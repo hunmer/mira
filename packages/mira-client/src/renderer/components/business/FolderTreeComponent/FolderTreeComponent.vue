@@ -245,6 +245,33 @@
       @close="handleMoveDialogClose"
       @move="handleItemMove"
     />
+
+    <!-- 删除确认对话框 -->
+    <AlertDialog v-model:open="showDeleteDialog">
+      <AlertDialogOverlay />
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>确认删除</AlertDialogTitle>
+          <AlertDialogDescription>
+            确定要删除{{ deletingType === 'folder' ? '文件夹' : '标签' }} "{{
+              deletingType === 'folder'
+                ? (deletingItem as any)?.label
+                : (deletingItem as any)?.name || (deletingItem as any)?.label
+            }}" 吗？此操作不可撤销。
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <div v-if="deletingType === 'folder'" class="flex items-center space-x-2 px-1">
+          <Checkbox id="deleteWithFiles" v-model:checked="deleteWithFiles" />
+          <label for="deleteWithFiles" class="text-sm text-muted-foreground cursor-pointer select-none">
+            同时删除文件夹内的文件（不勾选则文件移至未分类）
+          </label>
+        </div>
+        <AlertDialogFooter>
+          <AlertDialogCancel @click="showDeleteDialog = false">取消</AlertDialogCancel>
+          <AlertDialogAction @click="confirmDelete">删除</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   </div>
 </template>
 
@@ -260,6 +287,18 @@ import {
 } from '@/components/ui/context-menu'
 import FolderEditDialog from '../FolderEditDialog.vue'
 import FolderMoveDialog from '../FolderMoveDialog.vue'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogOverlay,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { Checkbox } from '@/components/ui/checkbox'
 import type { TreeNodeData } from '@/components/ui/volt/Tree.vue'
 import type { FolderItem } from '@renderer/types/components'
 import { useFolderTreeData } from './composables/useFolderTreeData'
@@ -372,6 +411,11 @@ const {
   handleMoveDialogClose,
   handleItemMove,
   handleItemSave,
+  showDeleteDialog,
+  deletingItem,
+  deletingType,
+  deleteWithFiles,
+  confirmDelete,
 } = useFolderOperations(emit)
 
 // 选择状态

@@ -48,6 +48,12 @@ export function useFolderOperations(
   const movingItem = ref<any | null>(null)
   const movingItemType = ref<ContextType>('folder')
 
+  // 删除确认对话框
+  const showDeleteDialog = ref(false)
+  const deletingItem = ref<any | null>(null)
+  const deletingType = ref<ContextType>('folder')
+  const deleteWithFiles = ref(false)
+
   function createContextMenuItems(type: ContextType): MenuItem[] {
     const isFolder = type === 'folder'
     const currentItem = isFolder ? currentContextFolder.value : currentContextTag.value
@@ -184,17 +190,24 @@ export function useFolderOperations(
     }
   }
 
-  async function handleDelete(type: ContextType, currentItem: any) {
+  function handleDelete(type: ContextType, currentItem: any) {
     if (!currentItem || !libraryStore.currentLibrary) return
-    const itemName = type === 'folder'
-      ? (currentItem as FolderItem).label
-      : currentItem.name || currentItem.title || currentItem.label
-    if (!confirm(`确定要删除${type === 'folder' ? '文件夹' : '标签'} "${itemName}" 吗？此操作不可撤销。`)) return
+    deletingType.value = type
+    deletingItem.value = currentItem
+    deleteWithFiles.value = false
+    showDeleteDialog.value = true
+  }
+
+  async function confirmDelete() {
+    const type = deletingType.value
+    const currentItem = deletingItem.value
+    if (!currentItem || !libraryStore.currentLibrary) return
+    showDeleteDialog.value = false
 
     try {
       const libraryId = libraryStore.currentLibrary.id
       if (type === 'folder') {
-        await miraSDKService.deleteFolder(libraryId, parseInt((currentItem as FolderItem).id))
+        await miraSDKService.deleteFolder(libraryId, parseInt((currentItem as FolderItem).id), deleteWithFiles.value)
         emit('folder-delete', currentItem)
         await new Promise(resolve => setTimeout(resolve, 100))
         emit('refresh-folders')
@@ -309,12 +322,17 @@ export function useFolderOperations(
     showMoveDialog,
     movingItem,
     movingItemType,
+    showDeleteDialog,
+    deletingItem,
+    deletingType,
+    deleteWithFiles,
     folderContextMenuItems,
     tagContextMenuItems,
     handleItemOperation,
     handleAdd,
     handleEditDialogClose,
     handleMoveDialogClose,
+    confirmDelete,
     handleItemMove,
     handleItemSave,
   }
