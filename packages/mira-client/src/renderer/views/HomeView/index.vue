@@ -121,7 +121,8 @@ const eventHandlers = useHomeEventHandlers(
   createTabFromFolder,
   createTabFromTag,
   switchToTabWithCallback,
-  tabsComposable.setAllTabsNeedUpdate
+  tabsComposable.setAllTabsNeedUpdate,
+  getCurrentTab
 )
 const {
   handleFolderSelect,

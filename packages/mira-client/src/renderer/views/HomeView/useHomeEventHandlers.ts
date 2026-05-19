@@ -15,7 +15,8 @@ export function useHomeEventHandlers(
   createTabFromFolder: any,
   createTabFromTag: any,
   switchToTabWithCallback: any,
-  setAllTabsNeedUpdate: any
+  setAllTabsNeedUpdate: any,
+  getCurrentTab: () => any
 ) {
   const homeController = useHomeController()
   const libraryStore = useLibraryStore()
@@ -146,6 +147,10 @@ export function useHomeEventHandlers(
       const result = await miraSDKService.emptyTrash(libraryId)
       clearTabCache()
       setAllTabsNeedUpdate(true)
+      const currentTab = getCurrentTab()
+      if (currentTab) {
+        switchToTabWithCallback(currentTab.id)
+      }
       console.log(`已清空回收站，删除 ${result.deletedCount} 个文件`)
     } catch (error) {
       console.error('清空回收站失败:', error)
