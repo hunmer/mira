@@ -394,20 +394,43 @@ export class LibraryServerDataSQLite implements ILibraryServerData {
         await this.deleteFolder(child.id, deleteFiles);
       }
 
-      // 处理文件夹内的文件
-      const files = await this.getSql('SELECT id FROM files WHERE folder_id = ?', [id]);
+      // 获取文件夹名（删除前必须先拿到，删除后 folders 表就没记录了）
+      const folderName = await this.getFolderName(id);
+      const libraryPath = await this.getLibraryPath();
+
+      // 处理文件夹内的文件（必须先查再处理，因为递归子文件夹会 commit 事务）
+      const files = await this.getSql('SELECT * FROM files WHERE folder_id = ?', [id]);
       if (deleteFiles) {
-        for (const file of files) {
-          await this.deleteFile(this.rowToMap(file).id);
+        for (const row of files) {
+          const file = this.rowToMap(row);
+          // 删除物理文件
+          const filePath = path.join(libraryPath, folderName, file.name);
+          if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+          // 删除缩略图
+          if (file.hash) {
+            const thumbPath = path.join(libraryPath, 'thumbs', `${file.hash}.png`);
+            if (fs.existsSync(thumbPath)) fs.unlinkSync(thumbPath);
+          }
+          // 删除 DB 记录
+          await this.runSql('DELETE FROM files WHERE id = ?', [file.id]);
         }
       } else {
-        for (const file of files) {
-          await this._moveFileToFolder(this.rowToMap(file).id, null);
+        for (const row of files) {
+          await this._moveFileToFolder(this.rowToMap(row).id, null);
         }
       }
 
       // 删除文件夹记录
       const result = await this.runSql('DELETE FROM folders WHERE id = ?', [id]);
+
+      // 清理空目录
+      const folderDir = path.join(libraryPath, folderName);
+      try {
+        if (fs.existsSync(folderDir) && fs.readdirSync(folderDir).length === 0) {
+          fs.rmdirSync(folderDir);
+        }
+      } catch {}
+
       await this.commitTransaction();
       return result.changes > 0;
     } catch (err) {
