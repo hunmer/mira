@@ -409,8 +409,11 @@ export class FileRoutes {
                 // 获取文件路径
                 const filePath = await obj.libraryService.getItemFilePath(item);
 
+                // 读取 moveToRecycleBin 参数，默认 true（移到回收站）
+                const moveToRecycleBin = req.query.moveToRecycleBin !== 'false';
+
                 // 删除数据库记录
-                const deleteSuccess = await obj.libraryService.deleteFile(parseInt(id));
+                const deleteSuccess = await obj.libraryService.deleteFile(parseInt(id), { moveToRecycleBin });
 
                 if (!deleteSuccess) {
                     return res.status(500).json({
@@ -421,27 +424,26 @@ export class FileRoutes {
                     });
                 }
 
-                // 删除物理文件
-                if (filePath && fs.existsSync(filePath)) {
-                    try {
-                        fs.unlinkSync(filePath);
-                        console.log(`Physical file deleted: ${filePath}`);
-                    } catch (fileError) {
-                        console.error(`Error deleting physical file ${filePath}:`, fileError);
-                        // 文件删除失败但数据库记录已删除，记录警告但不返回错误
+                // 仅在彻底删除时才删除物理文件和缩略图
+                if (!moveToRecycleBin) {
+                    if (filePath && fs.existsSync(filePath)) {
+                        try {
+                            fs.unlinkSync(filePath);
+                            console.log(`Physical file deleted: ${filePath}`);
+                        } catch (fileError) {
+                            console.error(`Error deleting physical file ${filePath}:`, fileError);
+                        }
                     }
-                }
 
-                // 删除缩略图
-                try {
-                    const thumbPath = await obj.libraryService.getItemThumbPath(item, { isNetworkImage: false });
-                    if (thumbPath && fs.existsSync(thumbPath)) {
-                        fs.unlinkSync(thumbPath);
-                        console.log(`Thumbnail deleted: ${thumbPath}`);
+                    try {
+                        const thumbPath = await obj.libraryService.getItemThumbPath(item, { isNetworkImage: false });
+                        if (thumbPath && fs.existsSync(thumbPath)) {
+                            fs.unlinkSync(thumbPath);
+                            console.log(`Thumbnail deleted: ${thumbPath}`);
+                        }
+                    } catch (thumbError) {
+                        console.error(`Error deleting thumbnail:`, thumbError);
                     }
-                } catch (thumbError) {
-                    console.error(`Error deleting thumbnail:`, thumbError);
-                    // 缩略图删除失败不影响整体操作
                 }
 
                 const response = {

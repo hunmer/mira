@@ -613,12 +613,12 @@ export class MiraSDKService {
     }
   }
 
-  async deleteFile(libraryId: string, fileId: string): Promise<BaseResponse> {
+  async deleteFile(libraryId: string, fileId: string, moveToRecycleBin: boolean = true): Promise<BaseResponse> {
     if (!this.client) throw new Error('Not connected to Mira server')
 
     try {
-      console.log('MiraSDKService: Deleting file', { libraryId, fileId })
-      const result = await this.client.files().delete(libraryId, fileId)
+      console.log('MiraSDKService: Deleting file', { libraryId, fileId, moveToRecycleBin })
+      const result = await this.client.files().delete(libraryId, fileId, { moveToRecycleBin })
       console.log('MiraSDKService: File deletion successful')
       return TypeAdapter.normalizeBaseResponse(result)
     } catch (error) {
