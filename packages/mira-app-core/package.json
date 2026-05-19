@@ -1,0 +1,32 @@
+{
+  "name": "mira-app-core",
+  "version": "1.0.24",
+  "description": "Core library for Mira TypeScript project - provides base functionality without auto-execution",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "rebuild": "npm install && npm run build",
+    "dev": "ts-node src/index.ts",
+    "start:ts": "ts-node src/index.ts"
+  },
+  "keywords": [
+    "mira",
+    "core",
+    "library"
+  ],
+  "author": "hunmer",
+  "license": "ISC",
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "axios": "^1.11.0",
+    "queue": "^7.0.0"
+  }
+}

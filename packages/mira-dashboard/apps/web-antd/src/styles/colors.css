@@ -1,0 +1,82 @@
+/* Custom Color Variables for Blue */
+:root {
+  /* Blue color palette - 蓝色调色板 */
+  --blue-50: 239 246 255;    /* #EFF6FF */
+  --blue-100: 219 234 254;   /* #DBEAFE */
+  --blue-200: 191 219 254;   /* #BFDBFE */
+  --blue-300: 147 197 253;   /* #93C5FD */
+  --blue-400: 96 165 250;    /* #60A5FA */
+  --blue-500: 59 130 246;    /* #3B82F6 - main blue */
+  --blue-600: 37 99 235;     /* #2563EB - hover */
+  --blue-700: 29 78 216;     /* #1D4ED8 - active */
+  --blue-foreground: 255 255 255; /* white text on blue */
+}
+
+/* Dark mode blue colors */
+.dark {
+  /* Slightly adjusted blues for dark mode */
+  --blue-50: 30 41 59;       /* darker variant for dark mode */
+  --blue-100: 51 65 85;      /* darker variant for dark mode */
+  --blue-200: 71 85 105;     /* darker variant for dark mode */
+  --blue-300: 100 116 139;   /* darker variant for dark mode */
+  --blue-400: 148 163 184;   /* darker variant for dark mode */
+  --blue-500: 59 130 246;    /* keep main blue */
+  --blue-600: 96 165 250;    /* lighter for dark mode */
+  --blue-700: 147 197 253;   /* much lighter for dark mode */
+  --blue-foreground: 15 23 42; /* dark text on light blue in dark mode */
+}
+
+/* Additional commonly used colors for compatibility */
+:root {
+  /* Red color palette (already exists in system) */
+  --red-50: 254 242 242;     /* #FEF2F2 */
+  --red-100: 254 226 226;    /* #FEE2E2 */
+  --red-200: 252 165 165;    /* #FCA5A5 */
+  --red-300: 248 113 113;    /* #F87171 */
+  --red-400: 239 68 68;      /* #EF4444 */
+  --red-500: 220 38 38;      /* #DC2626 - main red */
+  --red-600: 185 28 28;      /* #B91C1C - hover */
+  --red-700: 153 27 27;      /* #991B1B - active */
+  --red-foreground: 255 255 255; /* white text on red */
+  
+  /* Green color palette (already exists in system) */
+  --green-50: 240 253 244;   /* #F0FDF4 */
+  --green-100: 220 252 231;  /* #DCFCE7 */
+  --green-200: 187 247 208;  /* #BBF7D0 */
+  --green-300: 134 239 172;  /* #86EFAC */
+  --green-400: 74 222 128;   /* #4ADE80 */
+  --green-500: 34 197 94;    /* #22C55E - main green */
+  --green-600: 22 163 74;    /* #16A34A - hover */
+  --green-700: 21 128 61;    /* #15803D - active */
+  --green-foreground: 255 255 255; /* white text on green */
+  
+  /* Yellow color palette */
+  --yellow-50: 254 252 232;  /* #FEFCE8 */
+  --yellow-100: 254 249 195; /* #FEF9C3 */
+  --yellow-200: 254 240 138; /* #FEF08A */
+  --yellow-300: 253 224 71;  /* #FDE047 */
+  --yellow-400: 250 204 21;  /* #FACC15 */
+  --yellow-500: 234 179 8;   /* #EAB308 - main yellow */
+  --yellow-600: 202 138 4;   /* #CA8A04 - hover */
+  --yellow-700: 161 98 7;    /* #A16207 - active */
+  --yellow-foreground: 0 0 0; /* black text on yellow */
+  
+  /* Purple/Violet color palette */
+  --purple-50: 250 245 255;  /* #FAF5FF */
+  --purple-100: 243 232 255; /* #F3E8FF */
+  --purple-200: 233 213 255; /* #E9D5FF */
+  --purple-300: 196 181 253; /* #C4B5FD */
+  --purple-400: 167 139 250; /* #A78BFA */
+  --purple-500: 139 92 246;  /* #8B5CF6 - main purple */
+  --purple-600: 124 58 237;  /* #7C3AED - hover */
+  --purple-700: 109 40 217;  /* #6D28D9 - active */
+  --purple-foreground: 255 255 255; /* white text on purple */
+}
+
+.dark {
+  /* Dark mode adjustments for other colors */
+  --red-foreground: 255 255 255;
+  --green-foreground: 255 255 255;
+  --yellow-foreground: 0 0 0;
+  --purple-foreground: 255 255 255;
+}

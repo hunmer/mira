@@ -1,0 +1,34 @@
+{
+  "name": "mira_thumb",
+  "version": "1.0.19",
+  "main": "dist/index.js",
+  "files": [
+    "dist/**/*"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "rebuild": "npm install && npm run build",
+    "dev": "ts-node index.ts",
+    "start:ts": "ts-node index.ts"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "author": "hunmer",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "fluent-ffmpeg": "^2.1.3",
+    "mira-app-core": "^1.0.24",
+    "mira-app-server": "^1.0.25",
+    "mira-storage-sqlite": "^1.0.20",
+    "queue": "^7.0.0",
+    "which": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/fluent-ffmpeg": "^2.1.27",
+    "@types/which": "^3.0.4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}

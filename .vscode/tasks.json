@@ -1,0 +1,288 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build-mira-app-core",
+      "type": "shell",
+      "command": "npm",
+      "args": [
+        "run",
+        "rebuild"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/packages/mira-app-core"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "build-mira-app-server",
+      "type": "shell",
+      "command": "npm",
+      "args": [
+        "run",
+        "build"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/packages/mira-app-server"
+      },
+      "group": "build",
+      "dependsOn": "build-mira-app-core",
+      "presentation": {
+        "echo": true,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "build-mira-server-sdk",
+      "type": "shell",
+      "command": "npm",
+      "args": [
+        "run",
+        "build"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/packages/mira-server-sdk"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "start-mira-app-server-dev",
+      "type": "shell",
+      "command": "npm",
+      "args": [
+        "run",
+        "dev"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/packages/mira-app-server",
+        "env": {
+          "NODE_OPTIONS": "--enable-source-maps --inspect=9229"
+        }
+      },
+      "group": "test",
+      "isBackground": true,
+      "dependsOn": [
+        "stop-mira-app-server-dev",
+        "build-mira-app-server"
+      ],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "start-mira-dashboard-dev",
+      "type": "shell",
+      "command": "npm",
+      "args": [
+        "run",
+        "dev"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/packages/mira-dashboard",
+        "env": {
+          "NODE_OPTIONS": "--enable-source-maps"
+        },
+      },
+      "dependsOn": [
+        "stop-mira-dashboard-dev",
+        "build-mira-dashboard"
+      ],
+      "group": "test",
+      "isBackground": true,
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "build-mira-dashboard",
+      "type": "shell",
+      "command": "npm",
+      "args": [
+        "run",
+        "build"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/packages/mira-dashboard"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "start-full-stack",
+      "type": "shell",
+      "command": "echo",
+      "args": [
+        "Starting full Mira stack..."
+      ],
+      "group": "test",
+      "dependsOn": [
+        "start-mira-app-server-dev",
+        "start-mira-dashboard-dev"
+      ],
+      "dependsOrder": "parallel",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "build-full-stack",
+      "type": "shell",
+      "command": "echo",
+      "args": [
+        "Building full Mira stack..."
+      ],
+      "group": "build",
+      "dependsOn": [
+        "build-mira-app-core",
+        "build-mira-app-server",
+        "build-mira-dashboard"
+      ],
+      "dependsOrder": "sequence",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "stop-mira-app-server-dev",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-Command",
+        "$port = 8081; $process = Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess; if ($process) { Stop-Process -Id $process -Force; Write-Host 'Stopped mira-app-server on port 8081' } else { Write-Host 'No process found on port 8081' }"
+      ],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "stop-mira-dashboard-dev",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-Command",
+        "$port = 3999; $process = Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess; if ($process) { Stop-Process -Id $process -Force; Write-Host 'Stopped mira-dashboard on port 3999' } else { Write-Host 'No process found on port 3999' }"
+      ],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "stop-all-node-processes",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-Command",
+        "Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force; Write-Host 'Stopped all Node.js processes'"
+      ],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "build-mira-n8n-apis(mac)",
+      "type": "shell",
+      "command": "npm",
+      "args": [
+        "run",
+        "mac-test"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/workflows/n8n/mira_apis"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "build-mira-n8n-apis(windows)",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "./win_test.ps1"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/workflows/n8n/mira_apis"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "build-n8n-fs(windows)",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "./win_test.ps1"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/packages/n8n-nodes-fs"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+  ]
+}

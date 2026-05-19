@@ -1,0 +1,107 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+      
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/mira-app-server
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Verify workspace structure
+      run: |
+        echo "Checking workspace structure..."
+        ls -la packages/
+        ls -la packages/mira-storage-sqlite/
+        ls -la packages/mira-storage-sqlite/src/
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: 'packages/package-lock.json'
+
+    - name: Install dependencies
+      run: |
+        cd packages
+        npm install
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      continue-on-error: true
+      
+    - name: Show Docker version
+      run: |
+        echo "Docker installation details:"
+        docker --version
+        docker buildx version
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.SECERT }} # 不允许GITHUB_TOKEN为变量名称
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=raw,value=latest
+          type=raw,value=latest-{{date 'YYYYMMDD'}}
+
+    - name: Build and push Docker image
+      id: build
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./packages/mira-app-server/Dockerfile
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        platforms: linux/amd64,linux/arm64
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Generate artifact attestation
+      uses: actions/attest-build-provenance@v1
+      with:
+        subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
+        subject-digest: ${{ steps.build.outputs.digest }}
+        push-to-registry: true
+
+    - name: Make package public
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      run: |
+        # 使用 GitHub CLI 设置包为公开
+        echo "Setting package visibility to public..."
+        gh api \
+          --method PATCH \
+          -H "Accept: application/vnd.github+json" \
+          -H "X-GitHub-Api-Version: 2022-11-28" \
+          "/user/packages/container/${{ github.event.repository.name }}%2Fmira-app-server/visibility" \
+          -f visibility='public' || echo "Package may already be public or requires manual setup"
+      env:
+        GITHUB_TOKEN: ${{ secrets.SECERT }}

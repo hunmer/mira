@@ -1,0 +1,25 @@
+{
+  "timerEnabled": true,
+  "reportTime": "20:00",
+  "reportLoop": -1,
+  "reportDaysRange": 1,
+  "maxDisplayUsers": 10,
+  "reportApis": [
+    {
+      "method": "POST",
+      "url": "https://oapi.dingtalk.com/robot/send?access_token=10ed171b277a5457e8558ba2318d0e15db537ec82ad29068e39863d6bd9cbc8f",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "msgtype": "markdown",
+        "markdown": {
+          "title": "素材上传排行榜",
+          "text": "{text}"
+        },
+        "openConversationId": "cidc1zCBPIN7n6iCnjLYlibHQ==",
+        "robotCode": "dingnfvobzppogfk5z6q"
+      }
+    }
+  ]
+}

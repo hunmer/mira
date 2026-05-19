@@ -1,0 +1,77 @@
+{
+  "appId": "com.mira.desktop.test",
+  "productName": "Mira",
+  "copyright": "Copyright © 2025 Mira Team",
+  "electronVersion": "38.0.0",
+  "electronLanguages": ["zh-TW", "zh-CN", "en-US"],
+  "directories": {
+    "output": "build-test"
+  },
+  "files": [
+    "dist-renderer/**/*",
+    "dist-main/**/*",
+    "dist-preload/**/*",
+    "package.json",
+    "node_modules/**/*",
+    "!node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
+    "!node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
+    "!node_modules/*.d.ts",
+    "!node_modules/.bin",
+    "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}",
+    "!.editorconfig",
+    "!**/._*",
+    "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}",
+    "!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}",
+    "!**/{appveyor.yml,.travis.yml,circle.yml}",
+    "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}"
+  ],
+  "extraResources": [
+    {
+      "from": "assets/",
+      "to": "assets/",
+      "filter": ["**/*"]
+    },
+    {
+      "from": "dist-main/",
+      "to": "dist-main/",
+      "filter": ["**/*"]
+    },
+    {
+      "from": "dist-preload/",
+      "to": "dist-preload/",
+      "filter": ["**/*"]
+    },
+    {
+      "from": "dist-renderer/",
+      "to": "dist-renderer/",
+      "filter": ["**/*"]
+    },
+    {
+      "from": "plugins/",
+      "to": "plugins/",
+      "filter": ["**/*"]
+    },
+    {
+      "from": "configs/",
+      "to": "configs/",
+      "filter": ["**/*"]
+    }
+  ],
+  "buildVersion": "1.0.0-test",
+  "compression": "normal",
+  "artifactName": "${productName}-${version}-test-${arch}.${ext}",
+  "extraMetadata": {
+    "main": "dist-main/main.js",
+    "name": "mira-media-library-test",
+    "author": "Mira Team",
+    "description": "Mira Media Library Desktop Application - Test Version"
+  },
+  "win": {
+    "target": "dir",
+    "icon": "assets/icon.ico",
+    "requestedExecutionLevel": "asInvoker",
+    "signAndEditExecutable": false,
+    "verifyUpdateCodeSignature": false
+  },
+  "nsis": false
+}

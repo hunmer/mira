@@ -1,0 +1,17 @@
+[
+  {
+    "id": "1755239013113",
+    "name": "test",
+    "type": "local",
+    "description": "",
+    "icon": "default",
+    "pluginsDir": "/Users/Zhuanz/mira_typescript/plugins",
+    "customFields": {
+      "path": "/Users/Zhuanz/test_library/",
+      "enableHash": false,
+      "useHttpFile": true,
+      "serverURL": "http://127.0.0.1",
+      "serverPort": "8081"
+    }
+  }
+]

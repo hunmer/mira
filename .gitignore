@@ -1,0 +1,13 @@
+
+node_modules
+dist
+temp/
+packages/mira-app-server/mira_server.tar
+packages/mira-app-server/data/
+.vscode/edge-debug-user-data/
+packages/mira-server/mira_server.tar
+plugins/users.db
+plugins/users.db
+plugins/users.db
+.spec-workflow/
+

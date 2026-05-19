@@ -1,0 +1,653 @@
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted } from 'vue'
+
+// Component imports
+import FolderTreeComponent from '@renderer/components/business/FolderTreeComponent/FolderTreeComponent.vue'
+import ServerManagementDialog from '@renderer/components/business/ServerManagementDialog.vue'
+import ServerEditDialog from '@renderer/components/business/ServerEditDialog.vue'
+import ShortcutManagerDialog from '@renderer/components/business/ShortcutManagerDialog.vue'
+import FileUploadDialog from '@renderer/components/business/FileUploadDialog.vue'
+import PluginsDialog from '@renderer/components/business/PluginsDialog.vue'
+import SettingsDialog from '@renderer/components/business/SettingsDialog.vue'
+import TabViewRenderer from '@renderer/components/common/TabViewRenderer.vue'
+import { ContextMenu, ContextMenuTrigger, ContextMenuContent, ContextMenuItem } from '@/components/ui/context-menu'
+import Dropdown from '@/components/ui/volt/Dropdown.vue'
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from '@/components/ui/resizable'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+
+// Store imports
+import { useLibraryStore } from '@/renderer/stores/library'
+import { useTagStore } from '@renderer/stores/tag'
+
+// Controller import
+import { useHomeController } from '@renderer/controllers/HomeController'
+
+// Utils and Services
+import { environment } from '@renderer/utils'
+import { shortcutService } from '@renderer/services/ShortcutService'
+
+// Window and Navigation composables
+import { useWindowAndNavigation } from '@renderer/composables'
+
+// HomeView模块
+import { useHomeUIState } from './useHomeUIState'
+import { useHomeTabManagement } from './useHomeTabManagement'
+import { useHomeLibraryManagement } from './useHomeLibraryManagement'
+import { useHomeEventHandlers } from './useHomeEventHandlers'
+import { useHomeInit } from './useHomeInit'
+
+// ============================================
+// 初始化stores和controllers
+// ============================================
+const homeController = useHomeController()
+const libraryStore = useLibraryStore()
+const tagStore = useTagStore()
+
+// ============================================
+// UI状态管理
+// ============================================
+const uiState = useHomeUIState()
+const {
+  showServerManagementDialog,
+  showServerEditDialog,
+  showShortcutDialog,
+  editingServer,
+  showLibraryManagement
+} = uiState
+
+// 额外的对话框状态
+const showFileUploadDialog = ref(false)
+const showPluginsDialog = ref(false)
+const showSettingsDialog = ref(false)
+
+// ============================================
+// Tab管理
+// ============================================
+const tabManagement = useHomeTabManagement()
+const {
+  tabsComposable,
+  activeTabs,
+  currentTab,
+  currentTabViewConfig,
+  getCurrentTab,
+  setTabNeedUpdate,
+  createTabFromFolder,
+  createTabFromTag,
+  tabContextMenuItems,
+  handleTabContextMenu,
+  switchToTabWithCallback,
+  closeTabWithCallback,
+  handleActivateLastTab,
+  handleReopenClosedTab
+} = tabManagement
+
+// ============================================
+// 素材库管理
+// ============================================
+const libraryManagement = useHomeLibraryManagement(
+  showServerManagementDialog,
+  showServerEditDialog,
+  editingServer
+)
+const {
+  showNoLibraryDialog,
+  handleSelectCollection,
+  handleEditServer,
+  handleAddServer,
+  handleServerSaved,
+  handleCreateLibrary,
+  initializeDefaultLibrary
+} = libraryManagement
+
+// ============================================
+// 窗口和导航
+// ============================================
+const windowNavigation = useWindowAndNavigation()
+const {
+  isDesktop,
+  handleWindowClose,
+  handleWindowMinimize,
+  handleWindowMaximize
+} = windowNavigation
+
+// ============================================
+// 事件处理
+// ============================================
+const eventHandlers = useHomeEventHandlers(
+  createTabFromFolder,
+  createTabFromTag,
+  switchToTabWithCallback,
+  tabsComposable.setAllTabsNeedUpdate
+)
+const {
+  handleFolderSelect,
+  handleTagSelect,
+  handleRefreshFolders,
+  handleRefreshTags,
+  handleEmptyTrash,
+  registerGlobalEvents,
+  cleanupGlobalEvents
+} = eventHandlers
+
+// ============================================
+// 初始化
+// ============================================
+const homeInit = useHomeInit()
+const { performInitialization } = homeInit
+
+let cleanupModules: (() => void) | null = null
+
+onMounted(async () => {
+  cleanupModules = await performInitialization(
+    homeController,
+    getCurrentTab,
+    setTabNeedUpdate,
+    switchToTabWithCallback,
+    initializeDefaultLibrary
+  )
+
+  // 注册全局事件
+  registerGlobalEvents(
+    handleActivateLastTab,
+    handleReopenClosedTab
+  )
+})
+
+// ============================================
+// 组件卸载清理
+// ============================================
+onUnmounted(() => {
+  if (cleanupModules) {
+    cleanupModules()
+  }
+  cleanupGlobalEvents(
+    handleActivateLastTab,
+    handleReopenClosedTab
+  )
+})
+</script>
+
+<template>
+  <div class="home-view h-screen flex flex-col bg-white text-sm">
+    <!-- 顶部导航菜单 -->
+    <header class="w-full flex items-center justify-between p-2 border-b border-gray-200 bg-white">
+      <div class="flex items-center flex-1 min-w-0">
+        <!-- 素材库选择 -->
+        <div class="flex items-center space-x-2 mr-6 shrink-0">
+          <div class="relative">
+            <Dropdown
+              :offset="{ x: 0, y: 4 }"
+              placement="bottom-start"
+              min-width="280px"
+            >
+              <template #trigger>
+                <button
+                  class="flex items-center space-x-2 text-sm font-medium hover:bg-gray-100 rounded px-3 py-2 max-w-[200px]"
+                >
+                  <span class="material-icons text-blue-500">folder</span>
+                  <span class="truncate">{{ libraryStore.currentLibrary?.name || '未选择素材库' }}</span>
+                  <span class="material-symbols-outlined text-gray-500">keyboard_arrow_down</span>
+                </button>
+              </template>
+
+              <template #content="{ close }">
+                <div>
+                  <div class="p-2">
+                    <div class="text-xs text-gray-500 mb-2">选择素材库</div>
+                    <!-- 素材库列表 -->
+                    <div v-if="libraryStore.libraries && libraryStore.libraries.length > 0">
+                      <div
+                        v-for="collection in libraryStore.libraries"
+                        :key="collection.id"
+                        class="flex items-center justify-between p-2 hover:bg-gray-50 rounded cursor-pointer"
+                        @click="handleSelectCollection(collection); close()"
+                      >
+                        <div class="flex items-center space-x-2">
+                          <span class="material-icons text-blue-500">library_books</span>
+                          <div>
+                            <div class="font-medium text-sm">{{ collection.name }}</div>
+                            <div class="text-xs text-gray-500">
+                              {{ collection.fileCount }} 个文件 · {{ collection.type }}
+                            </div>
+                          </div>
+                        </div>
+                        <span
+                          v-if="libraryStore.currentLibrary?.id === collection.id"
+                          class="material-icons text-green-500 text-sm"
+                        >
+                          check
+                        </span>
+                      </div>
+                    </div>
+
+                    <!-- 无素材库提示 -->
+                    <div v-else class="p-3 text-center text-gray-500">
+                      <div class="mb-2">
+                        <span class="material-icons text-gray-400 text-2xl">library_books</span>
+                      </div>
+                      <div class="text-sm">暂无可用素材库</div>
+                      <div class="text-xs mt-1">请先连接到服务器或添加素材库</div>
+                    </div>
+
+                    <div class="border-t border-gray-200 mt-2 pt-2 space-y-1">
+                      <button
+                        class="w-full flex items-center space-x-2 p-2 text-gray-600 hover:bg-gray-50 rounded text-sm"
+                        @click="showLibraryManagement(); close()"
+                      >
+                        <span class="material-icons">settings</span>
+                        <span>服务器设置</span>
+                      </button>
+                      <button
+                        class="w-full flex items-center space-x-2 p-2 text-blue-600 hover:bg-blue-50 rounded text-sm"
+                        @click="handleAddServer(); close()"
+                      >
+                        <span class="material-icons">add</span>
+                        <span>连接服务器</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </Dropdown>
+          </div>
+        </div>
+
+        <!-- 导航按钮 -->
+        <div class="flex items-center space-x-1 mr-4 shrink-0">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <button
+                  class="p-2 rounded-md hover:bg-gray-100"
+                  @click="handleActivateLastTab"
+                >
+                  <span class="material-icons text-gray-600">arrow_back</span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">激活上一次的tab (Ctrl+Shift+Tab)</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <button
+                  class="p-2 rounded-md hover:bg-gray-100"
+                  @click="handleReopenClosedTab"
+                >
+                  <span class="material-icons text-gray-600">redo</span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">打开最后关闭的tab (Ctrl+Shift+T)</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+
+        <!-- Tabs 导航 -->
+        <div class="flex items-center space-x-2 flex-1 min-w-0 overflow-hidden">
+          <ContextMenu>
+            <ContextMenuTrigger as-child>
+              <div class="flex bg-gray-100 rounded-lg p-1 overflow-x-auto max-w-full">
+                <button
+                  v-for="tab in activeTabs"
+                  :key="tab.id"
+                  :class="[
+                    'px-3 py-1.5 text-sm font-medium rounded-md flex items-center space-x-2 min-w-0',
+                    tab.active
+                      ? 'text-blue-700 bg-white shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
+                  ]"
+                  @click="switchToTabWithCallback(tab.id)"
+                  @contextmenu="handleTabContextMenu(tab, $event)"
+                >
+                  <span class="material-icons text-sm" :style="{ color: tab.iconColor }">
+                    {{ tab.icon }}
+                  </span>
+                  <span class="truncate">{{ tab.label }}</span>
+                  <button
+                    v-if="activeTabs.length > 1 && tabsComposable.isTabClosable(tab.id)"
+                    class="hover:bg-gray-200 rounded-full "
+                    style="line-height: 0;"
+                    @click.stop="closeTabWithCallback(tab.id)"
+                  >
+                    <span class="material-icons text-xs">close</span>
+                  </button>
+                </button>
+              </div>
+            </ContextMenuTrigger>
+            <ContextMenuContent>
+              <ContextMenuItem
+                v-for="item in tabContextMenuItems"
+                :key="item.label"
+                @click="item.command?.()"
+              >
+                {{ item.label }}
+              </ContextMenuItem>
+            </ContextMenuContent>
+          </ContextMenu>
+        </div>
+      </div>
+
+      <!-- 右侧工具栏 -->
+      <div class="flex items-center space-x-4 shrink-0">
+        <!-- 分隔符 -->
+        <div class="h-5 border-l border-gray-300"></div>
+
+        <!-- 窗口控制按钮 - 仅桌面端显示 -->
+        <div v-if="isDesktop" class="flex items-center space-x-1 ml-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <button
+                  @click="handleWindowMinimize"
+                  class="p-1.5 rounded-md hover:bg-gray-100 transition-colors"
+                >
+                  <span class="material-icons text-gray-500" style="font-size: 16px;">remove</span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">最小化</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <button
+                  @click="handleWindowMaximize"
+                  class="p-1.5 rounded-md hover:bg-gray-100 transition-colors"
+                >
+                  <span class="material-icons text-gray-500" style="font-size: 16px;">crop_square</span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">最大化</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <button
+                  @click="handleWindowClose"
+                  class="p-1.5 rounded-md hover:bg-gray-100 transition-colors"
+                >
+                  <span class="material-icons text-gray-500" style="font-size: 16px;">close</span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">关闭</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      </div>
+    </header>
+
+    <!-- 主内容区域（侧边栏 + 内容） -->
+    <div class="flex flex-1 overflow-hidden">
+      <ResizablePanelGroup direction="horizontal" auto-save-id="home-sidebar" class="flex-1">
+        <!-- 左侧侧边栏 -->
+        <ResizablePanel :default-size="20" :min-size="15" class="bg-gray-50 border-r border-gray-200 flex flex-col overflow-hidden">
+          <!-- 文件夹树形导航 -->
+          <div class="flex-grow p-2 overflow-y-auto min-w-0">
+            <FolderTreeComponent
+              :folders="homeController.folderTree.value"
+              :tags="tagStore.tags"
+              :selected-folder="homeController.selectedFolder.value"
+              :show-tags="true"
+              @folder-select="handleFolderSelect"
+              @tag-select="handleTagSelect"
+              @folder-expand="homeController.handleFolderExpand"
+              @refresh-folders="handleRefreshFolders"
+              @refresh-tags="handleRefreshTags"
+              @empty-trash="handleEmptyTrash"
+            />
+          </div>
+        </ResizablePanel>
+
+        <ResizableHandle />
+
+        <!-- 右侧主内容区 -->
+        <ResizablePanel :default-size="80" :min-size="50" class="flex flex-col bg-gray-100 overflow-hidden">
+        <!-- 主内容区域 -->
+        <main class="flex-1 flex p-2 overflow-hidden relative min-w-0">
+          <!-- Tab视图内容 -->
+          <div class="flex-1 mr-2 min-w-0 overflow-hidden">
+            <TabViewRenderer
+              v-if="currentTab"
+              :tab-id="currentTab.id"
+              :view-config="currentTabViewConfig"
+              :cacheable="true"
+              class="w-full h-full"
+            />
+            <!-- 默认状态 - 没有活跃的Tab时显示 -->
+            <div v-else class="flex items-center justify-center h-full">
+              <div class="text-center">
+                <span class="material-icons text-6xl text-gray-400 mb-4">home</span>
+                <h2 class="text-xl font-semibold text-gray-600 mb-2">欢迎使用 Mira</h2>
+                <p class="text-gray-500">从左侧选择文件夹或标签来开始浏览您的媒体文件</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 右侧工具面板 - 始终显示 -->
+          <div class="w-12 shrink-0 bg-white border border-gray-200 rounded-lg flex flex-col items-center py-2 space-y-2">
+            <!-- 文件上传按钮 -->
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <button
+                    class="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                    @click="showFileUploadDialog = true"
+                  >
+                    <span class="material-icons text-gray-600 text-base">upload_file</span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="left">上传文件</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <!-- 搜索按钮 -->
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <button
+                    class="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                    @click="homeController.toggleSearch"
+                  >
+                    <span class="material-icons text-gray-600 text-base">search</span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="left">搜索</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <!-- 分隔线 -->
+            <div class="w-6 border-t border-gray-200"></div>
+
+            <!-- 插件管理按钮 -->
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <button
+                    class="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                    @click="showPluginsDialog = true"
+                  >
+                    <span class="material-icons text-gray-600 text-base">extension</span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="left">插件管理</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <!-- 快捷键设置按钮 -->
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <button
+                    class="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                    @click="showShortcutDialog = true"
+                  >
+                    <span class="material-icons text-gray-600 text-base">keyboard</span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="left">快捷键设置</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <!-- 设置按钮 -->
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <button
+                    class="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                    @click="showSettingsDialog = true"
+                  >
+                    <span class="material-icons text-gray-600 text-base">settings</span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="left">应用设置</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <!-- 开发者工具按钮（仅在Electron环境中显示） -->
+            <TooltipProvider v-if="environment.isElectron">
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <button
+                    class="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                    @click="shortcutService.executeAction('dev.devtools')"
+                  >
+                    <span class="material-icons text-gray-600 text-base">code</span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="left">开发者工具</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+          </div>
+        </main>
+        </ResizablePanel>
+      </ResizablePanelGroup>
+    </div>
+
+    <!-- 无素材库提示对话框 -->
+    <div
+      v-if="showNoLibraryDialog"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    >
+      <div class="bg-white rounded-lg p-6 max-w-md mx-4">
+        <div class="flex items-center mb-4">
+          <span class="material-icons text-yellow-500 mr-3">warning</span>
+          <h3 class="text-lg font-semibold">没有可用的素材库</h3>
+        </div>
+        <p class="text-gray-600 mb-6">
+          系统检测到您还没有创建任何素材库。素材库是用来管理和组织您的媒体文件的。
+        </p>
+        <div class="flex justify-end space-x-3">
+          <button
+            @click="showNoLibraryDialog = false"
+            class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md"
+          >
+            稍后创建
+          </button>
+          <button
+            @click="handleCreateLibrary"
+            class="px-4 py-2 bg-blue-500 text-white hover:bg-blue-600 rounded-md"
+          >
+            创建素材库
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 素材库管理对话框 -->
+    <ServerManagementDialog
+      v-model:visible="showServerManagementDialog"
+      @edit-server="handleEditServer"
+      @add-server="handleAddServer"
+    />
+
+    <!-- 素材库编辑对话框 -->
+    <ServerEditDialog
+      v-model:visible="showServerEditDialog"
+      :library="editingServer"
+      @saved="handleServerSaved"
+    />
+
+    <!-- 快捷键管理对话框 -->
+    <ShortcutManagerDialog
+      v-model:visible="showShortcutDialog"
+    />
+
+    <!-- 文件上传对话框 -->
+    <FileUploadDialog
+      v-model:visible="showFileUploadDialog"
+    />
+
+    <!-- 插件管理对话框 -->
+    <PluginsDialog
+      v-model:visible="showPluginsDialog"
+    />
+
+    <!-- 设置对话框 -->
+    <SettingsDialog
+      v-model:visible="showSettingsDialog"
+    />
+
+  </div>
+</template>
+
+<style scoped>
+.home-view {
+  font-size: 13px;
+}
+
+.material-icons,
+.material-symbols-outlined {
+  font-size: 18px;
+}
+
+.material-symbols-outlined.text-sm {
+  font-size: 16px;
+}
+
+/* 自定义滚动条 */
+:deep(.overflow-y-auto::-webkit-scrollbar) {
+  width: 6px;
+}
+
+:deep(.overflow-y-auto::-webkit-scrollbar-track) {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+:deep(.overflow-y-auto::-webkit-scrollbar-thumb) {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+:deep(.overflow-y-auto::-webkit-scrollbar-thumb:hover) {
+  background: #a8a8a8;
+}
+
+/* 悬停效果 */
+.group:hover .group-hover\:opacity-100 {
+  opacity: 1;
+}
+
+.group:hover .group-hover\:bg-black\/20 {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+/* 过渡动画 */
+.transition-colors {
+  transition-property: color, background-color, border-color;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
+}
+
+.transition-opacity {
+  transition-property: opacity;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
+}
+</style>

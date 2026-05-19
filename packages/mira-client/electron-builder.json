@@ -1,0 +1,174 @@
+{
+  "appId": "com.mira.desktop",
+  "productName": "Mira Media Library",
+  "copyright": "Copyright © 2025 Mira Team",
+  "electronVersion": "38.0.0",
+  "directories": {
+    "output": "build"
+  },
+  "files": [
+    "dist-renderer/**/*",
+    "dist-main/**/*",
+    "dist-preload/**/*",
+    "package.json",
+    "node_modules/**/*",
+    "!node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
+    "!node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
+    "!node_modules/*.d.ts",
+    "!node_modules/.bin",
+    "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}",
+    "!.editorconfig",
+    "!**/._*",
+    "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}",
+    "!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}",
+    "!**/{appveyor.yml,.travis.yml,circle.yml}",
+    "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}"
+  ],
+  "extraResources": [
+    {
+      "from": "assets/",
+      "to": "assets/",
+      "filter": ["**/*"]
+    },
+    {
+      "from": "configs/",
+      "to": "configs/",
+      "filter": ["**/*"]
+    }
+  ],
+  "publish": {
+    "provider": "generic",
+    "url": "http://192.168.1.200/mira_client/"
+  },
+  "buildVersion": "1.0.1",
+  "compression": "maximum",
+  "artifactName": "${productName}-${version}-${arch}.${ext}",
+  "generateUpdatesFilesForAllChannels": false,
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64"]
+      }
+    ],
+    "icon": "assets/icon.ico",
+    "requestedExecutionLevel": "asInvoker",
+    "signAndEditExecutable": true,
+    "verifyUpdateCodeSignature": false,
+    "artifactName": "${productName}-${version}-win-${arch}.${ext}"
+  },
+   "nsis": {
+    "oneClick": false,
+    "perMachine": false,
+    "allowToChangeInstallationDirectory": true,
+    "deleteAppDataOnUninstall": false,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "Mira Media Library",
+    "artifactName": "${productName}-${version}-win-setup.${ext}",
+    "uninstallDisplayName": "Mira Media Library",
+    "installerIcon": "assets/icon.ico",
+    "uninstallerIcon": "assets/icon.ico",
+    "installerHeaderIcon": "assets/icon.ico"
+  },
+  "portable": {
+    "artifactName": "${productName}-${version}-win-portable.${ext}"
+  },
+  "mac": {
+    "target": [
+      {
+        "target": "dmg",
+        "arch": ["x64", "arm64"]
+      },
+      {
+        "target": "zip",
+        "arch": ["x64", "arm64"]
+      }
+    ],
+    "icon": "build/icons/icon.icns",
+    "category": "public.app-category.photography",
+    "darkModeSupport": true,
+    "gatekeeperAssess": false,
+    "hardenedRuntime": true,
+    "entitlements": "build/entitlements.mac.plist",
+    "entitlementsInherit": "build/entitlements.mac.plist",
+    "artifactName": "${productName}-${version}-mac-${arch}.${ext}",
+    "minimumSystemVersion": "10.15.0"
+  },
+  "dmg": {
+    "title": "${productName} ${version}",
+    "icon": "build/icons/icon.icns",
+    "background": "build/icons/dmg-background.png",
+    "contents": [
+      {
+        "x": 410,
+        "y": 150,
+        "type": "link",
+        "path": "/Applications"
+      },
+      {
+        "x": 130,
+        "y": 150,
+        "type": "file"
+      }
+    ],
+    "window": {
+      "width": 540,
+      "height": 380
+    },
+    "artifactName": "${productName}-${version}-mac.${ext}"
+  },
+  "linux": {
+    "target": [
+      {
+        "target": "AppImage",
+        "arch": ["x64"]
+      },
+      {
+        "target": "deb",
+        "arch": ["x64"]
+      },
+      {
+        "target": "rpm",
+        "arch": ["x64"]
+      },
+      {
+        "target": "tar.gz",
+        "arch": ["x64"]
+      }
+    ],
+    "icon": "build/icons/",
+    "synopsis": "Modern media library management application",
+    "description": "Mira is a powerful and intuitive media library management application that helps you organize, browse, and manage your digital media assets with ease.",
+    "category": "Graphics",
+    "desktop": {
+      "entry": {
+        "StartupNotify": "true",
+        "Encoding": "UTF-8",
+        "MimeType": "x-scheme-handler/mira"
+      }
+    },
+    "artifactName": "${productName}-${version}-linux-${arch}.${ext}"
+  },
+  "appImage": {
+    "artifactName": "${productName}-${version}-linux.${ext}"
+  },
+  "deb": {
+    "priority": "optional",
+    "maintainer": "Mira Team <team@mira.com>",
+    "artifactName": "${productName}-${version}-linux.${ext}"
+  },
+  "rpm": {
+    "vendor": "Mira Team",
+    "artifactName": "${productName}-${version}-linux.${ext}"
+  },
+  "snap": {
+    "grade": "stable",
+    "summary": "Modern media library management",
+    "plugs": ["default", "home", "removable-media"],
+    "artifactName": "${productName}-${version}-linux.${ext}"
+  },
+  "afterSign": "scripts/notarize.js",
+  "beforeBuild": "scripts/before-build.js",
+  "afterPack": "scripts/after-pack.js"
+}

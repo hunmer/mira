@@ -1,0 +1,12 @@
+{
+  "port": 7457,
+  "list": {
+    "1": {
+      "title": "test",
+      "events": [
+        "file::created"
+      ],
+      "token": "token1"
+    }
+  }
+}

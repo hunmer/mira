@@ -1,0 +1,43 @@
+name: Test Docker Build
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'packages/mira-app-server/**'
+      - 'packages/mira-app-core/**'
+      - 'packages/mira-storage-sqlite/**'
+      - '.github/workflows/docker-*.yml'
+      - 'Dockerfile*'
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Test Docker build
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./packages/mira-app-server/Dockerfile
+        push: false
+        tags: mira-app-server:test
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Test optimized Docker build
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./packages/mira-app-server/Dockerfile.optimized
+        push: false
+        tags: mira-app-server:test-optimized
+        cache-from: type=gha
+        cache-to: type=gha,mode=max

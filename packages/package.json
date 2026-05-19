@@ -1,0 +1,36 @@
+{
+  "name": "@hunmer/mira-monorepo",
+  "version": "1.0.0",
+  "description": "Mira TypeScript project - monorepo with core, server, and plugins",
+  "scripts": {
+    "build:core": "cd ./mira-app-core && npm run rebuild",
+    "publish:core": "cd . && node tool.js build mira-app-core",
+    "build:sdk": "cd ./mira-server-sdk && npm run rebuild",
+    "publish:sdk": "cd .. && node tool.js publish mira-server-sdk",
+    "build:server": "cd ./mira-app-server && npm run rebuild",
+    "publish:server": "cd . && node tool.js build mira-app-server",
+    "build:storage": "cd ./mira-storage-sqlite && npm run rebuild",
+    "publish:storage": "cd . && node tool.js build mira-storage-sqlite",
+    "build:mira_thumb": "cd ../plugins/plugins/mira_thumb && npm run rebuild",
+    "publish:mira_thumb": "cd . && node tool.js build mira_thumb",
+    "build:mira_user": "cd ../plugins/plugins/mira_user && npm run rebuild",
+    "publish:mira_user": "cd . && node tool.js build mira_user",
+    "build:upload_statistics": "cd ../plugins/plugins/upload_statistics && npm run rebuild",
+    "build:plugins": "npm run build:mira_thumb && npm run build:mira_user && npm run build:upload_statistics",
+    "start:server": "npm run build:core && npm run build:server && npm run build:storage && npm run build:plugins",
+    "dev:server": "npm run dev --workspace=mira-app-server",
+    "build:docker": "./mira-app-server/docker-build.bat"
+  },
+  "keywords": [
+    "mira",
+    "typescript",
+    "server",
+    "plugins"
+  ],
+  "author": "hunmer",
+  "license": "ISC",
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "ts-node": "^10.9.2"
+  }
+}

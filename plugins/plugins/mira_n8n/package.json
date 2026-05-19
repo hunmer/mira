@@ -1,0 +1,25 @@
+{
+  "name": "mira_n8n",
+  "version": "1.0.7",
+  "main": "index.ts",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "rebuild": "npm install && npm run build",
+    "dev": "ts-node index.ts",
+    "start:ts": "ts-node index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "mira-storage-sqlite": "file://Users/Zhuanz/mira_typescript/packages/mira-storage-sqlite/",
+    "mira-app-server": "file://Users/Zhuanz/mira_typescript/packages/mira-app-server/",
+    "mira-app-core": "file://Users/Zhuanz/mira_typescript/packages/mira-app-core/"
+  },
+  "keywords": [],
+  "author": "hunmer",
+  "license": "ISC",
+  "description": ""
+}

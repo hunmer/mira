@@ -1,0 +1,24 @@
+{
+  "pluginName": "示例插件",
+  "pluginId": "12345678-1234-1234-1234-123456789abc",
+  "priority": 1,
+  "version": "1.0.0",
+  "index": "index.js",
+  "tags": ["示例", "测试", "开发"],
+  "description": "这是一个用于测试Mira本地插件系统的示例插件",
+  "author": "Mira Team",
+  "homepage": "https://github.com/mira-team/example-plugin",
+  "enable": true,
+  "config": {
+    "exampleSetting": "默认值",
+    "enableLogging": true
+  },
+  "hotkey": {
+    "ctrl+shift+e": "showExample"
+  },
+  "events": ["fileOpened", "fileSelected"],
+  "dependencies": [],
+  "permissions": ["ui", "config"],
+  "minAppVersion": "1.0.0",
+  "platform": ["win32", "darwin", "linux"]
+}

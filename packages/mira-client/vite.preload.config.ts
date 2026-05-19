@@ -1,0 +1,33 @@
+import { defineConfig } from 'vite'
+import { resolve } from 'path'
+
+export default defineConfig({
+  build: {
+    rollupOptions: {
+      input: {
+        preload: resolve(__dirname, 'src/preload/preload.ts'),
+        'search-preload': resolve(__dirname, 'src/preload/search-preload.js')
+      },
+      output: {
+        format: 'cjs',
+        entryFileNames: '[name].js'
+      },
+      external: [
+        'electron'
+      ],
+    },
+    sourcemap: process.env.NODE_ENV === 'development',
+    minify: process.env.NODE_ENV === 'production',
+    outDir: 'dist-preload',
+    target: 'node18',
+    emptyOutDir: true,
+  },
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, 'src')
+    }
+  },
+  optimizeDeps: {
+    exclude: ['electron']
+  }
+})

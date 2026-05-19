@@ -1,0 +1,80 @@
+# 多阶段构建的改进版Dockerfile
+FROM node:20-alpine as builder
+
+# 安装构建依赖
+RUN apk add --no-cache \
+    python3 \
+    py3-setuptools \
+    make \
+    g++
+
+# 设置工作目录
+WORKDIR /app
+
+# 复制根目录的依赖文件
+COPY package*.json ./
+COPY packages/package.json ./packages/
+COPY packages/mira-app-core/package*.json ./packages/mira-app-core/
+COPY packages/mira-app-server/package*.json ./packages/mira-app-server/
+COPY packages/mira-storage-sqlite/package*.json ./packages/mira-storage-sqlite/
+
+# 复制依赖切换脚本
+COPY dependency-*.json ./
+COPY tool.js ./
+
+# 复制源代码
+COPY packages/mira-app-core/src ./packages/mira-app-core/src
+COPY packages/mira-app-core/tsconfig.json ./packages/mira-app-core/
+COPY packages/mira-app-server/src ./packages/mira-app-server/src
+COPY packages/mira-app-server/tsconfig.json ./packages/mira-app-server/
+COPY packages/mira-storage-sqlite/src ./packages/mira-storage-sqlite/src
+COPY packages/mira-storage-sqlite/tsconfig.json ./packages/mira-storage-sqlite/
+COPY tsconfig.json ./
+
+# 安装所有依赖并构建
+RUN cd packages && npm install
+RUN cd packages && npm run build:core
+RUN cd packages && npm run build:storage  
+RUN cd packages && npm run build:server
+
+# 生产阶段
+FROM node:20-alpine
+
+# 安装运行时依赖
+RUN apk add --no-cache \
+    sqlite \
+    ffmpeg
+
+# 设置环境变量
+ENV SETUPTOOLS_USE_DISTUTILS=stdlib
+ENV FFMPEG_PATH=/usr/bin/ffmpeg
+ENV FFPROBE_PATH=/usr/bin/ffprobe
+
+# 创建应用用户
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S nodejs -u 1001
+
+# 设置工作目录
+WORKDIR /app
+
+# 复制构建产物和运行时需要的文件
+COPY --from=builder --chown=nodejs:nodejs /app/packages/mira-app-server/dist ./dist
+COPY --from=builder --chown=nodejs:nodejs /app/packages/mira-app-server/package.json ./package.json
+COPY --from=builder --chown=nodejs:nodejs /app/packages/mira-app-server/node_modules ./node_modules
+
+# 验证 FFmpeg 安装
+RUN ffmpeg -version
+
+# 切换到非root用户
+USER nodejs
+
+# 暴露端口
+EXPOSE 8018
+EXPOSE 8081
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:8081/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"
+
+# 启动命令
+CMD ["node", "dist/index.js"]

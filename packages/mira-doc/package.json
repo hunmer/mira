@@ -1,0 +1,31 @@
+{
+  "name": "mira-doc",
+  "version": "1.0.0",
+  "description": "Mira 系统完整文档 - 智能文件管理与自动化平台",
+  "main": "index.js",
+  "scripts": {
+    "docs:dev": "vitepress dev",
+    "docs:build": "vitepress build",
+    "docs:preview": "vitepress preview",
+    "docs:serve": "vitepress serve"
+  },
+  "keywords": [
+    "mira",
+    "file-management",
+    "automation",
+    "n8n",
+    "documentation",
+    "vitepress"
+  ],
+  "author": "Mira Team",
+  "license": "MIT",
+  "devDependencies": {
+    "vitepress": "2.0.0-alpha.12"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hunmer/mira-doc.git",
+    "directory": "mira-doc"
+  },
+  "homepage": "https://github.com/hunmer/mira-doc/tree/main/mira-doc"
+}

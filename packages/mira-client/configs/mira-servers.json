@@ -1,0 +1,24 @@
+{
+    "services": [
+        {
+            "id": "default-server",
+            "name": "素材库",
+            "serverUrl": "http://192.168.1.200:8081",
+            "websocketUrl": "ws://192.168.1.200:8018",
+            "createdAt": "2025-09-28T12:27:19.844Z",
+            "updatedAt": "2025-09-30T02:09:37.520Z",
+            "savedCredentials": {
+                "username": "admin",
+                "encryptedPassword": "=MjMx4WatRWY",
+                "lastLoginTime": "2025-09-30T02:09:37.519Z",
+                "autoLogin": true
+            },
+            "smb": {
+                "enabled": true,
+                "mountPath": "/library",
+                "smbPath": "\\\\192.168.1.200\\文件共享"
+            }
+        }
+    ],
+    "activeServerId": "default-server"
+}

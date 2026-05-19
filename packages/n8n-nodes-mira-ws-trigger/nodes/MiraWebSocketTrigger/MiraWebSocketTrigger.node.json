@@ -1,0 +1,20 @@
+{
+    "node": "n8n-nodes-mira-ws-trigger.miraWebSocketTrigger",
+    "nodeVersion": "1.0",
+    "codexVersion": "1.0",
+    "categories": [
+        "Trigger"
+    ],
+    "resources": {
+        "credentialDocumentation": [
+            {
+                "url": "https://github.com/user/mira_typescript"
+            }
+        ],
+        "primaryDocumentation": [
+            {
+                "url": "https://github.com/user/mira_typescript/blob/main/packages/n8n-nodes-mira-ws-trigger/README.md"
+            }
+        ]
+    }
+}

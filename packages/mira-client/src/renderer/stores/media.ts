@@ -1,0 +1,1114 @@
+import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
+import { miraSDKService } from '../services/MiraSDKService'
+import { LibraryStorage } from '../utils/LibraryStorage'
+import type { FileInfo } from '../../shared/types'
+
+// 扩展的文件信息类型，支持临时状态和本地操作状态
+interface ExtendedFileInfo extends FileInfo {
+  type?: string  // Added for component compatibility
+  isTemporary?: boolean
+  isUploading?: boolean
+  uploadProgress?: number
+  localPath?: string
+}
+
+/**
+ * 媒体文件状态管理
+ * 处理文件的 CRUD 操作、上传下载、搜索过滤和状态持久化
+ */
+export const useMediaStore = defineStore('media', () => {
+  // 状态 - 改为按 tabId 分组的对象结构
+  const filesMap = ref<Record<string, ExtendedFileInfo[]>>({})
+  const currentTabId = ref<string>('')
+  const currentFile = ref<ExtendedFileInfo | null>(null)
+  const selectedFiles = ref<Set<string>>(new Set())
+  const isLoading = ref(false)
+  const error = ref<string | null>(null)
+  const uploadProgress = ref<Map<string, number>>(new Map())
+  const lastUpdated = ref<Date | null>(null)
+  const pendingOperations = ref<Set<string>>(new Set())
+
+  // 本地文件路径映射: {libraryId: {fileId: localPath}}
+  const localFiles = ref<Record<string, Record<string, string>>>({})
+  
+  // 搜索和过滤状态
+  const searchQuery = ref('')
+  const filterType = ref<string>('')
+  const sortBy = ref<'name' | 'size' | 'createdAt' | 'updatedAt'>('name')
+  const sortOrder = ref<'asc' | 'desc'>('asc')
+  const currentLibraryId = ref<string>('')
+
+  // 计算属性
+  // 当前激活的文件列表
+  const files = computed(() => {
+    const tabId = currentTabId.value
+    return tabId ? (filesMap.value[tabId] || []) : []
+  })
+
+  const totalFiles = computed(() => files.value.length)
+  
+  const selectedFileCount = computed(() => selectedFiles.value.size)
+  
+  const totalSize = computed(() => {
+    return files.value.reduce((total, file) => total + file.size, 0)
+  })
+
+  const filesByType = computed(() => {
+    const grouped: Record<string, ExtendedFileInfo[]> = {}
+    files.value.forEach(file => {
+      const type = file.type || 'unknown'
+      if (!grouped[type]) {
+        grouped[type] = []
+      }
+      grouped[type].push(file)
+    })
+    return grouped
+  })
+
+  const filteredFiles = computed(() => {
+    let result = [...files.value]
+    
+    // 搜索过滤
+    if (searchQuery.value) {
+      const query = searchQuery.value.toLowerCase()
+      result = result.filter(file => 
+        file.name.toLowerCase().includes(query) ||
+        (file.type && file.type.toLowerCase().includes(query)) ||
+        file.mimeType?.toLowerCase().includes(query)
+      )
+    }
+    
+    // 类型过滤
+    if (filterType.value) {
+      result = result.filter(file => file.type === filterType.value)
+    }
+    
+    // 排序
+    result.sort((a, b) => {
+      const aValue = a[sortBy.value]
+      const bValue = b[sortBy.value]
+      
+      let comparison = 0
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        comparison = aValue.localeCompare(bValue)
+      } else if (typeof aValue === 'number' && typeof bValue === 'number') {
+        comparison = aValue - bValue
+      } else {
+        comparison = String(aValue).localeCompare(String(bValue))
+      }
+      
+      return sortOrder.value === 'asc' ? comparison : -comparison
+    })
+    
+    return result
+  })
+
+  const getFileById = computed(() => {
+    return (id: string) => files.value.find(file => file.id === id)
+  })
+
+  const isFileSelected = computed(() => {
+    return (id: string) => selectedFiles.value.has(id)
+  })
+
+  const uploadingFiles = computed(() => {
+    return files.value.filter(file => file.isUploading)
+  })
+
+  const isOperationPending = computed(() => {
+    return (operationId: string) => pendingOperations.value.has(operationId)
+  })
+
+  /**
+   * 设置当前活跃的 Tab
+   * @param tabId - Tab ID
+   */
+  const setCurrentTab = (tabId: string) => {
+    const previousTabId = currentTabId.value
+    currentTabId.value = tabId
+    console.log('🔄 MediaStore: currentTabId 已更新', {
+      from: previousTabId,
+      to: tabId,
+      hasDataForNewTab: getFilesForTab(tabId).length > 0,
+      newFilesCount: files.value.length
+    })
+  }
+
+  /**
+   * 为指定 Tab 设置文件数据
+   * @param tabId - Tab ID
+   * @param files - 文件列表
+   */
+  const setFilesForTab = (tabId: string, files: ExtendedFileInfo[]) => {
+    const previousCount = filesMap.value[tabId]?.length || 0
+    filesMap.value[tabId] = [...files]
+
+    console.log(`📁 MediaStore.setFilesForTab: ${tabId}`, {
+      之前文件数量: previousCount,
+      新文件数量: files.length,
+      文件预览: files.slice(0, 3).map(f => ({ id: f.id, name: f.name }))
+    })
+  }
+
+  /**
+   * 获取指定 Tab 的文件数据
+   * @param tabId - Tab ID
+   * @returns 文件列表
+   */
+  const getFilesForTab = (tabId: string): ExtendedFileInfo[] => {
+    return filesMap.value[tabId] || []
+  }
+
+  /**
+   * 清除指定 Tab 的文件数据
+   * @param tabId - Tab ID
+   */
+  const clearFilesForTab = (tabId: string) => {
+    delete filesMap.value[tabId]
+  }
+
+  /**
+   * 获取文件列表
+   * 支持过滤器、分页和缓存
+   * @param options - 选项对象
+   * @returns Promise<{success: boolean, data?: FileInfo[], error?: string, total?: number}>
+   */
+  const fetchFiles = async (options: {
+    libraryId: string
+    tabId?: string // 新增：指定要更新的 tab ID
+    filters?: {
+      title?: string
+      extension?: string
+      tags?: string[] | null
+      folder?: number
+      size_min?: number
+      size_max?: number
+      created_after?: string
+      created_before?: string
+      recycled?: number
+      sort?: string
+      order?: 'asc' | 'desc'
+      limit?: number
+      offset?: number
+      category?: string // 媒体类别：video, audio, image
+    }
+    append?: boolean // 是否追加到现有文件列表
+  }) => {
+    const { libraryId, tabId, filters, append = false } = options
+
+    isLoading.value = true
+    error.value = null
+
+    try {
+      if (!libraryId) {
+        throw new Error('Library ID is required')
+      }
+
+      const result = await miraSDKService.listFiles(libraryId, filters)
+      const rawFiles = result.files.map((file: FileInfo) => ({ ...file, isTemporary: false, libraryId }))
+      const newFiles = enhanceFilesWithLocalPath(rawFiles)
+
+      // 如果指定了 tabId，则更新指定 tab 的数据
+      if (tabId) {
+        if (append) {
+          // 追加模式：合并到现有列表，去重
+          const existingFiles = getFilesForTab(tabId)
+          const existingIds = new Set(existingFiles.map(f => f.id))
+          const uniqueNewFiles = newFiles.filter(f => !existingIds.has(f.id))
+          setFilesForTab(tabId, [...existingFiles, ...uniqueNewFiles])
+        } else {
+          // 替换模式：完全替换指定 tab 的文件列表
+          setFilesForTab(tabId, newFiles)
+        }
+
+        // 如果更新的是当前激活的 tab，则同时更新 currentTabId
+        if (currentTabId.value === '' || currentTabId.value === tabId) {
+          currentTabId.value = tabId
+        }
+      } else {
+        // 兼容旧逻辑：如果没有指定 tabId，更新当前激活的文件列表
+        if (append) {
+          const existingIds = new Set(files.value.map(f => f.id))
+          const uniqueNewFiles = newFiles.filter(f => !existingIds.has(f.id))
+          const currentFiles = files.value
+          if (currentTabId.value) {
+            setFilesForTab(currentTabId.value, [...currentFiles, ...uniqueNewFiles])
+          }
+        } else {
+          if (currentTabId.value) {
+            setFilesForTab(currentTabId.value, newFiles)
+          }
+        }
+      }
+
+      currentLibraryId.value = libraryId
+      lastUpdated.value = new Date()
+
+      // 持久化到本地存储
+      await persistMediaState()
+
+      return {
+        success: true,
+        data: newFiles,
+        total: result.total, // 使用API返回的真实总数
+        limit: result.limit,
+        offset: result.offset
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch files'
+      error.value = errorMessage
+      return { success: false, error: errorMessage }
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  /**
+   * 为Tab获取文件列表（懒加载）
+   * 根据Tab类型和过滤器动态加载
+   * @param tabInfo - Tab信息
+   * @param pagination - 分页信息
+   * @returns Promise<{success: boolean, data?: FileInfo[], error?: string, total?: number}>
+   */
+  const fetchFilesForTab = async (
+    tabInfo: {
+      id: string
+      type: string // 改为支持动态类型
+      data?: any
+      filters?: Record<string, any>
+      sort?: 'imported_at' | 'id' | 'size' | 'stars' | 'folder_id' | 'tags' | 'name' | 'custom_fields'
+      order?: 'asc' | 'desc'
+      libraryId?: string
+    },
+    pagination: {
+      limit?: number
+      offset?: number
+    } = {}
+  ) => {
+    const { limit = 50, offset = 0 } = pagination
+    console.log({tabInfo})
+    console.log(`📁 fetchFilesForTab调用:`, {
+      method: 'fetchFilesForTab',
+      tabType: tabInfo.type,
+      tabId: tabInfo.id,
+      requestedLimit: limit,
+      requestedOffset: offset,
+      originalPagination: pagination
+    })
+    // 确保有 libraryId - 如果 tabInfo 中没有，从当前素材库获取
+    let libraryId = tabInfo.libraryId
+    if (!libraryId) {
+      // 动态导入 libraryStore 以获取当前素材库
+      const { useLibraryStore } = await import('./library')
+      const libraryStore = useLibraryStore()
+
+      if (libraryStore.currentLibrary?.id) {
+        libraryId = libraryStore.currentLibrary.id
+        console.log(`📚 从当前素材库获取 libraryId: ${libraryId}`)
+      } else {
+        console.warn('⚠️ 无法获取 libraryId: tabInfo 中未提供且当前没有选中的素材库')
+        return { success: false, error: '无法获取素材库ID：请确保已选择素材库' }
+      }
+    }
+
+    // 构建基于Tab类型的过滤器
+    const filters: any = {
+      limit,
+      offset
+    }
+    console.log({tabInfo})
+    // 转换筛选器格式：从MediaTabData格式转换为API格式
+    if (tabInfo.filters) {
+      // 首先处理简单键值对格式的筛选器（直接来自初始化）
+      Object.entries(tabInfo.filters).forEach(([key, value]: [string, any]) => {
+        // 处理简单的键值对筛选器
+        if (key === 'folder') {
+          if (value !== null && value !== undefined && value !== '') {
+            const folderId = Number(value)
+            if (Number.isFinite(folderId)) {
+              filters.folder = folderId
+              console.log(`📁 应用文件夹筛选: folder=${value}`)
+            }
+          }
+          return
+        }
+        if (key === 'tags') {
+          if (value !== null) {
+            filters.tags = value
+            console.log(`🏷️ 应用标签筛选: tags=${JSON.stringify(value)}`)
+          }
+          return
+        }
+        if (key === 'recycled') {
+          filters.recycled = value
+          console.log(`🗑️ 应用回收站筛选: recycled=${value}`)
+          return
+        }
+      })
+
+      // 然后处理 FilterRule 对象格式的筛选器（来自 FilterBar）
+      Object.entries(tabInfo.filters).forEach(([key, filterRule]: [string, any]) => {
+        if (!filterRule || typeof filterRule !== 'object') {
+          console.log(`⏭️ 跳过非对象筛选器: ${key}`, filterRule)
+          return
+        }
+
+        // 检查是否是 FilterRule 格式（有 id 字段）
+        if (!filterRule.id) {
+          console.log(`⏭️ 跳过无 id 的筛选器: ${key}`, filterRule)
+          return
+        }
+
+        console.log(`🔍 处理 FilterRule: key=${key}, id=${filterRule.id}`, filterRule)
+
+        switch (filterRule.id) {
+          case 'folders':
+            if (filterRule.selectedValues && filterRule.selectedValues.length > 0) {
+              // 取第一个文件夹ID（API目前只支持单个文件夹筛选）
+              const folderId = filterRule.selectedValues[0]
+              if (folderId !== null && folderId !== undefined && folderId !== '') {
+                filters.folder = Number(folderId)
+                console.log(`📁 应用文件夹筛选: ${filters.folder}`)
+              }
+            }
+            break
+          case 'tags':
+            if (filterRule.selectedValues && filterRule.selectedValues.length > 0) {
+              filters.tags = filterRule.selectedValues.map((id: any) => String(id))
+              console.log(`🏷️ 应用标签筛选:`, filters.tags)
+            }
+            break
+          case 'urls':
+            // urls 筛选器使用 title 参数进行模糊搜索
+            console.log(`🔗 处理 urls 筛选器:`, { value: filterRule.value, type: typeof filterRule.value })
+            if (filterRule.value && typeof filterRule.value === 'string' && filterRule.value.trim()) {
+              filters.title = filterRule.value.trim()
+              console.log(`🔗 应用网址筛选(title): ${filters.title}`)
+            } else {
+              console.log(`⚠️ urls 筛选器值无效，跳过`)
+            }
+            break
+          case 'size':
+            if (filterRule.selectedPreset === 'custom') {
+              if (filterRule.customMin !== undefined) filters.size_min = filterRule.customMin
+              if (filterRule.customMax !== undefined) filters.size_max = filterRule.customMax
+            } else {
+              if (filterRule.sizeMin !== undefined) filters.size_min = filterRule.sizeMin
+              if (filterRule.sizeMax !== undefined) filters.size_max = filterRule.sizeMax
+            }
+            console.log(`📏 应用大小筛选: min=${filters.size_min}, max=${filters.size_max}`)
+            break
+          case 'category':
+            if (filterRule.selectedCategory && filterRule.selectedCategory !== '') {
+              filters.category = filterRule.selectedCategory
+              console.log(`🎬 应用类别筛选: ${filters.category}`)
+            }
+            break
+          case 'extension':
+            if (filterRule.selectedValues && filterRule.selectedValues.length > 0) {
+              // API通常期望单个扩展名字符串
+              filters.extension = filterRule.selectedValues.join(',')
+              console.log(`📄 应用扩展名筛选: ${filters.extension}`)
+            }
+            break
+          case 'title':
+            if (filterRule.value) {
+              filters.title = filterRule.value
+              console.log(`📝 应用标题筛选: ${filters.title}`)
+            }
+            break
+        }
+      })
+    }
+
+    // 应用排序设置
+    if (tabInfo.sort) {
+      filters.sort = tabInfo.sort
+      console.log(`🔄 应用排序字段: ${filters.sort}`)
+    }
+    if (tabInfo.order) {
+      filters.order = tabInfo.order
+      console.log(`⬆️⬇️ 应用排序顺序: ${filters.order}`)
+    }
+
+    // 根据Tab类型添加特定过滤器
+    switch (tabInfo.type) {
+      case 'folder':
+        if (tabInfo.data?.id && tabInfo.data.id !== 'folder-all') {
+          const parsed = parseInt(tabInfo.data.id)
+          if (!isNaN(parsed)) {
+            filters.folder = parsed
+          }
+        }
+        break
+      case 'tag':
+        if (tabInfo.data?.id || tabInfo.data?.name) {
+          filters.tags = [tabInfo.data.id || tabInfo.data.name]
+        }
+        break
+      case 'files':
+        // files 类型：过滤器已经在前面的简单键值对处理中设置
+        // 不需要额外处理，只需要确保不进入 default 分支
+        console.log(`📁 Files tab: 使用已设置的过滤器`, { folder: filters.folder, tags: filters.tags, recycled: filters.recycled })
+        break
+      case 'uncategorized':
+        // 未分类：显示没有文件夹的文件
+        filters.folder = null
+        console.log('📁 Uncategorized tab: filtering files without folder')
+        break
+      case 'untagged':
+        // 未标签：显示没有标签的文件
+        filters.tags = null
+        console.log('🏷️ Untagged tab: filtering files without tags')
+        break
+      case 'trash':
+        // 回收站：显示已回收的文件
+        filters.recycled = 1
+        console.log('🗑️ Trash tab: filtering recycled files')
+        break
+      case 'home':
+        // Home类型通常不需要加载实际文件，返回空结果
+        console.log('📁 Home tab detected, returning empty result')
+        return { success: true, data: [], total: 0 }
+      default:
+        // 对于未知类型，尝试从data中提取过滤器信息
+        if (tabInfo.data?.id) {
+          // 如果有ID，尝试作为文件夹ID处理
+          const parsedId = parseInt(tabInfo.data.id)
+          if (!isNaN(parsedId)) {
+            filters.folder = parsedId
+          }
+        }
+        if (tabInfo.data?.name) {
+          // 如果有name，尝试作为标签处理
+          filters.tags = [tabInfo.data.name]
+        }
+        console.log(`📁 Unknown tab type: ${tabInfo.type}, using default filter logic`)
+        break
+    }
+
+    // 清理 null/undefined 值，避免发送无意义的参数
+    Object.keys(filters).forEach(key => {
+      if (
+        filters[key] === null ||
+        filters[key] === undefined ||
+        (typeof filters[key] === 'number' && !Number.isFinite(filters[key]))
+      ) {
+        delete filters[key]
+      }
+    })
+
+    console.log(`📁 Loading files for tab: ${tabInfo.id}, type: ${tabInfo.type}, libraryId: ${libraryId}`, {
+      filters,
+      finalLimit: filters.limit,
+      finalOffset: filters.offset
+    })
+
+    return await fetchFiles({
+      libraryId: libraryId,
+      tabId: tabInfo.id, // 指定要更新的 tab ID
+      filters,
+      append: false // 在服务端分页模式下，每次都应该替换数据，不追加
+    })
+  }
+
+  /**
+   * 上传文件
+   * 使用乐观更新和进度追踪
+   * @param file - 要上传的文件
+   * @param libraryId - 库ID
+   * @param metadata - 文件元数据
+   * @returns Promise<{success: boolean, data?: any, error?: string}>
+   */
+  const uploadFile = async (file: File, libraryId: string, metadata?: any) => {
+    const fileId = `upload-${Date.now()}-${Math.random()}`
+    const operationId = `upload-${fileId}`
+    pendingOperations.value.add(operationId)
+    
+    // 创建临时文件条目用于乐观更新
+    const tempFileInfo: ExtendedFileInfo = {
+      id: fileId,
+      name: file.name,
+      size: file.size,
+      mimeType: file.type,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      metadata,
+      isTemporary: true,
+      isUploading: true,
+      uploadProgress: 0
+    }
+    
+    files.value.unshift(tempFileInfo)
+    uploadProgress.value.set(fileId, 0)
+    error.value = null
+    
+    try {
+      // 模拟上传进度
+      const progressInterval = setInterval(() => {
+        const current = uploadProgress.value.get(fileId) || 0
+        if (current < 90) {
+          const newProgress = current + 10
+          uploadProgress.value.set(fileId, newProgress)
+          
+          // 更新临时文件的进度
+          const tempFile = files.value.find(f => f.id === fileId)
+          if (tempFile) {
+            tempFile.uploadProgress = newProgress
+          }
+        }
+      }, 200)
+      
+      const result = await miraSDKService.uploadFile(file, libraryId, metadata)
+      
+      clearInterval(progressInterval)
+      uploadProgress.value.set(fileId, 100)
+      
+      // 更新临时文件为最终文件信息
+      const tempIndex = files.value.findIndex(f => f.id === fileId)
+      if (tempIndex !== -1) {
+        if (result.data) {
+          const enhancedFile = enhanceFileWithLocalPath({
+            ...result.data,
+            isTemporary: false,
+            isUploading: false,
+            libraryId
+          })
+          files.value[tempIndex] = enhancedFile
+        }
+      }
+      
+      // 持久化状态
+      await persistMediaState()
+      
+      // 清除上传进度
+      setTimeout(() => {
+        uploadProgress.value.delete(fileId)
+      }, 1000)
+      
+      return { success: true, data: result }
+    } catch (err) {
+      // 回滚：移除临时文件
+      const tempIndex = files.value.findIndex(f => f.id === fileId)
+      if (tempIndex !== -1) {
+        files.value.splice(tempIndex, 1)
+      }
+      
+      const errorMessage = err instanceof Error ? err.message : 'Failed to upload file'
+      error.value = errorMessage
+      uploadProgress.value.delete(fileId)
+      return { success: false, error: errorMessage }
+    } finally {
+      pendingOperations.value.delete(operationId)
+    }
+  }
+
+  /**
+   * 批量上传文件
+   * @param files - 要上传的文件列表
+   * @param libraryId - 库ID
+   * @param metadata - 文件元数据
+   * @returns Promise<{success: boolean, results: any[], errors: string[]}>
+   */
+  const uploadMultipleFiles = async (fileList: File[], libraryId: string, metadata?: any) => {
+    const results: any[] = []
+    const errors: string[] = []
+    
+    for (const file of fileList) {
+      try {
+        const result = await uploadFile(file, libraryId, metadata)
+        results.push(result)
+        
+        if (!result.success) {
+          errors.push(`${file.name}: ${result.error}`)
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Upload failed'
+        errors.push(`${file.name}: ${errorMessage}`)
+      }
+    }
+    
+    return {
+      success: errors.length === 0,
+      results,
+      errors
+    }
+  }
+
+  /**
+   * 删除文件
+   * 使用乐观更新策略
+   * @param libraryId - 库ID
+   * @param fileId - 文件ID
+   * @returns Promise<{success: boolean, error?: string}>
+   */
+  const deleteFile = async (libraryId: string, fileId: string) => {
+    const operationId = `delete-${fileId}`
+    pendingOperations.value.add(operationId)
+    error.value = null
+    
+    const index = files.value.findIndex(file => file.id === fileId)
+    if (index === -1) {
+      pendingOperations.value.delete(operationId)
+      return { success: false, error: 'File not found' }
+    }
+    
+    // 保存原始文件用于回滚
+    const deletedFile = files.value[index]
+    
+    // 乐观更新：从本地状态中移除文件
+    files.value.splice(index, 1)
+    
+    // 从选中列表中移除
+    selectedFiles.value.delete(fileId)
+    
+    // 如果是当前文件，清除当前文件
+    if (currentFile.value?.id === fileId) {
+      currentFile.value = null
+    }
+    
+    try {
+      await miraSDKService.deleteFile(libraryId, fileId)
+      
+      await persistMediaState()
+      
+      return { success: true }
+    } catch (err) {
+      // 回滚：恢复删除的文件
+      files.value.splice(index, 0, deletedFile)
+      
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete file'
+      error.value = errorMessage
+      return { success: false, error: errorMessage }
+    } finally {
+      pendingOperations.value.delete(operationId)
+    }
+  }
+
+  /**
+   * 批量删除文件
+   * @param libraryId - 库ID
+   * @param fileIds - 文件ID列表
+   * @returns Promise<{success: boolean, results: any[], errors: string[]}>
+   */
+  const deleteMultipleFiles = async (libraryId: string, fileIds: string[]) => {
+    const results: any[] = []
+    const errors: string[] = []
+    
+    for (const fileId of fileIds) {
+      try {
+        const result = await deleteFile(libraryId, fileId)
+        results.push(result)
+        
+        if (!result.success) {
+          errors.push(`${fileId}: ${result.error}`)
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Delete failed'
+        errors.push(`${fileId}: ${errorMessage}`)
+      }
+    }
+    
+    return {
+      success: errors.length === 0,
+      results,
+      errors
+    }
+  }
+
+  /**
+   * 下载文件
+   * @param libraryId - 库ID
+   * @param fileId - 文件ID
+   * @param filename - 下载文件名（可选）
+   * @returns Promise<{success: boolean, error?: string}>
+   */
+  const downloadFile = async (libraryId: string, fileId: string, filename?: string) => {
+    error.value = null
+    
+    try {
+      const blob = await miraSDKService.downloadFile(libraryId, fileId)
+      
+      // 创建下载链接
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename || `file-${fileId}`
+      document.body.appendChild(a)
+      a.click()
+      
+      // 清理
+      URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+      
+      return { success: true }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to download file'
+      error.value = errorMessage
+      return { success: false, error: errorMessage }
+    }
+  }
+
+  /**
+   * 设置当前文件
+   * @param file - 要设置的文件，可以为null
+   */
+  const setCurrentFile = (file: ExtendedFileInfo | null) => {
+    currentFile.value = file
+    persistMediaState()
+  }
+
+  /**
+   * 选择文件
+   * @param fileId - 文件ID
+   */
+  const selectFile = (fileId: string) => {
+    selectedFiles.value.add(fileId)
+  }
+
+  /**
+   * 取消选择文件
+   * @param fileId - 文件ID
+   */
+  const deselectFile = (fileId: string) => {
+    selectedFiles.value.delete(fileId)
+  }
+
+  /**
+   * 切换文件选择状态
+   * @param fileId - 文件ID
+   */
+  const toggleFileSelection = (fileId: string) => {
+    if (selectedFiles.value.has(fileId)) {
+      selectedFiles.value.delete(fileId)
+    } else {
+      selectedFiles.value.add(fileId)
+    }
+  }
+
+  /**
+   * 选择所有文件
+   */
+  const selectAllFiles = () => {
+    filteredFiles.value.forEach(file => {
+      selectedFiles.value.add(file.id)
+    })
+  }
+
+  /**
+   * 取消选择所有文件
+   */
+  const deselectAllFiles = () => {
+    selectedFiles.value.clear()
+  }
+
+  /**
+   * 设置搜索查询
+   * @param query - 搜索查询字符串
+   */
+  const setSearchQuery = (query: string) => {
+    searchQuery.value = query
+  }
+
+  /**
+   * 设置文件类型过滤器
+   * @param type - 文件类型
+   */
+  const setFilterType = (type: string) => {
+    filterType.value = type
+  }
+
+  /**
+   * 设置排序方式
+   * @param by - 排序字段
+   * @param order - 排序顺序
+   */
+  const setSorting = (by: typeof sortBy.value, order: typeof sortOrder.value) => {
+    sortBy.value = by
+    sortOrder.value = order
+  }
+
+  /**
+   * 持久化媒体状态到本地存储
+   * @returns Promise<void>
+   */
+  const persistMediaState = async () => {
+    try {
+      // 过滤掉临时文件后保存 filesMap
+      const filteredFilesMap: Record<string, ExtendedFileInfo[]> = {}
+      Object.keys(filesMap.value).forEach(tabId => {
+        const tabFiles = filesMap.value[tabId] || []
+        filteredFilesMap[tabId] = tabFiles.filter(f => !f.isTemporary)
+      })
+
+      const mediaData = {
+        filesMap: filteredFilesMap, // 保存按 tabId 分组的文件数据
+        currentTabId: currentTabId.value,
+        currentFile: currentFile.value,
+        selectedFiles: Array.from(selectedFiles.value),
+        searchQuery: searchQuery.value,
+        filterType: filterType.value,
+        sortBy: sortBy.value,
+        sortOrder: sortOrder.value,
+        currentLibraryId: currentLibraryId.value,
+        lastUpdated: lastUpdated.value?.toISOString()
+      }
+
+      await LibraryStorage.setItem('media', JSON.stringify(mediaData))
+    } catch (err) {
+      console.error('Failed to persist media state:', err)
+    }
+  }
+
+  /**
+   * 从本地存储恢复媒体状态
+   * @returns Promise<void>
+   */
+  const restoreMediaState = async () => {
+    try {
+      const stored = await LibraryStorage.getItem('media')
+      if (!stored) return
+
+      const mediaData = JSON.parse(stored)
+
+      // 优先恢复新格式（按 tabId 分组）
+      if (mediaData.filesMap) {
+        // 恢复新格式的数据
+        Object.keys(mediaData.filesMap).forEach(tabId => {
+          const tabFiles = mediaData.filesMap[tabId] || []
+          filesMap.value[tabId] = tabFiles.map((file: any) => ({ ...file, isTemporary: false }))
+        })
+        currentTabId.value = mediaData.currentTabId || ''
+      } else if (mediaData.files) {
+        // 兼容旧格式：将旧的 files 数组迁移到新格式
+        const legacyFiles = mediaData.files.map((file: any) => ({ ...file, isTemporary: false }))
+        if (legacyFiles.length > 0) {
+          // 为旧数据创建一个默认的 tab
+          const defaultTabId = 'legacy_default'
+          filesMap.value[defaultTabId] = legacyFiles
+          currentTabId.value = defaultTabId
+          console.log('🔄 将旧格式的文件数据迁移到新格式:', { count: legacyFiles.length, defaultTabId })
+        }
+      }
+
+      currentFile.value = mediaData.currentFile
+      selectedFiles.value = new Set(mediaData.selectedFiles || [])
+      searchQuery.value = mediaData.searchQuery || ''
+      filterType.value = mediaData.filterType || ''
+      sortBy.value = mediaData.sortBy || 'name'
+      sortOrder.value = mediaData.sortOrder || 'asc'
+      currentLibraryId.value = mediaData.currentLibraryId || ''
+      lastUpdated.value = mediaData.lastUpdated ? new Date(mediaData.lastUpdated) : null
+    } catch (err) {
+      console.error('Failed to restore media state:', err)
+    }
+  }
+
+  /**
+   * 带重试机制的获取文件
+   * @param libraryId - 库ID
+   * @param maxRetries - 最大重试次数，默认为3
+   * @returns Promise<{success: boolean, data?: FileInfo[], error?: string}>
+   */
+  const fetchFilesWithRetry = async (libraryId: string, maxRetries = 3) => {
+    let lastError = ''
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      const result = await fetchFiles({ libraryId})
+      
+      if (result.success) {
+        return result
+      }
+      
+      lastError = result.error || 'Unknown error'
+      
+      if (attempt < maxRetries) {
+        // 等待一定时间后重试
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
+      }
+    }
+    
+    return { success: false, error: `Fetch failed after ${maxRetries} attempts: ${lastError}` }
+  }
+
+  /**
+   * 清除错误信息
+   */
+  const clearError = () => {
+    error.value = null
+  }
+
+  /**
+   * 刷新文件列表
+   * @param libraryId - 库ID
+   * @returns Promise<{success: boolean, data?: FileInfo[], error?: string}>
+   */
+  const refreshFiles = async (libraryId: string, tabId?: string) => {
+    return await fetchFiles({
+      libraryId,
+      tabId: tabId || currentTabId.value, // 使用指定的 tabId 或当前激活的 tabId
+    })
+  }
+
+  /**
+   * 设置文件的本地路径
+   * @param libraryId - 库ID
+   * @param fileId - 文件ID
+   * @param localPath - 本地路径
+   */
+  const setLocalFile = (libraryId: string, fileId: string, localPath: string) => {
+    if (!localFiles.value[libraryId]) {
+      localFiles.value[libraryId] = {}
+    }
+    localFiles.value[libraryId][fileId] = localPath
+  }
+
+  /**
+   * 获取文件的本地路径
+   * @param libraryId - 库ID
+   * @param fileId - 文件ID
+   * @returns 本地路径或undefined
+   */
+  const getLocalFile = (libraryId: string, fileId: string): string | undefined => {
+    return localFiles.value[libraryId]?.[fileId]
+  }
+
+  /**
+   * 批量设置本地文件路径
+   * @param libraryId - 库ID
+   * @param filePathMap - 文件ID到本地路径的映射
+   */
+  const setLocalFiles = (libraryId: string, filePathMap: Record<string, string>) => {
+    if (!localFiles.value[libraryId]) {
+      localFiles.value[libraryId] = {}
+    }
+    Object.assign(localFiles.value[libraryId], filePathMap)
+  }
+
+  /**
+   * 清除指定库的本地文件路径映射
+   * @param libraryId - 库ID
+   */
+  const clearLocalFiles = (libraryId: string) => {
+    if (localFiles.value[libraryId]) {
+      delete localFiles.value[libraryId]
+    }
+  }
+
+  /**
+   * 增强文件对象，自动添加localFile字段
+   * @param file - 原始文件信息
+   * @returns 增强后的文件信息
+   */
+  const enhanceFileWithLocalPath = (file: FileInfo): FileInfo => {
+    // 如果已经有localFile字段，直接返回
+    if (file.localFile) {
+      return file
+    }
+
+    // 尝试从映射中获取本地路径
+    if (file.libraryId && file.id) {
+      const localPath = getLocalFile(file.libraryId, file.id)
+      if (localPath) {
+        return {
+          ...file,
+          localFile: localPath
+        }
+      }
+    }
+
+    return file
+  }
+
+  /**
+   * 批量增强文件数组，自动添加localFile字段
+   * @param files - 原始文件信息数组
+   * @returns 增强后的文件信息数组
+   */
+  const enhanceFilesWithLocalPath = (files: FileInfo[]): FileInfo[] => {
+    return files.map(file => enhanceFileWithLocalPath(file))
+  }
+
+  /**
+   * 获取扩展的文件信息（包含localFile字段）
+   * @param file - 原始文件信息
+   * @param libraryId - 库ID
+   * @returns 扩展的文件信息
+   */
+  const getExtendedFileInfo = (file: FileInfo, libraryId: string): ExtendedFileInfo => {
+    const localPath = getLocalFile(libraryId, file.id)
+    return {
+      ...file,
+      localFile: localPath
+    } as ExtendedFileInfo
+  }
+
+  return {
+    // 状态
+    files,
+    filesMap, // 新增：暴露 filesMap 用于调试或高级操作
+    currentTabId, // 新增：当前激活的 tab ID
+    currentFile,
+    selectedFiles,
+    isLoading,
+    error,
+    uploadProgress,
+    lastUpdated,
+    pendingOperations,
+    searchQuery,
+    filterType,
+    sortBy,
+    sortOrder,
+    currentLibraryId,
+
+    // 计算属性
+    totalFiles,
+    selectedFileCount,
+    totalSize,
+    filesByType,
+    filteredFiles,
+    getFileById,
+    isFileSelected,
+    uploadingFiles,
+    isOperationPending,
+
+    // 操作
+    fetchFiles,
+    fetchFilesForTab,
+    uploadFile,
+    uploadMultipleFiles,
+    deleteFile,
+    deleteMultipleFiles,
+    downloadFile,
+    setCurrentFile,
+    selectFile,
+    deselectFile,
+    toggleFileSelection,
+    selectAllFiles,
+    deselectAllFiles,
+    setSearchQuery,
+    setFilterType,
+    setSorting,
+    persistMediaState,
+    restoreMediaState,
+    fetchFilesWithRetry,
+    clearError,
+    refreshFiles,
+
+    // 新增：Tab 相关操作
+    setCurrentTab,
+    setFilesForTab,
+    getFilesForTab,
+    clearFilesForTab,
+
+    // 本地文件路径管理
+    setLocalFile,
+    getLocalFile,
+    setLocalFiles,
+    clearLocalFiles,
+    enhanceFileWithLocalPath,
+    enhanceFilesWithLocalPath,
+    getExtendedFileInfo
+  }
+})

@@ -1,0 +1,349 @@
+{
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "field": "hours",
+                            "hoursInterval": 24
+                        },
+                        {
+                            "field": "minutes",
+                            "minutesInterval": 0
+                        }
+                    ]
+                }
+            },
+            "id": "a9a01a53-8075-4388-becf-c256e26b63bd",
+            "name": "定时触发器",
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1.2,
+            "position": [
+                -1248,
+                128
+            ]
+        },
+        {
+            "parameters": {
+                "mode": "raw",
+                "jsonOutput": "{\n  \"reportDaysRange\": 7,\n  \"maxDisplayUsers\": 10,\n  \"minFilesThreshold\": 1,\n  \"reportHour\": 20,\n  \"reportMinute\": 0,\n  \"libraryId\": \"1755239013113\",\n  \"authToken\": \"Bearer mira-token-1-1755904810547-9c70962a10fe6f67a467bbdfe8859d1c57e8c38a9d7ec66f90dc68161694a7cd\",\n  \"enableDailyReport\": true,\n  \"enableWeeklyReport\": true,\n  \"onlyReportIfHasData\": true\n}",
+                "options": {
+                    "dotNotation": false
+                }
+            },
+            "id": "7024052b-2eab-4928-a070-c7d126aa6ac8",
+            "name": "配置参数",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [
+                -1024,
+                128
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// 检查是否应该发送报告\nconst config = $input.first().json;\nconst now = new Date();\nconst dayOfWeek = now.getDay(); // 0 = 周日, 1 = 周一, ..., 6 = 周六\n\n// 检查时间条件\nconst shouldSendDaily = config.enableDailyReport;\nconst shouldSendWeekly = config.enableWeeklyReport && dayOfWeek === 1; // 周一发送周报\n\n// 当前是否应该发送\nconst shouldSend = shouldSendDaily || shouldSendWeekly;\n\nconsole.log(`[检查发送条件] 今日: ${dayOfWeek}, 每日报告: ${shouldSendDaily}, 周报: ${shouldSendWeekly}, 应发送: ${shouldSend}`);\n\nreturn {\n    shouldSend,\n    reportType: shouldSendWeekly ? 'weekly' : 'daily',\n    dayOfWeek,\n    ...config\n};"
+            },
+            "id": "a68eef7c-a824-4e27-a2eb-9d7a5b0c79cb",
+            "name": "检查发送条件",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -800,
+                128
+            ]
+        },
+        {
+            "parameters": {
+                "url": "http://localhost:8081/upload_statistics/list",
+                "sendQuery": true,
+                "queryParameters": {
+                    "parameters": [
+                        {
+                            "name": "startDate",
+                            "value": "={{ $now.minus({days: $json.reportDaysRange}).toISODate() }}"
+                        },
+                        {
+                            "name": "endDate",
+                            "value": "={{ $now.toISODate() }}"
+                        },
+                        {
+                            "name": "libraryId",
+                            "value": "={{ $json.libraryId }}"
+                        }
+                    ]
+                },
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "={{ $json.authToken }}"
+                        }
+                    ]
+                },
+                "options": {
+                    "response": {
+                        "response": {
+                            "responseFormat": "json"
+                        }
+                    }
+                }
+            },
+            "id": "50ebb096-3e75-49a8-8c89-e47ad5f3f0f2",
+            "name": "获取上传统计数据",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                -352,
+                32
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// 处理统计数据，生成排行榜\nconst files = $input.all();\nconsole.log({files});\nconst config = $('检查发送条件').first().json;\nconst maxDisplayUsers = config.maxDisplayUsers;\nconst reportDaysRange = config.reportDaysRange;\nconst reportType = config.reportType;\n\nconsole.log(`[处理统计数据] 获取到 ${files.length} 个文件记录`);\n\n// 计算日期范围\nconst endDate = new Date();\nconst startDate = new Date();\nstartDate.setDate(endDate.getDate() - reportDaysRange);\n\n// 统计每个用户的上传数量和文件大小\nconst userStats = {};\nlet totalSize = 0;\n\nfiles.forEach(({json: file}) => {\n    const uploader = file.uploader || '未知用户';\n    const fileSize = file.size || 0;\n    \n    if (!userStats[uploader]) {\n        userStats[uploader] = {\n            count: 0,\n            size: 0,\n            files: []\n        };\n    }\n    \n    userStats[uploader].count += 1;\n    userStats[uploader].size += fileSize;\n    userStats[uploader].files.push({\n        name: file.name,\n        size: fileSize,\n        created_at: file.created_at\n    });\n    \n    totalSize += fileSize;\n});\n\n// 排序并截取前N名\nconst sortedUsers = Object.entries(userStats)\n    .sort((a, b) => b[1].count - a[1].count)\n    .slice(0, maxDisplayUsers);\n\n// 格式化文件大小\nfunction formatSize(bytes) {\n    if (bytes === 0) return '0 B';\n    const k = 1024;\n    const sizes = ['B', 'KB', 'MB', 'GB'];\n    const i = Math.floor(Math.log(bytes) / Math.log(k));\n    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];\n}\n\n// 生成报告标题\nconst reportTitle = reportType === 'weekly' ? '📊 周度素材上传统计报告' : '📈 每日素材上传统计报告';\n\n// 生成排行榜文本\nlet rankingText = `## ${reportTitle}\\n\\n`;\nrankingText += `📅 **统计周期**: ${startDate.toISOString().split('T')[0]} ~ ${endDate.toISOString().split('T')[0]}\\n\\n`;\nrankingText += `📁 **总计**: ${files.length}个文件，共${formatSize(totalSize)}\\n\\n`;\nrankingText += `👥 **参与用户**: ${Object.keys(userStats).length}人\\n\\n`;\n\nif (sortedUsers.length > 0) {\n    rankingText += `### 🏆 上传排行榜\\n\\n`;\n    sortedUsers.forEach(([user, stats], index) => {\n        const emoji = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🏅';\n        rankingText += `${emoji} **${index + 1}. ${user}**\\n`;\n        rankingText += `   📄 ${stats.count}个文件 | 💾 ${formatSize(stats.size)}\\n\\n`;\n    });\n} else {\n    rankingText += '### 📝 本期暂无上传记录\\n\\n';\n}\n\n// 添加激励语句\nif (files.length > 0) {\n    rankingText += `### 💪 继续加油！\\n\\n`;\n    rankingText += `感谢大家的积极参与，让我们的素材库更加丰富！🎉\\n`;\n}\n\nconsole.log(`[处理统计数据] 生成报告: ${Object.keys(userStats).length} 用户, ${files.length} 文件`);\n\nreturn {\n    title: reportTitle,\n    text: rankingText,\n    totalFiles: files.length,\n    totalUsers: Object.keys(userStats).length,\n    totalSize: formatSize(totalSize),\n    reportType,\n    dateRange: {\n        start: startDate.toISOString().split('T')[0],\n        end: endDate.toISOString().split('T')[0]\n    },\n    config\n};"
+            },
+            "id": "a0a3079d-3aff-4ac3-9fa2-f578ac624d5f",
+            "name": "处理统计数据",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -128,
+                32
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 1
+                    },
+                    "conditions": [
+                        {
+                            "id": "condition-1",
+                            "leftValue": "={{ $json.totalFiles }}",
+                            "rightValue": "={{ $json.config.minFilesThreshold }}",
+                            "operator": {
+                                "type": "number",
+                                "operation": "gte"
+                            }
+                        },
+                        {
+                            "id": "condition-2",
+                            "leftValue": "={{ $json.config.onlyReportIfHasData }}",
+                            "rightValue": false,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "equal"
+                            }
+                        }
+                    ],
+                    "combinator": "or"
+                },
+                "options": {}
+            },
+            "id": "d15bb513-5c74-4eb0-b661-c22786275c9a",
+            "name": "检查数据阈值",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.1,
+            "position": [
+                96,
+                32
+            ]
+        },
+        {
+            "parameters": {
+                "msgtype": "actionCard",
+                "title": "={{ $json.title }}",
+                "markdownText": "={{ $json.text }}",
+                "singleTitle": "查看详情",
+                "singleURL": "https://www.baidu.com"
+            },
+            "id": "e65ecd1d-4229-4a2e-8b58-164c68da07c1",
+            "name": "发送钉钉消息",
+            "type": "n8n-nodes-dingtalk.dingTalkRobot",
+            "typeVersion": 1,
+            "position": [
+                320,
+                -64
+            ],
+            "credentials": {
+                "dingTalkCustomRobotApi": {
+                    "id": "zdEK4xq2u8jsaYwO",
+                    "name": "DingTalkCustomRobot account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "// 记录跳过日志\nconsole.log(`条件不满足，跳过发送通知 - 总文件数: ${$json.totalFiles}，阈值: ${$json.config.minFilesThreshold}`);\nreturn $input.all();"
+            },
+            "id": "891aaa28-50c3-41c9-8713-2252b12aa83d",
+            "name": "记录跳过日志",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                320,
+                128
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// 记录不发送日志\nconsole.log('今日不发送报告 - 当前时间条件不满足');\nreturn $input.all();"
+            },
+            "id": "28ee1d9c-9d52-46b4-a634-9f82d4c4a424",
+            "name": "记录不发送日志",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -352,
+                224
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 2
+                    },
+                    "conditions": [
+                        {
+                            "id": "af8d723b-62a9-44f4-b281-c9869a01c3ab",
+                            "leftValue": "={{ $json.shouldSend }}",
+                            "rightValue": "",
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "true",
+                                "singleValue": true
+                            }
+                        },
+                        {
+                            "id": "86446386-588e-429e-9ed5-2b49ac1a1f51",
+                            "leftValue": "",
+                            "rightValue": "",
+                            "operator": {
+                                "type": "string",
+                                "operation": "equals",
+                                "name": "filter.operator.equals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [
+                -576,
+                128
+            ],
+            "id": "719f29b7-e002-4580-a475-e757d80063ab",
+            "name": "If"
+        }
+    ],
+    "connections": {
+        "定时触发器": {
+            "main": [
+                [
+                    {
+                        "node": "配置参数",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "配置参数": {
+            "main": [
+                [
+                    {
+                        "node": "检查发送条件",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "检查发送条件": {
+            "main": [
+                [
+                    {
+                        "node": "If",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "获取上传统计数据": {
+            "main": [
+                [
+                    {
+                        "node": "处理统计数据",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "处理统计数据": {
+            "main": [
+                [
+                    {
+                        "node": "检查数据阈值",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "检查数据阈值": {
+            "main": [
+                [
+                    {
+                        "node": "发送钉钉消息",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "记录跳过日志",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "If": {
+            "main": [
+                [
+                    {
+                        "node": "获取上传统计数据",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "记录不发送日志",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "pinData": {},
+    "meta": {
+        "instanceId": "fc7383d05e70dfb2e5bc24a56107b9dcb53bde5758f7387e737ce362de870369"
+    }
+}

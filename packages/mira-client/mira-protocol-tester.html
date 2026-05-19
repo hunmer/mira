@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mira 协议测试工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .section {
+            margin-bottom: 40px;
+        }
+        
+        .section-title {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #4facfe;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title::before {
+            content: '🔧';
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        input[type="text"], textarea, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        
+        input[type="text"]:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+        
+        textarea {
+            height: 120px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            resize: vertical;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin: 5px 10px 5px 0;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button.secondary {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            color: #8b4513;
+        }
+        
+        button.secondary:hover {
+            box-shadow: 0 5px 15px rgba(252, 182, 159, 0.4);
+        }
+        
+        .result-area {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .result-area.show {
+            display: block;
+            animation: slideDown 0.3s ease-out;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .result-title {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 10px;
+        }
+        
+        .result-content {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .success {
+            border-left: 4px solid #28a745;
+            background-color: #d4edda;
+        }
+        
+        .error {
+            border-left: 4px solid #dc3545;
+            background-color: #f8d7da;
+        }
+        
+        .info {
+            border-left: 4px solid #17a2b8;
+            background-color: #d1ecf1;
+        }
+        
+        .copy-btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            padding: 8px 16px;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+        }
+        
+        .example-section {
+            background: #f1f3f5;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .example-title {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 15px;
+        }
+        
+        .example-item {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        
+        .example-item:hover {
+            border-color: #4facfe;
+            box-shadow: 0 2px 8px rgba(79, 172, 254, 0.1);
+        }
+        
+        .example-name {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 5px;
+        }
+        
+        .example-desc {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-bottom: 10px;
+        }
+        
+        .example-data {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 11px;
+            color: #495057;
+            background: #f8f9fa;
+            padding: 8px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔗 Mira 协议测试工具</h1>
+            <p>生成和解析 mira:// 协议链接，无需 Electron 环境</p>
+        </div>
+        
+        <div class="content">
+            <div class="grid">
+                <!-- 协议生成器 -->
+                <div class="section">
+                    <h2 class="section-title">协议 URL 生成器</h2>
+                    
+                    <div class="form-group">
+                        <label for="protocolType">协议类型:</label>
+                        <select id="protocolType">
+                            <option value="server_import">server_import - 服务器导入</option>
+                            <option value="plugin_install">plugin_install - 插件安装</option>
+                            <option value="share_collection">share_collection - 分享收藏</option>
+                            <option value="custom">custom - 自定义类型</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" id="customTypeGroup" style="display: none;">
+                        <label for="customType">自定义类型名称:</label>
+                        <input type="text" id="customType" placeholder="例如: my_custom_handler">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="protocolData">JSON 数据:</label>
+                        <textarea id="protocolData" placeholder='请输入 JSON 格式的数据，例如:
+{
+  "serverUrl": "http://localhost:3001",
+  "name": "本地服务器",
+  "apiKey": "your-api-key"
+}'></textarea>
+                    </div>
+                    
+                    <button onclick="generateProtocolUrl()">🚀 生成协议 URL</button>
+                    <button class="secondary" onclick="validateJson()">✅ 验证 JSON</button>
+                    <button class="secondary" onclick="clearForm()">🗑️ 清空表单</button>
+                    
+                    <div id="generateResult" class="result-area">
+                        <div class="result-title">生成结果:</div>
+                        <div class="result-content" id="generateContent"></div>
+                        <button class="copy-btn" onclick="copyToClipboard('generateContent')">📋 复制链接</button>
+                    </div>
+                </div>
+                
+                <!-- 协议解析器 -->
+                <div class="section">
+                    <h2 class="section-title">协议 URL 解析器</h2>
+                    
+                    <div class="form-group">
+                        <label for="protocolUrl">Mira 协议 URL:</label>
+                        <textarea id="protocolUrl" placeholder="请粘贴 mira:// 协议链接，例如:
+mira://?json=eyJ0eXBlIjoic2VydmVyX2ltcG9ydCIsImRhdGEiOnsic2VydmVyVXJsIjoiaHR0cDovL2xvY2FsaG9zdDozMDAxIiwibmFtZSI6IuacrOWcsOacjeWKoeWZqCJ9fQ=="></textarea>
+                    </div>
+                    
+                    <button onclick="parseProtocolUrl()">🔍 解析协议 URL</button>
+                    <button class="secondary" onclick="clearParser()">🗑️ 清空解析器</button>
+                    
+                    <div id="parseResult" class="result-area">
+                        <div class="result-title">解析结果:</div>
+                        <div class="result-content" id="parseContent"></div>
+                        <button class="copy-btn" onclick="copyToClipboard('parseContent')">📋 复制结果</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 示例数据 -->
+            <div class="example-section">
+                <div class="example-title">📝 常用示例数据 (点击使用)</div>
+                
+                <div class="example-item" onclick="useExample('server_import')">
+                    <div class="example-name">服务器导入示例</div>
+                    <div class="example-desc">用于快速导入服务器配置信息</div>
+                    <div class="example-data">{"serverUrl": "http://localhost:3001", "name": "本地开发服务器", "apiKey": "dev-api-key"}</div>
+                </div>
+                
+                <div class="example-item" onclick="useExample('plugin_install')">
+                    <div class="example-name">插件安装示例</div>
+                    <div class="example-desc">用于通过链接安装插件</div>
+                    <div class="example-data">{"pluginId": "image-processor", "version": "1.0.0", "source": "marketplace"}</div>
+                </div>
+                
+                <div class="example-item" onclick="useExample('share_collection')">
+                    <div class="example-name">分享收藏示例</div>
+                    <div class="example-desc">用于分享媒体收藏集合</div>
+                    <div class="example-data">{"collectionId": "vacation-photos", "title": "假期照片", "description": "2024年度假照片集合"}</div>
+                </div>
+                
+                <div class="example-item" onclick="useExample('file_share')">
+                    <div class="example-name">文件分享示例</div>
+                    <div class="example-desc">用于分享单个文件或文件夹</div>
+                    <div class="example-data">{"fileId": "abc123", "fileName": "重要文档.pdf", "shareToken": "share_token_here"}</div>
+                </div>
+            </div>
+            
+            <!-- 使用说明 -->
+            <div class="section">
+                <h2 class="section-title">📖 使用说明</h2>
+                
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; line-height: 1.6;">
+                    <h4 style="color: #495057; margin-bottom: 15px;">协议格式说明:</h4>
+                    <p style="margin-bottom: 15px;"><strong>标准格式:</strong> <code>mira://?json=&lt;base64编码的JSON数据&gt;</code></p>
+                    
+                    <h4 style="color: #495057; margin-bottom: 10px; margin-top: 20px;">JSON 数据结构:</h4>
+                    <pre style="background: white; padding: 15px; border-radius: 6px; font-size: 13px; color: #495057;">{
+  "type": "协议处理器类型",
+  "data": {
+    // 具体的数据内容
+  }
+}</pre>
+                    
+                    <h4 style="color: #495057; margin-bottom: 10px; margin-top: 20px;">常用协议类型:</h4>
+                    <ul style="margin-left: 20px;">
+                        <li><strong>server_import:</strong> 服务器配置导入</li>
+                        <li><strong>plugin_install:</strong> 插件安装</li>
+                        <li><strong>share_collection:</strong> 收藏分享</li>
+                        <li><strong>file_share:</strong> 文件分享</li>
+                    </ul>
+                    
+                    <h4 style="color: #495057; margin-bottom: 10px; margin-top: 20px;">注意事项:</h4>
+                    <ul style="margin-left: 20px;">
+                        <li>JSON 数据必须是有效的格式</li>
+                        <li>生成的 URL 会自动进行 Base64 编码</li>
+                        <li>协议链接可以在支持 mira:// 的应用中打开</li>
+                        <li>此工具仅用于测试，不会实际触发协议处理</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 示例数据
+        const examples = {
+            server_import: {
+                type: 'server_import',
+                data: {
+                    serverUrl: 'http://localhost:3001',
+                    name: '本地开发服务器',
+                    apiKey: 'dev-api-key',
+                    description: '用于开发和测试的本地服务器'
+                }
+            },
+            plugin_install: {
+                type: 'plugin_install',
+                data: {
+                    pluginId: 'image-processor',
+                    version: '1.0.0',
+                    source: 'marketplace',
+                    name: '图片处理插件',
+                    description: '提供图片压缩、格式转换等功能'
+                }
+            },
+            share_collection: {
+                type: 'share_collection',
+                data: {
+                    collectionId: 'vacation-photos-2024',
+                    title: '2024假期照片',
+                    description: '美好的假期回忆照片合集',
+                    itemCount: 156,
+                    shareMode: 'public'
+                }
+            },
+            file_share: {
+                type: 'file_share',
+                data: {
+                    fileId: 'doc_abc123xyz',
+                    fileName: '项目需求文档.pdf',
+                    fileSize: 2048576,
+                    shareToken: 'st_' + Math.random().toString(36).substr(2, 16),
+                    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+                }
+            }
+        };
+        
+        // 监听协议类型选择变化
+        document.getElementById('protocolType').addEventListener('change', function() {
+            const customGroup = document.getElementById('customTypeGroup');
+            if (this.value === 'custom') {
+                customGroup.style.display = 'block';
+            } else {
+                customGroup.style.display = 'none';
+                // 自动填充示例数据
+                if (examples[this.value]) {
+                    document.getElementById('protocolData').value = JSON.stringify(examples[this.value].data, null, 2);
+                }
+            }
+        });
+        
+        // 初始化时加载默认示例
+        document.getElementById('protocolData').value = JSON.stringify(examples.server_import.data, null, 2);
+        
+        // 生成协议 URL
+        function generateProtocolUrl() {
+            const typeSelect = document.getElementById('protocolType');
+            const customType = document.getElementById('customType').value;
+            const dataInput = document.getElementById('protocolData').value;
+            
+            try {
+                // 获取协议类型
+                let protocolType;
+                if (typeSelect.value === 'custom') {
+                    if (!customType.trim()) {
+                        showResult('generateResult', 'generateContent', '请输入自定义类型名称', 'error');
+                        return;
+                    }
+                    protocolType = customType.trim();
+                } else {
+                    protocolType = typeSelect.value;
+                }
+                
+                // 解析 JSON 数据
+                let jsonData = {};
+                if (dataInput.trim()) {
+                    jsonData = JSON.parse(dataInput);
+                }
+                
+                // 构建协议数据
+                const protocolData = {
+                    type: protocolType,
+                    data: jsonData
+                };
+                
+                // 生成 Base64 编码的 JSON
+                const jsonString = JSON.stringify(protocolData);
+                const base64Data = btoa(unescape(encodeURIComponent(jsonString)));
+                const protocolUrl = `mira://?json=${base64Data}`;
+                
+                // 显示结果
+                const resultText = `协议 URL:\n${protocolUrl}\n\n原始数据 (JSON):\n${JSON.stringify(protocolData, null, 2)}\n\nBase64 编码后:\n${base64Data}`;
+                showResult('generateResult', 'generateContent', resultText, 'success');
+                
+            } catch (error) {
+                showResult('generateResult', 'generateContent', `生成失败: ${error.message}`, 'error');
+            }
+        }
+        
+        // 解析协议 URL
+        function parseProtocolUrl() {
+            const urlInput = document.getElementById('protocolUrl').value.trim();
+            
+            try {
+                if (!urlInput) {
+                    showResult('parseResult', 'parseContent', '请输入协议 URL', 'error');
+                    return;
+                }
+                
+                // 检查协议格式
+                if (!urlInput.startsWith('mira://')) {
+                    showResult('parseResult', 'parseContent', '无效的协议格式，必须以 mira:// 开头', 'error');
+                    return;
+                }
+                
+                // 解析 URL
+                const url = new URL(urlInput);
+                const base64Data = url.searchParams.get('json');
+                
+                if (!base64Data) {
+                    showResult('parseResult', 'parseContent', '未找到 JSON 数据参数', 'error');
+                    return;
+                }
+                
+                // Base64 解码
+                const jsonString = decodeURIComponent(escape(atob(base64Data)));
+                const protocolData = JSON.parse(jsonString);
+                
+                // 显示解析结果
+                const resultText = `解析成功!\n\n协议类型: ${protocolData.type}\n\n数据内容:\n${JSON.stringify(protocolData.data, null, 2)}\n\n完整数据结构:\n${JSON.stringify(protocolData, null, 2)}`;
+                showResult('parseResult', 'parseContent', resultText, 'success');
+                
+            } catch (error) {
+                showResult('parseResult', 'parseContent', `解析失败: ${error.message}`, 'error');
+            }
+        }
+        
+        // 验证 JSON 格式
+        function validateJson() {
+            const dataInput = document.getElementById('protocolData').value.trim();
+            
+            try {
+                if (!dataInput) {
+                    showResult('generateResult', 'generateContent', 'JSON 数据为空', 'info');
+                    return;
+                }
+                
+                const parsed = JSON.parse(dataInput);
+                const formatted = JSON.stringify(parsed, null, 2);
+                document.getElementById('protocolData').value = formatted;
+                showResult('generateResult', 'generateContent', `JSON 格式正确!\n\n格式化后:\n${formatted}`, 'success');
+                
+            } catch (error) {
+                showResult('generateResult', 'generateContent', `JSON 格式错误: ${error.message}`, 'error');
+            }
+        }
+        
+        // 使用示例数据
+        function useExample(exampleKey) {
+            const example = examples[exampleKey];
+            if (example) {
+                document.getElementById('protocolType').value = example.type;
+                document.getElementById('protocolData').value = JSON.stringify(example.data, null, 2);
+                
+                // 触发类型选择变化事件
+                document.getElementById('protocolType').dispatchEvent(new Event('change'));
+                
+                // 显示提示
+                showResult('generateResult', 'generateContent', `已加载示例: ${example.type}`, 'info');
+            }
+        }
+        
+        // 清空表单
+        function clearForm() {
+            document.getElementById('protocolType').value = 'server_import';
+            document.getElementById('customType').value = '';
+            document.getElementById('protocolData').value = '';
+            document.getElementById('generateResult').classList.remove('show');
+        }
+        
+        // 清空解析器
+        function clearParser() {
+            document.getElementById('protocolUrl').value = '';
+            document.getElementById('parseResult').classList.remove('show');
+        }
+        
+        // 显示结果
+        function showResult(resultId, contentId, text, type = 'info') {
+            const resultArea = document.getElementById(resultId);
+            const contentArea = document.getElementById(contentId);
+            
+            contentArea.textContent = text;
+            resultArea.className = `result-area show ${type}`;
+        }
+        
+        // 复制到剪贴板
+        async function copyToClipboard(elementId) {
+            const content = document.getElementById(elementId).textContent;
+            
+            try {
+                if (navigator.clipboard) {
+                    await navigator.clipboard.writeText(content);
+                    alert('✅ 已复制到剪贴板!');
+                } else {
+                    // 降级处理
+                    const textArea = document.createElement('textarea');
+                    textArea.value = content;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    alert('✅ 已复制到剪贴板!');
+                }
+            } catch (error) {
+                console.error('复制失败:', error);
+                alert('❌ 复制失败，请手动复制');
+            }
+        }
+        
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Mira 协议测试工具已加载');
+            console.log('支持的示例类型:', Object.keys(examples));
+        });
+    </script>
+</body>
+</html>

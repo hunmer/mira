@@ -1,0 +1,30 @@
+[
+    {
+        "id": "1753778329874",
+        "name": "remote_lib",
+        "icon": "default",
+        "customFields": {
+            "path": "E:/mira_test/remote_lib",
+            "enableHash": false
+        },
+        "serverURL": "http://127.0.0.1",
+        "serverPort": "3000",
+        "pluginsDir": "D:/mira_typescript/plugins",
+        "createdAt": "2025-07-22T14:27:23.375146"
+    },
+    {
+        "id": "1753984872018",
+        "name": "测试人物素材库",
+        "icon": "default",
+        "customFields": {
+            "path": "//192.168.31.3/文件共享/人物素材",
+            "enableHash": false
+        },
+	    "serverURL": "http://192.168.31.3",
+        "serverPort": "3000",
+        "pluginsDir": "D:/mira_typescript/plugins",
+        "useHttpFile": false,
+        "createdAt": "2025-07-22T14:27:23.375146"
+    }
+
+]

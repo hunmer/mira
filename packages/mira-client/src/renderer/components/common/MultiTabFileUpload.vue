@@ -1,0 +1,1102 @@
+<template>
+  <div class="multi-tab-file-upload">
+    <Tabs :model-value="currentTabValue" @update:model-value="updateCurrentTab" class="upload-tabs">
+      <TabsList>
+        <TabsTrigger
+          value="upload-area"
+          class="flex items-center gap-2"
+        >
+          <i class="pi pi-cloud-upload"></i>
+          <span>文件上传区域</span>
+        </TabsTrigger>
+        <TabsTrigger
+          value="uploading"
+          class="flex items-center gap-2"
+        >
+          <i class="pi pi-spin pi-spinner" v-if="uploadingFiles.length > 0"></i>
+          <i class="pi pi-clock" v-else></i>
+          <span>正在上传</span>
+          <Badge v-if="uploadingFiles.length > 0" variant="outline">{{ uploadingFiles.length }}</Badge>
+        </TabsTrigger>
+        <TabsTrigger
+          value="uploaded"
+          class="flex items-center gap-2"
+        >
+          <i class="pi pi-check-circle"></i>
+          <span>已上传</span>
+          <Badge v-if="uploadedFiles.length > 0" variant="secondary">{{ uploadedFiles.length }}</Badge>
+        </TabsTrigger>
+      </TabsList>
+
+      <div>
+        <!-- 文件上传区域 -->
+        <TabsContent value="upload-area">
+          <div class="upload-area p-4">
+            <div
+              class="dropzone"
+              :class="{ 'drag-over': isDragOver }"
+              @drop.prevent="handleDrop"
+              @dragover.prevent="handleDragOver"
+              @dragleave.prevent="handleDragLeave"
+              @click="triggerFileSelect"
+            >
+              <div class="dropzone-content">
+                <i class="pi pi-cloud-upload text-6xl text-primary mb-4"></i>
+                <h3 class="text-xl font-semibold mb-2">拖拽文件到这里</h3>
+                <p class="text-gray-600 mb-4">或者点击选择文件</p>
+                <Button
+                  variant="outline"
+                  @click.stop="triggerFileSelect"
+                >
+                  <i class="pi pi-plus mr-2"></i>
+                  选择文件
+                </Button>
+              </div>
+            </div>
+
+            <!-- 隐藏的文件输入 -->
+            <input
+              ref="fileInput"
+              type="file"
+              multiple
+              :accept="accept"
+              class="hidden"
+              @change="handleFileSelect"
+            />
+
+            <!-- 选中的文件预览 -->
+            <div v-if="selectedFiles.length > 0" class="selected-files mt-4">
+              <div class="flex items-center justify-between mb-3">
+                <h4 class="font-semibold">已选择的文件 ({{ selectedFiles.length }})</h4>
+                <Button
+                  :disabled="selectedFiles.length === 0"
+                  @click="startUpload"
+                >
+                  <i class="pi pi-upload mr-2"></i>
+                  开始上传
+                </Button>
+              </div>
+              <div class="file-list space-y-2">
+                <div
+                  v-for="(file, index) in selectedFiles"
+                  :key="index"
+                  class="file-item p-3 border border-gray-200 rounded-lg flex items-center justify-between"
+                >
+                  <div class="file-info flex items-center">
+                    <i :class="getFileIcon(file)" class="text-2xl mr-3"></i>
+                    <div>
+                      <div class="font-medium">{{ file.name }}</div>
+                      <div class="text-sm text-gray-500">{{ formatFileSize(file.size) }}</div>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    class="rounded-full"
+                    @click="removeSelectedFile(index)"
+                  >
+                    <i class="pi pi-times"></i>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+
+        <!-- 正在上传 -->
+        <TabsContent value="uploading">
+          <div class="uploading-area p-4">
+            <div v-if="uploadingFiles.length === 0" class="empty-state text-center py-8">
+              <i class="pi pi-info-circle text-4xl text-gray-400 mb-4"></i>
+              <p class="text-gray-500">暂无正在上传的文件</p>
+            </div>
+
+            <div v-else class="uploading-list space-y-3">
+              <div
+                v-for="(uploadItem, index) in uploadingFiles"
+                :key="index"
+                class="upload-item p-4 border border-gray-200 rounded-lg"
+              >
+                <div class="flex items-center justify-between mb-2">
+                  <div class="file-info flex items-center">
+                    <i :class="getFileIcon(uploadItem.file)" class="text-2xl mr-3"></i>
+                    <div>
+                      <div class="font-medium">{{ uploadItem.file.name }}</div>
+                      <div class="text-sm text-gray-500">{{ formatFileSize(uploadItem.file.size) }}</div>
+                    </div>
+                  </div>
+                  <Button
+                    variant="destructive"
+                    class="rounded-full"
+                    @click="cancelUpload(index)"
+                  >
+                    <i class="pi pi-times"></i>
+                  </Button>
+                </div>
+
+                <!-- 进度条 -->
+                <div class="progress-area">
+                  <div class="flex justify-between text-sm mb-1">
+                    <span>{{ uploadItem.status }}</span>
+                    <span>{{ Math.round(uploadItem.progress) }}%</span>
+                  </div>
+                  <Progress
+                    :model-value="uploadItem.progress"
+                    class="h-2"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+
+        <!-- 已上传 -->
+        <TabsContent value="uploaded">
+          <div class="uploaded-area" v-if="showUploadedFiles">
+            <!-- 文件列表头部 -->
+            <div class="flex justify-between items-center mb-4 p-4 pb-0">
+              <div class="flex items-center">
+                <h2 class="text-lg font-semibold text-gray-800 mr-2">已上传文件</h2>
+                <span class="text-sm text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                  {{ totalUploadedFiles }} 个文件
+                </span>
+              </div>
+
+              <!-- 搜索和过滤 -->
+              <div class="flex items-center space-x-4">
+                <div class="relative">
+                  <input
+                    v-model="searchQuery"
+                    class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="搜索文件..."
+                    type="text"
+                  />
+                  <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">search</span>
+                </div>
+
+                <div class="relative">
+                  <button
+                    @click="showFilterMenu = !showFilterMenu"
+                    class="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    <span class="material-icons">filter_list</span>
+                    <span>过滤</span>
+                    <span v-if="activeFilters.length > 0" class="bg-indigo-500 text-white text-xs rounded-full px-2 py-0.5 ml-1">
+                      {{ activeFilters.length }}
+                    </span>
+                  </button>
+
+                  <!-- 过滤菜单 -->
+                  <div
+                    v-if="showFilterMenu"
+                    class="absolute right-0 top-full mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-10"
+                  >
+                    <div class="p-4">
+                      <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-medium text-gray-800">过滤器</h3>
+                        <button
+                          @click="clearFilters"
+                          class="text-xs text-gray-500 hover:text-gray-700 underline"
+                        >
+                          清除所有
+                        </button>
+                      </div>
+                      <h4 class="font-medium text-gray-800 mb-3 text-sm">文件类型</h4>
+                      <div class="space-y-2">
+                        <label v-for="type in fileTypes" :key="type.value" class="flex items-center cursor-pointer">
+                          <Checkbox
+                            :checked="selectedFileTypes.includes(type.value)"
+                            @update:checked="($event: boolean) => { if ($event) selectedFileTypes.push(type.value); else selectedFileTypes = selectedFileTypes.filter(v => v !== type.value) }"
+                            class="mr-2"
+                          />
+                          <span class="text-sm text-gray-700">{{ type.label }}</span>
+                          <span class="text-xs text-gray-500 ml-auto">({{ getFileCountByType(type.value) }})</span>
+                        </label>
+                      </div>
+
+                      <hr class="my-4">
+
+                      <h4 class="font-medium text-gray-800 mb-3 text-sm">文件大小</h4>
+                      <RadioGroup :model-value="selectedFileSize" @update:model-value="selectedFileSize = $event" class="space-y-2">
+                        <div v-for="size in fileSizes" :key="size.value" class="flex items-center">
+                          <RadioGroupItem :value="size.value" class="mr-2" />
+                          <span class="text-sm text-gray-700">{{ size.label }}</span>
+                        </div>
+                      </RadioGroup>
+
+                      <hr class="my-4">
+
+                      <h4 class="font-medium text-gray-800 mb-3 text-sm">上传时间</h4>
+                      <div class="space-y-2">
+                        <label v-for="time in uploadTimes" :key="time.value" class="flex items-center cursor-pointer">
+                          <Checkbox
+                            :checked="selectedUploadTime.includes(time.value)"
+                            @update:checked="($event: boolean) => { if ($event) selectedUploadTime.push(time.value); else selectedUploadTime = selectedUploadTime.filter(v => v !== time.value) }"
+                            class="mr-2"
+                          />
+                          <span class="text-sm text-gray-700">{{ time.label }}</span>
+                        </label>
+                      </div>
+
+                      <div class="flex justify-between mt-4 pt-4 border-t border-gray-200">
+                        <button
+                          @click="clearFilters"
+                          class="text-sm text-gray-600 hover:text-gray-800"
+                        >
+                          清除过滤
+                        </button>
+                        <button
+                          @click="showFilterMenu = false"
+                          class="text-sm bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700"
+                        >
+                          应用
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="flex justify-between items-center mb-4 px-4">
+              <p class="text-gray-500">在这里可以查看和管理您上传的文件。</p>
+
+              <div class="flex items-center space-x-2">
+                <button
+                  @click="handleClearAllFiles"
+                  class="flex items-center space-x-2 px-3 py-1.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 text-sm transition-colors"
+                >
+                  <span class="material-icons text-sm">delete_sweep</span>
+                  <span>清空全部</span>
+                </button>
+
+                <button
+                  @click="handleRefreshFiles"
+                  :disabled="isLoading"
+                  class="flex items-center space-x-2 px-3 py-1.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 text-sm transition-colors disabled:opacity-50"
+                >
+                  <span class="material-icons text-sm" :class="{ 'animate-spin': isLoading }">refresh</span>
+                  <span>刷新</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 文件列表表格 -->
+            <div class="px-4 pb-4">
+              <DataTable
+                v-model:selection="selectedUploadedFiles"
+                :value="filteredUploadedFiles"
+                :paginator="true"
+                :rows="pageSize"
+                :totalRecords="totalUploadedFiles"
+                :loading="isLoading"
+                sortMode="single"
+                :sortField="sortField"
+                :sortOrder="sortOrder === 'asc' ? 1 : -1"
+                @sort="handleSortChange"
+                selectionMode="multiple"
+                dataKey="id"
+                class="bg-white rounded-lg shadow-sm border border-gray-200"
+                paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+                :rowsPerPageOptions="[10, 20, 50]"
+                currentPageReportTemplate="显示第 {first} 到 {last} 条，共 {totalRecords} 条记录"
+                responsiveLayout="scroll"
+              >
+                <template #empty>
+                  <div class="p-8 text-center text-gray-500">
+                    <div class="flex flex-col items-center">
+                      <span class="material-icons text-4xl text-gray-300 mb-2">folder_open</span>
+                      <p>{{ searchQuery ? '没有找到匹配的文件' : '还没有上传任何文件' }}</p>
+                    </div>
+                  </div>
+                </template>
+
+                <template #loading>
+                  <div class="p-8 text-center text-gray-500">
+                    <div class="flex items-center justify-center">
+                      <span class="material-icons animate-spin mr-2">refresh</span>
+                      加载中...
+                    </div>
+                  </div>
+                </template>
+
+                <Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
+
+                <Column field="name" header="文件名" sortable>
+                  <template #body="{ data }">
+                    <div class="flex items-center">
+                      <span class="material-icons mr-3" :class="getFileIconClass(data.mimeType)">
+                        {{ getFileIconForMime(data.mimeType) }}
+                      </span>
+                      <div>
+                        <p class="font-medium text-gray-800">{{ data.name }}</p>
+                        <p class="text-sm text-gray-500">{{ data.mimeType }}</p>
+                      </div>
+                    </div>
+                  </template>
+                </Column>
+
+                <Column field="size" header="文件大小" sortable>
+                  <template #body="{ data }">
+                    {{ formatFileSize(data.size) }}
+                  </template>
+                </Column>
+
+                <Column field="uploadedAt" header="上传时间" sortable>
+                  <template #body="{ data }">
+                    {{ formatDate(data.uploadedAt.toISOString()) }}
+                  </template>
+                </Column>
+
+                <Column header="操作">
+                  <template #body="{ data }">
+                    <div class="flex items-center space-x-2">
+                      <button
+                        @click="handleDeleteFile(data)"
+                        class="text-red-500 hover:text-red-700 transition-colors"
+                        title="删除"
+                      >
+                        <span class="material-icons">delete</span>
+                      </button>
+                    </div>
+                  </template>
+                </Column>
+              </DataTable>
+            </div>
+          </div>
+
+          <!-- 简化版已上传显示（当showUploadedFiles为false时） -->
+          <div v-else class="uploaded-area p-4">
+            <div v-if="uploadedFiles.length === 0" class="empty-state text-center py-8">
+              <i class="pi pi-check-circle text-4xl text-gray-400 mb-4"></i>
+              <p class="text-gray-500">暂无已上传的文件</p>
+            </div>
+
+            <div v-else>
+              <div class="flex items-center justify-between mb-4">
+                <h4 class="font-semibold">已上传文件 ({{ uploadedFiles.length }})</h4>
+                <Button
+                  variant="destructive"
+                  @click="clearUploadedFiles"
+                >
+                  <i class="pi pi-trash mr-2"></i>
+                  清空列表
+                </Button>
+              </div>
+
+              <div class="uploaded-list space-y-2">
+                <div
+                  v-for="(uploadItem, index) in uploadedFiles"
+                  :key="index"
+                  class="uploaded-item p-3 border border-green-200 bg-green-50 rounded-lg flex items-center justify-between"
+                >
+                  <div class="file-info flex items-center">
+                    <i :class="getFileIcon(uploadItem.file)" class="text-2xl mr-3 text-green-600"></i>
+                    <div>
+                      <div class="font-medium">{{ uploadItem.file.name }}</div>
+                      <div class="text-sm text-gray-500">
+                        {{ formatFileSize(uploadItem.file.size) }} •
+                        上传于 {{ formatUploadTime(uploadItem.uploadedAt) }}
+                      </div>
+                    </div>
+                  </div>
+                  <div class="actions flex items-center space-x-2">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger as-child>
+                          <Button
+                            variant="ghost"
+                            class="rounded-full"
+                            @click="downloadFile(uploadItem)"
+                          >
+                            <i class="pi pi-download"></i>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>下载</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger as-child>
+                          <Button
+                            variant="destructive"
+                            class="rounded-full"
+                            @click="removeUploadedFile(index)"
+                          >
+                            <i class="pi pi-times"></i>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>删除</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+      </div>
+    </Tabs>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { Button } from '@/components/ui/button'
+import { Progress } from '@/components/ui/progress'
+import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import DataTable from '@/components/ui/volt/DataTable.vue'
+import { TableHead as Column, TableCell } from '@/components/ui/table'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+
+interface UploadItem {
+  file: File
+  progress: number
+  status: string
+  uploadedAt?: Date
+  id: string
+}
+
+interface UploadedFileItem {
+  id: string
+  name: string
+  size: number
+  mimeType: string
+  uploadedAt: Date
+  libraryId?: string
+  libraryName?: string
+  status: 'success' | 'failed'
+  serverId?: string
+  localPath?: string
+  error?: string
+}
+
+interface Props {
+  accept?: string
+  maxFiles?: number
+  autoUpload?: boolean
+  // 已上传文件列表相关
+  uploadedFilesList?: UploadedFileItem[]
+  isLoading?: boolean
+  showUploadedFiles?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  accept: '*',
+  maxFiles: 10,
+  autoUpload: false,
+  uploadedFilesList: () => [],
+  isLoading: false,
+  showUploadedFiles: true
+})
+
+interface Emits {
+  (e: 'files-selected', files: File[]): void
+  (e: 'upload-start', files: File[]): void
+  (e: 'upload-progress', item: UploadItem): void
+  (e: 'upload-complete', item: UploadItem): void
+  (e: 'upload-error', item: UploadItem, error: string): void
+  (e: 'files-uploaded', items: UploadItem[]): void
+  // 已上传文件列表相关事件
+  (e: 'delete-file', file: UploadedFileItem): void
+  (e: 'clear-all-files'): void
+  (e: 'refresh-files'): void
+  (e: 'sort-change', sortField: string, sortOrder: string): void
+}
+
+const emit = defineEmits<Emits>()
+
+// 状态管理
+const currentTabValue = ref('upload-area')
+const isDragOver = ref(false)
+const fileInput = ref<HTMLInputElement>()
+
+// 文件列表
+const selectedFiles = ref<File[]>([])
+const uploadingFiles = ref<UploadItem[]>([])
+const uploadedFiles = ref<UploadItem[]>([])
+
+// 已上传文件列表相关状态
+const searchQuery = ref('')
+const showFilterMenu = ref(false)
+const selectedUploadedFiles = ref<string[]>([])
+const pageSize = ref(10)
+const sortField = ref<'name' | 'size' | 'uploadedAt'>('uploadedAt')
+const sortOrder = ref<'asc' | 'desc'>('desc')
+
+// 过滤相关
+const selectedFileTypes = ref<string[]>([])
+const selectedFileSize = ref<string>('')
+const selectedUploadTime = ref<string[]>([])
+
+// 过滤选项
+const fileTypes = ref([
+  { value: 'image', label: '图片' },
+  { value: 'video', label: '视频' },
+  { value: 'audio', label: '音频' },
+  { value: 'document', label: '文档' },
+  { value: 'archive', label: '压缩包' },
+  { value: 'unknown', label: '其他' }
+])
+
+const fileSizes = ref([
+  { value: '', label: '全部大小' },
+  { value: 'small', label: '小于 1MB' },
+  { value: 'medium', label: '1MB - 10MB' },
+  { value: 'large', label: '10MB - 100MB' },
+  { value: 'xlarge', label: '大于 100MB' }
+])
+
+const uploadTimes = ref([
+  { value: '', label: '全部时间' },
+  { value: 'today', label: '今天' },
+  { value: 'week', label: '本周' },
+  { value: 'month', label: '本月' },
+  { value: 'year', label: '今年' }
+])
+
+// 标签页切换处理
+const updateCurrentTab = (value: string) => {
+  currentTabValue.value = value
+}
+
+// 文件选择处理
+const triggerFileSelect = () => {
+  fileInput.value?.click()
+}
+
+const handleFileSelect = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  if (target.files) {
+    addFiles(Array.from(target.files))
+  }
+  // 清空输入框以允许重复选择同一文件
+  target.value = ''
+}
+
+const handleDrop = (event: DragEvent) => {
+  isDragOver.value = false
+  if (event.dataTransfer?.files) {
+    addFiles(Array.from(event.dataTransfer.files))
+  }
+}
+
+const handleDragOver = () => {
+  isDragOver.value = true
+}
+
+const handleDragLeave = () => {
+  isDragOver.value = false
+}
+
+// 文件管理
+const addFiles = (files: File[]) => {
+  const validFiles = files.filter(file => {
+    // 检查文件类型
+    if (props.accept !== '*' && !isFileTypeAccepted(file)) {
+      console.warn(`文件 ${file.name} 类型不支持`)
+      return false
+    }
+
+    // 检查是否已存在
+    if (selectedFiles.value.some(f => f.name === file.name && f.size === file.size)) {
+      console.warn(`文件 ${file.name} 已存在`)
+      return false
+    }
+
+    return true
+  })
+
+  // 检查总数限制
+  const totalFiles = selectedFiles.value.length + validFiles.length
+  if (totalFiles > props.maxFiles) {
+    const allowedCount = props.maxFiles - selectedFiles.value.length
+    validFiles.splice(allowedCount)
+    console.warn(`最多只能选择 ${props.maxFiles} 个文件`)
+  }
+
+  selectedFiles.value.push(...validFiles)
+  emit('files-selected', selectedFiles.value)
+
+  if (props.autoUpload && validFiles.length > 0) {
+    startUpload()
+  }
+}
+
+const removeSelectedFile = (index: number) => {
+  selectedFiles.value.splice(index, 1)
+}
+
+// 上传处理
+const startUpload = () => {
+  if (selectedFiles.value.length === 0) return
+
+  // 将选中的文件移动到上传队列
+  const filesToUpload = selectedFiles.value.map(file => ({
+    file,
+    progress: 0,
+    status: '准备上传',
+    id: Date.now() + Math.random().toString(36).substr(2, 9)
+  }))
+
+  uploadingFiles.value.push(...filesToUpload)
+  selectedFiles.value = []
+
+  // 切换到正在上传标签页
+  currentTabValue.value = 'uploading'
+
+  emit('upload-start', filesToUpload.map(item => item.file))
+
+  // 开始上传每个文件
+  filesToUpload.forEach(item => {
+    uploadFile(item)
+  })
+}
+
+const uploadFile = async (item: UploadItem) => {
+  try {
+    item.status = '正在上传'
+    emit('upload-progress', item)
+
+    // 模拟上传进度
+    const uploadProgress = () => {
+      return new Promise<void>((resolve) => {
+        const interval = setInterval(() => {
+          item.progress += Math.random() * 20
+          if (item.progress >= 100) {
+            item.progress = 100
+            clearInterval(interval)
+            resolve()
+          }
+          emit('upload-progress', item)
+        }, 200)
+      })
+    }
+
+    await uploadProgress()
+
+    // 上传完成
+    item.status = '上传完成'
+    item.uploadedAt = new Date()
+
+    // 从上传队列移动到已上传队列
+    const index = uploadingFiles.value.findIndex(f => f.id === item.id)
+    if (index !== -1) {
+      uploadingFiles.value.splice(index, 1)
+      uploadedFiles.value.unshift(item)
+    }
+
+    emit('upload-complete', item)
+
+  } catch (error) {
+    item.status = '上传失败'
+    emit('upload-error', item, error as string)
+  }
+}
+
+const cancelUpload = (index: number) => {
+  const item = uploadingFiles.value[index]
+  if (item) {
+    uploadingFiles.value.splice(index, 1)
+    // 这里可以添加实际的上传取消逻辑
+  }
+}
+
+// 已上传文件管理
+const downloadFile = (item: UploadItem) => {
+  // 创建下载链接
+  const url = URL.createObjectURL(item.file)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = item.file.name
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+const removeUploadedFile = (index: number) => {
+  uploadedFiles.value.splice(index, 1)
+}
+
+const clearUploadedFiles = () => {
+  uploadedFiles.value = []
+}
+
+// 工具函数
+const isFileTypeAccepted = (file: File): boolean => {
+  if (props.accept === '*') return true
+
+  const acceptTypes = props.accept.split(',').map(type => type.trim())
+
+  return acceptTypes.some(type => {
+    if (type.startsWith('.')) {
+      return file.name.toLowerCase().endsWith(type.toLowerCase())
+    }
+    if (type.includes('/*')) {
+      const baseType = type.split('/')[0]
+      return file.type.startsWith(baseType)
+    }
+    return file.type === type
+  })
+}
+
+const getFileIcon = (file: File): string => {
+  const type = file.type
+  const name = file.name.toLowerCase()
+
+  if (type.startsWith('image/')) return 'pi pi-image text-blue-500'
+  if (type.startsWith('video/')) return 'pi pi-video text-purple-500'
+  if (type.startsWith('audio/')) return 'pi pi-volume-up text-green-500'
+  if (type === 'application/pdf') return 'pi pi-file-pdf text-red-500'
+  if (type.includes('word') || name.endsWith('.doc') || name.endsWith('.docx')) return 'pi pi-file-word text-blue-600'
+  if (type.includes('sheet') || name.endsWith('.xls') || name.endsWith('.xlsx')) return 'pi pi-file-excel text-green-600'
+  if (type.includes('zip') || type.includes('rar') || type.includes('archive')) return 'pi pi-file-archive text-yellow-500'
+
+  return 'pi pi-file text-gray-500'
+}
+
+const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return '0 B'
+
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+}
+
+const formatUploadTime = (date: Date): string => {
+  return date.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
+// 已上传文件列表相关计算属性和方法
+
+// 根据 MIME 类型获取文件类型
+const getFileType = (mimeType: string): string => {
+  if (mimeType.startsWith('image/')) return 'image'
+  if (mimeType.startsWith('video/')) return 'video'
+  if (mimeType.startsWith('audio/')) return 'audio'
+  if (mimeType.includes('pdf') || mimeType.includes('document') || mimeType.includes('text')) return 'document'
+  if (mimeType.includes('zip') || mimeType.includes('rar') || mimeType.includes('tar')) return 'archive'
+  return 'unknown'
+}
+
+// 活跃过滤器
+const activeFilters = computed(() => {
+  const filters = []
+  if (selectedFileTypes.value.length > 0) filters.push('类型')
+  if (selectedFileSize.value) filters.push('大小')
+  if (selectedUploadTime.value.length > 0) filters.push('时间')
+  return filters
+})
+
+// 按类型统计文件数量
+const getFileCountByType = (type: string) => {
+  return props.uploadedFilesList.filter(file => getFileType(file.mimeType) === type).length
+}
+
+// 搜索和过滤
+const filteredUploadedFiles = computed(() => {
+  let result = props.uploadedFilesList
+
+  // 搜索过滤
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    result = result.filter(file =>
+      file.name.toLowerCase().includes(query) ||
+      file.mimeType?.toLowerCase().includes(query)
+    )
+  }
+
+  // 文件类型过滤
+  if (selectedFileTypes.value.length > 0) {
+    result = result.filter(file => selectedFileTypes.value.includes(getFileType(file.mimeType)))
+  }
+
+  // 文件大小过滤
+  if (selectedFileSize.value) {
+    result = result.filter(file => {
+      const size = file.size
+      switch (selectedFileSize.value) {
+        case 'small':
+          return size < 1024 * 1024 // < 1MB
+        case 'medium':
+          return size >= 1024 * 1024 && size < 10 * 1024 * 1024 // 1MB - 10MB
+        case 'large':
+          return size >= 10 * 1024 * 1024 && size < 100 * 1024 * 1024 // 10MB - 100MB
+        case 'xlarge':
+          return size >= 100 * 1024 * 1024 // > 100MB
+        default:
+          return true
+      }
+    })
+  }
+
+  // 上传时间过滤
+  if (selectedUploadTime.value.length > 0) {
+    const now = new Date()
+    result = result.filter(file => {
+      const fileDate = new Date(file.uploadedAt)
+      return selectedUploadTime.value.some(timeFilter => {
+        switch (timeFilter) {
+          case 'today':
+            return fileDate.toDateString() === now.toDateString()
+          case 'week':
+            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+            return fileDate >= weekAgo
+          case 'month':
+            const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
+            return fileDate >= monthAgo
+          case 'year':
+            const yearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate())
+            return fileDate >= yearAgo
+          default:
+            return true
+        }
+      })
+    })
+  }
+
+  // 排序
+  result.sort((a, b) => {
+    let aValue: any = a[sortField.value]
+    let bValue: any = b[sortField.value]
+
+    if (sortField.value === 'size') {
+      aValue = Number(aValue) || 0
+      bValue = Number(bValue) || 0
+    } else if (sortField.value === 'uploadedAt') {
+      aValue = new Date(aValue).getTime()
+      bValue = new Date(bValue).getTime()
+    } else {
+      aValue = String(aValue).toLowerCase()
+      bValue = String(bValue).toLowerCase()
+    }
+
+    if (sortOrder.value === 'asc') {
+      return aValue > bValue ? 1 : -1
+    } else {
+      return aValue < bValue ? 1 : -1
+    }
+  })
+
+  return result
+})
+
+// 总文件数
+const totalUploadedFiles = computed(() => filteredUploadedFiles.value.length)
+
+// 文件图标相关
+const getFileIconForMime = (mimeType: string): string => {
+  const type = getFileType(mimeType)
+  const iconMap: Record<string, string> = {
+    image: 'image',
+    video: 'videocam',
+    audio: 'audiotrack',
+    document: 'description',
+    archive: 'archive',
+    unknown: 'insert_drive_file'
+  }
+  return iconMap[type] || iconMap.unknown
+}
+
+const getFileIconClass = (mimeType: string): string => {
+  const type = getFileType(mimeType)
+  const classMap: Record<string, string> = {
+    image: 'text-green-500',
+    video: 'text-blue-500',
+    audio: 'text-purple-500',
+    document: 'text-blue-500',
+    archive: 'text-yellow-500',
+    unknown: 'text-gray-400'
+  }
+  return classMap[type] || classMap.unknown
+}
+
+// 日期格式化
+const formatDate = (dateString: string): string => {
+  const date = new Date(dateString)
+  return date.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
+// 事件处理
+const handleDeleteFile = (file: UploadedFileItem) => {
+  emit('delete-file', file)
+}
+
+const handleClearAllFiles = () => {
+  emit('clear-all-files')
+}
+
+const handleRefreshFiles = () => {
+  emit('refresh-files')
+}
+
+const handleSortChange = (event: any) => {
+  sortField.value = event.sortField
+  sortOrder.value = event.sortOrder === 1 ? 'asc' : 'desc'
+  emit('sort-change', sortField.value, sortOrder.value)
+}
+
+// 过滤器操作
+const clearFilters = () => {
+  selectedFileTypes.value = []
+  selectedFileSize.value = ''
+  selectedUploadTime.value = []
+  showFilterMenu.value = false
+}
+
+// 暴露的方法
+const clearAll = () => {
+  selectedFiles.value = []
+  uploadingFiles.value = []
+  uploadedFiles.value = []
+  currentTabValue.value = 'upload-area'
+}
+
+const getUploadStats = () => {
+  return {
+    selected: selectedFiles.value.length,
+    uploading: uploadingFiles.value.length,
+    uploaded: uploadedFiles.value.length,
+    total: selectedFiles.value.length + uploadingFiles.value.length + uploadedFiles.value.length
+  }
+}
+
+defineExpose({
+  clearAll,
+  getUploadStats,
+  startUpload
+})
+</script>
+
+<style scoped>
+.multi-tab-file-upload {
+  width: 100%;
+  min-height: 400px;
+}
+
+.upload-tabs {
+  height: 100%;
+}
+
+.dropzone {
+  border: 2px dashed #d1d5db;
+  border-radius: 12px;
+  padding: 3rem 2rem;
+  text-align: center;
+  background: #f9fafb;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.dropzone:hover,
+.dropzone.drag-over {
+  border-color: #6366f1;
+  background: #eef2ff;
+  transform: scale(1.02);
+}
+
+.dropzone-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.file-item,
+.upload-item,
+.uploaded-item {
+  transition: all 0.2s ease;
+}
+
+.file-item:hover,
+.upload-item:hover,
+.uploaded-item:hover {
+  shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.progress-area {
+  margin-top: 0.5rem;
+}
+
+.empty-state {
+  opacity: 0.8;
+}
+
+.actions {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.uploaded-item:hover .actions {
+  opacity: 1;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .dropzone {
+    background: #1f2937;
+    border-color: #4b5563;
+  }
+
+  .dropzone:hover,
+  .dropzone.drag-over {
+    background: #312e81;
+  }
+
+  .file-item,
+  .upload-item {
+    background: #1f2937;
+    border-color: #4b5563;
+  }
+
+  .uploaded-item {
+    background: #064e3b;
+    border-color: #065f46;
+  }
+}
+
+/* 隐藏默认的文件输入 */
+.hidden {
+  display: none;
+}
+
+/* Volt Tabs 组件样式增强 */
+.upload-tabs {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+/* 标签页图标动画 */
+.upload-tabs .pi-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 标签页面板内容样式 */
+.upload-tabs :deep(.bg-surface-0) {
+  background: #ffffff;
+}
+</style>

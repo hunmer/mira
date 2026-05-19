@@ -1,0 +1,95 @@
+import { MediaViewTabType } from '../TabTypes'
+import type { TabContext, TabViewConfig } from '../TabRegistry'
+import { useTagStore } from '../../stores/tag'
+
+export class TagTabType extends MediaViewTabType {
+  name = 'tag'
+  displayName = '标签'
+  icon = 'label'
+  iconColor = '#10B981'
+  allowMultipleInstances = true // 允许多个标签tab
+  cacheable = true
+
+  protected getLabel(context: TabContext): string {
+    const tagId = context.id || context.tagId || context.name || context.tabData?.id || context.tabData?.name
+
+    if (tagId) {
+      // 从 tagStore 获取标签信息
+      const tagStore = useTagStore()
+
+      // 尝试按 ID 查找（如果 tagId 是数字）
+      let tag = tagStore.tags.find(t => t.id === parseInt(tagId.toString()))
+
+      // 如果按 ID 没找到，尝试按标题查找
+      if (!tag && typeof tagId === 'string') {
+        tag = tagStore.tags.find(t => t.title === tagId)
+      }
+
+      if (tag) {
+        return tag.title || `标签 ${tagId}`
+      }
+    }
+
+    // 回退到 context 中的数据
+    return context.name || context.tagName || context.tabData?.name || context.tabData?.title || `标签 ${tagId || 'unknown'}`
+  }
+
+  protected getTabFilters(context: TabContext): Record<string, any> {
+    // Tag类型需要根据标签ID/名称过滤
+    // 尝试从多个可能的源获取标签信息
+    const tagId = context.id || context.tagId || context.tabData?.id
+    const tagName = context.name || context.tagName || context.tabData?.name || context.tabData?.title
+
+    // 优先使用tagId，如果没有则使用tagName
+    const tagIdentifier = tagId || tagName
+
+    console.log('🏷️ TagTabType.getTabFilters:', {
+      tagId,
+      tagName,
+      tagIdentifier,
+      context
+    })
+
+    // 返回 MediaTabData 格式的筛选器
+    return tagIdentifier ? {
+      tags: {
+        id: 'tags',
+        selectedValues: [tagIdentifier],
+        label: '标签筛选'
+      }
+    } : {}
+  }
+
+  protected getViewType(): string {
+    // 使用 'files' 而不是 'tag'，通过 filter 来区分
+    return 'files'
+  }
+
+  protected generateTabId(context: TabContext): string {
+    const tagId = context.id || context.tagId || context.name || context.tabData?.id || context.tabData?.name || 'unknown'
+    return tagId.startsWith('tag-') ? tagId : `tag-${tagId}`
+  }
+
+  async onInit(_context: TabContext) {
+    console.log('🏷️ TagTabType 初始化:', _context)
+    return { success: true }
+  }
+
+  async onActive(_context: TabContext) {
+    console.log('▶️ TagTabType 激活:', _context)
+    return { success: true }
+  }
+
+  async onInactive(_context: TabContext) {
+    console.log('⏸️ TagTabType 失活:', _context)
+    return { success: true }
+  }
+
+  async onClose(_context: TabContext) {
+    console.log('🔚 TagTabType 关闭:', _context)
+    return { success: true }
+  }
+}
+
+// 导出单例实例
+export const tagTabType = new TagTabType()

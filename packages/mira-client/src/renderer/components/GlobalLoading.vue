@@ -1,0 +1,197 @@
+<template>
+  <transition
+    name="loading-fade"
+    enter-active-class="transition-opacity duration-300 ease-out"
+    leave-active-class="transition-opacity duration-200 ease-in"
+    enter-from-class="opacity-0"
+    enter-to-class="opacity-100"
+    leave-from-class="opacity-100"
+    leave-to-class="opacity-0"
+  >
+    <div 
+      v-if="isVisible" 
+      class="global-loading fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm"
+      @click.stop
+    >
+      <div class="bg-white rounded-lg shadow-2xl p-8 max-w-sm mx-4 text-center">
+        <!-- 加载动画 -->
+        <div class="mb-6">
+          <div class="relative mx-auto w-16 h-16">
+            <!-- 外圈旋转动画 -->
+            <div class="absolute inset-0 rounded-full border-4 border-gray-200"></div>
+            <div class="absolute inset-0 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
+            
+            <!-- 内部脉冲动画 -->
+            <div class="absolute inset-2 rounded-full bg-blue-100 animate-pulse opacity-75"></div>
+            
+            <!-- 中心点 -->
+            <div class="absolute inset-6 rounded-full bg-blue-500"></div>
+          </div>
+        </div>
+        
+        <!-- 加载信息 -->
+        <div class="space-y-3">
+          <h3 class="text-lg font-semibold text-gray-900">
+            {{ title }}
+          </h3>
+          <p v-if="message" class="text-sm text-gray-600 leading-relaxed">
+            {{ message }}
+          </p>
+          
+          <!-- 进度条（可选） -->
+          <div v-if="showProgress && progress !== undefined" class="mt-4">
+            <div class="flex justify-between text-xs text-gray-500 mb-1">
+              <span>进度</span>
+              <span>{{ Math.round(progress) }}%</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                class="bg-blue-500 h-2 rounded-full transition-all duration-300 ease-out"
+                :style="{ width: `${Math.min(100, Math.max(0, progress))}%` }"
+              ></div>
+            </div>
+          </div>
+          
+          <!-- 额外操作按钮 -->
+          <div v-if="showCancel" class="mt-6">
+            <button
+              @click="handleCancel"
+              class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors"
+            >
+              取消
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </transition>
+</template>
+
+<script setup lang="ts">
+// Props
+interface Props {
+  isVisible?: boolean
+  title?: string
+  message?: string
+  progress?: number
+  showProgress?: boolean
+  showCancel?: boolean
+}
+
+withDefaults(defineProps<Props>(), {
+  isVisible: false,
+  title: '加载中...',
+  message: '',
+  progress: undefined,
+  showProgress: false,
+  showCancel: false
+})
+
+// Emits
+const emit = defineEmits<{
+  cancel: []
+}>()
+
+// Methods
+const handleCancel = () => {
+  emit('cancel')
+}
+</script>
+
+<style scoped>
+/* 额外的动画效果 */
+.global-loading {
+  /* 确保在最顶层 */
+  z-index: 9999;
+}
+
+/* 加载动画的微调 */
+@keyframes pulse-scale {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.75;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.9;
+  }
+}
+
+.animate-pulse {
+  animation: pulse-scale 2s ease-in-out infinite;
+}
+
+/* 暗色主题支持 */
+.dark .global-loading {
+  background-color: rgba(0, 0, 0, 0.6);
+}
+
+.dark .global-loading .bg-white {
+  background-color: rgb(31, 41, 55);
+  color: white;
+}
+
+.dark .global-loading .text-gray-900 {
+  color: rgb(243, 244, 246);
+}
+
+.dark .global-loading .text-gray-600 {
+  color: rgb(209, 213, 219);
+}
+
+.dark .global-loading .text-gray-500 {
+  color: rgb(156, 163, 175);
+}
+
+.dark .global-loading .bg-gray-200 {
+  background-color: rgb(75, 85, 99);
+}
+
+.dark .global-loading .hover\:bg-gray-100:hover {
+  background-color: rgb(55, 65, 81);
+}
+
+.dark .global-loading .text-gray-600:hover {
+  color: rgb(229, 231, 235);
+}
+
+/* 高对比度模式 */
+@media (prefers-contrast: high) {
+  .global-loading {
+    backdrop-filter: none;
+    background-color: rgba(0, 0, 0, 0.8);
+  }
+  
+  .global-loading .bg-white {
+    border: 2px solid rgb(31, 41, 55);
+  }
+}
+
+/* 减少动画模式 */
+@media (prefers-reduced-motion: reduce) {
+  .animate-spin,
+  .animate-pulse {
+    animation: none;
+  }
+  
+  .transition-opacity {
+    transition: none;
+  }
+}
+
+/* 响应式调整 */
+@media (max-width: 640px) {
+  .global-loading .max-w-sm {
+    max-width: 20rem;
+  }
+  
+  .global-loading .p-8 {
+    padding: 1.5rem;
+  }
+  
+  .global-loading .text-lg {
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+}
+</style>

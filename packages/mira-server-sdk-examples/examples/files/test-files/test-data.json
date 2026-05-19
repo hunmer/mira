@@ -1,0 +1,28 @@
+{
+  "name": "Test JSON File",
+  "version": "1.0.0",
+  "description": "This is a test JSON file for Mira SDK upload testing",
+  "timestamp": "2025-08-26T13:10:06.258Z",
+  "metadata": {
+    "fileType": "json",
+    "purpose": "testing",
+    "size": "small"
+  },
+  "data": [
+    {
+      "id": 1,
+      "name": "Item 1",
+      "value": 100
+    },
+    {
+      "id": 2,
+      "name": "Item 2",
+      "value": 200
+    },
+    {
+      "id": 3,
+      "name": "Item 3",
+      "value": 300
+    }
+  ]
+}

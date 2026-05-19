@@ -1,0 +1,202 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "切换在线版",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "sourceMaps": true,
+      "smartStep": true,
+      "args": [
+        "${workspaceFolder}/tool.js",
+        "online",
+      ]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "切换离线版",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "sourceMaps": true,
+      "smartStep": true,
+      "args": [
+        "${workspaceFolder}/tool.js",
+        "offline",
+      ]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "打包全部",
+      "console": "integratedTerminal",
+      "sourceMaps": true,
+      "smartStep": true,
+      "cwd": "${workspaceFolder}",
+      "args": [
+        "${workspaceFolder}/tool.js",
+        "build",
+      ]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "上传全部",
+      "console": "integratedTerminal",
+      "sourceMaps": true,
+      "smartStep": true,
+      "cwd": "${workspaceFolder}",
+      "args": [
+        "${workspaceFolder}/tool.js",
+        "publish",
+      ]
+    },
+    {
+      "name": "Launch Mira Server with Debugger",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/packages/mira-app-server/src/index.ts",
+      "cwd": "${workspaceFolder}/packages/mira-app-server",
+      "runtimeArgs": [
+        "--inspect=9230",
+        "-r",
+        "ts-node/register"
+      ],
+      "env": {
+        "NODE_ENV": "development",
+        "TS_NODE_PROJECT": "${workspaceFolder}/packages/mira-app-server/tsconfig.json",
+        "NODE_OPTIONS": "--enable-source-maps"
+      },
+      "console": "integratedTerminal",
+      "sourceMaps": true,
+      "smartStep": true,
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**"
+      ],
+      "skipFiles": [
+        "<node_internals>/**",
+        "**/node_modules/**"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/packages/**/dist/**/*.js"
+      ],
+      "preLaunchTask": "build-mira-app-server"
+    },
+    {
+      "type": "chrome",
+      "request": "launch",
+      "name": "Debug Mira Dashboard (Chrome)",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}/packages/mira-dashboard/src",
+      "sourceMaps": true,
+      "userDataDir": "${workspaceFolder}/.vscode/chrome-debug-user-data",
+      "preLaunchTask": "start-mira-dashboard-dev"
+    },
+    {
+      "type": "msedge",
+      "request": "launch",
+      "name": "Debug Mira Dashboard (Edge)",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}/packages/mira-dashboard/src",
+      "sourceMaps": true,
+      "userDataDir": "${workspaceFolder}/.vscode/edge-debug-user-data",
+      "preLaunchTask": "start-mira-dashboard-dev"
+    },
+    {
+      "name": "Debug Full Stack",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/packages/mira-app-server",
+      "program": "${workspaceFolder}/packages/mira-app-server/dist/index.js",
+      "console": "integratedTerminal",
+      "sourceMaps": true,
+      "smartStep": true,
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**"
+      ],
+      "skipFiles": [
+        "<node_internals>/**",
+        "**/node_modules/**"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/packages/**/dist/**/*.js"
+      ],
+      "preLaunchTask": "build-mira-app-server",
+      "postDebugTask": "start-mira-dashboard-dev"
+    },
+    {
+      "name": "Debug Plugins Test(macos)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/packages/mira-app-server/src/cli.ts",
+      "cwd": "${workspaceFolder}/packages/mira-app-server",
+      "args": [
+        "start",
+        "-d",
+        "/Users/Zhuanz/mira_typescript/plugins"
+      ],
+      "runtimeArgs": [
+        "-r",
+        "ts-node/register"
+      ],
+      "env": {
+        "NODE_ENV": "development",
+        "TS_NODE_PROJECT": "${workspaceFolder}/packages/mira-app-server/tsconfig.json",
+        "NODE_OPTIONS": "--enable-source-maps"
+      },
+      "console": "integratedTerminal",
+      "sourceMaps": true,
+      "smartStep": true,
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**"
+      ],
+      "skipFiles": [
+        "<node_internals>/**",
+        "**/node_modules/**"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/packages/**/dist/**/*.js"
+      ]
+    },
+    {
+      "name": "Debug Plugins Test(windows)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/packages/mira-app-server/src/cli.ts",
+      "cwd": "${workspaceFolder}/packages/mira-app-server",
+      "args": [
+        "start",
+        "-d",
+        "D:/mira_typescript/plugins"
+      ],
+      "runtimeArgs": [
+        "-r",
+        "ts-node/register"
+      ],
+      "env": {
+        "NODE_ENV": "development",
+        "TS_NODE_PROJECT": "${workspaceFolder}/packages/mira-app-server/tsconfig.json",
+        "NODE_OPTIONS": "--enable-source-maps"
+      },
+      "console": "integratedTerminal",
+      "sourceMaps": true,
+      "smartStep": true,
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**"
+      ],
+      "skipFiles": [
+        "<node_internals>/**",
+        "**/node_modules/**"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/packages/**/dist/**/*.js"
+      ]
+    },
+  ]
+}

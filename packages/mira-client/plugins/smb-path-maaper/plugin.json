@@ -1,0 +1,39 @@
+{
+  "pluginName": "SMB路径映射器",
+  "pluginId": "a9386ff4-7310-44a6-b54b-30710f3f6247",
+  "priority": 1,
+  "version": "2.0.0",
+  "index": "index.js",
+  "tags": ["SMB", "NAS", "路径映射", "拖拽", "文件管理"],
+  "description": "为Mira素材库提供SMB路径映射功能，支持HTTP到SMB路径转换和文件拖拽操作",
+  "author": "Mira Development Team",
+  "homepage": "https://github.com/mira-ai/smb-path-mapper",
+  "enable": true,
+  "config": {
+    "enableSmbMapping": true,
+    "enableDragDrop": true,
+    "showNotifications": true,
+    "logToConsole": false,
+    "smbMappings": {},
+    "defaultSmbProtocol": "smb://",
+    "autoSyncInterval": 5000,
+    "enablePathValidation": true
+  },
+  "hotkey": {},
+  "events": [
+    "mira_http_request",
+    "mira_http_api_files_getFiles",
+    "mediaSelected",
+    "mediaOpened",
+    "libraryUpdated"
+  ],
+  "dependencies": [],
+  "permissions": [
+    "ui",
+    "config",
+    "fileSystem",
+    "mediaAccess"
+  ],
+  "minAppVersion": "1.0.0",
+  "platform": ["win32", "darwin", "linux"]
+}

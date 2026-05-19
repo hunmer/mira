@@ -1,0 +1,66 @@
+{
+  "packageMappings": {
+    "mira-app-core": {
+      "defaultOnline": "1.0.24",
+      "defaultOffline": "file:D:/mira_typescript/packages/mira-app-core/",
+      "buildPath": "packages/mira-app-core",
+      "buildCommand": "npm install && npm run build && npm publish"
+    },
+    "mira-storage-sqlite": {
+      "defaultOnline": "1.0.20",
+      "defaultOffline": "file:D:/mira_typescript/packages/mira-storage-sqlite/",
+      "buildPath": "packages/mira-storage-sqlite",
+      "buildCommand": "npm install && npm run build && npm publish"
+    },
+    "mira-app-server": {
+      "defaultOnline": "1.0.25",
+      "defaultOffline": "file:D:/mira_typescript/packages/mira-app-server/",
+      "buildPath": "packages/mira-app-server",
+      "buildCommand": "npm install && npm run build && npm publish"
+    },
+    "mira-server-sdk": {
+      "defaultOnline": "1.0.11",
+      "defaultOffline": "file:D:/mira_typescript/packages/mira-server-sdk/",
+      "buildPath": "packages/mira-server-sdk",
+      "buildCommand": "npm install && npm run build && npm publish"
+    },
+    "mira_thumb": {
+      "defaultOnline": "1.0.19",
+      "defaultOffline": "file:D:/mira_typescript/plugins/plugins/mira_thumb/",
+      "buildPath": "plugins/plugins/mira_thumb",
+      "enable": true,
+      "buildCommand": "npm install && npm run build && npm publish"
+    },
+    "mira_user": {
+      "defaultOnline": "1.0.9",
+      "defaultOffline": "file:D:/mira_typescript/plugins/plugins/mira_user/",
+      "buildPath": "plugins/plugins/mira_user",
+      "enable": false,
+      "buildCommand": "npm install && npm run build && npm publish"
+    },
+    "upload_statistics": {
+      "defaultOnline": "1.0.9",
+      "defaultOffline": "file:D:/mira_typescript/plugins/plugins/upload_statistics/",
+      "buildPath": "plugins/plugins/upload_statistics",
+      "enable": false,
+      "buildCommand": "npm install && npm run build && npm publish"
+    },
+    "n8n-nodes-mira-ws-trigger": {
+      "defaultOnline": "0.1.3",
+      "defaultOffline": "file:D:/mira_typescript/packages/n8n-nodes-mira-ws-trigger/",
+      "buildPath": "packages/n8n-nodes-mira-ws-trigger",
+      "enable": false,
+      "buildCommand": "npm install && npm run build && npm publish"
+    }
+  },
+  "targetFiles": [
+    "plugins/plugins/mira_thumb/package.json",
+    "plugins/plugins/mira_user/package.json",
+    "plugins/plugins/upload_statistics/package.json",
+    "packages/mira-app-core/package.json",
+    "packages/mira-app-server/package.json",
+    "packages/mira-server-sdk/package.json",
+    "packages/mira-storage-sqlite/package.json"
+  ],
+  "description": "Configuration for dependency switching script (Windows). Each package can have multiple online versions and offline paths to choose from."
+}
