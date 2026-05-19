@@ -217,6 +217,33 @@
       @close="handleMoveDialogClose"
       @move="handleItemMove"
     />
+
+    <!-- 删除确认对话框 -->
+    <AlertDialog v-model:open="showDeleteDialog">
+      <AlertDialogOverlay />
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>确认删除</AlertDialogTitle>
+          <AlertDialogDescription>
+            确定要删除{{ deletingType === 'folder' ? '文件夹' : '标签' }} "{{
+              deletingType === 'folder'
+                ? (deletingItem as any)?.label
+                : (deletingItem as any)?.name || (deletingItem as any)?.label
+            }}" 吗？此操作不可撤销。
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <div v-if="deletingType === 'folder'" class="flex items-center space-x-2 px-1">
+          <Checkbox id="deleteWithFiles" v-model:checked="deleteWithFiles" />
+          <label for="deleteWithFiles" class="text-sm text-muted-foreground cursor-pointer select-none">
+            同时删除文件夹内的文件（不勾选则文件移至未分类）
+          </label>
+        </div>
+        <AlertDialogFooter>
+          <AlertDialogCancel @click="showDeleteDialog = false">取消</AlertDialogCancel>
+          <AlertDialogAction @click="confirmDelete">删除</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   </div>
 </template>
 
@@ -232,6 +259,18 @@ import {
 } from '@/components/ui/context-menu'
 import FolderEditDialog from './FolderEditDialog.vue'
 import FolderMoveDialog from './FolderMoveDialog.vue'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogOverlay,
+} from '@/components/ui/alert-dialog'
+import { Checkbox } from '@/components/ui/checkbox'
 import type { TreeNodeData } from '@/components/ui/volt/Tree.vue'
 import type { FolderItem } from '../../types/components'
 import type { MenuItem } from '@/components/ui/volt/types'
@@ -351,6 +390,12 @@ const showEditDialog = ref(false)
 const editingItem = ref<any | null>(null)
 const editingParentItem = ref<any | null>(null)
 const editingItemType = ref<ContextType>('folder')
+
+// 删除确认对话框
+const showDeleteDialog = ref(false)
+const deletingItem = ref<any | null>(null)
+const deletingType = ref<ContextType>('folder')
+const deleteWithFiles = ref(false)
 
 // 动态对话框标题
 const dialogTitle = computed(() => {
@@ -1174,33 +1219,36 @@ async function handleClone(type: ContextType, currentItem: any) {
   }
 }
 
-// 删除项目
-async function handleDelete(type: ContextType, currentItem: any) {
+// 删除项目 - 打开确认对话框
+function handleDelete(type: ContextType, currentItem: any) {
+  if (!currentItem || !libraryStore.currentLibrary) return
+  deletingType.value = type
+  deletingItem.value = currentItem
+  deleteWithFiles.value = false
+  showDeleteDialog.value = true
+}
+
+// 确认删除
+async function confirmDelete() {
+  const type = deletingType.value
+  const currentItem = deletingItem.value
   if (!currentItem || !libraryStore.currentLibrary) return
 
-  const itemName = type === 'folder'
-    ? (currentItem as FolderItem).label
-    : currentItem.name || currentItem.title || currentItem.label
-
-  if (!confirm(`确定要删除${type === 'folder' ? '文件夹' : '标签'} "${itemName}" 吗？此操作不可撤销。`)) {
-    return
-  }
+  showDeleteDialog.value = false
 
   try {
     const libraryId = libraryStore.currentLibrary.id
 
     if (type === 'folder') {
-      await miraSDKService.deleteFolder(libraryId, parseInt((currentItem as FolderItem).id))
+      await miraSDKService.deleteFolder(libraryId, parseInt((currentItem as FolderItem).id), deleteWithFiles.value)
       emit('folder-delete', currentItem)
       await new Promise(resolve => setTimeout(resolve, 100))
       emit('refresh-folders')
-      console.log('Folder deleted successfully')
     } else {
       await miraSDKService.deleteTag(libraryId, currentItem.id)
       emit('tag-delete', currentItem)
       await new Promise(resolve => setTimeout(resolve, 100))
       emit('refresh-tags')
-      console.log('Tag deleted successfully')
     }
   } catch (error) {
     console.error(`Failed to delete ${type}:`, error)

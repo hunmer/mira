@@ -26,7 +26,7 @@ export interface ILibraryServerData {
   // 文件夹相关方法
   createFolder(folderData: Record<string, any>): Promise<number>;
   updateFolder(id: number, folderData: Record<string, any>): Promise<boolean>;
-  deleteFolder(id: number): Promise<boolean>;
+  deleteFolder(id: number, deleteFiles?: boolean): Promise<boolean>;
   getFolder(id: number): Promise<Record<string, any> | null>;
   getFolders(options?: {
     parentId?: number;

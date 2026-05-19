@@ -50,8 +50,8 @@ export class FolderHandler extends MessageHandler {
                     this.server.broadcastLibraryEvent(libraryId, 'folder::updated', { result, libraryId });
                     break;
                 case 'delete':
-                    var { id } = data;
-                    if (await this.dbService.deleteFolder(id)) {
+                    var { id, deleteFiles } = data;
+                    if (await this.dbService.deleteFolder(id, deleteFiles)) {
                         result = { id };
                         this.server.broadcastPluginEvent('folder::deleted', { id, libraryId });
                         this.server.sendToWebsocket(this.ws, { eventName: 'folder::deleted', data: { id, libraryId } });

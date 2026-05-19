@@ -385,17 +385,21 @@ export class LibraryServerDataSQLite implements ILibraryServerData {
     return result.changes > 0;
   }
 
-  async deleteFolder(id: number): Promise<boolean> {
+  async deleteFolder(id: number, deleteFiles?: boolean): Promise<boolean> {
     await this.beginTransaction();
     try {
       // 递归删除子文件夹
       const children = await this.getFolders({ parentId: id });
       for (const child of children) {
-        await this.deleteFolder(child.id);
+        await this.deleteFolder(child.id, deleteFiles);
       }
 
-      // 更新文件的folder_id为null
-      await this.runSql('UPDATE files SET folder_id = NULL WHERE folder_id = ?', [id]);
+      // 处理文件夹内的文件：删除或移至未分类
+      if (deleteFiles) {
+        await this.runSql('DELETE FROM files WHERE folder_id = ?', [id]);
+      } else {
+        await this.runSql('UPDATE files SET folder_id = NULL WHERE folder_id = ?', [id]);
+      }
 
       // 删除文件夹
       const result = await this.runSql('DELETE FROM folders WHERE id = ?', [id]);

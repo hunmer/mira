@@ -801,13 +801,14 @@ export class MiraSDKService {
 
   /**
    * 删除文件夹
+   * @param deleteFiles 是否同时删除文件夹内的文件（默认 false，文件移至未分类）
    */
-  async deleteFolder(libraryId: string, folderId: number): Promise<any> {
+  async deleteFolder(libraryId: string, folderId: number, deleteFiles?: boolean): Promise<any> {
     if (!this.client) throw new Error('Not connected to Mira server')
 
     try {
-      console.log('MiraSDKService: Deleting folder', { libraryId, folderId })
-      const result = await this.client.folders().deleteFolder(libraryId, folderId)
+      console.log('MiraSDKService: Deleting folder', { libraryId, folderId, deleteFiles })
+      const result = await this.client.folders().deleteFolder(libraryId, folderId, deleteFiles)
       console.log('MiraSDKService: Folder deleted successfully', result)
       return result
     } catch (error) {
