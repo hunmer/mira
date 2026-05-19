@@ -51,7 +51,6 @@
                 @video-pause="onVideoPreviewPause"
                 @video-error="onVideoPreviewError"
                 @update-progress="updateVideoProgress"
-                @mousemove="(event) => handleVideoContainerMouseMove(videoItem, event)"
               />
             </template>
           </MediaItem>
@@ -194,52 +193,26 @@ const executeMenuCommand = async (item: MenuItem) => {
   }
 }
 
-const handleMouseMove = (item: FileInfo, event: MouseEvent) => {
-  // 基本的鼠标移动事件处理，可以在这里添加其他逻辑
-  // 视频时间跳转现在在 handleVideoContainerMouseMove 中处理
-}
+const seekVideo = throttle(100, (item: FileInfo, event: MouseEvent) => {
+  if (!currentVideoItem.value || currentVideoItem.value.id !== item.id) return
 
-// 节流的视频时间更新函数
-const updateVideoTime = throttle(100, (targetTime: number, videoComponent: any) => {
-  if (videoComponent && typeof videoComponent.setTimeThrottled === 'function') {
-    videoComponent.setTimeThrottled(targetTime)
-  } else {
-    console.warn('⏰ setTimeThrottled method not available')
-  }
+  const target = event.target as HTMLElement
+  const container = target.closest(`[data-selectable-id="${item.id}"]`)
+  if (!container) return
+
+  const video = container.querySelector('video')
+  if (!video) return
+
+  const duration = video.duration
+  if (!duration || duration <= 0) return
+
+  const rect = container.getBoundingClientRect()
+  const x = Math.max(0, Math.min(event.clientX - rect.left, rect.width))
+  video.currentTime = (x / rect.width) * duration
 })
 
-const handleVideoContainerMouseMove = (item: FileInfo, event: MouseEvent) => {
-  // 只对当前预览的视频进行时间跳转
-  if (!currentVideoItem.value || currentVideoItem.value.id !== item.id) {
-    return
-  }
-
-  try {
-    // 通过事件对象的 currentTarget 找到 VideoPreviewContainer 组件
-    const videoContainerElement = event.currentTarget as HTMLElement
-    const videoElement = videoContainerElement.querySelector('video')
-
-    if (!videoElement) {
-      return
-    }
-
-    const duration = videoElement.duration
-    if (!duration || duration <= 0) {
-      return
-    }
-
-    const rect = videoContainerElement.getBoundingClientRect()
-    const containerWidth = rect.width
-    const x = Math.max(0, Math.min(event.clientX - rect.left, containerWidth))
-
-    const progress = x / containerWidth
-    const targetTime = progress * duration
-
-    // 直接设置视频时间
-    videoElement.currentTime = targetTime
-  } catch (error) {
-    console.error('Error in handleVideoContainerMouseMove:', error)
-  }
+const handleMouseMove = (item: FileInfo, event: MouseEvent) => {
+  seekVideo(item, event)
 }
 
 const toggleVideoMute = async () => {
