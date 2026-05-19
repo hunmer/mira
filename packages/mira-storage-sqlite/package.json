@@ -27,10 +27,10 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
-    "mira-app-core": "^1.0.24",
+    "mira-app-core": "workspace:*",
     "sqlite3": "^5.1.7"
   },
   "peerDependencies": {
-    "mira-app-core": "^1.0.24"
+    "mira-app-core": "workspace:*"
   }
 }

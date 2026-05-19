@@ -58,7 +58,7 @@
     "filepond-plugin-file-validate-type": "^1.2.9",
     "lodash-es": "^4.17.21",
     "lucide-vue-next": "^1.0.0",
-    "mira-server-sdk": "^1.0.19",
+    "mira-server-sdk": "workspace:*",
     "pinia": "^3.0.3",
     "pinyin": "^4.0.0",
     "plyr": "^3.8.3",
@@ -103,10 +103,5 @@
     "vite-plugin-inspect": "^11.3.3",
     "vite-plugin-vue-devtools": "^8.0.1",
     "vue-tsc": "^2.2.4"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "electron"
-    ]
   }
 }

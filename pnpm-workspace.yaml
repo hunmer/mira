@@ -1,0 +1,9 @@
+packages:
+  - 'packages/mira-app-core'
+  - 'packages/mira-app-server'
+  - 'packages/mira-client'
+  - 'packages/mira-scripts-core'
+  - 'packages/mira-server-sdk'
+  - 'packages/mira-server-sdk-examples'
+  - 'packages/mira-storage-sqlite'
+  - 'packages/n8n-nodes-mira-ws-trigger'
