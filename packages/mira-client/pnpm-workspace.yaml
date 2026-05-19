@@ -1,7 +1,0 @@
-allowBuilds:
-  core-js: set this to true or false
-  electron: set this to true or false
-  electron-winstaller: set this to true or false
-  esbuild: set this to true or false
-  sharp: set this to true or false
-  vue-demi: set this to true or false
