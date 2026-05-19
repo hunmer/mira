@@ -59,7 +59,7 @@ export interface ILibraryServerData {
   ): Promise<Record<string, any>>;
   getFileFolder(fileId: number): Promise<Record<string, any>[]>;
   getFileTags(fileId: number): Promise<Record<string, any>[]>;
-  setFileFolder(fileId: number, folderId: string): Promise<boolean>;
+  setFileFolder(fileId: number, folderId: number | null): Promise<boolean>;
   setFileTags(fileId: number, tagIds: string[]): Promise<boolean>;
   getAllTags(): Promise<Record<string, any>[]>;
   getAllFolders(): Promise<Record<string, any>[]>;

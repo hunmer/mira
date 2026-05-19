@@ -123,7 +123,7 @@ export class BaseRouter {
                     break;
                     
                 case 'delete':
-                    result = await library.libraryService[serviceMethod](req.body.id);
+                    result = await library.libraryService[serviceMethod](req.body.id, req.body.deleteFiles);
                     break;
                     
                 case 'query':

@@ -394,14 +394,19 @@ export class LibraryServerDataSQLite implements ILibraryServerData {
         await this.deleteFolder(child.id, deleteFiles);
       }
 
-      // 处理文件夹内的文件：删除或移至未分类
+      // 处理文件夹内的文件
+      const files = await this.getSql('SELECT id FROM files WHERE folder_id = ?', [id]);
       if (deleteFiles) {
-        await this.runSql('DELETE FROM files WHERE folder_id = ?', [id]);
+        for (const file of files) {
+          await this.deleteFile(this.rowToMap(file).id);
+        }
       } else {
-        await this.runSql('UPDATE files SET folder_id = NULL WHERE folder_id = ?', [id]);
+        for (const file of files) {
+          await this._moveFileToFolder(this.rowToMap(file).id, null);
+        }
       }
 
-      // 删除文件夹
+      // 删除文件夹记录
       const result = await this.runSql('DELETE FROM folders WHERE id = ?', [id]);
       await this.commitTransaction();
       return result.changes > 0;
@@ -611,17 +616,37 @@ export class LibraryServerDataSQLite implements ILibraryServerData {
     }
   }
 
-  async setFileFolder(fileId: number, folderId: string): Promise<boolean> {
-    if (!folderId) return false;
+  private async _moveFileToFolder(fileId: number, folderId: number | null): Promise<boolean> {
+    const rows = await this.getSql('SELECT * FROM files WHERE id = ?', [fileId]);
+    if (rows.length === 0) return false;
+    const file = this.rowToMap(rows[0]);
+    const libraryPath = await this.getLibraryPath();
 
+    const srcFolderName = await this.getFolderName(file.folder_id);
+    const destFolderName = await this.getFolderName(folderId ?? undefined);
+
+    if (srcFolderName !== destFolderName) {
+      const srcPath = path.join(libraryPath, srcFolderName, file.name);
+      const destDir = path.join(libraryPath, destFolderName);
+      const destPath = path.join(destDir, file.name);
+      if (fs.existsSync(srcPath)) {
+        if (!fs.existsSync(destDir)) {
+          fs.mkdirSync(destDir, { recursive: true });
+        }
+        fs.renameSync(srcPath, destPath);
+      }
+    }
+
+    const result = await this.runSql('UPDATE files SET folder_id = ? WHERE id = ?', [folderId, fileId]);
+    return result.changes > 0;
+  }
+
+  async setFileFolder(fileId: number, folderId: number | null): Promise<boolean> {
     await this.beginTransaction();
     try {
-      const result = await this.runSql('UPDATE files SET folder_id = ? WHERE id = ?', [
-        folderId,
-        fileId,
-      ]);
+      const ok = await this._moveFileToFolder(fileId, folderId);
       await this.commitTransaction();
-      return result.changes > 0;
+      return ok;
     } catch (err) {
       await this.rollbackTransaction();
       throw err;
