@@ -9,7 +9,7 @@ import {
   useHomeFolderHandler
 } from '@renderer/modules/home'
 import { clearTabCache } from '@renderer/composables/useMediaTabData'
-import { MiraSDKService } from '@renderer/services/MiraSDKService'
+import { miraSDKService } from '@renderer/services/MiraSDKService'
 
 export function useHomeEventHandlers(
   createTabFromFolder: any,
@@ -143,8 +143,7 @@ export function useHomeEventHandlers(
     }
 
     try {
-      const sdkService = MiraSDKService.getInstance()
-      const result = await sdkService.emptyTrash(libraryId)
+      const result = await miraSDKService.emptyTrash(libraryId)
       clearTabCache()
       setAllTabsNeedUpdate(true)
       console.log(`已清空回收站，删除 ${result.deletedCount} 个文件`)
