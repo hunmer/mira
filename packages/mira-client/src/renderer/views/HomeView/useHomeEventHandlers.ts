@@ -144,14 +144,10 @@ export function useHomeEventHandlers(
 
     try {
       const sdkService = MiraSDKService.getInstance()
-      const result = await sdkService.listFiles(libraryId, { recycled: 1 })
-      const files = result?.data || []
-      if (files.length === 0) return
-
-      await Promise.all(files.map((f: any) => sdkService.deleteFile(libraryId, String(f.id))))
+      const result = await sdkService.emptyTrash(libraryId)
       clearTabCache()
       setAllTabsNeedUpdate(true)
-      console.log(`已清空回收站，删除 ${files.length} 个文件`)
+      console.log(`已清空回收站，删除 ${result.deletedCount} 个文件`)
     } catch (error) {
       console.error('清空回收站失败:', error)
     }

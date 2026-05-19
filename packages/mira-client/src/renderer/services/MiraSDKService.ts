@@ -627,6 +627,20 @@ export class MiraSDKService {
     }
   }
 
+  async emptyTrash(libraryId: string): Promise<{ success: boolean; deletedCount: number; errors?: string[] }> {
+    if (!this.client) throw new Error('Not connected to Mira server')
+
+    try {
+      console.log('MiraSDKService: Emptying trash', { libraryId })
+      const result = await this.client.files().emptyTrash(libraryId)
+      console.log('MiraSDKService: Trash emptied', result)
+      return result
+    } catch (error) {
+      console.error('MiraSDKService: Empty trash failed', error)
+      throw error
+    }
+  }
+
 
   /**
    * 库管理

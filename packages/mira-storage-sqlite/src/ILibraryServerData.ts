@@ -9,6 +9,7 @@ export interface ILibraryServerData {
   updateFile(id: number, fileData: Record<string, any>): Promise<boolean>;
   deleteFile(id: number, options?: { moveToRecycleBin: boolean }): Promise<boolean>;
   recoverFile(id: number): Promise<boolean>;
+  emptyTrash(): Promise<{ deletedCount: number; errors: string[] }>;
   getFile(id: number): Promise<Record<string, any> | null>;
   getFiles(options?: {
     select?: string;

@@ -488,6 +488,11 @@ export const useMediaStore = defineStore('media', () => {
         break
     }
 
+    // 非 trash 类型默认排除回收站文件
+    if (tabInfo.type !== 'trash' && filters.recycled === undefined) {
+      filters.recycled = 0
+    }
+
     // 清理 null/undefined 值，避免发送无意义的参数
     Object.keys(filters).forEach(key => {
       if (

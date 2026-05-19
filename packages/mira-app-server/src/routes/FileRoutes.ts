@@ -381,6 +381,46 @@ export class FileRoutes {
             }
         });
 
+        // 清空回收站
+        this.router.delete('/:libraryId/trash', async (req: Request, res: Response) => {
+            try {
+                const { libraryId } = req.params;
+                const obj = this.backend.libraries!.getLibrary(libraryId);
+
+                if (!obj) {
+                    return res.status(404).json({
+                        success: false,
+                        error: 'Library not found',
+                        libraryId
+                    });
+                }
+
+                const result = await obj.libraryService.emptyTrash();
+
+                // 广播 WebSocket 事件
+                if (this.backend.webSocketServer) {
+                    this.backend.webSocketServer.broadcastLibraryEvent(libraryId, 'files::trash-emptied', {
+                        libraryId,
+                        deletedCount: result.deletedCount
+                    });
+                }
+
+                res.json({
+                    success: true,
+                    message: `清空回收站完成，删除 ${result.deletedCount} 个文件`,
+                    deletedCount: result.deletedCount,
+                    errors: result.errors.length > 0 ? result.errors : undefined
+                });
+            } catch (error) {
+                console.error('Error emptying trash:', error);
+                res.status(500).json({
+                    success: false,
+                    error: 'Internal server error while emptying trash',
+                    details: error instanceof Error ? error.message : String(error)
+                });
+            }
+        });
+
         // 删除文件
         this.router.delete('/:libraryId/:id', async (req: Request, res: Response) => {
             try {

@@ -150,6 +150,35 @@ export class LibraryServerDataSQLite implements ILibraryServerData {
     return result.changes > 0;
   }
 
+  async emptyTrash(): Promise<{ deletedCount: number; errors: string[] }> {
+    const rows = await this.getSql('SELECT id, name, folder_id, hash FROM files WHERE recycled = 1');
+    if (rows.length === 0) return { deletedCount: 0, errors: [] };
+
+    const errors: string[] = [];
+    let deletedCount = 0;
+
+    for (const row of rows) {
+      const item = this.rowToMap(row);
+      try {
+        const filePath = await this.getItemFilePath(item);
+        if (filePath) {
+          try { fs.unlinkSync(filePath); } catch {}
+        }
+        const thumbPath = await this.getItemThumbPath(item);
+        if (thumbPath) {
+          try { fs.unlinkSync(thumbPath); } catch {}
+        }
+      } catch (e) {
+        errors.push(`file ${item.id}: ${e instanceof Error ? e.message : String(e)}`);
+      }
+
+      const result = await this.runSql('DELETE FROM files WHERE id = ?', [item.id]);
+      if (result.changes > 0) deletedCount++;
+    }
+
+    return { deletedCount, errors };
+  }
+
   async getFile(id: number): Promise<Record<string, any> | null> {
     const rows = await this.getSql('SELECT * FROM files WHERE id = ? LIMIT 1', [id]);
     return rows.length > 0 ? this.rowToMap(rows[0]) : null;
