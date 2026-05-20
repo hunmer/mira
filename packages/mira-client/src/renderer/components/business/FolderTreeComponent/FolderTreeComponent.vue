@@ -54,6 +54,7 @@
 
     <!-- 用户文件夹 -->
     <TreeSection
+      v-if="showFolderTree"
       :title="folderTitle"
       :show-search="showFolderSearch"
       :search-query="folderSearchQuery"
@@ -226,6 +227,7 @@ interface Props {
   selectedTags?: string[]
   showBaseCategories?: boolean
   showTags?: boolean
+  showFolderTree?: boolean
   baseCategoryTitle?: string
   folderTitle?: string
   tagTitle?: string
@@ -261,6 +263,7 @@ interface Emits {
 const props = withDefaults(defineProps<Props>(), {
   showBaseCategories: true,
   showTags: false,
+  showFolderTree: true,
   baseCategoryTitle: '基础分类',
   folderTitle: '文件夹',
   tagTitle: '标签',

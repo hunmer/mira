@@ -121,7 +121,7 @@
     <div>
       <div class="flex items-center justify-between mb-2">
         <h3 class="font-semibold text-gray-700 text-sm">标签</h3>
-        <Popover>
+        <Popover v-model:open="tagPopoverOpen">
           <PopoverTrigger as-child>
             <button class="text-blue-500 text-xs hover:text-blue-700 flex items-center gap-0.5">
               <span class="material-icons text-sm">{{ hasTags ? 'edit' : 'add' }}</span>
@@ -129,10 +129,14 @@
             </button>
           </PopoverTrigger>
           <PopoverContent align="end" side="bottom" class="w-80 p-2">
-            <FolderTagSelector
-              :file-infos="displayItems"
-              default-tab="tags"
-              @save="handleSelectorSave"
+            <FolderTreeComponent
+              :folders="[]"
+              :tags="tagItems"
+              :show-base-categories="false"
+              :show-folder-tree="false"
+              :show-tags="true"
+              tree-type="tags"
+              @tag-select="handleTagSelect"
             />
           </PopoverContent>
         </Popover>
@@ -166,7 +170,7 @@
     <div>
       <div class="flex items-center justify-between mb-2">
         <h3 class="font-semibold text-gray-700 text-sm">文件夹</h3>
-        <Popover>
+        <Popover v-model:open="folderPopoverOpen">
           <PopoverTrigger as-child>
             <button class="text-blue-500 text-xs hover:text-blue-700 flex items-center gap-0.5">
               <span class="material-icons text-sm">{{ displayItems[0]?.folderId ? 'edit' : 'add' }}</span>
@@ -174,10 +178,10 @@
             </button>
           </PopoverTrigger>
           <PopoverContent align="end" side="bottom" class="w-80 p-2">
-            <FolderTagSelector
-              :file-infos="displayItems"
-              default-tab="folders"
-              @save="handleSelectorSave"
+            <FolderTreeComponent
+              :folders="folderItems"
+              :show-base-categories="false"
+              @folder-select="handleFolderSelect"
             />
           </PopoverContent>
         </Popover>
@@ -277,9 +281,12 @@ import { toRefs, ref, computed, watch } from 'vue'
 import type { FileInfo } from '../../../shared/types'
 import ColorThief from 'colorthief'
 import FileDetailDialog from './FileDetailDialog.vue'
-import FolderTagSelector from './FolderTagSelector.vue'
+import FolderTreeComponent from './FolderTreeComponent/FolderTreeComponent.vue'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useTagStore } from '@renderer/stores/tag'
+import { useFolderStore } from '@renderer/stores/folder'
+import type { FolderItem } from '@renderer/types/components'
+import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { Empty, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 
 // 全局图片加载错误状态缓存
@@ -304,6 +311,32 @@ const emit = defineEmits<Emits>()
 // Access the item from props for use in functions
 const { item, items, libraryId } = toRefs(props)
 const tagStore = useTagStore()
+const folderStore = useFolderStore()
+
+// Popover 控制状态
+const tagPopoverOpen = ref(false)
+const folderPopoverOpen = ref(false)
+
+// 加载 store 数据
+watch(() => [tagPopoverOpen.value, folderPopoverOpen.value], ([tagOpen, folderOpen]) => {
+  const libId = libraryId.value || 'default'
+  if (tagOpen) tagStore.fetchTags(libId)
+  if (folderOpen) folderStore.fetchFolders(libId)
+})
+
+// Store 数据映射为 FolderItem 格式
+function mapFolderToItem(f: any): FolderItem {
+  return {
+    id: String(f.id),
+    label: f.title,
+    icon: 'folder',
+    count: f.fileCount,
+    children: f.children?.map(mapFolderToItem),
+    originalData: f,
+  }
+}
+const folderItems = computed(() => folderStore.folders.map(mapFolderToItem))
+const tagItems = computed(() => tagStore.tags)
 
 
 
@@ -454,10 +487,37 @@ const hasTags = computed(() => {
   return displayItems.value[0]?.tags && displayItems.value[0].tags.length > 0
 })
 
-const handleSelectorSave = (data: { folderId?: string; tags: string[] }) => {
-  if (item.value) {
-    if (data.folderId) item.value.folderId = data.folderId
-    if (data.tags.length > 0) item.value.tags = data.tags
+const handleFolderSelect = async (folderItem: any) => {
+  try {
+    const client = (miraSDKService as any).client
+    if (!client) return
+    for (const file of displayItems.value) {
+      const libId = file.libraryId || 'default'
+      await client.folders().setFileFolder({ libraryId: libId, fileId: parseInt(file.id), folder: parseInt(folderItem.id) })
+    }
+    if (item.value) item.value.folderId = folderItem.id
+    folderPopoverOpen.value = false
+  } catch (error) {
+    console.error('Failed to set folder:', error)
+  }
+}
+
+const handleTagSelect = async (tagData: any) => {
+  try {
+    const client = (miraSDKService as any).client
+    if (!client) return
+    const tagName = tagData.title || tagData.name
+    for (const file of displayItems.value) {
+      const libId = file.libraryId || 'default'
+      await client.tags().addTagsToFile(libId, parseInt(file.id), [tagName])
+    }
+    if (item.value) {
+      if (!item.value.tags) item.value.tags = []
+      if (!item.value.tags.includes(tagName)) item.value.tags.push(tagName)
+    }
+    tagPopoverOpen.value = false
+  } catch (error) {
+    console.error('Failed to add tag:', error)
   }
 }
 
