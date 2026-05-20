@@ -261,7 +261,7 @@
           </AlertDialogDescription>
         </AlertDialogHeader>
         <div v-if="deletingType === 'folder'" class="flex items-center space-x-2 px-1">
-          <Checkbox id="deleteWithFiles" v-model:checked="deleteWithFiles" />
+          <Checkbox id="deleteWithFiles" :model-value="deleteWithFiles" @update:model-value="deleteWithFiles = $event" />
           <label for="deleteWithFiles" class="text-sm text-muted-foreground cursor-pointer select-none">
             同时删除文件夹内的文件（不勾选则文件移至未分类）
           </label>
