@@ -20,21 +20,19 @@
           :close-on-content-click="false"
         >
           <template #trigger="{ isOpen }">
-            <button 
+           <button
               :class="[
                 'flex items-center space-x-1 px-2 py-1 rounded-md hover:bg-gray-200 transition-colors',
                 getFilterButtonClass(filter, isOpen)
               ]"
             >
-              <span class="material-icons text-sm">{{ filter.icon }}</span>
-              <!-- <span>{{ getFilterDisplayText(filter) }}</span> -->
-              <span 
-                v-if="hasActiveFilters(filter)"
-                class="bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center ml-1"
-              >
-                {{ getActiveFilterCount(filter) }}
-              </span>
-              <span class="material-icons text-xs">keyboard_arrow_down</span>
+             <span class="relative">
+               <span class="material-icons text-sm">{{ filter.icon }}</span>
+               <span v-if="hasActiveFilters(filter)"
+                 class="absolute -top-1.5 -right-1.5 bg-blue-500 text-white text-[10px] rounded-full min-w-4 h-4 flex items-center justify-center leading-none px-0.5">
+                  {{ getActiveFilterCount(filter) }}
+               </span>
+             </span>
             </button>
           </template>
           

@@ -19,21 +19,6 @@
       @dblclick="handleDoubleClick"
       @contextmenu="handleContextMenu"
     >
-      <!-- 展开/折叠按钮 -->
-      <button
-        v-if="hasChildren"
-        :class="[
-          'tree-toggle mr-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700',
-          'transition-transform duration-200',
-          { 'rotate-90': expanded }
-        ]"
-        @click.stop="handleToggle"
-      >
-        <span class="material-icons text-lg">
-          {{ expanded ? 'expand_more' : 'chevron_right' }}
-        </span>
-      </button>
-      
       <!-- 复选框 (checkbox mode) -->
       <Checkbox
         v-if="selectionMode === 'checkbox'"
@@ -43,26 +28,43 @@
         @click.stop
         @update:checked="handleCheckboxChange"
       />
-      
+
       <!-- 图标 -->
       <span v-if="nodeIcon" :class="['mr-2', nodeIcon]"></span>
-      
+
       <!-- 加载指示器 -->
       <span v-if="node.loading && loadingMode === 'icon'" class="mr-2 animate-spin">
         <span class="material-icons text-lg">refresh</span>
       </span>
-      
+
       <!-- 节点内容 -->
-      <div class="flex-1 flex items-center justify-between">
+      <div class="flex-1 flex items-center justify-between min-w-0">
         <slot :node="node">
           <span class="tree-node-label">{{ node.label }}</span>
         </slot>
-        
+
         <!-- 节点计数或其他信息 -->
         <span v-if="node.count !== undefined && node.count > 0" class="ml-2 text-sm text-gray-500">
           {{ node.count }}
         </span>
       </div>
+
+      <!-- 展开/折叠按钮 -->
+      <button
+        v-if="hasChildren"
+        type="button"
+        :class="[
+          'tree-toggle ml-1 p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700',
+          'transition-transform duration-200 shrink-0',
+          { 'rotate-90': expanded }
+        ]"
+        @click.stop="handleToggle"
+        @mousedown.stop
+      >
+        <span class="material-icons text-lg">
+          {{ expanded ? 'expand_more' : 'chevron_right' }}
+        </span>
+      </button>
     </div>
     
     <!-- 子节点 -->
