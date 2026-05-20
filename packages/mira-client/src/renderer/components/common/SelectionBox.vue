@@ -477,17 +477,6 @@ const handleWindowBlur = () => {
 const handleKeyDown = (e: KeyboardEvent) => {
   if (props.disabled) return
 
-  if (e.ctrlKey && e.key === 'a' && props.multiple) {
-    e.preventDefault()
-    const selectableElements = getSelectableElements()
-    selectableElements.forEach(element => {
-      const itemId = getElementItemId(element)
-      if (itemId) {
-        selectedItems.value.add(itemId)
-      }
-    })
-  }
-
   if (e.key === 'Escape') {
     clearSelection()
   }

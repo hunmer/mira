@@ -567,15 +567,13 @@ export const defaultBindings: ShortcutBinding[] = [
     description: '全屏快捷键'
   },
 
-  // 编辑快捷键(TODO: 解决输入框冲突)
-  // {
-  //   shortcut: 'Ctrl+A',
-  //   priority: 90,
-    
-  //   actionId: 'edit.select-all',
-  //   enabled: true,
-  //   description: '全选快捷键'
-  // },
+  {
+    shortcut: 'Ctrl+A',
+    priority: 90,
+    actionId: 'edit.select-all',
+    enabled: true,
+    description: '全选快捷键'
+  },
   // {
   //   shortcut: 'Delete',
   //   priority: 80,
