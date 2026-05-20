@@ -1,4 +1,4 @@
-import chokidar from 'chokidar';
+import * as chokidar from 'chokidar';
 import fs from 'fs';
 import path from 'path';
 import { LibraryServerDataSQLite } from 'mira-storage-sqlite';
@@ -26,16 +26,20 @@ export class LibraryWatcher {
 
     this.watcher = chokidar.watch(this.libraryPath, {
       ignoreInitial: true,
-      ignored: [
-        '**/thumbs/**',
-        '**/*.db',
-        '**/*.db-journal',
-        '**/*.db-wal',
-        '**/*.db-shm',
-        '**/.*',
-        '**/*.tmp',
-        '**/*.temp',
-      ],
+      ignored: (filePath: string) => {
+        const rel = path.relative(this.libraryPath, filePath).replace(/\\/g, '/');
+        if (rel === '') return false;
+        return rel.startsWith('thumbs') ||
+          rel.startsWith('thumbs/') ||
+          rel.includes('/thumbs/') ||
+          rel.includes('/.') ||
+          rel.endsWith('.db') ||
+          rel.endsWith('.db-journal') ||
+          rel.endsWith('.db-wal') ||
+          rel.endsWith('.db-shm') ||
+          rel.endsWith('.tmp') ||
+          rel.endsWith('.temp');
+      },
       awaitWriteFinish: {
         stabilityThreshold: 1000,
         pollInterval: 200,
@@ -44,8 +48,8 @@ export class LibraryWatcher {
       depth: 10,
     });
 
-    this.watcher.on('add', (filePath) => this.handleNewFile(filePath));
-    this.watcher.on('error', (error) => {
+    this.watcher.on('add', (filePath: string) => this.handleNewFile(filePath));
+    this.watcher.on('error', (error: unknown) => {
       console.error(`[Watcher] Error for library ${this.libraryId}:`, error);
     });
 
@@ -65,22 +69,61 @@ export class LibraryWatcher {
       const stat = fs.statSync(filePath);
       if (stat.size === 0) return;
 
-      // Check if file already exists in database
       const rows = await this.libraryService.getSql(
         'SELECT id FROM files WHERE path = ? LIMIT 1',
         [filePath]
       );
       if (rows.length > 0) return;
 
-      const result = await this.libraryService.createFileFromPath(filePath, {}, { importType: 'link' });
+      // 根据子目录结构查找或创建 folder
+      const folderId = await this.resolveFolder(filePath);
+
+      const fileData: Record<string, any> = {};
+      if (folderId) fileData.folder_id = folderId;
+
+      const result = await this.libraryService.createFileFromPath(filePath, fileData, { importType: 'link' });
       console.log(`[Watcher] Imported: ${path.basename(filePath)}`);
 
-      this.webSocketServer.broadcastLibraryEvent(this.libraryId, 'file::created', {
+      this.webSocketServer.broadcastPluginEvent('file::created', {
+        message: {
+          type: 'file',
+          action: 'create',
+        },
+        result,
         libraryId: this.libraryId,
-        file: result,
+      });
+
+      this.webSocketServer.broadcastLibraryEvent(this.libraryId, 'file::created', {
+        ...result,
+        libraryId: this.libraryId,
       });
     } catch (error) {
       console.error(`[Watcher] Failed to import ${filePath}:`, error);
     }
+  }
+
+  private async resolveFolder(filePath: string): Promise<number | null> {
+    const rel = path.relative(this.libraryPath, path.dirname(filePath));
+    if (!rel) return null;
+
+    const parts = rel.replace(/\\/g, '/').split('/');
+    let parentId: number | null = null;
+
+    for (const part of parts) {
+      if (!part) continue;
+      let folder = await this.libraryService.findFolderByName(part, parentId);
+      if (!folder) {
+        const id = await this.libraryService.createFolder({
+          title: part,
+          parent_id: parentId,
+          color: 0,
+          icon: '',
+        });
+        folder = { id };
+      }
+      parentId = folder.id;
+    }
+
+    return parentId;
   }
 }
