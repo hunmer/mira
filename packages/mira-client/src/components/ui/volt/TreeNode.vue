@@ -7,7 +7,7 @@
   >
     <div
       :class="[
-  'tree-node-content flex items-center p-1 rounded-md cursor-pointer',
+        'tree-node-content flex items-center min-h-8 py-1 rounded-md cursor-pointer',
         'hover:bg-gray-100 dark:hover:bg-gray-800',
         {
           'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300': isSelected,
@@ -30,11 +30,16 @@
       />
 
       <!-- 图标 -->
-      <span v-if="nodeIcon" :class="['mr-2', nodeIcon]"></span>
+      <span class="mr-2 inline-flex h-5 w-5 shrink-0 items-center justify-center">
+        <span v-if="nodeIcon" :class="['material-icons text-lg leading-none', nodeIcon]"></span>
+        <span v-else class="material-icons text-lg leading-none">
+          {{ hasChildren ? (expanded ? 'folder_open' : 'folder') : 'insert_drive_file' }}
+        </span>
+      </span>
 
       <!-- 加载指示器 -->
-      <span v-if="node.loading && loadingMode === 'icon'" class="mr-2 animate-spin">
-        <span class="material-icons text-lg">refresh</span>
+      <span v-if="node.loading && loadingMode === 'icon'" class="mr-2 inline-flex h-5 w-5 shrink-0 items-center justify-center animate-spin">
+        <span class="material-icons text-lg leading-none">refresh</span>
       </span>
 
       <!-- 节点内容 -->
@@ -54,14 +59,15 @@
         v-if="hasChildren"
         type="button"
         :class="[
-          'tree-toggle ml-1 p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700',
-          'transition-transform duration-200 shrink-0',
-          { 'rotate-90': expanded }
+          'tree-toggle ml-1 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded hover:bg-gray-200 dark:hover:bg-gray-700',
+          'transition-transform duration-200'
         ]"
         @click.stop="handleToggle"
+        @dblclick.stop
+        @pointerdown.stop
         @mousedown.stop
       >
-        <span class="material-icons text-lg">
+        <span class="material-icons text-lg leading-none">
           {{ expanded ? 'expand_more' : 'chevron_right' }}
         </span>
       </button>
@@ -102,8 +108,8 @@
           @node-contextmenu="(...args: any[]) => $emit('node-contextmenu', ...args)"
           @node-drag-end="$emit('node-drag-end', $event)"
         >
-          <template v-for="(_, slot) in $slots" v-slot:[slot]>
-            <slot :name="slot" />
+          <template v-for="(_, slot) in $slots" v-slot:[slot]="slotProps">
+            <slot :name="slot" v-bind="slotProps" />
           </template>
         </TreeNode>
       </VueDraggable>
@@ -127,8 +133,8 @@
           @node-toggle="$emit('node-toggle', $event)"
           @node-contextmenu="(...args: any[]) => $emit('node-contextmenu', ...args)"
         >
-          <template v-for="(_, slot) in $slots" v-slot:[slot]>
-            <slot :name="slot" />
+          <template v-for="(_, slot) in $slots" v-slot:[slot]="slotProps">
+            <slot :name="slot" v-bind="slotProps" />
           </template>
         </TreeNode>
       </template>

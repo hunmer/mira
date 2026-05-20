@@ -1,13 +1,21 @@
 <template>
     <div class="tree-container">
         <!-- 过滤器 -->
-        <div v-if="filter" class="tree-filter">
-            <input
-                v-model="filterValue"
-                type="text"
-                :placeholder="filterPlaceholder"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
+       <div v-if="filter || createable" class="tree-filter flex">
+            <div class="relative flex-grow">
+                <span class="material-icons absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-sm">{{ creating
+                    ? 'create_new_folder' : 'search' }}</span>
+                <input
+ref="filterInputRef"
+v-model="filterValue" type="text"
+                   :placeholder="creating ? createPlaceholder : filterPlaceholder"
+                    class="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    @keyup.enter="onFilterEnter" />
+            </div>
+           <button v-if="createable" @click="onCreateAction"
+                class="bg-gray-200 hover:bg-gray-300 text-gray-600 py-2 px-3 rounded-r-md">
+                <span class="material-icons text-sm">{{ creating ? 'close' : 'add' }}</span>
+            </button>
         </div>
 
         <!-- 自定义 Tree 组件 -->
@@ -114,6 +122,8 @@ interface Props {
     filterPlaceholder?: string
     filterLocale?: string
     draggable?: boolean
+    createable?: boolean
+    createPlaceholder?: string
 }
 
 // Events 定义
@@ -127,6 +137,7 @@ interface Emits {
     (e: 'node-collapse', node: TreeNodeData): void
     (e: 'node-contextmenu', node: TreeNodeData, event: MouseEvent): void
     (e: 'node-drag-end', event: any): void
+    (e: 'create', value: string): void
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -141,17 +152,41 @@ const props = withDefaults(defineProps<Props>(), {
     filterMode: 'lenient',
     filterPlaceholder: '搜索...',
     filterLocale: undefined,
-    draggable: false
+    draggable: false,
+    createable: false,
+    createPlaceholder: '输入名称...'
 })
 
 const emit = defineEmits<Emits>()
 
 // 状态
 const filterValue = ref('')
+const creating = ref(false)
+const filterInputRef = ref<HTMLInputElement>()
+
+// 新建模式切换
+function onCreateAction() {
+    if (creating.value) {
+        creating.value = false
+        filterValue.value = ''
+    } else {
+        creating.value = true
+        filterValue.value = ''
+        filterInputRef.value?.focus()
+    }
+}
+
+function onFilterEnter() {
+    if (creating.value && filterValue.value.trim()) {
+        emit('create', filterValue.value.trim())
+        filterValue.value = ''
+        creating.value = false
+    }
+}
 
 // 计算属性
 const filteredNodes = computed(() => {
-    if (!props.filter || !filterValue.value.trim()) {
+    if (creating.value || !props.filter || !filterValue.value.trim()) {
         return props.value
     }
 

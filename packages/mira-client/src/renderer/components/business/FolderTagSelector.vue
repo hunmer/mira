@@ -1,5 +1,5 @@
 <template>
-  <div class="w-72">
+  <div class="w-full">
     <div class="flex border-b mb-2">
       <button
         @click="activeTab = 'folders'"
@@ -27,25 +27,6 @@
 
     <!-- 文件夹 -->
     <div v-if="activeTab === 'folders'">
-      <div class="flex mb-2">
-        <div class="relative flex-grow">
-          <span class="material-icons absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-sm">folder</span>
-          <input
-            v-model="folderSearchQuery"
-            type="text"
-            placeholder="新建文件夹..."
-            class="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-300 rounded-l-md focus:ring-blue-500 focus:border-blue-500"
-            @keyup.enter="addNewFolder"
-          />
-        </div>
-        <button
-          @click="addNewFolder"
-          :disabled="!folderSearchQuery.trim()"
-          class="bg-gray-200 hover:bg-gray-300 text-gray-600 py-1.5 px-3 rounded-r-md disabled:bg-gray-100 disabled:cursor-not-allowed"
-        >
-          <span class="material-icons text-sm">add</span>
-        </button>
-      </div>
       <Tree
         v-model:selectionKeys="selectedFolders"
         v-model:expandedKeys="expandedFolders"
@@ -53,32 +34,16 @@
         selectionMode="single"
         :filter="true"
         filterMode="lenient"
-        placeholder="搜索文件夹..."
-        class="border border-gray-200 rounded-lg h-48"
+        filterPlaceholder="搜索文件夹..."
+        :createable="true"
+        createPlaceholder="输入文件夹名称..."
+        class="border border-gray-200 rounded-lg h-56"
+        @create="addNewFolder"
       />
     </div>
 
     <!-- 标签 -->
     <div v-if="activeTab === 'tags'">
-      <div class="flex mb-2">
-        <div class="relative flex-grow">
-          <span class="material-icons absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-sm">local_offer</span>
-          <input
-            v-model="tagSearchQuery"
-            type="text"
-            placeholder="新建标签..."
-            class="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-300 rounded-l-md focus:ring-blue-500 focus:border-blue-500"
-            @keyup.enter="addNewTag"
-          />
-        </div>
-        <button
-          @click="addNewTag"
-          :disabled="!tagSearchQuery.trim()"
-          class="bg-gray-200 hover:bg-gray-300 text-gray-600 py-1.5 px-3 rounded-r-md disabled:bg-gray-100 disabled:cursor-not-allowed"
-        >
-          <span class="material-icons text-sm">add</span>
-        </button>
-      </div>
       <Tree
         v-model:selectionKeys="selectedTags"
         v-model:expandedKeys="expandedTags"
@@ -86,8 +51,11 @@
         selectionMode="checkbox"
         :filter="true"
         filterMode="lenient"
-        placeholder="搜索标签..."
-        class="border border-gray-200 rounded-lg h-48"
+        filterPlaceholder="搜索标签..."
+        :createable="true"
+        createPlaceholder="输入标签名称..."
+        class="border border-gray-200 rounded-lg h-56"
+        @create="addNewTag"
       />
     </div>
 
@@ -133,8 +101,6 @@ const tagStore = useTagStore()
 const folderStore = useFolderStore()
 
 const activeTab = ref<'folders' | 'tags'>(props.defaultTab || 'folders')
-const folderSearchQuery = ref('')
-const tagSearchQuery = ref('')
 const selectedFolders = ref<Record<string, any>>({})
 const expandedFolders = ref<Record<string, boolean>>({})
 const selectedTags = ref<Record<string, any>>({})
@@ -208,29 +174,25 @@ const loadStoreData = () => {
   tagStore.fetchTags(libraryId)
 }
 
-const addNewFolder = async () => {
-  if (!folderSearchQuery.value.trim()) return
+const addNewFolder = async (name: string) => {
   try {
     const client = (miraSDKService as any).client
     if (!client) return
     const libraryId = props.fileInfos[0]?.libraryId || 'default'
-    await client.folders().createFolder(libraryId, folderSearchQuery.value.trim())
+    await client.folders().createFolder(libraryId, name)
     await folderStore.fetchFolders(libraryId)
-    folderSearchQuery.value = ''
   } catch (error) {
     console.error('Failed to create folder:', error)
   }
 }
 
-const addNewTag = async () => {
-  if (!tagSearchQuery.value.trim()) return
+const addNewTag = async (name: string) => {
   try {
     const client = (miraSDKService as any).client
     if (!client) return
     const libraryId = props.fileInfos[0]?.libraryId || 'default'
-    await client.tags().createTag(libraryId, tagSearchQuery.value.trim(), Math.floor(Math.random() * 5) + 1)
+    await client.tags().createTag(libraryId, name, Math.floor(Math.random() * 5) + 1)
     await tagStore.fetchTags(libraryId)
-    tagSearchQuery.value = ''
   } catch (error) {
     console.error('Failed to create tag:', error)
   }

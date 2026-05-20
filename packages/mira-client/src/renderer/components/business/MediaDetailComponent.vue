@@ -1,12 +1,14 @@
 <template>
-  <div class="space-y-4">
+  <div class="flex flex-col h-full">
     <!-- 无数据占位 -->
-    <div v-if="displayItems.length === 0" class="flex flex-col items-center justify-center py-12 text-gray-400">
-      <span class="material-icons text-4xl">info_outline</span>
-      <p class="mt-2 text-sm">选择文件以查看详情</p>
-    </div>
+    <Empty v-if="displayItems.length === 0" class="flex-1">
+      <EmptyMedia variant="icon">
+        <span class="material-icons">info_outline</span>
+      </EmptyMedia>
+      <EmptyTitle>选择文件以查看详情</EmptyTitle>
+    </Empty>
     <!-- 预览图 - 支持多选相册效果 -->
-    <div class="relative">
+    <div v-else class="relative">
       <!-- 单选模式 -->
       <div v-if="displayItems.length === 1" class="relative">
         <div class="relative rounded-lg bg-gray-100 overflow-hidden w-full" style="height: 192px;">
@@ -116,9 +118,25 @@
 
     <!-- 标签管理 -->
     <div>
-      <h3 class="font-semibold text-gray-700 mb-2 text-sm">标签</h3>
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="font-semibold text-gray-700 text-sm">标签</h3>
+        <Popover>
+          <PopoverTrigger as-child>
+            <button class="text-blue-500 text-xs hover:text-blue-700 flex items-center gap-0.5">
+              <span class="material-icons text-sm">{{ hasTags ? 'edit' : 'add' }}</span>
+              <span>{{ hasTags ? '编辑' : (isMultiSelect ? '批量设置' : '设置标签') }}</span>
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="end" side="bottom" class="w-80 p-2">
+            <FolderTagSelector
+              :file-infos="displayItems"
+              default-tab="tags"
+              @save="handleSelectorSave"
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
       <div class="flex flex-wrap gap-2 items-center">
-        <!-- 单选模式 -->
         <template v-if="!isMultiSelect && displayItems[0]?.tags && displayItems[0].tags.length > 0">
           <span
             v-for="tag in displayItems[0].tags"
@@ -126,15 +144,9 @@
             class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full flex items-center"
           >
             {{ getTagName(tag) }}
-            <button
-              class="ml-1 text-blue-500 text-xs hover:text-blue-700"
-              @click="handleRemoveTag(tag)"
-            >
-              ×
-            </button>
+            <button class="ml-1 text-blue-500 text-xs hover:text-blue-700" @click="handleRemoveTag(tag)">×</button>
           </span>
         </template>
-        <!-- 多选模式 - 有标签 -->
         <template v-else-if="isMultiSelect && mergedInfo && mergedInfo.tags.length > 0">
           <span
             v-for="tag in mergedInfo.tags"
@@ -142,90 +154,57 @@
             class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full flex items-center"
           >
             {{ getTagName(tag) }}
-            <button
-              class="ml-1 text-blue-500 text-xs hover:text-blue-700"
-              @click="handleRemoveTag(tag)"
-            >
-              ×
-            </button>
+            <button class="ml-1 text-blue-500 text-xs hover:text-blue-700" @click="handleRemoveTag(tag)">×</button>
           </span>
         </template>
-        <!-- 没有标签时显示设置按钮 -->
-        <template v-else>
-          <button 
-            class="bg-gray-100 text-gray-600 text-xs px-3 py-2 rounded-lg hover:bg-gray-200 flex items-center space-x-1"
-            @click="() => handleShowDialog('tags')"
-          >
-            <span class="material-icons text-sm">add</span>
-            <span>{{ isMultiSelect ? '批量设置标签' : '设置标签' }}</span>
-          </button>
-        </template>
+        <span v-else class="text-gray-400 text-xs">暂无标签</span>
       </div>
     </div>
 
     <!-- 文件夹信息 -->
     <div>
-      <h3 class="font-semibold text-gray-700 mb-2 text-sm">文件夹</h3>
-      <!-- 单选模式 -->
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="font-semibold text-gray-700 text-sm">文件夹</h3>
+        <Popover>
+          <PopoverTrigger as-child>
+            <button class="text-blue-500 text-xs hover:text-blue-700 flex items-center gap-0.5">
+              <span class="material-icons text-sm">{{ displayItems[0]?.folderId ? 'edit' : 'add' }}</span>
+              <span>{{ displayItems[0]?.folderId ? '编辑' : (isMultiSelect ? '批量设置' : '设置') }}</span>
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="end" side="bottom" class="w-80 p-2">
+            <FolderTagSelector
+              :file-infos="displayItems"
+              default-tab="folders"
+              @save="handleSelectorSave"
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
       <template v-if="!isMultiSelect">
-        <div v-if="displayItems[0]?.folderId" class="bg-blue-100 text-blue-700 text-xs px-3 py-2 rounded-lg flex items-center justify-between">
-          <span class="flex items-center">
-            <span class="material-icons mr-2 text-blue-500">folder</span>
-            {{ getFolderName(displayItems[0].folderId) }}
-          </span>
-          <button 
-            class="text-blue-500 text-sm hover:text-blue-700"
-            @click="() => handleShowDialog('folders')"
-          >
-            编辑
-          </button>
+        <div v-if="displayItems[0]?.folderId" class="bg-blue-100 text-blue-700 text-xs px-3 py-2 rounded-lg flex items-center">
+          <span class="material-icons mr-2 text-blue-500">folder</span>
+          {{ getFolderName(displayItems[0].folderId) }}
         </div>
-        <div v-else class="bg-gray-100 text-gray-600 text-xs px-3 py-2 rounded-lg flex items-center justify-between">
-          <span class="flex items-center">
-            <span class="material-icons mr-2 text-gray-400">folder_open</span>
-            未分类
-          </span>
-          <button 
-            class="text-gray-500 text-sm hover:text-gray-700"
-            @click="() => handleShowDialog('folders')"
-          >
-            设置文件夹
-          </button>
-        </div>
-      </template>
-      <!-- 多选模式 -->
-      <template v-else-if="mergedInfo && mergedInfo.folders.length > 0">
-        <div class="space-y-1">
-          <div 
-            v-for="folderId in mergedInfo.folders"
-            :key="folderId"
-            class="bg-blue-100 text-blue-700 text-xs px-3 py-2 rounded-lg flex items-center justify-between"
-          >
-            <span class="flex items-center">
-              <span class="material-icons mr-2 text-blue-500">folder</span>
-              {{ getFolderName(folderId) }}
-            </span>
-          </div>
-          <button 
-            class="text-blue-500 text-sm hover:text-blue-700 w-full text-center py-2 rounded-md hover:bg-blue-50 bg-gray-100"
-            @click="() => handleShowDialog('folders')"
-          >
-            批量设置文件夹
-          </button>
+        <div v-else class="bg-gray-100 text-gray-600 text-xs px-3 py-2 rounded-lg flex items-center">
+          <span class="material-icons mr-2 text-gray-400">folder_open</span>
+          未分类
         </div>
       </template>
       <template v-else-if="mergedInfo">
-        <div class="bg-gray-100 text-gray-600 text-xs px-3 py-2 rounded-lg flex items-center justify-between">
-          <span class="flex items-center">
-            <span class="material-icons mr-2 text-gray-400">folder_open</span>
-            多个文件未分类
-          </span>
-          <button 
-            class="text-gray-500 text-sm hover:text-gray-700"
-            @click="() => handleShowDialog('folders')"
+        <div v-if="mergedInfo.folders.length > 0" class="space-y-1">
+          <div
+            v-for="folderId in mergedInfo.folders"
+            :key="folderId"
+            class="bg-blue-100 text-blue-700 text-xs px-3 py-2 rounded-lg flex items-center"
           >
-            批量设置文件夹
-          </button>
+            <span class="material-icons mr-2 text-blue-500">folder</span>
+            {{ getFolderName(folderId) }}
+          </div>
+        </div>
+        <div v-else class="bg-gray-100 text-gray-600 text-xs px-3 py-2 rounded-lg flex items-center">
+          <span class="material-icons mr-2 text-gray-400">folder_open</span>
+          多个文件未分类
         </div>
       </template>
     </div>
@@ -282,6 +261,7 @@
   
   <!-- 文件详情对话框 -->
   <FileDetailDialog
+    v-if="showDialog"
     :visible="showDialog"
     :file-infos="displayItems"
     :default-tab="dialogDefaultTab"
@@ -295,7 +275,10 @@ import { toRefs, ref, computed, watch } from 'vue'
 import type { FileInfo } from '../../../shared/types'
 import ColorThief from 'colorthief'
 import FileDetailDialog from './FileDetailDialog.vue'
+import FolderTagSelector from './FolderTagSelector.vue'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useTagStore } from '@renderer/stores/tag'
+import { Empty, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 
 // 全局图片加载错误状态缓存
 const imageLoadErrorCache = new Map<string, boolean>()
@@ -461,9 +444,19 @@ const getImageLoadState = (item: FileInfo): 'loading' | 'loaded' | 'error' => {
 
 const getFolderName = (folderId?: string): string => {
   if (!folderId) return '未分类'
-  // TODO: 从实际的文件夹数据中获取名称
-  // 这里可能需要传入文件夹数据或通过store获取
   return folderId === 'default' ? '默认文件夹' : `文件夹 ${folderId}`
+}
+
+const hasTags = computed(() => {
+  if (isMultiSelect.value) return mergedInfo.value && mergedInfo.value.tags.length > 0
+  return displayItems.value[0]?.tags && displayItems.value[0].tags.length > 0
+})
+
+const handleSelectorSave = (data: { folderId?: string; tags: string[] }) => {
+  if (item.value) {
+    if (data.folderId) item.value.folderId = data.folderId
+    if (data.tags.length > 0) item.value.tags = data.tags
+  }
 }
 
 const handleRemoveTag = (tag: string) => {

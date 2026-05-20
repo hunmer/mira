@@ -26,7 +26,6 @@
             </ContextMenuTrigger>
             <ContextMenuContent class="w-48">
               <ContextMenuItem @click="handleEmptyTrash">
-                <span class="material-icons text-base mr-2">delete_forever</span>
                 <span>清空回收站</span>
               </ContextMenuItem>
             </ContextMenuContent>
@@ -112,7 +111,7 @@
                 class="material-icons mr-2 text-lg"
                 :style="{ color: convertColorToHex(node.data?.originalData?.color) }"
               >
-                {{ node.data?.icon || 'folder' }}
+                {{ node.icon || node.data?.icon || 'folder' }}
               </span>
 
               <!-- 文件夹名称 -->
@@ -170,6 +169,7 @@
       <!-- 搜索框 -->
       <div v-if="showTagSearch" class="px-2 mb-2">
         <input
+          ref="tagSearchInput"
           v-model="tagSearchQuery"
           type="text"
           placeholder="搜索标签..."
@@ -276,7 +276,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import Tree from '@/components/ui/volt/Tree.vue'
 import {
   ContextMenu,
@@ -386,6 +386,12 @@ const {
   computed(() => props.tags || []),
   computed(() => props.treeType || 'folders'),
 )
+
+const tagSearchInput = ref<HTMLInputElement | null>(null)
+
+watch(showTagSearch, (val) => {
+  if (val) nextTick(() => tagSearchInput.value?.focus())
+})
 
 const {
   setupDragEventListeners,
