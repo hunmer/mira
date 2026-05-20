@@ -146,8 +146,16 @@ const {
   videoProgress,
   handleMouseEnter,
   handleMouseLeave,
-  updateVideoProgress
+  updateVideoProgress,
+  stopVideoPreview,
+  syncVideoPreviewItems
 } = useVideoHover()
+
+watch(
+  () => props.items.map(item => item.id),
+  (items) => syncVideoPreviewItems(items),
+  { immediate: true }
+)
 
 // 调试：监控当前视频项变化
 watch(currentVideoItem, (newItem) => {
@@ -361,6 +369,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleDeleteKeyDown)
+  stopVideoPreview()
 })
 </script>
 

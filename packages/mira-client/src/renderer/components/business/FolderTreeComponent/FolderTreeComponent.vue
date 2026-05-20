@@ -53,176 +53,83 @@
     </div>
 
     <!-- 用户文件夹 -->
-    <div>
-      <div class="flex items-center justify-between px-2 mb-2">
-        <h2 class="text-xs font-semibold text-gray-500">{{ folderTitle }}</h2>
-        <div class="flex items-center space-x-1">
-          <button
-            @click="toggleFolderSearch"
-            class="p-1 text-gray-400 hover:text-gray-600 rounded"
-            :class="{ 'text-blue-600': showFolderSearch }"
-            title="搜索文件夹"
+    <TreeSection
+      :title="folderTitle"
+      :show-search="showFolderSearch"
+      :search-query="folderSearchQuery"
+      search-placeholder="搜索文件夹..."
+      :tree-data="filteredTreeData"
+      :context-menu-items="folderContextMenuItems"
+      empty-icon="folder_open"
+      empty-text="还没有任何的文件夹"
+      empty-hint="点击上方的 + 按钮添加新文件夹"
+      scroll-class="folder-tree-scroll"
+      @toggle-search="toggleFolderSearch"
+      @add="handleAdd('folder')"
+      @update:search-query="folderSearchQuery = $event"
+      :expandedKeys="expandedKeys"
+      :selectionKeys="selectionKeys"
+      selectionMode="single"
+      :draggable="true"
+      @update:value="onTreeDataUpdate"
+      @update:expandedKeys="updateExpandedKeys"
+      @update:selectionKeys="updateSelectionKeys"
+      @node-select="handleNodeSelect"
+      @node-expand="handleNodeExpand"
+      @node-collapse="handleNodeCollapse"
+      @node-contextmenu="handleNodeContextMenu"
+      @node-drag-end="onDragEnd"
+    >
+      <template #node="{ node }">
+        <div v-if="node" class="flex items-center">
+          <span
+            class="material-icons mr-2 text-lg"
+            :style="{ color: convertColorToHex(node.data?.originalData?.color) }"
           >
-            <span class="material-icons text-sm">search</span>
-          </button>
-          <button
-            @click="() => handleAdd('folder')"
-            class="p-1 text-gray-400 hover:text-gray-600 rounded"
-            title="添加文件夹"
-          >
-            <span class="material-icons text-sm">add</span>
-          </button>
+            {{ node.icon || node.data?.icon || 'folder' }}
+          </span>
+          <span class="flex-1">{{ node.label || '' }}</span>
+          <span v-if="node.count" class="text-xs text-gray-500 ml-2">{{ node.count }}</span>
         </div>
-      </div>
-
-      <!-- 搜索框 -->
-      <div v-if="showFolderSearch" class="px-2 mb-2">
-        <input
-          v-model="folderSearchQuery"
-          type="text"
-          placeholder="搜索文件夹..."
-          class="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-        />
-      </div>
-
-      <!-- 拖拽文件夹列表 -->
-      <div v-if="filteredTreeData.length > 0" class="folder-tree-scroll max-h-64 overflow-y-auto">
-        <ContextMenu>
-          <ContextMenuTrigger as-child>
-        <Tree
-          :value="filteredTreeData"
-          :expandedKeys="expandedKeys"
-          :selectionKeys="selectionKeys"
-          selectionMode="single"
-          :draggable="true"
-          @update:value="onTreeDataUpdate"
-          @update:expandedKeys="updateExpandedKeys"
-          @update:selectionKeys="updateSelectionKeys"
-          @node-select="handleNodeSelect"
-          @node-expand="handleNodeExpand"
-          @node-collapse="handleNodeCollapse"
-          @node-contextmenu="handleNodeContextMenu"
-          @node-drag-end="onDragEnd"
-        >
-          <template #default="{ node }">
-            <div v-if="node" class="flex items-center">
-              <!-- 文件夹图标 -->
-              <span
-                class="material-icons mr-2 text-lg"
-                :style="{ color: convertColorToHex(node.data?.originalData?.color) }"
-              >
-                {{ node.icon || node.data?.icon || 'folder' }}
-              </span>
-
-              <!-- 文件夹名称 -->
-              <span class="flex-1">{{ node.label || '' }}</span>
-
-              <!-- 文件数量 -->
-              <span v-if="node.count" class="text-xs text-gray-500 ml-2">{{ node.count }}</span>
-            </div>
-          </template>
-        </Tree>
-          </ContextMenuTrigger>
-          <ContextMenuContent class="w-52">
-            <template v-for="(item, i) in folderContextMenuItems" :key="i">
-              <ContextMenuSeparator v-if="item.separator" />
-              <ContextMenuItem v-else :disabled="item.disabled" @click="item.command?.()">
-                <span v-if="item.icon" class="material-icons text-base mr-2">{{ item.icon }}</span>
-                <span class="flex-1">{{ item.label }}</span>
-              </ContextMenuItem>
-            </template>
-          </ContextMenuContent>
-        </ContextMenu>
-      </div>
-
-      <!-- 文件夹空状态 -->
-      <div v-else class="flex flex-col items-center justify-center py-8 text-gray-500">
-        <span class="material-icons text-4xl mb-2 text-gray-400">folder_open</span>
-        <p class="text-sm text-center">还没有任何的文件夹</p>
-        <p class="text-xs text-gray-400 mt-1">点击上方的 + 按钮添加新文件夹</p>
-      </div>
-    </div>
+      </template>
+    </TreeSection>
 
     <!-- 标签分类 -->
-    <div>
-      <div class="flex items-center justify-between px-2 mb-2">
-        <h2 class="text-xs font-semibold text-gray-500">{{ tagTitle }}</h2>
-        <div class="flex items-center space-x-1">
-          <button
-            @click="toggleTagSearch"
-            class="p-1 text-gray-400 hover:text-gray-600 rounded"
-            :class="{ 'text-blue-600': showTagSearch }"
-            title="搜索标签"
+    <TreeSection
+      :title="tagTitle"
+      :show-search="showTagSearch"
+      :search-query="tagSearchQuery"
+      search-placeholder="搜索标签..."
+      :tree-data="filteredTagTreeNodes"
+      :context-menu-items="tagContextMenuItems"
+      empty-icon="label"
+      empty-text="还没有任何的标签"
+      empty-hint="点击上方的 + 按钮添加新标签"
+      scroll-class="tag-tree-scroll"
+      @toggle-search="toggleTagSearch"
+      @add="handleAdd('tag')"
+      @update:search-query="tagSearchQuery = $event"
+      selectionMode="single"
+      :selectionKeys="tagSelectionKeys"
+      :draggable="true"
+      @update:value="onTagTreeDataUpdate"
+      @update:selectionKeys="handleTagSelection"
+      @node-select="handleNodeSelect"
+      @node-contextmenu="handleTagContextMenu"
+      @node-drag-end="onTagDragEnd"
+    >
+      <template #node="{ node }">
+        <div v-if="node" class="flex items-center w-full">
+          <span
+            class="material-icons mr-2 text-lg"
+            :style="{ color: convertColorToHex(node.data?.color) }"
           >
-            <span class="material-icons text-sm">search</span>
-          </button>
-          <button
-            @click="() => handleAdd('tag')"
-            class="p-1 text-gray-400 hover:text-gray-600 rounded"
-            title="添加标签"
-          >
-            <span class="material-icons text-sm">add</span>
-          </button>
+            {{ node.icon || 'label' }}
+          </span>
+          <span class="flex-1">{{ node.label || '' }}</span>
         </div>
-      </div>
-
-      <!-- 搜索框 -->
-      <div v-if="showTagSearch" class="px-2 mb-2">
-        <input
-          ref="tagSearchInput"
-          v-model="tagSearchQuery"
-          type="text"
-          placeholder="搜索标签..."
-          class="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-        />
-      </div>
-
-      <div v-if="filteredTagTreeNodes.length > 0" class="tag-tree-scroll max-h-64 overflow-y-auto">
-        <ContextMenu>
-          <ContextMenuTrigger as-child>
-        <Tree
-          :value="filteredTagTreeNodes"
-          selectionMode="single"
-          :selectionKeys="tagSelectionKeys"
-          :draggable="true"
-          @update:value="onTagTreeDataUpdate"
-          @update:selectionKeys="handleTagSelection"
-          @node-select="handleNodeSelect"
-          @node-contextmenu="handleTagContextMenu"
-          @node-drag-end="onTagDragEnd"
-        >
-          <template #default="{ node }">
-            <div v-if="node" class="flex items-center w-full">
-              <span
-                class="material-icons mr-2 text-lg"
-                :style="{ color: convertColorToHex(node.data?.color) }"
-              >
-                {{ node.icon || 'label' }}
-              </span>
-              <span class="flex-1">{{ node.label || '' }}</span>
-            </div>
-          </template>
-        </Tree>
-          </ContextMenuTrigger>
-          <ContextMenuContent class="w-52">
-            <template v-for="(item, i) in tagContextMenuItems" :key="'tag-'+i">
-              <ContextMenuSeparator v-if="item.separator" />
-              <ContextMenuItem v-else :disabled="item.disabled" @click="item.command?.()">
-                <span v-if="item.icon" class="material-icons text-base mr-2">{{ item.icon }}</span>
-                <span class="flex-1">{{ item.label }}</span>
-              </ContextMenuItem>
-            </template>
-          </ContextMenuContent>
-        </ContextMenu>
-      </div>
-
-      <!-- 标签空状态 -->
-      <div v-else class="flex flex-col items-center justify-center py-8 text-gray-500">
-        <span class="material-icons text-4xl mb-2 text-gray-400">label</span>
-        <p class="text-sm text-center">还没有任何的标签</p>
-        <p class="text-xs text-gray-400 mt-1">点击上方的 + 按钮添加新标签</p>
-      </div>
-    </div>
+      </template>
+    </TreeSection>
 
     <!-- 通用编辑对话框 -->
     <FolderEditDialog
@@ -276,14 +183,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import Tree from '@/components/ui/volt/Tree.vue'
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
+import TreeSection from './TreeSection.vue'
 import {
   ContextMenu,
   ContextMenuTrigger,
   ContextMenuContent,
   ContextMenuItem,
-  ContextMenuSeparator,
 } from '@/components/ui/context-menu'
 import FolderEditDialog from '../FolderEditDialog.vue'
 import FolderMoveDialog from '../FolderMoveDialog.vue'
@@ -386,12 +292,6 @@ const {
   computed(() => props.tags || []),
   computed(() => props.treeType || 'folders'),
 )
-
-const tagSearchInput = ref<HTMLInputElement | null>(null)
-
-watch(showTagSearch, (val) => {
-  if (val) nextTick(() => tagSearchInput.value?.focus())
-})
 
 const {
   setupDragEventListeners,

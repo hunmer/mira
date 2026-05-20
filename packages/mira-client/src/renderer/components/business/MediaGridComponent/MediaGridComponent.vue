@@ -99,7 +99,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { throttle } from 'throttle-debounce'
 import {
   ContextMenu,
@@ -170,8 +170,16 @@ const {
   videoProgress,
   handleMouseEnter,
   handleMouseLeave,
-  updateVideoProgress
+  updateVideoProgress,
+  stopVideoPreview,
+  syncVideoPreviewItems
 } = useVideoHover()
+
+watch(
+  () => props.items.map(item => item.id),
+  (items) => syncVideoPreviewItems(items),
+  { immediate: true }
+)
 
 const handleDoubleClick = (item: FileInfo) => {
   emit('media-double-click', item)
@@ -247,6 +255,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleDeleteKeyDown)
+  stopVideoPreview()
 })
 </script>
 

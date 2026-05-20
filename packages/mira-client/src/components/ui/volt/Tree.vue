@@ -5,51 +5,30 @@
             <div class="relative flex-grow">
                 <span class="material-icons absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-sm">{{ creating
                     ? 'create_new_folder' : 'search' }}</span>
-                <input
-ref="filterInputRef"
-v-model="filterValue" type="text"
-                   :placeholder="creating ? createPlaceholder : filterPlaceholder"
-                    class="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+               <input ref="filterInputRef" v-model="filterValue" type="text"
+                    :placeholder="creating ? createPlaceholder : filterPlaceholder"
+                    :class="[
+                        'w-full pl-8 pr-3 py-2 text-sm border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+                        createable ? 'rounded-l-md border-r-0' : 'rounded-md'
+                    ]"
                     @keyup.enter="onFilterEnter" />
             </div>
            <button v-if="createable" @click="onCreateAction"
-                class="bg-gray-200 hover:bg-gray-300 text-gray-600 py-2 px-3 rounded-r-md">
+                class="bg-gray-200 hover:bg-gray-300 text-gray-600 py-2 px-3 rounded-r-md border border-gray-300 border-l-0">
                 <span class="material-icons text-sm">{{ creating ? 'close' : 'add' }}</span>
             </button>
         </div>
 
         <!-- 自定义 Tree 组件 -->
         <div class="tree-content">
-            <VueDraggable
-                v-if="draggable"
-                v-model="draggableNodes"
-                group="tree-nodes"
-                :animation="200"
-                ghost-class="tree-ghost"
-                chosen-class="tree-chosen"
-                drag-class="tree-drag"
-                @end="onDragEnd"
-                item-key="key"
-                class="tree-drag-area"
-            >
-                <TreeNode
-                    v-for="node in draggableNodes"
-                    :key="node.key"
-                    :node="node"
-                    :expandedKeys="expandedKeys"
-                    :selectionKeys="selectionKeys"
-                    :selectionMode="selectionMode"
-                    :metaKeySelection="metaKeySelection"
-                    :loadingMode="loadingMode"
-                    :draggable="draggable"
-                    @node-select="onNodeSelect"
-                    @node-unselect="onNodeUnselect"
-                    @node-expand="onNodeExpand"
-                    @node-collapse="onNodeCollapse"
-                    @node-toggle="onNodeToggle"
-                    @node-contextmenu="onNodeContextMenu"
-                    @node-drag-end="onNodeDragEnd"
-                >
+           <VueDraggable v-if="draggable" v-model="draggableNodes" group="tree-nodes" :animation="200"
+                ghost-class="tree-ghost" chosen-class="tree-chosen" drag-class="tree-drag" @end="onDragEnd"
+                item-key="key" class="tree-drag-area">
+                <TreeNode v-for="node in draggableNodes" :key="node.key" :node="node" :expandedKeys="expandedKeys"
+                    :selectionKeys="selectionKeys" :selectionMode="selectionMode" :metaKeySelection="metaKeySelection"
+                    :loadingMode="loadingMode" :draggable="draggable" @node-select="onNodeSelect"
+                    @node-unselect="onNodeUnselect" @node-expand="onNodeExpand" @node-collapse="onNodeCollapse"
+                    @node-toggle="onNodeToggle" @node-contextmenu="onNodeContextMenu" @node-drag-end="onNodeDragEnd">
                     <template v-for="(_, slot) in $slots" v-slot:[slot]="slotProps">
                         <slot :name="slot" v-bind="slotProps" />
                     </template>
@@ -58,23 +37,11 @@ v-model="filterValue" type="text"
 
             <!-- 非拖拽模式 -->
             <template v-else>
-                <TreeNode
-                    v-for="node in filteredNodes"
-                    :key="node.key"
-                    :node="node"
-                    :expandedKeys="expandedKeys"
-                    :selectionKeys="selectionKeys"
-                    :selectionMode="selectionMode"
-                    :metaKeySelection="metaKeySelection"
-                    :loadingMode="loadingMode"
-                    :draggable="false"
-                    @node-select="onNodeSelect"
-                    @node-unselect="onNodeUnselect"
-                    @node-expand="onNodeExpand"
-                    @node-collapse="onNodeCollapse"
-                    @node-toggle="onNodeToggle"
-                    @node-contextmenu="onNodeContextMenu"
-                >
+               <TreeNode v-for="node in filteredNodes" :key="node.key" :node="node" :expandedKeys="expandedKeys"
+                    :selectionKeys="selectionKeys" :selectionMode="selectionMode" :metaKeySelection="metaKeySelection"
+                    :loadingMode="loadingMode" :draggable="false" @node-select="onNodeSelect"
+                    @node-unselect="onNodeUnselect" @node-expand="onNodeExpand" @node-collapse="onNodeCollapse"
+                    @node-toggle="onNodeToggle" @node-contextmenu="onNodeContextMenu">
                     <template v-for="(_, slot) in $slots" v-slot:[slot]="slotProps">
                         <slot :name="slot" v-bind="slotProps" />
                     </template>
@@ -207,7 +174,7 @@ function filterNodes(nodes: TreeNodeData[], query: string): TreeNodeData[] {
 
     for (const node of nodes) {
         const cloned = { ...node }
-        
+
         if (nodeMatches(cloned, query)) {
             if (props.filterMode === 'lenient') {
                 // 宽松模式：如果父节点匹配，包含所有子节点
@@ -235,7 +202,7 @@ function filterNodes(nodes: TreeNodeData[], query: string): TreeNodeData[] {
 // 检查节点是否匹配查询
 function nodeMatches(node: TreeNodeData, query: string): boolean {
     const fields = Array.isArray(props.filterBy) ? props.filterBy : [props.filterBy]
-    
+
     return fields.some(field => {
         const value = node[field]
         if (typeof value === 'string') {
@@ -258,19 +225,19 @@ function onNodeSelect(node: TreeNodeData) {
         newSelection[node.key] = { checked: true, partialChecked: false }
         emit('update:selectionKeys', newSelection)
     }
-    
+
     emit('node-select', node)
 }
 
 function onNodeUnselect(node: TreeNodeData) {
     const newSelection = { ...props.selectionKeys }
-    
+
     if (props.selectionMode === 'checkbox') {
         newSelection[node.key] = { checked: false, partialChecked: false }
     } else {
         delete newSelection[node.key]
     }
-    
+
     emit('update:selectionKeys', newSelection)
     emit('node-unselect', node)
 }
@@ -312,7 +279,7 @@ function onNodeDragEnd(event: any) {
 // 公开的方法
 function expandAll() {
     const expanded: Record<string, boolean> = {}
-    
+
     function expandNode(nodes: TreeNodeData[]) {
         nodes.forEach(node => {
             if (node.children && node.children.length > 0) {
@@ -321,7 +288,7 @@ function expandAll() {
             }
         })
     }
-    
+
     expandNode(props.value)
     emit('update:expandedKeys', expanded)
 }

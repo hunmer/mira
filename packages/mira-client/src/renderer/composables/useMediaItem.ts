@@ -9,8 +9,8 @@ export interface MediaItemEmits {
   (e: 'click', item: FileInfo, event: MouseEvent): void
   (e: 'double-click', item: FileInfo): void
   (e: 'context-menu', item: FileInfo, event: MouseEvent): void
-  (e: 'mouse-enter', item: FileInfo): void
-  (e: 'mouse-leave', item: FileInfo): void
+  (e: 'mouse-enter', item: FileInfo, event: MouseEvent): void
+  (e: 'mouse-leave', item: FileInfo, event: MouseEvent): void
   (e: 'mouse-move', item: FileInfo, event: MouseEvent): void
   (e: 'pointer-down', event: PointerEvent, item: FileInfo): void
 }
@@ -124,12 +124,12 @@ export function useMediaItem(options: UseMediaItemOptions) {
     emit('context-menu', itemRef.value, event)
   }
 
-  const handleMouseEnter = () => {
-    emit('mouse-enter', itemRef.value)
+  const handleMouseEnter = (event: MouseEvent) => {
+    emit('mouse-enter', itemRef.value, event)
   }
 
-  const handleMouseLeave = () => {
-    emit('mouse-leave', itemRef.value)
+  const handleMouseLeave = (event: MouseEvent) => {
+    emit('mouse-leave', itemRef.value, event)
   }
 
   const handleMouseMove = (event: MouseEvent) => {

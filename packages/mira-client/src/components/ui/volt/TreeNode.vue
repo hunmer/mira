@@ -59,7 +59,7 @@
         v-if="hasChildren"
         type="button"
         :class="[
-          'tree-toggle ml-1 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded hover:bg-gray-200 dark:hover:bg-gray-700',
+  'tree-toggle ml-1 inline-flex h-5 w-5 me-2 shrink-0 items-center justify-center rounded dark:hover:bg-gray-700',
           'transition-transform duration-200'
         ]"
         @click.stop="handleToggle"

@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col h-full">
+  <div class="flex flex-col h-full space-y-4">
     <!-- 无数据占位 -->
     <Empty v-if="displayItems.length === 0" class="flex-1">
       <EmptyMedia variant="icon">
@@ -7,8 +7,9 @@
       </EmptyMedia>
       <EmptyTitle>选择文件以查看详情</EmptyTitle>
     </Empty>
+    <template v-else>
     <!-- 预览图 - 支持多选相册效果 -->
-    <div v-else class="relative">
+    <div class="relative">
       <!-- 单选模式 -->
       <div v-if="displayItems.length === 1" class="relative">
         <div class="relative rounded-lg bg-gray-100 overflow-hidden w-full" style="height: 192px;">
@@ -257,17 +258,18 @@
         </template>
       </div>
     </div>
+
+    <!-- 文件详情对话框 -->
+    <FileDetailDialog
+      v-if="showDialog"
+      :visible="showDialog"
+      :file-infos="displayItems"
+      :default-tab="dialogDefaultTab"
+      @close="showDialog = false"
+      @save="handleDialogSave"
+    />
+    </template>
   </div>
-  
-  <!-- 文件详情对话框 -->
-  <FileDetailDialog
-    v-if="showDialog"
-    :visible="showDialog"
-    :file-infos="displayItems"
-    :default-tab="dialogDefaultTab"
-    @close="showDialog = false"
-    @save="handleDialogSave"
-  />
 </template>
 
 <script setup lang="ts">

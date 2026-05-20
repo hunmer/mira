@@ -121,8 +121,8 @@ interface Emits {
   (e: 'click', item: FileInfo, event: MouseEvent): void
   (e: 'double-click', item: FileInfo): void
   (e: 'context-menu', item: FileInfo, event: MouseEvent): void
-  (e: 'mouse-enter', item: FileInfo): void
-  (e: 'mouse-leave', item: FileInfo): void
+  (e: 'mouse-enter', item: FileInfo, event: MouseEvent): void
+  (e: 'mouse-leave', item: FileInfo, event: MouseEvent): void
   (e: 'mouse-move', item: FileInfo, event: MouseEvent): void
   (e: 'pointer-down', event: PointerEvent, item: FileInfo): void
   (e: 'toggle-mute'): void
@@ -187,12 +187,12 @@ const handleContextMenu = (event: MouseEvent) => {
   emit('context-menu', props.item, event)
 }
 
-const handleMouseEnter = () => {
-  emit('mouse-enter', props.item)
+const handleMouseEnter = (event: MouseEvent) => {
+  emit('mouse-enter', props.item, event)
 }
 
-const handleMouseLeave = () => {
-  emit('mouse-leave', props.item)
+const handleMouseLeave = (event: MouseEvent) => {
+  emit('mouse-leave', props.item, event)
 }
 
 const handleMouseMove = (event: MouseEvent) => {

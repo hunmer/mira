@@ -5,11 +5,26 @@ export function useVideoHover() {
   const hoveredItem = ref<FileInfo | null>(null)
   const currentVideoItem = ref<FileInfo | null>(null)
   const videoProgress = ref<{ [key: string]: number }>({})
-  const hoverTimer = ref<NodeJS.Timeout | null>(null)
-  const videoStartTime = ref<number>(0) // 记录视频开始播放的时间
+  const hoveredElement = ref<HTMLElement | null>(null)
+  const hoverTimer = ref<ReturnType<typeof setTimeout> | null>(null)
+  const videoStartTime = ref<number>(0)
 
   const HOVER_DELAY = 500
-  const PROTECTION_PERIOD = 300 // 视频开始播放后的保护期（毫秒）
+
+  const clearHoverTimer = () => {
+    if (!hoverTimer.value) return
+
+    clearTimeout(hoverTimer.value)
+    hoverTimer.value = null
+  }
+
+  const resetVideoHover = () => {
+    clearHoverTimer()
+    hoveredItem.value = null
+    hoveredElement.value = null
+    currentVideoItem.value = null
+    videoStartTime.value = 0
+  }
 
   const getFileType = (item: FileInfo): 'image' | 'video' | 'audio' | 'document' | 'other' => {
     if (item.mimeType.startsWith('image/')) return 'image'
@@ -21,44 +36,77 @@ export function useVideoHover() {
     return 'other'
   }
 
-  const handleMouseEnter = (item: FileInfo) => {
-    if (getFileType(item) === 'video') {
-      hoveredItem.value = item
-
-      if (hoverTimer.value) {
-        clearTimeout(hoverTimer.value)
-      }
-
-      hoverTimer.value = setTimeout(() => {
-        currentVideoItem.value = item
-        videoStartTime.value = Date.now() // 记录视频开始时间
-      }, HOVER_DELAY)
-    }
+  const isStillHovering = (item: FileInfo) => {
+    return hoveredItem.value?.id === item.id &&
+      (!hoveredElement.value || hoveredElement.value.matches(':hover'))
   }
 
-  const handleMouseLeave = (item: FileInfo) => {
-    if (getFileType(item) === 'video') {
-      hoveredItem.value = null
+  const handleMouseEnter = (item: FileInfo, event?: MouseEvent) => {
+    if (getFileType(item) !== 'video') return
 
-      if (hoverTimer.value) {
-        clearTimeout(hoverTimer.value)
-        hoverTimer.value = null
-      }
+    clearHoverTimer()
+    hoveredItem.value = item
+    hoveredElement.value = event?.currentTarget instanceof HTMLElement ? event.currentTarget : null
 
-      // 检查是否在保护期内（刚开始播放）
-      const timeSinceStart = Date.now() - videoStartTime.value
-      if (currentVideoItem.value?.id === item.id && timeSinceStart < PROTECTION_PERIOD) {
-        // 在保护期内，重新设置 mouseenter 状态，但不停止视频
-        hoveredItem.value = item
+    hoverTimer.value = setTimeout(() => {
+      hoverTimer.value = null
+
+      if (!isStillHovering(item)) {
+        resetVideoHover()
         return
       }
 
-      currentVideoItem.value = null
+      currentVideoItem.value = item
+      videoStartTime.value = Date.now()
+    }, HOVER_DELAY)
+  }
+
+  const handleMouseLeave = (item: FileInfo, event?: MouseEvent) => {
+    if (getFileType(item) !== 'video') return
+
+    if (
+      event?.relatedTarget instanceof Node &&
+      event.currentTarget instanceof Node &&
+      event.currentTarget.contains(event.relatedTarget)
+    ) {
+      return
     }
+
+    resetVideoHover()
   }
 
   const updateVideoProgress = (itemId: string, progress: number) => {
     videoProgress.value[itemId] = progress
+  }
+
+  const stopVideoPreview = (itemId?: string) => {
+    if (!itemId) {
+      resetVideoHover()
+      return
+    }
+
+    delete videoProgress.value[itemId]
+
+    if (hoveredItem.value?.id === itemId || currentVideoItem.value?.id === itemId) {
+      resetVideoHover()
+    }
+  }
+
+  const syncVideoPreviewItems = (itemIds: string[]) => {
+    const activeItemIds = new Set(itemIds)
+
+    if (
+      (hoveredItem.value && !activeItemIds.has(hoveredItem.value.id)) ||
+      (currentVideoItem.value && !activeItemIds.has(currentVideoItem.value.id))
+    ) {
+      resetVideoHover()
+    }
+
+    Object.keys(videoProgress.value).forEach(itemId => {
+      if (!activeItemIds.has(itemId)) {
+        delete videoProgress.value[itemId]
+      }
+    })
   }
 
   return {
@@ -68,6 +116,8 @@ export function useVideoHover() {
     handleMouseEnter,
     handleMouseLeave,
     updateVideoProgress,
+    stopVideoPreview,
+    syncVideoPreviewItems,
     getFileType
   }
 }
