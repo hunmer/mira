@@ -100,7 +100,7 @@ export interface LocalPluginConfig {
   homepage?: string
   enable: boolean // 是否启用
   config: Record<string, any> // 默认配置
-  hotkey: Record<string, string> // 默认快捷键 {'ctrl+a': 'selectAll'}
+  hotkey: Record<string, string> // 
   events: string[] // 监听的自定义事件
   dependencies: string[] // 依赖的插件ID列表
   permissions?: string[] // 插件所需权限

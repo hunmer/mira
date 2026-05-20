@@ -1,7 +1,7 @@
 <template>
-  <div class="folder-tree-container space-y-4">
-    <!-- 基础分类 -->
-    <div v-if="showBaseCategories">
+  <div class="folder-tree-container">
+    <!-- 基础分类 (仅文件夹模式) -->
+    <div v-if="showBaseCategories && itemType === 'folder'" class="mb-4">
       <ul class="space-y-0.5">
         <li v-for="folder in baseCategoriesConfig" :key="folder.id">
           <ContextMenu v-if="folder.id === 'trash'">
@@ -9,7 +9,7 @@
               <a
                 :class="[
                   'flex items-center justify-between px-2 py-1.5 rounded-md hover:bg-gray-200 cursor-pointer',
-                  selectedFolder === folder.id ? 'bg-blue-100 text-blue-700' : 'text-gray-700'
+                  selectedKey === folder.id ? 'bg-blue-100 text-blue-700' : 'text-gray-700'
                 ]"
                 @click.prevent="handleBaseCategoryClick(folder)"
               >
@@ -25,7 +25,7 @@
               </a>
             </ContextMenuTrigger>
             <ContextMenuContent class="w-48">
-              <ContextMenuItem @click="handleEmptyTrash">
+              <ContextMenuItem @click="emit('empty-trash')">
                 <span>清空回收站</span>
               </ContextMenuItem>
             </ContextMenuContent>
@@ -34,7 +34,7 @@
             v-else
             :class="[
               'flex items-center justify-between px-2 py-1.5 rounded-md hover:bg-gray-200 cursor-pointer',
-              selectedFolder === folder.id ? 'bg-blue-100 text-blue-700' : 'text-gray-700'
+              selectedKey === folder.id ? 'bg-blue-100 text-blue-700' : 'text-gray-700'
             ]"
             @click.prevent="handleBaseCategoryClick(folder)"
           >
@@ -52,22 +52,21 @@
       </ul>
     </div>
 
-    <!-- 用户文件夹 -->
+    <!-- 树 -->
     <TreeSection
-      v-if="showFolderTree"
-      :title="folderTitle"
-      :show-search="showFolderSearch"
-      :search-query="folderSearchQuery"
-      search-placeholder="搜索文件夹..."
-      :tree-data="filteredTreeData"
-      :context-menu-items="folderContextMenuItems"
-      empty-icon="folder_open"
-      empty-text="还没有任何的文件夹"
-      empty-hint="点击上方的 + 按钮添加新文件夹"
-      scroll-class="folder-tree-scroll"
-      @toggle-search="toggleFolderSearch"
-      @add="handleAdd('folder')"
-      @update:search-query="folderSearchQuery = $event"
+      :title="sectionTitle"
+      :show-search="showSearch"
+      :search-query="searchQuery"
+      :search-placeholder="`搜索${sectionTitle}...`"
+      :tree-data="filteredNodes"
+      :context-menu-items="contextMenuItems"
+      :empty-icon="itemType === 'folder' ? 'folder_open' : 'label'"
+      :empty-text="`还没有任何的${sectionTitle}`"
+      :empty-hint="`点击上方的 + 按钮添加新${sectionTitle}`"
+      scroll-class="tree-scroll"
+      @toggle-search="toggleSearch"
+      @add="ops.handleAdd(itemType)"
+      @update:search-query="searchQuery = $event"
       :expandedKeys="expandedKeys"
       :selectionKeys="selectionKeys"
       selectionMode="single"
@@ -79,104 +78,67 @@
       @node-expand="handleNodeExpand"
       @node-collapse="handleNodeCollapse"
       @node-contextmenu="handleNodeContextMenu"
-      @node-drag-end="onDragEnd"
+      @node-drag-end="currentOnDragEnd"
     >
-      <template #node="{ node }">
-        <div v-if="node" class="flex items-center">
-          <span
-            class="material-icons mr-2 text-lg"
-            :style="{ color: convertColorToHex(node.data?.originalData?.color) }"
-          >
-            {{ node.icon || node.data?.icon || 'folder' }}
-          </span>
-          <span class="flex-1">{{ node.label || '' }}</span>
-          <span v-if="node.count" class="text-xs text-gray-500 ml-2">{{ node.count }}</span>
-        </div>
-      </template>
-    </TreeSection>
-
-    <!-- 标签分类 -->
-    <TreeSection
-      :title="tagTitle"
-      :show-search="showTagSearch"
-      :search-query="tagSearchQuery"
-      search-placeholder="搜索标签..."
-      :tree-data="filteredTagTreeNodes"
-      :context-menu-items="tagContextMenuItems"
-      empty-icon="label"
-      empty-text="还没有任何的标签"
-      empty-hint="点击上方的 + 按钮添加新标签"
-      scroll-class="tag-tree-scroll"
-      @toggle-search="toggleTagSearch"
-      @add="handleAdd('tag')"
-      @update:search-query="tagSearchQuery = $event"
-      selectionMode="single"
-      :selectionKeys="tagSelectionKeys"
-      :draggable="true"
-      @update:value="onTagTreeDataUpdate"
-      @update:selectionKeys="handleTagSelection"
-      @node-select="handleNodeSelect"
-      @node-contextmenu="handleTagContextMenu"
-      @node-drag-end="onTagDragEnd"
-    >
-      <template #node="{ node }">
-        <div v-if="node" class="flex items-center w-full">
-          <span
-            class="material-icons mr-2 text-lg"
-            :style="{ color: convertColorToHex(node.data?.color) }"
-          >
-            {{ node.icon || 'label' }}
-          </span>
-          <span class="flex-1">{{ node.label || '' }}</span>
-        </div>
+      <template #node="slotProps">
+        <slot name="node" v-bind="slotProps">
+          <div v-if="slotProps.node" class="flex items-center">
+            <span
+              class="material-icons mr-2 text-lg"
+              :style="{ color: getNodeColor(slotProps.node) }"
+            >
+              {{ slotProps.node.icon || defaultIcon }}
+            </span>
+            <span class="flex-1">{{ slotProps.node.label || '' }}</span>
+            <span v-if="slotProps.node.count" class="text-xs text-gray-500 ml-2">{{ slotProps.node.count }}</span>
+          </div>
+        </slot>
       </template>
     </TreeSection>
 
     <!-- 通用编辑对话框 -->
     <FolderEditDialog
-      :visible="showEditDialog"
-      :folder="editingItem"
-      :parent-folder="editingParentItem"
+      :visible="ops.showEditDialog.value"
+      :folder="ops.editingItem.value"
+      :parent-folder="ops.editingParentItem.value"
       :available-folders="folders"
-      :item-type="editingItemType"
-      :dialog-title="dialogTitle"
-      @close="handleEditDialogClose"
-      @save="handleItemSave"
+      :item-type="ops.editingItemType.value"
+      :dialog-title="ops.dialogTitle.value"
+      @close="ops.handleEditDialogClose"
+      @save="ops.handleItemSave"
     />
 
     <!-- 通用移动对话框 -->
     <FolderMoveDialog
-      :visible="showMoveDialog"
-      :folder="movingItem"
+      :visible="ops.showMoveDialog.value"
+      :folder="ops.movingItem.value"
       :available-folders="folders"
-      :item-type="movingItemType"
-      @close="handleMoveDialogClose"
-      @move="handleItemMove"
+      :item-type="ops.movingItemType.value"
+      @close="ops.handleMoveDialogClose"
+      @move="ops.handleItemMove"
     />
 
     <!-- 删除确认对话框 -->
-    <AlertDialog v-model:open="showDeleteDialog">
+    <AlertDialog v-model:open="ops.showDeleteDialog.value">
       <AlertDialogOverlay />
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>确认删除</AlertDialogTitle>
           <AlertDialogDescription>
-            确定要删除{{ deletingType === 'folder' ? '文件夹' : '标签' }} "{{
-              deletingType === 'folder'
-                ? (deletingItem as any)?.label
-                : (deletingItem as any)?.name || (deletingItem as any)?.label
+            确定要删除{{ ops.deletingType.value === 'folder' ? '文件夹' : '标签' }} "{{
+              (ops.deletingItem.value as any)?.label || (ops.deletingItem.value as any)?.name
             }}" 吗？此操作不可撤销。
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <div v-if="deletingType === 'folder'" class="flex items-center space-x-2 px-1">
-          <Checkbox id="deleteWithFiles" :model-value="deleteWithFiles" @update:model-value="deleteWithFiles = $event" />
+        <div v-if="ops.deletingType.value === 'folder'" class="flex items-center space-x-2 px-1">
+          <Checkbox id="deleteWithFiles" :model-value="ops.deleteWithFiles.value" @update:model-value="ops.deleteWithFiles.value = $event" />
           <label for="deleteWithFiles" class="text-sm text-muted-foreground cursor-pointer select-none">
             同时删除文件夹内的文件（不勾选则文件移至未分类）
           </label>
         </div>
         <AlertDialogFooter>
-          <AlertDialogCancel @click="showDeleteDialog = false">取消</AlertDialogCancel>
-          <AlertDialogAction @click="confirmDelete">删除</AlertDialogAction>
+          <AlertDialogCancel @click="ops.showDeleteDialog.value = false">取消</AlertDialogCancel>
+          <AlertDialogAction @click="ops.confirmDelete">删除</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
@@ -214,23 +176,17 @@ import { useFolderOperations } from './composables/useFolderOperations'
 
 const convertColorToHex = (color?: number | null): string => {
   if (color === null || color === undefined) return '#6B7280'
-  if (typeof color === 'number' && color > 0) {
-    return `#${color.toString(16).padStart(6, '0')}`
-  }
+  if (typeof color === 'number' && color > 0) return `#${color.toString(16).padStart(6, '0')}`
   return '#6B7280'
 }
 
 interface Props {
-  folders: FolderItem[]
+  folders?: FolderItem[]
   tags?: any[]
-  selectedFolder?: string
-  selectedTags?: string[]
+  itemType?: 'folder' | 'tag'
+  selectedKey?: string
   showBaseCategories?: boolean
-  showTags?: boolean
-  showFolderTree?: boolean
-  baseCategoryTitle?: string
-  folderTitle?: string
-  tagTitle?: string
+  title?: string
   baseCategoriesConfig?: Array<{
     id: string
     label: string
@@ -238,36 +194,13 @@ interface Props {
     iconColor?: string
     count?: number
   }>
-  treeType?: 'folders' | 'tags'
-}
-
-interface Emits {
-  (e: 'folder-select', folder: FolderItem | any): void
-  (e: 'folder-expand', folder: FolderItem, expanded: boolean): void
-  (e: 'tag-select', tag: any): void
-  (e: 'folder-add', parentFolder?: FolderItem): void
-  (e: 'folder-edit', folder: FolderItem): void
-  (e: 'folder-move', folder: FolderItem): void
-  (e: 'folder-clone', folder: FolderItem): void
-  (e: 'folder-delete', folder: FolderItem): void
-  (e: 'refresh-folders'): void
-  (e: 'tag-add', parentTag?: any): void
-  (e: 'tag-edit', tag: any): void
-  (e: 'tag-move', tag: any): void
-  (e: 'tag-clone', tag: any): void
-  (e: 'tag-delete', tag: any): void
-  (e: 'refresh-tags'): void
-  (e: 'empty-trash'): void
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  showBaseCategories: true,
-  showTags: false,
-  showFolderTree: true,
-  baseCategoryTitle: '基础分类',
-  folderTitle: '文件夹',
-  tagTitle: '标签',
-  treeType: 'folders',
+  itemType: 'folder',
+  showBaseCategories: false,
+  title: '',
+  folders: () => [],
   baseCategoriesConfig: () => [
     { id: 'all', label: '全部', icon: 'folder_open', iconColor: 'text-gray-500' },
     { id: 'uncategorized', label: '未分类', icon: 'folder_special', iconColor: 'text-gray-500' },
@@ -277,7 +210,17 @@ const props = withDefaults(defineProps<Props>(), {
   ],
 })
 
+interface Emits {
+  (e: 'select', item: any): void
+  (e: 'expand', item: any, expanded: boolean): void
+  (e: 'refresh'): void
+  (e: 'empty-trash'): void
+}
+
 const emit = defineEmits<Emits>()
+const isFolder = computed(() => props.itemType === 'folder')
+const defaultIcon = computed(() => isFolder.value ? 'folder' : 'label')
+const sectionTitle = computed(() => props.title || (isFolder.value ? '文件夹' : '标签'))
 
 // Composables
 const {
@@ -291,170 +234,134 @@ const {
   toggleFolderSearch,
   toggleTagSearch,
 } = useFolderTreeData(
-  computed(() => props.folders),
+  computed(() => props.folders || []),
   computed(() => props.tags || []),
-  computed(() => props.treeType || 'folders'),
+  computed(() => props.itemType),
 )
 
-const {
-  setupDragEventListeners,
-  onDragEnd,
-  onTagDragEnd,
-} = useFolderDragDrop(nodeIdMap, emit)
+const showSearch = computed(() => isFolder.value ? showFolderSearch.value : showTagSearch.value)
+const searchQuery = computed({
+  get: () => isFolder.value ? folderSearchQuery.value : tagSearchQuery.value,
+  set: (v) => { if (isFolder.value) folderSearchQuery.value = v; else tagSearchQuery.value = v },
+})
+const filteredNodes = computed(() => isFolder.value ? filteredTreeData.value : filteredTagTreeNodes.value)
+const toggleSearch = () => isFolder.value ? toggleFolderSearch() : toggleTagSearch()
 
-const {
-  currentContextFolder,
-  currentContextTag,
-  showEditDialog,
-  editingItem,
-  editingParentItem,
-  editingItemType,
-  dialogTitle,
-  showMoveDialog,
-  movingItem,
-  movingItemType,
-  folderContextMenuItems,
-  tagContextMenuItems,
-  handleAdd,
-  handleEditDialogClose,
-  handleMoveDialogClose,
-  handleItemMove,
-  handleItemSave,
-  showDeleteDialog,
-  deletingItem,
-  deletingType,
-  deleteWithFiles,
-  confirmDelete,
-} = useFolderOperations(emit)
+const { setupDragEventListeners, onDragEnd: onFolderDragEnd, onTagDragEnd } = useFolderDragDrop(nodeIdMap, {
+  'refresh-folders': () => emit('refresh'),
+  'refresh-tags': () => emit('refresh'),
+})
+const currentOnDragEnd = computed(() => isFolder.value ? onFolderDragEnd : onTagDragEnd)
 
-// 选择状态
-const folderSelectionKeys = ref<Record<string, boolean>>({})
-const tagSelectionKeys = ref<Record<string, boolean>>({})
-const folderExpandedKeys = ref<Record<string, boolean>>({})
+const ops = useFolderOperations({
+  'folder-add': () => {},
+  'folder-edit': () => {},
+  'folder-move': () => {},
+  'folder-clone': () => {},
+  'folder-delete': () => {},
+  'refresh-folders': () => emit('refresh'),
+  'tag-add': () => {},
+  'tag-edit': () => {},
+  'tag-move': () => {},
+  'tag-clone': () => {},
+  'tag-delete': () => {},
+  'refresh-tags': () => emit('refresh'),
+})
 
-const expandedKeys = computed(() => folderExpandedKeys.value)
-const selectionKeys = computed(() => folderSelectionKeys.value)
+const contextMenuItems = computed(() =>
+  isFolder.value ? ops.folderContextMenuItems.value : ops.tagContextMenuItems.value
+)
 
-// 事件处理
+// Selection state
+const selectionKeys = ref<Record<string, boolean>>({})
+const expandedKeys = ref<Record<string, boolean>>({})
+
+// Event handlers
 function handleBaseCategoryClick(category: any) {
   folderSearchQuery.value = ''
   showFolderSearch.value = false
-  const folderItem: FolderItem = {
+  emit('select', {
     id: category.id,
     label: category.label,
     icon: category.icon || 'folder',
     iconColor: category.iconColor,
     count: category.count,
     active: true,
-  }
-  emit('folder-select', folderItem)
-}
-
-function handleEmptyTrash() {
-  emit('empty-trash')
-}
-
-function handleTagSelection(selectionKeys: Record<string, boolean>) {
-  tagSelectionKeys.value = selectionKeys
+  })
 }
 
 function handleNodeSelect(node: TreeNodeData) {
   if (!node) return
-  folderSearchQuery.value = ''
-  showFolderSearch.value = false
-  tagSearchQuery.value = ''
-  showTagSearch.value = false
+  searchQuery.value = ''
+  if (isFolder.value) showFolderSearch.value = false
+  else showTagSearch.value = false
 
-  if (node.key?.startsWith('tag-')) {
-    emit('tag-select', node.data)
-    return
-  }
-
-  const folderItem: FolderItem = {
+  emit('select', {
     id: node.key || '',
     label: node.label || '',
-    icon: node.icon || 'folder',
-    iconColor: node.iconColor,
+    icon: node.icon || defaultIcon.value,
     count: node.count,
-    active: true,
     ...node.data,
-  }
-  emit('folder-select', folderItem)
+  })
 }
 
 function handleNodeExpand(node: TreeNodeData) {
-  if (node?.data) emit('folder-expand', node.data, true)
+  if (node?.data) emit('expand', node.data, true)
 }
 
 function handleNodeCollapse(node: TreeNodeData) {
-  if (node?.data) emit('folder-expand', node.data, false)
+  if (node?.data) emit('expand', node.data, false)
 }
 
 function handleNodeContextMenu(node: TreeNodeData, _event: MouseEvent) {
   if (!node?.data) return
-  currentContextFolder.value = node.data as FolderItem
-}
-
-function handleTagContextMenu(node: TreeNodeData, _event: MouseEvent) {
-  if (!node?.data) return
-  currentContextTag.value = node.data
+  if (isFolder.value) ops.currentContextFolder.value = node.data as FolderItem
+  else ops.currentContextTag.value = node.data
 }
 
 function updateExpandedKeys(keys: Record<string, boolean>) {
-  folderExpandedKeys.value = keys
+  expandedKeys.value = keys
 }
 
 function updateSelectionKeys(keys: Record<string, boolean>) {
-  folderSelectionKeys.value = keys
+  selectionKeys.value = keys
 }
 
-async function onTreeDataUpdate(_newData: TreeNodeData[]) {
-  emit('refresh-folders')
+function onTreeDataUpdate() {
+  emit('refresh')
 }
 
-async function onTagTreeDataUpdate(_newData: TreeNodeData[]) {
-  emit('refresh-tags')
+function getNodeColor(node: TreeNodeData): string {
+  if (isFolder.value) return convertColorToHex(node.data?.originalData?.color)
+  return convertColorToHex(node.data?.color)
 }
 
-// 生命周期
-let folderRefreshListener: ((event: CustomEvent) => void) | null = null
-let tagRefreshListener: ((event: CustomEvent) => void) | null = null
+// Lifecycle
+let refreshListener: ((event: CustomEvent) => void) | null = null
 
 onMounted(() => {
-  folderRefreshListener = () => emit('refresh-folders')
-  window.addEventListener('refresh-folders', folderRefreshListener as EventListener)
-
-  tagRefreshListener = () => emit('refresh-tags')
-  window.addEventListener('refresh-tags', tagRefreshListener as EventListener)
-
+  refreshListener = () => emit('refresh')
+  window.addEventListener(`refresh-${isFolder.value ? 'folders' : 'tags'}`, refreshListener as EventListener)
   setupDragEventListeners()
 })
 
 onUnmounted(() => {
-  if (folderRefreshListener) window.removeEventListener('refresh-folders', folderRefreshListener as EventListener)
-  if (tagRefreshListener) window.removeEventListener('refresh-tags', tagRefreshListener as EventListener)
+  if (refreshListener) {
+    window.removeEventListener(`refresh-${isFolder.value ? 'folders' : 'tags'}`, refreshListener as EventListener)
+  }
 })
 
 // Watchers
-watch(() => props.selectedFolder, (newSelected) => {
-  if (newSelected) {
-    folderSelectionKeys.value = {}
-    const baseCategory = props.baseCategoriesConfig.find(c => c.id === newSelected)
+watch(() => props.selectedKey, (key) => {
+  if (key) {
+    selectionKeys.value = {}
+    const baseCategory = props.baseCategoriesConfig.find(c => c.id === key)
     if (baseCategory) return
-    const folder = props.folders?.find(f => f.id === newSelected)
-    if (folder) folderSelectionKeys.value = { [newSelected]: true }
+    const items = isFolder.value ? props.folders : []
+    const found = items?.find(f => f.id === key)
+    if (found) selectionKeys.value = { [key]: true }
   } else {
-    folderSelectionKeys.value = {}
-  }
-}, { immediate: true })
-
-watch(() => props.selectedTags, (newSelectedTags) => {
-  if (newSelectedTags && newSelectedTags.length > 0) {
-    const keys: Record<string, boolean> = {}
-    newSelectedTags.forEach(tagId => { keys[`tag-${tagId}`] = true })
-    tagSelectionKeys.value = keys
-  } else {
-    tagSelectionKeys.value = {}
+    selectionKeys.value = {}
   }
 }, { immediate: true })
 </script>
@@ -468,99 +375,30 @@ watch(() => props.selectedTags, (newSelectedTags) => {
   font-size: 18px;
 }
 
-/* 文件夹和标签滚动区域样式 */
-.folder-tree-scroll,
-.tag-tree-scroll {
-  /* 自定义滚动条样式 */
+.tree-scroll {
   scrollbar-width: thin;
   scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
 }
 
-.folder-tree-scroll::-webkit-scrollbar,
-.tag-tree-scroll::-webkit-scrollbar {
+.tree-scroll::-webkit-scrollbar {
   width: 6px;
 }
 
-.folder-tree-scroll::-webkit-scrollbar-track,
-.tag-tree-scroll::-webkit-scrollbar-track {
+.tree-scroll::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.folder-tree-scroll::-webkit-scrollbar-thumb,
-.tag-tree-scroll::-webkit-scrollbar-thumb {
+.tree-scroll::-webkit-scrollbar-thumb {
   background-color: rgba(156, 163, 175, 0.3);
   border-radius: 3px;
-  transition: background-color 0.2s ease;
 }
 
-.folder-tree-scroll::-webkit-scrollbar-thumb:hover,
-.tag-tree-scroll::-webkit-scrollbar-thumb:hover {
+.tree-scroll::-webkit-scrollbar-thumb:hover {
   background-color: rgba(156, 163, 175, 0.5);
 }
 
-/* 确保内容区域有合适的边距 */
-.folder-tree-scroll,
-.tag-tree-scroll {
+.tree-scroll {
   padding-right: 4px;
   margin-right: -4px;
-}
-
-/* 拖拽目标区域样式 */
-.drag-target-area {
-  height: 2px;
-  margin-left: 1rem;
-  margin-right: 0.5rem;
-  background-color: transparent;
-  transition: background-color 0.2s ease;
-  position: relative;
-}
-
-.drag-target-area:hover,
-.drag-target-area.drag-over {
-  background-color: #3b82f6;
-  height: 3px;
-}
-
-.drag-target-area::before {
-  content: '';
-  position: absolute;
-  left: -0.5rem;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background-color: #3b82f6;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.drag-target-area:hover::before,
-.drag-target-area.drag-over::before {
-  opacity: 1;
-}
-
-/* 节点内容样式 */
-.node-content {
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  transition: background-color 0.2s ease;
-}
-
-.node-content:hover {
-  background-color: #f3f4f6;
-}
-
-/* 拖拽状态样式 */
-.dragging {
-  opacity: 0.5;
-}
-
-.drag-target-before {
-  margin-top: -1px;
-}
-
-.drag-target-after {
-  margin-bottom: -1px;
 }
 </style>

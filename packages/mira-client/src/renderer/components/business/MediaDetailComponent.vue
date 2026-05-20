@@ -130,13 +130,9 @@
           </PopoverTrigger>
           <PopoverContent align="end" side="bottom" class="w-80 p-2">
             <FolderTreeComponent
-              :folders="[]"
-              :tags="tagItems"
-              :show-base-categories="false"
-              :show-folder-tree="false"
-              :show-tags="true"
-              tree-type="tags"
-              @tag-select="handleTagSelect"
+              item-type="tag"
+              :tags="tagStore.tags"
+              @select="handleTagSelect"
             />
           </PopoverContent>
         </Popover>
@@ -179,9 +175,10 @@
           </PopoverTrigger>
           <PopoverContent align="end" side="bottom" class="w-80 p-2">
             <FolderTreeComponent
-              :folders="folderItems"
+              item-type="folder"
+              :folders="folderTreeNodes"
               :show-base-categories="false"
-              @folder-select="handleFolderSelect"
+              @select="handleFolderSelect"
             />
           </PopoverContent>
         </Popover>
@@ -285,7 +282,6 @@ import FolderTreeComponent from './FolderTreeComponent/FolderTreeComponent.vue'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useTagStore } from '@renderer/stores/tag'
 import { useFolderStore } from '@renderer/stores/folder'
-import type { FolderItem } from '@renderer/types/components'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { Empty, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 
@@ -325,20 +321,21 @@ watch(() => [tagPopoverOpen.value, folderPopoverOpen.value], ([tagOpen, folderOp
 })
 
 // Store 数据映射为 FolderItem 格式
-function mapFolderToItem(f: any): FolderItem {
-  return {
+const folderTreeNodes = computed(() =>
+  folderStore.folders.map((f: any) => ({
     id: String(f.id),
     label: f.title,
     icon: 'folder',
     count: f.fileCount,
-    children: f.children?.map(mapFolderToItem),
+    children: f.children?.map((c: any) => ({
+      id: String(c.id),
+      label: c.title,
+      icon: 'folder',
+      count: c.fileCount,
+    })),
     originalData: f,
-  }
-}
-const folderItems = computed(() => folderStore.folders.map(mapFolderToItem))
-const tagItems = computed(() => tagStore.tags)
-
-
+  }))
+)
 
 // 计算显示的文件列表
 const displayItems = computed(() => {

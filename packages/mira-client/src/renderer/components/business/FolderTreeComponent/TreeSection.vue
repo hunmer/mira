@@ -1,22 +1,22 @@
 <template>
   <div>
     <div class="flex items-center justify-between px-2 mb-2">
-      <h2 class="text-xs font-semibold text-gray-500">{{ title }}</h2>
-      <div class="flex items-center space-x-1">
+      <h2 class="text-xs font-semibold text-gray-500 leading-5">{{ title }}</h2>
+      <div class="flex items-center gap-0.5 -mr-1">
         <button
           @click="$emit('toggle-search')"
-          class="p-1 text-gray-400 hover:text-gray-600 rounded"
+          class="flex h-5 w-5 items-center justify-center text-gray-400 hover:text-gray-600 rounded"
           :class="{ 'text-blue-600': showSearch }"
           :title="searchPlaceholder"
         >
-          <span class="material-icons text-sm">search</span>
+          <span class="material-icons leading-none" style="font-size: 18px">search</span>
         </button>
         <button
           @click="$emit('add')"
-          class="p-1 text-gray-400 hover:text-gray-600 rounded"
+          class="flex h-5 w-5 items-center justify-center text-gray-400 hover:text-gray-600 rounded"
           :title="`添加${title}`"
         >
-          <span class="material-icons text-sm">add</span>
+          <span class="material-icons leading-none" style="font-size: 18px">add</span>
         </button>
       </div>
     </div>

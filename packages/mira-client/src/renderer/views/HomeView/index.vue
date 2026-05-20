@@ -388,18 +388,22 @@ onUnmounted(() => {
         <!-- 左侧侧边栏 -->
         <ResizablePanel :default-size="20" :min-size="15" class="bg-gray-50 border-r border-gray-200 flex flex-col overflow-hidden">
           <!-- 文件夹树形导航 -->
-          <div class="flex-grow p-2 overflow-y-auto min-w-0">
+          <div class="flex-grow p-2 overflow-y-auto min-w-0 space-y-4">
             <FolderTreeComponent
+              item-type="folder"
               :folders="homeController.folderTree.value"
-              :tags="tagStore.tags"
-              :selected-folder="homeController.selectedFolder.value"
-              :show-tags="true"
-              @folder-select="handleFolderSelect"
-              @tag-select="handleTagSelect"
-              @folder-expand="homeController.handleFolderExpand"
-              @refresh-folders="handleRefreshFolders"
-              @refresh-tags="handleRefreshTags"
+              :selected-key="homeController.selectedFolder.value"
+              :show-base-categories="true"
+              @select="handleFolderSelect"
+              @expand="homeController.handleFolderExpand"
+              @refresh="handleRefreshFolders"
               @empty-trash="handleEmptyTrash"
+            />
+            <FolderTreeComponent
+              item-type="tag"
+              :tags="tagStore.tags"
+              @select="handleTagSelect"
+              @refresh="handleRefreshTags"
             />
           </div>
         </ResizablePanel>

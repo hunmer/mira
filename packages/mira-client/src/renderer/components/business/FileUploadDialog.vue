@@ -235,16 +235,18 @@
           <div class="w-72 flex flex-col gap-4 flex-shrink-0">
             <!-- 文件夹和标签树 -->
             <div class="bg-white rounded-xl border border-gray-200 overflow-hidden flex-1">
-              <div class="p-2 h-full overflow-y-auto">
+              <div class="p-2 h-full overflow-y-auto space-y-4">
                 <FolderTreeComponent
+                  item-type="folder"
                   :folders="folderTreeData"
-                  :tags="tagTreeData"
-                  :selected-folder="selectedTargetFolderId"
-                  :selected-tags="selectedTargetTagIds"
+                  :selected-key="selectedTargetFolderId"
                   :show-base-categories="false"
-                  :show-tags="true"
-                  @folder-select="handleFolderSelect"
-                  @tag-select="handleTagSelect"
+                  @select="handleFolderSelect"
+                />
+                <FolderTreeComponent
+                  item-type="tag"
+                  :tags="tagTreeData"
+                  @select="handleTagSelect"
                 />
               </div>
             </div>
