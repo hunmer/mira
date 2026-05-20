@@ -1,5 +1,10 @@
 <template>
-  <div v-if="displayItems.length > 0" class="space-y-4">
+  <div class="space-y-4">
+    <!-- 无数据占位 -->
+    <div v-if="displayItems.length === 0" class="flex flex-col items-center justify-center py-12 text-gray-400">
+      <span class="material-icons text-4xl">info_outline</span>
+      <p class="mt-2 text-sm">选择文件以查看详情</p>
+    </div>
     <!-- 预览图 - 支持多选相册效果 -->
     <div class="relative">
       <!-- 单选模式 -->

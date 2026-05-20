@@ -29,6 +29,10 @@ export const useMediaStore = defineStore('media', () => {
   const lastUpdated = ref<Date | null>(null)
   const pendingOperations = ref<Set<string>>(new Set())
 
+  // 详情面板全局状态
+  const detailSidebarFiles = ref<FileInfo[]>([])
+  const showDetailSidebar = ref(false)
+
   // 本地文件路径映射: {libraryId: {fileId: localPath}}
   const localFiles = ref<Record<string, Record<string, string>>>({})
   
@@ -1049,6 +1053,19 @@ export const useMediaStore = defineStore('media', () => {
     } as ExtendedFileInfo
   }
 
+  // 详情面板操作
+  const setDetailSidebarFiles = (files: FileInfo[]) => {
+    detailSidebarFiles.value = files
+  }
+
+  const clearDetailSidebar = () => {
+    detailSidebarFiles.value = []
+  }
+
+  const toggleDetailSidebar = () => {
+    showDetailSidebar.value = !showDetailSidebar.value
+  }
+
   return {
     // 状态
     files,
@@ -1114,6 +1131,13 @@ export const useMediaStore = defineStore('media', () => {
     clearLocalFiles,
     enhanceFileWithLocalPath,
     enhanceFilesWithLocalPath,
-    getExtendedFileInfo
+    getExtendedFileInfo,
+
+    // 详情面板
+    detailSidebarFiles,
+    showDetailSidebar,
+    setDetailSidebarFiles,
+    clearDetailSidebar,
+    toggleDetailSidebar
   }
 })

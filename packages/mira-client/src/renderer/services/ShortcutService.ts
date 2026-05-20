@@ -83,7 +83,6 @@ export class ShortcutService {
     }
 
     this.isInitialized = true
-    console.log('快捷键服务初始化完成')
   }
 
   /**
@@ -171,7 +170,6 @@ export class ShortcutService {
         const success = await electronService.invoke('shortcut:register', binding.shortcut, binding.actionId)
         if (success) {
           this.globalBindings.set(binding.shortcut, binding)
-          console.log(`用户自定义全局快捷键 ${binding.shortcut} 注册成功`)
           return true
         } else {
           console.warn(`全局快捷键 ${binding.shortcut} 注册失败`)
@@ -206,7 +204,6 @@ export class ShortcutService {
         try {
           await electronService.invoke('shortcut:unregister', shortcut)
           this.globalBindings.delete(shortcut)
-          console.log(`全局快捷键 ${shortcut} 注销成功`)
         } catch (error) {
           console.error(`注销全局快捷键失败:`, error)
         }
@@ -226,7 +223,6 @@ export class ShortcutService {
 
     try {
       await action.callback(...args)
-      console.log(`执行动作: ${action.title}`)
       return true
     } catch (error) {
       console.error(`执行动作 ${actionId} 失败:`, error)
@@ -399,14 +395,11 @@ export class ShortcutService {
 
     const globalBindings = this.getAllBindings().filter(binding => binding.isGlobal && binding.enabled)
 
-    console.log(`开始注册 ${globalBindings.length} 个全局快捷键`)
-
     for (const binding of globalBindings) {
       try {
         const success = await electronService.invoke('shortcut:register', binding.shortcut, binding.actionId)
         if (success) {
           this.globalBindings.set(binding.shortcut, binding)
-          console.log(`全局快捷键 ${binding.shortcut} -> ${binding.actionId} 注册成功`)
         } else {
           console.warn(`全局快捷键 ${binding.shortcut} 注册失败，降级为本地快捷键`)
           binding.isGlobal = false
@@ -426,14 +419,11 @@ export class ShortcutService {
    */
   private setupGlobalShortcutListener(): void {
     if (electronService.isElectron() && !this.globalListenerSetup) {
-      // 添加监听器
       electronService.on('shortcut:triggered', (actionId: string) => {
-        console.log('全局快捷键触发:', actionId)
         this.executeAction(actionId)
       })
 
       this.globalListenerSetup = true
-      console.log('全局快捷键监听器已设置')
     }
   }
 
@@ -506,7 +496,6 @@ export class ShortcutService {
       }
     }
 
-    console.log(`加载了 ${defaultConfig.bindings.length} 个默认快捷键和 ${userBindingsArray.length} 个用户自定义快捷键`)
   }
 
   /**
@@ -524,7 +513,6 @@ export class ShortcutService {
     try {
       const userBindingsArray = Array.from(this.userBindings.values())
       await ConfigStorage.setItem(this.STORAGE_KEY, JSON.stringify(userBindingsArray))
-      console.log('用户自定义快捷键已保存')
     } catch (error) {
       console.error('保存用户自定义快捷键失败:', error)
     }
@@ -589,8 +577,6 @@ export class ShortcutService {
     if (electronService.isElectron()) {
       await this.registerGlobalShortcuts()
     }
-
-    console.log('快捷键已重置为默认配置')
   }
 
   /**

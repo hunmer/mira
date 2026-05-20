@@ -137,7 +137,7 @@
             @dblclick="handleMediaDoubleClick"
             @contextmenu="handleMediaContextMenu"
             @preview="handleMediaInfo"
-            @download="(item) => console.log('Download:', item)"
+            @download="() => {}"
             @media-select="handleMediaSelect"
             @media-delete="handleMediaDelete"
           />
@@ -156,7 +156,7 @@
               @contextmenu="handleMediaContextMenu"
               @media-select="handleMediaSelect"
               @media-delete="handleMediaDelete"
-              @after-render="() => console.log('✅ Waterfall 组件已渲染，数据项数量:', paginatedMediaItems.length)"
+              @after-render="() => {}"
             />
           </div>
 
@@ -259,7 +259,6 @@
         <div class="p-4 space-y-4 flex-grow overflow-y-auto">
           <!-- 有选中文件时显示文件详情 -->
           <MediaDetailComponent
-            v-if="sidebarMediaItems.length > 0"
             :item="sidebarMediaItems.length === 1 ? sidebarMediaItems[0] : undefined"
             :items="sidebarMediaItems.length > 1 ? sidebarMediaItems : undefined"
             :library-id="libraryId || 'default'"
@@ -267,37 +266,6 @@
             @tag-remove="handleTagRemove"
             @folder-change="handleFolderChange"
           />
-
-          <!-- 无选中文件时显示素材库信息 -->
-          <div v-else class="flex flex-col items-center justify-center h-full text-center space-y-4">
-            <div class="flex flex-col items-center space-y-4">
-              <!-- 素材库图标 -->
-              <div class="flex items-center justify-center">
-                <span class="material-icons text-9xl" :style="{ color: currentTabContent.iconColor }">
-                  {{ currentTabContent.icon }}
-                </span>
-              </div>
-
-              <!-- 素材库标题 -->
-              <div class="text-center">
-                <h3 class="text-lg font-semibold text-gray-900 mb-1">{{ currentTabContent.label }}</h3>
-                <p class="text-sm text-gray-500">{{ getCurrentLibraryDisplayName() }}</p>
-              </div>
-
-              <!-- 文件统计 -->
-              <div class="bg-gray-50 rounded-lg p-3 w-full">
-                <div class="flex items-center justify-center text-sm">
-                  <span class="text-gray-600 mr-2">文件总数:</span>
-                  <span class="font-medium text-gray-900">{{ filteredMediaItems.length }}</span>
-                </div>
-              </div>
-
-              <!-- 提示信息 -->
-              <p class="text-xs text-gray-400 mt-4">
-                选择文件以查看详细信息
-              </p>
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -369,7 +337,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick, toRef } from 'vue'
 import { useMediaStore } from '@renderer/stores/media'
 import { useFolderStore } from '@renderer/stores/folder'
 import { useLibraryStore } from '@renderer/stores/library'
@@ -437,28 +405,26 @@ let initialFilters = { ...props.filters }
 
 // 根据 viewType 设置默认状态筛选器
 if (props.viewType === 'trash') {
-  // 回收站：添加 recycled: 1 筛选条件
   initialFilters.recycled = 1
-  console.log('🗑️ 设置回收站筛选器: recycled=1')
 }
 // files 类型不需要额外的筛选器，folder 和 tag 通过 props.filters 传入
 
 if (Object.keys(initialFilters).length > 0) {
-  console.log('🔧 MediaTabListView 初始化筛选器:', initialFilters)
   mediaTabData.setInitialFilters(initialFilters)
 }
 
 // 使用 composables
 const mediaOperations = useMediaOperations()
 const {
-  selectedMediaItem,
-  showDetailSidebar,
   handleMediaClick,
   handleMediaInfo,
   handleMediaSetFolder,
   handleMediaSetTags,
-  toggleDetailSidebar
 } = mediaOperations
+
+// 详情面板使用全局 store 状态
+const showDetailSidebar = toRef(mediaStore, 'showDetailSidebar')
+const toggleDetailSidebar = () => mediaStore.toggleDetailSidebar()
 
 const filtersComposable = useFilters()
 const {
@@ -515,30 +481,15 @@ const handleDrop = (e: DragEvent) => {
 }
 
 // 使用 tab 独立的 viewMode（从 MediaTabData 获取）
-const viewMode = computed(() => {
-  const mode = mediaTabData.viewMode.value
-  console.log('🔄 MediaTabListView viewMode 计算 (Tab级别):', mode, 'Tab ID:', props.tabId)
-  return mode
-})
+const viewMode = computed(() => mediaTabData.viewMode.value)
 const selectedItems = computed(() => homeController.selectedItems?.value || [])
 const cardSize = computed(() => homeController.cardSize?.value || 'medium')
 const columnsPerRow = computed(() => homeController.columnsPerRow?.value || 6)
 const dynamicColumnWidth = computed(() => homeController.dynamicColumnWidth?.value || 200)
 // 使用MediaTabData的分页状态
-const currentPage = computed(() => {
-  const page = mediaTabData.currentPage.value
-  console.log(`📟 MediaTabListView.currentPage (MediaTabData):`, page)
-  return page
-})
+const currentPage = computed(() => mediaTabData.currentPage.value)
 
-const totalPages = computed(() => {
-  const pages = mediaTabData.totalPages.value
-  console.log(`📟 MediaTabListView.totalPages (MediaTabData):`, {
-    计算的页数: pages,
-    MediaTabData调试信息: mediaTabData.debugInfo.value
-  })
-  return pages
-})
+const totalPages = computed(() => mediaTabData.totalPages.value)
 
 const paginationPages = computed(() => {
   // 简单的分页页码计算
@@ -573,7 +524,6 @@ const paginationPages = computed(() => {
     }
   }
 
-  console.log(`📟 MediaTabListView.paginationPages (Tab级别):`, pages)
   return pages
 })
 // 使用本地的 paginatedMediaItems 计算全选状态
@@ -588,15 +538,8 @@ const isAllSelected = computed(() => {
 // 从 MediaTabData 获取数据（优先使用缓存数据）
 const paginatedMediaItems = computed(() => {
   const cachedData = mediaTabData.getCachedData()
-  if (cachedData.data.length > 0) {
-    // 使用缓存的分页数据
-    console.log('📊 MediaTabListView paginatedMediaItems (缓存):', cachedData.data.length, '项')
-    return cachedData.data
-  }
-  // 回退到homeController的数据
-  const fallbackData = homeController.paginatedMediaItems?.value || []
-  console.log('📊 MediaTabListView paginatedMediaItems (回退):', fallbackData.length, '项')
-  return fallbackData
+  if (cachedData.data.length > 0) return cachedData.data
+  return homeController.paginatedMediaItems?.value || []
 })
 
 const filteredMediaItems = computed(() => {
@@ -637,36 +580,20 @@ const currentTabContent = computed(() => {
   }
 })
 
-// 计算侧边栏显示的媒体项目
-const sidebarMediaItems = computed(() => {
-  // 优先基于selectedItems来判断，确保清除选择后正确更新
-  const selectedIds = selectedItems.value
+// 侧边栏文件直接从全局 store 读取
+const sidebarMediaItems = computed(() => mediaStore.detailSidebarFiles)
 
-  console.log('📟 sidebarMediaItems 计算:', {
-    selectedIds: selectedIds,
-    selectedIdsLength: selectedIds?.length,
-    selectedMediaItemExists: !!selectedMediaItem?.value,
-    selectedMediaItemId: selectedMediaItem?.value?.id
-  })
-
-  // 如果没有任何选中项，返回空数组
-  if (!selectedIds || selectedIds.length === 0) {
-    console.log('📟 sidebarMediaItems: 无选中项，返回空数组')
-    return []
+// 选中项变化时同步 FileInfo 到全局 store
+watch([selectedItems, () => paginatedMediaItems.value], ([ids, items]) => {
+  if (!ids || ids.length === 0) {
+    mediaStore.clearDetailSidebar()
+    return
   }
-
-  // 根据选中的ID获取对应的媒体项目
-  const selectedMediaItems = (homeController.mediaItems?.value || []).filter(item => selectedIds.includes(item.id))
-
-  // 如果过滤后没有找到对应项目，尝试使用selectedMediaItem作为备选
-  if (selectedMediaItems.length === 0 && selectedMediaItem?.value && selectedIds.includes(selectedMediaItem.value.id)) {
-    console.log('📟 sidebarMediaItems: 使用备选selectedMediaItem')
-    return [selectedMediaItem.value]
+  const matched = items.filter((item: FileInfo) => ids.includes(item.id))
+  if (matched.length > 0) {
+    mediaStore.setDetailSidebarFiles(matched)
   }
-
-  console.log('📟 sidebarMediaItems: 返回选中的媒体项目', selectedMediaItems.length)
-  return selectedMediaItems
-})
+}, { deep: true })
 
 // 转换数据为树形结构
 const folderTreeItems = computed(() => {
@@ -692,14 +619,8 @@ const fetchPageData = async (page: number) => {
 
       if (libraryStore.currentLibrary?.id) {
         libraryId = libraryStore.currentLibrary.id
-        console.log(`📚 从当前素材库获取 libraryId: ${libraryId}`)
       } else {
-        console.warn('❌ 缺少 libraryId 且当前没有选中的素材库，无法获取分页数据', {
-          tabId: props.tabId,
-          viewType: props.viewType,
-          libraryId: props.libraryId,
-          allProps: props
-        })
+        console.warn('缺少 libraryId，无法获取分页数据')
         return
       }
     } catch (error) {
@@ -718,10 +639,7 @@ const fetchPageData = async (page: number) => {
     const itemsPerPage = mediaTabData.itemsPerPage.value
     const offset = (page - 1) * itemsPerPage
 
-    console.log(`📄 获取分页数据: 页码${page}, offset=${offset}, limit=${itemsPerPage}`)
-
-    // 构建tab信息，包含当前的筛选器状态
-    // 清理 null/undefined 值，避免发送无意义的过滤参数
+    // 清理 null/undefined 值
     const rawFilters = mediaTabData.filters.value
     const currentFilters: Record<string, any> = {}
     Object.entries(rawFilters).forEach(([key, value]) => {
@@ -729,9 +647,6 @@ const fetchPageData = async (page: number) => {
         currentFilters[key] = value
       }
     })
-    console.log(`📄 fetchPageData 当前筛选器:`, JSON.stringify(currentFilters, null, 2))
-    console.log(`📄 fetchPageData 筛选器键:`, Object.keys(currentFilters))
-    console.log(`📄 fetchPageData props.filters:`, JSON.stringify(props.filters, null, 2))
 
     const tabInfo = {
       id: props.tabId,
@@ -743,16 +658,6 @@ const fetchPageData = async (page: number) => {
       order: sortOrder.value
     }
 
-    console.log(`🔄 fetchPageData tabInfo:`, {
-      tabId: tabInfo.id,
-      type: tabInfo.type,
-      libraryId: tabInfo.libraryId,
-      sort: tabInfo.sort,
-      order: tabInfo.order,
-      filters: tabInfo.filters,
-      完整tabInfo: JSON.stringify(tabInfo, null, 2)
-    })
-
     // 调用mediaStore的fetchFilesForTab获取数据
     const result = await mediaStore.fetchFilesForTab(tabInfo, {
       limit: itemsPerPage,
@@ -760,8 +665,6 @@ const fetchPageData = async (page: number) => {
     })
 
     if (result.success && result.data) {
-      console.log(`✅ 分页数据加载成功: ${result.data.length}条记录`)
-
       // 缓存数据到MediaTabData
       mediaTabData.cacheData(result.data, result.total || 0)
 
@@ -798,7 +701,6 @@ const handleMediaDoubleClick = (item: FileInfo) => {
 }
 
 const handleMediaSelect = (item: FileInfo, selected: boolean) => {
-  console.log('📝 MediaTabListView handleMediaSelect:', item.name, 'selected:', selected)
   homeController.handleMediaSelect(item, selected)
   emit('itemSelect', item)
 }
@@ -822,8 +724,6 @@ const handleSelectAll = () => {
 }
 
 const handleFilterChange = async (filter: FilterRule) => {
-  console.log('🔄 handleFilterChange:', filter)
-
   // 获取当前的筛选器状态作为基础
   const mergedFilters: Record<string, any> = { ...mediaTabData.filters.value }
 
@@ -833,12 +733,10 @@ const handleFilterChange = async (filter: FilterRule) => {
     // 跳过 FilterRule 格式的筛选器，只保留简单键值对
     if (value === null || typeof value !== 'object') {
       mergedFilters[key] = value
-      console.log(`📌 保留初始筛选器 ${key}:`, value)
     }
   })
 
   // 更新变化的筛选器
-  // 统一转换为 FilterRule 格式，以便 fetchFilesForTab 正确处理
   switch (filter.id) {
     case 'folders':
       if (filter.selectedValues && filter.selectedValues.length > 0) {
@@ -870,7 +768,6 @@ const handleFilterChange = async (filter: FilterRule) => {
           value: filter.value.trim(),
           label: '网址筛选'
         }
-        console.log('🔗 设置 urls 筛选器:', filter.value.trim())
       } else {
         delete mergedFilters.urls
       }
@@ -899,8 +796,6 @@ const handleFilterChange = async (filter: FilterRule) => {
       break
   }
 
-  console.log('📦 合并后的筛选器:', mergedFilters)
-
   // 更新MediaTabData中的筛选器
   mediaTabData.updateFilters(mergedFilters)
 
@@ -912,8 +807,6 @@ const handleFilterChange = async (filter: FilterRule) => {
 }
 
 const handleFilterClear = async (filter: FilterRule) => {
-  console.log('🗑️ handleFilterClear:', filter)
-
   // 获取当前的筛选器状态作为基础
   const mergedFilters: Record<string, any> = { ...mediaTabData.filters.value }
 
@@ -930,7 +823,6 @@ const handleFilterClear = async (filter: FilterRule) => {
 
   // 如果是初始筛选器，恢复为初始值而不是完全清除
   if (isInitialFilter(filter.id)) {
-    console.log('⚠️ 尝试清除初始筛选器，恢复为初始值')
     // 重新初始化 filterRules 显示
     initializeFilterRules()
   } else {
@@ -952,13 +844,9 @@ const handleFilterClear = async (filter: FilterRule) => {
   Object.entries(props.filters).forEach(([key, value]) => {
     // 跳过 FilterRule 格式的筛选器，只保留简单键值对
     if (value === null || typeof value !== 'object') {
-      // 如果对应的 FilterRule 被清除，确保简单格式也被考虑
-      // 但不覆盖用户的清除操作
-      console.log(`📌 保留初始筛选器 ${key}:`, value)
+      // 保留简单格式的初始筛选器
     }
   })
-
-  console.log('📦 清除后的筛选器:', mergedFilters)
 
   // 更新MediaTabData中的筛选器
   mediaTabData.updateFilters(mergedFilters)
@@ -971,18 +859,9 @@ const handleFilterClear = async (filter: FilterRule) => {
 }
 
 const handleSortChange = async (field: string, order: string) => {
-  console.log('[MediaTabListView] handleSortChange 被调用:', { field, order })
-
-  // 更新排序字段
   sortField.value = field
   sortOrder.value = order as 'asc' | 'desc'
-
-  console.log('[MediaTabListView] 排序已更新:', { sortField: sortField.value, sortOrder: sortOrder.value })
-
-  // 排序变化时重新加载第一页数据
   await fetchPageData(1)
-
-  console.log('[MediaTabListView] fetchPageData 已调用')
 }
 
 const handleToolbarAction = async (action: string) => {
@@ -1074,29 +953,13 @@ const handleFolderChange = (folderId: string) => {
 
 // 处理视图模式切换（使用 tab 独立的 viewMode）
 const handleViewModeChange = async (mode: 'grid' | 'list' | 'waterfall') => {
-  console.log('🔄 切换视图模式 (Tab级别):', mode, 'Tab ID:', props.tabId)
-
-  // 更新该 tab 独立的视图模式
   await mediaTabData.setViewMode(mode)
-
-  // 确保 DOM 更新
   await nextTick()
-
-  console.log('✅ 视图模式已更新 (Tab级别):', mediaTabData.viewMode.value)
-  console.log('✅ 本地计算的视图模式:', viewMode.value)
 }
 
-// 获取当前库的显示名称
-const getCurrentLibraryDisplayName = () => {
-  // 直接返回 label 或默认名称
-  // folder 和 tag 的名称通过 props.label 传入
-  return props.label || props.libraryId || '默认素材库'
-}
 
 // 初始化 filterRules，同步 props.filters 中的初始筛选器
 const initializeFilterRules = () => {
-  console.log('🎯 初始化 FilterRules，同步 props.filters:', props.filters)
-
   // 如果 props.filters 中有 folder，同步到 folders filterRule
   if (props.filters?.folder !== undefined) {
     const foldersFilter = filterRules.value.find(f => f.id === 'folders')
@@ -1106,7 +969,6 @@ const initializeFilterRules = () => {
       if (folderValue !== null) {
         foldersFilter.selectedValues = [folderValue]
         foldersFilter.active = true
-        console.log('✅ 同步 folder 筛选器:', folderValue)
       }
     }
   }
@@ -1120,12 +982,10 @@ const initializeFilterRules = () => {
         // 如果是 FilterRule 格式
         tagsFilter.selectedValues = tagsValue.selectedValues || []
         tagsFilter.active = tagsFilter.selectedValues.length > 0
-        console.log('✅ 同步 tags 筛选器:', tagsValue.selectedValues)
       } else if (Array.isArray(tagsValue)) {
         // 如果是数组格式
         tagsFilter.selectedValues = tagsValue
         tagsFilter.active = tagsValue.length > 0
-        console.log('✅ 同步 tags 筛选器 (数组):', tagsValue)
       }
     }
   }
@@ -1134,19 +994,12 @@ const initializeFilterRules = () => {
 // 监听Tab ID变化，初始化MediaTabData
 watch(() => props.tabId, async (newTabId, oldTabId) => {
   if (newTabId && props.libraryId) {
-    console.log(`📄 MediaTabListView 切换到Tab:`, {
-      newTabId,
-      oldTabId,
-      mediaTabDataDebug: mediaTabData.debugInfo.value
-    })
-
     // 初始化 filterRules
     initializeFilterRules()
 
     // 检查是否有缓存数据
     const cachedData = mediaTabData.getCachedData()
     if (cachedData.total > 0 && cachedData.data.length > 0) {
-      console.log(`💾 MediaTabListView 检测到缓存数据:`, cachedData)
       mediaTabData.updatePagination({
         totalRecords: cachedData.total,
         isServerPagination: true
@@ -1158,28 +1011,13 @@ watch(() => props.tabId, async (newTabId, oldTabId) => {
 // 生命周期
 onMounted(async () => {
   if (props.libraryId && props.tabId) {
-    // 初始化时检查是否需要加载数据
-    const cachedData = mediaTabData.getCachedData()
-    console.log(`🔍 MediaTabListView onMounted 检查:`, {
-      tabId: props.tabId,
-      cachedTotal: cachedData.total,
-      filters: mediaTabData.filters.value
-    })
-
-    // if (cachedData.total === 0) {
-    //   console.log(`🚀 MediaTabListView 初始化加载数据`)
-    //   await fetchPageData(1)
-    // } else {
-    //   console.log(`💾 MediaTabListView 使用缓存数据，跳过初始化加载`)
-    // }
+    mediaTabData.getCachedData()
   }
 })
 
 // 组件卸载时清理
 onUnmounted(() => {
-  // 如果需要完全清理Tab数据，可以调用cleanup
   // mediaTabData.cleanup()
-  console.log(`🧹 MediaTabListView (${props.tabId}) 组件卸载`)
 })
 
 // 监听器
@@ -1188,7 +1026,6 @@ watch(
   ([newTabId, newLibraryId, newFilters], [oldTabId, oldLibraryId, oldFilters]) => {
     // 如果 filters 变化，重新初始化过滤器
     if (JSON.stringify(newFilters) !== JSON.stringify(oldFilters)) {
-      console.log('🔄 props.filters 变化，重新初始化过滤器:', { oldFilters, newFilters })
       // 重新构建初始过滤器
       let initialFilters = { ...newFilters }
       if (props.viewType === 'trash') {
@@ -1210,13 +1047,6 @@ watch(
   { deep: true }
 )
 
-// 监听视图模式变化以便调试
-watch(
-  () => viewMode.value,
-  (newMode, oldMode) => {
-    console.log('🔄 MediaTabListView 视图模式变化:', { oldMode, newMode })
-  }
-)
 </script>
 
 <style scoped>

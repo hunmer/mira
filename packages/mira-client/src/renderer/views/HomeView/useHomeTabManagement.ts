@@ -131,14 +131,6 @@ export function useHomeTabManagement() {
 
   // Tab切换回调函数
   const handleTabSwitch = async (activeTab: TabItem) => {
-    console.log('🔄 Tab切换:', {
-      tabId: activeTab.id,
-      tabLabel: activeTab.label,
-      tabType: activeTab.type,
-      previousCurrentTabId: mediaStore.currentTabId
-    })
-
-    // 设置 mediaStore 的当前 tab ID
     mediaStore.setCurrentTab(activeTab.id)
 
     // 更新 HomeController 状态
@@ -150,26 +142,10 @@ export function useHomeTabManagement() {
 
     // 同步Tab级别分页状态到全局HomeController
     const tabPaginationState = getTabPaginationState(activeTab.id)
-    console.log(`🔄 Tab切换同步分页状态: ${activeTab.label}`, {
-      tabId: activeTab.id,
-      tab分页状态: tabPaginationState,
-      之前的全局状态: {
-        currentPage: homeController.currentPage.value,
-        serverTotalRecords: homeController.serverTotalRecords.value,
-        isServerPagination: homeController.isServerPagination.value
-      }
-    })
 
     homeController.currentPage.value = tabPaginationState.currentPage
     homeController.serverTotalRecords.value = tabPaginationState.totalRecords
     homeController.isServerPagination.value = tabPaginationState.isServerPagination
-
-    console.log(`✅ Tab切换后的全局状态:`, {
-      currentPage: homeController.currentPage.value,
-      serverTotalRecords: homeController.serverTotalRecords.value,
-      isServerPagination: homeController.isServerPagination.value,
-      totalPages: homeController.totalPages.value
-    })
 
     // 静态更新路由参数以匹配当前 tab
     try {
@@ -193,23 +169,16 @@ export function useHomeTabManagement() {
           type: 'clear'
         })
       }
-
-      console.log('✅ Tab切换时路由参数已更新')
     } catch (error) {
-      console.error('❌ Tab切换时更新路由参数失败:', error)
+      console.error('Tab切换时更新路由参数失败:', error)
     }
   }
 
   // Tab懒加载处理器
   const loadTabData = async (tab: TabItem, pagination?: { limit?: number; offset?: number }) => {
-    if (!libraryStore.currentLibrary?.id) {
-      console.warn('⚠️ No current library for tab loading')
-      return
-    }
+    if (!libraryStore.currentLibrary?.id) return
 
     try {
-      console.log(`📁 Loading data for tab: ${tab.label} (${tab.type})`, { pagination })
-
       // 获取或初始化Tab级别的分页状态
       let tabPaginationState = getTabPaginationState(tab.id)
 
@@ -242,47 +211,26 @@ export function useHomeTabManagement() {
       )
 
       if (result.success) {
-        console.log(`✅ Loaded ${result.data?.length} files for tab: ${tab.label}`)
-
         // 更新Tab级别的分页状态
         if (result.total !== undefined) {
-          console.log(`📊 数据加载完成，开始更新分页状态: Tab ${tab.label}`, {
-            返回的总记录数: result.total,
-            返回的limit: (result as any).limit,
-            返回的offset: (result as any).offset,
-            加载的数据量: result.data?.length
-          })
-
           updateTabPaginationState(tab.id, {
             totalRecords: result.total,
             isServerPagination: true
           })
 
-          // 获取更新后的Tab分页状态
-          const updatedTabState = getTabPaginationState(tab.id)
-          console.log(`📊 Tab分页状态已更新:`, updatedTabState)
-
           // 同步到全局状态
           homeController.serverTotalRecords.value = result.total
           homeController.isServerPagination.value = true
-
-          console.log(`📊 全局分页状态已同步:`, {
-            serverTotalRecords: homeController.serverTotalRecords.value,
-            isServerPagination: homeController.isServerPagination.value,
-            计算的totalPages: homeController.totalPages.value
-          })
-        } else {
-          console.warn(`⚠️ API未返回总记录数，result:`, result)
         }
 
         // 缓存数据到tab中
         const loadedData = mediaStore.getFilesForTab(tab.id) || []
         cacheTabData(tab.id, loadedData, result.total)
       } else {
-        console.error(`❌ Failed to load files for tab: ${tab.label}`, (result as any).error || 'Unknown error')
+        console.error(`加载Tab数据失败: ${tab.label}`, (result as any).error || 'Unknown error')
       }
     } catch (error) {
-      console.error('❌ Tab data loading failed:', error)
+      console.error('Tab数据加载失败:', error)
       // 直接设置状态而不是调用disableServerPagination避免重置
       homeController.isServerPagination.value = false
       homeController.serverTotalRecords.value = 0
@@ -302,18 +250,12 @@ export function useHomeTabManagement() {
 
   // 关闭Tab的包装方法
   const closeTabWithCallback = async (tabId: string) => {
-    console.log('🗂️ 开始关闭Tab:', tabId)
-
     await closeTab(tabId, {
       onSwitchCallback: handleTabSwitch,
       lazyLoadHandler: async (tab) => {
-        console.log('🔄 关闭Tab后触发懒加载:', tab.id, tab.label)
-        // 使用默认分页参数
         await loadTabData(tab, { limit: 999, offset: 0 })
       }
     })
-
-    console.log('✅ Tab关闭完成')
   }
 
   // 激活上一次的tab
