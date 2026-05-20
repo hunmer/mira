@@ -1,21 +1,19 @@
-# CLAUDE.md
+[根目录](../../CLAUDE.md) > [packages](..) > **mira-client**
 
-dashboard路径：/Users/Zhuanz/mira-dashboard/apps/web-antd/src/
-后端路径：/Users/Zhuanz/mira_typescript/packages/mira-app-server
-
-> 回到上一级: [.bmad-core/CLAUDE.md](./.bmad-core/CLAUDE.md)
-
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+# mira-client
 
 ## 变更记录 (Changelog)
 
 | 日期 | 操作 | 说明 |
 |------|------|------|
-| 2026-05-12 | 全量初始化扫描 | 阶段A全仓清点 + 阶段B模块优先扫描 + 阶段C深度补捞；覆盖 6 大模块、27 个已有 CLAUDE.md；新增 Mermaid 模块结构图、`.claude/index.json` |
+| 2026-05-20 | 架构扫描更新 | 更新根级导航面包屑；补充 monorepo 上下文信息 |
+| 2026-05-12 | 全量初始化扫描 | 阶段A全仓清点 + 阶段B模块优先扫描 + 阶段C深度补捞；覆盖 6 大模块、27 个已有 CLAUDE.md |
 
 ## 项目愿景
 
-Mira 是一个基于 Electron 的桌面媒体库管理客户端，采用 Vue 3 + TypeScript + PrimeVue 构建。通过客户端-服务器架构（mira-server-sdk），提供媒体文件的整理、查看、搜索和管理功能，支持插件扩展、自定义协议、全局搜索等高级特性。
+Mira 是一个基于 Electron 的桌面媒体库管理客户端，采用 Vue 3 + TypeScript + Shadcn-vue 构建。通过客户端-服务器架构（mira-server-sdk），提供媒体文件的整理、查看、搜索和管理功能，支持插件扩展、自定义协议、全局搜索等高级特性。
+
+本模块是 Mira TypeScript monorepo 中的桌面客户端组件，与服务端 `mira-app-server` 和 SDK `mira-server-sdk` 协同工作。
 
 ## 架构总览
 
@@ -109,7 +107,6 @@ graph TD
 - **桌面**: Electron 多进程架构 (main, renderer, preload)
 - **状态管理**: Pinia + 持久化存储
 - **构建工具**: Vite + 多进程自定义配置
-- **包管理器**: cnpm
 - **SDK**: mira-server-sdk (后端通信)
 
 ## 模块索引
@@ -128,34 +125,32 @@ graph TD
 
 ```bash
 # 开发
-cnpm run dev                    # 启动 Vite 开发服务器
-cnpm run electron:dev          # Electron 开发模式
-cnpm run electron:dev:mac      # macOS Electron 开发模式
-cnpm run electron:start        # 启动 Electron
+pnpm run dev                    # 启动 Vite 开发服务器
+pnpm run electron:dev          # Electron 开发模式
+pnpm run electron:dev:mac      # macOS Electron 开发模式
+pnpm run electron:start        # 启动 Electron
 
 # 构建
-cnpm run build                 # 构建渲染进程
-cnpm run build:all             # 构建所有进程 (renderer + main + preload)
-cnpm run build:main            # 仅构建主进程
-cnpm run build:preload         # 仅构建预加载脚本
-cnpm run build:prod            # 生产环境构建
+pnpm run build                 # 构建渲染进程
+pnpm run build:all             # 构建所有进程 (renderer + main + preload)
+pnpm run build:main            # 仅构建主进程
+pnpm run build:preload         # 仅构建预加载脚本
+pnpm run build:prod            # 生产环境构建
 
 # Electron 打包
-cnpm run electron:build        # 打包当前平台
-cnpm run electron:build:win    # 打包 Windows
-cnpm run electron:build:mac    # 打包 macOS
-cnpm run electron:build:linux  # 打包 Linux
-cnpm run electron:build:all    # 打包所有平台
+pnpm run electron:build        # 打包当前平台
+pnpm run electron:build:win    # 打包 Windows
+pnpm run electron:build:mac    # 打包 macOS
 
 # 代码质量
-cnpm run lint                  # ESLint 自动修复
-cnpm run type-check            # TypeScript 类型检查
-cnpm run docs                  # 生成 TypeDoc 文档
+pnpm run lint                  # ESLint 自动修复
+pnpm run type-check            # TypeScript 类型检查
+pnpm run docs                  # 生成 TypeDoc 文档
 
 # 工具
-cnpm run clean                 # 清理构建目录
-cnpm run analyze:deps          # 依赖图分析
-cnpm run analyze:bundle        # 包体积分析
+pnpm run clean                 # 清理构建目录
+pnpm run analyze:deps          # 依赖图分析
+pnpm run analyze:bundle        # 包体积分析
 ```
 
 ## Electron 进程结构
@@ -177,7 +172,7 @@ cnpm run analyze:bundle        # 包体积分析
 - **Composables** (`src/renderer/composables/`):
   - `TabRegistry.ts`: Tab 注册系统
   - `TabTypes.ts`: Tab 类型基类
-  - `useTabs.ts`: Tab 管理 (核心, 26376 字节)
+  - `useTabs.ts`: Tab 管理 (核心)
   - `tabs/`: 7 种内置 Tab 类型定义
 - **API** (`src/renderer/api/`):
   - `MiraAPI.ts`: 后端 API 统一封装
@@ -192,50 +187,20 @@ cnpm run analyze:bundle        # 包体积分析
 
 | Store | 文件 | 描述 |
 |-------|------|------|
-| AuthStore | `auth.ts` (808 行) | 用户认证和会话管理 |
+| AuthStore | `auth.ts` | 用户认证和会话管理 |
 | LibraryStore | `library.ts` | 媒体库管理 |
-| MediaStore | `media.ts` (1100 行) | 媒体文件核心状态 |
-| SettingsStore | `settings.ts` (595 行) | 应用配置和服务器设置 |
-| PluginStore | `plugin.ts` (899 行) | 插件市场和管理 |
+| MediaStore | `media.ts` | 媒体文件核心状态 |
+| SettingsStore | `settings.ts` | 应用配置和服务器设置 |
+| PluginStore | `plugin.ts` | 插件市场和管理 |
 | FolderStore | `folder.ts` | 文件夹管理 |
 | TagStore | `tag.ts` | 标签管理 |
 | ServerListStore | `serverList.ts` | 服务器列表 |
 | UploadHistoryStore | `uploadHistory.ts` | 上传历史 |
 | AppStateStore | `appState.ts` | 应用全局状态 |
 
-### 核心服务
-
-| 服务 | 文件 | 描述 |
-|------|------|------|
-| MiraSDKService | `MiraSDKService.ts` (891 行) | mira-server-sdk 集成 |
-| InitializationService | `InitializationService.ts` (511 行) | 应用初始化流程 |
-| PluginService | `PluginService.ts` (534 行) | 插件管理 |
-| SearchHandlers | `SearchHandlers.ts` (599 行) | 搜索处理 |
-| ShortcutService | `ShortcutService.ts` (612 行) | 快捷键管理 |
-| WebSocketService | `WebSocketService.ts` | 实时通信 |
-| MenuService | `MenuService.ts` | Electron 菜单管理 |
-| ElectronService | `ElectronService.ts` | Electron 环境检测 |
-
 ### Tab 系统架构
 
-基于视图的标签页系统，每个标签页对应一个 Vue 组件：
-
-**核心组件**:
-- `TabRegistry.ts`: 中央注册系统
-- `TabViewRenderer.vue`: 动态组件渲染器
-- `BaseTabType` / `MediaViewTabType`: 基类
-
-**内置 Tab 类型** (7 种):
-
-| 类型 | 文件 | 视图组件 |
-|------|------|----------|
-| HomeTabType | `HomeTabType.ts` | HomeTabView.vue |
-| AllTabType | `AllTabType.ts` | MediaTabListView.vue |
-| FolderTabType | `FolderTabType.ts` | MediaTabListView.vue |
-| TagTabType | `TagTabType.ts` | MediaTabListView.vue |
-| TrashTabType | `TrashTabType.ts` | MediaTabListView.vue |
-| UncategorizedTabType | `UncategorizedTabType.ts` | MediaTabListView.vue |
-| UntaggedTabType | `UntaggedTabType.ts` | MediaTabListView.vue |
+基于视图的标签页系统，每个标签页对应一个 Vue 组件。内置 Tab 类型：HomeTabType, AllTabType, FolderTabType, TagTabType, TrashTabType, UncategorizedTabType, UntaggedTabType。
 
 **生命周期钩子**: `onInit` / `onActive` / `onInactive` / `onClose`
 
@@ -259,18 +224,9 @@ cnpm run analyze:bundle        # 包体积分析
 "@volt/*": ["./src/volt/*"]
 ```
 
-## 配置文件
-
-| 文件 | 描述 |
-|------|------|
-| `vite.config.ts` | 主 Vite 配置（含 Electron 插件） |
-| `tsconfig.json` | TypeScript 配置（含路径映射） |
-| `package.json` | 项目依赖和脚本 |
-| `electron-builder.yml` | Electron 打包配置（如存在） |
-
 ## 测试策略
 
-项目当前以开发时类型检查为主（`cnpm run type-check`）。tsconfig 中已配置排除 `*.test.ts` 和 `*.spec.ts`。尚未建立自动化测试框架。
+项目当前以开发时类型检查为主（`pnpm run type-check`）。尚未建立自动化测试框架。
 
 ## 编码规范
 

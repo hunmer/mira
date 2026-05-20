@@ -16,6 +16,7 @@ export interface Library {
     customFields?: {
         path: string
         enableHash: boolean
+        enableAutoSync?: boolean
         [key: string]: any
     }
 }

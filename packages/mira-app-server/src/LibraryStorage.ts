@@ -3,6 +3,7 @@ import { ServerPluginManager } from "./ServerPluginManager";
 import { EventManager, getLibraries } from "mira-app-core";
 import { MiraServer } from "./MiraServer";
 import { MiraWebsocketServer } from "./WebSocketServer";
+import { LibraryWatcher } from "./LibraryWatcher";
 
 export class LibraryStorage {
     libraries: Record<string, {
@@ -10,6 +11,7 @@ export class LibraryStorage {
         pluginManager?: ServerPluginManager;
         eventManager?: EventManager;
         savedConfig?: Record<string, any>; // 保存禁用库的配置信息
+        watcher?: LibraryWatcher;
     }> = {};
 
     server: MiraServer;
@@ -26,6 +28,10 @@ export class LibraryStorage {
     }
 
     removeLibrary(libraryId: string) {
+        const lib = this.libraries[libraryId];
+        if (lib?.watcher) {
+            lib.watcher.stop();
+        }
         delete this.libraries[libraryId];
     }
 
@@ -46,6 +52,14 @@ export class LibraryStorage {
         );
         this.libraries[libraryId].pluginManager = pluginManager;
         await pluginManager.loadPlugins();
+
+        // 启动自动同步 watcher
+        const enableAutoSync = dbConfig.customFields?.enableAutoSync ?? true;
+        if (enableAutoSync) {
+            const watcher = new LibraryWatcher(dbServer, this.webSocketServer);
+            this.libraries[libraryId].watcher = watcher;
+            watcher.start(); // 不阻塞启动
+        }
 
         return dbServer;
     }
@@ -78,6 +92,9 @@ export class LibraryStorage {
 
     clear() {
         Object.values(this.libraries).forEach(lib => {
+            if (lib.watcher) {
+                lib.watcher.stop();
+            }
             if (lib.libraryService) {
                 lib.libraryService.close();
             }
@@ -133,6 +150,14 @@ export class LibraryStorage {
                 );
                 this.libraries[libraryId].pluginManager = pluginManager;
                 await pluginManager.loadPlugins();
+
+                // 启动自动同步 watcher
+                const enableAutoSync = config.customFields?.enableAutoSync ?? true;
+                if (enableAutoSync) {
+                    const watcher = new LibraryWatcher(dbServer, this.webSocketServer);
+                    this.libraries[libraryId].watcher = watcher;
+                    watcher.start();
+                }
             }
 
             // 更新状态
@@ -165,6 +190,12 @@ export class LibraryStorage {
             const savedConfig = { ...libraryObj.libraryService.config };
             savedConfig.status = 'inactive';
             savedConfig.updatedAt = new Date().toISOString();
+
+            // 停止自动同步 watcher
+            if (libraryObj.watcher) {
+                await libraryObj.watcher.stop();
+                libraryObj.watcher = undefined;
+            }
 
             // 卸载所有插件
             if (libraryObj.pluginManager) {

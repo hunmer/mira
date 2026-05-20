@@ -26,6 +26,7 @@ const libraryForm = ref({
   description: '',
   icon: 'default',
   enableHash: false,
+  enableAutoSync: true,
   serverURL: '',
   serverPort: '',
   pluginsDir: '',
@@ -96,6 +97,7 @@ const editLibrary = (library: Library) => {
     description: library.description || '',
     icon: library.icon || 'default',
     enableHash: library.customFields?.enableHash || false,
+    enableAutoSync: library.customFields?.enableAutoSync ?? true,
     serverURL: library.serverURL || '',
     serverPort: library.serverPort || '',
     pluginsDir: library.pluginsDir || '',
@@ -113,6 +115,7 @@ const cancelEdit = () => {
     description: '',
     icon: 'default',
     enableHash: false,
+    enableAutoSync: true,
     serverURL: '',
     serverPort: '',
     pluginsDir: '',
@@ -128,6 +131,7 @@ const openAddDialog = () => {
     description: '',
     icon: 'default',
     enableHash: false,
+    enableAutoSync: true,
     serverURL: '',
     serverPort: '',
     pluginsDir: '',
@@ -176,6 +180,7 @@ const saveLibrary = async () => {
       customFields: {
         path: libraryForm.value.path,
         enableHash: libraryForm.value.enableHash,
+        enableAutoSync: libraryForm.value.enableAutoSync,
       },
       ...(libraryForm.value.type === 'remote' && {
         serverURL: libraryForm.value.serverURL,
@@ -607,6 +612,18 @@ onMounted(() => {
           />
           <label for="enableHash" class="ml-2 block text-sm text-gray-700">
             启用文件哈希校验
+          </label>
+        </div>
+
+        <div class="flex items-center">
+          <input
+            id="enableAutoSync"
+            v-model="libraryForm.enableAutoSync"
+            type="checkbox"
+            class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <label for="enableAutoSync" class="ml-2 block text-sm text-gray-700">
+            启用自动同步（监控文件夹新文件）
           </label>
         </div>
 

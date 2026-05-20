@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
 import { MiraServer } from '..';
+import { LibraryWatcher } from '../LibraryWatcher';
 
 export class LibraryRoutes {
     private router: Router;
@@ -121,6 +122,7 @@ export class LibraryRoutes {
                     customFields: {
                         path: libraryPath,
                         enableHash: customFields?.enableHash || false,
+                        enableAutoSync: customFields?.enableAutoSync ?? true,
                         ...(customFields || {})
                     },
                     createdAt: new Date().toISOString(),
@@ -278,6 +280,17 @@ export class LibraryRoutes {
                 // 更新内存中的配置（如果库是活跃的）
                 if (libraryObj.libraryService) {
                     libraryObj.libraryService.config = updatedConfig;
+
+                    // 处理 watcher 启停
+                    const shouldWatch = updatedConfig.customFields?.enableAutoSync ?? true;
+                    if (shouldWatch && !libraryObj.watcher) {
+                        const watcher = new LibraryWatcher(libraryObj.libraryService, this.backend.getWebSocketServer());
+                        libraryObj.watcher = watcher;
+                        watcher.start();
+                    } else if (!shouldWatch && libraryObj.watcher) {
+                        await libraryObj.watcher.stop();
+                        libraryObj.watcher = undefined;
+                    }
                 } else if (libraryObj.savedConfig) {
                     // 更新保存的配置
                     libraryObj.savedConfig = updatedConfig;

@@ -45,6 +45,7 @@
     "@types/multer": "^2.0.0",
     "@types/yauzl": "^2.10.3",
     "axios": "^1.6.2",
+    "chokidar": "^5.0.0",
     "commander": "^11.1.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
