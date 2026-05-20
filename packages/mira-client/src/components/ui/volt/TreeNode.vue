@@ -7,7 +7,7 @@
   >
     <div
       :class="[
-        'tree-node-content flex items-center px-2 py-1.5 rounded-md cursor-pointer',
+  'tree-node-content flex items-center p-1 rounded-md cursor-pointer',
         'hover:bg-gray-100 dark:hover:bg-gray-800',
         {
           'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300': isSelected,

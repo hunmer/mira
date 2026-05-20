@@ -64,16 +64,6 @@
         {{ fileExtension }}
       </div>
 
-      <!-- 视频播放图标 -->
-      <div
-        v-show="isVideo && !isVideoPlaying"
-        class="absolute inset-0 flex items-center justify-center"
-      >
-        <div class="bg-black/50 rounded-full p-3">
-          <span class="material-icons text-white text-2xl">play_arrow</span>
-        </div>
-      </div>
-
       <!-- 选择框 -->
       <div
         v-if="isSelected"

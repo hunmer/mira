@@ -3,7 +3,7 @@
     :open="isVisible"
     @update:open="isVisible = $event"
   >
-    <DialogContent class="shortcut-manager-dialog sm:max-w-[80vw]">
+    <DialogContent class="shortcut-manager-dialog sm:max-w-[60vw]">
       <DialogHeader>
         <DialogTitle>快捷键设置</DialogTitle>
       </DialogHeader>
@@ -17,7 +17,7 @@
               class="w-full pl-10 pr-4 py-2 rounded-lg bg-surface-50 dark:bg-surface-800
                      border border-surface-200 dark:border-surface-700
                      text-surface-700 dark:text-surface-0
-                     focus:outline-none focus:ring-2 focus:ring-primary-500"
+                     focus:outline-none"
               placeholder="搜索快捷键"
               type="text"
             />
@@ -31,10 +31,10 @@
               <button
                 v-for="category in categories"
                 :key="category.id"
-                class="w-full flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                class="w-full flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer"
                 :class="selectedCategory === category.id
-                  ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
-                  : 'text-surface-600 dark:text-surface-400 hover:bg-surface-50 dark:hover:bg-surface-800'"
+                  ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-semibold border-l-2 border-primary-500'
+                  : 'text-surface-600 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-800'"
                 @click="selectedCategory = category.id"
               >
                 <span class="material-icons text-base mr-3">{{ category.icon }}</span>
@@ -90,7 +90,7 @@
 
                     <!-- 编辑按钮 -->
                     <button
-                      class="text-surface-400 hover:text-surface-600 dark:hover:text-surface-300 transition-colors"
+                      class="text-surface-400 hover:text-surface-600 dark:hover:text-surface-300 transition-colors cursor-pointer"
                       @click="editBinding(binding)"
                     >
                       <span class="material-icons text-sm">edit</span>
@@ -98,7 +98,7 @@
 
                     <!-- 删除按钮 -->
                     <button
-                      class="text-surface-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                      class="text-surface-400 hover:text-red-500 dark:hover:text-red-400 transition-colors cursor-pointer"
                       @click="removeBinding(binding)"
                     >
                       <span class="material-icons text-sm">delete</span>
@@ -126,7 +126,7 @@
       <div class="flex justify-between items-center w-full">
         <button
           class="px-4 py-2 text-sm font-medium text-surface-600 dark:text-surface-400
-                 hover:text-surface-700 dark:hover:text-surface-300 transition-colors"
+                 hover:text-surface-700 dark:hover:text-surface-300 transition-colors cursor-pointer"
           @click="resetToDefaults"
         >
           恢复默认
@@ -135,14 +135,14 @@
         <div class="flex gap-2">
           <button
             class="px-4 py-2 text-sm font-medium text-surface-600 dark:text-surface-400
-                   hover:text-surface-700 dark:hover:text-surface-300 transition-colors"
+                   hover:text-surface-700 dark:hover:text-surface-300 transition-colors cursor-pointer"
             @click="handleDialogHide"
           >
             取消
           </button>
           <button
             class="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700
-                   rounded-md transition-colors"
+                   rounded-md transition-colors cursor-pointer"
             @click="saveChanges"
           >
             保存
@@ -158,11 +158,11 @@
     :open="showAddDialog"
     @update:open="showAddDialog = $event"
   >
-    <DialogContent class="add-shortcut-dialog sm:max-w-[40vw]">
+    <DialogContent class="add-shortcut-dialog sm:max-w-[40vw] max-h-[80vh] flex flex-col">
       <DialogHeader>
         <DialogTitle>{{ editingBinding ? '编辑快捷键' : '添加快捷键' }}</DialogTitle>
       </DialogHeader>
-      <div class="add-shortcut-content space-y-4">
+      <div class="add-shortcut-content space-y-4 overflow-y-auto flex-1">
         <!-- 选择动作 -->
         <div>
           <label class="block text-sm font-medium text-surface-700 dark:text-surface-0 mb-2">
@@ -251,18 +251,18 @@
           </div>
         </div>
       </div>
-    <DialogFooter>
+    <DialogFooter class="shrink-0">
       <div class="flex justify-end gap-2">
         <button
           class="px-4 py-2 text-sm font-medium text-surface-600 dark:text-surface-400
-                 hover:text-surface-700 dark:hover:text-surface-300 transition-colors"
+                 hover:text-surface-700 dark:hover:text-surface-300 transition-colors cursor-pointer"
           @click="cancelAdd"
         >
           取消
         </button>
         <button
           class="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700
-                 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                 rounded-md transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           :disabled="!canSaveBinding"
           @click="saveBinding"
         >

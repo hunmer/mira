@@ -217,6 +217,7 @@ class MiraApplication {
       webPreferences: {
         nodeIntegration: true,
         contextIsolation: true,
+        zoomFactor: 1,
         spellcheck: false,
         webSecurity: false, // 禁用 web 安全策略，取消 CSP 检查
         preload: join(__dirname, '../dist-preload/preload.js')
@@ -246,6 +247,7 @@ class MiraApplication {
     this.mainWindow.once('ready-to-show', () => {
       logger.info('MiraApplication', 'Main window ready to show')
       this.mainWindow?.show()
+      this.mainWindow?.webContents.setZoomFactor(1);
       // 在开发环境或未打包时打开开发者工具
       const isDevelopment = process.env.NODE_ENV === 'development' || !app.isPackaged
       if (isDevelopment) {
@@ -310,6 +312,13 @@ class MiraApplication {
       return { action: 'deny' }
     })
 
+    // 禁用 Ctrl+滚轮缩放
+    this.mainWindow.webContents.on('zoom-changed', (_event, zoomDirection) => {
+      if (zoomDirection === 'in' || zoomDirection === 'out') {
+        this.mainWindow?.webContents.setZoomFactor(1)
+      }
+    })
+
     // 设置快捷键
     this.setupShortcuts()
   }
@@ -329,6 +338,11 @@ class MiraApplication {
         const isFullScreen = this.mainWindow?.isFullScreen()
         this.mainWindow?.setFullScreen(!isFullScreen)
         logger.debug('MiraApplication', `Fullscreen toggled via F11: ${!isFullScreen}`)
+      }
+
+      // 禁用 Ctrl++ / Ctrl+- / Ctrl+Scroll 缩放
+      if (input.type === 'keyDown' && input.control && (input.key === '+' || input.key === '=' || input.key === '-')) {
+        event.preventDefault()
       }
     })
   }
