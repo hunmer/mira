@@ -566,22 +566,6 @@ export const defaultBindings: ShortcutBinding[] = [
     enabled: true,
     description: '全屏快捷键'
   },
-
-  {
-    shortcut: 'Ctrl+A',
-    priority: 90,
-    actionId: 'edit.select-all',
-    enabled: true,
-    description: '全选快捷键'
-  },
-  {
-    shortcut: 'Delete',
-    priority: 80,
-    
-    actionId: 'edit.delete',
-    enabled: true,
-    description: '删除快捷键'
-  },
   {
     shortcut: 'Ctrl+Z',
     priority: 90,

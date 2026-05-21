@@ -302,7 +302,7 @@ onUnmounted(() => {
                       : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
                   ]"
                   @click="switchToTabWithCallback(tab.id)"
-                  @contextmenu="handleTabContextMenu(tab, $event)"
+                  @contextmenu="tab.type === 'home' ? $event.preventDefault() : handleTabContextMenu(tab, $event)"
                 >
                   <span class="material-icons text-sm" :style="{ color: tab.iconColor }">
                     {{ tab.icon }}

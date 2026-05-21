@@ -73,39 +73,45 @@ export function useHomeTabManagement() {
   )
 
   // Tab右键菜单配置
-  const tabContextMenuItems = computed(() => [
-    {
-      label: '克隆标签',
-      icon: 'content_copy',
-      command: () => {
-        if (currentContextTab.value) {
-          cloneTab(currentContextTab.value)
-        }
-      }
-    },
-    {
-      separator: true
-    },
-    {
-      label: '关闭标签',
-      icon: 'close',
-      command: async () => {
-        if (currentContextTab.value && activeTabs.value.length > 1) {
-          await closeTabWithCallback(currentContextTab.value.id)
+  const tabContextMenuItems = computed(() => {
+    // home tab 不显示右键菜单
+    if (!currentContextTab.value || currentContextTab.value.type === 'home') {
+      return []
+    }
+    return [
+      {
+        label: '克隆标签',
+        icon: 'content_copy',
+        command: () => {
+          if (currentContextTab.value) {
+            cloneTab(currentContextTab.value)
+          }
         }
       },
-      disabled: activeTabs.value.length <= 1
-    },
-    {
-      label: '关闭其他标签',
-      icon: 'clear_all',
-      command: () => {
-        if (currentContextTab.value) {
-          closeOtherTabs(currentContextTab.value.id)
+      {
+        separator: true
+      },
+      {
+        label: '关闭标签',
+        icon: 'close',
+        command: async () => {
+          if (currentContextTab.value && activeTabs.value.length > 1) {
+            await closeTabWithCallback(currentContextTab.value.id)
+          }
+        },
+        disabled: activeTabs.value.length <= 1
+      },
+      {
+        label: '关闭其他标签',
+        icon: 'clear_all',
+        command: () => {
+          if (currentContextTab.value) {
+            closeOtherTabs(currentContextTab.value.id)
+          }
         }
       }
-    }
-  ])
+    ]
+  })
 
   // Tab右键菜单事件处理
   const handleTabContextMenu = (tab: TabItem, event: MouseEvent) => {
