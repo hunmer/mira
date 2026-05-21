@@ -574,30 +574,30 @@ export const defaultBindings: ShortcutBinding[] = [
     enabled: true,
     description: '全选快捷键'
   },
-  // {
-  //   shortcut: 'Delete',
-  //   priority: 80,
+  {
+    shortcut: 'Delete',
+    priority: 80,
     
-  //   actionId: 'edit.delete',
-  //   enabled: true,
-  //   description: '删除快捷键'
-  // },
-  // {
-  //   shortcut: 'Ctrl+Z',
-  //   priority: 90,
+    actionId: 'edit.delete',
+    enabled: true,
+    description: '删除快捷键'
+  },
+  {
+    shortcut: 'Ctrl+Z',
+    priority: 90,
     
-  //   actionId: 'edit.undo',
-  //   enabled: true,
-  //   description: '撤销快捷键'
-  // },
-  // {
-  //   shortcut: 'Ctrl+Y',
-  //   priority: 90,
+    actionId: 'edit.undo',
+    enabled: true,
+    description: '撤销快捷键'
+  },
+  {
+    shortcut: 'Ctrl+Y',
+    priority: 90,
     
-  //   actionId: 'edit.redo',
-  //   enabled: true,
-  //   description: '重做快捷键'
-  // },
+    actionId: 'edit.redo',
+    enabled: true,
+    description: '重做快捷键'
+  },
 
   // 视图快捷键
   {

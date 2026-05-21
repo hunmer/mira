@@ -391,11 +391,11 @@ export function useTabs() {
    * 关闭其他 Tab
    */
   const closeOtherTabs = (keepTabId: string) => {
+    tabs.value = tabs.value.filter(tab => tab.id === keepTabId || tab.id === 'home')
     const keepTab = tabs.value.find(tab => tab.id === keepTabId)
     if (keepTab) {
-      tabs.value = [keepTab]
-      keepTab.active = true
-      activeTabId.value = keepTab.id
+      tabs.value.forEach(tab => tab.active = tab.id === keepTabId)
+      activeTabId.value = keepTabId
     }
   }
 
