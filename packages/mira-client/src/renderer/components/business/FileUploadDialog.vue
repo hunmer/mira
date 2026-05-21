@@ -3,7 +3,7 @@
     :open="isVisible"
     @update:open="handleOpenChange"
   >
-    <DialogContent class="file-upload-dialog sm:max-w-[90vw] max-h-[90vh] flex flex-col overflow-hidden">
+    <DialogContent class="file-upload-dialog sm:max-w-[90vw] h-[85vh] flex flex-col overflow-hidden">
       <DialogHeader>
         <DialogTitle>文件上传</DialogTitle>
       </DialogHeader>
@@ -65,7 +65,7 @@
               </div>
 
               <!-- 文件网格内容 -->
-              <div ref="fileGridContainerRef" class="flex-1 overflow-auto p-4">
+              <div ref="fileGridContainerRef" class="flex-1 overflow-auto p-4 min-h-0">
                 <SelectionBox
                   ref="selectionBoxRef"
                   v-model="selectedPendingIds"
