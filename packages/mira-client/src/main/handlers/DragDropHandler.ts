@@ -2,96 +2,13 @@ import { ipcMain, BrowserWindow, nativeImage } from 'electron'
 import { existsSync } from 'fs'
 import path from 'path'
 import { app } from 'electron'
+import { EXTENSION_ICON_MAP, getExtIconFileName } from '../utils/extIcons'
 
 /**
  * 拖拽处理器
  * 处理文件拖拽功能，支持本地文件和SMB路径
  */
 export class DragDropHandler {
-  // 文件扩展名到图标的映射表
-  private static readonly EXTENSION_ICON_MAP = new Map<string, string>([
-    // 图片文件
-    ['.jpg', 'JPG.png'],
-    ['.jpeg', 'JPG.png'],
-    ['.png', 'PNG.png'],
-    ['.gif', 'GIFF.png'],
-    ['.bmp', 'BMP.png'],
-    ['.tiff', 'TIFF.png'],
-    ['.tif', 'TIFF.png'],
-    ['.svg', 'SVG.png'],
-    ['.raw', 'RAW.png'],
-    ['.webp', 'PNG.png'], // 使用 PNG 图标作为 WebP 的替代
-
-    // 视频文件
-    ['.mp4', 'MP4.png'],
-    ['.avi', 'AVI.png'],
-    ['.mov', 'MOV.png'],
-    ['.mpeg', 'MPEG.png'],
-    ['.mpg', 'MPEG.png'],
-    ['.flv', 'FLV.png'],
-    ['.wmv', 'MP4.png'], // 使用 MP4 图标作为 WMV 的替代
-    ['.mkv', 'MP4.png'], // 使用 MP4 图标作为 MKV 的替代
-
-    // 音频文件
-    ['.mp3', 'MP3.png'],
-    ['.wav', 'WAV.png'],
-    ['.wma', 'WMA.png'],
-    ['.mid', 'MID.png'],
-    ['.midi', 'MID.png'],
-    ['.flac', 'WAV.png'], // 使用 WAV 图标作为 FLAC 的替代
-    ['.aac', 'MP3.png'], // 使用 MP3 图标作为 AAC 的替代
-
-    // 文档文件
-    ['.pdf', 'PDF.png'],
-    ['.doc', 'DOC.png'],
-    ['.docx', 'DOCX.png'],
-    ['.txt', 'TXT.png'],
-    ['.rtf', 'TXT.png'], // 使用 TXT 图标作为 RTF 的替代
-    ['.ppt', 'PPT.png'],
-    ['.pptx', 'PPT.png'],
-    ['.xls', 'CSV.png'], // 使用 CSV 图标作为 XLS 的替代
-    ['.xlsx', 'CSV.png'], // 使用 CSV 图标作为 XLSX 的替代
-    ['.csv', 'CSV.png'],
-
-    // 网页和标记语言文件
-    ['.html', 'HTML.png'],
-    ['.htm', 'HTML.png'],
-    ['.xml', 'XML.png'],
-    ['.xsl', 'XSL.png'],
-    ['.rss', 'RSS.png'],
-
-    // 设计文件
-    ['.psd', 'PSD.png'],
-    ['.ai', 'AI.png'],
-    ['.eps', 'EPS.png'],
-    ['.dwg', 'DWG.png'],
-
-    // 压缩文件
-    ['.zip', 'ZIP.png'],
-    ['.rar', 'RAR.png'],
-    ['.7z', 'ZIP.png'], // 使用 ZIP 图标作为 7Z 的替代
-    ['.tar', 'ZIP.png'], // 使用 ZIP 图标作为 TAR 的替代
-    ['.gz', 'ZIP.png'], // 使用 ZIP 图标作为 GZ 的替代
-
-    // 程序和系统文件
-    ['.exe', 'EXE.png'],
-    ['.dll', 'DLL.png'],
-    ['.java', 'JAVA.png'],
-    ['.js', 'HTML.png'], // 使用 HTML 图标作为 JS 的替代
-    ['.css', 'HTML.png'], // 使用 HTML 图标作为 CSS 的替代
-
-    // 数据库文件
-    ['.mdb', 'MDB.png'],
-    ['.db', 'MDB.png'], // 使用 MDB 图标作为 DB 的替代
-
-    // 光盘镜像文件
-    ['.iso', 'ISO.png'],
-
-    // 其他文件
-    ['.pub', 'PUB.png'],
-    ['.ps', 'PS.png'],
-    ['.crd', 'CRD.png']
-  ])
 
   constructor() {
     this.registerHandlers()
@@ -113,9 +30,6 @@ export class DragDropHandler {
    */
   private async handleStartDrag(event: any, filePath: string, iconInfo?: { iconPath?: string; iconType?: string }): Promise<{ success: boolean; message?: string }> {
     try {
-      console.log('🖱️ 开始 Electron 原生文件拖拽:', filePath)
-      console.log('📋 接收到的图标信息:', iconInfo)
-
       // 验证文件路径
       const validatedPath = this.validateAndConvertPath(filePath)
       if (!validatedPath) {
@@ -135,7 +49,6 @@ export class DragDropHandler {
       const icon = this.resolveDragIcon(validatedPath, iconInfo) ?? this.getRequiredIcon(validatedPath)
       targetWindow.webContents.startDrag({ file: validatedPath, icon })
 
-      console.log('✅ Electron 原生拖拽操作已启动:', validatedPath)
       return { success: true }
 
     } catch (error) {
@@ -153,9 +66,6 @@ export class DragDropHandler {
    */
   private async handleStartDragMultiple(event: any, filePaths: string[], iconInfo?: { iconPath?: string; iconType?: string }): Promise<{ success: boolean; message?: string }> {
     try {
-      console.log('🖱️ 开始 Electron 原生多文件拖拽:', filePaths)
-      console.log('📋 接收到的图标信息:', iconInfo)
-
       // 验证所有文件路径
       const validatedPaths = filePaths
         .map(path => this.validateAndConvertPath(path))
@@ -303,8 +213,6 @@ export class DragDropHandler {
     try {
       // 1. 优先使用从元素中提取的图标
       if (iconInfo?.iconPath) {
-        console.log(`🎯 使用检测到的${iconInfo.iconType}图标:`, iconInfo.iconPath)
-
         // 处理不同类型的图标路径
         if (iconInfo.iconPath.startsWith('data:')) {
           // Base64 图片数据，创建临时文件或直接使用
@@ -318,14 +226,12 @@ export class DragDropHandler {
           // 本地文件 URL - 需要解码并处理 UNC 路径
           const localPath = this.fileUrlToLocalPath(iconInfo.iconPath)
           if (localPath && existsSync(localPath)) {
-            console.log('📁 使用本地文件URL图标:', localPath)
             return this.resizeIconForDrag(localPath)
           }
         } else {
           // 相对路径或绝对路径
           const absolutePath = path.resolve(iconInfo.iconPath)
           if (existsSync(absolutePath)) {
-            console.log('📁 使用本地文件路径图标:', absolutePath)
             return this.resizeIconForDrag(absolutePath)
           }
         }
@@ -347,7 +253,6 @@ export class DragDropHandler {
     try {
       // SVG data URI 不被 nativeImage 支持，直接跳过使用默认图标
       if (base64Data.startsWith('data:image/svg')) {
-        console.log('⚠️ SVG data URI 不被支持，使用默认图标')
         return undefined
       }
 
@@ -360,8 +265,6 @@ export class DragDropHandler {
 
       // 获取图片尺寸
       const imageSize = image.getSize()
-      console.log(`🖼️ Base64图标尺寸: ${imageSize.width}x${imageSize.height}`)
-
       // 缩放到合适的拖拽尺寸
       const targetSize = 48
       let finalImage = image
@@ -371,7 +274,6 @@ export class DragDropHandler {
         const newWidth = Math.round(imageSize.width * scale)
         const newHeight = Math.round(imageSize.height * scale)
 
-        console.log(`🔄 缩放Base64图标到: ${newWidth}x${newHeight}`)
         finalImage = image.resize({ width: newWidth, height: newHeight })
       }
 
@@ -380,8 +282,6 @@ export class DragDropHandler {
       const tempIconPath = path.join(tempDir, `mira-drag-icon-base64-${Date.now()}.png`)
 
       require('fs').writeFileSync(tempIconPath, finalImage.toPNG())
-      console.log('💾 Base64图标已保存到临时文件:', tempIconPath)
-
       return tempIconPath
     } catch (error) {
       console.error('❌ 处理Base64图标失败:', error)
@@ -396,7 +296,6 @@ export class DragDropHandler {
     try {
       // 对于网络图片，我们可以尝试下载或使用缓存
       // 目前先返回 undefined，让系统使用默认图标
-      console.log('🌐 网络图片暂不支持，使用默认图标:', iconUrl)
       return this.getDefaultDragIcon(iconUrl)
     } catch (error) {
       console.error('❌ 处理网络图标失败:', error)
@@ -419,11 +318,9 @@ export class DragDropHandler {
 
       // 获取原始尺寸
       const originalSize = originalImage.getSize()
-      console.log(`🖼️ 原始图标尺寸: ${originalSize.width}x${originalSize.height}`)
 
       // 如果图标尺寸已经合适，直接返回原路径
       if (originalSize.width <= targetSize && originalSize.height <= targetSize) {
-        console.log('✅ 图标尺寸已经合适，无需缩放')
         return iconPath
       }
 
@@ -431,8 +328,6 @@ export class DragDropHandler {
       const scale = Math.min(targetSize / originalSize.width, targetSize / originalSize.height)
       const newWidth = Math.round(originalSize.width * scale)
       const newHeight = Math.round(originalSize.height * scale)
-
-      console.log(`🔄 缩放图标到: ${newWidth}x${newHeight} (目标: ${targetSize}px)`)
 
       // 创建缩放后的图像
       const resizedImage = originalImage.resize({ width: newWidth, height: newHeight })
@@ -442,7 +337,6 @@ export class DragDropHandler {
       const tempIconPath = path.join(tempDir, `mira-drag-icon-resized-${Date.now()}.png`)
 
       require('fs').writeFileSync(tempIconPath, resizedImage.toPNG())
-      console.log('💾 缩放后的图标已保存到:', tempIconPath)
 
       return tempIconPath
 
@@ -475,7 +369,6 @@ export class DragDropHandler {
       // 开发环境：使用 app.getAppPath() 或 __dirname 来定位
       // __dirname 指向编译后的 main 进程目录
       const appPath = app.getAppPath()
-      console.log('📁 开发环境资源路径:', appPath)
       return appPath
     }
   }
@@ -485,10 +378,7 @@ export class DragDropHandler {
    */
   private getDefaultDragIcon(filePath: string): string | undefined {
     try {
-      const ext = path.extname(filePath).toLowerCase()
-
-      // 从 Map 中获取对应的图标文件名
-      const iconFileName = DragDropHandler.EXTENSION_ICON_MAP.get(ext) || 'FILE.png'
+      const iconFileName = getExtIconFileName(filePath)
 
       // 使用正确的资源路径(开发环境和打包后都能正常工作)
       const resourcesPath = this.getResourcesPath()
@@ -496,20 +386,15 @@ export class DragDropHandler {
 
       // 检查图标文件是否存在
       if (existsSync(iconAbsolutePath)) {
-        console.log(`📂 找到 assets/ext_icons 图标 [${ext}]: ${iconAbsolutePath}`)
         // 缩放图标到拖拽合适的尺寸
         return this.resizeIconForDrag(iconAbsolutePath)
       } else {
         // 如果找不到特定图标，尝试使用默认的 FILE.png
         const defaultIconPath = path.join(resourcesPath, 'assets', 'ext_icons', 'FILE.png')
         if (existsSync(defaultIconPath)) {
-          console.log(`📂 使用默认 FILE.png 图标: ${defaultIconPath}`)
           // 缩放默认图标到拖拽合适的尺寸
           return this.resizeIconForDrag(defaultIconPath)
         } else {
-          console.log('⚠️ assets/ext_icons 图标文件不存在，创建占位图标')
-          console.log(`   资源路径: ${resourcesPath}`)
-          console.log(`   isPackaged: ${app.isPackaged}`)
           // 创建一个简单的占位图标
           return this.createPlaceholderIcon()
         }
@@ -546,7 +431,6 @@ export class DragDropHandler {
 
       const buffer = Buffer.from(grayPngBase64, 'base64')
       require('fs').writeFileSync(tempIconPath, buffer)
-      console.log('💾 已创建占位图标:', tempIconPath)
       return tempIconPath
     } catch (error) {
       console.error('❌ 创建占位图标失败:', error)
@@ -562,7 +446,5 @@ export class DragDropHandler {
     // 移除IPC处理器
     ipcMain.removeHandler('drag-drop:start')
     ipcMain.removeHandler('drag-drop:start-multiple')
-
-    console.log('🧹 Electron 原生拖拽处理器已清理')
   }
 }

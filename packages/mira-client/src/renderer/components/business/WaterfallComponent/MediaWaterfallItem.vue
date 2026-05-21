@@ -26,6 +26,7 @@
         <MediaThumbnail
           :file-id="item.id"
           :src="url"
+          :filename="item.name"
           :alt="item.name"
           img-class="w-full object-cover"
           @load="$emit('image-success', url)"

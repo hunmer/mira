@@ -64,18 +64,10 @@
                   <MediaThumbnail
                     :file-id="item.id"
                     :src="item.thumbnailPath || item.url || ''"
+                    :filename="item.name"
                     :alt="item.name"
                     img-class="w-full h-full object-cover"
-                  >
-                    <template #fallback>
-                      <div class="w-full h-full flex items-center justify-center text-gray-400">
-                        <span v-if="getFileType(item) === 'image'" class="material-icons">image</span>
-                        <span v-else-if="getFileType(item) === 'video'" class="material-icons">videocam</span>
-                        <span v-else-if="getFileType(item) === 'audio'" class="material-icons">audiotrack</span>
-                        <span v-else class="material-icons">insert_drive_file</span>
-                      </div>
-                    </template>
-                  </MediaThumbnail>
+                  />
                 </div>
               </PopoverTrigger>
 

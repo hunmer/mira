@@ -7,20 +7,28 @@
     @load="onLoad"
     @error="onError"
   />
-  <slot v-else name="fallback" />
+  <slot v-else name="fallback">
+    <div :class="['flex items-center justify-center', imgClass]">
+      <span class="material-icons text-gray-400" :style="{ fontSize: iconSize }">{{ fallbackIcon }}</span>
+    </div>
+  </slot>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { getFileTypeIcon } from '@renderer/utils/fileUtils'
 
 const props = withDefaults(defineProps<{
   fileId: string
   src: string
+  filename?: string
   alt?: string
   imgClass?: string
+  iconSize?: string
 }>(), {
   alt: '',
-  imgClass: ''
+  imgClass: '',
+  iconSize: '2rem'
 })
 
 const emit = defineEmits<{
@@ -30,6 +38,8 @@ const emit = defineEmits<{
 
 const currentSrc = ref(props.src)
 const hasError = ref(false)
+
+const fallbackIcon = computed(() => getFileTypeIcon(props.filename || ''))
 
 function toFileUrl(path: string): string {
   if (!path) return ''
