@@ -3,11 +3,11 @@
     :open="isVisible"
     @update:open="handleOpenChange"
   >
-    <DialogContent class="file-upload-dialog sm:max-w-[90vw] max-h-[90vh]">
+    <DialogContent class="file-upload-dialog sm:max-w-[90vw] max-h-[90vh] flex flex-col overflow-hidden">
       <DialogHeader>
         <DialogTitle>文件上传</DialogTitle>
       </DialogHeader>
-      <div class="file-upload-content h-full flex flex-col">
+      <div class="file-upload-content flex-1 flex flex-col min-h-0 overflow-hidden">
         <!-- 顶部队列状态 -->
         <div v-if="queueStats.pending > 0 || queueStats.running > 0" class="flex items-center justify-end space-x-4 text-sm mb-4 px-1">
           <span class="text-blue-600">等待中: {{ queueStats.pending }}</span>
@@ -17,7 +17,7 @@
         </div>
 
         <!-- 主体内容区域 -->
-        <div class="flex-1 flex gap-4 min-h-0">
+        <div class="flex-1 flex gap-4 min-h-0 overflow-hidden">
           <!-- 左侧：上传区域和文件网格 -->
           <div class="flex-1 flex flex-col min-w-0">
             <!-- 隐藏的文件输入 -->
@@ -556,6 +556,8 @@ const addFiles = async (files: File[]) => {
     const pendingFile = newFiles[i]
     try {
       pendingFile.preview = await createPreviewUrl(file)
+      // 触发 Vue 响应式更新
+      pendingFiles.value = [...pendingFiles.value]
     } catch (error) {
       console.warn(`生成文件 ${file.name} 预览失败:`, error)
     }
@@ -644,11 +646,7 @@ watch(
 
 const handleFolderSelect = (folder: FolderItem) => {
   selectedTargetFolderId.value = folder.id as string
-
-  // 如果有选中的文件，直接应用
-  if (selectedPendingIds.value.length > 0) {
-    applyMetadataToSelected()
-  }
+  applyMetadataToFiles()
 }
 
 const handleTagSelect = (tag: any) => {
@@ -662,31 +660,35 @@ const handleTagSelect = (tag: any) => {
     selectedTargetTagIds.value = selectedTargetTagIds.value.filter(id => id !== tagId)
   }
 
-  // 如果有选中的文件，直接应用
-  if (selectedPendingIds.value.length > 0) {
-    applyMetadataToSelected()
-  }
+  applyMetadataToFiles()
 }
 
-const applyMetadataToSelected = () => {
-  selectedPendingIds.value.forEach(id => {
+const applyMetadataToFiles = () => {
+  // 没有选中文件时，应用到所有文件
+  const targetIds = selectedPendingIds.value.length > 0
+    ? selectedPendingIds.value
+    : pendingFiles.value.map(f => f.id)
+
+  if (targetIds.length === 0) return
+
+  targetIds.forEach(id => {
     const file = pendingFiles.value.find(f => f.id === id)
     if (file) {
       if (selectedTargetFolderId.value) {
         file.folderId = selectedTargetFolderId.value
       }
       if (selectedTargetTagIds.value.length > 0) {
-        // 合并标签，去重
         const existingTags = file.tags || []
         file.tags = [...new Set([...existingTags, ...selectedTargetTagIds.value])]
       }
     }
   })
 
+  const scope = selectedPendingIds.value.length > 0 ? `${targetIds.length} 个选中文件` : '全部文件'
   toast.add({
     severity: 'success',
     summary: '已应用',
-    detail: `已为 ${selectedPendingIds.value.length} 个文件设置元数据`,
+    detail: `已为${scope}设置元数据`,
     life: 2000
   })
 }
