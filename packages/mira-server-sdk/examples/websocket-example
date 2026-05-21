@@ -1,0 +1,173 @@
+/**
+ * Mira WebSocket Client 使用示例
+ */
+
+import { MiraClient } from '../index';
+
+async function websocketExample() {
+    // 创建 Mira 客户端
+    const client = new MiraClient('http://localhost:8081');
+
+    try {
+        // 1. 先进行认证
+        await client.login('admin', 'admin123');
+        console.log('已登录到 Mira 服务器');
+
+        // 2. 创建 WebSocket 客户端连接
+        const wsClient = client.websocket(8018, {
+            clientId: 'example-client',
+            libraryId: '1755239013113',
+            reconnect: true,
+            reconnectInterval: 5000,
+            maxReconnectAttempts: 5
+        });
+
+        // 3. 绑定事件监听器
+
+        // 监听对话框事件
+        wsClient.bind('dialog', (data) => {
+            console.log('收到对话框事件:', data);
+            // 处理对话框显示逻辑
+        });
+
+        // 监听文件上传事件
+        wsClient.bind('fileUpload', (data) => {
+            console.log('收到文件上传事件:', data);
+            // 处理文件上传进度或结果
+        });
+
+        // 监听插件事件
+        wsClient.bind('plugin', (data) => {
+            console.log('收到插件事件:', data);
+            // 处理插件相关事件
+        });
+
+        // 监听自定义事件
+        wsClient.bind('customEvent', (data) => {
+            console.log('收到自定义事件:', data);
+        });
+
+        // 监听服务器的所有返回消息
+        wsClient.onData((data) => {
+            console.log('服务器返回的原始数据:', data);
+        });
+
+        // 4. 监听连接状态
+        wsClient.on('connected', () => {
+            console.log('WebSocket 连接已建立');
+        });
+
+        wsClient.on('disconnected', (data) => {
+            console.log('WebSocket 连接已断开:', data);
+        });
+
+        wsClient.on('error', (error) => {
+            console.error('WebSocket 错误:', error);
+        });
+
+        // 5. 启动 WebSocket 连接
+        await wsClient.start();
+        console.log('WebSocket 客户端已启动');
+
+        // 6. 发送消息示例
+        setTimeout(() => {
+            // 发送插件消息
+            wsClient.sendPluginMessage('test', {
+                message: 'Hello from client',
+                timestamp: Date.now()
+            });
+        }, 2000);
+
+        // 7. 5秒后取消某个事件监听
+        setTimeout(() => {
+            console.log('取消 dialog 事件监听');
+            wsClient.unbind('dialog');
+        }, 5000);
+
+        // 8. 保持连接活跃，实际应用中根据需要处理
+        console.log('WebSocket 客户端运行中...');
+
+        // 演示用：10秒后关闭连接
+        // setTimeout(() => {
+        //     console.log('关闭 WebSocket 连接...');
+        //     wsClient.stop();
+        // }, 10000);
+
+    } catch (error) {
+        console.error('示例执行失败:', error);
+    }
+}
+
+async function advancedWebSocketExample() {
+    const client = new MiraClient('http://localhost:8081');
+
+    try {
+        await client.login('admin', 'admin123');
+
+        const wsClient = client.websocket(8018, {
+            clientId: 'advanced-client',
+            libraryId: '1755239013113',
+            headers: {
+                'Authorization': 'Bearer your-token',
+                'Custom-Header': 'custom-value'
+            }
+        });
+
+        // 多事件监听器示例
+        const dialogHandler1 = (data: any) => console.log('Dialog handler 1:', data);
+        const dialogHandler2 = (data: any) => console.log('Dialog handler 2:', data);
+
+        wsClient.bind('dialog', dialogHandler1);
+        wsClient.bind('dialog', dialogHandler2);
+
+        // 监听原始消息
+        wsClient.on('message', (message) => {
+            console.log('收到原始消息:', message);
+        });
+
+        // 监听服务器的所有返回数据
+        wsClient.onData((data) => {
+            console.log('服务器数据回调:', data);
+        });
+
+        await wsClient.start();
+
+        // 发送自定义格式消息
+        wsClient.send({
+            eventName: 'custom',
+            action: 'getData',
+            libraryId: 'advanced-library',
+            data: {
+                query: 'SELECT * FROM files',
+                limit: 10
+            }
+        });
+
+        // 检查连接状态
+        setInterval(() => {
+            console.log('连接状态:', wsClient.isConnectedStatus());
+        }, 3000);
+
+        // 精确取消特定处理器
+        setTimeout(() => {
+            wsClient.unbind('dialog', dialogHandler1);
+            console.log('已取消 dialogHandler1');
+        }, 5000);
+
+    } catch (error) {
+        console.error('高级示例执行失败:', error);
+    }
+}
+
+// 如果直接运行此文件
+if (require.main === module) {
+    console.log('运行 WebSocket 基础示例...');
+    websocketExample();
+
+    // setTimeout(() => {
+    //     console.log('\n运行 WebSocket 高级示例...');
+    //     advancedWebSocketExample();
+    // }, 12000);
+}
+
+export { websocketExample, advancedWebSocketExample };

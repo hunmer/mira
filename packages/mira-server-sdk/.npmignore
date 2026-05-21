@@ -1,0 +1,53 @@
+# Source files
+src/
+tests/
+scripts/
+examples/
+
+# Configuration files
+tsconfig.json
+jest.config.js
+.eslintrc.js
+.gitignore
+.npmignore
+
+# Development files
+*.test.ts
+*.spec.ts
+test-*.js
+verify-sdk.js
+
+# Build tools
+.github/
+.vscode/
+.idea/
+
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files
+.env*
+
+# Logs
+*.log
+logs/
+
+# Coverage
+coverage/
+*.lcov
+
+# Cache
+.cache/
+.npm/
+.eslintcache
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary
+tmp/
+temp/
