@@ -169,23 +169,27 @@ export function useHomeEventHandlers(
   // 注册全局事件监听
   const registerGlobalEvents = (
     handleActivateLastTab: () => void,
-    handleReopenClosedTab: () => void
+    handleReopenClosedTab: () => void,
+    handleCloseCurrentTab: () => void
   ) => {
     window.addEventListener('home-tag-selected', handleTagSelected)
     window.addEventListener('home-folder-selected', handleFolderSelected)
     document.addEventListener('shortcut:activate-last-tab', handleActivateLastTab)
     document.addEventListener('shortcut:reopen-closed-tab', handleReopenClosedTab)
+    document.addEventListener('shortcut:close-current-tab', handleCloseCurrentTab)
   }
 
   // 清理全局事件监听
   const cleanupGlobalEvents = (
     handleActivateLastTab: () => void,
-    handleReopenClosedTab: () => void
+    handleReopenClosedTab: () => void,
+    handleCloseCurrentTab: () => void
   ) => {
     window.removeEventListener('home-tag-selected', handleTagSelected)
     window.removeEventListener('home-folder-selected', handleFolderSelected)
     document.removeEventListener('shortcut:activate-last-tab', handleActivateLastTab)
     document.removeEventListener('shortcut:reopen-closed-tab', handleReopenClosedTab)
+    document.removeEventListener('shortcut:close-current-tab', handleCloseCurrentTab)
   }
 
   return {

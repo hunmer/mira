@@ -274,6 +274,13 @@ export function useHomeTabManagement() {
     await reopenLastClosedTab()
   }
 
+  const handleCloseCurrentTab = async () => {
+    const currentTab = getCurrentTab()
+    if (currentTab) {
+      await closeTabWithCallback(currentTab.id)
+    }
+  }
+
   return {
     // Tab composable导出
     tabsComposable,
@@ -295,6 +302,7 @@ export function useHomeTabManagement() {
     closeTabWithCallback,
     handleActivateLastTab,
     handleReopenClosedTab,
+    handleCloseCurrentTab,
     loadTabData,
 
     // 分页状态管理

@@ -121,6 +121,7 @@ const eventHandlers = useHomeEventHandlers(
   createTabFromFolder,
   createTabFromTag,
   switchToTabWithCallback,
+  closeTabWithCallback,
   tabsComposable.setAllTabsNeedUpdate,
   getCurrentTab
 )
@@ -130,6 +131,7 @@ const {
   handleRefreshFolders,
   handleRefreshTags,
   handleEmptyTrash,
+  handleCloseCurrentTab,
   registerGlobalEvents,
   cleanupGlobalEvents
 } = eventHandlers
@@ -154,7 +156,8 @@ onMounted(async () => {
   // 注册全局事件
   registerGlobalEvents(
     handleActivateLastTab,
-    handleReopenClosedTab
+    handleReopenClosedTab,
+    handleCloseCurrentTab
   )
 })
 
@@ -167,7 +170,8 @@ onUnmounted(() => {
   }
   cleanupGlobalEvents(
     handleActivateLastTab,
-    handleReopenClosedTab
+    handleReopenClosedTab,
+    handleCloseCurrentTab
   )
 })
 </script>

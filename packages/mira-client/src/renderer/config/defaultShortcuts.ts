@@ -368,13 +368,13 @@ export const defaultActions: ShortcutAction[] = [
     }
   },
   {
-    id: 'window.close',
-    title: '关闭窗口',
-    description: '关闭当前窗口',
-    category: 'system',
+    id: 'tab.close-current',
+    title: '关闭当前标签页',
+    description: '关闭当前激活的标签页',
+    category: 'navigation',
     icon: 'close',
     callback: () => {
-      document.dispatchEvent(new CustomEvent('shortcut:window-close'))
+      document.dispatchEvent(new CustomEvent('shortcut:close-current-tab'))
     }
   },
 
@@ -654,9 +654,9 @@ export const defaultBindings: ShortcutBinding[] = [
     shortcut: 'Ctrl+W',
     priority: 80,
     
-    actionId: 'window.close',
+    actionId: 'tab.close-current',
     enabled: true,
-    description: '关闭窗口快捷键'
+    description: '关闭当前标签页快捷键'
   },
 
   // 开发调试快捷键
