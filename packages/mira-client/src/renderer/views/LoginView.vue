@@ -336,6 +336,7 @@ onMounted(async () => {
       // 构建完整的连接配置，同时支持token和用户名密码
       const connectionConfig = {
         serverUrl: activeServer.serverUrl,
+        websocketUrl: activeServer.websocketUrl,
         timeout: 30000,
         ...(activeServer.authToken && { apiKey: activeServer.authToken }),
         ...(activeServer.savedCredentials && {
@@ -361,6 +362,7 @@ onMounted(async () => {
 
         const credentialConfig = {
           serverUrl: activeServer.serverUrl,
+          websocketUrl: activeServer.websocketUrl,
           timeout: 30000,
           username: activeServer.savedCredentials.username,
           password: activeServer.savedCredentials.encryptedPassword // 实际使用时需要解密

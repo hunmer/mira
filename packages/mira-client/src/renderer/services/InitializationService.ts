@@ -349,6 +349,7 @@ export class InitializationService {
       // 构建完整的连接配置，同时支持token和用户名密码
       const connectionConfig = {
         serverUrl: activeLibrary.serverUrl,
+        websocketUrl: activeLibrary.websocketUrl,
         timeout: 30000,
         ...(activeLibrary.authToken && { apiKey: activeLibrary.authToken }),
         ...(activeLibrary.savedCredentials && {
@@ -365,6 +366,7 @@ export class InitializationService {
 
         const credentialConfig = {
           serverUrl: activeLibrary.serverUrl,
+          websocketUrl: activeLibrary.websocketUrl,
           timeout: 30000,
           username: activeLibrary.savedCredentials.username,
           password: activeLibrary.savedCredentials.encryptedPassword // 实际使用时需要解密
@@ -422,6 +424,7 @@ export class InitializationService {
       // 构建完整的连接配置，同时支持token和用户名密码
       const connectionConfig = {
         serverUrl: activeLibrary.serverUrl,
+        websocketUrl: activeLibrary.websocketUrl,
         timeout: 30000,
         ...(activeLibrary.authToken && { apiKey: activeLibrary.authToken }),
         ...(activeLibrary.savedCredentials && {
@@ -438,6 +441,7 @@ export class InitializationService {
 
         const credentialConfig = {
           serverUrl: activeLibrary.serverUrl,
+          websocketUrl: activeLibrary.websocketUrl,
           timeout: 30000,
           username: activeLibrary.savedCredentials.username,
           password: activeLibrary.savedCredentials.encryptedPassword // 实际使用时需要解密

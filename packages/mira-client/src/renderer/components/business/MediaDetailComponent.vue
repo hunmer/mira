@@ -257,7 +257,7 @@
 </template>
 
 <script setup lang="ts">
-import { toRefs, ref, computed, watch } from 'vue'
+import { toRefs, ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import type { FileInfo } from '../../../shared/types'
 import ColorThief from 'colorthief'
 import FolderTreeComponent from './FolderTreeComponent/FolderTreeComponent.vue'
@@ -265,6 +265,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useTagStore } from '@renderer/stores/tag'
 import { useFolderStore } from '@renderer/stores/folder'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
+import { webSocketService } from '@renderer/services/WebSocketService'
 import { Empty, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 
 // 全局图片加载错误状态缓存
@@ -318,19 +319,62 @@ const folderTreeNodes = computed(() =>
   }))
 )
 
-// 计算显示的文件列表
+// WebSocket 实时更新覆盖层
+const realtimeUpdates = ref<Map<string, Partial<FileInfo>>>(new Map())
+
+// 计算显示的文件列表（合并 WebSocket 实时更新）
 const displayItems = computed(() => {
+  let base: FileInfo[]
   if (items.value && items.value.length > 0) {
-    return items.value
+    base = items.value
+  } else if (item.value) {
+    base = [item.value]
+  } else {
+    return []
   }
-  if (item.value) {
-    return [item.value]
-  }
-  return []
+  return base.map(file => {
+    const update = realtimeUpdates.value.get(file.id)
+    return update ? { ...file, ...update } : file
+  })
 })
 
 // 是否为多选模式
 const isMultiSelect = computed(() => displayItems.value.length > 1)
+
+// 选中文件变化时清除实时更新
+watch([item, items], () => {
+  realtimeUpdates.value = new Map()
+})
+
+// WebSocket: 监听 file::updated 事件，刷新当前展示的文件信息
+const handleFileWsUpdate = async (data: any) => {
+  const fileId = String(data.fileId)
+  const eventLibId = data.libraryId
+  const currentLibId = libraryId.value || 'default'
+
+  const baseFiles = items.value?.length ? items.value : (item.value ? [item.value] : [])
+  const matched = baseFiles.some(f =>
+    String(f.id) === fileId && (f.libraryId === eventLibId || currentLibId === eventLibId)
+  )
+  if (!matched) return
+
+  try {
+    const updatedFile = await miraSDKService.getFile(eventLibId, fileId)
+    const updates = new Map(realtimeUpdates.value)
+    updates.set(fileId, updatedFile)
+    realtimeUpdates.value = updates
+  } catch (e) {
+    console.warn('Failed to fetch updated file:', e)
+  }
+}
+
+onMounted(() => {
+  webSocketService.addEventListener('file::updated', handleFileWsUpdate)
+})
+
+onUnmounted(() => {
+  webSocketService.removeEventListener('file::updated', handleFileWsUpdate)
+})
 
 // 监听显示项变化，重置加载状态
 watch(displayItems, (newItems) => {

@@ -111,6 +111,9 @@ export class MiraSDKService {
       await this.client.system().getSystemInfo()
       this.isConnected = true
 
+      // 自动初始化 WebSocket
+      this.autoInitializeWebSocket(config.websocketUrl)
+
       console.log('MiraSDKService: Connected successfully')
       return { success: true, message: 'Connected to Mira server' }
     } catch (error) {
@@ -120,6 +123,31 @@ export class MiraSDKService {
         success: false,
         message: error instanceof Error ? error.message : 'Connection failed'
       }
+    }
+  }
+
+  /**
+   * 自动初始化 WebSocket
+   */
+  private async autoInitializeWebSocket(websocketUrl?: string): Promise<void> {
+    if (!websocketUrl) {
+      console.log('MiraSDKService: No websocketUrl provided, skipping WebSocket init')
+      return
+    }
+
+    try {
+      const { useLibraryStore } = await import('../stores/library')
+      const libraryStore = useLibraryStore()
+      const libraryId = libraryStore.currentLibrary?.id
+
+      if (!libraryId) {
+        console.log('MiraSDKService: No active library, skipping WebSocket init')
+        return
+      }
+
+      await this.initializeWebSocket(websocketUrl, libraryId)
+    } catch (error) {
+      console.warn('MiraSDKService: Auto WebSocket init failed (non-fatal)', error)
     }
   }
 
@@ -212,10 +240,11 @@ export class MiraSDKService {
    */
   async disconnect(): Promise<BaseResponse> {
     try {
+      this.disconnectWebSocket()
       this.client = null
       this.isConnected = false
       this.connectionConfig = null
-      
+
       console.log('MiraSDKService: Disconnected')
       return { success: true, message: 'Disconnected from Mira server' }
     } catch (error) {

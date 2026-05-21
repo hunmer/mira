@@ -5,6 +5,7 @@
 // Mira 连接配置
 export interface MiraConnectionConfig {
   serverUrl: string
+  websocketUrl?: string
   apiKey?: string
   timeout?: number
 }

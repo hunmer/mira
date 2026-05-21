@@ -136,14 +136,15 @@ export const useAuthStore = defineStore('auth', () => {
       if (serverConfig) {
         const connectResult = await miraSDKService.connect({
           serverUrl: serverConfig.serverUrl,
+          websocketUrl: serverConfig.websocketUrl,
           timeout: 10000
         })
-        
+
         if (!connectResult.success) {
           throw new Error(`连接服务器失败: ${connectResult.message}`)
         }
       }
-      
+
       const loginResult = await miraSDKService.login(credentials)
       
       // 成功登录，更新状态
@@ -164,29 +165,6 @@ export const useAuthStore = defineStore('auth', () => {
       // 持久化认证状态
       await persistAuthState()
       console.log('Auth state persisted to localStorage')
-
-      // 初始化WebSocket连接（如果提供了websocket配置）
-      if (serverConfig?.websocketUrl) {
-        try {
-          const { useLibraryStore } = await import('./library')
-          const libraryStore = useLibraryStore()
-
-          if (libraryStore.currentLibrary) {
-            const wsConnected = await miraSDKService.initializeWebSocket(
-              serverConfig.websocketUrl,
-              libraryStore.currentLibrary.id
-            )
-
-            if (wsConnected) {
-              console.log('WebSocket connected successfully after login')
-            } else {
-              console.warn('Failed to connect WebSocket after login')
-            }
-          }
-        } catch (wsError) {
-          console.warn('Failed to initialize WebSocket after login:', wsError)
-        }
-      }
 
       // 保存登录凭据到当前活跃的素材库（如果用户选择记住登录）
       if (saveCredentials) {
@@ -236,14 +214,15 @@ export const useAuthStore = defineStore('auth', () => {
       if (serverConfig) {
         const connectResult = await miraSDKService.connect({
           serverUrl: serverConfig.serverUrl,
+          websocketUrl: serverConfig.websocketUrl,
           timeout: 10000
         })
-        
+
         if (!connectResult.success) {
           throw new Error(`连接服务器失败: ${connectResult.message}`)
         }
       }
-      
+
       // 注意: 这里假设 electronService 有 register 方法
       // 实际上需要在 ElectronService 中添加这个方法
       // const userInfo = await electronService.register(registrationData)
