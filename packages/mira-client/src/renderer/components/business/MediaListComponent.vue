@@ -182,7 +182,7 @@ const emit = defineEmits<Emits>()
 
 const selectionBoxRef = ref<InstanceType<typeof SelectionBox> | null>(null)
 const { focusSelectionBox, isSelectionBoxFocused } = useFocusedSelectAll(selectionBoxRef, props, emit)
-const { handleDeleteKeyDown } = useDeleteSelectedItems(props, emit, {
+const { handleDeleteKeyDown, handleEditAction } = useDeleteSelectedItems(props, emit, {
   isActive: isSelectionBoxFocused
 })
 
@@ -279,10 +279,12 @@ const handleClearSelection = () => {
 
 onMounted(() => {
   window.addEventListener('keydown', handleDeleteKeyDown)
+  document.addEventListener('edit-action', handleEditAction)
 })
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleDeleteKeyDown)
+  document.removeEventListener('edit-action', handleEditAction)
 })
 
 // 视频预览状态管理

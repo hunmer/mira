@@ -9,7 +9,8 @@
   />
   <slot v-else name="fallback">
     <div :class="['flex items-center justify-center', imgClass]">
-      <span class="material-icons text-gray-400" :style="{ fontSize: iconSize }">{{ fallbackIcon }}</span>
+      <img v-if="extIconUrl" :src="extIconUrl" class="object-contain opacity-60 w-full h-full p-5" />
+      <span v-else class="material-icons text-gray-400" :style="{ fontSize: iconSize }">{{ fallbackIcon }}</span>
     </div>
   </slot>
 </template>
@@ -17,6 +18,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { getFileTypeIcon } from '@renderer/utils/fileUtils'
+import { getExtIconUrl } from '@renderer/utils/extIconHelper'
 
 const props = withDefaults(defineProps<{
   fileId: string
@@ -40,6 +42,7 @@ const currentSrc = ref(props.src)
 const hasError = ref(false)
 
 const fallbackIcon = computed(() => getFileTypeIcon(props.filename || ''))
+const extIconUrl = computed(() => getExtIconUrl(props.filename || ''))
 
 function toFileUrl(path: string): string {
   if (!path) return ''

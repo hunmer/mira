@@ -23,8 +23,8 @@
 
           <!-- 错误占位符 - 使用文件类型图标 -->
           <div v-else-if="imageLoadState === 'error'" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-50">
-            <img :src="getExtIconUrl(displayItems[0]?.name || '')" class="w-16 h-16 object-contain opacity-60" />
-            <span class="text-xs text-gray-400 mt-2">加载失败</span>
+              <img :src="getExtIconUrl(displayItems[0]?.name || '')" class="w-16 h-16 object-contain opacity-60" />
+ 
           </div>
 
           <!-- 正常显示图片 -->

@@ -193,7 +193,7 @@ const handleContextMenu = (item: FileInfo, event: MouseEvent) => {
   contextMenuHandler(item, event)
 }
 
-const { handleDeleteKeyDown } = useDeleteSelectedItems(props, emit, {
+const { handleDeleteKeyDown, handleEditAction } = useDeleteSelectedItems(props, emit, {
   isActive: isSelectionBoxFocused
 })
 
@@ -257,10 +257,12 @@ const onVideoPreviewError = (error: Event) => {
 
 onMounted(() => {
   window.addEventListener('keydown', handleDeleteKeyDown)
+  document.addEventListener('edit-action', handleEditAction)
 })
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleDeleteKeyDown)
+  document.removeEventListener('edit-action', handleEditAction)
   stopVideoPreview()
 })
 </script>

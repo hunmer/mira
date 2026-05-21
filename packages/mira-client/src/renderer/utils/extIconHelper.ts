@@ -1,3 +1,5 @@
+// 图标文件在 public/ext_icons/ 下，Vite 直接作为静态资源提供
+
 const EXT_ICON_MAP: Record<string, string> = {
   '.jpg': 'JPG', '.jpeg': 'JPG', '.png': 'PNG', '.gif': 'GIFF',
   '.bmp': 'BMP', '.tiff': 'TIFF', '.tif': 'TIFF', '.svg': 'SVG',
@@ -15,27 +17,9 @@ const EXT_ICON_MAP: Record<string, string> = {
   '.exe': 'EXE', '.dll': 'DLL', '.iso': 'ISO',
 }
 
-const iconModules = import.meta.glob<{ default: string }>(
-  '../../../../assets/ext_icons/*.png',
-  { eager: true, query: '?url', import: 'default' }
-)
-
-const iconCache = new Map<string, string>()
-
-function resolveIconUrl(iconName: string): string {
-  if (iconCache.has(iconName)) return iconCache.get(iconName)!
-  for (const [path, url] of Object.entries(iconModules)) {
-    if (path.endsWith(`/${iconName}.png`)) {
-      iconCache.set(iconName, url)
-      return url
-    }
-  }
-  return ''
-}
-
 export function getExtIconUrl(filename: string): string {
   const dotIndex = filename.lastIndexOf('.')
   const ext = dotIndex > 0 ? filename.slice(dotIndex).toLowerCase() : ''
   const iconName = EXT_ICON_MAP[ext] || 'FILE'
-  return resolveIconUrl(iconName)
+  return `./ext_icons/${iconName}.png`
 }

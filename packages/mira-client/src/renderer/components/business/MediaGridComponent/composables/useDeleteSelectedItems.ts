@@ -80,16 +80,33 @@ export function useDeleteSelectedItems(
     }
   }
 
-  const handleDeleteKeyDown = (event: KeyboardEvent) => {
-    if (event.key !== 'Delete' || event.repeat || isEditableTarget(event.target)) return
-    if (options.isActive && !options.isActive()) return
-    if (props.selectedItems.length === 0) return
+  const canHandleDelete = (target: EventTarget | null) => {
+    if (options.isActive && !options.isActive()) return false
+    if (props.selectedItems.length === 0) return false
+    return !isEditableTarget(target)
+  }
+
+  const handleDelete = (event: KeyboardEvent | Event) => {
+    const isKeyboardEvent = event instanceof KeyboardEvent
+    if (isKeyboardEvent && (event.key !== 'Delete' || event.repeat)) return
+    if (!canHandleDelete(isKeyboardEvent ? event.target : null)) return
 
     event.preventDefault()
     void deleteSelectedItems()
   }
 
+  const handleDeleteKeyDown = (event: KeyboardEvent) => {
+    handleDelete(event)
+  }
+
+  const handleEditAction = (event: Event) => {
+    const detail = (event as CustomEvent).detail
+    if (detail?.action !== 'delete') return
+    handleDelete(event)
+  }
+
   return {
-    handleDeleteKeyDown
+    handleDeleteKeyDown,
+    handleEditAction
   }
 }

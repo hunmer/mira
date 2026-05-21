@@ -129,7 +129,7 @@ const selectionBoxRef = ref<InstanceType<typeof SelectionBox> | null>(null)
 const waterfallRef = ref()
 const settingsStore = useSettingsStore()
 const { focusSelectionBox, isSelectionBoxFocused } = useFocusedSelectAll(selectionBoxRef, props, emit)
-const { handleDeleteKeyDown } = useDeleteSelectedItems(props, emit, {
+const { handleDeleteKeyDown, handleEditAction } = useDeleteSelectedItems(props, emit, {
   isActive: isSelectionBoxFocused
 })
 
@@ -371,10 +371,12 @@ defineExpose({
 
 onMounted(() => {
   window.addEventListener('keydown', handleDeleteKeyDown)
+  document.addEventListener('edit-action', handleEditAction)
 })
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleDeleteKeyDown)
+  document.removeEventListener('edit-action', handleEditAction)
   stopVideoPreview()
 })
 </script>
