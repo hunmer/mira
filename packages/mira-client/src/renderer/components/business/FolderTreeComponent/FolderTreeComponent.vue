@@ -205,7 +205,6 @@ const props = withDefaults(defineProps<Props>(), {
     { id: 'all', label: '全部', icon: 'folder_open', iconColor: 'text-gray-500' },
     { id: 'uncategorized', label: '未分类', icon: 'folder_special', iconColor: 'text-gray-500' },
     { id: 'untagged', label: '未标签', icon: 'label_off', iconColor: 'text-gray-500' },
-    { id: 'tag-management', label: '标签管理', icon: 'label', iconColor: 'text-gray-500' },
     { id: 'trash', label: '回收站', icon: 'delete', iconColor: 'text-red-500' },
   ],
 })

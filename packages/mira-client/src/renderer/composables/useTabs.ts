@@ -303,7 +303,9 @@ export function useTabs() {
 
     // 识别特殊的文件夹类型
     let tabType = 'folder'
-    if (folderId === 'trash') {
+    if (folderId === 'all') {
+      tabType = 'all'
+    } else if (folderId === 'trash') {
       tabType = 'trash'
     } else if (folderId === 'uncategorized') {
       tabType = 'uncategorized'
