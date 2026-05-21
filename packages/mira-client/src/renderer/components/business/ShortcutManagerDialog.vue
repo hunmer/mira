@@ -3,11 +3,10 @@
     :open="isVisible"
     @update:open="isVisible = $event"
   >
-    <DialogContent class="shortcut-manager-dialog sm:max-w-[60vw]">
-      <DialogHeader>
+    <DialogContent class="shortcut-manager-dialog sm:max-w-[60vw] max-h-[70vh] flex flex-col overflow-hidden">      <DialogHeader>
         <DialogTitle>快捷键设置</DialogTitle>
       </DialogHeader>
-      <div class="shortcut-manager-content">
+      <div class="shortcut-manager-content flex-1 overflow-y-auto min-h-0">
         <!-- 搜索栏 -->
         <div class="search-section mb-6">
           <div class="relative">
@@ -31,10 +30,10 @@
               <button
                 v-for="category in categories"
                 :key="category.id"
-                class="w-full flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer"
+                class="w-full flex items-center px-3 py-2 rounded-md text-sm transition-colors cursor-pointer border-l-3"
                 :class="selectedCategory === category.id
-                  ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-semibold border-l-2 border-primary-500'
-                  : 'text-surface-600 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-800'"
+                  ? 'bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 font-semibold border-l-primary-500'
+                  : 'text-surface-600 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-800 border-l-transparent'"
                 @click="selectedCategory = category.id"
               >
                 <span class="material-icons text-base mr-3">{{ category.icon }}</span>
@@ -123,32 +122,13 @@
         </div>
       </div>
     <DialogFooter>
-      <div class="flex justify-between items-center w-full">
-        <button
-          class="px-4 py-2 text-sm font-medium text-surface-600 dark:text-surface-400
-                 hover:text-surface-700 dark:hover:text-surface-300 transition-colors cursor-pointer"
-          @click="resetToDefaults"
-        >
-          恢复默认
-        </button>
-
-        <div class="flex gap-2">
-          <button
-            class="px-4 py-2 text-sm font-medium text-surface-600 dark:text-surface-400
-                   hover:text-surface-700 dark:hover:text-surface-300 transition-colors cursor-pointer"
-            @click="handleDialogHide"
-          >
-            取消
-          </button>
-          <button
-            class="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700
-                   rounded-md transition-colors cursor-pointer"
-            @click="saveChanges"
-          >
-            保存
-          </button>
-        </div>
-      </div>
+      <button
+        class="px-4 py-2 text-sm font-medium text-surface-600 dark:text-surface-400
+               hover:text-surface-700 dark:hover:text-surface-300 transition-colors cursor-pointer"
+        @click="resetToDefaults"
+      >
+        恢复默认
+      </button>
     </DialogFooter>
     </DialogContent>
   </Dialog>
@@ -184,6 +164,7 @@
             快捷键组合
           </label>
           <div
+ref="recordRef"
             class="w-full px-3 py-2 border-2 rounded-md cursor-pointer transition-colors"
             :class="isRecording
               ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
@@ -275,7 +256,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -389,10 +370,6 @@ const canSaveBinding = computed((): boolean => {
 })
 
 // 方法
-const handleDialogHide = (): void => {
-  isVisible.value = false
-}
-
 const getCurrentCategoryName = (): string => {
   const category = categories.value.find(c => c.id === selectedCategory.value)
   return category?.name || '全部'
@@ -441,9 +418,12 @@ const removeBinding = async (binding: ShortcutBinding): Promise<void> => {
   refreshTrigger.value++
 }
 
+const recordRef = ref<HTMLElement | null>(null)
+
 const startRecording = (): void => {
   isRecording.value = true
   newBinding.value.shortcut = ''
+  nextTick(() => recordRef.value?.focus())
 }
 
 const handleKeyRecord = (event: KeyboardEvent): void => {
@@ -549,18 +529,10 @@ const resetToDefaults = async (): Promise<void> => {
     await shortcutService.resetToDefaults()
     // 触发列表更新
     refreshTrigger.value++
-    console.log('快捷键已重置为默认设置')
-    // 可以添加成功提示
   } catch (error) {
     console.error('重置快捷键失败:', error)
     // 可以添加错误提示
   }
-}
-
-const saveChanges = async (): Promise<void> => {
-  // 所有变更在编辑时已自动保存到持久化存储
-  console.log('快捷键设置已保存')
-  handleDialogHide()
 }
 
 // 生命周期
