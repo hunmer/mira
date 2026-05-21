@@ -7,9 +7,11 @@
     :realtime-selection="true"
     :min-selection-size="8"
     class="media-list w-full overflow-auto"
+    tabindex="0"
     @selection-update="handleSelectionUpdate"
     @item-click="handleSelectionItemClick"
     @clear-selection="handleClearSelection"
+    @pointerdown.capture="focusSelectionBox"
   >
     <Table class="w-full">
       <TableHeader>
@@ -163,6 +165,7 @@ import SelectionBox from '@renderer/components/common/SelectionBox.vue'
 import { useVideoPreview } from '@renderer/composables/useVideoPreview'
 import type { FileInfo } from '../../../shared/types'
 import { useDeleteSelectedItems } from './MediaGridComponent/composables/useDeleteSelectedItems'
+import { useFocusedSelectAll } from './MediaGridComponent/composables/useFocusedSelectAll'
 
 interface Props {
   items: FileInfo[]
@@ -184,6 +187,7 @@ const emit = defineEmits<Emits>()
 
 const selectionBoxRef = ref<InstanceType<typeof SelectionBox> | null>(null)
 const { handleDeleteKeyDown } = useDeleteSelectedItems(props, emit)
+const { focusSelectionBox } = useFocusedSelectAll(selectionBoxRef, props, emit)
 
 const selectedIds = computed({
   get: () => props.selectedItems,

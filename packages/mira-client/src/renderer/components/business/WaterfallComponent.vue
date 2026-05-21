@@ -7,9 +7,11 @@
     :realtime-selection="true"
     :min-selection-size="8"
     class="waterfall-wrapper"
+    tabindex="0"
     @selection-update="handleSelectionUpdate"
     @item-click="handleSelectionItemClick"
     @clear-selection="handleClearSelection"
+    @pointerdown.capture="focusSelectionBox"
   >
     <Waterfall
       ref="waterfallRef"
@@ -79,6 +81,7 @@ import { useSettingsStore } from '../../stores/settings'
 import { useDragDrop } from './MediaGridComponent/composables/useDragDrop'
 import { useVideoHover } from './MediaGridComponent/composables/useVideoHover'
 import { useDeleteSelectedItems } from './MediaGridComponent/composables/useDeleteSelectedItems'
+import { useFocusedSelectAll } from './MediaGridComponent/composables/useFocusedSelectAll'
 
 interface Props {
   items: FileInfo[]
@@ -126,6 +129,7 @@ const selectionBoxRef = ref<InstanceType<typeof SelectionBox> | null>(null)
 const waterfallRef = ref()
 const settingsStore = useSettingsStore()
 const { handleDeleteKeyDown } = useDeleteSelectedItems(props, emit)
+const { focusSelectionBox } = useFocusedSelectAll(selectionBoxRef, props, emit)
 
 const selectedIds = computed({
   get: () => props.selectedItems,

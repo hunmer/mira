@@ -213,15 +213,7 @@
 
     <!-- 基本信息 -->
     <div>
-      <div class="flex justify-between items-center mb-2">
-        <h3 class="font-semibold text-gray-700 text-sm">基本信息</h3>
-        <button 
-          class="text-blue-500 text-sm hover:text-blue-700 px-2 py-1 rounded-md hover:bg-blue-50"
-          @click="() => handleShowDialog()"
-        >
-          {{ isMultiSelect ? `查看 ${displayItems.length} 个文件详情` : '查看详情' }}
-        </button>
-      </div>
+      <h3 class="font-semibold text-gray-700 text-sm mb-2">基本信息</h3>
       <div class="text-xs space-y-2 text-gray-600">
         <!-- 单选模式 -->
         <template v-if="!isMultiSelect && displayItems[0]">
@@ -260,15 +252,6 @@
       </div>
     </div>
 
-    <!-- 文件详情对话框 -->
-    <FileDetailDialog
-      v-if="showDialog"
-      :visible="showDialog"
-      :file-infos="displayItems"
-      :default-tab="dialogDefaultTab"
-      @close="showDialog = false"
-      @save="handleDialogSave"
-    />
     </template>
   </div>
 </template>
@@ -277,7 +260,6 @@
 import { toRefs, ref, computed, watch } from 'vue'
 import type { FileInfo } from '../../../shared/types'
 import ColorThief from 'colorthief'
-import FileDetailDialog from './FileDetailDialog.vue'
 import FolderTreeComponent from './FolderTreeComponent/FolderTreeComponent.vue'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useTagStore } from '@renderer/stores/tag'
@@ -298,7 +280,6 @@ interface Emits {
   (e: 'tag-add', tag: string): void
   (e: 'tag-remove', tag: string): void
   (e: 'folder-change', folderId: string): void
-  (e: 'show-dialog', defaultTab?: 'folders' | 'tags'): void
 }
 
 const props = defineProps<Props>()
@@ -418,10 +399,6 @@ const imageLoadState = ref<'loading' | 'loaded' | 'error'>('loading')
 // 多选图片加载状态
 const multiImageLoadStates = ref<Record<string, 'loading' | 'loaded' | 'error'>>({})
 
-// 对话框状态
-const showDialog = ref(false)
-const dialogDefaultTab = ref<'folders' | 'tags'>('folders')
-
 // 图片加载处理
 const handleImageLoad = () => {
   imageLoadState.value = 'loaded'
@@ -491,8 +468,9 @@ const handleFolderSelect = async (folderItem: any) => {
     for (const file of displayItems.value) {
       const libId = file.libraryId || 'default'
       await client.folders().setFileFolder({ libraryId: libId, fileId: parseInt(file.id), folder: parseInt(folderItem.id) })
+      file.folderId = String(folderItem.id)
     }
-    if (item.value) item.value.folderId = folderItem.id
+    emit('folder-change', folderItem.id)
     folderPopoverOpen.value = false
   } catch (error) {
     console.error('Failed to set folder:', error)
@@ -507,19 +485,32 @@ const handleTagSelect = async (tagData: any) => {
     for (const file of displayItems.value) {
       const libId = file.libraryId || 'default'
       await client.tags().addTagsToFile(libId, parseInt(file.id), [tagName])
+      if (!file.tags) file.tags = []
+      if (!file.tags.includes(tagName)) file.tags.push(tagName)
     }
-    if (item.value) {
-      if (!item.value.tags) item.value.tags = []
-      if (!item.value.tags.includes(tagName)) item.value.tags.push(tagName)
-    }
+    emit('tag-add', tagName)
     tagPopoverOpen.value = false
   } catch (error) {
     console.error('Failed to add tag:', error)
   }
 }
 
-const handleRemoveTag = (tag: string) => {
-  emit('tag-remove', tag)
+const handleRemoveTag = async (tag: string) => {
+  try {
+    const client = (miraSDKService as any).client
+    if (!client) return
+    for (const file of displayItems.value) {
+      const libId = file.libraryId || 'default'
+      await client.tags().removeTagsFromFile(libId, parseInt(file.id), [tag])
+      if (file.tags) {
+        const idx = file.tags.indexOf(tag)
+        if (idx !== -1) file.tags.splice(idx, 1)
+      }
+    }
+    emit('tag-remove', tag)
+  } catch (error) {
+    console.error('Failed to remove tag:', error)
+  }
 }
 
 // 获取标签名称
@@ -531,29 +522,6 @@ const getTagName = (tagId: string): string => {
 }
 
 
-
-
-const handleShowDialog = (defaultTab?: 'folders' | 'tags') => {
-  // 设置默认tab
-  dialogDefaultTab.value = defaultTab || 'folders'
-  // 显示对话框
-  showDialog.value = true
-  emit('show-dialog', defaultTab)
-}
-
-const handleDialogSave = (data: { folderId?: string; tags: string[] }) => {
-  console.log('Dialog save data:', data)
-  // 这里可以添加保存成功后的处理逻辑
-  // 比如更新item的folderId和tags
-  if (item.value) {
-    if (data.folderId) {
-      item.value.folderId = data.folderId
-    }
-    if (data.tags.length > 0) {
-      item.value.tags = data.tags
-    }
-  }
-}
 
 const copyToClipboard = (text: string) => {
   navigator.clipboard.writeText(text).then(() => {

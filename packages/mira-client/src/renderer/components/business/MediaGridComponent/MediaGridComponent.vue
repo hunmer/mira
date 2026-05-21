@@ -7,9 +7,11 @@
     :realtime-selection="true"
     :min-selection-size="8"
     class="flex-1 overflow-y-auto pb-16 relative"
+    tabindex="0"
     @selection-update="handleSelectionUpdate"
     @item-click="handleItemClick"
     @clear-selection="handleClearSelection"
+    @pointerdown.capture="focusSelectionBox"
   >
     <!-- 右键菜单 -->
     <ContextMenu>
@@ -121,6 +123,7 @@ import { useContextMenu } from './composables/useContextMenu'
 import { useDragDrop } from './composables/useDragDrop'
 import { useVideoHover } from './composables/useVideoHover'
 import { useDeleteSelectedItems } from './composables/useDeleteSelectedItems'
+import { useFocusedSelectAll } from './composables/useFocusedSelectAll'
 import type { MenuItem } from '@/components/ui/volt/types'
 
 interface Props {
@@ -148,6 +151,7 @@ const emit = defineEmits<Emits>()
 
 const selectionBoxRef = ref<InstanceType<typeof SelectionBox> | null>(null)
 const settingsStore = useSettingsStore()
+const { focusSelectionBox } = useFocusedSelectAll(selectionBoxRef, props, emit)
 
 // 使用各种composables
 const {
@@ -249,34 +253,12 @@ const onVideoPreviewError = (error: Event) => {
   console.error('Video preview error:', error)
 }
 
-const handleSelectAll = () => {
-  const currentSelected = new Set(props.selectedItems)
-  props.items.forEach(item => {
-    if (!currentSelected.has(item.id)) {
-      emit('media-select', item, true)
-    }
-  })
-}
-
-const handleEditAction = (e: Event) => {
-  const detail = (e as CustomEvent).detail
-  if (detail.action === 'select-all') {
-    const el = selectionBoxRef.value?.$el
-    if (!el) return
-    const rect = el.getBoundingClientRect()
-    if (rect.width === 0 || rect.height === 0) return
-    handleSelectAll()
-  }
-}
-
 onMounted(() => {
   window.addEventListener('keydown', handleDeleteKeyDown)
-  document.addEventListener('edit-action', handleEditAction)
 })
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleDeleteKeyDown)
-  document.removeEventListener('edit-action', handleEditAction)
   stopVideoPreview()
 })
 </script>
