@@ -1,41 +1,31 @@
 <template>
-  <Dialog
-    :open="isVisible"
-    @update:open="isVisible = $event"
-  >
-    <DialogContent class="shortcut-manager-dialog sm:max-w-[60vw] max-h-[70vh] flex flex-col overflow-hidden">      <DialogHeader>
+  <Dialog :open="isVisible" @update:open="isVisible = $event">
+    <DialogContent class="shortcut-manager-dialog">
+      <DialogHeader>
         <DialogTitle>快捷键设置</DialogTitle>
       </DialogHeader>
-      <div class="shortcut-manager-content flex-1 overflow-y-auto min-h-0">
+      <div class="shortcut-manager-content flex flex-col flex-1 overflow-hidden min-h-0">
         <!-- 搜索栏 -->
-        <div class="search-section mb-6">
+        <div class="search-section mb-6 p-2">
           <div class="relative">
             <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-surface-500">search</span>
-            <input
-              v-model="searchQuery"
-              class="w-full pl-10 pr-4 py-2 rounded-lg bg-surface-50 dark:bg-surface-800
+            <input v-model="searchQuery" class="w-full pl-10 pr-4 py-2 rounded-lg bg-surface-50 dark:bg-surface-800
                      border border-surface-200 dark:border-surface-700
                      text-surface-700 dark:text-surface-0
-                     focus:outline-none"
-              placeholder="搜索快捷键"
-              type="text"
-            />
+                     focus:outline-none" placeholder="搜索快捷键" type="text" />
           </div>
         </div>
 
-        <div class="flex gap-6">
+        <div class="flex gap-6 min-h-0 flex-1 overflow-hidden">
           <!-- 左侧类别导航 -->
-          <div class="w-1/4">
+          <div class="w-1/4 shrink-0">
             <nav class="space-y-1">
-              <button
-                v-for="category in categories"
-                :key="category.id"
-                class="w-full flex items-center px-3 py-2 rounded-md text-sm transition-colors cursor-pointer border-l-3"
+              <button v-for="category in categories" :key="category.id"
+                class="w-full flex items-center px-3 py-2.5 rounded-md text-sm transition-colors cursor-pointer border-l-4"
                 :class="selectedCategory === category.id
-                  ? 'bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 font-semibold border-l-primary-500'
-                  : 'text-surface-600 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-800 border-l-transparent'"
-                @click="selectedCategory = category.id"
-              >
+  ? 'bg-primary/10 dark:bg-primary/15 text-primary font-semibold border-primary'
+  : 'text-surface-600 dark:text-surface-400 hover:bg-surface-50 dark:hover:bg-surface-800 border-transparent'"
+                @click="selectedCategory = category.id">
                 <span class="material-icons text-base mr-3">{{ category.icon }}</span>
                 {{ category.name }}
               </button>
@@ -43,77 +33,67 @@
           </div>
 
           <!-- 右侧快捷键列表 -->
-          <div class="w-3/4">
-            <div class="mb-4">
-              <h2 class="text-lg font-semibold text-surface-700 dark:text-surface-0 mb-2">
-                {{ getCurrentCategoryName() }}
-              </h2>
+          <div class="w-3/4 flex flex-col min-h-0">
+            <h2 class="text-lg font-semibold text-surface-700 dark:text-surface-0 mb-2 shrink-0">
+              {{ getCurrentCategoryName() }}
+            </h2>
 
-              <!-- 快捷键列表 -->
-              <div class="space-y-2 max-h-96 overflow-y-auto">
-                <div
-                  v-for="(binding, index) in filteredBindings"
-                  :key="binding.shortcut + binding.actionId"
-                  class="flex justify-between items-center p-3 rounded-md transition-colors"
-                  :class="index % 2 === 0 ? 'bg-surface-50 dark:bg-surface-800/50' : ''"
-                >
-                  <div class="flex-1">
-                    <div class="text-sm text-surface-700 dark:text-surface-0 font-medium">
-                      {{ getActionTitle(binding.actionId) }}
-                    </div>
-                    <div class="text-xs text-surface-500 dark:text-surface-400 mt-1">
-                      {{ getActionDescription(binding.actionId) }}
-                    </div>
+            <!-- 快捷键列表 -->
+            <div class="space-y-2 flex-1 min-h-0 overflow-y-scroll pr-2">
+              <div v-for="(binding, index) in filteredBindings" :key="binding.shortcut + binding.actionId"
+                class="flex justify-between items-center p-3 rounded-md transition-colors"
+                :class="index % 2 === 0 ? 'bg-surface-50 dark:bg-surface-800/50' : ''">
+                <div class="flex-1">
+                  <div class="text-sm text-surface-700 dark:text-surface-0 font-medium">
+                    {{ getActionTitle(binding.actionId) }}
                   </div>
+                  <div class="text-xs text-surface-500 dark:text-surface-400 mt-1">
+                    {{ getActionDescription(binding.actionId) }}
+                  </div>
+                </div>
 
-                  <div class="flex items-center gap-3">
-                    <!-- 快捷键显示 -->
-                    <div class="flex items-center gap-1">
-                      <template v-for="(key, keyIndex) in binding.shortcut.split('+')" :key="keyIndex">
-                        <kbd class="px-2 py-1 text-xs font-sans font-semibold text-surface-600 dark:text-surface-300
+                <div class="flex items-center gap-3">
+                  <!-- 快捷键显示 -->
+                  <div class="flex items-center gap-1">
+                    <template v-for="(key, keyIndex) in binding.shortcut.split('+')" :key="keyIndex">
+                      <kbd
+                        class="px-2 py-1 text-xs font-sans font-semibold text-surface-600 dark:text-surface-300
                                    bg-surface-100 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded">
-                          {{ formatKeyDisplay(key) }}
-                        </kbd>
-                        <span v-if="keyIndex < binding.shortcut.split('+').length - 1"
-                              class="text-surface-400 mx-1">+</span>
-                      </template>
-                    </div>
-
-                    <!-- 全局标识 -->
-                    <span v-if="binding.isGlobal"
-                          class="inline-flex items-center px-2 py-1 rounded text-xs font-medium
-                                 bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
-                      <span class="material-icons text-xs mr-1">public</span>
-                      全局
-                    </span>
-
-                    <!-- 编辑按钮 -->
-                    <button
-                      class="text-surface-400 hover:text-surface-600 dark:hover:text-surface-300 transition-colors cursor-pointer"
-                      @click="editBinding(binding)"
-                    >
-                      <span class="material-icons text-sm">edit</span>
-                    </button>
-
-                    <!-- 删除按钮 -->
-                    <button
-                      class="text-surface-400 hover:text-red-500 dark:hover:text-red-400 transition-colors cursor-pointer"
-                      @click="removeBinding(binding)"
-                    >
-                      <span class="material-icons text-sm">delete</span>
-                    </button>
+                        {{ formatKeyDisplay(key) }}
+                      </kbd>
+                      <span v-if="keyIndex < binding.shortcut.split('+').length - 1"
+                        class="text-surface-400 mx-1">+</span>
+                    </template>
                   </div>
+
+                  <!-- 全局标识 -->
+                  <span v-if="binding.isGlobal" class="inline-flex items-center px-2 py-1 rounded text-xs font-medium
+                                 bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
+                    <span class="material-icons text-xs mr-1">public</span>
+                    全局
+                  </span>
+
+                  <!-- 编辑按钮 -->
+                  <button
+                    class="text-surface-400 hover:text-surface-600 dark:hover:text-surface-300 transition-colors cursor-pointer"
+                    @click="editBinding(binding)">
+                    <span class="material-icons text-sm">edit</span>
+                  </button>
+
+                  <!-- 删除按钮 -->
+                  <button
+                    class="text-surface-400 hover:text-red-500 dark:hover:text-red-400 transition-colors cursor-pointer"
+                    @click="removeBinding(binding)">
+                    <span class="material-icons text-sm">delete</span>
+                  </button>
                 </div>
               </div>
 
               <!-- 添加新快捷键按钮 -->
-              <button
-                class="w-full flex items-center justify-center p-3 mt-4 rounded-md border-2 border-dashed
-                       border-surface-300 dark:border-surface-600 text-surface-500 dark:text-surface-400
-                       hover:bg-surface-50 dark:hover:bg-surface-800 hover:border-primary-500
-                       dark:hover:border-primary-400 transition-all"
-                @click="showAddDialog = true"
-              >
+              <button class="w-full flex items-center justify-center p-3 mt-2 rounded-md border-2 border-dashed
+                         border-surface-300 dark:border-surface-600 text-surface-500 dark:text-surface-400
+                         hover:bg-surface-50 dark:hover:bg-surface-800 hover:border-primary-500
+                         dark:hover:border-primary-400 transition-all" @click="showAddDialog = true">
                 <span class="material-icons text-base mr-2">add</span>
                 <span class="text-sm font-medium">添加新快捷键</span>
               </button>
@@ -121,23 +101,20 @@
           </div>
         </div>
       </div>
-    <DialogFooter>
-      <button
-        class="px-4 py-2 text-sm font-medium text-surface-600 dark:text-surface-400
+      <DialogFooter class="shrink-0">
+
+
+        <button class="px-4 py-2 text-sm font-medium text-surface-600 dark:text-surface-400
                hover:text-surface-700 dark:hover:text-surface-300 transition-colors cursor-pointer"
-        @click="resetToDefaults"
-      >
-        恢复默认
-      </button>
-    </DialogFooter>
+          @click="resetToDefaults">
+          恢复默认
+        </button>
+      </DialogFooter>
     </DialogContent>
   </Dialog>
 
   <!-- 添加/编辑快捷键对话框 -->
-  <Dialog
-    :open="showAddDialog"
-    @update:open="showAddDialog = $event"
-  >
+  <Dialog :open="showAddDialog" @update:open="showAddDialog = $event">
     <DialogContent class="add-shortcut-dialog sm:max-w-[40vw] max-h-[80vh] flex flex-col">
       <DialogHeader>
         <DialogTitle>{{ editingBinding ? '编辑快捷键' : '添加快捷键' }}</DialogTitle>
@@ -153,7 +130,8 @@
               <SelectValue placeholder="请选择动作" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem v-for="action in availableActions" :key="action.id" :value="action.id">{{ action.title }}</SelectItem>
+              <SelectItem v-for="action in availableActions" :key="action.id" :value="action.id">{{ action.title }}
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -163,32 +141,24 @@
           <label class="block text-sm font-medium text-surface-700 dark:text-surface-0 mb-2">
             快捷键组合
           </label>
-          <div
-ref="recordRef"
-            class="w-full px-3 py-2 border-2 rounded-md cursor-pointer transition-colors"
-            :class="isRecording
-              ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-              : 'border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800'"
-            @click="startRecording"
-            @keydown="handleKeyRecord"
-            tabindex="0"
-          >
-            <div v-if="!newBinding.shortcut && !isRecording"
-                 class="text-surface-400 dark:text-surface-500">
+          <div ref="recordRef" class="w-full px-3 py-2 border-2 rounded-md cursor-pointer transition-colors" :class="isRecording
+            ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+  : 'border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800'" @click="startRecording"
+            @keydown="handleKeyRecord" tabindex="0">
+            <div v-if="!newBinding.shortcut && !isRecording" class="text-surface-400 dark:text-surface-500">
               点击此处录制快捷键...
             </div>
-            <div v-else-if="isRecording"
-                 class="text-primary-600 dark:text-primary-400">
+            <div v-else-if="isRecording" class="text-primary-600 dark:text-primary-400">
               请按下快捷键组合...
             </div>
             <div v-else class="flex items-center gap-1">
               <template v-for="(key, keyIndex) in newBinding.shortcut.split('+')" :key="keyIndex">
-                <kbd class="px-2 py-1 text-xs font-sans font-semibold text-surface-600 dark:text-surface-300
+                <kbd
+                  class="px-2 py-1 text-xs font-sans font-semibold text-surface-600 dark:text-surface-300
                            bg-surface-100 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 rounded">
                   {{ formatKeyDisplay(key) }}
                 </kbd>
-                <span v-if="keyIndex < newBinding.shortcut.split('+').length - 1"
-                      class="text-surface-400 mx-1">+</span>
+                <span v-if="keyIndex < newBinding.shortcut.split('+').length - 1" class="text-surface-400 mx-1">+</span>
               </template>
             </div>
           </div>
@@ -197,10 +167,7 @@ ref="recordRef"
         <!-- 设置选项 -->
         <div class="space-y-3">
           <label class="flex items-center">
-            <Checkbox
-              :checked="newBinding.isGlobal"
-              @update:checked="newBinding.isGlobal = $event"
-            />
+            <Checkbox :checked="newBinding.isGlobal" @update:checked="newBinding.isGlobal = $event" />
             <span class="ml-2 text-sm text-surface-700 dark:text-surface-0">全局快捷键（在后台也可触发）</span>
           </label>
 
@@ -208,22 +175,15 @@ ref="recordRef"
             <label class="block text-sm font-medium text-surface-700 dark:text-surface-0 mb-2">
               优先级
             </label>
-            <input
-              v-model.number="newBinding.priority"
-              type="number"
-              min="0"
-              max="100"
-              class="w-full px-3 py-2 border border-surface-200 dark:border-surface-700 rounded-md
+            <input v-model.number="newBinding.priority" type="number" min="0" max="100" class="w-full px-3 py-2 border border-surface-200 dark:border-surface-700 rounded-md
                      bg-surface-0 dark:bg-surface-800 text-surface-700 dark:text-surface-0
-                     focus:outline-none focus:ring-2 focus:ring-primary-500"
-              placeholder="0-100，数值越大优先级越高"
-            />
+                     focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="0-100，数值越大优先级越高" />
           </div>
         </div>
 
         <!-- 冲突提示 -->
         <div v-if="shortcutConflict"
-             class="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
+          class="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
           <div class="flex">
             <span class="material-icons text-yellow-600 dark:text-yellow-400 mr-2">warning</span>
             <div class="text-sm text-yellow-800 dark:text-yellow-200">
@@ -232,25 +192,20 @@ ref="recordRef"
           </div>
         </div>
       </div>
-    <DialogFooter class="shrink-0">
-      <div class="flex justify-end gap-2">
-        <button
-          class="px-4 py-2 text-sm font-medium text-surface-600 dark:text-surface-400
+      <DialogFooter class="shrink-0">
+        <div class="flex justify-end gap-2">
+          <button class="px-4 py-2 text-sm font-medium text-surface-600 dark:text-surface-400
                  hover:text-surface-700 dark:hover:text-surface-300 transition-colors cursor-pointer"
-          @click="cancelAdd"
-        >
-          取消
-        </button>
-        <button
-          class="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700
+            @click="cancelAdd">
+            取消
+          </button>
+          <button class="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700
                  rounded-md transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          :disabled="!canSaveBinding"
-          @click="saveBinding"
-        >
-          {{ editingBinding ? '更新' : '添加' }}
-        </button>
-      </div>
-    </DialogFooter>
+            :disabled="!canSaveBinding" @click="saveBinding">
+            {{ editingBinding ? '更新' : '添加' }}
+          </button>
+        </div>
+      </DialogFooter>
     </DialogContent>
   </Dialog>
 </template>
@@ -544,3 +499,13 @@ onUnmounted(() => {
   shortcutService.destroy()
 })
 </script>
+<style>
+.shortcut-manager-dialog {
+  max-width: 80vw !important;
+  width: 80vw !important;
+  height: 70vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+</style>

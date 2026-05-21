@@ -8,49 +8,18 @@
         <DialogTitle>文件上传</DialogTitle>
       </DialogHeader>
       <div class="file-upload-content h-full flex flex-col">
-        <!-- 顶部工具栏 -->
-        <div class="flex items-center justify-between mb-4 px-1">
-          <div class="flex items-center space-x-4">
-            <div class="flex items-center space-x-2">
-              <span class="text-sm text-gray-600">素材库:</span>
-              <Select v-model="selectedLibraryId" @update:model-value="handleLibrarySelectChange">
-                <SelectTrigger class="w-48">
-                  <SelectValue placeholder="选择素材库" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem v-for="lib in libraryOptions" :key="lib.id" :value="lib.id">{{ lib.name }}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <!-- 上传队列状态 -->
-          <div v-if="queueStats.pending > 0 || queueStats.running > 0" class="flex items-center space-x-4 text-sm">
-            <span class="text-blue-600">等待中: {{ queueStats.pending }}</span>
-            <span class="text-orange-600">上传中: {{ queueStats.running }}</span>
-            <span class="text-green-600">已完成: {{ queueStats.completed }}</span>
-            <span v-if="queueStats.failed > 0" class="text-red-600">失败: {{ queueStats.failed }}</span>
-          </div>
+        <!-- 顶部队列状态 -->
+        <div v-if="queueStats.pending > 0 || queueStats.running > 0" class="flex items-center justify-end space-x-4 text-sm mb-4 px-1">
+          <span class="text-blue-600">等待中: {{ queueStats.pending }}</span>
+          <span class="text-orange-600">上传中: {{ queueStats.running }}</span>
+          <span class="text-green-600">已完成: {{ queueStats.completed }}</span>
+          <span v-if="queueStats.failed > 0" class="text-red-600">失败: {{ queueStats.failed }}</span>
         </div>
 
         <!-- 主体内容区域 -->
         <div class="flex-1 flex gap-4 min-h-0">
           <!-- 左侧：上传区域和文件网格 -->
           <div class="flex-1 flex flex-col min-w-0">
-            <!-- 拖拽上传区域 -->
-            <div
-              class="upload-dropzone mb-4 p-6 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 text-center cursor-pointer transition-all hover:border-blue-400 hover:bg-blue-50"
-              :class="{ 'border-blue-500 bg-blue-50': isDragOver }"
-              @drop.prevent="handleDrop"
-              @dragover.prevent="isDragOver = true"
-              @dragleave.prevent="isDragOver = false"
-              @click="triggerFileSelect"
-            >
-              <span class="material-icons text-4xl text-gray-400 mb-2">cloud_upload</span>
-              <p class="text-gray-600">拖拽文件到此处或点击选择文件</p>
-              <p class="text-xs text-gray-400 mt-1">支持多选，最多 {{ FILE_LIMITS.MAX_FILES_PER_BATCH }} 个文件</p>
-            </div>
-
             <!-- 隐藏的文件输入 -->
             <input
               ref="fileInputRef"
@@ -62,7 +31,13 @@
             />
 
             <!-- 待上传文件网格 -->
-            <div class="flex-1 bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col">
+            <div
+              class="flex-1 bg-white rounded-xl border-2 overflow-hidden flex flex-col transition-colors"
+              :class="isDragOver ? 'border-blue-500 bg-blue-50/30' : 'border-gray-200'"
+              @drop.prevent="handleDrop"
+              @dragover.prevent="isDragOver = true"
+              @dragleave.prevent="isDragOver = false"
+            >
               <!-- 文件列表头部 -->
               <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200">
                 <div class="flex items-center space-x-2">
@@ -105,11 +80,12 @@
                   <!-- 空状态 -->
                   <div
                     v-if="pendingFiles.length === 0"
-                    class="h-full flex flex-col items-center justify-center text-gray-400"
+                    class="h-full flex flex-col items-center justify-center text-gray-400 cursor-pointer"
+                    @click="triggerFileSelect"
                   >
-                    <span class="material-icons text-5xl mb-2">inbox</span>
-                    <p>还没有选择文件</p>
-                    <p class="text-xs mt-1">拖拽文件到此处或点击上方区域</p>
+                    <span class="material-icons text-5xl mb-2">cloud_upload</span>
+                    <p>拖拽文件到此处</p>
+                    <p class="text-xs mt-1">或点击选择文件（最多 {{ FILE_LIMITS.MAX_FILES_PER_BATCH }} 个）</p>
                   </div>
 
                   <!-- 文件网格 -->
@@ -216,19 +192,6 @@
               </div>
             </div>
 
-            <!-- 底部上传按钮 -->
-            <div class="mt-4 flex justify-end">
-              <button
-                class="px-6 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                :disabled="pendingFiles.length === 0 || !selectedLibraryId || uploadingFileIds.size > 0"
-                @click="startUpload"
-              >
-                <span class="flex items-center gap-2">
-                  <span class="material-icons text-sm">upload</span>
-                  开始上传 ({{ pendingFiles.length }})
-                </span>
-              </button>
-            </div>
           </div>
 
           <!-- 右侧：文件夹和标签面板 -->
@@ -253,6 +216,29 @@
           </div>
         </div>
       </div>
+      <DialogFooter class="flex-row w-full sm:justify-between">
+        <div class="flex items-center space-x-2">
+          <span class="text-sm text-gray-600">素材库:</span>
+          <Select v-model="selectedLibraryId" @update:model-value="(v: any) => handleLibrarySelectChange(v)">
+            <SelectTrigger class="w-48">
+              <SelectValue placeholder="选择素材库" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem v-for="lib in libraryOptions" :key="lib.id" :value="lib.id">{{ lib.name }}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <button
+          class="px-6 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="pendingFiles.length === 0 || !selectedLibraryId || uploadingFileIds.size > 0"
+          @click="startUpload"
+        >
+          <span class="flex items-center gap-2">
+            <span class="material-icons text-sm">upload</span>
+            开始上传 ({{ pendingFiles.length }})
+          </span>
+        </button>
+      </DialogFooter>
     </DialogContent>
   </Dialog>
 </template>

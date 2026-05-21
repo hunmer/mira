@@ -84,45 +84,22 @@
           />
         </div>
 
-        <!-- 自动连接 -->
-        <div class="flex items-center justify-between py-2">
-          <div>
-            <p class="text-slate-900 text-base font-normal leading-normal">启动时自动连接</p>
-            <p class="text-slate-600 text-sm">应用启动时自动连接到服务器</p>
-          </div>
-          <Switch
-            :checked="settingsStore.settings.autoConnect"
-            @update:checked="handleSettingChange('autoConnect', $event)"
-          />
-        </div>
       </div>
-    </div>
-
-    <!-- 保存按钮 -->
-    <div class="flex justify-end py-3">
-      <Button
-        @click="saveSettings"
-        :disabled="isSaving"
-      >
-        保存更改
-      </Button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
 import { useSettingsStore } from '../../stores/settings'
 import { useToast } from '@/renderer/composables/useToast'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Switch } from '@/components/ui/switch'
-import { Button } from '@/components/ui/button'
+
 
 const settingsStore = useSettingsStore()
 const toast = useToast()
 
-const isSaving = ref(false)
 
 // 选项配置
 const languageOptions = [
@@ -169,28 +146,6 @@ const handleSettingChange = async (key: string, value: any) => {
       detail: error instanceof Error ? error.message : '保存设置时发生错误',
       life: 5000
     })
-  }
-}
-
-const saveSettings = async () => {
-  isSaving.value = true
-  try {
-    await settingsStore.saveSettings()
-    toast.add({
-      severity: 'success',
-      summary: '保存成功',
-      detail: '所有设置已成功保存',
-      life: 3000
-    })
-  } catch (error) {
-    toast.add({
-      severity: 'error',
-      summary: '保存失败',
-      detail: error instanceof Error ? error.message : '保存设置时发生错误',
-      life: 5000
-    })
-  } finally {
-    isSaving.value = false
   }
 }
 </script>
