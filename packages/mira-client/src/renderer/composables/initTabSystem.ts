@@ -18,14 +18,10 @@ export function quickInitTabSystem(): boolean {
   }
 
   try {
-    console.log('🚀 快速初始化Tab注册系统')
     const success = initializeBuiltInTabTypes()
 
     if (success) {
       isInitialized = true
-      console.log('✅ Tab注册系统初始化完成')
-    } else {
-      console.error('❌ Tab注册系统初始化失败')
     }
 
     return success

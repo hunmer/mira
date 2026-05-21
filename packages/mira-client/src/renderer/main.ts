@@ -78,40 +78,29 @@ const initializeApp = async () => {
       // 监听菜单导航事件
       if (window.electronAPI) {
         window.electronAPI.on('menu:navigate', (routeName: string) => {
-          console.log('Menu navigation requested:', routeName)
-          router.push({ name: routeName }).catch(err => {
-            console.error('Navigation failed:', err)
-          })
+          router.push({ name: routeName }).catch(() => {})
         })
 
-        // 监听菜单动作事件
         window.electronAPI.on('menu:disconnect', () => {
-          console.log('Menu disconnect requested')
-          // 可以在这里调用断开连接的逻辑
+          // TODO: 断开连接
         })
 
         window.electronAPI.on('menu:export', () => {
-          console.log('Menu export requested')
-          // 可以在这里调用导出功能
+          // TODO: 导出功能
         })
 
         window.electronAPI.on('menu:refresh', () => {
-          console.log('Menu refresh requested')
-          // 可以在这里调用刷新功能
           window.location.reload()
         })
 
-        window.electronAPI.on('files:import', (filePaths: string[]) => {
-          console.log('Menu import requested:', filePaths)
-          // 可以在这里调用文件导入功能
+        window.electronAPI.on('files:import', (_filePaths: string[]) => {
+          // TODO: 文件导入
         })
       }
-      
-      console.log('✅ Menu service initialized')
     }
     
   } catch (error) {
-    console.error('❌ Failed to initialize application:', error)
+    console.error('Failed to initialize application:', error)
   } finally {
     // 无论初始化是否成功，都要挂载应用，让用户能看到界面
     app.mount('#app')

@@ -129,14 +129,7 @@ export const useMediaStore = defineStore('media', () => {
    * @param tabId - Tab ID
    */
   const setCurrentTab = (tabId: string) => {
-    const previousTabId = currentTabId.value
     currentTabId.value = tabId
-    console.log('🔄 MediaStore: currentTabId 已更新', {
-      from: previousTabId,
-      to: tabId,
-      hasDataForNewTab: getFilesForTab(tabId).length > 0,
-      newFilesCount: files.value.length
-    })
   }
 
   /**
@@ -145,14 +138,7 @@ export const useMediaStore = defineStore('media', () => {
    * @param files - 文件列表
    */
   const setFilesForTab = (tabId: string, files: ExtendedFileInfo[]) => {
-    const previousCount = filesMap.value[tabId]?.length || 0
     filesMap.value[tabId] = [...files]
-
-    console.log(`📁 MediaStore.setFilesForTab: ${tabId}`, {
-      之前文件数量: previousCount,
-      新文件数量: files.length,
-      文件预览: files.slice(0, 3).map(f => ({ id: f.id, name: f.name }))
-    })
   }
 
   /**
@@ -291,15 +277,6 @@ export const useMediaStore = defineStore('media', () => {
     } = {}
   ) => {
     const { limit = 50, offset = 0 } = pagination
-    console.log({tabInfo})
-    console.log(`📁 fetchFilesForTab调用:`, {
-      method: 'fetchFilesForTab',
-      tabType: tabInfo.type,
-      tabId: tabInfo.id,
-      requestedLimit: limit,
-      requestedOffset: offset,
-      originalPagination: pagination
-    })
     // 确保有 libraryId - 如果 tabInfo 中没有，从当前素材库获取
     let libraryId = tabInfo.libraryId
     if (!libraryId) {
@@ -309,9 +286,7 @@ export const useMediaStore = defineStore('media', () => {
 
       if (libraryStore.currentLibrary?.id) {
         libraryId = libraryStore.currentLibrary.id
-        console.log(`📚 从当前素材库获取 libraryId: ${libraryId}`)
       } else {
-        console.warn('⚠️ 无法获取 libraryId: tabInfo 中未提供且当前没有选中的素材库')
         return { success: false, error: '无法获取素材库ID：请确保已选择素材库' }
       }
     }
@@ -321,18 +296,16 @@ export const useMediaStore = defineStore('media', () => {
       limit,
       offset
     }
-    console.log({tabInfo})
+
     // 转换筛选器格式：从MediaTabData格式转换为API格式
     if (tabInfo.filters) {
       // 首先处理简单键值对格式的筛选器（直接来自初始化）
       Object.entries(tabInfo.filters).forEach(([key, value]: [string, any]) => {
-        // 处理简单的键值对筛选器
         if (key === 'folder') {
           if (value !== null && value !== undefined && value !== '') {
             const folderId = Number(value)
             if (Number.isFinite(folderId)) {
               filters.folder = folderId
-              console.log(`📁 应用文件夹筛选: folder=${value}`)
             }
           }
           return
@@ -340,57 +313,38 @@ export const useMediaStore = defineStore('media', () => {
         if (key === 'tags') {
           if (value !== null) {
             filters.tags = value
-            console.log(`🏷️ 应用标签筛选: tags=${JSON.stringify(value)}`)
           }
           return
         }
         if (key === 'recycled') {
           filters.recycled = value
-          console.log(`🗑️ 应用回收站筛选: recycled=${value}`)
           return
         }
       })
 
       // 然后处理 FilterRule 对象格式的筛选器（来自 FilterBar）
       Object.entries(tabInfo.filters).forEach(([key, filterRule]: [string, any]) => {
-        if (!filterRule || typeof filterRule !== 'object') {
-          console.log(`⏭️ 跳过非对象筛选器: ${key}`, filterRule)
+        if (!filterRule || typeof filterRule !== 'object' || !filterRule.id) {
           return
         }
-
-        // 检查是否是 FilterRule 格式（有 id 字段）
-        if (!filterRule.id) {
-          console.log(`⏭️ 跳过无 id 的筛选器: ${key}`, filterRule)
-          return
-        }
-
-        console.log(`🔍 处理 FilterRule: key=${key}, id=${filterRule.id}`, filterRule)
 
         switch (filterRule.id) {
           case 'folders':
             if (filterRule.selectedValues && filterRule.selectedValues.length > 0) {
-              // 取第一个文件夹ID（API目前只支持单个文件夹筛选）
               const folderId = filterRule.selectedValues[0]
               if (folderId !== null && folderId !== undefined && folderId !== '') {
                 filters.folder = Number(folderId)
-                console.log(`📁 应用文件夹筛选: ${filters.folder}`)
               }
             }
             break
           case 'tags':
             if (filterRule.selectedValues && filterRule.selectedValues.length > 0) {
               filters.tags = filterRule.selectedValues.map((id: any) => String(id))
-              console.log(`🏷️ 应用标签筛选:`, filters.tags)
             }
             break
           case 'urls':
-            // urls 筛选器使用 title 参数进行模糊搜索
-            console.log(`🔗 处理 urls 筛选器:`, { value: filterRule.value, type: typeof filterRule.value })
             if (filterRule.value && typeof filterRule.value === 'string' && filterRule.value.trim()) {
               filters.title = filterRule.value.trim()
-              console.log(`🔗 应用网址筛选(title): ${filters.title}`)
-            } else {
-              console.log(`⚠️ urls 筛选器值无效，跳过`)
             }
             break
           case 'size':
@@ -401,25 +355,20 @@ export const useMediaStore = defineStore('media', () => {
               if (filterRule.sizeMin !== undefined) filters.size_min = filterRule.sizeMin
               if (filterRule.sizeMax !== undefined) filters.size_max = filterRule.sizeMax
             }
-            console.log(`📏 应用大小筛选: min=${filters.size_min}, max=${filters.size_max}`)
             break
           case 'category':
             if (filterRule.selectedCategory && filterRule.selectedCategory !== '') {
               filters.category = filterRule.selectedCategory
-              console.log(`🎬 应用类别筛选: ${filters.category}`)
             }
             break
           case 'extension':
             if (filterRule.selectedValues && filterRule.selectedValues.length > 0) {
-              // API通常期望单个扩展名字符串
               filters.extension = filterRule.selectedValues.join(',')
-              console.log(`📄 应用扩展名筛选: ${filters.extension}`)
             }
             break
           case 'title':
             if (filterRule.value) {
               filters.title = filterRule.value
-              console.log(`📝 应用标题筛选: ${filters.title}`)
             }
             break
         }
@@ -429,11 +378,9 @@ export const useMediaStore = defineStore('media', () => {
     // 应用排序设置
     if (tabInfo.sort) {
       filters.sort = tabInfo.sort
-      console.log(`🔄 应用排序字段: ${filters.sort}`)
     }
     if (tabInfo.order) {
       filters.order = tabInfo.order
-      console.log(`⬆️⬇️ 应用排序顺序: ${filters.order}`)
     }
 
     // 根据Tab类型添加特定过滤器
@@ -452,43 +399,29 @@ export const useMediaStore = defineStore('media', () => {
         }
         break
       case 'files':
-        // files 类型：过滤器已经在前面的简单键值对处理中设置
-        // 不需要额外处理，只需要确保不进入 default 分支
-        console.log(`📁 Files tab: 使用已设置的过滤器`, { folder: filters.folder, tags: filters.tags, recycled: filters.recycled })
         break
       case 'uncategorized':
-        // 未分类：显示没有文件夹的文件
         filters.folder = null
-        console.log('📁 Uncategorized tab: filtering files without folder')
         break
       case 'untagged':
-        // 未标签：显示没有标签的文件
         filters.tags = null
-        console.log('🏷️ Untagged tab: filtering files without tags')
         break
       case 'trash':
-        // 回收站：显示已回收的文件
         filters.recycled = 1
-        console.log('🗑️ Trash tab: filtering recycled files')
         break
       case 'home':
-        // Home类型通常不需要加载实际文件，返回空结果
-        console.log('📁 Home tab detected, returning empty result')
         return { success: true, data: [], total: 0 }
       default:
-        // 对于未知类型，尝试从data中提取过滤器信息
         if (tabInfo.data?.id) {
-          // 如果有ID，尝试作为文件夹ID处理
           const parsedId = parseInt(tabInfo.data.id)
           if (!isNaN(parsedId)) {
             filters.folder = parsedId
           }
         }
         if (tabInfo.data?.name) {
-          // 如果有name，尝试作为标签处理
           filters.tags = [tabInfo.data.name]
         }
-        console.log(`📁 Unknown tab type: ${tabInfo.type}, using default filter logic`)
+        console.warn(`Unknown tab type: ${tabInfo.type}`)
         break
     }
 
@@ -506,12 +439,6 @@ export const useMediaStore = defineStore('media', () => {
       ) {
         delete filters[key]
       }
-    })
-
-    console.log(`📁 Loading files for tab: ${tabInfo.id}, type: ${tabInfo.type}, libraryId: ${libraryId}`, {
-      filters,
-      finalLimit: filters.limit,
-      finalOffset: filters.offset
     })
 
     return await fetchFiles({
@@ -897,7 +824,7 @@ export const useMediaStore = defineStore('media', () => {
           const defaultTabId = 'legacy_default'
           filesMap.value[defaultTabId] = legacyFiles
           currentTabId.value = defaultTabId
-          console.log('🔄 将旧格式的文件数据迁移到新格式:', { count: legacyFiles.length, defaultTabId })
+          console.warn('Legacy media data format migrated:', { count: legacyFiles.length, defaultTabId })
         }
       }
 

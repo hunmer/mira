@@ -474,7 +474,7 @@ const handleDrop = (e: DragEvent) => {
   droppedFiles.value = Array.from(e.dataTransfer.files)
   // 从当前 tab 的 filters 中提取文件夹和标签
   const folder = props.filters?.folder
-  uploadFolderId.value = folder != null ? String(folder) : undefined
+  uploadFolderId.value = folder != null && Number.isFinite(Number(folder)) ? String(folder) : undefined
   const tags = props.filters?.tags
   uploadTagIds.value = Array.isArray(tags) ? tags.map(String) : []
   showUploadDialog.value = true

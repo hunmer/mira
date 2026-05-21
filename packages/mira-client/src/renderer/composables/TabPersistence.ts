@@ -85,10 +85,9 @@ export class TabPersistence {
       await ConfigStorage.setItem(this.getStorageKey(), JSON.stringify(snapshot))
       await ConfigStorage.setItem(this.getActiveTabKey(), activeTabId)
 
-      console.log(`💾 保存Tab状态 [${this.currentLibraryId || 'default'}]: ${tabs.length}个Tab, 活跃Tab: ${activeTabId}`)
       return true
     } catch (error) {
-      console.error('❌ 保存Tab状态失败:', error)
+      console.error('Failed to save tabs state:', error)
       return false
     }
   }
@@ -100,29 +99,25 @@ export class TabPersistence {
     try {
       const savedState = await ConfigStorage.getItem(this.getStorageKey())
       if (!savedState) {
-        console.log(`ℹ️ 没有找到保存的Tab状态 [${this.currentLibraryId || 'default'}]`)
         return null
       }
 
       const snapshot: TabsStateSnapshot = JSON.parse(savedState)
 
       if (!snapshot.tabs || !Array.isArray(snapshot.tabs)) {
-        console.warn('⚠️ Tab状态数据格式无效')
         return null
       }
 
       const now = Date.now()
       const maxAge = 7 * 24 * 60 * 60 * 1000
       if (snapshot.timestamp && (now - snapshot.timestamp > maxAge)) {
-        console.log('ℹ️ Tab状态数据已过期，忽略恢复')
         await this.clearTabsState()
         return null
       }
 
-      console.log(`🔄 恢复Tab状态 [${this.currentLibraryId || 'default'}]: ${snapshot.tabs.length}个Tab, 活跃Tab: ${snapshot.activeTabId}`)
       return snapshot
     } catch (error) {
-      console.error('❌ 恢复Tab状态失败:', error)
+      console.error('Failed to load tabs state:', error)
       return null
     }
   }
@@ -134,9 +129,8 @@ export class TabPersistence {
     try {
       await ConfigStorage.removeItem(this.getStorageKey())
       await ConfigStorage.removeItem(this.getActiveTabKey())
-      console.log('🗑️ 清除Tab状态数据')
     } catch (error) {
-      console.error('❌ 清除Tab状态失败:', error)
+      console.error('Failed to clear tabs state:', error)
     }
   }
 
@@ -147,7 +141,7 @@ export class TabPersistence {
     try {
       return await ConfigStorage.getItem(this.getActiveTabKey())
     } catch (error) {
-      console.error('❌ 获取活跃Tab ID失败:', error)
+      console.error('Failed to get last active tab:', error)
       return null
     }
   }
