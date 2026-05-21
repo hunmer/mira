@@ -128,8 +128,10 @@ const emit = defineEmits<Emits>()
 const selectionBoxRef = ref<InstanceType<typeof SelectionBox> | null>(null)
 const waterfallRef = ref()
 const settingsStore = useSettingsStore()
-const { handleDeleteKeyDown } = useDeleteSelectedItems(props, emit)
-const { focusSelectionBox } = useFocusedSelectAll(selectionBoxRef, props, emit)
+const { focusSelectionBox, isSelectionBoxFocused } = useFocusedSelectAll(selectionBoxRef, props, emit)
+const { handleDeleteKeyDown } = useDeleteSelectedItems(props, emit, {
+  isActive: isSelectionBoxFocused
+})
 
 const selectedIds = computed({
   get: () => props.selectedItems,

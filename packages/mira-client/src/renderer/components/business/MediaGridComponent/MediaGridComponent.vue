@@ -151,7 +151,7 @@ const emit = defineEmits<Emits>()
 
 const selectionBoxRef = ref<InstanceType<typeof SelectionBox> | null>(null)
 const settingsStore = useSettingsStore()
-const { focusSelectionBox } = useFocusedSelectAll(selectionBoxRef, props, emit)
+const { focusSelectionBox, isSelectionBoxFocused } = useFocusedSelectAll(selectionBoxRef, props, emit)
 
 // 使用各种composables
 const {
@@ -193,7 +193,9 @@ const handleContextMenu = (item: FileInfo, event: MouseEvent) => {
   contextMenuHandler(item, event)
 }
 
-const { handleDeleteKeyDown } = useDeleteSelectedItems(props, emit)
+const { handleDeleteKeyDown } = useDeleteSelectedItems(props, emit, {
+  isActive: isSelectionBoxFocused
+})
 
 const executeMenuCommand = async (item: MenuItem) => {
   if (item.disabled || !item.command) return

@@ -13,6 +13,10 @@ interface UseDeleteSelectedItemsEmits {
   (e: 'media-delete', item: FileInfo): void
 }
 
+interface UseDeleteSelectedItemsOptions {
+  isActive?: () => boolean
+}
+
 const isEditableTarget = (target: EventTarget | null) => {
   if (!(target instanceof HTMLElement)) return false
 
@@ -22,7 +26,8 @@ const isEditableTarget = (target: EventTarget | null) => {
 
 export function useDeleteSelectedItems(
   props: UseDeleteSelectedItemsProps,
-  emit: UseDeleteSelectedItemsEmits
+  emit: UseDeleteSelectedItemsEmits,
+  options: UseDeleteSelectedItemsOptions = {}
 ) {
   const isDeletingSelectedItems = ref(false)
 
@@ -77,6 +82,7 @@ export function useDeleteSelectedItems(
 
   const handleDeleteKeyDown = (event: KeyboardEvent) => {
     if (event.key !== 'Delete' || event.repeat || isEditableTarget(event.target)) return
+    if (options.isActive && !options.isActive()) return
     if (props.selectedItems.length === 0) return
 
     event.preventDefault()
