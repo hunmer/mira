@@ -35,7 +35,7 @@
     <div v-if="treeData.length > 0" :class="[scrollClass, 'max-h-64 overflow-y-auto']">
       <ContextMenu>
         <ContextMenuTrigger as-child>
-          <Tree v-bind="$attrs" :value="treeData">
+          <Tree v-bind="$attrs" :value="treeData" :show-checkbox="false">
             <template #default="slotProps">
               <slot name="node" v-bind="slotProps" />
             </template>

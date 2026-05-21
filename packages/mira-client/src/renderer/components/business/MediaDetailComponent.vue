@@ -61,7 +61,7 @@
             v-for="(item, index) in displayItems.slice(0, 4)"
             :key="item.id"
             class="stack-container"
-            :style="{ zIndex: index }"
+            :style="{ zIndex: index, left: `${index * 8}px`, top: `${index * 8}px` }"
           >
             <!-- 加载中占位符 -->
             <div
@@ -81,28 +81,25 @@
 
             <!-- 正常显示图片 -->
             <img
-              v-else
+              v-show="multiImageLoadStates[item.id] === 'loaded'"
               :alt="item.name"
               :src="item.thumbnailPath || item.url"
-              :class="[
-                'stack-img',
-                `stack-img-${index + 1}`
-              ]"
+              class="stack-img"
               @load="handleMultiImageLoad(item.id)"
               @error="handleMultiImageError(item)"
             />
           </div>
-        </div>
-        <!-- 更多文件提示 -->
-        <div
-          v-if="displayItems.length > 4"
-          class="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded z-10"
-        >
-          +{{ displayItems.length - 4 }}
-        </div>
-        <!-- 文件数量显示 -->
-        <div class="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded z-10">
-          {{ displayItems.length }} 个文件
+          <!-- 更多文件提示 -->
+          <div
+            v-if="displayItems.length > 4"
+            class="absolute bottom-1 right-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded z-10"
+          >
+            +{{ displayItems.length - 4 }}
+          </div>
+          <!-- 文件数量显示 -->
+          <div class="absolute top-1 left-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded z-10">
+            {{ displayItems.length }} 个文件
+          </div>
         </div>
       </div>
     </div>
@@ -376,6 +373,11 @@ onUnmounted(() => {
   webSocketService.removeEventListener('file::updated', handleFileWsUpdate)
 })
 
+// 图片加载状态跟踪
+const imageLoadState = ref<'loading' | 'loaded' | 'error'>('loading')
+// 多选图片加载状态
+const multiImageLoadStates = ref<Record<string, 'loading' | 'loaded' | 'error'>>({})
+
 // 监听显示项变化，重置加载状态
 watch(displayItems, (newItems) => {
   // 重置单选模式加载状态
@@ -388,15 +390,17 @@ watch(displayItems, (newItems) => {
     }
   }
 
-  // 初始化多选模式加载状态
+  // 多选模式：只更新新增项，保留已加载/出错的状态
+  const prev = { ...multiImageLoadStates.value }
   const states: Record<string, 'loading' | 'loaded' | 'error'> = {}
   newItems.forEach(item => {
-    // 检查缓存中是否已有错误状态
-    const imageSrc = item.thumbnailPath || item.url
-    if (imageSrc && imageLoadErrorCache.has(imageSrc)) {
-      states[item.id] = 'error'
+    if (prev[item.id]) {
+      // 已存在的项保留之前的状态
+      states[item.id] = prev[item.id]
     } else {
-      states[item.id] = 'loading'
+      // 新增项：检查是否有缓存的错误状态
+      const imageSrc = item.thumbnailPath || item.url
+      states[item.id] = (imageSrc && imageLoadErrorCache.has(imageSrc)) ? 'error' : 'loading'
     }
   })
   multiImageLoadStates.value = states
@@ -438,10 +442,7 @@ const previewImage = ref<HTMLImageElement>()
 const extractedColors = ref<number[][]>([])
 const colorThief = new ColorThief()
 
-// 图片加载状态跟踪
-const imageLoadState = ref<'loading' | 'loaded' | 'error'>('loading')
-// 多选图片加载状态
-const multiImageLoadStates = ref<Record<string, 'loading' | 'loaded' | 'error'>>({})
+
 
 // 图片加载处理
 const handleImageLoad = () => {
@@ -662,21 +663,6 @@ const formatDuration = (seconds?: number): string => {
   border-radius: 12px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   border: 2px solid white;
-}
-
-.stack-img-2 {
-  left: 8px;
-  top: 8px;
-}
-
-.stack-img-3 {
-  left: 16px;
-  top: 16px;
-}
-
-.stack-img-4 {
-  left: 24px;
-  top: 24px;
 }
 
 /* 加载动画 */

@@ -288,7 +288,7 @@ onUnmounted(() => {
         </div>
 
         <!-- Tabs 导航 -->
-        <div class="flex items-center space-x-2 flex-1 min-w-0 overflow-hidden">
+        <div class="flex items-center space-x-2 flex-1 min-w-0 overflow-hidden mt-2">
           <ContextMenu>
             <ContextMenuTrigger as-child>
               <div class="flex bg-gray-100 rounded-lg p-1 overflow-x-auto max-w-full">

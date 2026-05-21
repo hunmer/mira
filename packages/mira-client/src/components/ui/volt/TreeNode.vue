@@ -7,7 +7,7 @@
   >
     <div
       :class="[
-        'tree-node-content flex items-center min-h-8 py-1 rounded-md cursor-pointer',
+  'tree-node-content flex items-center min-h-8 py-1 ps-2 rounded-md cursor-pointer',
         'hover:bg-gray-100 dark:hover:bg-gray-800',
         {
           'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300': isSelected,
@@ -21,7 +21,7 @@
     >
       <!-- 复选框 (checkbox mode) -->
       <Checkbox
-        v-if="selectionMode === 'checkbox'"
+v-if="showCheckbox && selectionMode === 'checkbox'"
         :checked="isChecked"
         :disabled="node.disabled"
         class="mr-2"
@@ -29,18 +29,8 @@
         @update:checked="handleCheckboxChange"
       />
 
-      <!-- 图标 -->
-      <span class="mr-2 inline-flex h-5 w-5 shrink-0 items-center justify-center">
-        <span v-if="nodeIcon" :class="['material-icons text-lg leading-none', nodeIcon]"></span>
-        <span v-else class="material-icons text-lg leading-none">
-          {{ hasChildren ? (expanded ? 'folder_open' : 'folder') : 'insert_drive_file' }}
-        </span>
-      </span>
 
-      <!-- 加载指示器 -->
-      <span v-if="node.loading && loadingMode === 'icon'" class="mr-2 inline-flex h-5 w-5 shrink-0 items-center justify-center animate-spin">
-        <span class="material-icons text-lg leading-none">refresh</span>
-      </span>
+
 
       <!-- 节点内容 -->
       <div class="flex-1 flex items-center justify-between min-w-0">
@@ -100,6 +90,7 @@
           :metaKeySelection="metaKeySelection"
           :loadingMode="loadingMode"
           :draggable="draggable"
+:showCheckbox="showCheckbox"
           @node-select="$emit('node-select', $event)"
           @node-unselect="$emit('node-unselect', $event)"
           @node-expand="$emit('node-expand', $event)"
@@ -126,6 +117,7 @@
           :metaKeySelection="metaKeySelection"
           :loadingMode="loadingMode"
           :draggable="false"
+:showCheckbox="showCheckbox"
           @node-select="$emit('node-select', $event)"
           @node-unselect="$emit('node-unselect', $event)"
           @node-expand="$emit('node-expand', $event)"
@@ -174,6 +166,7 @@ interface Props {
   metaKeySelection?: boolean
   loadingMode?: 'mask' | 'icon'
   draggable?: boolean
+  showCheckbox?: boolean
 }
 
 // Events 定义
@@ -191,7 +184,8 @@ const props = withDefaults(defineProps<Props>(), {
   selectionMode: undefined,
   metaKeySelection: true,
   loadingMode: 'mask',
-  draggable: false
+  draggable: false,
+  showCheckbox: true
 })
 
 const emit = defineEmits<Emits>()
@@ -216,21 +210,8 @@ const isChecked = computed(() => {
   return props.selectionKeys[props.node.key]?.checked || false
 })
 
-const nodeIcon = computed(() => {
-  if (props.node.icon) {
-    return props.node.icon
-  }
 
-  if (hasChildren.value) {
-    if (expanded.value && props.node.expandedIcon) {
-      return props.node.expandedIcon
-    } else if (!expanded.value && props.node.collapsedIcon) {
-      return props.node.collapsedIcon
-    }
-  }
 
-  return undefined
-})
 
 // 拖拽模式下的子节点列表
 const draggableChildren = computed({

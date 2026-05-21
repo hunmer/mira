@@ -26,7 +26,7 @@
                 item-key="key" class="tree-drag-area">
                 <TreeNode v-for="node in draggableNodes" :key="node.key" :node="node" :expandedKeys="expandedKeys"
                     :selectionKeys="selectionKeys" :selectionMode="selectionMode" :metaKeySelection="metaKeySelection"
-                    :loadingMode="loadingMode" :draggable="draggable" @node-select="onNodeSelect"
+                    :loadingMode="loadingMode" :draggable="draggable" :showCheckbox="showCheckbox" @node-select="onNodeSelect"
                     @node-unselect="onNodeUnselect" @node-expand="onNodeExpand" @node-collapse="onNodeCollapse"
                     @node-toggle="onNodeToggle" @node-contextmenu="onNodeContextMenu" @node-drag-end="onNodeDragEnd">
                     <template v-for="(_, slot) in $slots" v-slot:[slot]="slotProps">
@@ -39,7 +39,7 @@
             <template v-else>
                <TreeNode v-for="node in filteredNodes" :key="node.key" :node="node" :expandedKeys="expandedKeys"
                     :selectionKeys="selectionKeys" :selectionMode="selectionMode" :metaKeySelection="metaKeySelection"
-                    :loadingMode="loadingMode" :draggable="false" @node-select="onNodeSelect"
+                    :loadingMode="loadingMode" :draggable="false" :showCheckbox="showCheckbox" @node-select="onNodeSelect"
                     @node-unselect="onNodeUnselect" @node-expand="onNodeExpand" @node-collapse="onNodeCollapse"
                     @node-toggle="onNodeToggle" @node-contextmenu="onNodeContextMenu">
                     <template v-for="(_, slot) in $slots" v-slot:[slot]="slotProps">
@@ -91,6 +91,7 @@ interface Props {
     draggable?: boolean
     createable?: boolean
     createPlaceholder?: string
+    showCheckbox?: boolean
 }
 
 // Events 定义
@@ -121,7 +122,8 @@ const props = withDefaults(defineProps<Props>(), {
     filterLocale: undefined,
     draggable: false,
     createable: false,
-    createPlaceholder: '输入名称...'
+    createPlaceholder: '输入名称...',
+    showCheckbox: true
 })
 
 const emit = defineEmits<Emits>()
