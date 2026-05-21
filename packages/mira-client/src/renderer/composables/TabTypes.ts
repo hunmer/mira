@@ -42,6 +42,11 @@ export abstract class BaseTabType implements TabTypeDefinition {
 
   // 数据加载钩子变为可选，某些tab可能不需要数据加载
   async onDataLoad?(context: TabContext, pagination?: { limit?: number; offset?: number }): Promise<TabResult>
+
+  // 默认：不响应任何事件
+  shouldUpdateForEvent(_tabData: any, _eventData: any): boolean {
+    return false
+  }
 }
 
 // 媒体视图基类 - 提供通用的媒体文件展示视图

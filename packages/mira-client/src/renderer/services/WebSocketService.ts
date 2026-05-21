@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue'
 import { useLibraryStore } from '../stores/library'
+import { useTabs } from '../composables/useTabs'
 
 export interface WebSocketEventData {
   eventName: string
@@ -279,17 +280,18 @@ function setupEventListeners(libraryStore: any): void {
  * 处理文件事件，判断是否需要刷新当前tab
  */
 function handleFileEvent(data: any, eventType: 'created' | 'updated' | 'deleted'): void {
-  // 这里可以根据文件的tag和folders，判断当前是否有开启符合条件的tab
-  // 如果有的话需要刷新这个tab
-  
-  // 获取当前路由信息
-  const currentRoute = window.location.hash
-  
-  // 如果当前在文件列表页面，刷新列表
-  if (currentRoute.includes('/home') || currentRoute.includes('/files')) {
-    // 触发文件列表刷新事件
-    window.dispatchEvent(new CustomEvent('refresh-file-list', { 
-      detail: { eventType, data } 
-    }))
+  const { markTabsForEvent, tabs } = useTabs()
+  const markedIds = markTabsForEvent(data, eventType)
+
+  if (markedIds.length === 0) return
+
+  // 找出被标记的活跃 tab，立即刷新
+  for (const tabId of markedIds) {
+    const tab = tabs.value.find(t => t.id === tabId)
+    if (tab?.active) {
+      window.dispatchEvent(new CustomEvent('active-tab-refresh', {
+        detail: { tabId, eventType, data }
+      }))
+    }
   }
 }

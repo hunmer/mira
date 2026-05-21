@@ -45,6 +45,15 @@ export class UntaggedTabType extends MediaViewTabType {
     console.log('🔚 UntaggedTabType 关闭:', _context)
     return { success: true }
   }
+
+  shouldUpdateForEvent(tabData: any, eventData: any): boolean {
+    if (tabData?.libraryId !== eventData.libraryId) return false
+    // 事件带 tags 信息且为空 → 未标签文件受影响
+    if (eventData.tags && Array.isArray(eventData.tags)) {
+      return eventData.tags.length === 0
+    }
+    return false
+  }
 }
 
 // 导出单例实例

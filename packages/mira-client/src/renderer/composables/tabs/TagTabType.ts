@@ -89,6 +89,19 @@ export class TagTabType extends MediaViewTabType {
     console.log('🔚 TagTabType 关闭:', _context)
     return { success: true }
   }
+
+  shouldUpdateForEvent(tabData: any, eventData: any): boolean {
+    if (tabData?.libraryId !== eventData.libraryId) return false
+    // 标签 tab：事件中可能带 tags 信息，检查是否包含该标签
+    if (eventData.tags && Array.isArray(eventData.tags)) {
+      const tabTagId = tabData?.id || tabData?.tagId || tabData?.name
+      return eventData.tags.some((t: any) =>
+        String(t?.id || t) === String(tabTagId) || String(t?.title || t) === String(tabTagId)
+      )
+    }
+    // 没有 tags 信息时保守更新
+    return false
+  }
 }
 
 // 导出单例实例

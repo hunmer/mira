@@ -44,6 +44,12 @@ export class TrashTabType extends MediaViewTabType {
     console.log('🔚 TrashTabType 关闭:', _context)
     return { success: true }
   }
+
+  shouldUpdateForEvent(tabData: any, eventData: any): boolean {
+    // 回收站关心 recycled 状态变更的文件
+    if (tabData?.libraryId !== eventData.libraryId) return false
+    return eventData.recycled != null
+  }
 }
 
 // 导出单例实例

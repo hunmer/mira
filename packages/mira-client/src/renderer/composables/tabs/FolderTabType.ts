@@ -61,6 +61,13 @@ export class FolderTabType extends MediaViewTabType {
     console.log('🔚 FolderTabType 关闭:', _context)
     return { success: true }
   }
+
+  shouldUpdateForEvent(tabData: any, eventData: any): boolean {
+    if (tabData?.libraryId !== eventData.libraryId) return false
+    const tabFolderId = tabData?.id || tabData?.folderId
+    if (!tabFolderId) return false
+    return String(tabFolderId) === String(eventData.folder_id)
+  }
 }
 
 // 导出单例实例

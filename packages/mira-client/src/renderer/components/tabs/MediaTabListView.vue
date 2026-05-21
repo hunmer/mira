@@ -691,6 +691,14 @@ const handleRefresh = async () => {
   emit('refresh')
 }
 
+// WebSocket 活跃 tab 刷新回调
+const handleActiveTabRefresh = (e: Event) => {
+  const { tabId } = (e as CustomEvent).detail
+  if (tabId === props.tabId) {
+    handleRefresh()
+  }
+}
+
 const handleMediaDelete = async (_item: FileInfo) => {
   await handleRefresh()
 }
@@ -1013,11 +1021,15 @@ onMounted(async () => {
   if (props.libraryId && props.tabId) {
     mediaTabData.getCachedData()
   }
+
+  // 监听 WebSocket 触发的活跃 tab 刷新事件
+  window.addEventListener('active-tab-refresh', handleActiveTabRefresh)
 })
 
 // 组件卸载时清理
 onUnmounted(() => {
   // mediaTabData.cleanup()
+  window.removeEventListener('active-tab-refresh', handleActiveTabRefresh)
 })
 
 // 监听器

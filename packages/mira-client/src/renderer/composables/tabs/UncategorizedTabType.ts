@@ -45,6 +45,12 @@ export class UncategorizedTabType extends MediaViewTabType {
     console.log('🔚 UncategorizedTabType 关闭:', _context)
     return { success: true }
   }
+
+  shouldUpdateForEvent(tabData: any, eventData: any): boolean {
+    if (tabData?.libraryId !== eventData.libraryId) return false
+    // 文件的 folder_id 为空/null → 未分类文件发生了变化
+    return eventData.folder_id == null || eventData.folder_id === 0 || eventData.folder_id === ''
+  }
 }
 
 // 导出单例实例

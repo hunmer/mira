@@ -43,6 +43,10 @@ export class AllTabType extends MediaViewTabType {
     console.log('🔚 AllTabType 关闭')
     return { success: true }
   }
+
+  shouldUpdateForEvent(tabData: any, eventData: any): boolean {
+    return tabData?.libraryId === eventData.libraryId
+  }
 }
 
 // 导出单例实例

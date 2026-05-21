@@ -424,6 +424,22 @@ export function useTabs() {
     })
   }
 
+  /**
+   * 根据 WebSocket 事件标记需要更新的 tab
+   * 返回被标记的 tabId 列表
+   */
+  const markTabsForEvent = (eventData: any, _eventType: string): string[] => {
+    const markedIds: string[] = []
+    for (const tab of tabs.value) {
+      const tabType = tabRegistry.getType(tab.type)
+      if (tabType?.shouldUpdateForEvent?.(tab.data, eventData)) {
+        tab.needUpdate = true
+        markedIds.push(tab.id)
+      }
+    }
+    return markedIds
+  }
+
 
   // ============================================
   // Tab注册系统集成
@@ -866,6 +882,7 @@ export function useTabs() {
     getCurrentTab,
     setTabNeedUpdate,
     setAllTabsNeedUpdate,
+    markTabsForEvent,
 
     // 新的注册系统方法
     createTabFromRegisteredType,

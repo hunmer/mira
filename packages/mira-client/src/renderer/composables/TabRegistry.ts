@@ -50,6 +50,9 @@ export interface TabTypeDefinition {
   allowClose?: boolean // 是否允许关闭此tab
   defaultFilters?: Record<string, FilterRule>
   cacheable?: boolean
+
+  // 事件响应：判断该类型 tab 是否需要因 WebSocket 事件而更新
+  shouldUpdateForEvent?(tabData: any, eventData: any): boolean
 }
 
 // Tab注册系统核心
