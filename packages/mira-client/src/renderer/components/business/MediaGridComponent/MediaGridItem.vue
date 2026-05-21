@@ -23,11 +23,11 @@
         class="relative w-full h-[200px] rounded-lg overflow-hidden"
       >
         <!-- 懒加载图片 -->
-        <img
-          v-lazy="actualImageSrc"
+        <MediaThumbnail
+          :file-id="item.id"
+          :src="imageSrcComputed"
           :alt="item.name"
-          class="w-full h-full object-cover transition-opacity duration-300 lazy-image"
-          @error="handleImageError"
+          img-class="w-full h-full object-cover transition-opacity duration-300 lazy-image"
         />
       </div>
 
@@ -101,8 +101,9 @@
 </template>
 
 <script setup lang="ts">
-import { toRef, ref, computed } from 'vue'
+import { toRef } from 'vue'
 import type { FileInfo } from '../../../../shared/types'
+import MediaThumbnail from '@renderer/components/common/MediaThumbnail.vue'
 import { useMediaItem, type MediaItemEmits } from '@renderer/composables/useMediaItem'
 
 interface Props {
@@ -126,7 +127,6 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<Emits>()
 
 // 记录图片加载失败状态
-const hasLoadError = ref(false)
 
 // 使用媒体项逻辑
 const {
@@ -145,19 +145,6 @@ const {
   item: toRef(props, 'item'),
   emit
 })
-
-// 存储原始的 imageSrc，并在计算时添加加载失败检查
-const actualImageSrc = computed(() => {
-  if (hasLoadError.value) {
-    return '' // 返回空字符串，不再尝试加载
-  }
-  return imageSrcComputed.value
-})
-
-// 图片加载失败处理
-const handleImageError = () => {
-  hasLoadError.value = true
-}
 </script>
 
 <style scoped>

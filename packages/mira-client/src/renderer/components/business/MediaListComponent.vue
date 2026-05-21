@@ -61,19 +61,21 @@
                   @mouseenter="handleThumbnailHover(item)"
                   @mouseleave="handleThumbnailLeave(item)"
                 >
-                  <img
-                    v-if="(item.thumbnailPath || item.url) && !imageErrors[item.id]"
-                    v-lazy="item.thumbnailPath || item.url"
+                  <MediaThumbnail
+                    :file-id="item.id"
+                    :src="item.thumbnailPath || item.url || ''"
                     :alt="item.name"
-                    class="w-full h-full object-cover"
-                    @error="() => imageErrors[item.id] = true"
-                  />
-                  <div v-else class="w-full h-full flex items-center justify-center text-gray-400">
-                    <span v-if="getFileType(item) === 'image'" class="material-icons">image</span>
-                    <span v-else-if="getFileType(item) === 'video'" class="material-icons">videocam</span>
-                    <span v-else-if="getFileType(item) === 'audio'" class="material-icons">audiotrack</span>
-                    <span v-else class="material-icons">insert_drive_file</span>
-                  </div>
+                    img-class="w-full h-full object-cover"
+                  >
+                    <template #fallback>
+                      <div class="w-full h-full flex items-center justify-center text-gray-400">
+                        <span v-if="getFileType(item) === 'image'" class="material-icons">image</span>
+                        <span v-else-if="getFileType(item) === 'video'" class="material-icons">videocam</span>
+                        <span v-else-if="getFileType(item) === 'audio'" class="material-icons">audiotrack</span>
+                        <span v-else class="material-icons">insert_drive_file</span>
+                      </div>
+                    </template>
+                  </MediaThumbnail>
                 </div>
               </PopoverTrigger>
 
@@ -162,6 +164,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { PopoverRoot, PopoverTrigger, PopoverPortal, PopoverContent } from 'radix-vue'
 import VideoPreviewPopover from '@renderer/components/common/VideoPreviewPopover.vue'
 import SelectionBox from '@renderer/components/common/SelectionBox.vue'
+import MediaThumbnail from '@renderer/components/common/MediaThumbnail.vue'
 import { useVideoPreview } from '@renderer/composables/useVideoPreview'
 import type { FileInfo } from '../../../shared/types'
 import { useDeleteSelectedItems } from './MediaGridComponent/composables/useDeleteSelectedItems'
@@ -287,9 +290,6 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('keydown', handleDeleteKeyDown)
 })
-
-// 图片错误状态
-const imageErrors = ref<Record<string, boolean>>({})
 
 // 视频预览状态管理
 const videoPreviewStates = reactive<Record<string, boolean>>({})

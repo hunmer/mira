@@ -23,13 +23,13 @@
         class="relative overflow-hidden"
         :class="{ 'opacity-0': isVideoPlaying }"
       >
-        <LazyImg
-          :url="url"
+        <MediaThumbnail
+          :file-id="item.id"
+          :src="url"
           :alt="item.name"
-          class="w-full object-cover"
-          @load="$emit('image-load', url)"
+          img-class="w-full object-cover"
+          @load="$emit('image-success', url)"
           @error="$emit('image-error', url)"
-          @success="$emit('image-success', url)"
         />
       </div>
 
@@ -107,7 +107,7 @@
 
 <script setup lang="ts">
 import { toRef, watch } from 'vue'
-import { LazyImg } from 'vue-waterfall-plugin-next'
+import MediaThumbnail from '@renderer/components/common/MediaThumbnail.vue'
 import type { FileInfo } from '../../../../shared/types'
 import { useMediaItem, type MediaItemEmits } from '@renderer/composables/useMediaItem'
 

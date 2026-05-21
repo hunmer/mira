@@ -274,6 +274,14 @@ function setupEventListeners(libraryStore: any): void {
     console.log('File deleted:', data)
     handleFileEvent(data, 'deleted')
   })
+
+  // 监听缩略图生成事件
+  webSocketService.addEventListener('thumbnail::generated', (data) => {
+    console.log('Thumbnail generated:', data)
+    window.dispatchEvent(new CustomEvent('thumbnail-updated', {
+      detail: { fileId: String(data.id), thumbPath: data.thumb }
+    }))
+  })
 }
 
 /**
