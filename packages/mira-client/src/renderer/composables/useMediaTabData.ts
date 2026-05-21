@@ -1,4 +1,4 @@
-import { ref, reactive, computed } from 'vue'
+import { reactive, computed } from 'vue'
 import type { FilterRule } from '@/components/ui/volt/FilterBar.vue'
 
 // 媒体Tab的数据管理接口
@@ -59,13 +59,11 @@ export function useMediaTabData(tabId: string) {
   // 筛选器管理
   const updateFilters = (filters: Record<string, FilterRule>) => {
     tabDataStore[tabId].filters = { ...filters }
-    console.log(`🔍 更新Tab ${tabId} 筛选器:`, filters)
   }
 
   // 初始化筛选器
   const setInitialFilters = (filters: Record<string, FilterRule>) => {
     tabDataStore[tabId].filters = { ...filters }
-    console.log(`🎯 初始化Tab ${tabId} 筛选器:`, filters)
   }
 
   const clearFilters = (filterId?: string) => {
@@ -74,7 +72,6 @@ export function useMediaTabData(tabId: string) {
     } else {
       tabDataStore[tabId].filters = {}
     }
-    console.log(`🗑️ 清除Tab ${tabId} 筛选器:`, filterId || '全部')
   }
 
   const hasActiveFilters = computed(() => {
@@ -87,7 +84,6 @@ export function useMediaTabData(tabId: string) {
     tabDataStore[tabId].cachedData = [...data] // 深拷贝数据
     tabDataStore[tabId].cachedTotal = total || data.length
     tabDataStore[tabId].lastUpdated = Date.now()
-    console.log(`💾 缓存Tab ${tabId} 数据: ${data.length}条记录, 总数: ${total || data.length}`)
   }
 
   const getCachedData = () => {
@@ -103,7 +99,6 @@ export function useMediaTabData(tabId: string) {
     tabDataStore[tabId].cachedData = []
     tabDataStore[tabId].cachedTotal = 0
     tabDataStore[tabId].lastUpdated = 0
-    console.log(`🗑️ 清除Tab ${tabId} 缓存数据`)
   }
 
   const hasCachedData = computed(() => {
@@ -118,14 +113,7 @@ export function useMediaTabData(tabId: string) {
     itemsPerPage: number
     isServerPagination: boolean
   }>) => {
-    const oldState = { ...tabDataStore[tabId].pagination }
     Object.assign(tabDataStore[tabId].pagination, paginationState)
-
-    console.log(`📄 更新Tab ${tabId} 分页状态:`, {
-      更新前状态: oldState,
-      更新的字段: paginationState,
-      更新后状态: tabDataStore[tabId].pagination
-    })
   }
 
   const resetPagination = () => {
@@ -135,7 +123,6 @@ export function useMediaTabData(tabId: string) {
       itemsPerPage: 999,
       isServerPagination: false
     }
-    console.log(`🔄 重置Tab ${tabId} 分页状态`)
   }
 
   const currentPage = computed(() => tabDataStore[tabId]?.pagination?.currentPage || 1)
@@ -169,9 +156,7 @@ export function useMediaTabData(tabId: string) {
 
   const setViewMode = async (mode: 'grid' | 'list' | 'waterfall') => {
     if (tabDataStore[tabId]) {
-      const oldMode = tabDataStore[tabId].viewMode
       tabDataStore[tabId].viewMode = mode
-      console.log(`👁️ Tab ${tabId} 视图模式切换: ${oldMode} -> ${mode}`)
 
       // 可选：将该tab的视图模式保存为全局默认设置
       // 这样新打开的tab会使用最后一次使用的视图模式
@@ -179,8 +164,8 @@ export function useMediaTabData(tabId: string) {
         const { useSettingsStore } = require('@/renderer/stores/settings')
         const settingsStore = useSettingsStore()
         await settingsStore.updateSetting('defaultView', mode)
-      } catch (error) {
-        console.warn('⚠️ 无法保存默认视图模式:', error)
+      } catch {
+        // silently ignore
       }
     }
   }
@@ -188,7 +173,6 @@ export function useMediaTabData(tabId: string) {
   // 清理Tab数据（Tab关闭时调用）
   const cleanup = () => {
     delete tabDataStore[tabId]
-    console.log(`🧹 清理Tab ${tabId} 的数据管理器`)
   }
 
   // 调试信息
@@ -276,7 +260,6 @@ export function cacheTabData(tabId: string, data: any[], total?: number) {
   tabDataStore[tabId].cachedData = [...data]
   tabDataStore[tabId].cachedTotal = total || data.length
   tabDataStore[tabId].lastUpdated = Date.now()
-  console.log(`💾 [全局] 缓存Tab ${tabId} 数据: ${data.length}条记录, 总数: ${total || data.length}`)
 }
 
 /**
@@ -300,7 +283,6 @@ export function clearTabCache(tabId?: string) {
       tabDataStore[tabId].cachedData = []
       tabDataStore[tabId].cachedTotal = 0
       tabDataStore[tabId].lastUpdated = 0
-      console.log(`🗑️ [全局] 清除Tab ${tabId} 缓存数据`)
     }
   } else {
     Object.keys(tabDataStore).forEach(id => {
@@ -308,7 +290,6 @@ export function clearTabCache(tabId?: string) {
       tabDataStore[id].cachedTotal = 0
       tabDataStore[id].lastUpdated = 0
     })
-    console.log('🗑️ [全局] 清除所有Tab缓存数据')
   }
 }
 
@@ -319,7 +300,6 @@ export function clearAllTabData() {
   Object.keys(tabDataStore).forEach(tabId => {
     delete tabDataStore[tabId]
   })
-  console.log('🧹 清理所有Tab数据管理器')
 }
 
 /**
