@@ -270,9 +270,21 @@ function setupEventListeners(libraryStore: any): void {
     handleFileEvent(data, 'updated')
   })
 
-  webSocketService.addEventListener('file::delete', (data) => {
+  webSocketService.addEventListener('file::deleted', (data) => {
     console.log('File deleted:', data)
     handleFileEvent(data, 'deleted')
+  })
+
+  // 监听回收站清空事件
+  webSocketService.addEventListener('files::trash-emptied', (data) => {
+    console.log('Trash emptied:', data)
+    const { markTabsForEvent } = useTabs()
+    const markedIds = markTabsForEvent(data, 'trash-emptied')
+    for (const tabId of markedIds) {
+      window.dispatchEvent(new CustomEvent('active-tab-refresh', {
+        detail: { tabId, eventType: 'trash-emptied', data }
+      }))
+    }
   })
 
   // 监听缩略图生成事件
@@ -289,14 +301,19 @@ function setupEventListeners(libraryStore: any): void {
  */
 function handleFileEvent(data: any, eventType: 'created' | 'updated' | 'deleted'): void {
   const { markTabsForEvent, tabs } = useTabs()
+  console.log(`[WS] handleFileEvent: eventType=${eventType}, data=`, JSON.stringify(data))
+  console.log(`[WS] current tabs:`, tabs.value.map(t => ({ id: t.id, type: t.type, active: t.active, needUpdate: t.needUpdate, dataLibraryId: t.data?.libraryId })))
   const markedIds = markTabsForEvent(data, eventType)
+  console.log(`[WS] markTabsForEvent result: markedIds=`, markedIds)
 
   if (markedIds.length === 0) return
 
   // 找出被标记的活跃 tab，立即刷新
   for (const tabId of markedIds) {
     const tab = tabs.value.find(t => t.id === tabId)
+    console.log(`[WS] checking tab ${tabId}: active=${tab?.active}`)
     if (tab?.active) {
+      console.log(`[WS] dispatching active-tab-refresh for tab ${tabId}`)
       window.dispatchEvent(new CustomEvent('active-tab-refresh', {
         detail: { tabId, eventType, data }
       }))

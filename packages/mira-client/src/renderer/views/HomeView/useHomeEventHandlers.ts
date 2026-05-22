@@ -126,7 +126,7 @@ export function useHomeEventHandlers(
     console.log('📁 handleFolderSelected folderData:', folderData)
 
     // 只创建tab，不处理路由和数据刷新（这些已经由路由处理器处理了）
-    const newTab = createTabFromFolder(folderData, folderData.libraryId)
+    const newTab = createTabFromFolder(folderData, folderData.libraryId || libraryStore.currentLibrary?.id)
 
     if (newTab) {
       console.log('✅ 文件夹 tab 创建完成:', newTab.label)

@@ -205,6 +205,8 @@ export function useTabs() {
 
     const activeTab = tabs.value.find(tab => tab.id === tabId)
     if (activeTab) {
+      console.log(`[switchToTab] tabId=${tabId} needUpdate=${activeTab.needUpdate} hasLazyLoad=${!!lazyLoadHandler}`)
+
       // 记录Tab激活历史
       tabHistory.recordTabAction(activeTab, 'activate')
 
@@ -434,7 +436,10 @@ export function useTabs() {
     const markedIds: string[] = []
     for (const tab of tabs.value) {
       const tabType = tabRegistry.getType(tab.type)
-      if (tabType?.shouldUpdateForEvent?.(tab.data, eventData)) {
+      if (!tabType?.shouldUpdateForEvent) continue
+      const matched = tabType.shouldUpdateForEvent(tab.data, eventData)
+      console.log(`[markTabsForEvent] tab=${tab.id} type=${tab.type} tabData.libraryId="${tab.data?.libraryId}" (${typeof tab.data?.libraryId}) eventData.libraryId="${eventData.libraryId}" (${typeof eventData.libraryId}) => matched=${matched}`)
+      if (matched) {
         tab.needUpdate = true
         markedIds.push(tab.id)
       }

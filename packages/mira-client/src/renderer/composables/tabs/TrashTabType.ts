@@ -46,9 +46,11 @@ export class TrashTabType extends MediaViewTabType {
   }
 
   shouldUpdateForEvent(tabData: any, eventData: any): boolean {
-    // 回收站关心 recycled 状态变更的文件
-    if (tabData?.libraryId !== eventData.libraryId) return false
-    return eventData.recycled != null
+    const libMatch = String(tabData?.libraryId) !== String(eventData.libraryId)
+    const hasField = eventData.recycled != null || eventData.deletedCount != null || eventData.deletedAt != null
+    console.log(`[TrashTabType] shouldUpdate: tabData.libraryId="${tabData?.libraryId}" (${typeof tabData?.libraryId}) eventData.libraryId="${eventData.libraryId}" (${typeof eventData.libraryId}) libMatch=${libMatch} hasField=${hasField} recycled=${eventData.recycled} deletedCount=${eventData.deletedCount} deletedAt=${eventData.deletedAt}`)
+    if (libMatch) return false
+    return hasField
   }
 }
 
