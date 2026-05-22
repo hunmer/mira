@@ -1,8 +1,11 @@
-import { ref, computed } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import type { FileInfo } from '../../../../../shared/types'
 import type { MenuItem } from '@/components/ui/volt/types'
 import { appService } from '@renderer/services'
 import { useLibraryStore } from '@renderer/stores/library'
+import { useTagStore } from '@renderer/stores/tag'
+import { useFolderStore } from '@renderer/stores/folder'
+import { miraSDKService } from '@renderer/services/MiraSDKService'
 
 interface UseContextMenuEmits {
   (e: 'media-context-menu', item: FileInfo, event: MouseEvent): void
@@ -14,6 +17,66 @@ interface UseContextMenuEmits {
 
 export function useContextMenu(emit: UseContextMenuEmits) {
   const currentContextItem = ref<FileInfo | null>(null)
+  const folderPopoverOpen = ref(false)
+  const tagPopoverOpen = ref(false)
+  const popoverPosition = ref({ x: 0, y: 0 })
+  const tagStore = useTagStore()
+  const folderStore = useFolderStore()
+  const libraryStore = useLibraryStore()
+
+  watch([folderPopoverOpen, tagPopoverOpen], ([folderOpen, tagOpen]) => {
+    const libId = libraryStore.currentLibrary?.id || 'default'
+    if (folderOpen) folderStore.fetchFolders(libId)
+    if (tagOpen) tagStore.fetchTags(libId)
+  })
+
+  const folderTreeNodes = computed(() =>
+    folderStore.folders.map((f: any) => ({
+      id: String(f.id),
+      label: f.title,
+      icon: 'folder',
+      count: f.fileCount,
+      children: f.children?.map((c: any) => ({
+        id: String(c.id),
+        label: c.title,
+        icon: 'folder',
+        count: c.fileCount,
+      })),
+      originalData: f,
+    }))
+  )
+
+  const handleFolderSelect = async (folderItem: any) => {
+    try {
+      const client = (miraSDKService as any).client
+      if (!client || !currentContextItem.value) return
+      const file = currentContextItem.value
+      const libId = file.libraryId || 'default'
+      await client.folders().setFileFolder({ libraryId: libId, fileId: parseInt(file.id), folder: parseInt(folderItem.id) })
+      file.folderId = String(folderItem.id)
+      emit('media-set-folder', file)
+      folderPopoverOpen.value = false
+    } catch (error) {
+      console.error('Failed to set folder:', error)
+    }
+  }
+
+  const handleTagSelect = async (tagData: any) => {
+    try {
+      const client = (miraSDKService as any).client
+      if (!client || !currentContextItem.value) return
+      const tagName = tagData.title || tagData.name
+      const file = currentContextItem.value
+      const libId = file.libraryId || 'default'
+      await client.tags().addTagsToFile(libId, parseInt(file.id), [tagName])
+      if (!file.tags) file.tags = []
+      if (!file.tags.includes(tagName)) file.tags.push(tagName)
+      emit('media-set-tags', file)
+      tagPopoverOpen.value = false
+    } catch (error) {
+      console.error('Failed to add tag:', error)
+    }
+  }
 
   const runWithCurrentItem = async (handler: (item: FileInfo) => void | Promise<void>) => {
     const item = currentContextItem.value
@@ -40,14 +103,14 @@ export function useContextMenu(emit: UseContextMenuEmits) {
       label: '设置文件夹',
       shortcut: 'Ctrl+M',
       command: () => runWithCurrentItem((item) => {
-        emit('media-set-folder', item)
+        setTimeout(() => { folderPopoverOpen.value = true }, 100)
       })
     },
     {
       label: '设置标签',
       shortcut: 'Ctrl+T',
       command: () => runWithCurrentItem((item) => {
-        emit('media-set-tags', item)
+        setTimeout(() => { tagPopoverOpen.value = true }, 100)
       })
     },
     {
@@ -57,7 +120,6 @@ export function useContextMenu(emit: UseContextMenuEmits) {
       label: '删除',
       shortcut: 'Delete',
       command: () => runWithCurrentItem(async (item) => {
-        const libraryStore = useLibraryStore()
         const libraryId = item.libraryId || libraryStore.currentLibrary?.id
         if (!libraryId) {
           console.error('无法确定 libraryId')
@@ -76,12 +138,20 @@ export function useContextMenu(emit: UseContextMenuEmits) {
 
   const handleContextMenu = (item: FileInfo, event: MouseEvent) => {
     currentContextItem.value = item
+    popoverPosition.value = { x: event.clientX, y: event.clientY }
     emit('media-context-menu', item, event)
   }
 
   return {
     currentContextItem,
     contextMenuItems,
-    handleContextMenu
+    handleContextMenu,
+    folderPopoverOpen,
+    tagPopoverOpen,
+    popoverPosition,
+    folderTreeNodes,
+    handleFolderSelect,
+    handleTagSelect,
+    tagStore,
   }
 }

@@ -18,8 +18,6 @@ export function useDragDrop(props: { items: FileInfo[], selectedItems: string[] 
 
     if (event.button !== 0) return
 
-    console.log('🖱️ PointerDown detected on media item:', item.name)
-
     event.preventDefault()
     event.stopPropagation()
     event.stopImmediatePropagation()
@@ -35,8 +33,6 @@ export function useDragDrop(props: { items: FileInfo[], selectedItems: string[] 
 
       if ((deltaX > 5 || deltaY > 5) && !dragDetected) {
         dragDetected = true
-        console.log('🎯 检测到拖拽移动，启动原生拖拽')
-
         cleanup()
 
         if (!isDragInitiated) {
@@ -53,7 +49,6 @@ export function useDragDrop(props: { items: FileInfo[], selectedItems: string[] 
       cleanup()
 
       if (!dragDetected && deltaTime < 200 && deltaX < 5 && deltaY < 5) {
-        console.log('👆 检测到点击事件')
         return { isClick: true, event: upEvent }
       }
       return { isClick: false }
@@ -74,8 +69,6 @@ export function useDragDrop(props: { items: FileInfo[], selectedItems: string[] 
     dragStartTimer = setTimeout(() => {
       if (!isDragInitiated && !dragDetected) {
         dragDetected = true
-        console.log('🕒 长按检测，启动拖拽')
-
         cleanup()
         startNativeDrag(event, item)
       }
@@ -88,9 +81,6 @@ export function useDragDrop(props: { items: FileInfo[], selectedItems: string[] 
 
     const selectedFileIds = props.selectedItems.includes(item.id) ? props.selectedItems : [item.id]
 
-    console.log('🎯 启动原生拖拽:', selectedFileIds.length > 1 ? `${selectedFileIds.length} 个文件` : item.name)
-    console.log('📁 选中的文件ID:', selectedFileIds)
-
     const filePaths: string[] = []
 
     selectedFileIds.forEach(fileId => {
@@ -99,33 +89,19 @@ export function useDragDrop(props: { items: FileInfo[], selectedItems: string[] 
         const dataFile = mediaItemElement.getAttribute('data-file')
         if (dataFile && dataFile.trim()) {
           filePaths.push(dataFile)
-          console.log(`✅ 从DOM获取到文件路径: ${fileId} -> ${dataFile}`)
         } else {
-          console.warn(`⚠️ 文件 ${fileId} 没有 data-file 属性或为空，尝试从mediaStore获取`)
           const file = props.items.find(f => f.id === fileId)
           if (file?.libraryId) {
             const localPath = mediaStore.getLocalFile(file.libraryId, fileId)
             if (localPath) {
               filePaths.push(localPath)
-              console.log(`✅ 从mediaStore获取到文件路径: ${fileId} -> ${localPath}`)
-            } else {
-              console.warn(`⚠️ 文件 ${fileId} 在mediaStore中也没有localFile记录`)
             }
-          } else {
-            console.warn(`⚠️ 文件 ${fileId} 没有libraryId，无法从mediaStore查找`)
           }
         }
-      } else {
-        console.warn(`⚠️ 找不到文件 ${fileId} 对应的DOM元素`)
       }
     })
 
-    if (filePaths.length === 0) {
-      console.warn('⚠️ 没有有效的文件路径，无法启动拖拽')
-      return
-    }
-
-    console.log('📂 最终文件路径列表:', filePaths)
+    if (filePaths.length === 0) return
 
     try {
       if (window.electronAPI) {
@@ -133,16 +109,12 @@ export function useDragDrop(props: { items: FileInfo[], selectedItems: string[] 
 
         let result
         if (filePaths.length === 1) {
-          console.log('📋 调用单文件拖拽 IPC')
           result = await window.electronAPI.invoke('drag-drop:start', filePaths[0], iconInfo)
         } else {
-          console.log('📋 调用多文件拖拽 IPC')
           result = await window.electronAPI.invoke('drag-drop:start-multiple', filePaths, iconInfo)
         }
 
         if (result.success) {
-          console.log('✅ Electron 拖拽启动成功')
-
           const target = event.target as HTMLElement
           if (target) {
             target.style.opacity = '0.5'
@@ -153,14 +125,9 @@ export function useDragDrop(props: { items: FileInfo[], selectedItems: string[] 
               target.style.cursor = ''
             }, 200)
           }
-        } else {
-          console.error('❌ Electron 拖拽启动失败:', result.message)
         }
-      } else {
-        console.warn('⚠️ 非 Electron 环境，无法启动原生拖拽')
       }
-    } catch (error) {
-      console.error('❌ 调用拖拽 IPC 失败:', error)
+    } catch {
     } finally {
       setTimeout(() => { (window as any).__miraInternalDrag = false }, 1000)
     }
@@ -186,7 +153,6 @@ export function useDragDrop(props: { items: FileInfo[], selectedItems: string[] 
         if (element.tagName === 'IMG') {
           const img = element as HTMLImageElement
           if (img.src) {
-            console.log('🖼️ 检测到图片元素, src:', img.src)
             return {
               iconPath: img.src,
               iconType: 'element-image'
@@ -199,7 +165,6 @@ export function useDragDrop(props: { items: FileInfo[], selectedItems: string[] 
         if (backgroundImage && backgroundImage !== 'none') {
           const match = backgroundImage.match(/url\(['"]?(.*?)['"]?\)/)
           if (match && match[1]) {
-            console.log('🎨 检测到背景图片:', match[1])
             return {
               iconPath: match[1],
               iconType: 'background-image'
@@ -209,7 +174,6 @@ export function useDragDrop(props: { items: FileInfo[], selectedItems: string[] 
 
         const imgElement = element.querySelector('img')
         if (imgElement && imgElement.src) {
-          console.log('🔍 在子元素中找到图片:', imgElement.src)
           return {
             iconPath: imgElement.src,
             iconType: 'child-image'
@@ -220,8 +184,7 @@ export function useDragDrop(props: { items: FileInfo[], selectedItems: string[] 
       }
 
       return findImageInElement(mediaItemElement)
-    } catch (error) {
-      console.error('提取图标信息失败:', error)
+    } catch {
       return {}
     }
   }

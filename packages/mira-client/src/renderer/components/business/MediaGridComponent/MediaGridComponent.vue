@@ -97,6 +97,35 @@
       </template>
     </ContextMenuContent>
   </ContextMenu>
+
+    <!-- 文件夹选择 Popover -->
+    <Popover v-model:open="folderPopoverOpen">
+      <PopoverTrigger as-child>
+        <div :style="{ position: 'fixed', left: popoverPosition.x + 'px', top: popoverPosition.y + 'px', width: '1px', height: '1px' }"></div>
+      </PopoverTrigger>
+      <PopoverContent class="w-80 p-2">
+        <FolderTreeComponent
+          item-type="folder"
+          :folders="folderTreeNodes"
+          :show-base-categories="false"
+          @select="handleFolderSelect"
+        />
+      </PopoverContent>
+    </Popover>
+
+    <!-- 标签选择 Popover -->
+    <Popover v-model:open="tagPopoverOpen">
+      <PopoverTrigger as-child>
+        <div :style="{ position: 'fixed', left: popoverPosition.x + 'px', top: popoverPosition.y + 'px', width: '1px', height: '1px' }"></div>
+      </PopoverTrigger>
+      <PopoverContent class="w-80 p-2">
+        <FolderTreeComponent
+          item-type="tag"
+          :tags="tagStore.tags"
+          @select="handleTagSelect"
+        />
+      </PopoverContent>
+    </Popover>
   </SelectionBox>
 </template>
 
@@ -113,7 +142,9 @@ import {
   ContextMenuSubContent,
   ContextMenuSubTrigger,
 } from '@/components/ui/context-menu'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import SelectionBox from '../../common/SelectionBox.vue'
+import FolderTreeComponent from '../FolderTreeComponent/FolderTreeComponent.vue'
 import MediaItem from './MediaGridItem.vue'
 import VideoPreviewContainer from './VideoPreviewContainer.vue'
 import type { FileInfo } from '../../../../shared/types'
@@ -164,7 +195,14 @@ const {
 
 const {
   contextMenuItems,
-  handleContextMenu: contextMenuHandler
+  handleContextMenu: contextMenuHandler,
+  folderPopoverOpen,
+  tagPopoverOpen,
+  popoverPosition,
+  folderTreeNodes,
+  handleFolderSelect,
+  handleTagSelect,
+  tagStore,
 } = useContextMenu(emit)
 
 const { handlePointerDown } = useDragDrop(props)
