@@ -302,12 +302,7 @@ export const useMediaStore = defineStore('media', () => {
       // 首先处理简单键值对格式的筛选器（直接来自初始化）
       Object.entries(tabInfo.filters).forEach(([key, value]: [string, any]) => {
         if (key === 'folder') {
-          if (value !== null && value !== undefined && value !== '') {
-            const folderId = Number(value)
-            if (Number.isFinite(folderId)) {
-              filters.folder = folderId
-            }
-          }
+          filters.folder = value
           return
         }
         if (key === 'tags') {
@@ -432,10 +427,9 @@ export const useMediaStore = defineStore('media', () => {
       filters.recycled = 0
     }
 
-    // 清理 null/undefined 值，避免发送无意义的参数
+    // 清理 undefined 和非有限数字，保留 null（null 有语义：如 folder=null 表示未分类）
     Object.keys(filters).forEach(key => {
       if (
-        filters[key] === null ||
         filters[key] === undefined ||
         (typeof filters[key] === 'number' && !Number.isFinite(filters[key]))
       ) {

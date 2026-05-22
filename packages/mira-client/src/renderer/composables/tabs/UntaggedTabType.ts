@@ -14,7 +14,7 @@ export class UntaggedTabType extends MediaViewTabType {
 
   protected getTabFilters(_context: TabContext): Record<string, any> {
     // 未标签：tags 为 null 的文件
-    return { tags: null, type: 'files' }
+    return { tags: '= null', type: 'files' }
   }
 
   protected getViewType(): string {

@@ -259,7 +259,7 @@ export class LibraryServerDataSQLite implements ILibraryServerData {
     }
 
     // 处理 folder 筛选
-    if (filters.folder === null) {
+    if (filters.folder === '= null' || filters.folder === null) {
       // folder 为 null：筛选未分类的文件（folder_id 为 NULL 或 0）
       whereClauses.push('(folder_id IS NULL OR folder_id = 0)');
     } else if (folderId !== 0) {
@@ -269,7 +269,7 @@ export class LibraryServerDataSQLite implements ILibraryServerData {
     }
 
     // 处理 tags 筛选
-    if (filters.tags === null) {
+    if (filters.tags === '= null' || filters.tags === null) {
       // tags 为 null：筛选未标签的文件（tags 为 NULL 或空数组 '[]'）
       whereClauses.push("(tags IS NULL OR tags = '[]' OR json_array_length(tags) = 0)");
     } else if (tagIds.length > 0) {

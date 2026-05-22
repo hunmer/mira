@@ -648,7 +648,7 @@ const fetchPageData = async (page: number) => {
     const rawFilters = mediaTabData.filters.value
     const currentFilters: Record<string, any> = {}
     Object.entries(rawFilters).forEach(([key, value]) => {
-      if (value !== null && value !== undefined && !(typeof value === 'number' && Number.isNaN(value))) {
+      if (value !== undefined && !(typeof value === 'number' && Number.isNaN(value))) {
         currentFilters[key] = value
       }
     })
