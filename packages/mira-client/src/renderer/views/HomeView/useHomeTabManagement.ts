@@ -275,12 +275,12 @@ export function useHomeTabManagement() {
   }
 
   const handleCloseCurrentTab = async () => {
-    console.log('[shortcut:close-current-tab] handleCloseCurrentTab called')
+    console.warn('[shortcut:close-current-tab] handleCloseCurrentTab CALLED')
     const currentTab = getCurrentTab()
-    console.log('[shortcut:close-current-tab] currentTab:', currentTab ? { id: currentTab.id, type: currentTab.type } : null)
+    console.warn('[shortcut:close-current-tab] currentTab:', currentTab ? { id: currentTab.id, type: currentTab.type } : null)
     if (currentTab) {
       await closeTabWithCallback(currentTab.id)
-      console.log('[shortcut:close-current-tab] closeTabWithCallback done, tabId:', currentTab.id)
+      console.warn('[shortcut:close-current-tab] closeTabWithCallback done')
     } else {
       console.warn('[shortcut:close-current-tab] no current tab, skipping close')
     }
