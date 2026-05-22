@@ -374,7 +374,13 @@ export const defaultActions: ShortcutAction[] = [
     category: 'navigation',
     icon: 'close',
     callback: () => {
-      document.dispatchEvent(new CustomEvent('shortcut:close-current-tab'))
+      console.warn('[shortcut:close-current-tab] 1) callback entered')
+      try {
+        document.dispatchEvent(new CustomEvent('shortcut:close-current-tab'))
+        console.warn('[shortcut:close-current-tab] 2) dispatch done')
+      } catch (e) {
+        console.error('[shortcut:close-current-tab] dispatch FAILED:', e)
+      }
     }
   },
 

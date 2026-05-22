@@ -63,38 +63,32 @@ export function useFolderOperations(emit: FolderOperationsEmits) {
     return [
       {
         label: `添加${itemLabel}`,
-        icon: 'add',
         command: () => handleItemOperation('add', type),
       },
       {
         label: `添加${subItemLabel}`,
-        icon: isFolder ? 'create_new_folder' : 'label',
         command: () => handleItemOperation('addSub', type),
         disabled: !currentItem,
       },
       { separator: true },
       {
         label: '编辑',
-        icon: 'edit',
         command: () => handleItemOperation('edit', type),
         disabled: !currentItem,
       },
       {
         label: '移动',
-        icon: 'drive_file_move',
         command: () => handleItemOperation('move', type),
         disabled: !currentItem,
       },
       {
         label: '克隆',
-        icon: 'content_copy',
         command: () => handleItemOperation('clone', type),
         disabled: !currentItem,
       },
       { separator: true },
       {
         label: '删除',
-        icon: 'delete',
         command: () => handleItemOperation('delete', type),
         disabled: !currentItem,
         class: 'text-red-600',
