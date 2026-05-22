@@ -145,15 +145,19 @@ const { performInitialization } = homeInit
 let cleanupModules: (() => void) | null = null
 
 onMounted(async () => {
-  cleanupModules = await performInitialization(
-    homeController,
-    getCurrentTab,
-    setTabNeedUpdate,
-    switchToTabWithCallback,
-    initializeDefaultLibrary
-  )
+  try {
+    cleanupModules = await performInitialization(
+      homeController,
+      getCurrentTab,
+      setTabNeedUpdate,
+      switchToTabWithCallback,
+      initializeDefaultLibrary
+    )
+  } catch (e) {
+    console.error('[HomeView] performInitialization failed:', e)
+  }
 
-  // 注册全局事件
+  // 注册全局事件（无论初始化是否成功都要注册）
   registerGlobalEvents(
     handleActivateLastTab,
     handleReopenClosedTab,
