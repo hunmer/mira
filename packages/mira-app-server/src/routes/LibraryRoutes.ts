@@ -99,10 +99,10 @@ export class LibraryRoutes {
                     return res.status(400).json({ error: 'Name and path are required' });
                 }
 
-                // 对于远程库，验证服务器信息
-                if (type === 'remote') {
+                // 对于远程库或启用 HTTP 文件服务，验证服务器信息
+                if (type === 'remote' || useHttpFile) {
                     if (!serverURL || !serverPort) {
-                        return res.status(400).json({ error: 'Server URL and port are required for remote libraries' });
+                        return res.status(400).json({ error: 'Server URL and port are required when using remote library or HTTP file serving' });
                     }
                 }
 
@@ -247,10 +247,10 @@ export class LibraryRoutes {
                     }
                 }
 
-                // 对于远程库，验证服务器信息
-                if (type === 'remote') {
+                // 对于远程库或启用 HTTP 文件服务，验证服务器信息
+                if (type === 'remote' || useHttpFile) {
                     if (!serverURL || !serverPort) {
-                        return res.status(400).json({ error: 'Server URL and port are required for remote libraries' });
+                        return res.status(400).json({ error: 'Server URL and port are required when using remote library or HTTP file serving' });
                     }
                 }
 
@@ -271,12 +271,11 @@ export class LibraryRoutes {
                     updatedAt: new Date().toISOString()
                 };
 
-                // 更新远程库特有的字段
-                if (type === 'remote') {
+                // 更新服务器连接字段（远程库 或 启用 HTTP 文件服务时需要）
+                if (type === 'remote' || useHttpFile) {
                     updatedConfig.serverURL = serverURL;
                     updatedConfig.serverPort = serverPort;
-                } else {
-                    // 如果改为本地库，移除远程库字段
+                } else if (type !== 'remote' && !useHttpFile) {
                     delete updatedConfig.serverURL;
                     delete updatedConfig.serverPort;
                 }

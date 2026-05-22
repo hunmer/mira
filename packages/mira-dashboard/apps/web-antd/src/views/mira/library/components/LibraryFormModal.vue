@@ -110,8 +110,8 @@ defineEmits<{
       </label>
     </div>
 
-    <!-- 远程库相关配置 -->
-    <template v-if="form.type === 'remote'">
+    <!-- 服务器配置（远程库 或 启用 HTTP 文件服务时显示） -->
+    <template v-if="form.type === 'remote' || form.useHttpFile">
       <div>
         <label class="mb-1 block text-sm font-medium text-gray-700">
           服务器地址
@@ -119,7 +119,7 @@ defineEmits<{
         <input
           v-model="form.serverURL"
           type="text"
-          :required="form.type === 'remote'"
+          :required="form.type === 'remote' || form.useHttpFile"
           placeholder="例如：http://127.0.0.1"
           class="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
@@ -132,7 +132,7 @@ defineEmits<{
         <input
           v-model="form.serverPort"
           type="text"
-          :required="form.type === 'remote'"
+          :required="form.type === 'remote' || form.useHttpFile"
           placeholder="例如：3000"
           class="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         />

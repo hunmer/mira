@@ -132,7 +132,7 @@ export function useLibrary() {
       return;
     }
 
-    if (libraryForm.value.type === 'remote') {
+    if (libraryForm.value.type === 'remote' || libraryForm.value.useHttpFile) {
       if (!libraryForm.value.serverURL || !libraryForm.value.serverPort) {
         notification.error({
           message: '验证失败',
@@ -154,6 +154,7 @@ export function useLibrary() {
     loading.value = true;
     try {
       const isRemote = libraryForm.value.type === 'remote';
+      const needsServer = isRemote || libraryForm.value.useHttpFile;
       const submitData = {
         name: libraryForm.value.name,
         path: libraryForm.value.path,
@@ -166,12 +167,12 @@ export function useLibrary() {
           enableHash: libraryForm.value.enableHash,
           enableAutoSync: libraryForm.value.enableAutoSync,
           useHttpFile: libraryForm.value.useHttpFile,
-          ...(isRemote && {
+          ...(needsServer && {
             serverURL: libraryForm.value.serverURL,
             serverPort: libraryForm.value.serverPort,
           }),
         },
-        ...(isRemote && {
+        ...(needsServer && {
           serverURL: libraryForm.value.serverURL,
           serverPort: libraryForm.value.serverPort,
         }),
