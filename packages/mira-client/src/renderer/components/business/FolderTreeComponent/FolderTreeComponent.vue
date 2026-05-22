@@ -75,6 +75,7 @@
       @update:expandedKeys="updateExpandedKeys"
       @update:selectionKeys="updateSelectionKeys"
       @node-select="handleNodeSelect"
+      @node-unselect="handleNodeSelect"
       @node-expand="handleNodeExpand"
       @node-collapse="handleNodeCollapse"
       @node-contextmenu="handleNodeContextMenu"
@@ -186,6 +187,7 @@ interface Props {
   itemType?: 'folder' | 'tag'
   selectedKey?: string
   showBaseCategories?: boolean
+  defaultShowSearch?: boolean
   title?: string
   baseCategoriesConfig?: Array<{
     id: string
@@ -245,6 +247,12 @@ const searchQuery = computed({
 })
 const filteredNodes = computed(() => isFolder.value ? filteredTreeData.value : filteredTagTreeNodes.value)
 const toggleSearch = () => isFolder.value ? toggleFolderSearch() : toggleTagSearch()
+
+// 初始化搜索显示状态
+if (props.defaultShowSearch) {
+  if (isFolder.value) showFolderSearch.value = true
+  else showTagSearch.value = true
+}
 
 const { setupDragEventListeners, onDragEnd: onFolderDragEnd, onTagDragEnd } = useFolderDragDrop(nodeIdMap, {
   'refresh-folders': () => emit('refresh'),

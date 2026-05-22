@@ -65,7 +65,7 @@
               </div>
 
               <!-- 文件网格内容 -->
-              <div ref="fileGridContainerRef" class="flex-1 overflow-auto p-4 min-h-0">
+              <div ref="fileGridContainerRef" class="flex-1 min-h-0">
                 <SelectionBox
                   ref="selectionBoxRef"
                   v-model="selectedPendingIds"
@@ -73,7 +73,7 @@
                   :double-click-to-clear="true"
                   :realtime-selection="true"
                   :min-selection-size="8"
-                  class="h-full"
+                  class="h-full overflow-auto p-4"
                   @selection-update="handleSelectionUpdate"
                   @clear-selection="clearSelection"
                 >
@@ -204,11 +204,13 @@
                   :folders="folderTreeData"
                   :selected-key="selectedTargetFolderId"
                   :show-base-categories="false"
+                  :default-show-search="true"
                   @select="handleFolderTreeSelect"
                 />
                 <FolderTreeComponent
                   item-type="tag"
                   :tags="tagTreeData"
+                  :default-show-search="true"
                   @select="handleTagTreeSelect"
                 />
               </div>
@@ -294,13 +296,29 @@ function handleSelectionUpdate(_ids: string[]) {
 }
 
 function handleFolderTreeSelect(folder: any) {
-  handleFolderSelect(folder)
-  applyMetadataToFiles(pendingFiles, selectedPendingIds.value)
+  const deselected = handleFolderSelect(folder)
+  if (deselected) {
+    const ids = selectedPendingIds.value.length > 0 ? selectedPendingIds.value : pendingFiles.value.map(f => f.id)
+    ids.forEach(id => {
+      const file = pendingFiles.value.find(f => f.id === id)
+      if (file) delete file.folderId
+    })
+  } else {
+    applyMetadataToFiles(pendingFiles, selectedPendingIds.value)
+  }
 }
 
 function handleTagTreeSelect(tag: any) {
-  handleTagSelect(tag)
-  applyMetadataToFiles(pendingFiles, selectedPendingIds.value)
+  const removedTagId = handleTagSelect(tag)
+  if (removedTagId) {
+    const ids = selectedPendingIds.value.length > 0 ? selectedPendingIds.value : pendingFiles.value.map(f => f.id)
+    ids.forEach(id => {
+      const file = pendingFiles.value.find(f => f.id === id)
+      if (file?.tags) file.tags = file.tags.filter(t => t !== removedTagId)
+    })
+  } else {
+    applyMetadataToFiles(pendingFiles, selectedPendingIds.value)
+  }
 }
 </script>
 

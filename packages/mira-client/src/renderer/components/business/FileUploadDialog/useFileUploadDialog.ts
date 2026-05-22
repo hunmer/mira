@@ -143,6 +143,16 @@ export function useFileUploadDialog(props: Props, emit: Emits) {
     uploadQueue.enqueueFiles(filesToUpload, currentLibrary.value.id, (id) =>
       fileManagement.removePendingFile(id)
     )
+
+    const stopWatch = watch(
+      () => uploadQueue.uploadingFileIds.value.size,
+      (size) => {
+        if (size === 0) {
+          stopWatch()
+          isVisible.value = false
+        }
+      }
+    )
   }
 
   return {

@@ -81,7 +81,12 @@ export function useFolderTagPanel() {
   }
 
   function handleFolderSelect(folder: FolderItem) {
+    if (selectedTargetFolderId.value === folder.id) {
+      selectedTargetFolderId.value = undefined
+      return true
+    }
     selectedTargetFolderId.value = folder.id as string
+    return false
   }
 
   function handleTagSelect(tag: any) {
@@ -89,9 +94,10 @@ export function useFolderTagPanel() {
     const index = selectedTargetTagIds.value.indexOf(tagId)
     if (index === -1) {
       selectedTargetTagIds.value = [...selectedTargetTagIds.value, tagId]
-    } else {
-      selectedTargetTagIds.value = selectedTargetTagIds.value.filter((id) => id !== tagId)
+      return null
     }
+    selectedTargetTagIds.value = selectedTargetTagIds.value.filter((id) => id !== tagId)
+    return tagId
   }
 
   function clearTargetSelection() {

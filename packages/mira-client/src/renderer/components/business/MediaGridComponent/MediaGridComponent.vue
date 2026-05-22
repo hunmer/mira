@@ -108,6 +108,7 @@
           item-type="folder"
           :folders="folderTreeNodes"
           :show-base-categories="false"
+          :default-show-search="true"
           @select="handleFolderSelect"
         />
       </PopoverContent>
@@ -122,6 +123,7 @@
         <FolderTreeComponent
           item-type="tag"
           :tags="tagStore.tags"
+:default-show-search="true"
           @select="handleTagSelect"
         />
       </PopoverContent>
