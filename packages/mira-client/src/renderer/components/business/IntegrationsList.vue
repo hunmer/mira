@@ -777,8 +777,7 @@ onMounted(() => {
   overflow: hidden;
 }
 
-/* Material Icons 字体 */
-@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+/* Material Icons 字体已本地化 */
 
 /* 响应式设计 */
 @media (max-width: 768px) {

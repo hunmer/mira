@@ -13,6 +13,7 @@ export interface Library {
     serverURL?: string
     serverPort?: string
     pluginsDir?: string
+    useHttpFile?: boolean
     customFields?: {
         path: string
         enableHash: boolean

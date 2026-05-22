@@ -63,6 +63,12 @@ export class LibraryRoutes {
                         fileCount: stats.totalFiles,
                         size: stats.totalSize,
                         description: libraryConfig.description || '',
+                        icon: libraryConfig.icon || 'default',
+                        ...(libraryConfig.serverURL && { serverURL: libraryConfig.serverURL }),
+                        ...(libraryConfig.serverPort && { serverPort: libraryConfig.serverPort }),
+                        ...(libraryConfig.pluginsDir && { pluginsDir: libraryConfig.pluginsDir }),
+                        ...(libraryConfig.useHttpFile !== undefined && { useHttpFile: libraryConfig.useHttpFile }),
+                        ...(libraryConfig.customFields && { customFields: libraryConfig.customFields }),
                         createdAt: libraryConfig.createdAt || new Date().toISOString(),
                         updatedAt: libraryConfig.updatedAt || new Date().toISOString()
                     });
@@ -85,7 +91,8 @@ export class LibraryRoutes {
                     customFields,
                     serverURL,
                     serverPort,
-                    pluginsDir
+                    pluginsDir,
+                    useHttpFile
                 } = req.body;
 
                 if (!name || !libraryPath) {
@@ -139,6 +146,11 @@ export class LibraryRoutes {
                 // 添加插件目录（如果提供）
                 if (pluginsDir) {
                     libraryConfig.pluginsDir = pluginsDir;
+                }
+
+                // 添加 useHttpFile 配置
+                if (useHttpFile !== undefined) {
+                    libraryConfig.useHttpFile = useHttpFile;
                 }
 
                 // 读取现有的 librarys.json
@@ -208,7 +220,8 @@ export class LibraryRoutes {
                     customFields,
                     serverURL,
                     serverPort,
-                    pluginsDir
+                    pluginsDir,
+                    useHttpFile
                 } = req.body;
 
                 const libraryObj = this.backend.libraries!.getLibrary(id);
@@ -275,6 +288,11 @@ export class LibraryRoutes {
                     } else {
                         delete updatedConfig.pluginsDir;
                     }
+                }
+
+                // 更新 useHttpFile 配置
+                if (useHttpFile !== undefined) {
+                    updatedConfig.useHttpFile = useHttpFile;
                 }
 
                 // 更新内存中的配置（如果库是活跃的）

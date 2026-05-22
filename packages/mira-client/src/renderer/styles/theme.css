@@ -1,8 +1,7 @@
 /* Mira 主题系统 */
 
 /* ===== 全局字体导入 ===== */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+/* 字体已本地化，见 /assets/fonts/fonts.css */
 
 /* ===== 色彩系统 ===== */
 :root {
