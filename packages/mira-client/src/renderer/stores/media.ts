@@ -398,6 +398,8 @@ export const useMediaStore = defineStore('media', () => {
           filters.tags = [tabInfo.data.id || tabInfo.data.name]
         }
         break
+      case 'all':
+        break
       case 'files':
         break
       case 'uncategorized':

@@ -9,7 +9,7 @@
       </DialogHeader>
       <div class="plugins-content h-full flex">
         <!-- 侧边栏 -->
-        <aside class="w-56 bg-gray-50 border-r border-gray-200 flex flex-col">
+        <aside class="w-56 border-r border-gray-200 flex flex-col">
           <!-- 插件类型切换 -->
           <div class="p-4">
             <div class="bg-gray-200 rounded-lg p-1 flex">
@@ -230,14 +230,6 @@
           </div>
         </main>
       </div>
-    <DialogFooter>
-      <button
-        class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors"
-        @click="handleDialogHide"
-      >
-        关闭
-      </button>
-    </DialogFooter>
     </DialogContent>
   </Dialog>
 

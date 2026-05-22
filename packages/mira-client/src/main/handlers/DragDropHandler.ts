@@ -125,7 +125,7 @@ export class DragDropHandler {
         }
         // file:///C:/path -> C:\path (本地)
         else if (/^file:\/\/\/[A-Za-z]:/i.test(filePath)) {
-          normalizedPath = normalizedPath.replace(/\//g, '\\')
+          normalizedPath = normalizedPath.replace(/^\//, '').replace(/\//g, '\\')
         }
       }
 
@@ -169,7 +169,7 @@ export class DragDropHandler {
       }
       // file:///C:/path -> C:\path
       else if (/^file:\/\/\/[A-Za-z]:/i.test(fileUrl)) {
-        localPath = localPath.replace(/\//g, '\\')
+        localPath = localPath.replace(/^\//, '').replace(/\//g, '\\')
       }
       return localPath
     } catch {
