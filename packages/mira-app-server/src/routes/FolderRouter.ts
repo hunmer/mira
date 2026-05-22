@@ -39,10 +39,17 @@ export class FolderRouter extends BaseRouter {
 
         // 删除文件夹
         this.router.delete('/delete', async (req: Request, res: Response) => {
+            const libraryId = req.body.libraryId || req.query.libraryId as string;
+            const folderId = req.body.id;
             await this.handleCrudOperation(req, res, 'delete', 'deleteFolder', {
                 requiresId: true,
                 successMessage: 'Folder deleted successfully'
             });
+            // 广播 WebSocket 事件通知客户端
+            if (res.statusCode === 200 && folderId && libraryId && this.backend.webSocketServer) {
+                this.backend.webSocketServer.broadcastPluginEvent('folder::deleted', { id: folderId, libraryId });
+                this.backend.webSocketServer.broadcastLibraryEvent(libraryId, 'folder::deleted', { id: folderId, libraryId });
+            }
         });
 
         // 为文件设置文件夹

@@ -254,9 +254,17 @@ function setupEventListeners(libraryStore: any): void {
     libraryStore.refreshFolders?.(data.libraryId)
   })
 
-  webSocketService.addEventListener('folder::delete', (data) => {
+  webSocketService.addEventListener('folder::deleted', (data) => {
     console.log('Folder deleted:', data)
     libraryStore.refreshFolders?.(data.libraryId)
+
+    // 关闭被删除文件夹对应的 tab
+    const { tabs, closeTab } = useTabs()
+    const deletedTabId = `folder-${data.id}`
+    const tab = tabs.value.find(t => t.id === deletedTabId)
+    if (tab) {
+      closeTab(deletedTabId)
+    }
   })
 
   // 监听文件事件
