@@ -1,10 +1,11 @@
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, toRef } from 'vue'
 import type { FileInfo } from '../../../../../shared/types'
 import type { MenuItem } from '@/components/ui/volt/types'
 import { appService } from '@renderer/services'
 import { useLibraryStore } from '@renderer/stores/library'
 import { useTagStore } from '@renderer/stores/tag'
 import { useFolderStore } from '@renderer/stores/folder'
+import { useMediaStore } from '@renderer/stores/media'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 
 interface UseContextMenuProps {
@@ -28,6 +29,9 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
   const tagStore = useTagStore()
   const folderStore = useFolderStore()
   const libraryStore = useLibraryStore()
+  const mediaStore = useMediaStore()
+  const showDetailSidebar = toRef(mediaStore, 'showDetailSidebar')
+  const toggleDetailSidebar = () => mediaStore.toggleDetailSidebar()
 
   watch([folderPopoverOpen, tagPopoverOpen], ([folderOpen, tagOpen]) => {
     const libId = libraryStore.currentLibrary?.id || 'default'
@@ -112,7 +116,8 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
       label: '查看信息',
       shortcut: 'Ctrl+I',
       command: () => runWithCurrentItem(async (item) => {
-        emit('media-info', item)
+        mediaStore.setDetailSidebarFiles([item])
+        if (!showDetailSidebar.value) toggleDetailSidebar()
       })
     },
     {
