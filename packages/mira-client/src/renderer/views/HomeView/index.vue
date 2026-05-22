@@ -82,7 +82,8 @@ const {
   switchToTabWithCallback,
   closeTabWithCallback,
   handleActivateLastTab,
-  handleReopenClosedTab
+  handleReopenClosedTab,
+  handleCloseCurrentTab
 } = tabManagement
 
 // ============================================
@@ -121,7 +122,6 @@ const eventHandlers = useHomeEventHandlers(
   createTabFromFolder,
   createTabFromTag,
   switchToTabWithCallback,
-  closeTabWithCallback,
   tabsComposable.setAllTabsNeedUpdate,
   getCurrentTab
 )
@@ -131,7 +131,6 @@ const {
   handleRefreshFolders,
   handleRefreshTags,
   handleEmptyTrash,
-  handleCloseCurrentTab,
   registerGlobalEvents,
   cleanupGlobalEvents
 } = eventHandlers
