@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue'
+﻿import { computed, ref } from 'vue'
 import type { FolderItem } from '@renderer/types/components'
 import type { MenuItem } from '@/components/ui/volt/types'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
@@ -7,22 +7,22 @@ import { useLibraryStore } from '@renderer/stores/library'
 export type ContextType = 'folder' | 'tag'
 type OperationType = 'add' | 'addSub' | 'edit' | 'move' | 'clone' | 'delete'
 
-export function useFolderOperations(
-  emit: {
-    (e: 'folder-add', parentFolder?: FolderItem): void
-    (e: 'folder-edit', folder: FolderItem): void
-    (e: 'folder-move', folder: FolderItem): void
-    (e: 'folder-clone', folder: FolderItem): void
-    (e: 'folder-delete', folder: FolderItem): void
-    (e: 'refresh-folders'): void
-    (e: 'tag-add', parentTag?: any): void
-    (e: 'tag-edit', tag: any): void
-    (e: 'tag-move', tag: any): void
-    (e: 'tag-clone', tag: any): void
-    (e: 'tag-delete', tag: any): void
-    (e: 'refresh-tags'): void
-  },
-) {
+export interface FolderOperationsEmits {
+  'folder-add': (parentFolder?: FolderItem) => void
+  'folder-edit': (folder: FolderItem) => void
+  'folder-move': (folder: FolderItem) => void
+  'folder-clone': (folder: FolderItem) => void
+  'folder-delete': (folder: FolderItem) => void
+  'refresh-folders': () => void
+  'tag-add': (parentTag?: any) => void
+  'tag-edit': (tag: any) => void
+  'tag-move': (tag: any) => void
+  'tag-clone': (tag: any) => void
+  'tag-delete': (tag: any) => void
+  'refresh-tags': () => void
+}
+
+export function useFolderOperations(emit: FolderOperationsEmits) {
   const libraryStore = useLibraryStore()
 
   const currentContextFolder = ref<FolderItem | null>(null)
@@ -169,9 +169,9 @@ export function useFolderOperations(
           libraryId, parseInt(folder.id), `${folder.label} (副本)`, folderData.parent_id,
         )
         if (result) {
-          emit('folder-clone', folder)
+          emit['folder-clone'](folder)
           await new Promise(resolve => setTimeout(resolve, 100))
-          emit('refresh-folders')
+          emit['refresh-folders']()
         }
       } else {
         const tag = currentItem
@@ -179,14 +179,14 @@ export function useFolderOperations(
           libraryId, `${tag.name || tag.title || tag.label} (副本)`, tag.color, tag.description,
         )
         if (result) {
-          emit('tag-clone', tag)
+          emit['tag-clone'](tag)
           await new Promise(resolve => setTimeout(resolve, 100))
-          emit('refresh-tags')
+          emit['refresh-tags']()
         }
       }
     } catch (error) {
       console.error(`Failed to clone ${type}:`, error)
-      type === 'folder' ? emit('refresh-folders') : emit('refresh-tags')
+      type === 'folder' ? emit['refresh-folders']() : emit['refresh-tags']()
     }
   }
 
@@ -208,18 +208,18 @@ export function useFolderOperations(
       const libraryId = libraryStore.currentLibrary.id
       if (type === 'folder') {
         await miraSDKService.deleteFolder(libraryId, parseInt((currentItem as FolderItem).id), deleteWithFiles.value)
-        emit('folder-delete', currentItem)
+        emit['folder-delete'](currentItem)
         await new Promise(resolve => setTimeout(resolve, 100))
-        emit('refresh-folders')
+        emit['refresh-folders']()
       } else {
         await miraSDKService.deleteTag(libraryId, currentItem.id)
-        emit('tag-delete', currentItem)
+        emit['tag-delete'](currentItem)
         await new Promise(resolve => setTimeout(resolve, 100))
-        emit('refresh-tags')
+        emit['refresh-tags']()
       }
     } catch (error) {
       console.error(`Failed to delete ${type}:`, error)
-      type === 'folder' ? emit('refresh-folders') : emit('refresh-tags')
+      type === 'folder' ? emit['refresh-folders']() : emit['refresh-tags']()
     }
   }
 
@@ -243,18 +243,18 @@ export function useFolderOperations(
       const itemType = movingItemType.value
       if (itemType === 'folder') {
         await miraSDKService.moveFolder(libraryId, parseInt(data.folderId), data.newParentId || null)
-        emit('folder-move', movingItem.value)
+        emit['folder-move'](movingItem.value)
         await new Promise(resolve => setTimeout(resolve, 100))
-        emit('refresh-folders')
+        emit['refresh-folders']()
       } else {
-        emit('tag-move', movingItem.value)
+        emit['tag-move'](movingItem.value)
         await new Promise(resolve => setTimeout(resolve, 100))
-        emit('refresh-tags')
+        emit['refresh-tags']()
       }
       handleMoveDialogClose()
     } catch (error) {
       console.error(`Failed to move ${movingItemType.value}:`, error)
-      movingItemType.value === 'folder' ? emit('refresh-folders') : emit('refresh-tags')
+      movingItemType.value === 'folder' ? emit['refresh-folders']() : emit['refresh-tags']()
     }
   }
 
@@ -274,40 +274,40 @@ export function useFolderOperations(
           await miraSDKService.updateFolder(libraryId, parseInt(editingItem.value.id), {
             title: data.title, parent_id: data.parentId, color: data.color, description: data.description,
           })
-          emit('folder-edit', editingItem.value)
+          emit['folder-edit'](editingItem.value)
           await new Promise(resolve => setTimeout(resolve, 100))
-          emit('refresh-folders')
+          emit['refresh-folders']()
         } else {
           await miraSDKService.updateTag(libraryId, editingItem.value.id, {
             name: data.title, color: data.color, description: data.description,
           })
-          emit('tag-edit', editingItem.value)
+          emit['tag-edit'](editingItem.value)
           await new Promise(resolve => setTimeout(resolve, 100))
-          emit('refresh-tags')
+          emit['refresh-tags']()
         }
       } else {
         if (itemType === 'folder') {
           await miraSDKService.createFolder(
             libraryId, data.title, data.parentId, data.color, data.description,
           )
-          if (editingParentItem.value) emit('folder-add', editingParentItem.value)
-          else emit('folder-add')
+          if (editingParentItem.value) emit['folder-add'](editingParentItem.value)
+          else emit['folder-add']()
           await new Promise(resolve => setTimeout(resolve, 100))
-          emit('refresh-folders')
+          emit['refresh-folders']()
         } else {
           await miraSDKService.createTag(
             libraryId, data.title, data.color, data.description,
           )
-          if (editingParentItem.value) emit('tag-add', editingParentItem.value)
-          else emit('tag-add')
+          if (editingParentItem.value) emit['tag-add'](editingParentItem.value)
+          else emit['tag-add']()
           await new Promise(resolve => setTimeout(resolve, 100))
-          emit('refresh-tags')
+          emit['refresh-tags']()
         }
       }
       handleEditDialogClose()
     } catch (error) {
       console.error(`Failed to save ${itemType}:`, error)
-      itemType === 'folder' ? emit('refresh-folders') : emit('refresh-tags')
+      itemType === 'folder' ? emit['refresh-folders']() : emit['refresh-tags']()
     }
   }
 
