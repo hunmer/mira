@@ -1,0 +1,1 @@
+npm --filter mira-app-server deploy --prod D:\deploy\test_mira --config.node-linker=hoisted --legacy
