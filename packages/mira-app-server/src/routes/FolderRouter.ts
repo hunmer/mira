@@ -25,7 +25,10 @@ export class FolderRouter extends BaseRouter {
         // 创建文件夹
         this.router.post('/create', async (req: Request, res: Response) => {
             await this.handleCrudOperation(req, res, 'create', 'createFolder', {
-                successMessage: 'Folder created successfully'
+                successMessage: 'Folder created successfully',
+                onSuccess: (result, libraryId) => {
+                    this.broadcastFolderEvent('folder::created', libraryId, { result, libraryId });
+                }
             });
         });
 
@@ -33,7 +36,10 @@ export class FolderRouter extends BaseRouter {
         this.router.put('/update', async (req: Request, res: Response) => {
             await this.handleCrudOperation(req, res, 'update', 'updateFolder', {
                 requiresId: true,
-                successMessage: 'Folder updated successfully'
+                successMessage: 'Folder updated successfully',
+                onSuccess: (result, libraryId) => {
+                    this.broadcastFolderEvent('folder::updated', libraryId, { result, libraryId });
+                }
             });
         });
 
@@ -43,13 +49,11 @@ export class FolderRouter extends BaseRouter {
             const folderId = req.body.id;
             await this.handleCrudOperation(req, res, 'delete', 'deleteFolder', {
                 requiresId: true,
-                successMessage: 'Folder deleted successfully'
+                successMessage: 'Folder deleted successfully',
+                onSuccess: (_, libId) => {
+                    this.broadcastFolderEvent('folder::deleted', libId, { id: folderId, libraryId: libId });
+                }
             });
-            // 广播 WebSocket 事件通知客户端
-            if (res.statusCode === 200 && folderId && libraryId && this.backend.webSocketServer) {
-                this.backend.webSocketServer.broadcastPluginEvent('folder::deleted', { id: folderId, libraryId });
-                this.backend.webSocketServer.broadcastLibraryEvent(libraryId, 'folder::deleted', { id: folderId, libraryId });
-            }
         });
 
         // 为文件设置文件夹
@@ -63,6 +67,12 @@ export class FolderRouter extends BaseRouter {
         this.router.get('/file/:fileId', async (req: Request, res: Response) => {
             await this.handleFileAssociation(req, res, 'get', 'getFileFolder', 'folder');
         });
+    }
+
+    private broadcastFolderEvent(eventName: string, libraryId: string, data: any) {
+        if (!this.backend.webSocketServer) return;
+        this.backend.webSocketServer.broadcastPluginEvent(eventName, data);
+        this.backend.webSocketServer.broadcastLibraryEvent(libraryId, eventName, data);
     }
 
     public getRouter(): Router {

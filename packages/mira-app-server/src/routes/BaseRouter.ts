@@ -79,6 +79,7 @@ export class BaseRouter {
             successMessage?: string;
             dataTransform?: (data: any) => any;
             responseTransform?: (data: any) => any;
+            onSuccess?: (result: any, libraryId: string) => void;
         } = {}
     ): Promise<void> {
         try {
@@ -140,8 +141,13 @@ export class BaseRouter {
 
             // 应用响应转换（如果提供）
             const transformedResult = options.responseTransform ? options.responseTransform(result) : result;
+
+            if (options.onSuccess) {
+                options.onSuccess(result, libraryId);
+            }
+
             this.sendSuccess(res, transformedResult, options.successMessage);
-            
+
         } catch (error) {
             console.error(`${operation} operation error:`, error);
             this.sendError(res, 500, 'Internal server error');

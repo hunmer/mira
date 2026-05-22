@@ -25,7 +25,10 @@ export class TagRouter extends BaseRouter {
         // 创建标签
         this.router.post('/create', async (req: Request, res: Response) => {
             await this.handleCrudOperation(req, res, 'create', 'createTag', {
-                successMessage: 'Tag created successfully'
+                successMessage: 'Tag created successfully',
+                onSuccess: (result, libraryId) => {
+                    this.broadcastTagEvent('tag::created', libraryId, { result, libraryId });
+                }
             });
         });
 
@@ -33,7 +36,10 @@ export class TagRouter extends BaseRouter {
         this.router.put('/update', async (req: Request, res: Response) => {
             await this.handleCrudOperation(req, res, 'update', 'updateTag', {
                 requiresId: true,
-                successMessage: 'Tag updated successfully'
+                successMessage: 'Tag updated successfully',
+                onSuccess: (result, libraryId) => {
+                    this.broadcastTagEvent('tag::updated', libraryId, { result, libraryId });
+                }
             });
         });
 
@@ -41,7 +47,11 @@ export class TagRouter extends BaseRouter {
         this.router.delete('/delete', async (req: Request, res: Response) => {
             await this.handleCrudOperation(req, res, 'delete', 'deleteTag', {
                 requiresId: true,
-                successMessage: 'Tag deleted successfully'
+                successMessage: 'Tag deleted successfully',
+                onSuccess: (_, libraryId) => {
+                    const id = req.body.id;
+                    this.broadcastTagEvent('tag::deleted', libraryId, { id, libraryId });
+                }
             });
         });
 
@@ -95,6 +105,12 @@ export class TagRouter extends BaseRouter {
         this.router.get('/file/:fileId', async (req: Request, res: Response) => {
             await this.handleFileAssociation(req, res, 'get', 'getFileTags', 'tags');
         });
+    }
+
+    private broadcastTagEvent(eventName: string, libraryId: string, data: any) {
+        if (!this.backend.webSocketServer) return;
+        this.backend.webSocketServer.broadcastPluginEvent(eventName, data);
+        this.backend.webSocketServer.broadcastLibraryEvent(libraryId, eventName, data);
     }
 
     public getRouter(): Router {
