@@ -14,7 +14,7 @@ export class UncategorizedTabType extends MediaViewTabType {
 
   protected getTabFilters(_context: TabContext): Record<string, any> {
     // 未分类：folder 为 null 的文件
-    return { folder: '= null', type: 'files' }
+    return { folder: '=null', type: 'files' }
   }
 
   protected getViewType(): string {
