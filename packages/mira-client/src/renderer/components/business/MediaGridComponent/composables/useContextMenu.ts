@@ -1,4 +1,4 @@
-import { ref, computed, watch, nextTick } from 'vue'
+import { ref, computed, watch } from 'vue'
 import type { FileInfo } from '../../../../../shared/types'
 import type { MenuItem } from '@/components/ui/volt/types'
 import { appService } from '@renderer/services'
@@ -6,6 +6,11 @@ import { useLibraryStore } from '@renderer/stores/library'
 import { useTagStore } from '@renderer/stores/tag'
 import { useFolderStore } from '@renderer/stores/folder'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
+
+interface UseContextMenuProps {
+  selectedItems: string[]
+  items: FileInfo[]
+}
 
 interface UseContextMenuEmits {
   (e: 'media-context-menu', item: FileInfo, event: MouseEvent): void
@@ -15,7 +20,7 @@ interface UseContextMenuEmits {
   (e: 'media-delete', item: FileInfo): void
 }
 
-export function useContextMenu(emit: UseContextMenuEmits) {
+export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuEmits) {
   const currentContextItem = ref<FileInfo | null>(null)
   const folderPopoverOpen = ref(false)
   const tagPopoverOpen = ref(false)
@@ -46,15 +51,26 @@ export function useContextMenu(emit: UseContextMenuEmits) {
     }))
   )
 
+  const getTargetFiles = (): FileInfo[] => {
+    if (props.selectedItems.length <= 1 || !currentContextItem.value) {
+      return currentContextItem.value ? [currentContextItem.value] : []
+    }
+    const idSet = new Set(props.selectedItems)
+    return props.items.filter(f => idSet.has(f.id))
+  }
+
   const handleFolderSelect = async (folderItem: any) => {
     try {
       const client = (miraSDKService as any).client
-      if (!client || !currentContextItem.value) return
-      const file = currentContextItem.value
-      const libId = file.libraryId || 'default'
-      await client.folders().setFileFolder({ libraryId: libId, fileId: parseInt(file.id), folder: parseInt(folderItem.id) })
-      file.folderId = String(folderItem.id)
-      emit('media-set-folder', file)
+      if (!client) return
+      const files = getTargetFiles()
+      if (files.length === 0) return
+      for (const file of files) {
+        const libId = file.libraryId || 'default'
+        await client.folders().setFileFolder({ libraryId: libId, fileId: parseInt(file.id), folder: parseInt(folderItem.id) })
+        file.folderId = String(folderItem.id)
+        emit('media-set-folder', file)
+      }
       folderPopoverOpen.value = false
     } catch (error) {
       console.error('Failed to set folder:', error)
@@ -64,14 +80,17 @@ export function useContextMenu(emit: UseContextMenuEmits) {
   const handleTagSelect = async (tagData: any) => {
     try {
       const client = (miraSDKService as any).client
-      if (!client || !currentContextItem.value) return
+      if (!client) return
       const tagName = tagData.title || tagData.name
-      const file = currentContextItem.value
-      const libId = file.libraryId || 'default'
-      await client.tags().addTagsToFile(libId, parseInt(file.id), [tagName])
-      if (!file.tags) file.tags = []
-      if (!file.tags.includes(tagName)) file.tags.push(tagName)
-      emit('media-set-tags', file)
+      const files = getTargetFiles()
+      if (files.length === 0) return
+      for (const file of files) {
+        const libId = file.libraryId || 'default'
+        await client.tags().addTagsToFile(libId, parseInt(file.id), [tagName])
+        if (!file.tags) file.tags = []
+        if (!file.tags.includes(tagName)) file.tags.push(tagName)
+        emit('media-set-tags', file)
+      }
       tagPopoverOpen.value = false
     } catch (error) {
       console.error('Failed to add tag:', error)
@@ -100,14 +119,14 @@ export function useContextMenu(emit: UseContextMenuEmits) {
       separator: true
     },
     {
-      label: '设置文件夹',
+      label: props.selectedItems.length > 1 ? `设置文件夹 (${props.selectedItems.length})` : '设置文件夹',
       shortcut: 'Ctrl+M',
       command: () => runWithCurrentItem((item) => {
         setTimeout(() => { folderPopoverOpen.value = true }, 100)
       })
     },
     {
-      label: '设置标签',
+      label: props.selectedItems.length > 1 ? `设置标签 (${props.selectedItems.length})` : '设置标签',
       shortcut: 'Ctrl+T',
       command: () => runWithCurrentItem((item) => {
         setTimeout(() => { tagPopoverOpen.value = true }, 100)

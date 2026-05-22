@@ -205,7 +205,7 @@ const {
   handleFolderSelect,
   handleTagSelect,
   tagStore,
-} = useContextMenu(emit)
+} = useContextMenu(props, emit)
 
 const { handlePointerDown } = useDragDrop(props)
 
