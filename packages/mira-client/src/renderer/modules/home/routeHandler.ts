@@ -3,58 +3,36 @@ import { useRoute, useRouter } from 'vue-router'
 
 /**
  * 首页路由参数处理模块
- * 
- * 🎯 **功能说明**：
- * - 解析URL查询参数（?tag=xxx | ?folder=xxx）
- * - 自动执行对应的打开操作
- * - 管理路由状态和跳转
- * 
- * 📡 **支持的URL格式**：
- * - `/?tag=tagId&libraryId=libId&title=tagName` - 打开标签
- * - `/?folder=folderId&libraryId=libId&title=folderName` - 打开文件夹
- * - `/` - 默认首页状态
- * 
- * 🔄 **使用方式**：
- * ```typescript
- * const routeHandler = useHomeRouteHandler()
- * await routeHandler.initialize()
- * 
- * // 监听路由变化
- * routeHandler.watchRouteChanges()
- * 
- * // 手动处理路由
- * await routeHandler.handleCurrentRoute()
- * ```
+ *
+ * 状态提升为模块级单例，确保所有调用方共享同一份去重状态，
+ * 避免多个 composable 实例各自持有独立的 lastProcessedRouteKey
+ * 导致路由去重失效。
  */
+
+// 模块级单例状态
+const currentRouteState = ref<{
+  type: 'tag' | 'folder' | 'default' | null
+  id: string | null
+  libraryId: string | null
+  title: string | null
+  isProcessing: boolean
+}>({
+  type: null,
+  id: null,
+  libraryId: null,
+  title: null,
+  isProcessing: false
+})
+
+const routeError = ref('')
+const lastProcessedRouteKey = ref<string>('')
+const isProcessingRoute = ref(false)
+let routeWatcher: (() => void) | null = null
+const isWatchingRoute = ref(false)
+
 export function useHomeRouteHandler() {
   const route = useRoute()
   const router = useRouter()
-  
-  // 当前处理的路由状态
-  const currentRouteState = ref<{
-    type: 'tag' | 'folder' | 'default' | null
-    id: string | null
-    libraryId: string | null
-    title: string | null
-    isProcessing: boolean
-  }>({
-    type: null,
-    id: null,
-    libraryId: null,
-    title: null,
-    isProcessing: false
-  })
-
-  // 路由错误状态
-  const routeError = ref('')
-
-  // 防重复处理状态
-  const lastProcessedRouteKey = ref<string>('')
-  const isProcessingRoute = ref(false)
-  
-  // 路由监听器状态
-  let routeWatcher: (() => void) | null = null
-  const isWatchingRoute = ref(false)
 
   /**
    * 解析当前路由查询参数

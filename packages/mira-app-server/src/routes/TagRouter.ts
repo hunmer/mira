@@ -47,9 +47,48 @@ export class TagRouter extends BaseRouter {
 
         // 为文件设置标签
         this.router.post('/file/set', async (req: Request, res: Response) => {
-            await this.handleFileAssociation(req, res, 'set', 'setFileTags', 'tags', {
-                successMessage: 'File tags set successfully'
-            });
+            try {
+                const libraryId = req.body.libraryId || req.query.libraryId as string;
+                const fileId = req.body.fileId;
+                const tags: string[] = req.body.tags;
+
+                if (!fileId) {
+                    res.status(400).json({ code: 400, message: 'File ID is required', data: null });
+                    return;
+                }
+
+                const validation = await this.validateLibrary(libraryId);
+                if (!validation.success) {
+                    res.status(validation.error!.code).json(validation.error);
+                    return;
+                }
+
+                const { library } = validation;
+                const db = library.libraryService;
+                const tagIds: string[] = [];
+
+                for (const tag of tags) {
+                    // 已经是纯数字（标签ID），直接用
+                    if (/^\d+$/.test(tag)) {
+                        tagIds.push(tag);
+                        continue;
+                    }
+                    // 按名称查找
+                    const found = await db.queryTag({ title: tag });
+                    if (found.length > 0) {
+                        tagIds.push(String(found[0].id));
+                    } else {
+                        const newId = await db.createTag({ title: tag });
+                        tagIds.push(String(newId));
+                    }
+                }
+
+                const result = await db.setFileTags(fileId, tagIds);
+                this.sendSuccess(res, { fileId, tags: tagIds, result }, 'File tags set successfully');
+            } catch (error) {
+                console.error('Set file tags error:', error);
+                this.sendError(res, 500, 'Internal server error');
+            }
         });
 
         // 获取文件的标签

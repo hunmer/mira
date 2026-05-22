@@ -488,7 +488,7 @@ export function useTabs() {
       type: typeName,
       data: { ...data, libraryId },
       active: true,
-      needUpdate: false // 让具体的组件负责数据加载，避免重复请求
+      needUpdate: true // 新创建的tab需要加载数据
     }
 
     // 创建Tab上下文

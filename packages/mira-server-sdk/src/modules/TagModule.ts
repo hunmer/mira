@@ -224,9 +224,10 @@ export class TagModule {
 
     /**
      * 便捷方法：为文件添加标签
+     * 支持传标签名或标签ID，服务端会自动将名称解析为ID
      * @param libraryId 素材库ID
      * @param fileId 文件ID
-     * @param tags 标签数组
+     * @param tags 标签数组（名称或ID）
      * @returns Promise<SetFileTagsResponse>
      */
     async addTagsToFile(
