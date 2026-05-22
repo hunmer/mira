@@ -172,13 +172,11 @@ export function useHomeEventHandlers(
     handleReopenClosedTab: () => void,
     handleCloseCurrentTab: () => void
   ) => {
-    console.warn('[HomeView] registerGlobalEvents called')
     window.addEventListener('home-tag-selected', handleTagSelected)
     window.addEventListener('home-folder-selected', handleFolderSelected)
     document.addEventListener('shortcut:activate-last-tab', handleActivateLastTab)
     document.addEventListener('shortcut:reopen-closed-tab', handleReopenClosedTab)
     document.addEventListener('shortcut:close-current-tab', handleCloseCurrentTab)
-    console.warn('[HomeView] shortcut:close-current-tab listener registered')
   }
 
   // 清理全局事件监听

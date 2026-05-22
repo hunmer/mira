@@ -215,7 +215,6 @@ export class ShortcutService {
    * 执行动作
    */
   async executeAction(actionId: string, ...args: any[]): Promise<boolean> {
-    console.warn('[ShortcutService] executeAction:', actionId)
     const action = this.actions.get(actionId)
     if (!action) {
       console.warn(`动作 ${actionId} 不存在`)
@@ -224,7 +223,6 @@ export class ShortcutService {
 
     try {
       await action.callback(...args)
-      console.warn('[ShortcutService] executeAction done:', actionId)
       return true
     } catch (error) {
       console.error(`执行动作 ${actionId} 失败:`, error)
@@ -317,9 +315,6 @@ export class ShortcutService {
     }
 
     const shortcut = this.formatKeyboardEvent(event)
-    if (shortcut === 'Ctrl+W') {
-      console.warn('[ShortcutService] Ctrl+W detected, binding exists:', this.bindings.has(shortcut))
-    }
     const binding = this.bindings.get(shortcut)
 
     // 只处理非全局快捷键，全局快捷键由主进程处理
