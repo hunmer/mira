@@ -1,14 +1,14 @@
 <template>
   <div
     class="media-list-view flex-1 flex flex-col w-full bg-gray-100 overflow-hidden relative"
-    @dragover.prevent="handleDragOver"
-    @dragleave.prevent="handleDragLeave"
-    @drop.prevent="handleDrop"
+    @dragover.prevent="canUpload && handleDragOver($event)"
+    @dragleave.prevent="canUpload && handleDragLeave($event)"
+    @drop.prevent="canUpload && handleDrop($event)"
   >
     <!-- 拖拽上传覆盖层 -->
     <Transition name="fade">
       <div
-        v-if="isDragOver"
+        v-if="isDragOver && canUpload"
         class="absolute inset-0 z-50 bg-blue-500/10 border-2 border-dashed border-blue-400 rounded-lg flex items-center justify-center pointer-events-none"
       >
         <div class="text-center">
@@ -448,6 +448,11 @@ const sortField = ref<string>('imported_at')
 const sortOrder = ref<'asc' | 'desc'>('desc')
 
 // 拖拽上传
+const canUpload = computed(() =>
+  props.viewType !== 'trash'
+  && props.tabId !== 'folder-uncategorized'
+  && props.tabId !== 'folder-untagged'
+)
 const isDragOver = ref(false)
 const showUploadDialog = ref(false)
 const droppedFiles = ref<File[]>([])

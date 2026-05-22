@@ -3,11 +3,11 @@
     :open="isVisible"
     @update:open="handleOpenChange"
   >
-    <DialogContent class="file-upload-dialog sm:max-w-[90vw] h-[85vh] flex flex-col overflow-hidden">
+    <DialogContent class="file-upload-dialog sm:max-w-[90vw] h-[85vh] grid grid-rows-[auto_1fr_auto] overflow-hidden top-[5vh] translate-y-0">
       <DialogHeader>
         <DialogTitle>文件上传</DialogTitle>
       </DialogHeader>
-      <div class="file-upload-content flex-1 flex flex-col min-h-0 overflow-hidden">
+      <div class="file-upload-content flex flex-col min-h-0 overflow-hidden">
         <!-- 顶部队列状态 -->
         <div v-if="queueStats.pending > 0 || queueStats.running > 0" class="flex items-center justify-end space-x-4 text-sm mb-4 px-1">
           <span class="text-blue-600">等待中: {{ queueStats.pending }}</span>
@@ -81,7 +81,7 @@
                   <div
                     v-if="pendingFiles.length === 0"
                     class="h-full flex flex-col items-center justify-center text-gray-400 cursor-pointer"
-                    @click="triggerFileSelect"
+                    @click="triggerFileSelect(fileInputRef)"
                   >
                     <span class="material-icons text-5xl mb-2">cloud_upload</span>
                     <p>拖拽文件到此处</p>
@@ -204,12 +204,12 @@
                   :folders="folderTreeData"
                   :selected-key="selectedTargetFolderId"
                   :show-base-categories="false"
-                  @select="handleFolderSelect"
+                  @select="handleFolderTreeSelect"
                 />
                 <FolderTreeComponent
                   item-type="tag"
                   :tags="tagTreeData"
-                  @select="handleTagSelect"
+                  @select="handleTagTreeSelect"
                 />
               </div>
             </div>
@@ -244,623 +244,64 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick } from 'vue'
-import { useServerListStore } from '@renderer/stores/serverList'
-import { useMediaStore } from '@renderer/stores/media'
-import { useLibraryStore } from '@renderer/stores/library'
-import { useToast } from '@/renderer/composables/useToast'
-import { miraSDKService } from '@renderer/services/MiraSDKService'
-
-// 文件夹和标签类型定义
-interface Folder {
-  id: number
-  title: string
-  parent_id?: number
-  color?: number
-  fileCount?: number
-  children?: Folder[]
-}
-
-interface Tag {
-  id: number
-  title: string
-  color?: number
-  fileCount?: number
-}
-import Queue from 'queue'
+import { ref } from 'vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import SelectionBox from '@renderer/components/common/SelectionBox.vue'
 import FolderTreeComponent from './FolderTreeComponent/FolderTreeComponent.vue'
-import type { FolderItem } from '@renderer/types/components'
-
-// 组件属性
-interface Props {
-  visible?: boolean
-  initialFiles?: File[]
-  initialFolderId?: string
-  initialTagIds?: string[]
-}
+import { useFileUploadDialog } from './FileUploadDialog/useFileUploadDialog'
+import { isImageFile, isVideoFile, isAudioFile, isDocumentFile, formatFileSize } from './FileUploadDialog/useFileManagement'
+import { FILE_LIMITS } from './FileUploadDialog/types'
+import type { Props, Emits } from './FileUploadDialog/types'
 
 const props = withDefaults(defineProps<Props>(), {
   visible: false
 })
-
-// 组件事件
-interface Emits {
-  (e: 'update:visible', visible: boolean): void
-}
-
 const emit = defineEmits<Emits>()
 
-// 状态管理
-const serverListStore = useServerListStore()
-const mediaStore = useMediaStore()
-const libraryStore = useLibraryStore()
-const toast = useToast()
+const {
+  isVisible,
+  selectedLibraryId,
+  libraryOptions,
+  fileManagement,
+  uploadQueue,
+  folderTagPanel,
+  handleOpenChange,
+  handleLibrarySelectChange,
+  triggerFileSelect,
+  handleFileSelect,
+  handleDrop,
+  clearSelection,
+  startUpload
+} = useFileUploadDialog(props, emit)
 
-// 响应式数据
-const isVisible = computed({
-  get: () => props.visible,
-  set: (value) => emit('update:visible', value)
-})
+// 解构给模板直接使用
+const { pendingFiles, selectedPendingIds, isDragOver, columnsPerRow, removePendingFile, clearAllPendingFiles } = fileManagement
+const { uploadingFileIds, queueStats, getUploadProgress } = uploadQueue
+const { selectedTargetFolderId, folderTreeData, tagTreeData, getFolderName, getTagName, handleFolderSelect, handleTagSelect, applyMetadataToFiles } = folderTagPanel
 
-// 待上传文件接口
-interface PendingFile {
-  id: string
-  file: File
-  folderId?: string
-  tags?: string[]
-  preview?: string
-}
-
-// 文件引用
+// 模板引用
 const fileInputRef = ref<HTMLInputElement>()
 const fileGridContainerRef = ref<HTMLElement>()
 const selectionBoxRef = ref()
 
-// 待上传文件列表
-const pendingFiles = ref<PendingFile[]>([])
-const selectedPendingIds = ref<string[]>([])
-
-// 文件夹和标签数据
-const folders = ref<Folder[]>([])
-const tags = ref<Tag[]>([])
-
-// 选中的目标文件夹和标签
-const selectedTargetFolderId = ref<string>()
-const selectedTargetTagIds = ref<string[]>([])
-
-// 上传中的文件ID集合
-const uploadingFileIds = ref<Set<string>>(new Set())
-const uploadProgressMap = ref<Map<string, number>>(new Map())
-
-// 拖拽状态
-const isDragOver = ref(false)
-
-// 素材库选择
-const selectedLibraryId = ref<string>('')
-
-// 网格列数
-const columnsPerRow = ref(5)
-
-// 文件数量和大小限制配置
-const FILE_LIMITS = {
-  MAX_FILES_PER_BATCH: 500,
-  MAX_CONCURRENT_UPLOADS: 3,
-  MAX_TOTAL_SIZE: 1024 * 1024 * 1024,
+function handleFileClick(file: any, event: MouseEvent) {
+  selectionBoxRef.value?.handleItemClick(file.id, event)
 }
 
-// 上传队列配置
-const uploadQueue = new Queue({
-  concurrency: FILE_LIMITS.MAX_CONCURRENT_UPLOADS,
-  timeout: 60000,
-  autostart: true
-})
-
-// 队列状态
-const queueStats = ref({
-  pending: 0,
-  running: 0,
-  completed: 0,
-  failed: 0
-})
-
-// 队列事件监听
-uploadQueue.addEventListener('start', () => {
-  updateQueueStats()
-})
-
-uploadQueue.addEventListener('success', () => {
-  queueStats.value.completed++
-  updateQueueStats()
-})
-
-uploadQueue.addEventListener('error', () => {
-  queueStats.value.failed++
-  updateQueueStats()
-})
-
-uploadQueue.addEventListener('end', () => {
-  updateQueueStats()
-})
-
-const updateQueueStats = () => {
-  queueStats.value.pending = uploadQueue.length
-  queueStats.value.running = uploadingFileIds.value.size
+function handleSelectionUpdate(_ids: string[]) {
+  // v-model 自动更新 selectedPendingIds
 }
 
-// 计算属性
-const libraryOptions = computed(() => {
-  return libraryStore.libraries.map(lib => ({
-    id: lib.id,
-    name: lib.name,
-    path: lib.path
-  }))
-})
-
-const currentLibrary = computed(() => {
-  return libraryStore.libraries.find(lib => lib.id === selectedLibraryId.value)
-})
-
-// 文件夹树数据（转换为 FolderItem 格式）
-const folderTreeData = computed<FolderItem[]>(() => {
-  const buildTree = (parentId: number | null | undefined): FolderItem[] => {
-    return folders.value
-      .filter(folder => {
-        // 根节点: parent_id 为 null, undefined, 或 0
-        if (parentId === null || parentId === undefined) {
-          return !folder.parent_id || folder.parent_id === 0
-        }
-        return folder.parent_id === parentId
-      })
-      .map(folder => ({
-        id: String(folder.id),
-        label: folder.title,
-        icon: 'folder',
-        iconColor: folder.color ? '#' + folder.color.toString(16).padStart(6, '0') : undefined,
-        count: folder.fileCount,
-        children: buildTree(folder.id),
-        originalData: folder
-      }))
-  }
-  return buildTree(null)
-})
-
-// 标签树数据（转换为 FolderTreeComponent 需要的格式）
-const tagTreeData = computed(() => {
-  return tags.value.map(tag => ({
-    id: String(tag.id),
-    label: tag.title,
-    icon: 'label',
-    color: tag.color,
-    count: tag.fileCount
-  }))
-})
-
-// 方法
-const handleDialogHide = (): void => {
-  isVisible.value = false
+function handleFolderTreeSelect(folder: any) {
+  handleFolderSelect(folder)
+  applyMetadataToFiles(pendingFiles, selectedPendingIds.value)
 }
 
-const handleOpenChange = (open: boolean): void => {
-  if (!open) {
-    handleDialogHide()
-  }
+function handleTagTreeSelect(tag: any) {
+  handleTagSelect(tag)
+  applyMetadataToFiles(pendingFiles, selectedPendingIds.value)
 }
-
-const handleLibraryChange = async (event: any) => {
-  selectedLibraryId.value = event.value
-  // 加载文件夹和标签数据
-  await loadFoldersAndTags()
-}
-
-const handleLibrarySelectChange = async (value: string) => {
-  selectedLibraryId.value = value
-  // 加载文件夹和标签数据
-  await loadFoldersAndTags()
-}
-
-const loadFoldersAndTags = async () => {
-  if (!selectedLibraryId.value) return
-
-  try {
-    // 使用 MiraSDKService 获取文件夹
-    const foldersData = await miraSDKService.getAllFolders(selectedLibraryId.value)
-    folders.value = foldersData || []
-    console.log(`✅ 加载了 ${folders.value.length} 个文件夹`)
-
-    // 使用 SDK client 获取标签
-    const client = (miraSDKService as any).client
-    if (client) {
-      const tagsData = await client.tags().getAll(selectedLibraryId.value)
-      tags.value = (tagsData || []).map((tag: any) => ({
-        id: tag.id,
-        title: tag.title || tag.name,
-        color: tag.color,
-        fileCount: tag.fileCount || tag.file_count || 0
-      }))
-      console.log(`✅ 加载了 ${tags.value.length} 个标签`)
-    }
-  } catch (error) {
-    console.error('加载文件夹和标签失败:', error)
-    toast.add({
-      severity: 'error',
-      summary: '加载失败',
-      detail: '无法加载文件夹和标签数据',
-      life: 3000
-    })
-  }
-}
-
-const triggerFileSelect = () => {
-  fileInputRef.value?.click()
-}
-
-const handleFileSelect = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  if (target.files) {
-    addFiles(Array.from(target.files))
-  }
-  target.value = ''
-}
-
-const handleDrop = (event: DragEvent) => {
-  isDragOver.value = false
-  if (event.dataTransfer?.files) {
-    addFiles(Array.from(event.dataTransfer.files))
-  }
-}
-
-const addFiles = async (files: File[]) => {
-  if (files.length + pendingFiles.value.length > FILE_LIMITS.MAX_FILES_PER_BATCH) {
-    toast.add({
-      severity: 'warn',
-      summary: '文件数量过多',
-      detail: `单次最多只能上传 ${FILE_LIMITS.MAX_FILES_PER_BATCH} 个文件`,
-      life: 5000
-    })
-    return
-  }
-
-  const totalSize = files.reduce((sum, file) => sum + file.size, 0) +
-                   pendingFiles.value.reduce((sum, pf) => sum + pf.file.size, 0)
-  if (totalSize > FILE_LIMITS.MAX_TOTAL_SIZE) {
-    toast.add({
-      severity: 'warn',
-      summary: '文件总大小过大',
-      detail: `文件总大小不能超过 ${formatFileSize(FILE_LIMITS.MAX_TOTAL_SIZE)}`,
-      life: 5000
-    })
-    return
-  }
-
-  // 异步生成预览
-  const newFiles: PendingFile[] = []
-  for (const file of files) {
-    newFiles.push({
-      id: `pending-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      file,
-      folderId: selectedTargetFolderId.value,
-      tags: selectedTargetTagIds.value ? [...selectedTargetTagIds.value] : undefined,
-      preview: undefined // 先占位，稍后异步更新
-    })
-  }
-
-  // 先添加到列表（显示默认图标）
-  pendingFiles.value.push(...newFiles)
-
-  // 异步生成预览
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i]
-    const pendingFile = newFiles[i]
-    try {
-      pendingFile.preview = await createPreviewUrl(file)
-      // 触发 Vue 响应式更新
-      pendingFiles.value = [...pendingFiles.value]
-    } catch (error) {
-      console.warn(`生成文件 ${file.name} 预览失败:`, error)
-    }
-  }
-}
-
-const createPreviewUrl = async (file: File): Promise<string | undefined> => {
-  if (file.type.startsWith('image/')) {
-    return URL.createObjectURL(file)
-  }
-
-  if (file.type.startsWith('video/')) {
-    // 动态导入视频缩略图函数（避免循环依赖）
-    const { createVideoThumbnail } = await import('@renderer/utils/fileUtils')
-    return createVideoThumbnail(file, undefined, 320)
-  }
-
-  return undefined
-}
-
-const removePendingFile = (id: string) => {
-  const index = pendingFiles.value.findIndex(f => f.id === id)
-  if (index !== -1) {
-    const file = pendingFiles.value[index]
-    if (file.preview) {
-      URL.revokeObjectURL(file.preview)
-    }
-    pendingFiles.value.splice(index, 1)
-    selectedPendingIds.value = selectedPendingIds.value.filter(fid => fid !== id)
-  }
-}
-
-const clearAllPendingFiles = () => {
-  pendingFiles.value.forEach(file => {
-    if (file.preview) {
-      URL.revokeObjectURL(file.preview)
-    }
-  })
-  pendingFiles.value = []
-  selectedPendingIds.value = []
-}
-
-const clearSelection = () => {
-  selectedPendingIds.value = []
-  // 清空右侧的选中状态
-  selectedTargetFolderId.value = undefined
-  selectedTargetTagIds.value = []
-}
-
-const handleFileClick = (file: PendingFile, event: MouseEvent) => {
-  if (selectionBoxRef.value) {
-    selectionBoxRef.value.handleItemClick(file.id, event)
-  }
-}
-
-const handleSelectionUpdate = (ids: string[]) => {
-  // v-model 会自动更新 selectedPendingIds，这里只需要处理额外逻辑
-  updateRightPanelFromSelection(ids)
-}
-
-// 根据选中文件更新右侧面板显示
-const updateRightPanelFromSelection = (ids: string[]) => {
-  // 如果没有选中项，清空右侧选中状态
-  if (ids.length === 0) {
-    selectedTargetFolderId.value = undefined
-    selectedTargetTagIds.value = []
-    return
-  }
-
-  // 如果选中了文件，更新右侧显示为选中文件中第一个文件的元数据
-  const firstFile = pendingFiles.value.find(f => f.id === ids[0])
-  if (firstFile) {
-    selectedTargetFolderId.value = firstFile.folderId
-    selectedTargetTagIds.value = firstFile.tags ? [...firstFile.tags] : []
-  }
-}
-
-// 监听选中文件变化，更新右侧面板
-watch(
-  () => [...selectedPendingIds.value],
-  (newIds) => {
-    console.log('选中文件变化:', newIds)
-    updateRightPanelFromSelection(newIds)
-  }
-)
-
-const handleFolderSelect = (folder: FolderItem) => {
-  selectedTargetFolderId.value = folder.id as string
-  applyMetadataToFiles()
-}
-
-const handleTagSelect = (tag: any) => {
-  const tagId = String(tag.id)
-
-  // 切换标签选中状态（创建新数组以确保响应式更新）
-  const index = selectedTargetTagIds.value.indexOf(tagId)
-  if (index === -1) {
-    selectedTargetTagIds.value = [...selectedTargetTagIds.value, tagId]
-  } else {
-    selectedTargetTagIds.value = selectedTargetTagIds.value.filter(id => id !== tagId)
-  }
-
-  applyMetadataToFiles()
-}
-
-const applyMetadataToFiles = () => {
-  // 没有选中文件时，应用到所有文件
-  const targetIds = selectedPendingIds.value.length > 0
-    ? selectedPendingIds.value
-    : pendingFiles.value.map(f => f.id)
-
-  if (targetIds.length === 0) return
-
-  targetIds.forEach(id => {
-    const file = pendingFiles.value.find(f => f.id === id)
-    if (file) {
-      if (selectedTargetFolderId.value) {
-        file.folderId = selectedTargetFolderId.value
-      }
-      if (selectedTargetTagIds.value.length > 0) {
-        const existingTags = file.tags || []
-        file.tags = [...new Set([...existingTags, ...selectedTargetTagIds.value])]
-      }
-    }
-  })
-
-  const scope = selectedPendingIds.value.length > 0 ? `${targetIds.length} 个选中文件` : '全部文件'
-  toast.add({
-    severity: 'success',
-    summary: '已应用',
-    detail: `已为${scope}设置元数据`,
-    life: 2000
-  })
-}
-
-const startUpload = async () => {
-  if (!currentLibrary.value) {
-    toast.add({
-      severity: 'error',
-      summary: '错误',
-      detail: '请先选择一个素材库',
-      life: 3000
-    })
-    return
-  }
-
-  if (pendingFiles.value.length === 0) {
-    toast.add({
-      severity: 'warn',
-      summary: '提示',
-      detail: '没有待上传的文件',
-      life: 3000
-    })
-    return
-  }
-
-  // 将文件添加到上传队列
-  const filesToUpload = [...pendingFiles.value]
-
-  filesToUpload.forEach(pendingFile => {
-    uploadingFileIds.value.add(pendingFile.id)
-    uploadProgressMap.value.set(pendingFile.id, 0)
-
-    const uploadJob = createUploadJob(pendingFile)
-    uploadQueue.push(uploadJob)
-  })
-}
-
-const createUploadJob = (pendingFile: PendingFile) => {
-  return (callback?: (error?: Error, result?: any) => void) => {
-    if (!currentLibrary.value) {
-      const error = new Error('请先选择素材库')
-      callback?.(error)
-      return
-    }
-
-    // 构建 metadata 对象
-    const metadata: Record<string, any> = {}
-
-    if (pendingFile.folderId) {
-      metadata.folderId = pendingFile.folderId
-    }
-
-    if (pendingFile.tags && pendingFile.tags.length > 0) {
-      metadata.tags = pendingFile.tags
-    }
-
-    // 模拟进度更新
-    const progressInterval = setInterval(() => {
-      const currentProgress = uploadProgressMap.value.get(pendingFile.id) || 0
-      const newProgress = Math.min(currentProgress + Math.random() * 20, 90)
-      uploadProgressMap.value.set(pendingFile.id, newProgress)
-    }, 200)
-
-    // 调用上传 API
-    mediaStore.uploadFile(pendingFile.file, currentLibrary.value.id, Object.keys(metadata).length > 0 ? metadata : undefined)
-      .then(result => {
-        clearInterval(progressInterval)
-        uploadProgressMap.value.set(pendingFile.id, 100)
-
-        if (result.success) {
-          // 上传成功，从待上传列表移除
-          removePendingFile(pendingFile.id)
-          uploadingFileIds.value.delete(pendingFile.id)
-          callback?.(undefined, result)
-        } else {
-          throw new Error(result.error || '上传失败')
-        }
-      })
-      .catch(error => {
-        clearInterval(progressInterval)
-        uploadingFileIds.value.delete(pendingFile.id)
-        console.error('Upload error:', error)
-        callback?.(error)
-
-        toast.add({
-          severity: 'error',
-          summary: '上传失败',
-          detail: `文件 ${pendingFile.file.name}: ${error.message}`,
-          life: 5000
-        })
-      })
-  }
-}
-
-const getUploadProgress = (id: string): number => {
-  return Math.round(uploadProgressMap.value.get(id) || 0)
-}
-
-const getFolderName = (id: string): string => {
-  const folder = folders.value.find(f => String(f.id) === id)
-  return folder?.title || '未知文件夹'
-}
-
-const getTagName = (id: string): string => {
-  const tag = tags.value.find(t => String(t.id) === id)
-  return tag?.title || '未知标签'
-}
-
-// 文件类型判断
-const isImageFile = (mimeType: string): boolean => mimeType.startsWith('image/')
-const isVideoFile = (mimeType: string): boolean => mimeType.startsWith('video/')
-const isAudioFile = (mimeType: string): boolean => mimeType.startsWith('audio/')
-const isDocumentFile = (mimeType: string): boolean => {
-  return mimeType.includes('pdf') ||
-         mimeType.includes('document') ||
-         mimeType.includes('text') ||
-         mimeType.includes('spreadsheet') ||
-         mimeType.includes('presentation')
-}
-
-const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return '0 B'
-
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-}
-
-// 按需初始化标志
-const isInitialized = ref(false)
-
-// 监听对话框打开，按需初始化
-watch(isVisible, async (visible) => {
-  if (visible) {
-    if (!isInitialized.value) {
-      await nextTick()
-      try {
-        await serverListStore.initializeServerList()
-        await libraryStore.fetchLibraries()
-
-        if (libraryStore.libraries.length > 0) {
-          selectedLibraryId.value = libraryStore.libraries[0].id
-          await loadFoldersAndTags()
-        }
-
-        isInitialized.value = true
-      } catch (error) {
-        console.error('初始化文件上传对话框失败:', error)
-      }
-    }
-
-    // 处理传入的初始数据：先设文件夹/标签，再添加文件（addFiles 会读取当前选中值）
-    if (props.initialFolderId) {
-      selectedTargetFolderId.value = props.initialFolderId
-    }
-    if (props.initialTagIds && props.initialTagIds.length > 0) {
-      selectedTargetTagIds.value = [...props.initialTagIds]
-    }
-    if (props.initialFiles && props.initialFiles.length > 0) {
-      await addFiles(props.initialFiles)
-    }
-  }
-})
-
-// 监听素材库变化，重新加载文件夹和标签
-watch(selectedLibraryId, async (newId) => {
-  if (newId && isInitialized.value) {
-    await loadFoldersAndTags()
-  }
-})
 </script>
 
 <style scoped>
