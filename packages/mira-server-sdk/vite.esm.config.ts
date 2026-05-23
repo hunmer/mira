@@ -15,10 +15,11 @@ export default defineConfig({
       external: [],
       output: {
         format: 'es',
-        entryFileNames: 'mira-sdk.esm.js',
+        entryFileNames: 'mira-sdk.esm.mjs',
         inlineDynamicImports: true
       }
     },
+    emptyOutDir: false,
     target: 'es2020',
     minify: false, // 开发时不压缩，便于调试
     sourcemap: true
