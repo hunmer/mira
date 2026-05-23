@@ -200,6 +200,136 @@ mira_ws_fields_{websocketUrl}_{libraryId}
 
 因此同一客户端连接不同服务器或不同素材库时，登录字段互不覆盖。
 
+## HTTP 请求鉴权
+
+WebSocket 登录只保护 WS 握手链路。HTTP REST API 如果不额外拦截，会绕过 `client::before_connect`，例如未登录时仍可能调用：
+
+```text
+POST /api/files/getFiles
+POST /api/files/getFile
+```
+
+当前采用库级 HTTP hook 处理这类请求，不把 `mira_user` 写死到全局路由。
+
+### 设计原则
+
+HTTP 请求不携带 `username/password` 等登录字段。客户端只携带当前设备连接的 `clientId`：
+
+```json
+{
+  "libraryId": "1779533990551",
+  "clientId": "client_xxx",
+  "filters": {}
+}
+```
+
+后端根据 `libraryId + clientId` 找到当前 WebSocket 连接，再从该连接读取服务端保存的 `fields`。这样避免把敏感字段散落到每个 HTTP body 中，也避免插件逻辑污染全局路由。
+
+### 服务端字段来源
+
+`MiraWebsocketServer` 为每个已注册的 WS 连接维护运行时字段：
+
+```ts
+setClientFields(libraryId, clientId, fields)
+getClientFields(libraryId, clientId)
+```
+
+字段写入发生在两个位置：
+
+| 场景 | 写入来源 |
+|------|------|
+| `library/connect` | 客户端从本地恢复 fields 后发回，`LibraryHandler` 写入 WS 连接 |
+| 登录页登录成功 | `mira_user.onLogined()` 写入当前 WS 连接 |
+| 退出登录 | `mira_user` 写入 `{ username: null, password: null }`，服务端删除对应字段 |
+
+`setClientFields()` 对 `null` 和 `undefined` 使用删除语义，避免退出后旧字段残留。
+
+### 插件 HTTP Hook
+
+`ServerPluginManager` 提供库级 hook：
+
+```ts
+pluginManager.registerHttpHook({
+  method: 'POST',
+  path: '/api/files/getFiles',
+  handler: this.onHttpBeforeFiles.bind(this),
+})
+```
+
+路由执行前调用：
+
+```ts
+const allowed = await obj.pluginManager.runHttpHooks({
+  libraryId,
+  clientId,
+  method: req.method,
+  path: '/api/files/getFiles',
+  req,
+  res,
+  fields: webSocketServer.getClientFields(libraryId, clientId),
+})
+```
+
+hook 返回约定：
+
+| 返回值 | 含义 |
+|------|------|
+| `true` 或 `undefined` | 允许继续执行原 HTTP 路由 |
+| `false` | 阻断原 HTTP 路由，插件应自行写入响应 |
+
+`mira_user` 当前注册了：
+
+```text
+POST /api/files/getFiles
+POST /api/files/getFile
+```
+
+当 hook 中拿不到 `fields.username/password`，或 SDK 校验失败时，返回：
+
+```json
+{
+  "code": 401,
+  "message": "Unauthorized: login required",
+  "data": null
+}
+```
+
+### HTTP 与 WS 的关系
+
+HTTP 鉴权依赖当前设备的 WS 连接仍存在：
+
+1. 客户端启动 WS，获得并保存 `clientId`。
+2. WS 登录成功后，服务端把 fields 绑定到该 WS 连接。
+3. HTTP 请求只发送 `clientId`。
+4. HTTP 路由用 `clientId` 回查 WS fields。
+5. 插件 hook 根据 fields 决定放行或拒绝。
+
+如果没有 WS 连接，或 `clientId` 不匹配当前连接，`getClientFields()` 返回空，`mira_user` 会拒绝 HTTP 请求。
+
+### 不要在 HTTP Body 中传 Fields
+
+不要让普通 HTTP 请求携带：
+
+```json
+{
+  "fields": {
+    "username": "lyj",
+    "password": "131255"
+  }
+}
+```
+
+原因：
+
+| 问题 | 说明 |
+|------|------|
+| 安全边界弱 | 每个 HTTP 调用都暴露登录字段 |
+| 职责混乱 | HTTP 客户端需要理解插件字段 |
+| 难以撤销 | 退出登录后旧请求仍可能携带旧字段 |
+| 插件耦合 | 非登录插件也会看到不必要的敏感数据 |
+
+正确做法是：HTTP 只表达设备身份，即 `clientId`；登录字段由 WS 登录链路维护在服务端连接状态中。
+
 ## 完整时序
 
 ```text
@@ -214,6 +344,11 @@ mira_ws_fields_{websocketUrl}_{libraryId}
      -> 缺失字段：发送 dialog，返回 false
      -> 校验成功：发送 setFields，返回 true
   -> LibraryHandler 收到 true 后发送 connected
+  -> 后续 HTTP 请求携带 clientId
+  -> FileRoutes 通过 clientId 回查 WS fields
+  -> pluginManager.runHttpHooks 执行 mira_user HTTP hook
+     -> 缺失或无效 fields：返回 401
+     -> 有效 fields：继续执行原 HTTP 路由
 ```
 
 ## 相关文件
@@ -222,8 +357,11 @@ mira_ws_fields_{websocketUrl}_{libraryId}
 |------|------|
 | `packages/mira-app-server/src/WebSocketServer.ts` | WS 连接注册、消息分发、向客户端发送事件 |
 | `packages/mira-app-server/src/handlers/LibraryHandler.ts` | `open/connect` 握手与 `client::before_connect` 广播 |
-| `packages/mira-app-server/src/ServerPluginManager.ts` | 插件加载、字段注册、插件目录解析 |
+| `packages/mira-app-server/src/ServerPluginManager.ts` | 插件加载、字段注册、HTTP hook 注册和执行、插件目录解析 |
+| `packages/mira-app-server/src/routes/FileRoutes.ts` | `getFiles/getFile` 调用插件 HTTP hook 后再读取素材库 |
 | `packages/mira-client/src/renderer/services/WebSocketService.ts` | 客户端 WS 握手、`fields` 保存与发送 |
+| `packages/mira-client/src/renderer/services/MiraSDKService.ts` | HTTP 文件查询请求附带当前 `clientId` |
+| `packages/mira-server-sdk/src/modules/FileModule.ts` | 文件查询 SDK 请求支持 `clientId` |
 | `plugins/plugins/mira_user/index.ts` | 登录字段注册、登录校验、`setFields` 回写 |
 
 ## 调试判断
@@ -252,3 +390,11 @@ WebSocket connection established
 2. `WebSocketService` 是否写入本地存储。
 3. 下一次 `library/connect` 是否包含顶层 `fields.username/password`。
 4. `clientId` 变更是正常行为，不应依赖旧 `clientId` 判断长期登录状态。
+
+如果 HTTP 请求未登录仍能读取素材库，优先检查：
+
+1. HTTP body 是否携带了当前 WS 的 `clientId`。
+2. `WebSocketServer.getClientFields(libraryId, clientId)` 是否能取到 fields。
+3. 目标路由是否调用了 `pluginManager.runHttpHooks()`。
+4. `mira_user` 是否注册了该路由的 HTTP hook。
+5. 直接访问缩略图或原文件接口时，是否也接入了同样的 hook。
