@@ -18,6 +18,7 @@ export class LibraryWatcher {
   private libraryId: string;
   private webSocketServer: MiraWebsocketServer;
   private pendingUnlinks = new Map<string, PendingUnlink>();
+  private usePolling = false;
 
   constructor(libraryService: LibraryServerDataSQLite, webSocketServer: MiraWebsocketServer) {
     this.libraryService = libraryService;
@@ -31,6 +32,17 @@ export class LibraryWatcher {
       console.warn(`[Watcher] Library path does not exist: ${this.libraryPath}`);
       return;
     }
+
+    this.startWatcher(false);
+
+    // 启动时扫描已有文件，同步未入库的
+    this.initialSync();
+
+    console.log(`[Watcher] Started watching: ${this.libraryPath}${this.usePolling ? ' (polling)' : ''}`);
+  }
+
+  private startWatcher(polling: boolean): void {
+    this.usePolling = polling;
 
     this.watcher = chokidar.watch(this.libraryPath, {
       ignoreInitial: true,
@@ -54,11 +66,22 @@ export class LibraryWatcher {
       },
       persistent: false,
       depth: 10,
+      usePolling: polling,
+      interval: polling ? 3000 : undefined,
+      binaryInterval: polling ? 3000 : undefined,
     });
 
     this.watcher.on('add', (filePath: string) => this.handleNewFile(filePath));
     this.watcher.on('unlink', (filePath: string) => this.handleUnlink(filePath));
     this.watcher.on('error', (error: unknown) => {
+      const msg = error instanceof Error ? error.message : String(error);
+      if (msg.includes('ENOSPC') && !this.usePolling) {
+        console.warn(`[Watcher] ENOSPC: inotify limit reached, falling back to polling for library ${this.libraryId}`);
+        this.watcher!.close();
+        this.startWatcher(true);
+        this.initialSync();
+        return;
+      }
       console.error(`[Watcher] Error for library ${this.libraryId}:`, error);
     });
 
