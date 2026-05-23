@@ -55,6 +55,7 @@ export function usePluginManager() {
     name: '',
     version: 'latest',
     proxy: '',
+    npmSource: 'npmmirror',
   });
 
   // 下拉菜单
@@ -332,7 +333,7 @@ export function usePluginManager() {
     modalApi.close();
     selectedFile.value = null;
     currentInstallLibraryId.value = '';
-    installForm.value = { name: '', version: 'latest', proxy: '' };
+    installForm.value = { name: '', version: 'latest', proxy: '', npmSource: 'npmmirror' };
   };
 
   const handleInstallOk = async () => {

@@ -4,5 +4,11 @@
     "enabled": true,
     "path": "node_modules/mira_thumb",
     "status": "active"
+  },
+  {
+    "name": "mira_user",
+    "enabled": true,
+    "path": "node_modules/mira_user",
+    "status": "active"
   }
 ]

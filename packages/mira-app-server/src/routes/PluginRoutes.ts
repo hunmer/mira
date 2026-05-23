@@ -199,7 +199,7 @@ export class PluginRoutes {
         // 安装插件（从npm）
         this.router.post('/install', async (req: Request, res: Response) => {
             try {
-                const { name, version = 'latest', libraryId, proxy } = req.body;
+                const { name, version = 'latest', libraryId, proxy, npmSource } = req.body;
 
                 if (!name) {
                     return res.status(400).json({ error: 'Plugin name is required' });
@@ -235,6 +235,13 @@ export class PluginRoutes {
                     env.HTTPS_PROXY = 'http://127.0.0.1:7890';
                 }
 
+                // npm 源映射
+                const registryMap: Record<string, string> = {
+                    npmmirror: 'https://registry.npmmirror.com',
+                    npm: 'https://registry.npmjs.org',
+                };
+                const registry = registryMap[npmSource || 'npmmirror'] || registryMap.npmmirror;
+
                 // 初始化npm项目
                 spawnSync('npm', ['init', '-y'], {
                     cwd: pluginsDir,
@@ -242,7 +249,7 @@ export class PluginRoutes {
                     shell: true
                 });
 
-                const npmProcess = spawn('npm', ['install', packageName, '-save'], {
+                const npmProcess = spawn('npm', ['install', packageName, '-save', '--registry', registry], {
                     cwd: pluginsDir,
                     stdio: 'pipe',
                     env,

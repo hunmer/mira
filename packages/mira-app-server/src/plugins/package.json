@@ -138,6 +138,7 @@
     "minipass-sized": "^1.0.3",
     "minizlib": "^2.1.2",
     "mira_thumb": "^1.0.19",
+    "mira_user": "^1.0.8",
     "mira-app-server": "^1.0.25",
     "mira-server-sdk": "^1.0.11",
     "mira-storage-sqlite": "^1.0.20",
