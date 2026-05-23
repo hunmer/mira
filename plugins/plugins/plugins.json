@@ -2,8 +2,7 @@
   {
     "name": "mira_demo",
     "enabled": false,
-    "path": "mira_demo",
-    "status": "inactive"
+    "path": "mira_demo"
   },
   {
     "name": "mira_n8n",
