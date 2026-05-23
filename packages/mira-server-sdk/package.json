@@ -3,6 +3,7 @@
   "version": "1.0.19",
   "description": "TypeScript SDK for Mira App Server with jQuery-style chaining and modular architecture",
   "main": "dist/index.js",
+  "module": "dist/mira-sdk.esm.js",
   "types": "dist/index.d.ts",
   "files": [
     "dist",

@@ -263,10 +263,10 @@ function validateTypeScriptConfig() {
   console.log('✓ TypeScript configuration validated');
 }
 
-// 解析 cnpm 符号链接：把 .store 里的实际内容拷贝到 node_modules 下
+// 解析符号链接：把 .store 里的实际内容拷贝到 node_modules 下
 // electron-builder 不会跟随符号链接，导致打包后缺模块
 function resolveSymlinks() {
-  console.log('\n🔗 Resolving cnpm symlinks in node_modules...');
+  console.log('\n🔗 Resolving symlinks in node_modules...');
   const nmDir = path.resolve('node_modules');
   if (!fs.existsSync(nmDir)) return;
 

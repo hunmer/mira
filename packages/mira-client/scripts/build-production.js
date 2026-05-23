@@ -53,7 +53,7 @@ async function safeRename(oldPath, newPath, retries = 3) {
   try {
     // 1. 构建前端和主进程
     console.log('📦 步骤 1/5: 构建前端和主进程...')
-    execSync('cnpm run build:prod', { stdio: 'inherit', cwd: projectRoot })
+    execSync('pnpm run build:prod', { stdio: 'inherit', cwd: projectRoot })
 
     // 2. 备份 node_modules，安装生产依赖
     console.log('\n💾 步骤 2/5: 切换生产依赖...')
@@ -68,7 +68,7 @@ async function safeRename(oldPath, newPath, retries = 3) {
     }
 
     console.log('  安装生产依赖...')
-    execSync('cnpm install --prod', { stdio: 'inherit', cwd: projectRoot })
+    execSync('pnpm install --prod', { stdio: 'inherit', cwd: projectRoot })
 
     // 3. 清理并执行 Electron 打包
     console.log('\n🔨 步骤 3/5: 打包 Electron 应用...')
