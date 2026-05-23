@@ -249,7 +249,7 @@ onMounted(() => {
 
     <!-- 系统信息 -->
     <div v-if="loading" class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-      <div class="animate-pulse rounded-lg p-6 shadow-sm">
+      <div class="bg-background animate-pulse rounded-lg p-6 shadow-sm">
         <div class="mb-4 h-6 w-1/3 rounded"></div>
         <div class="space-y-3">
           <div v-for="i in 4" :key="i" class="flex justify-between">
@@ -258,7 +258,7 @@ onMounted(() => {
           </div>
         </div>
       </div>
-      <div class="animate-pulse rounded-lg p-6 shadow-sm">
+      <div class="bg-background animate-pulse rounded-lg p-6 shadow-sm">
         <div class="mb-4 h-6 w-1/3 rounded"></div>
         <div class="space-y-3">
           <div v-for="i in 3" :key="i" class="flex items-center rounded p-3">
@@ -273,7 +273,7 @@ onMounted(() => {
     </div>
 
     <div v-else class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-      <div class="rounded-lg p-6 shadow-sm">
+      <div class="bg-background rounded-lg p-6 shadow-sm">
         <div class="mb-4 flex items-center">
           <div class="mr-3 h-6 w-6">💻</div>
           <h3 class="text-lg font-semibold">系统信息</h3>
@@ -311,7 +311,7 @@ onMounted(() => {
         </div>
       </div>
 
-      <div class="rounded-lg p-6 shadow-sm">
+      <div class="bg-background rounded-lg p-6 shadow-sm">
         <div class="mb-4 flex items-center">
           <div class="mr-3 h-6 w-6">📊</div>
           <h3 class="text-lg font-semibold">最近活动</h3>

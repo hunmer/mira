@@ -23,7 +23,7 @@ defineEmits<{
 <template>
   <form @submit.prevent="$emit('submit')" class="space-y-4">
     <div>
-      <label class="mb-1 block text-sm font-medium text-gray-700">
+      <label class="mb-1 block text-sm font-medium text-foreground">
         名称
       </label>
       <input
@@ -31,12 +31,12 @@ defineEmits<{
         type="text"
         required
         placeholder="请输入资源库名称"
-        class="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        class="w-full rounded-md border border-input bg-background px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
       />
     </div>
 
     <div>
-      <label class="mb-1 block text-sm font-medium text-gray-700">
+      <label class="mb-1 block text-sm font-medium text-foreground">
         路径
       </label>
       <input
@@ -44,18 +44,18 @@ defineEmits<{
         type="text"
         required
         placeholder="请输入资源库路径"
-        class="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        class="w-full rounded-md border border-input bg-background px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
       />
     </div>
 
     <div>
-      <label class="mb-1 block text-sm font-medium text-gray-700">
+      <label class="mb-1 block text-sm font-medium text-foreground">
         类型
       </label>
       <select
         v-model="form.type"
         required
-        class="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        class="w-full rounded-md border border-input bg-background px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
       >
         <option value="local">本地</option>
         <option value="remote">远程</option>
@@ -63,14 +63,14 @@ defineEmits<{
     </div>
 
     <div>
-      <label class="mb-1 block text-sm font-medium text-gray-700">
+      <label class="mb-1 block text-sm font-medium text-foreground">
         图标
       </label>
       <input
         v-model="form.icon"
         type="text"
         placeholder="图标名称（默认：default）"
-        class="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        class="w-full rounded-md border border-input bg-background px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
       />
     </div>
 
@@ -79,9 +79,9 @@ defineEmits<{
         id="enableHash"
         v-model="form.enableHash"
         type="checkbox"
-        class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+        class="h-4 w-4 rounded border-input text-blue-600 focus:ring-blue-500"
       />
-      <label for="enableHash" class="ml-2 block text-sm text-gray-700">
+      <label for="enableHash" class="ml-2 block text-sm text-foreground">
         启用文件哈希校验
       </label>
     </div>
@@ -91,9 +91,9 @@ defineEmits<{
         id="enableAutoSync"
         v-model="form.enableAutoSync"
         type="checkbox"
-        class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+        class="h-4 w-4 rounded border-input text-blue-600 focus:ring-blue-500"
       />
-      <label for="enableAutoSync" class="ml-2 block text-sm text-gray-700">
+      <label for="enableAutoSync" class="ml-2 block text-sm text-foreground">
         启用自动同步（监控文件夹新文件）
       </label>
     </div>
@@ -103,9 +103,9 @@ defineEmits<{
         id="useHttpFile"
         v-model="form.useHttpFile"
         type="checkbox"
-        class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+        class="h-4 w-4 rounded border-input text-blue-600 focus:ring-blue-500"
       />
-      <label for="useHttpFile" class="ml-2 block text-sm text-gray-700">
+      <label for="useHttpFile" class="ml-2 block text-sm text-foreground">
         使用 HTTP 文件服务（远程库通过 HTTP 获取文件）
       </label>
     </div>
@@ -113,7 +113,7 @@ defineEmits<{
     <!-- 服务器配置（远程库 或 启用 HTTP 文件服务时显示） -->
     <template v-if="form.type === 'remote' || form.useHttpFile">
       <div>
-        <label class="mb-1 block text-sm font-medium text-gray-700">
+        <label class="mb-1 block text-sm font-medium text-foreground">
           服务器地址
         </label>
         <input
@@ -121,12 +121,12 @@ defineEmits<{
           type="text"
           :required="form.type === 'remote' || form.useHttpFile"
           placeholder="例如：http://127.0.0.1"
-          class="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          class="w-full rounded-md border border-input bg-background px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
       </div>
 
       <div>
-        <label class="mb-1 block text-sm font-medium text-gray-700">
+        <label class="mb-1 block text-sm font-medium text-foreground">
           服务器端口
         </label>
         <input
@@ -134,32 +134,32 @@ defineEmits<{
           type="text"
           :required="form.type === 'remote' || form.useHttpFile"
           placeholder="例如：3000"
-          class="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          class="w-full rounded-md border border-input bg-background px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
       </div>
     </template>
 
     <div>
-      <label class="mb-1 block text-sm font-medium text-gray-700">
+      <label class="mb-1 block text-sm font-medium text-foreground">
         插件目录
       </label>
       <input
         v-model="form.pluginsDir"
         type="text"
         placeholder="插件目录路径（可选）"
-        class="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        class="w-full rounded-md border border-input bg-background px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
       />
     </div>
 
     <div>
-      <label class="mb-1 block text-sm font-medium text-gray-700">
+      <label class="mb-1 block text-sm font-medium text-foreground">
         描述
       </label>
       <textarea
         v-model="form.description"
         rows="3"
         placeholder="请输入描述（可选）"
-        class="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        class="w-full rounded-md border border-input bg-background px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
       ></textarea>
     </div>
   </form>

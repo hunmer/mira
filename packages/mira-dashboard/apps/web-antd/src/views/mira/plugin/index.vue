@@ -839,7 +839,7 @@ onMounted(() => {
                 "
                 class="mt-3 border-t pt-3"
               >
-                <h4 class="mb-2 text-xs font-semibold text-gray-600">
+                <h4 class="mb-2 text-xs font-semibold text-foreground/70">
                   插件入口
                 </h4>
                 <div class="flex flex-wrap gap-1">
@@ -850,7 +850,7 @@ onMounted(() => {
                     )"
                     :key="route.path"
                     @click="openRouteInNewTab(route)"
-                    class="rounded bg-indigo-100 px-2 py-1 text-xs text-indigo-700 hover:bg-indigo-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    class="rounded bg-primary/10 px-2 py-1 text-xs text-primary hover:bg-primary/20 focus:outline-none focus:ring-1 focus:ring-primary"
                   >
                     {{ route.meta?.title || route.name }}
                   </button>
@@ -1345,37 +1345,35 @@ onMounted(() => {
   height: 320px;
   padding: 20px;
   overflow: hidden;
-  background-color: #fff;
-  border: 1px solid #e5e7eb;
+  background-color: hsl(var(--background));
+  border: 1px solid hsl(var(--border));
   border-radius: 12px;
   transition: all 0.3s ease;
 }
 
 .plugin-card:hover {
-  background-color: #f8fafc;
+  background-color: hsl(var(--accent));
   box-shadow: 0 8px 30px rgb(0 0 0 / 12%);
   transform: translateY(-2px);
 }
 
 .plugin-card.border-green-200 {
-  background-color: #f0f9ff;
-  border-color: #d9f7be;
+  border-color: hsl(var(--primary) / 0.3);
 }
 
 .plugin-card.border-gray-200 {
-  background-color: #fafafa;
-  border-color: #f0f0f0;
+  border-color: hsl(var(--border));
 }
 
 .plugin-header {
   padding-bottom: 12px;
   margin-bottom: 12px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid hsl(var(--border));
 }
 
 .plugin-info {
   padding: 12px;
-  background-color: rgb(248 250 252 / 50%);
+  background-color: hsl(var(--muted));
   border-radius: 6px;
 }
 
