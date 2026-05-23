@@ -9,3 +9,4 @@ packages/mira-server/mira_server.tar
 plugins/users.db
 .spec-workflow/
 
+mira-server.tar
