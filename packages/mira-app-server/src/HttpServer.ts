@@ -15,6 +15,7 @@ import { FileRoutes } from './routes/FileRoutes';
 import { DeviceRoutes } from './routes/DeviceRoutes';
 import { TagRouter } from './routes/TagRouter';
 import { FolderRouter } from './routes/FolderRouter';
+import { FsRouter } from './routes/FsRouter';
 
 // HTTP请求日志中间件
 interface RequestLogData {
@@ -139,6 +140,7 @@ export class MiraHttpServer {
     deviceRoutes: DeviceRoutes;
     tagRouter: TagRouter;
     folderRouter: FolderRouter;
+    fsRouter: FsRouter;
     adminsRouter: AdminsRouter;
     httpRouter: HttpRouter;
 
@@ -156,6 +158,7 @@ export class MiraHttpServer {
         this.deviceRoutes = new DeviceRoutes(backend);
         this.tagRouter = new TagRouter(backend);
         this.folderRouter = new FolderRouter(backend);
+        this.fsRouter = new FsRouter();
         this.httpRouter = new HttpRouter(backend);
 
         this.setupMiddleware();
@@ -230,6 +233,7 @@ export class MiraHttpServer {
         this.app.use('/api/devices', this.deviceRoutes.getRouter());
         this.app.use('/api/tags', this.tagRouter.getRouter());
         this.app.use('/api/folders', this.folderRouter.getRouter());
+        this.app.use('/api/fs', this.fsRouter.getRouter());
 
         // 获取所有素材库的插件路由定义
         this.app.get('/api/plugin-routes', (req, res) => {

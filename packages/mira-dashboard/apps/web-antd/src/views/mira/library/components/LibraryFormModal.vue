@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import PathTreeSelect from '#/components/mira/PathTreeSelect.vue';
+
 interface FormData {
   name: string;
   path: string;
@@ -39,13 +41,7 @@ const form = defineModel<FormData>({ required: true });
       <label class="text-foreground mb-1 block text-sm font-medium">
         路径
       </label>
-      <input
-        v-model="form.path"
-        type="text"
-        required
-        placeholder="请输入资源库路径"
-        class="border-input bg-background w-full rounded-md border px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-      />
+      <PathTreeSelect v-model="form.path" placeholder="请选择资源库路径" />
     </div>
 
     <div>
