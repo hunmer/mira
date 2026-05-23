@@ -11,6 +11,21 @@ export class FsRouter {
     }
 
     private setupRoutes(): void {
+        this.router.post('/mkdir', async (req: Request, res: Response) => {
+            try {
+                const { path: parentPath, name } = req.body;
+                if (!parentPath || !name) {
+                    res.status(400).json({ error: 'path and name are required' });
+                    return;
+                }
+                const newPath = path.join(parentPath, name);
+                await fs.promises.mkdir(newPath);
+                res.json({ label: name, value: newPath, isLeaf: false });
+            } catch (error: any) {
+                res.status(500).json({ error: error.message || 'Failed to create directory' });
+            }
+        });
+
         this.router.get('/dirs', async (req: Request, res: Response) => {
             try {
                 const dirPath = req.query.path as string;

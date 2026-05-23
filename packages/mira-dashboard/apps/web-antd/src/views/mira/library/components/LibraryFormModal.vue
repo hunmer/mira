@@ -139,11 +139,9 @@ const form = defineModel<FormData>({ required: true });
       <label class="text-foreground mb-1 block text-sm font-medium">
         插件目录
       </label>
-      <input
+      <PathTreeSelect
         v-model="form.pluginsDir"
-        type="text"
         placeholder="插件目录路径（可选）"
-        class="border-input bg-background w-full rounded-md border px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
       />
     </div>
 
