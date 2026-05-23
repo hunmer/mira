@@ -116,7 +116,7 @@ class ThumbPlugin extends ServerPlugin {
             }
             return res.status(400).json({ success: false, message: '无效的操作' });
         });
-        console.log('Thumbnail plugin initialized');
+        console.log('Thumbnail plugin initialized!!!');
 
     }
 

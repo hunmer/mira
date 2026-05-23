@@ -1,1 +1,27 @@
-[]
+[
+    {
+        "name": "mira_demo",
+        "enabled": false,
+        "path": "mira_demo"
+    },
+    {
+        "name": "mira_n8n",
+        "enabled": false,
+        "path": "mira_n8n"
+    },
+    {
+        "name": "mira_thumb",
+        "enabled": true,
+        "path": "node_modules/mira_thumb"
+    },
+    {
+        "name": "mira_user",
+        "enabled": false,
+        "path": "mira_user"
+    },
+    {
+        "name": "upload_statistics",
+        "enabled": false,
+        "path": "upload_statistics"
+    }
+]
