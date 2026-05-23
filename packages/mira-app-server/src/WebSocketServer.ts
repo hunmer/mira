@@ -10,6 +10,7 @@ interface LibraryClient {
 interface ConnectedClient extends WebSocket {
     clientId?: string;
     libraryId?: string;
+    fields?: Record<string, any>;
     connectionTime?: string;
     lastActivity?: string;
     requestInfo?: {
@@ -73,6 +74,27 @@ export class MiraWebsocketServer {
         if (!clients) return undefined;
 
         return clients.find((client) => (client as ConnectedClient).clientId === clientId);
+    }
+
+    setClientFields(libraryId: string, clientId: string, fields: Record<string, any>): void {
+        const client = this.getWsClientById(libraryId, clientId) as ConnectedClient | undefined;
+        if (!client) return;
+
+        client.fields = client.fields || {};
+        for (const [key, value] of Object.entries(fields)) {
+            if (value === null || value === undefined) {
+                delete client.fields[key];
+            } else {
+                client.fields[key] = value;
+            }
+        }
+    }
+
+    getClientFields(libraryId: string, clientId?: string): Record<string, any> | undefined {
+        if (!clientId) return undefined;
+
+        const client = this.getWsClientById(libraryId, clientId) as ConnectedClient | undefined;
+        return client?.fields;
     }
 
     showDialogToWeboscket(ws: WebSocket, data: Record<string, any>): void {

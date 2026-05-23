@@ -531,7 +531,7 @@ export class FileRoutes {
         // 获取文件列表 - 支持过滤参数
         this.router.post('/getFiles', async (req: Request, res: Response) => {
             try {
-                const { libraryId, filters = {}, isUrlFile = false } = req.body;
+                const { libraryId, filters = {}, isUrlFile = false, clientId } = req.body;
                 console.log({filters})
                 if (!libraryId) {
                     return res.status(400).json({
@@ -549,6 +549,17 @@ export class FileRoutes {
                         data: null
                     });
                 }
+
+                const allowed = await obj.pluginManager.runHttpHooks({
+                    libraryId,
+                    clientId,
+                    method: req.method,
+                    path: '/api/files/getFiles',
+                    req,
+                    res,
+                    fields: this.backend.webSocketServer.getClientFields(libraryId, clientId),
+                });
+                if (!allowed || res.headersSent) return;
 
                 const files = await obj.libraryService.getFiles({
                     filters: filters,
@@ -574,7 +585,7 @@ export class FileRoutes {
         // 获取单个文件信息
         this.router.post('/getFile', async (req: Request, res: Response) => {
             try {
-                const { libraryId, fileId } = req.body;
+                const { libraryId, fileId, clientId } = req.body;
 
                 if (!libraryId) {
                     return res.status(400).json({
@@ -600,6 +611,17 @@ export class FileRoutes {
                         data: null
                     });
                 }
+
+                const allowed = await obj.pluginManager.runHttpHooks({
+                    libraryId,
+                    clientId,
+                    method: req.method,
+                    path: '/api/files/getFile',
+                    req,
+                    res,
+                    fields: this.backend.webSocketServer.getClientFields(libraryId, clientId),
+                });
+                if (!allowed || res.headersSent) return;
 
                 const file = await obj.libraryService.getFile(parseInt(fileId));
                 if (!file) {

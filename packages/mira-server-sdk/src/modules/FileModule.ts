@@ -28,6 +28,7 @@ export interface GetFilesRequest {
     libraryId: string;
     filters?: FileFilters;
     isUrlFile?: boolean;
+    clientId?: string;
 }
 
 /**
@@ -293,10 +294,11 @@ export class FileModule {
      * @param fileId 文件ID
      * @returns Promise<FileData>
      */
-    async getFile(libraryId: string, fileId: string | number): Promise<FileData> {
+    async getFile(libraryId: string, fileId: string | number, clientId?: string): Promise<FileData> {
         return await this.httpClient.post<FileData>('/api/files/getFile', {
             libraryId,
-            fileId: fileId.toString()
+            fileId: fileId.toString(),
+            clientId
         });
     }
 

@@ -1,6 +1,7 @@
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useLibraryStore } from '../stores/library'
 import { useTabs } from '../composables/useTabs'
+import ConfigStorage from '../utils/ConfigStorage'
 
 export interface WebSocketEventData {
   eventName: string
@@ -20,6 +21,8 @@ class WebSocketService {
   private maxReconnectAttempts = 5
   private reconnectDelay = 1000
   private eventListeners: Map<string, Array<(data: any) => void>> = new Map()
+  private fields: Record<string, any> = {}
+  private readonly fieldsStoragePrefix = 'mira_ws_fields'
 
   // 响应式状态
   public isConnected = ref(false)
@@ -33,6 +36,10 @@ class WebSocketService {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       console.log('WebSocket already connected')
       return true
+    }
+
+    if (!this.config || this.config.url !== config.url || this.config.libraryId !== config.libraryId) {
+      this.fields = await this.loadFields(config)
     }
 
     this.config = config
@@ -106,6 +113,10 @@ class WebSocketService {
     }
   }
 
+  getClientId(): string | undefined {
+    return this.config?.clientId
+  }
+
   /**
    * 添加事件监听器
    */
@@ -142,12 +153,14 @@ class WebSocketService {
     this.isConnecting.value = false
     this.reconnectAttempts = 0
     this.lastError.value = null
+    this.openLibrarySession()
   }
 
   private handleMessage(event: MessageEvent): void {
     try {
       const data = JSON.parse(event.data)
       console.log('WebSocket message received:', data)
+      this.handleInternalEvent(data)
 
       // 触发相应的事件监听器
       if (data.eventName) {
@@ -165,6 +178,91 @@ class WebSocketService {
     } catch (error) {
       console.error('Failed to parse WebSocket message:', error)
     }
+  }
+
+  private handleInternalEvent(message: any): void {
+    switch (message.eventName) {
+      case 'try_connect':
+        this.connectLibrarySession()
+        break
+      case 'setFields':
+        this.updateFields(message.data?.fields)
+        break
+      case 'dialog':
+        this.openDialog(message.data)
+        break
+    }
+  }
+
+  private openLibrarySession(): void {
+    this.sendLibraryMessage('open', {})
+  }
+
+  private connectLibrarySession(): void {
+    this.sendLibraryMessage('connect', this.fields)
+  }
+
+  private sendLibraryMessage(action: 'open' | 'connect', fields: Record<string, any>): void {
+    if (!this.config) return
+
+    this.send({
+      action,
+      requestId: this.createRequestId(action),
+      libraryId: this.config.libraryId,
+      clientId: this.config.clientId,
+      fields,
+      payload: {
+        type: 'library',
+        data: { fields }
+      }
+    })
+  }
+
+  private updateFields(fields?: Record<string, any>): void {
+    if (!fields) return
+
+    for (const [key, value] of Object.entries(fields)) {
+      if (value === null || value === undefined) {
+        delete this.fields[key]
+      } else {
+        this.fields[key] = value
+      }
+    }
+
+    void this.saveFields()
+  }
+
+  private openDialog(data?: { url?: string }): void {
+    if (!data?.url) return
+    window.open(data.url, '_blank')
+  }
+
+  private createRequestId(action: string): string {
+    return `ws_${action}_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
+  }
+
+  private async loadFields(config: WebSocketConfig): Promise<Record<string, any>> {
+    try {
+      const savedFields = await ConfigStorage.getItem(this.getFieldsStorageKey(config))
+      return savedFields ? JSON.parse(savedFields) : {}
+    } catch (error) {
+      console.warn('Failed to load WebSocket fields:', error)
+      return {}
+    }
+  }
+
+  private async saveFields(): Promise<void> {
+    if (!this.config) return
+
+    try {
+      await ConfigStorage.setItem(this.getFieldsStorageKey(this.config), JSON.stringify(this.fields))
+    } catch (error) {
+      console.warn('Failed to save WebSocket fields:', error)
+    }
+  }
+
+  private getFieldsStorageKey(config: WebSocketConfig): string {
+    return `${this.fieldsStoragePrefix}_${config.url}_${config.libraryId}`
   }
 
   private handleClose(event: CloseEvent): void {

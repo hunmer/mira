@@ -29,8 +29,10 @@ export class LibraryHandler extends MessageHandler {
                             fields: obj!.pluginManager.fields, // 所有插件所需字段信息
                         }
                     });
+                    break;
                 case 'connect':
                     // 第二次握手
+                    this.server.setClientFields(libraryId, this.message.clientId, (this.message as any).fields || {});
                     const ok: any = await this.server.broadcastPluginEvent('client::before_connect', {
                         message: this.message,
                         ws: this.ws,

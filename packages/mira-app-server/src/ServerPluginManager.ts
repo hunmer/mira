@@ -4,11 +4,30 @@ import { PluginRouteDefinition } from './ServerPlugin';
 import { MiraClient } from 'mira-server-sdk';
 import * as fs from 'fs';
 import * as path from 'path';
+import type { Request, Response } from 'express';
 
 export interface PluginConfig {
     name: string;
     enabled: boolean;
     path: string;
+}
+
+export interface HttpHookContext {
+    libraryId: string;
+    clientId?: string;
+    method: string;
+    path: string;
+    req: Request;
+    res: Response;
+    fields?: Record<string, any>;
+}
+
+export type HttpHookHandler = (context: HttpHookContext) => boolean | void | Promise<boolean | void>;
+
+export interface HttpHookDefinition {
+    method?: string;
+    path: string | RegExp;
+    handler: HttpHookHandler;
 }
 
 export class ServerPluginManager {
@@ -18,6 +37,7 @@ export class ServerPluginManager {
     private pluginsConfigPath: string;
     private loadedPlugins: Map<string, any> = new Map();
     private miraClient: MiraClient;
+    private httpHooks: HttpHookDefinition[] = [];
     fields: Record<string, any>[] = [];
 
     constructor({ server, dbService, pluginsDir }: { server: MiraWebsocketServer, dbService: ILibraryServerData, pluginsDir?: string }) {
@@ -46,11 +66,26 @@ export class ServerPluginManager {
 
     // getPluginDir
     getPluginDir(pluginName: string): string {
-        return path.join(this.pluginsDir, pluginName);
+        const pluginConfig = this.getPluginConfig(pluginName);
+        return path.join(this.pluginsDir, pluginConfig?.path ?? pluginName);
     }
 
     getPluginDistDir(pluginName: string): string {
-        return path.join(this.pluginsDir, 'node_modules', pluginName, 'dist');
+        return path.join(this.getPluginDir(pluginName), 'dist');
+    }
+
+    private getPluginConfig(pluginName: string): PluginConfig | undefined {
+        if (!fs.existsSync(this.pluginsConfigPath)) return undefined;
+
+        try {
+            const config: PluginConfig[] = JSON.parse(
+                fs.readFileSync(this.pluginsConfigPath, 'utf-8')
+            );
+            return config.find(plugin => plugin.name === pluginName);
+        } catch (error) {
+            console.error(`Error reading plugin config for ${pluginName}:`, error);
+            return undefined;
+        }
     }
 
     async loadPlugins(reload: boolean = false): Promise<void> {
@@ -115,6 +150,32 @@ export class ServerPluginManager {
         this.fields.push(field);
     }
 
+    registerHttpHook(hook: HttpHookDefinition): void {
+        if (!hook.path || typeof hook.handler !== 'function') {
+            throw new Error('HTTP hook registration error: path and handler are required');
+        }
+        this.httpHooks.push({
+            ...hook,
+            method: hook.method?.toUpperCase(),
+        });
+    }
+
+    async runHttpHooks(context: HttpHookContext): Promise<boolean> {
+        for (const hook of this.httpHooks) {
+            if (!this.matchesHttpHook(hook, context)) continue;
+
+            const result = await hook.handler(context);
+            if (result === false) return false;
+        }
+        return true;
+    }
+
+    private matchesHttpHook(hook: HttpHookDefinition, context: HttpHookContext): boolean {
+        if (hook.method && hook.method !== context.method.toUpperCase()) return false;
+        if (typeof hook.path === 'string') return hook.path === context.path;
+        return hook.path.test(context.path);
+    }
+
     getPlugin<T>(name: string): T | undefined {
         return this.loadedPlugins.get(name);
     }
@@ -125,7 +186,7 @@ export class ServerPluginManager {
 
     unloadPlugin(name: string): boolean {
         if (this.loadedPlugins.has(name)) {
-            // 尝试调用插件的清理函数（如果存在）
+            // 尝试调用插件的清理函数（如果存在�?
             const plugin = this.loadedPlugins.get(name);
             if (plugin && typeof plugin.cleanup === 'function') {
                 try {
@@ -158,7 +219,7 @@ export class ServerPluginManager {
             return false;
         }
 
-        // 先卸载插件
+        // 先卸载插�?
         this.unloadPlugin(name);
 
         // 重新加载插件
@@ -230,7 +291,7 @@ export class ServerPluginManager {
     }
 
     /**
-     * 获取所有已加载插件的路由定义
+     * 获取所有已加载插件的路由定�?
      */
     getAllPluginRoutes(): PluginRouteDefinition[] {
         const allRoutes: PluginRouteDefinition[] = [];
@@ -244,7 +305,7 @@ export class ServerPluginManager {
                         // 为每个路由添加插件名称标识，但不修改路径
                         const routesWithPluginInfo = routes.map(route => ({
                             ...route,
-                            pluginName, // 添加插件名称，方便追踪
+                            pluginName, // 添加插件名称，方便追�?
                         }));
                         allRoutes.push(...routesWithPluginInfo);
                     }
@@ -258,7 +319,7 @@ export class ServerPluginManager {
     }
 
     /**
-     * 获取指定插件的路由定义
+     * 获取指定插件的路由定�?
      */
     getPluginRoutes(pluginName: string): PluginRouteDefinition[] {
         const plugin = this.loadedPlugins.get(pluginName);
@@ -279,6 +340,6 @@ export class ServerPluginManager {
      */
     registerPluginInstance(pluginName: string, pluginInstance: any): void {
         this.loadedPlugins.set(pluginName, pluginInstance);
-        console.log(`✅ Manually registered plugin: ${pluginName}`);
+        console.log(`�?Manually registered plugin: ${pluginName}`);
     }
 }

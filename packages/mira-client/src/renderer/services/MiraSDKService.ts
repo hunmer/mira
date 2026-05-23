@@ -16,8 +16,7 @@ import type {
 
 
 /**
- * 类型转换适配器
- */
+ * 类型转换适配�? */
 class TypeAdapter {
   static convertUserInfo(sdkUser: any): UserInfo {
     return {
@@ -59,8 +58,7 @@ class TypeAdapter {
       longDescription: sdkPlugin?.longDescription,
       author: sdkPlugin?.author,
       homepage: sdkPlugin?.homepage,
-      installed: true, // 假设从 getAll 返回的都是已安装的
-      enabled: sdkPlugin?.enabled !== false,
+      installed: true, // 假设�?getAll 返回的都是已安装�?      enabled: sdkPlugin?.enabled !== false,
       installedAt: sdkPlugin?.installedAt,
       category: sdkPlugin?.category,
       tags: sdkPlugin?.tags,
@@ -85,17 +83,14 @@ class TypeAdapter {
 }
 
 /**
- * Mira SDK 服务封装类
- * 直接使用 mira-server-sdk，支持 web 端和 Electron 端
- */
+ * Mira SDK 服务封装�? * 直接使用 mira-server-sdk，支�?web 端和 Electron �? */
 export class MiraSDKService {
   private client: MiraClient | null = null
   private isConnected: boolean = false
   private connectionConfig: MiraConnectionConfig | null = null
 
   /**
-   * 连接到 Mira 服务器
-   */
+   * 连接�?Mira 服务�?   */
   async connect(config: MiraConnectionConfig): Promise<BaseResponse> {
     try {
       console.log('MiraSDKService: Connecting to Mira server', { serverUrl: config.serverUrl })
@@ -111,7 +106,7 @@ export class MiraSDKService {
       await this.client.system().getSystemInfo()
       this.isConnected = true
 
-      // 自动初始化 WebSocket
+      // 自动初始�?WebSocket
       this.autoInitializeWebSocket(config.websocketUrl)
 
       console.log('MiraSDKService: Connected successfully')
@@ -127,7 +122,7 @@ export class MiraSDKService {
   }
 
   /**
-   * 自动初始化 WebSocket
+   * 自动初始�?WebSocket
    */
   private async autoInitializeWebSocket(websocketUrl?: string): Promise<void> {
     if (!websocketUrl) {
@@ -185,8 +180,7 @@ export class MiraSDKService {
   }
 
   /**
-   * 获取WebSocket连接状态
-   */
+   * 获取WebSocket连接状�?   */
   get isWebSocketConnected(): boolean {
     return webSocketService.isConnected.value
   }
@@ -277,8 +271,7 @@ export class MiraSDKService {
   }
 
   /**
-   * 获取连接状态
-   */
+   * 获取连接状�?   */
   isClientConnected(): boolean {
     return this.isConnected && this.client !== null
   }
@@ -469,56 +462,53 @@ export class MiraSDKService {
 
       console.log('MiraSDKService: Listing files', { libraryId, filters: requestFilters })
 
-      // 获取素材库配置以检查 SMB 设置
+      // 获取素材库配置以检�?SMB 设置
       const { useServerListStore } = await import('../stores/serverList')
       const serverListStore = useServerListStore()
       const ServerConfig = serverListStore.activeServer
 
-      // 使用 SDK 的文件模块获取文件列表
-      let files: any;
+      // 使用 SDK 的文件模块获取文件列�?      let files: any;
       if (requestFilters && Object.keys(requestFilters).length > 0) {
-        // 清理 null/undefined 值
-        const cleanedFilters = Object.fromEntries(
+        // 清理 null/undefined �?        const cleanedFilters = Object.fromEntries(
           Object.entries(requestFilters).filter(([, v]) =>
             v !== null &&
             v !== undefined &&
             !(typeof v === 'number' && !Number.isFinite(v))
           )
         )
-        // 使用带过滤器的方法
-        files = await (this.client.files() as any).getFiles({
+        // 使用带过滤器的方�?        files = await (this.client.files() as any).getFiles({
           libraryId,
-          filters: cleanedFilters
+          filters: cleanedFilters,
+          clientId: webSocketService.getClientId()
         })
       } else {
         // 使用获取所有文件的方法
-        files = await (this.client.files() as any).getAllFiles(libraryId)
+        files = await (this.client.files() as any).getFiles({
+          libraryId,
+          clientId: webSocketService.getClientId()
+        })
       }
-      // 转换为 FileInfo 类型
+      // 转换�?FileInfo 类型
       const fileInfos: FileInfo[] = files.result.map((file: any) => {
         let filePath = file.path
         let thumbnailPath = file.thumb
 
-        // 如果启用了 SMB，替换挂载路径为 SMB 路径
+        // 如果启用�?SMB，替换挂载路径为 SMB 路径
         if (ServerConfig?.smb?.enabled && ServerConfig.smb.mountPath && ServerConfig.smb.smbPath) {
           const mountPath = ServerConfig.smb.mountPath
           const smbPath = ServerConfig.smb.smbPath
 
-          // 处理文件路径：替换开头的挂载路径为 SMB 路径
+          // 处理文件路径：替换开头的挂载路径�?SMB 路径
           if (filePath && filePath.startsWith(mountPath)) {
-            // 移除挂载路径前缀，保留相对路径部分
-            const relativePath = filePath.substring(mountPath.length).replace(/^[\/\\]+/, '')
-            // 确保 SMB 路径以正确的分隔符结尾
-            const normalizedSmbPath = smbPath.endsWith('\\') || smbPath.endsWith('/') ? smbPath : smbPath + '\\'
+            // 移除挂载路径前缀，保留相对路径部�?            const relativePath = filePath.substring(mountPath.length).replace(/^[\/\\]+/, '')
+            // 确保 SMB 路径以正确的分隔符结�?            const normalizedSmbPath = smbPath.endsWith('\\') || smbPath.endsWith('/') ? smbPath : smbPath + '\\'
             filePath = normalizedSmbPath + relativePath
           }
 
-          // 处理缩略图路径：替换开头的挂载路径为 SMB 路径
+          // 处理缩略图路径：替换开头的挂载路径�?SMB 路径
           if (thumbnailPath && thumbnailPath.startsWith(mountPath)) {
-            // 移除挂载路径前缀，保留相对路径部分
-            const relativePath = thumbnailPath.substring(mountPath.length).replace(/^[\/\\]+/, '')
-            // 确保 SMB 路径以正确的分隔符结尾
-            const normalizedSmbPath = smbPath.endsWith('\\') || smbPath.endsWith('/') ? smbPath : smbPath + '\\'
+            // 移除挂载路径前缀，保留相对路径部�?            const relativePath = thumbnailPath.substring(mountPath.length).replace(/^[\/\\]+/, '')
+            // 确保 SMB 路径以正确的分隔符结�?            const normalizedSmbPath = smbPath.endsWith('\\') || smbPath.endsWith('/') ? smbPath : smbPath + '\\'
             thumbnailPath = normalizedSmbPath + relativePath
           }
         }
@@ -528,15 +518,14 @@ export class MiraSDKService {
           name: file.name, // 使用 name 字段
           path: toFileUrl(filePath),
           size: file.size,
-          extension: file.extension || this.getFileExtension(file.name), // 从文件名提取扩展名
-          mimeType: file.mime_type || this.getMimeTypeFromExtension(file.name),
+          extension: file.extension || this.getFileExtension(file.name), // 从文件名提取扩展�?          mimeType: file.mime_type || this.getMimeTypeFromExtension(file.name),
           createdAt: file.created_at,
           updatedAt: file.updated_at || file.imported_at || file.created_at,
           tags: typeof file.tags === 'string' ? JSON.parse(file.tags || '[]') : (file.tags || []),
           folderId: file.folder_id?.toString(),
           hash: file.hash || '',
           thumbnailPath: toFileUrl(thumbnailPath),
-          libraryId: libraryId, // 添加 libraryId 到 fileInfo
+          libraryId: libraryId, // 添加 libraryId �?fileInfo
           localFile: file.localFile || (() => {
             // 如果file.localFile为空，尝试从mediaStore获取
             try {
@@ -546,8 +535,7 @@ export class MiraSDKService {
               console.warn('从mediaStore获取localFile失败:', error)
               return undefined
             }
-          })() // SMB映射的本地文件路径
-        }
+          })() // SMB映射的本地文件路�?        }
       })
       
       console.log(`MiraSDKService: Found ${fileInfos.length} files`)
@@ -562,8 +550,7 @@ export class MiraSDKService {
         timestamp: new Date().toISOString()
       })
 
-      // 返回完整的分页信息
-      const result = {
+      // 返回完整的分页信�?      const result = {
         files: fileInfos,
         total: files.total || fileInfos.length,
         limit: files.limit || filters?.limit || 999,
@@ -586,10 +573,9 @@ export class MiraSDKService {
     try {
       console.log('MiraSDKService: Getting file', { libraryId, fileId })
       
-      // 使用 SDK 的文件模块获取单个文件信息
-      const file = await (this.client.files() as any).getFile(libraryId, fileId)
+      // 使用 SDK 的文件模块获取单个文件信�?      const file = await (this.client.files() as any).getFile(libraryId, fileId, webSocketService.getClientId())
       
-      // 转换为 FileInfo 类型
+      // 转换�?FileInfo 类型
       const fileInfo: FileInfo = {
         id: file.id.toString(),
         name: file.title || file.name, // 优先使用 title，如果没有则使用 name
@@ -672,8 +658,7 @@ export class MiraSDKService {
 
 
   /**
-   * 库管理
-   */
+   * 库管�?   */
   async getLibraries(): Promise<LibraryInfo[]> {
     if (!this.client) throw new Error('Not connected to Mira server')
     
@@ -692,12 +677,11 @@ export class MiraSDKService {
       console.log('MiraSDKService: Creating library', { name })
       await this.client.libraries().createLocal(
         name,
-        '', // path - 需要根据实际需求设置
-        description || '',
+        '', // path - 需要根据实际需求设�?        description || '',
         { type: 'local' }
       )
 
-      // 转换为 LibraryInfo 类型
+      // 转换�?LibraryInfo 类型
       const libraryInfo: LibraryInfo = {
         id: `library_${Date.now()}`,
         name,
@@ -739,8 +723,7 @@ export class MiraSDKService {
       return {
         status: 'healthy' as const,
         timestamp: new Date().toISOString(),
-        // 根据需要添加更多健康检查信息
-      }
+        // 根据需要添加更多健康检查信�?      }
     } catch (error) {
       console.error('MiraSDKService: Failed to get system health', error)
       return {
@@ -759,8 +742,7 @@ export class MiraSDKService {
   }
 
   /**
-   * 文件夹操作
-   */
+   * 文件夹操�?   */
 
   /**
    * 获取所有文件夹
@@ -780,8 +762,7 @@ export class MiraSDKService {
   }
 
   /**
-   * 创建文件夹
-   */
+   * 创建文件�?   */
   async createFolder(
     libraryId: string,
     title: string,
@@ -803,8 +784,7 @@ export class MiraSDKService {
   }
 
   /**
-   * 更新文件夹
-   */
+   * 更新文件�?   */
   async updateFolder(
     libraryId: string,
     folderId: number,
@@ -829,9 +809,7 @@ export class MiraSDKService {
   }
 
   /**
-   * 删除文件夹
-   * @param deleteFiles 是否同时删除文件夹内的文件（默认 false，文件移至未分类）
-   */
+   * 删除文件�?   * @param deleteFiles 是否同时删除文件夹内的文件（默认 false，文件移至未分类�?   */
   async deleteFolder(libraryId: string, folderId: number, deleteFiles?: boolean): Promise<any> {
     if (!this.client) throw new Error('Not connected to Mira server')
 
@@ -847,8 +825,7 @@ export class MiraSDKService {
   }
 
   /**
-   * 移动文件夹
-   */
+   * 移动文件�?   */
   async moveFolder(
     libraryId: string,
     folderId: number,
@@ -859,8 +836,7 @@ export class MiraSDKService {
     try {
       console.log('MiraSDKService: Moving folder', { libraryId, folderId, newParentId })
 
-      // 构建更新数据，正确处理null值
-      const updateData: any = {}
+      // 构建更新数据，正确处理null�?      const updateData: any = {}
       if (newParentId === null) {
         // 明确设置为null表示移动到根级别
         updateData.parent_id = null
@@ -880,8 +856,7 @@ export class MiraSDKService {
   }
 
   /**
-   * 克隆文件夹
-   */
+   * 克隆文件�?   */
   async cloneFolder(
     libraryId: string,
     folderId: number,
@@ -932,8 +907,7 @@ export class MiraSDKService {
         timestamp: new Date().toISOString()
       }
 
-      // 发布全局事件，插件可以监听
-      const customEvent = new CustomEvent(eventName, {
+      // 发布全局事件，插件可以监�?      const customEvent = new CustomEvent(eventName, {
         detail: eventData
       })
       window.dispatchEvent(customEvent)
