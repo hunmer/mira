@@ -7,6 +7,17 @@ interface LibraryClient {
     [libraryId: string]: WebSocket[];
 }
 
+interface ConnectedClient extends WebSocket {
+    clientId?: string;
+    libraryId?: string;
+    connectionTime?: string;
+    lastActivity?: string;
+    requestInfo?: {
+        url?: string;
+        headers: Record<string, any>;
+        remoteAddress?: string;
+    };
+}
 
 export class MiraWebsocketServer {
     port: number | undefined;
@@ -26,57 +37,48 @@ export class MiraWebsocketServer {
             const url = new URL(urlString, `ws://${request.headers.host}`);
             const clientId = url.searchParams.get('clientId');
             const libraryId = url.searchParams.get('libraryId');
+
             console.log(`WebSocket connection established: clientId=${clientId}, libraryId=${libraryId}`);
+
             if (clientId == null || libraryId == null) {
-                return ws.close();
+                console.warn('[WebSocketServer] Missing clientId or libraryId, closing connection:', request.url);
+                ws.close();
+                return;
             }
 
-            // 将请求信息保存到 ws 对象上
-            Object.assign(ws, {
-                clientId: clientId,
-                libraryId: libraryId,
-                requestInfo: {
-                    url: request.url,
-                    headers: request.headers,
-                    remoteAddress: request.socket.remoteAddress
-                }
+            this.registerClient(ws, clientId, libraryId, {
+                url: request.url,
+                headers: request.headers,
+                remoteAddress: request.socket.remoteAddress
             });
-
-            // 保存连接
-            if (!this.libraryClients[libraryId]) {
-                this.libraryClients[libraryId] = [];
-            }
-            if (!this.libraryClients[libraryId].includes(ws)) {
-                this.libraryClients[libraryId].push(ws);
-            }
-
             this.handleConnection(ws);
         });
     }
 
     broadcastToClients(eventName: string, eventData: Record<string, any>): void {
         const obj = this.backend.libraries!.getLibrary(eventData.libraryId);
-        if (obj) {
-            const eventManager = obj.eventManager;
-            if (eventManager) {
-                eventManager.broadcast(
-                    eventName,
-                    new EventArgs(eventName, eventData)
-                );
-            }
-        }
+        if (!obj) return;
+
+        const eventManager = obj.eventManager;
+        if (!eventManager) return;
+
+        eventManager.broadcast(
+            eventName,
+            new EventArgs(eventName, eventData)
+        );
     }
 
     getWsClientById(libraryId: string, clientId: string): WebSocket | undefined {
         const clients = this.libraryClients[libraryId];
-        if (clients) {
-            return clients.find((client) => (client as any).clientId === clientId);
-        }
+        if (!clients) return undefined;
+
+        return clients.find((client) => (client as ConnectedClient).clientId === clientId);
     }
 
     showDialogToWeboscket(ws: WebSocket, data: Record<string, any>): void {
         this.sendToWebsocket(ws, {
-            eventName: 'dialog', data: Object.assign({
+            eventName: 'dialog',
+            data: Object.assign({
                 title: '提示',
                 message: '',
                 url: ''
@@ -85,28 +87,45 @@ export class MiraWebsocketServer {
     }
 
     sendToWebsocket(ws: WebSocket, data: Record<string, any>): void {
-        console.log(`Sending WebSocket message:`, data);
+        console.log('Sending WebSocket message:', data);
         ws.send(JSON.stringify(data));
     }
 
     broadcastPluginEvent(eventName: string, data: Record<string, any>): Promise<boolean> {
         const libraryId = data?.libraryId ?? data?.message?.libraryId;
         const obj = this.backend.libraries!.getLibrary(libraryId);
-        if (obj) {
-            const eventManager = obj.eventManager;
-            if (eventManager) {
-                return eventManager.broadcast(
-                    eventName,
-                    new EventArgs(eventName, data)
-                );
+        if (!obj) return Promise.resolve(false);
+
+        const eventManager = obj.eventManager;
+        if (!eventManager) return Promise.resolve(false);
+
+        return eventManager.broadcast(
+            eventName,
+            new EventArgs(eventName, data)
+        );
+    }
+
+    broadcastLibraryEvent(libraryId: string, eventName: string, data: Record<string, any>): void {
+        const message = JSON.stringify({ eventName, data });
+        const clients = this.libraryClients[libraryId] || [];
+
+        clients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(message);
             }
-        }
-        return Promise.resolve(false);
+        });
+    }
+
+    async stop(): Promise<void> {
+        this.backend.libraries!.clear();
+        this.wss?.close();
+        console.log('WebSocket server stopped');
     }
 
     private handleConnection(ws: WebSocket): void {
         ws.on('message', async (message: string) => {
             try {
+                (ws as ConnectedClient).lastActivity = new Date().toISOString();
                 const data = JSON.parse(message);
                 await this.handleMessage(ws, data);
             } catch (e) {
@@ -118,15 +137,7 @@ export class MiraWebsocketServer {
         });
 
         ws.on('close', () => {
-            // Remove from all library client lists
-            Object.keys(this.libraryClients).forEach(libraryId => {
-                const index = this.libraryClients[libraryId].findIndex(
-                    client => client === ws
-                );
-                if (index !== -1) {
-                    this.libraryClients[libraryId].splice(index, 1);
-                }
-            });
+            this.unregisterClient(ws);
         });
     }
 
@@ -138,7 +149,7 @@ export class MiraWebsocketServer {
         const data = payload.data || {};
         const recordType = payload.type;
         const exists = this.backend.libraries!.libraryExists(libraryId);
-        // console.log('WebSocket message received:', JSON.stringify({ action, libraryId, recordType, payload }, null, 2));
+
         if (!exists) {
             this.sendToWebsocket(ws, {
                 status: 'error',
@@ -163,29 +174,68 @@ export class MiraWebsocketServer {
 
         if (handler) {
             await handler.handle();
-        } else {
-            this.sendToWebsocket(ws, {
-                status: 'error',
-                message: `Unsupported action: ${action} and record type: ${recordType}`,
-                requestId
-            });
+            return;
         }
+
+        this.sendToWebsocket(ws, {
+            status: 'error',
+            message: `Unsupported action: ${action} and record type: ${recordType}`,
+            requestId
+        });
     }
 
-    broadcastLibraryEvent(libraryId: string, eventName: string, data: Record<string, any>): void {
-        const message = JSON.stringify({ eventName: eventName, data: data });
-        if (this.libraryClients[libraryId]) {
-            this.libraryClients[libraryId].forEach(client => {
-                if (client.readyState === WebSocket.OPEN) {
-                    client.send(message);
-                }
-            });
+    private registerClient(
+        ws: WebSocket,
+        clientId: string,
+        libraryId: string,
+        requestInfo: ConnectedClient['requestInfo']
+    ): void {
+        const now = new Date().toISOString();
+
+        Object.assign(ws, {
+            clientId,
+            libraryId,
+            connectionTime: now,
+            lastActivity: now,
+            requestInfo
+        });
+
+        this.libraryClients[libraryId] = this.libraryClients[libraryId] || [];
+
+        const duplicateIndex = this.libraryClients[libraryId].findIndex(
+            client => (client as ConnectedClient).clientId === clientId
+        );
+        if (duplicateIndex !== -1) {
+            this.libraryClients[libraryId].splice(duplicateIndex, 1);
         }
+
+        this.libraryClients[libraryId].push(ws);
+        console.log(
+            `[WebSocketServer] Registered client ${clientId} for library ${libraryId}. ` +
+            `libraryConnections=${this.libraryClients[libraryId].length}, totalConnections=${this.getTotalConnectionCount()}`
+        );
     }
 
-    async stop(): Promise<void> {
-        this.backend.libraries!.clear();
-        this.wss?.close();
-        console.log('WebSocket server stopped');
+    private unregisterClient(ws: WebSocket): void {
+        Object.keys(this.libraryClients).forEach(libraryId => {
+            const index = this.libraryClients[libraryId].findIndex(client => client === ws);
+            if (index === -1) return;
+
+            const clientId = (ws as ConnectedClient).clientId || 'unknown';
+            this.libraryClients[libraryId].splice(index, 1);
+
+            if (this.libraryClients[libraryId].length === 0) {
+                delete this.libraryClients[libraryId];
+            }
+
+            console.log(
+                `[WebSocketServer] Unregistered client ${clientId} from library ${libraryId}. ` +
+                `totalConnections=${this.getTotalConnectionCount()}`
+            );
+        });
+    }
+
+    private getTotalConnectionCount(): number {
+        return Object.values(this.libraryClients).reduce((sum, clients) => sum + clients.length, 0);
     }
 }

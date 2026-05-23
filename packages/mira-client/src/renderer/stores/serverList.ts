@@ -2,6 +2,22 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import ConfigStorage from '@renderer/utils/ConfigStorage'
 
+const DEFAULT_WS_PORT = '8018'
+
+const createWebSocketUrl = (serverUrl: string): string => {
+  try {
+    const url = new URL(serverUrl)
+    url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
+    url.port = DEFAULT_WS_PORT
+    url.pathname = ''
+    url.search = ''
+    url.hash = ''
+    return url.toString().replace(/\/$/, '')
+  } catch {
+    return serverUrl.replace(/^http/, 'ws')
+  }
+}
+
 // 素材库配置接口
 export interface ServerConfig {
   id: string
@@ -236,7 +252,7 @@ export const useServerListStore = defineStore('serverList', () => {
         id: 'default-server', // 默认库ID
         name: '素材库',
         serverUrl: location.protocol+'//'+location.host+':8081',
-        websocketUrl: 'ws://'+location.host+':8018',
+        websocketUrl: createWebSocketUrl(location.protocol+'//'+location.host+':8081'),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       }
@@ -283,7 +299,7 @@ export const useServerListStore = defineStore('serverList', () => {
         id: server.id, // 使用真实的服务器库ID
         name: server.name,
         serverUrl: serverUrl,
-        websocketUrl: serverUrl.replace('http', 'ws') + '/ws',
+        websocketUrl: createWebSocketUrl(serverUrl),
         isActive: false,
         createdAt: server.createdAt,
         updatedAt: server.updatedAt

@@ -87,7 +87,7 @@
                 'w-full',
                 errors.websocketUrl ? 'border-red-500' : ''
               ]"
-              placeholder="ws://localhost:8081/ws"
+              placeholder="ws://localhost:8018"
               :data-invalid="!!errors.websocketUrl"
             />
             <span v-if="errors.websocketUrl" class="text-red-500 text-sm mt-1">{{ errors.websocketUrl }}</span>
@@ -343,6 +343,21 @@ const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
 const serverListStore = useServerListStore()
+const DEFAULT_WS_PORT = '8018'
+
+const createWebSocketUrl = (serverUrl: string): string => {
+  try {
+    const url = new URL(serverUrl)
+    url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
+    url.port = DEFAULT_WS_PORT
+    url.pathname = ''
+    url.search = ''
+    url.hash = ''
+    return url.toString().replace(/\/$/, '')
+  } catch {
+    return serverUrl.replace(/^http/, 'ws')
+  }
+}
 
 // 生成唯一的库ID
 const generateLibraryId = (): string => {
@@ -488,6 +503,7 @@ watch(isVisible, (visible) => {
 watch(() => formData.value.serverUrl, () => {
   // 清除连接测试结果
   connectionTestResult.value = null
+  formData.value.websocketUrl = createWebSocketUrl(formData.value.serverUrl.trim())
   // 清除服务器URL错误
   if (errors.value.serverUrl) {
     validateServerUrl()
@@ -530,7 +546,7 @@ const validateForm = () => {
   if (!formData.value.websocketUrl.trim()) {
     errors.value.websocketUrl = '请输入 WebSocket 地址'
   } else if (!formData.value.websocketUrl.match(/^wss?:\/\/.+/)) {
-    errors.value.websocketUrl = '请输入有效的 WebSocket 地址（如：ws://localhost:8081/ws）'
+    errors.value.websocketUrl = '请输入有效的 WebSocket 地址（如：ws://localhost:8018）'
   }
 
   // 认证验证

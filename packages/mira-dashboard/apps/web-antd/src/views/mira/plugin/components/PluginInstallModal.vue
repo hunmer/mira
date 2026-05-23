@@ -1,13 +1,13 @@
 <script setup lang="ts">
 defineProps<{
+  installForm: { name: string; proxy: string; version: string };
   installTab: string;
   selectedFile: File | null;
-  installForm: { name: string; version: string; proxy: string };
 }>();
 
 const emit = defineEmits<{
-  'update:installTab': [value: string];
   fileSelect: [event: Event];
+  'update:installTab': [value: string];
 }>();
 </script>
 
@@ -25,7 +25,9 @@ const emit = defineEmits<{
         </button>
         <button
           class="px-4 py-2 text-sm font-medium"
-          :class="[installTab === 'repository' ? 'border-b-2 border-blue-500' : '']"
+          :class="[
+            installTab === 'repository' ? 'border-b-2 border-blue-500' : '',
+          ]"
           @click="emit('update:installTab', 'repository')"
         >
           从仓库安装
@@ -69,7 +71,9 @@ const emit = defineEmits<{
           type="text"
           placeholder="latest"
           class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          @input="installForm.version = ($event.target as HTMLInputElement).value"
+          @input="
+            installForm.version = ($event.target as HTMLInputElement).value
+          "
         />
       </div>
       <div>

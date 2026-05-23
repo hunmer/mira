@@ -36,9 +36,13 @@ export class DeviceRoutes {
 
         // 断开特定设备连接
         this.router.post('/disconnect', this.disconnectDevice.bind(this));
+        this.router.post('/:clientId/disconnect', this.disconnectDeviceByClientId.bind(this));
 
         // 向特定设备发送消息
         this.router.post('/send-message', this.sendMessageToDevice.bind(this));
+        this.router.post('/:clientId/message', this.sendMessageToDeviceByClientId.bind(this));
+        this.router.post('/:clientId/test', this.sendTestMessageToDevice.bind(this));
+        this.router.get('/:clientId/messages', this.getDeviceMessages.bind(this));
 
         // 获取设备统计信息
         this.router.get('/stats', this.getDeviceStats.bind(this));
@@ -181,6 +185,25 @@ export class DeviceRoutes {
         }
     }
 
+    private async disconnectDeviceByClientId(req: Request, res: Response): Promise<void> {
+        const resolved = this.findDeviceClient(req.params.clientId);
+        if (!resolved) {
+            res.status(404).json({
+                success: false,
+                error: 'Device not found',
+                clientId: req.params.clientId
+            });
+            return;
+        }
+
+        req.body = {
+            ...req.body,
+            libraryId: resolved.libraryId,
+            clientId: req.params.clientId
+        };
+        await this.disconnectDevice(req, res);
+    }
+
     private async sendMessageToDevice(req: Request, res: Response): Promise<void> {
         try {
             const { libraryId, clientId, message } = req.body;
@@ -237,6 +260,70 @@ export class DeviceRoutes {
                 details: error instanceof Error ? error.message : String(error)
             });
         }
+    }
+
+    private async sendMessageToDeviceByClientId(req: Request, res: Response): Promise<void> {
+        const resolved = this.findDeviceClient(req.params.clientId);
+        if (!resolved) {
+            res.status(404).json({
+                success: false,
+                error: 'Device not found',
+                clientId: req.params.clientId
+            });
+            return;
+        }
+
+        req.body = {
+            ...req.body,
+            libraryId: resolved.libraryId,
+            clientId: req.params.clientId,
+            message: req.body?.message ?? req.body?.content
+        };
+        await this.sendMessageToDevice(req, res);
+    }
+
+    private async sendTestMessageToDevice(req: Request, res: Response): Promise<void> {
+        const resolved = this.findDeviceClient(req.params.clientId);
+        if (!resolved) {
+            res.status(404).json({
+                success: false,
+                error: 'Device not found',
+                clientId: req.params.clientId
+            });
+            return;
+        }
+
+        req.body = {
+            ...req.body,
+            libraryId: resolved.libraryId,
+            clientId: req.params.clientId,
+            message: {
+                type: 'test',
+                content: 'Test message from administrator',
+                timestamp: new Date().toISOString()
+            }
+        };
+        await this.sendMessageToDevice(req, res);
+    }
+
+    private async getDeviceMessages(req: Request, res: Response): Promise<void> {
+        const resolved = this.findDeviceClient(req.params.clientId);
+        if (!resolved) {
+            res.status(404).json({
+                success: false,
+                error: 'Device not found',
+                clientId: req.params.clientId
+            });
+            return;
+        }
+
+        res.json({
+            success: true,
+            data: [],
+            clientId: req.params.clientId,
+            libraryId: resolved.libraryId,
+            timestamp: new Date().toISOString()
+        });
     }
 
     private async getDeviceStats(req: Request, res: Response): Promise<void> {
@@ -296,6 +383,20 @@ export class DeviceRoutes {
             userAgent,
             ipAddress
         };
+    }
+
+    private findDeviceClient(clientId: string): { libraryId: string; client: WebSocket } | null {
+        const webSocketServer = this.backend.getWebSocketServer();
+        if (!webSocketServer) return null;
+
+        for (const [libraryId, clients] of Object.entries(webSocketServer.libraryClients)) {
+            const client = clients.find(item => (item as any).clientId === clientId);
+            if (client) {
+                return { libraryId, client };
+            }
+        }
+
+        return null;
     }
 
     public getRouter(): Router {

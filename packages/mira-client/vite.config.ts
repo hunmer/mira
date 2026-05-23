@@ -155,9 +155,7 @@ export default defineConfig({
       include: [
         'vue',
         'vue-router',
-        'pinia',
-        '@coleqiu/vue-drag-select',
-        'mira-server-sdk'
+        'pinia'
       ],
       exclude: [
         'electron'
