@@ -75,9 +75,21 @@ const {
           </select>
 
           <div class="relative min-w-64 flex-1">
-            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <div
+              class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3"
+            >
+              <svg
+                class="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
               </svg>
             </div>
             <input
@@ -118,8 +130,18 @@ const {
             class="inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             @click="openInstallDialog(library.id)"
           >
-            <svg class="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            <svg
+              class="-ml-1 mr-2 h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 4v16m8-8H4"
+              />
             </svg>
             安装插件
           </button>
@@ -141,7 +163,9 @@ const {
               <div class="stats-icon">✅</div>
               <div class="stats-info">
                 <h3>已启用</h3>
-                <p class="stats-number">{{ getActiveCount(library.plugins) }}</p>
+                <p class="stats-number">
+                  {{ getActiveCount(library.plugins) }}
+                </p>
               </div>
             </div>
           </div>
@@ -190,7 +214,9 @@ const {
             @dropdown="toggleDropdown"
             @open-route="openRouteInNewTab"
           >
-            <template #category>{{ getCategoryDisplayName(plugin.category) }}</template>
+            <template #category>
+              {{ getCategoryDisplayName(plugin.category) }}
+            </template>
           </PluginCard>
         </div>
 
@@ -201,10 +227,18 @@ const {
         >
           <div class="mb-4 text-4xl">🔧</div>
           <p class="mb-2 text-lg font-medium">
-            {{ searchKeywords[library.id] || categoryFilters[library.id] ? '没有找到匹配的插件' : '暂无插件' }}
+            {{
+              searchKeywords[library.id] || categoryFilters[library.id]
+                ? '没有找到匹配的插件'
+                : '暂无插件'
+            }}
           </p>
           <p class="text-sm">
-            {{ searchKeywords[library.id] || categoryFilters[library.id] ? '请尝试调整搜索条件' : '点击"安装插件"开始添加' }}
+            {{
+              searchKeywords[library.id] || categoryFilters[library.id]
+                ? '请尝试调整搜索条件'
+                : '点击"安装插件"开始添加'
+            }}
           </p>
         </div>
       </div>
@@ -284,7 +318,9 @@ const {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 12px;
   box-shadow: 0 4px 15px rgb(0 0 0 / 10%);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .stats-card:hover {

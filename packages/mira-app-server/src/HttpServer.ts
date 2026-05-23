@@ -56,10 +56,7 @@ function createHttpLoggerMiddleware() {
 
         // 输出请求信息
         console.log('\n' + '='.repeat(80));
-        // console.log(`📥 HTTP REQUEST [${timestamp}]`);
         console.log(`🔗 ${requestData.method.toUpperCase()} ${requestData.url}`);
-        // console.log(`🌐 IP: ${requestData.ip}`);
-        // console.log(`🔍 User-Agent: ${requestData.userAgent}`);
 
         if (Object.keys(requestData.query).length > 0) {
             console.log(`❓ Query Parameters:`, JSON.stringify(requestData.query, null, 2));
@@ -104,6 +101,22 @@ function createHttpLoggerMiddleware() {
             };
 
             console.log(`[${responseData.statusCode}] ${responseData.responseTime}ms`);
+
+            // 输出响应体（截断）
+            if (responseBody != null) {
+                const MAX_LEN = 500;
+                let bodyStr: string;
+                try {
+                    bodyStr = typeof responseBody === 'string' ? responseBody : JSON.stringify(responseBody);
+                } catch {
+                    bodyStr = String(responseBody);
+                }
+                if (bodyStr.length > MAX_LEN) {
+                    console.log(`📤 Response (truncated ${bodyStr.length}→${MAX_LEN}): ${bodyStr.substring(0, MAX_LEN)}...`);
+                } else {
+                    console.log(`📤 Response: ${bodyStr}`);
+                }
+            }
         });
 
         next();

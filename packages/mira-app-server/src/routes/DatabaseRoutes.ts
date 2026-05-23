@@ -11,20 +11,43 @@ export class DatabaseRoutes {
         this.setupRoutes();
     }
 
+    private getLibraryService(libraryId: string) {
+        const libraryObj = this.backend.libraries!.getLibrary(libraryId);
+        if (!libraryObj?.libraryService) return null;
+        if (!this.backend.libraries!.isLibraryActive(libraryId)) return null;
+        return libraryObj.libraryService;
+    }
+
     private setupRoutes(): void {
         // 获取数据库表列表
         this.router.get('/tables', async (req: Request, res: Response) => {
             try {
-                // 这里需要根据实际的数据库实现来获取表信息
-                // 暂时返回一个基本的表列表，后续可以扩展
-                const libraryCount = Object.keys(this.backend.libraries!.libraries).length;
-                const tables = [
-                    { name: 'users', schema: '', rowCount: 0 },
-                    { name: 'libraries', schema: '', rowCount: libraryCount },
-                    { name: 'plugins', schema: '', rowCount: 0 },
-                    { name: 'files', schema: '', rowCount: 0 },
-                    { name: 'tags', schema: '', rowCount: 0 }
-                ];
+                const libraryId = req.query.libraryId as string;
+                if (!libraryId) {
+                    return res.status(400).json({ error: 'libraryId is required' });
+                }
+
+                const service = this.getLibraryService(libraryId);
+                if (!service) {
+                    return res.status(404).json({ error: 'Library not found or inactive' });
+                }
+
+                // 查询 SQLite 真实表列表
+                const tables: any[] = [];
+                const tableNames = await service.getSql("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name");
+
+                for (const row of tableNames) {
+                    const name = row.name;
+                    const countResult = await service.getSql(`SELECT COUNT(*) as cnt FROM "${name}"`);
+                    const schemaResult = await service.getSql(`PRAGMA table_info("${name}")`);
+                    const schemaStr = schemaResult.map((c: any) => `${c.name}(${c.type})`).join(', ');
+                    tables.push({
+                        name,
+                        schema: schemaStr,
+                        rowCount: countResult[0]?.cnt || 0,
+                    });
+                }
+
                 res.json(tables);
             } catch (error) {
                 console.error('Error getting database tables:', error);
@@ -36,25 +59,20 @@ export class DatabaseRoutes {
         this.router.get('/tables/:tableName/data', async (req: Request, res: Response) => {
             try {
                 const { tableName } = req.params;
-                let data: any[] = [];
+                const libraryId = req.query.libraryId as string;
+                const limit = Math.min(parseInt(req.query.limit as string) || 100, 1000);
+                const offset = parseInt(req.query.offset as string) || 0;
 
-                if (tableName === 'libraries') {
-                    for (const [id, libraryObj] of Object.entries(this.backend.libraries!.libraries)) {
-                        if (libraryObj.libraryService) {
-                            const stats = await libraryObj.libraryService.getStats();
-                            data.push({
-                                id: id,
-                                name: libraryObj.libraryService.config.name,
-                                path: libraryObj.libraryService.config.path,
-                                type: libraryObj.libraryService.config.type || 'local',
-                                file_count: stats.totalFiles,
-                                size: stats.totalSize,
-                                created_at: libraryObj.libraryService.config.createdAt || new Date().toISOString()
-                            });
-                        }
-                    }
+                if (!libraryId) {
+                    return res.status(400).json({ error: 'libraryId is required' });
                 }
 
+                const service = this.getLibraryService(libraryId);
+                if (!service) {
+                    return res.status(404).json({ error: 'Library not found or inactive' });
+                }
+
+                const data = await service.getSql(`SELECT * FROM "${tableName}" LIMIT ? OFFSET ?`, [limit, offset]);
                 res.json(data);
             } catch (error) {
                 console.error('Error getting table data:', error);
@@ -66,24 +84,43 @@ export class DatabaseRoutes {
         this.router.get('/tables/:tableName/schema', async (req: Request, res: Response) => {
             try {
                 const { tableName } = req.params;
-                let schema: any[] = [];
+                const libraryId = req.query.libraryId as string;
 
-                if (tableName === 'libraries') {
-                    schema = [
-                        { name: 'id', type: 'TEXT', notnull: 1, pk: 1, dflt_value: null },
-                        { name: 'name', type: 'TEXT', notnull: 1, pk: 0, dflt_value: null },
-                        { name: 'path', type: 'TEXT', notnull: 1, pk: 0, dflt_value: null },
-                        { name: 'type', type: 'TEXT', notnull: 0, pk: 0, dflt_value: 'local' },
-                        { name: 'file_count', type: 'INTEGER', notnull: 0, pk: 0, dflt_value: '0' },
-                        { name: 'size', type: 'INTEGER', notnull: 0, pk: 0, dflt_value: '0' },
-                        { name: 'created_at', type: 'DATETIME', notnull: 0, pk: 0, dflt_value: 'CURRENT_TIMESTAMP' }
-                    ];
+                if (!libraryId) {
+                    return res.status(400).json({ error: 'libraryId is required' });
                 }
 
+                const service = this.getLibraryService(libraryId);
+                if (!service) {
+                    return res.status(404).json({ error: 'Library not found or inactive' });
+                }
+
+                const schema = await service.getSql(`PRAGMA table_info("${tableName}")`);
                 res.json(schema);
             } catch (error) {
                 console.error('Error getting table schema:', error);
                 res.status(500).json({ error: 'Failed to get table schema' });
+            }
+        });
+
+        // SQL 查询
+        this.router.post('/query', async (req: Request, res: Response) => {
+            try {
+                const { sql, libraryId } = req.body;
+                if (!sql || !libraryId) {
+                    return res.status(400).json({ error: 'sql and libraryId are required' });
+                }
+
+                const service = this.getLibraryService(libraryId);
+                if (!service) {
+                    return res.status(404).json({ error: 'Library not found or inactive' });
+                }
+
+                const result = await service.getSql(sql);
+                res.json(result);
+            } catch (error) {
+                console.error('Error executing SQL:', error);
+                res.status(500).json({ error: 'Failed to execute SQL' });
             }
         });
     }
