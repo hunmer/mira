@@ -62,7 +62,6 @@ export class TabHistory {
       const stored = await ConfigStorage.getItem(this.storageKey)
       if (stored) {
         this.history = JSON.parse(stored)
-        console.log(`📜 加载Tab历史记录: ${this.history.length}条`)
       }
     } catch (error) {
       console.error('❌ 加载Tab历史记录失败:', error)
@@ -98,8 +97,6 @@ export class TabHistory {
 
     // 保存到存储
     await this.saveHistory()
-
-    console.log(`📝 记录Tab${action}: ${tab.label} (总计${this.history.length}条)`)
   }
 
   /**
@@ -141,7 +138,6 @@ export class TabHistory {
   async clearHistory(): Promise<void> {
     this.history = []
     await ConfigStorage.removeItem(this.storageKey)
-    console.log('🗑️ 清除Tab历史记录')
   }
 
   /**
@@ -181,7 +177,6 @@ export class TabHistory {
 
     if (this.history.length !== beforeLength) {
       await this.saveHistory()
-      console.log(`🗑️ 删除Tab ${tabId} 的历史记录 (删除${beforeLength - this.history.length}条)`)
     }
   }
 }

@@ -89,7 +89,6 @@ export class SearchHandlers {
       }
 
       this.registeredSearchTypes.set(searchType.id, searchType)
-      console.log(`✅ 注册搜索类型: ${searchType.id} - ${searchType.title}`)
       return true
     } catch (error) {
       console.error('注册搜索类型失败:', error)
@@ -115,18 +114,13 @@ export class SearchHandlers {
    */
   private setupIpcListeners(): void {
     if (this.isInitialized) {
-      console.log('SearchHandlers IPC listeners already initialized, skipping...')
       return
     }
 
-    console.log('Initializing SearchHandlers IPC listeners...')
     // 监听来自主进程转发的搜索窗口消息
     if (window.electronAPI) {
       window.electronAPI.on('search-request-from-search-window', this.handleSearchWindowRequest.bind(this))
       this.isInitialized = true
-      console.log('✅ SearchHandlers IPC listeners initialized successfully')
-    } else {
-      console.warn('⚠️ electronAPI not available, SearchHandlers will not function properly')
     }
   }
 
@@ -135,15 +129,11 @@ export class SearchHandlers {
    */
   private async handleSearchWindowRequest(data: any): Promise<void> {
     try {
-      console.log('🎯 [SearchHandlers] 收到搜索窗口请求:', data)
       let result: any = null
 
       switch (data.type) {
         case 'search-request':
-          console.log('🔍 [SearchHandlers] 开始处理搜索请求:', { keyword: data.keyword, searchType: data.searchType })
           result = await this.handleSearch(data.keyword, data.searchType)
-          console.log('🔍 [SearchHandlers] 搜索完成，结果数量:', result?.length || 0)
-          console.log('🔍 [SearchHandlers] 搜索结果详情:', result)
 
           // 返回搜索结果
           const searchResponse = {
@@ -152,7 +142,6 @@ export class SearchHandlers {
             requestId: data.requestId,
             timestamp: Date.now()
           }
-          console.log('📤 [SearchHandlers] 向搜索窗口发送响应:', searchResponse)
           await this.sendResultToSearchWindow(searchResponse)
           break
 
@@ -180,7 +169,6 @@ export class SearchHandlers {
           break
 
         default:
-          console.log('未处理的搜索窗口请求类型:', data.type)
           await this.sendResultToSearchWindow({
             type: 'error',
             error: `未知的请求类型: ${data.type}`,
@@ -204,17 +192,12 @@ export class SearchHandlers {
    * 向搜索窗口发送结果
    */
   private async sendResultToSearchWindow(result: any): Promise<void> {
-    console.log('📤 [SearchHandlers] 通过IPC发送结果到搜索窗口:', result)
-
     if (window.electronAPI) {
       try {
         await window.electronAPI.invoke('search-result-from-main-renderer', result)
-        console.log('✅ [SearchHandlers] IPC调用成功')
       } catch (error) {
-        console.error('❌ [SearchHandlers] IPC调用失败:', error)
+        console.error('IPC调用失败:', error)
       }
-    } else {
-      console.error('❌ [SearchHandlers] electronAPI不可用')
     }
   }
 
@@ -228,8 +211,7 @@ export class SearchHandlers {
 
     try {
       let results: any[] = []
-      console.log({searchType, keyword})
-      
+
       // 使用注册的搜索类型进行搜索
       if (searchType === 'all') {
         // 搜索所有注册的类型
@@ -267,28 +249,23 @@ export class SearchHandlers {
   private async searchFiles(keyword: string): Promise<any[]> {
     try {
       if (!miraSDKService.isClientConnected()) {
-        console.log('Mira 未连接，无法搜索文件')
         return []
       }
 
-      console.log('搜索文件:', keyword)
-      
       // 获取当前库ID
       const { useMediaStore } = await import('../stores/media')
       const mediaStore = useMediaStore()
       const currentLibraryId = mediaStore.currentLibraryId || null
       
       if (!currentLibraryId) {
-        console.log('没有选择的库，无法搜索文件')
         return []
       }
 
       // 使用 MiraSDKService 搜索文件
-      const {files, offset, total, limit} = await miraSDKService.listFiles(currentLibraryId, {
+      const {files} = await miraSDKService.listFiles(currentLibraryId, {
         title: keyword, // 使用关键词作为标题搜索
         limit: 20 // 限制结果数量
       })
-      console.log({files})
       if (!files || !Array.isArray(files)) {
         return []
       }
@@ -324,12 +301,9 @@ export class SearchHandlers {
   private async searchFolders(keyword: string): Promise<any[]> {
     try {
       if (!miraSDKService.isClientConnected()) {
-        console.log('Mira 未连接，无法搜索文件夹')
         return []
       }
 
-      console.log('搜索文件夹:', keyword)
-      
       // 使用 folderStore 获取可用文件夹
       const { useFolderStore } = await import('../stores/folder')
       const folderStore = useFolderStore()
@@ -355,7 +329,6 @@ export class SearchHandlers {
         }))
         .slice(0, 10) // 限制结果数量
 
-      console.log(`搜索文件夹完成，找到 ${filteredFolders.length} 个匹配结果`)
       return filteredFolders
     } catch (error) {
       console.error('搜索文件夹失败:', error)
@@ -369,12 +342,9 @@ export class SearchHandlers {
   private async searchTags(keyword: string): Promise<any[]> {
     try {
       if (!miraSDKService.isClientConnected()) {
-        console.log('Mira 未连接，无法搜索标签')
         return []
       }
 
-      console.log('搜索标签:', keyword)
-      
       // 使用 tagStore 获取可用标签
       const { useTagStore } = await import('../stores/tag')
       const tagStore = useTagStore()
@@ -400,7 +370,6 @@ export class SearchHandlers {
         }))
         .slice(0, 10) // 限制结果数量
 
-      console.log(`搜索标签完成，找到 ${filteredTags.length} 个匹配结果`)
       return filteredTags
     } catch (error) {
       console.error('搜索标签失败:', error)
@@ -432,7 +401,6 @@ export class SearchHandlers {
           break
 
         default:
-          console.log('未知的项目类型:', item.type)
       }
 
     } catch (error) {
@@ -445,8 +413,6 @@ export class SearchHandlers {
    * 打开文件 - 触发路由跳转到file-preview
    */
   private async openFile(item: any): Promise<void> {
-    console.log('打开文件:', item)
-    
     try {
       // 验证必要参数
       if (!item.id) {
@@ -463,7 +429,6 @@ export class SearchHandlers {
         if (!libraryId) {
           throw new Error('无法确定库ID，请先选择一个媒体库')
         }
-        console.warn('⚠️ 文件缺少libraryId，使用当前选中的库:', libraryId)
       }
 
       // 使用类的router实例
@@ -477,7 +442,6 @@ export class SearchHandlers {
           mimeType: item.mimeType || 'application/octet-stream'
         }
       })
-      console.log('✅ 直接路由跳转到文件预览:', item.title || item.name)
     } catch (error) {
       console.error('❌ 打开文件失败:', error)
       throw new Error(`无法打开文件 "${item.title || item.name || '未知文件'}": ${error instanceof Error ? error.message : '未知错误'}`)
@@ -488,7 +452,6 @@ export class SearchHandlers {
    * 打开文件夹/收藏夹 - 跳转到根路由并传递文件夹参数
    */
   private async openFolder(item: any): Promise<void> {
-    console.log('打开文件夹:', item)
     
     try {
       // 验证必要参数
@@ -506,7 +469,6 @@ export class SearchHandlers {
         if (!libraryId) {
           throw new Error('无法确定库ID，请先选择一个媒体库')
         }
-        console.warn('⚠️ 文件夹缺少libraryId，使用当前选中的库:', libraryId)
       }
 
       // 使用类的router实例
@@ -518,7 +480,6 @@ export class SearchHandlers {
           title: item.title || item.name || '未知文件夹'
         }
       })
-      console.log('✅ 直接路由跳转到根路由（文件夹）:', item.title || item.name)
     } catch (error) {
       console.error('❌ 打开文件夹失败:', error)
       throw new Error(`无法打开文件夹 "${item.title || item.name || '未知文件夹'}": ${error instanceof Error ? error.message : '未知错误'}`)
@@ -529,7 +490,6 @@ export class SearchHandlers {
    * 打开标签视图 - 跳转到根路由并传递标签参数
    */
   private async openTag(item: any): Promise<void> {
-    console.log('打开标签:', item)
     
     try {
       // 验证必要参数
@@ -547,7 +507,6 @@ export class SearchHandlers {
         if (!libraryId) {
           throw new Error('无法确定库ID，请先选择一个媒体库')
         }
-        console.warn('⚠️ 标签缺少libraryId，使用当前选中的库:', libraryId)
       }
 
       // 使用类的router实例
@@ -560,7 +519,6 @@ export class SearchHandlers {
           color: item.color || '#666666'
         }
       })
-      console.log('✅ 直接路由跳转到根路由（标签）:', item.title || item.name)
     } catch (error) {
       console.error('❌ 打开标签失败:', error)
       throw new Error(`无法打开标签 "${item.title || item.name || '未知标签'}": ${error instanceof Error ? error.message : '未知错误'}`)
