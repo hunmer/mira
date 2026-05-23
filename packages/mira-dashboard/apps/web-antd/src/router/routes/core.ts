@@ -57,23 +57,6 @@ const coreRoutes: RouteRecordRaw[] = [
         },
       },
       {
-        name: 'CodeLogin',
-        path: 'code-login',
-        component: () => import('#/views/_core/authentication/code-login.vue'),
-        meta: {
-          title: $t('page.auth.codeLogin'),
-        },
-      },
-      {
-        name: 'QrCodeLogin',
-        path: 'qrcode-login',
-        component: () =>
-          import('#/views/_core/authentication/qrcode-login.vue'),
-        meta: {
-          title: $t('page.auth.qrcodeLogin'),
-        },
-      },
-      {
         name: 'ForgetPassword',
         path: 'forget-password',
         component: () =>

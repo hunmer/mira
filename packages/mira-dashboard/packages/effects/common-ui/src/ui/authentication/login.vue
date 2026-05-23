@@ -14,7 +14,6 @@ import { useVbenForm } from '@vben-core/form-ui';
 import { VbenButton, VbenCheckbox } from '@vben-core/shadcn-ui';
 
 import Title from './auth-title.vue';
-import ThirdPartyLogin from './third-party-login.vue';
 
 interface Props extends AuthenticationProps {
   formSchema?: VbenFormSchema[];
@@ -25,15 +24,11 @@ defineOptions({
 });
 
 const props = withDefaults(defineProps<Props>(), {
-  codeLoginPath: '/auth/code-login',
   forgetPasswordPath: '/auth/forget-password',
   formSchema: () => [],
   loading: false,
-  qrCodeLoginPath: '/auth/qrcode-login',
   registerPath: '/auth/register',
-  showCodeLogin: true,
   showForgetPassword: true,
-  showQrcodeLogin: true,
   showRegister: true,
   showRememberMe: true,
   showThirdPartyLogin: true,
@@ -143,33 +138,6 @@ defineExpose({
     >
       {{ submitButtonText || $t('common.login') }}
     </VbenButton>
-
-    <div
-      v-if="showCodeLogin || showQrcodeLogin"
-      class="mb-2 mt-4 flex items-center justify-between"
-    >
-      <VbenButton
-        v-if="showCodeLogin"
-        class="w-1/2"
-        variant="outline"
-        @click="handleGo(codeLoginPath)"
-      >
-        {{ $t('authentication.mobileLogin') }}
-      </VbenButton>
-      <VbenButton
-        v-if="showQrcodeLogin"
-        class="ml-4 w-1/2"
-        variant="outline"
-        @click="handleGo(qrCodeLoginPath)"
-      >
-        {{ $t('authentication.qrcodeLogin') }}
-      </VbenButton>
-    </div>
-
-    <!-- 第三方登录 -->
-    <slot name="third-party-login">
-      <ThirdPartyLogin v-if="showThirdPartyLogin" />
-    </slot>
 
     <slot name="to-register">
       <div v-if="showRegister" class="mt-3 text-center text-sm">
