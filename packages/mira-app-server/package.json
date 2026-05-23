@@ -15,8 +15,6 @@
     "dev": "node --inspect -r ts-node/register src/index.ts",
     "cli": "ts-node src/cli.ts",
     "cli:start": "ts-node src/cli.ts start",
-    "plugins:test:win": "ts-node src/cli.ts start -d \"D:\\mira_typescript\\plugins\"",
-    "plugins:test:mac": "ts-node src/cli.ts start -d /Users/Zhuanz/mira_typescript/plugins/",
     "cli:health": "ts-node src/cli.ts health",
     "cli:version": "ts-node src/cli.ts version",
     "test": "jest --config sdk/jest.config.js",

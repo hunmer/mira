@@ -42,7 +42,7 @@ export function useFileUploadDialog(props: Props, emit: Emits) {
         await serverListStore.initializeServerList()
         await libraryStore.fetchLibraries()
         if (libraryStore.libraries.length > 0) {
-          selectedLibraryId.value = libraryStore.libraries[0].id
+          selectedLibraryId.value = libraryStore.currentLibrary?.id || libraryStore.libraries[0].id
           await folderTagPanel.loadFoldersAndTags(selectedLibraryId.value)
         }
         isInitialized.value = true

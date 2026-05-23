@@ -1,6 +1,11 @@
 <script setup lang="ts">
 defineProps<{
-  installForm: { name: string; proxy: string; version: string; npmSource: string };
+  installForm: {
+    name: string;
+    npmSource: string;
+    proxy: string;
+    version: string;
+  };
   installTab: string;
   selectedFile: File | null;
 }>();
@@ -81,7 +86,9 @@ const emit = defineEmits<{
         <select
           :value="installForm.npmSource"
           class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          @change="installForm.npmSource = ($event.target as HTMLSelectElement).value"
+          @change="
+            installForm.npmSource = ($event.target as HTMLSelectElement).value
+          "
         >
           <option value="npmmirror">npmmirror（默认）</option>
           <option value="npm">npm</option>

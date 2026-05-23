@@ -4,6 +4,7 @@ import PluginCard from './components/PluginCard.vue';
 import PluginConfigDialog from './components/PluginConfigDialog.vue';
 import PluginDetailDrawerContent from './components/PluginDetailDrawer.vue';
 import PluginInstallModal from './components/PluginInstallModal.vue';
+import PluginStoreDialog from './components/PluginStoreDialog.vue';
 import { usePluginManager } from './composables/usePluginManager';
 
 defineOptions({ name: 'MiraPlugin' });
@@ -14,8 +15,6 @@ const {
   librariesWithPlugins,
   activeLibraryTab,
   searchKeywords,
-  sortOptions,
-  categoryFilters,
   selectedPlugin,
   showConfigDialog,
   configuringPlugin,
@@ -33,7 +32,6 @@ const {
 
   // 工具
   getCategoryDisplayName,
-  getAvailableCategories,
   getActiveCount,
   getPluginRoutesForLibrary,
   getFilteredPlugins,
@@ -48,6 +46,10 @@ const {
   showPluginDetail,
   toggleDropdown,
   openRouteInNewTab,
+  showStoreDialog,
+  getInstalledPluginNames,
+  openStoreDialog,
+  installFromStore,
 } = usePluginManager();
 </script>
 
@@ -100,31 +102,6 @@ const {
             />
           </div>
 
-          <select
-            v-model="sortOptions[library.id]"
-            class="block rounded-md border border-gray-300 px-3 py-2 leading-5 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          >
-            <option value="status">启用状态</option>
-            <option value="name">名称</option>
-            <option value="author">作者</option>
-            <option value="createdAt">安装时间</option>
-            <option value="category">分类</option>
-          </select>
-
-          <select
-            v-model="categoryFilters[library.id]"
-            class="block rounded-md border border-gray-300 px-3 py-2 leading-5 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          >
-            <option value="">全部分类</option>
-            <option
-              v-for="category in getAvailableCategories(library.plugins)"
-              :key="category"
-              :value="category"
-            >
-              {{ getCategoryDisplayName(category) }}
-            </option>
-          </select>
-
           <button
             type="button"
             class="inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
@@ -144,6 +121,27 @@ const {
               />
             </svg>
             安装插件
+          </button>
+
+          <button
+            type="button"
+            class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            @click="openStoreDialog()"
+          >
+            <svg
+              class="-ml-1 mr-2 h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"
+              />
+            </svg>
+            插件商店
           </button>
         </div>
 
@@ -228,14 +226,14 @@ const {
           <div class="mb-4 text-4xl">🔧</div>
           <p class="mb-2 text-lg font-medium">
             {{
-              searchKeywords[library.id] || categoryFilters[library.id]
+              searchKeywords[library.id]
                 ? '没有找到匹配的插件'
                 : '暂无插件'
             }}
           </p>
           <p class="text-sm">
             {{
-              searchKeywords[library.id] || categoryFilters[library.id]
+              searchKeywords[library.id]
                 ? '请尝试调整搜索条件'
                 : '点击"安装插件"开始添加'
             }}
@@ -283,6 +281,14 @@ const {
       :plugin="selectedPluginForAction"
       @action="handlePluginAction"
       @close="activeDropdown = null"
+    />
+
+    <!-- 插件商店 -->
+    <PluginStoreDialog
+      :visible="showStoreDialog"
+      :installed-names="getInstalledPluginNames"
+      @update:visible="showStoreDialog = $event"
+      @install="installFromStore"
     />
   </div>
 </template>

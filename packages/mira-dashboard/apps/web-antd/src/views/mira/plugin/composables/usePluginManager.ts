@@ -58,6 +58,35 @@ export function usePluginManager() {
     npmSource: 'npmmirror',
   });
 
+  // 插件商店
+  const showStoreDialog = ref(false);
+
+  const openStoreDialog = () => {
+    showStoreDialog.value = true;
+  };
+
+  const getInstalledPluginNames = computed(() =>
+    librariesWithPlugins.value.flatMap((lib) => lib.plugins.map((p) => p.name)),
+  );
+
+  const installFromStore = (pluginName: string) => {
+    showStoreDialog.value = false;
+    if (!activeLibraryTab.value && librariesWithPlugins.value.length > 0) {
+      activeLibraryTab.value = librariesWithPlugins.value[0]!.id;
+    }
+    currentInstallLibraryId.value = activeLibraryTab.value;
+    installForm.value = {
+      name: pluginName,
+      version: 'latest',
+      proxy: '',
+      npmSource: 'npmmirror',
+    };
+    installTab.value = 'repository';
+    const library = librariesWithPlugins.value.find((lib) => lib.id === activeLibraryTab.value);
+    const libraryName = library ? library.name || library.id : '插件';
+    modalApi.setState({ title: `安装 ${pluginName}` }).open();
+  };
+
   // 下拉菜单
   const activeDropdown = ref<string | null>(null);
   const selectedPluginForAction = ref<Plugin | null>(null);
@@ -397,6 +426,10 @@ export function usePluginManager() {
     selectedPluginForAction,
     dropdownStyle,
 
+    // 插件商店
+    showStoreDialog,
+    getInstalledPluginNames,
+
     // 组件
     PluginDetailDrawer,
     VbenModal,
@@ -418,6 +451,8 @@ export function usePluginManager() {
     handlePluginAction,
     handleFileSelect,
     openInstallDialog,
+    openStoreDialog,
+    installFromStore,
     cancelInstall,
     showPluginDetail,
     toggleDropdown,
