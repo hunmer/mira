@@ -66,7 +66,7 @@ export class UserRouter {
                         // 添加更多用户信息字段以符合vben标准
                         avatar: '', // 头像URL，可选
                         desc: userGroup, // 用户描述使用用户组
-                        homePath: '/dashboard', // 默认首页路径
+                        homePath: '/mira/overview', // 默认首页路径
                     };
 
                     res.json({
