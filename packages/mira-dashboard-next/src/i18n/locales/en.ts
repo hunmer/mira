@@ -48,6 +48,18 @@ export default {
     goRegister: 'Register',
     goLogin: 'Login',
   },
+  profile: {
+    title: 'Profile',
+    changePassword: 'Change Password',
+    changePasswordDesc: 'Update your login password',
+    oldPassword: 'Current Password',
+    newPassword: 'New Password',
+    confirmNewPassword: 'Confirm New Password',
+    fillAll: 'Please fill in all password fields',
+    passwordMin: 'New password must be at least 6 characters',
+    passwordMismatch: 'New passwords do not match',
+    passwordChanged: 'Password changed successfully',
+  },
   overview: {
     title: 'Overview',
     subtitle: 'Mira management system status overview',

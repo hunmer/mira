@@ -7,4 +7,6 @@ export const authApi = {
   me: () => client.get('/user/info'),
   register: (data: { username: string; password: string; email?: string }) =>
     client.post('/auth/register', data),
+  changePassword: (data: { oldPassword: string; newPassword: string }) =>
+    client.put('/user/change-password', data),
 }

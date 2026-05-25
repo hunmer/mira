@@ -119,6 +119,10 @@ export class UserStorage {
         return hash === verifyHash;
     }
 
+    public verifyPasswordDirect(password: string, hashedPassword: string): boolean {
+        return this.verifyPassword(password, hashedPassword);
+    }
+
     // 生成令牌
     generateToken(userId: number): string {
         const randomBytes = crypto.randomBytes(32).toString('hex');

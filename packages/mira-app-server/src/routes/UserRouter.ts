@@ -92,6 +92,42 @@ export class UserRouter {
         });
 
 
+        // 修改密码
+        this.router.put('/change-password', async (req: Request, res: Response) => {
+            try {
+                const token = req.headers.authorization?.replace('Bearer ', '');
+                if (!token) {
+                    return res.status(401).json({ code: 401, message: '未提供认证令牌', data: null });
+                }
+
+                const { oldPassword, newPassword } = req.body;
+                if (!oldPassword || !newPassword) {
+                    return res.status(400).json({ code: 400, message: '旧密码和新密码不能为空', data: null });
+                }
+                if (newPassword.length < 6) {
+                    return res.status(400).json({ code: 400, message: '新密码长度至少6个字符', data: null });
+                }
+
+                const authService = this.authRouter.getAuthService();
+                const user = await authService.validateToken(token);
+                if (!user) {
+                    return res.status(401).json({ code: 401, message: '无效或过期的认证令牌', data: null });
+                }
+
+                const userStorage = this.authRouter.getUserStorage();
+                const fullUser = await userStorage.findUserByUsername(user.username);
+                if (!fullUser || !userStorage.verifyPasswordDirect(oldPassword, fullUser.password)) {
+                    return res.status(400).json({ code: 400, message: '旧密码不正确', data: null });
+                }
+
+                await userStorage.updateUser(user.id, { password: newPassword });
+                res.json({ code: 0, message: '密码修改成功', data: null });
+            } catch (error) {
+                console.error('Change password error:', error);
+                res.status(500).json({ code: 500, message: '服务器内部错误', data: null });
+            }
+        });
+
         // 更新用户信息路由
         this.router.put('/info', async (req: Request, res: Response) => {
             try {

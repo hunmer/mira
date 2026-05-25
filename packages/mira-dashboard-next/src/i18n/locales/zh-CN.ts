@@ -48,6 +48,18 @@ export default {
     goRegister: '去注册',
     goLogin: '去登录',
   },
+  profile: {
+    title: '个人中心',
+    changePassword: '修改密码',
+    changePasswordDesc: '修改您的登录密码',
+    oldPassword: '旧密码',
+    newPassword: '新密码',
+    confirmNewPassword: '确认新密码',
+    fillAll: '请填写所有密码字段',
+    passwordMin: '新密码至少6个字符',
+    passwordMismatch: '两次输入的新密码不一致',
+    passwordChanged: '密码修改成功',
+  },
   overview: {
     title: '系统概览',
     subtitle: 'Mira 管理系统运行状态概览',

@@ -11,7 +11,9 @@ import { getDashboardContext } from '@/stores/app'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent } from '@/components/ui/card'
+import {
+  Card, CardContent, CardDescription, CardHeader, CardTitle,
+} from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
@@ -139,6 +141,17 @@ const registeredRouteNames = new Set<string>()
 
 // 暴露 dashboard 上下文给插件组件
 ;(window as any).MiraDashboard = getDashboardContext()
+;(window as any).MiraDashboardUI = {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  ScrollArea,
+  Separator,
+}
 
 async function loadPluginRoutes(libraryId: string) {
   try {

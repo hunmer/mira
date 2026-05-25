@@ -18,7 +18,7 @@ import {
   RiHome4Line, RiFolderLine, RiPuzzleLine, RiUserSettingsLine,
   RiDatabase2Line, RiSmartphoneLine, RiUploadCloudLine,
   RiSunLine, RiMoonLine, RiComputerLine, RiGlobalLine,
-  RiLogoutBoxRLine,
+  RiLogoutBoxRLine, RiUser3Line,
 } from '@remixicon/vue'
 
 const { t, locale } = useI18n()
@@ -68,7 +68,7 @@ function handleLogout() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem v-for="item in visibleNavItems" :key="item.path">
-                <SidebarMenuButton as-child :is-active="route.path === item.path" :tooltip="t(`nav.${item.key}`)">
+                <SidebarMenuButton as-child :is-active="route.path === item.path || route.path.startsWith(item.path + '/')" :tooltip="t(`nav.${item.key}`)">
                   <router-link :to="item.path">
                     <component :is="item.icon" class="size-4" />
                     <span>{{ t(`nav.${item.key}`) }}</span>
@@ -95,6 +95,10 @@ function handleLogout() {
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent side="top" class="w-56" align="start">
+                <DropdownMenuItem @click="router.push('/profile')">
+                  <RiUser3Line class="mr-2 size-4" />
+                  {{ t('profile.title') }}
+                </DropdownMenuItem>
                 <DropdownMenuItem @click="handleLogout">
                   <RiLogoutBoxRLine class="mr-2 size-4" />
                   {{ t('auth.logout') }}

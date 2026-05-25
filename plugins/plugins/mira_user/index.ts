@@ -17,7 +17,7 @@ class UserPlugin extends ServerPlugin {
         this.miraClient = miraClient;
         console.log('mira_user plugin initialized!!!');
 
-        // 注册所需的字�?
+        // 注册所需的字段
         pluginManager.registerFields([
             { action: 'connect', type: 'library', field: 'username' },
             { action: 'connect', type: 'library', field: 'password' },
@@ -34,10 +34,10 @@ class UserPlugin extends ServerPlugin {
             handler: this.onHttpBeforeFiles.bind(this),
         });
 
-        // 获取 httpServer �?backend
+        // 获取 httpServer 和 backend
         const backend = pluginManager.server.backend;
         const httpServer = backend.getHttpServer();
-        // 开放登录页�?
+        // 开放登录页面
         httpServer.app
             .use('/user', express.static(path.join(pluginManager.getPluginDir('mira_user'), 'web')) as any);
 
@@ -64,7 +64,7 @@ class UserPlugin extends ServerPlugin {
                 }
             } catch (error) {
                 console.error('登录错误:', error);
-                res.status(500).json({ success: false, message: (error as any).message || '服务器内部错�? });
+                res.status(500).json({ success: false, message: (error as any).message || '服务器内部错误' });
             }
         });
 
@@ -77,7 +77,7 @@ class UserPlugin extends ServerPlugin {
                     return;
                 }
                 if (password.length < 6) {
-                    res.status(400).json({ success: false, message: '密码长度不能少于6�? });
+                    res.status(400).json({ success: false, message: '密码长度不能少于6位' });
                     return;
                 }
                 // 使用 SDK 注册 - 如果SDK支持注册功能
@@ -91,11 +91,11 @@ class UserPlugin extends ServerPlugin {
                 }
             } catch (error) {
                 console.error('注册错误:', error);
-                res.status(500).json({ success: false, message: (error as any).message || '服务器内部错�? });
+                res.status(500).json({ success: false, message: (error as any).message || '服务器内部错误' });
             }
         });
 
-        // 退出登录接�?
+        // 退出登录接口
         httpServer.httpRouter.registerRounter(libraryId, '/user/logout', 'post', async (req: any, res: any) => {
             try {
                 const { libraryId, clientId, username } = req.body;
@@ -105,7 +105,7 @@ class UserPlugin extends ServerPlugin {
                     if (index > -1) {
                         this.logined_clients.splice(index, 1);
                     }
-                    // 通知客户端清除登录状�?
+                    // 通知客户端清除登录状态
                     const ws = this.server.getWsClientById(libraryId, clientId);
                     if (ws) {
                         this.server.setClientFields(libraryId, clientId, { username: null, password: null });
@@ -117,7 +117,7 @@ class UserPlugin extends ServerPlugin {
                         this.server.sendToWebsocket(ws, {
                             eventName: 'logout',
                             libraryId,
-                            data: { message: '已退出登�? }
+                            data: { message: '已退出登录' }
                         });
                     }
                 }
