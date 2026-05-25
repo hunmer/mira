@@ -43,65 +43,100 @@
 
       <!-- Step 1: Server Connection -->
       <form v-if="currentStep === 1" @submit.prevent="testConnection" class="step-form">
-        <div class="input-group">
-          <span class="material-icons input-icon">dns</span>
-          <input v-model="serverName" type="text" placeholder="服务器名称" required />
+        <div class="field">
+          <Label>服务器名称</Label>
+          <Input v-model="serverName" type="text" placeholder="服务器名称" required />
         </div>
-        <div class="input-group">
-          <span class="material-icons input-icon">link</span>
-          <input v-model="serverAddress" type="text" placeholder="服务器地址 (如 http://192.168.1.100)" required />
+        <div class="field">
+          <Label>服务器地址</Label>
+          <Input v-model="serverAddress" type="text" placeholder="http://192.168.1.100" required />
         </div>
-        <button type="button" class="collapse-toggle" @click="showWsField = !showWsField">
-          <span class="material-icons">{{ showWsField ? 'expand_less' : 'expand_more' }}</span>
+        <Button type="button" variant="ghost" size="sm" @click="showWsField = !showWsField">
+          <span class="material-icons text-sm">{{ showWsField ? 'expand_less' : 'expand_more' }}</span>
           WebSocket 地址
-        </button>
-        <div v-if="showWsField" class="input-group">
-          <span class="material-icons input-icon">swap_horiz</span>
-          <input v-model="wsAddress" type="text" placeholder="WebSocket 地址 (默认 8081)" />
+        </Button>
+        <div v-if="showWsField" class="field">
+          <Label>WebSocket 地址</Label>
+          <Input v-model="wsAddress" type="text" placeholder="默认 8081" />
         </div>
-        <button type="submit" class="action-button" :disabled="loading">
-          <span v-if="loading" class="loading-spinner"></span>
+        <Button type="submit" class="w-full" :disabled="loading">
+          <Loader2 v-if="loading" class="animate-spin" />
           {{ loading ? '连接中...' : '下一步' }}
-        </button>
+        </Button>
       </form>
 
       <!-- Step 2: Authentication -->
-      <form v-if="currentStep === 2" @submit.prevent="authMode === 'login' ? handleLogin() : handleRegister()" class="step-form">
-        <ToggleGroup type="single" :model-value="authMode" @update:model-value="onAuthModeChange" class="justify-center">
-          <ToggleGroupItem value="login" aria-label="登录">登录</ToggleGroupItem>
-          <ToggleGroupItem v-if="healthData?.allowRegistration !== false" value="register" aria-label="注册">注册</ToggleGroupItem>
-        </ToggleGroup>
+      <div v-if="currentStep === 2" class="step-form">
+        <Tabs default-value="login" class="justify-center">
+          <TabsList>
+            <TabsTrigger value="login">登录</TabsTrigger>
+            <TabsTrigger v-if="healthData?.allowRegistration !== false" value="register">注册</TabsTrigger>
+          </TabsList>
 
-        <div class="input-group">
-          <span class="material-icons input-icon">person</span>
-          <input v-model="credentials.username" type="text" placeholder="用户名" required />
-        </div>
-        <div v-if="authMode === 'register'" class="input-group">
-          <span class="material-icons input-icon">email</span>
-          <input v-model="registerForm.email" type="email" placeholder="邮箱（选填）" />
-        </div>
-        <div class="input-group">
-          <span class="material-icons input-icon">lock</span>
-          <input v-model="credentials.password" :type="showPassword ? 'text' : 'password'" :placeholder="authMode === 'register' ? '密码（至少6位，含字母和数字）' : '密码'" required />
-          <button type="button" class="password-toggle" @click="showPassword = !showPassword">
-            <span class="material-icons">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
-          </button>
-        </div>
-        <div v-if="authMode === 'register'" class="input-group">
-          <span class="material-icons input-icon">lock</span>
-          <input v-model="registerForm.confirmPassword" :type="showConfirmPassword ? 'text' : 'password'" placeholder="确认密码" required />
-          <button type="button" class="password-toggle" @click="showConfirmPassword = !showConfirmPassword">
-            <span class="material-icons">{{ showConfirmPassword ? 'visibility_off' : 'visibility' }}</span>
-          </button>
-        </div>
-        <button type="submit" class="action-button" :disabled="loading">
-          <span v-if="loading" class="loading-spinner"></span>
-          {{ loading ? (authMode === 'login' ? '登录中...' : '注册中...') : (authMode === 'login' ? '下一步' : '注册') }}
-        </button>
-        <button type="button" class="back-button" @click="currentStep = 1" :disabled="loading">
-          上一步
-        </button>
-      </form>
+          <TabsContent value="login">
+            <form @submit.prevent="handleLogin" class="space-y-4">
+              <div class="field">
+                <Label>用户名</Label>
+                <Input v-model="credentials.username" type="text" placeholder="用户名" required />
+              </div>
+              <div class="field">
+                <Label>密码</Label>
+                <div class="relative">
+                  <Input v-model="credentials.password" :type="showPassword ? 'text' : 'password'" placeholder="密码" required class="pr-9" />
+                  <Button type="button" variant="ghost" size="icon-sm" class="absolute right-0.5 top-1/2 -translate-y-1/2" @click="showPassword = !showPassword">
+                    <span class="material-icons text-sm">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
+                  </Button>
+                </div>
+              </div>
+              <Button type="submit" class="w-full" :disabled="loading">
+                <Loader2 v-if="loading" class="animate-spin" />
+                {{ loading ? '登录中...' : '下一步' }}
+              </Button>
+              <Button type="button" variant="ghost" class="w-full" @click="currentStep = 1" :disabled="loading">
+                上一步
+              </Button>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="register">
+            <form @submit.prevent="handleRegister" class="space-y-4">
+              <div class="field">
+                <Label>用户名</Label>
+                <Input v-model="credentials.username" type="text" placeholder="用户名" required />
+              </div>
+              <div class="field">
+                <Label>邮箱（选填）</Label>
+                <Input v-model="registerForm.email" type="email" placeholder="邮箱" />
+              </div>
+              <div class="field">
+                <Label>密码</Label>
+                <div class="relative">
+                  <Input v-model="credentials.password" :type="showPassword ? 'text' : 'password'" placeholder="至少6位，含字母和数字" required class="pr-9" />
+                  <Button type="button" variant="ghost" size="icon-sm" class="absolute right-0.5 top-1/2 -translate-y-1/2" @click="showPassword = !showPassword">
+                    <span class="material-icons text-sm">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
+                  </Button>
+                </div>
+              </div>
+              <div class="field">
+                <Label>确认密码</Label>
+                <div class="relative">
+                  <Input v-model="registerForm.confirmPassword" :type="showConfirmPassword ? 'text' : 'password'" placeholder="确认密码" required class="pr-9" />
+                  <Button type="button" variant="ghost" size="icon-sm" class="absolute right-0.5 top-1/2 -translate-y-1/2" @click="showConfirmPassword = !showConfirmPassword">
+                    <span class="material-icons text-sm">{{ showConfirmPassword ? 'visibility_off' : 'visibility' }}</span>
+                  </Button>
+                </div>
+              </div>
+              <Button type="submit" class="w-full" :disabled="loading">
+                <Loader2 v-if="loading" class="animate-spin" />
+                {{ loading ? '注册中...' : '注册' }}
+              </Button>
+              <Button type="button" variant="ghost" class="w-full" @click="currentStep = 1" :disabled="loading">
+                上一步
+              </Button>
+            </form>
+          </TabsContent>
+        </Tabs>
+      </div>
 
       <!-- Step 3: Library Selection -->
       <div v-if="currentStep === 3" class="step-form">
@@ -112,24 +147,25 @@
             v-for="lib in libraries"
             :key="lib.id"
             class="library-card"
-            :class="{ selected: selectedLibraryId === lib.id }"
-            @click="selectedLibraryId = lib.id"
+            :class="{ selected: selectedLibraryId === lib.id, disabled: !isLibraryAccessible(lib) }"
+            @click="isLibraryAccessible(lib) && (selectedLibraryId = lib.id)"
           >
             <span class="material-icons">{{ lib.icon === 'default' ? 'folder' : 'folder_special' }}</span>
             <div class="library-card-info">
               <div class="library-card-name">{{ lib.name }}</div>
               <div class="library-card-path">{{ lib.path }}</div>
             </div>
-            <span v-if="selectedLibraryId === lib.id" class="material-icons check-icon">check_circle</span>
+            <span v-if="!isLibraryAccessible(lib)" class="material-icons lock-icon">lock</span>
+            <span v-else-if="selectedLibraryId === lib.id" class="material-icons check-icon">check_circle</span>
           </div>
         </div>
-        <button class="action-button" :disabled="!selectedLibraryId || loading" @click="connectToLibrary">
-          <span v-if="loading" class="loading-spinner"></span>
+        <Button class="w-full" :disabled="!selectedLibraryId || loading" @click="connectToLibrary">
+          <Loader2 v-if="loading" class="animate-spin" />
           连接
-        </button>
-        <button type="button" class="back-button" @click="handleStepBack" :disabled="loading">
+        </Button>
+        <Button type="button" variant="ghost" class="w-full" @click="handleStepBack" :disabled="loading">
           上一步
-        </button>
+        </Button>
       </div>
 
     </div>
@@ -144,7 +180,11 @@ import { useServerListStore } from '../stores/serverList'
 import {
   Stepper, StepperItem, StepperTrigger, StepperIndicator,
 } from '@/components/ui/stepper'
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { Loader2 } from 'lucide-vue-next'
 import type { HealthResponse, Library } from 'mira-server-sdk'
 
 const router = useRouter()
@@ -165,17 +205,12 @@ const showWsField = ref(false)
 const healthData = ref<HealthResponse | null>(null)
 
 // Step 2
-const authMode = ref<'login' | 'register'>('login')
 const showPassword = ref(false)
 const showConfirmPassword = ref(false)
 const credentials = reactive({ username: '', password: '' })
 const registerForm = reactive({ email: '', confirmPassword: '' })
 const userRole = ref('')
 const authToken = ref('')
-
-function onAuthModeChange(val: string | string[]) {
-  if (val && typeof val === 'string') authMode.value = val as 'login' | 'register'
-}
 
 // Step 3
 const libraries = ref<Library[]>([])
@@ -250,16 +285,21 @@ async function handleLogin() {
   }
 }
 
-// Step 3: Fetch & filter libraries
+function isLibraryAccessible(lib: Library) {
+  if (!lib.allowedRoles || lib.allowedRoles.length === 0) return true
+  return lib.allowedRoles.includes(userRole.value)
+}
+
+// Step 3: Fetch all libraries
 async function fetchLibraries(client: any) {
   loading.value = true
   try {
-    const allLibs = await client.libraries().getAll()
-    // Filter by user role (backward compatible: no allowedRoles = accessible to all)
-    libraries.value = allLibs.filter((lib: Library) => {
-      if (!lib.allowedRoles || lib.allowedRoles.length === 0) return true
-      return lib.allowedRoles.includes(userRole.value)
-    })
+    libraries.value = await client.libraries().getAll()
+    // Auto-select if only one accessible library
+    const accessible = libraries.value.filter(isLibraryAccessible)
+    if (accessible.length === 1) {
+      selectedLibraryId.value = accessible[0].id
+    }
   } catch {
     error.value = '获取素材库列表失败'
   } finally {
@@ -330,8 +370,8 @@ async function handleRegister() {
     error.value = '请输入用户名和密码'
     return
   }
-  if (credentials.password.length < 6 || !/(?=.*[a-zA-Z])(?=.*\d)/.test(credentials.password)) {
-    error.value = '密码至少6位，需包含字母和数字'
+  if (credentials.password.length < 6 ) {
+    error.value = '密码至少6位'
     return
   }
   if (credentials.password !== registerForm.confirmPassword) {
@@ -341,17 +381,8 @@ async function handleRegister() {
   loading.value = true
   error.value = ''
   try {
-    const result = await authStore.register({
-      username: credentials.username.trim(),
-      email: registerForm.email.trim() || undefined,
-      password: credentials.password,
-    }, { serverUrl: serverAddress.value, websocketUrl: wsAddress.value || '' })
-    if (result.success) {
-      // 注册成功后自动登录
-      await handleLogin()
-    } else {
-      error.value = result.error || '注册失败'
-    }
+    await tempClient.auth().register(credentials.username.trim(), credentials.password)
+    await handleLogin()
   } catch (err: any) {
     error.value = err instanceof Error ? err.message : '注册失败'
   } finally {
@@ -471,88 +502,11 @@ onMounted(async () => {
   gap: 1rem;
 }
 
-.input-group {
-  position: relative;
-}
-.input-icon {
-  position: absolute;
-  left: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #9ca3af;
-  z-index: 2;
-  font-size: 1.25rem;
-}
-.input-group input {
-  width: 100%;
-  padding: 0.75rem 0.75rem 0.75rem 2.5rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  background: white;
-  transition: border-color 0.2s;
-}
-.input-group input:focus {
-  outline: none;
-  border-color: #1173d4;
-  box-shadow: 0 0 0 2px rgba(17, 115, 212, 0.2);
-}
-
-.password-toggle {
-  position: absolute;
-  right: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  color: #9ca3af;
-  cursor: pointer;
-  z-index: 2;
-}
-
-.collapse-toggle {
+.field {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 0.25rem;
-  background: none;
-  border: none;
-  color: #6b7280;
-  font-size: 0.875rem;
-  cursor: pointer;
-  padding: 0;
 }
-.collapse-toggle:hover { color: #374151; }
-
-/* Buttons */
-.action-button {
-  width: 100%;
-  background: #1173d4;
-  color: white;
-  font-weight: 700;
-  padding: 0.75rem 1rem;
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: background 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-}
-.action-button:hover:not(:disabled) { background: rgba(17, 115, 212, 0.9); }
-.action-button:disabled { opacity: 0.6; cursor: not-allowed; }
-
-.back-button {
-  width: 100%;
-  background: none;
-  color: #6b7280;
-  font-weight: 600;
-  padding: 0.5rem;
-  border: none;
-  cursor: pointer;
-  transition: color 0.2s;
-}
-.back-button:hover { color: #374151; }
 
 /* Library list */
 .library-list {
@@ -574,12 +528,15 @@ onMounted(async () => {
 }
 .library-card:hover { border-color: #93c5fd; background: #f0f7ff; }
 .library-card.selected { border-color: #1173d4; background: #eff6ff; }
+.library-card.disabled { opacity: 0.5; cursor: not-allowed; border-color: #e5e7eb; background: #f9fafb; }
+.library-card.disabled:hover { border-color: #e5e7eb; background: #f9fafb; }
 .library-card .material-icons { font-size: 1.5rem; color: #6b7280; }
 .library-card.selected .material-icons { color: #1173d4; }
 .library-card-info { flex: 1; min-width: 0; }
 .library-card-name { font-weight: 600; font-size: 0.9rem; color: #1f2937; }
 .library-card-path { font-size: 0.75rem; color: #9ca3af; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .check-icon { color: #1173d4 !important; font-size: 1.25rem !important; }
+.lock-icon { color: #9ca3af !important; font-size: 1.25rem !important; }
 
 /* Error */
 .error-banner {
@@ -613,19 +570,6 @@ onMounted(async () => {
   text-align: center;
   padding: 2rem;
   color: #9ca3af;
-}
-
-.loading-spinner {
-  width: 1rem;
-  height: 1rem;
-  border: 2px solid transparent;
-  border-top: 2px solid white;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  display: inline-block;
-}
-@keyframes spin {
-  to { transform: rotate(360deg); }
 }
 
 @media (max-width: 480px) {
