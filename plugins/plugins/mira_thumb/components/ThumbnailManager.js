@@ -34,18 +34,18 @@
     components: getDashboardUiComponents(),
     template: `
       <div class="space-y-6">
-        <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 class="text-2xl font-bold tracking-normal">缩略图管理</h1>
             <p class="mt-1 text-sm text-muted-foreground">管理和生成媒体文件缩略图</p>
           </div>
-          <div class="flex flex-col gap-2 md:flex-row md:items-center">
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
             <MiraSelect
               v-model="selectedLibraryId"
               :disabled="librariesLoading || isScanning"
               @update:model-value="handleLibraryChange"
             >
-              <MiraSelectTrigger class="w-full md:w-64">
+              <MiraSelectTrigger class="w-full sm:w-64">
                 <MiraSelectValue :placeholder="librariesLoading ? '加载素材库...' : '选择素材库'" />
               </MiraSelectTrigger>
               <MiraSelectContent>
@@ -58,18 +58,19 @@
                 </MiraSelectItem>
               </MiraSelectContent>
             </MiraSelect>
-
-            <MiraButton variant="outline" :disabled="!selectedLibraryId || loading" @click="refreshStats">
-              <span v-if="loading" class="mr-1 size-3 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
-              刷新统计
-            </MiraButton>
-            <MiraButton :disabled="!selectedLibraryId || isScanning" @click="startScan">
-              <span v-if="isScanning" class="mr-1 size-3 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
-              {{ isScanning ? '正在扫描...' : '开始扫描' }}
-            </MiraButton>
-            <MiraButton variant="destructive" :disabled="!isScanning" @click="cancelScan">
-              取消扫描
-            </MiraButton>
+            <div class="flex gap-2 sm:ml-auto">
+              <MiraButton variant="outline" :disabled="!selectedLibraryId || loading" @click="refreshStats">
+                <span v-if="loading" class="mr-1 size-3 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+                刷新统计
+              </MiraButton>
+              <MiraButton :disabled="!selectedLibraryId || isScanning" @click="startScan">
+                <span v-if="isScanning" class="mr-1 size-3 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+                {{ isScanning ? '正在扫描...' : '开始扫描' }}
+              </MiraButton>
+              <MiraButton variant="destructive" :disabled="!isScanning" @click="cancelScan">
+                取消扫描
+              </MiraButton>
+            </div>
           </div>
         </div>
 
@@ -99,72 +100,74 @@
           </MiraCard>
         </div>
 
-        <MiraCard>
-          <MiraCardHeader>
-            <MiraCardTitle>处理进度</MiraCardTitle>
-            <MiraCardDescription>当前缩略图生成任务状态</MiraCardDescription>
-          </MiraCardHeader>
-          <MiraCardContent>
-            <div v-if="progress.totalPending > 0" class="space-y-5">
-              <div class="flex items-center justify-between gap-4">
-                <div class="text-sm text-muted-foreground">
-                  已完成 {{ progress.completed }} / {{ progress.totalPending }}
+        <div class="grid gap-4 lg:grid-cols-2">
+          <MiraCard>
+            <MiraCardHeader>
+              <MiraCardTitle>处理进度</MiraCardTitle>
+              <MiraCardDescription>当前缩略图生成任务状态</MiraCardDescription>
+            </MiraCardHeader>
+            <MiraCardContent>
+              <div v-if="progress.totalPending > 0" class="space-y-5">
+                <div class="flex items-center justify-between gap-4">
+                  <div class="text-sm text-muted-foreground">
+                    已完成 {{ progress.completed }} / {{ progress.totalPending }}
+                  </div>
+                  <div class="text-xl font-semibold">{{ progress.progress }}%</div>
                 </div>
-                <div class="text-xl font-semibold">{{ progress.progress }}%</div>
+
+                <div class="h-3 overflow-hidden rounded-full bg-secondary">
+                  <div
+                    class="h-full rounded-full bg-primary transition-all duration-500"
+                    :style="{ width: progress.progress + '%' }"
+                  ></div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-3">
+                  <div class="rounded-md border p-4 text-center">
+                    <div class="text-lg font-semibold">{{ progress.totalPending }}</div>
+                    <div class="text-xs text-muted-foreground">总任务</div>
+                  </div>
+                  <div class="rounded-md border p-4 text-center">
+                    <div class="text-lg font-semibold">{{ progress.completed }}</div>
+                    <div class="text-xs text-muted-foreground">已完成</div>
+                  </div>
+                  <div class="rounded-md border p-4 text-center">
+                    <div class="text-lg font-semibold">{{ progress.queueLength }}</div>
+                    <div class="text-xs text-muted-foreground">队列中</div>
+                  </div>
+                </div>
               </div>
 
-              <div class="h-3 overflow-hidden rounded-full bg-secondary">
-                <div
-                  class="h-full rounded-full bg-primary transition-all duration-500"
-                  :style="{ width: progress.progress + '%' }"
-                ></div>
+              <div v-else class="py-10 text-center">
+                <div class="text-lg font-medium">暂无待处理任务</div>
+                <div class="mt-1 text-sm text-muted-foreground">所有媒体文件的缩略图均已生成或尚未开始扫描</div>
               </div>
+            </MiraCardContent>
+          </MiraCard>
 
-              <div class="grid gap-3 md:grid-cols-3">
-                <div class="rounded-md border p-4 text-center">
-                  <div class="text-lg font-semibold">{{ progress.totalPending }}</div>
-                  <div class="text-xs text-muted-foreground">总任务</div>
-                </div>
-                <div class="rounded-md border p-4 text-center">
-                  <div class="text-lg font-semibold">{{ progress.completed }}</div>
-                  <div class="text-xs text-muted-foreground">已完成</div>
-                </div>
-                <div class="rounded-md border p-4 text-center">
-                  <div class="text-lg font-semibold">{{ progress.queueLength }}</div>
-                  <div class="text-xs text-muted-foreground">队列中</div>
-                </div>
+          <MiraCard>
+            <MiraCardHeader class="flex flex-row items-start justify-between gap-4">
+              <div>
+                <MiraCardTitle>操作日志</MiraCardTitle>
+                <MiraCardDescription>实时显示缩略图任务的执行结果</MiraCardDescription>
               </div>
-            </div>
-
-            <div v-else class="py-10 text-center">
-              <div class="text-lg font-medium">暂无待处理任务</div>
-              <div class="mt-1 text-sm text-muted-foreground">所有媒体文件的缩略图均已生成或尚未开始扫描</div>
-            </div>
-          </MiraCardContent>
-        </MiraCard>
-
-        <MiraCard>
-          <MiraCardHeader class="flex flex-row items-start justify-between gap-4">
-            <div>
-              <MiraCardTitle>操作日志</MiraCardTitle>
-              <MiraCardDescription>实时显示缩略图任务的执行结果</MiraCardDescription>
-            </div>
-            <MiraButton variant="outline" size="sm" @click="clearLogs">清空日志</MiraButton>
-          </MiraCardHeader>
-          <MiraCardContent>
-            <MiraScrollArea class="h-80 rounded-md border bg-muted/40 p-4" ref="logContainer">
-              <div v-if="logs.length" class="space-y-2 font-mono text-xs">
-                <div v-for="(log, index) in logs" :key="index" class="flex gap-2">
-                  <span class="shrink-0 text-muted-foreground">[{{ log.time }}]</span>
-                  <span>{{ log.message }}</span>
+              <MiraButton variant="outline" size="sm" @click="clearLogs">清空日志</MiraButton>
+            </MiraCardHeader>
+            <MiraCardContent>
+              <MiraScrollArea class="h-80 rounded-md border bg-muted/40 p-4" ref="logContainer">
+                <div v-if="logs.length" class="space-y-2 font-mono text-xs">
+                  <div v-for="(log, index) in logs" :key="index" class="flex gap-2">
+                    <span class="shrink-0 text-muted-foreground">[{{ log.time }}]</span>
+                    <span>{{ log.message }}</span>
+                  </div>
                 </div>
-              </div>
-              <div v-else class="py-12 text-center text-sm text-muted-foreground">
-                暂无操作日志
-              </div>
-            </MiraScrollArea>
-          </MiraCardContent>
-        </MiraCard>
+                <div v-else class="py-12 text-center text-sm text-muted-foreground">
+                  暂无操作日志
+                </div>
+              </MiraScrollArea>
+            </MiraCardContent>
+          </MiraCard>
+        </div>
       </div>
     `,
     data() {
