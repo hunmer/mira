@@ -62,8 +62,6 @@ export function useLibraryManagement(libraryStore: any) {
   
   // 初始化默认素材库
   const initializeDefaultLibrary = async () => {
-    console.log('📚 初始化默认素材库开始')
-
     // 初始化 libraryStore
     await libraryStore.initializeServerList()
     if (libraryStore.libraries && libraryStore.libraries.length > 0) {

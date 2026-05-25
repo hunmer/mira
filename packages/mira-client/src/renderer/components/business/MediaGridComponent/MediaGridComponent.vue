@@ -276,7 +276,7 @@ const toggleVideoMute = async () => {
 
 // Video preview event handlers
 const onVideoPreviewLoaded = (payload: { duration: number }) => {
-  console.log('Video loaded with duration:', payload.duration)
+  // console.log('Video loaded with duration:', payload.duration)
 }
 
 const onVideoPreviewTimeUpdate = (payload: { currentTime: number, progress: number }) => {

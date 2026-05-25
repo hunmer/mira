@@ -166,12 +166,7 @@ watch(
 // 调试：监控当前视频项变化
 watch(currentVideoItem, (newItem) => {
   if (newItem) {
-    console.log('🎬 Waterfall video preview starting:', {
-      id: newItem.id,
-      name: newItem.name,
-      path: newItem.path,
-      hasPath: !!newItem.path
-    })
+
   }
 })
 
@@ -339,7 +334,7 @@ const handleMouseMove = (item: FileInfo, event: MouseEvent) => {
 
 // Video preview event handlers
 const onVideoPreviewLoaded = (payload: { duration: number }) => {
-  console.log('Video loaded with duration:', payload.duration)
+  // console.log('Video loaded with duration:', payload.duration)
 }
 
 const onVideoPreviewTimeUpdate = (_payload: { currentTime: number, progress: number }) => {
