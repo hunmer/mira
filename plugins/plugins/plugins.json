@@ -23,5 +23,10 @@
     "name": "upload_statistics",
     "enabled": false,
     "path": "upload_statistics"
+  },
+  {
+    "name": "mira_thumb_imagemagick",
+    "enabled": false,
+    "path": "mira_thumb_imagemagick"
   }
 ]

@@ -1,0 +1,20 @@
+{
+  "name": "mira_thumb_imagemagick",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "files": ["dist/**/*"],
+  "scripts": {
+    "build": "tsc",
+    "rebuild": "npm install && npm run build"
+  },
+  "dependencies": {
+    "which": "^7.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  },
+  "peerDependencies": {
+    "mira-app-server": "^1.0.25",
+    "mira-storage-sqlite": "^1.0.20"
+  }
+}
