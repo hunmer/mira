@@ -104,7 +104,6 @@ function handleLogout() {
     <SidebarInset>
       <header class="flex h-14 items-center gap-2 border-b px-4">
         <SidebarTrigger />
-        <Separator orientation="vertical" class="h-4" />
         <div class="flex-1" />
         <!-- Locale switcher -->
         <DropdownMenu>

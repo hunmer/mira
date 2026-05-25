@@ -297,7 +297,7 @@ onMounted(loadPlugins)
       </TabsList>
 
       <TabsContent v-for="g in groups" :key="g.id" :value="g.id" class="mt-4">
-        <div v-if="currentPlugins.length" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div v-if="currentPlugins.length" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
           <Card
             v-for="plugin in currentPlugins"
             :key="plugin.name"
@@ -313,8 +313,8 @@ onMounted(loadPlugins)
                   <p class="text-xs text-muted-foreground">v{{ plugin.version }}</p>
                 </div>
                 <Switch
-                  :checked="plugin.status === 'active'"
-                  @update:checked="(v: boolean) => toggleStatus(plugin, v)"
+                  :model-value="plugin.status === 'active'"
+                  @update:model-value="(v: boolean) => toggleStatus(plugin, v)"
                 />
               </div>
 
@@ -395,8 +395,8 @@ onMounted(loadPlugins)
           <div class="flex items-center justify-between">
             <Label>{{ t('plugin.enabled') || '状态' }}</Label>
             <Switch
-              :checked="detailPlugin.status === 'active'"
-              @update:checked="(v: boolean) => toggleStatus(detailPlugin!, v)"
+              :model-value="detailPlugin.status === 'active'"
+              @update:model-value="(v: boolean) => toggleStatus(detailPlugin!, v)"
             />
           </div>
 
