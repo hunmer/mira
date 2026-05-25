@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 
 // Component imports
 import FolderTreeComponent from '@renderer/components/business/FolderTreeComponent/FolderTreeComponent.vue'
@@ -22,6 +23,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 // Store imports
 import { useLibraryStore } from '@/renderer/stores/library'
 import { useTagStore } from '@renderer/stores/tag'
+import { useAuthStore } from '@renderer/stores/auth'
 
 // Controller import
 import { useHomeController } from '@renderer/controllers/HomeController'
@@ -114,6 +116,13 @@ const {
   handleWindowMinimize,
   handleWindowMaximize
 } = windowNavigation
+
+const authStore = useAuthStore()
+const router = useRouter()
+const handleLogout = async () => {
+  await authStore.logout()
+  router.push('/login')
+}
 
 // ============================================
 // 事件处理
@@ -255,6 +264,13 @@ onUnmounted(() => {
                       >
                         <span class="material-icons">add</span>
                         <span>连接服务器</span>
+                      </button>
+                      <button
+                        class="w-full flex items-center space-x-2 p-2 text-red-600 hover:bg-red-50 rounded text-sm"
+                        @click="handleLogout(); close()"
+                      >
+                        <span class="material-icons">logout</span>
+                        <span>退出登录</span>
                       </button>
                     </div>
                   </div>
