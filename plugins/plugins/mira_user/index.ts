@@ -127,15 +127,15 @@ class UserPlugin extends ServerPlugin {
                 }
                 res.status(200).json({
                     success: true,
-                    message: '退出登录成�?
+                    message: '退出登录成功'
                 });
             } catch (error) {
-                console.error('退出登录错�?', error);
-                res.status(500).json({ success: false, message: '服务器内部错�? });
+                console.error('退出登录错误:', error);
+                res.status(500).json({ success: false, message: '服务器内部错误' });
             }
         });
 
-        // 绑定登录前事�?
+        // 绑定登录前事件
         const obj = backend.libraries!.getLibrary(dbService.getLibraryId());
         if (obj) {
             obj.eventManager.on('client::before_connect', this.onUserLogin.bind(this));
@@ -176,7 +176,7 @@ class UserPlugin extends ServerPlugin {
             if (!loginResult || !loginResult.accessToken) {
                 this.server.showDialogToWeboscket(ws, {
                     title: '登录',
-                    message: '账号和密码错�?,
+                    message: '账号和密码错误',
                     url
                 });
                 return false;
@@ -187,7 +187,7 @@ class UserPlugin extends ServerPlugin {
             console.error(`[mira_user] SDK 登录异常:`, error);
             this.server.showDialogToWeboscket(ws, {
                 title: '登录',
-                message: '账号和密码错�?,
+                message: '账号和密码错误',
                 url
             });
             return false;
@@ -236,7 +236,7 @@ class UserPlugin extends ServerPlugin {
         console.log(`[mira_user] onLogined: libraryId=${libraryId}, username=${username}, ws=${!!ws}`);
         if (ws) {
             this.server.setClientFields(libraryId, ws.clientId, { username, password });
-            // 客户端保存字段信�?
+            // 客户端保存字段信息
             this.server.sendToWebsocket(ws, {
                 eventName: 'setFields',
                 libraryId,

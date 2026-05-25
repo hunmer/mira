@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
+import { registerAllPluginRoutes } from './pluginRoutes'
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -47,11 +48,24 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   const auth = useAuthStore()
   if (to.meta.requiresAuth !== false && !auth.isLoggedIn) {
     return { path: '/login', query: { redirect: to.fullPath } }
   }
+
+  if (to.name === 'NotFound' && auth.isLoggedIn) {
+    try {
+      await registerAllPluginRoutes(router)
+      const resolved = router.resolve(to.fullPath)
+      if (resolved.name !== 'NotFound') {
+        return to.fullPath
+      }
+    } catch (e) {
+      console.error('Failed to register plugin routes before navigation:', e)
+    }
+  }
+
   if (to.meta.roles?.length && !to.meta.roles.includes(auth.userRole)) {
     return '/overview'
   }

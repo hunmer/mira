@@ -11,7 +11,7 @@ Dashboard 通过运行时动态加载插件组件，实现插件的 UI 页面注
 GET /api/plugin-routes/:libraryId  ──►  返回路由定义数组
         │
         ▼
-前端 plugin/index.vue loadPluginRoutes()
+前端 router/pluginRoutes.ts registerPluginRoutes()
         │
         ├─ 存入 pluginRoutes (展示按钮)
         └─ router.addRoute('MainLayout', child) (注册路由)
@@ -26,6 +26,7 @@ GET /api/plugin-routes/:libraryId  ──►  返回路由定义数组
                 │
                 ▼
         withMixin() 注入 getLibraryId() 方法
+        ensurePluginRuntime() 挂载 window.MiraDashboard / window.MiraDashboardUI
                 │
                 ▼
         Vue 渲染组件（需要 vue runtime compiler）
@@ -35,9 +36,11 @@ GET /api/plugin-routes/:libraryId  ──►  返回路由定义数组
 
 | 文件 | 职责 |
 |------|------|
-| `src/router/index.ts` | 布局路由加 `name: 'MainLayout'`，守卫更新 `currentLibraryId` |
+| `src/router/index.ts` | 布局路由加 `name: 'MainLayout'`；守卫更新 `currentLibraryId`；刷新命中 404 时补注册插件路由 |
+| `src/router/pluginRoutes.ts` | 拉取插件路由；动态 `router.addRoute()`；解析 builder/component；动态加载插件 JS |
+| `src/pluginRuntime.ts` | 挂载 `window.MiraDashboard` 和 `window.MiraDashboardUI`，给插件提供运行时上下文和宿主 UI 组件 |
 | `src/stores/app.ts` | `useAppStore` 存 `currentLibraryId`；`MiraDashboardContext` 接口；`getDashboardContext()` 工厂 |
-| `src/views/mira/plugin/index.vue` | `loadPluginRoutes` 加载并注册路由；`resolvePluginComponent` 解析组件；`window.MiraDashboard` 挂载 |
+| `src/views/mira/plugin/index.vue` | 插件管理页；展示插件列表和入口；调用 `registerPluginRoutes()` 获取并注册当前素材库的插件路由 |
 | `vite.config.ts` | Vue alias 指向完整构建（含 runtime compiler）；`/api` proxy 到后端 |
 
 后端侧：
@@ -65,9 +68,12 @@ const route: PluginRouteDefinition = {
 }
 ```
 
-### 2. 前端拉取路由（plugin/index.vue）
+### 2. 前端拉取路由
 
-`onMounted` 时遍历所有素材库，对每个库调用 `loadPluginRoutes(libraryId)`：
+插件路由由 `src/router/pluginRoutes.ts` 统一注册：
+
+- 插件管理页加载时，遍历当前展示的素材库并调用 `registerPluginRoutes(router, libraryId)`。
+- 刷新插件深链接时，如果初始路由命中 `NotFound`，`src/router/index.ts` 会调用 `registerAllPluginRoutes(router)` 补注册全部插件路由，然后重新解析当前 URL。
 
 ```
 GET /api/plugin-routes/:libraryId → [{ name, path, component, pluginName, meta, ... }]
@@ -113,7 +119,7 @@ if (route.component) {
 
 ### 5. 上下文注入
 
-插件组件需要知道当前素材库 ID 和用户信息。提供两种途径：
+插件组件需要知道当前素材库 ID、用户信息、API 基础路径，并且可以复用宿主 shadcn-vue 组件。提供以下途径：
 
 #### mixin 注入（`this.getLibraryId()`）
 注册路由时通过 Vue mixin 注入 `getLibraryId()` 方法，闭包捕获 `libraryId`：
@@ -134,6 +140,52 @@ window.MiraDashboard = {
   getApiBase(): string     // 返回 '/api'
 }
 ```
+
+#### 宿主 UI 组件（`window.MiraDashboardUI`）
+
+插件 JS 是通过 `<script>` 动态加载的浏览器脚本，不能直接使用 `import '@/components/ui/button'` 等 Vite alias。因此 Dashboard 通过 `src/pluginRuntime.ts` 暴露一组已存在的 shadcn-vue 组件：
+
+```typescript
+window.MiraDashboardUI = {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  ScrollArea,
+  Separator,
+}
+```
+
+插件组件通过本地 `components` 字段注册这些组件。建议使用插件私有前缀命名，避免和宿主或其他插件组件名冲突：
+
+```javascript
+const ui = window.MiraDashboardUI || {};
+
+const MyComponent = {
+  name: 'MyPlugin',
+  components: {
+    MiraButton: ui.Button,
+    MiraCard: ui.Card,
+    MiraCardContent: ui.CardContent,
+  },
+  template: `
+    <MiraCard>
+      <MiraCardContent>
+        <MiraButton @click="refresh">刷新</MiraButton>
+      </MiraCardContent>
+    </MiraCard>
+  `
+};
+```
+
+约束：
+
+- 插件不能直接 `import` Dashboard 源码中的 shadcn-vue 组件。
+- `window.MiraDashboardUI` 只暴露宿主明确支持的组件，不等同于完整 shadcn-vue 包。
+- 插件仍应优先通过 Tailwind token 类名（如 `text-muted-foreground`、`bg-muted`、`border`）保持视觉一致。
 
 路由守卫在进入插件页时把 `meta.libraryId` 写入 store：
 
@@ -158,6 +210,11 @@ router.beforeEach((to) => {
 
   const MyComponent = {
     name: 'MyPlugin',
+    components: {
+      MiraButton: window.MiraDashboardUI?.Button,
+      MiraCard: window.MiraDashboardUI?.Card,
+      MiraCardContent: window.MiraDashboardUI?.CardContent,
+    },
     template: `<div>...</div>`,  // 需要 Vue runtime compiler
     data() { return { ... } },
     methods: {
