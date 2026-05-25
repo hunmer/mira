@@ -138,6 +138,7 @@ export default {
     or: 'or',
     browse: 'Browse files',
     uploading: 'Uploading...',
+    startUpload: 'Start Upload',
     uploadSuccess: 'Upload successful',
     uploadFailed: 'Upload failed',
   },

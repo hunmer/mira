@@ -108,7 +108,7 @@ onMounted(loadLibraries)
       </div>
       <div class="flex items-center gap-4">
         <Button :disabled="!canUpload || uploading" @click="handleUpload">
-          {{ uploading ? `${t('fileUpload.uploading')} ${progress}%` : t('fileUpload.browse') }}
+          {{ uploading ? `${t('fileUpload.uploading')} ${progress}%` : t('fileUpload.startUpload') }}
         </Button>
         <div v-if="uploading" class="h-2 flex-1 rounded-full bg-secondary">
           <div class="h-full rounded-full bg-primary transition-all" :style="{ width: `${progress}%` }" />

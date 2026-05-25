@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import type { Plugin } from '@/types/mira'
 import type { LibraryPlugins } from '@/api/modules/plugin'
 import { pluginApi } from '@/api'
@@ -254,8 +255,10 @@ async function submitInstall() {
   }
 }
 
+const router = useRouter()
+
 function openRoute(route: PluginRoute) {
-  window.open(route.path, '_blank')
+  router.push(route.path)
 }
 
 onMounted(loadPlugins)

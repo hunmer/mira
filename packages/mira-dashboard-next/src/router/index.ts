@@ -25,6 +25,7 @@ const router = createRouter({
     },
     {
       path: '/',
+      name: 'MainLayout',
       component: () => import('@/layouts/DefaultLayout.vue'),
       meta: { requiresAuth: true },
       children: [

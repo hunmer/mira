@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
@@ -54,7 +55,12 @@ function handleLogout() {
   <SidebarProvider>
     <Sidebar collapsible="icon">
       <SidebarHeader class="p-4">
-        <h2 class="text-lg font-bold tracking-tight">Mira</h2>
+        <SidebarMenu>
+          <SidebarMenuButton size="lg" tooltip="Mira">
+            <span class="text-lg font-bold leading-none hidden group-data-[collapsible=icon]:block">M</span>
+            <span class="text-lg font-bold tracking-tight group-data-[collapsible=icon]:hidden">Mira</span>
+          </SidebarMenuButton>
+        </SidebarMenu>
       </SidebarHeader>
       <Separator />
       <SidebarContent>

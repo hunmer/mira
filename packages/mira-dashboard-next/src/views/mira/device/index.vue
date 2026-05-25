@@ -19,7 +19,22 @@ async function loadDevices() {
   loading.value = true
   try {
     const res = await deviceApi.list()
-    devices.value = Array.isArray(res.data) ? res.data : []
+    const raw = res.data?.data ?? res.data
+    if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+      devices.value = Object.entries(raw).flatMap(([libraryId, list]) =>
+        (list as any[]).map((d) => ({
+          id: d.clientId,
+          name: d.clientId,
+          type: d.userAgent?.includes('Electron') ? 'Electron' : 'Web',
+          status: d.status,
+          lastSeen: d.lastActivity,
+          libraryId,
+          ...d,
+        })),
+      )
+    } else {
+      devices.value = Array.isArray(raw) ? raw : []
+    }
   } catch {
     toast.error(t('common.failed'))
   } finally {

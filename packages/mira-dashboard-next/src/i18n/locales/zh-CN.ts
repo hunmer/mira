@@ -138,6 +138,7 @@ export default {
     or: '或',
     browse: '浏览文件',
     uploading: '上传中...',
+    startUpload: '开始上传',
     uploadSuccess: '上传成功',
     uploadFailed: '上传失败',
   },
