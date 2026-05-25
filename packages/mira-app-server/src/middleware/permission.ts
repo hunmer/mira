@@ -21,6 +21,7 @@ const LIBRARY_SCOPED_PREFIXES = [
     '/database/',
     '/devices/',
     '/fs/',
+    '/statistics/',
 ];
 
 // ============================================================
@@ -34,7 +35,7 @@ export function canAccessLibrary(config: any, userRole?: string): boolean {
 }
 
 function extractLibraryId(req: Request): string | undefined {
-    return req.params?.id || req.query?.libraryId as string || req.body?.libraryId;
+    return req.params?.id || req.params?.libraryId || req.query?.libraryId as string || req.body?.libraryId;
 }
 
 function isPublicRoute(method: string, path: string): boolean {
@@ -85,8 +86,8 @@ export function createHttpPermissionMiddleware(
             return next();
         }
 
-        // 3. 提取并校验 token
-        const token = req.headers.authorization?.replace('Bearer ', '');
+        // 3. 提取并校验 token（支持 Authorization header 和 query 参数）
+        const token = req.headers.authorization?.replace('Bearer ', '') || (req.query.token as string);
         if (!token) {
             return res.status(401).json({ code: 401, message: '未提供认证令牌', data: null });
         }

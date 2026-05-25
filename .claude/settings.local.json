@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__shadcnVue__get_project_registries"
+    ]
+  }
+}

@@ -17,6 +17,7 @@ import { TagRouter } from './routes/TagRouter';
 import { FolderRouter } from './routes/FolderRouter';
 import { FsRouter } from './routes/FsRouter';
 import { SettingsRouter } from './routes/SettingsRouter'
+import { StatisticsRouter } from './routes/StatisticsRouter';
 import { createHttpPermissionMiddleware } from './middleware/permission';
 
 // HTTP请求日志中间件
@@ -146,6 +147,7 @@ export class MiraHttpServer {
     adminsRouter: AdminsRouter;
     httpRouter: HttpRouter;
     settingsRouter: SettingsRouter;
+    statisticsRouter: StatisticsRouter;
 
     constructor(backend: MiraServer, dataDir: string = './data') {
         this.backend = backend;
@@ -164,6 +166,7 @@ export class MiraHttpServer {
         this.fsRouter = new FsRouter();
         this.httpRouter = new HttpRouter(backend);
         this.settingsRouter = new SettingsRouter(backend, this.authRouter);
+        this.statisticsRouter = new StatisticsRouter(backend);
 
         this.setupMiddleware();
     }
@@ -246,6 +249,7 @@ export class MiraHttpServer {
         this.app.use('/api/folders', this.folderRouter.getRouter());
         this.app.use('/api/fs', this.fsRouter.getRouter());
         this.app.use('/api/settings', this.settingsRouter.getRouter());
+        this.app.use('/api/statistics', this.statisticsRouter.getRouter());
 
         // 获取所有素材库的插件路由定义
         this.app.get('/api/plugin-routes', (req, res) => {

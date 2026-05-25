@@ -29,6 +29,7 @@ export default {
     database: 'Database',
     device: 'Devices',
     fileUpload: 'File Upload',
+    statistics: 'Statistics',
   },
   auth: {
     login: 'Login',
@@ -163,5 +164,19 @@ export default {
     light: 'Light',
     dark: 'Dark',
     system: 'System',
+  },
+  statistics: {
+    title: 'Upload Statistics',
+    subtitle: 'View upload trends for your libraries',
+    selectLibrary: 'Select Library',
+    uploader: 'Uploader',
+    fileCount: 'File Count',
+    totalSize: 'Total Size',
+    totalSizeMB: 'Total Size (MB)',
+    unknown: 'Unknown',
+    trend: 'Upload Trend',
+    trendDesc: 'File count and size over time',
+    '60d': 'Last 60 days',
+    '30d': 'Last 30 days',
   },
 }

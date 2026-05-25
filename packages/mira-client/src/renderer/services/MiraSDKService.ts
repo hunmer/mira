@@ -3,6 +3,16 @@ import { initializeWebSocket, webSocketService } from './WebSocketService'
 import { useMediaStore } from '../stores/media'
 import { useAuthStore } from '../stores/auth'
 import { toFileUrl } from '../utils/fileUtils'
+
+/** 给 HTTP 资源 URL 追加 token 参数（用于 <img>/<video> 等无法设 header 的场景） */
+function appendToken(url: string | undefined): string | undefined {
+  if (!url) return url
+  if (!url.startsWith('http')) return url
+  const token = useAuthStore().token
+  if (!token) return url
+  const sep = url.includes('?') ? '&' : '?'
+  return `${url}${sep}token=${encodeURIComponent(token)}`
+}
 import type {
   MiraConnectionConfig,
   LoginCredentials,
@@ -534,7 +544,7 @@ export class MiraSDKService {
         return {
           id: file.id.toString(),
           name: file.name, // 使用 name 字段
-          path: toFileUrl(filePath),
+          path: appendToken(toFileUrl(filePath)),
           size: file.size,
           extension: file.extension || this.getFileExtension(file.name), // 从文件名提取扩展名
           mimeType: file.mime_type || this.getMimeTypeFromExtension(file.name),
@@ -543,7 +553,7 @@ export class MiraSDKService {
           tags: typeof file.tags === 'string' ? JSON.parse(file.tags || '[]') : (file.tags || []),
           folderId: file.folder_id?.toString(),
           hash: file.hash || '',
-          thumbnailPath: toFileUrl(thumbnailPath),
+          thumbnailPath: appendToken(toFileUrl(thumbnailPath)),
           libraryId: libraryId, // 添加 libraryId 到 fileInfo
           localFile: file.localFile || (() => {
             // 如果file.localFile为空，尝试从mediaStore获取
@@ -601,7 +611,7 @@ export class MiraSDKService {
       const fileInfo: FileInfo = {
         id: file.id.toString(),
         name: file.title || file.name, // 优先使用 title，如果没有则使用 name
-        path: toFileUrl(file.path),
+        path: appendToken(toFileUrl(file.path)),
         size: file.size,
         extension: file.extension || this.getFileExtension(file.title || file.name),
         mimeType: file.mime_type || this.getMimeTypeFromExtension(file.title || file.name),
@@ -610,7 +620,7 @@ export class MiraSDKService {
         tags: typeof file.tags === 'string' ? JSON.parse(file.tags || '[]') : (file.tags || []),
         folderId: file.folder_id?.toString(),
         hash: file.hash || '',
-        thumbnailPath: toFileUrl(file.thumbnail_path),
+        thumbnailPath: appendToken(toFileUrl(file.thumbnail_path)),
         libraryId: libraryId
       }
       

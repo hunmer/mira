@@ -29,6 +29,7 @@ export default {
     database: '数据库预览',
     device: '设备管理',
     fileUpload: '文件上传',
+    statistics: '上传统计',
   },
   auth: {
     login: '登录',
@@ -163,5 +164,19 @@ export default {
     light: '浅色',
     dark: '深色',
     system: '跟随系统',
+  },
+  statistics: {
+    title: '上传统计',
+    subtitle: '查看素材库上传趋势',
+    selectLibrary: '选择资源库',
+    uploader: '上传者',
+    fileCount: '文件数',
+    totalSize: '总大小',
+    totalSizeMB: '总大小 (MB)',
+    unknown: '未知',
+    trend: '上传趋势',
+    trendDesc: '文件数量与大小随时间变化',
+    '60d': '近 60 天',
+    '30d': '近 30 天',
   },
 }

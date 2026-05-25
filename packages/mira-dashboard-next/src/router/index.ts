@@ -41,6 +41,7 @@ const router = createRouter({
         { path: 'database', name: 'Database', component: () => import('@/views/mira/database/index.vue'), meta: { roles: ['super', 'admin'] } },
         { path: 'device', name: 'Device', component: () => import('@/views/mira/device/index.vue'), meta: { roles: ['super', 'admin'] } },
         { path: 'file-upload', name: 'FileUpload', component: () => import('@/views/mira/file-upload/index.vue'), meta: { roles: ['super', 'admin'] } },
+        { path: 'statistics', name: 'Statistics', component: () => import('@/views/mira/statistics/index.vue'), meta: { roles: ['super', 'admin'] } },
         { path: 'profile', name: 'Profile', component: () => import('@/views/mira/profile/index.vue') },
       ],
     },

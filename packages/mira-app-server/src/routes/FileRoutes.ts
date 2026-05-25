@@ -47,6 +47,8 @@ export class FileRoutes {
             const clientId = req.body.clientId || null;
             const fields = req.body.fields ? JSON.parse(req.body.fields) : null;
             const payload = req.body.payload ? JSON.parse(req.body.payload) : null;
+            const uploader = (req as any).user?.id || null;
+            console.log('[Upload] req.user:', JSON.stringify((req as any).user), '| uploader:', uploader);
             const obj = this.backend.libraries!.getLibrary(libraryId);
             if (!obj) return res.status(404).send('Library not found');
 
@@ -77,6 +79,7 @@ export class FileRoutes {
                         folder_id: folder_id || existingFile.folder_id,
                         imported_at: Date.now(),
                     };
+                    if (uploader) updateData.uploader = uploader;
 
                     const updateSuccess = await obj.libraryService.updateFile(parseInt(fileId), updateData);
 
@@ -152,6 +155,7 @@ export class FileRoutes {
                                 size: file.size,
                                 imported_at: Date.now(),
                             };
+                            if (uploader) updateData.uploader = uploader;
 
                             // 处理物理文件替换
                             try {
@@ -228,6 +232,7 @@ export class FileRoutes {
                                 name: req.body.name || originalName,
                                 tags: JSON.stringify(tags || []),
                                 folder_id: folder_id || null,
+                                uploader,
                             };
 
                             result = await obj.libraryService.createFileFromPath(file.path, fileData, { importType: 'move' }); // 使用move上传完成后自动删除临时文件

@@ -17,6 +17,7 @@ import { toast } from 'vue-sonner'
 import {
   RiHome4Line, RiFolderLine, RiPuzzleLine, RiUserSettingsLine,
   RiDatabase2Line, RiSmartphoneLine, RiUploadCloudLine,
+  RiBarChart2Line,
   RiSunLine, RiMoonLine, RiComputerLine, RiGlobalLine,
   RiLogoutBoxRLine, RiUser3Line,
 } from '@remixicon/vue'
@@ -35,6 +36,7 @@ const navItems = [
   { path: '/database', icon: RiDatabase2Line, key: 'database', roles: ['super', 'admin'] },
   { path: '/device', icon: RiSmartphoneLine, key: 'device', roles: ['super', 'admin'] },
   { path: '/file-upload', icon: RiUploadCloudLine, key: 'fileUpload', roles: ['super', 'admin'] },
+  { path: '/statistics', icon: RiBarChart2Line, key: 'statistics', roles: ['super', 'admin'] },
 ]
 
 const visibleNavItems = navItems.filter(

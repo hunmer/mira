@@ -45,6 +45,7 @@ export class LibraryServerDataSQLite implements ILibraryServerData {
         thumb INTEGER DEFAULT 0,
         recycled INTEGER DEFAULT 0,
         tags TEXT,
+        uploader INTEGER,
         FOREIGN KEY(folder_id) REFERENCES folders(id)
       )
     `);
@@ -72,16 +73,21 @@ export class LibraryServerDataSQLite implements ILibraryServerData {
         FOREIGN KEY(parent_id) REFERENCES tags(id)
       )
     `);
+
+    // 迁移：为已有 files 表添加 uploader 列
+    try {
+      await this.executeSql('ALTER TABLE files ADD COLUMN uploader INTEGER');
+    } catch {}
   }
 
   // 文件操作方法实现
   async createFile(fileData: Record<string, any>): Promise<Record<string, any>> {
     const result = await this.runSql(
       `INSERT INTO files(
-        name, created_at, imported_at, size, hash, 
+        name, created_at, imported_at, size, hash,
         custom_fields, notes, stars, folder_id,
-        reference, path, thumb, recycled, tags
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        reference, path, thumb, recycled, tags, uploader
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         fileData.name,
         fileData.created_at,
@@ -97,6 +103,7 @@ export class LibraryServerDataSQLite implements ILibraryServerData {
         fileData.thumb ?? 0,
         fileData.recycled ?? 0,
         fileData.tags,
+        fileData.uploader ?? null,
       ]
     );
     return { id: result.lastID, ...fileData };
@@ -127,6 +134,7 @@ export class LibraryServerDataSQLite implements ILibraryServerData {
     addField('path', fileData.path);
     addField('thumb', fileData.thumb ?? 0);
     addField('recycled', fileData.recycled ?? 0);
+    addField('uploader', fileData.uploader);
 
     if (fields.length === 0) return false;
 
@@ -926,6 +934,37 @@ export class LibraryServerDataSQLite implements ILibraryServerData {
     } catch (error) {
       console.error('Error getting library stats:', error);
       return { totalFiles: 0, totalSize: 0 };
+    }
+  }
+
+  async getUploadStatistics(): Promise<Record<string, any>[]> {
+    try {
+      const result = await this.getSql(
+        `SELECT uploader, COUNT(*) as file_count, COALESCE(SUM(size), 0) as total_size
+         FROM files WHERE recycled = 0 GROUP BY uploader`
+      );
+      return result.map(row => this.rowToMap(row));
+    } catch (error) {
+      console.error('Error getting upload statistics:', error);
+      return [];
+    }
+  }
+
+  async getDailyUploadStats(): Promise<Record<string, any>[]> {
+    try {
+      const result = await this.getSql(
+        `SELECT date(imported_at / 1000, 'unixepoch') as date,
+                COUNT(*) as file_count,
+                COALESCE(SUM(size), 0) as total_size
+         FROM files
+         WHERE recycled = 0
+         GROUP BY date(imported_at / 1000, 'unixepoch')
+         ORDER BY date ASC`
+      );
+      return result.map(row => this.rowToMap(row));
+    } catch (error) {
+      console.error('Error getting daily upload stats:', error);
+      return [];
     }
   }
 }
