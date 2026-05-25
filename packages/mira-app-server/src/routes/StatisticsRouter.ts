@@ -58,6 +58,23 @@ export class StatisticsRouter {
                 res.status(500).json({ code: 500, message: 'Internal server error', data: null });
             }
         });
+
+        // 文件类型统计
+        this.router.get('/:libraryId/file-types', async (req: Request, res: Response) => {
+            try {
+                const { libraryId } = req.params;
+                const obj = this.backend.libraries?.getLibrary(libraryId);
+                if (!obj) {
+                    return res.status(404).json({ code: 404, message: 'Library not found', data: null });
+                }
+
+                const stats = await obj.libraryService.getFileTypeStatistics();
+                res.json({ code: 0, message: 'Success', data: stats });
+            } catch (error) {
+                console.error('Error getting file type statistics:', error);
+                res.status(500).json({ code: 500, message: 'Internal server error', data: null });
+            }
+        });
     }
 
     public getRouter(): Router {

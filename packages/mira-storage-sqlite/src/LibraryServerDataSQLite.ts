@@ -967,4 +967,35 @@ export class LibraryServerDataSQLite implements ILibraryServerData {
       return [];
     }
   }
+
+  async getFileTypeStatistics(): Promise<Record<string, any>[]> {
+    try {
+      const result = await this.getSql(
+        `SELECT
+          CASE
+            WHEN name LIKE '%.jpg' OR name LIKE '%.jpeg' THEN 'image'
+            WHEN name LIKE '%.png' OR name LIKE '%.gif' OR name LIKE '%.webp' OR name LIKE '%.bmp' THEN 'image'
+            WHEN name LIKE '%.mp4' OR name LIKE '%.avi' OR name LIKE '%.mkv' OR name LIKE '%.mov' OR name LIKE '%.wmv' OR name LIKE '%.flv' THEN 'video'
+            WHEN name LIKE '%.mp3' OR name LIKE '%.wav' OR name LIKE '%.flac' OR name LIKE '%.aac' OR name LIKE '%.ogg' OR name LIKE '%.wma' THEN 'audio'
+            WHEN name LIKE '%.pdf' THEN 'pdf'
+            WHEN name LIKE '%.doc' OR name LIKE '%.docx' THEN 'doc'
+            WHEN name LIKE '%.xls' OR name LIKE '%.xlsx' THEN 'xls'
+            WHEN name LIKE '%.ppt' OR name LIKE '%.pptx' THEN 'ppt'
+            WHEN name LIKE '%.zip' OR name LIKE '%.rar' OR name LIKE '%.7z' OR name LIKE '%.tar' OR name LIKE '%.gz' THEN 'archive'
+            WHEN name LIKE '%.txt' OR name LIKE '%.md' OR name LIKE '%.log' THEN 'text'
+            ELSE 'other'
+          END as type,
+          COUNT(*) as file_count,
+          COALESCE(SUM(size), 0) as total_size
+         FROM files
+         WHERE recycled = 0
+         GROUP BY type
+         ORDER BY file_count DESC`
+      );
+      return result.map(row => this.rowToMap(row));
+    } catch (error) {
+      console.error('Error getting file type statistics:', error);
+      return [];
+    }
+  }
 }
