@@ -1,6 +1,7 @@
 import { MiraClient } from 'mira-server-sdk'
 import { initializeWebSocket, webSocketService } from './WebSocketService'
 import { useMediaStore } from '../stores/media'
+import { useAuthStore } from '../stores/auth'
 import { toFileUrl } from '../utils/fileUtils'
 import type {
   MiraConnectionConfig,
@@ -100,8 +101,11 @@ export class MiraSDKService {
     try {
       console.log('MiraSDKService: Connecting to Mira server', { serverUrl: config.serverUrl })
 
+      const authStore = useAuthStore()
+
       this.client = new MiraClient(config.serverUrl, {
-        timeout: config.timeout || 30000
+        timeout: config.timeout || 30000,
+        getToken: () => authStore.token ?? undefined
       })
 
       // 保存连接配置

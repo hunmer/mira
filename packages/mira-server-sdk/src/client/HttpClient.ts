@@ -23,8 +23,9 @@ export class HttpClient {
         // 设置请求拦截器
         this.axiosInstance.interceptors.request.use(
             (config) => {
-                if (this.config.token) {
-                    config.headers.Authorization = `Bearer ${this.config.token}`;
+                const token = this.config.getToken?.() || this.config.token;
+                if (token) {
+                    config.headers.Authorization = `Bearer ${token}`;
                 }
                 return config;
             },

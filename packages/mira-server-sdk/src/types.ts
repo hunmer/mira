@@ -25,6 +25,7 @@ export interface ClientConfig {
     timeout?: number;
     headers?: Record<string, string>;
     token?: string;
+    getToken?: () => string | undefined;
 }
 
 // 认证相关类型
