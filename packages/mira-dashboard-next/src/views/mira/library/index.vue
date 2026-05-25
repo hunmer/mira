@@ -46,6 +46,7 @@ function getDefaultForm(): LibraryFormData {
     name: '', path: '', type: 'local', description: '',
     icon: '', enableHash: false, enableAutoSync: false,
     useHttpFile: false, serverURL: '', serverPort: '', pluginsDir: '',
+    allowedRoles: ['super', 'admin', 'user'],
   }
 }
 
@@ -68,6 +69,7 @@ function openEdit(lib: Library) {
     useHttpFile: lib.useHttpFile ?? false,
     enableHash: lib.customFields?.enableHash ?? false,
     enableAutoSync: lib.customFields?.enableAutoSync ?? false,
+    allowedRoles: (lib as any).allowedRoles ?? ['super', 'admin', 'user'],
     _id: lib.id,
   }
   dialogOpen.value = true

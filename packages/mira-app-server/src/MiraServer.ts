@@ -2,6 +2,7 @@ import { MiraHttpServer } from "./HttpServer";
 import { LibraryStorage } from "./LibraryStorage";
 import { MiraWebsocketServer } from "./server";
 import { ServerPluginManager } from "./ServerPluginManager";
+import { SettingsManager } from "./SettingsManager";
 import path from "path";
 
 
@@ -16,6 +17,7 @@ export class MiraServer {
     httpServer?: MiraHttpServer;
     webSocketServer?: MiraWebsocketServer;
     pluginManager?: ServerPluginManager;
+    settingsManager!: SettingsManager;
     config: ServerConfig;
     libraries?: LibraryStorage;
 
@@ -35,6 +37,10 @@ export class MiraServer {
 
     public async start(): Promise<void> {
         try {
+            // 初始化设置管理器
+            this.settingsManager = new SettingsManager(this.dataPath);
+            await this.settingsManager.initialize();
+
             // 启动HTTP服务器
             this.httpServer = new MiraHttpServer(this, this.config.dataPath);
             await this.httpServer.initialize();

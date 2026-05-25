@@ -6,12 +6,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from '@/components/ui/dialog'
 import StatCard from '@/components/common/StatCard.vue'
-import { systemApi, libraryApi, pluginApi, adminApi } from '@/api'
+import { systemApi, libraryApi, pluginApi, adminApi, settingsApi } from '@/api'
+import type { ServerSettings } from '@/types/mira'
 import { toast } from 'vue-sonner'
 import {
   RiFolderLine, RiPuzzleLine, RiUserSettingsLine, RiDatabase2Line,
   RiRefreshLine, RiComputerLine, RiTimeLine, RiInformationLine,
+  RiSettingsLine,
 } from '@remixicon/vue'
 
 const { t } = useI18n()
@@ -20,6 +27,9 @@ const loading = ref(false)
 const stats = ref({ libraries: 0, plugins: 0, admins: 0, dbSize: '0 B' })
 const systemInfo = ref({ uptime: '-', version: '-', nodeVersion: '-' })
 const recentActivities = ref<{ id: number; message: string; time: string }[]>([])
+
+const settingsDialogOpen = ref(false)
+const settings = ref<ServerSettings>({ authRequired: true, allowRegistration: true })
 
 function formatSize(bytes: number): string {
   if (!bytes) return '0 B'
@@ -35,6 +45,25 @@ function formatUptime(seconds: number): string {
   if (d > 0) return `${d}d ${h}h`
   if (h > 0) return `${h}h ${m}m`
   return `${m}m`
+}
+
+async function loadSettings() {
+  try {
+    const res = await settingsApi.get()
+    settings.value = res.data.data ?? res.data
+  } catch {
+    toast.error(t('common.failed'))
+  }
+}
+
+async function saveSettings() {
+  try {
+    await settingsApi.update(settings.value)
+    toast.success(t('common.success'))
+    settingsDialogOpen.value = false
+  } catch {
+    toast.error(t('common.failed'))
+  }
 }
 
 async function refreshData() {
@@ -80,10 +109,15 @@ onMounted(refreshData)
         <h1 class="text-2xl font-bold">{{ t('overview.title') }}</h1>
         <p class="text-muted-foreground">{{ t('overview.subtitle') }}</p>
       </div>
-      <Button :disabled="loading" @click="refreshData">
-        <RiRefreshLine class="mr-2 size-4" :class="{ 'animate-spin': loading }" />
-        {{ t('overview.refreshData') }}
-      </Button>
+      <div class="flex gap-2">
+        <Button variant="outline" @click="settingsDialogOpen = true; loadSettings()">
+          <RiSettingsLine class="mr-2 size-4" /> {{ t('overview.settings') }}
+        </Button>
+        <Button :disabled="loading" @click="refreshData">
+          <RiRefreshLine class="mr-2 size-4" :class="{ 'animate-spin': loading }" />
+          {{ t('overview.refreshData') }}
+        </Button>
+      </div>
     </div>
 
     <!-- Stats -->
@@ -150,5 +184,28 @@ onMounted(refreshData)
         </CardContent>
       </Card>
     </div>
+
+    <!-- Settings Dialog -->
+    <Dialog :open="settingsDialogOpen" @update:open="settingsDialogOpen = $event">
+      <DialogContent class="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{{ t('overview.serverSettings') }}</DialogTitle>
+        </DialogHeader>
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <Label>{{ t('overview.authRequired') }}</Label>
+            <Switch v-model:checked="settings.authRequired" />
+          </div>
+          <div class="flex items-center justify-between">
+            <Label>{{ t('overview.allowRegistration') }}</Label>
+            <Switch v-model:checked="settings.allowRegistration" />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" @click="settingsDialogOpen = false">{{ t('common.cancel') }}</Button>
+          <Button @click="saveSettings">{{ t('common.save') }}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>

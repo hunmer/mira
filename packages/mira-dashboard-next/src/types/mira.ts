@@ -14,12 +14,18 @@ export interface Library {
   serverPort?: string
   pluginsDir?: string
   useHttpFile?: boolean
+  allowedRoles?: string[]
   customFields?: {
     path: string
     enableHash: boolean
     enableAutoSync?: boolean
     [key: string]: any
   }
+}
+
+export interface ServerSettings {
+  authRequired: boolean
+  allowRegistration: boolean
 }
 
 export interface Plugin {

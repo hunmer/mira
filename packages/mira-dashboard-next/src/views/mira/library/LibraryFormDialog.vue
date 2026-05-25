@@ -23,6 +23,7 @@ export interface LibraryFormData {
   serverURL: string
   serverPort: string
   pluginsDir: string
+  allowedRoles: string[]
 }
 
 const props = defineProps<{
@@ -39,7 +40,17 @@ const { t } = useI18n()
 
 const form = defineModel<LibraryFormData | null>({ required: true })
 
+const ROLES = ['super', 'admin', 'user'] as const
+
 const showServerFields = () => form.value?.type === 'remote' || form.value?.useHttpFile
+
+const toggleRole = (role: string) => {
+  if (!form.value) return
+  const roles = new Set(form.value.allowedRoles || [])
+  if (roles.has(role)) roles.delete(role)
+  else roles.add(role)
+  form.value.allowedRoles = [...roles]
+}
 </script>
 
 <template>
@@ -107,6 +118,20 @@ const showServerFields = () => form.value?.type === 'remote' || form.value?.useH
             rows="3"
             class="border-input bg-background w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
           />
+        </div>
+        <div class="space-y-2">
+          <Label>{{ t('library.allowedRoles') }}</Label>
+          <div class="flex gap-4">
+            <label v-for="role in ROLES" :key="role" class="flex items-center gap-2">
+              <input
+                type="checkbox"
+                :checked="form.allowedRoles?.includes(role)"
+                @change="toggleRole(role)"
+                class="size-4 rounded border-input"
+              />
+              <span class="text-sm">{{ role }}</span>
+            </label>
+          </div>
         </div>
       </div>
       <DialogFooter>

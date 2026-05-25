@@ -76,6 +76,10 @@ export default {
     nodeVersion: 'Node.js Version',
     noActivity: 'No recent activity',
     refreshData: 'Refresh',
+    settings: 'Settings',
+    serverSettings: 'Server Settings',
+    authRequired: 'Require Authentication',
+    allowRegistration: 'Allow Registration',
   },
   library: {
     title: 'Library Management',
@@ -104,6 +108,7 @@ export default {
     namePlaceholder: 'Enter library name',
     pathPlaceholder: 'Select library path',
     descriptionPlaceholder: 'Enter description (optional)',
+    allowedRoles: 'Allowed Roles',
   },
   plugin: {
     title: 'Plugin Management',

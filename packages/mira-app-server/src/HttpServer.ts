@@ -16,6 +16,7 @@ import { DeviceRoutes } from './routes/DeviceRoutes';
 import { TagRouter } from './routes/TagRouter';
 import { FolderRouter } from './routes/FolderRouter';
 import { FsRouter } from './routes/FsRouter';
+import { SettingsRouter } from './routes/SettingsRouter';
 
 // HTTP请求日志中间件
 interface RequestLogData {
@@ -143,6 +144,7 @@ export class MiraHttpServer {
     fsRouter: FsRouter;
     adminsRouter: AdminsRouter;
     httpRouter: HttpRouter;
+    settingsRouter: SettingsRouter;
 
     constructor(backend: MiraServer, dataDir: string = './data') {
         this.backend = backend;
@@ -160,6 +162,7 @@ export class MiraHttpServer {
         this.folderRouter = new FolderRouter(backend);
         this.fsRouter = new FsRouter();
         this.httpRouter = new HttpRouter(backend);
+        this.settingsRouter = new SettingsRouter(backend);
 
         this.setupMiddleware();
     }
@@ -234,6 +237,7 @@ export class MiraHttpServer {
         this.app.use('/api/tags', this.tagRouter.getRouter());
         this.app.use('/api/folders', this.folderRouter.getRouter());
         this.app.use('/api/fs', this.fsRouter.getRouter());
+        this.app.use('/api/settings', this.settingsRouter.getRouter());
 
         // 获取所有素材库的插件路由定义
         this.app.get('/api/plugin-routes', (req, res) => {
@@ -310,6 +314,7 @@ export class MiraHttpServer {
 
         // 健康检查端点
         this.app.get('/api/health', (req, res) => {
+            const settings = this.backend.settingsManager.getSettings();
             res.json({
                 code: 0,
                 data: {
@@ -318,7 +323,9 @@ export class MiraHttpServer {
                     uptime: process.uptime(),
                     version: process.env.npm_package_version || '1.0.0',
                     nodeVersion: process.version,
-                    environment: process.env.NODE_ENV || 'development'
+                    environment: process.env.NODE_ENV || 'development',
+                    authRequired: settings.authRequired,
+                    allowRegistration: settings.allowRegistration
                 }
             });
         });

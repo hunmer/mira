@@ -69,6 +69,7 @@ export class LibraryRoutes {
                         ...(libraryConfig.pluginsDir && { pluginsDir: libraryConfig.pluginsDir }),
                         ...(libraryConfig.useHttpFile !== undefined && { useHttpFile: libraryConfig.useHttpFile }),
                         ...(libraryConfig.customFields && { customFields: libraryConfig.customFields }),
+                        ...(libraryConfig.allowedRoles && { allowedRoles: libraryConfig.allowedRoles }),
                         createdAt: libraryConfig.createdAt || new Date().toISOString(),
                         updatedAt: libraryConfig.updatedAt || new Date().toISOString()
                     });
@@ -92,7 +93,8 @@ export class LibraryRoutes {
                     serverURL,
                     serverPort,
                     pluginsDir,
-                    useHttpFile
+                    useHttpFile,
+                    allowedRoles
                 } = req.body;
 
                 if (!name || !libraryPath) {
@@ -132,6 +134,7 @@ export class LibraryRoutes {
                         enableAutoSync: customFields?.enableAutoSync ?? true,
                         ...(customFields || {})
                     },
+                    ...(allowedRoles && { allowedRoles }),
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
                     status: 'active' // 新建的库默认为活动状态
@@ -196,6 +199,7 @@ export class LibraryRoutes {
                         serverPort: serverPort
                     }),
                     ...(pluginsDir && { pluginsDir }),
+                    ...(allowedRoles && { allowedRoles }),
                     createdAt: libraryConfig.createdAt,
                     updatedAt: libraryConfig.updatedAt
                 };
@@ -221,7 +225,8 @@ export class LibraryRoutes {
                     serverURL,
                     serverPort,
                     pluginsDir,
-                    useHttpFile
+                    useHttpFile,
+                    allowedRoles
                 } = req.body;
 
                 const libraryObj = this.backend.libraries!.getLibrary(id);
@@ -294,6 +299,11 @@ export class LibraryRoutes {
                     updatedConfig.useHttpFile = useHttpFile;
                 }
 
+                // 更新 allowedRoles
+                if (allowedRoles !== undefined) {
+                    updatedConfig.allowedRoles = allowedRoles;
+                }
+
                 // 更新内存中的配置（如果库是活跃的）
                 if (libraryObj.libraryService) {
                     libraryObj.libraryService.config = updatedConfig;
@@ -355,6 +365,7 @@ export class LibraryRoutes {
                     ...(updatedConfig.serverURL && { serverURL: updatedConfig.serverURL }),
                     ...(updatedConfig.serverPort && { serverPort: updatedConfig.serverPort }),
                     ...(updatedConfig.pluginsDir && { pluginsDir: updatedConfig.pluginsDir }),
+                    ...(updatedConfig.allowedRoles && { allowedRoles: updatedConfig.allowedRoles }),
                     createdAt: updatedConfig.createdAt,
                     updatedAt: updatedConfig.updatedAt
                 };

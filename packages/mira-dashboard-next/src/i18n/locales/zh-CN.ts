@@ -76,6 +76,10 @@ export default {
     nodeVersion: 'Node.js 版本',
     noActivity: '暂无最近活动',
     refreshData: '刷新数据',
+    settings: '设置',
+    serverSettings: '服务器设置',
+    authRequired: '需要认证',
+    allowRegistration: '允许注册',
   },
   library: {
     title: '资源库管理',
@@ -104,6 +108,7 @@ export default {
     namePlaceholder: '请输入资源库名称',
     pathPlaceholder: '请选择资源库路径',
     descriptionPlaceholder: '请输入描述（可选）',
+    allowedRoles: '允许访问的角色',
   },
   plugin: {
     title: '插件管理',

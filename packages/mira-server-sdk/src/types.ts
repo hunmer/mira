@@ -101,6 +101,7 @@ export interface Library {
     serverURL?: string;
     serverPort?: number;
     pluginsDir?: string;
+    allowedRoles?: string[];
 }
 
 export interface CreateLibraryRequest {
@@ -115,6 +116,7 @@ export interface CreateLibraryRequest {
     serverURL?: string;
     serverPort?: number;
     pluginsDir?: string;
+    allowedRoles?: string[];
 }
 
 export interface UpdateLibraryRequest {
@@ -123,6 +125,7 @@ export interface UpdateLibraryRequest {
     customFields?: {
         enableHash?: boolean;
     };
+    allowedRoles?: string[];
 }
 
 // 插件类型
@@ -320,6 +323,8 @@ export interface HealthResponse {
     version: string;
     nodeVersion?: string;
     environment?: string;
+    authRequired?: boolean;
+    allowRegistration?: boolean;
 }
 
 // 更新用户信息请求
