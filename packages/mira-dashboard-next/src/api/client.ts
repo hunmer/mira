@@ -1,13 +1,44 @@
 import axios from 'axios'
 import type { AxiosInstance, InternalAxiosRequestConfig } from 'axios'
 
-const baseURL = import.meta.env.VITE_API_BASE_URL || '/api'
+const STORAGE_KEY = 'api_base_url'
+
+function normalizeBaseURL(url: string) {
+  return url.replace(/\/$/, '').replace(/\/api$/, '') + '/api'
+}
+
+function getBaseURL() {
+  const raw = localStorage.getItem(STORAGE_KEY) || import.meta.env.VITE_API_BASE_URL || '/api'
+  return normalizeBaseURL(raw)
+}
 
 const client: AxiosInstance = axios.create({
-  baseURL,
   timeout: 10000,
   headers: { 'Content-Type': 'application/json' },
 })
+
+function applyBaseURL() {
+  client.defaults.baseURL = getBaseURL()
+}
+
+applyBaseURL()
+
+export function setApiBaseURL(url: string) {
+  if (url) {
+    localStorage.setItem(STORAGE_KEY, url)
+  } else {
+    localStorage.removeItem(STORAGE_KEY)
+  }
+  applyBaseURL()
+}
+
+export function getApiBaseURL() {
+  return getBaseURL()
+}
+
+export function getDefaultBaseURL() {
+  return normalizeBaseURL(import.meta.env.VITE_API_BASE_URL || '/api')
+}
 
 client.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const token = localStorage.getItem('token')
