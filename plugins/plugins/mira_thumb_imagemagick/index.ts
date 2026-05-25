@@ -56,7 +56,7 @@ class ThumbImageMagickPlugin {
       fs.mkdirSync(this.pluginDataDir, { recursive: true });
     }
 
-    this.loadConfig({ enableExts: ['psd'] });
+    this.loadConfig({ enableExts: ['psd'], magickPath: '' });
 
     const backend = pluginManager.server.backend;
     this.thumbnailService = backend.thumbnailService || null;
@@ -65,14 +65,24 @@ class ThumbImageMagickPlugin {
       return;
     }
 
-    let magickPath = process.env.MAGICK_PATH || '';
+    // 优先级：配置文件 > 环境变量 > PATH 查找
+    let magickPath: string = this.configs.magickPath || process.env.MAGICK_PATH || '';
+
     if (!magickPath) {
       try { magickPath = which.sync('magick'); } catch {
-        try { magickPath = which.sync('convert'); } catch {
-          console.warn('ThumbImageMagickPlugin: ImageMagick not found. Set MAGICK_PATH or install ImageMagick.');
-          return;
-        }
+        try {
+          const p = which.sync('convert');
+          if (process.platform === 'win32' && p.toLowerCase().includes('system32')) {
+            console.warn('ThumbImageMagickPlugin: found Windows system convert.exe, not ImageMagick. Set magickPath in config.');
+          } else {
+            magickPath = p;
+          }
+        } catch { }
       }
+    }
+    if (!magickPath || (path.isAbsolute(magickPath) && !fs.existsSync(magickPath))) {
+      console.warn('ThumbImageMagickPlugin: ImageMagick not found. Set magickPath in plugin config.json or MAGICK_PATH env.');
+      return;
     }
 
     const enabledExts = (this.configs.enableExts as string[]).filter(ext => SUPPORTED_EXTS.includes(ext));

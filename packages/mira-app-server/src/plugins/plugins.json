@@ -10,20 +10,9 @@
     "path": "mira_n8n"
   },
   {
-    "name": "mira_thumb",
-    "enabled": false,
-    "path": "node_modules/mira_thumb",
-    "status": "inactive"
-  },
-  {
-    "name": "mira_user",
-    "enabled": false,
-    "path": "node_modules/mira_user",
-    "status": "inactive"
-  },
-  {
-    "name": "upload_statistics",
-    "enabled": false,
-    "path": "upload_statistics"
+    "name": "mira_thumb_imagemagick",
+    "enabled": true,
+    "path": "node_modules/mira_thumb_imagemagick",
+    "status": "active"
   }
 ]
