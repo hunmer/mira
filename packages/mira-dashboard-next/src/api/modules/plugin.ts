@@ -1,14 +1,24 @@
 import client from '../client'
 import type { Plugin } from '@/types/mira'
 
+export interface LibraryPlugins {
+  id: string
+  name: string
+  description: string
+  plugins: Plugin[]
+}
+
 export const pluginApi = {
   list: () => client.get<Plugin[]>('/plugins'),
-  get: (name: string) => client.get<Plugin>(`/plugins/${name}`),
-  updateStatus: (name: string, status: 'active' | 'inactive') =>
-    client.put(`/plugins/${name}/status`, { status }),
-  configure: (name: string, config: Record<string, any>) =>
-    client.put(`/plugins/${name}/config`, config),
-  install: (data: { name: string; version?: string }) =>
+  listByLibrary: () => client.get<LibraryPlugins[]>('/plugins/by-library'),
+  get: (name: string, libraryId?: string) =>
+    client.get<Plugin>(`/plugins/${name}`, { params: { libraryId } }),
+  updateStatus: (libraryId: string, pluginName: string, status: 'active' | 'inactive') =>
+    client.post('/plugins/toggle-status', { libraryId, pluginName, status }),
+  configure: (name: string, config: Record<string, any>, libraryId?: string) =>
+    client.put(`/plugins/${name}/config`, config, { params: { libraryId } }),
+  install: (data: { name: string; version?: string; libraryId: string }) =>
     client.post('/plugins/install', data),
-  uninstall: (name: string) => client.delete(`/plugins/${name}`),
+  uninstall: (name: string, libraryId?: string) =>
+    client.delete(`/plugins/${name}`, { params: { libraryId } }),
 }

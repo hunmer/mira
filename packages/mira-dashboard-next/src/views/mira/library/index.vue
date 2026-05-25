@@ -9,9 +9,8 @@ import { Badge } from '@/components/ui/badge'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
-} from '@/components/ui/dialog'
+import LibraryFormDialog from './LibraryFormDialog.vue'
+import type { LibraryFormData } from './LibraryFormDialog.vue'
 import { toast } from 'vue-sonner'
 import {
   RiAddLine, RiSearchLine, RiEditLine, RiDeleteBinLine,
@@ -22,7 +21,7 @@ const libraries = ref<Library[]>([])
 const loading = ref(false)
 const searchQuery = ref('')
 const dialogOpen = ref(false)
-const editingLib = ref<Partial<Library> | null>(null)
+const editingLib = ref<(LibraryFormData & { _id?: string }) | null>(null)
 
 const filtered = computed(() => {
   if (!searchQuery.value) return libraries.value
@@ -42,23 +41,46 @@ async function loadLibraries() {
   }
 }
 
+function getDefaultForm(): LibraryFormData {
+  return {
+    name: '', path: '', type: 'local', description: '',
+    icon: '', enableHash: false, enableAutoSync: false,
+    useHttpFile: false, serverURL: '', serverPort: '', pluginsDir: '',
+  }
+}
+
 function openCreate() {
-  editingLib.value = { name: '', path: '', type: 'local', description: '' }
+  editingLib.value = { ...getDefaultForm() }
   dialogOpen.value = true
 }
 
 function openEdit(lib: Library) {
-  editingLib.value = { ...lib }
+  editingLib.value = {
+    ...getDefaultForm(),
+    name: lib.name,
+    path: lib.path,
+    type: lib.type,
+    description: lib.description ?? '',
+    icon: lib.icon ?? '',
+    serverURL: lib.serverURL ?? '',
+    serverPort: lib.serverPort ?? '',
+    pluginsDir: lib.pluginsDir ?? '',
+    useHttpFile: lib.useHttpFile ?? false,
+    enableHash: lib.customFields?.enableHash ?? false,
+    enableAutoSync: lib.customFields?.enableAutoSync ?? false,
+    _id: lib.id,
+  }
   dialogOpen.value = true
 }
 
 async function handleSave() {
   if (!editingLib.value) return
   try {
-    if (editingLib.value.id) {
-      await libraryApi.update(editingLib.value.id, editingLib.value)
+    const { _id, ...data } = editingLib.value as LibraryFormData & { _id?: string }
+    if (_id) {
+      await libraryApi.update(_id, data)
     } else {
-      await libraryApi.create(editingLib.value)
+      await libraryApi.create(data)
     }
     toast.success(t('common.success'))
     dialogOpen.value = false
@@ -145,30 +167,12 @@ onMounted(loadLibraries)
     </div>
 
     <!-- Create/Edit Dialog -->
-    <Dialog :open="dialogOpen" @update:open="dialogOpen = $event">
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{{ editingLib?.id ? t('library.editLibrary') : t('library.createLibrary') }}</DialogTitle>
-        </DialogHeader>
-        <div class="space-y-4" v-if="editingLib">
-          <div class="space-y-2">
-            <label class="text-sm font-medium">{{ t('common.name') }}</label>
-            <Input v-model="editingLib.name" />
-          </div>
-          <div class="space-y-2">
-            <label class="text-sm font-medium">{{ t('library.path') }}</label>
-            <Input v-model="editingLib.path" />
-          </div>
-          <div class="space-y-2">
-            <label class="text-sm font-medium">{{ t('common.description') }}</label>
-            <Input v-model="editingLib.description" />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" @click="dialogOpen = false">{{ t('common.cancel') }}</Button>
-          <Button @click="handleSave">{{ t('common.save') }}</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <LibraryFormDialog
+      v-model="editingLib"
+      :open="dialogOpen"
+      :is-edit="!!editingLib?._id"
+      @update:open="dialogOpen = $event"
+      @save="handleSave"
+    />
   </div>
 </template>
