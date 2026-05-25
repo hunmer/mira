@@ -11,8 +11,9 @@
   },
   {
     "name": "mira_thumb",
-    "enabled": true,
-    "path": "node_modules/mira_thumb"
+    "enabled": false,
+    "path": "node_modules/mira_thumb",
+    "status": "inactive"
   },
   {
     "name": "mira_user",

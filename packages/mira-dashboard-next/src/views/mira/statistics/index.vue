@@ -107,17 +107,20 @@ const svgDefs = `
 `
 
 const yMax = computed(() => {
-  const maxVal = Math.max(...chartData.value.map(d => Math.max(d.fileCount, d.totalSizeMB)), 10)
-  return Math.ceil(maxVal * 1.2)
+  if (!chartData.value.length) return 10
+  const maxVal = Math.max(...chartData.value.map(d => Math.max(d.fileCount, d.totalSizeMB)))
+  return Math.max(Math.ceil(maxVal * 1.2), 10)
 })
 
+const hasChartData = computed(() => chartData.value.some(d => d.fileCount > 0 || d.totalSizeMB > 0))
+
 // ---- 上传人员排行 ----
-type UploaderItem = { name: string; count: number }
+type UploaderItem = { index: number; name: string; count: number }
 
 const uploaderData = computed<UploaderItem[]>(() =>
   [...uploaders.value]
     .sort((a, b) => b.fileCount - a.fileCount)
-    .map(u => ({ name: u.uploaderName, count: u.fileCount })),
+    .map((u, i) => ({ index: i, name: u.uploaderName, count: u.fileCount })),
 )
 
 const uploaderConfig = {
@@ -233,24 +236,24 @@ const hasData = computed(() => rawDaily.value.length > 0 || uploaders.value.leng
       </CardHeader>
       <CardContent class="px-2 pt-4 sm:px-6 sm:pt-6 pb-4">
         <div v-if="loading" class="text-muted-foreground py-16 text-center">{{ t('common.loading') }}</div>
-        <div v-else-if="!chartData.length" class="text-muted-foreground py-16 text-center">{{ t('common.noData') }}</div>
+        <div v-else-if="!hasChartData" class="text-muted-foreground py-16 text-center">{{ t('common.noData') }}</div>
         <ChartContainer v-else :config="trendConfig" class="aspect-auto h-[300px] w-full" :cursor="false">
           <VisXYContainer :data="chartData" :svg-defs="svgDefs" :margin="{ left: 10 }" :y-domain="[0, yMax]">
             <VisArea
-              :x="(d: ChartItem) => d.date"
+              :x="(d: ChartItem) => d.date.getTime()"
               :y="[(d: ChartItem) => d.fileCount, (d: ChartItem) => d.totalSizeMB]"
               :color="(_d: ChartItem, i: number) => ['url(#fillFileCount)', 'url(#fillTotalSizeMB)'][i]"
               :opacity="0.6"
             />
             <VisLine
-              :x="(d: ChartItem) => d.date"
+              :x="(d: ChartItem) => d.date.getTime()"
               :y="[(d: ChartItem) => d.fileCount, (d: ChartItem) => d.totalSizeMB]"
               :color="(_d: ChartItem, i: number) => [trendConfig.fileCount.color, trendConfig.totalSizeMB.color][i]"
               :line-width="1.5"
             />
             <VisAxis
               type="x"
-              :x="(d: ChartItem) => d.date"
+              :x="(d: ChartItem) => d.date.getTime()"
               :tick-line="false"
               :domain-line="false"
               :grid-line="false"
@@ -286,8 +289,8 @@ const hasData = computed(() => rawDaily.value.length > 0 || uploaders.value.leng
           <ChartContainer v-else :config="uploaderConfig" class="aspect-auto h-[300px] w-full">
             <VisXYContainer :data="uploaderData" :margin="{ left: 80 }">
               <VisGroupedBar
-                :x="(d: UploaderItem) => d.count"
-                :y="(d: UploaderItem) => d.name"
+                :x="(d: UploaderItem) => d.index"
+                :y="(d: UploaderItem) => d.count"
                 :color="uploaderConfig.count.color"
                 :rounded-corners="4"
                 :orientation="Orientation.Horizontal"
@@ -303,7 +306,8 @@ const hasData = computed(() => rawDaily.value.length > 0 || uploaders.value.leng
                 :tick-line="false"
                 :domain-line="false"
                 :grid-line="false"
-                :tick-values="uploaderData.map(d => d.name)"
+                :tick-values="uploaderData.map(d => d.index)"
+                :tick-format="(_: any, i: number) => uploaderData[i]?.name || ''"
               />
               <ChartTooltip />
               <ChartCrosshair

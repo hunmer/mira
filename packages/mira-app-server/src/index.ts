@@ -6,6 +6,7 @@ import { ServerPluginManager } from './ServerPluginManager';
 import { ServerPlugin } from './ServerPlugin';
 import { MiraWebsocketServer } from './WebSocketServer';
 import { MiraHttpServer } from './server';
+import { ThumbnailService } from './services/ThumbnailService';
 import express from 'express';
 
 // 加载环境变量 - 先加载根目录的 .env，再加载本地的 .env
@@ -56,7 +57,7 @@ async function startServer() {
 }
 
 // 导出服务器实例和启动函数
-export { MiraServer, startServer, ServerPluginManager, ServerPlugin, MiraWebsocketServer, MiraHttpServer, express, ws };
+export { MiraServer, startServer, ServerPluginManager, ServerPlugin, MiraWebsocketServer, MiraHttpServer, ThumbnailService, express, ws };
 export type { PluginRouteDefinition } from './ServerPlugin';
 
 // 如果直接运行此文件，则启动服务器

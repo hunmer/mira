@@ -53,6 +53,16 @@ export class LibraryStorage {
         this.libraries[libraryId].pluginManager = pluginManager;
         await pluginManager.loadPlugins();
 
+        // 接入缩略图服务
+        const thumbService = this.server.thumbnailService;
+        if (thumbService) {
+            const em = this.libraries[libraryId].eventManager!;
+            em.on('file::created', (event: any) => thumbService.onFileCreated(libraryId, event, dbServer));
+            em.on('file::deleted', (event: any) => thumbService.onFileDeleted(libraryId, event.args?.result || event.args, dbServer));
+            // 自动扫描缺失缩略图
+            thumbService.scanPending(libraryId, dbServer);
+        }
+
         // 启动自动同步 watcher
         const enableAutoSync = dbConfig.customFields?.enableAutoSync ?? true;
         if (enableAutoSync) {

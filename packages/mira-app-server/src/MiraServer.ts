@@ -3,6 +3,7 @@ import { LibraryStorage } from "./LibraryStorage";
 import { MiraWebsocketServer } from "./server";
 import { ServerPluginManager } from "./ServerPluginManager";
 import { SettingsManager } from "./SettingsManager";
+import { ThumbnailService } from "./services/ThumbnailService";
 import path from "path";
 
 
@@ -18,6 +19,7 @@ export class MiraServer {
     webSocketServer?: MiraWebsocketServer;
     pluginManager?: ServerPluginManager;
     settingsManager!: SettingsManager;
+    thumbnailService!: ThumbnailService;
     config: ServerConfig;
     libraries?: LibraryStorage;
 
@@ -41,6 +43,9 @@ export class MiraServer {
             this.settingsManager = new SettingsManager(this.dataPath);
             await this.settingsManager.initialize();
 
+            // 初始化缩略图服务
+            this.thumbnailService = new ThumbnailService();
+
             // 启动HTTP服务器
             this.httpServer = new MiraHttpServer(this, this.config.dataPath);
             await this.httpServer.initialize();
@@ -52,6 +57,9 @@ export class MiraServer {
             );
             await this.webSocketServer.start(this.config.wsPort!);
             console.log(`🔌 WebSocket Server initialized on port ${this.config.wsPort}`);
+
+            // 缩略图服务接入 WebSocket 广播
+            this.thumbnailService.setWebSocketServer(this.webSocketServer);
 
             console.log('📚 Auto-loading libraries...');
             this.libraries = new LibraryStorage(this);

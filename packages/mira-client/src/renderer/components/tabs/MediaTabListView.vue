@@ -108,7 +108,7 @@
     <div class="flex-1 flex overflow-hidden relative">
       <div class="flex-1 flex flex-col min-w-0">
         <!-- 媒体内容 - files 和 trash 都使用统一的视图 -->
-        <div class="flex-1 overflow-y-auto w-full min-w-0">
+        <div class="flex-1 overflow-y-auto w-full min-w-0" @wheel="handleCtrlWheel">
           <!-- 网格视图 -->
           <MediaGridComponent
             v-if="viewMode === 'grid'"
@@ -950,6 +950,18 @@ const scrollToSelectionTop = () => {
 
 const handleColumnsChange = (event: Event) => {
   homeController.handleColumnsChange(event)
+}
+
+const handleCtrlWheel = (event: WheelEvent) => {
+  if (!event.ctrlKey) return
+  if (viewMode.value !== 'grid' && viewMode.value !== 'waterfall') return
+  event.preventDefault()
+  const delta = event.deltaY > 0 ? 1 : -1
+  const next = Math.min(8, Math.max(2, columnsPerRow.value + delta))
+  if (next !== columnsPerRow.value) {
+    const fake = { target: { value: String(next) } } as unknown as Event
+    homeController.handleColumnsChange(fake)
+  }
 }
 
 const handleTagAdd = (tagName: string) => {

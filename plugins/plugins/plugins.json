@@ -11,7 +11,7 @@
   },
   {
     "name": "mira_thumb",
-    "enabled": true,
+    "enabled": false,
     "path": "mira_thumb"
   },
   {
