@@ -216,12 +216,16 @@
         methods: {
             // 获取库ID
             getLibraryId() {
-            const path = window.location.href;
-                const match = path.match(/\/mira\/library\/([^\/]+)/);
-                if (match) {
-                    return match[1];
-                }
+                const ctx = window.MiraDashboard;
+                if (ctx) return ctx.getLibraryId();
                 return 'default';
+            },
+
+            // 获取 API 基础路径
+            getApiBase() {
+                const ctx = window.MiraDashboard;
+                if (ctx) return ctx.getApiBase();
+                return 'http://127.0.0.1:8081/api';
             },
 
             // 添加日志
@@ -253,7 +257,7 @@
             async refreshStats() {
                 this.loading = true;
                 try {
-                    const response = await fetch(`http://127.0.0.1:8081/thumb/stats?libraryId=${this.getLibraryId()}`);
+                    const response = await fetch(`${this.getApiBase()}/thumb/stats?libraryId=${this.getLibraryId()}`);
                     if (!response.ok) {
                         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                     }
@@ -273,7 +277,7 @@
             // 开始扫描
             async startScan() {
                 try {
-                    const response = await fetch(`http://127.0.0.1:8081/thumb/scan?libraryId=${this.getLibraryId()}`);
+                    const response = await fetch(`${this.getApiBase()}/thumb/scan?libraryId=${this.getLibraryId()}`);
                     if (!response.ok) {
                         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                     }
@@ -292,7 +296,7 @@
             // 取消扫描
             async cancelScan() {
                 try {
-                    const response = await fetch(`http://127.0.0.1:8081/thumb/cancel?libraryId=${this.getLibraryId()}`);
+                    const response = await fetch(`${this.getApiBase()}/thumb/cancel?libraryId=${this.getLibraryId()}`);
                     if (!response.ok) {
                         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                     }
@@ -316,7 +320,7 @@
 
                 this.progressTimer = setInterval(async () => {
                     try {
-                        const response = await fetch(`http://127.0.0.1:8081/thumb/progress?libraryId=${this.getLibraryId()}`);
+                        const response = await fetch(`${this.getApiBase()}/thumb/progress?libraryId=${this.getLibraryId()}`);
                         if (!response.ok) {
                             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                         }

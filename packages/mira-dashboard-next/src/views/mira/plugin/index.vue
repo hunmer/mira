@@ -6,6 +6,8 @@ import type { Plugin } from '@/types/mira'
 import type { LibraryPlugins } from '@/api/modules/plugin'
 import { pluginApi } from '@/api'
 import client from '@/api/client'
+import { useAppStore } from '@/stores/app'
+import { getDashboardContext } from '@/stores/app'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -135,6 +137,9 @@ async function loadPlugins() {
 
 const registeredRouteNames = new Set<string>()
 
+// 暴露 dashboard 上下文给插件组件
+;(window as any).MiraDashboard = getDashboardContext()
+
 async function loadPluginRoutes(libraryId: string) {
   try {
     const res = await client.get(`/plugin-routes/${libraryId}`)
@@ -153,7 +158,7 @@ async function loadPluginRoutes(libraryId: string) {
         name: routeName,
         path: childPath,
         component,
-        meta: { ...route.meta, isPlugin: true, requiresAuth: true },
+        meta: { ...route.meta, isPlugin: true, requiresAuth: true, libraryId },
       })
     }
   } catch {
@@ -162,17 +167,23 @@ async function loadPluginRoutes(libraryId: string) {
 }
 
 function resolvePluginComponent(route: PluginRoute, libraryId: string) {
-  // builder 模式：直接用返回的 HTML 作为模板
+  const mixin = {
+    methods: {
+      getLibraryId: () => libraryId,
+    },
+  }
+
+  // builder 模式
   if (route.builder) {
     try {
       const html = route.builder()
-      return defineComponent({ template: html, name: route.name })
+      return defineComponent({ template: html, name: route.name, mixins: [mixin] })
     } catch (e) {
       console.error(`Plugin route builder error: ${route.name}`, e)
     }
   }
 
-  // component 模式：动态加载插件 JS，从 window.MiraPluginComponents 取组件
+  // component 模式：动态加载插件 JS
   if (route.component) {
     const comp = route.component
     const pluginName = route.pluginName || ''
@@ -181,13 +192,13 @@ function resolvePluginComponent(route: PluginRoute, libraryId: string) {
     return () => new Promise<any>((resolve) => {
       const key = `${pluginName}_${comp.replace(/[/.]/g, '_')}`
       const existing = (window as any).MiraPluginComponents?.[key]
-      if (existing) return resolve(existing)
+      if (existing) return resolve(withMixin(existing, mixin))
 
       const script = document.createElement('script')
       script.src = src
       script.onload = () => {
-        const comp = (window as any).MiraPluginComponents?.[key]
-        resolve(comp || fallback(route))
+        const raw = (window as any).MiraPluginComponents?.[key]
+        resolve(raw ? withMixin(raw, mixin) : fallback(route))
       }
       script.onerror = () => {
         console.error(`Failed to load plugin script: ${src}`)
@@ -198,6 +209,10 @@ function resolvePluginComponent(route: PluginRoute, libraryId: string) {
   }
 
   return fallback(route)
+}
+
+function withMixin(comp: any, mixin: any) {
+  return defineComponent({ ...comp, mixins: [mixin] })
 }
 
 function fallback(route: PluginRoute) {

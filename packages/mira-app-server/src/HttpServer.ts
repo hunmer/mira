@@ -218,7 +218,7 @@ export class MiraHttpServer {
     }
 
     private setupRoutes() {
-        this.app.use('/', this.httpRouter.getRouter()); // 插件注册服务
+        this.app.use('/api', this.httpRouter.getRouter()); // 插件注册服务
         this.app.use('/api/auth', this.authRouter.getRouter());
         this.app.use('/api/admins', this.adminsRouter.getRouter());
 

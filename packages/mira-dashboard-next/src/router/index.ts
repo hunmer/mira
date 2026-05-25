@@ -1,10 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useAppStore } from '@/stores/app'
 
 declare module 'vue-router' {
   interface RouteMeta {
     requiresAuth?: boolean
     roles?: string[]
+    isPlugin?: boolean
+    libraryId?: string
   }
 }
 
@@ -50,6 +53,9 @@ router.beforeEach((to) => {
   }
   if (to.meta.roles?.length && !to.meta.roles.includes(auth.userRole)) {
     return '/overview'
+  }
+  if (to.meta.libraryId) {
+    useAppStore().setCurrentLibrary(to.meta.libraryId)
   }
 })
 
