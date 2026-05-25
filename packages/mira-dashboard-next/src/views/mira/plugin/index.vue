@@ -1,40 +1,106 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Plugin } from '@/types/mira'
 import type { LibraryPlugins } from '@/api/modules/plugin'
 import { pluginApi } from '@/api'
+import client from '@/api/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
+import { Separator } from '@/components/ui/separator'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import {
+  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
+} from '@/components/ui/sheet'
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { toast } from 'vue-sonner'
 import {
-  RiSearchLine, RiMoreLine, RiSettings3Line, RiToggleLine,
-  RiStopCircleLine, RiStore2Line,
+  RiSearchLine, RiMoreLine, RiSettings3Line, RiStopCircleLine,
+  RiStore2Line, RiInformationLine, RiExternalLinkLine,
 } from '@remixicon/vue'
 
+interface PluginRoute {
+  name: string
+  path: string
+  pluginName: string
+  meta?: { title?: string }
+}
+
 const { t } = useI18n()
+
+// core state
 const groups = ref<LibraryPlugins[]>([])
 const loading = ref(false)
 const searchQuery = ref('')
 const activeTab = ref('')
+const pluginRoutes = reactive<Record<string, PluginRoute[]>>({})
+
+// detail sheet
+const detailOpen = ref(false)
+const detailPlugin = ref<Plugin | null>(null)
+
+// config dialog
 const configDialog = ref(false)
 const configPlugin = ref<Plugin | null>(null)
-const configData = ref<Record<string, any>>({})
+const configJson = ref('')
+
+// store dialog
+const storeOpen = ref(false)
+const storeSearch = ref('')
+
+const storePlugins = [
+  { name: 'mira_user', title: '用户认证', description: '用户登录认证插件，通过 SDK 连接 Mira 服务端进行权限验证，支持多角色管理和会话管理。', icon: '👤', category: '安全', deps: 'mira-server-sdk' },
+  { name: 'mira_thumb', title: '缩略图生成', description: '自动为视频和图片生成缩略图，基于 ffmpeg 实现高效批量处理。', icon: '🖼️', category: '存储', deps: 'fluent-ffmpeg, queue' },
+  { name: 'upload_statistics', title: '上传统计', description: '记录和查询文件上传历史数据，提供上传量统计和趋势分析。', icon: '📊', category: '工具', deps: '--' },
+  { name: 'mira_n8n', title: 'n8n 集成', description: '通过 Webhook 和 WebSocket 将 Mira 事件转发到 n8n 工作流引擎，实现自动化任务编排。', icon: '🔗', category: '集成', deps: 'ws' },
+]
+
+const installedNames = computed(() => groups.value.flatMap(g => g.plugins.map(p => p.name)))
+
+const filteredStorePlugins = computed(() => {
+  if (!storeSearch.value) return storePlugins
+  const q = storeSearch.value.toLowerCase()
+  return storePlugins.filter(p =>
+    p.name.toLowerCase().includes(q) ||
+    p.title.toLowerCase().includes(q) ||
+    p.description.toLowerCase().includes(q),
+  )
+})
 
 const currentPlugins = computed(() => {
   const g = groups.value.find(g => g.id === activeTab.value)
   if (!g) return []
   if (!searchQuery.value) return g.plugins
   const q = searchQuery.value.toLowerCase()
-  return g.plugins.filter(p => p.name.toLowerCase().includes(q))
+  return g.plugins.filter(p =>
+    p.name.toLowerCase().includes(q) ||
+    p.author.toLowerCase().includes(q) ||
+    (p.description && p.description.toLowerCase().includes(q)),
+  )
 })
+
+function getRoutesForPlugin(libraryId: string, pluginName: string) {
+  return (pluginRoutes[libraryId] || []).filter(r => r.pluginName === pluginName)
+}
+
+const categoryMap: Record<string, string> = {
+  general: '通用', security: '安全', storage: '存储',
+  ui: '界面', utility: '工具', integration: '集成', development: '开发',
+}
+
+function getCategoryName(c?: string) {
+  return categoryMap[c || 'general'] || c || '通用'
+}
 
 async function loadPlugins() {
   loading.value = true
@@ -44,6 +110,9 @@ async function loadPlugins() {
     if (groups.value.length && !activeTab.value) {
       activeTab.value = groups.value[0].id
     }
+    for (const g of groups.value) {
+      loadPluginRoutes(g.id)
+    }
   } catch {
     toast.error(t('common.failed'))
   } finally {
@@ -51,31 +120,53 @@ async function loadPlugins() {
   }
 }
 
-async function toggleStatus(plugin: Plugin) {
+async function loadPluginRoutes(libraryId: string) {
   try {
-    const newStatus = plugin.status === 'active' ? 'inactive' : 'active'
+    const res = await client.get(`/plugin-routes/${libraryId}`)
+    pluginRoutes[libraryId] = Array.isArray(res.data?.data) ? res.data.data : []
+  } catch {
+    pluginRoutes[libraryId] = []
+  }
+}
+
+async function toggleStatus(plugin: Plugin, checked: boolean) {
+  const newStatus = checked ? 'active' : 'inactive'
+  try {
     await pluginApi.updateStatus(plugin.libraryId!, plugin.name, newStatus)
+    plugin.status = newStatus
+    if (detailPlugin.value?.name === plugin.name) detailPlugin.value.status = newStatus
     toast.success(t('common.success'))
-    await loadPlugins()
   } catch {
     toast.error(t('common.failed'))
   }
 }
 
-function openConfig(plugin: Plugin) {
-  configPlugin.value = plugin
-  configData.value = {}
-  configDialog.value = true
+function openDetail(plugin: Plugin) {
+  detailPlugin.value = plugin
+  detailOpen.value = true
+}
+
+async function openConfig(plugin: Plugin) {
+  try {
+    const res = await client.get(`/plugins/${plugin.name}/config`, { params: { libraryId: plugin.libraryId } })
+    configJson.value = JSON.stringify(res.data, null, 2)
+    configPlugin.value = plugin
+    configDialog.value = true
+    detailOpen.value = false
+  } catch {
+    toast.error(t('common.failed'))
+  }
 }
 
 async function saveConfig() {
   if (!configPlugin.value) return
   try {
-    await pluginApi.configure(configPlugin.value.name, configData.value, configPlugin.value.libraryId)
+    const parsed = JSON.parse(configJson.value)
+    await pluginApi.configure(configPlugin.value.name, parsed, configPlugin.value.libraryId)
     toast.success(t('common.success'))
     configDialog.value = false
-  } catch {
-    toast.error(t('common.failed'))
+  } catch (e) {
+    toast.error(e instanceof SyntaxError ? 'JSON 格式错误' : t('common.failed'))
   }
 }
 
@@ -84,10 +175,27 @@ async function uninstallPlugin(plugin: Plugin) {
   try {
     await pluginApi.uninstall(plugin.name, plugin.libraryId)
     toast.success(t('common.success'))
+    if (detailPlugin.value?.name === plugin.name) detailOpen.value = false
     await loadPlugins()
   } catch {
     toast.error(t('common.failed'))
   }
+}
+
+async function installFromStore(name: string) {
+  if (!activeTab.value) return
+  try {
+    await pluginApi.install({ name, libraryId: activeTab.value })
+    toast.success(t('common.success'))
+    storeOpen.value = false
+    setTimeout(loadPlugins, 2000)
+  } catch {
+    toast.error(t('common.failed'))
+  }
+}
+
+function openRoute(route: PluginRoute) {
+  window.open(route.path, '_blank')
 }
 
 onMounted(loadPlugins)
@@ -95,22 +203,26 @@ onMounted(loadPlugins)
 
 <template>
   <div class="space-y-6">
+    <!-- header -->
     <div class="flex items-center justify-between">
       <h1 class="text-2xl font-bold">{{ t('plugin.title') }}</h1>
-      <Button>
+      <Button @click="storeOpen = true">
         <RiStore2Line class="mr-2 size-4" /> {{ t('plugin.pluginStore') }}
       </Button>
     </div>
 
+    <!-- search -->
     <div class="relative max-w-sm">
       <RiSearchLine class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
       <Input v-model="searchQuery" :placeholder="t('common.search')" class="pl-9" />
     </div>
 
+    <!-- loading -->
     <div v-if="loading" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      <Card v-for="i in 6" :key="i"><CardContent class="h-40 animate-pulse" /></Card>
+      <Card v-for="i in 6" :key="i"><CardContent class="h-48 animate-pulse" /></Card>
     </div>
 
+    <!-- main content -->
     <Tabs v-else-if="groups.length" v-model="activeTab">
       <TabsList>
         <TabsTrigger v-for="g in groups" :key="g.id" :value="g.id">
@@ -121,21 +233,68 @@ onMounted(loadPlugins)
 
       <TabsContent v-for="g in groups" :key="g.id" :value="g.id" class="mt-4">
         <div v-if="currentPlugins.length" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <Card v-for="plugin in currentPlugins" :key="plugin.name">
-            <CardHeader class="pb-2">
-              <div class="flex items-start justify-between">
-                <div>
-                  <CardTitle class="text-base">{{ plugin.name }}</CardTitle>
-                  <p class="text-xs text-muted-foreground">{{ t('plugin.version') }}: {{ plugin.version }}</p>
+          <Card
+            v-for="plugin in currentPlugins"
+            :key="plugin.name"
+            class="relative cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5"
+            :class="plugin.status === 'active' ? 'border-l-4 border-l-green-500' : 'border-l-4 border-l-muted'"
+            @click="openDetail(plugin)"
+          >
+            <CardContent class="pt-5">
+              <!-- header: name + switch -->
+              <div class="mb-3 flex items-start justify-between" @click.stop>
+                <div class="min-w-0 flex-1">
+                  <h3 class="truncate text-base font-semibold">{{ plugin.name }}</h3>
+                  <p class="text-xs text-muted-foreground">v{{ plugin.version }}</p>
                 </div>
+                <Switch
+                  :checked="plugin.status === 'active'"
+                  @update:checked="(v: boolean) => toggleStatus(plugin, v)"
+                />
+              </div>
+
+              <!-- description -->
+              <p class="mb-3 line-clamp-2 text-sm text-muted-foreground">
+                {{ plugin.description || '-' }}
+              </p>
+
+              <!-- meta -->
+              <div class="mb-3 flex items-center gap-2 text-xs text-muted-foreground">
+                <Badge :variant="plugin.status === 'active' ? 'default' : 'secondary'">
+                  {{ plugin.status === 'active' ? t('plugin.enabled') : t('plugin.disabled') }}
+                </Badge>
+                <span>{{ t('plugin.author') }}: {{ plugin.author }}</span>
+              </div>
+
+              <!-- plugin routes -->
+              <div v-if="getRoutesForPlugin(g.id, plugin.name).length" class="border-t pt-3">
+                <p class="mb-1.5 text-[11px] font-medium text-muted-foreground">插件入口</p>
+                <div class="flex flex-wrap gap-1">
+                  <Button
+                    v-for="route in getRoutesForPlugin(g.id, plugin.name)"
+                    :key="route.path"
+                    variant="outline"
+                    size="sm"
+                    class="h-6 gap-1 px-2 text-xs"
+                    @click.stop="openRoute(route)"
+                  >
+                    {{ route.meta?.title || route.name }}
+                    <RiExternalLinkLine class="size-3" />
+                  </Button>
+                </div>
+              </div>
+
+              <!-- actions (dropdown, stop click propagation) -->
+              <div class="absolute right-2 top-2" @click.stop>
                 <DropdownMenu>
                   <DropdownMenuTrigger as-child>
-                    <Button variant="ghost" size="icon"><RiMoreLine class="size-4" /></Button>
+                    <Button variant="ghost" size="icon" class="size-8">
+                      <RiMoreLine class="size-4" />
+                    </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem @click="toggleStatus(plugin)">
-                      <RiToggleLine class="mr-2 size-4" />
-                      {{ plugin.status === 'active' ? t('plugin.disable') : t('plugin.enable') }}
+                    <DropdownMenuItem @click="openDetail(plugin)">
+                      <RiInformationLine class="mr-2 size-4" /> {{ t('plugin.detail') || '详情' }}
                     </DropdownMenuItem>
                     <DropdownMenuItem v-if="plugin.configurable" @click="openConfig(plugin)">
                       <RiSettings3Line class="mr-2 size-4" /> {{ t('plugin.configure') }}
@@ -145,15 +304,6 @@ onMounted(loadPlugins)
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p class="mb-3 line-clamp-2 text-sm text-muted-foreground">{{ plugin.description || '-' }}</p>
-              <div class="flex items-center gap-2">
-                <Badge :variant="plugin.status === 'active' ? 'default' : 'secondary'">
-                  {{ plugin.status === 'active' ? t('plugin.enabled') : t('plugin.disabled') }}
-                </Badge>
-                <span class="text-xs text-muted-foreground">{{ t('plugin.author') }}: {{ plugin.author }}</span>
               </div>
             </CardContent>
           </Card>
@@ -168,19 +318,160 @@ onMounted(loadPlugins)
       {{ t('common.noData') }}
     </div>
 
+    <!-- Detail Sheet -->
+    <Sheet :open="detailOpen" @update:open="detailOpen = $event">
+      <SheetContent class="sm:max-w-md overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle>{{ detailPlugin?.name }}</SheetTitle>
+          <SheetDescription>{{ detailPlugin?.description || '-' }}</SheetDescription>
+        </SheetHeader>
+
+        <div v-if="detailPlugin" class="mt-4 space-y-4">
+          <div class="flex items-center justify-between">
+            <Label>{{ t('plugin.enabled') || '状态' }}</Label>
+            <Switch
+              :checked="detailPlugin.status === 'active'"
+              @update:checked="(v: boolean) => toggleStatus(detailPlugin!, v)"
+            />
+          </div>
+
+          <Separator />
+
+          <div class="space-y-3 text-sm">
+            <div class="flex justify-between">
+              <span class="text-muted-foreground">{{ t('plugin.version') }}</span>
+              <span>{{ detailPlugin.version }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-muted-foreground">{{ t('plugin.author') }}</span>
+              <span>{{ detailPlugin.author }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-muted-foreground">分类</span>
+              <span>{{ getCategoryName(detailPlugin.category) }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-muted-foreground">所属库</span>
+              <span>{{ detailPlugin.libraryName || detailPlugin.libraryId || '-' }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-muted-foreground">入口文件</span>
+              <span class="text-xs">{{ detailPlugin.main }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-muted-foreground">依赖</span>
+              <span>{{ detailPlugin.dependencies.length }} 个</span>
+            </div>
+            <div v-if="detailPlugin.tags?.length" class="flex flex-wrap items-center gap-1">
+              <span class="text-muted-foreground">标签</span>
+              <Badge v-for="tag in detailPlugin.tags" :key="tag" variant="outline" class="text-xs">{{ tag }}</Badge>
+            </div>
+          </div>
+
+          <Separator />
+
+          <!-- routes in detail -->
+          <div v-if="detailPlugin.libraryId && getRoutesForPlugin(detailPlugin.libraryId, detailPlugin.name).length">
+            <p class="mb-2 text-sm font-medium">插件入口</p>
+            <div class="flex flex-wrap gap-2">
+              <Button
+                v-for="route in getRoutesForPlugin(detailPlugin.libraryId!, detailPlugin.name)"
+                :key="route.path"
+                variant="outline"
+                size="sm"
+                class="gap-1"
+                @click="openRoute(route)"
+              >
+                {{ route.meta?.title || route.name }}
+                <RiExternalLinkLine class="size-3" />
+              </Button>
+            </div>
+          </div>
+
+          <div class="flex gap-2 pt-2">
+            <Button
+              v-if="detailPlugin.configurable"
+              class="flex-1"
+              @click="openConfig(detailPlugin)"
+            >
+              <RiSettings3Line class="mr-2 size-4" /> {{ t('plugin.configure') }}
+            </Button>
+            <Button
+              variant="destructive"
+              @click="uninstallPlugin(detailPlugin)"
+            >
+              <RiStopCircleLine class="mr-2 size-4" /> {{ t('plugin.uninstall') }}
+            </Button>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
+
     <!-- Config Dialog -->
     <Dialog :open="configDialog" @update:open="configDialog = $event">
-      <DialogContent>
+      <DialogContent class="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{{ t('plugin.configure') }} - {{ configPlugin?.name }}</DialogTitle>
+          <DialogDescription>编辑 JSON 配置</DialogDescription>
         </DialogHeader>
-        <div class="py-4 text-center text-sm text-muted-foreground">
-          {{ t('common.noData') }}
-        </div>
+        <textarea
+          v-model="configJson"
+          class="min-h-[200px] w-full rounded-md border bg-muted p-3 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          spellcheck="false"
+        />
         <DialogFooter>
           <Button variant="outline" @click="configDialog = false">{{ t('common.cancel') }}</Button>
           <Button @click="saveConfig">{{ t('common.save') }}</Button>
         </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <!-- Store Dialog -->
+    <Dialog :open="storeOpen" @update:open="storeOpen = $event">
+      <DialogContent class="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{{ t('plugin.pluginStore') }}</DialogTitle>
+          <DialogDescription>浏览并安装官方插件</DialogDescription>
+        </DialogHeader>
+
+        <div class="relative mb-4">
+          <RiSearchLine class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input v-model="storeSearch" placeholder="搜索插件..." class="pl-9" />
+        </div>
+
+        <ScrollArea class="max-h-[400px]">
+          <div class="space-y-3 pr-3">
+            <Card v-for="p in filteredStorePlugins" :key="p.name">
+              <CardContent class="flex items-start gap-4 py-4">
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-xl">
+                  {{ p.icon }}
+                </div>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-2">
+                    <span class="font-medium">{{ p.title }}</span>
+                    <Badge variant="outline" class="text-[10px]">{{ p.category }}</Badge>
+                    <Badge v-if="installedNames.includes(p.name)" variant="secondary" class="text-[10px]">已安装</Badge>
+                  </div>
+                  <p class="text-xs text-muted-foreground">{{ p.name }}</p>
+                  <p class="mt-1 text-sm text-muted-foreground">{{ p.description }}</p>
+                  <p v-if="p.deps !== '--'" class="mt-1 text-[11px] text-muted-foreground/60">依赖: {{ p.deps }}</p>
+                </div>
+                <Button
+                  :disabled="installedNames.includes(p.name)"
+                  :variant="installedNames.includes(p.name) ? 'secondary' : 'default'"
+                  size="sm"
+                  @click="installFromStore(p.name)"
+                >
+                  {{ installedNames.includes(p.name) ? '已安装' : '安装' }}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <div v-if="!filteredStorePlugins.length" class="py-8 text-center text-sm text-muted-foreground">
+              没有找到匹配的插件
+            </div>
+          </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   </div>

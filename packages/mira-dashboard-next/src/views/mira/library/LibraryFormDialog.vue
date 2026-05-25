@@ -3,6 +3,7 @@ import { useI18n } from 'vue-i18n'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import PathTreeSelect from '@/components/PathTreeSelect.vue'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog'
@@ -54,7 +55,7 @@ const showServerFields = () => form.value?.type === 'remote' || form.value?.useH
         </div>
         <div class="space-y-2">
           <Label>{{ t('library.path') }}</Label>
-          <Input v-model="form.path" :placeholder="t('library.pathPlaceholder')" />
+          <PathTreeSelect v-model="form.path" :placeholder="t('library.pathPlaceholder')" />
         </div>
         <div class="space-y-2">
           <Label>{{ t('library.type') }}</Label>
@@ -96,7 +97,7 @@ const showServerFields = () => form.value?.type === 'remote' || form.value?.useH
         </template>
         <div class="space-y-2">
           <Label>{{ t('library.pluginsDir') }}</Label>
-          <Input v-model="form.pluginsDir" :placeholder="t('library.pluginsDirPlaceholder')" />
+          <PathTreeSelect v-model="form.pluginsDir" :placeholder="t('library.pluginsDirPlaceholder')" />
         </div>
         <div class="space-y-2">
           <Label>{{ t('common.description') }}</Label>
