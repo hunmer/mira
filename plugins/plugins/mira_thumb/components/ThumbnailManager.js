@@ -20,6 +20,11 @@
       MiraCardHeader: ui.CardHeader,
       MiraCardTitle: ui.CardTitle,
       MiraScrollArea: ui.ScrollArea,
+      MiraSelect: ui.Select,
+      MiraSelectContent: ui.SelectContent,
+      MiraSelectItem: ui.SelectItem,
+      MiraSelectTrigger: ui.SelectTrigger,
+      MiraSelectValue: ui.SelectValue,
       MiraSeparator: ui.Separator,
     };
   }
@@ -29,17 +34,36 @@
     components: getDashboardUiComponents(),
     template: `
       <div class="space-y-6">
-        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <h1 class="text-2xl font-bold tracking-normal">缩略图管理</h1>
             <p class="mt-1 text-sm text-muted-foreground">管理和生成媒体文件缩略图</p>
           </div>
-          <div class="flex flex-wrap gap-2">
-            <MiraButton variant="outline" :disabled="loading" @click="refreshStats">
+          <div class="flex flex-col gap-2 md:flex-row md:items-center">
+            <MiraSelect
+              v-model="selectedLibraryId"
+              :disabled="librariesLoading || isScanning"
+              @update:model-value="handleLibraryChange"
+            >
+              <MiraSelectTrigger class="w-full md:w-64">
+                <MiraSelectValue :placeholder="librariesLoading ? '加载素材库...' : '选择素材库'" />
+              </MiraSelectTrigger>
+              <MiraSelectContent>
+                <MiraSelectItem
+                  v-for="library in libraries"
+                  :key="library.id"
+                  :value="library.id"
+                >
+                  {{ library.name }}
+                </MiraSelectItem>
+              </MiraSelectContent>
+            </MiraSelect>
+
+            <MiraButton variant="outline" :disabled="!selectedLibraryId || loading" @click="refreshStats">
               <span v-if="loading" class="mr-1 size-3 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
               刷新统计
             </MiraButton>
-            <MiraButton :disabled="isScanning" @click="startScan">
+            <MiraButton :disabled="!selectedLibraryId || isScanning" @click="startScan">
               <span v-if="isScanning" class="mr-1 size-3 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
               {{ isScanning ? '正在扫描...' : '开始扫描' }}
             </MiraButton>
@@ -48,6 +72,18 @@
             </MiraButton>
           </div>
         </div>
+
+        <MiraCard v-if="selectedLibrary">
+          <MiraCardContent class="flex flex-col gap-2 pt-5 md:flex-row md:items-center md:justify-between">
+            <div class="min-w-0">
+              <div class="truncate text-sm font-medium">{{ selectedLibrary.name }}</div>
+              <div class="truncate text-xs text-muted-foreground">{{ selectedLibrary.path }}</div>
+            </div>
+            <MiraBadge :variant="selectedLibrary.status === 'active' ? 'default' : 'secondary'">
+              {{ selectedLibrary.status === 'active' ? '启用' : '停用' }}
+            </MiraBadge>
+          </MiraCardContent>
+        </MiraCard>
 
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <MiraCard v-for="item in statItems" :key="item.label">
@@ -134,7 +170,10 @@
     data() {
       return {
         loading: false,
+        librariesLoading: false,
         isScanning: false,
+        libraries: [],
+        selectedLibraryId: '',
         stats: {
           totalFiles: 0,
           withThumbnails: 0,
@@ -161,19 +200,26 @@
           { label: '剩余任务', value: this.progress.queueLength || this.stats.withoutThumbnails, badge: 'Queue', variant: 'outline' },
         ];
       },
+      selectedLibrary() {
+        return this.libraries.find(library => library.id === this.selectedLibraryId) || null;
+      },
     },
     mounted() {
       console.debug('ThumbnailManager mounted');
-      this.refreshStats();
+      this.loadLibraries();
     },
     beforeUnmount() {
       this.stopProgressMonitoring();
     },
     methods: {
-      getLibraryId() {
+      async getLibraries() {
         const ctx = window.MiraDashboard;
-        if (ctx) return ctx.getLibraryId();
-        return 'default';
+        if (ctx && typeof ctx.getLibraries === 'function') {
+          return ctx.getLibraries();
+        }
+
+        const result = await this.requestJson('/libraries');
+        return Array.isArray(result) ? result : [];
       },
 
       getApiBase() {
@@ -188,6 +234,37 @@
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
         return response.json();
+      },
+
+      async loadLibraries() {
+        this.librariesLoading = true;
+        try {
+          this.libraries = await this.getLibraries();
+          if (!this.selectedLibraryId && this.libraries.length) {
+            const activeLibrary = this.libraries.find(library => library.status === 'active');
+            this.selectedLibraryId = (activeLibrary || this.libraries[0]).id;
+            await this.refreshStats();
+          }
+        } catch (error) {
+          console.error('获取素材库列表失败:', error);
+          this.addLog(`获取素材库失败：${error.message}`);
+        } finally {
+          this.librariesLoading = false;
+        }
+      },
+
+      handleLibraryChange(libraryId) {
+        this.selectedLibraryId = libraryId;
+        this.stopProgressMonitoring();
+        this.isScanning = false;
+        this.progress = {
+          totalPending: 0,
+          queueLength: 0,
+          processing: false,
+          completed: 0,
+          progress: 0,
+        };
+        this.refreshStats();
       },
 
       addLog(message) {
@@ -206,9 +283,10 @@
       },
 
       async refreshStats() {
+        if (!this.selectedLibraryId) return;
         this.loading = true;
         try {
-          const result = await this.requestJson(`/thumb/stats?libraryId=${this.getLibraryId()}`);
+          const result = await this.requestJson(`/thumb/stats?libraryId=${this.selectedLibraryId}`);
           if (result.success) {
             this.stats = result.data;
             this.addLog(`统计已更新：总文件 ${this.stats.totalFiles} 个，缩略图完成率 ${this.stats.thumbnailRate}%`);
@@ -222,8 +300,9 @@
       },
 
       async startScan() {
+        if (!this.selectedLibraryId) return;
         try {
-          const result = await this.requestJson(`/thumb/scan?libraryId=${this.getLibraryId()}`);
+          const result = await this.requestJson(`/thumb/scan?libraryId=${this.selectedLibraryId}`);
           if (result.success) {
             this.isScanning = true;
             this.addLog(result.message || '缩略图扫描已开始');
@@ -236,8 +315,9 @@
       },
 
       async cancelScan() {
+        if (!this.selectedLibraryId) return;
         try {
-          const result = await this.requestJson(`/thumb/cancel?libraryId=${this.getLibraryId()}`);
+          const result = await this.requestJson(`/thumb/cancel?libraryId=${this.selectedLibraryId}`);
           if (result.success) {
             this.isScanning = false;
             this.stopProgressMonitoring();
@@ -253,7 +333,7 @@
         this.stopProgressMonitoring();
         this.progressTimer = setInterval(async () => {
           try {
-            const result = await this.requestJson(`/thumb/progress?libraryId=${this.getLibraryId()}`);
+            const result = await this.requestJson(`/thumb/progress?libraryId=${this.selectedLibraryId}`);
             if (!result.success) return;
 
             this.progress = result.data;

@@ -54,16 +54,10 @@ export async function registerPluginRoutes(router: Router, libraryId: string) {
 }
 
 function resolvePluginComponent(route: PluginRoute, libraryId: string) {
-  const mixin = {
-    methods: {
-      getLibraryId: () => libraryId,
-    },
-  }
-
   if (route.builder) {
     try {
       const html = route.builder()
-      return defineComponent({ template: html, name: route.name, mixins: [mixin] })
+      return defineComponent({ template: html, name: route.name })
     } catch (e) {
       console.error(`Plugin route builder error: ${route.name}`, e)
     }
@@ -79,13 +73,13 @@ function resolvePluginComponent(route: PluginRoute, libraryId: string) {
 
       const key = `${pluginName}_${comp.replace(/[/.]/g, '_')}`
       const existing = (window as any).MiraPluginComponents?.[key]
-      if (existing) return resolve(withMixin(existing, mixin))
+      if (existing) return resolve(defineComponent(existing))
 
       const script = document.createElement('script')
       script.src = src
       script.onload = () => {
         const raw = (window as any).MiraPluginComponents?.[key]
-        resolve(raw ? withMixin(raw, mixin) : fallback(route))
+        resolve(raw ? defineComponent(raw) : fallback(route))
       }
       script.onerror = () => {
         console.error(`Failed to load plugin script: ${src}`)
@@ -96,10 +90,6 @@ function resolvePluginComponent(route: PluginRoute, libraryId: string) {
   }
 
   return fallback(route)
-}
-
-function withMixin(comp: any, mixin: any) {
-  return defineComponent({ ...comp, mixins: [mixin] })
 }
 
 function fallback(route: PluginRoute) {

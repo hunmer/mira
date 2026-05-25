@@ -25,7 +25,6 @@ GET /api/plugin-routes/:libraryId  ──►  返回路由定义数组
           └─ component 模式: <script> 加载 JS → window.MiraPluginComponents 取组件
                 │
                 ▼
-        withMixin() 注入 getLibraryId() 方法
         ensurePluginRuntime() 挂载 window.MiraDashboard / window.MiraDashboardUI
                 │
                 ▼
@@ -112,32 +111,22 @@ if (route.component) {
 1. 拼接 URL: `/api/plugins/{libraryId}/{pluginName}/{component}`
 2. 创建 `<script>` 标签加载
 3. 脚本执行后通过 IIFE 把组件注册到 `window.MiraPluginComponents`
-4. 从全局对象取出组件，用 `withMixin` 包装
+4. 从全局对象取出组件并交给 Vue 渲染
 
 #### fallback
 如果 builder 和 component 都没有，返回占位组件显示路由名称。
 
 ### 5. 上下文注入
 
-插件组件需要知道当前素材库 ID、用户信息、API 基础路径，并且可以复用宿主 shadcn-vue 组件。提供以下途径：
-
-#### mixin 注入（`this.getLibraryId()`）
-注册路由时通过 Vue mixin 注入 `getLibraryId()` 方法，闭包捕获 `libraryId`：
-
-```typescript
-const mixin = {
-  methods: { getLibraryId: () => libraryId }
-}
-// withMixin 把 mixin 合并进组件
-```
+插件组件需要获取素材库列表、用户信息、API 基础路径，并且可以复用宿主 shadcn-vue 组件。提供以下途径：
 
 #### 全局接口（`window.MiraDashboard`）
 
 ```typescript
 window.MiraDashboard = {
-  getLibraryId(): string   // 从 app store 读取
-  getUser(): User | null   // 从 auth store 读取
-  getApiBase(): string     // 返回 '/api'
+  getLibraries(): Promise<Library[]> // 返回所有素材库信息
+  getUser(): User | null             // 从 auth store 读取
+  getApiBase(): string               // 返回 '/api'
 }
 ```
 
@@ -155,6 +144,11 @@ window.MiraDashboardUI = {
   CardHeader,
   CardTitle,
   ScrollArea,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Separator,
 }
 ```
@@ -170,8 +164,23 @@ const MyComponent = {
     MiraButton: ui.Button,
     MiraCard: ui.Card,
     MiraCardContent: ui.CardContent,
+    MiraSelect: ui.Select,
+    MiraSelectContent: ui.SelectContent,
+    MiraSelectItem: ui.SelectItem,
+    MiraSelectTrigger: ui.SelectTrigger,
+    MiraSelectValue: ui.SelectValue,
   },
   template: `
+    <MiraSelect v-model="selectedLibraryId">
+      <MiraSelectTrigger>
+        <MiraSelectValue placeholder="选择素材库" />
+      </MiraSelectTrigger>
+      <MiraSelectContent>
+        <MiraSelectItem v-for="library in libraries" :key="library.id" :value="library.id">
+          {{ library.name }}
+        </MiraSelectItem>
+      </MiraSelectContent>
+    </MiraSelect>
     <MiraCard>
       <MiraCardContent>
         <MiraButton @click="refresh">刷新</MiraButton>
@@ -214,15 +223,19 @@ router.beforeEach((to) => {
       MiraButton: window.MiraDashboardUI?.Button,
       MiraCard: window.MiraDashboardUI?.Card,
       MiraCardContent: window.MiraDashboardUI?.CardContent,
+      MiraSelect: window.MiraDashboardUI?.Select,
+      MiraSelectContent: window.MiraDashboardUI?.SelectContent,
+      MiraSelectItem: window.MiraDashboardUI?.SelectItem,
+      MiraSelectTrigger: window.MiraDashboardUI?.SelectTrigger,
+      MiraSelectValue: window.MiraDashboardUI?.SelectValue,
     },
     template: `<div>...</div>`,  // 需要 Vue runtime compiler
     data() { return { ... } },
     methods: {
-      getLibraryId() {
-        // 优先用 mixin 注入，fallback 到全局接口
+      async getLibraries() {
         const ctx = window.MiraDashboard;
-        if (ctx) return ctx.getLibraryId();
-        return 'default';
+        if (ctx) return ctx.getLibraries();
+        return [];
       },
       getApiBase() {
         const ctx = window.MiraDashboard;
@@ -241,7 +254,7 @@ API 请求必须走 `getApiBase()` 而非硬编码地址：
 
 ```javascript
 // 正确
-const res = await fetch(`${this.getApiBase()}/thumb/stats?libraryId=${this.getLibraryId()}`);
+const res = await fetch(`${this.getApiBase()}/thumb/stats?libraryId=${this.selectedLibraryId}`);
 
 // 错误 - 硬编码地址和 libraryId
 const res = await fetch(`http://127.0.0.1:8081/thumb/stats?libraryId=default`);
