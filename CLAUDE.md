@@ -4,6 +4,7 @@
 
 | 日期 | 操作 | 说明 |
 |------|------|------|
+| 2026-05-25 | 增量更新扫描 | 更新模块版本号、服务端路由清单（新增 FsRouter、BaseRouter、LibraryWatcher、UserStorage）、插件深度扫描、SDK 模块清单完善 |
 | 2026-05-20 | 初始化架构扫描 | 首次生成完整架构文档，覆盖 10+ 个模块 |
 
 ## 项目愿景
@@ -75,27 +76,31 @@ graph TD
 
 ## 模块索引
 
-| 模块 | 路径 | 语言 | 职责 |
-|------|------|------|------|
-| mira-app-core | `packages/mira-app-core` | TypeScript | 核心库：事件管理器 (EventManager)、库列表持久化、共享类型定义 |
-| mira-storage-sqlite | `packages/mira-storage-sqlite` | TypeScript | SQLite 存储实现：文件/文件夹/标签 CRUD、事务管理、缩略图路径 |
-| mira-app-server | `packages/mira-app-server` | TypeScript | 服务端：Express HTTP + WebSocket 服务，RESTful API，插件管理，用户认证 |
-| mira-client | `packages/mira-client` | TypeScript/Vue 3 | Electron 桌面客户端：媒体浏览/预览/管理，插件系统，Tab 导航 |
-| mira-dashboard | `packages/mira-dashboard` | TypeScript/Vue 3 | Web 管理面板：基于 Vben Admin，库管理/插件/设备/管理员/数据库管理 |
-| mira-server-sdk | `packages/mira-server-sdk` | TypeScript | TypeScript SDK：链式调用 API 客户端，含 HTTP + WebSocket 模块 |
-| mira-scripts-core | `packages/mira-scripts-core` | TypeScript | 脚本工具集：数据转换 (convertLibraryData)、文件导入 (pathFilesToLibrary) |
-| mira-server-sdk-examples | `packages/mira-server-sdk-examples` | TypeScript | SDK 示例与测试用例 |
-| n8n-nodes-mira-ws-trigger | `packages/n8n-nodes-mira-ws-trigger` | TypeScript | n8n 社区节点：WebSocket 事件触发器 |
-| mira-doc | `packages/mira-doc` | Markdown/VitePress | 项目文档站 |
-| plugins/* | `plugins/plugins/*` | TypeScript | 服务端插件：缩略图生成 (mira_thumb)、用户管理 (mira_user)、n8n 集成、统计 |
+| 模块 | 路径 | 语言 | 版本 | 职责 |
+|------|------|------|------|------|
+| mira-app-core | `packages/mira-app-core` | TypeScript | 1.0.24 | 核心库：事件管理器 (EventManager)、库列表持久化、共享类型定义 (User, Session, WebSocketMessage) |
+| mira-storage-sqlite | `packages/mira-storage-sqlite` | TypeScript | 1.0.20 | SQLite 存储实现：文件/文件夹/标签 CRUD、事务管理、缩略图路径、931 行核心实现 |
+| mira-app-server | `packages/mira-app-server` | TypeScript | 1.0.25 | 服务端：Express HTTP + WebSocket 服务，13 个路由模块，CLI 工具，用户认证 |
+| mira-client | `packages/mira-client` | TypeScript/Vue 3 | 1.0.2 | Electron 桌面客户端：媒体浏览/预览/管理，插件系统，Tab 导航，10 个 Pinia Store |
+| mira-dashboard | `packages/mira-dashboard` | TypeScript/Vue 3 | 5.5.9 | Web 管理面板：基于 Vben Admin，6 个 Mira 功能页面 + 认证/错误页面 |
+| mira-server-sdk | `packages/mira-server-sdk` | TypeScript | 1.0.19 | TypeScript SDK：链式调用 API 客户端，10 个 API 模块 + WebSocket + HTTP 双通道 |
+| mira-scripts-core | `packages/mira-scripts-core` | TypeScript | 1.0.5 | 脚本工具集：数据转换 (convertLibraryData)、文件导入 (pathFilesToLibrary) |
+| mira-server-sdk-examples | `packages/mira-server-sdk-examples` | TypeScript | 1.0.0 | SDK 示例与测试用例：认证、上传、基础/高级用法示例 |
+| n8n-nodes-mira-ws-trigger | `packages/n8n-nodes-mira-ws-trigger` | TypeScript | 0.1.3 | n8n 社区节点：WebSocket 事件触发器，支持事件过滤和指数退避重连 |
+| mira-doc | `packages/mira-doc` | Markdown/VitePress | 1.0.0 | 项目文档站：VitePress 2.0 驱动，含 API/指南/Dashboard/n8n 文档 |
+| mira_thumb | `plugins/plugins/mira_thumb` | TypeScript | 1.0.19 | 服务端插件：缩略图生成 (ffmpeg)，支持图片/视频，队列并发控制 |
+| mira_user | `plugins/plugins/mira_user` | TypeScript | 1.0.9 | 服务端插件：用户登录认证，通过 SDK 进行权限验证，HTTP Hook 拦截 |
+| mira_n8n | `plugins/plugins/mira_n8n` | TypeScript | 1.0.9 | 服务端插件：n8n Webhook 集成，独立 WebSocket 服务器转发事件 |
+| upload_statistics | `plugins/plugins/upload_statistics` | TypeScript | 1.0.7 | 服务端插件：上传统计，记录上传者信息和上传历史 |
 
 ## 运行与开发
 
 ### 环境要求
 
-- Node.js >= 18
+- Node.js >= 18 (dashboard 需要 >= 20.10.0)
 - pnpm (推荐 >= 9)
 - Python (用于 node-gyp / sqlite3 编译)
+- ffmpeg (用于缩略图生成插件)
 
 ### 常用命令
 
@@ -110,7 +115,7 @@ pnpm run start:server
 pnpm run build:core       # 构建 mira-app-core
 pnpm run build:storage    # 构建 mira-storage-sqlite
 pnpm run build:server     # 构建 mira-app-server
-pnpm run build:sdk        # 构建 mira-server-sdk
+pnpm run build:sdk        # 构建 mira-server-sdk (含 ESM + CJS)
 pnpm run build:plugins    # 构建所有服务端插件
 
 # 服务端开发
@@ -136,13 +141,14 @@ pnpm run docs:dev         # VitePress 开发服务器
 - `MIRA_SERVER_HTTP_PORT` / `HTTP_PORT`: HTTP 端口 (默认 8081)
 - `MIRA_SERVER_WS_PORT` / `WS_PORT`: WebSocket 端口 (默认 8018)
 - `DATA_PATH`: 数据目录路径 (默认 `./data`)
+- `FFMPEG_PATH`: ffmpeg 可执行文件路径 (缩略图插件使用)
 
 ## 测试策略
 
 | 模块 | 测试框架 | 测试目录 | 备注 |
 |------|----------|----------|------|
 | mira-app-server | Jest | `sdk/` | 通过 `pnpm test` 运行 |
-| mira-server-sdk | Jest | 根目录 | 通过 `pnpm test` 运行 |
+| mira-server-sdk | Jest | `tests/` | 16 个源文件，含 HttpClient/AuthModule/MiraClient 集成测试 |
 | mira-server-sdk-examples | Jest | `tests/` | 认证/上传专项测试 |
 | mira-dashboard | Vitest | 各子包 | 通过 `pnpm test:unit` 运行 |
 
@@ -154,14 +160,17 @@ pnpm run docs:dev         # VitePress 开发服务器
 - 服务端代码使用 CommonJS (`require/module.exports`)，客户端使用 ESM
 - API 响应统一格式：`{ code: number, data: any, message?: string, timestamp: string }`
 - 错误处理：Express 错误中间件统一捕获，WebSocket 使用 `status: 'error'` 响应
-- 插件系统：继承 `ServerPlugin` 基类，通过 `plugins.json` 注册
+- 插件系统：继承 `ServerPlugin` 基类，通过 `plugins.json` 注册，导出 `init()` 函数
 - 命名约定：文件使用 PascalCase (类)、camelCase (函数/变量)
+- 插件必须导出 `init(inst): PluginClass` 工厂函数
 
 ## AI 使用指引
 
 - 修改服务端逻辑时，注意 `mira-app-core` 和 `mira-storage-sqlite` 是独立包，需要分别构建
-- 添加新 API 路由时，参考 `packages/mira-app-server/src/routes/` 下现有路由的注册模式
+- 添加新 API 路由时，参考 `packages/mira-app-server/src/routes/` 下现有路由的注册模式（继承 `BaseRouter` 或直接注册）
 - 添加新 SDK 模块时，参考 `packages/mira-server-sdk/src/modules/` 下现有模块的链式调用模式
 - 客户端使用 `mira-server-sdk` 的 ESM 构建与服务端通信
 - 仪表盘基于 Vben Admin 框架，路由/菜单/权限系统遵循 Vben 约定
 - 插件开发需要同时考虑服务端 (`ServerPlugin`) 和客户端（前端 UI 组件）两侧
+- 插件可注册 HTTP Hook 拦截请求、监听事件管理器事件、注册前端路由
+- WebSocket 消息格式：`{ action, requestId, libraryId, clientId, payload: { type, data } }`

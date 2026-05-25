@@ -6,6 +6,7 @@
 
 | 日期 | 操作 | 说明 |
 |------|------|------|
+| 2026-05-25 | 增量更新 | 补充命令路由机制说明 |
 | 2026-05-20 | 初始化 | 首次生成模块文档 |
 
 ## 模块职责
@@ -17,10 +18,12 @@ Mira 脚本工具集，提供数据处理和迁移的命令行工具：
 
 ## 入口与启动
 
-- **入口文件**: `index.ts` -- CLI 入口，命令路由
+- **入口文件**: `index.ts` -- CLI 入口，命令路由器
 - **脚本目录**: `scripts/`
 - **运行方式**: `ts-node index.ts <command> [options]` 或 `pnpm run script <command>`
 - **帮助**: `pnpm run help`
+
+命令路由机制：入口文件定义 `scripts` 映射表，根据命令名 spawn `ts-node` 子进程执行对应脚本。
 
 ## 对外接口
 
@@ -46,7 +49,7 @@ pnpm run script import -- --importType=move --maxFolderDepth=3
 ## 关键依赖与配置
 
 - **workspace 依赖**: `mira-storage-sqlite`, `mira-app-core`
-- **运行方式**: ts-node
+- **运行方式**: ts-node（子进程 spawn）
 
 ## 数据模型
 
@@ -60,7 +63,7 @@ pnpm run script import -- --importType=move --maxFolderDepth=3
 
 | 文件 | 说明 |
 |------|------|
-| `index.ts` | CLI 入口，命令路由 |
+| `index.ts` | CLI 入口，命令路由器 (151 行) |
 | `scripts/convertLibraryData.ts` | 数据库转换脚本 |
 | `scripts/pathFilesToLibrary.ts` | 文件导入脚本 |
 | `package.json` | 包配置 (v1.0.5) |

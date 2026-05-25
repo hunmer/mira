@@ -6,13 +6,14 @@
 
 | 日期 | 操作 | 说明 |
 |------|------|------|
+| 2026-05-25 | 增量更新 | 确认接口签名不变，补充 EventArgs 优先级机制细节 |
 | 2026-05-20 | 初始化 | 首次生成模块文档 |
 
 ## 模块职责
 
 Mira 核心库，提供不自动执行的共享基础能力，被 `mira-app-server`、`mira-storage-sqlite`、`mira-scripts-core` 等模块依赖。核心职责：
 
-1. **事件管理器 (EventManager)**: 基于 Node.js EventEmitter 的事件系统，支持订阅/取消/广播，支持优先级排序
+1. **事件管理器 (EventManager)**: 基于 Node.js EventEmitter 的事件系统，支持订阅/取消/广播，支持优先级排序（数字越大越先执行）
 2. **库列表管理**: 读写 `librarys.json` 配置文件，管理多素材库的元信息
 3. **共享类型**: `User`、`Session`、`WebSocketMessage` 等跨模块共享类型定义
 
@@ -30,7 +31,7 @@ Mira 核心库，提供不自动执行的共享基础能力，被 `mira-app-serv
 
 ```typescript
 class EventManager extends EventEmitter {
-  subscribe<T>(eventName: string, handler: (args: T) => void, priority?: number): string
+  subscribe<T>(eventName: string, handler: (args: T) => void | boolean | Promise<boolean>, priority?: number): string
   subscribeOnce<T>(eventName: string, handler: (args: T) => void): string
   unsubscribe(subscriptionId: string): boolean
   broadcast<T>(eventName: string, args: T): Promise<boolean>
@@ -38,9 +39,10 @@ class EventManager extends EventEmitter {
 }
 ```
 
-- 单例模式 `EventManager.instance`
+- 单例模式 `EventManager.instance`（也可 `new EventManager()` 独立实例化）
 - `EventArgs` 基类携带 `eventName`、`args`、`whenOccurred`
-- `broadcast` 返回 `false` 可中断传播链
+- `broadcast` 按优先级排序执行，处理器返回 `false` 可中断传播链
+- `EventSubscription` 句柄可调用 `cancel()` 取消订阅
 
 ### 库列表 (src/LibraryList.ts)
 
@@ -49,7 +51,7 @@ getLibraries(dirPath?: string): Promise<any[]>
 saveLibraries(dirPath?: string, libraries: any): Promise<void>
 ```
 
-- 读写指定目录下的 `librarys.json`
+- 读写指定目录下的 `librarys.json`，文件不存在时自动创建空数组
 
 ### 共享类型
 
@@ -75,10 +77,9 @@ interface WebSocketMessage = { action, requestId, libraryId, clientId, payload: 
 
 ## 相关文件清单
 
-| 文件 | 说明 |
-|------|------|
-| `src/index.ts` | 模块入口，导出所有公共 API 和类型 |
-| `src/event-manager.ts` | EventManager + EventArgs + EventSubscription |
-| `src/LibraryList.ts` | 库列表 JSON 文件读写 |
-| `package.json` | 包配置 (name: mira-app-core, v1.0.24) |
-| `tsconfig.json` | TypeScript 配置 |
+| 文件 | 行数 | 说明 |
+|------|------|------|
+| `src/index.ts` | 39 | 模块入口，导出所有公共 API 和类型 |
+| `src/event-manager.ts` | 226 | EventManager + EventArgs + EventSubscription |
+| `src/LibraryList.ts` | 46 | 库列表 JSON 文件读写 |
+| `package.json` | -- | 包配置 (name: mira-app-core, v1.0.24) |

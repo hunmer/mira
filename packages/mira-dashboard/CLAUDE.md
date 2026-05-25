@@ -6,6 +6,7 @@
 
 | 日期 | 操作 | 说明 |
 |------|------|------|
+| 2026-05-25 | 增量更新 | 补充完整视图清单（26 个 .vue 文件）、认证/错误页面 |
 | 2026-05-20 | 初始化 | 首次生成模块文档 |
 
 ## 模块职责
@@ -14,7 +15,7 @@ Mira Web 管理面板，基于 **Vben Admin (Vue 3 + Ant Design + Vite)** 构建
 
 1. **系统概览**: 服务器状态、素材库统计
 2. **素材库管理**: 库的创建/启用/禁用/配置
-3. **插件管理**: 服务端插件的安装/启用/禁用/配置
+3. **插件管理**: 服务端插件的安装/启用/禁用/配置，含插件商店
 4. **管理员管理**: 用户和角色管理（需要 super 角色）
 5. **数据库预览**: 直接查看/编辑素材库数据
 6. **设备管理**: 已连接设备的管理
@@ -45,6 +46,24 @@ Mira Web 管理面板，基于 **Vben Admin (Vue 3 + Ant Design + Vite)** 构建
 | `/mira/device` | `views/mira/device/index.vue` | super, admin | 设备管理 |
 | `/mira/file-upload` | `views/mira/file-upload/index.vue` | super, admin | 文件上传 |
 
+### 视图文件清单 (26 个 .vue 文件)
+
+**Mira 功能页面**:
+- `views/mira/overview/index.vue` - 系统概览
+- `views/mira/library/index.vue` - 素材库管理
+- `views/mira/library/components/LibraryTable.vue`, `LibraryFormModal.vue`, `LibrarySearchBar.vue`
+- `views/mira/plugin/index.vue` - 插件管理
+- `views/mira/plugin/components/PluginCard.vue`, `PluginDetailDrawer.vue`, `PluginConfigDialog.vue`, `PluginStoreDialog.vue`, `PluginInstallModal.vue`, `PluginActionDropdown.vue`
+- `views/mira/admin/index.vue` - 管理员
+- `views/mira/database/index.vue` - 数据库
+- `views/mira/device/index.vue` - 设备
+- `views/mira/file-upload/index.vue` - 文件上传
+
+**认证/核心页面**:
+- `views/_core/authentication/login.vue`, `register.vue`, `forget-password.vue`
+- `views/_core/fallback/not-found.vue`, `forbidden.vue`, `internal-error.vue`, `offline.vue`, `coming-soon.vue`
+- `views/_core/about/index.vue`
+
 ### API 层 (apps/web-antd/src/api/)
 
 | 文件 | 说明 |
@@ -55,13 +74,20 @@ Mira Web 管理面板，基于 **Vben Admin (Vue 3 + Ant Design + Vite)** 构建
 | `core/user.ts` | 用户 API |
 | `core/plugin-routes.ts` | 动态插件路由 API |
 
+### 自定义组件
+
+| 组件 | 说明 |
+|------|------|
+| `components/mira/StatCard.vue` | 统计卡片 |
+| `components/Library/LibraryPluginSelector.vue` | 素材库插件选择器 |
+
 ## 关键依赖与配置
 
 - **框架**: Vben Admin (内部 monorepo，含 `@vben/*` 多个子包)
 - **UI**: Ant Design Vue, VxeTable, Monaco Editor
 - **构建**: Turbo (monorepo 构建), Vite
 - **语言**: TypeScript, Vue 3
-- **包管理**: pnpm >= 9.12.0
+- **包管理**: pnpm >= 9.12.0, pnpm@10.14.0
 - **Node**: >= 20.10.0
 - **环境**: ESM (`"type": "module"`)
 
@@ -85,11 +111,12 @@ Mira Web 管理面板，基于 **Vben Admin (Vue 3 + Ant Design + Vite)** 构建
 | 文件/目录 | 说明 |
 |-----------|------|
 | `apps/web-antd/` | 主应用 (Ant Design 版本) |
-| `apps/web-antd/src/views/mira/` | Mira 功能页面 (6 个视图) |
+| `apps/web-antd/src/views/mira/` | Mira 功能页面 (14 个 .vue) |
+| `apps/web-antd/src/views/_core/` | 认证/错误页面 (8 个 .vue) |
 | `apps/web-antd/src/api/mira/` | Mira API 封装 |
 | `apps/web-antd/src/types/mira/` | Mira 类型定义 |
 | `apps/web-antd/src/router/routes/modules/mira.ts` | Mira 路由配置 |
-| `apps/web-antd/src/components/mira/` | Mira 专用组件 (StatCard, MonacoEditor) |
+| `apps/web-antd/src/components/mira/` | Mira 专用组件 |
 | `apps/web-antd/src/components/Library/` | 素材库组件 |
 | `packages/` | Vben Admin 内部共享包 (utils, stores, types 等) |
 | `internal/` | Vben 内部构建工具 (eslint-config, vite-config 等) |
