@@ -11,8 +11,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "allowJs": true
+    "resolveJsonModule": true
   },
   "include": ["*.ts"],
   "exclude": ["node_modules", "dist"]
