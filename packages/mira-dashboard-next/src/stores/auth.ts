@@ -14,14 +14,21 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function login(username: string, password: string) {
     const res = await authApi.login({ username, password })
-    const data = res.data
-    if (data.success && data.data) {
-      token.value = data.data.token
-      user.value = data.data.user
-      localStorage.setItem('token', data.data.token)
-      localStorage.setItem('user', JSON.stringify(data.data.user))
+    const body = res.data
+    if (body.code === 0 && body.data?.accessToken) {
+      token.value = body.data.accessToken
+      localStorage.setItem('token', body.data.accessToken)
+      // 登录后获取用户信息
+      try {
+        const meRes = await authApi.me()
+        user.value = meRes.data?.data || meRes.data
+        localStorage.setItem('user', JSON.stringify(user.value))
+      } catch {
+        user.value = { id: '', username, email: '', role: 'admin', createdAt: '', updatedAt: '' }
+        localStorage.setItem('user', JSON.stringify(user.value))
+      }
     } else {
-      throw new Error(data.message || 'Login failed')
+      throw new Error(body.message || 'Login failed')
     }
   }
 

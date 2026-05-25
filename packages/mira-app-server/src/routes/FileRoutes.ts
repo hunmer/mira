@@ -557,7 +557,7 @@ export class FileRoutes {
                     path: '/api/files/getFiles',
                     req,
                     res,
-                    fields: this.backend.webSocketServer.getClientFields(libraryId, clientId),
+                    fields: this.backend.webSocketServer?.getClientFields(libraryId, clientId),
                 });
                 if (!allowed || res.headersSent) return;
 
@@ -619,7 +619,7 @@ export class FileRoutes {
                     path: '/api/files/getFile',
                     req,
                     res,
-                    fields: this.backend.webSocketServer.getClientFields(libraryId, clientId),
+                    fields: this.backend.webSocketServer?.getClientFields(libraryId, clientId),
                 });
                 if (!allowed || res.headersSent) return;
 
