@@ -257,13 +257,14 @@ export class AuthRouter {
 
                 if (user) {
                     const token = await this.authService.generateToken(user.id);
+                    const userInfo = this.authService.getUserInfo(user);
 
-                    // 符合vben框架标准的返回格式
                     res.json({
-                        code: 0,  // 0表示成功
+                        code: 0,
                         message: '登录成功',
                         data: {
-                            accessToken: token  // vben期望的token字段名
+                            accessToken: token,
+                            user: userInfo
                         }
                     });
 

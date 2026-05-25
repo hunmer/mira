@@ -7,4 +7,6 @@ export const libraryApi = {
   create: (data: Partial<Library>) => client.post<Library>('/libraries', data),
   update: (id: string, data: Partial<Library>) => client.put<Library>(`/libraries/${id}`, data),
   delete: (id: string) => client.delete(`/libraries/${id}`),
+  toggleStatus: (id: string, status: 'active' | 'inactive') =>
+    client.patch(`/libraries/${id}/status`, { status }),
 }

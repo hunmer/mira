@@ -101,6 +101,17 @@ async function handleDelete(id: string) {
   }
 }
 
+async function toggleStatus(lib: Library) {
+  const next = lib.status === 'active' ? 'inactive' : 'active'
+  try {
+    await libraryApi.toggleStatus(lib.id, next)
+    toast.success(t('common.success'))
+    await loadLibraries()
+  } catch {
+    toast.error(t('common.failed'))
+  }
+}
+
 onMounted(loadLibraries)
 </script>
 
@@ -146,7 +157,11 @@ onMounted(loadLibraries)
               <Badge variant="outline">{{ lib.type === 'local' ? t('library.local') : t('library.remote') }}</Badge>
             </TableCell>
             <TableCell>
-              <Badge :variant="lib.status === 'active' ? 'default' : 'secondary'">
+              <Badge
+                class="cursor-pointer select-none"
+                :variant="lib.status === 'active' ? 'default' : 'secondary'"
+                @click="toggleStatus(lib)"
+              >
                 {{ lib.status === 'active' ? t('library.active') : t('library.inactive') }}
               </Badge>
             </TableCell>

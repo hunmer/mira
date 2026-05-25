@@ -14,6 +14,9 @@ import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select'
+import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog'
 import {
@@ -26,7 +29,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { toast } from 'vue-sonner'
 import {
   RiSearchLine, RiMoreLine, RiSettings3Line, RiStopCircleLine,
-  RiStore2Line, RiInformationLine, RiExternalLinkLine,
+  RiStore2Line, RiInformationLine, RiExternalLinkLine, RiAddLine, RiUploadLine,
 } from '@remixicon/vue'
 
 interface PluginRoute {
@@ -57,6 +60,13 @@ const configJson = ref('')
 // store dialog
 const storeOpen = ref(false)
 const storeSearch = ref('')
+
+// install dialog
+const installOpen = ref(false)
+const installTab = ref<'repository' | 'local'>('repository')
+const installForm = ref({ name: '', version: 'latest', npmSource: 'npmmirror', proxy: '' })
+const installFile = ref<File | null>(null)
+const installLoading = ref(false)
 
 const storePlugins = [
   { name: 'mira_user', title: '用户认证', description: '用户登录认证插件，通过 SDK 连接 Mira 服务端进行权限验证，支持多角色管理和会话管理。', icon: '👤', category: '安全', deps: 'mira-server-sdk' },
@@ -194,6 +204,56 @@ async function installFromStore(name: string) {
   }
 }
 
+function openInstallDialog() {
+  installForm.value = { name: '', version: 'latest', npmSource: 'npmmirror', proxy: '' }
+  installFile.value = null
+  installTab.value = 'repository'
+  installOpen.value = true
+}
+
+function handleFileSelect(e: Event) {
+  const target = e.target as HTMLInputElement
+  installFile.value = target.files?.[0] ?? null
+}
+
+async function submitInstall() {
+  if (!activeTab.value) return
+  installLoading.value = true
+  try {
+    if (installTab.value === 'repository') {
+      if (!installForm.value.name) {
+        toast.error('请输入插件名称')
+        installLoading.value = false
+        return
+      }
+      await pluginApi.install({
+        name: installForm.value.name,
+        version: installForm.value.version || undefined,
+        libraryId: activeTab.value,
+      })
+    } else {
+      if (!installFile.value) {
+        toast.error('请选择插件包文件')
+        installLoading.value = false
+        return
+      }
+      const formData = new FormData()
+      formData.append('file', installFile.value)
+      formData.append('libraryId', activeTab.value)
+      await client.post('/plugins/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+    }
+    toast.success(t('common.success'))
+    installOpen.value = false
+    setTimeout(loadPlugins, 2000)
+  } catch {
+    toast.error(t('common.failed'))
+  } finally {
+    installLoading.value = false
+  }
+}
+
 function openRoute(route: PluginRoute) {
   window.open(route.path, '_blank')
 }
@@ -206,9 +266,14 @@ onMounted(loadPlugins)
     <!-- header -->
     <div class="flex items-center justify-between">
       <h1 class="text-2xl font-bold">{{ t('plugin.title') }}</h1>
-      <Button @click="storeOpen = true">
-        <RiStore2Line class="mr-2 size-4" /> {{ t('plugin.pluginStore') }}
-      </Button>
+      <div class="flex gap-2">
+        <Button variant="outline" @click="openInstallDialog">
+          <RiAddLine class="mr-2 size-4" /> 安装插件
+        </Button>
+        <Button @click="storeOpen = true">
+          <RiStore2Line class="mr-2 size-4" /> {{ t('plugin.pluginStore') }}
+        </Button>
+      </div>
     </div>
 
     <!-- search -->
@@ -472,6 +537,69 @@ onMounted(loadPlugins)
             </div>
           </div>
         </ScrollArea>
+      </DialogContent>
+    </Dialog>
+
+    <!-- Install Dialog -->
+    <Dialog :open="installOpen" @update:open="installOpen = $event">
+      <DialogContent class="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>安装插件</DialogTitle>
+          <DialogDescription>为当前素材库「{{ groups.find(g => g.id === activeTab)?.name || activeTab }}」安装插件</DialogDescription>
+        </DialogHeader>
+
+        <Tabs v-model="installTab">
+          <TabsList class="w-full">
+            <TabsTrigger value="repository" class="flex-1">从仓库安装</TabsTrigger>
+            <TabsTrigger value="local" class="flex-1">
+              <RiUploadLine class="mr-1 size-3.5" /> 从本地上传
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="repository" class="mt-4 space-y-4">
+            <div class="space-y-2">
+              <Label>插件名称</Label>
+              <Input v-model="installForm.name" placeholder="npm 包名，如：mira-plugin-example" />
+            </div>
+            <div class="space-y-2">
+              <Label>版本</Label>
+              <Input v-model="installForm.version" placeholder="latest" />
+            </div>
+            <div class="space-y-2">
+              <Label>NPM 源</Label>
+              <Select v-model="installForm.npmSource">
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="npmmirror">npmmirror（默认）</SelectItem>
+                  <SelectItem value="npm">npm</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div class="space-y-2">
+              <Label>代理地址（可选）</Label>
+              <Input v-model="installForm.proxy" placeholder="http://proxy.example.com:8080" />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="local" class="mt-4 space-y-4">
+            <div class="space-y-2">
+              <Label>选择插件包</Label>
+              <Input type="file" accept=".zip,.tar.gz" @change="handleFileSelect" />
+              <p class="text-xs text-muted-foreground">支持 .zip 和 .tar.gz 格式</p>
+            </div>
+            <div v-if="installFile" class="text-sm text-muted-foreground">
+              已选择: {{ installFile.name }}
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        <DialogFooter>
+          <Button variant="outline" @click="installOpen = false">{{ t('common.cancel') }}</Button>
+          <Button :disabled="installLoading" @click="submitInstall">
+            <RiAddLine v-if="!installLoading" class="mr-2 size-4" />
+            {{ installLoading ? '安装中...' : '安装' }}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   </div>

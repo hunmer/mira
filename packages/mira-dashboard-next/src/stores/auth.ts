@@ -18,14 +18,20 @@ export const useAuthStore = defineStore('auth', () => {
     if (body.code === 0 && body.data?.accessToken) {
       token.value = body.data.accessToken
       localStorage.setItem('token', body.data.accessToken)
-      // 登录后获取用户信息
-      try {
-        const meRes = await authApi.me()
-        user.value = meRes.data?.data || meRes.data
+
+      // 优先使用登录响应中的用户信息，否则通过 /user/info 获取
+      if (body.data.user) {
+        user.value = body.data.user
         localStorage.setItem('user', JSON.stringify(user.value))
-      } catch {
-        user.value = { id: '', username, email: '', role: 'admin', createdAt: '', updatedAt: '' }
-        localStorage.setItem('user', JSON.stringify(user.value))
+      } else {
+        try {
+          const meRes = await authApi.me()
+          user.value = meRes.data?.data || meRes.data
+          localStorage.setItem('user', JSON.stringify(user.value))
+        } catch {
+          user.value = { id: '', username, email: '', role: 'user', createdAt: '', updatedAt: '' }
+          localStorage.setItem('user', JSON.stringify(user.value))
+        }
       }
     } else {
       throw new Error(body.message || 'Login failed')

@@ -111,7 +111,7 @@ onMounted(async () => {
         <RiArrowDownSLine class="ml-2 size-4 shrink-0 text-muted-foreground" />
       </button>
     </PopoverTrigger>
-    <PopoverContent class="w-[--reka-popper-anchor-width] max-h-72 overflow-auto p-1" align="start">
+    <PopoverContent class="min-w-72 max-h-72 w-[--reka-popper-anchor-width] overflow-auto p-1" align="start">
       <PathTreeNode
         v-for="node in treeData"
         :key="node.value"
