@@ -187,7 +187,7 @@ function resolvePluginComponent(route: PluginRoute, libraryId: string) {
   if (route.component) {
     const comp = route.component
     const pluginName = route.pluginName || ''
-    const src = `/plugins/${libraryId}/${pluginName}/${comp}`
+    const src = `/api/plugins/${libraryId}/${pluginName}/${comp}`
 
     return () => new Promise<any>((resolve) => {
       const key = `${pluginName}_${comp.replace(/[/.]/g, '_')}`
