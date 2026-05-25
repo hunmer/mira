@@ -57,6 +57,7 @@ export interface LibraryInfo {
   fileCount: number
   createdAt: string
   updatedAt: string
+  allowedRoles?: string[]
 }
 
 // 插件信息

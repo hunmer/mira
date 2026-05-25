@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { useLibraryStore } from '../stores/library'
+import { useAuthStore } from '../stores/auth'
 import { useTabs } from '../composables/useTabs'
 import ConfigStorage from '../utils/ConfigStorage'
 
@@ -47,7 +48,8 @@ class WebSocketService {
     this.lastError.value = null
 
     try {
-      const wsUrl = `${config.url}?clientId=${config.clientId}&libraryId=${config.libraryId}`
+      const token = useAuthStore().token
+      const wsUrl = `${config.url}?clientId=${config.clientId}&libraryId=${config.libraryId}${token ? `&token=${token}` : ''}`
       console.log('Connecting to WebSocket:', wsUrl)
       
       this.ws = new WebSocket(wsUrl)

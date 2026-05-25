@@ -19,6 +19,10 @@ import {
   ResizableHandle,
 } from '@/components/ui/resizable'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogAction
+} from '@/components/ui/alert-dialog'
 
 // Store imports
 import { useLibraryStore } from '@/renderer/stores/library'
@@ -124,6 +128,25 @@ const handleLogout = async () => {
   router.push('/login')
 }
 
+const showAccessDeniedDialog = ref(false)
+
+const canAccessLibrary = (lib: { allowedRoles?: string[] }) => {
+  const userRole = authStore.user?.role
+  if (!userRole) return true
+  if (!lib.allowedRoles || lib.allowedRoles.length === 0) return true
+  return lib.allowedRoles.includes(userRole)
+}
+
+const onSelectCollection = (collection: any, close: () => void) => {
+  if (!canAccessLibrary(collection)) {
+    showAccessDeniedDialog.value = true
+    close()
+    return
+  }
+  handleSelectCollection(collection)
+  close()
+}
+
 // ============================================
 // 事件处理
 // ============================================
@@ -220,8 +243,11 @@ onUnmounted(() => {
                       <div
                         v-for="collection in libraryStore.libraries"
                         :key="collection.id"
-                        class="flex items-center justify-between p-2 hover:bg-gray-50 rounded cursor-pointer"
-                        @click="handleSelectCollection(collection); close()"
+                        class="flex items-center justify-between p-2 rounded"
+                        :class="canAccessLibrary(collection)
+                          ? 'hover:bg-gray-50 cursor-pointer'
+                          : 'opacity-50 cursor-not-allowed bg-gray-50'"
+                        @click="onSelectCollection(collection, close)"
                       >
                         <div class="flex items-center space-x-2">
                           <span class="material-icons text-blue-500">library_books</span>
@@ -229,6 +255,7 @@ onUnmounted(() => {
                             <div class="font-medium text-sm">{{ collection.name }}</div>
                             <div class="text-xs text-gray-500">
                               {{ collection.fileCount }} 个文件 · {{ collection.type }}
+                              <span v-if="!canAccessLibrary(collection)" class="text-red-400"> · 权限不足</span>
                             </div>
                           </div>
                         </div>
@@ -620,6 +647,21 @@ onUnmounted(() => {
     <SettingsDialog
       v-model:visible="showSettingsDialog"
     />
+
+    <!-- 权限不足对话框 -->
+    <AlertDialog v-model:open="showAccessDeniedDialog">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>权限不足</AlertDialogTitle>
+          <AlertDialogDescription>
+            您的角色没有访问该素材库的权限，请选择其他素材库。
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogAction @click="showAccessDeniedDialog = false">确定</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
 
   </div>
 </template>

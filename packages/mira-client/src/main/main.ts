@@ -225,7 +225,7 @@ class MiraApplication {
       frame: false,
       show: false, // 先隐藏，加载完成后显示
       title: 'Mira Media Library',
-      icon: join(__dirname, '../../assets/icon.ico'), // 应用图标
+      icon: join(app.isPackaged ? process.resourcesPath : __dirname, app.isPackaged ? 'assets/icon.ico' : '../assets/icon.ico'),
     })
 
     // 让 windowStateKeeper 管理这个窗口

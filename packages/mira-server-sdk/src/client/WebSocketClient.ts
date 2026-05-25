@@ -92,6 +92,7 @@ export class WebSocketClient extends SimpleEmitter {
         const params = new URLSearchParams();
         if (this.options.clientId) params.append('clientId', this.options.clientId);
         if (this.options.libraryId) params.append('libraryId', this.options.libraryId);
+        if (this.options.token) params.append('token', this.options.token);
 
         this.url = `ws://localhost:${port}?${params.toString()}`;
     }

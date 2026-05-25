@@ -2,14 +2,22 @@ import { WebSocketServer as WSServer, WebSocket } from 'ws';
 import { EventArgs } from 'mira-app-core';
 import { WebSocketRouter } from './routes/WebSocketRouter';
 import { MiraServer } from '.';
+import { canAccessLibrary } from './middleware/permission';
 
 interface LibraryClient {
     [libraryId: string]: WebSocket[];
 }
 
+interface WSUserInfo {
+    id: number;
+    username: string;
+    role: string;
+}
+
 interface ConnectedClient extends WebSocket {
     clientId?: string;
     libraryId?: string;
+    user?: WSUserInfo;
     fields?: Record<string, any>;
     connectionTime?: string;
     lastActivity?: string;
@@ -33,13 +41,12 @@ export class MiraWebsocketServer {
     async start(port: number): Promise<void> {
         this.port = port;
         this.wss = new WSServer({ port: this.port });
-        this.wss.on('connection', (ws: WebSocket, request) => {
+        this.wss.on('connection', async (ws: WebSocket, request) => {
             const urlString = request.url ?? '';
             const url = new URL(urlString, `ws://${request.headers.host}`);
             const clientId = url.searchParams.get('clientId');
             const libraryId = url.searchParams.get('libraryId');
-
-            console.log(`WebSocket connection established: clientId=${clientId}, libraryId=${libraryId}`);
+            const token = url.searchParams.get('token');
 
             if (clientId == null || libraryId == null) {
                 console.warn('[WebSocketServer] Missing clientId or libraryId, closing connection:', request.url);
@@ -47,11 +54,48 @@ export class MiraWebsocketServer {
                 return;
             }
 
+            // 认证检查
+            const settings = this.backend.settingsManager.getSettings();
+            let user: WSUserInfo | undefined;
+
+            if (settings.authRequired) {
+                if (!token) {
+                    console.warn(`[WebSocketServer] No token provided, closing: clientId=${clientId}`);
+                    ws.close(4001, 'Authentication required');
+                    return;
+                }
+
+                const authService = this.backend.httpServer?.authRouter.getAuthService();
+                if (!authService) {
+                    ws.close(1011, 'Server error');
+                    return;
+                }
+
+                const validated = await authService.validateToken(token);
+                if (!validated) {
+                    console.warn(`[WebSocketServer] Invalid token, closing: clientId=${clientId}`);
+                    ws.close(4001, 'Authentication failed');
+                    return;
+                }
+
+                user = { id: validated.id, username: validated.username, role: validated.role };
+
+                // 库权限检查
+                const libConfig = this.backend.libraries?.getLibraryConfig(libraryId);
+                if (!canAccessLibrary(libConfig, user.role)) {
+                    console.warn(`[WebSocketServer] Access denied: user=${user.username} role=${user.role} library=${libraryId}`);
+                    ws.close(4003, 'Access denied to library');
+                    return;
+                }
+            }
+
+            console.log(`WebSocket connection established: clientId=${clientId}, libraryId=${libraryId}${user ? `, user=${user.username}(${user.role})` : ''}`);
+
             this.registerClient(ws, clientId, libraryId, {
                 url: request.url,
                 headers: request.headers,
                 remoteAddress: request.socket.remoteAddress
-            });
+            }, user);
             this.handleConnection(ws);
         });
     }
@@ -164,12 +208,27 @@ export class MiraWebsocketServer {
     }
 
     private async handleMessage(ws: WebSocket, row: Record<string, any>): Promise<void> {
+        const client = ws as ConnectedClient;
         const payload = row.payload || {};
         const action = row.action;
         const requestId = row.requestId;
         const libraryId = row.libraryId;
         const data = payload.data || {};
         const recordType = payload.type;
+
+        // 库权限检查：如果消息目标库和用户角色不匹配
+        if (client.user && libraryId) {
+            const libConfig = this.backend.libraries?.getLibraryConfig(libraryId);
+            if (!canAccessLibrary(libConfig, client.user.role)) {
+                this.sendToWebsocket(ws, {
+                    status: 'error',
+                    message: 'Access denied to library',
+                    requestId
+                });
+                return;
+            }
+        }
+
         const exists = this.backend.libraries!.libraryExists(libraryId);
 
         if (!exists) {
@@ -210,13 +269,15 @@ export class MiraWebsocketServer {
         ws: WebSocket,
         clientId: string,
         libraryId: string,
-        requestInfo: ConnectedClient['requestInfo']
+        requestInfo: ConnectedClient['requestInfo'],
+        user?: WSUserInfo
     ): void {
         const now = new Date().toISOString();
 
         Object.assign(ws, {
             clientId,
             libraryId,
+            user,
             connectionTime: now,
             lastActivity: now,
             requestInfo

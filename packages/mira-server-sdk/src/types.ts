@@ -337,6 +337,7 @@ export interface UpdateUserRequest {
 export interface WebSocketOptions {
     clientId?: string;
     libraryId?: string;
+    token?: string;
     reconnect?: boolean;
     reconnectInterval?: number;
     maxReconnectAttempts?: number;

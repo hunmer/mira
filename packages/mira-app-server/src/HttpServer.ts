@@ -16,7 +16,8 @@ import { DeviceRoutes } from './routes/DeviceRoutes';
 import { TagRouter } from './routes/TagRouter';
 import { FolderRouter } from './routes/FolderRouter';
 import { FsRouter } from './routes/FsRouter';
-import { SettingsRouter } from './routes/SettingsRouter';
+import { SettingsRouter } from './routes/SettingsRouter'
+import { createHttpPermissionMiddleware } from './middleware/permission';
 
 // HTTP请求日志中间件
 interface RequestLogData {
@@ -218,6 +219,13 @@ export class MiraHttpServer {
 
         // 静态文件中间件
         this.app.use('/static', express.static('public'));
+
+        // 统一权限中间件（CORS + body parser 之后、路由注册之前）
+        this.app.use('/api', createHttpPermissionMiddleware(
+            this.authRouter.getAuthService(),
+            this.backend.settingsManager,
+            () => this.backend.libraries
+        ));
     }
 
     private setupRoutes() {

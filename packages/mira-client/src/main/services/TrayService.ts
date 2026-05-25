@@ -244,7 +244,7 @@ export class TrayService {
    */
   private getTrayIconPath(): string {
     let iconName: string
-    
+
     if (process.platform === 'win32') {
       iconName = 'tray-icon.ico'
     } else if (process.platform === 'darwin') {
@@ -252,10 +252,13 @@ export class TrayService {
     } else {
       iconName = 'tray-icon.png'
     }
-    
-    const iconPath = join(__dirname, '../../assets', iconName)
-    logger.debug('TrayService', 'Tray icon path', { iconPath })
-    
+
+    const assetsDir = app.isPackaged
+      ? join(process.resourcesPath, 'assets')
+      : join(__dirname, '../assets')
+    const iconPath = join(assetsDir, iconName)
+    logger.debug('TrayService', 'Tray icon path', { iconPath, isPackaged: app.isPackaged })
+
     return iconPath
   }
 
