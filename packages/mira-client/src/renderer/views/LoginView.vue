@@ -16,14 +16,14 @@
           </StepperTrigger>
           <div class="stepper-label">服务器</div>
         </StepperItem>
-        <StepperSeparator />
+        <div class="stepper-separator" />
         <StepperItem :step="2" :completed="currentStep > 2" :disabled="!healthData || healthData.authRequired === false">
           <StepperTrigger>
             <StepperIndicator>2</StepperIndicator>
           </StepperTrigger>
           <div class="stepper-label">认证</div>
         </StepperItem>
-        <StepperSeparator />
+        <div class="stepper-separator" />
         <StepperItem :step="3" :disabled="currentStep < 3">
           <StepperTrigger>
             <StepperIndicator>3</StepperIndicator>
@@ -66,24 +66,37 @@
       </form>
 
       <!-- Step 2: Authentication -->
-      <form v-if="currentStep === 2" @submit.prevent="handleLogin" class="step-form">
+      <form v-if="currentStep === 2" @submit.prevent="authMode === 'login' ? handleLogin() : handleRegister()" class="step-form">
+        <ToggleGroup type="single" :model-value="authMode" @update:model-value="onAuthModeChange" class="justify-center">
+          <ToggleGroupItem value="login" aria-label="登录">登录</ToggleGroupItem>
+          <ToggleGroupItem v-if="healthData?.allowRegistration !== false" value="register" aria-label="注册">注册</ToggleGroupItem>
+        </ToggleGroup>
+
         <div class="input-group">
           <span class="material-icons input-icon">person</span>
           <input v-model="credentials.username" type="text" placeholder="用户名" required />
         </div>
+        <div v-if="authMode === 'register'" class="input-group">
+          <span class="material-icons input-icon">email</span>
+          <input v-model="registerForm.email" type="email" placeholder="邮箱（选填）" />
+        </div>
         <div class="input-group">
           <span class="material-icons input-icon">lock</span>
-          <input v-model="credentials.password" :type="showPassword ? 'text' : 'password'" placeholder="密码" required />
+          <input v-model="credentials.password" :type="showPassword ? 'text' : 'password'" :placeholder="authMode === 'register' ? '密码（至少6位，含字母和数字）' : '密码'" required />
           <button type="button" class="password-toggle" @click="showPassword = !showPassword">
             <span class="material-icons">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
           </button>
         </div>
+        <div v-if="authMode === 'register'" class="input-group">
+          <span class="material-icons input-icon">lock</span>
+          <input v-model="registerForm.confirmPassword" :type="showConfirmPassword ? 'text' : 'password'" placeholder="确认密码" required />
+          <button type="button" class="password-toggle" @click="showConfirmPassword = !showConfirmPassword">
+            <span class="material-icons">{{ showConfirmPassword ? 'visibility_off' : 'visibility' }}</span>
+          </button>
+        </div>
         <button type="submit" class="action-button" :disabled="loading">
           <span v-if="loading" class="loading-spinner"></span>
-          {{ loading ? '登录中...' : '下一步' }}
-        </button>
-        <button v-if="healthData?.allowRegistration !== false" type="button" class="register-button" @click="showRegisterDialog = true">
-          注册账号
+          {{ loading ? (authMode === 'login' ? '登录中...' : '注册中...') : (authMode === 'login' ? '下一步' : '注册') }}
         </button>
         <button type="button" class="back-button" @click="currentStep = 1" :disabled="loading">
           上一步
@@ -119,13 +132,6 @@
         </button>
       </div>
 
-      <!-- Register Dialog -->
-      <RegisterDialog
-        :is-visible="showRegisterDialog"
-        :server-config="{ serverUrl: serverAddress, websocketUrl: wsAddress || '' }"
-        @close="showRegisterDialog = false"
-        @registered="handleUserRegistered"
-      />
     </div>
   </div>
 </template>
@@ -135,10 +141,10 @@ import { reactive, ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useServerListStore } from '../stores/serverList'
-import RegisterDialog from '../components/RegisterDialog.vue'
 import {
-  Stepper, StepperItem, StepperTrigger, StepperIndicator, StepperSeparator,
+  Stepper, StepperItem, StepperTrigger, StepperIndicator,
 } from '@/components/ui/stepper'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import type { HealthResponse, Library } from 'mira-server-sdk'
 
 const router = useRouter()
@@ -159,11 +165,17 @@ const showWsField = ref(false)
 const healthData = ref<HealthResponse | null>(null)
 
 // Step 2
+const authMode = ref<'login' | 'register'>('login')
 const showPassword = ref(false)
-const showRegisterDialog = ref(false)
+const showConfirmPassword = ref(false)
 const credentials = reactive({ username: '', password: '' })
+const registerForm = reactive({ email: '', confirmPassword: '' })
 const userRole = ref('')
 const authToken = ref('')
+
+function onAuthModeChange(val: string | string[]) {
+  if (val && typeof val === 'string') authMode.value = val as 'login' | 'register'
+}
 
 // Step 3
 const libraries = ref<Library[]>([])
@@ -293,6 +305,7 @@ async function connectToLibrary() {
       authStore.user = { username: credentials.username, role: userRole.value } as any
       authStore.token = authToken.value
       authStore.tokenExpiration = new Date(Date.now() + 24 * 60 * 60 * 1000)
+      await authStore.persistAuthState()
     }
 
     const redirect = route.query.redirect as string
@@ -312,10 +325,38 @@ function handleStepBack() {
   }
 }
 
-async function handleUserRegistered(user: any) {
-  showRegisterDialog.value = false
-  // Auto-fill credentials after registration
-  credentials.username = user?.username || ''
+async function handleRegister() {
+  if (!credentials.username.trim() || !credentials.password) {
+    error.value = '请输入用户名和密码'
+    return
+  }
+  if (credentials.password.length < 6 || !/(?=.*[a-zA-Z])(?=.*\d)/.test(credentials.password)) {
+    error.value = '密码至少6位，需包含字母和数字'
+    return
+  }
+  if (credentials.password !== registerForm.confirmPassword) {
+    error.value = '两次输入的密码不一致'
+    return
+  }
+  loading.value = true
+  error.value = ''
+  try {
+    const result = await authStore.register({
+      username: credentials.username.trim(),
+      email: registerForm.email.trim() || undefined,
+      password: credentials.password,
+    }, { serverUrl: serverAddress.value, websocketUrl: wsAddress.value || '' })
+    if (result.success) {
+      // 注册成功后自动登录
+      await handleLogin()
+    } else {
+      error.value = result.error || '注册失败'
+    }
+  } catch (err: any) {
+    error.value = err instanceof Error ? err.message : '注册失败'
+  } finally {
+    loading.value = false
+  }
 }
 
 function handleClose() {
@@ -330,30 +371,9 @@ onMounted(async () => {
   authStore.clearError()
   await serverListStore.initializeServerList()
 
-  // Auto-restore if possible
+  // Pre-fill server address from last active server
   const activeServer = serverListStore.activeServer
   if (activeServer) {
-    try {
-      const { miraSDKService } = await import('../services/MiraSDKService')
-      const connectionConfig = {
-        serverUrl: activeServer.serverUrl,
-        websocketUrl: activeServer.websocketUrl,
-        timeout: 30000,
-        ...(activeServer.authToken && { apiKey: activeServer.authToken }),
-      }
-      const connectResult = await miraSDKService.connect(connectionConfig)
-      if (connectResult.success) {
-        await authStore.initializeAuthAfterConnection()
-        if (authStore.isLoggedIn) {
-          const redirect = route.query.redirect as string
-          await router.push(redirect || '/')
-          return
-        }
-      }
-    } catch {
-      // Failed to restore, show login
-    }
-    // Pre-fill server address
     serverAddress.value = activeServer.serverUrl
     serverName.value = activeServer.name
   }
@@ -435,6 +455,14 @@ onMounted(async () => {
   margin-top: 0.25rem;
   text-align: center;
 }
+.stepper-separator {
+  flex: 1;
+  height: 2px;
+  background: #e5e7eb;
+  margin: 0 0.5rem;
+  align-self: center;
+  margin-top: -1rem;
+}
 
 /* Forms */
 .step-form {
@@ -513,19 +541,6 @@ onMounted(async () => {
 }
 .action-button:hover:not(:disabled) { background: rgba(17, 115, 212, 0.9); }
 .action-button:disabled { opacity: 0.6; cursor: not-allowed; }
-
-.register-button {
-  width: 100%;
-  background: #e5e7eb;
-  color: #374151;
-  font-weight: 700;
-  padding: 0.75rem 1rem;
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.register-button:hover { background: #d1d5db; }
 
 .back-button {
   width: 100%;

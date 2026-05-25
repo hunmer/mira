@@ -52,35 +52,6 @@ class MiraHelper {
     
     return errorMessage
   }
-  
-  /**
-   * 简单的密码加密（基于Base64，仅用于本地存储）
-   * 注意：这不是安全的加密，仅用于防止明文存储
-   */
-  static encryptPassword(password: string): string {
-    try {
-      // 使用Base64编码，添加一些简单的混淆
-      const encoded = btoa(unescape(encodeURIComponent(password)))
-      const obfuscated = encoded.split('').reverse().join('')
-      return obfuscated
-    } catch {
-      return password
-    }
-  }
-  
-  /**
-   * 解密密码
-   */
-  static decryptPassword(encryptedPassword: string): string {
-    try {
-      // 反向混淆处理
-      const deobfuscated = encryptedPassword.split('').reverse().join('')
-      const decoded = decodeURIComponent(escape(atob(deobfuscated)))
-      return decoded
-    } catch {
-      return encryptedPassword
-    }
-  }
 }
 
 /**
@@ -468,15 +439,12 @@ export const useAuthStore = defineStore('auth', () => {
         return
       }
       
-      // 加密密码
-      const encryptedPassword = MiraHelper.encryptPassword(credentials.password)
-      
       // 更新库配置
       const updatedLibrary = {
         ...library,
         savedCredentials: {
           username: credentials.username,
-          encryptedPassword,
+          encryptedPassword: credentials.password,
           lastLoginTime: new Date().toISOString(),
           autoLogin: true
         },
@@ -507,15 +475,12 @@ export const useAuthStore = defineStore('auth', () => {
       }
       
       const { username, encryptedPassword, autoLogin } = library.savedCredentials
-      
+
       if (!autoLogin) {
         return null
       }
-      
-      // 解密密码
-      const password = MiraHelper.decryptPassword(encryptedPassword)
-      
-      return { username, password }
+
+      return { username, password: encryptedPassword }
       
     } catch (error) {
       console.error('Failed to get credentials from library:', error)

@@ -194,11 +194,11 @@ onMounted(refreshData)
         <div class="space-y-4">
           <div class="flex items-center justify-between">
             <Label>{{ t('overview.authRequired') }}</Label>
-            <Switch v-model:checked="settings.authRequired" />
+            <Switch v-model="settings.authRequired" />
           </div>
           <div class="flex items-center justify-between">
             <Label>{{ t('overview.allowRegistration') }}</Label>
-            <Switch v-model:checked="settings.allowRegistration" />
+            <Switch v-model="settings.allowRegistration" />
           </div>
         </div>
         <DialogFooter>

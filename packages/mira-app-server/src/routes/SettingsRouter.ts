@@ -1,12 +1,15 @@
 import { Router, Request, Response } from 'express';
 import { MiraServer } from '..';
+import { AuthRouter } from './AuthRouter';
 
 export class SettingsRouter {
     private router: Router;
     private backend: MiraServer;
+    private authRouter: AuthRouter;
 
-    constructor(backend: MiraServer) {
+    constructor(backend: MiraServer, authRouter: AuthRouter) {
         this.backend = backend;
+        this.authRouter = authRouter;
         this.router = Router();
         this.setupRoutes();
     }
@@ -19,8 +22,7 @@ export class SettingsRouter {
         });
 
         // 更新服务器设置（需要 admin 权限）
-        this.router.put('/', async (req: Request, res: Response) => {
-            // 检查 admin 权限
+        this.router.put('/', this.authRouter.authMiddleware(), async (req: Request, res: Response) => {
             const user = (req as any).user;
             if (!user || (user.role !== 'super' && user.role !== 'admin')) {
                 return res.status(403).json({ code: 403, message: 'Admin access required' });
