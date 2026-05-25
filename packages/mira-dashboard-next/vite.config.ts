@@ -21,6 +21,10 @@ export default defineConfig({
         target: 'http://127.0.0.1:8081',
         changeOrigin: true,
       },
+      '/plugins': {
+        target: 'http://127.0.0.1:8081',
+        changeOrigin: true,
+      },
       '/health': {
         target: 'http://127.0.0.1:8081',
         changeOrigin: true,

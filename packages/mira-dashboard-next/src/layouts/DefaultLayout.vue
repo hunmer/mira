@@ -57,7 +57,7 @@ function handleLogout() {
       <SidebarHeader class="p-4">
         <SidebarMenu>
           <SidebarMenuButton size="lg" tooltip="Mira">
-            <span class="text-lg font-bold leading-none hidden group-data-[collapsible=icon]:block">M</span>
+            <img src="/logo.png" alt="Mira" class="size-6 shrink-0" />
             <span class="text-lg font-bold tracking-tight group-data-[collapsible=icon]:hidden">Mira</span>
           </SidebarMenuButton>
         </SidebarMenu>

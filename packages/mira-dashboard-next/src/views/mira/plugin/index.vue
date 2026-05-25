@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, defineComponent, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import type { Plugin } from '@/types/mira'
@@ -37,7 +37,9 @@ interface PluginRoute {
   name: string
   path: string
   pluginName: string
-  meta?: { title?: string }
+  component?: string
+  builder?: () => string
+  meta?: { title?: string; [k: string]: any }
 }
 
 const { t } = useI18n()
@@ -131,13 +133,79 @@ async function loadPlugins() {
   }
 }
 
+const registeredRouteNames = new Set<string>()
+
 async function loadPluginRoutes(libraryId: string) {
   try {
     const res = await client.get(`/plugin-routes/${libraryId}`)
-    pluginRoutes[libraryId] = Array.isArray(res.data?.data) ? res.data.data : []
+    const routes: PluginRoute[] = Array.isArray(res.data?.data) ? res.data.data : []
+    pluginRoutes[libraryId] = routes
+
+    for (const route of routes) {
+      const routeName = `plugin_${libraryId}_${route.name}`
+      if (registeredRouteNames.has(routeName)) continue
+      registeredRouteNames.add(routeName)
+
+      const childPath = route.path.startsWith('/') ? route.path.slice(1) : route.path
+      const component = resolvePluginComponent(route, libraryId)
+
+      router.addRoute('MainLayout', {
+        name: routeName,
+        path: childPath,
+        component,
+        meta: { ...route.meta, isPlugin: true, requiresAuth: true },
+      })
+    }
   } catch {
     pluginRoutes[libraryId] = []
   }
+}
+
+function resolvePluginComponent(route: PluginRoute, libraryId: string) {
+  // builder 模式：直接用返回的 HTML 作为模板
+  if (route.builder) {
+    try {
+      const html = route.builder()
+      return defineComponent({ template: html, name: route.name })
+    } catch (e) {
+      console.error(`Plugin route builder error: ${route.name}`, e)
+    }
+  }
+
+  // component 模式：动态加载插件 JS，从 window.MiraPluginComponents 取组件
+  if (route.component) {
+    const comp = route.component
+    const pluginName = route.pluginName || ''
+    const src = `/plugins/${libraryId}/${pluginName}/${comp}`
+
+    return () => new Promise<any>((resolve) => {
+      const key = `${pluginName}_${comp.replace(/[/.]/g, '_')}`
+      const existing = (window as any).MiraPluginComponents?.[key]
+      if (existing) return resolve(existing)
+
+      const script = document.createElement('script')
+      script.src = src
+      script.onload = () => {
+        const comp = (window as any).MiraPluginComponents?.[key]
+        resolve(comp || fallback(route))
+      }
+      script.onerror = () => {
+        console.error(`Failed to load plugin script: ${src}`)
+        resolve(fallback(route))
+      }
+      document.head.append(script)
+    })
+  }
+
+  return fallback(route)
+}
+
+function fallback(route: PluginRoute) {
+  return defineComponent({
+    template: `<div class="p-6"><h2 class="text-lg font-semibold mb-2">{{ title }}</h2><p class="text-muted-foreground">插件页面: {{ path }}</p></div>`,
+    data: () => ({ title: route.meta?.title || route.name, path: route.path }),
+    name: route.name,
+  })
 }
 
 async function toggleStatus(plugin: Plugin, checked: boolean) {

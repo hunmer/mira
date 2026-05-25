@@ -50,7 +50,9 @@ async function handleUpload() {
   try {
     for (const file of files.value) {
       const fd = new FormData()
-      fd.append('file', file)
+      fd.append('files', file)
+      fd.append('libraryId', selectedLib.value)
+      fd.append('payload', JSON.stringify({ data: { tags: [], folder_id: null } }))
       await fileApi.uploadProgress(selectedLib.value, fd, (p) => { progress.value = p })
     }
     toast.success(t('fileUpload.uploadSuccess'))

@@ -47,10 +47,11 @@ async function refreshData() {
       systemApi.health(),
     ])
 
-    const libs = libsRes.status === 'fulfilled' ? (Array.isArray(libsRes.value.data) ? libsRes.value.data : []) : []
-    const plugins = pluginsRes.status === 'fulfilled' ? (Array.isArray(pluginsRes.value.data) ? pluginsRes.value.data : []) : []
-    const admins = adminsRes.status === 'fulfilled' ? (Array.isArray(adminsRes.value.data) ? adminsRes.value.data : []) : []
-    const health = healthRes.status === 'fulfilled' ? healthRes.value.data : null
+    const unwrap = (r: PromiseFulfilledResult<any>) => r.value.data?.data ?? r.value.data
+    const libs = libsRes.status === 'fulfilled' ? (Array.isArray(unwrap(libsRes)) ? unwrap(libsRes) : []) : []
+    const plugins = pluginsRes.status === 'fulfilled' ? (Array.isArray(unwrap(pluginsRes)) ? unwrap(pluginsRes) : []) : []
+    const admins = adminsRes.status === 'fulfilled' ? (Array.isArray(unwrap(adminsRes)) ? unwrap(adminsRes) : []) : []
+    const health = healthRes.status === 'fulfilled' ? unwrap(healthRes) : null
 
     const totalSize = libs.reduce((s: number, l: any) => s + (l.size || 0), 0)
     stats.value = { libraries: libs.length, plugins: plugins.length, admins: admins.length, dbSize: formatSize(totalSize) }
