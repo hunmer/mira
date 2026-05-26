@@ -3,6 +3,7 @@ import { onMounted, ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Library } from '@/types/mira'
 import { libraryApi } from '@/api'
+import { useLibrary } from '@/composables/useLibrary'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -16,6 +17,7 @@ import {
 } from '@remixicon/vue'
 
 const { t } = useI18n()
+const { loadLibraries: refreshGlobalLibs } = useLibrary()
 const libraries = ref<Library[]>([])
 const loading = ref(false)
 const searchQuery = ref('')
@@ -33,6 +35,7 @@ async function loadLibraries() {
   try {
     const res = await libraryApi.list()
     libraries.value = Array.isArray(res.data) ? res.data : []
+    refreshGlobalLibs()
   } catch {
     toast.error(t('common.failed'))
   } finally {

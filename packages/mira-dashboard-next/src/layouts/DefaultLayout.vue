@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button'
 import { toast } from 'vue-sonner'
 import {
   RiHome4Line, RiFolderLine, RiPuzzleLine, RiUserSettingsLine,
-  RiDatabase2Line, RiSmartphoneLine, RiUploadCloudLine,
+  RiDatabase2Line, RiSmartphoneLine,
   RiBarChart2Line, RiImageLine, RiFolderOpenLine,
   RiSunLine, RiMoonLine, RiComputerLine, RiGlobalLine,
   RiLogoutBoxRLine, RiUser3Line,
@@ -38,7 +38,6 @@ const navItems = [
   { path: '/admin', icon: RiUserSettingsLine, key: 'admin', roles: ['super'] },
   { path: '/database', icon: RiDatabase2Line, key: 'database', roles: ['super', 'admin'] },
   { path: '/device', icon: RiSmartphoneLine, key: 'device', roles: ['super', 'admin'] },
-  { path: '/file-upload', icon: RiUploadCloudLine, key: 'fileUpload', roles: ['super', 'admin'] },
   { path: '/file-manager', icon: RiFolderOpenLine, key: 'fileManager', roles: ['super', 'admin'] },
   { path: '/statistics', icon: RiBarChart2Line, key: 'statistics', roles: ['super', 'admin'] },
   { path: '/thumbnail', icon: RiImageLine, key: 'thumbnail', roles: ['super', 'admin'] },

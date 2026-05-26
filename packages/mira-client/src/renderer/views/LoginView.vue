@@ -49,28 +49,68 @@
       </div>
 
       <!-- Step 1: Server Connection -->
-      <form v-if="currentStep === 1" @submit.prevent="testConnection" class="flex flex-col gap-4">
-        <div class="flex flex-col gap-1">
-          <Label>服务器名称</Label>
-          <Input v-model="serverName" type="text" placeholder="服务器名称" required />
+      <div v-if="currentStep === 1">
+        <!-- Server List View -->
+        <div v-if="!showAddForm" class="flex flex-col gap-4">
+          <div class="grid grid-cols-2 gap-3">
+            <!-- Add Server Card -->
+            <div
+              class="flex flex-col items-center justify-center gap-2 p-4 border-2 border-dashed border-gray-300 dark:border-zinc-600 rounded-xl cursor-pointer transition-all hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-500/10"
+              @click="showAddForm = true"
+            >
+              <span class="material-icons text-3xl text-gray-400 dark:text-zinc-500">add</span>
+              <span class="text-xs text-gray-500 dark:text-zinc-400">添加服务器</span>
+            </div>
+            <!-- Existing Server Cards -->
+            <div
+              v-for="server in serverListStore.services"
+              :key="server.id"
+              class="flex flex-col gap-2 p-4 border-2 rounded-xl cursor-pointer transition-all"
+              :class="loading && selectedServerId === server.id
+                ? 'border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-500/10'
+                : 'border-gray-200 dark:border-zinc-700 hover:border-blue-300 dark:hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-500/10'"
+              @click="quickConnect(server)"
+            >
+              <div class="flex items-center gap-2">
+                <span class="material-icons text-lg text-blue-600 dark:text-blue-400">dns</span>
+                <span class="font-semibold text-sm text-gray-800 dark:text-zinc-100 truncate">{{ server.name }}</span>
+              </div>
+              <span class="text-xs text-gray-400 dark:text-zinc-500 truncate">{{ server.serverUrl }}</span>
+            </div>
+          </div>
+          <div v-if="serverListStore.services.length === 0" class="text-center py-4 text-sm text-gray-400 dark:text-zinc-500">
+            还没有添加过服务器
+          </div>
         </div>
-        <div class="flex flex-col gap-1">
-          <Label>服务器地址</Label>
-          <Input v-model="serverAddress" type="text" placeholder="http://192.168.1.100" required />
-        </div>
-        <Button type="button" variant="ghost" size="sm" @click="showWsField = !showWsField">
-          <span class="material-icons text-sm">{{ showWsField ? 'expand_less' : 'expand_more' }}</span>
-          WebSocket 地址
-        </Button>
-        <div v-if="showWsField" class="flex flex-col gap-1">
-          <Label>WebSocket 地址</Label>
-          <Input v-model="wsAddress" type="text" placeholder="默认 8081" />
-        </div>
-        <Button type="submit" class="w-full" :disabled="loading">
-          <Loader2 v-if="loading" class="animate-spin" />
-          {{ loading ? '连接中...' : '下一步' }}
-        </Button>
-      </form>
+
+        <!-- Add Server Form -->
+        <form v-else @submit.prevent="testConnection" class="flex flex-col gap-4 relative">
+          <button type="button" class="absolute -top-1 right-0 flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-zinc-300 bg-transparent border-none cursor-pointer" @click="showAddForm = false">
+            <span class="material-icons text-sm">arrow_back</span>
+            返回列表
+          </button>
+          <div class="flex flex-col gap-1">
+            <Label>服务器名称</Label>
+            <Input v-model="serverName" type="text" placeholder="服务器名称" required />
+          </div>
+          <div class="flex flex-col gap-1">
+            <Label>服务器地址</Label>
+            <Input v-model="serverAddress" type="text" placeholder="http://192.168.1.100" required />
+          </div>
+          <Button type="button" variant="ghost" size="sm" @click="showWsField = !showWsField">
+            <span class="material-icons text-sm">{{ showWsField ? 'expand_less' : 'expand_more' }}</span>
+            WebSocket 地址
+          </Button>
+          <div v-if="showWsField" class="flex flex-col gap-1">
+            <Label>WebSocket 地址</Label>
+            <Input v-model="wsAddress" type="text" placeholder="默认 8081" />
+          </div>
+          <Button type="submit" class="w-full" :disabled="loading">
+            <Loader2 v-if="loading" class="animate-spin" />
+            {{ loading ? '连接中...' : '下一步' }}
+          </Button>
+        </form>
+      </div>
 
       <!-- Step 2: Authentication -->
       <div v-if="currentStep === 2" class="flex flex-col gap-4">
@@ -189,7 +229,7 @@
 import { reactive, ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { useServerListStore } from '../stores/serverList'
+import { useServerListStore, type ServerConfig } from '../stores/serverList'
 import Aurora from '@renderer/components/Aurora.vue'
 import {
   Stepper, StepperItem, StepperTrigger, StepperIndicator,
@@ -216,6 +256,8 @@ const serverName = ref('')
 const serverAddress = ref('')
 const wsAddress = ref('')
 const showWsField = ref(false)
+const showAddForm = ref(false)
+const selectedServerId = ref('')
 const healthData = ref<HealthResponse | null>(null)
 
 // Step 2
@@ -225,6 +267,30 @@ const credentials = reactive({ username: '', password: '' })
 const registerForm = reactive({ email: '', confirmPassword: '' })
 const userRole = ref('')
 const authToken = ref('')
+
+const CREDS_STORAGE_KEY = 'mira_saved_credentials'
+
+function saveCredentials(serverUrl: string, username: string, password: string) {
+  try {
+    const raw = localStorage.getItem(CREDS_STORAGE_KEY)
+    const all: Record<string, { username: string; password: string }> = raw ? JSON.parse(raw) : {}
+    all[serverUrl.replace(/\/$/, '')] = { username, password }
+    localStorage.setItem(CREDS_STORAGE_KEY, JSON.stringify(all))
+  } catch {}
+}
+
+function loadCredentials(serverUrl: string) {
+  try {
+    const raw = localStorage.getItem(CREDS_STORAGE_KEY)
+    if (!raw) return
+    const all: Record<string, { username: string; password: string }> = JSON.parse(raw)
+    const saved = all[serverUrl.replace(/\/$/, '')]
+    if (saved) {
+      credentials.username = saved.username
+      credentials.password = saved.password
+    }
+  } catch {}
+}
 
 // Step 3
 const libraries = ref<Library[]>([])
@@ -248,6 +314,15 @@ async function createTempClient(baseUrl: string) {
   return tempClient
 }
 
+// Quick connect to an existing server
+async function quickConnect(server: ServerConfig) {
+  serverName.value = server.name
+  serverAddress.value = server.serverUrl
+  wsAddress.value = server.websocketUrl || ''
+  selectedServerId.value = server.id
+  await testConnection()
+}
+
 // Step 1: Test connection
 async function testConnection() {
   if (!serverAddress.value.trim()) {
@@ -266,6 +341,7 @@ async function testConnection() {
       currentStep.value = 3
       await fetchLibraries(client)
     } else {
+      loadCredentials(serverAddress.value)
       currentStep.value = 2
     }
   } catch (err: any) {
@@ -290,6 +366,7 @@ async function handleLogin() {
     userRole.value = verifyResult.user?.role || 'user'
     authToken.value = loginResult.accessToken || ''
 
+    saveCredentials(serverAddress.value, credentials.username, credentials.password)
     currentStep.value = 3
     await fetchLibraries(client)
   } catch (err: any) {

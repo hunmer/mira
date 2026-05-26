@@ -2,7 +2,7 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useLibrary } from '@/composables/useLibrary'
-import { fileManagerApi } from '@/api'
+import { fileManagerApi, fileApi } from '@/api'
 import PathTreeSelect from '@/components/PathTreeSelect.vue'
 import { Button } from '@/components/ui/button'
 import {
@@ -18,6 +18,7 @@ import {
 import {
   RiFolderLine, RiFileLine, RiMoreLine, RiHome4Line,
   RiCheckboxBlankLine, RiCheckboxCircleLine, RiDeleteBinLine, RiDragMoveLine,
+  RiUploadCloudLine, RiCloseLine,
 } from '@remixicon/vue'
 import { toast } from 'vue-sonner'
 
@@ -65,6 +66,61 @@ const moveLoading = ref(false)
 const deleteDialogVisible = ref(false)
 const deletePaths = ref<string[]>([])
 const deleteLoading = ref(false)
+
+// 上传对话框
+const uploadDialogVisible = ref(false)
+const uploadFiles = ref<File[]>([])
+const uploading = ref(false)
+const uploadProgress = ref(0)
+const dragOver = ref(false)
+
+const canUpload = computed(() => selectedLibraryId.value && uploadFiles.value.length > 0)
+
+function handleDrop(e: DragEvent) {
+  dragOver.value = false
+  if (e.dataTransfer?.files) {
+    uploadFiles.value.push(...Array.from(e.dataTransfer.files))
+  }
+}
+
+function handleFileInput(e: Event) {
+  const input = e.target as HTMLInputElement
+  if (input.files) uploadFiles.value.push(...Array.from(input.files))
+}
+
+function removeUploadFile(index: number) {
+  uploadFiles.value.splice(index, 1)
+}
+
+function openUploadDialog() {
+  uploadFiles.value = []
+  uploadProgress.value = 0
+  uploading.value = false
+  uploadDialogVisible.value = true
+}
+
+async function handleUpload() {
+  if (!selectedLibraryId.value || !uploadFiles.value.length) return
+  uploading.value = true
+  uploadProgress.value = 0
+  try {
+    for (const file of uploadFiles.value) {
+      const fd = new FormData()
+      fd.append('files', file)
+      fd.append('libraryId', selectedLibraryId.value)
+      fd.append('payload', JSON.stringify({ data: { tags: [], folder_id: null } }))
+      await fileApi.uploadProgress(selectedLibraryId.value, fd, (p) => { uploadProgress.value = p })
+    }
+    toast.success(t('fileUpload.uploadSuccess'))
+    uploadFiles.value = []
+    uploadDialogVisible.value = false
+    loadItems()
+  } catch {
+    toast.error(t('fileUpload.uploadFailed'))
+  } finally {
+    uploading.value = false
+  }
+}
 
 const breadcrumbs = computed(() => {
   if (!currentPath.value) return []
@@ -335,6 +391,10 @@ onMounted(() => {
         <p class="mt-1 text-sm text-muted-foreground">{{ t('fileManager.subtitle') }}</p>
       </div>
       <div class="flex gap-2">
+        <Button variant="outline" size="sm" :disabled="!selectedLibraryId" @click="openUploadDialog">
+          <RiUploadCloudLine class="mr-1 size-4" />
+          {{ t('nav.fileUpload') }}
+        </Button>
         <Button
           v-if="selected.size > 0"
           variant="outline"
@@ -549,6 +609,50 @@ onMounted(() => {
             {{ t('common.delete') }}
           </Button>
         </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <!-- 上传对话框 -->
+    <Dialog :open="uploadDialogVisible" @update:open="uploadDialogVisible = $event">
+      <DialogContent class="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{{ t('fileUpload.title') }}</DialogTitle>
+        </DialogHeader>
+        <div
+          class="rounded-lg border-2 border-dashed p-8 text-center transition-colors"
+          :class="{ 'border-primary bg-primary/5': dragOver }"
+          @dragover.prevent="dragOver = true"
+          @dragleave.prevent="dragOver = false"
+          @drop.prevent="handleDrop"
+        >
+          <RiUploadCloudLine class="mx-auto size-10 text-muted-foreground" />
+          <p class="mt-3 text-sm text-muted-foreground">{{ t('fileUpload.dragHere') }}</p>
+          <p class="mt-1 text-xs text-muted-foreground">{{ t('fileUpload.or') }}</p>
+          <label class="mt-3 inline-block cursor-pointer">
+            <input type="file" multiple class="hidden" @change="handleFileInput" />
+            <Button variant="outline" size="sm" as="span">{{ t('fileUpload.browse') }}</Button>
+          </label>
+        </div>
+        <div v-if="uploadFiles.length" class="max-h-48 space-y-2 overflow-y-auto">
+          <div v-for="(file, i) in uploadFiles" :key="i" class="flex items-center gap-3 rounded-md border p-2">
+            <RiFileLine class="size-4 shrink-0 text-muted-foreground" />
+            <span class="flex-1 truncate text-sm">{{ file.name }}</span>
+            <span class="shrink-0 text-xs text-muted-foreground">{{ (file.size / 1024).toFixed(1) }} KB</span>
+            <Button variant="ghost" size="icon" class="size-6" @click="removeUploadFile(i)">
+              <RiCloseLine class="size-3" />
+            </Button>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" @click="uploadDialogVisible = false">{{ t('common.cancel') }}</Button>
+          <Button :disabled="!canUpload || uploading" @click="handleUpload">
+            <span v-if="uploading" class="mr-1 size-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            {{ uploading ? `${t('fileUpload.uploading')} ${uploadProgress}%` : t('fileUpload.startUpload') }}
+          </Button>
+        </DialogFooter>
+        <div v-if="uploading" class="h-2 rounded-full bg-secondary">
+          <div class="h-full rounded-full bg-primary transition-all" :style="{ width: `${uploadProgress}%` }" />
+        </div>
       </DialogContent>
     </Dialog>
   </div>

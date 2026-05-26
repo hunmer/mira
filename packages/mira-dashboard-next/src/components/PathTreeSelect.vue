@@ -7,7 +7,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog'
-import { toast } from 'vue-sonner'
 import { RiArrowDownSLine, RiFolderLine, RiAddLine } from '@remixicon/vue'
 import client from '@/api/client'
 import PathTreeNode from './PathTreeNode.vue'
@@ -48,6 +47,7 @@ const mkdirVisible = ref(false)
 const mkdirParent = ref('')
 const mkdirParentLabel = ref('')
 const newFolderName = ref('')
+const mkdirError = ref('')
 
 function onSelect(value: string) {
   selected.value = value
@@ -58,12 +58,14 @@ function openMkdir(node: TreeNode) {
   mkdirParent.value = node.value
   mkdirParentLabel.value = node.label
   newFolderName.value = ''
+  mkdirError.value = ''
   mkdirVisible.value = true
 }
 
 async function handleMkdir() {
   const name = newFolderName.value.trim()
   if (!name) return
+  mkdirError.value = ''
   try {
     const res = await client.post('/fs/mkdir', { path: mkdirParent.value, name })
     const newNode = res.data as TreeNode
@@ -78,9 +80,8 @@ async function handleMkdir() {
     selected.value = newNode.value
     emit('update:modelValue', newNode.value)
     mkdirVisible.value = false
-    toast.success(`"${name}" ${t('common.success')}`)
-  } catch {
-    toast.error(t('common.failed'))
+  } catch (err: any) {
+    mkdirError.value = err.response?.data?.error || t('common.failed')
   }
 }
 
@@ -130,6 +131,7 @@ onMounted(async () => {
         <DialogTitle>{{ mkdirParentLabel }}</DialogTitle>
       </DialogHeader>
       <Input v-model="newFolderName" placeholder="folder name" @keydown.enter="handleMkdir" />
+      <p v-if="mkdirError" class="text-destructive text-sm">{{ mkdirError }}</p>
       <DialogFooter>
         <Button variant="outline" @click="mkdirVisible = false">{{ t('common.cancel') }}</Button>
         <Button @click="handleMkdir">{{ t('common.create') }}</Button>
