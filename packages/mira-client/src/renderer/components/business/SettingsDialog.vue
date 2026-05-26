@@ -60,7 +60,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 
 // 导入组件
 import GeneralPanel from '../../views/settings/GeneralPanel.vue'
-import UsersPanel from '../../views/settings/UsersPanel.vue'
 import NotificationsPanel from '../../views/settings/NotificationsPanel.vue'
 import PluginsPanel from '../../views/settings/pluginPlan.vue'
 import DataPanel from '../../views/settings/DataPanel.vue'
@@ -99,7 +98,6 @@ const activeSection = ref('general')
 const currentComponent = computed(() => {
   const componentMap: Record<string, any> = {
     general: GeneralPanel,
-    users: UsersPanel,
     notifications: NotificationsPanel,
     plugins: PluginsPanel,
     data: DataPanel

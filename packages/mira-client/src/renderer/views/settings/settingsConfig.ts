@@ -7,7 +7,6 @@ export interface SettingSection {
 
 export const settingSections: SettingSection[] = [
   { id: 'general', name: 'General', icon: 'settings' },
-  { id: 'users', name: 'Users', icon: 'group' },
   { id: 'notifications', name: 'Notifications', icon: 'notifications' },
   { id: 'plugins', name: 'Plugins', icon: 'extension' },
   { id: 'data', name: 'Data', icon: 'storage' }

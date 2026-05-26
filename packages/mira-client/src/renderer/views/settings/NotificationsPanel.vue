@@ -13,17 +13,6 @@
             @update:checked="handleSettingChange('enableNotifications', $event)"
           />
         </div>
-
-        <div class="flex items-center justify-between py-2">
-          <div>
-            <p class="text-slate-900 text-base font-normal leading-normal">自动备份</p>
-            <p class="text-slate-600 text-sm">定期自动备份应用设置</p>
-          </div>
-          <Switch
-            :checked="settingsStore.settings.autoBackup"
-            @update:checked="handleSettingChange('autoBackup', $event)"
-          />
-        </div>
       </div>
     </div>
   </div>

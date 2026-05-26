@@ -97,7 +97,6 @@ import { useToast } from '@/renderer/composables/useToast'
 // 导入组件
 import OverviewPanel from './settings/OverviewPanel.vue'
 import GeneralPanel from './settings/GeneralPanel.vue'
-import UsersPanel from './settings/UsersPanel.vue'
 import NotificationsPanel from './settings/NotificationsPanel.vue'
 import PluginsPanel from './settings/pluginPlan.vue'
 import SettingsImportExportDialog from './settings/SettingsImportExportDialog.vue'
@@ -122,7 +121,6 @@ const currentComponent = computed(() => {
   const componentMap: Record<string, any> = {
     overview: OverviewPanel,
     general: GeneralPanel,
-    users: UsersPanel,
     notifications: NotificationsPanel,
     plugins: PluginsPanel
   }
