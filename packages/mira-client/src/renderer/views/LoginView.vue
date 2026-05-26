@@ -4,7 +4,7 @@
       :color-stops="['#3A29FF', '#FF94B4', '#FF3232']"
       :amplitude="1.0"
       :blend="0.5"
-      :speed="0.5"
+      :speed="1.2"
       class="aurora-bg"
     />
     <div class="login-container">
@@ -184,7 +184,7 @@ import { reactive, ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useServerListStore } from '../stores/serverList'
-import Aurora from '@/components/Aurora.vue'
+import Aurora from '@renderer/components/Aurora.vue'
 import {
   Stepper, StepperItem, StepperTrigger, StepperIndicator,
 } from '@/components/ui/stepper'

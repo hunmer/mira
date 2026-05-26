@@ -153,7 +153,8 @@ const handleImageError = () => {
 }
 
 const getLocalFile = (item: FileInfo): string | undefined => {
-  return item.localFile || !item.path?.toLocaleLowerCase().startsWith('http') ? item.path : undefined
+  if (item.localFile) return item.localFile
+  return !item.path?.toLocaleLowerCase().startsWith('http') ? item.path : undefined
 }
 
 const fileExtension = computed((): string => {

@@ -38,9 +38,8 @@ export function useMediaItem(options: UseMediaItemOptions) {
 
   // 获取本地文件路径
   const getLocalFile = (fileItem: FileInfo): string | undefined => {
-    return fileItem.localFile || !fileItem.path?.toLocaleLowerCase().startsWith('http')
-      ? fileItem.path
-      : undefined
+    if (fileItem.localFile) return fileItem.localFile
+    return !fileItem.path?.toLocaleLowerCase().startsWith('http') ? fileItem.path : undefined
   }
 
   // 文件扩展名
