@@ -75,6 +75,84 @@ export class StatisticsRouter {
                 res.status(500).json({ code: 500, message: 'Internal server error', data: null });
             }
         });
+
+        // 最近上传记录（一周内，按天/用户/文件夹/标签聚合）
+        this.router.get('/:libraryId/recent-uploads', async (req: Request, res: Response) => {
+            try {
+                const { libraryId } = req.params;
+                const days = parseInt(req.query.days as string) || 7;
+                const obj = this.backend.libraries?.getLibrary(libraryId);
+                if (!obj) {
+                    return res.status(404).json({ code: 404, message: 'Library not found', data: null });
+                }
+
+                const raw: any = await obj.libraryService.getRecentUploads(days);
+
+                // 收集所有 folder_id，批量查名称
+                const folderIds = [...new Set((raw.byFolder || []).map((r: any) => r.folder_id).filter(Boolean))] as number[];
+
+                const folderMap = new Map<number, string>();
+                for (const fid of folderIds) {
+                    const folder = await obj.libraryService.getFolder(fid);
+                    if (folder) folderMap.set(fid, folder.title);
+                }
+
+                const tagMap = new Map<number, string>();
+                const allTags = await obj.libraryService.getAllTags();
+                for (const tag of allTags) {
+                    tagMap.set(tag.id, tag.title);
+                }
+
+                const userStorage = this.backend.httpServer?.authRouter.getUserStorage();
+                const allUsers = userStorage ? await userStorage.getAllUsers() : [];
+                const userMap = new Map(allUsers.map(u => [u.id, u.username]));
+
+                const userName = (id: number | null) => id ? (userMap.get(id) || `User#${id}`) : '未知';
+
+                // 合并成统一的活动记录
+                type Record = { date: string; userName: string; target: string; fileCount: number };
+                const records: Record[] = [];
+
+                for (const r of (raw.byFolder || [])) {
+                    const folderName = r.folder_id ? (folderMap.get(r.folder_id) || '未分类') : '素材库';
+                    records.push({ date: r.date, userName: userName(r.uploader), target: folderName, fileCount: r.file_count });
+                }
+
+                for (const r of (raw.byTag || [])) {
+                    const tagName = r.tag_id ? (tagMap.get(Number(r.tag_id)) || '未知标签') : '未知标签';
+                    records.push({ date: r.date, userName: userName(r.uploader), target: tagName, fileCount: r.file_count });
+                }
+
+                // 按日期分组
+                const grouped = new Map<string, Record[]>();
+                for (const r of records) {
+                    if (!grouped.has(r.date)) grouped.set(r.date, []);
+                    grouped.get(r.date)!.push(r);
+                }
+
+                // 合并同天同用户同目标的记录
+                const result: { date: string; items: { userName: string; target: string; fileCount: number }[] }[] = [];
+                for (const [date, items] of grouped) {
+                    const merged = new Map<string, { userName: string; target: string; fileCount: number }>();
+                    for (const item of items) {
+                        const key = `${item.userName}::${item.target}`;
+                        const existing = merged.get(key);
+                        if (existing) {
+                            existing.fileCount += item.fileCount;
+                        } else {
+                            merged.set(key, { userName: item.userName, target: item.target, fileCount: item.fileCount });
+                        }
+                    }
+                    result.push({ date, items: [...merged.values()].sort((a, b) => b.fileCount - a.fileCount) });
+                }
+
+                result.sort((a, b) => b.date.localeCompare(a.date));
+                res.json({ code: 0, message: 'Success', data: result });
+            } catch (error) {
+                console.error('Error getting recent uploads:', error);
+                res.status(500).json({ code: 500, message: 'Internal server error', data: null });
+            }
+        });
     }
 
     public getRouter(): Router {

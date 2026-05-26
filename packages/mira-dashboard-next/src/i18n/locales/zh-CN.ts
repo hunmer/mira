@@ -196,6 +196,10 @@ export default {
       text: '文本',
       other: '其他',
     },
+    recentUploads: '最近上传记录',
+    recentUploadsDesc: '一周内的上传活动',
+    uploaded: '上传了',
+    uploadedTo: '个素材到',
   },
   thumbnail: {
     title: '缩略图管理',

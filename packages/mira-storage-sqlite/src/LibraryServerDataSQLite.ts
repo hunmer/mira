@@ -998,4 +998,56 @@ export class LibraryServerDataSQLite implements ILibraryServerData {
       return [];
     }
   }
+
+  async getRecentUploads(days: number = 7): Promise<Record<string, any>[]> {
+    try {
+      const since = Date.now() - days * 24 * 60 * 60 * 1000;
+      // 按天、上传者、文件夹维度聚合
+      const folderRows = await this.getSql(
+        `SELECT date(imported_at / 1000, 'unixepoch') as date,
+                uploader,
+                folder_id,
+                COUNT(*) as file_count
+         FROM files
+         WHERE recycled = 0 AND imported_at >= ?
+         GROUP BY date, uploader, folder_id
+         ORDER BY date DESC, file_count DESC`,
+        [since]
+      );
+
+      // 按天、上传者、标签维度聚合（files.tags 是 JSON 数组）
+      const tagRows = await this.getSql(
+        `SELECT date(f.imported_at / 1000, 'unixepoch') as date,
+                f.uploader,
+                j.value as tag_id,
+                COUNT(*) as file_count
+         FROM files f, json_each(f.tags) j
+         WHERE f.recycled = 0 AND f.imported_at >= ? AND f.tags IS NOT NULL
+         GROUP BY date, f.uploader, j.value
+         ORDER BY date DESC, file_count DESC`,
+        [since]
+      );
+
+      // 查询无标签的文件（按天、上传者）
+      const noTagRows = await this.getSql(
+        `SELECT date(imported_at / 1000, 'unixepoch') as date,
+                uploader,
+                COUNT(*) as file_count
+         FROM files
+         WHERE recycled = 0 AND imported_at >= ? AND (tags IS NULL OR tags = '[]' OR tags = '')
+         GROUP BY date, uploader
+         ORDER BY date DESC, file_count DESC`,
+        [since]
+      );
+
+      return {
+        byFolder: folderRows.map(row => this.rowToMap(row)),
+        byTag: tagRows.map(row => this.rowToMap(row)),
+        noTag: noTagRows.map(row => this.rowToMap(row)),
+      } as any;
+    } catch (error) {
+      console.error('Error getting recent uploads:', error);
+      return [];
+    }
+  }
 }

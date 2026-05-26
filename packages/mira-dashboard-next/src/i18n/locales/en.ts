@@ -196,6 +196,10 @@ export default {
       text: 'Text',
       other: 'Other',
     },
+    recentUploads: 'Recent Uploads',
+    recentUploadsDesc: 'Upload activity in the past week',
+    uploaded: 'uploaded',
+    uploadedTo: 'files to',
   },
   thumbnail: {
     title: 'Thumbnail Management',

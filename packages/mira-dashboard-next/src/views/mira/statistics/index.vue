@@ -24,12 +24,14 @@ const route = useRoute()
 interface DailyRow { date: string; file_count: number; total_size: number }
 interface UploaderRow { uploader: number | null; uploaderName: string; fileCount: number; totalSize: number }
 interface FileTypeRow { type: string; file_count: number; total_size: number }
+interface RecentUploadDay { date: string; items: { userName: string; target: string; fileCount: number }[] }
 
 const libraries = ref<Library[]>([])
 const selectedLibraryId = ref<string>('')
 const rawDaily = ref<DailyRow[]>([])
 const uploaders = ref<UploaderRow[]>([])
 const fileTypes = ref<FileTypeRow[]>([])
+const recentUploads = ref<RecentUploadDay[]>([])
 const loading = ref(false)
 const timeRange = ref('60d')
 
@@ -45,14 +47,16 @@ async function loadStats() {
   if (!selectedLibraryId.value) return
   loading.value = true
   try {
-    const [dailyRes, uploadRes, typeRes]: any[] = await Promise.all([
+    const [dailyRes, uploadRes, typeRes, recentRes]: any[] = await Promise.all([
       statisticsApi.daily(selectedLibraryId.value),
       statisticsApi.upload(selectedLibraryId.value),
       statisticsApi.fileTypes(selectedLibraryId.value),
+      statisticsApi.recentUploads(selectedLibraryId.value),
     ])
     rawDaily.value = dailyRes.data?.data || []
     uploaders.value = uploadRes.data?.data || []
     fileTypes.value = typeRes.data?.data || []
+    recentUploads.value = recentRes.data?.data || []
   } catch {
     rawDaily.value = []
     uploaders.value = []
@@ -189,6 +193,16 @@ const summary = computed(() => {
 })
 
 const hasData = computed(() => rawDaily.value.length > 0 || uploaders.value.length > 0 || fileTypes.value.length > 0)
+
+function daysAgo(dateStr: string) {
+  const now = new Date()
+  now.setHours(0, 0, 0, 0)
+  const d = new Date(dateStr + 'T00:00:00')
+  const diff = Math.floor((now.getTime() - d.getTime()) / 86400000)
+  if (diff === 0) return '今天'
+  if (diff === 1) return '昨天'
+  return `${diff}天前`
+}
 </script>
 
 <template>
@@ -354,6 +368,28 @@ const hasData = computed(() => rawDaily.value.length > 0 || uploaders.value.leng
         </CardContent>
       </Card>
     </div>
+
+    <!-- 最近上传记录 -->
+    <Card v-if="selectedLibraryId && recentUploads.length">
+      <CardHeader>
+        <CardTitle>{{ t('statistics.recentUploads') }}</CardTitle>
+        <CardDescription>{{ t('statistics.recentUploadsDesc') }}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div v-for="day in recentUploads" :key="day.date" class="mb-4 last:mb-0">
+          <div class="text-muted-foreground mb-2 text-xs font-medium">{{ day.date }} ({{ daysAgo(day.date) }})</div>
+          <div class="space-y-1">
+            <div v-for="(item, i) in day.items" :key="i" class="text-sm">
+              <span class="font-medium">{{ item.userName }}</span>
+              {{ t('statistics.uploaded') }}
+              <span class="font-medium text-primary">{{ item.fileCount }}</span>
+              {{ t('statistics.uploadedTo') }}
+              <span class="font-medium">{{ item.target }}</span>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
 
     <Card v-if="!selectedLibraryId">
       <CardContent class="text-muted-foreground py-16 text-center">
