@@ -5,6 +5,7 @@
       <VViewer
         ref="viewerRef"
         :options="viewerOptions"
+        :trigger="imageUrl"
         class="viewer"
         @inited="onViewerInited"
       >

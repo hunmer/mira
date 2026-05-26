@@ -219,6 +219,7 @@ export interface SystemHealth {
   timestamp: string
   details?: Record<string, any>
   dashboardPort?: number
+  isDocker?: boolean
 }
 
 // 托盘设置

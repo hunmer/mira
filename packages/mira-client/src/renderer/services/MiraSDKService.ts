@@ -475,6 +475,15 @@ export class MiraSDKService {
 
       console.log('MiraSDKService: Listing files', { libraryId, filters: requestFilters })
 
+      // 获取部署环境信息
+      const { useSettingsStore } = await import('../stores/settings')
+      const isDocker = useSettingsStore().systemHealth?.isDocker ?? false
+      let smbConfig: { enabled?: boolean; smbPath?: string; mountPath?: string } | null = null
+      if (isDocker) {
+        const { useServerListStore } = await import('../stores/serverList')
+        smbConfig = useServerListStore().activeServer?.smb ?? null
+      }
+
       // 使用 SDK 的文件模块获取文件列表
       let files: any;
       if (requestFilters && Object.keys(requestFilters).length > 0) {
@@ -501,26 +510,51 @@ export class MiraSDKService {
       }
       // 转换为 FileInfo 类型
       const fileInfos: FileInfo[] = files.result.map((file: any) => {
+        let localFile: string | undefined = file.file_path
+        let thumbnailPath = file.thumb_path || file.thumb
+
+        // Docker 环境 + SMB：将服务端路径映射为 SMB 本地路径
+        if (isDocker && smbConfig?.enabled && smbConfig.smbPath) {
+          const smbPath = smbConfig.smbPath
+          const sep = smbPath.includes('/') ? '/' : '\\'
+          const normalizedSmbPath = smbPath.endsWith(sep) ? smbPath : smbPath + sep
+
+          if (smbConfig.mountPath && file.file_path) {
+            // 用 mountPath 替换服务端路径前缀为 SMB 路径
+            const mountPrefix = smbConfig.mountPath.endsWith('/') ? smbConfig.mountPath : smbConfig.mountPath + '/'
+            localFile = file.file_path.replace(mountPrefix, normalizedSmbPath).replace(/\//g, sep)
+            if (file.thumb_path) {
+              thumbnailPath = file.thumb_path.replace(mountPrefix, normalizedSmbPath).replace(/\//g, sep)
+            }
+          } else {
+            // 回退：从元数据构建
+            if (file.folder_name && file.name) {
+              localFile = normalizedSmbPath + file.folder_name + sep + file.name
+            }
+            const thumbFileName = file.hash ? `${file.hash}.png` : `${file.id}.png`
+            thumbnailPath = normalizedSmbPath + 'thumbs' + sep + thumbFileName
+          }
+        }
+
         return {
           id: file.id.toString(),
-          name: file.name, // 使用 name 字段
+          name: file.name,
           path: appendToken(toFileUrl(file.path)),
           size: file.size,
-          extension: file.extension || this.getFileExtension(file.name), // 从文件名提取扩展名
+          extension: file.extension || this.getFileExtension(file.name),
           mimeType: file.mime_type || this.getMimeTypeFromExtension(file.name),
           createdAt: file.created_at,
           updatedAt: file.updated_at || file.imported_at || file.created_at,
           tags: typeof file.tags === 'string' ? JSON.parse(file.tags || '[]') : (file.tags || []),
           folderId: file.folder_id?.toString(),
           hash: file.hash || '',
-          thumbnailPath: appendToken(toFileUrl(file.thumb_path || file.thumb)),
-          libraryId: libraryId, // 添加 libraryId 到 fileInfo
-          localFile: file.file_path || file.localFile || (() => {
+          thumbnailPath: appendToken(toFileUrl(thumbnailPath)),
+          libraryId: libraryId,
+          localFile: localFile || file.localFile || (() => {
             try {
               const mediaStore = useMediaStore()
               return mediaStore.getLocalFile(libraryId, file.id.toString())
             } catch (error) {
-              console.warn('从mediaStore获取localFile失败:', error)
               return undefined
             }
           })()
@@ -717,6 +751,7 @@ export class MiraSDKService {
         status: 'healthy' as const,
         timestamp: new Date().toISOString(),
         dashboardPort: (health as any).dashboardPort || 5173,
+        isDocker: !!(health as any).isDocker,
       }
     } catch (error) {
       console.error('MiraSDKService: Failed to get system health', error)

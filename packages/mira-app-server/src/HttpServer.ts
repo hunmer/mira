@@ -1,6 +1,7 @@
 import { Express, Router } from 'express';
 import http from 'http';
 import express from 'express';
+import fs from 'fs';
 import axios from "axios";
 import { AuthRouter } from "./routes/AuthRouter";
 import { UserRouter } from "./routes/UserRouter";
@@ -331,6 +332,7 @@ export class MiraHttpServer {
         // 健康检查端点
         this.app.get('/api/health', (req, res) => {
             const settings = this.backend.settingsManager.getSettings();
+            const isDocker = fs.existsSync('/.dockerenv') || fs.existsSync('/run/.containerenv');
             res.json({
                 code: 0,
                 data: {
@@ -340,6 +342,7 @@ export class MiraHttpServer {
                     version: process.env.npm_package_version || '1.0.0',
                     nodeVersion: process.version,
                     environment: process.env.NODE_ENV || 'development',
+                    isDocker,
                     authRequired: settings.authRequired,
                     allowRegistration: settings.allowRegistration,
                     dashboardPort: settings.dashboardPort || 5173
