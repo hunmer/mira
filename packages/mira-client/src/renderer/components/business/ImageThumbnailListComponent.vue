@@ -23,7 +23,7 @@
 <script setup lang="ts">
 import { watch } from 'vue'
 import type { FileInfo } from '../../../shared/types'
-import { toCacheBustedFileUrl } from '../../utils/fileUtils'
+import { getPreviewImageSource, toCacheBustedFileUrl } from '../../utils/fileUtils'
 
 interface Props {
   images: FileInfo[]
@@ -55,9 +55,11 @@ watch(
         ? {
             id: currentImage.id,
             name: currentImage.name,
+            localFile: currentImage.localFile,
             path: currentImage.path,
             url: currentImage.url,
             thumbnailPath: currentImage.thumbnailPath,
+            previewSource: getPreviewImageSource(currentImage),
             updatedAt: currentImage.updatedAt
           }
         : null,
@@ -75,9 +77,11 @@ const handleImageSelect = (image: FileInfo): void => {
     image: {
       id: image.id,
       name: image.name,
+      localFile: image.localFile,
       path: image.path,
       url: image.url,
       thumbnailPath: image.thumbnailPath,
+      previewSource: getPreviewImageSource(image),
       updatedAt: image.updatedAt
     },
     thumbnailSrc: getImageSrc(image)

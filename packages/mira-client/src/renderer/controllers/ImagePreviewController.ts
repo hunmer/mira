@@ -4,6 +4,7 @@ import { api as viewerApi } from 'v-viewer'  // 保留备用，现在主要使�
 import 'viewerjs/dist/viewer.css'
 import { useMediaStore } from '../stores/media'
 import { useLibraryStore } from '../stores/library'
+import { getPreviewImageSource } from '../utils/fileUtils'
 import type { FileInfo } from '../../shared/types'
 
 export class ImagePreviewController {
@@ -32,9 +33,11 @@ export class ImagePreviewController {
     return {
       id: image.id,
       name: image.name,
+      localFile: image.localFile,
       path: image.path,
       url: image.url,
       thumbnailPath: image.thumbnailPath,
+      previewSource: getPreviewImageSource(image),
       updatedAt: image.updatedAt
     }
   }
@@ -408,13 +411,15 @@ export class ImagePreviewController {
     // 预加载前一张
     if (currentIndex > 0) {
       const prevImage = this.imageItems.value[currentIndex - 1]
-      if (prevImage.url) imagesToPreload.push(prevImage.url)
+      const prevImageSource = getPreviewImageSource(prevImage)
+      if (prevImageSource) imagesToPreload.push(prevImageSource)
     }
 
     // 预加载后一张
     if (currentIndex < this.imageItems.value.length - 1) {
       const nextImage = this.imageItems.value[currentIndex + 1]
-      if (nextImage.url) imagesToPreload.push(nextImage.url)
+      const nextImageSource = getPreviewImageSource(nextImage)
+      if (nextImageSource) imagesToPreload.push(nextImageSource)
     }
 
     // 预加载图片

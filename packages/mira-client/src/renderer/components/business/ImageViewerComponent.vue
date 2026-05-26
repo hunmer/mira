@@ -123,7 +123,7 @@
 import { ref, watch, computed, nextTick } from 'vue'
 import { component as VViewer } from 'v-viewer'
 import type { FileInfo } from '../../../shared/types'
-import { toCacheBustedFileUrl } from '../../utils/fileUtils'
+import { getCacheBustedPreviewImageSource, getPreviewImageSource } from '../../utils/fileUtils'
 
 interface Props {
   image?: FileInfo
@@ -143,7 +143,7 @@ const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
 // 本地路径转 file:// URL
-const imageUrl = computed(() => toCacheBustedFileUrl(props.image?.path || props.image?.url, props.cacheKey))
+const imageUrl = computed(() => getCacheBustedPreviewImageSource(props.image, props.cacheKey))
 const viewerKey = computed(() => `${props.image?.id || 'empty'}:${imageUrl.value || ''}`)
 
 const describeImage = (image?: FileInfo): Record<string, unknown> | null => {
@@ -152,9 +152,11 @@ const describeImage = (image?: FileInfo): Record<string, unknown> | null => {
   return {
     id: image.id,
     name: image.name,
+    localFile: image.localFile,
     path: image.path,
     url: image.url,
     thumbnailPath: image.thumbnailPath,
+    previewSource: getPreviewImageSource(image),
     updatedAt: image.updatedAt
   }
 }

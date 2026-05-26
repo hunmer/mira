@@ -1,3 +1,5 @@
+import type { FileInfo } from '../../shared/types'
+
 /**
  * 文件处理工具函数
  */
@@ -36,6 +38,17 @@ export function withCacheBust(url: string | undefined, cacheKey?: string | numbe
 
 export function toCacheBustedFileUrl(path: string | undefined, cacheKey?: string | number): string | undefined {
   return withCacheBust(toFileUrl(path), cacheKey)
+}
+
+export function getPreviewImageSource(image: FileInfo | undefined): string | undefined {
+  return image?.localFile || image?.path || image?.url
+}
+
+export function getCacheBustedPreviewImageSource(
+  image: FileInfo | undefined,
+  cacheKey?: string | number
+): string | undefined {
+  return toCacheBustedFileUrl(getPreviewImageSource(image), cacheKey)
 }
 
 /**

@@ -135,7 +135,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import type { FileInfo } from '../../../shared/types'
-import { toCacheBustedFileUrl } from '../../utils/fileUtils'
+import { getCacheBustedPreviewImageSource, getPreviewImageSource } from '../../utils/fileUtils'
 
 interface Props {
   image?: FileInfo
@@ -153,7 +153,7 @@ const emit = defineEmits<Emits>()
 // 响应式数据
 const showAddTag = ref(false)
 const newTag = ref('')
-const imageSrc = computed(() => toCacheBustedFileUrl(props.image?.path || props.image?.url, props.cacheKey))
+const imageSrc = computed(() => getCacheBustedPreviewImageSource(props.image, props.cacheKey))
 
 const describeImage = (image?: FileInfo): Record<string, unknown> | null => {
   if (!image) return null
@@ -161,9 +161,11 @@ const describeImage = (image?: FileInfo): Record<string, unknown> | null => {
   return {
     id: image.id,
     name: image.name,
+    localFile: image.localFile,
     path: image.path,
     url: image.url,
     thumbnailPath: image.thumbnailPath,
+    previewSource: getPreviewImageSource(image),
     updatedAt: image.updatedAt
   }
 }

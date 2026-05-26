@@ -114,6 +114,7 @@ import ImageThumbnailListComponent from '../business/ImageThumbnailListComponent
 import ImageViewerComponent from '../business/ImageViewerComponent.vue'
 import ImageInfoComponent from '../business/ImageInfoComponent.vue'
 import { useImagePreviewController } from '../../controllers/ImagePreviewController'
+import { getPreviewImageSource } from '../../utils/fileUtils'
 
 // 使用控制器
 const controller = useImagePreviewController()
@@ -134,9 +135,11 @@ watch(
         ? {
             id: currentImage.id,
             name: currentImage.name,
+            localFile: currentImage.localFile,
             path: currentImage.path,
             url: currentImage.url,
             thumbnailPath: currentImage.thumbnailPath,
+            previewSource: getPreviewImageSource(currentImage),
             updatedAt: currentImage.updatedAt
           }
         : null
@@ -216,9 +219,11 @@ onMounted(() => {
       ? {
           id: controller.currentImage.value.id,
           name: controller.currentImage.value.name,
+          localFile: controller.currentImage.value.localFile,
           path: controller.currentImage.value.path,
           url: controller.currentImage.value.url,
-          thumbnailPath: controller.currentImage.value.thumbnailPath
+          thumbnailPath: controller.currentImage.value.thumbnailPath,
+          previewSource: getPreviewImageSource(controller.currentImage.value)
         }
       : null
   })
