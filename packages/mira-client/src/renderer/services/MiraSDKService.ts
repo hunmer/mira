@@ -103,6 +103,7 @@ export class MiraSDKService {
   private client: MiraClient | null = null
   private isConnected: boolean = false
   private connectionConfig: MiraConnectionConfig | null = null
+  private _pendingWebsocketUrl?: string
 
   /**
    * 连接到 Mira 服务器
@@ -125,8 +126,8 @@ export class MiraSDKService {
       await this.client.system().getSystemInfo()
       this.isConnected = true
 
-      // 自动初始化 WebSocket
-      this.autoInitializeWebSocket(config.websocketUrl)
+      // WebSocket 初始化延迟到 library 加载后执行（见 initializeHomeView）
+      this._pendingWebsocketUrl = config.websocketUrl
 
       console.log('MiraSDKService: Connected successfully')
       return { success: true, message: 'Connected to Mira server' }
@@ -141,27 +142,18 @@ export class MiraSDKService {
   }
 
   /**
-   * 自动初始化 WebSocket
+   * 在 library 加载完成后初始化 WebSocket（由 InitializationService 调用）
    */
-  private async autoInitializeWebSocket(websocketUrl?: string): Promise<void> {
-    if (!websocketUrl) {
-      console.log('MiraSDKService: No websocketUrl provided, skipping WebSocket init')
+  async initWebSocketForLibrary(libraryId: string): Promise<void> {
+    const wsUrl = this._pendingWebsocketUrl
+    if (!wsUrl) {
+      console.log('MiraSDKService: No websocketUrl, skipping WebSocket init')
       return
     }
-
     try {
-      const { useLibraryStore } = await import('../stores/library')
-      const libraryStore = useLibraryStore()
-      const libraryId = libraryStore.currentLibrary?.id
-
-      if (!libraryId) {
-        console.log('MiraSDKService: No active library, skipping WebSocket init')
-        return
-      }
-
-      await this.initializeWebSocket(websocketUrl, libraryId)
+      await this.initializeWebSocket(wsUrl, libraryId)
     } catch (error) {
-      console.warn('MiraSDKService: Auto WebSocket init failed (non-fatal)', error)
+      console.warn('MiraSDKService: WebSocket init failed (non-fatal)', error)
     }
   }
 

@@ -195,6 +195,12 @@ export class InitializationService {
       await this.loadFolderStructure(selectedLibraryId)
       initState.completeStep('加载文件夹结构')
 
+      // WebSocket 初始化（library 已确定）
+      try {
+        const { miraSDKService } = await import('../services/MiraSDKService')
+        await miraSDKService.initWebSocketForLibrary(selectedLibraryId)
+      } catch { /* non-fatal */ }
+
       // 第五步：加载标签列表
       initState.updateStep('加载标签列表', 90)
       await this.loadTagList(selectedLibraryId)
