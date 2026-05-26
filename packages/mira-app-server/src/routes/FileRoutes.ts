@@ -386,9 +386,17 @@ export class FileRoutes {
             }
         });
 
-        // 清空回收站
+        // 清空回收站（需要 admin 权限）
         this.router.delete('/:libraryId/trash', async (req: Request, res: Response) => {
             try {
+                const user = (req as any).user;
+                if (!user || user.role !== 'admin') {
+                    return res.status(403).json({
+                        success: false,
+                        error: '权限不足，清空回收站需要管理员权限',
+                    });
+                }
+
                 const { libraryId } = req.params;
                 const obj = this.backend.libraries!.getLibrary(libraryId);
 
@@ -651,6 +659,100 @@ export class FileRoutes {
                     data: null
                 });
             }
+        });
+
+        // 重命名文件（含同名检测）
+        this.router.post('/rename', async (req: Request, res: Response) => {
+            try {
+                const { libraryId, fileId, name } = req.body;
+
+                if (!libraryId || !fileId || !name) {
+                    return res.status(400).json({ code: 400, message: 'libraryId, fileId, name are required' });
+                }
+
+                const obj = this.backend.libraries!.getLibrary(libraryId);
+                if (!obj) return res.status(404).json({ code: 404, message: 'Library not found' });
+
+                const file = await obj.libraryService.getFile(parseInt(fileId));
+                if (!file) return res.status(404).json({ code: 404, message: 'File not found' });
+
+                // 同文件夹下同名检测
+                const { result: siblings } = await obj.libraryService.getFiles({
+                    filters: { folder: file.folder_id || '=null' },
+                });
+                const duplicate = siblings.find((f: any) => f.name === name && String(f.id) !== String(fileId));
+                if (duplicate) {
+                    return res.status(409).json({ code: 409, message: '同文件夹下已存在同名文件', data: { conflictId: duplicate.id } });
+                }
+
+                // 重命名物理文件
+                const oldPath = await obj.libraryService.getItemFilePath(file);
+                const updated = await obj.libraryService.updateFile(parseInt(fileId), { name });
+
+                if (updated && oldPath) {
+                    const dir = path.dirname(oldPath);
+                    const newPath = path.join(dir, name);
+                    if (fs.existsSync(oldPath) && oldPath !== newPath) {
+                        try { fs.renameSync(oldPath, newPath); } catch (e) { console.error('Rename file error:', e); }
+                    }
+                }
+
+                const result = await obj.libraryService.getFile(parseInt(fileId));
+                this.broadcastFileEvent('file::updated', libraryId, result, parseInt(fileId));
+
+                res.json({ code: 0, message: 'Success', data: result });
+            } catch (error) {
+                console.error('Error renaming file:', error);
+                res.status(500).json({ code: 500, message: 'Internal server error' });
+            }
+        });
+
+        // 更新文件元数据（website 等）
+        this.router.post('/update', async (req: Request, res: Response) => {
+            try {
+                const { libraryId, fileId, data } = req.body;
+
+                if (!libraryId || !fileId || !data) {
+                    return res.status(400).json({ code: 400, message: 'libraryId, fileId, data are required' });
+                }
+
+                const obj = this.backend.libraries!.getLibrary(libraryId);
+                if (!obj) return res.status(404).json({ code: 404, message: 'Library not found' });
+
+                const file = await obj.libraryService.getFile(parseInt(fileId));
+                if (!file) return res.status(404).json({ code: 404, message: 'File not found' });
+
+                // 将 camelCase 映射到 snake_case 列名
+                const updateData: Record<string, any> = {};
+                if (data.website !== undefined) updateData.website = data.website;
+                if (data.notes !== undefined) updateData.notes = data.notes;
+                if (data.stars !== undefined) updateData.stars = data.stars;
+                if (data.custom_fields !== undefined) updateData.custom_fields = typeof data.custom_fields === 'string' ? data.custom_fields : JSON.stringify(data.custom_fields);
+
+                if (Object.keys(updateData).length === 0) {
+                    return res.status(400).json({ code: 400, message: 'No valid fields to update' });
+                }
+
+                await obj.libraryService.updateFile(parseInt(fileId), updateData);
+                const result = await obj.libraryService.getFile(parseInt(fileId));
+                this.broadcastFileEvent('file::updated', libraryId, result, parseInt(fileId));
+
+                res.json({ code: 0, message: 'Success', data: result });
+            } catch (error) {
+                console.error('Error updating file:', error);
+                res.status(500).json({ code: 500, message: 'Internal server error' });
+            }
+        });
+    }
+
+    private broadcastFileEvent(event: string, libraryId: string, result: any, fileId: number) {
+        if (!this.backend.webSocketServer) return;
+        this.backend.webSocketServer.broadcastPluginEvent(event, {
+            message: { type: 'file', action: 'update' },
+            result, libraryId, fileId,
+        });
+        this.backend.webSocketServer.broadcastLibraryEvent(libraryId, event, {
+            ...result, libraryId, fileId,
         });
     }
 

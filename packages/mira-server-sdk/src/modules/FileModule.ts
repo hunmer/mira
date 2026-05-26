@@ -412,4 +412,35 @@ export class FileModule {
             }
         });
     }
+
+    /**
+     * 重命名文件（含同名检测）
+     * @param libraryId 素材库ID
+     * @param fileId 文件ID
+     * @param name 新文件名
+     * @returns Promise<FileData>
+     * @throws 409 同文件夹下已存在同名文件
+     */
+    async renameFile(libraryId: string, fileId: string | number, name: string): Promise<FileData> {
+        return await this.httpClient.post<FileData>('/api/files/rename', {
+            libraryId,
+            fileId: fileId.toString(),
+            name,
+        });
+    }
+
+    /**
+     * 更新文件元数据（website 等）
+     * @param libraryId 素材库ID
+     * @param fileId 文件ID
+     * @param data 更新数据
+     * @returns Promise<FileData>
+     */
+    async updateFile(libraryId: string, fileId: string | number, data: Record<string, any>): Promise<FileData> {
+        return await this.httpClient.post<FileData>('/api/files/update', {
+            libraryId,
+            fileId: fileId.toString(),
+            data,
+        });
+    }
 }

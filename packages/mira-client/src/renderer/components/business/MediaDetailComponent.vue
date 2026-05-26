@@ -103,10 +103,38 @@
         </div>
       </div>
     </div>
+    <!-- 文件名编辑 - 仅单选模式 -->
+    <div v-if="!isMultiSelect && displayItems[0]">
+      <label class="block text-xs font-medium text-gray-600 mb-1">文件名</label>
+      <input
+        v-model="editName"
+        type="text"
+        :class="['w-full text-sm border rounded-lg px-3 py-2 outline-none transition-colors', nameError ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-blue-400']"
+        :disabled="nameSaving"
+        @blur="handleNameBlur"
+        @keydown.enter="handleNameBlur"
+      />
+      <p v-if="nameError" class="text-xs text-red-500 mt-1">{{ nameError }}</p>
+    </div>
+
+    <!-- Website 编辑 - 仅单选模式 -->
+    <div v-if="!isMultiSelect && displayItems[0]">
+      <label class="block text-xs font-medium text-gray-600 mb-1">网址</label>
+      <input
+        v-model="editWebsite"
+        type="text"
+        placeholder="https://"
+        class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-blue-400 transition-colors"
+        :disabled="websiteSaving"
+        @blur="handleWebsiteBlur"
+        @keydown.enter="handleWebsiteBlur"
+      />
+    </div>
+
     <!-- 文件URL - 仅单选模式显示 -->
     <div v-if="!isMultiSelect && displayItems[0]?.url" class="flex items-center bg-gray-50 border border-gray-200 rounded-lg p-2">
       <span class="flex-1 text-xs truncate">{{ displayItems[0].url }}</span>
-      <button 
+      <button
         class="p-1 rounded-md hover:bg-gray-100"
         @click="copyToClipboard(displayItems[0].url)"
       >
@@ -324,6 +352,13 @@ const folderTreeNodes = computed(() =>
 // WebSocket 实时更新覆盖层
 const realtimeUpdates = ref<Map<string, Partial<FileInfo>>>(new Map())
 
+// 文件名/website 编辑状态
+const editName = ref('')
+const editWebsite = ref('')
+const nameError = ref('')
+const nameSaving = ref(false)
+const websiteSaving = ref(false)
+
 // 计算显示的文件列表（合并 WebSocket 实时更新）
 const displayItems = computed(() => {
   let base: FileInfo[]
@@ -377,6 +412,59 @@ onMounted(() => {
 onUnmounted(() => {
   webSocketService.removeEventListener('file::updated', handleFileWsUpdate)
 })
+
+// 文件切换时同步编辑值
+watch(displayItems, (items) => {
+  if (items.length === 1) {
+    editName.value = items[0].name || ''
+    editWebsite.value = (items[0] as any).website || ''
+    nameError.value = ''
+  }
+}, { immediate: true })
+
+// 文件名更新（blur/enter 触发）
+const handleNameBlur = async () => {
+  const file = displayItems.value[0]
+  if (!file || !editName.value.trim() || editName.value.trim() === file.name) {
+    editName.value = file?.name || ''
+    nameError.value = ''
+    return
+  }
+  const newName = editName.value.trim()
+  nameSaving.value = true
+  nameError.value = ''
+  try {
+    const libId = file.libraryId || libraryId?.value || 'default'
+    await miraSDKService.renameFile(libId, file.id, newName)
+  } catch (e: any) {
+    if (e?.response?.status === 409 || e?.response?.data?.code === 409) {
+      nameError.value = '同文件夹下已存在同名文件'
+    } else {
+      nameError.value = '重命名失败'
+      editName.value = file.name
+    }
+  } finally {
+    nameSaving.value = false
+  }
+}
+
+// website 更新（blur/enter 触发）
+const handleWebsiteBlur = async () => {
+  const file = displayItems.value[0]
+  if (!file) return
+  const newWebsite = editWebsite.value.trim()
+  const oldWebsite = (file as any).website || ''
+  if (newWebsite === oldWebsite) return
+  websiteSaving.value = true
+  try {
+    const libId = file.libraryId || libraryId?.value || 'default'
+    await miraSDKService.updateFile(libId, file.id, { website: newWebsite })
+  } catch {
+    editWebsite.value = oldWebsite
+  } finally {
+    websiteSaving.value = false
+  }
+}
 
 // 图片加载状态跟踪
 const imageLoadState = ref<'loading' | 'loaded' | 'error'>('loading')

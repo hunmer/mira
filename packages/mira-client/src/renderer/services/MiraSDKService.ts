@@ -690,6 +690,16 @@ export class MiraSDKService {
     }
   }
 
+  async renameFile(libraryId: string, fileId: string | number, name: string): Promise<any> {
+    if (!this.client) throw new Error('Not connected to Mira server')
+    return await this.client.files().renameFile(libraryId, fileId, name)
+  }
+
+  async updateFile(libraryId: string, fileId: string | number, data: Record<string, any>): Promise<any> {
+    if (!this.client) throw new Error('Not connected to Mira server')
+    return await this.client.files().updateFile(libraryId, fileId, data)
+  }
+
 
   /**
    * 库管理

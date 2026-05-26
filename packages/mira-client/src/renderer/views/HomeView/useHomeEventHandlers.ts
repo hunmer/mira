@@ -152,8 +152,11 @@ export function useHomeEventHandlers(
         switchToTabWithCallback(currentTab.id)
       }
       console.log(`已清空回收站，删除 ${result.deletedCount} 个文件`)
-    } catch (error) {
+    } catch (error: any) {
       console.error('清空回收站失败:', error)
+      if (error?.message?.includes('403') || error?.error?.includes('权限不足')) {
+        alert('权限不足，清空回收站需要管理员权限')
+      }
     }
   }
 
