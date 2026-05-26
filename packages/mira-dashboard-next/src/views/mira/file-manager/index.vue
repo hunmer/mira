@@ -307,8 +307,9 @@ onMounted(() => {
       <span>{{ t('common.total', { n: total }) }}</span>
     </div>
 
-    <!-- 文件网格 -->
-    <div v-if="items.length" class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+    <!-- 文件网格（固定高度 + 滚动） -->
+    <div class="h-[calc(100vh-16rem)] overflow-y-auto">
+      <div v-if="items.length" class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
       <div
         v-for="item in items"
         :key="item.path"
@@ -372,6 +373,7 @@ onMounted(() => {
       <Button variant="outline" @click="loadMore">
         {{ t('fileManager.loadMore') }}
       </Button>
+    </div>
     </div>
 
     <!-- 右键菜单（浮动） -->

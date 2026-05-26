@@ -124,24 +124,6 @@ export class LibraryModule {
     }
 
     /**
-     * 获取本地素材库列表
-     * @returns Promise<Library[]>
-     */
-    async getLocal(): Promise<Library[]> {
-        const libraries = await this.getAll();
-        return libraries.filter(lib => lib.type === 'local');
-    }
-
-    /**
-     * 获取远程素材库列表
-     * @returns Promise<Library[]>
-     */
-    async getRemote(): Promise<Library[]> {
-        const libraries = await this.getAll();
-        return libraries.filter(lib => lib.type === 'remote');
-    }
-
-    /**
      * 按状态筛选素材库
      * @param status 状态
      * @returns Promise<Library[]>
