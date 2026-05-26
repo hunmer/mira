@@ -30,6 +30,7 @@ COPY packages/mira-app-core/tsconfig.json ./packages/mira-app-core/
 COPY packages/mira-app-server/tsconfig.json ./packages/mira-app-server/
 COPY packages/mira-storage-sqlite/tsconfig.json ./packages/mira-storage-sqlite/
 COPY packages/mira-server-sdk/tsconfig.json ./packages/mira-server-sdk/
+COPY packages/mira-server-sdk/vite.esm.config.ts ./packages/mira-server-sdk/
 
 COPY packages/mira-app-core/src ./packages/mira-app-core/src
 COPY packages/mira-app-server/src ./packages/mira-app-server/src
