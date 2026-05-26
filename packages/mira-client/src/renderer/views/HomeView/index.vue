@@ -123,6 +123,14 @@ const {
 
 const authStore = useAuthStore()
 const router = useRouter()
+
+const userAvatarUrl = computed(() => {
+  const avatar = (authStore.user as any)?.avatar
+  if (!avatar) return ''
+  const base = (miraSDKService.getConnectionConfig()?.serverUrl || '').replace(/\/$/, '')
+  return `${base}${avatar}`
+})
+
 const handleLogout = async () => {
   await authStore.logout()
   router.push('/login')
@@ -212,9 +220,9 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="home-view h-screen flex flex-col bg-white text-sm">
+  <div class="home-view h-screen flex flex-col bg-white dark:bg-gray-900 text-sm">
     <!-- 顶部导航菜单 -->
-    <header class="w-full flex items-center justify-between p-2 border-b border-gray-200 bg-white">
+    <header class="w-full flex items-center justify-between p-2 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
       <div class="flex items-center flex-1 min-w-0">
         <!-- 素材库选择 -->
         <div class="flex items-center space-x-2 mr-6 shrink-0">
@@ -245,8 +253,8 @@ onUnmounted(() => {
                         :key="collection.id"
                         class="flex items-center justify-between p-2 rounded"
                         :class="canAccessLibrary(collection)
-                          ? 'hover:bg-gray-50 cursor-pointer'
-                          : 'opacity-50 cursor-not-allowed bg-gray-50'"
+                          ? 'hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer'
+                          : 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-gray-900'"
                         @click="onSelectCollection(collection, close)"
                       >
                         <div class="flex items-center space-x-2">
@@ -277,9 +285,9 @@ onUnmounted(() => {
                       <div class="text-xs mt-1">请先连接到服务器或添加素材库</div>
                     </div>
 
-                    <div class="border-t border-gray-200 mt-2 pt-2 space-y-1">
+                    <div class="border-t border-gray-200 dark:border-gray-700 mt-2 pt-2 space-y-1">
                       <button
-                        class="w-full flex items-center space-x-2 p-2 text-gray-600 hover:bg-gray-50 rounded text-sm"
+                        class="w-full flex items-center space-x-2 p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded text-sm"
                         @click="showLibraryManagement(); close()"
                       >
                         <span class="material-icons">settings</span>
@@ -334,15 +342,15 @@ onUnmounted(() => {
         <div class="flex items-center space-x-2 flex-1 min-w-0 overflow-hidden mt-2">
           <ContextMenu>
             <ContextMenuTrigger as-child>
-              <div class="flex bg-gray-100 rounded-lg p-1 overflow-x-auto max-w-full">
+              <div class="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1 overflow-x-auto max-w-full">
                 <button
                   v-for="tab in activeTabs"
                   :key="tab.id"
                   :class="[
                     'px-3 py-1.5 text-sm font-medium rounded-md flex items-center space-x-2 min-w-0',
                     tab.active
-                      ? 'text-blue-700 bg-white shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
+                      ? 'text-blue-700 dark:text-blue-400 bg-white dark:bg-gray-700 shadow-sm'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-white/50 dark:hover:bg-gray-700/50'
                   ]"
                   @click="switchToTabWithCallback(tab.id)"
                   @contextmenu="tab.type === 'home' ? $event.preventDefault() : handleTabContextMenu(tab, $event)"
@@ -429,7 +437,7 @@ onUnmounted(() => {
     <div class="flex flex-1 overflow-hidden">
       <ResizablePanelGroup direction="horizontal" auto-save-id="home-sidebar" class="flex-1">
         <!-- 左侧侧边栏 -->
-        <ResizablePanel :default-size="20" :min-size="15" class="bg-gray-50 border-r border-gray-200 flex flex-col overflow-hidden">
+        <ResizablePanel :default-size="20" :min-size="15" class="bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden">
           <!-- 文件夹树形导航 -->
           <div class="flex-grow p-2 overflow-y-auto min-w-0 space-y-4">
             <FolderTreeComponent
@@ -470,14 +478,14 @@ onUnmounted(() => {
             <div v-else class="flex items-center justify-center h-full">
               <div class="text-center">
                 <span class="material-icons text-6xl text-gray-400 mb-4">home</span>
-                <h2 class="text-xl font-semibold text-gray-600 mb-2">欢迎使用 Mira</h2>
+                <h2 class="text-xl font-semibold text-gray-600 dark:text-gray-300 mb-2">欢迎使用 Mira</h2>
                 <p class="text-gray-500">从左侧选择文件夹或标签来开始浏览您的媒体文件</p>
               </div>
             </div>
           </div>
 
           <!-- 右侧工具面板 - 始终显示 -->
-          <div class="w-12 shrink-0 bg-white border border-gray-200 rounded-lg flex flex-col items-center py-2 space-y-2">
+          <div class="w-12 shrink-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg flex flex-col items-center py-2 space-y-2">
             <!-- 文件上传按钮 -->
             <TooltipProvider>
               <Tooltip>
@@ -509,7 +517,7 @@ onUnmounted(() => {
             </TooltipProvider>
 
             <!-- 分隔线 -->
-            <div class="w-6 border-t border-gray-200"></div>
+            <div class="w-6 border-t border-gray-200 dark:border-gray-700"></div>
 
             <!-- 插件管理按钮 -->
             <TooltipProvider>
@@ -572,10 +580,10 @@ onUnmounted(() => {
                 </button>
               </template>
               <template #content="{ close }">
-                <div class="p-2">
-                  <div class="px-2 py-1.5 text-sm font-medium truncate">{{ authStore.userDisplayName }}</div>
+                <div class="p-3">
+                  <div class="text-sm font-medium truncate">{{ authStore.userDisplayName }}</div>
                   <div v-if="authStore.user?.role" class="px-2 pb-2 text-xs text-gray-500">{{ authStore.user.role }}</div>
-                  <div class="border-t border-gray-100 pt-1">
+                  <div class="border-t border-gray-100 dark:border-gray-700 pt-1">
                     <button
                       class="w-full flex items-center space-x-2 p-2 text-red-600 hover:bg-red-50 rounded text-sm"
                       @click="handleLogout(); close()"
@@ -614,12 +622,12 @@ onUnmounted(() => {
       v-if="showNoLibraryDialog"
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
     >
-      <div class="bg-white rounded-lg p-6 max-w-md mx-4">
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md mx-4">
         <div class="flex items-center mb-4">
           <span class="material-icons text-yellow-500 mr-3">warning</span>
           <h3 class="text-lg font-semibold">没有可用的素材库</h3>
         </div>
-        <p class="text-gray-600 mb-6">
+        <p class="text-gray-600 dark:text-gray-400 mb-6">
           系统检测到您还没有创建任何素材库。素材库是用来管理和组织您的媒体文件的。
         </p>
         <div class="flex justify-end space-x-3">
@@ -722,6 +730,18 @@ onUnmounted(() => {
 
 :deep(.overflow-y-auto::-webkit-scrollbar-thumb:hover) {
   background: #a8a8a8;
+}
+
+:deep(.dark .overflow-y-auto::-webkit-scrollbar-track) {
+  background: #374151;
+}
+
+:deep(.dark .overflow-y-auto::-webkit-scrollbar-thumb) {
+  background: #6b7280;
+}
+
+:deep(.dark .overflow-y-auto::-webkit-scrollbar-thumb:hover) {
+  background: #9ca3af;
 }
 
 /* 悬停效果 */

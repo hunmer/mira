@@ -1,12 +1,12 @@
 <template>
   <div class="menu-test-page">
     <div class="p-6 space-y-6">
-      <h2 class="text-2xl font-bold text-gray-800">菜单 API 测试</h2>
+      <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200">菜单 API 测试</h2>
       
       <!-- 菜单管理 -->
-      <div class="bg-white p-4 rounded-lg shadow">
+      <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
         <h3 class="text-lg font-semibold mb-4">菜单管理</h3>
-        
+
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <!-- 添加自定义菜单 -->
           <div class="space-y-2">
@@ -41,7 +41,7 @@
       </div>
 
       <!-- 菜单项管理 -->
-      <div class="bg-white p-4 rounded-lg shadow">
+      <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
         <h3 class="text-lg font-semibold mb-4">菜单项管理</h3>
         
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -76,24 +76,24 @@
       </div>
 
       <!-- 当前菜单状态 -->
-      <div class="bg-white p-4 rounded-lg shadow">
+      <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
         <h3 class="text-lg font-semibold mb-4">当前菜单状态</h3>
         
         <div class="space-y-4">
           <div v-for="menu in currentMenus" :key="menu.id" class="border rounded p-3">
-            <h4 class="font-medium text-gray-800">{{ menu.label }} ({{ menu.id }})</h4>
+            <h4 class="font-medium text-gray-800 dark:text-gray-200">{{ menu.label }} ({{ menu.id }})</h4>
             <ul class="mt-2 space-y-1">
               <li 
                 v-for="item in menu.submenu" 
                 :key="item.id"
-                class="text-sm text-gray-600 pl-4"
+                class="text-sm text-gray-600 dark:text-gray-400 pl-4"
                 :class="{
                   'text-gray-400': item.enabled === false,
                   'line-through': item.visible === false
                 }"
               >
                 {{ item.label || item.id }} 
-                <span v-if="item.accelerator" class="text-xs bg-gray-100 px-1 rounded">
+                <span v-if="item.accelerator" class="text-xs bg-gray-100 dark:bg-gray-700 px-1 rounded">
                   {{ item.accelerator }}
                 </span>
                 <span v-if="item.route" class="text-xs text-blue-500">
@@ -106,22 +106,22 @@
 
         <button
           @click="refreshMenuState"
-          class="mt-4 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+          class="mt-4 px-4 py-2 bg-gray-500 dark:bg-gray-600 text-white rounded hover:bg-gray-600"
         >
           刷新菜单状态
         </button>
       </div>
 
       <!-- 操作日志 -->
-      <div class="bg-white p-4 rounded-lg shadow">
+      <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
         <h3 class="text-lg font-semibold mb-4">操作日志</h3>
-        <div class="bg-gray-50 p-3 rounded h-40 overflow-y-auto">
+        <div class="bg-gray-50 dark:bg-gray-900 p-3 rounded h-40 overflow-y-auto">
           <div 
             v-for="(log, index) in logs" 
             :key="index"
-            class="text-sm text-gray-700 mb-1"
+            class="text-sm text-gray-700 dark:text-gray-300 mb-1"
           >
-            <span class="text-gray-500">{{ log.time }}</span> - {{ log.message }}
+            <span class="text-gray-500 dark:text-gray-400">{{ log.time }}</span> - {{ log.message }}
           </div>
         </div>
         <button
@@ -307,5 +307,9 @@ onMounted(() => {
 .menu-test-page {
   min-height: 100vh;
   background-color: #f5f5f5;
+}
+
+:root.dark .menu-test-page {
+  background-color: #111827;
 }
 </style>

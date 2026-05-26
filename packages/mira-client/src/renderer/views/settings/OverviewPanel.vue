@@ -7,8 +7,8 @@
           <div class="flex items-center gap-3 mb-3">
             <span class="material-icons text-2xl" :class="connectionStatusColor">language</span>
             <div>
-              <h3 class="font-semibold text-slate-900">连接状态</h3>
-              <p class="text-sm text-slate-600">{{ connectionStatusText }}</p>
+              <h3 class="font-semibold text-slate-900 dark:text-slate-100">连接状态</h3>
+              <p class="text-sm text-slate-600 dark:text-slate-400">{{ connectionStatusText }}</p>
             </div>
           </div>
           <div class="text-xs text-slate-500">
@@ -23,8 +23,8 @@
           <div class="flex items-center gap-3 mb-3">
             <span class="material-icons text-2xl text-blue-600">computer</span>
             <div>
-              <h3 class="font-semibold text-slate-900">系统信息</h3>
-              <p class="text-sm text-slate-600">{{ systemPlatform }}</p>
+              <h3 class="font-semibold text-slate-900 dark:text-slate-100">系统信息</h3>
+              <p class="text-sm text-slate-600 dark:text-slate-400">{{ systemPlatform }}</p>
             </div>
           </div>
           <div class="text-xs text-slate-500">

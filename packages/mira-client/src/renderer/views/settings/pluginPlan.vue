@@ -1,29 +1,29 @@
 <template>
   <div class="p-4 space-y-6">
     <div>
-      <h3 class="text-slate-900 text-lg font-bold leading-tight tracking-[-0.015em] pb-2 pt-4">插件目录配置</h3>
+      <h3 class="text-slate-900 dark:text-slate-100 text-lg font-bold leading-tight tracking-[-0.015em] pb-2 pt-4">插件目录配置</h3>
       <div class="space-y-4">
         <div>
-          <p class="text-slate-900 text-base font-normal leading-normal">当前插件目录</p>
+          <p class="text-slate-900 dark:text-slate-100 text-base font-normal leading-normal">当前插件目录</p>
           <div class="flex gap-2 mt-1">
             <Input v-model="pluginDirectory" placeholder="选择插件目录..." class="flex-1" readonly />
             <Button variant="secondary" @click="selectPluginDirectory">
               <i class="pi pi-folder-open mr-2"></i>浏览
             </Button>
           </div>
-          <p class="text-slate-600 text-sm">插件将从此目录加载，建议使用独立的文件夹</p>
+          <p class="text-slate-600 dark:text-slate-400 text-sm">插件将从此目录加载，建议使用独立的文件夹</p>
         </div>
 
         <div class="flex items-center justify-between py-2">
           <div>
-            <p class="text-slate-900 text-base font-normal leading-normal">自动扫描插件</p>
-            <p class="text-slate-600 text-sm">启动时自动扫描并加载插件目录中的插件</p>
+            <p class="text-slate-900 dark:text-slate-100 text-base font-normal leading-normal">自动扫描插件</p>
+            <p class="text-slate-600 dark:text-slate-400 text-sm">启动时自动扫描并加载插件目录中的插件</p>
           </div>
           <Switch :checked="autoScanEnabled" @update:checked="autoScanEnabled = $event" />
         </div>
 
         <div v-if="autoScanEnabled">
-          <p class="text-slate-900 text-base font-normal leading-normal">扫描间隔</p>
+          <p class="text-slate-900 dark:text-slate-100 text-base font-normal leading-normal">扫描间隔</p>
           <Select v-model="scanInterval" class="mt-1">
             <SelectTrigger class="w-full">
               <SelectValue placeholder="选择扫描间隔" />
@@ -32,7 +32,7 @@
               <SelectItem v-for="opt in scanIntervalOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</SelectItem>
             </SelectContent>
           </Select>
-          <p class="text-slate-600 text-sm">定期检查插件目录变化</p>
+          <p class="text-slate-600 dark:text-slate-400 text-sm">定期检查插件目录变化</p>
         </div>
       </div>
     </div>

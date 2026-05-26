@@ -3,10 +3,10 @@
     <div class="flex gap-6">
       <!-- 本地化设置 -->
       <div class="flex-1">
-        <h3 class="text-slate-900 text-lg font-bold leading-tight tracking-[-0.015em] pb-2 pt-4">本地化设置</h3>
+        <h3 class="text-slate-900 dark:text-slate-100 text-lg font-bold leading-tight tracking-[-0.015em] pb-2 pt-4">本地化设置</h3>
         <div class="flex flex-wrap items-end gap-4 py-3">
           <div class="flex flex-col min-w-40 flex-1">
-            <label class="text-slate-900 text-base font-medium leading-normal pb-2">语言</label>
+            <label class="text-slate-900 dark:text-slate-100 text-base font-medium leading-normal pb-2">语言</label>
             <Select
               :model-value="settingsStore.settings.language"
               @update:model-value="(value: any) => { settingsStore.settings.language = value; handleSettingChange('language', value) }"
@@ -24,7 +24,7 @@
 
       <!-- 主题设置 -->
       <div class="flex-1">
-        <h3 class="text-slate-900 text-lg font-bold leading-tight tracking-[-0.015em] pb-2 pt-4">主题设置</h3>
+        <h3 class="text-slate-900 dark:text-slate-100 text-lg font-bold leading-tight tracking-[-0.015em] pb-2 pt-4">主题设置</h3>
         <div class="flex flex-wrap gap-5 py-3">
           <ToggleGroup
             type="single"
