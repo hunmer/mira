@@ -785,6 +785,17 @@ const handleFilterChange = async (filter: FilterRule) => {
         delete mergedFilters.urls
       }
       break
+    case 'title':
+      if (filter.value !== undefined && filter.value !== null && filter.value.trim() !== '') {
+        mergedFilters.title = {
+          id: 'title',
+          value: filter.value.trim(),
+          label: '标题筛选'
+        }
+      } else {
+        delete mergedFilters.title
+      }
+      break
     case 'size':
       mergedFilters.size = {
         id: 'size',

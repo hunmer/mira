@@ -28,9 +28,3 @@ export const themeOptions = [
   { label: '自动', value: 'auto' }
 ]
 
-// 网格大小选项配置
-export const gridSizeOptions = [
-  { label: '小', value: 'small' },
-  { label: '中', value: 'medium' },
-  { label: '大', value: 'large' }
-]

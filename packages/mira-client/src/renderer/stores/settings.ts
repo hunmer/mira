@@ -9,11 +9,10 @@ export interface AppSettings {
   // 界面设置
   theme: 'light' | 'dark' | 'auto'
   language: string
-  gridSize: 'small' | 'medium' | 'large'
+
   defaultView: 'grid' | 'list' | 'waterfall'
   columnsPerRow: number
-  showThumbnails: boolean
-  compactMode: boolean
+
   sidebarWidth: number
   
   // 文件设置
@@ -78,7 +77,7 @@ export interface Settings {
   maxBackups: number
   showHiddenFiles: boolean
   defaultView: 'grid' | 'list' | 'waterfall'
-  gridSize: 'small' | 'medium' | 'large'
+
   columnsPerRow: number
   sortBy: 'name' | 'date' | 'size' | 'type'
   sortOrder: 'asc' | 'desc'
@@ -112,11 +111,11 @@ export const useSettingsStore = defineStore('settings', () => {
     // 界面设置
     theme: 'auto',
     language: 'zh-CN',
-    gridSize: 'medium',
+
     defaultView: 'grid',
     columnsPerRow: 4,
-    showThumbnails: true,
-    compactMode: false,
+
+
     sidebarWidth: 256,
     
     // 文件设置
@@ -359,11 +358,11 @@ export const useSettingsStore = defineStore('settings', () => {
     const defaultSettings: AppSettings = {
       theme: 'auto',
       language: 'zh-CN',
-      gridSize: 'medium',
+  
       defaultView: 'grid',
       columnsPerRow: 4,
-      showThumbnails: true,
-      compactMode: false,
+  
+  
       sidebarWidth: 256,
       autoSync: true,
       syncInterval: 300,
