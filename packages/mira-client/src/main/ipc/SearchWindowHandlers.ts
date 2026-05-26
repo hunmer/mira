@@ -160,7 +160,7 @@ export class SearchWindowHandlers {
       this.searchWindow.loadFile(searchPagePath)
     } else {
       // 开发环境：加载开发中的搜索窗口文件
-      const searchPagePath = require('path').join(__dirname, '../src/search-window.html')
+      const searchPagePath = require('path').join(__dirname, '../src/search-window/search-window.html')
       this.searchWindow.loadFile(searchPagePath)
     }
 
