@@ -20,7 +20,7 @@
           @click="handleContentClick"
         >
           <div 
-            class="bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden"
+            class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg dark:shadow-black/30 overflow-hidden"
             :style="{ minWidth: minWidth }"
           >
             <slot name="content" :close="close" />

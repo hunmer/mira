@@ -9,7 +9,7 @@
       </DialogHeader>
       <div class="plugins-content h-full flex">
         <!-- 侧边栏 -->
-        <aside class="w-56 border-r border-gray-200 dark:border-gray-700 flex flex-col">
+        <aside class="w-56 rounded-lg border border-gray-200 dark:border-gray-700 flex flex-col">
           <!-- 插件类型切换 -->
           <div class="p-4">
             <div class="bg-gray-200 dark:bg-gray-700 rounded-lg p-1 flex">
@@ -104,7 +104,7 @@
         </aside>
 
         <!-- 主内容区 -->
-        <main class="flex-1 flex flex-col bg-white dark:bg-gray-900">
+        <main class="flex-1 flex flex-col bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 ml-2">
           <!-- 顶部操作栏 -->
           <header class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
             <div class="flex items-center space-x-3">

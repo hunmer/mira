@@ -9,7 +9,7 @@
       </DialogHeader>
       <div class="settings-content h-full flex bg-gray-50 dark:bg-gray-900">
         <!-- 左侧分类面板 -->
-        <aside class="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
+        <aside class="w-64 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 flex flex-col">
           <div class="p-4 flex-1">
             <div class="flex flex-col gap-1">
               <div
@@ -27,7 +27,7 @@
         </aside>
 
         <!-- 右侧设置面板 -->
-        <main class="flex-1 flex flex-col bg-white dark:bg-gray-800">
+        <main class="flex-1 flex flex-col bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 ml-2">
           <div class="p-4 border-b border-gray-200 dark:border-gray-700">
             <p class="text-gray-900 dark:text-gray-100 text-2xl font-bold">{{ getCurrentSectionName() }}</p>
           </div>

@@ -9,7 +9,7 @@ export function useFileManagement() {
   const pendingFiles = ref<PendingFile[]>([])
   const selectedPendingIds = ref<string[]>([])
   const isDragOver = ref(false)
-  const columnsPerRow = ref(5)
+  const columnsPerRow = ref(8)
 
   function addFiles(files: File[], defaultFolderId?: string, defaultTagIds?: string[]) {
     if (files.length + pendingFiles.value.length > FILE_LIMITS.MAX_FILES_PER_BATCH) {
