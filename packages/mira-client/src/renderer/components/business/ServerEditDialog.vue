@@ -519,11 +519,6 @@ const smbEnabled = computed({
   }
 })
 
-// 监听 SMB 状态变化（调试用）
-watch(() => formData.value.smbEnabled, (newValue) => {
-  console.log('SMB status changed:', newValue)
-})
-
 const validateForm = () => {
   errors.value = {}
 

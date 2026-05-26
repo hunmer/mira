@@ -477,7 +477,11 @@ export class MiraSDKService {
 
       // 获取部署环境信息
       const { useSettingsStore } = await import('../stores/settings')
-      const isDocker = useSettingsStore().systemHealth?.isDocker ?? false
+      const settingsStore = useSettingsStore()
+      if (!settingsStore.systemHealth) {
+        await settingsStore.getSystemHealth()
+      }
+      const isDocker = settingsStore.systemHealth?.isDocker ?? false
       let smbConfig: { enabled?: boolean; smbPath?: string; mountPath?: string } | null = null
       if (isDocker) {
         const { useServerListStore } = await import('../stores/serverList')
@@ -510,30 +514,35 @@ export class MiraSDKService {
       }
       // 转换为 FileInfo 类型
       const fileInfos: FileInfo[] = files.result.map((file: any) => {
-        let localFile: string | undefined = file.file_path
-        let thumbnailPath = file.thumb_path || file.thumb
+        let localFile: string | undefined
+        let thumbnailPath: string | undefined
 
-        // Docker 环境 + SMB：将服务端路径映射为 SMB 本地路径
-        if (isDocker && smbConfig?.enabled && smbConfig.smbPath) {
-          const smbPath = smbConfig.smbPath
-          const sep = smbPath.includes('/') ? '/' : '\\'
-          const normalizedSmbPath = smbPath.endsWith(sep) ? smbPath : smbPath + sep
+        if (isDocker) {
+          // Docker 环境：需要 SMB 映射才能访问本地路径，否则用 HTTP URL
+          if (smbConfig?.enabled && smbConfig.smbPath) {
+            const smbPath = smbConfig.smbPath
+            const sep = smbPath.includes('/') ? '/' : '\\'
+            const normalizedSmbPath = smbPath.endsWith(sep) ? smbPath : smbPath + sep
 
-          if (smbConfig.mountPath && file.file_path) {
-            // 用 mountPath 替换服务端路径前缀为 SMB 路径
-            const mountPrefix = smbConfig.mountPath.endsWith('/') ? smbConfig.mountPath : smbConfig.mountPath + '/'
-            localFile = file.file_path.replace(mountPrefix, normalizedSmbPath).replace(/\//g, sep)
-            if (file.thumb_path) {
-              thumbnailPath = file.thumb_path.replace(mountPrefix, normalizedSmbPath).replace(/\//g, sep)
+            if (smbConfig.mountPath && file.file_path) {
+              const mountPrefix = smbConfig.mountPath.endsWith('/') ? smbConfig.mountPath : smbConfig.mountPath + '/'
+              localFile = file.file_path.replace(mountPrefix, normalizedSmbPath).replace(/\//g, sep)
+              if (file.thumb_path) {
+                thumbnailPath = file.thumb_path.replace(mountPrefix, normalizedSmbPath).replace(/\//g, sep)
+              }
+            } else {
+              if (file.folder_name && file.name) {
+                localFile = normalizedSmbPath + file.folder_name + sep + file.name
+              }
+              const thumbFileName = file.hash ? `${file.hash}.png` : `${file.id}.png`
+              thumbnailPath = normalizedSmbPath + 'thumbs' + sep + thumbFileName
             }
-          } else {
-            // 回退：从元数据构建
-            if (file.folder_name && file.name) {
-              localFile = normalizedSmbPath + file.folder_name + sep + file.name
-            }
-            const thumbFileName = file.hash ? `${file.hash}.png` : `${file.id}.png`
-            thumbnailPath = normalizedSmbPath + 'thumbs' + sep + thumbFileName
           }
+          // Docker 无 SMB：localFile 和 thumbnailPath 都留空，回退到 HTTP URL
+        } else {
+          // 本地部署：服务端路径就是本机路径，直接用
+          localFile = file.file_path
+          thumbnailPath = file.thumb_path
         }
 
         return {
@@ -548,7 +557,7 @@ export class MiraSDKService {
           tags: typeof file.tags === 'string' ? JSON.parse(file.tags || '[]') : (file.tags || []),
           folderId: file.folder_id?.toString(),
           hash: file.hash || '',
-          thumbnailPath: appendToken(toFileUrl(thumbnailPath)),
+          thumbnailPath: appendToken(toFileUrl(thumbnailPath || file.thumb)),
           libraryId: libraryId,
           localFile: localFile || file.localFile || (() => {
             try {
