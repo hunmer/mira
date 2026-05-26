@@ -244,6 +244,7 @@ export class ThumbnailService {
       select: 'id,hash,thumb',
       filters: { limit: 9999999 },
       isUrlFile: false,
+      countFile: true,
     })).result;
 
     let synced = 0;
