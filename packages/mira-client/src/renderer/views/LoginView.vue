@@ -1,5 +1,12 @@
 <template>
   <div class="login-view">
+    <Aurora
+      :color-stops="['#3A29FF', '#FF94B4', '#FF3232']"
+      :amplitude="1.0"
+      :blend="0.5"
+      :speed="0.5"
+      class="aurora-bg"
+    />
     <div class="login-container">
       <!-- Close button -->
       <button class="header-button close-button" @click="handleClose" title="关闭">
@@ -177,6 +184,7 @@ import { reactive, ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useServerListStore } from '../stores/serverList'
+import Aurora from '@/components/Aurora.vue'
 import {
   Stepper, StepperItem, StepperTrigger, StepperIndicator,
 } from '@/components/ui/stepper'
@@ -417,20 +425,18 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background-image: url('https://images.unsplash.com/photo-1531297484001-80022131f5a1?q=80&w=2020&auto=format&fit=crop');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  background: #0a0a0a;
   font-family: Inter, 'Noto Sans', sans-serif;
   position: relative;
+  overflow: hidden;
 }
 
-.login-view::before {
-  content: '';
+.aurora-bg {
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(248, 250, 252, 0.2);
-  backdrop-filter: blur(4px);
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
 }
 
 .login-container {
@@ -439,11 +445,11 @@ onMounted(async () => {
   width: 100%;
   max-width: 440px;
   padding: 2rem;
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(12px);
   border-radius: 0.75rem;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .header-button {
