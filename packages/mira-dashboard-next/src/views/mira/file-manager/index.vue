@@ -1,0 +1,438 @@
+<script setup lang="ts">
+import { ref, computed, watch, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useLibrary } from '@/composables/useLibrary'
+import { fileManagerApi } from '@/api'
+import PathTreeSelect from '@/components/PathTreeSelect.vue'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from '@/components/ui/dialog'
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  RiFolderLine, RiFileLine, RiMoreLine, RiHome4Line,
+  RiCheckboxBlankLine, RiCheckboxCircleLine, RiDeleteBinLine, RiDragMoveLine,
+} from '@remixicon/vue'
+import { toast } from 'vue-sonner'
+
+interface FileItem {
+  name: string
+  path: string
+  isDir: boolean
+  size: number
+  modified: string
+  extension?: string
+}
+
+const { t } = useI18n()
+const { selectedId: selectedLibraryId, selectedLibrary } = useLibrary()
+
+const items = ref<FileItem[]>([])
+const total = ref(0)
+const loading = ref(false)
+const currentPath = ref('')
+const offset = ref(0)
+const limit = 50
+
+const selected = ref<Set<string>>(new Set())
+const contextMenuTarget = ref<FileItem | null>(null)
+const contextMenuPos = ref({ x: 0, y: 0 })
+const showContextMenu = ref(false)
+
+// 移动对话框
+const moveDialogVisible = ref(false)
+const moveSource = ref('')
+const moveTargetPath = ref('')
+const moveLoading = ref(false)
+
+// 删除确认
+const deleteDialogVisible = ref(false)
+const deletePaths = ref<string[]>([])
+const deleteLoading = ref(false)
+
+const breadcrumbs = computed(() => {
+  if (!currentPath.value) return []
+  return currentPath.value.split(/[/\\]/).filter(Boolean)
+})
+
+const hasMore = computed(() => offset.value + limit < total.value)
+
+const allSelected = computed(() =>
+  items.value.length > 0 && items.value.every(item => selected.value.has(item.path)),
+)
+
+function formatSize(bytes: number) {
+  if (bytes === 0) return '-'
+  const units = ['B', 'KB', 'MB', 'GB']
+  let i = 0
+  let size = bytes
+  while (size >= 1024 && i < units.length - 1) { size /= 1024; i++ }
+  return `${size.toFixed(i === 0 ? 0 : 1)} ${units[i]}`
+}
+
+function fileIconClass(item: FileItem) {
+  if (item.isDir) return 'text-blue-500'
+  const ext = item.extension?.toLowerCase()
+  if (['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'].includes(ext || '')) return 'text-green-500'
+  if (['.mp4', '.avi', '.mkv', '.mov', '.wmv'].includes(ext || '')) return 'text-purple-500'
+  if (['.mp3', '.wav', '.flac', '.aac', '.ogg'].includes(ext || '')) return 'text-orange-500'
+  return 'text-muted-foreground'
+}
+
+async function loadItems(append = false) {
+  if (!selectedLibraryId.value) return
+  loading.value = true
+  try {
+    const res = await fileManagerApi.list({
+      libraryId: selectedLibraryId.value,
+      path: currentPath.value || undefined,
+      offset: append ? offset.value : 0,
+      limit,
+    })
+    const data = res.data
+    if (append) {
+      items.value.push(...data.items)
+    } else {
+      items.value = data.items
+    }
+    total.value = data.total
+    offset.value = append ? offset.value + data.items.length : data.items.length
+  } catch (e: any) {
+    toast.error(e.response?.data?.error || t('fileManager.loadFailed'))
+  } finally {
+    loading.value = false
+  }
+}
+
+function navigateTo(dirPath: string) {
+  currentPath.value = dirPath
+  offset.value = 0
+  selected.value.clear()
+  loadItems()
+}
+
+function navigateBreadcrumb(index: number) {
+  const parts = currentPath.value.split(/[/\\]/).filter(Boolean)
+  navigateTo(parts.slice(0, index + 1).join('/'))
+}
+
+function openItem(item: FileItem) {
+  if (item.isDir) {
+    navigateTo(item.path)
+  }
+}
+
+function toggleSelect(item: FileItem) {
+  if (selected.value.has(item.path)) {
+    selected.value.delete(item.path)
+  } else {
+    selected.value.add(item.path)
+  }
+}
+
+function toggleSelectAll() {
+  if (allSelected.value) {
+    selected.value.clear()
+  } else {
+    items.value.forEach(item => selected.value.add(item.path))
+  }
+}
+
+// 右键菜单
+function onContextMenu(e: MouseEvent, item: FileItem) {
+  e.preventDefault()
+  contextMenuTarget.value = item
+  contextMenuPos.value = { x: e.clientX, y: e.clientY }
+  showContextMenu.value = true
+  // 点击其他地方关闭
+  setTimeout(() => {
+    document.addEventListener('click', closeContextMenu, { once: true })
+  }, 0)
+}
+
+function closeContextMenu() {
+  showContextMenu.value = false
+  contextMenuTarget.value = null
+}
+
+function openMoveDialog(source: string) {
+  moveSource.value = source
+  moveTargetPath.value = ''
+  moveDialogVisible.value = true
+  closeContextMenu()
+}
+
+function openDeleteDialog(paths: string[]) {
+  deletePaths.value = paths
+  deleteDialogVisible.value = true
+  closeContextMenu()
+}
+
+async function handleMove(destPath: string) {
+  if (!destPath || !selectedLibraryId.value) return
+  moveLoading.value = true
+  try {
+    await fileManagerApi.move({
+      libraryId: selectedLibraryId.value,
+      source: moveSource.value,
+      destination: destPath,
+    })
+    toast.success(t('fileManager.moveSuccess'))
+    moveDialogVisible.value = false
+    loadItems()
+  } catch (e: any) {
+    toast.error(e.response?.data?.error || t('fileManager.moveFailed'))
+  } finally {
+    moveLoading.value = false
+  }
+}
+
+async function handleDelete() {
+  if (!selectedLibraryId.value) return
+  deleteLoading.value = true
+  try {
+    await fileManagerApi.remove({
+      libraryId: selectedLibraryId.value,
+      paths: deletePaths.value,
+    })
+    toast.success(t('fileManager.deleteSuccess'))
+    deleteDialogVisible.value = false
+    selected.value.clear()
+    loadItems()
+  } catch (e: any) {
+    toast.error(e.response?.data?.error || t('fileManager.deleteFailed'))
+  } finally {
+    deleteLoading.value = false
+  }
+}
+
+function batchMove() {
+  if (selected.value.size === 1) {
+    openMoveDialog([...selected.value][0])
+  }
+}
+
+function batchDelete() {
+  if (selected.value.size > 0) {
+    openDeleteDialog([...selected.value])
+  }
+}
+
+function loadMore() {
+  loadItems(true)
+}
+
+watch(selectedLibraryId, () => {
+  currentPath.value = ''
+  offset.value = 0
+  selected.value.clear()
+  if (selectedLibraryId.value) loadItems()
+})
+
+onMounted(() => {
+  if (selectedLibraryId.value) loadItems()
+})
+</script>
+
+<template>
+  <div class="space-y-4" @click="closeContextMenu">
+    <!-- 头部 -->
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h1 class="text-2xl font-bold tracking-normal">{{ t('fileManager.title') }}</h1>
+        <p class="mt-1 text-sm text-muted-foreground">{{ t('fileManager.subtitle') }}</p>
+      </div>
+      <div class="flex gap-2">
+        <Button
+          v-if="selected.size > 0"
+          variant="outline"
+          size="sm"
+          :disabled="selected.size !== 1"
+          @click="batchMove"
+        >
+          <RiDragMoveLine class="mr-1 size-4" />
+          {{ t('fileManager.move') }}
+        </Button>
+        <Button
+          v-if="selected.size > 0"
+          variant="destructive"
+          size="sm"
+          @click="batchDelete"
+        >
+          <RiDeleteBinLine class="mr-1 size-4" />
+          {{ t('fileManager.delete') }}
+        </Button>
+        <Button variant="outline" size="sm" :disabled="!selectedLibraryId || loading" @click="loadItems()">
+          {{ t('common.refresh') }}
+        </Button>
+      </div>
+    </div>
+
+    <!-- 面包屑 -->
+    <Card class="flex items-center gap-1 px-3 py-2">
+      <button
+        class="inline-flex items-center gap-1 rounded px-2 py-1 text-sm hover:bg-accent"
+        @click="navigateTo('')"
+      >
+        <RiHome4Line class="size-4" />
+        <span>{{ selectedLibrary?.name || 'Root' }}</span>
+      </button>
+      <template v-for="(seg, i) in breadcrumbs" :key="i">
+        <span class="text-muted-foreground">/</span>
+        <button
+          class="rounded px-2 py-1 text-sm hover:bg-accent"
+          :class="{ 'font-medium': i === breadcrumbs.length - 1 }"
+          @click="navigateBreadcrumb(i)"
+        >
+          {{ seg }}
+        </button>
+      </template>
+    </Card>
+
+    <!-- 工具栏 -->
+    <div v-if="items.length" class="flex items-center gap-2 text-sm text-muted-foreground">
+      <button class="inline-flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-accent" @click="toggleSelectAll">
+        <RiCheckboxCircleLine v-if="allSelected" class="size-4 text-primary" />
+        <RiCheckboxBlankLine v-else class="size-4" />
+      </button>
+      <span v-if="selected.size">{{ t('fileManager.selected', { n: selected.size }) }}</span>
+      <span>{{ t('common.total', { n: total }) }}</span>
+    </div>
+
+    <!-- 文件网格 -->
+    <div v-if="items.length" class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+      <div
+        v-for="item in items"
+        :key="item.path"
+        class="group relative flex cursor-pointer flex-col items-center rounded-lg border p-3 transition-colors hover:bg-accent/50"
+        :class="{ 'border-primary bg-primary/5': selected.has(item.path) }"
+        @click.exact="toggleSelect(item)"
+        @dblclick="openItem(item)"
+        @contextmenu="onContextMenu($event, item)"
+      >
+        <!-- 选择框 -->
+        <div class="absolute left-2 top-2 opacity-0 group-hover:opacity-100" :class="{ '!opacity-100': selected.has(item.path) }">
+          <RiCheckboxCircleLine v-if="selected.has(item.path)" class="size-4 text-primary" />
+          <RiCheckboxBlankLine v-else class="size-4 text-muted-foreground" />
+        </div>
+
+        <component :is="item.isDir ? RiFolderLine : RiFileLine" class="size-10 mb-2" :class="fileIconClass(item)" />
+
+        <span class="w-full truncate text-center text-sm" :title="item.name">{{ item.name }}</span>
+        <span class="text-xs text-muted-foreground">
+          {{ item.isDir ? t('fileManager.folder') : formatSize(item.size) }}
+        </span>
+
+        <!-- 右键菜单触发按钮 -->
+        <DropdownMenu>
+          <DropdownMenuTrigger as-child>
+            <button
+              class="absolute right-2 top-2 rounded p-1 opacity-0 hover:bg-accent group-hover:opacity-100"
+              @click.stop
+            >
+              <RiMoreLine class="size-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem v-if="item.isDir" @click="navigateTo(item.path)">
+              <RiFolderLine class="mr-2 size-4" /> {{ t('fileManager.open') }}
+            </DropdownMenuItem>
+            <DropdownMenuItem @click="openMoveDialog(item.path)">
+              <RiDragMoveLine class="mr-2 size-4" /> {{ t('fileManager.move') }}
+            </DropdownMenuItem>
+            <DropdownMenuItem class="text-destructive" @click="openDeleteDialog([item.path])">
+              <RiDeleteBinLine class="mr-2 size-4" /> {{ t('fileManager.delete') }}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </div>
+
+    <!-- 空状态 -->
+    <div v-else-if="!loading" class="flex flex-col items-center justify-center py-20 text-muted-foreground">
+      <RiFolderLine class="size-12 mb-3 opacity-50" />
+      <p>{{ t('fileManager.empty') }}</p>
+    </div>
+
+    <!-- 加载中 -->
+    <div v-if="loading" class="flex justify-center py-8">
+      <span class="size-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+    </div>
+
+    <!-- 加载更多 -->
+    <div v-if="hasMore && !loading" class="flex justify-center">
+      <Button variant="outline" @click="loadMore">
+        {{ t('fileManager.loadMore') }}
+      </Button>
+    </div>
+
+    <!-- 右键菜单（浮动） -->
+    <Teleport to="body">
+      <div
+        v-if="showContextMenu && contextMenuTarget"
+        class="fixed z-50 min-w-[160px] rounded-md border bg-popover p-1 shadow-md"
+        :style="{ left: contextMenuPos.x + 'px', top: contextMenuPos.y + 'px' }"
+      >
+        <button
+          v-if="contextMenuTarget.isDir"
+          class="flex w-full items-center gap-2 rounded-sm px-3 py-1.5 text-sm hover:bg-accent"
+          @click="navigateTo(contextMenuTarget!.path); closeContextMenu()"
+        >
+          <RiFolderLine class="size-4" /> {{ t('fileManager.open') }}
+        </button>
+        <button
+          class="flex w-full items-center gap-2 rounded-sm px-3 py-1.5 text-sm hover:bg-accent"
+          @click="openMoveDialog(contextMenuTarget!.path)"
+        >
+          <RiDragMoveLine class="size-4" /> {{ t('fileManager.move') }}
+        </button>
+        <button
+          class="flex w-full items-center gap-2 rounded-sm px-3 py-1.5 text-sm text-destructive hover:bg-accent"
+          @click="openDeleteDialog([contextMenuTarget!.path])"
+        >
+          <RiDeleteBinLine class="size-4" /> {{ t('fileManager.delete') }}
+        </button>
+      </div>
+    </Teleport>
+
+    <!-- 移动对话框 -->
+    <Dialog :open="moveDialogVisible" @update:open="moveDialogVisible = $event">
+      <DialogContent class="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{{ t('fileManager.moveTitle') }}</DialogTitle>
+        </DialogHeader>
+        <p class="text-sm text-muted-foreground">{{ t('fileManager.moveDesc', { name: moveSource.split(/[/\\]/).pop() }) }}</p>
+        <PathTreeSelect v-model="moveTargetPath" :placeholder="t('fileManager.selectTarget')" />
+        <DialogFooter>
+          <Button variant="outline" @click="moveDialogVisible = false">{{ t('common.cancel') }}</Button>
+          <Button :disabled="!moveTargetPath || moveLoading" @click="handleMove(moveTargetPath)">
+            <span v-if="moveLoading" class="mr-1 size-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            {{ t('fileManager.move') }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <!-- 删除确认对话框 -->
+    <Dialog :open="deleteDialogVisible" @update:open="deleteDialogVisible = $event">
+      <DialogContent class="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>{{ t('fileManager.deleteTitle') }}</DialogTitle>
+        </DialogHeader>
+        <p class="text-sm text-muted-foreground">
+          {{ t('fileManager.deleteConfirm', { n: deletePaths.length }) }}
+        </p>
+        <DialogFooter>
+          <Button variant="outline" @click="deleteDialogVisible = false">{{ t('common.cancel') }}</Button>
+          <Button variant="destructive" :disabled="deleteLoading" @click="handleDelete">
+            <span v-if="deleteLoading" class="mr-1 size-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            {{ t('common.delete') }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  </div>
+</template>

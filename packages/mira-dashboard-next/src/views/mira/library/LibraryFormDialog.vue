@@ -41,8 +41,6 @@ const form = defineModel<LibraryFormData | null>({ required: true })
 
 const ROLES = ['super', 'admin', 'user'] as const
 
-const showServerFields = () => true
-
 const toggleRole = (role: string) => {
   if (!form.value) return
   const roles = new Set(form.value.allowedRoles || [])
@@ -91,16 +89,6 @@ const toggleRole = (role: string) => {
           <input id="enableAutoSync" v-model="form.enableAutoSync" type="checkbox" class="size-4 rounded border-input" />
           <Label for="enableAutoSync">{{ t('library.enableAutoSync') }}</Label>
         </div>
-        <template v-if="showServerFields()">
-          <div class="space-y-2">
-            <Label>{{ t('library.serverURL') }}</Label>
-            <Input v-model="form.serverURL" :placeholder="t('library.serverURLPlaceholder')" />
-          </div>
-          <div class="space-y-2">
-            <Label>{{ t('library.serverPort') }}</Label>
-            <Input v-model="form.serverPort" :placeholder="t('library.serverPortPlaceholder')" />
-          </div>
-        </template>
         <div class="space-y-2">
           <Label>{{ t('library.pluginsDir') }}</Label>
           <PathTreeSelect v-model="form.pluginsDir" :placeholder="t('library.pluginsDirPlaceholder')" />
