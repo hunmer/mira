@@ -126,6 +126,7 @@ import { Progress } from '@/components/ui/progress'
 // 初始化搜索处理器（仅在 Electron 环境中，且避免重复初始化）
 import { SearchHandlers } from './services/SearchHandlers'
 import { environment } from './utils'
+import { useTabs } from './composables/useTabs'
 
 // 全局快捷键系统
 import { useAutoShortcuts } from './composables/useShortcuts'
@@ -337,15 +338,15 @@ const setupElectronListeners = () => {
   })
 
   // 监听 openTab 协议事件（来自 dashboard 等外部来源）
-  window.electronAPI.on('protocol:open-tab', (data: { type: string; tabType: string; id: string | number; name: string; libraryId?: string }) => {
+  window.electronAPI.on('protocol:open-tab', (data: any) => {
     console.log('Received openTab protocol:', data)
-    const { useTabs } = require('./composables/useTabs')
+    if (!data || !data.tabType) return
     const tabs = useTabs()
 
     if (data.tabType === 'folder') {
-      tabs.createTabFromFolder({ id: data.id, title: data.name }, data.libraryId)
+      tabs.createTabFromFolder({ id: String(data.id), title: data.name }, data.libraryId)
     } else if (data.tabType === 'tag') {
-      tabs.createTabFromTag({ id: data.id, title: data.name }, data.libraryId)
+      tabs.createTabFromTag({ id: String(data.id), title: data.name }, data.libraryId)
     }
   })
   

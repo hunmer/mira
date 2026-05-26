@@ -233,8 +233,8 @@ async function showUserDialog(uploaderId: number | null) {
 // ---- mira:// 协议链接 ----
 function createMiraUrl(tabType: 'folder' | 'tag', id: number | null, name: string) {
   if (id == null) return ''
-  const data = { type: 'openTab', tabType, id, name, libraryId: selectedLibraryId.value }
-  const json = JSON.stringify(data)
+  const payload = { type: 'openTab', data: { tabType, id, name, libraryId: selectedLibraryId.value } }
+  const json = JSON.stringify(payload)
   const base64 = btoa(unescape(encodeURIComponent(json)))
   return `mira://?json=${base64}`
 }
