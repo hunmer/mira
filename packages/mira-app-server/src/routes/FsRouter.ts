@@ -1,7 +1,9 @@
 import { Router, Request, Response } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
+import fg from 'fast-glob';
 import { MiraServer } from '..';
+import { LibraryServerDataSQLite } from 'mira-storage-sqlite';
 
 interface FileEntry {
     name: string;
@@ -221,6 +223,119 @@ export class FsRouter {
                 res.status(500).json({ error: error.message || 'Failed to delete' });
             }
         });
+
+        // 同步：对比磁盘文件与数据库记录
+        this.router.post('/sync', async (req: Request, res: Response) => {
+            try {
+                const { libraryId } = req.body;
+                if (!libraryId) {
+                    res.status(400).json({ error: 'libraryId is required' });
+                    return;
+                }
+
+                const lib = this.backend?.libraries?.getLibrary(libraryId);
+                const dbService = lib?.libraryService as LibraryServerDataSQLite | undefined;
+                const libraryPath = this.getLibraryPath(libraryId);
+
+                if (!dbService || !libraryPath) {
+                    res.status(400).json({ error: 'Invalid libraryId or library not active' });
+                    return;
+                }
+
+                const result = await this.syncLibrary(libraryPath, dbService);
+                res.json({ success: true, data: result });
+            } catch (error: any) {
+                res.status(500).json({ error: error.message || 'Failed to sync' });
+            }
+        });
+    }
+
+    private async scanDiskFiles(libraryPath: string): Promise<string[]> {
+        const entries = await fg('**/*', {
+            cwd: libraryPath,
+            absolute: true,
+            dot: false,
+            ignore: [
+                'thumbs/**',
+                'thumbs',
+                '**/thumbs/**',
+                '**/.*',
+                '**/*.db',
+                '**/*.db-journal',
+                '**/*.db-wal',
+                '**/*.db-shm',
+                '**/*.tmp',
+                '**/*.temp',
+            ],
+            onlyFiles: true,
+            suppressErrors: true,
+        });
+        // 过滤掉空文件
+        return entries.filter((p) => {
+            try { return fs.statSync(p).size > 0; } catch { return false; }
+        });
+    }
+
+    private async syncLibrary(
+        libraryPath: string,
+        dbService: LibraryServerDataSQLite,
+    ): Promise<{ scanned: number; added: number; removed: number }> {
+        const diskFiles = await this.scanDiskFiles(libraryPath);
+        const diskSet = new Set(diskFiles);
+
+        const dbFiles = (await dbService.getFiles({
+            select: 'id,path',
+            filters: { limit: 9999999 },
+            isUrlFile: false,
+        })).result;
+
+        let added = 0;
+        let removed = 0;
+
+        // 移除数据库中不存在于磁盘的记录
+        for (const file of dbFiles) {
+            if (!diskSet.has(file.path)) {
+                await dbService.deleteFile(file.id);
+                removed++;
+            }
+        }
+
+        // 添加磁盘中存在但数据库中没有的文件
+        const dbPathSet = new Set(dbFiles.map((f: any) => f.path));
+        for (const filePath of diskFiles) {
+            if (!dbPathSet.has(filePath)) {
+                const fileData: Record<string, any> = {};
+                const folderId = await this.resolveFolder(filePath, libraryPath, dbService);
+                if (folderId) fileData.folder_id = folderId;
+                await dbService.createFileFromPath(filePath, fileData, { importType: 'link' });
+                added++;
+            }
+        }
+
+        return { scanned: diskFiles.length, added, removed };
+    }
+
+    private async resolveFolder(
+        filePath: string,
+        libraryPath: string,
+        dbService: LibraryServerDataSQLite,
+    ): Promise<number | null> {
+        const rel = path.relative(libraryPath, path.dirname(filePath));
+        if (!rel) return null;
+        const parts = rel.replace(/\\/g, '/').split('/');
+        let parentId: number | null = null;
+        for (const part of parts) {
+            if (!part) continue;
+            let folder = await dbService.findFolderByName(part, parentId);
+            if (!folder) {
+                const id = await dbService.createFolder({
+                    title: part, parent_id: parentId, color: 0, icon: '',
+                });
+                folder = { id };
+            }
+            parentId = folder.id;
+        }
+        return parentId;
     }
 
     public getRouter(): Router {

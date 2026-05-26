@@ -256,5 +256,9 @@ export default {
     selected: '{n} selected',
     empty: 'This folder is empty',
     loadMore: 'Load More',
+    sync: 'Sync',
+    syncing: 'Syncing...',
+    syncResult: 'Scanned {scanned} files, added {added}, removed {removed}',
+    syncFailed: 'Sync failed',
   },
 }

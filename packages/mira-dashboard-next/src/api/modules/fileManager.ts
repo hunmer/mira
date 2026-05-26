@@ -10,4 +10,7 @@ export const fileManagerApi = {
   remove(data: { libraryId: string; paths: string[] }) {
     return client.post('/fs/remove', data)
   },
+  sync(libraryId: string) {
+    return client.post('/fs/sync', { libraryId })
+  },
 }

@@ -18,7 +18,7 @@ import {
 import {
   RiFolderLine, RiFileLine, RiMoreLine, RiHome4Line,
   RiCheckboxBlankLine, RiCheckboxCircleLine, RiDeleteBinLine, RiDragMoveLine,
-  RiUploadCloudLine, RiCloseLine,
+  RiUploadCloudLine, RiCloseLine, RiRefreshLine,
 } from '@remixicon/vue'
 import { toast } from 'vue-sonner'
 
@@ -73,6 +73,9 @@ const uploadFiles = ref<File[]>([])
 const uploading = ref(false)
 const uploadProgress = ref(0)
 const dragOver = ref(false)
+
+// 同步
+const syncing = ref(false)
 
 const canUpload = computed(() => selectedLibraryId.value && uploadFiles.value.length > 0)
 
@@ -290,6 +293,21 @@ function batchDelete() {
   }
 }
 
+async function syncFiles() {
+  if (!selectedLibraryId.value) return
+  syncing.value = true
+  try {
+    const res = await fileManagerApi.sync(selectedLibraryId.value)
+    const { added, removed, scanned } = res.data.data
+    toast.success(t('fileManager.syncResult', { scanned, added, removed }))
+    loadItems()
+  } catch (e: any) {
+    toast.error(e.response?.data?.error || t('fileManager.syncFailed'))
+  } finally {
+    syncing.value = false
+  }
+}
+
 function loadMore() {
   loadItems(true)
 }
@@ -416,6 +434,11 @@ onMounted(() => {
         </Button>
         <Button variant="outline" size="sm" :disabled="!selectedLibraryId || loading" @click="loadItems()">
           {{ t('common.refresh') }}
+        </Button>
+        <Button variant="outline" size="sm" :disabled="!selectedLibraryId || syncing" @click="syncFiles">
+          <span v-if="syncing" class="mr-1 size-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+          <RiRefreshLine v-else class="mr-1 size-4" />
+          {{ syncing ? t('fileManager.syncing') : t('fileManager.sync') }}
         </Button>
       </div>
     </div>

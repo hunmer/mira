@@ -256,5 +256,9 @@ export default {
     selected: '已选 {n} 项',
     empty: '当前目录为空',
     loadMore: '加载更多',
+    sync: '同步',
+    syncing: '同步中...',
+    syncResult: '扫描 {scanned} 个文件，新增 {added} 个，移除 {removed} 个',
+    syncFailed: '同步失败',
   },
 }
