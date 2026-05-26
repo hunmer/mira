@@ -224,6 +224,8 @@ export class SearchWindowHandlers {
       if (this.searchWindow && !this.searchWindow.isDestroyed()) {
         // 通过 IPC 将 port2 传递给搜索窗口（preload会转发给DOM）
         this.searchWindow.webContents.postMessage('connect', { role: 'search' }, [port2])
+        // 发送当前主题
+        this.sendThemeToSearchWindow()
       }
     })
   }
@@ -324,6 +326,23 @@ export class SearchWindowHandlers {
   }
 
   /**
+   * 检测当前主题并发送给搜索窗口
+   */
+  private async sendThemeToSearchWindow(): Promise<void> {
+    try {
+      const mainWindow = this.getMainWindow()
+      if (!mainWindow || mainWindow.isDestroyed()) return
+
+      const isDark = await mainWindow.webContents.executeJavaScript(
+        `document.documentElement.classList.contains('dark')`
+      )
+      this.sendMessageToSearchWindow({ type: 'theme-update', isDark })
+    } catch (error) {
+      console.error('Failed to detect theme for search window:', error)
+    }
+  }
+
+  /**
    * 向搜索窗口发送消息
    */
   public sendMessageToSearchWindow(message: any): void {
@@ -355,6 +374,8 @@ export class SearchWindowHandlers {
         this.searchWindow.focus()
         // 确保窗口始终在最前
         this.searchWindow.setAlwaysOnTop(true, 'screen-saver')
+        // 同步主题
+        this.sendThemeToSearchWindow()
       }
     } catch (error) {
       this.hideLoadingWindow()

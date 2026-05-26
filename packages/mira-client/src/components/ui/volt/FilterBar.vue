@@ -38,7 +38,7 @@
             <div class="min-w-[280px]">
               <!-- 文件夹筛选器 -->
               <div v-if="filter.type === 'folders'">
-                <div class="max-h-[300px] overflow-y-auto">
+                <div class="max-h-[300px] overflow-y-auto p-2">
                   <FolderTreeComponent
                     item-type="folder"
                     :folders="folderTreeItems || []"
@@ -55,7 +55,7 @@
 
               <!-- 标签筛选器 -->
               <div v-else-if="filter.type === 'tags'">
-                <div class="max-h-[300px] overflow-y-auto">
+                <div class="max-h-[300px] overflow-y-auto p-2">
                   <FolderTreeComponent
                     item-type="tag"
                     :tags="tagTreeItems || []"

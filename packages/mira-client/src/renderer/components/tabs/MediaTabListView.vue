@@ -339,7 +339,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick, toRef } from 'vue'
 import { useMediaStore } from '@renderer/stores/media'
-import { useFolderStore } from '@renderer/stores/folder'
 import { useLibraryStore } from '@renderer/stores/library'
 import { appService } from '@renderer/services'
 import { useTagStore } from '@renderer/stores/tag'
@@ -389,7 +388,6 @@ const emit = defineEmits<{
 }>()
 
 // 获取共享状态和控制器
-const folderStore = useFolderStore()
 const tagStore = useTagStore()
 const mediaStore = useMediaStore()
 const homeController = useHomeController()
@@ -598,7 +596,7 @@ watch([selectedItems, () => paginatedMediaItems.value], ([ids, items]) => {
   }
 }, { deep: true })
 
-const folderTreeItems = computed(() => folderStore.folders || [])
+const folderTreeItems = computed(() => homeController.folderTree.value || [])
 const tagTreeItems = computed(() => tagStore.tags || [])
 
 // 方法

@@ -44,6 +44,7 @@ async function initSearchWindow() {
           searchTimeout: null,  // 防抖定时器
           selectedIndex: -1,    // 选中的搜索结果索引
           messagePort: null,    // MessagePort 通信端口
+          isDark: true,         // 当前是否暗色主题
           // 分页相关
           currentPage: 1,
           pageSize: 10,
@@ -379,10 +380,17 @@ async function initSearchWindow() {
             this.isSearching = false
             this.selectedIndex = -1  // 重置选中索引
             console.error('❌ [SearchWindow] 搜索错误:', event.data.error)
-            // 可以显示错误提示
+          } else if (event.data && event.data.type === 'theme-update') {
+            this.applyTheme(event.data.isDark)
           } else {
             console.log('ℹ️ [SearchWindow] 收到其他类型消息:', event.data?.type)
           }
+        },
+        applyTheme(isDark) {
+          this.isDark = isDark
+          const root = document.documentElement
+          root.classList.remove('dark', 'light')
+          root.classList.add(isDark ? 'dark' : 'light')
         },
         handleSearchInputKeydown(event) {
           if (event.key === 'Escape') {

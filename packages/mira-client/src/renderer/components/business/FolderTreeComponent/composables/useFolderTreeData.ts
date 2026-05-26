@@ -25,7 +25,7 @@ export function useFolderTreeData(
     return folderList.map(folder => {
       const nodeData = {
         key: folder.id,
-        label: folder.label,
+        label: folder.label || (folder as any).title || (folder as any).name,
         data: {
           ...folder,
           parentId,
@@ -116,7 +116,7 @@ export function useFolderTreeData(
     }
     return {
       key: item.id,
-      label: item.label,
+      label: item.label || (item as any).title || (item as any).name,
       icon: item.icon || 'folder',
       count: item.count,
       leaf: !item.children || item.children.length === 0,
