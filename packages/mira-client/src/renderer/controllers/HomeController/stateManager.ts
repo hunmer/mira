@@ -56,6 +56,10 @@ export class HomeStateManager {
         filterConditions.value.urls = filterRule.value || ''
         console.log('更新网址筛选:', filterConditions.value.urls)
         break
+      case 'title':
+        filterConditions.value.title = filterRule.value || ''
+        console.log('更新标题筛选:', filterConditions.value.title)
+        break
       case 'size':
         if (filterRule.selectedPreset === 'custom') {
           filterConditions.value.sizeMin = filterRule.customMin
@@ -97,6 +101,9 @@ export class HomeStateManager {
       case 'urls':
         filterConditions.value.urls = ''
         break
+      case 'title':
+        filterConditions.value.title = ''
+        break
       case 'size':
         filterConditions.value.sizeMin = undefined
         filterConditions.value.sizeMax = undefined
@@ -129,6 +136,7 @@ export class HomeStateManager {
       folders: [],
       tags: [],
       urls: '',
+      title: '',
       sizeMin: undefined,
       sizeMax: undefined,
       sizePreset: ''
@@ -145,6 +153,9 @@ export class HomeStateManager {
           break
         case 'urls':
           filterConditions.value.urls = filterRule.value || ''
+          break
+        case 'title':
+          filterConditions.value.title = filterRule.value || ''
           break
         case 'size':
           if (filterRule.selectedPreset === 'custom') {

@@ -339,7 +339,7 @@ export const useMediaStore = defineStore('media', () => {
             break
           case 'urls':
             if (filterRule.value && typeof filterRule.value === 'string' && filterRule.value.trim()) {
-              filters.title = filterRule.value.trim()
+              filters.url = filterRule.value.trim()
             }
             break
           case 'size':

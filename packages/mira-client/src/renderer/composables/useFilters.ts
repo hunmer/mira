@@ -39,6 +39,13 @@ export function useFilters() {
       value: ''
     },
     {
+      id: 'title',
+      type: 'title',
+      label: '标题',
+      icon: 'title',
+      value: ''
+    },
+    {
       id: 'size',
       type: 'size',
       label: '大小',

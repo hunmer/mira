@@ -23,6 +23,7 @@ export class HomeDataManager {
     folders: [],
     tags: [],
     urls: '',
+    title: '',
     sizeMin: undefined,
     sizeMax: undefined,
     sizePreset: ''

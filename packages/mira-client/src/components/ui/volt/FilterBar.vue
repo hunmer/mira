@@ -117,6 +117,34 @@
                   </button>
                 </div>
               </div>
+
+              <!-- 标题筛选器 -->
+              <div v-else-if="filter.type === 'title'">
+                <div class="p-3">
+                  <h3 class="font-medium text-gray-900 mb-3">标题筛选</h3>
+                  <input
+                    :value="filter.value"
+                    type="text"
+                    placeholder="输入标题关键词..."
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    @input="updateFilterValue(filter, $event)"
+                  />
+                </div>
+                <div class="p-3 border-t border-gray-200 flex justify-end space-x-2">
+                  <button
+                    class="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
+                    @click="clearFilter(filter); close()"
+                  >
+                    清除
+                  </button>
+                  <button
+                    class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+                    @click="close()"
+                  >
+                    确定
+                  </button>
+                </div>
+              </div>
               
               <!-- 大小筛选器 -->
               <div v-else-if="filter.type === 'size'">
@@ -344,7 +372,7 @@ import type { FilterTreeItem } from './FilterTree.vue'
 
 export interface FilterRule {
   id: string
-  type: 'folders' | 'tags' | 'urls' | 'size' | 'category'
+  type: 'folders' | 'tags' | 'urls' | 'title' | 'size' | 'category'
   label: string
   icon: string
   active?: boolean
@@ -463,6 +491,8 @@ const hasActiveFilters = (filter: FilterRule) => {
       return filter.selectedValues && filter.selectedValues.length > 0
     case 'urls':
       return filter.value && filter.value.trim().length > 0
+    case 'title':
+      return filter.value && filter.value.trim().length > 0
     case 'size':
       return filter.selectedPreset && filter.selectedPreset !== ''
     case 'category':
@@ -478,6 +508,7 @@ const getActiveFilterCount = (filter: FilterRule) => {
     case 'tags':
       return filter.selectedValues?.length || 0
     case 'urls':
+    case 'title':
       return filter.value && filter.value.trim().length > 0 ? 1 : 0
     case 'size':
       return filter.selectedPreset && filter.selectedPreset !== '' ? 1 : 0

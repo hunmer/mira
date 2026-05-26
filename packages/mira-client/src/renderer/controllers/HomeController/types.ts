@@ -21,6 +21,7 @@ export interface FilterConditions {
   folders: (string | number)[]
   tags: (string | number)[]
   urls: string
+  title: string
   sizeMin?: number
   sizeMax?: number
   sizePreset?: string

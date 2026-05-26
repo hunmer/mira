@@ -44,6 +44,7 @@ export class LibraryServerDataSQLite implements ILibraryServerData {
         recycled INTEGER DEFAULT 0,
         tags TEXT,
         uploader INTEGER,
+        website TEXT,
         FOREIGN KEY(folder_id) REFERENCES folders(id)
       )
     `);
@@ -75,6 +76,11 @@ export class LibraryServerDataSQLite implements ILibraryServerData {
     // 迁移：为已有 files 表添加 uploader 列
     try {
       await this.executeSql('ALTER TABLE files ADD COLUMN uploader INTEGER');
+    } catch {}
+
+    // 迁移：为已有 files 表添加 website 列
+    try {
+      await this.executeSql('ALTER TABLE files ADD COLUMN website TEXT');
     } catch {}
   }
 
@@ -226,9 +232,37 @@ export class LibraryServerDataSQLite implements ILibraryServerData {
       params.push(filters.star);
     }
 
+    // title: 名称模糊搜索
+    if (filters.title) {
+      whereClauses.push('name LIKE ?');
+      params.push(`%${filters.title}%`);
+    }
+
+    // name: 名称模糊搜索（兼容旧接口）
     if (filters.name) {
       whereClauses.push('name LIKE ?');
       params.push(`%${filters.name}%`);
+    }
+
+    // url: 网址筛选，搜索 website 字段
+    if (filters.url) {
+      whereClauses.push('website LIKE ?');
+      params.push(`%${filters.url}%`);
+    }
+
+    // category: 通过扩展名过滤媒体类型 (image/video/audio)
+    if (filters.category) {
+      const extMap: Record<string, string[]> = {
+        image: ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg', '.ico', '.tiff', '.tif'],
+        video: ['.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv', '.webm', '.m4v', '.mpg', '.mpeg', '.3gp'],
+        audio: ['.mp3', '.wav', '.flac', '.aac', '.ogg', '.wma', '.m4a', '.ape', '.opus'],
+      };
+      const exts = extMap[filters.category];
+      if (exts) {
+        const placeholders = exts.map(() => 'LOWER(name) LIKE ?').join(' OR ');
+        whereClauses.push(`(${placeholders})`);
+        params.push(...exts.map(ext => `%${ext}`));
+      }
     }
 
     if (filters.dateRange) {
@@ -249,14 +283,17 @@ export class LibraryServerDataSQLite implements ILibraryServerData {
       params.push(startTime, endTime);
     }
 
-    if (filters.minSize !== undefined) {
+    // size_min/minSize 和 size_max/maxSize 都支持（客户端传 size_min/size_max）
+    const sizeMin = filters.size_min ?? filters.minSize;
+    if (sizeMin !== undefined) {
       whereClauses.push('size >= ?');
-      params.push(filters.minSize * 1024);
+      params.push(sizeMin * 1024);
     }
 
-    if (filters.maxSize !== undefined) {
+    const sizeMax = filters.size_max ?? filters.maxSize;
+    if (sizeMax !== undefined) {
       whereClauses.push('size <= ?');
-      params.push(filters.maxSize * 1024);
+      params.push(sizeMax * 1024);
     }
 
     if (filters.minRating !== undefined) {
