@@ -239,6 +239,30 @@ export class ThumbnailService {
     };
   }
 
+  async syncThumbStatus(libraryId: string, dbService: ILibraryServerData): Promise<{ total: number; synced: number }> {
+    const files = (await dbService.getFiles({
+      select: 'id,hash,thumb',
+      filters: { limit: 9999999 },
+      isUrlFile: false,
+    })).result;
+
+    let synced = 0;
+    for (const file of files) {
+      try {
+        const thumbPath = await dbService.getItemThumbPath(file, { isUrlFile: false });
+        const exists = fs.existsSync(thumbPath);
+        const expected = exists ? 1 : 0;
+        if (file.thumb !== expected) {
+          await dbService.updateFile(file.id, { thumb: expected });
+          synced++;
+        }
+      } catch {
+        continue;
+      }
+    }
+    return { total: files.length, synced };
+  }
+
   private async getPendingFiles(libraryId: string, dbService: ILibraryServerData): Promise<any[]> {
     const files = (await dbService.getFiles({
       select: 'id,hash,folder_id,name',

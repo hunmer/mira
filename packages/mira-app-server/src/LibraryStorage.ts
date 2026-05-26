@@ -60,7 +60,10 @@ export class LibraryStorage {
             em.on('file::created', (event: any) => thumbService.onFileCreated(libraryId, event, dbServer));
             em.on('file::deleted', (event: any) => thumbService.onFileDeleted(libraryId, event.args?.result || event.args, dbServer));
             // 自动扫描缺失缩略图
-            thumbService.scanPending(libraryId, dbServer);
+            const enableThumbScan = dbConfig.customFields?.enableThumbScan ?? true;
+            if (enableThumbScan) {
+                thumbService.scanPending(libraryId, dbServer);
+            }
         }
 
         // 启动自动同步 watcher

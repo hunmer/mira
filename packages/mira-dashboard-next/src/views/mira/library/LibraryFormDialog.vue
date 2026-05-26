@@ -15,6 +15,7 @@ export interface LibraryFormData {
   icon: string
   enableHash: boolean
   enableAutoSync: boolean
+  enableThumbScan: boolean
   pluginsDir: string
   allowedRoles: string[]
 }
@@ -70,6 +71,10 @@ const toggleRole = (role: string) => {
         <div class="flex items-center gap-2">
           <input id="enableAutoSync" v-model="form.enableAutoSync" type="checkbox" class="size-4 rounded border-input" />
           <Label for="enableAutoSync">{{ t('library.enableAutoSync') }}</Label>
+        </div>
+        <div class="flex items-center gap-2">
+          <input id="enableThumbScan" v-model="form.enableThumbScan" type="checkbox" class="size-4 rounded border-input" />
+          <Label for="enableThumbScan">{{ t('library.enableThumbScan') }}</Label>
         </div>
         <div class="space-y-2">
           <Label>{{ t('library.pluginsDir') }}</Label>

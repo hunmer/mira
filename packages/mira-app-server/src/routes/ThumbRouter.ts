@@ -53,6 +53,15 @@ export class ThumbRouter extends BaseRouter {
       }));
       res.json({ success: true, data: generators });
     });
+
+    this.router.get('/sync', async (req: Request, res: Response) => {
+      const libraryId = req.query.libraryId as string;
+      const validation = await this.validateLibrary(libraryId);
+      if (!validation.success) return res.status(validation.error!.code).json(validation.error);
+
+      const data = await this.thumbnailService.syncThumbStatus(libraryId, validation.library.libraryService);
+      res.json({ success: true, data });
+    });
   }
 
   getRouter(): Router {

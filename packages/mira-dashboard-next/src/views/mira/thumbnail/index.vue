@@ -13,6 +13,7 @@ const { t } = useI18n()
 const { selectedId: selectedLibraryId, selectedLibrary } = useLibrary()
 
 const loading = ref(false)
+const syncing = ref(false)
 const isScanning = ref(false)
 const stats = ref({ totalFiles: 0, withThumbnails: 0, withoutThumbnails: 0, thumbnailRate: 0 })
 const progress = ref({ totalPending: 0, queueLength: 0, processing: false, completed: 0, progress: 0 })
@@ -29,6 +30,19 @@ const statItems = computed(() => [
 function addLog(message: string) {
   logs.value.unshift({ time: new Date().toLocaleTimeString(), message })
   if (logs.value.length > 50) logs.value = logs.value.slice(0, 50)
+}
+
+async function checkProgress() {
+  if (!selectedLibraryId.value) return
+  try {
+    const res: any = await thumbnailApi.progress(selectedLibraryId.value)
+    if (!res.data?.success) return
+    progress.value = res.data.data
+    if (progress.value.processing || progress.value.queueLength > 0) {
+      isScanning.value = true
+      startProgressMonitoring()
+    }
+  } catch {}
 }
 
 async function refreshStats() {
@@ -74,6 +88,23 @@ async function cancelScan() {
   }
 }
 
+async function syncThumbs() {
+  if (!selectedLibraryId.value) return
+  syncing.value = true
+  try {
+    const res: any = await thumbnailApi.sync(selectedLibraryId.value)
+    if (res.data?.success) {
+      const { total, synced } = res.data.data
+      addLog(t('thumbnail.syncResult', { total, synced }))
+      await refreshStats()
+    }
+  } catch (error: any) {
+    addLog(`${t('thumbnail.syncFailed')}：${error.message}`)
+  } finally {
+    syncing.value = false
+  }
+}
+
 function startProgressMonitoring() {
   stopProgressMonitoring()
   progressTimer = setInterval(async () => {
@@ -100,7 +131,10 @@ function stopProgressMonitoring() {
   }
 }
 
-onMounted(refreshStats)
+onMounted(async () => {
+  await refreshStats()
+  checkProgress()
+})
 onBeforeUnmount(stopProgressMonitoring)
 </script>
 
@@ -123,6 +157,10 @@ onBeforeUnmount(stopProgressMonitoring)
           </Button>
           <Button variant="destructive" :disabled="!isScanning" @click="cancelScan">
             {{ t('thumbnail.cancelScan') }}
+          </Button>
+          <Button variant="outline" :disabled="!selectedLibraryId || syncing" @click="syncThumbs">
+            <span v-if="syncing" class="mr-1 size-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            {{ t('thumbnail.syncThumbs') }}
           </Button>
         </div>
       </div>

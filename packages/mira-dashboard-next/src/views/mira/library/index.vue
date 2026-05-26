@@ -43,7 +43,7 @@ async function loadLibraries() {
 function getDefaultForm(): LibraryFormData {
   return {
     name: '', path: '', description: '',
-    icon: '', enableHash: false, enableAutoSync: false,
+    icon: '', enableHash: false, enableAutoSync: false, enableThumbScan: true,
     pluginsDir: '',
     allowedRoles: ['super', 'admin', 'user'],
   }
@@ -64,6 +64,7 @@ function openEdit(lib: Library) {
     pluginsDir: lib.pluginsDir ?? '',
     enableHash: lib.customFields?.enableHash ?? false,
     enableAutoSync: lib.customFields?.enableAutoSync ?? false,
+    enableThumbScan: lib.customFields?.enableThumbScan ?? true,
     allowedRoles: (lib as any).allowedRoles ?? ['super', 'admin', 'user'],
     _id: lib.id,
   }

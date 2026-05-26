@@ -6,4 +6,5 @@ export const thumbnailApi = {
   cancel: () => client.get(`/thumb/cancel`),
   stats: (libraryId: string) => client.get(`/thumb/stats`, { params: { libraryId } }),
   generators: () => client.get(`/thumb/generators`),
+  sync: (libraryId: string) => client.get(`/thumb/sync`, { params: { libraryId } }),
 }
