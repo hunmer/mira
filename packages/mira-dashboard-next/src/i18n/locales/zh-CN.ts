@@ -82,6 +82,7 @@ export default {
     serverSettings: '服务器设置',
     authRequired: '需要认证',
     allowRegistration: '允许注册',
+    dashboardPort: '管理面板端口',
   },
   library: {
     title: '资源库管理',

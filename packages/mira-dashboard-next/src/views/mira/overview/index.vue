@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog'
@@ -29,7 +30,7 @@ const systemInfo = ref({ uptime: '-', version: '-', nodeVersion: '-' })
 const recentActivities = ref<{ id: number; message: string; time: string }[]>([])
 
 const settingsDialogOpen = ref(false)
-const settings = ref<ServerSettings>({ authRequired: true, allowRegistration: true })
+const settings = ref<ServerSettings>({ authRequired: true, allowRegistration: true, dashboardPort: 5173 })
 
 function formatSize(bytes: number): string {
   if (!bytes) return '0 B'
@@ -199,6 +200,10 @@ onMounted(refreshData)
           <div class="flex items-center justify-between">
             <Label>{{ t('overview.allowRegistration') }}</Label>
             <Switch v-model="settings.allowRegistration" />
+          </div>
+          <div class="flex items-center justify-between">
+            <Label>{{ t('overview.dashboardPort') }}</Label>
+            <Input v-model.number="settings.dashboardPort" type="number" class="w-24" :min="1" :max="65535" placeholder="5173" />
           </div>
         </div>
         <DialogFooter>

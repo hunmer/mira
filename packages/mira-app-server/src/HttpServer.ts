@@ -341,7 +341,8 @@ export class MiraHttpServer {
                     nodeVersion: process.version,
                     environment: process.env.NODE_ENV || 'development',
                     authRequired: settings.authRequired,
-                    allowRegistration: settings.allowRegistration
+                    allowRegistration: settings.allowRegistration,
+                    dashboardPort: settings.dashboardPort || 5173
                 }
             });
         });

@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
 import { registerAllPluginRoutes } from './pluginRoutes'
+import { authApi } from '@/api'
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -52,6 +53,22 @@ const router = createRouter({
 
 router.beforeEach(async (to) => {
   const auth = useAuthStore()
+
+  // 从 URL 中识别 token 参数，自动登录
+  const tokenParam = to.query.token as string | undefined
+  if (tokenParam) {
+    localStorage.setItem('token', tokenParam)
+    auth.token = tokenParam
+    try {
+      const meRes = await authApi.me()
+      auth.user = meRes.data?.data || meRes.data
+      localStorage.setItem('user', JSON.stringify(auth.user))
+    } catch { /* ignore */ }
+    const cleanQuery = { ...to.query }
+    delete cleanQuery.token
+    return { path: to.path, query: cleanQuery, hash: to.hash }
+  }
+
   if (to.meta.requiresAuth !== false && !auth.isLoggedIn) {
     return { path: '/login', query: { redirect: to.fullPath } }
   }

@@ -26,6 +26,7 @@ export interface Library {
 export interface ServerSettings {
   authRequired: boolean
   allowRegistration: boolean
+  dashboardPort?: number
 }
 
 export interface Plugin {

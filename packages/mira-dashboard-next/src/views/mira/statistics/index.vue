@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
 import { libraryApi, statisticsApi } from '@/api'
 import type { ChartConfig } from '@/components/ui/chart'
 import { Orientation } from '@unovis/ts'
@@ -18,6 +19,7 @@ import {
 import type { Library } from '@/types/mira'
 
 const { t } = useI18n()
+const route = useRoute()
 
 interface DailyRow { date: string; file_count: number; total_size: number }
 interface UploaderRow { uploader: number | null; uploaderName: string; fileCount: number; totalSize: number }
@@ -61,7 +63,15 @@ async function loadStats() {
 }
 
 watch(selectedLibraryId, loadStats)
-loadLibraries()
+
+async function init() {
+  await loadLibraries()
+  const queryId = route.query.libraryId as string | undefined
+  if (queryId && libraries.value.some(l => l.id === queryId)) {
+    selectedLibraryId.value = queryId
+  }
+}
+init()
 
 // ---- 趋势图 ----
 type ChartItem = { date: Date; fileCount: number; totalSizeMB: number }

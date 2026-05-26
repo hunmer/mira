@@ -751,13 +751,13 @@ export class MiraSDKService {
 
   async getSystemHealth(): Promise<SystemHealth> {
     if (!this.client) throw new Error('Not connected to Mira server')
-    
+
     try {
-      await this.client.system().getSystemInfo()
+      const health = await this.client.system().getHealth()
       return {
         status: 'healthy' as const,
         timestamp: new Date().toISOString(),
-        // 根据需要添加更多健康检查信息
+        dashboardPort: (health as any).dashboardPort || 5173,
       }
     } catch (error) {
       console.error('MiraSDKService: Failed to get system health', error)

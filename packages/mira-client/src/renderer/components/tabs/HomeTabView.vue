@@ -1,55 +1,78 @@
 <template>
-  <div class="home-view flex-1 flex flex-col items-center justify-center bg-gray-50">
-    <div class="home-empty text-center">
-      <span class="material-icons home-empty__icon">tab</span>
-      <h3 class="home-empty__title">从侧边栏选择内容</h3>
-      <p class="home-empty__desc">点击左侧文件夹或标签，打开新标签页查看内容</p>
+  <div class="home-view flex-1 flex flex-col">
+    <div v-if="loading" class="flex items-center justify-center flex-1">
+      <span class="text-gray-400">加载中...</span>
     </div>
+    <div v-else-if="error" class="flex items-center justify-center flex-1">
+      <div class="text-center">
+        <span class="material-icons text-4xl text-gray-400 mb-2 block">cloud_off</span>
+        <p class="text-gray-500 text-sm">{{ error }}</p>
+      </div>
+    </div>
+    <webview
+      v-else
+      :src="dashboardUrl"
+      class="flex-1"
+      style="width: 100%; height: 100%;"
+      allowpopups
+    />
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { miraSDKService } from '@renderer/services/MiraSDKService'
+import { useAuthStore } from '@renderer/stores/auth'
 
 interface Props {
   tabId?: string
   libraryId?: string
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   tabId: 'home'
 })
 
+const loading = ref(true)
+const error = ref('')
+const dashboardUrl = ref('')
+
+onMounted(async () => {
+  try {
+    if (!miraSDKService.isClientConnected()) {
+      error.value = '未连接到服务器'
+      return
+    }
+
+    const config = miraSDKService.getConnectionConfig()
+    if (!config?.serverUrl) {
+      error.value = '无法获取服务器地址'
+      return
+    }
+
+    const health = await miraSDKService.getSystemHealth()
+    const port = health.dashboardPort || 5173
+
+    const serverUrl = new URL(config.serverUrl)
+    const authStore = useAuthStore()
+    const url = new URL('/statistics', `${serverUrl.protocol}//${serverUrl.hostname}:${port}`)
+    if (authStore.token) {
+      url.searchParams.set('token', authStore.token)
+    }
+    if (props.libraryId) {
+      url.searchParams.set('libraryId', props.libraryId)
+    }
+    dashboardUrl.value = url.toString()
+  } catch (e: any) {
+    error.value = e.message || '加载失败'
+  } finally {
+    loading.value = false
+  }
+})
 </script>
 
 <style scoped>
 .home-view {
   min-height: 100%;
-}
-
-.home-empty {
-  animation: fadeIn .3s ease-out;
-}
-
-.home-empty__icon {
-  font-size: 56px;
-  color: #9ca3af;
-  margin-bottom: 16px;
-}
-
-.home-empty__title {
-  font-size: 16px;
-  font-weight: 500;
-  color: #6b7280;
-  margin-bottom: 4px;
-}
-
-.home-empty__desc {
-  font-size: 13px;
-  color: #9ca3af;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
 }
 </style>

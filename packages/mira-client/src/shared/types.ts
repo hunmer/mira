@@ -218,6 +218,7 @@ export interface SystemHealth {
   status: 'healthy' | 'warning' | 'error' | 'disconnected'
   timestamp: string
   details?: Record<string, any>
+  dashboardPort?: number
 }
 
 // 托盘设置

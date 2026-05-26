@@ -220,6 +220,7 @@ class MiraApplication {
         zoomFactor: 1,
         spellcheck: false,
         webSecurity: false, // 禁用 web 安全策略，取消 CSP 检查
+        webviewTag: true,
         preload: join(__dirname, '../dist-preload/preload.js')
       },
       frame: false,

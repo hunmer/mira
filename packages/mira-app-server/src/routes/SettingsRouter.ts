@@ -29,10 +29,11 @@ export class SettingsRouter {
             }
 
             try {
-                const { authRequired, allowRegistration } = req.body;
+                const { authRequired, allowRegistration, dashboardPort } = req.body;
                 const updated = await this.backend.settingsManager.updateSettings({
                     ...(authRequired !== undefined && { authRequired: !!authRequired }),
                     ...(allowRegistration !== undefined && { allowRegistration: !!allowRegistration }),
+                    ...(dashboardPort !== undefined && { dashboardPort: Number(dashboardPort) || 5173 }),
                 });
                 res.json({ code: 0, data: updated });
             } catch (error) {
