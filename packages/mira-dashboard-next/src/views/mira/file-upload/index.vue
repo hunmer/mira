@@ -1,31 +1,21 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { Library } from '@/types/mira'
-import { libraryApi, fileApi } from '@/api'
-import { onMounted } from 'vue'
+import { useLibrary } from '@/composables/useLibrary'
+import { fileApi } from '@/api'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'vue-sonner'
 import { RiUploadCloudLine, RiFileLine, RiCloseLine } from '@remixicon/vue'
 
 const { t } = useI18n()
-const libraries = ref<Library[]>([])
-const selectedLib = ref('')
+const { selectedId: selectedLib } = useLibrary()
 const files = ref<File[]>([])
 const uploading = ref(false)
 const progress = ref(0)
 const dragOver = ref(false)
 
 const canUpload = computed(() => selectedLib.value && files.value.length > 0)
-
-async function loadLibraries() {
-  try {
-    const res = await libraryApi.list()
-    libraries.value = Array.isArray(res.data) ? res.data : []
-  } catch { /* ignore */ }
-}
 
 function handleDrop(e: DragEvent) {
   dragOver.value = false
@@ -63,22 +53,11 @@ async function handleUpload() {
     uploading.value = false
   }
 }
-
-onMounted(loadLibraries)
 </script>
 
 <template>
   <div class="space-y-6">
     <h1 class="text-2xl font-bold">{{ t('fileUpload.title') }}</h1>
-
-    <Select v-model="selectedLib">
-      <SelectTrigger class="w-64">
-        <SelectValue :placeholder="t('fileUpload.selectLibrary')" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem v-for="lib in libraries" :key="lib.id" :value="lib.id">{{ lib.name }}</SelectItem>
-      </SelectContent>
-    </Select>
 
     <Card
       class="border-dashed"

@@ -516,29 +516,22 @@ export class MiraSDKService {
       const fileInfos: FileInfo[] = files.result.map((file: any) => {
         let filePath = file.path
         let thumbnailPath = file.thumb
+        let localFilePath: string | undefined
 
-        // 如果启用了 SMB，替换挂载路径为 SMB 路径
-        if (ServerConfig?.smb?.enabled && ServerConfig.smb.mountPath && ServerConfig.smb.smbPath) {
-          const mountPath = ServerConfig.smb.mountPath
+        // 如果启用了 SMB，从文件元数据构建本地路径
+        if (ServerConfig?.smb?.enabled && ServerConfig.smb.smbPath) {
           const smbPath = ServerConfig.smb.smbPath
+          const sep = smbPath.includes('/') ? '/' : '\\'
+          const normalizedSmbPath = smbPath.endsWith(sep) ? smbPath : smbPath + sep
 
-          // 处理文件路径：替换开头的挂载路径为 SMB 路径
-          if (filePath && filePath.startsWith(mountPath)) {
-            // 移除挂载路径前缀，保留相对路径部分
-            const relativePath = filePath.substring(mountPath.length).replace(/^[\/\\]+/, '')
-            // 确保 SMB 路径以正确的分隔符结尾
-            const normalizedSmbPath = smbPath.endsWith('\\') || smbPath.endsWith('/') ? smbPath : smbPath + '\\'
-            filePath = normalizedSmbPath + relativePath
+          // 文件本地路径: smbPath/folder_name/name
+          if (file.folder_name && file.name) {
+            localFilePath = normalizedSmbPath + file.folder_name + sep + file.name
           }
 
-          // 处理缩略图路径：替换开头的挂载路径为 SMB 路径
-          if (thumbnailPath && thumbnailPath.startsWith(mountPath)) {
-            // 移除挂载路径前缀，保留相对路径部分
-            const relativePath = thumbnailPath.substring(mountPath.length).replace(/^[\/\\]+/, '')
-            // 确保 SMB 路径以正确的分隔符结尾
-            const normalizedSmbPath = smbPath.endsWith('\\') || smbPath.endsWith('/') ? smbPath : smbPath + '\\'
-            thumbnailPath = normalizedSmbPath + relativePath
-          }
+          // 缩略图本地路径: smbPath/thumbs/{hash|id}.png
+          const thumbFileName = file.hash ? `${file.hash}.png` : `${file.id}.png`
+          thumbnailPath = normalizedSmbPath + 'thumbs' + sep + thumbFileName
         }
 
         return {
@@ -555,8 +548,8 @@ export class MiraSDKService {
           hash: file.hash || '',
           thumbnailPath: appendToken(toFileUrl(thumbnailPath)),
           libraryId: libraryId, // 添加 libraryId 到 fileInfo
-          localFile: file.localFile || (() => {
-            // 如果file.localFile为空，尝试从mediaStore获取
+          localFile: localFilePath || file.localFile || (() => {
+            // 如果SMB未启用或构建失败，尝试从mediaStore获取
             try {
               const mediaStore = useMediaStore()
               return mediaStore.getLocalFile(libraryId, file.id.toString())
@@ -564,7 +557,7 @@ export class MiraSDKService {
               console.warn('从mediaStore获取localFile失败:', error)
               return undefined
             }
-          })() // SMB映射的本地文件路径
+          })()
         }
       })
       

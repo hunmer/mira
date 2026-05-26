@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { Library, DatabaseTable, DatabaseRow } from '@/types/mira'
-import { libraryApi } from '@/api'
+import type { DatabaseTable, DatabaseRow } from '@/types/mira'
+import { useLibrary } from '@/composables/useLibrary'
 import client from '@/api/client'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
@@ -18,8 +17,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'vue-sonner'
 
 const { t } = useI18n()
-const libraries = ref<Library[]>([])
-const selectedLib = ref('')
+const { selectedId: selectedLib } = useLibrary()
 const tables = ref<DatabaseTable[]>([])
 const rows = ref<DatabaseRow[]>([])
 const columns = ref<string[]>([])
@@ -37,13 +35,6 @@ const dataTableName = ref('')
 const dataRows = ref<any[]>([])
 const dataColumns = computed(() => dataRows.value.length ? Object.keys(dataRows.value[0]) : [])
 const dataLoading = ref(false)
-
-async function loadLibraries() {
-  try {
-    const res = await libraryApi.list()
-    libraries.value = Array.isArray(res.data) ? res.data : []
-  } catch { /* ignore */ }
-}
 
 async function loadTables() {
   if (!selectedLib.value) return
@@ -89,8 +80,6 @@ async function executeSql() {
 }
 
 watch(selectedLib, () => { tables.value = []; rows.value = []; columns.value = []; loadTables() })
-
-onMounted(loadLibraries)
 </script>
 
 <template>
@@ -101,17 +90,6 @@ onMounted(loadLibraries)
         <Button :disabled="!selectedLib" @click="loadTables">{{ t('common.refresh') }}</Button>
         <Button :disabled="!selectedLib" @click="showSqlDialog = true; sqlResult = []">SQL查询</Button>
       </div>
-    </div>
-
-    <div class="flex items-center gap-4">
-      <Select v-model="selectedLib">
-        <SelectTrigger class="w-64">
-          <SelectValue :placeholder="t('database.selectLibrary')" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem v-for="lib in libraries" :key="lib.id" :value="lib.id">{{ lib.name }}</SelectItem>
-        </SelectContent>
-      </Select>
     </div>
 
     <Card v-if="loading">

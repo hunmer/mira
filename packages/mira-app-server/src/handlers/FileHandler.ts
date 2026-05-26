@@ -25,7 +25,7 @@ export class FileHandler extends MessageHandler {
                 case 'read':
                     result = await this.dbService.getFiles({
                         filters: data?.query ?? {},
-                        isUrlFile: this.dbService.useHttpFile,
+                        isUrlFile: true,
                     });
                     break;
                 case 'create':

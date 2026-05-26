@@ -19,7 +19,6 @@ export interface LibraryFormData {
   icon: string
   enableHash: boolean
   enableAutoSync: boolean
-  useHttpFile: boolean
   serverURL: string
   serverPort: string
   pluginsDir: string
@@ -42,7 +41,7 @@ const form = defineModel<LibraryFormData | null>({ required: true })
 
 const ROLES = ['super', 'admin', 'user'] as const
 
-const showServerFields = () => form.value?.type === 'remote' || form.value?.useHttpFile
+const showServerFields = () => true
 
 const toggleRole = (role: string) => {
   if (!form.value) return
@@ -91,10 +90,6 @@ const toggleRole = (role: string) => {
         <div class="flex items-center gap-2">
           <input id="enableAutoSync" v-model="form.enableAutoSync" type="checkbox" class="size-4 rounded border-input" />
           <Label for="enableAutoSync">{{ t('library.enableAutoSync') }}</Label>
-        </div>
-        <div class="flex items-center gap-2">
-          <input id="useHttpFile" v-model="form.useHttpFile" type="checkbox" class="size-4 rounded border-input" />
-          <Label for="useHttpFile">{{ t('library.useHttpFile') }}</Label>
         </div>
         <template v-if="showServerFields()">
           <div class="space-y-2">

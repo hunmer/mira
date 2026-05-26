@@ -536,7 +536,7 @@ export class FileRoutes {
         // 获取文件列表 - 支持过滤参数
         this.router.post('/getFiles', async (req: Request, res: Response) => {
             try {
-                const { libraryId, filters = {}, isUrlFile = false, clientId } = req.body;
+                const { libraryId, filters = {}, clientId } = req.body;
                 console.log({filters})
                 if (!libraryId) {
                     return res.status(400).json({
@@ -568,7 +568,7 @@ export class FileRoutes {
 
                 const files = await obj.libraryService.getFiles({
                     filters: filters,
-                    isUrlFile: isUrlFile || obj.libraryService.useHttpFile,
+                    isUrlFile: true,
                 });
 
                 res.json({

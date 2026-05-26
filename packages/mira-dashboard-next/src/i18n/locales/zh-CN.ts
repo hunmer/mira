@@ -101,7 +101,6 @@ export default {
     iconPlaceholder: '图标名称（默认：default）',
     enableHash: '启用文件哈希校验',
     enableAutoSync: '启用自动同步（监控文件夹新文件）',
-    useHttpFile: '使用 HTTP 文件服务（远程库通过 HTTP 获取文件）',
     serverURL: '服务器地址',
     serverURLPlaceholder: '例如：http://127.0.0.1',
     serverPort: '服务器端口',

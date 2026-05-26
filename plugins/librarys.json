@@ -9,7 +9,6 @@
     "customFields": {
       "path": "test-library",
       "enableHash": false,
-      "useHttpFile": true,
       "serverURL": "http://127.0.0.1",
       "serverPort": "8081"
     },

@@ -45,7 +45,7 @@ function getDefaultForm(): LibraryFormData {
   return {
     name: '', path: '', type: 'local', description: '',
     icon: '', enableHash: false, enableAutoSync: false,
-    useHttpFile: false, serverURL: '', serverPort: '', pluginsDir: '',
+    serverURL: '', serverPort: '', pluginsDir: '',
     allowedRoles: ['super', 'admin', 'user'],
   }
 }
@@ -66,7 +66,6 @@ function openEdit(lib: Library) {
     serverURL: lib.serverURL ?? '',
     serverPort: lib.serverPort ?? '',
     pluginsDir: lib.pluginsDir ?? '',
-    useHttpFile: lib.useHttpFile ?? false,
     enableHash: lib.customFields?.enableHash ?? false,
     enableAutoSync: lib.customFields?.enableAutoSync ?? false,
     allowedRoles: (lib as any).allowedRoles ?? ['super', 'admin', 'user'],

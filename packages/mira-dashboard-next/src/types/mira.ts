@@ -13,7 +13,6 @@ export interface Library {
   serverURL?: string
   serverPort?: string
   pluginsDir?: string
-  useHttpFile?: boolean
   allowedRoles?: string[]
   customFields?: {
     path: string

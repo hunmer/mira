@@ -1,7 +1,6 @@
 export interface ILibraryServerData {
   readonly config?: Record<string, any>;
   readonly enableHash: boolean;
-  readonly useHttpFile: boolean;
   readonly customFields?: Record<string, any>;
   getPublicURL(url: string): string;
   initialize(): Promise<void>;

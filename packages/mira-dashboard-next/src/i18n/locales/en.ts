@@ -101,7 +101,6 @@ export default {
     iconPlaceholder: 'Icon name (default: default)',
     enableHash: 'Enable file hash verification',
     enableAutoSync: 'Enable auto sync (watch folder for new files)',
-    useHttpFile: 'Use HTTP file service (remote library fetches files via HTTP)',
     serverURL: 'Server URL',
     serverURLPlaceholder: 'e.g. http://127.0.0.1',
     serverPort: 'Server Port',

@@ -67,7 +67,6 @@ export class LibraryRoutes {
                         ...(libraryConfig.serverURL && { serverURL: libraryConfig.serverURL }),
                         ...(libraryConfig.serverPort && { serverPort: libraryConfig.serverPort }),
                         ...(libraryConfig.pluginsDir && { pluginsDir: libraryConfig.pluginsDir }),
-                        ...(libraryConfig.useHttpFile !== undefined && { useHttpFile: libraryConfig.useHttpFile }),
                         ...(libraryConfig.customFields && { customFields: libraryConfig.customFields }),
                         ...(libraryConfig.allowedRoles && { allowedRoles: libraryConfig.allowedRoles }),
                         createdAt: libraryConfig.createdAt || new Date().toISOString(),
@@ -93,19 +92,11 @@ export class LibraryRoutes {
                     serverURL,
                     serverPort,
                     pluginsDir,
-                    useHttpFile,
                     allowedRoles
                 } = req.body;
 
                 if (!name || !libraryPath) {
                     return res.status(400).json({ error: 'Name and path are required' });
-                }
-
-                // 对于远程库或启用 HTTP 文件服务，验证服务器信息
-                if (type === 'remote' || useHttpFile) {
-                    if (!serverURL || !serverPort) {
-                        return res.status(400).json({ error: 'Server URL and port are required when using remote library or HTTP file serving' });
-                    }
                 }
 
                 // 检查路径是否已存在
@@ -149,11 +140,6 @@ export class LibraryRoutes {
                 // 添加插件目录（如果提供）
                 if (pluginsDir) {
                     libraryConfig.pluginsDir = pluginsDir;
-                }
-
-                // 添加 useHttpFile 配置
-                if (useHttpFile !== undefined) {
-                    libraryConfig.useHttpFile = useHttpFile;
                 }
 
                 // 读取现有的 librarys.json
@@ -225,7 +211,6 @@ export class LibraryRoutes {
                     serverURL,
                     serverPort,
                     pluginsDir,
-                    useHttpFile,
                     allowedRoles
                 } = req.body;
 
@@ -252,13 +237,6 @@ export class LibraryRoutes {
                     }
                 }
 
-                // 对于远程库或启用 HTTP 文件服务，验证服务器信息
-                if (type === 'remote' || useHttpFile) {
-                    if (!serverURL || !serverPort) {
-                        return res.status(400).json({ error: 'Server URL and port are required when using remote library or HTTP file serving' });
-                    }
-                }
-
                 // 更新配置，支持新的字段结构
                 const updatedConfig: any = {
                     ...currentConfig,
@@ -276,13 +254,12 @@ export class LibraryRoutes {
                     updatedAt: new Date().toISOString()
                 };
 
-                // 更新服务器连接字段（远程库 或 启用 HTTP 文件服务时需要）
-                if (type === 'remote' || useHttpFile) {
+                // 更新服务器连接字段
+                if (serverURL !== undefined) {
                     updatedConfig.serverURL = serverURL;
+                }
+                if (serverPort !== undefined) {
                     updatedConfig.serverPort = serverPort;
-                } else if (type !== 'remote' && !useHttpFile) {
-                    delete updatedConfig.serverURL;
-                    delete updatedConfig.serverPort;
                 }
 
                 // 更新插件目录
@@ -292,11 +269,6 @@ export class LibraryRoutes {
                     } else {
                         delete updatedConfig.pluginsDir;
                     }
-                }
-
-                // 更新 useHttpFile 配置
-                if (useHttpFile !== undefined) {
-                    updatedConfig.useHttpFile = useHttpFile;
                 }
 
                 // 更新 allowedRoles

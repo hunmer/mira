@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useTheme, type ThemeMode } from '@/composables/useTheme'
+import { useLibrary } from '@/composables/useLibrary'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
   SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
@@ -27,6 +29,7 @@ const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
 const { mode: themeMode } = useTheme()
+const { libraries, selectedId, loading: libsLoading, ensureLoaded } = useLibrary()
 
 const navItems = [
   { path: '/overview', icon: RiHome4Line, key: 'overview', roles: [] },
@@ -46,6 +49,8 @@ const visibleNavItems = navItems.filter(
 
 function setTheme(m: ThemeMode) { themeMode.value = m }
 function setLocale(l: string) { locale.value = l; localStorage.setItem('locale', l) }
+
+onMounted(ensureLoaded)
 
 function handleLogout() {
   auth.logout()
@@ -118,6 +123,15 @@ function handleLogout() {
       <header class="flex h-14 items-center gap-2 border-b px-4">
         <SidebarTrigger />
         <div class="flex-1" />
+        <!-- Library selector -->
+        <Select v-model="selectedId" :disabled="libsLoading || !libraries.length">
+          <SelectTrigger class="w-52 h-8 text-xs">
+            <SelectValue placeholder="选择素材库" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="lib in libraries" :key="lib.id" :value="lib.id">{{ lib.name }}</SelectItem>
+          </SelectContent>
+        </Select>
         <!-- Locale switcher -->
         <DropdownMenu>
           <DropdownMenuTrigger as-child>

@@ -7,14 +7,12 @@ export class LibraryServerDataSQLite implements ILibraryServerData {
   private db: Database | null = null;
   private inTransaction = false;
   readonly enableHash: boolean;
-  readonly useHttpFile: boolean;
   readonly customFields: Record<string, any>;
   readonly config: Record<string, any>;
 
   constructor(config: Record<string, any>, opts: any) {
     this.config = config;
     this.customFields = config.customFields || {};
-    this.useHttpFile = config.customFields?.useHttpFile ?? false;
     this.enableHash = config.customFields?.enableHash ?? false;
   }
 

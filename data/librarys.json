@@ -23,7 +23,6 @@
 	    "serverURL": "http://192.168.31.3",
         "serverPort": "3000",
         "pluginsDir": "D:/mira_typescript/plugins",
-        "useHttpFile": false,
         "createdAt": "2025-07-22T14:27:23.375146"
     }
 
