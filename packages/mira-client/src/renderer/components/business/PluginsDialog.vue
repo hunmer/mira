@@ -9,17 +9,17 @@
       </DialogHeader>
       <div class="plugins-content h-full flex">
         <!-- 侧边栏 -->
-        <aside class="w-56 border-r border-gray-200 flex flex-col">
+        <aside class="w-56 border-r border-gray-200 dark:border-gray-700 flex flex-col">
           <!-- 插件类型切换 -->
           <div class="p-4">
-            <div class="bg-gray-200 rounded-lg p-1 flex">
+            <div class="bg-gray-200 dark:bg-gray-700 rounded-lg p-1 flex">
               <button
                 @click="activeTab = 'local'"
                 :class="[
                   'flex-1 text-sm py-2 px-3 rounded-md font-medium transition-colors',
                   activeTab === 'local'
-                    ? 'bg-white text-gray-900 shadow'
-                    : 'text-gray-600'
+                    ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 shadow'
+                    : 'text-gray-600 dark:text-gray-400'
                 ]"
               >
                 本地插件
@@ -29,8 +29,8 @@
                 :class="[
                   'flex-1 text-sm py-2 px-3 rounded-md font-medium transition-colors',
                   activeTab === 'online'
-                    ? 'bg-white text-gray-900 shadow'
-                    : 'text-gray-600'
+                    ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 shadow'
+                    : 'text-gray-600 dark:text-gray-400'
                 ]"
               >
                 插件市场
@@ -45,8 +45,8 @@
               :class="[
                 'flex items-center w-full px-3 py-2 text-sm rounded-lg transition-colors',
                 selectedCategory === 'all'
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'text-gray-600 hover:bg-gray-100'
+                  ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
               ]"
             >
               <span class="material-icons text-base mr-2">all_inclusive</span>
@@ -57,8 +57,8 @@
               :class="[
                 'flex items-center w-full px-3 py-2 text-sm rounded-lg transition-colors',
                 selectedCategory === 'communication'
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'text-gray-600 hover:bg-gray-100'
+                  ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
               ]"
             >
               <span class="material-icons text-base mr-2">chat_bubble_outline</span>
@@ -69,8 +69,8 @@
               :class="[
                 'flex items-center w-full px-3 py-2 text-sm rounded-lg transition-colors',
                 selectedCategory === 'documentation'
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'text-gray-600 hover:bg-gray-100'
+                  ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
               ]"
             >
               <span class="material-icons text-base mr-2">description</span>
@@ -81,8 +81,8 @@
               :class="[
                 'flex items-center w-full px-3 py-2 text-sm rounded-lg transition-colors',
                 selectedCategory === 'productivity'
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'text-gray-600 hover:bg-gray-100'
+                  ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
               ]"
             >
               <span class="material-icons text-base mr-2">trending_up</span>
@@ -93,8 +93,8 @@
               :class="[
                 'flex items-center w-full px-3 py-2 text-sm rounded-lg transition-colors',
                 selectedCategory === 'development'
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'text-gray-600 hover:bg-gray-100'
+                  ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
               ]"
             >
               <span class="material-icons text-base mr-2">code</span>
@@ -104,11 +104,11 @@
         </aside>
 
         <!-- 主内容区 -->
-        <main class="flex-1 flex flex-col bg-white">
+        <main class="flex-1 flex flex-col bg-white dark:bg-gray-900">
           <!-- 顶部操作栏 -->
-          <header class="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+          <header class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
             <div class="flex items-center space-x-3">
-              <span class="text-lg font-semibold text-gray-800">{{ getCategoryTitle() }}</span>
+              <span class="text-lg font-semibold text-gray-800 dark:text-gray-200">{{ getCategoryTitle() }}</span>
             </div>
             <div class="flex items-center space-x-2">
               <!-- 搜索框 -->
@@ -118,7 +118,7 @@
                   v-model="searchQuery"
                   type="text"
                   placeholder="搜索插件..."
-                  class="pl-9 pr-4 py-2 w-64 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  class="pl-9 pr-4 py-2 w-64 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                 />
               </div>
               <!-- 刷新按钮 -->
@@ -128,7 +128,7 @@
                     <button
                       @click="refreshPlugins"
                       :disabled="isRefreshing"
-                      class="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-600 disabled:opacity-50"
+                      class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-400 disabled:opacity-50"
                     >
                       <span class="material-icons text-base" :class="{ 'animate-spin': isRefreshing }">refresh</span>
                     </button>
@@ -160,19 +160,19 @@
               <div
                 v-for="plugin in filteredLocalPlugins"
                 :key="plugin.config.pluginId"
-                class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow"
               >
                 <div class="flex items-start justify-between mb-3">
                   <div class="flex-1">
-                    <h3 class="font-medium text-gray-900">{{ plugin.config.pluginName }}</h3>
-                    <p class="text-xs text-gray-500 mt-1">{{ plugin.config.description }}</p>
+                    <h3 class="font-medium text-gray-900 dark:text-gray-100">{{ plugin.config.pluginName }}</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ plugin.config.description }}</p>
                   </div>
                   <!-- 启用/禁用开关 -->
                   <button
                     @click="togglePlugin(plugin)"
                     :class="[
                       'ml-3 w-10 h-6 rounded-full relative transition-colors',
-                      plugin.status !== 'disabled' ? 'bg-green-500' : 'bg-gray-300'
+                      plugin.status !== 'disabled' ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
                     ]"
                   >
                     <span
@@ -183,29 +183,29 @@
                     ></span>
                   </button>
                 </div>
-                <div class="flex items-center justify-between text-xs text-gray-500">
+                <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                   <span>{{ plugin.config.author }}</span>
                   <span>v{{ plugin.config.version }}</span>
                 </div>
-                <div v-if="plugin.error" class="mt-2 text-xs text-red-500 bg-red-50 p-2 rounded">
+                <div v-if="plugin.error" class="mt-2 text-xs text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-2 rounded">
                   {{ plugin.error }}
                 </div>
-                <div class="flex items-center space-x-2 mt-3 pt-3 border-t border-gray-100">
+                <div class="flex items-center space-x-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
                   <button
                     @click="showPluginDetails(plugin)"
-                    class="text-xs text-blue-600 hover:text-blue-800"
+                    class="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
                   >
                     详情
                   </button>
                   <button
                     @click="reloadPlugin(plugin)"
-                    class="text-xs text-gray-600 hover:text-gray-800"
+                    class="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300"
                   >
                     重载
                   </button>
                   <button
                     @click="removePlugin(plugin)"
-                    class="text-xs text-red-600 hover:text-red-800"
+                    class="text-xs text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
                   >
                     卸载
                   </button>
@@ -214,8 +214,8 @@
 
               <!-- 空状态 -->
               <div v-if="filteredLocalPlugins.length === 0" class="col-span-2 text-center py-12">
-                <span class="material-icons text-6xl text-gray-300">extension</span>
-                <p class="text-gray-500 mt-4">
+                <span class="material-icons text-6xl text-gray-300 dark:text-gray-600">extension</span>
+                <p class="text-gray-500 dark:text-gray-400 mt-4">
                   {{ searchQuery ? '没有找到匹配的插件' : '暂无插件' }}
                 </p>
               </div>
@@ -223,9 +223,9 @@
 
             <!-- 在线插件（占位符） -->
             <div v-else class="flex flex-col items-center justify-center h-full text-center py-12">
-              <span class="material-icons text-6xl text-gray-300">cloud</span>
-              <h3 class="text-lg font-medium text-gray-600 mt-4">在线插件市场</h3>
-              <p class="text-gray-500 mt-2">在线插件市场功能正在开发中，敬请期待。</p>
+              <span class="material-icons text-6xl text-gray-300 dark:text-gray-600">cloud</span>
+              <h3 class="text-lg font-medium text-gray-600 dark:text-gray-400 mt-4">在线插件市场</h3>
+              <p class="text-gray-500 dark:text-gray-400 mt-2">在线插件市场功能正在开发中，敬请期待。</p>
             </div>
           </div>
         </main>
@@ -245,76 +245,76 @@
     <div v-if="selectedPlugin" class="space-y-4">
       <div class="grid grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium mb-1 text-gray-700">插件ID</label>
+          <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">插件ID</label>
           <input
             :value="selectedPlugin.config.pluginId"
             readonly
-            class="w-full px-3 py-2 border border-gray-200 rounded bg-gray-50 text-sm"
+            class="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100"
           />
         </div>
         <div>
-          <label class="block text-sm font-medium mb-1 text-gray-700">版本</label>
+          <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">版本</label>
           <input
             :value="selectedPlugin.config.version"
             readonly
-            class="w-full px-3 py-2 border border-gray-200 rounded bg-gray-50 text-sm"
+            class="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100"
           />
         </div>
       </div>
       <div>
-        <label class="block text-sm font-medium mb-1 text-gray-700">描述</label>
+        <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">描述</label>
         <textarea
           :value="selectedPlugin.config.description"
           readonly
           rows="3"
-          class="w-full px-3 py-2 border border-gray-200 rounded bg-gray-50 text-sm"
+          class="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100"
         ></textarea>
       </div>
       <div class="grid grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium mb-1 text-gray-700">作者</label>
+          <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">作者</label>
           <input
             :value="selectedPlugin.config.author"
             readonly
-            class="w-full px-3 py-2 border border-gray-200 rounded bg-gray-50 text-sm"
+            class="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100"
           />
         </div>
         <div>
-          <label class="block text-sm font-medium mb-1 text-gray-700">主页</label>
+          <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">主页</label>
           <input
             :value="selectedPlugin.config.homepage || '无'"
             readonly
-            class="w-full px-3 py-2 border border-gray-200 rounded bg-gray-50 text-sm"
+            class="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100"
           />
         </div>
       </div>
       <div v-if="selectedPlugin.config.dependencies && selectedPlugin.config.dependencies.length > 0">
-        <label class="block text-sm font-medium mb-1 text-gray-700">依赖插件</label>
+        <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">依赖插件</label>
         <div class="flex flex-wrap gap-1">
           <span
             v-for="dep in selectedPlugin.config.dependencies"
             :key="dep"
-            class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs"
+            class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300 rounded text-xs"
           >
             {{ dep }}
           </span>
         </div>
       </div>
       <div>
-        <label class="block text-sm font-medium mb-1 text-gray-700">插件目录</label>
+        <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">插件目录</label>
         <input
           :value="selectedPlugin.directory"
           readonly
-          class="w-full px-3 py-2 border border-gray-200 rounded bg-gray-50 text-sm"
+          class="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100"
         />
       </div>
       <div v-if="selectedPlugin.error">
-        <label class="block text-sm font-medium mb-1 text-gray-700">错误信息</label>
+        <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">错误信息</label>
         <textarea
           :value="selectedPlugin.error"
           readonly
           rows="3"
-          class="w-full px-3 py-2 border border-gray-200 rounded bg-red-50 text-sm text-red-600"
+          class="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded bg-red-50 dark:bg-red-900/20 text-sm text-red-600 dark:text-red-400"
         ></textarea>
       </div>
     </div>
@@ -331,25 +331,25 @@
         <DialogTitle>添加新插件</DialogTitle>
       </DialogHeader>
     <div class="space-y-3">
-      <p class="text-gray-600">选择要添加插件的方式：</p>
+      <p class="text-gray-600 dark:text-gray-400">选择要添加插件的方式：</p>
       <button
         @click="selectPluginDirectory"
-        class="w-full flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+        class="w-full flex items-center p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
       >
         <span class="material-icons text-2xl text-blue-500 mr-3">folder_open</span>
         <div class="text-left">
           <div class="font-medium">从文件夹添加</div>
-          <div class="text-sm text-gray-500">选择包含插件的文件夹</div>
+          <div class="text-sm text-gray-500 dark:text-gray-400">选择包含插件的文件夹</div>
         </div>
       </button>
       <button
         @click="installPluginFromFile"
-        class="w-full flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+        class="w-full flex items-center p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
       >
         <span class="material-icons text-2xl text-blue-500 mr-3">description</span>
         <div class="text-left">
           <div class="font-medium">从文件安装</div>
-          <div class="text-sm text-gray-500">安装 ZIP 格式的插件包</div>
+          <div class="text-sm text-gray-500 dark:text-gray-400">安装 ZIP 格式的插件包</div>
         </div>
       </button>
     </div>

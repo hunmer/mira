@@ -10,10 +10,10 @@
       <div class="file-upload-content flex flex-col min-h-0 overflow-hidden">
         <!-- 顶部队列状态 -->
         <div v-if="queueStats.pending > 0 || queueStats.running > 0" class="flex items-center justify-end space-x-4 text-sm mb-4 px-1">
-          <span class="text-blue-600">等待中: {{ queueStats.pending }}</span>
-          <span class="text-orange-600">上传中: {{ queueStats.running }}</span>
-          <span class="text-green-600">已完成: {{ queueStats.completed }}</span>
-          <span v-if="queueStats.failed > 0" class="text-red-600">失败: {{ queueStats.failed }}</span>
+          <span class="text-blue-600 dark:text-blue-400">等待中: {{ queueStats.pending }}</span>
+          <span class="text-orange-600 dark:text-orange-400">上传中: {{ queueStats.running }}</span>
+          <span class="text-green-600 dark:text-green-400">已完成: {{ queueStats.completed }}</span>
+          <span v-if="queueStats.failed > 0" class="text-red-600 dark:text-red-400">失败: {{ queueStats.failed }}</span>
         </div>
 
         <!-- 主体内容区域 -->
@@ -32,31 +32,31 @@
 
             <!-- 待上传文件网格 -->
             <div
-              class="flex-1 bg-white rounded-xl border-2 overflow-hidden flex flex-col transition-colors"
-              :class="isDragOver ? 'border-blue-500 bg-blue-50/30' : 'border-gray-200'"
+              class="flex-1 bg-white dark:bg-gray-900 rounded-xl border-2 overflow-hidden flex flex-col transition-colors"
+              :class="isDragOver ? 'border-blue-500 bg-blue-50/30 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700'"
               @drop.prevent="handleDrop"
               @dragover.prevent="isDragOver = true"
               @dragleave.prevent="isDragOver = false"
             >
               <!-- 文件列表头部 -->
-              <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+              <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
                 <div class="flex items-center space-x-2">
-                  <span class="text-sm font-medium text-gray-700">待上传文件</span>
-                  <span v-if="pendingFiles.length > 0" class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                  <span class="text-sm font-medium text-gray-700 dark:text-gray-300">待上传文件</span>
+                  <span v-if="pendingFiles.length > 0" class="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">
                     {{ pendingFiles.length }} 个
                   </span>
                 </div>
                 <div class="flex items-center space-x-2">
                   <button
                     v-if="selectedPendingIds.length > 0"
-                    class="text-xs text-gray-500 hover:text-gray-700"
+                    class="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                     @click="clearSelection"
                   >
                     取消选择 ({{ selectedPendingIds.length }})
                   </button>
                   <button
                     v-if="pendingFiles.length > 0"
-                    class="text-xs text-red-500 hover:text-red-700"
+                    class="text-xs text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
                     @click="clearAllPendingFiles"
                   >
                     清空全部
@@ -80,7 +80,7 @@
                   <!-- 空状态 -->
                   <div
                     v-if="pendingFiles.length === 0"
-                    class="h-full flex flex-col items-center justify-center text-gray-400 cursor-pointer"
+                    class="h-full flex flex-col items-center justify-center text-gray-400 dark:text-gray-500 cursor-pointer"
                     @click="triggerFileSelect(fileInputRef)"
                   >
                     <span class="material-icons text-5xl mb-2">cloud_upload</span>
@@ -98,8 +98,8 @@
                       v-for="file in pendingFiles"
                       :key="file.id"
                       :data-selectable-id="file.id"
-                      class="file-card group relative bg-gray-50 rounded-lg overflow-hidden border-2 transition-all cursor-pointer"
-                      :class="selectedPendingIds.includes(file.id) ? 'border-blue-500 ring-2 ring-blue-200' : 'border-transparent hover:border-gray-300'"
+                      class="file-card group relative bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden border-2 transition-all cursor-pointer"
+                      :class="selectedPendingIds.includes(file.id) ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800' : 'border-transparent hover:border-gray-300 dark:hover:border-gray-600'"
                       @click.stop="handleFileClick(file, $event)"
                     >
                       <!-- 预览区域 -->
@@ -112,7 +112,7 @@
                           alt="预览"
                         />
                         <!-- 视频预览 -->
-                        <div v-else-if="isVideoFile(file.file.type)" class="w-full h-full flex items-center justify-center bg-purple-100">
+                        <div v-else-if="isVideoFile(file.file.type)" class="w-full h-full flex items-center justify-center bg-purple-100 dark:bg-purple-900/30">
                           <img
                             v-if="file.preview"
                             :src="file.preview"
@@ -122,15 +122,15 @@
                           <span v-else class="material-icons text-4xl text-purple-400">videocam</span>
                         </div>
                         <!-- 音频预览 -->
-                        <div v-else-if="isAudioFile(file.file.type)" class="w-full h-full flex items-center justify-center bg-green-100">
+                        <div v-else-if="isAudioFile(file.file.type)" class="w-full h-full flex items-center justify-center bg-green-100 dark:bg-green-900/30">
                           <span class="material-icons text-4xl text-green-400">audiotrack</span>
                         </div>
                         <!-- 文档预览 -->
-                        <div v-else-if="isDocumentFile(file.file.type)" class="w-full h-full flex items-center justify-center bg-blue-100">
+                        <div v-else-if="isDocumentFile(file.file.type)" class="w-full h-full flex items-center justify-center bg-blue-100 dark:bg-blue-900/30">
                           <span class="material-icons text-4xl text-blue-400">description</span>
                         </div>
                         <!-- 其他文件 -->
-                        <div v-else class="w-full h-full flex items-center justify-center bg-gray-200">
+                        <div v-else class="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700">
                           <span class="material-icons text-4xl text-gray-400">insert_drive_file</span>
                         </div>
 
@@ -156,7 +156,7 @@
 
                       <!-- 文件信息 -->
                       <div class="p-2">
-                        <p class="text-xs font-medium text-gray-700 truncate" :title="file.file.name">
+                        <p class="text-xs font-medium text-gray-700 dark:text-gray-300 truncate" :title="file.file.name">
                           {{ file.file.name }}
                         </p>
                         <p class="text-xs text-gray-400">{{ formatFileSize(file.file.size) }}</p>
@@ -165,7 +165,7 @@
                         <div class="flex items-center gap-1 mt-1 flex-wrap">
                           <span
                             v-if="file.folderId"
-                            class="text-xs bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded"
+                            class="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded"
                           >
                             <span class="material-icons text-xs align-middle mr-0.5">folder</span>
                             {{ getFolderName(file.folderId) }}
@@ -173,7 +173,7 @@
                           <span
                             v-for="tagId in (file.tags || []).slice(0, 2)"
                             :key="tagId"
-                            class="text-xs bg-green-100 text-green-600 px-1.5 py-0.5 rounded"
+                            class="text-xs bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded"
                           >
                             <span class="material-icons text-xs align-middle mr-0.5">label</span>
                             {{ getTagName(tagId) }}
@@ -197,7 +197,7 @@
           <!-- 右侧：文件夹和标签面板 -->
           <div class="w-72 flex flex-col gap-4 flex-shrink-0">
             <!-- 文件夹和标签树 -->
-            <div class="bg-white rounded-xl border border-gray-200 overflow-hidden flex-1">
+            <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex-1">
               <div class="p-2 h-full overflow-y-auto space-y-4">
                 <FolderTreeComponent
                   item-type="folder"
@@ -220,7 +220,7 @@
       </div>
       <DialogFooter class="flex-row w-full sm:justify-between">
         <div class="flex items-center space-x-2">
-          <span class="text-sm text-gray-600">素材库:</span>
+          <span class="text-sm text-gray-600 dark:text-gray-400">素材库:</span>
           <Select v-model="selectedLibraryId" @update:model-value="(v: any) => handleLibrarySelectChange(v)">
             <SelectTrigger class="w-48">
               <SelectValue placeholder="选择素材库" />
@@ -231,7 +231,7 @@
           </Select>
         </div>
         <button
-          class="px-6 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          class="px-6 py-2 bg-blue-500 dark:bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-600 dark:hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           :disabled="pendingFiles.length === 0 || !selectedLibraryId || uploadingFileIds.size > 0"
           @click="startUpload"
         >

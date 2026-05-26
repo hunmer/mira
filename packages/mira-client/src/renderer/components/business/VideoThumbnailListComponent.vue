@@ -1,38 +1,38 @@
 <template>
-  <div class="w-28 flex-shrink-0 bg-white p-2 flex flex-col items-center border-r border-gray-200">
+  <div class="w-28 flex-shrink-0 bg-white dark:bg-gray-900 p-2 flex flex-col items-center border-r border-gray-200 dark:border-gray-700">
     <div class="flex-grow space-y-3 overflow-y-auto pr-1">
-      <div 
+      <div
         v-for="video in videos"
         :key="video.id"
         :class="[
           'relative cursor-pointer rounded-lg',
-          video.id === currentVideoId 
-            ? 'border-2 border-blue-500' 
-            : 'border-2 border-transparent hover:border-gray-300'
+          video.id === currentVideoId
+            ? 'border-2 border-blue-500'
+            : 'border-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600'
         ]"
         @click="$emit('video-select', video.id)"
       >
-        <img 
+        <img
           :alt="video.name"
           :src="video.thumbnailPath || video.url"
           class="h-24 w-24 rounded-lg object-cover"
           loading="lazy"
         />
-        
+
         <!-- 播放图标覆盖层 -->
         <div class="absolute inset-0 bg-black/30 flex items-center justify-center rounded-lg">
           <span class="material-icons text-white">play_arrow</span>
         </div>
-        
+
         <!-- 格式标识 -->
-        <span 
+        <span
           class="absolute top-1 right-1 inline-flex items-center rounded-sm bg-black/60 px-1.5 py-0.5 text-xs font-medium text-white"
         >
           {{ getFileFormat(video.name) }}
         </span>
-        
+
         <!-- 时长显示 -->
-        <span 
+        <span
           v-if="video.metadata?.duration"
           class="absolute bottom-1 right-1 inline-flex items-center rounded-sm bg-black/60 px-1.5 py-0.5 text-xs font-medium text-white"
         >
@@ -83,13 +83,25 @@ const formatDuration = (seconds: number): string => {
   border-radius: 2px;
 }
 
+.dark .overflow-y-auto::-webkit-scrollbar-track {
+  background: #374151;
+}
+
 .overflow-y-auto::-webkit-scrollbar-thumb {
   background: #c1c1c1;
   border-radius: 2px;
 }
 
+.dark .overflow-y-auto::-webkit-scrollbar-thumb {
+  background: #4b5563;
+}
+
 .overflow-y-auto::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
+}
+
+.dark .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
 }
 
 /* 悬停效果 */
