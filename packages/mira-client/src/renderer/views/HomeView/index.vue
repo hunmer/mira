@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 // Component imports
@@ -28,6 +28,7 @@ import {
 import { useLibraryStore } from '@/renderer/stores/library'
 import { useTagStore } from '@renderer/stores/tag'
 import { useAuthStore } from '@renderer/stores/auth'
+import { useDashboardStore } from '@renderer/stores/dashboard'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 
 // Controller import
@@ -125,12 +126,26 @@ const {
 const authStore = useAuthStore()
 const router = useRouter()
 
+const dashboardStore = useDashboardStore()
+const avatarLoadError = ref(false)
+
 const userAvatarUrl = computed(() => {
+  const userId = authStore.user?.id
+  const baseUrl = dashboardStore.dashboardBaseUrl
+  console.log('[AvatarDebug] userId:', userId, 'baseUrl:', baseUrl, 'user:', JSON.stringify(authStore.user))
+  if (userId && baseUrl) {
+    const url = dashboardStore.getUserAvatarUrl(userId)
+    console.log('[AvatarDebug] resolved avatar URL:', url)
+    return url
+  }
   const avatar = (authStore.user as any)?.avatar
+  console.log('[AvatarDebug] fallback, avatar field:', avatar)
   if (!avatar) return ''
   const base = (miraSDKService.getConnectionConfig()?.serverUrl || '').replace(/\/$/, '')
   return `${base}${avatar}`
 })
+
+watch(userAvatarUrl, (v) => { avatarLoadError.value = false; console.log('[AvatarDebug] userAvatarUrl changed:', v) })
 
 const handleLogout = async () => {
   await authStore.logout()
@@ -571,11 +586,11 @@ onUnmounted(() => {
               <template #trigger>
                 <button class="p-2 rounded-lg hover:bg-gray-100 transition-colors">
                   <img
-                    v-if="userAvatarUrl"
+                    v-if="userAvatarUrl && !avatarLoadError"
                     :src="userAvatarUrl"
                     alt="avatar"
                     class="w-6 h-6 rounded-full object-cover"
-                    @error="($event.target as HTMLImageElement).style.display = 'none'"
+                    @error="avatarLoadError = true"
                   />
                   <div v-else class="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-medium">
                     {{ authStore.userDisplayName?.charAt(0)?.toUpperCase() || '?' }}

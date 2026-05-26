@@ -10,6 +10,8 @@ import { computed } from 'vue'
 import { cn } from '@/lib/utils'
 import AlertDialogOverlay from './AlertDialogOverlay.vue'
 
+defineOptions({ inheritAttrs: false })
+
 const props = defineProps<AlertDialogContentProps>()
 const emits = defineEmits<AlertDialogContentEmits>()
 

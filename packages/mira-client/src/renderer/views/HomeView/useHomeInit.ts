@@ -3,6 +3,8 @@
  */
 import { useAppState } from '@renderer/stores/appState'
 import { useLibraryStore } from '@/renderer/stores/library'
+import { useDashboardStore } from '@renderer/stores/dashboard'
+import { useAuthStore } from '@renderer/stores/auth'
 import { tabPersistence } from '@renderer/composables/TabPersistence'
 import {
   useHomeRouteHandler,
@@ -13,6 +15,8 @@ import {
 export function useHomeInit() {
   const { setRouteHandlersRegistered } = useAppState()
   const libraryStore = useLibraryStore()
+  const dashboardStore = useDashboardStore()
+  const authStore = useAuthStore()
 
   const routeHandler = useHomeRouteHandler()
   const tagHandler = useHomeTagHandler()
@@ -73,6 +77,12 @@ export function useHomeInit() {
     homeController.setGetCurrentLibraryCallback(() => libraryStore.currentLibrary)
 
     await initializeLibrary(initializeDefaultLibrary)
+
+    // 并行解析 dashboard URL 和刷新用户信息（确保 user.id 存在）
+    await Promise.all([
+      dashboardStore.resolve(),
+      authStore.getCurrentUser(true).catch(() => {})
+    ])
 
     const { useTabs } = await import('@renderer/composables/useTabs')
     const tabsComposable = useTabs()

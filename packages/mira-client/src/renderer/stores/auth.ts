@@ -276,8 +276,8 @@ export const useAuthStore = defineStore('auth', () => {
    * 获取当前用户信息
    * @returns Promise<UserInfo>
    */
-  const getCurrentUser = async () => {
-    if (isLoggedIn.value && user.value && !isTokenExpired.value) {
+  const getCurrentUser = async (forceRefresh = false) => {
+    if (!forceRefresh && isLoggedIn.value && user.value && !isTokenExpired.value) {
       return user.value
     }
 

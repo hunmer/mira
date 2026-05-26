@@ -5,6 +5,7 @@ export { useSettingsStore } from './settings'
 export { usePluginStore } from './plugin'
 export { useFolderStore } from './folder'
 export { useTagStore } from './tag'
+export { useDashboardStore } from './dashboard'
 
 // 导出类型
 export type { AppSettings } from './settings'
