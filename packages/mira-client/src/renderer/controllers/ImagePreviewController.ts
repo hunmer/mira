@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { api as viewerApi } from 'v-viewer'  // 保留备用，现在主要使用内嵌组件
 import 'viewerjs/dist/viewer.css'
@@ -20,6 +20,24 @@ export class ImagePreviewController {
   public loading = ref<boolean>(false)
   public error = ref<string | null>(null)
   public viewerInstance = ref<any>(null)
+  public imageCacheKey = ref<number>(Date.now())
+
+  private debug = (event: string, payload: Record<string, unknown> = {}): void => {
+    console.debug('[ImagePreviewDebug][Controller]', event, payload)
+  }
+
+  private describeImage = (image?: FileInfo): Record<string, unknown> | null => {
+    if (!image) return null
+
+    return {
+      id: image.id,
+      name: image.name,
+      path: image.path,
+      url: image.url,
+      thumbnailPath: image.thumbnailPath,
+      updatedAt: image.updatedAt
+    }
+  }
 
   constructor() {
     // 初始化当前图片ID
@@ -28,6 +46,38 @@ export class ImagePreviewController {
     } else if (this.imageItems.value.length > 0) {
       this.currentImageId.value = this.imageItems.value[0].id
     }
+
+    this.debug('constructor:init', {
+      routeId: this.route.params.id,
+      currentImageId: this.currentImageId.value,
+      cacheKey: this.imageCacheKey.value,
+      imageCount: this.imageItems.value.length,
+      currentImage: this.describeImage(this.currentImage.value)
+    })
+
+    watch(
+      () => this.route.params.id,
+      (imageId) => {
+        this.debug('route:param-change', {
+          routeId: imageId,
+          currentImageId: this.currentImageId.value,
+          cacheKey: this.imageCacheKey.value
+        })
+
+        if (typeof imageId === 'string' && imageId && imageId !== this.currentImageId.value) {
+          this.currentImageId.value = imageId
+          this.imageCacheKey.value = Date.now()
+          this.zoom.value = 1
+          this.rotation.value = 0
+
+          this.debug('route:param-applied', {
+            currentImageId: this.currentImageId.value,
+            cacheKey: this.imageCacheKey.value,
+            currentImage: this.describeImage(this.currentImage.value)
+          })
+        }
+      }
+    )
     
     // 延迟初始化 - 将在实际需要时调用 initializeIfNeeded
   }
@@ -128,14 +178,46 @@ export class ImagePreviewController {
    * 选择图片
    */
   public handleImageSelect = (imageId: string): void => {
-    if (this.currentImageId.value === imageId) return
+    this.debug('select:request', {
+      requestedImageId: imageId,
+      previousImageId: this.currentImageId.value,
+      previousImage: this.describeImage(this.currentImage.value),
+      cacheKey: this.imageCacheKey.value
+    })
+
+    if (this.currentImageId.value === imageId) {
+      this.debug('select:skip-same-id', { imageId })
+      return
+    }
+
     this.currentImageId.value = imageId
+    this.imageCacheKey.value = Date.now()
     this.zoom.value = 1
     this.rotation.value = 0
+
+    this.debug('select:state-updated', {
+      currentImageId: this.currentImageId.value,
+      cacheKey: this.imageCacheKey.value,
+      currentImageIndex: this.currentImageIndex.value,
+      currentImage: this.describeImage(this.currentImage.value)
+    })
+
+    this.router.replace({
+      name: 'ImagePreview',
+      params: { id: imageId },
+      query: this.route.query
+    }).then(() => {
+      this.debug('select:route-synced', {
+        routeId: this.route.params.id,
+        currentImageId: this.currentImageId.value,
+        cacheKey: this.imageCacheKey.value
+      })
+    }).catch((error) => {
+      console.error('[ImagePreviewDebug][Controller] select:route-sync-failed', error)
+    })
   }
 
-  // URL 同步：不使用 router.replace，避免同路由参数变化导致组件重挂载、controller 重建
-  // 图片切换只改 reactive state，不走路由
+  // URL 同步使用 router.replace，避免缩略图切换污染浏览历史。
 
   /**
    * 放大

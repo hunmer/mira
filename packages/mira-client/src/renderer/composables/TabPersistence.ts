@@ -6,6 +6,7 @@
  */
 
 import type { TabItem } from './useTabs'
+import { getTabViewMode } from './useMediaTabData'
 import ConfigStorage from '@renderer/utils/ConfigStorage'
 
 const STORAGE_KEY_PREFIX = 'mira-tabs-state'
@@ -20,6 +21,7 @@ export interface TabState {
   data?: any
   active: boolean
   filters?: Record<string, any>
+  viewMode?: 'grid' | 'list' | 'waterfall'
 }
 
 export interface TabsStateSnapshot {
@@ -73,7 +75,8 @@ export class TabPersistence {
         type: tab.type,
         data: tab.data,
         active: tab.active,
-        filters: tab.filters
+        filters: tab.filters,
+        viewMode: getTabViewMode(tab.id)
       }))
 
       const snapshot: TabsStateSnapshot = {

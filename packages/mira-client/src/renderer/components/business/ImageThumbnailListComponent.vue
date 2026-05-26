@@ -4,7 +4,7 @@
       <img
         v-for="image in images"
         :key="image.id"
-        v-memo="[image.id === currentImageId, image.thumbnailPath, image.url]"
+        v-memo="[image.id === currentImageId, image.thumbnailPath, image.url, cacheKey]"
         :alt="image.name"
         :class="[
           'h-24 w-24 cursor-pointer rounded-lg border-2 object-cover',
@@ -12,8 +12,8 @@
             ? 'border-blue-500'
             : 'border-transparent hover:border-gray-300'
         ]"
-        :src="image.thumbnailPath || image.url"
-        @click="$emit('image-select', image.id)"
+        :src="getImageSrc(image)"
+        @click="handleImageSelect(image)"
         loading="lazy"
       />
     </div>
@@ -21,19 +21,70 @@
 </template>
 
 <script setup lang="ts">
+import { watch } from 'vue'
 import type { FileInfo } from '../../../shared/types'
+import { toCacheBustedFileUrl } from '../../utils/fileUtils'
 
 interface Props {
   images: FileInfo[]
   currentImageId: string
+  cacheKey?: string | number
 }
 
 interface Emits {
   (e: 'image-select', imageId: string): void
 }
 
-defineProps<Props>()
-defineEmits<Emits>()
+const props = defineProps<Props>()
+const emit = defineEmits<Emits>()
+
+const getImageSrc = (image: FileInfo): string | undefined => {
+  return toCacheBustedFileUrl(image.thumbnailPath || image.url, props.cacheKey)
+}
+
+watch(
+  () => [props.currentImageId, props.cacheKey, props.images.length] as const,
+  ([currentImageId, cacheKey, imageCount]) => {
+    const currentImage = props.images.find((image) => image.id === currentImageId)
+
+    console.debug('[ImagePreviewDebug][ThumbnailList] props-change', {
+      currentImageId,
+      cacheKey,
+      imageCount,
+      currentImage: currentImage
+        ? {
+            id: currentImage.id,
+            name: currentImage.name,
+            path: currentImage.path,
+            url: currentImage.url,
+            thumbnailPath: currentImage.thumbnailPath,
+            updatedAt: currentImage.updatedAt
+          }
+        : null,
+      currentThumbnailSrc: currentImage ? getImageSrc(currentImage) : undefined
+    })
+  },
+  { immediate: true }
+)
+
+const handleImageSelect = (image: FileInfo): void => {
+  console.debug('[ImagePreviewDebug][ThumbnailList] click', {
+    clickedImageId: image.id,
+    currentImageId: props.currentImageId,
+    cacheKey: props.cacheKey,
+    image: {
+      id: image.id,
+      name: image.name,
+      path: image.path,
+      url: image.url,
+      thumbnailPath: image.thumbnailPath,
+      updatedAt: image.updatedAt
+    },
+    thumbnailSrc: getImageSrc(image)
+  })
+
+  emit('image-select', image.id)
+}
 </script>
 
 <style scoped>

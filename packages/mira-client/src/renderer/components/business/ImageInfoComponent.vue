@@ -13,7 +13,7 @@
         <div v-if="image" class="relative">
           <img 
             :alt="image.name"
-            :src="image.path || image.url"
+            :src="imageSrc"
             class="rounded-lg object-cover w-full h-48 cursor-pointer"
           />
           <div class="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
@@ -133,11 +133,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { FileInfo } from '../../../shared/types'
+import { toCacheBustedFileUrl } from '../../utils/fileUtils'
 
 interface Props {
   image?: FileInfo
+  cacheKey?: string | number
 }
 
 interface Emits {
@@ -145,12 +147,38 @@ interface Emits {
   (e: 'tag-remove', tag: string): void
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
 // 响应式数据
 const showAddTag = ref(false)
 const newTag = ref('')
+const imageSrc = computed(() => toCacheBustedFileUrl(props.image?.path || props.image?.url, props.cacheKey))
+
+const describeImage = (image?: FileInfo): Record<string, unknown> | null => {
+  if (!image) return null
+
+  return {
+    id: image.id,
+    name: image.name,
+    path: image.path,
+    url: image.url,
+    thumbnailPath: image.thumbnailPath,
+    updatedAt: image.updatedAt
+  }
+}
+
+watch(
+  [() => props.image, () => props.cacheKey, imageSrc],
+  ([image, cacheKey, src]) => {
+    console.debug('[ImagePreviewDebug][Info] props-change', {
+      image: describeImage(image),
+      cacheKey,
+      imageSrc: src
+    })
+  },
+  { immediate: true }
+)
 
 // 方法
 const addTag = () => {

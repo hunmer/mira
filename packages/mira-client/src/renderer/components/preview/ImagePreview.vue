@@ -46,6 +46,7 @@
       <ImageThumbnailListComponent
         :images="controller.imageItems.value"
         :current-image-id="controller.currentImageId.value"
+        :cache-key="controller.imageCacheKey.value"
         @image-select="controller.handleImageSelect"
       />
 
@@ -53,6 +54,7 @@
       <div class="relative flex flex-grow flex-col">
         <ImageViewerComponent
           :image="controller.currentImage.value"
+          :cache-key="controller.imageCacheKey.value"
           :zoom="controller.zoom.value"
           :rotation="controller.rotation.value"
           @zoom-in="controller.handleZoomIn"
@@ -96,6 +98,7 @@
       <!-- 右侧信息面板 -->
       <ImageInfoComponent
         :image="controller.currentImage.value"
+        :cache-key="controller.imageCacheKey.value"
         :similar-images="controller.similarImages.value"
         @search-similar="controller.handleSearchSimilar"
         @tag-add="controller.handleTagAdd"
@@ -106,7 +109,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, watch } from 'vue'
 import ImageThumbnailListComponent from '../business/ImageThumbnailListComponent.vue'
 import ImageViewerComponent from '../business/ImageViewerComponent.vue'
 import ImageInfoComponent from '../business/ImageInfoComponent.vue'
@@ -114,6 +117,33 @@ import { useImagePreviewController } from '../../controllers/ImagePreviewControl
 
 // 使用控制器
 const controller = useImagePreviewController()
+
+watch(
+  [
+    () => controller.currentImageId.value,
+    () => controller.currentImage.value,
+    () => controller.imageCacheKey.value
+  ],
+  ([currentImageId, currentImage, cacheKey]) => {
+    console.debug('[ImagePreviewDebug][Page] state', {
+      currentImageId,
+      cacheKey,
+      imageIndex: controller.currentImageIndex.value,
+      imageCount: controller.imageItems.value.length,
+      image: currentImage
+        ? {
+            id: currentImage.id,
+            name: currentImage.name,
+            path: currentImage.path,
+            url: currentImage.url,
+            thumbnailPath: currentImage.thumbnailPath,
+            updatedAt: currentImage.updatedAt
+          }
+        : null
+    })
+  },
+  { immediate: true }
+)
 
 // 格式化文件大小
 const formatFileSize = (bytes?: number): string => {
@@ -178,6 +208,20 @@ const handleKeyPress = (event: KeyboardEvent) => {
 }
 
 onMounted(() => {
+  console.debug('[ImagePreviewDebug][Page] mounted', {
+    currentImageId: controller.currentImageId.value,
+    cacheKey: controller.imageCacheKey.value,
+    imageCount: controller.imageItems.value.length,
+    currentImage: controller.currentImage.value
+      ? {
+          id: controller.currentImage.value.id,
+          name: controller.currentImage.value.name,
+          path: controller.currentImage.value.path,
+          url: controller.currentImage.value.url,
+          thumbnailPath: controller.currentImage.value.thumbnailPath
+        }
+      : null
+  })
   document.addEventListener('keydown', handleKeyPress)
   // 初始化相似图片搜索
   controller.handleSearchSimilar()
@@ -191,6 +235,10 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  console.debug('[ImagePreviewDebug][Page] unmounted', {
+    currentImageId: controller.currentImageId.value,
+    cacheKey: controller.imageCacheKey.value
+  })
   document.removeEventListener('keydown', handleKeyPress)
 })
 </script>

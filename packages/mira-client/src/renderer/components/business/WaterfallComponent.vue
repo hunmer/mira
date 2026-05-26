@@ -287,16 +287,20 @@ const handleAfterRender = () => {
   emit('after-render')
 }
 
-const handleImageLoad = (_url: string) => {
-//   console.log('Image loaded:', url)
-}
+let refreshTimer: ReturnType<typeof setTimeout> | null = null
+
+const handleImageLoad = (_url: string) => {}
 
 const handleImageError = (url: string) => {
   console.error('Image load error:', url)
 }
 
 const handleImageSuccess = (_url: string) => {
-//   console.log('Image success:', url)
+  if (refreshTimer) clearTimeout(refreshTimer)
+  refreshTimer = setTimeout(() => {
+    refresh()
+    refreshTimer = null
+  }, 100)
 }
 
 // 视频静音切换
@@ -373,6 +377,7 @@ onUnmounted(() => {
   window.removeEventListener('keydown', handleDeleteKeyDown)
   document.removeEventListener('edit-action', handleEditAction)
   stopVideoPreview()
+  if (refreshTimer) clearTimeout(refreshTimer)
 })
 </script>
 

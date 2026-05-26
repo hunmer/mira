@@ -80,7 +80,7 @@
       <!-- 主内容区域 -->
       <main class="flex-1 overflow-hidden">
         <router-view v-slot="{ Component, route: currentRoute }">
-          <transition :name="String(currentRoute.meta?.transition || 'fade')" mode="out-in">
+          <transition :name="String(currentRoute.meta?.transition ?? 'fade')" mode="out-in">
             <component :is="Component" :key="currentRoute.name" />
           </transition>
         </router-view>

@@ -5,11 +5,9 @@ import type { DeviceInfo } from '@/types/mira'
 import { deviceApi } from '@/api'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table'
+import { Card, CardContent } from '@/components/ui/card'
 import { toast } from 'vue-sonner'
-import { RiLoader4Line } from '@remixicon/vue'
+import { RiLoader4Line, RiComputerLine, RiMacbookLine } from '@remixicon/vue'
 
 const { t } = useI18n()
 const devices = ref<DeviceInfo[]>([])
@@ -65,41 +63,54 @@ onMounted(loadDevices)
       </Button>
     </div>
 
-    <div class="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>{{ t('device.deviceName') }}</TableHead>
-            <TableHead>{{ t('device.deviceType') }}</TableHead>
-            <TableHead>{{ t('common.status') }}</TableHead>
-            <TableHead>{{ t('device.lastSeen') }}</TableHead>
-            <TableHead>{{ t('common.actions') }}</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          <TableRow v-if="loading">
-            <TableCell :colspan="5" class="py-8 text-center text-muted-foreground">{{ t('common.loading') }}</TableCell>
-          </TableRow>
-          <TableRow v-else-if="!devices.length">
-            <TableCell :colspan="5" class="py-8 text-center text-muted-foreground">{{ t('common.noData') }}</TableCell>
-          </TableRow>
-          <TableRow v-for="device in devices" :key="device.id">
-            <TableCell class="font-medium">{{ device.name }}</TableCell>
-            <TableCell class="text-muted-foreground">{{ device.type }}</TableCell>
-            <TableCell>
-              <Badge :variant="device.status === 'connected' ? 'default' : 'secondary'">
-                {{ device.status === 'connected' ? t('device.connected') : t('device.disconnected') }}
-              </Badge>
-            </TableCell>
-            <TableCell class="text-muted-foreground">{{ device.lastSeen }}</TableCell>
-            <TableCell>
-              <Button v-if="device.status === 'connected'" variant="ghost" size="sm" @click="disconnectDevice(device.id)">
-                {{ t('device.disconnect') }}
-              </Button>
-            </TableCell>
-          </TableRow>
-        </TableBody>
-      </Table>
+    <div v-if="loading" class="py-12 text-center text-muted-foreground">
+      <RiLoader4Line class="mx-auto mb-2 size-6 animate-spin" />
+      {{ t('common.loading') }}
+    </div>
+
+    <div v-else-if="!devices.length" class="py-12 text-center text-muted-foreground">
+      {{ t('common.noData') }}
+    </div>
+
+    <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <Card v-for="device in devices" :key="device.id" class="overflow-hidden">
+        <CardContent class="p-5">
+          <div class="mb-3 flex items-start justify-between">
+            <div class="flex items-center gap-3">
+              <div class="flex size-10 items-center justify-center rounded-lg bg-muted">
+                <RiMacbookLine v-if="device.type === 'Electron'" class="size-5 text-foreground" />
+                <RiComputerLine v-else class="size-5 text-foreground" />
+              </div>
+              <div>
+                <div class="font-medium leading-tight">{{ device.name }}</div>
+                <div class="text-xs text-muted-foreground">{{ device.type }}</div>
+              </div>
+            </div>
+            <Badge :variant="device.status === 'connected' ? 'default' : 'secondary'">
+              {{ device.status === 'connected' ? t('device.connected') : t('device.disconnected') }}
+            </Badge>
+          </div>
+
+          <div v-if="device.libraryId" class="mb-3 text-xs text-muted-foreground">
+            Library: {{ device.libraryId }}
+          </div>
+
+          <div v-if="device.lastSeen" class="mb-3 text-xs text-muted-foreground">
+            {{ t('device.lastSeen') }}: {{ device.lastSeen }}
+          </div>
+
+          <div class="flex justify-end border-t pt-3">
+            <Button
+              v-if="device.status === 'connected'"
+              variant="ghost"
+              size="sm"
+              @click="disconnectDevice(device.id)"
+            >
+              {{ t('device.disconnect') }}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   </div>
 </template>

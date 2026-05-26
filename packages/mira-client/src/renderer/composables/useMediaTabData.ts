@@ -1,5 +1,6 @@
 import { reactive, computed } from 'vue'
 import type { FilterRule } from '@/components/ui/volt/FilterBar.vue'
+import { useSettingsStore } from '@/renderer/stores/settings'
 
 // 媒体Tab的数据管理接口
 export interface MediaTabData {
@@ -20,6 +21,16 @@ export interface MediaTabData {
 // 全局存储所有Tab的数据
 const tabDataStore = reactive<Record<string, MediaTabData>>({})
 
+// 恢复时暂存每个tab的viewMode
+const _restoredViewModes: Record<string, 'grid' | 'list' | 'waterfall'> = {}
+
+// viewMode变化时的回调（由useTabs注册，触发tab状态保存）
+let _viewModeChangeCallback: (() => void) | null = null
+
+export function registerViewModeChangeCallback(cb: () => void) {
+  _viewModeChangeCallback = cb
+}
+
 /**
  * MediaTabListView专用的数据管理Composable
  * 负责管理特定于媒体列表视图的状态，如筛选器、缓存数据、分页等
@@ -27,16 +38,9 @@ const tabDataStore = reactive<Record<string, MediaTabData>>({})
 export function useMediaTabData(tabId: string) {
   // 确保该Tab的数据存在
   if (!tabDataStore[tabId]) {
-    // 从settingsStore获取默认视图模式
-    const getDefaultViewMode = () => {
-      try {
-        const { useSettingsStore } = require('@/renderer/stores/settings')
-        const settingsStore = useSettingsStore()
-        return settingsStore.settings?.defaultView || 'grid'
-      } catch {
-        return 'grid'
-      }
-    }
+    const settingsStore = useSettingsStore()
+    const defaultMode = _restoredViewModes[tabId] || settingsStore.settings?.defaultView || 'grid'
+    delete _restoredViewModes[tabId]
 
     tabDataStore[tabId] = {
       tabId,
@@ -49,7 +53,7 @@ export function useMediaTabData(tabId: string) {
         itemsPerPage: 999,
         isServerPagination: false
       },
-      viewMode: getDefaultViewMode(), // 初始化为默认视图模式
+      viewMode: defaultMode,
       lastUpdated: 0
     }
   }
@@ -157,16 +161,7 @@ export function useMediaTabData(tabId: string) {
   const setViewMode = async (mode: 'grid' | 'list' | 'waterfall') => {
     if (tabDataStore[tabId]) {
       tabDataStore[tabId].viewMode = mode
-
-      // 可选：将该tab的视图模式保存为全局默认设置
-      // 这样新打开的tab会使用最后一次使用的视图模式
-      try {
-        const { useSettingsStore } = require('@/renderer/stores/settings')
-        const settingsStore = useSettingsStore()
-        await settingsStore.updateSetting('defaultView', mode)
-      } catch {
-        // silently ignore
-      }
+      _viewModeChangeCallback?.()
     }
   }
 
@@ -230,16 +225,9 @@ export function useMediaTabData(tabId: string) {
  */
 export function cacheTabData(tabId: string, data: any[], total?: number) {
   if (!tabDataStore[tabId]) {
-    // 从settingsStore获取默认视图模式
-    const getDefaultViewMode = () => {
-      try {
-        const { useSettingsStore } = require('@/renderer/stores/settings')
-        const settingsStore = useSettingsStore()
-        return settingsStore.settings?.defaultView || 'grid'
-      } catch {
-        return 'grid'
-      }
-    }
+    const settingsStore = useSettingsStore()
+    const defaultMode = _restoredViewModes[tabId] || settingsStore.settings?.defaultView || 'grid'
+    delete _restoredViewModes[tabId]
 
     tabDataStore[tabId] = {
       tabId,
@@ -252,7 +240,7 @@ export function cacheTabData(tabId: string, data: any[], total?: number) {
         itemsPerPage: 999,
         isServerPagination: false
       },
-      viewMode: getDefaultViewMode(),
+      viewMode: defaultMode,
       lastUpdated: 0
     }
   }
@@ -307,4 +295,19 @@ export function clearAllTabData() {
  */
 export function getAllTabData() {
   return { ...tabDataStore }
+}
+
+/**
+ * 获取指定tab的viewMode（用于Tab持久化保存）
+ */
+export function getTabViewMode(tabId: string): 'grid' | 'list' | 'waterfall' | undefined {
+  return tabDataStore[tabId]?.viewMode
+}
+
+/**
+ * 恢复指定tab的viewMode（Tab状态恢复时调用）
+ * 存入 pending map，等 useMediaTabData 初始化时读取
+ */
+export function restoreTabViewMode(tabId: string, mode: 'grid' | 'list' | 'waterfall') {
+  _restoredViewModes[tabId] = mode
 }

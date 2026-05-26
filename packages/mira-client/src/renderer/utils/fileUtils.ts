@@ -23,6 +23,22 @@ export function toFileUrl(path: string | undefined): string | undefined {
 }
 
 /**
+ * 给图片 URL 添加缓存破坏参数，避免预览切换时复用旧图片缓存
+ */
+export function withCacheBust(url: string | undefined, cacheKey?: string | number): string | undefined {
+  if (!url || cacheKey === undefined || cacheKey === null || cacheKey === '') return url
+
+  const [urlWithoutHash, hash = ''] = url.split('#')
+  const separator = urlWithoutHash.includes('?') ? '&' : '?'
+
+  return `${urlWithoutHash}${separator}_t=${encodeURIComponent(String(cacheKey))}${hash ? `#${hash}` : ''}`
+}
+
+export function toCacheBustedFileUrl(path: string | undefined, cacheKey?: string | number): string | undefined {
+  return withCacheBust(toFileUrl(path), cacheKey)
+}
+
+/**
  * 格式化文件大小
  */
 export function formatFileSize(bytes: number): string {

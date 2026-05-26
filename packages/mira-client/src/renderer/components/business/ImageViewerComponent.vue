@@ -3,6 +3,7 @@
     <!-- 图片容器 - 使用 VViewer 组件的内嵌模式 -->
     <div class="flex flex-grow items-center justify-center w-full viewer-container">
       <VViewer
+        :key="viewerKey"
         ref="viewerRef"
         :options="viewerOptions"
         :trigger="imageUrl"
@@ -13,6 +14,7 @@
           <div class="images">
             <img 
               v-if="image"
+              :key="viewerKey"
               :src="imageUrl"
               :alt="image.name"
               class="viewer-image"
@@ -34,7 +36,7 @@
 
     <!-- 图片加载状态 -->
     <div 
-      v-if="loading"
+      v-if="loading && !viewerInstance"
       class="absolute inset-0 flex items-center justify-center bg-white/80"
     >
       <div class="flex flex-col items-center space-y-2">
@@ -118,13 +120,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, nextTick } from 'vue'
 import { component as VViewer } from 'v-viewer'
 import type { FileInfo } from '../../../shared/types'
-import { toFileUrl } from '../../utils/fileUtils'
+import { toCacheBustedFileUrl } from '../../utils/fileUtils'
 
 interface Props {
   image?: FileInfo
+  cacheKey?: string | number
 }
 
 interface Emits {
@@ -140,7 +143,21 @@ const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
 // 本地路径转 file:// URL
-const imageUrl = computed(() => toFileUrl(props.image?.path || props.image?.url))
+const imageUrl = computed(() => toCacheBustedFileUrl(props.image?.path || props.image?.url, props.cacheKey))
+const viewerKey = computed(() => `${props.image?.id || 'empty'}:${imageUrl.value || ''}`)
+
+const describeImage = (image?: FileInfo): Record<string, unknown> | null => {
+  if (!image) return null
+
+  return {
+    id: image.id,
+    name: image.name,
+    path: image.path,
+    url: image.url,
+    thumbnailPath: image.thumbnailPath,
+    updatedAt: image.updatedAt
+  }
+}
 
 // 响应式数据
 const loading = ref(false)
@@ -171,19 +188,56 @@ const viewerOptions = ref({
 })
 
 // 方法
-const handleImageLoad = () => {
+const handleImageLoad = async () => {
   loading.value = false
   error.value = false
+
+  console.debug('[ImagePreviewDebug][Viewer] source-image-load', {
+    image: describeImage(props.image),
+    cacheKey: props.cacheKey,
+    imageUrl: imageUrl.value,
+    viewerKey: viewerKey.value
+  })
+
+  await nextTick()
+  viewerInstance.value?.update?.()
+  viewerInstance.value?.view?.(0)
+
+  console.debug('[ImagePreviewDebug][Viewer] viewer-updated-after-load', {
+    imageId: props.image?.id,
+    cacheKey: props.cacheKey,
+    imageUrl: imageUrl.value,
+    viewerKey: viewerKey.value,
+    viewerIndex: viewerInstance.value?.index,
+    viewerLength: viewerInstance.value?.length
+  })
 }
 
 const handleImageError = () => {
   loading.value = false
   error.value = true
+
+  console.debug('[ImagePreviewDebug][Viewer] source-image-error', {
+    image: describeImage(props.image),
+    cacheKey: props.cacheKey,
+    imageUrl: imageUrl.value,
+    viewerKey: viewerKey.value
+  })
 }
 
 // viewer 初始化回调
 const onViewerInited = (viewer: any) => {
   viewerInstance.value = viewer
+  viewerInstance.value?.view?.(0)
+
+  console.debug('[ImagePreviewDebug][Viewer] inited', {
+    image: describeImage(props.image),
+    cacheKey: props.cacheKey,
+    imageUrl: imageUrl.value,
+    viewerKey: viewerKey.value,
+    viewerIndex: viewerInstance.value?.index,
+    viewerLength: viewerInstance.value?.length
+  })
 }
 
 // v-viewer 操作方法
@@ -254,17 +308,39 @@ const toggleFullscreen = () => {
 
 // 监听图片变化，重置状态
 watch(() => props.image, (newImage, oldImage) => {
+  console.debug('[ImagePreviewDebug][Viewer] props-image-change', {
+    oldImage: describeImage(oldImage),
+    newImage: describeImage(newImage),
+    cacheKey: props.cacheKey,
+    imageUrl: imageUrl.value,
+    viewerKey: viewerKey.value
+  })
+
   if (newImage && newImage !== oldImage) {
     // 只在真正切换图片时显示加载状态
     if (!oldImage || newImage.id !== oldImage.id) {
       loading.value = true
       error.value = false
+      viewerInstance.value = null
       // 重置翻转状态
       flipHorizontalState.value = 1
       flipVerticalState.value = 1
     }
   }
 }, { immediate: true })
+
+watch(
+  () => props.cacheKey,
+  (newCacheKey, oldCacheKey) => {
+    console.debug('[ImagePreviewDebug][Viewer] cache-key-change', {
+      oldCacheKey,
+      newCacheKey,
+      image: describeImage(props.image),
+      imageUrl: imageUrl.value,
+      viewerKey: viewerKey.value
+    })
+  }
+)
 </script>
 
 <style scoped>
@@ -313,7 +389,18 @@ watch(() => props.image, (newImage, oldImage) => {
 :deep(.viewer-canvas > img) {
   border-radius: 0.5rem;
   object-fit: contain;
-  transition: opacity 0.2s ease-in-out;
+  opacity: 1;
+  animation: viewer-image-fade-in 0.25s ease-in-out;
+}
+
+@keyframes viewer-image-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 /* 全屏模式样式 */

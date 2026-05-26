@@ -3,6 +3,7 @@ import type { FilterRule } from '@/components/ui/volt/FilterBar.vue'
 import { tabRegistry, type TabContext, type TabTypeDefinition, type TabViewConfig } from './TabRegistry'
 import { quickInitTabSystem } from './initTabSystem'
 import { tabPersistence, type TabState } from './TabPersistence'
+import { restoreTabViewMode, registerViewModeChangeCallback } from './useMediaTabData'
 import { tabHistory } from './TabHistory'
 
 // ============================================
@@ -655,6 +656,11 @@ export function useTabs() {
             needUpdate: true // 恢复的tab需要重新加载数据
           }
 
+          // 恢复per-tab viewMode
+          if (tabState.viewMode) {
+            restoreTabViewMode(tabState.id, tabState.viewMode)
+          }
+
           restoredTabs.push(restoredTab)
         } catch (error) {
           console.error(`❌ 恢复Tab失败: ${tabState.label}`, error)
@@ -871,6 +877,15 @@ export function useTabs() {
       },
       { deep: true }
     )
+
+    // 注册viewMode变化回调，触发tab状态保存
+    registerViewModeChangeCallback(() => {
+      if (!isRestoringState.value && tabs.value.length > 0) {
+        nextTick(() => {
+          saveTabsState()
+        })
+      }
+    })
   }
 
   // ============================================

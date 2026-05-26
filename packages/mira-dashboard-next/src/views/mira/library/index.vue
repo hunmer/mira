@@ -77,7 +77,11 @@ function openEdit(lib: Library) {
 async function handleSave() {
   if (!editingLib.value) return
   try {
-    const { _id, ...data } = editingLib.value as LibraryFormData & { _id?: string }
+    const { _id, enableHash, enableAutoSync, enableThumbScan, ...rest } = editingLib.value as LibraryFormData & { _id?: string }
+    const data = {
+      ...rest,
+      customFields: { enableHash, enableAutoSync, enableThumbScan },
+    }
     if (_id) {
       await libraryApi.update(_id, data)
     } else {
