@@ -13,6 +13,11 @@ const PUBLIC_ROUTES: Set<string> = new Set([
     'GET /settings',
 ]);
 
+// 不需要鉴权的路由前缀（支持动态路径参数）
+const PUBLIC_PREFIXES = [
+    '/user/avatar/',
+];
+
 // 需要做素材库 allowedRoles 校验的路由前缀
 const LIBRARY_SCOPED_PREFIXES = [
     '/files/',
@@ -39,7 +44,9 @@ function extractLibraryId(req: Request): string | undefined {
 }
 
 function isPublicRoute(method: string, path: string): boolean {
-    return PUBLIC_ROUTES.has(`${method} ${path}`);
+    if (PUBLIC_ROUTES.has(`${method} ${path}`)) return true;
+    if (method === 'GET' && PUBLIC_PREFIXES.some(prefix => path.startsWith(prefix))) return true;
+    return false;
 }
 
 function isLibraryScoped(path: string): boolean {

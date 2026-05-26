@@ -1,13 +1,17 @@
 import { Router, Request, Response } from 'express';
+import * as fs from 'fs';
+import * as path from 'path';
 import { AuthRouter } from './AuthRouter';
 
 export class UserRouter {
     private router: Router;
     private authRouter: AuthRouter;
+    private dataDir: string;
 
-    constructor(authRouter: AuthRouter) {
+    constructor(authRouter: AuthRouter, dataDir: string = './data') {
         this.router = Router();
         this.authRouter = authRouter;
+        this.dataDir = dataDir;
         this.setupRoutes();
     }
 
@@ -64,7 +68,7 @@ export class UserRouter {
                         userGroup: userGroup, // 用户组信息
                         registrationDate: new Date(userInfo.created_at).toISOString().split('T')[0], // 注册日期
                         // 添加更多用户信息字段以符合vben标准
-                        avatar: '', // 头像URL，可选
+                        avatar: `/api/user/avatar/${user.id}`,
                         desc: userGroup, // 用户描述使用用户组
                         homePath: '/mira/overview', // 默认首页路径
                     };
@@ -166,6 +170,71 @@ export class UserRouter {
                     message: '服务器内部错误',
                     data: null
                 });
+            }
+        });
+
+        // 上传头像
+        this.router.post('/avatar', async (req: Request, res: Response) => {
+            try {
+                const token = req.headers.authorization?.replace('Bearer ', '');
+                if (!token) {
+                    return res.status(401).json({ code: 401, message: '未提供认证令牌', data: null });
+                }
+
+                const authService = this.authRouter.getAuthService();
+                const user = await authService.validateToken(token);
+                if (!user) {
+                    return res.status(401).json({ code: 401, message: '无效或过期的认证令牌', data: null });
+                }
+
+                const { image } = req.body;
+                if (!image) {
+                    return res.status(400).json({ code: 400, message: '请提供图片数据', data: null });
+                }
+
+                const userDir = path.join(this.dataDir, 'users', user.id.toString());
+                await fs.promises.mkdir(userDir, { recursive: true });
+
+                const avatarPath = path.join(userDir, 'avatar.jpg');
+                const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
+                await fs.promises.writeFile(avatarPath, Buffer.from(base64Data, 'base64'));
+
+                res.json({
+                    code: 0,
+                    message: '头像上传成功',
+                    data: { avatar: `/api/user/avatar/${user.id}` }
+                });
+            } catch (error) {
+                console.error('Upload avatar error:', error);
+                res.status(500).json({ code: 500, message: '服务器内部错误', data: null });
+            }
+        });
+
+        // 获取头像
+        this.router.get('/avatar/:userId', async (req: Request, res: Response) => {
+            try {
+                const { userId } = req.params;
+                const avatarPath = path.join(this.dataDir, 'users', userId, 'avatar.jpg');
+
+                if (fs.existsSync(avatarPath)) {
+                    return res.sendFile(path.resolve(avatarPath));
+                }
+
+                // 默认头像：生成 SVG
+                const userStorage = this.authRouter.getUserStorage();
+                const user = await userStorage.findUserById(parseInt(userId));
+                const initial = (user?.username || '?')[0].toUpperCase();
+                const colors = ['#4f46e5', '#0891b2', '#059669', '#d97706', '#dc2626', '#7c3aed', '#db2777'];
+                const color = colors[parseInt(userId) % colors.length];
+
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128"><rect width="128" height="128" rx="64" fill="${color}"/><text x="64" y="64" dy=".35em" text-anchor="middle" fill="white" font-size="48" font-family="sans-serif">${initial}</text></svg>`;
+
+                res.setHeader('Content-Type', 'image/svg+xml');
+                res.setHeader('Cache-Control', 'public, max-age=300');
+                res.send(svg);
+            } catch (error) {
+                console.error('Get avatar error:', error);
+                res.status(500).json({ code: 500, message: '服务器内部错误', data: null });
             }
         });
     }

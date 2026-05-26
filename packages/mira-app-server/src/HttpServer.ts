@@ -157,7 +157,7 @@ export class MiraHttpServer {
         this.app = express();
         this.httpServer = http.createServer(this.app);
         this.authRouter = new AuthRouter(dataDir);
-        this.userRouter = new UserRouter(this.authRouter);
+        this.userRouter = new UserRouter(this.authRouter, dataDir);
         this.adminsRouter = new AdminsRouter(this.authRouter);
         this.libraryRoutes = new LibraryRoutes(backend);
         this.pluginRoutes = new PluginRoutes(backend);

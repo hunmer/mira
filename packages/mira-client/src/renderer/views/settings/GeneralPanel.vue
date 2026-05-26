@@ -29,7 +29,7 @@
           <ToggleGroup
             type="single"
             :model-value="settingsStore.settings.theme"
-            @update:model-value="(value: string) => { if (value) handleSettingChange('theme', value) }"
+            @update:model-value="(value: string) => { if (value) { settingsStore.settings.theme = value as 'light' | 'dark' | 'auto'; handleSettingChange('theme', value) } }"
           >
             <ToggleGroupItem v-for="opt in themeOptions" :key="opt.value" :value="opt.value">
               {{ opt.label }}

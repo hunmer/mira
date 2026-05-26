@@ -1,4 +1,6 @@
+import { h } from 'vue'
 import { toast } from 'vue-sonner'
+import { Progress } from '@/components/ui/progress'
 
 interface BatchOptions {
   label: string
@@ -19,7 +21,25 @@ export async function runBatchOperation<T>(
   const total = items.length
   let completed = 0
   let failed = 0
-  const id = toast.loading(`${options.label} 0/${total}...`)
+  const toastId = `batch-${Date.now()}`
+
+  const updateToast = (done: boolean) => {
+    const current = completed + failed
+    const percent = Math.round((current / total) * 100)
+    const text = done
+      ? (failed === 0 ? `${options.label}完成 ${completed}/${total}` : `${options.label}完成: 成功${completed}, 失败${failed}`)
+      : `${options.label} ${current}/${total}`
+
+    toast.custom(
+      h('div', { class: 'w-64 space-y-1.5' }, [
+        h('p', { class: 'text-sm font-medium' }, text),
+        h(Progress, { modelValue: percent, class: 'h-1.5' })
+      ]),
+      { id: toastId, duration: done ? (failed > 0 ? 5000 : 3000) : Infinity }
+    )
+  }
+
+  updateToast(false)
 
   for (const item of items) {
     try {
@@ -28,12 +48,6 @@ export async function runBatchOperation<T>(
     } catch {
       failed++
     }
-    toast.loading(`${options.label} ${completed + failed}/${total}...`, { id })
-  }
-
-  if (failed === 0) {
-    toast.success(`${options.label}完成 ${completed}/${total}`, { id, duration: 3000 })
-  } else {
-    toast.error(`${options.label}完成: 成功 ${completed}, 失败 ${failed}`, { id, duration: 5000 })
+    updateToast(completed + failed === total)
   }
 }

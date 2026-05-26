@@ -7,16 +7,16 @@
       <DialogHeader>
         <DialogTitle>设置</DialogTitle>
       </DialogHeader>
-      <div class="settings-content h-full flex bg-gray-50">
+      <div class="settings-content h-full flex bg-gray-50 dark:bg-gray-900">
         <!-- 左侧分类面板 -->
-        <aside class="w-64 bg-white border-r border-gray-200 flex flex-col">
+        <aside class="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
           <div class="p-4 flex-1">
             <div class="flex flex-col gap-1">
               <div
                 v-for="section in settingSections"
                 :key="section.id"
                 class="flex items-center gap-3 px-3 py-2 cursor-pointer rounded-lg transition-colors"
-                :class="activeSection === section.id ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100 text-gray-700'"
+                :class="activeSection === section.id ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300' : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'"
                 @click="activeSection = section.id"
               >
                 <span class="material-icons text-lg">{{ section.icon }}</span>
@@ -27,9 +27,9 @@
         </aside>
 
         <!-- 右侧设置面板 -->
-        <main class="flex-1 flex flex-col bg-white">
-          <div class="p-4 border-b border-gray-200">
-            <p class="text-gray-900 text-2xl font-bold">{{ getCurrentSectionName() }}</p>
+        <main class="flex-1 flex flex-col bg-white dark:bg-gray-800">
+          <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+            <p class="text-gray-900 dark:text-gray-100 text-2xl font-bold">{{ getCurrentSectionName() }}</p>
           </div>
 
           <!-- 动态组件渲染 -->
@@ -41,7 +41,7 @@
     <DialogFooter>
       <div class="flex justify-end w-full">
         <button
-          class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
+          class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 rounded-md transition-colors"
           @click="handleDialogHide"
         >
           关闭

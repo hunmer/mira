@@ -9,4 +9,6 @@ export const authApi = {
     client.post('/auth/register', data),
   changePassword: (data: { oldPassword: string; newPassword: string }) =>
     client.put('/user/change-password', data),
+  uploadAvatar: (image: string) =>
+    client.post('/user/avatar', { image }),
 }
