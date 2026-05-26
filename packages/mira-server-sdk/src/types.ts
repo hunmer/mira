@@ -88,7 +88,6 @@ export interface Library {
     id: string;
     name: string;
     path: string;
-    type: 'local' | 'remote';
     status: 'active' | 'inactive' | 'error';
     fileCount: number;
     size: number;
@@ -99,8 +98,6 @@ export interface Library {
     customFields?: {
         enableHash?: boolean;
     };
-    serverURL?: string;
-    serverPort?: number;
     pluginsDir?: string;
     allowedRoles?: string[];
 }
@@ -108,14 +105,11 @@ export interface Library {
 export interface CreateLibraryRequest {
     name: string;
     path: string;
-    type: 'local' | 'remote';
     description: string;
     icon?: string;
     customFields?: {
         enableHash?: boolean;
     };
-    serverURL?: string;
-    serverPort?: number;
     pluginsDir?: string;
     allowedRoles?: string[];
 }

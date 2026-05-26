@@ -7,8 +7,6 @@
             "path": "E:/mira_test/remote_lib",
             "enableHash": false
         },
-        "serverURL": "http://127.0.0.1",
-        "serverPort": "3000",
         "pluginsDir": "D:/mira_typescript/plugins",
         "createdAt": "2025-07-22T14:27:23.375146"
     },
@@ -20,8 +18,6 @@
             "path": "//192.168.31.3/文件共享/人物素材",
             "enableHash": false
         },
-	    "serverURL": "http://192.168.31.3",
-        "serverPort": "3000",
         "pluginsDir": "D:/mira_typescript/plugins",
         "createdAt": "2025-07-22T14:27:23.375146"
     }

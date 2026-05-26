@@ -92,7 +92,7 @@ export class LibraryModule {
     }
 
     /**
-     * 创建本地素材库
+     * 创建素材库
      * @param name 名称
      * @param path 路径
      * @param description 描述
@@ -108,38 +108,7 @@ export class LibraryModule {
         const libraryData: CreateLibraryRequest = {
             name,
             path,
-            type: 'local',
             description,
-            ...options,
-        };
-        return await this.create(libraryData);
-    }
-
-    /**
-     * 创建远程素材库
-     * @param name 名称
-     * @param path 路径
-     * @param serverURL 服务器URL
-     * @param serverPort 服务器端口
-     * @param description 描述
-     * @param options 其他选项
-     * @returns Promise<BaseResponse>
-     */
-    async createRemote(
-        name: string,
-        path: string,
-        serverURL: string,
-        serverPort: number,
-        description: string,
-        options?: Partial<CreateLibraryRequest>
-    ): Promise<BaseResponse> {
-        const libraryData: CreateLibraryRequest = {
-            name,
-            path,
-            type: 'remote',
-            description,
-            serverURL,
-            serverPort,
             ...options,
         };
         return await this.create(libraryData);

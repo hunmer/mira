@@ -53,7 +53,6 @@ export interface Library {
   id: string
   name: string
   path: string
-  type?: string
   createdAt?: string
   updatedAt?: string
   // 为了兼容 SDK 的 Library 类型，添加一些可选属性
@@ -65,8 +64,6 @@ export interface Library {
   customFields?: {
     enableHash?: boolean
   }
-  serverURL?: string
-  serverPort?: number
   pluginsDir?: string
 }
 

@@ -5,7 +5,10 @@ import { useLibrary } from '@/composables/useLibrary'
 import { fileManagerApi } from '@/api'
 import PathTreeSelect from '@/components/PathTreeSelect.vue'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
+import {
+  Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList,
+  BreadcrumbPage, BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog'
@@ -272,25 +275,27 @@ onMounted(() => {
     </div>
 
     <!-- 面包屑 -->
-    <Card class="flex items-center gap-1 overflow-x-auto px-3 py-2 whitespace-nowrap">
-      <button
-        class="inline-flex shrink-0 items-center gap-1 rounded px-2 py-1 text-sm hover:bg-accent"
-        @click="navigateTo('')"
-      >
-        <RiHome4Line class="size-4" />
-        <span>{{ selectedLibrary?.name || 'Root' }}</span>
-      </button>
-      <template v-for="(seg, i) in breadcrumbs" :key="i">
-        <span class="shrink-0 text-muted-foreground">/</span>
-        <button
-          class="shrink-0 rounded px-2 py-1 text-sm hover:bg-accent"
-          :class="{ 'font-medium': i === breadcrumbs.length - 1 }"
-          @click="navigateBreadcrumb(i)"
-        >
-          {{ seg }}
-        </button>
-      </template>
-    </Card>
+    <Breadcrumb>
+      <BreadcrumbList>
+        <BreadcrumbItem>
+          <BreadcrumbLink as-child>
+            <button class="inline-flex items-center gap-1" @click="navigateTo('')">
+              <RiHome4Line class="size-4" />
+              {{ selectedLibrary?.name || 'Root' }}
+            </button>
+          </BreadcrumbLink>
+        </BreadcrumbItem>
+        <template v-for="(seg, i) in breadcrumbs" :key="i">
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink v-if="i < breadcrumbs.length - 1" as-child>
+              <button @click="navigateBreadcrumb(i)">{{ seg }}</button>
+            </BreadcrumbLink>
+            <BreadcrumbPage v-else>{{ seg }}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </template>
+      </BreadcrumbList>
+    </Breadcrumb>
 
     <!-- 工具栏 -->
     <div v-if="items.length" class="flex items-center gap-2 text-sm text-muted-foreground">

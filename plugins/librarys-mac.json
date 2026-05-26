@@ -8,9 +8,7 @@
     "pluginsDir": "/Users/Zhuanz/mira_typescript/plugins",
     "customFields": {
       "path": "/Users/Zhuanz/test_library/",
-      "enableHash": false,
-      "serverURL": "http://127.0.0.1",
-      "serverPort": "8081"
+      "enableHash": false
     }
   }
 ]

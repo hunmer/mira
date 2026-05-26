@@ -8,9 +8,7 @@
     "icon": "default",
     "customFields": {
       "path": "test-library",
-      "enableHash": false,
-      "serverURL": "http://127.0.0.1",
-      "serverPort": "8081"
+      "enableHash": false
     },
     "status": "active",
     "updatedAt": "2025-09-27T14:05:05.959Z"
