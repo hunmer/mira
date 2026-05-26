@@ -718,11 +718,6 @@ export class LibraryServerDataSQLite implements ILibraryServerData {
   }
 
   getPublicURL(url: string): string {
-    const serverURL = this.customFields['serverURL'];
-    const serverPort = this.customFields['serverPort'];
-    if (serverURL && serverPort) {
-      return `${serverURL}:${serverPort}/${url}`;
-    }
     const apiBaseUrl = process.env.API_BASE_URL;
     if (apiBaseUrl) {
       return `${apiBaseUrl}/${url}`;

@@ -5,7 +5,6 @@ import type { Library } from '@/types/mira'
 import { libraryApi } from '@/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
@@ -43,9 +42,9 @@ async function loadLibraries() {
 
 function getDefaultForm(): LibraryFormData {
   return {
-    name: '', path: '', type: 'local', description: '',
+    name: '', path: '', description: '',
     icon: '', enableHash: false, enableAutoSync: false,
-    serverURL: '', serverPort: '', pluginsDir: '',
+    pluginsDir: '',
     allowedRoles: ['super', 'admin', 'user'],
   }
 }
@@ -60,11 +59,8 @@ function openEdit(lib: Library) {
     ...getDefaultForm(),
     name: lib.name,
     path: lib.path,
-    type: lib.type,
     description: lib.description ?? '',
     icon: lib.icon ?? '',
-    serverURL: lib.serverURL ?? '',
-    serverPort: lib.serverPort ?? '',
     pluginsDir: lib.pluginsDir ?? '',
     enableHash: lib.customFields?.enableHash ?? false,
     enableAutoSync: lib.customFields?.enableAutoSync ?? false,
@@ -138,7 +134,6 @@ onMounted(loadLibraries)
           <TableRow>
             <TableHead>{{ t('common.name') }}</TableHead>
             <TableHead>{{ t('library.path') }}</TableHead>
-            <TableHead>{{ t('library.type') }}</TableHead>
             <TableHead>{{ t('common.status') }}</TableHead>
             <TableHead>{{ t('library.fileCount') }}</TableHead>
             <TableHead>{{ t('common.actions') }}</TableHead>
@@ -146,17 +141,14 @@ onMounted(loadLibraries)
         </TableHeader>
         <TableBody>
           <TableRow v-if="loading">
-            <TableCell :colspan="6" class="py-8 text-center text-muted-foreground">{{ t('common.loading') }}</TableCell>
+            <TableCell :colspan="5" class="py-8 text-center text-muted-foreground">{{ t('common.loading') }}</TableCell>
           </TableRow>
           <TableRow v-else-if="!filtered.length">
-            <TableCell :colspan="6" class="py-8 text-center text-muted-foreground">{{ t('common.noData') }}</TableCell>
+            <TableCell :colspan="5" class="py-8 text-center text-muted-foreground">{{ t('common.noData') }}</TableCell>
           </TableRow>
           <TableRow v-for="lib in filtered" :key="lib.id">
             <TableCell class="font-medium">{{ lib.name }}</TableCell>
             <TableCell class="max-w-[200px] truncate text-muted-foreground">{{ lib.path }}</TableCell>
-            <TableCell>
-              <Badge variant="outline">{{ lib.type === 'local' ? t('library.local') : t('library.remote') }}</Badge>
-            </TableCell>
             <TableCell>
               <Badge
                 class="cursor-pointer select-none"

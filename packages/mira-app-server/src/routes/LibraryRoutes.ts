@@ -58,14 +58,11 @@ export class LibraryRoutes {
                         id: id,
                         name: libraryConfig.name,
                         path: configPath,
-                        type: libraryConfig.type || 'local',
                         status: status,
                         fileCount: stats.totalFiles,
                         size: stats.totalSize,
                         description: libraryConfig.description || '',
                         icon: libraryConfig.icon || 'default',
-                        ...(libraryConfig.serverURL && { serverURL: libraryConfig.serverURL }),
-                        ...(libraryConfig.serverPort && { serverPort: libraryConfig.serverPort }),
                         ...(libraryConfig.pluginsDir && { pluginsDir: libraryConfig.pluginsDir }),
                         ...(libraryConfig.customFields && { customFields: libraryConfig.customFields }),
                         ...(libraryConfig.allowedRoles && { allowedRoles: libraryConfig.allowedRoles }),
@@ -85,12 +82,9 @@ export class LibraryRoutes {
                 const {
                     name,
                     path: libraryPath,
-                    type,
                     description,
                     icon,
                     customFields,
-                    serverURL,
-                    serverPort,
                     pluginsDir,
                     allowedRoles
                 } = req.body;
@@ -116,7 +110,6 @@ export class LibraryRoutes {
                     id: newId,
                     name,
                     path: libraryPath,
-                    type: type || 'local',
                     description: description || '',
                     icon: icon || 'default',
                     customFields: {
@@ -130,12 +123,6 @@ export class LibraryRoutes {
                     updatedAt: new Date().toISOString(),
                     status: 'active' // 新建的库默认为活动状态
                 };
-
-                // 添加远程库特有的字段
-                if (type === 'remote') {
-                    libraryConfig.serverURL = serverURL;
-                    libraryConfig.serverPort = serverPort;
-                }
 
                 // 添加插件目录（如果提供）
                 if (pluginsDir) {
@@ -173,17 +160,12 @@ export class LibraryRoutes {
                     id: newId,
                     name,
                     path: libraryPath,
-                    type: type || 'local',
                     status: 'active',
                     fileCount: 0,
                     size: 0,
                     description: description || '',
                     icon: icon || 'default',
                     customFields: libraryConfig.customFields,
-                    ...(type === 'remote' && {
-                        serverURL: serverURL,
-                        serverPort: serverPort
-                    }),
                     ...(pluginsDir && { pluginsDir }),
                     ...(allowedRoles && { allowedRoles }),
                     createdAt: libraryConfig.createdAt,
@@ -204,12 +186,9 @@ export class LibraryRoutes {
                 const {
                     name,
                     path: libraryPath,
-                    type,
                     description,
                     icon,
                     customFields,
-                    serverURL,
-                    serverPort,
                     pluginsDir,
                     allowedRoles
                 } = req.body;
@@ -242,7 +221,6 @@ export class LibraryRoutes {
                     ...currentConfig,
                     name: name || currentConfig.name,
                     path: libraryPath || currentConfig.path,
-                    type: type || currentConfig.type,
                     description: description !== undefined ? description : currentConfig.description,
                     icon: icon || currentConfig.icon || 'default',
                     customFields: {
@@ -253,14 +231,6 @@ export class LibraryRoutes {
                     },
                     updatedAt: new Date().toISOString()
                 };
-
-                // 更新服务器连接字段
-                if (serverURL !== undefined) {
-                    updatedConfig.serverURL = serverURL;
-                }
-                if (serverPort !== undefined) {
-                    updatedConfig.serverPort = serverPort;
-                }
 
                 // 更新插件目录
                 if (pluginsDir !== undefined) {
@@ -327,15 +297,12 @@ export class LibraryRoutes {
                     id: id,
                     name: updatedConfig.name,
                     path: updatedConfig.path || updatedConfig.customFields?.path,
-                    type: updatedConfig.type,
                     status: this.backend.libraries!.getLibraryStatus(id),
                     fileCount: stats.totalFiles,
                     size: stats.totalSize,
                     description: updatedConfig.description || '',
                     icon: updatedConfig.icon,
                     customFields: updatedConfig.customFields,
-                    ...(updatedConfig.serverURL && { serverURL: updatedConfig.serverURL }),
-                    ...(updatedConfig.serverPort && { serverPort: updatedConfig.serverPort }),
                     ...(updatedConfig.pluginsDir && { pluginsDir: updatedConfig.pluginsDir }),
                     ...(updatedConfig.allowedRoles && { allowedRoles: updatedConfig.allowedRoles }),
                     createdAt: updatedConfig.createdAt,

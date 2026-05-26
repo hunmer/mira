@@ -7,20 +7,14 @@ import PathTreeSelect from '@/components/PathTreeSelect.vue'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog'
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select'
 
 export interface LibraryFormData {
   name: string
   path: string
-  type: 'local' | 'remote'
   description: string
   icon: string
   enableHash: boolean
   enableAutoSync: boolean
-  serverURL: string
-  serverPort: string
   pluginsDir: string
   allowedRoles: string[]
 }
@@ -64,18 +58,6 @@ const toggleRole = (role: string) => {
         <div class="space-y-2">
           <Label>{{ t('library.path') }}</Label>
           <PathTreeSelect v-model="form.path" :placeholder="t('library.pathPlaceholder')" />
-        </div>
-        <div class="space-y-2">
-          <Label>{{ t('library.type') }}</Label>
-          <Select v-model="form.type">
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="local">{{ t('library.local') }}</SelectItem>
-              <SelectItem value="remote">{{ t('library.remote') }}</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
         <div class="space-y-2">
           <Label>{{ t('library.icon') }}</Label>

@@ -272,18 +272,18 @@ onMounted(() => {
     </div>
 
     <!-- 面包屑 -->
-    <Card class="flex items-center gap-1 px-3 py-2">
+    <Card class="flex items-center gap-1 overflow-x-auto px-3 py-2 whitespace-nowrap">
       <button
-        class="inline-flex items-center gap-1 rounded px-2 py-1 text-sm hover:bg-accent"
+        class="inline-flex shrink-0 items-center gap-1 rounded px-2 py-1 text-sm hover:bg-accent"
         @click="navigateTo('')"
       >
         <RiHome4Line class="size-4" />
         <span>{{ selectedLibrary?.name || 'Root' }}</span>
       </button>
       <template v-for="(seg, i) in breadcrumbs" :key="i">
-        <span class="text-muted-foreground">/</span>
+        <span class="shrink-0 text-muted-foreground">/</span>
         <button
-          class="rounded px-2 py-1 text-sm hover:bg-accent"
+          class="shrink-0 rounded px-2 py-1 text-sm hover:bg-accent"
           :class="{ 'font-medium': i === breadcrumbs.length - 1 }"
           @click="navigateBreadcrumb(i)"
         >

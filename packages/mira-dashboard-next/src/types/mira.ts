@@ -3,15 +3,12 @@ export interface Library {
   name: string
   path: string
   description?: string
-  type: 'local' | 'remote'
   status: 'active' | 'inactive'
   fileCount: number
   size: number
   createdAt: string
   updatedAt: string
   icon?: string
-  serverURL?: string
-  serverPort?: string
   pluginsDir?: string
   allowedRoles?: string[]
   customFields?: {
