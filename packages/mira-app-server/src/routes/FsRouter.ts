@@ -283,25 +283,22 @@ export class FsRouter {
         const diskFiles = await this.scanDiskFiles(libraryPath);
         const diskSet = new Set(diskFiles);
 
-        const dbFiles = (await dbService.getFiles({
-            select: 'id,path',
-            filters: { limit: 9999999 },
-            isUrlFile: false,
-        })).result;
+        // 直接用 SQL 查询，避免 getFiles 的 processingFiles 处理
+        const rows: any[] = await dbService.getSql('SELECT id, path FROM files', []);
+        const dbPathSet = new Set(rows.map(r => r.path));
 
         let added = 0;
         let removed = 0;
 
         // 移除数据库中不存在于磁盘的记录
-        for (const file of dbFiles) {
-            if (!diskSet.has(file.path)) {
-                await dbService.deleteFile(file.id);
+        for (const row of rows) {
+            if (!diskSet.has(row.path)) {
+                await dbService.deleteFile(row.id);
                 removed++;
             }
         }
 
         // 添加磁盘中存在但数据库中没有的文件
-        const dbPathSet = new Set(dbFiles.map((f: any) => f.path));
         for (const filePath of diskFiles) {
             if (!dbPathSet.has(filePath)) {
                 const fileData: Record<string, any> = {};

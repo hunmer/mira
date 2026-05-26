@@ -16,6 +16,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { toast } from 'vue-sonner'
+import { Toaster } from '@/components/ui/sonner'
 import {
   RiHome4Line, RiFolderLine, RiPuzzleLine, RiUserSettingsLine,
   RiDatabase2Line, RiSmartphoneLine,
@@ -60,6 +61,7 @@ function handleLogout() {
 </script>
 
 <template>
+  <Toaster />
   <SidebarProvider>
     <Sidebar collapsible="icon">
       <SidebarHeader class="p-4">
