@@ -7,6 +7,7 @@ import { useTagStore } from '@renderer/stores/tag'
 import { useFolderStore } from '@renderer/stores/folder'
 import { useMediaStore } from '@renderer/stores/media'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
+import { runBatchOperation } from '@renderer/composables/useBatchOperation'
 
 interface UseContextMenuProps {
   selectedItems: string[]
@@ -64,41 +65,33 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
   }
 
   const handleFolderSelect = async (folderItem: any) => {
-    try {
-      const client = (miraSDKService as any).client
-      if (!client) return
-      const files = getTargetFiles()
-      if (files.length === 0) return
-      for (const file of files) {
-        const libId = file.libraryId || 'default'
-        await client.folders().setFileFolder({ libraryId: libId, fileId: parseInt(file.id), folder: parseInt(folderItem.id) })
-        file.folderId = String(folderItem.id)
-        emit('media-set-folder', file)
-      }
-      folderPopoverOpen.value = false
-    } catch (error) {
-      console.error('Failed to set folder:', error)
-    }
+    const client = (miraSDKService as any).client
+    if (!client) return
+    const files = getTargetFiles()
+    if (files.length === 0) return
+    folderPopoverOpen.value = false
+    await runBatchOperation(files, async (file) => {
+      const libId = file.libraryId || 'default'
+      await client.folders().setFileFolder({ libraryId: libId, fileId: parseInt(file.id), folder: parseInt(folderItem.id) })
+      file.folderId = String(folderItem.id)
+      emit('media-set-folder', file)
+    }, { label: '设置文件夹' })
   }
 
   const handleTagSelect = async (tagData: any) => {
-    try {
-      const client = (miraSDKService as any).client
-      if (!client) return
-      const tagName = tagData.title || tagData.name
-      const files = getTargetFiles()
-      if (files.length === 0) return
-      for (const file of files) {
-        const libId = file.libraryId || 'default'
-        await client.tags().addTagsToFile(libId, parseInt(file.id), [tagName])
-        if (!file.tags) file.tags = []
-        if (!file.tags.includes(tagName)) file.tags.push(tagName)
-        emit('media-set-tags', file)
-      }
-      tagPopoverOpen.value = false
-    } catch (error) {
-      console.error('Failed to add tag:', error)
-    }
+    const client = (miraSDKService as any).client
+    if (!client) return
+    const tagName = tagData.title || tagData.name
+    const files = getTargetFiles()
+    if (files.length === 0) return
+    tagPopoverOpen.value = false
+    await runBatchOperation(files, async (file) => {
+      const libId = file.libraryId || 'default'
+      await client.tags().addTagsToFile(libId, parseInt(file.id), [tagName])
+      if (!file.tags) file.tags = []
+      if (!file.tags.includes(tagName)) file.tags.push(tagName)
+      emit('media-set-tags', file)
+    }, { label: '设置标签' })
   }
 
   const runWithCurrentItem = async (handler: (item: FileInfo) => void | Promise<void>) => {
@@ -146,21 +139,12 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
       command: () => runWithCurrentItem(async () => {
         const files = getTargetFiles()
         if (files.length === 0) return
-
-        for (const file of files) {
+        await runBatchOperation(files, async (file) => {
           const libraryId = file.libraryId || libraryStore.currentLibrary?.id
-          if (!libraryId) {
-            console.error('无法确定 libraryId')
-            continue
-          }
-
-          try {
-            await appService.deleteFile(libraryId, file.id)
-            emit('media-delete', file)
-          } catch (err) {
-            console.error('删除文件失败:', err)
-          }
-        }
+          if (!libraryId) return
+          await appService.deleteFile(libraryId, file.id)
+          emit('media-delete', file)
+        }, { label: '删除' })
       })
     }
   ])

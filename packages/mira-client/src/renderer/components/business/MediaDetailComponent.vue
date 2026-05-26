@@ -268,6 +268,7 @@ import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { webSocketService } from '@renderer/services/WebSocketService'
 import { Empty, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { getExtIconUrl } from '@renderer/utils/extIconHelper'
+import { runBatchOperation } from '@renderer/composables/useBatchOperation'
 
 // 全局图片加载错误状态缓存
 const imageLoadErrorCache = new Map<string, boolean>()
@@ -511,55 +512,46 @@ const hasTags = computed(() => {
 })
 
 const handleFolderSelect = async (folderItem: any) => {
-  try {
-    const client = (miraSDKService as any).client
-    if (!client) return
-    for (const file of displayItems.value) {
-      const libId = file.libraryId || 'default'
-      await client.folders().setFileFolder({ libraryId: libId, fileId: parseInt(file.id), folder: parseInt(folderItem.id) })
-      file.folderId = String(folderItem.id)
-    }
-    emit('folder-change', folderItem.id)
-    folderPopoverOpen.value = false
-  } catch (error) {
-    console.error('Failed to set folder:', error)
-  }
+  const client = (miraSDKService as any).client
+  if (!client) return
+  const files = displayItems.value
+  folderPopoverOpen.value = false
+  await runBatchOperation(files, async (file) => {
+    const libId = file.libraryId || 'default'
+    await client.folders().setFileFolder({ libraryId: libId, fileId: parseInt(file.id), folder: parseInt(folderItem.id) })
+    file.folderId = String(folderItem.id)
+  }, { label: '设置文件夹' })
+  emit('folder-change', folderItem.id)
 }
 
 const handleTagSelect = async (tagData: any) => {
-  try {
-    const client = (miraSDKService as any).client
-    if (!client) return
-    const tagName = tagData.title || tagData.name
-    for (const file of displayItems.value) {
-      const libId = file.libraryId || 'default'
-      await client.tags().addTagsToFile(libId, parseInt(file.id), [tagName])
-      if (!file.tags) file.tags = []
-      if (!file.tags.includes(tagName)) file.tags.push(tagName)
-    }
-    emit('tag-add', tagName)
-    tagPopoverOpen.value = false
-  } catch (error) {
-    console.error('Failed to add tag:', error)
-  }
+  const client = (miraSDKService as any).client
+  if (!client) return
+  const tagName = tagData.title || tagData.name
+  const files = displayItems.value
+  tagPopoverOpen.value = false
+  await runBatchOperation(files, async (file) => {
+    const libId = file.libraryId || 'default'
+    await client.tags().addTagsToFile(libId, parseInt(file.id), [tagName])
+    if (!file.tags) file.tags = []
+    if (!file.tags.includes(tagName)) file.tags.push(tagName)
+  }, { label: '设置标签' })
+  emit('tag-add', tagName)
 }
 
 const handleRemoveTag = async (tag: string) => {
-  try {
-    const client = (miraSDKService as any).client
-    if (!client) return
-    for (const file of displayItems.value) {
-      const libId = file.libraryId || 'default'
-      await client.tags().removeTagsFromFile(libId, parseInt(file.id), [tag])
-      if (file.tags) {
-        const idx = file.tags.indexOf(tag)
-        if (idx !== -1) file.tags.splice(idx, 1)
-      }
+  const client = (miraSDKService as any).client
+  if (!client) return
+  const files = displayItems.value
+  await runBatchOperation(files, async (file) => {
+    const libId = file.libraryId || 'default'
+    await client.tags().removeTagsFromFile(libId, parseInt(file.id), [tag])
+    if (file.tags) {
+      const idx = file.tags.indexOf(tag)
+      if (idx !== -1) file.tags.splice(idx, 1)
     }
-    emit('tag-remove', tag)
-  } catch (error) {
-    console.error('Failed to remove tag:', error)
-  }
+  }, { label: '移除标签' })
+  emit('tag-remove', tag)
 }
 
 // 获取标签名称

@@ -292,13 +292,6 @@ onUnmounted(() => {
                         <span class="material-icons">add</span>
                         <span>连接服务器</span>
                       </button>
-                      <button
-                        class="w-full flex items-center space-x-2 p-2 text-red-600 hover:bg-red-50 rounded text-sm"
-                        @click="handleLogout(); close()"
-                      >
-                        <span class="material-icons">logout</span>
-                        <span>退出登录</span>
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -562,6 +555,38 @@ onUnmounted(() => {
                 <TooltipContent side="left">应用设置</TooltipContent>
               </Tooltip>
             </TooltipProvider>
+
+            <!-- 弹性占位 -->
+            <div class="flex-1"></div>
+
+            <!-- 用户信息 -->
+            <Dropdown
+              placement="bottom-end"
+              min-width="180px"
+            >
+              <template #trigger>
+                <button class="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                  <div class="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-medium">
+                    {{ authStore.userDisplayName?.charAt(0)?.toUpperCase() || '?' }}
+                  </div>
+                </button>
+              </template>
+              <template #content="{ close }">
+                <div class="p-2">
+                  <div class="px-2 py-1.5 text-sm font-medium truncate">{{ authStore.userDisplayName }}</div>
+                  <div v-if="authStore.user?.role" class="px-2 pb-2 text-xs text-gray-500">{{ authStore.user.role }}</div>
+                  <div class="border-t border-gray-100 pt-1">
+                    <button
+                      class="w-full flex items-center space-x-2 p-2 text-red-600 hover:bg-red-50 rounded text-sm"
+                      @click="handleLogout(); close()"
+                    >
+                      <span class="material-icons text-base">logout</span>
+                      <span>退出登录</span>
+                    </button>
+                  </div>
+                </div>
+              </template>
+            </Dropdown>
 
             <!-- 开发者工具按钮（仅在Electron环境中显示） -->
             <TooltipProvider v-if="environment.isElectron">
