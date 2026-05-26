@@ -34,6 +34,21 @@
             <p v-if="errors.title" class="text-red-500 text-sm mt-1">{{ errors.title }}</p>
           </div>
 
+          
+          <!-- 文件夹描述 -->
+          <div>
+            <label for="folderDescription" class="block text-sm font-medium text-gray-700 mb-1">
+              描述
+            </label>
+            <textarea
+              id="folderDescription"
+              v-model="formData.description"
+              :placeholder="`请输入${itemTypeText}描述（可选）`"
+              rows="3"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+            ></textarea>
+          </div>
+
           <!-- 父文件夹 -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -103,19 +118,6 @@
             </div>
           </div>
 
-          <!-- 文件夹描述 -->
-          <div>
-            <label for="folderDescription" class="block text-sm font-medium text-gray-700 mb-1">
-              描述
-            </label>
-            <textarea
-              id="folderDescription"
-              v-model="formData.description"
-              :placeholder="`请输入${itemTypeText}描述（可选）`"
-              rows="3"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-            ></textarea>
-          </div>
 
           <!-- 错误信息 -->
           <div v-if="error" class="bg-red-50 border border-red-200 rounded-md p-3">

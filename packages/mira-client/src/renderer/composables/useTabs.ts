@@ -474,12 +474,19 @@ export function useTabs() {
     const { id, label, data, libraryId, context = {} } = options
     const tabId = id || `${typeName}-${Date.now()}`
 
-    // 检查是否允许多个实例
+    // 同 ID 去重：已存在相同 tabId 则直接切换
+    const existingTab = tabs.value.find(tab => tab.id === tabId)
+    if (existingTab) {
+      switchToTab(existingTab.id)
+      return existingTab
+    }
+
+    // 同类型去重：不允许同类型多实例时，复用已有 tab
     if (!tabType.allowMultipleInstances) {
-      const existingTab = tabs.value.find(tab => tab.type === typeName)
-      if (existingTab) {
-        switchToTab(existingTab.id)
-        return existingTab
+      const sameTypeTab = tabs.value.find(tab => tab.type === typeName)
+      if (sameTypeTab) {
+        switchToTab(sameTypeTab.id)
+        return sameTypeTab
       }
     }
 
