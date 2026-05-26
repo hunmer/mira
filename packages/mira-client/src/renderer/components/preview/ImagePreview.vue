@@ -45,7 +45,7 @@
       <!-- 左侧缩略图列表 -->
       <ImageThumbnailListComponent
         :images="controller.imageItems.value"
-        :current-image-id="controller.currentImageId.value"
+        :current-image-index="controller.currentImageIndex.value"
         :cache-key="controller.imageCacheKey.value"
         @image-select="controller.handleImageSelect"
       />

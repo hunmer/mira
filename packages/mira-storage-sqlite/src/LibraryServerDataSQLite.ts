@@ -797,14 +797,32 @@ export class LibraryServerDataSQLite implements ILibraryServerData {
     return buffer.toString('hex').substring(0, 32); // 简化示例
   }
 
+  private getUniquePath(destPath: string): string {
+    if (!fs.existsSync(destPath)) return destPath;
+    const ext = path.extname(destPath);
+    const base = path.basename(destPath, ext);
+    const dir = path.dirname(destPath);
+    let i = 1;
+    let newPath: string;
+    do {
+      newPath = path.join(dir, `${base} (${i})${ext}`);
+      i++;
+    } while (fs.existsSync(newPath));
+    return newPath;
+  }
+
   private async handleFile(
     filePath: string,
     fileData: Record<string, any>,
     importType: string
   ): Promise<void> {
-    const destPath = path.join(await this.getItemPath(fileData), fileData.name);
+    let destPath = this.getUniquePath(path.join(await this.getItemPath(fileData), fileData.name));
     const destDir = path.dirname(destPath);
-    console.log({ filePath, destPath })
+    // 如果文件名变了，同步更新 fileData
+    const actualName = path.basename(destPath);
+    if (actualName !== fileData.name) {
+      fileData.name = actualName;
+    }
     switch (importType) {
       case 'link':
         // 保持原文件位置不变
@@ -815,12 +833,12 @@ export class LibraryServerDataSQLite implements ILibraryServerData {
         }
         fs.copyFileSync(filePath, destPath);
         fileData.path = destPath;
+        fileData.name = path.basename(destPath);
         break;
       case 'move':
         if (!fs.existsSync(destDir)) {
           fs.mkdirSync(destDir, { recursive: true });
         }
-        // 如果不同是跨盘符操作，则单独复制一份，再删除源文件
         if (path.parse(filePath).root !== path.parse(destPath).root) {
           fs.copyFileSync(filePath, destPath);
           fs.unlinkSync(filePath);
@@ -828,6 +846,7 @@ export class LibraryServerDataSQLite implements ILibraryServerData {
           fs.renameSync(filePath, destPath);
         }
         fileData.path = destPath;
+        fileData.name = path.basename(destPath);
         break;
       default:
         throw new Error(`Unknown import type: ${importType}`);

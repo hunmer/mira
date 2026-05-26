@@ -14,7 +14,7 @@ export class ImagePreviewController {
   private libraryStore = useLibraryStore()
 
   // 响应式状态
-  public currentImageId = ref<string>('')
+  public currentImageIndex = ref<number>(0)
   public zoom = ref<number>(1)
   public rotation = ref<number>(0)
   public similarImages = ref<FileInfo[]>([])
@@ -43,16 +43,12 @@ export class ImagePreviewController {
   }
 
   constructor() {
-    // 初始化当前图片ID
-    if (this.route.params.id) {
-      this.currentImageId.value = this.route.params.id as string
-    } else if (this.imageItems.value.length > 0) {
-      this.currentImageId.value = this.imageItems.value[0].id
-    }
+    this.setCurrentImageIndexById(typeof this.route.params.id === 'string' ? this.route.params.id : undefined, false)
 
     this.debug('constructor:init', {
       routeId: this.route.params.id,
       currentImageId: this.currentImageId.value,
+      currentImageIndex: this.currentImageIndex.value,
       cacheKey: this.imageCacheKey.value,
       imageCount: this.imageItems.value.length,
       currentImage: this.describeImage(this.currentImage.value)
@@ -64,20 +60,12 @@ export class ImagePreviewController {
         this.debug('route:param-change', {
           routeId: imageId,
           currentImageId: this.currentImageId.value,
+          currentImageIndex: this.currentImageIndex.value,
           cacheKey: this.imageCacheKey.value
         })
 
         if (typeof imageId === 'string' && imageId && imageId !== this.currentImageId.value) {
-          this.currentImageId.value = imageId
-          this.imageCacheKey.value = Date.now()
-          this.zoom.value = 1
-          this.rotation.value = 0
-
-          this.debug('route:param-applied', {
-            currentImageId: this.currentImageId.value,
-            cacheKey: this.imageCacheKey.value,
-            currentImage: this.describeImage(this.currentImage.value)
-          })
+          this.setCurrentImageIndexById(imageId)
         }
       }
     )
@@ -102,12 +90,71 @@ export class ImagePreviewController {
   }
 
   /**
-   * 获取所有图片类型的媒体项目
+   * 获取打开预览时当前 Tab 的图片结果集
    */
   public imageItems = computed<FileInfo[]>(() => {
-    return this.mediaStore.files
+    const previewItems = this.mediaStore.imagePreviewItems.length > 0
+      ? this.mediaStore.imagePreviewItems
+      : this.mediaStore.files
+
+    return previewItems
       .filter(file => this.getFileType(file.name) === 'image')
   })
+
+  private normalizeImageIndex = (index: number): number => {
+    const maxIndex = this.imageItems.value.length - 1
+    if (maxIndex < 0) return 0
+    return Math.min(Math.max(index, 0), maxIndex)
+  }
+
+  private setCurrentImageIndex = (index: number, syncRoute = true): void => {
+    const nextIndex = this.normalizeImageIndex(index)
+    const previousIndex = this.currentImageIndex.value
+
+    if (previousIndex === nextIndex && this.currentImage.value) {
+      return
+    }
+
+    this.currentImageIndex.value = nextIndex
+    this.imageCacheKey.value = Date.now()
+    this.zoom.value = 1
+    this.rotation.value = 0
+
+    const image = this.currentImage.value
+
+    this.debug('index:set', {
+      previousIndex,
+      currentImageIndex: this.currentImageIndex.value,
+      currentImageId: this.currentImageId.value,
+      cacheKey: this.imageCacheKey.value,
+      currentImage: this.describeImage(image)
+    })
+
+    if (syncRoute && image?.id) {
+      this.router.replace({
+        name: 'ImagePreview',
+        params: { id: image.id },
+        query: this.route.query
+      }).then(() => {
+        this.debug('index:route-synced', {
+          routeId: this.route.params.id,
+          currentImageIndex: this.currentImageIndex.value,
+          currentImageId: this.currentImageId.value,
+          cacheKey: this.imageCacheKey.value
+        })
+      }).catch((error) => {
+        console.error('[ImagePreviewDebug][Controller] index:route-sync-failed', error)
+      })
+    }
+  }
+
+  private setCurrentImageIndexById = (imageId?: string, syncRoute = true): void => {
+    const index = imageId
+      ? this.imageItems.value.findIndex((image: FileInfo) => image.id === imageId)
+      : 0
+
+    this.setCurrentImageIndex(index >= 0 ? index : 0, syncRoute)
+  }
 
   /**
    * 解析JSON格式的标签
@@ -153,14 +200,14 @@ export class ImagePreviewController {
    * 当前图片
    */
   public currentImage = computed(() => {
-    return this.imageItems.value.find((img: FileInfo) => img.id === this.currentImageId.value) || this.imageItems.value[0]
+    return this.imageItems.value[this.normalizeImageIndex(this.currentImageIndex.value)]
   })
 
   /**
-   * 当前图片索引
+   * 当前图片 ID
    */
-  public currentImageIndex = computed(() => {
-    return this.imageItems.value.findIndex((img: FileInfo) => img.id === this.currentImageId.value)
+  public currentImageId = computed(() => {
+    return this.currentImage.value?.id || ''
   })
 
   /**
@@ -180,44 +227,24 @@ export class ImagePreviewController {
   /**
    * 选择图片
    */
-  public handleImageSelect = (imageId: string): void => {
+  public handleImageSelect = (imageIndex: number): void => {
+    const image = this.imageItems.value[imageIndex]
+
     this.debug('select:request', {
-      requestedImageId: imageId,
+      requestedImageIndex: imageIndex,
+      requestedImage: this.describeImage(image),
+      previousImageIndex: this.currentImageIndex.value,
       previousImageId: this.currentImageId.value,
       previousImage: this.describeImage(this.currentImage.value),
       cacheKey: this.imageCacheKey.value
     })
 
-    if (this.currentImageId.value === imageId) {
-      this.debug('select:skip-same-id', { imageId })
+    if (!image) {
+      this.debug('select:skip-missing-index', { imageIndex })
       return
     }
 
-    this.currentImageId.value = imageId
-    this.imageCacheKey.value = Date.now()
-    this.zoom.value = 1
-    this.rotation.value = 0
-
-    this.debug('select:state-updated', {
-      currentImageId: this.currentImageId.value,
-      cacheKey: this.imageCacheKey.value,
-      currentImageIndex: this.currentImageIndex.value,
-      currentImage: this.describeImage(this.currentImage.value)
-    })
-
-    this.router.replace({
-      name: 'ImagePreview',
-      params: { id: imageId },
-      query: this.route.query
-    }).then(() => {
-      this.debug('select:route-synced', {
-        routeId: this.route.params.id,
-        currentImageId: this.currentImageId.value,
-        cacheKey: this.imageCacheKey.value
-      })
-    }).catch((error) => {
-      console.error('[ImagePreviewDebug][Controller] select:route-sync-failed', error)
-    })
+    this.setCurrentImageIndex(imageIndex)
   }
 
   // URL 同步使用 router.replace，避免缩略图切换污染浏览历史。
@@ -274,7 +301,7 @@ export class ImagePreviewController {
   public previousImage = (): void => {
     const currentIndex = this.currentImageIndex.value
     if (currentIndex > 0) {
-      this.handleImageSelect(this.imageItems.value[currentIndex - 1].id)
+      this.handleImageSelect(currentIndex - 1)
     }
   }
 
@@ -284,7 +311,7 @@ export class ImagePreviewController {
   public nextImage = (): void => {
     const currentIndex = this.currentImageIndex.value
     if (currentIndex < this.imageItems.value.length - 1) {
-      this.handleImageSelect(this.imageItems.value[currentIndex + 1].id)
+      this.handleImageSelect(currentIndex + 1)
     }
   }
 
@@ -338,8 +365,8 @@ export class ImagePreviewController {
    */
   public openWithViewer = (initialIndex?: number): void => {
     const images = this.imageItems.value.map(item => ({
-      src: item.url || '',
-      'data-source': item.url || '', // 高分辨率图片源
+      src: getPreviewImageSource(item) || '',
+      'data-source': getPreviewImageSource(item) || '', // 高分辨率图片源
       alt: item.name
     }))
 
@@ -376,11 +403,10 @@ export class ImagePreviewController {
         zIndex: 9999,
         zIndexInline: 999,
         viewed: (event: any) => {
-          // 当切换图片时更新当前图片ID
+          // 当切换图片时更新唯一索引状态
           const index = event.detail.index
           if (this.imageItems.value[index]) {
-            this.currentImageId.value = this.imageItems.value[index].id
-            this.router.replace(`/image-preview/${this.imageItems.value[index].id}`)
+            this.setCurrentImageIndex(index)
           }
         },
         hide: () => {

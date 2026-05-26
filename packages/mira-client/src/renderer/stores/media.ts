@@ -32,6 +32,7 @@ export const useMediaStore = defineStore('media', () => {
   // 详情面板全局状态
   const detailSidebarFiles = ref<FileInfo[]>([])
   const showDetailSidebar = ref(false)
+  const imagePreviewItems = ref<FileInfo[]>([])
 
   // 本地文件路径映射: {libraryId: {fileId: localPath}}
   const localFiles = ref<Record<string, Record<string, string>>>({})
@@ -989,11 +990,20 @@ export const useMediaStore = defineStore('media', () => {
     showDetailSidebar.value = !showDetailSidebar.value
   }
 
+  const setImagePreviewItems = (files: FileInfo[]) => {
+    imagePreviewItems.value = [...files]
+  }
+
+  const clearImagePreviewItems = () => {
+    imagePreviewItems.value = []
+  }
+
   return {
     // 状态
     files,
     filesMap, // 新增：暴露 filesMap 用于调试或高级操作
     currentTabId, // 新增：当前激活的 tab ID
+    imagePreviewItems,
     currentFile,
     selectedFiles,
     isLoading,
@@ -1046,6 +1056,8 @@ export const useMediaStore = defineStore('media', () => {
     setFilesForTab,
     getFilesForTab,
     clearFilesForTab,
+    setImagePreviewItems,
+    clearImagePreviewItems,
 
     // 本地文件路径管理
     setLocalFile,

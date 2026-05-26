@@ -2,18 +2,18 @@
   <div class="w-28 flex-shrink-0 bg-white p-2 flex flex-col items-center border-r border-gray-200">
     <div class="flex-grow space-y-3 overflow-y-auto pr-1">
       <img
-        v-for="image in images"
+        v-for="(image, index) in images"
         :key="image.id"
-        v-memo="[image.id === currentImageId, image.thumbnailPath, image.url, cacheKey]"
+        v-memo="[index === currentImageIndex, image.thumbnailPath, image.url, cacheKey]"
         :alt="image.name"
         :class="[
           'h-24 w-24 cursor-pointer rounded-lg border-2 object-cover',
-          image.id === currentImageId
+          index === currentImageIndex
             ? 'border-blue-500'
             : 'border-transparent hover:border-gray-300'
         ]"
         :src="getImageSrc(image)"
-        @click="handleImageSelect(image)"
+        @click="handleImageSelect(index, image)"
         loading="lazy"
       />
     </div>
@@ -27,12 +27,12 @@ import { getPreviewImageSource, toCacheBustedFileUrl } from '../../utils/fileUti
 
 interface Props {
   images: FileInfo[]
-  currentImageId: string
+  currentImageIndex: number
   cacheKey?: string | number
 }
 
 interface Emits {
-  (e: 'image-select', imageId: string): void
+  (e: 'image-select', imageIndex: number): void
 }
 
 const props = defineProps<Props>()
@@ -43,12 +43,13 @@ const getImageSrc = (image: FileInfo): string | undefined => {
 }
 
 watch(
-  () => [props.currentImageId, props.cacheKey, props.images.length] as const,
-  ([currentImageId, cacheKey, imageCount]) => {
-    const currentImage = props.images.find((image) => image.id === currentImageId)
+  () => [props.currentImageIndex, props.cacheKey, props.images.length] as const,
+  ([currentImageIndex, cacheKey, imageCount]) => {
+    const currentImage = props.images[currentImageIndex]
 
     console.debug('[ImagePreviewDebug][ThumbnailList] props-change', {
-      currentImageId,
+      currentImageIndex,
+      currentImageId: currentImage?.id,
       cacheKey,
       imageCount,
       currentImage: currentImage
@@ -69,10 +70,12 @@ watch(
   { immediate: true }
 )
 
-const handleImageSelect = (image: FileInfo): void => {
+const handleImageSelect = (imageIndex: number, image: FileInfo): void => {
   console.debug('[ImagePreviewDebug][ThumbnailList] click', {
+    clickedImageIndex: imageIndex,
     clickedImageId: image.id,
-    currentImageId: props.currentImageId,
+    currentImageIndex: props.currentImageIndex,
+    currentImageId: props.images[props.currentImageIndex]?.id,
     cacheKey: props.cacheKey,
     image: {
       id: image.id,
@@ -87,7 +90,7 @@ const handleImageSelect = (image: FileInfo): void => {
     thumbnailSrc: getImageSrc(image)
   })
 
-  emit('image-select', image.id)
+  emit('image-select', imageIndex)
 }
 </script>
 

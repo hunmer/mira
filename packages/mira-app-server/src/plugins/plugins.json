@@ -11,7 +11,7 @@
   },
   {
     "name": "mira_thumb_imagemagick",
-    "enabled": true,
+    "enabled": false,
     "path": "node_modules/mira_thumb_imagemagick",
     "status": "active"
   }

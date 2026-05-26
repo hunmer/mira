@@ -697,6 +697,7 @@ const handleMediaDelete = async (_item: FileInfo) => {
 }
 
 const handleMediaDoubleClick = (item: FileInfo) => {
+  mediaStore.setImagePreviewItems(paginatedMediaItems.value)
   homeController.handleMediaDoubleClick(item)
   emit('itemDoubleClick', item)
 }
