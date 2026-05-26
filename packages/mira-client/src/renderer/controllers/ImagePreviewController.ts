@@ -1,4 +1,4 @@
-import { ref, computed, watch, nextTick } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { api as viewerApi } from 'v-viewer'  // 保留备用，现在主要使用内嵌组件
 import 'viewerjs/dist/viewer.css'
@@ -134,14 +134,8 @@ export class ImagePreviewController {
     this.rotation.value = 0
   }
 
-  // URL 同步：延迟更新，避免快速切换时触发路由重渲染
-  private stopUrlSync = watch(() => this.currentImageId.value, (id) => {
-    nextTick(() => {
-      if (id && this.route.params.id !== id) {
-        this.router.replace(`/image-preview/${id}`)
-      }
-    })
-  })
+  // URL 同步：不使用 router.replace，避免同路由参数变化导致组件重挂载、controller 重建
+  // 图片切换只改 reactive state，不走路由
 
   /**
    * 放大

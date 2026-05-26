@@ -890,6 +890,8 @@ export class LibraryServerDataSQLite implements ILibraryServerData {
         custom_fields: customFields,
         thumb: await this.getItemThumbPath(file, { isUrlFile }),
         path: await this.getItemFilePath(file, { isUrlFile }),
+        file_path: await this.getItemFilePath(file, { isUrlFile: false }),
+        thumb_path: await this.getItemThumbPath(file, { isUrlFile: false }),
       };
     }));
   }

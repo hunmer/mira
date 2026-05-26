@@ -475,11 +475,6 @@ export class MiraSDKService {
 
       console.log('MiraSDKService: Listing files', { libraryId, filters: requestFilters })
 
-      // 获取素材库配置以检查 SMB 设置
-      const { useServerListStore } = await import('../stores/serverList')
-      const serverListStore = useServerListStore()
-      const ServerConfig = serverListStore.activeServer
-
       // 使用 SDK 的文件模块获取文件列表
       let files: any;
       if (requestFilters && Object.keys(requestFilters).length > 0) {
@@ -506,30 +501,10 @@ export class MiraSDKService {
       }
       // 转换为 FileInfo 类型
       const fileInfos: FileInfo[] = files.result.map((file: any) => {
-        let filePath = file.path
-        let thumbnailPath = file.thumb
-        let localFilePath: string | undefined
-
-        // 如果启用了 SMB，从文件元数据构建本地路径
-        if (ServerConfig?.smb?.enabled && ServerConfig.smb.smbPath) {
-          const smbPath = ServerConfig.smb.smbPath
-          const sep = smbPath.includes('/') ? '/' : '\\'
-          const normalizedSmbPath = smbPath.endsWith(sep) ? smbPath : smbPath + sep
-
-          // 文件本地路径: smbPath/folder_name/name
-          if (file.folder_name && file.name) {
-            localFilePath = normalizedSmbPath + file.folder_name + sep + file.name
-          }
-
-          // 缩略图本地路径: smbPath/thumbs/{hash|id}.png
-          const thumbFileName = file.hash ? `${file.hash}.png` : `${file.id}.png`
-          thumbnailPath = normalizedSmbPath + 'thumbs' + sep + thumbFileName
-        }
-
         return {
           id: file.id.toString(),
           name: file.name, // 使用 name 字段
-          path: appendToken(toFileUrl(filePath)),
+          path: appendToken(toFileUrl(file.path)),
           size: file.size,
           extension: file.extension || this.getFileExtension(file.name), // 从文件名提取扩展名
           mimeType: file.mime_type || this.getMimeTypeFromExtension(file.name),
@@ -538,10 +513,9 @@ export class MiraSDKService {
           tags: typeof file.tags === 'string' ? JSON.parse(file.tags || '[]') : (file.tags || []),
           folderId: file.folder_id?.toString(),
           hash: file.hash || '',
-          thumbnailPath: appendToken(toFileUrl(thumbnailPath)),
+          thumbnailPath: appendToken(toFileUrl(file.thumb_path || file.thumb)),
           libraryId: libraryId, // 添加 libraryId 到 fileInfo
-          localFile: localFilePath || file.localFile || (() => {
-            // 如果SMB未启用或构建失败，尝试从mediaStore获取
+          localFile: file.file_path || file.localFile || (() => {
             try {
               const mediaStore = useMediaStore()
               return mediaStore.getLocalFile(libraryId, file.id.toString())
