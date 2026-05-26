@@ -106,10 +106,10 @@
     <!-- 文件名编辑 - 仅单选模式 -->
     <div v-if="!isMultiSelect && displayItems[0]">
       <label class="block text-xs font-medium text-gray-600 mb-1">文件名</label>
-      <input
+      <Input
         v-model="editName"
         type="text"
-        :class="['w-full text-sm border rounded-lg px-3 py-2 outline-none transition-colors', nameError ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-blue-400']"
+        :class="nameError ? 'border-red-400 focus-visible:ring-red-400' : ''"
         :disabled="nameSaving"
         @blur="handleNameBlur"
         @keydown.enter="handleNameBlur"
@@ -120,11 +120,10 @@
     <!-- Website 编辑 - 仅单选模式 -->
     <div v-if="!isMultiSelect && displayItems[0]">
       <label class="block text-xs font-medium text-gray-600 mb-1">网址</label>
-      <input
+      <Input
         v-model="editWebsite"
         type="text"
         placeholder="https://"
-        class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-blue-400 transition-colors"
         :disabled="websiteSaving"
         @blur="handleWebsiteBlur"
         @keydown.enter="handleWebsiteBlur"
@@ -295,6 +294,7 @@ import { useFolderStore } from '@renderer/stores/folder'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { webSocketService } from '@renderer/services/WebSocketService'
 import { Empty, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
+import { Input } from '@/components/ui/input'
 import { getExtIconUrl } from '@renderer/utils/extIconHelper'
 import { runBatchOperation } from '@renderer/composables/useBatchOperation'
 
@@ -420,7 +420,7 @@ watch(displayItems, (items) => {
     editWebsite.value = (items[0] as any).website || ''
     nameError.value = ''
   }
-}, { immediate: true })
+}, { immediate: true, deep: true })
 
 // 文件名更新（blur/enter 触发）
 const handleNameBlur = async () => {

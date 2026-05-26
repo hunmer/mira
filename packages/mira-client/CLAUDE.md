@@ -1,3 +1,5 @@
+1.组件要使用现有组件库的组件，避免使用原生组件
+
 [根目录](../../CLAUDE.md) > [packages](..) > **mira-client**
 
 # mira-client
