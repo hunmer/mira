@@ -718,7 +718,17 @@ export class LibraryServerDataSQLite implements ILibraryServerData {
   }
 
   getPublicURL(url: string): string {
-    return `${this.customFields['serverURL']}:${this.customFields['serverPort']}/${url}`;
+    const serverURL = this.customFields['serverURL'];
+    const serverPort = this.customFields['serverPort'];
+    if (serverURL && serverPort) {
+      return `${serverURL}:${serverPort}/${url}`;
+    }
+    const apiBaseUrl = process.env.API_BASE_URL;
+    if (apiBaseUrl) {
+      return `${apiBaseUrl}/${url}`;
+    }
+    const port = process.env.MIRA_SERVER_HTTP_PORT || process.env.HTTP_PORT || '8081';
+    return `http://127.0.0.1:${port}/${url}`;
   }
 
   async getItemFilePath(item: Record<string, any>, options?: { isUrlFile: boolean }): Promise<string> {

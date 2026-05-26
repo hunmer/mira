@@ -165,7 +165,7 @@ export class MiraHttpServer {
         this.deviceRoutes = new DeviceRoutes(backend);
         this.tagRouter = new TagRouter(backend);
         this.folderRouter = new FolderRouter(backend);
-        this.fsRouter = new FsRouter();
+        this.fsRouter = new FsRouter(backend);
         this.httpRouter = new HttpRouter(backend);
         this.settingsRouter = new SettingsRouter(backend, this.authRouter);
         this.statisticsRouter = new StatisticsRouter(backend);
