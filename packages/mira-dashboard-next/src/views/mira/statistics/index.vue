@@ -2,7 +2,7 @@
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
-import { libraryApi, statisticsApi } from '@/api'
+import { libraryApi, statisticsApi, adminApi } from '@/api'
 import type { ChartConfig } from '@/components/ui/chart'
 import { Orientation } from '@unovis/ts'
 import { Donut } from '@unovis/ts'
@@ -16,6 +16,10 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from '@/components/ui/dialog'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import type { Library } from '@/types/mira'
 
 const { t } = useI18n()
@@ -24,7 +28,7 @@ const route = useRoute()
 interface DailyRow { date: string; file_count: number; total_size: number }
 interface UploaderRow { uploader: number | null; uploaderName: string; fileCount: number; totalSize: number }
 interface FileTypeRow { type: string; file_count: number; total_size: number }
-interface RecentUploadDay { date: string; items: { userName: string; target: string; fileCount: number }[] }
+interface RecentUploadDay { date: string; items: { userName: string; uploader: number | null; target: string; targetType: string; targetId: number | null; fileCount: number }[] }
 
 const libraries = ref<Library[]>([])
 const selectedLibraryId = ref<string>('')
@@ -203,6 +207,37 @@ function daysAgo(dateStr: string) {
   if (diff === 1) return '昨天'
   return `${diff}天前`
 }
+
+// ---- 用户信息 Dialog ----
+import type { User } from '@/types/auth'
+
+const userDialogVisible = ref(false)
+const userDialogLoading = ref(false)
+const userDialogUser = ref<User | null>(null)
+
+async function showUserDialog(uploaderId: number | null) {
+  if (!uploaderId) return
+  userDialogVisible.value = true
+  userDialogLoading.value = true
+  try {
+    const res: any = await adminApi.list()
+    const users: User[] = Array.isArray(res.data) ? res.data : (res.data?.data || [])
+    userDialogUser.value = users.find(u => String(u.id) === String(uploaderId)) || null
+  } catch {
+    userDialogUser.value = null
+  } finally {
+    userDialogLoading.value = false
+  }
+}
+
+// ---- mira:// 协议链接 ----
+function createMiraUrl(tabType: 'folder' | 'tag', id: number | null, name: string) {
+  if (id == null) return ''
+  const data = { type: 'openTab', tabType, id, name, libraryId: selectedLibraryId.value }
+  const json = JSON.stringify(data)
+  const base64 = btoa(unescape(encodeURIComponent(json)))
+  return `mira://?json=${base64}`
+}
 </script>
 
 <template>
@@ -380,16 +415,51 @@ function daysAgo(dateStr: string) {
           <div class="text-muted-foreground mb-2 text-xs font-medium">{{ day.date }} ({{ daysAgo(day.date) }})</div>
           <div class="space-y-1">
             <div v-for="(item, i) in day.items" :key="i" class="text-sm">
-              <span class="font-medium">{{ item.userName }}</span>
+              <a
+                v-if="item.uploader"
+                class="cursor-pointer font-medium text-primary hover:underline"
+                @click.prevent="showUserDialog(item.uploader)"
+              >{{ item.userName }}</a>
+              <span v-else class="font-medium">{{ item.userName }}</span>
               {{ t('statistics.uploaded') }}
               <span class="font-medium text-primary">{{ item.fileCount }}</span>
               {{ t('statistics.uploadedTo') }}
-              <span class="font-medium">{{ item.target }}</span>
+              <a
+                v-if="item.targetId != null"
+                :href="createMiraUrl(item.targetType as 'folder' | 'tag', item.targetId, item.target)"
+                class="font-medium text-primary hover:underline"
+              >{{ item.target }}</a>
+              <span v-else class="font-medium">{{ item.target }}</span>
             </div>
           </div>
         </div>
       </CardContent>
     </Card>
+
+    <!-- 用户信息 Dialog -->
+    <Dialog v-model:open="userDialogVisible">
+      <DialogContent class="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{{ t('statistics.userInfo') }}</DialogTitle>
+          <DialogDescription />
+        </DialogHeader>
+        <div v-if="userDialogLoading" class="py-8 text-center text-muted-foreground">{{ t('common.loading') }}</div>
+        <div v-else-if="!userDialogUser" class="py-8 text-center text-muted-foreground">{{ t('common.noData') }}</div>
+        <div v-else class="flex items-center gap-4">
+          <Avatar class="h-14 w-14">
+            <AvatarFallback class="text-lg">{{ userDialogUser.username.slice(0, 2).toUpperCase() }}</AvatarFallback>
+          </Avatar>
+          <div class="space-y-1">
+            <div class="text-lg font-medium">{{ userDialogUser.username }}</div>
+            <div class="text-muted-foreground text-sm">{{ userDialogUser.email }}</div>
+            <div class="text-muted-foreground text-xs">
+              {{ t('statistics.role') }}: {{ userDialogUser.role }}
+              <span v-if="userDialogUser.createdAt"> &middot; {{ t('statistics.joinedAt') }}: {{ userDialogUser.createdAt?.slice(0, 10) }}</span>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
 
     <Card v-if="!selectedLibraryId">
       <CardContent class="text-muted-foreground py-16 text-center">

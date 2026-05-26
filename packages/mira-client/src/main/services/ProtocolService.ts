@@ -122,8 +122,12 @@ export class ProtocolService {
    */
   private registerProtocolHandler(): void {
     try {
-      // 由于我们主要通过系统注册来处理协议，这里不需要注册自定义协议
-      // 系统会直接启动应用并传递协议参数
+      // 注册自定义协议 scheme，使渲染进程可通过 <a href="mira://..."> 触发
+      const { protocol } = require('electron') as typeof import('electron')
+      protocol.registerStringProtocol('mira', (request: any, callback: (response: string) => void) => {
+        this.parseAndHandleUrl(request.url)
+        callback('')
+      })
       logger.debug('ProtocolService', 'Protocol handler registration completed')
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)

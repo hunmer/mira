@@ -335,6 +335,19 @@ const setupElectronListeners = () => {
     console.log('Import files:', filePaths)
     // 这里可以调用文件上传逻辑
   })
+
+  // 监听 openTab 协议事件（来自 dashboard 等外部来源）
+  window.electronAPI.on('protocol:open-tab', (data: { type: string; tabType: string; id: string | number; name: string; libraryId?: string }) => {
+    console.log('Received openTab protocol:', data)
+    const { useTabs } = require('./composables/useTabs')
+    const tabs = useTabs()
+
+    if (data.tabType === 'folder') {
+      tabs.createTabFromFolder({ id: data.id, title: data.name }, data.libraryId)
+    } else if (data.tabType === 'tag') {
+      tabs.createTabFromTag({ id: data.id, title: data.name }, data.libraryId)
+    }
+  })
   
   // 监听全局Loading事件
   window.electronAPI.on('show-global-loading', (message: string, options?: {
@@ -387,6 +400,7 @@ const cleanupElectronListeners = () => {
   window.electronAPI.removeAllListeners('navigate:plugins')
   window.electronAPI.removeAllListeners('navigate:settings')
   window.electronAPI.removeAllListeners('files:import')
+  window.electronAPI.removeAllListeners('protocol:open-tab')
   window.electronAPI.removeAllListeners('show-global-loading')
   window.electronAPI.removeAllListeners('hide-global-loading')
 

@@ -475,11 +475,11 @@ class MiraApplication {
     // 注册默认的 server_import 处理器
     this.protocolService?.registerHandler('server_import', async (data) => {
       logger.info('MiraApplication', 'Handling server_import protocol', { data })
-      
+
       try {
         // 确保主窗口可见
         this.showMainWindow()
-        
+
         // 发送服务器导入数据到渲染进程
         if (this.mainWindow && !this.mainWindow.isDestroyed()) {
           this.mainWindow.webContents.send('protocol:server-import', data)
@@ -487,6 +487,22 @@ class MiraApplication {
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error)
         logger.error('MiraApplication', `Error handling server_import: ${errorMessage}`)
+      }
+    })
+
+    // 注册 openTab 处理器 - 从 dashboard 等外部来源打开 Tab
+    this.protocolService?.registerHandler('openTab', async (data) => {
+      logger.info('MiraApplication', 'Handling openTab protocol', { data })
+
+      try {
+        this.showMainWindow()
+
+        if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+          this.mainWindow.webContents.send('protocol:open-tab', data)
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        logger.error('MiraApplication', `Error handling openTab: ${errorMessage}`)
       }
     })
     

@@ -110,17 +110,17 @@ export class StatisticsRouter {
                 const userName = (id: number | null) => id ? (userMap.get(id) || `User#${id}`) : '未知';
 
                 // 合并成统一的活动记录
-                type Record = { date: string; userName: string; target: string; fileCount: number };
+                type Record = { date: string; userName: string; uploader: number | null; target: string; targetType: 'folder' | 'tag'; targetId: number | null; fileCount: number };
                 const records: Record[] = [];
 
                 for (const r of (raw.byFolder || [])) {
                     const folderName = r.folder_id ? (folderMap.get(r.folder_id) || '未分类') : '素材库';
-                    records.push({ date: r.date, userName: userName(r.uploader), target: folderName, fileCount: r.file_count });
+                    records.push({ date: r.date, userName: userName(r.uploader), uploader: r.uploader, target: folderName, targetType: 'folder', targetId: r.folder_id || null, fileCount: r.file_count });
                 }
 
                 for (const r of (raw.byTag || [])) {
                     const tagName = r.tag_id ? (tagMap.get(Number(r.tag_id)) || '未知标签') : '未知标签';
-                    records.push({ date: r.date, userName: userName(r.uploader), target: tagName, fileCount: r.file_count });
+                    records.push({ date: r.date, userName: userName(r.uploader), uploader: r.uploader, target: tagName, targetType: 'tag', targetId: r.tag_id ? Number(r.tag_id) : null, fileCount: r.file_count });
                 }
 
                 // 按日期分组
@@ -131,16 +131,16 @@ export class StatisticsRouter {
                 }
 
                 // 合并同天同用户同目标的记录
-                const result: { date: string; items: { userName: string; target: string; fileCount: number }[] }[] = [];
+                const result: { date: string; items: { userName: string; uploader: number | null; target: string; targetType: string; targetId: number | null; fileCount: number }[] }[] = [];
                 for (const [date, items] of grouped) {
-                    const merged = new Map<string, { userName: string; target: string; fileCount: number }>();
+                    const merged = new Map<string, { userName: string; uploader: number | null; target: string; targetType: string; targetId: number | null; fileCount: number }>();
                     for (const item of items) {
-                        const key = `${item.userName}::${item.target}`;
+                        const key = `${item.uploader}::${item.targetType}::${item.targetId}`;
                         const existing = merged.get(key);
                         if (existing) {
                             existing.fileCount += item.fileCount;
                         } else {
-                            merged.set(key, { userName: item.userName, target: item.target, fileCount: item.fileCount });
+                            merged.set(key, { userName: item.userName, uploader: item.uploader, target: item.target, targetType: item.targetType, targetId: item.targetId, fileCount: item.fileCount });
                         }
                     }
                     result.push({ date, items: [...merged.values()].sort((a, b) => b.fileCount - a.fileCount) });

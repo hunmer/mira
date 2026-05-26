@@ -200,6 +200,9 @@ export default {
     recentUploadsDesc: 'Upload activity in the past week',
     uploaded: 'uploaded',
     uploadedTo: 'files to',
+    userInfo: 'User Info',
+    role: 'Role',
+    joinedAt: 'Joined',
   },
   thumbnail: {
     title: 'Thumbnail Management',

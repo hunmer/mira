@@ -200,6 +200,9 @@ export default {
     recentUploadsDesc: '一周内的上传活动',
     uploaded: '上传了',
     uploadedTo: '个素材到',
+    userInfo: '用户信息',
+    role: '角色',
+    joinedAt: '注册时间',
   },
   thumbnail: {
     title: '缩略图管理',
