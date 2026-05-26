@@ -3,5 +3,9 @@
     "allow": [
       "mcp__shadcnVue__get_project_registries"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "code-review-graph"
+  ],
+  "enableAllProjectMcpServers": true
 }

@@ -184,7 +184,7 @@ pnpm run analyze:bundle        # 包体积分析
 
 ### 状态管理
 
-使用 Pinia 持久化存储:
+使用 Pinia 持久化存储（11 个 Store）:
 
 | Store | 文件 | 描述 |
 |-------|------|------|
@@ -198,6 +198,7 @@ pnpm run analyze:bundle        # 包体积分析
 | ServerListStore | `serverList.ts` | 服务器列表 |
 | UploadHistoryStore | `uploadHistory.ts` | 上传历史 |
 | AppStateStore | `appState.ts` | 应用全局状态 |
+| DashboardStore | `dashboard.ts` | Dashboard Web 应用 URL 解析与访问管理 |
 
 ### Tab 系统架构
 

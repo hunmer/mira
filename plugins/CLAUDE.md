@@ -6,6 +6,7 @@
 
 | 日期 | 操作 | 说明 |
 |------|------|------|
+| 2026-05-26 | 增量更新 | 新增 mira_thumb_imagemagick 插件 (ImageMagick 缩略图)；mira_user/upload_statistics 源码已移除；服务端内置 ThumbnailService 替代部分插件功能 |
 | 2026-05-25 | 深度扫描更新 | 完整扫描 4 个插件源码，补充每个插件的路由/事件/机制详情 |
 | 2026-05-20 | 初始化 | 首次生成插件目录文档 |
 
@@ -18,6 +19,7 @@
 - 监听/广播 WebSocket 事件（通过 `EventManager.subscribe/broadcast`）
 - 注册 HTTP Hook 拦截请求（通过 `pluginManager.registerHttpHook`）
 - 注册前端 UI 路由定义（通过 `registerRoute`）
+- 注册缩略图生成器（通过 `thumbnailService.registerGenerator`）
 - 扩展客户端连接字段（通过 `pluginManager.registerFields`）
 - 持久化配置（通过 `writeConfig/readConfig/writeJson/readJson`）
 
@@ -31,20 +33,7 @@
 
 ## 插件列表
 
-### mira_user (v1.0.9) - 用户登录认证
-
-**职责**: 通过 SDK 连接 Mira 服务端进行权限验证，控制文件访问。
-
-**机制**:
-- 在 `client::before_connect` 事件中拦截未认证的 WebSocket 连接，弹出登录对话框
-- 使用 `mira-server-sdk` 的 `MiraClient.auth().login()` 校验用户名密码
-- 通过 `registerHttpHook` 拦截 `/api/files/getFiles` 和 `/api/files/getFile`，验证后才能访问文件
-- 提供 HTTP 接口：`/user/login` (POST), `/user/register` (POST), `/user/logout` (POST)
-- 托管静态登录页面：`/user/index.html`
-
-**关键依赖**: mira-server-sdk, mira-app-server, mira-storage-sqlite, mira-app-core
-
-### mira_thumb (v1.0.19) - 缩略图生成
+### mira_thumb (v1.0.19) - 缩略图生成 (ffmpeg)
 
 **职责**: 使用 ffmpeg 为图片和视频自动生成缩略图。
 
@@ -60,19 +49,7 @@
 
 **关键依赖**: fluent-ffmpeg, queue, which, mira-app-core
 
-### upload_statistics (v1.0.7) - 上传统计
-
-**职责**: 记录和查询文件上传历史数据。
-
-**机制**:
-- 监听 `file::created` 事件，从客户端字段中提取 `username`，写入文件的 `custom_fields.uploader`
-- 注册客户端字段：`{ action: 'create', type: 'file', field: 'username' }`
-- 提供 HTTP 接口：`/upload_statistics/list` (GET, 支持 username/startDate/endDate 过滤)
-- 注册前端路由：`/statistics/upload` (统计页面), `/statistics/upload/details` (详情页面)
-
-**关键依赖**: mira-app-server, mira-storage-sqlite, mira-app-core
-
-### mira_n8n (v1.0.9) - n8n 集成
+### mira_n8n (v1.0.7) - n8n 集成
 
 **职责**: 通过独立的 WebSocket 服务器将 Mira 事件转发到 n8n 工作流。
 
@@ -83,9 +60,29 @@
 - 按 Webhook 配置的事件列表过滤并转发事件
 - 提供 HTTP 接口：`/n8n/list` (GET 列表, POST 新增), `/n8n/list/:id` (DELETE 删除)
 - 支持指数退避重连（客户端侧）
-- 默认配置包含一个测试 Webhook
 
 **关键依赖**: ws (内置), mira-app-server, mira-storage-sqlite, mira-app-core
+
+### mira_thumb_imagemagick (v1.0.0) - ImageMagick 缩略图
+
+**职责**: 使用 ImageMagick 为专业格式生成缩略图，扩展内置 ThumbnailService 的能力。
+
+**机制**:
+- 实现 `ThumbnailGenerator` 接口，通过 `thumbnailService.registerGenerator()` 注册
+- 支持格式：psd, ai, eps, svg, tiff, tif, dng, raw, heic, heif（可通过配置启用/禁用）
+- 生成参数：200x200 像素，保持宽高比
+- ImageMagick 查找优先级：配置文件 > `MAGICK_PATH` 环境变量 > PATH 查找
+- 配置文件：`data/config.json`，可配置 `magickPath` 和 `enableExts`
+
+**关键依赖**: which (查找 ImageMagick)
+
+### mira_user (v1.0.9) - 用户登录认证 [已移除]
+
+源码已移除，功能可能已内置于服务端核心。`plugins.json` 中仍有注册但 `enabled: false`。
+
+### upload_statistics (v1.0.7) - 上传统计 [已移除]
+
+源码已移除，功能已内置于服务端 `StatisticsRouter`（提供更丰富的统计 API）。`plugins.json` 中仍有注册但 `enabled: false`。
 
 ## 对外接口
 
@@ -115,7 +112,7 @@ export function init(inst: { pluginManager, server, dbService, miraClient? }): P
 ## 关键依赖与配置
 
 所有插件共享以下依赖：
-- `mira-app-server`: 提供 `ServerPlugin`, `ServerPluginManager`, `MiraWebsocketServer` 等
+- `mira-app-server`: 提供 `ServerPlugin`, `ServerPluginManager`, `MiraWebsocketServer`, `ThumbnailService` 等
 - `mira-storage-sqlite`: 提供 `ILibraryServerData` 数据接口
 - `mira-app-core`: 提供 `EventArgs`, `EventManager`
 
@@ -131,18 +128,24 @@ export function init(inst: { pluginManager, server, dbService, miraClient? }): P
 plugins/
   CLAUDE.md                     # 本文件
   plugins/
-    mira_user/
-      index.ts                  # 用户认证插件 (259 行)
-      tsconfig.json
-      web/                      # 登录页面静态文件
+    plugins.json                # 插件注册配置（6 个插件条目）
+    mira_user/                  # [已移除] 用户认证插件
     mira_thumb/
       index.ts                  # 缩略图生成插件 (331 行)
+      CLAUDE.md                 # 模块文档
+      package.json              # 包配置 (v1.0.19)
       tsconfig.json
       node_modules/             # 插件独立依赖 (fluent-ffmpeg)
-    upload_statistics/
-      index.ts                  # 上传统计插件 (130 行)
-      tsconfig.json
+    upload_statistics/          # [已移除] 上传统计插件
     mira_n8n/
       index.ts                  # n8n 集成插件 (290 行)
+      CLAUDE.md                 # 模块文档
+      package.json              # 包配置 (v1.0.7)
+      tsconfig.json
+    mira_thumb_imagemagick/
+      index.ts                  # ImageMagick 缩略图插件 (117 行)
+      config.json               # 默认配置
+      data/config.json          # 运行时配置
+      package.json              # 包配置 (v1.0.0)
       tsconfig.json
 ```

@@ -1,60 +1,60 @@
 <template>
-  <div class="login-view">
+  <div class="flex items-center justify-center min-h-screen bg-[#0a0a0a] font-[Inter,'Noto_Sans',sans-serif] relative overflow-hidden">
     <Aurora
       :color-stops="['#3A29FF', '#FF94B4', '#FF3232']"
       :amplitude="1.0"
       :blend="0.5"
       :speed="1.2"
-      class="aurora-bg"
+      class="absolute inset-0 w-full h-full z-0"
     />
-    <div class="login-container">
+    <div class="relative z-[1] w-full max-w-[440px] p-8 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.3)] dark:shadow-[0_10px_40px_rgba(0,0,0,0.6)] border border-white/30 dark:border-zinc-700/50 max-[480px]:m-4 max-[480px]:p-6">
       <!-- Close button -->
-      <button class="header-button close-button" @click="handleClose" title="关闭">
+      <button class="absolute top-4 right-4 w-8 h-8 border-none bg-transparent text-gray-400 hover:text-gray-500 cursor-pointer flex items-center justify-center rounded transition-colors" @click="handleClose" title="关闭">
         <span class="material-icons">close</span>
       </button>
 
-      <h1 class="login-title">连接服务器</h1>
+      <h1 class="text-center text-2xl font-bold text-gray-800 dark:text-zinc-100 mb-6">连接服务器</h1>
 
       <!-- Stepper -->
-      <Stepper v-model="currentStep" class="stepper">
+      <Stepper v-model="currentStep" class="flex items-center justify-center gap-0 mb-6">
         <StepperItem :step="1" :completed="currentStep > 1">
           <StepperTrigger>
             <StepperIndicator>1</StepperIndicator>
           </StepperTrigger>
-          <div class="stepper-label">服务器</div>
+          <div class="text-xs text-gray-500 dark:text-zinc-400 mt-1 text-center">服务器</div>
         </StepperItem>
-        <div class="stepper-separator" />
+        <div class="flex-1 h-0.5 bg-gray-200 dark:bg-zinc-700 mx-2 self-center -mt-4" />
         <StepperItem :step="2" :completed="currentStep > 2" :disabled="!healthData || healthData.authRequired === false">
           <StepperTrigger>
             <StepperIndicator>2</StepperIndicator>
           </StepperTrigger>
-          <div class="stepper-label">认证</div>
+          <div class="text-xs text-gray-500 dark:text-zinc-400 mt-1 text-center">认证</div>
         </StepperItem>
-        <div class="stepper-separator" />
+        <div class="flex-1 h-0.5 bg-gray-200 dark:bg-zinc-700 mx-2 self-center -mt-4" />
         <StepperItem :step="3" :disabled="currentStep < 3">
           <StepperTrigger>
             <StepperIndicator>3</StepperIndicator>
           </StepperTrigger>
-          <div class="stepper-label">素材库</div>
+          <div class="text-xs text-gray-500 dark:text-zinc-400 mt-1 text-center">素材库</div>
         </StepperItem>
       </Stepper>
 
       <!-- Error banner -->
-      <div v-if="error" class="error-banner">
-        <span class="material-icons error-icon">error</span>
+      <div v-if="error" class="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-500/40 text-red-600 dark:text-red-300 p-3 rounded-lg text-sm flex items-center gap-2 relative mb-4">
+        <span class="material-icons text-xl shrink-0">error</span>
         {{ error }}
-        <button type="button" class="error-close" @click="error = ''">
-          <span class="material-icons">close</span>
+        <button type="button" class="absolute right-2 top-1/2 -translate-y-1/2 bg-transparent border-none text-red-600 dark:text-red-300 cursor-pointer p-1" @click="error = ''">
+          <span class="material-icons text-base">close</span>
         </button>
       </div>
 
       <!-- Step 1: Server Connection -->
-      <form v-if="currentStep === 1" @submit.prevent="testConnection" class="step-form">
-        <div class="field">
+      <form v-if="currentStep === 1" @submit.prevent="testConnection" class="flex flex-col gap-4">
+        <div class="flex flex-col gap-1">
           <Label>服务器名称</Label>
           <Input v-model="serverName" type="text" placeholder="服务器名称" required />
         </div>
-        <div class="field">
+        <div class="flex flex-col gap-1">
           <Label>服务器地址</Label>
           <Input v-model="serverAddress" type="text" placeholder="http://192.168.1.100" required />
         </div>
@@ -62,7 +62,7 @@
           <span class="material-icons text-sm">{{ showWsField ? 'expand_less' : 'expand_more' }}</span>
           WebSocket 地址
         </Button>
-        <div v-if="showWsField" class="field">
+        <div v-if="showWsField" class="flex flex-col gap-1">
           <Label>WebSocket 地址</Label>
           <Input v-model="wsAddress" type="text" placeholder="默认 8081" />
         </div>
@@ -73,7 +73,7 @@
       </form>
 
       <!-- Step 2: Authentication -->
-      <div v-if="currentStep === 2" class="step-form">
+      <div v-if="currentStep === 2" class="flex flex-col gap-4">
         <Tabs default-value="login" class="justify-center">
           <TabsList>
             <TabsTrigger value="login">登录</TabsTrigger>
@@ -82,11 +82,11 @@
 
           <TabsContent value="login">
             <form @submit.prevent="handleLogin" class="space-y-4">
-              <div class="field">
+              <div class="flex flex-col gap-1">
                 <Label>用户名</Label>
                 <Input v-model="credentials.username" type="text" placeholder="用户名" required />
               </div>
-              <div class="field">
+              <div class="flex flex-col gap-1">
                 <Label>密码</Label>
                 <div class="relative">
                   <Input v-model="credentials.password" :type="showPassword ? 'text' : 'password'" placeholder="密码" required class="pr-9" />
@@ -107,15 +107,15 @@
 
           <TabsContent value="register">
             <form @submit.prevent="handleRegister" class="space-y-4">
-              <div class="field">
+              <div class="flex flex-col gap-1">
                 <Label>用户名</Label>
                 <Input v-model="credentials.username" type="text" placeholder="用户名" required />
               </div>
-              <div class="field">
+              <div class="flex flex-col gap-1">
                 <Label>邮箱（选填）</Label>
                 <Input v-model="registerForm.email" type="email" placeholder="邮箱" />
               </div>
-              <div class="field">
+              <div class="flex flex-col gap-1">
                 <Label>密码</Label>
                 <div class="relative">
                   <Input v-model="credentials.password" :type="showPassword ? 'text' : 'password'" placeholder="至少6位，含字母和数字" required class="pr-9" />
@@ -124,7 +124,7 @@
                   </Button>
                 </div>
               </div>
-              <div class="field">
+              <div class="flex flex-col gap-1">
                 <Label>确认密码</Label>
                 <div class="relative">
                   <Input v-model="registerForm.confirmPassword" :type="showConfirmPassword ? 'text' : 'password'" placeholder="确认密码" required class="pr-9" />
@@ -146,24 +146,30 @@
       </div>
 
       <!-- Step 3: Library Selection -->
-      <div v-if="currentStep === 3" class="step-form">
-        <div v-if="loading" class="loading-text">加载素材库...</div>
-        <div v-else-if="libraries.length === 0" class="empty-text">没有可用的素材库</div>
-        <div v-else class="library-list">
+      <div v-if="currentStep === 3" class="flex flex-col gap-4">
+        <div v-if="loading" class="text-center py-8 text-gray-400 dark:text-zinc-500">加载素材库...</div>
+        <div v-else-if="libraries.length === 0" class="text-center py-8 text-gray-400 dark:text-zinc-500">没有可用的素材库</div>
+        <div v-else class="flex flex-col gap-2 max-h-60 overflow-y-auto">
           <div
             v-for="lib in libraries"
             :key="lib.id"
-            class="library-card"
-            :class="{ selected: selectedLibraryId === lib.id, disabled: !isLibraryAccessible(lib) }"
+            class="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all"
+            :class="[
+              selectedLibraryId === lib.id
+                ? 'border-blue-600 dark:border-blue-500 bg-blue-50 dark:bg-blue-500/15'
+                : isLibraryAccessible(lib)
+                  ? 'border-gray-200 dark:border-zinc-700 hover:border-blue-300 dark:hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-500/10'
+                  : 'opacity-50 cursor-not-allowed border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-900'
+            ]"
             @click="isLibraryAccessible(lib) && (selectedLibraryId = lib.id)"
           >
-            <span class="material-icons">{{ lib.icon === 'default' ? 'folder' : 'folder_special' }}</span>
-            <div class="library-card-info">
-              <div class="library-card-name">{{ lib.name }}</div>
-              <div class="library-card-path">{{ lib.path }}</div>
+            <span class="material-icons text-2xl" :class="selectedLibraryId === lib.id ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-zinc-400'">{{ lib.icon === 'default' ? 'folder' : 'folder_special' }}</span>
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-sm text-gray-800 dark:text-zinc-100">{{ lib.name }}</div>
+              <div class="text-xs text-gray-400 dark:text-zinc-500 overflow-hidden text-ellipsis whitespace-nowrap">{{ lib.path }}</div>
             </div>
-            <span v-if="!isLibraryAccessible(lib)" class="material-icons lock-icon">lock</span>
-            <span v-else-if="selectedLibraryId === lib.id" class="material-icons check-icon">check_circle</span>
+            <span v-if="!isLibraryAccessible(lib)" class="material-icons text-xl text-gray-400 dark:text-zinc-500">lock</span>
+            <span v-else-if="selectedLibraryId === lib.id" class="material-icons text-xl text-blue-600 dark:text-blue-400">check_circle</span>
           </div>
         </div>
         <Button class="w-full" :disabled="!selectedLibraryId || loading" @click="connectToLibrary">
@@ -418,167 +424,3 @@ onMounted(async () => {
   }
 })
 </script>
-
-<style scoped>
-.login-view {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  background: #0a0a0a;
-  font-family: Inter, 'Noto Sans', sans-serif;
-  position: relative;
-  overflow: hidden;
-}
-
-.aurora-bg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
-}
-
-.login-container {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  max-width: 440px;
-  padding: 2rem;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(12px);
-  border-radius: 0.75rem;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-.header-button {
-  position: absolute;
-  top: 1rem;
-  width: 2rem;
-  height: 2rem;
-  border: none;
-  background: none;
-  color: #9ca3af;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0.25rem;
-  transition: color 0.2s ease;
-}
-.header-button:hover { color: #6b7280; }
-.close-button { right: 1rem; }
-
-.login-title {
-  text-align: center;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #1f2937;
-  margin: 0 0 1.5rem 0;
-}
-
-/* Stepper */
-.stepper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0;
-  margin-bottom: 1.5rem;
-}
-.stepper-label {
-  font-size: 0.75rem;
-  color: #6b7280;
-  margin-top: 0.25rem;
-  text-align: center;
-}
-.stepper-separator {
-  flex: 1;
-  height: 2px;
-  background: #e5e7eb;
-  margin: 0 0.5rem;
-  align-self: center;
-  margin-top: -1rem;
-}
-
-/* Forms */
-.step-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-/* Library list */
-.library-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  max-height: 240px;
-  overflow-y: auto;
-}
-.library-card {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  border: 2px solid #e5e7eb;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.library-card:hover { border-color: #93c5fd; background: #f0f7ff; }
-.library-card.selected { border-color: #1173d4; background: #eff6ff; }
-.library-card.disabled { opacity: 0.5; cursor: not-allowed; border-color: #e5e7eb; background: #f9fafb; }
-.library-card.disabled:hover { border-color: #e5e7eb; background: #f9fafb; }
-.library-card .material-icons { font-size: 1.5rem; color: #6b7280; }
-.library-card.selected .material-icons { color: #1173d4; }
-.library-card-info { flex: 1; min-width: 0; }
-.library-card-name { font-weight: 600; font-size: 0.9rem; color: #1f2937; }
-.library-card-path { font-size: 0.75rem; color: #9ca3af; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.check-icon { color: #1173d4 !important; font-size: 1.25rem !important; }
-.lock-icon { color: #9ca3af !important; font-size: 1.25rem !important; }
-
-/* Error */
-.error-banner {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #dc2626;
-  padding: 0.75rem;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  position: relative;
-  margin-bottom: 1rem;
-}
-.error-icon { font-size: 1.25rem; flex-shrink: 0; }
-.error-close {
-  position: absolute;
-  right: 0.5rem;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  color: #dc2626;
-  cursor: pointer;
-  padding: 0.25rem;
-}
-.error-close .material-icons { font-size: 1rem; }
-
-.loading-text, .empty-text {
-  text-align: center;
-  padding: 2rem;
-  color: #9ca3af;
-}
-
-@media (max-width: 480px) {
-  .login-container { margin: 1rem; padding: 1.5rem; }
-}
-</style>
