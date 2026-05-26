@@ -1,39 +1,41 @@
 <template>
   <div class="p-4 space-y-6">
-    <!-- 本地化设置 -->
-    <div>
-      <h3 class="text-slate-900 text-lg font-bold leading-tight tracking-[-0.015em] pb-2 pt-4">本地化设置</h3>
-      <div class="flex max-w-[480px] flex-wrap items-end gap-4 py-3">
-        <div class="flex flex-col min-w-40 flex-1">
-          <label class="text-slate-900 text-base font-medium leading-normal pb-2">语言</label>
-          <Select
-            :model-value="settingsStore.settings.language"
-            @update:model-value="(value: any) => { settingsStore.settings.language = value; handleSettingChange('language', value) }"
-          >
-            <SelectTrigger class="w-full">
-              <SelectValue placeholder="选择语言" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem v-for="opt in languageOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</SelectItem>
-            </SelectContent>
-          </Select>
+    <div class="flex gap-6">
+      <!-- 本地化设置 -->
+      <div class="flex-1">
+        <h3 class="text-slate-900 text-lg font-bold leading-tight tracking-[-0.015em] pb-2 pt-4">本地化设置</h3>
+        <div class="flex flex-wrap items-end gap-4 py-3">
+          <div class="flex flex-col min-w-40 flex-1">
+            <label class="text-slate-900 text-base font-medium leading-normal pb-2">语言</label>
+            <Select
+              :model-value="settingsStore.settings.language"
+              @update:model-value="(value: any) => { settingsStore.settings.language = value; handleSettingChange('language', value) }"
+            >
+              <SelectTrigger class="w-full">
+                <SelectValue placeholder="选择语言" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem v-for="opt in languageOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- 主题设置 -->
-    <div>
-      <h3 class="text-slate-900 text-lg font-bold leading-tight tracking-[-0.015em] pb-2 pt-4">主题设置</h3>
-      <div class="flex flex-wrap gap-5 py-3">
-        <ToggleGroup
-          type="single"
-          :model-value="settingsStore.settings.theme"
-          @update:model-value="(value: string) => { if (value) handleSettingChange('theme', value) }"
-        >
-          <ToggleGroupItem v-for="opt in themeOptions" :key="opt.value" :value="opt.value">
-            {{ opt.label }}
-          </ToggleGroupItem>
-        </ToggleGroup>
+      <!-- 主题设置 -->
+      <div class="flex-1">
+        <h3 class="text-slate-900 text-lg font-bold leading-tight tracking-[-0.015em] pb-2 pt-4">主题设置</h3>
+        <div class="flex flex-wrap gap-5 py-3">
+          <ToggleGroup
+            type="single"
+            :model-value="settingsStore.settings.theme"
+            @update:model-value="(value: string) => { if (value) handleSettingChange('theme', value) }"
+          >
+            <ToggleGroupItem v-for="opt in themeOptions" :key="opt.value" :value="opt.value">
+              {{ opt.label }}
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
       </div>
     </div>
 </div>

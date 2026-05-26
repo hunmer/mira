@@ -3,7 +3,7 @@
     :open="isVisible"
     @update:open="isVisible = $event"
   >
-    <DialogContent class="settings-dialog sm:max-w-[90vw] sm:max-h-[85vh]">
+    <DialogContent class="settings-dialog sm:max-w-[60vw] sm:max-h-[60vh] overflow-hidden grid-rows-[auto_1fr_auto]">
       <DialogHeader>
         <DialogTitle>设置</DialogTitle>
       </DialogHeader>
@@ -11,7 +11,6 @@
         <!-- 左侧分类面板 -->
         <aside class="w-64 bg-white border-r border-gray-200 flex flex-col">
           <div class="p-4 flex-1">
-            <h1 class="text-gray-900 text-base font-medium mb-4">设置</h1>
             <div class="flex flex-col gap-1">
               <div
                 v-for="section in settingSections"
@@ -134,7 +133,6 @@ watch(isVisible, async (visible) => {
 
 <style scoped>
 .settings-content {
-  height: 65vh;
   min-height: 400px;
 }
 </style>

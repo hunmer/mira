@@ -141,20 +141,25 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
       separator: true
     },
     {
-      label: '删除',
+      label: props.selectedItems.length > 1 ? `删除 (${props.selectedItems.length})` : '删除',
       shortcut: 'Delete',
-      command: () => runWithCurrentItem(async (item) => {
-        const libraryId = item.libraryId || libraryStore.currentLibrary?.id
-        if (!libraryId) {
-          console.error('无法确定 libraryId')
-          return
-        }
+      command: () => runWithCurrentItem(async () => {
+        const files = getTargetFiles()
+        if (files.length === 0) return
 
-        try {
-          await appService.deleteFile(libraryId, item.id)
-          emit('media-delete', item)
-        } catch (err) {
-          console.error('删除文件失败:', err)
+        for (const file of files) {
+          const libraryId = file.libraryId || libraryStore.currentLibrary?.id
+          if (!libraryId) {
+            console.error('无法确定 libraryId')
+            continue
+          }
+
+          try {
+            await appService.deleteFile(libraryId, file.id)
+            emit('media-delete', file)
+          } catch (err) {
+            console.error('删除文件失败:', err)
+          }
         }
       })
     }
