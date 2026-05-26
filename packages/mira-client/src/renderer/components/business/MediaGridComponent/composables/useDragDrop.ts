@@ -1,12 +1,28 @@
-import { ref } from 'vue'
 import type { FileInfo } from '../../../../../shared/types'
 import { useMediaStore } from '../../../../stores/media'
 
 export function useDragDrop(props: { items: FileInfo[], selectedItems: string[] }) {
   const mediaStore = useMediaStore()
 
-  let dragStartTimer: NodeJS.Timeout | null = null
+  let dragStartTimer: ReturnType<typeof setTimeout> | null = null
+  let internalDragResetTimer: ReturnType<typeof setTimeout> | null = null
   let isDragInitiated = false
+
+  const setInternalDrag = (value: boolean) => {
+    ;(window as any).__miraInternalDrag = value
+  }
+
+  const scheduleInternalDragReset = (delay = 1000) => {
+    if (internalDragResetTimer) {
+      clearTimeout(internalDragResetTimer)
+      internalDragResetTimer = null
+    }
+
+    internalDragResetTimer = setTimeout(() => {
+      setInternalDrag(false)
+      internalDragResetTimer = null
+    }, delay)
+  }
 
   const handlePointerDown = (event: PointerEvent, item: FileInfo) => {
     if (dragStartTimer) {
@@ -77,7 +93,6 @@ export function useDragDrop(props: { items: FileInfo[], selectedItems: string[] 
 
   const startNativeDrag = async (event: PointerEvent, item: FileInfo) => {
     isDragInitiated = true
-    ;(window as any).__miraInternalDrag = true
 
     const selectedFileIds = props.selectedItems.includes(item.id) ? props.selectedItems : [item.id]
 
@@ -102,6 +117,9 @@ export function useDragDrop(props: { items: FileInfo[], selectedItems: string[] 
     })
 
     if (filePaths.length === 0) return
+
+    setInternalDrag(true)
+    scheduleInternalDragReset(5000)
 
     try {
       if (window.electronAPI) {
@@ -129,7 +147,7 @@ export function useDragDrop(props: { items: FileInfo[], selectedItems: string[] 
       }
     } catch {
     } finally {
-      setTimeout(() => { (window as any).__miraInternalDrag = false }, 1000)
+      scheduleInternalDragReset()
     }
   }
 

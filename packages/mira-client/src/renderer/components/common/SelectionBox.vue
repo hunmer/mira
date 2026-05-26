@@ -302,7 +302,6 @@ const clearSelection = (e?: MouseEvent) => {
     if (!isSelectableArea(target)) return
   }
 
-  console.log('🧹 Double click to clear all selections')
   selectedItems.value.clear()
   lastSelectedIndex.value = -1
   emit('clear-selection')
@@ -392,7 +391,6 @@ const emitSelectionUpdate = (nextSelection: Set<string>) => {
 
 const handleItemClick = (itemId: string, event: MouseEvent) => {
   if (props.disabled) return
-  console.log({event})
   event.stopPropagation()
 
   if (event.altKey) {
@@ -461,7 +459,6 @@ const handleGlobalMouseUp = (e: MouseEvent) => {
 // 窗口失去焦点时取消选择
 const handleWindowBlur = () => {
   if (selecting.value) {
-    console.log('🔍 Window lost focus, canceling selection')
     // 重置选择状态，不触发选择事件
     selecting.value = false
     altMode.value = false

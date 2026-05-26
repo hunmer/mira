@@ -51,45 +51,47 @@
 
           <!-- 父文件夹 -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              {{ parentTypeText }}
+            <!-- 根文件夹选项 -->
+            <label class="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer mb-3">
+              <input
+                type="radio"
+                :value="undefined"
+                v-model="formData.parentId"
+                @change="parentSelectionKeys = {}"
+                class="text-blue-600"
+              />
+              <span class="material-icons text-gray-500">
+                {{ props.itemType === 'tag' ? 'label' : 'home' }}
+              </span>
+              <span>{{ props.itemType === 'tag' ? '根标签' : '根目录' }}</span>
             </label>
 
-            <!-- 根文件夹选项 -->
-            <div class="mb-3">
-              <label class="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer">
-                <input
-                  type="radio"
-                  :value="undefined"
-                  v-model="formData.parentId"
-                  class="text-blue-600"
-                />
-                <span class="material-icons text-gray-500">
-                  {{ props.itemType === 'tag' ? 'label' : 'home' }}
-                </span>
-                <span>{{ props.itemType === 'tag' ? '根标签' : '根目录' }}</span>
-              </label>
-            </div>
-
             <!-- 文件夹树 -->
-            <div class="border rounded-md max-h-48 overflow-y-auto">
-              <Tree
-                :value="parentFolderTreeNodes"
-                selectionMode="single"
-                :selectionKeys="parentSelectionKeys"
-                @update:selectionKeys="handleParentSelectionChange"
-                class="p-2"
-              >
-                <template #default="slotProps">
-                  <div class="flex items-center space-x-2 w-full">
-                    <span class="material-icons text-gray-500 text-sm">
-                      {{ props.itemType === 'tag' ? 'label' : 'folder' }}
-                    </span>
-                    <span class="flex-1 text-sm">{{ (slotProps as any).node.label }}</span>
-                  </div>
-                </template>
-              </Tree>
-            </div>
+            <TreeSection
+              :title="parentTypeText"
+              :show-search="false"
+              :search-query="''"
+              :search-placeholder="''"
+              :tree-data="parentFolderTreeNodes"
+              :context-menu-items="[]"
+              :empty-icon="props.itemType === 'tag' ? 'label' : 'folder_open'"
+              :empty-text="`没有可选的${parentTypeText}`"
+              :empty-hint="`选择${props.itemType === 'tag' ? '根标签' : '根目录'}创建顶层${itemTypeText}`"
+              selectionMode="single"
+              :selectionKeys="parentSelectionKeys"
+              :expandedKeys="parentExpandedKeys"
+              @update:selectionKeys="handleParentSelectionChange"
+              @update:expandedKeys="parentExpandedKeys = $event"
+            >
+              <template #node="slotProps">
+                <div class="flex items-center">
+                  <span class="material-icons mr-2 text-lg" :style="{ color: getNodeColor(slotProps.node) }">
+                    {{ slotProps.node.icon || (props.itemType === 'tag' ? 'label' : 'folder') }}
+                  </span>
+                  <span class="flex-1">{{ slotProps.node.label || '' }}</span>
+                </div>
+              </template>
+            </TreeSection>
 
             <p class="text-gray-500 text-xs mt-2">
               选择{{ parentTypeText }}，或选择{{ props.itemType === 'tag' ? '根标签' : '根目录' }}创建顶层{{ itemTypeText }}
@@ -156,7 +158,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { Input } from '@/components/ui/input'
-import Tree from '@/components/ui/volt/Tree.vue'
+import TreeSection from './FolderTreeComponent/TreeSection.vue'
 import type { TreeNodeData } from '@/components/ui/volt/Tree.vue'
 import type { FolderItem } from '../../types/components'
 
@@ -204,6 +206,7 @@ const errors = ref({
 
 // 父文件夹选择相关
 const parentSelectionKeys = ref<Record<string, boolean>>({})
+const parentExpandedKeys = ref<Record<string, boolean>>({})
 
 // 计算属性
 const isEdit = computed(() => !!props.folder)
@@ -229,6 +232,12 @@ const colorOptions = [
   { value: 0x6366F1, class: 'bg-indigo-500', label: '靛蓝' }, // #6366F1
   { value: 0x6B7280, class: 'bg-gray-500', label: '灰色' }    // #6B7280
 ]
+
+const getNodeColor = (node: any): string => {
+  const color = node?.data?.originalData?.color ?? node?.data?.color
+  if (!color || typeof color !== 'number' || color <= 0) return '#6B7280'
+  return `#${color.toString(16).padStart(6, '0')}`
+}
 
 // 父文件夹树节点
 const parentFolderTreeNodes = computed((): TreeNodeData[] => {
