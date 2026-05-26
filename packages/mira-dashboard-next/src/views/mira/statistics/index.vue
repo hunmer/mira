@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute } from 'vue-router'
-import { libraryApi, statisticsApi, adminApi } from '@/api'
+import { statisticsApi, adminApi } from '@/api'
+import { useLibrary } from '@/composables/useLibrary'
 import type { ChartConfig } from '@/components/ui/chart'
 import { Orientation } from '@unovis/ts'
 import { Donut } from '@unovis/ts'
@@ -14,38 +14,24 @@ import {
   ChartContainer, ChartTooltipContent, ChartCrosshair, ChartTooltip, componentToString,
 } from '@/components/ui/chart'
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select'
-import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from '@/components/ui/dialog'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import type { Library } from '@/types/mira'
 
 const { t } = useI18n()
-const route = useRoute()
 
 interface DailyRow { date: string; file_count: number; total_size: number }
 interface UploaderRow { uploader: number | null; uploaderName: string; fileCount: number; totalSize: number }
 interface FileTypeRow { type: string; file_count: number; total_size: number }
 interface RecentUploadDay { date: string; items: { userName: string; uploader: number | null; target: string; targetType: string; targetId: number | null; fileCount: number }[] }
 
-const libraries = ref<Library[]>([])
-const selectedLibraryId = ref<string>('')
+const { selectedId: selectedLibraryId } = useLibrary()
 const rawDaily = ref<DailyRow[]>([])
 const uploaders = ref<UploaderRow[]>([])
 const fileTypes = ref<FileTypeRow[]>([])
 const recentUploads = ref<RecentUploadDay[]>([])
 const loading = ref(false)
 const timeRange = ref('60d')
-
-async function loadLibraries() {
-  try {
-    const res: any = await libraryApi.list()
-    const d = res.data
-    libraries.value = Array.isArray(d) ? d : d?.data || []
-  } catch {}
-}
 
 async function loadStats() {
   if (!selectedLibraryId.value) return
@@ -72,14 +58,8 @@ async function loadStats() {
 
 watch(selectedLibraryId, loadStats)
 
-async function init() {
-  await loadLibraries()
-  const queryId = route.query.libraryId as string | undefined
-  if (queryId && libraries.value.some(l => l.id === queryId)) {
-    selectedLibraryId.value = queryId
-  }
-}
-init()
+// initial load
+loadStats()
 
 // ---- 趋势图 ----
 type ChartItem = { date: Date; fileCount: number; totalSizeMB: number }
@@ -248,16 +228,6 @@ function createMiraUrl(tabType: 'folder' | 'tag', id: number | null, name: strin
         <h1 class="text-2xl font-bold">{{ t('statistics.title') }}</h1>
         <p class="text-muted-foreground text-sm">{{ t('statistics.subtitle') }}</p>
       </div>
-      <Select v-model="selectedLibraryId">
-        <SelectTrigger class="w-[260px]">
-          <SelectValue :placeholder="t('statistics.selectLibrary')" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem v-for="lib in libraries" :key="lib.id" :value="lib.id">
-            {{ lib.name }}
-          </SelectItem>
-        </SelectContent>
-      </Select>
     </div>
 
     <!-- 汇总卡片 -->

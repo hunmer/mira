@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import type { Plugin } from '@/types/mira'
 import type { LibraryPlugins } from '@/api/modules/plugin'
 import { pluginApi } from '@/api'
 import client from '@/api/client'
+import { useLibrary } from '@/composables/useLibrary'
 import { registerPluginRoutes } from '@/router/pluginRoutes'
 import type { PluginRoute } from '@/router/pluginRoutes'
 import { Button } from '@/components/ui/button'
@@ -36,12 +37,12 @@ import {
 } from '@remixicon/vue'
 
 const { t } = useI18n()
+const { selectedId: activeTab } = useLibrary()
 
 // core state
 const groups = ref<LibraryPlugins[]>([])
 const loading = ref(false)
 const searchQuery = ref('')
-const activeTab = ref('')
 const pluginRoutes = reactive<Record<string, PluginRoute[]>>({})
 
 // detail sheet
@@ -113,9 +114,6 @@ async function loadPlugins() {
   try {
     const res = await pluginApi.listByLibrary()
     groups.value = Array.isArray(res.data) ? res.data : []
-    if (groups.value.length && !activeTab.value) {
-      activeTab.value = groups.value[0].id
-    }
     for (const g of groups.value) {
       loadPluginRoutes(g.id)
     }

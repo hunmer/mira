@@ -6,7 +6,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "rebuild": "pnpm install && pnpm run build",
+    "rebuild": "pnpm run build",
     "dev": "ts-node src/index.ts",
     "start:ts": "ts-node src/index.ts"
   },

@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "rebuild": "pnpm install && pnpm run build",
+    "rebuild": "pnpm run build",
     "start": "node dist/index.js",
     "start:ts": "node --inspect -r ts-node/register src/index.ts",
     "dev": "node --inspect -r ts-node/register src/index.ts",

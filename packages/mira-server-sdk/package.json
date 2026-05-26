@@ -19,7 +19,7 @@
   ],
   "scripts": {
     "build": "tsc && pnpm run build:esm",
-    "rebuild": "pnpm install && pnpm run build",
+    "rebuild": "pnpm run build",
     "build:watch": "tsc --watch",
     "build:esm": "vite build --config vite.esm.config.ts",
     "clean": "rimraf dist",

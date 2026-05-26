@@ -1,24 +1,19 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { libraryApi, thumbnailApi } from '@/api'
+import { thumbnailApi } from '@/api'
+import { useLibrary } from '@/composables/useLibrary'
 import {
   Card, CardContent, CardDescription, CardHeader, CardTitle,
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select'
-import type { Library } from '@/types/mira'
 
 const { t } = useI18n()
+const { selectedId: selectedLibraryId, selectedLibrary } = useLibrary()
 
 const loading = ref(false)
-const librariesLoading = ref(false)
 const isScanning = ref(false)
-const libraries = ref<Library[]>([])
-const selectedLibraryId = ref('')
 const stats = ref({ totalFiles: 0, withThumbnails: 0, withoutThumbnails: 0, thumbnailRate: 0 })
 const progress = ref({ totalPending: 0, queueLength: 0, processing: false, completed: 0, progress: 0 })
 const logs = ref<{ time: string; message: string }[]>([])
@@ -31,31 +26,9 @@ const statItems = computed(() => [
   { label: t('thumbnail.remainingTasks'), value: progress.value.queueLength || stats.value.withoutThumbnails, badge: 'Queue', variant: 'outline' as const },
 ])
 
-const selectedLibrary = computed(() =>
-  libraries.value.find(lib => lib.id === selectedLibraryId.value) || null,
-)
-
 function addLog(message: string) {
   logs.value.unshift({ time: new Date().toLocaleTimeString(), message })
   if (logs.value.length > 50) logs.value = logs.value.slice(0, 50)
-}
-
-async function loadLibraries() {
-  librariesLoading.value = true
-  try {
-    const res: any = await libraryApi.list()
-    const d = res.data
-    libraries.value = Array.isArray(d) ? d : d?.data || []
-    if (!selectedLibraryId.value && libraries.value.length) {
-      const active = libraries.value.find(lib => (lib as any).status === 'active')
-      selectedLibraryId.value = (active || libraries.value[0]).id
-      await refreshStats()
-    }
-  } catch (error: any) {
-    addLog(`${t('thumbnail.loadLibrariesFailed')}：${error.message}`)
-  } finally {
-    librariesLoading.value = false
-  }
 }
 
 async function refreshStats() {
@@ -127,15 +100,7 @@ function stopProgressMonitoring() {
   }
 }
 
-function handleLibraryChange(id: any) {
-  selectedLibraryId.value = id as string
-  stopProgressMonitoring()
-  isScanning.value = false
-  progress.value = { totalPending: 0, queueLength: 0, processing: false, completed: 0, progress: 0 }
-  refreshStats()
-}
-
-onMounted(loadLibraries)
+onMounted(refreshStats)
 onBeforeUnmount(stopProgressMonitoring)
 </script>
 
@@ -147,16 +112,6 @@ onBeforeUnmount(stopProgressMonitoring)
         <p class="mt-1 text-sm text-muted-foreground">{{ t('thumbnail.subtitle') }}</p>
       </div>
       <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <Select :model-value="selectedLibraryId" :disabled="librariesLoading || isScanning" @update:model-value="handleLibraryChange">
-          <SelectTrigger class="w-full sm:w-64">
-            <SelectValue :placeholder="librariesLoading ? t('thumbnail.loading') : t('thumbnail.selectLibrary')" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem v-for="library in libraries" :key="library.id" :value="library.id">
-              {{ library.name }}
-            </SelectItem>
-          </SelectContent>
-        </Select>
         <div class="flex gap-2 sm:ml-auto">
           <Button variant="outline" :disabled="!selectedLibraryId || loading" @click="refreshStats">
             <span v-if="loading" class="mr-1 size-3 animate-spin rounded-full border-2 border-current border-t-transparent" />

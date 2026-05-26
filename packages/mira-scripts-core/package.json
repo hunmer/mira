@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "rebuild": "pnpm install && pnpm run build",
+    "rebuild": "pnpm run build",
     "dev": "ts-node index.ts",
     "start": "ts-node index.ts",
     "script": "ts-node index.ts",
