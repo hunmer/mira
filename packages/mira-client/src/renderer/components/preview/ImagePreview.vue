@@ -109,44 +109,15 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, watch } from 'vue'
+import { onMounted, onUnmounted } from 'vue'
 import ImageThumbnailListComponent from '../business/ImageThumbnailListComponent.vue'
 import ImageViewerComponent from '../business/ImageViewerComponent.vue'
 import ImageInfoComponent from '../business/ImageInfoComponent.vue'
 import { useImagePreviewController } from '../../controllers/ImagePreviewController'
-import { getPreviewImageSource } from '../../utils/fileUtils'
 
 // 使用控制器
 const controller = useImagePreviewController()
 
-watch(
-  [
-    () => controller.currentImageId.value,
-    () => controller.currentImage.value,
-    () => controller.imageCacheKey.value
-  ],
-  ([currentImageId, currentImage, cacheKey]) => {
-    console.debug('[ImagePreviewDebug][Page] state', {
-      currentImageId,
-      cacheKey,
-      imageIndex: controller.currentImageIndex.value,
-      imageCount: controller.imageItems.value.length,
-      image: currentImage
-        ? {
-            id: currentImage.id,
-            name: currentImage.name,
-            localFile: currentImage.localFile,
-            path: currentImage.path,
-            url: currentImage.url,
-            thumbnailPath: currentImage.thumbnailPath,
-            previewSource: getPreviewImageSource(currentImage),
-            updatedAt: currentImage.updatedAt
-          }
-        : null
-    })
-  },
-  { immediate: true }
-)
 
 // 格式化文件大小
 const formatFileSize = (bytes?: number): string => {
@@ -211,22 +182,6 @@ const handleKeyPress = (event: KeyboardEvent) => {
 }
 
 onMounted(() => {
-  console.debug('[ImagePreviewDebug][Page] mounted', {
-    currentImageId: controller.currentImageId.value,
-    cacheKey: controller.imageCacheKey.value,
-    imageCount: controller.imageItems.value.length,
-    currentImage: controller.currentImage.value
-      ? {
-          id: controller.currentImage.value.id,
-          name: controller.currentImage.value.name,
-          localFile: controller.currentImage.value.localFile,
-          path: controller.currentImage.value.path,
-          url: controller.currentImage.value.url,
-          thumbnailPath: controller.currentImage.value.thumbnailPath,
-          previewSource: getPreviewImageSource(controller.currentImage.value)
-        }
-      : null
-  })
   document.addEventListener('keydown', handleKeyPress)
   // 初始化相似图片搜索
   controller.handleSearchSimilar()
@@ -240,10 +195,6 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  console.debug('[ImagePreviewDebug][Page] unmounted', {
-    currentImageId: controller.currentImageId.value,
-    cacheKey: controller.imageCacheKey.value
-  })
   document.removeEventListener('keydown', handleKeyPress)
 })
 </script>

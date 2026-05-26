@@ -694,12 +694,17 @@ export class LibraryServerDataSQLite implements ILibraryServerData {
     if (srcFolderName !== destFolderName) {
       const srcPath = path.join(libraryPath, srcFolderName, file.name);
       const destDir = path.join(libraryPath, destFolderName);
-      const destPath = path.join(destDir, file.name);
+      let destPath = path.join(destDir, file.name);
       if (fs.existsSync(srcPath)) {
         if (!fs.existsSync(destDir)) {
           fs.mkdirSync(destDir, { recursive: true });
         }
+        destPath = this.getUniquePath(destPath);
         fs.renameSync(srcPath, destPath);
+      }
+      const newName = path.basename(destPath);
+      if (newName !== file.name) {
+        await this.runSql('UPDATE files SET name = ?, path = ? WHERE id = ?', [newName, destPath, fileId]);
       }
     }
 
