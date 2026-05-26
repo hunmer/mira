@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 // Component imports
@@ -28,6 +28,7 @@ import {
 import { useLibraryStore } from '@/renderer/stores/library'
 import { useTagStore } from '@renderer/stores/tag'
 import { useAuthStore } from '@renderer/stores/auth'
+import { miraSDKService } from '@renderer/services/MiraSDKService'
 
 // Controller import
 import { useHomeController } from '@renderer/controllers/HomeController'
@@ -462,7 +463,7 @@ onUnmounted(() => {
         <ResizableHandle />
 
         <!-- 右侧主内容区 -->
-        <ResizablePanel :default-size="80" :min-size="50" class="flex flex-col bg-gray-100 overflow-hidden">
+        <ResizablePanel :default-size="80" :min-size="50" class="flex flex-col bg-gray-100 dark:bg-gray-900 overflow-hidden">
         <!-- 主内容区域 -->
         <main class="flex-1 flex p-2 overflow-hidden relative min-w-0">
           <!-- Tab视图内容 -->
@@ -574,7 +575,14 @@ onUnmounted(() => {
             >
               <template #trigger>
                 <button class="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                  <div class="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-medium">
+                  <img
+                    v-if="userAvatarUrl"
+                    :src="userAvatarUrl"
+                    alt="avatar"
+                    class="w-6 h-6 rounded-full object-cover"
+                    @error="($event.target as HTMLImageElement).style.display = 'none'"
+                  />
+                  <div v-else class="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-medium">
                     {{ authStore.userDisplayName?.charAt(0)?.toUpperCase() || '?' }}
                   </div>
                 </button>

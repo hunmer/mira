@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useLibrary } from '@/composables/useLibrary'
 import { fileManagerApi } from '@/api'
@@ -44,6 +44,16 @@ const selected = ref<Set<string>>(new Set())
 const contextMenuTarget = ref<FileItem | null>(null)
 const contextMenuPos = ref({ x: 0, y: 0 })
 const showContextMenu = ref(false)
+
+// 框选状态
+const gridRef = ref<HTMLElement | null>(null)
+const isLassoActive = ref(false)
+const lassoRect = ref({ left: 0, top: 0, width: 0, height: 0 })
+let lassoStartX = 0
+let lassoStartY = 0
+let lassoBaseSelected = new Set<string>()
+let lassoRaf = 0
+let lassoPending: MouseEvent | null = null
 
 // 移动对话框
 const moveDialogVisible = ref(false)
@@ -228,6 +238,82 @@ function loadMore() {
   loadItems(true)
 }
 
+// --- 框选 ---
+function onLassoMouseDown(e: MouseEvent) {
+  if (e.button !== 0) return
+  if ((e.target as HTMLElement).closest('[data-selectable-item]')) return
+  const container = gridRef.value
+  if (!container) return
+  const rect = container.getBoundingClientRect()
+  lassoStartX = e.clientX - rect.left + container.scrollLeft
+  lassoStartY = e.clientY - rect.top + container.scrollTop
+  lassoBaseSelected = new Set(selected.value)
+  isLassoActive.value = true
+  lassoRect.value = { left: lassoStartX, top: lassoStartY, width: 0, height: 0 }
+  document.addEventListener('mousemove', onLassoMouseMove)
+  document.addEventListener('mouseup', onLassoMouseUp)
+}
+
+function onLassoMouseMove(e: MouseEvent) {
+  if (!isLassoActive.value) return
+  lassoPending = e
+  if (lassoRaf) return
+  lassoRaf = requestAnimationFrame(doLassoUpdate)
+}
+
+function doLassoUpdate() {
+  lassoRaf = 0
+  const e = lassoPending
+  if (!e || !isLassoActive.value) return
+  const container = gridRef.value
+  if (!container) return
+  const rect = container.getBoundingClientRect()
+  const x = e.clientX - rect.left + container.scrollLeft
+  const y = e.clientY - rect.top + container.scrollTop
+  const left = Math.min(lassoStartX, x)
+  const top = Math.min(lassoStartY, y)
+  const width = Math.abs(x - lassoStartX)
+  const height = Math.abs(y - lassoStartY)
+  lassoRect.value = { left, top, width, height }
+
+  // 碰撞检测：用 scrollTop 偏移后的坐标
+  const scrollLeft = container.scrollLeft
+  const scrollTop = container.scrollTop
+  const cards = container.querySelectorAll<HTMLElement>('[data-selectable-item]')
+  const newSelected = new Set<string>(lassoBaseSelected)
+  for (let i = 0; i < cards.length; i++) {
+    const card = cards[i]
+    const cr = card.getBoundingClientRect()
+    const cLeft = cr.left - rect.left + scrollLeft
+    const cTop = cr.top - rect.top + scrollTop
+    const cRight = cLeft + cr.width
+    const cBottom = cTop + cr.height
+    if (left < cRight && left + width > cLeft && top < cBottom && top + height > cTop) {
+      newSelected.add(card.dataset.path!)
+    }
+  }
+  selected.value = newSelected
+}
+
+function onLassoMouseUp() {
+  isLassoActive.value = false
+  if (lassoRaf) { cancelAnimationFrame(lassoRaf); lassoRaf = 0 }
+  lassoPending = null
+  document.removeEventListener('mousemove', onLassoMouseMove)
+  document.removeEventListener('mouseup', onLassoMouseUp)
+}
+
+function onGridDblClick(e: MouseEvent) {
+  if ((e.target as HTMLElement).closest('[data-selectable-item]')) return
+  selected.value.clear()
+}
+
+onUnmounted(() => {
+  if (lassoRaf) cancelAnimationFrame(lassoRaf)
+  document.removeEventListener('mousemove', onLassoMouseMove)
+  document.removeEventListener('mouseup', onLassoMouseUp)
+})
+
 watch(selectedLibraryId, () => {
   currentPath.value = ''
   offset.value = 0
@@ -307,22 +393,34 @@ onMounted(() => {
       <span>{{ t('common.total', { n: total }) }}</span>
     </div>
 
-    <!-- 文件网格（固定高度 + 滚动） -->
-    <div class="h-[calc(100vh-16rem)] overflow-y-auto">
+    <!-- 文件网格（固定高度 + 滚动 + 框选） -->
+    <div
+      ref="gridRef"
+      class="h-[calc(100vh-16rem)] overflow-y-auto relative select-none"
+      @mousedown="onLassoMouseDown"
+      @dblclick="onGridDblClick"
+    >
       <div v-if="items.length" class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
       <div
         v-for="item in items"
         :key="item.path"
+        data-selectable-item
+        :data-path="item.path"
         class="group relative flex cursor-pointer flex-col items-center rounded-lg border p-3 transition-colors hover:bg-accent/50"
         :class="{ 'border-primary bg-primary/5': selected.has(item.path) }"
         @click.exact="toggleSelect(item)"
         @dblclick="openItem(item)"
         @contextmenu="onContextMenu($event, item)"
       >
-        <!-- 选择框 -->
-        <div class="absolute left-2 top-2 opacity-0 group-hover:opacity-100" :class="{ '!opacity-100': selected.has(item.path) }">
-          <RiCheckboxCircleLine v-if="selected.has(item.path)" class="size-4 text-primary" />
-          <RiCheckboxBlankLine v-else class="size-4 text-muted-foreground" />
+        <!-- 右上角 checkbox -->
+        <div
+          class="absolute right-1.5 top-1.5 z-10"
+          @click.stop="toggleSelect(item)"
+        >
+          <div class="rounded-full p-0.5 opacity-0 transition-opacity group-hover:opacity-100" :class="{ '!opacity-100': selected.has(item.path) }">
+            <RiCheckboxCircleLine v-if="selected.has(item.path)" class="size-4 text-primary" />
+            <RiCheckboxBlankLine v-else class="size-4 text-muted-foreground" />
+          </div>
         </div>
 
         <component :is="item.isDir ? RiFolderLine : RiFileLine" class="size-10 mb-2" :class="fileIconClass(item)" />
@@ -336,7 +434,7 @@ onMounted(() => {
         <DropdownMenu>
           <DropdownMenuTrigger as-child>
             <button
-              class="absolute right-2 top-2 rounded p-1 opacity-0 hover:bg-accent group-hover:opacity-100"
+              class="absolute left-2 bottom-2 rounded p-1 opacity-0 hover:bg-accent group-hover:opacity-100"
               @click.stop
             >
               <RiMoreLine class="size-4" />
@@ -357,23 +455,35 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- 空状态 -->
-    <div v-else-if="!loading" class="flex flex-col items-center justify-center py-20 text-muted-foreground">
-      <RiFolderLine class="size-12 mb-3 opacity-50" />
-      <p>{{ t('fileManager.empty') }}</p>
-    </div>
+      <!-- 空状态 -->
+      <div v-if="!items.length && !loading" class="flex flex-col items-center justify-center py-20 text-muted-foreground">
+        <RiFolderLine class="size-12 mb-3 opacity-50" />
+        <p>{{ t('fileManager.empty') }}</p>
+      </div>
 
-    <!-- 加载中 -->
-    <div v-if="loading" class="flex justify-center py-8">
-      <span class="size-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-    </div>
+      <!-- 加载中 -->
+      <div v-if="loading" class="flex justify-center py-8">
+        <span class="size-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+      </div>
 
-    <!-- 加载更多 -->
-    <div v-if="hasMore && !loading" class="flex justify-center">
-      <Button variant="outline" @click="loadMore">
-        {{ t('fileManager.loadMore') }}
-      </Button>
-    </div>
+      <!-- 加载更多 -->
+      <div v-if="hasMore && !loading" class="flex justify-center">
+        <Button variant="outline" @click="loadMore">
+          {{ t('fileManager.loadMore') }}
+        </Button>
+      </div>
+
+      <!-- 框选遮罩 -->
+      <div
+        v-if="isLassoActive && (lassoRect.width > 2 || lassoRect.height > 2)"
+        class="absolute pointer-events-none border-2 border-primary/60 bg-primary/10 rounded-sm z-20"
+        :style="{
+          left: lassoRect.left + 'px',
+          top: lassoRect.top + 'px',
+          width: lassoRect.width + 'px',
+          height: lassoRect.height + 'px',
+        }"
+      />
     </div>
 
     <!-- 右键菜单（浮动） -->

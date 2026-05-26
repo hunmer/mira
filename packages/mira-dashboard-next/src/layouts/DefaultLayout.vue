@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/sidebar'
 import { Separator } from '@/components/ui/separator'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { toast } from 'vue-sonner'
 import {
@@ -95,6 +95,7 @@ function handleLogout() {
               <DropdownMenuTrigger as-child>
                 <SidebarMenuButton size="lg">
                   <Avatar class="size-8">
+                    <AvatarImage :src="`/api/user/avatar/${auth.user?.id}`" />
                     <AvatarFallback>{{ auth.user?.username?.charAt(0)?.toUpperCase() || 'U' }}</AvatarFallback>
                   </Avatar>
                   <div class="grid flex-1 text-left text-sm leading-tight">

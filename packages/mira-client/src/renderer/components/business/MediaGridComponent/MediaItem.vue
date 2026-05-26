@@ -92,11 +92,11 @@
       <div
         v-show="!isVideoPlaying"
         class="absolute bottom-0 left-0 right-0 p-2 rounded-b-lg"
-        :class="isSelected ? 'bg-blue-500/90' : 'bg-white/90'"
+        :class="isSelected ? 'bg-blue-500/90' : 'bg-white/90 dark:bg-gray-800/90'"
       >
         <h3
           class="text-sm font-semibold truncate"
-          :class="isSelected ? 'text-white' : 'text-gray-900'"
+          :class="isSelected ? 'text-white' : 'text-gray-900 dark:text-gray-100'"
         >
           {{ item.name }}
         </h3>
