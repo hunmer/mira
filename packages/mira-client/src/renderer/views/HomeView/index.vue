@@ -458,6 +458,16 @@ onUnmounted(() => {
               @refresh="handleRefreshTags"
             />
           </div>
+          <!-- 底部搜索胶囊 -->
+          <div class="shrink-0 px-2 pb-2 pt-1">
+            <button
+              class="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer text-gray-400 text-xs"
+              @click="homeController.toggleSearch"
+            >
+              <span class="material-icons text-sm">search</span>
+              <span>搜索</span>
+            </button>
+          </div>
         </ResizablePanel>
 
         <ResizableHandle />
@@ -499,21 +509,6 @@ onUnmounted(() => {
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="left">上传文件</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
-            <!-- 搜索按钮 -->
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger as-child>
-                  <button
-                    class="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                    @click="homeController.toggleSearch"
-                  >
-                    <span class="material-icons text-gray-600 text-base">search</span>
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="left">搜索</TooltipContent>
               </Tooltip>
             </TooltipProvider>
 

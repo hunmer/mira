@@ -27,7 +27,7 @@
               <span class="relative">
                 <span class="material-icons text-sm">{{ filter.icon }}</span>
                 <span v-if="hasActiveFilters(filter)"
-                  class="absolute -top-1.5 -right-1.5 bg-blue-500 text-white text-[10px] rounded-full min-w-4 h-4 flex items-center justify-center leading-none px-0.5">
+                  class="absolute -bottom-0.25 -right-1.5 bg-blue-500 text-white text-[10px] rounded-full min-w-4 h-4 flex items-center justify-center leading-none px-0.5">
                   {{ getActiveFilterCount(filter) }}
                 </span>
               </span>
@@ -38,14 +38,15 @@
             <div class="min-w-[280px]">
               <!-- 文件夹筛选器 -->
               <div v-if="filter.type === 'folders'">
-                <FilterTree
-                  :items="folderTreeItems || []"
-                  :multiple="false"
-                  :selected-values="filter.selectedValues || []"
-                  :show-search="true"
-                  :show-actions="false"
-                  @update:selected-values="(values) => updateFilterValues(filter, values)"
-                />
+                <div class="max-h-[300px] overflow-y-auto">
+                  <FolderTreeComponent
+                    item-type="folder"
+                    :folders="folderTreeItems || []"
+                    :selected-key="filter.selectedValues?.[0] != null ? String(filter.selectedValues[0]) : ''"
+                    @select="(item: any) => updateFilterValues(filter, item.id ? [item.id] : [])"
+                    @refresh="() => {}"
+                  />
+                </div>
                 <div class="p-3 border-t border-gray-200 flex justify-end space-x-2">
                   <Button variant="ghost" size="sm" @click="clearFilter(filter); close()">清除</Button>
                   <Button size="sm" @click="close()">确定</Button>
@@ -54,14 +55,14 @@
 
               <!-- 标签筛选器 -->
               <div v-else-if="filter.type === 'tags'">
-                <FilterTree
-                  :items="tagTreeItems || []"
-                  :multiple="true"
-                  :selected-values="filter.selectedValues || []"
-                  :show-search="true"
-                  :show-actions="true"
-                  @update:selected-values="(values) => updateFilterValues(filter, values)"
-                />
+                <div class="max-h-[300px] overflow-y-auto">
+                  <FolderTreeComponent
+                    item-type="tag"
+                    :tags="tagTreeItems || []"
+                    @select="(item: any) => handleTagFilterSelect(filter, item)"
+                    @refresh="() => {}"
+                  />
+                </div>
                 <div class="p-3 border-t border-gray-200 flex justify-end space-x-2">
                   <Button variant="ghost" size="sm" @click="clearFilter(filter); close()">清除</Button>
                   <Button size="sm" @click="close()">确定</Button>
@@ -261,13 +262,12 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import Dropdown from './Dropdown.vue'
-import FilterTree from './FilterTree.vue'
+import FolderTreeComponent from '@renderer/components/business/FolderTreeComponent/FolderTreeComponent.vue'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
-import type { FilterTreeItem } from './FilterTree.vue'
 
 export interface FilterRule {
   id: string
@@ -306,8 +306,8 @@ interface CategoryOption {
 interface Props {
   filters: FilterRule[]
   isAllSelected: boolean
-  folderTreeItems?: FilterTreeItem[]
-  tagTreeItems?: FilterTreeItem[]
+  folderTreeItems?: any[]
+  tagTreeItems?: any[]
   sort?: 'imported_at' | 'id' | 'size' | 'stars' | 'folder_id' | 'tags' | 'name' | 'custom_fields'
   order?: 'asc' | 'desc'
 }
@@ -408,6 +408,15 @@ const updateFilterValues = (filter: FilterRule, values: (string | number)[]) => 
   filter.selectedValues = values
   filter.active = values.length > 0
   emit('filter-change', filter)
+}
+
+const handleTagFilterSelect = (filter: FilterRule, item: any) => {
+  const values = [...(filter.selectedValues || [])]
+  const id = String(item.id)
+  const index = values.indexOf(id)
+  if (index >= 0) values.splice(index, 1)
+  else values.push(id)
+  updateFilterValues(filter, values)
 }
 
 const handleFilterInput = (filter: FilterRule, newValue: string) => {

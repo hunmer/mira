@@ -429,8 +429,6 @@ const toggleDetailSidebar = () => mediaStore.toggleDetailSidebar()
 const filtersComposable = useFilters()
 const {
   filterRules,
-  createFolderTreeItems,
-  createTagTreeItems,
   handleFilterChange: baseHandleFilterChange,
   handleFilterClear: baseHandleFilterClear
 } = filtersComposable
@@ -600,16 +598,8 @@ watch([selectedItems, () => paginatedMediaItems.value], ([ids, items]) => {
   }
 }, { deep: true })
 
-// 转换数据为树形结构
-const folderTreeItems = computed(() => {
-  const folders = folderStore.folders || []
-  return createFolderTreeItems(folders)
-})
-
-const tagTreeItems = computed(() => {
-  const tags = tagStore.tags || []
-  return createTagTreeItems(tags)
-})
+const folderTreeItems = computed(() => folderStore.folders || [])
+const tagTreeItems = computed(() => tagStore.tags || [])
 
 // 方法
 // 获取指定页面的数据
