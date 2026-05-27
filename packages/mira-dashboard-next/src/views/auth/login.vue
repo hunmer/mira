@@ -13,8 +13,10 @@ const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
 
-const username = ref('')
-const password = ref('')
+const STORAGE_KEY = 'mira_login_credentials'
+const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}')
+const username = ref(saved.username || '')
+const password = ref(saved.password || '')
 const loading = ref(false)
 
 async function handleLogin() {
@@ -22,6 +24,7 @@ async function handleLogin() {
   loading.value = true
   try {
     await auth.login(username.value, password.value)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ username: username.value, password: password.value }))
     toast.success(t('auth.loginSuccess'))
     const redirect = (route.query.redirect as string) || '/overview'
     router.push(redirect)

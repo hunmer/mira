@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
 import { registerAllPluginRoutes } from './pluginRoutes'
@@ -14,7 +14,7 @@ declare module 'vue-router' {
 }
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHashHistory(),
   routes: [
     {
       path: '/login',
@@ -42,7 +42,7 @@ const router = createRouter({
         { path: 'database', name: 'Database', component: () => import('@/views/mira/database/index.vue'), meta: { roles: ['super', 'admin'] } },
         { path: 'device', name: 'Device', component: () => import('@/views/mira/device/index.vue'), meta: { roles: ['super', 'admin'] } },
         { path: 'file-manager', name: 'FileManager', component: () => import('@/views/mira/file-manager/index.vue'), meta: { roles: ['super', 'admin'] } },
-        { path: 'statistics', name: 'Statistics', component: () => import('@/views/mira/statistics/index.vue'), meta: { roles: ['super', 'admin'] } },
+        { path: 'statistics', name: 'Statistics', component: () => import('@/views/mira/statistics/index.vue') },
         { path: 'thumbnail', name: 'Thumbnail', component: () => import('@/views/mira/thumbnail/index.vue'), meta: { roles: ['super', 'admin'] } },
         { path: 'profile', name: 'Profile', component: () => import('@/views/mira/profile/index.vue') },
       ],
