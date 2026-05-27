@@ -49,7 +49,7 @@ export class MiraClient {
     constructor(baseURL: string, config?: Partial<ClientConfig>) {
         const clientConfig: ClientConfig = {
             baseURL,
-            timeout: 10000,
+            timeout: 10000 * 6,
             ...config,
         };
 
