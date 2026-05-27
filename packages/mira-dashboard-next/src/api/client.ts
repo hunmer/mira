@@ -52,11 +52,14 @@ client.interceptors.response.use(
   (res) => res,
   (error) => {
     const status = error.response?.status
-    if (status === 401) {
+    const requestUrl = error.config?.url || ''
+    const isLoginRequest = requestUrl.endsWith('/auth/login')
+
+    if (status === 401 && !isLoginRequest) {
       localStorage.removeItem('token')
       localStorage.removeItem('user')
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login'
+      if (window.location.hash !== '#/login') {
+        window.location.hash = '#/login'
       }
     }
     return Promise.reject(error)
