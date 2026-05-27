@@ -8,8 +8,9 @@ export function useDragDrop(props: { items: FileInfo[], selectedItems: string[] 
   let internalDragResetTimer: ReturnType<typeof setTimeout> | null = null
   let isDragInitiated = false
 
-  const setInternalDrag = (value: boolean) => {
+  const setInternalDrag = (value: boolean, fileIds: string[] = []) => {
     ;(window as any).__miraInternalDrag = value
+    ;(window as any).__miraInternalDragFileIds = value ? fileIds : []
   }
 
   const scheduleInternalDragReset = (delay = 1000) => {
@@ -118,8 +119,8 @@ export function useDragDrop(props: { items: FileInfo[], selectedItems: string[] 
 
     if (filePaths.length === 0) return
 
-    setInternalDrag(true)
-    scheduleInternalDragReset(5000)
+    setInternalDrag(true, selectedFileIds)
+    scheduleInternalDragReset(10000)
 
     try {
       if (window.electronAPI) {
@@ -147,7 +148,7 @@ export function useDragDrop(props: { items: FileInfo[], selectedItems: string[] 
       }
     } catch {
     } finally {
-      scheduleInternalDragReset()
+      scheduleInternalDragReset(10000)
     }
   }
 

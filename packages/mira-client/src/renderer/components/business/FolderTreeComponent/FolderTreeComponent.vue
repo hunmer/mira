@@ -1,5 +1,10 @@
 <template>
-  <div class="folder-tree-container w-full" @dragover.prevent.capture @drop.prevent.capture>
+  <div
+    class="folder-tree-container w-full"
+    @dragover.capture="handleTreeDragOver"
+    @dragleave.capture="handleTreeDragLeave"
+    @drop.capture="handleTreeDrop"
+  >
     <!-- 基础分类 (仅文件夹模式) -->
     <div v-if="showBaseCategories && itemType === 'folder'" class="mb-4">
       <ul class="space-y-0.5">
@@ -99,6 +104,7 @@
           >
             <template #default="{ node, stat }">
               <div
+                :data-folder-tree-node-id="node.id"
                 :class="[
                   'flex items-center min-h-8 py-1 px-2 rounded-md cursor-pointer',
                   'hover:bg-gray-100 dark:hover:bg-gray-800',
@@ -124,6 +130,7 @@
           <BaseTree v-else v-model="treeData">
             <template #default="{ node, stat }">
               <div
+                :data-folder-tree-node-id="node.id"
                 :class="[
                   'flex items-center min-h-8 py-1 px-2 rounded-md cursor-pointer',
                   'hover:bg-gray-100 dark:hover:bg-gray-800',
@@ -336,6 +343,63 @@ const sectionTitle = computed(() => props.title || (isFolder.value ? '文件夹'
 // 拖拽 drop 状态
 const dragOverNodeId = ref<string | null>(null)
 
+const nodeMap = computed(() => {
+  const map = new Map<string, HeTreeNode>()
+  const walk = (nodes: HeTreeNode[]) => {
+    for (const node of nodes) {
+      map.set(node.id, node)
+      if (node.children?.length) walk(node.children)
+    }
+  }
+  walk(treeData.value)
+  return map
+})
+
+function hasAcceptableFileDrag(e: DragEvent): boolean {
+  const types = Array.from(e.dataTransfer?.types || [])
+  return Boolean((window as any).__miraInternalDrag || e.dataTransfer?.files?.length || types.includes('Files'))
+}
+
+function findDropNode(target: EventTarget | null): HeTreeNode | null {
+  const element = target instanceof HTMLElement
+    ? target.closest<HTMLElement>('[data-folder-tree-node-id]')
+    : null
+  const nodeId = element?.dataset.folderTreeNodeId
+  return nodeId ? nodeMap.value.get(nodeId) || null : null
+}
+
+function acceptFileDropEvent(e: DragEvent, node: HeTreeNode) {
+  e.preventDefault()
+  e.stopPropagation()
+  e.stopImmediatePropagation()
+  if (e.dataTransfer) {
+    e.dataTransfer.dropEffect = (window as any).__miraInternalDrag ? 'move' : 'copy'
+  }
+  dragOverNodeId.value = node.id
+}
+
+function handleTreeDragOver(e: DragEvent) {
+  if (!hasAcceptableFileDrag(e)) return
+  const node = findDropNode(e.target)
+  if (!node) return
+  acceptFileDropEvent(e, node)
+}
+
+function handleTreeDragLeave(e: DragEvent) {
+  const current = e.currentTarget as HTMLElement | null
+  const related = e.relatedTarget as Node | null
+  if (current && related && current.contains(related)) return
+  dragOverNodeId.value = null
+}
+
+async function handleTreeDrop(e: DragEvent) {
+  if (!hasAcceptableFileDrag(e)) return
+  const node = findDropNode(e.target)
+  if (!node) return
+  acceptFileDropEvent(e, node)
+  await processNodeDrop(e, node)
+}
+
 function resolveNodeId(node: HeTreeNode): number {
   // tag 节点 id 格式为 "tag-123"
   const raw = node.id
@@ -356,15 +420,21 @@ function handleNodeDragLeave(e: DragEvent, _node: HeTreeNode) {
 }
 
 async function handleNodeDrop(e: DragEvent, node: HeTreeNode) {
+  await processNodeDrop(e, node)
+}
+
+async function processNodeDrop(e: DragEvent, node: HeTreeNode) {
   dragOverNodeId.value = null
   if (!libraryStore.currentLibrary) return
   const libraryId = libraryStore.currentLibrary.id
 
   // 内部拖拽：素材库文件 → 设置文件夹/标签
   if ((window as any).__miraInternalDrag) {
-    const selectedIds = homeController.selectedItems?.value || []
+    const selectedIds = (window as any).__miraInternalDragFileIds || homeController.selectedItems?.value || []
     if (selectedIds.length === 0) return
     await handleInternalDrop(libraryId, selectedIds, node)
+    ;(window as any).__miraInternalDrag = false
+    ;(window as any).__miraInternalDragFileIds = []
     return
   }
 
