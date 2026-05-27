@@ -48,7 +48,7 @@ export class FolderHandler extends MessageHandler {
                 case 'update':
                     result = await this.dbService.updateFolder(data.id, data);
                     this.server.broadcastPluginEvent('folder::updated', { message: this.message, result, libraryId });
-                    this.server.broadcastLibraryEvent(libraryId, 'folder::updated', { result, libraryId });
+                    this.server.broadcastLibraryEvent(libraryId, 'folder::updated', { id: data.id, title: data.title, libraryId });
                     break;
                 case 'delete':
                     var { id, deleteFiles } = data;

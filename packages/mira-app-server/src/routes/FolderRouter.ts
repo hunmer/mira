@@ -37,8 +37,8 @@ export class FolderRouter extends BaseRouter {
             await this.handleCrudOperation(req, res, 'update', 'updateFolder', {
                 requiresId: true,
                 successMessage: 'Folder updated successfully',
-                onSuccess: (result, libraryId) => {
-                    this.broadcastFolderEvent('folder::updated', libraryId, { result, libraryId });
+                onSuccess: (_result, libraryId) => {
+                    this.broadcastFolderEvent('folder::updated', libraryId, { id: req.body.id, title: req.body.title, libraryId });
                 }
             });
         });

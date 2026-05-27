@@ -49,7 +49,7 @@ export class TagHandler extends MessageHandler {
                 case 'update':
                     result = await this.dbService.updateTag(data.id, data);
                     this.server.broadcastPluginEvent('tag::updated', { message: this.message, result, libraryId });
-                    this.server.broadcastLibraryEvent(libraryId, 'tag::updated', { result, libraryId });
+                    this.server.broadcastLibraryEvent(libraryId, 'tag::updated', { id: data.id, title: data.title, libraryId });
                     break;
                 case 'delete':
                     var { id } = data;

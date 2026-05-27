@@ -111,8 +111,6 @@ export class MiraSDKService {
    */
   async connect(config: MiraConnectionConfig): Promise<BaseResponse> {
     try {
-      console.log('MiraSDKService: Connecting to Mira server', { serverUrl: config.serverUrl })
-
       const authStore = useAuthStore()
       useSettingsStore().setConnectionStatus('connecting')
 
@@ -132,7 +130,6 @@ export class MiraSDKService {
       // WebSocket 初始化延迟到 library 加载后执行（见 initializeHomeView）
       this._pendingWebsocketUrl = config.websocketUrl
 
-      console.log('MiraSDKService: Connected successfully')
       return { success: true, message: 'Connected to Mira server' }
     } catch (error) {
       console.error('MiraSDKService: Connection failed', error)
@@ -151,7 +148,6 @@ export class MiraSDKService {
   async initWebSocketForLibrary(libraryId: string): Promise<void> {
     const wsUrl = this._pendingWebsocketUrl
     if (!wsUrl) {
-      console.log('MiraSDKService: No websocketUrl, skipping WebSocket init')
       return
     }
     try {
@@ -174,9 +170,7 @@ export class MiraSDKService {
         libraryId
       })
 
-      if (connected) {
-        console.log('MiraSDKService: WebSocket connected successfully')
-      } else {
+      if (!connected) {
         console.error('MiraSDKService: Failed to connect WebSocket')
       }
 
@@ -213,14 +207,12 @@ export class MiraSDKService {
     if (!this.client) throw new Error('Not connected to Mira server')
 
     try {
-      console.log('MiraSDKService: Creating tag', { libraryId, name, color, description })
       const result = await this.client.tags().create({
         libraryId,
         title: name,
         color,
         description
       })
-      console.log('MiraSDKService: Tag created successfully', result)
       return result
     } catch (error) {
       console.error('MiraSDKService: Failed to create tag', error)
@@ -235,9 +227,7 @@ export class MiraSDKService {
     if (!this.client) throw new Error('Not connected to Mira server')
 
     try {
-      console.log('MiraSDKService: Deleting tag', { libraryId, tagId })
       const result = await this.client.tags().delete({ libraryId, id: tagId })
-      console.log('MiraSDKService: Tag deleted successfully', result)
       return result
     } catch (error) {
       console.error('MiraSDKService: Failed to delete tag', error)
@@ -256,7 +246,6 @@ export class MiraSDKService {
       this.connectionConfig = null
       useSettingsStore().setConnectionStatus('disconnected')
 
-      console.log('MiraSDKService: Disconnected')
       return { success: true, message: 'Disconnected from Mira server' }
     } catch (error) {
       console.error('MiraSDKService: Disconnect failed', error)
@@ -370,9 +359,7 @@ export class MiraSDKService {
     if (!this.client) throw new Error('Not connected to Mira server')
     
     try {
-      console.log('MiraSDKService: User login attempt', { username: credentials.username })
       const loginResult = await this.client.auth().login(credentials.username, credentials.password)
-      console.log('MiraSDKService: Login successful, got token:', !!loginResult.accessToken)
       
       // 获取用户信息
       const verifyResult = await this.client.auth().verify()
@@ -397,7 +384,6 @@ export class MiraSDKService {
     if (!this.client) throw new Error('Not connected to Mira server')
 
     try {
-      console.log('MiraSDKService: User registration attempt', { username: userData.username })
       const result = await this.client.auth().register(userData.username, userData.password)
 
       // 转换为我们的 UserInfo 类型
@@ -409,7 +395,6 @@ export class MiraSDKService {
         role: 'user'
       }
 
-      console.log('MiraSDKService: Registration successful')
       return userInfo
     } catch (error) {
       console.error('MiraSDKService: Registration failed', error)
@@ -421,9 +406,7 @@ export class MiraSDKService {
     if (!this.client) throw new Error('Not connected to Mira server')
     
     try {
-      console.log('MiraSDKService: User logout')
       const result = await this.client.auth().logout()
-      console.log('MiraSDKService: Logout successful')
       return TypeAdapter.normalizeBaseResponse(result)
     } catch (error) {
       console.error('MiraSDKService: Logout failed', error)
@@ -478,7 +461,6 @@ export class MiraSDKService {
           )
         : undefined
 
-      console.log('MiraSDKService: Listing files', { libraryId, filters: requestFilters })
 
       // 获取部署环境信息
       const { useSettingsStore } = await import('../stores/settings')
@@ -575,7 +557,6 @@ export class MiraSDKService {
         }
       })
       
-      console.log(`MiraSDKService: Found ${fileInfos.length} files`)
 
       // 发布HTTP请求成功事件
       this.emitHttpEvent('api/files/getFiles', 'success', {
@@ -609,7 +590,6 @@ export class MiraSDKService {
     if (!this.client) throw new Error('Not connected to Mira server')
 
     try {
-      console.log('MiraSDKService: Getting file', { libraryId, fileId })
       
       // 使用 SDK 的文件模块获取单个文件信息
       const file = await (this.client.files() as any).getFile(libraryId, fileId, webSocketService.getClientId())
@@ -631,7 +611,6 @@ export class MiraSDKService {
         libraryId: libraryId
       }
       
-      console.log('MiraSDKService: File retrieved successfully', fileInfo)
       return fileInfo
     } catch (error) {
       console.error('MiraSDKService: Failed to get file', error)
@@ -643,9 +622,7 @@ export class MiraSDKService {
     if (!this.client) throw new Error('Not connected to Mira server')
     
     try {
-      console.log('MiraSDKService: Uploading file', { fileName: file.name, libraryId })
       const result = await this.client.files().uploadFile(file, libraryId, metadata)
-      console.log('MiraSDKService: File upload successful')
       return TypeAdapter.normalizeBaseResponse(result)
     } catch (error) {
       console.error('MiraSDKService: File upload failed', error)
@@ -657,9 +634,7 @@ export class MiraSDKService {
     if (!this.client) throw new Error('Not connected to Mira server')
     
     try {
-      console.log('MiraSDKService: Downloading file', { libraryId, fileId })
       const result = await this.client.files().download(libraryId, fileId)
-      console.log('MiraSDKService: File download successful')
       return result
     } catch (error) {
       console.error('MiraSDKService: File download failed', error)
@@ -671,9 +646,7 @@ export class MiraSDKService {
     if (!this.client) throw new Error('Not connected to Mira server')
 
     try {
-      console.log('MiraSDKService: Deleting file', { libraryId, fileId, moveToRecycleBin })
       const result = await this.client.files().delete(libraryId, fileId, { moveToRecycleBin })
-      console.log('MiraSDKService: File deletion successful')
       return TypeAdapter.normalizeBaseResponse(result)
     } catch (error) {
       console.error('MiraSDKService: File deletion failed', error)
@@ -685,9 +658,7 @@ export class MiraSDKService {
     if (!this.client) throw new Error('Not connected to Mira server')
 
     try {
-      console.log('MiraSDKService: Emptying trash', { libraryId })
       const result = await this.client.files().emptyTrash(libraryId)
-      console.log('MiraSDKService: Trash emptied', result)
       return result
     } catch (error) {
       console.error('MiraSDKService: Empty trash failed', error)
@@ -724,7 +695,6 @@ export class MiraSDKService {
     if (!this.client) throw new Error('Not connected to Mira server')
 
     try {
-      console.log('MiraSDKService: Creating library', { name })
       await this.client.libraries().createLocal(
         name,
         '', // path - 需要根据实际需求设置
@@ -744,7 +714,6 @@ export class MiraSDKService {
         updatedAt: new Date().toISOString()
       }
 
-      console.log('MiraSDKService: Library created successfully')
       return libraryInfo
     } catch (error) {
       console.error('MiraSDKService: Library creation failed', error)
@@ -805,9 +774,7 @@ export class MiraSDKService {
     if (!this.client) throw new Error('Not connected to Mira server')
 
     try {
-      console.log('MiraSDKService: Getting all folders', { libraryId })
       const folders = await this.client.folders().getAll(libraryId)
-      console.log(`MiraSDKService: Found ${folders.length} folders`)
       return folders
     } catch (error) {
       console.error('MiraSDKService: Failed to get folders', error)
@@ -828,9 +795,7 @@ export class MiraSDKService {
     if (!this.client) throw new Error('Not connected to Mira server')
 
     try {
-      console.log('MiraSDKService: Creating folder', { libraryId, title, parentId, color, description })
       const result = await this.client.folders().createFolder(libraryId, title, parentId, color, description)
-      console.log('MiraSDKService: Folder created successfully', result)
       return result
     } catch (error) {
       console.error('MiraSDKService: Failed to create folder', error)
@@ -854,9 +819,7 @@ export class MiraSDKService {
     if (!this.client) throw new Error('Not connected to Mira server')
 
     try {
-      console.log('MiraSDKService: Updating folder', { libraryId, folderId, updates })
       const result = await this.client.folders().updateFolder(libraryId, folderId, updates)
-      console.log('MiraSDKService: Folder updated successfully', result)
       return result
     } catch (error) {
       console.error('MiraSDKService: Failed to update folder', error)
@@ -872,9 +835,7 @@ export class MiraSDKService {
     if (!this.client) throw new Error('Not connected to Mira server')
 
     try {
-      console.log('MiraSDKService: Deleting folder', { libraryId, folderId, deleteFiles })
       const result = await this.client.folders().deleteFolder(libraryId, folderId, deleteFiles)
-      console.log('MiraSDKService: Folder deleted successfully', result)
       return result
     } catch (error) {
       console.error('MiraSDKService: Failed to delete folder', error)
@@ -893,7 +854,6 @@ export class MiraSDKService {
     if (!this.client) throw new Error('Not connected to Mira server')
 
     try {
-      console.log('MiraSDKService: Moving folder', { libraryId, folderId, newParentId })
 
       // 构建更新数据，正确处理null值
       const updateData: any = {}
@@ -905,9 +865,7 @@ export class MiraSDKService {
         updateData.parent_id = newParentId
       }
 
-      console.log('MiraSDKService: Update data', updateData)
       const result = await this.client.folders().updateFolder(libraryId, folderId, updateData)
-      console.log('MiraSDKService: Folder moved successfully', result)
       return result
     } catch (error) {
       console.error('MiraSDKService: Failed to move folder', error)
@@ -953,7 +911,6 @@ export class MiraSDKService {
     if (!this.client) throw new Error('Not connected to Mira server')
 
     try {
-      console.log('MiraSDKService: Cloning folder', { libraryId, folderId, newTitle, newParentId })
 
       // 首先获取原文件夹信息
       const folders = await this.getAllFolders(libraryId)
@@ -973,7 +930,6 @@ export class MiraSDKService {
         originalFolder.description
       )
 
-      console.log('MiraSDKService: Folder cloned successfully', result)
       return result
     } catch (error) {
       console.error('MiraSDKService: Failed to clone folder', error)
@@ -1006,7 +962,6 @@ export class MiraSDKService {
       })
       window.dispatchEvent(genericEvent)
 
-      console.log(`[MiraSDKService] Emitted HTTP event: ${eventName}`, eventData)
     } catch (error) {
       console.error('Failed to emit HTTP event:', error)
     }

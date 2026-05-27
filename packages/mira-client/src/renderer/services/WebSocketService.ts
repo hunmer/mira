@@ -396,12 +396,18 @@ function setupEventListeners(libraryStore: any): void {
     libraryStore.refreshTags?.(data.libraryId)
   })
 
-  webSocketService.addEventListener('tag::update', (data) => {
+  webSocketService.addEventListener('tag::updated', (data) => {
     console.log('Tag updated:', data)
     libraryStore.refreshTags?.(data.libraryId)
+    if (data.id && data.title) {
+      const { tabs } = useTabs()
+      const tabId = `tag-${data.id}`
+      const tab = tabs.value.find(t => t.id === tabId)
+      if (tab) tab.label = data.title
+    }
   })
 
-  webSocketService.addEventListener('tag::delete', (data) => {
+  webSocketService.addEventListener('tag::deleted', (data) => {
     console.log('Tag deleted:', data)
     libraryStore.refreshTags?.(data.libraryId)
   })
@@ -412,9 +418,15 @@ function setupEventListeners(libraryStore: any): void {
     libraryStore.refreshFolders?.(data.libraryId)
   })
 
-  webSocketService.addEventListener('folder::update', (data) => {
+  webSocketService.addEventListener('folder::updated', (data) => {
     console.log('Folder updated:', data)
     libraryStore.refreshFolders?.(data.libraryId)
+    if (data.id && data.title) {
+      const { tabs } = useTabs()
+      const tabId = `folder-${data.id}`
+      const tab = tabs.value.find(t => t.id === tabId)
+      if (tab) tab.label = data.title
+    }
   })
 
   webSocketService.addEventListener('folder::deleted', (data) => {
@@ -475,22 +487,29 @@ function setupEventListeners(libraryStore: any): void {
 
 /**
  * 处理文件事件，判断是否需要刷新当前tab
+ * updated 事件按 tab 节流 300ms，避免批量更新时重复刷新
  */
+const refreshTimers = new Map<string, ReturnType<typeof setTimeout>>()
+
 function handleFileEvent(data: any, eventType: 'created' | 'updated' | 'deleted'): void {
   const { markTabsForEvent, tabs } = useTabs()
-  console.log(`[WS] handleFileEvent: eventType=${eventType}, data=`, JSON.stringify(data))
-  console.log(`[WS] current tabs:`, tabs.value.map(t => ({ id: t.id, type: t.type, active: t.active, needUpdate: t.needUpdate, dataLibraryId: t.data?.libraryId })))
   const markedIds = markTabsForEvent(data, eventType)
-  console.log(`[WS] markTabsForEvent result: markedIds=`, markedIds)
-
   if (markedIds.length === 0) return
 
-  // 找出被标记的活跃 tab，立即刷新
   for (const tabId of markedIds) {
     const tab = tabs.value.find(t => t.id === tabId)
-    console.log(`[WS] checking tab ${tabId}: active=${tab?.active}`)
-    if (tab?.active) {
-      console.log(`[WS] dispatching active-tab-refresh for tab ${tabId}`)
+    if (!tab?.active) continue
+
+    if (eventType === 'updated') {
+      const existing = refreshTimers.get(tabId)
+      if (existing) clearTimeout(existing)
+      refreshTimers.set(tabId, setTimeout(() => {
+        refreshTimers.delete(tabId)
+        window.dispatchEvent(new CustomEvent('active-tab-refresh', {
+          detail: { tabId, eventType, data }
+        }))
+      }, 300))
+    } else {
       window.dispatchEvent(new CustomEvent('active-tab-refresh', {
         detail: { tabId, eventType, data }
       }))

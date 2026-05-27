@@ -37,8 +37,8 @@ export class TagRouter extends BaseRouter {
             await this.handleCrudOperation(req, res, 'update', 'updateTag', {
                 requiresId: true,
                 successMessage: 'Tag updated successfully',
-                onSuccess: (result, libraryId) => {
-                    this.broadcastTagEvent('tag::updated', libraryId, { result, libraryId });
+                onSuccess: (_result, libraryId) => {
+                    this.broadcastTagEvent('tag::updated', libraryId, { id: req.body.id, title: req.body.title, libraryId });
                 }
             });
         });

@@ -1,5 +1,5 @@
 <template>
-  <div class="folder-tree-container w-full">
+  <div class="folder-tree-container w-full" @dragover.prevent.capture @drop.prevent.capture>
     <!-- 基础分类 (仅文件夹模式) -->
     <div v-if="showBaseCategories && itemType === 'folder'" class="mb-4">
       <ul class="space-y-0.5">
