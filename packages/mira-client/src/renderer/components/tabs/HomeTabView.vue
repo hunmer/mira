@@ -44,6 +44,6 @@ onMounted(async () => {
   const params: Record<string, string> = {}
   if (authStore.token) params.token = authStore.token
   if (props.libraryId) params.libraryId = props.libraryId
-  dashboardUrl.value = dashboardStore.buildUrl('/statistics', params)
+  dashboardUrl.value = dashboardStore.buildUrl('/#/statistics', params)
 })
 </script>
