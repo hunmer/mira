@@ -8,9 +8,10 @@ export function useDragDrop(props: { items: FileInfo[], selectedItems: string[] 
   let internalDragResetTimer: ReturnType<typeof setTimeout> | null = null
   let isDragInitiated = false
 
-  const setInternalDrag = (value: boolean, fileIds: string[] = []) => {
+  const setInternalDrag = (value: boolean, fileIds: string[] = [], filePaths: string[] = []) => {
     ;(window as any).__miraInternalDrag = value
     ;(window as any).__miraInternalDragFileIds = value ? fileIds : []
+    ;(window as any).__miraInternalDragFilePaths = value ? filePaths : []
   }
 
   const scheduleInternalDragReset = (delay = 1000) => {
@@ -97,6 +98,7 @@ export function useDragDrop(props: { items: FileInfo[], selectedItems: string[] 
 
     const selectedFileIds = props.selectedItems.includes(item.id) ? props.selectedItems : [item.id]
 
+    const draggableFileIds: string[] = []
     const filePaths: string[] = []
 
     selectedFileIds.forEach(fileId => {
@@ -104,12 +106,14 @@ export function useDragDrop(props: { items: FileInfo[], selectedItems: string[] 
       if (mediaItemElement) {
         const dataFile = mediaItemElement.getAttribute('data-file')
         if (dataFile && dataFile.trim()) {
+          draggableFileIds.push(fileId)
           filePaths.push(dataFile)
         } else {
           const file = props.items.find(f => f.id === fileId)
           if (file?.libraryId) {
             const localPath = mediaStore.getLocalFile(file.libraryId, fileId)
             if (localPath) {
+              draggableFileIds.push(fileId)
               filePaths.push(localPath)
             }
           }
@@ -119,7 +123,7 @@ export function useDragDrop(props: { items: FileInfo[], selectedItems: string[] 
 
     if (filePaths.length === 0) return
 
-    setInternalDrag(true, selectedFileIds)
+    setInternalDrag(true, draggableFileIds, filePaths)
     scheduleInternalDragReset(10000)
 
     try {

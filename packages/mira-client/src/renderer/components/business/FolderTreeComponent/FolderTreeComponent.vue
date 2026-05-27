@@ -271,7 +271,6 @@ import { useLibraryStore } from '@renderer/stores/library'
 import { useMediaStore } from '@renderer/stores/media'
 import { useSettingsStore } from '@renderer/stores/settings'
 import { useToast } from '@renderer/composables/useToast'
-import { useHomeController } from '@renderer/controllers/HomeController'
 import { pinyinMatch } from '@renderer/utils/helpers'
 
 interface HeTreeNode {
@@ -335,7 +334,6 @@ const libraryStore = useLibraryStore()
 const mediaStore = useMediaStore()
 const settingsStore = useSettingsStore()
 const toast = useToast()
-const homeController = useHomeController()
 const isFolder = computed(() => props.itemType === 'folder')
 const defaultIcon = computed(() => isFolder.value ? 'folder' : 'label')
 const sectionTitle = computed(() => props.title || (isFolder.value ? '文件夹' : '标签'))
@@ -357,7 +355,49 @@ const nodeMap = computed(() => {
 
 function hasAcceptableFileDrag(e: DragEvent): boolean {
   const types = Array.from(e.dataTransfer?.types || [])
-  return Boolean((window as any).__miraInternalDrag || e.dataTransfer?.files?.length || types.includes('Files'))
+  return Boolean(
+    (window as any).__miraInternalDrag ||
+    (window as any).__miraInternalDragFilePaths?.length ||
+    e.dataTransfer?.files?.length ||
+    types.includes('Files')
+  )
+}
+
+function normalizeDragPath(path: string): string {
+  return path.replace(/\\/g, '/').toLowerCase()
+}
+
+function resolveInternalDraggedFileIds(e: DragEvent): string[] {
+  const cachedIds = ((window as any).__miraInternalDragFileIds || []) as string[]
+  const cachedPaths = ((window as any).__miraInternalDragFilePaths || []) as string[]
+
+  if ((window as any).__miraInternalDrag && cachedIds.length > 0) {
+    return cachedIds
+  }
+
+  if (!e.dataTransfer?.files?.length || cachedIds.length === 0 || cachedPaths.length === 0) {
+    return []
+  }
+
+  const droppedPaths = Array.from(e.dataTransfer.files)
+    .map(file => (file as File & { path?: string }).path || '')
+    .filter(Boolean)
+    .map(normalizeDragPath)
+
+  if (droppedPaths.length === 0) return []
+
+  const droppedPathSet = new Set(droppedPaths)
+  const matchedIds = cachedPaths
+    .map((path, index) => droppedPathSet.has(normalizeDragPath(path)) ? cachedIds[index] : null)
+    .filter((id): id is string => Boolean(id))
+
+  return matchedIds.length > 0 ? matchedIds : []
+}
+
+function clearInternalDragState() {
+  ;(window as any).__miraInternalDrag = false
+  ;(window as any).__miraInternalDragFileIds = []
+  ;(window as any).__miraInternalDragFilePaths = []
 }
 
 function findDropNode(target: EventTarget | null): HeTreeNode | null {
@@ -373,7 +413,7 @@ function acceptFileDropEvent(e: DragEvent, node: HeTreeNode) {
   e.stopPropagation()
   e.stopImmediatePropagation()
   if (e.dataTransfer) {
-    e.dataTransfer.dropEffect = (window as any).__miraInternalDrag ? 'move' : 'copy'
+    e.dataTransfer.dropEffect = 'copy'
   }
   dragOverNodeId.value = node.id
 }
@@ -408,7 +448,7 @@ function resolveNodeId(node: HeTreeNode): number {
 
 function handleNodeDragOver(e: DragEvent, node: HeTreeNode) {
   e.preventDefault()
-  if (e.dataTransfer) e.dataTransfer.dropEffect = (window as any).__miraInternalDrag ? 'move' : 'copy'
+  if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'
   dragOverNodeId.value = node.id
 }
 
@@ -428,13 +468,11 @@ async function processNodeDrop(e: DragEvent, node: HeTreeNode) {
   if (!libraryStore.currentLibrary) return
   const libraryId = libraryStore.currentLibrary.id
 
+  const internalFileIds = resolveInternalDraggedFileIds(e)
   // 内部拖拽：素材库文件 → 设置文件夹/标签
-  if ((window as any).__miraInternalDrag) {
-    const selectedIds = (window as any).__miraInternalDragFileIds || homeController.selectedItems?.value || []
-    if (selectedIds.length === 0) return
-    await handleInternalDrop(libraryId, selectedIds, node)
-    ;(window as any).__miraInternalDrag = false
-    ;(window as any).__miraInternalDragFileIds = []
+  if (internalFileIds.length > 0) {
+    await handleInternalDrop(libraryId, internalFileIds, node)
+    clearInternalDragState()
     return
   }
 
