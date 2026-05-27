@@ -21,7 +21,7 @@ export class HomeStateManager {
   // UI状态
   public cardSize = ref<'small' | 'medium' | 'large'>('medium')
   public columnsPerRow = ref(this.settingsStore.settings.columnsPerRow)
-  public viewMode = ref<'grid' | 'list' | 'waterfall'>(this.settingsStore.settings.defaultView)
+  public viewMode = ref<'grid' | 'list' | 'waterfall'>('grid')
 
   /**
    * 处理筛选器变化
@@ -240,7 +240,6 @@ export class HomeStateManager {
    */
   public setViewMode = async (mode: 'grid' | 'list' | 'waterfall'): Promise<void> => {
     this.viewMode.value = mode
-    await this.settingsStore.updateSetting('defaultView', mode)
   }
 
   /**
@@ -321,7 +320,7 @@ export class HomeStateManager {
   public async initialize(): Promise<void> {
     await this.settingsStore.loadSettings()
 
-    this.viewMode.value = this.settingsStore.settings.defaultView
+    this.viewMode.value = 'grid'
     this.columnsPerRow.value = this.settingsStore.settings.columnsPerRow
 
     if (this.libraryStore.currentLibrary) {

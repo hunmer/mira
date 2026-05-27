@@ -10,7 +10,6 @@ export interface AppSettings {
   theme: 'light' | 'dark' | 'auto'
   language: string
 
-  defaultView: 'grid' | 'list' | 'waterfall'
   columnsPerRow: number
 
   sidebarWidth: number
@@ -76,7 +75,6 @@ export interface Settings {
   backupInterval: number // minutes
   maxBackups: number
   showHiddenFiles: boolean
-  defaultView: 'grid' | 'list' | 'waterfall'
 
   columnsPerRow: number
   sortBy: 'name' | 'date' | 'size' | 'type'
@@ -112,7 +110,6 @@ export const useSettingsStore = defineStore('settings', () => {
     theme: 'auto',
     language: 'zh-CN',
 
-    defaultView: 'grid',
     columnsPerRow: 4,
 
 
@@ -358,8 +355,7 @@ export const useSettingsStore = defineStore('settings', () => {
     const defaultSettings: AppSettings = {
       theme: 'auto',
       language: 'zh-CN',
-  
-      defaultView: 'grid',
+
       columnsPerRow: 4,
   
   

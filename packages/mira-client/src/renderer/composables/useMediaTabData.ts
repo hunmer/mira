@@ -1,6 +1,6 @@
 import { reactive, computed } from 'vue'
 import type { FilterRule } from '@/components/ui/volt/FilterBar.vue'
-import { useSettingsStore } from '@/renderer/stores/settings'
+
 
 // 媒体Tab的数据管理接口
 export interface MediaTabData {
@@ -38,8 +38,7 @@ export function registerViewModeChangeCallback(cb: () => void) {
 export function useMediaTabData(tabId: string) {
   // 确保该Tab的数据存在
   if (!tabDataStore[tabId]) {
-    const settingsStore = useSettingsStore()
-    const defaultMode = _restoredViewModes[tabId] || settingsStore.settings?.defaultView || 'grid'
+    const defaultMode = _restoredViewModes[tabId] || 'grid'
     delete _restoredViewModes[tabId]
 
     tabDataStore[tabId] = {
@@ -225,8 +224,7 @@ export function useMediaTabData(tabId: string) {
  */
 export function cacheTabData(tabId: string, data: any[], total?: number) {
   if (!tabDataStore[tabId]) {
-    const settingsStore = useSettingsStore()
-    const defaultMode = _restoredViewModes[tabId] || settingsStore.settings?.defaultView || 'grid'
+    const defaultMode = _restoredViewModes[tabId] || 'grid'
     delete _restoredViewModes[tabId]
 
     tabDataStore[tabId] = {
