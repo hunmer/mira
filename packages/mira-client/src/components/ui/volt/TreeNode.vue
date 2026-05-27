@@ -20,16 +20,13 @@
       @contextmenu="handleContextMenu"
     >
       <!-- 复选框 (checkbox mode) -->
-      <Checkbox
-v-if="showCheckbox && selectionMode === 'checkbox'"
+      <Checkbox v-if="showCheckbox && selectionMode === 'checkbox'"
         :checked="isChecked"
         :disabled="node.disabled"
         class="mr-2"
         @click.stop
         @update:checked="handleCheckboxChange"
       />
-
-
 
 
       <!-- 节点内容 -->

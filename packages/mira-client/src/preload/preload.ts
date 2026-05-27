@@ -134,7 +134,9 @@ const electronAPI: ElectronAPI = {
     mkdir: (dirPath: string, recursive?: boolean) =>
       ipcRenderer.invoke('fs:mkdir', dirPath, recursive),
     copyFile: (src: string, dest: string) =>
-      ipcRenderer.invoke('fs:copyFile', src, dest)
+      ipcRenderer.invoke('fs:copyFile', src, dest),
+    showItemInFolder: (filePath: string) =>
+      ipcRenderer.invoke('fs:showItemInFolder', filePath)
   },
 
   // 自动更新 API

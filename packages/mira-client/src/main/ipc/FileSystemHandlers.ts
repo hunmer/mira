@@ -1,4 +1,4 @@
-import { ipcMain, IpcMainInvokeEvent, dialog } from 'electron'
+import { ipcMain, IpcMainInvokeEvent, dialog, shell } from 'electron'
 import * as fs from 'fs'
 import * as path from 'path'
 
@@ -23,6 +23,7 @@ export class FileSystemHandlers {
     ipcMain.handle('fs:selectFile', this.handleFsSelectFile.bind(this))
     ipcMain.handle('fs:mkdir', this.handleFsMkdir.bind(this))
     ipcMain.handle('fs:copyFile', this.handleFsCopyFile.bind(this))
+    ipcMain.handle('fs:showItemInFolder', this.handleShowItemInFolder.bind(this))
   }
 
   /**
@@ -197,5 +198,12 @@ export class FileSystemHandlers {
         message: error instanceof Error ? error.message : 'Failed to copy file'
       }
     }
+  }
+
+  private handleShowItemInFolder(
+    _event: IpcMainInvokeEvent,
+    filePath: string
+  ): Promise<boolean> {
+    return shell.showItemInFolder(filePath)
   }
 }

@@ -41,6 +41,7 @@
   "license": "MIT",
   "description": "Mira Media Library Desktop Application",
   "dependencies": {
+    "@he-tree/vue": "^2.10.5",
     "@radix-icons/vue": "^1.0.0",
     "@tailwindcss/vite": "4.0.17",
     "@vitejs/plugin-vue": "^5.2.1",

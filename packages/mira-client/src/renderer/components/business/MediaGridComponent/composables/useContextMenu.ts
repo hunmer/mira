@@ -133,6 +133,15 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
     {
       separator: true
     },
+    ...([
+      currentContextItem.value?.localFile && {
+        label: '定位到文件夹',
+        command: () => {
+          const api = (window as any).electronAPI
+          api?.fs?.showItemInFolder(currentContextItem.value!.localFile!)
+        }
+      }
+    ].filter(Boolean) as MenuItem[]),
     {
       label: props.selectedItems.length > 1 ? `删除 (${props.selectedItems.length})` : '删除',
       shortcut: 'Delete',

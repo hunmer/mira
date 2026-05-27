@@ -2,7 +2,7 @@ import { ipcMain, BrowserWindow, nativeImage } from 'electron'
 import { existsSync } from 'fs'
 import path from 'path'
 import { app } from 'electron'
-import { EXTENSION_ICON_MAP, getExtIconFileName } from '../utils/extIcons'
+import { getExtIconFileName } from '../utils/extIcons'
 
 /**
  * 拖拽处理器
