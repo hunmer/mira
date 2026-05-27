@@ -436,7 +436,7 @@ function setupEventListeners(libraryStore: any): void {
     handleFileEvent(data, 'created')
   })
 
-  webSocketService.addEventListener('file::update', (data) => {
+  webSocketService.addEventListener('file::updated', (data) => {
     console.log('File updated:', data)
     handleFileEvent(data, 'updated')
   })
