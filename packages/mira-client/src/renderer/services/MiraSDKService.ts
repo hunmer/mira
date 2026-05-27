@@ -220,6 +220,22 @@ export class MiraSDKService {
     }
   }
 
+  async updateTag(libraryId: string, tagId: string | number, updates: { name?: string; color?: number; description?: string }): Promise<any> {
+    if (!this.client) throw new Error('Not connected to Mira server')
+
+    try {
+      const result = await this.client.tags().updateTag(libraryId, Number(tagId), {
+        title: updates.name,
+        color: updates.color,
+        description: updates.description,
+      })
+      return result
+    } catch (error) {
+      console.error('MiraSDKService: Failed to update tag', error)
+      throw error
+    }
+  }
+
   /**
    * 删除标签
    */
