@@ -679,7 +679,7 @@ const fetchPageData = async (page: number) => {
 }
 
 const handleRefresh = async () => {
-  // 刷新数据时返回第一页
+  homeController.selectedItems.value = []
   await fetchPageData(1)
   emit('refresh')
 }

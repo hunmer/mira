@@ -443,7 +443,13 @@ function eachDroppable() {
 
 // 拖拽确认状态
 const showDragConfirm = ref(false)
-const dragConfirmInfo = ref({ dragId: '', dragName: '', newParentId: null as string | null, targetLabel: '' })
+const dragConfirmInfo = ref({
+  dragId: '',
+  dragName: '',
+  newParentId: null as string | null,
+  targetLabel: '',
+  newSiblingIds: [] as { id: number; sort_index: number }[],
+})
 
 // 拖拽前记录旧 parentId
 let beforeDragParentId: string | null = null
@@ -470,31 +476,36 @@ function onAfterDrop() {
   const isSameLevel = newParentId === beforeDragParentId
 
   if (isSameLevel) {
-    // 同层级排序：收集同级节点的 index
-    saveSiblingSortIndex(dragNode)
+    // 同层级排序：直接保存
+    const items = collectSiblingSortItems(dragNode)
+    doUpdateSortIndex(items)
     return
   }
 
-  // 跨层级移动：弹确认
+  // 跨层级移动：弹确认前先存好新兄弟排序
   const dragName = dragNode.data.label as string
   const parentLabel = dragNode.parent?.data?.label ?? ''
   const targetLabel = newParentId ? `「${parentLabel}」下` : '根目录'
+  const newSiblingIds = collectSiblingSortItems(dragNode)
 
-  dragConfirmInfo.value = { dragId: draggedId, dragName, newParentId, targetLabel }
+  dragConfirmInfo.value = { dragId: draggedId, dragName, newParentId, targetLabel, newSiblingIds }
   showDragConfirm.value = true
 }
 
-// 同层级排序：读取同级节点顺序并更新 sort_index
-async function saveSiblingSortIndex(dragNode: any) {
+// 收集同级节点的 sort_index 映射
+function collectSiblingSortItems(dragNode: any): { id: number; sort_index: number }[] {
   const parent = dragNode.parent
   const siblings: any[] = parent ? parent.children : (treeRef.value as any)?.stats ?? []
-  if (!siblings || siblings.length === 0) { emit('refresh'); return }
-
-  const libraryId = libraryStore.currentLibrary!.id
-  const items = siblings.map((s: any, i: number) => ({
+  if (!siblings || siblings.length === 0) return []
+  return siblings.map((s: any, i: number) => ({
     id: parseInt(s.data.id),
     sort_index: i,
   }))
+}
+
+async function doUpdateSortIndex(items: { id: number; sort_index: number }[]) {
+  if (items.length === 0) { beforeDragParentId = null; emit('refresh'); return }
+  const libraryId = libraryStore.currentLibrary!.id
   try {
     await miraSDKService.updateFolderSortIndex(libraryId, items)
   } catch (error) {
@@ -509,15 +520,19 @@ async function confirmDragMove() {
   showDragConfirm.value = false
   if (!libraryStore.currentLibrary) return
 
-  const { dragId, newParentId } = dragConfirmInfo.value
+  const { dragId, newParentId, newSiblingIds } = dragConfirmInfo.value
   const libraryId = libraryStore.currentLibrary.id
   try {
-    // 移动文件夹（parent 变了，清除 sort_index）
+    // 1. 移动文件夹到新 parent
     await miraSDKService.moveFolder(
       libraryId,
       parseInt(dragId),
       newParentId ? parseInt(newParentId) : null,
     )
+    // 2. 把拖拽时的落点位置写入新兄弟们的 sort_index
+    if (newSiblingIds.length > 0) {
+      await miraSDKService.updateFolderSortIndex(libraryId, newSiblingIds)
+    }
   } catch (error) {
     console.error('Failed to move folder via drag and drop:', error)
   }

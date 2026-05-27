@@ -290,7 +290,7 @@ export function useTabs() {
    */
   const createTabFromFolder = (folder: any, libraryId?: string) => {
     // 确保tab ID不会重复添加前缀
-    const folderId = folder.id
+    const folderId = String(folder.id)
     const tabId = folderId.startsWith('folder-') ? folderId : `folder-${folderId}`
 
     const existingTab = tabs.value.find(tab => tab.id === tabId)
