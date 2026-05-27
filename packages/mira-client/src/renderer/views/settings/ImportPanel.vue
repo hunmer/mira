@@ -7,8 +7,8 @@
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">开启后，拖拽文件到当前文件夹/标签时将直接上传，无需手动确认</p>
       </div>
       <Switch
-        :checked="settingsStore.settings.directImportMode"
-        @update:checked="(val: boolean) => { settingsStore.settings.directImportMode = val; handleSettingChange('directImportMode', val) }"
+        :model-value="settingsStore.settings.directImportMode"
+        @update:model-value="(val: boolean) => { settingsStore.settings.directImportMode = val; handleSettingChange('directImportMode', val) }"
       />
     </div>
   </div>

@@ -18,6 +18,7 @@ export class LibraryWatcher {
   private libraryId: string;
   private webSocketServer: MiraWebsocketServer;
   private pendingUnlinks = new Map<string, PendingUnlink>();
+  private ignoredPaths = new Set<string>();
   private usePolling = false;
 
   constructor(libraryService: LibraryServerDataSQLite, webSocketServer: MiraWebsocketServer) {
@@ -170,6 +171,15 @@ export class LibraryWatcher {
       rel.endsWith('.temp');
   }
 
+  ignorePath(filePath: string): void {
+    this.ignoredPaths.add(filePath);
+    setTimeout(() => this.ignoredPaths.delete(filePath), 10000);
+  }
+
+  private isIgnored(filePath: string): boolean {
+    return this.ignoredPaths.has(filePath);
+  }
+
   async stop(): Promise<void> {
     if (this.watcher) {
       await this.watcher.close();
@@ -185,6 +195,7 @@ export class LibraryWatcher {
 
   // 文件删除/移走：暂存记录，若短时间内没有对应 add 则从 DB 删除
   private handleUnlink(filePath: string): void {
+    if (this.isIgnored(filePath)) return;
     this.libraryService.getSql('SELECT * FROM files WHERE path = ? LIMIT 1', [filePath])
       .then((rows) => {
         if (rows.length === 0) return;
@@ -207,6 +218,7 @@ export class LibraryWatcher {
   }
 
   private async handleNewFile(filePath: string): Promise<void> {
+    if (this.isIgnored(filePath)) return;
     try {
       const stat = fs.statSync(filePath);
       if (stat.size === 0) return;

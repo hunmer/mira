@@ -81,7 +81,21 @@ export class FolderRouter extends BaseRouter {
         // 为文件设置文件夹
         this.router.post('/file/set', async (req: Request, res: Response) => {
             await this.handleFileAssociation(req, res, 'set', 'setFileFolder', 'folder', {
-                successMessage: 'File folder set successfully'
+                successMessage: 'File folder set successfully',
+                onSuccess: (result, libraryId, fileId) => {
+                    if (result.success) {
+                        const obj = this.backend.libraries!.getLibrary(libraryId);
+                        if (obj) {
+                            obj.libraryService.getFile(parseInt(fileId.toString())).then((file: any) => {
+                                if (file) {
+                                    this.broadcastFolderEvent('file::updated', libraryId, {
+                                        ...file, libraryId, fileId: parseInt(fileId.toString()), old_data: result.oldData,
+                                    });
+                                }
+                            });
+                        }
+                    }
+                }
             });
         });
 

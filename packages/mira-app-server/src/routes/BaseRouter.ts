@@ -165,6 +165,7 @@ export class BaseRouter {
         associationType: string,
         options: {
             successMessage?: string;
+            onSuccess?: (result: any, libraryId: string, fileId: string | number) => void;
         } = {}
     ): Promise<void> {
         try {
@@ -197,7 +198,11 @@ export class BaseRouter {
                 result = await library.libraryService[serviceMethod](parseInt(fileId));
                 this.sendSuccess(res, { [associationType]: result });
             }
-            
+
+            if (options.onSuccess) {
+                options.onSuccess(result, libraryId, fileId);
+            }
+
         } catch (error) {
             console.error(`${operation} file ${associationType} error:`, error);
             this.sendError(res, 500, 'Internal server error');
