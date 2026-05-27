@@ -128,6 +128,7 @@ const selectionBoxRef = ref<InstanceType<typeof SelectionBox> | null>(null)
 const waterfallRef = ref()
 const thumbnailRatios = ref<Record<string, number>>({})
 const thumbnailRatiosReady = ref(false)
+const initialRatioPreloadCount = computed(() => Math.max(props.columnsPerRow * 4, 16))
 const settingsStore = useSettingsStore()
 const { focusSelectionBox, isSelectionBoxFocused } = useFocusedSelectAll(selectionBoxRef, props, emit)
 const { handleDeleteKeyDown, handleEditAction } = useDeleteSelectedItems(props, emit, {
@@ -199,8 +200,9 @@ const readImageRatio = (url: string): Promise<number | null> => {
 const preloadThumbnailRatios = async (items: FileInfo[]) => {
   const currentVersion = ++preloadVersion
   thumbnailRatiosReady.value = false
+  thumbnailRatios.value = {}
 
-  const entries = await Promise.all(items.map(async (item) => {
+  const entries = await Promise.all(items.slice(0, initialRatioPreloadCount.value).map(async (item) => {
     const ratio = await readImageRatio(getItemUrl(item))
     return ratio ? [item.id, ratio] as const : null
   }))
@@ -262,7 +264,7 @@ const loadProps = computed(() => ({
   loading: '',
   error: '',
   observerOptions: {
-    rootMargin: '1000px 0px'
+    rootMargin: '300px 0px'
   },
   ratioCalculator: (width: number, height: number) => {
     const minRatio = 0.6
