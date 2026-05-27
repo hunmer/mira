@@ -49,15 +49,11 @@ interface Props {
   isVisible: boolean
   error?: string | null
   autoInitialize?: boolean
-  connectionStatus?: 'connecting' | 'connected' | 'disconnected' | 'error' | 'reconnecting'
-  isLoading?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   error: null,
-  autoInitialize: true,
-  connectionStatus: undefined,
-  isLoading: false
+  autoInitialize: true
 })
 
 const emit = defineEmits<{
@@ -76,11 +72,10 @@ const loadingMessage = ref('正在检查上次连接的素材库...')
 const error = ref<string | null>(props.error)
 const isComplete = ref(false)
 const isRedirecting = ref(false)
-const isGlobalLoading = computed(() => props.isLoading || props.connectionStatus === 'connecting')
 
 // 计算是否应该显示组件
 const shouldShow = computed(() => {
-  return (props.isVisible || isGlobalLoading.value) && !isRedirecting.value
+  return props.isVisible && !isRedirecting.value
 })
 
 // 执行实际的初始化流程

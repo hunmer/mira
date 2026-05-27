@@ -67,8 +67,6 @@
       :show-actions="!!initState.state.error"
       :allow-cancel="false"
       :auto-initialize="false"
-      :connection-status="settingsStore.connectionStatus"
-      :is-loading="settingsStore.isLoading"
       @retry="handleInitRetry"
       @completed="handleInitCompleted"
       @failed="handleInitFailed"

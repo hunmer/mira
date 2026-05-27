@@ -209,6 +209,13 @@ export class MiraWebsocketServer {
 
     private async handleMessage(ws: WebSocket, row: Record<string, any>): Promise<void> {
         const client = ws as ConnectedClient;
+
+        // 心跳响应：ping 直接回 pong，不走业务逻辑
+        if (row.eventName === 'ping') {
+            this.sendToWebsocket(ws, { eventName: 'pong' });
+            return;
+        }
+
         const payload = row.payload || {};
         const action = row.action;
         const requestId = row.requestId;

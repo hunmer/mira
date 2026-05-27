@@ -153,6 +153,11 @@ export const useSettingsStore = defineStore('settings', () => {
   const systemHealth = ref<SystemHealth | null>(null)
   const isLoading = ref(false)
   const error = ref<string | null>(null)
+
+  const setConnectionStatus = (status: typeof connectionStatus.value) => {
+    connectionStatus.value = status
+    isConnected.value = status === 'connected'
+  }
   const lastConnectionAttempt = ref<Date | null>(null)
   const connectionRetries = ref(0)
 
@@ -560,6 +565,7 @@ export const useSettingsStore = defineStore('settings', () => {
     clearError,
     initialize,
     startHealthMonitoring,
+    setConnectionStatus,
 
     // 素材库相关导出
     libraries,

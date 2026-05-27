@@ -1,18 +1,26 @@
 <template>
-  <VideoPreview
-    v-if="currentVideoItem"
-    :key="`video-${currentVideoItem.id}`"
-    :ref="el => setVideoPreviewRef(el, currentVideoItem.id)"
-    :src="videoSrc"
-    :muted="isMuted"
-    :auto-jump="false"
-    class="absolute inset-0"
-    @loaded="onVideoPreviewLoaded"
-    @timeupdate="onVideoPreviewTimeUpdate"
-    @play="onVideoPreviewPlay"
-    @pause="onVideoPreviewPause"
-    @error="onVideoPreviewError"
-  />
+  <div class="relative w-full h-full">
+    <VideoPreview
+      v-if="currentVideoItem"
+      :key="`video-${currentVideoItem.id}`"
+      :ref="el => setVideoPreviewRef(el, currentVideoItem.id)"
+      :src="videoSrc"
+      :muted="isMuted"
+      :auto-jump="false"
+      class="absolute inset-0"
+      @loaded="onVideoPreviewLoaded"
+      @timeupdate="onVideoPreviewTimeUpdate"
+      @play="onVideoPreviewPlay"
+      @pause="onVideoPreviewPause"
+      @error="onVideoPreviewError"
+    />
+    <img
+      v-if="posterSrc && showPoster"
+      :src="posterSrc"
+      class="absolute inset-0 w-full h-full object-cover pointer-events-none transition-opacity duration-200"
+      :class="showPoster ? 'opacity-100' : 'opacity-0'"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -20,7 +28,7 @@ import { computed, ref, watch } from 'vue'
 import { throttle } from 'throttle-debounce'
 import VideoPreview from '../../common/VideoPreview.vue'
 import type { FileInfo } from '../../../../shared/types'
-import { getMediaFileUrl } from '@renderer/utils/fileUtils'
+import { getMediaFileUrl, toFileUrl } from '@renderer/utils/fileUtils'
 
 interface VideoPreviewAPI {
   play(): Promise<void> | undefined
@@ -54,7 +62,14 @@ const emit = defineEmits<Emits>()
 // 优先使用 localFile（本地/SMB 映射路径），回退到 HTTP path
 const videoSrc = computed(() => getMediaFileUrl(props.currentVideoItem))
 
+const posterSrc = computed(() => toFileUrl(props.currentVideoItem?.thumbnailPath))
+
+const showPoster = ref(true)
 const videoPreviewComponent = ref<VideoPreviewAPI | null>(null)
+
+watch(() => props.currentVideoItem?.id, () => {
+  showPoster.value = true
+})
 
 const setVideoPreviewRef = (el: any, itemId: string) => {
   if (el && props.currentVideoItem?.id === itemId && videoPreviewComponent.value !== el) {
@@ -82,6 +97,9 @@ const onVideoPreviewLoaded = (payload: { duration: number }) => {
 }
 
 const onVideoPreviewTimeUpdate = (payload: { currentTime: number, progress: number }) => {
+  if (showPoster.value && payload.currentTime > 0) {
+    showPoster.value = false
+  }
   if (props.currentVideoItem) {
     emit('update-progress', props.currentVideoItem.id, payload.progress)
   }

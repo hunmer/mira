@@ -2,6 +2,7 @@ import { MiraClient } from 'mira-server-sdk'
 import { initializeWebSocket, webSocketService } from './WebSocketService'
 import { useMediaStore } from '../stores/media'
 import { useAuthStore } from '../stores/auth'
+import { useSettingsStore } from '../stores/settings'
 import { toFileUrl } from '../utils/fileUtils'
 
 /** 给 HTTP 资源 URL 追加 token 参数（用于 <img>/<video> 等无法设 header 的场景） */
@@ -113,6 +114,7 @@ export class MiraSDKService {
       console.log('MiraSDKService: Connecting to Mira server', { serverUrl: config.serverUrl })
 
       const authStore = useAuthStore()
+      useSettingsStore().setConnectionStatus('connecting')
 
       this.client = new MiraClient(config.serverUrl, {
         timeout: config.timeout || 30000,
@@ -125,6 +127,7 @@ export class MiraSDKService {
       // 测试连接
       await this.client.system().getSystemInfo()
       this.isConnected = true
+      useSettingsStore().setConnectionStatus('connected')
 
       // WebSocket 初始化延迟到 library 加载后执行（见 initializeHomeView）
       this._pendingWebsocketUrl = config.websocketUrl
@@ -134,6 +137,7 @@ export class MiraSDKService {
     } catch (error) {
       console.error('MiraSDKService: Connection failed', error)
       this.isConnected = false
+      useSettingsStore().setConnectionStatus('error')
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Connection failed'
@@ -250,6 +254,7 @@ export class MiraSDKService {
       this.client = null
       this.isConnected = false
       this.connectionConfig = null
+      useSettingsStore().setConnectionStatus('disconnected')
 
       console.log('MiraSDKService: Disconnected')
       return { success: true, message: 'Disconnected from Mira server' }

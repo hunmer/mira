@@ -133,7 +133,6 @@ const emit = defineEmits<Emits>()
 const {
   imageSrc: imageSrcComputed,
   fileExtension,
-  isVideo,
   getLocalFile,
   handleClick,
   handleDoubleClick,

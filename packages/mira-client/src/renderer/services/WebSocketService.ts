@@ -26,6 +26,12 @@ class WebSocketService {
   private fields: Record<string, any> = {}
   private readonly fieldsStoragePrefix = 'mira_ws_fields'
 
+  // 心跳
+  private heartbeatTimer: ReturnType<typeof setInterval> | null = null
+  private heartbeatTimeoutTimer: ReturnType<typeof setTimeout> | null = null
+  private readonly HEARTBEAT_INTERVAL = 30000 // 30s 发一次 ping
+  private readonly HEARTBEAT_TIMEOUT = 10000  // 10s 没收到 pong 认为断开
+
   // 响应式状态
   public isConnected = ref(false)
   public isConnecting = ref(false)
@@ -89,6 +95,7 @@ class WebSocketService {
    * 断开WebSocket连接
    */
   disconnect(): void {
+    this.stopHeartbeat()
     if (this.ws) {
       this.ws.close()
       this.ws = null
@@ -156,6 +163,7 @@ class WebSocketService {
     this.isConnecting.value = false
     this.reconnectAttempts = 0
     this.lastError.value = null
+    this.startHeartbeat()
     this.openLibrarySession()
   }
 
@@ -185,6 +193,9 @@ class WebSocketService {
 
   private handleInternalEvent(message: any): void {
     switch (message.eventName) {
+      case 'pong':
+        this.onPongReceived()
+        break
       case 'try_connect':
         this.connectLibrarySession()
         break
@@ -272,10 +283,45 @@ class WebSocketService {
     console.log('WebSocket connection closed:', event.code, event.reason)
     this.isConnected.value = false
     this.isConnecting.value = false
+    this.stopHeartbeat()
 
     // 如果不是主动关闭，尝试重连
     if (event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
+      useSettingsStore().setConnectionStatus('reconnecting')
       this.attemptReconnect()
+    } else {
+      useSettingsStore().setConnectionStatus('disconnected')
+    }
+  }
+
+  private startHeartbeat(): void {
+    this.stopHeartbeat()
+    this.heartbeatTimer = setInterval(() => {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        this.ws.send(JSON.stringify({ eventName: 'ping' }))
+        this.heartbeatTimeoutTimer = setTimeout(() => {
+          console.warn('WebSocket heartbeat timeout, closing connection')
+          this.ws?.close(4000, 'heartbeat timeout')
+        }, this.HEARTBEAT_TIMEOUT)
+      }
+    }, this.HEARTBEAT_INTERVAL)
+  }
+
+  private stopHeartbeat(): void {
+    if (this.heartbeatTimer) {
+      clearInterval(this.heartbeatTimer)
+      this.heartbeatTimer = null
+    }
+    if (this.heartbeatTimeoutTimer) {
+      clearTimeout(this.heartbeatTimeoutTimer)
+      this.heartbeatTimeoutTimer = null
+    }
+  }
+
+  private onPongReceived(): void {
+    if (this.heartbeatTimeoutTimer) {
+      clearTimeout(this.heartbeatTimeoutTimer)
+      this.heartbeatTimeoutTimer = null
     }
   }
 
