@@ -21,10 +21,10 @@ export interface CreateAdminForm {
 }
 
 export interface LoginResponse {
-  success: boolean
+  code: number
   message?: string
   data?: {
-    token: string
+    accessToken: string
     user: User
   }
 }

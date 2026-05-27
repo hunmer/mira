@@ -15,13 +15,13 @@ export const useAuthStore = defineStore('auth', () => {
   async function login(username: string, password: string) {
     const res = await authApi.login({ username, password })
     const body = res.data
-    if (body.success && body.data?.token) {
-      token.value = body.data.token
-      localStorage.setItem('token', body.data.token)
+    const data = body.data
+    if (data?.accessToken) {
+      token.value = data.accessToken
+      localStorage.setItem('token', data.accessToken)
 
-      // 优先使用登录响应中的用户信息，否则通过 /user/info 获取
-      if (body.data.user) {
-        user.value = body.data.user
+      if (data.user) {
+        user.value = data.user
         localStorage.setItem('user', JSON.stringify(user.value))
       } else {
         try {

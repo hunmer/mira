@@ -134,16 +134,6 @@ const uploaderData = computed<UploaderItem[]>(() =>
     })),
 )
 
-const uploaderConfig = computed(() => {
-  const config: Record<string, { label: string; color: string }> = {
-    count: { label: t('statistics.fileCount'), color: '' },
-  }
-  for (const u of uploaderData.value) {
-    config[u.name] = { label: u.name, color: u.fill }
-  }
-  return config satisfies ChartConfig
-})
-
 const maxUploaderCount = computed(() =>
   uploaderData.value.length ? Math.max(...uploaderData.value.map(d => d.count)) : 0,
 )
