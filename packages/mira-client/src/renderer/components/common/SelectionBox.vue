@@ -397,19 +397,34 @@ const handleItemClick = (itemId: string, event: MouseEvent) => {
     if (selectedItems.value.has(itemId)) {
       selectedItems.value.delete(itemId)
     }
-  } else if (event.shiftKey && lastSelectedIndex.value !== -1 && props.multiple) {
-    // Shift范围选择逻辑需要根据具体使用场景实现
-    // 这里提供基础框架
+  } else if (event.shiftKey && props.multiple) {
     const selectableElements = getSelectableElements()
     const currentIndex = selectableElements.findIndex(el => getElementItemId(el) === itemId)
-    const start = Math.min(lastSelectedIndex.value, currentIndex)
-    const end = Math.max(lastSelectedIndex.value, currentIndex)
 
-    for (let i = start; i <= end; i++) {
-      const elementId = getElementItemId(selectableElements[i])
-      if (elementId) {
-        selectedItems.value.add(elementId)
+    // 如果没有锚点，往前遍历找最近已选中的项作为起点
+    let anchorIndex = lastSelectedIndex.value
+    if (anchorIndex === -1) {
+      for (let i = currentIndex - 1; i >= 0; i--) {
+        const prevId = getElementItemId(selectableElements[i])
+        if (prevId && selectedItems.value.has(prevId)) {
+          anchorIndex = i
+          break
+        }
       }
+    }
+
+    if (anchorIndex !== -1) {
+      const start = Math.min(anchorIndex, currentIndex)
+      const end = Math.max(anchorIndex, currentIndex)
+
+      for (let i = start; i <= end; i++) {
+        const elementId = getElementItemId(selectableElements[i])
+        if (elementId) {
+          selectedItems.value.add(elementId)
+        }
+      }
+    } else {
+      selectedItems.value.add(itemId)
     }
   } else if (event.ctrlKey && props.multiple) {
     if (selectedItems.value.has(itemId)) {

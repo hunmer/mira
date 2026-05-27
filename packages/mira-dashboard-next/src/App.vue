@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { setApiBaseURL, getApiBaseURL, getDefaultBaseURL } from '@/api/client'
+import { Toaster } from '@/components/ui/sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -34,6 +35,7 @@ function resetDefault() {
 </script>
 
 <template>
+  <Toaster />
   <router-view />
   <Button
     v-if="showSetting"

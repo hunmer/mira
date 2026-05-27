@@ -52,50 +52,104 @@
       </ul>
     </div>
 
+    <!-- 标题栏 + 搜索 + 添加 -->
+    <div class="flex items-center justify-between px-2 mb-2">
+      <h2 class="text-xs font-semibold text-gray-500 leading-5">{{ sectionTitle }}</h2>
+      <div class="flex items-center gap-0.5 -mr-1">
+        <button
+          @click="toggleSearch"
+          class="flex h-5 w-5 items-center justify-center text-gray-400 hover:text-gray-600 rounded"
+          :class="{ 'text-blue-600': showSearch }"
+          :title="`搜索${sectionTitle}...`"
+        >
+          <span class="material-icons leading-none" style="font-size: 18px">search</span>
+        </button>
+        <button
+          @click="ops.handleAdd(itemType)"
+          class="flex h-5 w-5 items-center justify-center text-gray-400 hover:text-gray-600 rounded"
+          :title="`添加${sectionTitle}`"
+        >
+          <span class="material-icons leading-none" style="font-size: 18px">add</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 搜索框 -->
+    <div v-if="showSearch" class="px-2 mb-2">
+      <input
+        ref="searchInputRef"
+        v-model="searchQuery"
+        type="text"
+        :placeholder="`搜索${sectionTitle}...`"
+        class="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+      />
+    </div>
+
     <!-- 树 -->
-    <TreeSection
-      :title="sectionTitle"
-      :show-search="showSearch"
-      :search-query="searchQuery"
-      :search-placeholder="`搜索${sectionTitle}...`"
-      :tree-data="filteredNodes"
-      :context-menu-items="contextMenuItems"
-      :empty-icon="itemType === 'folder' ? 'folder_open' : 'label'"
-      :empty-text="`还没有任何的${sectionTitle}`"
-      :empty-hint="`点击上方的 + 按钮添加新${sectionTitle}`"
-      scroll-class="tree-scroll"
-      @toggle-search="toggleSearch"
-      @add="ops.handleAdd(itemType)"
-      @update:search-query="searchQuery = $event"
-      :expandedKeys="expandedKeys"
-      :selectionKeys="selectionKeys"
-      selectionMode="single"
-      :draggable="true"
-      @update:value="onTreeDataUpdate"
-      @update:expandedKeys="updateExpandedKeys"
-      @update:selectionKeys="updateSelectionKeys"
-      @node-select="handleNodeSelect"
-      @node-unselect="handleNodeSelect"
-      @node-expand="handleNodeExpand"
-      @node-collapse="handleNodeCollapse"
-      @node-contextmenu="handleNodeContextMenu"
-      @node-drag-end="currentOnDragEnd"
-    >
-      <template #node="slotProps">
-        <slot name="node" v-bind="slotProps">
-          <div v-if="slotProps.node" class="flex items-center">
-            <span
-              class="material-icons mr-2 text-lg"
-              :style="{ color: getNodeColor(slotProps.node) }"
-            >
-              {{ slotProps.node.icon || defaultIcon }}
-            </span>
-            <span class="flex-1">{{ slotProps.node.label || '' }}</span>
-            <span v-if="slotProps.node.count" class="text-xs text-gray-500 ml-2">{{ slotProps.node.count }}</span>
-          </div>
-        </slot>
-      </template>
-    </TreeSection>
+    <ContextMenu>
+      <ContextMenuTrigger as-child>
+        <div v-if="treeData.length > 0" class="tree-scroll max-h-64 overflow-y-auto">
+          <Draggable
+            ref="treeRef"
+            v-model="treeData"
+            :eachDroppable="eachDroppable"
+            @after-drop="onAfterDrop"
+          >
+            <template #default="{ node, stat }">
+              <div
+                :class="[
+                  'flex items-center min-h-8 py-1 px-2 rounded-md cursor-pointer',
+                  'hover:bg-gray-100 dark:hover:bg-gray-800',
+                  selectedKey === node.id ? 'bg-blue-100 text-blue-700' : ''
+                ]"
+                @click="handleNodeClick(node)"
+                @contextmenu="handleNodeContextMenu(node, $event)"
+              >
+                <!-- 展开/折叠 -->
+                <span
+                  v-if="stat.children.length"
+                  class="material-icons text-base mr-1 text-gray-400 hover:text-gray-600 select-none"
+                  @click.stop="stat.open = !stat.open"
+                >
+                  {{ stat.open ? 'expand_more' : 'chevron_right' }}
+                </span>
+                <span v-else class="inline-block w-5"></span>
+
+                <!-- 图标 -->
+                <span
+                  class="material-icons mr-2 text-lg"
+                  :style="{ color: getNodeColor(node) }"
+                >
+                  {{ node.icon || defaultIcon }}
+                </span>
+
+                <!-- 标签 -->
+                <span class="flex-1 truncate text-sm">{{ node.label }}</span>
+
+                <!-- 计数 -->
+                <span v-if="node.count" class="text-xs text-gray-500 ml-2">{{ node.count }}</span>
+              </div>
+            </template>
+          </Draggable>
+        </div>
+      </ContextMenuTrigger>
+      <ContextMenuContent class="w-52">
+        <template v-for="(item, i) in contextMenuItems" :key="i">
+          <ContextMenuSeparator v-if="item.separator" />
+          <ContextMenuItem v-else :disabled="item.disabled" @click="item.command?.()">
+            <span v-if="item.icon" class="material-icons text-base mr-2">{{ item.icon }}</span>
+            <span class="flex-1">{{ item.label }}</span>
+          </ContextMenuItem>
+        </template>
+      </ContextMenuContent>
+    </ContextMenu>
+
+    <!-- 空状态 -->
+    <div v-if="treeData.length === 0" class="flex flex-col items-center justify-center py-8 text-gray-500">
+      <span class="material-icons text-4xl mb-2 text-gray-400">{{ itemType === 'folder' ? 'folder_open' : 'label' }}</span>
+      <p class="text-sm text-center">还没有任何的{{ sectionTitle }}</p>
+      <p class="text-xs text-gray-400 mt-1">点击上方的 + 按钮添加新{{ sectionTitle }}</p>
+    </div>
 
     <!-- 通用编辑对话框 -->
     <FolderEditDialog
@@ -147,13 +201,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
-import TreeSection from './TreeSection.vue'
+import { computed, ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import { Draggable, dragContext } from '@he-tree/vue'
+import '@he-tree/vue/style/default.css'
 import {
   ContextMenu,
   ContextMenuTrigger,
   ContextMenuContent,
   ContextMenuItem,
+  ContextMenuSeparator,
 } from '@/components/ui/context-menu'
 import FolderEditDialog from '../FolderEditDialog.vue'
 import FolderMoveDialog from '../FolderMoveDialog.vue'
@@ -169,11 +225,22 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Checkbox } from '@/components/ui/checkbox'
-import type { TreeNodeData } from '@/components/ui/volt/Tree.vue'
 import type { FolderItem } from '@renderer/types/components'
-import { useFolderTreeData } from './composables/useFolderTreeData'
-import { useFolderDragDrop } from './composables/useFolderDragDrop'
 import { useFolderOperations } from './composables/useFolderOperations'
+import { miraSDKService } from '@renderer/services/MiraSDKService'
+import { useLibraryStore } from '@renderer/stores/library'
+import { pinyinMatch } from '@renderer/utils/helpers'
+
+interface HeTreeNode {
+  id: string
+  label: string
+  icon?: string
+  count?: number
+  color?: number | null
+  nodeType: string
+  originalData?: any
+  children?: HeTreeNode[]
+}
 
 const convertColorToHex = (color?: number | null): string => {
   if (color === null || color === undefined) return '#6B7280'
@@ -219,47 +286,80 @@ interface Emits {
 }
 
 const emit = defineEmits<Emits>()
+const libraryStore = useLibraryStore()
 const isFolder = computed(() => props.itemType === 'folder')
 const defaultIcon = computed(() => isFolder.value ? 'folder' : 'label')
 const sectionTitle = computed(() => props.title || (isFolder.value ? '文件夹' : '标签'))
 
-// Composables
-const {
-  nodeIdMap,
-  showFolderSearch,
-  showTagSearch,
-  folderSearchQuery,
-  tagSearchQuery,
-  filteredTreeData,
-  filteredTagTreeNodes,
-  toggleFolderSearch,
-  toggleTagSearch,
-} = useFolderTreeData(
-  computed(() => props.folders || []),
-  computed(() => props.tags || []),
-  computed(() => props.itemType),
-)
+// 搜索
+const showSearch = ref(props.defaultShowSearch || false)
+const searchQuery = ref('')
+const searchInputRef = ref<HTMLInputElement | null>(null)
 
-const showSearch = computed(() => isFolder.value ? showFolderSearch.value : showTagSearch.value)
-const searchQuery = computed({
-  get: () => isFolder.value ? folderSearchQuery.value : tagSearchQuery.value,
-  set: (v) => { if (isFolder.value) folderSearchQuery.value = v; else tagSearchQuery.value = v },
+watch(showSearch, (val) => {
+  if (val) nextTick(() => searchInputRef.value?.focus())
 })
-const filteredNodes = computed(() => isFolder.value ? filteredTreeData.value : filteredTagTreeNodes.value)
-const toggleSearch = () => isFolder.value ? toggleFolderSearch() : toggleTagSearch()
 
-// 初始化搜索显示状态
-if (props.defaultShowSearch) {
-  if (isFolder.value) showFolderSearch.value = true
-  else showTagSearch.value = true
+function toggleSearch() {
+  showSearch.value = !showSearch.value
+  if (!showSearch.value) searchQuery.value = ''
 }
 
-const { setupDragEventListeners, onDragEnd: onFolderDragEnd, onTagDragEnd } = useFolderDragDrop(nodeIdMap, {
-  'refresh-folders': () => emit('refresh'),
-  'refresh-tags': () => emit('refresh'),
-})
-const currentOnDragEnd = computed(() => isFolder.value ? onFolderDragEnd : onTagDragEnd)
+// 数据转换：FolderItem[] -> HeTreeNode[]
+function convertFoldersToNodes(items: FolderItem[]): HeTreeNode[] {
+  return items.map(f => ({
+    id: f.id,
+    label: f.label || (f as any).title || (f as any).name,
+    icon: f.icon || 'folder',
+    count: f.count,
+    color: (f as any).originalData?.color ?? (f as any).color,
+    nodeType: 'folder',
+    originalData: (f as any).originalData || f,
+    children: f.children ? convertFoldersToNodes(f.children) : undefined,
+  }))
+}
 
+function convertTagsToNodes(tags: any[]): HeTreeNode[] {
+  return tags.map(t => ({
+    id: `tag-${t.id}`,
+    label: t.name || t.title || t.label,
+    icon: 'label',
+    count: t.fileCount || t.count,
+    color: t.color,
+    nodeType: 'tag',
+    originalData: t,
+    children: undefined,
+  }))
+}
+
+// 过滤
+function filterNodes(nodes: HeTreeNode[], query: string): HeTreeNode[] {
+  const result: HeTreeNode[] = []
+  for (const node of nodes) {
+    const match = pinyinMatch(node.label, query)
+    const filteredChildren = node.children ? filterNodes(node.children, query) : []
+    if (match || filteredChildren.length > 0) {
+      result.push({
+        ...node,
+        children: filteredChildren.length > 0 ? filteredChildren : node.children,
+      })
+    }
+  }
+  return result
+}
+
+const rawNodes = computed<HeTreeNode[]>(() => {
+  return isFolder.value
+    ? convertFoldersToNodes(props.folders || [])
+    : convertTagsToNodes(props.tags || [])
+})
+
+const treeData = computed<HeTreeNode[]>(() => {
+  const q = searchQuery.value.trim()
+  return q ? filterNodes(rawNodes.value, q) : rawNodes.value
+})
+
+// 操作
 const ops = useFolderOperations({
   'folder-add': () => {},
   'folder-edit': () => {},
@@ -279,14 +379,10 @@ const contextMenuItems = computed(() =>
   isFolder.value ? ops.folderContextMenuItems.value : ops.tagContextMenuItems.value
 )
 
-// Selection state
-const selectionKeys = ref<Record<string, boolean>>({})
-const expandedKeys = ref<Record<string, boolean>>({})
-
-// Event handlers
+// 节点交互
 function handleBaseCategoryClick(category: any) {
-  folderSearchQuery.value = ''
-  showFolderSearch.value = false
+  searchQuery.value = ''
+  showSearch.value = false
   emit('select', {
     id: category.id,
     label: category.label,
@@ -297,59 +393,94 @@ function handleBaseCategoryClick(category: any) {
   })
 }
 
-function handleNodeSelect(node: TreeNodeData) {
-  if (!node) return
+function handleNodeClick(node: HeTreeNode) {
   searchQuery.value = ''
-  if (isFolder.value) showFolderSearch.value = false
-  else showTagSearch.value = false
-
+  showSearch.value = false
   emit('select', {
-    id: node.key || '',
-    label: node.label || '',
+    id: node.id,
+    label: node.label,
     icon: node.icon || defaultIcon.value,
     count: node.count,
-    ...node.data,
+    ...node.originalData,
   })
 }
 
-function handleNodeExpand(node: TreeNodeData) {
-  if (node?.data) emit('expand', node.data, true)
+function handleNodeContextMenu(node: HeTreeNode, _event: MouseEvent) {
+  if (isFolder.value) {
+    ops.currentContextFolder.value = { ...node.originalData, id: node.id, label: node.label, icon: node.icon, count: node.count } as FolderItem
+  } else {
+    ops.currentContextTag.value = { ...node.originalData, id: node.id, name: node.label }
+  }
 }
 
-function handleNodeCollapse(node: TreeNodeData) {
-  if (node?.data) emit('expand', node.data, false)
+function getNodeColor(node: HeTreeNode): string {
+  return convertColorToHex(node.color)
 }
 
-function handleNodeContextMenu(node: TreeNodeData, _event: MouseEvent) {
-  if (!node?.data) return
-  if (isFolder.value) ops.currentContextFolder.value = node.data as FolderItem
-  else ops.currentContextTag.value = node.data
+// 拖拽：控制哪些节点可以放置
+function eachDroppable() {
+  // 标签不支持拖拽排序
+  if (!isFolder.value) return false
+  return true
 }
 
-function updateExpandedKeys(keys: Record<string, boolean>) {
-  expandedKeys.value = keys
-}
+// 拖拽完成后执行移动操作
+async function onAfterDrop() {
+  if (!isFolder.value || !libraryStore.currentLibrary) return
 
-function updateSelectionKeys(keys: Record<string, boolean>) {
-  selectionKeys.value = keys
-}
+  const dragNode = dragContext.dragNode
+  if (!dragNode?.data) return
 
-function onTreeDataUpdate() {
+  const draggedId = dragNode.data.id as string
+  const draggedNodeType = dragNode.data.nodeType as string
+  if (draggedNodeType === 'tag') return
+
+  // 拖拽后数据已更新，找到新 parent
+  // 遍历 treeData 找到 draggedId 的新位置
+  const newParentId = findParentId(treeData.value, draggedId)
+
+  // 如果 parent 没变就不调 API
+  const oldParentId = findParentId(rawNodes.value, draggedId)
+  if (newParentId === oldParentId) return
+
+  const libraryId = libraryStore.currentLibrary.id
+  try {
+    await miraSDKService.moveFolder(
+      libraryId,
+      parseInt(draggedId),
+      newParentId ? parseInt(newParentId) : null,
+    )
+  } catch (error) {
+    console.error('Failed to move folder via drag and drop:', error)
+  }
   emit('refresh')
 }
 
-function getNodeColor(node: TreeNodeData): string {
-  if (isFolder.value) return convertColorToHex(node.data?.originalData?.color)
-  return convertColorToHex(node.data?.color)
+// 在树结构中查找 targetId 的直接 parentId（根级返回 null）
+function findParentId(nodes: HeTreeNode[], targetId: string): string | null {
+  for (const node of nodes) {
+    if (node.id === targetId) return null
+    if (node.children) {
+      for (const child of node.children) {
+        if (child.id === targetId) return node.id
+      }
+      for (const child of node.children) {
+        if (child.children) {
+          const found = findParentId(child.children, targetId)
+          if (found !== undefined) return found === null ? child.id : found
+        }
+      }
+    }
+  }
+  return null
 }
 
-// Lifecycle
+// 生命周期
 let refreshListener: ((event: CustomEvent) => void) | null = null
 
 onMounted(() => {
   refreshListener = () => emit('refresh')
   window.addEventListener(`refresh-${isFolder.value ? 'folders' : 'tags'}`, refreshListener as EventListener)
-  setupDragEventListeners()
 })
 
 onUnmounted(() => {
@@ -357,20 +488,6 @@ onUnmounted(() => {
     window.removeEventListener(`refresh-${isFolder.value ? 'folders' : 'tags'}`, refreshListener as EventListener)
   }
 })
-
-// Watchers
-watch(() => props.selectedKey, (key) => {
-  if (key) {
-    selectionKeys.value = {}
-    const baseCategory = props.baseCategoriesConfig.find(c => c.id === key)
-    if (baseCategory) return
-    const items = isFolder.value ? props.folders : []
-    const found = items?.find(f => f.id === key)
-    if (found) selectionKeys.value = { [key]: true }
-  } else {
-    selectionKeys.value = {}
-  }
-}, { immediate: true })
 </script>
 
 <style scoped>
@@ -385,6 +502,8 @@ watch(() => props.selectedKey, (key) => {
 .tree-scroll {
   scrollbar-width: thin;
   scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+  padding-right: 4px;
+  margin-right: -4px;
 }
 
 .tree-scroll::-webkit-scrollbar {
@@ -402,10 +521,5 @@ watch(() => props.selectedKey, (key) => {
 
 .tree-scroll::-webkit-scrollbar-thumb:hover {
   background-color: rgba(156, 163, 175, 0.5);
-}
-
-.tree-scroll {
-  padding-right: 4px;
-  margin-right: -4px;
 }
 </style>
