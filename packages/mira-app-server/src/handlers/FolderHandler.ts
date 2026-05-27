@@ -23,8 +23,9 @@ export class FolderHandler extends MessageHandler {
             switch (action) {
                 case 'file_set':
                     var { fileId, folder } = data;
-                    if (await this.dbService.setFileFolder(fileId, folder)) {
-                        result = { fileId, folder, libraryId };
+                    const folderResult = await this.dbService.setFileFolder(fileId, folder);
+                    if (folderResult.success) {
+                        result = { fileId, folder, libraryId, old_data: folderResult.oldData };
                         this.server.broadcastPluginEvent('file::setFolder', result);
                         this.server.broadcastLibraryEvent(libraryId, 'file::setFolder', result);
                     }

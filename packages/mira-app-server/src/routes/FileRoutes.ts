@@ -81,7 +81,7 @@ export class FileRoutes {
                     };
                     if (uploader) updateData.uploader = uploader;
 
-                    const updateSuccess = await obj.libraryService.updateFile(parseInt(fileId), updateData);
+                    const { success: updateSuccess, oldData } = await obj.libraryService.updateFile(parseInt(fileId), updateData);
 
                     let result = null;
                     if (updateSuccess) {
@@ -114,14 +114,14 @@ export class FileRoutes {
                             ...result,
                             libraryId,
                             fileId: parseInt(fileId),
-                            old_data: existingFile,
+                            old_data: oldData,
                         });
 
                         if (clientId) {
                             const ws = this.backend.webSocketServer?.getWsClientById(libraryId, clientId);
                             ws && this.backend.webSocketServer?.sendToWebsocket(ws, {
                                 eventName: 'file::updated',
-                                data: { fileId: parseInt(fileId), old_data: existingFile }
+                                data: { fileId: parseInt(fileId), old_data: oldData }
                             });
                         }
 
@@ -186,7 +186,7 @@ export class FileRoutes {
                             }
 
                             // 更新文件记录
-                            const updateSuccess = await obj.libraryService.updateFile(parseInt(fileId), updateData);
+                            const { success: updateSuccess, oldData } = await obj.libraryService.updateFile(parseInt(fileId), updateData);
 
                             if (updateSuccess) {
                                 // 获取更新后的文件信息
@@ -218,13 +218,13 @@ export class FileRoutes {
                                     const ws = this.backend.webSocketServer?.getWsClientById(libraryId, clientId);
                                     ws && this.backend.webSocketServer?.sendToWebsocket(ws, {
                                         eventName: 'file::updated',
-                                        data: { path: sourcePath, fileId: parseInt(fileId) }
+                                        data: { path: sourcePath, fileId: parseInt(fileId), old_data: oldData }
                                     });
                                     this.backend.webSocketServer?.broadcastLibraryEvent(libraryId, 'file::updated', {
                                         ...result,
                                         libraryId,
                                         fileId: parseInt(fileId),
-                                        old_data: existingFile,
+                                        old_data: oldData,
                                     });
                                 }
                             }
@@ -689,7 +689,7 @@ export class FileRoutes {
 
                 // 重命名物理文件
                 const oldPath = await obj.libraryService.getItemFilePath(file);
-                const updated = await obj.libraryService.updateFile(parseInt(fileId), { name });
+                const { success: updated, oldData } = await obj.libraryService.updateFile(parseInt(fileId), { name });
 
                 if (updated && oldPath) {
                     const dir = path.dirname(oldPath);
@@ -700,7 +700,7 @@ export class FileRoutes {
                 }
 
                 const result = await obj.libraryService.getFile(parseInt(fileId));
-                this.broadcastFileEvent('file::updated', libraryId, result, parseInt(fileId), file);
+                this.broadcastFileEvent('file::updated', libraryId, result, parseInt(fileId), oldData);
 
                 res.json({ code: 0, message: 'Success', data: result });
             } catch (error) {
@@ -735,9 +735,9 @@ export class FileRoutes {
                     return res.status(400).json({ code: 400, message: 'No valid fields to update' });
                 }
 
-                await obj.libraryService.updateFile(parseInt(fileId), updateData);
+                const { oldData } = await obj.libraryService.updateFile(parseInt(fileId), updateData);
                 const result = await obj.libraryService.getFile(parseInt(fileId));
-                this.broadcastFileEvent('file::updated', libraryId, result, parseInt(fileId), file);
+                this.broadcastFileEvent('file::updated', libraryId, result, parseInt(fileId), oldData);
 
                 res.json({ code: 0, message: 'Success', data: result });
             } catch (error) {

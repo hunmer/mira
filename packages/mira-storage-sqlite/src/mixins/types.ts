@@ -42,6 +42,7 @@ export interface CoreAccessible {
     offset: number;
     total: number;
   }>;
+  getFile(id: number): Promise<Record<string, any> | null>;
   deleteFolder(id: number, deleteFiles?: boolean): Promise<boolean>;
   deleteTag(id: number): Promise<boolean>;
 }

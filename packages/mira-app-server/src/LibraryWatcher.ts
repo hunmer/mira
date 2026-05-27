@@ -232,7 +232,7 @@ export class LibraryWatcher {
       if (moved) {
         // 移动/重命名 → 更新已有记录
         const folderId = await this.resolveFolder(filePath);
-        await this.libraryService.updateFile(moved.id, {
+        const { oldData } = await this.libraryService.updateFile(moved.id, {
           path: filePath,
           name: path.basename(filePath),
           folder_id: folderId,
@@ -245,6 +245,7 @@ export class LibraryWatcher {
           path: filePath,
           name: path.basename(filePath),
           folder_id: folderId,
+          old_data: oldData,
         });
       } else {
         // 全新文件 → 导入

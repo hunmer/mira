@@ -30,6 +30,8 @@ import { useLibraryStore } from '@/renderer/stores/library'
 import { useTagStore } from '@renderer/stores/tag'
 import { useAuthStore } from '@renderer/stores/auth'
 import { useDashboardStore } from '@renderer/stores/dashboard'
+import { useServerListStore } from '@renderer/stores/serverList'
+import { useSettingsStore } from '@renderer/stores/settings'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 
 // Controller import
@@ -136,6 +138,8 @@ const {
 } = windowNavigation
 
 const authStore = useAuthStore()
+const serverListStore = useServerListStore()
+const settingsStore = useSettingsStore()
 const router = useRouter()
 
 const dashboardStore = useDashboardStore()
@@ -171,6 +175,29 @@ const canAccessLibrary = (lib: { allowedRoles?: string[] }) => {
   if (!userRole) return true
   if (!lib.allowedRoles || lib.allowedRoles.length === 0) return true
   return lib.allowedRoles.includes(userRole)
+}
+
+const getLibraryLocalPath = (collection: { path: string }): string | null => {
+  const isDocker = settingsStore.systemHealth?.isDocker ?? false
+  const smb = serverListStore.activeServer?.smb
+  if (!isDocker) return collection.path
+  if (!smb?.enabled || !smb.smbPath) return null
+  const smbPath = smb.smbPath
+  const sep = smbPath.includes('/') ? '/' : '\\'
+  const normalizedSmbPath = smbPath.endsWith(sep) ? smbPath : smbPath + sep
+  if (smb.mountPath && collection.path) {
+    const mountPrefix = smb.mountPath.endsWith('/') ? smb.mountPath : smb.mountPath + '/'
+    return collection.path.replace(mountPrefix, normalizedSmbPath).replace(/\//g, sep)
+  }
+  return normalizedSmbPath + collection.path.replace(/^\//, '').replace(/\//g, sep)
+}
+
+const openLibraryFolder = (collection: any, event: Event) => {
+  event.stopPropagation()
+  const localPath = getLibraryLocalPath(collection)
+  if (!localPath) return
+  const api = (window as any).electronAPI
+  api?.fs?.showItemInFolder(localPath)
 }
 
 const onSelectCollection = (collection: any, close: () => void) => {
@@ -329,12 +356,22 @@ onUnmounted(() => {
                             </div>
                           </div>
                         </div>
-                        <span
-                          v-if="libraryStore.currentLibrary?.id === collection.id"
-                          class="material-icons text-green-500 text-sm"
-                        >
-                          check
-                        </span>
+                        <div class="flex items-center space-x-1">
+                          <button
+                            v-if="getLibraryLocalPath(collection)"
+                            class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                            title="定位到目录"
+                            @click="openLibraryFolder(collection, $event)"
+                          >
+                            <span class="material-icons text-sm">folder_open</span>
+                          </button>
+                          <span
+                            v-if="libraryStore.currentLibrary?.id === collection.id"
+                            class="material-icons text-green-500 text-sm"
+                          >
+                            check
+                          </span>
+                        </div>
                       </div>
                     </div>
 

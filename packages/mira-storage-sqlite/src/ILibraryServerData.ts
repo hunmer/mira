@@ -5,7 +5,7 @@ export interface ILibraryServerData {
   getPublicURL(url: string): string;
   initialize(): Promise<void>;
   createFile(fileData: Record<string, any>): Promise<Record<string, any>>;
-  updateFile(id: number, fileData: Record<string, any>): Promise<boolean>;
+  updateFile(id: number, fileData: Record<string, any>): Promise<{ success: boolean; oldData: Record<string, any> | null }>;
   deleteFile(id: number, options?: { moveToRecycleBin: boolean }): Promise<boolean>;
   recoverFile(id: number): Promise<boolean>;
   emptyTrash(): Promise<{ deletedCount: number; errors: string[] }>;
@@ -58,8 +58,8 @@ export interface ILibraryServerData {
   ): Promise<Record<string, any>>;
   getFileFolder(fileId: number): Promise<Record<string, any>[]>;
   getFileTags(fileId: number): Promise<Record<string, any>[]>;
-  setFileFolder(fileId: number, folderId: number | null): Promise<boolean>;
-  setFileTags(fileId: number, tagIds: string[]): Promise<boolean>;
+  setFileFolder(fileId: number, folderId: number | null): Promise<{ success: boolean; oldData: Record<string, any> | null }>;
+  setFileTags(fileId: number, tagIds: string[]): Promise<{ success: boolean; oldData: Record<string, any> | null }>;
   getAllTags(): Promise<Record<string, any>[]>;
   getAllFolders(): Promise<Record<string, any>[]>;
   getLibraryId(): string;

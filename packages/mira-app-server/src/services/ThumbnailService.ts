@@ -134,7 +134,7 @@ export class ThumbnailService {
 
         if (fs.existsSync(thumbPath)) {
           result.thumb = thumbPath;
-          await dbService.updateFile(result.id, { thumb: 1 });
+          await dbService.updateFile(result.id, { thumb: 1 }); // return value unused
           console.log('Thumbnail generated:', thumbPath);
           this.wsServer?.broadcastLibraryEvent(libraryId, 'thumbnail::generated', result);
         } else {
@@ -156,7 +156,7 @@ export class ThumbnailService {
         if (fs.existsSync(thumbPath)) {
           fs.unlinkSync(thumbPath);
         }
-        await dbService.updateFile(item.id, { thumb: 0 });
+        await dbService.updateFile(item.id, { thumb: 0 }); // return value unused
       } catch (err) {
         console.error('Failed to delete thumbnail:', err);
       }
@@ -183,7 +183,7 @@ export class ThumbnailService {
           await generator.generate(filePath, thumbPath);
 
           if (fs.existsSync(thumbPath)) {
-            await dbService.updateFile(file.id, { thumb: 1 });
+            await dbService.updateFile(file.id, { thumb: 1 }); // return value unused
           }
         } catch (err) {
           console.error('Failed to process thumbnail:', err);

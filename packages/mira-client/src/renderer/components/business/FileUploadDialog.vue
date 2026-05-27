@@ -284,7 +284,6 @@ const { selectedTargetFolderId, folderTreeData, tagTreeData, getFolderName, getT
 
 // 模板引用
 const fileInputRef = ref<HTMLInputElement>()
-const fileGridContainerRef = ref<HTMLElement>()
 const selectionBoxRef = ref()
 
 function handleFileClick(file: any, event: MouseEvent) {

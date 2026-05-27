@@ -116,7 +116,7 @@ export class TagRouter extends BaseRouter {
                 }
 
                 const result = await db.setFileTags(fileId, tagIds);
-                this.sendSuccess(res, { fileId, tags: tagIds, result }, 'File tags set successfully');
+                this.sendSuccess(res, { fileId, tags: tagIds, success: result.success, old_data: result.oldData }, 'File tags set successfully');
             } catch (error) {
                 console.error('Set file tags error:', error);
                 this.sendError(res, 500, 'Internal server error');

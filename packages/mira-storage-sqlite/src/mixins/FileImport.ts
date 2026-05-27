@@ -89,19 +89,21 @@ export const FileImport = {
     return result.changes > 0;
   },
 
-  async setFileFolder(this: CoreAccessible, fileId: number, folderId: number | null): Promise<boolean> {
+  async setFileFolder(this: CoreAccessible, fileId: number, folderId: number | null): Promise<{ success: boolean; oldData: Record<string, any> | null }> {
+    const oldData = await this.getFile(fileId);
     await this.beginTransaction();
     try {
       const ok = await (this as any)._moveFileToFolder(fileId, folderId);
       await this.commitTransaction();
-      return ok;
+      return { success: ok, oldData };
     } catch (err) {
       await this.rollbackTransaction();
       throw err;
     }
   },
 
-  async setFileTags(this: CoreAccessible, fileId: number, tagIds: string[]): Promise<boolean> {
+  async setFileTags(this: CoreAccessible, fileId: number, tagIds: string[]): Promise<{ success: boolean; oldData: Record<string, any> | null }> {
+    const oldData = await this.getFile(fileId);
     await this.beginTransaction();
     try {
       const result = await this.runSql('UPDATE files SET tags = ? WHERE id = ?', [
@@ -109,7 +111,7 @@ export const FileImport = {
         fileId,
       ]);
       await this.commitTransaction();
-      return result.changes > 0;
+      return { success: result.changes > 0, oldData };
     } catch (err) {
       await this.rollbackTransaction();
       throw err;

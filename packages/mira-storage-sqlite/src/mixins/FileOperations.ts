@@ -30,7 +30,10 @@ export const FileOperations = {
     return { id: result.lastID, ...fileData };
   },
 
-  async updateFile(this: CoreAccessible, id: number, fileData: Record<string, any>): Promise<boolean> {
+  async updateFile(this: CoreAccessible, id: number, fileData: Record<string, any>): Promise<{ success: boolean; oldData: Record<string, any> | null }> {
+    const oldData = await this.getFile(id);
+    if (!oldData) return { success: false, oldData: null };
+
     const fields: string[] = [];
     const params: any[] = [];
 
@@ -57,13 +60,13 @@ export const FileOperations = {
     addField('recycled', fileData.recycled ?? 0);
     addField('uploader', fileData.uploader);
 
-    if (fields.length === 0) return false;
+    if (fields.length === 0) return { success: false, oldData };
 
     const query = `UPDATE files SET ${fields.join(', ')} WHERE id = ?`;
     params.push(id);
 
     const result = await this.runSql(query, params);
-    return result.changes > 0;
+    return { success: result.changes > 0, oldData };
   },
 
   async deleteFile(this: CoreAccessible, id: number, options?: { moveToRecycleBin: boolean }): Promise<boolean> {

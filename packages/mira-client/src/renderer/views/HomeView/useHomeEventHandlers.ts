@@ -143,6 +143,8 @@ export function useHomeEventHandlers(
       return
     }
 
+    if (!window.confirm('确定要清空回收站吗？此操作不可撤销。')) return
+
     try {
       const result = await miraSDKService.emptyTrash(libraryId)
       clearTabCache()

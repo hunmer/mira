@@ -36,9 +36,10 @@ export class FileHandler extends MessageHandler {
                     this.server.broadcastLibraryEvent(libraryId, 'file::created', result);
                     break;
                 case 'update':
-                    result = await this.dbService.updateFile(data.id, data);
+                    const { success: updateOk, oldData } = await this.dbService.updateFile(data.id, data);
+                    result = await this.dbService.getFile(data.id);
                     this.server.broadcastPluginEvent('file::updated', { message, result, libraryId });
-                    this.server.broadcastLibraryEvent(libraryId, 'file::updated', { result, libraryId });
+                    this.server.broadcastLibraryEvent(libraryId, 'file::updated', { ...result, libraryId, old_data: oldData });
                     break;
                 case 'recover':
                     var { id } = data;

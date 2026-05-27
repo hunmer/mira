@@ -92,14 +92,24 @@ export class TagTabType extends MediaViewTabType {
 
   shouldUpdateForEvent(tabData: any, eventData: any): boolean {
     if (tabData?.libraryId !== eventData.libraryId) return false
-    // 标签 tab：事件中可能带 tags 信息，检查是否包含该标签
-    if (eventData.tags && Array.isArray(eventData.tags)) {
-      const tabTagId = tabData?.id || tabData?.tagId || tabData?.name
-      return eventData.tags.some((t: any) =>
+    const tabTagId = tabData?.id || tabData?.tagId || tabData?.name
+    if (!tabTagId) return false
+
+    const matchTags = (tags: any[]): boolean =>
+      tags.some((t: any) =>
         String(t?.id || t) === String(tabTagId) || String(t?.title || t) === String(tabTagId)
       )
+
+    // 检查新标签
+    if (eventData.tags) {
+      const tags = typeof eventData.tags === 'string' ? JSON.parse(eventData.tags) : eventData.tags
+      if (Array.isArray(tags) && matchTags(tags)) return true
     }
-    // 没有 tags 信息时保守更新
+    // 检查旧标签（标签被移除时，来源标签 tab 也需更新）
+    if (eventData.old_data?.tags) {
+      const oldTags = typeof eventData.old_data.tags === 'string' ? JSON.parse(eventData.old_data.tags) : eventData.old_data.tags
+      if (Array.isArray(oldTags) && matchTags(oldTags)) return true
+    }
     return false
   }
 }
