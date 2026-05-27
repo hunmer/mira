@@ -5,6 +5,8 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useTheme, type ThemeMode } from '@/composables/useTheme'
 import { useLibrary } from '@/composables/useLibrary'
+
+const SIDEBAR_COOKIE = 'sidebar_state'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
@@ -51,7 +53,17 @@ const visibleNavItems = navItems.filter(
 function setTheme(m: ThemeMode) { themeMode.value = m }
 function setLocale(l: string) { locale.value = l; localStorage.setItem('locale', l) }
 
-onMounted(ensureLoaded)
+const hideSideParam = route.query.hideSide
+const sidebarDefaultOpen = hideSideParam !== undefined ? false : undefined
+
+onMounted(() => {
+  if (hideSideParam !== undefined) {
+    document.cookie = `${SIDEBAR_COOKIE}=false; path=/; max-age=${60 * 60 * 24 * 365}`
+    const { hideSide, ...rest } = route.query
+    router.replace({ query: rest })
+  }
+  ensureLoaded()
+})
 
 function handleLogout() {
   auth.logout()
@@ -62,7 +74,7 @@ function handleLogout() {
 
 <template>
   <Toaster />
-  <SidebarProvider>
+  <SidebarProvider :default-open="sidebarDefaultOpen">
     <Sidebar collapsible="icon">
       <SidebarHeader class="p-4">
         <SidebarMenu>
