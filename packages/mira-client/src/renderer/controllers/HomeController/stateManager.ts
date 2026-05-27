@@ -36,29 +36,18 @@ export class HomeStateManager {
     filterConditions: any,
     onPageReset?: () => void
   ): void => {
-    console.log('HomeController - 筛选器变化:', filterType, {
-      id: filterRule.id,
-      selectedValues: filterRule.selectedValues,
-      value: filterRule.value,
-      selectedPreset: filterRule.selectedPreset
-    })
-
     switch (filterType) {
       case 'folders':
         filterConditions.value.folders = filterRule.selectedValues || []
-        console.log('更新文件夹筛选:', filterConditions.value.folders)
         break
       case 'tags':
         filterConditions.value.tags = filterRule.selectedValues || []
-        console.log('更新标签筛选:', filterConditions.value.tags)
         break
       case 'urls':
         filterConditions.value.urls = filterRule.value || ''
-        console.log('更新网址筛选:', filterConditions.value.urls)
         break
       case 'title':
         filterConditions.value.title = filterRule.value || ''
-        console.log('更新标题筛选:', filterConditions.value.title)
         break
       case 'size':
         if (filterRule.selectedPreset === 'custom') {
@@ -69,11 +58,6 @@ export class HomeStateManager {
           filterConditions.value.sizeMax = filterRule.sizeMax
         }
         filterConditions.value.sizePreset = filterRule.selectedPreset
-        console.log('更新大小筛选:', {
-          min: filterConditions.value.sizeMin,
-          max: filterConditions.value.sizeMax,
-          preset: filterConditions.value.sizePreset
-        })
         break
     }
 
@@ -89,8 +73,6 @@ export class HomeStateManager {
    * @param onPageReset - 页面重置回调
    */
   public handleFilterClear = (filterType: string, filterConditions: any, onPageReset?: () => void): void => {
-    console.log('清除筛选器:', filterType)
-
     switch (filterType) {
       case 'folders':
         filterConditions.value.folders = []
@@ -129,8 +111,6 @@ export class HomeStateManager {
     filterConditions: any,
     onPageReset?: () => void
   ): void => {
-    console.log('应用筛选器到标签:', tabId, filters)
-
     // 重置筛选条件
     filterConditions.value = {
       folders: [],
@@ -195,8 +175,6 @@ export class HomeStateManager {
    * @param onRefresh - 刷新回调
    */
   public handleToolbarAction = async (buttonId: string, onRefresh?: () => Promise<void>): Promise<void> => {
-    console.log('Toolbar action:', buttonId)
-
     switch (buttonId) {
       case 'upload':
         // 打开文件上传对话框
@@ -222,8 +200,6 @@ export class HomeStateManager {
    * @param selectedItems - 选中项目引用
    */
   public handleContentAction = (buttonId: string, mediaItems: any[], selectedItems: any): void => {
-    console.log('Content action:', buttonId)
-
     switch (buttonId) {
       case 'select-all':
         selectedItems.value = mediaItems.map(item => item.id)
@@ -309,10 +285,10 @@ export class HomeStateManager {
         this.folderStore.refreshFolders(libraryId),
         this.tagStore.refreshTags(libraryId)
       ])
-
-      console.log('✅ Data refreshed successfully')
     }
   }
+
+  /**
 
   /**
    * 初始化控制器

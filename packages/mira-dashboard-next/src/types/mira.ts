@@ -12,7 +12,6 @@ export interface Library {
   pluginsDir?: string
   allowedRoles?: string[]
   customFields?: {
-    path: string
     enableHash: boolean
     enableAutoSync?: boolean
     [key: string]: any

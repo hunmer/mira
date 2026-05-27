@@ -390,7 +390,7 @@ export class FileRoutes {
         this.router.delete('/:libraryId/trash', async (req: Request, res: Response) => {
             try {
                 const user = (req as any).user;
-                if (!user || user.role !== 'admin') {
+                if (!user || (user.role !== 'admin' && user.role !== 'super')) {
                     return res.status(403).json({
                         success: false,
                         error: '权限不足，清空回收站需要管理员权限',

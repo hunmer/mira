@@ -7,7 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog'
-import { RiArrowDownSLine, RiFolderLine, RiAddLine } from '@remixicon/vue'
+import { RiArrowDownSLine } from '@remixicon/vue'
 import client from '@/api/client'
 import PathTreeNode from './PathTreeNode.vue'
 

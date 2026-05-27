@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { libraryApi } from '@/api'
 import type { Library } from '@/types/mira'
 import { useAuthStore } from './auth'

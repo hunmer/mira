@@ -15,9 +15,9 @@ export const useAuthStore = defineStore('auth', () => {
   async function login(username: string, password: string) {
     const res = await authApi.login({ username, password })
     const body = res.data
-    if (body.code === 0 && body.data?.accessToken) {
-      token.value = body.data.accessToken
-      localStorage.setItem('token', body.data.accessToken)
+    if (body.success && body.data?.token) {
+      token.value = body.data.token
+      localStorage.setItem('token', body.data.token)
 
       // 优先使用登录响应中的用户信息，否则通过 /user/info 获取
       if (body.data.user) {
