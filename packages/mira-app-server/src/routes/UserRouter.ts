@@ -66,7 +66,7 @@ export class UserRouter {
                         roles: [userInfo.role], // vben期望的角色数组
                         permissions: permissions, // 权限码数组
                         userGroup: userGroup, // 用户组信息
-                        registrationDate: new Date(userInfo.created_at).toISOString().split('T')[0], // 注册日期
+                        registrationDate: userInfo.created_at,
                         // 添加更多用户信息字段以符合vben标准
                         avatar: `/api/user/avatar/${user.id}`,
                         desc: userGroup, // 用户描述使用用户组

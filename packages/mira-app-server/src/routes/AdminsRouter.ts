@@ -20,8 +20,8 @@ export class AdminsRouter {
                 const admins = users.map((user: any) => ({
                     id: user.id.toString(),
                     username: user.username,
-                    email: user.email || `${user.username}@mira.local`,
-                    role: 'admin',
+                    email: user.email || '',
+                    role: user.role,
                     createdAt: user.created_at ? new Date(user.created_at).toISOString() : new Date().toISOString(),
                     updatedAt: user.updated_at ? new Date(user.updated_at).toISOString() : new Date().toISOString()
                 }));
@@ -67,7 +67,7 @@ export class AdminsRouter {
                 const hashedPassword = userStorage.hashPassword(password);
                 const newAdmin = {
                     username,
-                    email: email || `${username}@mira.local`,
+                    email: email || '',
                     password: hashedPassword,
                     role: 'admin',
                     permissions: ['admin'],

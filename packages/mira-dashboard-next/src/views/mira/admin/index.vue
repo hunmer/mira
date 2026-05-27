@@ -19,7 +19,7 @@ const { t } = useI18n()
 const admins = ref<User[]>([])
 const loading = ref(false)
 const dialogOpen = ref(false)
-const editing = ref<{ id?: string; username: string; email: string; password: string } | null>(null)
+const editing = ref<{ id?: string; username: string; email: string; password: string; role: string } | null>(null)
 
 async function loadAdmins() {
   loading.value = true
@@ -112,11 +112,11 @@ onMounted(loadAdmins)
             <TableCell class="font-medium">{{ admin.username }}</TableCell>
             <TableCell class="text-muted-foreground">{{ admin.email }}</TableCell>
             <TableCell>
-              <Badge :variant="admin.role === 'super' ? 'default' : 'secondary'">
-                {{ admin.role === 'super' ? t('admin.superAdmin') : t('admin.admin') }}
+              <Badge :variant="admin.role === 'super' ? 'default' : admin.role === 'admin' ? 'secondary' : 'outline'">
+                {{ admin.role === 'super' ? t('admin.superAdmin') : admin.role === 'admin' ? t('admin.admin') : admin.role }}
               </Badge>
             </TableCell>
-            <TableCell class="text-muted-foreground">{{ admin.createdAt }}</TableCell>
+            <TableCell class="text-muted-foreground">{{ admin.createdAt?.slice(0, 10) }}</TableCell>
             <TableCell>
               <div class="flex gap-1">
                 <Button variant="ghost" size="icon" @click="openEdit(admin)">
