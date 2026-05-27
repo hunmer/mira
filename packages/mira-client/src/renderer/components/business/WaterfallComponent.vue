@@ -126,6 +126,8 @@ const emit = defineEmits<Emits>()
 
 const selectionBoxRef = ref<InstanceType<typeof SelectionBox> | null>(null)
 const waterfallRef = ref()
+const thumbnailRatios = ref<Record<string, number>>({})
+const thumbnailRatiosReady = ref(false)
 const settingsStore = useSettingsStore()
 const { focusSelectionBox, isSelectionBoxFocused } = useFocusedSelectAll(selectionBoxRef, props, emit)
 const { handleDeleteKeyDown, handleEditAction } = useDeleteSelectedItems(props, emit, {
@@ -169,11 +171,63 @@ watch(currentVideoItem, (newItem) => {
   }
 })
 
-// 用真实宽高计算 ratio，没有 metadata 时才用 hash 生成确定性 fallback
+// 预加载缩略图真实比例，避免图片进入视口后再改变瀑布流高度。
+let preloadVersion = 0
+
+const getItemUrl = (item: FileInfo): string => item.thumbnailPath || item.url || ''
+
+const readImageRatio = (url: string): Promise<number | null> => {
+  if (!url) return Promise.resolve(null)
+
+  return new Promise((resolve) => {
+    const image = new Image()
+
+    image.onload = () => {
+      if (image.naturalWidth > 0 && image.naturalHeight > 0) {
+        resolve(image.naturalWidth / image.naturalHeight)
+        return
+      }
+
+      resolve(null)
+    }
+
+    image.onerror = () => resolve(null)
+    image.src = url
+  })
+}
+
+const preloadThumbnailRatios = async (items: FileInfo[]) => {
+  const currentVersion = ++preloadVersion
+  thumbnailRatiosReady.value = false
+
+  const entries = await Promise.all(items.map(async (item) => {
+    const ratio = await readImageRatio(getItemUrl(item))
+    return ratio ? [item.id, ratio] as const : null
+  }))
+
+  if (currentVersion !== preloadVersion) return
+
+  thumbnailRatios.value = entries.reduce<Record<string, number>>((ratios, entry) => {
+    if (entry) {
+      ratios[entry[0]] = entry[1]
+    }
+
+    return ratios
+  }, {})
+  thumbnailRatiosReady.value = true
+}
+
+watch(
+  () => props.items.map(item => `${item.id}:${getItemUrl(item)}`),
+  () => {
+    void preloadThumbnailRatios(props.items)
+  },
+  { immediate: true }
+)
+
 const getItemRatio = (item: FileInfo): number => {
-  const w = item.metadata?.width
-  const h = item.metadata?.height
-  if (w && h) return Math.min(Math.max(w / h, 0.6), 1.8)
+  const thumbnailRatio = thumbnailRatios.value[item.id]
+  if (thumbnailRatio) return thumbnailRatio
 
   let seed = 0
   for (let i = 0; i < item.id.length; i++) seed = ((seed << 5) - seed + item.id.charCodeAt(i)) | 0
@@ -181,9 +235,11 @@ const getItemRatio = (item: FileInfo): number => {
 }
 
 const waterfallItems = computed(() => {
+  if (!thumbnailRatiosReady.value) return []
+
   return props.items.map(item => ({
     ...item,
-    url: item.thumbnailPath || item.url || '',
+    url: getItemUrl(item),
     ratio: getItemRatio(item)
   }))
 })

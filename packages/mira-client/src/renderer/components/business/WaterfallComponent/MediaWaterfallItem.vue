@@ -29,8 +29,7 @@
           :src="url"
           :filename="item.name"
           :alt="item.name"
-          img-class="w-full h-full object-cover"
-          @load="$emit('image-success', url)"
+          img-class="w-full h-full object-contain"
           @error="$emit('image-error', url)"
         />
       </div>
@@ -124,9 +123,7 @@ interface Props {
 }
 
 interface Emits extends MediaItemEmits {
-  (e: 'image-load', url: string): void
   (e: 'image-error', url: string): void
-  (e: 'image-success', url: string): void
   (e: 'toggle-mute'): void
 }
 
