@@ -34,6 +34,9 @@ export class DeviceRoutes {
         // 获取特定素材库的设备连接信息
         this.router.get('/library/:libraryId', this.getLibraryDevices.bind(this));
 
+        // 广播消息（指定设备或全部）
+        this.router.post('/broadcast', this.broadcastMessage.bind(this));
+
         // 断开特定设备连接
         this.router.post('/disconnect', this.disconnectDevice.bind(this));
         this.router.post('/:clientId/disconnect', this.disconnectDeviceByClientId.bind(this));
@@ -46,6 +49,69 @@ export class DeviceRoutes {
 
         // 获取设备统计信息
         this.router.get('/stats', this.getDeviceStats.bind(this));
+    }
+
+    private async broadcastMessage(req: Request, res: Response): Promise<void> {
+        try {
+            const { message, title, clientIds } = req.body;
+
+            if (!message) {
+                res.status(400).json({ success: false, error: 'message is required' });
+                return;
+            }
+
+            const webSocketServer = this.backend.getWebSocketServer();
+            if (!webSocketServer) {
+                res.status(500).json({ success: false, error: 'WebSocket server not available' });
+                return;
+            }
+
+            const payload = {
+                eventName: 'notification',
+                data: {
+                    title: title || 'Administrator',
+                    body: message,
+                    timestamp: new Date().toISOString(),
+                    from: 'administrator',
+                },
+            };
+
+            let sentCount = 0;
+
+            if (clientIds && Array.isArray(clientIds) && clientIds.length > 0) {
+                // 发送给指定设备
+                for (const clientId of clientIds) {
+                    const found = this.findDeviceClient(clientId);
+                    if (found && found.client.readyState === WebSocket.OPEN) {
+                        webSocketServer.sendToWebsocket(found.client, payload);
+                        sentCount++;
+                    }
+                }
+            } else {
+                // 发送给所有设备
+                for (const clients of Object.values(webSocketServer.libraryClients)) {
+                    for (const client of clients) {
+                        if (client.readyState === WebSocket.OPEN) {
+                            webSocketServer.sendToWebsocket(client, payload);
+                            sentCount++;
+                        }
+                    }
+                }
+            }
+
+            res.json({
+                success: true,
+                data: { sentCount },
+                timestamp: new Date().toISOString(),
+            });
+        } catch (error) {
+            console.error('Failed to broadcast message:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to broadcast message',
+                details: error instanceof Error ? error.message : String(error),
+            });
+        }
     }
 
     private async getAllDevices(req: Request, res: Response): Promise<void> {

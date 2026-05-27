@@ -1,17 +1,48 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { DeviceInfo } from '@/types/mira'
 import { deviceApi } from '@/api'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { toast } from 'vue-sonner'
-import { RiLoader4Line, RiComputerLine, RiMacbookLine } from '@remixicon/vue'
+import { RiLoader4Line, RiComputerLine, RiMacbookLine, RiNotificationLine } from '@remixicon/vue'
 
 const { t } = useI18n()
 const devices = ref<DeviceInfo[]>([])
 const loading = ref(false)
+const selectedIds = ref<Set<string>>(new Set())
+const dialogOpen = ref(false)
+const broadcastMsg = ref('')
+const sending = ref(false)
+
+const selectedCount = computed(() => selectedIds.value.size)
+const allSelected = computed(() => devices.value.length > 0 && selectedIds.value.size === devices.value.length)
+
+function toggleSelect(id: string) {
+  const s = new Set(selectedIds.value)
+  if (s.has(id)) s.delete(id)
+  else s.add(id)
+  selectedIds.value = s
+}
+
+function toggleAll() {
+  if (allSelected.value) {
+    selectedIds.value = new Set()
+  } else {
+    selectedIds.value = new Set(devices.value.map(d => d.id))
+  }
+}
 
 async function loadDevices() {
   loading.value = true
@@ -33,6 +64,7 @@ async function loadDevices() {
     } else {
       devices.value = Array.isArray(raw) ? raw : []
     }
+    selectedIds.value = new Set()
   } catch {
     toast.error(t('common.failed'))
   } finally {
@@ -50,6 +82,37 @@ async function disconnectDevice(id: string) {
   }
 }
 
+function openBroadcastDialog() {
+  broadcastMsg.value = ''
+  dialogOpen.value = true
+}
+
+async function sendBroadcast() {
+  if (!broadcastMsg.value.trim()) {
+    toast.warning(t('device.messageRequired'))
+    return
+  }
+  sending.value = true
+  try {
+    const payload: any = {
+      message: broadcastMsg.value.trim(),
+      title: 'Administrator',
+    }
+    // 只传选中的设备；空数组时后端发给全部
+    if (selectedIds.value.size > 0 && !allSelected.value) {
+      payload.clientIds = [...selectedIds.value]
+    }
+    const res = await deviceApi.broadcast(payload)
+    const count = res.data?.data?.sentCount ?? 0
+    toast.success(t('device.sendSuccess', { count }))
+    dialogOpen.value = false
+  } catch {
+    toast.error(t('common.failed'))
+  } finally {
+    sending.value = false
+  }
+}
+
 onMounted(loadDevices)
 </script>
 
@@ -57,10 +120,16 @@ onMounted(loadDevices)
   <div class="space-y-6">
     <div class="flex items-center justify-between">
       <h1 class="text-2xl font-bold">{{ t('device.title') }}</h1>
-      <Button variant="outline" @click="loadDevices">
-        <RiLoader4Line class="mr-2 size-4" :class="{ 'animate-spin': loading }" />
-        {{ t('common.refresh') }}
-      </Button>
+      <div class="flex items-center gap-2">
+        <Button variant="outline" @click="openBroadcastDialog">
+          <RiNotificationLine class="mr-2 size-4" />
+          {{ t('device.broadcast') }}
+        </Button>
+        <Button variant="outline" @click="loadDevices">
+          <RiLoader4Line class="mr-2 size-4" :class="{ 'animate-spin': loading }" />
+          {{ t('common.refresh') }}
+        </Button>
+      </div>
     </div>
 
     <div v-if="loading" class="py-12 text-center text-muted-foreground">
@@ -72,45 +141,106 @@ onMounted(loadDevices)
       {{ t('common.noData') }}
     </div>
 
-    <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <Card v-for="device in devices" :key="device.id" class="overflow-hidden">
-        <CardContent class="p-5">
-          <div class="mb-3 flex items-start justify-between">
-            <div class="flex items-center gap-3">
-              <div class="flex size-10 items-center justify-center rounded-lg bg-muted">
-                <RiMacbookLine v-if="device.type === 'Electron'" class="size-5 text-foreground" />
-                <RiComputerLine v-else class="size-5 text-foreground" />
+    <template v-else>
+      <div v-if="selectedCount > 0" class="flex items-center gap-2 text-sm text-muted-foreground">
+        {{ t('device.selectedDevices', { count: selectedCount }) }}
+      </div>
+      <label v-else class="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
+        <input
+          type="checkbox"
+          :checked="allSelected"
+          class="size-4 rounded border-gray-300 accent-primary"
+          @change.prevent="toggleAll()"
+        />
+        {{ t('device.allDevices') }}
+      </label>
+
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <Card
+          v-for="device in devices"
+          :key="device.id"
+          class="relative overflow-hidden transition-colors"
+          :class="selectedIds.has(device.id) ? 'ring-2 ring-primary' : ''"
+        >
+          <!-- 右上角 checkbox -->
+          <label class="absolute right-3 top-3 z-10 flex cursor-pointer items-center">
+            <input
+              type="checkbox"
+              :checked="selectedIds.has(device.id)"
+              class="size-4 rounded border-gray-300 text-primary accent-primary"
+              @change.prevent="toggleSelect(device.id)"
+            />
+          </label>
+
+          <CardContent class="p-5">
+            <div class="mb-3 flex items-start justify-between">
+              <div class="flex items-center gap-3">
+                <div class="flex size-10 items-center justify-center rounded-lg bg-muted">
+                  <RiMacbookLine v-if="device.type === 'Electron'" class="size-5 text-foreground" />
+                  <RiComputerLine v-else class="size-5 text-foreground" />
+                </div>
+                <div>
+                  <div class="font-medium leading-tight">{{ device.name }}</div>
+                  <div class="text-xs text-muted-foreground">{{ device.type }}</div>
+                </div>
               </div>
-              <div>
-                <div class="font-medium leading-tight">{{ device.name }}</div>
-                <div class="text-xs text-muted-foreground">{{ device.type }}</div>
-              </div>
+              <Badge :variant="device.status === 'connected' ? 'default' : 'secondary'">
+                {{ device.status === 'connected' ? t('device.connected') : t('device.disconnected') }}
+              </Badge>
             </div>
-            <Badge :variant="device.status === 'connected' ? 'default' : 'secondary'">
-              {{ device.status === 'connected' ? t('device.connected') : t('device.disconnected') }}
-            </Badge>
-          </div>
 
-          <div v-if="device.libraryId" class="mb-3 text-xs text-muted-foreground">
-            Library: {{ device.libraryId }}
-          </div>
+            <div v-if="device.libraryId" class="mb-3 text-xs text-muted-foreground">
+              Library: {{ device.libraryId }}
+            </div>
 
-          <div v-if="device.lastSeen" class="mb-3 text-xs text-muted-foreground">
-            {{ t('device.lastSeen') }}: {{ device.lastSeen }}
-          </div>
+            <div v-if="device.lastSeen" class="mb-3 text-xs text-muted-foreground">
+              {{ t('device.lastSeen') }}: {{ device.lastSeen }}
+            </div>
 
-          <div class="flex justify-end border-t pt-3">
-            <Button
-              v-if="device.status === 'connected'"
-              variant="ghost"
-              size="sm"
-              @click="disconnectDevice(device.id)"
-            >
-              {{ t('device.disconnect') }}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+            <div class="flex justify-end border-t pt-3">
+              <Button
+                v-if="device.status === 'connected'"
+                variant="ghost"
+                size="sm"
+                @click="disconnectDevice(device.id)"
+              >
+                {{ t('device.disconnect') }}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </template>
+
+    <!-- 广播对话框 -->
+    <Dialog v-model:open="dialogOpen">
+      <DialogContent class="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{{ t('device.broadcastTitle') }}</DialogTitle>
+          <DialogDescription>
+            <span v-if="selectedCount > 0">
+              {{ t('device.broadcastTo') }}: {{ t('device.selectedDevices', { count: selectedCount }) }}
+            </span>
+            <span v-else>{{ t('device.broadcastTo') }}: {{ t('device.allDevices') }}</span>
+          </DialogDescription>
+        </DialogHeader>
+
+        <Textarea
+          v-model="broadcastMsg"
+          :placeholder="t('device.broadcastPlaceholder')"
+          rows="4"
+        />
+
+        <DialogFooter>
+          <Button variant="outline" @click="dialogOpen = false">
+            {{ t('common.cancel') }}
+          </Button>
+          <Button :disabled="sending || !broadcastMsg.trim()" @click="sendBroadcast">
+            <RiLoader4Line v-if="sending" class="mr-2 size-4 animate-spin" />
+            {{ t('device.send') }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
