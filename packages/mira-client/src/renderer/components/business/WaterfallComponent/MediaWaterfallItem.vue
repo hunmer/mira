@@ -11,6 +11,7 @@
     <!-- 图片/视频容器 - 使用固定高度避免视频播放时布局变化 -->
     <div
       class="relative w-full"
+      :style="mediaContainerStyle"
       @dblclick="handleDoubleClick"
       @contextmenu.prevent="handleContextMenu"
       @mouseenter="handleMouseEnter"
@@ -20,7 +21,7 @@
     >
       <!-- 图片/缩略图容器 (始终占用空间，视频播放时透明) -->
       <div
-        class="relative overflow-hidden"
+        class="absolute inset-0 overflow-hidden"
         :class="{ 'opacity-0': isVideoPlaying }"
       >
         <MediaThumbnail
@@ -28,7 +29,7 @@
           :src="url"
           :filename="item.name"
           :alt="item.name"
-          img-class="w-full object-cover"
+          img-class="w-full h-full object-cover"
           @load="$emit('image-success', url)"
           @error="$emit('image-error', url)"
         />
@@ -107,7 +108,7 @@
 </template>
 
 <script setup lang="ts">
-import { toRef, watch } from 'vue'
+import { computed, toRef, watch } from 'vue'
 import MediaThumbnail from '@renderer/components/common/MediaThumbnail.vue'
 import type { FileInfo } from '../../../../shared/types'
 import { useMediaItem, type MediaItemEmits } from '@renderer/composables/useMediaItem'
@@ -115,6 +116,7 @@ import { useMediaItem, type MediaItemEmits } from '@renderer/composables/useMedi
 interface Props {
   item: FileInfo
   url: string
+  ratio?: number
   isSelected: boolean
   isVideoPlaying?: boolean
   isMuted?: boolean
@@ -131,10 +133,15 @@ interface Emits extends MediaItemEmits {
 const props = withDefaults(defineProps<Props>(), {
   isVideoPlaying: false,
   isMuted: false,
-  progress: 0
+  progress: 0,
+  ratio: 1
 })
 
 const emit = defineEmits<Emits>()
+
+const mediaContainerStyle = computed(() => ({
+  aspectRatio: `${props.ratio} / 1`
+}))
 
 // 调试：监控视频播放状态变化
 watch(() => props.isVideoPlaying, (isPlaying) => {

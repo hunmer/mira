@@ -34,6 +34,7 @@
         <MediaWaterfallItem
           :item="item"
           :url="url"
+          :ratio="item.ratio"
           :is-selected="selectedItems.includes(item.id)"
           :is-video-playing="currentVideoItem?.id === item.id"
           :is-muted="settingsStore.settings.videoPreviewMuted"
@@ -45,9 +46,7 @@
           @mouse-leave="handleMouseLeave"
           @mouse-move="handleMouseMove"
           @pointer-down="handlePointerDown"
-          @image-load="handleImageLoad"
           @image-error="handleImageError"
-          @image-success="handleImageSuccess"
           @toggle-mute="toggleVideoMute"
         >
           <template #video-preview="{ item: videoItem, isPlaying }">
@@ -116,7 +115,7 @@ const props = withDefaults(defineProps<Props>(), {
   rowKey: 'id',
   imgSelector: 'url',
   backgroundColor: '#f8fafc',
-  animationEffect: 'fadeIn',
+  animationEffect: '',
   animationDuration: 1000,
   animationDelay: 300,
   lazyload: true,
@@ -170,14 +169,22 @@ watch(currentVideoItem, (newItem) => {
   }
 })
 
-// 转换数据格式以适配插件
+// 用真实宽高计算 ratio，没有 metadata 时才用 hash 生成确定性 fallback
+const getItemRatio = (item: FileInfo): number => {
+  const w = item.metadata?.width
+  const h = item.metadata?.height
+  if (w && h) return Math.min(Math.max(w / h, 0.6), 1.8)
+
+  let seed = 0
+  for (let i = 0; i < item.id.length; i++) seed = ((seed << 5) - seed + item.id.charCodeAt(i)) | 0
+  return (Math.abs(seed) % 50) / 100 + 0.8
+}
+
 const waterfallItems = computed(() => {
   return props.items.map(item => ({
     ...item,
-    // 确保有url字段用于图片显示
     url: item.thumbnailPath || item.url || '',
-    // 为瀑布流添加随机高度比例
-    ratio: Math.random() * 0.5 + 0.8 // 0.8-1.3之间的随机比例
+    ratio: getItemRatio(item)
   }))
 })
 
@@ -194,12 +201,14 @@ const breakpoints = computed(() => ({
   }
 }))
 
-// 懒加载配置
+// 懒加载配置 - rootMargin 提前加载视口外的图片，避免滚动时重排
 const loadProps = computed(() => ({
-  loading: '', // 可以设置loading图片
-  error: '', // 可以设置错误图片
+  loading: '',
+  error: '',
+  observerOptions: {
+    rootMargin: '1000px 0px'
+  },
   ratioCalculator: (width: number, height: number) => {
-    // 控制图片比例，避免过于极端的长宽比
     const minRatio = 0.6
     const maxRatio = 1.8
     const curRatio = width / height
@@ -287,20 +296,15 @@ const handleAfterRender = () => {
   emit('after-render')
 }
 
-let refreshTimer: ReturnType<typeof setTimeout> | null = null
-
-const handleImageLoad = (_url: string) => {}
+// 暴露重新渲染方法
+const refresh = () => {
+  if (waterfallRef.value) {
+    waterfallRef.value.renderer()
+  }
+}
 
 const handleImageError = (url: string) => {
   console.error('Image load error:', url)
-}
-
-const handleImageSuccess = (_url: string) => {
-  if (refreshTimer) clearTimeout(refreshTimer)
-  refreshTimer = setTimeout(() => {
-    refresh()
-    refreshTimer = null
-  }, 100)
 }
 
 // 视频静音切换
@@ -357,13 +361,6 @@ const onVideoPreviewError = (error: Event) => {
   console.error('Video preview error:', error)
 }
 
-// 暴露重新渲染方法
-const refresh = () => {
-  if (waterfallRef.value) {
-    waterfallRef.value.renderer()
-  }
-}
-
 defineExpose({
   refresh
 })
@@ -377,7 +374,6 @@ onUnmounted(() => {
   window.removeEventListener('keydown', handleDeleteKeyDown)
   document.removeEventListener('edit-action', handleEditAction)
   stopVideoPreview()
-  if (refreshTimer) clearTimeout(refreshTimer)
 })
 </script>
 
