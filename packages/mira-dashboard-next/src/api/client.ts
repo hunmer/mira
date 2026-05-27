@@ -8,7 +8,7 @@ function normalizeBaseURL(url: string) {
 }
 
 function getBaseURL() {
-  const raw = localStorage.getItem(STORAGE_KEY) || import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081/api'
+  const raw = localStorage.getItem(STORAGE_KEY) || import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:8081/api`
   return normalizeBaseURL(raw)
 }
 
@@ -37,7 +37,7 @@ export function getApiBaseURL() {
 }
 
 export function getDefaultBaseURL() {
-  return normalizeBaseURL(import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081/api')
+  return normalizeBaseURL(import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:8081/api`)
 }
 
 client.interceptors.request.use((config: InternalAxiosRequestConfig) => {
