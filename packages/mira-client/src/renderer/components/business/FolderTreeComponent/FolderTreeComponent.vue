@@ -93,6 +93,7 @@
             ref="treeRef"
             v-model="treeData"
             :eachDroppable="eachDroppable"
+            @before-drag-start="onBeforeDragStart"
             @after-drop="onAfterDrop"
           >
             <template #default="{ node, stat }">
@@ -194,6 +195,23 @@
         <AlertDialogFooter>
           <AlertDialogCancel @click="ops.showDeleteDialog.value = false">取消</AlertDialogCancel>
           <AlertDialogAction @click="ops.confirmDelete">删除</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
+    <!-- 拖拽移动确认对话框 -->
+    <AlertDialog v-model:open="showDragConfirm">
+      <AlertDialogOverlay />
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>确认移动</AlertDialogTitle>
+          <AlertDialogDescription>
+            确定将文件夹「{{ dragConfirmInfo.dragName }}」移动到{{ dragConfirmInfo.targetLabel }}吗？
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel @click="cancelDragMove">取消</AlertDialogCancel>
+          <AlertDialogAction @click="confirmDragMove">确认移动</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
@@ -417,15 +435,27 @@ function getNodeColor(node: HeTreeNode): string {
   return convertColorToHex(node.color)
 }
 
-// 拖拽：控制哪些节点可以放置
+// 拖拽：标签不支持拖拽排序
 function eachDroppable() {
-  // 标签不支持拖拽排序
-  if (!isFolder.value) return false
-  return true
+  return isFolder.value
 }
 
-// 拖拽完成后执行移动操作
-async function onAfterDrop() {
+// 拖拽确认状态
+const showDragConfirm = ref(false)
+const dragConfirmInfo = ref({ dragId: '', dragName: '', newParentId: null as string | null, targetLabel: '' })
+
+// 拖拽前记录旧 parentId
+let beforeDragParentId: string | null = null
+
+function onBeforeDragStart() {
+  if (!isFolder.value) return
+  const dragNode = dragContext.dragNode
+  if (!dragNode?.data) return
+  beforeDragParentId = dragNode.parent?.data?.id ?? null
+}
+
+// 拖拽完成后弹出确认
+function onAfterDrop() {
   if (!isFolder.value || !libraryStore.currentLibrary) return
 
   const dragNode = dragContext.dragNode
@@ -435,44 +465,46 @@ async function onAfterDrop() {
   const draggedNodeType = dragNode.data.nodeType as string
   if (draggedNodeType === 'tag') return
 
-  // 拖拽后数据已更新，找到新 parent
-  // 遍历 treeData 找到 draggedId 的新位置
-  const newParentId = findParentId(treeData.value, draggedId)
+  const newParentId = dragNode.parent?.data?.id ?? null
 
-  // 如果 parent 没变就不调 API
-  const oldParentId = findParentId(rawNodes.value, draggedId)
-  if (newParentId === oldParentId) return
+  if (newParentId === beforeDragParentId) {
+    emit('refresh')
+    return
+  }
 
+  const dragName = dragNode.data.label as string
+  const parentLabel = dragNode.parent?.data?.label ?? ''
+  const targetLabel = newParentId
+    ? `「${parentLabel}」下`
+    : '根目录'
+
+  dragConfirmInfo.value = { dragId: draggedId, dragName, newParentId, targetLabel }
+  showDragConfirm.value = true
+}
+
+async function confirmDragMove() {
+  showDragConfirm.value = false
+  if (!libraryStore.currentLibrary) return
+
+  const { dragId, newParentId } = dragConfirmInfo.value
   const libraryId = libraryStore.currentLibrary.id
   try {
     await miraSDKService.moveFolder(
       libraryId,
-      parseInt(draggedId),
+      parseInt(dragId),
       newParentId ? parseInt(newParentId) : null,
     )
   } catch (error) {
     console.error('Failed to move folder via drag and drop:', error)
   }
+  beforeDragParentId = null
   emit('refresh')
 }
 
-// 在树结构中查找 targetId 的直接 parentId（根级返回 null）
-function findParentId(nodes: HeTreeNode[], targetId: string): string | null {
-  for (const node of nodes) {
-    if (node.id === targetId) return null
-    if (node.children) {
-      for (const child of node.children) {
-        if (child.id === targetId) return node.id
-      }
-      for (const child of node.children) {
-        if (child.children) {
-          const found = findParentId(child.children, targetId)
-          if (found !== undefined) return found === null ? child.id : found
-        }
-      }
-    }
-  }
-  return null
+function cancelDragMove() {
+  showDragConfirm.value = false
+  beforeDragParentId = null
+  emit('refresh')
 }
 
 // 生命周期

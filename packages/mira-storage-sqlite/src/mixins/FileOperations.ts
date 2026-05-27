@@ -1,0 +1,295 @@
+import * as fs from 'fs';
+import { CoreAccessible } from './types';
+
+export const FileOperations = {
+  async createFile(this: CoreAccessible, fileData: Record<string, any>): Promise<Record<string, any>> {
+    const result = await this.runSql(
+      `INSERT INTO files(
+        name, created_at, imported_at, size, hash,
+        custom_fields, notes, stars, folder_id,
+        reference, path, thumb, recycled, tags, uploader
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        fileData.name,
+        fileData.created_at,
+        fileData.imported_at,
+        fileData.size,
+        fileData.hash,
+        fileData.custom_fields,
+        fileData.notes,
+        fileData.stars ?? 0,
+        fileData.folder_id,
+        fileData.reference,
+        fileData.path,
+        fileData.thumb ?? 0,
+        fileData.recycled ?? 0,
+        fileData.tags,
+        fileData.uploader ?? null,
+      ]
+    );
+    return { id: result.lastID, ...fileData };
+  },
+
+  async updateFile(this: CoreAccessible, id: number, fileData: Record<string, any>): Promise<boolean> {
+    const fields: string[] = [];
+    const params: any[] = [];
+
+    const addField = (key: string, value: any) => {
+      if (fileData[key] !== undefined) {
+        fields.push(`${key} = ?`);
+        params.push(value);
+      }
+    };
+
+    addField('name', fileData.name);
+    addField('created_at', fileData.created_at);
+    addField('imported_at', fileData.imported_at);
+    addField('size', fileData.size);
+    addField('hash', fileData.hash);
+    addField('custom_fields', fileData.custom_fields);
+    addField('notes', fileData.notes);
+    addField('stars', fileData.stars ?? 0);
+    addField('tags', fileData.tags);
+    addField('folder_id', fileData.folder_id);
+    addField('reference', fileData.reference);
+    addField('path', fileData.path);
+    addField('thumb', fileData.thumb ?? 0);
+    addField('recycled', fileData.recycled ?? 0);
+    addField('uploader', fileData.uploader);
+
+    if (fields.length === 0) return false;
+
+    const query = `UPDATE files SET ${fields.join(', ')} WHERE id = ?`;
+    params.push(id);
+
+    const result = await this.runSql(query, params);
+    return result.changes > 0;
+  },
+
+  async deleteFile(this: CoreAccessible, id: number, options?: { moveToRecycleBin: boolean }): Promise<boolean> {
+    const query = options?.moveToRecycleBin
+      ? 'UPDATE files SET recycled = 1 WHERE id = ?'
+      : 'DELETE FROM files WHERE id = ?';
+    const result = await this.runSql(query, [id]);
+    return result.changes > 0;
+  },
+
+  async recoverFile(this: CoreAccessible, id: number): Promise<boolean> {
+    const result = await this.runSql('UPDATE files SET recycled = 0 WHERE id = ?', [id]);
+    return result.changes > 0;
+  },
+
+  async emptyTrash(this: CoreAccessible): Promise<{ deletedCount: number; errors: string[] }> {
+    const rows = await this.getSql('SELECT id, name, folder_id, hash FROM files WHERE recycled = 1');
+    if (rows.length === 0) return { deletedCount: 0, errors: [] };
+
+    const errors: string[] = [];
+    let deletedCount = 0;
+
+    for (const row of rows) {
+      const item = this.rowToMap(row);
+      try {
+        const filePath = await this.getItemFilePath(item);
+        if (filePath) {
+          try { fs.unlinkSync(filePath); } catch {}
+        }
+        const thumbPath = await this.getItemThumbPath(item);
+        if (thumbPath) {
+          try { fs.unlinkSync(thumbPath); } catch {}
+        }
+      } catch (e) {
+        errors.push(`file ${item.id}: ${e instanceof Error ? e.message : String(e)}`);
+      }
+
+      const result = await this.runSql('DELETE FROM files WHERE id = ?', [item.id]);
+      if (result.changes > 0) deletedCount++;
+    }
+
+    return { deletedCount, errors };
+  },
+
+  async getFile(this: CoreAccessible, id: number): Promise<Record<string, any> | null> {
+    const rows = await this.getSql('SELECT * FROM files WHERE id = ? LIMIT 1', [id]);
+    return rows.length > 0 ? this.rowToMap(rows[0]) : null;
+  },
+
+  async getFiles(this: CoreAccessible, options?: {
+    select?: string;
+    filters?: Record<string, any>;
+    isUrlFile?: boolean;
+    countFile?: boolean;
+  }): Promise<{
+    result: Record<string, any>[];
+    limit: number;
+    offset: number;
+    total: number;
+  }> {
+    const select = options?.select || '*';
+    const filters = options?.filters || {};
+    const whereClauses: string[] = [];
+    const params: any[] = [];
+    const folderId = parseInt(filters.folder?.toString() || '0') || 0;
+    const tagIds = Array.isArray(filters.tags) ? filters.tags.map((id: any) => id.toString()) : [];
+    const limit = parseInt(filters.limit?.toString() || '100') || 100;
+    const offset = parseInt(filters.offset?.toString() || '0') || 0;
+    console.log({filters})
+
+    if (filters.recycled !== undefined) {
+      whereClauses.push('recycled = ?');
+      params.push(filters.recycled ? 1 : 0);
+    }
+
+    if (filters.thumb !== undefined) {
+      whereClauses.push('thumb = ?');
+      params.push(filters.thumb ? 1 : 0);
+    }
+
+    if (filters.star !== undefined) {
+      whereClauses.push('stars >= ?');
+      params.push(filters.star);
+    }
+
+    if (filters.title) {
+      whereClauses.push('name LIKE ?');
+      params.push(`%${filters.title}%`);
+    }
+
+    if (filters.name) {
+      whereClauses.push('name LIKE ?');
+      params.push(`%${filters.name}%`);
+    }
+
+    if (filters.url) {
+      whereClauses.push('website LIKE ?');
+      params.push(`%${filters.url}%`);
+    }
+
+    if (filters.category) {
+      const extMap: Record<string, string[]> = {
+        image: ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg', '.ico', '.tiff', '.tif'],
+        video: ['.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv', '.webm', '.m4v', '.mpg', '.mpeg', '.3gp'],
+        audio: ['.mp3', '.wav', '.flac', '.aac', '.ogg', '.wma', '.m4a', '.ape', '.opus'],
+      };
+      const exts = extMap[filters.category];
+      if (exts) {
+        const placeholders = exts.map(() => 'LOWER(name) LIKE ?').join(' OR ');
+        whereClauses.push(`(${placeholders})`);
+        params.push(...exts.map((ext: string) => `%${ext}`));
+      }
+    }
+
+    if (filters.dateRange) {
+      let startTime = filters.dateRange.start.getTime();
+      let endTime = filters.dateRange.end.getTime();
+      const today = new Date();
+      const isToday =
+        filters.dateRange.end.getFullYear() === today.getFullYear() &&
+        filters.dateRange.end.getMonth() === today.getMonth() &&
+        filters.dateRange.end.getDate() === today.getDate();
+      if (isToday) {
+        const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+        endTime = endOfToday.getTime();
+      }
+      whereClauses.push('created_at BETWEEN ? AND ?');
+      params.push(startTime, endTime);
+    }
+
+    const sizeMin = filters.size_min ?? filters.minSize;
+    if (sizeMin !== undefined) {
+      whereClauses.push('size >= ?');
+      params.push(sizeMin * 1024);
+    }
+
+    const sizeMax = filters.size_max ?? filters.maxSize;
+    if (sizeMax !== undefined) {
+      whereClauses.push('size <= ?');
+      params.push(sizeMax * 1024);
+    }
+
+    if (filters.minRating !== undefined) {
+      whereClauses.push('stars >= ?');
+      params.push(filters.minRating);
+    }
+
+    if (filters.folder === '=null' || filters.folder === null) {
+      whereClauses.push('(folder_id IS NULL OR folder_id = 0)');
+    } else if (folderId !== 0) {
+      whereClauses.push('folder_id = ?');
+      params.push(folderId);
+    }
+
+    if (filters.tags === '=null' || filters.tags === null) {
+      whereClauses.push("(tags IS NULL OR tags = '[]' OR json_array_length(tags) = 0)");
+    } else if (tagIds.length > 0) {
+      const tagPlaceholders = tagIds.map(() => '?').join(',');
+      whereClauses.push(`(
+        SELECT COUNT(DISTINCT value)
+        FROM json_each(tags)
+        WHERE value IN (${tagPlaceholders})
+      ) = ${tagIds.length}`);
+      params.push(...tagIds);
+    }
+
+    if (filters.custom_fields) {
+      const customFields = filters.custom_fields;
+      const convertValue = (value: any) => {
+        if (value == 'null') {
+          value = null;
+        }
+        return value;
+      }
+      for (const [key, value] of Object.entries(customFields)) {
+        if (typeof value === 'string' && value.startsWith('!=')) {
+          let actualValue: string | null = value.substring(2).trim();
+          whereClauses.push(`(json_extract(custom_fields, '$.${key}') IS NOT NULL OR json_extract(custom_fields, '$.${key}') != ?)`);
+          params.push(convertValue(actualValue));
+        } else if (typeof value === 'string' && value.startsWith('>')) {
+          whereClauses.push(`json_extract(custom_fields, '$.${key}') > ?`);
+          params.push(convertValue(value.substring(1).trim()));
+        } else if (typeof value === 'string' && value.startsWith('<')) {
+          whereClauses.push(`json_extract(custom_fields, '$.${key}') < ?`);
+          params.push(convertValue(value.substring(1).trim()));
+        } else {
+          whereClauses.push(`json_extract(custom_fields, '$.${key}') = ?`);
+          params.push(convertValue(value));
+        }
+      }
+    }
+
+    const where = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+    let orderBy = '';
+    if (filters?.sort) {
+      const order = filters?.order || 'asc';
+      if (filters.sort === 'custom_fields') {
+        orderBy = ` ORDER BY json_extract(custom_fields, '$') ${order}`;
+      } else {
+        orderBy = ` ORDER BY ${filters.sort} ${order}`;
+      }
+    }
+
+    const query = `SELECT ${select} FROM files ${where}${orderBy} LIMIT ? OFFSET ?`;
+    const countQuery = `SELECT COUNT(*) as total FROM files ${where}`;
+
+    const [rows, countRows] = await Promise.all([
+      this.getSql(query, [...params, limit, offset]),
+      this.getSql(countQuery, params),
+    ]);
+
+    let result = rows.map((row: any) => this.rowToMap(row));
+    if (!options?.countFile) {
+      result = await this.processingFiles(result, options?.isUrlFile ?? true);
+    }
+
+    return {
+      result,
+      limit,
+      offset,
+      total: countRows[0].total,
+    };
+  },
+
+  async queryFile(this: CoreAccessible, query: Record<string, any>, isUrlFile: boolean = true): Promise<Record<string, any>[]> {
+    const { result } = await this.getFiles({ filters: query });
+    return this.processingFiles(result, isUrlFile);
+  },
+};
