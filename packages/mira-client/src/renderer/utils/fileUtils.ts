@@ -44,6 +44,10 @@ export function getPreviewImageSource(image: FileInfo | undefined): string | und
   return image?.localFile || image?.path || image?.url
 }
 
+export function getMediaFileUrl(file: FileInfo | undefined): string {
+  return toFileUrl(getPreviewImageSource(file)) || ''
+}
+
 export function getCacheBustedPreviewImageSource(
   image: FileInfo | undefined,
   cacheKey?: string | number

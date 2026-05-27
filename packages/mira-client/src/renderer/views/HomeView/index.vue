@@ -355,15 +355,15 @@ onUnmounted(() => {
         </div>
 
         <!-- Tabs 导航 -->
-        <div class="flex items-center space-x-2 flex-1 min-w-0 overflow-hidden mt-2">
+        <div class="flex items-center flex-1 min-w-0 mt-2">
           <ContextMenu>
             <ContextMenuTrigger as-child>
-              <div class="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1 overflow-x-auto max-w-full">
+              <div class="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1 overflow-x-auto max-w-full scrollbar-thin">
                 <button
                   v-for="tab in activeTabs"
                   :key="tab.id"
                   :class="[
-                    'px-3 py-1.5 text-sm font-medium rounded-md flex items-center space-x-2 min-w-0',
+                    'px-3 py-1.5 text-sm font-medium rounded-md flex items-center space-x-2 shrink-0',
                     tab.active
                       ? 'text-blue-700 dark:text-blue-400 bg-white dark:bg-gray-700 shadow-sm'
                       : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-white/50 dark:hover:bg-gray-700/50'

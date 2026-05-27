@@ -159,6 +159,7 @@ import SelectionBox from '@renderer/components/common/SelectionBox.vue'
 import MediaThumbnail from '@renderer/components/common/MediaThumbnail.vue'
 import { useVideoPreview } from '@renderer/composables/useVideoPreview'
 import type { FileInfo } from '../../../shared/types'
+import { getMediaFileUrl } from '@renderer/utils/fileUtils'
 import { useDeleteSelectedItems } from './MediaGridComponent/composables/useDeleteSelectedItems'
 import { useFocusedSelectAll } from './MediaGridComponent/composables/useFocusedSelectAll'
 
@@ -297,17 +298,7 @@ const videoPreview = useVideoPreview({
 })
 
 // 获取视频 URL
-const getVideoUrl = (data: FileInfo): string => {
-  if (data.url) return data.url
-  const filePath = data.localFile || data.path
-  if (!filePath) return ''
-  if (filePath.startsWith('http://') || filePath.startsWith('https://') || filePath.startsWith('file://')) return filePath
-  let normalizedPath = filePath.replace(/\\/g, '/')
-  if (normalizedPath.match(/^[a-zA-Z]:/)) return `file:///${normalizedPath}`
-  if (normalizedPath.startsWith('//')) return `file:${normalizedPath}`
-  if (normalizedPath.startsWith('/')) return `file://${normalizedPath}`
-  return `file:///${normalizedPath}`
-}
+const getVideoUrl = getMediaFileUrl
 
 const handleThumbnailHover = (data: FileInfo) => {
   if (getFileType(data) === 'video') {

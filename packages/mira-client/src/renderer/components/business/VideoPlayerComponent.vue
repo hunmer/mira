@@ -41,6 +41,7 @@ import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import Plyr from 'plyr'
 import 'plyr/dist/plyr.css'
 import type { FileInfo } from '../../../shared/types'
+import { getMediaFileUrl } from '@renderer/utils/fileUtils'
 
 interface Props {
   video?: FileInfo
@@ -158,16 +159,7 @@ const plyrOptions = {
 }
 
 // 绑定 Plyr 事件（只调用一次）
-const getVideoSrc = (video: FileInfo): string => {
-  const filePath = video.localFile || video.path
-  if (!filePath) return video.url || ''
-  if (filePath.startsWith('http://') || filePath.startsWith('https://') || filePath.startsWith('file://')) return filePath
-  const normalizedPath = filePath.replace(/\\/g, '/')
-  if (normalizedPath.match(/^[a-zA-Z]:/)) return `file:///${normalizedPath}`
-  if (normalizedPath.startsWith('//')) return `file:${normalizedPath}`
-  if (normalizedPath.startsWith('/')) return `file://${normalizedPath}`
-  return `file:///${normalizedPath}`
-}
+const getVideoSrc = getMediaFileUrl
 
 const buildPlayerSource = (video: FileInfo) => ({
   type: 'video' as const,

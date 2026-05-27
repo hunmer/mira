@@ -20,6 +20,7 @@ import { computed, ref, watch } from 'vue'
 import { throttle } from 'throttle-debounce'
 import VideoPreview from '../../common/VideoPreview.vue'
 import type { FileInfo } from '../../../../shared/types'
+import { getMediaFileUrl } from '@renderer/utils/fileUtils'
 
 interface VideoPreviewAPI {
   play(): Promise<void> | undefined
@@ -51,18 +52,7 @@ const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
 // 优先使用 localFile（本地/SMB 映射路径），回退到 HTTP path
-const videoSrc = computed(() => {
-  const item = props.currentVideoItem
-  if (!item) return ''
-  const filePath = item.localFile || item.path
-  if (!filePath) return ''
-  if (filePath.startsWith('http://') || filePath.startsWith('https://') || filePath.startsWith('file://')) return filePath
-  const normalizedPath = filePath.replace(/\\/g, '/')
-  if (normalizedPath.match(/^[a-zA-Z]:/)) return `file:///${normalizedPath}`
-  if (normalizedPath.startsWith('//')) return `file:${normalizedPath}`
-  if (normalizedPath.startsWith('/')) return `file://${normalizedPath}`
-  return `file:///${normalizedPath}`
-})
+const videoSrc = computed(() => getMediaFileUrl(props.currentVideoItem))
 
 const videoPreviewComponent = ref<VideoPreviewAPI | null>(null)
 
