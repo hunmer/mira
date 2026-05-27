@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+defineOptions({ name: 'Home' })
+import { ref, computed, watch, onMounted, onUnmounted, onActivated, onDeactivated, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 
 // Component imports
@@ -93,6 +94,17 @@ const {
   handleReopenClosedTab,
   handleCloseCurrentTab
 } = tabManagement
+
+const tabScrollContainer = ref<HTMLElement>()
+
+watch(() => currentTab.value?.id, () => {
+  nextTick(() => {
+    const container = tabScrollContainer.value
+    if (!container) return
+    const active = container.querySelector('[data-active-tab="true"]') as HTMLElement
+    active?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })
+  })
+})
 
 // ============================================
 // 素材库管理
@@ -218,6 +230,40 @@ onMounted(async () => {
     handleReopenClosedTab,
     handleCloseCurrentTab
   )
+})
+
+// ============================================
+// keep-alive 滚动位置保持
+// ============================================
+const sidebarScrollRef = ref<HTMLElement>()
+const mainContentRef = ref<HTMLElement>()
+const savedScrollPositions = new Map<string, number>()
+
+onDeactivated(() => {
+  if (sidebarScrollRef.value) {
+    savedScrollPositions.set('sidebar', sidebarScrollRef.value.scrollTop)
+  }
+  if (mainContentRef.value) {
+    mainContentRef.value.querySelectorAll('.overflow-y-auto, .overflow-auto').forEach((el, i) => {
+      savedScrollPositions.set(`main-${i}`, (el as HTMLElement).scrollTop)
+    })
+  }
+})
+
+onActivated(() => {
+  nextTick(() => {
+    if (sidebarScrollRef.value && savedScrollPositions.has('sidebar')) {
+      sidebarScrollRef.value.scrollTop = savedScrollPositions.get('sidebar')!
+    }
+    if (mainContentRef.value) {
+      mainContentRef.value.querySelectorAll('.overflow-y-auto, .overflow-auto').forEach((el, i) => {
+        const key = `main-${i}`
+        if (savedScrollPositions.has(key)) {
+          (el as HTMLElement).scrollTop = savedScrollPositions.get(key)!
+        }
+      })
+    }
+  })
 })
 
 // ============================================
@@ -358,10 +404,11 @@ onUnmounted(() => {
         <div class="flex items-center flex-1 min-w-0 mt-2">
           <ContextMenu>
             <ContextMenuTrigger as-child>
-              <div class="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1 overflow-x-auto max-w-full scrollbar-thin">
+              <div ref="tabScrollContainer" class="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1 overflow-x-auto max-w-full scrollbar-thin">
                 <button
                   v-for="tab in activeTabs"
                   :key="tab.id"
+                  :data-active-tab="tab.active"
                   :class="[
                     'px-3 py-1.5 text-sm font-medium rounded-md flex items-center space-x-2 shrink-0',
                     tab.active
@@ -455,7 +502,7 @@ onUnmounted(() => {
         <!-- 左侧侧边栏 -->
         <ResizablePanel :default-size="20" :min-size="15" class="bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden">
           <!-- 文件夹树形导航 -->
-          <div class="flex-grow p-2 overflow-y-auto min-w-0 space-y-4">
+          <div ref="sidebarScrollRef" class="flex-grow p-2 overflow-y-auto min-w-0 space-y-4">
             <FolderTreeComponent
               item-type="folder"
               :folders="homeController.folderTree.value"
@@ -490,7 +537,7 @@ onUnmounted(() => {
         <!-- 右侧主内容区 -->
         <ResizablePanel :default-size="80" :min-size="50" class="flex flex-col bg-gray-100 dark:bg-gray-900 overflow-hidden">
         <!-- 主内容区域 -->
-        <main class="flex-1 flex p-2 overflow-hidden relative min-w-0">
+        <main ref="mainContentRef" class="flex-1 flex p-2 overflow-hidden relative min-w-0">
           <!-- Tab视图内容 -->
           <div class="flex-1 mr-2 min-w-0 overflow-hidden">
             <TabViewRenderer

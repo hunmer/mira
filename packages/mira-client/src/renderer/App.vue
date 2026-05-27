@@ -81,7 +81,9 @@
       <main class="flex-1 overflow-hidden">
         <router-view v-slot="{ Component, route: currentRoute }">
           <transition :name="String(currentRoute.meta?.transition ?? 'fade')" mode="out-in">
-            <component :is="Component" :key="currentRoute.name" />
+            <keep-alive include="Home">
+              <component :is="Component" :key="currentRoute.name" />
+            </keep-alive>
           </transition>
         </router-view>
       </main>

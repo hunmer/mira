@@ -354,6 +354,12 @@ export interface ElectronAPI {
     isPackaged: () => Promise<boolean>
   }
 
+  // 通知 API
+  notification: {
+    show: (options: { title: string; body?: string; silent?: boolean }) => Promise<{ success: boolean; error?: string }>
+    isSupported: () => Promise<boolean>
+  }
+
   // 兼容性API（用于插件）
   startDrag: (filePath: string, iconInfo?: { iconPath?: string; iconType?: string }) => Promise<{ success: boolean; message?: string }>
 

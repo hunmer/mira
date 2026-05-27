@@ -189,6 +189,14 @@ const electronAPI: ElectronAPI = {
       ipcRenderer.invoke('app:isPackaged')
   },
 
+  // 通知 API
+  notification: {
+    show: (options: { title: string; body?: string; silent?: boolean }) =>
+      ipcRenderer.invoke('notification:show', options),
+    isSupported: () =>
+      ipcRenderer.invoke('notification:is-supported')
+  },
+
   // 兼容性API（用于插件）
   startDrag: (filePath: string, iconInfo?: { iconPath?: string; iconType?: string }) =>
     ipcRenderer.invoke('drag-drop:start', filePath, iconInfo),

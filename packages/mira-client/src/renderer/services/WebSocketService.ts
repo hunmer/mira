@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { useLibraryStore } from '../stores/library'
 import { useAuthStore } from '../stores/auth'
+import { useSettingsStore } from '../stores/settings'
 import { useTabs } from '../composables/useTabs'
 import ConfigStorage from '../utils/ConfigStorage'
 
@@ -324,6 +325,22 @@ export async function initializeWebSocket(config: WebSocketConfig): Promise<bool
 }
 
 /**
+ * 显示桌面通知
+ */
+function showDesktopNotification(title: string, body?: string): void {
+  const settingsStore = useSettingsStore()
+  if (!settingsStore.settings.enableNotifications) return
+
+  window.electronAPI?.notification.show({
+    title,
+    body: body || '',
+    silent: false,
+  }).catch((err: Error) => {
+    console.warn('Failed to show notification:', err.message)
+  })
+}
+
+/**
  * 设置WebSocket事件监听器
  */
 function setupEventListeners(libraryStore: any): void {
@@ -401,6 +418,12 @@ function setupEventListeners(libraryStore: any): void {
     window.dispatchEvent(new CustomEvent('thumbnail-updated', {
       detail: { fileId: String(data.id), thumbPath: data.thumb }
     }))
+  })
+
+  // 监听通知事件
+  webSocketService.addEventListener('notification', (data) => {
+    console.log('Notification received:', data)
+    showDesktopNotification(data.title, data.body)
   })
 }
 

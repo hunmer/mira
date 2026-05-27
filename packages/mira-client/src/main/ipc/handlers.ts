@@ -10,6 +10,7 @@ import { SearchWindowHandlers } from './SearchWindowHandlers'
 import { MenuHandlers } from './MenuHandlers'
 import { ShortcutHandlers } from './ShortcutHandlers'
 import { AutoUpdateHandlers } from './AutoUpdateHandlers'
+import { NotificationHandlers } from './NotificationHandlers'
 import { getAutoUpdater } from '../services/useAutoUpdater'
 
 /**
@@ -28,6 +29,7 @@ export class IPCHandlers {
   private menuHandlers: MenuHandlers
   private shortcutHandlers: ShortcutHandlers
   private autoUpdateHandlers: AutoUpdateHandlers
+  private notificationHandlers: NotificationHandlers
 
   constructor() {
     this.pluginHandler = new PluginHandler()
@@ -41,6 +43,7 @@ export class IPCHandlers {
     this.menuHandlers = new MenuHandlers()
     this.shortcutHandlers = new ShortcutHandlers()
     this.autoUpdateHandlers = new AutoUpdateHandlers()
+    this.notificationHandlers = new NotificationHandlers()
 
     // 注册本地插件管理
     this.pluginHandler.registerHandlers()
