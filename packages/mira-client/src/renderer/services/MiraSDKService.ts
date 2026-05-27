@@ -916,6 +916,22 @@ export class MiraSDKService {
   }
 
   /**
+   * 批量更新文件夹排序 index
+   */
+  async updateFolderSortIndex(libraryId: string, items: { id: number; sort_index: number }[]): Promise<any> {
+    if (!this.client) throw new Error('Not connected to Mira server')
+    return await this.client.folders().updateSortIndex(libraryId, items)
+  }
+
+  /**
+   * 批量更新标签排序 index
+   */
+  async updateTagSortIndex(libraryId: string, items: { id: number; sort_index: number }[]): Promise<any> {
+    if (!this.client) throw new Error('Not connected to Mira server')
+    return await this.client.tags().updateSortIndex(libraryId, items)
+  }
+
+  /**
    * 克隆文件夹
    */
   async cloneFolder(

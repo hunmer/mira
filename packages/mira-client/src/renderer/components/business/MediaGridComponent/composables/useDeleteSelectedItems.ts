@@ -2,6 +2,7 @@ import { ref } from 'vue'
 import type { FileInfo } from '../../../../../shared/types'
 import { appService } from '../../../../services'
 import { useLibraryStore } from '../../../../stores/library'
+import { runBatchOperation } from '../../../../composables/useBatchOperation'
 
 interface UseDeleteSelectedItemsProps {
   items: FileInfo[]
@@ -46,27 +47,13 @@ export function useDeleteSelectedItems(
     try {
       const libraryStore = useLibraryStore()
       const deletedFiles: FileInfo[] = []
-      let failed = 0
 
-      for (const file of selectedFiles) {
+      await runBatchOperation(selectedFiles, async (file) => {
         const libraryId = file.libraryId || libraryStore.currentLibrary?.id
-        if (!libraryId) {
-          failed++
-          continue
-        }
-
-        try {
-          await appService.deleteFile(libraryId, file.id)
-          deletedFiles.push(file)
-        } catch (error) {
-          failed++
-          console.error('删除文件失败:', file.id, error)
-        }
-      }
-
-      if (failed > 0) {
-        console.error(`删除失败: ${failed} 个文件`)
-      }
+        if (!libraryId) throw new Error('缺少库ID')
+        await appService.deleteFile(libraryId, file.id)
+        deletedFiles.push(file)
+      }, { label: '删除' })
 
       deletedFiles.forEach(file => {
         emit('media-select', file, false)

@@ -30,12 +30,16 @@ export async function runBatchOperation<T>(
       ? (failed === 0 ? `${options.label}完成 ${completed}/${total}` : `${options.label}完成: 成功${completed}, 失败${failed}`)
       : `${options.label} ${current}/${total}`
 
+    if (done) {
+      toast.dismiss(toastId)
+    }
+
     toast.custom(
-      h('div', { class: 'w-64 space-y-1.5' }, [
+      h('div', { class: 'w-64 space-y-1.5 p-3' }, [
         h('p', { class: 'text-sm font-medium' }, text),
         h(Progress, { modelValue: percent, class: 'h-1.5' })
       ]),
-      { id: toastId, duration: done ? (failed > 0 ? 5000 : 3000) : Infinity }
+      { id: done ? undefined : toastId, duration: done ? (failed > 0 ? 5000 : 3000) : Infinity }
     )
   }
 

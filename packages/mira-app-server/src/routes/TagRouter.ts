@@ -43,6 +43,28 @@ export class TagRouter extends BaseRouter {
             });
         });
 
+        // 批量设置标签排序 index
+        this.router.put('/sort-index', async (req: Request, res: Response) => {
+            try {
+                const libraryId = req.body.libraryId || req.query.libraryId as string;
+                const validation = await this.validateLibrary(libraryId);
+                if (!validation.success) { res.status(validation.error!.code).json(validation.error); return; }
+
+                const items: { id: number; sort_index: number }[] = req.body.items;
+                if (!Array.isArray(items)) { this.sendError(res, 400, 'items must be an array'); return; }
+
+                const db = validation.library!.libraryService;
+                for (const item of items) {
+                    await db.updateTag(item.id, { sort_index: item.sort_index });
+                }
+                this.broadcastTagEvent('tag::updated', libraryId, { items, libraryId });
+                this.sendSuccess(res, { updated: items.length }, 'Sort index updated');
+            } catch (error) {
+                console.error('Update tag sort-index error:', error);
+                this.sendError(res, 500, 'Internal server error');
+            }
+        });
+
         // 删除标签
         this.router.delete('/delete', async (req: Request, res: Response) => {
             await this.handleCrudOperation(req, res, 'delete', 'deleteTag', {

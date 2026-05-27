@@ -48,8 +48,6 @@ export class ShortcutHandlers {
     actionId: string
   ): Promise<boolean> {
     try {
-      logger.debug('ShortcutHandlers', 'Registering global shortcut', { shortcut, actionId })
-
       // 检查快捷键是否已经被注册
       if (this.registeredShortcuts.has(shortcut)) {
         logger.warn('ShortcutHandlers', 'Shortcut already registered, unregistering first', { shortcut })
@@ -58,8 +56,6 @@ export class ShortcutHandlers {
 
       // 注册全局快捷键
       const success = globalShortcut.register(shortcut, () => {
-        logger.debug('ShortcutHandlers', 'Global shortcut triggered', { shortcut, actionId })
-
         // 向渲染进程发送快捷键触发事件
         if (this.mainWindow && !this.mainWindow.isDestroyed()) {
           this.mainWindow.webContents.send('shortcut:triggered', actionId)
@@ -135,7 +131,6 @@ export class ShortcutHandlers {
         shortcuts[shortcut] = actionId
       }
 
-      logger.debug('ShortcutHandlers', 'Returning registered shortcuts', { count: Object.keys(shortcuts).length })
       return shortcuts
     } catch (error) {
       logger.error('ShortcutHandlers', 'Error getting registered shortcuts', { error })
@@ -149,12 +144,10 @@ export class ShortcutHandlers {
   private async unregisterShortcut(shortcut: string): Promise<boolean> {
     try {
       if (!this.registeredShortcuts.has(shortcut)) {
-        logger.debug('ShortcutHandlers', 'Shortcut not registered, nothing to unregister', { shortcut })
         return true
       }
 
       const actionId = this.registeredShortcuts.get(shortcut)
-      logger.debug('ShortcutHandlers', 'Unregistering global shortcut', { shortcut, actionId })
 
       // 从Electron全局快捷键中注销
       globalShortcut.unregister(shortcut)

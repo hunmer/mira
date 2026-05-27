@@ -5,13 +5,14 @@ import { CoreAccessible } from './types';
 export const FolderOperations = {
   async createFolder(this: CoreAccessible, folderData: Record<string, any>): Promise<number> {
     const result = await this.runSql(
-      'INSERT INTO folders(id, title, parent_id, color, icon) VALUES (?, ?, ?, ?, ?)',
+      'INSERT INTO folders(id, title, parent_id, color, icon, sort_index) VALUES (?, ?, ?, ?, ?, ?)',
       [
         folderData.id,
         folderData.title,
         folderData.parent_id,
         folderData.color,
         folderData.icon,
+        folderData.sort_index ?? 0,
       ]
     );
     return result.lastID;
@@ -32,6 +33,7 @@ export const FolderOperations = {
     addField('parent_id', folderData.parent_id);
     addField('color', folderData.color);
     addField('icon', folderData.icon);
+    addField('sort_index', folderData.sort_index);
 
     if (fields.length === 0) return false;
 
@@ -124,7 +126,7 @@ export const FolderOperations = {
   },
 
   async getAllFolders(this: CoreAccessible): Promise<Record<string, any>[]> {
-    const rows = await this.getSql('SELECT * FROM folders', []);
+    const rows = await this.getSql('SELECT * FROM folders ORDER BY sort_index ASC, id ASC', []);
     return rows.map(row => this.rowToMap(row));
   },
 

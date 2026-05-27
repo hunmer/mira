@@ -213,6 +213,13 @@ export class TagModule {
     }
 
     /**
+     * 批量更新标签排序 index
+     */
+    async updateSortIndex(libraryId: string, items: { id: number; sort_index: number }[]): Promise<any> {
+        return await this.httpClient.put('/api/tags/sort-index', { libraryId, items });
+    }
+
+    /**
      * 便捷方法：删除标签
      * @param libraryId 素材库ID
      * @param id 标签ID

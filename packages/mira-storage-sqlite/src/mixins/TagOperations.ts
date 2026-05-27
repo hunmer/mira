@@ -3,13 +3,14 @@ import { CoreAccessible } from './types';
 export const TagOperations = {
   async createTag(this: CoreAccessible, tagData: Record<string, any>): Promise<number> {
     const result = await this.runSql(
-      'INSERT INTO tags(id, title, parent_id, color, icon) VALUES (?, ?, ?, ?, ?)',
+      'INSERT INTO tags(id, title, parent_id, color, icon, sort_index) VALUES (?, ?, ?, ?, ?, ?)',
       [
         tagData.id,
         tagData.title,
         tagData.parent_id,
         tagData.color,
         tagData.icon,
+        tagData.sort_index ?? 0,
       ]
     );
     return result.lastID;
@@ -30,6 +31,7 @@ export const TagOperations = {
     addField('parent_id', tagData.parent_id);
     addField('color', tagData.color);
     addField('icon', tagData.icon);
+    addField('sort_index', tagData.sort_index);
 
     if (fields.length === 0) return false;
 
@@ -80,7 +82,7 @@ export const TagOperations = {
   },
 
   async getAllTags(this: CoreAccessible): Promise<Record<string, any>[]> {
-    const rows = await this.getSql('SELECT * FROM tags', []);
+    const rows = await this.getSql('SELECT * FROM tags ORDER BY sort_index ASC, id ASC', []);
     return rows.map(row => this.rowToMap(row));
   },
 

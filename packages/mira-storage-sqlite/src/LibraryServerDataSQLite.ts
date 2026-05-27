@@ -59,6 +59,7 @@ export class LibraryServerDataSQLite {
         parent_id INTEGER,
         color INTEGER,
         icon TEXT,
+        sort_index INTEGER DEFAULT 0,
         FOREIGN KEY(parent_id) REFERENCES folders(id)
       )
     `);
@@ -70,9 +71,17 @@ export class LibraryServerDataSQLite {
         parent_id INTEGER,
         color INTEGER,
         icon INTEGER,
+        sort_index INTEGER DEFAULT 0,
         FOREIGN KEY(parent_id) REFERENCES tags(id)
       )
     `);
+
+    try {
+      await this.executeSql('ALTER TABLE folders ADD COLUMN sort_index INTEGER DEFAULT 0');
+    } catch {}
+    try {
+      await this.executeSql('ALTER TABLE tags ADD COLUMN sort_index INTEGER DEFAULT 0');
+    } catch {}
 
     try {
       await this.executeSql('ALTER TABLE files ADD COLUMN uploader INTEGER');

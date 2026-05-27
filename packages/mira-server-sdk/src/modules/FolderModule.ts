@@ -216,6 +216,13 @@ export class FolderModule {
     }
 
     /**
+     * 批量更新文件夹排序 index
+     */
+    async updateSortIndex(libraryId: string, items: { id: number; sort_index: number }[]): Promise<any> {
+        return await this.httpClient.put('/api/folders/sort-index', { libraryId, items });
+    }
+
+    /**
      * 便捷方法：删除文件夹
      * @param libraryId 素材库ID
      * @param id 文件夹ID

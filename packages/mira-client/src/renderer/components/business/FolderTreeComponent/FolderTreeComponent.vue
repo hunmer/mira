@@ -313,6 +313,7 @@ const sectionTitle = computed(() => props.title || (isFolder.value ? '文件夹'
 const showSearch = ref(props.defaultShowSearch || false)
 const searchQuery = ref('')
 const searchInputRef = ref<HTMLInputElement | null>(null)
+const treeRef = ref<any>(null)
 
 watch(showSearch, (val) => {
   if (val) nextTick(() => searchInputRef.value?.focus())
@@ -454,7 +455,7 @@ function onBeforeDragStart() {
   beforeDragParentId = dragNode.parent?.data?.id ?? null
 }
 
-// 拖拽完成后弹出确认
+// 拖拽完成后：同层级排序 or 跨层级移动
 function onAfterDrop() {
   if (!isFolder.value || !libraryStore.currentLibrary) return
 
@@ -466,22 +467,44 @@ function onAfterDrop() {
   if (draggedNodeType === 'tag') return
 
   const newParentId = dragNode.parent?.data?.id ?? null
+  const isSameLevel = newParentId === beforeDragParentId
 
-  if (newParentId === beforeDragParentId) {
-    emit('refresh')
+  if (isSameLevel) {
+    // 同层级排序：收集同级节点的 index
+    saveSiblingSortIndex(dragNode)
     return
   }
 
+  // 跨层级移动：弹确认
   const dragName = dragNode.data.label as string
   const parentLabel = dragNode.parent?.data?.label ?? ''
-  const targetLabel = newParentId
-    ? `「${parentLabel}」下`
-    : '根目录'
+  const targetLabel = newParentId ? `「${parentLabel}」下` : '根目录'
 
   dragConfirmInfo.value = { dragId: draggedId, dragName, newParentId, targetLabel }
   showDragConfirm.value = true
 }
 
+// 同层级排序：读取同级节点顺序并更新 sort_index
+async function saveSiblingSortIndex(dragNode: any) {
+  const parent = dragNode.parent
+  const siblings: any[] = parent ? parent.children : (treeRef.value as any)?.stats ?? []
+  if (!siblings || siblings.length === 0) { emit('refresh'); return }
+
+  const libraryId = libraryStore.currentLibrary!.id
+  const items = siblings.map((s: any, i: number) => ({
+    id: parseInt(s.data.id),
+    sort_index: i,
+  }))
+  try {
+    await miraSDKService.updateFolderSortIndex(libraryId, items)
+  } catch (error) {
+    console.error('Failed to update folder sort index:', error)
+  }
+  beforeDragParentId = null
+  emit('refresh')
+}
+
+// 跨层级移动确认
 async function confirmDragMove() {
   showDragConfirm.value = false
   if (!libraryStore.currentLibrary) return
@@ -489,6 +512,7 @@ async function confirmDragMove() {
   const { dragId, newParentId } = dragConfirmInfo.value
   const libraryId = libraryStore.currentLibrary.id
   try {
+    // 移动文件夹（parent 变了，清除 sort_index）
     await miraSDKService.moveFolder(
       libraryId,
       parseInt(dragId),
