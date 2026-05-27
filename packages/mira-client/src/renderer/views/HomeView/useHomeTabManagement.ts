@@ -45,6 +45,18 @@ export function useHomeTabManagement() {
   })
 
   const currentTabViewConfig = ref<TabViewConfig | null>(null)
+  const visitedTabIds = ref<string[]>([])
+  const tabViewConfigMap = ref<Record<string, TabViewConfig | null>>({})
+
+  const visitedTabs = computed(() => {
+    return visitedTabIds.value
+      .map(tabId => activeTabs.value.find(tab => tab.id === tabId))
+      .filter((tab): tab is TabItem => Boolean(tab))
+  })
+
+  const getTabViewConfigForTab = (tabId: string) => {
+    return tabViewConfigMap.value[tabId] || null
+  }
 
   // 监听当前tab变化并异步获取视图配置
   watch(
@@ -55,6 +67,12 @@ export function useHomeTabManagement() {
         return
       }
 
+      if (!visitedTabIds.value.includes(newTab.id)) {
+        visitedTabIds.value.push(newTab.id)
+      }
+
+      const tabId = newTab.id
+
       try {
         // 使用 tabRegistryAPI 异步获取 Tab 的视图配置
         const config = await tabRegistryAPI.getTabViewConfig(newTab.type, {
@@ -63,11 +81,42 @@ export function useHomeTabManagement() {
           tabData: newTab.data,
           filters: {}
         })
-        currentTabViewConfig.value = config
+        tabViewConfigMap.value = {
+          ...tabViewConfigMap.value,
+          [tabId]: config
+        }
+
+        if (currentTab.value?.id === tabId) {
+          currentTabViewConfig.value = config
+        }
       } catch (error) {
         console.error('获取Tab视图配置失败:', error)
-        currentTabViewConfig.value = null
+
+        tabViewConfigMap.value = {
+          ...tabViewConfigMap.value,
+          [tabId]: null
+        }
+
+        if (currentTab.value?.id === tabId) {
+          currentTabViewConfig.value = null
+        }
       }
+    },
+    { immediate: true }
+  )
+
+  watch(
+    () => activeTabs.value.map(tab => tab.id),
+    (tabIds) => {
+      visitedTabIds.value = visitedTabIds.value.filter(tabId => tabIds.includes(tabId))
+
+      const nextConfigMap: Record<string, TabViewConfig | null> = {}
+      for (const tabId of tabIds) {
+        if (tabId in tabViewConfigMap.value) {
+          nextConfigMap[tabId] = tabViewConfigMap.value[tabId]
+        }
+      }
+      tabViewConfigMap.value = nextConfigMap
     },
     { immediate: true }
   )
@@ -287,6 +336,8 @@ export function useHomeTabManagement() {
     activeTabs,
     currentTab,
     currentTabViewConfig,
+    visitedTabs,
+    getTabViewConfigForTab,
     getCurrentTab,
     setTabNeedUpdate,
     createTabFromFolder,

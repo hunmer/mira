@@ -1,6 +1,6 @@
 <template>
   <div
-    class="media-list-view flex-1 flex flex-col w-full bg-gray-100 dark:bg-gray-900 overflow-hidden relative h-full text-[13px]"
+    class="p-2 media-list-view flex-1 flex flex-col w-full bg-gray-100 dark:bg-gray-900 overflow-hidden relative h-full text-[13px]"
     @dragover.prevent="canUpload && handleDragOver($event)"
     @dragleave.prevent="canUpload && handleDragLeave($event)"
     @drop.prevent="canUpload && handleDrop($event)"

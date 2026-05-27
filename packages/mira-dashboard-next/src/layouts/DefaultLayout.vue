@@ -42,7 +42,7 @@ const navItems = [
   { path: '/database', icon: RiDatabase2Line, key: 'database', roles: ['super', 'admin'] },
   { path: '/device', icon: RiSmartphoneLine, key: 'device', roles: ['super', 'admin'] },
   { path: '/file-manager', icon: RiFolderOpenLine, key: 'fileManager', roles: ['super', 'admin'] },
-  { path: '/statistics', icon: RiBarChart2Line, key: 'statistics', roles: ['super', 'admin'] },
+  { path: '/statistics', icon: RiBarChart2Line, key: 'statistics', roles: ['super', 'admin', 'user'] },
   { path: '/thumbnail', icon: RiImageLine, key: 'thumbnail', roles: ['super', 'admin'] },
 ]
 

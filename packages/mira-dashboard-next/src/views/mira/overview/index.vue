@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dialog'
 import StatCard from '@/components/common/StatCard.vue'
 import { systemApi, libraryApi, pluginApi, adminApi, settingsApi } from '@/api'
+import { useAuthStore } from '@/stores/auth'
 import type { ServerSettings } from '@/types/mira'
 import { toast } from 'vue-sonner'
 import {
@@ -23,6 +24,7 @@ import {
 } from '@remixicon/vue'
 
 const { t } = useI18n()
+const authStore = useAuthStore()
 
 const loading = ref(false)
 const stats = ref({ libraries: 0, plugins: 0, admins: 0, dbSize: '0 B' })
@@ -111,7 +113,7 @@ onMounted(refreshData)
         <p class="text-muted-foreground">{{ t('overview.subtitle') }}</p>
       </div>
       <div class="flex gap-2">
-        <Button variant="outline" @click="settingsDialogOpen = true; loadSettings()">
+        <Button v-if="authStore.userRole !== 'user'" variant="outline" @click="settingsDialogOpen = true; loadSettings()">
           <RiSettingsLine class="mr-2 size-4" /> {{ t('overview.settings') }}
         </Button>
         <Button :disabled="loading" @click="refreshData">

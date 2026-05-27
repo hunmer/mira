@@ -10,6 +10,7 @@ import {
   Card, CardContent, CardDescription, CardHeader, CardTitle,
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   ChartContainer, ChartTooltipContent, ChartCrosshair, ChartTooltip, componentToString,
 } from '@/components/ui/chart'
@@ -31,17 +32,26 @@ const uploaders = ref<UploaderRow[]>([])
 const fileTypes = ref<FileTypeRow[]>([])
 const recentUploads = ref<RecentUploadDay[]>([])
 const loading = ref(false)
-const timeRange = ref('60d')
+const timeRange = ref<number>(30)
+
+const TIME_OPTIONS = [
+  { label: () => t('statistics.1d'), value: 1 },
+  { label: () => t('statistics.7d'), value: 7 },
+  { label: () => t('statistics.30d'), value: 30 },
+  { label: () => t('statistics.180d'), value: 180 },
+  { label: () => t('statistics.365d'), value: 365 },
+]
 
 async function loadStats() {
   if (!selectedLibraryId.value) return
   loading.value = true
   try {
+    const days = timeRange.value
     const [dailyRes, uploadRes, typeRes, recentRes]: any[] = await Promise.all([
-      statisticsApi.daily(selectedLibraryId.value),
-      statisticsApi.upload(selectedLibraryId.value),
-      statisticsApi.fileTypes(selectedLibraryId.value),
-      statisticsApi.recentUploads(selectedLibraryId.value),
+      statisticsApi.daily(selectedLibraryId.value, days),
+      statisticsApi.upload(selectedLibraryId.value, days),
+      statisticsApi.fileTypes(selectedLibraryId.value, days),
+      statisticsApi.recentUploads(selectedLibraryId.value, days),
     ])
     rawDaily.value = dailyRes.data?.data || []
     uploaders.value = uploadRes.data?.data || []
@@ -57,6 +67,7 @@ async function loadStats() {
 }
 
 watch(selectedLibraryId, loadStats)
+watch(timeRange, loadStats)
 
 // initial load
 loadStats()
@@ -65,7 +76,7 @@ loadStats()
 type ChartItem = { date: Date; fileCount: number; totalSizeMB: number }
 
 const chartData = computed<ChartItem[]>(() => {
-  const days = timeRange.value === '30d' ? 30 : 60
+  const days = timeRange.value
   const now = new Date()
   const startDate = new Date(now)
   startDate.setDate(startDate.getDate() - days)
@@ -235,15 +246,27 @@ function createMiraUrl(tabType: 'folder' | 'tag', id: number | null, name: strin
 
 <template>
   <div class="space-y-6">
-    <!-- 头部 + 汇总卡片 -->
+    <!-- 头部 + 汇总 -->
     <div class="flex items-center justify-between gap-4">
       <div>
         <h1 class="text-2xl font-bold">{{ t('statistics.title') }}</h1>
         <p class="text-muted-foreground text-sm">{{ t('statistics.subtitle') }}</p>
       </div>
-      <div v-if="selectedLibraryId && hasData" class="flex items-center gap-3 shrink-0">
-        <Badge variant="secondary">{{ t('statistics.fileCount') }}: {{ summary.totalFiles }}</Badge>
-        <Badge variant="secondary">{{ t('statistics.totalSize') }}: {{ formatSize(summary.totalSize) }}</Badge>
+      <div v-if="selectedLibraryId" class="flex items-center gap-3 shrink-0">
+        <div class="inline-flex h-8 rounded-md bg-muted p-0.5">
+          <Button
+            v-for="opt in TIME_OPTIONS"
+            :key="opt.value"
+            :variant="timeRange === opt.value ? 'outline' : 'ghost'"
+            size="sm"
+            class="h-7 rounded-sm px-2.5 text-xs data-[variant=outline]:bg-background data-[variant=outline]:shadow-sm"
+            @click="timeRange = opt.value"
+          >{{ opt.label() }}</Button>
+        </div>
+        <template v-if="hasData">
+          <Badge variant="secondary">{{ t('statistics.fileCount') }}: {{ summary.totalFiles }}</Badge>
+          <Badge variant="secondary">{{ t('statistics.totalSize') }}: {{ formatSize(summary.totalSize) }}</Badge>
+        </template>
       </div>
     </div>
 
@@ -256,15 +279,6 @@ function createMiraUrl(tabType: 'folder' | 'tag', id: number | null, name: strin
             <CardTitle>{{ t('statistics.trend') }}</CardTitle>
             <CardDescription>{{ t('statistics.trendDesc') }}</CardDescription>
           </div>
-          <Select v-model="timeRange">
-            <SelectTrigger class="hidden w-[160px] rounded-lg sm:ml-auto sm:flex">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent class="rounded-xl">
-              <SelectItem value="60d" class="rounded-lg">{{ t('statistics.60d') }}</SelectItem>
-              <SelectItem value="30d" class="rounded-lg">{{ t('statistics.30d') }}</SelectItem>
-            </SelectContent>
-          </Select>
         </CardHeader>
         <CardContent class="px-2 pt-4 sm:px-6 sm:pt-6 pb-4">
           <div v-if="loading" class="text-muted-foreground py-16 text-center">{{ t('common.loading') }}</div>

@@ -74,8 +74,8 @@ export interface ILibraryServerData {
   closeLibrary(): Promise<boolean>;
   getLibraryInfo(): Promise<Record<string, any>>;
   getStats(): Promise<{ totalFiles: number; totalSize: number }>;
-  getUploadStatistics(): Promise<Record<string, any>[]>;
-  getDailyUploadStats(): Promise<Record<string, any>[]>;
-  getFileTypeStatistics(): Promise<Record<string, any>[]>;
+  getUploadStatistics(startTime?: number): Promise<Record<string, any>[]>;
+  getDailyUploadStats(startTime?: number): Promise<Record<string, any>[]>;
+  getFileTypeStatistics(startTime?: number): Promise<Record<string, any>[]>;
   getRecentUploads(days?: number): Promise<Record<string, any>[]>;
 }

@@ -11,6 +11,12 @@ export class StatisticsRouter {
         this.setupRoutes();
     }
 
+    private static getStartTime(req: Request): number | undefined {
+        const days = parseInt(req.query.days as string);
+        if (days > 0) return Date.now() - days * 24 * 60 * 60 * 1000;
+        return undefined;
+    }
+
     private setupRoutes(): void {
         // 上传统计（按用户）
         this.router.get('/:libraryId/upload', async (req: Request, res: Response) => {
@@ -21,7 +27,8 @@ export class StatisticsRouter {
                     return res.status(404).json({ code: 404, message: 'Library not found', data: null });
                 }
 
-                const stats = await obj.libraryService.getUploadStatistics();
+                const startTime = StatisticsRouter.getStartTime(req);
+                const stats = await obj.libraryService.getUploadStatistics(startTime);
 
                 // 把 uploader ID 映射为用户名
                 const userStorage = this.backend.httpServer?.authRouter.getUserStorage();
@@ -51,7 +58,8 @@ export class StatisticsRouter {
                     return res.status(404).json({ code: 404, message: 'Library not found', data: null });
                 }
 
-                const stats = await obj.libraryService.getDailyUploadStats();
+                const startTime = StatisticsRouter.getStartTime(req);
+                const stats = await obj.libraryService.getDailyUploadStats(startTime);
                 res.json({ code: 0, message: 'Success', data: stats });
             } catch (error) {
                 console.error('Error getting daily upload stats:', error);
@@ -68,7 +76,8 @@ export class StatisticsRouter {
                     return res.status(404).json({ code: 404, message: 'Library not found', data: null });
                 }
 
-                const stats = await obj.libraryService.getFileTypeStatistics();
+                const startTime = StatisticsRouter.getStartTime(req);
+                const stats = await obj.libraryService.getFileTypeStatistics(startTime);
                 res.json({ code: 0, message: 'Success', data: stats });
             } catch (error) {
                 console.error('Error getting file type statistics:', error);

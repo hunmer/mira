@@ -83,7 +83,8 @@ const {
   tabsComposable,
   activeTabs,
   currentTab,
-  currentTabViewConfig,
+  visitedTabs,
+  getTabViewConfigForTab,
   getCurrentTab,
   setTabNeedUpdate,
   createTabFromFolder,
@@ -575,18 +576,20 @@ onUnmounted(() => {
         <!-- 右侧主内容区 -->
         <ResizablePanel :default-size="80" :min-size="50" class="flex flex-col bg-gray-100 dark:bg-gray-900 overflow-hidden">
         <!-- 主内容区域 -->
-        <main ref="mainContentRef" class="flex-1 flex p-2 overflow-hidden relative min-w-0">
+        <main ref="mainContentRef" class="flex-1 flex overflow-hidden relative min-w-0">
           <!-- Tab视图内容 -->
           <div class="flex-1 mr-2 min-w-0 overflow-hidden">
             <TabViewRenderer
-              v-if="currentTab"
-              :tab-id="currentTab.id"
-              :view-config="currentTabViewConfig"
+              v-for="tab in visitedTabs"
+              :key="tab.id"
+              v-show="currentTab?.id === tab.id"
+              :tab-id="tab.id"
+              :view-config="getTabViewConfigForTab(tab.id)"
               :cacheable="true"
               class="w-full h-full"
             />
             <!-- 默认状态 - 没有活跃的Tab时显示 -->
-            <div v-else class="flex items-center justify-center h-full">
+            <div v-if="!currentTab" class="flex items-center justify-center h-full">
               <div class="text-center">
                 <span class="material-icons text-6xl text-gray-400 mb-4">home</span>
                 <h2 class="text-xl font-semibold text-gray-600 dark:text-gray-300 mb-2">欢迎使用 Mira</h2>

@@ -14,12 +14,12 @@ export const Statistics = {
     }
   },
 
-  async getUploadStatistics(this: CoreAccessible): Promise<Record<string, any>[]> {
+  async getUploadStatistics(this: CoreAccessible, startTime?: number): Promise<Record<string, any>[]> {
     try {
-      const result = await this.getSql(
-        `SELECT uploader, COUNT(*) as file_count, COALESCE(SUM(size), 0) as total_size
-         FROM files WHERE recycled = 0 GROUP BY uploader`
-      );
+      const sql = startTime
+        ? `SELECT uploader, COUNT(*) as file_count, COALESCE(SUM(size), 0) as total_size FROM files WHERE recycled = 0 AND imported_at >= ? GROUP BY uploader`
+        : `SELECT uploader, COUNT(*) as file_count, COALESCE(SUM(size), 0) as total_size FROM files WHERE recycled = 0 GROUP BY uploader`;
+      const result = await this.getSql(sql, startTime ? [startTime] : []);
       return result.map(row => this.rowToMap(row));
     } catch (error) {
       console.error('Error getting upload statistics:', error);
@@ -27,17 +27,12 @@ export const Statistics = {
     }
   },
 
-  async getDailyUploadStats(this: CoreAccessible): Promise<Record<string, any>[]> {
+  async getDailyUploadStats(this: CoreAccessible, startTime?: number): Promise<Record<string, any>[]> {
     try {
-      const result = await this.getSql(
-        `SELECT date(imported_at / 1000, 'unixepoch') as date,
-                COUNT(*) as file_count,
-                COALESCE(SUM(size), 0) as total_size
-         FROM files
-         WHERE recycled = 0
-         GROUP BY date(imported_at / 1000, 'unixepoch')
-         ORDER BY date ASC`
-      );
+      const sql = startTime
+        ? `SELECT date(imported_at / 1000, 'unixepoch') as date, COUNT(*) as file_count, COALESCE(SUM(size), 0) as total_size FROM files WHERE recycled = 0 AND imported_at >= ? GROUP BY date(imported_at / 1000, 'unixepoch') ORDER BY date ASC`
+        : `SELECT date(imported_at / 1000, 'unixepoch') as date, COUNT(*) as file_count, COALESCE(SUM(size), 0) as total_size FROM files WHERE recycled = 0 GROUP BY date(imported_at / 1000, 'unixepoch') ORDER BY date ASC`;
+      const result = await this.getSql(sql, startTime ? [startTime] : []);
       return result.map(row => this.rowToMap(row));
     } catch (error) {
       console.error('Error getting daily upload stats:', error);
@@ -45,8 +40,9 @@ export const Statistics = {
     }
   },
 
-  async getFileTypeStatistics(this: CoreAccessible): Promise<Record<string, any>[]> {
+  async getFileTypeStatistics(this: CoreAccessible, startTime?: number): Promise<Record<string, any>[]> {
     try {
+      const where = startTime ? 'recycled = 0 AND imported_at >= ?' : 'recycled = 0';
       const result = await this.getSql(
         `SELECT
           CASE
@@ -65,9 +61,10 @@ export const Statistics = {
           COUNT(*) as file_count,
           COALESCE(SUM(size), 0) as total_size
          FROM files
-         WHERE recycled = 0
+         WHERE ${where}
          GROUP BY type
-         ORDER BY file_count DESC`
+         ORDER BY file_count DESC`,
+        startTime ? [startTime] : []
       );
       return result.map(row => this.rowToMap(row));
     } catch (error) {
