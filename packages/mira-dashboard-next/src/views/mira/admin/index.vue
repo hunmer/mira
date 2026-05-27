@@ -34,12 +34,12 @@ async function loadAdmins() {
 }
 
 function openCreate() {
-  editing.value = { username: '', email: '', password: '' }
+  editing.value = { username: '', email: '', password: '', role: 'user' }
   dialogOpen.value = true
 }
 
 function openEdit(user: User) {
-  editing.value = { id: user.id, username: user.username, email: user.email, password: '' }
+  editing.value = { id: user.id, username: user.username, email: user.email, password: '', role: user.role }
   dialogOpen.value = true
 }
 
@@ -50,6 +50,7 @@ async function handleSave() {
       await adminApi.update(editing.value.id, {
         username: editing.value.username,
         email: editing.value.email,
+        role: editing.value.role,
         ...(editing.value.password ? { password: editing.value.password } : {}),
       })
     } else {
@@ -150,6 +151,14 @@ onMounted(loadAdmins)
           <div class="space-y-2">
             <label class="text-sm font-medium">{{ t('auth.password') }}</label>
             <Input v-model="editing.password" type="password" :placeholder="editing.id ? '(leave empty to keep)' : ''" />
+          </div>
+          <div class="space-y-2">
+            <label class="text-sm font-medium">{{ t('admin.role') }}</label>
+            <select v-model="editing.role" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+              <option value="super">Super Admin</option>
+              <option value="admin">Admin</option>
+              <option value="user">User</option>
+            </select>
           </div>
         </div>
         <DialogFooter>

@@ -108,7 +108,7 @@ export class AdminsRouter {
         this.router.put('/:id', async (req, res) => {
             try {
                 const { id } = req.params;
-                const { email, username, password } = req.body;
+                const { email, username, password, role } = req.body;
 
                 const userStorage = this.authRouter.getAuthService().getUserStorage();
                 const updateData: any = {};
@@ -121,6 +121,9 @@ export class AdminsRouter {
                 }
                 if (password !== undefined && password.trim() !== '') {
                     updateData.password = password; // UserStorage.updateUser 会自动hash密码
+                }
+                if (role !== undefined) {
+                    updateData.role = role;
                 }
 
                 const success = await userStorage.updateUser(parseInt(id), updateData);

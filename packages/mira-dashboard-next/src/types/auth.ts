@@ -39,6 +39,7 @@ export interface UpdateAdminRequest {
   email?: string
   username?: string
   password?: string
+  role?: string
 }
 
 export interface AdminResponse {
