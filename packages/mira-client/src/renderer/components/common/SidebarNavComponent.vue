@@ -1,7 +1,7 @@
 <template>
-  <div class="sidebar-nav">
+  <div class="flex flex-col h-full bg-gray-50">
     <!-- 搜索框 -->
-    <div v-if="searchable" class="sidebar-nav__search">
+    <div v-if="searchable" class="p-3 border-b border-gray-200">
       <IconField icon-position="left">>
         <InputIcon>
           <span class="material-icons">search</span>
@@ -13,21 +13,21 @@
         />
       </IconField>
     </div>
-    
+
     <!-- 导航树 -->
-    <div class="sidebar-nav__tree">
+    <div class="flex-1 overflow-y-auto py-2">
       <div
         v-for="item in filteredItems"
         :key="item.id"
-        class="sidebar-nav__item"
+        class="mb-0.5"
         :style="{ paddingLeft: `${(item.level || 0) * 16 + 8}px` }"
       >
         <!-- 导航项 -->
         <div
-          class="sidebar-nav__item-content"
+          class="flex items-center py-1.5 px-2 mx-2 rounded-md cursor-pointer transition-all duration-150 ease-in text-gray-700 text-sm hover:bg-gray-200"
           :class="{
             'sidebar-nav__item-content--active': item.active,
-            'sidebar-nav__item-content--dragging': isDragging && dragItem?.id === item.id
+            'opacity-50': isDragging && dragItem?.id === item.id
           }"
           :draggable="draggable"
           @click="handleItemClick(item)"
@@ -40,41 +40,41 @@
             v-if="item.children && item.children.length > 0"
             variant="ghost"
             size="sm"
-            class="sidebar-nav__expand-btn"
+            class="w-5 h-5 min-w-[20px] flex items-center justify-center mr-1"
             @click.stop="toggleExpand(item)"
           >
             <span class="material-icons">{{ item.expanded ? 'keyboard_arrow_down' : 'keyboard_arrow_right' }}</span>
           </Button>
-          <div v-else class="sidebar-nav__expand-btn" />
-          
+          <div v-else class="w-5 h-5 min-w-[20px] flex items-center justify-center mr-1" />
+
           <!-- 图标 -->
-          <span 
-            class="material-icons sidebar-nav__icon"
+          <span
+            class="material-icons mr-2 text-base"
             :style="{ color: item.iconColor }"
           >{{ getItemIcon(item) }}</span>
-          
+
           <!-- 标签 -->
-          <span class="sidebar-nav__label">{{ item.label }}</span>
-          
+          <span class="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{{ item.label }}</span>
+
           <!-- 数量 -->
-          <span v-if="showCounts && item.count !== undefined" class="sidebar-nav__count">
+          <span v-if="showCounts && item.count !== undefined" class="sidebar-nav__count text-xs text-gray-500 bg-gray-200 px-1.5 py-0.5 rounded-xl min-w-[20px] text-center">
             {{ item.count }}
           </span>
         </div>
-        
+
         <!-- 子项 -->
         <template v-if="item.expanded && item.children">
           <div
             v-for="child in item.children"
             :key="child.id"
-            class="sidebar-nav__item"
+            class="mb-0.5"
             :style="{ paddingLeft: `${((item.level || 0) + 1) * 16 + 8}px` }"
           >
             <div
-              class="sidebar-nav__item-content"
+              class="flex items-center py-1.5 px-2 mx-2 rounded-md cursor-pointer transition-all duration-150 ease-in text-gray-700 text-sm hover:bg-gray-200"
               :class="{
                 'sidebar-nav__item-content--active': child.active,
-                'sidebar-nav__item-content--dragging': isDragging && dragItem?.id === child.id
+                'opacity-50': isDragging && dragItem?.id === child.id
               }"
               :draggable="draggable"
               @click="handleItemClick(child)"
@@ -87,24 +87,24 @@
                 v-if="child.children && child.children.length > 0"
                 variant="ghost"
                 size="sm"
-                class="sidebar-nav__expand-btn"
+                class="w-5 h-5 min-w-[20px] flex items-center justify-center mr-1"
                 @click.stop="toggleExpand(child)"
               >
                 <span class="material-icons">{{ child.expanded ? 'keyboard_arrow_down' : 'keyboard_arrow_right' }}</span>
               </Button>
-              <div v-else class="sidebar-nav__expand-btn" />
-              
+              <div v-else class="w-5 h-5 min-w-[20px] flex items-center justify-center mr-1" />
+
               <!-- 图标 -->
-              <span 
-                class="material-icons sidebar-nav__icon"
+              <span
+                class="material-icons mr-2 text-base"
                 :style="{ color: child.iconColor }"
               >{{ getItemIcon(child) }}</span>
-              
+
               <!-- 标签 -->
-              <span class="sidebar-nav__label">{{ child.label }}</span>
-              
+              <span class="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{{ child.label }}</span>
+
               <!-- 数量 -->
-              <span v-if="showCounts && child.count !== undefined" class="sidebar-nav__count">
+              <span v-if="showCounts && child.count !== undefined" class="sidebar-nav__count text-xs text-gray-500 bg-gray-200 px-1.5 py-0.5 rounded-xl min-w-[20px] text-center">
                 {{ child.count }}
               </span>
             </div>
@@ -112,9 +112,9 @@
         </template>
       </div>
     </div>
-    
+
     <!-- 拖拽指示器 -->
-    <div v-if="isDragging" class="sidebar-nav__drop-indicator" />
+    <div v-if="isDragging" class="absolute left-0 right-0 h-0.5 bg-blue-500 rounded-sm opacity-80 pointer-events-none" />
   </div>
 </template>
 
@@ -232,84 +232,10 @@ const handleDrop = (target: NavigationItem, event: DragEvent) => {
 </script>
 
 <style scoped>
-.sidebar-nav {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  background: rgb(249 250 251);
-}
-
-.sidebar-nav__search {
-  padding: 12px;
-  border-bottom: 1px solid rgb(229 231 235);
-}
-
-.sidebar-nav__tree {
-  flex: 1;
-  overflow-y: auto;
-  padding: 8px 0;
-}
-
-.sidebar-nav__item {
-  margin-bottom: 2px;
-}
-
-.sidebar-nav__item-content {
-  display: flex;
-  align-items: center;
-  padding: 6px 8px;
-  margin: 0 8px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  color: rgb(55 65 81);
-  font-size: 0.875rem;
-}
-
-.sidebar-nav__item-content:hover {
-  background: rgb(229 231 235);
-}
-
 .sidebar-nav__item-content--active {
   background: rgb(219 234 254);
   color: rgb(29 78 216);
   font-weight: 600;
-}
-
-.sidebar-nav__item-content--dragging {
-  opacity: 0.5;
-}
-
-.sidebar-nav__expand-btn {
-  width: 20px;
-  height: 20px;
-  min-width: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 4px;
-}
-
-.sidebar-nav__icon {
-  margin-right: 8px;
-  font-size: 1rem;
-}
-
-.sidebar-nav__label {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.sidebar-nav__count {
-  font-size: 0.75rem;
-  color: rgb(107 114 128);
-  background: rgb(229 231 235);
-  padding: 2px 6px;
-  border-radius: 12px;
-  min-width: 20px;
-  text-align: center;
 }
 
 .sidebar-nav__item-content--active .sidebar-nav__count {
@@ -317,18 +243,6 @@ const handleDrop = (target: NavigationItem, event: DragEvent) => {
   color: rgb(29 78 216);
 }
 
-.sidebar-nav__drop-indicator {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: rgb(59 130 246);
-  border-radius: 1px;
-  opacity: 0.8;
-  pointer-events: none;
-}
-
-/* 拖拽时的视觉反馈 */
 .sidebar-nav__item-content[draggable="true"]:hover {
   cursor: grab;
 }

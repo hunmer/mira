@@ -1,5 +1,5 @@
 <template>
-  <div class="toolbar-component">
+  <div class="bg-white">
     <div class="flex items-center justify-between bg-white p-2">
       <div class="flex items-center space-x-1">
         <template v-for="(group, groupIndex) in groups" :key="group.id">
@@ -13,7 +13,7 @@
                       :variant="getButtonVariant(button)"
                       :disabled="button.disabled"
                       :size="getButtonSize()"
-                      class="toolbar-button"
+                      class="transition-all duration-200 hover:scale-105"
                       @click="handleButtonClick(button)"
                     >
                       <span class="material-icons">{{ getButtonIcon(button) }}</span>
@@ -105,16 +105,3 @@ const handleButtonClick = (button: ToolbarButton) => {
 }
 </script>
 
-<style scoped>
-.toolbar-component {
-  background-color: white;
-}
-
-.toolbar-button {
-  transition: all 0.2s;
-}
-
-.toolbar-button:hover {
-  transform: scale(1.05);
-}
-</style>

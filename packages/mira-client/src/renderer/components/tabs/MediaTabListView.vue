@@ -1,6 +1,6 @@
 <template>
   <div
-    class="media-list-view flex-1 flex flex-col w-full bg-gray-100 dark:bg-gray-900 overflow-hidden relative"
+    class="media-list-view flex-1 flex flex-col w-full bg-gray-100 dark:bg-gray-900 overflow-hidden relative h-full text-[13px]"
     @dragover.prevent="canUpload && handleDragOver($event)"
     @dragleave.prevent="canUpload && handleDragLeave($event)"
     @drop.prevent="canUpload && handleDrop($event)"
@@ -1100,13 +1100,6 @@ watch(
 </script>
 
 <style scoped>
-.media-list-view {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  font-size: 13px;
-}
-
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.15s ease;

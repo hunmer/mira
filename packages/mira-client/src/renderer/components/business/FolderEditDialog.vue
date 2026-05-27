@@ -281,9 +281,3 @@ watch(() => props.visible, (newValue) => {
   }
 })
 </script>
-
-<style scoped>
-.bg-opacity-50 {
-  background-color: rgba(0, 0, 0, 0.5);
-}
-</style>

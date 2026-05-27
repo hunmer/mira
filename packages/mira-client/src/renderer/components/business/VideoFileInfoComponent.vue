@@ -113,7 +113,7 @@
             :key="tag"
             class="inline-flex items-center rounded-md bg-blue-100 dark:bg-blue-900/30 px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-400"
           >
-            <span class="material-icons text-xs mr-1">label</span>
+            <span class="material-icons text-base mr-1">label</span>
             {{ tag }}
           </span>
         </div>
@@ -203,9 +203,3 @@ const formatBitrate = (bitrate: number): string => {
   return `${bitrate} bps`
 }
 </script>
-
-<style scoped>
-.material-icons {
-  font-size: 16px;
-}
-</style>

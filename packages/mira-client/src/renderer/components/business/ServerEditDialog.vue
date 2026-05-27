@@ -7,7 +7,7 @@
       <DialogHeader>
         <DialogTitle>{{ isEdit ? '编辑服务器' : '连接服务器' }}</DialogTitle>
       </DialogHeader>
-    <div class="dialog-content">
+    <div class="max-h-[calc(90vh-180px)] overflow-y-auto p-6 pb-4">
       <form @submit.prevent="handleSubmit" class="space-y-6">
         <!-- 基本信息 - 双栏布局 -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -663,10 +663,6 @@ const handleClose = () => {
 </script>
 
 <style scoped>
-.form-field {
-  margin-bottom: 1.5rem;
-}
-
 .animate-spin {
   animation: spin 1s linear infinite;
 }
@@ -680,40 +676,30 @@ const handleClose = () => {
   }
 }
 
-/* 对话框滚动样式 */
 .library-edit-dialog :deep([data-radix-dialog-content]) {
   max-height: calc(90vh - 120px);
   overflow-y: auto;
   padding: 0;
 }
 
-.dialog-content {
-  max-height: calc(90vh - 180px); /* 减去标题栏、底部按钮和内边距的高度 */
-  overflow-y: auto;
-  padding: 1.5rem;
-  padding-bottom: 1rem;
-}
-
-/* 自定义滚动条样式 */
-.dialog-content::-webkit-scrollbar {
+.max-h-\[calc\(90vh-180px\)\]::-webkit-scrollbar {
   width: 8px;
 }
 
-.dialog-content::-webkit-scrollbar-track {
+.max-h-\[calc\(90vh-180px\)\]::-webkit-scrollbar-track {
   background: #f1f1f1;
   border-radius: 4px;
 }
 
-.dialog-content::-webkit-scrollbar-thumb {
+.max-h-\[calc\(90vh-180px\)\]::-webkit-scrollbar-thumb {
   background: #c1c1c1;
   border-radius: 4px;
 }
 
-.dialog-content::-webkit-scrollbar-thumb:hover {
+.max-h-\[calc\(90vh-180px\)\]::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
 }
 
-/* 响应式设计 */
 @media (max-width: 768px) {
   .library-edit-dialog {
     margin: 1rem;
@@ -724,18 +710,11 @@ const handleClose = () => {
     max-width: none !important;
   }
 
-  /* 小屏幕下强制单栏布局 */
   .grid.md\\:grid-cols-2 {
     grid-template-columns: 1fr !important;
   }
 }
 
-/* 双栏布局优化 */
-.form-field {
-  margin-bottom: 0; /* 移除默认边距，使用 space-y 控制间距 */
-}
-
-/* ToggleButton 样式优化 */
 .library-edit-dialog :deep(.p-togglebutton) {
   min-width: 80px;
 }

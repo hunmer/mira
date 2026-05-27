@@ -1,5 +1,5 @@
 <template>
-  <div class="upload-example p-6 max-w-4xl mx-auto">
+  <div class="p-6 max-w-4xl mx-auto bg-slate-50 min-h-screen dark:bg-slate-950">
     <div class="mb-6">
       <h2 class="text-2xl font-bold mb-2">多标签页文件上传组件示例</h2>
       <p class="text-gray-600">这个组件支持拖拽上传、多文件处理，并提供三个标签页来管理文件的不同状态。</p>
@@ -16,7 +16,7 @@
       <CardContent>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div class="form-group">
-            <label class="block text-sm font-medium mb-2">文件类型</label>
+            <label class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-200">文件类型</label>
             <Dropdown
               v-model="accept"
               :options="acceptOptions"
@@ -28,7 +28,7 @@
           </div>
 
           <div class="form-group">
-            <label class="block text-sm font-medium mb-2">最大文件大小 (MB)</label>
+            <label class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-200">最大文件大小 (MB)</label>
             <Input
               type="number"
               :model-value="maxFileSizeMB"
@@ -40,7 +40,7 @@
           </div>
 
           <div class="form-group">
-            <label class="block text-sm font-medium mb-2">最大文件数量</label>
+            <label class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-200">最大文件数量</label>
             <Input
               type="number"
               :model-value="maxFiles"
@@ -120,11 +120,11 @@
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div class="event-log max-h-64 overflow-y-auto space-y-2">
+        <div class="event-log max-h-64 overflow-y-auto space-y-2 font-mono">
           <div
             v-for="(event, index) in eventLog"
             :key="index"
-            class="event-item p-3 rounded-lg text-sm"
+            class="event-item p-3 rounded-lg text-sm transition-all duration-200 ease-in-out hover:translate-x-1"
             :class="{
               'bg-blue-50 border border-blue-200': event.type === 'info',
               'bg-green-50 border border-green-200': event.type === 'success',
@@ -279,38 +279,3 @@ const formatFileSize = (bytes: number): string => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 </script>
-
-<style scoped>
-.upload-example {
-  background: #f8fafc;
-  min-height: 100vh;
-}
-
-.form-group label {
-  color: #374151;
-  font-weight: 500;
-}
-
-.event-log {
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-}
-
-.event-item {
-  transition: all 0.2s ease;
-}
-
-.event-item:hover {
-  transform: translateX(4px);
-}
-
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  .upload-example {
-    background: #0f172a;
-  }
-
-  .form-group label {
-    color: #e5e7eb;
-  }
-}
-</style>

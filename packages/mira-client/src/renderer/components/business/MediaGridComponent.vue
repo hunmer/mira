@@ -50,6 +50,3 @@ const handleContextMenu = (item: FileInfo, event: MouseEvent) => {
   emit('media-context-menu', item, event)
 }
 </script>
-
-<style scoped>
-</style>

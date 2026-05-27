@@ -1,16 +1,16 @@
 <template>
-  <div v-if="isVisible" class="register-dialog-overlay" @click.self="closeDialog">
-    <div class="register-dialog">
-      <div class="dialog-header">
-        <h2>用户注册</h2>
-        <button class="close-button" @click="closeDialog">
+  <div v-if="isVisible" class="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000]" @click.self="closeDialog">
+    <div class="bg-white rounded-xl shadow-[0_10px_25px_rgba(0,0,0,0.15)] w-full max-w-[500px] max-h-[90vh] overflow-y-auto m-4">
+      <div class="flex items-center justify-between p-6 pb-0 border-b border-gray-200 mb-6">
+        <h2 class="text-xl font-semibold text-gray-800 m-0">用户注册</h2>
+        <button class="bg-transparent border-none text-gray-400 cursor-pointer p-1 rounded transition-colors duration-200 hover:text-gray-500" @click="closeDialog">
           <span class="material-icons">close</span>
         </button>
       </div>
       
-      <form @submit.prevent="handleSubmit" class="dialog-form">
-        <div class="input-group">
-          <label for="username">用户名</label>
+      <form @submit.prevent="handleSubmit" class="px-6 pb-6 flex flex-col gap-6">
+        <div class="flex flex-col gap-2">
+          <label for="username" class="text-sm font-medium text-gray-700">用户名</label>
           <input
             id="username"
             v-model="formData.username"
@@ -19,11 +19,11 @@
             :class="{ 'error': errors.username }"
             required
           />
-          <div v-if="errors.username" class="error-message">{{ errors.username }}</div>
+          <div v-if="errors.username" class="text-red-500 text-sm">{{ errors.username }}</div>
         </div>
 
-        <div class="input-group">
-          <label for="email">邮箱</label>
+        <div class="flex flex-col gap-2">
+          <label for="email" class="text-sm font-medium text-gray-700">邮箱</label>
           <input
             id="email"
             v-model="formData.email"
@@ -31,11 +31,11 @@
             placeholder="请输入邮箱地址"
             :class="{ 'error': errors.email }"
           />
-          <div v-if="errors.email" class="error-message">{{ errors.email }}</div>
+          <div v-if="errors.email" class="text-red-500 text-sm">{{ errors.email }}</div>
         </div>
 
-        <div class="input-group">
-          <label for="realName">真实姓名</label>
+        <div class="flex flex-col gap-2">
+          <label for="realName" class="text-sm font-medium text-gray-700">真实姓名</label>
           <input
             id="realName"
             v-model="formData.realName"
@@ -43,12 +43,12 @@
             placeholder="请输入真实姓名"
             :class="{ 'error': errors.realName }"
           />
-          <div v-if="errors.realName" class="error-message">{{ errors.realName }}</div>
+          <div v-if="errors.realName" class="text-red-500 text-sm">{{ errors.realName }}</div>
         </div>
 
-        <div class="input-group">
-          <label for="password">密码</label>
-          <div class="password-input-container">
+        <div class="flex flex-col gap-2">
+          <label for="password" class="text-sm font-medium text-gray-700">密码</label>
+          <div class="relative">
             <input
               id="password"
               v-model="formData.password"
@@ -59,18 +59,18 @@
             />
             <button
               type="button"
-              class="password-toggle"
+              class="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none text-gray-400 cursor-pointer p-1 hover:text-gray-500"
               @click="showPassword = !showPassword"
             >
               <span class="material-icons">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
             </button>
           </div>
-          <div v-if="errors.password" class="error-message">{{ errors.password }}</div>
+          <div v-if="errors.password" class="text-red-500 text-sm">{{ errors.password }}</div>
         </div>
 
-        <div class="input-group">
-          <label for="confirmPassword">确认密码</label>
-          <div class="password-input-container">
+        <div class="flex flex-col gap-2">
+          <label for="confirmPassword" class="text-sm font-medium text-gray-700">确认密码</label>
+          <div class="relative">
             <input
               id="confirmPassword"
               v-model="formData.confirmPassword"
@@ -81,20 +81,20 @@
             />
             <button
               type="button"
-              class="password-toggle"
+              class="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none text-gray-400 cursor-pointer p-1 hover:text-gray-500"
               @click="showConfirmPassword = !showConfirmPassword"
             >
               <span class="material-icons">{{ showConfirmPassword ? 'visibility_off' : 'visibility' }}</span>
             </button>
           </div>
-          <div v-if="errors.confirmPassword" class="error-message">{{ errors.confirmPassword }}</div>
+          <div v-if="errors.confirmPassword" class="text-red-500 text-sm">{{ errors.confirmPassword }}</div>
         </div>
 
-        <div v-if="error" class="error-banner">
+        <div v-if="error" class="bg-red-50 border border-red-200 text-red-600 p-3 rounded-lg text-sm">
           {{ error }}
         </div>
 
-        <div class="dialog-actions">
+        <div class="flex gap-3 justify-end mt-4">
           <button
             type="button"
             class="cancel-button"
@@ -352,79 +352,6 @@ watch(() => props.isVisible, (newValue) => {
 </script>
 
 <style scoped>
-.register-dialog-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.register-dialog {
-  background: white;
-  border-radius: 0.75rem;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-  width: 100%;
-  max-width: 500px;
-  max-height: 90vh;
-  overflow-y: auto;
-  margin: 1rem;
-}
-
-.dialog-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1.5rem 1.5rem 0 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
-  margin-bottom: 1.5rem;
-}
-
-.dialog-header h2 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0;
-}
-
-.close-button {
-  background: none;
-  border: none;
-  color: #9ca3af;
-  cursor: pointer;
-  padding: 0.25rem;
-  border-radius: 0.25rem;
-  transition: color 0.2s ease;
-}
-
-.close-button:hover {
-  color: #6b7280;
-}
-
-.dialog-form {
-  padding: 0 1.5rem 1.5rem 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.input-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.input-group label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #374151;
-}
-
 .input-group input {
   width: 100%;
   padding: 0.75rem;
@@ -433,30 +360,6 @@ watch(() => props.isVisible, (newValue) => {
   font-size: 1rem;
   transition: all 0.3s ease;
   background: white;
-}
-
-.password-input-container {
-  position: relative;
-}
-
-.password-input-container input {
-  padding-right: 2.5rem;
-}
-
-.password-toggle {
-  position: absolute;
-  right: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  color: #9ca3af;
-  cursor: pointer;
-  padding: 0.25rem;
-}
-
-.password-toggle:hover {
-  color: #6b7280;
 }
 
 .input-group input:focus {
@@ -470,25 +373,8 @@ watch(() => props.isVisible, (newValue) => {
   box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
 }
 
-.error-message {
-  color: #ef4444;
-  font-size: 0.875rem;
-}
-
-.error-banner {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #dc2626;
-  padding: 0.75rem;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-}
-
-.dialog-actions {
-  display: flex;
-  gap: 0.75rem;
-  justify-content: flex-end;
-  margin-top: 1rem;
+.password-input-container input {
+  padding-right: 2.5rem;
 }
 
 .cancel-button,
@@ -544,22 +430,10 @@ watch(() => props.isVisible, (newValue) => {
 
 /* 响应式 */
 @media (max-width: 480px) {
-  .register-dialog {
-    margin: 0.5rem;
-  }
-  
-  .dialog-header {
-    padding: 1rem 1rem 0 1rem;
-  }
-  
-  .dialog-form {
-    padding: 0 1rem 1rem 1rem;
-  }
-  
   .dialog-actions {
     flex-direction: column;
   }
-  
+
   .cancel-button,
   .submit-button {
     width: 100%;

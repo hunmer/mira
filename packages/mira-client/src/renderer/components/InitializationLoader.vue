@@ -1,8 +1,8 @@
 <template>
   <div 
     v-if="shouldShow" 
-    class="fixed inset-0 flex items-center justify-center z-50 initialization-overlay"
-    :class="{ 'fade-out': isComplete }"
+    class="fixed inset-0 flex items-center justify-center z-50 bg-black/30 transition-opacity duration-500 ease-out"
+    :class="{ 'opacity-0': isComplete }"
   >
     <div class="text-center">
       <!-- Loading 图标 -->
@@ -170,15 +170,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.initialization-overlay {
-  background-color: rgba(0, 0, 0, 0.3);
-  transition: opacity 0.5s ease-out;
-}
-
-.fade-out {
-  opacity: 0;
-}
-
 .custom-loader {
     width: 50px;
     height: 50px;
@@ -186,14 +177,14 @@ onMounted(() => {
     position: relative;
 }
 .custom-loader::before,
-.custom-loader::after {    
+.custom-loader::after {
     content: "";
     grid-area: 1/1;
     --c: radial-gradient(farthest-side, #766DF4 92%, transparent);
-    background: 
-      var(--c) 50%  0, 
-      var(--c) 50%  100%, 
-      var(--c) 100% 50%, 
+    background:
+      var(--c) 50%  0,
+      var(--c) 50%  100%,
+      var(--c) 100% 50%,
       var(--c) 0    50%;
     background-size: 12px 12px;
     background-repeat: no-repeat;
@@ -206,7 +197,7 @@ onMounted(() => {
     animation-timing-function: linear;
 }
 
-@keyframes s2{ 
+@keyframes s2{
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }

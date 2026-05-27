@@ -1,5 +1,5 @@
 <template>
-  <div class="menu-test-page">
+  <div class="min-h-screen bg-[#f5f5f5] dark:bg-gray-900">
     <div class="p-6 space-y-6">
       <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200">菜单 API 测试</h2>
       
@@ -303,13 +303,3 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
-.menu-test-page {
-  min-height: 100vh;
-  background-color: #f5f5f5;
-}
-
-:root.dark .menu-test-page {
-  background-color: #111827;
-}
-</style>

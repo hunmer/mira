@@ -1,23 +1,23 @@
 <template>
-  <div class="audio-preview">
-    <div class="audio-container">
-      <div class="audio-info">
-        <h3>{{ fileInfo.title || fileInfo.name || '未知音频文件' }}</h3>
-        <p v-if="fileInfo.size" class="file-size">文件大小: {{ formatFileSize(fileInfo.size) }}</p>
+  <div class="w-full h-full flex justify-center items-center bg-[#f8f9fa]">
+    <div class="flex flex-col items-center gap-8 p-8 bg-white rounded-lg shadow-md max-w-[500px] w-[90%]">
+      <div class="text-center">
+        <h3 class="m-0 mb-2 text-[#333]">{{ fileInfo.title || fileInfo.name || '未知音频文件' }}</h3>
+        <p v-if="fileInfo.size" class="text-[#666] text-[0.9rem] m-0">文件大小: {{ formatFileSize(fileInfo.size) }}</p>
       </div>
-      
-      <audio 
+
+      <audio
         v-if="audioUrl"
-        :src="audioUrl" 
+        :src="audioUrl"
         controls
         preload="metadata"
         @error="onAudioError"
-        class="preview-audio"
+        class="w-full outline-none"
       >
         您的浏览器不支持音频播放
       </audio>
-      
-      <div v-else class="error">
+
+      <div v-else class="text-[#e74c3c] text-center">
         <p>无法获取音频文件</p>
       </div>
     </div>
@@ -66,52 +66,3 @@ const onAudioError = (): void => {
   emit('error', '音频加载失败')
 }
 </script>
-
-<style scoped>
-.audio-preview {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #f8f9fa;
-}
-
-.audio-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2rem;
-  padding: 2rem;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  max-width: 500px;
-  width: 90%;
-}
-
-.audio-info {
-  text-align: center;
-}
-
-.audio-info h3 {
-  margin: 0 0 0.5rem 0;
-  color: #333;
-}
-
-.file-size {
-  color: #666;
-  font-size: 0.9rem;
-  margin: 0;
-}
-
-.preview-audio {
-  width: 100%;
-  outline: none;
-}
-
-.error {
-  color: #e74c3c;
-  text-align: center;
-}
-</style>

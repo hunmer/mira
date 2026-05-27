@@ -1,5 +1,5 @@
 <template>
-  <div class="theme-switcher">
+  <div class="inline-block">
     <TooltipProvider v-if="mode === 'button'">
       <Tooltip>
         <TooltipTrigger as-child>
@@ -23,7 +23,7 @@
       option-label="label"
       option-value="value"
       :placeholder="dropdownPlaceholder"
-      class="theme-dropdown"
+      class="min-w-[140px]"
       @change="handleThemeChange"
     >
       <template #value="{ value }">
@@ -54,7 +54,7 @@
       </ToggleGroupItem>
     </ToggleGroup>
     
-    <div v-else-if="mode === 'radio'" class="theme-radio-group">
+    <div v-else-if="mode === 'radio'" class="flex gap-[var(--mira-space-2)] items-center">
       <div 
         v-for="theme in themeOptions"
         :key="theme.value"
@@ -275,27 +275,9 @@ defineExpose({
 </script>
 
 <style scoped>
-.theme-switcher {
-  display: inline-block;
-}
-
-.theme-dropdown {
-  min-width: 140px;
-}
-
 .theme-tabs :deep(button) {
   min-width: auto;
   padding: var(--mira-space-2) var(--mira-space-3);
-}
-
-.theme-radio-group {
-  display: flex;
-  gap: var(--mira-space-2);
-  align-items: center;
-}
-
-.theme-radio-item {
-  position: relative;
 }
 
 .theme-radio-label {
@@ -333,7 +315,6 @@ defineExpose({
   color: var(--mira-primary-200);
 }
 
-/* 尺寸变体 */
 .theme-switcher[data-size="small"] .theme-radio-label {
   padding: var(--mira-space-1) var(--mira-space-2);
   font-size: var(--mira-text-xs);
@@ -344,26 +325,11 @@ defineExpose({
   font-size: var(--mira-text-base);
 }
 
-/* 无障碍访问 */
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-/* 焦点样式 */
 .theme-radio-label:focus-within {
   outline: 2px solid var(--mira-primary-500);
   outline-offset: 2px;
 }
 
-/* 动画 */
 @media (prefers-reduced-motion: reduce) {
   .theme-radio-label {
     transition: none;

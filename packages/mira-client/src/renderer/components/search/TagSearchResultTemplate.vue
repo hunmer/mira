@@ -1,5 +1,5 @@
 <template>
-  <div class="search-result-item tag-result p-2 rounded-md flex items-center space-x-4 hover:bg-gray-600 cursor-pointer transition-colors duration-200">
+  <div class="search-result-item tag-result p-2 rounded-md flex items-center space-x-4 hover:bg-gray-600 cursor-pointer transition-colors duration-200 border border-transparent hover:border-[#374151]">
     <!-- 标签颜色指示器 -->
     <div class="tag-indicator flex-shrink-0">
       <div 
@@ -88,14 +88,6 @@ const tagColor = computed((): string => {
 </script>
 
 <style scoped>
-.search-result-item {
-  border: 1px solid transparent;
-}
-
-.search-result-item:hover {
-  border-color: #374151;
-}
-
 .tag-indicator {
   transition: transform 0.2s;
 }
@@ -124,20 +116,20 @@ const tagColor = computed((): string => {
     align-items: flex-start;
     gap: 0.5rem;
   }
-  
+
   .tag-result > * {
     margin-left: 0 !important;
     margin-right: 0 !important;
   }
-  
+
   .tag-indicator {
     align-self: center;
   }
-  
+
   .tag-info {
     text-align: center;
   }
-  
+
   .tag-count {
     align-self: center;
   }
@@ -148,11 +140,11 @@ const tagColor = computed((): string => {
     width: 2.5rem;
     height: 2.5rem;
   }
-  
+
   .tag-info p {
     font-size: 0.875rem;
   }
-  
+
   .tag-info div {
     font-size: 0.75rem;
   }

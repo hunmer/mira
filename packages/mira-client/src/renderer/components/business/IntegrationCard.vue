@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-card-light dark:bg-card-dark p-6 rounded-lg border border-border-light dark:border-border-dark plugin-card">
+  <div class="bg-[var(--card-light)] dark:bg-[var(--card-dark)] p-6 rounded-lg border border-[var(--border-light)] dark:border-[var(--border-dark)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
     <!-- 插件头部 -->
     <div class="flex justify-between items-start mb-4">
       <div class="flex items-center">
@@ -10,7 +10,7 @@
         </Avatar>
         <div>
           <div class="flex items-center gap-2 mb-1">
-            <h3 class="font-semibold text-lg text-text-light-primary dark:text-text-dark-primary">
+            <h3 class="font-semibold text-lg text-[var(--text-light-primary)] dark:text-[var(--text-dark-primary)]">
               {{ plugin.config.pluginName }}
             </h3>
             <Badge
@@ -33,7 +33,7 @@
     </div>
 
     <!-- 插件描述 -->
-    <p class="text-sm text-text-light-secondary dark:text-text-dark-secondary mb-4 line-clamp-2">
+    <p class="text-sm text-[var(--text-light-secondary)] dark:text-[var(--text-dark-secondary)] mb-4 line-clamp-2">
       {{ plugin.config.description }}
     </p>
 
@@ -231,50 +231,6 @@ const handleToggle = (shouldEnable: boolean) => {
   --text-dark-secondary: #B0B0B0;
   --border-light: #DEE2E6;
   --border-dark: #333333;
-}
-
-/* 自定义CSS类 */
-.bg-card-light {
-  background-color: var(--card-light);
-}
-
-.dark .bg-card-dark {
-  background-color: var(--card-dark);
-}
-
-.text-text-light-primary {
-  color: var(--text-light-primary);
-}
-
-.dark .text-text-dark-primary {
-  color: var(--text-dark-primary);
-}
-
-.text-text-light-secondary {
-  color: var(--text-light-secondary);
-}
-
-.dark .text-text-dark-secondary {
-  color: var(--text-dark-secondary);
-}
-
-.border-border-light {
-  border-color: var(--border-light);
-}
-
-.dark .border-border-dark {
-  border-color: var(--border-dark);
-}
-
-
-/* 插件卡片 */
-.plugin-card {
-  transition: all 0.2s ease;
-}
-
-.plugin-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 /* 行限制 */

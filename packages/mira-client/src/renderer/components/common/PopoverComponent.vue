@@ -87,7 +87,3 @@ watch(isOpen, (newValue) => {
   emit('update:open', newValue)
 })
 </script>
-
-<style scoped>
-/* Popover 样式可以在这里自定义或通过 contentClass 传入 */
-</style>

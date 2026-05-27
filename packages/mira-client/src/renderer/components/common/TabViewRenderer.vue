@@ -10,7 +10,7 @@
 -->
 
 <template>
-  <div class="tab-view-renderer w-full h-full">
+  <div class="w-full h-full relative overflow-hidden">
     <!-- 加载状态 -->
     <div v-if="loading" class="flex items-center justify-center h-full">
       <i class="pi pi-spinner pi-spin text-2xl text-gray-500"></i>
@@ -190,14 +190,7 @@ defineExpose({
 </script>
 
 <style scoped>
-.tab-view-renderer {
-  /* 确保渲染器占满容器 */
-  position: relative;
-  overflow: hidden;
-}
-
-/* 加载和错误状态样式 */
-.tab-view-renderer .pi-spinner {
+.pi-spinner {
   animation: pi-spinner-rotate 2s linear infinite;
 }
 

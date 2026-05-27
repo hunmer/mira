@@ -1,12 +1,12 @@
 <template>
-  <div class="video-preview-popover">
+  <div class="bg-black rounded-lg overflow-hidden shadow-[0_10px_40px_rgba(0,0,0,0.3)]">
     <div
-      class="video-preview-container"
+      class="video-preview-container relative"
       @mousemove="handleMouseMove"
     >
       <!-- 加载中状态 -->
-      <div v-if="isLoading" class="video-loading">
-        <span class="material-icons animate-spin">hourglass_empty</span>
+      <div v-if="isLoading" class="absolute inset-0 flex flex-col items-center justify-center text-white/70 bg-black">
+        <span class="material-icons animate-spin text-5xl mb-2">hourglass_empty</span>
         <span class="text-sm mt-2">加载中...</span>
       </div>
 
@@ -15,7 +15,7 @@
         v-show="!isLoading"
         ref="localVideoRef"
         :src="videoUrl"
-        class="video-preview"
+        class="w-full h-full object-contain block"
         muted
         preload="metadata"
         @loadedmetadata="handleVideoLoaded"
@@ -30,32 +30,32 @@
       <!-- 播放/暂停按钮覆层 -->
       <div
         v-if="!isLoading && !hasError"
-        class="video-controls-overlay"
+        class="absolute inset-0 flex items-center justify-center cursor-pointer bg-transparent transition-colors duration-200 hover:bg-black/10"
         @click.stop="togglePlayPause"
       >
         <transition name="fade">
-          <div v-if="showPlayButton" class="play-pause-button">
-            <span class="material-icons">{{ isPlaying ? 'pause' : 'play_arrow' }}</span>
+          <div v-if="showPlayButton" class="w-16 h-16 rounded-full bg-black/30 flex items-center justify-center transition-all duration-200 hover:bg-black/50 hover:scale-110">
+            <span class="material-icons text-4xl text-white">{{ isPlaying ? 'pause' : 'play_arrow' }}</span>
           </div>
         </transition>
       </div>
 
       <!-- 错误状态 -->
-      <div v-if="hasError" class="video-error">
-        <span class="material-icons">error_outline</span>
+      <div v-if="hasError" class="absolute inset-0 flex flex-col items-center justify-center text-white/70 bg-black">
+        <span class="material-icons text-5xl mb-2">error_outline</span>
         <span class="text-sm mt-2">视频加载失败</span>
       </div>
 
       <!-- 视频进度条 -->
-      <div v-if="showProgress && duration > 0 && !isLoading" class="video-progress">
+      <div v-if="showProgress && duration > 0 && !isLoading" class="absolute bottom-0 left-0 right-0 h-[3px] bg-white/30">
         <div
-          class="video-progress-bar"
+          class="h-full bg-blue-500 transition-[width] duration-100"
           :style="{ width: `${(currentVideoTime / duration) * 100}%` }"
         ></div>
       </div>
 
       <!-- 视频时长显示 -->
-      <div v-if="duration > 0 && !isLoading" class="video-duration">
+      <div v-if="duration > 0 && !isLoading" class="absolute bottom-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-xs font-semibold pointer-events-none">
         {{ formatDuration(currentVideoTime) }} / {{ formatDuration(duration) }}
       </div>
     </div>
@@ -284,45 +284,9 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.video-preview-popover {
-  background: #000;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-}
-
 .video-preview-container {
-  position: relative;
   width: v-bind('width + "px"');
   height: v-bind('height + "px"');
-}
-
-.video-preview {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  display: block;
-}
-
-.video-loading,
-.video-error {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: rgba(255, 255, 255, 0.7);
-  background: #000;
-}
-
-.video-loading .material-icons,
-.video-error .material-icons {
-  font-size: 3rem;
-  margin-bottom: 0.5rem;
 }
 
 .animate-spin {
@@ -336,75 +300,6 @@ onUnmounted(() => {
   to {
     transform: rotate(360deg);
   }
-}
-
-.video-progress {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: rgba(255, 255, 255, 0.3);
-}
-
-.video-progress-bar {
-  height: 100%;
-  background: rgb(59 130 246);
-  transition: width 0.1s ease;
-}
-
-.video-duration {
-  position: absolute;
-  bottom: 8px;
-  right: 8px;
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  pointer-events: none;
-}
-
-/* 控制覆层 */
-.video-controls-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  background: transparent;
-  transition: background 0.2s ease;
-}
-
-.video-controls-overlay:hover {
-  background: rgba(0, 0, 0, 0.1);
-}
-
-/* 播放/暂停按钮 */
-.play-pause-button {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-}
-
-.play-pause-button:hover {
-  background: rgba(0, 0, 0, 0.5);
-  transform: scale(1.1);
-}
-
-.play-pause-button .material-icons {
-  font-size: 2.5rem;
-  color: white;
 }
 
 /* 淡入淡出动画 */

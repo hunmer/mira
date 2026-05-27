@@ -15,7 +15,7 @@
         <button
           v-if="hasChildren"
           :class="[
-            'material-symbols-outlined text-gray-400 mr-1',
+            'material-symbols-outlined text-lg text-gray-400 mr-1',
             folder.expanded ? '' : ''
           ]"
           @click.stop="handleExpandToggle"
@@ -24,13 +24,13 @@
         </button>
         <span 
           v-else-if="folder.level && folder.level > 0"
-          class="material-symbols-outlined text-gray-400 mr-1 invisible"
+          class="material-symbols-outlined text-lg text-gray-400 mr-1 invisible"
         >
           keyboard_arrow_right
         </span>
         
         <!-- 文件夹图标 -->
-        <span :class="`material-icons mr-2 ${folder.iconColor || getIconColor()}`">
+        <span :class="`material-icons text-lg mr-2 ${folder.iconColor || getIconColor()}`">
           {{ folder.icon }}
         </span>
         {{ folder.label }}
@@ -110,10 +110,3 @@ const getCountStyle = () => {
   return 'text-gray-500'
 }
 </script>
-
-<style scoped>
-.material-icons,
-.material-symbols-outlined {
-  font-size: 18px;
-}
-</style>

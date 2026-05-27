@@ -1,5 +1,5 @@
 <template>
-  <div class="search-result-item file-result p-2 rounded-md flex items-center space-x-4 hover:bg-gray-600 cursor-pointer transition-colors duration-200">
+  <div class="search-result-item file-result p-2 rounded-md flex items-center space-x-4 hover:bg-gray-600 cursor-pointer transition-colors duration-200 border border-transparent hover:border-gray-700">
     <!-- 文件缩略图或图标 -->
     <div class="file-thumbnail flex-shrink-0">
       <img 
@@ -182,14 +182,6 @@ const handleImageError = (event: Event) => {
 </script>
 
 <style scoped>
-.search-result-item {
-  border: 1px solid transparent;
-}
-
-.search-result-item:hover {
-  border-color: #374151;
-}
-
 .file-thumbnail img {
   transition: transform 0.2s;
 }
@@ -205,20 +197,20 @@ const handleImageError = (event: Event) => {
     align-items: flex-start;
     gap: 0.5rem;
   }
-  
+
   .file-result > * {
     margin-left: 0 !important;
     margin-right: 0 !important;
   }
-  
+
   .file-thumbnail {
     align-self: center;
   }
-  
+
   .file-info {
     text-align: center;
   }
-  
+
   .file-tags {
     align-self: center;
   }
@@ -230,11 +222,11 @@ const handleImageError = (event: Event) => {
     width: 2.5rem;
     height: 2.5rem;
   }
-  
+
   .file-info p {
     font-size: 0.875rem;
   }
-  
+
   .file-info div {
     font-size: 0.75rem;
   }

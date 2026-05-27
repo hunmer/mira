@@ -1,31 +1,27 @@
 <template>
   <div
-    class="media-card"
+    class="relative bg-white rounded-lg border-2 border-transparent cursor-pointer transition-all duration-200 overflow-hidden hover:border-blue-500 hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)]"
     :class="[
       `media-card--${size}`,
-      { 
+      {
         'media-card--selected': selected,
-        'media-card--selectable': selectable 
+        'media-card--selectable': selectable
       }
     ]"
-    @click="handleClick"
-    @dblclick="handleDoubleClick"
-    @contextmenu="handleContextMenu"
-  >
     <!-- 选择框 -->
     <div v-if="selected" class="media-card__selection-indicator">
-      <div class="media-card__selection-icon">
+      <div class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
         <span class="material-icons text-white text-sm">check</span>
       </div>
     </div>
     
     <!-- 媒体内容 -->
-    <div class="media-card__content">
+    <div class="relative w-full bg-gray-50 media-card__content">
       <!-- 文件夹类型 -->
-      <div v-if="getFileType(item) === 'folder'" class="media-card__folder">
+      <div v-if="getFileType(item) === 'folder'" class="flex flex-col items-center justify-center h-full text-center">
         <span class="material-icons text-blue-500" style="font-size: 4rem;">folder</span>
-        <div class="media-card__folder-name">{{ item.name }}</div>
-        <div v-if="item.metadata?.itemCount" class="media-card__folder-count">
+        <div class="mt-2 font-semibold text-gray-700">{{ item.name }}</div>
+        <div v-if="item.metadata?.itemCount" class="mt-1 text-xs text-gray-500">
           {{ item.metadata.itemCount }} 项
         </div>
       </div>
@@ -35,13 +31,13 @@
         <img
           v-lazy="item.thumbnailPath || item.url"
           :alt="item.name"
-          class="media-card__image-content"
+          class="w-full h-full object-cover"
           @load="handleImageLoad"
           @error="handleImageError"
         />
 
         <!-- 文件类型标签 -->
-        <div class="media-card__file-type">
+        <div class="absolute top-2 right-2 bg-black/70 text-white px-1.5 py-0.5 rounded text-[0.7rem] font-semibold">
           {{ getFileExtension(item.name) }}
         </div>
       </div>
@@ -49,7 +45,7 @@
       <!-- 视频类型 -->
       <div v-else-if="getFileType(item) === 'video'" class="media-card__video">
         <div
-          class="media-card__video-thumbnail"
+          class="relative w-full h-full"
           @mouseenter="videoPreview.handleMouseEnter(item)"
           @mouseleave="videoPreview.handleMouseLeave()"
           @mousemove="videoPreview.handleMouseMove"
@@ -59,7 +55,7 @@
             v-if="item.thumbnailPath && !videoPreview.showPreview.value"
             v-lazy="item.thumbnailPath"
             :alt="item.name"
-            class="media-card__image-content"
+            class="w-full h-full object-cover"
           />
 
           <!-- 视频预览 -->
@@ -67,7 +63,7 @@
             v-if="videoPreview.showPreview.value"
             :ref="el => videoPreview.videoRef.value = el as HTMLVideoElement"
             :src="item.url"
-            class="media-card__video-preview"
+            class="absolute top-0 left-0 w-full h-full object-cover"
             muted
             preload="metadata"
             @loadedmetadata="videoPreview.handleVideoLoaded"
@@ -79,81 +75,81 @@
           </div>
 
           <!-- 播放按钮 -->
-          <div class="media-card__play-button" v-if="!videoPreview.showPreview.value">
+          <div class="media-card__play-button absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/70 flex items-center justify-center text-white opacity-0 transition-opacity duration-200" v-if="!videoPreview.showPreview.value">
             <span class="material-icons">play_arrow</span>
           </div>
 
           <!-- 视频进度条 -->
-          <div v-if="videoPreview.showPreview.value && videoPreview.duration.value > 0" class="media-card__video-progress">
+          <div v-if="videoPreview.showPreview.value && videoPreview.duration.value > 0" class="absolute bottom-0 left-0 right-0 h-[3px] bg-black/30">
             <div
-              class="media-card__video-progress-bar"
+              class="h-full bg-blue-500 transition-[width] duration-100"
               :style="{ width: `${(videoPreview.currentTime.value / videoPreview.duration.value) * 100}%` }"
             ></div>
           </div>
         </div>
 
         <!-- 文件类型标签 -->
-        <div class="media-card__file-type">
+        <div class="absolute top-2 right-2 bg-black/70 text-white px-1.5 py-0.5 rounded text-[0.7rem] font-semibold">
           {{ getFileExtension(item.name) }}
         </div>
 
         <!-- 视频时长 -->
-        <div v-if="item.metadata?.duration" class="media-card__duration">
+        <div v-if="item.metadata?.duration" class="absolute bottom-2 right-2 bg-black/70 text-white px-1.5 py-0.5 rounded text-[0.7rem]">
           {{ formatDuration(item.metadata.duration) }}
         </div>
       </div>
       
       <!-- 音频类型 -->
       <div v-else-if="getFileType(item) === 'audio'" class="media-card__audio">
-        <div class="media-card__placeholder">
+        <div class="flex flex-col items-center justify-center h-full text-center">
           <span class="material-icons text-blue-500" style="font-size: 2rem;">volume_up</span>
         </div>
-        <div class="media-card__file-type">
+        <div class="absolute top-2 right-2 bg-black/70 text-white px-1.5 py-0.5 rounded text-[0.7rem] font-semibold">
           {{ getFileExtension(item.name) }}
         </div>
       </div>
       
       <!-- 文档类型 -->
       <div v-else class="media-card__document">
-        <div class="media-card__placeholder">
+        <div class="flex flex-col items-center justify-center h-full text-center">
           <i :class="getDocumentIcon(item.name)" style="font-size: 2rem;" />
         </div>
-        <div class="media-card__file-type">
+        <div class="absolute top-2 right-2 bg-black/70 text-white px-1.5 py-0.5 rounded text-[0.7rem] font-semibold">
           {{ getFileExtension(item.name) }}
         </div>
       </div>
     </div>
     
     <!-- 文件信息 -->
-    <div v-if="showDetails" class="media-card__details">
-      <div class="media-card__name" :title="item.name">
+    <div v-if="showDetails" class="p-3">
+      <div class="font-semibold text-gray-900 text-sm leading-5 mb-1 overflow-hidden text-ellipsis whitespace-nowrap" :title="item.name">
         {{ item.name }}
       </div>
       
-      <div v-if="item.size" class="media-card__size">
+      <div v-if="item.size" class="text-xs text-gray-500 mb-0.5">
         {{ formatFileSize(item.size) }}
       </div>
       
-      <div v-if="item.createdAt" class="media-card__date">
+      <div v-if="item.createdAt" class="text-xs text-gray-500 mb-0.5">
         {{ formatDate(item.createdAt) }}
       </div>
       
       <!-- 标签 -->
-      <div v-if="item.tags && item.tags.length > 0" class="media-card__tags">
+      <div v-if="item.tags && item.tags.length > 0" class="flex items-center flex-wrap gap-1 mt-2">
         <Badge
           v-for="tag in item.tags.slice(0, 3)"
           :key="tag"
           variant="secondary"
           class="text-xs"
         >{{ tag }}</Badge>
-        <span v-if="item.tags.length > 3" class="media-card__more-tags">
+        <span v-if="item.tags.length > 3" class="text-xs text-gray-500">
           +{{ item.tags.length - 3 }}
         </span>
       </div>
     </div>
     
     <!-- 悬停操作按钮 -->
-    <div class="media-card__actions">
+    <div class="media-card__actions absolute top-2 right-2 flex gap-1 opacity-0 transition-opacity duration-200">
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger as-child>
@@ -322,43 +318,11 @@ const formatDuration = (seconds: number): string => {
 </script>
 
 <style scoped>
-.media-card {
-  position: relative;
-  background: white;
-  border-radius: 8px;
-  border: 2px solid transparent;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  overflow: hidden;
-}
-
-.media-card:hover {
-  border-color: rgb(59 130 246);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
 .media-card--selectable .media-card__selection-indicator {
   position: absolute;
   top: 8px;
   left: 8px;
   z-index: 10;
-}
-
-.media-card__selection-icon {
-  width: 24px;
-  height: 24px;
-  background: rgb(59 130 246);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.media-card__content {
-  position: relative;
-  width: 100%;
-  background: rgb(249 250 251);
 }
 
 .media-card--small .media-card__content {
@@ -373,151 +337,8 @@ const formatDuration = (seconds: number): string => {
   height: 200px;
 }
 
-.media-card__folder,
-.media-card__placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  text-align: center;
-}
-
-.media-card__folder-name {
-  margin-top: 8px;
-  font-weight: 600;
-  color: rgb(55 65 81);
-}
-
-.media-card__folder-count {
-  margin-top: 4px;
-  font-size: 0.75rem;
-  color: rgb(107 114 128);
-}
-
-.media-card__image-content {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.media-card__video-thumbnail {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-
-.media-card__video-preview {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.media-card__video-progress {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: rgba(0, 0, 0, 0.3);
-}
-
-.media-card__video-progress-bar {
-  height: 100%;
-  background: rgb(59 130 246);
-  transition: width 0.1s ease;
-}
-
-.media-card__play-button {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
 .media-card:hover .media-card__play-button {
   opacity: 1;
-}
-
-.media-card__file-type {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 0.7rem;
-  font-weight: 600;
-}
-
-.media-card__duration {
-  position: absolute;
-  bottom: 8px;
-  right: 8px;
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 0.7rem;
-}
-
-.media-card__details {
-  padding: 12px;
-}
-
-.media-card__name {
-  font-weight: 600;
-  color: rgb(17 24 39);
-  font-size: 0.875rem;
-  line-height: 1.25rem;
-  margin-bottom: 4px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.media-card__size,
-.media-card__date {
-  font-size: 0.75rem;
-  color: rgb(107 114 128);
-  margin-bottom: 2px;
-}
-
-.media-card__tags {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 8px;
-}
-
-.media-card__more-tags {
-  font-size: 0.75rem;
-  color: rgb(107 114 128);
-}
-
-.media-card__actions {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  display: flex;
-  gap: 4px;
-  opacity: 0;
-  transition: opacity 0.2s ease;
 }
 
 .media-card:hover .media-card__actions {

@@ -931,6 +931,16 @@ export class MiraSDKService {
     return await this.client.tags().updateSortIndex(libraryId, items)
   }
 
+  async moveFileToFolder(libraryId: string, fileId: number, folderId: number): Promise<any> {
+    if (!this.client) throw new Error('Not connected to Mira server')
+    return await this.client.folders().moveFileToFolder(libraryId, fileId, folderId)
+  }
+
+  async addTagsToFile(libraryId: string, fileId: number, tags: string[]): Promise<any> {
+    if (!this.client) throw new Error('Not connected to Mira server')
+    return await this.client.tags().addTagsToFile(libraryId, fileId, tags)
+  }
+
   /**
    * 克隆文件夹
    */

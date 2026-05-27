@@ -1,5 +1,5 @@
 <template>
-  <div class="video-preview-view bg-gray-100 dark:bg-gray-950 h-screen flex flex-col text-sm">
+  <div class="video-preview-view bg-gray-100 dark:bg-gray-950 h-screen flex flex-col text-[13px]">
     <!-- 顶部工具栏 -->
     <header class="flex h-16 flex-shrink-0 items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-6">
       <div class="flex items-center space-x-4">
@@ -197,10 +197,6 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.video-preview-view {
-  font-size: 13px;
-}
-
 .material-icons,
 .material-symbols-outlined {
   font-size: 18px;
@@ -210,7 +206,6 @@ onUnmounted(() => {
   font-size: 16px;
 }
 
-/* 禁用按钮样式 */
 button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -218,17 +213,5 @@ button:disabled {
 
 button:disabled:hover {
   background-color: inherit;
-}
-
-/* 过渡动画 */
-.transition-colors {
-  transition-property: color, background-color, border-color;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 200ms;
-}
-
-/* 工具栏背景模糊效果 */
-.backdrop-blur-sm {
-  backdrop-filter: blur(4px);
 }
 </style>

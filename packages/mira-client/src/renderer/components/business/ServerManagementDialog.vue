@@ -8,8 +8,8 @@
         <DialogTitle>服务器管理</DialogTitle>
       </DialogHeader>
     <!-- 服务器列表 -->
-    <div class="server-list">
-      <div v-if="servers.length === 0" class="empty-state p-6 text-center">
+    <div class="max-h-[400px] overflow-y-auto">
+      <div v-if="servers.length === 0" class="flex flex-col items-center p-6 text-center">
         <span class="material-icons text-gray-400 text-4xl mb-4">folder_off</span>
         <p class="text-gray-500 mb-2">暂无服务器</p>
         <p class="text-xs text-gray-400">点击下方按钮连接您的第一个服务器</p>
@@ -215,19 +215,3 @@ const confirmDelete = async () => {
 }
 </script>
 
-<style scoped>
-.server-list {
-  max-height: 400px;
-  overflow-y: auto;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.server-item:last-child {
-  margin-bottom: 0;
-}
-</style>

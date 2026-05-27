@@ -1,6 +1,6 @@
 <template>
-  <div class="multi-tab-file-upload">
-    <Tabs :model-value="currentTabValue" @update:model-value="updateCurrentTab" class="upload-tabs">
+  <div class="w-full min-h-[400px]">
+    <Tabs :model-value="currentTabValue" @update:model-value="updateCurrentTab" class="upload-tabs h-full bg-white rounded-xl shadow-sm overflow-hidden">
       <TabsList>
         <TabsTrigger
           value="upload-area"
@@ -40,7 +40,7 @@
               @dragleave.prevent="handleDragLeave"
               @click="triggerFileSelect"
             >
-              <div class="dropzone-content">
+              <div class="flex flex-col items-center justify-center">
                 <i class="pi pi-cloud-upload text-6xl text-primary mb-4"></i>
                 <h3 class="text-xl font-semibold mb-2">拖拽文件到这里</h3>
                 <p class="text-gray-600 mb-4">或者点击选择文件</p>
@@ -105,7 +105,7 @@
         <!-- 正在上传 -->
         <TabsContent value="uploading">
           <div class="uploading-area p-4">
-            <div v-if="uploadingFiles.length === 0" class="empty-state text-center py-8">
+            <div v-if="uploadingFiles.length === 0" class="opacity-80 text-center py-8">
               <i class="pi pi-info-circle text-4xl text-gray-400 mb-4"></i>
               <p class="text-gray-500">暂无正在上传的文件</p>
             </div>
@@ -134,7 +134,7 @@
                 </div>
 
                 <!-- 进度条 -->
-                <div class="progress-area">
+                <div class="mt-2">
                   <div class="flex justify-between text-sm mb-1">
                     <span>{{ uploadItem.status }}</span>
                     <span>{{ Math.round(uploadItem.progress) }}%</span>
@@ -367,7 +367,7 @@
 
           <!-- 简化版已上传显示（当showUploadedFiles为false时） -->
           <div v-else class="uploaded-area p-4">
-            <div v-if="uploadedFiles.length === 0" class="empty-state text-center py-8">
+            <div v-if="uploadedFiles.length === 0" class="opacity-80 text-center py-8">
               <i class="pi pi-check-circle text-4xl text-gray-400 mb-4"></i>
               <p class="text-gray-500">暂无已上传的文件</p>
             </div>
@@ -985,15 +985,6 @@ defineExpose({
 </script>
 
 <style scoped>
-.multi-tab-file-upload {
-  width: 100%;
-  min-height: 400px;
-}
-
-.upload-tabs {
-  height: 100%;
-}
-
 .dropzone {
   border: 2px dashed #d1d5db;
   border-radius: 12px;
@@ -1011,13 +1002,6 @@ defineExpose({
   transform: scale(1.02);
 }
 
-.dropzone-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
 .file-item,
 .upload-item,
 .uploaded-item {
@@ -1027,16 +1011,7 @@ defineExpose({
 .file-item:hover,
 .upload-item:hover,
 .uploaded-item:hover {
-  shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transform: translateY(-1px);
-}
-
-.progress-area {
-  margin-top: 0.5rem;
-}
-
-.empty-state {
-  opacity: 0.8;
 }
 
 .actions {
@@ -1070,19 +1045,6 @@ defineExpose({
     background: #064e3b;
     border-color: #065f46;
   }
-}
-
-/* 隐藏默认的文件输入 */
-.hidden {
-  display: none;
-}
-
-/* Volt Tabs 组件样式增强 */
-.upload-tabs {
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
 }
 
 /* 标签页图标动画 */

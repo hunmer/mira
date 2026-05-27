@@ -3,7 +3,7 @@
     :data-selectable-id="item.id"
     :data-file="getLocalFile(item)"
     :class="[
-      'waterfall-card media-waterfall-item bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden group cursor-pointer transition-all duration-200 hover:shadow-md',
+      'waterfall-card media-waterfall-item bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden group cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5',
       isSelected ? 'ring-2 ring-blue-500' : ''
     ]"
     @click="handleClick"
@@ -167,9 +167,3 @@ const {
   emit
 })
 </script>
-
-<style scoped>
-.waterfall-card:hover {
-  transform: translateY(-2px);
-}
-</style>

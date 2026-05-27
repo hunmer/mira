@@ -1,13 +1,13 @@
 <template>
   <div
     ref="containerRef"
-    class="selection-container"
+    class="selection-container relative w-full h-full select-none pointer-events-auto [&>*]:pointer-events-auto"
   >
     <!-- 选择框 -->
     <div
       v-if="selecting && isSelectionAreaValid"
-      class="selection-box"
-      :class="{ 'subtract-mode': altMode }"
+      class="selection-box absolute border-2 border-dashed border-blue-500 bg-blue-500/10 pointer-events-none z-[1000] backdrop-blur-[2px] rounded"
+      :class="{ 'subtract-mode': !altMode ? false : true, '!border-red-500 !bg-red-500/10': altMode }"
       :style="selectionBoxStyle"
     />
 
@@ -577,34 +577,8 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.selection-container {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  user-select: none;
-  /* 允许点击事件穿透到子元素 */
-  pointer-events: auto;
-}
-
-.selection-container > * {
-  /* 恢复子元素的点击事件 */
-  pointer-events: auto;
-}
-
 .selection-box {
-  position: absolute;
-  border: 2px dashed #3b82f6;
-  background: rgba(59, 130, 246, 0.1);
-  pointer-events: none;
-  z-index: 1000;
-  backdrop-filter: blur(2px);
   animation: pulse 2s infinite;
-  border-radius: 4px;
-}
-
-.selection-box.subtract-mode {
-  border-color: #ef4444;
-  background: rgba(239, 68, 68, 0.1);
 }
 
 @keyframes pulse {
@@ -618,7 +592,6 @@ onUnmounted(() => {
   }
 }
 
-/* 选中状态样式 - 由具体组件自己处理样式 */
 :deep([data-selectable-id].selected) {
   transition: all 0.2s ease;
 }

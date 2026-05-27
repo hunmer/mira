@@ -19,7 +19,7 @@
           <button
             v-for="suggestion in suggestions"
             :key="suggestion"
-            class="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs rounded-full transition-colors"
+            class="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs rounded-full transition-colors hover:-translate-y-px"
             @click="$emit('search', suggestion)"
           >
             {{ suggestion }}
@@ -144,9 +144,5 @@ const suggestions = computed((): string[] => {
   50% {
     opacity: 0.7;
   }
-}
-
-.search-suggestions button:hover {
-  transform: translateY(-1px);
 }
 </style>

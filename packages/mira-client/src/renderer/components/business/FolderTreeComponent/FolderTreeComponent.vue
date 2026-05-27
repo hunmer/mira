@@ -1,5 +1,5 @@
 <template>
-  <div class="folder-tree-container">
+  <div class="folder-tree-container w-full">
     <!-- 基础分类 (仅文件夹模式) -->
     <div v-if="showBaseCategories && itemType === 'folder'" class="mb-4">
       <ul class="space-y-0.5">
@@ -102,10 +102,14 @@
                 :class="[
                   'flex items-center min-h-8 py-1 px-2 rounded-md cursor-pointer',
                   'hover:bg-gray-100 dark:hover:bg-gray-800',
-                  selectedKey === node.id ? 'bg-blue-100 text-blue-700' : ''
+                  selectedKey === node.id ? 'bg-blue-100 text-blue-700' : '',
+                  dragOverNodeId === node.id ? 'ring-2 ring-blue-400 bg-blue-50' : ''
                 ]"
                 @click="handleNodeClick(node)"
                 @contextmenu="handleNodeContextMenu(node, $event)"
+                @dragover="handleNodeDragOver($event, node)"
+                @dragleave="handleNodeDragLeave($event, node)"
+                @drop.stop="handleNodeDrop($event, node)"
               >
                 <span v-if="stat.children.length" class="material-icons text-base mr-1 text-gray-400 hover:text-gray-600 select-none" @click.stop="stat.open = !stat.open">
                   {{ stat.open ? 'expand_more' : 'chevron_right' }}
@@ -123,10 +127,14 @@
                 :class="[
                   'flex items-center min-h-8 py-1 px-2 rounded-md cursor-pointer',
                   'hover:bg-gray-100 dark:hover:bg-gray-800',
-                  selectedKey === node.id ? 'bg-blue-100 text-blue-700' : ''
+                  selectedKey === node.id ? 'bg-blue-100 text-blue-700' : '',
+                  dragOverNodeId === node.id ? 'ring-2 ring-blue-400 bg-blue-50' : ''
                 ]"
                 @click="handleNodeClick(node)"
                 @contextmenu="handleNodeContextMenu(node, $event)"
+                @dragover="handleNodeDragOver($event, node)"
+                @dragleave="handleNodeDragLeave($event, node)"
+                @drop.stop="handleNodeDrop($event, node)"
               >
                 <span v-if="stat.children.length" class="material-icons text-base mr-1 text-gray-400 hover:text-gray-600 select-none" @click.stop="stat.open = !stat.open">
                   {{ stat.open ? 'expand_more' : 'chevron_right' }}
@@ -253,6 +261,10 @@ import type { FolderItem } from '@renderer/types/components'
 import { useFolderOperations } from './composables/useFolderOperations'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { useLibraryStore } from '@renderer/stores/library'
+import { useMediaStore } from '@renderer/stores/media'
+import { useSettingsStore } from '@renderer/stores/settings'
+import { useToast } from '@renderer/composables/useToast'
+import { useHomeController } from '@renderer/controllers/HomeController'
 import { pinyinMatch } from '@renderer/utils/helpers'
 
 interface HeTreeNode {
@@ -313,9 +325,101 @@ interface Emits {
 
 const emit = defineEmits<Emits>()
 const libraryStore = useLibraryStore()
+const mediaStore = useMediaStore()
+const settingsStore = useSettingsStore()
+const toast = useToast()
+const homeController = useHomeController()
 const isFolder = computed(() => props.itemType === 'folder')
 const defaultIcon = computed(() => isFolder.value ? 'folder' : 'label')
 const sectionTitle = computed(() => props.title || (isFolder.value ? '文件夹' : '标签'))
+
+// 拖拽 drop 状态
+const dragOverNodeId = ref<string | null>(null)
+
+function resolveNodeId(node: HeTreeNode): number {
+  // tag 节点 id 格式为 "tag-123"
+  const raw = node.id
+  return parseInt(isFolder.value ? raw : raw.replace('tag-', ''))
+}
+
+function handleNodeDragOver(e: DragEvent, node: HeTreeNode) {
+  e.preventDefault()
+  if (e.dataTransfer) e.dataTransfer.dropEffect = (window as any).__miraInternalDrag ? 'move' : 'copy'
+  dragOverNodeId.value = node.id
+}
+
+function handleNodeDragLeave(e: DragEvent, _node: HeTreeNode) {
+  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+  if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) {
+    dragOverNodeId.value = null
+  }
+}
+
+async function handleNodeDrop(e: DragEvent, node: HeTreeNode) {
+  dragOverNodeId.value = null
+  if (!libraryStore.currentLibrary) return
+  const libraryId = libraryStore.currentLibrary.id
+
+  // 内部拖拽：素材库文件 → 设置文件夹/标签
+  if ((window as any).__miraInternalDrag) {
+    const selectedIds = homeController.selectedItems?.value || []
+    if (selectedIds.length === 0) return
+    await handleInternalDrop(libraryId, selectedIds, node)
+    return
+  }
+
+  // 外部文件拖拽 → 上传
+  if (!e.dataTransfer?.files?.length) return
+  const files = Array.from(e.dataTransfer.files)
+  const nodeIdNum = resolveNodeId(node)
+  if (isNaN(nodeIdNum)) return
+
+  if (settingsStore.settings.directImportMode) {
+    const metadata: Record<string, any> = {}
+    if (isFolder.value) metadata.folderId = String(nodeIdNum)
+    else metadata.tags = [String(nodeIdNum)]
+    for (const file of files) {
+      mediaStore.uploadFile(file, libraryId, metadata)
+    }
+    toast.add({ severity: 'success', detail: `正在上传 ${files.length} 个文件到「${node.label}」`, life: 2000 })
+    return
+  }
+
+  // 非直接导入模式：通过 SDK 上传并带上文件夹/标签
+  for (const file of files) {
+    const opts: any = {}
+    if (isFolder.value) opts.folderId = String(nodeIdNum)
+    else opts.tags = [String(nodeIdNum)]
+    try {
+      await miraSDKService.uploadFile(file, libraryId, opts)
+    } catch (err) {
+      console.error('Upload failed:', err)
+    }
+  }
+  toast.add({ severity: 'success', detail: `已上传 ${files.length} 个文件到「${node.label}」`, life: 2000 })
+}
+
+async function handleInternalDrop(libraryId: string, fileIds: string[], node: HeTreeNode) {
+  const nodeIdNum = resolveNodeId(node)
+  if (isNaN(nodeIdNum)) return
+
+  let success = 0
+  for (const fid of fileIds) {
+    try {
+      if (isFolder.value) {
+        await miraSDKService.moveFileToFolder(libraryId, parseInt(fid), nodeIdNum)
+      } else {
+        await miraSDKService.addTagsToFile(libraryId, parseInt(fid), [String(nodeIdNum)])
+      }
+      success++
+    } catch (err) {
+      console.error(`Failed to set ${isFolder.value ? 'folder' : 'tag'} for file ${fid}:`, err)
+    }
+  }
+  if (success > 0) {
+    toast.add({ severity: 'success', detail: `已将 ${success} 个文件${isFolder.value ? '移入' : '打上标签'}「${node.label}」`, life: 2000 })
+  }
+}
 
 // 搜索
 const showSearch = ref(props.defaultShowSearch || false)
@@ -570,10 +674,6 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.folder-tree-container {
-  width: 100%;
-}
-
 .material-icons {
   font-size: 18px;
 }

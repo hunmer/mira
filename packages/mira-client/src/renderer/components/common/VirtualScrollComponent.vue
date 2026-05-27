@@ -1,19 +1,19 @@
 <template>
   <div 
     ref="containerRef"
-    class="virtual-scroll-container"
+    class="virtual-scroll-container relative overflow-y-auto overflow-x-hidden"
     :style="{ height: containerHeight }"
     @scroll="handleScroll"
   >
     <!-- 滚动区域占位 -->
     <div 
-      class="virtual-scroll-spacer"
+      class="virtual-scroll-spacer pointer-events-none"
       :style="{ height: totalHeight + 'px' }"
     ></div>
     
     <!-- 可见项容器 -->
     <div 
-      class="virtual-scroll-content"
+      class="virtual-scroll-content will-change-transform"
       :style="{ 
         transform: `translateY(${offsetY}px)`,
         position: 'absolute',
@@ -25,7 +25,7 @@
       <div
         v-for="(item, index) in visibleItems"
         :key="getItemKey(item, startIndex + index)"
-        class="virtual-scroll-item"
+        class="virtual-scroll-item box-border"
         :style="{ height: itemHeight + 'px' }"
       >
         <slot :item="item" :index="startIndex + index">
@@ -40,7 +40,7 @@
     <!-- 加载状态 -->
     <div 
       v-if="loading" 
-      class="virtual-scroll-loading flex items-center justify-center p-4"
+      class="virtual-scroll-loading flex items-center justify-center p-4 bg-white/90 dark:bg-slate-800/90 backdrop-blur-[4px]"
       :style="{ 
         position: 'absolute',
         bottom: 0,
@@ -192,29 +192,6 @@ defineExpose({
 </script>
 
 <style scoped>
-.virtual-scroll-container {
-  position: relative;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
-.virtual-scroll-spacer {
-  pointer-events: none;
-}
-
-.virtual-scroll-content {
-  will-change: transform;
-}
-
-.virtual-scroll-item {
-  box-sizing: border-box;
-}
-
-.virtual-scroll-loading {
-  background-color: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(4px);
-}
-
 /* 滚动条样式 */
 .virtual-scroll-container::-webkit-scrollbar {
   width: 8px;
@@ -234,7 +211,6 @@ defineExpose({
   background: var(--mira-gray-500);
 }
 
-/* 暗色主题 */
 .dark .virtual-scroll-container::-webkit-scrollbar-track {
   background: var(--mira-gray-800);
 }
@@ -245,9 +221,5 @@ defineExpose({
 
 .dark .virtual-scroll-container::-webkit-scrollbar-thumb:hover {
   background: var(--mira-gray-500);
-}
-
-.dark .virtual-scroll-loading {
-  background-color: rgba(30, 41, 59, 0.9);
 }
 </style>

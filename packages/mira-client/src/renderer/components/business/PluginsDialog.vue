@@ -7,7 +7,7 @@
       <DialogHeader>
         <DialogTitle>插件管理</DialogTitle>
       </DialogHeader>
-      <div class="plugins-content h-full flex">
+      <div class="min-h-[400px] h-full flex">
         <!-- 侧边栏 -->
         <aside class="w-56 rounded-lg border border-gray-200 dark:border-gray-700 flex flex-col">
           <!-- 插件类型切换 -->
@@ -615,17 +615,3 @@ watch(isVisible, async (visible) => {
 })
 </script>
 
-<style scoped>
-.plugins-content {
-  min-height: 400px;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-.animate-spin {
-  animation: spin 1s linear infinite;
-}
-</style>

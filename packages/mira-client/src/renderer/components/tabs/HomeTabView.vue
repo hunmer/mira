@@ -1,5 +1,5 @@
 <template>
-  <div class="home-view flex-1 flex flex-col">
+  <div class="home-view flex-1 flex flex-col min-h-full">
     <div v-if="dashboardStore.loading" class="flex items-center justify-center flex-1">
       <span class="text-gray-400">加载中...</span>
     </div>
@@ -47,9 +47,3 @@ onMounted(async () => {
   dashboardUrl.value = dashboardStore.buildUrl('/statistics', params)
 })
 </script>
-
-<style scoped>
-.home-view {
-  min-height: 100%;
-}
-</style>

@@ -7,7 +7,7 @@
       <DialogHeader>
         <DialogTitle>设置</DialogTitle>
       </DialogHeader>
-      <div class="settings-content h-full flex bg-gray-50 dark:bg-gray-900">
+      <div class="min-h-[400px] h-full flex bg-gray-50 dark:bg-gray-900">
         <!-- 左侧分类面板 -->
         <aside class="w-64 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 flex flex-col">
           <div class="p-4 flex-1">
@@ -132,9 +132,3 @@ watch(isVisible, async (visible) => {
   }
 })
 </script>
-
-<style scoped>
-.settings-content {
-  min-height: 400px;
-}
-</style>

@@ -1,5 +1,5 @@
 <template>
-  <div class="search-component">
+  <div class="search-component relative">
     <!-- 主搜索框 -->
     <div class="relative flex items-center">
       <!-- 搜索输入框 -->
@@ -315,9 +315,3 @@ watch(() => props.modelValue, (newValue) => {
   }
 })
 </script>
-
-<style scoped>
-.search-component {
-  position: relative;
-}
-</style>

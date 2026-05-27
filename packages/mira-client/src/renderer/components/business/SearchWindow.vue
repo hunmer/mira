@@ -1,5 +1,5 @@
 <template>
-  <div class="search-window-container">
+  <div class="w-full h-full flex items-center justify-center p-4 box-border">
     <GlobalSearchContent />
   </div>
 </template>
@@ -62,14 +62,3 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped>
-.search-window-container {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  box-sizing: border-box;
-}
-</style>

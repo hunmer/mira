@@ -1,23 +1,23 @@
 <template>
   <div class="relative flex flex-grow flex-col items-center justify-center p-8">
     <!-- 图片容器 - 使用 VViewer 组件的内嵌模式 -->
-    <div class="flex flex-grow items-center justify-center w-full viewer-container">
+    <div class="flex flex-grow items-center justify-center w-full h-full min-h-[400px]">
       <VViewer
         :key="viewerKey"
         ref="viewerRef"
         :options="viewerOptions"
         :trigger="imageUrl"
-        class="viewer"
+        class="h-full w-full"
         @inited="onViewerInited"
       >
         <template #default>
-          <div class="images">
+          <div class="h-full flex items-center justify-center">
             <img 
               v-if="image"
               :key="viewerKey"
               :src="imageUrl"
               :alt="image.name"
-              class="viewer-image"
+              class="max-h-full max-w-full rounded-lg object-contain hidden opacity-0 transition-opacity duration-300 ease-in-out"
               @load="handleImageLoad"
               @error="handleImageError"
             />
@@ -346,39 +346,6 @@ watch(
 </script>
 
 <style scoped>
-.select-none {
-  user-select: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-}
-
-/* VViewer 组件内嵌模式样式调整 */
-.viewer-container {
-  height: 100%;
-  min-height: 400px;
-}
-
-.viewer {
-  height: 100%;
-  width: 100%;
-}
-
-.images {
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.viewer-image {
-  max-height: 100%;
-  max-width: 100%;
-  border-radius: 0.5rem;
-  object-fit: contain;
-  display: none;
-}
-
 :deep(.viewer-container) {
   background: transparent !important;
   height: 100% !important;
@@ -405,22 +372,11 @@ watch(
   }
 }
 
-/* 全屏模式样式 */
 :deep(.viewer-backdrop) {
   background: rgba(0, 0, 0, 0.8) !important;
 }
 
 :deep(.viewer-container.viewer-fixed) {
   background: rgba(0, 0, 0, 0.9) !important;
-}
-
-/* 减少加载闪烁 */
-.viewer-image {
-  opacity: 0;
-  transition: opacity 0.3s ease-in-out;
-}
-
-.viewer-image.loaded {
-  opacity: 1;
 }
 </style>

@@ -80,23 +80,50 @@ export class FolderRouter extends BaseRouter {
 
         // 为文件设置文件夹
         this.router.post('/file/set', async (req: Request, res: Response) => {
-            await this.handleFileAssociation(req, res, 'set', 'setFileFolder', 'folder', {
-                successMessage: 'File folder set successfully',
-                onSuccess: (result, libraryId, fileId) => {
-                    if (result.success) {
-                        const obj = this.backend.libraries!.getLibrary(libraryId);
-                        if (obj) {
-                            obj.libraryService.getFile(parseInt(fileId.toString())).then((file: any) => {
-                                if (file) {
-                                    this.broadcastFolderEvent('file::updated', libraryId, {
-                                        ...file, libraryId, fileId: parseInt(fileId.toString()), old_data: result.oldData,
-                                    });
-                                }
-                            });
-                        }
-                    }
+            try {
+                const libraryId = req.body.libraryId || req.query.libraryId as string;
+                const fileId = req.body.fileId;
+                const folderId = req.body.folder;
+
+                if (!fileId) {
+                    res.status(400).json({ code: 400, message: 'File ID is required', data: null });
+                    return;
                 }
-            });
+
+                const validation = await this.validateLibrary(libraryId);
+                if (!validation.success) {
+                    res.status(validation.error!.code).json(validation.error);
+                    return;
+                }
+
+                const { library } = validation;
+                const db = library.libraryService;
+
+                // 移动前注册忽略路径，避免 Watcher 重复处理
+                const oldFile = await db.getFile(parseInt(fileId));
+                const watcher = this.backend.libraries!.getLibrary(libraryId)?.watcher;
+                if (oldFile && watcher) {
+                    const oldPath = await db.getItemFilePath(oldFile);
+                    if (oldPath) watcher.ignorePath(oldPath);
+                }
+
+                const result = await db.setFileFolder(parseInt(fileId), folderId);
+                if (result.success) {
+                    const newFile = await db.getFile(parseInt(fileId));
+                    if (newFile) {
+                        const newPath = await db.getItemFilePath(newFile);
+                        if (newPath && watcher) watcher.ignorePath(newPath);
+                    }
+                    this.broadcastFolderEvent('file::updated', libraryId, {
+                        ...newFile, libraryId, fileId: parseInt(fileId), old_data: result.oldData,
+                    });
+                }
+
+                this.sendSuccess(res, { fileId, folder: folderId, success: result.success }, 'File folder set successfully');
+            } catch (error) {
+                console.error('Set file folder error:', error);
+                this.sendError(res, 500, 'Internal server error');
+            }
         });
 
         // 获取文件的文件夹

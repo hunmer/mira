@@ -196,7 +196,3 @@ const handleMediaDelete = (item: FileInfo) => {
   emit('media-delete', item)
 }
 </script>
-
-<style scoped>
-/* 继承父级样式即可 */
-</style>

@@ -1,27 +1,27 @@
 <template>
-  <div class="file-preview-container">
+  <div class="w-full h-screen flex flex-col bg-neutral-200">
     <!-- 加载状态 -->
-    <div v-if="isLoading" class="loading-container">
+    <div v-if="isLoading" class="flex flex-col justify-center items-center h-full gap-4">
       <div class="loading-spinner"></div>
       <p>正在加载文件信息...</p>
     </div>
 
     <!-- 错误状态 -->
-    <div v-else-if="error" class="error-container">
-      <div class="error-message">
-        <h3>加载失败</h3>
+    <div v-else-if="error" class="flex justify-center items-center h-full">
+      <div class="text-center p-8 bg-white rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.1)] max-w-[400px]">
+        <h3 class="text-red-500 mb-4">加载失败</h3>
         <p>{{ error }}</p>
-        <button @click="loadFileInfo" class="retry-button">重试</button>
+        <button @click="loadFileInfo" class="bg-blue-500 text-white border-none px-4 py-2 rounded cursor-pointer mt-4 hover:bg-blue-700">重试</button>
       </div>
     </div>
 
     <!-- 文件预览 -->
-    <div v-else-if="fileInfo" class="preview-content">
+    <div v-else-if="fileInfo" class="flex flex-col h-full">
       <!-- 预览区域 -->
-      <div class="preview-area">
+      <div class="flex-1 overflow-hidden relative">
         <!-- 根据文件类型渲染不同的预览组件 -->
-        <component 
-          :is="previewComponent" 
+        <component
+          :is="previewComponent"
           :file-info="fileInfo"
           @error="handlePreviewError"
         />
@@ -191,23 +191,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.file-preview-container {
-  width: 100%;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background-color: #f5f5f5;
-}
-
-.loading-container {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  gap: 1rem;
-}
-
 .loading-spinner {
   width: 40px;
   height: 40px;
@@ -220,78 +203,5 @@ onMounted(() => {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
-}
-
-.error-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-}
-
-.error-message {
-  text-align: center;
-  padding: 2rem;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  max-width: 400px;
-}
-
-.error-message h3 {
-  color: #e74c3c;
-  margin-bottom: 1rem;
-}
-
-.retry-button {
-  background-color: #007bff;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  margin-top: 1rem;
-}
-
-.retry-button:hover {
-  background-color: #0056b3;
-}
-
-.preview-content {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.file-header {
-  background: white;
-  padding: 1rem 2rem;
-  border-bottom: 1px solid #e1e1e1;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.file-header h2 {
-  margin: 0 0 0.5rem 0;
-  color: #333;
-  font-size: 1.5rem;
-}
-
-.file-meta {
-  display: flex;
-  gap: 1rem;
-  font-size: 0.9rem;
-  color: #666;
-}
-
-.file-meta span {
-  padding: 0.25rem 0.5rem;
-  background: #f8f9fa;
-  border-radius: 4px;
-}
-
-.preview-area {
-  flex: 1;
-  overflow: hidden;
-  position: relative;
 }
 </style>

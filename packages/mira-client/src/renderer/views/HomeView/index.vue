@@ -309,7 +309,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="home-view h-screen flex flex-col bg-white dark:bg-gray-900 text-sm">
+  <div class="home-view h-screen flex flex-col bg-white dark:bg-gray-900 text-[13px]">
     <!-- 顶部导航菜单 -->
     <header class="w-full flex items-center justify-between p-2 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
       <div class="flex items-center flex-1 min-w-0">
@@ -803,10 +803,6 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-.home-view {
-  font-size: 13px;
-}
-
 .material-icons,
 .material-symbols-outlined {
   font-size: 18px;
@@ -845,27 +841,5 @@ onUnmounted(() => {
 
 :deep(.dark .overflow-y-auto::-webkit-scrollbar-thumb:hover) {
   background: #9ca3af;
-}
-
-/* 悬停效果 */
-.group:hover .group-hover\:opacity-100 {
-  opacity: 1;
-}
-
-.group:hover .group-hover\:bg-black\/20 {
-  background-color: rgba(0, 0, 0, 0.2);
-}
-
-/* 过渡动画 */
-.transition-colors {
-  transition-property: color, background-color, border-color;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 200ms;
-}
-
-.transition-opacity {
-  transition-property: opacity;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 200ms;
 }
 </style>

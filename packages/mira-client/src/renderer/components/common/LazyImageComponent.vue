@@ -1,7 +1,7 @@
 <template>
   <div 
     ref="containerRef"
-    class="lazy-image-container"
+    class="lazy-image-container block"
     :class="[
       'relative overflow-hidden bg-gray-100 dark:bg-gray-800',
       roundedClass,
@@ -293,25 +293,20 @@ defineExpose({
 </script>
 
 <style scoped>
-.lazy-image-container {
-  position: relative;
-  display: block;
-}
-
 /* 骨架屏动画 */
 .shimmer {
-  background: linear-gradient(90deg, 
-    var(--mira-gray-200) 25%, 
-    var(--mira-gray-100) 50%, 
+  background: linear-gradient(90deg,
+    var(--mira-gray-200) 25%,
+    var(--mira-gray-100) 50%,
     var(--mira-gray-200) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
 
 .dark .shimmer {
-  background: linear-gradient(90deg, 
-    var(--mira-gray-700) 25%, 
-    var(--mira-gray-600) 50%, 
+  background: linear-gradient(90deg,
+    var(--mira-gray-700) 25%,
+    var(--mira-gray-600) 50%,
     var(--mira-gray-700) 75%);
   background-size: 200% 100%;
 }
@@ -323,11 +318,6 @@ defineExpose({
   100% {
     background-position: 200% 0;
   }
-}
-
-/* 图片加载动画 */
-img {
-  transition: opacity 0.3s ease-in-out;
 }
 
 /* 悬停效果 */

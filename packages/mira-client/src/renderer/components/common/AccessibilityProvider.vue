@@ -1,9 +1,9 @@
 <template>
-  <div class="accessibility-provider">
+  <div class="relative">
     <slot />
     
     <!-- 跳转到主内容链接 -->
-    <a 
+    <a
       v-if="showSkipLink"
       href="#main-content"
       class="skip-link"
@@ -19,7 +19,7 @@
       role="status"
       aria-live="polite"
     >
-      <div v-if="currentFocus" class="keyboard-hint">
+      <div v-if="currentFocus" class="text-center">
         使用 Tab 键导航，回车键激活，ESC 键退出
       </div>
     </div>
@@ -308,10 +308,6 @@ defineExpose({
 </script>
 
 <style scoped>
-.accessibility-provider {
-  position: relative;
-}
-
 /* 跳转链接 */
 .skip-link {
   position: absolute;
@@ -351,10 +347,6 @@ defineExpose({
 .keyboard-hints.visible {
   opacity: 1;
   visibility: visible;
-}
-
-.keyboard-hint {
-  text-align: center;
 }
 
 /* 屏幕阅读器专用 */

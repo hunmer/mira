@@ -6,7 +6,7 @@
     :double-click-to-clear="true"
     :realtime-selection="true"
     :min-selection-size="8"
-    class="waterfall-wrapper"
+    class="waterfall-wrapper w-full h-full"
     tabindex="0"
     @selection-update="handleSelectionUpdate"
     @item-click="handleSelectionItemClick"
@@ -382,22 +382,15 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.waterfall-wrapper {
-  width: 100%;
-  height: 100%;
-}
-
 .waterfall-card:hover {
   transform: translateY(-2px);
 }
 
-/* 自定义动画样式 */
 :deep(.animate__animated) {
   animation-fill-mode: both;
   animation-duration: 1s;
 }
 
-/* 懒加载图片样式 */
 :deep(.lazy__img[lazy=loading]) {
   padding: 2em 0;
   width: 48px;

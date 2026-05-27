@@ -64,11 +64,3 @@ const toolbarGroups = computed((): ToolbarGroup[] => [
   }
 ])
 </script>
-
-<style scoped>
-.content-toolbar {
-  background-color: white;
-  border-bottom: 1px solid rgb(229 231 235);
-  padding: 0.75rem 1.5rem;
-}
-</style>

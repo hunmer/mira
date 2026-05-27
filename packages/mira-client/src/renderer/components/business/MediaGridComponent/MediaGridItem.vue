@@ -3,7 +3,7 @@
     :data-selectable-id="item.id"
     :data-file="getLocalFile(item)"
     :class="[
-      'media-item group relative cursor-pointer',
+      'media-item group relative cursor-pointer transition-all',
       { 'selected': isSelected }
     ]"
     @click="handleClick"
@@ -152,21 +152,6 @@ const {
   font-size: 18px;
 }
 
-.media-item.selected {
-  /* 移除边框样式,使用文件名背景色表示选中状态 */
-  transition: all 0.2s ease;
-}
-
-.media-item {
-  transition: all 0.2s ease;
-}
-
-/* 懒加载图片样式 */
-.lazy-image {
-  transition: opacity 0.3s ease;
-}
-
-/* 确保 lazy 状态的图片不会拦截事件，让父容器的拖动功能正常工作 */
 :deep(.lazy-image[lazy]),
 :deep(.lazy-image[lazy=loading]),
 :deep(.lazy-image[lazy=loaded]),

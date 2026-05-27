@@ -56,17 +56,17 @@
       
       <!-- 多选模式 - 叠放相册效果 -->
       <div v-else class="relative">
-        <div class="image-stack">
+        <div class="image-stack relative w-[120px] h-[120px] mx-auto">
           <div
             v-for="(item, index) in displayItems.slice(0, 4)"
             :key="item.id"
-            class="stack-container"
+            class="stack-container absolute w-[100px] h-[100px] top-0 left-0"
             :style="{ zIndex: index, left: `${index * 8}px`, top: `${index * 8}px` }"
           >
             <!-- 加载中占位符 -->
             <div
               v-if="multiImageLoadStates[item.id] === 'loading' || multiImageLoadStates[item.id] === undefined"
-              class="stack-placeholder bg-gray-100 rounded-lg flex items-center justify-center"
+              class="stack-placeholder absolute w-full h-full top-0 left-0 rounded-xl shadow-[0_2px_6px_rgba(0,0,0,0.1)] border-2 border-white bg-gray-100 rounded-lg flex items-center justify-center"
             >
               <span class="material-icons text-gray-300 text-xl">image</span>
             </div>
@@ -74,7 +74,7 @@
             <!-- 错误占位符 -->
             <div
               v-else-if="multiImageLoadStates[item.id] === 'error'"
-              class="stack-placeholder bg-red-50 rounded-lg flex items-center justify-center"
+              class="stack-placeholder absolute w-full h-full top-0 left-0 rounded-xl shadow-[0_2px_6px_rgba(0,0,0,0.1)] border-2 border-white bg-red-50 flex items-center justify-center"
             >
               <span class="material-icons text-red-200 text-xl">broken_image</span>
             </div>
@@ -84,7 +84,7 @@
               v-show="multiImageLoadStates[item.id] === 'loaded'"
               :alt="item.name"
               :src="item.thumbnailPath || item.url"
-              class="stack-img"
+              class="stack-img absolute w-full h-full top-0 left-0 object-cover rounded-xl shadow-[0_2px_6px_rgba(0,0,0,0.1)] border-2 border-white"
               @load="handleMultiImageLoad(item.id)"
               @error="handleMultiImageError(item)"
             />
@@ -708,45 +708,6 @@ const formatDuration = (seconds?: number): string => {
 <style scoped>
 .material-icons {
   font-size: 16px;
-}
-
-/* 叠放相册样式 */
-.image-stack {
-  position: relative;
-  width: 120px;
-  height: 120px;
-  margin: 0 auto;
-}
-
-.stack-container {
-  position: absolute;
-  width: 100px;
-  height: 100px;
-  top: 0;
-  left: 0;
-}
-
-.stack-img {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  top: 0;
-  left: 0;
-  object-fit: cover;
-  border-radius: 12px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  border: 2px solid white;
-}
-
-.stack-placeholder {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  top: 0;
-  left: 0;
-  border-radius: 12px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  border: 2px solid white;
 }
 
 /* 加载动画 */

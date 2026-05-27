@@ -1,5 +1,5 @@
 <template>
-  <div class="search-result-item folder-result p-2 rounded-md flex items-center space-x-4 hover:bg-gray-600 cursor-pointer transition-colors duration-200">
+  <div class="search-result-item folder-result p-2 rounded-md flex items-center space-x-4 hover:bg-gray-600 cursor-pointer transition-colors duration-200 border border-transparent hover:border-[#374151]">
     <!-- 文件夹图标 -->
     <div class="folder-icon flex-shrink-0">
       <div 
@@ -29,7 +29,7 @@
     </div>
 
     <!-- 文件数量和层级指示 -->
-    <div class="folder-meta flex-shrink-0 flex flex-col items-end space-y-1">
+    <div class="folder-meta flex-shrink-0 flex flex-col items-end space-y-1 transition-opacity duration-200">
       <!-- 文件数量 -->
       <span 
         v-if="item.fileCount && item.fileCount > 0" 
@@ -127,24 +127,12 @@ const folderDepth = computed((): number => {
 </script>
 
 <style scoped>
-.search-result-item {
-  border: 1px solid transparent;
-}
-
-.search-result-item:hover {
-  border-color: #374151;
-}
-
 .folder-icon {
   transition: transform 0.2s;
 }
 
 .search-result-item:hover .folder-icon {
   transform: scale(1.05);
-}
-
-.folder-meta {
-  transition: opacity 0.2s;
 }
 
 .search-result-item:hover .folder-meta {
@@ -158,20 +146,20 @@ const folderDepth = computed((): number => {
     align-items: flex-start;
     gap: 0.5rem;
   }
-  
+
   .folder-result > * {
     margin-left: 0 !important;
     margin-right: 0 !important;
   }
-  
+
   .folder-icon {
     align-self: center;
   }
-  
+
   .folder-info {
     text-align: center;
   }
-  
+
   .folder-meta {
     align-self: center;
     flex-direction: row;
@@ -184,11 +172,11 @@ const folderDepth = computed((): number => {
     width: 2.5rem;
     height: 2.5rem;
   }
-  
+
   .folder-info p {
     font-size: 0.875rem;
   }
-  
+
   .folder-info div {
     font-size: 0.75rem;
   }

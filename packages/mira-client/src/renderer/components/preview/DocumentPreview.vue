@@ -1,42 +1,42 @@
 <template>
-  <div class="document-preview">
-    <div class="document-container">
-      <div class="document-info">
-        <h3>{{ fileInfo.title || fileInfo.name || '未知文档' }}</h3>
-        <div class="meta-info">
-          <span v-if="fileInfo.mimeType" class="mime-type">{{ fileInfo.mimeType }}</span>
-          <span v-if="fileInfo.size" class="file-size">{{ formatFileSize(fileInfo.size) }}</span>
+  <div class="w-full h-full flex flex-col bg-neutral-100">
+    <div class="flex flex-col h-full">
+      <div class="bg-white px-8 py-4 border-b border-gray-200">
+        <h3 class="m-0 mb-2 text-gray-800">{{ fileInfo.title || fileInfo.name || '未知文档' }}</h3>
+        <div class="flex gap-4 text-sm text-gray-500">
+          <span v-if="fileInfo.mimeType" class="px-2 py-1 bg-neutral-100 rounded">{{ fileInfo.mimeType }}</span>
+          <span v-if="fileInfo.size" class="px-2 py-1 bg-neutral-100 rounded">{{ formatFileSize(fileInfo.size) }}</span>
         </div>
       </div>
-      
+
       <!-- PDF预览 -->
-      <div v-if="isPDF" class="pdf-container">
-        <iframe 
+      <div v-if="isPDF" class="flex-1 relative">
+        <iframe
           v-if="documentUrl"
           :src="documentUrl"
-          class="pdf-viewer"
+          class="w-full h-full border-none"
           @error="onDocumentError"
         ></iframe>
-        <div v-else class="error">
+        <div v-else class="flex justify-center items-center flex-1 text-red-500 text-center">
           <p>无法加载PDF文件</p>
         </div>
       </div>
-      
+
       <!-- 文本文件预览 -->
-      <div v-else-if="isTextFile" class="text-container">
-        <div v-if="textContent" class="text-content">
+      <div v-else-if="isTextFile" class="flex-1 overflow-auto bg-white m-4 rounded-lg shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
+        <div v-if="textContent" class="text-content p-8">
           <pre>{{ textContent }}</pre>
         </div>
-        <div v-else class="error">
+        <div v-else class="flex justify-center items-center flex-1 text-red-500 text-center">
           <p>无法加载文本内容</p>
         </div>
       </div>
-      
+
       <!-- 其他文档类型 -->
-      <div v-else class="generic-document">
-        <div class="document-icon">📄</div>
+      <div v-else class="flex flex-col justify-center items-center flex-1 gap-4">
+        <div class="text-6xl opacity-50">📄</div>
         <p>此文档类型暂不支持预览</p>
-        <button v-if="documentUrl" @click="downloadFile" class="download-button">
+        <button v-if="documentUrl" @click="downloadFile" class="bg-blue-500 text-white border-none px-6 py-3 rounded cursor-pointer text-base hover:bg-blue-700">
           下载文件
         </button>
       </div>
@@ -133,68 +133,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.document-preview {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  background: #f8f9fa;
-}
-
-.document-container {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.document-info {
-  background: white;
-  padding: 1rem 2rem;
-  border-bottom: 1px solid #e1e1e1;
-}
-
-.document-info h3 {
-  margin: 0 0 0.5rem 0;
-  color: #333;
-}
-
-.meta-info {
-  display: flex;
-  gap: 1rem;
-  font-size: 0.9rem;
-  color: #666;
-}
-
-.meta-info span {
-  padding: 0.25rem 0.5rem;
-  background: #f8f9fa;
-  border-radius: 4px;
-}
-
-.pdf-container {
-  flex: 1;
-  position: relative;
-}
-
-.pdf-viewer {
-  width: 100%;
-  height: 100%;
-  border: none;
-}
-
-.text-container {
-  flex: 1;
-  overflow: auto;
-  background: white;
-  margin: 1rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.text-content {
-  padding: 2rem;
-}
-
 .text-content pre {
   margin: 0;
   white-space: pre-wrap;
@@ -202,42 +140,5 @@ onMounted(() => {
   font-family: 'Courier New', monospace;
   font-size: 0.9rem;
   line-height: 1.5;
-}
-
-.generic-document {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  flex: 1;
-  gap: 1rem;
-}
-
-.document-icon {
-  font-size: 4rem;
-  opacity: 0.5;
-}
-
-.download-button {
-  background-color: #007bff;
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 1rem;
-}
-
-.download-button:hover {
-  background-color: #0056b3;
-}
-
-.error {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex: 1;
-  color: #e74c3c;
-  text-align: center;
 }
 </style>

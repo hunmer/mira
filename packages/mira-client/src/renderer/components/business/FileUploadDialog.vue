@@ -7,7 +7,7 @@
       <DialogHeader>
         <DialogTitle>文件上传</DialogTitle>
       </DialogHeader>
-      <div class="file-upload-content flex flex-col min-h-0 overflow-hidden">
+      <div class="file-upload-content flex flex-col min-h-[400px] overflow-hidden">
         <!-- 顶部队列状态 -->
         <div v-if="queueStats.pending > 0 || queueStats.running > 0" class="flex items-center justify-end space-x-4 text-sm mb-4 px-1">
           <span class="text-blue-600 dark:text-blue-400">等待中: {{ queueStats.pending }}</span>
@@ -98,7 +98,7 @@
                       v-for="file in pendingFiles"
                       :key="file.id"
                       :data-selectable-id="file.id"
-                      class="file-card group relative bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden border-2 transition-all cursor-pointer"
+                      class="file-card group relative bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden border-2 transition-all cursor-pointer select-none"
                       :class="selectedPendingIds.includes(file.id) ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800' : 'border-transparent hover:border-gray-300 dark:hover:border-gray-600'"
                       @click.stop="handleFileClick(file, $event)"
                     >
@@ -322,23 +322,6 @@ function handleTagTreeSelect(tag: any) {
 </script>
 
 <style scoped>
-.file-upload-content {
-  min-height: 400px;
-}
-
-.upload-dropzone {
-  user-select: none;
-}
-
-.file-card {
-  user-select: none;
-}
-
-.tag-btn {
-  white-space: nowrap;
-}
-
-/* SelectionBox 样式 */
 :deep(.selection-box) {
   background: rgba(59, 130, 246, 0.1);
   border: 2px solid rgba(59, 130, 246, 0.6);

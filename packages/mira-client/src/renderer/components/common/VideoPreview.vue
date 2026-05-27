@@ -1,9 +1,9 @@
 <template>
-  <div class="video-preview-wrapper">
+  <div class="relative w-full h-full overflow-hidden [contain:layout_style]">
     <video
       ref="videoRef"
       :src="src"
-      class="rounded-lg object-cover w-full h-full"
+      class="rounded-lg object-cover w-full h-full block"
       :muted="muted"
       loop
       preload="auto"
@@ -287,27 +287,11 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.video-preview-wrapper {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  overflow: hidden; /* 防止视频溢出 */
-  contain: layout style; /* 优化渲染性能 */
-}
-
-video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block; /* 移除默认的inline间距 */
-}
-
-/* 隐藏 Plyr 控制栏和元素 */
 :deep(.plyr) {
   --plyr-control-spacing: 0;
   width: 100% !important;
   height: 100% !important;
-  aspect-ratio: inherit; /* 继承父容器的宽高比 */
+  aspect-ratio: inherit;
 }
 
 :deep(.plyr__video-wrapper) {
@@ -347,7 +331,6 @@ video {
   visibility: hidden !important;
 }
 
-/* 确保 Plyr 容器不会超出父容器尺寸 */
 :deep(.plyr--video) {
   max-width: 100%;
   max-height: 100%;
@@ -355,7 +338,6 @@ video {
   aspect-ratio: inherit;
 }
 
-/* 防止视频元素撑开容器 */
 :deep(.plyr__video-embed),
 :deep(.plyr__video-wrapper video) {
   max-width: 100% !important;
@@ -364,12 +346,10 @@ video {
   aspect-ratio: inherit;
 }
 
-/* 禁止 Plyr 自动设置尺寸 */
 :deep(.plyr--video .plyr__video-wrapper) {
-  padding-bottom: 0 !important; /* 移除 Plyr 的 aspect-ratio padding */
+  padding-bottom: 0 !important;
 }
 
-/* 确保视频填充方式正确 */
 :deep(.plyr__video-wrapper video),
 :deep(.plyr video) {
   position: absolute !important;

@@ -3,7 +3,7 @@
     :data-selectable-id="item.id"
     :data-file="getLocalFile(item)"
     :class="[
-      'media-item group relative cursor-pointer',
+      'group relative cursor-pointer transition-all duration-200',
       { 'selected': isSelected }
     ]"
     @click="handleClick"
@@ -26,7 +26,7 @@
         <img
           v-lazy="imageSrc"
           :alt="item.name"
-          class="w-full h-full object-cover transition-opacity duration-300 lazy-image"
+          class="w-full h-full object-cover transition-opacity duration-300"
           @error="handleImageError"
         />
       </div>
@@ -46,7 +46,7 @@
         @click.stop="$emit('toggle-mute')"
         class="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded hover:bg-black/70 transition-colors z-10"
       >
-        <span class="material-icons text-sm">
+        <span class="material-icons text-[18px]">
           {{ isMuted ? 'volume_off' : 'volume_up' }}
         </span>
       </button>
@@ -65,7 +65,7 @@
         class="absolute inset-0 flex items-center justify-center"
       >
         <div class="bg-black/50 rounded-full p-3">
-          <span class="material-icons text-white text-2xl">play_arrow</span>
+          <span class="material-icons text-white text-[18px]">play_arrow</span>
         </div>
       </div>
 
@@ -74,7 +74,7 @@
         v-if="isSelected"
         class="absolute top-2 left-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center"
       >
-        <span class="material-icons text-white text-sm">check</span>
+        <span class="material-icons text-white text-[18px]">check</span>
       </div>
 
       <!-- 视频进度条 (仅在视频预览时显示) -->
@@ -204,23 +204,3 @@ const handlePointerDown = (event: PointerEvent) => {
   emit('pointer-down', event, props.item)
 }
 </script>
-
-<style scoped>
-.material-icons {
-  font-size: 18px;
-}
-
-.media-item.selected {
-  /* 移除边框样式，使用文件名背景色表示选中状态 */
-  transition: all 0.2s ease;
-}
-
-.media-item {
-  transition: all 0.2s ease;
-}
-
-/* 懒加载图片样式 */
-.lazy-image {
-  transition: opacity 0.3s ease;
-}
-</style>

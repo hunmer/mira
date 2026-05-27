@@ -1,5 +1,5 @@
 <template>
-  <div class="global-search-content bg-gray-800 text-gray-300 rounded-lg shadow-lg w-full max-w-2xl mx-auto">
+  <div class="global-search-content bg-gray-800 dark:bg-[#1f2937] text-gray-300 rounded-lg shadow-lg w-full max-w-2xl mx-auto">
     <!-- 搜索头部 -->
     <div class="search-header p-4 border-b border-gray-700 flex items-center justify-between">
       <div class="flex items-center w-full">
@@ -68,7 +68,7 @@
             v-for="(item, index) in currentSearchResults"
             :key="getItemKey(item, index)"
             :class="[
-              'search-result-item p-2 rounded-md cursor-pointer transition-colors duration-200',
+              'search-result-item p-2 rounded-md cursor-pointer transition-all duration-200 ease-in-out',
               selectedResultIndex === index 
                 ? 'bg-gray-600 ring-2 ring-blue-500' 
                 : 'hover:bg-gray-600'
@@ -279,11 +279,6 @@ defineExpose({
 </script>
 
 <style scoped>
-/* 搜索结果项过渡动画 */
-.search-result-item {
-  transition: all 0.2s ease-in-out;
-}
-
 /* 选中状态的特殊样式 */
 .search-result-item[aria-selected="true"] {
   transform: translateX(2px);
@@ -323,28 +318,21 @@ kbd {
     margin: 0;
     border-radius: 0;
   }
-  
+
   .search-tabs {
     flex-wrap: wrap;
     gap: 0.5rem;
   }
-  
+
   .search-tabs button {
     font-size: 0.875rem;
     padding: 0.5rem 0.75rem;
   }
-  
+
   .search-footer {
     flex-direction: column;
     gap: 0.5rem;
     text-align: center;
-  }
-}
-
-/* 暗色主题优化 */
-.dark {
-  .global-search-content {
-    background-color: #1f2937;
   }
 }
 </style>

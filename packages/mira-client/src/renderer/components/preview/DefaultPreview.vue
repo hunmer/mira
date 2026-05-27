@@ -1,41 +1,41 @@
 <template>
-  <div class="default-preview">
-    <div class="preview-container">
-      <div class="file-icon">
-        <span class="icon">{{ getFileIcon() }}</span>
+  <div class="w-full h-full flex justify-center items-center bg-neutral-100">
+    <div class="flex flex-col items-center gap-8 p-12 bg-white rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.1)] max-w-[500px] w-[90%]">
+      <div class="flex justify-center items-center w-[100px] h-[100px] bg-gray-300 rounded-full">
+        <span class="text-5xl">{{ getFileIcon() }}</span>
       </div>
-      
-      <div class="file-info">
-        <h3>{{ fileInfo.title || fileInfo.name || '未知文件' }}</h3>
-        
-        <div class="file-details">
-          <div v-if="fileInfo.mimeType" class="detail-item">
-            <span class="label">文件类型:</span>
-            <span class="value">{{ fileInfo.mimeType }}</span>
+
+      <div class="text-center w-full">
+        <h3 class="m-0 mb-6 text-gray-800 text-2xl break-words">{{ fileInfo.title || fileInfo.name || '未知文件' }}</h3>
+
+        <div class="flex flex-col gap-3 mb-8 text-left">
+          <div v-if="fileInfo.mimeType" class="detail-item flex justify-between p-2 bg-neutral-100 rounded">
+            <span class="label font-medium text-gray-500 min-w-[80px]">文件类型:</span>
+            <span class="value text-gray-800 break-words flex-1 text-right">{{ fileInfo.mimeType }}</span>
           </div>
-          
-          <div v-if="fileInfo.size" class="detail-item">
-            <span class="label">文件大小:</span>
-            <span class="value">{{ formatFileSize(fileInfo.size) }}</span>
+
+          <div v-if="fileInfo.size" class="detail-item flex justify-between p-2 bg-neutral-100 rounded">
+            <span class="label font-medium text-gray-500 min-w-[80px]">文件大小:</span>
+            <span class="value text-gray-800 break-words flex-1 text-right">{{ formatFileSize(fileInfo.size) }}</span>
           </div>
-          
-          <div v-if="fileInfo.updatedAt" class="detail-item">
-            <span class="label">修改时间:</span>
-            <span class="value">{{ formatDate(fileInfo.updatedAt) }}</span>
+
+          <div v-if="fileInfo.updatedAt" class="detail-item flex justify-between p-2 bg-neutral-100 rounded">
+            <span class="label font-medium text-gray-500 min-w-[80px]">修改时间:</span>
+            <span class="value text-gray-800 break-words flex-1 text-right">{{ formatDate(fileInfo.updatedAt) }}</span>
           </div>
-          
-          <div v-if="fileInfo.description" class="detail-item">
-            <span class="label">描述:</span>
-            <span class="value">{{ fileInfo.description }}</span>
+
+          <div v-if="fileInfo.description" class="detail-item flex justify-between p-2 bg-neutral-100 rounded">
+            <span class="label font-medium text-gray-500 min-w-[80px]">描述:</span>
+            <span class="value text-gray-800 break-words flex-1 text-right">{{ fileInfo.description }}</span>
           </div>
         </div>
-        
-        <div class="actions">
-          <button v-if="downloadUrl" @click="downloadFile" class="download-button">
+
+        <div class="flex gap-4 justify-center flex-wrap">
+          <button v-if="downloadUrl" @click="downloadFile" class="px-6 py-3 border-none rounded-md cursor-pointer text-[0.95rem] transition-all duration-200 bg-blue-500 text-white hover:bg-blue-700">
             下载文件
           </button>
-          
-          <button @click="copyFileInfo" class="copy-button">
+
+          <button @click="copyFileInfo" class="px-6 py-3 border-none rounded-md cursor-pointer text-[0.95rem] transition-all duration-200 bg-gray-500 text-white hover:bg-gray-600">
             复制文件信息
           </button>
         </div>
@@ -151,116 +151,3 @@ const copyFileInfo = (): void => {
 }
 </script>
 
-<style scoped>
-.default-preview {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #f8f9fa;
-}
-
-.preview-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2rem;
-  padding: 3rem;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  max-width: 500px;
-  width: 90%;
-}
-
-.file-icon {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100px;
-  height: 100px;
-  background: #f0f0f0;
-  border-radius: 50%;
-}
-
-.file-icon .icon {
-  font-size: 3rem;
-}
-
-.file-info {
-  text-align: center;
-  width: 100%;
-}
-
-.file-info h3 {
-  margin: 0 0 1.5rem 0;
-  color: #333;
-  font-size: 1.5rem;
-  word-break: break-word;
-}
-
-.file-details {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-bottom: 2rem;
-  text-align: left;
-}
-
-.detail-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.5rem;
-  background: #f8f9fa;
-  border-radius: 4px;
-}
-
-.detail-item .label {
-  font-weight: 500;
-  color: #666;
-  min-width: 80px;
-}
-
-.detail-item .value {
-  color: #333;
-  word-break: break-word;
-  flex: 1;
-  text-align: right;
-}
-
-.actions {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.download-button,
-.copy-button {
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.95rem;
-  transition: all 0.2s;
-}
-
-.download-button {
-  background-color: #007bff;
-  color: white;
-}
-
-.download-button:hover {
-  background-color: #0056b3;
-}
-
-.copy-button {
-  background-color: #6c757d;
-  color: white;
-}
-
-.copy-button:hover {
-  background-color: #545b62;
-}
-</style>

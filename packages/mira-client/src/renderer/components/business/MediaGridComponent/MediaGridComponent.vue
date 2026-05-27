@@ -312,7 +312,6 @@ onUnmounted(() => {
   font-size: 18px;
 }
 
-/* Viselect 选择框样式 */
 :deep(.selection-area) {
   background: rgba(59, 130, 246, 0.1);
   border: 2px solid rgba(59, 130, 246, 0.6);
