@@ -340,6 +340,8 @@
 import { ref, computed, watch, onMounted, onUnmounted, nextTick, toRef } from 'vue'
 import { useMediaStore } from '@renderer/stores/media'
 import { useLibraryStore } from '@renderer/stores/library'
+import { useSettingsStore } from '@renderer/stores/settings'
+import { useToast } from '@renderer/composables/useToast'
 import { appService } from '@renderer/services'
 import { useTagStore } from '@renderer/stores/tag'
 import { useHomeController } from '@renderer/controllers/HomeController'
@@ -390,6 +392,7 @@ const emit = defineEmits<{
 // 获取共享状态和控制器
 const tagStore = useTagStore()
 const mediaStore = useMediaStore()
+const libraryStore = useLibraryStore()
 const homeController = useHomeController()
 
 // 使用独立的Tab分页状态管理 (已由MediaTabData替代)
@@ -455,6 +458,9 @@ const droppedFiles = ref<File[]>([])
 const uploadFolderId = ref<string>()
 const uploadTagIds = ref<string[]>([])
 
+const settingsStore = useSettingsStore()
+const toast = useToast()
+
 const handleDragOver = (e: DragEvent) => {
   if ((window as any).__miraInternalDrag) return
   isDragOver.value = true
@@ -467,17 +473,36 @@ const handleDragLeave = (e: DragEvent) => {
   }
 }
 
-const handleDrop = (e: DragEvent) => {
+const handleDrop = async (e: DragEvent) => {
   isDragOver.value = false
   if ((window as any).__miraInternalDrag) return
   if (!e.dataTransfer?.files?.length) return
 
-  droppedFiles.value = Array.from(e.dataTransfer.files)
-  // 从当前 tab 的 filters 中提取文件夹和标签
+  const files = Array.from(e.dataTransfer.files)
   const folder = props.filters?.folder
-  uploadFolderId.value = folder != null && Number.isFinite(Number(folder)) ? String(folder) : undefined
+  const folderId = folder != null && Number.isFinite(Number(folder)) ? String(folder) : undefined
   const tags = props.filters?.tags
-  uploadTagIds.value = Array.isArray(tags) ? tags.map(String) : []
+  const tagIds = Array.isArray(tags) ? tags.map(String) : []
+
+  if (settingsStore.settings.directImportMode) {
+    const libraryId = libraryStore.currentLibrary?.id
+    if (!libraryId) {
+      toast.add({ severity: 'error', summary: '错误', detail: '未选择素材库', life: 3000 })
+      return
+    }
+    const metadata: Record<string, any> = {}
+    if (folderId) metadata.folderId = folderId
+    if (tagIds.length > 0) metadata.tags = tagIds
+    for (const file of files) {
+      mediaStore.uploadFile(file, libraryId, Object.keys(metadata).length > 0 ? metadata : undefined)
+    }
+    toast.add({ severity: 'success', summary: '直接导入', detail: `正在上传 ${files.length} 个文件`, life: 2000 })
+    return
+  }
+
+  droppedFiles.value = files
+  uploadFolderId.value = folderId
+  uploadTagIds.value = tagIds
   showUploadDialog.value = true
 }
 
@@ -607,9 +632,6 @@ const fetchPageData = async (page: number) => {
   if (!libraryId) {
     // 尝试从当前素材库获取 libraryId
     try {
-      const { useLibraryStore } = await import('@/renderer/stores/library')
-      const libraryStore = useLibraryStore()
-
       if (libraryStore.currentLibrary?.id) {
         libraryId = libraryStore.currentLibrary.id
       } else {
@@ -881,7 +903,6 @@ const handleToolbarAction = async (action: string) => {
   if (action === 'delete') {
     const ids = selectedItems.value
     if (ids.length === 0) return
-    const libraryStore = useLibraryStore()
     const cachedFiles = mediaTabData.getCachedData().data
     let failed = 0
     for (const id of ids) {

@@ -30,7 +30,10 @@ export interface AppSettings {
 
   // 媒体预览设置
   videoPreviewMuted: boolean
-  
+
+  // 导入设置
+  directImportMode: boolean
+
   // 高级设置
   debugMode: boolean
   enableNotifications: boolean
@@ -131,7 +134,10 @@ export const useSettingsStore = defineStore('settings', () => {
 
     // 媒体预览设置
     videoPreviewMuted: true,
-    
+
+    // 导入设置
+    directImportMode: false,
+
     // 高级设置
     debugMode: false,
     enableNotifications: true,
@@ -376,6 +382,7 @@ export const useSettingsStore = defineStore('settings', () => {
       lazyLoading: true,
       maxConcurrentUploads: 3,
       videoPreviewMuted: true,
+      directImportMode: false,
       debugMode: false,
       enableNotifications: true,
       autoBackup: true,

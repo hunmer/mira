@@ -60,6 +60,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 // 导入组件
 import GeneralPanel from '../../views/settings/GeneralPanel.vue'
 import NotificationsPanel from '../../views/settings/NotificationsPanel.vue'
+import ImportPanel from '../../views/settings/ImportPanel.vue'
 import PluginsPanel from '../../views/settings/pluginPlan.vue'
 import DataPanel from '../../views/settings/DataPanel.vue'
 
@@ -98,6 +99,7 @@ const currentComponent = computed(() => {
   const componentMap: Record<string, any> = {
     general: GeneralPanel,
     notifications: NotificationsPanel,
+    import: ImportPanel,
     plugins: PluginsPanel,
     data: DataPanel
   }
