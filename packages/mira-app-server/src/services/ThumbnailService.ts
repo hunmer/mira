@@ -192,11 +192,13 @@ export class ThumbnailService {
     }
   }
 
-  private incrementProgress(libraryId: string): void {
+  private incrementProgress(libraryId: string): { total: number; completed: number } {
     const p = this.progress.get(libraryId);
     if (p) {
       p.completed++;
+      return p;
     }
+    return { total: 0, completed: 0 };
   }
 
   cancelScan(): void {
@@ -264,9 +266,21 @@ export class ThumbnailService {
       } catch {
         // skip
       }
-      this.incrementProgress(libraryId);
+      const p = this.incrementProgress(libraryId);
+      if (p.completed % 1000 === 0 || p.completed === total) {
+        console.log(`ThumbnailService: sync progress ${p.completed}/${total} (${Math.round(p.completed / total * 100)}%), synced ${synced}`);
+      }
     }
     return { total, synced };
+  }
+
+  private incrementProgress(libraryId: string): { total: number; completed: number } {
+    const p = this.progress.get(libraryId);
+    if (p) {
+      p.completed++;
+      return p;
+    }
+    return { total: 0, completed: 0 };
   }
 
   private async getPendingFiles(libraryId: string, dbService: ILibraryServerData): Promise<any[]> {
