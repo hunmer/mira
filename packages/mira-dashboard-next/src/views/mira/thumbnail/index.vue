@@ -94,15 +94,41 @@ async function syncThumbs() {
   try {
     const res: any = await thumbnailApi.sync(selectedLibraryId.value)
     if (res.data?.success) {
-      const { total, synced } = res.data.data
-      addLog(t('thumbnail.syncResult', { total, synced }))
-      await refreshStats()
+      addLog(t('thumbnail.syncStarted'))
+      startSyncProgressMonitoring()
     }
   } catch (error: any) {
     addLog(`${t('thumbnail.syncFailed')}：${error.message}`)
-  } finally {
     syncing.value = false
   }
+}
+
+let lastSyncLoggedPercent = -1
+function startSyncProgressMonitoring() {
+  lastSyncLoggedPercent = -1
+  startProgressMonitoring()
+  // override the normal progress monitoring with sync-aware version
+  stopProgressMonitoring()
+  progressTimer = setInterval(async () => {
+    try {
+      const res: any = await thumbnailApi.progress(selectedLibraryId.value)
+      if (!res.data?.success) return
+      progress.value = res.data.data
+      const pct = progress.value.progress
+      // log at 25% intervals
+      if (pct < 100 && pct - lastSyncLoggedPercent >= 25) {
+        lastSyncLoggedPercent = pct
+        addLog(`${t('thumbnail.syncProgress')}：${progress.value.completed} / ${progress.value.totalPending} (${pct}%)`)
+      }
+      if (!progress.value.processing && progress.value.queueLength === 0) {
+        stopProgressMonitoring()
+        const { total, synced } = { total: progress.value.totalPending, synced: progress.value.completed }
+        addLog(t('thumbnail.syncResult', { total, synced }))
+        syncing.value = false
+        setTimeout(() => refreshStats(), 1000)
+      }
+    } catch {}
+  }, 1000)
 }
 
 function startProgressMonitoring() {

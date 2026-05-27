@@ -224,6 +224,8 @@ export default {
     scanning: 'Scanning...',
     cancelScan: 'Cancel Scan',
     syncThumbs: 'Sync Thumb Status',
+    syncStarted: 'Thumbnail sync started',
+    syncProgress: 'Sync progress',
     syncResult: 'Sync complete: {total} files, {synced} updated',
     syncFailed: 'Failed to sync thumb status',
     scanStarted: 'Thumbnail scan started',

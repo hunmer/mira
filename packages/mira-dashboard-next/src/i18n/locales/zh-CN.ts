@@ -224,6 +224,8 @@ export default {
     scanning: '正在扫描...',
     cancelScan: '取消扫描',
     syncThumbs: '同步缩略图状态',
+    syncStarted: '缩略图同步已开始',
+    syncProgress: '同步进度',
     syncResult: '同步完成：共 {total} 个文件，更新 {synced} 条记录',
     syncFailed: '同步缩略图状态失败',
     scanStarted: '缩略图扫描已开始',

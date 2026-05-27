@@ -162,11 +162,11 @@ export class ThumbnailService {
     })();
   }
 
-  async scanPending(libraryId: string, dbService: ILibraryServerData): Promise<void> {
+  async scanPending(libraryId: string, dbService: ILibraryServerData, reason: string = 'unknown'): Promise<void> {
     const pendingFiles = await this.getPendingFiles(libraryId, dbService);
     const total = pendingFiles.length;
     this.progress.set(libraryId, { total, completed: 0 });
-    console.log(`ThumbnailService: scanning ${total} pending files for library ${libraryId}`);
+    console.log(`ThumbnailService: scanning ${total} pending files for library ${libraryId} (reason: ${reason})`);
 
     for (const file of pendingFiles) {
       this.taskQueue.push(async () => {
@@ -239,13 +239,17 @@ export class ThumbnailService {
     };
   }
 
-  async syncThumbStatus(libraryId: string, dbService: ILibraryServerData): Promise<{ total: number; synced: number }> {
+  async syncThumbStatus(libraryId: string, dbService: ILibraryServerData, reason: string = 'manual-sync'): Promise<{ total: number; synced: number }> {
     const files = (await dbService.getFiles({
       select: 'id,hash,thumb',
       filters: { limit: 9999999 },
       isUrlFile: false,
       countFile: true,
     })).result;
+
+    const total = files.length;
+    this.progress.set(libraryId, { total, completed: 0 });
+    console.log(`ThumbnailService: syncing ${total} files for library ${libraryId} (reason: ${reason})`);
 
     let synced = 0;
     for (const file of files) {
@@ -258,10 +262,11 @@ export class ThumbnailService {
           synced++;
         }
       } catch {
-        continue;
+        // skip
       }
+      this.incrementProgress(libraryId);
     }
-    return { total: files.length, synced };
+    return { total, synced };
   }
 
   private async getPendingFiles(libraryId: string, dbService: ILibraryServerData): Promise<any[]> {

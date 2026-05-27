@@ -19,7 +19,7 @@ export class ThumbRouter extends BaseRouter {
       const validation = await this.validateLibrary(libraryId);
       if (!validation.success) return res.status(validation.error!.code).json(validation.error);
 
-      this.thumbnailService.scanPending(libraryId, validation.library.libraryService);
+      this.thumbnailService.scanPending(libraryId, validation.library.libraryService, 'manual-scan');
       res.json({ success: true, message: '开始扫描缩略图' });
     });
 

@@ -62,7 +62,7 @@ export class LibraryStorage {
             // 自动扫描缺失缩略图
             const enableThumbScan = dbConfig.customFields?.enableThumbScan ?? false;
             if (enableThumbScan) {
-                thumbService.scanPending(libraryId, dbServer);
+                thumbService.scanPending(libraryId, dbServer, 'library-startup');
             }
         }
 
