@@ -113,14 +113,15 @@ export class FileRoutes {
                         this.backend.webSocketServer?.broadcastLibraryEvent(libraryId, 'file::updated', {
                             ...result,
                             libraryId,
-                            fileId: parseInt(fileId)
+                            fileId: parseInt(fileId),
+                            old_data: existingFile,
                         });
 
                         if (clientId) {
                             const ws = this.backend.webSocketServer?.getWsClientById(libraryId, clientId);
                             ws && this.backend.webSocketServer?.sendToWebsocket(ws, {
                                 eventName: 'file::updated',
-                                data: { fileId: parseInt(fileId) }
+                                data: { fileId: parseInt(fileId), old_data: existingFile }
                             });
                         }
 
@@ -222,7 +223,8 @@ export class FileRoutes {
                                     this.backend.webSocketServer?.broadcastLibraryEvent(libraryId, 'file::updated', {
                                         ...result,
                                         libraryId,
-                                        fileId: parseInt(fileId)
+                                        fileId: parseInt(fileId),
+                                        old_data: existingFile,
                                     });
                                 }
                             }
@@ -698,7 +700,7 @@ export class FileRoutes {
                 }
 
                 const result = await obj.libraryService.getFile(parseInt(fileId));
-                this.broadcastFileEvent('file::updated', libraryId, result, parseInt(fileId));
+                this.broadcastFileEvent('file::updated', libraryId, result, parseInt(fileId), file);
 
                 res.json({ code: 0, message: 'Success', data: result });
             } catch (error) {
@@ -735,7 +737,7 @@ export class FileRoutes {
 
                 await obj.libraryService.updateFile(parseInt(fileId), updateData);
                 const result = await obj.libraryService.getFile(parseInt(fileId));
-                this.broadcastFileEvent('file::updated', libraryId, result, parseInt(fileId));
+                this.broadcastFileEvent('file::updated', libraryId, result, parseInt(fileId), file);
 
                 res.json({ code: 0, message: 'Success', data: result });
             } catch (error) {
@@ -745,14 +747,15 @@ export class FileRoutes {
         });
     }
 
-    private broadcastFileEvent(event: string, libraryId: string, result: any, fileId: number) {
+    private broadcastFileEvent(event: string, libraryId: string, result: any, fileId: number, oldData?: any) {
         if (!this.backend.webSocketServer) return;
+        const eventData = oldData ? { old_data: oldData } : {};
         this.backend.webSocketServer.broadcastPluginEvent(event, {
             message: { type: 'file', action: 'update' },
-            result, libraryId, fileId,
+            result, libraryId, fileId, ...eventData,
         });
         this.backend.webSocketServer.broadcastLibraryEvent(libraryId, event, {
-            ...result, libraryId, fileId,
+            ...result, libraryId, fileId, ...eventData,
         });
     }
 

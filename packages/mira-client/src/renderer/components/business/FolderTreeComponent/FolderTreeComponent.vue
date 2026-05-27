@@ -90,6 +90,7 @@
       <ContextMenuTrigger as-child>
         <div v-if="treeData.length > 0" class="tree-scroll max-h-64 overflow-y-auto">
           <Draggable
+            v-if="draggable"
             ref="treeRef"
             v-model="treeData"
             :eachDroppable="eachDroppable"
@@ -106,32 +107,37 @@
                 @click="handleNodeClick(node)"
                 @contextmenu="handleNodeContextMenu(node, $event)"
               >
-                <!-- 展开/折叠 -->
-                <span
-                  v-if="stat.children.length"
-                  class="material-icons text-base mr-1 text-gray-400 hover:text-gray-600 select-none"
-                  @click.stop="stat.open = !stat.open"
-                >
+                <span v-if="stat.children.length" class="material-icons text-base mr-1 text-gray-400 hover:text-gray-600 select-none" @click.stop="stat.open = !stat.open">
                   {{ stat.open ? 'expand_more' : 'chevron_right' }}
                 </span>
                 <span v-else class="inline-block w-5"></span>
-
-                <!-- 图标 -->
-                <span
-                  class="material-icons mr-2 text-lg"
-                  :style="{ color: getNodeColor(node) }"
-                >
-                  {{ node.icon || defaultIcon }}
-                </span>
-
-                <!-- 标签 -->
+                <span class="material-icons mr-2 text-lg" :style="{ color: getNodeColor(node) }">{{ node.icon || defaultIcon }}</span>
                 <span class="flex-1 truncate text-sm">{{ node.label }}</span>
-
-                <!-- 计数 -->
                 <span v-if="node.count" class="text-xs text-gray-500 ml-2">{{ node.count }}</span>
               </div>
             </template>
           </Draggable>
+          <BaseTree v-else v-model="treeData">
+            <template #default="{ node, stat }">
+              <div
+                :class="[
+                  'flex items-center min-h-8 py-1 px-2 rounded-md cursor-pointer',
+                  'hover:bg-gray-100 dark:hover:bg-gray-800',
+                  selectedKey === node.id ? 'bg-blue-100 text-blue-700' : ''
+                ]"
+                @click="handleNodeClick(node)"
+                @contextmenu="handleNodeContextMenu(node, $event)"
+              >
+                <span v-if="stat.children.length" class="material-icons text-base mr-1 text-gray-400 hover:text-gray-600 select-none" @click.stop="stat.open = !stat.open">
+                  {{ stat.open ? 'expand_more' : 'chevron_right' }}
+                </span>
+                <span v-else class="inline-block w-5"></span>
+                <span class="material-icons mr-2 text-lg" :style="{ color: getNodeColor(node) }">{{ node.icon || defaultIcon }}</span>
+                <span class="flex-1 truncate text-sm">{{ node.label }}</span>
+                <span v-if="node.count" class="text-xs text-gray-500 ml-2">{{ node.count }}</span>
+              </div>
+            </template>
+          </BaseTree>
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent class="w-52">
@@ -220,7 +226,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
-import { Draggable, dragContext } from '@he-tree/vue'
+import { Draggable, BaseTree, dragContext } from '@he-tree/vue'
 import '@he-tree/vue/style/default.css'
 import {
   ContextMenu,
@@ -274,6 +280,7 @@ interface Props {
   showBaseCategories?: boolean
   defaultShowSearch?: boolean
   title?: string
+  draggable?: boolean
   baseCategoriesConfig?: Array<{
     id: string
     label: string
@@ -286,6 +293,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   itemType: 'folder',
   showBaseCategories: false,
+  draggable: false,
   title: '',
   folders: () => [],
   baseCategoriesConfig: () => [

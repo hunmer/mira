@@ -505,6 +505,7 @@ onUnmounted(() => {
           <div ref="sidebarScrollRef" class="flex-grow p-2 overflow-y-auto min-w-0 space-y-4">
             <FolderTreeComponent
               item-type="folder"
+              :draggable="true"
               :folders="homeController.folderTree.value"
               :selected-key="homeController.selectedFolder.value"
               :show-base-categories="true"
