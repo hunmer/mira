@@ -1,6 +1,7 @@
 import ffmpeg from 'fluent-ffmpeg';
 import path from 'path';
 import fs from 'fs';
+import fg from 'fast-glob';
 import Queue from 'queue';
 import which from 'which';
 import { EventArgs } from 'mira-app-core';
@@ -242,6 +243,7 @@ export class ThumbnailService {
   }
 
   async syncThumbStatus(libraryId: string, dbService: ILibraryServerData, reason: string = 'manual-sync'): Promise<{ total: number; synced: number }> {
+    const libraryPath: string = dbService.config?.customFields?.path || '';
     const files = (await dbService.getFiles({
       select: 'id,hash,thumb',
       filters: { limit: 9999999 },
@@ -253,34 +255,52 @@ export class ThumbnailService {
     this.progress.set(libraryId, { total, completed: 0 });
     console.log(`ThumbnailService: syncing ${total} files for library ${libraryId} (reason: ${reason})`);
 
-    let synced = 0;
-    for (const file of files) {
-      try {
-        const thumbPath = await dbService.getItemThumbPath(file, { isUrlFile: false });
-        const exists = fs.existsSync(thumbPath);
-        const expected = exists ? 1 : 0;
-        if (file.thumb !== expected) {
-          await dbService.updateFile(file.id, { thumb: expected });
-          synced++;
-        }
-      } catch {
-        // skip
-      }
-      const p = this.incrementProgress(libraryId);
-      if (p.completed % 1000 === 0 || p.completed === total) {
-        console.log(`ThumbnailService: sync progress ${p.completed}/${total} (${Math.round(p.completed / total * 100)}%), synced ${synced}`);
+    // fast-glob 一次扫描 thumbs 目录
+    const thumbsDir = path.join(libraryPath, 'thumbs');
+    const existingThumbs = new Set<string>();
+    if (fs.existsSync(thumbsDir)) {
+      const entries = await fg('*.png', { cwd: thumbsDir, absolute: false });
+      for (const entry of entries) {
+        existingThumbs.add(path.basename(entry, '.png'));
       }
     }
-    return { total, synced };
-  }
+    console.log(`ThumbnailService: found ${existingThumbs.size} thumbnail files on disk`);
 
-  private incrementProgress(libraryId: string): { total: number; completed: number } {
-    const p = this.progress.get(libraryId);
-    if (p) {
-      p.completed++;
-      return p;
+    // 对比收集需要更新的记录
+    const toUpdate0to1: number[] = [];
+    const toUpdate1to0: number[] = [];
+    for (const file of files) {
+      const thumbKey = file.hash || String(file.id);
+      const diskHas = existingThumbs.has(thumbKey);
+      if (diskHas && file.thumb !== 1) toUpdate0to1.push(file.id);
+      else if (!diskHas && file.thumb !== 0) toUpdate1to0.push(file.id);
     }
-    return { total: 0, completed: 0 };
+
+    const mismatchCount = toUpdate0to1.length + toUpdate1to0.length;
+    console.log(`ThumbnailService: ${mismatchCount} mismatches (${toUpdate0to1.length} missing in DB, ${toUpdate1to0.length} missing on disk)`);
+
+    // 批量 SQL 更新
+    let synced = 0;
+    const query = (dbService as any).query.bind(dbService);
+    const batchSize = 500;
+    const updateBatch = async (ids: number[], thumbValue: number) => {
+      for (let i = 0; i < ids.length; i += batchSize) {
+        const batch = ids.slice(i, i + batchSize);
+        const placeholders = batch.map(() => '?').join(',');
+        await query(`UPDATE files SET thumb = ? WHERE id IN (${placeholders})`, [thumbValue, ...batch]);
+        synced += batch.length;
+        const p = this.progress.get(libraryId)!;
+        p.completed = synced;
+        console.log(`ThumbnailService: sync progress ${synced}/${mismatchCount} (${Math.round(synced / mismatchCount * 100)}%)`);
+      }
+    };
+
+    if (toUpdate0to1.length > 0) await updateBatch(toUpdate0to1, 1);
+    if (toUpdate1to0.length > 0) await updateBatch(toUpdate1to0, 0);
+
+    const p = this.progress.get(libraryId)!;
+    p.completed = total;
+    return { total, synced };
   }
 
   private async getPendingFiles(libraryId: string, dbService: ILibraryServerData): Promise<any[]> {
