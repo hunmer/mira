@@ -108,9 +108,6 @@ export class UserRouter {
                 if (!oldPassword || !newPassword) {
                     return res.status(400).json({ code: 400, message: '旧密码和新密码不能为空', data: null });
                 }
-                if (newPassword.length < 6) {
-                    return res.status(400).json({ code: 400, message: '新密码长度至少6个字符', data: null });
-                }
 
                 const authService = this.authRouter.getAuthService();
                 const user = await authService.validateToken(token);

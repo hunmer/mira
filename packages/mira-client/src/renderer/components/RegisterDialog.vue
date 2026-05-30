@@ -271,14 +271,6 @@ const validateEmail = (email: string) => {
 }
 
 const validatePassword = (password: string) => {
-  if (password.length < 6) {
-    errors.password = '密码至少需要6个字符'
-    return false
-  }
-  if (!/(?=.*[a-zA-Z])(?=.*\d)/.test(password)) {
-    errors.password = '密码需要包含字母和数字'
-    return false
-  }
   return true
 }
 

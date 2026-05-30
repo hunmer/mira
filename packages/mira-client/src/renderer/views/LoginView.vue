@@ -461,10 +461,6 @@ async function handleRegister() {
     error.value = '请输入用户名和密码'
     return
   }
-  if (credentials.password.length < 6 ) {
-    error.value = '密码至少6位'
-    return
-  }
   if (credentials.password !== registerForm.confirmPassword) {
     error.value = '两次输入的密码不一致'
     return

@@ -164,22 +164,6 @@ export class AuthRouter {
                     });
                 }
 
-                if (username.length < 3) {
-                    return res.status(400).json({
-                        code: 400,
-                        message: '用户名长度至少3个字符',
-                        data: null
-                    });
-                }
-
-                if (password.length < 6) {
-                    return res.status(400).json({
-                        code: 400,
-                        message: '密码长度至少6个字符',
-                        data: null
-                    });
-                }
-
                 // 检查用户名是否已存在
                 const userStorage = this.authService.getUserStorage();
                 const existingUser = await userStorage.findUserByUsername(username);

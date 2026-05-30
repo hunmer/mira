@@ -72,7 +72,7 @@ async function handleChangePassword() {
     toast.error(t('profile.fillAll'))
     return
   }
-  if (form.value.newPassword.length < 6) {
+  if (form.value.newPassword.length <= 0) {
     toast.error(t('profile.passwordMin'))
     return
   }
