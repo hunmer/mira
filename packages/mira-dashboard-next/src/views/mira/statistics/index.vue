@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { statisticsApi, adminApi } from '@/api'
 import { useLibrary } from '@/composables/useLibrary'
+import { useBroadcast } from '@/composables/useBroadcast'
 import type { ChartConfig } from '@/components/ui/chart'
 import { Donut } from '@unovis/ts'
 import { VisArea, VisAxis, VisLine, VisXYContainer, VisDonut, VisSingleContainer } from '@unovis/vue'
@@ -15,11 +16,14 @@ import {
   ChartContainer, ChartTooltipContent, ChartCrosshair, ChartTooltip, componentToString,
 } from '@/components/ui/chart'
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Textarea } from '@/components/ui/textarea'
+import { RiNotificationLine, RiLoader4Line } from '@remixicon/vue'
 
 const { t } = useI18n()
+const { dialogOpen: broadcastDialogOpen, broadcastMsg, sending, openDialog: openBroadcastDialog, sendBroadcast } = useBroadcast()
 
 interface DailyRow { date: string; file_count: number; total_size: number }
 interface UploaderRow { uploader: number | null; uploaderName: string; fileCount: number; totalSize: number }
@@ -253,6 +257,10 @@ function createMiraUrl(tabType: 'folder' | 'tag', id: number | null, name: strin
         <p class="text-muted-foreground text-sm">{{ t('statistics.subtitle') }}</p>
       </div>
       <div v-if="selectedLibraryId" class="flex items-center gap-3 shrink-0">
+        <Button variant="outline" size="sm" @click="openBroadcastDialog">
+          <RiNotificationLine class="mr-1.5 size-4" />
+          {{ t('device.broadcast') }}
+        </Button>
         <div class="inline-flex h-8 rounded-md bg-muted p-0.5">
           <Button
             v-for="opt in TIME_OPTIONS"
@@ -475,6 +483,28 @@ function createMiraUrl(tabType: 'folder' | 'tag', id: number | null, name: strin
             </div>
           </div>
         </div>
+      </DialogContent>
+    </Dialog>
+
+    <!-- 广播对话框 -->
+    <Dialog v-model:open="broadcastDialogOpen">
+      <DialogContent class="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{{ t('device.broadcastTitle') }}</DialogTitle>
+          <DialogDescription>{{ t('device.broadcastTo') }}: {{ t('device.allDevices') }}</DialogDescription>
+        </DialogHeader>
+        <Textarea
+          v-model="broadcastMsg"
+          :placeholder="t('device.broadcastPlaceholder')"
+          rows="4"
+        />
+        <DialogFooter>
+          <Button variant="outline" @click="broadcastDialogOpen = false">{{ t('common.cancel') }}</Button>
+          <Button :disabled="sending || !broadcastMsg.trim()" @click="sendBroadcast()">
+            <RiLoader4Line v-if="sending" class="mr-2 size-4 animate-spin" />
+            {{ t('device.send') }}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
 

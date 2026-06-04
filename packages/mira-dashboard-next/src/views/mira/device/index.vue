@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { DeviceInfo } from '@/types/mira'
 import { deviceApi } from '@/api'
+import { useBroadcast } from '@/composables/useBroadcast'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
@@ -22,9 +23,7 @@ const { t } = useI18n()
 const devices = ref<DeviceInfo[]>([])
 const loading = ref(false)
 const selectedIds = ref<Set<string>>(new Set())
-const dialogOpen = ref(false)
-const broadcastMsg = ref('')
-const sending = ref(false)
+const { dialogOpen, broadcastMsg, sending, openDialog: openBroadcastDialog, sendBroadcast } = useBroadcast()
 
 const selectedCount = computed(() => selectedIds.value.size)
 const allSelected = computed(() => devices.value.length > 0 && selectedIds.value.size === devices.value.length)
@@ -79,37 +78,6 @@ async function disconnectDevice(id: string) {
     await loadDevices()
   } catch {
     toast.error(t('common.failed'))
-  }
-}
-
-function openBroadcastDialog() {
-  broadcastMsg.value = ''
-  dialogOpen.value = true
-}
-
-async function sendBroadcast() {
-  if (!broadcastMsg.value.trim()) {
-    toast.warning(t('device.messageRequired'))
-    return
-  }
-  sending.value = true
-  try {
-    const payload: any = {
-      message: broadcastMsg.value.trim(),
-      title: 'Administrator',
-    }
-    // 只传选中的设备；空数组时后端发给全部
-    if (selectedIds.value.size > 0 && !allSelected.value) {
-      payload.clientIds = [...selectedIds.value]
-    }
-    const res = await deviceApi.broadcast(payload)
-    const count = res.data?.data?.sentCount ?? 0
-    toast.success(t('device.sendSuccess', { count }))
-    dialogOpen.value = false
-  } catch {
-    toast.error(t('common.failed'))
-  } finally {
-    sending.value = false
   }
 }
 
@@ -235,7 +203,7 @@ onMounted(loadDevices)
           <Button variant="outline" @click="dialogOpen = false">
             {{ t('common.cancel') }}
           </Button>
-          <Button :disabled="sending || !broadcastMsg.trim()" @click="sendBroadcast">
+          <Button :disabled="sending || !broadcastMsg.trim()" @click="sendBroadcast(allSelected || selectedIds.size === 0 ? undefined : [...selectedIds])">
             <RiLoader4Line v-if="sending" class="mr-2 size-4 animate-spin" />
             {{ t('device.send') }}
           </Button>

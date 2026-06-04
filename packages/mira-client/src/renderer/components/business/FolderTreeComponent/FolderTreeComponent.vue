@@ -1,5 +1,6 @@
 <template>
   <div
+    ref="treeContainerRef"
     class="folder-tree-container w-full"
     @dragover.capture="handleTreeDragOver"
     @dragleave.capture="handleTreeDragLeave"
@@ -12,6 +13,7 @@
           <ContextMenu v-if="folder.id === 'trash'">
             <ContextMenuTrigger as-child>
               <a
+                :data-folder-tree-node-id="folder.id"
                 :class="[
                   'flex items-center justify-between px-2 py-1.5 rounded-md hover:bg-gray-200 cursor-pointer',
                   selectedKey === folder.id ? 'bg-blue-100 text-blue-700' : 'text-gray-700'
@@ -37,6 +39,7 @@
           </ContextMenu>
           <a
             v-else
+            :data-folder-tree-node-id="folder.id"
             :class="[
               'flex items-center justify-between px-2 py-1.5 rounded-md hover:bg-gray-200 cursor-pointer',
               selectedKey === folder.id ? 'bg-blue-100 text-blue-700' : 'text-gray-700'
@@ -127,7 +130,7 @@
               </div>
             </template>
           </Draggable>
-          <BaseTree v-else v-model="treeData">
+          <BaseTree v-else ref="treeRef" v-model="treeData">
             <template #default="{ node, stat }">
               <div
                 :data-folder-tree-node-id="node.id"
@@ -534,6 +537,7 @@ const showSearch = ref(props.defaultShowSearch || false)
 const searchQuery = ref('')
 const searchInputRef = ref<HTMLInputElement | null>(null)
 const treeRef = ref<any>(null)
+const treeContainerRef = ref<HTMLElement | null>(null)
 
 watch(showSearch, (val) => {
   if (val) nextTick(() => searchInputRef.value?.focus())
@@ -543,6 +547,33 @@ function toggleSearch() {
   showSearch.value = !showSearch.value
   if (!showSearch.value) searchQuery.value = ''
 }
+
+async function locateNode(id: string): Promise<boolean> {
+  searchQuery.value = ''
+  showSearch.value = false
+  await nextTick()
+
+  const node = nodeMap.value.get(id)
+  if (node) {
+    const stat = treeRef.value?.getStat?.(node)
+    if (stat) {
+      treeRef.value?.openNodeAndParents?.(stat)
+      await nextTick()
+    }
+  }
+
+  const target = treeContainerRef.value?.querySelector<HTMLElement>(`[data-folder-tree-node-id="${id}"]`)
+  if (!target) return false
+
+  target.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  target.classList.remove('sidebar-locate-pulse')
+  void target.offsetWidth
+  target.classList.add('sidebar-locate-pulse')
+  window.setTimeout(() => target.classList.remove('sidebar-locate-pulse'), 1200)
+  return true
+}
+
+defineExpose({ locateNode })
 
 // 数据转换：FolderItem[] -> HeTreeNode[]
 function convertFoldersToNodes(items: FolderItem[]): HeTreeNode[] {
@@ -808,5 +839,19 @@ onUnmounted(() => {
 
 .tree-scroll::-webkit-scrollbar-thumb:hover {
   background-color: rgba(156, 163, 175, 0.5);
+}
+
+.sidebar-locate-pulse {
+  animation: sidebar-locate-pulse 1.2s ease-out;
+}
+
+@keyframes sidebar-locate-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.55);
+    background-color: rgba(219, 234, 254, 0.95);
+  }
+  100% {
+    box-shadow: 0 0 0 8px rgba(59, 130, 246, 0);
+  }
 }
 </style>

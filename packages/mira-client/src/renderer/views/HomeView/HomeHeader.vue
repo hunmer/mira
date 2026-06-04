@@ -25,6 +25,7 @@ const emit = defineEmits<{
   addServer: []
   activateLastTab: []
   reopenClosedTab: []
+  locateInSidebar: []
   switchTab: [id: string]
   closeTab: [id: string]
   tabContextMenu: [tab: any, event: MouseEvent]
@@ -213,6 +214,19 @@ const onSelectCollection = (collection: any, close: () => void) => {
               </button>
             </TooltipTrigger>
             <TooltipContent side="bottom">打开最后关闭的tab (Ctrl+Shift+T)</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <TooltipProvider v-if="currentTab && currentTab.type !== 'home'">
+          <Tooltip>
+            <TooltipTrigger as-child>
+              <button
+                class="p-2 rounded-md hover:bg-gray-100"
+                @click="emit('locateInSidebar')"
+              >
+                <span class="material-icons text-gray-600">my_location</span>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">在侧边栏中定位当前项</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>

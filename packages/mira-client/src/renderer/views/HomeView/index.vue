@@ -187,6 +187,15 @@ onActivated(() => {
   })
 })
 
+// 侧边栏定位
+const sidebarRef = ref<{ locateItem: (type: 'folder' | 'tag', id: string) => void | Promise<void> }>()
+const handleLocateInSidebar = () => {
+  const tab = currentTab.value
+  if (!tab) return
+  const type = tab.type === 'tag' ? 'tag' as const : 'folder' as const
+  sidebarRef.value?.locateItem(type, tab.id)
+}
+
 // ============================================
 // 其他事件处理
 // ============================================
@@ -231,6 +240,7 @@ onUnmounted(() => {
       @window-minimize="handleWindowMinimize"
       @window-maximize="handleWindowMaximize"
       @window-close="handleWindowClose"
+      @locate-in-sidebar="handleLocateInSidebar"
     />
 
     <!-- 主内容区域（侧边栏 + 内容） -->
@@ -239,6 +249,7 @@ onUnmounted(() => {
         <!-- 左侧侧边栏 -->
         <ResizablePanel :default-size="20" :min-size="15" class="bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden">
           <HomeSidebar
+            ref="sidebarRef"
             :home-controller="homeController"
             :tags="tagStore.tags"
             @folder-select="handleFolderSelect"

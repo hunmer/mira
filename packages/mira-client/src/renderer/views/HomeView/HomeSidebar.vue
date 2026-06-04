@@ -25,6 +25,8 @@ const emit = defineEmits<{
 // keep-alive 滚动位置保持
 const sidebarScrollRef = ref<HTMLElement>()
 const savedScrollTop = ref(0)
+const folderTreeRef = ref<{ locateNode: (id: string) => Promise<boolean> }>()
+const tagTreeRef = ref<{ locateNode: (id: string) => Promise<boolean> }>()
 
 onDeactivated(() => {
   if (sidebarScrollRef.value) {
@@ -39,12 +41,32 @@ onActivated(() => {
     }
   })
 })
+
+const locateItem = async (type: 'folder' | 'tag', id: string) => {
+  await nextTick()
+  const container = sidebarScrollRef.value
+  if (!container) return
+
+  let nodeId = id
+  if (type === 'tag' && !id.startsWith('tag-')) {
+    nodeId = `tag-${id}`
+  }
+
+  const tree = type === 'tag' ? tagTreeRef.value : folderTreeRef.value
+  if (await tree?.locateNode(nodeId)) return
+
+  const el = container.querySelector(`[data-folder-tree-node-id="${nodeId}"]`) as HTMLElement
+  el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+}
+
+defineExpose({ locateItem })
 </script>
 
 <template>
   <!-- 文件夹树形导航 -->
   <div ref="sidebarScrollRef" class="flex-grow p-2 overflow-y-auto min-w-0 space-y-4">
     <FolderTreeComponent
+      ref="folderTreeRef"
       item-type="folder"
       :draggable="true"
       :folders="homeController.folderTree.value"
@@ -56,6 +78,7 @@ onActivated(() => {
       @empty-trash="emit('emptyTrash')"
     />
     <FolderTreeComponent
+      ref="tagTreeRef"
       item-type="tag"
       :tags="tags"
       @select="emit('tagSelect', $event)"
