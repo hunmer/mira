@@ -212,6 +212,8 @@ export default {
     userInfo: 'User Info',
     role: 'Role',
     joinedAt: 'Joined',
+    noData: 'No Statistics Data',
+    noDataHint: 'No uploads found for this library in the selected time range',
   },
   thumbnail: {
     title: 'Thumbnail Management',

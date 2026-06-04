@@ -212,6 +212,8 @@ export default {
     userInfo: '用户信息',
     role: '角色',
     joinedAt: '注册时间',
+    noData: '暂无统计数据',
+    noDataHint: '当前素材库在所选时间范围内没有上传记录',
   },
   thumbnail: {
     title: '缩略图管理',
