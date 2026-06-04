@@ -16,7 +16,8 @@
                 :data-folder-tree-node-id="folder.id"
                 :class="[
                   'flex items-center justify-between px-2 py-1.5 rounded-md hover:bg-gray-200 cursor-pointer',
-                  selectedKey === folder.id ? 'bg-blue-100 text-blue-700' : 'text-gray-700'
+                  selectedKey === folder.id ? 'bg-blue-100 text-blue-700' : 'text-gray-700',
+                  locatingNodeId === folder.id ? 'sidebar-locate-active' : ''
                 ]"
                 @click.prevent="handleBaseCategoryClick(folder)"
               >
@@ -42,7 +43,8 @@
             :data-folder-tree-node-id="folder.id"
             :class="[
               'flex items-center justify-between px-2 py-1.5 rounded-md hover:bg-gray-200 cursor-pointer',
-              selectedKey === folder.id ? 'bg-blue-100 text-blue-700' : 'text-gray-700'
+              selectedKey === folder.id ? 'bg-blue-100 text-blue-700' : 'text-gray-700',
+              locatingNodeId === folder.id ? 'sidebar-locate-active' : ''
             ]"
             @click.prevent="handleBaseCategoryClick(folder)"
           >
@@ -112,7 +114,8 @@
                   'flex items-center min-h-8 py-1 px-2 rounded-md cursor-pointer',
                   'hover:bg-gray-100 dark:hover:bg-gray-800',
                   selectedKey === node.id ? 'bg-blue-100 text-blue-700' : '',
-                  dragOverNodeId === node.id ? 'ring-2 ring-blue-400 bg-blue-50' : ''
+                  dragOverNodeId === node.id ? 'ring-2 ring-blue-400 bg-blue-50' : '',
+                  locatingNodeId === node.id ? 'sidebar-locate-active' : ''
                 ]"
                 @click="handleNodeClick(node)"
                 @contextmenu="handleNodeContextMenu(node, $event)"
@@ -138,7 +141,8 @@
                   'flex items-center min-h-8 py-1 px-2 rounded-md cursor-pointer',
                   'hover:bg-gray-100 dark:hover:bg-gray-800',
                   selectedKey === node.id ? 'bg-blue-100 text-blue-700' : '',
-                  dragOverNodeId === node.id ? 'ring-2 ring-blue-400 bg-blue-50' : ''
+                  dragOverNodeId === node.id ? 'ring-2 ring-blue-400 bg-blue-50' : '',
+                  locatingNodeId === node.id ? 'sidebar-locate-active' : ''
                 ]"
                 @click="handleNodeClick(node)"
                 @contextmenu="handleNodeContextMenu(node, $event)"
@@ -538,6 +542,7 @@ const searchQuery = ref('')
 const searchInputRef = ref<HTMLInputElement | null>(null)
 const treeRef = ref<any>(null)
 const treeContainerRef = ref<HTMLElement | null>(null)
+const locatingNodeId = ref<string | null>(null)
 
 watch(showSearch, (val) => {
   if (val) nextTick(() => searchInputRef.value?.focus())
@@ -599,11 +604,14 @@ async function locateNode(id: string): Promise<boolean> {
   if (!target) return false
 
   target.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  locatingNodeId.value = null
   window.setTimeout(() => {
-    target.classList.remove('sidebar-locate-pulse')
-    void target.offsetWidth
-    target.classList.add('sidebar-locate-pulse')
-    window.setTimeout(() => target.classList.remove('sidebar-locate-pulse'), 1600)
+    locatingNodeId.value = id
+    window.setTimeout(() => {
+      if (locatingNodeId.value === id) {
+        locatingNodeId.value = null
+      }
+    }, 1800)
   }, 250)
   return true
 }
@@ -876,22 +884,23 @@ onUnmounted(() => {
   background-color: rgba(156, 163, 175, 0.5);
 }
 
-.sidebar-locate-pulse {
-  animation: sidebar-locate-pulse 0.4s ease-in-out 4;
+.sidebar-locate-active {
+  background-color: rgba(191, 219, 254, 0.95) !important;
+  color: rgb(29, 78, 216) !important;
+  outline: 2px solid rgba(37, 99, 235, 0.95) !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.22) !important;
+  animation: sidebar-locate-active 0.45s ease-in-out 4;
 }
 
-@keyframes sidebar-locate-pulse {
+@keyframes sidebar-locate-active {
   0% {
-    outline: 2px solid rgba(37, 99, 235, 0);
-    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+    filter: brightness(1);
   }
   50% {
-    outline: 2px solid rgba(37, 99, 235, 0.95);
-    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.25);
+    filter: brightness(1.18);
   }
   100% {
-    outline: 2px solid rgba(37, 99, 235, 0);
-    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+    filter: brightness(1);
   }
 }
 </style>

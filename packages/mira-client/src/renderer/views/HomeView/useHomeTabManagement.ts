@@ -308,6 +308,18 @@ export function useHomeTabManagement() {
     })
   }
 
+  const refreshCurrentTabAfterLibrarySwitch = () => {
+    visitedTabIds.value = []
+    tabViewConfigMap.value = {}
+    currentTabViewConfig.value = null
+
+    const activeTab = getCurrentTab()
+    if (!activeTab) return
+
+    setTabNeedUpdate(activeTab.id, true)
+    switchToTabWithCallback(activeTab.id)
+  }
+
   // 关闭Tab的包装方法
   const closeTabWithCallback = async (tabId: string) => {
     await closeTab(tabId, {
@@ -359,6 +371,7 @@ export function useHomeTabManagement() {
     handleActivateLastTab,
     handleReopenClosedTab,
     handleCloseCurrentTab,
+    refreshCurrentTabAfterLibrarySwitch,
     loadTabData,
 
     // 分页状态管理

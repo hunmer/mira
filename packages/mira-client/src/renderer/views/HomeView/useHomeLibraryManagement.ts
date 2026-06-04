@@ -26,6 +26,26 @@ export function useHomeLibraryManagement(
     initializeDefaultLibrary
   } = libraryManagement
 
+  const ensureServerConfigForCollection = async (collection: CollectionInfo): Promise<boolean> => {
+    if (serverListStore.services.some(server => server.id === collection.id)) {
+      return true
+    }
+
+    const baseServer = serverListStore.activeServer || serverListStore.services[0]
+    if (!baseServer) {
+      return false
+    }
+
+    const result = await serverListStore.addServer({
+      ...baseServer,
+      id: collection.id,
+      name: collection.name || baseServer.name,
+      isActive: false
+    })
+
+    return result.success
+  }
+
   // 素材库选择处理
   const handleSelectCollection = async (collection: CollectionInfo) => {
     console.log('🏛️ 选择素材库:', collection.name, collection.id)
@@ -35,8 +55,16 @@ export function useHomeLibraryManagement(
       tabPersistence.setCurrentLibraryId(collection.id)
 
       // 同步更新 serverListStore 的 activeServerId
+      const hasServerConfig = await ensureServerConfigForCollection(collection)
+      if (!hasServerConfig) {
+        throw new Error(`无法找到素材库 ${collection.id} 对应的服务器配置`)
+      }
+
       if (serverListStore.activeServerId !== collection.id) {
-        await serverListStore.setActiveServer(collection.id)
+        const result = await serverListStore.setActiveServer(collection.id)
+        if (!result.success) {
+          throw new Error(result.error || `切换素材库失败: ${collection.id}`)
+        }
       }
 
       // 设置当前选中的素材库（await 确保持久化完成）
@@ -47,9 +75,10 @@ export function useHomeLibraryManagement(
         detail: { collection }
       }))
 
-      location.reload()
+      return true
     } catch (error) {
       console.error('❌ 素材库切换失败:', error)
+      return false
     }
   }
 

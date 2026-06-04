@@ -421,7 +421,7 @@ async function connectToLibrary() {
         ...(authToken.value && { authToken: authToken.value }),
       })
     }
-    await serverListStore.setActiveServer(existingServer?.id || lib.id)
+    await serverListStore.setActiveServer(existingServer?.id || lib.id, { reconnect: false })
 
     // Connect via MiraSDKService
     await miraSDKService.connect({

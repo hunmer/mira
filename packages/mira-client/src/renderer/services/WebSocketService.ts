@@ -42,8 +42,12 @@ class WebSocketService {
    */
   async connect(config: WebSocketConfig): Promise<boolean> {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      console.log('WebSocket already connected')
-      return true
+      if (this.isSameConfig(config)) {
+        console.log('WebSocket already connected')
+        return true
+      }
+
+      this.disconnect()
     }
 
     if (!this.config || this.config.url !== config.url || this.config.libraryId !== config.libraryId) {
@@ -97,7 +101,7 @@ class WebSocketService {
   disconnect(): void {
     this.stopHeartbeat()
     if (this.ws) {
-      this.ws.close()
+      this.ws.close(1000, 'manual disconnect')
       this.ws = null
     }
     this.isConnected.value = false
@@ -277,6 +281,14 @@ class WebSocketService {
 
   private getFieldsStorageKey(config: WebSocketConfig): string {
     return `${this.fieldsStoragePrefix}_${config.url}_${config.libraryId}`
+  }
+
+  private isSameConfig(config: WebSocketConfig): boolean {
+    return (
+      this.config?.url === config.url &&
+      this.config?.libraryId === config.libraryId &&
+      this.config?.clientId === config.clientId
+    )
   }
 
   private handleClose(event: CloseEvent): void {

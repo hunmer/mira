@@ -2,7 +2,7 @@ import { ref, computed, watch, nextTick } from 'vue'
 import { tabRegistry, type TabContext, type TabTypeDefinition, type TabViewConfig } from './TabRegistry'
 import { quickInitTabSystem } from './initTabSystem'
 import { tabPersistence, type TabState } from './TabPersistence'
-import { restoreTabViewMode, registerViewModeChangeCallback } from './useMediaTabData'
+import { restoreTabViewMode, registerViewModeChangeCallback, clearTabCache } from './useMediaTabData'
 import { tabHistory } from './TabHistory'
 
 // ============================================
@@ -28,6 +28,57 @@ const globalActiveTabId = ref('')
 const globalIsRestoringState = ref(true) // 初始为 true，阻止自动创建 tab
 const globalHasInitialized = ref(false) // 标记是否已经初始化过
 let globalHasSetupEffects = false // 标记是否已设置副作用（watch和初始化）
+
+const createHomeTab = (): TabItem => ({
+  id: 'home',
+  label: '首页',
+  icon: 'home',
+  iconColor: '#3B82F6',
+  type: 'home',
+  data: {},
+  active: true,
+  needUpdate: false
+})
+
+const restoreTabsFromSnapshot = (savedState: { tabs: TabState[], activeTabId: string }): boolean => {
+  const restoredTabs: TabItem[] = []
+
+  for (const tabState of savedState.tabs) {
+    if (!tabRegistry.isRegistered(tabState.type)) {
+      console.warn(`Tab类型 "${tabState.type}" 未注册，跳过: ${tabState.label}`)
+      continue
+    }
+
+    if (tabState.viewMode) {
+      restoreTabViewMode(tabState.id, tabState.viewMode)
+    }
+
+    restoredTabs.push({
+      id: tabState.id,
+      label: tabState.label,
+      icon: tabState.icon,
+      iconColor: tabState.iconColor,
+      type: tabState.type,
+      data: tabState.data,
+      active: false,
+      needUpdate: true,
+      filters: tabState.filters
+    })
+  }
+
+  if (restoredTabs.length === 0) {
+    return false
+  }
+
+  globalTabs.value = restoredTabs
+
+  const activeTabIndex = restoredTabs.findIndex(tab => tab.id === savedState.activeTabId)
+  const targetIndex = activeTabIndex >= 0 ? activeTabIndex : 0
+  restoredTabs[targetIndex].active = true
+  globalActiveTabId.value = restoredTabs[targetIndex].id
+
+  return true
+}
 
 // ============================================
 // 模块级别初始化函数（在模块加载时执行）
@@ -107,6 +158,40 @@ async function initializeTabsSystem() {
 
 // 模块加载时立即启动初始化
 initializeTabsSystem()
+
+export async function resetTabsForLibrary(libraryId: string | null): Promise<void> {
+  quickInitTabSystem()
+  tabPersistence.setCurrentLibraryId(libraryId)
+  clearTabCache()
+
+  globalIsRestoringState.value = true
+
+  try {
+    const savedState = await tabPersistence.loadTabsState()
+
+    if (!savedState || savedState.tabs.length === 0 || !restoreTabsFromSnapshot(savedState)) {
+      globalTabs.value = [createHomeTab()]
+      globalActiveTabId.value = 'home'
+    }
+
+    globalHasInitialized.value = true
+
+    try {
+      const { useMediaStore } = await import('../stores/media')
+      const mediaStore = useMediaStore()
+      mediaStore.filesMap = {}
+      mediaStore.currentTabId = ''
+      mediaStore.currentFile = null
+      mediaStore.deselectAllFiles()
+      mediaStore.clearDetailSidebar()
+      mediaStore.clearImagePreviewItems()
+    } catch (error) {
+      console.warn('清理Tab关联媒体数据失败:', error)
+    }
+  } finally {
+    globalIsRestoringState.value = false
+  }
+}
 
 /**
  * Tabs 功能 Composable

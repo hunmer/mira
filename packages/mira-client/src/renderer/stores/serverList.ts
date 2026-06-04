@@ -167,15 +167,20 @@ export const useServerListStore = defineStore('serverList', () => {
   /**
    * 设置活跃的素材库
    */
-  const setActiveServer = async (id: string) => {
+  const setActiveServer = async (id: string, options: { reconnect?: boolean } = {}) => {
     const server = services.value.find(lib => lib.id === id)
     if (!server) {
       return { success: false, error: 'Server not found' }
     }
 
     try {
+      const previousServerId = activeServerId.value
       activeServerId.value = id
       await persistServerListState()
+
+      if (previousServerId !== id && options.reconnect !== false) {
+        await handleActiveServerChanged(server)
+      }
       
       return { success: true, data: server }
     } catch (err) {
@@ -183,6 +188,53 @@ export const useServerListStore = defineStore('serverList', () => {
       error.value = errorMessage
       return { success: false, error: errorMessage }
     }
+  }
+
+  const handleActiveServerChanged = async (server: ServerConfig) => {
+    const [
+      { miraSDKService },
+      { resetTabsForLibrary },
+      { useAppState },
+      { initializationService },
+      { useFolderStore },
+      { useTagStore },
+      { useLibraryStore },
+      { useAuthStore }
+    ] = await Promise.all([
+      import('../services/MiraSDKService'),
+      import('../composables/useTabs'),
+      import('./appState'),
+      import('../services/InitializationService'),
+      import('./folder'),
+      import('./tag'),
+      import('./library'),
+      import('./auth')
+    ])
+
+    await miraSDKService.disconnect()
+    useFolderStore().cleanup()
+    useTagStore().cleanup()
+    await useLibraryStore().setCurrentLibrary(server as any)
+    useAppState().resetAppState()
+
+    const connectionResult = await miraSDKService.connect({
+      serverUrl: server.serverUrl,
+      websocketUrl: server.websocketUrl,
+      timeout: 30000,
+      ...(server.authToken && { apiKey: server.authToken }),
+      ...(server.savedCredentials && {
+        username: server.savedCredentials.username,
+        password: server.savedCredentials.encryptedPassword
+      })
+    })
+
+    if (!connectionResult.success) {
+      throw new Error(connectionResult.message || 'Failed to reconnect active server')
+    }
+
+    await useAuthStore().initializeAuthAfterConnection()
+    await initializationService.forceReinitialize()
+    await resetTabsForLibrary(server.id)
   }
 
   /**

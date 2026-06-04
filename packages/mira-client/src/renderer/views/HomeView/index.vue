@@ -80,7 +80,8 @@ const {
   closeTabWithCallback,
   handleActivateLastTab,
   handleReopenClosedTab,
-  handleCloseCurrentTab
+  handleCloseCurrentTab,
+  refreshCurrentTabAfterLibrarySwitch
 } = tabManagement
 
 // ============================================
@@ -100,6 +101,14 @@ const {
   handleCreateLibrary,
   initializeDefaultLibrary
 } = libraryManagement
+
+const handleSelectCollectionAndRefresh = async (collection: any) => {
+  const switched = await handleSelectCollection(collection)
+  if (!switched) return
+
+  await nextTick()
+  refreshCurrentTabAfterLibrarySwitch()
+}
 
 // ============================================
 // 窗口和导航
@@ -239,7 +248,7 @@ onUnmounted(() => {
       :tab-context-menu-items="tabContextMenuItems"
       :is-tab-closable="tabsComposable.isTabClosable"
       :is-desktop="isDesktop"
-      @select-collection="handleSelectCollection"
+      @select-collection="handleSelectCollectionAndRefresh"
       @access-denied="showAccessDeniedDialog = true"
       @show-library-management="showLibraryManagement"
       @add-server="handleAddServer"

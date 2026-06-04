@@ -183,7 +183,6 @@ const handleClose = () => {
 const handleSetActive = async (serverId: string) => {
   try {
     await serverListStore.setActiveServer(serverId)
-    location.reload()
   } catch (error) {
     console.error('设置活跃服务器失败:', error)
   }
@@ -214,4 +213,3 @@ const confirmDelete = async () => {
   }
 }
 </script>
-

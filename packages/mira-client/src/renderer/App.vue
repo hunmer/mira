@@ -73,13 +73,10 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, reactive, ref, watch } from 'vue'
+import { onMounted, onUnmounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { toast } from 'vue-sonner'
 import GlobalLoading from './components/GlobalLoading.vue'
 import { useSettingsStore } from './stores/settings'
-import { useGlobalInitializationState } from './composables/useInitializationState'
-import { initializationService } from './services/InitializationService'
 
 // Import shadcn components
 import { Sonner as Toaster } from '@/components/ui/sonner'
@@ -118,9 +115,6 @@ const settingsStore = useSettingsStore()
 
 // 拖拽状态管理 - 简化为始终启用
 
-
-// 初始化状态管理
-const initState = useGlobalInitializationState()
 
 // 全局Loading状态管理
 const globalLoading = reactive({
@@ -163,38 +157,6 @@ if (environment.isElectron) {
 // 初始化全局快捷键系统
 const shortcuts = useAutoShortcuts()
 
-// 初始化状态 toast 通知（替代 InitializationLoader 组件）
-let initToastId: string | number | undefined
-
-watch(() => initState.state.isInitializing, (isInit, wasInit) => {
-  if (isInit && !wasInit && !initState.state.error) {
-    initToastId = toast.loading('正在初始化...')
-  } else if (!isInit && wasInit && !initState.state.error) {
-    if (initToastId !== undefined) {
-      toast.success('初始化完成', { id: initToastId })
-      initToastId = undefined
-    }
-  }
-})
-
-watch(() => initState.state.error, (error, prevError) => {
-  if (error) {
-    if (initToastId !== undefined) {
-      toast.dismiss(initToastId)
-      initToastId = undefined
-    }
-    toast.error(error, {
-      duration: 10000,
-      action: {
-        label: '重试',
-        onClick: () => initializationService.forceReinitialize()
-      }
-    })
-  } else if (prevError && initState.state.isInitializing) {
-    // 错误清除，重试中
-    initToastId = toast.loading('正在重新初始化...')
-  }
-})
 
 // 处理全局Loading取消
 const handleGlobalLoadingCancel = () => {

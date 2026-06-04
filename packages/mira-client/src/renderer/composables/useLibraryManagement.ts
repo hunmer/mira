@@ -27,7 +27,6 @@ export function useLibraryManagement(libraryStore: any) {
     currentLibrary.value = library
     // 更新活跃素材库
     await libraryStore.setActiveLibrary(library.id)
-    location.reload()
   }
 
   /**
