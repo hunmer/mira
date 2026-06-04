@@ -94,7 +94,7 @@
           </div>
 
           <div v-if="!isEdit" class="flex items-center space-x-2">
-            <Checkbox id="autoOpenTab" v-model="formData.autoOpenTab" />
+            <Checkbox id="autoOpenTab" v-model="autoOpenTab" />
             <Label for="autoOpenTab" class="text-sm text-gray-700 cursor-pointer">创建后自动打开</Label>
           </div>
 
@@ -150,13 +150,13 @@ const emit = defineEmits<Emits>()
 const isLoading = ref(false)
 const error = ref<string | null>(null)
 const selectedParentId = ref<string | null>(null)
+const autoOpenTab = ref(true)
 
 const formData = ref({
   title: '',
   parentId: undefined as number | undefined,
   color: null as number | null,
   description: '',
-  autoOpenTab: true
 })
 
 const errors = ref({ title: '' })
@@ -243,9 +243,10 @@ const handleSubmit = async () => {
       title: formData.value.title?.trim() || '',
       parentId: formData.value.parentId,
       description: formData.value.description?.trim() || undefined,
-      autoOpenTab: !isEdit.value && formData.value.autoOpenTab,
+      autoOpenTab: !isEdit.value && autoOpenTab.value,
     }
     if (formData.value.color !== null) saveData.color = formData.value.color
+    console.log('[FolderEditDialog] handleSubmit:', { autoOpenTab: autoOpenTab.value, isEdit: isEdit.value, saveDataAutoOpen: saveData.autoOpenTab })
     emit('save', saveData)
   } catch (err) {
     error.value = err instanceof Error ? err.message : '保存失败'
@@ -260,9 +261,10 @@ const handleCancel = () => {
 }
 
 const resetForm = () => {
-  formData.value = { title: '', parentId: undefined, color: null, description: '', autoOpenTab: true }
+  formData.value = { title: '', parentId: undefined, color: null, description: '' }
   errors.value = { title: '' }
   selectedParentId.value = null
+  autoOpenTab.value = true
   error.value = null
   isLoading.value = false
 }
