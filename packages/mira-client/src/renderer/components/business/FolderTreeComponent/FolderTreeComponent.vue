@@ -549,6 +549,15 @@ function toggleSearch() {
 }
 
 async function locateNode(id: string): Promise<boolean> {
+  console.log('[DEBUG-locate-sidebar] tree locateNode start', {
+    id,
+    itemType: props.itemType,
+    treeDataCount: treeData.value.length,
+    rawNodeCount: rawNodes.value.length,
+    searchQuery: searchQuery.value,
+    hasTreeRef: Boolean(treeRef.value),
+    hasTreeContainerRef: Boolean(treeContainerRef.value),
+  })
   searchQuery.value = ''
   showSearch.value = false
   await nextTick()
@@ -557,23 +566,45 @@ async function locateNode(id: string): Promise<boolean> {
   const stat = treeRef.value?.statsFlat?.find((item: any) => item.data?.id === id)
     || (node ? treeRef.value?.getStat?.(node) : null)
 
+  console.log('[DEBUG-locate-sidebar] tree resolve target', {
+    id,
+    foundNode: Boolean(node),
+    foundStat: Boolean(stat),
+    statsFlatCount: treeRef.value?.statsFlat?.length,
+    visibleStatsCount: treeRef.value?.visibleStats?.length,
+  })
+
   if (stat) {
     let current = stat
+    const openedIds: string[] = []
     while (current) {
       current.open = true
+      if (current.data?.id) openedIds.push(current.data.id)
       current = current.parent
     }
+    console.log('[DEBUG-locate-sidebar] tree opened path', {
+      id,
+      openedIds,
+    })
     await nextTick()
   }
 
   const target = treeContainerRef.value?.querySelector<HTMLElement>(`[data-folder-tree-node-id="${id}"]`)
+  console.log('[DEBUG-locate-sidebar] tree query target element', {
+    id,
+    foundTarget: Boolean(target),
+    targetText: target?.textContent?.trim(),
+    containerScrollTop: treeContainerRef.value?.scrollTop,
+  })
   if (!target) return false
 
   target.scrollIntoView({ behavior: 'smooth', block: 'center' })
-  target.classList.remove('sidebar-locate-pulse')
-  void target.offsetWidth
-  target.classList.add('sidebar-locate-pulse')
-  window.setTimeout(() => target.classList.remove('sidebar-locate-pulse'), 1200)
+  window.setTimeout(() => {
+    target.classList.remove('sidebar-locate-pulse')
+    void target.offsetWidth
+    target.classList.add('sidebar-locate-pulse')
+    window.setTimeout(() => target.classList.remove('sidebar-locate-pulse'), 1600)
+  }, 250)
   return true
 }
 
@@ -846,16 +877,21 @@ onUnmounted(() => {
 }
 
 .sidebar-locate-pulse {
-  animation: sidebar-locate-pulse 1.2s ease-out;
+  animation: sidebar-locate-pulse 0.4s ease-in-out 4;
 }
 
 @keyframes sidebar-locate-pulse {
   0% {
-    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.55);
-    background-color: rgba(219, 234, 254, 0.95);
+    outline: 2px solid rgba(37, 99, 235, 0);
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+  }
+  50% {
+    outline: 2px solid rgba(37, 99, 235, 0.95);
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.25);
   }
   100% {
-    box-shadow: 0 0 0 8px rgba(59, 130, 246, 0);
+    outline: 2px solid rgba(37, 99, 235, 0);
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
   }
 }
 </style>

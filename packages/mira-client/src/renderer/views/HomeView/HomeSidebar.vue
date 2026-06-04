@@ -45,17 +45,40 @@ onActivated(() => {
 const locateItem = async (type: 'folder' | 'tag', id: string) => {
   await nextTick()
   const container = sidebarScrollRef.value
+  console.log('[DEBUG-locate-sidebar] sidebar locateItem start', {
+    type,
+    id,
+    hasContainer: Boolean(container),
+    hasFolderTreeRef: Boolean(folderTreeRef.value),
+    hasTagTreeRef: Boolean(tagTreeRef.value),
+  })
   if (!container) return
 
   let nodeId = id
   if (type === 'tag' && !id.startsWith('tag-')) {
     nodeId = `tag-${id}`
+  } else if (type === 'folder' && id.startsWith('folder-')) {
+    nodeId = id.slice('folder-'.length)
   }
 
   const tree = type === 'tag' ? tagTreeRef.value : folderTreeRef.value
-  if (await tree?.locateNode(nodeId)) return
+  console.log('[DEBUG-locate-sidebar] sidebar normalized target', {
+    type,
+    nodeId,
+    hasTreeRef: Boolean(tree),
+  })
+  const locatedByTree = await tree?.locateNode(nodeId)
+  console.log('[DEBUG-locate-sidebar] sidebar tree locate result', {
+    nodeId,
+    locatedByTree,
+  })
+  if (locatedByTree) return
 
   const el = container.querySelector(`[data-folder-tree-node-id="${nodeId}"]`) as HTMLElement
+  console.log('[DEBUG-locate-sidebar] sidebar fallback query', {
+    nodeId,
+    found: Boolean(el),
+  })
   el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
 }
 

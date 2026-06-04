@@ -191,9 +191,20 @@ onActivated(() => {
 const sidebarRef = ref<{ locateItem: (type: 'folder' | 'tag', id: string) => void | Promise<void> }>()
 const handleLocateInSidebar = () => {
   const tab = currentTab.value
+  console.log('[DEBUG-locate-sidebar] home handleLocateInSidebar', {
+    hasTab: Boolean(tab),
+    tabId: tab?.id,
+    tabType: tab?.type,
+    hasSidebarRef: Boolean(sidebarRef.value),
+  })
   if (!tab) return
   const type = tab.type === 'tag' ? 'tag' as const : 'folder' as const
-  sidebarRef.value?.locateItem(type, tab.id)
+  const targetId = String(tab.data?.id ?? tab.id)
+  console.log('[DEBUG-locate-sidebar] home call sidebar.locateItem', {
+    type,
+    id: targetId,
+  })
+  sidebarRef.value?.locateItem(type, targetId)
 }
 
 // ============================================

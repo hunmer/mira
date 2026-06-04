@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
 import {
   Dialog,
   DialogContent,
@@ -23,7 +24,7 @@ const { t } = useI18n()
 const devices = ref<DeviceInfo[]>([])
 const loading = ref(false)
 const selectedIds = ref<Set<string>>(new Set())
-const { dialogOpen, broadcastMsg, sending, openDialog: openBroadcastDialog, sendBroadcast } = useBroadcast()
+const { dialogOpen, broadcastTitle, broadcastMsg, sending, openDialog: openBroadcastDialog, sendBroadcast } = useBroadcast()
 
 const selectedCount = computed(() => selectedIds.value.size)
 const allSelected = computed(() => devices.value.length > 0 && selectedIds.value.size === devices.value.length)
@@ -193,6 +194,7 @@ onMounted(loadDevices)
           </DialogDescription>
         </DialogHeader>
 
+        <Input v-model="broadcastTitle" :placeholder="t('device.broadcastTitlePlaceholder')" />
         <Textarea
           v-model="broadcastMsg"
           :placeholder="t('device.broadcastPlaceholder')"

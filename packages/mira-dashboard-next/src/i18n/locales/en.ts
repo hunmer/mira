@@ -147,6 +147,7 @@ export default {
     disconnect: 'Disconnect',
     broadcast: 'Broadcast',
     broadcastTitle: 'Broadcast Message',
+    broadcastTitlePlaceholder: 'Title (optional)',
     broadcastPlaceholder: 'Enter message content...',
     broadcastTo: 'Send to',
     selectedDevices: '{count} device(s) selected',

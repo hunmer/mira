@@ -147,6 +147,7 @@ export default {
     disconnect: '断开连接',
     broadcast: '发送广播',
     broadcastTitle: '发送广播消息',
+    broadcastTitlePlaceholder: '标题（可选）',
     broadcastPlaceholder: '请输入要发送的消息内容...',
     broadcastTo: '发送给',
     selectedDevices: '已选 {count} 台设备',

@@ -20,10 +20,11 @@ import {
 } from '@/components/ui/dialog'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
 import { RiNotificationLine, RiLoader4Line } from '@remixicon/vue'
 
 const { t } = useI18n()
-const { dialogOpen: broadcastDialogOpen, broadcastMsg, sending, openDialog: openBroadcastDialog, sendBroadcast } = useBroadcast()
+const { dialogOpen: broadcastDialogOpen, broadcastTitle, broadcastMsg, sending, openDialog: openBroadcastDialog, sendBroadcast } = useBroadcast()
 
 function openBroadcastWithSummary() {
   const lines = recentUploads.value.flatMap(day =>
@@ -503,6 +504,7 @@ function createMiraUrl(tabType: 'folder' | 'tag', id: number | null, name: strin
           <DialogTitle>{{ t('device.broadcastTitle') }}</DialogTitle>
           <DialogDescription>{{ t('device.broadcastTo') }}: {{ t('device.allDevices') }}</DialogDescription>
         </DialogHeader>
+        <Input v-model="broadcastTitle" :placeholder="t('device.broadcastTitlePlaceholder')" />
         <Textarea
           v-model="broadcastMsg"
           :placeholder="t('device.broadcastPlaceholder')"

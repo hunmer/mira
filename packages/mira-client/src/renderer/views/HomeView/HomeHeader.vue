@@ -34,6 +34,14 @@ const emit = defineEmits<{
   windowClose: []
 }>()
 
+const handleLocateInSidebarClick = () => {
+  console.log('[DEBUG-locate-sidebar] header click', {
+    currentTabId: props.currentTab?.id,
+    currentTabType: props.currentTab?.type,
+  })
+  emit('locateInSidebar')
+}
+
 const libraryStore = useLibraryStore()
 const settingsStore = useSettingsStore()
 const serverListStore = useServerListStore()
@@ -221,7 +229,7 @@ const onSelectCollection = (collection: any, close: () => void) => {
             <TooltipTrigger as-child>
               <button
                 class="p-2 rounded-md hover:bg-gray-100"
-                @click="emit('locateInSidebar')"
+                @click="handleLocateInSidebarClick"
               >
                 <span class="material-icons text-gray-600">my_location</span>
               </button>

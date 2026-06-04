@@ -189,10 +189,15 @@ export function useHomeTabManagement() {
     mediaStore.setCurrentTab(activeTab.id)
 
     // 更新 HomeController 状态
-    if (activeTab.type === 'folder') {
-      homeController.selectedFolder.value = activeTab.id
-    } else if (activeTab.type === 'base' || activeTab.type === 'all') {
-      homeController.selectedFolder.value = activeTab.id
+    if (
+      activeTab.type === 'folder' ||
+      activeTab.type === 'base' ||
+      activeTab.type === 'all' ||
+      activeTab.type === 'trash' ||
+      activeTab.type === 'uncategorized' ||
+      activeTab.type === 'untagged'
+    ) {
+      homeController.selectedFolder.value = String(activeTab.data?.id ?? activeTab.id).replace(/^folder-/, '')
     }
 
     // 同步Tab级别分页状态到全局HomeController

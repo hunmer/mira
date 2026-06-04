@@ -6,10 +6,12 @@ import { toast } from 'vue-sonner'
 export function useBroadcast() {
   const { t } = useI18n()
   const dialogOpen = ref(false)
+  const broadcastTitle = ref('')
   const broadcastMsg = ref('')
   const sending = ref(false)
 
   function openDialog() {
+    broadcastTitle.value = ''
     broadcastMsg.value = ''
     dialogOpen.value = true
   }
@@ -22,7 +24,10 @@ export function useBroadcast() {
     }
     sending.value = true
     try {
-      const payload: Record<string, any> = { message: msg, title: 'Administrator' }
+      const payload: Record<string, any> = { message: msg }
+      if (broadcastTitle.value.trim()) {
+        payload.title = broadcastTitle.value.trim()
+      }
       if (clientIds?.length) {
         payload.clientIds = clientIds
       }
@@ -37,5 +42,5 @@ export function useBroadcast() {
     }
   }
 
-  return { dialogOpen, broadcastMsg, sending, openDialog, sendBroadcast }
+  return { dialogOpen, broadcastTitle, broadcastMsg, sending, openDialog, sendBroadcast }
 }
