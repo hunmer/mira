@@ -326,7 +326,7 @@ export class InitializationService {
   }
 
   /**
-   * 执行完整的初始化流程（用于 InitializationLoader.vue）
+   * 执行完整的初始化流程
    * @param updateMessage 更新消息的回调函数
    * @returns Promise<{success: boolean, error?: string}>
    */

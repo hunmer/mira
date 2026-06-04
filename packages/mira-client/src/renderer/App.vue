@@ -54,24 +54,6 @@
       @cancel="handleGlobalLoadingCancel"
     />
     
-    <!-- 初始化加载器 -->
-    <InitializationLoader
-      :is-visible="initState.isVisible.value"
-      :description="'正在加载您的素材库和相关数据'"
-      :current-step="initState.state.currentStep"
-      :progress="initState.state.progress"
-      :show-progress="true"
-      :show-steps="true"
-      :steps="initState.state.steps"
-      :error="initState.state.error"
-      :show-actions="!!initState.state.error"
-      :allow-cancel="false"
-      :auto-initialize="false"
-      @retry="handleInitRetry"
-      @completed="handleInitCompleted"
-      @failed="handleInitFailed"
-    />
-    
     <!-- 应用主内容 -->
     <div class="flex h-full">
       
@@ -91,9 +73,9 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, reactive, ref } from 'vue'
+import { onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import InitializationLoader from './components/InitializationLoader.vue'
+import { toast } from 'vue-sonner'
 import GlobalLoading from './components/GlobalLoading.vue'
 import { useSettingsStore } from './stores/settings'
 import { useGlobalInitializationState } from './composables/useInitializationState'
@@ -181,24 +163,38 @@ if (environment.isElectron) {
 // 初始化全局快捷键系统
 const shortcuts = useAutoShortcuts()
 
-// 处理初始化重试
-const handleInitRetry = async () => {
-  try {
-    await initializationService.forceReinitialize()
-  } catch (error) {
-    console.error('Failed to retry initialization:', error)
+// 初始化状态 toast 通知（替代 InitializationLoader 组件）
+let initToastId: string | number | undefined
+
+watch(() => initState.state.isInitializing, (isInit, wasInit) => {
+  if (isInit && !wasInit && !initState.state.error) {
+    initToastId = toast.loading('正在初始化...')
+  } else if (!isInit && wasInit && !initState.state.error) {
+    if (initToastId !== undefined) {
+      toast.success('初始化完成', { id: initToastId })
+      initToastId = undefined
+    }
   }
-}
+})
 
-// 处理初始化完成
-const handleInitCompleted = () => {
-  console.log('✅ Initialization completed successfully')
-}
-
-// 处理初始化失败
-const handleInitFailed = (error: string) => {
-  console.error('❌ Initialization failed:', error)
-}
+watch(() => initState.state.error, (error, prevError) => {
+  if (error) {
+    if (initToastId !== undefined) {
+      toast.dismiss(initToastId)
+      initToastId = undefined
+    }
+    toast.error(error, {
+      duration: 10000,
+      action: {
+        label: '重试',
+        onClick: () => initializationService.forceReinitialize()
+      }
+    })
+  } else if (prevError && initState.state.isInitializing) {
+    // 错误清除，重试中
+    initToastId = toast.loading('正在重新初始化...')
+  }
+})
 
 // 处理全局Loading取消
 const handleGlobalLoadingCancel = () => {
