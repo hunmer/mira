@@ -52,10 +52,10 @@
       <div v-if="currentStep === 1">
         <!-- Server List View -->
         <div v-if="!showAddForm" class="flex flex-col gap-4">
-          <div class="grid grid-cols-2 gap-3">
+          <div class="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
             <!-- Add Server Card -->
             <div
-              class="flex flex-col items-center justify-center gap-2 p-4 border-2 border-dashed border-gray-300 dark:border-zinc-600 rounded-xl cursor-pointer transition-all hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-500/10"
+              class="flex-shrink-0 flex flex-col items-center justify-center gap-2 p-4 w-40 border-2 border-dashed border-gray-300 dark:border-zinc-600 rounded-xl cursor-pointer transition-all hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-500/10"
               @click="showAddForm = true"
             >
               <span class="material-icons text-3xl text-gray-400 dark:text-zinc-500">add</span>
@@ -65,7 +65,7 @@
             <div
               v-for="server in serverListStore.services"
               :key="server.id"
-              class="flex flex-col gap-2 p-4 border-2 rounded-xl cursor-pointer transition-all"
+              class="flex-shrink-0 flex flex-col gap-2 p-4 w-40 border-2 rounded-xl cursor-pointer transition-all"
               :class="loading && selectedServerId === server.id
                 ? 'border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-500/10'
                 : 'border-gray-200 dark:border-zinc-700 hover:border-blue-300 dark:hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-500/10'"

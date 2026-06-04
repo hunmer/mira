@@ -257,6 +257,7 @@ export function useFolderOperations(emit: FolderOperationsEmits) {
     parentId?: number
     color?: number
     description?: string
+    autoOpenTab?: boolean
   }) {
     if (!libraryStore.currentLibrary) return
     const itemType = editingItemType.value
@@ -281,21 +282,31 @@ export function useFolderOperations(emit: FolderOperationsEmits) {
         }
       } else {
         if (itemType === 'folder') {
-          await miraSDKService.createFolder(
+          const result = await miraSDKService.createFolder(
             libraryId, data.title, data.parentId, data.color, data.description,
           )
           if (editingParentItem.value) emit['folder-add'](editingParentItem.value)
           else emit['folder-add']()
           await new Promise(resolve => setTimeout(resolve, 100))
           emit['refresh-folders']()
+          if (data.autoOpenTab && result?.id) {
+            window.dispatchEvent(new CustomEvent('home-folder-selected', {
+              detail: { id: String(result.id), title: data.title, libraryId, color: data.color }
+            }))
+          }
         } else {
-          await miraSDKService.createTag(
+          const result = await miraSDKService.createTag(
             libraryId, data.title, data.color, data.description,
           )
           if (editingParentItem.value) emit['tag-add'](editingParentItem.value)
           else emit['tag-add']()
           await new Promise(resolve => setTimeout(resolve, 100))
           emit['refresh-tags']()
+          if (data.autoOpenTab && result?.id) {
+            window.dispatchEvent(new CustomEvent('home-tag-selected', {
+              detail: { id: result.id, title: data.title, libraryId, color: data.color }
+            }))
+          }
         }
       }
       handleEditDialogClose()

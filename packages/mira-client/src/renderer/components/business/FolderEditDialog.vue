@@ -93,6 +93,11 @@
             </div>
           </div>
 
+          <div v-if="!isEdit" class="flex items-center space-x-2">
+            <Checkbox id="autoOpenTab" v-model="formData.autoOpenTab" />
+            <Label for="autoOpenTab" class="text-sm text-gray-700 cursor-pointer">创建后自动打开</Label>
+          </div>
+
           <div v-if="error" class="bg-red-50 border border-red-200 rounded-md p-3">
             <p class="text-red-600 text-sm">{{ error }}</p>
           </div>
@@ -118,6 +123,8 @@ import { ref, computed, watch } from 'vue'
 import { BaseTree } from '@he-tree/vue'
 import '@he-tree/vue/style/default.css'
 import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
 import type { FolderItem } from '../../types/components'
 
 interface Props {
@@ -131,7 +138,7 @@ interface Props {
 
 interface Emits {
   (e: 'close'): void
-  (e: 'save', data: { title: string; parentId?: number; color?: number; description?: string }): void
+  (e: 'save', data: { title: string; parentId?: number; color?: number; description?: string; autoOpenTab?: boolean }): void
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -148,7 +155,8 @@ const formData = ref({
   title: '',
   parentId: undefined as number | undefined,
   color: null as number | null,
-  description: ''
+  description: '',
+  autoOpenTab: true
 })
 
 const errors = ref({ title: '' })
@@ -235,6 +243,7 @@ const handleSubmit = async () => {
       title: formData.value.title?.trim() || '',
       parentId: formData.value.parentId,
       description: formData.value.description?.trim() || undefined,
+      autoOpenTab: !isEdit.value && formData.value.autoOpenTab,
     }
     if (formData.value.color !== null) saveData.color = formData.value.color
     emit('save', saveData)
@@ -251,7 +260,7 @@ const handleCancel = () => {
 }
 
 const resetForm = () => {
-  formData.value = { title: '', parentId: undefined, color: null, description: '' }
+  formData.value = { title: '', parentId: undefined, color: null, description: '', autoOpenTab: true }
   errors.value = { title: '' }
   selectedParentId.value = null
   error.value = null
