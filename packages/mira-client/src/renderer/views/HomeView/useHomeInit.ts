@@ -3,9 +3,10 @@
  */
 import { useAppState } from '@renderer/stores/appState'
 import { useLibraryStore } from '@/renderer/stores/library'
+import { useServerListStore } from '@renderer/stores/serverList'
 import { useDashboardStore } from '@renderer/stores/dashboard'
 import { useAuthStore } from '@renderer/stores/auth'
-import { tabPersistence } from '@renderer/composables/TabPersistence'
+import { createTabScopeId, tabPersistence } from '@renderer/composables/TabPersistence'
 import {
   useHomeRouteHandler,
   useHomeTagHandler,
@@ -15,6 +16,7 @@ import {
 export function useHomeInit() {
   const { setRouteHandlersRegistered } = useAppState()
   const libraryStore = useLibraryStore()
+  const serverListStore = useServerListStore()
   const dashboardStore = useDashboardStore()
   const authStore = useAuthStore()
 
@@ -54,7 +56,10 @@ export function useHomeInit() {
     await libraryStore.restoreLibraryState()
 
     if (libraryStore.currentLibrary?.id) {
-      tabPersistence.setCurrentLibraryId(libraryStore.currentLibrary.id)
+      tabPersistence.setCurrentLibraryId(createTabScopeId(
+        serverListStore.activeServer?.serverUrl,
+        libraryStore.currentLibrary.id
+      ))
     }
 
     if (libraryStore.libraries.length === 0) {

@@ -12,6 +12,16 @@ import ConfigStorage from '@renderer/utils/ConfigStorage'
 const STORAGE_KEY_PREFIX = 'mira-tabs-state'
 const ACTIVE_TAB_KEY_PREFIX = 'mira-active-tab-id'
 
+export const createTabScopeId = (
+  serverUrl: string | null | undefined,
+  libraryId: string | null | undefined
+): string | null => {
+  if (!libraryId) return null
+
+  const normalizedServerUrl = serverUrl?.replace(/\/$/, '') || 'local'
+  return `${encodeURIComponent(normalizedServerUrl)}::${libraryId}`
+}
+
 export interface TabState {
   id: string
   label: string

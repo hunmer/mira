@@ -199,7 +199,8 @@ export const useServerListStore = defineStore('serverList', () => {
       { useFolderStore },
       { useTagStore },
       { useLibraryStore },
-      { useAuthStore }
+      { useAuthStore },
+      { createTabScopeId }
     ] = await Promise.all([
       import('../services/MiraSDKService'),
       import('../composables/useTabs'),
@@ -208,7 +209,8 @@ export const useServerListStore = defineStore('serverList', () => {
       import('./folder'),
       import('./tag'),
       import('./library'),
-      import('./auth')
+      import('./auth'),
+      import('../composables/TabPersistence')
     ])
 
     await miraSDKService.disconnect()
@@ -234,7 +236,10 @@ export const useServerListStore = defineStore('serverList', () => {
 
     await useAuthStore().initializeAuthAfterConnection()
     await initializationService.forceReinitialize()
-    await resetTabsForLibrary(server.id)
+    await resetTabsForLibrary(createTabScopeId(
+      server.serverUrl,
+      useLibraryStore().currentLibrary?.id || server.id
+    ))
   }
 
   /**

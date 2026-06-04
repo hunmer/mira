@@ -22,6 +22,19 @@ export class InitializationService {
     return InitializationService.instance
   }
 
+  private async setTabScope(libraryId: string | null | undefined): Promise<void> {
+    const [
+      { tabPersistence, createTabScopeId },
+      { useServerListStore }
+    ] = await Promise.all([
+      import('../composables/TabPersistence'),
+      import('../stores/serverList')
+    ])
+
+    const activeServer = useServerListStore().activeServer
+    tabPersistence.setCurrentLibraryId(createTabScopeId(activeServer?.serverUrl, libraryId))
+  }
+
   /**
    * 应用级别初始化（包含连接和认证）
    * @returns Promise<{success: boolean, error?: string}>
@@ -150,8 +163,7 @@ export class InitializationService {
 
       // 同步 tab 持久化的 libraryId
       if (previousLibraryId) {
-        const { tabPersistence } = await import('../composables/TabPersistence')
-        tabPersistence.setCurrentLibraryId(previousLibraryId)
+        await this.setTabScope(previousLibraryId)
       }
 
       const libraryResult = await libraryStore.fetchLibraries()
@@ -186,8 +198,7 @@ export class InitializationService {
       const selectedLibrary = libraryStore.getLibraryById(selectedLibraryId)
       if (selectedLibrary) {
         libraryStore.currentLibrary = selectedLibrary
-        const { tabPersistence } = await import('../composables/TabPersistence')
-        tabPersistence.setCurrentLibraryId(selectedLibraryId)
+        await this.setTabScope(selectedLibraryId)
       }
       
       // 第四步：加载文件夹结构
@@ -241,8 +252,7 @@ export class InitializationService {
       // 设置为当前素材库
       try {
         await libraryStore.setCurrentLibrary(librarys[0])
-        const { tabPersistence } = await import('../composables/TabPersistence')
-        tabPersistence.setCurrentLibraryId(selectedLibraryId)
+        await this.setTabScope(selectedLibraryId)
       } catch (error) {
         // 设置当前素材库失败，忽略
       }

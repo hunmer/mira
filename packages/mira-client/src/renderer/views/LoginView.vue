@@ -415,9 +415,9 @@ async function fetchLibraries(client: any) {
   loading.value = true
   try {
     libraries.value = await client.libraries().getAll()
-    // Auto-select if only one accessible library
+    // Auto-select first accessible library
     const accessible = libraries.value.filter(isLibraryAccessible)
-    if (accessible.length === 1) {
+    if (accessible.length > 0) {
       selectedLibraryId.value = accessible[0].id
     }
   } catch {
