@@ -283,6 +283,7 @@ const deleteTarget = ref<ServerConfig | null>(null)
 function handleDeleteServer() {
   const target = deleteTarget.value
   if (!target) return
+  deleteTarget.value = null
   serverListStore.deleteServer(target.id)
 }
 const selectedServerId = ref('')
