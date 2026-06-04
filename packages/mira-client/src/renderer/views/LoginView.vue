@@ -7,7 +7,7 @@
       :speed="1.2"
       class="absolute inset-0 w-full h-full z-0"
     />
-    <div class="relative z-[1] w-full max-w-[440px] p-8 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.3)] dark:shadow-[0_10px_40px_rgba(0,0,0,0.6)] border border-white/30 dark:border-zinc-700/50 max-[480px]:m-4 max-[480px]:p-6">
+    <Motion layout class="relative z-[1] w-full max-w-[440px] p-8 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.3)] dark:shadow-[0_10px_40px_rgba(0,0,0,0.6)] border border-white/30 dark:border-zinc-700/50 max-[480px]:m-4 max-[480px]:p-6">
       <!-- Close button -->
       <button class="absolute top-4 right-4 w-8 h-8 border-none bg-transparent text-gray-400 hover:text-gray-500 cursor-pointer flex items-center justify-center rounded transition-colors" @click="handleClose" title="关闭">
         <span class="material-icons">close</span>
@@ -52,35 +52,52 @@
       <div v-if="currentStep === 1">
         <!-- Server List View -->
         <div v-if="!showAddForm" class="flex flex-col gap-4">
-          <div class="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
+          <div class="flex flex-col gap-3">
             <!-- Add Server Card -->
             <div
-              class="flex-shrink-0 flex flex-col items-center justify-center gap-2 p-4 w-40 border-2 border-dashed border-gray-300 dark:border-zinc-600 rounded-xl cursor-pointer transition-all hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-500/10"
+              class="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-gray-300 dark:border-zinc-600 rounded-xl cursor-pointer transition-all hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-500/10"
               @click="showAddForm = true"
             >
-              <span class="material-icons text-3xl text-gray-400 dark:text-zinc-500">add</span>
-              <span class="text-xs text-gray-500 dark:text-zinc-400">添加服务器</span>
+              <span class="material-icons text-2xl text-gray-400 dark:text-zinc-500">add</span>
+              <span class="text-sm text-gray-500 dark:text-zinc-400">添加服务器</span>
             </div>
             <!-- Existing Server Cards -->
             <div
               v-for="server in serverListStore.services"
               :key="server.id"
-              class="flex-shrink-0 flex flex-col gap-2 p-4 w-40 border-2 rounded-xl cursor-pointer transition-all"
+              class="flex items-center gap-3 p-3 border-2 rounded-xl cursor-pointer transition-all group"
               :class="loading && selectedServerId === server.id
                 ? 'border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-500/10'
                 : 'border-gray-200 dark:border-zinc-700 hover:border-blue-300 dark:hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-500/10'"
               @click="quickConnect(server)"
             >
-              <div class="flex items-center gap-2">
-                <span class="material-icons text-lg text-blue-600 dark:text-blue-400">dns</span>
+              <span class="material-icons text-lg text-blue-600 dark:text-blue-400">dns</span>
+              <div class="flex flex-col min-w-0 flex-1">
                 <span class="font-semibold text-sm text-gray-800 dark:text-zinc-100 truncate">{{ server.name }}</span>
+                <span class="text-xs text-gray-400 dark:text-zinc-500 truncate">{{ server.serverUrl }}</span>
               </div>
-              <span class="text-xs text-gray-400 dark:text-zinc-500 truncate">{{ server.serverUrl }}</span>
+              <Button variant="ghost" size="icon-sm" class="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 text-gray-400 hover:text-red-500" @click.stop="deleteTarget = server">
+                <span class="material-icons text-base">delete</span>
+              </Button>
             </div>
           </div>
           <div v-if="serverListStore.services.length === 0" class="text-center py-4 text-sm text-gray-400 dark:text-zinc-500">
             还没有添加过服务器
           </div>
+
+          <!-- Delete Confirmation Dialog -->
+          <AlertDialog :open="!!deleteTarget" @update:open="v => { if (!v) deleteTarget = null }">
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>删除服务器</AlertDialogTitle>
+                <AlertDialogDescription>确定要删除「{{ deleteTarget?.name }}」吗？此操作不可撤销。</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>取消</AlertDialogCancel>
+                <Button class="bg-red-600 hover:bg-red-700 text-white" @click="handleDeleteServer">删除</Button>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
 
         <!-- Add Server Form -->
@@ -221,7 +238,7 @@
         </Button>
       </div>
 
-    </div>
+    </Motion>
   </div>
 </template>
 
@@ -230,6 +247,7 @@ import { reactive, ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useServerListStore, type ServerConfig } from '../stores/serverList'
+import { Motion } from 'motion-v'
 import Aurora from '@renderer/components/Aurora.vue'
 import {
   Stepper, StepperItem, StepperTrigger, StepperIndicator,
@@ -239,6 +257,9 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Loader2 } from 'lucide-vue-next'
+import {
+  AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import type { HealthResponse, Library } from 'mira-server-sdk'
 
 const router = useRouter()
@@ -257,6 +278,13 @@ const serverAddress = ref('')
 const wsAddress = ref('')
 const showWsField = ref(false)
 const showAddForm = ref(false)
+const deleteTarget = ref<ServerConfig | null>(null)
+
+function handleDeleteServer() {
+  const target = deleteTarget.value
+  if (!target) return
+  serverListStore.deleteServer(target.id)
+}
 const selectedServerId = ref('')
 const healthData = ref<HealthResponse | null>(null)
 

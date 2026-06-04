@@ -60,6 +60,7 @@
     "lodash-es": "^4.17.21",
     "lucide-vue-next": "^1.0.0",
     "mira-server-sdk": "workspace:*",
+    "motion-v": "^2.2.1",
     "pinia": "^3.0.3",
     "pinyin": "^4.0.0",
     "plyr": "^3.8.3",
