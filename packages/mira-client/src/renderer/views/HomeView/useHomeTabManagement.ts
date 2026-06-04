@@ -58,6 +58,43 @@ export function useHomeTabManagement() {
     return tabViewConfigMap.value[tabId] || null
   }
 
+  const loadTabViewConfig = async (tab: TabItem) => {
+    if (!visitedTabIds.value.includes(tab.id)) {
+      visitedTabIds.value.push(tab.id)
+    }
+
+    const tabId = tab.id
+
+    try {
+      const config = await tabRegistryAPI.getTabViewConfig(tab.type, {
+        tabId: tab.id,
+        libraryId: libraryStore.currentLibrary?.id,
+        tabData: tab.data,
+        filters: {}
+      })
+
+      tabViewConfigMap.value = {
+        ...tabViewConfigMap.value,
+        [tabId]: config
+      }
+
+      if (currentTab.value?.id === tabId) {
+        currentTabViewConfig.value = config
+      }
+    } catch (error) {
+      console.error('获取Tab视图配置失败:', error)
+
+      tabViewConfigMap.value = {
+        ...tabViewConfigMap.value,
+        [tabId]: null
+      }
+
+      if (currentTab.value?.id === tabId) {
+        currentTabViewConfig.value = null
+      }
+    }
+  }
+
   // 监听当前tab变化并异步获取视图配置
   watch(
     () => currentTab.value,
@@ -308,7 +345,7 @@ export function useHomeTabManagement() {
     })
   }
 
-  const refreshCurrentTabAfterLibrarySwitch = () => {
+  const refreshCurrentTabAfterLibrarySwitch = async () => {
     visitedTabIds.value = []
     tabViewConfigMap.value = {}
     currentTabViewConfig.value = null
@@ -316,6 +353,7 @@ export function useHomeTabManagement() {
     const activeTab = getCurrentTab()
     if (!activeTab) return
 
+    await loadTabViewConfig(activeTab)
     setTabNeedUpdate(activeTab.id, true)
     switchToTabWithCallback(activeTab.id)
   }

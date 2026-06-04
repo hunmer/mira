@@ -107,7 +107,7 @@ const handleSelectCollectionAndRefresh = async (collection: any) => {
   if (!switched) return
 
   await nextTick()
-  refreshCurrentTabAfterLibrarySwitch()
+  await refreshCurrentTabAfterLibrarySwitch()
 }
 
 // ============================================
