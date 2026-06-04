@@ -554,12 +554,16 @@ async function locateNode(id: string): Promise<boolean> {
   await nextTick()
 
   const node = nodeMap.value.get(id)
-  if (node) {
-    const stat = treeRef.value?.getStat?.(node)
-    if (stat) {
-      treeRef.value?.openNodeAndParents?.(stat)
-      await nextTick()
+  const stat = treeRef.value?.statsFlat?.find((item: any) => item.data?.id === id)
+    || (node ? treeRef.value?.getStat?.(node) : null)
+
+  if (stat) {
+    let current = stat
+    while (current) {
+      current.open = true
+      current = current.parent
     }
+    await nextTick()
   }
 
   const target = treeContainerRef.value?.querySelector<HTMLElement>(`[data-folder-tree-node-id="${id}"]`)

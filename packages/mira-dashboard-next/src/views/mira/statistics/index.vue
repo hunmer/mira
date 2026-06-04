@@ -25,6 +25,14 @@ import { RiNotificationLine, RiLoader4Line } from '@remixicon/vue'
 const { t } = useI18n()
 const { dialogOpen: broadcastDialogOpen, broadcastMsg, sending, openDialog: openBroadcastDialog, sendBroadcast } = useBroadcast()
 
+function openBroadcastWithSummary() {
+  const lines = recentUploads.value.flatMap(day =>
+    day.items.map(item => `${item.userName} ${t('statistics.uploaded')} ${item.fileCount} ${t('statistics.uploadedTo')} ${item.target}`)
+  )
+  broadcastMsg.value = lines.join('\n')
+  broadcastDialogOpen.value = true
+}
+
 interface DailyRow { date: string; file_count: number; total_size: number }
 interface UploaderRow { uploader: number | null; uploaderName: string; fileCount: number; totalSize: number }
 interface FileTypeRow { type: string; file_count: number; total_size: number }
@@ -257,10 +265,6 @@ function createMiraUrl(tabType: 'folder' | 'tag', id: number | null, name: strin
         <p class="text-muted-foreground text-sm">{{ t('statistics.subtitle') }}</p>
       </div>
       <div v-if="selectedLibraryId" class="flex items-center gap-3 shrink-0">
-        <Button variant="outline" size="sm" @click="openBroadcastDialog">
-          <RiNotificationLine class="mr-1.5 size-4" />
-          {{ t('device.broadcast') }}
-        </Button>
         <div class="inline-flex h-8 rounded-md bg-muted p-0.5">
           <Button
             v-for="opt in TIME_OPTIONS"
@@ -344,8 +348,14 @@ function createMiraUrl(tabType: 'folder' | 'tag', id: number | null, name: strin
       <!-- 最近上传记录 -->
       <div v-if="recentUploads.length" class="overflow-hidden rounded-lg border bg-card">
         <div class="flex items-center justify-between border-b px-4 py-3">
-          <span class="font-medium text-sm">{{ t('statistics.recentUploads') }}</span>
-          <span class="text-muted-foreground text-xs">{{ recentUploads.reduce((s, d) => s + d.items.length, 0) }} events</span>
+          <div class="flex items-center gap-2">
+            <span class="font-medium text-sm">{{ t('statistics.recentUploads') }}</span>
+            <span class="text-muted-foreground text-xs">{{ recentUploads.reduce((s, d) => s + d.items.length, 0) }} events</span>
+          </div>
+          <Button variant="ghost" size="sm" class="h-7 px-2 text-xs" @click="openBroadcastWithSummary">
+            <RiNotificationLine class="mr-1 size-3.5" />
+            {{ t('device.broadcast') }}
+          </Button>
         </div>
         <div class="px-4 py-3 overflow-y-auto max-h-[380px]">
           <div class="relative">
