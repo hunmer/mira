@@ -14,5 +14,10 @@
     "enabled": false,
     "path": "node_modules/mira_thumb_imagemagick",
     "status": "active"
+  },
+  {
+    "name": "mira_duplicate_scanner",
+    "enabled": true,
+    "path": "node_modules/mira_duplicate_scanner"
   }
 ]

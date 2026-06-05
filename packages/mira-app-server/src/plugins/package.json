@@ -137,6 +137,7 @@
     "minipass-pipeline": "^1.2.4",
     "minipass-sized": "^1.0.3",
     "minizlib": "^2.1.2",
+    "mira_duplicate_scanner": "file:../../../../plugins/plugins/mira_duplicate_scanner",
     "mira_thumb_imagemagick": "file:../../../../plugins/plugins/mira_thumb_imagemagick",
     "mira-app-server": "^1.0.25",
     "mira-server-sdk": "^1.0.11",

@@ -25,6 +25,12 @@
       "esbuild",
       "sqlite3",
       "sharp"
-    ]
+    ],
+    "overrides": {
+      "mira_duplicate_scanner": "link:C:/Users/Administrator/AppData/Local/pnpm/global/5/node_modules/mira_duplicate_scanner"
+    }
+  },
+  "dependencies": {
+    "mira_duplicate_scanner": "link:C:/Users/Administrator/AppData/Local/pnpm/global/5/node_modules/mira_duplicate_scanner"
   }
 }
