@@ -182,6 +182,12 @@
       getApiBase: function () {
         return Dashboard && Dashboard.getApiBase ? Dashboard.getApiBase() : '/api';
       },
+      authHeaders: function () {
+        var token = localStorage.getItem('token');
+        var h = { 'Content-Type': 'application/json' };
+        if (token) h['Authorization'] = 'Bearer ' + token;
+        return h;
+      },
       startScan: function () {
         var self = this;
         if (!self.selectedLibraryId || self.scanning) return;
@@ -192,7 +198,7 @@
 
         fetch(self.getApiBase() + '/duplicate/scan', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: self.authHeaders(),
           body: JSON.stringify({ libraryId: self.selectedLibraryId, mode: self.scanMode }),
         })
         .then(function (r) { return r.json(); })
@@ -239,7 +245,7 @@
         self.deleting = true;
         fetch(self.getApiBase() + '/duplicate/delete', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: self.authHeaders(),
           body: JSON.stringify({
             libraryId: self.selectedLibraryId,
             fileIds: Array.from(self.selectedIds),
