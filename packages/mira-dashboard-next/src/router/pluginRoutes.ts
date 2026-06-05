@@ -66,26 +66,27 @@ function resolvePluginComponent(route: PluginRoute, libraryId: string) {
   if (route.component) {
     const comp = route.component
     const pluginName = route.pluginName || ''
-    const src = `/api/plugins/${libraryId}/${pluginName}/${comp}`
+    const src = `/plugins/${libraryId}/${pluginName}/${comp}`
 
-    return () => new Promise<any>((resolve) => {
+    return () => new Promise<any>(async (resolve) => {
       ensurePluginRuntime()
 
       const key = `${pluginName}_${comp.replace(/[/.]/g, '_')}`
       const existing = (window as any).MiraPluginComponents?.[key]
       if (existing) return resolve(defineComponent(existing))
 
-      const script = document.createElement('script')
-      script.src = src
-      script.onload = () => {
+      try {
+        const res = await client.get(src)
+        if (typeof res.data === 'string') {
+          // eslint-disable-next-line no-eval
+          eval(res.data)
+        }
         const raw = (window as any).MiraPluginComponents?.[key]
         resolve(raw ? defineComponent(raw) : fallback(route))
-      }
-      script.onerror = () => {
-        console.error(`Failed to load plugin script: ${src}`)
+      } catch (e) {
+        console.error(`Failed to load plugin script: ${src}`, e)
         resolve(fallback(route))
       }
-      document.head.append(script)
     })
   }
 

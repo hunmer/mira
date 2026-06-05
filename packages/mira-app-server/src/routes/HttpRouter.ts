@@ -165,11 +165,16 @@ export class HttpRouter {
         }
 
         const pluginDir = pluginManager.getPluginDistDir(pluginName);
-        const fullFilePath = path.join(pluginDir, filePath);
+        let fullFilePath = path.join(pluginDir, filePath);
+
+        // dist/ 下找不到则回退到插件根目录
+        if (!fs.existsSync(fullFilePath)) {
+          fullFilePath = path.join(pluginManager.getPluginDir(pluginName), filePath);
+        }
 
         // 安全检查：确保文件路径在插件目录内
         const resolvedPath = path.resolve(fullFilePath);
-        const resolvedPluginDir = path.resolve(pluginDir);
+        const resolvedPluginDir = path.resolve(pluginManager.getPluginDir(pluginName));
 
         if (!resolvedPath.startsWith(resolvedPluginDir)) {
           return res.status(403).json({ error: 'Access denied: path outside plugin directory' });
