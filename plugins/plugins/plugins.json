@@ -28,5 +28,10 @@
     "name": "mira_thumb_imagemagick",
     "enabled": false,
     "path": "mira_thumb_imagemagick"
+  },
+  {
+    "name": "mira_duplicate_scanner",
+    "enabled": true,
+    "path": "mira_duplicate_scanner"
   }
 ]
