@@ -1,0 +1,14 @@
+{
+  "name": "mira_duplicate_scanner",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "mira-storage-sqlite": "file:../../packages/mira-storage-sqlite",
+    "mira-app-server": "file:../../packages/mira-app-server"
+  },
+  "author": "hunmer",
+  "license": "ISC"
+}
