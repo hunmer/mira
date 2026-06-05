@@ -18,6 +18,6 @@
   {
     "name": "mira_duplicate_scanner",
     "enabled": true,
-    "path": "../../../../plugins/plugins/mira_duplicate_scanner"
+    "path": "node_modules/mira_duplicate_scanner"
   }
 ]

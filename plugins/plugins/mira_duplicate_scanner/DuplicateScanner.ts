@@ -1,5 +1,3 @@
-import { ILibraryServerData } from 'mira-storage-sqlite';
-
 export interface DuplicateGroup {
     key: string;
     title: string;
@@ -29,7 +27,7 @@ export interface ScanResult {
 }
 
 export class DuplicateScanner {
-    constructor(private dbService: ILibraryServerData) {}
+    constructor(private dbService: any) {}
 
     async scan(mode: 'quick' | 'precise' = 'quick'): Promise<ScanResult> {
         const allFiles = await this.fetchAllFiles();

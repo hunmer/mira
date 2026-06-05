@@ -5,9 +5,8 @@
   "scripts": {
     "build": "tsc"
   },
-  "dependencies": {
-    "mira-storage-sqlite": "file:../../packages/mira-storage-sqlite",
-    "mira-app-server": "file:../../packages/mira-app-server"
+  "devDependencies": {
+    "@types/node": "^20.0.0"
   },
   "author": "hunmer",
   "license": "ISC"

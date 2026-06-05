@@ -1,30 +1,27 @@
-import { ServerPluginManager, MiraWebsocketServer, ServerPlugin } from 'mira-app-server';
-import { ILibraryServerData } from 'mira-storage-sqlite';
-import { MiraHttpServer } from 'mira-app-server/dist/server';
 import { DuplicateScanner } from './DuplicateScanner';
 
-class MiraDuplicateScanner extends ServerPlugin {
-    private readonly httpServer: MiraHttpServer;
-    private readonly dbService: ILibraryServerData;
+class MiraDuplicateScanner {
+    private pluginName = 'mira_duplicate_scanner';
+    private routes: any[] = [];
 
-    constructor({ pluginManager, server, dbService }: {
-        pluginManager: ServerPluginManager;
-        server: MiraWebsocketServer;
-        dbService: ILibraryServerData;
-    }) {
-        super('mira_duplicate_scanner', pluginManager, dbService);
-        this.dbService = dbService;
-        this.httpServer = server.backend.getHttpServer();
+    getRoutes() {
+        return [...this.routes];
+    }
 
+    constructor(inst: any) {
+        const { pluginManager } = inst;
+        const dbService = inst.dbService;
+        const backend = pluginManager.server.backend;
+        const httpRouter = backend.getHttpServer().httpRouter;
         const libraryId = dbService.getLibraryId();
 
         // POST /api/duplicate/scan
-        this.httpServer.httpRouter.registerRounter(
+        httpRouter.registerRounter(
             libraryId, '/duplicate/scan', 'post',
             async (req: any, res: any) => {
                 try {
                     const { mode } = req.body;
-                    const scanner = new DuplicateScanner(this.dbService);
+                    const scanner = new DuplicateScanner(dbService);
                     const result = await scanner.scan(mode || 'quick');
                     res.json({ success: true, data: result });
                 } catch (error) {
@@ -38,7 +35,7 @@ class MiraDuplicateScanner extends ServerPlugin {
         );
 
         // POST /api/duplicate/delete
-        this.httpServer.httpRouter.registerRounter(
+        httpRouter.registerRounter(
             libraryId, '/duplicate/delete', 'post',
             async (req: any, res: any) => {
                 try {
@@ -50,7 +47,7 @@ class MiraDuplicateScanner extends ServerPlugin {
                         });
                     }
 
-                    const scanner = new DuplicateScanner(this.dbService);
+                    const scanner = new DuplicateScanner(dbService);
                     const result = await scanner.deleteFiles(fileIds);
                     res.json({ success: true, data: result });
                 } catch (error) {
@@ -64,12 +61,12 @@ class MiraDuplicateScanner extends ServerPlugin {
         );
 
         // Register Dashboard frontend route
-        this.registerRoute({
+        this.routes.push({
             name: 'DuplicateScanner',
             group: '文件管理',
             path: '/tools/duplicate-scanner',
             component: 'components/DuplicateScanner.js',
-            pluginName: 'mira_duplicate_scanner',
+            pluginName: this.pluginName,
             meta: { title: '重复文件扫描', roles: ['super', 'admin', 'user'] },
         });
 
@@ -77,6 +74,6 @@ class MiraDuplicateScanner extends ServerPlugin {
     }
 }
 
-export function init(inst: any): MiraDuplicateScanner {
+export function init(inst: any) {
     return new MiraDuplicateScanner(inst);
 }
