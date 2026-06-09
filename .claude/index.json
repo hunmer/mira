@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "timestamp": "2026-05-26T23:21:41+08:00",
+  "timestamp": "2026-06-09T11:59:31+08:00",
   "project": {
     "name": "mira_typescript",
     "description": "Mira 媒体库管理系统 - TypeScript 多包项目",
@@ -12,20 +12,36 @@
       "path": "packages/mira-app-core",
       "name": "mira-app-core",
       "version": "1.0.24",
-      "description": "核心库 - 提供事件管理、库列表管理等基础功能",
+      "description": "核心库 - 事件管理、SQLite 存储、TypeScript SDK、共享类型",
       "language": "TypeScript",
       "entry": "src/index.ts",
       "dist": "dist/index.js",
-      "dependencies": ["axios", "queue"],
+      "dependencies": ["axios", "queue", "sqlite3", "ws"],
       "workspaceDependencies": [],
       "tests": { "exists": false, "path": null },
-      "interfaces": ["EventArgs", "EventSubscription", "EventManager", "User", "Session", "WebSocketMessage"],
+      "subModules": {
+        "storage/sqlite": {
+          "entry": "src/storage/sqlite/index.ts",
+          "exports": ["ILibraryServerData", "LibraryServerDataSQLite"],
+          "files": 7
+        },
+        "shared/sdk": {
+          "entry": "src/shared/sdk/index.ts",
+          "exports": ["MiraClient", "WebSocketClient", "HttpClient", "AuthModule", "UserModule", "LibraryModule", "PluginModule", "FileModule", "DatabaseModule", "DeviceModule", "SystemModule", "TagModule", "FolderModule"],
+          "files": 16
+        }
+      },
       "keyFiles": [
         "src/index.ts",
         "src/event-manager.ts",
-        "src/LibraryList.ts"
+        "src/LibraryList.ts",
+        "src/storage/sqlite/index.ts",
+        "src/storage/sqlite/ILibraryServerData.ts",
+        "src/storage/sqlite/LibraryServerDataSQLite.ts",
+        "src/shared/sdk/index.ts",
+        "src/shared/sdk/client/MiraClient.ts"
       ],
-      "sourceStats": { "files": 3, "lines": 311 },
+      "sourceStats": { "files": 28, "lines": 2000 },
       "coverage": {
         "scanned": true,
         "depth": "deep",
@@ -41,39 +57,23 @@
       "entry": "src/index.ts",
       "bin": "dist/cli.js",
       "dist": "dist/index.js",
-      "dependencies": ["express", "ws", "socket.io", "sqlite3", "commander", "cors", "multer", "axios", "chokidar", "yauzl", "dotenv", "fluent-ffmpeg"],
-      "workspaceDependencies": ["mira-app-core", "mira-server-sdk", "mira-storage-sqlite"],
+      "dependencies": ["express", "ws", "socket.io", "sqlite3", "commander", "cors", "multer", "axios", "chokidar", "yauzl", "dotenv", "fluent-ffmpeg", "fast-glob", "which", "queue"],
+      "workspaceDependencies": ["mira-app-core"],
       "tests": { "exists": true, "path": "sdk/" },
-      "interfaces": [
-        "MiraServer", "MiraHttpServer", "MiraWebsocketServer",
-        "ServerPluginManager", "ServerPlugin", "LibraryStorage",
-        "LibraryWatcher", "UserStorage", "SettingsManager",
-        "ThumbnailService", "ThumbnailGenerator",
-        "PluginRouteDefinition", "HttpHookDefinition", "PluginConfig",
-        "ServerSettings"
-      ],
       "routes": [
         "/api/auth", "/api/admins", "/api/user", "/api/libraries",
         "/api/plugins", "/api/database", "/api/files", "/api/devices",
         "/api/tags", "/api/folders", "/api/fs", "/api/thumb",
-        "/api/statistics", "/api/settings", "/api/health"
+        "/api/statistics", "/api/settings"
       ],
       "handlers": ["MessageHandler", "FileHandler", "FolderHandler", "TagHandler", "LibraryHandler", "PluginMessageHandler"],
       "keyFiles": [
-        "src/index.ts", "src/MiraServer.ts", "src/HttpServer.ts",
-        "src/WebSocketServer.ts", "src/LibraryStorage.ts",
-        "src/LibraryWatcher.ts", "src/ServerPluginManager.ts",
-        "src/ServerPlugin.ts", "src/UserStorage.ts", "src/SettingsManager.ts",
-        "src/services/ThumbnailService.ts", "src/cli.ts", "src/types.ts",
-        "src/routes/AuthRouter.ts", "src/routes/AdminsRouter.ts",
-        "src/routes/UserRouter.ts", "src/routes/LibraryRoutes.ts",
-        "src/routes/PluginRoutes.ts", "src/routes/FileRoutes.ts",
-        "src/routes/DeviceRoutes.ts", "src/routes/DatabaseRoutes.ts",
-        "src/routes/TagRouter.ts", "src/routes/FolderRouter.ts",
-        "src/routes/FsRouter.ts", "src/routes/ThumbRouter.ts",
-        "src/routes/StatisticsRouter.ts", "src/routes/SettingsRouter.ts",
-        "src/routes/BaseRouter.ts", "src/routes/HttpRouter.ts",
-        "src/routes/WebSocketRouter.ts"
+        "src/index.ts", "src/server.ts", "src/cli.ts",
+        "src/MiraServer.ts", "src/WebSocketServer.ts",
+        "src/LibraryStorage.ts", "src/LibraryWatcher.ts",
+        "src/ServerPluginManager.ts", "src/ServerPlugin.ts",
+        "src/UserStorage.ts", "src/SettingsManager.ts",
+        "src/services/ThumbnailService.ts"
       ],
       "sourceStats": { "files": 35, "lines": 7400 },
       "coverage": {
@@ -83,104 +83,23 @@
       }
     },
     {
-      "path": "packages/mira-storage-sqlite",
-      "name": "mira-storage-sqlite",
-      "version": "1.0.20",
-      "description": "SQLite 存储实现 - 提供数据库持久化层",
-      "language": "TypeScript",
-      "entry": "src/index.ts",
-      "dist": "dist/index.js",
-      "dependencies": ["sqlite3"],
-      "workspaceDependencies": ["mira-app-core"],
-      "tests": { "exists": false, "path": null },
-      "interfaces": ["ILibraryServerData", "LibraryServerDataSQLite"],
-      "keyFiles": [
-        "src/index.ts",
-        "src/ILibraryServerData.ts",
-        "src/LibraryServerDataSQLite.ts"
-      ],
-      "sourceStats": { "files": 3, "lines": 1014 },
-      "coverage": {
-        "scanned": true,
-        "depth": "deep",
-        "gaps": ["缺少测试目录"]
-      }
-    },
-    {
-      "path": "packages/mira-server-sdk",
-      "name": "mira-server-sdk",
-      "version": "1.0.19",
-      "description": "TypeScript SDK - jQuery 风格链式调用，模块化架构，10 个 API 模块",
-      "language": "TypeScript",
-      "entry": "src/index.ts",
-      "dist": "dist/index.js",
-      "dependencies": ["axios", "form-data", "ws"],
-      "workspaceDependencies": [],
-      "tests": { "exists": true, "path": "tests/" },
-      "interfaces": [
-        "MiraClient", "WebSocketClient", "HttpClient",
-        "AuthModule", "UserModule", "LibraryModule", "PluginModule",
-        "FileModule", "DatabaseModule", "DeviceModule", "SystemModule",
-        "TagModule", "FolderModule"
-      ],
-      "keyFiles": [
-        "src/index.ts", "src/types.ts", "src/client/MiraClient.ts",
-        "src/client/HttpClient.ts", "src/client/WebSocketClient.ts",
-        "src/modules/AuthModule.ts", "src/modules/UserModule.ts",
-        "src/modules/LibraryModule.ts", "src/modules/PluginModule.ts",
-        "src/modules/FileModule.ts", "src/modules/DatabaseModule.ts",
-        "src/modules/DeviceModule.ts", "src/modules/SystemModule.ts",
-        "src/modules/TagModule.ts", "src/modules/FolderModule.ts",
-        "src/utils/EventEmitter.ts"
-      ],
-      "sourceStats": { "files": 16, "lines": 3277 },
-      "coverage": {
-        "scanned": true,
-        "depth": "deep",
-        "gaps": []
-      }
-    },
-    {
-      "path": "packages/mira-server-sdk-examples",
-      "name": "mira-server-sdk-examples",
-      "version": "1.0.0",
-      "description": "SDK 示例和测试用例",
-      "language": "TypeScript",
-      "entry": "src/index.ts",
-      "workspaceDependencies": ["mira-server-sdk"],
-      "tests": { "exists": true, "path": "tests/" },
-      "keyFiles": [
-        "src/index.ts",
-        "examples/auth/login-example.ts",
-        "examples/files/upload-example.ts",
-        "examples/basic/basic-usage.ts",
-        "examples/advanced/chain-operations.ts",
-        "tests/auth.test.ts",
-        "tests/upload.test.ts"
-      ],
-      "coverage": {
-        "scanned": true,
-        "depth": "medium",
-        "gaps": []
-      }
-    },
-    {
       "path": "packages/mira-client",
       "name": "mira-web",
-      "version": "1.0.3",
+      "version": "1.0.5",
       "description": "Electron + Vue 3 桌面客户端",
       "language": "TypeScript/Vue",
       "entry": "src/main/main.ts",
       "dependencies": [
         "vue", "vue-router", "pinia", "radix-vue", "reka-ui",
         "tailwindcss", "filepond", "plyr", "viewerjs", "lodash-es",
-        "electron", "mira-server-sdk", "shadcn-vue"
+        "electron", "mira-app-core"
       ],
-      "workspaceDependencies": ["mira-server-sdk"],
+      "workspaceDependencies": ["mira-app-core"],
       "tests": { "exists": false, "path": null },
       "stores": [
         "auth", "library", "media", "settings", "plugin",
-        "folder", "tag", "serverList", "uploadHistory", "dashboard"
+        "folder", "tag", "serverList", "uploadHistory",
+        "appState", "dashboard"
       ],
       "keyFiles": [
         "src/main/main.ts",
@@ -201,7 +120,7 @@
       "path": "packages/mira-dashboard-next",
       "name": "mira-dashboard-next",
       "version": "0.0.0",
-      "description": "Web 管理面板 - 基于 shadcn-vue + Tailwind CSS 4（替代原 Vben Admin 版本）",
+      "description": "Web 管理面板 - 基于 shadcn-vue + Tailwind CSS 4",
       "language": "TypeScript/Vue",
       "entry": "src/main.ts",
       "dependencies": [
@@ -211,30 +130,20 @@
       ],
       "workspaceDependencies": [],
       "tests": { "exists": false, "path": null },
-      "views": {
-        "mira": 11,
-        "auth": 3,
-        "totalVueFiles": 14
-      },
-      "apiModules": 13,
+      "views": { "mira": 11, "auth": 3 },
+      "apiModules": 11,
       "stores": ["auth", "app"],
       "keyFiles": [
-        "src/main.ts",
-        "src/App.vue",
-        "src/router/index.ts",
-        "src/router/pluginRoutes.ts",
-        "src/stores/auth.ts",
-        "src/stores/app.ts",
-        "src/api/client.ts",
-        "src/api/index.ts",
-        "src/layouts/DefaultLayout.vue",
-        "src/i18n/index.ts",
+        "src/main.ts", "src/App.vue", "src/router/index.ts",
+        "src/router/pluginRoutes.ts", "src/stores/auth.ts",
+        "src/stores/app.ts", "src/api/client.ts", "src/api/index.ts",
+        "src/layouts/DefaultLayout.vue", "src/i18n/index.ts",
         "src/pluginRuntime.ts"
       ],
       "coverage": {
         "scanned": true,
         "depth": "medium",
-        "gaps": ["未扫描所有 shadcn-vue UI 组件（约 150+ 自动生成组件）"]
+        "gaps": ["shadcn-vue UI 组件为自动生成，未逐一扫描"]
       }
     },
     {
@@ -244,38 +153,14 @@
       "description": "数据转换和导入工具集",
       "language": "TypeScript",
       "entry": "index.ts",
-      "workspaceDependencies": ["mira-storage-sqlite", "mira-app-core"],
+      "workspaceDependencies": ["mira-app-core"],
       "tests": { "exists": false, "path": null },
       "keyFiles": [
         "index.ts",
         "scripts/convertLibraryData.ts",
         "scripts/pathFilesToLibrary.ts"
       ],
-      "coverage": {
-        "scanned": true,
-        "depth": "deep",
-        "gaps": []
-      }
-    },
-    {
-      "path": "packages/n8n-nodes-mira-ws-trigger",
-      "name": "n8n-nodes-mira-ws-trigger",
-      "version": "0.1.3",
-      "description": "n8n WebSocket 触发器节点 - 监听 Mira 服务器实时事件",
-      "language": "TypeScript",
-      "entry": "index.ts",
-      "dependencies": ["ws"],
-      "peerDependencies": ["n8n-core", "n8n-workflow"],
-      "tests": { "exists": false, "path": null },
-      "keyFiles": [
-        "nodes/MiraWebSocketTrigger/MiraWebSocketTrigger.node.ts"
-      ],
-      "sourceStats": { "files": 1, "lines": 247 },
-      "coverage": {
-        "scanned": true,
-        "depth": "deep",
-        "gaps": []
-      }
+      "coverage": { "scanned": true, "depth": "deep", "gaps": [] }
     },
     {
       "path": "packages/mira-doc",
@@ -293,32 +178,18 @@
         "dashboard/index.md", "dashboard/api.md", "dashboard/deployment.md",
         "n8n/overview.md", "n8n/installation.md"
       ],
-      "coverage": {
-        "scanned": true,
-        "depth": "medium",
-        "gaps": []
-      }
+      "coverage": { "scanned": true, "depth": "medium", "gaps": [] }
     },
     {
       "path": "plugins/plugins",
       "name": "mira-server-plugins",
-      "description": "服务端插件集合 (3 个活跃插件, 2 个已移除)",
+      "description": "服务端插件集合 (4 个活跃插件)",
       "language": "TypeScript",
       "plugins": [
         {
-          "name": "mira_thumb",
-          "version": "1.0.19",
-          "description": "缩略图生成插件 - ffmpeg 图片/视频缩略图，队列并发控制",
-          "lines": 331,
-          "routes": ["/thumb/scan", "/thumb/progress", "/thumb/cancel", "/thumb/stats"],
-          "events": ["file::created", "file::deleted"],
-          "keyFiles": ["plugins/mira_thumb/index.ts"]
-        },
-        {
           "name": "mira_n8n",
           "version": "1.0.7",
-          "description": "n8n 集成插件 - 独立 WebSocket 服务器，Token 验证，事件过滤",
-          "lines": 290,
+          "description": "n8n 集成 - 独立 WebSocket 服务器，Token 验证",
           "routes": ["/n8n/list", "/n8n/list/:id"],
           "wssPort": 7457,
           "keyFiles": ["plugins/mira_n8n/index.ts"]
@@ -326,65 +197,88 @@
         {
           "name": "mira_thumb_imagemagick",
           "version": "1.0.0",
-          "description": "ImageMagick 缩略图生成插件 - PSD/AI/EPS/SVG/TIFF/DNG/HEIC 等专业格式",
-          "lines": 117,
+          "description": "ImageMagick 缩略图 - PSD/AI/EPS/SVG/TIFF/DNG/HEIC",
           "generatorInterface": "ThumbnailGenerator",
           "keyFiles": ["plugins/mira_thumb_imagemagick/index.ts"]
         },
         {
+          "name": "mira_duplicate_scanner",
+          "version": "1.0.0",
+          "description": "重复文件扫描与删除",
+          "routes": ["/duplicate/scan", "/duplicate/delete"],
+          "enabled": true,
+          "keyFiles": ["plugins/mira_duplicate_scanner/index.ts", "plugins/mira_duplicate_scanner/DuplicateScanner.ts"]
+        },
+        {
+          "name": "mira_thumb",
+          "version": "1.0.19",
+          "status": "old_plugins",
+          "description": "ffmpeg 缩略图生成 (已移至 old_plugins/)",
+          "keyFiles": ["old_plugins/mira_thumb/index.ts"]
+        },
+        {
           "name": "mira_user",
-          "version": "1.0.9",
           "status": "removed",
-          "description": "用户登录认证插件 - 源码已移除"
+          "description": "用户认证插件 - 源码已移除"
         },
         {
           "name": "upload_statistics",
-          "version": "1.0.7",
           "status": "removed",
-          "description": "上传统计插件 - 源码已移除，功能内置于服务端 StatisticsRouter"
+          "description": "上传统计插件 - 源码已移除，功能内置于服务端"
         }
       ],
       "tests": { "exists": false, "path": null },
-      "coverage": {
-        "scanned": true,
-        "depth": "deep",
-        "gaps": []
-      }
+      "coverage": { "scanned": true, "depth": "deep", "gaps": [] }
+    }
+  ],
+  "removedModules": [
+    {
+      "path": "packages/mira-storage-sqlite",
+      "name": "mira-storage-sqlite",
+      "note": "已合并到 packages/mira-app-core/src/storage/sqlite/"
+    },
+    {
+      "path": "packages/mira-server-sdk",
+      "name": "mira-server-sdk",
+      "note": "已合并到 packages/mira-app-core/src/shared/sdk/"
+    },
+    {
+      "path": "packages/mira-server-sdk-examples",
+      "name": "mira-server-sdk-examples",
+      "note": "已从 pnpm-workspace.yaml 移除"
+    },
+    {
+      "path": "packages/n8n-nodes-mira-ws-trigger",
+      "name": "n8n-nodes-mira-ws-trigger",
+      "note": "已从 pnpm-workspace.yaml 移除"
     }
   ],
   "scanSummary": {
     "totalModules": 12,
     "scannedModules": 12,
     "coveragePercent": 100,
-    "estimatedTotalSourceFiles": 120,
-    "scannedFiles": 110,
+    "estimatedTotalSourceFiles": 130,
+    "scannedFiles": 120,
     "fileCoveragePercent": 92,
-    "sourceLinesScanned": {
-      "mira-app-core": 311,
-      "mira-storage-sqlite": 1014,
-      "mira-app-server": 7400,
-      "mira-server-sdk": 3277,
-      "mira-dashboard-next": "~2000",
-      "plugins": 738
-    },
     "truncated": false,
     "ignoredDirectories": [
       "node_modules",
       "dist",
       ".git",
       "packages/mira-app-server/data",
-      "packages/mira-dashboard-next/node_modules",
-      "packages/mira-doc/.vitepress",
-      "plugins/plugins/*/node_modules"
+      "packages/mira-app-server/src/plugins/node_modules",
+      "packages/mira-dashboard-next/src/components/ui",
+      "packages/mira-client/src/components/ui",
+      "plugins/plugins/*/node_modules",
+      "plugins/old_plugins/*/node_modules"
     ],
     "gaps": [
-      "mira-client 的 Vue 组件仅扫描了关键文件（200+ 组件，已有独立详细 CLAUDE.md）",
+      "mira-client 的 200+ Vue 组件仅扫描了关键文件",
       "mira-dashboard-next 的 shadcn-vue UI 组件为自动生成，未逐一扫描"
     ],
     "nextSteps": [
-      "补扫 packages/mira-client/src/renderer/components/ 全部业务组件（如果需要）",
-      "补扫 packages/mira-dashboard-next/src/views/mira/ 各页面的详细功能（如果需要）",
-      "确认 mira_user 和 upload_statistics 的功能是否完全内置于服务端"
+      "如需细节可补扫 packages/mira-client/src/renderer/components/ 业务组件",
+      "如需细节可补扫 packages/mira-dashboard-next/src/views/mira/ 各页面"
     ]
   }
 }
