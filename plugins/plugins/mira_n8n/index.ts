@@ -1,5 +1,5 @@
 import { ServerPluginManager, MiraWebsocketServer, ServerPlugin, ws } from 'mira-app-server';
-import { ILibraryServerData } from 'mira-storage-sqlite';
+import { ILibraryServerData } from 'mira-app-core/storage/sqlite';
 import { MiraHttpServer } from 'mira-app-server/dist/server';
 import { EventManager } from 'mira-app-core/dist';
 

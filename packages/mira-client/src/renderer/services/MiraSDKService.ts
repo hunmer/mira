@@ -1,4 +1,4 @@
-import { MiraClient } from 'mira-server-sdk'
+import { MiraClient } from 'mira-app-core/shared/sdk'
 import { initializeWebSocket, webSocketService } from './WebSocketService'
 import { useMediaStore } from '../stores/media'
 import { useAuthStore } from '../stores/auth'

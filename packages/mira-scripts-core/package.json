@@ -16,7 +16,6 @@
     "access": "public"
   },
   "dependencies": {
-    "mira-storage-sqlite": "workspace:*",
     "mira-app-core": "workspace:*"
   },
   "author": "hunmer",

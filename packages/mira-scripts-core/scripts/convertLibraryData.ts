@@ -1,4 +1,4 @@
-import { LibraryServerDataSQLite } from 'mira-storage-sqlite';
+import { LibraryServerDataSQLite } from 'mira-app-core/storage/sqlite';
 import * as path from 'path';
 import * as fs from 'fs';
 import { Database } from 'sqlite3';

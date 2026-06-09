@@ -1,6 +1,6 @@
 import { PluginService } from '../services/PluginService'
 import { environment } from '../utils'
-import { MiraClient } from 'mira-server-sdk'
+import { MiraClient } from 'mira-app-core/shared/sdk'
 import type {
   MiraConnectionConfig,
   LoginCredentials,

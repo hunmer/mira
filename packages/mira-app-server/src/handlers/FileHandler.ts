@@ -1,7 +1,7 @@
 import { MessageHandler } from './MessageHandler';
 import { WebSocket, WebSocketServer } from 'ws';
 import type { WebSocketMessage } from '../types';
-import { ILibraryServerData } from 'mira-storage-sqlite';
+import { ILibraryServerData } from 'mira-app-core/storage/sqlite';
 import { MiraWebsocketServer } from '../WebSocketServer';
 
 export class FileHandler extends MessageHandler {

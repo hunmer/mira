@@ -16,7 +16,6 @@ COPY package*.json ./
 COPY packages/package.json ./packages/
 COPY packages/mira-app-core/package*.json ./packages/mira-app-core/
 COPY packages/mira-app-server/package*.json ./packages/mira-app-server/
-COPY packages/mira-storage-sqlite/package*.json ./packages/mira-storage-sqlite/
 
 # 复制依赖切换脚本
 COPY dependency-*.json ./
@@ -25,16 +24,14 @@ COPY tool.js ./
 # 复制源代码
 COPY packages/mira-app-core/src ./packages/mira-app-core/src
 COPY packages/mira-app-core/tsconfig.json ./packages/mira-app-core/
+COPY packages/mira-app-core/vite.sdk.config.ts ./packages/mira-app-core/
 COPY packages/mira-app-server/src ./packages/mira-app-server/src
 COPY packages/mira-app-server/tsconfig.json ./packages/mira-app-server/
-COPY packages/mira-storage-sqlite/src ./packages/mira-storage-sqlite/src
-COPY packages/mira-storage-sqlite/tsconfig.json ./packages/mira-storage-sqlite/
 COPY tsconfig.json ./
 
 # 安装所有依赖并构建
 RUN cd packages && npm install
 RUN cd packages && npm run build:core
-RUN cd packages && npm run build:storage  
 RUN cd packages && npm run build:server
 
 # 生产阶段

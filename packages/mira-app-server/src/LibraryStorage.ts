@@ -1,4 +1,4 @@
-import { LibraryServerDataSQLite } from "mira-storage-sqlite";
+import { LibraryServerDataSQLite } from "mira-app-core/storage/sqlite";
 import { ServerPluginManager } from "./ServerPluginManager";
 import { EventManager, getLibraries } from "mira-app-core";
 import { MiraServer } from "./MiraServer";

@@ -4,7 +4,5 @@ packages:
   - 'packages/mira-client'
   - 'packages/mira-dashboard-next'
   - 'packages/mira-scripts-core'
-  - 'packages/mira-server-sdk'
   - 'packages/mira-server-sdk-examples'
-  - 'packages/mira-storage-sqlite'
   - 'packages/n8n-nodes-mira-ws-trigger'

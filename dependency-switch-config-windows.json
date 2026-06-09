@@ -6,22 +6,10 @@
       "buildPath": "packages/mira-app-core",
       "buildCommand": "npm install && npm run build && npm publish"
     },
-    "mira-storage-sqlite": {
-      "defaultOnline": "1.0.20",
-      "defaultOffline": "file:D:/mira_typescript/packages/mira-storage-sqlite/",
-      "buildPath": "packages/mira-storage-sqlite",
-      "buildCommand": "npm install && npm run build && npm publish"
-    },
     "mira-app-server": {
       "defaultOnline": "1.0.25",
       "defaultOffline": "file:D:/mira_typescript/packages/mira-app-server/",
       "buildPath": "packages/mira-app-server",
-      "buildCommand": "npm install && npm run build && npm publish"
-    },
-    "mira-server-sdk": {
-      "defaultOnline": "1.0.11",
-      "defaultOffline": "file:D:/mira_typescript/packages/mira-server-sdk/",
-      "buildPath": "packages/mira-server-sdk",
       "buildCommand": "npm install && npm run build && npm publish"
     },
     "mira_thumb": {
@@ -58,9 +46,7 @@
     "plugins/plugins/mira_user/package.json",
     "plugins/plugins/upload_statistics/package.json",
     "packages/mira-app-core/package.json",
-    "packages/mira-app-server/package.json",
-    "packages/mira-server-sdk/package.json",
-    "packages/mira-storage-sqlite/package.json"
+    "packages/mira-app-server/package.json"
   ],
   "description": "Configuration for dependency switching script (Windows). Each package can have multiple online versions and offline paths to choose from."
 }

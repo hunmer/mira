@@ -1,7 +1,7 @@
 import * as chokidar from 'chokidar';
 import fs from 'fs';
 import path from 'path';
-import { LibraryServerDataSQLite } from 'mira-storage-sqlite';
+import { LibraryServerDataSQLite } from 'mira-app-core/storage/sqlite';
 import { MiraWebsocketServer } from './WebSocketServer';
 
 interface PendingUnlink {

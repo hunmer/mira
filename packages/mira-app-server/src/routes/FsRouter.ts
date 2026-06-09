@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import fg from 'fast-glob';
 import { MiraServer } from '..';
-import { LibraryServerDataSQLite } from 'mira-storage-sqlite';
+import { LibraryServerDataSQLite } from 'mira-app-core/storage/sqlite';
 
 interface FileEntry {
     name: string;

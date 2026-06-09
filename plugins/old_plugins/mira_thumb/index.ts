@@ -1,5 +1,5 @@
 import { ServerPluginManager, ServerPlugin, MiraWebsocketServer, MiraHttpServer, PluginRouteDefinition } from 'mira-app-server';
-import { ILibraryServerData } from 'mira-storage-sqlite';
+import { ILibraryServerData } from 'mira-app-core/storage/sqlite';
 import ffmpeg from 'fluent-ffmpeg';
 import path from 'path';
 import fs from 'fs';

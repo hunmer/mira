@@ -62,7 +62,7 @@ export default defineConfig({
               minify: process.env.NODE_ENV === 'production',
               outDir: 'dist-main',
               rollupOptions: {
-                external: ['electron', 'mira-server-sdk', 'electron-window-state'],
+                external: ['electron', 'mira-app-core/shared/sdk', 'electron-window-state'],
               },
               target: 'node18',
               emptyOutDir: true,

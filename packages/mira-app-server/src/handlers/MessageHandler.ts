@@ -1,4 +1,4 @@
-import { ILibraryServerData } from 'mira-storage-sqlite';
+import { ILibraryServerData } from 'mira-app-core/storage/sqlite';
 import { WebSocket, WebSocketServer } from 'ws';
 import type { WebSocketMessage } from '../types';
 import { response } from 'express';

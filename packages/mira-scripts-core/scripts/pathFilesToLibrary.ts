@@ -1,6 +1,6 @@
 import * as path from 'path';
 import * as fs from 'fs';
-import { LibraryServerDataSQLite } from 'mira-storage-sqlite';
+import { LibraryServerDataSQLite } from 'mira-app-core/storage/sqlite';
 
 interface FileImportOptions {
   maxFolderDepth?: number;

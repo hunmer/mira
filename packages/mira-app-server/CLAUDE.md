@@ -119,12 +119,12 @@ interface ThumbnailGenerator {
 export { MiraServer, startServer, ServerPluginManager, ServerPlugin, MiraWebsocketServer, MiraHttpServer, ThumbnailService, express, ws };
 export type { ThumbnailGenerator } from './services/ThumbnailService';
 export type { PluginRouteDefinition } from './ServerPlugin';
-export type { ILibraryServerData } from 'mira-storage-sqlite';
+export type { ILibraryServerData } from 'mira-app-core/storage/sqlite';
 ```
 
 ## 关键依赖与配置
 
-- **workspace 依赖**: `mira-app-core`, `mira-server-sdk`, `mira-storage-sqlite`
+- **workspace 依赖**: `mira-app-core`
 - **核心依赖**: `express`, `ws`, `socket.io`, `sqlite3`, `commander`, `multer` (文件上传), `cors`, `dotenv`, `yauzl` (ZIP 解压), `chokidar` (文件监视), `axios`, `fluent-ffmpeg` (缩略图)
 - **开发依赖**: `typescript`, `ts-node`, `jest`, `ts-jest`
 - **环境变量**: `MIRA_SERVER_HTTP_PORT` (8081), `MIRA_SERVER_WS_PORT` (8018), `DATA_PATH`, `FFMPEG_PATH`
@@ -132,7 +132,7 @@ export type { ILibraryServerData } from 'mira-storage-sqlite';
 
 ## 数据模型
 
-服务端本身不定义独立数据模型，数据层由 `mira-storage-sqlite` 提供。服务端维护的类型：
+服务端本身不定义独立数据模型，数据层由 `mira-app-core/storage/sqlite` 提供。服务端维护的类型：
 
 - `User`: 用户信息（id, username, password, role, permissions, ...）
 - `Session`: 会话信息（token, user_id, created_at, expires_at, is_active）

@@ -51,7 +51,7 @@ export default defineConfig({
     ],
     exclude: [
       'electron',
-      'mira-server-sdk'
+      'mira-app-core/shared/sdk'
     ],
     force: true
   },

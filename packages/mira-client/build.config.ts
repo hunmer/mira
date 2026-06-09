@@ -118,7 +118,7 @@ export function getRendererConfig(): BuildConfig {
 
 // Rollup 外部依赖配置
 export const externalDependencies = {
-  main: ['electron', 'mira-server-sdk', 'fs', 'path', 'os', 'crypto'],
+  main: ['electron', 'mira-app-core/shared/sdk', 'fs', 'path', 'os', 'crypto'],
   preload: ['electron'],
   renderer: [] // 渲染进程通常不需要外部依赖
 }
@@ -135,7 +135,7 @@ export const chunkSplitConfig = {
   'utils-vendor': ['lodash-es', 'dayjs'],
   
   // Mira SDK
-  'mira-sdk': ['mira-server-sdk']
+  'mira-sdk': ['mira-app-core/shared/sdk']
 }
 
 // 资源优化配置

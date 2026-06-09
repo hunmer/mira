@@ -43,7 +43,7 @@ export default defineConfig({
       'electron-log',
       'electron-updater',
       'electron-window-state',
-      'mira-server-sdk'
+      'mira-app-core/shared/sdk'
     ]
   }
 })

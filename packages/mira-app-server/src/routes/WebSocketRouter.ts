@@ -1,5 +1,5 @@
 
-import { LibraryServerDataSQLite } from 'mira-storage-sqlite';
+import { LibraryServerDataSQLite } from 'mira-app-core/storage/sqlite';
 import { WebSocket, WebSocketServer } from 'ws';
 import { MessageHandler } from '../handlers/MessageHandler';
 import { FileHandler } from '../handlers/FileHandler';

@@ -5,11 +5,9 @@
   "description": "Mira TypeScript project - monorepo with core, server, and plugins",
   "scripts": {
     "build:core": "pnpm -C packages/mira-app-core run rebuild",
-    "build:sdk": "pnpm -C packages/mira-server-sdk run rebuild",
     "build:server": "pnpm -C packages/mira-app-server run rebuild",
-    "build:storage": "pnpm -C packages/mira-storage-sqlite run rebuild",
     "build:plugins": "pnpm run build:mira_thumb && pnpm run build:mira_user && pnpm run build:upload_statistics",
-    "start:server": "pnpm run build:core && pnpm run build:storage && pnpm run build:server && pnpm run build:plugins"
+    "start:server": "pnpm run build:core && pnpm run build:server && pnpm run build:plugins"
   },
   "keywords": [
     "mira",

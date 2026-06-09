@@ -60,7 +60,7 @@ async function startServer() {
 export { MiraServer, startServer, ServerPluginManager, ServerPlugin, MiraWebsocketServer, MiraHttpServer, ThumbnailService, express, ws };
 export type { ThumbnailGenerator } from './services/ThumbnailService';
 export type { PluginRouteDefinition } from './ServerPlugin';
-export type { ILibraryServerData } from 'mira-storage-sqlite';
+export type { ILibraryServerData } from 'mira-app-core/storage/sqlite';
 
 // 如果直接运行此文件，则启动服务器
 if (require.main === module) {

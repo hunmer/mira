@@ -5,7 +5,7 @@ import fg from 'fast-glob';
 import Queue from 'queue';
 import which from 'which';
 import { EventArgs } from 'mira-app-core';
-import { ILibraryServerData } from 'mira-storage-sqlite';
+import { ILibraryServerData } from 'mira-app-core/storage/sqlite';
 import { MiraWebsocketServer } from '../WebSocketServer';
 
 export interface ThumbnailGenerator {

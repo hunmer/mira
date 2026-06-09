@@ -1,4 +1,4 @@
-import { MiraClient } from 'mira-server-sdk'
+import { MiraClient } from 'mira-app-core/shared/sdk'
 import { logger } from '../utils/Logger'
 
 /**

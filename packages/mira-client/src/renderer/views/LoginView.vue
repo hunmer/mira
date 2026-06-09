@@ -260,7 +260,7 @@ import { Loader2 } from 'lucide-vue-next'
 import {
   AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import type { HealthResponse, Library } from 'mira-server-sdk'
+import type { HealthResponse, Library } from 'mira-app-core/shared/sdk'
 
 const router = useRouter()
 const route = useRoute()
@@ -337,7 +337,7 @@ function createWsUrl(httpUrl: string): string {
 }
 
 async function createTempClient(baseUrl: string) {
-  const { MiraClient } = await import('mira-server-sdk')
+  const { MiraClient } = await import('mira-app-core/shared/sdk')
   const cleanUrl = baseUrl.replace(/\/$/, '')
   tempClient = new MiraClient(cleanUrl)
   return tempClient

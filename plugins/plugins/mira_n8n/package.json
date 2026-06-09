@@ -14,7 +14,6 @@
     "access": "public"
   },
   "dependencies": {
-    "mira-storage-sqlite": "file://Users/Zhuanz/mira_typescript/packages/mira-storage-sqlite/",
     "mira-app-server": "file://Users/Zhuanz/mira_typescript/packages/mira-app-server/",
     "mira-app-core": "file://Users/Zhuanz/mira_typescript/packages/mira-app-core/"
   },
