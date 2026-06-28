@@ -1,6 +1,6 @@
 {
   "name": "mira-app-core",
-  "version": "1.0.24",
+  "version": "1.0.3",
   "description": "Core library for Mira TypeScript project - provides base functionality without auto-execution",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
