@@ -155,6 +155,8 @@ export class LibraryServerDataSQLite {
     if (options?.isUrlFile) {
       return this.getPublicURL(`api/files/file/${this.getLibraryId()}/${item.id}`);
     }
+    // 回收站文件：物理位置已被移到 .trash/，软删时 path 列已写入 .trash 绝对路径，直接读它
+    if (item.recycled) return item.path || '';
     const libraryPath = await this.getLibraryPath();
     const folderName = await this.getFolderName(item.folder_id);
     return path.join(libraryPath, folderName, item.name);

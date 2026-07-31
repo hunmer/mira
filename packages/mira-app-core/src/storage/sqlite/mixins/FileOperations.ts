@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import * as path from 'path';
 import { CoreAccessible } from './types';
 
 export const FileOperations = {
@@ -70,20 +71,66 @@ export const FileOperations = {
   },
 
   async deleteFile(this: CoreAccessible, id: number, options?: { moveToRecycleBin: boolean }): Promise<boolean> {
-    const query = options?.moveToRecycleBin
-      ? 'UPDATE files SET recycled = 1 WHERE id = ?'
-      : 'DELETE FROM files WHERE id = ?';
-    const result = await this.runSql(query, [id]);
+    if (options?.moveToRecycleBin) {
+      const item = await this.getFile(id);
+      if (!item) return false;
+      // 已经在回收站，不重复移动
+      if (item.recycled) return true;
+
+      const src = await this.getItemFilePath(item); // 非 recycled 分支：原位置
+      const libraryPath = await this.getLibraryPath();
+      const trashDir = path.join(libraryPath, '.trash');
+      if (!fs.existsSync(trashDir)) fs.mkdirSync(trashDir, { recursive: true });
+      const dest = this.getUniquePath(path.join(trashDir, item.name));
+
+      // 先改 DB（path 指向 .trash + recycled=1），再移动磁盘文件。
+      // 顺序很重要：watcher 的 handleUnlink 按 path 查行，旧路径 unlink 时找不到行就不会误删记录。
+      await this.runSql('UPDATE files SET recycled = 1, path = ? WHERE id = ?', [dest, id]);
+
+      if (src && fs.existsSync(src) && src !== dest) {
+        try {
+          if (path.parse(src).root === path.parse(dest).root) {
+            fs.renameSync(src, dest);
+          } else {
+            fs.copyFileSync(src, dest);
+            fs.unlinkSync(src);
+          }
+        } catch (e) {
+          console.error(`[deleteFile] move to .trash failed (${src} -> ${dest}):`, e);
+        }
+      }
+      return true;
+    }
+    // 硬删：只删 DB 行，物理文件删除仍由调用方（FileRoutes）负责，保持现状
+    const result = await this.runSql('DELETE FROM files WHERE id = ?', [id]);
     return result.changes > 0;
   },
 
   async recoverFile(this: CoreAccessible, id: number): Promise<boolean> {
-    const result = await this.runSql('UPDATE files SET recycled = 0 WHERE id = ?', [id]);
-    return result.changes > 0;
+    const item = await this.getFile(id);
+    if (!item || !item.recycled) return false;
+
+    const src = item.path; // 软删时写入的 .trash 绝对路径
+    // 原文件夹位置（folder_id 对应的文件夹可能已被删除，getFolderName 会返回空串 → 落到库根目录）
+    const destDir = await this.getItemPath(item);
+    if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
+    const dest = this.getUniquePath(path.join(destDir, item.name));
+
+    // 先改 DB（恢复 path 到原位置 + recycled=0），再移动磁盘文件
+    await this.runSql('UPDATE files SET recycled = 0, path = ? WHERE id = ?', [dest, id]);
+
+    if (src && fs.existsSync(src) && src !== dest) {
+      try {
+        fs.renameSync(src, dest);
+      } catch (e) {
+        console.error(`[recoverFile] move out of .trash failed (${src} -> ${dest}):`, e);
+      }
+    }
+    return true;
   },
 
   async emptyTrash(this: CoreAccessible): Promise<{ deletedCount: number; errors: string[] }> {
-    const rows = await this.getSql('SELECT id, name, folder_id, hash FROM files WHERE recycled = 1');
+    const rows = await this.getSql('SELECT id, name, folder_id, hash, path, recycled FROM files WHERE recycled = 1');
     if (rows.length === 0) return { deletedCount: 0, errors: [] };
 
     const errors: string[] = [];

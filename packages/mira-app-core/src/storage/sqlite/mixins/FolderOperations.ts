@@ -47,30 +47,85 @@ export const FolderOperations = {
   async deleteFolder(this: CoreAccessible, id: number, deleteFiles?: boolean): Promise<boolean> {
     await this.beginTransaction();
     try {
+      const libraryPath = await this.getLibraryPath();
+
+      if (deleteFiles) {
+        // 勾选「同时删除文件」：把整个文件夹目录（含子文件夹结构）一次性移动进 .trash/，
+        // 子树所有文件标记 recycled=1（可从回收站还原或清空），文件夹行直接删除。
+        const folderName = await this.getFolderName(id);
+        const folderDir = path.join(libraryPath, folderName);
+
+        // 收集整个子树的文件夹 id（含自身）
+        const subtreeIds: number[] = [id];
+        const collect = async (parentId: number) => {
+          const children = await this.getSql('SELECT id FROM folders WHERE parent_id = ?', [parentId]);
+          for (const c of children) {
+            const cid = this.rowToMap(c).id;
+            subtreeIds.push(cid);
+            await collect(cid);
+          }
+        };
+        await collect(id);
+
+        const placeholders = subtreeIds.map(() => '?').join(',');
+        // 子树内所有文件（含未回收的）；path 列保留的是磁盘绝对路径
+        const fileRows = await this.getSql(
+          `SELECT id, name, path FROM files WHERE folder_id IN (${placeholders})`,
+          subtreeIds
+        );
+
+        const trashDir = path.join(libraryPath, '.trash');
+        if (!fs.existsSync(trashDir)) fs.mkdirSync(trashDir, { recursive: true });
+        // .trash 下给整个文件夹一个独立目录（带去重后缀），保留子目录结构
+        const trashFolderDir = this.getUniquePath(
+          fs.existsSync(folderDir) ? path.join(trashDir, path.basename(folderDir)) : path.join(trashDir, `folder_${id}`)
+        );
+        const trashFolderName = path.basename(trashFolderDir);
+
+        // 先改 DB：把每个文件的 path 重写到 .trash 下对应位置 + recycled=1。
+        // 顺序很重要——若 watcher 在 rename 后对旧路径发出 unlink，因 path 已更新，查不到行不会误删记录。
+        for (const row of fileRows) {
+          const file = this.rowToMap(row);
+          const rel = file.path && fs.existsSync(folderDir)
+            ? path.relative(folderDir, path.dirname(file.path))
+            : '';
+          const subDir = rel && rel !== '.' && !rel.startsWith('..') ? rel : '';
+          const newPath = path.join(trashFolderDir, subDir, file.name);
+          await this.runSql('UPDATE files SET recycled = 1, path = ? WHERE id = ?', [newPath, file.id]);
+        }
+
+        // 移动整个文件夹目录（一次 rename 带走全部子目录与文件）
+        if (fs.existsSync(folderDir)) {
+          try {
+            fs.renameSync(folderDir, trashFolderDir);
+          } catch (e) {
+            console.error(`[deleteFolder] move folder to .trash failed (${folderDir} -> ${trashFolderDir}):`, e);
+          }
+        } else if (fileRows.length > 0) {
+          // 文件夹目录已不存在（如 SMB 等场景），单独建目录兜底
+          fs.mkdirSync(trashFolderDir, { recursive: true });
+        }
+
+        // 删除子树所有文件夹行
+        const delResult = await this.runSql(
+          `DELETE FROM folders WHERE id IN (${placeholders})`,
+          subtreeIds
+        );
+
+        await this.commitTransaction();
+        return delResult.changes > 0;
+      }
+
+      // deleteFiles=false：原有递归行为，文件移到未分类（库根目录）
       const children = await this.getFolders({ parentId: id });
       for (const child of children) {
         await this.deleteFolder(child.id, deleteFiles);
       }
 
       const folderName = await this.getFolderName(id);
-      const libraryPath = await this.getLibraryPath();
-
       const files = await this.getSql('SELECT * FROM files WHERE folder_id = ?', [id]);
-      if (deleteFiles) {
-        for (const row of files) {
-          const file = this.rowToMap(row);
-          const filePath = path.join(libraryPath, folderName, file.name);
-          if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-          if (file.hash) {
-            const thumbPath = path.join(libraryPath, 'thumbs', `${file.hash}.png`);
-            if (fs.existsSync(thumbPath)) fs.unlinkSync(thumbPath);
-          }
-          await this.runSql('DELETE FROM files WHERE id = ?', [file.id]);
-        }
-      } else {
-        for (const row of files) {
-          await (this as any)._moveFileToFolder(this.rowToMap(row).id, null);
-        }
+      for (const row of files) {
+        await (this as any)._moveFileToFolder(this.rowToMap(row).id, null);
       }
 
       const result = await this.runSql('DELETE FROM folders WHERE id = ?', [id]);

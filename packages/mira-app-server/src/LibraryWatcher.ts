@@ -53,6 +53,9 @@ export class LibraryWatcher {
         return rel.startsWith('thumbs') ||
           rel.startsWith('thumbs/') ||
           rel.includes('/thumbs/') ||
+          rel === '.trash' ||
+          rel.startsWith('.trash/') ||
+          rel.includes('/.trash/') ||
           rel.includes('/.') ||
           rel.endsWith('.db') ||
           rel.endsWith('.db-journal') ||
@@ -162,6 +165,9 @@ export class LibraryWatcher {
     return rel.startsWith('thumbs') ||
       rel.startsWith('thumbs/') ||
       rel.includes('/thumbs/') ||
+      rel === '.trash' ||
+      rel.startsWith('.trash/') ||
+      rel.includes('/.trash/') ||
       rel.includes('/.') ||
       rel.endsWith('.db') ||
       rel.endsWith('.db-journal') ||
