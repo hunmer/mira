@@ -217,6 +217,54 @@ export function useFolderOperations(emit: FolderOperationsEmits) {
     }
   }
 
+  // 批量删除（多选模式）
+  const showBatchDeleteDialog = ref(false)
+  const batchDeletingNodes = ref<any[]>([])
+  const batchDeletingType = ref<ContextType>('folder')
+  const batchDeleteTotalCount = ref(0)
+  // 每次成功完成批量删除后自增，供外部 watch 以清理选择
+  const batchDeleteCompleted = ref(0)
+
+  function startBatchDelete(type: ContextType, nodes: any[], totalCount: number) {
+    if (nodes.length === 0 || !libraryStore.currentLibrary) return
+    batchDeletingType.value = type
+    batchDeletingNodes.value = nodes
+    batchDeleteTotalCount.value = totalCount
+    deleteWithFiles.value = false
+    showBatchDeleteDialog.value = true
+  }
+
+  async function confirmBatchDelete() {
+    const type = batchDeletingType.value
+    const nodes = batchDeletingNodes.value
+    if (nodes.length === 0 || !libraryStore.currentLibrary) return
+    showBatchDeleteDialog.value = false
+
+    const libraryId = libraryStore.currentLibrary.id
+    let success = 0
+    let failed = 0
+    for (const node of nodes) {
+      try {
+        const rawId = String(node.id)
+        if (type === 'folder') {
+          await miraSDKService.deleteFolder(libraryId, parseInt(rawId), deleteWithFiles.value)
+          emit['folder-delete'](node)
+        } else {
+          await miraSDKService.deleteTag(libraryId, parseInt(rawId.replace('tag-', '')))
+          emit['tag-delete'](node)
+        }
+        success++
+      } catch (error) {
+        failed++
+        console.error(`Failed to delete ${type} ${node.id}:`, error)
+      }
+    }
+    await new Promise(resolve => setTimeout(resolve, 100))
+    type === 'folder' ? emit['refresh-folders']() : emit['refresh-tags']()
+    batchDeleteCompleted.value++
+    return { success, failed }
+  }
+
   function handleEditDialogClose() {
     showEditDialog.value = false
     editingItem.value = null
@@ -337,6 +385,13 @@ export function useFolderOperations(emit: FolderOperationsEmits) {
     deletingItem,
     deletingType,
     deleteWithFiles,
+    showBatchDeleteDialog,
+    batchDeletingNodes,
+    batchDeletingType,
+    batchDeleteTotalCount,
+    batchDeleteCompleted,
+    startBatchDelete,
+    confirmBatchDelete,
     folderContextMenuItems,
     tagContextMenuItems,
     handleItemOperation,

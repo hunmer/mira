@@ -62,7 +62,7 @@
       </ul>
     </div>
 
-    <!-- 标题栏 + 搜索 + 添加 -->
+    <!-- 标题栏 + 搜索 + 多选 + 添加 -->
     <div class="flex items-center justify-between px-2 mb-2">
       <h2 class="text-xs font-semibold text-gray-500 leading-5">{{ sectionTitle }}</h2>
       <div class="flex items-center gap-0.5 -mr-1">
@@ -75,12 +75,30 @@
           <span class="material-icons leading-none" style="font-size: 18px">search</span>
         </button>
         <button
+          v-if="selectionEnabled"
+          @click="toggleSelectionMode"
+          class="flex h-5 w-5 items-center justify-center text-gray-400 hover:text-gray-600 rounded"
+          :class="{ 'text-blue-600': selectionActive }"
+          :title="selectionActive ? `退出${selectionModeLabel}（已选 ${selectionCount}）` : `${selectionModeLabel}模式`"
+        >
+          <span class="material-icons leading-none" style="font-size: 18px">{{ isMultiMode ? 'checklist' : 'check_box_outline_blank' }}</span>
+        </button>
+        <button
           @click="ops.handleAdd(itemType)"
           class="flex h-5 w-5 items-center justify-center text-gray-400 hover:text-gray-600 rounded"
           :title="`添加${sectionTitle}`"
         >
           <span class="material-icons leading-none" style="font-size: 18px">add</span>
         </button>
+      </div>
+    </div>
+
+    <!-- 多选工具条 -->
+    <div v-if="selectionActive && isMultiMode" class="flex items-center justify-between px-2 mb-2 text-xs text-gray-500">
+      <span>已选 {{ selectionCount }} 项</span>
+      <div class="flex items-center gap-2">
+        <button class="text-blue-600 hover:underline" @click="selectAll">全选</button>
+        <button class="text-gray-500 hover:underline" @click="clearSelection">清空</button>
       </div>
     </div>
 
@@ -114,6 +132,7 @@
                   'flex items-center min-h-8 py-1 px-2 rounded-md cursor-pointer',
                   'hover:bg-gray-100 dark:hover:bg-gray-800',
                   selectedKey === node.id ? 'bg-blue-100 text-blue-700' : '',
+                  selectionActive && isNodeSelected(node) ? 'bg-blue-50' : '',
                   dragOverNodeId === node.id ? 'ring-2 ring-blue-400 bg-blue-50' : '',
                   locatingNodeId === node.id ? 'sidebar-locate-active' : ''
                 ]"
@@ -123,6 +142,14 @@
                 @dragleave="handleNodeDragLeave($event, node)"
                 @drop.stop="handleNodeDrop($event, node)"
               >
+                <Checkbox
+                  v-if="showNodeCheckbox"
+                  :model-value="getNodeCheckState(node) === true"
+                  :indeterminate="getNodeCheckState(node) === 'indeterminate'"
+                  class="mr-1.5"
+                  @update:model-value="onNodeCheckChange(node, $event)"
+                  @click.stop
+                />
                 <span v-if="stat.children.length" class="material-icons text-base mr-1 text-gray-400 hover:text-gray-600 select-none" @click.stop="stat.open = !stat.open">
                   {{ stat.open ? 'expand_more' : 'chevron_right' }}
                 </span>
@@ -141,6 +168,7 @@
                   'flex items-center min-h-8 py-1 px-2 rounded-md cursor-pointer',
                   'hover:bg-gray-100 dark:hover:bg-gray-800',
                   selectedKey === node.id ? 'bg-blue-100 text-blue-700' : '',
+                  selectionActive && isNodeSelected(node) ? 'bg-blue-50' : '',
                   dragOverNodeId === node.id ? 'ring-2 ring-blue-400 bg-blue-50' : '',
                   locatingNodeId === node.id ? 'sidebar-locate-active' : ''
                 ]"
@@ -150,6 +178,14 @@
                 @dragleave="handleNodeDragLeave($event, node)"
                 @drop.stop="handleNodeDrop($event, node)"
               >
+                <Checkbox
+                  v-if="showNodeCheckbox"
+                  :model-value="getNodeCheckState(node) === true"
+                  :indeterminate="getNodeCheckState(node) === 'indeterminate'"
+                  class="mr-1.5"
+                  @update:model-value="onNodeCheckChange(node, $event)"
+                  @click.stop
+                />
                 <span v-if="stat.children.length" class="material-icons text-base mr-1 text-gray-400 hover:text-gray-600 select-none" @click.stop="stat.open = !stat.open">
                   {{ stat.open ? 'expand_more' : 'chevron_right' }}
                 </span>
@@ -223,6 +259,31 @@
         <AlertDialogFooter>
           <AlertDialogCancel @click="ops.showDeleteDialog.value = false">取消</AlertDialogCancel>
           <AlertDialogAction @click="ops.confirmDelete">删除</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
+    <!-- 批量删除确认对话框 -->
+    <AlertDialog v-model:open="ops.showBatchDeleteDialog.value">
+      <AlertDialogOverlay />
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>确认批量删除</AlertDialogTitle>
+          <AlertDialogDescription>
+            确定要删除已选中的 {{ ops.batchDeleteTotalCount.value }} 个{{
+              ops.batchDeletingType.value === 'folder' ? '文件夹' : '标签'
+            }}吗？此操作不可撤销。
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <div v-if="ops.batchDeletingType.value === 'folder'" class="flex items-center space-x-2 px-1">
+          <Checkbox id="batchDeleteWithFiles" :model-value="ops.deleteWithFiles.value" @update:model-value="ops.deleteWithFiles.value = $event" />
+          <label for="batchDeleteWithFiles" class="text-sm text-muted-foreground cursor-pointer select-none">
+            同时删除文件夹内的文件（不勾选则文件移至未分类）
+          </label>
+        </div>
+        <AlertDialogFooter>
+          <AlertDialogCancel @click="ops.showBatchDeleteDialog.value = false">取消</AlertDialogCancel>
+          <AlertDialogAction @click="ops.confirmBatchDelete">删除</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
@@ -306,6 +367,13 @@ interface Props {
   defaultShowSearch?: boolean
   title?: string
   draggable?: boolean
+  /**
+   * 选择模式开关
+   * - 'none'：不启用选择模式（不显示进入选择模式的图标）
+   * - 'single'：单选
+   * - 'multi'：多选
+   */
+  selectionMode?: 'none' | 'single' | 'multi'
   baseCategoriesConfig?: Array<{
     id: string
     label: string
@@ -319,6 +387,7 @@ const props = withDefaults(defineProps<Props>(), {
   itemType: 'folder',
   showBaseCategories: false,
   draggable: false,
+  selectionMode: 'none',
   title: '',
   folders: () => [],
   baseCategoriesConfig: () => [
@@ -553,6 +622,112 @@ function toggleSearch() {
   if (!showSearch.value) searchQuery.value = ''
 }
 
+// 选择模式（单选/多选/不启用）
+// selectionMode 由 prop 决定能力；selectionActive 表示当前是否已进入选择状态
+const selectionEnabled = computed(() => props.selectionMode !== 'none')
+const isMultiMode = computed(() => props.selectionMode === 'multi')
+const selectionModeLabel = computed(() => isMultiMode.value ? '多选' : '单选')
+const selectionActive = ref(false)
+const selectedNodeIds = ref<Set<string>>(new Set())
+// 选择模式下当前选中的节点数量
+const selectionCount = computed(() => selectedNodeIds.value.size)
+// 是否在节点最左侧展示 checkbox（仅多选模式）
+const showNodeCheckbox = computed(() => selectionActive.value && isMultiMode.value)
+
+function toggleSelectionMode() {
+  selectionActive.value = !selectionActive.value
+  if (!selectionActive.value) clearSelection()
+}
+
+// 选择模式能力变化时，自动关闭已激活的选择状态并清空选中
+watch(() => props.selectionMode, () => {
+  selectionActive.value = false
+  clearSelection()
+})
+
+function clearSelection() {
+  selectedNodeIds.value = new Set()
+}
+
+// 单选模式下仅保留一个节点
+function selectSingle(node: HeTreeNode) {
+  selectedNodeIds.value = new Set([node.id])
+}
+
+// 判断节点是否处于选中状态（含被选中分组下的子项）
+function isNodeSelected(node: HeTreeNode): boolean {
+  if (selectedNodeIds.value.has(node.id)) return true
+  // 多选分组被选中时，其子项也视为选中
+  if (isMultiMode.value) {
+    const ids = collectDescendantIds(node)
+    return ids.some(id => selectedNodeIds.value.has(id))
+  }
+  return false
+}
+
+// 递归收集节点及其所有后代 id
+function collectDescendantIds(node: HeTreeNode, acc: string[] = []): string[] {
+  acc.push(node.id)
+  if (node.children?.length) {
+    for (const child of node.children) collectDescendantIds(child, acc)
+  }
+  return acc
+}
+
+// 节点勾选状态：true / false / 'indeterminate'（仅多选模式使用）
+function getNodeCheckState(node: HeTreeNode): boolean | 'indeterminate' {
+  if (!node.children?.length) {
+    return selectedNodeIds.value.has(node.id)
+  }
+  const ids = collectDescendantIds(node)
+  const selectedCount = ids.filter(id => selectedNodeIds.value.has(id)).length
+  if (selectedCount === 0) return false
+  if (selectedCount === ids.length) return true
+  return 'indeterminate'
+}
+
+function onNodeCheckChange(node: HeTreeNode, checked: boolean | 'indeterminate') {
+  const next = new Set(selectedNodeIds.value)
+  const ids = collectDescendantIds(node)
+  if (checked) {
+    ids.forEach(id => next.add(id))
+  } else {
+    ids.forEach(id => next.delete(id))
+  }
+  selectedNodeIds.value = next
+}
+
+function selectAll() {
+  const next = new Set<string>()
+  const walk = (nodes: HeTreeNode[]) => {
+    for (const node of nodes) {
+      collectDescendantIds(node).forEach(id => next.add(id))
+    }
+  }
+  walk(treeData.value)
+  selectedNodeIds.value = next
+}
+
+// 收集实际要删除的节点：仅保留被选中、且不被某个已选中的祖先节点包含的节点
+// （避免对分组勾选时重复删除其后代）
+function collectSelectedTopLevelNodes(): { nodes: HeTreeNode[]; total: number } {
+  const selectedSet = selectedNodeIds.value
+  const topLevel: HeTreeNode[] = []
+  const visit = (nodes: HeTreeNode[], ancestorSelected: boolean) => {
+    for (const node of nodes) {
+      const isSelected = selectedSet.has(node.id)
+      if (isSelected && !ancestorSelected) {
+        topLevel.push(node)
+      }
+      if (node.children?.length) {
+        visit(node.children, ancestorSelected || isSelected)
+      }
+    }
+  }
+  visit(treeData.value, false)
+  return { nodes: topLevel, total: selectedSet.size }
+}
+
 async function locateNode(id: string): Promise<boolean> {
   console.log('[DEBUG-locate-sidebar] tree locateNode start', {
     id,
@@ -688,9 +863,35 @@ const ops = useFolderOperations({
   'refresh-tags': () => emit('refresh'),
 })
 
-const contextMenuItems = computed(() =>
-  isFolder.value ? ops.folderContextMenuItems.value : ops.tagContextMenuItems.value
-)
+const contextMenuItems = computed(() => {
+  // 选择模式激活时：右键菜单仅展示「删除」
+  if (selectionActive.value) {
+    const itemLabel = isFolder.value ? '文件夹' : '标签'
+    const { nodes, total } = collectSelectedTopLevelNodes()
+    const label = total > 0 ? `删除${itemLabel} (${total})` : `删除${itemLabel}`
+    return [
+      {
+        label,
+        command: () => handleBatchDelete(),
+        disabled: nodes.length === 0,
+        class: 'text-red-600',
+      },
+    ]
+  }
+  return isFolder.value ? ops.folderContextMenuItems.value : ops.tagContextMenuItems.value
+})
+
+// 选择模式下的批量删除（单选/多选均走这里）
+function handleBatchDelete() {
+  const { nodes, total } = collectSelectedTopLevelNodes()
+  if (nodes.length === 0) return
+  ops.startBatchDelete(isFolder.value ? 'folder' : 'tag', nodes, total)
+}
+
+// 批量删除完成时清空选中
+watch(() => ops.batchDeleteCompleted.value, (n) => {
+  if (n > 0) selectedNodeIds.value = new Set()
+})
 
 // 节点交互
 function handleBaseCategoryClick(category: any) {
@@ -707,6 +908,17 @@ function handleBaseCategoryClick(category: any) {
 }
 
 function handleNodeClick(node: HeTreeNode) {
+  // 选择模式激活：点击节点执行选中/取消选中，不触发常规 select
+  if (selectionActive.value) {
+    if (isMultiMode.value) {
+      // 多选：切换该节点及其所有后代
+      onNodeCheckChange(node, !(getNodeCheckState(node) === true))
+    } else {
+      // 单选：仅选中当前节点
+      selectSingle(node)
+    }
+    return
+  }
   searchQuery.value = ''
   showSearch.value = false
   emit('select', {

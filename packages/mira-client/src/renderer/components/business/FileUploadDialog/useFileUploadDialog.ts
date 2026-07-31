@@ -2,11 +2,13 @@ import { ref, computed, watch, nextTick } from 'vue'
 import { useServerListStore } from '@renderer/stores/serverList'
 import { useLibraryStore } from '@renderer/stores/library'
 import { useToast } from '@/renderer/composables/useToast'
-import type { Props, Emits } from './types'
+import { miraSDKService } from '@renderer/services/MiraSDKService'
+import type { Props, Emits, LocalFsNode } from './types'
 import { useUploadQueue } from './useUploadQueue'
 import { useFileManagement } from './useFileManagement'
 import { useFolderTagPanel } from './useFolderTagPanel'
 import { useLocalTree } from './useLocalTree'
+import { useFileFilters } from './useFileFilters'
 
 export function useFileUploadDialog(props: Props, emit: Emits) {
   const toast = useToast()
@@ -17,9 +19,12 @@ export function useFileUploadDialog(props: Props, emit: Emits) {
   const uploadQueue = useUploadQueue()
   const folderTagPanel = useFolderTagPanel()
   const localTree = useLocalTree(fileManagement.pendingFiles)
+  const fileFilters = useFileFilters(fileManagement.pendingFiles)
 
   const selectedLibraryId = ref<string>('')
   const isInitialized = ref(false)
+  // “按原有结构导入”进行中（创建服务器文件夹 + 应用到文件）
+  const isImportingStructure = ref(false)
 
   const isVisible = computed({
     get: () => props.visible,
@@ -143,6 +148,98 @@ export function useFileUploadDialog(props: Props, emit: Emits) {
     }
   }
 
+  /**
+   * 按原有本地目录结构导入：
+   * 在当前素材库下按层级创建服务器文件夹（保留多层级父子关系），
+   * 并把每个待上传文件的 folderId 设置为其所属本地目录对应的服务器文件夹。
+   * 完成后刷新右侧面板，使文件夹徽标正确显示名称。
+   */
+  async function importWithStructure() {
+    if (isImportingStructure.value) return
+    if (!currentLibrary.value) {
+      toast.add({ severity: 'error', summary: '错误', detail: '请先选择一个素材库', life: 3000 })
+      return
+    }
+    const tree = localTree.localTree.value
+    if (!tree || tree.length === 0) {
+      toast.add({ severity: 'warn', summary: '提示', detail: '没有可导入的文件夹结构', life: 3000 })
+      return
+    }
+
+    isImportingStructure.value = true
+    const libraryId = currentLibrary.value.id
+    // 预加载现有文件夹，尽量复用同名同级文件夹避免重复创建
+    const existing = new Map<string, number>() // key: `${parentId}:${title}` -> folderId
+    try {
+      const foldersData = (await miraSDKService.getAllFolders(libraryId)) || []
+      for (const f of foldersData) {
+        existing.set(`${f.parent_id ?? 0}:${f.title}`, f.id)
+      }
+    } catch (e) {
+      console.warn('加载现有文件夹失败，将全部新建:', e)
+    }
+
+    // 广度优先：按层级创建，确保父文件夹 id 先就绪
+    // localDirPath -> serverFolderId
+    const pathToServerId = new Map<string, number>()
+    // 队列：{ node, parentServerId }
+    type QItem = { node: LocalFsNode; parentServerId: number | undefined }
+    const queue: QItem[] = tree.filter((n) => n.isDir).map((node) => ({ node, parentServerId: undefined }))
+    try {
+      while (queue.length > 0) {
+        const { node, parentServerId } = queue.shift()!
+        const key = `${parentServerId ?? 0}:${node.name}`
+        let serverId: number | undefined = pathToServerId.get(node.path) ?? existing.get(key)
+        if (serverId === undefined) {
+          const result = await miraSDKService.createFolder(libraryId, node.name, parentServerId)
+          serverId = typeof result === 'object' ? result?.id : result
+        }
+        if (serverId === undefined || serverId === null) {
+          throw new Error(`创建文件夹失败: ${node.name}`)
+        }
+        pathToServerId.set(node.path, serverId)
+        existing.set(`${parentServerId ?? 0}:${node.name}`, serverId)
+        // 子目录入队
+        for (const child of node.children || []) {
+          if (child.isDir) queue.push({ node: child, parentServerId: serverId })
+        }
+      }
+    } catch (error) {
+      isImportingStructure.value = false
+      console.error('按结构导入失败:', error)
+      toast.add({
+        severity: 'error',
+        summary: '导入失败',
+        detail: error instanceof Error ? error.message : '创建文件夹失败',
+        life: 5000
+      })
+      return
+    }
+
+    // 将每个待上传文件归属到其本地目录对应的服务器文件夹
+    let applied = 0
+    for (const pf of fileManagement.pendingFiles.value) {
+      if (pf.localDirPath) {
+        const sid = pathToServerId.get(pf.localDirPath)
+        if (sid !== undefined) {
+          pf.folderId = String(sid)
+          applied++
+        }
+      }
+    }
+
+    // 刷新右侧面板，使文件夹徽标显示真实名称
+    await folderTagPanel.loadFoldersAndTags(libraryId)
+
+    isImportingStructure.value = false
+    toast.add({
+      severity: 'success',
+      summary: '已应用结构',
+      detail: `已按原有结构创建文件夹并应用到 ${applied} 个文件`,
+      life: 3000
+    })
+  }
+
   function startUpload() {
     if (!currentLibrary.value) {
       toast.add({ severity: 'error', summary: '错误', detail: '请先选择一个素材库', life: 3000 })
@@ -179,12 +276,15 @@ export function useFileUploadDialog(props: Props, emit: Emits) {
     uploadQueue,
     folderTagPanel,
     localTree,
+    fileFilters,
     handleOpenChange,
     handleLibrarySelectChange,
     triggerFileSelect,
     handleFileSelect,
     handleDrop,
     clearSelection,
+    importWithStructure,
+    isImportingStructure,
     startUpload
   }
 }

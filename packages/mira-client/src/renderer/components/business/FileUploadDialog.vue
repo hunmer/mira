@@ -20,7 +20,7 @@
         <div class="flex-1 flex gap-4 min-h-0 overflow-hidden">
           <!-- 最左侧：本地文件夹树（导入的目录结构，仅浏览/筛选） -->
           <div class="w-60 flex flex-col flex-shrink-0">
-            <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex-1">
+            <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex-1 min-h-0">
               <div class="p-2 h-full overflow-y-auto">
                 <FolderTreeComponent
                   item-type="folder"
@@ -32,6 +32,15 @@
                 />
               </div>
             </div>
+            <!-- 按原有结构导入：在服务器镜像创建本地目录层级并应用到文件 -->
+            <button
+              class="mt-2 w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-blue-500 dark:bg-blue-600 text-white text-xs font-medium hover:bg-blue-600 dark:hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="isImportingStructure || localTreeData.length === 0"
+              :title="localTreeData.length === 0 ? '请先导入文件夹' : '按本地目录层级在素材库下创建对应文件夹并应用到待上传文件'"
+              @click="importWithStructure"
+            >
+              <span>{{ isImportingStructure ? '导入中...' : '按原有结构创建文件夹' }}</span>
+            </button>
           </div>
 
           <!-- 中间：上传区域和文件网格 -->
@@ -80,6 +89,126 @@
                 </div>
               </div>
 
+              <!-- 过滤器：格式 / 文件大小 / 文件名 + 切换隐藏不符合条件 -->
+              <div v-if="pendingFiles.length > 0" class="flex items-center gap-2 px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex-wrap">
+                <!-- 格式 -->
+                <Select v-model="formatFilter">
+                  <SelectTrigger class="h-7 w-24 text-xs">
+                    <SelectValue placeholder="格式" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">全部格式</SelectItem>
+                    <SelectItem value="image">图片</SelectItem>
+                    <SelectItem value="video">视频</SelectItem>
+                    <SelectItem value="audio">音频</SelectItem>
+                    <SelectItem value="document">文档</SelectItem>
+                    <SelectItem value="other">其他</SelectItem>
+                  </SelectContent>
+                </Select>
+                <!-- 文件大小 -->
+                <Select v-if="sizeFilter !== 'custom'" v-model="sizeFilter" @update:model-value="onSizeFilterChange">
+                  <SelectTrigger class="h-7 w-28 text-xs">
+                    <SelectValue placeholder="文件大小" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">全部大小</SelectItem>
+                    <SelectItem value="lt1m">&lt; 1MB</SelectItem>
+                    <SelectItem value="1to10m">1 - 10MB</SelectItem>
+                    <SelectItem value="gt10m">&gt; 10MB</SelectItem>
+                    <SelectItem value="custom">自定义...</SelectItem>
+                  </SelectContent>
+                </Select>
+                <!-- 文件大小：自定义区间（双滑块） -->
+                <Popover v-else v-model:open="sizePopoverOpen">
+                  <PopoverTrigger as-child>
+                    <button
+                      class="h-7 w-28 text-xs flex items-center justify-between px-2 rounded-md border border-blue-400 text-blue-500 dark:text-blue-400 bg-blue-50/40 dark:bg-blue-900/20 hover:bg-blue-50 dark:hover:bg-blue-900/30"
+                    >
+                      <span class="truncate">{{ sizeRangeDisplay[0] }} - {{ sizeRangeDisplay[1] }} {{ unitLabel }}</span>
+                      <span
+                        class="material-icons ml-1 text-gray-400 hover:text-red-500"
+                        style="font-size: 14px"
+                        @click.stop="sizePopoverOpen = false; sizeFilter = 'all'"
+                        title="清除自定义"
+                      >close</span>
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent class="w-64 p-3" align="start">
+                    <div class="space-y-3">
+                      <!-- 单位切换 -->
+                      <div class="flex items-center gap-1">
+                        <button
+                          v-for="u in sizeUnits"
+                          :key="u.value"
+                          class="flex-1 h-6 text-xs rounded border transition-colors"
+                          :class="sizeUnit === u.value
+                            ? 'border-blue-400 text-blue-500 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-900/30'
+                            : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'"
+                          @click="changeSizeUnit(u.value)"
+                        >{{ u.label }}</button>
+                      </div>
+                      <div class="flex items-center justify-between text-xs text-gray-600 dark:text-gray-300">
+                        <span>最小 {{ sizeRangeDisplay[0] }} {{ unitLabel }}</span>
+                        <span>最大 {{ sizeRangeDisplay[1] }} {{ unitLabel }}</span>
+                      </div>
+                      <Slider
+                        v-model="sizeRangeDisplay"
+                        :min="0"
+                        :max="sliderMax"
+                        :step="sliderStep"
+                        type="multiple"
+                      />
+                      <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-1">
+                          <input
+                            v-model.number="sizeRangeDisplayMin"
+                            type="number"
+                            min="0"
+                            class="h-7 w-16 text-xs px-2 rounded-md border border-gray-200 dark:border-gray-700 bg-transparent"
+                          />
+                          <span class="text-xs text-gray-400">{{ unitLabel }}</span>
+                        </div>
+                        <span class="text-gray-400">~</span>
+                        <div class="flex items-center gap-1">
+                          <input
+                            v-model.number="sizeRangeDisplayMax"
+                            type="number"
+                            min="0"
+                            class="h-7 w-16 text-xs px-2 rounded-md border border-gray-200 dark:border-gray-700 bg-transparent"
+                          />
+                          <span class="text-xs text-gray-400">{{ unitLabel }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                <!-- 文件名 -->
+                <div class="relative flex-1 min-w-[120px]">
+                  <span class="material-icons absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" style="font-size: 14px">search</span>
+                  <input
+                    v-model="nameFilter"
+                    type="text"
+                    placeholder="文件名"
+                    class="h-7 w-full pl-7 pr-2 text-xs rounded-md border border-gray-200 dark:border-gray-700 bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  />
+                </div>
+                <!-- 命中数提示 -->
+                <span v-if="hasActiveFilter" class="text-xs text-gray-400 whitespace-nowrap">
+                  命中 {{ matchedCount }}
+                </span>
+                <!-- 切换隐藏不符合条件 -->
+                <button
+                  class="flex h-7 w-7 items-center justify-center rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  :class="{ 'text-blue-500 dark:text-blue-400': hideNonMatching }"
+                  :title="hideNonMatching ? '显示不符合条件的文件' : '隐藏不符合条件的文件'"
+                  @click="hideNonMatching = !hideNonMatching"
+                >
+                  <span class="material-icons leading-none" style="font-size: 18px">
+                    {{ hideNonMatching ? 'visibility_off' : 'visibility' }}
+                  </span>
+                </button>
+              </div>
+
               <!-- 文件网格内容 -->
               <div ref="fileGridContainerRef" class="flex-1 min-h-0">
                 <SelectionBox
@@ -95,7 +224,7 @@
                 >
                   <!-- 空状态 -->
                   <div
-                    v-if="filteredPendingFiles.length === 0"
+                    v-if="displayFiles.length === 0"
                     class="h-full flex flex-col items-center justify-center text-gray-400 dark:text-gray-500 cursor-pointer"
                     @click="triggerFileSelect(fileInputRef)"
                   >
@@ -111,12 +240,14 @@
                     :style="{ gridTemplateColumns: `repeat(${columnsPerRow}, 1fr)` }"
                   >
                     <div
-                      v-for="file in filteredPendingFiles"
+                      v-for="file in displayFiles"
                       :key="file.id"
-                      :data-selectable-id="file.id"
-                      class="file-card group relative bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden border-2 transition-all cursor-pointer select-none"
-                      :class="selectedPendingIds.includes(file.id) ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800' : 'border-transparent hover:border-gray-300 dark:hover:border-gray-600'"
-                      @click.stop="handleFileClick(file, $event)"
+                      :data-selectable-id="matchesFilters(file) ? file.id : undefined"
+                      class="file-card group relative bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden border-2 transition-all select-none"
+                      :class="[
+                        !matchesFilters(file) ? 'opacity-50 cursor-not-allowed border-transparent' : (selectedPendingIds.includes(file.id) ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800 cursor-pointer' : 'border-transparent hover:border-gray-300 dark:hover:border-gray-600 cursor-pointer')
+                      ]"
+                      @click.stop="matchesFilters(file) && handleFileClick(file, $event)"
                     >
                       <!-- 预览区域 -->
                       <div class="aspect-square relative">
@@ -167,6 +298,14 @@
                             <div class="text-2xl font-bold">{{ getUploadProgress(file.id) }}%</div>
                             <div class="text-xs">上传中...</div>
                           </div>
+                        </div>
+
+                        <!-- 不符合条件遮罩 -->
+                        <div
+                          v-if="!matchesFilters(file)"
+                          class="absolute inset-0 bg-gray-900/30 flex items-center justify-center pointer-events-none"
+                        >
+                          <span class="text-xs text-white bg-gray-800/80 px-2 py-0.5 rounded">不符合条件</span>
                         </div>
                       </div>
 
@@ -264,9 +403,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Slider } from '@/components/ui/slider'
 import SelectionBox from '@renderer/components/common/SelectionBox.vue'
 import FolderTreeComponent from './FolderTreeComponent/FolderTreeComponent.vue'
 import { useFileUploadDialog } from './FileUploadDialog/useFileUploadDialog'
@@ -287,14 +428,68 @@ const {
   uploadQueue,
   folderTagPanel,
   localTree,
+  fileFilters,
   handleOpenChange,
   handleLibrarySelectChange,
   triggerFileSelect,
   handleFileSelect,
   handleDrop,
   clearSelection,
+  importWithStructure,
+  isImportingStructure,
   startUpload
 } = useFileUploadDialog(props, emit)
+
+// 文件过滤器
+const {
+  formatFilter,
+  sizeFilter,
+  sizeRangeDisplay,
+  sizeUnit,
+  changeSizeUnit,
+  nameFilter,
+  matchesFilters,
+  hasActiveFilter
+} = fileFilters
+// 切换隐藏不符合条件的文件
+const hideNonMatching = ref(false)
+// 自定义大小区间 Popover 的打开状态
+const sizePopoverOpen = ref(false)
+
+// 大小单位选项与标签
+const sizeUnits = [
+  { value: 'kb' as const, label: 'KB' },
+  { value: 'mb' as const, label: 'MB' },
+  { value: 'gb' as const, label: 'GB' },
+]
+const unitLabel = computed(() => sizeUnits.find((u) => u.value === sizeUnit.value)?.label || '')
+
+// 滑块最大值/步长随单位变化（保证可拖动范围合理）
+const sliderMax = computed(() => (sizeUnit.value === 'kb' ? 1024 : sizeUnit.value === 'mb' ? 1024 : 100))
+const sliderStep = 1
+
+// 两个数字输入框分别绑定展示区间的 min / max（写入经 sizeRangeDisplay 回到字节）
+const sizeRangeDisplayMin = computed<number>({
+  get: () => sizeRangeDisplay.value[0],
+  set: (val) => {
+    sizeRangeDisplay.value = [val, sizeRangeDisplay.value[1]]
+  },
+})
+const sizeRangeDisplayMax = computed<number>({
+  get: () => sizeRangeDisplay.value[1],
+  set: (val) => {
+    sizeRangeDisplay.value = [sizeRangeDisplay.value[0], val]
+  },
+})
+
+// 选择【自定义】时，下一个 tick 再打开 Popover，避免同一点击事件被 Popover 误判为外部点击而立即关闭
+function onSizeFilterChange(value: any) {
+  if (value === 'custom') {
+    nextTick(() => {
+      sizePopoverOpen.value = true
+    })
+  }
+}
 
 // 解构给模板直接使用
 const { pendingFiles, selectedPendingIds, isDragOver, columnsPerRow, removePendingFile, clearAllPendingFiles } = fileManagement
@@ -309,6 +504,21 @@ const {
   handleLocalTreeSelect,
   clearLocalTree
 } = localTree
+
+/**
+ * 最终展示的文件列表：
+ * 先按左栏本地目录筛选，再根据【隐藏不符合条件】决定是否过滤掉不符合过滤条件的文件。
+ * 未隐藏时：不符合条件的文件仍展示（不可选中 + 显示【不符合条件】）。
+ */
+const displayFiles = computed(() => {
+  if (!hideNonMatching.value) return filteredPendingFiles.value
+  return filteredPendingFiles.value.filter((f) => matchesFilters(f))
+})
+
+// 当前匹配过滤条件的文件数（用于计数提示）
+const matchedCount = computed(
+  () => filteredPendingFiles.value.filter((f) => matchesFilters(f)).length
+)
 
 // 模板引用
 const fileInputRef = ref<HTMLInputElement>()
