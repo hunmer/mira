@@ -164,6 +164,7 @@ interface Props {
   selectedItems: string[]
   cardSize: 'small' | 'medium' | 'large'
   columnsPerRow?: number
+  isTrash?: boolean
 }
 
 interface Emits {
@@ -175,10 +176,12 @@ interface Emits {
   (e: 'media-set-folder', item: FileInfo): void
   (e: 'media-set-tags', item: FileInfo): void
   (e: 'media-delete', item: FileInfo): void
+  (e: 'media-restore', item: FileInfo): void
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  columnsPerRow: 4
+  columnsPerRow: 4,
+  isTrash: false
 })
 const emit = defineEmits<Emits>()
 

@@ -280,6 +280,19 @@ export class FileModule {
     }
 
     /**
+     * 恢复文件（从回收站还原）
+     * @param libraryId 素材库ID
+     * @param fileId 文件ID
+     * @returns Promise<BaseResponse>
+     */
+    async restoreFile(libraryId: string, fileId: string | number): Promise<BaseResponse> {
+        return await this.httpClient.post<BaseResponse>('/api/files/recover', {
+            libraryId,
+            fileId: fileId.toString(),
+        });
+    }
+
+    /**
      * 获取文件列表（支持过滤）
      * @param request 获取文件请求
      * @returns Promise<FileData[]>

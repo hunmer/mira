@@ -97,8 +97,12 @@ export class AppService {
     return await miraSDKService.downloadFile(libraryId, fileId)
   }
 
-  async deleteFile(libraryId: string, fileId: string): Promise<BaseResponse> {
-    return await miraSDKService.deleteFile(libraryId, fileId)
+  async deleteFile(libraryId: string, fileId: string, moveToRecycleBin: boolean = true): Promise<BaseResponse> {
+    return await miraSDKService.deleteFile(libraryId, fileId, moveToRecycleBin)
+  }
+
+  async restoreFile(libraryId: string, fileId: string): Promise<BaseResponse> {
+    return await miraSDKService.restoreFile(libraryId, fileId)
   }
 
   /**

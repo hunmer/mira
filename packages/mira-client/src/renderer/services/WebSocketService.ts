@@ -470,6 +470,11 @@ function setupEventListeners(libraryStore: any): void {
     handleFileEvent(data, 'deleted')
   })
 
+  webSocketService.addEventListener('file::recovered', (data) => {
+    console.log('File recovered:', data)
+    handleFileEvent(data, 'recovered')
+  })
+
   // 监听回收站清空事件
   webSocketService.addEventListener('files::trash-emptied', (data) => {
     console.log('Trash emptied:', data)
@@ -503,7 +508,7 @@ function setupEventListeners(libraryStore: any): void {
  */
 const refreshTimers = new Map<string, ReturnType<typeof setTimeout>>()
 
-function handleFileEvent(data: any, eventType: 'created' | 'updated' | 'deleted'): void {
+function handleFileEvent(data: any, eventType: 'created' | 'updated' | 'deleted' | 'recovered'): void {
   const { markTabsForEvent, tabs } = useTabs()
   const markedIds = markTabsForEvent(data, eventType)
   if (markedIds.length === 0) return

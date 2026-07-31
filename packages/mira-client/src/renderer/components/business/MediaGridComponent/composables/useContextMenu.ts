@@ -12,6 +12,7 @@ import { runBatchOperation } from '@renderer/composables/useBatchOperation'
 interface UseContextMenuProps {
   selectedItems: string[]
   items: FileInfo[]
+  isTrash?: boolean
 }
 
 interface UseContextMenuEmits {
@@ -20,6 +21,7 @@ interface UseContextMenuEmits {
   (e: 'media-set-folder', item: FileInfo): void
   (e: 'media-set-tags', item: FileInfo): void
   (e: 'media-delete', item: FileInfo): void
+  (e: 'media-restore', item: FileInfo): void
 }
 
 export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuEmits) {
@@ -104,59 +106,104 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
     await handler(item)
   }
 
-  const contextMenuItems = computed((): MenuItem[] => [
-    {
-      label: '查看信息',
-      shortcut: 'Ctrl+I',
-      command: () => runWithCurrentItem(async (item) => {
-        mediaStore.setDetailSidebarFiles([item])
-        if (!showDetailSidebar.value) toggleDetailSidebar()
-      })
-    },
-    {
-      separator: true
-    },
-    {
-      label: props.selectedItems.length > 1 ? `设置文件夹 (${props.selectedItems.length})` : '设置文件夹',
-      shortcut: 'Ctrl+M',
-      command: () => runWithCurrentItem((item) => {
-        setTimeout(() => { folderPopoverOpen.value = true }, 100)
-      })
-    },
-    {
-      label: props.selectedItems.length > 1 ? `设置标签 (${props.selectedItems.length})` : '设置标签',
-      shortcut: 'Ctrl+T',
-      command: () => runWithCurrentItem((item) => {
-        setTimeout(() => { tagPopoverOpen.value = true }, 100)
-      })
-    },
-    {
-      separator: true
-    },
-    ...([
-      currentContextItem.value?.localFile && {
-        label: '定位到文件夹',
-        command: () => {
-          const api = (window as any).electronAPI
-          api?.fs?.showItemInFolder(currentContextItem.value!.localFile!)
+  const contextMenuItems = computed((): MenuItem[] => {
+    // 回收站视图：只提供恢复（+ 查看 / 定位）
+    if (props.isTrash) {
+      return [
+        {
+          label: '查看信息',
+          shortcut: 'Ctrl+I',
+          command: () => runWithCurrentItem(async (item) => {
+            mediaStore.setDetailSidebarFiles([item])
+            if (!showDetailSidebar.value) toggleDetailSidebar()
+          })
+        },
+        { separator: true },
+        {
+          label: props.selectedItems.length > 1 ? `恢复文件 (${props.selectedItems.length})` : '恢复文件',
+          shortcut: 'Ctrl+R',
+          command: () => runWithCurrentItem(async () => {
+            const files = getTargetFiles()
+            if (files.length === 0) return
+            await runBatchOperation(files, async (file) => {
+              const libraryId = file.libraryId || libraryStore.currentLibrary?.id
+              if (!libraryId) return
+              await appService.restoreFile(libraryId, file.id)
+              emit('media-restore', file)
+            }, { label: '恢复文件' })
+          })
+        },
+        {
+          label: props.selectedItems.length > 1 ? `彻底删除 (${props.selectedItems.length})` : '彻底删除',
+          command: () => runWithCurrentItem(async () => {
+            const files = getTargetFiles()
+            if (files.length === 0) return
+            await runBatchOperation(files, async (file) => {
+              const libraryId = file.libraryId || libraryStore.currentLibrary?.id
+              if (!libraryId) return
+              await appService.deleteFile(libraryId, file.id, false)
+              emit('media-delete', file)
+            }, { label: '彻底删除' })
+          })
         }
-      }
-    ].filter(Boolean) as MenuItem[]),
-    {
-      label: props.selectedItems.length > 1 ? `删除 (${props.selectedItems.length})` : '删除',
-      shortcut: 'Delete',
-      command: () => runWithCurrentItem(async () => {
-        const files = getTargetFiles()
-        if (files.length === 0) return
-        await runBatchOperation(files, async (file) => {
-          const libraryId = file.libraryId || libraryStore.currentLibrary?.id
-          if (!libraryId) return
-          await appService.deleteFile(libraryId, file.id)
-          emit('media-delete', file)
-        }, { label: '删除' })
-      })
+      ]
     }
-  ])
+
+    // 普通文件视图：原有菜单
+    return [
+      {
+        label: '查看信息',
+        shortcut: 'Ctrl+I',
+        command: () => runWithCurrentItem(async (item) => {
+          mediaStore.setDetailSidebarFiles([item])
+          if (!showDetailSidebar.value) toggleDetailSidebar()
+        })
+      },
+      {
+        separator: true
+      },
+      {
+        label: props.selectedItems.length > 1 ? `设置文件夹 (${props.selectedItems.length})` : '设置文件夹',
+        shortcut: 'Ctrl+M',
+        command: () => runWithCurrentItem(() => {
+          setTimeout(() => { folderPopoverOpen.value = true }, 100)
+        })
+      },
+      {
+        label: props.selectedItems.length > 1 ? `设置标签 (${props.selectedItems.length})` : '设置标签',
+        shortcut: 'Ctrl+T',
+        command: () => runWithCurrentItem(() => {
+          setTimeout(() => { tagPopoverOpen.value = true }, 100)
+        })
+      },
+      {
+        separator: true
+      },
+      ...([
+        currentContextItem.value?.localFile && {
+          label: '定位到文件夹',
+          command: () => {
+            const api = (window as any).electronAPI
+            api?.fs?.showItemInFolder(currentContextItem.value!.localFile!)
+          }
+        }
+      ].filter(Boolean) as MenuItem[]),
+      {
+        label: props.selectedItems.length > 1 ? `删除 (${props.selectedItems.length})` : '删除',
+        shortcut: 'Delete',
+        command: () => runWithCurrentItem(async () => {
+          const files = getTargetFiles()
+          if (files.length === 0) return
+          await runBatchOperation(files, async (file) => {
+            const libraryId = file.libraryId || libraryStore.currentLibrary?.id
+            if (!libraryId) return
+            await appService.deleteFile(libraryId, file.id)
+            emit('media-delete', file)
+          }, { label: '删除' })
+        })
+      }
+    ]
+  })
 
   const handleContextMenu = (item: FileInfo, event: MouseEvent) => {
     currentContextItem.value = item

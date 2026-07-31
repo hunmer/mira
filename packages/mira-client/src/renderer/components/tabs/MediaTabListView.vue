@@ -117,6 +117,7 @@
             :selected-items="selectedItems"
             :card-size="cardSize"
             :columns-per-row="columnsPerRow"
+            :is-trash="viewType === 'trash'"
             @media-click="handleMediaClick"
             @media-double-click="handleMediaDoubleClick"
             @media-select="handleMediaSelect"
@@ -125,6 +126,7 @@
             @media-set-folder="handleMediaSetFolder"
             @media-set-tags="handleMediaSetTags"
             @media-delete="handleMediaDelete"
+            @media-restore="handleMediaRestore"
           />
 
           <!-- 列表视图 -->
@@ -715,6 +717,10 @@ const handleActiveTabRefresh = (e: Event) => {
 }
 
 const handleMediaDelete = async (_item: FileInfo) => {
+  await handleRefresh()
+}
+
+const handleMediaRestore = async (_item: FileInfo) => {
   await handleRefresh()
 }
 

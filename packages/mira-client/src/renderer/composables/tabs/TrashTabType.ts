@@ -47,8 +47,8 @@ export class TrashTabType extends MediaViewTabType {
 
   shouldUpdateForEvent(tabData: any, eventData: any): boolean {
     const libMatch = String(tabData?.libraryId) !== String(eventData.libraryId)
-    const hasField = eventData.recycled != null || eventData.deletedCount != null || eventData.deletedAt != null
-    console.log(`[TrashTabType] shouldUpdate: tabData.libraryId="${tabData?.libraryId}" (${typeof tabData?.libraryId}) eventData.libraryId="${eventData.libraryId}" (${typeof eventData.libraryId}) libMatch=${libMatch} hasField=${hasField} recycled=${eventData.recycled} deletedCount=${eventData.deletedCount} deletedAt=${eventData.deletedAt}`)
+    const hasField = eventData.recycled != null || eventData.deletedCount != null || eventData.deletedAt != null || eventData.recovered != null
+    console.log(`[TrashTabType] shouldUpdate: tabData.libraryId="${tabData?.libraryId}" (${typeof tabData?.libraryId}) eventData.libraryId="${eventData.libraryId}" (${typeof eventData.libraryId}) libMatch=${libMatch} hasField=${hasField} recycled=${eventData.recycled} deletedCount=${eventData.deletedCount} deletedAt=${eventData.deletedAt} recovered=${eventData.recovered}`)
     if (libMatch) return false
     return hasField
   }

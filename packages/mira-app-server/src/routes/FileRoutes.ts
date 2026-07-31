@@ -441,6 +441,71 @@ export class FileRoutes {
             }
         });
 
+        // 恢复文件（从回收站还原）
+        this.router.post('/recover', async (req: Request, res: Response) => {
+            try {
+                const { libraryId, fileId } = req.body;
+
+                if (!libraryId || !fileId) {
+                    return res.status(400).json({
+                        code: 400,
+                        message: 'libraryId and fileId are required',
+                        data: null
+                    });
+                }
+
+                const obj = this.backend.libraries!.getLibrary(libraryId);
+                if (!obj) {
+                    return res.status(404).json({
+                        code: 404,
+                        message: 'Library not found',
+                        data: null
+                    });
+                }
+
+                // 获取恢复前的文件信息（用于事件携带 folder_id）
+                const before = await obj.libraryService.getFile(parseInt(fileId));
+
+                const success = await obj.libraryService.recoverFile(parseInt(fileId));
+                if (!success) {
+                    return res.status(500).json({
+                        code: 500,
+                        message: 'Failed to recover file',
+                        data: null
+                    });
+                }
+
+                const result = await obj.libraryService.getFile(parseInt(fileId));
+                const response = {
+                    success: true,
+                    message: 'File recovered successfully',
+                    recoveredFile: {
+                        id: parseInt(fileId),
+                        name: result?.name,
+                        libraryId,
+                        folderId: result?.folder_id ?? null,
+                        recoveredAt: new Date().toISOString()
+                    }
+                };
+
+                // 发送 WebSocket 事件
+                this.broadcastFileEvent('file::recovered', libraryId, result, parseInt(fileId), before ? { folder_id: before.folder_id, recycled: 1 } : undefined);
+                // 标记 recovered，便于回收站 tab 精确匹配刷新
+                if (this.backend.webSocketServer) {
+                    this.backend.webSocketServer.broadcastLibraryEvent(libraryId, 'file::recovered', { recovered: 1, libraryId, fileId: parseInt(fileId) });
+                }
+
+                res.json(response);
+            } catch (error) {
+                console.error('Error recovering file:', error);
+                res.status(500).json({
+                    code: 500,
+                    message: 'Internal server error while recovering file',
+                    details: error instanceof Error ? error.message : String(error)
+                });
+            }
+        });
+
         // 删除文件
         this.router.delete('/:libraryId/:id', async (req: Request, res: Response) => {
             try {

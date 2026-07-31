@@ -685,6 +685,18 @@ export class MiraSDKService {
     }
   }
 
+  async restoreFile(libraryId: string, fileId: string): Promise<BaseResponse> {
+    if (!this.client) throw new Error('Not connected to Mira server')
+
+    try {
+      const result = await this.client.files().restoreFile(libraryId, fileId)
+      return TypeAdapter.normalizeBaseResponse(result)
+    } catch (error) {
+      console.error('MiraSDKService: File restore failed', error)
+      throw error
+    }
+  }
+
   async renameFile(libraryId: string, fileId: string | number, name: string): Promise<any> {
     if (!this.client) throw new Error('Not connected to Mira server')
     return await this.client.files().renameFile(libraryId, fileId, name)
