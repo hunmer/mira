@@ -177,24 +177,66 @@
             v-if="selectedItems.length > 0"
             class="flex items-center space-x-2"
           >
+            <!-- 反选 -->
             <button
               class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
-              @click="handleToolbarAction('copy')"
+              title="反选"
+              @click="handleInvertSelection"
             >
-              <span class="material-icons text-gray-600 dark:text-gray-400">content_copy</span>
+              <span class="material-symbols-outlined text-gray-600 dark:text-gray-400">swap_horiz</span>
             </button>
+            <!-- 取消选择 -->
             <button
               class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
-              @click="handleToolbarAction('open')"
+              title="取消选择"
+              @click="handleClearSelection"
             >
-              <span class="material-icons text-gray-600 dark:text-gray-400">open_in_new</span>
+              <span class="material-symbols-outlined text-gray-600 dark:text-gray-400">deselect</span>
             </button>
-            <button
-              class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
-              @click="handleToolbarAction('delete')"
-            >
-              <span class="material-icons text-gray-600 dark:text-gray-400">delete</span>
-            </button>
+            <div class="h-6 border-l border-gray-200 dark:border-gray-700"></div>
+
+            <!-- 回收站：恢复文件 / 彻底删除 -->
+            <template v-if="isTrash">
+              <button
+                class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                :title="`恢复文件 (${selectedItems.length})`"
+                @click="handleToolbarAction('restore')"
+              >
+                <span class="material-symbols-outlined text-gray-600 dark:text-gray-400">restore</span>
+              </button>
+              <button
+                class="p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/30 group"
+                :title="`彻底删除 (${selectedItems.length})`"
+                @click="handleToolbarAction('purge')"
+              >
+                <span class="material-symbols-outlined text-gray-600 dark:text-gray-400 group-hover:text-red-600 dark:group-hover:text-red-400">delete_forever</span>
+              </button>
+            </template>
+
+            <!-- 普通视图：复制 / 打开 / 删除 -->
+            <template v-else>
+              <button
+                class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                title="复制"
+                @click="handleToolbarAction('copy')"
+              >
+                <span class="material-icons text-gray-600 dark:text-gray-400">content_copy</span>
+              </button>
+              <button
+                class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                title="打开"
+                @click="handleToolbarAction('open')"
+              >
+                <span class="material-icons text-gray-600 dark:text-gray-400">open_in_new</span>
+              </button>
+              <button
+                class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                :title="`删除 (${selectedItems.length})`"
+                @click="handleToolbarAction('delete')"
+              >
+                <span class="material-icons text-gray-600 dark:text-gray-400">delete</span>
+              </button>
+            </template>
             <div class="h-6 border-l border-gray-200 dark:border-gray-700"></div>
           </div>
 
@@ -344,6 +386,7 @@ import { useMediaStore } from '@renderer/stores/media'
 import { useLibraryStore } from '@renderer/stores/library'
 import { useSettingsStore } from '@renderer/stores/settings'
 import { useToast } from '@renderer/composables/useToast'
+import { runBatchOperation } from '@renderer/composables/useBatchOperation'
 import { appService } from '@renderer/services'
 import { useTagStore } from '@renderer/stores/tag'
 import { useHomeController } from '@renderer/controllers/HomeController'
@@ -510,6 +553,7 @@ const handleDrop = async (e: DragEvent) => {
 
 // 使用 tab 独立的 viewMode（从 MediaTabData 获取）
 const viewMode = computed(() => mediaTabData.viewMode.value)
+const isTrash = computed(() => props.viewType === 'trash')
 const selectedItems = computed(() => homeController.selectedItems?.value || [])
 const cardSize = computed(() => homeController.cardSize?.value || 'medium')
 const columnsPerRow = computed(() => homeController.columnsPerRow?.value || 6)
@@ -906,6 +950,48 @@ const handleSortChange = async (field: string, order: string) => {
 }
 
 const handleToolbarAction = async (action: string) => {
+  // 回收站：恢复 / 彻底删除
+  if (action === 'restore') {
+    const ids = selectedItems.value
+    if (ids.length === 0) return
+    const cachedFiles = mediaTabData.getCachedData().data
+    const files: FileInfo[] = ids
+      .map(id => cachedFiles.find((f: FileInfo) => f.id === id))
+      .filter((f): f is FileInfo => Boolean(f))
+    if (files.length === 0) return
+
+    await runBatchOperation(files, async (file) => {
+      const libraryId = file.libraryId || libraryStore.currentLibrary?.id
+      if (!libraryId) throw new Error('缺少库ID')
+      await appService.restoreFile(libraryId, file.id)
+    }, { label: '恢复文件' })
+
+    homeController.selectedItems.value = []
+    await handleRefresh()
+    return
+  }
+
+  if (action === 'purge') {
+    const ids = selectedItems.value
+    if (ids.length === 0) return
+    const cachedFiles = mediaTabData.getCachedData().data
+    const files: FileInfo[] = ids
+      .map(id => cachedFiles.find((f: FileInfo) => f.id === id))
+      .filter((f): f is FileInfo => Boolean(f))
+    if (files.length === 0) return
+
+    await runBatchOperation(files, async (file) => {
+      const libraryId = file.libraryId || libraryStore.currentLibrary?.id
+      if (!libraryId) throw new Error('缺少库ID')
+      // 彻底删除：跳过回收站
+      await appService.deleteFile(libraryId, file.id, false)
+    }, { label: '彻底删除' })
+
+    homeController.selectedItems.value = []
+    await handleRefresh()
+    return
+  }
+
   if (action === 'delete') {
     const ids = selectedItems.value
     if (ids.length === 0) return
@@ -927,6 +1013,21 @@ const handleToolbarAction = async (action: string) => {
     return
   }
   homeController.handleToolbarAction(action)
+}
+
+// 反选当前页
+const handleInvertSelection = () => {
+  const items = paginatedMediaItems.value
+  const selected = new Set(selectedItems.value)
+  const inverted = items
+    .map(item => item.id)
+    .filter(id => !selected.has(id))
+  homeController.selectedItems.value = inverted
+}
+
+// 取消选择（全部清空）
+const handleClearSelection = () => {
+  homeController.selectedItems.value = []
 }
 
 const handlePreviousPage = async () => {
