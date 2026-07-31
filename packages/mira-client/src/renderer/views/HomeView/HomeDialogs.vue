@@ -24,6 +24,8 @@ const showAccessDeniedDialog = defineModel<boolean>('showAccessDeniedDialog', { 
 
 defineProps<{
   editingServer: ServerConfig | null
+  uploadInitialFolderId?: string
+  uploadInitialTagIds?: string[]
 }>()
 
 const emit = defineEmits<{
@@ -87,6 +89,8 @@ const emit = defineEmits<{
   <!-- 文件上传对话框 -->
   <FileUploadDialog
     v-model:visible="showFileUploadDialog"
+    :initial-folder-id="uploadInitialFolderId"
+    :initial-tag-ids="uploadInitialTagIds"
   />
 
   <!-- 插件管理对话框 -->

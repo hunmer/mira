@@ -51,10 +51,9 @@ export function useFileUploadDialog(props: Props, emit: Emits) {
       }
     }
 
-    if (props.initialFolderId) folderTagPanel.selectedTargetFolderId.value = props.initialFolderId
-    if (props.initialTagIds && props.initialTagIds.length > 0) {
-      folderTagPanel.selectedTargetTagIds.value = [...props.initialTagIds]
-    }
+    // 每次打开都根据最新 props 重置目标选择，避免上次打开残留的文件夹/标签被错误地带入本次上传
+    folderTagPanel.selectedTargetFolderId.value = props.initialFolderId
+    folderTagPanel.selectedTargetTagIds.value = props.initialTagIds ? [...props.initialTagIds] : []
     if (props.initialFiles && props.initialFiles.length > 0) {
       fileManagement.addFiles(
         props.initialFiles,

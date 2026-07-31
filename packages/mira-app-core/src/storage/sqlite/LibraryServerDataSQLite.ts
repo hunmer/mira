@@ -11,14 +11,20 @@ import { Statistics } from './mixins/Statistics';
 export class LibraryServerDataSQLite {
   private db: Database | null = null;
   private inTransaction = false;
-  readonly enableHash: boolean;
-  readonly customFields: Record<string, any>;
   readonly config: Record<string, any>;
 
   constructor(config: Record<string, any>, opts: any) {
     this.config = config;
-    this.customFields = config.customFields || {};
-    this.enableHash = config.customFields?.enableHash ?? false;
+  }
+
+  // 实时从 config 读取，确保 PUT /:id 更新 customFields 后立即生效，
+  // 不再依赖构造时的快照（否则切换 enableHash 需重启或禁/启库才能生效）
+  get enableHash(): boolean {
+    return this.config.customFields?.enableHash ?? false;
+  }
+
+  get customFields(): Record<string, any> {
+    return this.config.customFields || {};
   }
 
   async initialize(): Promise<void> {
@@ -244,7 +250,9 @@ export class LibraryServerDataSQLite {
       const folder = await this.getFolder(folderId);
       if (folder) return folder.title;
     }
-    return '未分类';
+    // 未分类文件（folder_id 为空）存放在素材库根目录，返回空串让 path.join 自然落到根目录。
+    // 不再返回字面量 '未分类'，避免每次上传未分类文件都在素材库下创建物理「未分类」子文件夹。
+    return '';
   }
 
   // --- SQL 基础操作 ---

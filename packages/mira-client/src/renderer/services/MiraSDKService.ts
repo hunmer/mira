@@ -534,8 +534,11 @@ export class MiraSDKService {
                 thumbnailPath = file.thumb_path.replace(mountPrefix, normalizedSmbPath).replace(/\//g, sep)
               }
             } else {
-              if (file.folder_name && file.name) {
-                localFile = normalizedSmbPath + file.folder_name + sep + file.name
+              // folder_name 为空串时表示未分类文件（存放在素材库根目录），直接拼根路径
+              if (file.name) {
+                localFile = file.folder_name
+                  ? normalizedSmbPath + file.folder_name + sep + file.name
+                  : normalizedSmbPath + file.name
               }
               const thumbFileName = file.hash ? `${file.hash}.png` : `${file.id}.png`
               thumbnailPath = normalizedSmbPath + 'thumbs' + sep + thumbFileName

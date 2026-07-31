@@ -16,6 +16,21 @@ export const FileImport = {
     const stat = fs.statSync(filePath);
     const hash = this.enableHash ? this.calculateFileHashSync(filePath) : '';
 
+    // hash 校验：若库中已存在相同 hash 的文件，则跳过导入（去重）
+    if (hash) {
+      const existing = await this.getSql(
+        'SELECT * FROM files WHERE hash = ? AND recycled = 0 LIMIT 1',
+        [hash]
+      );
+      if (existing.length > 0) {
+        // move 方式导入时清理临时源文件，避免残留（上传走的就是 move）
+        if ((options?.importType || 'copy') === 'move') {
+          try { fs.unlinkSync(filePath); } catch {}
+        }
+        return { ...this.rowToMap(existing[0]), duplicate: true };
+      }
+    }
+
     const fileData = {
       path: filePath,
       name: path.basename(filePath),

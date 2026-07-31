@@ -246,6 +246,7 @@
 import { reactive, ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useLibraryStore } from '../stores/library'
 import { useServerListStore, type ServerConfig } from '../stores/serverList'
 import { Motion } from 'motion-v'
 import Aurora from '@renderer/components/Aurora.vue'
@@ -265,6 +266,7 @@ import type { HealthResponse, Library } from 'mira-app-core/shared/sdk'
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const libraryStore = useLibraryStore()
 const serverListStore = useServerListStore()
 
 // Stepper state
@@ -467,6 +469,17 @@ async function connectToLibrary() {
       authStore.tokenExpiration = new Date(Date.now() + 24 * 60 * 60 * 1000)
       await authStore.persistAuthState()
     }
+
+    // Persist the user-selected library so initializeHomeView() picks it up
+    // instead of falling back to libraries[0]. Must happen AFTER setActiveServer
+    // (which scopes LibraryStorage keys by activeServerId) and after connect.
+    try {
+      await libraryStore.fetchLibraries()
+      const selectedLib = libraryStore.getLibraryById(selectedLibraryId.value)
+      if (selectedLib) {
+        await libraryStore.setCurrentLibrary(selectedLib)
+      }
+    } catch { /* non-fatal: selectLibrary() has its own fallback */ }
 
     const redirect = route.query.redirect as string
     await router.push(redirect || '/')

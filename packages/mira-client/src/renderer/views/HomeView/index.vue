@@ -1,6 +1,6 @@
 <script setup lang="ts">
 defineOptions({ name: 'Home' })
-import { ref, onMounted, onUnmounted, onActivated, onDeactivated, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, onActivated, onDeactivated, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 
 // 布局组件
@@ -83,6 +83,22 @@ const {
   handleCloseCurrentTab,
   refreshCurrentTabAfterLibrarySwitch
 } = tabManagement
+
+// 上传对话框的 tab 上下文
+// 仅普通文件夹/标签 tab 提供真实 ID；未分类/未标签/all/trash/home 等特殊 tab 不提供，
+// 避免把字面量 'uncategorized'/'untagged' 等误当作文件夹 ID 传给上传逻辑而在素材库里错误创建同名文件夹
+const uploadInitialFolderId = computed<string | undefined>(() => {
+  const tab = currentTab.value
+  if (!tab || tab.type !== 'folder') return undefined
+  const num = Number(tab.data?.id)
+  return Number.isFinite(num) ? String(num) : undefined
+})
+const uploadInitialTagIds = computed<string[]>(() => {
+  const tab = currentTab.value
+  if (!tab || tab.type !== 'tag') return []
+  const num = Number(tab.data?.id)
+  return Number.isFinite(num) ? [String(num)] : []
+})
 
 // ============================================
 // 素材库管理
@@ -330,6 +346,8 @@ onUnmounted(() => {
       v-model:show-settings-dialog="showSettingsDialog"
       v-model:show-access-denied-dialog="showAccessDeniedDialog"
       :editing-server="editingServer"
+      :upload-initial-folder-id="uploadInitialFolderId"
+      :upload-initial-tag-ids="uploadInitialTagIds"
       @create-library="handleCreateLibrary"
       @edit-server="handleEditServer"
       @add-server="handleAddServer"

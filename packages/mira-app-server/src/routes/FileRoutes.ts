@@ -238,15 +238,16 @@ export class FileRoutes {
                             };
 
                             result = await obj.libraryService.createFileFromPath(file.path, fileData, { importType: 'move' }); // 使用move上传完成后自动删除临时文件
+                            const isDuplicate = result?.duplicate === true;
                             results.push({
-                                success: true,
+                                success: !isDuplicate,
                                 file: file.path,
                                 result,
-                                operation: 'create'
+                                operation: isDuplicate ? 'duplicate' : 'create'
                             });
 
-                            // 发送WebSocket事件
-                            if (this.backend.webSocketServer) {
+                            // 发送WebSocket事件（命中重复时不广播 file::created，因为并没有新建文件）
+                            if (this.backend.webSocketServer && !isDuplicate) {
                                 this.backend.webSocketServer.broadcastPluginEvent('file::created', {
                                     message: {
                                         type: 'file',
@@ -256,11 +257,15 @@ export class FileRoutes {
                                 });
 
                                 this.backend.webSocketServer?.broadcastLibraryEvent(libraryId, 'file::created', { ...result, libraryId });
+                            }
 
-                                if (clientId) {
-                                    const ws = this.backend.webSocketServer?.getWsClientById(libraryId, clientId);
-                                    ws && this.backend.webSocketServer?.sendToWebsocket(ws, { eventName: 'file::uploaded', data: { path: sourcePath } });
-                                }
+                            // 命中重复也向上传方回传 file::uploaded（带 duplicate 标记），让前端能给出"已存在，已跳过"的提示
+                            if (this.backend.webSocketServer && clientId) {
+                                const ws = this.backend.webSocketServer?.getWsClientById(libraryId, clientId);
+                                ws && this.backend.webSocketServer?.sendToWebsocket(ws, {
+                                    eventName: 'file::uploaded',
+                                    data: isDuplicate ? { path: sourcePath, duplicate: true } : { path: sourcePath }
+                                });
                             }
                         }
                     } catch (error) {
