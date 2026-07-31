@@ -126,9 +126,38 @@ export function useFileManagement() {
     })
 
     pendingFiles.value.push(...newFiles)
-    // 异步生成预览（占位 File 的 createObjectURL 不可用，预览仅对可读类型有意义；
-    // 这里跳过预览，预览在上传时读取字节后再生成会引入复杂度，暂不强求）
     pendingFiles.value = [...pendingFiles.value]
+    // 后台为图片/视频生成缩略图预览（按需读取本地字节，不阻塞入列）
+    generateLocalPreviews(newFiles)
+  }
+
+  /**
+   * 为本地导入的图片/视频文件按需读取字节并生成预览。
+   * 限制并发，避免一次性读取大量文件导致内存峰值过高。
+   */
+  async function generateLocalPreviews(files: PendingFile[]) {
+    const PREVIEW_CONCURRENCY = 4
+    let cursor = 0
+    const run = async () => {
+      while (cursor < files.length) {
+        const i = cursor++
+        const pf = files[i]
+        // 仅图片/视频有预览
+        if (!pf.localPath || !pf.file.type || (!pf.file.type.startsWith('image/') && !pf.file.type.startsWith('video/'))) {
+          continue
+        }
+        try {
+          const bytesRes = await window.electronAPI.fs.readFileBytes(pf.localPath)
+          if (!bytesRes.success || !bytesRes.data) continue
+          const realFile = new File([bytesRes.data], pf.file.name, { type: pf.file.type })
+          pf.preview = await createPreviewUrl(realFile)
+          pendingFiles.value = [...pendingFiles.value]
+        } catch (error) {
+          console.warn(`生成本地文件 ${pf.file.name} 预览失败:`, error)
+        }
+      }
+    }
+    await Promise.all(Array.from({ length: Math.min(PREVIEW_CONCURRENCY, files.length) }, run))
   }
 
   async function generatePreviews(files: File[], newFiles: PendingFile[]) {

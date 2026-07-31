@@ -73,7 +73,7 @@
                   <button
                     v-if="pendingFiles.length > 0"
                     class="text-xs text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
-                    @click="clearAllPendingFiles"
+                    @click="handleClearAll"
                   >
                     清空全部
                   </button>
@@ -222,12 +222,14 @@
                   :show-base-categories="false"
                   :default-show-search="true"
                   @select="handleFolderTreeSelect"
+                  @refresh="handleFolderPanelRefresh"
                 />
                 <FolderTreeComponent
                   item-type="tag"
                   :tags="tagTreeData"
                   :default-show-search="true"
                   @select="handleTagTreeSelect"
+                  @refresh="handleFolderPanelRefresh"
                 />
               </div>
             </div>
@@ -297,14 +299,15 @@ const {
 // 解构给模板直接使用
 const { pendingFiles, selectedPendingIds, isDragOver, columnsPerRow, removePendingFile, clearAllPendingFiles } = fileManagement
 const { uploadingFileIds, queueStats, getUploadProgress } = uploadQueue
-const { selectedTargetFolderId, folderTreeData, tagTreeData, getFolderName, getTagName, handleFolderSelect, handleTagSelect, applyMetadataToFiles } = folderTagPanel
+const { selectedTargetFolderId, folderTreeData, tagTreeData, getFolderName, getTagName, handleFolderSelect, handleTagSelect, applyMetadataToFiles, loadFoldersAndTags } = folderTagPanel
 // 本地树（左栏）：仅浏览/筛选，不参与上传 metadata
 const {
   baseCategoriesConfig,
   localTreeData,
   selectedLocalDir,
   filteredPendingFiles,
-  handleLocalTreeSelect
+  handleLocalTreeSelect,
+  clearLocalTree
 } = localTree
 
 // 模板引用
@@ -319,6 +322,12 @@ function handleSelectionUpdate(_ids: string[]) {
   // v-model 自动更新 selectedPendingIds
 }
 
+// 清空全部文件时一并清空左侧本地文件夹树
+function handleClearAll() {
+  clearAllPendingFiles()
+  clearLocalTree()
+}
+
 function handleFolderTreeSelect(folder: any) {
   const deselected = handleFolderSelect(folder)
   if (deselected) {
@@ -330,6 +339,15 @@ function handleFolderTreeSelect(folder: any) {
   } else {
     applyMetadataToFiles(pendingFiles, selectedPendingIds.value)
   }
+}
+
+/**
+ * 右侧文件夹/标签面板刷新（新增/编辑/删除后触发）。
+ * 仅重新拉取文件夹与标签以更新列表，不自动应用到待上传文件。
+ */
+async function handleFolderPanelRefresh() {
+  if (!selectedLibraryId.value) return
+  await loadFoldersAndTags(selectedLibraryId.value)
 }
 
 function handleTagTreeSelect(tag: any) {

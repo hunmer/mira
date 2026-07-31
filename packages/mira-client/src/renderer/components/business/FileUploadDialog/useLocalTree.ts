@@ -43,17 +43,19 @@ export function useLocalTree(pendingFiles: Ref<PendingFile[]>) {
 
   /**
    * LocalFsNode[] -> FolderItem[]，id 用本地 path 保证唯一
-   * count 为该目录下（含子目录）文件数
+   * 只转换目录节点（文件不作为树节点展示），count 为该目录下（含子目录）文件数
    */
   function convertNodes(nodes: LocalFsNode[]): FolderItem[] {
-    return nodes.map((node) => ({
-      id: node.path,
-      label: node.name,
-      icon: 'folder',
-      count: node.isDir ? countFiles(node) : undefined,
-      children: node.isDir && node.children ? convertNodes(node.children.filter((c) => c.isDir)) : undefined,
-      originalData: node
-    }))
+    return nodes
+      .filter((node) => node.isDir)
+      .map((node) => ({
+        id: node.path,
+        label: node.name,
+        icon: 'folder',
+        count: countFiles(node),
+        children: node.children ? convertNodes(node.children) : undefined,
+        originalData: node
+      }))
   }
 
   /**

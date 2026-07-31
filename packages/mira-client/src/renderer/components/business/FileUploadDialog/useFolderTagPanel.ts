@@ -72,12 +72,16 @@ export function useFolderTagPanel() {
     }
   }
 
-  function getFolderName(id: string): string {
-    return folders.value.find((f) => String(f.id) === id)?.title || '未知文件夹'
+  function getFolderName(id: string | number | undefined): string {
+    if (id === undefined || id === null) return '未知文件夹'
+    const sid = String(id)
+    return folders.value.find((f) => String(f.id) === sid)?.title || '未知文件夹'
   }
 
-  function getTagName(id: string): string {
-    return tags.value.find((t) => String(t.id) === id)?.title || '未知标签'
+  function getTagName(id: string | number | undefined): string {
+    if (id === undefined || id === null) return '未知标签'
+    const sid = String(id)
+    return tags.value.find((t) => String(t.id) === sid)?.title || '未知标签'
   }
 
   function handleFolderSelect(folder: FolderItem) {

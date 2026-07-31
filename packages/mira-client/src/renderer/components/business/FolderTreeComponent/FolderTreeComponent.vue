@@ -710,11 +710,12 @@ function handleNodeClick(node: HeTreeNode) {
   searchQuery.value = ''
   showSearch.value = false
   emit('select', {
-    id: node.id,
     label: node.label,
     icon: node.icon || defaultIcon.value,
     count: node.count,
     ...node.originalData,
+    // id 放在 originalData 展开之后，避免被原始数据中的数字 id 覆盖（节点 id 始终是字符串）
+    id: node.id,
   })
 }
 
