@@ -10,6 +10,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogAction
 } from '@/components/ui/alert-dialog'
 import type { ServerConfig } from '@renderer/stores/serverList'
+import type { LocalFsNode } from '../../../shared/types'
 
 defineOptions({ name: 'HomeDialogs' })
 
@@ -26,6 +27,7 @@ defineProps<{
   editingServer: ServerConfig | null
   uploadInitialFolderId?: string
   uploadInitialTagIds?: string[]
+  uploadInitialTree?: { rootPath: string; tree: LocalFsNode[] }
 }>()
 
 const emit = defineEmits<{
@@ -91,6 +93,7 @@ const emit = defineEmits<{
     v-model:visible="showFileUploadDialog"
     :initial-folder-id="uploadInitialFolderId"
     :initial-tag-ids="uploadInitialTagIds"
+    :initial-local-tree="uploadInitialTree"
   />
 
   <!-- 插件管理对话框 -->

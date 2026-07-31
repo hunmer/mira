@@ -50,7 +50,7 @@ export function useUploadQueue() {
     libraryId: string,
     onFileRemoved: (id: string) => void
   ) {
-    return (callback?: (error?: Error, result?: any) => void) => {
+    return async (callback?: (error?: Error, result?: any) => void) => {
       const metadata: Record<string, any> = {}
       if (pendingFile.folderId) metadata.folderId = pendingFile.folderId
       if (pendingFile.tags && pendingFile.tags.length > 0) metadata.tags = pendingFile.tags
@@ -60,35 +60,46 @@ export function useUploadQueue() {
         uploadProgressMap.value.set(pendingFile.id, Math.min(current + Math.random() * 20, 90))
       }, 200)
 
-      mediaStore
-        .uploadFile(
-          pendingFile.file,
+      try {
+        // 惰性读取：导入的本地文件占位 File 无字节，上传前按路径读取真实字节
+        let uploadFile: File = pendingFile.file
+        if (pendingFile.localPath) {
+          const bytesRes = await window.electronAPI.fs.readFileBytes(pendingFile.localPath)
+          if (!bytesRes.success || !bytesRes.data) {
+            throw new Error(bytesRes.message || '读取本地文件失败')
+          }
+          uploadFile = new File([bytesRes.data], pendingFile.file.name, {
+            type: pendingFile.file.type || 'application/octet-stream',
+            lastModified: Date.now()
+          })
+        }
+
+        const result = await mediaStore.uploadFile(
+          uploadFile,
           libraryId,
           Object.keys(metadata).length > 0 ? metadata : undefined
         )
-        .then((result) => {
-          clearInterval(progressInterval)
-          uploadProgressMap.value.set(pendingFile.id, 100)
-          if (result.success) {
-            onFileRemoved(pendingFile.id)
-            uploadingFileIds.value.delete(pendingFile.id)
-            callback?.(undefined, result)
-          } else {
-            throw new Error(result.error || '上传失败')
-          }
-        })
-        .catch((error) => {
-          clearInterval(progressInterval)
+        clearInterval(progressInterval)
+        uploadProgressMap.value.set(pendingFile.id, 100)
+        if (result.success) {
+          onFileRemoved(pendingFile.id)
           uploadingFileIds.value.delete(pendingFile.id)
-          console.error('Upload error:', error)
-          callback?.(error)
-          toast.add({
-            severity: 'error',
-            summary: '上传失败',
-            detail: `文件 ${pendingFile.file.name}: ${error.message}`,
-            life: 5000
-          })
+          callback?.(undefined, result)
+        } else {
+          throw new Error(result.error || '上传失败')
+        }
+      } catch (error) {
+        clearInterval(progressInterval)
+        uploadingFileIds.value.delete(pendingFile.id)
+        console.error('Upload error:', error)
+        callback?.(error as Error)
+        toast.add({
+          severity: 'error',
+          summary: '上传失败',
+          detail: `文件 ${pendingFile.file.name}: ${(error as Error).message}`,
+          life: 5000
         })
+      }
     }
   }
 

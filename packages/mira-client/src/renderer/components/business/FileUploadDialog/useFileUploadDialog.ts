@@ -6,6 +6,7 @@ import type { Props, Emits } from './types'
 import { useUploadQueue } from './useUploadQueue'
 import { useFileManagement } from './useFileManagement'
 import { useFolderTagPanel } from './useFolderTagPanel'
+import { useLocalTree } from './useLocalTree'
 
 export function useFileUploadDialog(props: Props, emit: Emits) {
   const toast = useToast()
@@ -15,6 +16,7 @@ export function useFileUploadDialog(props: Props, emit: Emits) {
   const fileManagement = useFileManagement()
   const uploadQueue = useUploadQueue()
   const folderTagPanel = useFolderTagPanel()
+  const localTree = useLocalTree(fileManagement.pendingFiles)
 
   const selectedLibraryId = ref<string>('')
   const isInitialized = ref(false)
@@ -54,6 +56,19 @@ export function useFileUploadDialog(props: Props, emit: Emits) {
     // 每次打开都根据最新 props 重置目标选择，避免上次打开残留的文件夹/标签被错误地带入本次上传
     folderTagPanel.selectedTargetFolderId.value = props.initialFolderId
     folderTagPanel.selectedTargetTagIds.value = props.initialTagIds ? [...props.initialTagIds] : []
+
+    // 处理导入的本地文件夹树：清空旧的本地文件，重新入列
+    // 注意：保留之前手动添加的文件会与“每次打开一个导入批次”的语义冲突，故每次打开重置本地来源文件
+    if (props.initialLocalTree && props.initialLocalTree.tree.length > 0) {
+      localTree.setLocalTree(props.initialLocalTree.rootPath, props.initialLocalTree.tree)
+      // 移除上一批本地来源的待上传文件（保留手动添加的非本地文件）
+      fileManagement.pendingFiles.value = fileManagement.pendingFiles.value.filter((f) => !f.localPath)
+      fileManagement.addLocalFiles(props.initialLocalTree.tree)
+    } else {
+      // 未传入本地树：清空本地树状态并移除残留的本地来源文件
+      localTree.clearLocalTree()
+      fileManagement.pendingFiles.value = fileManagement.pendingFiles.value.filter((f) => !f.localPath)
+    }
     if (props.initialFiles && props.initialFiles.length > 0) {
       fileManagement.addFiles(
         props.initialFiles,
@@ -163,6 +178,7 @@ export function useFileUploadDialog(props: Props, emit: Emits) {
     fileManagement,
     uploadQueue,
     folderTagPanel,
+    localTree,
     handleOpenChange,
     handleLibrarySelectChange,
     triggerFileSelect,

@@ -24,6 +24,8 @@ export class FileSystemHandlers {
     ipcMain.handle('fs:mkdir', this.handleFsMkdir.bind(this))
     ipcMain.handle('fs:copyFile', this.handleFsCopyFile.bind(this))
     ipcMain.handle('fs:showItemInFolder', this.handleShowItemInFolder.bind(this))
+    ipcMain.handle('fs:readDirTree', this.handleFsReadDirTree.bind(this))
+    ipcMain.handle('fs:readFileBytes', this.handleFsReadFileBytes.bind(this))
   }
 
   /**
@@ -203,7 +205,106 @@ export class FileSystemHandlers {
   private handleShowItemInFolder(
     _event: IpcMainInvokeEvent,
     filePath: string
-  ): Promise<boolean> {
-    return shell.showItemInFolder(filePath)
+  ): void {
+    shell.showItemInFolder(filePath)
+  }
+
+  /**
+   * 处理递归读取目录树（保留层级关系）
+   * 用于导入本地文件夹时展示其结构
+   */
+  private async handleFsReadDirTree(
+    _event: IpcMainInvokeEvent,
+    dirPath: string
+  ): Promise<{ success: boolean; data?: LocalFsNode[]; message?: string }> {
+    try {
+      const data = await this.walkDir(dirPath)
+      return { success: true, data }
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to read directory tree'
+      }
+    }
+  }
+
+  /**
+   * 递归遍历目录，构建树形结构
+   * 跳过隐藏文件和常见忽略目录
+   */
+  private async walkDir(dirPath: string): Promise<LocalFsNode[]> {
+    const entries = await fs.promises.readdir(dirPath, { withFileTypes: true })
+    const nodes: LocalFsNode[] = []
+
+    for (const entry of entries) {
+      // 跳过隐藏文件/目录
+      if (entry.name.startsWith('.')) continue
+      // 跳过常见忽略目录
+      if (entry.isDirectory() && IGNORED_DIRS.has(entry.name)) continue
+
+      const fullPath = path.join(dirPath, entry.name)
+      if (entry.isDirectory()) {
+        const children = await this.walkDir(fullPath)
+        // 即使空目录也保留，以维持层级结构
+        nodes.push({
+          name: entry.name,
+          path: fullPath,
+          isDir: true,
+          children
+        })
+      } else if (entry.isFile()) {
+        let size: number | undefined
+        let ext: string | undefined
+        try {
+          const stat = await fs.promises.stat(fullPath)
+          size = stat.size
+          ext = path.extname(entry.name).toLowerCase()
+        } catch {
+          // 跳过无法访问的文件
+          continue
+        }
+        nodes.push({
+          name: entry.name,
+          path: fullPath,
+          isDir: false,
+          size,
+          ext
+        })
+      }
+    }
+    return nodes
+  }
+
+  /**
+   * 处理读取文件字节
+   * 用于按本地路径上传文件时获取字节内容
+   */
+  private async handleFsReadFileBytes(
+    _event: IpcMainInvokeEvent,
+    filePath: string
+  ): Promise<{ success: boolean; data?: ArrayBuffer; message?: string }> {
+    try {
+      const buffer = await fs.promises.readFile(filePath)
+      // 返回 ArrayBuffer 的副本，避免 buffer 被复用时数据被污染
+      return { success: true, data: buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) }
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to read file bytes'
+      }
+    }
   }
 }
+
+/** 本地文件系统节点（IPC 返回结构） */
+export interface LocalFsNode {
+  name: string
+  path: string
+  isDir: boolean
+  size?: number
+  ext?: string
+  children?: LocalFsNode[]
+}
+
+/** 导入时跳过的目录名 */
+const IGNORED_DIRS = new Set(['node_modules', 'thumbs', 'System Volume Information'])

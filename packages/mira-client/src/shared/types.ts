@@ -17,6 +17,16 @@ export interface BaseResponse {
   data?: any
 }
 
+// 本地文件系统节点（导入本地文件夹时递归读取的树形结构）
+export interface LocalFsNode {
+  name: string
+  path: string
+  isDir: boolean
+  size?: number
+  ext?: string
+  children?: LocalFsNode[]
+}
+
 // 用户信息
 export interface UserInfo {
   id: string
@@ -331,6 +341,9 @@ export interface ElectronAPI {
     selectFile: (title?: string, filters?: { name: string; extensions: string[] }[]) => Promise<{ success: boolean; path?: string; message?: string }>
     mkdir: (dirPath: string, recursive?: boolean) => Promise<{ success: boolean; message?: string }>
     copyFile: (src: string, dest: string) => Promise<{ success: boolean; message?: string }>
+    showItemInFolder: (filePath: string) => Promise<void>
+    readDirTree: (dirPath: string) => Promise<{ success: boolean; data?: LocalFsNode[]; message?: string }>
+    readFileBytes: (filePath: string) => Promise<{ success: boolean; data?: ArrayBuffer; message?: string }>
   }
 
   // 自动更新 API

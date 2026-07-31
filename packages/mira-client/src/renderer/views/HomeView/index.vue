@@ -56,6 +56,8 @@ const {
 
 // 额外的对话框状态
 const showFileUploadDialog = ref(false)
+// 导入本地文件夹：传入上传对话框的本地目录树（rootPath + tree）
+const uploadInitialTree = ref<{ rootPath: string; tree: any[] }>()
 const showPluginsDialog = ref(false)
 const showSettingsDialog = ref(false)
 const showAccessDeniedDialog = ref(false)
@@ -99,6 +101,12 @@ const uploadInitialTagIds = computed<string[]>(() => {
   const num = Number(tab.data?.id)
   return Number.isFinite(num) ? [String(num)] : []
 })
+
+// 从侧边栏导入本地文件夹：记录本地树并打开上传对话框
+function handleImportFolder(payload: { rootPath: string; tree: any[] }) {
+  uploadInitialTree.value = payload
+  showFileUploadDialog.value = true
+}
 
 // ============================================
 // 素材库管理
@@ -293,6 +301,7 @@ onUnmounted(() => {
             @refresh-folders="handleRefreshFolders"
             @refresh-tags="handleRefreshTags"
             @empty-trash="handleEmptyTrash"
+            @import-folder="handleImportFolder"
           />
         </ResizablePanel>
 
@@ -348,6 +357,7 @@ onUnmounted(() => {
       :editing-server="editingServer"
       :upload-initial-folder-id="uploadInitialFolderId"
       :upload-initial-tag-ids="uploadInitialTagIds"
+      :upload-initial-tree="uploadInitialTree"
       @create-library="handleCreateLibrary"
       @edit-server="handleEditServer"
       @add-server="handleAddServer"

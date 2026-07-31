@@ -18,7 +18,23 @@
 
         <!-- 主体内容区域 -->
         <div class="flex-1 flex gap-4 min-h-0 overflow-hidden">
-          <!-- 左侧：上传区域和文件网格 -->
+          <!-- 最左侧：本地文件夹树（导入的目录结构，仅浏览/筛选） -->
+          <div class="w-60 flex flex-col flex-shrink-0">
+            <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex-1">
+              <div class="p-2 h-full overflow-y-auto">
+                <FolderTreeComponent
+                  item-type="folder"
+                  :folders="localTreeData"
+                  :selected-key="selectedLocalDir"
+                  :show-base-categories="true"
+                  :base-categories-config="baseCategoriesConfig"
+                  @select="handleLocalTreeSelect"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- 中间：上传区域和文件网格 -->
           <div class="flex-1 flex flex-col min-w-0">
             <!-- 隐藏的文件输入 -->
             <input
@@ -43,7 +59,7 @@
                 <div class="flex items-center space-x-2">
                   <span class="text-sm font-medium text-gray-700 dark:text-gray-300">待上传文件</span>
                   <span v-if="pendingFiles.length > 0" class="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">
-                    {{ pendingFiles.length }} 个
+                    {{ filteredPendingFiles.length }} / {{ pendingFiles.length }} 个
                   </span>
                 </div>
                 <div class="flex items-center space-x-2">
@@ -79,7 +95,7 @@
                 >
                   <!-- 空状态 -->
                   <div
-                    v-if="pendingFiles.length === 0"
+                    v-if="filteredPendingFiles.length === 0"
                     class="h-full flex flex-col items-center justify-center text-gray-400 dark:text-gray-500 cursor-pointer"
                     @click="triggerFileSelect(fileInputRef)"
                   >
@@ -95,7 +111,7 @@
                     :style="{ gridTemplateColumns: `repeat(${columnsPerRow}, 1fr)` }"
                   >
                     <div
-                      v-for="file in pendingFiles"
+                      v-for="file in filteredPendingFiles"
                       :key="file.id"
                       :data-selectable-id="file.id"
                       class="file-card group relative bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden border-2 transition-all cursor-pointer select-none"
@@ -159,7 +175,7 @@
                         <p class="text-xs font-medium text-gray-700 dark:text-gray-300 truncate" :title="file.file.name">
                           {{ file.file.name }}
                         </p>
-                        <p class="text-xs text-gray-400">{{ formatFileSize(file.file.size) }}</p>
+                        <p class="text-xs text-gray-400">{{ formatFileSize(file.localSize ?? file.file.size) }}</p>
 
                         <!-- 元数据标识 -->
                         <div class="flex items-center gap-1 mt-1 flex-wrap">
@@ -268,6 +284,7 @@ const {
   fileManagement,
   uploadQueue,
   folderTagPanel,
+  localTree,
   handleOpenChange,
   handleLibrarySelectChange,
   triggerFileSelect,
@@ -281,6 +298,14 @@ const {
 const { pendingFiles, selectedPendingIds, isDragOver, columnsPerRow, removePendingFile, clearAllPendingFiles } = fileManagement
 const { uploadingFileIds, queueStats, getUploadProgress } = uploadQueue
 const { selectedTargetFolderId, folderTreeData, tagTreeData, getFolderName, getTagName, handleFolderSelect, handleTagSelect, applyMetadataToFiles } = folderTagPanel
+// 本地树（左栏）：仅浏览/筛选，不参与上传 metadata
+const {
+  baseCategoriesConfig,
+  localTreeData,
+  selectedLocalDir,
+  filteredPendingFiles,
+  handleLocalTreeSelect
+} = localTree
 
 // 模板引用
 const fileInputRef = ref<HTMLInputElement>()

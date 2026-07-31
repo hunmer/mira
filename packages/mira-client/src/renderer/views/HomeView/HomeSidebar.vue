@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { ref, onActivated, onDeactivated, nextTick } from 'vue'
 import FolderTreeComponent from '@renderer/components/business/FolderTreeComponent/FolderTreeComponent.vue'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem
+} from '@/components/ui/dropdown-menu'
+import { useToast } from '@/renderer/composables/useToast'
+import type { LocalFsNode } from '../../../shared/types'
 
 defineOptions({ name: 'HomeSidebar' })
 
@@ -20,7 +28,43 @@ const emit = defineEmits<{
   refreshFolders: []
   refreshTags: []
   emptyTrash: []
+  /** 导入本地文件夹：抛出根路径 + 递归目录树给父级 */
+  importFolder: [payload: { rootPath: string; tree: LocalFsNode[] }]
 }>()
+
+const toast = useToast()
+const isImporting = ref(false)
+
+/**
+ * 导入本地文件夹：
+ * 1. 选择目录 -> 2. 递归读取目录树 -> 3. 抛给父级打开上传对话框
+ */
+async function handleImportFolder() {
+  if (isImporting.value) return
+  isImporting.value = true
+  try {
+    const dirRes = await window.electronAPI.fs.selectDirectory('选择要导入的文件夹')
+    if (!dirRes.success || !dirRes.path) return // 用户取消
+
+    const treeRes = await window.electronAPI.fs.readDirTree(dirRes.path)
+    if (!treeRes.success || !treeRes.data) {
+      toast.add({ severity: 'error', summary: '导入失败', detail: treeRes.message || '读取文件夹结构失败', life: 3000 })
+      return
+    }
+
+    emit('importFolder', { rootPath: dirRes.path, tree: treeRes.data })
+  } catch (error) {
+    console.error('导入文件夹失败:', error)
+    toast.add({
+      severity: 'error',
+      summary: '导入失败',
+      detail: error instanceof Error ? error.message : '未知错误',
+      life: 3000
+    })
+  } finally {
+    isImporting.value = false
+  }
+}
 
 // keep-alive 滚动位置保持
 const sidebarScrollRef = ref<HTMLElement>()
@@ -86,6 +130,28 @@ defineExpose({ locateItem })
 </script>
 
 <template>
+  <!-- 顶部横向图标按钮列表 -->
+  <div class="shrink-0 flex items-center gap-1 px-2 py-1.5 border-b border-gray-200 dark:border-gray-700">
+    <DropdownMenu>
+      <DropdownMenuTrigger as-child>
+        <button
+          class="flex h-7 w-7 items-center justify-center text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="isImporting"
+          title="导入"
+        >
+          <span class="material-icons leading-none" style="font-size: 18px">
+            {{ isImporting ? 'hourglass_top' : 'drive_folder_upload' }}
+          </span>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" class="w-40">
+        <DropdownMenuItem @click="handleImportFolder">
+          <span class="material-icons text-base mr-2">folder_open</span>
+          <span>导入文件夹</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  </div>
   <!-- 文件夹树形导航 -->
   <div ref="sidebarScrollRef" class="flex-grow p-2 overflow-y-auto min-w-0 space-y-4">
     <FolderTreeComponent

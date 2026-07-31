@@ -136,7 +136,11 @@ const electronAPI: ElectronAPI = {
     copyFile: (src: string, dest: string) =>
       ipcRenderer.invoke('fs:copyFile', src, dest),
     showItemInFolder: (filePath: string) =>
-      ipcRenderer.invoke('fs:showItemInFolder', filePath)
+      ipcRenderer.invoke('fs:showItemInFolder', filePath),
+    readDirTree: (dirPath: string) =>
+      ipcRenderer.invoke('fs:readDirTree', dirPath),
+    readFileBytes: (filePath: string) =>
+      ipcRenderer.invoke('fs:readFileBytes', filePath)
   },
 
   // 自动更新 API
