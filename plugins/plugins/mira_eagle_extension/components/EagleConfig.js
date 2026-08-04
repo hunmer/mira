@@ -20,6 +20,7 @@
       MiraSelectValue: ui.SelectValue,
       MiraSeparator: ui.Separator,
       MiraBadge: ui.Badge,
+      MiraInput: ui.Input,
     },
     template: [
       '<div class="p-6 space-y-6 max-w-3xl mx-auto">',
@@ -68,6 +69,28 @@
 
       '  <MiraSeparator />',
 
+      '  <!-- 网络代理 -->',
+      '  <div class="space-y-3">',
+      '    <div class="text-sm font-medium">网络代理（下载远端图片）</div>',
+      '    <p class="text-xs text-muted-foreground">开启后，下载 pinterest/微博/小红书等图床图片时走代理。支持 http://、https://、socks5://</p>',
+      '    <div class="flex items-center gap-3">',
+      '      <label class="flex items-center gap-2 text-sm cursor-pointer">',
+      '        <input type="checkbox" v-model="proxyEnabled" />',
+      '        启用代理',
+      '      </label>',
+      '      <MiraInput v-model="proxyUrl" class="flex-1" placeholder="http://127.0.0.1:7890 或 socks5://127.0.0.1:1080" :disabled="!proxyEnabled" />',
+      '      <MiraButton @click="saveConfig" :disabled="saving">{{ saving ? "保存中..." : "保存代理" }}</MiraButton>',
+      '    </div>',
+      '    <div class="space-y-1" v-if="proxyEnabled">',
+      '      <div class="text-xs font-medium">仅对以下站点走代理（每行一个，留空 = 所有站点）</div>',
+      '      <p class="text-xs text-muted-foreground">支持 <code>*.example.com</code> 通配；<code>!example.com</code> 排除。匹配的是图片下载地址的域名。</p>',
+      '      <textarea v-model="proxySitesText" rows="5" class="w-full font-mono text-xs border rounded-md p-2 bg-transparent" placeholder="i.pinimg.com&#10;*.weibo.com&#10;!cdn.example.com"></textarea>',
+      '    </div>',
+      '    <p v-if="justSaved" class="text-sm text-green-600">✅ 设置已保存。</p>',
+      '  </div>',
+
+      '  <MiraSeparator />',
+
       '  <!-- 状态信息 -->',
       '  <div class="grid grid-cols-2 gap-4 text-sm">',
       '    <div class="flex justify-between border rounded-md p-3">',
@@ -92,6 +115,9 @@
         targetLibraryId: '',
         libraries: [],
         config: { running: false, port: 41595, portCapture: 41593, targetLibraryId: '' },
+        proxyEnabled: false,
+        proxyUrl: '',
+        proxySitesText: '',
         loaded: false,
         saving: false,
         justSaved: false,
@@ -157,6 +183,10 @@
             if (res && res.success && res.data) {
               self.config = res.data;
               self.targetLibraryId = res.data.targetLibraryId || '';
+              self.proxyEnabled = !!(res.data.proxy && res.data.proxy.enabled);
+              self.proxyUrl = (res.data.proxy && res.data.proxy.url) || '';
+              var sites = (res.data.proxy && Array.isArray(res.data.proxy.sites)) ? res.data.proxy.sites : [];
+              self.proxySitesText = sites.join('\n');
             }
             self.loaded = true;
           })
@@ -170,10 +200,18 @@
         var self = this;
         self.saving = true;
         self.justSaved = false;
+        // 把 textarea 按行切分为数组（去空行、去首尾空白）
+        var sites = (self.proxySitesText || '')
+          .split(/\r?\n/)
+          .map(function (s) { return s.trim(); })
+          .filter(function (s) { return s.length > 0; });
         fetch((Dashboard.getApiBase ? Dashboard.getApiBase() : '/api') + '/eagle/config', {
           method: 'POST',
           headers: self.authHeaders(),
-          body: JSON.stringify({ targetLibraryId: self.targetLibraryId }),
+          body: JSON.stringify({
+            targetLibraryId: self.targetLibraryId,
+            proxy: { enabled: self.proxyEnabled, url: self.proxyUrl, sites: sites },
+          }),
         })
           .then(function (r) { return r.json(); })
           .then(function (res) {

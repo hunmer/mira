@@ -25,6 +25,17 @@ interface PluginConfig {
   allowedPushTypes: string[];
   /** 配置页选择的接收库 ID；为空表示未配置，Eagle 数据将被拒绝并提示去配置页 */
   targetLibraryId: string;
+  /** 详细调试日志：打印每个收到的请求（method/url/body 摘要） */
+  verbose: boolean;
+  /** 网络代理（用于下载远端图片，绕过图床防盗链/区域限制） */
+  proxy: {
+    enabled: boolean;
+    url: string; // 形如 http://127.0.0.1:7890 或 socks5://127.0.0.1:1080
+    /** 仅对清单内站点走代理（匹配图片下载 URL 的 host）。
+     *  支持通配符 *.example.com；以 ! 开头表示排除。
+     *  空数组 = 对所有站点走代理。 */
+    sites: string[];
+  };
 }
 
 interface EagleItem {
@@ -45,6 +56,9 @@ class MiraEagleExtension {
   private tempDir: string;
   private server41595?: http.Server;
   private server41593?: http.Server;
+  /** 缓存的代理 agent（key 为 proxy.url，避免每次下载重建连接池） */
+  private proxyAgent: any = null;
+  private proxyAgentKey = '';
 
   /** dashboard 路由（被 ServerPluginManager.getAllPluginRoutes 消费） */
   private routes: any[] = [];
@@ -58,9 +72,11 @@ class MiraEagleExtension {
     this.pluginManager = pluginManager;
     this.bootstrapLibraryId = bootstrapDbService.getLibraryId();
     this.config = this.loadConfig();
+    // 兼容旧配置里的 "data/temp"（getPluginDataDir 已含 data/，避免拼成 data/data/temp）
+    const tempRel = this.config.tempDir.replace(/^data[\\/]/, '');
     this.tempDir = path.isAbsolute(this.config.tempDir)
       ? this.config.tempDir
-      : path.join(this.getPluginDataDir(), this.config.tempDir);
+      : path.join(this.getPluginDataDir(), tempRel);
     fs.mkdirSync(this.tempDir, { recursive: true });
 
     this.registerDashboardRoute();
@@ -117,15 +133,21 @@ class MiraEagleExtension {
       portCapture: 41593,
       apiToken: '3f0b58a7-a8a6-4652-8e12-5a6ad45bc77d',
       recentFoldersLimit: 10,
-      tempDir: 'data/temp',
+      tempDir: 'temp',
       allowedPushTypes: ['image', 'screen capture', 'save-url'],
       targetLibraryId: '',
+      verbose: true,
+      proxy: { enabled: false, url: '', sites: [] },
     };
     try {
       const file = this.getConfigPath();
       if (fs.existsSync(file)) {
         const saved = JSON.parse(fs.readFileSync(file, 'utf-8'));
-        return { ...defaultConfig, ...saved };
+        // 合并 proxy，保证旧配置（无 sites 字段）也有默认值
+        const merged = { ...defaultConfig, ...saved };
+        merged.proxy = { ...defaultConfig.proxy, ...(saved.proxy || {}) };
+        if (!Array.isArray(merged.proxy.sites)) merged.proxy.sites = [];
+        return merged;
       }
     } catch (e) {
       console.warn('[mira_eagle_extension] 读取配置失败，使用默认值:', e);
@@ -172,6 +194,36 @@ class MiraEagleExtension {
     res.end(data);
   }
 
+  /** 把任意 body 压缩成可打印的摘要（base64/大字符串截断，保留结构） */
+  private summarizeBody(body: any): any {
+    if (body == null) return body;
+    if (typeof body !== 'object') return body;
+    const out: any = {};
+    for (const [k, v] of Object.entries(body)) {
+      if (typeof v === 'string' && v.length > 120) {
+        out[k] = `<string len=${v.length}> ${v.slice(0, 80)}…`;
+      } else if (Array.isArray(v)) {
+        out[k] = `[Array len=${v.length}]` + (v.length && typeof v[0] === 'object' ? '' : '');
+      } else {
+        out[k] = v;
+      }
+    }
+    return out;
+  }
+
+  /** 详细调试日志：打印每个进入的 HTTP 请求 */
+  private logRequest(tag: string, req: http.IncomingMessage, extra?: any) {
+    if (!this.config.verbose) return;
+    const url = (req.url || '/');
+    const origin = req.headers.origin || req.headers.referer || '-';
+    const ct = req.headers['content-type'] || '-';
+    const len = req.headers['content-length'] || '-';
+    console.log(
+      `[mira_eagle_extension:${tag}] ← ${req.method} ${url} | origin=${origin} | ct=${ct} | len=${len}` +
+      (extra ? ' | ' + JSON.stringify(this.summarizeBody(extra)) : '')
+    );
+  }
+
   private readBody(req: http.IncomingMessage): Promise<any> {
     return new Promise(resolve => {
       let raw = '';
@@ -199,20 +251,143 @@ class MiraEagleExtension {
     });
   }
 
-  private downloadToFile(url: string, dest: string): Promise<string | null> {
-    return new Promise(resolve => {
-      const lib = url.startsWith('https') ? require('https') : require('http');
-      const req = lib.get(url, (resp: http.IncomingMessage) => {
-        if (resp.statusCode && resp.statusCode >= 300 && resp.statusCode < 400 && resp.headers.location) {
-          return resolve(this.downloadToFile(resp.headers.location, dest));
+  /**
+   * 判断某个 host 是否应走代理。
+   * 规则（对照 config.proxy.sites，支持通配符与排除）：
+   *  - 空清单 → 所有站点都走代理
+   *  - 形如 *.example.com → 匹配 example.com 及其任意子域
+   *  - 形如 example.com  → 精确匹配或 *.example.com 子域
+   *  - 形如 !example.com  → 排除（排除优先于包含）
+   */
+  private shouldProxy(host: string, sites: string[]): boolean {
+    if (!Array.isArray(sites) || sites.length === 0) return true; // 空清单 = 全部走代理
+    const h = host.toLowerCase();
+    const excludes = sites.filter(s => s.trim().startsWith('!')).map(s => s.trim().slice(1).toLowerCase());
+    const includes = sites.filter(s => !s.trim().startsWith('!')).map(s => s.trim().toLowerCase());
+
+    const matchOne = (rule: string): boolean => {
+      if (!rule) return false;
+      if (rule.startsWith('*.')) {
+        const base = rule.slice(2); // *.example.com -> example.com
+        return h === base || h.endsWith('.' + base);
+      }
+      // 精确或子域：example.com 匹配 example.com / x.example.com
+      return h === rule || h.endsWith('.' + rule);
+    };
+    // 排除优先
+    if (excludes.some(matchOne)) return false;
+    return includes.some(matchOne);
+  }
+
+  /**
+   * 根据 config.proxy 构造（并缓存）HTTP(S)/SOCKS 代理 agent。
+   * 返回 null 表示不走代理。
+   * targetUrl 用于按 config.proxy.sites 判断是否对该站点启用代理。
+   * 代理模块来自 pluginsDir/node_modules（http-proxy-agent / https-proxy-agent / socks-proxy-agent）。
+   */
+  private getHttpAgent(targetIsHttps: boolean, targetUrl: string): any {
+    const { enabled, url, sites } = this.config.proxy || {};
+    if (!enabled || !url) {
+      this.proxyAgent = null;
+      this.proxyAgentKey = '';
+      return null;
+    }
+    // 仅对清单内站点走代理
+    let host = '';
+    try { host = new URL(targetUrl).host; } catch {}
+    if (host && !this.shouldProxy(host, sites || [])) {
+      if (this.config.verbose) console.log(`[mira_eagle_extension] ${host} 不在代理清单，直连`);
+      return null;
+    }
+    // 缓存：同一 url 复用 agent（连接池）
+    const key = url + '|' + (targetIsHttps ? 'https' : 'http');
+    if (this.proxyAgent && this.proxyAgentKey === key) return this.proxyAgent;
+    try {
+      // 代理模块位于 ServerPluginManager 的 pluginsDir/node_modules（本插件经软链接加载，
+      // 其物理目录的 node_modules 里没有这些包）。按多级 fallback 解析模块路径。
+      const pluginsDir = this.pluginManager.pluginsDir;
+      const resolve = (name: string): any => {
+        // 1) 常规解析
+        try { return require(name); } catch {}
+        // 2) 直接 require 绝对路径：pluginsDir/node_modules/<name>
+        if (pluginsDir) {
+          const abs = path.join(pluginsDir, 'node_modules', name);
+          try { return require(abs); } catch {}
         }
-        if (resp.statusCode !== 200) return resolve(null);
+        // 3) 从本插件目录向上逐层查找 node_modules
+        let dir: string | undefined = __dirname;
+        for (let i = 0; i < 8 && dir; i++) {
+          const abs = path.join(dir, 'node_modules', name);
+          try { return require(abs); } catch {}
+          const parent = path.dirname(dir);
+          if (parent === dir) break;
+          dir = parent;
+        }
+        throw new Error(`cannot resolve module ${name}`);
+      };
+
+      let agent: any = null;
+      if (url.startsWith('socks')) {
+        // socks5:// / socks4:// 同时覆盖 http 与 https 目标
+        const { SocksProxyAgent } = resolve('socks-proxy-agent');
+        agent = new SocksProxyAgent(url);
+      } else if (url.startsWith('http')) {
+        const HttpAgent = resolve('http-proxy-agent');
+        const HttpsAgent = resolve('https-proxy-agent');
+        agent = targetIsHttps ? new HttpsAgent(url) : new HttpAgent(url);
+      } else {
+        console.warn(`[mira_eagle_extension] 不支持的代理协议: ${url}`);
+        return null;
+      }
+      this.proxyAgent = agent;
+      this.proxyAgentKey = key;
+      if (this.config.verbose) console.log(`[mira_eagle_extension] 使用代理 ${url}（目标 ${targetIsHttps ? 'https' : 'http'}）`);
+      return agent;
+    } catch (e) {
+      console.error('[mira_eagle_extension] 创建代理 agent 失败:', e);
+      console.error('[mira_eagle_extension] 提示：请确认插件 node_modules 下已安装 http-proxy-agent / https-proxy-agent / socks-proxy-agent');
+      return null;
+    }
+  }
+
+  /**
+   * 下载远端图片到临时文件。
+   * 关键：必须带浏览器风格的 User-Agent / Referer / Accept，
+   * 否则 pinterest、微博、小红书等图床会直接返回 403/空白。
+   * 若 config.proxy.enabled，则通过代理下载。
+   */
+  private downloadToFile(url: string, dest: string, referer?: string): Promise<string | null> {
+    return new Promise(resolve => {
+      const targetIsHttps = url.startsWith('https');
+      const lib = targetIsHttps ? require('https') : require('http');
+      const headers: Record<string, string> = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+      };
+      if (referer) headers['Referer'] = referer;
+      const agent = this.getHttpAgent(targetIsHttps, url);
+      const reqOpts: any = { headers };
+      if (agent) reqOpts.agent = agent;
+      const req = lib.get(url, reqOpts, (resp: http.IncomingMessage) => {
+        if (resp.statusCode && resp.statusCode >= 300 && resp.statusCode < 400 && resp.headers.location) {
+          // 跟随重定向，保持 Referer
+          return resolve(this.downloadToFile(resp.headers.location, dest, referer || url));
+        }
+        if (resp.statusCode !== 200) {
+          if (this.config.verbose) console.warn(`[mira_eagle_extension] 下载返回 HTTP ${resp.statusCode}: ${url}`);
+          resp.resume();
+          return resolve(null);
+        }
         const stream = fs.createWriteStream(dest);
         resp.pipe(stream);
         stream.on('finish', () => stream.close(() => resolve(dest)));
         stream.on('error', () => { try { fs.unlinkSync(dest); } catch {} resolve(null); });
       });
-      req.on('error', () => resolve(null));
+      req.on('error', (e: Error) => {
+        if (this.config.verbose) console.warn(`[mira_eagle_extension] 下载网络错误: ${url}`, e.message);
+        resolve(null);
+      });
       req.setTimeout(30000, () => { req.destroy(); resolve(null); });
     });
   }
@@ -241,13 +416,66 @@ class MiraEagleExtension {
     return 'png';
   }
 
+  /** 把标题转成安全的文件名（去除非法字符 / 控制长度 / 去除扩展名部分）。失败返回 null。 */
+  private safeFilename(title?: string): string | null {
+    if (!title) return null;
+    let base = String(title).trim();
+    if (!base) return null;
+    // 去掉文件系统非法字符与路径分隔符
+    base = base.replace(/[<>:"/\\|?*\x00-\x1F]/g, '');
+    // 若标题自带扩展名，去掉（下方会统一补）
+    base = base.replace(/\.[a-zA-Z0-9]{1,5}$/, '');
+    base = base.replace(/^\.+|\.+$/g, '').trim();
+    if (!base) return null;
+    // 控制长度，避免超长文件名
+    if (base.length > 80) base = base.slice(0, 80).trim();
+    return base;
+  }
+
+  /**
+   * 把临时文件改名为 "标题.扩展名"，使落盘文件名可读。
+   * 返回新路径；标题为空或改名失败时返回原路径。
+   */
+  private renameTempToTitle(tempPath: string, title?: string): string | null {
+    const safe = this.safeFilename(title);
+    if (!safe) return tempPath;
+    try {
+      const ext = path.extname(tempPath); // 含点，如 .jpg
+      const dir = path.dirname(tempPath);
+      let dest = path.join(dir, safe + (ext || '.jpg'));
+      // 避免临时目录内重名
+      let i = 1;
+      while (fs.existsSync(dest) && dest !== tempPath) {
+        dest = path.join(dir, `${safe}_${i}${ext || '.jpg'}`);
+        i++;
+      }
+      if (dest === tempPath) return tempPath;
+      fs.renameSync(tempPath, dest);
+      if (this.config.verbose) console.log(`[mira_eagle_extension] 重命名临时文件: ${path.basename(tempPath)} -> ${path.basename(dest)}`);
+      return dest;
+    } catch (e) {
+      console.warn('[mira_eagle_extension] 重命名临时文件失败，沿用原名:', e);
+      return tempPath;
+    }
+  }
+
   // ============================== 落库（用目标库） ==============================
 
   private broadcastFileCreated(targetLibraryId: string, file: Record<string, any>) {
     try {
       const wss = this.backend.getWebSocketServer?.();
-      wss?.broadcastLibraryEvent?.(targetLibraryId, 'file::created', file);
-      wss?.broadcastPluginEvent?.('file::created', { result: file, libraryId: targetLibraryId });
+      // 关键：客户端的标签页刷新（shouldUpdateForEvent）按 eventData.libraryId 匹配当前库，
+      // 必须把 libraryId 合并进 data，否则事件被静默丢弃、列表不刷新。
+      // 对齐 LibraryWatcher.ts:282 的有效广播格式 { ...result, libraryId }。
+      wss?.broadcastLibraryEvent?.(targetLibraryId, 'file::created', {
+        ...file,
+        libraryId: targetLibraryId,
+      });
+      wss?.broadcastPluginEvent?.('file::created', {
+        message: { type: 'file', action: 'create' },
+        result: file,
+        libraryId: targetLibraryId,
+      });
     } catch (e) {
       console.warn('[mira_eagle_extension] 广播 file::created 失败:', e);
     }
@@ -288,44 +516,84 @@ class MiraEagleExtension {
     base64?: string;
     src?: string;
     url?: string;
+    referer?: string;
     title?: string;
     folderId?: number;
     tags?: string[];
     desc?: string;
+    /** 下载/base64 都失败时，用此 URL 建一个 URL 引用文件（仍可在库中显示） */
+    fallbackRefUrl?: string;
   }): Promise<Record<string, any> | null> {
     let tempPath: string | null = null;
+    const custom_fields: Record<string, any> = {};
+    if (opts.url) custom_fields.url = opts.url;
+    if (opts.desc) custom_fields.desc = opts.desc;
+
+    // 尝试 1：base64 / 下载到本地，再 createFileFromPath（真正落盘）
     try {
       if (opts.base64) {
         tempPath = this.base64ToTempFile(opts.base64);
-        if (!tempPath) return null;
+        if (this.config.verbose) console.log(`[mira_eagle_extension] base64 解码 -> ${tempPath}`);
+        if (!tempPath) throw new Error('base64 解码失败');
       } else if (opts.src) {
         const ext = this.guessExtFromUrl(opts.src);
         tempPath = path.join(this.tempDir, `${crypto.randomBytes(8).toString('hex')}.${ext}`);
-        const downloaded = await this.downloadToFile(opts.src, tempPath);
-        if (!downloaded) return null;
+        if (this.config.verbose) console.log(`[mira_eagle_extension] 下载 ${opts.src} -> ${tempPath}`);
+        const downloaded = await this.downloadToFile(opts.src, tempPath, opts.referer);
+        if (!downloaded) throw new Error(`下载失败: ${opts.src}`);
+        if (this.config.verbose) console.log(`[mira_eagle_extension] 下载完成 ${fs.statSync(tempPath).size} bytes`);
       } else {
-        return null;
+        throw new Error('无 base64 也无 src');
       }
 
-      const custom_fields: Record<string, any> = {};
-      if (opts.url) custom_fields.url = opts.url;
-      if (opts.desc) custom_fields.desc = opts.desc;
+      // 用页面标题重命名临时文件，使落盘文件名 / DB name / 前端显示三者一致。
+      // 关键：name 字段同时是磁盘文件名（getItemFilePath / SMB 插件按 folder+name 拼路径），
+      // 不能事后用 updateFile 改成标题（否则磁盘文件名不变，拖拽 data-file 路径失效）。
+      // 所以在 createFileFromPath 前就把临时文件改名为 "标题.扩展名"。
+      const titledTemp = this.renameTempToTitle(tempPath, opts.title);
+      if (titledTemp && titledTemp !== tempPath) tempPath = titledTemp;
 
       const file = await dbService.createFileFromPath(tempPath, {
         folder_id: opts.folderId ?? null,
         custom_fields,
         tags: opts.tags && opts.tags.length ? JSON.stringify(opts.tags) : null,
       }, { importType: 'move' });
+      if (this.config.verbose) console.log(`[mira_eagle_extension] createFileFromPath 结果:`, file?.id, file?.duplicate ? '(duplicate)' : '');
 
-      if (opts.title && file?.id) {
-        try { await dbService.updateFile?.(file.id, { name: opts.title }); } catch {}
-      }
       return file;
     } catch (e) {
-      console.error('[mira_eagle_extension] importFileFromSource 失败:', e);
+      console.warn('[mira_eagle_extension] importFileFromSource 落盘失败:', e instanceof Error ? e.message : e);
       if (tempPath) { try { fs.unlinkSync(tempPath); } catch {} }
-      return null;
     }
+
+    // 尝试 2：下载/解码都失败时，回退为 URL 引用文件（reference/path 存远端 URL）
+    if (opts.fallbackRefUrl) {
+      try {
+        if (this.config.verbose) console.log(`[mira_eagle_extension] 回退为 URL 引用文件: ${opts.fallbackRefUrl}`);
+        // name 用 URL 文件名（URL 引用文件无磁盘路径，name 仅作显示/标识）
+        let name = '';
+        try { name = path.basename(new URL(opts.fallbackRefUrl).pathname); } catch {}
+        if (!name) name = `${Date.now()}.jpg`;
+        // 显示标题写入 custom_fields.title（与主路径保持一致）
+        const fbCf = { ...(custom_fields || {}), title: opts.title || name };
+        const file = await dbService.createFile({
+          name,
+          created_at: Date.now(),
+          imported_at: Date.now(),
+          size: 0,
+          hash: '',
+          reference: opts.fallbackRefUrl,
+          path: opts.fallbackRefUrl,
+          folder_id: opts.folderId ?? null,
+          custom_fields: fbCf,
+          tags: opts.tags && opts.tags.length ? JSON.stringify(opts.tags) : null,
+        });
+        return { ...file, _urlFallback: true };
+      } catch (e2) {
+        console.error('[mira_eagle_extension] URL 回退也失败:', e2);
+      }
+    }
+    return null;
   }
 
   // ============================== Eagle 协议路由（端口 41595 / 41593） ==============================
@@ -333,9 +601,13 @@ class MiraEagleExtension {
   private handleAddFromURLs = async (req: http.IncomingMessage, res: http.ServerResponse) => {
     const dbService = this.getTargetDbService();
     const lid = this.config.targetLibraryId;
-    if (!dbService) return this.sendJson(res, { status: 'failed', code: 'no target library' });
+    if (!dbService) {
+      this.logRequest('41595:addFromURLs', req, { rejected: 'no target library', targetLibraryId: lid });
+      return this.sendJson(res, { status: 'failed', code: 'no target library' });
+    }
     try {
       const body = await this.readBody(req);
+      this.logRequest('41595:addFromURLs', req, body);
       const { folderId, items } = body || {};
       if (!Array.isArray(items)) return this.sendJson(res, { status: 'failed', code: 'invalid params' });
       let ok = 0;
@@ -353,9 +625,13 @@ class MiraEagleExtension {
   private handleFolderCreate = async (req: http.IncomingMessage, res: http.ServerResponse) => {
     const dbService = this.getTargetDbService();
     const lid = this.config.targetLibraryId;
-    if (!dbService) return this.sendJson(res, { status: 'failed', code: 'no target library' });
+    if (!dbService) {
+      this.logRequest('41595:folderCreate', req, { rejected: 'no target library', targetLibraryId: lid });
+      return this.sendJson(res, { status: 'failed', code: 'no target library' });
+    }
     try {
       const body = await this.readBody(req);
+      this.logRequest('41595:folderCreate', req, body);
       const { name, parentId, color, icon } = body || {};
       if (!name) return this.sendJson(res, { status: 'failed', code: 'missing name' });
       const id = await dbService.createFolder({
@@ -363,7 +639,8 @@ class MiraEagleExtension {
       });
       try {
         const wss = this.backend.getWebSocketServer?.();
-        wss?.broadcastLibraryEvent?.(lid, 'folder::created', { id, title: name });
+        // 客户端 folder::created 处理按 data.libraryId 刷新文件夹列表，必须带上
+        wss?.broadcastLibraryEvent?.(lid, 'folder::created', { id, title: name, libraryId: lid });
       } catch {}
       this.sendJson(res, { status: 'success', data: { id } });
     } catch (e) {
@@ -391,27 +668,60 @@ class MiraEagleExtension {
   private handleCapturePush = async (req: http.IncomingMessage, res: http.ServerResponse) => {
     try {
       const body = await this.readBody(req);
+      // 详细打印收到的推送内容（base64 等大字段会被截断）
+      this.logRequest('41593:push', req, body);
+
       // 先响应（原版行为：始终返回 Eagle 信息）
       this.sendJson(res, this.getInformation());
-      if (!body || !body.type || !this.config.allowedPushTypes.includes(body.type)) return;
-      if (!body || !body.type || !this.config.allowedPushTypes.includes(body.type)) return;
+
+      if (!body) {
+        if (this.config.verbose) console.log('[mira_eagle_extension:41593] body 为空，忽略');
+        return;
+      }
+      if (!body.type) {
+        if (this.config.verbose) console.log('[mira_eagle_extension:41593] body 缺少 type 字段，忽略。body keys =', Object.keys(body));
+        return;
+      }
+      if (!this.config.allowedPushTypes.includes(body.type)) {
+        if (this.config.verbose) console.log(`[mira_eagle_extension:41593] type="${body.type}" 不在白名单 ${JSON.stringify(this.config.allowedPushTypes)}，忽略`);
+        return;
+      }
+      if (this.config.verbose) console.log(`[mira_eagle_extension:41593] 接受推送 type="${body.type}"`);
+
       const dbService = this.getTargetDbService();
       const lid = this.config.targetLibraryId;
-      if (!dbService) { console.warn('[mira_eagle_extension] 收到扩展推送但未配置目标库'); return; }
+      if (!dbService) {
+        console.warn(`[mira_eagle_extension:41593] 收到推送但无法解析目标库 (targetLibraryId="${lid}")，已丢弃`);
+        return;
+      }
 
       const { metaTags, metaDescription, metaPicture, src, url, title, folderID, base64 } = body;
+      const hasBase64 = !!(base64 && String(base64).length);
+      const hasSrc = !!(src || metaPicture);
+      if (this.config.verbose) {
+        console.log(`[mira_eagle_extension:41593] 来源: base64=${hasBase64}${hasBase64 ? '(len=' + String(base64).length + ')' : ''} src=${src || '-'} metaPicture=${metaPicture || '-'} url=${url || '-'} folderID=${folderID ?? '-'}`);
+      }
       const file = await this.importFileFromSource(dbService, {
         base64,
-        src: base64 ? undefined : (src || metaPicture),
+        src: hasBase64 ? undefined : (src || metaPicture),
         url,
+        // 用页面 url 作 Referer，pinterest/微博/小红书等图床防盗链需要
+        referer: url,
         title: title || (url ? undefined : Date.now().toString()),
         folderId: folderID,
         tags: metaTags,
         desc: metaDescription,
+        // 下载失败时回退为 URL 引用文件（仍可在库中显示）
+        fallbackRefUrl: src || metaPicture || url,
       });
-      if (file) this.broadcastFileCreated(lid, file);
+      if (file) {
+        console.log(`[mira_eagle_extension:41593] ✅ 已导入 file id=${file.id} 到库 ${lid}${file._urlFallback ? '（URL 引用，下载失败回退）' : ''}`);
+        this.broadcastFileCreated(lid, file);
+      } else {
+        console.warn(`[mira_eagle_extension:41593] ❌ 导入失败（无可用图片来源）`);
+      }
     } catch (e) {
-      console.error('[mira_eagle_extension] capturePush error:', e);
+      console.error('[mira_eagle_extension:41593] capturePush error:', e);
     }
   };
 
@@ -433,6 +743,11 @@ class MiraEagleExtension {
             port: this.config.port,
             portCapture: this.config.portCapture,
             running: !!this.server41595?.listening,
+            proxy: {
+              enabled: !!this.config.proxy?.enabled,
+              url: this.config.proxy?.url || '',
+              sites: Array.isArray(this.config.proxy?.sites) ? this.config.proxy.sites : [],
+            },
           },
         });
       } catch (e) {
@@ -442,10 +757,31 @@ class MiraEagleExtension {
 
     app.post('/api/eagle/config', async (req: any, res: any) => {
       try {
-        const { targetLibraryId } = req.body || {};
-        this.config.targetLibraryId = typeof targetLibraryId === 'string' ? targetLibraryId : '';
+        const body = req.body || {};
+        if (typeof body.targetLibraryId === 'string') {
+          this.config.targetLibraryId = body.targetLibraryId;
+        }
+        if (body.proxy && typeof body.proxy === 'object') {
+          const sites = Array.isArray(body.proxy.sites)
+            ? body.proxy.sites.map((s: any) => String(s).trim()).filter((s: string) => s)
+            : [];
+          this.config.proxy = {
+            enabled: !!body.proxy.enabled,
+            url: typeof body.proxy.url === 'string' ? body.proxy.url.trim() : '',
+            sites,
+          };
+          // 代理变更后让缓存的 agent 失效，下次下载重建
+          this.proxyAgent = null;
+          this.proxyAgentKey = '';
+        }
         const saved = this.saveConfig();
-        res.json({ success: saved, data: { targetLibraryId: this.config.targetLibraryId } });
+        res.json({
+          success: saved,
+          data: {
+            targetLibraryId: this.config.targetLibraryId,
+            proxy: this.config.proxy,
+          },
+        });
       } catch (e) {
         res.status(500).json({ success: false, error: String(e) });
       }
@@ -470,12 +806,14 @@ class MiraEagleExtension {
   private start() {
     // --- 端口 41595：Eagle API 协议 ---
     this.server41595 = http.createServer(async (req, res) => {
+      this.logRequest('41595', req);
       if (req.method === 'OPTIONS') return this.sendJson(res, {});
       const url = (req.url || '/').split('?')[0];
       if (req.method === 'GET' && url === '/') return this.sendJson(res, this.getInformation());
       if (req.method === 'POST' && url === '/api/item/addFromURLs') return this.handleAddFromURLs(req, res);
       if (req.method === 'POST' && url === '/api/folder/create') return this.handleFolderCreate(req, res);
       if (req.method === 'GET' && url === '/api/folder/listRecent') return this.handleListRecentFolders(req, res);
+      if (this.config.verbose) console.log(`[mira_eagle_extension:41595] 未匹配路由 ${req.method} ${url}`);
       this.sendJson(res, { status: 'failed', code: 'not found' });
     });
     this.server41595.on('error', (e: NodeJS.ErrnoException) => {
@@ -486,6 +824,7 @@ class MiraEagleExtension {
 
     // --- 端口 41593：截图 / 图片 / save-url 推送 ---
     this.server41593 = http.createServer(async (req, res) => {
+      this.logRequest('41593', req);
       if (req.method === 'OPTIONS') return this.sendJson(res, {});
       const url = (req.url || '/').split('?')[0];
       if (req.method === 'GET' && url === '/') return this.sendJson(res, this.getInformation());
@@ -494,6 +833,7 @@ class MiraEagleExtension {
         return process.exit(0);
       }
       if (req.method === 'POST' && url === '/') return this.handleCapturePush(req, res);
+      if (this.config.verbose) console.log(`[mira_eagle_extension:41593] 未匹配路由 ${req.method} ${url}`);
       this.sendJson(res, this.getInformation());
     });
     this.server41593.on('error', (e: NodeJS.ErrnoException) => {

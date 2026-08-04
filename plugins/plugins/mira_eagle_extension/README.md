@@ -82,6 +82,44 @@
 | `tempDir` | 下载 / base64 解码的临时目录（相对插件 data 目录） |
 | `allowedPushTypes` | 允许处理的推送 `type` 白名单 |
 | `targetLibraryId` | **接收 Eagle 数据的库 ID**（配置页选择，留空则拒绝数据） |
+| `proxy.enabled` | 是否启用网络代理（下载远端图片时走代理） |
+| `proxy.url` | 代理地址，支持 `http://`、`https://`、`socks5://`（如 `http://127.0.0.1:7890`） |
+| `proxy.sites` | **仅对清单内站点走代理**的域名数组；留空 = 所有站点都走。支持通配与排除（见下） |
+
+## 🌐 网络代理
+
+许多图床（pinterest、微博、小红书、instagram 等）有区域限制或防盗链，直连可能下载失败。在配置页 `http://127.0.0.1:5173/#/tools/eagle-extension` 勾选"启用代理"并填入代理地址即可。
+
+- 支持 HTTP/HTTPS 代理：`http://127.0.0.1:7890`
+- 支持 SOCKS5 代理：`socks5://127.0.0.1:1080`
+- 下载时仍会带浏览器 `User-Agent` + `Referer`（防盗链）
+- 即使代理下仍下载失败，也会回退为 URL 引用文件入库（不丢条目）
+
+### 按站点启用代理（清单）
+
+不想所有图片都绕代理？在配置页「仅对以下站点走代理」文本框里逐行填写域名，**只有图片下载地址的域名命中清单时才走代理**，其余直连。
+
+每行一条规则，匹配的是**图片下载 URL 的 host**（不是页面 URL）：
+
+| 规则写法 | 含义 | 示例 |
+|---|---|---|
+| `example.com` | 精确匹配，或其任意子域 | `pinimg.com` 命中 `i.pinimg.com` |
+| `*.example.com` | 通配该域及其子域 | `*.weibo.com` 命中 `sinacn.cn`? 否，命中 `wx*.weibo.com` |
+| `!example.com` | **排除**（排除优先于包含） | `!cdn.local.com` 强制直连 |
+| （留空） | 所有站点都走代理 | — |
+
+示例清单：
+```
+i.pinimg.com
+*.weibo.com
+*.xiaohongshu.com
+!localhost
+```
+含义：pinterest、微博、小红书的图床走代理；本机直连；其余站点也走代理（因为只要清单非空且未命中包含项，会走"不在清单=直连"逻辑——若想让其余直连，可加 `!*` 排除全部后再逐一包含）。
+
+> 日志会显示 `xxx 不在代理清单，直连` 或 `使用代理 ...（目标 https）`，便于确认命中情况。
+
+> 代理模块（`http-proxy-agent` / `https-proxy-agent` / `socks-proxy-agent`）来自 `ServerPluginManager` 的 `pluginsDir/node_modules`，无需额外安装。
 
 
 ## 🚀 安装与启用
@@ -102,9 +140,10 @@ Eagle 扩展会探测本地 `41595` / `41593` 端口。只要本插件在运行�
 
 ## 🛠️ 技术实现
 
-- **零第三方运行时依赖**：用 Node 内置 `http` 模块创建服务器（原版用 express/request），`https.get` 下载远端图
+- **零第三方运行时依赖（除可选代理）**：用 Node 内置 `http` 模块创建服务器（原版用 express/request），`https.get` 下载远端图；代理模块复用 `pluginsDir/node_modules`
 - **完整 Node 环境**：服务端插件无沙箱，可直接 `require('http'/'fs'/'path'/'crypto')`
 - **dbService 落库**：URL 类用 `createFile` + `reference`/`path` 存为 URL 引用文件；二进制类用 `createFileFromPath` 落盘去重
+- **文件名 = 页面标题**：下载后把临时文件改名为"标题.扩展名"再落盘，使磁盘文件名 / DB `name` / 前端显示三者一致（标题含非法字符会被自动清理，过长截断）。**不会事后用 `updateFile` 改 `name`**——`name` 同时是磁盘文件名（`getItemFilePath` 与 SMB 插件按 `folder+name` 拼路径），事后改会破坏拖拽 `data-file`
 - **实时刷新**：导入后广播 `file::created`，前端监听该事件刷新
 
 ## ⚠️ 与原版 server.js 的差异
@@ -119,5 +158,6 @@ Eagle 扩展会探测本地 `41595` / `41593` 端口。只要本插件在运行�
 ## 🐛 故障排除
 
 - **端口被占用**：日志会警告 `EADDRINUSE`——确认没有同时运行 Eagle，或修改 `config.json` 端口（注意 Eagle 扩展固定探测 41595/41593）
+- **下载失败（`下载返回 HTTP 403` / `下载网络错误`）**：图床防盗链或区域限制。开启配置页的**网络代理**；日志会显示 `使用代理 xxx`
 - **扩展保存后库里看不到**：确认保存的库就是当前激活库（`dbService.getLibraryId()`）；检查服务端控制台是否有 `addUrlItem` / `importFileFromSource` 报错
 - **跨域被拒**：本插件所有响应已加 CORS 头，若仍失败检查是否有反向代理覆盖了响应头

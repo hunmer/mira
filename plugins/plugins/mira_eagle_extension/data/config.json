@@ -3,11 +3,17 @@
   "portCapture": 41593,
   "apiToken": "3f0b58a7-a8a6-4652-8e12-5a6ad45bc77d",
   "recentFoldersLimit": 10,
-  "tempDir": "data/temp",
+  "tempDir": "temp",
   "allowedPushTypes": [
     "image",
     "screen capture",
     "save-url"
   ],
-  "targetLibraryId": "1785462412295"
+  "targetLibraryId": "1785462412295",
+  "verbose": true,
+  "proxy": {
+    "enabled": true,
+    "url": "http://127.0.0.1:7890",
+    "sites": []
+  }
 }
