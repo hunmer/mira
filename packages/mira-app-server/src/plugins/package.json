@@ -138,6 +138,7 @@
     "minipass-sized": "^1.0.3",
     "minizlib": "^2.1.2",
     "mira_duplicate_scanner": "file:../../../../plugins/plugins/mira_duplicate_scanner",
+    "mira_eagle_extension": "file:../../../../plugins/plugins/mira_eagle_extension",
     "mira_thumb_imagemagick": "file:../../../../plugins/plugins/mira_thumb_imagemagick",
     "mira-app-core": "^1.0.24",
     "mira-app-server": "^1.0.25",

@@ -19,5 +19,10 @@
     "name": "mira_duplicate_scanner",
     "enabled": true,
     "path": "node_modules/mira_duplicate_scanner"
+  },
+  {
+    "name": "mira_eagle_extension",
+    "enabled": true,
+    "path": "node_modules/mira_eagle_extension"
   }
 ]

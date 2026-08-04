@@ -1,8 +1,20 @@
 # Mira Eagle 浏览器扩展支持
 
-在 Mira 服务端复刻 **Eagle 本地 HTTP 协议**，让 Eagle 浏览器扩展无需任何改动，即可把网页图片 / 截图 / 链接保存到 **Mira 当前素材库**。
+在 Mira 服务端复刻 **Eagle 本地 HTTP 协议**，让 Eagle 浏览器扩展无需任何改动，即可把网页图片 / 截图 / 链接保存到 **Mira 素材库**。
 
-> 移植自 `scripts/eagle浏览器扩展支持/server.js`。原版把请求转发给本机 Eagle（`127.0.0.1:41597`），本插件直接操作当前库的 `dbService`，把图片真正落库到 Mira。
+> 移植自 `scripts/eagle浏览器扩展支持/server.js`。原版把请求转发给本机 Eagle（`127.0.0.1:41597`），本插件直接操作 `dbService`，把图片真正落库到 Mira。
+
+## ⭐ 架构：全局单例 + 库选择器
+
+`ServerPluginManager` 是 **per-library** 的——每个素材库都会各 `new` 一个、各调一次插件 `init(inst)`。若每个实例都 `listen()`，第二个库必然 `EADDRINUSE`。
+
+本插件采用 **模块级单例**：
+- 借助 Node `require` 缓存（`ServerPluginManager` 仅在 reload 时清缓存），模块级变量 `globalServer` 跨库共享
+- 端口 41595 / 41593 **只在首个库加载时 bind 一次**，后续库直接返回同一实例
+- 入库时不绑定 `init` 时的库，而是按 **配置页选择的 `targetLibraryId`** 在请求时解析对应库的 `dbService`
+
+因此多库场景下也只有一个 HTTP 服务实例，所有库共用，数据统一进入用户在配置页选定的库。
+
 
 ## 🎯 功能
 
@@ -23,9 +35,29 @@
 | `:41593 GET /exit` | GET | `process.exit(0)`（保持原版行为） |
 | `:41593 POST /` | POST | body `type` ∈ `image` / `screen capture` / `save-url`：`base64` 优先，否则下载 `src`，用 `createFileFromPath(..., {importType:'move'})` 落盘入库，归类 `folderID`，写入 `metaTags`/`metaDescription`/`url` |
 
-落库后会广播 `file::created` / `folder::created` WebSocket 事件，前端网格实时刷新。
+落库后会广播 `file::created` / `folder::created` WebSocket 事件，前端网格实时刷新（用 `targetLibraryId`）。
 
-## ⚙️ 配置
+## 🖥️ 配置页（选择接收库）
+
+访问 **`http://127.0.0.1:5173/#/tools/eagle-extension`**（5173 为 dashboard dev 端口；生产环境用对应端口）。
+
+页面提供：
+- **素材库选择器**——下拉选择 Eagle 数据要进入的库（来自 `Dashboard.getLibraries()` / `GET /api/libraries`）
+- **保存**——写入 `data/config.json` 的 `targetLibraryId`
+- 服务运行状态、端口、当前目标库、可用库数量
+
+> ⚠️ **未选择目标库时，所有 Eagle 请求会返回 `{ status:'failed', code:'no target library' }`**，启动日志也会提示去配置页选择。
+
+### 配置端点（非库级，自动带 token 鉴权）
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/api/eagle/config` | GET | 返回 `{ targetLibraryId, port, portCapture, running, libraries:[{id,name,active}] }` |
+| `/api/eagle/config` | POST | body `{ targetLibraryId }` → 写入 `data/config.json` |
+
+挂在 `MiraHttpServer.app` 上（在 `/api` 下，自动走 token 中间件；前端调 `authHeaders()` 带 Bearer token）。用 `app._eagleConfigRegistered` 标志位守卫，只注册一次。
+
+## ⚙️ 配置文件
 
 `data/config.json`：
 
@@ -36,7 +68,8 @@
   "apiToken": "3f0b58a7-a8a6-4652-8e12-5a6ad45bc77d",
   "recentFoldersLimit": 10,
   "tempDir": "data/temp",
-  "allowedPushTypes": ["image", "screen capture", "save-url"]
+  "allowedPushTypes": ["image", "screen capture", "save-url"],
+  "targetLibraryId": ""
 }
 ```
 
@@ -48,6 +81,8 @@
 | `recentFoldersLimit` | `listRecent` 返回的最大条数 |
 | `tempDir` | 下载 / base64 解码的临时目录（相对插件 data 目录） |
 | `allowedPushTypes` | 允许处理的推送 `type` 白名单 |
+| `targetLibraryId` | **接收 Eagle 数据的库 ID**（配置页选择，留空则拒绝数据） |
+
 
 ## 🚀 安装与启用
 
