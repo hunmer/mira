@@ -98,6 +98,29 @@ class MiraEagleExtension {
       `[mira_eagle_extension] 全局单例已启动，端口 ${this.config.port} / ${this.config.portCapture}` +
       (this.config.targetLibraryId ? `，目标库 ${this.config.targetLibraryId}` : '，⚠️ 尚未选择目标库，请到配置页 /tools/eagle-extension 选择')
     );
+    // 启动时立即探测 IMU 模块状态（给用户明确反馈）
+    this.reportImuStatus();
+  }
+
+  /** 启动时打印 IMU 模块状态，便于确认 maxurl.user.js 是否被识别 */
+  private reportImuStatus() {
+    if (!this.config.imu?.enabled) {
+      console.log('[mira_eagle_extension] IMU：已禁用');
+      return;
+    }
+    const candidates = [
+      this.pluginManager.getPluginDir ? path.join(this.pluginManager.getPluginDir(this.pluginName), 'maxurl.user.js') : '',
+      path.join(__dirname, 'maxurl.user.js'),
+      path.join(__dirname, '..', 'maxurl.user.js'),
+      path.join(this.getPluginDataDir(), '..', 'maxurl.user.js'),
+    ].filter(Boolean);
+    const found = candidates.find(c => fs.existsSync(c));
+    if (!found) {
+      console.warn('[mira_eagle_extension] IMU：未找到 maxurl.user.js（原图升级不可用）。请把 Image Max URL 的 userscript.user.js 放到插件目录并重命名为 maxurl.user.js');
+      console.warn('[mira_eagle_extension] IMU：查找位置：' + candidates.join(' ; '));
+      return;
+    }
+    console.log(`[mira_eagle_extension] IMU：已发现模块 ${path.basename(found)}（${(fs.statSync(found).size / 1024 / 1024).toFixed(2)} MB），首次升级时加载`);
   }
 
   // ============================== backend / 库解析 ==============================
@@ -506,11 +529,14 @@ class MiraEagleExtension {
       if (this.config.verbose) console.log('[mira_eagle_extension] IMU 已禁用，跳过原图升级');
       return null;
     }
-    // maxurl.user.js 位于插件根目录（与 index.ts 同级）
+    // maxurl.user.js 位于插件根目录。优先用 pluginManager.getPluginDir（权威路径，
+    // 兼容 dist/ 编译加载与 src/ ts-node 加载），再回退 __dirname 与 data 父目录。
     const candidates = [
+      this.pluginManager.getPluginDir ? path.join(this.pluginManager.getPluginDir(this.pluginName), 'maxurl.user.js') : '',
       path.join(__dirname, 'maxurl.user.js'),
+      path.join(__dirname, '..', 'maxurl.user.js'), // dist/ 编译产物情况
       path.join(this.getPluginDataDir(), '..', 'maxurl.user.js'),
-    ];
+    ].filter(Boolean);
     let imuPath = '';
     for (const c of candidates) {
       if (fs.existsSync(c)) { imuPath = c; break; }
@@ -576,18 +602,18 @@ class MiraEagleExtension {
 
   /**
    * 用 IMU 尝试把缩略图 URL 升级为原图 URL。
-   * 返回原图 URL；找不到/出错/超时则返回原 url。
+   * 返回候选 URL 数组（已按优先级排序：is_original 优先，去重，去 bad/fake/video）。
+   * 第一个元素总是原 url（保底）。找不到/出错/超时则返回 [url]。
    */
-  private upgradeImageUrl(url: string): Promise<string> {
+  private upgradeImageUrlCandidates(url: string): Promise<string[]> {
     const imu = this.loadImu();
-    if (!imu) return Promise.resolve(url);
+    if (!imu) return Promise.resolve([url]);
     return new Promise(resolve => {
       let settled = false;
-      const done = (u: string) => { if (!settled) { settled = true; resolve(u); } };
-      // 超时兜底（IMU 的某些规则会发多次请求）
+      const done = (urls: string[]) => { if (!settled) { settled = true; resolve(urls); } };
       const to = setTimeout(() => {
         if (this.config.verbose) console.warn(`[mira_eagle_extension] IMU 升级超时，沿用原 URL: ${url}`);
-        done(url);
+        done([url]);
       }, this.config.imu?.timeout || 15000);
 
       try {
@@ -600,22 +626,38 @@ class MiraEagleExtension {
           do_request: (opts: any) => this.imuDoRequest(opts),
           cb: (result: any[]) => {
             clearTimeout(to);
-            if (!result || !result.length) return done(url);
-            // 找第一个可用、非坏、非 fake 的候选；优先 is_original
-            const usable = result.find(r => r && r.url && !r.bad && !r.fake && !r.video);
-            if (usable && usable.url && usable.url !== url) {
-              if (this.config.verbose) console.log(`[mira_eagle_extension] IMU 升级: ${url} -> ${usable.url}`);
-              return done(usable.url);
+            if (!result || !result.length) return done([url]);
+            // 收集所有可用候选，is_original 优先；去重、去 bad/fake/video
+            const seen = new Set<string>();
+            const ordered: { url: string; original: boolean }[] = [];
+            for (const r of result) {
+              if (!r || !r.url || r.bad || r.fake || r.video) continue;
+              if (r.url === url || seen.has(r.url)) continue;
+              seen.add(r.url);
+              ordered.push({ url: r.url, original: !!r.is_original });
             }
-            done(url);
+            ordered.sort((a, b) => Number(b.original) - Number(a.original));
+            const candidates = ordered.map(o => o.url);
+            if (this.config.verbose && candidates.length) {
+              console.log(`[mira_eagle_extension] IMU 升级候选 (${candidates.length}): ${url} -> ${candidates.join(', ')}`);
+            }
+            // 优先尝试升级候选（大的在前），原 url 放最后作保底——
+            // 因为原 url 通常是缩略图，总能下成功，但质量最差，应最后才用
+            done([...candidates, url]);
           },
         });
       } catch (e) {
         clearTimeout(to);
         console.warn('[mira_eagle_extension] IMU 调用异常:', e);
-        done(url);
+        done([url]);
       }
     });
+  }
+
+  /** 兼容旧调用：返回单个升级 URL（第一个候选） */
+  private async upgradeImageUrl(url: string): Promise<string> {
+    const candidates = await this.upgradeImageUrlCandidates(url);
+    return candidates.length > 1 ? candidates[1] : candidates[0];
   }
 
   // ============================== 落库（用目标库） ==============================
@@ -643,13 +685,16 @@ class MiraEagleExtension {
   private async addUrlItem(dbService: any, item: EagleItem, folderId?: number): Promise<Record<string, any> | null> {
     try {
       const now = Date.now();
+      // 先用 IMU 把缩略图 URL 升级为原图（若启用且模块可用）
+      const refUrl = await this.upgradeImageUrl(item.url);
       const custom_fields: Record<string, any> = { url: item.website || item.url };
+      if (refUrl !== item.url) custom_fields.originalUrl = refUrl;
       if (item.tags && item.tags.length) custom_fields.tags = item.tags;
       if (item.description) custom_fields.desc = item.description;
 
       let name = item.name;
       if (!name) {
-        try { name = path.basename(new URL(item.url).pathname); } catch { name = `${now}.png`; }
+        try { name = path.basename(new URL(refUrl).pathname); } catch { name = `${now}.png`; }
       }
 
       const file = await dbService.createFile({
@@ -658,8 +703,8 @@ class MiraEagleExtension {
         imported_at: now,
         size: 0,
         hash: '',
-        reference: item.url,
-        path: item.url,
+        reference: refUrl,
+        path: refUrl,
         folder_id: folderId ?? null,
         custom_fields,
         tags: item.tags && item.tags.length ? JSON.stringify(item.tags) : null,
@@ -688,25 +733,39 @@ class MiraEagleExtension {
     if (opts.url) custom_fields.url = opts.url;
     if (opts.desc) custom_fields.desc = opts.desc;
 
-    // 尝试 1：base64 / 下载到本地，再 createFileFromPath（真正落盘）
+    // 尝试 1：优先用 src（远端原图）下载，因为 base64 通常是缩略图质量。
+    // Eagle 的 image 类型常同时带 base64（当前可见图）和 src（原图 URL），
+    // 此时优先 IMU 升级 src → 按候选逐个下载原图；全失败再用 base64 兜底。
     try {
-      if (opts.base64) {
+      if (opts.src) {
+        // IMU 返回候选列表（第一个是原 src 保底，其余是升级候选，原图优先）
+        const candidates = await this.upgradeImageUrlCandidates(opts.src);
+        for (let i = 0; i < candidates.length; i++) {
+          const candUrl = candidates[i];
+          const ext = this.guessExtFromUrl(candUrl);
+          const tryPath = path.join(this.tempDir, `${crypto.randomBytes(8).toString('hex')}.${ext}`);
+          if (this.config.verbose) console.log(`[mira_eagle_extension] 下载候选 ${i + 1}/${candidates.length}: ${candUrl} -> ${tryPath}`);
+          const downloaded = await this.downloadToFile(candUrl, tryPath, opts.referer);
+          if (downloaded) {
+            tempPath = tryPath;
+            if (this.config.verbose) console.log(`[mira_eagle_extension] 下载完成 ${fs.statSync(tempPath).size} bytes`);
+            break;
+          }
+          // 此候选失败（如 403），清理临时文件，继续下一个候选
+          try { fs.unlinkSync(tryPath); } catch {}
+        }
+        if (!tempPath) {
+          console.warn(`[mira_eagle_extension] 所有 ${candidates.length} 个候选下载均失败` + (opts.base64 ? '，回退用 base64' : ''));
+        }
+      }
+      // src 下载失败或无 src 时，用 base64
+      if (!tempPath && opts.base64) {
         tempPath = this.base64ToTempFile(opts.base64);
         if (this.config.verbose) console.log(`[mira_eagle_extension] base64 解码 -> ${tempPath}`);
         if (!tempPath) throw new Error('base64 解码失败');
-      } else if (opts.src) {
-        // 先用 IMU 把缩略图 URL 升级为原图（若启用且模块可用）
-        let srcUrl = opts.src;
-        const upgraded = await this.upgradeImageUrl(opts.src);
-        if (upgraded && upgraded !== opts.src) srcUrl = upgraded;
-        const ext = this.guessExtFromUrl(srcUrl);
-        tempPath = path.join(this.tempDir, `${crypto.randomBytes(8).toString('hex')}.${ext}`);
-        if (this.config.verbose) console.log(`[mira_eagle_extension] 下载 ${srcUrl} -> ${tempPath}`);
-        const downloaded = await this.downloadToFile(srcUrl, tempPath, opts.referer);
-        if (!downloaded) throw new Error(`下载失败: ${srcUrl}`);
-        if (this.config.verbose) console.log(`[mira_eagle_extension] 下载完成 ${fs.statSync(tempPath).size} bytes`);
-      } else {
-        throw new Error('无 base64 也无 src');
+      }
+      if (!tempPath) {
+        throw new Error('无 base64 也无 src，或下载均失败');
       }
 
       // 用页面标题重命名临时文件，使落盘文件名 / DB name / 前端显示三者一致。
@@ -872,7 +931,9 @@ class MiraEagleExtension {
       }
       const file = await this.importFileFromSource(dbService, {
         base64,
-        src: hasBase64 ? undefined : (src || metaPicture),
+        // 同时传 src 和 base64：importFileFromSource 会优先 IMU 升级 src 下载原图，
+        // 失败再用 base64 兜底（src 是原图 URL，base64 通常是缩略图质量）。
+        src: src || metaPicture,
         url,
         // 用页面 url 作 Referer，pinterest/微博/小红书等图床防盗链需要
         referer: url,
