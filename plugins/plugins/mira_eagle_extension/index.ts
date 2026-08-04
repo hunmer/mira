@@ -36,6 +36,14 @@ interface PluginConfig {
      *  空数组 = 对所有站点走代理。 */
     sites: string[];
   };
+  /** Image Max URL：下载前尝试把缩略图 URL 升级为原图 */
+  imu: {
+    enabled: boolean;
+    /** 升级超时（毫秒） */
+    timeout: number;
+    /** 最大迭代次数（IMU 内部） */
+    iterations: number;
+  };
 }
 
 interface EagleItem {
@@ -59,6 +67,9 @@ class MiraEagleExtension {
   /** 缓存的代理 agent（key 为 proxy.url，避免每次下载重建连接池） */
   private proxyAgent: any = null;
   private proxyAgentKey = '';
+  /** Image Max URL 模块（懒加载；null 表示未加载/不可用） */
+  private imuModule: any = null;
+  private imuLoadAttempted = false;
 
   /** dashboard 路由（被 ServerPluginManager.getAllPluginRoutes 消费） */
   private routes: any[] = [];
@@ -138,15 +149,17 @@ class MiraEagleExtension {
       targetLibraryId: '',
       verbose: true,
       proxy: { enabled: false, url: '', sites: [] },
+      imu: { enabled: true, timeout: 15000, iterations: 200 },
     };
     try {
       const file = this.getConfigPath();
       if (fs.existsSync(file)) {
         const saved = JSON.parse(fs.readFileSync(file, 'utf-8'));
-        // 合并 proxy，保证旧配置（无 sites 字段）也有默认值
+        // 合并 proxy / imu，保证旧配置（无新字段）也有默认值
         const merged = { ...defaultConfig, ...saved };
         merged.proxy = { ...defaultConfig.proxy, ...(saved.proxy || {}) };
         if (!Array.isArray(merged.proxy.sites)) merged.proxy.sites = [];
+        merged.imu = { ...defaultConfig.imu, ...(saved.imu || {}) };
         return merged;
       }
     } catch (e) {
@@ -169,16 +182,33 @@ class MiraEagleExtension {
 
   // ============================== Eagle 信息 ==============================
 
+  /** 41593 GET / 响应体（扁平结构，键名 appVersion）。对齐 Eagle 4.x 协议。 */
   private getInformation() {
     return {
-      version: '3.0.0',
-      prereleaseVersion: null,
-      buildVersion: '20231101',
+      appVersion: '4.0.0',
       showCollectModal: false,
       platform: process.platform,
       preferences: {
         general: { language: 'zh_CN', showMenuItem: 'true', showSidebarBadge: 'true' },
         developer: { apiToken: this.config.apiToken },
+      },
+    };
+  }
+
+  /** 41595 GET / 响应体（包裹在 {status, data}，且用 version 键）。对齐 Eagle 4.x 协议。 */
+  private getApiInfo() {
+    return {
+      status: 'success',
+      data: {
+        version: '4.0.0',
+        prereleaseVersion: null,
+        buildVersion: '20231101',
+        showCollectModal: false,
+        platform: process.platform,
+        preferences: {
+          general: { language: 'zh_CN', showMenuItem: 'true', showSidebarBadge: 'true' },
+          developer: { apiToken: this.config.apiToken },
+        },
       },
     };
   }
@@ -240,8 +270,12 @@ class MiraEagleExtension {
         if (ct.includes('application/x-www-form-urlencoded')) {
           const obj: any = {};
           for (const pair of raw.split('&')) {
-            const [k, v] = pair.split('=');
-            if (k) obj[decodeURIComponent(k)] = decodeURIComponent(v || '');
+            const eq = pair.indexOf('=');
+            if (eq < 0) continue;
+            // urlencoded 中空格编码为 '+'，decodeURIComponent 不会处理它，需先替换
+            const k = pair.slice(0, eq);
+            const v = pair.slice(eq + 1);
+            obj[decodeURIComponent(k.replace(/\+/g, ' '))] = decodeURIComponent(v.replace(/\+/g, ' '));
           }
           return resolve(obj);
         }
@@ -459,6 +493,131 @@ class MiraEagleExtension {
     }
   }
 
+  // ============================== Image Max URL（缩略图 → 原图） ==============================
+
+  /**
+   * 懒加载 Image Max URL 模块（maxurl.user.js，需放在插件根目录）。
+   * 失败/未启用返回 null。模块只在首次调用时 require，之后缓存。
+   */
+  private loadImu(): any {
+    if (this.imuLoadAttempted) return this.imuModule;
+    this.imuLoadAttempted = true;
+    if (!this.config.imu?.enabled) {
+      if (this.config.verbose) console.log('[mira_eagle_extension] IMU 已禁用，跳过原图升级');
+      return null;
+    }
+    // maxurl.user.js 位于插件根目录（与 index.ts 同级）
+    const candidates = [
+      path.join(__dirname, 'maxurl.user.js'),
+      path.join(this.getPluginDataDir(), '..', 'maxurl.user.js'),
+    ];
+    let imuPath = '';
+    for (const c of candidates) {
+      if (fs.existsSync(c)) { imuPath = c; break; }
+    }
+    if (!imuPath) {
+      console.warn('[mira_eagle_extension] 未找到 maxurl.user.js，跳过原图升级。请把 Image Max URL 的 userscript.user.js 放到插件目录并重命名为 maxurl.user.js');
+      return null;
+    }
+    try {
+      this.imuModule = require(imuPath);
+      if (this.config.verbose) console.log(`[mira_eagle_extension] IMU 模块已加载: ${path.basename(imuPath)}`);
+      return this.imuModule;
+    } catch (e) {
+      console.error('[mira_eagle_extension] 加载 IMU 模块失败:', e);
+      return null;
+    }
+  }
+
+  /** IMU 需要的 do_request（类 GM_xmlhttpRequest），走代理（若启用） */
+  private imuDoRequest(options: any): void {
+    const targetIsHttps = (options.url || '').startsWith('https');
+    const lib = targetIsHttps ? require('https') : require('http');
+    const headers: Record<string, string> = {};
+    if (options.headers) {
+      for (const [k, v] of Object.entries(options.headers)) {
+        if (v === null || v === '') continue;
+        headers[k] = String(v);
+      }
+    }
+    if (!headers['User-Agent']) {
+      headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+    }
+    const agent = this.getHttpAgent(targetIsHttps, options.url);
+    const reqOpts: any = { method: options.method || 'GET', headers };
+    if (agent) reqOpts.agent = agent;
+    let url: string;
+    try { url = options.url; } catch { if (options.onload) options.onload({ readyState: 4, status: 0, responseText: '', finalUrl: options.url }); return; }
+
+    const req = lib.request(url, reqOpts, (resp: http.IncomingMessage) => {
+      const chunks: Buffer[] = [];
+      resp.on('data', (c: Buffer) => chunks.push(c));
+      resp.on('end', () => {
+        const buf = Buffer.concat(chunks);
+        const body = buf.toString('utf8');
+        if (options.onload) {
+          options.onload({
+            readyState: 4,
+            status: resp.statusCode || 0,
+            statusText: resp.statusMessage || '',
+            responseText: body,
+            finalUrl: url,
+          });
+        }
+      });
+    });
+    req.on('error', (e: Error) => {
+      if (options.onload) options.onload({ readyState: 4, status: 0, responseText: '', finalUrl: url });
+    });
+    req.setTimeout(this.config.imu?.timeout || 15000, () => { req.destroy(); });
+    if (options.data && (options.method || '').toUpperCase() === 'POST') req.write(options.data);
+    req.end();
+  }
+
+  /**
+   * 用 IMU 尝试把缩略图 URL 升级为原图 URL。
+   * 返回原图 URL；找不到/出错/超时则返回原 url。
+   */
+  private upgradeImageUrl(url: string): Promise<string> {
+    const imu = this.loadImu();
+    if (!imu) return Promise.resolve(url);
+    return new Promise(resolve => {
+      let settled = false;
+      const done = (u: string) => { if (!settled) { settled = true; resolve(u); } };
+      // 超时兜底（IMU 的某些规则会发多次请求）
+      const to = setTimeout(() => {
+        if (this.config.verbose) console.warn(`[mira_eagle_extension] IMU 升级超时，沿用原 URL: ${url}`);
+        done(url);
+      }, this.config.imu?.timeout || 15000);
+
+      try {
+        imu(url, {
+          fill_object: true,
+          iterations: this.config.imu?.iterations || 200,
+          use_cache: true,
+          exclude_videos: true,
+          filter: (u: string) => { try { return imu.is_internet_url ? imu.is_internet_url(u) : /^https?:\/\//.test(u); } catch { return true; } },
+          do_request: (opts: any) => this.imuDoRequest(opts),
+          cb: (result: any[]) => {
+            clearTimeout(to);
+            if (!result || !result.length) return done(url);
+            // 找第一个可用、非坏、非 fake 的候选；优先 is_original
+            const usable = result.find(r => r && r.url && !r.bad && !r.fake && !r.video);
+            if (usable && usable.url && usable.url !== url) {
+              if (this.config.verbose) console.log(`[mira_eagle_extension] IMU 升级: ${url} -> ${usable.url}`);
+              return done(usable.url);
+            }
+            done(url);
+          },
+        });
+      } catch (e) {
+        clearTimeout(to);
+        console.warn('[mira_eagle_extension] IMU 调用异常:', e);
+        done(url);
+      }
+    });
+  }
+
   // ============================== 落库（用目标库） ==============================
 
   private broadcastFileCreated(targetLibraryId: string, file: Record<string, any>) {
@@ -536,11 +695,15 @@ class MiraEagleExtension {
         if (this.config.verbose) console.log(`[mira_eagle_extension] base64 解码 -> ${tempPath}`);
         if (!tempPath) throw new Error('base64 解码失败');
       } else if (opts.src) {
-        const ext = this.guessExtFromUrl(opts.src);
+        // 先用 IMU 把缩略图 URL 升级为原图（若启用且模块可用）
+        let srcUrl = opts.src;
+        const upgraded = await this.upgradeImageUrl(opts.src);
+        if (upgraded && upgraded !== opts.src) srcUrl = upgraded;
+        const ext = this.guessExtFromUrl(srcUrl);
         tempPath = path.join(this.tempDir, `${crypto.randomBytes(8).toString('hex')}.${ext}`);
-        if (this.config.verbose) console.log(`[mira_eagle_extension] 下载 ${opts.src} -> ${tempPath}`);
-        const downloaded = await this.downloadToFile(opts.src, tempPath, opts.referer);
-        if (!downloaded) throw new Error(`下载失败: ${opts.src}`);
+        if (this.config.verbose) console.log(`[mira_eagle_extension] 下载 ${srcUrl} -> ${tempPath}`);
+        const downloaded = await this.downloadToFile(srcUrl, tempPath, opts.referer);
+        if (!downloaded) throw new Error(`下载失败: ${srcUrl}`);
         if (this.config.verbose) console.log(`[mira_eagle_extension] 下载完成 ${fs.statSync(tempPath).size} bytes`);
       } else {
         throw new Error('无 base64 也无 src');
@@ -615,7 +778,9 @@ class MiraEagleExtension {
         const file = await this.addUrlItem(dbService, it, folderId);
         if (file) { ok++; this.broadcastFileCreated(lid, file); }
       }
-      this.sendJson(res, { status: 'success', data: { count: ok } });
+      if (this.config.verbose) console.log(`[mira_eagle_extension:41595] addFromURLs 导入 ${ok}/${items.length}`);
+      // 对齐 Eagle 协议：成功仅返回 {status:"success"}
+      this.sendJson(res, { status: 'success' });
     } catch (e) {
       console.error('[mira_eagle_extension] addFromURLs error:', e);
       this.sendJson(res, { status: 'failed', code: 'error' });
@@ -632,17 +797,21 @@ class MiraEagleExtension {
     try {
       const body = await this.readBody(req);
       this.logRequest('41595:folderCreate', req, body);
-      const { name, parentId, color, icon } = body || {};
-      if (!name) return this.sendJson(res, { status: 'failed', code: 'missing name' });
+      // Eagle 扩展用 folderName；兼容旧字段 name
+      const folderName = body?.folderName ?? body?.name;
+      const parentId = body?.parentId ?? body?.parentID;
+      const { color, icon } = body || {};
+      if (!folderName) return this.sendJson(res, { status: 'failed', code: 'missing folderName' });
       const id = await dbService.createFolder({
-        title: name, parent_id: parentId ?? null, color: color || '', icon: icon || '', sort_index: 0,
+        title: folderName, parent_id: parentId ?? null, color: color || '', icon: icon || '', sort_index: 0,
       });
       try {
         const wss = this.backend.getWebSocketServer?.();
         // 客户端 folder::created 处理按 data.libraryId 刷新文件夹列表，必须带上
-        wss?.broadcastLibraryEvent?.(lid, 'folder::created', { id, title: name, libraryId: lid });
+        wss?.broadcastLibraryEvent?.(lid, 'folder::created', { id, title: folderName, libraryId: lid });
       } catch {}
-      this.sendJson(res, { status: 'success', data: { id } });
+      // 对齐 Eagle 协议响应
+      this.sendJson(res, { status: 'success', data: { id, name: folderName, images: [], folders: [] } });
     } catch (e) {
       console.error('[mira_eagle_extension] folderCreate error:', e);
       this.sendJson(res, { status: 'failed', code: 'error' });
@@ -748,6 +917,11 @@ class MiraEagleExtension {
               url: this.config.proxy?.url || '',
               sites: Array.isArray(this.config.proxy?.sites) ? this.config.proxy.sites : [],
             },
+            imu: {
+              enabled: !!this.config.imu?.enabled,
+              timeout: this.config.imu?.timeout ?? 15000,
+              iterations: this.config.imu?.iterations ?? 200,
+            },
           },
         });
       } catch (e) {
@@ -774,12 +948,23 @@ class MiraEagleExtension {
           this.proxyAgent = null;
           this.proxyAgentKey = '';
         }
+        if (body.imu && typeof body.imu === 'object') {
+          this.config.imu = {
+            enabled: !!body.imu.enabled,
+            timeout: Number(body.imu.timeout) > 0 ? Number(body.imu.timeout) : 15000,
+            iterations: Number(body.imu.iterations) > 0 ? Number(body.imu.iterations) : 200,
+          };
+          // imu.enabled 变更后重置加载状态，以便重新尝试加载模块
+          this.imuLoadAttempted = false;
+          this.imuModule = null;
+        }
         const saved = this.saveConfig();
         res.json({
           success: saved,
           data: {
             targetLibraryId: this.config.targetLibraryId,
             proxy: this.config.proxy,
+            imu: this.config.imu,
           },
         });
       } catch (e) {
@@ -809,7 +994,7 @@ class MiraEagleExtension {
       this.logRequest('41595', req);
       if (req.method === 'OPTIONS') return this.sendJson(res, {});
       const url = (req.url || '/').split('?')[0];
-      if (req.method === 'GET' && url === '/') return this.sendJson(res, this.getInformation());
+      if (req.method === 'GET' && url === '/') return this.sendJson(res, this.getApiInfo());
       if (req.method === 'POST' && url === '/api/item/addFromURLs') return this.handleAddFromURLs(req, res);
       if (req.method === 'POST' && url === '/api/folder/create') return this.handleFolderCreate(req, res);
       if (req.method === 'GET' && url === '/api/folder/listRecent') return this.handleListRecentFolders(req, res);

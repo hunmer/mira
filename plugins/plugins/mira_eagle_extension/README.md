@@ -27,13 +27,13 @@
 
 | Eagle 端口/路径 | 方法 | Mira 行为 |
 |---|---|---|
-| `:41595 GET /` | GET | 返回 Eagle 服务信息（伪装） |
-| `:41595 POST /api/item/addFromURLs` | POST | body `{folderId, items:[{name,url,website,modificationTime}]}` → 每条作为 **URL 引用文件** 写入当前库，归入 `folderId`，来源 `url` 存入 `custom_fields` |
-| `:41595 POST /api/folder/create` | POST | body `{name,parentId,color,icon}` → `dbService.createFolder(...)`，返回 `{id}` |
-| `:41595 GET /api/folder/listRecent` | GET | `dbService.getAllFolders()` 取最近 N 条（默认 10） |
-| `:41593 GET /` | GET | 返回 Eagle 服务信息 |
+| `:41595 GET /` | GET | 返回 Eagle 服务信息（伪装），格式 `{status:"success", data:{version,...}}` |
+| `:41595 POST /api/item/addFromURLs` | POST | body `{folderId, items:[{name,url,website,modificationTime}]}` → 每条作为 **URL 引用文件** 写入当前库，归入 `folderId`，来源 `url` 存入 `custom_fields`。返回 `{status:"success"}` |
+| `:41595 POST /api/folder/create` | POST | body `{folderName, parentId, color, icon}`（Eagle 用 `folderName`，兼容 `name`）→ `dbService.createFolder(...)`，返回 `{status:"success", data:{id,name,...}}` |
+| `:41595 GET /api/folder/listRecent` | GET | `dbService.getAllFolders()` 取最近 N 条（默认 10），返回 `{status:"success", data:[{id,name,...}]}` |
+| `:41593 GET /` | GET | 返回 Eagle 服务信息（扁平结构 `{appVersion, preferences, ...}`） |
 | `:41593 GET /exit` | GET | `process.exit(0)`（保持原版行为） |
-| `:41593 POST /` | POST | body `type` ∈ `image` / `screen capture` / `save-url`：`base64` 优先，否则下载 `src`，用 `createFileFromPath(..., {importType:'move'})` 落盘入库，归类 `folderID`，写入 `metaTags`/`metaDescription`/`url` |
+| `:41593 POST /` | POST | body `type` ∈ `image` / `screen capture` / `save-url`（**urlencoded 格式，`+` 会自动解码为空格**）：`base64` 优先，否则下载 `src`，用 `createFileFromPath(..., {importType:'move'})` 落盘入库，归类 `folderID`，写入 `metaTags`/`metaDescription`/`url` |
 
 落库后会广播 `file::created` / `folder::created` WebSocket 事件，前端网格实时刷新（用 `targetLibraryId`）。
 
@@ -85,6 +85,31 @@
 | `proxy.enabled` | 是否启用网络代理（下载远端图片时走代理） |
 | `proxy.url` | 代理地址，支持 `http://`、`https://`、`socks5://`（如 `http://127.0.0.1:7890`） |
 | `proxy.sites` | **仅对清单内站点走代理**的域名数组；留空 = 所有站点都走。支持通配与排除（见下） |
+| `imu.enabled` | 是否启用原图升级（下载前用 Image Max URL 把缩略图 URL 升级为原图） |
+| `imu.timeout` | 升级超时毫秒数（默认 15000） |
+| `imu.iterations` | IMU 内部最大迭代次数（默认 200） |
+
+## 🖼️ 原图升级（Image Max URL）
+
+很多图床（pinterest、微博、小红书等）的缩略图 URL 和原图 URL 规律不同（如 pinterest 是 `/236x/` vs `/originals/`）。本插件集成 [Image Max URL](https://github.com/qsniyg/maxurl)，下载前自动把缩略图 URL 升级为原图 URL。
+
+### 安装 IMU 模块（必需）
+IMU 的 `userscript.user.js` 同时是一个 Node 模块。请手动下载并放到插件目录：
+
+1. 下载 `https://raw.githubusercontent.com/qsniyg/maxurl/master/userscript.user.js`（约 1.5MB，开发版，规则最全）
+2. 重命名为 **`maxurl.user.js`**，放到 `plugins/plugins/mira_eagle_extension/maxurl.user.js`
+3. 重启服务端，日志会打印 `[mira_eagle_extension] IMU 模块已加载: maxurl.user.js`
+
+> 放错位置或文件缺失时，日志会提示 `未找到 maxurl.user.js`，插件会自动跳过升级（不影响正常导入，只是仍下载缩略图）。
+
+### 使用
+配置页 `http://127.0.0.1:5173/#/tools/eagle-extension` 勾选「启用原图升级」。升级流程：
+1. Eagle 扩展推送 `src`（通常是缩略图）
+2. 调用 IMU 升级（支持 10000+ 站点，自动复用代理设置）
+3. 下载升级后的原图；失败则回退到原 URL 再下载
+4. 若仍失败，回退为 URL 引用文件入库
+
+日志：`IMU 升级: https://i.pinimg.com/236x/abc.jpg -> https://i.pinimg.com/originals/abc.jpg`
 
 ## 🌐 网络代理
 

@@ -91,6 +91,25 @@
 
       '  <MiraSeparator />',
 
+      '  <!-- 原图升级 (Image Max URL) -->',
+      '  <div class="space-y-3">',
+      '    <div class="text-sm font-medium">原图升级（Image Max URL）</div>',
+      '    <p class="text-xs text-muted-foreground">下载前尝试把缩略图 URL 升级为原图（支持 pinterest/微博等 10000+ 站点）。需要把 IMU 的 <code>userscript.user.js</code> 放到插件目录并重命名为 <code>maxurl.user.js</code>。</p>',
+      '    <div class="flex items-center gap-3">',
+      '      <label class="flex items-center gap-2 text-sm cursor-pointer">',
+      '        <input type="checkbox" v-model="imuEnabled" />',
+      '        启用原图升级',
+      '      </label>',
+      '      <label class="text-xs text-muted-foreground">超时(ms)</label>',
+      '      <MiraInput v-model.number="imuTimeout" class="w-24" type="number" :disabled="!imuEnabled" />',
+      '      <MiraButton @click="saveConfig" :disabled="saving">{{ saving ? "保存中..." : "保存" }}</MiraButton>',
+      '    </div>',
+      '    <p v-if="imuEnabled" class="text-xs text-muted-foreground">模块状态：{{ imuLoaded ? "已加载" : "未找到 maxurl.user.js" }}</p>',
+      '    <p v-if="justSaved" class="text-sm text-green-600">✅ 设置已保存。</p>',
+      '  </div>',
+
+      '  <MiraSeparator />',
+
       '  <!-- 状态信息 -->',
       '  <div class="grid grid-cols-2 gap-4 text-sm">',
       '    <div class="flex justify-between border rounded-md p-3">',
@@ -118,6 +137,9 @@
         proxyEnabled: false,
         proxyUrl: '',
         proxySitesText: '',
+        imuEnabled: false,
+        imuTimeout: 15000,
+        imuLoaded: false,
         loaded: false,
         saving: false,
         justSaved: false,
@@ -187,6 +209,8 @@
               self.proxyUrl = (res.data.proxy && res.data.proxy.url) || '';
               var sites = (res.data.proxy && Array.isArray(res.data.proxy.sites)) ? res.data.proxy.sites : [];
               self.proxySitesText = sites.join('\n');
+              self.imuEnabled = !!(res.data.imu && res.data.imu.enabled);
+              self.imuTimeout = (res.data.imu && res.data.imu.timeout) || 15000;
             }
             self.loaded = true;
           })
@@ -211,6 +235,7 @@
           body: JSON.stringify({
             targetLibraryId: self.targetLibraryId,
             proxy: { enabled: self.proxyEnabled, url: self.proxyUrl, sites: sites },
+            imu: { enabled: self.imuEnabled, timeout: self.imuTimeout },
           }),
         })
           .then(function (r) { return r.json(); })

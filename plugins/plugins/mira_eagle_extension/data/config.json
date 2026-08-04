@@ -15,5 +15,10 @@
     "enabled": true,
     "url": "http://127.0.0.1:7890",
     "sites": []
+  },
+  "imu": {
+    "enabled": true,
+    "timeout": 15000,
+    "iterations": 200
   }
 }
