@@ -2,28 +2,28 @@
   <div v-if="visible" class="fixed inset-0 flex items-center justify-center z-50">
     <div class="bg-black bg-opacity-50 absolute inset-0" @click="handleCancel"></div>
     <div class="bg-white rounded-lg shadow-xl w-full max-w-md relative">
-      <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-        <h2 class="text-xl font-semibold text-gray-800">移动文件夹</h2>
-        <button @click="handleCancel" class="text-gray-500 hover:text-gray-800">
+      <div class="px-6 py-4 border-b border-border flex items-center justify-between">
+        <h2 class="text-xl font-semibold text-foreground">移动文件夹</h2>
+        <button @click="handleCancel" class="text-muted-foreground hover:text-foreground">
           <span class="material-icons">close</span>
         </button>
       </div>
 
       <div class="px-6 py-4">
-        <div v-if="folder" class="mb-4 p-3 bg-gray-50 rounded-md">
+        <div v-if="folder" class="mb-4 p-3 bg-muted rounded-md">
           <div class="flex items-center space-x-2">
-            <span class="material-icons text-gray-600">folder</span>
-            <span class="font-medium text-gray-800">{{ folder.label }}</span>
+            <span class="material-icons text-muted-foreground">folder</span>
+            <span class="font-medium text-foreground">{{ folder.label }}</span>
           </div>
-          <p class="text-sm text-gray-600 mt-1">选择新的父文件夹位置</p>
+          <p class="text-sm text-muted-foreground mt-1">选择新的父文件夹位置</p>
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">移动到</label>
+          <label class="block text-sm font-medium text-foreground mb-2">移动到</label>
           <div class="mb-3">
-            <label class="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer">
-              <input type="radio" :value="undefined" v-model="selectedParentId" class="text-blue-600" />
-              <span class="material-icons text-gray-500">home</span>
+            <label class="flex items-center space-x-2 p-2 border rounded-md hover:bg-muted cursor-pointer">
+              <input type="radio" :value="undefined" v-model="selectedParentId" class="text-primary" />
+              <span class="material-icons text-muted-foreground">home</span>
               <span>根目录</span>
             </label>
           </div>
@@ -33,35 +33,35 @@
               <template #default="{ node, stat }">
                 <div
                   :class="[
-                    'flex items-center px-2 py-1 rounded-md cursor-pointer hover:bg-gray-100',
-                    selectedParentId === node.id ? 'bg-blue-100 text-blue-700' : ''
+                    'flex items-center px-2 py-1 rounded-md cursor-pointer hover:bg-muted',
+                    selectedParentId === node.id ? 'bg-primary text-primary' : ''
                   ]"
                   @click="selectedParentId = node.id"
                 >
-                  <span v-if="stat.children.length" class="material-icons text-base mr-1 text-gray-400" @click.stop="stat.open = !stat.open">
+                  <span v-if="stat.children.length" class="material-icons text-base mr-1 text-muted-foreground" @click.stop="stat.open = !stat.open">
                     {{ stat.open ? 'expand_more' : 'chevron_right' }}
                   </span>
                   <span v-else class="inline-block w-5"></span>
-                  <span class="material-icons text-gray-500 text-sm mr-2">folder</span>
+                  <span class="material-icons text-muted-foreground text-sm mr-2">folder</span>
                   <span class="flex-1 text-sm">{{ node.label }}</span>
                 </div>
               </template>
             </BaseTree>
           </div>
 
-          <p class="text-xs text-gray-500 mt-2">
+          <p class="text-xs text-muted-foreground mt-2">
             选择文件夹作为新的父目录，或选择根目录将文件夹移动到顶层
           </p>
         </div>
 
-        <div v-if="error" class="mt-4 bg-red-50 border border-red-200 rounded-md p-3">
-          <p class="text-red-600 text-sm">{{ error }}</p>
+        <div v-if="error" class="mt-4 bg-destructive border border-destructive rounded-md p-3">
+          <p class="text-destructive text-sm">{{ error }}</p>
         </div>
       </div>
 
-      <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
-        <button type="button" @click="handleCancel" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors" :disabled="isLoading">取消</button>
-        <button type="button" @click="handleMove" class="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-md transition-colors flex items-center space-x-2" :disabled="isLoading">
+      <div class="px-6 py-4 border-t border-border flex justify-end space-x-3">
+        <button type="button" @click="handleCancel" class="px-4 py-2 text-foreground bg-muted hover:bg-accent rounded-md transition-colors" :disabled="isLoading">取消</button>
+        <button type="button" @click="handleMove" class="px-4 py-2 bg-primary text-white hover:bg-primary rounded-md transition-colors flex items-center space-x-2" :disabled="isLoading">
           <svg v-if="isLoading" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>

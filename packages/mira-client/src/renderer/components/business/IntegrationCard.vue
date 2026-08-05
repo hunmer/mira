@@ -140,13 +140,13 @@ const getPluginStatusClass = (status: string) => {
     case 'loaded':
       return 'bg-green-500 text-white'
     case 'loading':
-      return 'bg-blue-500 text-white'
+      return 'bg-primary text-white'
     case 'error':
-      return 'bg-red-500 text-white'
+      return 'bg-destructive text-white'
     case 'disabled':
-      return 'bg-gray-500 text-white'
+      return 'bg-muted text-white'
     default:
-      return 'bg-gray-400 text-white'
+      return 'bg-muted text-white'
   }
 }
 
@@ -183,11 +183,11 @@ const getStatusVariant = (status: string): 'default' | 'secondary' | 'destructiv
 const getTagClass = (tag: string) => {
   // 预定义颜色方案
   const colorSchemes = [
-    'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400',
+    'bg-primary dark:bg-primary/50 text-primary dark:text-primary',
     'bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400',
     'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-600 dark:text-yellow-400',
-    'bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400',
-    'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400',
+    'bg-destructive dark:bg-destructive/50 text-destructive dark:text-destructive',
+    'bg-primary dark:bg-primary/50 text-primary dark:text-primary',
     'bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400',
     'bg-pink-100 dark:bg-pink-900/50 text-pink-600 dark:text-pink-400',
     'bg-teal-100 dark:bg-teal-900/50 text-teal-600 dark:text-teal-400',

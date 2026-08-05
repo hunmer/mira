@@ -1,5 +1,5 @@
 <template>
-  <div class="relative flex flex-grow flex-col bg-gray-100 overflow-hidden">
+  <div class="relative flex flex-grow flex-col bg-muted overflow-hidden">
     <!-- 视频容器 -->
     <div class="flex flex-grow items-center justify-center w-full h-full overflow-hidden">
       <div class="relative w-full h-full rounded-lg overflow-hidden shadow-2xl">
@@ -12,11 +12,11 @@
         <!-- 视频不存在时的占位符 -->
         <div
           v-if="!video"
-          class="w-full h-full bg-gray-200 flex items-center justify-center absolute inset-0 z-5"
+          class="w-full h-full bg-accent flex items-center justify-center absolute inset-0 z-5"
         >
           <div class="text-center">
-            <span class="material-icons text-gray-400 text-8xl mb-4 block">videocam_off</span>
-            <p class="text-gray-600 text-lg">无可用视频</p>
+            <span class="material-icons text-muted-foreground text-8xl mb-4 block">videocam_off</span>
+            <p class="text-muted-foreground text-lg">无可用视频</p>
           </div>
         </div>
         
@@ -26,7 +26,7 @@
           class="absolute inset-0 bg-black/50 flex items-center justify-center z-10"
         >
           <div class="flex flex-col items-center space-y-2 text-white">
-            <span class="material-icons text-red-400 text-6xl">error</span>
+            <span class="material-icons text-destructive text-6xl">error</span>
             <span class="text-sm">视频加载失败</span>
           </div>
         </div>

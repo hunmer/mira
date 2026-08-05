@@ -1,5 +1,5 @@
 <template>
-  <div class="search-result-item folder-result p-2 rounded-md flex items-center space-x-4 hover:bg-gray-600 cursor-pointer transition-colors duration-200 border border-transparent hover:border-[#374151]">
+  <div class="search-result-item folder-result p-2 rounded-md flex items-center space-x-4 hover:bg-muted cursor-pointer transition-colors duration-200 border border-transparent hover:border-[#374151]">
     <!-- 文件夹图标 -->
     <div class="folder-icon flex-shrink-0">
       <div 
@@ -16,14 +16,14 @@
     <div class="folder-info flex-1 min-w-0">
       <p class="font-semibold text-white truncate" :title="item.title">
         {{ item.title }}
-        <span v-if="isRootFolder" class="text-xs text-blue-400 ml-1">(根目录)</span>
+        <span v-if="isRootFolder" class="text-xs text-primary ml-1">(根目录)</span>
       </p>
-      <div class="flex items-center space-x-2 text-sm text-gray-400">
+      <div class="flex items-center space-x-2 text-sm text-muted-foreground">
         <span>{{ item.fileCount || 0 }} 个文件</span>
         <span v-if="item.path">•</span>
         <span v-if="item.path" class="truncate" :title="item.path">{{ item.path }}</span>
       </div>
-      <div v-if="item.description" class="text-xs text-gray-500 mt-1 truncate">
+      <div v-if="item.description" class="text-xs text-muted-foreground mt-1 truncate">
         {{ item.description }}
       </div>
     </div>
@@ -43,7 +43,7 @@
         <span 
           v-for="level in folderDepth" 
           :key="level"
-          class="w-1 h-1 bg-gray-500 rounded-full"
+          class="w-1 h-1 bg-muted rounded-full"
         ></span>
       </div>
     </div>

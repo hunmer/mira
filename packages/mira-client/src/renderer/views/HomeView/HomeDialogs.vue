@@ -44,24 +44,24 @@ const emit = defineEmits<{
     v-if="showNoLibraryDialog"
     class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
   >
-    <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md mx-4">
+    <div class="bg-white dark:bg-muted rounded-lg p-6 max-w-md mx-4">
       <div class="flex items-center mb-4">
         <span class="material-icons text-yellow-500 mr-3">warning</span>
         <h3 class="text-lg font-semibold">没有可用的素材库</h3>
       </div>
-      <p class="text-gray-600 dark:text-gray-400 mb-6">
+      <p class="text-muted-foreground dark:text-muted-foreground mb-6">
         系统检测到您还没有创建任何素材库。素材库是用来管理和组织您的媒体文件的。
       </p>
       <div class="flex justify-end space-x-3">
         <button
           @click="showNoLibraryDialog = false"
-          class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md"
+          class="px-4 py-2 text-muted-foreground hover:bg-muted rounded-md"
         >
           稍后创建
         </button>
         <button
           @click="emit('createLibrary')"
-          class="px-4 py-2 bg-blue-500 text-white hover:bg-blue-600 rounded-md"
+          class="px-4 py-2 bg-primary text-white hover:bg-primary rounded-md"
         >
           创建素材库
         </button>

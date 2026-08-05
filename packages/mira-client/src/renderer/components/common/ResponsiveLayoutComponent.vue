@@ -369,23 +369,23 @@ defineExpose({
 }
 
 .mira-spacing-xs {
-  gap: var(--mira-space-1);
+  gap: 0.25rem;
 }
 
 .mira-spacing-sm {
-  gap: var(--mira-space-2);
+  gap: 0.5rem;
 }
 
 .mira-spacing-md {
-  gap: var(--mira-space-4);
+  gap: 1rem;
 }
 
 .mira-spacing-lg {
-  gap: var(--mira-space-6);
+  gap: 1.5rem;
 }
 
 .mira-spacing-xl {
-  gap: var(--mira-space-8);
+  gap: 2rem;
 }
 
 /* 对齐 */
@@ -419,15 +419,15 @@ defineExpose({
 .mira-sidebar {
   grid-area: sidebar;
   min-width: v-bind(sidebarWidth);
-  background-color: var(--mira-bg-primary);
-  border-right: 1px solid var(--mira-border-primary);
-  transition: all var(--mira-transition-normal);
+  background-color: var(--background);
+  border-right: 1px solid var(--border);
+  transition: all 250ms ease;
 }
 
 .mira-sidebar-right {
   order: 2;
   border-right: none;
-  border-left: 1px solid var(--mira-border-primary);
+  border-left: 1px solid var(--border);
 }
 
 .mira-sidebar-collapsed {
@@ -477,7 +477,7 @@ defineExpose({
   z-index: 99;
   opacity: 0;
   visibility: hidden;
-  transition: all var(--mira-transition-normal);
+  transition: all 250ms ease;
 }
 
 .mira-mobile-overlay.visible {
@@ -488,17 +488,17 @@ defineExpose({
 /* 断点信息 */
 .mira-breakpoint-info {
   position: fixed;
-  top: var(--mira-space-4);
-  right: var(--mira-space-4);
-  background-color: var(--mira-primary-500);
+  top: 1rem;
+  right: 1rem;
+  background-color: var(--primary);
   color: white;
-  padding: var(--mira-space-2) var(--mira-space-3);
-  border-radius: var(--mira-radius-md);
-  font-size: var(--mira-text-xs);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-md);
+  font-size: 0.75rem;
   font-weight: 600;
   z-index: 1000;
   display: flex;
-  gap: var(--mira-space-2);
+  gap: 0.5rem;
   pointer-events: none;
 }
 
@@ -533,18 +533,18 @@ defineExpose({
   }
   
   .mira-spacing-lg {
-    gap: var(--mira-space-4);
+    gap: 1rem;
   }
   
   .mira-spacing-xl {
-    gap: var(--mira-space-6);
+    gap: 1.5rem;
   }
 }
 
 /* 暗色主题 */
 .dark .mira-sidebar {
-  background-color: var(--mira-bg-secondary);
-  border-color: var(--mira-border-primary);
+  background-color: var(--muted);
+  border-color: var(--border);
 }
 
 /* 高对比度主题 */

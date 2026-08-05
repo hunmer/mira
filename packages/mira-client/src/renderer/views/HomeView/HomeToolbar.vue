@@ -38,16 +38,16 @@ watch(userAvatarUrl, () => { avatarLoadError.value = false })
 </script>
 
 <template>
-  <div class="w-12 shrink-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg flex flex-col items-center py-2 space-y-2">
+  <div class="w-12 shrink-0 bg-white dark:bg-muted border border-border dark:border-border rounded-lg flex flex-col items-center py-2 space-y-2">
     <!-- 文件上传按钮 -->
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger as-child>
           <button
-            class="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            class="p-2 rounded-lg hover:bg-muted transition-colors"
             @click="emit('upload')"
           >
-            <span class="material-icons text-gray-600 text-base">upload_file</span>
+            <span class="material-icons text-muted-foreground text-base">upload_file</span>
           </button>
         </TooltipTrigger>
         <TooltipContent side="left">上传文件</TooltipContent>
@@ -55,17 +55,17 @@ watch(userAvatarUrl, () => { avatarLoadError.value = false })
     </TooltipProvider>
 
     <!-- 分隔线 -->
-    <div class="w-6 border-t border-gray-200 dark:border-gray-700"></div>
+    <div class="w-6 border-t border-border dark:border-border"></div>
 
     <!-- 插件管理按钮 -->
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger as-child>
           <button
-            class="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            class="p-2 rounded-lg hover:bg-muted transition-colors"
             @click="emit('plugins')"
           >
-            <span class="material-icons text-gray-600 text-base">extension</span>
+            <span class="material-icons text-muted-foreground text-base">extension</span>
           </button>
         </TooltipTrigger>
         <TooltipContent side="left">插件管理</TooltipContent>
@@ -77,10 +77,10 @@ watch(userAvatarUrl, () => { avatarLoadError.value = false })
       <Tooltip>
         <TooltipTrigger as-child>
           <button
-            class="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            class="p-2 rounded-lg hover:bg-muted transition-colors"
             @click="emit('shortcuts')"
           >
-            <span class="material-icons text-gray-600 text-base">keyboard</span>
+            <span class="material-icons text-muted-foreground text-base">keyboard</span>
           </button>
         </TooltipTrigger>
         <TooltipContent side="left">快捷键设置</TooltipContent>
@@ -92,10 +92,10 @@ watch(userAvatarUrl, () => { avatarLoadError.value = false })
       <Tooltip>
         <TooltipTrigger as-child>
           <button
-            class="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            class="p-2 rounded-lg hover:bg-muted transition-colors"
             @click="emit('settings')"
           >
-            <span class="material-icons text-gray-600 text-base">settings</span>
+            <span class="material-icons text-muted-foreground text-base">settings</span>
           </button>
         </TooltipTrigger>
         <TooltipContent side="left">应用设置</TooltipContent>
@@ -111,7 +111,7 @@ watch(userAvatarUrl, () => { avatarLoadError.value = false })
       min-width="180px"
     >
       <template #trigger>
-        <button class="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+        <button class="p-2 rounded-lg hover:bg-muted transition-colors">
           <img
             v-if="userAvatarUrl && !avatarLoadError"
             :src="userAvatarUrl"
@@ -119,7 +119,7 @@ watch(userAvatarUrl, () => { avatarLoadError.value = false })
             class="w-6 h-6 rounded-full object-cover"
             @error="avatarLoadError = true"
           />
-          <div v-else class="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-medium">
+          <div v-else class="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-white text-xs font-medium">
             {{ authStore.userDisplayName?.charAt(0)?.toUpperCase() || '?' }}
           </div>
         </button>
@@ -127,10 +127,10 @@ watch(userAvatarUrl, () => { avatarLoadError.value = false })
       <template #content="{ close }">
         <div class="p-3">
           <div class="text-sm font-medium truncate">{{ authStore.userDisplayName }}</div>
-          <div v-if="authStore.user?.role" class="px-2 pb-2 text-xs text-gray-500">{{ authStore.user.role }}</div>
-          <div class="border-t border-gray-100 dark:border-gray-700 pt-1">
+          <div v-if="authStore.user?.role" class="px-2 pb-2 text-xs text-muted-foreground">{{ authStore.user.role }}</div>
+          <div class="border-t border-border dark:border-border pt-1">
             <button
-              class="w-full flex items-center space-x-2 p-2 text-red-600 hover:bg-red-50 rounded text-sm"
+              class="w-full flex items-center space-x-2 p-2 text-destructive hover:bg-destructive rounded text-sm"
               @click="emit('logout'); close()"
             >
               <span class="material-icons text-base">logout</span>
@@ -146,10 +146,10 @@ watch(userAvatarUrl, () => { avatarLoadError.value = false })
       <Tooltip>
         <TooltipTrigger as-child>
           <button
-            class="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            class="p-2 rounded-lg hover:bg-muted transition-colors"
             @click="shortcutService.executeAction('dev.devtools')"
           >
-            <span class="material-icons text-gray-600 text-base">code</span>
+            <span class="material-icons text-muted-foreground text-base">code</span>
           </button>
         </TooltipTrigger>
         <TooltipContent side="left">开发者工具</TooltipContent>

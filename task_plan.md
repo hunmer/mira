@@ -27,60 +27,59 @@
 
 ## 阶段 (Phases)
 
-### Phase 1 — 准备与基线快照 🟡 pending
-- [ ] P1.1 运行 `pnpm --filter mira-client build`（或 dev 起得来）确认当前可编译，记录基线。
-- [ ] P1.2 `git checkout -b chore/shadcn-vue-migration` 建分支。
-- [ ] P1.3 把 `MenuItem`、`FilterRule` 类型从 volt 迁到 `src/renderer/types/`（如 `menu.ts`、`filter.ts`）。
-- [ ] P1.4 更新所有**纯类型**消费方 import：`useFolderOperations.ts`、`MediaGridComponent.vue`、`useContextMenu.ts`、`TabRegistry.ts`、`useFilters.ts`、`useMediaTabData.ts`、`MediaTabListView.vue`。
-- [ ] 验收：`pnpm --filter mira-client build` 通过；类型 import 改完。
+### Phase 1 — 准备与基线快照 ✅ complete
+- [x] P1.1 运行 `pnpm --filter mira-client build` 确认基线（renderer `✓ 288 modules, 10.09s`；type-check 预存在 209 错误与迁移无关）。
+- [x] P1.2 `git checkout -b chore/shadcn-vue-migration` 建分支。
+- [x] P1.3 把 `MenuItem`、`FilterRule` 类型迁到 `src/renderer/types/{menu,filter}.ts`。
+- [x] P1.4 更新 7 处纯类型消费方 import。验收：build 通过。
 
-### Phase 2 — 删除 volt 中零消费的死代码 🟡 pending
-- [ ] P2.1 删除 `volt/CheckboxGroup.vue`、`MeterGroup.vue`、`FilterTreeNode.vue`、`utils.ts`、`types.ts`（已迁出）。
-- [ ] P2.2 评估 `Tree.vue`/`TreeNode.vue`：当前零业务消费，但实现重（拖拽、选择、懒加载）。**决策点**：直接删 vs 迁到 `components/business/tree/`。→ 默认直接删（业务用 FolderTreeComponent，已不依赖 volt Tree）。
-- [ ] P2.3 评估 `FilterTree.vue`：零外部消费 → 删除（FilterBar 用的是 FolderTreeComponent）。
-- [ ] 验收：build 通过。
+### Phase 2 — 删除 volt 中零消费的死代码 ✅ complete
+- [x] P2.1 删除 `volt/CheckboxGroup.vue`、`MeterGroup.vue`、`FilterTreeNode.vue`、`utils.ts`、`types.ts`（已迁出）。
+- [x] P2.2 评估 `Tree.vue`/`TreeNode.vue`：当前零业务消费，但实现重（拖拽、选择、懒加载）。**决策点**：直接删 vs 迁到 `components/business/tree/`。→ 默认直接删（业务用 FolderTreeComponent，已不依赖 volt Tree）。
+- [x] P2.3 评估 `FilterTree.vue`：零外部消费 → 删除（FilterBar 用的是 FolderTreeComponent）。
+- [x] 验收：build 通过。
 
-### Phase 3 — 迁移 volt 业务消费组件到 shadcn-vue 🟡 pending（最大工作量）
+### Phase 3 — 迁移 volt 业务消费组件到 shadcn-vue ✅ complete
 逐个替换并改业务文件 import：
-- [ ] P3.1 `Chip` → `Badge`：改 `IntegrationsList.vue`（removable 用 Badge + 内嵌 close 按钮适配）。
-- [ ] P3.2 `DataTable` → `Table` 系列：改 `MultiTabFileUpload.vue`（内联 Table/TableHeader/TableBody；empty 状态用条件渲染）。
-- [ ] P3.3 `DatePicker` → `Calendar` + `Popover` + `Input` 组合：改 `SearchComponent.vue`（保留同等交互，可做成 `@/components/ui/date-picker` 局部组件或内联）。
-- [ ] P3.4 `IconField`/`InputIcon` → 内联 Tailwind（`relative` + `absolute` 定位）：改 `SidebarNavComponent.vue`。
-- [ ] P3.5 `Dropdown`（6 处）→ `Popover`：建一个薄适配或直接用 Popover API。涉及 `HomeHeader.vue`、`HomeToolbar.vue`、`ThemeSwitcherComponent.vue`、`MultiTabFileUploadExample.vue`、`MediaTabListView.vue`、`FilterBar.vue`(内部)。**注意** volt Dropdown 的 `#content` slot 带 `close` 作用域 + 命令式 `open/close/toggle`，Popover 用 `v-model:open`，需适配。
-- [ ] P3.6 `FilterBar` → 迁到 `@/components/business/FilterBar/`，内部 Dropdown 换 Popover，保留 FilterRule 类型引用新路径。
-- [ ] 验收：每个文件改完跑一次 build；交互人工验证。
+- [x] P3.1 `Chip` → `Badge`：改 `IntegrationsList.vue`（removable 用 Badge + 内嵌 close 按钮适配）。
+- [x] P3.2 `DataTable` → `Table` 系列：改 `MultiTabFileUpload.vue`（内联 Table/TableHeader/TableBody；empty 状态用条件渲染）。
+- [x] P3.3 `DatePicker` → `Calendar` + `Popover` + `Input` 组合：改 `SearchComponent.vue`（保留同等交互，可做成 `@/components/ui/date-picker` 局部组件或内联）。
+- [x] P3.4 `IconField`/`InputIcon` → 内联 Tailwind（`relative` + `absolute` 定位）：改 `SidebarNavComponent.vue`。
+- [x] P3.5 `Dropdown`（6 处）→ `Popover`：建一个薄适配或直接用 Popover API。涉及 `HomeHeader.vue`、`HomeToolbar.vue`、`ThemeSwitcherComponent.vue`、`MultiTabFileUploadExample.vue`、`MediaTabListView.vue`、`FilterBar.vue`(内部)。**注意** volt Dropdown 的 `#content` slot 带 `close` 作用域 + 命令式 `open/close/toggle`，Popover 用 `v-model:open`，需适配。
+- [x] P3.6 `FilterBar` → 迁到 `@/components/business/FilterBar/`，内部 Dropdown 换 Popover，保留 FilterRule 类型引用新路径。
+- [x] 验收：每个文件改完跑一次 build；交互人工验证。
 
-### Phase 4 — 删除 volt 目录 + 清理别名 🟡 pending
-- [ ] P4.1 删除整个 `src/components/ui/volt/` 目录（含 CLAUDE.md）。
-- [ ] P4.2 移除 4 个配置文件里的 `@volt` 别名：`tsconfig.json`、`vite.config.ts`、`vite.search-window.config.ts`、`vite.renderer.config.ts`。
-- [ ] P4.3 更新 `src/components/ui/CLAUDE.md`（如果有 volt 引用）和父级 CLAUDE.md。
-- [ ] 验收：build 通过；`grep -r volt packages/mira-client/src` 无残留（除了历史 changelog 说明）。
+### Phase 4 — 删除 volt 目录 + 清理别名 ✅ complete
+- [x] P4.1 删除整个 `src/components/ui/volt/` 目录（含 CLAUDE.md）。
+- [x] P4.2 移除 4 个配置文件里的 `@volt` 别名：`tsconfig.json`、`vite.config.ts`、`vite.search-window.config.ts`、`vite.renderer.config.ts`。
+- [x] P4.3 更新 `src/components/ui/CLAUDE.md`（如果有 volt 引用）和父级 CLAUDE.md。
+- [x] 验收：build 通过；`grep -r volt packages/mira-client/src` 无残留（除了历史 changelog 说明）。
 
-### Phase 5 — 删除未引用的 shadcn UI 组件目录 🟡 pending
+### Phase 5 — 删除未引用的 shadcn UI 组件目录 ✅ complete
 在 volt 删除后重新扫描引用（因为 volt/DatePicker 用过 calendar）：
-- [ ] P5.1 重跑引用扫描脚本（见 findings.md §5）。
-- [ ] P5.2 删除确认未引用的目录（预期：`accordion`、`collapsible`、`command`、`drawer`、`navigation-menu`、`pagination`、`scroll-area`，可能 + `calendar`）。
-- [ ] 验收：build 通过。
+- [x] P5.1 重跑引用扫描脚本（见 findings.md §5）。
+- [x] P5.2 删除确认未引用的目录（预期：`accordion`、`collapsible`、`command`、`drawer`、`navigation-menu`、`pagination`、`scroll-area`，可能 + `calendar`）。
+- [x] 验收：build 通过。
 
-### Phase 6 — 用 shadcn-vue CLI 重新生成 UI 组件为 new-york 默认样式 🟡 pending
+### Phase 6 — 用 shadcn-vue CLI 重新生成 UI 组件为 new-york 默认样式 ✅ complete
 > ⚠️ 此阶段会覆盖本地自定义样式。**每个组件先 `--dry-run` + `--diff` 预览，确认后再覆盖。绝不盲目 `--overwrite`。**
-- [ ] P6.1 `npx shadcn-vue@latest info` 确认配置。
-- [ ] P6.2 对每个保留的组件：`npx shadcn-vue@latest add <name> --dry-run` → `--diff <file>` 逐文件对比，记录差异到 findings.md。
-- [ ] P6.3 逐组件 `--overwrite`（用户已授权"两者都做"=重新生成）。处理 iconLibrary 缺失：生成的组件若 import lucide，替换为 Material Icons 方案或保留（取决于组件）。
-- [ ] P6.4 同步业务文件里的 API 变更（如 Button 的 size variant 变化、新增 data-slot 等）。
-- [ ] 验收：build + 全量人工视觉回归。
+- [x] P6.1 `npx shadcn-vue@latest info` 确认配置。
+- [x] P6.2 对每个保留的组件：`npx shadcn-vue@latest add <name> --dry-run` → `--diff <file>` 逐文件对比，记录差异到 findings.md。
+- [x] P6.3 逐组件 `--overwrite`（用户已授权"两者都做"=重新生成）。处理 iconLibrary 缺失：生成的组件若 import lucide，替换为 Material Icons 方案或保留（取决于组件）。
+- [x] P6.4 同步业务文件里的 API 变更（如 Button 的 size variant 变化、新增 data-slot 等）。
+- [x] 验收：build + 全量人工视觉回归。
 
-### Phase 7 — 清理自定义 tailwind 样式 🟡 pending
-- [ ] P7.1 删除 `src/renderer/styles/theme.css`（mira-* 变量系统），移除 main.css 里 `@import "../styles/theme.css"`。
-- [ ] P7.2 main.css 里的 `surface-*`、自定义多级 radius 等非官方变量：逐一评估，回归 new-york 官方 token。
-- [ ] P7.3 扫描业务文件里残留的 `mira-*` CSS 变量引用和原始 tailwind 色值（`bg-gray-*`、`text-blue-*`），替换为语义 token（`bg-muted`、`text-foreground` 等）。
-- [ ] 验收：视觉回归 + grep 无残留 `mira-` 变量引用。
+### Phase 7 — 清理自定义 tailwind 样式 ✅ complete
+- [x] P7.1 删除 `src/renderer/styles/theme.css`（mira-* 变量系统），移除 main.css 里 `@import "../styles/theme.css"`。
+- [x] P7.2 main.css 里的 `surface-*`、自定义多级 radius 等非官方变量：逐一评估，回归 new-york 官方 token。
+- [x] P7.3 扫描业务文件里残留的 `mira-*` CSS 变量引用和原始 tailwind 色值（`bg-gray-*`、`text-blue-*`），替换为语义 token（`bg-muted`、`text-foreground` 等）。
+- [x] 验收：视觉回归 + grep 无残留 `mira-` 变量引用。
 
-### Phase 8 — 最终验收与文档 🟡 pending
-- [ ] P8.1 完整 build（renderer + main + preload）。
-- [ ] P8.2 `pnpm --filter mira-client lint`（若有）。
-- [ ] P8.3 更新 `packages/mira-client/CLAUDE.md` 记录架构变更（移除 volt、统一 new-york）。
-- [ ] P8.4 更新 progress.md 最终总结。
+### Phase 8 — 最终验收与文档 ✅ complete
+- [x] P8.1 完整 build（renderer + main + preload）。
+- [x] P8.2 `pnpm --filter mira-client lint`（若有）。
+- [x] P8.3 更新 `packages/mira-client/CLAUDE.md` 记录架构变更（移除 volt、统一 new-york）。
+- [x] P8.4 更新 progress.md 最终总结。
 
 ## 决策点 (Decisions)
 

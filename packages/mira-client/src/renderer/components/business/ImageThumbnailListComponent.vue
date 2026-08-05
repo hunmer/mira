@@ -1,5 +1,5 @@
 <template>
-  <div class="w-28 flex-shrink-0 bg-white p-2 flex flex-col items-center border-r border-gray-200">
+  <div class="w-28 flex-shrink-0 bg-white p-2 flex flex-col items-center border-r border-border">
     <div class="flex-grow space-y-3 overflow-y-auto pr-1">
       <img
         v-for="(image, index) in images"
@@ -9,8 +9,8 @@
         :class="[
           'h-24 w-24 cursor-pointer rounded-lg border-2 object-cover',
           index === currentImageIndex
-            ? 'border-blue-500'
-            : 'border-transparent hover:border-gray-300'
+            ? 'border-primary'
+            : 'border-transparent hover:border-border'
         ]"
         :src="getImageSrc(image)"
         @click="handleImageSelect(index, image)"

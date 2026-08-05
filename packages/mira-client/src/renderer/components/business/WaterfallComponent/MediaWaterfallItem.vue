@@ -3,8 +3,8 @@
     :data-selectable-id="item.id"
     :data-file="getLocalFile(item)"
     :class="[
-      'waterfall-card media-waterfall-item bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden group cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5',
-      isSelected ? 'ring-2 ring-blue-500' : ''
+      'waterfall-card media-waterfall-item bg-white rounded-lg shadow-sm border border-border overflow-hidden group cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5',
+      isSelected ? 'ring-2 ring-primary' : ''
     ]"
     @click="handleClick"
   >
@@ -60,7 +60,7 @@
       <!-- 选择框 -->
       <div
         v-if="isSelected"
-        class="absolute top-2 left-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center z-10"
+        class="absolute top-2 left-2 w-6 h-6 bg-primary rounded-full flex items-center justify-center z-10"
       >
         <span class="material-icons text-white text-sm">check</span>
       </div>
@@ -89,7 +89,7 @@
         class="absolute bottom-0 left-0 right-0 h-1 bg-black/30 z-10"
       >
         <div
-          class="h-full bg-blue-500 transition-all duration-100"
+          class="h-full bg-primary transition-all duration-100"
           :style="{ width: `${progress * 100}%` }"
         ></div>
       </div>
@@ -97,8 +97,8 @@
 
     <!-- 文件信息 -->
     <div class="p-3">
-      <h3 class="text-sm font-medium text-gray-900 truncate">{{ item.name }}</h3>
-      <div class="flex items-center justify-between mt-2 text-xs text-gray-500">
+      <h3 class="text-sm font-medium text-foreground truncate">{{ item.name }}</h3>
+      <div class="flex items-center justify-between mt-2 text-xs text-muted-foreground">
         <span>{{ formatFileSize(item.size || 0) }}</span>
         <span>{{ formatDate(item.createdAt || '') }}</span>
       </div>

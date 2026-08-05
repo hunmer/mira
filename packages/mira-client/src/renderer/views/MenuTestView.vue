@@ -1,10 +1,10 @@
 <template>
-  <div class="min-h-screen bg-[#f5f5f5] dark:bg-gray-900">
+  <div class="min-h-screen bg-[#f5f5f5] dark:bg-muted">
     <div class="p-6 space-y-6">
-      <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200">菜单 API 测试</h2>
+      <h2 class="text-2xl font-bold text-foreground dark:text-muted-foreground">菜单 API 测试</h2>
       
       <!-- 菜单管理 -->
-      <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+      <div class="bg-white dark:bg-muted p-4 rounded-lg shadow">
         <h3 class="text-lg font-semibold mb-4">菜单管理</h3>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -12,7 +12,7 @@
           <div class="space-y-2">
             <button
               @click="addCustomMenu"
-              class="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              class="w-full px-4 py-2 bg-primary text-white rounded hover:bg-primary"
             >
               添加自定义菜单
             </button>
@@ -22,7 +22,7 @@
           <div class="space-y-2">
             <button
               @click="removeCustomMenu"
-              class="w-full px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+              class="w-full px-4 py-2 bg-destructive text-white rounded hover:bg-destructive"
             >
               移除自定义菜单
             </button>
@@ -41,7 +41,7 @@
       </div>
 
       <!-- 菜单项管理 -->
-      <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+      <div class="bg-white dark:bg-muted p-4 rounded-lg shadow">
         <h3 class="text-lg font-semibold mb-4">菜单项管理</h3>
         
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -68,7 +68,7 @@
 
           <button
             @click="toggleMenuItemVisible"
-            class="px-4 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600"
+            class="px-4 py-2 bg-primary text-white rounded hover:bg-primary"
           >
             切换菜单项可见性
           </button>
@@ -76,27 +76,27 @@
       </div>
 
       <!-- 当前菜单状态 -->
-      <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+      <div class="bg-white dark:bg-muted p-4 rounded-lg shadow">
         <h3 class="text-lg font-semibold mb-4">当前菜单状态</h3>
         
         <div class="space-y-4">
           <div v-for="menu in currentMenus" :key="menu.id" class="border rounded p-3">
-            <h4 class="font-medium text-gray-800 dark:text-gray-200">{{ menu.label }} ({{ menu.id }})</h4>
+            <h4 class="font-medium text-foreground dark:text-muted-foreground">{{ menu.label }} ({{ menu.id }})</h4>
             <ul class="mt-2 space-y-1">
               <li 
                 v-for="item in menu.submenu" 
                 :key="item.id"
-                class="text-sm text-gray-600 dark:text-gray-400 pl-4"
+                class="text-sm text-muted-foreground dark:text-muted-foreground pl-4"
                 :class="{
-                  'text-gray-400': item.enabled === false,
+                  'text-muted-foreground': item.enabled === false,
                   'line-through': item.visible === false
                 }"
               >
                 {{ item.label || item.id }} 
-                <span v-if="item.accelerator" class="text-xs bg-gray-100 dark:bg-gray-700 px-1 rounded">
+                <span v-if="item.accelerator" class="text-xs bg-muted dark:bg-muted px-1 rounded">
                   {{ item.accelerator }}
                 </span>
-                <span v-if="item.route" class="text-xs text-blue-500">
+                <span v-if="item.route" class="text-xs text-primary">
                   → {{ item.route }}
                 </span>
               </li>
@@ -106,27 +106,27 @@
 
         <button
           @click="refreshMenuState"
-          class="mt-4 px-4 py-2 bg-gray-500 dark:bg-gray-600 text-white rounded hover:bg-gray-600"
+          class="mt-4 px-4 py-2 bg-muted dark:bg-muted text-white rounded hover:bg-muted"
         >
           刷新菜单状态
         </button>
       </div>
 
       <!-- 操作日志 -->
-      <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+      <div class="bg-white dark:bg-muted p-4 rounded-lg shadow">
         <h3 class="text-lg font-semibold mb-4">操作日志</h3>
-        <div class="bg-gray-50 dark:bg-gray-900 p-3 rounded h-40 overflow-y-auto">
+        <div class="bg-muted dark:bg-muted p-3 rounded h-40 overflow-y-auto">
           <div 
             v-for="(log, index) in logs" 
             :key="index"
-            class="text-sm text-gray-700 dark:text-gray-300 mb-1"
+            class="text-sm text-foreground dark:text-muted-foreground mb-1"
           >
-            <span class="text-gray-500 dark:text-gray-400">{{ log.time }}</span> - {{ log.message }}
+            <span class="text-muted-foreground dark:text-muted-foreground">{{ log.time }}</span> - {{ log.message }}
           </div>
         </div>
         <button
           @click="clearLogs"
-          class="mt-2 px-3 py-1 bg-gray-400 text-white text-sm rounded hover:bg-gray-500"
+          class="mt-2 px-3 py-1 bg-muted text-white text-sm rounded hover:bg-muted"
         >
           清空日志
         </button>

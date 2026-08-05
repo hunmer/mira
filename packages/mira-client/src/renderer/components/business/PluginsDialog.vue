@@ -9,17 +9,17 @@
       </DialogHeader>
       <div class="min-h-[400px] h-full flex">
         <!-- 侧边栏 -->
-        <aside class="w-56 rounded-lg border border-gray-200 dark:border-gray-700 flex flex-col">
+        <aside class="w-56 rounded-lg border border-border dark:border-border flex flex-col">
           <!-- 插件类型切换 -->
           <div class="p-4">
-            <div class="bg-gray-200 dark:bg-gray-700 rounded-lg p-1 flex">
+            <div class="bg-accent dark:bg-muted rounded-lg p-1 flex">
               <button
                 @click="activeTab = 'local'"
                 :class="[
                   'flex-1 text-sm py-2 px-3 rounded-md font-medium transition-colors',
                   activeTab === 'local'
-                    ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 shadow'
-                    : 'text-gray-600 dark:text-gray-400'
+                    ? 'bg-white dark:bg-muted text-foreground dark:text-muted-foreground shadow'
+                    : 'text-muted-foreground dark:text-muted-foreground'
                 ]"
               >
                 本地插件
@@ -29,8 +29,8 @@
                 :class="[
                   'flex-1 text-sm py-2 px-3 rounded-md font-medium transition-colors',
                   activeTab === 'online'
-                    ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 shadow'
-                    : 'text-gray-600 dark:text-gray-400'
+                    ? 'bg-white dark:bg-muted text-foreground dark:text-muted-foreground shadow'
+                    : 'text-muted-foreground dark:text-muted-foreground'
                 ]"
               >
                 插件市场
@@ -45,8 +45,8 @@
               :class="[
                 'flex items-center w-full px-3 py-2 text-sm rounded-lg transition-colors',
                 selectedCategory === 'all'
-                  ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  ? 'bg-primary dark:bg-primary text-primary dark:text-primary'
+                  : 'text-muted-foreground dark:text-muted-foreground hover:bg-muted dark:hover:bg-muted'
               ]"
             >
               <span class="material-icons text-base mr-2">all_inclusive</span>
@@ -57,8 +57,8 @@
               :class="[
                 'flex items-center w-full px-3 py-2 text-sm rounded-lg transition-colors',
                 selectedCategory === 'communication'
-                  ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  ? 'bg-primary dark:bg-primary text-primary dark:text-primary'
+                  : 'text-muted-foreground dark:text-muted-foreground hover:bg-muted dark:hover:bg-muted'
               ]"
             >
               <span class="material-icons text-base mr-2">chat_bubble_outline</span>
@@ -69,8 +69,8 @@
               :class="[
                 'flex items-center w-full px-3 py-2 text-sm rounded-lg transition-colors',
                 selectedCategory === 'documentation'
-                  ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  ? 'bg-primary dark:bg-primary text-primary dark:text-primary'
+                  : 'text-muted-foreground dark:text-muted-foreground hover:bg-muted dark:hover:bg-muted'
               ]"
             >
               <span class="material-icons text-base mr-2">description</span>
@@ -81,8 +81,8 @@
               :class="[
                 'flex items-center w-full px-3 py-2 text-sm rounded-lg transition-colors',
                 selectedCategory === 'productivity'
-                  ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  ? 'bg-primary dark:bg-primary text-primary dark:text-primary'
+                  : 'text-muted-foreground dark:text-muted-foreground hover:bg-muted dark:hover:bg-muted'
               ]"
             >
               <span class="material-icons text-base mr-2">trending_up</span>
@@ -93,8 +93,8 @@
               :class="[
                 'flex items-center w-full px-3 py-2 text-sm rounded-lg transition-colors',
                 selectedCategory === 'development'
-                  ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  ? 'bg-primary dark:bg-primary text-primary dark:text-primary'
+                  : 'text-muted-foreground dark:text-muted-foreground hover:bg-muted dark:hover:bg-muted'
               ]"
             >
               <span class="material-icons text-base mr-2">code</span>
@@ -104,21 +104,21 @@
         </aside>
 
         <!-- 主内容区 -->
-        <main class="flex-1 flex flex-col bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 ml-2">
+        <main class="flex-1 flex flex-col bg-white dark:bg-muted rounded-lg border border-border dark:border-border ml-2">
           <!-- 顶部操作栏 -->
-          <header class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+          <header class="flex items-center justify-between px-4 py-3 border-b border-border dark:border-border">
             <div class="flex items-center space-x-3">
-              <span class="text-lg font-semibold text-gray-800 dark:text-gray-200">{{ getCategoryTitle() }}</span>
+              <span class="text-lg font-semibold text-foreground dark:text-muted-foreground">{{ getCategoryTitle() }}</span>
             </div>
             <div class="flex items-center space-x-2">
               <!-- 搜索框 -->
               <div class="relative">
-                <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">search</span>
+                <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">search</span>
                 <input
                   v-model="searchQuery"
                   type="text"
                   placeholder="搜索插件..."
-                  class="pl-9 pr-4 py-2 w-64 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  class="pl-9 pr-4 py-2 w-64 border border-border dark:border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm bg-white dark:bg-muted text-foreground dark:text-muted-foreground"
                 />
               </div>
               <!-- 刷新按钮 -->
@@ -128,7 +128,7 @@
                     <button
                       @click="refreshPlugins"
                       :disabled="isRefreshing"
-                      class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-400 disabled:opacity-50"
+                      class="p-2 rounded-lg hover:bg-muted dark:hover:bg-muted transition-colors text-muted-foreground dark:text-muted-foreground disabled:opacity-50"
                     >
                       <span class="material-icons text-base" :class="{ 'animate-spin': isRefreshing }">refresh</span>
                     </button>
@@ -142,7 +142,7 @@
                   <TooltipTrigger as-child>
                     <button
                       @click="showAddPluginDialog = true"
-                      class="p-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+                      class="p-2 rounded-lg bg-primary text-white hover:bg-primary transition-colors"
                     >
                       <span class="material-icons text-base">add</span>
                     </button>
@@ -160,19 +160,19 @@
               <div
                 v-for="plugin in filteredLocalPlugins"
                 :key="plugin.config.pluginId"
-                class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow"
+                class="border border-border dark:border-border rounded-lg p-4 hover:shadow-md transition-shadow"
               >
                 <div class="flex items-start justify-between mb-3">
                   <div class="flex-1">
-                    <h3 class="font-medium text-gray-900 dark:text-gray-100">{{ plugin.config.pluginName }}</h3>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ plugin.config.description }}</p>
+                    <h3 class="font-medium text-foreground dark:text-muted-foreground">{{ plugin.config.pluginName }}</h3>
+                    <p class="text-xs text-muted-foreground dark:text-muted-foreground mt-1">{{ plugin.config.description }}</p>
                   </div>
                   <!-- 启用/禁用开关 -->
                   <button
                     @click="togglePlugin(plugin)"
                     :class="[
                       'ml-3 w-10 h-6 rounded-full relative transition-colors',
-                      plugin.status !== 'disabled' ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
+                      plugin.status !== 'disabled' ? 'bg-green-500' : 'bg-accent dark:bg-muted'
                     ]"
                   >
                     <span
@@ -183,29 +183,29 @@
                     ></span>
                   </button>
                 </div>
-                <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                <div class="flex items-center justify-between text-xs text-muted-foreground dark:text-muted-foreground">
                   <span>{{ plugin.config.author }}</span>
                   <span>v{{ plugin.config.version }}</span>
                 </div>
-                <div v-if="plugin.error" class="mt-2 text-xs text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-2 rounded">
+                <div v-if="plugin.error" class="mt-2 text-xs text-destructive dark:text-destructive bg-destructive dark:bg-destructive/20 p-2 rounded">
                   {{ plugin.error }}
                 </div>
-                <div class="flex items-center space-x-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+                <div class="flex items-center space-x-2 mt-3 pt-3 border-t border-border dark:border-border">
                   <button
                     @click="showPluginDetails(plugin)"
-                    class="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+                    class="text-xs text-primary dark:text-primary hover:text-primary dark:hover:text-primary"
                   >
                     详情
                   </button>
                   <button
                     @click="reloadPlugin(plugin)"
-                    class="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300"
+                    class="text-xs text-muted-foreground dark:text-muted-foreground hover:text-foreground dark:hover:text-muted-foreground"
                   >
                     重载
                   </button>
                   <button
                     @click="removePlugin(plugin)"
-                    class="text-xs text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
+                    class="text-xs text-destructive dark:text-destructive hover:text-destructive dark:hover:text-destructive"
                   >
                     卸载
                   </button>
@@ -214,8 +214,8 @@
 
               <!-- 空状态 -->
               <div v-if="filteredLocalPlugins.length === 0" class="col-span-2 text-center py-12">
-                <span class="material-icons text-6xl text-gray-300 dark:text-gray-600">extension</span>
-                <p class="text-gray-500 dark:text-gray-400 mt-4">
+                <span class="material-icons text-6xl text-muted-foreground dark:text-muted-foreground">extension</span>
+                <p class="text-muted-foreground dark:text-muted-foreground mt-4">
                   {{ searchQuery ? '没有找到匹配的插件' : '暂无插件' }}
                 </p>
               </div>
@@ -225,25 +225,25 @@
             <div v-else>
               <!-- 未配置市场源 -->
               <div v-if="!marketplaceUrl" class="flex flex-col items-center justify-center h-full text-center py-12">
-                <span class="material-icons text-6xl text-gray-300 dark:text-gray-600">cloud_off</span>
-                <h3 class="text-lg font-medium text-gray-600 dark:text-gray-400 mt-4">未配置插件市场源</h3>
-                <p class="text-gray-500 dark:text-gray-400 mt-2">请先在「设置 → 插件 → 插件市场源」中填写市场源地址</p>
+                <span class="material-icons text-6xl text-muted-foreground dark:text-muted-foreground">cloud_off</span>
+                <h3 class="text-lg font-medium text-muted-foreground dark:text-muted-foreground mt-4">未配置插件市场源</h3>
+                <p class="text-muted-foreground dark:text-muted-foreground mt-2">请先在「设置 → 插件 → 插件市场源」中填写市场源地址</p>
               </div>
 
               <!-- 加载中 -->
               <div v-else-if="pluginStore.isMarketplaceLoading" class="flex flex-col items-center justify-center h-full text-center py-12">
-                <span class="material-icons text-5xl text-gray-300 dark:text-gray-600 animate-spin">sync</span>
-                <p class="text-gray-500 dark:text-gray-400 mt-4">正在加载插件市场...</p>
+                <span class="material-icons text-5xl text-muted-foreground dark:text-muted-foreground animate-spin">sync</span>
+                <p class="text-muted-foreground dark:text-muted-foreground mt-4">正在加载插件市场...</p>
               </div>
 
               <!-- 加载失败 -->
               <div v-else-if="pluginStore.marketplaceError && filteredMarketplacePlugins.length === 0" class="flex flex-col items-center justify-center h-full text-center py-12">
-                <span class="material-icons text-6xl text-red-300 dark:text-red-700">error_outline</span>
-                <h3 class="text-lg font-medium text-gray-600 dark:text-gray-400 mt-4">插件市场加载失败</h3>
-                <p class="text-gray-500 dark:text-gray-400 mt-2">{{ pluginStore.marketplaceError }}</p>
+                <span class="material-icons text-6xl text-destructive dark:text-destructive">error_outline</span>
+                <h3 class="text-lg font-medium text-muted-foreground dark:text-muted-foreground mt-4">插件市场加载失败</h3>
+                <p class="text-muted-foreground dark:text-muted-foreground mt-2">{{ pluginStore.marketplaceError }}</p>
                 <button
                   @click="loadMarketplace"
-                  class="mt-4 px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                  class="mt-4 px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary transition-colors"
                 >
                   重试
                 </button>
@@ -254,12 +254,12 @@
                 <div
                   v-for="entry in filteredMarketplacePlugins"
                   :key="entry.pluginId"
-                  class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow"
+                  class="border border-border dark:border-border rounded-lg p-4 hover:shadow-md transition-shadow"
                 >
                   <div class="flex items-start justify-between mb-3">
                     <div class="flex-1">
-                      <h3 class="font-medium text-gray-900 dark:text-gray-100">{{ entry.pluginName }}</h3>
-                      <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ entry.description }}</p>
+                      <h3 class="font-medium text-foreground dark:text-muted-foreground">{{ entry.pluginName }}</h3>
+                      <p class="text-xs text-muted-foreground dark:text-muted-foreground mt-1">{{ entry.description }}</p>
                     </div>
                     <span
                       v-if="getMarketStatus(entry).badge"
@@ -271,7 +271,7 @@
                       {{ getMarketStatus(entry).badge }}
                     </span>
                   </div>
-                  <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                  <div class="flex items-center justify-between text-xs text-muted-foreground dark:text-muted-foreground">
                     <span>{{ entry.author }}</span>
                     <span>v{{ entry.version }}</span>
                   </div>
@@ -279,17 +279,17 @@
                     <span
                       v-for="p in entry.platform"
                       :key="p"
-                      class="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded text-[10px]"
+                      class="px-1.5 py-0.5 bg-muted dark:bg-muted text-muted-foreground dark:text-muted-foreground rounded text-[10px]"
                     >
                       {{ platformLabel(p) }}
                     </span>
                   </div>
-                  <div class="flex items-center justify-end space-x-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+                  <div class="flex items-center justify-end space-x-2 mt-3 pt-3 border-t border-border dark:border-border">
                     <button
                       v-if="getMarketStatus(entry).action === 'install'"
                       @click="installMarketplacePlugin(entry)"
                       :disabled="isInstalling(entry.pluginId)"
-                      class="text-xs px-3 py-1 rounded bg-blue-500 text-white hover:bg-blue-600 transition-colors disabled:opacity-50"
+                      class="text-xs px-3 py-1 rounded bg-primary text-white hover:bg-primary transition-colors disabled:opacity-50"
                     >
                       {{ isInstalling(entry.pluginId) ? '安装中...' : '安装' }}
                     </button>
@@ -304,7 +304,7 @@
                     <button
                       v-else
                       disabled
-                      class="text-xs px-3 py-1 rounded bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-default"
+                      class="text-xs px-3 py-1 rounded bg-muted dark:bg-muted text-muted-foreground dark:text-muted-foreground cursor-default"
                     >
                       已安装
                     </button>
@@ -313,8 +313,8 @@
 
                 <!-- 空状态 -->
                 <div v-if="filteredMarketplacePlugins.length === 0" class="col-span-2 text-center py-12">
-                  <span class="material-icons text-6xl text-gray-300 dark:text-gray-600">store</span>
-                  <p class="text-gray-500 dark:text-gray-400 mt-4">
+                  <span class="material-icons text-6xl text-muted-foreground dark:text-muted-foreground">store</span>
+                  <p class="text-muted-foreground dark:text-muted-foreground mt-4">
                     {{ searchQuery ? '没有找到匹配的插件' : '插件市场暂无可用插件' }}
                   </p>
                 </div>
@@ -338,76 +338,76 @@
     <div v-if="selectedPlugin" class="space-y-4">
       <div class="grid grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">插件ID</label>
+          <label class="block text-sm font-medium mb-1 text-foreground dark:text-muted-foreground">插件ID</label>
           <input
             :value="selectedPlugin.config.pluginId"
             readonly
-            class="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100"
+            class="w-full px-3 py-2 border border-border dark:border-border rounded bg-muted dark:bg-muted text-sm text-foreground dark:text-muted-foreground"
           />
         </div>
         <div>
-          <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">版本</label>
+          <label class="block text-sm font-medium mb-1 text-foreground dark:text-muted-foreground">版本</label>
           <input
             :value="selectedPlugin.config.version"
             readonly
-            class="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100"
+            class="w-full px-3 py-2 border border-border dark:border-border rounded bg-muted dark:bg-muted text-sm text-foreground dark:text-muted-foreground"
           />
         </div>
       </div>
       <div>
-        <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">描述</label>
+        <label class="block text-sm font-medium mb-1 text-foreground dark:text-muted-foreground">描述</label>
         <textarea
           :value="selectedPlugin.config.description"
           readonly
           rows="3"
-          class="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100"
+          class="w-full px-3 py-2 border border-border dark:border-border rounded bg-muted dark:bg-muted text-sm text-foreground dark:text-muted-foreground"
         ></textarea>
       </div>
       <div class="grid grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">作者</label>
+          <label class="block text-sm font-medium mb-1 text-foreground dark:text-muted-foreground">作者</label>
           <input
             :value="selectedPlugin.config.author"
             readonly
-            class="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100"
+            class="w-full px-3 py-2 border border-border dark:border-border rounded bg-muted dark:bg-muted text-sm text-foreground dark:text-muted-foreground"
           />
         </div>
         <div>
-          <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">主页</label>
+          <label class="block text-sm font-medium mb-1 text-foreground dark:text-muted-foreground">主页</label>
           <input
             :value="selectedPlugin.config.homepage || '无'"
             readonly
-            class="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100"
+            class="w-full px-3 py-2 border border-border dark:border-border rounded bg-muted dark:bg-muted text-sm text-foreground dark:text-muted-foreground"
           />
         </div>
       </div>
       <div v-if="selectedPlugin.config.dependencies && selectedPlugin.config.dependencies.length > 0">
-        <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">依赖插件</label>
+        <label class="block text-sm font-medium mb-1 text-foreground dark:text-muted-foreground">依赖插件</label>
         <div class="flex flex-wrap gap-1">
           <span
             v-for="dep in selectedPlugin.config.dependencies"
             :key="dep"
-            class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300 rounded text-xs"
+            class="px-2 py-1 bg-primary dark:bg-primary text-primary dark:text-primary rounded text-xs"
           >
             {{ dep }}
           </span>
         </div>
       </div>
       <div>
-        <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">插件目录</label>
+        <label class="block text-sm font-medium mb-1 text-foreground dark:text-muted-foreground">插件目录</label>
         <input
           :value="selectedPlugin.directory"
           readonly
-          class="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100"
+          class="w-full px-3 py-2 border border-border dark:border-border rounded bg-muted dark:bg-muted text-sm text-foreground dark:text-muted-foreground"
         />
       </div>
       <div v-if="selectedPlugin.error">
-        <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">错误信息</label>
+        <label class="block text-sm font-medium mb-1 text-foreground dark:text-muted-foreground">错误信息</label>
         <textarea
           :value="selectedPlugin.error"
           readonly
           rows="3"
-          class="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded bg-red-50 dark:bg-red-900/20 text-sm text-red-600 dark:text-red-400"
+          class="w-full px-3 py-2 border border-border dark:border-border rounded bg-destructive dark:bg-destructive/20 text-sm text-destructive dark:text-destructive"
         ></textarea>
       </div>
     </div>
@@ -424,25 +424,25 @@
         <DialogTitle>添加新插件</DialogTitle>
       </DialogHeader>
     <div class="space-y-3">
-      <p class="text-gray-600 dark:text-gray-400">选择要添加插件的方式：</p>
+      <p class="text-muted-foreground dark:text-muted-foreground">选择要添加插件的方式：</p>
       <button
         @click="selectPluginDirectory"
-        class="w-full flex items-center p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+        class="w-full flex items-center p-4 border border-border dark:border-border rounded-lg hover:bg-muted dark:hover:bg-muted transition-colors"
       >
-        <span class="material-icons text-2xl text-blue-500 mr-3">folder_open</span>
+        <span class="material-icons text-2xl text-primary mr-3">folder_open</span>
         <div class="text-left">
           <div class="font-medium">从文件夹添加</div>
-          <div class="text-sm text-gray-500 dark:text-gray-400">选择包含插件的文件夹</div>
+          <div class="text-sm text-muted-foreground dark:text-muted-foreground">选择包含插件的文件夹</div>
         </div>
       </button>
       <button
         @click="installPluginFromFile"
-        class="w-full flex items-center p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+        class="w-full flex items-center p-4 border border-border dark:border-border rounded-lg hover:bg-muted dark:hover:bg-muted transition-colors"
       >
-        <span class="material-icons text-2xl text-blue-500 mr-3">description</span>
+        <span class="material-icons text-2xl text-primary mr-3">description</span>
         <div class="text-left">
           <div class="font-medium">从文件安装</div>
-          <div class="text-sm text-gray-500 dark:text-gray-400">安装 ZIP 格式的插件包</div>
+          <div class="text-sm text-muted-foreground dark:text-muted-foreground">安装 ZIP 格式的插件包</div>
         </div>
       </button>
     </div>
@@ -660,7 +660,7 @@ const getMarketStatus = (entry: MarketplacePluginEntry): {
   return {
     action: 'none',
     badge: '已安装',
-    badgeClass: 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+    badgeClass: 'bg-muted dark:bg-muted text-muted-foreground dark:text-muted-foreground'
   }
 }
 

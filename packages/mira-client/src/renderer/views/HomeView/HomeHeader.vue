@@ -100,7 +100,7 @@ const onSelectCollection = (collection: any, close: () => void) => {
 </script>
 
 <template>
-  <header class="w-full flex items-center justify-between p-2 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+  <header class="w-full flex items-center justify-between p-2 border-b border-border dark:border-border bg-white dark:bg-muted">
     <div class="flex items-center flex-1 min-w-0">
       <!-- 素材库选择 -->
       <div class="flex items-center space-x-2 mr-6 shrink-0">
@@ -112,18 +112,18 @@ const onSelectCollection = (collection: any, close: () => void) => {
           >
             <template #trigger>
               <button
-                class="flex items-center space-x-2 text-sm font-medium hover:bg-gray-100 rounded px-3 py-2 max-w-[200px]"
+                class="flex items-center space-x-2 text-sm font-medium hover:bg-muted rounded px-3 py-2 max-w-[200px]"
               >
-                <span class="material-icons text-blue-500">folder</span>
+                <span class="material-icons text-primary">folder</span>
                 <span class="truncate">{{ libraryStore.currentLibrary?.name || '未选择素材库' }}</span>
-                <span class="material-symbols-outlined text-gray-500">keyboard_arrow_down</span>
+                <span class="material-symbols-outlined text-muted-foreground">keyboard_arrow_down</span>
               </button>
             </template>
 
             <template #content="{ close }">
               <div>
                 <div class="p-2">
-                  <div class="text-xs text-gray-500 mb-2">选择素材库</div>
+                  <div class="text-xs text-muted-foreground mb-2">选择素材库</div>
                   <!-- 素材库列表 -->
                   <div v-if="libraryStore.libraries && libraryStore.libraries.length > 0">
                     <div
@@ -131,24 +131,24 @@ const onSelectCollection = (collection: any, close: () => void) => {
                       :key="collection.id"
                       class="flex items-center justify-between p-2 rounded"
                       :class="canAccessLibrary(collection)
-                        ? 'hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer'
-                        : 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-gray-900'"
+                        ? 'hover:bg-muted dark:hover:bg-muted cursor-pointer'
+                        : 'opacity-50 cursor-not-allowed bg-muted dark:bg-muted'"
                       @click="onSelectCollection(collection, close)"
                     >
                       <div class="flex items-center space-x-2">
-                        <span class="material-icons text-blue-500">library_books</span>
+                        <span class="material-icons text-primary">library_books</span>
                         <div>
                           <div class="font-medium text-sm">{{ collection.name }}</div>
-                          <div class="text-xs text-gray-500">
+                          <div class="text-xs text-muted-foreground">
                             {{ collection.fileCount }} 个文件 · {{ collection.type }}
-                            <span v-if="!canAccessLibrary(collection)" class="text-red-400"> · 权限不足</span>
+                            <span v-if="!canAccessLibrary(collection)" class="text-destructive"> · 权限不足</span>
                           </div>
                         </div>
                       </div>
                       <div class="flex items-center space-x-1">
                         <button
                           v-if="getLibraryLocalPath(collection)"
-                          class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                          class="p-1 rounded hover:bg-accent dark:hover:bg-muted text-muted-foreground hover:text-muted-foreground dark:hover:text-muted-foreground"
                           title="定位到目录"
                           @click="openLibraryFolder(collection, $event)"
                         >
@@ -165,24 +165,24 @@ const onSelectCollection = (collection: any, close: () => void) => {
                   </div>
 
                   <!-- 无素材库提示 -->
-                  <div v-else class="p-3 text-center text-gray-500">
+                  <div v-else class="p-3 text-center text-muted-foreground">
                     <div class="mb-2">
-                      <span class="material-icons text-gray-400 text-2xl">library_books</span>
+                      <span class="material-icons text-muted-foreground text-2xl">library_books</span>
                     </div>
                     <div class="text-sm">暂无可用素材库</div>
                     <div class="text-xs mt-1">请先连接到服务器或添加素材库</div>
                   </div>
 
-                  <div class="border-t border-gray-200 dark:border-gray-700 mt-2 pt-2 space-y-1">
+                  <div class="border-t border-border dark:border-border mt-2 pt-2 space-y-1">
                     <button
-                      class="w-full flex items-center space-x-2 p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded text-sm"
+                      class="w-full flex items-center space-x-2 p-2 text-muted-foreground dark:text-muted-foreground hover:bg-muted dark:hover:bg-muted rounded text-sm"
                       @click="emit('showLibraryManagement'); close()"
                     >
                       <span class="material-icons">settings</span>
                       <span>服务器设置</span>
                     </button>
                     <button
-                      class="w-full flex items-center space-x-2 p-2 text-blue-600 hover:bg-blue-50 rounded text-sm"
+                      class="w-full flex items-center space-x-2 p-2 text-primary hover:bg-primary rounded text-sm"
                       @click="emit('addServer'); close()"
                     >
                       <span class="material-icons">add</span>
@@ -202,10 +202,10 @@ const onSelectCollection = (collection: any, close: () => void) => {
           <Tooltip>
             <TooltipTrigger as-child>
               <button
-                class="p-2 rounded-md hover:bg-gray-100"
+                class="p-2 rounded-md hover:bg-muted"
                 @click="emit('activateLastTab')"
               >
-                <span class="material-icons text-gray-600">arrow_back</span>
+                <span class="material-icons text-muted-foreground">arrow_back</span>
               </button>
             </TooltipTrigger>
             <TooltipContent side="bottom">激活上一次的tab (Ctrl+Shift+Tab)</TooltipContent>
@@ -215,10 +215,10 @@ const onSelectCollection = (collection: any, close: () => void) => {
           <Tooltip>
             <TooltipTrigger as-child>
               <button
-                class="p-2 rounded-md hover:bg-gray-100"
+                class="p-2 rounded-md hover:bg-muted"
                 @click="emit('reopenClosedTab')"
               >
-                <span class="material-icons text-gray-600">redo</span>
+                <span class="material-icons text-muted-foreground">redo</span>
               </button>
             </TooltipTrigger>
             <TooltipContent side="bottom">打开最后关闭的tab (Ctrl+Shift+T)</TooltipContent>
@@ -228,10 +228,10 @@ const onSelectCollection = (collection: any, close: () => void) => {
           <Tooltip>
             <TooltipTrigger as-child>
               <button
-                class="p-2 rounded-md hover:bg-gray-100"
+                class="p-2 rounded-md hover:bg-muted"
                 @click="handleLocateInSidebarClick"
               >
-                <span class="material-icons text-gray-600">my_location</span>
+                <span class="material-icons text-muted-foreground">my_location</span>
               </button>
             </TooltipTrigger>
             <TooltipContent side="bottom">在侧边栏中定位当前项</TooltipContent>
@@ -243,7 +243,7 @@ const onSelectCollection = (collection: any, close: () => void) => {
       <div class="flex items-center flex-1 min-w-0 mt-2">
         <ContextMenu>
           <ContextMenuTrigger as-child>
-            <div ref="tabScrollContainer" class="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1 overflow-x-auto max-w-full scrollbar-thin">
+            <div ref="tabScrollContainer" class="flex bg-muted dark:bg-muted rounded-lg p-1 overflow-x-auto max-w-full scrollbar-thin">
               <button
                 v-for="tab in activeTabs"
                 :key="tab.id"
@@ -251,8 +251,8 @@ const onSelectCollection = (collection: any, close: () => void) => {
                 :class="[
                   'px-3 py-1.5 text-sm font-medium rounded-md flex items-center space-x-2 shrink-0',
                   tab.active
-                    ? 'text-blue-700 dark:text-blue-400 bg-white dark:bg-gray-700 shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-white/50 dark:hover:bg-gray-700/50'
+                    ? 'text-primary dark:text-primary bg-white dark:bg-muted shadow-sm'
+                    : 'text-muted-foreground dark:text-muted-foreground hover:text-foreground dark:hover:text-muted-foreground hover:bg-white/50 dark:hover:bg-muted/50'
                 ]"
                 @click="emit('switchTab', tab.id)"
                 @contextmenu="tab.type === 'home' ? $event.preventDefault() : emit('tabContextMenu', tab, $event)"
@@ -263,7 +263,7 @@ const onSelectCollection = (collection: any, close: () => void) => {
                 <span class="truncate">{{ tab.label }}</span>
                 <button
                   v-if="activeTabs.length > 1 && isTabClosable(tab.id)"
-                  class="hover:bg-gray-200 rounded-full"
+                  class="hover:bg-accent rounded-full"
                   style="line-height: 0;"
                   @click.stop="emit('closeTab', tab.id)"
                 >
@@ -287,7 +287,7 @@ const onSelectCollection = (collection: any, close: () => void) => {
 
     <!-- 右侧工具栏 -->
     <div class="flex items-center space-x-4 shrink-0">
-      <div class="h-5 border-l border-gray-300"></div>
+      <div class="h-5 border-l border-border"></div>
       <!-- 窗口控制按钮 - 仅桌面端显示 -->
       <div v-if="isDesktop" class="flex items-center space-x-1 ml-2">
         <TooltipProvider>
@@ -295,9 +295,9 @@ const onSelectCollection = (collection: any, close: () => void) => {
             <TooltipTrigger as-child>
               <button
                 @click="emit('windowMinimize')"
-                class="p-1.5 rounded-md hover:bg-gray-100 transition-colors"
+                class="p-1.5 rounded-md hover:bg-muted transition-colors"
               >
-                <span class="material-icons text-gray-500" style="font-size: 16px;">remove</span>
+                <span class="material-icons text-muted-foreground" style="font-size: 16px;">remove</span>
               </button>
             </TooltipTrigger>
             <TooltipContent side="bottom">最小化</TooltipContent>
@@ -308,9 +308,9 @@ const onSelectCollection = (collection: any, close: () => void) => {
             <TooltipTrigger as-child>
               <button
                 @click="emit('windowMaximize')"
-                class="p-1.5 rounded-md hover:bg-gray-100 transition-colors"
+                class="p-1.5 rounded-md hover:bg-muted transition-colors"
               >
-                <span class="material-icons text-gray-500" style="font-size: 16px;">crop_square</span>
+                <span class="material-icons text-muted-foreground" style="font-size: 16px;">crop_square</span>
               </button>
             </TooltipTrigger>
             <TooltipContent side="bottom">最大化</TooltipContent>
@@ -321,9 +321,9 @@ const onSelectCollection = (collection: any, close: () => void) => {
             <TooltipTrigger as-child>
               <button
                 @click="emit('windowClose')"
-                class="p-1.5 rounded-md hover:bg-gray-100 transition-colors"
+                class="p-1.5 rounded-md hover:bg-muted transition-colors"
               >
-                <span class="material-icons text-gray-500" style="font-size: 16px;">close</span>
+                <span class="material-icons text-muted-foreground" style="font-size: 16px;">close</span>
               </button>
             </TooltipTrigger>
             <TooltipContent side="bottom">关闭</TooltipContent>

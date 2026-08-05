@@ -7,13 +7,13 @@
       :speed="1.2"
       class="absolute inset-0 w-full h-full z-0"
     />
-    <Motion layout class="relative z-[1] w-full max-w-[440px] p-8 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.3)] dark:shadow-[0_10px_40px_rgba(0,0,0,0.6)] border border-white/30 dark:border-zinc-700/50 max-[480px]:m-4 max-[480px]:p-6">
+    <Motion layout class="relative z-[1] w-full max-w-[440px] p-8 bg-white/90 dark:bg-muted/90 backdrop-blur-xl rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.3)] dark:shadow-[0_10px_40px_rgba(0,0,0,0.6)] border border-white/30 dark:border-border/50 max-[480px]:m-4 max-[480px]:p-6">
       <!-- Close button -->
-      <button class="absolute top-4 right-4 w-8 h-8 border-none bg-transparent text-gray-400 hover:text-gray-500 cursor-pointer flex items-center justify-center rounded transition-colors" @click="handleClose" title="关闭">
+      <button class="absolute top-4 right-4 w-8 h-8 border-none bg-transparent text-muted-foreground hover:text-muted-foreground cursor-pointer flex items-center justify-center rounded transition-colors" @click="handleClose" title="关闭">
         <span class="material-icons">close</span>
       </button>
 
-      <h1 class="text-center text-2xl font-bold text-gray-800 dark:text-zinc-100 mb-6">连接服务器</h1>
+      <h1 class="text-center text-2xl font-bold text-foreground dark:text-muted-foreground mb-6">连接服务器</h1>
 
       <!-- Stepper -->
       <Stepper v-model="currentStep" class="flex items-center justify-center gap-0 mb-6">
@@ -21,29 +21,29 @@
           <StepperTrigger>
             <StepperIndicator>1</StepperIndicator>
           </StepperTrigger>
-          <div class="text-xs text-gray-500 dark:text-zinc-400 mt-1 text-center">服务器</div>
+          <div class="text-xs text-muted-foreground dark:text-muted-foreground mt-1 text-center">服务器</div>
         </StepperItem>
-        <div class="flex-1 h-0.5 bg-gray-200 dark:bg-zinc-700 mx-2 self-center -mt-4" />
+        <div class="flex-1 h-0.5 bg-accent dark:bg-muted mx-2 self-center -mt-4" />
         <StepperItem :step="2" :completed="currentStep > 2" :disabled="!healthData || healthData.authRequired === false">
           <StepperTrigger>
             <StepperIndicator>2</StepperIndicator>
           </StepperTrigger>
-          <div class="text-xs text-gray-500 dark:text-zinc-400 mt-1 text-center">认证</div>
+          <div class="text-xs text-muted-foreground dark:text-muted-foreground mt-1 text-center">认证</div>
         </StepperItem>
-        <div class="flex-1 h-0.5 bg-gray-200 dark:bg-zinc-700 mx-2 self-center -mt-4" />
+        <div class="flex-1 h-0.5 bg-accent dark:bg-muted mx-2 self-center -mt-4" />
         <StepperItem :step="3" :disabled="currentStep < 3">
           <StepperTrigger>
             <StepperIndicator>3</StepperIndicator>
           </StepperTrigger>
-          <div class="text-xs text-gray-500 dark:text-zinc-400 mt-1 text-center">素材库</div>
+          <div class="text-xs text-muted-foreground dark:text-muted-foreground mt-1 text-center">素材库</div>
         </StepperItem>
       </Stepper>
 
       <!-- Error banner -->
-      <div v-if="error" class="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-500/40 text-red-600 dark:text-red-300 p-3 rounded-lg text-sm flex items-center gap-2 relative mb-4">
+      <div v-if="error" class="bg-destructive dark:bg-destructive/30 border border-destructive dark:border-destructive/40 text-destructive dark:text-destructive p-3 rounded-lg text-sm flex items-center gap-2 relative mb-4">
         <span class="material-icons text-xl shrink-0">error</span>
         {{ error }}
-        <button type="button" class="absolute right-2 top-1/2 -translate-y-1/2 bg-transparent border-none text-red-600 dark:text-red-300 cursor-pointer p-1" @click="error = ''">
+        <button type="button" class="absolute right-2 top-1/2 -translate-y-1/2 bg-transparent border-none text-destructive dark:text-destructive cursor-pointer p-1" @click="error = ''">
           <span class="material-icons text-base">close</span>
         </button>
       </div>
@@ -55,11 +55,11 @@
           <div class="flex flex-col gap-3">
             <!-- Add Server Card -->
             <div
-              class="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-gray-300 dark:border-zinc-600 rounded-xl cursor-pointer transition-all hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-500/10"
+              class="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-border dark:border-border rounded-xl cursor-pointer transition-all hover:border-primary dark:hover:border-primary hover:bg-primary/50 dark:hover:bg-primary/10"
               @click="showAddForm = true"
             >
-              <span class="material-icons text-2xl text-gray-400 dark:text-zinc-500">add</span>
-              <span class="text-sm text-gray-500 dark:text-zinc-400">添加服务器</span>
+              <span class="material-icons text-2xl text-muted-foreground dark:text-muted-foreground">add</span>
+              <span class="text-sm text-muted-foreground dark:text-muted-foreground">添加服务器</span>
             </div>
             <!-- Existing Server Cards -->
             <div
@@ -67,21 +67,21 @@
               :key="server.id"
               class="flex items-center gap-3 p-3 border-2 rounded-xl cursor-pointer transition-all group"
               :class="loading && selectedServerId === server.id
-                ? 'border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-500/10'
-                : 'border-gray-200 dark:border-zinc-700 hover:border-blue-300 dark:hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-500/10'"
+                ? 'border-primary dark:border-primary bg-primary dark:bg-primary/10'
+                : 'border-border dark:border-border hover:border-primary dark:hover:border-primary hover:bg-primary/50 dark:hover:bg-primary/10'"
               @click="quickConnect(server)"
             >
-              <span class="material-icons text-lg text-blue-600 dark:text-blue-400">dns</span>
+              <span class="material-icons text-lg text-primary dark:text-primary">dns</span>
               <div class="flex flex-col min-w-0 flex-1">
-                <span class="font-semibold text-sm text-gray-800 dark:text-zinc-100 truncate">{{ server.name }}</span>
-                <span class="text-xs text-gray-400 dark:text-zinc-500 truncate">{{ server.serverUrl }}</span>
+                <span class="font-semibold text-sm text-foreground dark:text-muted-foreground truncate">{{ server.name }}</span>
+                <span class="text-xs text-muted-foreground dark:text-muted-foreground truncate">{{ server.serverUrl }}</span>
               </div>
-              <Button variant="ghost" size="icon-sm" class="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 text-gray-400 hover:text-red-500" @click.stop="deleteTarget = server">
+              <Button variant="ghost" size="icon-sm" class="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 text-muted-foreground hover:text-destructive" @click.stop="deleteTarget = server">
                 <span class="material-icons text-base">delete</span>
               </Button>
             </div>
           </div>
-          <div v-if="serverListStore.services.length === 0" class="text-center py-4 text-sm text-gray-400 dark:text-zinc-500">
+          <div v-if="serverListStore.services.length === 0" class="text-center py-4 text-sm text-muted-foreground dark:text-muted-foreground">
             还没有添加过服务器
           </div>
 
@@ -94,7 +94,7 @@
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>取消</AlertDialogCancel>
-                <Button class="bg-red-600 hover:bg-red-700 text-white" @click="handleDeleteServer">删除</Button>
+                <Button class="bg-destructive hover:bg-destructive text-white" @click="handleDeleteServer">删除</Button>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
@@ -102,7 +102,7 @@
 
         <!-- Add Server Form -->
         <form v-else @submit.prevent="testConnection" class="flex flex-col gap-4 relative">
-          <button type="button" class="absolute -top-1 right-0 flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-zinc-300 bg-transparent border-none cursor-pointer" @click="showAddForm = false">
+          <button type="button" class="absolute -top-1 right-0 flex items-center gap-1 text-xs text-muted-foreground hover:text-muted-foreground dark:text-muted-foreground dark:hover:text-muted-foreground bg-transparent border-none cursor-pointer" @click="showAddForm = false">
             <span class="material-icons text-sm">arrow_back</span>
             返回列表
           </button>
@@ -204,8 +204,8 @@
 
       <!-- Step 3: Library Selection -->
       <div v-if="currentStep === 3" class="flex flex-col gap-4">
-        <div v-if="loading" class="text-center py-8 text-gray-400 dark:text-zinc-500">加载素材库...</div>
-        <div v-else-if="libraries.length === 0" class="text-center py-8 text-gray-400 dark:text-zinc-500">没有可用的素材库</div>
+        <div v-if="loading" class="text-center py-8 text-muted-foreground dark:text-muted-foreground">加载素材库...</div>
+        <div v-else-if="libraries.length === 0" class="text-center py-8 text-muted-foreground dark:text-muted-foreground">没有可用的素材库</div>
         <div v-else class="flex flex-col gap-2 max-h-60 overflow-y-auto">
           <div
             v-for="lib in libraries"
@@ -213,20 +213,20 @@
             class="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all"
             :class="[
               selectedLibraryId === lib.id
-                ? 'border-blue-600 dark:border-blue-500 bg-blue-50 dark:bg-blue-500/15'
+                ? 'border-primary dark:border-primary bg-primary dark:bg-primary/15'
                 : isLibraryAccessible(lib)
-                  ? 'border-gray-200 dark:border-zinc-700 hover:border-blue-300 dark:hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-500/10'
-                  : 'opacity-50 cursor-not-allowed border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-900'
+                  ? 'border-border dark:border-border hover:border-primary dark:hover:border-primary hover:bg-primary/50 dark:hover:bg-primary/10'
+                  : 'opacity-50 cursor-not-allowed border-border dark:border-border bg-muted dark:bg-muted'
             ]"
             @click="isLibraryAccessible(lib) && (selectedLibraryId = lib.id)"
           >
-            <span class="material-icons text-2xl" :class="selectedLibraryId === lib.id ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-zinc-400'">{{ lib.icon === 'default' ? 'folder' : 'folder_special' }}</span>
+            <span class="material-icons text-2xl" :class="selectedLibraryId === lib.id ? 'text-primary dark:text-primary' : 'text-muted-foreground dark:text-muted-foreground'">{{ lib.icon === 'default' ? 'folder' : 'folder_special' }}</span>
             <div class="flex-1 min-w-0">
-              <div class="font-semibold text-sm text-gray-800 dark:text-zinc-100">{{ lib.name }}</div>
-              <div class="text-xs text-gray-400 dark:text-zinc-500 overflow-hidden text-ellipsis whitespace-nowrap">{{ lib.path }}</div>
+              <div class="font-semibold text-sm text-foreground dark:text-muted-foreground">{{ lib.name }}</div>
+              <div class="text-xs text-muted-foreground dark:text-muted-foreground overflow-hidden text-ellipsis whitespace-nowrap">{{ lib.path }}</div>
             </div>
-            <span v-if="!isLibraryAccessible(lib)" class="material-icons text-xl text-gray-400 dark:text-zinc-500">lock</span>
-            <span v-else-if="selectedLibraryId === lib.id" class="material-icons text-xl text-blue-600 dark:text-blue-400">check_circle</span>
+            <span v-if="!isLibraryAccessible(lib)" class="material-icons text-xl text-muted-foreground dark:text-muted-foreground">lock</span>
+            <span v-else-if="selectedLibraryId === lib.id" class="material-icons text-xl text-primary dark:text-primary">check_circle</span>
           </div>
         </div>
         <Button class="w-full" :disabled="!selectedLibraryId || loading" @click="connectToLibrary">

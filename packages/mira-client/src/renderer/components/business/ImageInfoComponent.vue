@@ -1,8 +1,8 @@
 <template>
-  <div class="w-80 flex-shrink-0 bg-white flex flex-col border-l border-gray-200">
+  <div class="w-80 flex-shrink-0 bg-white flex flex-col border-l border-border">
     <!-- 顶部标题 -->
-    <div class="border-b border-gray-200 p-4">
-      <h2 class="text-lg font-semibold text-gray-900">详细信息</h2>
+    <div class="border-b border-border p-4">
+      <h2 class="text-lg font-semibold text-foreground">详细信息</h2>
     </div>
 
     <!-- 内容区域 -->
@@ -23,31 +23,31 @@
 
         <!-- 文件名和路径 -->
         <div>
-          <h3 class="font-semibold text-gray-800 mb-2">{{ image?.name || 'Unknown' }}</h3>
-          <div class="text-xs text-gray-600 bg-gray-50 p-2 rounded">
+          <h3 class="font-semibold text-foreground mb-2">{{ image?.name || 'Unknown' }}</h3>
+          <div class="text-xs text-muted-foreground bg-muted p-2 rounded">
             {{ image?.folderId || '/Unknown' }}
           </div>
         </div>
 
         <!-- 标签管理 -->
         <div>
-          <h4 class="font-semibold text-gray-700 mb-2 text-sm">标签</h4>
+          <h4 class="font-semibold text-foreground mb-2 text-sm">标签</h4>
           <div class="flex flex-wrap gap-2 items-center">
             <span 
               v-for="tag in image?.tags"
               :key="tag"
-              class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full flex items-center"
+              class="bg-primary text-primary text-xs px-2 py-1 rounded-full flex items-center"
             >
               {{ tag }}
               <button 
-                class="ml-1 text-blue-500 text-xs hover:text-blue-700"
+                class="ml-1 text-primary text-xs hover:text-primary"
                 @click="$emit('tag-remove', tag)"
               >
                 ×
               </button>
             </span>
             <button 
-              class="text-gray-500 hover:text-gray-700 text-lg px-2 py-1 rounded-full hover:bg-gray-100"
+              class="text-muted-foreground hover:text-foreground text-lg px-2 py-1 rounded-full hover:bg-muted"
               @click="showAddTag = true"
             >
               +
@@ -60,18 +60,18 @@
               v-model="newTag"
               type="text"
               placeholder="输入新标签"
-              class="flex-1 px-2 py-1 text-xs border border-gray-300 rounded"
+              class="flex-1 px-2 py-1 text-xs border border-border rounded"
               @keyup.enter="addTag"
               @keyup.escape="cancelAddTag"
             />
             <button 
-              class="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+              class="px-2 py-1 text-xs bg-primary text-white rounded hover:bg-primary"
               @click="addTag"
             >
               添加
             </button>
             <button 
-              class="px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600"
+              class="px-2 py-1 text-xs bg-muted text-white rounded hover:bg-muted"
               @click="cancelAddTag"
             >
               取消
@@ -81,8 +81,8 @@
 
         <!-- 基本信息 -->
         <div>
-          <h4 class="font-semibold text-gray-700 mb-2 text-sm">基本信息</h4>
-          <div class="text-xs space-y-2 text-gray-600">
+          <h4 class="font-semibold text-foreground mb-2 text-sm">基本信息</h4>
+          <div class="text-xs space-y-2 text-muted-foreground">
             <div class="flex justify-between">
               <span>文件大小</span>
               <span>{{ formatFileSize(image?.size) }}</span>
@@ -107,9 +107,9 @@
         </div>
 
         <!-- 操作按钮 -->
-        <div class="pt-4 border-t border-gray-200">
+        <div class="pt-4 border-t border-border">
           <div class="grid grid-cols-2 gap-2">
-            <button class="px-3 py-2 text-sm bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 flex items-center justify-center space-x-1">
+            <button class="px-3 py-2 text-sm bg-primary text-primary rounded-md hover:bg-primary flex items-center justify-center space-x-1">
               <span class="material-symbols-outlined text-sm">download</span>
               <span>下载</span>
             </button>
@@ -121,7 +121,7 @@
               <span class="material-symbols-outlined text-sm">edit</span>
               <span>编辑</span>
             </button>
-            <button class="px-3 py-2 text-sm bg-red-100 text-red-700 rounded-md hover:bg-red-200 flex items-center justify-center space-x-1">
+            <button class="px-3 py-2 text-sm bg-destructive text-destructive rounded-md hover:bg-destructive flex items-center justify-center space-x-1">
               <span class="material-symbols-outlined text-sm">delete</span>
               <span>删除</span>
             </button>

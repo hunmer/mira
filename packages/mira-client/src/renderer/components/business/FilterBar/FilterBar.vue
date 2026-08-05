@@ -1,5 +1,5 @@
 <template>
-  <div class="filter-bar flex items-center space-x-4 mb-4 text-gray-500">
+  <div class="filter-bar flex items-center space-x-4 mb-4 text-muted-foreground">
     <!-- 全选控制 -->
     <label class="flex items-center space-x-1 cursor-pointer select-none">
       <Checkbox
@@ -8,7 +8,7 @@
       />
     </label>
 
-    <div class="h-5 border-l border-gray-300"></div>
+    <div class="h-5 border-l border-border"></div>
 
     <!-- 筛选器 -->
     <div class="flex items-center space-x-3">
@@ -27,7 +27,7 @@
               <span class="relative">
                 <span class="material-icons text-sm">{{ filter.icon }}</span>
                 <span v-if="hasActiveFilters(filter)"
-                  class="absolute -bottom-0.25 -right-1.5 bg-blue-500 text-white text-[10px] rounded-full min-w-4 h-4 flex items-center justify-center leading-none px-0.5">
+                  class="absolute -bottom-0.25 -right-1.5 bg-primary text-white text-[10px] rounded-full min-w-4 h-4 flex items-center justify-center leading-none px-0.5">
                   {{ getActiveFilterCount(filter) }}
                 </span>
               </span>
@@ -47,7 +47,7 @@
                     @refresh="() => {}"
                   />
                 </div>
-                <div class="p-3 border-t border-gray-200 flex justify-end space-x-2">
+                <div class="p-3 border-t border-border flex justify-end space-x-2">
                   <Button variant="ghost" size="sm" @click="clearFilter(filter); close()">清除</Button>
                   <Button size="sm" @click="close()">确定</Button>
                 </div>
@@ -63,7 +63,7 @@
                     @refresh="() => {}"
                   />
                 </div>
-                <div class="p-3 border-t border-gray-200 flex justify-end space-x-2">
+                <div class="p-3 border-t border-border flex justify-end space-x-2">
                   <Button variant="ghost" size="sm" @click="clearFilter(filter); close()">清除</Button>
                   <Button size="sm" @click="close()">确定</Button>
                 </div>
@@ -72,14 +72,14 @@
               <!-- 网址筛选器 -->
               <div v-else-if="filter.type === 'urls'">
                 <div class="p-3">
-                  <h3 class="font-medium text-gray-900 mb-3">网址筛选</h3>
+                  <h3 class="font-medium text-foreground mb-3">网址筛选</h3>
                   <Input
                     :model-value="filter.value"
                     placeholder="输入网址或域名..."
                     @update:model-value="(val) => handleFilterInput(filter, val as string)"
                   />
                 </div>
-                <div class="p-3 border-t border-gray-200 flex justify-end space-x-2">
+                <div class="p-3 border-t border-border flex justify-end space-x-2">
                   <Button variant="ghost" size="sm" @click="clearFilter(filter); close()">清除</Button>
                   <Button size="sm" @click="close()">确定</Button>
                 </div>
@@ -88,14 +88,14 @@
               <!-- 标题筛选器 -->
               <div v-else-if="filter.type === 'title'">
                 <div class="p-3">
-                  <h3 class="font-medium text-gray-900 mb-3">标题筛选</h3>
+                  <h3 class="font-medium text-foreground mb-3">标题筛选</h3>
                   <Input
                     :model-value="filter.value"
                     placeholder="输入标题关键词..."
                     @update:model-value="(val) => handleFilterInput(filter, val as string)"
                   />
                 </div>
-                <div class="p-3 border-t border-gray-200 flex justify-end space-x-2">
+                <div class="p-3 border-t border-border flex justify-end space-x-2">
                   <Button variant="ghost" size="sm" @click="clearFilter(filter); close()">清除</Button>
                   <Button size="sm" @click="close()">确定</Button>
                 </div>
@@ -104,7 +104,7 @@
               <!-- 大小筛选器 -->
               <div v-else-if="filter.type === 'size'">
                 <div class="p-3">
-                  <h3 class="font-medium text-gray-900 mb-3">文件大小</h3>
+                  <h3 class="font-medium text-foreground mb-3">文件大小</h3>
 
                   <RadioGroup
                     :model-value="filter.selectedPreset || ''"
@@ -120,7 +120,7 @@
                       <Label class="text-sm cursor-pointer">{{ preset.label }}</Label>
                     </div>
 
-                    <div class="border-t border-gray-200 pt-3">
+                    <div class="border-t border-border pt-3">
                       <div class="flex items-center space-x-2 cursor-pointer mb-3">
                         <RadioGroupItem value="custom" />
                         <Label class="text-sm cursor-pointer">自定义范围</Label>
@@ -128,7 +128,7 @@
 
                       <div v-if="filter.selectedPreset === 'custom'" class="grid grid-cols-2 gap-2">
                         <div>
-                          <Label class="block text-xs text-gray-600 mb-1">最小值</Label>
+                          <Label class="block text-xs text-muted-foreground mb-1">最小值</Label>
                           <Input
                             type="number"
                             :model-value="filter.customMin?.toString() ?? ''"
@@ -137,7 +137,7 @@
                           />
                         </div>
                         <div>
-                          <Label class="block text-xs text-gray-600 mb-1">最大值</Label>
+                          <Label class="block text-xs text-muted-foreground mb-1">最大值</Label>
                           <Input
                             type="number"
                             :model-value="filter.customMax?.toString() ?? ''"
@@ -149,7 +149,7 @@
                     </div>
                   </RadioGroup>
                 </div>
-                <div class="p-3 border-t border-gray-200 flex justify-end space-x-2">
+                <div class="p-3 border-t border-border flex justify-end space-x-2">
                   <Button variant="ghost" size="sm" @click="clearFilter(filter); close()">清除</Button>
                   <Button size="sm" @click="close()">确定</Button>
                 </div>
@@ -158,7 +158,7 @@
               <!-- 类别筛选器 -->
               <div v-else-if="filter.type === 'category'">
                 <div class="p-3">
-                  <h3 class="font-medium text-gray-900 mb-3">媒体类别</h3>
+                  <h3 class="font-medium text-foreground mb-3">媒体类别</h3>
                   <RadioGroup
                     :model-value="filter.selectedCategory || ''"
                     class="space-y-2"
@@ -167,15 +167,15 @@
                     <div
                       v-for="category in categoryOptions"
                       :key="category.value"
-                      class="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 px-2 py-1 rounded"
+                      class="flex items-center space-x-2 cursor-pointer hover:bg-muted px-2 py-1 rounded"
                     >
                       <RadioGroupItem :value="category.value" />
-                      <span class="material-icons text-sm text-gray-500">{{ category.icon }}</span>
+                      <span class="material-icons text-sm text-muted-foreground">{{ category.icon }}</span>
                       <Label class="text-sm cursor-pointer">{{ category.label }}</Label>
                     </div>
                   </RadioGroup>
                 </div>
-                <div class="p-3 border-t border-gray-200 flex justify-end space-x-2">
+                <div class="p-3 border-t border-border flex justify-end space-x-2">
                   <Button variant="ghost" size="sm" @click="clearFilter(filter); close()">清除</Button>
                   <Button size="sm" @click="close()">确定</Button>
                 </div>
@@ -186,7 +186,7 @@
       </template>
     </div>
 
-    <div class="h-5 border-l border-gray-300"></div>
+    <div class="h-5 border-l border-border"></div>
 
     <!-- 排序器 -->
     <div class="flex items-center space-x-3">
@@ -198,7 +198,7 @@
           <Button
             variant="ghost"
             size="xs"
-            :class="isOpen ? 'text-blue-600 bg-blue-50' : 'text-gray-600'"
+            :class="isOpen ? 'text-primary bg-primary' : 'text-muted-foreground'"
           >
             <span class="material-icons text-sm">sort</span>
             <span class="text-sm">{{ getSortDisplayText() }}</span>
@@ -208,10 +208,10 @@
 
         <template #content>
           <div class="min-w-[240px] p-3">
-            <h3 class="font-medium text-gray-900 mb-3">排序设置</h3>
+            <h3 class="font-medium text-foreground mb-3">排序设置</h3>
 
             <div class="mb-4">
-              <Label class="block text-xs text-gray-600 mb-2">排序字段</Label>
+              <Label class="block text-xs text-muted-foreground mb-2">排序字段</Label>
               <RadioGroup
                 :model-value="sortField"
                 class="space-y-2"
@@ -220,36 +220,36 @@
                 <div
                   v-for="option in sortOptions"
                   :key="option.value"
-                  class="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 px-2 py-1 rounded"
+                  class="flex items-center space-x-2 cursor-pointer hover:bg-muted px-2 py-1 rounded"
                 >
                   <RadioGroupItem :value="option.value" />
-                  <span class="material-icons text-sm text-gray-500">{{ option.icon }}</span>
+                  <span class="material-icons text-sm text-muted-foreground">{{ option.icon }}</span>
                   <Label class="text-sm cursor-pointer">{{ option.label }}</Label>
                 </div>
               </RadioGroup>
             </div>
 
-            <div class="border-t border-gray-200 pt-3 mb-3">
-              <Label class="block text-xs text-gray-600 mb-2">排序顺序</Label>
+            <div class="border-t border-border pt-3 mb-3">
+              <Label class="block text-xs text-muted-foreground mb-2">排序顺序</Label>
               <RadioGroup
                 :model-value="sortOrder"
                 class="space-y-2"
                 @update:model-value="(val) => updateSort(sortField, val as string)"
               >
-                <div class="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 px-2 py-1 rounded">
+                <div class="flex items-center space-x-2 cursor-pointer hover:bg-muted px-2 py-1 rounded">
                   <RadioGroupItem value="desc" />
-                  <span class="material-icons text-sm text-gray-500">arrow_downward</span>
+                  <span class="material-icons text-sm text-muted-foreground">arrow_downward</span>
                   <Label class="text-sm cursor-pointer">降序</Label>
                 </div>
-                <div class="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 px-2 py-1 rounded">
+                <div class="flex items-center space-x-2 cursor-pointer hover:bg-muted px-2 py-1 rounded">
                   <RadioGroupItem value="asc" />
-                  <span class="material-icons text-sm text-gray-500">arrow_upward</span>
+                  <span class="material-icons text-sm text-muted-foreground">arrow_upward</span>
                   <Label class="text-sm cursor-pointer">升序</Label>
                 </div>
               </RadioGroup>
             </div>
 
-            <div class="pt-3 border-t border-gray-200 flex justify-end">
+            <div class="pt-3 border-t border-border flex justify-end">
               <Button variant="ghost" size="sm" @click="resetSort()">重置为默认</Button>
             </div>
           </div>
@@ -353,9 +353,9 @@ const categoryOptions: CategoryOption[] = [
 const getFilterButtonClass = (filter: FilterRule, isOpen: boolean) => {
   const hasActive = hasActiveFilters(filter)
 
-  if (isOpen) return 'text-blue-600 bg-blue-50'
-  if (hasActive) return 'text-blue-600'
-  return 'text-gray-600'
+  if (isOpen) return 'text-primary bg-primary'
+  if (hasActive) return 'text-primary'
+  return 'text-muted-foreground'
 }
 
 const hasActiveFilters = (filter: FilterRule) => {

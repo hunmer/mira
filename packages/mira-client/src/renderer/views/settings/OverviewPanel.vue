@@ -7,11 +7,11 @@
           <div class="flex items-center gap-3 mb-3">
             <span class="material-icons text-2xl" :class="connectionStatusColor">language</span>
             <div>
-              <h3 class="font-semibold text-slate-900 dark:text-slate-100">连接状态</h3>
-              <p class="text-sm text-slate-600 dark:text-slate-400">{{ connectionStatusText }}</p>
+              <h3 class="font-semibold text-foreground dark:text-muted-foreground">连接状态</h3>
+              <p class="text-sm text-muted-foreground dark:text-muted-foreground">{{ connectionStatusText }}</p>
             </div>
           </div>
-          <div class="text-xs text-slate-500">
+          <div class="text-xs text-muted-foreground">
             服务器: {{ settingsStore.settings.serverUrl }}
           </div>
         </CardContent>
@@ -21,13 +21,13 @@
       <Card class="p-4">
         <CardContent>
           <div class="flex items-center gap-3 mb-3">
-            <span class="material-icons text-2xl text-blue-600">computer</span>
+            <span class="material-icons text-2xl text-primary">computer</span>
             <div>
-              <h3 class="font-semibold text-slate-900 dark:text-slate-100">系统信息</h3>
-              <p class="text-sm text-slate-600 dark:text-slate-400">{{ systemPlatform }}</p>
+              <h3 class="font-semibold text-foreground dark:text-muted-foreground">系统信息</h3>
+              <p class="text-sm text-muted-foreground dark:text-muted-foreground">{{ systemPlatform }}</p>
             </div>
           </div>
-          <div class="text-xs text-slate-500">
+          <div class="text-xs text-muted-foreground">
             版本: {{ appVersion }}
           </div>
         </CardContent>
@@ -53,9 +53,9 @@ const connectionStatusColor = computed(() => {
     case 'reconnecting':
       return 'text-yellow-600'
     case 'error':
-      return 'text-red-600'
+      return 'text-destructive'
     default:
-      return 'text-gray-600'
+      return 'text-muted-foreground'
   }
 })
 

@@ -131,11 +131,11 @@ defineExpose({ locateItem })
 
 <template>
   <!-- 顶部横向图标按钮列表 -->
-  <div class="shrink-0 flex items-center gap-1 px-2 py-1.5 border-b border-gray-200 dark:border-gray-700">
+  <div class="shrink-0 flex items-center gap-1 px-2 py-1.5 border-b border-border dark:border-border">
     <DropdownMenu>
       <DropdownMenuTrigger as-child>
         <button
-          class="flex h-7 w-7 items-center justify-center text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          class="flex h-7 w-7 items-center justify-center text-muted-foreground dark:text-muted-foreground hover:text-foreground dark:hover:text-muted-foreground hover:bg-muted dark:hover:bg-muted rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           :disabled="isImporting"
           title="导入"
         >
@@ -177,7 +177,7 @@ defineExpose({ locateItem })
   <!-- 底部搜索胶囊 -->
   <div class="shrink-0 px-2 pb-2 pt-1">
     <button
-      class="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer text-gray-400 text-xs"
+      class="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full bg-white dark:bg-muted border border-border dark:border-border hover:bg-muted dark:hover:bg-muted transition-colors cursor-pointer text-muted-foreground text-xs"
       @click="homeController.toggleSearch"
     >
       <span class="material-icons text-sm">search</span>

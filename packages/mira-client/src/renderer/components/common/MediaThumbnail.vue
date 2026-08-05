@@ -10,7 +10,7 @@
   <slot v-else name="fallback">
     <div :class="['flex items-center justify-center', imgClass]">
       <img v-if="extIconUrl" :src="extIconUrl" class="object-contain opacity-60 w-full h-full p-5" />
-      <span v-else class="material-icons text-gray-400" :style="{ fontSize: iconSize }">{{ fallbackIcon }}</span>
+      <span v-else class="material-icons text-muted-foreground" :style="{ fontSize: iconSize }">{{ fallbackIcon }}</span>
     </div>
   </slot>
 </template>

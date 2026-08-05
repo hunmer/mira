@@ -12,17 +12,17 @@
     <div class="relative">
       <!-- 单选模式 -->
       <div v-if="displayItems.length === 1" class="relative">
-        <div class="relative rounded-lg bg-gray-100 overflow-hidden w-full" style="height: 192px;">
+        <div class="relative rounded-lg bg-muted overflow-hidden w-full" style="height: 192px;">
           <!-- 加载中占位符 -->
-          <div v-if="imageLoadState === 'loading'" class="absolute inset-0 flex items-center justify-center bg-gray-100">
-            <div class="flex flex-col items-center text-gray-400">
+          <div v-if="imageLoadState === 'loading'" class="absolute inset-0 flex items-center justify-center bg-muted">
+            <div class="flex flex-col items-center text-muted-foreground">
               <span class="material-icons animate-pulse">image</span>
               <span class="text-xs mt-1">加载中...</span>
             </div>
           </div>
 
           <!-- 错误占位符 - 使用文件类型图标 -->
-          <div v-else-if="imageLoadState === 'error'" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-50">
+          <div v-else-if="imageLoadState === 'error'" class="absolute inset-0 flex flex-col items-center justify-center bg-muted">
               <img :src="getExtIconUrl(displayItems[0]?.name || '')" class="w-16 h-16 object-contain opacity-60" />
  
           </div>
@@ -66,17 +66,17 @@
             <!-- 加载中占位符 -->
             <div
               v-if="multiImageLoadStates[item.id] === 'loading' || multiImageLoadStates[item.id] === undefined"
-              class="stack-placeholder absolute w-full h-full top-0 left-0 rounded-xl shadow-[0_2px_6px_rgba(0,0,0,0.1)] border-2 border-white bg-gray-100 rounded-lg flex items-center justify-center"
+              class="stack-placeholder absolute w-full h-full top-0 left-0 rounded-xl shadow-[0_2px_6px_rgba(0,0,0,0.1)] border-2 border-white bg-muted rounded-lg flex items-center justify-center"
             >
-              <span class="material-icons text-gray-300 text-xl">image</span>
+              <span class="material-icons text-muted-foreground text-xl">image</span>
             </div>
 
             <!-- 错误占位符 -->
             <div
               v-else-if="multiImageLoadStates[item.id] === 'error'"
-              class="stack-placeholder absolute w-full h-full top-0 left-0 rounded-xl shadow-[0_2px_6px_rgba(0,0,0,0.1)] border-2 border-white bg-red-50 flex items-center justify-center"
+              class="stack-placeholder absolute w-full h-full top-0 left-0 rounded-xl shadow-[0_2px_6px_rgba(0,0,0,0.1)] border-2 border-white bg-destructive flex items-center justify-center"
             >
-              <span class="material-icons text-red-200 text-xl">broken_image</span>
+              <span class="material-icons text-destructive text-xl">broken_image</span>
             </div>
 
             <!-- 正常显示图片 -->
@@ -105,21 +105,21 @@
     </div>
     <!-- 文件名编辑 - 仅单选模式 -->
     <div v-if="!isMultiSelect && displayItems[0]">
-      <label class="block text-xs font-medium text-gray-600 mb-1">文件名</label>
+      <label class="block text-xs font-medium text-muted-foreground mb-1">文件名</label>
       <Input
         v-model="editName"
         type="text"
-        :class="nameError ? 'border-red-400 focus-visible:ring-red-400' : ''"
+        :class="nameError ? 'border-destructive focus-visible:ring-destructive' : ''"
         :disabled="nameSaving"
         @blur="handleNameBlur"
         @keydown.enter="handleNameBlur"
       />
-      <p v-if="nameError" class="text-xs text-red-500 mt-1">{{ nameError }}</p>
+      <p v-if="nameError" class="text-xs text-destructive mt-1">{{ nameError }}</p>
     </div>
 
     <!-- Website 编辑 - 仅单选模式 -->
     <div v-if="!isMultiSelect && displayItems[0]">
-      <label class="block text-xs font-medium text-gray-600 mb-1">网址</label>
+      <label class="block text-xs font-medium text-muted-foreground mb-1">网址</label>
       <Input
         v-model="editWebsite"
         type="text"
@@ -131,23 +131,23 @@
     </div>
 
     <!-- 文件URL - 仅单选模式显示 -->
-    <div v-if="!isMultiSelect && displayItems[0]?.url" class="flex items-center bg-gray-50 border border-gray-200 rounded-lg p-2">
+    <div v-if="!isMultiSelect && displayItems[0]?.url" class="flex items-center bg-muted border border-border rounded-lg p-2">
       <span class="flex-1 text-xs truncate">{{ displayItems[0].url }}</span>
       <button
-        class="p-1 rounded-md hover:bg-gray-100"
+        class="p-1 rounded-md hover:bg-muted"
         @click="copyToClipboard(displayItems[0].url)"
       >
-        <span class="material-icons text-gray-600 text-sm">link</span>
+        <span class="material-icons text-muted-foreground text-sm">link</span>
       </button>
     </div>
 
     <!-- 标签管理 -->
     <div>
       <div class="flex items-center justify-between mb-2">
-        <h3 class="font-semibold text-gray-700 text-sm">标签</h3>
+        <h3 class="font-semibold text-foreground text-sm">标签</h3>
         <Popover v-model:open="tagPopoverOpen">
           <PopoverTrigger as-child>
-            <button class="text-blue-500 text-xs hover:text-blue-700 flex items-center gap-0.5">
+            <button class="text-primary text-xs hover:text-primary flex items-center gap-0.5">
               <span class="material-icons text-sm">{{ hasTags ? 'edit' : 'add' }}</span>
               <span>{{ hasTags ? '编辑' : (isMultiSelect ? '批量设置' : '设置标签') }}</span>
             </button>
@@ -168,33 +168,33 @@
           <span
             v-for="tag in displayItems[0].tags"
             :key="tag"
-            class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full flex items-center"
+            class="bg-primary text-primary text-xs px-2 py-1 rounded-full flex items-center"
           >
             {{ getTagName(tag) }}
-            <button class="ml-1 text-blue-500 text-xs hover:text-blue-700" @click="handleRemoveTag(tag)">×</button>
+            <button class="ml-1 text-primary text-xs hover:text-primary" @click="handleRemoveTag(tag)">×</button>
           </span>
         </template>
         <template v-else-if="isMultiSelect && mergedInfo && mergedInfo.tags.length > 0">
           <span
             v-for="tag in mergedInfo.tags"
             :key="tag"
-            class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full flex items-center"
+            class="bg-primary text-primary text-xs px-2 py-1 rounded-full flex items-center"
           >
             {{ getTagName(tag) }}
-            <button class="ml-1 text-blue-500 text-xs hover:text-blue-700" @click="handleRemoveTag(tag)">×</button>
+            <button class="ml-1 text-primary text-xs hover:text-primary" @click="handleRemoveTag(tag)">×</button>
           </span>
         </template>
-        <span v-else class="text-gray-400 text-xs">暂无标签</span>
+        <span v-else class="text-muted-foreground text-xs">暂无标签</span>
       </div>
     </div>
 
     <!-- 文件夹信息 -->
     <div>
       <div class="flex items-center justify-between mb-2">
-        <h3 class="font-semibold text-gray-700 text-sm">文件夹</h3>
+        <h3 class="font-semibold text-foreground text-sm">文件夹</h3>
         <Popover v-model:open="folderPopoverOpen">
           <PopoverTrigger as-child>
-            <button class="text-blue-500 text-xs hover:text-blue-700 flex items-center gap-0.5">
+            <button class="text-primary text-xs hover:text-primary flex items-center gap-0.5">
               <span class="material-icons text-sm">{{ displayItems[0]?.folderId ? 'edit' : 'add' }}</span>
               <span>{{ displayItems[0]?.folderId ? '编辑' : (isMultiSelect ? '批量设置' : '设置') }}</span>
             </button>
@@ -211,12 +211,12 @@
         </Popover>
       </div>
       <template v-if="!isMultiSelect">
-        <div v-if="displayItems[0]?.folderId" class="bg-blue-100 text-blue-700 text-xs px-3 py-2 rounded-lg flex items-center">
-          <span class="material-icons mr-2 text-blue-500">folder</span>
+        <div v-if="displayItems[0]?.folderId" class="bg-primary text-primary text-xs px-3 py-2 rounded-lg flex items-center">
+          <span class="material-icons mr-2 text-primary">folder</span>
           {{ getFolderName(displayItems[0].folderId) }}
         </div>
-        <div v-else class="bg-gray-100 text-gray-600 text-xs px-3 py-2 rounded-lg flex items-center">
-          <span class="material-icons mr-2 text-gray-400">folder_open</span>
+        <div v-else class="bg-muted text-muted-foreground text-xs px-3 py-2 rounded-lg flex items-center">
+          <span class="material-icons mr-2 text-muted-foreground">folder_open</span>
           未分类
         </div>
       </template>
@@ -225,14 +225,14 @@
           <div
             v-for="folderId in mergedInfo.folders"
             :key="folderId"
-            class="bg-blue-100 text-blue-700 text-xs px-3 py-2 rounded-lg flex items-center"
+            class="bg-primary text-primary text-xs px-3 py-2 rounded-lg flex items-center"
           >
-            <span class="material-icons mr-2 text-blue-500">folder</span>
+            <span class="material-icons mr-2 text-primary">folder</span>
             {{ getFolderName(folderId) }}
           </div>
         </div>
-        <div v-else class="bg-gray-100 text-gray-600 text-xs px-3 py-2 rounded-lg flex items-center">
-          <span class="material-icons mr-2 text-gray-400">folder_open</span>
+        <div v-else class="bg-muted text-muted-foreground text-xs px-3 py-2 rounded-lg flex items-center">
+          <span class="material-icons mr-2 text-muted-foreground">folder_open</span>
           多个文件未分类
         </div>
       </template>
@@ -240,8 +240,8 @@
 
     <!-- 基本信息 -->
     <div>
-      <h3 class="font-semibold text-gray-700 text-sm mb-2">基本信息</h3>
-      <div class="text-xs space-y-2 text-gray-600">
+      <h3 class="font-semibold text-foreground text-sm mb-2">基本信息</h3>
+      <div class="text-xs space-y-2 text-muted-foreground">
         <!-- 单选模式 -->
         <template v-if="!isMultiSelect && displayItems[0]">
           <div class="flex justify-between">

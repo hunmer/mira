@@ -49,7 +49,7 @@
       <!-- 视频进度条 -->
       <div v-if="showProgress && duration > 0 && !isLoading" class="absolute bottom-0 left-0 right-0 h-[3px] bg-white/30">
         <div
-          class="h-full bg-blue-500 transition-[width] duration-100"
+          class="h-full bg-primary transition-[width] duration-100"
           :style="{ width: `${(currentVideoTime / duration) * 100}%` }"
         ></div>
       </div>

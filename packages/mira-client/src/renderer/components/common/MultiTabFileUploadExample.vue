@@ -1,8 +1,8 @@
 <template>
-  <div class="p-6 max-w-4xl mx-auto bg-slate-50 min-h-screen dark:bg-slate-950">
+  <div class="p-6 max-w-4xl mx-auto bg-muted min-h-screen dark:bg-muted">
     <div class="mb-6">
       <h2 class="text-2xl font-bold mb-2">多标签页文件上传组件示例</h2>
-      <p class="text-gray-600">这个组件支持拖拽上传、多文件处理，并提供三个标签页来管理文件的不同状态。</p>
+      <p class="text-muted-foreground">这个组件支持拖拽上传、多文件处理，并提供三个标签页来管理文件的不同状态。</p>
     </div>
 
     <!-- 组件配置面板 -->
@@ -16,7 +16,7 @@
       <CardContent>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div class="form-group">
-            <label class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-200">文件类型</label>
+            <label class="block text-sm font-medium mb-2 text-foreground dark:text-muted-foreground">文件类型</label>
             <Select v-model="accept">
               <SelectTrigger class="w-full">
                 <SelectValue placeholder="选择文件类型" />
@@ -34,7 +34,7 @@
           </div>
 
           <div class="form-group">
-            <label class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-200">最大文件大小 (MB)</label>
+            <label class="block text-sm font-medium mb-2 text-foreground dark:text-muted-foreground">最大文件大小 (MB)</label>
             <Input
               type="number"
               :model-value="maxFileSizeMB"
@@ -46,7 +46,7 @@
           </div>
 
           <div class="form-group">
-            <label class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-200">最大文件数量</label>
+            <label class="block text-sm font-medium mb-2 text-foreground dark:text-muted-foreground">最大文件数量</label>
             <Input
               type="number"
               :model-value="maxFiles"
@@ -75,7 +75,7 @@
             <i class="pi pi-cloud-upload mr-2"></i>
             文件上传
           </div>
-          <div class="flex items-center space-x-4 text-sm text-gray-600">
+          <div class="flex items-center space-x-4 text-sm text-muted-foreground">
             <span>已选择: {{ uploadStats.selected }}</span>
             <span>上传中: {{ uploadStats.uploading }}</span>
             <span>已上传: {{ uploadStats.uploaded }}</span>
@@ -132,20 +132,20 @@
             :key="index"
             class="event-item p-3 rounded-lg text-sm transition-all duration-200 ease-in-out hover:translate-x-1"
             :class="{
-              'bg-blue-50 border border-blue-200': event.type === 'info',
+              'bg-primary border border-primary': event.type === 'info',
               'bg-green-50 border border-green-200': event.type === 'success',
-              'bg-red-50 border border-red-200': event.type === 'error',
+              'bg-destructive border border-destructive': event.type === 'error',
               'bg-yellow-50 border border-yellow-200': event.type === 'warning'
             }"
           >
             <div class="flex items-start justify-between">
               <div>
                 <div class="font-medium">{{ event.message }}</div>
-                <div v-if="event.details" class="text-gray-600 mt-1">
+                <div v-if="event.details" class="text-muted-foreground mt-1">
                   {{ event.details }}
                 </div>
               </div>
-              <div class="text-xs text-gray-500 ml-4">
+              <div class="text-xs text-muted-foreground ml-4">
                 {{ event.timestamp.toLocaleTimeString() }}
               </div>
             </div>

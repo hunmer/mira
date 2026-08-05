@@ -1,6 +1,6 @@
 <template>
   <div
-    class="p-2 media-list-view flex-1 flex flex-col w-full bg-gray-100 dark:bg-gray-900 overflow-hidden relative h-full text-[13px]"
+    class="p-2 media-list-view flex-1 flex flex-col w-full bg-muted dark:bg-muted overflow-hidden relative h-full text-[13px]"
     @dragover.prevent="canUpload && handleDragOver($event)"
     @dragleave.prevent="canUpload && handleDragLeave($event)"
     @drop.prevent="canUpload && handleDrop($event)"
@@ -9,11 +9,11 @@
     <Transition name="fade">
       <div
         v-if="isDragOver && canUpload"
-        class="absolute inset-0 z-50 bg-blue-500/10 border-2 border-dashed border-blue-400 rounded-lg flex items-center justify-center pointer-events-none"
+        class="absolute inset-0 z-50 bg-primary/10 border-2 border-dashed border-primary rounded-lg flex items-center justify-center pointer-events-none"
       >
         <div class="text-center">
-          <span class="material-icons text-5xl text-blue-500 mb-2">cloud_upload</span>
-          <p class="text-blue-600 font-medium text-lg">释放文件以上传</p>
+          <span class="material-icons text-5xl text-primary mb-2">cloud_upload</span>
+          <p class="text-primary font-medium text-lg">释放文件以上传</p>
         </div>
       </div>
     </Transition>
@@ -43,12 +43,12 @@
         >
           <template #trigger>
             <button
-              class="flex items-center space-x-1 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              class="flex items-center space-x-1 border border-border dark:border-border rounded-md hover:bg-muted dark:hover:bg-muted transition-colors"
               :title="getViewModeTitle(viewMode)"
               style="padding: 6px;"
             >
-              <span class="material-icons text-sm text-gray-600 dark:text-gray-400">{{ getViewModeIcon(viewMode) }}</span>
-              <span class="material-icons text-sm text-gray-400">keyboard_arrow_down</span>
+              <span class="material-icons text-sm text-muted-foreground dark:text-muted-foreground">{{ getViewModeIcon(viewMode) }}</span>
+              <span class="material-icons text-sm text-muted-foreground">keyboard_arrow_down</span>
             </button>
           </template>
 
@@ -58,8 +58,8 @@
                 v-for="mode in viewModes"
                 :key="mode.value"
                 :class="[
-                  'w-full flex items-center space-x-2 px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors',
-                  viewMode === mode.value ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600' : 'text-gray-700 dark:text-gray-300'
+                  'w-full flex items-center space-x-2 px-3 py-2 text-sm hover:bg-muted dark:hover:bg-muted transition-colors',
+                  viewMode === mode.value ? 'bg-primary dark:bg-primary/30 text-primary' : 'text-foreground dark:text-muted-foreground'
                 ]"
                 @click="handleViewModeChange(mode.value as 'grid' | 'list' | 'waterfall'); close()"
               >
@@ -67,7 +67,7 @@
                 <span>{{ mode.label }}</span>
                 <span
                   v-if="viewMode === mode.value"
-                  class="material-icons text-sm ml-auto text-blue-600"
+                  class="material-icons text-sm ml-auto text-primary"
                 >
                   check
                 </span>
@@ -78,7 +78,7 @@
 
         <!-- 刷新按钮 -->
         <button
-          class="flex items-center space-x-1 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md border border-gray-200 dark:border-gray-700 transition-colors"
+          class="flex items-center space-x-1 px-3 py-1.5 text-sm text-muted-foreground dark:text-muted-foreground hover:text-foreground dark:hover:text-muted-foreground hover:bg-muted dark:hover:bg-muted rounded-md border border-border dark:border-border transition-colors"
           @click="handleRefresh"
           title="刷新数据"
         >
@@ -91,8 +91,8 @@
           :class="[
             'flex items-center space-x-1 px-3 py-1.5 text-sm rounded-md border transition-colors',
             showDetailSidebar
-              ? 'bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100'
-              : 'text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
+              ? 'bg-primary text-primary border-primary hover:bg-primary'
+              : 'text-muted-foreground dark:text-muted-foreground border-border dark:border-border hover:text-foreground dark:hover:text-muted-foreground hover:bg-muted dark:hover:bg-muted'
           ]"
           :title="showDetailSidebar ? '隐藏详情面板' : '显示详情面板'"
         >
@@ -163,14 +163,14 @@
           </div>
 
           <!-- 如果没有匹配的视图模式 -->
-          <div v-if="!['grid', 'list', 'waterfall'].includes(viewMode)" class="flex items-center justify-center h-40 text-gray-500 dark:text-gray-400">
+          <div v-if="!['grid', 'list', 'waterfall'].includes(viewMode)" class="flex items-center justify-center h-40 text-muted-foreground dark:text-muted-foreground">
             未知的视图模式: {{ viewMode }}
           </div>
         </div>
 
         <!-- 浮动操作栏 -->
         <div
-          class="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center space-x-4 bg-white dark:bg-gray-800 shadow-lg dark:shadow-black/30 rounded-full p-1 border border-gray-200 dark:border-gray-700"
+          class="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center space-x-4 bg-white dark:bg-muted shadow-lg dark:shadow-black/30 rounded-full p-1 border border-border dark:border-border"
         >
           <!-- 操作按钮 - 仅在选中文件时显示 -->
           <div
@@ -179,71 +179,71 @@
           >
             <!-- 反选 -->
             <button
-              class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+              class="p-2 rounded-full hover:bg-muted dark:hover:bg-muted"
               title="反选"
               @click="handleInvertSelection"
             >
-              <span class="material-symbols-outlined text-gray-600 dark:text-gray-400">swap_horiz</span>
+              <span class="material-symbols-outlined text-muted-foreground dark:text-muted-foreground">swap_horiz</span>
             </button>
             <!-- 取消选择 -->
             <button
-              class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+              class="p-2 rounded-full hover:bg-muted dark:hover:bg-muted"
               title="取消选择"
               @click="handleClearSelection"
             >
-              <span class="material-symbols-outlined text-gray-600 dark:text-gray-400">deselect</span>
+              <span class="material-symbols-outlined text-muted-foreground dark:text-muted-foreground">deselect</span>
             </button>
-            <div class="h-6 border-l border-gray-200 dark:border-gray-700"></div>
+            <div class="h-6 border-l border-border dark:border-border"></div>
 
             <!-- 回收站：恢复文件 / 彻底删除 -->
             <template v-if="isTrash">
               <button
-                class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                class="p-2 rounded-full hover:bg-muted dark:hover:bg-muted"
                 :title="`恢复文件 (${selectedItems.length})`"
                 @click="handleToolbarAction('restore')"
               >
-                <span class="material-symbols-outlined text-gray-600 dark:text-gray-400">restore</span>
+                <span class="material-symbols-outlined text-muted-foreground dark:text-muted-foreground">restore</span>
               </button>
               <button
-                class="p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/30 group"
+                class="p-2 rounded-full hover:bg-destructive dark:hover:bg-destructive/30 group"
                 :title="`彻底删除 (${selectedItems.length})`"
                 @click="handleToolbarAction('purge')"
               >
-                <span class="material-symbols-outlined text-gray-600 dark:text-gray-400 group-hover:text-red-600 dark:group-hover:text-red-400">delete_forever</span>
+                <span class="material-symbols-outlined text-muted-foreground dark:text-muted-foreground group-hover:text-destructive dark:group-hover:text-destructive">delete_forever</span>
               </button>
             </template>
 
             <!-- 普通视图：复制 / 打开 / 删除 -->
             <template v-else>
               <button
-                class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                class="p-2 rounded-full hover:bg-muted dark:hover:bg-muted"
                 title="复制"
                 @click="handleToolbarAction('copy')"
               >
-                <span class="material-icons text-gray-600 dark:text-gray-400">content_copy</span>
+                <span class="material-icons text-muted-foreground dark:text-muted-foreground">content_copy</span>
               </button>
               <button
-                class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                class="p-2 rounded-full hover:bg-muted dark:hover:bg-muted"
                 title="打开"
                 @click="handleToolbarAction('open')"
               >
-                <span class="material-icons text-gray-600 dark:text-gray-400">open_in_new</span>
+                <span class="material-icons text-muted-foreground dark:text-muted-foreground">open_in_new</span>
               </button>
               <button
-                class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                class="p-2 rounded-full hover:bg-muted dark:hover:bg-muted"
                 :title="`删除 (${selectedItems.length})`"
                 @click="handleToolbarAction('delete')"
               >
-                <span class="material-icons text-gray-600 dark:text-gray-400">delete</span>
+                <span class="material-icons text-muted-foreground dark:text-muted-foreground">delete</span>
               </button>
             </template>
-            <div class="h-6 border-l border-gray-200 dark:border-gray-700"></div>
+            <div class="h-6 border-l border-border dark:border-border"></div>
           </div>
 
           <!-- 分页控件 - 始终显示 -->
-          <div class="flex items-center space-x-1 text-gray-600 dark:text-gray-400 text-xs">
+          <div class="flex items-center space-x-1 text-muted-foreground dark:text-muted-foreground text-xs">
             <button
-              class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+              class="p-2 rounded-full hover:bg-muted dark:hover:bg-muted"
               :disabled="currentPage === 1"
               @click="handlePreviousPage"
             >
@@ -257,8 +257,8 @@
               <button
                 v-else
                 :class="[
-                  'px-2 py-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 min-w-[28px]',
-                  page.active ? 'bg-blue-100 text-blue-600 font-semibold' : ''
+                  'px-2 py-1 rounded-full hover:bg-muted dark:hover:bg-muted min-w-[28px]',
+                  page.active ? 'bg-primary text-primary font-semibold' : ''
                 ]"
                 @click="handlePageChange(page.number)"
               >
@@ -267,7 +267,7 @@
             </template>
 
             <button
-              class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+              class="p-2 rounded-full hover:bg-muted dark:hover:bg-muted"
               :disabled="currentPage === totalPages"
               @click="handleNextPage"
             >
@@ -280,18 +280,18 @@
       <!-- 右侧信息面板 -->
       <div
         v-if="showDetailSidebar"
-        class="w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg flex flex-col ml-2"
+        class="w-72 bg-white dark:bg-muted border border-border dark:border-border rounded-lg flex flex-col ml-2"
       >
-        <div class="border-b border-gray-200 dark:border-gray-700">
+        <div class="border-b border-border dark:border-border">
           <nav aria-label="Tabs" class="flex -mb-px">
             <a
-              class="w-1/2 py-2 px-1 text-center border-b-2 font-medium text-sm text-blue-600 border-blue-500"
+              class="w-1/2 py-2 px-1 text-center border-b-2 font-medium text-sm text-primary border-primary"
               href="#"
             >
               信息
             </a>
             <a
-              class="w-1/2 py-2 px-1 text-center border-b-2 font-medium text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600"
+              class="w-1/2 py-2 px-1 text-center border-b-2 font-medium text-sm text-muted-foreground dark:text-muted-foreground hover:text-foreground dark:hover:text-muted-foreground hover:border-border dark:hover:border-border"
               href="#"
             >
               分享
@@ -315,24 +315,24 @@
     </div>
 
     <!-- 底部状态栏 -->
-    <footer class="flex justify-center p-2 bg-gray-100 dark:bg-gray-900">
+    <footer class="flex justify-center p-2 bg-muted dark:bg-muted">
       <!-- 状态信息 -->
-      <div class="w-[100%] flex items-center justify-between bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-3">
+      <div class="w-[100%] flex items-center justify-between bg-white dark:bg-muted rounded-2xl border border-border dark:border-border p-3">
         <div class="flex-1 flex items-center space-x-6">
           <!-- 路由状态 -->
           <div class="flex items-center space-x-1">
             <span class="material-icons text-sm" :style="{ color: currentTabContent.iconColor }">
               {{ currentTabContent.icon }}
             </span>
-            <span class="text-xs text-gray-700 dark:text-gray-300 font-medium">
+            <span class="text-xs text-foreground dark:text-muted-foreground font-medium">
               {{ currentTabContent.label }}
             </span>
           </div>
 
           <!-- 当前路径和文件数 -->
           <div class="flex items-center space-x-1">
-            <span class="material-icons text-sm text-gray-500 dark:text-gray-400">folder_open</span>
-            <span class="text-xs text-gray-600 dark:text-gray-400">
+            <span class="material-icons text-sm text-muted-foreground dark:text-muted-foreground">folder_open</span>
+            <span class="text-xs text-muted-foreground dark:text-muted-foreground">
               {{ filteredMediaItems.length }} 个文件
             </span>
           </div>
@@ -341,15 +341,15 @@
         <div class="flex items-center space-x-4">
           <!-- 已选择素材 - 仅在有选择时显示 -->
           <div v-if="selectedItems.length > 0" class="flex items-center space-x-1">
-            <span class="material-icons text-sm text-blue-600">check_circle</span>
-            <span class="text-xs text-blue-700 font-medium">
+            <span class="material-icons text-sm text-primary">check_circle</span>
+            <span class="text-xs text-primary font-medium">
               已选择 {{ selectedItems.length }} 个素材
             </span>
           </div>
 
           <!-- 分页信息 -->
           <div class="flex items-center space-x-1">
-            <span class="text-xs text-gray-600 dark:text-gray-400">
+            <span class="text-xs text-muted-foreground dark:text-muted-foreground">
               第 {{ currentPage }} / {{ totalPages }} 页
             </span>
           </div>
@@ -357,7 +357,7 @@
           <!-- 列数调整滑块 -->
           <div v-if="viewMode === 'grid' || viewMode === 'waterfall'" class="flex items-center space-x-2">
             <input
-              class="w-24 h-1 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
+              class="w-24 h-1 bg-accent dark:bg-muted rounded-lg appearance-none cursor-pointer"
               type="range"
               min="2"
               max="8"

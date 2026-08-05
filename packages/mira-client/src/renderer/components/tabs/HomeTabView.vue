@@ -1,12 +1,12 @@
 <template>
   <div class="home-view flex-1 flex flex-col min-h-full">
     <div v-if="dashboardStore.loading" class="flex items-center justify-center flex-1">
-      <span class="text-gray-400">加载中...</span>
+      <span class="text-muted-foreground">加载中...</span>
     </div>
     <div v-else-if="dashboardStore.error" class="flex items-center justify-center flex-1">
       <div class="text-center">
-        <span class="material-icons text-4xl text-gray-400 mb-2 block">cloud_off</span>
-        <p class="text-gray-500 text-sm">{{ dashboardStore.error }}</p>
+        <span class="material-icons text-4xl text-muted-foreground mb-2 block">cloud_off</span>
+        <p class="text-muted-foreground text-sm">{{ dashboardStore.error }}</p>
       </div>
     </div>
     <webview

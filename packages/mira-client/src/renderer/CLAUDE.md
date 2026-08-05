@@ -2,7 +2,7 @@
 
 [根目录](../../CLAUDE.md) > **src/renderer**
 
-> 导航: [Main 模块](../main/CLAUDE.md) | [Preload 模块](../preload/CLAUDE.md) | [Volt 组件库](../volt/CLAUDE.md) | [Shared 模块](../shared/CLAUDE.md)
+> 导航: [Main 模块](../main/CLAUDE.md) | [Preload 模块](../preload/CLAUDE.md) | [shadcn-vue UI 组件](../components/ui/CLAUDE.md) | [Shared 模块](../shared/CLAUDE.md)
 
 ## 变更记录 (Changelog)
 

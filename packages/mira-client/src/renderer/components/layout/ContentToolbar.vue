@@ -1,5 +1,5 @@
 <template>
-  <div class="content-toolbar bg-white border-b border-gray-200 px-6 py-3">
+  <div class="content-toolbar bg-white border-b border-border px-6 py-3">
     <ToolbarComponent
       :groups="toolbarGroups"
       size="small"

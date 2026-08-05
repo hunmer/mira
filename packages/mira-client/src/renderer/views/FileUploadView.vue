@@ -1,11 +1,11 @@
 <template>
-  <div class="h-screen bg-gray-50 dark:bg-gray-900 overflow-y-auto">
+  <div class="h-screen bg-muted dark:bg-muted overflow-y-auto">
     <main class="flex-1 p-8">
       <!-- 页面头部 -->
       <div class="flex items-center justify-between mb-6">
         <router-link
           to="/"
-          class="flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-800 transition-colors"
+          class="flex items-center text-muted-foreground dark:text-muted-foreground hover:text-foreground transition-colors"
         >
           <span class="material-icons mr-2">arrow_back_ios</span>
           返回主页
@@ -13,7 +13,7 @@
 
         <!-- 素材库选择器 -->
         <div class="flex items-center space-x-2">
-          <span class="text-sm text-gray-600 dark:text-gray-400">素材库:</span>
+          <span class="text-sm text-muted-foreground dark:text-muted-foreground">素材库:</span>
           <Select v-model="selectedLibraryId" @update:model-value="handleLibrarySelectChange">
             <SelectTrigger class="w-48">
               <SelectValue placeholder="选择素材库" />
@@ -27,31 +27,31 @@
 
       <!-- 队列状态显示 -->
       <div v-if="queueStats.pending > 0 || queueStats.running > 0" class="mb-6">
-        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">上传队列状态</h3>
-        <div class="bg-blue-50 p-4 rounded-lg">
+        <h3 class="text-lg font-semibold text-foreground dark:text-muted-foreground mb-4">上传队列状态</h3>
+        <div class="bg-primary p-4 rounded-lg">
           <div class="grid grid-cols-4 gap-4 text-center">
             <div>
-              <div class="text-2xl font-bold text-blue-600">{{ queueStats.pending }}</div>
-              <div class="text-sm text-gray-600 dark:text-gray-400">等待中</div>
+              <div class="text-2xl font-bold text-primary">{{ queueStats.pending }}</div>
+              <div class="text-sm text-muted-foreground dark:text-muted-foreground">等待中</div>
             </div>
             <div>
               <div class="text-2xl font-bold text-orange-600">{{ queueStats.running }}</div>
-              <div class="text-sm text-gray-600 dark:text-gray-400">上传中</div>
+              <div class="text-sm text-muted-foreground dark:text-muted-foreground">上传中</div>
             </div>
             <div>
               <div class="text-2xl font-bold text-green-600">{{ queueStats.completed }}</div>
-              <div class="text-sm text-gray-600 dark:text-gray-400">已完成</div>
+              <div class="text-sm text-muted-foreground dark:text-muted-foreground">已完成</div>
             </div>
             <div>
-              <div class="text-2xl font-bold text-red-600">{{ queueStats.failed }}</div>
-              <div class="text-sm text-gray-600 dark:text-gray-400">失败</div>
+              <div class="text-2xl font-bold text-destructive">{{ queueStats.failed }}</div>
+              <div class="text-sm text-muted-foreground dark:text-muted-foreground">失败</div>
             </div>
           </div>
         </div>
       </div>
 
       <!-- 多标签页文件上传组件 -->
-      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm mb-8">
+      <div class="bg-white dark:bg-muted rounded-2xl shadow-sm mb-8">
         <MultiTabFileUpload
           ref="multiTabUploadRef"
           accept="*"

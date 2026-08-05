@@ -61,7 +61,7 @@
         <!-- 空状态 -->
         <div
           v-if="props.items.length === 0"
-          class="absolute inset-0 flex flex-col items-center justify-center h-64 text-gray-500"
+          class="absolute inset-0 flex flex-col items-center justify-center h-64 text-muted-foreground"
         >
           <span class="material-icons text-6xl mb-4">folder_open</span>
           <h3 class="text-lg font-medium mb-2">暂无文件</h3>

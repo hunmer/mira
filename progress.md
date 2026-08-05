@@ -20,7 +20,40 @@
 - 待 P1.1 记录：`pnpm --filter mira-client build` 当前状态。
 
 ### 下一步
-- P7: 清理自定义 tailwind 样式（theme.css + main.css + 业务文件原始色值）。
+- 无（全部 8 阶段完成）。可由用户做人工视觉回归 QA。
+
+## Phase 8 完成 (2026-08-05) — 最终验收与文档
+- ✅ `pnpm run build:all` 全通过（renderer + main + preload 三段）。
+- ✅ 架构验证：0 个应用文件直接 import reka-ui；0 个 mira-* 变量引用；0 个活跃 volt 引用（仅 2 处迁移注释）；ui 目录 34 个。
+- ✅ 文档更新：`src/components/ui/CLAUDE.md` 重写（34 组件、new-york-v4 基线、迁移说明）；`renderer/CLAUDE.md` 导航链接；`claude/file-map.md`、`claude/public-interfaces.md` 清除 volt/旧计数。
+
+## 总结
+本次在 `mira-client` 完成 shadcn-vue 迁移：
+- 删除自定义 volt 组件库（9 文件）、theme.css、surface-*/mira-* 样式系统。
+- 重新生成 33 个标准组件为 new-york-v4 官方默认（iconLibrary=lucide）。
+- 删除 7 个未引用 UI 目录。
+- 迁移 7 个 volt 业务消费组件 + 87 处 mira-* 引用 + 1772 处原始色值到语义 token。
+- 新增依赖：@lucide/vue、@internationalized/date、@tanstack/vue-table；删除 vue-draggable-plus。
+- 全程 build 门禁通过。保留 green/yellow/amber 等状态色（shadcn 无对应语义 token，社区惯例保留）。
+
+### 待人工 QA
+- 各视图视觉回归（new-york-v4 尺寸/间距与旧版可能不同）。
+- AccessibilityProvider 的 high-contrast 在 dark 模式下的表现（原 theme.css 遗留行为，本次等价迁移未优化）。
+- MultiTabFileUpload 表格重写后的交互（排序/选择/全选）。
+
+## Phase 7 完成 (2026-08-05) — 清理自定义 tailwind 样式
+- ✅ **迁移 7 个 mira-* 业务文件**（共 87 处引用）到 shadcn 语义 token / 字面量：
+  - Animation（6）、VirtualScroll（6）、LazyImage（6，shimmer 用 muted/background 双色保留效果）
+  - ThemeSwitcher（22）、ResponsiveLayout（22，仅 var，class 名前缀保留）
+  - App.vue（21）、AccessibilityProvider（18，含删除失效的 setProperty('--mira-transition-*') JS，改为依赖全局 @media reduced-motion）
+- ✅ **删除 theme.css** + main.css 里的 `@import`；把全局字体规则并入 main.css 的 body base layer。
+- ✅ **删除 main.css 的 surface-* 变量**（重复的 slate 色阶），迁移 4 个消费文件（App.vue、IntegrationsList、MultiTabFileUpload、ShortcutManagerDialog）的 surface-* 工具类到语义 token。
+- ✅ **批量迁移原始色值**：70 文件 1772 处（gray/slate/zinc→muted/border/foreground、blue/indigo→primary、red→destructive）。build 通过。
+- ⚠️ **保留** green/yellow/amber/emerald/purple（90 处，19 文件）——这些是 success/warning 状态色，shadcn-vue 无对应语义 token，状态图标用 emerald/green 是社区惯例。
+
+### P7 说明
+- AccessibilityProvider 的 high-contrast token 重定义（--foreground:#000 / --background:#fff）有 dark 模式下的潜在冲突（dark+high-contrast 会黑字黑底），但这是原 theme.css 就有的行为，本次保持等价迁移，未引入新问题。后续可单独优化。
+- shimmer 动画用 muted/background 双色保留扫光效果。
 
 ## Phase 6 完成 (2026-08-05) — 重新生成 new-york-v4 默认组件
 - ✅ **CLI fetch 被本地代理 (127.0.0.1:7890) 干扰失败**（curl/Node fetch 能走代理，CLI 内部 fetch 不行）。改写一次性脚本 `scripts/fetch-shadcn.mjs` 用 Node 原生 fetch 直接拉 registry，复刻 `add --overwrite` 写文件行为（用完即删）。

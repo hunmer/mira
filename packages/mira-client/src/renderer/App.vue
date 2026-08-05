@@ -1,5 +1,5 @@
 <template>
-  <div id="app" class="h-screen w-screen overflow-hidden bg-surface-50 dark:bg-surface-950">
+  <div id="app" class="h-screen w-screen overflow-hidden bg-background">
     <!-- iOS风格拖拽横条 -->
     <div class="drag-handle-bar">
       <div class="drag-handle-indicator"></div>
@@ -433,9 +433,9 @@ onUnmounted(() => {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
-  background-color: var(--mira-bg-secondary);
-  color: var(--mira-text-primary);
-  transition: background-color var(--mira-transition-normal), color var(--mira-transition-normal);
+  background-color: var(--muted);
+  color: var(--foreground);
+  transition: background-color 250ms ease, color 250ms ease;
 }
 
 /* 确保全屏布局 */
@@ -457,8 +457,8 @@ html, body, #app {
 }
 
 .dark #app {
-  background-color: var(--mira-bg-primary);
-  color: var(--mira-text-primary);
+  background-color: var(--background);
+  color: var(--foreground);
 }
 
 /* 高对比度主题 */
@@ -478,38 +478,38 @@ html, body, #app {
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: var(--mira-gray-400);
+  background-color: var(--muted-foreground);
   border-radius: 4px;
-  transition: background-color var(--mira-transition-fast);
+  transition: background-color 150ms ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: var(--mira-gray-500);
+  background-color: var(--muted-foreground);
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background-color: var(--mira-gray-600);
+  background-color: var(--muted);
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background-color: var(--mira-gray-500);
+  background-color: var(--muted-foreground);
 }
 
 /* 焦点样式 */
 :focus-visible {
-  outline: 2px solid var(--mira-primary-500);
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
 
 /* 选择样式 */
 ::selection {
-  background-color: var(--mira-primary-200);
-  color: var(--mira-primary-900);
+  background-color: var(--accent);
+  color: var(--accent-foreground);
 }
 
 .dark ::selection {
-  background-color: var(--mira-primary-800);
-  color: var(--mira-primary-100);
+  background-color: var(--accent);
+  color: var(--accent-foreground);
 }
 
 /* 无障碍访问 - 减少动画 */
@@ -596,18 +596,18 @@ html, body, #app {
 
 .shimmer {
   background: linear-gradient(90deg, 
-    var(--mira-gray-200) 25%, 
-    var(--mira-gray-100) 50%, 
-    var(--mira-gray-200) 75%);
+    var(--muted) 25%, 
+    var(--background) 50%, 
+    var(--muted) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
 
 .dark .shimmer {
   background: linear-gradient(90deg,
-    var(--mira-gray-700) 25%,
-    var(--mira-gray-600) 50%,
-    var(--mira-gray-700) 75%);
+    var(--muted) 25%,
+    var(--muted) 50%,
+    var(--muted) 75%);
   background-size: 200% 100%;
 }
 

@@ -65,5 +65,5 @@
 
 | 路径 | 说明 |
 |------|------|
-| `src/components/ui/` | shadcn/ui 组件 (~214 个 Vue 文件) |
-| `src/components/ui/volt/` | 自定义 Volt 组件 (~58 个 Vue 文件) |
+| `src/components/ui/` | shadcn-vue 组件库（new-york-v4 默认样式，34 个组件目录） |
+| `src/components/ui/date-picker/` | 本地组合：Input + Popover + Calendar（从原 volt 迁入） |

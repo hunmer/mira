@@ -1,5 +1,5 @@
 <template>
-  <div class="w-28 flex-shrink-0 bg-white dark:bg-gray-900 p-2 flex flex-col items-center border-r border-gray-200 dark:border-gray-700">
+  <div class="w-28 flex-shrink-0 bg-white dark:bg-muted p-2 flex flex-col items-center border-r border-border dark:border-border">
     <div class="flex-grow space-y-3 overflow-y-auto pr-1">
       <div
         v-for="video in videos"
@@ -7,8 +7,8 @@
         :class="[
           'relative cursor-pointer rounded-lg',
           video.id === currentVideoId
-            ? 'border-2 border-blue-500'
-            : 'border-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600'
+            ? 'border-2 border-primary'
+            : 'border-2 border-transparent hover:border-border dark:hover:border-border'
         ]"
         @click="$emit('video-select', video.id)"
       >

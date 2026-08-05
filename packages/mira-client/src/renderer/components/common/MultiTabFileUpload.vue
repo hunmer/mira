@@ -43,7 +43,7 @@
               <div class="flex flex-col items-center justify-center">
                 <i class="pi pi-cloud-upload text-6xl text-primary mb-4"></i>
                 <h3 class="text-xl font-semibold mb-2">拖拽文件到这里</h3>
-                <p class="text-gray-600 mb-4">或者点击选择文件</p>
+                <p class="text-muted-foreground mb-4">或者点击选择文件</p>
                 <Button
                   variant="outline"
                   @click.stop="triggerFileSelect"
@@ -80,13 +80,13 @@
                 <div
                   v-for="(file, index) in selectedFiles"
                   :key="index"
-                  class="file-item p-3 border border-gray-200 rounded-lg flex items-center justify-between"
+                  class="file-item p-3 border border-border rounded-lg flex items-center justify-between"
                 >
                   <div class="file-info flex items-center">
                     <i :class="getFileIcon(file)" class="text-2xl mr-3"></i>
                     <div>
                       <div class="font-medium">{{ file.name }}</div>
-                      <div class="text-sm text-gray-500">{{ formatFileSize(file.size) }}</div>
+                      <div class="text-sm text-muted-foreground">{{ formatFileSize(file.size) }}</div>
                     </div>
                   </div>
                   <Button
@@ -106,22 +106,22 @@
         <TabsContent value="uploading">
           <div class="uploading-area p-4">
             <div v-if="uploadingFiles.length === 0" class="opacity-80 text-center py-8">
-              <i class="pi pi-info-circle text-4xl text-gray-400 mb-4"></i>
-              <p class="text-gray-500">暂无正在上传的文件</p>
+              <i class="pi pi-info-circle text-4xl text-muted-foreground mb-4"></i>
+              <p class="text-muted-foreground">暂无正在上传的文件</p>
             </div>
 
             <div v-else class="uploading-list space-y-3">
               <div
                 v-for="(uploadItem, index) in uploadingFiles"
                 :key="index"
-                class="upload-item p-4 border border-gray-200 rounded-lg"
+                class="upload-item p-4 border border-border rounded-lg"
               >
                 <div class="flex items-center justify-between mb-2">
                   <div class="file-info flex items-center">
                     <i :class="getFileIcon(uploadItem.file)" class="text-2xl mr-3"></i>
                     <div>
                       <div class="font-medium">{{ uploadItem.file.name }}</div>
-                      <div class="text-sm text-gray-500">{{ formatFileSize(uploadItem.file.size) }}</div>
+                      <div class="text-sm text-muted-foreground">{{ formatFileSize(uploadItem.file.size) }}</div>
                     </div>
                   </div>
                   <Button
@@ -155,8 +155,8 @@
             <!-- 文件列表头部 -->
             <div class="flex justify-between items-center mb-4 p-4 pb-0">
               <div class="flex items-center">
-                <h2 class="text-lg font-semibold text-gray-800 mr-2">已上传文件</h2>
-                <span class="text-sm text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                <h2 class="text-lg font-semibold text-foreground mr-2">已上传文件</h2>
+                <span class="text-sm text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
                   {{ totalUploadedFiles }} 个文件
                 </span>
               </div>
@@ -166,21 +166,21 @@
                 <div class="relative">
                   <input
                     v-model="searchQuery"
-                    class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    class="pl-10 pr-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="搜索文件..."
                     type="text"
                   />
-                  <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">search</span>
+                  <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">search</span>
                 </div>
 
                 <div class="relative">
                   <button
                     @click="showFilterMenu = !showFilterMenu"
-                    class="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+                    class="flex items-center space-x-2 px-4 py-2 border border-border rounded-lg text-foreground hover:bg-muted transition-colors"
                   >
                     <span class="material-icons">filter_list</span>
                     <span>过滤</span>
-                    <span v-if="activeFilters.length > 0" class="bg-indigo-500 text-white text-xs rounded-full px-2 py-0.5 ml-1">
+                    <span v-if="activeFilters.length > 0" class="bg-primary text-white text-xs rounded-full px-2 py-0.5 ml-1">
                       {{ activeFilters.length }}
                     </span>
                   </button>
@@ -188,19 +188,19 @@
                   <!-- 过滤菜单 -->
                   <div
                     v-if="showFilterMenu"
-                    class="absolute right-0 top-full mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-10"
+                    class="absolute right-0 top-full mt-2 w-64 bg-white border border-border rounded-lg shadow-lg z-10"
                   >
                     <div class="p-4">
                       <div class="flex justify-between items-center mb-3">
-                        <h3 class="font-medium text-gray-800">过滤器</h3>
+                        <h3 class="font-medium text-foreground">过滤器</h3>
                         <button
                           @click="clearFilters"
-                          class="text-xs text-gray-500 hover:text-gray-700 underline"
+                          class="text-xs text-muted-foreground hover:text-foreground underline"
                         >
                           清除所有
                         </button>
                       </div>
-                      <h4 class="font-medium text-gray-800 mb-3 text-sm">文件类型</h4>
+                      <h4 class="font-medium text-foreground mb-3 text-sm">文件类型</h4>
                       <div class="space-y-2">
                         <label v-for="type in fileTypes" :key="type.value" class="flex items-center cursor-pointer">
                           <Checkbox
@@ -208,24 +208,24 @@
                             @update:checked="($event: boolean) => { if ($event) selectedFileTypes.push(type.value); else selectedFileTypes = selectedFileTypes.filter(v => v !== type.value) }"
                             class="mr-2"
                           />
-                          <span class="text-sm text-gray-700">{{ type.label }}</span>
-                          <span class="text-xs text-gray-500 ml-auto">({{ getFileCountByType(type.value) }})</span>
+                          <span class="text-sm text-foreground">{{ type.label }}</span>
+                          <span class="text-xs text-muted-foreground ml-auto">({{ getFileCountByType(type.value) }})</span>
                         </label>
                       </div>
 
                       <hr class="my-4">
 
-                      <h4 class="font-medium text-gray-800 mb-3 text-sm">文件大小</h4>
+                      <h4 class="font-medium text-foreground mb-3 text-sm">文件大小</h4>
                       <RadioGroup :model-value="selectedFileSize" @update:model-value="selectedFileSize = $event" class="space-y-2">
                         <div v-for="size in fileSizes" :key="size.value" class="flex items-center">
                           <RadioGroupItem :value="size.value" class="mr-2" />
-                          <span class="text-sm text-gray-700">{{ size.label }}</span>
+                          <span class="text-sm text-foreground">{{ size.label }}</span>
                         </div>
                       </RadioGroup>
 
                       <hr class="my-4">
 
-                      <h4 class="font-medium text-gray-800 mb-3 text-sm">上传时间</h4>
+                      <h4 class="font-medium text-foreground mb-3 text-sm">上传时间</h4>
                       <div class="space-y-2">
                         <label v-for="time in uploadTimes" :key="time.value" class="flex items-center cursor-pointer">
                           <Checkbox
@@ -233,20 +233,20 @@
                             @update:checked="($event: boolean) => { if ($event) selectedUploadTime.push(time.value); else selectedUploadTime = selectedUploadTime.filter(v => v !== time.value) }"
                             class="mr-2"
                           />
-                          <span class="text-sm text-gray-700">{{ time.label }}</span>
+                          <span class="text-sm text-foreground">{{ time.label }}</span>
                         </label>
                       </div>
 
-                      <div class="flex justify-between mt-4 pt-4 border-t border-gray-200">
+                      <div class="flex justify-between mt-4 pt-4 border-t border-border">
                         <button
                           @click="clearFilters"
-                          class="text-sm text-gray-600 hover:text-gray-800"
+                          class="text-sm text-muted-foreground hover:text-foreground"
                         >
                           清除过滤
                         </button>
                         <button
                           @click="showFilterMenu = false"
-                          class="text-sm bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700"
+                          class="text-sm bg-primary text-white px-3 py-1 rounded hover:bg-primary"
                         >
                           应用
                         </button>
@@ -259,12 +259,12 @@
 
             <!-- 操作按钮 -->
             <div class="flex justify-between items-center mb-4 px-4">
-              <p class="text-gray-500">在这里可以查看和管理您上传的文件。</p>
+              <p class="text-muted-foreground">在这里可以查看和管理您上传的文件。</p>
 
               <div class="flex items-center space-x-2">
                 <button
                   @click="handleClearAllFiles"
-                  class="flex items-center space-x-2 px-3 py-1.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 text-sm transition-colors"
+                  class="flex items-center space-x-2 px-3 py-1.5 border border-border rounded-lg text-foreground hover:bg-muted text-sm transition-colors"
                 >
                   <span class="material-icons text-sm">delete_sweep</span>
                   <span>清空全部</span>
@@ -273,7 +273,7 @@
                 <button
                   @click="handleRefreshFiles"
                   :disabled="isLoading"
-                  class="flex items-center space-x-2 px-3 py-1.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 text-sm transition-colors disabled:opacity-50"
+                  class="flex items-center space-x-2 px-3 py-1.5 border border-border rounded-lg text-foreground hover:bg-muted text-sm transition-colors disabled:opacity-50"
                 >
                   <span class="material-icons text-sm" :class="{ 'animate-spin': isLoading }">refresh</span>
                   <span>刷新</span>
@@ -374,8 +374,8 @@
           <!-- 简化版已上传显示（当showUploadedFiles为false时） -->
           <div v-else class="uploaded-area p-4">
             <div v-if="uploadedFiles.length === 0" class="opacity-80 text-center py-8">
-              <i class="pi pi-check-circle text-4xl text-gray-400 mb-4"></i>
-              <p class="text-gray-500">暂无已上传的文件</p>
+              <i class="pi pi-check-circle text-4xl text-muted-foreground mb-4"></i>
+              <p class="text-muted-foreground">暂无已上传的文件</p>
             </div>
 
             <div v-else>
@@ -400,7 +400,7 @@
                     <i :class="getFileIcon(uploadItem.file)" class="text-2xl mr-3 text-green-600"></i>
                     <div>
                       <div class="font-medium">{{ uploadItem.file.name }}</div>
-                      <div class="text-sm text-gray-500">
+                      <div class="text-sm text-muted-foreground">
                         {{ formatFileSize(uploadItem.file.size) }} •
                         上传于 {{ formatUploadTime(uploadItem.uploadedAt) }}
                       </div>
@@ -784,15 +784,15 @@ const getFileIcon = (file: File): string => {
   const type = file.type
   const name = file.name.toLowerCase()
 
-  if (type.startsWith('image/')) return 'pi pi-image text-blue-500'
+  if (type.startsWith('image/')) return 'pi pi-image text-primary'
   if (type.startsWith('video/')) return 'pi pi-video text-purple-500'
   if (type.startsWith('audio/')) return 'pi pi-volume-up text-green-500'
-  if (type === 'application/pdf') return 'pi pi-file-pdf text-red-500'
-  if (type.includes('word') || name.endsWith('.doc') || name.endsWith('.docx')) return 'pi pi-file-word text-blue-600'
+  if (type === 'application/pdf') return 'pi pi-file-pdf text-destructive'
+  if (type.includes('word') || name.endsWith('.doc') || name.endsWith('.docx')) return 'pi pi-file-word text-primary'
   if (type.includes('sheet') || name.endsWith('.xls') || name.endsWith('.xlsx')) return 'pi pi-file-excel text-green-600'
   if (type.includes('zip') || type.includes('rar') || type.includes('archive')) return 'pi pi-file-archive text-yellow-500'
 
-  return 'pi pi-file text-gray-500'
+  return 'pi pi-file text-muted-foreground'
 }
 
 const formatFileSize = (bytes: number): string => {
@@ -950,11 +950,11 @@ const getFileIconClass = (mimeType: string): string => {
   const type = getFileType(mimeType)
   const classMap: Record<string, string> = {
     image: 'text-green-500',
-    video: 'text-blue-500',
+    video: 'text-primary',
     audio: 'text-purple-500',
-    document: 'text-blue-500',
+    document: 'text-primary',
     archive: 'text-yellow-500',
-    unknown: 'text-gray-400'
+    unknown: 'text-muted-foreground'
   }
   return classMap[type] || classMap.unknown
 }
@@ -1096,7 +1096,7 @@ defineExpose({
 }
 
 /* 标签页面板内容样式 */
-.upload-tabs :deep(.bg-surface-0) {
+.upload-tabs :deep(.bg-background) {
   background: #ffffff;
 }
 </style>

@@ -28,8 +28,8 @@
       v-else-if="kind === 'audio'"
       class="flex h-full w-full flex-col items-center justify-center gap-3 p-4 text-white"
     >
-      <span class="material-icons text-blue-400" style="font-size: 3rem;">volume_up</span>
-      <p class="max-w-full truncate text-xs text-gray-300" :title="item.name">{{ item.name }}</p>
+      <span class="material-icons text-primary" style="font-size: 3rem;">volume_up</span>
+      <p class="max-w-full truncate text-xs text-muted-foreground" :title="item.name">{{ item.name }}</p>
       <audio :src="videoSrc" controls preload="metadata" class="w-full max-w-xs" />
     </div>
 
@@ -43,8 +43,8 @@
         :src="extIconUrl"
         class="h-16 w-16 object-contain opacity-80"
       />
-      <span v-else class="material-icons text-gray-400" style="font-size: 3rem;">{{ fallbackIcon }}</span>
-      <p class="max-w-full truncate text-xs text-gray-300" :title="item.name">{{ item.name }}</p>
+      <span v-else class="material-icons text-muted-foreground" style="font-size: 3rem;">{{ fallbackIcon }}</span>
+      <p class="max-w-full truncate text-xs text-muted-foreground" :title="item.name">{{ item.name }}</p>
     </div>
   </div>
 </template>

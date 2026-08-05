@@ -30,7 +30,7 @@
       <TableBody>
         <TableRow v-if="items.length === 0">
           <TableCell colspan="7">
-            <div class="flex flex-col items-center justify-center h-64 text-gray-500">
+            <div class="flex flex-col items-center justify-center h-64 text-muted-foreground">
               <span class="material-icons text-4xl mb-2">folder_open</span>
               <p class="text-lg font-medium">暂无文件</p>
               <p class="text-sm">选择不同的筛选条件查看文件</p>
@@ -57,7 +57,7 @@
             <PopoverRoot v-model:open="videoPreviewStates[item.id]">
               <PopoverTrigger as-child>
                 <div
-                  class="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center cursor-pointer"
+                  class="w-16 h-16 rounded-lg overflow-hidden bg-muted flex items-center justify-center cursor-pointer"
                   @mouseenter="handleThumbnailHover(item)"
                   @mouseleave="handleThumbnailLeave(item)"
                 >
@@ -99,8 +99,8 @@
           <!-- 文件名列 -->
           <TableCell>
             <div class="flex flex-col min-w-0">
-              <span class="text-sm font-medium text-gray-900 truncate">{{ item.name }}</span>
-              <span class="text-xs text-gray-500 px-2 py-1 bg-gray-100 rounded inline-block w-fit mt-1">
+              <span class="text-sm font-medium text-foreground truncate">{{ item.name }}</span>
+              <span class="text-xs text-muted-foreground px-2 py-1 bg-muted rounded inline-block w-fit mt-1">
                 {{ getFileExtension(item.name) }}
               </span>
             </div>
@@ -108,34 +108,34 @@
 
           <!-- 文件大小列 -->
           <TableCell>
-            <span class="text-sm text-gray-700">{{ formatFileSize(item.size || 0) }}</span>
+            <span class="text-sm text-foreground">{{ formatFileSize(item.size || 0) }}</span>
           </TableCell>
 
           <!-- 分辨率列 -->
           <TableCell>
-            <span v-if="item.metadata?.width && item.metadata?.height" class="text-sm text-gray-700">
+            <span v-if="item.metadata?.width && item.metadata?.height" class="text-sm text-foreground">
               {{ item.metadata.width }}×{{ item.metadata.height }}
             </span>
-            <span v-else class="text-sm text-gray-400">-</span>
+            <span v-else class="text-sm text-muted-foreground">-</span>
           </TableCell>
 
           <!-- 创建时间列 -->
           <TableCell>
-            <span class="text-sm text-gray-700">{{ formatDate(item.createdAt || '') }}</span>
+            <span class="text-sm text-foreground">{{ formatDate(item.createdAt || '') }}</span>
           </TableCell>
 
           <!-- 操作列 -->
           <TableCell class="text-right">
             <div class="flex space-x-2 justify-end">
               <button
-                class="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
+                class="p-2 text-muted-foreground hover:text-muted-foreground rounded-full hover:bg-muted"
                 @click.stop="emit('preview', item)"
                 title="预览"
               >
                 <span class="material-icons text-sm">visibility</span>
               </button>
               <button
-                class="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
+                class="p-2 text-muted-foreground hover:text-muted-foreground rounded-full hover:bg-muted"
                 @click.stop="emit('download', item)"
                 title="下载"
               >

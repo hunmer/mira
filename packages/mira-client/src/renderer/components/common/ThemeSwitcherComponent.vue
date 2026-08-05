@@ -56,7 +56,7 @@
       </ToggleGroupItem>
     </ToggleGroup>
     
-    <div v-else-if="mode === 'radio'" class="flex gap-[var(--mira-space-2)] items-center">
+    <div v-else-if="mode === 'radio'" class="flex gap-2 items-center">
       <div 
         v-for="theme in themeOptions"
         :key="theme.value"
@@ -279,56 +279,56 @@ defineExpose({
 <style scoped>
 .theme-tabs :deep(button) {
   min-width: auto;
-  padding: var(--mira-space-2) var(--mira-space-3);
+  padding: 0.5rem 0.75rem;
 }
 
 .theme-radio-label {
   display: flex;
   align-items: center;
-  gap: var(--mira-space-2);
-  padding: var(--mira-space-2) var(--mira-space-3);
-  border: 1px solid var(--mira-border-primary);
-  border-radius: var(--mira-radius-md);
-  background-color: var(--mira-bg-primary);
-  color: var(--mira-text-secondary);
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--background);
+  color: var(--muted-foreground);
   cursor: pointer;
-  transition: all var(--mira-transition-fast);
+  transition: all 150ms ease;
   user-select: none;
 }
 
 .theme-radio-label:hover {
-  background-color: var(--mira-gray-50);
-  border-color: var(--mira-border-secondary);
-  color: var(--mira-text-primary);
+  background-color: var(--muted);
+  border-color: var(--border);
+  color: var(--foreground);
 }
 
 .theme-radio-label.active {
-  background-color: var(--mira-primary-50);
-  border-color: var(--mira-primary-500);
-  color: var(--mira-primary-700);
+  background-color: var(--accent);
+  border-color: var(--ring);
+  color: var(--primary);
 }
 
 .dark .theme-radio-label:hover {
-  background-color: var(--mira-gray-700);
+  background-color: var(--muted);
 }
 
 .dark .theme-radio-label.active {
-  background-color: var(--mira-primary-900);
-  color: var(--mira-primary-200);
+  background-color: var(--primary);
+  color: var(--primary-foreground);
 }
 
 .theme-switcher[data-size="small"] .theme-radio-label {
-  padding: var(--mira-space-1) var(--mira-space-2);
-  font-size: var(--mira-text-xs);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
 }
 
 .theme-switcher[data-size="large"] .theme-radio-label {
-  padding: var(--mira-space-3) var(--mira-space-4);
-  font-size: var(--mira-text-base);
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
 }
 
 .theme-radio-label:focus-within {
-  outline: 2px solid var(--mira-primary-500);
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
 

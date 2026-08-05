@@ -59,5 +59,4 @@
 "@/*": ["./src/*"]
 "@renderer/*": ["./src/renderer/*"]
 "@main/*": ["./src/main/*"]
-"@volt/*": ["./src/volt/*"]
 ```

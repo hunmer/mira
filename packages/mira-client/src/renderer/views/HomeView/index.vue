@@ -264,7 +264,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="home-view h-screen flex flex-col bg-white dark:bg-gray-900 text-[13px]">
+  <div class="home-view h-screen flex flex-col bg-white dark:bg-muted text-[13px]">
     <!-- 顶部导航菜单 -->
     <HomeHeader
       :active-tabs="activeTabs"
@@ -291,7 +291,7 @@ onUnmounted(() => {
     <div class="flex flex-1 overflow-hidden">
       <ResizablePanelGroup direction="horizontal" auto-save-id="home-sidebar" class="flex-1">
         <!-- 左侧侧边栏 -->
-        <ResizablePanel :default-size="20" :min-size="15" class="bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden">
+        <ResizablePanel :default-size="20" :min-size="15" class="bg-muted dark:bg-muted border-r border-border dark:border-border flex flex-col overflow-hidden">
           <HomeSidebar
             ref="sidebarRef"
             :home-controller="homeController"
@@ -308,7 +308,7 @@ onUnmounted(() => {
         <ResizableHandle />
 
         <!-- 右侧主内容区 -->
-        <ResizablePanel :default-size="80" :min-size="50" class="flex flex-col bg-gray-100 dark:bg-gray-900 overflow-hidden">
+        <ResizablePanel :default-size="80" :min-size="50" class="flex flex-col bg-muted dark:bg-muted overflow-hidden">
           <main ref="mainContentRef" class="flex-1 flex overflow-hidden relative min-w-0">
             <!-- Tab视图内容 -->
             <div class="flex-1 mr-2 min-w-0 overflow-hidden">
@@ -324,9 +324,9 @@ onUnmounted(() => {
               <!-- 默认状态 - 没有活跃的Tab时显示 -->
               <div v-if="!currentTab" class="flex items-center justify-center h-full">
                 <div class="text-center">
-                  <span class="material-icons text-6xl text-gray-400 mb-4">home</span>
-                  <h2 class="text-xl font-semibold text-gray-600 dark:text-gray-300 mb-2">欢迎使用 Mira</h2>
-                  <p class="text-gray-500">从左侧选择文件夹或标签来开始浏览您的媒体文件</p>
+                  <span class="material-icons text-6xl text-muted-foreground mb-4">home</span>
+                  <h2 class="text-xl font-semibold text-muted-foreground dark:text-muted-foreground mb-2">欢迎使用 Mira</h2>
+                  <p class="text-muted-foreground">从左侧选择文件夹或标签来开始浏览您的媒体文件</p>
                 </div>
               </div>
             </div>

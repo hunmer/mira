@@ -8,12 +8,12 @@
       <DialogHeader>
         <DialogTitle></DialogTitle>
       </DialogHeader>
-    <div v-if="plugin" class="plugin-detail-content bg-white text-neutral-800 overflow-hidden">
+    <div v-if="plugin" class="plugin-detail-content bg-white text-foreground overflow-hidden">
       <!-- 头部关闭按钮 -->
       <header class="flex justify-end mb-6 p-4">
         <button 
           @click="closeDialog"
-          class="text-gray-400 hover:text-gray-600 transition-colors"
+          class="text-muted-foreground hover:text-muted-foreground transition-colors"
         >
           <span class="material-icons">close</span>
         </button>
@@ -33,9 +33,9 @@
               />
               <div
                 v-else
-                class="w-24 h-24 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg shadow-lg flex items-center justify-center"
+                class="w-24 h-24 bg-gradient-to-br from-primary to-primary rounded-lg shadow-lg flex items-center justify-center"
               >
-                <span class="material-icons text-3xl text-blue-600">extension</span>
+                <span class="material-icons text-3xl text-primary">extension</span>
               </div>
               <!-- 安装状态标识 -->
               <div v-if="plugin.installed" class="absolute -bottom-2 -right-2 bg-white p-1 rounded-full shadow-md">
@@ -46,34 +46,34 @@
             </div>
             <div>
               <h1 class="text-3xl font-bold">{{ plugin.name }}</h1>
-              <p class="text-gray-500 mt-1">{{ plugin.description }}</p>
+              <p class="text-muted-foreground mt-1">{{ plugin.description }}</p>
             </div>
           </div>
 
           <!-- 标签栏 -->
-          <div class="flex border-b border-gray-200 mb-6">
+          <div class="flex border-b border-border mb-6">
             <button 
               v-for="tab in tabs"
               :key="tab.value"
               @click="activeTab = tab.value"
               class="py-2 px-4 font-semibold transition-colors"
               :class="activeTab === tab.value 
-                ? 'text-blue-600 border-b-2 border-blue-600' 
-                : 'text-gray-500 hover:text-gray-700'"
+                ? 'text-primary border-b-2 border-primary' 
+                : 'text-muted-foreground hover:text-foreground'"
             >
               {{ tab.label }}
             </button>
           </div>
 
           <!-- 标签内容 -->
-          <div class="space-y-4 text-gray-600">
+          <div class="space-y-4 text-muted-foreground">
             <!-- 插件介绍 -->
             <div v-if="activeTab === 'overview'">
               <p>{{ plugin.longDescription || plugin.description }}</p>
               
               <!-- 功能特性 -->
               <div v-if="plugin.features && plugin.features.length" class="mt-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-3">主要功能</h3>
+                <h3 class="text-lg font-semibold text-foreground mb-3">主要功能</h3>
                 <ul class="space-y-2">
                   <li v-for="feature in plugin.features" :key="feature" class="flex items-start">
                     <span class="material-icons text-green-500 mr-2 mt-0.5 text-sm">check_circle</span>
@@ -86,15 +86,15 @@
             <!-- 版本记录 -->
             <div v-if="activeTab === 'changelog'">
               <div v-if="plugin.changelog && plugin.changelog.length" class="space-y-4">
-                <div v-for="change in plugin.changelog" :key="change.version" class="border-l-4 border-blue-200 pl-4">
+                <div v-for="change in plugin.changelog" :key="change.version" class="border-l-4 border-primary pl-4">
                   <div class="flex items-center gap-2 mb-1">
-                    <h4 class="font-semibold text-gray-800">版本 {{ change.version }}</h4>
-                    <span class="text-sm text-gray-500">{{ formatDate(change.date) }}</span>
+                    <h4 class="font-semibold text-foreground">版本 {{ change.version }}</h4>
+                    <span class="text-sm text-muted-foreground">{{ formatDate(change.date) }}</span>
                   </div>
-                  <p class="text-gray-600">{{ change.description }}</p>
+                  <p class="text-muted-foreground">{{ change.description }}</p>
                 </div>
               </div>
-              <div v-else class="text-center py-8 text-gray-500">
+              <div v-else class="text-center py-8 text-muted-foreground">
                 暂无版本记录
               </div>
             </div>
@@ -111,13 +111,13 @@
               <div v-if="plugin.screenshots.length > 1" class="absolute inset-0 flex items-center justify-between px-4">
                 <button 
                   @click="prevScreenshot"
-                  class="bg-white/50 hover:bg-white/75 text-gray-800 rounded-full p-2 transition-colors"
+                  class="bg-white/50 hover:bg-white/75 text-foreground rounded-full p-2 transition-colors"
                 >
                   <span class="material-icons">chevron_left</span>
                 </button>
                 <button 
                   @click="nextScreenshot"
-                  class="bg-white/50 hover:bg-white/75 text-gray-800 rounded-full p-2 transition-colors"
+                  class="bg-white/50 hover:bg-white/75 text-foreground rounded-full p-2 transition-colors"
                 >
                   <span class="material-icons">chevron_right</span>
                 </button>
@@ -129,7 +129,7 @@
                 :key="index"
                 @click="currentScreenshot = index"
                 class="h-2 w-2 rounded-full cursor-pointer transition-colors"
-                :class="currentScreenshot === index ? 'bg-blue-600' : 'bg-gray-300'"
+                :class="currentScreenshot === index ? 'bg-primary' : 'bg-accent'"
               ></span>
             </div>
           </div>
@@ -139,12 +139,12 @@
         <aside class="md:col-span-1">
           <div class="sticky top-8">
             <!-- 操作按钮 -->
-            <div class="bg-gray-50 rounded-lg p-6">
+            <div class="bg-muted rounded-lg p-6">
               <button
                 v-if="!plugin.installed"
                 @click="handleInstall"
                 :disabled="isInstalling"
-                class="bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white font-bold py-3 px-6 rounded-lg w-full flex items-center justify-center text-lg mb-4 transition-colors"
+                class="bg-primary hover:bg-primary disabled:bg-primary text-white font-bold py-3 px-6 rounded-lg w-full flex items-center justify-center text-lg mb-4 transition-colors"
               >
                 <span v-if="isInstalling" class="material-icons mr-2 animate-spin">refresh</span>
                 <span v-else class="material-icons mr-2">download</span>
@@ -155,7 +155,7 @@
                 v-else
                 @click="handleUninstall"
                 :disabled="isUninstalling"
-                class="bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white font-bold py-3 px-6 rounded-lg w-full flex items-center justify-center text-lg mb-4 transition-colors"
+                class="bg-destructive hover:bg-destructive disabled:bg-destructive text-white font-bold py-3 px-6 rounded-lg w-full flex items-center justify-center text-lg mb-4 transition-colors"
               >
                 <span v-if="isUninstalling" class="material-icons mr-2 animate-spin">refresh</span>
                 <span v-else class="material-icons mr-2">delete</span>
@@ -165,14 +165,14 @@
               <button
                 v-if="plugin.homepage"
                 @click="openHomepage"
-                class="bg-white hover:bg-gray-100 text-gray-800 font-bold py-3 px-6 rounded-lg w-full flex items-center justify-center text-lg border border-gray-300 mb-6 transition-colors"
+                class="bg-white hover:bg-muted text-foreground font-bold py-3 px-6 rounded-lg w-full flex items-center justify-center text-lg border border-border mb-6 transition-colors"
               >
                 <span class="material-icons mr-2">home</span>
                 查看主页
               </button>
 
               <!-- 插件信息 -->
-              <div class="space-y-4 text-sm text-gray-500">
+              <div class="space-y-4 text-sm text-muted-foreground">
                 <div class="flex items-center">
                   <span class="material-icons text-base mr-3 w-5 text-center">person</span>
                   <span>由 <strong>{{ plugin.author || '未知开发者' }}</strong> 开发</span>
@@ -188,13 +188,13 @@
               </div>
 
               <!-- 标签分类 -->
-              <div v-if="plugin.tags && plugin.tags.length" class="mt-6 pt-6 border-t border-gray-200">
-                <h3 class="font-semibold text-gray-800 mb-3">类别</h3>
+              <div v-if="plugin.tags && plugin.tags.length" class="mt-6 pt-6 border-t border-border">
+                <h3 class="font-semibold text-foreground mb-3">类别</h3>
                 <div class="flex flex-wrap gap-2">
                   <span
                     v-for="tag in plugin.tags"
                     :key="tag"
-                    class="bg-gray-200 text-gray-700 text-xs font-medium px-2.5 py-1 rounded-full"
+                    class="bg-accent text-foreground text-xs font-medium px-2.5 py-1 rounded-full"
                   >
                     {{ tag }}
                   </span>
@@ -202,10 +202,10 @@
               </div>
 
               <!-- 统计信息 -->
-              <div class="mt-6 pt-6 border-t border-gray-200 grid grid-cols-3 gap-4 text-center">
+              <div class="mt-6 pt-6 border-t border-border grid grid-cols-3 gap-4 text-center">
                 <div>
-                  <div class="font-bold text-lg text-gray-800">{{ plugin.rating || 'N/A' }}</div>
-                  <div class="text-sm text-gray-500">
+                  <div class="font-bold text-lg text-foreground">{{ plugin.rating || 'N/A' }}</div>
+                  <div class="text-sm text-muted-foreground">
                     <div v-if="plugin.rating" class="flex justify-center text-amber-500">
                       <span v-for="i in 5" :key="i" class="material-icons text-sm">
                         {{ i <= Math.floor(plugin.rating) ? 'star' : 
@@ -216,12 +216,12 @@
                   </div>
                 </div>
                 <div>
-                  <div class="font-bold text-lg text-gray-800">{{ formatNumber(plugin.downloads) || 'N/A' }}</div>
-                  <div class="text-sm text-gray-500">下载</div>
+                  <div class="font-bold text-lg text-foreground">{{ formatNumber(plugin.downloads) || 'N/A' }}</div>
+                  <div class="text-sm text-muted-foreground">下载</div>
                 </div>
                 <div>
-                  <div class="font-bold text-lg text-gray-800">{{ formatNumber(plugin.users) || 'N/A' }}</div>
-                  <div class="text-sm text-gray-500">用户</div>
+                  <div class="font-bold text-lg text-foreground">{{ formatNumber(plugin.users) || 'N/A' }}</div>
+                  <div class="text-sm text-muted-foreground">用户</div>
                 </div>
               </div>
             </div>
