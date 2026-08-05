@@ -233,116 +233,122 @@
                     <p class="text-xs mt-1">或点击选择文件（最多 {{ FILE_LIMITS.MAX_FILES_PER_BATCH }} 个）</p>
                   </div>
 
-                  <!-- 文件网格 -->
-                  <div
+                  <!-- 文件网格：Masonry 按容器宽度响应式分列 -->
+                  <Masonry
                     v-else
-                    class="grid gap-3"
-                    :style="{ gridTemplateColumns: `repeat(${columnsPerRow}, 1fr)` }"
+                    :data="displayFiles"
+                    :get-key="(file: any) => file.id"
+                    :columns="columnsByWidth"
+                    :gap="12"
+                    :get-meta="getFileMeta"
+                    :enter-animation="false"
+                    :exit-animation="false"
+                    :layout-transition="false"
                   >
-                    <div
-                      v-for="file in displayFiles"
-                      :key="file.id"
-                      :data-selectable-id="matchesFilters(file) ? file.id : undefined"
-                      class="file-card group relative bg-white/40 dark:bg-muted/40 backdrop-blur-sm rounded-lg overflow-hidden border-2 transition-all select-none"
-                      :class="[
-                        !matchesFilters(file) ? 'opacity-50 cursor-not-allowed border-transparent' : (selectedPendingIds.includes(file.id) ? 'border-primary ring-2 ring-primary dark:ring-primary cursor-pointer' : 'border-transparent hover:border-border dark:hover:border-border cursor-pointer')
-                      ]"
-                      @click.stop="matchesFilters(file) && handleFileClick(file, $event)"
-                    >
-                      <!-- 预览区域 -->
-                      <div class="aspect-square relative">
-                        <!-- 图片预览 -->
-                        <img
-                          v-if="file.preview && isImageFile(file.file.type)"
-                          :src="file.preview"
-                          class="w-full h-full object-cover"
-                          alt="预览"
-                        />
-                        <!-- 视频预览 -->
-                        <div v-else-if="isVideoFile(file.file.type)" class="w-full h-full flex items-center justify-center bg-purple-100 dark:bg-purple-900/30">
+                    <template #default="{ item: file }">
+                      <div
+                        :data-selectable-id="matchesFilters(file) ? file.id : undefined"
+                        class="file-card group relative bg-white/40 dark:bg-muted/40 backdrop-blur-sm rounded-lg overflow-hidden border-2 transition-all select-none h-full"
+                        :class="[
+                          !matchesFilters(file) ? 'opacity-50 cursor-not-allowed border-transparent' : (selectedPendingIds.includes(file.id) ? 'border-primary ring-2 ring-primary dark:ring-primary cursor-pointer' : 'border-transparent hover:border-border dark:hover:border-border cursor-pointer')
+                        ]"
+                        @click.stop="matchesFilters(file) && handleFileClick(file, $event)"
+                      >
+                        <!-- 预览区域 -->
+                        <div class="aspect-square relative">
+                          <!-- 图片预览 -->
                           <img
-                            v-if="file.preview"
+                            v-if="file.preview && isImageFile(file.file.type)"
                             :src="file.preview"
                             class="w-full h-full object-cover"
-                            alt="视频封面"
+                            alt="预览"
                           />
-                          <span v-else class="material-icons text-4xl text-purple-400">videocam</span>
-                        </div>
-                        <!-- 音频预览 -->
-                        <div v-else-if="isAudioFile(file.file.type)" class="w-full h-full flex items-center justify-center bg-green-100 dark:bg-green-900/30">
-                          <span class="material-icons text-4xl text-green-400">audiotrack</span>
-                        </div>
-                        <!-- 文档预览 -->
-                        <div v-else-if="isDocumentFile(file.file.type)" class="w-full h-full flex items-center justify-center bg-primary dark:bg-primary/30">
-                          <span class="material-icons text-4xl text-primary">description</span>
-                        </div>
-                        <!-- 其他文件 -->
-                        <div v-else class="w-full h-full flex items-center justify-center bg-accent dark:bg-muted">
-                          <span class="material-icons text-4xl text-muted-foreground">insert_drive_file</span>
-                        </div>
+                          <!-- 视频预览 -->
+                          <div v-else-if="isVideoFile(file.file.type)" class="w-full h-full flex items-center justify-center bg-purple-100 dark:bg-purple-900/30">
+                            <img
+                              v-if="file.preview"
+                              :src="file.preview"
+                              class="w-full h-full object-cover"
+                              alt="视频封面"
+                            />
+                            <span v-else class="material-icons text-4xl text-purple-400">videocam</span>
+                          </div>
+                          <!-- 音频预览 -->
+                          <div v-else-if="isAudioFile(file.file.type)" class="w-full h-full flex items-center justify-center bg-green-100 dark:bg-green-900/30">
+                            <span class="material-icons text-4xl text-green-400">audiotrack</span>
+                          </div>
+                          <!-- 文档预览 -->
+                          <div v-else-if="isDocumentFile(file.file.type)" class="w-full h-full flex items-center justify-center bg-primary dark:bg-primary/30">
+                            <span class="material-icons text-4xl text-primary">description</span>
+                          </div>
+                          <!-- 其他文件 -->
+                          <div v-else class="w-full h-full flex items-center justify-center bg-accent dark:bg-muted">
+                            <span class="material-icons text-4xl text-muted-foreground">insert_drive_file</span>
+                          </div>
 
-                        <!-- 删除按钮 -->
-                        <button
-                          class="absolute top-1 right-1 w-6 h-6 bg-destructive text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                          @click.stop="removePendingFile(file.id)"
-                        >
-                          <span class="material-icons text-sm">close</span>
-                        </button>
+                          <!-- 删除按钮 -->
+                          <button
+                            class="absolute top-1 right-1 w-6 h-6 bg-destructive text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                            @click.stop="removePendingFile(file.id)"
+                          >
+                            <span class="material-icons text-sm">close</span>
+                          </button>
 
-                        <!-- 上传进度 -->
-                        <div
-                          v-if="uploadingFileIds.has(file.id)"
-                          class="absolute inset-0 bg-black/50 flex items-center justify-center"
-                        >
-                          <div class="text-center text-white">
-                            <div class="text-2xl font-bold">{{ getUploadProgress(file.id) }}%</div>
-                            <div class="text-xs">上传中...</div>
+                          <!-- 上传进度 -->
+                          <div
+                            v-if="uploadingFileIds.has(file.id)"
+                            class="absolute inset-0 bg-black/50 flex items-center justify-center"
+                          >
+                            <div class="text-center text-white">
+                              <div class="text-2xl font-bold">{{ getUploadProgress(file.id) }}%</div>
+                              <div class="text-xs">上传中...</div>
+                            </div>
+                          </div>
+
+                          <!-- 不符合条件遮罩 -->
+                          <div
+                            v-if="!matchesFilters(file)"
+                            class="absolute inset-0 bg-muted/30 flex items-center justify-center pointer-events-none"
+                          >
+                            <span class="text-xs text-white bg-muted/80 px-2 py-0.5 rounded">不符合条件</span>
                           </div>
                         </div>
 
-                        <!-- 不符合条件遮罩 -->
-                        <div
-                          v-if="!matchesFilters(file)"
-                          class="absolute inset-0 bg-muted/30 flex items-center justify-center pointer-events-none"
-                        >
-                          <span class="text-xs text-white bg-muted/80 px-2 py-0.5 rounded">不符合条件</span>
+                        <!-- 文件信息 -->
+                        <div class="p-2">
+                          <p class="text-xs font-medium text-foreground dark:text-muted-foreground truncate" :title="file.file.name">
+                            {{ file.file.name }}
+                          </p>
+                          <p class="text-xs text-muted-foreground">{{ formatFileSize(file.localSize ?? file.file.size) }}</p>
+
+                          <!-- 元数据标识 -->
+                          <div class="flex items-center gap-1 mt-1 flex-wrap">
+                            <span
+                              v-if="file.folderId"
+                              class="text-xs bg-primary dark:bg-primary/30 text-primary dark:text-primary px-1.5 py-0.5 rounded"
+                            >
+                              <span class="material-icons text-xs align-middle mr-0.5">folder</span>
+                              {{ getFolderName(file.folderId) }}
+                            </span>
+                            <span
+                              v-for="tagId in (file.tags || []).slice(0, 2)"
+                              :key="tagId"
+                              class="text-xs bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded"
+                            >
+                              <span class="material-icons text-xs align-middle mr-0.5">label</span>
+                              {{ getTagName(tagId) }}
+                            </span>
+                            <span
+                              v-if="(file.tags?.length || 0) > 2"
+                              class="text-xs text-muted-foreground"
+                            >
+                              +{{ (file.tags?.length || 0) - 2 }}
+                            </span>
+                          </div>
                         </div>
                       </div>
-
-                      <!-- 文件信息 -->
-                      <div class="p-2">
-                        <p class="text-xs font-medium text-foreground dark:text-muted-foreground truncate" :title="file.file.name">
-                          {{ file.file.name }}
-                        </p>
-                        <p class="text-xs text-muted-foreground">{{ formatFileSize(file.localSize ?? file.file.size) }}</p>
-
-                        <!-- 元数据标识 -->
-                        <div class="flex items-center gap-1 mt-1 flex-wrap">
-                          <span
-                            v-if="file.folderId"
-                            class="text-xs bg-primary dark:bg-primary/30 text-primary dark:text-primary px-1.5 py-0.5 rounded"
-                          >
-                            <span class="material-icons text-xs align-middle mr-0.5">folder</span>
-                            {{ getFolderName(file.folderId) }}
-                          </span>
-                          <span
-                            v-for="tagId in (file.tags || []).slice(0, 2)"
-                            :key="tagId"
-                            class="text-xs bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded"
-                          >
-                            <span class="material-icons text-xs align-middle mr-0.5">label</span>
-                            {{ getTagName(tagId) }}
-                          </span>
-                          <span
-                            v-if="(file.tags?.length || 0) > 2"
-                            class="text-xs text-muted-foreground"
-                          >
-                            +{{ (file.tags?.length || 0) - 2 }}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                    </template>
+                  </Masonry>
                 </SelectionBox>
               </div>
             </div>
@@ -409,6 +415,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Slider } from '@/components/ui/slider'
 import SelectionBox from '@renderer/components/common/SelectionBox.vue'
+import { Masonry, type MasonryColumns, type MasonryItemMeta } from '@/components/ui/masonry'
 import FolderTreeComponent from './FolderTreeComponent/FolderTreeComponent.vue'
 import { useFileUploadDialog } from './FileUploadDialog/useFileUploadDialog'
 import { isImageFile, isVideoFile, isAudioFile, isDocumentFile, formatFileSize } from './FileUploadDialog/useFileManagement'
@@ -492,7 +499,7 @@ function onSizeFilterChange(value: any) {
 }
 
 // 解构给模板直接使用
-const { pendingFiles, selectedPendingIds, isDragOver, columnsPerRow, removePendingFile, clearAllPendingFiles } = fileManagement
+const { pendingFiles, selectedPendingIds, isDragOver, removePendingFile, clearAllPendingFiles } = fileManagement
 const { uploadingFileIds, queueStats, getUploadProgress } = uploadQueue
 const { selectedTargetFolderId, folderTreeData, tagTreeData, getFolderName, getTagName, handleFolderSelect, handleTagSelect, applyMetadataToFiles, loadFoldersAndTags } = folderTagPanel
 // 本地树（左栏）：仅浏览/筛选，不参与上传 metadata
@@ -523,6 +530,33 @@ const matchedCount = computed(
 // 模板引用
 const fileInputRef = ref<HTMLInputElement>()
 const selectionBoxRef = ref()
+const fileGridContainerRef = ref<HTMLElement>()
+
+/**
+ * 待上传网格响应式分列：基于 Tailwind 断点随容器宽度增减列数，
+ * 窄容器少放、宽容器多放。Masonry 内部用 ResizeObserver 实时测容器宽，
+ * 这里只需给出断点映射，无需手动维护尺寸监听。
+ */
+const columnsByWidth = computed<MasonryColumns>(() => ({
+  base: 2,   // < 640px
+  sm: 3,     // >= 640px
+  md: 4,     // >= 768px
+  lg: 6,     // >= 1024px
+  xl: 8      // >= 1280px
+}))
+
+/**
+ * 文件卡片由「正方形预览 + 固定高度信息块」组成。
+ * Masonry 按列宽算高度：用合成 aspect（w : (w + 信息块高度)）让高度随列宽缩放，
+ * 信息块高度取一个稳定估值（约 76px：padding + 文件名 + 大小 + 标签行）。
+ */
+const CARD_INFO_HEIGHT = 76
+function getFileMeta(_file: any, _index: number): MasonryItemMeta {
+  // aspect = w/(w+infoH) 近似：用 1000 像素作分子避免精度损失，得到稳定整数比
+  const w = 1000
+  const h = w + CARD_INFO_HEIGHT
+  return { aspect: `${w}:${h}` }
+}
 
 function handleFileClick(file: any, event: MouseEvent) {
   selectionBoxRef.value?.handleItemClick(file.id, event)

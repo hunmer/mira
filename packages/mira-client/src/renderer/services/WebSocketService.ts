@@ -421,6 +421,7 @@ let importNotifyTimer: ReturnType<typeof setTimeout> | null = null
 let importNotifyCount = 0
 let importNotifyLastName = ''
 let importNotifyLastThumb = ''
+let importNotifyThumbs: string[] = []
 let importNotifyLastFileId: string | undefined
 let importNotifyLastPreviewType: 'image' | 'video' = 'image'
 // 是否已展示（避免缩略图到达后重复展示）
@@ -450,7 +451,8 @@ function doShowImportNotification(): void {
     body,
     type: 'success',
     icon: thumb || 'file_download_done',
-    duration: 4000,
+    icons: importNotifyThumbs,
+    duration: 60000,
     actions: [{ id: 'view', label: '查看' }],
     data: fileIdResolved
       ? { fileId: fileIdResolved, count, previewType: importNotifyLastPreviewType }
@@ -477,6 +479,7 @@ function notifyFileImported(
     importNotifyCount = 0
     importNotifyLastName = ''
     importNotifyLastThumb = ''
+    importNotifyThumbs = []
     importNotifyLastFileId = undefined
     importNotifyLastPreviewType = 'image'
   }
@@ -491,7 +494,10 @@ function notifyFileImported(
   importNotifyLastPreviewType = isVideo ? 'video' : 'image'
   // 解析缩略图：本地路径转 file://，http 加 token
   const resolved = appendThumbToken(toFileUrl(thumbRaw))
-  if (resolved) importNotifyLastThumb = resolved
+  if (resolved) {
+    importNotifyLastThumb = resolved
+    if (!importNotifyThumbs.includes(resolved)) importNotifyThumbs.push(resolved)
+  }
 
   // 聚合窗口内的事件；首条事件后等待最多 IMPORT_THUMB_WAIT 让缩略图就绪，
   // 缩略图到达（updateImportThumbIfPending）则立即展示，否则超时兜底展示。
@@ -513,12 +519,163 @@ function updateImportThumbIfPending(fileId: string | number, thumbRaw?: string):
   const thumb = appendThumbToken(toFileUrl(thumbRaw))
   if (!thumb) return
   importNotifyLastThumb = thumb
+  if (!importNotifyThumbs.includes(thumb)) importNotifyThumbs.push(thumb)
   // 缩略图已就绪，立即展示（取消等待定时器）
   if (importNotifyTimer) {
     clearTimeout(importNotifyTimer)
     importNotifyTimer = null
   }
   doShowImportNotification()
+}
+
+type EagleImportStatus = 'preparing' | 'success' | 'failed'
+
+interface EagleImportGroup {
+  displayId: string
+  states: Map<string, EagleImportStatus>
+  names: Map<string, string>
+  thumbs: string[]
+  lastFileId?: string
+  lastPreviewType: 'image' | 'video'
+  failureMessage?: string
+}
+
+const EAGLE_IMPORT_BATCH_WINDOW = 800
+let activeEagleImportGroup: EagleImportGroup | null = null
+let eagleImportBatchTimer: ReturnType<typeof setTimeout> | null = null
+const eagleImportGroupsById = new Map<string, EagleImportGroup>()
+const eagleImportGroupsByFileId = new Map<string, EagleImportGroup>()
+
+function importNotificationsEnabled(): boolean {
+  const settingsStore = useSettingsStore()
+  return settingsStore.settings.enableNotifications
+    && settingsStore.settings.enableImportNotifications
+}
+
+function resolvePreviewType(fileName?: string, mimeType?: string): 'image' | 'video' {
+  const normalizedType = mimeType?.toLowerCase()
+  return normalizedType === 'video'
+    || normalizedType?.startsWith('video/')
+    || /\.(mp4|webm|avi|mov|wmv|flv|mkv|3gp)$/i.test(fileName || '')
+    ? 'video'
+    : 'image'
+}
+
+function addEagleImportThumb(group: EagleImportGroup, thumbRaw?: string): void {
+  const thumb = appendThumbToken(toFileUrl(thumbRaw))
+  if (thumb && !group.thumbs.includes(thumb)) group.thumbs.push(thumb)
+}
+
+function showEagleImportGroup(group: EagleImportGroup): void {
+  if (!importNotificationsEnabled()) return
+
+  const states = [...group.states.values()]
+  const total = states.length
+  const preparing = states.filter((status) => status === 'preparing').length
+  const succeeded = states.filter((status) => status === 'success').length
+  const failed = states.filter((status) => status === 'failed').length
+  const lastName = [...group.names.values()].at(-1)
+  const complete = preparing === 0
+  let title = total > 1 ? `正在导入 ${total} 个文件` : '正在下载图片'
+  let body = lastName || '正在准备图片'
+  let type: 'info' | 'success' | 'warning' | 'error' = 'info'
+  let icon = group.thumbs.at(-1) || 'downloading'
+
+  if (complete && failed === 0) {
+    title = total > 1 ? `已导入 ${total} 个文件` : '文件导入完成'
+    body = lastName || '图片已添加到媒体库'
+    type = 'success'
+    icon = group.thumbs.at(-1) || 'file_download_done'
+  } else if (complete && succeeded === 0) {
+    title = total > 1 ? `${failed} 个文件导入失败` : '图片下载失败'
+    body = group.failureMessage || lastName || '未能下载图片'
+    type = 'error'
+    icon = 'error'
+  } else if (complete) {
+    title = `已导入 ${succeeded} 个，${failed} 个失败`
+    body = group.failureMessage || lastName || '部分图片未能下载'
+    type = 'warning'
+    icon = group.thumbs.at(-1) || 'warning'
+  } else if (failed > 0) {
+    body = `已完成 ${succeeded} 个，失败 ${failed} 个，剩余 ${preparing} 个`
+    type = 'warning'
+  }
+
+  window.electronAPI?.notificationWindow?.show({
+    notificationId: group.displayId,
+    title,
+    body,
+    type,
+    icon,
+    icons: group.thumbs,
+    duration: complete ? 60000 : 0,
+    actions: succeeded > 0 ? [{ id: 'view', label: '查看' }] : [],
+    data: group.lastFileId
+      ? { fileId: group.lastFileId, count: total, previewType: group.lastPreviewType }
+      : undefined,
+  }).catch((err: Error) => {
+    console.warn('Failed to update Eagle import notification:', err.message)
+  })
+}
+
+function prepareEagleImportNotification(data: any): void {
+  if (!importNotificationsEnabled() || !data?.id) return
+  const id = String(data.id)
+  let group = activeEagleImportGroup
+  if (!group) {
+    group = {
+      displayId: id,
+      states: new Map(),
+      names: new Map(),
+      thumbs: [],
+      lastPreviewType: 'image',
+    }
+    activeEagleImportGroup = group
+  }
+  group.states.set(id, 'preparing')
+  if (data.name) group.names.set(id, String(data.name))
+  eagleImportGroupsById.set(id, group)
+
+  if (eagleImportBatchTimer) clearTimeout(eagleImportBatchTimer)
+  eagleImportBatchTimer = setTimeout(() => {
+    activeEagleImportGroup = null
+    eagleImportBatchTimer = null
+  }, EAGLE_IMPORT_BATCH_WINDOW)
+  showEagleImportGroup(group)
+}
+
+function failEagleImportNotification(data: any): void {
+  if (!importNotificationsEnabled() || !data?.id) return
+  const id = String(data.id)
+  const group = eagleImportGroupsById.get(id)
+  if (!group) return
+  group.states.set(id, 'failed')
+  if (data.name) group.names.set(id, String(data.name))
+  if (data.message) group.failureMessage = String(data.message)
+  showEagleImportGroup(group)
+}
+
+function completeEagleImportNotification(data: any): boolean {
+  if (!data?.notificationId) return false
+  const id = String(data.notificationId)
+  const group = eagleImportGroupsById.get(id)
+  if (!group) return true
+
+  const fileName = data?.name || data?.title || data?.fileName
+  group.states.set(id, data.downloadFailed ? 'failed' : 'success')
+  if (fileName) group.names.set(id, String(fileName))
+  if (data.downloadFailed) group.failureMessage = '图片下载失败，已保存为 URL 引用'
+  if (data.id !== undefined && data.id !== null) {
+    group.lastFileId = String(data.id)
+    eagleImportGroupsByFileId.set(group.lastFileId, group)
+  }
+  group.lastPreviewType = resolvePreviewType(fileName, data?.mimeType || data?.mime_type || data?.type)
+  addEagleImportThumb(
+    group,
+    data?.thumb_path || data?.thumbnail_path || (typeof data?.thumb === 'string' ? data.thumb : undefined)
+  )
+  showEagleImportGroup(group)
+  return true
 }
 
 /**
@@ -583,12 +740,20 @@ function setupEventListeners(libraryStore: any): void {
     handleFileEvent(data, 'created')
     // 导入文件通知（受 enableImportNotifications 控制，批量聚合）。
     // 缩略图可能在 thumb / thumb_path / thumbnail_path 字段（后端广播时已解析为路径/URL）。
-    notifyFileImported(
-      data?.name || data?.title || data?.fileName,
-      data?.thumb_path || data?.thumbnail_path || (typeof data?.thumb === 'string' ? data.thumb : undefined),
-      data?.id,
-      data?.mimeType || data?.mime_type || data?.type
-    )
+    if (!completeEagleImportNotification(data)) {
+      notifyFileImported(
+        data?.name || data?.title || data?.fileName,
+        data?.thumb_path || data?.thumbnail_path || (typeof data?.thumb === 'string' ? data.thumb : undefined),
+        data?.id,
+        data?.mimeType || data?.mime_type || data?.type
+      )
+    }
+  })
+
+  webSocketService.addEventListener('eagle::import-notification', (data) => {
+    console.log('Eagle import notification:', data)
+    if (data?.status === 'preparing') prepareEagleImportNotification(data)
+    if (data?.status === 'failed') failEagleImportNotification(data)
   })
 
   webSocketService.addEventListener('file::updated', (data) => {
@@ -626,6 +791,11 @@ function setupEventListeners(libraryStore: any): void {
     }))
     // 缩略图就绪后补发到最近一次导入通知（file::created 时缩略图尚未生成）
     updateImportThumbIfPending(data.id, data.thumb)
+    const eagleGroup = eagleImportGroupsByFileId.get(String(data.id))
+    if (eagleGroup) {
+      addEagleImportThumb(eagleGroup, data.thumb)
+      showEagleImportGroup(eagleGroup)
+    }
   })
 
   // 监听通知事件

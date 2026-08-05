@@ -6,7 +6,8 @@ import { FILE_LIMITS } from './types'
 /** 简易 MIME 推断（导入本地文件时按扩展名给出 type，供预览判断） */
 function guessMimeFromExt(ext?: string): string {
   if (!ext) return 'application/octet-stream'
-  const e = ext.toLowerCase()
+  const normalized = ext.toLowerCase()
+  const e = normalized.startsWith('.') ? normalized : `.${normalized}`
   const map: Record<string, string> = {
     '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.gif': 'image/gif',
     '.webp': 'image/webp', '.bmp': 'image/bmp', '.svg': 'image/svg+xml',
@@ -28,7 +29,6 @@ export function useFileManagement() {
   const pendingFiles = ref<PendingFile[]>([])
   const selectedPendingIds = ref<string[]>([])
   const isDragOver = ref(false)
-  const columnsPerRow = ref(8)
 
   function addFiles(files: File[], defaultFolderId?: string, defaultTagIds?: string[]) {
     if (files.length + pendingFiles.value.length > FILE_LIMITS.MAX_FILES_PER_BATCH) {
@@ -201,7 +201,6 @@ export function useFileManagement() {
     pendingFiles,
     selectedPendingIds,
     isDragOver,
-    columnsPerRow,
     addFiles,
     addLocalFiles,
     removePendingFile,

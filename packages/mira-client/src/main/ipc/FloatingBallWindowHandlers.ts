@@ -47,8 +47,8 @@ export class FloatingBallWindowHandlers {
         super({
           name: 'floating-ball',
           title: 'Mira 悬浮球',
-          width: 64,
-          height: 64,
+          width: 112,
+          height: 96,
           position: 'bottom-right',
           margin: 24,
           movable: true,

@@ -9,12 +9,16 @@ import type { NotificationAnimation } from '../../shared/types'
  * 通知窗口载荷（结构化字段 + 可选任意 HTML）
  */
 export interface NotificationPayload {
+  /** 业务通知 ID；重复调用 show 时原位更新同一通知 */
+  notificationId?: string
   /** 标题（必填） */
   title: string
   /** 正文 */
   body?: string
   /** 图标（Material Icons 名称或图片 URL） */
   icon?: string
+  /** 多文件通知的缩略图 URL（最多展示 4 张） */
+  icons?: string[]
   /** 通知类型，决定左侧色条颜色：info | success | warning | error */
   type?: 'info' | 'success' | 'warning' | 'error'
   /** 操作按钮 [{ id, label }]，点击后通过 action 事件回传 id */
@@ -38,6 +42,10 @@ export interface NotificationPayload {
 interface NotificationSlot {
   /** 唯一 id（同时也是 IPC 通道后缀，避免冲突） */
   id: number
+  /** 调用方约定的业务 ID，用于原位更新 */
+  notificationId?: string
+  /** 最近一次内容；窗口初次加载期间发生更新时，下发最终版本 */
+  payload: NotificationPayload
   /** 该通知专属的窗口处理器 */
   handler: FloatingWindowHandler
   /** 自动隐藏定时器 */
@@ -96,6 +104,26 @@ export class NotificationWindowHandlers {
    * 显示一条通知
    */
   public async showNotification(payload: NotificationPayload): Promise<void> {
+    const existing = payload.notificationId
+      ? this.slots.find((slot) => slot.notificationId === payload.notificationId)
+      : undefined
+    if (existing) {
+      const duration = payload.duration ?? 5000
+      existing.duration = duration
+      existing.remaining = duration
+      existing.payload = payload
+      existing.handler.sendMessage({
+        type: 'notification-content',
+        payload: {
+          ...payload,
+          __animDir: this.animDirOf(existing.position),
+          __draggable: this.isDraggable(existing.position),
+        },
+      })
+      this.startAutoHide(existing)
+      return
+    }
+
     // 超过上限时移除最早的一条
     if (this.slots.length >= this.MAX_SLOTS) {
       this.dismissSlot(this.slots[0])
@@ -112,6 +140,8 @@ export class NotificationWindowHandlers {
     const duration = payload.duration ?? 5000
     const slot: NotificationSlot = {
       id,
+      notificationId: payload.notificationId,
+      payload,
       handler,
       timer: null,
       duration,
@@ -131,7 +161,7 @@ export class NotificationWindowHandlers {
       handler.sendMessage({
         type: 'notification-content',
         payload: {
-          ...payload,
+          ...slot.payload,
           __animDir: this.animDirOf(position),
           __draggable: this.isDraggable(position),
         },

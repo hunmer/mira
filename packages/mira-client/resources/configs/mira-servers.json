@@ -1,0 +1,1 @@
+{"services":[{"id":"default-server","name":"素材库","serverUrl":"http://localhost:3000:8081","websocketUrl":"ws://localhost:3000:8081","createdAt":"2026-08-05T15:47:59.956Z","updatedAt":"2026-08-05T15:47:59.956Z"}],"activeServerId":"default-server"}

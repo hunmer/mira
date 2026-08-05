@@ -302,12 +302,16 @@ export type FloatingBallClickAction = 'openUpload' | 'toggleMain'
 
 // 通知窗口载荷（结构化字段 + 可选任意 HTML）
 export interface NotificationPayload {
+  /** 业务通知 ID；重复调用 show 时原位更新同一通知 */
+  notificationId?: string
   /** 标题（必填） */
   title: string
   /** 正文 */
   body?: string
   /** 图标（Material Icons 名称或图片 URL） */
   icon?: string
+  /** 多文件通知的缩略图 URL（最多展示 4 张） */
+  icons?: string[]
   /** 通知类型，决定左侧色条颜色：info | success | warning | error */
   type?: 'info' | 'success' | 'warning' | 'error'
   /** 操作按钮 [{ id, label }]，点击后通过 action 事件回传 id */

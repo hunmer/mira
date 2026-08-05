@@ -189,6 +189,25 @@
       border-right: 1px solid var(--nt-border);
     }
 
+    .notification-thumb-grid {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: repeat(2, 1fr);
+      gap: 1px;
+      background: var(--nt-border);
+    }
+
+    .notification-thumb-grid-item {
+      width: 100%;
+      height: 100%;
+      min-width: 0;
+      min-height: 0;
+      object-fit: cover;
+      background: var(--nt-bg-hover);
+    }
+
     /* 缩略图（icon 为图片 URL 时渲染为 <img>） */
     .notification-thumb {
       width: 100%;

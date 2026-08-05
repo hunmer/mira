@@ -304,12 +304,13 @@ export const useServerListStore = defineStore('serverList', () => {
    * 初始化默认素材库
    */
   const initializeDefaultLibraries = async () => {
+    const baseHost = location.hostname
     const defaultLibraries: ServerConfig[] = [
       {
         id: 'default-server', // 默认库ID
         name: '素材库',
-        serverUrl: location.protocol+'//'+location.host+':8081',
-        websocketUrl: createWebSocketUrl(location.protocol+'//'+location.host+':8081'),
+        serverUrl: `${location.protocol}//${baseHost}:8081`,
+        websocketUrl: createWebSocketUrl(`${location.protocol}//${baseHost}:8081`),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       }

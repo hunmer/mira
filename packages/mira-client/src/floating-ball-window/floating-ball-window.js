@@ -67,8 +67,14 @@ async function initFloatingBall() {
         @mousedown="handleDragStart"
         @click="handleClick"
       >
-        <span class="material-icons">add</span>
-        <div class="fb-drop-hint" :class="{ 'is-visible': isDragover }">松开以导入文件</div>
+        <div class="folder-back">
+          <div class="folder-page page-left"><i></i><i></i><i></i><i></i></div>
+          <div class="folder-page page-center"><i></i><i></i><i></i><i></i></div>
+          <div class="folder-page page-right"><i></i><i></i><i></i><i></i></div>
+        </div>
+        <div class="folder-front"></div>
+        <span class="folder-status material-icons">{{ isFileReceived ? 'check' : 'add' }}</span>
+        <div class="fb-drop-hint" :class="{ 'is-visible': isDragover }">松开导入</div>
       </div>
     `,
     mounted() {
@@ -215,9 +221,14 @@ function extractExt(name) {
 
 function receiveFileAnimation() {
   const ball = document.querySelector('.floating-ball')
+  const status = ball && ball.querySelector('.folder-status')
   if (!ball) return
   ball.classList.remove('is-file-received')
   void ball.offsetWidth
   ball.classList.add('is-file-received')
-  setTimeout(() => ball.classList.remove('is-file-received'), 700)
+  if (status) status.textContent = 'check'
+  setTimeout(() => {
+    ball.classList.remove('is-file-received')
+    if (status) status.textContent = 'add'
+  }, 700)
 }

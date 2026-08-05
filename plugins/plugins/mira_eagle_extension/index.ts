@@ -662,7 +662,29 @@ class MiraEagleExtension {
 
   // ============================== 落库（用目标库） ==============================
 
-  private broadcastFileCreated(targetLibraryId: string, file: Record<string, any>) {
+  private broadcastImportNotification(
+    targetLibraryId: string,
+    id: string,
+    status: 'preparing' | 'failed',
+    name?: string,
+    message?: string,
+  ) {
+    try {
+      this.backend.getWebSocketServer?.()?.broadcastLibraryEvent?.(
+        targetLibraryId,
+        'eagle::import-notification',
+        { id, status, name, message, libraryId: targetLibraryId },
+      );
+    } catch (e) {
+      console.warn('[mira_eagle_extension] 广播导入通知失败:', e);
+    }
+  }
+
+  private broadcastFileCreated(
+    targetLibraryId: string,
+    file: Record<string, any>,
+    notification?: { id: string; downloadFailed?: boolean },
+  ) {
     try {
       const wss = this.backend.getWebSocketServer?.();
       // 关键：客户端的标签页刷新（shouldUpdateForEvent）按 eventData.libraryId 匹配当前库，
@@ -671,6 +693,10 @@ class MiraEagleExtension {
       wss?.broadcastLibraryEvent?.(targetLibraryId, 'file::created', {
         ...file,
         libraryId: targetLibraryId,
+        ...(notification ? {
+          notificationId: notification.id,
+          downloadFailed: !!notification.downloadFailed,
+        } : {}),
       });
       wss?.broadcastPluginEvent?.('file::created', {
         message: { type: 'file', action: 'create' },
@@ -929,6 +955,11 @@ class MiraEagleExtension {
       if (this.config.verbose) {
         console.log(`[mira_eagle_extension:41593] 来源: base64=${hasBase64}${hasBase64 ? '(len=' + String(base64).length + ')' : ''} src=${src || '-'} metaPicture=${metaPicture || '-'} url=${url || '-'} folderID=${folderID ?? '-'}`);
       }
+      const notificationId = `eagle-import-${Date.now()}-${crypto.randomBytes(6).toString('hex')}`;
+      const notificationName = title || (() => {
+        try { return path.basename(new URL(src || metaPicture || url).pathname); } catch { return undefined; }
+      })();
+      this.broadcastImportNotification(lid, notificationId, 'preparing', notificationName);
       const file = await this.importFileFromSource(dbService, {
         base64,
         // 同时传 src 和 base64：importFileFromSource 会优先 IMU 升级 src 下载原图，
@@ -946,9 +977,16 @@ class MiraEagleExtension {
       });
       if (file) {
         console.log(`[mira_eagle_extension:41593] ✅ 已导入 file id=${file.id} 到库 ${lid}${file._urlFallback ? '（URL 引用，下载失败回退）' : ''}`);
-        this.broadcastFileCreated(lid, file);
+        this.broadcastFileCreated(lid, file, {
+          id: notificationId,
+          downloadFailed: !!file._urlFallback,
+        });
+        if (file._urlFallback) {
+          this.broadcastImportNotification(lid, notificationId, 'failed', notificationName, '图片下载失败，已保存为 URL 引用');
+        }
       } else {
         console.warn(`[mira_eagle_extension:41593] ❌ 导入失败（无可用图片来源）`);
+        this.broadcastImportNotification(lid, notificationId, 'failed', notificationName, '图片下载失败');
       }
     } catch (e) {
       console.error('[mira_eagle_extension:41593] capturePush error:', e);

@@ -40,7 +40,7 @@
       </Stepper>
 
       <!-- Error banner -->
-      <div v-if="error" class="bg-destructive dark:bg-destructive/30 border border-destructive dark:border-destructive/40 text-destructive dark:text-destructive p-3 rounded-lg text-sm flex items-center gap-2 relative mb-4">
+      <div v-if="error" class="bg-destructive/10 dark:bg-destructive/30 border border-destructive/40 dark:border-destructive/40 text-destructive dark:text-destructive p-3 rounded-lg text-sm flex items-center gap-2 relative mb-4">
         <span class="material-icons text-xl shrink-0">error</span>
         {{ error }}
         <button type="button" class="absolute right-2 top-1/2 -translate-y-1/2 bg-transparent border-none text-destructive dark:text-destructive cursor-pointer p-1" @click="error = ''">
@@ -76,7 +76,7 @@
                 <span class="font-semibold text-sm text-foreground dark:text-muted-foreground truncate">{{ server.name }}</span>
                 <span class="text-xs text-muted-foreground dark:text-muted-foreground truncate">{{ server.serverUrl }}</span>
               </div>
-              <Button variant="ghost" size="icon-sm" class="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 text-muted-foreground hover:text-destructive" @click.stop="deleteTarget = server">
+              <Button variant="ghost" size="icon-sm" class="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 text-muted-foreground hover:text-destructive" @click.stop="openDeleteDialog(server)">
                 <span class="material-icons text-base">delete</span>
               </Button>
             </div>
@@ -86,15 +86,15 @@
           </div>
 
           <!-- Delete Confirmation Dialog -->
-          <AlertDialog :open="!!deleteTarget" @update:open="v => { if (!v) deleteTarget = null }">
+          <AlertDialog v-if="deleteTarget" :open="true" @update:open="handleDeleteDialogOpenChange">
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>删除服务器</AlertDialogTitle>
                 <AlertDialogDescription>确定要删除「{{ deleteTarget?.name }}」吗？此操作不可撤销。</AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>取消</AlertDialogCancel>
-                <Button class="bg-destructive hover:bg-destructive text-white" @click="handleDeleteServer">删除</Button>
+                <Button type="button" variant="outline" @click="closeDeleteDialog">取消</Button>
+                <Button type="button" class="bg-destructive hover:bg-destructive text-white" @click="handleDeleteServer">删除</Button>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
@@ -243,7 +243,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted } from 'vue'
+import { reactive, ref, nextTick, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useLibraryStore } from '../stores/library'
@@ -259,7 +259,7 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Loader2 } from 'lucide-vue-next'
 import {
-  AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import type { HealthResponse, Library } from 'mira-app-core/shared/sdk'
 
@@ -282,11 +282,24 @@ const showWsField = ref(false)
 const showAddForm = ref(false)
 const deleteTarget = ref<ServerConfig | null>(null)
 
-function handleDeleteServer() {
+function openDeleteDialog(server: ServerConfig) {
+  deleteTarget.value = server
+}
+
+function handleDeleteDialogOpenChange(open: boolean) {
+  if (!open) closeDeleteDialog()
+}
+
+function closeDeleteDialog() {
+  deleteTarget.value = null
+}
+
+async function handleDeleteServer() {
   const target = deleteTarget.value
   if (!target) return
-  deleteTarget.value = null
-  serverListStore.deleteServer(target.id)
+  closeDeleteDialog()
+  await nextTick()
+  await serverListStore.deleteServer(target.id)
 }
 const selectedServerId = ref('')
 const healthData = ref<HealthResponse | null>(null)

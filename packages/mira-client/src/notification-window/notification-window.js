@@ -67,6 +67,7 @@ async function initNotificationWindow() {
         title: '',
         body: '',
         icon: '',
+        icons: [],
         type: 'info',
         actions: [],
         html: '',
@@ -91,6 +92,12 @@ async function initNotificationWindow() {
         if (this._thumbFailed) return false
         return typeof this.icon === 'string' &&
           /^(https?:|file:|data:|\/\/)/i.test(this.icon)
+      },
+      displayIcons() {
+        if (!Array.isArray(this.icons)) return []
+        return [...new Set(this.icons.filter((icon) =>
+          typeof icon === 'string' && /^(https?:|file:|data:|\/\/)/i.test(icon)
+        ))].slice(0, 4)
       },
       displayIcon() {
         // 非 URL 时按类型回退到 Material Icons 名称
@@ -130,8 +137,20 @@ async function initNotificationWindow() {
         <div class="notification-bar" :class="type"></div>
         <!-- 最左侧：缩略图 / 图标（大尺寸） -->
         <div class="notification-thumb-wrap" :class="type">
+          <div v-if="displayIcons.length > 1" class="notification-thumb-grid">
+            <img
+              v-for="thumb in displayIcons"
+              :key="thumb"
+              :src="thumb"
+              class="notification-thumb-grid-item"
+              draggable="false"
+              referrerpolicy="no-referrer"
+              @error="$event.currentTarget.style.visibility = 'hidden'"
+              @mousedown.prevent
+            />
+          </div>
           <img
-            v-if="isIconUrl"
+            v-else-if="isIconUrl"
             :src="icon"
             class="notification-thumb"
             draggable="false"
@@ -183,6 +202,7 @@ async function initNotificationWindow() {
         this.title = payload.title || ''
         this.body = payload.body || ''
         this.icon = payload.icon || ''
+        this.icons = Array.isArray(payload.icons) ? payload.icons : []
         this.type = payload.type || 'info'
         this.actions = Array.isArray(payload.actions) ? payload.actions : []
         this._thumbFailed = false
@@ -204,7 +224,7 @@ async function initNotificationWindow() {
           return
         }
         // 回传业务数据（如 fileId），主进程转发给主渲染进程
-        bridge.send({ type: 'click', data: this.data, timestamp: Date.now() })
+        bridge.send({ type: 'click', data: Vue.toRaw(this.data), timestamp: Date.now() })
       },
       debugActionPointer(action, event) {
         console.info('[NotificationDebug] action pointerdown', {
@@ -215,7 +235,12 @@ async function initNotificationWindow() {
         })
       },
       handleAction(action) {
-        const message = { type: 'action', id: action.id, data: this.data, timestamp: Date.now() }
+        const message = {
+          type: 'action',
+          id: action.id,
+          data: Vue.toRaw(this.data),
+          timestamp: Date.now(),
+        }
         console.info('[NotificationDebug] action click, sending message', {
           message,
           bridgeReady: bridge.isReady(),
