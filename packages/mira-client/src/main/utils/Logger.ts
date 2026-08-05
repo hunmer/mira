@@ -2,6 +2,16 @@ import log from 'electron-log'
 import { join } from 'node:path'
 import { inspect } from 'node:util'
 
+// Electron 由 Vite 启动时，父进程退出会先关闭 stdout/stderr 管道。
+// 忽略此时的终端写入错误，文件日志仍可正常完成退出记录。
+const handleTerminalError = (error: NodeJS.ErrnoException) => {
+  if (error.code === 'EIO' || error.code === 'EPIPE') {
+    log.transports.console.level = false
+  }
+}
+process.stdout.on('error', handleTerminalError)
+process.stderr.on('error', handleTerminalError)
+
 if (process.platform === 'win32') {
   process.stdout.setDefaultEncoding('utf8')
   process.stderr.setDefaultEncoding('utf8')

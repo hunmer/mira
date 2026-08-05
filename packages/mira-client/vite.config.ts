@@ -166,12 +166,11 @@ export default defineConfig({
       ],
       exclude: [
         'electron'
-      ],
-      force: true
+      ]
     },
     server: {
       port: 3000,
-      strictPort: false, // 改为 false，避免端口冲突
+      strictPort: false,
       cors: true,
       host: 'localhost', // 添加 host 配置
       fs: {

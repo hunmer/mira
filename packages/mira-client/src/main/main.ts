@@ -229,6 +229,29 @@ class MiraApplication {
       icon: join(app.isPackaged ? process.resourcesPath : __dirname, app.isPackaged ? 'assets/icon.ico' : '../assets/icon.ico'),
     })
 
+    // 页面长时间未就绪时也显示窗口，避免开发服务器阻塞导致应用完全不可见。
+    const showFallbackTimer = setTimeout(() => {
+      if (this.mainWindow && !this.mainWindow.isDestroyed() && !this.mainWindow.isVisible()) {
+        logger.warn('MiraApplication', 'Main window load timed out, showing window for diagnostics')
+        this.mainWindow.show()
+      }
+    }, 10000)
+    showFallbackTimer.unref()
+
+    this.mainWindow.webContents.on(
+      'did-fail-load',
+      (_event, errorCode, errorDescription, validatedURL, isMainFrame) => {
+        if (!isMainFrame) return
+        clearTimeout(showFallbackTimer)
+        logger.error('MiraApplication', 'Main window failed to load', {
+          errorCode,
+          errorDescription,
+          validatedURL
+        })
+        this.mainWindow?.show()
+      }
+    )
+
     // 让 windowStateKeeper 管理这个窗口
     mainWindowState.manage(this.mainWindow)
     
@@ -246,6 +269,7 @@ class MiraApplication {
 
     // 窗口加载完成后显示
     this.mainWindow.once('ready-to-show', () => {
+      clearTimeout(showFallbackTimer)
       logger.info('MiraApplication', 'Main window ready to show')
       this.mainWindow?.show()
       this.mainWindow?.webContents.setZoomFactor(1);
@@ -267,14 +291,15 @@ class MiraApplication {
     } else {
       // 开发环境 - vite-plugin-electron 会自动处理
       logger.info('MiraApplication', 'Loading development app')
-      // vite-plugin-electron 会自动注入正确的 URL
-      this.mainWindow.loadURL('http://localhost:3000')
+      const devServerUrl = process.env.VITE_DEV_SERVER_URL || 'http://localhost:3000'
+      this.mainWindow.loadURL(devServerUrl)
     }
     // 浮动窗口通过该标识将点击事件准确转发给主窗口，生产和开发环境都必须设置。
     ;(this.mainWindow as BrowserWindow & { aliasName?: string }).aliasName = 'Mira'
 
     // 窗口关闭时清理引用
     this.mainWindow.on('closed', () => {
+      clearTimeout(showFallbackTimer)
       logger.info('MiraApplication', 'Main window closed')
       this.mainWindow = null
     })
