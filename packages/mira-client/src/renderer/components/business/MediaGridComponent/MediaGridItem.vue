@@ -20,7 +20,7 @@
       <!-- 图片/缩略图容器 (视频播放时隐藏) -->
       <div
         v-show="!isVideoPlaying"
-        class="relative w-full h-[200px] rounded-lg overflow-hidden"
+        class="relative w-full h-[200px] rounded-xl overflow-hidden shadow-sm group-hover:shadow-[0_12px_36px_rgba(99,102,241,0.15)] transition-shadow"
       >
         <!-- 懒加载图片 -->
         <MediaThumbnail
@@ -35,7 +35,7 @@
       <!-- 视频预览组件插槽 (绝对定位覆盖在缩略图上) -->
       <div
         v-show="isVideoPlaying"
-        class="absolute inset-0 rounded-lg overflow-hidden"
+        class="absolute inset-0 rounded-xl overflow-hidden"
         @pointerdown="handlePointerDown"
         @contextmenu="handleContextMenu"
       >
@@ -113,8 +113,8 @@
       <!-- 文件名 (非视频预览时显示) -->
       <div
         v-show="!isVideoPlaying"
-        class="absolute bottom-0 left-0 right-0 p-2 rounded-b-lg"
-        :class="isSelected ? 'bg-primary/90' : 'bg-white/90 dark:bg-muted/90'"
+        class="absolute bottom-0 left-0 right-0 p-2 rounded-b-xl"
+        :class="isSelected ? 'bg-primary/90' : 'bg-white/80 dark:bg-muted/80 backdrop-blur'"
       >
         <h3
           class="text-sm font-semibold truncate"

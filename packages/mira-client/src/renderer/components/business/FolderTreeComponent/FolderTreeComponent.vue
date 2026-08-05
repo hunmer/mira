@@ -15,8 +15,8 @@
               <a
                 :data-folder-tree-node-id="folder.id"
                 :class="[
-                  'flex items-center justify-between px-2 py-1.5 rounded-md hover:bg-accent cursor-pointer',
-                  selectedKey === folder.id ? 'bg-primary text-primary' : 'text-foreground',
+                  'flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-primary/5 cursor-pointer transition-colors',
+                  selectedKey === folder.id ? 'bg-primary/10 text-primary font-medium' : 'text-foreground',
                   locatingNodeId === folder.id ? 'sidebar-locate-active' : ''
                 ]"
                 @click.prevent="handleBaseCategoryClick(folder)"
@@ -42,8 +42,8 @@
             v-else
             :data-folder-tree-node-id="folder.id"
             :class="[
-              'flex items-center justify-between px-2 py-1.5 rounded-md hover:bg-accent cursor-pointer',
-              selectedKey === folder.id ? 'bg-primary text-primary' : 'text-foreground',
+              'flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-primary/5 cursor-pointer transition-colors',
+              selectedKey === folder.id ? 'bg-primary/10 text-primary font-medium' : 'text-foreground',
               locatingNodeId === folder.id ? 'sidebar-locate-active' : ''
             ]"
             @click.prevent="handleBaseCategoryClick(folder)"
@@ -109,7 +109,7 @@
         v-model="searchQuery"
         type="text"
         :placeholder="`搜索${sectionTitle}...`"
-        class="w-full px-2 py-1 text-xs border border-border rounded focus:outline-none focus:border-primary"
+        class="w-full px-3 py-1.5 text-xs border border-border rounded-full bg-white/60 dark:bg-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
       />
     </div>
 
@@ -129,11 +129,11 @@
               <div
                 :data-folder-tree-node-id="node.id"
                 :class="[
-                  'flex items-center min-h-8 py-1 px-2 rounded-md cursor-pointer',
-                  'hover:bg-muted dark:hover:bg-muted',
-                  selectedKey === node.id ? 'bg-primary text-primary' : '',
-                  selectionActive && isNodeSelected(node) ? 'bg-primary' : '',
-                  dragOverNodeId === node.id ? 'ring-2 ring-primary bg-primary' : '',
+                  'flex items-center min-h-8 py-1 px-2 rounded-lg cursor-pointer transition-colors',
+                  'hover:bg-primary/5',
+                  selectedKey === node.id ? 'bg-primary/10 text-primary font-medium' : '',
+                  selectionActive && isNodeSelected(node) ? 'bg-primary/10' : '',
+                  dragOverNodeId === node.id ? 'ring-2 ring-primary/50 bg-primary/10' : '',
                   locatingNodeId === node.id ? 'sidebar-locate-active' : ''
                 ]"
                 @click="handleNodeClick(node)"
@@ -165,11 +165,11 @@
               <div
                 :data-folder-tree-node-id="node.id"
                 :class="[
-                  'flex items-center min-h-8 py-1 px-2 rounded-md cursor-pointer',
-                  'hover:bg-muted dark:hover:bg-muted',
-                  selectedKey === node.id ? 'bg-primary text-primary' : '',
-                  selectionActive && isNodeSelected(node) ? 'bg-primary' : '',
-                  dragOverNodeId === node.id ? 'ring-2 ring-primary bg-primary' : '',
+                  'flex items-center min-h-8 py-1 px-2 rounded-lg cursor-pointer transition-colors',
+                  'hover:bg-primary/5',
+                  selectedKey === node.id ? 'bg-primary/10 text-primary font-medium' : '',
+                  selectionActive && isNodeSelected(node) ? 'bg-primary/10' : '',
+                  dragOverNodeId === node.id ? 'ring-2 ring-primary/50 bg-primary/10' : '',
                   locatingNodeId === node.id ? 'sidebar-locate-active' : ''
                 ]"
                 @click="handleNodeClick(node)"

@@ -41,8 +41,8 @@
           v-for="item in items"
           :key="item.id"
           :data-selectable-id="item.id"
-          :class="{ 'bg-muted/50': isSelected(item.id) }"
-          class="cursor-pointer hover:bg-muted/50"
+          :class="{ 'bg-primary/10': isSelected(item.id) }"
+          class="cursor-pointer hover:bg-primary/5 transition-colors"
           @click="handleItemClick(item, $event)"
           @dblclick="emit('dblclick', item)"
           @contextmenu="emit('contextmenu', item, $event)"
@@ -100,7 +100,7 @@
           <TableCell>
             <div class="flex flex-col min-w-0">
               <span class="text-sm font-medium text-foreground truncate">{{ item.name }}</span>
-              <span class="text-xs text-muted-foreground px-2 py-1 bg-muted rounded inline-block w-fit mt-1">
+              <span class="text-xs text-primary px-2 py-0.5 bg-primary/10 rounded-full inline-block w-fit mt-1">
                 {{ getFileExtension(item.name) }}
               </span>
             </div>

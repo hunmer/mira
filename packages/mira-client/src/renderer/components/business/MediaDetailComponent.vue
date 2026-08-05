@@ -12,7 +12,7 @@
     <div class="relative">
       <!-- 单选模式 -->
       <div v-if="displayItems.length === 1" class="relative">
-        <div class="relative rounded-lg bg-muted overflow-hidden w-full" style="height: 192px;">
+        <div class="relative rounded-xl bg-muted/60 overflow-hidden w-full shadow-sm" style="height: 192px;">
           <!-- 加载中占位符 -->
           <div v-if="imageLoadState === 'loading'" class="absolute inset-0 flex items-center justify-center bg-muted">
             <div class="flex flex-col items-center text-muted-foreground">
@@ -33,7 +33,7 @@
             ref="previewImage"
             :alt="displayItems[0].name"
             :src="displayItems[0].url || displayItems[0].thumbnailPath"
-            class="rounded-lg object-contain w-full h-full"
+            class="rounded-xl object-contain w-full h-full"
             @load="handleImageLoad"
             @error="handleImageError"
           />
@@ -131,7 +131,7 @@
     </div>
 
     <!-- 文件URL - 仅单选模式显示 -->
-    <div v-if="!isMultiSelect && displayItems[0]?.url" class="flex items-center bg-muted border border-border rounded-lg p-2">
+    <div v-if="!isMultiSelect && displayItems[0]?.url" class="flex items-center bg-muted/60 border border-border/60 rounded-lg p-2">
       <span class="flex-1 text-xs truncate">{{ displayItems[0].url }}</span>
       <button
         class="p-1 rounded-md hover:bg-muted"
@@ -168,7 +168,7 @@
           <span
             v-for="tag in displayItems[0].tags"
             :key="tag"
-            class="bg-primary text-primary text-xs px-2 py-1 rounded-full flex items-center"
+            class="bg-primary/10 text-primary text-xs px-2.5 py-1 rounded-full flex items-center"
           >
             {{ getTagName(tag) }}
             <button class="ml-1 text-primary text-xs hover:text-primary" @click="handleRemoveTag(tag)">×</button>
@@ -178,7 +178,7 @@
           <span
             v-for="tag in mergedInfo.tags"
             :key="tag"
-            class="bg-primary text-primary text-xs px-2 py-1 rounded-full flex items-center"
+            class="bg-primary/10 text-primary text-xs px-2.5 py-1 rounded-full flex items-center"
           >
             {{ getTagName(tag) }}
             <button class="ml-1 text-primary text-xs hover:text-primary" @click="handleRemoveTag(tag)">×</button>
@@ -211,7 +211,7 @@
         </Popover>
       </div>
       <template v-if="!isMultiSelect">
-        <div v-if="displayItems[0]?.folderId" class="bg-primary text-primary text-xs px-3 py-2 rounded-lg flex items-center">
+        <div v-if="displayItems[0]?.folderId" class="bg-primary/10 text-primary text-xs px-3 py-2 rounded-lg flex items-center">
           <span class="material-icons mr-2 text-primary">folder</span>
           {{ getFolderName(displayItems[0].folderId) }}
         </div>
@@ -225,7 +225,7 @@
           <div
             v-for="folderId in mergedInfo.folders"
             :key="folderId"
-            class="bg-primary text-primary text-xs px-3 py-2 rounded-lg flex items-center"
+            class="bg-primary/10 text-primary text-xs px-3 py-2 rounded-lg flex items-center"
           >
             <span class="material-icons mr-2 text-primary">folder</span>
             {{ getFolderName(folderId) }}

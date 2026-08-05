@@ -87,21 +87,30 @@ shadow-[0_8px_30px_rgba(99,102,241,0.08)]
 
 ## 6. 布局规范（HomeView）
 
+三列结构，同 Y 轴对齐，均为玻璃磨砂面板：
+
 ```
-┌──────────────────────────────────────────────────┐
-│ 顶部悬浮栏：素材库 · Tab 多标签页 · 窗口控制        │
-├────────┬──────────────────────────────┬──────────┤
-│ 左侧栏  │  中间内容区                    │ 右侧悬浮  │
-│ 文件夹  │  搜索 / 过滤器 / 图片列表 /     │ 工具条    │
-│ 标签    │  右侧图片信息 / 底部分页        │ (上传等)  │
-└────────┴──────────────────────────────┴──────────┘
+┌───────────┬──────────────────────────────┬────────────┐
+│ 左侧栏     │ 导航按钮 + Tabs 条            │ 头像菜单    │
+│ 素材库切换  │（激活 tab 连接胶囊）          │ + 窗口控制  │
+│ 文件夹     ├──────────────────────────────┼────────────┤
+│ 标签       │                              │ 图片详情    │
+│ 搜索胶囊   │  中间内容区（图片列表）        │ 面板        │
+│           │  底部：浮动分页栏 + 状态栏     │            │
+└───────────┴──────────────────────────────┴────────────┘
 ```
 
-### 6.1 顶部悬浮栏（HomeHeader）
+- **对齐规则**：Tabs 条固定 `h-[56px]`（= 紧凑 Header 44px + 间距 12px），使中间内容面板顶与右侧详情面板顶严格对齐
+- **Tabs 连接胶囊**：激活 tab `rounded-t-2xl border-b-0 -mb-px` 与内容面板同底色（`bg-white/30`）无缝连接；未激活 tab 为 `rounded-full` 胶囊，hover 时呈现与激活态一致的玻璃质感
+- **Tabs 滚动条隐藏**：容器使用 `[scrollbar-width:none] [&::-webkit-scrollbar]:hidden`
+- **第三列**：紧凑 Header（导航 + 窗口控制，`w-fit ml-auto` 靠右）+ `w-72` 图片详情面板
+- **不透明度阶梯**：内容区 `bg-white/30` < 侧栏/工具条/详情 `bg-white/40` < 状态栏 `bg-white/50` < 浮动操作栏 `bg-white/60`，全部 `backdrop-blur-xl`
 
-- 整体为一条玻璃面板：`rounded-2xl` + 玻璃配方，四周浮于底色之上
-- Tab 容器：`rounded-xl bg-secondary-100/70 p-1`，激活 Tab `bg-white shadow-sm text-primary`
-- 素材库选择器、导航按钮：图标按钮 `rounded-lg hover:bg-muted`
+### 6.1 紧凑 Header（HomeHeader，第三列顶部）
+
+- 不再占满整行：`w-fit ml-auto` 靠右悬浮，仅含导航按钮（上一次 tab / 重开 tab / 侧栏定位）与窗口控制
+- 玻璃配方 `bg-white/40`，按钮 `h-8 w-8 rounded-lg hover:bg-primary/10 hover:text-primary`
+- 素材库切换已移至侧栏顶部（`bg-primary/10 text-primary rounded-xl` 胶囊按钮）
 
 ### 6.2 左侧栏（HomeSidebar）
 
@@ -112,13 +121,19 @@ shadow-[0_8px_30px_rgba(99,102,241,0.08)]
 
 ### 6.3 中间内容区
 
-- 搜索框：胶囊 `rounded-full`，玻璃底 `bg-white/70 backdrop-blur`
-- 过滤器：chip 样式 `rounded-full bg-white/60`，激活态 `bg-primary/10 text-primary`
-- 图片卡片：`rounded-xl overflow-hidden shadow-sm`，hover 抬升阴影 + 图片 `hover:scale-105 transition`
-- 右侧图片信息面板：玻璃面板，字段用「弱化标签 + 正文值」两行式
-- 底部分页：胶囊按钮组 `rounded-full`，当前页 `bg-primary text-primary-foreground`
+- 搜索框：胶囊 `rounded-full`，玻璃底 `bg-white/40 backdrop-blur`
+- 过滤器：ghost 图标按钮，激活态 `bg-primary/10 text-primary rounded-lg`
+- 图片卡片：`rounded-xl overflow-hidden shadow-sm`，hover 抬升阴影 `group-hover:shadow-[0_12px_36px_rgba(99,102,241,0.15)]` + 过渡
+- 列表行：hover `bg-primary/5`，选中 `bg-primary/10`；扩展名 chip `bg-primary/10 text-primary rounded-full`
+- 底部分页：浮动胶囊栏 `rounded-full bg-white/60 backdrop-blur-xl`，当前页 `bg-primary text-primary-foreground`
+- 底部状态栏：玻璃条 `bg-white/50 backdrop-blur-xl rounded-2xl`
 
-### 6.4 右侧悬浮工具条（HomeToolbar）
+### 6.4 第三列详情面板
+
+- `w-72` 玻璃面板，位于紧凑 Header 下方，由全局 `mediaStore.showDetailSidebar` 控制显隐
+- 标签/文件夹 chip：`bg-primary/10 text-primary`，预览图容器 `rounded-xl`
+
+### 6.5 悬浮工具条（HomeToolbar，中区内右缘）
 
 - 竖向玻璃胶囊面板，图标按钮等距排列，分隔用 `border-t border-border/60` 短线
 

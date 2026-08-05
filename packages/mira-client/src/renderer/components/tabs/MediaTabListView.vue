@@ -1,6 +1,6 @@
 <template>
   <div
-    class="p-2 media-list-view flex-1 flex flex-col w-full bg-muted dark:bg-muted overflow-hidden relative h-full text-[13px]"
+    class="p-2 media-list-view flex-1 flex flex-col w-full bg-transparent overflow-hidden relative h-full text-[13px]"
     @dragover.prevent="canUpload && handleDragOver($event)"
     @dragleave.prevent="canUpload && handleDragLeave($event)"
     @drop.prevent="canUpload && handleDrop($event)"
@@ -43,7 +43,7 @@
         >
           <template #trigger>
             <button
-              class="flex items-center space-x-1 border border-border dark:border-border rounded-md hover:bg-muted dark:hover:bg-muted transition-colors"
+              class="flex items-center space-x-1 rounded-lg border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur shadow-sm hover:bg-white/60 dark:hover:bg-muted transition-colors"
               :title="getViewModeTitle(viewMode)"
               style="padding: 6px;"
             >
@@ -58,8 +58,8 @@
                 v-for="mode in viewModes"
                 :key="mode.value"
                 :class="[
-                  'w-full flex items-center space-x-2 px-3 py-2 text-sm hover:bg-muted dark:hover:bg-muted transition-colors',
-                  viewMode === mode.value ? 'bg-primary dark:bg-primary/30 text-primary' : 'text-foreground dark:text-muted-foreground'
+                  'w-full flex items-center space-x-2 px-3 py-2 text-sm rounded-lg hover:bg-primary/5 transition-colors',
+                  viewMode === mode.value ? 'bg-primary/10 text-primary' : 'text-foreground dark:text-muted-foreground'
                 ]"
                 @click="handleViewModeChange(mode.value as 'grid' | 'list' | 'waterfall'); close()"
               >
@@ -78,7 +78,7 @@
 
         <!-- 刷新按钮 -->
         <button
-          class="flex items-center space-x-1 px-3 py-1.5 text-sm text-muted-foreground dark:text-muted-foreground hover:text-foreground dark:hover:text-muted-foreground hover:bg-muted dark:hover:bg-muted rounded-md border border-border dark:border-border transition-colors"
+          class="flex items-center space-x-1 px-3 py-1.5 text-sm text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur shadow-sm transition-colors"
           @click="handleRefresh"
           title="刷新数据"
         >
@@ -89,10 +89,10 @@
         <button
           @click="toggleDetailSidebar"
           :class="[
-            'flex items-center space-x-1 px-3 py-1.5 text-sm rounded-md border transition-colors',
+            'flex items-center space-x-1 px-3 py-1.5 text-sm rounded-lg border shadow-sm transition-colors',
             showDetailSidebar
-              ? 'bg-primary text-primary border-primary hover:bg-primary'
-              : 'text-muted-foreground dark:text-muted-foreground border-border dark:border-border hover:text-foreground dark:hover:text-muted-foreground hover:bg-muted dark:hover:bg-muted'
+              ? 'bg-primary/10 text-primary border-primary/30 hover:bg-primary/15'
+              : 'text-muted-foreground border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur hover:text-primary hover:bg-primary/10'
           ]"
           :title="showDetailSidebar ? '隐藏详情面板' : '显示详情面板'"
         >
@@ -170,7 +170,7 @@
 
         <!-- 浮动操作栏 -->
         <div
-          class="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center space-x-4 bg-white dark:bg-muted shadow-lg dark:shadow-black/30 rounded-full p-1 border border-border dark:border-border"
+          class="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center space-x-4 bg-white/60 dark:bg-muted/80 backdrop-blur-xl shadow-[0_12px_36px_rgba(99,102,241,0.15)] rounded-full p-1.5 border border-white/60 dark:border-border"
         >
           <!-- 操作按钮 - 仅在选中文件时显示 -->
           <div
@@ -179,7 +179,7 @@
           >
             <!-- 反选 -->
             <button
-              class="p-2 rounded-full hover:bg-muted dark:hover:bg-muted"
+              class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
               title="反选"
               @click="handleInvertSelection"
             >
@@ -187,7 +187,7 @@
             </button>
             <!-- 取消选择 -->
             <button
-              class="p-2 rounded-full hover:bg-muted dark:hover:bg-muted"
+              class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
               title="取消选择"
               @click="handleClearSelection"
             >
@@ -198,14 +198,14 @@
             <!-- 回收站：恢复文件 / 彻底删除 -->
             <template v-if="isTrash">
               <button
-                class="p-2 rounded-full hover:bg-muted dark:hover:bg-muted"
+                class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
                 :title="`恢复文件 (${selectedItems.length})`"
                 @click="handleToolbarAction('restore')"
               >
                 <span class="material-symbols-outlined text-muted-foreground dark:text-muted-foreground">restore</span>
               </button>
               <button
-                class="p-2 rounded-full hover:bg-destructive dark:hover:bg-destructive/30 group"
+                class="p-2 rounded-full hover:bg-destructive/10 group transition-colors"
                 :title="`彻底删除 (${selectedItems.length})`"
                 @click="handleToolbarAction('purge')"
               >
@@ -216,21 +216,21 @@
             <!-- 普通视图：复制 / 打开 / 删除 -->
             <template v-else>
               <button
-                class="p-2 rounded-full hover:bg-muted dark:hover:bg-muted"
+                class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
                 title="复制"
                 @click="handleToolbarAction('copy')"
               >
                 <span class="material-icons text-muted-foreground dark:text-muted-foreground">content_copy</span>
               </button>
               <button
-                class="p-2 rounded-full hover:bg-muted dark:hover:bg-muted"
+                class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
                 title="打开"
                 @click="handleToolbarAction('open')"
               >
                 <span class="material-icons text-muted-foreground dark:text-muted-foreground">open_in_new</span>
               </button>
               <button
-                class="p-2 rounded-full hover:bg-muted dark:hover:bg-muted"
+                class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
                 :title="`删除 (${selectedItems.length})`"
                 @click="handleToolbarAction('delete')"
               >
@@ -243,7 +243,7 @@
           <!-- 分页控件 - 始终显示 -->
           <div class="flex items-center space-x-1 text-muted-foreground dark:text-muted-foreground text-xs">
             <button
-              class="p-2 rounded-full hover:bg-muted dark:hover:bg-muted"
+              class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
               :disabled="currentPage === 1"
               @click="handlePreviousPage"
             >
@@ -257,8 +257,8 @@
               <button
                 v-else
                 :class="[
-                  'px-2 py-1 rounded-full hover:bg-muted dark:hover:bg-muted min-w-[28px]',
-                  page.active ? 'bg-primary text-primary font-semibold' : ''
+                  'px-2 py-1 rounded-full hover:bg-primary/10 min-w-[28px] transition-colors',
+                  page.active ? 'bg-primary text-primary-foreground font-semibold shadow-sm hover:bg-primary' : ''
                 ]"
                 @click="handlePageChange(page.number)"
               >
@@ -267,7 +267,7 @@
             </template>
 
             <button
-              class="p-2 rounded-full hover:bg-muted dark:hover:bg-muted"
+              class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
               :disabled="currentPage === totalPages"
               @click="handleNextPage"
             >
@@ -276,48 +276,12 @@
           </div>
         </div>
       </div>
-
-      <!-- 右侧信息面板 -->
-      <div
-        v-if="showDetailSidebar"
-        class="w-72 bg-white dark:bg-muted border border-border dark:border-border rounded-lg flex flex-col ml-2"
-      >
-        <div class="border-b border-border dark:border-border">
-          <nav aria-label="Tabs" class="flex -mb-px">
-            <a
-              class="w-1/2 py-2 px-1 text-center border-b-2 font-medium text-sm text-primary border-primary"
-              href="#"
-            >
-              信息
-            </a>
-            <a
-              class="w-1/2 py-2 px-1 text-center border-b-2 font-medium text-sm text-muted-foreground dark:text-muted-foreground hover:text-foreground dark:hover:text-muted-foreground hover:border-border dark:hover:border-border"
-              href="#"
-            >
-              分享
-            </a>
-          </nav>
-        </div>
-
-        <!-- 详情内容 -->
-        <div class="p-4 space-y-4 flex-grow overflow-y-auto">
-          <!-- 有选中文件时显示文件详情 -->
-          <MediaDetailComponent
-            :item="sidebarMediaItems.length === 1 ? sidebarMediaItems[0] : undefined"
-            :items="sidebarMediaItems.length > 1 ? sidebarMediaItems : undefined"
-            :library-id="libraryId || 'default'"
-            @tag-add="handleTagAdd"
-            @tag-remove="handleTagRemove"
-            @folder-change="handleFolderChange"
-          />
-        </div>
-      </div>
     </div>
 
     <!-- 底部状态栏 -->
-    <footer class="flex justify-center p-2 bg-muted dark:bg-muted">
+    <footer class="flex justify-center px-2 pb-1 pt-2">
       <!-- 状态信息 -->
-      <div class="w-[100%] flex items-center justify-between bg-white dark:bg-muted rounded-2xl border border-border dark:border-border p-3">
+      <div class="w-[100%] flex items-center justify-between bg-white/50 dark:bg-muted/70 backdrop-blur-xl rounded-2xl border border-white/60 dark:border-border shadow-sm px-4 py-2.5">
         <div class="flex-1 flex items-center space-x-6">
           <!-- 路由状态 -->
           <div class="flex items-center space-x-1">
@@ -396,7 +360,6 @@ import { useMediaTabData } from '@renderer/composables/useMediaTabData'
 import MediaGridComponent from '@renderer/components/business/MediaGridComponent.vue'
 import MediaListComponent from '@renderer/components/business/MediaListComponent.vue'
 import WaterfallComponent from '@renderer/components/business/WaterfallComponent.vue'
-import MediaDetailComponent from '@renderer/components/business/MediaDetailComponent.vue'
 import FileUploadDialog from '@renderer/components/business/FileUploadDialog.vue'
 import FilterBar from '@/renderer/components/business/FilterBar/FilterBar.vue'
 import { Dropdown } from '@/renderer/components/common/Dropdown'
@@ -1090,18 +1053,6 @@ const handleCtrlWheel = (event: WheelEvent) => {
     const fake = { target: { value: String(next) } } as unknown as Event
     homeController.handleColumnsChange(fake)
   }
-}
-
-const handleTagAdd = (tagName: string) => {
-  homeController.handleTagAdd(tagName)
-}
-
-const handleTagRemove = (tagName: string) => {
-  homeController.handleTagRemove(tagName)
-}
-
-const handleFolderChange = (folderId: string) => {
-  homeController.handleFolderChange(folderId)
 }
 
 // 处理视图模式切换（使用 tab 独立的 viewMode）

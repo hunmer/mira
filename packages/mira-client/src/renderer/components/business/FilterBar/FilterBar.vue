@@ -198,7 +198,7 @@
           <Button
             variant="ghost"
             size="xs"
-            :class="isOpen ? 'text-primary bg-primary' : 'text-muted-foreground'"
+            :class="isOpen ? 'text-primary bg-primary/10 rounded-lg' : 'text-muted-foreground hover:text-foreground hover:bg-primary/5 rounded-lg'"
           >
             <span class="material-icons text-sm">sort</span>
             <span class="text-sm">{{ getSortDisplayText() }}</span>
@@ -353,9 +353,9 @@ const categoryOptions: CategoryOption[] = [
 const getFilterButtonClass = (filter: FilterRule, isOpen: boolean) => {
   const hasActive = hasActiveFilters(filter)
 
-  if (isOpen) return 'text-primary bg-primary'
-  if (hasActive) return 'text-primary'
-  return 'text-muted-foreground'
+  if (isOpen) return 'text-primary bg-primary/10 rounded-lg'
+  if (hasActive) return 'text-primary bg-primary/10 rounded-lg'
+  return 'text-muted-foreground hover:text-foreground hover:bg-primary/5 rounded-lg'
 }
 
 const hasActiveFilters = (filter: FilterRule) => {
