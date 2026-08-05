@@ -153,7 +153,8 @@
                 <span v-if="stat.children.length" class="material-icons text-base mr-1 text-muted-foreground hover:text-muted-foreground select-none" @click.stop="stat.open = !stat.open">
                   {{ stat.open ? 'expand_more' : 'chevron_right' }}
                 </span>
-                <span v-else class="inline-block w-5"></span>
+                <!-- 叶子节点占位：仅在展示 checkbox 时保留，用于与父节点图标对齐；无 checkbox 时隐藏，让图标贴最左侧 -->
+                <span v-else-if="showNodeCheckbox" class="inline-block w-5"></span>
                 <span class="material-icons mr-2 text-lg" :style="{ color: getNodeColor(node) }">{{ node.icon || defaultIcon }}</span>
                 <span class="flex-1 truncate text-sm">{{ node.label }}</span>
                 <span v-if="node.count" class="text-xs text-muted-foreground ml-2">{{ node.count }}</span>
@@ -189,7 +190,8 @@
                 <span v-if="stat.children.length" class="material-icons text-base mr-1 text-muted-foreground hover:text-muted-foreground select-none" @click.stop="stat.open = !stat.open">
                   {{ stat.open ? 'expand_more' : 'chevron_right' }}
                 </span>
-                <span v-else class="inline-block w-5"></span>
+                <!-- 叶子节点占位：仅在展示 checkbox 时保留，用于与父节点图标对齐；无 checkbox 时隐藏，让图标贴最左侧 -->
+                <span v-else-if="showNodeCheckbox" class="inline-block w-5"></span>
                 <span class="material-icons mr-2 text-lg" :style="{ color: getNodeColor(node) }">{{ node.icon || defaultIcon }}</span>
                 <span class="flex-1 truncate text-sm">{{ node.label }}</span>
                 <span v-if="node.count" class="text-xs text-muted-foreground ml-2">{{ node.count }}</span>

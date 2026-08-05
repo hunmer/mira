@@ -41,9 +41,11 @@ shadow-[0_8px_30px_rgba(99,102,241,0.08)]
 - 描边用 `border-white/60`（亮）让边缘有「高光」，不用深灰描边
 
 **弹出层（Popover / DropdownMenu / ContextMenu）**已在 shadcn-vue 基础组件统一定制：
-`bg-white/80 dark:bg-muted/80 backdrop-blur-xl rounded-xl~2xl border-white/60 shadow-[0_12px_40px_rgba(99,102,241,0.12)]`
+`bg-white/65 dark:bg-muted/70 backdrop-blur-xl rounded-xl~2xl border-white/60 shadow-[0_12px_40px_rgba(99,102,241,0.12)]`
 
-**对话框（Dialog）**：`bg-white/80 dark:bg-muted/85 backdrop-blur-xl rounded-2xl shadow-[0_24px_60px_rgba(99,102,241,0.15)]`；遮罩 `bg-black/40 backdrop-blur-sm`
+**卡片（Card）**：`bg-white/60 dark:bg-muted/60 backdrop-blur-xl rounded-2xl border-white/60 shadow-[0_8px_30px_rgba(99,102,241,0.08)]`
+
+**对话框（Dialog）**：`bg-white/70 dark:bg-muted/80 backdrop-blur-xl rounded-2xl shadow-[0_24px_60px_rgba(99,102,241,0.15)]`；遮罩 `bg-black/40 backdrop-blur-sm`
 
 ### 2.3 强调色
 

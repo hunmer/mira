@@ -7,19 +7,19 @@
       <DialogHeader>
         <DialogTitle>插件管理</DialogTitle>
       </DialogHeader>
-      <div class="min-h-[400px] h-full flex">
+      <div class="min-h-[400px] h-full flex gap-3">
         <!-- 侧边栏 -->
-        <aside class="w-56 rounded-lg border border-border dark:border-border flex flex-col">
+        <aside class="w-56 flex flex-col">
           <!-- 插件类型切换 -->
           <div class="p-4">
-            <div class="bg-accent dark:bg-muted rounded-lg p-1 flex">
+            <div class="bg-white/40 dark:bg-muted/40 rounded-lg p-1 flex border border-white/60 dark:border-border">
               <button
                 @click="activeTab = 'local'"
                 :class="[
                   'flex-1 text-sm py-2 px-3 rounded-md font-medium transition-colors',
                   activeTab === 'local'
-                    ? 'bg-white dark:bg-muted text-foreground dark:text-muted-foreground shadow'
-                    : 'text-muted-foreground dark:text-muted-foreground'
+                    ? 'bg-primary/10 text-primary shadow-sm'
+                    : 'text-muted-foreground dark:text-muted-foreground hover:text-foreground'
                 ]"
               >
                 本地插件
@@ -29,8 +29,8 @@
                 :class="[
                   'flex-1 text-sm py-2 px-3 rounded-md font-medium transition-colors',
                   activeTab === 'online'
-                    ? 'bg-white dark:bg-muted text-foreground dark:text-muted-foreground shadow'
-                    : 'text-muted-foreground dark:text-muted-foreground'
+                    ? 'bg-primary/10 text-primary shadow-sm'
+                    : 'text-muted-foreground dark:text-muted-foreground hover:text-foreground'
                 ]"
               >
                 插件市场
@@ -45,8 +45,8 @@
               :class="[
                 'flex items-center w-full px-3 py-2 text-sm rounded-lg transition-colors',
                 selectedCategory === 'all'
-                  ? 'bg-primary dark:bg-primary text-primary dark:text-primary'
-                  : 'text-muted-foreground dark:text-muted-foreground hover:bg-muted dark:hover:bg-muted'
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground dark:text-muted-foreground hover:bg-white/50 dark:hover:bg-muted/60'
               ]"
             >
               <span class="material-icons text-base mr-2">all_inclusive</span>
@@ -57,8 +57,8 @@
               :class="[
                 'flex items-center w-full px-3 py-2 text-sm rounded-lg transition-colors',
                 selectedCategory === 'communication'
-                  ? 'bg-primary dark:bg-primary text-primary dark:text-primary'
-                  : 'text-muted-foreground dark:text-muted-foreground hover:bg-muted dark:hover:bg-muted'
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground dark:text-muted-foreground hover:bg-white/50 dark:hover:bg-muted/60'
               ]"
             >
               <span class="material-icons text-base mr-2">chat_bubble_outline</span>
@@ -69,8 +69,8 @@
               :class="[
                 'flex items-center w-full px-3 py-2 text-sm rounded-lg transition-colors',
                 selectedCategory === 'documentation'
-                  ? 'bg-primary dark:bg-primary text-primary dark:text-primary'
-                  : 'text-muted-foreground dark:text-muted-foreground hover:bg-muted dark:hover:bg-muted'
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground dark:text-muted-foreground hover:bg-white/50 dark:hover:bg-muted/60'
               ]"
             >
               <span class="material-icons text-base mr-2">description</span>
@@ -81,8 +81,8 @@
               :class="[
                 'flex items-center w-full px-3 py-2 text-sm rounded-lg transition-colors',
                 selectedCategory === 'productivity'
-                  ? 'bg-primary dark:bg-primary text-primary dark:text-primary'
-                  : 'text-muted-foreground dark:text-muted-foreground hover:bg-muted dark:hover:bg-muted'
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground dark:text-muted-foreground hover:bg-white/50 dark:hover:bg-muted/60'
               ]"
             >
               <span class="material-icons text-base mr-2">trending_up</span>
@@ -93,8 +93,8 @@
               :class="[
                 'flex items-center w-full px-3 py-2 text-sm rounded-lg transition-colors',
                 selectedCategory === 'development'
-                  ? 'bg-primary dark:bg-primary text-primary dark:text-primary'
-                  : 'text-muted-foreground dark:text-muted-foreground hover:bg-muted dark:hover:bg-muted'
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground dark:text-muted-foreground hover:bg-white/50 dark:hover:bg-muted/60'
               ]"
             >
               <span class="material-icons text-base mr-2">code</span>
@@ -104,7 +104,7 @@
         </aside>
 
         <!-- 主内容区 -->
-        <main class="flex-1 flex flex-col bg-white dark:bg-muted rounded-lg border border-border dark:border-border ml-2">
+        <main class="flex-1 flex flex-col">
           <!-- 顶部操作栏 -->
           <header class="flex items-center justify-between px-4 py-3 border-b border-border dark:border-border">
             <div class="flex items-center space-x-3">
@@ -118,7 +118,7 @@
                   v-model="searchQuery"
                   type="text"
                   placeholder="搜索插件..."
-                  class="pl-9 pr-4 py-2 w-64 border border-border dark:border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm bg-white dark:bg-muted text-foreground dark:text-muted-foreground"
+                  class="pl-9 pr-4 py-2 w-64 border border-white/60 dark:border-border bg-white/40 dark:bg-muted/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm text-foreground dark:text-muted-foreground"
                 />
               </div>
               <!-- 刷新按钮 -->

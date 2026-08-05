@@ -263,57 +263,54 @@
     </div>
 
     <!-- 底部状态栏 -->
-    <footer class="flex justify-center px-2 pb-1 pt-2">
-      <!-- 状态信息 -->
-      <div class="w-[100%] flex items-center justify-between bg-white/50 dark:bg-muted/70 backdrop-blur-xl rounded-2xl border border-white/60 dark:border-border shadow-sm px-4 py-2.5">
-        <div class="flex-1 flex items-center space-x-6">
-          <!-- 路由状态 -->
-          <div class="flex items-center space-x-1">
-            <span class="material-icons text-sm" :style="{ color: currentTabContent.iconColor }">
-              {{ currentTabContent.icon }}
-            </span>
-            <span class="text-xs text-foreground dark:text-muted-foreground font-medium">
-              {{ currentTabContent.label }}
-            </span>
-          </div>
-
-          <!-- 当前路径和文件数 -->
-          <div class="flex items-center space-x-1">
-            <span class="material-icons text-sm text-muted-foreground dark:text-muted-foreground">folder_open</span>
-            <span class="text-xs text-muted-foreground dark:text-muted-foreground">
-              {{ filteredMediaItems.length }} 个文件
-            </span>
-          </div>
+    <footer class="flex items-center justify-between px-2 pt-2 shrink-0 text-xs border-t border-white/60 dark:border-border">
+      <div class="flex-1 flex items-center space-x-6">
+        <!-- 路由状态 -->
+        <div class="flex items-center space-x-1">
+          <span class="material-icons text-sm" :style="{ color: currentTabContent.iconColor }">
+            {{ currentTabContent.icon }}
+          </span>
+          <span class="text-foreground dark:text-muted-foreground font-medium">
+            {{ currentTabContent.label }}
+          </span>
         </div>
 
-        <div class="flex items-center space-x-4">
-          <!-- 已选择素材 - 仅在有选择时显示 -->
-          <div v-if="selectedItems.length > 0" class="flex items-center space-x-1">
-            <span class="material-icons text-sm text-primary">check_circle</span>
-            <span class="text-xs text-primary font-medium">
-              已选择 {{ selectedItems.length }} 个素材
-            </span>
-          </div>
+        <!-- 当前路径和文件数 -->
+        <div class="flex items-center space-x-1">
+          <span class="material-icons text-sm text-muted-foreground dark:text-muted-foreground">folder_open</span>
+          <span class="text-muted-foreground dark:text-muted-foreground">
+            {{ filteredMediaItems.length }} 个文件
+          </span>
+        </div>
+      </div>
 
-          <!-- 分页信息 -->
-          <div class="flex items-center space-x-1">
-            <span class="text-xs text-muted-foreground dark:text-muted-foreground">
-              第 {{ currentPage }} / {{ totalPages }} 页
-            </span>
-          </div>
+      <div class="flex items-center space-x-4">
+        <!-- 已选择素材 - 仅在有选择时显示 -->
+        <div v-if="selectedItems.length > 0" class="flex items-center space-x-1">
+          <span class="material-icons text-sm text-primary">check_circle</span>
+          <span class="text-primary font-medium">
+            已选择 {{ selectedItems.length }} 个素材
+          </span>
+        </div>
 
-          <!-- 列数调整滑块 -->
-          <div v-if="viewMode === 'grid' || viewMode === 'waterfall'" class="flex items-center space-x-2">
-            <input
-              class="w-24 h-1 bg-accent dark:bg-muted rounded-lg appearance-none cursor-pointer"
-              type="range"
-              min="2"
-              max="8"
-              :value="columnsPerRow"
-              @input="handleColumnsChange"
-              title="调整列数"
-            />
-          </div>
+        <!-- 分页信息 -->
+        <div class="flex items-center space-x-1">
+          <span class="text-muted-foreground dark:text-muted-foreground">
+            第 {{ currentPage }} / {{ totalPages }} 页
+          </span>
+        </div>
+
+        <!-- 列数调整滑块 -->
+        <div v-if="viewMode === 'grid' || viewMode === 'waterfall'" class="flex items-center space-x-2">
+          <input
+            class="w-24 h-1 bg-accent dark:bg-muted rounded-lg appearance-none cursor-pointer"
+            type="range"
+            min="2"
+            max="8"
+            :value="columnsPerRow"
+            @input="handleColumnsChange"
+            title="调整列数"
+          />
         </div>
       </div>
     </footer>

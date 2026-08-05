@@ -20,7 +20,7 @@
         <div class="flex-1 flex gap-4 min-h-0 overflow-hidden">
           <!-- 最左侧：本地文件夹树（导入的目录结构，仅浏览/筛选） -->
           <div class="w-60 flex flex-col flex-shrink-0">
-            <div class="bg-white dark:bg-muted rounded-xl border border-border dark:border-border overflow-hidden flex-1 min-h-0">
+            <div class="flex-1 min-h-0">
               <div class="p-2 h-full overflow-y-auto">
                 <FolderTreeComponent
                   item-type="folder"
@@ -57,8 +57,8 @@
 
             <!-- 待上传文件网格 -->
             <div
-              class="flex-1 bg-white dark:bg-muted rounded-xl border-2 overflow-hidden flex flex-col transition-colors"
-              :class="isDragOver ? 'border-primary bg-primary/30 dark:bg-primary/20' : 'border-border dark:border-border'"
+              class="flex-1 rounded-xl border-2 overflow-hidden flex flex-col transition-colors"
+              :class="isDragOver ? 'border-primary bg-primary/30 dark:bg-primary/20' : 'border-white/60 dark:border-border'"
               @drop.prevent="handleDrop"
               @dragover.prevent="isDragOver = true"
               @dragleave.prevent="isDragOver = false"
@@ -352,7 +352,7 @@
           <!-- 右侧：文件夹和标签面板 -->
           <div class="w-72 flex flex-col gap-4 flex-shrink-0">
             <!-- 文件夹和标签树 -->
-            <div class="bg-white dark:bg-muted rounded-xl border border-border dark:border-border overflow-hidden flex-1">
+            <div class="overflow-hidden flex-1">
               <div class="p-2 h-full overflow-y-auto space-y-4">
                 <FolderTreeComponent
                   item-type="folder"
