@@ -3,7 +3,7 @@
     :open="isVisible"
     @update:open="handleOpenChange"
   >
-    <DialogContent class="file-upload-dialog sm:max-w-[90vw] h-[85vh] grid grid-rows-[auto_1fr_auto] overflow-hidden top-[5vh] translate-y-0">
+    <DialogContent class="file-upload-dialog sm:max-w-[90vw] h-[85vh] grid grid-rows-[auto_1fr_auto] overflow-hidden">
       <DialogHeader>
         <DialogTitle>文件上传</DialogTitle>
       </DialogHeader>

@@ -95,7 +95,7 @@ function handleTabContextMenu(tab: TabItem, event: MouseEvent) {
               <!-- 激活态背景：共享 layoutId，切换 tab 时由 motion-v 在按钮间平滑滑动 -->
               <Motion v-if="tab.active" layoutId="home-active-tab"
                 :transition="{ type: 'spring', stiffness: 400, damping: 32 }"
-                class="absolute inset-0 z-0 rounded-t-2xl border border-b-0 border-primary/60 bg-primary shadow-[0_-4px_16px_var(--shadow-primary-sm)]" />
+                class="absolute inset-0 z-0 rounded-t-lg border border-b-0 border-primary/60 bg-primary shadow-[0_-4px_16px_var(--shadow-primary-sm)]" />
               <span class="relative z-[1] material-icons text-[12px] leading-none"
                 :style="{ color: tab.active ? undefined : tab.iconColor }">
                 {{ tab.icon }}

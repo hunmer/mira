@@ -271,108 +271,112 @@ onMounted(loadPlugins)
       </div>
     </div>
 
-    <!-- search -->
-    <div class="relative max-w-sm">
-      <RiSearchLine class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-      <Input v-model="searchQuery" :placeholder="t('common.search')" class="pl-9" />
-    </div>
-
     <!-- loading -->
     <div v-if="loading" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       <Card v-for="i in 6" :key="i"><CardContent class="h-48 animate-pulse" /></Card>
     </div>
 
     <!-- main content -->
-    <Tabs v-else-if="groups.length" v-model="activeTab">
-      <TabsList>
-        <TabsTrigger v-for="g in groups" :key="g.id" :value="g.id">
-          {{ g.name }}
-          <Badge variant="secondary" class="ml-1.5 text-[10px] px-1.5 py-0">{{ g.plugins.length }}</Badge>
-        </TabsTrigger>
-      </TabsList>
+    <template v-else-if="groups.length">
+      <!-- toolbar: library select + search -->
+      <div class="flex items-center gap-3">
+        <Select v-model="activeTab">
+          <SelectTrigger class="w-[200px]">
+            <SelectValue placeholder="选择素材库" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="g in groups" :key="g.id" :value="g.id">
+              {{ g.name }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
+        <div class="relative max-w-sm flex-1">
+          <RiSearchLine class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input v-model="searchQuery" :placeholder="t('common.search')" class="pl-9" />
+        </div>
+      </div>
 
-      <TabsContent v-for="g in groups" :key="g.id" :value="g.id" class="mt-4">
-        <div v-if="currentPlugins.length" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-          <Card
-            v-for="plugin in currentPlugins"
-            :key="plugin.name"
-            class="relative cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5"
-            :class="plugin.status === 'active' ? 'border-l-4 border-l-green-500' : 'border-l-4 border-l-muted'"
-            @click="openDetail(plugin)"
-          >
-            <CardContent class="pt-5">
-              <!-- header: name + switch -->
-              <div class="mb-3 flex items-start justify-between" @click.stop>
-                <div class="min-w-0 flex-1">
-                  <h3 class="truncate text-base font-semibold">{{ plugin.name }}</h3>
-                  <p class="text-xs text-muted-foreground">v{{ plugin.version }}</p>
-                </div>
-                <Switch
-                  :model-value="plugin.status === 'active'"
-                  @update:model-value="(v: boolean) => toggleStatus(plugin, v)"
-                />
+      <!-- plugin grid -->
+      <div v-if="currentPlugins.length" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+        <Card
+          v-for="plugin in currentPlugins"
+          :key="plugin.name"
+          class="relative cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5"
+          :class="plugin.status === 'active' ? 'border-l-4 border-l-green-500' : 'border-l-4 border-l-muted'"
+          @click="openDetail(plugin)"
+        >
+          <CardContent class="pt-5">
+            <!-- header: name + switch -->
+            <div class="mb-3 flex items-start justify-between" @click.stop>
+              <div class="min-w-0 flex-1">
+                <h3 class="truncate text-base font-semibold">{{ plugin.name }}</h3>
+                <p class="text-xs text-muted-foreground">v{{ plugin.version }}</p>
               </div>
+              <Switch
+                :model-value="plugin.status === 'active'"
+                @update:model-value="(v: boolean) => toggleStatus(plugin, v)"
+              />
+            </div>
 
-              <!-- description -->
-              <p class="mb-3 line-clamp-2 text-sm text-muted-foreground">
-                {{ plugin.description || '-' }}
-              </p>
+            <!-- description -->
+            <p class="mb-3 line-clamp-2 text-sm text-muted-foreground">
+              {{ plugin.description || '-' }}
+            </p>
 
-              <!-- meta -->
-              <div class="mb-3 flex items-center gap-2 text-xs text-muted-foreground">
-                <Badge :variant="plugin.status === 'active' ? 'default' : 'secondary'">
-                  {{ plugin.status === 'active' ? t('plugin.enabled') : t('plugin.disabled') }}
-                </Badge>
-                <span>{{ t('plugin.author') }}: {{ plugin.author }}</span>
+            <!-- meta -->
+            <div class="mb-3 flex items-center gap-2 text-xs text-muted-foreground">
+              <Badge :variant="plugin.status === 'active' ? 'default' : 'secondary'">
+                {{ plugin.status === 'active' ? t('plugin.enabled') : t('plugin.disabled') }}
+              </Badge>
+              <span>{{ t('plugin.author') }}: {{ plugin.author }}</span>
+            </div>
+
+            <!-- plugin routes -->
+            <div v-if="activeTab && getRoutesForPlugin(activeTab, plugin.name).length" class="border-t pt-3">
+              <p class="mb-1.5 text-[11px] font-medium text-muted-foreground">插件入口</p>
+              <div class="flex flex-wrap gap-1">
+                <Button
+                  v-for="route in getRoutesForPlugin(activeTab!, plugin.name)"
+                  :key="route.path"
+                  variant="outline"
+                  size="sm"
+                  class="h-6 gap-1 px-2 text-xs"
+                  @click.stop="openRoute(route)"
+                >
+                  {{ route.meta?.title || route.name }}
+                  <RiExternalLinkLine class="size-3" />
+                </Button>
               </div>
+            </div>
 
-              <!-- plugin routes -->
-              <div v-if="getRoutesForPlugin(g.id, plugin.name).length" class="border-t pt-3">
-                <p class="mb-1.5 text-[11px] font-medium text-muted-foreground">插件入口</p>
-                <div class="flex flex-wrap gap-1">
-                  <Button
-                    v-for="route in getRoutesForPlugin(g.id, plugin.name)"
-                    :key="route.path"
-                    variant="outline"
-                    size="sm"
-                    class="h-6 gap-1 px-2 text-xs"
-                    @click.stop="openRoute(route)"
-                  >
-                    {{ route.meta?.title || route.name }}
-                    <RiExternalLinkLine class="size-3" />
+            <!-- actions (dropdown, stop click propagation) -->
+            <div class="absolute right-2 top-2" @click.stop>
+              <DropdownMenu>
+                <DropdownMenuTrigger as-child>
+                  <Button variant="ghost" size="icon" class="size-8">
+                    <RiMoreLine class="size-4" />
                   </Button>
-                </div>
-              </div>
-
-              <!-- actions (dropdown, stop click propagation) -->
-              <div class="absolute right-2 top-2" @click.stop>
-                <DropdownMenu>
-                  <DropdownMenuTrigger as-child>
-                    <Button variant="ghost" size="icon" class="size-8">
-                      <RiMoreLine class="size-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem @click="openDetail(plugin)">
-                      <RiInformationLine class="mr-2 size-4" /> {{ t('plugin.detail') || '详情' }}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem v-if="plugin.configurable" @click="openConfig(plugin)">
-                      <RiSettings3Line class="mr-2 size-4" /> {{ t('plugin.configure') }}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem class="text-destructive" @click="uninstallPlugin(plugin)">
-                      <RiStopCircleLine class="mr-2 size-4" /> {{ t('plugin.uninstall') }}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        <div v-else class="py-12 text-center text-muted-foreground">
-          {{ t('common.noData') }}
-        </div>
-      </TabsContent>
-    </Tabs>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem @click="openDetail(plugin)">
+                    <RiInformationLine class="mr-2 size-4" /> {{ t('plugin.detail') || '详情' }}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem v-if="plugin.configurable" @click="openConfig(plugin)">
+                    <RiSettings3Line class="mr-2 size-4" /> {{ t('plugin.configure') }}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem class="text-destructive" @click="uninstallPlugin(plugin)">
+                    <RiStopCircleLine class="mr-2 size-4" /> {{ t('plugin.uninstall') }}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      <div v-else class="py-12 text-center text-muted-foreground">
+        {{ t('common.noData') }}
+      </div>
+    </template>
 
     <div v-else class="py-12 text-center text-muted-foreground">
       {{ t('common.noData') }}

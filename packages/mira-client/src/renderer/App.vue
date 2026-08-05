@@ -6,7 +6,12 @@
     </div>
 
     <!-- 全局 Toast 消息 -->
-    <Toaster />
+    <Toaster
+      richColors
+      closeButton
+      position="bottom-right"
+      :theme="settingsStore.isDarkMode ? 'dark' : 'light'"
+    />
 
     <!-- 更新对话框 -->
     <Dialog v-model:open="updateDialog.visible">
