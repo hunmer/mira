@@ -1,0 +1,29 @@
+{
+  "name": "mira-browser-extension",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Mira 浏览器扩展 - 网页采集入口(截图/拖拽上传/资源嗅探)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "type-check": "vue-tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "mira-app-core": "workspace:*",
+    "vue": "^3.4.0"
+  },
+  "devDependencies": {
+    "@crxjs/vite-plugin": "^2.0.0-beta.28",
+    "@vitejs/plugin-vue": "^5.0.0",
+    "@types/chrome": "^0.0.260",
+    "@vitest/coverage-v8": "^1.6.0",
+    "jsdom": "^24.0.0",
+    "typescript": "^5.3.3",
+    "vite": "^5.4.0",
+    "vitest": "^1.6.0",
+    "vue-tsc": "^2.0.0"
+  }
+}

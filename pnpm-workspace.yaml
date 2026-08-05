@@ -6,3 +6,4 @@ packages:
   - 'packages/mira-scripts-core'
   - 'packages/mira-server-sdk-examples'
   - 'packages/n8n-nodes-mira-ws-trigger'
+  - 'packages/mira-browser-extension'
