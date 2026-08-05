@@ -1,23 +1,10 @@
 import type { Uploader } from './uploader';
 import { dataUrlToBlob } from '@/shared/staged-file';
 import { getSettings } from './settings';
+import { stitchFrames, cropImage } from './offscreen';
 
 export interface CapturerDeps {
   uploader: Uploader;
-}
-
-// 占位:Task 11(offscreen)实现后替换
-async function stitchFrames(
-  frames: string[],
-  dims: { scrollHeight: number; viewportHeight: number },
-): Promise<string> {
-  throw new Error('offscreen not implemented');
-}
-async function cropImage(
-  dataUrl: string,
-  rect: { x: number; y: number; w: number; h: number; dpr: number },
-): Promise<string> {
-  throw new Error('offscreen not implemented');
 }
 
 export function createCapturer(deps: CapturerDeps) {
