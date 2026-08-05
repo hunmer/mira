@@ -240,7 +240,6 @@
 
     <!-- 删除确认对话框 -->
     <AlertDialog v-model:open="ops.showDeleteDialog.value">
-      <AlertDialogOverlay />
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>确认删除</AlertDialogTitle>
@@ -265,7 +264,6 @@
 
     <!-- 批量删除确认对话框 -->
     <AlertDialog v-model:open="ops.showBatchDeleteDialog.value">
-      <AlertDialogOverlay />
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>确认批量删除</AlertDialogTitle>
@@ -290,7 +288,6 @@
 
     <!-- 拖拽移动确认对话框 -->
     <AlertDialog v-model:open="showDragConfirm">
-      <AlertDialogOverlay />
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>确认移动</AlertDialogTitle>
@@ -328,7 +325,6 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogOverlay,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Checkbox } from '@/components/ui/checkbox'

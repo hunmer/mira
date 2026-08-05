@@ -1,6 +1,6 @@
 ﻿import { computed, ref } from 'vue'
 import type { FolderItem } from '@renderer/types/components'
-import type { MenuItem } from '@/components/ui/volt/types'
+import type { MenuItem } from '@/renderer/types/menu'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { useLibraryStore } from '@renderer/stores/library'
 

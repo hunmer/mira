@@ -398,10 +398,10 @@ import MediaListComponent from '@renderer/components/business/MediaListComponent
 import WaterfallComponent from '@renderer/components/business/WaterfallComponent.vue'
 import MediaDetailComponent from '@renderer/components/business/MediaDetailComponent.vue'
 import FileUploadDialog from '@renderer/components/business/FileUploadDialog.vue'
-import FilterBar from '@/components/ui/volt/FilterBar.vue'
-import Dropdown from '@/components/ui/volt/Dropdown.vue'
+import FilterBar from '@/renderer/components/business/FilterBar/FilterBar.vue'
+import { Dropdown } from '@/renderer/components/common/Dropdown'
 import type { FileInfo } from '../../../shared/types'
-import type { FilterRule } from '@/components/ui/volt/FilterBar.vue'
+import type { FilterRule } from '@/renderer/types/filter'
 
 // Props
 interface Props {

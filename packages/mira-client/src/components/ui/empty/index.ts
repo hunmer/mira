@@ -24,3 +24,4 @@ export const emptyMediaVariants = cva(
 )
 
 export type EmptyMediaVariants = VariantProps<typeof emptyMediaVariants>
+

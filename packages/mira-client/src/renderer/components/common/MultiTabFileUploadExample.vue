@@ -17,14 +17,20 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div class="form-group">
             <label class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-200">文件类型</label>
-            <Dropdown
-              v-model="accept"
-              :options="acceptOptions"
-              option-label="label"
-              option-value="value"
-              placeholder="选择文件类型"
-              class="w-full"
-            />
+            <Select v-model="accept">
+              <SelectTrigger class="w-full">
+                <SelectValue placeholder="选择文件类型" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem
+                  v-for="opt in acceptOptions"
+                  :key="opt.value"
+                  :value="opt.value"
+                >
+                  {{ opt.label }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div class="form-group">
@@ -154,7 +160,7 @@
 import { ref, computed } from 'vue'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import Dropdown from '@/components/ui/volt/Dropdown.vue'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import MultiTabFileUpload from './MultiTabFileUpload.vue'

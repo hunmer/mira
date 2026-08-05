@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import Dropdown from '@/components/ui/volt/Dropdown.vue'
+import { Dropdown } from '@/renderer/components/common/Dropdown'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useAuthStore } from '@/renderer/stores/auth'
 import { useDashboardStore } from '@/renderer/stores/dashboard'

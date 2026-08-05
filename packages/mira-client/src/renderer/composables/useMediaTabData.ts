@@ -1,5 +1,5 @@
 import { reactive, computed } from 'vue'
-import type { FilterRule } from '@/components/ui/volt/FilterBar.vue'
+import type { FilterRule } from '@/renderer/types/filter'
 
 
 // 媒体Tab的数据管理接口

@@ -5,3 +5,4 @@ export { default as StepperItem } from "./StepperItem.vue"
 export { default as StepperSeparator } from "./StepperSeparator.vue"
 export { default as StepperTitle } from "./StepperTitle.vue"
 export { default as StepperTrigger } from "./StepperTrigger.vue"
+

@@ -109,8 +109,7 @@ export default defineConfig({
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),
         '@renderer': fileURLToPath(new URL('./src/renderer', import.meta.url)),
-        '@main': fileURLToPath(new URL('./src/main', import.meta.url)),
-        '@volt': fileURLToPath(new URL('./src/components/ui/volt', import.meta.url))
+        '@main': fileURLToPath(new URL('./src/main', import.meta.url))
       }
     },
     base: './',

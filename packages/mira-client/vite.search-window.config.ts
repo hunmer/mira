@@ -11,8 +11,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
-      '@renderer': fileURLToPath(new URL('./src/renderer', import.meta.url)),
-      '@volt': fileURLToPath(new URL('./src/components/ui/volt', import.meta.url))
+      '@renderer': fileURLToPath(new URL('./src/renderer', import.meta.url))
     }
   },
   build: {

@@ -157,7 +157,7 @@ import { useDragDrop } from './composables/useDragDrop'
 import { useVideoHover } from './composables/useVideoHover'
 import { useDeleteSelectedItems } from './composables/useDeleteSelectedItems'
 import { useFocusedSelectAll } from './composables/useFocusedSelectAll'
-import type { MenuItem } from '@/components/ui/volt/types'
+import type { MenuItem } from '@/renderer/types/menu'
 
 interface Props {
   items: FileInfo[]

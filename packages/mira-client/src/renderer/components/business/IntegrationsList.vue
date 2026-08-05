@@ -326,12 +326,14 @@
         <div v-if="selectedPlugin.config.dependencies && selectedPlugin.config.dependencies.length > 0">
           <label class="block text-sm font-medium mb-1">依赖插件</label>
           <div class="flex flex-wrap gap-1">
-            <Chip
+            <Badge
               v-for="dep in selectedPlugin.config.dependencies"
               :key="dep"
-              :label="dep"
+              variant="secondary"
               class="text-xs"
-            />
+            >
+              {{ dep }}
+            </Badge>
           </div>
         </div>
 
@@ -432,7 +434,7 @@ import IntegrationCard from './IntegrationCard.vue'
 // 组件导入
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import Chip from '@/components/ui/volt/Chip.vue'
+import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Input } from '@/components/ui/input'

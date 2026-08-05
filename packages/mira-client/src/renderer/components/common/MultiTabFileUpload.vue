@@ -283,85 +283,91 @@
 
             <!-- 文件列表表格 -->
             <div class="px-4 pb-4">
-              <DataTable
-                v-model:selection="selectedUploadedFiles"
-                :value="filteredUploadedFiles"
-                :paginator="true"
-                :rows="pageSize"
-                :totalRecords="totalUploadedFiles"
-                :loading="isLoading"
-                sortMode="single"
-                :sortField="sortField"
-                :sortOrder="sortOrder === 'asc' ? 1 : -1"
-                @sort="handleSortChange"
-                selectionMode="multiple"
-                dataKey="id"
-                class="bg-white rounded-lg shadow-sm border border-gray-200"
-                paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-                :rowsPerPageOptions="[10, 20, 50]"
-                currentPageReportTemplate="显示第 {first} 到 {last} 条，共 {totalRecords} 条记录"
-                responsiveLayout="scroll"
-              >
-                <template #empty>
-                  <div class="p-8 text-center text-gray-500">
-                    <div class="flex flex-col items-center">
-                      <span class="material-icons text-4xl text-gray-300 mb-2">folder_open</span>
-                      <p>{{ searchQuery ? '没有找到匹配的文件' : '还没有上传任何文件' }}</p>
-                    </div>
+              <div class="rounded-lg border border-border bg-card overflow-hidden">
+                <div v-if="isLoading" class="p-8 text-center text-muted-foreground">
+                  <div class="flex items-center justify-center">
+                    <span class="material-icons animate-spin mr-2">refresh</span>
+                    加载中...
                   </div>
-                </template>
-
-                <template #loading>
-                  <div class="p-8 text-center text-gray-500">
-                    <div class="flex items-center justify-center">
-                      <span class="material-icons animate-spin mr-2">refresh</span>
-                      加载中...
-                    </div>
-                  </div>
-                </template>
-
-                <Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
-
-                <Column field="name" header="文件名" sortable>
-                  <template #body="{ data }">
-                    <div class="flex items-center">
-                      <span class="material-icons mr-3" :class="getFileIconClass(data.mimeType)">
-                        {{ getFileIconForMime(data.mimeType) }}
-                      </span>
-                      <div>
-                        <p class="font-medium text-gray-800">{{ data.name }}</p>
-                        <p class="text-sm text-gray-500">{{ data.mimeType }}</p>
-                      </div>
-                    </div>
-                  </template>
-                </Column>
-
-                <Column field="size" header="文件大小" sortable>
-                  <template #body="{ data }">
-                    {{ formatFileSize(data.size) }}
-                  </template>
-                </Column>
-
-                <Column field="uploadedAt" header="上传时间" sortable>
-                  <template #body="{ data }">
-                    {{ formatDate(data.uploadedAt.toISOString()) }}
-                  </template>
-                </Column>
-
-                <Column header="操作">
-                  <template #body="{ data }">
-                    <div class="flex items-center space-x-2">
-                      <button
-                        @click="handleDeleteFile(data)"
-                        class="text-red-500 hover:text-red-700 transition-colors"
-                        title="删除"
-                      >
-                        <span class="material-icons">delete</span>
-                      </button>
-                    </div>
-                  </template>
-                </Column>
-              </DataTable>
+                </div>
+                <Table v-else>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead class="w-12">
+                        <Checkbox
+                          :model-value="filteredUploadedFiles.length > 0 && selectedUploadedFiles.length === filteredUploadedFiles.length"
+                          @update:model-value="toggleSelectAll"
+                        />
+                      </TableHead>
+                      <TableHead class="cursor-pointer select-none" @click="toggleSort('name')">
+                        文件名
+                        <span v-if="sortField === 'name'" class="material-icons text-xs align-middle">
+                          {{ sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                        </span>
+                      </TableHead>
+                      <TableHead class="cursor-pointer select-none" @click="toggleSort('size')">
+                        文件大小
+                        <span v-if="sortField === 'size'" class="material-icons text-xs align-middle">
+                          {{ sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                        </span>
+                      </TableHead>
+                      <TableHead class="cursor-pointer select-none" @click="toggleSort('uploadedAt')">
+                        上传时间
+                        <span v-if="sortField === 'uploadedAt'" class="material-icons text-xs align-middle">
+                          {{ sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                        </span>
+                      </TableHead>
+                      <TableHead>操作</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow v-if="filteredUploadedFiles.length === 0">
+                      <TableCell :colspan="5" class="p-8 text-center text-muted-foreground">
+                        <div class="flex flex-col items-center">
+                          <span class="material-icons text-4xl text-muted-foreground/50 mb-2">folder_open</span>
+                          <p>{{ searchQuery ? '没有找到匹配的文件' : '还没有上传任何文件' }}</p>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                    <TableRow
+                      v-for="data in filteredUploadedFiles"
+                      :key="data.id"
+                      :data-state="selectedUploadedFiles.includes(data.id) ? 'selected' : undefined"
+                    >
+                      <TableCell>
+                        <Checkbox
+                          :model-value="selectedUploadedFiles.includes(data.id)"
+                          @update:model-value="toggleSelectFile(data.id)"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <div class="flex items-center">
+                          <span class="material-icons mr-3" :class="getFileIconClass(data.mimeType)">
+                            {{ getFileIconForMime(data.mimeType) }}
+                          </span>
+                          <div>
+                            <p class="font-medium text-foreground">{{ data.name }}</p>
+                            <p class="text-sm text-muted-foreground">{{ data.mimeType }}</p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{{ formatFileSize(data.size) }}</TableCell>
+                      <TableCell>{{ formatDate(data.uploadedAt.toISOString()) }}</TableCell>
+                      <TableCell>
+                        <div class="flex items-center space-x-2">
+                          <button
+                            @click="handleDeleteFile(data)"
+                            class="text-destructive hover:text-destructive/80 transition-colors"
+                            title="删除"
+                          >
+                            <span class="material-icons">delete</span>
+                          </button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           </div>
 
@@ -448,8 +454,14 @@ import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import DataTable from '@/components/ui/volt/DataTable.vue'
-import { TableHead as Column, TableCell } from '@/components/ui/table'
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 interface UploadItem {
@@ -526,6 +538,32 @@ const selectedUploadedFiles = ref<string[]>([])
 const pageSize = ref(10)
 const sortField = ref<'name' | 'size' | 'uploadedAt'>('uploadedAt')
 const sortOrder = ref<'asc' | 'desc'>('desc')
+
+// 表格交互：排序切换 / 行选择 / 全选
+const toggleSort = (field: 'name' | 'size' | 'uploadedAt') => {
+  if (sortField.value === field) {
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortField.value = field
+    sortOrder.value = 'asc'
+  }
+  emit('sort-change', sortField.value, sortOrder.value)
+}
+const toggleSelectFile = (id: string) => {
+  const idx = selectedUploadedFiles.value.indexOf(id)
+  if (idx === -1) {
+    selectedUploadedFiles.value = [...selectedUploadedFiles.value, id]
+  } else {
+    selectedUploadedFiles.value = selectedUploadedFiles.value.filter(v => v !== id)
+  }
+}
+const toggleSelectAll = (checked: boolean | string | number) => {
+  if (checked === true) {
+    selectedUploadedFiles.value = filteredUploadedFiles.value.map(f => f.id)
+  } else {
+    selectedUploadedFiles.value = []
+  }
+}
 
 // 过滤相关
 const selectedFileTypes = ref<string[]>([])

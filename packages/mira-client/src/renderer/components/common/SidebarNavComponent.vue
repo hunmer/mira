@@ -1,17 +1,17 @@
 <template>
   <div class="flex flex-col h-full bg-gray-50">
     <!-- 搜索框 -->
-    <div v-if="searchable" class="p-3 border-b border-gray-200">
-      <IconField icon-position="left">>
-        <InputIcon>
-          <span class="material-icons">search</span>
-        </InputIcon>
+    <div v-if="searchable" class="p-3 border-b border-border">
+      <div class="relative">
+        <span class="absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground leading-none">
+          <span class="material-icons text-sm">search</span>
+        </span>
         <Input
           v-model="searchQuery"
           placeholder="搜索文件夹..."
-          class="w-full h-8 text-xs"
+          class="w-full h-8 text-xs pl-9"
         />
-      </IconField>
+      </div>
     </div>
 
     <!-- 导航树 -->
@@ -121,8 +121,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { Input } from '@/components/ui/input'
-import IconField from '@/components/ui/volt/IconField.vue'
-import InputIcon from '@/components/ui/volt/InputIcon.vue'
 import { Button } from '@/components/ui/button'
 import type { SidebarNavComponentProps, NavigationItem, SidebarNavEvents } from '../../types/components'
 

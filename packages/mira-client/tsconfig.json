@@ -19,8 +19,7 @@
     "paths": {
       "@/*": ["./src/*"],
       "@renderer/*": ["./src/renderer/*"],
-      "@main/*": ["./src/main/*"],
-      "@volt/*": ["./src/components/ui/volt/*"]
+      "@main/*": ["./src/main/*"]
     },
     "types": ["node", "vite/client"]
   },

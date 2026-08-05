@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue'
-import Dropdown from '@/components/ui/volt/Dropdown.vue'
+import { Dropdown } from '@/renderer/components/common/Dropdown'
 import { ContextMenu, ContextMenuTrigger, ContextMenuContent, ContextMenuItem } from '@/components/ui/context-menu'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useLibraryStore } from '@/renderer/stores/library'
