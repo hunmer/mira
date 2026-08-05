@@ -19,6 +19,5 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "noEmit": true
   },
-  "include": ["src/**/*.ts", "src/**/*.vue", "src/**/*.tsx"],
-  "references": [{ "path": "../mira-app-core" }]
+  "include": ["src/**/*.ts", "src/**/*.vue", "src/**/*.tsx"]
 }
