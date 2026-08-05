@@ -203,6 +203,8 @@ export class NotificationWindowHandlers {
     // 创建子类实例：通过方法覆盖承载业务逻辑，避免 messageHandlers 闭包循环引用
     const handler = new (class NotificationSlotHandler extends FloatingWindowHandler {
       private measured = false
+      /** 拖拽期间记录的窗口起始位置（nt-drag-start 时写入） */
+      private dragStartPos: { x: number; y: number } | null = null
 
       constructor() {
         super({
@@ -250,7 +252,23 @@ export class NotificationWindowHandlers {
               const slot = self.slots.find((s) => s.handler === this)
               if (slot) self.dismissSlot(slot)
             },
-            'drag-end': () => {
+            // 自定义 JS 拖拽：记录起点 → 增量移动并 clamp → 结束 clamp
+            'nt-drag-start': () => {
+              const win = this.getWindow()
+              if (win && !win.isDestroyed()) {
+                const b = win.getBounds()
+                this.dragStartPos = { x: b.x, y: b.y }
+              }
+            },
+            'nt-drag-move': (data) => {
+              const win = this.getWindow()
+              if (!win || win.isDestroyed() || !this.dragStartPos) return
+              const nx = this.dragStartPos.x + Number(data.deltaX || 0)
+              const ny = this.dragStartPos.y + Number(data.deltaY || 0)
+              win.setPosition(Math.round(nx), Math.round(ny), false)
+            },
+            'nt-drag-end': () => {
+              this.dragStartPos = null
               this.clampToScreen()
             },
             'hover-pause': () => {

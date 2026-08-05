@@ -71,6 +71,8 @@ async function initNotificationWindow() {
         html: '',
         hasContent: false,
         isDragging: false,
+        // 自定义拖拽追踪（相对增量，主进程侧 setPosition）
+        dragStartCursor: null,
       }
     },
     computed: {
@@ -98,11 +100,10 @@ async function initNotificationWindow() {
           <div
             class="notification-header"
             @mousedown="handleDragStart"
-            @mouseup="handleDragEnd"
           >
             <span class="material-icons notification-icon" :class="type">{{ displayIcon }}</span>
             <div class="notification-title">{{ title }}</div>
-            <button class="notification-close" @click.stop="handleClose" title="关闭">
+            <button class="notification-close" @click.stop="handleClose" @mousedown.stop title="关闭">
               <span class="material-icons" style="font-size:16px;">close</span>
             </button>
           </div>
@@ -114,6 +115,7 @@ async function initNotificationWindow() {
               :key="action.id"
               class="notification-action"
               @click.stop="handleAction(action)"
+              @mousedown.stop
             >{{ action.label }}</button>
           </div>
         </div>
@@ -123,11 +125,15 @@ async function initNotificationWindow() {
       document.addEventListener('contextmenu', (e) => e.preventDefault())
       document.addEventListener('dragover', (e) => e.preventDefault())
       document.addEventListener('drop', (e) => e.preventDefault())
-      // 鼠标离开窗口（拖到桌面）后也要结束拖拽态
-      window.addEventListener('mouseup', this.handleDragEnd)
+      // 拖拽期间在 document 上追踪 mousemove/mouseup（鼠标离开窗口也能继续）
+      this._onMouseMove = (e) => this.handleDragMove(e)
+      this._onMouseUp = (e) => this.handleDragEnd(e)
+      document.addEventListener('mousemove', this._onMouseMove)
+      document.addEventListener('mouseup', this._onMouseUp)
     },
     unmounted() {
-      window.removeEventListener('mouseup', this.handleDragEnd)
+      if (this._onMouseMove) document.removeEventListener('mousemove', this._onMouseMove)
+      if (this._onMouseUp) document.removeEventListener('mouseup', this._onMouseUp)
     },
     methods: {
       applyContent(payload) {
@@ -148,17 +154,39 @@ async function initNotificationWindow() {
       handleClose() {
         bridge.send({ type: 'dismiss', timestamp: Date.now() })
       },
-      // 拖拽：通知主进程临时启用 -webkit-app-region: drag
-      handleDragStart() {
-        if (this.isDragging) return
+      // ===== 自定义 JS 拖拽（主进程 setPosition，实时 clamp 到屏幕内）=====
+      // 使用通知专有消息类型，避免与基类内置 drag-start（-webkit-app-region hack）冲突
+      handleDragStart(e) {
+        // 仅左键触发
+        if (e.button !== 0 || this.isDragging) return
         this.isDragging = true
-        bridge.send({ type: 'drag-start', timestamp: Date.now() })
+        this.dragStartCursor = { x: e.screenX, y: e.screenY }
+        // 通知主进程记录窗口起始位置
+        bridge.send({ type: 'nt-drag-start', timestamp: Date.now() })
+        e.preventDefault()
       },
-      handleDragEnd() {
+      handleDragMove(e) {
+        if (!this.isDragging || !this.dragStartCursor) return
+        // 记录最新光标位置，用 rAF 节流，避免 mousemove 高频发消息淹没主进程
+        this._lastMove = { x: e.screenX, y: e.screenY }
+        if (this._rafId) return
+        this._rafId = requestAnimationFrame(() => {
+          this._rafId = 0
+          if (!this.isDragging || !this.dragStartCursor || !this._lastMove) return
+          const deltaX = this._lastMove.x - this.dragStartCursor.x
+          const deltaY = this._lastMove.y - this.dragStartCursor.y
+          bridge.send({ type: 'nt-drag-move', deltaX, deltaY, timestamp: Date.now() })
+        })
+      },
+      handleDragEnd(e) {
         if (!this.isDragging) return
         this.isDragging = false
-        // 拖拽结束，通知主进程 clamp 到屏幕内
-        bridge.send({ type: 'drag-end', timestamp: Date.now() })
+        this.dragStartCursor = null
+        if (this._rafId) {
+          cancelAnimationFrame(this._rafId)
+          this._rafId = 0
+        }
+        bridge.send({ type: 'nt-drag-end', timestamp: Date.now() })
       },
       // 悬停暂停 / 离开恢复自动消失
       handleMouseEnter() {
