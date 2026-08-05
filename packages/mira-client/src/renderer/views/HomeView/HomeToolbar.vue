@@ -38,7 +38,7 @@ watch(userAvatarUrl, () => { avatarLoadError.value = false })
 </script>
 
 <template>
-  <div class="w-12 shrink-0 bg-white dark:bg-muted border border-border dark:border-border rounded-lg flex flex-col items-center py-2 space-y-2">
+  <div class="w-12 shrink-0 rounded-2xl border border-white/60 dark:border-border bg-white/70 dark:bg-muted/70 backdrop-blur-xl shadow-[0_8px_30px_rgba(99,102,241,0.08)] flex flex-col items-center py-2 space-y-2">
     <!-- 文件上传按钮 -->
     <TooltipProvider>
       <Tooltip>
@@ -130,7 +130,7 @@ watch(userAvatarUrl, () => { avatarLoadError.value = false })
           <div v-if="authStore.user?.role" class="px-2 pb-2 text-xs text-muted-foreground">{{ authStore.user.role }}</div>
           <div class="border-t border-border dark:border-border pt-1">
             <button
-              class="w-full flex items-center space-x-2 p-2 text-destructive hover:bg-destructive rounded text-sm"
+              class="w-full flex items-center space-x-2 p-2 text-destructive hover:bg-destructive/10 rounded-lg text-sm transition-colors"
               @click="emit('logout'); close()"
             >
               <span class="material-icons text-base">logout</span>

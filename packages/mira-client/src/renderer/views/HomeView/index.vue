@@ -264,9 +264,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="home-view h-screen flex flex-col bg-white dark:bg-muted text-[13px]">
-    <!-- 顶部导航菜单 -->
-    <HomeHeader
+  <div class="home-view h-screen flex flex-col text-[13px] bg-gradient-to-br from-[#edeffa] via-[#f3f4fb] to-[#e8ebf8] dark:from-muted dark:via-muted dark:to-muted">
+    <!-- 顶部导航菜单（悬浮玻璃栏） -->
+    <div class="shrink-0 px-3 pt-3">
+      <HomeHeader
       :active-tabs="activeTabs"
       :current-tab="currentTab"
       :tab-context-menu-items="tabContextMenuItems"
@@ -286,12 +287,13 @@ onUnmounted(() => {
       @window-close="handleWindowClose"
       @locate-in-sidebar="handleLocateInSidebar"
     />
+    </div>
 
     <!-- 主内容区域（侧边栏 + 内容） -->
-    <div class="flex flex-1 overflow-hidden">
+    <div class="flex flex-1 overflow-hidden p-3 gap-3">
       <ResizablePanelGroup direction="horizontal" auto-save-id="home-sidebar" class="flex-1">
-        <!-- 左侧侧边栏 -->
-        <ResizablePanel :default-size="20" :min-size="15" class="bg-muted dark:bg-muted border-r border-border dark:border-border flex flex-col overflow-hidden">
+        <!-- 左侧侧边栏（玻璃面板） -->
+        <ResizablePanel :default-size="20" :min-size="15" class="rounded-2xl border border-white/60 dark:border-border bg-white/60 dark:bg-muted/60 backdrop-blur-xl shadow-[0_8px_30px_rgba(99,102,241,0.06)] flex flex-col overflow-hidden">
           <HomeSidebar
             ref="sidebarRef"
             :home-controller="homeController"
@@ -305,13 +307,13 @@ onUnmounted(() => {
           />
         </ResizablePanel>
 
-        <ResizableHandle />
+        <ResizableHandle class="w-3 bg-transparent hover:bg-transparent focus-visible:ring-0" />
 
-        <!-- 右侧主内容区 -->
-        <ResizablePanel :default-size="80" :min-size="50" class="flex flex-col bg-muted dark:bg-muted overflow-hidden">
-          <main ref="mainContentRef" class="flex-1 flex overflow-hidden relative min-w-0">
+        <!-- 右侧主内容区（玻璃面板） -->
+        <ResizablePanel :default-size="80" :min-size="50" class="flex flex-col rounded-2xl border border-white/60 dark:border-border bg-white/50 dark:bg-muted/50 backdrop-blur-xl shadow-[0_8px_30px_rgba(99,102,241,0.06)] overflow-hidden">
+          <main ref="mainContentRef" class="flex-1 flex overflow-hidden relative min-w-0 p-2 gap-2">
             <!-- Tab视图内容 -->
-            <div class="flex-1 mr-2 min-w-0 overflow-hidden">
+            <div class="flex-1 min-w-0 overflow-hidden rounded-xl">
               <TabViewRenderer
                 v-for="tab in visitedTabs"
                 :key="tab.id"
@@ -323,9 +325,9 @@ onUnmounted(() => {
               />
               <!-- 默认状态 - 没有活跃的Tab时显示 -->
               <div v-if="!currentTab" class="flex items-center justify-center h-full">
-                <div class="text-center">
-                  <span class="material-icons text-6xl text-muted-foreground mb-4">home</span>
-                  <h2 class="text-xl font-semibold text-muted-foreground dark:text-muted-foreground mb-2">欢迎使用 Mira</h2>
+                <div class="text-center rounded-2xl border border-white/60 dark:border-border bg-white/70 dark:bg-muted/70 backdrop-blur-xl shadow-[0_8px_30px_rgba(99,102,241,0.08)] px-10 py-8">
+                  <span class="material-icons text-6xl text-primary/60 mb-4">home</span>
+                  <h2 class="text-xl font-medium text-foreground mb-2">欢迎使用 Mira</h2>
                   <p class="text-muted-foreground">从左侧选择文件夹或标签来开始浏览您的媒体文件</p>
                 </div>
               </div>

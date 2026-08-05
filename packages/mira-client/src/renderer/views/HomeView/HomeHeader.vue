@@ -100,7 +100,7 @@ const onSelectCollection = (collection: any, close: () => void) => {
 </script>
 
 <template>
-  <header class="w-full flex items-center justify-between p-2 border-b border-border dark:border-border bg-white dark:bg-muted">
+  <header class="w-full flex items-center justify-between px-3 py-2 rounded-2xl border border-white/60 dark:border-border bg-white/70 dark:bg-muted/70 backdrop-blur-xl shadow-[0_8px_30px_rgba(99,102,241,0.08)]">
     <div class="flex items-center flex-1 min-w-0">
       <!-- 素材库选择 -->
       <div class="flex items-center space-x-2 mr-6 shrink-0">
@@ -112,7 +112,7 @@ const onSelectCollection = (collection: any, close: () => void) => {
           >
             <template #trigger>
               <button
-                class="flex items-center space-x-2 text-sm font-medium hover:bg-muted rounded px-3 py-2 max-w-[200px]"
+                class="flex items-center space-x-2 text-sm font-medium rounded-lg bg-primary/10 text-primary hover:bg-primary/15 transition-colors px-3 py-2 max-w-[200px]"
               >
                 <span class="material-icons text-primary">folder</span>
                 <span class="truncate">{{ libraryStore.currentLibrary?.name || '未选择素材库' }}</span>
@@ -182,7 +182,7 @@ const onSelectCollection = (collection: any, close: () => void) => {
                       <span>服务器设置</span>
                     </button>
                     <button
-                      class="w-full flex items-center space-x-2 p-2 text-primary hover:bg-primary rounded text-sm"
+                      class="w-full flex items-center space-x-2 p-2 text-primary hover:bg-primary/10 rounded-lg text-sm transition-colors"
                       @click="emit('addServer'); close()"
                     >
                       <span class="material-icons">add</span>
@@ -243,16 +243,16 @@ const onSelectCollection = (collection: any, close: () => void) => {
       <div class="flex items-center flex-1 min-w-0 mt-2">
         <ContextMenu>
           <ContextMenuTrigger as-child>
-            <div ref="tabScrollContainer" class="flex bg-muted dark:bg-muted rounded-lg p-1 overflow-x-auto max-w-full scrollbar-thin">
+            <div ref="tabScrollContainer" class="flex bg-secondary-100/70 dark:bg-muted rounded-xl p-1 overflow-x-auto max-w-full scrollbar-thin">
               <button
                 v-for="tab in activeTabs"
                 :key="tab.id"
                 :data-active-tab="tab.active"
                 :class="[
-                  'px-3 py-1.5 text-sm font-medium rounded-md flex items-center space-x-2 shrink-0',
+                  'px-3 py-1.5 text-sm font-medium rounded-lg flex items-center space-x-2 shrink-0 transition-colors',
                   tab.active
                     ? 'text-primary dark:text-primary bg-white dark:bg-muted shadow-sm'
-                    : 'text-muted-foreground dark:text-muted-foreground hover:text-foreground dark:hover:text-muted-foreground hover:bg-white/50 dark:hover:bg-muted/50'
+                    : 'text-muted-foreground dark:text-muted-foreground hover:text-foreground dark:hover:text-muted-foreground hover:bg-white/60 dark:hover:bg-muted/50'
                 ]"
                 @click="emit('switchTab', tab.id)"
                 @contextmenu="tab.type === 'home' ? $event.preventDefault() : emit('tabContextMenu', tab, $event)"
