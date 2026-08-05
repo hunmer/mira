@@ -281,10 +281,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="home-view h-screen flex flex-col text-[13px]" style="background: linear-gradient(to bottom right, var(--glass-tint-1), var(--glass-tint-2), var(--glass-tint-3))">
+  <div class="home-view h-screen flex flex-col text-[13px] relative" style="background: linear-gradient(to bottom right, var(--glass-tint-1), var(--glass-tint-2), var(--glass-tint-3))">
     <!-- 主内容区域（左侧栏 + 中间内容 + 右侧列） -->
     <div class="flex flex-1 min-h-0 p-3 gap-3">
-      <ResizablePanelGroup direction="horizontal" auto-save-id="home-sidebar" class="flex-1 !overflow-visible">
+      <ResizablePanelGroup direction="horizontal" auto-save-id="home-sidebar" class="flex-1 min-w-0 !overflow-visible">
         <!-- 左侧侧边栏（玻璃面板） -->
         <ResizablePanel :default-size="20" :min-size="15" class="rounded-2xl border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur-xl shadow-[0_12px_40px_var(--shadow-primary-md)] flex flex-col overflow-hidden">
           <HomeSidebar
@@ -309,7 +309,11 @@ onUnmounted(() => {
         <!-- 中间列：Tabs 条 + 内容面板 -->
         <ResizablePanel :default-size="80" :min-size="50" class="flex flex-col min-w-0 !overflow-visible">
           <!-- Tabs 条（固定高度与右侧 HomeHeader 对齐，内容面板顶与详情面板顶对齐；隐藏滚动条） -->
-          <div class="shrink-0 h-[56px] px-2 flex items-end overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <!-- 侧栏隐藏时 HomeHeader 悬浮于右上角，为避免遮挡 tabs，右侧留出 header 宽度 -->
+          <div
+            class="shrink-0 h-[56px] px-2 flex items-end overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden transition-[padding] duration-150"
+            :class="showDetailSidebar ? 'pr-2' : 'pr-[220px]'"
+          >
             <!-- 导航按钮（原 HomeHeader 迁入） -->
             <div class="flex items-center gap-0.5 shrink-0 mb-0.5 mr-1">
               <button
@@ -391,8 +395,14 @@ onUnmounted(() => {
         </ResizablePanel>
       </ResizablePanelGroup>
 
-      <!-- 第三列：紧凑 Header（用户头像菜单 + 窗口控制，靠右） + 图片详情面板 -->
-      <div class="shrink-0 flex flex-col gap-3 min-w-0">
+      <!-- 右侧列：详情侧栏可见时为常规列（Header 在上、侧栏在下，互不重叠）；
+           侧栏隐藏时整体悬浮于右上角，仅留 Header，中间内容自动占满全宽 -->
+      <div
+        class="flex flex-col gap-3 transition-[position] duration-200"
+        :class="showDetailSidebar
+          ? 'shrink-0 min-w-0'
+          : 'absolute top-3 right-3 z-20'"
+      >
         <HomeHeader
           :is-desktop="isDesktop"
           @upload="showFileUploadDialog = true"
@@ -405,7 +415,7 @@ onUnmounted(() => {
           @window-close="handleWindowClose"
         />
 
-        <!-- 图片简略信息面板（从中间区域迁出） -->
+        <!-- 图片详情面板 -->
         <Transition
           enter-active-class="transition-[transform,opacity] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]"
           leave-active-class="transition-[transform,opacity] duration-150 ease-[cubic-bezier(0.4,0,1,1)]"
@@ -414,7 +424,7 @@ onUnmounted(() => {
         >
           <aside
             v-if="showDetailSidebar"
-            class="w-72 flex-1 rounded-2xl border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur-xl shadow-[0_12px_40px_var(--shadow-primary-md)] overflow-hidden flex flex-col"
+            class="w-72 flex-1 min-w-0 rounded-2xl border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur-xl shadow-[0_12px_40px_var(--shadow-primary-md)] overflow-hidden flex flex-col"
           >
             <div class="p-4 flex-1 overflow-y-auto">
               <MediaDetailComponent

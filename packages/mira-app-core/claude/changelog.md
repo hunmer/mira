@@ -1,7 +1,8 @@
-# 变更记录
+# 变更记录（倒序，最近 5 条）
 
 | 日期 | 操作 | 说明 |
 |------|------|------|
-| 2026-06-09 | 结构重构 | 确认 storage/sqlite 和 shared/sdk 已合并到 core 内部；重构文档为索引+详情分离 |
-| 2026-05-25 | 增量更新 | 确认接口签名不变，补充 EventArgs 优先级机制细节 |
-| 2026-05-20 | 初始化 | 首次生成模块文档 |
+| 2026-08-05 | 初始化 AI 上下文 | 按 monorepo 约定重建 AI 上下文文档：CLAUDE.md 轻量索引 + claude/ 8 个详情文件（overview / conventions / module-responsibilities / entrypoints / public-interfaces / dependencies-and-config / file-map / changelog）。确认包版本升至 2.0.1；订正 README 中"无 ws/数据库依赖"的过时描述（实际依赖 sqlite3、ws）。 |
+| 2026-06-09 | 结构重构 | 确认 storage/sqlite 和 shared/sdk 已合并到 core 内部；文档拆分为索引+详情。 |
+| 2026-05-25 | 增量更新 | 接口签名不变，补充 EventArgs 优先级机制细节。 |
+| 2026-05-20 | 初始化 | 首次生成模块文档。 |

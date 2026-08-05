@@ -100,21 +100,50 @@
       box-shadow: var(--nt-shadow);
       overflow: hidden;
       display: flex;
-      cursor: pointer;
-      transition: transform 0.2s ease, background 0.2s ease;
-      animation: slide-in 0.3s ease;
+      cursor: move;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: background 0.2s ease, box-shadow 0.2s ease;
       position: relative;
     }
 
     .notification-card:hover {
       background: var(--nt-bg-hover);
-      transform: translateX(-2px);
     }
 
-    @keyframes slide-in {
+    .notification-card.is-dragging {
+      box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.55), 0 8px 16px -6px rgba(0, 0, 0, 0.35);
+    }
+
+    /* ===== 出现动画 ===== */
+    @keyframes anim-slide-right {
       from { transform: translateX(120%); opacity: 0; }
       to   { transform: translateX(0); opacity: 1; }
     }
+    @keyframes anim-slide-left {
+      from { transform: translateX(-120%); opacity: 0; }
+      to   { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes anim-fade {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes anim-zoom {
+      from { transform: scale(0.8); opacity: 0; }
+      to   { transform: scale(1); opacity: 1; }
+    }
+    @keyframes anim-bounce {
+      0%   { transform: translateY(-40%); opacity: 0; }
+      60%  { transform: translateY(8%); opacity: 1; }
+      80%  { transform: translateY(-4%); }
+      100% { transform: translateY(0); }
+    }
+
+    .anim-slide-right { animation: anim-slide-right 0.32s cubic-bezier(0.22, 1, 0.36, 1); }
+    .anim-slide-left  { animation: anim-slide-left  0.32s cubic-bezier(0.22, 1, 0.36, 1); }
+    .anim-fade        { animation: anim-fade        0.3s ease; }
+    .anim-zoom        { animation: anim-zoom        0.3s cubic-bezier(0.22, 1, 0.36, 1); transform-origin: bottom right; }
+    .anim-bounce      { animation: anim-bounce      0.5s cubic-bezier(0.22, 1, 0.36, 1); }
 
     /* 左侧色条（按 type） */
     .notification-bar {
@@ -139,9 +168,6 @@
       align-items: center;
       gap: 8px;
       margin-bottom: 4px;
-      cursor: move;
-      user-select: none;
-      -webkit-user-select: none;
     }
 
     .notification-icon {

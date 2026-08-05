@@ -72,6 +72,23 @@
             </div>
           </div>
 
+          <!-- 出现动画 -->
+          <div class="space-y-3">
+            <p class="text-sm font-semibold text-foreground dark:text-muted-foreground">出现动画</p>
+            <p class="text-xs text-muted-foreground">slide 会根据所在屏幕位置自动从对应方向滑入（右下角从右、左下角从左）。</p>
+            <div class="flex flex-wrap items-center gap-2">
+              <Button
+                v-for="a in animationDemos"
+                :key="a.value"
+                variant="outline"
+                size="sm"
+                @click="showByAnimation(a.value)"
+              >
+                {{ a.label }}
+              </Button>
+            </div>
+          </div>
+
           <!-- 时长控制 -->
           <div class="space-y-3">
             <p class="text-sm font-semibold text-foreground dark:text-muted-foreground">显示时长</p>
@@ -112,6 +129,19 @@
                   </select>
                 </label>
               </div>
+              <label class="block">
+                <span class="text-xs text-muted-foreground">出现动画</span>
+                <select
+                  v-model="custom.animation"
+                  class="mt-1 w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm outline-none focus:border-primary"
+                >
+                  <option value="slide">slide（按位置滑入）</option>
+                  <option value="fade">fade（淡入）</option>
+                  <option value="zoom">zoom（缩放）</option>
+                  <option value="bounce">bounce（弹跳）</option>
+                  <option value="none">none（无）</option>
+                </select>
+              </label>
               <label class="block">
                 <span class="text-xs text-muted-foreground">正文</span>
                 <textarea
@@ -166,7 +196,7 @@
 import { ref, computed } from 'vue'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
-import type { NotificationPayload, FloatingWindowPosition } from '@/shared/types'
+import type { NotificationPayload, FloatingWindowPosition, NotificationAnimation } from '@/shared/types'
 
 const activeTab = ref('notification')
 
@@ -192,12 +222,22 @@ const positionDemos = [
   { value: 'center', label: '屏幕居中' },
 ] as const
 
+// 出现动画演示数据
+const animationDemos = [
+  { value: 'slide', label: 'Slide（默认，按位置滑入）' },
+  { value: 'fade', label: 'Fade（淡入）' },
+  { value: 'zoom', label: 'Zoom（缩放）' },
+  { value: 'bounce', label: 'Bounce（弹跳）' },
+  { value: 'none', label: 'None（无动画）' },
+] as const
+
 // 自定义参数表单
 const custom = ref<NotificationPayload>({
   title: '自定义通知',
   body: '这是通过 Playground 自定义参数发送的通知。',
   type: 'info',
   duration: 5000,
+  animation: 'slide',
 })
 
 /**
@@ -230,6 +270,16 @@ function showByPosition(position: FloatingWindowPosition) {
     type: 'info',
     position,
     duration: 3000,
+  })
+}
+
+function showByAnimation(animation: NotificationAnimation) {
+  notify({
+    title: '动画演示',
+    body: `出现动画：${animation}`,
+    type: 'info',
+    animation,
+    duration: 4000,
   })
 }
 
@@ -284,6 +334,7 @@ function showCustom() {
     body: custom.value.body,
     type: custom.value.type,
     duration: custom.value.duration,
+    animation: custom.value.animation,
   })
 }
 </script>

@@ -289,6 +289,14 @@ export interface NotificationAction {
   label: string
 }
 
+/** 通知出现动画类型 */
+export type NotificationAnimation =
+  | 'slide'      // 从所在边滑入（默认；右下角从右滑入，左下角从左滑入）
+  | 'fade'       // 淡入
+  | 'zoom'       // 缩放放大
+  | 'bounce'     // 弹跳
+  | 'none'       // 无动画
+
 // 通知窗口载荷（结构化字段 + 可选任意 HTML）
 export interface NotificationPayload {
   /** 标题（必填） */
@@ -297,9 +305,9 @@ export interface NotificationPayload {
   body?: string
   /** 图标（Material Icons 名称或图片 URL） */
   icon?: string
-  /** 通知类型，决定左侧色条颜色 */
+  /** 通知类型，决定左侧色条颜色：info | success | warning | error */
   type?: 'info' | 'success' | 'warning' | 'error'
-  /** 操作按钮 */
+  /** 操作按钮 [{ id, label }]，点击后通过 action 事件回传 id */
   actions?: NotificationAction[]
   /** 任意自定义 HTML（存在时以 v-html 渲染，覆盖 body） */
   html?: string
@@ -307,6 +315,8 @@ export interface NotificationPayload {
   duration?: number
   /** 屏幕位置覆盖（默认右下角） */
   position?: FloatingWindowPosition
+  /** 出现动画，默认 'slide' */
+  animation?: NotificationAnimation
 }
 
 // 协议数据结构

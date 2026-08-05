@@ -71,8 +71,12 @@ async function initNotificationWindow() {
         html: '',
         hasContent: false,
         isDragging: false,
-        // 自定义拖拽追踪（相对增量，主进程侧 setPosition）
+        // 自定义拖拽追踪（相对增量，主进程 setPosition）
         dragStartCursor: null,
+        // 本次按下是否真的发生过位移（用于区分点击与拖拽）
+        dragMoved: false,
+        // 出现动画类型
+        animation: 'slide',
       }
     },
     computed: {
@@ -86,21 +90,36 @@ async function initNotificationWindow() {
           default: return 'notifications'
         }
       },
+      // 动画 class：slide 细化为 slide-left / slide-right（由主进程位置决定方向，
+      // 渲染层未知位置时默认 slide-right）
+      animationClass() {
+        switch (this.animation) {
+          case 'fade': return 'anim-fade'
+          case 'zoom': return 'anim-zoom'
+          case 'bounce': return 'anim-bounce'
+          case 'none': return ''
+          case 'slide':
+          default: return this.slideDir === 'left' ? 'anim-slide-left' : 'anim-slide-right'
+        }
+      },
+      slideDir() {
+        // 通知专有消息会带上 position 的水平方向提示（payload.__hSide）
+        return this._hSide === 'left' ? 'left' : 'right'
+      },
     },
     template: `
       <div
         v-if="hasContent"
         class="notification-card"
+        :class="[animationClass, { 'is-dragging': isDragging }]"
+        @mousedown="handleDragStart"
         @click="handleCardClick"
         @mouseenter="handleMouseEnter"
         @mouseleave="handleMouseLeave"
       >
         <div class="notification-bar" :class="type"></div>
         <div class="notification-main">
-          <div
-            class="notification-header"
-            @mousedown="handleDragStart"
-          >
+          <div class="notification-header">
             <span class="material-icons notification-icon" :class="type">{{ displayIcon }}</span>
             <div class="notification-title">{{ title }}</div>
             <button class="notification-close" @click.stop="handleClose" @mousedown.stop title="关闭">
@@ -143,9 +162,16 @@ async function initNotificationWindow() {
         this.type = payload.type || 'info'
         this.actions = Array.isArray(payload.actions) ? payload.actions : []
         this.html = payload.html || ''
+        this.animation = payload.animation || 'slide'
+        this._hSide = payload.__hSide || 'right'
         this.hasContent = true
       },
       handleCardClick() {
+        // 拖拽过则不触发点击
+        if (this.dragMoved) {
+          this.dragMoved = false
+          return
+        }
         bridge.send({ type: 'click', timestamp: Date.now() })
       },
       handleAction(action) {
@@ -157,9 +183,10 @@ async function initNotificationWindow() {
       // ===== 自定义 JS 拖拽（主进程 setPosition，实时 clamp 到屏幕内）=====
       // 使用通知专有消息类型，避免与基类内置 drag-start（-webkit-app-region hack）冲突
       handleDragStart(e) {
-        // 仅左键触发
+        // 仅左键触发；忽略来自按钮等 no-drag 元素的事件（它们 @mousedown.stop 不会冒泡到这里）
         if (e.button !== 0 || this.isDragging) return
         this.isDragging = true
+        this.dragMoved = false
         this.dragStartCursor = { x: e.screenX, y: e.screenY }
         // 通知主进程记录窗口起始位置
         bridge.send({ type: 'nt-drag-start', timestamp: Date.now() })
@@ -175,6 +202,9 @@ async function initNotificationWindow() {
           if (!this.isDragging || !this.dragStartCursor || !this._lastMove) return
           const deltaX = this._lastMove.x - this.dragStartCursor.x
           const deltaY = this._lastMove.y - this.dragStartCursor.y
+          // 任一方向有实际位移即视为拖拽（主进程按位置决定可用轴）
+          if (Math.abs(deltaX) > 2 || Math.abs(deltaY) > 2) this.dragMoved = true
+          // 同时发送 deltaX / deltaY，由主进程按所在位置选择轴并限定方向
           bridge.send({ type: 'nt-drag-move', deltaX, deltaY, timestamp: Date.now() })
         })
       },

@@ -60,9 +60,7 @@ watch(userAvatarUrl, () => { avatarLoadError.value = false })
               : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'"
             @click="mediaStore.toggleDetailSidebar()"
           >
-            <span class="material-icons" style="font-size: 18px;">
-              {{ mediaStore.showDetailSidebar ? 'right_panel_close' : 'view_sidebar' }}
-            </span>
+            <span class="material-icons" style="font-size: 18px;">view_sidebar</span>
           </button>
         </TooltipTrigger>
         <TooltipContent side="bottom">{{ mediaStore.showDetailSidebar ? '隐藏详情侧栏' : '显示详情侧栏' }}</TooltipContent>
