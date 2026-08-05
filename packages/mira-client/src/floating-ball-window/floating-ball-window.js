@@ -52,6 +52,7 @@ async function initFloatingBall() {
         dragStartCursor: null,
         // 本次按下是否真的发生过位移（用于区分点击与拖拽）
         dragMoved: false,
+        dragDepth: 0,
       }
     },
     template: `
@@ -61,10 +62,6 @@ async function initFloatingBall() {
         title="拖拽移动 · 拖入文件上传 · 单击触发动作"
         @mousedown="handleDragStart"
         @click="handleClick"
-        @dragenter.prevent="onDragEnter"
-        @dragover.prevent="onDragOver"
-        @dragleave.prevent="onDragLeave"
-        @drop.prevent="onDrop"
       >
         <span class="material-icons">add</span>
         <div class="fb-drop-hint" :class="{ 'is-visible': isDragover }">松开以导入文件</div>
@@ -72,6 +69,16 @@ async function initFloatingBall() {
     `,
     mounted() {
       document.addEventListener('contextmenu', (e) => e.preventDefault())
+      // Electron/macOS 对文件拖拽暴露的 dataTransfer.types 不完全一致，
+      // 在窗口级监听确保拖到透明窗口边缘时也能显示接收状态。
+      this._onWindowDragEnter = (e) => this.onDragEnter(e)
+      this._onWindowDragOver = (e) => this.onDragOver(e)
+      this._onWindowDragLeave = (e) => this.onDragLeave(e)
+      this._onWindowDrop = (e) => this.onDrop(e)
+      window.addEventListener('dragenter', this._onWindowDragEnter)
+      window.addEventListener('dragover', this._onWindowDragOver)
+      window.addEventListener('dragleave', this._onWindowDragLeave)
+      window.addEventListener('drop', this._onWindowDrop)
       // 拖拽期间在 document 上追踪 mousemove/mouseup（鼠标离开窗口也能继续）
       this._onMouseMove = (e) => this.handleDragMove(e)
       this._onMouseUp = (e) => this.handleDragEnd(e)
@@ -81,6 +88,10 @@ async function initFloatingBall() {
     unmounted() {
       if (this._onMouseMove) document.removeEventListener('mousemove', this._onMouseMove)
       if (this._onMouseUp) document.removeEventListener('mouseup', this._onMouseUp)
+      if (this._onWindowDragEnter) window.removeEventListener('dragenter', this._onWindowDragEnter)
+      if (this._onWindowDragOver) window.removeEventListener('dragover', this._onWindowDragOver)
+      if (this._onWindowDragLeave) window.removeEventListener('dragleave', this._onWindowDragLeave)
+      if (this._onWindowDrop) window.removeEventListener('drop', this._onWindowDrop)
     },
     methods: {
       handleClick() {
@@ -128,17 +139,24 @@ async function initFloatingBall() {
       },
       // ===== 文件拖放：取真实路径转发主渲染进程 =====
       onDragEnter(e) {
-        // 仅当拖入的是文件时高亮
-        if (hasFiles(e)) this.isDragover = true
+        if (!hasFiles(e)) return
+        this.dragDepth += 1
+        this.isDragover = true
+        e.preventDefault()
       },
       onDragOver(e) {
-        if (hasFiles(e)) this.isDragover = true
+        if (!hasFiles(e)) return
+        this.isDragover = true
+        e.preventDefault()
       },
       onDragLeave(e) {
-        // 离开球体区域时取消高亮（dragleave 会冒泡，简单处理即可）
-        this.isDragover = false
+        if (!hasFiles(e)) return
+        this.dragDepth = Math.max(0, this.dragDepth - 1)
+        if (this.dragDepth === 0) this.isDragover = false
       },
       onDrop(e) {
+        e.preventDefault()
+        this.dragDepth = 0
         this.isDragover = false
         const files = collectDroppedFiles(e)
         if (files.length === 0) return
@@ -155,8 +173,12 @@ async function initFloatingBall() {
  */
 function hasFiles(e) {
   if (!e.dataTransfer) return false
-  // 某些类型表示拖入的是文件
-  return Array.from(e.dataTransfer.types || []).includes('Files')
+  // 不同平台/应用可能不提供 Files 类型，但 files 或 URI 类型仍可用。
+  const types = Array.from(e.dataTransfer.types || [])
+  return (e.dataTransfer.files && e.dataTransfer.files.length > 0) ||
+    types.includes('Files') ||
+    types.includes('public.file-url') ||
+    types.includes('text/uri-list')
 }
 
 /**

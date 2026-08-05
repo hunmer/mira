@@ -2,7 +2,6 @@
 @source "../../";
 @source "../../../index.html";
 @import "tw-animate-css";
-@import "vue-sonner/style.css";
 
 @custom-variant dark (&:is(.dark *));
 

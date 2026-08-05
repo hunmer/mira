@@ -306,16 +306,10 @@ onMounted(loadPlugins)
           @click="openDetail(plugin)"
         >
           <CardContent class="pt-5">
-            <!-- header: name + switch -->
-            <div class="mb-3 flex items-start justify-between" @click.stop>
-              <div class="min-w-0 flex-1">
-                <h3 class="truncate text-base font-semibold">{{ plugin.name }}</h3>
-                <p class="text-xs text-muted-foreground">v{{ plugin.version }}</p>
-              </div>
-              <Switch
-                :model-value="plugin.status === 'active'"
-                @update:model-value="(v: boolean) => toggleStatus(plugin, v)"
-              />
+            <!-- header: name -->
+            <div class="mb-3 pr-8">
+              <h3 class="truncate text-base font-semibold">{{ plugin.name }}</h3>
+              <p class="text-xs text-muted-foreground">v{{ plugin.version }}</p>
             </div>
 
             <!-- description -->
@@ -323,12 +317,19 @@ onMounted(loadPlugins)
               {{ plugin.description || '-' }}
             </p>
 
-            <!-- meta -->
-            <div class="mb-3 flex items-center gap-2 text-xs text-muted-foreground">
-              <Badge :variant="plugin.status === 'active' ? 'default' : 'secondary'">
-                {{ plugin.status === 'active' ? t('plugin.enabled') : t('plugin.disabled') }}
-              </Badge>
-              <span>{{ t('plugin.author') }}: {{ plugin.author }}</span>
+            <!-- meta: status switch + author -->
+            <div class="mb-3 flex flex-wrap items-center gap-3">
+              <div class="flex items-center gap-2" @click.stop>
+                <Switch
+                  :model-value="plugin.status === 'active'"
+                  @update:model-value="(v: boolean) => toggleStatus(plugin, v)"
+                />
+                <span class="text-xs text-muted-foreground">
+                  {{ plugin.status === 'active' ? t('plugin.enabled') : t('plugin.disabled') }}
+                </span>
+              </div>
+              <Separator orientation="vertical" class="h-3" />
+              <span class="text-xs text-muted-foreground">{{ t('plugin.author') }}: {{ plugin.author }}</span>
             </div>
 
             <!-- plugin routes -->

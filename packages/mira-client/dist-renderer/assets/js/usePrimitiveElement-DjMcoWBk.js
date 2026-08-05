@@ -1,0 +1,1 @@
+import{aC as n}from"./index-sf42wPku.js";import{_ as m,e as r}from"./vue-vendor-B6Z-PBIe.js";function o(){const e=m(),t=r(()=>["#text","#comment"].includes(e.value?.$el.nodeName)?e.value?.$el.nextElementSibling:n(e));return{primitiveElement:e,currentElement:t}}export{o as u};

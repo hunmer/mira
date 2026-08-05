@@ -24,6 +24,10 @@ import VueViewer from 'v-viewer'
 import VueLazyload from 'vue3-lazyload'
 
 import './assets/main.css'
+// vue-sonner 样式需独立加载：放在 main.css（经 Tailwind v4 PostCSS 处理）中会被
+// @import 链 / layer 重排影响，导致 [data-sonner-toaster] 的 position/z-index 失效，
+// toast 会以纯文本形式出现在 body 顶部。作为独立 JS 导入则由 Vite 直接管为单独 CSS 资源。
+import 'vue-sonner/style.css'
 
 // 设置全局错误处理
 setupGlobalErrorHandler()
