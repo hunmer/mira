@@ -79,10 +79,21 @@ async function initNotificationWindow() {
         animation: 'slide',
         // 是否允许拖拽（center 位置禁止）
         draggable: true,
+        // 业务自定义数据（如 { fileId }），点击/操作时原样回传
+        data: null,
       }
     },
     computed: {
+      // icon 是否为图片 URL（http(s):// / file:// / data:），否则视为 Material Icons 名称
+      // 加载失败(_thumbFailed)时回退到 Material Icons
+      isIconUrl() {
+        if (this._thumbFailed) return false
+        return typeof this.icon === 'string' &&
+          /^(https?:|file:|data:|\/\/)/i.test(this.icon)
+      },
       displayIcon() {
+        // 非 URL 时按类型回退到 Material Icons 名称
+        if (this.isIconUrl) return ''
         if (this.icon) return this.icon
         switch (this.type) {
           case 'success': return 'check_circle'
@@ -118,7 +129,15 @@ async function initNotificationWindow() {
         <div class="notification-bar" :class="type"></div>
         <div class="notification-main">
           <div class="notification-header">
-            <span class="material-icons notification-icon" :class="type">{{ displayIcon }}</span>
+            <img
+              v-if="isIconUrl"
+              :src="icon"
+              class="notification-thumb"
+              :class="type"
+              referrerpolicy="no-referrer"
+              @error="onThumbError"
+            />
+            <span v-else class="material-icons notification-icon" :class="type">{{ displayIcon }}</span>
             <div class="notification-title">{{ title }}</div>
             <button class="notification-close" @click.stop="handleClose" @mousedown.stop title="关闭">
               <span class="material-icons" style="font-size:16px;">close</span>
@@ -159,11 +178,17 @@ async function initNotificationWindow() {
         this.icon = payload.icon || ''
         this.type = payload.type || 'info'
         this.actions = Array.isArray(payload.actions) ? payload.actions : []
+        this._thumbFailed = false
         this.html = payload.html || ''
         this.animation = payload.animation || 'slide'
         this._animDir = payload.__animDir || 'right'
         this.draggable = payload.__draggable !== false
+        this.data = payload.data || null
         this.hasContent = true
+      },
+      // 缩略图加载失败 → 回退到 Material Icons
+      onThumbError() {
+        this._thumbFailed = true
       },
       handleCardClick() {
         // 拖拽过则不触发点击
@@ -171,10 +196,11 @@ async function initNotificationWindow() {
           this.dragMoved = false
           return
         }
-        bridge.send({ type: 'click', timestamp: Date.now() })
+        // 回传业务数据（如 fileId），主进程转发给主渲染进程
+        bridge.send({ type: 'click', data: this.data, timestamp: Date.now() })
       },
       handleAction(action) {
-        bridge.send({ type: 'action', id: action.id, timestamp: Date.now() })
+        bridge.send({ type: 'action', id: action.id, data: this.data, timestamp: Date.now() })
       },
       handleClose() {
         bridge.send({ type: 'dismiss', timestamp: Date.now() })

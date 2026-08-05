@@ -1,6 +1,6 @@
 <script setup lang="ts">
 defineOptions({ name: 'Home' })
-import { ref, computed, watch, onMounted, onUnmounted, onActivated, onDeactivated, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, onActivated, onDeactivated, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 
 // 布局组件
@@ -10,17 +10,12 @@ import {
   ResizablePanel,
   ResizableHandle,
 } from '@/components/ui/resizable'
-import {
-  ContextMenu,
-  ContextMenuTrigger,
-  ContextMenuContent,
-  ContextMenuItem,
-} from '@/components/ui/context-menu'
 import MediaDetailComponent from '@renderer/components/business/MediaDetailComponent.vue'
 
 // 功能子组件
 import HomeHeader from './HomeHeader.vue'
 import HomeSidebar from './HomeSidebar.vue'
+import HomeTabsBar from './HomeTabsBar.vue'
 import HomeDialogs from './HomeDialogs.vue'
 
 // Store imports
@@ -112,16 +107,7 @@ const {
   refreshCurrentTabAfterLibrarySwitch
 } = tabManagement
 
-// Tab 条滚动容器：切换 tab 时自动滚动到可见位置
-const tabScrollContainer = ref<HTMLElement>()
-watch(() => currentTab.value?.id, () => {
-  nextTick(() => {
-    const container = tabScrollContainer.value
-    if (!container) return
-    const active = container.querySelector('[data-active-tab="true"]') as HTMLElement
-    active?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })
-  })
-})
+// Tab 条的滚动逻辑已迁移到 HomeTabsBar 组件内
 
 // 上传对话框的 tab 上下文
 // 仅普通文件夹/标签 tab 提供真实 ID；未分类/未标签/all/trash/home 等特殊 tab 不提供，
@@ -314,57 +300,15 @@ onUnmounted(() => {
             class="shrink-0 h-[56px] px-2 flex items-end overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden transition-[padding] duration-150"
             :class="showDetailSidebar ? 'pr-2' : 'pr-[220px]'"
           >
-            <!-- 导航按钮（原 HomeHeader 迁入） -->
-            <div class="flex items-center gap-0.5 shrink-0 mb-0.5 mr-1">
-              <button
-                class="h-8 w-8 flex items-center justify-center rounded-full text-muted-foreground hover:text-primary hover:bg-white/50 hover:backdrop-blur-xl transition-[color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-95"
-                title="激活上一次的tab (Ctrl+Shift+Tab)"
-                @click="handleActivateLastTab"
-              >
-                <span class="material-icons">arrow_back</span>
-              </button>
-            </div>
-            <ContextMenu>
-              <ContextMenuTrigger as-child>
-                <div ref="tabScrollContainer" class="flex items-end gap-1 h-full">
-                  <button
-                    v-for="tab in activeTabs"
-                    :key="tab.id"
-                    :data-active-tab="tab.active"
-                    :class="[
-                      'flex items-center space-x-2 shrink-0 text-sm font-medium transition-[color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.98]',
-                      tab.active
-                        ? 'relative z-10 px-4 py-2 -mb-px rounded-t-2xl border border-b-0 border-white/60 dark:border-border bg-white/30 dark:bg-muted/50 backdrop-blur-xl text-primary shadow-[0_-4px_16px_var(--shadow-primary-sm)]'
-                        : 'px-3 py-1.5 mb-0.5 rounded-full text-muted-foreground hover:text-primary hover:bg-white/50 dark:hover:bg-muted/50 hover:backdrop-blur-xl hover:shadow-[0_-4px_16px_var(--shadow-primary-sm)]'
-                    ]"
-                    @click="switchToTabWithCallback(tab.id)"
-                    @contextmenu="tab.type === 'home' ? $event.preventDefault() : handleTabContextMenu(tab, $event)"
-                  >
-                    <span class="material-icons text-sm" :style="{ color: tab.iconColor }">
-                      {{ tab.icon }}
-                    </span>
-                    <span class="truncate max-w-[140px]">{{ tab.label }}</span>
-                    <button
-                      v-if="activeTabs.length > 1 && tabsComposable.isTabClosable(tab.id)"
-                      class="hover:bg-primary/10 rounded-full transition-transform duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-90"
-                      style="line-height: 0;"
-                      @click.stop="closeTabWithCallback(tab.id)"
-                    >
-                      <span class="material-icons text-xs">close</span>
-                    </button>
-                  </button>
-                </div>
-              </ContextMenuTrigger>
-              <ContextMenuContent>
-                <ContextMenuItem
-                  v-for="item in tabContextMenuItems"
-                  :key="item.label"
-                  @click="item.command?.()"
-                >
-                  {{ item.label }}
-                </ContextMenuItem>
-              </ContextMenuContent>
-            </ContextMenu>
+            <HomeTabsBar
+              :active-tabs="activeTabs"
+              :tab-context-menu-items="tabContextMenuItems"
+              :is-tab-closable="tabsComposable.isTabClosable"
+              :on-activate-last-tab="handleActivateLastTab"
+              :on-switch-tab="switchToTabWithCallback"
+              :on-close-tab="closeTabWithCallback"
+              :on-context-menu="handleTabContextMenu"
+            />
           </div>
 
           <!-- 内容面板（玻璃磨砂） -->

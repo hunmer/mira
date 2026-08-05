@@ -317,6 +317,11 @@ export interface NotificationPayload {
   position?: FloatingWindowPosition
   /** 出现动画，默认 'slide' */
   animation?: NotificationAnimation
+  /**
+   * 业务自定义数据，点击/操作时原样回传给主渲染进程。
+   * 例如导入通知携带 { fileId }，点击后据此跳转图片详情。
+   */
+  data?: Record<string, any>
 }
 
 // 协议数据结构

@@ -92,7 +92,7 @@
     <div class="flex-1 flex overflow-hidden relative">
       <div class="flex-1 flex flex-col min-w-0">
         <!-- 媒体内容 - files 和 trash 都使用统一的视图 -->
-        <div class="flex-1 overflow-y-auto w-full min-w-0" @wheel="handleCtrlWheel">
+        <div class="flex-1 overflow-y-auto w-full min-w-0 p-1" @wheel="handleCtrlWheel">
           <!-- 网格视图 -->
           <MediaGridComponent
             v-if="viewMode === 'grid'"

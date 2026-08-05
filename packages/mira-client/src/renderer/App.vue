@@ -285,6 +285,19 @@ const setupElectronListeners = () => {
   window.electronAPI.on('navigate:settings', () => {
     router.push('/settings')
   })
+
+  // 监听通知窗口的点击/操作回调，跳转到对应文件详情
+  window.electronAPI.on('notification-from-window', (payload: any) => {
+    if (!payload) return
+    const fileId = payload?.data?.fileId
+    // 点击通知卡片 或 点击 action 按钮（actionId === 'view'）均跳转图片预览
+    const shouldOpen =
+      (payload.type === 'notification:click' && fileId) ||
+      (payload.type === 'notification:action' && payload.actionId === 'view' && fileId)
+    if (shouldOpen) {
+      router.push(`/image-preview/${fileId}`)
+    }
+  })
   
   // 监听文件导入事件
   window.electronAPI.on('files:import', (filePaths: string[]) => {
@@ -356,6 +369,7 @@ const cleanupElectronListeners = () => {
   window.electronAPI.removeAllListeners('navigate:home')
   window.electronAPI.removeAllListeners('navigate:plugins')
   window.electronAPI.removeAllListeners('navigate:settings')
+  window.electronAPI.removeAllListeners('notification-from-window')
   window.electronAPI.removeAllListeners('files:import')
   window.electronAPI.removeAllListeners('protocol:open-tab')
   window.electronAPI.removeAllListeners('show-global-loading')

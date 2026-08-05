@@ -195,6 +195,22 @@
     .notification-icon.warning { color: var(--nt-warning); }
     .notification-icon.error { color: var(--nt-error); }
 
+    /* 缩略图（icon 为图片 URL 时渲染为 <img>） */
+    .notification-thumb {
+      width: 32px;
+      height: 32px;
+      flex-shrink: 0;
+      border-radius: 6px;
+      object-fit: cover;
+      background: var(--nt-bg-hover);
+      /* 按 type 给细色条边框 */
+      border: 2px solid transparent;
+    }
+    .notification-thumb.info { border-color: var(--nt-info); }
+    .notification-thumb.success { border-color: var(--nt-success); }
+    .notification-thumb.warning { border-color: var(--nt-warning); }
+    .notification-thumb.error { border-color: var(--nt-error); }
+
     .notification-title {
       flex: 1;
       font-size: 14px;

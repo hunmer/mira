@@ -13,6 +13,17 @@
             @update:checked="handleSettingChange('enableNotifications', $event)"
           />
         </div>
+
+        <div class="flex items-center justify-between py-2">
+          <div>
+            <p class="text-foreground dark:text-muted-foreground text-base font-normal leading-normal">导入文件通知</p>
+            <p class="text-muted-foreground dark:text-muted-foreground text-sm">文件导入完成时弹出桌面通知（批量导入会聚合为一条）</p>
+          </div>
+          <Switch
+            :checked="settingsStore.settings.enableImportNotifications"
+            @update:checked="handleSettingChange('enableImportNotifications', $event)"
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -29,9 +40,11 @@ const toast = useToast()
 // 方法
 const handleSettingChange = async (key: string, value: any) => {
   try {
+    // 先写入 store，再保存（避免保存时读到旧值）
+    ;(settingsStore.settings as any)[key] = value
     // 自动保存设置
     await settingsStore.saveSettings()
-    
+
     toast.add({
       severity: 'success',
       summary: '设置已保存',

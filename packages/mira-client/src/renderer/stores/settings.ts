@@ -51,6 +51,8 @@ export interface AppSettings {
   // 高级设置
   debugMode: boolean
   enableNotifications: boolean
+  /** 导入文件通知开关（文件创建事件触发桌面通知） */
+  enableImportNotifications: boolean
   autoBackup: boolean
   backupInterval: number
 
@@ -161,6 +163,7 @@ export const useSettingsStore = defineStore('settings', () => {
     // 高级设置
     debugMode: false,
     enableNotifications: true,
+    enableImportNotifications: true,
     autoBackup: true,
     backupInterval: 1440, // 24小时
 
@@ -414,6 +417,7 @@ export const useSettingsStore = defineStore('settings', () => {
       directImportMode: false,
       debugMode: false,
       enableNotifications: true,
+      enableImportNotifications: true,
       autoBackup: true,
       backupInterval: 1440,
       pluginsDirectory: '',

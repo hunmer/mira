@@ -4,6 +4,7 @@ import { useAuthStore } from '../stores/auth'
 import { useSettingsStore } from '../stores/settings'
 import { useTabs } from '../composables/useTabs'
 import ConfigStorage from '../utils/ConfigStorage'
+import { toFileUrl } from '../utils/fileUtils'
 
 export interface WebSocketEventData {
   eventName: string
@@ -399,6 +400,76 @@ function showDesktopNotification(title: string, body?: string): void {
 }
 
 /**
+ * 给 http(s) 缩略图 URL 追加鉴权 token（与 MiraSDKService.appendToken 一致），
+ * file:// / data: 等本地资源不加 token。
+ */
+function appendThumbToken(url: string | undefined): string | undefined {
+  if (!url) return url
+  if (!/^https?:/i.test(url)) return url
+  const token = useAuthStore().token
+  if (!token) return url
+  const sep = url.includes('?') ? '&' : '?'
+  return `${url}${sep}token=${encodeURIComponent(token)}`
+}
+
+/**
+ * 导入文件通知：聚合短时间内（800ms）的 file::created 事件为一条通知，
+ * 避免批量导入时弹出大量通知。
+ * 使用自定义通知窗口（notificationWindow），支持富样式、缩略图、操作按钮，而非系统原生通知。
+ */
+let importNotifyTimer: ReturnType<typeof setTimeout> | null = null
+let importNotifyCount = 0
+let importNotifyLastName = ''
+let importNotifyLastThumb = ''
+let importNotifyLastFileId: string | undefined
+function notifyFileImported(fileName?: string, thumbRaw?: string, fileId?: string | number): void {
+  const settingsStore = useSettingsStore()
+  // 受主通知开关 + 导入文件通知开关共同控制
+  if (!settingsStore.settings.enableNotifications) return
+  if (!settingsStore.settings.enableImportNotifications) return
+
+  importNotifyCount += 1
+  if (fileName) importNotifyLastName = fileName
+  if (fileId !== undefined && fileId !== null) importNotifyLastFileId = String(fileId)
+  // 解析缩略图：本地路径转 file://，http 加 token
+  const resolved = appendThumbToken(toFileUrl(thumbRaw))
+  if (resolved) importNotifyLastThumb = resolved
+
+  if (importNotifyTimer) clearTimeout(importNotifyTimer)
+  importNotifyTimer = setTimeout(() => {
+    const count = importNotifyCount
+    const name = importNotifyLastName
+    const thumb = importNotifyLastThumb
+    const fileIdResolved = importNotifyLastFileId
+    importNotifyCount = 0
+    importNotifyLastName = ''
+    importNotifyLastThumb = ''
+    importNotifyLastFileId = undefined
+    importNotifyTimer = null
+
+    const title = count > 1 ? `已导入 ${count} 个文件` : '文件导入完成'
+    const body = count > 1
+      ? (name ? `最后导入：${name}` : '批量导入完成')
+      : (name || '新文件已添加到媒体库')
+
+    // 使用自定义通知窗口（桌面右下角悬浮卡片）。
+    // icon 优先用最后一个文件的缩略图（URL），无缩略图则回退 Material Icon。
+    // data.fileId 用于点击/操作时跳转图片详情。
+    window.electronAPI?.notificationWindow?.show({
+      title,
+      body,
+      type: 'success',
+      icon: thumb || 'file_download_done',
+      duration: 4000,
+      actions: [{ id: 'view', label: '查看' }],
+      data: fileIdResolved ? { fileId: fileIdResolved, count } : undefined,
+    }).catch((err: Error) => {
+      console.warn('Failed to show import notification window:', err.message)
+    })
+  }, 800)
+}
+
+/**
  * 设置WebSocket事件监听器
  */
 function setupEventListeners(libraryStore: any): void {
@@ -458,6 +529,13 @@ function setupEventListeners(libraryStore: any): void {
   webSocketService.addEventListener('file::created', (data) => {
     console.log('File created:', data)
     handleFileEvent(data, 'created')
+    // 导入文件通知（受 enableImportNotifications 控制，批量聚合）。
+    // 缩略图可能在 thumb / thumb_path / thumbnail_path 字段（后端广播时已解析为路径/URL）。
+    notifyFileImported(
+      data?.name || data?.title || data?.fileName,
+      data?.thumb_path || data?.thumbnail_path || (typeof data?.thumb === 'string' ? data.thumb : undefined),
+      data?.id
+    )
   })
 
   webSocketService.addEventListener('file::updated', (data) => {

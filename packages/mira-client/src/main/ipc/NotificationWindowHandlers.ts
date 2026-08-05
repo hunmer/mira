@@ -3,6 +3,7 @@ import {
   FloatingWindowHandler,
   type FloatingWindowPosition,
 } from './FloatingWindowHandler'
+import type { NotificationAnimation } from '../../shared/types'
 
 /**
  * 通知窗口载荷（结构化字段 + 可选任意 HTML）
@@ -24,6 +25,13 @@ export interface NotificationPayload {
   duration?: number
   /** 屏幕位置覆盖（默认右下角） */
   position?: FloatingWindowPosition
+  /** 出现动画，默认 'slide' */
+  animation?: NotificationAnimation
+  /**
+   * 业务自定义数据，点击/操作时原样回传给主渲染进程。
+   * 例如导入通知携带 { fileId }，点击后据此跳转图片详情。
+   */
+  data?: Record<string, any>
 }
 
 /** 单条通知在池中的窗口槽位 */

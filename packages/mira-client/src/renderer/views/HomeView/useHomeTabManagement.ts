@@ -112,6 +112,12 @@ export function useHomeTabManagement(
 
       const tabId = newTab.id
 
+      // 已访问的 tab 复用原配置，避免 TabViewRenderer 进入 loading 并重建瀑布流。
+      if (tabId in tabViewConfigMap.value) {
+        currentTabViewConfig.value = tabViewConfigMap.value[tabId]
+        return
+      }
+
       try {
         // 使用 tabRegistryAPI 异步获取 Tab 的视图配置
         const config = await tabRegistryAPI.getTabViewConfig(newTab.type, {
