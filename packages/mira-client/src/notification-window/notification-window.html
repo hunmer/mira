@@ -95,6 +95,7 @@
     /* 通知卡片（右下角） */
     .notification-card {
       width: 320px;
+      min-height: 72px;
       background: var(--nt-bg);
       border-radius: 12px;
       box-shadow: var(--nt-shadow);
@@ -172,9 +173,43 @@
     .notification-bar.warning { background: var(--nt-warning); }
     .notification-bar.error { background: var(--nt-error); }
 
+    /* 最左侧缩略图/图标容器（大尺寸，填满卡片高度） */
+    .notification-thumb-wrap {
+      width: 64px;
+      flex-shrink: 0;
+      align-self: stretch;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: var(--nt-bg-hover);
+      border-right: 1px solid var(--nt-border);
+    }
+
+    /* 缩略图（icon 为图片 URL 时渲染为 <img>） */
+    .notification-thumb {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      /* 禁用浏览器原生图片拖拽，避免吞掉卡片的 click 事件 */
+      -webkit-user-drag: none;
+      user-drag: none;
+      pointer-events: auto;
+    }
+
+    /* 无缩略图时的 Material Icon（居中、按 type 着色） */
+    .notification-icon {
+      font-size: 32px;
+    }
+
+    .notification-icon.info { color: var(--nt-info); }
+    .notification-icon.success { color: var(--nt-success); }
+    .notification-icon.warning { color: var(--nt-warning); }
+    .notification-icon.error { color: var(--nt-error); }
+
     .notification-main {
       flex: 1;
-      padding: 14px 12px 14px 14px;
+      padding: 12px 12px 12px 14px;
       min-width: 0;
     }
 
@@ -184,32 +219,6 @@
       gap: 8px;
       margin-bottom: 4px;
     }
-
-    .notification-icon {
-      font-size: 20px;
-      flex-shrink: 0;
-    }
-
-    .notification-icon.info { color: var(--nt-info); }
-    .notification-icon.success { color: var(--nt-success); }
-    .notification-icon.warning { color: var(--nt-warning); }
-    .notification-icon.error { color: var(--nt-error); }
-
-    /* 缩略图（icon 为图片 URL 时渲染为 <img>） */
-    .notification-thumb {
-      width: 32px;
-      height: 32px;
-      flex-shrink: 0;
-      border-radius: 6px;
-      object-fit: cover;
-      background: var(--nt-bg-hover);
-      /* 按 type 给细色条边框 */
-      border: 2px solid transparent;
-    }
-    .notification-thumb.info { border-color: var(--nt-info); }
-    .notification-thumb.success { border-color: var(--nt-success); }
-    .notification-thumb.warning { border-color: var(--nt-warning); }
-    .notification-thumb.error { border-color: var(--nt-error); }
 
     .notification-title {
       flex: 1;

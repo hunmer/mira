@@ -127,17 +127,22 @@ async function initNotificationWindow() {
         @mouseleave="handleMouseLeave"
       >
         <div class="notification-bar" :class="type"></div>
+        <!-- 最左侧：缩略图 / 图标（大尺寸） -->
+        <div class="notification-thumb-wrap" :class="type">
+          <img
+            v-if="isIconUrl"
+            :src="icon"
+            class="notification-thumb"
+            draggable="false"
+            referrerpolicy="no-referrer"
+            @error="onThumbError"
+            @mousedown.prevent
+          />
+          <span v-else class="material-icons notification-icon" :class="type">{{ displayIcon }}</span>
+        </div>
+        <!-- 右侧：信息区 -->
         <div class="notification-main">
           <div class="notification-header">
-            <img
-              v-if="isIconUrl"
-              :src="icon"
-              class="notification-thumb"
-              :class="type"
-              referrerpolicy="no-referrer"
-              @error="onThumbError"
-            />
-            <span v-else class="material-icons notification-icon" :class="type">{{ displayIcon }}</span>
             <div class="notification-title">{{ title }}</div>
             <button class="notification-close" @click.stop="handleClose" @mousedown.stop title="关闭">
               <span class="material-icons" style="font-size:16px;">close</span>

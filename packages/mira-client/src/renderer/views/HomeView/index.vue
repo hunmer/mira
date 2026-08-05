@@ -53,6 +53,14 @@ const router = useRouter()
 // 第三列：详情面板状态（数据由 MediaTabListView 同步到 mediaStore）
 // ============================================
 const showDetailSidebar = computed(() => mediaStore.showDetailSidebar)
+// 侧栏是否已完全折叠：仅在隐藏动画结束后才为 true。
+// 用 showDetailSidebar 控制显隐，用 sidebarCollapsed 控制布局（父容器悬浮 / Tabs 右侧留白），
+// 这样隐藏动画期间父容器仍占位，避免 <aside> 过早失去 flex 尺寸导致内容被挤压。
+const sidebarCollapsed = ref(!mediaStore.showDetailSidebar)
+watch(showDetailSidebar, visible => {
+  if (visible) sidebarCollapsed.value = false
+})
+const onDetailSidebarLeave = () => { sidebarCollapsed.value = true }
 const sidebarMediaItems = computed(() => mediaStore.detailSidebarFiles)
 const detailSidebarItem = computed(() => sidebarMediaItems.value.length === 1 ? sidebarMediaItems.value[0] : undefined)
 const detailSidebarItems = computed(() => sidebarMediaItems.value.length > 1 ? sidebarMediaItems.value : undefined)
@@ -353,7 +361,7 @@ onUnmounted(() => {
           <!-- 侧栏隐藏时 HomeHeader 悬浮于右上角，为避免遮挡 tabs，右侧留出 header 宽度 -->
           <div
             class="shrink-0 h-[56px] px-2 flex items-end overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden transition-[padding] duration-150"
-            :class="showDetailSidebar ? 'pr-2' : 'pr-[220px]'"
+            :class="sidebarCollapsed ? 'pr-[220px]' : 'pr-2'"
           >
             <HomeTabsBar
               :active-tabs="activeTabs"
@@ -398,9 +406,9 @@ onUnmounted(() => {
            侧栏隐藏时整体悬浮于右上角，仅留 Header，中间内容自动占满全宽 -->
       <div
         class="flex flex-col gap-3 transition-[position] duration-200"
-        :class="showDetailSidebar
-          ? 'shrink-0 min-w-0'
-          : 'absolute top-3 right-3 z-20'"
+        :class="sidebarCollapsed
+          ? 'absolute top-3 right-3 z-20'
+          : 'shrink-0 min-w-0'"
       >
         <HomeHeader
           :is-desktop="isDesktop"
@@ -420,6 +428,7 @@ onUnmounted(() => {
           leave-active-class="transition-[transform,opacity] duration-150 ease-[cubic-bezier(0.4,0,1,1)]"
           enter-from-class="opacity-0 translate-x-4"
           leave-to-class="opacity-0 translate-x-4"
+          @after-leave="onDetailSidebarLeave"
         >
           <aside
             v-if="showDetailSidebar"

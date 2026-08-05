@@ -75,6 +75,10 @@ import { useDragDrop } from './MediaGridComponent/composables/useDragDrop'
 import { useVideoHover } from './MediaGridComponent/composables/useVideoHover'
 import { useDeleteSelectedItems } from './MediaGridComponent/composables/useDeleteSelectedItems'
 import { useFocusedSelectAll } from './MediaGridComponent/composables/useFocusedSelectAll'
+import {
+  getCachedThumbnailRatio,
+  loadThumbnailRatio
+} from './WaterfallComponent/thumbnailRatioCache'
 
 interface Props {
   items: FileInfo[]
@@ -189,71 +193,65 @@ let preloadVersion = 0
 
 const getItemUrl = (item: FileInfo): string => item.thumbnailPath || item.url || ''
 
-const readImageRatio = (url: string): Promise<number | null> => {
-  if (!url) return Promise.resolve(null)
-
-  return new Promise((resolve) => {
-    const image = new Image()
-
-    image.onload = () => {
-      if (image.naturalWidth > 0 && image.naturalHeight > 0) {
-        resolve(image.naturalWidth / image.naturalHeight)
-        return
-      }
-
-      resolve(null)
-    }
-
-    image.onerror = () => resolve(null)
-    image.src = url
-  })
-}
-
 const preloadThumbnailRatios = async (items: FileInfo[]) => {
   const currentVersion = ++preloadVersion
   thumbnailRatiosReady.value = false
+  console.debug('[DEBUG-wf-tab] ratio-preload-start', {
+    itemCount: items.length,
+    headCount: initialRatioPreloadCount.value
+  })
 
   // 首屏前 N 个：同步预加载，等真实比例再渲染（避免首屏布局抖动）。
   const headEntries = await Promise.all(items.slice(0, initialRatioPreloadCount.value).map(async (item) => {
-    const ratio = await readImageRatio(getItemUrl(item))
+    const ratio = await loadThumbnailRatio(item.id, getItemUrl(item))
     return ratio ? [item.id, ratio] as const : null
   }))
 
   if (currentVersion !== preloadVersion) return
 
-  thumbnailRatios.value = headEntries.reduce<Record<string, number>>((ratios, entry) => {
+  const publishedRatios = headEntries.reduce<Record<string, number>>((ratios, entry) => {
     if (entry) {
       ratios[entry[0]] = entry[1]
     }
 
     return ratios
   }, {})
-  thumbnailRatiosReady.value = true
 
-  // 首屏外的项按需异步加载真实比例，加载完成后更新（覆盖 hash fallback）。
-  // 这样首屏外的宽图也能正确占多列。
+  // 同时使用之前实例已缓存的比例；发布后本次实例不再修改，避免后台加载导致连续重排。
+  for (const item of items) {
+    const ratio = getCachedThumbnailRatio(item.id, getItemUrl(item))
+    if (ratio) publishedRatios[item.id] = ratio
+  }
+
+  thumbnailRatios.value = publishedRatios
+  thumbnailRatiosReady.value = true
+  console.debug('[DEBUG-wf-tab] ratio-layout-published', {
+    itemCount: items.length,
+    measuredCount: Object.keys(publishedRatios).length
+  })
+
+  // 首屏外比例仅写入跨实例缓存，不能修改当前已发布布局。
   void loadRemainingRatios(items)
 }
 
-// 异步加载尚未测量的 item 比例（限并发，避免一次性发起上千请求），
-// 每批完成后更新 thumbnailRatios，触发 waterfallItems / Masonry 重算。
+// 异步预热其余比例（限并发），供下次实例或数据批次直接复用。
 const loadingRatioIds = new Set<string>()
 const RATIO_CONCURRENCY = 12
 const loadRemainingRatios = async (items: FileInfo[]) => {
-  const pending = items.filter(item => !thumbnailRatios.value[item.id] && !loadingRatioIds.has(item.id))
+  const pending = items.filter(item => (
+    !getCachedThumbnailRatio(item.id, getItemUrl(item)) && !loadingRatioIds.has(item.id)
+  ))
   let cursor = 0
   const runWorker = async () => {
     while (cursor < pending.length) {
       const item = pending[cursor++]
       loadingRatioIds.add(item.id)
-      const ratio = await readImageRatio(getItemUrl(item))
+      await loadThumbnailRatio(item.id, getItemUrl(item))
       loadingRatioIds.delete(item.id)
-      if (ratio && !thumbnailRatios.value[item.id]) {
-        thumbnailRatios.value = { ...thumbnailRatios.value, [item.id]: ratio }
-      }
     }
   }
   await Promise.all(Array.from({ length: Math.min(RATIO_CONCURRENCY, pending.length) }, runWorker))
+  console.debug('[DEBUG-wf-tab] ratio-cache-warmed', { loadedCount: pending.length })
 }
 
 watch(
@@ -265,7 +263,7 @@ watch(
 )
 
 // hash fallback：未加载真实比例前给一个稳定占位比例，避免空白布局。
-// 占位值范围压在 [0.8, 1.3]，待真实比例加载后由 loadRemainingRatios 覆盖。
+// 占位值范围压在 [0.8, 1.3]，当前实例内保持不变，避免异步比例引发布局重排。
 const fallbackRatio = (item: FileInfo): number => {
   let seed = 0
   for (let i = 0; i < item.id.length; i++) seed = ((seed << 5) - seed + item.id.charCodeAt(i)) | 0
@@ -477,11 +475,13 @@ defineExpose({
 })
 
 onMounted(() => {
+  console.debug('[DEBUG-wf-tab] waterfall-mounted', { itemCount: props.items.length })
   window.addEventListener('keydown', handleDeleteKeyDown)
   document.addEventListener('edit-action', handleEditAction)
 })
 
 onUnmounted(() => {
+  console.debug('[DEBUG-wf-tab] waterfall-unmounted', { itemCount: props.items.length })
   window.removeEventListener('keydown', handleDeleteKeyDown)
   document.removeEventListener('edit-action', handleEditAction)
   stopVideoPreview()
