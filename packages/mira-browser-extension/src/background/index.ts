@@ -85,20 +85,6 @@ chrome.commands.onCommand.addListener(async command => {
   if (command === 'capture-selection') await capturer.captureSelection(tab.id);
 });
 
-// 右键菜单
-setupContextMenus({
-  captureVisible: capturer.captureVisible,
-  captureFullPage: capturer.captureFullPage,
-  captureSelection: capturer.captureSelection,
-  uploadImageUrl: async url => {
-    const settings = await getSettings();
-    const res = await fetch(url);
-    const blob = await res.blob();
-    const file = new File([blob], url.split('/').pop() || 'image', { type: blob.type });
-    uploader.enqueue({ file, libraryId: settings.libraryId, source: 'dragdrop' });
-  },
-});
-
 // tab 关闭清理嗅探快照
 chrome.tabs.onRemoved.addListener(tabId => {
   sniffSnapshots.delete(tabId);
