@@ -118,11 +118,15 @@ export class NotificationWindowHandlers {
 
     // 页面加载完成后下发通知内容，渲染层测量高度后回传 measure-ready，
     // 此时 onReadyToShow 负责定位 + 显示。
-    // 附带动画方向提示 __animDir，供渲染层选择 slide 动画方向。
+    // 附带动画方向与可拖拽提示，供渲染层选择 slide 方向、决定是否启用拖拽。
     handler.getWindow()?.webContents.once('did-finish-load', () => {
       handler.sendMessage({
         type: 'notification-content',
-        payload: { ...payload, __animDir: this.animDirOf(position) },
+        payload: {
+          ...payload,
+          __animDir: this.animDirOf(position),
+          __draggable: this.isDraggable(position),
+        },
       })
     })
 
@@ -358,7 +362,10 @@ export class NotificationWindowHandlers {
       else if (pos === 'top-right' || pos === 'bottom-right') x = wa.x + wa.width - w - margin
       else x = wa.x + Math.round((wa.width - w) / 2) // top/bottom/center
       // 垂直（含堆叠偏移）
-      if (pos === 'top-left' || pos === 'top-right' || pos === 'top') {
+      if (pos === 'center') {
+        // 屏幕居中：垂直也居中，堆叠时整体向上偏移
+        y = wa.y + Math.round((wa.height - h) / 2) - offsetUp
+      } else if (pos === 'top-left' || pos === 'top-right' || pos === 'top') {
         y = wa.y + margin + offsetUp // 顶部预设时向下堆叠
       } else {
         y = wa.y + wa.height - h - margin - offsetUp // 底部预设时向上堆叠
@@ -448,6 +455,13 @@ export class NotificationWindowHandlers {
       default:
         return { axis: 'vertical', sign: 0 } // 上下均可
     }
+  }
+
+  /**
+   * 是否允许拖拽。屏幕居中（center）禁止拖拽，其余位置允许（按各自轴向滑出关闭）。
+   */
+  private isDraggable(position: FloatingWindowPosition): boolean {
+    return !(typeof position === 'string' && position === 'center')
   }
 
   /**

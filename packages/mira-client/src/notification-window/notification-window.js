@@ -77,6 +77,8 @@ async function initNotificationWindow() {
         dragMoved: false,
         // 出现动画类型
         animation: 'slide',
+        // 是否允许拖拽（center 位置禁止）
+        draggable: true,
       }
     },
     computed: {
@@ -90,8 +92,7 @@ async function initNotificationWindow() {
           default: return 'notifications'
         }
       },
-      // 动画 class：slide 细化为 slide-left / slide-right（由主进程位置决定方向，
-      // 渲染层未知位置时默认 slide-right）
+      // 动画 class：slide 细化为四向（由主进程位置决定方向）
       animationClass() {
         switch (this.animation) {
           case 'fade': return 'anim-fade'
@@ -99,19 +100,16 @@ async function initNotificationWindow() {
           case 'bounce': return 'anim-bounce'
           case 'none': return ''
           case 'slide':
-          default: return this.slideDir === 'left' ? 'anim-slide-left' : 'anim-slide-right'
+          default:
+            return 'anim-slide-' + (this._animDir || 'right')
         }
-      },
-      slideDir() {
-        // 通知专有消息会带上 position 的水平方向提示（payload.__hSide）
-        return this._hSide === 'left' ? 'left' : 'right'
       },
     },
     template: `
       <div
         v-if="hasContent"
         class="notification-card"
-        :class="[animationClass, { 'is-dragging': isDragging }]"
+        :class="[animationClass, { 'is-dragging': isDragging, 'is-draggable': draggable }]"
         @mousedown="handleDragStart"
         @click="handleCardClick"
         @mouseenter="handleMouseEnter"
@@ -163,7 +161,8 @@ async function initNotificationWindow() {
         this.actions = Array.isArray(payload.actions) ? payload.actions : []
         this.html = payload.html || ''
         this.animation = payload.animation || 'slide'
-        this._hSide = payload.__hSide || 'right'
+        this._animDir = payload.__animDir || 'right'
+        this.draggable = payload.__draggable !== false
         this.hasContent = true
       },
       handleCardClick() {
@@ -183,6 +182,8 @@ async function initNotificationWindow() {
       // ===== 自定义 JS 拖拽（主进程 setPosition，实时 clamp 到屏幕内）=====
       // 使用通知专有消息类型，避免与基类内置 drag-start（-webkit-app-region hack）冲突
       handleDragStart(e) {
+        // 居中等不可拖拽位置直接放行（不启动拖拽）
+        if (!this.draggable) return
         // 仅左键触发；忽略来自按钮等 no-drag 元素的事件（它们 @mousedown.stop 不会冒泡到这里）
         if (e.button !== 0 || this.isDragging) return
         this.isDragging = true

@@ -40,21 +40,6 @@ const initialTransform = computed(() => {
       return "translate3d(0, -8px, 0) scale(0.95)"
   }
 })
-
-const onMotionMounted = () => {
-  if (import.meta.env.DEV) {
-    console.debug("[DEBUG-dropdown-motion] mounted", {
-      side: props.side ?? "bottom",
-      initialTransform: initialTransform.value,
-    })
-  }
-}
-
-const onMotionComplete = () => {
-  if (import.meta.env.DEV) {
-    console.debug("[DEBUG-dropdown-motion] enter complete")
-  }
-}
 </script>
 
 <template>
@@ -66,7 +51,6 @@ const onMotionComplete = () => {
       <Motion
         as="div"
         data-slot="popover-content"
-        data-dropdown-motion
         :initial="{ opacity: 0, transform: initialTransform }"
         :animate="{ opacity: 1, transform: 'translate3d(0, 0, 0) scale(1)' }"
         :transition="{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }"
@@ -76,8 +60,6 @@ const onMotionComplete = () => {
             props.class,
           )
         "
-        @vue:mounted="onMotionMounted"
-        @animation-complete="onMotionComplete"
       >
         <slot />
       </Motion>
