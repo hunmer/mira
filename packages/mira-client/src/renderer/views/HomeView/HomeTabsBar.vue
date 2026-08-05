@@ -72,9 +72,7 @@ function handleTabContextMenu(tab: TabItem, event: MouseEvent) {
     <div class="flex items-center gap-0.5 shrink-0 mb-0.5 mr-1">
       <button
         class="h-8 w-8 flex items-center justify-center rounded-full text-muted-foreground hover:text-primary hover:bg-white/50 hover:backdrop-blur-xl transition-[color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-95"
-        title="激活上一次的tab (Ctrl+Shift+Tab)"
-        @click="props.onActivateLastTab"
-      >
+        title="激活上一次的tab (Ctrl+Shift+Tab)" @click="props.onActivateLastTab">
         <span class="material-icons">arrow_back</span>
       </button>
     </div>
@@ -83,40 +81,29 @@ function handleTabContextMenu(tab: TabItem, event: MouseEvent) {
       <ContextMenuTrigger as-child>
         <LayoutGroup id="home-tabs">
           <div ref="tabScrollContainer" class="flex items-end gap-1 h-full">
-            <button
-              v-for="tab in props.activeTabs"
-              :key="tab.id"
-              :data-active-tab="tab.active"
-              :class="[
-                'group relative flex items-center space-x-2 shrink-0 text-sm font-medium transition-colors duration-150',
-                // 激活/非激活统一基础尺寸，差异化的背景交给下方共享 layoutId 指示器滑动
-                tab.active
-                  ? 'z-10 px-4 py-2 -mb-px text-primary-foreground'
-                  : 'px-3 py-1.5 mb-0.5 text-muted-foreground hover:text-primary active:scale-[0.98]'
-              ]"
-              @click="handleSwitchTab(tab)"
-              @contextmenu="handleTabContextMenu(tab, $event)"
-            >
+            <button v-for="tab in props.activeTabs" :key="tab.id" :data-active-tab="tab.active" :class="[
+              'group relative flex items-center space-x-1 shrink-0 text-xs font-medium transition-colors duration-150',
+              // 激活/非激活统一基础高度，差异化的背景交给下方共享 layoutId 指示器滑动
+              tab.active
+                ? 'z-10 -mb-px py-1 text-primary-foreground'
+                : 'py-0.5 mb-0.5 text-muted-foreground hover:text-primary active:scale-[0.98]',
+              // 无关闭按钮的 tab（如 home）右侧补足间距，使内容与可关闭 tab 视觉对齐
+              (props.activeTabs.length > 1 && props.isTabClosable(tab.id))
+                ? (tab.active ? 'px-2' : 'px-1.5')
+                : (tab.active ? 'pl-2 pr-5' : 'pl-1.5 pr-5')
+            ]" @click="handleSwitchTab(tab)" @contextmenu="handleTabContextMenu(tab, $event)">
               <!-- 激活态背景：共享 layoutId，切换 tab 时由 motion-v 在按钮间平滑滑动 -->
-              <Motion
-                v-if="tab.active"
-                layoutId="home-active-tab"
+              <Motion v-if="tab.active" layoutId="home-active-tab"
                 :transition="{ type: 'spring', stiffness: 400, damping: 32 }"
-                class="absolute inset-0 z-0 rounded-t-2xl border border-b-0 border-primary/60 bg-primary shadow-[0_-4px_16px_var(--shadow-primary-sm)]"
-              />
-              <span
-                class="relative z-[1] material-icons text-sm"
-                :style="{ color: tab.active ? undefined : tab.iconColor }"
-              >
+                class="absolute inset-0 z-0 rounded-t-2xl border border-b-0 border-primary/60 bg-primary shadow-[0_-4px_16px_var(--shadow-primary-sm)]" />
+              <span class="relative z-[1] material-icons text-[12px] leading-none"
+                :style="{ color: tab.active ? undefined : tab.iconColor }">
                 {{ tab.icon }}
               </span>
-              <span class="relative z-[1] truncate max-w-[140px]">{{ tab.label }}</span>
-              <button
-                v-if="props.activeTabs.length > 1 && props.isTabClosable(tab.id)"
+              <span class="relative z-[1] truncate max-w-[120px]">{{ tab.label }}</span>
+              <button v-if="props.activeTabs.length > 1 && props.isTabClosable(tab.id)"
                 class="relative z-[1] rounded-full opacity-0 group-hover:opacity-100 transition-[opacity,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] hover:bg-primary/10 active:scale-90"
-                style="line-height: 0;"
-                @click.stop="props.onCloseTab(tab.id)"
-              >
+                style="line-height: 0;" @click.stop="props.onCloseTab(tab.id)">
                 <span class="material-icons text-xs">close</span>
               </button>
             </button>
@@ -124,11 +111,7 @@ function handleTabContextMenu(tab: TabItem, event: MouseEvent) {
         </LayoutGroup>
       </ContextMenuTrigger>
       <ContextMenuContent>
-        <ContextMenuItem
-          v-for="item in props.tabContextMenuItems"
-          :key="item.label"
-          @click="item.command?.()"
-        >
+        <ContextMenuItem v-for="item in props.tabContextMenuItems" :key="item.label" @click="item.command?.()">
           {{ item.label }}
         </ContextMenuItem>
       </ContextMenuContent>

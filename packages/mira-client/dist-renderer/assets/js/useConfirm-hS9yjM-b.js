@@ -1,0 +1,1 @@
+import{_ as r}from"./vue-vendor-B6Z-PBIe.js";const a=r({visible:!1});function l(){return{require:e=>{a.value={visible:!0,header:e.header,message:e.message,acceptLabel:e.acceptLabel||"Confirm",rejectLabel:e.rejectLabel||"Cancel",onAccept:e.accept}},close:()=>{a.value.visible=!1}}}export{l as u};

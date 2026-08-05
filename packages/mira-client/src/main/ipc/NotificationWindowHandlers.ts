@@ -521,6 +521,9 @@ export class NotificationWindowHandlers {
   private forwardToMainRenderer(data: any): void {
     const mainWindow = this.getMainWindow()
     if (mainWindow && !mainWindow.isDestroyed()) {
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      mainWindow.show()
+      mainWindow.focus()
       mainWindow.webContents.send('notification-from-window', data)
     }
   }

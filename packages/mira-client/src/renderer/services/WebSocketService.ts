@@ -422,6 +422,7 @@ let importNotifyCount = 0
 let importNotifyLastName = ''
 let importNotifyLastThumb = ''
 let importNotifyLastFileId: string | undefined
+let importNotifyLastPreviewType: 'image' | 'video' = 'image'
 // 是否已展示（避免缩略图到达后重复展示）
 let importNotifyShown = false
 // 缩略图就绪前的最长等待时间（ms）：超时则用 Material Icon 兜底展示
@@ -451,13 +452,20 @@ function doShowImportNotification(): void {
     icon: thumb || 'file_download_done',
     duration: 4000,
     actions: [{ id: 'view', label: '查看' }],
-    data: fileIdResolved ? { fileId: fileIdResolved, count } : undefined,
+    data: fileIdResolved
+      ? { fileId: fileIdResolved, count, previewType: importNotifyLastPreviewType }
+      : undefined,
   }).catch((err: Error) => {
     console.warn('Failed to show import notification window:', err.message)
   })
 }
 
-function notifyFileImported(fileName?: string, thumbRaw?: string, fileId?: string | number): void {
+function notifyFileImported(
+  fileName?: string,
+  thumbRaw?: string,
+  fileId?: string | number,
+  mimeType?: string
+): void {
   const settingsStore = useSettingsStore()
   // 受主通知开关 + 导入文件通知开关共同控制
   if (!settingsStore.settings.enableNotifications) return
@@ -470,11 +478,17 @@ function notifyFileImported(fileName?: string, thumbRaw?: string, fileId?: strin
     importNotifyLastName = ''
     importNotifyLastThumb = ''
     importNotifyLastFileId = undefined
+    importNotifyLastPreviewType = 'image'
   }
 
   importNotifyCount += 1
   if (fileName) importNotifyLastName = fileName
   if (fileId !== undefined && fileId !== null) importNotifyLastFileId = String(fileId)
+  const normalizedType = mimeType?.toLowerCase()
+  const isVideo = normalizedType === 'video'
+    || normalizedType?.startsWith('video/')
+    || /\.(mp4|webm|avi|mov|wmv|flv|mkv|3gp)$/i.test(fileName || '')
+  importNotifyLastPreviewType = isVideo ? 'video' : 'image'
   // 解析缩略图：本地路径转 file://，http 加 token
   const resolved = appendThumbToken(toFileUrl(thumbRaw))
   if (resolved) importNotifyLastThumb = resolved
@@ -572,7 +586,8 @@ function setupEventListeners(libraryStore: any): void {
     notifyFileImported(
       data?.name || data?.title || data?.fileName,
       data?.thumb_path || data?.thumbnail_path || (typeof data?.thumb === 'string' ? data.thumb : undefined),
-      data?.id
+      data?.id,
+      data?.mimeType || data?.mime_type || data?.type
     )
   })
 

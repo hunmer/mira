@@ -55,7 +55,7 @@
           <div class="flex flex-col gap-3">
             <!-- Add Server Card -->
             <div
-              class="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-border dark:border-border rounded-xl cursor-pointer transition-all hover:border-primary dark:hover:border-primary hover:bg-primary/50 dark:hover:bg-primary/10"
+              class="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-border dark:border-border rounded-xl cursor-pointer transition-all hover:border-primary dark:hover:border-primary hover:bg-primary/10 dark:hover:bg-primary/10"
               @click="showAddForm = true"
             >
               <span class="material-icons text-2xl text-muted-foreground dark:text-muted-foreground">add</span>
@@ -67,8 +67,8 @@
               :key="server.id"
               class="flex items-center gap-3 p-3 border-2 rounded-xl cursor-pointer transition-all group"
               :class="loading && selectedServerId === server.id
-                ? 'border-primary dark:border-primary bg-primary dark:bg-primary/10'
-                : 'border-border dark:border-border hover:border-primary dark:hover:border-primary hover:bg-primary/50 dark:hover:bg-primary/10'"
+                ? 'border-primary dark:border-primary bg-primary/15 dark:bg-primary/10'
+                : 'border-border dark:border-border hover:border-primary dark:hover:border-primary hover:bg-primary/10 dark:hover:bg-primary/10'"
               @click="quickConnect(server)"
             >
               <span class="material-icons text-lg text-primary dark:text-primary">dns</span>
@@ -213,9 +213,9 @@
             class="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all"
             :class="[
               selectedLibraryId === lib.id
-                ? 'border-primary dark:border-primary bg-primary dark:bg-primary/15'
+                ? 'border-primary dark:border-primary bg-primary/15 dark:bg-primary/15'
                 : isLibraryAccessible(lib)
-                  ? 'border-border dark:border-border hover:border-primary dark:hover:border-primary hover:bg-primary/50 dark:hover:bg-primary/10'
+                  ? 'border-border dark:border-border hover:border-primary dark:hover:border-primary hover:bg-primary/10 dark:hover:bg-primary/10'
                   : 'opacity-50 cursor-not-allowed border-border dark:border-border bg-muted dark:bg-muted'
             ]"
             @click="isLibraryAccessible(lib) && (selectedLibraryId = lib.id)"

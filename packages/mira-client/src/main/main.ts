@@ -269,8 +269,9 @@ class MiraApplication {
       logger.info('MiraApplication', 'Loading development app')
       // vite-plugin-electron 会自动注入正确的 URL
       this.mainWindow.loadURL('http://localhost:3000')
-      this.mainWindow.aliasName = 'Mira'
     }
+    // 浮动窗口通过该标识将点击事件准确转发给主窗口，生产和开发环境都必须设置。
+    ;(this.mainWindow as BrowserWindow & { aliasName?: string }).aliasName = 'Mira'
 
     // 窗口关闭时清理引用
     this.mainWindow.on('closed', () => {

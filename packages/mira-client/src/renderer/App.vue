@@ -290,12 +290,15 @@ const setupElectronListeners = () => {
   window.electronAPI.on('notification-from-window', (payload: any) => {
     if (!payload) return
     const fileId = payload?.data?.fileId
-    // 点击通知卡片 或 点击 action 按钮（actionId === 'view'）均跳转图片预览
+    // 点击通知卡片或“查看”按钮，按媒体类型打开对应预览页。
     const shouldOpen =
       (payload.type === 'notification:click' && fileId) ||
       (payload.type === 'notification:action' && payload.actionId === 'view' && fileId)
     if (shouldOpen) {
-      router.push(`/image-preview/${fileId}`)
+      const previewRoute = payload?.data?.previewType === 'video'
+        ? 'video-preview'
+        : 'image-preview'
+      router.push(`/${previewRoute}/${encodeURIComponent(String(fileId))}`)
     }
   })
   
