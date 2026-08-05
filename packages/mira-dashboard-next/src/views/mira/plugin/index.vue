@@ -109,6 +109,11 @@ function getCategoryName(c?: string) {
   return categoryMap[c || 'general'] || c || '通用'
 }
 
+// icon 可能是 emoji 字符、URL（/api/plugins/... 或 http）或文件路径
+function isIconUrl(icon?: string | null): boolean {
+  return !!icon && (icon.startsWith('http') || icon.startsWith('/api/') || icon.startsWith('/'))
+}
+
 async function loadPlugins() {
   loading.value = true
   try {
@@ -301,45 +306,77 @@ onMounted(loadPlugins)
         <Card
           v-for="plugin in currentPlugins"
           :key="plugin.name"
-          class="relative cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5"
-          :class="plugin.status === 'active' ? 'border-l-4 border-l-green-500' : 'border-l-4 border-l-muted'"
+          class="group relative cursor-pointer overflow-hidden transition-all hover:shadow-md hover:-translate-y-0.5"
+          :class="plugin.status === 'active' ? 'ring-1 ring-green-500/40' : ''"
           @click="openDetail(plugin)"
         >
-          <CardContent class="pt-5">
-            <!-- header: name -->
-            <div class="mb-3 pr-8">
-              <h3 class="truncate text-base font-semibold">{{ plugin.name }}</h3>
-              <p class="text-xs text-muted-foreground">v{{ plugin.version }}</p>
-            </div>
-
-            <!-- description -->
-            <p class="mb-3 line-clamp-2 text-sm text-muted-foreground">
-              {{ plugin.description || '-' }}
-            </p>
-
-            <!-- meta: status switch + author -->
-            <div class="mb-3 flex flex-wrap items-center gap-3">
-              <div class="flex items-center gap-2" @click.stop>
+          <!-- active status bar -->
+          <div
+            class="absolute inset-x-0 top-0 h-1 transition-colors"
+            :class="plugin.status === 'active' ? 'bg-green-500' : 'bg-transparent'"
+          />
+          <CardContent class="space-y-3 pt-5 pb-0">
+            <!-- header: icon + title + actions -->
+            <div class="flex items-start gap-3">
+              <div
+                class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-xl"
+                :class="plugin.status === 'active' ? 'bg-green-500/10' : ''"
+              >
+                <span v-if="plugin.icon && !isIconUrl(plugin.icon)">{{ plugin.icon }}</span>
+                <img v-else-if="plugin.icon && isIconUrl(plugin.icon)" :src="plugin.icon" class="size-6 object-contain" />
+                <RiStore2Line v-else class="size-5 text-muted-foreground" />
+              </div>
+              <div class="min-w-0 flex-1">
+                <h3 class="truncate text-sm font-semibold">{{ plugin.title || plugin.name }}</h3>
+                <p class="truncate text-xs text-muted-foreground">{{ plugin.name }} · v{{ plugin.version }}</p>
+              </div>
+              <!-- actions -->
+              <div class="flex shrink-0 items-center gap-1" @click.stop>
                 <Switch
                   :model-value="plugin.status === 'active'"
                   @update:model-value="(v: boolean) => toggleStatus(plugin, v)"
                 />
-                <span class="text-xs text-muted-foreground">
-                  {{ plugin.status === 'active' ? t('plugin.enabled') : t('plugin.disabled') }}
-                </span>
+                <DropdownMenu>
+                  <DropdownMenuTrigger as-child>
+                    <Button variant="ghost" size="icon" class="size-7 opacity-60 transition-opacity group-hover:opacity-100">
+                      <RiMoreLine class="size-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem @click="openDetail(plugin)">
+                      <RiInformationLine class="mr-2 size-4" /> {{ t('plugin.detail') || '详情' }}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem v-if="plugin.configurable" @click="openConfig(plugin)">
+                      <RiSettings3Line class="mr-2 size-4" /> {{ t('plugin.configure') }}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem class="text-destructive" @click="uninstallPlugin(plugin)">
+                      <RiStopCircleLine class="mr-2 size-4" /> {{ t('plugin.uninstall') }}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
-              <Separator orientation="vertical" class="h-3" />
-              <span class="text-xs text-muted-foreground">{{ t('plugin.author') }}: {{ plugin.author }}</span>
             </div>
 
-            <!-- plugin routes -->
-            <div v-if="activeTab && getRoutesForPlugin(activeTab, plugin.name).length" class="border-t pt-3">
-              <p class="mb-1.5 text-[11px] font-medium text-muted-foreground">插件入口</p>
-              <div class="flex flex-wrap gap-1">
+            <!-- description -->
+            <p class="line-clamp-2 min-h-[2.5rem] text-xs text-muted-foreground">
+              {{ plugin.description || '-' }}
+            </p>
+
+            <!-- tags -->
+            <div v-if="plugin.tags?.length" class="flex flex-wrap gap-1">
+              <Badge v-for="tag in plugin.tags" :key="tag" variant="secondary" class="text-[10px] font-normal">{{ tag }}</Badge>
+            </div>
+
+            <!-- footer: category + routes -->
+            <div class="flex items-center justify-between border-t pt-3">
+              <Badge variant="outline" class="text-[10px] font-normal text-muted-foreground">
+                {{ getCategoryName(plugin.category) }}
+              </Badge>
+              <div v-if="activeTab && getRoutesForPlugin(activeTab, plugin.name).length" class="flex flex-wrap justify-end gap-1">
                 <Button
                   v-for="route in getRoutesForPlugin(activeTab!, plugin.name)"
                   :key="route.path"
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   class="h-6 gap-1 px-2 text-xs"
                   @click.stop="openRoute(route)"
@@ -348,28 +385,6 @@ onMounted(loadPlugins)
                   <RiExternalLinkLine class="size-3" />
                 </Button>
               </div>
-            </div>
-
-            <!-- actions (dropdown, stop click propagation) -->
-            <div class="absolute right-2 top-2" @click.stop>
-              <DropdownMenu>
-                <DropdownMenuTrigger as-child>
-                  <Button variant="ghost" size="icon" class="size-8">
-                    <RiMoreLine class="size-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem @click="openDetail(plugin)">
-                    <RiInformationLine class="mr-2 size-4" /> {{ t('plugin.detail') || '详情' }}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem v-if="plugin.configurable" @click="openConfig(plugin)">
-                    <RiSettings3Line class="mr-2 size-4" /> {{ t('plugin.configure') }}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem class="text-destructive" @click="uninstallPlugin(plugin)">
-                    <RiStopCircleLine class="mr-2 size-4" /> {{ t('plugin.uninstall') }}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
             </div>
           </CardContent>
         </Card>
@@ -392,16 +407,6 @@ onMounted(loadPlugins)
         </SheetHeader>
 
         <div v-if="detailPlugin" class="mt-4 space-y-4">
-          <div class="flex items-center justify-between">
-            <Label>{{ t('plugin.enabled') || '状态' }}</Label>
-            <Switch
-              :model-value="detailPlugin.status === 'active'"
-              @update:model-value="(v: boolean) => toggleStatus(detailPlugin!, v)"
-            />
-          </div>
-
-          <Separator />
-
           <div class="space-y-3 text-sm">
             <div class="flex justify-between">
               <span class="text-muted-foreground">{{ t('plugin.version') }}</span>

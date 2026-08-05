@@ -36,6 +36,7 @@ export interface Plugin {
   createdAt: string
   updatedAt: string
   icon?: string | null
+  title?: string
   category?: string
   tags?: string[]
   libraryId?: string

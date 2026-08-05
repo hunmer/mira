@@ -64,6 +64,8 @@ export interface FloatingWindowOptions {
   hideOnBlur?: boolean
   /** 是否在任务栏中显示，默认 true（通知窗口应设为 false） */
   skipTaskbar?: boolean
+  /** macOS 下是否允许首次点击在激活窗口的同时传递给页面，默认 false */
+  acceptFirstMouse?: boolean
   /** 创建/显示时是否触发全屏 loading 遮罩，默认 true（通知窗口应设为 false） */
   showLoading?: boolean
   /** 渲染层 HTML 文件名，如 'search-window.html' */
@@ -133,6 +135,7 @@ export class FloatingWindowHandler {
       alwaysOnTop: true,
       hideOnBlur: false,
       skipTaskbar: false,
+      acceptFirstMouse: false,
       showLoading: true,
       ...options,
     }
@@ -328,6 +331,7 @@ export class FloatingWindowHandler {
       closable: true,
       alwaysOnTop: opts.alwaysOnTop,
       skipTaskbar: opts.skipTaskbar,
+      acceptFirstMouse: opts.acceptFirstMouse,
       frame: false,
       transparent: true,
       show: false,

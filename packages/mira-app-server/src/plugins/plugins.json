@@ -2,12 +2,14 @@
   {
     "name": "mira_demo",
     "enabled": false,
-    "path": "mira_demo"
+    "path": "mira_demo",
+    "status": "inactive"
   },
   {
     "name": "mira_n8n",
     "enabled": false,
-    "path": "mira_n8n"
+    "path": "mira_n8n",
+    "status": "inactive"
   },
   {
     "name": "mira_thumb_imagemagick",
@@ -18,7 +20,8 @@
   {
     "name": "mira_duplicate_scanner",
     "enabled": true,
-    "path": "node_modules/mira_duplicate_scanner"
+    "path": "node_modules/mira_duplicate_scanner",
+    "status": "active"
   },
   {
     "name": "mira_eagle_extension",

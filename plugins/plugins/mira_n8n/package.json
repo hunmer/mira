@@ -1,8 +1,18 @@
 {
   "name": "mira_n8n",
   "version": "1.0.7",
+  "description": "通过 Webhook 和 WebSocket 把 Mira 文件事件转发到 n8n 工作流引擎，实现跨应用自动化任务编排。",
+  "author": "hunmer",
+  "license": "ISC",
   "main": "index.ts",
   "types": "dist/index.d.ts",
+  "mira": {
+    "id": "mira_n8n",
+    "title": "n8n 集成",
+    "icon": "🔗",
+    "category": "integration",
+    "tags": ["n8n", "Webhook", "自动化", "工作流"]
+  },
   "scripts": {
     "build": "tsc",
     "rebuild": "npm install && npm run build",
@@ -17,8 +27,5 @@
     "mira-app-server": "file://Users/Zhuanz/mira_typescript/packages/mira-app-server/",
     "mira-app-core": "file://Users/Zhuanz/mira_typescript/packages/mira-app-core/"
   },
-  "keywords": [],
-  "author": "hunmer",
-  "license": "ISC",
-  "description": ""
+  "keywords": []
 }

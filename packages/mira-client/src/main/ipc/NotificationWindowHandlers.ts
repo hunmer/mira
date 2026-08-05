@@ -236,6 +236,7 @@ export class NotificationWindowHandlers {
           movable: true,
           alwaysOnTop: true,
           skipTaskbar: true,
+          acceptFirstMouse: true,
           showLoading: false,
           htmlFileName: 'notification-window.html',
           htmlDirName: 'notification-window',
@@ -261,14 +262,14 @@ export class NotificationWindowHandlers {
               self.forwardToMainRenderer({ type: 'notification:click', id, data: data.data })
             },
             action: (data) => {
+              const slot = self.slots.find((s) => s.handler === this)
+              if (slot) self.dismissSlot(slot)
               self.forwardToMainRenderer({
                 type: 'notification:action',
                 id,
                 actionId: data.id,
                 data: data.data,
               })
-              const slot = self.slots.find((s) => s.handler === this)
-              if (slot) self.dismissSlot(slot)
             },
             // 自定义 JS 拖拽：仅水平、且只允许朝所在边缘外侧的单方向拖动
             'nt-drag-start': () => {

@@ -11,3 +11,10 @@ plugins/users.db
 
 mira-server.tar
 packages/mira-app-server/.tmp-*
+
+# mira-client build artifacts
+packages/mira-client/dist-main/
+packages/mira-client/dist-preload/
+packages/mira-client/dist-renderer/
+packages/mira-client/dist-float/
+packages/mira-client/build/

@@ -257,6 +257,11 @@ export class ServerPluginManager {
                 }
             }
 
+            // 读取 package.json 中 mira 字段下的展示信息（title/icon/category/tags）
+            const miraInfo = ((packageInfo as any).mira || {}) as {
+                title?: string; icon?: string; category?: string; tags?: string[];
+            };
+
             return {
                 name: pluginConfig.name,
                 enabled: pluginConfig.enabled,
@@ -264,9 +269,10 @@ export class ServerPluginManager {
                 ...packageInfo,
                 status: pluginConfig.enabled ? 'active' : 'inactive',
                 configurable: true,
-                icon: icon || (packageInfo as any).icon || null, // 支持package.json中的icon字段
-                category: (packageInfo as any).category || 'general', // 添加分类
-                tags: (packageInfo as any).tags || [] // 添加标签
+                icon: icon || miraInfo.icon || (packageInfo as any).icon || null, // 优先用 icon 文件，其次 mira.icon，最后 package.json 顶层 icon
+                title: miraInfo.title || (packageInfo as any).title || pluginConfig.name,
+                category: miraInfo.category || (packageInfo as any).category || 'general',
+                tags: miraInfo.tags || (packageInfo as any).tags || []
             };
         });
     }

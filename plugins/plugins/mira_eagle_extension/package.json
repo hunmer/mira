@@ -1,13 +1,21 @@
 {
   "name": "mira_eagle_extension",
   "version": "1.0.0",
+  "description": "在服务端复刻 Eagle 本地 HTTP 协议，让 Eagle 浏览器扩展无需改动即可把网页图片、截图、链接保存到 Mira 素材库。",
+  "author": "hunmer",
+  "license": "ISC",
   "main": "index.ts",
+  "mira": {
+    "id": "mira_eagle_extension",
+    "title": "Eagle 浏览器扩展支持",
+    "icon": "🦅",
+    "category": "integration",
+    "tags": ["Eagle", "浏览器扩展", "采集"]
+  },
   "scripts": {
     "build": "tsc"
   },
   "devDependencies": {
     "@types/node": "^20.0.0"
-  },
-  "author": "hunmer",
-  "license": "ISC"
+  }
 }

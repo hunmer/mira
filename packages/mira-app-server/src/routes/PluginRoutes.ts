@@ -20,6 +20,7 @@ interface PluginInfo {
     createdAt: string;
     updatedAt: string;
     icon?: string;
+    title?: string;
     category: string;
     tags: any[];
 }
@@ -53,6 +54,7 @@ export class PluginRoutes {
             createdAt: plugin.createdAt || new Date().toISOString(),
             updatedAt: plugin.updatedAt || new Date().toISOString(),
             icon: plugin.icon || null,
+            title: plugin.title || plugin.name,
             category: plugin.category || 'general',
             tags: plugin.tags || []
         };
