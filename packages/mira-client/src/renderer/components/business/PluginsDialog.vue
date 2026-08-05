@@ -342,7 +342,7 @@
           <input
             :value="selectedPlugin.config.pluginId"
             readonly
-            class="w-full px-3 py-2 border border-border dark:border-border rounded bg-muted dark:bg-muted text-sm text-foreground dark:text-muted-foreground"
+            class="w-full px-3 py-2 border border-border dark:border-border rounded bg-muted/50 dark:bg-muted/50 text-sm text-foreground dark:text-muted-foreground"
           />
         </div>
         <div>
@@ -350,7 +350,7 @@
           <input
             :value="selectedPlugin.config.version"
             readonly
-            class="w-full px-3 py-2 border border-border dark:border-border rounded bg-muted dark:bg-muted text-sm text-foreground dark:text-muted-foreground"
+            class="w-full px-3 py-2 border border-border dark:border-border rounded bg-muted/50 dark:bg-muted/50 text-sm text-foreground dark:text-muted-foreground"
           />
         </div>
       </div>
@@ -369,7 +369,7 @@
           <input
             :value="selectedPlugin.config.author"
             readonly
-            class="w-full px-3 py-2 border border-border dark:border-border rounded bg-muted dark:bg-muted text-sm text-foreground dark:text-muted-foreground"
+            class="w-full px-3 py-2 border border-border dark:border-border rounded bg-muted/50 dark:bg-muted/50 text-sm text-foreground dark:text-muted-foreground"
           />
         </div>
         <div>
@@ -377,7 +377,7 @@
           <input
             :value="selectedPlugin.config.homepage || '无'"
             readonly
-            class="w-full px-3 py-2 border border-border dark:border-border rounded bg-muted dark:bg-muted text-sm text-foreground dark:text-muted-foreground"
+            class="w-full px-3 py-2 border border-border dark:border-border rounded bg-muted/50 dark:bg-muted/50 text-sm text-foreground dark:text-muted-foreground"
           />
         </div>
       </div>
@@ -458,7 +458,7 @@ import { usePluginStore } from '@renderer/stores/plugin'
 import { useSettingsStore } from '@renderer/stores/settings'
 import type { PluginRuntime } from '../../../shared/types'
 import type { MarketplacePluginEntry } from '../../../shared/types'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 // 组件属性
@@ -585,10 +585,6 @@ const filteredMarketplacePlugins = computed(() => {
 })
 
 // 方法
-const handleDialogHide = (): void => {
-  isVisible.value = false
-}
-
 const getCategoryTitle = () => {
   switch (selectedCategory.value) {
     case 'all': return '全部集成'

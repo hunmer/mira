@@ -3,8 +3,10 @@
     :data-selectable-id="item.id"
     :data-file="getLocalFile(item)"
     :class="[
-      'waterfall-card media-waterfall-item bg-white rounded-lg shadow-sm border border-border overflow-hidden group cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5',
-      isSelected ? 'ring-2 ring-primary' : ''
+      'waterfall-card media-waterfall-item group relative cursor-pointer transition-all duration-200 rounded-xl overflow-hidden',
+      isSelected
+        ? 'ring-2 ring-primary'
+        : 'shadow-sm hover:shadow-[0_12px_36px_rgba(99,102,241,0.15)] hover:-translate-y-0.5'
     ]"
     @click="handleClick"
   >
@@ -93,14 +95,19 @@
           :style="{ width: `${progress * 100}%` }"
         ></div>
       </div>
-    </div>
 
-    <!-- 文件信息 -->
-    <div class="p-3">
-      <h3 class="text-sm font-medium text-foreground truncate">{{ item.name }}</h3>
-      <div class="flex items-center justify-between mt-2 text-xs text-muted-foreground">
-        <span>{{ formatFileSize(item.size || 0) }}</span>
-        <span>{{ formatDate(item.createdAt || '') }}</span>
+      <!-- 文件名 (玻璃浮层，非视频预览时显示) -->
+      <div
+        v-show="!isVideoPlaying"
+        class="absolute bottom-0 left-0 right-0 p-2"
+        :class="isSelected ? 'bg-primary/90' : 'bg-white/80 dark:bg-muted/80 backdrop-blur'"
+      >
+        <h3
+          class="text-sm font-medium truncate"
+          :class="isSelected ? 'text-white' : 'text-foreground dark:text-muted-foreground'"
+        >
+          {{ item.name }}
+        </h3>
       </div>
     </div>
   </div>
@@ -157,8 +164,6 @@ const {
   fileExtension,
   isVideo,
   getLocalFile,
-  formatFileSize,
-  formatDate,
   handleClick,
   handleDoubleClick,
   handleContextMenu,

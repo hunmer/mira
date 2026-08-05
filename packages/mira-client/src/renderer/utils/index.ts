@@ -8,6 +8,7 @@ export * from './errorHandler'
 export * from './fileUtils'
 export * from './helpers'
 export { default as ConfigStorage } from './ConfigStorage'
+export * from './theme-style'
 
 // 常用工具函数
 export const debounce = <T extends (...args: any[]) => any>(

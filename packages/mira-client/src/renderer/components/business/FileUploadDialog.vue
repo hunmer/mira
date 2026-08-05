@@ -243,7 +243,7 @@
                       v-for="file in displayFiles"
                       :key="file.id"
                       :data-selectable-id="matchesFilters(file) ? file.id : undefined"
-                      class="file-card group relative bg-muted dark:bg-muted rounded-lg overflow-hidden border-2 transition-all select-none"
+                      class="file-card group relative bg-white/40 dark:bg-muted/40 backdrop-blur-sm rounded-lg overflow-hidden border-2 transition-all select-none"
                       :class="[
                         !matchesFilters(file) ? 'opacity-50 cursor-not-allowed border-transparent' : (selectedPendingIds.includes(file.id) ? 'border-primary ring-2 ring-primary dark:ring-primary cursor-pointer' : 'border-transparent hover:border-border dark:hover:border-border cursor-pointer')
                       ]"

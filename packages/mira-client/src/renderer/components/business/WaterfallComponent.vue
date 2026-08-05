@@ -436,10 +436,6 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.waterfall-card:hover {
-  transform: translateY(-2px);
-}
-
 :deep(.animate__animated) {
   animation-fill-mode: both;
   animation-duration: 1s;

@@ -65,6 +65,9 @@ const handleDetailTagAdd = (tagName: string) => homeController.handleTagAdd(tagN
 const handleDetailTagRemove = (tagName: string) => homeController.handleTagRemove(tagName)
 const handleDetailFolderChange = (folderId: string) => homeController.handleFolderChange(folderId)
 
+// 侧边栏定位（供 Tab 管理的右键菜单使用）
+const sidebarRef = ref<{ locateItem: (type: 'folder' | 'tag', id: string) => void | Promise<void> }>()
+
 // ============================================
 // UI状态管理
 // ============================================
@@ -88,7 +91,7 @@ const showAccessDeniedDialog = ref(false)
 // ============================================
 // Tab管理
 // ============================================
-const tabManagement = useHomeTabManagement()
+const tabManagement = useHomeTabManagement(sidebarRef)
 const {
   tabsComposable,
   activeTabs,
@@ -254,26 +257,6 @@ onActivated(() => {
   })
 })
 
-// 侧边栏定位
-const sidebarRef = ref<{ locateItem: (type: 'folder' | 'tag', id: string) => void | Promise<void> }>()
-const handleLocateInSidebar = () => {
-  const tab = currentTab.value
-  console.log('[DEBUG-locate-sidebar] home handleLocateInSidebar', {
-    hasTab: Boolean(tab),
-    tabId: tab?.id,
-    tabType: tab?.type,
-    hasSidebarRef: Boolean(sidebarRef.value),
-  })
-  if (!tab) return
-  const type = tab.type === 'tag' ? 'tag' as const : 'folder' as const
-  const targetId = String(tab.data?.id ?? tab.id)
-  console.log('[DEBUG-locate-sidebar] home call sidebar.locateItem', {
-    type,
-    id: targetId,
-  })
-  sidebarRef.value?.locateItem(type, targetId)
-}
-
 // ============================================
 // 其他事件处理
 // ============================================
@@ -335,21 +318,6 @@ onUnmounted(() => {
                 @click="handleActivateLastTab"
               >
                 <span class="material-icons">arrow_back</span>
-              </button>
-              <button
-                class="h-8 w-8 flex items-center justify-center rounded-full text-muted-foreground hover:text-primary hover:bg-white/50 hover:backdrop-blur-xl transition-colors"
-                title="打开最后关闭的tab (Ctrl+Shift+T)"
-                @click="handleReopenClosedTab"
-              >
-                <span class="material-icons">redo</span>
-              </button>
-              <button
-                v-if="currentTab && currentTab.type !== 'home'"
-                class="h-8 w-8 flex items-center justify-center rounded-full text-muted-foreground hover:text-primary hover:bg-white/50 hover:backdrop-blur-xl transition-colors"
-                title="在侧边栏中定位当前项"
-                @click="handleLocateInSidebar"
-              >
-                <span class="material-icons">my_location</span>
               </button>
             </div>
             <ContextMenu>
