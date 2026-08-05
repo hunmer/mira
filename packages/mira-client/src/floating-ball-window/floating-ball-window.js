@@ -35,6 +35,9 @@ async function initFloatingBall() {
       if (data.type === 'fb-state') {
         // noop
       }
+      if (data.type === 'fb-drop-accepted') {
+        receiveFileAnimation()
+      }
     },
     onReady: () => {
       bridge.send({ type: 'fb-ready', timestamp: Date.now() })
@@ -48,6 +51,7 @@ async function initFloatingBall() {
       return {
         isDragging: false,
         isDragover: false,
+        isFileReceived: false,
         // 自定义拖拽追踪（相对增量，主进程 setPosition）
         dragStartCursor: null,
         // 本次按下是否真的发生过位移（用于区分点击与拖拽）
@@ -58,7 +62,7 @@ async function initFloatingBall() {
     template: `
       <div
         class="floating-ball fb-pulse"
-        :class="{ 'is-dragging': isDragging, 'is-dragover': isDragover }"
+        :class="{ 'is-dragging': isDragging, 'is-dragover': isDragover, 'is-file-received': isFileReceived }"
         title="拖拽移动 · 拖入文件上传 · 单击触发动作"
         @mousedown="handleDragStart"
         @click="handleClick"
@@ -92,6 +96,7 @@ async function initFloatingBall() {
       if (this._onWindowDragOver) window.removeEventListener('dragover', this._onWindowDragOver)
       if (this._onWindowDragLeave) window.removeEventListener('dragleave', this._onWindowDragLeave)
       if (this._onWindowDrop) window.removeEventListener('drop', this._onWindowDrop)
+      if (this._receivedTimer) clearTimeout(this._receivedTimer)
     },
     methods: {
       handleClick() {
@@ -139,18 +144,17 @@ async function initFloatingBall() {
       },
       // ===== 文件拖放：取真实路径转发主渲染进程 =====
       onDragEnter(e) {
-        if (!hasFiles(e)) return
+        // 必须无条件阻止默认行为，否则系统会显示不可投放光标，后续 drop 也不会派发。
+        e.preventDefault()
         this.dragDepth += 1
         this.isDragover = true
-        e.preventDefault()
       },
       onDragOver(e) {
-        if (!hasFiles(e)) return
-        this.isDragover = true
         e.preventDefault()
+        if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'
+        this.isDragover = true
       },
       onDragLeave(e) {
-        if (!hasFiles(e)) return
         this.dragDepth = Math.max(0, this.dragDepth - 1)
         if (this.dragDepth === 0) this.isDragover = false
       },
@@ -160,25 +164,17 @@ async function initFloatingBall() {
         this.isDragover = false
         const files = collectDroppedFiles(e)
         if (files.length === 0) return
+        this.isFileReceived = true
+        clearTimeout(this._receivedTimer)
+        this._receivedTimer = setTimeout(() => {
+          this.isFileReceived = false
+        }, 700)
         bridge.send({ type: 'fb-file-drop', files, timestamp: Date.now() })
       },
     },
   })
 
   app.mount('#floating-ball-app')
-}
-
-/**
- * 判断拖放事件是否包含文件
- */
-function hasFiles(e) {
-  if (!e.dataTransfer) return false
-  // 不同平台/应用可能不提供 Files 类型，但 files 或 URI 类型仍可用。
-  const types = Array.from(e.dataTransfer.types || [])
-  return (e.dataTransfer.files && e.dataTransfer.files.length > 0) ||
-    types.includes('Files') ||
-    types.includes('public.file-url') ||
-    types.includes('text/uri-list')
 }
 
 /**
@@ -215,4 +211,13 @@ function extractExt(name) {
   const idx = name.lastIndexOf('.')
   if (idx < 0) return ''
   return name.slice(idx + 1).toLowerCase()
+}
+
+function receiveFileAnimation() {
+  const ball = document.querySelector('.floating-ball')
+  if (!ball) return
+  ball.classList.remove('is-file-received')
+  void ball.offsetWidth
+  ball.classList.add('is-file-received')
+  setTimeout(() => ball.classList.remove('is-file-received'), 700)
 }

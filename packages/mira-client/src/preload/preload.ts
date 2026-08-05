@@ -227,6 +227,8 @@ const electronAPI: ElectronAPI = {
       ipcRenderer.invoke('floating-ball:set-position', pos),
     getState: () =>
       ipcRenderer.invoke('floating-ball:get-state'),
+    showMainWindow: () =>
+      ipcRenderer.invoke('floating-ball:show-main'),
     toggleMainWindow: () =>
       ipcRenderer.invoke('floating-ball:toggle-main')
   },

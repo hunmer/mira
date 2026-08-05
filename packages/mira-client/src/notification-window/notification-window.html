@@ -81,6 +81,7 @@
       overflow: hidden;
       user-select: none;
       -webkit-user-select: none;
+      -webkit-app-region: no-drag !important;
     }
 
     #notification-app {
@@ -90,6 +91,7 @@
       display: flex;
       align-items: flex-end;
       justify-content: flex-end;
+      -webkit-app-region: no-drag !important;
     }
 
     /* 通知卡片（右下角） */
@@ -106,6 +108,7 @@
       -webkit-user-select: none;
       transition: background 0.2s ease, box-shadow 0.2s ease;
       position: relative;
+      -webkit-app-region: no-drag !important;
     }
 
     /* 仅可拖拽位置显示拖动光标 */
@@ -242,6 +245,8 @@
       align-items: center;
       flex-shrink: 0;
       transition: color 0.2s;
+      pointer-events: auto;
+      -webkit-app-region: no-drag !important;
     }
 
     .notification-close:hover {
@@ -284,6 +289,8 @@
       font-size: 12px;
       font-family: inherit;
       transition: all 0.2s;
+      pointer-events: auto;
+      -webkit-app-region: no-drag !important;
     }
 
     .notification-action:hover {

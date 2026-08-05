@@ -173,6 +173,18 @@ class MiraApplication {
       logger.info('MiraApplication', 'App is about to quit')
       this.cleanup()
     })
+
+    // 捕获退出信号，确保 macOS / 开发模式下也能干净退出
+    // （vite-plugin-electron 在 macOS 下 Ctrl+C 经常不会触发 before-quit）
+    const quitGracefully = (signal: NodeJS.Signals) => {
+      logger.info('MiraApplication', `Received ${signal}, quitting...`)
+      // before-quit 钩子会负责 cleanup
+      app.quit()
+    }
+    process.on('SIGINT', quitGracefully)
+    process.on('SIGTERM', quitGracefully)
+    // macOS 下 SIGHUP 常见于父进程（vite）退出时
+    process.on('SIGHUP', quitGracefully)
   }
 
   private createWindow() {
@@ -606,12 +618,19 @@ class MiraApplication {
     this.protocolService?.cleanup()
     this.protocolService = null
 
-    // 清理托盘服务
+    // 清理托盘服务（macOS 下托盘残留是进程不退出的常见原因）
     this.trayService?.cleanup()
     this.trayService = null
 
     // 清理窗口状态管理器引用
     this.windowState = null
+
+    // 强制销毁所有窗口，避免残留句柄阻止退出
+    for (const win of BrowserWindow.getAllWindows()) {
+      if (!win.isDestroyed()) {
+        win.destroy()
+      }
+    }
 
     logger.info('MiraApplication', 'Application cleanup completed')
   }

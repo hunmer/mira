@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow } from 'electron'
+import { app, ipcMain, BrowserWindow } from 'electron'
 import {
   FloatingWindowHandler,
   type FloatingWindowPosition,
@@ -262,7 +262,9 @@ export class NotificationWindowHandlers {
               self.forwardToMainRenderer({ type: 'notification:click', id, data: data.data })
             },
             action: (data) => {
+              console.info('[NotificationDebug][main] action received', { id, data })
               const slot = self.slots.find((s) => s.handler === this)
+              console.info('[NotificationDebug][main] dismissing slot', { id, slotFound: !!slot })
               if (slot) self.dismissSlot(slot)
               self.forwardToMainRenderer({
                 type: 'notification:action',
@@ -320,7 +322,17 @@ export class NotificationWindowHandlers {
         // ready-to-show 时内容尚未应用（高度未知），先按堆叠初步定位并显示，
         // 待 measure-ready 回调再校正高度并重定位。
         self.positionSlot(this, position, stackIndex)
+        const win = this.getWindow()
+        if (win && !win.isDestroyed()) {
+          // 通知使用自定义 JS 拖拽，必须确保原生窗口不会吞掉鼠标按键事件。
+          win.setIgnoreMouseEvents(false)
+          win.setFocusable(true)
+        }
         this.doShow()
+        if (!app.isPackaged) {
+          console.info('[NotificationDebug][main] opening notification DevTools', { id })
+          win?.webContents.openDevTools({ mode: 'detach', activate: true })
+        }
       }
     })()
 
@@ -521,11 +533,17 @@ export class NotificationWindowHandlers {
 
   private forwardToMainRenderer(data: any): void {
     const mainWindow = this.getMainWindow()
+    console.info('[NotificationDebug][main] forwarding to main renderer', {
+      data,
+      mainWindowFound: !!mainWindow,
+      mainWindowDestroyed: mainWindow?.isDestroyed() ?? null,
+    })
     if (mainWindow && !mainWindow.isDestroyed()) {
       if (mainWindow.isMinimized()) mainWindow.restore()
       mainWindow.show()
       mainWindow.focus()
       mainWindow.webContents.send('notification-from-window', data)
+      console.info('[NotificationDebug][main] notification-from-window sent', data)
     }
   }
 

@@ -20,6 +20,7 @@ export default {
     failed: '操作失败',
     confirmDelete: '确认删除？',
     total: '共 {n} 条',
+    back: '返回',
   },
   nav: {
     overview: '系统概览',

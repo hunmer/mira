@@ -20,6 +20,7 @@ export default {
     failed: 'Failed',
     confirmDelete: 'Confirm delete?',
     total: '{n} items',
+    back: 'Back',
   },
   nav: {
     overview: 'Overview',

@@ -49,6 +49,7 @@ async function initNotificationWindow() {
     role: 'notification',
     onMessage: (data) => {
       if (data.type === 'notification-content' && data.payload) {
+        console.info('[NotificationDebug] content received', data.payload)
         appVM.applyContent(data.payload)
         reportMeasure()
       }
@@ -156,6 +157,7 @@ async function initNotificationWindow() {
               :key="action.id"
               class="notification-action"
               @click.stop="handleAction(action)"
+              @pointerdown.stop="debugActionPointer(action, $event)"
               @mousedown.stop
             >{{ action.label }}</button>
           </div>
@@ -204,8 +206,21 @@ async function initNotificationWindow() {
         // 回传业务数据（如 fileId），主进程转发给主渲染进程
         bridge.send({ type: 'click', data: this.data, timestamp: Date.now() })
       },
+      debugActionPointer(action, event) {
+        console.info('[NotificationDebug] action pointerdown', {
+          action,
+          button: event.button,
+          bridgeReady: bridge.isReady(),
+          data: this.data,
+        })
+      },
       handleAction(action) {
-        bridge.send({ type: 'action', id: action.id, data: this.data, timestamp: Date.now() })
+        const message = { type: 'action', id: action.id, data: this.data, timestamp: Date.now() }
+        console.info('[NotificationDebug] action click, sending message', {
+          message,
+          bridgeReady: bridge.isReady(),
+        })
+        bridge.send(message)
       },
       handleClose() {
         bridge.send({ type: 'dismiss', timestamp: Date.now() })

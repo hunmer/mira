@@ -52,6 +52,8 @@ export class FloatingBallWindowHandlers {
           position: 'bottom-right',
           margin: 24,
           movable: true,
+          // macOS 透明窗口首次接收 Finder 拖拽时需要允许窗口激活。
+          acceptFirstMouse: true,
           alwaysOnTop: true,
           skipTaskbar: true,
           showLoading: false,
@@ -67,13 +69,17 @@ export class FloatingBallWindowHandlers {
             // 点击行为由主渲染进程按 floatingBallClickAction 设置决定
             // （main 进程不反向查询渲染进程设置，保持解耦）
             'fb-click': () => {
-              self.forwardToMain({ type: 'fb-click' })
+              const main = self.getMainWindow()
+              const mainWasHidden = !!main && (main.isMinimized() || !main.isVisible())
+              if (mainWasHidden) self.showMainWindow()
+              self.forwardToMain({ type: 'fb-click', mainWasHidden })
             },
             // 接收文件拖放：转发主渲染进程，并激活主窗口
             'fb-file-drop': (data) => {
               const files = Array.isArray(data.files) ? data.files : []
               if (files.length === 0) return
               self.forwardToMain({ type: 'file-drop', files })
+              self.handler.sendMessage({ type: 'fb-drop-accepted' })
               self.showMainWindow()
             },
             // 自定义全向拖拽（无轴向/方向限制）
@@ -108,6 +114,44 @@ export class FloatingBallWindowHandlers {
         // 创建后恢复上次位置（若已持久化）
         self.restorePosition()
         this.doShow()
+        this.applyInteractiveWindowLevel()
+      }
+
+      protected async handleShow(): Promise<void> {
+        await super.handleShow()
+        this.applyInteractiveWindowLevel()
+      }
+
+      private applyInteractiveWindowLevel(): void {
+        if (process.platform !== 'darwin' || !this.window || this.window.isDestroyed()) return
+        // screen-saver 层用于纯展示覆盖；Finder 不会把它稳定视为拖放目标。
+        this.window.setAlwaysOnTop(true, 'floating')
+        this.window.setFocusable(true)
+        this.window.setIgnoreMouseEvents(false)
+      }
+
+      protected setupWindowEvents(): void {
+        super.setupWindowEvents()
+        // macOS 对透明无边框窗口偶尔不派发 HTML5 drop，而把文件作为导航目标传入。
+        // 拦截 file:// 导航作为原生兜底，避免页面被文件路径替换。
+        this.window?.webContents.on('will-navigate', (event, url) => {
+          if (process.platform !== 'darwin' || !url.startsWith('file://')) return
+          event.preventDefault()
+          try {
+            const fileUrl = new URL(url)
+            const filePath = decodeURIComponent(fileUrl.pathname)
+            const name = path.basename(filePath)
+            if (!filePath || !name) return
+            self.forwardToMain({
+              type: 'file-drop',
+              files: [{ name, path: filePath, isDir: false, size: 0, ext: path.extname(name).slice(1).toLowerCase() }],
+            })
+            self.handler.sendMessage({ type: 'fb-drop-accepted' })
+            self.showMainWindow()
+          } catch (error) {
+            console.error('[floating-ball] macOS 原生拖放解析失败:', error)
+          }
+        })
       }
     })()
 
@@ -115,6 +159,7 @@ export class FloatingBallWindowHandlers {
     ipcMain.handle('floating-ball:set-position', (_e, pos) => this.setPosition(pos))
     ipcMain.handle('floating-ball:get-state', () => this.getState())
     ipcMain.handle('floating-ball:toggle-main', () => this.toggleMainWindow())
+    ipcMain.handle('floating-ball:show-main', () => this.showMainWindow())
   }
 
   // ============ 对外公共方法 ============
@@ -183,6 +228,7 @@ export class FloatingBallWindowHandlers {
     ipcMain.removeHandler('floating-ball:set-position')
     ipcMain.removeHandler('floating-ball:get-state')
     ipcMain.removeHandler('floating-ball:toggle-main')
+    ipcMain.removeHandler('floating-ball:show-main')
     // 基类清理 :show/:hide/:toggle 及窗口、MessagePort
     this.handler.cleanup()
   }

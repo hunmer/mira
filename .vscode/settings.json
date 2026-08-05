@@ -67,5 +67,8 @@
   },
   "tailwindCSS.experimental.classRegex": [
     "class:\\s*['\"]([^'\"]*)['\"]"
+  ],
+  "taskManager.favorites": [
+    "mira/packages/mira-client/npm/install - packages/mira-client"
   ]
 }

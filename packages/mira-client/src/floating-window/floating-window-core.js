@@ -68,6 +68,9 @@
 
     function send(message) {
       if (port) {
+        if (message && (message.type === 'action' || message.type === 'click' || message.type === 'dismiss')) {
+          console.info('[' + role + '][NotificationDebug] MessagePort send', message)
+        }
         port.postMessage(message)
       } else {
         console.warn('⚠️ [' + role + '] MessagePort 未初始化，消息未发送:', message)

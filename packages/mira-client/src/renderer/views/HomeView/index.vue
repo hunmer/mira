@@ -154,10 +154,13 @@ function handleFloatingBallMessage(data: any) {
     // 单击行为按设置决定
     const action = settingsStore.settings.floatingBallClickAction
     if (action === 'toggleMain') {
-      // 切换主窗口显示/隐藏
-      window.electronAPI?.floatingBall?.toggleMainWindow().catch((e) => console.error('切换主窗口失败:', e))
+      // 主进程已负责恢复隐藏窗口；仅在原本可见时执行最小化切换。
+      if (!data.mainWasHidden) {
+        window.electronAPI?.floatingBall?.toggleMainWindow().catch((e) => console.error('切换主窗口失败:', e))
+      }
     } else {
-      // 默认：打开文件上传对话框（空列表）
+      // 默认：先恢复并聚焦主窗口，再打开文件上传对话框（空列表）
+      window.electronAPI?.floatingBall?.showMainWindow().catch((e) => console.error('唤起主窗口失败:', e))
       uploadInitialTree.value = undefined
       showFileUploadDialog.value = true
     }

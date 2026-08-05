@@ -24,12 +24,18 @@ import {
   RiDatabase2Line, RiSmartphoneLine,
   RiBarChart2Line, RiImageLine, RiFolderOpenLine,
   RiSunLine, RiMoonLine, RiComputerLine, RiGlobalLine,
-  RiLogoutBoxRLine, RiUser3Line,
+  RiLogoutBoxRLine, RiUser3Line, RiArrowGoBackLine,
 } from '@remixicon/vue'
 
 const { t, locale } = useI18n()
 const router = useRouter()
 const route = useRoute()
+
+// 返回上一级：仅当存在历史记录时可返回
+const canGoBack = typeof window !== 'undefined' && window.history.length > 1
+function goBack() {
+  router.back()
+}
 const auth = useAuthStore()
 const { mode: themeMode } = useTheme()
 const { libraries, selectedId, loading: libsLoading, ensureLoaded } = useLibrary()
@@ -137,6 +143,17 @@ function handleLogout() {
     <SidebarInset>
       <header class="flex h-14 items-center gap-2 border-b px-4">
         <SidebarTrigger />
+        <Button
+          v-if="canGoBack"
+          variant="ghost"
+          size="icon"
+          class="size-8"
+          :title="t('common.back')"
+          @click="goBack"
+        >
+          <RiArrowGoBackLine class="size-4" />
+        </Button>
+        <Separator orientation="vertical" class="mx-1 h-5" />
         <div class="flex-1" />
         <!-- Library selector -->
         <Select v-model="selectedId" :disabled="libsLoading || !libraries.length">

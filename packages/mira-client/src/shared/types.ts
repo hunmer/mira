@@ -480,6 +480,8 @@ export interface ElectronAPI {
     setPosition: (pos?: { x: number; y: number } | null) => Promise<void>
     /** 读取当前坐标（窗口未创建时返回上次持久化的坐标或 null） */
     getState: () => Promise<{ x: number; y: number } | null>
+    /** 恢复、显示并聚焦主窗口 */
+    showMainWindow: () => Promise<void>
     /** 切换主渲染窗口显示/隐藏（点击行为 toggleMain 时由渲染进程调用） */
     toggleMainWindow: () => Promise<void>
   }

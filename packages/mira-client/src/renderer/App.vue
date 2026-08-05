@@ -293,6 +293,7 @@ const setupElectronListeners = () => {
 
   // 监听通知窗口的点击/操作回调，跳转到对应文件详情
   window.electronAPI.on('notification-from-window', (payload: any) => {
+    console.info('[NotificationDebug][renderer] notification received', payload)
     if (!payload) return
     const fileId = payload?.data?.fileId
     // 点击通知卡片或“查看”按钮，按媒体类型打开对应预览页。
@@ -303,7 +304,19 @@ const setupElectronListeners = () => {
       const previewRoute = payload?.data?.previewType === 'video'
         ? 'video-preview'
         : 'image-preview'
-      router.push(`/${previewRoute}/${encodeURIComponent(String(fileId))}`)
+      const target = `/${previewRoute}/${encodeURIComponent(String(fileId))}`
+      console.info('[NotificationDebug][renderer] routing', { target, payload })
+      router.push(target).then(() => {
+        console.info('[NotificationDebug][renderer] route completed', { target })
+      }).catch((error) => {
+        console.error('[NotificationDebug][renderer] route failed', { target, error })
+      })
+    } else {
+      console.warn('[NotificationDebug][renderer] ignored notification payload', {
+        payload,
+        fileId,
+        shouldOpen,
+      })
     }
   })
   

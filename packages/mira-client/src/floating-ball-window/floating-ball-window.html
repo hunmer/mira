@@ -59,6 +59,8 @@
       overflow: hidden;
       user-select: none;
       -webkit-user-select: none;
+      pointer-events: auto;
+      -webkit-app-region: no-drag !important;
     }
 
     #floating-ball-app {
@@ -68,6 +70,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      pointer-events: auto;
+      -webkit-app-region: no-drag !important;
     }
 
     /* 悬浮球主体 */
@@ -85,6 +89,8 @@
       transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.18s ease;
       user-select: none;
       -webkit-user-select: none;
+      pointer-events: auto;
+      -webkit-app-region: no-drag !important;
     }
 
     .floating-ball:hover {
@@ -102,6 +108,18 @@
     .floating-ball.is-dragover {
       border: 3px solid var(--fb-drop);
       transform: scale(1.12);
+    }
+
+    /* 文件已成功接收：短促放大并闪烁确认 */
+    @keyframes fb-received {
+      0% { transform: scale(1.12); box-shadow: var(--fb-shadow), 0 0 0 0 rgba(16, 185, 129, 0.8); }
+      45% { transform: scale(1.28); box-shadow: var(--fb-shadow-drag), 0 0 0 12px rgba(16, 185, 129, 0.15); }
+      100% { transform: scale(1); box-shadow: var(--fb-shadow), 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    .floating-ball.fb-pulse.is-file-received {
+      border-color: var(--fb-drop);
+      animation: fb-received 0.7s ease-out;
     }
 
     .floating-ball .material-icons {
