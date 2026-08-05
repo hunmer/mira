@@ -42,6 +42,7 @@ const props = withDefaults(defineProps<MasonryProps<VT>>(), {
   exitAnimation: true,
   staggerDelay: 0.05,
   layoutTransition: true,
+  layoutMode: "stream",
   lazyRootMargin: "300px"
 })
 
@@ -144,6 +145,106 @@ function layout<T>(
   return { items, totalHeight }
 }
 
+/**
+ * 智能填充布局：
+ *  1. 宽图(colSpan>1)按原始顺序流式定位，作为保序锚点（跨列图必须保持相对位置才不违和）
+ *  2. 普通图(colSpan=1)再用 best-fit 贪心回填：每次选 bottoms 最小的列放入，
+ *     自动钻进宽图旁留下的低位空隙，显著减少间隙。
+ * 代价：普通图之间的相对顺序会与原始数组不一致。
+ */
+function layoutFill<T>(
+  data: T[],
+  columns: number,
+  colWidth: number,
+  gap: number,
+  rowHeight: number,
+  getMeta: ((item: T, i: number) => MasonryItemMeta | undefined) | undefined,
+  getKey: (item: T, i: number) => string | number
+): { items: PlacedItem<T>[]; totalHeight: number } {
+  const items: PlacedItem<T>[] = []
+  if (columns <= 0 || colWidth <= 0) return { items, totalHeight: 0 }
+
+  // bottoms[k] = 第 k 列"下一个可用 top"（已含上方 gap）
+  const bottoms = new Array(columns).fill(0)
+
+  // 预解析每个 item 的占列数、高度、懒加载标记（避免对 getMeta 重复求值）
+  const parsed = data.map((item, index) => {
+    const meta = getMeta?.(item, index) ?? {}
+    const cs = Math.min(Math.max(Math.floor(meta.colSpan ?? 1), 1), columns)
+    const width = cs * colWidth + (cs - 1) * gap
+    let height: number
+    if (typeof meta.height === "number") {
+      height = meta.height
+    } else {
+      const ratio = aspectToRatio(meta.aspect)
+      height = ratio != null ? width * ratio : (meta.rowSpan ?? 1) * rowHeight
+    }
+    return { item, index, colSpan: cs, height, lazy: !!meta.lazy }
+  })
+
+  const place = (
+    p: { item: T; index: number; colSpan: number; height: number; lazy: boolean },
+    startCol: number
+  ) => {
+    let top = 0
+    for (let k = startCol; k < startCol + p.colSpan; k++) top = Math.max(top, bottoms[k])
+    const width = p.colSpan * colWidth + (p.colSpan - 1) * gap
+    for (let k = startCol; k < startCol + p.colSpan; k++) {
+      bottoms[k] = top + p.height + gap
+    }
+    items.push({
+      key: getKey(p.item, p.index),
+      item: p.item,
+      index: p.index,
+      left: startCol * (colWidth + gap),
+      top,
+      width,
+      height: p.height,
+      lazy: p.lazy
+    })
+  }
+
+  // 1. 宽图流式定位（保序）
+  for (const p of parsed) {
+    if (p.colSpan <= 1) continue
+    let bestStart = 0
+    let minTop = Infinity
+    for (let s = 0; s <= columns - p.colSpan; s++) {
+      let top = 0
+      for (let k = s; k < s + p.colSpan; k++) top = Math.max(top, bottoms[k])
+      if (top < minTop) {
+        minTop = top
+        bestStart = s
+      }
+    }
+    place(p, bestStart)
+  }
+
+  // 2. 普通图 best-fit 回填：每次挑当前最矮的列，把能放进该列最低位的图放进去，
+  //    优先消化与最高列的高度差，自然补齐宽图旁的空隙。
+  const singles = parsed.filter(p => p.colSpan === 1)
+  const placedSingle = new Set<number>()
+  while (placedSingle.size < singles.length) {
+    // 找当前最矮列
+    let minCol = 0
+    let minBottom = bottoms[0]
+    for (let k = 1; k < columns; k++) {
+      if (bottoms[k] < minBottom) {
+        minBottom = bottoms[k]
+        minCol = k
+      }
+    }
+    // 在剩余普通图中挑第一个未放置的（保持相对顺序，减少跳变）
+    const next = singles.find(p => !placedSingle.has(p.index))
+    if (!next) break
+    placedSingle.add(next.index)
+    place(next, minCol)
+  }
+
+  const totalHeight = Math.max(0, Math.max(...bottoms, 0) - gap)
+  return { items, totalHeight }
+}
+
 /** 排序（不修改原数组） */
 function sortData<T>(
   data: T[],
@@ -210,18 +311,13 @@ const colWidth = computed(() =>
   width.value > 0 ? (width.value - (colCount.value - 1) * props.gap) / colCount.value : 0
 )
 
-// 3. 布局
-const placed = computed(() =>
-  layout(
-    sorted.value,
-    colCount.value,
-    colWidth.value,
-    props.gap,
-    props.rowHeight,
-    props.getMeta,
-    keyExtractor.value
-  )
-)
+// 3. 布局（fill 模式智能回填空隙，stream 模式纯流式）
+const placed = computed(() => {
+  const args = [colCount.value, colWidth.value, props.gap, props.rowHeight, props.getMeta, keyExtractor.value] as const
+  return props.layoutMode === "fill"
+    ? layoutFill(sorted.value, ...args)
+    : layout(sorted.value, ...args)
+})
 
 /* --------------------------------------------------------------- 动画配置 */
 

@@ -76,7 +76,8 @@ export default defineConfig({
           // 预加载脚本 - 支持多入口
           entry: {
             preload: 'src/preload/preload.ts',
-            'search-preload': 'src/preload/search-preload.js'
+            'search-preload': 'src/preload/search-preload.js',
+            'notification-preload': 'src/preload/notification-preload.js'
           },
           onstart(options) {
             // 通知渲染进程重新加载页面

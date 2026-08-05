@@ -205,6 +205,16 @@ const electronAPI: ElectronAPI = {
       ipcRenderer.invoke('notification:is-supported')
   },
 
+  // 通知窗口 API（自定义 BrowserWindow 通知）
+  notificationWindow: {
+    show: (payload) =>
+      ipcRenderer.invoke('notification:window-show', payload),
+    hide: () =>
+      ipcRenderer.invoke('notification-window:hide'),
+    dismiss: () =>
+      ipcRenderer.invoke('notification:window-dismiss')
+  },
+
   // 兼容性API（用于插件）
   startDrag: (filePath: string, iconInfo?: { iconPath?: string; iconType?: string }) =>
     ipcRenderer.invoke('drag-drop:start', filePath, iconInfo),

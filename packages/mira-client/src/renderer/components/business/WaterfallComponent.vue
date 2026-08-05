@@ -21,6 +21,7 @@
       :gap="gap"
       :class="waterfallClass"
       :layout-transition="layoutTransition"
+      :layout-mode="layoutMode"
       :lazy-root-margin="lazyRootMargin"
       @after-render="handleAfterRender"
     >
@@ -98,6 +99,13 @@ interface Props {
   maxColSpan?: number
   /** 排序/列数变化时的 layout 平滑过渡，默认 true；大量 item 卡顿可关闭 */
   layoutTransition?: boolean
+  /**
+   * 布局模式：
+   *  - "fill"（默认）：智能填充。宽图先按序流式定位保序，普通图 best-fit 回填到
+   *    最矮列，自动补齐宽图旁的空隙，减少间隙。代价是普通图相对顺序会被打乱。
+   *  - "stream"：纯贪心流式，顺序严格保持，但宽图旁易留空隙。
+   */
+  layoutMode?: 'fill' | 'stream'
   /** 懒加载触发的 IntersectionObserver rootMargin */
   lazyRootMargin?: string
 }
@@ -128,6 +136,7 @@ const props = withDefaults(defineProps<Props>(), {
   ultraWideAspectThreshold: 2.4,
   maxColSpan: 3,
   layoutTransition: true,
+  layoutMode: 'fill',
   lazyRootMargin: '300px 0px'
 })
 

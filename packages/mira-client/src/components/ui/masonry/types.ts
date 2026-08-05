@@ -65,6 +65,15 @@ export interface MasonryProps<T = any> {
   /** 排序/列数变化时是否平滑过渡位置（layout 动画），默认 true */
   layoutTransition?: boolean
 
+  /**
+   * 布局模式：
+   *  - "stream"（默认）：纯贪心流式，每个 item 放到当前最矮的起始列
+   *  - "fill"：智能填充。宽图(colSpan>1)先按序流式定位保序锚点，普通图(colSpan=1)
+   *            再用 best-fit 按高度差回填到所有列，自动补齐宽图旁的空隙，减少间隙。
+   *            代价是普通图之间的相对顺序会被打破。
+   */
+  layoutMode?: "stream" | "fill"
+
   /** 懒加载触发的 rootMargin，默认 "300px" */
   lazyRootMargin?: string
 }
