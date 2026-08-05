@@ -53,7 +53,7 @@ watch(userAvatarUrl, () => { avatarLoadError.value = false })
       min-width="200px"
     >
       <template #trigger>
-        <button class="p-1 rounded-full hover:bg-primary/10 transition-colors">
+        <button class="h-8 w-8 flex items-center justify-center rounded-full hover:bg-primary/10 transition-colors">
           <img
             v-if="userAvatarUrl && !avatarLoadError"
             :src="userAvatarUrl"

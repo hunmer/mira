@@ -328,7 +328,7 @@ onUnmounted(() => {
           <!-- Tabs 条（固定高度与右侧 HomeHeader 对齐，内容面板顶与详情面板顶对齐；隐藏滚动条） -->
           <div class="shrink-0 h-[56px] px-2 flex items-end overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <!-- 导航按钮（原 HomeHeader 迁入） -->
-            <div class="flex items-center gap-0.5 shrink-0 mb-1.5 mr-1">
+            <div class="flex items-center gap-0.5 shrink-0 mb-0.5 mr-1">
               <button
                 class="h-8 w-8 flex items-center justify-center rounded-full text-muted-foreground hover:text-primary hover:bg-white/50 hover:backdrop-blur-xl transition-colors"
                 title="激活上一次的tab (Ctrl+Shift+Tab)"
@@ -363,7 +363,7 @@ onUnmounted(() => {
                       'flex items-center space-x-2 shrink-0 text-sm font-medium transition-colors',
                       tab.active
                         ? 'relative z-10 px-4 py-2 -mb-px rounded-t-2xl border border-b-0 border-white/60 dark:border-border bg-white/30 dark:bg-muted/50 backdrop-blur-xl text-primary shadow-[0_-4px_16px_rgba(99,102,241,0.06)]'
-                        : 'px-3 py-1.5 mb-1.5 rounded-full text-muted-foreground hover:text-primary hover:bg-white/50 dark:hover:bg-muted/50 hover:backdrop-blur-xl hover:shadow-[0_-4px_16px_rgba(99,102,241,0.06)]'
+                        : 'px-3 py-1.5 mb-0.5 rounded-full text-muted-foreground hover:text-primary hover:bg-white/50 dark:hover:bg-muted/50 hover:backdrop-blur-xl hover:shadow-[0_-4px_16px_rgba(99,102,241,0.06)]'
                     ]"
                     @click="switchToTabWithCallback(tab.id)"
                     @contextmenu="tab.type === 'home' ? $event.preventDefault() : handleTabContextMenu(tab, $event)"

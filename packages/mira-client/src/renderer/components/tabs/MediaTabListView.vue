@@ -85,22 +85,6 @@
           <span class="material-icons text-base" :class="{ 'animate-spin': isLoading }">refresh</span>
         </button>
 
-        <!-- 切换详情面板按钮 -->
-        <button
-          @click="toggleDetailSidebar"
-          :class="[
-            'flex items-center space-x-1 px-3 py-1.5 text-sm rounded-lg border shadow-sm transition-colors',
-            showDetailSidebar
-              ? 'bg-primary/10 text-primary border-primary/30 hover:bg-primary/15'
-              : 'text-muted-foreground border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur hover:text-primary hover:bg-primary/10'
-          ]"
-          :title="showDetailSidebar ? '隐藏详情面板' : '显示详情面板'"
-        >
-          <span class="material-icons text-base">
-            {{ showDetailSidebar ? 'visibility_off' : 'info' }}
-          </span>
-        </button>
-        
       </div>
     </div>
 
@@ -345,7 +329,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted, nextTick, toRef } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useMediaStore } from '@renderer/stores/media'
 import { useLibraryStore } from '@renderer/stores/library'
 import { useSettingsStore } from '@renderer/stores/settings'
@@ -430,10 +414,6 @@ const {
   handleMediaSetFolder,
   handleMediaSetTags,
 } = mediaOperations
-
-// 详情面板使用全局 store 状态
-const showDetailSidebar = toRef(mediaStore, 'showDetailSidebar')
-const toggleDetailSidebar = () => mediaStore.toggleDetailSidebar()
 
 const filtersComposable = useFilters()
 const {

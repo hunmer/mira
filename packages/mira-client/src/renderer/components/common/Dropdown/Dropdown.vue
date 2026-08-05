@@ -22,6 +22,8 @@ interface Props {
   /** 点击内容是否自动关闭 */
   closeOnContentClick?: boolean
   disabled?: boolean
+  /** trigger 区域是否撑满父级宽度（默认 inline-flex 收缩到内容宽度） */
+  fullWidth?: boolean
 }
 
 interface Emits {
@@ -36,6 +38,7 @@ const props = withDefaults(defineProps<Props>(), {
   minWidth: '200px',
   closeOnContentClick: false,
   disabled: false,
+  fullWidth: false,
 })
 const emit = defineEmits<Emits>()
 
@@ -78,7 +81,7 @@ defineExpose({
 <template>
   <Popover v-model:open="open">
     <PopoverTrigger as-child>
-      <div class="inline-flex"><slot name="trigger" :is-open="open" /></div>
+      <div :class="fullWidth ? 'flex w-full' : 'inline-flex'"><slot name="trigger" :is-open="open" /></div>
     </PopoverTrigger>
     <PopoverContent
       :side="side"

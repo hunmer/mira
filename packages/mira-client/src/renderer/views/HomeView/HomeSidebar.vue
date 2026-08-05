@@ -193,6 +193,7 @@ defineExpose({ locateItem })
       :offset="{ x: 0, y: 4 }"
       placement="bottom-start"
       min-width="280px"
+      full-width
     >
       <template #trigger>
         <button

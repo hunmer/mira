@@ -40,6 +40,11 @@ shadow-[0_8px_30px_rgba(99,102,241,0.08)]
 - 次级/内嵌面板透明度降为 `bg-white/50`、`bg-white/60`
 - 描边用 `border-white/60`（亮）让边缘有「高光」，不用深灰描边
 
+**弹出层（Popover / DropdownMenu / ContextMenu）**已在 shadcn-vue 基础组件统一定制：
+`bg-white/80 dark:bg-muted/80 backdrop-blur-xl rounded-xl~2xl border-white/60 shadow-[0_12px_40px_rgba(99,102,241,0.12)]`
+
+**对话框（Dialog）**：`bg-white/80 dark:bg-muted/85 backdrop-blur-xl rounded-2xl shadow-[0_24px_60px_rgba(99,102,241,0.15)]`；遮罩 `bg-black/40 backdrop-blur-sm`
+
 ### 2.3 强调色
 
 - 主色：`primary`（选中态、主按钮、激活图标）

@@ -216,17 +216,19 @@
       <p class="text-xs text-muted-foreground mt-1">点击上方的 + 按钮添加新{{ sectionTitle }}</p>
     </div>
 
-    <!-- 通用编辑对话框 -->
-    <FolderEditDialog
-      :visible="ops.showEditDialog.value"
-      :folder="ops.editingItem.value"
-      :parent-folder="ops.editingParentItem.value"
-      :available-folders="folders"
-      :item-type="ops.editingItemType.value"
-      :dialog-title="ops.dialogTitle.value"
-      @close="ops.handleEditDialogClose"
-      @save="ops.handleItemSave"
-    />
+    <!-- 通用编辑对话框（Teleport 到 body，避免被侧栏等祖先容器的 transform/filter 等限制为局部定位） -->
+    <Teleport to="body">
+      <FolderEditDialog
+        :visible="ops.showEditDialog.value"
+        :folder="ops.editingItem.value"
+        :parent-folder="ops.editingParentItem.value"
+        :available-folders="folders"
+        :item-type="ops.editingItemType.value"
+        :dialog-title="ops.dialogTitle.value"
+        @close="ops.handleEditDialogClose"
+        @save="ops.handleItemSave"
+      />
+    </Teleport>
 
     <!-- 通用移动对话框 -->
     <FolderMoveDialog
