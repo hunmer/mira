@@ -1,5 +1,5 @@
 <template>
-  <div id="app" class="h-screen w-screen overflow-hidden bg-surface-50 dark:bg-surface-950">
+  <div id="app" class="h-screen w-screen overflow-hidden bg-background">
     <!-- iOS风格拖拽横条 -->
     <div class="drag-handle-bar">
       <div class="drag-handle-indicator"></div>
@@ -30,7 +30,6 @@
 
     <!-- 全局确认对话框 -->
     <AlertDialog>
-      <AlertDialogOverlay class="fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
       <AlertDialogContent class="fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg">
         <AlertDialogHeader>
           <AlertDialogTitle />
@@ -79,10 +78,9 @@ import GlobalLoading from './components/GlobalLoading.vue'
 import { useSettingsStore } from './stores/settings'
 
 // Import shadcn components
-import { Sonner as Toaster } from '@/components/ui/sonner'
+import { Toaster } from '@/components/ui/sonner'
 import {
   AlertDialog,
-  AlertDialogOverlay,
   AlertDialogContent,
   AlertDialogHeader,
   AlertDialogTitle,
@@ -287,6 +285,19 @@ const setupElectronListeners = () => {
   window.electronAPI.on('navigate:settings', () => {
     router.push('/settings')
   })
+
+  // 监听通知窗口的点击/操作回调，跳转到对应文件详情
+  window.electronAPI.on('notification-from-window', (payload: any) => {
+    if (!payload) return
+    const fileId = payload?.data?.fileId
+    // 点击通知卡片 或 点击 action 按钮（actionId === 'view'）均跳转图片预览
+    const shouldOpen =
+      (payload.type === 'notification:click' && fileId) ||
+      (payload.type === 'notification:action' && payload.actionId === 'view' && fileId)
+    if (shouldOpen) {
+      router.push(`/image-preview/${fileId}`)
+    }
+  })
   
   // 监听文件导入事件
   window.electronAPI.on('files:import', (filePaths: string[]) => {
@@ -358,6 +369,7 @@ const cleanupElectronListeners = () => {
   window.electronAPI.removeAllListeners('navigate:home')
   window.electronAPI.removeAllListeners('navigate:plugins')
   window.electronAPI.removeAllListeners('navigate:settings')
+  window.electronAPI.removeAllListeners('notification-from-window')
   window.electronAPI.removeAllListeners('files:import')
   window.electronAPI.removeAllListeners('protocol:open-tab')
   window.electronAPI.removeAllListeners('show-global-loading')
@@ -435,9 +447,11 @@ onUnmounted(() => {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
-  background-color: var(--mira-bg-secondary);
-  color: var(--mira-text-primary);
-  transition: background-color var(--mira-transition-normal), color var(--mira-transition-normal);
+  /* 背景保持中性，使用语义变量，不被主色调染。
+     主题风格(Mira/Lyra/Luma/Rhea)改变 --background 时背景才变化。 */
+  background-color: var(--background);
+  color: var(--foreground);
+  transition: background-color 250ms ease, color 250ms ease;
 }
 
 /* 确保全屏布局 */
@@ -459,8 +473,8 @@ html, body, #app {
 }
 
 .dark #app {
-  background-color: var(--mira-bg-primary);
-  color: var(--mira-text-primary);
+  background-color: var(--background);
+  color: var(--foreground);
 }
 
 /* 高对比度主题 */
@@ -480,38 +494,38 @@ html, body, #app {
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: var(--mira-gray-400);
+  background-color: var(--muted-foreground);
   border-radius: 4px;
-  transition: background-color var(--mira-transition-fast);
+  transition: background-color 150ms ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: var(--mira-gray-500);
+  background-color: var(--muted-foreground);
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background-color: var(--mira-gray-600);
+  background-color: var(--muted);
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background-color: var(--mira-gray-500);
+  background-color: var(--muted-foreground);
 }
 
 /* 焦点样式 */
 :focus-visible {
-  outline: 2px solid var(--mira-primary-500);
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
 
 /* 选择样式 */
 ::selection {
-  background-color: var(--mira-primary-200);
-  color: var(--mira-primary-900);
+  background-color: var(--accent);
+  color: var(--accent-foreground);
 }
 
 .dark ::selection {
-  background-color: var(--mira-primary-800);
-  color: var(--mira-primary-100);
+  background-color: var(--accent);
+  color: var(--accent-foreground);
 }
 
 /* 无障碍访问 - 减少动画 */
@@ -598,18 +612,18 @@ html, body, #app {
 
 .shimmer {
   background: linear-gradient(90deg, 
-    var(--mira-gray-200) 25%, 
-    var(--mira-gray-100) 50%, 
-    var(--mira-gray-200) 75%);
+    var(--muted) 25%, 
+    var(--background) 50%, 
+    var(--muted) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
 
 .dark .shimmer {
   background: linear-gradient(90deg,
-    var(--mira-gray-700) 25%,
-    var(--mira-gray-600) 50%,
-    var(--mira-gray-700) 75%);
+    var(--muted) 25%,
+    var(--muted) 50%,
+    var(--muted) 75%);
   background-size: 200% 100%;
 }
 

@@ -3,14 +3,16 @@
     :data-selectable-id="item.id"
     :data-file="getLocalFile(item)"
     :class="[
-      'waterfall-card media-waterfall-item bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden group cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5',
-      isSelected ? 'ring-2 ring-blue-500' : ''
+      'waterfall-card media-waterfall-item group relative cursor-pointer transition-all duration-200 rounded-xl overflow-hidden h-full w-full',
+      isSelected
+        ? 'ring-2 ring-primary'
+        : 'shadow-sm hover:shadow-[0_12px_36px_rgba(99,102,241,0.15)] hover:-translate-y-0.5'
     ]"
     @click="handleClick"
   >
-    <!-- 图片/视频容器 - 使用固定高度避免视频播放时布局变化 -->
+    <!-- 图片/视频容器 - Masonry 已通过定位框给定精确高度，内部直接 h-full 填满 -->
     <div
-      class="relative w-full"
+      class="relative w-full h-full"
       :style="mediaContainerStyle"
       @dblclick="handleDoubleClick"
       @contextmenu.prevent="handleContextMenu"
@@ -60,7 +62,7 @@
       <!-- 选择框 -->
       <div
         v-if="isSelected"
-        class="absolute top-2 left-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center z-10"
+        class="absolute top-2 left-2 w-6 h-6 bg-primary rounded-full flex items-center justify-center z-10"
       >
         <span class="material-icons text-white text-sm">check</span>
       </div>
@@ -89,18 +91,23 @@
         class="absolute bottom-0 left-0 right-0 h-1 bg-black/30 z-10"
       >
         <div
-          class="h-full bg-blue-500 transition-all duration-100"
+          class="h-full bg-primary transition-all duration-100"
           :style="{ width: `${progress * 100}%` }"
         ></div>
       </div>
-    </div>
 
-    <!-- 文件信息 -->
-    <div class="p-3">
-      <h3 class="text-sm font-medium text-gray-900 truncate">{{ item.name }}</h3>
-      <div class="flex items-center justify-between mt-2 text-xs text-gray-500">
-        <span>{{ formatFileSize(item.size || 0) }}</span>
-        <span>{{ formatDate(item.createdAt || '') }}</span>
+      <!-- 文件名 (玻璃浮层，非视频预览时显示) -->
+      <div
+        v-show="!isVideoPlaying"
+        class="absolute bottom-0 left-0 right-0 p-2 rounded-b-xl"
+        :class="isSelected ? 'bg-primary/90' : 'bg-white/80 dark:bg-muted/80 backdrop-blur'"
+      >
+        <h3
+          class="text-sm font-medium truncate"
+          :class="isSelected ? 'text-white' : 'text-foreground dark:text-muted-foreground'"
+        >
+          {{ item.name }}
+        </h3>
       </div>
     </div>
   </div>
@@ -157,8 +164,6 @@ const {
   fileExtension,
   isVideo,
   getLocalFile,
-  formatFileSize,
-  formatDate,
   handleClick,
   handleDoubleClick,
   handleContextMenu,

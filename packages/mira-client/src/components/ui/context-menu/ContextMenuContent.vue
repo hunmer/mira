@@ -7,6 +7,7 @@ import {
   ContextMenuPortal,
   useForwardPropsEmits,
 } from "reka-ui"
+import { Motion } from "motion-v"
 import { cn } from "@/lib/utils"
 
 defineOptions({
@@ -24,14 +25,22 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
 <template>
   <ContextMenuPortal>
     <ContextMenuContent
-      data-slot="context-menu-content"
       v-bind="{ ...$attrs, ...forwarded }"
-      :class="cn(
-        'bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 max-h-(--reka-context-menu-content-available-height) min-w-[8rem] overflow-x-hidden overflow-y-auto rounded-md border p-1 shadow-md',
-        props.class,
-      )"
+      as-child
     >
-      <slot />
+      <Motion
+        as="div"
+        data-slot="context-menu-content"
+        :initial="{ opacity: 0, transform: 'translate3d(0, -8px, 0) scale(0.95)' }"
+        :animate="{ opacity: 1, transform: 'translate3d(0, 0, 0) scale(1)' }"
+        :transition="{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }"
+        :class="cn(
+          'bg-white/65 dark:bg-muted/70 backdrop-blur-xl text-popover-foreground data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 z-50 max-h-(--reka-context-menu-content-available-height) min-w-[8rem] overflow-x-hidden overflow-y-auto rounded-xl border border-white/60 dark:border-border p-1 shadow-[0_12px_40px_rgba(99,102,241,0.12)]',
+          props.class,
+        )"
+      >
+        <slot />
+      </Motion>
     </ContextMenuContent>
   </ContextMenuPortal>
 </template>

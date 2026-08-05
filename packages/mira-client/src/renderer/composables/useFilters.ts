@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import type { FilterRule } from '@/components/ui/volt/FilterBar.vue'
+import type { FilterRule } from '@/renderer/types/filter'
 import type { TabItem } from './useTabs'
 
 /**

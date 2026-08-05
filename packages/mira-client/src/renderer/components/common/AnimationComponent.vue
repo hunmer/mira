@@ -327,7 +327,7 @@ const onAfterLeave = (el: Element) => {
 /* 淡入淡出 */
 .mira-fade-enter-active,
 .mira-fade-leave-active {
-  transition: opacity var(--mira-transition-normal);
+  transition: opacity 250ms ease;
 }
 
 .mira-fade-enter-from,
@@ -344,7 +344,7 @@ const onAfterLeave = (el: Element) => {
 .mira-slide-left-leave-active,
 .mira-slide-right-enter-active,
 .mira-slide-right-leave-active {
-  transition: all var(--mira-transition-normal);
+  transition: all 250ms ease;
 }
 
 .mira-slide-up-enter-from {
@@ -390,7 +390,7 @@ const onAfterLeave = (el: Element) => {
 /* 缩放动画 */
 .mira-scale-enter-active,
 .mira-scale-leave-active {
-  transition: all var(--mira-transition-normal);
+  transition: all 250ms ease;
 }
 
 .mira-scale-enter-from,
@@ -402,7 +402,7 @@ const onAfterLeave = (el: Element) => {
 /* 放大动画 */
 .mira-zoom-enter-active,
 .mira-zoom-leave-active {
-  transition: all var(--mira-transition-normal);
+  transition: all 250ms ease;
 }
 
 .mira-zoom-enter-from,
@@ -414,7 +414,7 @@ const onAfterLeave = (el: Element) => {
 /* 翻转动画 */
 .mira-flip-enter-active,
 .mira-flip-leave-active {
-  transition: all var(--mira-transition-normal);
+  transition: all 250ms ease;
 }
 
 .mira-flip-enter-from {
@@ -510,7 +510,7 @@ const onAfterLeave = (el: Element) => {
 /* 模糊动画 */
 .mira-blur-enter-active,
 .mira-blur-leave-active {
-  transition: all var(--mira-transition-normal);
+  transition: all 250ms ease;
 }
 
 .mira-blur-enter-from,

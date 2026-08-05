@@ -31,7 +31,7 @@ export const useMediaStore = defineStore('media', () => {
 
   // 详情面板全局状态
   const detailSidebarFiles = ref<FileInfo[]>([])
-  const showDetailSidebar = ref(false)
+  const showDetailSidebar = ref(true)
   const imagePreviewItems = ref<FileInfo[]>([])
 
   // 本地文件路径映射: {libraryId: {fileId: localPath}}

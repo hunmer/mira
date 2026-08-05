@@ -14,7 +14,9 @@ import {
   useHomeFolderHandler
 } from '@renderer/modules/home'
 
-export function useHomeTabManagement() {
+export function useHomeTabManagement(
+  sidebarRef?: Ref<{ locateItem: (type: 'folder' | 'tag', id: string) => void | Promise<void> } | null | undefined>
+) {
   const libraryStore = useLibraryStore()
   const mediaStore = useMediaStore()
   const homeController = useHomeController()
@@ -110,6 +112,12 @@ export function useHomeTabManagement() {
 
       const tabId = newTab.id
 
+      // 已访问的 tab 复用原配置，避免 TabViewRenderer 进入 loading 并重建瀑布流。
+      if (tabId in tabViewConfigMap.value) {
+        currentTabViewConfig.value = tabViewConfigMap.value[tabId]
+        return
+      }
+
       try {
         // 使用 tabRegistryAPI 异步获取 Tab 的视图配置
         const config = await tabRegistryAPI.getTabViewConfig(newTab.type, {
@@ -165,6 +173,17 @@ export function useHomeTabManagement() {
       return []
     }
     return [
+      {
+        label: '在侧边栏中定位当前项',
+        icon: 'my_location',
+        command: () => {
+          const tab = currentContextTab.value
+          if (!tab) return
+          const type = tab.type === 'tag' ? 'tag' as const : 'folder' as const
+          const targetId = String(tab.data?.id ?? tab.id)
+          sidebarRef?.value?.locateItem(type, targetId)
+        }
+      },
       {
         label: '克隆标签',
         icon: 'content_copy',

@@ -6,8 +6,8 @@
     <!-- 选择框 -->
     <div
       v-if="selecting && isSelectionAreaValid"
-      class="selection-box absolute border-2 border-dashed border-blue-500 bg-blue-500/10 pointer-events-none z-[1000] backdrop-blur-[2px] rounded"
-      :class="{ 'subtract-mode': !altMode ? false : true, '!border-red-500 !bg-red-500/10': altMode }"
+      class="selection-box absolute border-2 border-dashed border-primary bg-primary/10 pointer-events-none z-[1000] backdrop-blur-[2px] rounded"
+      :class="{ 'subtract-mode': !altMode ? false : true, '!border-destructive !bg-destructive/10': altMode }"
       :style="selectionBoxStyle"
     />
 

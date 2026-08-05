@@ -1,6 +1,6 @@
 <template>
   <div
-    class="relative bg-white rounded-lg border-2 border-transparent cursor-pointer transition-all duration-200 overflow-hidden hover:border-blue-500 hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)]"
+    class="relative bg-white rounded-lg border-2 border-transparent cursor-pointer transition-all duration-200 overflow-hidden hover:border-primary hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)]"
     :class="[
       `media-card--${size}`,
       {
@@ -10,18 +10,18 @@
     ]"
     <!-- 选择框 -->
     <div v-if="selected" class="media-card__selection-indicator">
-      <div class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
+      <div class="w-6 h-6 bg-primary rounded-full flex items-center justify-center shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
         <span class="material-icons text-white text-sm">check</span>
       </div>
     </div>
     
     <!-- 媒体内容 -->
-    <div class="relative w-full bg-gray-50 media-card__content">
+    <div class="relative w-full bg-muted media-card__content">
       <!-- 文件夹类型 -->
       <div v-if="getFileType(item) === 'folder'" class="flex flex-col items-center justify-center h-full text-center">
-        <span class="material-icons text-blue-500" style="font-size: 4rem;">folder</span>
-        <div class="mt-2 font-semibold text-gray-700">{{ item.name }}</div>
-        <div v-if="item.metadata?.itemCount" class="mt-1 text-xs text-gray-500">
+        <span class="material-icons text-primary" style="font-size: 4rem;">folder</span>
+        <div class="mt-2 font-semibold text-foreground">{{ item.name }}</div>
+        <div v-if="item.metadata?.itemCount" class="mt-1 text-xs text-muted-foreground">
           {{ item.metadata.itemCount }} 项
         </div>
       </div>
@@ -71,7 +71,7 @@
 
           <!-- 占位符 -->
           <div v-if="!item.thumbnailPath && !videoPreview.showPreview.value" class="media-card__placeholder">
-            <span class="material-icons text-gray-400" style="font-size: 2rem;">videocam</span>
+            <span class="material-icons text-muted-foreground" style="font-size: 2rem;">videocam</span>
           </div>
 
           <!-- 播放按钮 -->
@@ -82,7 +82,7 @@
           <!-- 视频进度条 -->
           <div v-if="videoPreview.showPreview.value && videoPreview.duration.value > 0" class="absolute bottom-0 left-0 right-0 h-[3px] bg-black/30">
             <div
-              class="h-full bg-blue-500 transition-[width] duration-100"
+              class="h-full bg-primary transition-[width] duration-100"
               :style="{ width: `${(videoPreview.currentTime.value / videoPreview.duration.value) * 100}%` }"
             ></div>
           </div>
@@ -102,7 +102,7 @@
       <!-- 音频类型 -->
       <div v-else-if="getFileType(item) === 'audio'" class="media-card__audio">
         <div class="flex flex-col items-center justify-center h-full text-center">
-          <span class="material-icons text-blue-500" style="font-size: 2rem;">volume_up</span>
+          <span class="material-icons text-primary" style="font-size: 2rem;">volume_up</span>
         </div>
         <div class="absolute top-2 right-2 bg-black/70 text-white px-1.5 py-0.5 rounded text-[0.7rem] font-semibold">
           {{ getFileExtension(item.name) }}
@@ -122,15 +122,15 @@
     
     <!-- 文件信息 -->
     <div v-if="showDetails" class="p-3">
-      <div class="font-semibold text-gray-900 text-sm leading-5 mb-1 overflow-hidden text-ellipsis whitespace-nowrap" :title="item.name">
+      <div class="font-semibold text-foreground text-sm leading-5 mb-1 overflow-hidden text-ellipsis whitespace-nowrap" :title="item.name">
         {{ item.name }}
       </div>
       
-      <div v-if="item.size" class="text-xs text-gray-500 mb-0.5">
+      <div v-if="item.size" class="text-xs text-muted-foreground mb-0.5">
         {{ formatFileSize(item.size) }}
       </div>
       
-      <div v-if="item.createdAt" class="text-xs text-gray-500 mb-0.5">
+      <div v-if="item.createdAt" class="text-xs text-muted-foreground mb-0.5">
         {{ formatDate(item.createdAt) }}
       </div>
       
@@ -142,7 +142,7 @@
           variant="secondary"
           class="text-xs"
         >{{ tag }}</Badge>
-        <span v-if="item.tags.length > 3" class="text-xs text-gray-500">
+        <span v-if="item.tags.length > 3" class="text-xs text-muted-foreground">
           +{{ item.tags.length - 3 }}
         </span>
       </div>
@@ -277,19 +277,19 @@ const getFileExtension = (filename: string): string => {
 const getDocumentIcon = (filename: string): string => {
   const extension = filename.split('.').pop()?.toLowerCase()
   const iconMap: Record<string, string> = {
-    'pdf': 'picture_as_pdf text-red-500',
-    'doc': 'description text-blue-500',
-    'docx': 'description text-blue-500',
+    'pdf': 'picture_as_pdf text-destructive',
+    'doc': 'description text-primary',
+    'docx': 'description text-primary',
     'xls': 'table_chart text-green-500',
     'xlsx': 'table_chart text-green-500',
     'ppt': 'slideshow text-orange-500',
     'pptx': 'slideshow text-orange-500',
-    'txt': 'text_snippet text-gray-500',
+    'txt': 'text_snippet text-muted-foreground',
     'zip': 'folder_zip text-yellow-500',
     'rar': 'folder_zip text-yellow-500'
   }
   
-  return iconMap[extension || ''] || 'insert_drive_file text-gray-500'
+  return iconMap[extension || ''] || 'insert_drive_file text-muted-foreground'
 }
 
 const formatFileSize = (bytes: number): string => {

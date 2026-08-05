@@ -1,6 +1,6 @@
 import { ref, computed, watch, toRef } from 'vue'
 import type { FileInfo } from '../../../../../shared/types'
-import type { MenuItem } from '@/components/ui/volt/types'
+import type { MenuItem } from '@/renderer/types/menu'
 import { appService } from '@renderer/services'
 import { useLibraryStore } from '@renderer/stores/library'
 import { useTagStore } from '@renderer/stores/tag'

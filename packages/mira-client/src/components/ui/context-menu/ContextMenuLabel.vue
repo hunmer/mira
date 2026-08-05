@@ -20,3 +20,4 @@ const delegatedProps = reactiveOmit(props, "class")
     <slot />
   </ContextMenuLabel>
 </template>
+

@@ -1,16 +1,16 @@
 <template>
   <div v-if="isVisible" class="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000]" @click.self="closeDialog">
     <div class="bg-white rounded-xl shadow-[0_10px_25px_rgba(0,0,0,0.15)] w-full max-w-[500px] max-h-[90vh] overflow-y-auto m-4">
-      <div class="flex items-center justify-between p-6 pb-0 border-b border-gray-200 mb-6">
-        <h2 class="text-xl font-semibold text-gray-800 m-0">用户注册</h2>
-        <button class="bg-transparent border-none text-gray-400 cursor-pointer p-1 rounded transition-colors duration-200 hover:text-gray-500" @click="closeDialog">
+      <div class="flex items-center justify-between p-6 pb-0 border-b border-border mb-6">
+        <h2 class="text-xl font-semibold text-foreground m-0">用户注册</h2>
+        <button class="bg-transparent border-none text-muted-foreground cursor-pointer p-1 rounded transition-colors duration-200 hover:text-muted-foreground" @click="closeDialog">
           <span class="material-icons">close</span>
         </button>
       </div>
       
       <form @submit.prevent="handleSubmit" class="px-6 pb-6 flex flex-col gap-6">
         <div class="flex flex-col gap-2">
-          <label for="username" class="text-sm font-medium text-gray-700">用户名</label>
+          <label for="username" class="text-sm font-medium text-foreground">用户名</label>
           <input
             id="username"
             v-model="formData.username"
@@ -19,11 +19,11 @@
             :class="{ 'error': errors.username }"
             required
           />
-          <div v-if="errors.username" class="text-red-500 text-sm">{{ errors.username }}</div>
+          <div v-if="errors.username" class="text-destructive text-sm">{{ errors.username }}</div>
         </div>
 
         <div class="flex flex-col gap-2">
-          <label for="email" class="text-sm font-medium text-gray-700">邮箱</label>
+          <label for="email" class="text-sm font-medium text-foreground">邮箱</label>
           <input
             id="email"
             v-model="formData.email"
@@ -31,11 +31,11 @@
             placeholder="请输入邮箱地址"
             :class="{ 'error': errors.email }"
           />
-          <div v-if="errors.email" class="text-red-500 text-sm">{{ errors.email }}</div>
+          <div v-if="errors.email" class="text-destructive text-sm">{{ errors.email }}</div>
         </div>
 
         <div class="flex flex-col gap-2">
-          <label for="realName" class="text-sm font-medium text-gray-700">真实姓名</label>
+          <label for="realName" class="text-sm font-medium text-foreground">真实姓名</label>
           <input
             id="realName"
             v-model="formData.realName"
@@ -43,11 +43,11 @@
             placeholder="请输入真实姓名"
             :class="{ 'error': errors.realName }"
           />
-          <div v-if="errors.realName" class="text-red-500 text-sm">{{ errors.realName }}</div>
+          <div v-if="errors.realName" class="text-destructive text-sm">{{ errors.realName }}</div>
         </div>
 
         <div class="flex flex-col gap-2">
-          <label for="password" class="text-sm font-medium text-gray-700">密码</label>
+          <label for="password" class="text-sm font-medium text-foreground">密码</label>
           <div class="relative">
             <input
               id="password"
@@ -59,17 +59,17 @@
             />
             <button
               type="button"
-              class="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none text-gray-400 cursor-pointer p-1 hover:text-gray-500"
+              class="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none text-muted-foreground cursor-pointer p-1 hover:text-muted-foreground"
               @click="showPassword = !showPassword"
             >
               <span class="material-icons">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
             </button>
           </div>
-          <div v-if="errors.password" class="text-red-500 text-sm">{{ errors.password }}</div>
+          <div v-if="errors.password" class="text-destructive text-sm">{{ errors.password }}</div>
         </div>
 
         <div class="flex flex-col gap-2">
-          <label for="confirmPassword" class="text-sm font-medium text-gray-700">确认密码</label>
+          <label for="confirmPassword" class="text-sm font-medium text-foreground">确认密码</label>
           <div class="relative">
             <input
               id="confirmPassword"
@@ -81,16 +81,16 @@
             />
             <button
               type="button"
-              class="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none text-gray-400 cursor-pointer p-1 hover:text-gray-500"
+              class="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none text-muted-foreground cursor-pointer p-1 hover:text-muted-foreground"
               @click="showConfirmPassword = !showConfirmPassword"
             >
               <span class="material-icons">{{ showConfirmPassword ? 'visibility_off' : 'visibility' }}</span>
             </button>
           </div>
-          <div v-if="errors.confirmPassword" class="text-red-500 text-sm">{{ errors.confirmPassword }}</div>
+          <div v-if="errors.confirmPassword" class="text-destructive text-sm">{{ errors.confirmPassword }}</div>
         </div>
 
-        <div v-if="error" class="bg-red-50 border border-red-200 text-red-600 p-3 rounded-lg text-sm">
+        <div v-if="error" class="bg-destructive border border-destructive text-destructive p-3 rounded-lg text-sm">
           {{ error }}
         </div>
 

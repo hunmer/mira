@@ -72,7 +72,7 @@
       <!-- 选择框 -->
       <div
         v-if="isSelected"
-        class="absolute top-2 left-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center"
+        class="absolute top-2 left-2 w-6 h-6 bg-primary rounded-full flex items-center justify-center"
       >
         <span class="material-icons text-white text-[18px]">check</span>
       </div>
@@ -83,7 +83,7 @@
         class="absolute bottom-0 left-0 right-0 h-1 bg-black/30 rounded-b-lg z-10"
       >
         <div
-          class="h-full bg-blue-500 rounded-b-lg transition-all duration-100"
+          class="h-full bg-primary rounded-b-lg transition-all duration-100"
           :style="{ width: `${progress * 100}%` }"
         ></div>
       </div>
@@ -92,11 +92,11 @@
       <div
         v-show="!isVideoPlaying"
         class="absolute bottom-0 left-0 right-0 p-2 rounded-b-lg"
-        :class="isSelected ? 'bg-blue-500/90' : 'bg-white/90 dark:bg-gray-800/90'"
+        :class="isSelected ? 'bg-primary/90' : 'bg-white/90 dark:bg-muted/90'"
       >
         <h3
           class="text-sm font-semibold truncate"
-          :class="isSelected ? 'text-white' : 'text-gray-900 dark:text-gray-100'"
+          :class="isSelected ? 'text-white' : 'text-foreground dark:text-muted-foreground'"
         >
           {{ item.name }}
         </h3>

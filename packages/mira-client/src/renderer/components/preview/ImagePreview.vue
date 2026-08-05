@@ -1,25 +1,25 @@
 <template>
-  <div class="image-preview-view bg-gray-100 h-screen flex flex-col text-[13px]">
+  <div class="image-preview-view bg-muted h-screen flex flex-col text-[13px]">
     <!-- 顶部工具栏 -->
-    <header class="flex h-16 flex-shrink-0 items-center justify-between border-b border-gray-200 bg-white px-6">
+    <header class="flex h-16 flex-shrink-0 items-center justify-between border-b border-border bg-white px-6">
       <div class="flex items-center space-x-4">
         <button 
-          class="rounded-full p-2 hover:bg-gray-100"
+          class="rounded-full p-2 hover:bg-muted"
           @click="controller.goBack"
         >
-          <span class="material-icons text-gray-600">arrow_back</span>
+          <span class="material-icons text-muted-foreground">arrow_back</span>
         </button>
         <div class="flex items-center space-x-2">
-          <span class="text-lg font-semibold text-gray-800">{{ controller.currentImage.value?.name || 'Loading...' }}</span>
+          <span class="text-lg font-semibold text-foreground">{{ controller.currentImage.value?.name || 'Loading...' }}</span>
           <div class="flex items-center space-x-2">
-            <span class="inline-flex items-center rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">
+            <span class="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
               <span class="material-symbols-outlined text-sm mr-1">folder</span>
               {{ controller.currentImage.value?.folderId || '/Pictures' }}
             </span>
             <span 
               v-for="tag in controller.currentImage.value?.tags"
               :key="tag"
-              class="inline-flex items-center rounded-md bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700"
+              class="inline-flex items-center rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary"
             >
               <span class="material-symbols-outlined text-sm mr-1">label</span>
               {{ tag }}
@@ -28,14 +28,14 @@
         </div>
       </div>
       <div class="flex items-center space-x-2">
-        <button class="rounded-full p-2 hover:bg-gray-100">
-          <span class="material-symbols-outlined text-gray-600">more_horiz</span>
+        <button class="rounded-full p-2 hover:bg-muted">
+          <span class="material-symbols-outlined text-muted-foreground">more_horiz</span>
         </button>
         <button 
-          class="rounded-full p-2 hover:bg-gray-100"
+          class="rounded-full p-2 hover:bg-muted"
           @click="controller.closePreview"
         >
-          <span class="material-icons text-gray-600">close</span>
+          <span class="material-icons text-muted-foreground">close</span>
         </button>
       </div>
     </header>
@@ -66,7 +66,7 @@
         />
 
         <!-- 底部状态栏 -->
-        <footer class="flex h-10 flex-shrink-0 items-center justify-between border-t border-gray-200 bg-white px-6 text-xs text-gray-600">
+        <footer class="flex h-10 flex-shrink-0 items-center justify-between border-t border-border bg-white px-6 text-xs text-muted-foreground">
           <div class="flex items-center space-x-4">
             <span>尺寸: {{ controller.currentImage.value?.metadata?.width || 0 }}x{{ controller.currentImage.value?.metadata?.height || 0 }}</span>
             <span>大小: {{ formatFileSize(controller.currentImage.value?.size) }}</span>
@@ -78,18 +78,18 @@
           <div class="flex items-center space-x-4">
             <span>{{ controller.currentImageIndex.value + 1 }} / {{ controller.imageItems.value.length }}</span>
             <button 
-              class="rounded-full p-1 hover:bg-gray-100"
+              class="rounded-full p-1 hover:bg-muted"
               :disabled="controller.currentImageIndex.value === 0"
               @click="controller.previousImage"
             >
-              <span class="material-symbols-outlined text-gray-500">navigate_before</span>
+              <span class="material-symbols-outlined text-muted-foreground">navigate_before</span>
             </button>
             <button 
-              class="rounded-full p-1 hover:bg-gray-100"
+              class="rounded-full p-1 hover:bg-muted"
               :disabled="controller.currentImageIndex.value === controller.imageItems.value.length - 1"
               @click="controller.nextImage"
             >
-              <span class="material-symbols-outlined text-gray-500">navigate_next</span>
+              <span class="material-symbols-outlined text-muted-foreground">navigate_next</span>
             </button>
           </div>
         </footer>

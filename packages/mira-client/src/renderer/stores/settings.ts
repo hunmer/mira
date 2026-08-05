@@ -4,11 +4,25 @@ import { miraSDKService } from '../services/MiraSDKService'
 import { miraAPI } from '../api/MiraAPI'
 import type { MiraConnectionConfig, SystemInfo, SystemHealth } from '../../shared/types'
 import ConfigStorage from '@renderer/utils/ConfigStorage'
+import {
+  THEME_STYLES,
+  applyThemeStyle,
+  removeThemeStyle,
+  applyPrimaryColor,
+  removePrimaryColor,
+} from '@renderer/utils/theme-style'
 
 export interface AppSettings {
   // 界面设置
   theme: 'light' | 'dark' | 'auto'
   language: string
+
+  // 主题风格覆盖（'' | 'mira' | 'lyra' | 'luma' | 'rhea' | 'custom'）
+  themeStyle: string
+  // Custom 风格模式下的 CSS 变量文本
+  themeStyleCustomCss: string
+  // 主色覆盖（hex，空字符串表示使用主题自带主色）
+  primaryColor: string
 
   columnsPerRow: number
 
@@ -34,9 +48,17 @@ export interface AppSettings {
   // 导入设置
   directImportMode: boolean
 
+  // 悬浮球设置
+  /** 是否启用悬浮球（默认关闭，opt-in） */
+  floatingBallEnabled: boolean
+  /** 悬浮球单击行为：打开上传对话框 / 切换主窗口 */
+  floatingBallClickAction: 'openUpload' | 'toggleMain'
+
   // 高级设置
   debugMode: boolean
   enableNotifications: boolean
+  /** 导入文件通知开关（文件创建事件触发桌面通知） */
+  enableImportNotifications: boolean
   autoBackup: boolean
   backupInterval: number
 
@@ -114,6 +136,11 @@ export const useSettingsStore = defineStore('settings', () => {
     theme: 'auto',
     language: 'zh-CN',
 
+    // 主题风格 / 主色覆盖
+    themeStyle: '',
+    themeStyleCustomCss: '',
+    primaryColor: '',
+
     columnsPerRow: 4,
 
 
@@ -139,9 +166,14 @@ export const useSettingsStore = defineStore('settings', () => {
     // 导入设置
     directImportMode: false,
 
+    // 悬浮球设置
+    floatingBallEnabled: false,
+    floatingBallClickAction: 'openUpload',
+
     // 高级设置
     debugMode: false,
     enableNotifications: true,
+    enableImportNotifications: true,
     autoBackup: true,
     backupInterval: 1440, // 24小时
 
@@ -315,6 +347,10 @@ export const useSettingsStore = defineStore('settings', () => {
     // 特殊处理某些设置项的变更
     if (key === 'theme') {
       applyTheme()
+    } else if (key === 'themeStyle' || key === 'themeStyleCustomCss') {
+      applyThemeStyleOverride()
+    } else if (key === 'primaryColor') {
+      applyPrimaryColorOverride()
     } else if (key === 'language') {
       // 这里可以添加语言切换逻辑
     } else if (key === 'pluginsDirectory' || key === 'autoLoadPlugins' || 
@@ -369,6 +405,10 @@ export const useSettingsStore = defineStore('settings', () => {
       theme: 'auto',
       language: 'zh-CN',
 
+      themeStyle: '',
+      themeStyleCustomCss: '',
+      primaryColor: '',
+
       columnsPerRow: 4,
   
   
@@ -385,8 +425,11 @@ export const useSettingsStore = defineStore('settings', () => {
       maxConcurrentUploads: 3,
       videoPreviewMuted: true,
       directImportMode: false,
+      floatingBallEnabled: false,
+      floatingBallClickAction: 'openUpload',
       debugMode: false,
       enableNotifications: true,
+      enableImportNotifications: true,
       autoBackup: true,
       backupInterval: 1440,
       pluginsDirectory: '',
@@ -401,6 +444,8 @@ export const useSettingsStore = defineStore('settings', () => {
     settings.value = defaultSettings
     await saveSettings()
     applyTheme()
+    applyThemeStyleOverride()
+    applyPrimaryColorOverride()
   }
 
   // 连接功能已移至serverList store
@@ -444,7 +489,7 @@ export const useSettingsStore = defineStore('settings', () => {
    */
   const applyTheme = () => {
     const root = document.documentElement
-    
+
     if (isDarkMode.value) {
       root.classList.add('dark')
       root.setAttribute('data-theme', 'dark')
@@ -452,6 +497,36 @@ export const useSettingsStore = defineStore('settings', () => {
       root.classList.remove('dark')
       root.setAttribute('data-theme', 'light')
     }
+  }
+
+  /**
+   * 应用主题风格覆盖（mira/lyra/luma/rhea/custom）
+   * 仅管理 <style> 注入，与 applyTheme() 的 .dark class 互不冲突
+   */
+  const applyThemeStyleOverride = () => {
+    const style = settings.value.themeStyle
+    if (!style) {
+      removeThemeStyle()
+      return
+    }
+    if (style === 'custom') {
+      const css = settings.value.themeStyleCustomCss
+      if (css) applyThemeStyle(css)
+      else removeThemeStyle()
+      return
+    }
+    const css = THEME_STYLES[style]
+    if (css) applyThemeStyle(css)
+    else removeThemeStyle()
+  }
+
+  /**
+   * 应用主色覆盖
+   */
+  const applyPrimaryColorOverride = () => {
+    const color = settings.value.primaryColor
+    if (color) applyPrimaryColor(color)
+    else removePrimaryColor()
   }
 
   /**
@@ -509,6 +584,10 @@ export const useSettingsStore = defineStore('settings', () => {
   const initialize = async () => {
     await loadSettings()
     applyTheme()
+
+    // 应用主题风格 / 主色覆盖
+    applyThemeStyleOverride()
+    applyPrimaryColorOverride()
 
     // 监听系统主题变化
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')

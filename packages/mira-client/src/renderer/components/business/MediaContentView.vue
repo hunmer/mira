@@ -8,8 +8,8 @@
             {{ icon }}
           </span>
           <div>
-            <h2 class="text-xl font-semibold text-gray-900">{{ title }}</h2>
-            <p class="text-gray-500">{{ subtitle }}</p>
+            <h2 class="text-xl font-semibold text-foreground">{{ title }}</h2>
+            <p class="text-muted-foreground">{{ subtitle }}</p>
           </div>
         </div>
 
@@ -20,8 +20,8 @@
             :class="[
               'flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200',
               showDetailSidebar
-                ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-primary text-primary hover:bg-primary'
+                : 'bg-muted text-foreground hover:bg-accent'
             ]"
             :title="showDetailSidebar ? '隐藏详情面板' : '显示详情面板'"
           >
@@ -39,8 +39,8 @@
         class="flex items-center justify-center h-40"
       >
         <div class="text-center">
-          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
-          <p class="text-gray-500">{{ loadingMessage }}</p>
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+          <p class="text-muted-foreground">{{ loadingMessage }}</p>
         </div>
       </div>
 
@@ -98,7 +98,7 @@
         </div>
 
         <!-- 未知视图模式 -->
-        <div v-else class="flex items-center justify-center h-40 text-gray-500">
+        <div v-else class="flex items-center justify-center h-40 text-muted-foreground">
           未知的视图模式: {{ viewMode }}
         </div>
       </div>

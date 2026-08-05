@@ -1,4 +1,4 @@
-import type { FilterRule } from '@/components/ui/volt/FilterBar.vue'
+import type { FilterRule } from '@/renderer/types/filter'
 import type { Component } from 'vue'
 
 // Tab生命周期返回结果

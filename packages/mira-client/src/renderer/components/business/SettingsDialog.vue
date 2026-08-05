@@ -7,16 +7,16 @@
       <DialogHeader>
         <DialogTitle>设置</DialogTitle>
       </DialogHeader>
-      <div class="min-h-[400px] h-full flex bg-gray-50 dark:bg-gray-900">
+      <div class="min-h-[400px] h-full flex gap-3">
         <!-- 左侧分类面板 -->
-        <aside class="w-64 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 flex flex-col">
+        <aside class="w-64 flex flex-col">
           <div class="p-4 flex-1">
             <div class="flex flex-col gap-1">
               <div
                 v-for="section in settingSections"
                 :key="section.id"
-                class="flex items-center gap-3 px-3 py-2 cursor-pointer rounded-lg transition-colors"
-                :class="activeSection === section.id ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300' : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'"
+                  class="flex items-center gap-3 px-3 py-2 cursor-pointer rounded-lg transition-colors"
+                  :class="activeSection === section.id ? 'bg-primary/10 text-primary' : 'hover:bg-white/50 dark:hover:bg-muted/60 text-foreground dark:text-muted-foreground'"
                 @click="activeSection = section.id"
               >
                 <span class="material-icons text-lg">{{ section.icon }}</span>
@@ -27,9 +27,9 @@
         </aside>
 
         <!-- 右侧设置面板 -->
-        <main class="flex-1 flex flex-col bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 ml-2">
-          <div class="p-4 border-b border-gray-200 dark:border-gray-700">
-            <p class="text-gray-900 dark:text-gray-100 text-2xl font-bold">{{ getCurrentSectionName() }}</p>
+        <main class="flex-1 flex flex-col">
+          <div class="p-4 border-b border-white/60 dark:border-border">
+            <p class="text-foreground dark:text-muted-foreground text-2xl font-bold">{{ getCurrentSectionName() }}</p>
           </div>
 
           <!-- 动态组件渲染 -->
@@ -38,16 +38,6 @@
           </div>
         </main>
       </div>
-    <DialogFooter>
-      <div class="flex justify-end w-full">
-        <button
-          class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 rounded-md transition-colors"
-          @click="handleDialogHide"
-        >
-          关闭
-        </button>
-      </div>
-    </DialogFooter>
     </DialogContent>
   </Dialog>
 </template>
@@ -55,14 +45,16 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
 import { useSettingsStore } from '../../stores/settings'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 // 导入组件
 import GeneralPanel from '../../views/settings/GeneralPanel.vue'
 import NotificationsPanel from '../../views/settings/NotificationsPanel.vue'
 import ImportPanel from '../../views/settings/ImportPanel.vue'
+import FloatingBallPanel from '../../views/settings/FloatingBallPanel.vue'
 import PluginsPanel from '../../views/settings/pluginPlan.vue'
 import DataPanel from '../../views/settings/DataPanel.vue'
+import PlaygroundPanel from '../../views/settings/PlaygroundPanel.vue'
 
 // 导入配置
 import { settingSections } from '../../views/settings/settingsConfig'
@@ -100,16 +92,13 @@ const currentComponent = computed(() => {
     general: GeneralPanel,
     notifications: NotificationsPanel,
     import: ImportPanel,
+    'floating-ball': FloatingBallPanel,
     plugins: PluginsPanel,
-    data: DataPanel
+    data: DataPanel,
+    playground: PlaygroundPanel
   }
   return componentMap[activeSection.value] || GeneralPanel
 })
-
-// 方法
-const handleDialogHide = (): void => {
-  isVisible.value = false
-}
 
 const getCurrentSectionName = () => {
   const section = settingSections.find(s => s.id === activeSection.value)

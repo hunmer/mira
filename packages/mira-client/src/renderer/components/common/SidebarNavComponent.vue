@@ -1,17 +1,17 @@
 <template>
-  <div class="flex flex-col h-full bg-gray-50">
+  <div class="flex flex-col h-full bg-muted">
     <!-- 搜索框 -->
-    <div v-if="searchable" class="p-3 border-b border-gray-200">
-      <IconField icon-position="left">>
-        <InputIcon>
-          <span class="material-icons">search</span>
-        </InputIcon>
+    <div v-if="searchable" class="p-3 border-b border-border">
+      <div class="relative">
+        <span class="absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground leading-none">
+          <span class="material-icons text-sm">search</span>
+        </span>
         <Input
           v-model="searchQuery"
           placeholder="搜索文件夹..."
-          class="w-full h-8 text-xs"
+          class="w-full h-8 text-xs pl-9"
         />
-      </IconField>
+      </div>
     </div>
 
     <!-- 导航树 -->
@@ -24,7 +24,7 @@
       >
         <!-- 导航项 -->
         <div
-          class="flex items-center py-1.5 px-2 mx-2 rounded-md cursor-pointer transition-all duration-150 ease-in text-gray-700 text-sm hover:bg-gray-200"
+          class="flex items-center py-1.5 px-2 mx-2 rounded-md cursor-pointer transition-all duration-150 ease-in text-foreground text-sm hover:bg-accent"
           :class="{
             'sidebar-nav__item-content--active': item.active,
             'opacity-50': isDragging && dragItem?.id === item.id
@@ -57,7 +57,7 @@
           <span class="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{{ item.label }}</span>
 
           <!-- 数量 -->
-          <span v-if="showCounts && item.count !== undefined" class="sidebar-nav__count text-xs text-gray-500 bg-gray-200 px-1.5 py-0.5 rounded-xl min-w-[20px] text-center">
+          <span v-if="showCounts && item.count !== undefined" class="sidebar-nav__count text-xs text-muted-foreground bg-accent px-1.5 py-0.5 rounded-xl min-w-[20px] text-center">
             {{ item.count }}
           </span>
         </div>
@@ -71,7 +71,7 @@
             :style="{ paddingLeft: `${((item.level || 0) + 1) * 16 + 8}px` }"
           >
             <div
-              class="flex items-center py-1.5 px-2 mx-2 rounded-md cursor-pointer transition-all duration-150 ease-in text-gray-700 text-sm hover:bg-gray-200"
+              class="flex items-center py-1.5 px-2 mx-2 rounded-md cursor-pointer transition-all duration-150 ease-in text-foreground text-sm hover:bg-accent"
               :class="{
                 'sidebar-nav__item-content--active': child.active,
                 'opacity-50': isDragging && dragItem?.id === child.id
@@ -104,7 +104,7 @@
               <span class="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{{ child.label }}</span>
 
               <!-- 数量 -->
-              <span v-if="showCounts && child.count !== undefined" class="sidebar-nav__count text-xs text-gray-500 bg-gray-200 px-1.5 py-0.5 rounded-xl min-w-[20px] text-center">
+              <span v-if="showCounts && child.count !== undefined" class="sidebar-nav__count text-xs text-muted-foreground bg-accent px-1.5 py-0.5 rounded-xl min-w-[20px] text-center">
                 {{ child.count }}
               </span>
             </div>
@@ -114,15 +114,13 @@
     </div>
 
     <!-- 拖拽指示器 -->
-    <div v-if="isDragging" class="absolute left-0 right-0 h-0.5 bg-blue-500 rounded-sm opacity-80 pointer-events-none" />
+    <div v-if="isDragging" class="absolute left-0 right-0 h-0.5 bg-primary rounded-sm opacity-80 pointer-events-none" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { Input } from '@/components/ui/input'
-import IconField from '@/components/ui/volt/IconField.vue'
-import InputIcon from '@/components/ui/volt/InputIcon.vue'
 import { Button } from '@/components/ui/button'
 import type { SidebarNavComponentProps, NavigationItem, SidebarNavEvents } from '../../types/components'
 

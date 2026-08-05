@@ -10,17 +10,17 @@
       <div class="file-upload-content flex flex-col min-h-[400px] overflow-hidden">
         <!-- 顶部队列状态 -->
         <div v-if="queueStats.pending > 0 || queueStats.running > 0" class="flex items-center justify-end space-x-4 text-sm mb-4 px-1">
-          <span class="text-blue-600 dark:text-blue-400">等待中: {{ queueStats.pending }}</span>
+          <span class="text-primary dark:text-primary">等待中: {{ queueStats.pending }}</span>
           <span class="text-orange-600 dark:text-orange-400">上传中: {{ queueStats.running }}</span>
           <span class="text-green-600 dark:text-green-400">已完成: {{ queueStats.completed }}</span>
-          <span v-if="queueStats.failed > 0" class="text-red-600 dark:text-red-400">失败: {{ queueStats.failed }}</span>
+          <span v-if="queueStats.failed > 0" class="text-destructive dark:text-destructive">失败: {{ queueStats.failed }}</span>
         </div>
 
         <!-- 主体内容区域 -->
         <div class="flex-1 flex gap-4 min-h-0 overflow-hidden">
           <!-- 最左侧：本地文件夹树（导入的目录结构，仅浏览/筛选） -->
           <div class="w-60 flex flex-col flex-shrink-0">
-            <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex-1 min-h-0">
+            <div class="flex-1 min-h-0">
               <div class="p-2 h-full overflow-y-auto">
                 <FolderTreeComponent
                   item-type="folder"
@@ -34,7 +34,7 @@
             </div>
             <!-- 按原有结构导入：在服务器镜像创建本地目录层级并应用到文件 -->
             <button
-              class="mt-2 w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-blue-500 dark:bg-blue-600 text-white text-xs font-medium hover:bg-blue-600 dark:hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              class="mt-2 w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-primary dark:bg-primary text-white text-xs font-medium hover:bg-primary dark:hover:bg-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               :disabled="isImportingStructure || localTreeData.length === 0"
               :title="localTreeData.length === 0 ? '请先导入文件夹' : '按本地目录层级在素材库下创建对应文件夹并应用到待上传文件'"
               @click="importWithStructure"
@@ -57,31 +57,31 @@
 
             <!-- 待上传文件网格 -->
             <div
-              class="flex-1 bg-white dark:bg-gray-900 rounded-xl border-2 overflow-hidden flex flex-col transition-colors"
-              :class="isDragOver ? 'border-blue-500 bg-blue-50/30 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700'"
+              class="flex-1 rounded-xl border-2 overflow-hidden flex flex-col transition-colors"
+              :class="isDragOver ? 'border-primary bg-primary/30 dark:bg-primary/20' : 'border-white/60 dark:border-border'"
               @drop.prevent="handleDrop"
               @dragover.prevent="isDragOver = true"
               @dragleave.prevent="isDragOver = false"
             >
               <!-- 文件列表头部 -->
-              <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+              <div class="flex items-center justify-between px-4 py-3 border-b border-border dark:border-border">
                 <div class="flex items-center space-x-2">
-                  <span class="text-sm font-medium text-gray-700 dark:text-gray-300">待上传文件</span>
-                  <span v-if="pendingFiles.length > 0" class="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">
+                  <span class="text-sm font-medium text-foreground dark:text-muted-foreground">待上传文件</span>
+                  <span v-if="pendingFiles.length > 0" class="text-xs text-muted-foreground dark:text-muted-foreground bg-muted dark:bg-muted px-2 py-0.5 rounded-full">
                     {{ filteredPendingFiles.length }} / {{ pendingFiles.length }} 个
                   </span>
                 </div>
                 <div class="flex items-center space-x-2">
                   <button
                     v-if="selectedPendingIds.length > 0"
-                    class="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                    class="text-xs text-muted-foreground dark:text-muted-foreground hover:text-foreground dark:hover:text-muted-foreground"
                     @click="clearSelection"
                   >
                     取消选择 ({{ selectedPendingIds.length }})
                   </button>
                   <button
                     v-if="pendingFiles.length > 0"
-                    class="text-xs text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                    class="text-xs text-destructive dark:text-destructive hover:text-destructive dark:hover:text-destructive"
                     @click="handleClearAll"
                   >
                     清空全部
@@ -90,7 +90,7 @@
               </div>
 
               <!-- 过滤器：格式 / 文件大小 / 文件名 + 切换隐藏不符合条件 -->
-              <div v-if="pendingFiles.length > 0" class="flex items-center gap-2 px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex-wrap">
+              <div v-if="pendingFiles.length > 0" class="flex items-center gap-2 px-4 py-2 border-b border-border dark:border-border flex-wrap">
                 <!-- 格式 -->
                 <Select v-model="formatFilter">
                   <SelectTrigger class="h-7 w-24 text-xs">
@@ -122,11 +122,11 @@
                 <Popover v-else v-model:open="sizePopoverOpen">
                   <PopoverTrigger as-child>
                     <button
-                      class="h-7 w-28 text-xs flex items-center justify-between px-2 rounded-md border border-blue-400 text-blue-500 dark:text-blue-400 bg-blue-50/40 dark:bg-blue-900/20 hover:bg-blue-50 dark:hover:bg-blue-900/30"
+                      class="h-7 w-28 text-xs flex items-center justify-between px-2 rounded-md border border-primary text-primary dark:text-primary bg-primary/40 dark:bg-primary/20 hover:bg-primary dark:hover:bg-primary/30"
                     >
                       <span class="truncate">{{ sizeRangeDisplay[0] }} - {{ sizeRangeDisplay[1] }} {{ unitLabel }}</span>
                       <span
-                        class="material-icons ml-1 text-gray-400 hover:text-red-500"
+                        class="material-icons ml-1 text-muted-foreground hover:text-destructive"
                         style="font-size: 14px"
                         @click.stop="sizePopoverOpen = false; sizeFilter = 'all'"
                         title="清除自定义"
@@ -142,12 +142,12 @@
                           :key="u.value"
                           class="flex-1 h-6 text-xs rounded border transition-colors"
                           :class="sizeUnit === u.value
-                            ? 'border-blue-400 text-blue-500 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-900/30'
-                            : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'"
+                            ? 'border-primary text-primary dark:text-primary bg-primary/50 dark:bg-primary/30'
+                            : 'border-border dark:border-border text-muted-foreground dark:text-muted-foreground hover:bg-muted dark:hover:bg-muted'"
                           @click="changeSizeUnit(u.value)"
                         >{{ u.label }}</button>
                       </div>
-                      <div class="flex items-center justify-between text-xs text-gray-600 dark:text-gray-300">
+                      <div class="flex items-center justify-between text-xs text-muted-foreground dark:text-muted-foreground">
                         <span>最小 {{ sizeRangeDisplay[0] }} {{ unitLabel }}</span>
                         <span>最大 {{ sizeRangeDisplay[1] }} {{ unitLabel }}</span>
                       </div>
@@ -164,19 +164,19 @@
                             v-model.number="sizeRangeDisplayMin"
                             type="number"
                             min="0"
-                            class="h-7 w-16 text-xs px-2 rounded-md border border-gray-200 dark:border-gray-700 bg-transparent"
+                            class="h-7 w-16 text-xs px-2 rounded-md border border-border dark:border-border bg-transparent"
                           />
-                          <span class="text-xs text-gray-400">{{ unitLabel }}</span>
+                          <span class="text-xs text-muted-foreground">{{ unitLabel }}</span>
                         </div>
-                        <span class="text-gray-400">~</span>
+                        <span class="text-muted-foreground">~</span>
                         <div class="flex items-center gap-1">
                           <input
                             v-model.number="sizeRangeDisplayMax"
                             type="number"
                             min="0"
-                            class="h-7 w-16 text-xs px-2 rounded-md border border-gray-200 dark:border-gray-700 bg-transparent"
+                            class="h-7 w-16 text-xs px-2 rounded-md border border-border dark:border-border bg-transparent"
                           />
-                          <span class="text-xs text-gray-400">{{ unitLabel }}</span>
+                          <span class="text-xs text-muted-foreground">{{ unitLabel }}</span>
                         </div>
                       </div>
                     </div>
@@ -184,22 +184,22 @@
                 </Popover>
                 <!-- 文件名 -->
                 <div class="relative flex-1 min-w-[120px]">
-                  <span class="material-icons absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" style="font-size: 14px">search</span>
+                  <span class="material-icons absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" style="font-size: 14px">search</span>
                   <input
                     v-model="nameFilter"
                     type="text"
                     placeholder="文件名"
-                    class="h-7 w-full pl-7 pr-2 text-xs rounded-md border border-gray-200 dark:border-gray-700 bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-400"
+                    class="h-7 w-full pl-7 pr-2 text-xs rounded-md border border-border dark:border-border bg-transparent focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                 </div>
                 <!-- 命中数提示 -->
-                <span v-if="hasActiveFilter" class="text-xs text-gray-400 whitespace-nowrap">
+                <span v-if="hasActiveFilter" class="text-xs text-muted-foreground whitespace-nowrap">
                   命中 {{ matchedCount }}
                 </span>
                 <!-- 切换隐藏不符合条件 -->
                 <button
-                  class="flex h-7 w-7 items-center justify-center rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                  :class="{ 'text-blue-500 dark:text-blue-400': hideNonMatching }"
+                  class="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:text-muted-foreground dark:hover:text-muted-foreground hover:bg-muted dark:hover:bg-muted transition-colors"
+                  :class="{ 'text-primary dark:text-primary': hideNonMatching }"
                   :title="hideNonMatching ? '显示不符合条件的文件' : '隐藏不符合条件的文件'"
                   @click="hideNonMatching = !hideNonMatching"
                 >
@@ -225,7 +225,7 @@
                   <!-- 空状态 -->
                   <div
                     v-if="displayFiles.length === 0"
-                    class="h-full flex flex-col items-center justify-center text-gray-400 dark:text-gray-500 cursor-pointer"
+                    class="h-full flex flex-col items-center justify-center text-muted-foreground dark:text-muted-foreground cursor-pointer"
                     @click="triggerFileSelect(fileInputRef)"
                   >
                     <span class="material-icons text-5xl mb-2">cloud_upload</span>
@@ -243,9 +243,9 @@
                       v-for="file in displayFiles"
                       :key="file.id"
                       :data-selectable-id="matchesFilters(file) ? file.id : undefined"
-                      class="file-card group relative bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden border-2 transition-all select-none"
+                      class="file-card group relative bg-white/40 dark:bg-muted/40 backdrop-blur-sm rounded-lg overflow-hidden border-2 transition-all select-none"
                       :class="[
-                        !matchesFilters(file) ? 'opacity-50 cursor-not-allowed border-transparent' : (selectedPendingIds.includes(file.id) ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800 cursor-pointer' : 'border-transparent hover:border-gray-300 dark:hover:border-gray-600 cursor-pointer')
+                        !matchesFilters(file) ? 'opacity-50 cursor-not-allowed border-transparent' : (selectedPendingIds.includes(file.id) ? 'border-primary ring-2 ring-primary dark:ring-primary cursor-pointer' : 'border-transparent hover:border-border dark:hover:border-border cursor-pointer')
                       ]"
                       @click.stop="matchesFilters(file) && handleFileClick(file, $event)"
                     >
@@ -273,17 +273,17 @@
                           <span class="material-icons text-4xl text-green-400">audiotrack</span>
                         </div>
                         <!-- 文档预览 -->
-                        <div v-else-if="isDocumentFile(file.file.type)" class="w-full h-full flex items-center justify-center bg-blue-100 dark:bg-blue-900/30">
-                          <span class="material-icons text-4xl text-blue-400">description</span>
+                        <div v-else-if="isDocumentFile(file.file.type)" class="w-full h-full flex items-center justify-center bg-primary dark:bg-primary/30">
+                          <span class="material-icons text-4xl text-primary">description</span>
                         </div>
                         <!-- 其他文件 -->
-                        <div v-else class="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700">
-                          <span class="material-icons text-4xl text-gray-400">insert_drive_file</span>
+                        <div v-else class="w-full h-full flex items-center justify-center bg-accent dark:bg-muted">
+                          <span class="material-icons text-4xl text-muted-foreground">insert_drive_file</span>
                         </div>
 
                         <!-- 删除按钮 -->
                         <button
-                          class="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                          class="absolute top-1 right-1 w-6 h-6 bg-destructive text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
                           @click.stop="removePendingFile(file.id)"
                         >
                           <span class="material-icons text-sm">close</span>
@@ -303,24 +303,24 @@
                         <!-- 不符合条件遮罩 -->
                         <div
                           v-if="!matchesFilters(file)"
-                          class="absolute inset-0 bg-gray-900/30 flex items-center justify-center pointer-events-none"
+                          class="absolute inset-0 bg-muted/30 flex items-center justify-center pointer-events-none"
                         >
-                          <span class="text-xs text-white bg-gray-800/80 px-2 py-0.5 rounded">不符合条件</span>
+                          <span class="text-xs text-white bg-muted/80 px-2 py-0.5 rounded">不符合条件</span>
                         </div>
                       </div>
 
                       <!-- 文件信息 -->
                       <div class="p-2">
-                        <p class="text-xs font-medium text-gray-700 dark:text-gray-300 truncate" :title="file.file.name">
+                        <p class="text-xs font-medium text-foreground dark:text-muted-foreground truncate" :title="file.file.name">
                           {{ file.file.name }}
                         </p>
-                        <p class="text-xs text-gray-400">{{ formatFileSize(file.localSize ?? file.file.size) }}</p>
+                        <p class="text-xs text-muted-foreground">{{ formatFileSize(file.localSize ?? file.file.size) }}</p>
 
                         <!-- 元数据标识 -->
                         <div class="flex items-center gap-1 mt-1 flex-wrap">
                           <span
                             v-if="file.folderId"
-                            class="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded"
+                            class="text-xs bg-primary dark:bg-primary/30 text-primary dark:text-primary px-1.5 py-0.5 rounded"
                           >
                             <span class="material-icons text-xs align-middle mr-0.5">folder</span>
                             {{ getFolderName(file.folderId) }}
@@ -335,7 +335,7 @@
                           </span>
                           <span
                             v-if="(file.tags?.length || 0) > 2"
-                            class="text-xs text-gray-400"
+                            class="text-xs text-muted-foreground"
                           >
                             +{{ (file.tags?.length || 0) - 2 }}
                           </span>
@@ -352,7 +352,7 @@
           <!-- 右侧：文件夹和标签面板 -->
           <div class="w-72 flex flex-col gap-4 flex-shrink-0">
             <!-- 文件夹和标签树 -->
-            <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex-1">
+            <div class="overflow-hidden flex-1">
               <div class="p-2 h-full overflow-y-auto space-y-4">
                 <FolderTreeComponent
                   item-type="folder"
@@ -377,7 +377,7 @@
       </div>
       <DialogFooter class="flex-row w-full sm:justify-between">
         <div class="flex items-center space-x-2">
-          <span class="text-sm text-gray-600 dark:text-gray-400">素材库:</span>
+          <span class="text-sm text-muted-foreground dark:text-muted-foreground">素材库:</span>
           <Select v-model="selectedLibraryId" @update:model-value="(v: any) => handleLibrarySelectChange(v)">
             <SelectTrigger class="w-48">
               <SelectValue placeholder="选择素材库" />
@@ -388,7 +388,7 @@
           </Select>
         </div>
         <button
-          class="px-6 py-2 bg-blue-500 dark:bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-600 dark:hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          class="px-6 py-2 bg-primary dark:bg-primary text-white rounded-lg font-medium hover:bg-primary dark:hover:bg-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           :disabled="pendingFiles.length === 0 || !selectedLibraryId || uploadingFileIds.size > 0"
           @click="startUpload"
         >

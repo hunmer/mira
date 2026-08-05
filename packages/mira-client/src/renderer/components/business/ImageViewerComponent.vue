@@ -28,9 +28,9 @@
       <!-- 无图片时的占位符 -->
       <div 
         v-if="!image"
-        class="flex items-center justify-center w-96 h-96 bg-gray-200 rounded-lg"
+        class="flex items-center justify-center w-96 h-96 bg-accent rounded-lg"
       >
-        <span class="material-icons text-gray-400 text-6xl">image</span>
+        <span class="material-icons text-muted-foreground text-6xl">image</span>
       </div>
     </div>
 
@@ -40,8 +40,8 @@
       class="absolute inset-0 flex items-center justify-center bg-white/80"
     >
       <div class="flex flex-col items-center space-y-2">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-        <span class="text-sm text-gray-600">加载中...</span>
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <span class="text-sm text-muted-foreground">加载中...</span>
       </div>
     </div>
 
@@ -51,69 +51,69 @@
       class="absolute inset-0 flex items-center justify-center bg-white/80"
     >
       <div class="flex flex-col items-center space-y-2">
-        <span class="material-icons text-gray-400 text-6xl">broken_image</span>
-        <span class="text-sm text-gray-600">图片加载失败</span>
+        <span class="material-icons text-muted-foreground text-6xl">broken_image</span>
+        <span class="text-sm text-muted-foreground">图片加载失败</span>
       </div>
     </div>
 
     <!-- 底部工具栏 -->
-    <div class="absolute bottom-6 flex items-center space-x-2 rounded-full border border-gray-200 bg-white/80 p-2 backdrop-blur-md">
+    <div class="absolute bottom-6 flex items-center space-x-2 rounded-full border border-border bg-white/80 p-2 backdrop-blur-md">
       <button 
-        class="rounded-full p-2 hover:bg-gray-100"
+        class="rounded-full p-2 hover:bg-muted"
         @click="zoomIn"
       >
-        <span class="material-symbols-outlined text-gray-600">zoom_in</span>
+        <span class="material-symbols-outlined text-muted-foreground">zoom_in</span>
       </button>
       <button 
-        class="rounded-full p-2 hover:bg-gray-100"
+        class="rounded-full p-2 hover:bg-muted"
         @click="zoomOut"
       >
-        <span class="material-symbols-outlined text-gray-600">zoom_out</span>
+        <span class="material-symbols-outlined text-muted-foreground">zoom_out</span>
       </button>
       <button 
-        class="rounded-full p-2 hover:bg-gray-100"
+        class="rounded-full p-2 hover:bg-muted"
         @click="resetZoom"
       >
-        <span class="material-symbols-outlined text-gray-600">zoom_out_map</span>
+        <span class="material-symbols-outlined text-muted-foreground">zoom_out_map</span>
       </button>
-      <div class="h-6 border-l border-gray-300"></div>
+      <div class="h-6 border-l border-border"></div>
       <button 
-        class="rounded-full p-2 hover:bg-gray-100"
+        class="rounded-full p-2 hover:bg-muted"
         @click="rotateLeft"
       >
-        <span class="material-symbols-outlined text-gray-600">rotate_90_degrees_ccw</span>
+        <span class="material-symbols-outlined text-muted-foreground">rotate_90_degrees_ccw</span>
       </button>
       <button 
-        class="rounded-full p-2 hover:bg-gray-100"
+        class="rounded-full p-2 hover:bg-muted"
         @click="rotateRight"
       >
-        <span class="material-symbols-outlined text-gray-600">rotate_90_degrees_cw</span>
+        <span class="material-symbols-outlined text-muted-foreground">rotate_90_degrees_cw</span>
       </button>
-      <div class="h-6 border-l border-gray-300"></div>
+      <div class="h-6 border-l border-border"></div>
       <button 
-        class="rounded-full p-2 hover:bg-gray-100"
+        class="rounded-full p-2 hover:bg-muted"
         @click="flipHorizontal"
       >
-        <span class="material-symbols-outlined text-gray-600">flip</span>
+        <span class="material-symbols-outlined text-muted-foreground">flip</span>
       </button>
       <button 
-        class="rounded-full p-2 hover:bg-gray-100"
+        class="rounded-full p-2 hover:bg-muted"
         @click="flipVertical"
       >
-        <span class="material-symbols-outlined text-gray-600" style="transform: rotate(90deg);">flip</span>
+        <span class="material-symbols-outlined text-muted-foreground" style="transform: rotate(90deg);">flip</span>
       </button>
-      <div class="h-6 border-l border-gray-300"></div>
+      <div class="h-6 border-l border-border"></div>
       <button 
-        class="rounded-full p-2 hover:bg-gray-100"
+        class="rounded-full p-2 hover:bg-muted"
         @click="reset"
       >
-        <span class="material-symbols-outlined text-gray-600">restart_alt</span>
+        <span class="material-symbols-outlined text-muted-foreground">restart_alt</span>
       </button>
       <button 
-        class="rounded-full p-2 hover:bg-gray-100"
+        class="rounded-full p-2 hover:bg-muted"
         @click="toggleFullscreen"
       >
-        <span class="material-symbols-outlined text-gray-600">fullscreen</span>
+        <span class="material-symbols-outlined text-muted-foreground">fullscreen</span>
       </button>
     </div>
   </div>

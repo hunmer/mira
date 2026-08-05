@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mira 通知</title>
+  <!-- 本地 Vue（与搜索窗口共用） -->
+  <script src="vendor/vue.global.prod.js"></script>
+  <!-- 通用浮动窗口脚手架 -->
+  <script src="floating-window-core.js"></script>
+  <style>
+    /* Material Icons - 本地字体 */
+    @font-face {
+      font-family: 'Material Icons';
+      font-style: normal;
+      font-weight: 400;
+      src: url('../../assets/fonts/material-icons.ttf') format('truetype');
+    }
+
+    .material-icons {
+      font-family: 'Material Icons';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 24px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ========== 主题变量 ========== */
+    :root {
+      --nt-bg: #1f2937;
+      --nt-bg-hover: #374151;
+      --nt-text-title: #f3f4f6;
+      --nt-text-body: #d1d5db;
+      --nt-text-muted: #9ca3af;
+      --nt-border: rgba(255, 255, 255, 0.06);
+      --nt-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 6px 12px -4px rgba(0, 0, 0, 0.3);
+      --nt-info: #3b82f6;
+      --nt-success: #10b981;
+      --nt-warning: #f59e0b;
+      --nt-error: #ef4444;
+    }
+
+    :root.light {
+      --nt-bg: #ffffff;
+      --nt-bg-hover: #f3f4f6;
+      --nt-text-title: #111827;
+      --nt-text-body: #374151;
+      --nt-text-muted: #6b7280;
+      --nt-border: rgba(0, 0, 0, 0.06);
+      --nt-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.15), 0 6px 12px -4px rgba(0, 0, 0, 0.08);
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root:not(.dark):not(.light) {
+        --nt-bg: #ffffff;
+        --nt-bg-hover: #f3f4f6;
+        --nt-text-title: #111827;
+        --nt-text-body: #374151;
+        --nt-text-muted: #6b7280;
+        --nt-border: rgba(0, 0, 0, 0.06);
+        --nt-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.15), 0 6px 12px -4px rgba(0, 0, 0, 0.08);
+      }
+    }
+
+    /* ========== 基础样式 ========== */
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Helvetica Neue', sans-serif;
+      background: transparent;
+      color: var(--nt-text-title);
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    #notification-app {
+      width: 100vw;
+      height: 100vh;
+      background: transparent;
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-end;
+    }
+
+    /* 通知卡片（右下角） */
+    .notification-card {
+      width: 320px;
+      min-height: 72px;
+      background: var(--nt-bg);
+      border-radius: 12px;
+      box-shadow: var(--nt-shadow);
+      overflow: hidden;
+      display: flex;
+      cursor: default;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: background 0.2s ease, box-shadow 0.2s ease;
+      position: relative;
+    }
+
+    /* 仅可拖拽位置显示拖动光标 */
+    .notification-card.is-draggable {
+      cursor: move;
+    }
+
+    .notification-card:hover {
+      background: var(--nt-bg-hover);
+    }
+
+    .notification-card.is-dragging {
+      box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.55), 0 8px 16px -6px rgba(0, 0, 0, 0.35);
+    }
+
+    /* ===== 出现动画 ===== */
+    @keyframes anim-slide-right {
+      from { transform: translateX(120%); opacity: 0; }
+      to   { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes anim-slide-left {
+      from { transform: translateX(-120%); opacity: 0; }
+      to   { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes anim-slide-up {
+      from { transform: translateY(120%); opacity: 0; }
+      to   { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes anim-slide-down {
+      from { transform: translateY(-120%); opacity: 0; }
+      to   { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes anim-fade {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes anim-zoom {
+      from { transform: scale(0.8); opacity: 0; }
+      to   { transform: scale(1); opacity: 1; }
+    }
+    @keyframes anim-bounce {
+      0%   { transform: translateY(-40%); opacity: 0; }
+      60%  { transform: translateY(8%); opacity: 1; }
+      80%  { transform: translateY(-4%); }
+      100% { transform: translateY(0); }
+    }
+
+    .anim-slide-right { animation: anim-slide-right 0.32s cubic-bezier(0.22, 1, 0.36, 1); }
+    .anim-slide-left  { animation: anim-slide-left  0.32s cubic-bezier(0.22, 1, 0.36, 1); }
+    .anim-slide-up    { animation: anim-slide-up    0.32s cubic-bezier(0.22, 1, 0.36, 1); }
+    .anim-slide-down  { animation: anim-slide-down  0.32s cubic-bezier(0.22, 1, 0.36, 1); }
+    .anim-fade        { animation: anim-fade        0.3s ease; }
+    .anim-zoom        { animation: anim-zoom        0.3s cubic-bezier(0.22, 1, 0.36, 1); transform-origin: bottom right; }
+    .anim-bounce      { animation: anim-bounce      0.5s cubic-bezier(0.22, 1, 0.36, 1); }
+
+    /* 左侧色条（按 type） */
+    .notification-bar {
+      width: 4px;
+      flex-shrink: 0;
+      align-self: stretch;
+    }
+
+    .notification-bar.info { background: var(--nt-info); }
+    .notification-bar.success { background: var(--nt-success); }
+    .notification-bar.warning { background: var(--nt-warning); }
+    .notification-bar.error { background: var(--nt-error); }
+
+    /* 最左侧缩略图/图标容器（大尺寸，填满卡片高度） */
+    .notification-thumb-wrap {
+      width: 64px;
+      flex-shrink: 0;
+      align-self: stretch;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: var(--nt-bg-hover);
+      border-right: 1px solid var(--nt-border);
+    }
+
+    /* 缩略图（icon 为图片 URL 时渲染为 <img>） */
+    .notification-thumb {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      /* 禁用浏览器原生图片拖拽，避免吞掉卡片的 click 事件 */
+      -webkit-user-drag: none;
+      user-drag: none;
+      pointer-events: auto;
+    }
+
+    /* 无缩略图时的 Material Icon（居中、按 type 着色） */
+    .notification-icon {
+      font-size: 32px;
+    }
+
+    .notification-icon.info { color: var(--nt-info); }
+    .notification-icon.success { color: var(--nt-success); }
+    .notification-icon.warning { color: var(--nt-warning); }
+    .notification-icon.error { color: var(--nt-error); }
+
+    .notification-main {
+      flex: 1;
+      padding: 12px 12px 12px 14px;
+      min-width: 0;
+    }
+
+    .notification-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .notification-title {
+      flex: 1;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--nt-text-title);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .notification-close {
+      background: none;
+      border: none;
+      color: var(--nt-text-muted);
+      cursor: pointer;
+      padding: 2px;
+      border-radius: 4px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+      transition: color 0.2s;
+    }
+
+    .notification-close:hover {
+      color: var(--nt-text-body);
+    }
+
+    .notification-body {
+      font-size: 13px;
+      color: var(--nt-text-body);
+      line-height: 1.4;
+      margin: 0;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    /* 自定义 HTML 内容区 */
+    .notification-html {
+      font-size: 13px;
+      color: var(--nt-text-body);
+      line-height: 1.4;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .notification-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .notification-action {
+      background: var(--nt-bg-hover);
+      border: 1px solid var(--nt-border);
+      color: var(--nt-text-body);
+      padding: 5px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+
+    .notification-action:hover {
+      background: var(--nt-info);
+      color: #fff;
+      border-color: var(--nt-info);
+    }
+  </style>
+</head>
+<body>
+  <div id="notification-app"></div>
+
+  <script src="./notification-window.js"></script>
+</body>
+</html>

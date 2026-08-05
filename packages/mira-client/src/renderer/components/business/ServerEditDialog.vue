@@ -13,7 +13,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <!-- 服务器名称 -->
           <div class="form-field">
-            <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="name" class="block text-sm font-medium text-foreground mb-2">
               服务器名称 *
             </label>
             <Input
@@ -21,17 +21,17 @@
               v-model="formData.name"
               :class="[
                 'w-full',
-                errors.name ? 'border-red-500' : ''
+                errors.name ? 'border-destructive' : ''
               ]"
               placeholder="请输入服务器名称"
               :data-invalid="!!errors.name"
             />
-            <span v-if="errors.name" class="text-red-500 text-sm mt-1">{{ errors.name }}</span>
+            <span v-if="errors.name" class="text-destructive text-sm mt-1">{{ errors.name }}</span>
           </div>
 
           <!-- 服务器 ID -->
           <div class="form-field">
-            <label for="id" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="id" class="block text-sm font-medium text-foreground mb-2">
               服务器 ID *
             </label>
             <Input
@@ -39,14 +39,14 @@
               v-model="formData.id"
               :class="[
                 'w-full',
-                errors.id ? 'border-red-500' : ''
+                errors.id ? 'border-destructive' : ''
               ]"
               placeholder="请输入或使用生成的 ID"
               :data-invalid="!!errors.id"
               :readonly="isEdit"
             />
-            <span v-if="errors.id" class="text-red-500 text-sm mt-1">{{ errors.id }}</span>
-            <p class="text-xs text-gray-500 mt-1">
+            <span v-if="errors.id" class="text-destructive text-sm mt-1">{{ errors.id }}</span>
+            <p class="text-xs text-muted-foreground mt-1">
               {{ isEdit ? '编辑时无法修改 ID' : '唯一标识符，用于区分不同的服务器' }}
             </p>
           </div>
@@ -56,7 +56,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <!-- 服务器地址 -->
           <div class="form-field">
-            <label for="serverUrl" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="serverUrl" class="block text-sm font-medium text-foreground mb-2">
               服务器地址 *
             </label>
             <Input
@@ -64,20 +64,20 @@
               v-model="formData.serverUrl"
               :class="[
                 'w-full',
-                errors.serverUrl ? 'border-red-500' : ''
+                errors.serverUrl ? 'border-destructive' : ''
               ]"
               placeholder="http://localhost:8081"
               :data-invalid="!!errors.serverUrl"
             />
-            <span v-if="errors.serverUrl" class="text-red-500 text-sm mt-1">{{ errors.serverUrl }}</span>
-            <p class="text-xs text-gray-500 mt-1">
+            <span v-if="errors.serverUrl" class="text-destructive text-sm mt-1">{{ errors.serverUrl }}</span>
+            <p class="text-xs text-muted-foreground mt-1">
               WebSocket地址将自动根据服务器地址生成
             </p>
           </div>
 
           <!-- WebSocket 地址 -->
           <div class="form-field">
-            <label for="websocketUrl" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="websocketUrl" class="block text-sm font-medium text-foreground mb-2">
               WebSocket 地址 *
             </label>
             <Input
@@ -85,13 +85,13 @@
               v-model="formData.websocketUrl"
               :class="[
                 'w-full',
-                errors.websocketUrl ? 'border-red-500' : ''
+                errors.websocketUrl ? 'border-destructive' : ''
               ]"
               placeholder="ws://localhost:8018"
               :data-invalid="!!errors.websocketUrl"
             />
-            <span v-if="errors.websocketUrl" class="text-red-500 text-sm mt-1">{{ errors.websocketUrl }}</span>
-            <p class="text-xs text-gray-500 mt-1">
+            <span v-if="errors.websocketUrl" class="text-destructive text-sm mt-1">{{ errors.websocketUrl }}</span>
+            <p class="text-xs text-muted-foreground mt-1">
               用于实时通信的 WebSocket 连接地址
             </p>
           </div>
@@ -100,7 +100,7 @@
         <!-- 认证配置 -->
         <div class="form-field">
           <div class="flex items-center justify-between mb-4">
-            <label class="block text-sm font-medium text-gray-700">
+            <label class="block text-sm font-medium text-foreground">
               认证方式
             </label>
             <!-- 认证方式切换 -->
@@ -118,7 +118,7 @@
           <!-- 用户名密码输入框 -->
           <div v-if="!authTokenMode" class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label for="username" class="block text-sm font-medium text-gray-700 mb-2">
+              <label for="username" class="block text-sm font-medium text-foreground mb-2">
                 用户名
               </label>
               <Input
@@ -126,19 +126,19 @@
                 v-model="formData.username"
                 :class="[
                   'w-full',
-                  errors.username ? 'border-red-500' : ''
+                  errors.username ? 'border-destructive' : ''
                 ]"
                 placeholder="请输入用户名"
                 :data-invalid="!!errors.username"
               />
-              <span v-if="errors.username" class="text-red-500 text-sm mt-1">{{ errors.username }}</span>
-              <p class="text-xs text-gray-500 mt-1">
+              <span v-if="errors.username" class="text-destructive text-sm mt-1">{{ errors.username }}</span>
+              <p class="text-xs text-muted-foreground mt-1">
                 连接服务器时需要的用户名
               </p>
             </div>
 
             <div>
-              <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+              <label for="password" class="block text-sm font-medium text-foreground mb-2">
                 密码
               </label>
               <Input
@@ -146,14 +146,14 @@
                 v-model="formData.password"
                 :class="[
                   'w-full',
-                  errors.password ? 'border-red-500' : ''
+                  errors.password ? 'border-destructive' : ''
                 ]"
                 placeholder="请输入密码"
                 :data-invalid="!!errors.password"
                 type="password"
               />
-              <span v-if="errors.password" class="text-red-500 text-sm mt-1">{{ errors.password }}</span>
-              <p class="text-xs text-gray-500 mt-1">
+              <span v-if="errors.password" class="text-destructive text-sm mt-1">{{ errors.password }}</span>
+              <p class="text-xs text-muted-foreground mt-1">
                 连接服务器时需要的密码
               </p>
             </div>
@@ -161,7 +161,7 @@
 
           <!-- Token 输入框 -->
           <div v-if="authTokenMode" class="space-y-2">
-            <label for="authTokenValue" class="block text-sm font-medium text-gray-700">
+            <label for="authTokenValue" class="block text-sm font-medium text-foreground">
               API Token
             </label>
             <Input
@@ -169,14 +169,14 @@
               v-model="formData.authToken"
               :class="[
                 'w-full',
-                errors.authToken ? 'border-red-500' : ''
+                errors.authToken ? 'border-destructive' : ''
               ]"
               placeholder="请输入 API Token"
               :data-invalid="!!errors.authToken"
               type="password"
             />
-            <span v-if="errors.authToken" class="text-red-500 text-sm mt-1">{{ errors.authToken }}</span>
-            <p class="text-xs text-gray-500">
+            <span v-if="errors.authToken" class="text-destructive text-sm mt-1">{{ errors.authToken }}</span>
+            <p class="text-xs text-muted-foreground">
               使用 API Token 可以跳过用户名密码认证
             </p>
           </div>
@@ -193,7 +193,7 @@
           </div>
           <div
             v-else
-            class="flex items-center space-x-2 text-red-600 text-sm p-3 bg-red-50 rounded-lg border border-red-200"
+            class="flex items-center space-x-2 text-destructive text-sm p-3 bg-destructive rounded-lg border border-destructive"
           >
             <span class="material-icons text-sm">error</span>
             <span>连接测试失败: {{ connectionTestResult.error }}</span>
@@ -203,7 +203,7 @@
         <!-- SMB 配置 -->
         <div class="form-field mt-4">
           <div class="flex items-center justify-between mb-4">
-            <label class="text-sm font-medium text-gray-700">
+            <label class="text-sm font-medium text-foreground">
               SMB 共享
             </label>
             <div class="flex items-center space-x-3">
@@ -219,7 +219,7 @@
           <div v-if="smbEnabled" class="ml-6 grid grid-cols-1 md:grid-cols-2 gap-4">
             <!-- 挂载路径 -->
             <div>
-              <label for="mountPath" class="block text-sm font-medium text-gray-700 mb-2">
+              <label for="mountPath" class="block text-sm font-medium text-foreground mb-2">
                 挂载路径
               </label>
               <Input
@@ -227,20 +227,20 @@
                 v-model="formData.mountPath"
                 :class="[
                   'w-full',
-                  errors.mountPath ? 'border-red-500' : ''
+                  errors.mountPath ? 'border-destructive' : ''
                 ]"
                 placeholder="/mnt/media"
                 :data-invalid="!!errors.mountPath"
               />
-              <span v-if="errors.mountPath" class="text-red-500 text-sm mt-1">{{ errors.mountPath }}</span>
-              <p class="text-xs text-gray-500 mt-1">
+              <span v-if="errors.mountPath" class="text-destructive text-sm mt-1">{{ errors.mountPath }}</span>
+              <p class="text-xs text-muted-foreground mt-1">
                 服务器上的挂载路径前缀
               </p>
             </div>
 
             <!-- SMB 路径 -->
             <div>
-              <label for="smbPath" class="block text-sm font-medium text-gray-700 mb-2">
+              <label for="smbPath" class="block text-sm font-medium text-foreground mb-2">
                 SMB 路径
               </label>
               <Input
@@ -248,13 +248,13 @@
                 v-model="formData.smbPath"
                 :class="[
                   'w-full',
-                  errors.smbPath ? 'border-red-500' : ''
+                  errors.smbPath ? 'border-destructive' : ''
                 ]"
                 placeholder="\\\\server\\share\\path"
                 :data-invalid="!!errors.smbPath"
               />
-              <span v-if="errors.smbPath" class="text-red-500 text-sm mt-1">{{ errors.smbPath }}</span>
-              <p class="text-xs text-gray-500 mt-1">
+              <span v-if="errors.smbPath" class="text-destructive text-sm mt-1">{{ errors.smbPath }}</span>
+              <p class="text-xs text-muted-foreground mt-1">
                 SMB 共享的网络路径，用于本地文件访问
               </p>
             </div>
@@ -269,11 +269,11 @@
             :checked="formData.saveCredentials"
             @update:checked="formData.saveCredentials = $event"
           />
-          <label for="saveCredentials" class="text-sm text-gray-700">
+          <label for="saveCredentials" class="text-sm text-foreground">
             保存登录信息（如果服务器需要认证）
           </label>
         </div>
-        <p class="text-xs text-gray-500 mt-1">
+        <p class="text-xs text-muted-foreground mt-1">
           勾选后，首次登录时会保存您的用户名和密码（加密存储）
         </p>
       </div>
@@ -287,7 +287,7 @@
           type="button"
           @click="testConnection"
           :disabled="!formData.serverUrl || isTesting"
-          class="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          class="flex items-center space-x-2 px-4 py-2 bg-muted text-foreground rounded-lg hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <span class="material-icons text-sm" :class="{ 'animate-spin': isTesting }">
             {{ isTesting ? 'sync' : 'wifi_find' }}
@@ -300,7 +300,7 @@
           <button
             type="button"
             @click="handleClose"
-            class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            class="px-4 py-2 text-muted-foreground hover:bg-muted rounded-lg transition-colors"
           >
             取消
           </button>
@@ -308,7 +308,7 @@
             type="button"
             @click="handleSubmit"
             :disabled="!isFormValid || isSubmitting"
-            class="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            class="flex items-center space-x-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <span v-if="isSubmitting" class="material-icons text-sm animate-spin">sync</span>
             <span>{{ isEdit ? '保存' : '添加' }}</span>

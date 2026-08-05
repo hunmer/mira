@@ -20,16 +20,17 @@ const props = withDefaults(defineProps<ToggleProps & {
 const emits = defineEmits<ToggleEmits>()
 
 const delegatedProps = reactiveOmit(props, "class", "size", "variant")
-
 const forwarded = useForwardPropsEmits(delegatedProps, emits)
 </script>
 
 <template>
   <Toggle
     v-slot="slotProps"
+    data-slot="toggle"
     v-bind="forwarded"
     :class="cn(toggleVariants({ variant, size }), props.class)"
   >
     <slot v-bind="slotProps" />
   </Toggle>
 </template>
+

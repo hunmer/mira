@@ -205,6 +205,32 @@ const electronAPI: ElectronAPI = {
       ipcRenderer.invoke('notification:is-supported')
   },
 
+  // 通知窗口 API（自定义 BrowserWindow 通知）
+  notificationWindow: {
+    show: (payload) =>
+      ipcRenderer.invoke('notification:window-show', payload),
+    hide: () =>
+      ipcRenderer.invoke('notification:window-hide'),
+    dismiss: (id) =>
+      ipcRenderer.invoke('notification:window-dismiss', id)
+  },
+
+  // 悬浮球窗口 API（单实例，可拖拽 / 接收文件拖放 / 持久化位置）
+  floatingBall: {
+    show: () =>
+      ipcRenderer.invoke('floating-ball:show'),
+    hide: () =>
+      ipcRenderer.invoke('floating-ball:hide'),
+    toggle: () =>
+      ipcRenderer.invoke('floating-ball:toggle'),
+    setPosition: (pos) =>
+      ipcRenderer.invoke('floating-ball:set-position', pos),
+    getState: () =>
+      ipcRenderer.invoke('floating-ball:get-state'),
+    toggleMainWindow: () =>
+      ipcRenderer.invoke('floating-ball:toggle-main')
+  },
+
   // 兼容性API（用于插件）
   startDrag: (filePath: string, iconInfo?: { iconPath?: string; iconType?: string }) =>
     ipcRenderer.invoke('drag-drop:start', filePath, iconInfo),

@@ -1,5 +1,5 @@
 <template>
-  <div class="search-result-item file-result p-2 rounded-md flex items-center space-x-4 hover:bg-gray-600 cursor-pointer transition-colors duration-200 border border-transparent hover:border-gray-700">
+  <div class="search-result-item file-result p-2 rounded-md flex items-center space-x-4 hover:bg-muted cursor-pointer transition-colors duration-200 border border-transparent hover:border-border">
     <!-- 文件缩略图或图标 -->
     <div class="file-thumbnail flex-shrink-0">
       <img 
@@ -11,9 +11,9 @@
       />
       <div 
         v-else 
-        class="w-12 h-12 rounded-md bg-gray-700 flex items-center justify-center"
+        class="w-12 h-12 rounded-md bg-muted flex items-center justify-center"
       >
-        <span class="material-icons text-gray-400 text-xl">{{ fileIcon }}</span>
+        <span class="material-icons text-muted-foreground text-xl">{{ fileIcon }}</span>
       </div>
     </div>
 
@@ -22,11 +22,11 @@
       <p class="font-semibold text-white truncate" :title="item.name">
         {{ item.name }}
       </p>
-      <div class="flex items-center space-x-2 text-sm text-gray-400">
+      <div class="flex items-center space-x-2 text-sm text-muted-foreground">
         <span>{{ formattedFileSize }}</span>
         <span>•</span>
         <span>{{ formattedDate }}</span>
-        <span v-if="item.mimeType" class="text-xs bg-gray-700 px-2 py-1 rounded">
+        <span v-if="item.mimeType" class="text-xs bg-muted px-2 py-1 rounded">
           {{ fileType }}
         </span>
       </div>
@@ -38,13 +38,13 @@
         <span 
           v-for="tag in item.tags.slice(0, 2)" 
           :key="tag"
-          class="text-xs bg-blue-600 text-white px-2 py-1 rounded"
+          class="text-xs bg-primary text-white px-2 py-1 rounded"
         >
           {{ tag }}
         </span>
         <span 
           v-if="item.tags.length > 2"
-          class="text-xs text-gray-400"
+          class="text-xs text-muted-foreground"
         >
           +{{ item.tags.length - 2 }}
         </span>

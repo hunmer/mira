@@ -1,15 +1,15 @@
 <template>
   <div class="p-4 space-y-6">
     <div>
-      <h3 class="text-slate-900 dark:text-slate-100 text-lg font-bold leading-tight tracking-[-0.015em] pb-2 pt-4">数据管理</h3>
-      <p class="text-slate-600 dark:text-slate-400 text-sm">导入或导出应用设置</p>
+      <h3 class="text-foreground dark:text-muted-foreground text-lg font-bold leading-tight tracking-[-0.015em] pb-2 pt-4">数据管理</h3>
+      <p class="text-muted-foreground dark:text-muted-foreground text-sm">导入或导出应用设置</p>
     </div>
 
     <div class="space-y-4">
       <div class="flex items-center justify-between py-2">
         <div>
-          <p class="text-slate-900 dark:text-slate-100 text-base font-normal leading-normal">导出设置</p>
-          <p class="text-slate-600 dark:text-slate-400 text-sm">将当前设置保存为 JSON 文件</p>
+          <p class="text-foreground dark:text-muted-foreground text-base font-normal leading-normal">导出设置</p>
+          <p class="text-muted-foreground dark:text-muted-foreground text-sm">将当前设置保存为 JSON 文件</p>
         </div>
         <Button @click="exportSettings" variant="outline">
           导出
@@ -18,8 +18,8 @@
 
       <div class="flex items-center justify-between py-2">
         <div>
-          <p class="text-slate-900 dark:text-slate-100 text-base font-normal leading-normal">导入设置</p>
-          <p class="text-slate-600 dark:text-slate-400 text-sm">从 JSON 文件恢复设置</p>
+          <p class="text-foreground dark:text-muted-foreground text-base font-normal leading-normal">导入设置</p>
+          <p class="text-muted-foreground dark:text-muted-foreground text-sm">从 JSON 文件恢复设置</p>
         </div>
         <Button @click="openImportDialog" variant="outline">
           导入

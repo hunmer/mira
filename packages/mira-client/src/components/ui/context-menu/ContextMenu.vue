@@ -16,3 +16,4 @@ const forwarded = useForwardPropsEmits(props, emits)
     <slot />
   </ContextMenuRoot>
 </template>
+

@@ -1,41 +1,41 @@
 <template>
-  <div class="w-full h-full flex justify-center items-center bg-neutral-100">
+  <div class="w-full h-full flex justify-center items-center bg-muted">
     <div class="flex flex-col items-center gap-8 p-12 bg-white rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.1)] max-w-[500px] w-[90%]">
-      <div class="flex justify-center items-center w-[100px] h-[100px] bg-gray-300 rounded-full">
+      <div class="flex justify-center items-center w-[100px] h-[100px] bg-accent rounded-full">
         <span class="text-5xl">{{ getFileIcon() }}</span>
       </div>
 
       <div class="text-center w-full">
-        <h3 class="m-0 mb-6 text-gray-800 text-2xl break-words">{{ fileInfo.title || fileInfo.name || '未知文件' }}</h3>
+        <h3 class="m-0 mb-6 text-foreground text-2xl break-words">{{ fileInfo.title || fileInfo.name || '未知文件' }}</h3>
 
         <div class="flex flex-col gap-3 mb-8 text-left">
-          <div v-if="fileInfo.mimeType" class="detail-item flex justify-between p-2 bg-neutral-100 rounded">
-            <span class="label font-medium text-gray-500 min-w-[80px]">文件类型:</span>
-            <span class="value text-gray-800 break-words flex-1 text-right">{{ fileInfo.mimeType }}</span>
+          <div v-if="fileInfo.mimeType" class="detail-item flex justify-between p-2 bg-muted rounded">
+            <span class="label font-medium text-muted-foreground min-w-[80px]">文件类型:</span>
+            <span class="value text-foreground break-words flex-1 text-right">{{ fileInfo.mimeType }}</span>
           </div>
 
-          <div v-if="fileInfo.size" class="detail-item flex justify-between p-2 bg-neutral-100 rounded">
-            <span class="label font-medium text-gray-500 min-w-[80px]">文件大小:</span>
-            <span class="value text-gray-800 break-words flex-1 text-right">{{ formatFileSize(fileInfo.size) }}</span>
+          <div v-if="fileInfo.size" class="detail-item flex justify-between p-2 bg-muted rounded">
+            <span class="label font-medium text-muted-foreground min-w-[80px]">文件大小:</span>
+            <span class="value text-foreground break-words flex-1 text-right">{{ formatFileSize(fileInfo.size) }}</span>
           </div>
 
-          <div v-if="fileInfo.updatedAt" class="detail-item flex justify-between p-2 bg-neutral-100 rounded">
-            <span class="label font-medium text-gray-500 min-w-[80px]">修改时间:</span>
-            <span class="value text-gray-800 break-words flex-1 text-right">{{ formatDate(fileInfo.updatedAt) }}</span>
+          <div v-if="fileInfo.updatedAt" class="detail-item flex justify-between p-2 bg-muted rounded">
+            <span class="label font-medium text-muted-foreground min-w-[80px]">修改时间:</span>
+            <span class="value text-foreground break-words flex-1 text-right">{{ formatDate(fileInfo.updatedAt) }}</span>
           </div>
 
-          <div v-if="fileInfo.description" class="detail-item flex justify-between p-2 bg-neutral-100 rounded">
-            <span class="label font-medium text-gray-500 min-w-[80px]">描述:</span>
-            <span class="value text-gray-800 break-words flex-1 text-right">{{ fileInfo.description }}</span>
+          <div v-if="fileInfo.description" class="detail-item flex justify-between p-2 bg-muted rounded">
+            <span class="label font-medium text-muted-foreground min-w-[80px]">描述:</span>
+            <span class="value text-foreground break-words flex-1 text-right">{{ fileInfo.description }}</span>
           </div>
         </div>
 
         <div class="flex gap-4 justify-center flex-wrap">
-          <button v-if="downloadUrl" @click="downloadFile" class="px-6 py-3 border-none rounded-md cursor-pointer text-[0.95rem] transition-all duration-200 bg-blue-500 text-white hover:bg-blue-700">
+          <button v-if="downloadUrl" @click="downloadFile" class="px-6 py-3 border-none rounded-md cursor-pointer text-[0.95rem] transition-all duration-200 bg-primary text-white hover:bg-primary">
             下载文件
           </button>
 
-          <button @click="copyFileInfo" class="px-6 py-3 border-none rounded-md cursor-pointer text-[0.95rem] transition-all duration-200 bg-gray-500 text-white hover:bg-gray-600">
+          <button @click="copyFileInfo" class="px-6 py-3 border-none rounded-md cursor-pointer text-[0.95rem] transition-all duration-200 bg-muted text-white hover:bg-muted">
             复制文件信息
           </button>
         </div>

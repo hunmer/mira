@@ -13,40 +13,40 @@
       class="global-loading fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm dark:bg-black/60"
       @click.stop
     >
-      <div class="bg-white dark:bg-gray-800 dark:text-white rounded-lg shadow-2xl p-8 max-w-sm mx-4 text-center max-sm:max-w-[20rem] max-sm:p-6">
+      <div class="bg-white dark:bg-muted dark:text-white rounded-lg shadow-2xl p-8 max-w-sm mx-4 text-center max-sm:max-w-[20rem] max-sm:p-6">
         <!-- 加载动画 -->
         <div class="mb-6">
           <div class="relative mx-auto w-16 h-16">
             <!-- 外圈旋转动画 -->
-            <div class="absolute inset-0 rounded-full border-4 border-gray-200"></div>
-            <div class="absolute inset-0 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
+            <div class="absolute inset-0 rounded-full border-4 border-border"></div>
+            <div class="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
             
             <!-- 内部脉冲动画 -->
-            <div class="absolute inset-2 rounded-full bg-blue-100 animate-pulse opacity-75"></div>
+            <div class="absolute inset-2 rounded-full bg-primary animate-pulse opacity-75"></div>
             
             <!-- 中心点 -->
-            <div class="absolute inset-6 rounded-full bg-blue-500"></div>
+            <div class="absolute inset-6 rounded-full bg-primary"></div>
           </div>
         </div>
         
         <!-- 加载信息 -->
         <div class="space-y-3">
-          <h3 class="text-lg max-sm:text-base font-semibold text-gray-900 dark:text-gray-100">
+          <h3 class="text-lg max-sm:text-base font-semibold text-foreground dark:text-muted-foreground">
             {{ title }}
           </h3>
-          <p v-if="message" class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+          <p v-if="message" class="text-sm text-muted-foreground dark:text-muted-foreground leading-relaxed">
             {{ message }}
           </p>
           
           <!-- 进度条（可选） -->
           <div v-if="showProgress && progress !== undefined" class="mt-4">
-            <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
+            <div class="flex justify-between text-xs text-muted-foreground dark:text-muted-foreground mb-1">
               <span>进度</span>
               <span>{{ Math.round(progress) }}%</span>
             </div>
-            <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+            <div class="w-full bg-accent dark:bg-muted rounded-full h-2">
               <div 
-                class="bg-blue-500 h-2 rounded-full transition-all duration-300 ease-out"
+                class="bg-primary h-2 rounded-full transition-all duration-300 ease-out"
                 :style="{ width: `${Math.min(100, Math.max(0, progress))}%` }"
               ></div>
             </div>
@@ -56,7 +56,7 @@
           <div v-if="showCancel" class="mt-6">
             <button
               @click="handleCancel"
-              class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 dark:hover:text-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
+              class="px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted dark:hover:text-muted-foreground dark:hover:bg-muted rounded-md transition-colors"
             >
               取消
             </button>

@@ -1,11 +1,11 @@
 <template>
-  <div class="w-full h-full flex flex-col bg-neutral-100">
+  <div class="w-full h-full flex flex-col bg-muted">
     <div class="flex flex-col h-full">
-      <div class="bg-white px-8 py-4 border-b border-gray-200">
-        <h3 class="m-0 mb-2 text-gray-800">{{ fileInfo.title || fileInfo.name || '未知文档' }}</h3>
-        <div class="flex gap-4 text-sm text-gray-500">
-          <span v-if="fileInfo.mimeType" class="px-2 py-1 bg-neutral-100 rounded">{{ fileInfo.mimeType }}</span>
-          <span v-if="fileInfo.size" class="px-2 py-1 bg-neutral-100 rounded">{{ formatFileSize(fileInfo.size) }}</span>
+      <div class="bg-white px-8 py-4 border-b border-border">
+        <h3 class="m-0 mb-2 text-foreground">{{ fileInfo.title || fileInfo.name || '未知文档' }}</h3>
+        <div class="flex gap-4 text-sm text-muted-foreground">
+          <span v-if="fileInfo.mimeType" class="px-2 py-1 bg-muted rounded">{{ fileInfo.mimeType }}</span>
+          <span v-if="fileInfo.size" class="px-2 py-1 bg-muted rounded">{{ formatFileSize(fileInfo.size) }}</span>
         </div>
       </div>
 
@@ -17,7 +17,7 @@
           class="w-full h-full border-none"
           @error="onDocumentError"
         ></iframe>
-        <div v-else class="flex justify-center items-center flex-1 text-red-500 text-center">
+        <div v-else class="flex justify-center items-center flex-1 text-destructive text-center">
           <p>无法加载PDF文件</p>
         </div>
       </div>
@@ -27,7 +27,7 @@
         <div v-if="textContent" class="text-content p-8">
           <pre>{{ textContent }}</pre>
         </div>
-        <div v-else class="flex justify-center items-center flex-1 text-red-500 text-center">
+        <div v-else class="flex justify-center items-center flex-1 text-destructive text-center">
           <p>无法加载文本内容</p>
         </div>
       </div>
@@ -36,7 +36,7 @@
       <div v-else class="flex flex-col justify-center items-center flex-1 gap-4">
         <div class="text-6xl opacity-50">📄</div>
         <p>此文档类型暂不支持预览</p>
-        <button v-if="documentUrl" @click="downloadFile" class="bg-blue-500 text-white border-none px-6 py-3 rounded cursor-pointer text-base hover:bg-blue-700">
+        <button v-if="documentUrl" @click="downloadFile" class="bg-primary text-white border-none px-6 py-3 rounded cursor-pointer text-base hover:bg-primary">
           下载文件
         </button>
       </div>

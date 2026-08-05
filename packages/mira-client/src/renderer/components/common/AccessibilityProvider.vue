@@ -192,15 +192,8 @@ const setupMediaQueries = () => {
     
     const handleReducedMotionChange = (e: MediaQueryListEvent) => {
       isReducedMotion.value = e.matches
-      if (props.respectReducedMotion && e.matches) {
-        document.documentElement.style.setProperty('--mira-transition-fast', '0ms')
-        document.documentElement.style.setProperty('--mira-transition-normal', '0ms')
-        document.documentElement.style.setProperty('--mira-transition-slow', '0ms')
-      } else {
-        document.documentElement.style.removeProperty('--mira-transition-fast')
-        document.documentElement.style.removeProperty('--mira-transition-normal')
-        document.documentElement.style.removeProperty('--mira-transition-slow')
-      }
+      // 减少动画的强制 0ms 由全局 @media (prefers-reduced-motion: reduce) 规则覆盖
+      // （见 App.vue / theme.css 的全局规则），此处仅维护响应式状态。
     }
     
     reducedMotionQuery.addEventListener('change', handleReducedMotionChange)
@@ -313,7 +306,7 @@ defineExpose({
   position: absolute;
   top: -40px;
   left: 6px;
-  background: var(--mira-primary-500);
+  background: var(--ring);
   color: white;
   padding: 8px;
   border-radius: 4px;
@@ -329,18 +322,18 @@ defineExpose({
 /* 键盘导航提示 */
 .keyboard-hints {
   position: fixed;
-  bottom: var(--mira-space-4);
+  bottom: 1rem;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--mira-gray-900);
+  background: var(--foreground);
   color: white;
-  padding: var(--mira-space-2) var(--mira-space-4);
-  border-radius: var(--mira-radius-md);
-  font-size: var(--mira-text-sm);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
   z-index: 1000;
   opacity: 0;
   visibility: hidden;
-  transition: all var(--mira-transition-normal);
+  transition: all 250ms ease;
   pointer-events: none;
 }
 
@@ -364,16 +357,16 @@ defineExpose({
 
 /* 焦点样式增强 */
 :global(:focus-visible) {
-  outline: 2px solid var(--mira-primary-500);
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
-  border-radius: var(--mira-radius-sm);
+  border-radius: var(--radius-sm);
 }
 
 /* 高对比度模式增强 */
 :global(.high-contrast) {
-  --mira-border-primary: #000000;
-  --mira-text-primary: #000000;
-  --mira-bg-primary: #ffffff;
+  --border: #000000;
+  --foreground: #000000;
+  --background: #ffffff;
 }
 
 :global(.high-contrast .skip-link) {

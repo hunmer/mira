@@ -11,17 +11,17 @@
 
 <template>
   <div class="w-full h-full relative overflow-hidden">
-    <!-- 加载状态 -->
-    <div v-if="loading" class="flex items-center justify-center h-full">
-      <i class="pi pi-spinner pi-spin text-2xl text-gray-500"></i>
-      <span class="ml-2 text-gray-500">加载中...</span>
+    <!-- 加载状态作为覆盖层，不能卸载已缓存的视图实例。 -->
+    <div v-if="loading" class="absolute inset-0 z-10 flex items-center justify-center bg-background/80">
+      <i class="pi pi-spinner pi-spin text-2xl text-muted-foreground"></i>
+      <span class="ml-2 text-muted-foreground">加载中...</span>
     </div>
 
     <!-- 错误状态 -->
-    <div v-else-if="error" class="flex flex-col items-center justify-center h-full text-center p-8">
-      <i class="pi pi-exclamation-triangle text-4xl text-red-500 mb-4"></i>
-      <h3 class="text-lg font-semibold text-gray-700 mb-2">视图加载失败</h3>
-      <p class="text-gray-500 mb-4">{{ error }}</p>
+    <div v-if="error" class="absolute inset-0 z-10 flex flex-col items-center justify-center h-full text-center p-8 bg-background/80">
+      <i class="pi pi-exclamation-triangle text-4xl text-destructive mb-4"></i>
+      <h3 class="text-lg font-semibold text-foreground mb-2">视图加载失败</h3>
+      <p class="text-muted-foreground mb-4">{{ error }}</p>
       <Button @click="retry" severity="secondary" outlined>
         <i class="pi pi-refresh mr-2"></i>
         重试
@@ -29,20 +29,22 @@
     </div>
 
     <!-- 视图组件渲染 -->
-    <component
-      v-else-if="viewConfig && componentInstance"
-      :is="componentInstance"
-      v-bind="viewConfig.props"
-      :key="viewConfig.key || tabId"
-      @error="handleComponentError"
-      class="w-full h-full"
-    />
+    <KeepAlive>
+      <component
+        v-if="viewConfig && componentInstance"
+        :is="componentInstance"
+        v-bind="viewConfig.props"
+        :key="viewConfig.key || tabId"
+        @error="handleComponentError"
+        class="w-full h-full"
+      />
+    </KeepAlive>
 
     <!-- 空状态（没有配置视图） -->
-    <div v-else class="flex flex-col items-center justify-center h-full text-center p-8">
-      <i class="pi pi-inbox text-4xl text-gray-400 mb-4"></i>
-      <h3 class="text-lg font-semibold text-gray-600 mb-2">暂无视图</h3>
-      <p class="text-gray-500">该Tab类型尚未配置视图组件</p>
+    <div v-if="!loading && !error && (!viewConfig || !componentInstance)" class="flex flex-col items-center justify-center h-full text-center p-8">
+      <i class="pi pi-inbox text-4xl text-muted-foreground mb-4"></i>
+      <h3 class="text-lg font-semibold text-muted-foreground mb-2">暂无视图</h3>
+      <p class="text-muted-foreground">该Tab类型尚未配置视图组件</p>
     </div>
   </div>
 </template>
@@ -92,6 +94,10 @@ const loadComponent = async () => {
 
   loading.value = true
   error.value = ''
+  console.debug('[DEBUG-wf-tab] renderer-load-start', {
+    tabId: props.tabId,
+    cacheKey: cacheKey.value
+  })
 
   try {
     const { component } = props.viewConfig
@@ -100,6 +106,7 @@ const loadComponent = async () => {
     if (props.cacheable && cacheKey.value && componentCache.has(cacheKey.value)) {
       componentInstance.value = componentCache.get(cacheKey.value)
       loading.value = false
+      console.debug('[DEBUG-wf-tab] renderer-cache-hit', { tabId: props.tabId })
       return
     }
 
@@ -128,6 +135,7 @@ const loadComponent = async () => {
     }
 
     loading.value = false
+    console.debug('[DEBUG-wf-tab] renderer-load-complete', { tabId: props.tabId })
   } catch (err: any) {
     console.error('🚨 TabViewRenderer: 组件加载失败', err)
     error.value = err.message || '未知错误'
@@ -170,6 +178,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  console.debug('[DEBUG-wf-tab] renderer-unmounted', { tabId: props.tabId })
   console.log('🔧 TabViewRenderer: 组件卸载', { tabId: props.tabId })
 
   // 清理缓存（如果不需要缓存）

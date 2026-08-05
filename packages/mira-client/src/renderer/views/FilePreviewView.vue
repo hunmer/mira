@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full h-screen flex flex-col bg-neutral-200">
+  <div class="w-full h-screen flex flex-col bg-accent">
     <!-- 加载状态 -->
     <div v-if="isLoading" class="flex flex-col justify-center items-center h-full gap-4">
       <div class="loading-spinner"></div>
@@ -9,9 +9,9 @@
     <!-- 错误状态 -->
     <div v-else-if="error" class="flex justify-center items-center h-full">
       <div class="text-center p-8 bg-white rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.1)] max-w-[400px]">
-        <h3 class="text-red-500 mb-4">加载失败</h3>
+        <h3 class="text-destructive mb-4">加载失败</h3>
         <p>{{ error }}</p>
-        <button @click="loadFileInfo" class="bg-blue-500 text-white border-none px-4 py-2 rounded cursor-pointer mt-4 hover:bg-blue-700">重试</button>
+        <button @click="loadFileInfo" class="bg-primary text-white border-none px-4 py-2 rounded cursor-pointer mt-4 hover:bg-primary">重试</button>
       </div>
     </div>
 

@@ -7,6 +7,11 @@ import {
   DropdownMenuContent,
   DropdownMenuItem
 } from '@/components/ui/dropdown-menu'
+import { Dropdown } from '@/renderer/components/common/Dropdown'
+import { useLibraryStore } from '@/renderer/stores/library'
+import { useSettingsStore } from '@/renderer/stores/settings'
+import { useServerListStore } from '@/renderer/stores/serverList'
+import { useAuthStore } from '@/renderer/stores/auth'
 import { useToast } from '@/renderer/composables/useToast'
 import type { LocalFsNode } from '../../../shared/types'
 
@@ -28,12 +33,64 @@ const emit = defineEmits<{
   refreshFolders: []
   refreshTags: []
   emptyTrash: []
+  selectCollection: [collection: any]
+  accessDenied: []
+  showLibraryManagement: []
+  addServer: []
   /** 导入本地文件夹：抛出根路径 + 递归目录树给父级 */
   importFolder: [payload: { rootPath: string; tree: LocalFsNode[] }]
 }>()
 
 const toast = useToast()
 const isImporting = ref(false)
+
+// ============================================
+// 素材库切换（从 HomeHeader 迁入）
+// ============================================
+const libraryStore = useLibraryStore()
+const settingsStore = useSettingsStore()
+const serverListStore = useServerListStore()
+const authStore = useAuthStore()
+
+const canAccessLibrary = (lib: { allowedRoles?: string[] }) => {
+  const userRole = authStore.user?.role
+  if (!userRole) return true
+  if (!lib.allowedRoles || lib.allowedRoles.length === 0) return true
+  return lib.allowedRoles.includes(userRole)
+}
+
+const getLibraryLocalPath = (collection: { path: string }): string | null => {
+  const isDocker = settingsStore.systemHealth?.isDocker ?? false
+  const smb = serverListStore.activeServer?.smb
+  if (!isDocker) return collection.path
+  if (!smb?.enabled || !smb.smbPath) return null
+  const smbPath = smb.smbPath
+  const sep = smbPath.includes('/') ? '/' : '\\'
+  const normalizedSmbPath = smbPath.endsWith(sep) ? smbPath : smbPath + sep
+  if (smb.mountPath && collection.path) {
+    const mountPrefix = smb.mountPath.endsWith('/') ? smb.mountPath : smb.mountPath + '/'
+    return collection.path.replace(mountPrefix, normalizedSmbPath).replace(/\//g, sep)
+  }
+  return normalizedSmbPath + collection.path.replace(/^\//, '').replace(/\//g, sep)
+}
+
+const openLibraryFolder = (collection: any, event: Event) => {
+  event.stopPropagation()
+  const localPath = getLibraryLocalPath(collection)
+  if (!localPath) return
+  const api = (window as any).electronAPI
+  api?.fs?.showItemInFolder(localPath)
+}
+
+const onSelectCollection = (collection: any, close: () => void) => {
+  if (!canAccessLibrary(collection)) {
+    emit('accessDenied')
+    close()
+    return
+  }
+  emit('selectCollection', collection)
+  close()
+}
 
 /**
  * 导入本地文件夹：
@@ -130,12 +187,105 @@ defineExpose({ locateItem })
 </script>
 
 <template>
+  <!-- 素材库选择（从 HomeHeader 迁入，位于侧栏顶部） -->
+  <div class="shrink-0 px-2 pt-2 pb-1">
+    <Dropdown
+      :offset="{ x: 0, y: 4 }"
+      placement="bottom-start"
+      min-width="280px"
+      full-width
+    >
+      <template #trigger>
+        <button
+          class="w-full flex items-center space-x-2 text-sm font-medium rounded-xl bg-primary/10 text-primary hover:bg-primary/15 transition-colors px-3 py-2"
+        >
+          <span class="material-icons">folder</span>
+          <span class="truncate flex-1 text-left">{{ libraryStore.currentLibrary?.name || '未选择素材库' }}</span>
+          <span class="material-symbols-outlined text-primary/60">keyboard_arrow_down</span>
+        </button>
+      </template>
+
+      <template #content="{ close }">
+        <div>
+          <div class="p-2">
+            <div class="text-xs text-muted-foreground mb-2">选择素材库</div>
+            <!-- 素材库列表 -->
+            <div v-if="libraryStore.libraries && libraryStore.libraries.length > 0">
+              <div
+                v-for="collection in libraryStore.libraries"
+                :key="collection.id"
+                class="flex items-center justify-between p-2 rounded-lg"
+                :class="canAccessLibrary(collection)
+                  ? 'hover:bg-primary/5 cursor-pointer'
+                  : 'opacity-50 cursor-not-allowed bg-muted dark:bg-muted'"
+                @click="onSelectCollection(collection, close)"
+              >
+                <div class="flex items-center space-x-2">
+                  <span class="material-icons text-primary">library_books</span>
+                  <div>
+                    <div class="font-medium text-sm">{{ collection.name }}</div>
+                    <div class="text-xs text-muted-foreground">
+                      {{ collection.fileCount }} 个文件 · {{ collection.type }}
+                      <span v-if="!canAccessLibrary(collection)" class="text-destructive"> · 权限不足</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="flex items-center space-x-1">
+                  <button
+                    v-if="getLibraryLocalPath(collection)"
+                    class="p-1 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                    title="定位到目录"
+                    @click="openLibraryFolder(collection, $event)"
+                  >
+                    <span class="material-icons text-sm">folder_open</span>
+                  </button>
+                  <span
+                    v-if="libraryStore.currentLibrary?.id === collection.id"
+                    class="material-icons text-primary text-sm"
+                  >
+                    check
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 无素材库提示 -->
+            <div v-else class="p-3 text-center text-muted-foreground">
+              <div class="mb-2">
+                <span class="material-icons text-muted-foreground text-2xl">library_books</span>
+              </div>
+              <div class="text-sm">暂无可用素材库</div>
+              <div class="text-xs mt-1">请先连接到服务器或添加素材库</div>
+            </div>
+
+            <div class="border-t border-border/60 mt-2 pt-2 space-y-1">
+              <button
+                class="w-full flex items-center space-x-2 p-2 text-muted-foreground hover:bg-primary/5 hover:text-foreground rounded-lg text-sm transition-colors"
+                @click="emit('showLibraryManagement'); close()"
+              >
+                <span class="material-icons">settings</span>
+                <span>服务器设置</span>
+              </button>
+              <button
+                class="w-full flex items-center space-x-2 p-2 text-primary hover:bg-primary/10 rounded-lg text-sm transition-colors"
+                @click="emit('addServer'); close()"
+              >
+                <span class="material-icons">add</span>
+                <span>连接服务器</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </template>
+    </Dropdown>
+  </div>
+
   <!-- 顶部横向图标按钮列表 -->
-  <div class="shrink-0 flex items-center gap-1 px-2 py-1.5 border-b border-gray-200 dark:border-gray-700">
+  <div class="shrink-0 flex items-center gap-1.5 px-2 py-2">
     <DropdownMenu>
       <DropdownMenuTrigger as-child>
         <button
-          class="flex h-7 w-7 items-center justify-center text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          class="flex h-8 w-8 items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           :disabled="isImporting"
           title="导入"
         >
@@ -177,7 +327,7 @@ defineExpose({ locateItem })
   <!-- 底部搜索胶囊 -->
   <div class="shrink-0 px-2 pb-2 pt-1">
     <button
-      class="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer text-gray-400 text-xs"
+      class="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-full bg-primary/10 text-primary hover:bg-primary/15 transition-colors cursor-pointer text-xs font-medium"
       @click="homeController.toggleSearch"
     >
       <span class="material-icons text-sm">search</span>

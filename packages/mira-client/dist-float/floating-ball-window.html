@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mira 悬浮球</title>
+  <!-- 本地 Vue（与搜索/通知窗口共用） -->
+  <script src="vendor/vue.global.prod.js"></script>
+  <!-- 通用浮动窗口脚手架 -->
+  <script src="floating-window-core.js"></script>
+  <style>
+    /* Material Icons - 本地字体（路径相对 src/floating-ball-window/，向上两级到项目根） */
+    @font-face {
+      font-family: 'Material Icons';
+      font-style: normal;
+      font-weight: 400;
+      src: url('../../assets/fonts/material-icons.ttf') format('truetype');
+    }
+
+    .material-icons {
+      font-family: 'Material Icons';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 24px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ========== 主题变量 ========== */
+    :root {
+      --fb-bg-start: #6366f1;
+      --fb-bg-end: #8b5cf6;
+      --fb-icon: #ffffff;
+      --fb-ring: rgba(255, 255, 255, 0.35);
+      --fb-shadow: 0 8px 24px -4px rgba(79, 70, 229, 0.55), 0 4px 10px -2px rgba(0, 0, 0, 0.3);
+      --fb-shadow-drag: 0 14px 36px -6px rgba(79, 70, 229, 0.7), 0 8px 18px -4px rgba(0, 0, 0, 0.4);
+      --fb-glow: rgba(139, 92, 246, 0.45);
+      --fb-drop: #10b981;
+    }
+
+    /* 深色主题下保持鲜明（悬浮球本身偏亮，仅微调阴影） */
+    :root.dark {
+      --fb-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.6), 0 4px 10px -2px rgba(0, 0, 0, 0.5);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      background: transparent;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    #floating-ball-app {
+      width: 100vw;
+      height: 100vh;
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* 悬浮球主体 */
+    .floating-ball {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--fb-bg-start), var(--fb-bg-end));
+      box-shadow: var(--fb-shadow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: grab;
+      position: relative;
+      transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.18s ease;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .floating-ball:hover {
+      transform: scale(1.08);
+    }
+
+    .floating-ball.is-dragging {
+      cursor: grabbing;
+      box-shadow: var(--fb-shadow-drag);
+      transform: scale(1.05);
+      transition: none;
+    }
+
+    /* 拖入文件高亮 */
+    .floating-ball.is-dragover {
+      border: 3px solid var(--fb-drop);
+      transform: scale(1.12);
+    }
+
+    .floating-ball .material-icons {
+      color: var(--fb-icon);
+      font-size: 28px;
+      pointer-events: none;
+    }
+
+    /* 呼吸光晕动画 */
+    @keyframes fb-pulse {
+      0%   { box-shadow: var(--fb-shadow), 0 0 0 0 var(--fb-glow); }
+      70%  { box-shadow: var(--fb-shadow), 0 0 0 10px rgba(139, 92, 246, 0); }
+      100% { box-shadow: var(--fb-shadow), 0 0 0 0 rgba(139, 92, 246, 0); }
+    }
+
+    .floating-ball.fb-pulse {
+      animation: fb-pulse 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    /* 拖拽/拖入期间关闭呼吸动画，避免抖动 */
+    .floating-ball.is-dragging.fb-pulse,
+    .floating-ball.is-dragover.fb-pulse {
+      animation: none;
+    }
+
+    /* 拖入提示文字 */
+    .fb-drop-hint {
+      position: fixed;
+      bottom: 70px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--fb-drop);
+      color: #fff;
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+
+    .fb-drop-hint.is-visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="floating-ball-app"></div>
+
+  <script src="./floating-ball-window.js"></script>
+</body>
+</html>

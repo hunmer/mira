@@ -3,7 +3,7 @@
     ref="containerRef"
     class="lazy-image-container block"
     :class="[
-      'relative overflow-hidden bg-gray-100 dark:bg-gray-800',
+      'relative overflow-hidden bg-muted dark:bg-muted',
       roundedClass,
       aspectRatioClass
     ]"
@@ -15,7 +15,7 @@
       :class="placeholderClass"
     >
       <div v-if="showSkeleton" class="shimmer w-full h-full rounded"></div>
-      <div v-else class="flex flex-col items-center gap-2 text-gray-400">
+      <div v-else class="flex flex-col items-center gap-2 text-muted-foreground">
         <span class="material-icons text-2xl">image</span>
         <span v-if="showPlaceholderText" class="text-xs">{{ placeholderText }}</span>
       </div>
@@ -24,11 +24,11 @@
     <!-- 错误状态 -->
     <div 
       v-if="error"
-      class="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800"
+      class="absolute inset-0 flex items-center justify-center bg-muted dark:bg-muted"
       :class="errorClass"
     >
-      <div class="flex flex-col items-center gap-2 text-gray-400">
-        <span class="material-icons text-2xl text-red-500">warning</span>
+      <div class="flex flex-col items-center gap-2 text-muted-foreground">
+        <span class="material-icons text-2xl text-destructive">warning</span>
         <span class="text-xs">{{ errorText }}</span>
         <button 
           v-if="allowRetry"
@@ -179,7 +179,7 @@ const imageClass = computed(() => {
 })
 
 const placeholderClass = computed(() => {
-  return props.showSkeleton ? '' : 'bg-gray-50 dark:bg-gray-700'
+  return props.showSkeleton ? '' : 'bg-muted dark:bg-muted'
 })
 
 const errorClass = computed(() => {
@@ -296,18 +296,18 @@ defineExpose({
 /* 骨架屏动画 */
 .shimmer {
   background: linear-gradient(90deg,
-    var(--mira-gray-200) 25%,
-    var(--mira-gray-100) 50%,
-    var(--mira-gray-200) 75%);
+    var(--muted) 25%,
+    var(--background) 50%,
+    var(--muted) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
 
 .dark .shimmer {
   background: linear-gradient(90deg,
-    var(--mira-gray-700) 25%,
-    var(--mira-gray-600) 50%,
-    var(--mira-gray-700) 75%);
+    var(--muted) 25%,
+    var(--background) 50%,
+    var(--muted) 75%);
   background-size: 200% 100%;
 }
 

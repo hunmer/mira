@@ -20,3 +20,4 @@ const forwarded = useForwardProps(delegatedProps)
     <slot />
   </StepperTrigger>
 </template>
+

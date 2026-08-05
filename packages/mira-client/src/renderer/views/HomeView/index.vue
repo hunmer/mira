@@ -1,6 +1,6 @@
 <script setup lang="ts">
 defineOptions({ name: 'Home' })
-import { ref, computed, onMounted, onUnmounted, onActivated, onDeactivated, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, onActivated, onDeactivated, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 // 布局组件
@@ -10,16 +10,20 @@ import {
   ResizablePanel,
   ResizableHandle,
 } from '@/components/ui/resizable'
+import MediaDetailComponent from '@renderer/components/business/MediaDetailComponent.vue'
 
 // 功能子组件
 import HomeHeader from './HomeHeader.vue'
 import HomeSidebar from './HomeSidebar.vue'
-import HomeToolbar from './HomeToolbar.vue'
+import HomeTabsBar from './HomeTabsBar.vue'
 import HomeDialogs from './HomeDialogs.vue'
 
 // Store imports
 import { useTagStore } from '@renderer/stores/tag'
 import { useAuthStore } from '@renderer/stores/auth'
+import { useMediaStore } from '@renderer/stores/media'
+import { useLibraryStore } from '@renderer/stores/library'
+import { useSettingsStore } from '@renderer/stores/settings'
 
 // Controller import
 import { useHomeController } from '@renderer/controllers/HomeController'
@@ -40,7 +44,34 @@ import { useHomeInit } from './useHomeInit'
 const homeController = useHomeController()
 const tagStore = useTagStore()
 const authStore = useAuthStore()
+const mediaStore = useMediaStore()
+const libraryStore = useLibraryStore()
+const settingsStore = useSettingsStore()
 const router = useRouter()
+
+// ============================================
+// 第三列：详情面板状态（数据由 MediaTabListView 同步到 mediaStore）
+// ============================================
+const showDetailSidebar = computed(() => mediaStore.showDetailSidebar)
+// 侧栏是否已完全折叠：仅在隐藏动画结束后才为 true。
+// 用 showDetailSidebar 控制显隐，用 sidebarCollapsed 控制布局（父容器悬浮 / Tabs 右侧留白），
+// 这样隐藏动画期间父容器仍占位，避免 <aside> 过早失去 flex 尺寸导致内容被挤压。
+const sidebarCollapsed = ref(!mediaStore.showDetailSidebar)
+watch(showDetailSidebar, visible => {
+  if (visible) sidebarCollapsed.value = false
+})
+const onDetailSidebarLeave = () => { sidebarCollapsed.value = true }
+const sidebarMediaItems = computed(() => mediaStore.detailSidebarFiles)
+const detailSidebarItem = computed(() => sidebarMediaItems.value.length === 1 ? sidebarMediaItems.value[0] : undefined)
+const detailSidebarItems = computed(() => sidebarMediaItems.value.length > 1 ? sidebarMediaItems.value : undefined)
+const detailLibraryId = computed(() => libraryStore.currentLibrary?.id || 'default')
+
+const handleDetailTagAdd = (tagName: string) => homeController.handleTagAdd(tagName)
+const handleDetailTagRemove = (tagName: string) => homeController.handleTagRemove(tagName)
+const handleDetailFolderChange = (folderId: string) => homeController.handleFolderChange(folderId)
+
+// 侧边栏定位（供 Tab 管理的右键菜单使用）
+const sidebarRef = ref<{ locateItem: (type: 'folder' | 'tag', id: string) => void | Promise<void> }>()
 
 // ============================================
 // UI状态管理
@@ -65,7 +96,7 @@ const showAccessDeniedDialog = ref(false)
 // ============================================
 // Tab管理
 // ============================================
-const tabManagement = useHomeTabManagement()
+const tabManagement = useHomeTabManagement(sidebarRef)
 const {
   tabsComposable,
   activeTabs,
@@ -85,6 +116,8 @@ const {
   handleCloseCurrentTab,
   refreshCurrentTabAfterLibrarySwitch
 } = tabManagement
+
+// Tab 条的滚动逻辑已迁移到 HomeTabsBar 组件内
 
 // 上传对话框的 tab 上下文
 // 仅普通文件夹/标签 tab 提供真实 ID；未分类/未标签/all/trash/home 等特殊 tab 不提供，
@@ -106,6 +139,39 @@ const uploadInitialTagIds = computed<string[]>(() => {
 function handleImportFolder(payload: { rootPath: string; tree: any[] }) {
   uploadInitialTree.value = payload
   showFileUploadDialog.value = true
+}
+
+// ============ 悬浮球：接收主进程转发的消息 ============
+// file-drop：悬浮球拖入的文件（已是含 path 的 LocalFsNode[]），复用上传对话框的本地导入链路
+function handleFloatingBallMessage(data: any) {
+  if (!data || typeof data !== 'object') return
+  if (data.type === 'file-drop') {
+    const files = Array.isArray(data.files) ? data.files : []
+    if (files.length === 0) return
+    uploadInitialTree.value = { rootPath: '', tree: files }
+    showFileUploadDialog.value = true
+  } else if (data.type === 'fb-click') {
+    // 单击行为按设置决定
+    const action = settingsStore.settings.floatingBallClickAction
+    if (action === 'toggleMain') {
+      // 切换主窗口显示/隐藏
+      window.electronAPI?.floatingBall?.toggleMainWindow().catch((e) => console.error('切换主窗口失败:', e))
+    } else {
+      // 默认：打开文件上传对话框（空列表）
+      uploadInitialTree.value = undefined
+      showFileUploadDialog.value = true
+    }
+  }
+}
+
+// 悬浮球开关响应：启用则显示，关闭则隐藏
+function applyFloatingBallEnabled(enabled: boolean) {
+  if (!window.electronAPI?.floatingBall) return
+  if (enabled) {
+    window.electronAPI.floatingBall.show().catch((e) => console.error('显示悬浮球失败:', e))
+  } else {
+    window.electronAPI.floatingBall.hide().catch((e) => console.error('隐藏悬浮球失败:', e))
+  }
 }
 
 // ============================================
@@ -191,6 +257,24 @@ onMounted(async () => {
     handleReopenClosedTab,
     handleCloseCurrentTab
   )
+
+  // 悬浮球：监听主进程转发的消息（文件拖放 / 单击）
+  window.electronAPI?.on('floating-ball-from-window', handleFloatingBallMessage)
+
+  // 悬浮球：应用当前启用设置（设置已由 settingsStore.initialize() 加载完成）
+  try {
+    if (settingsStore.settings.floatingBallEnabled) {
+      applyFloatingBallEnabled(true)
+    }
+  } catch (e) {
+    console.error('[HomeView] 应用悬浮球初始状态失败:', e)
+  }
+
+  // 悬浮球：响应设置中开关变化
+  watch(
+    () => settingsStore.settings.floatingBallEnabled,
+    (enabled) => applyFloatingBallEnabled(enabled)
+  )
 })
 
 // ============================================
@@ -220,26 +304,6 @@ onActivated(() => {
   })
 })
 
-// 侧边栏定位
-const sidebarRef = ref<{ locateItem: (type: 'folder' | 'tag', id: string) => void | Promise<void> }>()
-const handleLocateInSidebar = () => {
-  const tab = currentTab.value
-  console.log('[DEBUG-locate-sidebar] home handleLocateInSidebar', {
-    hasTab: Boolean(tab),
-    tabId: tab?.id,
-    tabType: tab?.type,
-    hasSidebarRef: Boolean(sidebarRef.value),
-  })
-  if (!tab) return
-  const type = tab.type === 'tag' ? 'tag' as const : 'folder' as const
-  const targetId = String(tab.data?.id ?? tab.id)
-  console.log('[DEBUG-locate-sidebar] home call sidebar.locateItem', {
-    type,
-    id: targetId,
-  })
-  sidebarRef.value?.locateItem(type, targetId)
-}
-
 // ============================================
 // 其他事件处理
 // ============================================
@@ -260,38 +324,18 @@ onUnmounted(() => {
     handleReopenClosedTab,
     handleCloseCurrentTab
   )
+  // 悬浮球：移除监听
+  window.electronAPI?.removeAllListeners('floating-ball-from-window')
 })
 </script>
 
 <template>
-  <div class="home-view h-screen flex flex-col bg-white dark:bg-gray-900 text-[13px]">
-    <!-- 顶部导航菜单 -->
-    <HomeHeader
-      :active-tabs="activeTabs"
-      :current-tab="currentTab"
-      :tab-context-menu-items="tabContextMenuItems"
-      :is-tab-closable="tabsComposable.isTabClosable"
-      :is-desktop="isDesktop"
-      @select-collection="handleSelectCollectionAndRefresh"
-      @access-denied="showAccessDeniedDialog = true"
-      @show-library-management="showLibraryManagement"
-      @add-server="handleAddServer"
-      @activate-last-tab="handleActivateLastTab"
-      @reopen-closed-tab="handleReopenClosedTab"
-      @switch-tab="switchToTabWithCallback"
-      @close-tab="closeTabWithCallback"
-      @tab-context-menu="handleTabContextMenu"
-      @window-minimize="handleWindowMinimize"
-      @window-maximize="handleWindowMaximize"
-      @window-close="handleWindowClose"
-      @locate-in-sidebar="handleLocateInSidebar"
-    />
-
-    <!-- 主内容区域（侧边栏 + 内容） -->
-    <div class="flex flex-1 overflow-hidden">
-      <ResizablePanelGroup direction="horizontal" auto-save-id="home-sidebar" class="flex-1">
-        <!-- 左侧侧边栏 -->
-        <ResizablePanel :default-size="20" :min-size="15" class="bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden">
+  <div class="home-view h-screen flex flex-col text-[13px] relative" style="background: linear-gradient(to bottom right, var(--glass-tint-1), var(--glass-tint-2), var(--glass-tint-3))">
+    <!-- 主内容区域（左侧栏 + 中间内容 + 右侧列） -->
+    <div class="flex flex-1 min-h-0 p-3 gap-3">
+      <ResizablePanelGroup direction="horizontal" auto-save-id="home-sidebar" class="flex-1 min-w-0 !overflow-visible">
+        <!-- 左侧侧边栏（玻璃面板） -->
+        <ResizablePanel :default-size="20" :min-size="15" class="rounded-2xl border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur-xl shadow-[0_12px_40px_var(--shadow-primary-md)] flex flex-col overflow-hidden">
           <HomeSidebar
             ref="sidebarRef"
             :home-controller="homeController"
@@ -302,46 +346,107 @@ onUnmounted(() => {
             @refresh-tags="handleRefreshTags"
             @empty-trash="handleEmptyTrash"
             @import-folder="handleImportFolder"
+            @select-collection="handleSelectCollectionAndRefresh"
+            @access-denied="showAccessDeniedDialog = true"
+            @show-library-management="showLibraryManagement"
+            @add-server="handleAddServer"
           />
         </ResizablePanel>
 
-        <ResizableHandle />
+        <ResizableHandle class="w-3 bg-transparent hover:bg-transparent focus-visible:ring-0" />
 
-        <!-- 右侧主内容区 -->
-        <ResizablePanel :default-size="80" :min-size="50" class="flex flex-col bg-gray-100 dark:bg-gray-900 overflow-hidden">
-          <main ref="mainContentRef" class="flex-1 flex overflow-hidden relative min-w-0">
-            <!-- Tab视图内容 -->
-            <div class="flex-1 mr-2 min-w-0 overflow-hidden">
-              <TabViewRenderer
-                v-for="tab in visitedTabs"
-                :key="tab.id"
-                v-show="currentTab?.id === tab.id"
-                :tab-id="tab.id"
-                :view-config="getTabViewConfigForTab(tab.id)"
-                :cacheable="true"
-                class="w-full h-full"
-              />
-              <!-- 默认状态 - 没有活跃的Tab时显示 -->
-              <div v-if="!currentTab" class="flex items-center justify-center h-full">
-                <div class="text-center">
-                  <span class="material-icons text-6xl text-gray-400 mb-4">home</span>
-                  <h2 class="text-xl font-semibold text-gray-600 dark:text-gray-300 mb-2">欢迎使用 Mira</h2>
-                  <p class="text-gray-500">从左侧选择文件夹或标签来开始浏览您的媒体文件</p>
+        <!-- 中间列：Tabs 条 + 内容面板 -->
+        <ResizablePanel :default-size="80" :min-size="50" class="flex flex-col min-w-0 !overflow-visible">
+          <!-- Tabs 条（固定高度与右侧 HomeHeader 对齐，内容面板顶与详情面板顶对齐；隐藏滚动条） -->
+          <!-- 侧栏隐藏时 HomeHeader 悬浮于右上角，为避免遮挡 tabs，右侧留出 header 宽度 -->
+          <div
+            class="shrink-0 h-[56px] px-2 flex items-end overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden transition-[padding] duration-150"
+            :class="sidebarCollapsed ? 'pr-[220px]' : 'pr-2'"
+          >
+            <HomeTabsBar
+              :active-tabs="activeTabs"
+              :tab-context-menu-items="tabContextMenuItems"
+              :is-tab-closable="tabsComposable.isTabClosable"
+              :on-activate-last-tab="handleActivateLastTab"
+              :on-switch-tab="switchToTabWithCallback"
+              :on-close-tab="closeTabWithCallback"
+              :on-context-menu="handleTabContextMenu"
+            />
+          </div>
+
+          <!-- 内容面板（玻璃磨砂） -->
+          <div class="flex-1 rounded-2xl border border-white/60 dark:border-border bg-white/30 dark:bg-muted/50 backdrop-blur-xl shadow-[0_12px_40px_var(--shadow-primary-md)] overflow-hidden flex flex-col">
+            <main ref="mainContentRef" class="flex-1 flex overflow-hidden relative min-w-0 p-2 gap-2">
+              <!-- Tab视图内容（占满） -->
+              <div class="flex-1 min-w-0 overflow-hidden rounded-xl">
+                <TabViewRenderer
+                  v-for="tab in visitedTabs"
+                  :key="tab.id"
+                  v-show="currentTab?.id === tab.id"
+                  :tab-id="tab.id"
+                  :view-config="getTabViewConfigForTab(tab.id)"
+                  :cacheable="true"
+                  class="w-full h-full"
+                />
+                <!-- 默认状态 - 没有活跃的Tab时显示 -->
+                <div v-if="!currentTab" class="flex items-center justify-center h-full">
+                  <div class="text-center rounded-2xl border border-white/60 dark:border-border bg-white/50 dark:bg-muted/70 backdrop-blur-xl shadow-[0_12px_40px_var(--shadow-primary-md)] px-10 py-8">
+                    <span class="material-icons text-6xl text-primary/60 mb-4 animate-[fadeUp_300ms_cubic-bezier(0.23,1,0.32,1)_both]">home</span>
+                    <h2 class="text-xl font-medium text-foreground mb-2 animate-[fadeUp_300ms_cubic-bezier(0.23,1,0.32,1)_60ms_both]">欢迎使用 Mira</h2>
+                    <p class="text-muted-foreground animate-[fadeUp_300ms_cubic-bezier(0.23,1,0.32,1)_120ms_both]">从左侧选择文件夹或标签来开始浏览您的媒体文件</p>
+                  </div>
                 </div>
               </div>
-            </div>
-
-            <!-- 右侧工具面板 -->
-            <HomeToolbar
-              @upload="showFileUploadDialog = true"
-              @plugins="showPluginsDialog = true"
-              @shortcuts="showShortcutDialog = true"
-              @settings="showSettingsDialog = true"
-              @logout="handleLogout"
-            />
-          </main>
+            </main>
+          </div>
         </ResizablePanel>
       </ResizablePanelGroup>
+
+      <!-- 右侧列：详情侧栏可见时为常规列（Header 在上、侧栏在下，互不重叠）；
+           侧栏隐藏时整体悬浮于右上角，仅留 Header，中间内容自动占满全宽 -->
+      <div
+        class="flex flex-col gap-3 transition-[position] duration-200"
+        :class="sidebarCollapsed
+          ? 'absolute top-3 right-3 z-20'
+          : 'shrink-0 min-w-0'"
+      >
+        <HomeHeader
+          :is-desktop="isDesktop"
+          @upload="showFileUploadDialog = true"
+          @plugins="showPluginsDialog = true"
+          @shortcuts="showShortcutDialog = true"
+          @settings="showSettingsDialog = true"
+          @logout="handleLogout"
+          @window-minimize="handleWindowMinimize"
+          @window-maximize="handleWindowMaximize"
+          @window-close="handleWindowClose"
+        />
+
+        <!-- 图片详情面板 -->
+        <Transition
+          enter-active-class="transition-[transform,opacity] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]"
+          leave-active-class="transition-[transform,opacity] duration-150 ease-[cubic-bezier(0.4,0,1,1)]"
+          enter-from-class="opacity-0 translate-x-4"
+          leave-to-class="opacity-0 translate-x-4"
+          @after-leave="onDetailSidebarLeave"
+        >
+          <aside
+            v-if="showDetailSidebar"
+            class="w-72 flex-1 min-w-0 rounded-2xl border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur-xl shadow-[0_12px_40px_var(--shadow-primary-md)] overflow-hidden flex flex-col"
+          >
+            <div class="p-4 flex-1 overflow-y-auto">
+              <MediaDetailComponent
+                :item="detailSidebarItem"
+                :items="detailSidebarItems"
+                :library-id="detailLibraryId"
+                @tag-add="handleDetailTagAdd"
+                @tag-remove="handleDetailTagRemove"
+                @folder-change="handleDetailFolderChange"
+              />
+            </div>
+          </aside>
+        </Transition>
+      </div>
     </div>
 
     <!-- 所有对话框 -->
@@ -367,6 +472,28 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+/* 玻璃态中性背景与阴影：使用语义变量，不被主色调染。
+   切换主色调色板时背景不变（保持中性），
+   切换主题风格(Mira/Lyra/Luma/Rhea)时 --background/--muted 改变才联动。 */
+.home-view {
+  /* 中性背景渐变：background → muted 过渡，营造轻微层次感。 */
+  --glass-tint-1: var(--background);
+  --glass-tint-2: color-mix(in oklch, var(--background) 50%, var(--muted));
+  --glass-tint-3: var(--muted);
+  /* 中性阴影：基于 foreground 的低透明色（浅色偏黑、深色偏白），不偏色。 */
+  --shadow-primary-sm: color-mix(in oklch, var(--foreground) 6%, transparent);
+  --shadow-primary-md: color-mix(in oklch, var(--foreground) 10%, transparent);
+  /* 自定义缓动曲线：内置 ease 太弱，缺 punch。 */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+/* 空状态欢迎卡 stagger 入场 */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .material-icons,
 .material-symbols-outlined {
   font-size: 18px;

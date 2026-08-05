@@ -76,7 +76,9 @@ export default defineConfig({
           // 预加载脚本 - 支持多入口
           entry: {
             preload: 'src/preload/preload.ts',
-            'search-preload': 'src/preload/search-preload.js'
+            'search-preload': 'src/preload/search-preload.js',
+            'notification-preload': 'src/preload/notification-preload.js',
+            'floating-ball-preload': 'src/preload/floating-ball-preload.js'
           },
           onstart(options) {
             // 通知渲染进程重新加载页面
@@ -109,8 +111,7 @@ export default defineConfig({
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),
         '@renderer': fileURLToPath(new URL('./src/renderer', import.meta.url)),
-        '@main': fileURLToPath(new URL('./src/main', import.meta.url)),
-        '@volt': fileURLToPath(new URL('./src/components/ui/volt', import.meta.url))
+        '@main': fileURLToPath(new URL('./src/main', import.meta.url))
       }
     },
     base: './',

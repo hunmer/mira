@@ -30,7 +30,7 @@
       >
         <slot :item="item" :index="startIndex + index">
           <!-- 默认渲染 -->
-          <div class="p-4 border-b border-gray-200">
+          <div class="p-4 border-b border-border">
             {{ item }}
           </div>
         </slot>
@@ -40,7 +40,7 @@
     <!-- 加载状态 -->
     <div 
       v-if="loading" 
-      class="virtual-scroll-loading flex items-center justify-center p-4 bg-white/90 dark:bg-slate-800/90 backdrop-blur-[4px]"
+      class="virtual-scroll-loading flex items-center justify-center p-4 bg-white/90 dark:bg-muted/90 backdrop-blur-[4px]"
       :style="{ 
         position: 'absolute',
         bottom: 0,
@@ -49,7 +49,7 @@
       }"
     >
       <Progress class="h-1 w-24" />
-      <span class="ml-2 text-sm text-gray-600">加载中...</span>
+      <span class="ml-2 text-sm text-muted-foreground">加载中...</span>
     </div>
   </div>
 </template>
@@ -198,28 +198,28 @@ defineExpose({
 }
 
 .virtual-scroll-container::-webkit-scrollbar-track {
-  background: var(--mira-gray-100);
+  background: var(--muted);
   border-radius: 4px;
 }
 
 .virtual-scroll-container::-webkit-scrollbar-thumb {
-  background: var(--mira-gray-400);
+  background: var(--muted-foreground);
   border-radius: 4px;
 }
 
 .virtual-scroll-container::-webkit-scrollbar-thumb:hover {
-  background: var(--mira-gray-500);
+  background: var(--muted-foreground);
 }
 
 .dark .virtual-scroll-container::-webkit-scrollbar-track {
-  background: var(--mira-gray-800);
+  background: var(--card);
 }
 
 .dark .virtual-scroll-container::-webkit-scrollbar-thumb {
-  background: var(--mira-gray-600);
+  background: var(--muted-foreground);
 }
 
 .dark .virtual-scroll-container::-webkit-scrollbar-thumb:hover {
-  background: var(--mira-gray-500);
+  background: var(--muted-foreground);
 }
 </style>

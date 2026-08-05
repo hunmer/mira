@@ -40,6 +40,13 @@
       "group": "build"
     },
     {
+      "label": "build-mira-client",
+      "type": "shell",
+      "command": "pnpm run build:all",
+      "options": { "cwd": "${workspaceFolder}/packages/mira-client" },
+      "group": "build"
+    },
+    {
       "label": "build-full",
       "group": { "kind": "build", "isDefault": true },
       "dependsOn": ["build-mira-app-server", "build-mira-dashboard"],

@@ -1,37 +1,33 @@
-# mira-app-core 总览
+# 架构总览
 
-## 模块职责
+## 模块定位
 
-Mira 核心库，提供不自动执行的共享基础能力。被 `mira-app-server`、`mira-client`、`mira-scripts-core` 等模块依赖。
+mira-app-core 是 monorepo 的核心库，提供共享类型、事件系统、存储实现和 SDK 客户端。**纯库，不自动执行业务逻辑，不独立启动**（无 server 监听、无主入口副作用）。
 
-核心职责：
-1. **事件管理器 (EventManager)**: 基于 Node.js EventEmitter 的事件系统，支持优先级排序
-2. **库列表管理**: 读写 `librarys.json` 配置文件
-3. **共享类型**: `User`、`Session`、`WebSocketMessage` 等跨模块类型
-4. **SQLite 存储** (`src/storage/sqlite/`): 文件/文件夹/标签 CRUD、事务管理、统计数据
-5. **TypeScript SDK** (`src/shared/sdk/`): 链式调用 API 客户端，10 个 API 模块 + WebSocket + HTTP 双通道
+## 边界
 
-## 入口与启动
+- **做什么**：定义跨包共享的类型（User / Session / WebSocketMessage 等）、提供 EventManager 事件总线、实现 SQLite 持久化、提供面向 Mira App Server 的 SDK 客户端。
+- **不做什么**：不启动 HTTP/WS 服务端、不写业务编排、不直接读写配置文件以外的运行时状态。
 
-- **入口文件**: `src/index.ts` -- 导出 EventManager、getLibraries、saveLibraries、User、Session、WebSocketMessage
-- **存储入口**: `src/storage/sqlite/index.ts` -- 导出 ILibraryServerData、LibraryServerDataSQLite
-- **SDK 入口**: `src/shared/sdk/index.ts` -- 导出 MiraClient、WebSocketClient、10 个 Module
-- **构建产物**: `dist/index.js` + `dist/index.d.ts`
-- **本模块是纯库，不独立启动**
+## 分层结构（基于 src 目录）
 
-## 构建命令
-
-```bash
-pnpm run build          # tsc + vite build (SDK ESM)
-pnpm run rebuild        # 同 build
-pnpm run dev            # ts-node 开发模式
+```
+src/
+├── index.ts              核心入口：类型 + EventManager + 库列表
+├── event-manager.ts      事件系统（优先级、可中断）
+├── LibraryList.ts        librarys.json 读写工具
+├── storage/sqlite/       SQLite 持久化层（接口 + 实现 + mixins）
+└── shared/sdk/           TypeScript SDK（MiraClient + 10 个 Module + HTTP/WS client）
 ```
 
-## 关键依赖
+## 下游依赖方
 
-| 依赖 | 用途 |
+被 mira-app-server、mira-client、mira-scripts-core 等包依赖（基于既有文档记录；本次未逐一验证 import 关系）。
+
+## 三个公开导出路径
+
+| 路径 | 内容 |
 |------|------|
-| axios | HTTP 请求 (SDK) |
-| queue | 队列管理 |
-| sqlite3 | SQLite 驱动 (存储层) |
-| ws | WebSocket 客户端 (SDK) |
+| `mira-app-core` | 核心类型 + EventManager + 库列表工具 |
+| `mira-app-core/storage/sqlite` | ILibraryServerData 接口 + LibraryServerDataSQLite 实现 |
+| `mira-app-core/shared/sdk` | MiraClient + 10 个 Module + WebSocket/HTTP client（ESM bundle） |

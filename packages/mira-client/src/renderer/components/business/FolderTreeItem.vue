@@ -2,9 +2,9 @@
   <li>
     <a 
       :class="[
-        'flex items-center justify-between px-2 py-1.5 rounded-md hover:bg-gray-200',
+        'flex items-center justify-between px-2 py-1.5 rounded-md hover:bg-accent',
         getItemStyle(),
-        selectedFolder === folder.id ? 'bg-blue-100 text-blue-700' : 'text-gray-700'
+        selectedFolder === folder.id ? 'bg-primary text-primary' : 'text-foreground'
       ]"
       :style="{ paddingLeft: `${(folder.level || 0) * 1 + 0.5}rem` }"
       href="#"
@@ -15,7 +15,7 @@
         <button
           v-if="hasChildren"
           :class="[
-            'material-symbols-outlined text-lg text-gray-400 mr-1',
+            'material-symbols-outlined text-lg text-muted-foreground mr-1',
             folder.expanded ? '' : ''
           ]"
           @click.stop="handleExpandToggle"
@@ -24,7 +24,7 @@
         </button>
         <span 
           v-else-if="folder.level && folder.level > 0"
-          class="material-symbols-outlined text-lg text-gray-400 mr-1 invisible"
+          class="material-symbols-outlined text-lg text-muted-foreground mr-1 invisible"
         >
           keyboard_arrow_right
         </span>
@@ -88,15 +88,15 @@ const handleExpandToggle = () => {
 
 const getItemStyle = () => {
   if (props.selectedFolder === props.folder.id) {
-    return 'bg-blue-100 text-blue-700'
+    return 'bg-primary text-primary'
   }
   return ''
 }
 
 const getIconColor = () => {
   const colors = [
-    'text-blue-500', 'text-green-500', 'text-yellow-500', 'text-red-500',
-    'text-purple-500', 'text-orange-500', 'text-pink-500', 'text-indigo-500',
+    'text-primary', 'text-green-500', 'text-yellow-500', 'text-destructive',
+    'text-purple-500', 'text-orange-500', 'text-pink-500', 'text-primary',
     'text-teal-500', 'text-cyan-500', 'text-lime-500', 'text-amber-500'
   ]
   const index = props.folder.id.length % colors.length
@@ -105,8 +105,8 @@ const getIconColor = () => {
 
 const getCountStyle = () => {
   if (props.selectedFolder === props.folder.id) {
-    return 'text-blue-600'
+    return 'text-primary'
   }
-  return 'text-gray-500'
+  return 'text-muted-foreground'
 }
 </script>

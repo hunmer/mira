@@ -15,19 +15,19 @@
               <a
                 :data-folder-tree-node-id="folder.id"
                 :class="[
-                  'flex items-center justify-between px-2 py-1.5 rounded-md hover:bg-gray-200 cursor-pointer',
-                  selectedKey === folder.id ? 'bg-blue-100 text-blue-700' : 'text-gray-700',
+                  'flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-primary/5 cursor-pointer transition-colors',
+                  selectedKey === folder.id ? 'bg-primary/10 text-primary font-medium' : 'text-foreground',
                   locatingNodeId === folder.id ? 'sidebar-locate-active' : ''
                 ]"
                 @click.prevent="handleBaseCategoryClick(folder)"
               >
                 <span class="flex items-center">
-                  <span :class="`material-icons mr-2 text-lg ${folder.iconColor || 'text-gray-500'}`">
+                  <span :class="`material-icons mr-2 text-lg ${folder.iconColor || 'text-muted-foreground'}`">
                     {{ folder.icon }}
                   </span>
                   {{ folder.label }}
                 </span>
-                <span v-if="folder.count !== undefined" class="text-gray-500 text-xs">
+                <span v-if="folder.count !== undefined" class="text-muted-foreground text-xs">
                   {{ folder.count }}
                 </span>
               </a>
@@ -42,19 +42,19 @@
             v-else
             :data-folder-tree-node-id="folder.id"
             :class="[
-              'flex items-center justify-between px-2 py-1.5 rounded-md hover:bg-gray-200 cursor-pointer',
-              selectedKey === folder.id ? 'bg-blue-100 text-blue-700' : 'text-gray-700',
+              'flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-primary/5 cursor-pointer transition-colors',
+              selectedKey === folder.id ? 'bg-primary/10 text-primary font-medium' : 'text-foreground',
               locatingNodeId === folder.id ? 'sidebar-locate-active' : ''
             ]"
             @click.prevent="handleBaseCategoryClick(folder)"
           >
             <span class="flex items-center">
-              <span :class="`material-icons mr-2 text-lg ${folder.iconColor || 'text-gray-500'}`">
+              <span :class="`material-icons mr-2 text-lg ${folder.iconColor || 'text-muted-foreground'}`">
                 {{ folder.icon }}
               </span>
               {{ folder.label }}
             </span>
-            <span v-if="folder.count !== undefined" class="text-gray-500 text-xs">
+            <span v-if="folder.count !== undefined" class="text-muted-foreground text-xs">
               {{ folder.count }}
             </span>
           </a>
@@ -64,12 +64,12 @@
 
     <!-- 标题栏 + 搜索 + 多选 + 添加 -->
     <div class="flex items-center justify-between px-2 mb-2">
-      <h2 class="text-xs font-semibold text-gray-500 leading-5">{{ sectionTitle }}</h2>
+      <h2 class="text-xs font-semibold text-muted-foreground leading-5">{{ sectionTitle }}</h2>
       <div class="flex items-center gap-0.5 -mr-1">
         <button
           @click="toggleSearch"
-          class="flex h-5 w-5 items-center justify-center text-gray-400 hover:text-gray-600 rounded"
-          :class="{ 'text-blue-600': showSearch }"
+          class="flex h-5 w-5 items-center justify-center text-muted-foreground hover:text-muted-foreground rounded"
+          :class="{ 'text-primary': showSearch }"
           :title="`搜索${sectionTitle}...`"
         >
           <span class="material-icons leading-none" style="font-size: 18px">search</span>
@@ -77,15 +77,15 @@
         <button
           v-if="selectionEnabled"
           @click="toggleSelectionMode"
-          class="flex h-5 w-5 items-center justify-center text-gray-400 hover:text-gray-600 rounded"
-          :class="{ 'text-blue-600': selectionActive }"
+          class="flex h-5 w-5 items-center justify-center text-muted-foreground hover:text-muted-foreground rounded"
+          :class="{ 'text-primary': selectionActive }"
           :title="selectionActive ? `退出${selectionModeLabel}（已选 ${selectionCount}）` : `${selectionModeLabel}模式`"
         >
           <span class="material-icons leading-none" style="font-size: 18px">{{ isMultiMode ? 'checklist' : 'check_box_outline_blank' }}</span>
         </button>
         <button
           @click="ops.handleAdd(itemType)"
-          class="flex h-5 w-5 items-center justify-center text-gray-400 hover:text-gray-600 rounded"
+          class="flex h-5 w-5 items-center justify-center text-muted-foreground hover:text-muted-foreground rounded"
           :title="`添加${sectionTitle}`"
         >
           <span class="material-icons leading-none" style="font-size: 18px">add</span>
@@ -94,11 +94,11 @@
     </div>
 
     <!-- 多选工具条 -->
-    <div v-if="selectionActive && isMultiMode" class="flex items-center justify-between px-2 mb-2 text-xs text-gray-500">
+    <div v-if="selectionActive && isMultiMode" class="flex items-center justify-between px-2 mb-2 text-xs text-muted-foreground">
       <span>已选 {{ selectionCount }} 项</span>
       <div class="flex items-center gap-2">
-        <button class="text-blue-600 hover:underline" @click="selectAll">全选</button>
-        <button class="text-gray-500 hover:underline" @click="clearSelection">清空</button>
+        <button class="text-primary hover:underline" @click="selectAll">全选</button>
+        <button class="text-muted-foreground hover:underline" @click="clearSelection">清空</button>
       </div>
     </div>
 
@@ -109,7 +109,7 @@
         v-model="searchQuery"
         type="text"
         :placeholder="`搜索${sectionTitle}...`"
-        class="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+        class="w-full px-3 py-1.5 text-xs border border-border rounded-full bg-white/60 dark:bg-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
       />
     </div>
 
@@ -129,11 +129,11 @@
               <div
                 :data-folder-tree-node-id="node.id"
                 :class="[
-                  'flex items-center min-h-8 py-1 px-2 rounded-md cursor-pointer',
-                  'hover:bg-gray-100 dark:hover:bg-gray-800',
-                  selectedKey === node.id ? 'bg-blue-100 text-blue-700' : '',
-                  selectionActive && isNodeSelected(node) ? 'bg-blue-50' : '',
-                  dragOverNodeId === node.id ? 'ring-2 ring-blue-400 bg-blue-50' : '',
+                  'flex items-center min-h-8 py-1 px-2 rounded-lg cursor-pointer transition-colors',
+                  'hover:bg-primary/5',
+                  selectedKey === node.id ? 'bg-primary/10 text-primary font-medium' : '',
+                  selectionActive && isNodeSelected(node) ? 'bg-primary/10' : '',
+                  dragOverNodeId === node.id ? 'ring-2 ring-primary/50 bg-primary/10' : '',
                   locatingNodeId === node.id ? 'sidebar-locate-active' : ''
                 ]"
                 @click="handleNodeClick(node)"
@@ -150,13 +150,14 @@
                   @update:model-value="onNodeCheckChange(node, $event)"
                   @click.stop
                 />
-                <span v-if="stat.children.length" class="material-icons text-base mr-1 text-gray-400 hover:text-gray-600 select-none" @click.stop="stat.open = !stat.open">
+                <span v-if="stat.children.length" class="material-icons text-base mr-1 text-muted-foreground hover:text-muted-foreground select-none" @click.stop="stat.open = !stat.open">
                   {{ stat.open ? 'expand_more' : 'chevron_right' }}
                 </span>
-                <span v-else class="inline-block w-5"></span>
+                <!-- 叶子节点占位：仅在展示 checkbox 时保留，用于与父节点图标对齐；无 checkbox 时隐藏，让图标贴最左侧 -->
+                <span v-else-if="showNodeCheckbox" class="inline-block w-5"></span>
                 <span class="material-icons mr-2 text-lg" :style="{ color: getNodeColor(node) }">{{ node.icon || defaultIcon }}</span>
                 <span class="flex-1 truncate text-sm">{{ node.label }}</span>
-                <span v-if="node.count" class="text-xs text-gray-500 ml-2">{{ node.count }}</span>
+                <span v-if="node.count" class="text-xs text-muted-foreground ml-2">{{ node.count }}</span>
               </div>
             </template>
           </Draggable>
@@ -165,11 +166,11 @@
               <div
                 :data-folder-tree-node-id="node.id"
                 :class="[
-                  'flex items-center min-h-8 py-1 px-2 rounded-md cursor-pointer',
-                  'hover:bg-gray-100 dark:hover:bg-gray-800',
-                  selectedKey === node.id ? 'bg-blue-100 text-blue-700' : '',
-                  selectionActive && isNodeSelected(node) ? 'bg-blue-50' : '',
-                  dragOverNodeId === node.id ? 'ring-2 ring-blue-400 bg-blue-50' : '',
+                  'flex items-center min-h-8 py-1 px-2 rounded-lg cursor-pointer transition-colors',
+                  'hover:bg-primary/5',
+                  selectedKey === node.id ? 'bg-primary/10 text-primary font-medium' : '',
+                  selectionActive && isNodeSelected(node) ? 'bg-primary/10' : '',
+                  dragOverNodeId === node.id ? 'ring-2 ring-primary/50 bg-primary/10' : '',
                   locatingNodeId === node.id ? 'sidebar-locate-active' : ''
                 ]"
                 @click="handleNodeClick(node)"
@@ -186,13 +187,14 @@
                   @update:model-value="onNodeCheckChange(node, $event)"
                   @click.stop
                 />
-                <span v-if="stat.children.length" class="material-icons text-base mr-1 text-gray-400 hover:text-gray-600 select-none" @click.stop="stat.open = !stat.open">
+                <span v-if="stat.children.length" class="material-icons text-base mr-1 text-muted-foreground hover:text-muted-foreground select-none" @click.stop="stat.open = !stat.open">
                   {{ stat.open ? 'expand_more' : 'chevron_right' }}
                 </span>
-                <span v-else class="inline-block w-5"></span>
+                <!-- 叶子节点占位：仅在展示 checkbox 时保留，用于与父节点图标对齐；无 checkbox 时隐藏，让图标贴最左侧 -->
+                <span v-else-if="showNodeCheckbox" class="inline-block w-5"></span>
                 <span class="material-icons mr-2 text-lg" :style="{ color: getNodeColor(node) }">{{ node.icon || defaultIcon }}</span>
                 <span class="flex-1 truncate text-sm">{{ node.label }}</span>
-                <span v-if="node.count" class="text-xs text-gray-500 ml-2">{{ node.count }}</span>
+                <span v-if="node.count" class="text-xs text-muted-foreground ml-2">{{ node.count }}</span>
               </div>
             </template>
           </BaseTree>
@@ -210,23 +212,25 @@
     </ContextMenu>
 
     <!-- 空状态 -->
-    <div v-if="treeData.length === 0" class="flex flex-col items-center justify-center py-8 text-gray-500">
-      <span class="material-icons text-4xl mb-2 text-gray-400">{{ itemType === 'folder' ? 'folder_open' : 'label' }}</span>
+    <div v-if="treeData.length === 0" class="flex flex-col items-center justify-center py-8 text-muted-foreground">
+      <span class="material-icons text-4xl mb-2 text-muted-foreground">{{ itemType === 'folder' ? 'folder_open' : 'label' }}</span>
       <p class="text-sm text-center">还没有任何的{{ sectionTitle }}</p>
-      <p class="text-xs text-gray-400 mt-1">点击上方的 + 按钮添加新{{ sectionTitle }}</p>
+      <p class="text-xs text-muted-foreground mt-1">点击上方的 + 按钮添加新{{ sectionTitle }}</p>
     </div>
 
-    <!-- 通用编辑对话框 -->
-    <FolderEditDialog
-      :visible="ops.showEditDialog.value"
-      :folder="ops.editingItem.value"
-      :parent-folder="ops.editingParentItem.value"
-      :available-folders="folders"
-      :item-type="ops.editingItemType.value"
-      :dialog-title="ops.dialogTitle.value"
-      @close="ops.handleEditDialogClose"
-      @save="ops.handleItemSave"
-    />
+    <!-- 通用编辑对话框（Teleport 到 body，避免被侧栏等祖先容器的 transform/filter 等限制为局部定位） -->
+    <Teleport to="body">
+      <FolderEditDialog
+        :visible="ops.showEditDialog.value"
+        :folder="ops.editingItem.value"
+        :parent-folder="ops.editingParentItem.value"
+        :available-folders="folders"
+        :item-type="ops.editingItemType.value"
+        :dialog-title="ops.dialogTitle.value"
+        @close="ops.handleEditDialogClose"
+        @save="ops.handleItemSave"
+      />
+    </Teleport>
 
     <!-- 通用移动对话框 -->
     <FolderMoveDialog
@@ -240,7 +244,6 @@
 
     <!-- 删除确认对话框 -->
     <AlertDialog v-model:open="ops.showDeleteDialog.value">
-      <AlertDialogOverlay />
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>确认删除</AlertDialogTitle>
@@ -265,7 +268,6 @@
 
     <!-- 批量删除确认对话框 -->
     <AlertDialog v-model:open="ops.showBatchDeleteDialog.value">
-      <AlertDialogOverlay />
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>确认批量删除</AlertDialogTitle>
@@ -290,7 +292,6 @@
 
     <!-- 拖拽移动确认对话框 -->
     <AlertDialog v-model:open="showDragConfirm">
-      <AlertDialogOverlay />
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>确认移动</AlertDialogTitle>
@@ -328,7 +329,6 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogOverlay,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -391,10 +391,10 @@ const props = withDefaults(defineProps<Props>(), {
   title: '',
   folders: () => [],
   baseCategoriesConfig: () => [
-    { id: 'all', label: '全部', icon: 'folder_open', iconColor: 'text-gray-500' },
-    { id: 'uncategorized', label: '未分类', icon: 'folder_special', iconColor: 'text-gray-500' },
-    { id: 'untagged', label: '未标签', icon: 'label_off', iconColor: 'text-gray-500' },
-    { id: 'trash', label: '回收站', icon: 'delete', iconColor: 'text-red-500' },
+    { id: 'all', label: '全部', icon: 'folder_open', iconColor: 'text-muted-foreground' },
+    { id: 'uncategorized', label: '未分类', icon: 'folder_special', iconColor: 'text-muted-foreground' },
+    { id: 'untagged', label: '未标签', icon: 'label_off', iconColor: 'text-muted-foreground' },
+    { id: 'trash', label: '回收站', icon: 'delete', iconColor: 'text-destructive' },
   ],
 })
 
@@ -874,7 +874,7 @@ const contextMenuItems = computed(() => {
         label,
         command: () => handleBatchDelete(),
         disabled: nodes.length === 0,
-        class: 'text-red-600',
+        class: 'text-destructive',
       },
     ]
   }

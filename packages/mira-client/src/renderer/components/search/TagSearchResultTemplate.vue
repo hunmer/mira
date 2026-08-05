@@ -1,5 +1,5 @@
 <template>
-  <div class="search-result-item tag-result p-2 rounded-md flex items-center space-x-4 hover:bg-gray-600 cursor-pointer transition-colors duration-200 border border-transparent hover:border-[#374151]">
+  <div class="search-result-item tag-result p-2 rounded-md flex items-center space-x-4 hover:bg-muted cursor-pointer transition-colors duration-200 border border-transparent hover:border-[#374151]">
     <!-- 标签颜色指示器 -->
     <div class="tag-indicator flex-shrink-0">
       <div 
@@ -15,7 +15,7 @@
       <p class="font-semibold text-white truncate" :title="item.title">
         {{ item.title }}
       </p>
-      <div class="flex items-center space-x-2 text-sm text-gray-400">
+      <div class="flex items-center space-x-2 text-sm text-muted-foreground">
         <span>{{ item.fileCount || 0 }} 个文件</span>
         <span v-if="item.description">•</span>
         <span v-if="item.description" class="truncate">{{ item.description }}</span>
@@ -24,7 +24,7 @@
 
     <!-- 文件数量标识 -->
     <div v-if="item.fileCount && item.fileCount > 0" class="tag-count flex-shrink-0">
-      <span class="text-xs bg-blue-600 text-white px-3 py-1 rounded-full font-medium">
+      <span class="text-xs bg-primary text-white px-3 py-1 rounded-full font-medium">
         {{ item.fileCount }}
       </span>
     </div>

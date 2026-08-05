@@ -198,5 +198,51 @@
         "${workspaceFolder}/packages/**/dist/**/*.js"
       ]
     },
+    {
+      "name": "Launch Mira Client (Electron)",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/packages/mira-client",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["run", "electron:dev"],
+      "env": {
+        "NODE_ENV": "development",
+        "NODE_OPTIONS": "--enable-source-maps"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "openOnSessionStart",
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"]
+    },
+    {
+      "name": "Debug Mira Client Electron Main",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/packages/mira-client",
+      "runtimeExecutable": "${workspaceFolder}/packages/mira-client/node_modules/.bin/electron",
+      "runtimeArgs": [
+        ".",
+        "--inspect=9223",
+        "--disable-dev-shm-usage",
+        "--disable-extensions",
+        "--no-sandbox"
+      ],
+      "env": {
+        "NODE_ENV": "development",
+        "NODE_OPTIONS": "--enable-source-maps"
+      },
+      "console": "integratedTerminal",
+      "sourceMaps": true,
+      "smartStep": true,
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/packages/mira-client/dist-main/**/*.js",
+        "${workspaceFolder}/packages/mira-client/dist-preload/**/*.js"
+      ],
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+      "preLaunchTask": "build-mira-client"
+    },
   ]
 }

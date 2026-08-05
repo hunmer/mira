@@ -272,6 +272,61 @@ export interface TraySettings {
   clickAction: 'toggle' | 'show' | 'minimize'
 }
 
+// 浮动窗口位置预设
+export type FloatingWindowPosition =
+  | 'top-left'
+  | 'top-right'
+  | 'bottom-left'
+  | 'bottom-right'
+  | 'top'
+  | 'bottom'
+  | 'center'
+  | { x: number; y: number }
+
+// 通知窗口操作按钮
+export interface NotificationAction {
+  id: string
+  label: string
+}
+
+/** 通知出现动画类型 */
+export type NotificationAnimation =
+  | 'slide'      // 从所在边滑入（默认；右下角从右滑入，左下角从左滑入）
+  | 'fade'       // 淡入
+  | 'zoom'       // 缩放放大
+  | 'bounce'     // 弹跳
+  | 'none'       // 无动画
+
+/** 悬浮球点击行为：打开上传对话框 / 切换主窗口 */
+export type FloatingBallClickAction = 'openUpload' | 'toggleMain'
+
+// 通知窗口载荷（结构化字段 + 可选任意 HTML）
+export interface NotificationPayload {
+  /** 标题（必填） */
+  title: string
+  /** 正文 */
+  body?: string
+  /** 图标（Material Icons 名称或图片 URL） */
+  icon?: string
+  /** 通知类型，决定左侧色条颜色：info | success | warning | error */
+  type?: 'info' | 'success' | 'warning' | 'error'
+  /** 操作按钮 [{ id, label }]，点击后通过 action 事件回传 id */
+  actions?: NotificationAction[]
+  /** 任意自定义 HTML（存在时以 v-html 渲染，覆盖 body） */
+  html?: string
+  /** 自动消失时长（ms），0 表示常驻，默认 5000 */
+  duration?: number
+  /** 屏幕位置覆盖（默认右下角） */
+  position?: FloatingWindowPosition
+  /** 出现动画，默认 'slide' */
+  animation?: NotificationAnimation
+  /**
+   * 业务自定义数据，点击/操作时原样回传给主渲染进程。
+   * 例如导入通知携带 { fileId }，点击后据此跳转图片详情。
+   */
+  data?: Record<string, any>
+}
+
 // 协议数据结构
 export interface ProtocolData {
   type: string
@@ -406,6 +461,27 @@ export interface ElectronAPI {
   notification: {
     show: (options: { title: string; body?: string; silent?: boolean }) => Promise<{ success: boolean; error?: string }>
     isSupported: () => Promise<boolean>
+  }
+
+  // 通知窗口 API（自定义 BrowserWindow 通知，支持多种位置与自定义内容）
+  notificationWindow: {
+    show: (payload: NotificationPayload) => Promise<void>
+    hide: () => Promise<void>
+    /** 关闭指定通知（传 id）或全部（不传） */
+    dismiss: (id?: number) => Promise<void>
+  }
+
+  // 悬浮球窗口 API（单实例，可拖拽 / 接收文件拖放 / 持久化位置）
+  floatingBall: {
+    show: () => Promise<void>
+    hide: () => Promise<void>
+    toggle: () => Promise<void>
+    /** 设置位置；传 null 重置到默认（右下角）并清除持久化 */
+    setPosition: (pos?: { x: number; y: number } | null) => Promise<void>
+    /** 读取当前坐标（窗口未创建时返回上次持久化的坐标或 null） */
+    getState: () => Promise<{ x: number; y: number } | null>
+    /** 切换主渲染窗口显示/隐藏（点击行为 toggleMain 时由渲染进程调用） */
+    toggleMainWindow: () => Promise<void>
   }
 
   // 兼容性API（用于插件）

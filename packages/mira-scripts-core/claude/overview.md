@@ -1,26 +1,29 @@
-# mira-scripts-core 总览
+# overview
 
-## 模块职责
+## 模块定位
 
-Mira 脚本工具集，提供数据处理和迁移的命令行工具：
+`mira-scripts-core` 是 pnpm monorepo 中的脚本工具包，为 Mira 提供命令行数据处理工具。它本身不实现核心业务逻辑，而是作为 CLI 路由层 + 可执行脚本集合，复用 `mira-app-core` 的存储能力完成一次性数据迁移 / 导入任务。
 
-1. **convert (数据库转换)**: 从源 SQLite 数据库转换数据到目标目录，支持文件夹和标签过滤
-2. **import (文件导入)**: 将指定路径的文件导入到素材库数据库中，支持 copy/move 模式
+## 核心能力
 
-## 入口
+1. **convert（数据库转换）**：从源 SQLite 数据库读取数据，转换并写入目标目录，支持按文件夹 ID、标签 ID 过滤以及 `move` 等导入类型。
+2. **import（文件导入）**：扫描指定路径下的文件（支持目录递归与最大深度限制），将其导入素材库数据库，支持 `copy` / `move` 两种模式。
 
-- **入口文件**: `index.ts` -- CLI 入口，命令路由器
-- **运行**: `ts-node index.ts <command> [options]` 或 `pnpm run script <command>`
+## 入口与运行
 
-## 命令路由
+- 入口文件：`index.ts`（手写 argv 路由，**未使用 commander**）。
+- 运行方式：
+  - `ts-node index.ts <command> [options]`
+  - `pnpm run script <command> [-- <args>]`
+- 子命令仅 `convert` 与 `import`；`--help` / `-h` 或无参时打印用法。
 
-入口定义 `scripts` 映射表，根据命令名 spawn `ts-node` 子进程执行对应脚本。
+## 架构要点
 
-```bash
-pnpm run script convert -- --sourceDbPath=source.db --targetDir=./target
-pnpm run script import -- --source=./files --target=library.db
-```
+- 入口维护一张 `scripts` 映射表（`Record<string, ScriptInfo>`），每项含 `name` / `description` / `script` / `examples`。
+- 真正执行时通过 `child_process.spawn('ts-node', [scriptPath, ...args], { stdio: 'inherit', shell: true })` 拉起子进程，主进程透传 stdio 与退出码。
+- 两个脚本均直接 `import { LibraryServerDataSQLite } from 'mira-app-core/storage/sqlite'`，依赖 `mira-app-core` 提供的存储实现。
 
-## 依赖
+## 状态
 
-- `mira-app-core` (workspace) -- 核心库
+- 版本：1.0.5，license ISC，author hunmer。
+- 详细子命令接口见 `public-interfaces.md`；依赖与配置见 `dependencies-and-config.md`；文件清单见 `file-map.md`。

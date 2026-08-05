@@ -1,25 +1,25 @@
 <template>
   <div class="empty-search-state text-center py-12">
     <div class="empty-icon mb-6">
-      <span class="material-icons text-6xl text-gray-500">{{ getEmptyIcon() }}</span>
+      <span class="material-icons text-6xl text-muted-foreground">{{ getEmptyIcon() }}</span>
     </div>
     
     <div class="empty-content">
-      <h3 class="text-gray-400 text-lg font-medium mb-2">
+      <h3 class="text-muted-foreground text-lg font-medium mb-2">
         {{ getEmptyTitle() }}
       </h3>
-      <p class="text-gray-500 text-sm mb-4">
+      <p class="text-muted-foreground text-sm mb-4">
         {{ getEmptyDescription() }}
       </p>
       
       <!-- 搜索建议 -->
       <div v-if="suggestions.length > 0" class="search-suggestions">
-        <p class="text-gray-500 text-xs mb-2">建议尝试：</p>
+        <p class="text-muted-foreground text-xs mb-2">建议尝试：</p>
         <div class="flex flex-wrap justify-center gap-2">
           <button
             v-for="suggestion in suggestions"
             :key="suggestion"
-            class="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs rounded-full transition-colors hover:-translate-y-px"
+            class="px-3 py-1 bg-muted hover:bg-muted text-muted-foreground text-xs rounded-full transition-colors hover:-translate-y-px"
             @click="$emit('search', suggestion)"
           >
             {{ suggestion }}

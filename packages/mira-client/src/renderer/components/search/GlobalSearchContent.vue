@@ -1,13 +1,13 @@
 <template>
-  <div class="global-search-content bg-gray-800 dark:bg-[#1f2937] text-gray-300 rounded-lg shadow-lg w-full max-w-2xl mx-auto">
+  <div class="global-search-content bg-muted dark:bg-[#1f2937] text-muted-foreground rounded-lg shadow-lg w-full max-w-2xl mx-auto">
     <!-- 搜索头部 -->
-    <div class="search-header p-4 border-b border-gray-700 flex items-center justify-between">
+    <div class="search-header p-4 border-b border-border flex items-center justify-between">
       <div class="flex items-center w-full">
-        <span class="material-icons text-gray-500">search</span>
+        <span class="material-icons text-muted-foreground">search</span>
         <input 
           ref="searchInputRef"
           v-model="searchKeyword"
-          class="bg-transparent text-gray-300 placeholder-gray-500 ml-2 w-full focus:outline-none"
+          class="bg-transparent text-muted-foreground placeholder-gray-500 ml-2 w-full focus:outline-none"
           placeholder="搜索 (支持拼音、模糊关键字)"
           type="text"
           @keydown="handleSearchInputKeydown"
@@ -15,7 +15,7 @@
         />
       </div>
       <button 
-        class="text-gray-500 hover:text-gray-300 transition-colors"
+        class="text-muted-foreground hover:text-muted-foreground transition-colors"
         @click="handleClose"
       >
         <span class="material-icons">close</span>
@@ -30,8 +30,8 @@
         :class="[
           'relative px-4 py-2 rounded-md transition-all duration-200',
           globalSearchState.activeTab === service.id 
-            ? 'bg-gray-900 text-white' 
-            : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+            ? 'bg-muted text-white' 
+            : 'bg-muted hover:bg-muted text-muted-foreground'
         ]"
         @click="setActiveTab(service.id)"
       >
@@ -41,7 +41,7 @@
         <!-- 数量徽章 -->
         <span 
           v-if="getTotalCount(service.id) > 0"
-          class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white"
+          class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-xs text-white"
         >
           {{ getTotalCount(service.id) }}
         </span>
@@ -50,11 +50,11 @@
 
     <!-- 搜索结果区域 -->
     <div class="search-results px-4 pb-4">
-      <div class="bg-gray-700 p-2 rounded-lg">
+      <div class="bg-muted p-2 rounded-lg">
         <!-- 加载状态 -->
         <div v-if="globalSearchState.isSearching" class="flex items-center justify-center py-8">
-          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-          <span class="ml-2 text-gray-400">搜索中...</span>
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <span class="ml-2 text-muted-foreground">搜索中...</span>
         </div>
 
         <!-- 搜索结果列表 -->
@@ -70,8 +70,8 @@
             :class="[
               'search-result-item p-2 rounded-md cursor-pointer transition-all duration-200 ease-in-out',
               selectedResultIndex === index 
-                ? 'bg-gray-600 ring-2 ring-blue-500' 
-                : 'hover:bg-gray-600'
+                ? 'bg-muted ring-2 ring-primary' 
+                : 'hover:bg-muted'
             ]"
             role="option"
             :aria-selected="selectedResultIndex === index"
@@ -96,9 +96,9 @@
 
         <!-- 初始状态 -->
         <div v-else class="empty-initial-state text-center py-12">
-          <span class="material-icons text-6xl text-gray-500 mb-4">search</span>
-          <p class="text-gray-400 text-lg mb-2">开始搜索</p>
-          <p class="text-gray-500 text-sm">
+          <span class="material-icons text-6xl text-muted-foreground mb-4">search</span>
+          <p class="text-muted-foreground text-lg mb-2">开始搜索</p>
+          <p class="text-muted-foreground text-sm">
             输入关键词搜索{{ currentService?.title || '内容' }}
           </p>
         </div>
@@ -106,25 +106,25 @@
     </div>
 
     <!-- 键盘快捷键提示 -->
-    <div class="search-footer p-4 border-t border-gray-700 flex justify-between items-center text-sm text-gray-400">
+    <div class="search-footer p-4 border-t border-border flex justify-between items-center text-sm text-muted-foreground">
       <div class="flex items-center space-x-4">
         <div class="flex items-center space-x-1">
           <span>切换</span>
-          <kbd class="bg-gray-700 px-2 py-1 rounded-md">Tab</kbd>
+          <kbd class="bg-muted px-2 py-1 rounded-md">Tab</kbd>
         </div>
         <div class="flex items-center space-x-1">
           <span>移动</span>
-          <kbd class="bg-gray-700 px-2 py-1 rounded-md">↑</kbd>
-          <kbd class="bg-gray-700 px-2 py-1 rounded-md">↓</kbd>
+          <kbd class="bg-muted px-2 py-1 rounded-md">↑</kbd>
+          <kbd class="bg-muted px-2 py-1 rounded-md">↓</kbd>
         </div>
         <div class="flex items-center space-x-1">
           <span>选中</span>
-          <kbd class="bg-gray-700 px-2 py-1 rounded-md">↵</kbd>
+          <kbd class="bg-muted px-2 py-1 rounded-md">↵</kbd>
         </div>
       </div>
       <div class="flex items-center space-x-1">
         <span>关闭</span>
-        <kbd class="bg-gray-700 px-2 py-1 rounded-md">ESC</kbd>
+        <kbd class="bg-muted px-2 py-1 rounded-md">ESC</kbd>
       </div>
     </div>
   </div>

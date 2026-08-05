@@ -8,12 +8,12 @@
           :model-value="modelValue"
           :placeholder="placeholder"
           :disabled="disabled"
-          class="w-full pl-10 pr-12 py-2 text-sm border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          class="w-full pl-10 pr-12 py-2 text-sm border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
           @input="handleInput"
           @keydown.enter="handleSearch"
           @focus="showSuggestions = true"
         />
-        <span class="material-icons absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">search</span>
+        <span class="material-icons absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">search</span>
       </div>
       
       <!-- 加载指示器 -->
@@ -46,20 +46,20 @@
     <!-- 搜索建议/历史 -->
     <div
       v-if="showSuggestions && (searchHistory.length > 0 || suggestions.length > 0)"
-      class="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto"
+      class="absolute top-full left-0 right-0 mt-1 bg-white border border-border rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto"
     >
       <!-- 搜索历史 -->
       <div v-if="searchHistory.length > 0 && !modelValue">
-        <div class="px-3 py-2 text-xs font-semibold text-gray-500 border-b border-gray-100">
+        <div class="px-3 py-2 text-xs font-semibold text-muted-foreground border-b border-border">
           最近搜索
         </div>
         <div
           v-for="(item, index) in searchHistory.slice(0, 5)"
           :key="`history-${index}`"
-          class="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer group"
+          class="flex items-center px-3 py-2 hover:bg-muted cursor-pointer group"
           @click="selectSuggestion(item)"
         >
-          <span class="material-icons text-gray-400 mr-3">history</span>
+          <span class="material-icons text-muted-foreground mr-3">history</span>
           <span class="flex-1 text-sm">{{ item }}</span>
           <Button
             variant="ghost"
@@ -74,16 +74,16 @@
       
       <!-- 搜索建议 -->
       <div v-if="suggestions.length > 0">
-        <div class="px-3 py-2 text-xs font-semibold text-gray-500 border-b border-gray-100">
+        <div class="px-3 py-2 text-xs font-semibold text-muted-foreground border-b border-border">
           建议
         </div>
         <div
           v-for="(suggestion, index) in suggestions"
           :key="`suggestion-${index}`"
-          class="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer"
+          class="flex items-center px-3 py-2 hover:bg-muted cursor-pointer"
           @click="selectSuggestion(suggestion)"
         >
-          <span class="material-icons text-gray-400 mr-3">search</span>
+          <span class="material-icons text-muted-foreground mr-3">search</span>
           <span class="text-sm">{{ suggestion }}</span>
         </div>
       </div>
@@ -92,10 +92,10 @@
     <!-- 高级过滤器面板 -->
     <div
       v-if="showFilterPanel"
-      class="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-4"
+      class="absolute top-full left-0 right-0 mt-1 bg-white border border-border rounded-lg shadow-lg z-50 p-4"
     >
       <div class="flex items-center justify-between mb-3">
-        <h3 class="text-sm font-semibold text-gray-700">高级筛选</h3>
+        <h3 class="text-sm font-semibold text-foreground">高级筛选</h3>
         <Button
           variant="ghost"
           size="sm"
@@ -108,7 +108,7 @@
       
       <div class="space-y-3">
         <div v-for="filter in availableFilters" :key="`filter-${filter.key}`" class="flex items-center space-x-3">
-          <label class="text-sm font-medium text-gray-600 w-20">{{ filter.label }}</label>
+          <label class="text-sm font-medium text-muted-foreground w-20">{{ filter.label }}</label>
           
           <!-- 文本输入 -->
           <Input
@@ -144,7 +144,7 @@
         </div>
       </div>
       
-      <div class="flex items-center justify-end space-x-2 mt-4 pt-3 border-t border-gray-200">
+      <div class="flex items-center justify-end space-x-2 mt-4 pt-3 border-t border-border">
         <Button
           variant="outline"
           size="sm"
@@ -168,7 +168,7 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
-import DatePicker from '@/components/ui/volt/DatePicker.vue'
+import { DatePicker } from '@/components/ui/date-picker'
 import { Progress } from '@/components/ui/progress'
 import type { SearchComponentProps, SearchFilter, SearchEvents } from '../../types/components'
 import ConfigStorage from '@renderer/utils/ConfigStorage'

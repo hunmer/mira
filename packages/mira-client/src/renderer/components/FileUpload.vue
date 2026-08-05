@@ -162,14 +162,14 @@ defineExpose({
 
 :deep(.filepond--root) {
   border-radius: 0.375rem; /* rounded-md */
-  border: 2px dashed #d1d5db; /* border-gray-300 */
-  background-color: #f9fafb; /* bg-gray-50 */
+  border: 2px dashed #d1d5db; /* border-border */
+  background-color: #f9fafb; /* bg-muted */
   transition: border-color 0.2s, background-color 0.2s;
 }
 
 :deep(.filepond--root:hover) {
-  border-color: #6366f1; /* border-indigo-500 */
-  background-color: #eef2ff; /* bg-indigo-50 */
+  border-color: #6366f1; /* border-primary */
+  background-color: #eef2ff; /* bg-primary */
 }
 
 :deep(.filepond--panel-root) {
@@ -178,35 +178,35 @@ defineExpose({
 }
 
 :deep(.filepond--drop-label) {
-  color: #6b7280; /* text-gray-500 */
+  color: #6b7280; /* text-muted-foreground */
   font-size: 0.875rem; /* text-sm */
 }
 
 :deep(.filepond--label-action) {
-  color: #6366f1; /* text-indigo-600 */
+  color: #6366f1; /* text-primary */
   font-weight: 600;
   text-decoration: underline;
   cursor: pointer;
 }
 
 :deep(.filepond--label-action:hover) {
-  color: #4f46e5; /* text-indigo-700 */
+  color: #4f46e5; /* text-primary */
 }
 
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
   :deep(.filepond--root) {
-    border-color: #4b5563; /* border-gray-600 */
-    background-color: #1f2937; /* bg-gray-800 */
+    border-color: #4b5563; /* border-border */
+    background-color: #1f2937; /* bg-muted */
   }
   
   :deep(.filepond--root:hover) {
-    border-color: #6366f1; /* border-indigo-500 */
-    background-color: #312e81; /* bg-indigo-900 */
+    border-color: #6366f1; /* border-primary */
+    background-color: #312e81; /* bg-primary */
   }
   
   :deep(.filepond--drop-label) {
-    color: #9ca3af; /* text-gray-400 */
+    color: #9ca3af; /* text-muted-foreground */
   }
 }
 
@@ -217,39 +217,39 @@ defineExpose({
 }
 
 :deep(.filepond--item-panel) {
-  background-color: #f3f4f6; /* bg-gray-100 */
+  background-color: #f3f4f6; /* bg-muted */
   border-radius: 0.375rem;
-  border: 1px solid #e5e7eb; /* border-gray-200 */
+  border: 1px solid #e5e7eb; /* border-border */
 }
 
 :deep(.filepond--file-info-main) {
-  color: #374151; /* text-gray-700 */
+  color: #374151; /* text-foreground */
   font-weight: 500;
 }
 
 :deep(.filepond--file-info-sub) {
-  color: #6b7280; /* text-gray-500 */
+  color: #6b7280; /* text-muted-foreground */
 }
 
 /* Loading indicator */
 :deep(.filepond--file-action-button) {
-  background-color: #6366f1; /* bg-indigo-600 */
+  background-color: #6366f1; /* bg-primary */
   border-radius: 50%;
   width: 2rem;
   height: 2rem;
 }
 
 :deep(.filepond--file-action-button:hover) {
-  background-color: #4f46e5; /* bg-indigo-700 */
+  background-color: #4f46e5; /* bg-primary */
 }
 
 /* Error styling */
 :deep(.filepond--item-state-error .filepond--item-panel) {
-  background-color: #fef2f2; /* bg-red-50 */
-  border-color: #fca5a5; /* border-red-300 */
+  background-color: #fef2f2; /* bg-destructive */
+  border-color: #fca5a5; /* border-destructive */
 }
 
 :deep(.filepond--item-state-error .filepond--file-info-main) {
-  color: #dc2626; /* text-red-600 */
+  color: #dc2626; /* text-destructive */
 }
 </style>

@@ -1,16 +1,27 @@
 <template>
   <div class="p-4 space-y-6">
     <div>
-      <h3 class="text-slate-900 dark:text-slate-100 text-lg font-bold leading-tight tracking-[-0.015em] pb-2 pt-4">通知设置</h3>
+      <h3 class="text-foreground dark:text-muted-foreground text-lg font-bold leading-tight tracking-[-0.015em] pb-2 pt-4">通知设置</h3>
       <div class="space-y-4">
         <div class="flex items-center justify-between py-2">
           <div>
-            <p class="text-slate-900 dark:text-slate-100 text-base font-normal leading-normal">启用通知</p>
-            <p class="text-slate-600 dark:text-slate-400 text-sm">接收应用状态和操作结果通知</p>
+            <p class="text-foreground dark:text-muted-foreground text-base font-normal leading-normal">启用通知</p>
+            <p class="text-muted-foreground dark:text-muted-foreground text-sm">接收应用状态和操作结果通知</p>
           </div>
           <Switch
             :checked="settingsStore.settings.enableNotifications"
             @update:checked="handleSettingChange('enableNotifications', $event)"
+          />
+        </div>
+
+        <div class="flex items-center justify-between py-2">
+          <div>
+            <p class="text-foreground dark:text-muted-foreground text-base font-normal leading-normal">导入文件通知</p>
+            <p class="text-muted-foreground dark:text-muted-foreground text-sm">文件导入完成时弹出桌面通知（批量导入会聚合为一条）</p>
+          </div>
+          <Switch
+            :checked="settingsStore.settings.enableImportNotifications"
+            @update:checked="handleSettingChange('enableImportNotifications', $event)"
           />
         </div>
       </div>
@@ -29,9 +40,11 @@ const toast = useToast()
 // 方法
 const handleSettingChange = async (key: string, value: any) => {
   try {
+    // 先写入 store，再保存（避免保存时读到旧值）
+    ;(settingsStore.settings as any)[key] = value
     // 自动保存设置
     await settingsStore.saveSettings()
-    
+
     toast.add({
       severity: 'success',
       summary: '设置已保存',

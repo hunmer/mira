@@ -20,7 +20,7 @@
       <!-- 图片/缩略图容器 (视频播放时隐藏) -->
       <div
         v-show="!isVideoPlaying"
-        class="relative w-full h-[200px] rounded-lg overflow-hidden"
+        class="relative w-full h-[200px] rounded-xl overflow-hidden shadow-sm group-hover:shadow-[0_12px_36px_rgba(99,102,241,0.15)] transition-shadow"
       >
         <!-- 懒加载图片 -->
         <MediaThumbnail
@@ -35,7 +35,7 @@
       <!-- 视频预览组件插槽 (绝对定位覆盖在缩略图上) -->
       <div
         v-show="isVideoPlaying"
-        class="absolute inset-0 rounded-lg overflow-hidden"
+        class="absolute inset-0 rounded-xl overflow-hidden"
         @pointerdown="handlePointerDown"
         @contextmenu="handleContextMenu"
       >
@@ -94,7 +94,7 @@
       <!-- 选择框 -->
       <div
         v-if="isSelected"
-        class="absolute top-2 left-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center"
+        class="absolute top-2 left-2 w-6 h-6 bg-primary rounded-full flex items-center justify-center"
       >
         <span class="material-icons text-white text-sm">check</span>
       </div>
@@ -105,7 +105,7 @@
         class="absolute bottom-0 left-0 right-0 h-1 bg-black/30 rounded-b-lg z-10"
       >
         <div
-          class="h-full bg-blue-500 rounded-b-lg transition-all duration-100"
+          class="h-full bg-primary rounded-b-lg transition-all duration-100"
           :style="{ width: `${progress * 100}%` }"
         ></div>
       </div>
@@ -113,12 +113,12 @@
       <!-- 文件名 (非视频预览时显示) -->
       <div
         v-show="!isVideoPlaying"
-        class="absolute bottom-0 left-0 right-0 p-2 rounded-b-lg"
-        :class="isSelected ? 'bg-blue-500/90' : 'bg-white/90 dark:bg-gray-800/90'"
+        class="absolute bottom-0 left-0 right-0 p-2 rounded-b-xl"
+        :class="isSelected ? 'bg-primary/90' : 'bg-white/80 dark:bg-muted/80 backdrop-blur'"
       >
         <h3
           class="text-sm font-semibold truncate"
-          :class="isSelected ? 'text-white' : 'text-gray-900 dark:text-gray-100'"
+          :class="isSelected ? 'text-white' : 'text-foreground dark:text-muted-foreground'"
         >
           {{ item.name }}
         </h3>

@@ -11,7 +11,7 @@
               'flex items-center w-full px-4 py-2 text-sm font-medium rounded-lg transition-colors no-underline',
               selectedCategory === 'all'
                 ? 'text-primary bg-primary/10'
-                : 'text-text-light-secondary dark:text-text-dark-secondary hover:bg-gray-100 dark:hover:bg-gray-800'
+                : 'text-text-light-secondary dark:text-text-dark-secondary hover:bg-muted dark:hover:bg-muted'
             ]"
           >
             <i class="material-icons mr-3">all_inclusive</i> 全部集成
@@ -22,7 +22,7 @@
               'flex items-center w-full px-4 py-2 text-sm font-medium rounded-lg transition-colors no-underline',
               selectedCategory === 'communication'
                 ? 'text-primary bg-primary/10'
-                : 'text-text-light-secondary dark:text-text-dark-secondary hover:bg-gray-100 dark:hover:bg-gray-800'
+                : 'text-text-light-secondary dark:text-text-dark-secondary hover:bg-muted dark:hover:bg-muted'
             ]"
           >
             <i class="material-icons mr-3">chat_bubble_outline</i> 通讯
@@ -33,7 +33,7 @@
               'flex items-center w-full px-4 py-2 text-sm font-medium rounded-lg transition-colors no-underline',
               selectedCategory === 'documentation'
                 ? 'text-primary bg-primary/10'
-                : 'text-text-light-secondary dark:text-text-dark-secondary hover:bg-gray-100 dark:hover:bg-gray-800'
+                : 'text-text-light-secondary dark:text-text-dark-secondary hover:bg-muted dark:hover:bg-muted'
             ]"
           >
             <i class="material-icons mr-3">description</i> 文档
@@ -44,7 +44,7 @@
               'flex items-center w-full px-4 py-2 text-sm font-medium rounded-lg transition-colors no-underline',
               selectedCategory === 'productivity'
                 ? 'text-primary bg-primary/10'
-                : 'text-text-light-secondary dark:text-text-dark-secondary hover:bg-gray-100 dark:hover:bg-gray-800'
+                : 'text-text-light-secondary dark:text-text-dark-secondary hover:bg-muted dark:hover:bg-muted'
             ]"
           >
             <i class="material-icons mr-3">trending_up</i> 效率工具
@@ -55,7 +55,7 @@
               'flex items-center w-full px-4 py-2 text-sm font-medium rounded-lg transition-colors no-underline',
               selectedCategory === 'development'
                 ? 'text-primary bg-primary/10'
-                : 'text-text-light-secondary dark:text-text-dark-secondary hover:bg-gray-100 dark:hover:bg-gray-800'
+                : 'text-text-light-secondary dark:text-text-dark-secondary hover:bg-muted dark:hover:bg-muted'
             ]"
           >
             <i class="material-icons mr-3">code</i> 开发工具
@@ -64,7 +64,7 @@
 
         <!-- 插件类型切换 -->
         <div>
-          <div class="bg-gray-100 dark:bg-gray-700 rounded-lg p-1 flex">
+          <div class="bg-muted dark:bg-muted rounded-lg p-1 flex">
             <button
               @click="activeTab = 'local'"
               :class="[
@@ -191,12 +191,12 @@
               <Card class="text-center py-12">
                 <CardContent>
                   <div class="mb-6">
-                    <i class="pi pi-box text-6xl text-surface-400"></i>
+                    <i class="pi pi-box text-6xl text-muted-foreground"></i>
                   </div>
-                  <h3 class="text-xl font-medium text-surface-900 dark:text-surface-0 mb-3">
+                  <h3 class="text-xl font-medium text-foreground  mb-3">
                     {{ searchQuery ? '没有找到匹配的插件' : '暂无插件' }}
                   </h3>
-                  <p class="text-surface-600 dark:text-surface-400 mb-6 max-w-md mx-auto">
+                  <p class="text-muted-foreground dark:text-muted-foreground mb-6 max-w-md mx-auto">
                     {{ searchQuery ? '请尝试调整搜索条件' : '开始使用本地插件来扩展应用功能' }}
                   </p>
                   <Button
@@ -215,12 +215,12 @@
             <Card class="text-center py-12 col-span-full">
               <CardContent>
                 <div class="mb-6">
-                  <i class="pi pi-cloud text-6xl text-surface-400"></i>
+                  <i class="pi pi-cloud text-6xl text-muted-foreground"></i>
                 </div>
-                <h3 class="text-xl font-medium text-surface-900 dark:text-surface-0 mb-3">
+                <h3 class="text-xl font-medium text-foreground  mb-3">
                   在线插件功能开发中
                 </h3>
-                <p class="text-surface-600 dark:text-surface-400 mb-6 max-w-md mx-auto">
+                <p class="text-muted-foreground dark:text-muted-foreground mb-6 max-w-md mx-auto">
                   在线插件市场功能正在开发中，敬请期待。
                 </p>
               </CardContent>
@@ -233,7 +233,7 @@
               <button
                 @click="currentPage--"
                 :disabled="currentPage <= 1"
-                class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50"
+                class="p-2 rounded-md hover:bg-muted dark:hover:bg-muted disabled:opacity-50"
               >
                 <i class="material-icons text-base">chevron_left</i>
               </button>
@@ -246,7 +246,7 @@
                     'w-6 h-6 rounded-full text-xs font-bold',
                     page === currentPage
                       ? 'bg-primary text-white'
-                      : 'text-text-light-secondary dark:text-text-dark-secondary hover:bg-gray-100 dark:hover:bg-gray-800'
+                      : 'text-text-light-secondary dark:text-text-dark-secondary hover:bg-muted dark:hover:bg-muted'
                   ]"
                 >
                   {{ page }}
@@ -255,7 +255,7 @@
               <button
                 @click="currentPage++"
                 :disabled="currentPage >= totalPages"
-                class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50"
+                class="p-2 rounded-md hover:bg-muted dark:hover:bg-muted disabled:opacity-50"
               >
                 <i class="material-icons text-base">chevron_right</i>
               </button>
@@ -326,12 +326,14 @@
         <div v-if="selectedPlugin.config.dependencies && selectedPlugin.config.dependencies.length > 0">
           <label class="block text-sm font-medium mb-1">依赖插件</label>
           <div class="flex flex-wrap gap-1">
-            <Chip
+            <Badge
               v-for="dep in selectedPlugin.config.dependencies"
               :key="dep"
-              :label="dep"
+              variant="secondary"
               class="text-xs"
-            />
+            >
+              {{ dep }}
+            </Badge>
           </div>
         </div>
 
@@ -343,7 +345,7 @@
               :key="key"
               class="flex justify-between text-sm"
             >
-              <code class="bg-surface-100 dark:bg-surface-800 px-2 py-1 rounded">{{ key }}</code>
+              <code class="bg-muted dark:bg-muted px-2 py-1 rounded">{{ key }}</code>
               <span>{{ action }}</span>
             </div>
           </div>
@@ -381,7 +383,7 @@
           <DialogTitle>添加新插件</DialogTitle>
         </DialogHeader>
       <div class="space-y-4">
-        <p class="text-surface-600 dark:text-surface-400">
+        <p class="text-muted-foreground dark:text-muted-foreground">
           选择要添加插件的方式：
         </p>
         <div class="grid gap-3">
@@ -394,7 +396,7 @@
                 <i class="pi pi-folder-open text-2xl text-primary mr-4"></i>
                 <div>
                   <h4 class="font-medium">从文件夹添加</h4>
-                  <p class="text-sm text-surface-500">选择包含插件的文件夹</p>
+                  <p class="text-sm text-muted-foreground">选择包含插件的文件夹</p>
                 </div>
               </div>
             </CardContent>
@@ -409,7 +411,7 @@
                 <i class="pi pi-file-zip text-2xl text-primary mr-4"></i>
                 <div>
                   <h4 class="font-medium">从文件安装</h4>
-                  <p class="text-sm text-surface-500">安装 ZIP 格式的插件包</p>
+                  <p class="text-sm text-muted-foreground">安装 ZIP 格式的插件包</p>
                 </div>
               </div>
             </CardContent>
@@ -432,7 +434,7 @@ import IntegrationCard from './IntegrationCard.vue'
 // 组件导入
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import Chip from '@/components/ui/volt/Chip.vue'
+import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Input } from '@/components/ui/input'
