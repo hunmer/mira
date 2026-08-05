@@ -10,7 +10,8 @@ export const settingSections: SettingSection[] = [
   { id: 'notifications', name: 'Notifications', icon: 'notifications' },
   { id: 'import', name: '导入选项', icon: 'upload_file' },
   { id: 'plugins', name: 'Plugins', icon: 'extension' },
-  { id: 'data', name: 'Data', icon: 'storage' }
+  { id: 'data', name: 'Data', icon: 'storage' },
+  { id: 'playground', name: 'Playground', icon: 'science' }
 ]
 
 // 语言选项配置

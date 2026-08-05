@@ -2,54 +2,62 @@
  * 通知窗口专用入口文件 (Vue 版本)
  *
  * 基于通用 FloatingWindowCore 与主进程通信。
- * 支持结构化字段（title/body/icon/type/actions）+ 可选任意 HTML 内容。
+ * - 多实例并存：每条通知一个独立窗口，主进程侧窗口池管理堆叠
+ * - 无初次 loading：页面加载后即就绪，等待 notification-content 下发内容
+ * - 内容自适应：接收内容后测量实际高度回传 measure-ready
+ * - 支持拖拽：卡片头部可拖动移动窗口，松手后主进程 clamp 到屏幕内
+ * - 悬停暂停自动消失
  */
 
 window.addEventListener('DOMContentLoaded', async () => {
   try {
-    const loadingEl = document.querySelector('.loading')
-    if (loadingEl) loadingEl.style.display = 'none'
-
     const Core = window.FloatingWindowCore
     if (!Core || typeof Vue === 'undefined') {
-      Core
-        ? Core.showError(document.getElementById('notification-app'), 'Vue 框架未正确加载')
-        : (document.getElementById('notification-app').innerHTML =
-            '<div style="padding:2rem;color:#ef4444;text-align:center;">脚手架未加载</div>')
+      const app = document.getElementById('notification-app')
+      app.innerHTML = '<div style="padding:2rem;color:#ef4444;text-align:center;font-size:13px;">通知窗口初始化失败</div>'
       return
     }
 
     await initNotificationWindow()
   } catch (error) {
     console.error('通知窗口初始化失败:', error)
-    window.FloatingWindowCore.showError(
-      document.getElementById('notification-app'),
-      error.message
-    )
   }
 })
 
-/**
- * 初始化通知窗口 Vue 应用
- */
+let bridgeRef = null
+
 async function initNotificationWindow() {
   const Core = window.FloatingWindowCore
   const { createApp } = Vue
 
-  // 建立与主进程的 MessagePort 通信
+  // 内容渲染后测量实际高度并回传，主进程据此调整窗口尺寸并重定位
+  function reportMeasure() {
+    Vue.nextTick(() => {
+      const card = document.querySelector('.notification-card')
+      if (card) {
+        const rect = card.getBoundingClientRect()
+        // 高度含 padding，留少量余量
+        const height = Math.ceil(rect.height) + 4
+        if (bridgeRef) {
+          bridgeRef.send({ type: 'measure-ready', height, timestamp: Date.now() })
+        }
+      }
+    })
+  }
+
   const bridge = Core.createBridge({
     role: 'notification',
     onMessage: (data) => {
-      // 收到通知内容更新
       if (data.type === 'notification-content' && data.payload) {
         appVM.applyContent(data.payload)
+        reportMeasure()
       }
     },
     onReady: () => {
-      // 通知主进程窗口已就绪
       bridge.send({ type: 'notification-ready', timestamp: Date.now() })
     },
   })
+  bridgeRef = bridge
   bridge.start()
 
   const app = createApp({
@@ -62,21 +70,18 @@ async function initNotificationWindow() {
         actions: [],
         html: '',
         hasContent: false,
+        isDragging: false,
       }
     },
     computed: {
       displayIcon() {
         if (this.icon) return this.icon
         switch (this.type) {
-          case 'success':
-            return 'check_circle'
-          case 'warning':
-            return 'warning'
-          case 'error':
-            return 'error'
+          case 'success': return 'check_circle'
+          case 'warning': return 'warning'
+          case 'error': return 'error'
           case 'info':
-          default:
-            return 'notifications'
+          default: return 'notifications'
         }
       },
     },
@@ -85,24 +90,23 @@ async function initNotificationWindow() {
         v-if="hasContent"
         class="notification-card"
         @click="handleCardClick"
-        @mouseenter="pauseAutoHide"
-        @mouseleave="resumeAutoHide"
+        @mouseenter="handleMouseEnter"
+        @mouseleave="handleMouseLeave"
       >
-        <div :class="['notification-bar', type]"></div>
+        <div class="notification-bar" :class="type"></div>
         <div class="notification-main">
-          <div class="notification-header">
-            <span :class="['material-icons', 'notification-icon', type]">{{ displayIcon }}</span>
+          <div
+            class="notification-header"
+            @mousedown="handleDragStart"
+            @mouseup="handleDragEnd"
+          >
+            <span class="material-icons notification-icon" :class="type">{{ displayIcon }}</span>
             <div class="notification-title">{{ title }}</div>
             <button class="notification-close" @click.stop="handleClose" title="关闭">
               <span class="material-icons" style="font-size:16px;">close</span>
             </button>
           </div>
-          <!-- 自定义 HTML 优先；否则显示结构化 body -->
-          <div
-            v-if="html"
-            class="notification-html"
-            v-html="html"
-          ></div>
+          <div v-if="html" class="notification-html" v-html="html"></div>
           <p v-else-if="body" class="notification-body">{{ body }}</p>
           <div v-if="actions && actions.length" class="notification-actions">
             <button
@@ -116,15 +120,16 @@ async function initNotificationWindow() {
       </div>
     `,
     mounted() {
-      // 禁用右键与拖拽默认行为
       document.addEventListener('contextmenu', (e) => e.preventDefault())
       document.addEventListener('dragover', (e) => e.preventDefault())
       document.addEventListener('drop', (e) => e.preventDefault())
+      // 鼠标离开窗口（拖到桌面）后也要结束拖拽态
+      window.addEventListener('mouseup', this.handleDragEnd)
+    },
+    unmounted() {
+      window.removeEventListener('mouseup', this.handleDragEnd)
     },
     methods: {
-      /**
-       * 应用主进程下发的通知内容
-       */
       applyContent(payload) {
         this.title = payload.title || ''
         this.body = payload.body || ''
@@ -133,9 +138,6 @@ async function initNotificationWindow() {
         this.actions = Array.isArray(payload.actions) ? payload.actions : []
         this.html = payload.html || ''
         this.hasContent = true
-
-        // 启动自动隐藏倒计时（duration 由主进程侧统一管理自动 hide，
-        // 这里仅做 UI 侧的进度感知，实际关闭由主进程定时触发 dismiss）
       },
       handleCardClick() {
         bridge.send({ type: 'click', timestamp: Date.now() })
@@ -146,13 +148,27 @@ async function initNotificationWindow() {
       handleClose() {
         bridge.send({ type: 'dismiss', timestamp: Date.now() })
       },
-      // hover 暂停/恢复：通知主进程？目前主进程单一定时器，hover 暂停由
-      // 窗口 hideOnBlur=false 维持显示。这里预留接口。
-      pauseAutoHide() {},
-      resumeAutoHide() {},
+      // 拖拽：通知主进程临时启用 -webkit-app-region: drag
+      handleDragStart() {
+        if (this.isDragging) return
+        this.isDragging = true
+        bridge.send({ type: 'drag-start', timestamp: Date.now() })
+      },
+      handleDragEnd() {
+        if (!this.isDragging) return
+        this.isDragging = false
+        // 拖拽结束，通知主进程 clamp 到屏幕内
+        bridge.send({ type: 'drag-end', timestamp: Date.now() })
+      },
+      // 悬停暂停 / 离开恢复自动消失
+      handleMouseEnter() {
+        bridge.send({ type: 'hover-pause', timestamp: Date.now() })
+      },
+      handleMouseLeave() {
+        bridge.send({ type: 'hover-resume', timestamp: Date.now() })
+      },
     },
   })
 
   const appVM = app.mount('#notification-app')
-  console.log('✅ 通知窗口 Vue 应用初始化完成')
 }

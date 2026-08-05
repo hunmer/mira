@@ -53,6 +53,7 @@ import NotificationsPanel from '../../views/settings/NotificationsPanel.vue'
 import ImportPanel from '../../views/settings/ImportPanel.vue'
 import PluginsPanel from '../../views/settings/pluginPlan.vue'
 import DataPanel from '../../views/settings/DataPanel.vue'
+import PlaygroundPanel from '../../views/settings/PlaygroundPanel.vue'
 
 // 导入配置
 import { settingSections } from '../../views/settings/settingsConfig'
@@ -91,7 +92,8 @@ const currentComponent = computed(() => {
     notifications: NotificationsPanel,
     import: ImportPanel,
     plugins: PluginsPanel,
-    data: DataPanel
+    data: DataPanel,
+    playground: PlaygroundPanel
   }
   return componentMap[activeSection.value] || GeneralPanel
 })

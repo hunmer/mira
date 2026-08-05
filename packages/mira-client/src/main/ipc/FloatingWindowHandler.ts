@@ -62,6 +62,10 @@ export interface FloatingWindowOptions {
   alwaysOnTop?: boolean
   /** 是否在失焦时隐藏（通知窗口常用），默认 false */
   hideOnBlur?: boolean
+  /** 是否在任务栏中显示，默认 true（通知窗口应设为 false） */
+  skipTaskbar?: boolean
+  /** 创建/显示时是否触发全屏 loading 遮罩，默认 true（通知窗口应设为 false） */
+  showLoading?: boolean
   /** 渲染层 HTML 文件名，如 'search-window.html' */
   htmlFileName: string
   /** 渲染层 HTML 所在源目录名（如 'search-window'），开发态从 src/<htmlDirName>/ 加载 */
@@ -107,7 +111,10 @@ export class FloatingWindowHandler {
   protected messagePort: Electron.MessagePortMain | null = null
   protected isLoadingWindow = false
   protected options: Required<
-    Omit<FloatingWindowOptions, 'messageHandlers' | 'position' | 'minWidth' | 'minHeight' | 'maxWidth' | 'maxHeight'>
+    Omit<
+      FloatingWindowOptions,
+      'messageHandlers' | 'position' | 'minWidth' | 'minHeight' | 'maxWidth' | 'maxHeight'
+    >
   > & {
     messageHandlers?: Record<string, (data: any, ctx: FloatingWindowMessageContext) => void>
     position: FloatingWindowPosition
@@ -125,6 +132,8 @@ export class FloatingWindowHandler {
       movable: true,
       alwaysOnTop: true,
       hideOnBlur: false,
+      skipTaskbar: false,
+      showLoading: true,
       ...options,
     }
 
@@ -318,6 +327,7 @@ export class FloatingWindowHandler {
       maximizable: false,
       closable: true,
       alwaysOnTop: opts.alwaysOnTop,
+      skipTaskbar: opts.skipTaskbar,
       frame: false,
       transparent: true,
       show: false,
@@ -369,13 +379,13 @@ export class FloatingWindowHandler {
 
     this.window.once('ready-to-show', () => {
       if (this.window && !this.window.isDestroyed()) {
-        this.window.show()
-        this.window.focus()
-        if (this.options.alwaysOnTop) {
-          this.window.setAlwaysOnTop(true, 'screen-saver')
+        // 通知等需要内容渲染后再定位/显示的窗口，由子类通过 doShow() 显式触发。
+        // 默认（搜索窗口等）这里直接显示。
+        if (this.options.showLoading === false && typeof (this as any).onReadyToShow === 'function') {
+          ;(this as any).onReadyToShow()
+        } else {
+          this.doShow()
         }
-        this.window.setVisibleOnAllWorkspaces(true)
-        this.hideLoadingWindow()
       }
     })
 
@@ -405,6 +415,69 @@ export class FloatingWindowHandler {
         this.window.webContents.postMessage('connect', { role: this.options.role }, [port2])
         this.sendTheme()
       }
+    })
+  }
+
+  /**
+   * 实际显示窗口（含置顶、全工作区、loading 收尾）
+   */
+  protected doShow(): void {
+    if (!this.window || this.window.isDestroyed()) return
+    this.window.show()
+    this.window.focus()
+    if (this.options.alwaysOnTop) {
+      this.window.setAlwaysOnTop(true, 'screen-saver')
+    }
+    this.window.setVisibleOnAllWorkspaces(true)
+    this.hideLoadingWindow()
+  }
+
+  /**
+   * 子类可覆盖：窗口 ready-to-show 但需等内容渲染后再显示时调用。
+   * 默认实现为直接显示（由 ready-to-show 分支兜底）。
+   */
+  protected onReadyToShow(): void {
+    this.doShow()
+  }
+
+  /**
+   * 将当前窗口坐标限制在屏幕可视区域内（防止拖拽移出桌面）。
+   * 使用窗口所在 display 的 workArea。
+   */
+  public clampToScreen(): void {
+    if (!this.window || this.window.isDestroyed()) return
+    const { screen: screenMod } = require('electron') as typeof import('electron')
+    const winBounds = this.window.getBounds()
+    const display = screenMod.getDisplayMatching(winBounds)
+    const wa = display.workArea
+
+    let { x, y } = winBounds
+    const w = winBounds.width
+    const h = winBounds.height
+
+    // 保证窗口至少有 margin 像素留在屏幕内
+    if (x < wa.x) x = wa.x
+    if (y < wa.y) y = wa.y
+    if (x + w > wa.x + wa.width) x = wa.x + wa.width - w
+    if (y + h > wa.y + wa.height) y = wa.y + wa.height - h
+
+    if (x !== winBounds.x || y !== winBounds.y) {
+      this.window.setPosition(Math.round(x), Math.round(y), false)
+    }
+  }
+
+  /**
+   * 根据内容实际尺寸调整窗口高度（通知窗口内容可变时使用）。
+   * 由渲染层通过 measure-ready 消息上报内容高度。
+   */
+  public resizeHeight(height: number): void {
+    if (!this.window || this.window.isDestroyed()) return
+    const bounds = this.window.getBounds()
+    this.window.setBounds({
+      x: bounds.x,
+      y: bounds.y,
+      width: bounds.width,
+      height: Math.max(height, this.options.minHeight ?? 0),
     })
   }
 
@@ -558,8 +631,10 @@ export class FloatingWindowHandler {
 
   /**
    * 全屏 loading（复用主窗口的 global-loading 机制）
+   * 通知窗口等通过 showLoading:false 关闭此行为。
    */
   protected showLoadingWindow(): void {
+    if (this.options.showLoading === false) return
     if (this.isLoadingWindow) return
     this.isLoadingWindow = true
     const mainWindow = this.getMainWindow()

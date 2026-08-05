@@ -4,6 +4,7 @@ import { Dropdown } from '@/renderer/components/common/Dropdown'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useAuthStore } from '@/renderer/stores/auth'
 import { useDashboardStore } from '@/renderer/stores/dashboard'
+import { useMediaStore } from '@/renderer/stores/media'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { environment } from '@renderer/utils'
 import { shortcutService } from '@renderer/services/ShortcutService'
@@ -27,6 +28,7 @@ const emit = defineEmits<{
 
 const authStore = useAuthStore()
 const dashboardStore = useDashboardStore()
+const mediaStore = useMediaStore()
 const avatarLoadError = ref(false)
 
 const userAvatarUrl = computed(() => {
@@ -47,6 +49,26 @@ watch(userAvatarUrl, () => { avatarLoadError.value = false })
 <template>
   <!-- 紧凑右侧悬浮栏：用户头像菜单 + 窗口控制 -->
   <header class="flex items-center justify-end gap-1 px-2 py-1.5 rounded-2xl border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur-xl shadow-[0_12px_40px_rgba(99,102,241,0.10)] w-fit ml-auto">
+    <!-- 切换详情侧栏 -->
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger as-child>
+          <button
+            class="h-8 w-8 flex items-center justify-center rounded-lg transition-[color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-95"
+            :class="mediaStore.showDetailSidebar
+              ? 'text-primary hover:bg-primary/10'
+              : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'"
+            @click="mediaStore.toggleDetailSidebar()"
+          >
+            <span class="material-icons" style="font-size: 18px;">
+              {{ mediaStore.showDetailSidebar ? 'right_panel_close' : 'view_sidebar' }}
+            </span>
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">{{ mediaStore.showDetailSidebar ? '隐藏详情侧栏' : '显示详情侧栏' }}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+
     <!-- 用户头像 + 功能菜单（原 HomeToolbar 功能并入） -->
     <Dropdown
       placement="bottom-end"

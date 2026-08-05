@@ -313,7 +313,7 @@ onUnmounted(() => {
             <!-- 导航按钮（原 HomeHeader 迁入） -->
             <div class="flex items-center gap-0.5 shrink-0 mb-0.5 mr-1">
               <button
-                class="h-8 w-8 flex items-center justify-center rounded-full text-muted-foreground hover:text-primary hover:bg-white/50 hover:backdrop-blur-xl transition-colors"
+                class="h-8 w-8 flex items-center justify-center rounded-full text-muted-foreground hover:text-primary hover:bg-white/50 hover:backdrop-blur-xl transition-[color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-95"
                 title="激活上一次的tab (Ctrl+Shift+Tab)"
                 @click="handleActivateLastTab"
               >
@@ -328,7 +328,7 @@ onUnmounted(() => {
                     :key="tab.id"
                     :data-active-tab="tab.active"
                     :class="[
-                      'flex items-center space-x-2 shrink-0 text-sm font-medium transition-colors',
+                      'flex items-center space-x-2 shrink-0 text-sm font-medium transition-[color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.98]',
                       tab.active
                         ? 'relative z-10 px-4 py-2 -mb-px rounded-t-2xl border border-b-0 border-white/60 dark:border-border bg-white/30 dark:bg-muted/50 backdrop-blur-xl text-primary shadow-[0_-4px_16px_var(--shadow-primary-sm)]'
                         : 'px-3 py-1.5 mb-0.5 rounded-full text-muted-foreground hover:text-primary hover:bg-white/50 dark:hover:bg-muted/50 hover:backdrop-blur-xl hover:shadow-[0_-4px_16px_var(--shadow-primary-sm)]'
@@ -342,7 +342,7 @@ onUnmounted(() => {
                     <span class="truncate max-w-[140px]">{{ tab.label }}</span>
                     <button
                       v-if="activeTabs.length > 1 && tabsComposable.isTabClosable(tab.id)"
-                      class="hover:bg-primary/10 rounded-full"
+                      class="hover:bg-primary/10 rounded-full transition-transform duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-90"
                       style="line-height: 0;"
                       @click.stop="closeTabWithCallback(tab.id)"
                     >
@@ -380,9 +380,9 @@ onUnmounted(() => {
                 <!-- 默认状态 - 没有活跃的Tab时显示 -->
                 <div v-if="!currentTab" class="flex items-center justify-center h-full">
                   <div class="text-center rounded-2xl border border-white/60 dark:border-border bg-white/50 dark:bg-muted/70 backdrop-blur-xl shadow-[0_12px_40px_var(--shadow-primary-md)] px-10 py-8">
-                    <span class="material-icons text-6xl text-primary/60 mb-4">home</span>
-                    <h2 class="text-xl font-medium text-foreground mb-2">欢迎使用 Mira</h2>
-                    <p class="text-muted-foreground">从左侧选择文件夹或标签来开始浏览您的媒体文件</p>
+                    <span class="material-icons text-6xl text-primary/60 mb-4 animate-[fadeUp_300ms_cubic-bezier(0.23,1,0.32,1)_both]">home</span>
+                    <h2 class="text-xl font-medium text-foreground mb-2 animate-[fadeUp_300ms_cubic-bezier(0.23,1,0.32,1)_60ms_both]">欢迎使用 Mira</h2>
+                    <p class="text-muted-foreground animate-[fadeUp_300ms_cubic-bezier(0.23,1,0.32,1)_120ms_both]">从左侧选择文件夹或标签来开始浏览您的媒体文件</p>
                   </div>
                 </div>
               </div>
@@ -406,21 +406,28 @@ onUnmounted(() => {
         />
 
         <!-- 图片简略信息面板（从中间区域迁出） -->
-        <aside
-          v-if="showDetailSidebar"
-          class="w-72 flex-1 rounded-2xl border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur-xl shadow-[0_12px_40px_var(--shadow-primary-md)] overflow-hidden flex flex-col"
+        <Transition
+          enter-active-class="transition-[transform,opacity] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]"
+          leave-active-class="transition-[transform,opacity] duration-150 ease-[cubic-bezier(0.4,0,1,1)]"
+          enter-from-class="opacity-0 translate-x-4"
+          leave-to-class="opacity-0 translate-x-4"
         >
-          <div class="p-4 flex-1 overflow-y-auto">
-            <MediaDetailComponent
-              :item="detailSidebarItem"
-              :items="detailSidebarItems"
-              :library-id="detailLibraryId"
-              @tag-add="handleDetailTagAdd"
-              @tag-remove="handleDetailTagRemove"
-              @folder-change="handleDetailFolderChange"
-            />
-          </div>
-        </aside>
+          <aside
+            v-if="showDetailSidebar"
+            class="w-72 flex-1 rounded-2xl border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur-xl shadow-[0_12px_40px_var(--shadow-primary-md)] overflow-hidden flex flex-col"
+          >
+            <div class="p-4 flex-1 overflow-y-auto">
+              <MediaDetailComponent
+                :item="detailSidebarItem"
+                :items="detailSidebarItems"
+                :library-id="detailLibraryId"
+                @tag-add="handleDetailTagAdd"
+                @tag-remove="handleDetailTagRemove"
+                @folder-change="handleDetailFolderChange"
+              />
+            </div>
+          </aside>
+        </Transition>
       </div>
     </div>
 
@@ -458,6 +465,15 @@ onUnmounted(() => {
   /* 中性阴影：基于 foreground 的低透明色（浅色偏黑、深色偏白），不偏色。 */
   --shadow-primary-sm: color-mix(in oklch, var(--foreground) 6%, transparent);
   --shadow-primary-md: color-mix(in oklch, var(--foreground) 10%, transparent);
+  /* 自定义缓动曲线：内置 ease 太弱，缺 punch。 */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+/* 空状态欢迎卡 stagger 入场 */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .material-icons,

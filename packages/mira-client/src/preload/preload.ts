@@ -210,9 +210,9 @@ const electronAPI: ElectronAPI = {
     show: (payload) =>
       ipcRenderer.invoke('notification:window-show', payload),
     hide: () =>
-      ipcRenderer.invoke('notification-window:hide'),
-    dismiss: () =>
-      ipcRenderer.invoke('notification:window-dismiss')
+      ipcRenderer.invoke('notification:window-hide'),
+    dismiss: (id) =>
+      ipcRenderer.invoke('notification:window-dismiss', id)
   },
 
   // 兼容性API（用于插件）

@@ -449,7 +449,8 @@ export interface ElectronAPI {
   notificationWindow: {
     show: (payload: NotificationPayload) => Promise<void>
     hide: () => Promise<void>
-    dismiss: () => Promise<void>
+    /** 关闭指定通知（传 id）或全部（不传） */
+    dismiss: (id?: number) => Promise<void>
   }
 
   // 兼容性API（用于插件）

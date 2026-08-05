@@ -139,6 +139,9 @@
       align-items: center;
       gap: 8px;
       margin-bottom: 4px;
+      cursor: move;
+      user-select: none;
+      -webkit-user-select: none;
     }
 
     .notification-icon {
@@ -222,16 +225,10 @@
       color: #fff;
       border-color: var(--nt-info);
     }
-
-    .loading {
-      display: none;
-    }
   </style>
 </head>
 <body>
-  <div id="notification-app">
-    <div class="loading"></div>
-  </div>
+  <div id="notification-app"></div>
 
   <script src="./notification-window.js"></script>
 </body>
