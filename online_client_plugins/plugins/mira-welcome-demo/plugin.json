@@ -1,0 +1,25 @@
+{
+  "pluginName": "欢迎示例插件",
+  "pluginId": "b1c2d3e4-5f60-4a7b-8c9d-0a1b2c3d4e5f",
+  "priority": 1,
+  "version": "1.0.0",
+  "index": "index.js",
+  "tags": ["示例", "演示", "市场"],
+  "category": "development",
+  "description": "Mira 客户端插件市场的演示插件，展示了插件系统的基本能力：配置读写、事件监听、UI 交互、日志记录。",
+  "author": "Mira Team",
+  "homepage": "https://github.com/mira-team/mira-welcome-demo",
+  "enable": true,
+  "config": {
+    "exampleSetting": "默认值",
+    "enableLogging": true
+  },
+  "hotkey": {
+    "ctrl+shift+e": "showExample"
+  },
+  "events": ["fileOpened", "fileSelected"],
+  "dependencies": [],
+  "permissions": ["ui", "config"],
+  "minAppVersion": "1.0.0",
+  "platform": ["win32", "darwin", "linux"]
+}

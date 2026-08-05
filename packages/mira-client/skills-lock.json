@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "uithing": {
+      "source": "BayBreezy/ui-thing",
+      "sourceType": "github",
+      "skillPath": "skills/uithing/SKILL.md",
+      "computedHash": "f6f60582794e4a6cfd939ffb91c58addddff9872231f9103418bafc1f6db831f"
+    }
+  }
+}

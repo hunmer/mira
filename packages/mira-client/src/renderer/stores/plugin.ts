@@ -6,6 +6,8 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { MockDataGenerator } from '../utils/mockData'
 import { pluginService } from '../services/PluginService'
+import { useSettingsStore } from './settings'
+import type { MarketplacePluginEntry } from '../../shared/types'
 
 // 导入分离的插件模块
 import {
@@ -63,6 +65,12 @@ export const usePluginStore = defineStore('plugin', () => {
   const lastUpdated = ref<Date | null>(null)
   const pendingOperations = ref<Set<string>>(new Set())
   const isLocalPluginSystemInitialized = computed(() => pluginService.initialized)
+
+  // 插件市场状态
+  const marketplacePlugins = ref<MarketplacePluginEntry[]>([])
+  const isMarketplaceLoading = ref(false)
+  const marketplaceError = ref<string | null>(null)
+  const marketplaceLastUpdated = ref<Date | null>(null)
 
   // 搜索和过滤状态
   const searchQuery = ref('')
@@ -708,6 +716,76 @@ export const usePluginStore = defineStore('plugin', () => {
     }, 'Failed to select ZIP file')
   }
 
+  // ==================== 插件市场操作 ====================
+
+  /**
+   * 拉取插件市场目录
+   * 从 settings.clientPluginMarketUrl 指向的 HTTP 静态服务获取 plugins.json
+   */
+  const fetchMarketplaceCatalog = async () => {
+    const settingsStore = useSettingsStore()
+    const marketUrl = (settingsStore.settings.clientPluginMarketUrl || '').trim()
+
+    if (!marketUrl) {
+      marketplacePlugins.value = []
+      marketplaceError.value = '未配置插件市场源地址'
+      return { success: false, message: '未配置插件市场源地址' }
+    }
+
+    isMarketplaceLoading.value = true
+    marketplaceError.value = null
+    try {
+      const result = await pluginService.fetchMarketplaceCatalog(marketUrl)
+      if (result.success && result.data) {
+        const catalog = result.data as { plugins: MarketplacePluginEntry[] }
+        marketplacePlugins.value = catalog.plugins || []
+        marketplaceLastUpdated.value = new Date()
+        return { success: true, data: catalog }
+      } else {
+        marketplaceError.value = result.message || '拉取插件市场目录失败'
+        return { success: false, message: marketplaceError.value }
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch marketplace catalog'
+      marketplaceError.value = errorMessage
+      return { success: false, error: errorMessage }
+    } finally {
+      isMarketplaceLoading.value = false
+    }
+  }
+
+  /**
+   * 从插件市场安装/更新插件
+   * 安装成功后会刷新本地插件列表。
+   */
+  const installMarketplacePlugin = async (entry: MarketplacePluginEntry) => {
+    const operationId = `market-install-${entry.pluginId}`
+    if (pendingOperations.value.has(operationId)) {
+      return { success: false, message: '该插件正在安装中' }
+    }
+    pendingOperations.value.add(operationId)
+
+    try {
+      const settingsStore = useSettingsStore()
+      const marketUrl = (settingsStore.settings.clientPluginMarketUrl || '').trim()
+      if (!marketUrl) {
+        return { success: false, message: '未配置插件市场源地址' }
+      }
+
+      const result = await pluginService.installMarketplacePlugin(marketUrl, entry)
+      if (result.success) {
+        // 安装成功后刷新本地插件列表
+        await loadLocalPlugins()
+      }
+      return result
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to install marketplace plugin'
+      return { success: false, error: errorMessage }
+    } finally {
+      pendingOperations.value.delete(operationId)
+    }
+  }
+
   // ==================== 状态管理操作 ====================
 
   /**
@@ -813,6 +891,12 @@ export const usePluginStore = defineStore('plugin', () => {
     sortOrder,
     isLocalPluginSystemInitialized,
 
+    // 插件市场状态
+    marketplacePlugins,
+    isMarketplaceLoading,
+    marketplaceError,
+    marketplaceLastUpdated,
+
     // 计算属性
     totalPlugins,
     installedPlugins,
@@ -858,6 +942,10 @@ export const usePluginStore = defineStore('plugin', () => {
     discoverLocalPlugins,
     selectPluginDirectory,
     selectZipFile,
+
+    // 插件市场操作
+    fetchMarketplaceCatalog,
+    installMarketplacePlugin,
 
     // 脚本管理（从模块导入）
     injectPluginsToDocument,

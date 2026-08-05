@@ -106,7 +106,9 @@ const electronAPI: ElectronAPI = {
     getConfig: () =>
       ipcRenderer.invoke('plugin:get-config'),
     clearCache: () =>
-      ipcRenderer.invoke('plugin:clear-cache')
+      ipcRenderer.invoke('plugin:clear-cache'),
+    installFromMarketplace: (marketUrl: string, entry: any) =>
+      ipcRenderer.invoke('plugin:install-from-marketplace', marketUrl, entry)
   },
 
   // 拖拽功能 API

@@ -1,13 +1,8 @@
-# Progress: Package Consolidation
+# Progress Log
 
-## 2026-06-09
-- 创建规划文件，开始调研包边界与依赖关系。
-- 完成初步包配置与引用扫描，准备读取源码入口与 TS 配置。
-- 读取核心入口、SQLite 入口、SDK 入口与 TS 配置；确认需要用子入口隔离 SQLite 与 SDK。
-- 将 SQLite 源码迁入 `packages/mira-app-core/src/storage/sqlite`。
-- 将 SDK shared 源码迁入 `packages/mira-app-core/src/shared/sdk`。
-- 更新 `mira-app-core` 子入口、依赖与 SDK ESM 构建配置。
-- 更新服务端、客户端、脚本与插件运行时代码导入路径。
-- 移除旧 workspace 包配置与旧包目录。
-- 运行 `pnpm install --lockfile-only` 同步 lockfile，未执行构建或测试。
-- 完成最终旧包名导入与配置残留扫描。
+## Session 1 — 2026-08-05 (research/planning only)
+- Read ui-thing skill (SKILL.md, cli.md, mcp.md, rules/styling.md, rules/composition.md, rules/reka-and-forwarding.md).
+- Audited mira-client stack: Vite+Electron+Vue3+Tailwind v4, shadcn-vue style UI (cva+cn), 243 ui files / 36 families / 68 consumers.
+- Confirmed UI Thing CLI, source repo, MCP, and tailwind-variants are ALL absent in this workspace; project is not Nuxt.
+- Drafted findings.md + task_plan.md. Awaiting user decisions on scope and source of ui-thing defaults before any code changes.
+- **No files modified yet.**

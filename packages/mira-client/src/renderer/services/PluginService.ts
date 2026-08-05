@@ -3,7 +3,9 @@ import type {
   PluginRuntime,
   PluginManagerConfig,
   BaseResponse,
-  PluginContext
+  PluginContext,
+  MarketplaceCatalog,
+  MarketplacePluginEntry
 } from '../../shared/types'
 import { pluginSystem } from './PluginSystemCore'
 import ConfigStorage from '@renderer/utils/ConfigStorage'
@@ -328,6 +330,57 @@ export class PluginService {
    */
   public getOnlinePlugins(): OnlinePluginConfig[] {
     return Array.from(this.onlinePlugins.values())
+  }
+
+  /**
+   * 拉取插件市场目录（plugins.json）
+   * 直接在渲染进程 fetch，Web/Electron 环境均可用。
+   * @param marketUrl 市场源根地址
+   */
+  public async fetchMarketplaceCatalog(marketUrl: string): Promise<BaseResponse> {
+    try {
+      const base = (marketUrl || '').trim().replace(/\/+$/, '')
+      if (!base) {
+        return { success: false, message: '市场源地址为空' }
+      }
+      const catalogUrl = `${base}/plugins.json`
+      const response = await fetch(catalogUrl)
+      if (!response.ok) {
+        return { success: false, message: `拉取市场目录失败 (${response.status}): ${catalogUrl}` }
+      }
+      const catalog = (await response.json()) as MarketplaceCatalog
+      if (!catalog || !Array.isArray(catalog.plugins)) {
+        return { success: false, message: '市场目录格式不正确' }
+      }
+      return { success: true, data: catalog, message: `Loaded ${catalog.plugins.length} marketplace plugins` }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      return { success: false, message: errorMessage }
+    }
+  }
+
+  /**
+   * 从插件市场安装/更新插件
+   * 由主进程负责下载到本地 pluginsDirectory，成功后刷新已加载的插件列表。
+   * @param marketUrl 市场源根地址
+   * @param entry 市场目录中的插件条目
+   */
+  public async installMarketplacePlugin(marketUrl: string, entry: MarketplacePluginEntry): Promise<BaseResponse> {
+    try {
+      if (!this.isElectronEnvironment) {
+        return { success: false, message: '插件市场安装仅在 Electron 环境可用' }
+      }
+
+      const result = await (window as any).electronAPI.plugin.installFromMarketplace(marketUrl, entry)
+      if (result.success) {
+        // 安装成功后重新发现并加载本地插件，让新插件出现在列表里
+        await this.discoverAndLoadPlugins()
+      }
+      return result
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      return { success: false, message: errorMessage }
+    }
   }
 
   /**

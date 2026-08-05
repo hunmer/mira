@@ -65,6 +65,32 @@
         {{ fileExtension }}
       </div>
 
+      <!-- 预览放大镜按钮：悬浮卡片时显示，悬浮按钮弹出 hovercard 预览 -->
+      <HoverCard
+        v-show="!isVideoPlaying"
+        :open-delay="200"
+        :close-delay="150"
+      >
+        <HoverCardTrigger as-child>
+          <button
+            class="absolute bottom-12 right-2 z-10 w-7 h-7 rounded-full bg-black/55 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-black/75 transition-opacity"
+            title="预览"
+            @click.stop
+            @pointerdown.stop
+          >
+            <span class="material-icons text-base">search</span>
+          </button>
+        </HoverCardTrigger>
+        <HoverCardContent
+          side="top"
+          align="end"
+          :side-offset="8"
+          class="w-auto border-0 bg-transparent p-0 shadow-none"
+        >
+          <MediaPreviewContent :item="item" />
+        </HoverCardContent>
+      </HoverCard>
+
       <!-- 选择框 -->
       <div
         v-if="isSelected"
@@ -105,6 +131,8 @@
 import { toRef } from 'vue'
 import type { FileInfo } from '../../../../shared/types'
 import MediaThumbnail from '@renderer/components/common/MediaThumbnail.vue'
+import MediaPreviewContent from '@renderer/components/common/MediaPreviewContent.vue'
+import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card'
 import { useMediaItem, type MediaItemEmits } from '@renderer/composables/useMediaItem'
 
 interface Props {

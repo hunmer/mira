@@ -2,11 +2,13 @@ import { ipcMain, dialog } from 'electron'
 import { logger } from '../utils/Logger'
 import * as fs from 'fs/promises'
 import * as path from 'path'
+import { createHash } from 'crypto'
 import type {
   LocalPluginConfig,
   PluginRuntime,
   PluginManagerConfig,
-  BaseResponse
+  BaseResponse,
+  MarketplacePluginEntry
 } from '../../shared/types'
 
 /**
@@ -54,6 +56,9 @@ export class PluginHandler {
     ipcMain.handle('plugin:disable', this.handleDisablePlugin.bind(this))
     ipcMain.handle('plugin:reload', this.handleReloadPlugin.bind(this))
     ipcMain.handle('plugin:execute', this.handleExecutePlugin.bind(this))
+
+    // 插件市场（HTTP 静态源）
+    ipcMain.handle('plugin:install-from-marketplace', this.handleInstallFromMarketplace.bind(this))
 
     logger.info('PluginHandler', 'Plugin IPC handlers registered')
   }
@@ -534,6 +539,133 @@ export class PluginHandler {
     }
   }
 
+  // =========================== 插件市场（HTTP 静态源） ===========================
+
+  /**
+   * 规范化市场源根 URL：去掉末尾斜杠，统一用单斜杠拼接
+   */
+  private normalizeMarketUrl(marketUrl: string): string {
+    return (marketUrl || '').trim().replace(/\/+$/, '')
+  }
+
+  /**
+   * 下载单个文件并以 UTF-8 buffer 返回（插件市场文件通常较小，这里直接全量读取）
+   * 校验 sha256（当提供 checksum 时），不一致则抛错。
+   */
+  private async downloadAndVerifyFile(
+    fileUrl: string,
+    expectedChecksum?: string
+  ): Promise<Buffer> {
+    const response = await fetch(fileUrl)
+    if (!response.ok) {
+      throw new Error(`下载失败 (${response.status}): ${fileUrl}`)
+    }
+    const buf = Buffer.from(await response.arrayBuffer())
+
+    if (expectedChecksum) {
+      const expected = expectedChecksum.startsWith('sha256:')
+        ? expectedChecksum.slice(7)
+        : expectedChecksum
+      const actual = createHash('sha256').update(buf).digest('hex')
+      if (actual !== expected) {
+        throw new Error(`校验失败: ${fileUrl}\n期望 sha256=${expected}\n实际 sha256=${actual}`)
+      }
+    }
+    return buf
+  }
+
+  /**
+   * 从插件市场安装插件
+   * 把远程插件目录下载到本地 pluginsDirectory/<pluginId>/，随后走与本地插件一致的加载流程。
+   */
+  private async handleInstallFromMarketplace(
+    _event: Electron.IpcMainInvokeEvent,
+    marketUrl: string,
+    entry: MarketplacePluginEntry
+  ): Promise<BaseResponse> {
+    try {
+      if (!this.config?.pluginsDirectory) {
+        return { success: false, message: '未配置本地插件目录，无法安装' }
+      }
+      if (!entry?.pluginId || !entry?.directory) {
+        return { success: false, message: '市场插件条目信息不完整' }
+      }
+
+      const base = this.normalizeMarketUrl(marketUrl)
+      if (!base) {
+        return { success: false, message: '市场源地址为空' }
+      }
+
+      const targetDir = path.join(this.config.pluginsDirectory, entry.pluginId)
+      logger.info('PluginHandler', `Installing plugin from marketplace: ${entry.pluginId} -> ${targetDir}`)
+
+      // 目标目录已存在时，先清空再覆盖（视为更新/重装）
+      try {
+        await fs.access(targetDir)
+        await fs.rm(targetDir, { recursive: true, force: true })
+        logger.info('PluginHandler', `Removed existing plugin directory before install: ${targetDir}`)
+      } catch {
+        // 目录不存在，无需处理
+      }
+      await fs.mkdir(targetDir, { recursive: true })
+
+      // 逐文件下载并校验
+      const files = entry.files && entry.files.length > 0
+        ? entry.files
+        : null
+
+      if (files) {
+        for (const f of files) {
+          // entry.directory 是相对市场根（如 plugins/<id>），f.path 是相对插件目录
+          const fileUrl = `${base}/${entry.directory}/${f.path}`
+          const buf = await this.downloadAndVerifyFile(fileUrl, f.checksum)
+          const dest = path.join(targetDir, path.normalize(f.path))
+          await fs.mkdir(path.dirname(dest), { recursive: true })
+          await fs.writeFile(dest, buf)
+        }
+      } else {
+        // 兜底：索引未提供文件清单时，至少下载 plugin.json + 入口文件
+        logger.warn('PluginHandler', `市场条目缺少 files 清单，退化为最小下载: ${entry.pluginId}`)
+
+        // 先拉 plugin.json 确定入口
+        const pluginJsonUrl = `${base}/${entry.directory}/plugin.json`
+        const pluginJsonBuf = await this.downloadAndVerifyFile(pluginJsonUrl)
+        await fs.writeFile(path.join(targetDir, 'plugin.json'), pluginJsonBuf)
+
+        let entryFile = 'index.js'
+        try {
+          const parsed = JSON.parse(pluginJsonBuf.toString('utf-8'))
+          entryFile = parsed.index || 'index.js'
+        } catch {
+          // 解析失败则用默认入口名
+        }
+
+        const entryUrl = `${base}/${entry.directory}/${entryFile}`
+        const entryBuf = await this.downloadAndVerifyFile(entryUrl)
+        await fs.writeFile(path.join(targetDir, entryFile), entryBuf)
+      }
+
+      // 验证安装结果：plugin.json 可解析且字段齐全
+      const installedConfig = await this.parsePluginConfig(targetDir)
+      if (!installedConfig) {
+        // 解析失败，清理半成品目录
+        await fs.rm(targetDir, { recursive: true, force: true })
+        return { success: false, message: '安装后校验 plugin.json 失败，已回滚' }
+      }
+
+      logger.info('PluginHandler', `Plugin installed from marketplace: ${installedConfig.pluginName} v${installedConfig.version}`)
+      return {
+        success: true,
+        message: `插件 ${installedConfig.pluginName} 安装成功`,
+        data: { directory: targetDir, config: installedConfig }
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      logger.error('PluginHandler', `Failed to install plugin from marketplace: ${errorMessage}`)
+      return { success: false, message: errorMessage }
+    }
+  }
+
   // =========================== 配置管理 ===========================
 
   /**
@@ -602,6 +734,7 @@ export class PluginHandler {
     ipcMain.removeHandler('plugin:update-config')
     ipcMain.removeHandler('plugin:get-config')
     ipcMain.removeHandler('plugin:clear-cache')
+    ipcMain.removeHandler('plugin:install-from-marketplace')
 
     logger.info('PluginHandler', 'Plugin IPC handlers cleaned up')
   }

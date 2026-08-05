@@ -204,6 +204,40 @@ export interface PluginManagerConfig {
   trustedPlugins: string[] // 受信任的插件ID列表
 }
 
+// 客户端插件市场：索引中的单个文件描述
+export interface MarketplacePluginFile {
+  path: string // 相对插件目录的路径（posix 风格）
+  size: number
+  checksum: string // 形如 "sha256:..."
+}
+
+// 客户端插件市场：索引中的单个插件条目
+export interface MarketplacePluginEntry {
+  pluginId: string
+  pluginName: string
+  version: string
+  description: string
+  author: string
+  homepage?: string
+  category?: string
+  tags: string[]
+  minAppVersion?: string
+  platform?: string[]
+  directory: string // 相对市场源根目录，例如 "plugins/<pluginId>"
+  icon?: string | null // 相对插件目录的图标文件
+  readme?: string | null // 相对插件目录的 README 文件
+  size: number // 目录总字节数
+  checksum: string // 整目录聚合哈希 "sha256:..."
+  files?: MarketplacePluginFile[] // 文件清单（用于逐文件下载与校验）
+}
+
+// 客户端插件市场：plugins.json 根结构
+export interface MarketplaceCatalog {
+  version: number
+  generatedAt: string
+  plugins: MarketplacePluginEntry[]
+}
+
 // 系统信息
 export interface SystemInfo {
   version: string
@@ -323,6 +357,7 @@ export interface ElectronAPI {
     updateConfig: (config: any) => Promise<BaseResponse>
     getConfig: () => Promise<BaseResponse>
     clearCache: () => Promise<BaseResponse>
+    installFromMarketplace: (marketUrl: string, entry: MarketplacePluginEntry) => Promise<BaseResponse>
   }
 
   // 拖拽功能 API

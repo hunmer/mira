@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "generatedAt": "2026-08-05T03:52:11.692Z",
+  "plugins": [
+    {
+      "pluginId": "b1c2d3e4-5f60-4a7b-8c9d-0a1b2c3d4e5f",
+      "pluginName": "欢迎示例插件",
+      "version": "1.0.0",
+      "description": "Mira 客户端插件市场的演示插件，展示了插件系统的基本能力：配置读写、事件监听、UI 交互、日志记录。",
+      "author": "Mira Team",
+      "homepage": "https://github.com/mira-team/mira-welcome-demo",
+      "category": "development",
+      "tags": [
+        "示例",
+        "演示",
+        "市场"
+      ],
+      "minAppVersion": "1.0.0",
+      "platform": [
+        "win32",
+        "darwin",
+        "linux"
+      ],
+      "directory": "plugins/mira-welcome-demo",
+      "icon": null,
+      "readme": "README.md",
+      "size": 3056,
+      "checksum": "sha256:ae636a57b411379344276464d25b8abf3cde1a542628f8f519d359e16e643c75",
+      "files": [
+        {
+          "path": "README.md",
+          "size": 522,
+          "checksum": "sha256:1d97fdbd0faafec78c9e7b63f718083712bd038d8e047ee44a4d66f985960419"
+        },
+        {
+          "path": "plugin.json",
+          "size": 802,
+          "checksum": "sha256:7fe3f8955ca482a75dbd2f3272e9a9740821f7d1f3b16c1d6f4c8999512a206e"
+        },
+        {
+          "path": "index.js",
+          "size": 1732,
+          "checksum": "sha256:429e8f5f747564fc25aee2c8a5ea98e595d8d1b0426f1678c2eeede30015aa54"
+        }
+      ]
+    }
+  ]
+}

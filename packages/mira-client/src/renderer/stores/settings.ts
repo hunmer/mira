@@ -47,6 +47,7 @@ export interface AppSettings {
   maxPluginLoadTime: number
   enablePluginSandbox: boolean
   trustedPlugins: string[]
+  clientPluginMarketUrl: string // 客户端插件市场源地址（HTTP 静态服务）
 }
 
 // 添加素材库类型定义
@@ -150,7 +151,8 @@ export const useSettingsStore = defineStore('settings', () => {
     autoLoadPlugins: true,
     maxPluginLoadTime: 30000, // 30秒
     enablePluginSandbox: false,
-    trustedPlugins: []
+    trustedPlugins: [],
+    clientPluginMarketUrl: '' // 客户端插件市场源地址，留空表示未配置
   })
   
   const isConnected = ref(false)
@@ -392,9 +394,10 @@ export const useSettingsStore = defineStore('settings', () => {
       autoLoadPlugins: true,
       maxPluginLoadTime: 30000,
       enablePluginSandbox: false,
-      trustedPlugins: []
+      trustedPlugins: [],
+      clientPluginMarketUrl: ''
     }
-    
+
     settings.value = defaultSettings
     await saveSettings()
     applyTheme()

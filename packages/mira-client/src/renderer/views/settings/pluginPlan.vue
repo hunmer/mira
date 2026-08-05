@@ -37,6 +37,29 @@
       </div>
     </div>
 
+    <div>
+      <h3 class="text-slate-900 dark:text-slate-100 text-lg font-bold leading-tight tracking-[-0.015em] pb-2 pt-4">插件市场源</h3>
+      <div class="space-y-4">
+        <div>
+          <p class="text-slate-900 dark:text-slate-100 text-base font-normal leading-normal">市场源地址</p>
+          <div class="flex gap-2 mt-1">
+            <Input
+              v-model="clientPluginMarketUrl"
+              placeholder="例如 http://localhost:8080"
+              class="flex-1"
+              @blur="saveMarketUrl"
+            />
+            <Button variant="secondary" @click="saveMarketUrl">
+              <i class="pi pi-check mr-2"></i>保存
+            </Button>
+          </div>
+          <p class="text-slate-600 dark:text-slate-400 text-sm">
+            指向插件市场静态 HTTP 服务的根地址（需提供 plugins.json）。留空则未配置市场源，「插件市场」标签会提示去设置。
+          </p>
+        </div>
+      </div>
+    </div>
+
     <AlertDialog :open="showResetDialog" @update:open="showResetDialog = $event">
       <AlertDialogContent>
         <AlertDialogHeader>
@@ -71,6 +94,7 @@ const settingsStore = useSettingsStore()
 const pluginDirectory = ref('')
 const autoScanEnabled = ref(true)
 const scanInterval = ref(30000) // 30秒
+const clientPluginMarketUrl = ref('')
 
 // 状态
 const resetting = ref(false)
@@ -137,11 +161,13 @@ const confirmReset = async () => {
     pluginDirectory.value = ''
     autoScanEnabled.value = true
     scanInterval.value = 30000
+    clientPluginMarketUrl.value = ''
 
     await settingsStore.updateSettings({
       pluginsDirectory: '',
       autoLoadPlugins: true,
-      trustedPlugins: []
+      trustedPlugins: [],
+      clientPluginMarketUrl: ''
     })
 
     ConfigStorage.removeItem('mira-plugin-extended-settings')
@@ -156,12 +182,26 @@ const confirmReset = async () => {
   }
 }
 
+// 保存插件市场源地址
+const saveMarketUrl = async () => {
+  try {
+    await settingsStore.updateSettings({
+      clientPluginMarketUrl: (clientPluginMarketUrl.value || '').trim()
+    })
+    showToast('success', '成功', '插件市场源地址已保存')
+  } catch (error) {
+    console.error('保存市场源失败:', error)
+    showToast('error', '错误', '保存插件市场源地址失败')
+  }
+}
+
 const loadCurrentSettings = async () => {
   try {
     const currentSettings = settingsStore.settings
 
     pluginDirectory.value = currentSettings.pluginsDirectory || ''
     autoScanEnabled.value = currentSettings.autoLoadPlugins ?? true
+    clientPluginMarketUrl.value = currentSettings.clientPluginMarketUrl || ''
 
     try {
       const extendedSettingsJson = await ConfigStorage.getItem('mira-plugin-extended-settings')
@@ -180,6 +220,7 @@ const loadCurrentSettings = async () => {
     pluginDirectory.value = ''
     autoScanEnabled.value = true
     scanInterval.value = 30000
+    clientPluginMarketUrl.value = ''
   }
 }
 
