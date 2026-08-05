@@ -12,9 +12,9 @@
     <div class="relative">
       <!-- 单选模式 -->
       <div v-if="displayItems.length === 1" class="relative">
-        <div class="relative rounded-xl bg-muted/60 overflow-hidden w-full shadow-sm" style="height: 192px;">
+        <div class="relative w-full flex items-center justify-center" style="height: 192px;">
           <!-- 加载中占位符 -->
-          <div v-if="imageLoadState === 'loading'" class="absolute inset-0 flex items-center justify-center bg-muted">
+          <div v-if="imageLoadState === 'loading'" class="absolute inset-0 flex items-center justify-center">
             <div class="flex flex-col items-center text-muted-foreground">
               <span class="material-icons animate-pulse">image</span>
               <span class="text-xs mt-1">加载中...</span>
@@ -22,7 +22,7 @@
           </div>
 
           <!-- 错误占位符 - 使用文件类型图标 -->
-          <div v-else-if="imageLoadState === 'error'" class="absolute inset-0 flex flex-col items-center justify-center bg-muted">
+          <div v-else-if="imageLoadState === 'error'" class="absolute inset-0 flex flex-col items-center justify-center">
               <img :src="getExtIconUrl(displayItems[0]?.name || '')" class="w-16 h-16 object-contain opacity-60" />
  
           </div>
@@ -33,7 +33,7 @@
             ref="previewImage"
             :alt="displayItems[0].name"
             :src="displayItems[0].url || displayItems[0].thumbnailPath"
-            class="rounded-xl object-contain w-full h-full"
+            class="rounded-xl object-contain max-w-full max-h-full"
             @load="handleImageLoad"
             @error="handleImageError"
           />
@@ -42,16 +42,17 @@
         <div class="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
           {{ getFileExtension(displayItems[0]) }}
         </div>
-        <!-- 颜色提取结果显示 -->
-        <div v-if="extractedColors.length > 0" class="absolute bottom-2 left-2 flex space-x-1">
-          <div
-            v-for="(color, index) in extractedColors"
-            :key="index"
-            :style="{ backgroundColor: `rgb(${color[0]}, ${color[1]}, ${color[2]})` }"
-            class="w-6 h-6 rounded-full border-2 border-white shadow-sm"
-            :title="`RGB(${color[0]}, ${color[1]}, ${color[2]})`"
-          ></div>
-        </div>
+      </div>
+
+      <!-- 颜色提取结果显示（在图片下方） -->
+      <div v-if="displayItems.length === 1 && extractedColors.length > 0" class="flex justify-center space-x-1 mt-2">
+        <div
+          v-for="(color, index) in extractedColors"
+          :key="index"
+          :style="{ backgroundColor: `rgb(${color[0]}, ${color[1]}, ${color[2]})` }"
+          class="w-6 h-6 rounded-full shadow-sm"
+          :title="`RGB(${color[0]}, ${color[1]}, ${color[2]})`"
+        ></div>
       </div>
       
       <!-- 多选模式 - 叠放相册效果 -->

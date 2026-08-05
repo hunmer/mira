@@ -262,9 +262,6 @@ importers:
       vue-sonner:
         specifier: ^2.0.9
         version: 2.0.9
-      vue-waterfall-plugin-next:
-        specifier: ^2.6.9
-        version: 2.6.9
       vue3-lazyload:
         specifier: ^0.3.8
         version: 0.3.8(vue@3.5.13(typescript@5.7.3))
@@ -6300,9 +6297,6 @@ packages:
     hasBin: true
     peerDependencies:
       typescript: '>=5.0.0'
-
-  vue-waterfall-plugin-next@2.6.9:
-    resolution: {integrity: sha512-b6DGrH39RHPebRIVvj3kxBxJABbQx288YXrhBTpdzeA4aHQmHtqpvH8xwOHO+mkmz4WoXrTA5TapzMXjkVZKfQ==}
 
   vue3-lazyload@0.3.8:
     resolution: {integrity: sha512-UiJHRT7mzry102WbhtrRgJh+f8Z8u4Z+H1RU4dvPmQeq7wFSDFxZB9iJOWGihH2FscXN/8rMGLDOQJAmjwqpCg==}
@@ -13231,8 +13225,6 @@ snapshots:
       '@volar/typescript': 2.4.15
       '@vue/language-core': 2.2.12(typescript@5.7.3)
       typescript: 5.7.3
-
-  vue-waterfall-plugin-next@2.6.9: {}
 
   vue3-lazyload@0.3.8(vue@3.5.13(typescript@5.7.3)):
     dependencies:

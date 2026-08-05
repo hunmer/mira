@@ -433,7 +433,9 @@ onUnmounted(() => {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
-  background-color: var(--muted);
+  /* 背景保持中性，使用语义变量，不被主色调染。
+     主题风格(Mira/Lyra/Luma/Rhea)改变 --background 时背景才变化。 */
+  background-color: var(--background);
   color: var(--foreground);
   transition: background-color 250ms ease, color 250ms ease;
 }

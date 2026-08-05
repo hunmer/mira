@@ -281,12 +281,12 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="home-view h-screen flex flex-col text-[13px] bg-gradient-to-br from-[#e3e7f7] via-[#eceefc] to-[#dde3f5] dark:from-muted dark:via-muted dark:to-muted">
+  <div class="home-view h-screen flex flex-col text-[13px]" style="background: linear-gradient(to bottom right, var(--glass-tint-1), var(--glass-tint-2), var(--glass-tint-3))">
     <!-- 主内容区域（左侧栏 + 中间内容 + 右侧列） -->
-    <div class="flex flex-1 overflow-hidden p-3 gap-3">
-      <ResizablePanelGroup direction="horizontal" auto-save-id="home-sidebar" class="flex-1">
+    <div class="flex flex-1 min-h-0 p-3 gap-3">
+      <ResizablePanelGroup direction="horizontal" auto-save-id="home-sidebar" class="flex-1 !overflow-visible">
         <!-- 左侧侧边栏（玻璃面板） -->
-        <ResizablePanel :default-size="20" :min-size="15" class="rounded-2xl border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur-xl shadow-[0_12px_40px_rgba(99,102,241,0.10)] flex flex-col overflow-hidden">
+        <ResizablePanel :default-size="20" :min-size="15" class="rounded-2xl border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur-xl shadow-[0_12px_40px_var(--shadow-primary-md)] flex flex-col overflow-hidden">
           <HomeSidebar
             ref="sidebarRef"
             :home-controller="homeController"
@@ -307,7 +307,7 @@ onUnmounted(() => {
         <ResizableHandle class="w-3 bg-transparent hover:bg-transparent focus-visible:ring-0" />
 
         <!-- 中间列：Tabs 条 + 内容面板 -->
-        <ResizablePanel :default-size="80" :min-size="50" class="flex flex-col min-w-0 overflow-hidden">
+        <ResizablePanel :default-size="80" :min-size="50" class="flex flex-col min-w-0 !overflow-visible">
           <!-- Tabs 条（固定高度与右侧 HomeHeader 对齐，内容面板顶与详情面板顶对齐；隐藏滚动条） -->
           <div class="shrink-0 h-[56px] px-2 flex items-end overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <!-- 导航按钮（原 HomeHeader 迁入） -->
@@ -330,8 +330,8 @@ onUnmounted(() => {
                     :class="[
                       'flex items-center space-x-2 shrink-0 text-sm font-medium transition-colors',
                       tab.active
-                        ? 'relative z-10 px-4 py-2 -mb-px rounded-t-2xl border border-b-0 border-white/60 dark:border-border bg-white/30 dark:bg-muted/50 backdrop-blur-xl text-primary shadow-[0_-4px_16px_rgba(99,102,241,0.06)]'
-                        : 'px-3 py-1.5 mb-0.5 rounded-full text-muted-foreground hover:text-primary hover:bg-white/50 dark:hover:bg-muted/50 hover:backdrop-blur-xl hover:shadow-[0_-4px_16px_rgba(99,102,241,0.06)]'
+                        ? 'relative z-10 px-4 py-2 -mb-px rounded-t-2xl border border-b-0 border-white/60 dark:border-border bg-white/30 dark:bg-muted/50 backdrop-blur-xl text-primary shadow-[0_-4px_16px_var(--shadow-primary-sm)]'
+                        : 'px-3 py-1.5 mb-0.5 rounded-full text-muted-foreground hover:text-primary hover:bg-white/50 dark:hover:bg-muted/50 hover:backdrop-blur-xl hover:shadow-[0_-4px_16px_var(--shadow-primary-sm)]'
                     ]"
                     @click="switchToTabWithCallback(tab.id)"
                     @contextmenu="tab.type === 'home' ? $event.preventDefault() : handleTabContextMenu(tab, $event)"
@@ -364,7 +364,7 @@ onUnmounted(() => {
           </div>
 
           <!-- 内容面板（玻璃磨砂） -->
-          <div class="flex-1 rounded-2xl border border-white/60 dark:border-border bg-white/30 dark:bg-muted/50 backdrop-blur-xl shadow-[0_12px_40px_rgba(99,102,241,0.10)] overflow-hidden flex flex-col">
+          <div class="flex-1 rounded-2xl border border-white/60 dark:border-border bg-white/30 dark:bg-muted/50 backdrop-blur-xl shadow-[0_12px_40px_var(--shadow-primary-md)] overflow-hidden flex flex-col">
             <main ref="mainContentRef" class="flex-1 flex overflow-hidden relative min-w-0 p-2 gap-2">
               <!-- Tab视图内容（占满） -->
               <div class="flex-1 min-w-0 overflow-hidden rounded-xl">
@@ -379,7 +379,7 @@ onUnmounted(() => {
                 />
                 <!-- 默认状态 - 没有活跃的Tab时显示 -->
                 <div v-if="!currentTab" class="flex items-center justify-center h-full">
-                  <div class="text-center rounded-2xl border border-white/60 dark:border-border bg-white/50 dark:bg-muted/70 backdrop-blur-xl shadow-[0_12px_40px_rgba(99,102,241,0.10)] px-10 py-8">
+                  <div class="text-center rounded-2xl border border-white/60 dark:border-border bg-white/50 dark:bg-muted/70 backdrop-blur-xl shadow-[0_12px_40px_var(--shadow-primary-md)] px-10 py-8">
                     <span class="material-icons text-6xl text-primary/60 mb-4">home</span>
                     <h2 class="text-xl font-medium text-foreground mb-2">欢迎使用 Mira</h2>
                     <p class="text-muted-foreground">从左侧选择文件夹或标签来开始浏览您的媒体文件</p>
@@ -408,7 +408,7 @@ onUnmounted(() => {
         <!-- 图片简略信息面板（从中间区域迁出） -->
         <aside
           v-if="showDetailSidebar"
-          class="w-72 flex-1 rounded-2xl border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur-xl shadow-[0_12px_40px_rgba(99,102,241,0.10)] overflow-hidden flex flex-col"
+          class="w-72 flex-1 rounded-2xl border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur-xl shadow-[0_12px_40px_var(--shadow-primary-md)] overflow-hidden flex flex-col"
         >
           <div class="p-4 flex-1 overflow-y-auto">
             <MediaDetailComponent
@@ -447,6 +447,19 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+/* 玻璃态中性背景与阴影：使用语义变量，不被主色调染。
+   切换主色调色板时背景不变（保持中性），
+   切换主题风格(Mira/Lyra/Luma/Rhea)时 --background/--muted 改变才联动。 */
+.home-view {
+  /* 中性背景渐变：background → muted 过渡，营造轻微层次感。 */
+  --glass-tint-1: var(--background);
+  --glass-tint-2: color-mix(in oklch, var(--background) 50%, var(--muted));
+  --glass-tint-3: var(--muted);
+  /* 中性阴影：基于 foreground 的低透明色（浅色偏黑、深色偏白），不偏色。 */
+  --shadow-primary-sm: color-mix(in oklch, var(--foreground) 6%, transparent);
+  --shadow-primary-md: color-mix(in oklch, var(--foreground) 10%, transparent);
+}
+
 .material-icons,
 .material-symbols-outlined {
   font-size: 18px;

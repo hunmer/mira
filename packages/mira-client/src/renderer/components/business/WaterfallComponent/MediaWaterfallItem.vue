@@ -3,16 +3,16 @@
     :data-selectable-id="item.id"
     :data-file="getLocalFile(item)"
     :class="[
-      'waterfall-card media-waterfall-item group relative cursor-pointer transition-all duration-200 rounded-xl overflow-hidden',
+      'waterfall-card media-waterfall-item group relative cursor-pointer transition-all duration-200 rounded-xl overflow-hidden h-full w-full',
       isSelected
         ? 'ring-2 ring-primary'
         : 'shadow-sm hover:shadow-[0_12px_36px_rgba(99,102,241,0.15)] hover:-translate-y-0.5'
     ]"
     @click="handleClick"
   >
-    <!-- 图片/视频容器 - 使用固定高度避免视频播放时布局变化 -->
+    <!-- 图片/视频容器 - Masonry 已通过定位框给定精确高度，内部直接 h-full 填满 -->
     <div
-      class="relative w-full"
+      class="relative w-full h-full"
       :style="mediaContainerStyle"
       @dblclick="handleDoubleClick"
       @contextmenu.prevent="handleContextMenu"
@@ -99,7 +99,7 @@
       <!-- 文件名 (玻璃浮层，非视频预览时显示) -->
       <div
         v-show="!isVideoPlaying"
-        class="absolute bottom-0 left-0 right-0 p-2"
+        class="absolute bottom-0 left-0 right-0 p-2 rounded-b-xl"
         :class="isSelected ? 'bg-primary/90' : 'bg-white/80 dark:bg-muted/80 backdrop-blur'"
       >
         <h3

@@ -13,27 +13,21 @@
     @clear-selection="handleClearSelection"
     @pointerdown.capture="focusSelectionBox"
   >
-    <Waterfall
-      ref="waterfallRef"
-      :list="waterfallItems"
-      :row-key="rowKey"
-      :gutter="gap"
-      :width="columnWidth"
-      :breakpoints="breakpoints"
-      :img-selector="imgSelector"
-      :background-color="backgroundColor"
-      :animation-effect="animationEffect"
-      :animation-duration="animationDuration"
-      :animation-delay="animationDelay"
-      :lazyload="lazyload"
-      :load-props="loadProps"
-      :align="align"
+    <Masonry
+      :data="waterfallItems"
+      :get-key="getKey"
+      :get-meta="getMeta"
+      :columns="columns"
+      :gap="gap"
+      :class="waterfallClass"
+      :layout-transition="layoutTransition"
+      :lazy-root-margin="lazyRootMargin"
       @after-render="handleAfterRender"
     >
-      <template #default="{ item, url }">
+      <template #default="{ item }">
         <MediaWaterfallItem
           :item="item"
-          :url="url"
+          :url="item.url"
           :ratio="item.ratio"
           :is-selected="selectedItems.includes(item.id)"
           :is-video-playing="currentVideoItem?.id === item.id"
@@ -64,17 +58,16 @@
           </template>
         </MediaWaterfallItem>
       </template>
-    </Waterfall>
+    </Masonry>
   </SelectionBox>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { Waterfall } from 'vue-waterfall-plugin-next'
-import 'vue-waterfall-plugin-next/dist/style.css'
 import SelectionBox from '../common/SelectionBox.vue'
 import MediaWaterfallItem from './WaterfallComponent/MediaWaterfallItem.vue'
 import VideoPreviewContainer from './MediaGridComponent/VideoPreviewContainer.vue'
+import { Masonry, type MasonryColumns, type MasonryItemMeta } from '@/components/ui/masonry'
 import type { FileInfo } from '../../../shared/types'
 import { useSettingsStore } from '../../stores/settings'
 import { useDragDrop } from './MediaGridComponent/composables/useDragDrop'
@@ -89,6 +82,7 @@ interface Props {
   columnsPerRow?: number
   gap?: number
   rowKey?: string
+  /** 以下字段保留以向后兼容（原 vue-waterfall-plugin-next 专用），内部已忽略 */
   imgSelector?: string
   backgroundColor?: string
   animationEffect?: string
@@ -96,6 +90,16 @@ interface Props {
   animationDelay?: number
   lazyload?: boolean
   align?: 'left' | 'center' | 'right'
+  /** 宽图占多列阈值（基于缩略图宽高比 width/height）：aspect >= 此值占 2 列 */
+  wideAspectThreshold?: number
+  /** 超宽图占 3 列阈值：aspect >= 此值占 3 列 */
+  ultraWideAspectThreshold?: number
+  /** 单个 item 最多占用列数上限 */
+  maxColSpan?: number
+  /** 排序/列数变化时的 layout 平滑过渡，默认 true；大量 item 卡顿可关闭 */
+  layoutTransition?: boolean
+  /** 懒加载触发的 IntersectionObserver rootMargin */
+  lazyRootMargin?: string
 }
 
 interface Emits {
@@ -119,13 +123,17 @@ const props = withDefaults(defineProps<Props>(), {
   animationDuration: 1000,
   animationDelay: 300,
   lazyload: true,
-  align: 'center'
+  align: 'center',
+  wideAspectThreshold: 1.6,
+  ultraWideAspectThreshold: 2.4,
+  maxColSpan: 3,
+  layoutTransition: true,
+  lazyRootMargin: '300px 0px'
 })
 
 const emit = defineEmits<Emits>()
 
 const selectionBoxRef = ref<InstanceType<typeof SelectionBox> | null>(null)
-const waterfallRef = ref()
 const thumbnailRatios = ref<Record<string, number>>({})
 const thumbnailRatiosReady = ref(false)
 const initialRatioPreloadCount = computed(() => Math.max(props.columnsPerRow * 4, 16))
@@ -165,14 +173,9 @@ watch(
   { immediate: true }
 )
 
-// 调试：监控当前视频项变化
-watch(currentVideoItem, (newItem) => {
-  if (newItem) {
-
-  }
-})
-
-// 预加载缩略图真实比例，避免图片进入视口后再改变瀑布流高度。
+// 加载缩略图真实比例，避免图片进入视口后再改变瀑布流高度。
+// 策略：首屏前 N 个同步预加载（等真实比例再渲染，避免布局抖动）；
+//       其余项按需异步加载，加载完成后更新比例并触发布局重算。
 let preloadVersion = 0
 
 const getItemUrl = (item: FileInfo): string => item.thumbnailPath || item.url || ''
@@ -200,16 +203,16 @@ const readImageRatio = (url: string): Promise<number | null> => {
 const preloadThumbnailRatios = async (items: FileInfo[]) => {
   const currentVersion = ++preloadVersion
   thumbnailRatiosReady.value = false
-  thumbnailRatios.value = {}
 
-  const entries = await Promise.all(items.slice(0, initialRatioPreloadCount.value).map(async (item) => {
+  // 首屏前 N 个：同步预加载，等真实比例再渲染（避免首屏布局抖动）。
+  const headEntries = await Promise.all(items.slice(0, initialRatioPreloadCount.value).map(async (item) => {
     const ratio = await readImageRatio(getItemUrl(item))
     return ratio ? [item.id, ratio] as const : null
   }))
 
   if (currentVersion !== preloadVersion) return
 
-  thumbnailRatios.value = entries.reduce<Record<string, number>>((ratios, entry) => {
+  thumbnailRatios.value = headEntries.reduce<Record<string, number>>((ratios, entry) => {
     if (entry) {
       ratios[entry[0]] = entry[1]
     }
@@ -217,6 +220,31 @@ const preloadThumbnailRatios = async (items: FileInfo[]) => {
     return ratios
   }, {})
   thumbnailRatiosReady.value = true
+
+  // 首屏外的项按需异步加载真实比例，加载完成后更新（覆盖 hash fallback）。
+  // 这样首屏外的宽图也能正确占多列。
+  void loadRemainingRatios(items)
+}
+
+// 异步加载尚未测量的 item 比例（限并发，避免一次性发起上千请求），
+// 每批完成后更新 thumbnailRatios，触发 waterfallItems / Masonry 重算。
+const loadingRatioIds = new Set<string>()
+const RATIO_CONCURRENCY = 12
+const loadRemainingRatios = async (items: FileInfo[]) => {
+  const pending = items.filter(item => !thumbnailRatios.value[item.id] && !loadingRatioIds.has(item.id))
+  let cursor = 0
+  const runWorker = async () => {
+    while (cursor < pending.length) {
+      const item = pending[cursor++]
+      loadingRatioIds.add(item.id)
+      const ratio = await readImageRatio(getItemUrl(item))
+      loadingRatioIds.delete(item.id)
+      if (ratio && !thumbnailRatios.value[item.id]) {
+        thumbnailRatios.value = { ...thumbnailRatios.value, [item.id]: ratio }
+      }
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(RATIO_CONCURRENCY, pending.length) }, runWorker))
 }
 
 watch(
@@ -227,13 +255,19 @@ watch(
   { immediate: true }
 )
 
+// hash fallback：未加载真实比例前给一个稳定占位比例，避免空白布局。
+// 占位值范围压在 [0.8, 1.3]，待真实比例加载后由 loadRemainingRatios 覆盖。
+const fallbackRatio = (item: FileInfo): number => {
+  let seed = 0
+  for (let i = 0; i < item.id.length; i++) seed = ((seed << 5) - seed + item.id.charCodeAt(i)) | 0
+  return (Math.abs(seed) % 50) / 100 + 0.8
+}
+
 const getItemRatio = (item: FileInfo): number => {
   const thumbnailRatio = thumbnailRatios.value[item.id]
   if (thumbnailRatio) return thumbnailRatio
 
-  let seed = 0
-  for (let i = 0; i < item.id.length; i++) seed = ((seed << 5) - seed + item.id.charCodeAt(i)) | 0
-  return (Math.abs(seed) % 50) / 100 + 0.8
+  return fallbackRatio(item)
 }
 
 const waterfallItems = computed(() => {
@@ -246,39 +280,46 @@ const waterfallItems = computed(() => {
   }))
 })
 
-// 响应式断点配置 - 使用固定列数
-const breakpoints = computed(() => ({
-  1200: {
-    rowPerView: props.columnsPerRow
-  },
-  800: {
-    rowPerView: Math.max(Math.floor(props.columnsPerRow * 0.75), 2)
-  },
-  500: {
-    rowPerView: Math.max(Math.floor(props.columnsPerRow * 0.5), 2)
+// Masonry 响应式列数：对齐原 breakpoints 行为（移动优先）
+// 原断点：1200+ 用 columnsPerRow；800+ 缩到 75%；500+ 缩到 50%；其余最少 2 列
+// 映射到 Tailwind 断点（sm640/md768/lg1024/xl1280）
+const columns = computed<MasonryColumns>(() => {
+  const md = Math.max(Math.floor(props.columnsPerRow * 0.75), 2)
+  const sm = Math.max(Math.floor(props.columnsPerRow * 0.5), 2)
+  return {
+    base: 2,
+    sm,
+    md,
+    lg: md,
+    xl: props.columnsPerRow
   }
-}))
+})
 
-// 懒加载配置 - rootMargin 提前加载视口外的图片，避免滚动时重排
-const loadProps = computed(() => ({
-  loading: '',
-  error: '',
-  observerOptions: {
-    rootMargin: '300px 0px'
-  },
-  ratioCalculator: (width: number, height: number) => {
-    const minRatio = 0.6
-    const maxRatio = 1.8
-    const curRatio = width / height
+// 计算宽图占列数（基于 aspect = width/height）
+// 注意：列数未知时按 columnsPerRow 近似，Masonry 内部会再 Math.min(colSpan, columns) 兜底
+const computeColSpan = (ratio: number): number => {
+  if (ratio >= props.ultraWideAspectThreshold) return 3
+  if (ratio >= props.wideAspectThreshold) return 2
+  return 1
+}
 
-    if (curRatio < minRatio) {
-      return minRatio
-    } else if (curRatio > maxRatio) {
-      return maxRatio
-    } else {
-      return curRatio
-    }
+const getKey = (item: FileInfo & { ratio?: number }, index: number): string | number =>
+  item.id ?? index
+
+const getMeta = (item: FileInfo & { ratio?: number }, _index: number): MasonryItemMeta => {
+  const ratio = item.ratio ?? 1
+  const desired = computeColSpan(ratio)
+  // 保证旁边还能放普通项：最多占用 columns-1 列（columnsPerRow 近似）
+  const colSpan = Math.min(Math.max(desired, 1), Math.max(props.columnsPerRow - 1, 1), props.maxColSpan)
+  return {
+    colSpan,
+    aspect: `${ratio}:1`, // Masonry 按宽度算高度，多列时高度自动按比例放大
+    lazy: props.lazyload
   }
+}
+
+const waterfallClass = computed(() => ({
+  'justify-center': props.align === 'center'
 }))
 
 // 事件处理
@@ -354,12 +395,15 @@ const handleAfterRender = () => {
   emit('after-render')
 }
 
-// 暴露重新渲染方法
+// 暴露重新渲染方法（响应式已自动重算，refresh 作为保险触发一次重新布局）
+const forceTick = ref(0)
 const refresh = () => {
-  if (waterfallRef.value) {
-    waterfallRef.value.renderer()
-  }
+  forceTick.value++
 }
+// watch forceTick 触发 thumbnailRatio 重新读取（无副作用，仅触发依赖收集）
+watch(forceTick, () => {
+  void preloadThumbnailRatios(props.items)
+})
 
 const handleImageError = (url: string) => {
   console.error('Image load error:', url)
@@ -399,7 +443,7 @@ const handleMouseMove = (item: FileInfo, event: MouseEvent) => {
 }
 
 // Video preview event handlers
-const onVideoPreviewLoaded = (payload: { duration: number }) => {
+const onVideoPreviewLoaded = (_payload: { duration: number }) => {
   // console.log('Video loaded with duration:', payload.duration)
 }
 

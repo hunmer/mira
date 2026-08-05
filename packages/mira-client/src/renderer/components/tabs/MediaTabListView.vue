@@ -277,7 +277,6 @@
 
         <!-- 当前路径和文件数 -->
         <div class="flex items-center space-x-1">
-          <span class="material-icons text-sm text-muted-foreground dark:text-muted-foreground">folder_open</span>
           <span class="text-muted-foreground dark:text-muted-foreground">
             {{ filteredMediaItems.length }} 个文件
           </span>
@@ -287,7 +286,6 @@
       <div class="flex items-center space-x-4">
         <!-- 已选择素材 - 仅在有选择时显示 -->
         <div v-if="selectedItems.length > 0" class="flex items-center space-x-1">
-          <span class="material-icons text-sm text-primary">check_circle</span>
           <span class="text-primary font-medium">
             已选择 {{ selectedItems.length }} 个素材
           </span>
