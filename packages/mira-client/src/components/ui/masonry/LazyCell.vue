@@ -9,6 +9,7 @@ import { onBeforeUnmount, onMounted, ref } from "vue"
 const props = defineProps<{
   lazy?: boolean
   rootMargin?: string
+  placeholderColor?: string
 }>()
 
 const cellRef = ref<HTMLElement | null>(null)
@@ -37,7 +38,11 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="cellRef" class="h-full w-full">
+  <div
+    ref="cellRef"
+    class="h-full min-h-0 w-full min-w-0 overflow-hidden"
+    :style="{ backgroundColor: props.placeholderColor }"
+  >
     <!-- lazy=false 时忽略 inView，直接渲染 -->
     <slot v-if="!props.lazy || inView" />
   </div>

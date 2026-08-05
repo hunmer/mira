@@ -83,6 +83,27 @@ interface PlacedItem<T> {
   lazy: boolean
 }
 
+const PLACEHOLDER_COLORS = [
+  "#dbeafe",
+  "#dcfce7",
+  "#fef3c7",
+  "#fee2e2",
+  "#ede9fe",
+  "#cffafe",
+  "#fce7f3",
+  "#e2e8f0"
+] as const
+
+/** 根据稳定 key 生成稳定的随机感占位色，避免响应式重渲染时闪色。 */
+function placeholderColor(key: string | number): string {
+  const value = String(key)
+  let hash = 0
+  for (let i = 0; i < value.length; i++) {
+    hash = (hash * 31 + value.charCodeAt(i)) | 0
+  }
+  return PLACEHOLDER_COLORS[Math.abs(hash) % PLACEHOLDER_COLORS.length]
+}
+
 /** 贪心布局：每个 item 放到连续 colSpan 列中"当前最矮"的位置 */
 function layout<T>(
   data: T[],
@@ -390,10 +411,16 @@ watch(
           left: p.left,
           top: p.top,
           width: p.width,
-          height: p.height
+          height: p.height,
+          overflow: 'hidden',
+          contain: 'layout paint'
         }"
       >
-        <LazyCell :lazy="p.lazy" :root-margin="props.lazyRootMargin">
+        <LazyCell
+          :lazy="p.lazy"
+          :root-margin="props.lazyRootMargin"
+          :placeholder-color="placeholderColor(p.key)"
+        >
           <slot :item="p.item" :index="p.index" />
         </LazyCell>
       </Motion>

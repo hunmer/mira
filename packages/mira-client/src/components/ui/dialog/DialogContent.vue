@@ -9,6 +9,7 @@ import {
   DialogPortal,
   useForwardPropsEmits,
 } from "reka-ui"
+import { Motion } from "motion-v"
 import { cn } from "@/lib/utils"
 import DialogOverlay from "./DialogOverlay.vue"
 
@@ -30,25 +31,32 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
   <DialogPortal>
     <DialogOverlay />
     <DialogContent
-      data-slot="dialog-content"
       v-bind="{ ...$attrs, ...forwarded }"
-      :class="
-        cn(
-          'bg-white/70 dark:bg-muted/80 backdrop-blur-xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-2xl border border-white/60 dark:border-border p-6 shadow-[0_24px_60px_rgba(99,102,241,0.15)] duration-200 sm:max-w-lg',
-          props.class,
-        )"
+      as-child
     >
-      <slot />
-
-      <DialogClose
-        v-if="showCloseButton"
-        data-slot="dialog-close"
-        class="ring-offset-background focus:ring-ring group absolute top-4 right-4 flex items-center justify-center rounded-lg p-1 text-muted-foreground opacity-70 transition-all hover:bg-destructive/10 hover:text-destructive hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg]:transition-transform group-hover:[&_svg]:rotate-90"
+      <Motion
+        as="div"
+        data-slot="dialog-content"
+        :initial="{ opacity: 0, transform: 'translate3d(-50%, calc(-50% + 12px), 0) scale(0.96)' }"
+        :animate="{ opacity: 1, transform: 'translate3d(-50%, -50%, 0) scale(1)' }"
+        :transition="{ duration: 0.24, ease: [0.23, 1, 0.32, 1] }"
+        :class="
+          cn(
+            'bg-white/70 dark:bg-muted/80 backdrop-blur-xl data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] gap-4 rounded-2xl border border-white/60 dark:border-border p-6 shadow-[0_24px_60px_rgba(99,102,241,0.15)] duration-200 sm:max-w-lg',
+            props.class,
+          )"
       >
-        <X />
-        <span class="sr-only">Close</span>
-      </DialogClose>
+        <slot />
+
+        <DialogClose
+          v-if="showCloseButton"
+          data-slot="dialog-close"
+          class="ring-offset-background focus:ring-ring group absolute top-4 right-4 flex items-center justify-center rounded-lg p-1 text-muted-foreground opacity-70 transition-all hover:bg-destructive/10 hover:text-destructive hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg]:transition-transform group-hover:[&_svg]:rotate-90"
+        >
+          <X />
+          <span class="sr-only">Close</span>
+        </DialogClose>
+      </Motion>
     </DialogContent>
   </DialogPortal>
 </template>
-

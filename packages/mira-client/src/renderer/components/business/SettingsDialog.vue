@@ -51,6 +51,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import GeneralPanel from '../../views/settings/GeneralPanel.vue'
 import NotificationsPanel from '../../views/settings/NotificationsPanel.vue'
 import ImportPanel from '../../views/settings/ImportPanel.vue'
+import FloatingBallPanel from '../../views/settings/FloatingBallPanel.vue'
 import PluginsPanel from '../../views/settings/pluginPlan.vue'
 import DataPanel from '../../views/settings/DataPanel.vue'
 import PlaygroundPanel from '../../views/settings/PlaygroundPanel.vue'
@@ -91,6 +92,7 @@ const currentComponent = computed(() => {
     general: GeneralPanel,
     notifications: NotificationsPanel,
     import: ImportPanel,
+    'floating-ball': FloatingBallPanel,
     plugins: PluginsPanel,
     data: DataPanel,
     playground: PlaygroundPanel

@@ -7,7 +7,8 @@ export default defineConfig({
       input: {
         preload: resolve(__dirname, 'src/preload/preload.ts'),
         'search-preload': resolve(__dirname, 'src/preload/search-preload.js'),
-        'notification-preload': resolve(__dirname, 'src/preload/notification-preload.js')
+        'notification-preload': resolve(__dirname, 'src/preload/notification-preload.js'),
+        'floating-ball-preload': resolve(__dirname, 'src/preload/floating-ball-preload.js')
       },
       output: {
         format: 'cjs',

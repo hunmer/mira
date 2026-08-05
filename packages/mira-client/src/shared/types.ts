@@ -297,6 +297,9 @@ export type NotificationAnimation =
   | 'bounce'     // 弹跳
   | 'none'       // 无动画
 
+/** 悬浮球点击行为：打开上传对话框 / 切换主窗口 */
+export type FloatingBallClickAction = 'openUpload' | 'toggleMain'
+
 // 通知窗口载荷（结构化字段 + 可选任意 HTML）
 export interface NotificationPayload {
   /** 标题（必填） */
@@ -466,6 +469,19 @@ export interface ElectronAPI {
     hide: () => Promise<void>
     /** 关闭指定通知（传 id）或全部（不传） */
     dismiss: (id?: number) => Promise<void>
+  }
+
+  // 悬浮球窗口 API（单实例，可拖拽 / 接收文件拖放 / 持久化位置）
+  floatingBall: {
+    show: () => Promise<void>
+    hide: () => Promise<void>
+    toggle: () => Promise<void>
+    /** 设置位置；传 null 重置到默认（右下角）并清除持久化 */
+    setPosition: (pos?: { x: number; y: number } | null) => Promise<void>
+    /** 读取当前坐标（窗口未创建时返回上次持久化的坐标或 null） */
+    getState: () => Promise<{ x: number; y: number } | null>
+    /** 切换主渲染窗口显示/隐藏（点击行为 toggleMain 时由渲染进程调用） */
+    toggleMainWindow: () => Promise<void>
   }
 
   // 兼容性API（用于插件）

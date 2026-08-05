@@ -77,7 +77,8 @@ export default defineConfig({
           entry: {
             preload: 'src/preload/preload.ts',
             'search-preload': 'src/preload/search-preload.js',
-            'notification-preload': 'src/preload/notification-preload.js'
+            'notification-preload': 'src/preload/notification-preload.js',
+            'floating-ball-preload': 'src/preload/floating-ball-preload.js'
           },
           onstart(options) {
             // 通知渲染进程重新加载页面

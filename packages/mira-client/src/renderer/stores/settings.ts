@@ -48,6 +48,12 @@ export interface AppSettings {
   // 导入设置
   directImportMode: boolean
 
+  // 悬浮球设置
+  /** 是否启用悬浮球（默认关闭，opt-in） */
+  floatingBallEnabled: boolean
+  /** 悬浮球单击行为：打开上传对话框 / 切换主窗口 */
+  floatingBallClickAction: 'openUpload' | 'toggleMain'
+
   // 高级设置
   debugMode: boolean
   enableNotifications: boolean
@@ -159,6 +165,10 @@ export const useSettingsStore = defineStore('settings', () => {
 
     // 导入设置
     directImportMode: false,
+
+    // 悬浮球设置
+    floatingBallEnabled: false,
+    floatingBallClickAction: 'openUpload',
 
     // 高级设置
     debugMode: false,
@@ -415,6 +425,8 @@ export const useSettingsStore = defineStore('settings', () => {
       maxConcurrentUploads: 3,
       videoPreviewMuted: true,
       directImportMode: false,
+      floatingBallEnabled: false,
+      floatingBallClickAction: 'openUpload',
       debugMode: false,
       enableNotifications: true,
       enableImportNotifications: true,

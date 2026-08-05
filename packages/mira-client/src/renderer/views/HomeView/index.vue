@@ -1,6 +1,6 @@
 <script setup lang="ts">
 defineOptions({ name: 'Home' })
-import { ref, computed, onMounted, onUnmounted, onActivated, onDeactivated, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, onActivated, onDeactivated, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 // 布局组件
@@ -23,6 +23,7 @@ import { useTagStore } from '@renderer/stores/tag'
 import { useAuthStore } from '@renderer/stores/auth'
 import { useMediaStore } from '@renderer/stores/media'
 import { useLibraryStore } from '@renderer/stores/library'
+import { useSettingsStore } from '@renderer/stores/settings'
 
 // Controller import
 import { useHomeController } from '@renderer/controllers/HomeController'
@@ -45,6 +46,7 @@ const tagStore = useTagStore()
 const authStore = useAuthStore()
 const mediaStore = useMediaStore()
 const libraryStore = useLibraryStore()
+const settingsStore = useSettingsStore()
 const router = useRouter()
 
 // ============================================
@@ -131,6 +133,39 @@ function handleImportFolder(payload: { rootPath: string; tree: any[] }) {
   showFileUploadDialog.value = true
 }
 
+// ============ 悬浮球：接收主进程转发的消息 ============
+// file-drop：悬浮球拖入的文件（已是含 path 的 LocalFsNode[]），复用上传对话框的本地导入链路
+function handleFloatingBallMessage(data: any) {
+  if (!data || typeof data !== 'object') return
+  if (data.type === 'file-drop') {
+    const files = Array.isArray(data.files) ? data.files : []
+    if (files.length === 0) return
+    uploadInitialTree.value = { rootPath: '', tree: files }
+    showFileUploadDialog.value = true
+  } else if (data.type === 'fb-click') {
+    // 单击行为按设置决定
+    const action = settingsStore.settings.floatingBallClickAction
+    if (action === 'toggleMain') {
+      // 切换主窗口显示/隐藏
+      window.electronAPI?.floatingBall?.toggleMainWindow().catch((e) => console.error('切换主窗口失败:', e))
+    } else {
+      // 默认：打开文件上传对话框（空列表）
+      uploadInitialTree.value = undefined
+      showFileUploadDialog.value = true
+    }
+  }
+}
+
+// 悬浮球开关响应：启用则显示，关闭则隐藏
+function applyFloatingBallEnabled(enabled: boolean) {
+  if (!window.electronAPI?.floatingBall) return
+  if (enabled) {
+    window.electronAPI.floatingBall.show().catch((e) => console.error('显示悬浮球失败:', e))
+  } else {
+    window.electronAPI.floatingBall.hide().catch((e) => console.error('隐藏悬浮球失败:', e))
+  }
+}
+
 // ============================================
 // 素材库管理
 // ============================================
@@ -214,6 +249,24 @@ onMounted(async () => {
     handleReopenClosedTab,
     handleCloseCurrentTab
   )
+
+  // 悬浮球：监听主进程转发的消息（文件拖放 / 单击）
+  window.electronAPI?.on('floating-ball-from-window', handleFloatingBallMessage)
+
+  // 悬浮球：应用当前启用设置（设置已由 settingsStore.initialize() 加载完成）
+  try {
+    if (settingsStore.settings.floatingBallEnabled) {
+      applyFloatingBallEnabled(true)
+    }
+  } catch (e) {
+    console.error('[HomeView] 应用悬浮球初始状态失败:', e)
+  }
+
+  // 悬浮球：响应设置中开关变化
+  watch(
+    () => settingsStore.settings.floatingBallEnabled,
+    (enabled) => applyFloatingBallEnabled(enabled)
+  )
 })
 
 // ============================================
@@ -263,6 +316,8 @@ onUnmounted(() => {
     handleReopenClosedTab,
     handleCloseCurrentTab
   )
+  // 悬浮球：移除监听
+  window.electronAPI?.removeAllListeners('floating-ball-from-window')
 })
 </script>
 

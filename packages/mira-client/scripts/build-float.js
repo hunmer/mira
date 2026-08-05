@@ -32,6 +32,9 @@ const filesToCopy = [
   // notification-window
   ['src/notification-window/notification-window.html', 'notification-window.html'],
   ['src/notification-window/notification-window.js', 'notification-window.js'],
+  // floating-ball-window
+  ['src/floating-ball-window/floating-ball-window.html', 'floating-ball-window.html'],
+  ['src/floating-ball-window/floating-ball-window.js', 'floating-ball-window.js'],
   // floating-window core
   ['src/floating-window/floating-window-core.js', 'floating-window-core.js'],
   // shared vue vendor

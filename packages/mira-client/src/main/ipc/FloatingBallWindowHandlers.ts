@@ -9,7 +9,7 @@ import { FloatingWindowHandler } from './FloatingWindowHandler'
  * 基于 FloatingWindowHandler 通用模板，承载悬浮球特有逻辑：
  *   - 自定义全向拖拽（nt-drag-*），松手 clamp 到屏幕内并持久化坐标
  *   - 接收文件拖放（fb-file-drop），转发主渲染进程触发 FileUploadDialog
- *   - 单击行为可配置（fb-click）：打开上传对话框 / 切换主窗口
+ *   - 单击行为可配置（fb-click）：由主渲染进程按设置决定（打开上传 / 切换主窗口）
  *
  * 位置持久化：写 userData/floating-ball-state.json，与 AppSettings 解耦。
  *
@@ -18,7 +18,7 @@ import { FloatingWindowHandler } from './FloatingWindowHandler'
  *   - floating-ball:set-position（null=重置）
  *   - floating-ball:get-state（读取当前坐标）
  *
- * 主渲染进程 → 悬浮球：通过 floating-ball-from-window 通道下发业务消息。
+ * 主渲染进程 ← 悬浮球：通过 floating-ball-from-window 通道下发业务消息。
  */
 
 /** 悬浮球点击行为（与 AppSettings.floatingBallClickAction 对齐） */
@@ -38,7 +38,11 @@ export class FloatingBallWindowHandlers {
   private dragStartPos: { x: number; y: number } | null = null
 
   constructor() {
-    this.handler = new (class extends FloatingWindowHandler {
+    // 用 self 捕获外层实例，供 messageHandlers 内的箭头函数访问
+    // （参考 NotificationWindowHandlers.createSlotHandler 的写法）
+    const self = this
+
+    this.handler = new (class FloatingBallHandler extends FloatingWindowHandler {
       constructor() {
         super({
           name: 'floating-ball',
@@ -60,41 +64,41 @@ export class FloatingBallWindowHandlers {
             'fb-ready': () => {
               /* 窗口已就绪 */
             },
-            'fb-click': (_data, ctx) => {
-              // 点击行为由主渲染进程的设置决定；这里先转发一个统一 click 消息，
-              // 由主渲染进程根据 floatingBallClickAction 决定具体动作，
-              // 避免 main 进程反向查询渲染进程设置（解耦）。
-              ctx.send && forwardToMain({ type: 'fb-click' })
+            // 点击行为由主渲染进程按 floatingBallClickAction 设置决定
+            // （main 进程不反向查询渲染进程设置，保持解耦）
+            'fb-click': () => {
+              self.forwardToMain({ type: 'fb-click' })
             },
-            'fb-file-drop': (data, ctx) => {
+            // 接收文件拖放：转发主渲染进程，并激活主窗口
+            'fb-file-drop': (data) => {
               const files = Array.isArray(data.files) ? data.files : []
               if (files.length === 0) return
-              forwardToMain({ type: 'file-drop', files })
-              ctx.getMainWindow?.()?.show()
+              self.forwardToMain({ type: 'file-drop', files })
+              self.showMainWindow()
             },
             // 自定义全向拖拽（无轴向/方向限制）
-            'nt-drag-start': (_data, _ctx) => {
-              const win = this.handler.getWindow()
+            'nt-drag-start': () => {
+              const win = self.handler.getWindow()
               if (win && !win.isDestroyed()) {
                 const b = win.getBounds()
-                this.dragStartPos = { x: b.x, y: b.y }
+                self.dragStartPos = { x: b.x, y: b.y }
               }
             },
-            'nt-drag-move': (data, _ctx) => {
-              const win = this.handler.getWindow()
-              if (!win || win.isDestroyed() || !this.dragStartPos) return
+            'nt-drag-move': (data) => {
+              const win = self.handler.getWindow()
+              if (!win || win.isDestroyed() || !self.dragStartPos) return
               const dx = Number(data.deltaX || 0)
               const dy = Number(data.deltaY || 0)
-              const nx = this.dragStartPos.x + dx
-              const ny = this.dragStartPos.y + dy
+              const nx = self.dragStartPos.x + dx
+              const ny = self.dragStartPos.y + dy
               win.setPosition(Math.round(nx), Math.round(ny), false)
             },
-            'nt-drag-end': (_data, _ctx) => {
-              this.dragStartPos = null
-              const win = this.handler.getWindow()
+            'nt-drag-end': () => {
+              self.dragStartPos = null
+              const win = self.handler.getWindow()
               if (!win || win.isDestroyed()) return
-              this.handler.clampToScreen()
-              this.persistPosition()
+              self.handler.clampToScreen()
+              self.persistPosition()
             },
           },
         })
@@ -102,7 +106,7 @@ export class FloatingBallWindowHandlers {
 
       protected onReadyToShow(): void {
         // 创建后恢复上次位置（若已持久化）
-        this.restorePosition()
+        self.restorePosition()
         this.doShow()
       }
     })()
@@ -110,6 +114,7 @@ export class FloatingBallWindowHandlers {
     // 自有业务 IPC
     ipcMain.handle('floating-ball:set-position', (_e, pos) => this.setPosition(pos))
     ipcMain.handle('floating-ball:get-state', () => this.getState())
+    ipcMain.handle('floating-ball:toggle-main', () => this.toggleMainWindow())
   }
 
   // ============ 对外公共方法 ============
@@ -154,6 +159,22 @@ export class FloatingBallWindowHandlers {
     return this.readPersistedPosition()
   }
 
+  /**
+   * 切换主渲染窗口的显示状态：
+   * 最小化/隐藏时显示并聚焦，否则最小化。
+   */
+  public async toggleMainWindow(): Promise<void> {
+    const main = this.getMainWindow()
+    if (!main || main.isDestroyed()) return
+    if (main.isMinimized() || !main.isVisible()) {
+      main.restore()
+      main.show()
+      main.focus()
+    } else {
+      main.minimize()
+    }
+  }
+
   public getHandler(): FloatingWindowHandler {
     return this.handler
   }
@@ -161,8 +182,36 @@ export class FloatingBallWindowHandlers {
   public cleanup(): void {
     ipcMain.removeHandler('floating-ball:set-position')
     ipcMain.removeHandler('floating-ball:get-state')
+    ipcMain.removeHandler('floating-ball:toggle-main')
     // 基类清理 :show/:hide/:toggle 及窗口、MessagePort
     this.handler.cleanup()
+  }
+
+  // ============ 主渲染进程通信 ============
+
+  private forwardToMain(data: any): void {
+    const main = this.getMainWindow()
+    if (main && !main.isDestroyed()) {
+      main.webContents.send('floating-ball-from-window', data)
+    }
+  }
+
+  /** 显示并聚焦主渲染窗口（拖入文件后把用户引导回主界面） */
+  private showMainWindow(): void {
+    const main = this.getMainWindow()
+    if (!main || main.isDestroyed()) return
+    if (main.isMinimized()) main.restore()
+    main.show()
+    main.focus()
+  }
+
+  private getMainWindow(): BrowserWindow | null {
+    const windows = BrowserWindow.getAllWindows()
+    const main = windows.find((w: any) => w.aliasName === 'Mira') as BrowserWindow | undefined
+    if (main && !main.isDestroyed()) return main
+    // 回退：排除当前悬浮球窗口
+    const selfWin = this.handler.getWindow()
+    return windows.find((w) => w !== selfWin && !w.isDestroyed()) || null
   }
 
   // ============ 位置持久化 ============
@@ -221,28 +270,5 @@ export class FloatingBallWindowHandlers {
     win.setPosition(Math.round(persisted.x), Math.round(persisted.y), false)
     // 切换分辨率/显示器后可能越界，clamp 一次
     this.handler.clampToScreen()
-  }
-
-  // ============ 主窗口定位 ============
-
-  private getMainWindow(): BrowserWindow | null {
-    const windows = BrowserWindow.getAllWindows()
-    const main = windows.find((w: any) => w.aliasName === 'Mira') as BrowserWindow | undefined
-    if (main && !main.isDestroyed()) return main
-    // 回退：排除当前悬浮球窗口
-    const selfWin = this.handler.getWindow()
-    return windows.find((w) => w !== selfWin && !w.isDestroyed()) || null
-  }
-}
-
-// 模块内闭包辅助：在 messageHandlers 中转发给主渲染进程
-function forwardToMain(data: any): void {
-  // 通过临时访问主进程的所有窗口找到主渲染窗口
-  const windows = BrowserWindow.getAllWindows()
-  const main =
-    windows.find((w: any) => w.aliasName === 'Mira') as BrowserWindow | undefined ||
-    windows[0]
-  if (main && !main.isDestroyed()) {
-    main.webContents.send('floating-ball-from-window', data)
   }
 }

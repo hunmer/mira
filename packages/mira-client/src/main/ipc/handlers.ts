@@ -8,6 +8,7 @@ import { FileSystemHandlers } from './FileSystemHandlers'
 import { SystemHandlers } from './SystemHandlers'
 import { SearchWindowHandlers } from './SearchWindowHandlers'
 import { NotificationWindowHandlers } from './NotificationWindowHandlers'
+import { FloatingBallWindowHandlers } from './FloatingBallWindowHandlers'
 import { MenuHandlers } from './MenuHandlers'
 import { ShortcutHandlers } from './ShortcutHandlers'
 import { AutoUpdateHandlers } from './AutoUpdateHandlers'
@@ -28,6 +29,7 @@ export class IPCHandlers {
   private systemHandlers: SystemHandlers
   private searchWindowHandlers: SearchWindowHandlers
   private notificationWindowHandlers: NotificationWindowHandlers
+  private floatingBallHandlers: FloatingBallWindowHandlers
   private menuHandlers: MenuHandlers
   private shortcutHandlers: ShortcutHandlers
   private autoUpdateHandlers: AutoUpdateHandlers
@@ -43,6 +45,7 @@ export class IPCHandlers {
     this.systemHandlers = new SystemHandlers()
     this.searchWindowHandlers = new SearchWindowHandlers()
     this.notificationWindowHandlers = new NotificationWindowHandlers()
+    this.floatingBallHandlers = new FloatingBallWindowHandlers()
     this.menuHandlers = new MenuHandlers()
     this.shortcutHandlers = new ShortcutHandlers()
     this.autoUpdateHandlers = new AutoUpdateHandlers()
@@ -144,6 +147,13 @@ export class IPCHandlers {
   }
 
   /**
+   * 获取悬浮球窗口处理器
+   */
+  public getFloatingBallHandlers(): FloatingBallWindowHandlers {
+    return this.floatingBallHandlers
+  }
+
+  /**
    * 获取快捷键处理器
    */
   public getShortcutHandlers(): ShortcutHandlers {
@@ -158,6 +168,7 @@ export class IPCHandlers {
     this.pluginHandler.cleanup()
     this.searchWindowHandlers.cleanup()
     this.notificationWindowHandlers.cleanup()
+    this.floatingBallHandlers.cleanup()
     this.menuHandlers.removeAllHandlers()
     this.shortcutHandlers.cleanup()
 
