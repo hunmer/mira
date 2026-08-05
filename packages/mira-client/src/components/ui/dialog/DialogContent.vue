@@ -37,12 +37,12 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
       <Motion
         as="div"
         data-slot="dialog-content"
-        :initial="{ opacity: 0, transform: 'translate3d(-50%, calc(-50% + 12px), 0) scale(0.96)' }"
+        :initial="{ opacity: 0, transform: 'translate3d(-50%, -50%, 0) scale(0.88)' }"
         :animate="{ opacity: 1, transform: 'translate3d(-50%, -50%, 0) scale(1)' }"
-        :transition="{ duration: 0.24, ease: [0.23, 1, 0.32, 1] }"
+        :transition="{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }"
         :class="
           cn(
-            'bg-white/70 dark:bg-muted/80 backdrop-blur-xl data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] gap-4 rounded-2xl border border-white/60 dark:border-border p-6 shadow-[0_24px_60px_rgba(99,102,241,0.15)] duration-200 sm:max-w-lg',
+            'dialog-content-motion bg-white/70 dark:bg-muted/80 backdrop-blur-xl fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] gap-4 rounded-2xl border border-white/60 dark:border-border p-6 shadow-[0_24px_60px_rgba(99,102,241,0.15)] sm:max-w-lg',
             props.class,
           )"
       >
@@ -60,3 +60,21 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
     </DialogContent>
   </DialogPortal>
 </template>
+
+<style scoped>
+.dialog-content-motion[data-state="closed"] {
+  animation: dialog-content-exit 180ms cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+@keyframes dialog-content-exit {
+  from {
+    opacity: 1;
+    transform: translate3d(-50%, -50%, 0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate3d(-50%, -50%, 0) scale(0.88);
+  }
+}
+</style>

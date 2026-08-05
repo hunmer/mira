@@ -422,11 +422,55 @@ let importNotifyCount = 0
 let importNotifyLastName = ''
 let importNotifyLastThumb = ''
 let importNotifyLastFileId: string | undefined
+// 是否已展示（避免缩略图到达后重复展示）
+let importNotifyShown = false
+// 缩略图就绪前的最长等待时间（ms）：超时则用 Material Icon 兜底展示
+const IMPORT_THUMB_WAIT = 1500
+
+function doShowImportNotification(): void {
+  if (importNotifyShown) return
+  importNotifyShown = true
+
+  const count = importNotifyCount
+  const name = importNotifyLastName
+  const thumb = importNotifyLastThumb
+  const fileIdResolved = importNotifyLastFileId
+
+  const title = count > 1 ? `已导入 ${count} 个文件` : '文件导入完成'
+  const body = count > 1
+    ? (name ? `最后导入：${name}` : '批量导入完成')
+    : (name || '新文件已添加到媒体库')
+
+  // 使用自定义通知窗口（桌面右下角悬浮卡片）。
+  // icon 优先用最后一个文件的缩略图（URL），无缩略图则回退 Material Icon。
+  // data.fileId 用于点击/操作时跳转图片详情。
+  window.electronAPI?.notificationWindow?.show({
+    title,
+    body,
+    type: 'success',
+    icon: thumb || 'file_download_done',
+    duration: 4000,
+    actions: [{ id: 'view', label: '查看' }],
+    data: fileIdResolved ? { fileId: fileIdResolved, count } : undefined,
+  }).catch((err: Error) => {
+    console.warn('Failed to show import notification window:', err.message)
+  })
+}
+
 function notifyFileImported(fileName?: string, thumbRaw?: string, fileId?: string | number): void {
   const settingsStore = useSettingsStore()
   // 受主通知开关 + 导入文件通知开关共同控制
   if (!settingsStore.settings.enableNotifications) return
   if (!settingsStore.settings.enableImportNotifications) return
+
+  // 上一批已展示完毕，开始新一批：重置聚合状态
+  if (importNotifyShown) {
+    importNotifyShown = false
+    importNotifyCount = 0
+    importNotifyLastName = ''
+    importNotifyLastThumb = ''
+    importNotifyLastFileId = undefined
+  }
 
   importNotifyCount += 1
   if (fileName) importNotifyLastName = fileName
@@ -435,38 +479,32 @@ function notifyFileImported(fileName?: string, thumbRaw?: string, fileId?: strin
   const resolved = appendThumbToken(toFileUrl(thumbRaw))
   if (resolved) importNotifyLastThumb = resolved
 
+  // 聚合窗口内的事件；首条事件后等待最多 IMPORT_THUMB_WAIT 让缩略图就绪，
+  // 缩略图到达（updateImportThumbIfPending）则立即展示，否则超时兜底展示。
   if (importNotifyTimer) clearTimeout(importNotifyTimer)
   importNotifyTimer = setTimeout(() => {
-    const count = importNotifyCount
-    const name = importNotifyLastName
-    const thumb = importNotifyLastThumb
-    const fileIdResolved = importNotifyLastFileId
-    importNotifyCount = 0
-    importNotifyLastName = ''
-    importNotifyLastThumb = ''
-    importNotifyLastFileId = undefined
     importNotifyTimer = null
+    doShowImportNotification()
+  }, IMPORT_THUMB_WAIT)
+}
 
-    const title = count > 1 ? `已导入 ${count} 个文件` : '文件导入完成'
-    const body = count > 1
-      ? (name ? `最后导入：${name}` : '批量导入完成')
-      : (name || '新文件已添加到媒体库')
-
-    // 使用自定义通知窗口（桌面右下角悬浮卡片）。
-    // icon 优先用最后一个文件的缩略图（URL），无缩略图则回退 Material Icon。
-    // data.fileId 用于点击/操作时跳转图片详情。
-    window.electronAPI?.notificationWindow?.show({
-      title,
-      body,
-      type: 'success',
-      icon: thumb || 'file_download_done',
-      duration: 4000,
-      actions: [{ id: 'view', label: '查看' }],
-      data: fileIdResolved ? { fileId: fileIdResolved, count } : undefined,
-    }).catch((err: Error) => {
-      console.warn('Failed to show import notification window:', err.message)
-    })
-  }, 800)
+/**
+ * 缩略图就绪回调：若导入通知尚未展示且匹配最后导入文件，填入缩略图并立即展示。
+ * 缩略图通常在 file::created 之后异步生成（thumbnail::generated 事件），
+ * 这样可保证展示时带上缩略图，且只展示一次。
+ */
+function updateImportThumbIfPending(fileId: string | number, thumbRaw?: string): void {
+  if (importNotifyShown) return
+  if (!importNotifyLastFileId || String(fileId) !== importNotifyLastFileId) return
+  const thumb = appendThumbToken(toFileUrl(thumbRaw))
+  if (!thumb) return
+  importNotifyLastThumb = thumb
+  // 缩略图已就绪，立即展示（取消等待定时器）
+  if (importNotifyTimer) {
+    clearTimeout(importNotifyTimer)
+    importNotifyTimer = null
+  }
+  doShowImportNotification()
 }
 
 /**
@@ -571,6 +609,8 @@ function setupEventListeners(libraryStore: any): void {
     window.dispatchEvent(new CustomEvent('thumbnail-updated', {
       detail: { fileId: String(data.id), thumbPath: data.thumb }
     }))
+    // 缩略图就绪后补发到最近一次导入通知（file::created 时缩略图尚未生成）
+    updateImportThumbIfPending(data.id, data.thumb)
   })
 
   // 监听通知事件

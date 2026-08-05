@@ -206,37 +206,49 @@ async function initNotificationWindow() {
         bridge.send({ type: 'dismiss', timestamp: Date.now() })
       },
       // ===== 自定义 JS 拖拽（主进程 setPosition，实时 clamp 到屏幕内）=====
-      // 使用通知专有消息类型，避免与基类内置 drag-start（-webkit-app-region hack）冲突
+      // 使用通知专有消息类型，避免与基类内置 drag-start（-webkit-app-region hack）冲突。
+      // 采用「延迟启动」：mousedown 仅记录起点，move 超过阈值才真正发起拖拽，
+      // 这样纯点击不会被误判为拖拽（保证 click 回调正常触发）。
       handleDragStart(e) {
         // 居中等不可拖拽位置直接放行（不启动拖拽）
         if (!this.draggable) return
         // 仅左键触发；忽略来自按钮等 no-drag 元素的事件（它们 @mousedown.stop 不会冒泡到这里）
         if (e.button !== 0 || this.isDragging) return
-        this.isDragging = true
         this.dragMoved = false
         this.dragStartCursor = { x: e.screenX, y: e.screenY }
-        // 通知主进程记录窗口起始位置
-        bridge.send({ type: 'nt-drag-start', timestamp: Date.now() })
-        e.preventDefault()
+        this._dragArmed = true // 蓄势：等待 move 超阈值才真正拖拽
       },
       handleDragMove(e) {
-        if (!this.isDragging || !this.dragStartCursor) return
-        // 记录最新光标位置，用 rAF 节流，避免 mousemove 高频发消息淹没主进程
+        if (!this._dragArmed || !this.dragStartCursor) return
+        const deltaX = e.screenX - this.dragStartCursor.x
+        const deltaY = e.screenY - this.dragStartCursor.y
+        // 超过阈值才真正启动拖拽（避免点击被吞）
+        if (!this.isDragging) {
+          if (Math.abs(deltaX) < 4 && Math.abs(deltaY) < 4) return
+          this.isDragging = true
+          this.dragMoved = true
+          // 真正开始拖拽时才通知主进程记录窗口起点
+          bridge.send({ type: 'nt-drag-start', timestamp: Date.now() })
+        }
+        // rAF 节流，避免 mousemove 高频发消息淹没主进程
         this._lastMove = { x: e.screenX, y: e.screenY }
         if (this._rafId) return
         this._rafId = requestAnimationFrame(() => {
           this._rafId = 0
           if (!this.isDragging || !this.dragStartCursor || !this._lastMove) return
-          const deltaX = this._lastMove.x - this.dragStartCursor.x
-          const deltaY = this._lastMove.y - this.dragStartCursor.y
-          // 任一方向有实际位移即视为拖拽（主进程按位置决定可用轴）
-          if (Math.abs(deltaX) > 2 || Math.abs(deltaY) > 2) this.dragMoved = true
+          const dX = this._lastMove.x - this.dragStartCursor.x
+          const dY = this._lastMove.y - this.dragStartCursor.y
           // 同时发送 deltaX / deltaY，由主进程按所在位置选择轴并限定方向
-          bridge.send({ type: 'nt-drag-move', deltaX, deltaY, timestamp: Date.now() })
+          bridge.send({ type: 'nt-drag-move', deltaX: dX, deltaY: dY, timestamp: Date.now() })
         })
       },
       handleDragEnd(e) {
-        if (!this.isDragging) return
+        // 无论是否真正拖拽过，都清理蓄势状态
+        this._dragArmed = false
+        if (!this.isDragging) {
+          this.dragStartCursor = null
+          return
+        }
         this.isDragging = false
         this.dragStartCursor = null
         if (this._rafId) {

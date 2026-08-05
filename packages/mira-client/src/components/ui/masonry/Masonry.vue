@@ -48,6 +48,41 @@ const props = withDefaults(defineProps<MasonryProps<VT>>(), {
 
 const emit = defineEmits<{ (e: "after-render"): void }>()
 
+const revealedKeys = ref<Set<string | number>>(new Set())
+const activeBatch = new Set<string | number>()
+const readyKeys = new Set<string | number>()
+let batchVersion = 0
+
+function scheduleBatchReveal(): void {
+  const version = ++batchVersion
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      if (version !== batchVersion || activeBatch.size === 0) return
+      if (![...activeBatch].every((key) => readyKeys.has(key))) return
+
+      revealedKeys.value = new Set([...revealedKeys.value, ...activeBatch])
+      activeBatch.clear()
+    })
+  })
+}
+
+function handleCellVisible(key: string | number): void {
+  if (revealedKeys.value.has(key)) return
+  activeBatch.add(key)
+  scheduleBatchReveal()
+}
+
+function handleCellReady(key: string | number): void {
+  readyKeys.add(key)
+  scheduleBatchReveal()
+}
+
+function handleCellHidden(key: string | number): void {
+  activeBatch.delete(key)
+  readyKeys.delete(key)
+  scheduleBatchReveal()
+}
+
 /* --------------------------------------------------------------- helpers */
 
 /** 宽高比字符串 -> height/width 比例 */
@@ -420,6 +455,10 @@ watch(
           :lazy="p.lazy"
           :root-margin="props.lazyRootMargin"
           :placeholder-color="placeholderColor(p.key)"
+          :revealed="revealedKeys.has(p.key)"
+          @visible="handleCellVisible(p.key)"
+          @ready="handleCellReady(p.key)"
+          @hidden="handleCellHidden(p.key)"
         >
           <slot :item="p.item" :index="p.index" />
         </LazyCell>

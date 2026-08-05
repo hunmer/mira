@@ -21,10 +21,26 @@ const delegatedProps = reactiveOmit(props, "class")
       data-slot="dialog-overlay"
       :initial="{ opacity: 0 }"
       :animate="{ opacity: 1 }"
-      :transition="{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }"
-      :class="cn('data-[state=closed]:animate-out data-[state=closed]:fade-out-0 fixed inset-0 z-50 bg-black/40 backdrop-blur-sm', props.class)"
+      :transition="{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }"
+      :class="cn('dialog-overlay-motion fixed inset-0 z-50 bg-black/40 backdrop-blur-sm', props.class)"
     >
       <slot />
     </Motion>
   </DialogOverlay>
 </template>
+
+<style scoped>
+.dialog-overlay-motion[data-state="closed"] {
+  animation: dialog-overlay-exit 200ms ease-in forwards;
+}
+
+@keyframes dialog-overlay-exit {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+</style>
