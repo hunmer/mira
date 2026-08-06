@@ -136,12 +136,21 @@ importers:
 
   packages/mira-browser-extension:
     dependencies:
+      '@hunmer/vue-masonry':
+        specifier: workspace:*
+        version: link:../vue-masonry
       mira-app-core:
         specifier: workspace:*
         version: link:../mira-app-core
+      motion-v:
+        specifier: ^2.2.1
+        version: 2.2.1(@vueuse/core@14.3.0(vue@3.5.13(typescript@5.7.3)))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vue@3.5.13(typescript@5.7.3))
       vue:
         specifier: ^3.4.0
         version: 3.5.13(typescript@5.7.3)
+      vue-i18n:
+        specifier: ^11.4.4
+        version: 11.4.4(vue@3.5.13(typescript@5.7.3))
     devDependencies:
       '@crxjs/vite-plugin':
         specifier: ^2.0.0-beta.28

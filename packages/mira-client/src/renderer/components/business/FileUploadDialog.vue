@@ -236,26 +236,29 @@
                   <!-- 文件网格：Masonry 按容器宽度响应式分列 -->
                   <Masonry
                     v-else
+                    ref="masonryRef"
                     :data="displayFiles"
                     :get-key="(file: any) => file.id"
                     :columns="columnsByWidth"
                     :gap="12"
                     :get-meta="getFileMeta"
-                    :enter-animation="false"
-                    :exit-animation="false"
-                    :layout-transition="false"
+                    :layout-mode="'fill'"
+                    :enter-animation="true"
+                    :exit-animation="true"
+                    :layout-transition="true"
+                    :lazy-root-margin="'300px'"
                   >
                     <template #default="{ item: file }">
                       <div
                         :data-selectable-id="matchesFilters(file) ? file.id : undefined"
-                        class="file-card group relative bg-white/40 dark:bg-muted/40 backdrop-blur-sm rounded-lg overflow-hidden border-2 transition-all select-none h-full"
+                        class="file-card group relative flex flex-col bg-white/40 dark:bg-muted/40 backdrop-blur-sm rounded-lg overflow-hidden border-2 transition-all select-none h-full"
                         :class="[
                           !matchesFilters(file) ? 'opacity-50 cursor-not-allowed border-transparent' : (selectedPendingIds.includes(file.id) ? 'border-primary ring-2 ring-primary dark:ring-primary cursor-pointer' : 'border-transparent hover:border-border dark:hover:border-border cursor-pointer')
                         ]"
                         @click.stop="matchesFilters(file) && handleFileClick(file, $event)"
                       >
-                        <!-- 预览区域 -->
-                        <div class="aspect-square relative">
+                        <!-- 预览区域：按真实比例自适应填充 Masonry 分配的剩余高度 -->
+                        <div class="flex-1 min-h-0 relative">
                           <!-- 图片预览 -->
                           <img
                             v-if="file.preview && isImageFile(file.file.type)"
@@ -314,8 +317,8 @@
                           </div>
                         </div>
 
-                        <!-- 文件信息 -->
-                        <div class="p-2">
+                        <!-- 文件信息：固定高度不收缩，与 CARD_INFO_HEIGHT 估值对齐 -->
+                        <div class="p-2 shrink-0">
                           <p class="text-xs font-medium text-foreground dark:text-muted-foreground truncate" :title="file.file.name">
                             {{ file.file.name }}
                           </p>
@@ -409,7 +412,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed, nextTick, watch } from 'vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -419,8 +422,9 @@ import { Masonry, type MasonryColumns, type MasonryItemMeta } from '@hunmer/vue-
 import FolderTreeComponent from './FolderTreeComponent/FolderTreeComponent.vue'
 import { useFileUploadDialog } from './FileUploadDialog/useFileUploadDialog'
 import { isImageFile, isVideoFile, isAudioFile, isDocumentFile, formatFileSize } from './FileUploadDialog/useFileManagement'
+import { useFileRatios } from './FileUploadDialog/useFileRatios'
 import { FILE_LIMITS } from './FileUploadDialog/types'
-import type { Props, Emits } from './FileUploadDialog/types'
+import type { Props, Emits, PendingFile } from './FileUploadDialog/types'
 
 const props = withDefaults(defineProps<Props>(), {
   visible: false
@@ -533,30 +537,70 @@ const selectionBoxRef = ref()
 const fileGridContainerRef = ref<HTMLElement>()
 
 /**
- * 待上传网格响应式分列：基于 Tailwind 断点随容器宽度增减列数，
- * 窄容器少放、宽容器多放。Masonry 内部用 ResizeObserver 实时测容器宽，
- * 这里只需给出断点映射，无需手动维护尺寸监听。
+ * 待上传网格响应式分列：基于 Tailwind 断点随容器宽度增减列数。
+ * 列数比固定正方形时期稍密（瀑布流按真实比例变高，列窄一点视觉更紧凑）。
+ * Masonry 内部用 ResizeObserver 实时测容器宽，这里只给断点映射。
  */
 const columnsByWidth = computed<MasonryColumns>(() => ({
   base: 2,   // < 640px
   sm: 3,     // >= 640px
-  md: 4,     // >= 768px
-  lg: 6,     // >= 1024px
-  xl: 8      // >= 1280px
+  md: 5,     // >= 768px
+  lg: 7,     // >= 1024px
+  xl: 9      // >= 1280px
 }))
 
-/**
- * 文件卡片由「正方形预览 + 固定高度信息块」组成。
- * Masonry 按列宽算高度：用合成 aspect（w : (w + 信息块高度)）让高度随列宽缩放，
- * 信息块高度取一个稳定估值（约 76px：padding + 文件名 + 大小 + 标签行）。
- */
+// 列数上限近似值，用于约束 colSpan（保证宽图旁还能放普通项）
+const approxColumns = computed(() => {
+  const cols = columnsByWidth.value
+  return typeof cols === 'object' ? (cols.xl ?? 9) : cols
+})
+
+// 复用 WaterfallComponent 的真实比例预加载能力（等 preview 就绪后读取 naturalWidth/Height）
+const { ratios, getRatio } = useFileRatios(pendingFiles, approxColumns.value)
+
+// 卡片信息块（文件名/大小/标签）固定高度估值，叠加到预览高度上
 const CARD_INFO_HEIGHT = 76
-function getFileMeta(_file: any, _index: number): MasonryItemMeta {
-  // aspect = w/(w+infoH) 近似：用 1000 像素作分子避免精度损失，得到稳定整数比
-  const w = 1000
-  const h = w + CARD_INFO_HEIGHT
-  return { aspect: `${w}:${h}` }
+// 宽图占列阈值（基于 ratio = w/h）：>= 阈值占更多列，与 WaterfallComponent 对齐
+const WIDE_RATIO_THRESHOLD = 1.6
+const ULTRA_WIDE_RATIO_THRESHOLD = 2.4
+
+/**
+ * 真实变高瀑布流的布局元信息。
+ *
+ * 高度计算要点：Masonry 的 aspect 是针对「整个 item 宽度」算总高度。
+ * 卡片 = 预览区(按真实图片比例) + 固定信息块(CARD_INFO_HEIGHT)。
+ * 因此合成 aspect 时要让「预览区高度 = colWidth × 真实比例」，再补上信息块高度，
+ * 即 aspect 表示的 height = 预览区高度 + 信息块高度。
+ *
+ * 实现：换算成等价的 width:height 比例。以 colWidth 为参照宽度，预览区高 = colWidth/ratio，
+ * 信息块加 CARD_INFO_HEIGHT，得到合成 aspect = colWidth : (colWidth/ratio + infoH)。
+ * 用 1000 作分子避免精度损失。
+ */
+function getFileMeta(file: PendingFile, _index: number): MasonryItemMeta {
+  const ratio = getRatio(file)
+  if (ratio != null) {
+    const desiredColSpan = ratio >= ULTRA_WIDE_RATIO_THRESHOLD
+      ? 3
+      : ratio >= WIDE_RATIO_THRESHOLD
+        ? 2
+        : 1
+    const colSpan = Math.min(Math.max(desiredColSpan, 1), Math.max(approxColumns.value - 1, 1))
+    // colSpan>1 时实际显示宽度更大，预览区高度按实际宽度算
+    const refWidth = 1000 * colSpan
+    const previewH = refWidth / ratio
+    const totalH = previewH + CARD_INFO_HEIGHT
+    return { colSpan, aspect: `${refWidth}:${totalH}`, lazy: true }
+  }
+  // 非图片：用 height 给定固定卡片总高，避免瀑布流里塌成一行
+  return { height: 220, lazy: false }
 }
+
+// Masonry 实例引用。getMeta 是 prop getter 非响应式，需在数据/比例变化时手动刷新布局：
+//  - pendingFiles 变化（增删文件）
+//  - ratios 变化（preview 异步加载完成后拿到真实比例，getRatio 返回值随之改变）
+const masonryRef = ref<InstanceType<typeof Masonry>>()
+const refreshLayout = () => nextTick(() => masonryRef.value?.refresh())
+watch([pendingFiles, ratios], refreshLayout, { flush: 'post', deep: true })
 
 function handleFileClick(file: any, event: MouseEvent) {
   selectionBoxRef.value?.handleItemClick(file.id, event)

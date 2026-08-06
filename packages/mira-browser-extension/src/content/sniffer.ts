@@ -139,6 +139,15 @@ export function createSniffer(onUpdate: (resources: SniffedResource[]) => void):
   let scanTimer: ReturnType<typeof setTimeout> | null = null;
   let reportTimer: ReturnType<typeof setTimeout> | null = null;
 
+  function cleanup() {
+    perfObs?.disconnect();
+    mutObs?.disconnect();
+    if (scanTimer) clearTimeout(scanTimer);
+    if (reportTimer) clearTimeout(reportTimer);
+    perfObs = mutObs = null;
+    scanTimer = reportTimer = null;
+  }
+
   function scan() {
     const fresh = extractFromDOM(kinds);
     dbg.log('sniffer', 'scan', { kinds, freshCount: fresh.length });
@@ -162,6 +171,7 @@ export function createSniffer(onUpdate: (resources: SniffedResource[]) => void):
 
   return {
     start(k) {
+      cleanup();
       kinds = k;
       resources = [];
       dbg.info('sniffer', 'start', { kinds, hasBody: !!document.body, imgCount: document.querySelectorAll('img').length });
@@ -195,12 +205,7 @@ export function createSniffer(onUpdate: (resources: SniffedResource[]) => void):
     },
     stop() {
       dbg.info('sniffer', 'stop');
-      perfObs?.disconnect();
-      mutObs?.disconnect();
-      if (scanTimer) clearTimeout(scanTimer);
-      if (reportTimer) clearTimeout(reportTimer);
-      perfObs = mutObs = null;
-      scanTimer = reportTimer = null;
+      cleanup();
     },
     getResources() {
       return [...resources];

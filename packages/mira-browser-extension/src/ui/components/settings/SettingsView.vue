@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { useSettings } from '@/ui/composables/useSettings';
+import { useI18n } from 'vue-i18n';
+import type { Locale } from '@/shared/types';
 import Input from '@/ui/components/ui/Input.vue';
 import Switch from '@/ui/components/ui/Switch.vue';
 import { setDebug, refreshDebugFlag } from '@/shared/debug';
 import { ref, onMounted } from 'vue';
 
+const { t } = useI18n();
 const { settings, update } = useSettings();
 
 // 调试日志开关(独立于 ExtensionSettings,存 chrome.storage.local 的 mira_debug)
@@ -19,44 +22,51 @@ async function onToggleDebug(v: boolean) {
 <template>
   <div class="view">
     <section>
-      <h3>目标</h3>
-      <label>默认标签(逗号分隔)</label>
+      <h3>{{ t('settings.groupTarget') }}</h3>
+      <label>{{ t('settings.defaultTags') }}</label>
       <Input
         :model-value="settings.tags.join(',')"
         @update:model-value="v => update({ tags: v.split(',').map(s => s.trim()).filter(Boolean) })"
       />
     </section>
     <section>
-      <h3>界面</h3>
+      <h3>{{ t('settings.groupUI') }}</h3>
       <div class="row">
-        <span>UI 模式</span>
+        <span>{{ t('settings.uiMode') }}</span>
         <select :value="settings.uiMode" @change="e => update({ uiMode: (e.target as HTMLSelectElement).value as any })">
-          <option value="popup">Popup</option>
-          <option value="sidePanel">侧边栏</option>
+          <option value="popup">{{ t('settings.uiModePopup') }}</option>
+          <option value="sidePanel">{{ t('settings.uiModeSidePanel') }}</option>
         </select>
       </div>
-      <div class="row"><span>拖拽快传按钮</span><Switch :model-value="settings.dragPopoverEnabled" @update:model-value="v => update({ dragPopoverEnabled: v })" /></div>
-      <div class="row"><span>面板拖放区</span><Switch :model-value="settings.dropZoneEnabled" @update:model-value="v => update({ dropZoneEnabled: v })" /></div>
+      <div class="row">
+        <span>{{ t('settings.language') }}</span>
+        <select :value="settings.locale" @change="e => update({ locale: (e.target as HTMLSelectElement).value as Locale })">
+          <option value="zh-CN">中文</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+      <div class="row"><span>{{ t('settings.dragPopover') }}</span><Switch :model-value="settings.dragPopoverEnabled" @update:model-value="v => update({ dragPopoverEnabled: v })" /></div>
+      <div class="row"><span>{{ t('settings.dropZone') }}</span><Switch :model-value="settings.dropZoneEnabled" @update:model-value="v => update({ dropZoneEnabled: v })" /></div>
     </section>
     <section>
-      <h3>采集</h3>
-      <div class="row"><span>资源嗅探</span><Switch :model-value="settings.snifferEnabled" @update:model-value="v => update({ snifferEnabled: v })" /></div>
-      <div class="row"><span>自动滚动</span><Switch :model-value="settings.autoScrollEnabled" @update:model-value="v => update({ autoScrollEnabled: v })" /></div>
+      <h3>{{ t('settings.groupCapture') }}</h3>
+      <div class="row"><span>{{ t('settings.sniffer') }}</span><Switch :model-value="settings.snifferEnabled" @update:model-value="v => update({ snifferEnabled: v })" /></div>
+      <div class="row"><span>{{ t('settings.autoScroll') }}</span><Switch :model-value="settings.autoScrollEnabled" @update:model-value="v => update({ autoScrollEnabled: v })" /></div>
       <div class="row">
-        <span>滚动间隔(ms)</span>
+        <span>{{ t('settings.autoScrollDelay') }}</span>
         <Input
           type="number" :model-value="String(settings.autoScrollDelay)"
           @update:model-value="v => update({ autoScrollDelay: Number(v) || 800 })"
         />
       </div>
-      <div class="row" title="拖图/嗅探/右键上传时,前端先用 maxurl 提取高清原图">
-        <span>高清大图升级</span><Switch :model-value="settings.imuEnabled" @update:model-value="v => update({ imuEnabled: v })" />
+      <div class="row" :title="t('settings.imuHint')">
+        <span>{{ t('settings.imu') }}</span><Switch :model-value="settings.imuEnabled" @update:model-value="v => update({ imuEnabled: v })" />
       </div>
     </section>
     <section>
-      <h3>调试</h3>
-      <div class="row" title="开启后 console 输出 [mira-ext][*] 详细日志(截图/嗅探/拖拽/上传)">
-        <span>调试日志</span><Switch :model-value="debugOn" @update:model-value="onToggleDebug" />
+      <h3>{{ t('settings.groupDebug') }}</h3>
+      <div class="row" :title="t('settings.debugHint')">
+        <span>{{ t('settings.debugLog') }}</span><Switch :model-value="debugOn" @update:model-value="onToggleDebug" />
       </div>
     </section>
   </div>

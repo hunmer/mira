@@ -4,6 +4,16 @@
 export type ResourceKind = 'image' | 'audio' | 'video';
 
 /**
+ * 嗅探资源展示视图:list 列表 / masonry 瀑布流
+ */
+export type SnifferViewMode = 'list' | 'masonry';
+
+/**
+ * 界面语言:i18n locale
+ */
+export type Locale = 'zh-CN' | 'en';
+
+/**
  * 嗅探到的资源
  */
 export interface SniffedResource {
@@ -30,6 +40,9 @@ export interface SniffedResource {
   /** 全部 Tab 聚合展示时的来源信息 */
   tabId?: number;
   tabTitle?: string;
+  /** 资源所在页面 URL，用于下载时设置 Referer */
+  pageUrl?: string;
+  referrer?: string;
 }
 
 /**
@@ -82,9 +95,13 @@ export interface ExtensionSettings {
   tags: string[];
   uiMode: UIMode;
   theme: Theme;
+  /** 界面语言:i18n locale */
+  locale: Locale;
   dragPopoverEnabled: boolean;
   dropZoneEnabled: boolean;
   snifferEnabled: boolean;
+  /** 嗅探资源展示视图:list 列表 / masonry 瀑布流 */
+  snifferView: SnifferViewMode;
   snifferKinds: ResourceKind[];
   autoScrollEnabled: boolean;
   /** 滚动间隔(ms) */
@@ -104,9 +121,11 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   tags: [],
   uiMode: 'popup',
   theme: 'auto',
+  locale: 'zh-CN',
   dragPopoverEnabled: true,
   dropZoneEnabled: true,
   snifferEnabled: false,
+  snifferView: 'list',
   snifferKinds: ['image', 'audio', 'video'],
   autoScrollEnabled: false,
   autoScrollDelay: 800,

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { describe, it, expect } from 'vitest';
-import { extractFromDOM, mergeResources, isMediaInitiator, urlToId } from './sniffer';
+import { describe, it, expect, vi } from 'vitest';
+import { createSniffer, extractFromDOM, mergeResources, isMediaInitiator, urlToId } from './sniffer';
 
 describe('sniffer', () => {
   it('urlToId 对相同 url 返回相同 id', () => {
@@ -67,5 +67,17 @@ describe('sniffer', () => {
     expect(isMediaInitiator('video')).toBe(true);
     expect(isMediaInitiator('audio')).toBe(true);
     expect(isMediaInitiator('fetch')).toBe(false);
+  });
+
+  it('重复 start 会先释放已有观察器', () => {
+    const disconnect = vi.spyOn(MutationObserver.prototype, 'disconnect');
+    const sniffer = createSniffer(() => {});
+
+    sniffer.start(['image']);
+    sniffer.start(['image']);
+
+    expect(disconnect).toHaveBeenCalledTimes(1);
+    sniffer.stop();
+    disconnect.mockRestore();
   });
 });

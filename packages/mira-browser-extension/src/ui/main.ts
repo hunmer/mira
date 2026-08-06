@@ -1,6 +1,7 @@
 import { createApp } from 'vue';
 import App from './App.vue';
 import './style.css';
+import i18n from './i18n';
 import { resolveTheme, applyTheme, watchSystemTheme } from './theme';
 import { DEFAULT_SETTINGS } from '@/shared/types';
 import { STORAGE_KEYS } from '@/shared/storage';
@@ -28,4 +29,4 @@ watchSystemTheme(resolved => {
   });
 });
 
-createApp(App, { containerMode }).mount('#app');
+createApp(App, { containerMode }).use(i18n).mount('#app');

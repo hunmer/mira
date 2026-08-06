@@ -24,7 +24,7 @@ export type Request =
       type: 'UPLOAD_FILES';
       payload: { files: StagedFile[]; libraryId: string; tags?: string[]; folderId?: string };
     }
-  | { type: 'UPLOAD_FROM_URL'; payload: { url: string; kind: ResourceKind; libraryId: string; folderId?: number; tags?: string[] } }
+  | { type: 'UPLOAD_FROM_URL'; payload: { url: string; kind: ResourceKind; libraryId: string; folderId?: number; tags?: string[]; referrer?: string } }
   | { type: 'UPLOAD_STATUS' }
   | { type: 'UPLOAD_CANCEL'; payload: { id: string } }
   // 截图

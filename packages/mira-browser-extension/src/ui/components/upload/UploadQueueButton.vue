@@ -7,9 +7,11 @@
  * - 队列来自 useUploadQueue(模块级单例,文件夹/标签页的上传共享同一队列)
  */
 import { computed, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useUploadQueue } from '@/ui/composables/useUploadQueue';
 import UploadQueue from './UploadQueue.vue';
 
+const { t } = useI18n();
 const { tasks, load, cancel } = useUploadQueue();
 
 onMounted(load);
@@ -33,7 +35,7 @@ function toggle() {
     <button
       class="icon-btn"
       :class="{ active: open, failed: hasFailed }"
-      :title="activeCount ? `${activeCount} 个上传中` : '上传队列'"
+      :title="activeCount ? t('upload.uploadingN', { n: activeCount }) : t('upload.queue')"
       @click="toggle"
     >
       <!-- 上传/云 图标 -->
@@ -49,8 +51,8 @@ function toggle() {
     <!-- popover -->
     <div v-if="open" class="popover">
       <div class="head">
-        <span>上传队列</span>
-        <button class="close" title="关闭" @click="open = false">×</button>
+        <span>{{ t('upload.queue') }}</span>
+        <button class="close" :title="t('common.close')" @click="open = false">×</button>
       </div>
       <UploadQueue :tasks="tasks" @cancel="cancel" @retry="load" />
     </div>

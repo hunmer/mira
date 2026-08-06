@@ -9,6 +9,7 @@
  * 上传复用 useUploadQueue:文件夹落点 → folderId;标签落点 → tags:[title]。
  */
 import { computed, onMounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useLibraryTree, filterTree, collectIds, flattenTree } from '@/ui/composables/useLibraryTree';
 import { useSettings } from '@/ui/composables/useSettings';
 import { useUploadQueue } from '@/ui/composables/useUploadQueue';
@@ -20,6 +21,7 @@ import type { LibraryTreeNode } from '@/shared/types';
 
 const props = defineProps<{ mode: 'folder' | 'tag' }>();
 
+const { t } = useI18n();
 const { settings } = useSettings();
 const { addFiles } = useUploadQueue();
 const { tree, count, loading, error, load } = useLibraryTree(props.mode);
@@ -117,8 +119,8 @@ watch(
   { immediate: true },
 );
 
-const titleText = computed(() => (props.mode === 'folder' ? '文件夹' : '标签'));
-const unitText = computed(() => (props.mode === 'folder' ? '个文件夹' : '个标签'));
+const titleText = computed(() => props.mode === 'folder' ? t('common.folder') : t('common.tag'));
+const unitText = computed(() => props.mode === 'folder' ? t('library.folderUnit') : t('library.tagUnit'));
 
 const noData = computed(() => !loading.value && !error.value && count.value === 0);
 </script>
@@ -140,35 +142,35 @@ const noData = computed(() => !loading.value && !error.value && count.value === 
         <input
           v-model="query"
           type="text"
-          :placeholder="`搜索${titleText}…`"
+          :placeholder="t('library.searchPlaceholder', { type: titleText })"
         />
         <button
           v-if="query"
           class="clear"
-          title="清除"
+          :title="t('common.clear')"
           @click="query = ''"
         >×</button>
       </span>
-      <button class="refresh" title="刷新" :disabled="loading" @click="load(settings.libraryId)">↻</button>
-      <span class="count">{{ count }} {{ unitText }}</span>
+      <button class="refresh" :title="t('common.refresh')" :disabled="loading" @click="load(settings.libraryId)">↻</button>
+      <span class="count">{{ t('library.count', { n: count, unit: unitText }) }}</span>
     </div>
 
     <!-- 错误 -->
-    <div v-if="error" class="msg err">加载失败:{{ error }}</div>
+    <div v-if="error" class="msg err">{{ t('library.loadFailed', { error }) }}</div>
 
     <!-- 加载中 -->
-    <div v-else-if="loading" class="msg">加载中…</div>
+    <div v-else-if="loading" class="msg">{{ t('common.loading') }}</div>
 
     <!-- 空态 -->
     <div v-else-if="noData" class="msg empty">
       <span class="big">📁</span>
-      <span>当前素材库下暂无{{ titleText }}</span>
-      <span class="hint">拖放文件到此可上传到素材库根目录</span>
+      <span>{{ t('library.emptyTitle', { type: titleText }) }}</span>
+      <span class="hint">{{ t('library.emptyHint') }}</span>
     </div>
 
     <!-- 搜索无结果 -->
     <div v-else-if="isSearching && filteredTree.length === 0" class="msg">
-      未找到匹配的{{ titleText }}
+      {{ t('library.noMatch', { type: titleText }) }}
     </div>
 
     <!-- 树 -->

@@ -12,7 +12,11 @@ dbg.info('content', 'script loaded', { url: location.href, readyState: document.
 // 嗅探上报:发给 service worker(SNIFFER_REPORT)
 const sniffer = createSniffer(resources => {
   dbg.log('content', 'sniffer onUpdate → report', { count: resources.length });
-  chrome.runtime.sendMessage({ type: 'SNIFFER_REPORT', resources }).catch(e => dbg.error('content', 'SNIFFER_REPORT send failed', e));
+  const pageUrl = location.href;
+  chrome.runtime.sendMessage({
+    type: 'SNIFFER_REPORT',
+    resources: resources.map(resource => ({ ...resource, pageUrl, referrer: pageUrl })),
+  }).catch(e => dbg.error('content', 'SNIFFER_REPORT send failed', e));
 });
 
 // 拖拽上传:发给 service worker

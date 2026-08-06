@@ -1,9 +1,20 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import type { UploadTask } from '@/shared/types';
 import Progress from '@/ui/components/ui/Progress.vue';
 import Button from '@/ui/components/ui/Button.vue';
-defineProps<{ task: UploadTask }>();
+const { t } = useI18n();
+const props = defineProps<{ task: UploadTask }>();
 defineEmits<{ cancel: []; retry: [] }>();
+
+const statusText = computed(() => {
+  const { status, percent, error } = props.task;
+  if (status === 'queued') return t('common.queued');
+  if (status === 'uploading') return `${percent}%`;
+  if (status === 'success') return t('common.done');
+  return error ?? t('common.failed');
+});
 </script>
 
 <template>
@@ -14,11 +25,9 @@ defineEmits<{ cancel: []; retry: [] }>();
     </div>
     <Progress v-if="task.status === 'uploading'" :value="task.percent" />
     <div class="status">
-      <span :class="task.status">
-        {{ { queued: '排队', uploading: `${task.percent}%`, success: '完成', failed: task.error ?? '失败' }[task.status] }}
-      </span>
-      <Button v-if="task.status === 'uploading'" size="sm" variant="ghost" @click="$emit('cancel')">取消</Button>
-      <Button v-if="task.status === 'failed'" size="sm" variant="ghost" @click="$emit('retry')">重试</Button>
+      <span :class="task.status">{{ statusText }}</span>
+      <Button v-if="task.status === 'uploading'" size="sm" variant="ghost" @click="$emit('cancel')">{{ t('common.cancel') }}</Button>
+      <Button v-if="task.status === 'failed'" size="sm" variant="ghost" @click="$emit('retry')">{{ t('common.retry') }}</Button>
     </div>
   </div>
 </template>

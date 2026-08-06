@@ -85,7 +85,13 @@ export function createRouter(deps: RouterDeps): RequestHandler {
       case 'UPLOAD_FROM_URL': {
         const settings = await getSettings();
         // service worker fetch url → Blob → File(规避 content script CORS)
-        const res = await fetch(req.payload.url);
+        const res = await fetch(req.payload.url, {
+          credentials: 'include',
+          ...(req.payload.referrer ? {
+            referrer: req.payload.referrer,
+            referrerPolicy: 'no-referrer-when-downgrade' as ReferrerPolicy,
+          } : {}),
+        });
         const blob = await res.blob();
         const filename = req.payload.url.split('/').pop()?.split('?')[0] || `resource-${Date.now()}`;
         const file = new File([blob], filename, { type: blob.type || 'image/*' });

@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useConnection, DEFAULT_SERVER_URL, DEFAULT_USERNAME } from '@/ui/composables/useConnection';
 import { useSettings } from '@/ui/composables/useSettings';
 import Button from '@/ui/components/ui/Button.vue';
 import Input from '@/ui/components/ui/Input.vue';
 
+const { t } = useI18n();
 const emit = defineEmits<{ connected: [] }>();
 const { login } = useConnection();
 const { settings, update, load } = useSettings();
@@ -32,7 +34,7 @@ async function submit() {
     if (!settings.value.libraryId) await update({ libraryId: '' });
     emit('connected');
   } catch (e: any) {
-    error.value = e?.message ?? '登录失败';
+    error.value = e?.message ?? t('connection.failed');
   } finally {
     loading.value = false;
   }
@@ -41,16 +43,16 @@ async function submit() {
 
 <template>
   <div class="form">
-    <h2>Mira 连接</h2>
-    <label>服务器地址</label>
+    <h2>{{ t('connection.title') }}</h2>
+    <label>{{ t('connection.serverURL') }}</label>
     <Input v-model="serverURL" placeholder="http://localhost:8081" />
-    <label>用户名</label>
-    <Input v-model="username" placeholder="用户名" />
-    <label>密码</label>
-    <Input v-model="password" type="password" placeholder="密码" />
+    <label>{{ t('connection.username') }}</label>
+    <Input v-model="username" :placeholder="t('connection.usernamePlaceholder')" />
+    <label>{{ t('connection.password') }}</label>
+    <Input v-model="password" type="password" :placeholder="t('connection.passwordPlaceholder')" />
     <p v-if="error" class="err">{{ error }}</p>
     <Button :disabled="loading" @click="submit">
-      {{ loading ? '连接中...' : '连接' }}
+      {{ loading ? t('connection.connecting') : t('connection.connect') }}
     </Button>
   </div>
 </template>

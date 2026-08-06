@@ -1,5 +1,5 @@
 import type { Request, Event } from '@/shared/messages';
-import type { ExtensionSettings, UploadTask, SniffedResource } from '@/shared/types';
+import type { ExtensionSettings, UploadTask, SniffedResource, ResourceKind } from '@/shared/types';
 import type { StagedFile } from '@/shared/types';
 import type { Folder, Tag } from 'mira-app-core/shared/sdk';
 
@@ -50,6 +50,9 @@ export function useBackground() {
     },
     async snifferQuery(tabId: number) {
       return send<{ resources: SniffedResource[] }>({ type: 'SNIFFER_QUERY', payload: { tabId } });
+    },
+    async snifferStart(tabId: number, kinds: ResourceKind[]) {
+      return send({ type: 'SNIFFER_START', payload: { tabId, kinds } });
     },
     onUploadProgress(cb: (p: { id: string; percent: number; status: string }) => void) {
       const listener = (msg: Event) => {

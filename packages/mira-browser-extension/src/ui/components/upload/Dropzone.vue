@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { canAcceptDrop } from '@/shared/drag-data';
+const { t } = useI18n();
 const emit = defineEmits<{ drop: [files: File[]] }>();
 const hovering = ref(false);
 const inputRef = ref<HTMLInputElement | null>(null);
@@ -43,7 +45,7 @@ function openPicker() {
     @drop.prevent="onDrop"
   >
     <input ref="inputRef" type="file" multiple class="file-input" @change="onPick" />
-    <span>拖放文件到此处,或点击选择</span>
+    <span>{{ t('upload.dropHint') }}</span>
   </div>
 </template>
 

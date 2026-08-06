@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import type { SniffedResource } from '@/shared/types';
+const { t } = useI18n();
 defineProps<{ resource: SniffedResource; selected: boolean }>();
 defineEmits<{ toggle: [] }>();
 </script>
@@ -13,7 +15,7 @@ defineEmits<{ toggle: [] }>();
     <div class="meta">
       <div class="url">{{ resource.url.split('/').pop() }}</div>
       <div class="dim">{{ resource.width }}×{{ resource.height }} · ×{{ resource.occurrences }}</div>
-      <div v-if="resource.tabTitle" class="source">来源：{{ resource.tabTitle }}</div>
+      <div v-if="resource.tabTitle" class="source">{{ t('sniffer.source', { title: resource.tabTitle }) }}</div>
     </div>
   </div>
 </template>

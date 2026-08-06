@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import type { UploadTask } from '@/shared/types';
 import UploadItem from './UploadItem.vue';
+const { t } = useI18n();
 defineProps<{ tasks: UploadTask[] }>();
 defineEmits<{ cancel: [id: string]; retry: [id: string] }>();
 </script>
@@ -8,10 +10,10 @@ defineEmits<{ cancel: [id: string]; retry: [id: string] }>();
 <template>
   <div class="queue">
     <UploadItem
-      v-for="t in tasks" :key="t.id" :task="t"
-      @cancel="$emit('cancel', t.id)" @retry="$emit('retry', t.id)"
+      v-for="task in tasks" :key="task.id" :task="task"
+      @cancel="$emit('cancel', task.id)" @retry="$emit('retry', task.id)"
     />
-    <p v-if="!tasks.length" class="empty">暂无上传任务</p>
+    <p v-if="!tasks.length" class="empty">{{ t('upload.noTasks') }}</p>
   </div>
 </template>
 

@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import i18n from '@/ui/i18n';
 import { useConnection } from '@/ui/composables/useConnection';
 import { useBackground } from '@/ui/composables/useBackground';
 import { useSettings } from '@/ui/composables/useSettings';
@@ -12,6 +14,7 @@ import SnifferView from '@/ui/components/sniffer/SnifferView.vue';
 import SettingsView from '@/ui/components/settings/SettingsView.vue';
 import LibraryTreeView from '@/ui/components/library/LibraryTreeView.vue';
 
+const { t } = useI18n();
 const props = defineProps<{ containerMode: 'popup' | 'sidePanel' }>();
 const { status, verify, libraries } = useConnection();
 const { settings, load, update } = useSettings();
@@ -25,6 +28,9 @@ const authenticated = computed(() => status.value === 'connected');
 
 // 主题:settings.theme 变化或系统主题(auto 时)变化 → 应用
 watch(() => settings.value.theme, t => applyTheme(resolveTheme(t)), { immediate: true });
+
+// 语言:settings.locale 变化 → 同步到 i18n 实例(初始 locale 固定 zh-CN,settings 加载后切换)
+watch(() => settings.value.locale, l => { if (l) i18n.global.locale.value = l; });
 const unwatchSystem = watchSystemTheme(resolved => {
   if (settings.value.theme === 'auto') applyTheme(resolved);
 });
@@ -58,7 +64,7 @@ function onConnected() {
 <template>
   <div class="app" :class="containerMode">
     <!-- 启动自动登录中:显示 loading,避免登录界面一闪而过 -->
-    <div v-if="booting" class="booting">连接中…</div>
+    <div v-if="booting" class="booting">{{ t('app.connecting') }}</div>
     <ConnectionForm v-else-if="!authenticated" @connected="onConnected" />
     <template v-else>
       <GlobalHeader :screenshot-open="screenshotOpen" @toggle-screenshot="screenshotOpen = !screenshotOpen">

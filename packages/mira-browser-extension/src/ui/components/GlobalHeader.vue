@@ -2,9 +2,11 @@
 import { useConnection } from '@/ui/composables/useConnection';
 import { useSettings } from '@/ui/composables/useSettings';
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import type { Theme } from '@/shared/types';
 import UploadQueueButton from '@/ui/components/upload/UploadQueueButton.vue';
 
+const { t } = useI18n();
 const { status, libraries } = useConnection();
 const { settings, update } = useSettings();
 const props = defineProps<{ screenshotOpen?: boolean }>();
@@ -20,7 +22,9 @@ async function onLibChange(e: Event) {
 }
 
 // 主题三态循环:auto → light → dark → auto
-const themeLabel = computed(() => ({ auto: '🌗 自动', light: '☀️ 亮色', dark: '🌙 暗色' }[settings.value.theme]));
+const themeLabel = computed(() => ({
+  auto: t('header.themeAuto'), light: t('header.themeLight'), dark: t('header.themeDark'),
+}[settings.value.theme]));
 async function cycleTheme() {
   const next: Record<Theme, Theme> = { auto: 'light', light: 'dark', dark: 'auto' };
   await update({ theme: next[settings.value.theme] });
@@ -31,12 +35,12 @@ async function cycleTheme() {
   <div class="header">
     <span class="dot" :style="{ background: statusColor }" />
     <select class="lib" :value="settings.libraryId" @change="onLibChange">
-      <option value="" disabled>选择素材库</option>
+      <option value="" disabled>{{ t('header.selectLibrary') }}</option>
       <option v-for="lib in libraries" :key="lib.id" :value="lib.id">{{ lib.name }}</option>
     </select>
-    <button class="screenshot" @click="emit('toggle-screenshot')">截图</button>
+    <button class="screenshot" @click="emit('toggle-screenshot')">{{ t('header.screenshot') }}</button>
     <UploadQueueButton />
-    <button class="theme" :title="`主题: ${settings.theme}`" @click="cycleTheme">{{ themeLabel }}</button>
+    <button class="theme" :title="t('header.themeTitle', { theme: settings.theme })" @click="cycleTheme">{{ themeLabel }}</button>
     <div v-if="props.screenshotOpen" class="screenshot-menu"><slot name="screenshot-menu" /></div>
   </div>
 </template>
