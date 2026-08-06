@@ -8,7 +8,7 @@
           <div class="flex gap-2 mt-1">
             <Input v-model="pluginDirectory" placeholder="选择插件目录..." class="flex-1" readonly />
             <Button variant="secondary" @click="selectPluginDirectory">
-              <i class="pi pi-folder-open mr-2"></i>浏览
+              <span class="material-icons mr-2">folder_open</span>浏览
             </Button>
           </div>
           <p class="text-muted-foreground dark:text-muted-foreground text-sm">插件将从此目录加载，建议使用独立的文件夹</p>
@@ -41,21 +41,48 @@
       <h3 class="text-foreground dark:text-muted-foreground text-lg font-bold leading-tight tracking-[-0.015em] pb-2 pt-4">插件市场源</h3>
       <div class="space-y-4">
         <div>
-          <p class="text-foreground dark:text-muted-foreground text-base font-normal leading-normal">市场源地址</p>
-          <div class="flex gap-2 mt-1">
+          <p class="text-foreground dark:text-muted-foreground text-base font-normal leading-normal">市场源地址列表</p>
+          <p class="text-muted-foreground dark:text-muted-foreground text-sm mt-1">
+            指向插件市场静态 HTTP 服务的根地址（需提供 plugins.json）。可配置多个源，在「插件市场」标签中通过下拉框切换。
+          </p>
+
+          <!-- 已配置的源列表 -->
+          <div v-if="clientPluginMarketUrls.length > 0" class="mt-3 space-y-2">
+            <div
+              v-for="(url, index) in clientPluginMarketUrls"
+              :key="index"
+              class="flex gap-2 items-center"
+            >
+              <Input
+                :model-value="url"
+                placeholder="例如 http://localhost:8080"
+                class="flex-1"
+                @update:model-value="(val) => updateMarketUrl(index, val)"
+                @blur="saveMarketUrls"
+              />
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                @click="removeMarketUrl(index)"
+                title="删除"
+              >
+                <span class="material-icons">delete</span>
+              </Button>
+            </div>
+          </div>
+
+          <!-- 添加新源 -->
+          <div class="flex gap-2 mt-3">
             <Input
-              v-model="clientPluginMarketUrl"
-              placeholder="例如 http://localhost:8080"
+              v-model="newMarketUrl"
+              placeholder="输入新的市场源地址后点击添加"
               class="flex-1"
-              @blur="saveMarketUrl"
+              @keydown.enter="addMarketUrl"
             />
-            <Button variant="secondary" @click="saveMarketUrl">
-              <i class="pi pi-check mr-2"></i>保存
+            <Button variant="secondary" @click="addMarketUrl">
+              <span class="material-icons mr-1">add</span>添加
             </Button>
           </div>
-          <p class="text-muted-foreground dark:text-muted-foreground text-sm">
-            指向插件市场静态 HTTP 服务的根地址（需提供 plugins.json）。留空则未配置市场源，「插件市场」标签会提示去设置。
-          </p>
         </div>
       </div>
     </div>
@@ -94,7 +121,8 @@ const settingsStore = useSettingsStore()
 const pluginDirectory = ref('')
 const autoScanEnabled = ref(true)
 const scanInterval = ref(30000) // 30秒
-const clientPluginMarketUrl = ref('')
+const clientPluginMarketUrls = ref<string[]>([])
+const newMarketUrl = ref('')
 
 // 状态
 const resetting = ref(false)
@@ -161,13 +189,15 @@ const confirmReset = async () => {
     pluginDirectory.value = ''
     autoScanEnabled.value = true
     scanInterval.value = 30000
-    clientPluginMarketUrl.value = ''
+    clientPluginMarketUrls.value = []
+    newMarketUrl.value = ''
 
     await settingsStore.updateSettings({
       pluginsDirectory: '',
       autoLoadPlugins: true,
       trustedPlugins: [],
-      clientPluginMarketUrl: ''
+      clientPluginMarketUrl: '',
+      clientPluginMarketUrls: []
     })
 
     ConfigStorage.removeItem('mira-plugin-extended-settings')
@@ -182,17 +212,59 @@ const confirmReset = async () => {
   }
 }
 
-// 保存插件市场源地址
-const saveMarketUrl = async () => {
+// 保存插件市场源列表（同步规范化并写入「当前选中源」）
+const saveMarketUrls = async () => {
   try {
+    // 规范化：trim、去空、去重（保留顺序）
+    const urls = clientPluginMarketUrls.value
+      .map((u) => (u || '').trim())
+      .filter((u) => !!u)
+      .filter((u, i, arr) => arr.indexOf(u) === i)
+    clientPluginMarketUrls.value = urls
+
+    // 保证当前选中源在列表内：若旧选中源仍存在则保留，否则回退到首项
+    const currentSelected = (settingsStore.settings.clientPluginMarketUrl || '').trim()
+    const selected =
+      currentSelected && urls.includes(currentSelected)
+        ? currentSelected
+        : urls[0] || ''
+
     await settingsStore.updateSettings({
-      clientPluginMarketUrl: (clientPluginMarketUrl.value || '').trim()
+      clientPluginMarketUrl: selected,
+      clientPluginMarketUrls: urls
     })
-    showToast('success', '成功', '插件市场源地址已保存')
   } catch (error) {
     console.error('保存市场源失败:', error)
-    showToast('error', '错误', '保存插件市场源地址失败')
+    showToast('error', '错误', '保存插件市场源列表失败')
   }
+}
+
+// 修改指定位置的市场源
+const updateMarketUrl = (index: number, val: string | number) => {
+  clientPluginMarketUrls.value[index] = String(val ?? '')
+}
+
+// 添加新的市场源
+const addMarketUrl = async () => {
+  const url = (newMarketUrl.value || '').trim()
+  if (!url) {
+    showToast('warn', '警告', '请输入市场源地址')
+    return
+  }
+  if (clientPluginMarketUrls.value.includes(url)) {
+    showToast('warn', '警告', '该源地址已存在')
+    return
+  }
+  clientPluginMarketUrls.value.push(url)
+  newMarketUrl.value = ''
+  await saveMarketUrls()
+  showToast('success', '成功', '已添加市场源')
+}
+
+// 删除指定市场源
+const removeMarketUrl = async (index: number) => {
+  clientPluginMarketUrls.value.splice(index, 1)
+  await saveMarketUrls()
 }
 
 const loadCurrentSettings = async () => {
@@ -201,7 +273,22 @@ const loadCurrentSettings = async () => {
 
     pluginDirectory.value = currentSettings.pluginsDirectory || ''
     autoScanEnabled.value = currentSettings.autoLoadPlugins ?? true
-    clientPluginMarketUrl.value = currentSettings.clientPluginMarketUrl || ''
+
+    // 插件市场源列表（含旧单值迁移兜底）
+    const urlsList = Array.isArray(currentSettings.clientPluginMarketUrls)
+      ? currentSettings.clientPluginMarketUrls
+      : []
+    const oldSingle = (currentSettings.clientPluginMarketUrl || '').trim()
+    const mergedUrls =
+      urlsList.length > 0
+        ? urlsList
+        : oldSingle
+          ? [oldSingle]
+          : []
+    clientPluginMarketUrls.value = mergedUrls
+      .map((u: string) => (u || '').trim())
+      .filter((u: string) => !!u)
+      .filter((u: string, i: number, arr: string[]) => arr.indexOf(u) === i)
 
     try {
       const extendedSettingsJson = await ConfigStorage.getItem('mira-plugin-extended-settings')
@@ -220,7 +307,8 @@ const loadCurrentSettings = async () => {
     pluginDirectory.value = ''
     autoScanEnabled.value = true
     scanInterval.value = 30000
-    clientPluginMarketUrl.value = ''
+    clientPluginMarketUrls.value = []
+    newMarketUrl.value = ''
   }
 }
 

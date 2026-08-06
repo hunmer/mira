@@ -623,14 +623,7 @@ const refreshPlugins = async () => {
   try {
     const result = await pluginStore.discoverLocalPlugins()
 
-    if (result.success) {
-      toast.add({
-        severity: 'success',
-        summary: '刷新成功',
-        detail: '插件列表已更新',
-        life: 3000
-      })
-    } else {
+    if (!result.success) {
       toast.add({
         severity: 'error',
         summary: '刷新失败',

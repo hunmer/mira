@@ -8,7 +8,7 @@
     "build:server": "pnpm -C packages/mira-app-server run rebuild",
     "build:plugins": "pnpm run build:mira_thumb && pnpm run build:mira_user && pnpm run build:upload_statistics",
     "build:client-plugins-index": "node scripts/build-client-plugins-index.mjs",
-    "dev:client-plugins": "node scripts/build-client-plugins-index.mjs --watch",
+    "dev:client-plugins": "node scripts/build-client-plugins-index.mjs --watch --serve",
     "start:server": "pnpm run build:core && pnpm run build:server && pnpm run build:plugins"
   },
   "keywords": [

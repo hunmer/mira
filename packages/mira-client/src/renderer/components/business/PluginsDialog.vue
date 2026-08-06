@@ -107,9 +107,6 @@
         <main class="flex-1 flex flex-col">
           <!-- 顶部操作栏 -->
           <header class="flex items-center justify-between px-4 py-3 border-b border-border dark:border-border">
-            <div class="flex items-center space-x-3">
-              <span class="text-lg font-semibold text-foreground dark:text-muted-foreground">{{ getCategoryTitle() }}</span>
-            </div>
             <div class="flex items-center space-x-2">
               <!-- 搜索框 -->
               <div class="relative">
@@ -122,7 +119,7 @@
                 />
               </div>
               <!-- 刷新按钮 -->
-              <TooltipProvider>
+              <TooltipProvider :ignore-non-keyboard-focus="true">
                 <Tooltip>
                   <TooltipTrigger as-child>
                     <button
@@ -137,7 +134,7 @@
                 </Tooltip>
               </TooltipProvider>
               <!-- 添加插件按钮 -->
-              <TooltipProvider>
+              <TooltipProvider :ignore-non-keyboard-focus="true">
                 <Tooltip>
                   <TooltipTrigger as-child>
                     <button
@@ -223,6 +220,24 @@
 
             <!-- 在线插件市场 -->
             <div v-else>
+              <!-- 插件源切换 -->
+              <div v-if="marketplaceUrlList.length > 0" class="flex items-center gap-2 mb-3">
+                <span class="text-sm text-muted-foreground dark:text-muted-foreground whitespace-nowrap">插件源</span>
+                <Select
+                  :model-value="marketplaceUrl"
+                  @update:model-value="switchMarketSource"
+                >
+                  <SelectTrigger size="sm" class="w-[320px]">
+                    <SelectValue placeholder="选择插件市场源" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem v-for="url in marketplaceUrlList" :key="url" :value="url">
+                      {{ url }}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <!-- 未配置市场源 -->
               <div v-if="!marketplaceUrl" class="flex flex-col items-center justify-center h-full text-center py-12">
                 <span class="material-icons text-6xl text-muted-foreground dark:text-muted-foreground">cloud_off</span>
@@ -460,6 +475,8 @@ import type { PluginRuntime } from '../../../shared/types'
 import type { MarketplacePluginEntry } from '../../../shared/types'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import type { AcceptableValue } from 'reka-ui'
 
 // 组件属性
 interface Props {
@@ -499,6 +516,10 @@ const selectedPlugin = ref<PluginRuntime | null>(null)
 
 // 插件市场相关
 const marketplaceUrl = computed(() => (settingsStore.settings.clientPluginMarketUrl || '').trim())
+const marketplaceUrlList = computed(() => {
+  const list = settingsStore.settings.clientPluginMarketUrls || []
+  return list.map((u) => (u || '').trim()).filter((u) => !!u)
+})
 const installingIds = ref<Set<string>>(new Set())
 
 // 计算属性
@@ -604,6 +625,16 @@ const getCategoryTitle = () => {
 const loadMarketplace = async () => {
   if (!marketplaceUrl.value) return
   await pluginStore.fetchMarketplaceCatalog()
+}
+
+/**
+ * 切换当前生效的插件市场源
+ * 写入设置后，既有 watch(marketplaceUrl) 会自动触发重新加载目录
+ */
+const switchMarketSource = async (value: AcceptableValue) => {
+  const url = typeof value === 'string' ? value.trim() : ''
+  if (!url || url === marketplaceUrl.value) return
+  await settingsStore.updateSetting('clientPluginMarketUrl', url)
 }
 
 /**
@@ -779,14 +810,7 @@ const refreshPlugins = async () => {
   isRefreshing.value = true
   try {
     const result = await pluginStore.discoverLocalPlugins()
-    if (result.success) {
-      toast.add({
-        severity: 'success',
-        summary: '刷新成功',
-        detail: '插件列表已更新',
-        life: 3000
-      })
-    } else {
+    if (!result.success) {
       toast.add({
         severity: 'error',
         summary: '刷新失败',

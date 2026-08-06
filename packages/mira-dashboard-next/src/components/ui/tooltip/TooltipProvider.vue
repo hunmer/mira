@@ -4,6 +4,7 @@ import { TooltipProvider } from 'reka-ui'
 
 const props = withDefaults(defineProps<TooltipProviderProps>(), {
   delayDuration: 0,
+  disableHoverableContent: true,
 })
 </script>
 

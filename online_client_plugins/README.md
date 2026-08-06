@@ -36,7 +36,7 @@ online_client_plugins/
 pnpm build:client-plugins-index
 # 或： node scripts/build-client-plugins-index.mjs
 
-# 开发模式：监听变化自动重建
+# 开发模式：监听变化自动重建索引，同时在 8080 端口起静态服务（带 CORS）
 pnpm dev:client-plugins
 ```
 
@@ -49,16 +49,24 @@ pnpm dev:client-plugins
 
 校验失败时脚本以非零退出码退出，便于接入 CI。
 
+> 💡 **本地调试一条命令搞定**：`pnpm dev:client-plugins` 现在同时**监听重建索引**并**在 `http://localhost:8080` 起静态服务**（自带 `Access-Control-Allow-Origin: *`，客户端可直接跨域拉取）。端口可用环境变量 `PORT=9000` 或 CLI `--port 9000` 覆盖。客户端「插件市场源」填 `http://localhost:8080` 即可。
+>
+> 如只想重建索引不想起服务，用 `pnpm build:client-plugins-index`（单次）或手动 `node scripts/build-client-plugins-index.mjs --watch`（仅监听）；只想起服务，用 `node scripts/build-client-plugins-index.mjs --serve`。
+
 ## 如何对外提供静态服务
 
 `plugins.json` 必须可从市场源根目录直接访问，且服务需允许客户端跨域（CORS）。任选一种方式：
 
-### 方式一：本地调试（npx serve）
+### 方式一：本地调试（pnpm dev:client-plugins，推荐）
 
 ```bash
-npx serve online_client_plugins -p 8080
+# 一条命令：监听重建索引 + 在 8080 起静态服务（带 CORS）
+pnpm dev:client-plugins
 # 客户端在「设置 → 插件」里把市场源填为 http://localhost:8080
+# 端口冲突时换端口：PORT=9000 pnpm dev:client-plugins
 ```
+
+> 也可以用 `npx serve online_client_plugins -p 8080` 单独起静态服务（需先 `pnpm build:client-plugins-index` 生成索引）。
 
 ### 方式二：nginx
 

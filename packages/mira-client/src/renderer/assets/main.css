@@ -1,7 +1,8 @@
 @import "tailwindcss" source(none);
+@import "tw-animate-css";
+
 @source "../../";
 @source "../../../index.html";
-@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -138,5 +139,19 @@
     -moz-osx-font-smoothing: grayscale;
     user-select: none;
     -webkit-user-select: none;
+  }
+
+  /*
+    全局隐藏 UI 元素接收焦点后的描边。
+    桌面应用场景下键盘焦点可视化需求较低，统一去除：
+      1) 浏览器默认 outline（含上方 base 的 outline-ring/50）
+      2) Tailwind/shadcn 的 ring（本质是 box-shadow）
+    若个别元素需要保留焦点反馈（例如自定义可聚焦控件），可在其上显式
+    重置 outline / box-shadow 覆盖本规则。
+  */
+  *:focus,
+  *:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
   }
 }

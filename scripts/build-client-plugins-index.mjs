@@ -8,19 +8,23 @@
  * 用法:
  *   node scripts/build-client-plugins-index.mjs            # 单次生成
  *   node scripts/build-client-plugins-index.mjs --watch    # 监听变化自动重建
+ *   node scripts/build-client-plugins-index.mjs --serve    # 在 8080 起静态服务（仅生成一次索引）
+ *   node scripts/build-client-plugins-index.mjs --watch --serve  # 监听 + 起静态服务
  *
  * 设计要点:
  *   - 零运行时依赖，仅用 Node 内置模块；
  *   - 校验 plugin.json 必填字段，检测 pluginId 重复；
  *   - 为每个文件计算 sha256，并为整目录计算聚合 checksum（可重现）；
  *   - 原子写入 plugins.json（先写 .tmp 再 rename）；
- *   - 校验失败时以非零退出码退出，便于接入 CI。
+ *   - 校验失败时以非零退出码退出，便于接入 CI；
+ *   - --serve 用 Node 内置 http 起零依赖静态服务，带 CORS，便于客户端跨域拉取。
  */
 
 import { createHash } from 'node:crypto'
 import { readFile, readdir, stat, writeFile, rename, access } from 'node:fs/promises'
 import { existsSync, watch } from 'node:fs'
-import { join, relative, sep, posix, dirname } from 'node:path'
+import { createServer } from 'node:http'
+import { join, relative, sep, posix, dirname, extname, normalize } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -220,6 +224,107 @@ async function build() {
   return { catalog, errors }
 }
 
+/** 解析监听端口：--port <n> > process.env.PORT > 默认 8080 */
+function resolvePort(argv) {
+  const portIdx = argv.indexOf('--port')
+  if (portIdx !== -1 && argv[portIdx + 1]) {
+    const p = Number(argv[portIdx + 1])
+    if (Number.isInteger(p) && p > 0 && p < 65536) return p
+    err(`--port 值无效: ${argv[portIdx + 1]}，回退到默认/环境变量`)
+  }
+  if (process.env.PORT) {
+    const p = Number(process.env.PORT)
+    if (Number.isInteger(p) && p > 0 && p < 65536) return p
+  }
+  return 8080
+}
+
+/** 常见 MIME 类型映射（未知类型回退 application/octet-stream） */
+const MIME = {
+  '.json': 'application/json; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.mjs': 'text/javascript; charset=utf-8',
+  '.html': 'text/html; charset=utf-8',
+  '.htm': 'text/html; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.md': 'text/markdown; charset=utf-8',
+  '.txt': 'text/plain; charset=utf-8',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
+  '.webp': 'image/webp',
+  '.map': 'application/json; charset=utf-8',
+  '.zip': 'application/zip'
+}
+
+/**
+ * 零依赖静态服务：把市场源根目录 ROOT 通过 HTTP 暴露，并带 CORS 头。
+ * 供客户端跨域拉取 plugins.json 与各插件文件。
+ */
+function startStaticServer(port) {
+  const server = createServer(async (req, res) => {
+    // 始终允许跨域（客户端跨域拉取必需）
+    res.setHeader('Access-Control-Allow-Origin', '*')
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
+    if (req.method === 'OPTIONS') {
+      res.writeHead(204)
+      res.end()
+      return
+    }
+    if (req.method !== 'GET') {
+      res.writeHead(405, { 'Content-Type': 'application/json; charset=utf-8' })
+      res.end(JSON.stringify({ error: 'Method Not Allowed' }))
+      return
+    }
+
+    // 解析 URL → ROOT 下的安全路径（防 ../../ 越界）
+    const urlPath = decodeURIComponent(new URL(req.url, 'http://localhost').pathname)
+    const safe = normalize(urlPath).replace(/^(\.\.[/\\])+/, '')
+    const abs = join(ROOT, safe)
+
+    try {
+      const s = await stat(abs)
+      let target = abs
+      if (s.isDirectory()) {
+        // 目录优先返回 index.html，否则回退到 plugins.json（市场索引最常用）
+        const indexHtml = join(abs, 'index.html')
+        target = existsSync(indexHtml) ? indexHtml : join(abs, 'plugins.json')
+        if (!existsSync(target)) {
+          res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' })
+          res.end(JSON.stringify({ error: 'Not Found', path: urlPath }))
+          return
+        }
+      }
+      const data = await readFile(target)
+      res.setHeader('Content-Type', MIME[extname(target).toLowerCase()] || 'application/octet-stream')
+      res.writeHead(200)
+      res.end(data)
+    } catch (e) {
+      res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' })
+      res.end(JSON.stringify({ error: 'Not Found', path: urlPath }))
+    }
+  })
+
+  server.on('error', (e) => {
+    if (e.code === 'EADDRINUSE') {
+      err(`端口 ${port} 已被占用，静态服务启动失败。可用 PORT=xxxx 或 --port xxxx 指定其他端口。`)
+    } else {
+      err('静态服务错误:', e.message)
+    }
+    process.exitCode = 1
+  })
+
+  server.listen(port, () => {
+    log(`🌐 静态服务已启动: http://localhost:${port}`)
+    log(`   市场源根目录: ${ROOT}`)
+    log(`   客户端「插件市场源」填: http://localhost:${port}`)
+  })
+  return server
+}
+
 /** 原子写入 JSON（写 .tmp 再 rename） */
 async function writeIndex(catalog) {
   const json = JSON.stringify(catalog, null, 2) + '\n'
@@ -249,7 +354,9 @@ async function run(reason) {
 }
 
 async function main() {
-  const watchMode = process.argv.includes('--watch')
+  const argv = process.argv
+  const watchMode = argv.includes('--watch')
+  const serveMode = argv.includes('--serve')
 
   await run('初始化')
 
@@ -273,6 +380,11 @@ async function main() {
       err('启动 watch 失败（当前平台可能不支持 recursive watch）:', e.message)
       process.exitCode = 1
     }
+  }
+
+  if (serveMode) {
+    const port = resolvePort(argv)
+    startStaticServer(port)
   }
 }
 

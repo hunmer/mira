@@ -131,4 +131,15 @@
   button:not(:disabled), [role="button"]:not(:disabled) {
     cursor: pointer;
     }
+
+  /*
+    全局隐藏 UI 元素接收焦点后的描边。
+    同 main.css：移除浏览器默认 outline 与 Tailwind/shadcn ring（box-shadow）。
+    需要保留焦点反馈的元素可在自身重置覆盖。
+  */
+  *:focus,
+  *:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+  }
 }

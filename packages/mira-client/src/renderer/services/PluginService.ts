@@ -7,7 +7,26 @@ import type {
   MarketplaceCatalog,
   MarketplacePluginEntry
 } from '../../shared/types'
+import { toRaw } from 'vue'
 import { pluginSystem } from './PluginSystemCore'
+
+/**
+ * 递归剥离对象的响应式 Proxy，返回可被 Electron IPC（structured clone）克隆的纯对象。
+ * 用于在跨 IPC 边界前把 Vue/Pinia 的响应式状态转换为普通对象，避免
+ * “对象不能被克隆”错误。
+ */
+const toPlainObject = <T>(obj: T): T => {
+  const raw = toRaw(obj as any)
+  if (raw === null || typeof raw !== 'object') return raw as T
+  if (Array.isArray(raw)) {
+    return raw.map((item) => toPlainObject(item)) as unknown as T
+  }
+  const result: Record<string, unknown> = {}
+  for (const key of Object.keys(raw)) {
+    result[key] = toPlainObject((raw as Record<string, unknown>)[key])
+  }
+  return result as T
+}
 import ConfigStorage from '@renderer/utils/ConfigStorage'
 
 /**
@@ -371,7 +390,12 @@ export class PluginService {
         return { success: false, message: '插件市场安装仅在 Electron 环境可用' }
       }
 
-      const result = await (window as any).electronAPI.plugin.installFromMarketplace(marketUrl, entry)
+      // entry 来自 Pinia 响应式状态，是 Vue 的 Proxy；Electron IPC 的 structured
+      // clone 无法克隆 Proxy，会抛 “对象不能被克隆”。跨 IPC 边界前用 toRaw 递归
+      // 剥离响应式包装，得到纯对象后再传递。
+      const plainEntry = toPlainObject(entry) as MarketplacePluginEntry
+
+      const result = await (window as any).electronAPI.plugin.installFromMarketplace(marketUrl, plainEntry)
       if (result.success) {
         // 安装成功后重新发现并加载本地插件，让新插件出现在列表里
         await this.discoverAndLoadPlugins()

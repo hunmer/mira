@@ -69,7 +69,8 @@ export interface AppSettings {
   maxPluginLoadTime: number
   enablePluginSandbox: boolean
   trustedPlugins: string[]
-  clientPluginMarketUrl: string // 客户端插件市场源地址（HTTP 静态服务）
+  clientPluginMarketUrl: string // 客户端插件市场当前选中的源地址（HTTP 静态服务），留空表示未选择
+  clientPluginMarketUrls: string[] // 客户端插件市场源地址列表（可配置多个，便于在「插件市场」中切换）
 }
 
 // 添加素材库类型定义
@@ -184,7 +185,8 @@ export const useSettingsStore = defineStore('settings', () => {
     maxPluginLoadTime: 30000, // 30秒
     enablePluginSandbox: false,
     trustedPlugins: [],
-    clientPluginMarketUrl: '' // 客户端插件市场源地址，留空表示未配置
+    clientPluginMarketUrl: '', // 客户端插件市场当前选中的源地址，留空表示未选择
+    clientPluginMarketUrls: [] // 客户端插件市场源地址列表
   })
   
   const isConnected = ref(false)
@@ -285,6 +287,42 @@ export const useSettingsStore = defineStore('settings', () => {
 
 
   /**
+   * 插件市场源地址迁移：
+   * - 若列表为空但存在旧的单值 clientPluginMarketUrl，则将其迁移进列表；
+   * - 规范化列表（去空白、去空、去重）；
+   * - 确保当前选中的 clientPluginMarketUrl 一定在列表中（否则回退到列表首项）。
+   */
+  const migrateMarketUrls = () => {
+    const oldSingle = (settings.value.clientPluginMarketUrl || '').trim()
+
+    // 列表规范化
+    let urls: string[] = Array.isArray(settings.value.clientPluginMarketUrls)
+      ? settings.value.clientPluginMarketUrls
+      : []
+    // 向后兼容：旧版本只有单值
+    if (urls.length === 0 && oldSingle) {
+      urls = [oldSingle]
+    }
+    urls = urls
+      .map((u) => (u || '').trim())
+      .filter((u) => !!u)
+      // 去重（保留顺序）
+      .filter((u, i, arr) => arr.indexOf(u) === i)
+
+    settings.value.clientPluginMarketUrls = urls
+
+    // 保证选中源在列表内
+    const current = oldSingle
+    if (urls.length === 0) {
+      settings.value.clientPluginMarketUrl = ''
+    } else if (current && urls.includes(current)) {
+      settings.value.clientPluginMarketUrl = current
+    } else {
+      settings.value.clientPluginMarketUrl = urls[0]
+    }
+  }
+
+  /**
    * 加载设置从本地存储
    * @returns Promise<void>
    */
@@ -295,6 +333,9 @@ export const useSettingsStore = defineStore('settings', () => {
         const parsed = JSON.parse(stored)
         // 合并设置，确保新增的设置项有默认值
         settings.value = { ...settings.value, ...parsed }
+
+        // 插件市场源：向后兼容迁移（旧版本仅有单一 clientPluginMarketUrl）
+        migrateMarketUrls()
       } else {
       }
       // 初始化插件服务（如果配置了插件目录且启用了自动加载，且尚未初始化）
@@ -438,7 +479,8 @@ export const useSettingsStore = defineStore('settings', () => {
       maxPluginLoadTime: 30000,
       enablePluginSandbox: false,
       trustedPlugins: [],
-      clientPluginMarketUrl: ''
+      clientPluginMarketUrl: '',
+      clientPluginMarketUrls: []
     }
 
     settings.value = defaultSettings

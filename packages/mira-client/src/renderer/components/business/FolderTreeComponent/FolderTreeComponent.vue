@@ -140,7 +140,7 @@
                   dragOverNodeId === node.id ? 'ring-2 ring-primary/50 bg-primary/10' : '',
                   locatingNodeId === node.id ? 'sidebar-locate-active' : ''
                 ]"
-                @click="handleNodeClick(node)"
+                @click="handleNodeClick(node, stat, $event)"
                 @contextmenu="handleNodeContextMenu(node, $event)"
                 @dragover="handleNodeDragOver($event, node)"
                 @dragleave="handleNodeDragLeave($event, node)"
@@ -158,7 +158,7 @@
                   v-if="stat.children.length"
                   class="folder-chevron material-icons text-base mr-1 text-muted-foreground hover:text-muted-foreground select-none"
                   :class="{ 'folder-chevron--open': stat.open }"
-                  @click.stop="toggleNode(stat)"
+                  @click.stop="toggleNode(stat, $event)"
                 >
                   chevron_right
                 </span>
@@ -182,7 +182,7 @@
                   dragOverNodeId === node.id ? 'ring-2 ring-primary/50 bg-primary/10' : '',
                   locatingNodeId === node.id ? 'sidebar-locate-active' : ''
                 ]"
-                @click="handleNodeClick(node)"
+                @click="handleNodeClick(node, stat, $event)"
                 @contextmenu="handleNodeContextMenu(node, $event)"
                 @dragover="handleNodeDragOver($event, node)"
                 @dragleave="handleNodeDragLeave($event, node)"
@@ -200,7 +200,7 @@
                   v-if="stat.children.length"
                   class="folder-chevron material-icons text-base mr-1 text-muted-foreground hover:text-muted-foreground select-none"
                   :class="{ 'folder-chevron--open': stat.open }"
-                  @click.stop="toggleNode(stat)"
+                  @click.stop="toggleNode(stat, $event)"
                 >
                   chevron_right
                 </span>
@@ -925,11 +925,72 @@ function handleBaseCategoryClick(category: any) {
   })
 }
 
-function toggleNode(stat: any) {
-  stat.open = !stat.open
+const CHILDREN_SLIDE_MS = 240
+const animatingStats = new WeakSet<object>()
+
+function getDescendantRows(targetRow: HTMLElement): HTMLElement[] {
+  const targetLevel = Number(targetRow.getAttribute('aria-level') || 0)
+  if (!targetLevel) return []
+
+  const descendants: HTMLElement[] = []
+  let row = targetRow.nextElementSibling as HTMLElement | null
+  while (row) {
+    const level = Number(row.getAttribute('aria-level') || 0)
+    if (level > 0 && level <= targetLevel) break
+    descendants.push(row)
+    row = row.nextElementSibling as HTMLElement | null
+  }
+  return descendants
 }
 
-function handleNodeClick(node: HeTreeNode) {
+function getTargetRow(event: MouseEvent): HTMLElement | null {
+  return (event.currentTarget as HTMLElement).closest<HTMLElement>('.tree-node')
+}
+
+function animateChildRows(rows: HTMLElement[], phase: 'expand' | 'collapse'): Promise<void> {
+  const keyframes: Keyframe[] = phase === 'expand'
+    ? [
+        { transform: 'translateX(-24px)', opacity: 0 },
+        { transform: 'translateX(0)', opacity: 1 },
+      ]
+    : [
+        { transform: 'translateX(0)', opacity: 1 },
+        { transform: 'translateX(24px)', opacity: 0 },
+      ]
+  const animations = rows.map(row => row.animate(keyframes, {
+    duration: CHILDREN_SLIDE_MS,
+    easing: 'cubic-bezier(0.23, 1, 0.32, 1)',
+    fill: 'both',
+  }))
+
+  return Promise.allSettled(animations.map(animation => animation.finished)).then(() => {
+    animations.forEach(animation => animation.cancel())
+  })
+}
+
+async function toggleNode(stat: any, event: MouseEvent) {
+  if (animatingStats.has(stat)) return
+  animatingStats.add(stat)
+  const targetRow = getTargetRow(event)
+
+  try {
+    if (!stat.open) {
+      stat.open = true
+      await nextTick()
+      const descendants = targetRow ? getDescendantRows(targetRow) : []
+      await animateChildRows(descendants, 'expand')
+      return
+    }
+
+    const descendants = targetRow ? getDescendantRows(targetRow) : []
+    await animateChildRows(descendants, 'collapse')
+    stat.open = false
+  } finally {
+    animatingStats.delete(stat)
+  }
+}
+
+function handleNodeClick(node: HeTreeNode, stat: any, event: MouseEvent) {
   // 选择模式激活：点击节点执行选中/取消选中，不触发常规 select
   if (selectionActive.value) {
     if (isMultiMode.value) {
@@ -941,6 +1002,11 @@ function handleNodeClick(node: HeTreeNode) {
     }
     return
   }
+
+  if (stat.children?.length) {
+    void toggleNode(stat, event)
+  }
+
   searchQuery.value = ''
   showSearch.value = false
   emit('select', {
@@ -1096,6 +1162,7 @@ onUnmounted(() => {
 }
 
 .tree-scroll {
+  overflow-x: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
   padding-right: 4px;
@@ -1104,6 +1171,7 @@ onUnmounted(() => {
 
 .tree-scroll::-webkit-scrollbar {
   width: 6px;
+  height: 0;
 }
 
 .tree-scroll::-webkit-scrollbar-track {
@@ -1187,6 +1255,7 @@ onUnmounted(() => {
 }
 
 .folder-chevron {
+  transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1);
   transform-origin: center center;
 }
 
@@ -1214,7 +1283,6 @@ onUnmounted(() => {
   transform: rotate(90deg) scale(0.9);
 }
 
-/* reduced-motion：保留 opacity（辅助理解），去掉位移/高度形变 */
 @media (prefers-reduced-motion: reduce) {
   .search-slide-enter-active,
   .search-slide-leave-active {
@@ -1230,5 +1298,11 @@ onUnmounted(() => {
   .header-action-btn {
     transition: none;
   }
+
+  /* Folder tree animation is an explicit interaction requirement. */
+  .folder-chevron {
+    transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1) !important;
+  }
+
 }
 </style>
