@@ -36,6 +36,7 @@ import { TrayService } from './services/TrayService'
 // import { inspect } from 'node:util'
 import { logger } from './utils/Logger'
 import { getAutoUpdater } from './services/useAutoUpdater'
+import { runLocalServerScript, runLocalServerScriptSync } from './services/LocalServerService'
 
 // function formatArgs(args: any[]): string {
 //   return args.map(a =>
@@ -124,10 +125,32 @@ class MiraApplication {
     
     // 记录启动参数，用于调试协议处理
     logger.debug('MiraApplication', 'Startup arguments', { argv: process.argv })
-    
+
+    // 系统登录项只负责唤起脚本管理的后台服务，不创建 Mira UI。
+    if (process.argv.includes('--mira-server-startup')) {
+      this.setupServerStartupApp()
+      return
+    }
+
     this.protocolService = ProtocolService.getInstance()
     this.trayService = TrayService.getInstance()
     this.setupApp()
+  }
+
+  private setupServerStartupApp() {
+    app.whenReady().then(async () => {
+      try {
+        await runLocalServerScript('start', {
+          onOutput: line => logger.info('LocalServerService', line),
+        })
+      } catch (error) {
+        logger.warn('LocalServerService', 'Login startup failed', {
+          error: error instanceof Error ? error.message : String(error),
+        })
+      } finally {
+        app.quit()
+      }
+    })
   }
 
   private setupApp() {
@@ -141,6 +164,15 @@ class MiraApplication {
       this.setupIPC()
       this.setupProtocol()
       this.setupTray()
+
+      // 本地服务由独立生命周期脚本管理；启动检查不阻塞窗口显示。
+      void runLocalServerScript('start', {
+        onOutput: line => logger.info('LocalServerService', line),
+      }).catch(error => {
+        logger.warn('LocalServerService', 'Local backend auto-start failed', {
+          error: error instanceof Error ? error.message : String(error),
+        })
+      })
 
       // 延迟检查自动更新（避免影响启动速度）
       if (app.isPackaged) {
@@ -163,7 +195,6 @@ class MiraApplication {
     app.on('window-all-closed', () => {
       logger.info('MiraApplication', 'All windows closed')
       if (process.platform !== 'darwin') {
-        this.cleanup()
         app.quit()
       }
     })
@@ -171,6 +202,14 @@ class MiraApplication {
     // 应用即将退出
     app.on('before-quit', () => {
       logger.info('MiraApplication', 'App is about to quit')
+      try {
+        const output = runLocalServerScriptSync('stop')
+        if (output) logger.info('LocalServerService', output)
+      } catch (error) {
+        logger.warn('LocalServerService', 'Local backend stop failed', {
+          error: error instanceof Error ? error.message : String(error),
+        })
+      }
       this.cleanup()
     })
 

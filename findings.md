@@ -11,6 +11,12 @@
 - Default-library provisioning can use authenticated `GET/POST /api/libraries`; creation requires `name` and `path`, and the API returns the created library object directly.
 - Immediate connection should remain in `useConnectionFlow`: set the local server address, run health detection, authenticate when required, select the deployment-returned library ID, then reuse `connectToLibrary()` for store persistence and navigation.
 - Per-step output will use a manual expanded-ID set: output opens the running step, success closes it, and failure leaves it open.
+- Electron creates the main window from `app.whenReady()` and has no local-server startup check today.
+- `electron-builder.json` packages only app bundles plus assets/configs; a lifecycle script must be added to `extraResources` and resolved from `process.resourcesPath` when packaged.
+- A standalone Node script can own backend PID/log/health logic. Electron can run that script through its executable with `ELECTRON_RUN_AS_NODE=1`, without directly spawning `mira-app-server`.
+- The service should persist after Electron exits; `stop` only targets a PID recorded by the lifecycle script, so independently started services are not killed.
+- Electron shutdown now invokes the script's synchronous `stop` command without intercepting `before-quit`, preserving auto-updater quit behavior.
+- Manual package commands `server:start`, `server:status`, and `server:stop` reuse the latest explicit service state/data directory through a home-directory pointer file.
 
 - `HANDOFF.md`: the feature belongs primarily to the Vue plugin window using `@woven-canvas/vue`.
 - Canvas project switching remounts `WovenCanvas` by `currentProjectId`; persistence uses IndexedDB.
@@ -66,3 +72,5 @@
 - Browser automation verified two persisted nodes were listed, focusing selected exactly one canvas block, and deleting reduced the live list from two nodes to one.
 - On narrow touch layouts, delete controls must remain visibly available and the redundant external toggle must hide while the sidebar is open.
 - Frame integration was verified through real canvas box-selection and the existing create-Frame action: two child shapes displayed `Frame`, while the Frame node itself displayed `画布根级`.
+- Auto-start uses Electron login-item settings with `--mira-server-startup`; that mode runs the packaged lifecycle script and exits without normal app cleanup.
+- The setting is read from the OS on mount and persisted in the existing settings store after a successful IPC update.

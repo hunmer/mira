@@ -16,6 +16,7 @@ export interface AppSettings {
   // 界面设置
   theme: 'light' | 'dark' | 'auto'
   language: string
+  autoStartServer: boolean
 
   // 主题风格覆盖（'' | 'mira' | 'lyra' | 'luma' | 'rhea' | 'custom'）
   themeStyle: string
@@ -136,6 +137,7 @@ export const useSettingsStore = defineStore('settings', () => {
     // 界面设置
     theme: 'auto',
     language: 'zh-CN',
+    autoStartServer: false,
 
     // 主题风格 / 主色覆盖
     themeStyle: '',
@@ -474,6 +476,7 @@ export const useSettingsStore = defineStore('settings', () => {
     const defaultSettings: AppSettings = {
       theme: 'auto',
       language: 'zh-CN',
+      autoStartServer: false,
 
       themeStyle: '',
       themeStyleCustomCss: '',

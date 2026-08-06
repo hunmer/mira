@@ -543,6 +543,12 @@ export interface ElectronAPI {
     removeDeployProgressListener: () => void
   }
 
+  // 本地服务系统登录自启动
+  serverAutoStart: {
+    get: () => Promise<{ success: boolean; enabled: boolean; message?: string }>
+    set: (enabled: boolean) => Promise<{ success: boolean; enabled: boolean; message?: string }>
+  }
+
   // 通知 API
   notification: {
     show: (options: { title: string; body?: string; silent?: boolean }) => Promise<{ success: boolean; error?: string }>

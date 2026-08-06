@@ -233,6 +233,12 @@ const electronAPI: ElectronAPI = {
     },
   },
 
+  // 本地服务系统登录自启动
+  serverAutoStart: {
+    get: () => ipcRenderer.invoke('server-autostart:get'),
+    set: (enabled: boolean) => ipcRenderer.invoke('server-autostart:set', enabled),
+  },
+
   // 通知 API
   notification: {
     show: (options: { title: string; body?: string; silent?: boolean }) =>

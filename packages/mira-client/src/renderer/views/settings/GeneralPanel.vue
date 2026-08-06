@@ -1,5 +1,21 @@
 <template>
   <div class="p-4 space-y-6">
+    <!-- 服务设置 -->
+    <div>
+      <h3 class="text-foreground dark:text-muted-foreground text-lg font-bold leading-tight tracking-[-0.015em] pb-2 pt-4">服务设置</h3>
+      <div class="flex items-center justify-between gap-4 py-3">
+        <div>
+          <p class="text-foreground dark:text-muted-foreground text-base font-normal leading-normal">自启动服务</p>
+          <p class="text-muted-foreground dark:text-muted-foreground text-sm">系统登录时自动启动 mira-app-server，即使 Mira 主程序未打开</p>
+        </div>
+        <Switch
+          :checked="autoStartServer"
+          :disabled="autoStartServerLoading || !hasServerAutoStart"
+          @update:checked="handleAutoStartChange"
+        />
+      </div>
+    </div>
+
     <!-- 本地化设置 -->
     <div>
       <h3 class="text-foreground dark:text-muted-foreground text-lg font-bold leading-tight tracking-[-0.015em] pb-2 pt-4">本地化设置</h3>
@@ -140,17 +156,56 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useSettingsStore } from '../../stores/settings'
 import { useToast } from '@/renderer/composables/useToast'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
+import { Switch } from '@/components/ui/switch'
 import { ExternalLink } from 'lucide-vue-next'
 import { DEFAULT_PRIMARY_COLORS } from '@renderer/utils/theme-style'
 
 const settingsStore = useSettingsStore()
 const toast = useToast()
+
+const autoStartServer = ref(false)
+const autoStartServerLoading = ref(false)
+const hasServerAutoStart = computed(() => Boolean(window.electronAPI?.serverAutoStart))
+
+onMounted(async () => {
+  if (!hasServerAutoStart.value) return
+  autoStartServerLoading.value = true
+  try {
+    const result = await window.electronAPI.serverAutoStart.get()
+    if (result.success) {
+      autoStartServer.value = result.enabled
+      settingsStore.settings.autoStartServer = result.enabled
+    }
+  } catch (error) {
+    console.error('Failed to read server auto-start setting:', error)
+  } finally {
+    autoStartServerLoading.value = false
+  }
+})
+
+const handleAutoStartChange = async (enabled: boolean) => {
+  if (!hasServerAutoStart.value) return
+  const previous = autoStartServer.value
+  autoStartServerLoading.value = true
+  try {
+    const result = await window.electronAPI.serverAutoStart.set(enabled)
+    if (!result.success) throw new Error(result.message || '系统登录项设置失败')
+    autoStartServer.value = result.enabled
+    await settingsStore.updateSetting('autoStartServer', result.enabled)
+    toast.add({ severity: 'success', summary: '设置已保存', detail: result.enabled ? '服务将在系统登录时自动启动' : '已关闭服务自启动', life: 2000 })
+  } catch (error) {
+    autoStartServer.value = previous
+    toast.add({ severity: 'error', summary: '保存失败', detail: error instanceof Error ? error.message : '设置服务自启动时发生错误', life: 5000 })
+  } finally {
+    autoStartServerLoading.value = false
+  }
+}
 
 // 自定义取色器 input 引用
 const customColorInput = ref<HTMLInputElement | null>(null)

@@ -40,6 +40,12 @@
 - Final scoped dependency, SFC, Viewer.js method wiring, cleanup, and whitespace checks passed.
 
 ## 2026-08-07
+- Started the General settings backend auto-start toggle task.
+- Started the script-managed local backend lifecycle and Electron startup auto-check task.
+- Selected a packaged Node lifecycle script with persistent PID/log state and health-based idempotency.
+- Added `mira-server-service.mjs` with `start/status/stop`, packaged it as an extra resource, and routed deployment/startup/shutdown through `LocalServerService`.
+- Main production build, script syntax/packaging checks, scoped whitespace checks, and stopped-service behavior verification passed.
+- Full `tsc -p tsconfig.node.json` remains blocked by pre-existing `DragDropHandler` and Vite 5/6 type conflicts; no changed lifecycle file matched filtered diagnostics.
 - Started the follow-up deployment UX, default-library provisioning, and immediate-connection task.
 - Confirmed the built-in default admin and selected an idempotent API-based default-library provisioning flow.
 - Added backend default-library provisioning, deployment-result library ID, collapsible per-step output, fixed dialog height, and the immediate-connection event flow.
@@ -66,3 +72,5 @@
 - Visual inspection caught internal `transform-*` entities and a mobile toggle overlap; filtered nodes by `Synced` and hid the redundant open-state toggle on narrow screens.
 - Automated desktop/mobile interaction checks passed; made delete icons persistently visible for touch users and documented the component in `HANDOFF.md`.
 - Final production build and scoped `vue-tsc` passed; Frame membership, focus selection, deletion, desktop layout, and mobile layout were verified in browser automation.
+- Implemented the General settings “自启动服务” switch, system login-item IPC, preload/shared API contract, and hidden startup-only main-process branch.
+- Main, preload, and full renderer production builds passed; scoped `git diff --check` passed.

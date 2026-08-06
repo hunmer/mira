@@ -25,6 +25,10 @@ export class AppHandlers {
     ipcMain.handle('app:getPath', this.handleAppGetPath.bind(this))
     ipcMain.handle('app:isPackaged', this.handleAppIsPackaged.bind(this))
 
+    // 服务自启动（系统登录项）
+    ipcMain.handle('server-autostart:get', this.handleServerAutoStartGet.bind(this))
+    ipcMain.handle('server-autostart:set', this.handleServerAutoStartSet.bind(this))
+
     ipcMain.handle('app:toggle-devtools', this.handleAppToggleDevTools.bind(this))
     ipcMain.handle('dev:toggle-devtools', this.handleAppToggleDevTools.bind(this))
     ipcMain.handle('dev:force-reload', this.handleDevForceReload.bind(this))
@@ -130,5 +134,31 @@ export class AppHandlers {
    */
   private async handleAppIsPackaged(_event: IpcMainInvokeEvent): Promise<boolean> {
     return app.isPackaged
+  }
+
+  private async handleServerAutoStartGet(_event: IpcMainInvokeEvent): Promise<{ success: boolean; enabled: boolean; message?: string }> {
+    try {
+      const settings = app.getLoginItemSettings({ args: ['--mira-server-startup'] })
+      return { success: true, enabled: settings.openAtLogin }
+    } catch (error) {
+      return { success: false, enabled: false, message: error instanceof Error ? error.message : String(error) }
+    }
+  }
+
+  private async handleServerAutoStartSet(
+    _event: IpcMainInvokeEvent,
+    enabled: boolean,
+  ): Promise<{ success: boolean; enabled: boolean; message?: string }> {
+    try {
+      app.setLoginItemSettings({
+        openAtLogin: Boolean(enabled),
+        openAsHidden: true,
+        args: ['--mira-server-startup'],
+      })
+      const settings = app.getLoginItemSettings({ args: ['--mira-server-startup'] })
+      return { success: true, enabled: settings.openAtLogin }
+    } catch (error) {
+      return { success: false, enabled: false, message: error instanceof Error ? error.message : String(error) }
+    }
   }
 }

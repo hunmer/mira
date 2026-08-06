@@ -1,7 +1,8 @@
 import { ipcMain, IpcMainInvokeEvent, BrowserWindow, app } from 'electron'
-import { execFile, spawn, type ChildProcessWithoutNullStreams } from 'child_process'
+import { execFile, spawn } from 'child_process'
 import { mkdir } from 'fs/promises'
 import path from 'path'
+import { runLocalServerScript } from '../services/LocalServerService'
 
 /**
  * 后端部署 (mira-app-server) IPC 处理器
@@ -67,7 +68,6 @@ export interface DeploymentProgress {
 export class ServerDeployHandlers {
   private mainWindow: BrowserWindow | null = null
   private deploymentInProgress = false
-  private serverProcess: ChildProcessWithoutNullStreams | null = null
 
   constructor() {
     this.registerHandlers()
@@ -205,78 +205,8 @@ export class ServerDeployHandlers {
     return created.id
   }
 
-  private getServerExecutable(): Promise<string> {
-    return new Promise((resolve, reject) => {
-      execFile(
-        NPM_BIN,
-        ['prefix', '-g'],
-        { shell: IS_WIN, windowsHide: true },
-        (error, stdout, stderr) => {
-          if (error) {
-            reject(new Error(stderr?.trim() || error.message))
-            return
-          }
-          const prefix = stdout.trim()
-          resolve(IS_WIN ? path.join(prefix, `${SERVER_BIN}.cmd`) : path.join(prefix, 'bin', SERVER_BIN))
-        },
-      )
-    })
-  }
-
-  private async startServer(dataPath: string, onOutput: (line: string) => void): Promise<void> {
-    const existingHealth = await this.checkHealth()
-    if (existingHealth.ok) {
-      onOutput(`检测到端口 ${HTTP_PORT} 上已有可用服务，直接复用`)
-      return
-    }
-
-    const executable = await this.getServerExecutable()
-    onOutput(`可执行文件：${executable}`)
-    const child = spawn(
-      executable,
-      ['start', '--http-port', String(HTTP_PORT), '--ws-port', String(WS_PORT), '--data-path', dataPath],
-      {
-        shell: IS_WIN,
-        windowsHide: true,
-        env: {
-          ...process.env,
-          INITIAL_ADMIN_USERNAME: DEFAULT_ADMIN_USERNAME,
-          INITIAL_ADMIN_PASSWORD: DEFAULT_ADMIN_PASSWORD,
-        },
-      },
-    )
-    this.serverProcess = child
-    let startError: Error | null = null
-
-    const emitChunk = (chunk: Buffer | string) => {
-      String(chunk)
-        .split(/\r?\n/)
-        .map(line => line.trim())
-        .filter(Boolean)
-        .forEach(onOutput)
-    }
-    child.stdout.on('data', emitChunk)
-    child.stderr.on('data', emitChunk)
-    child.once('error', error => {
-      startError = error
-    })
-    child.once('close', exitCode => {
-      if (exitCode !== 0) startError = new Error(`${SERVER_BIN} 退出码 ${exitCode ?? -1}`)
-      if (this.serverProcess === child) this.serverProcess = null
-    })
-
-    for (let attempt = 0; attempt < 40; attempt++) {
-      if (startError) throw startError
-      const health = await this.checkHealth()
-      if (health.ok) {
-        onOutput(`HTTP 服务已监听 ${HTTP_PORT}，WebSocket 端口 ${WS_PORT}`)
-        return
-      }
-      await new Promise(resolve => setTimeout(resolve, 500))
-    }
-
-    child.kill()
-    throw new Error(`服务启动超时：20 秒内未通过端口 ${HTTP_PORT} 健康检查`)
+  private async startServer(onOutput: (line: string) => void): Promise<void> {
+    await runLocalServerScript('start', { onOutput })
   }
 
   private async handleDeploy(
@@ -327,7 +257,7 @@ export class ServerDeployHandlers {
 
       await runStep(4, async output => {
         output(`启动 ${SERVER_BIN}，HTTP ${HTTP_PORT} / WebSocket ${WS_PORT}`)
-        await this.startServer(dataPath, output)
+        await this.startServer(output)
       })
 
       await runStep(5, async output => {

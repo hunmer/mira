@@ -1,9 +1,17 @@
 # Task Plan
 
 ## Goal
-Extend the real deployment guide with collapsible step output, fixed dialog sizing, default library provisioning, and one-click login into that library.
+Add a General settings toggle that installs/removes an OS login item for the script-managed local backend, allowing mira-app-server to start without the Mira UI.
 
 ## Phases
+- [complete] Inspect GeneralPanel settings, persistence, and existing OS startup IPC/build conventions.
+- [complete] Define cross-platform auto-start entrypoint and IPC contract.
+- [complete] Implement the settings toggle and OS startup install/remove behavior.
+- [complete] Run focused verification and document acceptance steps.
+- [complete] Inspect Electron startup lifecycle, build packaging, and current server process ownership.
+- [complete] Define a packaged cross-platform start/status/stop script contract.
+- [complete] Implement script-managed deployment startup and Electron auto-start checks.
+- [complete] Run focused lifecycle/build verification and document acceptance steps.
 - [complete] Inspect current login/auth/library APIs and the user's overlapping LoginView changes.
 - [complete] Define the idempotent default-user/library provisioning and post-deploy connection contract.
 - [complete] Implement backend provisioning, collapsible deployment UI, fixed dialog sizing, and immediate connection.
@@ -58,3 +66,5 @@ Extend the real deployment guide with collapsible step output, fixed dialog sizi
 | Normalizing two existing mixed-line-ending files made added CRLF lines fail `git diff --check` | 1 | Rewrote only the changed blocks with their original LF convention; scoped diff check then passed. |
 | Full client `vue-tsc` reported numerous existing unrelated errors | 1 | Filtered diagnostics to the four deployment files; no matching errors were reported, and all three relevant production builds passed. |
 | First checklist patch assumed an explicit `defineOptions` call that the component does not contain | 1 | Split the patch against the component's actual script and template blocks. |
+| Main-process TypeScript check is blocked by existing `DragDropHandler` and mixed Vite-version errors | 1 | Confirmed no diagnostics reference the new lifecycle service/handler changes; production main build passes. |
+| Standalone `status` returns exit code 1 when the service is stopped | 1 | This is intentional CLI status semantics; it still emits the JSON health/managed state and does not mutate files. |

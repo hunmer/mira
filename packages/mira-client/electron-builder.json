@@ -35,6 +35,10 @@
       "from": "configs/",
       "to": "configs/",
       "filter": ["**/*"]
+    },
+    {
+      "from": "scripts/mira-server-service.mjs",
+      "to": "scripts/mira-server-service.mjs"
     }
   ],
   "publish": {
