@@ -82,7 +82,16 @@ export const TagOperations = {
   },
 
   async getAllTags(this: CoreAccessible): Promise<Record<string, any>[]> {
-    const rows = await this.getSql('SELECT * FROM tags ORDER BY sort_index ASC, id ASC', []);
+    // 相关子查询带出每个标签关联的非回收文件数。
+    // 文件-标签关联存在 files.tags（JSON 数组字符串），用 json_each 展开后按标签 id 命中。
+    const rows = await this.getSql(
+      `SELECT t.*,
+        (SELECT COUNT(*) FROM files
+         WHERE recycled = 0
+           AND EXISTS (SELECT 1 FROM json_each(files.tags) WHERE value = t.id)) AS file_count
+       FROM tags t ORDER BY sort_index ASC, id ASC`,
+      []
+    );
     return rows.map(row => this.rowToMap(row));
   },
 

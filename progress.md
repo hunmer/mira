@@ -32,3 +32,9 @@
 - Scoped SFC compilation passed for both updated components; selector inspection confirmed the multi-select dropdown width and requested nine preview controls.
 - Removed the temporary `[DEBUG-toolbar-spacing]` probe and the obsolete footer selector after confirming the targeted geometry.
 - Final scoped SFC, toolbar geometry, preview control, cleanup, and whitespace checks passed.
+- Started replacing the manual preview transform implementation with Viewer.js/v-viewer after user correction.
+- Installed direct plugin dependencies `v-viewer@3.0.23` and `viewerjs@1.11.8`; whiteboard package metadata and lockfile were updated.
+- Replaced manual CSS transforms/native fullscreen with a real inline `VViewer` and underlying Viewer.js instance; all external controls now call Viewer.js methods.
+- Scoped SFC compilation and source inspection confirmed the real Viewer.js instance wiring and direct plugin dependency declarations.
+- Removed temporary `[DEBUG-viewerjs]` initialization probes after confirming `@inited` and image-load update paths.
+- Final scoped dependency, SFC, Viewer.js method wiring, cleanup, and whitespace checks passed.

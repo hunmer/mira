@@ -14,6 +14,12 @@ importers:
       '@woven-canvas/vue':
         specifier: ^1.4.0
         version: 1.4.0(2aa198774f57ef2a01a861d83315bfc4)
+      v-viewer:
+        specifier: ^3.0.23
+        version: 3.0.23(viewerjs@1.11.8)(vue@3.5.41(typescript@5.9.3))
+      viewerjs:
+        specifier: ^1.11.8
+        version: 1.11.8
       vue:
         specifier: ^3.4.0
         version: 3.5.41(typescript@5.9.3)
@@ -596,6 +602,9 @@ packages:
   linkifyjs@4.3.3:
     resolution: {integrity: sha512-P8aEP5U/D1/IlTY2OeYsErdwh9bGuLE30NcXtKEjgdHcahveQoQwM2yZNsioQHsWFz0P7KKudisbrzCgR0sDHg==}
 
+  lodash-es@4.18.1:
+    resolution: {integrity: sha512-J8xewKD/Gk22OZbhpOVSwcs60zhd95ESDwezOFuA3/099925PdHJ7OFHNTGtajL3AlZkykD32HykiMo+BIBI8A==}
+
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
 
@@ -672,6 +681,15 @@ packages:
     resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
     engines: {node: '>=14.17'}
     hasBin: true
+
+  v-viewer@3.0.23:
+    resolution: {integrity: sha512-u/Zd/FXTdtdE2k2YeYMf6mU4oL0ILEZ9STHnZT7myyfRwQot68GO3O+6DwxNnHTaATiiAJTrz2MXjaqYKoB7iA==}
+    peerDependencies:
+      viewerjs: ^1.11.0
+      vue: ^3.0.0
+
+  viewerjs@1.11.8:
+    resolution: {integrity: sha512-PLO477UwNThzMek7EQhr7+YONfbgFKj+E6J/+Vr+USzY6cN1WNGQcft0mlIepQXATquvDmH1dOx7aokNyOx/vw==}
 
   vite@5.4.21:
     resolution: {integrity: sha512-o5a9xKjbtuhY6Bi5S3+HvbRERmouabWbyUcpXXUA1u+GNUKoROi9byOJ8M0nHbHYHkYICiMlqxkg1KkYmm25Sw==}
@@ -1227,6 +1245,8 @@ snapshots:
 
   linkifyjs@4.3.3: {}
 
+  lodash-es@4.18.1: {}
+
   magic-string@0.30.21:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
@@ -1356,6 +1376,14 @@ snapshots:
   source-map-js@1.2.1: {}
 
   typescript@5.9.3: {}
+
+  v-viewer@3.0.23(viewerjs@1.11.8)(vue@3.5.41(typescript@5.9.3)):
+    dependencies:
+      lodash-es: 4.18.1
+      viewerjs: 1.11.8
+      vue: 3.5.41(typescript@5.9.3)
+
+  viewerjs@1.11.8: {}
 
   vite@5.4.21:
     dependencies:

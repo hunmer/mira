@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { component as VViewer } from 'v-viewer'
+import type Viewer from 'viewerjs'
+import 'viewerjs/dist/viewer.css'
 import { WOVEN_CANVAS_KEY, useQuery } from '@woven-canvas/vue'
 import { Asset, Block, Image as CanvasImage } from '@woven-canvas/core'
 
@@ -24,13 +27,30 @@ const imageEntities = useQuery([Block, CanvasImage, Asset] as const)
 const previewImages = ref<PreviewImage[]>([])
 const previewOpen = ref(false)
 const activeEntityId = ref<number | null>(null)
-const zoom = ref(1)
-const previewRotation = ref(0)
-const previewFlipX = ref(false)
-const previewFlipY = ref(false)
 const mainImageError = ref(false)
-const dialogRef = ref<HTMLElement | null>(null)
+const viewerInstance = ref<Viewer | null>(null)
+const flipHorizontalState = ref(1)
+const flipVerticalState = ref(1)
 let resolveVersion = 0
+
+const viewerOptions: Viewer.Options = {
+  inline: true,
+  button: false,
+  navbar: false,
+  title: false,
+  toolbar: false,
+  tooltip: false,
+  movable: true,
+  zoomable: true,
+  rotatable: true,
+  scalable: true,
+  transition: false,
+  fullscreen: true,
+  keyboard: false,
+  backdrop: true,
+  focus: true,
+  zIndexInline: 0,
+}
 
 const activeIndex = computed(() => (
   previewImages.value.findIndex((item) => item.entityId === activeEntityId.value)
@@ -41,9 +61,6 @@ const activeImage = computed(() => (
 
 async function resolvePreviewImages() {
   const currentVersion = ++resolveVersion
-  const activeWasResolved = activeEntityId.value !== null && previewImages.value.some(
-    (item) => item.entityId === activeEntityId.value
-  )
   const assetManager = wovenCanvas.getAssetManager()
   const results = await Promise.all(imageEntities.value.map(async (item, index) => {
     const block = item.block.value
@@ -78,7 +95,6 @@ async function resolvePreviewImages() {
 
   if (currentVersion !== resolveVersion) return
   previewImages.value = results
-  if (!activeWasResolved && activeEntityId.value !== null) syncViewerToActiveImage()
   if (activeEntityId.value !== null && !results.some((item) => item.entityId === activeEntityId.value)) {
     closePreview()
   }
@@ -86,7 +102,7 @@ async function resolvePreviewImages() {
 
 function openPreview(entityId: number) {
   activeEntityId.value = entityId
-  syncViewerToActiveImage()
+  resetFlipState()
   mainImageError.value = false
   previewOpen.value = true
   void resolvePreviewImages()
@@ -95,14 +111,19 @@ function openPreview(entityId: number) {
 function closePreview() {
   previewOpen.value = false
   activeEntityId.value = null
-  zoom.value = 1
+  viewerInstance.value = null
+  resetFlipState()
   mainImageError.value = false
 }
 
 function selectImage(entityId: number) {
   activeEntityId.value = entityId
-  syncViewerToActiveImage()
+  resetFlipState()
   mainImageError.value = false
+  void nextTick(() => {
+    viewerInstance.value?.update()
+    viewerInstance.value?.view(0)
+  })
 }
 
 function previousImage() {
@@ -118,53 +139,59 @@ function nextImage() {
 }
 
 function zoomIn() {
-  zoom.value = Math.min(4, Number((zoom.value + 0.25).toFixed(2)))
+  viewerInstance.value?.zoom(0.1, true)
 }
 
 function zoomOut() {
-  zoom.value = Math.max(0.25, Number((zoom.value - 0.25).toFixed(2)))
+  viewerInstance.value?.zoom(-0.1, true)
 }
 
 function resetZoom() {
-  zoom.value = 1
+  viewerInstance.value?.reset()
 }
 
 function rotateLeft() {
-  previewRotation.value -= Math.PI / 2
+  viewerInstance.value?.rotate(-90)
 }
 
 function rotateRight() {
-  previewRotation.value += Math.PI / 2
+  viewerInstance.value?.rotate(90)
 }
 
 function flipHorizontal() {
-  previewFlipX.value = !previewFlipX.value
+  flipHorizontalState.value *= -1
+  viewerInstance.value?.scaleX(flipHorizontalState.value)
 }
 
 function flipVertical() {
-  previewFlipY.value = !previewFlipY.value
+  flipVerticalState.value *= -1
+  viewerInstance.value?.scaleY(flipVerticalState.value)
 }
 
 function resetViewer() {
-  zoom.value = 1
-  previewRotation.value = 0
-  previewFlipX.value = false
-  previewFlipY.value = false
+  viewerInstance.value?.reset()
+  resetFlipState()
 }
 
-async function toggleFullscreen() {
-  if (document.fullscreenElement) {
-    await document.exitFullscreen()
-    return
-  }
-  await dialogRef.value?.requestFullscreen()
+function toggleFullscreen() {
+  viewerInstance.value?.full()
 }
 
-function syncViewerToActiveImage() {
-  zoom.value = 1
-  previewRotation.value = activeImage.value?.rotation || 0
-  previewFlipX.value = activeImage.value?.flipX || false
-  previewFlipY.value = activeImage.value?.flipY || false
+function resetFlipState() {
+  flipHorizontalState.value = 1
+  flipVerticalState.value = 1
+}
+
+function onViewerInited(viewer: Viewer) {
+  viewerInstance.value = viewer
+  viewer.view(0)
+}
+
+async function handleImageLoad() {
+  mainImageError.value = false
+  await nextTick()
+  viewerInstance.value?.update()
+  viewerInstance.value?.view(0)
 }
 
 function handleOpenPreview(event: Event) {
@@ -218,7 +245,6 @@ onBeforeUnmount(() => {
   <Teleport to="body">
     <div v-if="previewOpen" class="wb-image-preview-mask" @pointerdown.self="closePreview">
       <section
-        ref="dialogRef"
         class="wb-image-preview-dialog"
         role="dialog"
         aria-modal="true"
@@ -256,16 +282,22 @@ onBeforeUnmount(() => {
 
           <main class="wb-image-viewer">
             <div class="wb-image-stage">
-              <img
+              <VViewer
                 v-if="activeImage?.url && !mainImageError"
                 :key="activeImage.entityId"
-                :src="activeImage.url"
-                :alt="activeImage.name"
-                :style="{
-                  transform: `scale(${zoom}) rotate(${previewRotation}rad) scaleX(${previewFlipX ? -1 : 1}) scaleY(${previewFlipY ? -1 : 1})`,
-                }"
-                @error="mainImageError = true"
+                :options="viewerOptions"
+                :trigger="activeImage.url"
+                class="wb-viewer"
+                @inited="onViewerInited"
               >
+                <img
+                  :src="activeImage.url"
+                  :alt="activeImage.name"
+                  class="wb-viewer-source"
+                  @load="handleImageLoad"
+                  @error="mainImageError = true"
+                >
+              </VViewer>
               <div v-else class="wb-image-preview-empty">
                 <span class="material-icons">broken_image</span>
                 <span>图片暂时无法显示</span>
@@ -346,14 +378,6 @@ onBeforeUnmount(() => {
   background: #fff;
   box-shadow: 0 28px 80px rgba(0, 0, 0, 0.32);
   font-family: var(--wov-font-family, sans-serif);
-}
-.wb-image-preview-dialog:fullscreen {
-  width: 100vw;
-  height: 100vh;
-  max-width: none;
-  max-height: none;
-  border: 0;
-  border-radius: 0;
 }
 .wb-image-preview-header {
   height: 58px;
@@ -436,15 +460,10 @@ onBeforeUnmount(() => {
   background-position: 0 0, 0 8px, 8px -8px, -8px 0;
   background-size: 16px 16px;
 }
-.wb-image-stage > img {
-  max-width: 92%;
-  max-height: 92%;
-  display: block;
-  object-fit: contain;
-  transform-origin: center;
-  transition: transform 0.15s ease;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
-}
+.wb-viewer { width: 100%; height: 100%; min-width: 0; min-height: 0; }
+.wb-viewer-source { display: none; }
+.wb-viewer :deep(.viewer-container) { background: transparent; }
+.wb-viewer :deep(.viewer-canvas) { background: transparent; }
 .wb-image-preview-empty { display: grid; place-items: center; gap: 10px; color: #a8aeb7; font-size: 13px; }
 .wb-image-preview-empty .material-icons { font-size: 34px; }
 .wb-image-viewer-toolbar {

@@ -11,6 +11,8 @@
   "dependencies": {
     "@woven-canvas/core": "^1.1.0",
     "@woven-canvas/vue": "^1.4.0",
+    "v-viewer": "^3.0.23",
+    "viewerjs": "^1.11.8",
     "vue": "^3.4.0"
   },
   "devDependencies": {

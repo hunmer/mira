@@ -12,6 +12,8 @@ export interface Tag {
     description?: string;
     createdAt?: string;
     updatedAt?: string;
+    /** 标签关联的非回收文件数（后端 getAllTags 返回） */
+    file_count?: number;
 }
 
 /**

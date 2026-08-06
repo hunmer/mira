@@ -95,7 +95,8 @@ export const useTagStore = defineStore('tag', () => {
         ...tag,
         isTemporary: false,
         isSelected: false,
-        fileCount: tag.fileCount || 0
+        // 后端返回 file_count（snake_case），归一化到前端使用的 fileCount
+        fileCount: tag.file_count ?? tag.fileCount ?? 0
       }))
 
       // 更新缓存和当前状态

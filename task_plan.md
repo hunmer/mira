@@ -16,6 +16,9 @@ Implement whiteboard canvas interactions, selection toolbar actions, and a dialo
 - [complete] Compare the requested viewer controls and diagnose multi-select dropdown trigger spacing.
 - [complete] Replace the preview footer controls and normalize multi-select toolbar button geometry.
 - [complete] Run scoped SFC/style verification and document manual acceptance steps.
+- [complete] Verify Viewer.js/v-viewer APIs and compare the existing viewer implementation with the whiteboard preview.
+- [complete] Replace manual transforms with a real Viewer.js instance and add plugin dependencies.
+- [complete] Run scoped dependency/SFC verification and document manual acceptance steps.
 
 ## Errors Encountered
 | Error | Attempt | Resolution |
@@ -30,3 +33,4 @@ Implement whiteboard canvas interactions, selection toolbar actions, and a dialo
 | Full-worktree `git diff --check` failed on unrelated user edits in `FolderTreeComponent.vue` | 1 | Preserve those edits and scope whitespace/SFC checks to the two whiteboard files. |
 | Root Node resolution could not find `@vue/compiler-sfc` | 1 | Resolve the compiler from the whiteboard plugin's nested pnpm dependency directory. |
 | Combined follow-up patch assumed a duplicated CSS line that was only an overlapping excerpt | 1 | Split the edit into small patches against exact current contexts. |
+| CodeGraph context call used `query` but this server version requires `task` | 1 | Inspect the live tool schema and retry with its declared parameter name. |

@@ -30,3 +30,11 @@
 - `ImageViewerComponent.vue:58-117` uses a floating bottom pill with zoom in/out/reset, rotate left/right, horizontal/vertical flip, reset-all, and fullscreen controls separated into groups.
 - The multi-select fix targets the confirmed dropdown geometry mismatch: all three custom triggers are now fixed at 36px with 8px group spacing and `flex-shrink: 0`; native toolbar geometry is unchanged.
 - The preview toolbar actions are local view state only and do not mutate the selected canvas image's Block transform.
+- Official npm metadata on 2026-08-06 reports `viewerjs@1.11.8` and `v-viewer@3.0.23` as latest.
+- Viewer.js official docs confirm inline mode and the required instance methods: `zoom`, `rotate`, `scaleX`, `scaleY`, `reset`, `full`, `exit`, and `destroy`; methods should be called after the viewer reaches its viewed lifecycle.
+- The existing Mira component uses `v-viewer` as the Vue wrapper and accesses the underlying Viewer.js instance, so the whiteboard should use the same integration rather than direct CSS transforms.
+- The existing `ImageViewerComponent` configures `VViewer` with `inline: true`, native toolbar/navbar/title disabled, and movement/zoom/rotation/scale enabled; it captures the real Viewer.js instance from `@inited` and calls `update()`/`view(0)` after source load.
+- The whiteboard plugin currently declares neither `v-viewer` nor `viewerjs`; both must be direct plugin dependencies because this package builds independently from `mira-client`.
+- `v-viewer@3.0.23` exports `component` and emits `inited` with the underlying typed `viewerjs` instance both on creation and update; `:trigger` can drive source refreshes.
+- The plugin can therefore delegate lifecycle to `VViewer`, store the emitted Viewer.js instance, and forward every external toolbar action to that instance.
+- The whiteboard preview now has a real `Viewer` instance from `VViewer`; manual `transform` state and native `requestFullscreen` are no longer part of the implementation.
