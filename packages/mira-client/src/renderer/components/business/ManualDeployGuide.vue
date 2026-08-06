@@ -28,12 +28,12 @@ const steps: Step[] = [
   {
     title: '3. 启动服务器',
     desc: '使用默认配置启动（HTTP 端口 8081 / WebSocket 端口 8018）。',
-    command: 'mira-app-server',
+    command: 'mira-app-server start',
   },
   {
     title: '4. 自定义端口 / 数据目录',
     desc: '可选：通过参数自定义 HTTP、WebSocket 端口与数据目录。',
-    command: 'mira-app-server --http-port 8081 --ws-port 8018 --data-path ./data',
+    command: 'mira-app-server start --http-port 8081 --ws-port 8018 --data-path ./data',
   },
   {
     title: '5. 校验健康状态',

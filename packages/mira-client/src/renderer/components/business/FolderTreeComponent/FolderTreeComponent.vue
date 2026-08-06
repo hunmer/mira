@@ -65,10 +65,10 @@
     <!-- 标题栏 + 搜索 + 多选 + 添加 -->
     <div class="flex items-center justify-between px-2 mb-2">
       <h2 class="text-xs font-semibold text-muted-foreground leading-5">{{ sectionTitle }}</h2>
-      <div class="flex items-center gap-0.5 -mr-1">
+      <div class="header-actions flex items-center gap-0.5 -mr-1">
         <button
           @click="toggleSearch"
-          class="flex h-5 w-5 items-center justify-center text-muted-foreground hover:text-muted-foreground rounded"
+          class="header-action-btn flex h-5 w-5 items-center justify-center text-muted-foreground hover:text-muted-foreground rounded"
           :class="{ 'text-primary': showSearch }"
           :title="`搜索${sectionTitle}...`"
         >
@@ -77,7 +77,7 @@
         <button
           v-if="selectionEnabled"
           @click="toggleSelectionMode"
-          class="flex h-5 w-5 items-center justify-center text-muted-foreground hover:text-muted-foreground rounded"
+          class="header-action-btn flex h-5 w-5 items-center justify-center text-muted-foreground hover:text-muted-foreground rounded"
           :class="{ 'text-primary': selectionActive }"
           :title="selectionActive ? `退出${selectionModeLabel}（已选 ${selectionCount}）` : `${selectionModeLabel}模式`"
         >
@@ -85,7 +85,7 @@
         </button>
         <button
           @click="ops.handleAdd(itemType)"
-          class="flex h-5 w-5 items-center justify-center text-muted-foreground hover:text-muted-foreground rounded"
+          class="header-action-btn flex h-5 w-5 items-center justify-center text-muted-foreground hover:text-muted-foreground rounded"
           :title="`添加${sectionTitle}`"
         >
           <span class="material-icons leading-none" style="font-size: 18px">add</span>
@@ -102,21 +102,25 @@
       </div>
     </div>
 
-    <!-- 搜索框 -->
-    <div v-if="showSearch" class="px-2 mb-2">
-      <input
-        ref="searchInputRef"
-        v-model="searchQuery"
-        type="text"
-        :placeholder="`搜索${sectionTitle}...`"
-        class="w-full px-3 py-1.5 text-xs border border-border rounded-full bg-white/60 dark:bg-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
-      />
-    </div>
+    <!-- 搜索框（展开/折叠动效：grid 0fr→1fr 做高度过渡 + opacity/translateY 叠加） -->
+    <Transition name="search-slide">
+      <div v-if="showSearch" class="search-shell px-2 mb-2">
+        <div class="search-shell-inner">
+          <input
+            ref="searchInputRef"
+            v-model="searchQuery"
+            type="text"
+            :placeholder="`搜索${sectionTitle}...`"
+            class="w-full px-3 py-1.5 text-xs border border-border rounded-full bg-white/60 dark:bg-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
+          />
+        </div>
+      </div>
+    </Transition>
 
     <!-- 树 -->
     <ContextMenu>
       <ContextMenuTrigger as-child>
-        <div v-if="treeData.length > 0" class="tree-scroll max-h-64 overflow-y-auto">
+        <div v-if="treeData.length > 0" class="tree-scroll max-h-64 overflow-y-auto" :class="{ 'tree-mounted': treeMounted }">
           <Draggable
             v-if="draggable"
             ref="treeRef"
@@ -150,8 +154,13 @@
                   @update:model-value="onNodeCheckChange(node, $event)"
                   @click.stop
                 />
-                <span v-if="stat.children.length" class="material-icons text-base mr-1 text-muted-foreground hover:text-muted-foreground select-none" @click.stop="stat.open = !stat.open">
-                  {{ stat.open ? 'expand_more' : 'chevron_right' }}
+                <span
+                  v-if="stat.children.length"
+                  class="folder-chevron material-icons text-base mr-1 text-muted-foreground hover:text-muted-foreground select-none"
+                  :class="{ 'folder-chevron--open': stat.open }"
+                  @click.stop="stat.open = !stat.open"
+                >
+                  chevron_right
                 </span>
                 <!-- 叶子节点占位：仅在展示 checkbox 时保留，用于与父节点图标对齐；无 checkbox 时隐藏，让图标贴最左侧 -->
                 <span v-else-if="showNodeCheckbox" class="inline-block w-5"></span>
@@ -187,8 +196,13 @@
                   @update:model-value="onNodeCheckChange(node, $event)"
                   @click.stop
                 />
-                <span v-if="stat.children.length" class="material-icons text-base mr-1 text-muted-foreground hover:text-muted-foreground select-none" @click.stop="stat.open = !stat.open">
-                  {{ stat.open ? 'expand_more' : 'chevron_right' }}
+                <span
+                  v-if="stat.children.length"
+                  class="folder-chevron material-icons text-base mr-1 text-muted-foreground hover:text-muted-foreground select-none"
+                  :class="{ 'folder-chevron--open': stat.open }"
+                  @click.stop="stat.open = !stat.open"
+                >
+                  chevron_right
                 </span>
                 <!-- 叶子节点占位：仅在展示 checkbox 时保留，用于与父节点图标对齐；无 checkbox 时隐藏，让图标贴最左侧 -->
                 <span v-else-if="showNodeCheckbox" class="inline-block w-5"></span>
@@ -616,6 +630,9 @@ const searchInputRef = ref<HTMLInputElement | null>(null)
 const treeRef = ref<any>(null)
 const treeContainerRef = ref<HTMLElement | null>(null)
 const locatingNodeId = ref<string | null>(null)
+// 树首次渲染完成标记：仅在挂载后展开的子节点才播放「从左滑入」动画，
+// 避免每次侧栏/对话框初次打开时整列节点一起滑动（噪音，违背 unseen-details 原则）。
+const treeMounted = ref(false)
 
 watch(showSearch, (val) => {
   if (val) nextTick(() => searchInputRef.value?.focus())
@@ -1064,6 +1081,8 @@ let refreshListener: ((event: CustomEvent) => void) | null = null
 onMounted(() => {
   refreshListener = () => emit('refresh')
   window.addEventListener(`refresh-${isFolder.value ? 'folders' : 'tags'}`, refreshListener as EventListener)
+  // 首帧渲染后再放开滑入动画，跳过初始批次
+  nextTick(() => { treeMounted.value = true })
 })
 
 onUnmounted(() => {
@@ -1119,6 +1138,133 @@ onUnmounted(() => {
   }
   100% {
     filter: brightness(1);
+  }
+}
+
+/*
+  搜索栏展开/折叠动效。
+  - 高度用 grid-template-rows: 0fr → 1fr 过渡（无需 JS 测量，自适应内容高度）。
+  - 叠加 opacity + 微量 translateY，进入 ease-out 有 punch、退出更快利索（200ms / 150ms）。
+  - 入场起始用 max-height 兜底，避免个别内核 grid 行高过渡不触发。
+*/
+.search-shell {
+  display: grid;
+  grid-template-rows: 1fr;
+  overflow: hidden;
+}
+
+.search-slide-enter-active {
+  transition:
+    grid-template-rows 200ms cubic-bezier(0.23, 1, 0.32, 1),
+    opacity 200ms cubic-bezier(0.23, 1, 0.32, 1),
+    transform 200ms cubic-bezier(0.23, 1, 0.32, 1),
+    margin 200ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.search-slide-leave-active {
+  transition:
+    grid-template-rows 150ms cubic-bezier(0.4, 0, 1, 1),
+    opacity 150ms cubic-bezier(0.4, 0, 1, 1),
+    transform 150ms cubic-bezier(0.4, 0, 1, 1),
+    margin 150ms cubic-bezier(0.4, 0, 1, 1);
+}
+
+.search-slide-enter-from {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transform: translateY(-4px);
+  margin-bottom: -0.5rem;
+}
+
+.search-slide-leave-to {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transform: translateY(-4px);
+  margin-bottom: -0.5rem;
+}
+
+.search-shell-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* 文件夹 chevron：单图标旋转，连续平滑（类 Finder/macOS），强 ease-out */
+.folder-chevron {
+  transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1);
+  transform-origin: center center;
+}
+
+.folder-chevron--open {
+  transform: rotate(90deg);
+}
+
+/*
+  按下反馈（emil-design-eng 硬性项）：可点击元素按压必须即时回弹。
+  图标按钮比卡片按钮更克制，用 scale(0.9)。
+*/
+.header-action-btn {
+  transition: transform 160ms ease-out;
+}
+
+.header-action-btn:active {
+  transform: scale(0.9);
+}
+
+.folder-chevron:active {
+  transform: scale(0.9);
+}
+
+.folder-chevron.folder-chevron--open:active {
+  transform: rotate(90deg) scale(0.9);
+}
+
+/*
+  展开时子节点「从左滑入」。
+  为什么用纯 CSS @keyframes 而非 motion-v：
+  - he-tree 折叠时把子节点从 visibleStats 过滤掉，子 DOM 立即卸载；
+    motion-v 的 <AnimatePresence> 拿不到退出时机，做不出退出动画，
+    且它需直接持有带 key 的子节点列表，而节点列表是 he-tree 内部 v-for 渲染的，
+    无法在它和内容间插一层而不破坏拖拽/虚拟列表。
+  - 纯 CSS：展开时子节点重新挂载 → @keyframes 自然触发一次，零 JS、GPU 加速。
+  - 仅做「进入」位移（左→右）；折叠沿用库原生行为（DOM 即时移除），避免与拖拽/虚拟列表冲突。
+  - 只在 .tree-mounted 容器内启用：跳过组件首次渲染批次，避免侧栏/对话框打开时整列滑动。
+*/
+.tree-mounted .tree-node {
+  animation: tree-node-slide-in 220ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+@keyframes tree-node-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* reduced-motion：保留 opacity（辅助理解），去掉位移/高度形变 */
+@media (prefers-reduced-motion: reduce) {
+  .search-slide-enter-active,
+  .search-slide-leave-active {
+    transition: opacity 150ms ease;
+  }
+
+  .search-slide-enter-from,
+  .search-slide-leave-to {
+    grid-template-rows: 0fr;
+    transform: none;
+  }
+
+  .folder-chevron,
+  .folder-chevron--open,
+  .header-action-btn {
+    transition: none;
+  }
+
+  .tree-mounted .tree-node {
+    animation: none;
   }
 }
 </style>

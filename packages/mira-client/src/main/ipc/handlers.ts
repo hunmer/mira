@@ -13,6 +13,7 @@ import { MenuHandlers } from './MenuHandlers'
 import { ShortcutHandlers } from './ShortcutHandlers'
 import { AutoUpdateHandlers } from './AutoUpdateHandlers'
 import { NotificationHandlers } from './NotificationHandlers'
+import { ServerDeployHandlers } from './ServerDeployHandlers'
 import { getAutoUpdater } from '../services/useAutoUpdater'
 
 /**
@@ -34,6 +35,7 @@ export class IPCHandlers {
   private shortcutHandlers: ShortcutHandlers
   private autoUpdateHandlers: AutoUpdateHandlers
   private notificationHandlers: NotificationHandlers
+  private serverDeployHandlers: ServerDeployHandlers
 
   constructor() {
     this.pluginHandler = new PluginHandler()
@@ -50,6 +52,7 @@ export class IPCHandlers {
     this.shortcutHandlers = new ShortcutHandlers()
     this.autoUpdateHandlers = new AutoUpdateHandlers()
     this.notificationHandlers = new NotificationHandlers()
+    this.serverDeployHandlers = new ServerDeployHandlers()
 
     // 注册本地插件管理
     this.pluginHandler.registerHandlers()
@@ -68,6 +71,7 @@ export class IPCHandlers {
     this.menuHandlers.setMainWindow(window)
     this.shortcutHandlers.setMainWindow(window)
     getAutoUpdater().setMainWindow(window)
+    this.serverDeployHandlers.setMainWindow(window)
   }
 
   /**
@@ -219,5 +223,8 @@ export class IPCHandlers {
 
     // 清理自动更新处理器
     this.autoUpdateHandlers.cleanup()
+
+    // 清理后端部署处理器
+    this.serverDeployHandlers.cleanup()
   }
 }

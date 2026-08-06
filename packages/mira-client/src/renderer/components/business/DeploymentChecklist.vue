@@ -8,9 +8,10 @@
  * 步骤文案贴合本项目真实部署流程（npm install -g mira-app-server → 启动 → 健康检查）。
  * 纯前端模拟，不真正执行命令；点击「启动部署」按顺序推进各阶段状态。
  */
-import { ref, computed, onBeforeUnmount } from 'vue'
+import { ref, computed, onBeforeUnmount, onMounted } from 'vue'
 import { Motion, AnimatePresence, motion } from 'motion-v'
 import { useSettingsStore } from '@renderer/stores/settings'
+import { useServerDeploy } from '@renderer/composables/useServerDeploy'
 import { cn } from '@/lib/utils'
 
 type TaskStatus = 'pending' | 'running' | 'success' | 'skipped' | 'failed'
@@ -27,6 +28,23 @@ interface Task {
 const settingsStore = useSettingsStore()
 // 复用 settingsStore 已有的主题计算（支持 light/dark/auto）
 const isDarkMode = computed(() => settingsStore.isDarkMode)
+
+// 版本检测 + 更新（真实检测，仅 Electron 可用）
+const {
+  status: deployStatus,
+  installedVersion,
+  latestVersion,
+  errorMessage: deployError,
+  updateInProgress,
+  updateLog,
+  checkVersion,
+  runUpdate,
+} = useServerDeploy()
+
+// 打开组件即检测已安装版本
+onMounted(() => {
+  checkVersion()
+})
 
 // 默认部署步骤（贴合 mira-app-server README 真实流程）
 const defaultTasks: Task[] = [
@@ -47,7 +65,7 @@ const defaultTasks: Task[] = [
   {
     id: 3,
     title: '启动服务器',
-    subtitle: 'mira-app-server --http-port 8081 --ws-port 8018',
+    subtitle: 'mira-app-server start --http-port 8081 --ws-port 8018',
     status: 'pending',
     info: null,
   },
@@ -126,6 +144,86 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="flex w-full flex-col font-sans select-none">
+    <!-- 版本状态条：真实检测本地已装版本 + npm 最新版 -->
+    <div
+      :class="cn(
+        'mb-3 flex items-center gap-2 rounded-2xl p-2.5 text-xs transition-colors',
+        isDarkMode ? 'bg-neutral-950 text-neutral-300' : 'bg-neutral-100 text-neutral-700',
+      )"
+    >
+      <!-- 状态图标 -->
+      <span
+        v-if="deployStatus === 'checking' || updateInProgress"
+        class="material-icons text-sm animate-spin text-muted-foreground"
+      >sync</span>
+      <span
+        v-else-if="deployStatus === 'up-to-date'"
+        class="material-icons text-sm text-emerald-500"
+      >check_circle</span>
+      <span
+        v-else-if="deployStatus === 'update-available'"
+        class="material-icons text-sm text-amber-500"
+      >arrow_upward</span>
+      <span
+        v-else-if="deployStatus === 'not-installed'"
+        class="material-icons text-sm text-muted-foreground"
+      >download</span>
+      <span
+        v-else-if="deployStatus === 'error'"
+        class="material-icons text-sm text-destructive"
+      >error</span>
+      <span v-else class="material-icons text-sm text-muted-foreground">dns</span>
+
+      <!-- 状态文案 -->
+      <span class="flex-1 min-w-0 truncate">
+        <template v-if="deployStatus === 'checking'">正在检测已安装版本…</template>
+        <template v-else-if="updateInProgress">正在更新…{{ updateLog.length ? `（${updateLog.length} 行输出）` : '' }}</template>
+        <template v-else-if="deployStatus === 'up-to-date'">
+          已安装 v{{ installedVersion }}（最新）
+        </template>
+        <template v-else-if="deployStatus === 'update-available'">
+          {{ installedVersion ? `已装 v${installedVersion}，` : '未安装，' }}最新 v{{ latestVersion }}
+        </template>
+        <template v-else-if="deployStatus === 'not-installed'">未安装 mira-app-server</template>
+        <template v-else-if="deployStatus === 'error'">检测失败：{{ deployError }}</template>
+        <template v-else>等待检测</template>
+      </span>
+
+      <!-- 操作按钮 -->
+      <button
+        v-if="deployStatus === 'update-available' && !updateInProgress"
+        type="button"
+        :class="cn(
+          'shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors border-none cursor-pointer',
+          isDarkMode
+            ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30'
+            : 'bg-amber-100 text-amber-700 hover:bg-amber-200',
+        )"
+        @click="runUpdate"
+      >
+        {{ installedVersion ? '更新' : '安装' }}
+      </button>
+      <button
+        v-if="deployStatus === 'error'"
+        type="button"
+        class="shrink-0 rounded-lg px-2 py-1 text-[11px] font-semibold text-muted-foreground hover:text-foreground border border-border bg-transparent cursor-pointer transition-colors"
+        @click="checkVersion"
+      >
+        重试
+      </button>
+    </div>
+
+    <!-- 更新进度日志（更新中展示） -->
+    <div
+      v-if="updateInProgress && updateLog.length"
+      :class="cn(
+        'mb-3 max-h-24 overflow-y-auto rounded-2xl p-2.5 font-mono text-[10px] leading-relaxed transition-colors',
+        isDarkMode ? 'bg-neutral-950 text-neutral-400' : 'bg-neutral-100 text-neutral-500',
+      )"
+    >
+      <div v-for="(line, i) in updateLog" :key="i">{{ line }}</div>
+    </div>
+
     <!-- Tasks -->
     <div class="flex flex-col gap-2.5">
       <div v-for="task in tasks" :key="task.id" class="relative flex w-full flex-col items-center">

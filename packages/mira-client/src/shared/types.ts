@@ -461,6 +461,35 @@ export interface ElectronAPI {
     isPackaged: () => Promise<boolean>
   }
 
+  // 后端部署 (mira-app-server) API
+  serverDeploy: {
+    /** 检测本地已安装版本（走 npm ls -g，读 package.json 真实版本） */
+    getInstalledVersion: () => Promise<{
+      success: boolean
+      data?: { installed: boolean; version?: string; prefix?: string }
+      message?: string
+    }>
+    /** 查询 npm registry 最新版本 */
+    getLatestVersion: () => Promise<{
+      success: boolean
+      data: { latest: string | null; error?: string }
+    }>
+    /** 一键更新到最新版（spawn npm install -g，实时推送进度事件） */
+    update: () => Promise<{
+      success: boolean
+      data?: { success: boolean; version?: string; message?: string }
+      message?: string
+    }>
+    /** 监听更新进度（安装过程的 stdout/stderr 输出） */
+    onUpdateProgress: (callback: (progress: {
+      type: 'data' | 'done' | 'error'
+      line?: string
+      exitCode?: number
+    }) => void) => void
+    /** 移除更新进度监听 */
+    removeUpdateProgressListener: () => void
+  }
+
   // 通知 API
   notification: {
     show: (options: { title: string; body?: string; silent?: boolean }) => Promise<{ success: boolean; error?: string }>

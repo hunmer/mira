@@ -197,6 +197,22 @@ const electronAPI: ElectronAPI = {
       ipcRenderer.invoke('app:isPackaged')
   },
 
+  // 后端部署 (mira-app-server) API
+  serverDeploy: {
+    getInstalledVersion: () =>
+      ipcRenderer.invoke('server-deploy:getInstalledVersion'),
+    getLatestVersion: () =>
+      ipcRenderer.invoke('server-deploy:getLatestVersion'),
+    update: () =>
+      ipcRenderer.invoke('server-deploy:update'),
+    onUpdateProgress: (callback: (progress: any) => void) => {
+      ipcRenderer.on('server-deploy:update-progress', (_event, progress) => callback(progress))
+    },
+    removeUpdateProgressListener: () => {
+      ipcRenderer.removeAllListeners('server-deploy:update-progress')
+    },
+  },
+
   // 通知 API
   notification: {
     show: (options: { title: string; body?: string; silent?: boolean }) =>
