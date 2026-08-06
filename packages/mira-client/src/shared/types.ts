@@ -448,6 +448,8 @@ export interface ElectronAPI {
     open: (opts: PluginWindowOpenOptions) => Promise<{ success: boolean; windowId?: string; message?: string }>
     close: (windowId: string) => Promise<{ success: boolean; message?: string }>
     send: (pluginId: string, entry: string, channel: string, data: any) => Promise<{ success: boolean; delivered: boolean }>
+    copyImage?: (payload: { data: ArrayBuffer; previewData: ArrayBuffer; fileName: string; mimeType: string }) => Promise<{ success: boolean; message?: string }>
+    startImageDrag?: (payload: { data: ArrayBuffer; previewData: ArrayBuffer; fileName: string; mimeType: string }) => void
     onMessage?: (callback: (channel: string, data: any) => void) => () => void
     /** 设置本窗口的专属菜单栏（per-window，Windows/Linux 生效） */
     setMenu?: (template: any[]) => Promise<{ success: boolean; message?: string }>

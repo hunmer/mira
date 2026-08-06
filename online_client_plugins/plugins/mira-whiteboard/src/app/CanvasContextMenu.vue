@@ -12,17 +12,20 @@ import {
   Shape,
   Text,
 } from '@woven-canvas/core'
+import { useCanvasImageTransfer } from './useCanvasImageTransfer'
 
-type MenuKind = 'canvas' | 'block'
+type MenuKind = 'canvas' | 'block' | 'image'
 
 const { getEditor, nextEditorTick } = useEditorContext()
 const { createImageBlock } = useImageCreation()
+const { copyImage, isImageEntity } = useCanvasImageTransfer()
 const menuOpen = ref(false)
 const menuKind = ref<MenuKind>('canvas')
 const menuX = ref(0)
 const menuY = ref(0)
 const menuRef = ref<HTMLElement | null>(null)
 const imageInput = ref<HTMLInputElement | null>(null)
+const menuEntityId = ref<number | null>(null)
 let insertionPoint: [number, number] = [0, 0]
 
 function closeMenu() {
@@ -65,16 +68,18 @@ function handleContextMenu(event: MouseEvent) {
   const blockElement = target?.closest<HTMLElement>('.wov-block[data-entity-id]')
   if (blockElement) {
     const entityId = Number(blockElement.dataset.entityId)
+    menuEntityId.value = Number.isFinite(entityId) ? entityId : null
     if (Number.isFinite(entityId) && blockElement.dataset.selected !== 'true') {
       nextEditorTick((ctx) => {
         deselectAll(ctx)
         selectBlock(ctx, entityId)
       })
     }
-    void openMenu(event, 'block')
+    void openMenu(event, isImageEntity(entityId) ? 'image' : 'block')
     return
   }
 
+  menuEntityId.value = null
   nextEditorTick((ctx) => deselectAll(ctx))
   void openMenu(event, 'canvas')
 }
@@ -131,6 +136,17 @@ function runSelectionCommand(command: typeof DuplicateSelected | typeof RemoveSe
   closeMenu()
 }
 
+async function copySelectedImage() {
+  const entityId = menuEntityId.value
+  closeMenu()
+  if (entityId === null) return
+  try {
+    await copyImage(entityId)
+  } catch (error) {
+    console.warn('[whiteboard] copy image failed', error)
+  }
+}
+
 onMounted(() => {
   document.addEventListener('contextmenu', handleContextMenu, true)
   document.addEventListener('pointerdown', closeMenu)
@@ -161,6 +177,7 @@ onBeforeUnmount(() => {
       <button role="menuitem" @click="createShape"><span class="material-icons">category</span><span>添加形状</span></button>
     </template>
     <template v-else>
+      <button v-if="menuKind === 'image'" role="menuitem" @click="copySelectedImage"><span class="material-icons">content_copy</span><span>复制图片</span></button>
       <button role="menuitem" @click="runSelectionCommand(DuplicateSelected)"><span class="material-icons">content_copy</span><span>克隆</span></button>
       <button class="danger" role="menuitem" @click="runSelectionCommand(RemoveSelected)"><span class="material-icons">delete_outline</span><span>删除</span></button>
     </template>

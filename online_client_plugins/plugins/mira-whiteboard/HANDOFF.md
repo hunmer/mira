@@ -15,6 +15,7 @@
 3. 左侧栏新建 / 重命名 / 删除画布工程。
 4. 左侧栏点击工程（或菜单【项目】子菜单点击工程）→ 右侧画布切换到该工程。
 5. 窗口顶部的菜单栏是**自定义**的：【项目】子菜单列出工程，点击切换；不再继承 Mira 主窗口的全局菜单。
+6. 画布右上角【对象管理】展开节点侧栏；节点列表仅查询带 `Synced` 的持久化 Block，支持显示类型/所属 Frame、聚焦和级联删除。
 
 ---
 
@@ -67,7 +68,8 @@ mira-whiteboard/
 ├── src/
 │   ├── app/           # 组合窗口 SPA
 │   │   ├── main.ts
-│   │   └── App.vue    # 左侧工程列表 + 右侧画布 + 自定义菜单（localStorage 持久化）
+│   │   ├── App.vue    # 工程管理 + 画布 + 自定义菜单（localStorage 持久化）
+│   │   └── CanvasObjectManager.vue # 画布对象管理侧栏
 │   ├── shared/
 │   │   └── loadMaterialIcons.ts
 │   ├── assets/fonts/material-icons.woff2
@@ -89,6 +91,7 @@ mira-whiteboard/
 | 画布持久化 key | `<WovenCanvas>` 的 `store.persistence.documentId = "mira-whiteboard:" + projectId`，存 IndexedDB |
 | 画布切换机制 | `<WovenCanvas :key="currentProjectId">`，换 key → 重挂 → 换 documentId |
 | 菜单 IPC | 渲染进程 → `plugin-window:set-menu`(template) → 主进程 `win.setMenu`；点击 → `plugin-window:menu-action`(payload) 回窗口 |
+| 图片剪贴板 / 外部拖拽 | `pluginWindow.copyImage(payload)` 写系统图片剪贴板；`pluginWindow.startImageDrag(payload)` 将图片写入临时文件并调用 Electron `webContents.startDrag` |
 | 媒体投递 | 宿主侧 `pluginWindow.send(PLUGIN_ID, 'dist/index.html', 'media:add', files)` → 窗口 `onMessage('media:add')` 接收并插入当前工程（无当前工程则自动新建一个）|
 
 > 组合窗口内**只有 `window.electronAPI.pluginWindow`**（来自专用 preload），没有宿主的 api.storage / 事件系统，所以工程列表走 localStorage。
@@ -106,7 +109,7 @@ mira-whiteboard/
 
 2. **插件窗口机制（主进程）**
    - `packages/mira-client/src/main/ipc/PluginWindowHandlers.ts`：标准带 frame 的 BrowserWindow，按 `<pluginsDir>/<插件actualDirectory>/<entry>` 定位，windowId = `pluginId:entry:projectId`。
-   - 专用 preload：`packages/mira-client/src/preload/plugin-window-preload.js`（暴露 pluginWindow.open/close/send/onMessage/setMenu/onMenuAction）。
+   - 专用 preload：`packages/mira-client/src/preload/plugin-window-preload.js`（额外暴露图片专用的 copyImage/startImageDrag，不开放通用文件系统）。
    - vite 入口：`packages/mira-client/vite.preload.config.ts` 已注册 `plugin-window-preload`。
    - IPC 注册：`packages/mira-client/src/main/ipc/handlers.ts`（IPCHandlers 构造 + cleanup）。
 

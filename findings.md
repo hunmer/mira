@@ -38,3 +38,19 @@
 - `v-viewer@3.0.23` exports `component` and emits `inited` with the underlying typed `viewerjs` instance both on creation and update; `:trigger` can drive source refreshes.
 - The plugin can therefore delegate lifecycle to `VViewer`, store the emitted Viewer.js instance, and forward every external toolbar action to that instance.
 - The whiteboard preview now has a real `Viewer` instance from `VViewer`; manual `transform` state and native `requestFullscreen` are no longer part of the implementation.
+- 2026-08-07 task starts from a dirty worktree: `online_client_plugins/plugins.json`, root `pnpm-lock.yaml`, and `pnpm-workspace.yaml` are user changes and must be preserved.
+- `HANDOFF.md` identifies plugin-window preload and main-process `PluginWindowHandlers` as the supported Electron bridge extension points.
+- The current client lives under `packages/mira-client`; the handoff's paths are package-relative.
+- Both context-menu and toolbar features can resolve the selected Woven image through `Asset`, `Image`, and the injected `WOVEN_CANVAS_KEY` AssetManager.
+- Electron's native external drag must be initiated by main-process `webContents.startDrag`; plugin windows currently expose no clipboard or drag method, so the dedicated preload whitelist and handler need a narrow extension.
+- Existing main-process `SystemHandlers` copies images only from filesystem paths and is not exposed to plugin windows; whiteboard images are commonly IndexedDB/blob-backed, so bytes must cross IPC.
+- Woven `MenuButton` has a single native button root and inherits undeclared attributes/listeners, so `draggable`, `disabled`, and `dragstart` are forwarded without replacing the established toolbar component.
+- The transfer payload preserves raw source bytes for the dropped file and includes a PNG preview for clipboard decoding and the native drag icon.
+- The supplied Woven docs define every visual node as an entity with `Block`; `useQuery([Block])` is the supported reactive all-node query.
+- `Block.parentId` is present in the installed API/runtime even though the abbreviated docs property table omits it; Frame ancestry can be resolved from the same live Block query.
+- No documented focus-block command exists. Camera focus can be implemented with `Camera.write`: center the block's world-space bounds in the current screen while preserving zoom, then select it for visible feedback.
+- Existing `cascadeDelete` is appropriate for object-manager deletion because deleting a Frame must not leave descendant entities orphaned.
+- `useQuery([Block])` also returns ephemeral transform handles. Real document nodes are distinguished by the `Synced` component assigned by `createBlock`, so the manager must query `[Block, Synced]` (and `[Block, Frame, Synced]` for Frame labels).
+- Browser automation verified two persisted nodes were listed, focusing selected exactly one canvas block, and deleting reduced the live list from two nodes to one.
+- On narrow touch layouts, delete controls must remain visibly available and the redundant external toggle must hide while the sidebar is open.
+- Frame integration was verified through real canvas box-selection and the existing create-Frame action: two child shapes displayed `Frame`, while the Frame node itself displayed `画布根级`.

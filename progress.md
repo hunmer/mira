@@ -38,3 +38,21 @@
 - Scoped SFC compilation and source inspection confirmed the real Viewer.js instance wiring and direct plugin dependency declarations.
 - Removed temporary `[DEBUG-viewerjs]` initialization probes after confirming `@inited` and image-load update paths.
 - Final scoped dependency, SFC, Viewer.js method wiring, cleanup, and whitespace checks passed.
+
+## 2026-08-07
+- Started image copy-to-clipboard and Electron external file-drag toolbar work.
+- Read the handoff, context menu, selection toolbar, image URL resolver, plugin preload, and main-process handler structure.
+- Added a shared Woven image-transfer composable, image-only context-menu copy command, and a preloaded external-drag toolbar control.
+- Extended the plugin-window preload/main-process bridge with image-scoped clipboard and native file-drag IPC.
+- Plugin, Electron main-process, and preload production builds passed.
+- Full client type-check remains blocked by existing repository errors; whiteboard-wide type-check also reports an existing preview injected-context error.
+- Scoped `vue-tsc` for the new composable and both changed Vue components passed.
+- Normalized dragged filenames to the actual response MIME so the temporary file extension matches its bytes.
+- Final scoped whitespace and dist bundle checks passed; all task phases are complete.
+- Started the object-management sidebar task and inspected the current canvas mount/layout.
+- Confirmed the supported all-Block query, parent hierarchy, cascade deletion, selection, and Camera-based focus approach.
+- Added `CanvasObjectManager.vue` and mounted it inside each active Woven canvas instance.
+- Whiteboard production build and scoped object-manager `vue-tsc` passed.
+- Visual inspection caught internal `transform-*` entities and a mobile toggle overlap; filtered nodes by `Synced` and hid the redundant open-state toggle on narrow screens.
+- Automated desktop/mobile interaction checks passed; made delete icons persistently visible for touch users and documented the component in `HANDOFF.md`.
+- Final production build and scoped `vue-tsc` passed; Frame membership, focus selection, deletion, desktop layout, and mobile layout were verified in browser automation.

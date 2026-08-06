@@ -13,6 +13,7 @@ import {
   selectBlock,
   Selected,
 } from '@woven-canvas/core'
+import { useCanvasImageTransfer, type CanvasImageTransferPayload } from './useCanvasImageTransfer'
 
 type Alignment = 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom'
 
@@ -23,6 +24,7 @@ interface AutoLayoutPreset {
 }
 
 const { nextEditorTick } = useEditorContext()
+const { resolveImageTransfer, startImageDrag } = useCanvasImageTransfer()
 const selected = useQuery([Block, Selected] as const)
 const isMultiSelection = computed(() => selected.value.length > 1)
 const isSingleImage = computed(
@@ -35,6 +37,8 @@ const layoutRows = ref(1)
 const layoutColumns = ref(1)
 const layoutRowGap = ref(24)
 const layoutColumnGap = ref(24)
+const imageDragPayload = ref<CanvasImageTransferPayload | null>(null)
+let imageDragResolveVersion = 0
 const autoLayoutPresets: AutoLayoutPreset[] = [
   { id: 'compact', label: '紧凑网格', description: '8 px 间距' },
   { id: 'balanced', label: '均衡网格', description: '24 px 间距' },
@@ -48,6 +52,24 @@ watch(
     if (count < 2) return
     layoutColumns.value = Math.ceil(Math.sqrt(count))
     layoutRows.value = Math.ceil(count / layoutColumns.value)
+  },
+  { immediate: true }
+)
+
+watch(
+  () => isSingleImage.value ? selected.value[0].entityId : null,
+  async (entityId) => {
+    const version = ++imageDragResolveVersion
+    imageDragPayload.value = null
+    if (entityId === null) return
+    try {
+      const payload = await resolveImageTransfer(entityId)
+      if (version === imageDragResolveVersion) imageDragPayload.value = payload
+    } catch (error) {
+      if (version === imageDragResolveVersion) {
+        console.warn('[whiteboard] prepare image drag failed', error)
+      }
+    }
   },
   { immediate: true }
 )
@@ -234,6 +256,15 @@ function flipImage(axis: 0 | 1) {
     block.flip[axis] = !block.flip[axis]
   })
 }
+
+function handleImageDragStart(event: DragEvent) {
+  if (!imageDragPayload.value) {
+    event.preventDefault()
+    return
+  }
+  event.dataTransfer?.setData('text/plain', imageDragPayload.value.fileName)
+  startImageDrag(imageDragPayload.value)
+}
 </script>
 
 <template>
@@ -303,6 +334,14 @@ function flipImage(axis: 0 | 1) {
     <div v-if="isSingleImage" class="wb-toolbar-actions">
       <MenuButton title="查看大图" @click="openImagePreview">
         <span class="material-icons">open_in_full</span>
+      </MenuButton>
+      <MenuButton
+        :title="imageDragPayload ? '拖出图片文件' : '正在准备图片'"
+        :draggable="Boolean(imageDragPayload)"
+        :disabled="!imageDragPayload"
+        @dragstart="handleImageDragStart"
+      >
+        <span class="material-icons">drag_indicator</span>
       </MenuButton>
       <MenuButton title="水平翻转" @click="flipImage(0)">
         <span class="material-icons">flip</span>

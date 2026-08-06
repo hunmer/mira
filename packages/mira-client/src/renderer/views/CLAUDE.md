@@ -17,7 +17,7 @@
 | 视图 | 行数 | 描述 |
 |------|------|------|
 | `HomeView/` | - | 首页完整模块（详见 HomeView/CLAUDE.md） |
-| `LoginView.vue` | 801 | 登录页面 |
+| `LoginView/` | - | 登录页面完整模块（详见 LoginView/CLAUDE.md） |
 | `SettingsView.vue` | 143 | 设置页面 |
 | `FileUploadView.vue` | 429 | 文件上传 |
 | `FilePreviewView.vue` | 258 | 文件预览 |
@@ -30,4 +30,5 @@
 | 目录 | 文档 | 描述 |
 |------|------|------|
 | `HomeView/` | [HomeView/CLAUDE.md](./HomeView/CLAUDE.md) | 首页完整实现 |
+| `LoginView/` | [LoginView/CLAUDE.md](./LoginView/CLAUDE.md) | 登录页面完整实现 |
 | `settings/` | [settings/CLAUDE.md](./settings/CLAUDE.md) | 设置子面板 |

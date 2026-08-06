@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-06T12:29:47.880Z",
+  "generatedAt": "2026-08-06T16:43:31.554Z",
   "plugins": [
     {
       "pluginId": "b1c2d3e4-5f60-4a7b-8c9d-0a1b2c3d4e5f",
@@ -28,11 +28,6 @@
       "checksum": "sha256:ee8e314b93f33c14116648e78342883a54c8961a24b37eb8ef763d9f66a66b28",
       "files": [
         {
-          "path": "README.md",
-          "size": 522,
-          "checksum": "sha256:1d97fdbd0faafec78c9e7b63f718083712bd038d8e047ee44a4d66f985960419"
-        },
-        {
           "path": "plugin.json",
           "size": 802,
           "checksum": "sha256:7fe3f8955ca482a75dbd2f3272e9a9740821f7d1f3b16c1d6f4c8999512a206e"
@@ -41,6 +36,11 @@
           "path": "index.js",
           "size": 3228,
           "checksum": "sha256:bdc0c595cd365bcf5effc27b5b31943461e00511bcf2084aca4c785425521dc8"
+        },
+        {
+          "path": "README.md",
+          "size": 522,
+          "checksum": "sha256:1d97fdbd0faafec78c9e7b63f718083712bd038d8e047ee44a4d66f985960419"
         }
       ]
     },
@@ -67,14 +67,9 @@
       "directory": "plugins/mira-whiteboard",
       "icon": "icon.png",
       "readme": "README.md",
-      "size": 1299272,
-      "checksum": "sha256:f7b55e5bab693afa63cfc206bafec6e6ef4228937b858e7a5f22a699d02ec56b",
+      "size": 1362220,
+      "checksum": "sha256:cfa09a1ee52876532738ffaf2b1b657cbf4d6499e54fa2f64d0307565a9cc95b",
       "files": [
-        {
-          "path": "README.md",
-          "size": 6781,
-          "checksum": "sha256:cdd0f6de451c246fc75ab26ef39a5646a242a5dd9fd84501b9f993857f01e8db"
-        },
         {
           "path": "plugin.json",
           "size": 782,
@@ -82,8 +77,8 @@
         },
         {
           "path": "package.json",
-          "size": 476,
-          "checksum": "sha256:6fd35a7f97908d2545e2a6959485608799f6cd1cf38bb748e93b0bcf7de41873"
+          "size": 530,
+          "checksum": "sha256:7a8136e4f24d5a127371ef51463f27c1b1d5f84bcd204d6659fe6cfb37573057"
         },
         {
           "path": "index.js",
@@ -96,14 +91,9 @@
           "checksum": "sha256:f6d67580e4fbb5bb4943cd84cbbfef5dafb40477fa406baaeda75e49c8665ffd"
         },
         {
-          "path": "HANDOFF.md",
-          "size": 11793,
-          "checksum": "sha256:a6cb77f8fd97a1e0c243206511d0c2295a4c98f8bcc37fd59f0ffd2f461d82d3"
-        },
-        {
           "path": "dist/index.html",
           "size": 401,
-          "checksum": "sha256:aca02aa9c349d15695bc72af047464db78d80adfa19b0fbef975d1c045e4c88e"
+          "checksum": "sha256:be299560280ee189c067665b525c0ed8de7a0c37596d264af9a348272704cba0"
         },
         {
           "path": "dist/assets/material-icons-kAwBdRge.woff2",
@@ -111,14 +101,24 @@
           "checksum": "sha256:8265f64786397d6b832d1ca0aafdf149ad84e72759fffa9f7272e91a0fb015d1"
         },
         {
-          "path": "dist/assets/index-BrTl8Cou.js",
-          "size": 1050288,
-          "checksum": "sha256:97ca0f7d7953042e98dcac507829a6d25fb8f5b9d51e872165e3bf81cdac3b36"
+          "path": "dist/assets/index-_6MjF2C4.js",
+          "size": 1101419,
+          "checksum": "sha256:986ce48f3d2a644d429a1b2d8630c335ff481d7029816c29d1a182c3e0245b74"
         },
         {
-          "path": "dist/assets/index-BiIpQpuG.css",
-          "size": 49630,
-          "checksum": "sha256:60ef0a4161f6f70870a61e424e2a54851a859fd96510bf43ae1f3d73a8d96426"
+          "path": "dist/assets/index-BSZ1OOXo.css",
+          "size": 60938,
+          "checksum": "sha256:b3895ac96a3c584ddc14807c7e3f6ce716ea3abeea2f6238e2ea681ced1b4ce1"
+        },
+        {
+          "path": "README.md",
+          "size": 6781,
+          "checksum": "sha256:cdd0f6de451c246fc75ab26ef39a5646a242a5dd9fd84501b9f993857f01e8db"
+        },
+        {
+          "path": "HANDOFF.md",
+          "size": 12248,
+          "checksum": "sha256:4cafa2e07599b50a565e4628821ef81e233afcaeeeb008857478bdaf16c8bbc8"
         }
       ]
     }

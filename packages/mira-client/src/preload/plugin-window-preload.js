@@ -7,7 +7,7 @@
  *   - 设置本窗口的专属菜单栏（win.setMenu，Windows/Linux 生效），
  *     并接收菜单点击事件（plugin-window:menu-action）。
  *
- * 与主 preload 的区别：这里只暴露 pluginWindow.{open,close,send,setMenu,onMessage,onMenuAction}，
+ * 与主 preload 的区别：这里只暴露 pluginWindow 的窗口通信与图片传输能力，
  * 不暴露文件系统 / 拖拽 / 插件管理等其它能力，遵循最小权限原则。
  */
 const { ipcRenderer, contextBridge } = require('electron')
@@ -19,6 +19,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     open: (opts) => ipcRenderer.invoke('plugin-window:open', opts),
     close: (windowId) => ipcRenderer.invoke('plugin-window:close', windowId),
     send: (pluginId, entry, channel, data) => ipcRenderer.invoke('plugin-window:send', pluginId, entry, channel, data),
+    copyImage: (payload) => ipcRenderer.invoke('plugin-window:copy-image', payload),
+    startImageDrag: (payload) => ipcRenderer.send('plugin-window:start-image-drag', payload),
     onMessage: (callback) => {
       const listener = (_event, channel, data) => callback(channel, data)
       ipcRenderer.on('plugin-window:message', listener)

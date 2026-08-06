@@ -8,3 +8,4 @@ packages:
   - 'packages/n8n-nodes-mira-ws-trigger'
   - 'packages/mira-browser-extension'
   - 'packages/vue-masonry'
+  - 'online_client_plugins/plugins/*'

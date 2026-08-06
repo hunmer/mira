@@ -1,5 +1,6 @@
-import { ipcMain, BrowserWindow, Menu, app } from 'electron'
+import { ipcMain, BrowserWindow, Menu, app, clipboard, nativeImage } from 'electron'
 import type { MenuItemConstructorOptions } from 'electron'
+import { mkdirSync, writeFileSync } from 'fs'
 import * as fs from 'fs/promises'
 import * as path from 'path'
 import { logger } from '../utils/Logger'
@@ -21,6 +22,13 @@ export interface PluginWindowOpenOptions {
   height?: number
   /** 传递给窗口页面的查询参数（拼到 URL query 上） */
   query?: Record<string, string>
+}
+
+interface PluginWindowImagePayload {
+  data: ArrayBuffer | Uint8Array
+  previewData: ArrayBuffer | Uint8Array
+  fileName: string
+  mimeType: string
 }
 
 /**
@@ -56,6 +64,8 @@ export class PluginWindowHandlers {
     ipcMain.handle('plugin-window:open', this.handleOpen.bind(this))
     ipcMain.handle('plugin-window:close', this.handleClose.bind(this))
     ipcMain.handle('plugin-window:send', this.handleSend.bind(this))
+    ipcMain.handle('plugin-window:copy-image', this.handleCopyImage.bind(this))
+    ipcMain.on('plugin-window:start-image-drag', this.handleStartImageDrag.bind(this))
     // 设置发起窗口的专属菜单栏（per-window menu）。
     // 插件窗口默认继承全局 Menu.setApplicationMenu，这里允许每个窗口
     // 用 win.setMenu 替换成自己的模板（Windows/Linux 生效）。
@@ -271,6 +281,58 @@ export class PluginWindowHandlers {
     return { success: true, delivered: true }
   }
 
+  private toImageBuffer(payload: PluginWindowImagePayload, field: 'data' | 'previewData'): Buffer {
+    const value = payload?.[field]
+    const buffer = value instanceof ArrayBuffer
+      ? Buffer.from(value)
+      : value instanceof Uint8Array
+        ? Buffer.from(value.buffer, value.byteOffset, value.byteLength)
+        : Buffer.alloc(0)
+    if (!payload?.mimeType?.startsWith('image/') || buffer.length === 0 || buffer.length > 100 * 1024 * 1024) {
+      throw new Error('无效的图片数据')
+    }
+    return buffer
+  }
+
+  private async handleCopyImage(
+    _event: Electron.IpcMainInvokeEvent,
+    payload: PluginWindowImagePayload
+  ): Promise<{ success: boolean; message?: string }> {
+    try {
+      const image = nativeImage.createFromBuffer(this.toImageBuffer(payload, 'previewData'))
+      if (image.isEmpty()) throw new Error('无法解析图片数据')
+      clipboard.writeImage(image)
+      return { success: true }
+    } catch (error) {
+      return { success: false, message: error instanceof Error ? error.message : String(error) }
+    }
+  }
+
+  private handleStartImageDrag(event: Electron.IpcMainEvent, payload: PluginWindowImagePayload): void {
+    try {
+      const data = this.toImageBuffer(payload, 'data')
+      const preview = nativeImage.createFromBuffer(this.toImageBuffer(payload, 'previewData'))
+      if (preview.isEmpty()) throw new Error('无法解析图片数据')
+
+      const safeName = path.basename(payload.fileName || 'image.png')
+        .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
+        .slice(0, 160) || 'image.png'
+      const tempDir = path.join(app.getPath('temp'), 'mira-whiteboard-drag')
+      mkdirSync(tempDir, { recursive: true })
+      const filePath = path.join(tempDir, `${process.pid}-${safeName}`)
+      writeFileSync(filePath, data)
+
+      const size = preview.getSize()
+      const scale = Math.min(1, 48 / Math.max(size.width, size.height))
+      const icon = scale < 1
+        ? preview.resize({ width: Math.max(1, Math.round(size.width * scale)), height: Math.max(1, Math.round(size.height * scale)) })
+        : preview
+      event.sender.startDrag({ file: filePath, icon })
+    } catch (error) {
+      logger.warn('PluginWindowHandlers', `Failed to start image drag: ${error instanceof Error ? error.message : String(error)}`)
+    }
+  }
+
   /**
    * 为发起请求的插件窗口设置专属菜单栏。
    *
@@ -355,6 +417,8 @@ export class PluginWindowHandlers {
     ipcMain.removeHandler('plugin-window:open')
     ipcMain.removeHandler('plugin-window:close')
     ipcMain.removeHandler('plugin-window:send')
+    ipcMain.removeHandler('plugin-window:copy-image')
+    ipcMain.removeAllListeners('plugin-window:start-image-drag')
     ipcMain.removeHandler('plugin-window:set-menu')
   }
 }
