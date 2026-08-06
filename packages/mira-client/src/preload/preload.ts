@@ -217,11 +217,19 @@ const electronAPI: ElectronAPI = {
       ipcRenderer.invoke('server-deploy:getLatestVersion'),
     update: () =>
       ipcRenderer.invoke('server-deploy:update'),
+    deploy: () =>
+      ipcRenderer.invoke('server-deploy:deploy'),
     onUpdateProgress: (callback: (progress: any) => void) => {
       ipcRenderer.on('server-deploy:update-progress', (_event, progress) => callback(progress))
     },
     removeUpdateProgressListener: () => {
       ipcRenderer.removeAllListeners('server-deploy:update-progress')
+    },
+    onDeployProgress: (callback: (progress: any) => void) => {
+      ipcRenderer.on('server-deploy:deploy-progress', (_event, progress) => callback(progress))
+    },
+    removeDeployProgressListener: () => {
+      ipcRenderer.removeAllListeners('server-deploy:deploy-progress')
     },
   },
 

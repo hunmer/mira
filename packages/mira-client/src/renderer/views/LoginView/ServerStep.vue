@@ -77,7 +77,7 @@ async function handleDeleteServer() {
         <!-- Add Server Card -->
         <div
           class="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-border dark:border-border rounded-xl cursor-pointer transition-all hover:border-primary dark:hover:border-primary hover:bg-primary/10 dark:hover:bg-primary/10"
-          @click="emit('update:showAddForm', true)"
+          @click="showAddForm = true"
         >
           <span class="material-icons text-2xl text-muted-foreground dark:text-muted-foreground">add</span>
           <span class="text-sm text-muted-foreground dark:text-muted-foreground">添加服务器</span>
@@ -142,25 +142,25 @@ async function handleDeleteServer() {
 
     <!-- Add Server Form -->
     <form v-else @submit.prevent="emit('testConnection')" class="flex flex-col gap-4 relative">
-      <button type="button" class="absolute -top-1 right-0 flex items-center gap-1 text-xs text-muted-foreground hover:text-muted-foreground dark:text-muted-foreground dark:hover:text-muted-foreground bg-transparent border-none cursor-pointer" @click="emit('update:showAddForm', false)">
+      <button type="button" class="absolute -top-1 right-0 flex items-center gap-1 text-xs text-muted-foreground hover:text-muted-foreground dark:text-muted-foreground dark:hover:text-muted-foreground bg-transparent border-none cursor-pointer" @click="showAddForm = false">
         <span class="material-icons text-sm">arrow_back</span>
         返回列表
       </button>
       <div class="flex flex-col gap-1">
         <Label>服务器名称</Label>
-        <Input :model-value="serverName" @update:model-value="emit('update:server-name', $event)" type="text" placeholder="服务器名称" required />
+        <Input v-model="serverName" type="text" placeholder="服务器名称" required />
       </div>
       <div class="flex flex-col gap-1">
         <Label>服务器地址</Label>
-        <Input :model-value="serverAddress" @update:model-value="emit('update:server-address', $event)" type="text" placeholder="http://192.168.1.100" required />
+        <Input v-model="serverAddress" type="text" placeholder="http://192.168.1.100" required />
       </div>
-      <Button type="button" variant="ghost" size="sm" @click="emit('update:showWsField', !showWsField)">
+      <Button type="button" variant="ghost" size="sm" @click="showWsField = !showWsField">
         <span class="material-icons text-sm">{{ showWsField ? 'expand_less' : 'expand_more' }}</span>
         WebSocket 地址
       </Button>
       <div v-if="showWsField" class="flex flex-col gap-1">
         <Label>WebSocket 地址</Label>
-        <Input :model-value="wsAddress" @update:model-value="emit('update:ws-address', $event)" type="text" placeholder="默认 8081" />
+        <Input v-model="wsAddress" type="text" placeholder="默认 8081" />
       </div>
       <Button type="submit" class="w-full" :disabled="loading">
         <Loader2 v-if="loading" class="animate-spin" />

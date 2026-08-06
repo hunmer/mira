@@ -518,6 +518,8 @@ export interface ElectronAPI {
       data?: { success: boolean; version?: string; message?: string }
       message?: string
     }>
+    /** 执行完整的本地部署流水线 */
+    deploy: () => Promise<{ success: boolean; message?: string }>
     /** 监听更新进度（安装过程的 stdout/stderr 输出） */
     onUpdateProgress: (callback: (progress: {
       type: 'data' | 'done' | 'error'
@@ -526,6 +528,15 @@ export interface ElectronAPI {
     }) => void) => void
     /** 移除更新进度监听 */
     removeUpdateProgressListener: () => void
+    /** 监听完整部署中每个步骤的状态与后台输出 */
+    onDeployProgress: (callback: (progress: {
+      stepId: number
+      type: 'status' | 'output'
+      status?: 'running' | 'success' | 'failed'
+      line?: string
+    }) => void) => void
+    /** 移除部署进度监听 */
+    removeDeployProgressListener: () => void
   }
 
   // 通知 API

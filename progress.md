@@ -40,6 +40,11 @@
 - Final scoped dependency, SFC, Viewer.js method wiring, cleanup, and whitespace checks passed.
 
 ## 2026-08-07
+- Started the login deployment guide implementation task and preserved the existing user edit in `ServerStep.vue`.
+- Confirmed the checklist is simulated and selected a main-process five-step deployment pipeline with per-step progress events.
+- Added the real main-process deployment pipeline, preload/shared API contract, and renderer-side per-step output handling.
+- Renderer, Electron main-process, and preload production builds passed; scoped whitespace checks passed.
+- Full client `vue-tsc` remains blocked by existing project errors, while filtered diagnostics contain no errors from the four deployment files.
 - Started image copy-to-clipboard and Electron external file-drag toolbar work.
 - Read the handoff, context menu, selection toolbar, image URL resolver, plugin preload, and main-process handler structure.
 - Added a shared Woven image-transfer composable, image-only context-menu copy command, and a preloaded external-drag toolbar control.

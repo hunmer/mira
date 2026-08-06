@@ -1,5 +1,13 @@
 # Findings
 
+- 2026-08-07 deployment task starts with an existing user modification in `packages/mira-client/src/renderer/views/LoginView/ServerStep.vue`; preserve and integrate with it.
+- `DeploymentChecklist.vue` is the actual simulated implementation; `DeployGuideDialog.vue` only mounts it.
+- Existing `ServerDeployHandlers` already provides main-process npm version/update IPC and stdout/stderr progress, but has no full deployment operation.
+- The real server CLI requires the `start` subcommand, supports HTTP/WS/data-path options, and exposes health at `GET /health` and `GET /api/health`.
+- The deployment order must be runtime check, global package install, data-directory setup, server start, then health check so the configured directory can be passed to the start command.
+- The smallest compatible contract is one `serverDeploy.deploy()` invoke plus progress events containing `stepId`, status, and output line; command execution remains entirely in the Electron main process.
+- Global CLI startup resolves the executable from `npm prefix -g`, avoiding desktop-app PATH differences; health reuse requires a Mira `/health` JSON body with `status: "ok"`.
+
 - `HANDOFF.md`: the feature belongs primarily to the Vue plugin window using `@woven-canvas/vue`.
 - Canvas project switching remounts `WovenCanvas` by `currentProjectId`; persistence uses IndexedDB.
 - Working tree was clean at task start.

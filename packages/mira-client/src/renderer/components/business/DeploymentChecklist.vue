@@ -5,8 +5,7 @@
  * 由 React 版 great-ui-deployment-checklist 移植为 Vue 3 + motion-v。
  * 用于 LoginView「在线部署」对话框中，展示后端 (mira-app-server) 部署流水线动画。
  *
- * 步骤文案贴合本项目真实部署流程（npm install -g mira-app-server → 启动 → 健康检查）。
- * 纯前端模拟，不真正执行命令；点击「启动部署」按顺序推进各阶段状态。
+ * 点击「启动部署」后，通过 Electron 主进程执行真实命令，并逐步展示后台输出。
  */
 import { ref, computed, onBeforeUnmount, onMounted } from 'vue'
 import { Motion, AnimatePresence, motion } from 'motion-v'
@@ -23,6 +22,13 @@ interface Task {
   subtitle: string
   status: TaskStatus
   info: string | null
+}
+
+interface DeploymentProgress {
+  stepId: number
+  type: 'status' | 'output'
+  status?: 'running' | 'success' | 'failed'
+  line?: string
 }
 
 const settingsStore = useSettingsStore()
@@ -64,22 +70,22 @@ const defaultTasks: Task[] = [
   },
   {
     id: 3,
+    title: '配置数据目录',
+    subtitle: '在应用数据目录中创建 mira-app-server 持久化目录。',
+    status: 'pending',
+    info: null,
+  },
+  {
+    id: 4,
     title: '启动服务器',
     subtitle: 'mira-app-server start --http-port 8081 --ws-port 8018',
     status: 'pending',
     info: null,
   },
   {
-    id: 4,
-    title: '配置数据目录（可选）',
-    subtitle: '通过 --data-path 自定义数据目录。',
-    status: 'pending',
-    info: null,
-  },
-  {
     id: 5,
     title: '健康检查并连接',
-    subtitle: 'GET /api/system/health 返回 success: true。',
+    subtitle: 'GET /health 返回 status: ok。',
     status: 'pending',
     info: null,
   },
@@ -90,44 +96,59 @@ const pipelineStatus = ref<PipelineStatus>('idle')
 
 let running = false
 
-const delay = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms))
+function updateTask(taskId: number, update: Partial<Task>) {
+  tasks.value = tasks.value.map(task => (task.id === taskId ? { ...task, ...update } : task))
+}
+
+function appendTaskOutput(taskId: number, line: string) {
+  const task = tasks.value.find(item => item.id === taskId)
+  if (!task) return
+  const lines = task.info ? task.info.split('\n') : []
+  updateTask(taskId, { info: [...lines, line].slice(-100).join('\n') })
+}
 
 async function runPipeline() {
-  if (running) return
+  if (running || updateInProgress.value || !window.electronAPI?.serverDeploy) return
   running = true
   pipelineStatus.value = 'running'
   tasks.value = tasks.value.map(t => ({ ...t, status: 'pending', info: null }))
 
-  for (let i = 0; i < tasks.value.length; i++) {
-    const taskId = tasks.value[i].id
-    tasks.value = tasks.value.map(t => (t.id === taskId ? { ...t, status: 'running' } : t))
-    await delay(1800)
-
-    if (taskId === 4) {
-      // 步骤 4 为可选配置，演示「跳过」状态
-      tasks.value = tasks.value.map(t =>
-        t.id === taskId
-          ? {
-              ...t,
-              status: 'skipped',
-              info: '已跳过：未指定 --data-path，将使用默认数据目录 ./data。',
-            }
-          : t,
-      )
-    } else {
-      tasks.value = tasks.value.map(t => (t.id === taskId ? { ...t, status: 'success' } : t))
+  const api = window.electronAPI.serverDeploy
+  const onProgress = (progress: DeploymentProgress) => {
+    if (progress.type === 'status' && progress.status) {
+      updateTask(progress.stepId, { status: progress.status })
     }
-
-    if (i < tasks.value.length - 1) await delay(600)
+    if (progress.type === 'output' && progress.line) {
+      appendTaskOutput(progress.stepId, progress.line)
+    }
   }
+  api.removeDeployProgressListener()
+  api.onDeployProgress(onProgress)
 
-  pipelineStatus.value = 'success'
-  running = false
-}
-
-function resetChecklist() {
-  tasks.value = tasks.value.map(t => ({ ...t, status: 'pending', info: null }))
-  pipelineStatus.value = 'idle'
+  try {
+    const result = await api.deploy()
+    if (!result.success) {
+      const current = tasks.value.find(task => task.status === 'running')
+      if (current) {
+        updateTask(current.id, { status: 'failed' })
+        if (result.message) appendTaskOutput(current.id, result.message)
+      }
+      pipelineStatus.value = 'failed'
+      return
+    }
+    pipelineStatus.value = 'success'
+    await checkVersion()
+  } catch (error) {
+    const current = tasks.value.find(task => task.status === 'running')
+    if (current) {
+      updateTask(current.id, { status: 'failed' })
+      appendTaskOutput(current.id, error instanceof Error ? error.message : String(error))
+    }
+    pipelineStatus.value = 'failed'
+  } finally {
+    api.removeDeployProgressListener()
+    running = false
+  }
 }
 
 // ---- 图标（贴近原 React 版的精简 SVG）----
@@ -139,6 +160,7 @@ const MotionPath = motion.path
 
 onBeforeUnmount(() => {
   running = false
+  window.electronAPI?.serverDeploy.removeDeployProgressListener()
 })
 </script>
 
@@ -315,7 +337,7 @@ onBeforeUnmount(() => {
         <!-- Info panel (expandable) -->
         <div :class="cn('z-0 grid w-[90%] transition-all duration-300 ease-in-out', task.info ? '-mt-3.5 grid-rows-[1fr] opacity-100' : 'pointer-events-none mt-0 grid-rows-[0fr] opacity-0')">
           <div class="min-h-0 overflow-hidden">
-            <div :class="cn('rounded-b-2xl px-3.5 pt-5 pb-2.5 font-mono text-[9.5px] leading-relaxed transition-colors duration-300', isDarkMode ? 'bg-neutral-800 text-neutral-200' : 'bg-neutral-200/90 text-neutral-800')">
+            <div :class="cn('max-h-24 overflow-y-auto whitespace-pre-wrap break-all rounded-b-2xl px-3.5 pt-5 pb-2.5 font-mono text-[9.5px] leading-relaxed transition-colors duration-300', isDarkMode ? 'bg-neutral-800 text-neutral-200' : 'bg-neutral-200/90 text-neutral-800')">
               {{ task.info }}
             </div>
           </div>
@@ -337,7 +359,7 @@ onBeforeUnmount(() => {
         <svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5L6.5 12L13 4.5" /></svg>
         部署完成
       </Motion>
-      <Motion v-else as="button" @click="resetChecklist" :while-tap="{ scale: 0.98 }" :class="cn('flex w-full items-center justify-center gap-1.5 rounded-2xl py-2.5 font-sans text-xs font-bold transition-colors border-none cursor-pointer', isDarkMode ? 'bg-neutral-800 text-neutral-200 hover:bg-neutral-700' : 'bg-neutral-200 text-neutral-800 hover:bg-neutral-300')">
+      <Motion v-else as="button" @click="runPipeline" :while-tap="{ scale: 0.98 }" :class="cn('flex w-full items-center justify-center gap-1.5 rounded-2xl py-2.5 font-sans text-xs font-bold transition-colors border-none cursor-pointer', isDarkMode ? 'bg-neutral-800 text-neutral-200 hover:bg-neutral-700' : 'bg-neutral-200 text-neutral-800 hover:bg-neutral-300')">
         <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
           <polyline points="3 3 3 8 8 8" />

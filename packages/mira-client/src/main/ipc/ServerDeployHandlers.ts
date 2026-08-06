@@ -1,5 +1,7 @@
-import { ipcMain, IpcMainInvokeEvent, BrowserWindow } from 'electron'
-import { execFile, spawn } from 'child_process'
+import { ipcMain, IpcMainInvokeEvent, BrowserWindow, app } from 'electron'
+import { execFile, spawn, type ChildProcessWithoutNullStreams } from 'child_process'
+import { mkdir } from 'fs/promises'
+import path from 'path'
 
 /**
  * 后端部署 (mira-app-server) IPC 处理器
@@ -8,6 +10,7 @@ import { execFile, spawn } from 'child_process'
  * - 检测已安装版本（npm ls -g --json，读 package.json 真实版本，不用 --version）
  * - 查询 npm registry 最新版本
  * - 一键更新（npm install -g mira-app-server@latest，实时推送进度）
+ * - 完整部署（环境检查、安装、数据目录、启动、健康检查）
  *
  * 注意：mira-app-server 的 CLI 版本号是硬编码的（commander program.version('1.0.17')），
  * 与 package.json 实际版本不一致，因此版本检测走 npm ls 而非 --version。
@@ -20,7 +23,10 @@ const REGISTRY_LATEST_URL = `https://registry.npmjs.org/${PACKAGE_NAME}/latest`
 // 不带 shell:true 直接 spawn .cmd/.bat 文件会抛 EINVAL，因此统一用 'npm' + shell:true
 // 让系统解析；非 Windows 直接执行无需 shell。
 const NPM_BIN = 'npm'
+const SERVER_BIN = 'mira-app-server'
 const IS_WIN = process.platform === 'win32'
+const HTTP_PORT = 8081
+const WS_PORT = 8018
 
 export interface InstalledVersionInfo {
   installed: boolean
@@ -48,8 +54,17 @@ export interface UpdateProgress {
   exitCode?: number
 }
 
+export interface DeploymentProgress {
+  stepId: number
+  type: 'status' | 'output'
+  status?: 'running' | 'success' | 'failed'
+  line?: string
+}
+
 export class ServerDeployHandlers {
   private mainWindow: BrowserWindow | null = null
+  private deploymentInProgress = false
+  private serverProcess: ChildProcessWithoutNullStreams | null = null
 
   constructor() {
     this.registerHandlers()
@@ -64,6 +79,197 @@ export class ServerDeployHandlers {
     ipcMain.handle('server-deploy:getInstalledVersion', this.handleGetInstalledVersion.bind(this))
     ipcMain.handle('server-deploy:getLatestVersion', this.handleGetLatestVersion.bind(this))
     ipcMain.handle('server-deploy:update', this.handleUpdate.bind(this))
+    ipcMain.handle('server-deploy:deploy', this.handleDeploy.bind(this))
+  }
+
+  private runCommand(
+    command: string,
+    args: string[],
+    onOutput: (line: string) => void,
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const child = spawn(command, args, { shell: IS_WIN, windowsHide: true })
+      let settled = false
+
+      const emitChunk = (chunk: Buffer | string) => {
+        String(chunk)
+          .split(/\r?\n/)
+          .map(line => line.trim())
+          .filter(Boolean)
+          .forEach(onOutput)
+      }
+
+      child.stdout?.on('data', emitChunk)
+      child.stderr?.on('data', emitChunk)
+      child.once('error', error => {
+        if (settled) return
+        settled = true
+        reject(error)
+      })
+      child.once('close', exitCode => {
+        if (settled) return
+        settled = true
+        if (exitCode === 0) resolve()
+        else reject(new Error(`${command} 退出码 ${exitCode ?? -1}`))
+      })
+    })
+  }
+
+  private async checkHealth(): Promise<{ ok: boolean; detail?: string }> {
+    try {
+      const response = await fetch(`http://127.0.0.1:${HTTP_PORT}/health`, {
+        signal: AbortSignal.timeout(2000),
+      })
+      const text = await response.text()
+      let isMiraHealthy = false
+      try {
+        const body = JSON.parse(text)
+        isMiraHealthy = body?.status === 'ok'
+      } catch {
+        isMiraHealthy = false
+      }
+      return {
+        ok: response.ok && isMiraHealthy,
+        detail: text || `HTTP ${response.status}`,
+      }
+    } catch {
+      return { ok: false }
+    }
+  }
+
+  private getServerExecutable(): Promise<string> {
+    return new Promise((resolve, reject) => {
+      execFile(
+        NPM_BIN,
+        ['prefix', '-g'],
+        { shell: IS_WIN, windowsHide: true },
+        (error, stdout, stderr) => {
+          if (error) {
+            reject(new Error(stderr?.trim() || error.message))
+            return
+          }
+          const prefix = stdout.trim()
+          resolve(IS_WIN ? path.join(prefix, `${SERVER_BIN}.cmd`) : path.join(prefix, 'bin', SERVER_BIN))
+        },
+      )
+    })
+  }
+
+  private async startServer(dataPath: string, onOutput: (line: string) => void): Promise<void> {
+    const existingHealth = await this.checkHealth()
+    if (existingHealth.ok) {
+      onOutput(`检测到端口 ${HTTP_PORT} 上已有可用服务，直接复用`)
+      return
+    }
+
+    const executable = await this.getServerExecutable()
+    onOutput(`可执行文件：${executable}`)
+    const child = spawn(
+      executable,
+      ['start', '--http-port', String(HTTP_PORT), '--ws-port', String(WS_PORT), '--data-path', dataPath],
+      { shell: IS_WIN, windowsHide: true },
+    )
+    this.serverProcess = child
+    let startError: Error | null = null
+
+    const emitChunk = (chunk: Buffer | string) => {
+      String(chunk)
+        .split(/\r?\n/)
+        .map(line => line.trim())
+        .filter(Boolean)
+        .forEach(onOutput)
+    }
+    child.stdout.on('data', emitChunk)
+    child.stderr.on('data', emitChunk)
+    child.once('error', error => {
+      startError = error
+    })
+    child.once('close', exitCode => {
+      if (exitCode !== 0) startError = new Error(`${SERVER_BIN} 退出码 ${exitCode ?? -1}`)
+      if (this.serverProcess === child) this.serverProcess = null
+    })
+
+    for (let attempt = 0; attempt < 40; attempt++) {
+      if (startError) throw startError
+      const health = await this.checkHealth()
+      if (health.ok) {
+        onOutput(`HTTP 服务已监听 ${HTTP_PORT}，WebSocket 端口 ${WS_PORT}`)
+        return
+      }
+      await new Promise(resolve => setTimeout(resolve, 500))
+    }
+
+    child.kill()
+    throw new Error(`服务启动超时：20 秒内未通过端口 ${HTTP_PORT} 健康检查`)
+  }
+
+  private async handleDeploy(
+    event: IpcMainInvokeEvent,
+  ): Promise<{ success: boolean; message?: string }> {
+    if (this.deploymentInProgress) {
+      return { success: false, message: '已有部署任务正在执行' }
+    }
+    this.deploymentInProgress = true
+
+    const emit = (progress: DeploymentProgress) => {
+      if (!event.sender.isDestroyed()) {
+        event.sender.send('server-deploy:deploy-progress', progress)
+      }
+    }
+    const runStep = async (stepId: number, action: (output: (line: string) => void) => Promise<void>) => {
+      emit({ stepId, type: 'status', status: 'running' })
+      const output = (line: string) => emit({ stepId, type: 'output', line })
+      try {
+        await action(output)
+        emit({ stepId, type: 'status', status: 'success' })
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error)
+        output(message)
+        emit({ stepId, type: 'status', status: 'failed' })
+        throw error
+      }
+    }
+
+    try {
+      await runStep(1, async output => {
+        const major = Number(process.versions.node.split('.')[0])
+        output(`Node.js ${process.version}`)
+        if (major < 18) throw new Error('需要 Node.js 18 或更高版本')
+        await this.runCommand(NPM_BIN, ['--version'], line => output(`npm ${line}`))
+      })
+
+      await runStep(2, async output => {
+        output(`执行 npm install -g ${PACKAGE_NAME}@latest`)
+        await this.runCommand(NPM_BIN, ['install', '-g', `${PACKAGE_NAME}@latest`], output)
+      })
+
+      const dataPath = path.join(app.getPath('userData'), PACKAGE_NAME)
+      await runStep(3, async output => {
+        await mkdir(dataPath, { recursive: true })
+        output(`数据目录：${dataPath}`)
+      })
+
+      await runStep(4, async output => {
+        output(`启动 ${SERVER_BIN}，HTTP ${HTTP_PORT} / WebSocket ${WS_PORT}`)
+        await this.startServer(dataPath, output)
+      })
+
+      await runStep(5, async output => {
+        const health = await this.checkHealth()
+        if (!health.ok) throw new Error('健康检查失败')
+        output(`GET http://127.0.0.1:${HTTP_PORT}/health`)
+        if (health.detail) output(health.detail)
+      })
+
+      return { success: true }
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : String(error),
+      }
+    } finally {
+      this.deploymentInProgress = false
+    }
   }
 
   /**
@@ -214,5 +420,6 @@ export class ServerDeployHandlers {
     ipcMain.removeAllListeners('server-deploy:getInstalledVersion')
     ipcMain.removeAllListeners('server-deploy:getLatestVersion')
     ipcMain.removeAllListeners('server-deploy:update')
+    ipcMain.removeAllListeners('server-deploy:deploy')
   }
 }

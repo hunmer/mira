@@ -14,15 +14,15 @@ defineOptions({ name: 'AuthStep' })
 defineProps<{
   loading: boolean
   healthData: HealthResponse | null
-  showPassword: boolean
-  showConfirmPassword: boolean
   credentials: { username: string; password: string }
   registerForm: { email: string; confirmPassword: string }
 }>()
 
+// 密码可见性开关通过 v-model 与父级双向绑定
+const showPassword = defineModel<boolean>('showPassword', { required: true })
+const showConfirmPassword = defineModel<boolean>('showConfirmPassword', { required: true })
+
 const emit = defineEmits<{
-  'update:showPassword': [value: boolean]
-  'update:showConfirmPassword': [value: boolean]
   login: []
   register: []
   back: []
@@ -47,7 +47,7 @@ const emit = defineEmits<{
             <Label>密码</Label>
             <div class="relative">
               <Input v-model="credentials.password" :type="showPassword ? 'text' : 'password'" placeholder="密码" required class="pr-9" />
-              <Button type="button" variant="ghost" size="icon-sm" class="absolute right-0.5 top-1/2 -translate-y-1/2" @click="emit('update:showPassword', !showPassword)">
+              <Button type="button" variant="ghost" size="icon-sm" class="absolute right-0.5 top-1/2 -translate-y-1/2" @click="showPassword = !showPassword">
                 <span class="material-icons text-sm">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
               </Button>
             </div>
@@ -76,7 +76,7 @@ const emit = defineEmits<{
             <Label>密码</Label>
             <div class="relative">
               <Input v-model="credentials.password" :type="showPassword ? 'text' : 'password'" placeholder="至少6位，含字母和数字" required class="pr-9" />
-              <Button type="button" variant="ghost" size="icon-sm" class="absolute right-0.5 top-1/2 -translate-y-1/2" @click="emit('update:showPassword', !showPassword)">
+              <Button type="button" variant="ghost" size="icon-sm" class="absolute right-0.5 top-1/2 -translate-y-1/2" @click="showPassword = !showPassword">
                 <span class="material-icons text-sm">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
               </Button>
             </div>
@@ -85,7 +85,7 @@ const emit = defineEmits<{
             <Label>确认密码</Label>
             <div class="relative">
               <Input v-model="registerForm.confirmPassword" :type="showConfirmPassword ? 'text' : 'password'" placeholder="确认密码" required class="pr-9" />
-              <Button type="button" variant="ghost" size="icon-sm" class="absolute right-0.5 top-1/2 -translate-y-1/2" @click="emit('update:showConfirmPassword', !showConfirmPassword)">
+              <Button type="button" variant="ghost" size="icon-sm" class="absolute right-0.5 top-1/2 -translate-y-1/2" @click="showConfirmPassword = !showConfirmPassword">
                 <span class="material-icons text-sm">{{ showConfirmPassword ? 'visibility_off' : 'visibility' }}</span>
               </Button>
             </div>
