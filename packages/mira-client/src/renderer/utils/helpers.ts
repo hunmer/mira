@@ -66,6 +66,24 @@ export function pinyinMatch(text: string, query: string): boolean {
 }
 
 /**
+ * 获取字符串的首字母（用于 A-Z 分组）
+ * - 中文：取拼音首字母（大写）
+ * - 英文/数字/符号：取原字符大写；非字母返回空串
+ */
+export function getPinyinFirstLetter(text: string): string {
+  if (!text) return ''
+  const first = text.trim()[0]
+  if (!first) return ''
+  if (/[a-zA-Z]/.test(first)) return first.toUpperCase()
+  // 中文走拼音首字母
+  if (/[\u4e00-\u9fa5]/.test(first)) {
+    const py = getPinyin(text.trim())
+    return (py.first[0] || '').toUpperCase()
+  }
+  return ''
+}
+
+/**
  * 防抖函数
  */
 export function debounce<T extends (...args: any[]) => any>(

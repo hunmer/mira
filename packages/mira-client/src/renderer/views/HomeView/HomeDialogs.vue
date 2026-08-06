@@ -5,6 +5,8 @@ import ShortcutManagerDialog from '@renderer/components/business/ShortcutManager
 import FileUploadDialog from '@renderer/components/business/FileUploadDialog.vue'
 import PluginsDialog from '@renderer/components/business/PluginsDialog.vue'
 import SettingsDialog from '@renderer/components/business/SettingsDialog.vue'
+import FolderManageDialog from '@renderer/components/business/FolderManageDialog.vue'
+import TagManageDialog from '@renderer/components/business/TagManageDialog.vue'
 import {
   AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
   AlertDialogDescription, AlertDialogFooter, AlertDialogAction
@@ -22,6 +24,8 @@ const showFileUploadDialog = defineModel<boolean>('showFileUploadDialog', { requ
 const showPluginsDialog = defineModel<boolean>('showPluginsDialog', { required: true })
 const showSettingsDialog = defineModel<boolean>('showSettingsDialog', { required: true })
 const showAccessDeniedDialog = defineModel<boolean>('showAccessDeniedDialog', { required: true })
+const showFolderManageDialog = defineModel<boolean>('showFolderManageDialog', { required: true })
+const showTagManageDialog = defineModel<boolean>('showTagManageDialog', { required: true })
 
 defineProps<{
   editingServer: ServerConfig | null
@@ -35,6 +39,8 @@ const emit = defineEmits<{
   editServer: [server: ServerConfig]
   addServer: []
   serverSaved: []
+  selectFolder: [folder: any]
+  selectTag: [tag: any]
 }>()
 </script>
 
@@ -104,6 +110,18 @@ const emit = defineEmits<{
   <!-- 设置对话框 -->
   <SettingsDialog
     v-model:visible="showSettingsDialog"
+  />
+
+  <!-- 文件夹管理对话框 -->
+  <FolderManageDialog
+    v-model:visible="showFolderManageDialog"
+    @select="emit('selectFolder', $event)"
+  />
+
+  <!-- 标签管理对话框 -->
+  <TagManageDialog
+    v-model:visible="showTagManageDialog"
+    @select="emit('selectTag', $event)"
   />
 
   <!-- 权限不足对话框 -->

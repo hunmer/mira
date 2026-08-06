@@ -37,6 +37,10 @@ const emit = defineEmits<{
   accessDenied: []
   showLibraryManagement: []
   addServer: []
+  /** 打开文件夹管理对话框 */
+  manageFolders: []
+  /** 打开标签管理对话框 */
+  manageTags: []
   /** 导入本地文件夹：抛出根路径 + 递归目录树给父级 */
   importFolder: [payload: { rootPath: string; tree: LocalFsNode[] }]
 }>()
@@ -301,6 +305,24 @@ defineExpose({ locateItem })
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+
+    <!-- 文件夹管理 -->
+    <button
+      class="flex h-8 w-8 items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      title="文件夹管理"
+      @click="emit('manageFolders')"
+    >
+      <span class="material-icons leading-none" style="font-size: 18px">drive_file_move</span>
+    </button>
+
+    <!-- 标签管理 -->
+    <button
+      class="flex h-8 w-8 items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      title="标签管理"
+      @click="emit('manageTags')"
+    >
+      <span class="material-icons leading-none" style="font-size: 18px">sell</span>
+    </button>
   </div>
   <!-- 文件夹树形导航 -->
   <div ref="sidebarScrollRef" class="flex-grow p-2 overflow-y-auto min-w-0 space-y-4">

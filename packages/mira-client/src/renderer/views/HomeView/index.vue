@@ -92,6 +92,8 @@ const uploadInitialTree = ref<{ rootPath: string; tree: any[] }>()
 const showPluginsDialog = ref(false)
 const showSettingsDialog = ref(false)
 const showAccessDeniedDialog = ref(false)
+const showFolderManageDialog = ref(false)
+const showTagManageDialog = ref(false)
 
 // ============================================
 // Tab管理
@@ -143,7 +145,7 @@ function handleImportFolder(payload: { rootPath: string; tree: any[] }) {
 
 // ============ 悬浮球：接收主进程转发的消息 ============
 // file-drop：悬浮球拖入的文件（已是含 path 的 LocalFsNode[]），复用上传对话框的本地导入链路
-function handleFloatingBallMessage(data: any) {
+async function handleFloatingBallMessage(data: any) {
   if (!data || typeof data !== 'object') return
   if (data.type === 'file-drop') {
     const files = Array.isArray(data.files) ? data.files : []
@@ -164,6 +166,16 @@ function handleFloatingBallMessage(data: any) {
       uploadInitialTree.value = undefined
       showFileUploadDialog.value = true
     }
+  } else if (data.type === 'fb-hide-always') {
+    // 始终隐藏：关闭悬浮球开关并持久化（已有的 watch 会触发悬浮球 hide）
+    try {
+      await settingsStore.updateSettings({ floatingBallEnabled: false })
+    } catch (e) {
+      console.error('关闭悬浮球设置失败:', e)
+    }
+  } else if (data.type === 'fb-open-settings') {
+    // 打开设置：跳转到设置页的悬浮球分区（主进程已负责唤起主窗口）
+    router.push({ name: 'Settings', query: { tab: 'floating-ball' } })
   }
 }
 
@@ -353,6 +365,8 @@ onUnmounted(() => {
             @access-denied="showAccessDeniedDialog = true"
             @show-library-management="showLibraryManagement"
             @add-server="handleAddServer"
+            @manage-folders="showFolderManageDialog = true"
+            @manage-tags="showTagManageDialog = true"
           />
         </ResizablePanel>
 
@@ -462,6 +476,8 @@ onUnmounted(() => {
       v-model:show-plugins-dialog="showPluginsDialog"
       v-model:show-settings-dialog="showSettingsDialog"
       v-model:show-access-denied-dialog="showAccessDeniedDialog"
+      v-model:show-folder-manage-dialog="showFolderManageDialog"
+      v-model:show-tag-manage-dialog="showTagManageDialog"
       :editing-server="editingServer"
       :upload-initial-folder-id="uploadInitialFolderId"
       :upload-initial-tag-ids="uploadInitialTagIds"
@@ -470,6 +486,8 @@ onUnmounted(() => {
       @edit-server="handleEditServer"
       @add-server="handleAddServer"
       @server-saved="handleServerSaved"
+      @select-folder="handleFolderSelect"
+      @select-tag="handleTagSelect"
     />
   </div>
 </template>
