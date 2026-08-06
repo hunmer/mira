@@ -1,0 +1,63 @@
+{
+  "name": "@hunmer/vue-masonry",
+  "version": "0.1.0",
+  "description": "Vue 3 瀑布流组件:响应式列数 / 跨列跨行 / 宽高比 / 懒加载 / 入场 & layout 动画 / 排序",
+  "type": "module",
+  "license": "MIT",
+  "author": "hunmer",
+  "homepage": "https://github.com/hunmer/mira_typescript/tree/main/packages/vue-masonry",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hunmer/mira_typescript.git",
+    "directory": "packages/vue-masonry"
+  },
+  "bugs": {
+    "url": "https://github.com/hunmer/mira_typescript/issues"
+  },
+  "keywords": [
+    "vue",
+    "vue3",
+    "masonry",
+    "waterfall",
+    "瀑布流",
+    "layout",
+    "grid",
+    "motion-v"
+  ],
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/vue-masonry.cjs",
+  "module": "./dist/vue-masonry.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/vue-masonry.js",
+      "require": "./dist/vue-masonry.cjs"
+    },
+    "./style.css": "./dist/style.css"
+  },
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "scripts": {
+    "build": "vite build",
+    "type-check": "vue-tsc --noEmit"
+  },
+  "peerDependencies": {
+    "vue": "^3.3.0",
+    "motion-v": "^2.0.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.4",
+    "typescript": "~5.7.3",
+    "vite": "^6.4.2",
+    "vite-plugin-dts": "^4.5.0",
+    "vue": "^3.5.13",
+    "vue-tsc": "^2.2.12"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

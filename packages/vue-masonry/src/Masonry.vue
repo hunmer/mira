@@ -2,23 +2,20 @@
 /**
  * Masonry —— 通用瀑布流公共组件
  *
- * Vue 3 版复刻自原 React `masonry.tsx`。核心能力：
- *  1. 容器列数（数字 / 响应式断点）；item 通过 getMeta 设置跨列(colSpan)、跨行(rowSpan)
- *  2. item 自定义宽高比 aspect（"1:1" / "9:16" / "16:9" ...）或显式 height
+ * 核心能力:
+ *  1. 容器列数(数字 / 响应式断点);item 通过 getMeta 设置跨列(colSpan)、跨行(rowSpan)
+ *  2. item 自定义宽高比 aspect("1:1" / "9:16" / "16:9" ...)或显式 height
  *  3. 容器 gap 间距
- *  4. item 懒加载（lazy，进入视窗才渲染内容）
- *  5. 出/入场动画（motion-v，支持 stagger）+ layout 位置过渡
- *  6. 容器按 item 自定义属性排序（sortBy，可多字段）
+ *  4. item 懒加载(lazy,进入视窗才渲染内容)
+ *  5. 出/入场动画(motion-v,支持 stagger)+ layout 位置过渡
+ *  6. 容器按 item 自定义属性排序(sortBy,可多字段)
  *
- * 高度优先级：height > aspect > rowSpan × rowHeight
- *
- * 注：相比 React 版未移植滚动加载更多（hasMore/onLoadMore/scrollContainerRef/loader）——
- * 当前项目分页在上层组件处理，本组件保持精简。
+ * 高度优先级:height > aspect > rowSpan × rowHeight
  */
 
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { AnimatePresence, Motion } from "motion-v"
-import { cn } from "@/lib/utils"
+import { cn } from "./utils"
 import LazyCell from "./LazyCell.vue"
 import type {
   MasonryColumns,
@@ -68,7 +65,7 @@ function aspectToRatio(aspect?: string): number | null {
 
 const TAILWIND_BP = { sm: 640, md: 768, lg: 1024, xl: 1280 } as const
 
-/** 按容器宽度解析列数（移动优先） */
+/** 按容器宽度解析列数(移动优先) */
 function resolveColumns(width: number, cols: MasonryColumns): number {
   if (typeof cols === "number") return Math.max(1, Math.floor(cols))
   const w = width
@@ -101,7 +98,7 @@ const PLACEHOLDER_COLORS = [
   "#e2e8f0"
 ] as const
 
-/** 根据稳定 key 生成稳定的随机感占位色，避免响应式重渲染时闪色。 */
+/** 根据稳定 key 生成稳定的随机感占位色,避免响应式重渲染时闪色。 */
 function placeholderColor(key: string | number): string {
   const value = String(key)
   let hash = 0
@@ -111,7 +108,7 @@ function placeholderColor(key: string | number): string {
   return PLACEHOLDER_COLORS[Math.abs(hash) % PLACEHOLDER_COLORS.length]
 }
 
-/** 贪心布局：每个 item 放到连续 colSpan 列中"当前最矮"的位置 */
+/** 贪心布局:每个 item 放到连续 colSpan 列中"当前最矮"的位置 */
 function layout<T>(
   data: T[],
   columns: number,
@@ -124,7 +121,7 @@ function layout<T>(
   const items: PlacedItem<T>[] = []
   if (columns <= 0 || colWidth <= 0) return { items, totalHeight: 0 }
 
-  // bottoms[k] = 第 k 列"下一个可用 top"（已含上方 gap）
+  // bottoms[k] = 第 k 列"下一个可用 top"(已含上方 gap)
   const bottoms = new Array(columns).fill(0)
 
   data.forEach((item, index) => {
@@ -174,11 +171,11 @@ function layout<T>(
 }
 
 /**
- * 智能填充布局：
- *  1. 宽图(colSpan>1)按原始顺序流式定位，作为保序锚点（跨列图必须保持相对位置才不违和）
- *  2. 记录宽图对齐时跨过的列内洞区，普通图(colSpan=1)先用 best-fit 回填洞区，
+ * 智能填充布局:
+ *  1. 宽图(colSpan>1)按原始顺序流式定位,作为保序锚点(跨列图必须保持相对位置才不违和)
+ *  2. 记录宽图对齐时跨过的列内洞区,普通图(colSpan=1)先用 best-fit 回填洞区,
  *     再把剩余项目放到当前最矮列。
- * 代价：普通图之间的相对顺序会与原始数组不一致。
+ * 代价:普通图之间的相对顺序会与原始数组不一致。
  */
 function layoutFill<T>(
   data: T[],
@@ -192,11 +189,11 @@ function layoutFill<T>(
   const items: PlacedItem<T>[] = []
   if (columns <= 0 || colWidth <= 0) return { items, totalHeight: 0 }
 
-  // bottoms[k] = 第 k 列"下一个可用 top"（已含上方 gap）
+  // bottoms[k] = 第 k 列"下一个可用 top"(已含上方 gap)
   const bottoms = new Array(columns).fill(0)
   const gapSlots: Array<{ column: number; top: number; maxBottom: number }> = []
 
-  // 预解析每个 item 的占列数、高度、懒加载标记（避免对 getMeta 重复求值）
+  // 预解析每个 item 的占列数、高度、懒加载标记(避免对 getMeta 重复求值)
   const parsed = data.map((item, index) => {
     const meta = getMeta?.(item, index) ?? {}
     const cs = Math.min(Math.max(Math.floor(meta.colSpan ?? 1), 1), columns)
@@ -240,7 +237,7 @@ function layoutFill<T>(
     }
   }
 
-  // 1. 宽图流式定位（保序）
+  // 1. 宽图流式定位(保序)
   for (const p of parsed) {
     if (p.colSpan <= 1) continue
     let bestStart = 0
@@ -254,7 +251,7 @@ function layoutFill<T>(
       }
     }
 
-    // 跨列项以最高列为 top；记录其他列被跨过的空间，供单列项稍后回填。
+    // 跨列项以最高列为 top;记录其他列被跨过的空间,供单列项稍后回填。
     for (let k = bestStart; k < bestStart + p.colSpan; k++) {
       const maxBottom = minTop - gap
       if (bottoms[k] < maxBottom) {
@@ -308,7 +305,7 @@ function layoutFill<T>(
   return { items, totalHeight }
 }
 
-/** 排序（不修改原数组） */
+/** 排序(不修改原数组) */
 function sortData<T>(
   data: T[],
   sortBy: MasonrySortOption<T> | MasonrySortOption<T>[] | undefined
@@ -383,7 +380,7 @@ const colWidth = computed(() =>
   width.value > 0 ? (width.value - (colCount.value - 1) * props.gap) / colCount.value : 0
 )
 
-// 3. 布局（fill 模式智能回填空隙，stream 模式纯流式）
+// 3. 布局(fill 模式智能回填空隙,stream 模式纯流式)
 const placed = computed(() => {
   void layoutVersion.value
   const args = [colCount.value, colWidth.value, props.gap, props.rowHeight, props.getMeta, keyExtractor.value] as const
@@ -417,7 +414,7 @@ const exitTransition = computed(() => ({
   ease: "easeIn"
 }))
 
-/** item 入场 transition：首屏前 colCount 个 stagger，其余统一 */
+/** item 入场 transition:首屏前 colCount 个 stagger,其余统一 */
 function itemTransition(i: number): Record<string, unknown> {
   if (!enterEnabled.value) return { duration: 0 }
   if (i < colCount.value) {
@@ -426,8 +423,8 @@ function itemTransition(i: number): Record<string, unknown> {
   return enterTransition.value
 }
 
-// motion-v 的 exit 期望 VariantLabels | VariantType，此处对象字面量结构匹配，
-// 用 any 规避复杂的变体类型推导（参考 LoginView 直接使用 Motion 的用法）
+// motion-v 的 exit 期望 VariantLabels | VariantType,此处对象字面量结构匹配,
+// 用 any 规避复杂的变体类型推导
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function itemExit(): any {
   return exitEnabled.value
@@ -435,7 +432,7 @@ function itemExit(): any {
     : { opacity: 0 }
 }
 
-/* 监听 placed 变化触发 after-render 事件（向上层暴露渲染完成） */
+/* 监听 placed 变化触发 after-render 事件(向上层暴露渲染完成) */
 watch(
   () => placed.value,
   () => emit("after-render"),
@@ -446,7 +443,7 @@ watch(
 <template>
   <div
     ref="containerRef"
-    :class="cn('relative w-full', props.class)"
+    :class="cn('masonry-container', props.class)"
     :style="{ height: placed.totalHeight, ...props.style }"
   >
     <AnimatePresence>
@@ -483,3 +480,11 @@ watch(
     </AnimatePresence>
   </div>
 </template>
+
+<style scoped>
+/* 等价于 Tailwind 的 `relative w-full`(脱离 Tailwind 运行时) */
+.masonry-container {
+  position: relative;
+  width: 100%;
+}
+</style>

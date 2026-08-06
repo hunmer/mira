@@ -40,6 +40,28 @@ const router = createRouter({
   captureFullPage: capturer.captureFullPage,
   captureSelection: capturer.captureSelection,
   getSniffSnapshot: (tabId: number) => sniffSnapshots.get(tabId) ?? [],
+  getAllSniffSnapshots: async () => {
+    const resources = new Map<string, SniffedResource>();
+    for (const [tabId, snapshot] of sniffSnapshots.entries()) {
+      let tabTitle = `Tab ${tabId}`;
+      try {
+        const tab = await chrome.tabs.get(tabId);
+        tabTitle = tab.title || tab.url || tabTitle;
+      } catch { /* tab may have closed between snapshot and query */ }
+      for (const resource of snapshot) {
+        const key = `${resource.id}:${resource.url}`;
+        const existing = resources.get(key);
+        if (existing) {
+          const titles = new Set((existing.tabTitle || '').split('、').filter(Boolean));
+          titles.add(tabTitle);
+          existing.tabTitle = [...titles].join('、');
+        } else {
+          resources.set(key, { ...resource, tabId, tabTitle });
+        }
+      }
+    }
+    return [...resources.values()];
+  },
 });
 
 // 上传进度 → 广播给 UI

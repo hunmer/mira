@@ -75,9 +75,10 @@ export class FloatingBallWindowHandlers {
               self.forwardToMain({ type: 'fb-click', mainWasHidden })
             },
             // 右键菜单：原生 Menu.popup。
-            // 直接读鼠标屏幕坐标——透明无边框窗口的 contextmenu 事件坐标不可靠，
-            // 用 screen.getCursorScreenPoint() 拿到确定位置。
+            // 不传 x/y，让 Electron 使用当前鼠标位置；显式坐标会被当作窗口内坐标。
             'fb-context-menu': () => {
+              const win = self.handler.getWindow()
+              if (!win || win.isDestroyed()) return
               const menu = Menu.buildFromTemplate([
                 {
                   label: '隐藏本次',
@@ -93,9 +94,7 @@ export class FloatingBallWindowHandlers {
                   click: () => self.openSettings(),
                 },
               ])
-              const { screen: screenMod } = require('electron') as typeof import('electron')
-              const { x, y } = screenMod.getCursorScreenPoint()
-              menu.popup({ x: Math.round(x), y: Math.round(y) })
+              menu.popup({ window: win })
             },
             // 接收文件拖放：转发主渲染进程，并激活主窗口
             'fb-file-drop': (data) => {

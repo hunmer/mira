@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { useConnection } from '@/ui/composables/useConnection';
+import { useConnection, DEFAULT_SERVER_URL, DEFAULT_USERNAME } from '@/ui/composables/useConnection';
 import { useSettings } from '@/ui/composables/useSettings';
 import Button from '@/ui/components/ui/Button.vue';
 import Input from '@/ui/components/ui/Input.vue';
@@ -9,8 +9,9 @@ const emit = defineEmits<{ connected: [] }>();
 const { login } = useConnection();
 const { settings, update, load } = useSettings();
 
-const serverURL = ref('http://localhost:8081');
-const username = ref('');
+// 默认值:自动登录用的 admin/admin123;回退到手动登录时预填
+const serverURL = ref(DEFAULT_SERVER_URL);
+const username = ref(DEFAULT_USERNAME);
 const password = ref('');
 const error = ref('');
 const loading = ref(false);

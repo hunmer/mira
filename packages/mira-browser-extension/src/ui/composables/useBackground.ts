@@ -1,6 +1,7 @@
 import type { Request, Event } from '@/shared/messages';
 import type { ExtensionSettings, UploadTask, SniffedResource } from '@/shared/types';
 import type { StagedFile } from '@/shared/types';
+import type { Folder, Tag } from 'mira-app-core/shared/sdk';
 
 function send<T = any>(req: Request): Promise<T> {
   return chrome.runtime.sendMessage(req);
@@ -24,7 +25,10 @@ export function useBackground() {
       return send({ type: 'LIB_LIST' });
     },
     async listFolders(libraryId: string) {
-      return send({ type: 'FOLDER_LIST', payload: { libraryId } });
+      return send<Folder[]>({ type: 'FOLDER_LIST', payload: { libraryId } });
+    },
+    async listTags(libraryId: string) {
+      return send<Tag[]>({ type: 'TAG_LIST', payload: { libraryId } });
     },
     async uploadFiles(files: StagedFile[], libraryId: string, tags?: string[], folderId?: string) {
       return send({ type: 'UPLOAD_FILES', payload: { files, libraryId, tags, folderId } });

@@ -168,11 +168,11 @@ async function initFloatingBall() {
         this.dragDepth = Math.max(0, this.dragDepth - 1)
         if (this.dragDepth === 0) this.isDragover = false
       },
-      onDrop(e) {
+      async onDrop(e) {
         e.preventDefault()
         this.dragDepth = 0
         this.isDragover = false
-        const files = collectDroppedFiles(e)
+        const files = await collectDroppedFiles(e)
         if (files.length === 0) return
         this.isFileReceived = true
         clearTimeout(this._receivedTimer)
@@ -188,10 +188,10 @@ async function initFloatingBall() {
 }
 
 /**
- * 从 drop 事件收集文件节点（含真实路径）。
- * 路径经 preload 暴露的 webUtils.getPathForFile 获取。
+ * 从 drop 事件收集文件节点。
+ * 本地文件只传真实路径；浏览器图片没有磁盘路径，需要携带字节供主窗口重建 File。
  */
-function collectDroppedFiles(e) {
+async function collectDroppedFiles(e) {
   const dt = e.dataTransfer
   if (!dt) return []
   const api = window.electronAPI || {}
@@ -206,13 +206,18 @@ function collectDroppedFiles(e) {
     }
     const name = f.name || ''
     const ext = extractExt(name)
-    result.push({
+    const node = {
       name,
       path,
       isDir: false,
       size: f.size || 0,
       ext,
-    })
+      mimeType: f.type || '',
+    }
+    if (!path && typeof f.arrayBuffer === 'function') {
+      node.bytes = Array.from(new Uint8Array(await f.arrayBuffer()))
+    }
+    result.push(node)
   }
   return result
 }

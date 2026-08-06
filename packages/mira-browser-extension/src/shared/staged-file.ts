@@ -1,19 +1,61 @@
 import type { StagedFile } from './types';
+import { dbg } from './debug';
 
 /**
  * File → StagedFile(用于跨上下文传输)
- * chrome.runtime.sendMessage 无法序列化 File,转成 ArrayBuffer + 元信息
+ * chrome.runtime.sendMessage 无法序列化 File,转成普通 number[] + 元信息。
+ *
+ * 重要:不能用 ArrayBuffer 也不能用 Uint8Array —— 实测 UI → service worker 经
+ * 结构化克隆:裸 ArrayBuffer 会变成空对象 {};Uint8Array 会变成 {0:255,1:216,...}
+ * 的「类数组普通对象」(丢掉 TypedArray 身份,instanceof 全部失败)。
+ * 普通 number[] 是真正的 Array,结构化克隆稳定,代价是内存翻倍(可接受)。
  */
 export async function fileToStaged(file: File): Promise<StagedFile> {
   const buffer = await file.arrayBuffer();
-  return { name: file.name, type: file.type, buffer };
+  const bytes = Array.from(new Uint8Array(buffer));
+  dbg.log('staged', 'fileToStaged', { name: file.name, type: file.type, size: file.size, bytesLen: bytes.length });
+  return { name: file.name, type: file.type, buffer: bytes };
+}
+
+/**
+ * 把到达 service worker 的任意形态 buffer 规整成 Uint8Array。
+ * 兼容:number[] / Uint8Array / ArrayBuffer / 类数组对象 {0:x,1:y,...} / 损坏对象。
+ */
+function normalizeBytes(buf: unknown): Uint8Array {
+  // 真正的数组(number[])—— 主路径
+  if (Array.isArray(buf)) {
+    return new Uint8Array(buf);
+  }
+  // Uint8Array / 其他 TypedArray
+  if (buf instanceof Uint8Array) return buf;
+  if (ArrayBuffer.isView(buf as any)) {
+    const view = buf as unknown as ArrayBufferView;
+    return new Uint8Array(view.buffer, view.byteOffset, view.byteLength);
+  }
+  // ArrayBuffer
+  if (buf instanceof ArrayBuffer) return new Uint8Array(buf);
+  // 类数组普通对象 {0:255,1:216,...}(Uint8Array 经结构化克隆退化成的形态)
+  if (buf && typeof buf === 'object') {
+    const obj = buf as Record<string, number>;
+    // 用 length 字段(若有)或遍历键确定长度
+    const len = typeof obj.length === 'number' ? obj.length : Object.keys(obj).length;
+    if (len > 0) {
+      const out = new Uint8Array(len);
+      for (let i = 0; i < len; i++) out[i] = obj[i] ?? 0;
+      return out;
+    }
+  }
+  dbg.error('staged', 'normalizeBytes: unrecognized buffer', { got: buf });
+  return new Uint8Array(0);
 }
 
 /**
  * StagedFile → File(service worker 侧重建)
  */
 export function stagedToFile(staged: StagedFile): File {
-  return new File([staged.buffer], staged.name, { type: staged.type });
+  const bytes = normalizeBytes(staged.buffer);
+  dbg.log('staged', 'stagedToFile', { name: staged.name, type: staged.type, bytesLen: bytes.length });
+  return new File([bytes], staged.name, { type: staged.type || 'application/octet-stream' });
 }
 
 /**

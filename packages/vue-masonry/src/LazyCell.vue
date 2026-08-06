@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * LazyCell —— 懒加载容器
- * lazy=false 时直接渲染内容；lazy=true 时进入预加载范围即加载并常驻。
+ * lazy=false 时直接渲染内容;lazy=true 时进入预加载范围即加载并常驻。
  * 拆成独立组件以保证 IntersectionObserver 在 v-for 中稳定挂载。
  */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue"
@@ -26,7 +26,6 @@ let ob: IntersectionObserver | null = null
 let visibilityOb: IntersectionObserver | null = null
 let reportedVisible = false
 let loadVersion = 0
-const DEBUG_ROOT_MARKER = Symbol.for("mira.masonry-preload-debugged")
 
 function findScrollRoot(element: HTMLElement): HTMLElement | null {
   let parent = element.parentElement
@@ -96,14 +95,6 @@ onMounted(() => {
   if (!el) return
   const scrollRoot = findScrollRoot(el)
   const rootMargin = props.rootMargin ?? "300px"
-  const debugTarget = scrollRoot ?? document.documentElement
-  if (!(debugTarget as any)[DEBUG_ROOT_MARKER]) {
-    (debugTarget as any)[DEBUG_ROOT_MARKER] = true
-    console.debug("[DEBUG-masonry-preload] observer-root", {
-      usesScrollRoot: Boolean(scrollRoot),
-      rootMargin
-    })
-  }
 
   ob = new IntersectionObserver(
     ([entry]) => {
@@ -142,22 +133,70 @@ onBeforeUnmount(() => {
 <template>
   <div
     ref="cellRef"
-    class="relative h-full min-h-0 w-full min-w-0 overflow-hidden"
+    class="lazy-cell"
+    :class="{ 'lazy-cell--pending': active && !props.revealed }"
     :aria-busy="active && !props.revealed"
   >
     <div
       v-if="active && !props.revealed"
-      class="absolute inset-0 animate-pulse"
+      class="lazy-cell__placeholder"
       :style="{ backgroundColor: props.placeholderColor }"
       aria-hidden="true"
     />
-    <!-- 内容提前挂载并加载，当前 cell 完成后独立显示。 -->
+    <!-- 内容提前挂载并加载,当前 cell 完成后独立显示。 -->
     <div
       v-if="active"
-      class="h-full w-full transition-opacity duration-150"
-      :class="props.revealed ? 'visible opacity-100' : 'invisible opacity-0'"
+      class="lazy-cell__content"
+      :class="props.revealed ? 'lazy-cell__content--visible' : 'lazy-cell__content--hidden'"
     >
       <slot :preload="active" />
     </div>
   </div>
 </template>
+
+<style scoped>
+/* 等价于 Tailwind 的 `relative h-full min-h-0 w-full min-w-0 overflow-hidden` */
+.lazy-cell {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* 等价于 `absolute inset-0 animate-pulse` */
+.lazy-cell__placeholder {
+  position: absolute;
+  inset: 0;
+  animation: lazy-cell-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* 等价于 `transition-opacity duration-150` */
+.lazy-cell__content {
+  height: 100%;
+  width: 100%;
+  transition-property: opacity;
+  transition-duration: 150ms;
+}
+
+.lazy-cell__content--hidden {
+  visibility: hidden;
+  opacity: 0;
+}
+
+.lazy-cell__content--visible {
+  visibility: visible;
+  opacity: 1;
+}
+
+@keyframes lazy-cell-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+</style>

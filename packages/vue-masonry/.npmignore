@@ -1,0 +1,17 @@
+# 只发布 dist/(package.json 的 files 字段已限制,此文件作双重保险)
+*
+!dist
+!package.json
+!README.md
+!CHANGELOG.md
+!LICENSE
+
+# 显式排除
+src
+node_modules
+*.ts
+!*.d.ts
+vite.config.ts
+tsconfig.json
+.npmignore
+.gitignore

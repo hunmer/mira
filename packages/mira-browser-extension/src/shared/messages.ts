@@ -18,12 +18,13 @@ export type Request =
   // 素材库
   | { type: 'LIB_LIST' }
   | { type: 'FOLDER_LIST'; payload: { libraryId: string } }
+  | { type: 'TAG_LIST'; payload: { libraryId: string } }
   // 上传
   | {
       type: 'UPLOAD_FILES';
       payload: { files: StagedFile[]; libraryId: string; tags?: string[]; folderId?: string };
     }
-  | { type: 'UPLOAD_FROM_URL'; payload: { url: string; kind: ResourceKind; libraryId: string; folderId?: number } }
+  | { type: 'UPLOAD_FROM_URL'; payload: { url: string; kind: ResourceKind; libraryId: string; folderId?: number; tags?: string[] } }
   | { type: 'UPLOAD_STATUS' }
   | { type: 'UPLOAD_CANCEL'; payload: { id: string } }
   // 截图
@@ -60,7 +61,7 @@ export type ContentCommand =
 
 const REQUEST_TYPES = new Set<Request['type']>([
   'AUTH_LOGIN', 'AUTH_VERIFY', 'CONFIG_GET', 'CONFIG_SET',
-  'LIB_LIST', 'FOLDER_LIST',
+  'LIB_LIST', 'FOLDER_LIST', 'TAG_LIST',
   'UPLOAD_FILES', 'UPLOAD_FROM_URL', 'UPLOAD_STATUS', 'UPLOAD_CANCEL',
   'CAPTURE_VISIBLE', 'CAPTURE_FULLPAGE', 'CAPTURE_SELECTION',
   'SNIFFER_START', 'SNIFFER_STOP', 'SNIFFER_QUERY',

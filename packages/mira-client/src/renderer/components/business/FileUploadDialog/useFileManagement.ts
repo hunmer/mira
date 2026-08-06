@@ -3,6 +3,11 @@ import { useToast } from '@/renderer/composables/useToast'
 import type { PendingFile, LocalFsNode } from './types'
 import { FILE_LIMITS } from './types'
 
+type DroppedFileNode = LocalFsNode & {
+  mimeType?: string
+  bytes?: number[]
+}
+
 /** 简易 MIME 推断（导入本地文件时按扩展名给出 type，供预览判断） */
 function guessMimeFromExt(ext?: string): string {
   if (!ext) return 'application/octet-stream'
@@ -67,14 +72,14 @@ export function useFileManagement() {
   }
 
   /**
-   * 从本地目录树惰性入列待上传文件（不读取字节）。
-   * 构造一个仅含 name/type/size 的占位 File，真实字节在上传时通过 fs:readFileBytes 读取。
+   * 从本地目录树入列待上传文件。
+   * 磁盘文件构造占位 File 并在上传时惰性读取；浏览器文件使用随节点传入的字节。
    * - localPath: 文件绝对路径（上传时按需读字节）
    * - localDirPath: 直接归属的目录 path（左栏本地树筛选用）
    */
   function addLocalFiles(nodes: LocalFsNode[], rootDir?: string) {
     // 扁平化收集所有文件节点 + 其直接父目录
-    const collected: { node: LocalFsNode; dir: string | undefined }[] = []
+    const collected: { node: DroppedFileNode; dir: string | undefined }[] = []
     const walk = (list: LocalFsNode[], dir: string | undefined) => {
       for (const n of list) {
         if (!n.isDir) {
@@ -110,14 +115,14 @@ export function useFileManagement() {
     }
 
     const newFiles: PendingFile[] = collected.map(({ node, dir }) => {
-      const type = guessMimeFromExt(node.ext)
-      // 占位 File：包含 name 与 size，但无真实字节（上传前惰性读取）
-      const placeholder = new File([], node.name, { type, lastModified: Date.now() })
-      // 占位 File 的 size 为 0，这里手动覆盖 size 校验已通过；真实大小见 node.size
+      const type = node.mimeType || guessMimeFromExt(node.ext)
+      const file = node.bytes
+        ? new File([Uint8Array.from(node.bytes)], node.name, { type, lastModified: Date.now() })
+        : new File([], node.name, { type, lastModified: Date.now() })
       const pending: PendingFile = {
         id: `pending-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        file: placeholder,
-        localPath: node.path,
+        file,
+        localPath: node.path || undefined,
         localDirPath: dir,
         localSize: node.size,
         preview: undefined
@@ -142,14 +147,18 @@ export function useFileManagement() {
       while (cursor < files.length) {
         const i = cursor++
         const pf = files[i]
-        // 仅图片/视频有预览
-        if (!pf.localPath || !pf.file.type || (!pf.file.type.startsWith('image/') && !pf.file.type.startsWith('video/'))) {
+        if (!pf.file.type || (!pf.file.type.startsWith('image/') && !pf.file.type.startsWith('video/'))) {
           continue
         }
         try {
-          const bytesRes = await window.electronAPI.fs.readFileBytes(pf.localPath)
-          if (!bytesRes.success || !bytesRes.data) continue
-          const realFile = new File([bytesRes.data], pf.file.name, { type: pf.file.type })
+          let realFile = pf.file
+          if (pf.localPath) {
+            const bytesRes = await window.electronAPI.fs.readFileBytes(pf.localPath)
+            if (!bytesRes.success || !bytesRes.data) continue
+            realFile = new File([bytesRes.data], pf.file.name, { type: pf.file.type })
+          } else if (realFile.size === 0) {
+            continue
+          }
           pf.preview = await createPreviewUrl(realFile)
           pendingFiles.value = [...pendingFiles.value]
         } catch (error) {

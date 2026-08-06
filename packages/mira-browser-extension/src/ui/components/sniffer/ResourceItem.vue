@@ -13,6 +13,7 @@ defineEmits<{ toggle: [] }>();
     <div class="meta">
       <div class="url">{{ resource.url.split('/').pop() }}</div>
       <div class="dim">{{ resource.width }}×{{ resource.height }} · ×{{ resource.occurrences }}</div>
+      <div v-if="resource.tabTitle" class="source">来源：{{ resource.tabTitle }}</div>
     </div>
   </div>
 </template>
@@ -24,4 +25,5 @@ defineEmits<{ toggle: [] }>();
 .meta { flex: 1; overflow: hidden; }
 .url { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dim { font-size: 11px; color: var(--muted); }
+.source { font-size: 10px; color: var(--primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 </style>

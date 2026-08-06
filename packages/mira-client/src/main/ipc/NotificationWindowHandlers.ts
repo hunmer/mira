@@ -357,6 +357,8 @@ export class NotificationWindowHandlers {
           // 通知使用自定义 JS 拖拽，必须确保原生窗口不会吞掉鼠标按键事件。
           win.setIgnoreMouseEvents(false)
           win.setFocusable(true)
+          // Electron 在 Windows 上会随 setFocusable(true) 重新加入任务栏。
+          win.setSkipTaskbar(true)
         }
         this.doShow()
         // if (!app.isPackaged) {

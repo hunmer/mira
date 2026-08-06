@@ -2,8 +2,8 @@
 defineProps<{ modelValue: string }>();
 const emit = defineEmits<{ 'update:modelValue': [v: string] }>();
 const tabs = [
-  { id: 'upload', label: '上传' },
-  { id: 'screenshot', label: '截图' },
+  { id: 'folders', label: '文件夹' },
+  { id: 'tags', label: '标签' },
   { id: 'sniffer', label: '嗅探' },
   { id: 'settings', label: '设置' },
 ];

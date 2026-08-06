@@ -415,7 +415,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Slider } from '@/components/ui/slider'
 import SelectionBox from '@renderer/components/common/SelectionBox.vue'
-import { Masonry, type MasonryColumns, type MasonryItemMeta } from '@/components/ui/masonry'
+import { Masonry, type MasonryColumns, type MasonryItemMeta } from '@hunmer/vue-masonry'
 import FolderTreeComponent from './FolderTreeComponent/FolderTreeComponent.vue'
 import { useFileUploadDialog } from './FileUploadDialog/useFileUploadDialog'
 import { isImageFile, isVideoFile, isAudioFile, isDocumentFile, formatFileSize } from './FileUploadDialog/useFileManagement'

@@ -16,7 +16,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog'
-import { getPinyinFirstLetter } from '@renderer/utils/helpers'
+import { getPinyinFirstLetter, pinyinMatch } from '@renderer/utils/helpers'
 
 defineOptions({ name: 'GroupedCardBrowserDialog' })
 
@@ -62,6 +62,12 @@ const emit = defineEmits<{
 }>()
 
 // ----------------------------------------
+// 搜索：实时过滤（支持拼音匹配）
+// ----------------------------------------
+const searchQuery = ref('')
+const trimmedQuery = computed(() => searchQuery.value.trim())
+
+// ----------------------------------------
 // A-Z 分组：按 label 首字母（中文走拼音首字母）归类
 // ----------------------------------------
 interface Group {
@@ -70,10 +76,15 @@ interface Group {
 }
 
 const groups = computed<Group[]>(() => {
+  // 先按搜索词过滤（支持中文/拼音首字母/全拼）
+  const filtered = trimmedQuery.value
+    ? props.items.filter(item => pinyinMatch(item.label, trimmedQuery.value))
+    : props.items
+
   const buckets: Record<string, BrowserItem[]> = {}
   const order: string[] = []
 
-  for (const item of props.items) {
+  for (const item of filtered) {
     const letter = (getPinyinFirstLetter(item.label) || '#').toUpperCase()
     const key = /^[A-Z]$/.test(letter) ? letter : '#'
     if (!buckets[key]) {
@@ -163,14 +174,22 @@ const onSelectItem = (raw: any) => {
 watch(
   () => props.visible,
   v => {
-    if (v) activeKey.value = groups.value[0]?.key || ''
+    if (v) {
+      activeKey.value = groups.value[0]?.key || ''
+    } else {
+      // 关闭时清空搜索，下次打开为干净状态
+      searchQuery.value = ''
+    }
   }
 )
+
+// 是否处于搜索态（用于隐藏 A-Z 索引、调整空态文案）
+const isSearching = computed(() => trimmedQuery.value.length > 0)
 </script>
 
 <template>
   <Dialog :open="visible" @update:open="emit('update:visible', $event)">
-    <DialogContent class="grouped-card-dialog sm:max-w-[720px] flex flex-col gap-0 p-0">
+    <DialogContent class="grouped-card-dialog w-[80vw] h-[80vh] max-w-none sm:max-w-none flex flex-col gap-0 p-0">
       <DialogHeader class="px-5 pt-5 pb-3">
         <DialogTitle class="flex items-center gap-2 text-lg">
           <span class="material-icons text-primary">{{ emptyIcon === 'folder_off' ? 'folder' : 'label' }}</span>
@@ -180,9 +199,10 @@ watch(
         <DialogDescription class="sr-only">{{ title }}</DialogDescription>
       </DialogHeader>
 
-      <!-- A-Z 字母索引（仅展示出现过的字母） -->
-      <div class="px-5 pb-2 shrink-0">
-        <div class="flex flex-wrap items-center gap-0.5 text-xs">
+      <!-- 工具栏：A-Z 字母索引 + 搜索栏 -->
+      <div class="px-5 pb-2 shrink-0 flex items-center gap-2">
+        <!-- A-Z 字母索引（仅展示出现过的字母；搜索时隐藏） -->
+        <div v-show="!isSearching" class="flex flex-wrap items-center gap-0.5 text-xs flex-1 min-w-0">
           <template v-for="group in groups" :key="group.key">
             <button
               type="button"
@@ -196,13 +216,34 @@ watch(
             </button>
           </template>
         </div>
+
+        <!-- 搜索栏 -->
+        <div class="relative shrink-0" :class="isSearching ? 'w-full' : 'w-40'">
+          <span class="material-icons absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" style="font-size: 16px">search</span>
+          <input
+            v-model="searchQuery"
+            type="text"
+            :placeholder="`搜索${itemTypeLabel}…`"
+            class="w-full h-8 pl-7 pr-7 text-sm rounded-lg bg-muted/60 border border-border/60 focus:border-primary/50 focus:bg-background focus:outline-none focus:ring-1 focus:ring-primary/30 transition-colors placeholder:text-muted-foreground/70"
+          />
+          <button
+            v-if="searchQuery"
+            type="button"
+            class="absolute right-1.5 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            title="清除"
+            @click="searchQuery = ''"
+          >
+            <span class="material-icons" style="font-size: 14px">close</span>
+          </button>
+        </div>
       </div>
 
       <!-- 分组卡片网格 -->
-      <div ref="bodyRef" class="flex-1 overflow-y-auto px-5 pb-5 min-h-[280px] max-h-[60vh]" @scroll.passive="onBodyScroll">
+      <div ref="bodyRef" class="flex-1 overflow-y-auto px-5 pb-5 min-h-0" @scroll.passive="onBodyScroll">
         <div v-if="groups.length === 0" class="h-full flex flex-col items-center justify-center text-muted-foreground py-12">
-          <span class="material-icons text-4xl mb-2 opacity-50">{{ emptyIcon }}</span>
-          <div class="text-sm">暂无{{ itemTypeLabel }}可展示</div>
+          <span class="material-icons text-4xl mb-2 opacity-50">{{ isSearching ? 'search_off' : emptyIcon }}</span>
+          <div class="text-sm">{{ isSearching ? `未找到匹配的${itemTypeLabel}` : `暂无${itemTypeLabel}可展示` }}</div>
+          <div v-if="isSearching" class="text-xs mt-1 text-muted-foreground/70">尝试其他关键词</div>
         </div>
 
         <div v-for="group in groups" :key="group.key" class="mb-4" :data-group-key="group.key">

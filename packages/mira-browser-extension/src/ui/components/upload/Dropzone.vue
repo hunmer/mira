@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { canAcceptDrop } from '@/shared/drag-data';
 const emit = defineEmits<{ drop: [files: File[]] }>();
 const hovering = ref(false);
 const inputRef = ref<HTMLInputElement | null>(null);
@@ -8,8 +9,16 @@ function emitFiles(files: File[]) {
   if (files.length) emit('drop', files);
 }
 
+function onDragOver(e: DragEvent) {
+  // 文件或链接都高亮(链接 drop 由外层 .view 处理 → UPLOAD_FROM_URL)
+  if (!canAcceptDrop(e.dataTransfer)) return;
+  e.preventDefault();
+  hovering.value = true;
+}
+
 function onDrop(e: DragEvent) {
   hovering.value = false;
+  // 本地文件 → emit;链接(files 空)不 emit,冒泡到外层处理
   emitFiles(Array.from(e.dataTransfer?.files ?? []));
 }
 
@@ -29,7 +38,7 @@ function openPicker() {
   <div
     class="zone" :class="{ hover: hovering }"
     @click="openPicker"
-    @dragover.prevent="hovering = true"
+    @dragover="onDragOver"
     @dragleave="hovering = false"
     @drop.prevent="onDrop"
   >

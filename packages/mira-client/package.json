@@ -46,6 +46,7 @@
   "description": "Mira Media Library Desktop Application",
   "dependencies": {
     "@he-tree/vue": "^2.10.5",
+    "@hunmer/vue-masonry": "workspace:*",
     "@internationalized/date": "^3.12.3",
     "@lucide/vue": "^1.17.0",
     "@radix-icons/vue": "^1.0.0",

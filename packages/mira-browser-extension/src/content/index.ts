@@ -4,6 +4,7 @@ import { createDragDrop, type DragDropPayload } from './dragdrop';
 import { createAutoScroller } from './autoscroll';
 import { drawSelection } from './overlay/selection';
 import { upgradeImageUrl } from '@/shared/imu';
+import { fileToStaged } from '@/shared/staged-file';
 import { dbg } from '@/shared/debug';
 
 dbg.info('content', 'script loaded', { url: location.href, readyState: document.readyState });
@@ -32,16 +33,18 @@ const dragdrop = createDragDrop({
   },
   onUpload(payload: DragDropPayload) {
     if (payload.file) {
-      // File 跨上下文序列化
-      payload.file.arrayBuffer().then(buffer => {
+      // File 跨上下文序列化 —— 必须用 fileToStaged(转 number[]),
+      // 裸 ArrayBuffer / Uint8Array 经 sendMessage 结构化克隆会丢失/退化,见 staged-file.ts
+      fileToStaged(payload.file).then(staged => {
+        dbg.log('content', 'UPLOAD_FILES staged', { name: staged.name, bytesLen: staged.buffer.length });
         chrome.runtime.sendMessage({
           type: 'UPLOAD_FILES',
           payload: {
-            files: [{ name: payload.file!.name, type: payload.file!.type, buffer }],
+            files: [staged],
             libraryId: '', // service worker 用默认 libraryId
             folderId: payload.folderId != null ? String(payload.folderId) : undefined,
           },
-        }).catch(() => {});
+        }).catch(e => dbg.error('content', 'UPLOAD_FILES send failed', e));
       });
     } else if (payload.url) {
       uploadUrl(payload.url, payload.kind, payload.folderId);

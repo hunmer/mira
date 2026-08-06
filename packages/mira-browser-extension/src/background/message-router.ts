@@ -19,6 +19,7 @@ export interface RouterDeps {
   captureSelection: (tabId: number) => Promise<void>;
   /** 读取某 tab 的嗅探快照(index.ts 维护的 Map 注入) */
   getSniffSnapshot: (tabId: number) => SniffedResource[];
+  getAllSniffSnapshots: () => Promise<SniffedResource[]>;
 }
 
 export type RequestHandler = (
@@ -63,6 +64,10 @@ export function createRouter(deps: RouterDeps): RequestHandler {
         return withAuth((client: MiraClient) =>
           client.folders().getAll(req.payload.libraryId),
         );
+      case 'TAG_LIST':
+        return withAuth((client: MiraClient) =>
+          client.tags().getAll(req.payload.libraryId),
+        );
       case 'UPLOAD_FILES': {
         const settings = await getSettings();
         for (const staged of req.payload.files) {
@@ -88,6 +93,7 @@ export function createRouter(deps: RouterDeps): RequestHandler {
           file,
           libraryId: req.payload.libraryId || settings.libraryId,
           folderId: req.payload.folderId != null ? String(req.payload.folderId) : undefined,
+          tags: req.payload.tags,
           source: 'sniffer',
         });
         return { enqueued: 1 };
@@ -117,7 +123,11 @@ export function createRouter(deps: RouterDeps): RequestHandler {
         return { success: true };
       case 'SNIFFER_QUERY': {
         // 从内存快照返回(getSniffSnapshot 由 index.ts 注入)
-        return { resources: deps.getSniffSnapshot(req.payload.tabId) };
+        return {
+          resources: req.payload.tabId === -1
+            ? await deps.getAllSniffSnapshots()
+            : deps.getSniffSnapshot(req.payload.tabId),
+        };
       }
       case 'AUTOSCROLL_START':
         await sendToContent(req.payload.tabId, {

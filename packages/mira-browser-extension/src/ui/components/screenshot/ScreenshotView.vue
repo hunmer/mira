@@ -48,6 +48,6 @@ async function run(fn: (tabId: number) => Promise<any>, label: string) {
 </template>
 
 <style scoped>
-.view { padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.view { padding: 8px; display: flex; flex-direction: column; gap: 8px; }
 .msg { color: var(--muted); font-size: 12px; margin-top: 8px; }
 </style>

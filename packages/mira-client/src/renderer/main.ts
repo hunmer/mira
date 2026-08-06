@@ -29,6 +29,9 @@ import './assets/main.css'
 // toast 会以纯文本形式出现在 body 顶部。作为独立 JS 导入则由 Vite 直接管为单独 CSS 资源。
 import 'vue-sonner/style.css'
 
+// @hunmer/vue-masonry 瀑布流组件样式(scoped CSS 产物,需独立引入)
+import '@hunmer/vue-masonry/style.css'
+
 // 设置全局错误处理
 setupGlobalErrorHandler()
 

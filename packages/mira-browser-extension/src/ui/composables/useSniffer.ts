@@ -5,9 +5,19 @@ import type { SniffedResource } from '@/shared/types';
 const resources = ref<SniffedResource[]>([]);
 const bg = useBackground();
 
-export function useSniffer(currentTabId: () => number) {
+export function useSniffer(currentTabId: () => number | 'all') {
   async function load() {
-    const r = await bg.snifferQuery(currentTabId());
+    const target = currentTabId();
+    if (target === 'all') {
+      const r = await bg.snifferQuery(-1);
+      resources.value = r.resources;
+      return;
+    }
+    if (!target) {
+      resources.value = [];
+      return;
+    }
+    const r = await bg.snifferQuery(target);
     resources.value = r.resources;
   }
   async function start() {
@@ -19,7 +29,11 @@ export function useSniffer(currentTabId: () => number) {
   }
 
   const off = bg.onSnifferFound((tabId, res) => {
-    if (tabId === currentTabId()) resources.value = res;
+    if (currentTabId() === 'all') {
+      void load();
+    } else if (tabId === currentTabId()) {
+      resources.value = res;
+    }
   });
   onUnmounted(off);
 

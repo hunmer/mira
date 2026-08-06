@@ -27,6 +27,9 @@ export interface SniffedResource {
   occurrences: number;
   /** 嗅探时间戳 */
   sniffedAt: number;
+  /** 全部 Tab 聚合展示时的来源信息 */
+  tabId?: number;
+  tabTitle?: string;
 }
 
 /**
@@ -112,11 +115,32 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
 
 /**
  * 跨上下文文件序列化结构
- * chrome.runtime.sendMessage 无法序列化 File,用此结构传输
+ * chrome.runtime.sendMessage 无法序列化 File,用此结构传输。
+ *
+ * wire 格式用 number[]:实测 ArrayBuffer → 到达 SW 变成 {};
+ * Uint8Array → 到达 SW 变成 {0:x,1:y,...} 类数组对象(丢 TypedArray 身份)。
+ * 只有普通 number[] 经结构化克隆稳定,故 buffer 在传输层是 number[]。
+ * (类型上保留宽容联合,stagedToFile 的 normalizeBytes 兼容全部形态)
  */
 export interface StagedFile {
   name: string;
   type: string;
-  /** 二进制数据 */
-  buffer: ArrayBuffer;
+  /** 二进制(传输层 number[];兼容 Uint8Array/ArrayBuffer/类数组对象) */
+  buffer: number[] | Uint8Array;
+}
+
+/**
+ * 素材库树节点:文件夹 / 标签通用形态。
+ *
+ * 后端 Folder / Tag 都是扁平 + parent_id(根为 0 / undefined),
+ * 前端一次性 getAll 后按 parent_id 组装成树。
+ */
+export interface LibraryTreeNode {
+  id: number;
+  title: string;
+  color?: number;
+  /** 0 表示根节点(无父级) */
+  parentId: number;
+  level: number;
+  children: LibraryTreeNode[];
 }

@@ -9,7 +9,8 @@
  * 仅依赖 Vue ref/computed + CSS 3D 变换 + @lucide/vue 图标，无额外运行时依赖。
  */
 import { ref, computed, watch } from 'vue'
-import { ChevronLeft, ChevronRight, X, ExternalLink } from '@lucide/vue'
+import { useRouter } from 'vue-router'
+import { Motion, AnimatePresence } from 'motion-v'
 import { useMediaStore } from '@renderer/stores/media'
 import { useLibraryStore } from '@renderer/stores/library'
 import type { BrowserItem } from './GroupedCardBrowserDialog.vue'
@@ -26,6 +27,7 @@ const emit = defineEmits<{
   select: [raw: any]
 }>()
 
+const router = useRouter()
 const mediaStore = useMediaStore()
 const libraryStore = useLibraryStore()
 
@@ -35,11 +37,17 @@ const PREVIEW_COUNT = 5 // 扇形展开的预览卡片数
 // 状态
 // ----------------------------------------
 const isHovered = ref(false)
-const isOpen = ref(false) // 缩略图大图预览
-const lightboxIndex = ref(0)
-const isSliding = ref(false)
 
-const thumbnails = ref<{ id: string; src: string; title: string }[]>([])
+// 缩略图项：保留跳转 preview 路由所需的字段（id/libraryId/title/path/mimeType）
+interface ThumbItem {
+  id: string
+  src: string
+  title: string
+  path?: string
+  mimeType?: string
+  libraryId?: string
+}
+const thumbnails = ref<ThumbItem[]>([])
 const isLoadingThumbs = ref(false)
 const hasLoadedThumbs = ref(false)
 
@@ -52,7 +60,7 @@ const effectiveLibraryId = computed(() => props.libraryId || libraryStore.curren
 // 预览项目（不足 PREVIEW_COUNT 时复用已有缩略图）
 const previewThumbs = computed(() => {
   if (thumbnails.value.length === 0) return []
-  const arr: { id: string; src: string; title: string }[] = []
+  const arr: ThumbItem[] = []
   for (let i = 0; i < PREVIEW_COUNT; i++) {
     arr.push(thumbnails.value[i % thumbnails.value.length])
   }
@@ -73,6 +81,35 @@ const fanLayout = computed(() => {
     }
   })
 })
+
+// 动画过渡参数（spring 让扇形展开更有弹性）
+const FAN_TRANSITION = { type: 'spring' as const, stiffness: 260, damping: 26 }
+
+// 单张扇形卡片的动画目标：折叠态（藏在前板下）vs 展开态（扇形飞出）
+function getFanTarget(index: number, hovered: boolean) {
+  const l = fanLayout.value[index] ?? { rotation: 0, tx: 0, ty: 0 }
+  if (hovered) {
+    return {
+      y: -100 + l.ty,
+      x: l.tx,
+      rotate: l.rotation,
+      scale: 1,
+      opacity: 1,
+    }
+  }
+  return {
+    y: 0,
+    x: 0,
+    rotate: 0,
+    scale: 0.4,
+    opacity: 0,
+  }
+}
+
+// 每张卡片的 stagger 延迟（展开时从中间向两侧 / 从前到后依次出现）
+function getFanDelay(index: number) {
+  return index * 0.04
+}
 
 // ----------------------------------------
 // 缩略图懒加载（首次悬停时触发）
@@ -98,6 +135,9 @@ async function loadThumbnails() {
           id: String(f.id),
           src: f.thumbnailPath || f.url,
           title: f.name,
+          path: f.path || '',
+          mimeType: f.mimeType || 'application/octet-stream',
+          libraryId: effectiveLibraryId.value,
         }))
     }
   } catch (e) {
@@ -126,38 +166,23 @@ const openFolder = () => {
   emit('select', folder.value)
 }
 
-const openLightbox = (index: number) => {
+// 点击缩略图：直接跳转 preview 路由（不再弹 lightbox）
+const previewFile = (index: number) => {
   if (thumbnails.value.length === 0) return
-  lightboxIndex.value = Math.min(index, thumbnails.value.length - 1)
-  isOpen.value = true
+  const realIndex = index % thumbnails.value.length
+  const file = thumbnails.value[realIndex]
+  if (!file?.id) return
+  router.push({
+    path: '/file-preview',
+    query: {
+      id: file.id,
+      libraryId: file.libraryId || effectiveLibraryId.value,
+      title: file.title || '未命名',
+      path: file.path || '',
+      mimeType: file.mimeType || 'application/octet-stream',
+    },
+  })
 }
-
-const closeLightbox = () => {
-  isOpen.value = false
-}
-
-const navigate = (dir: -1 | 1) => {
-  if (isSliding.value) return
-  const next = lightboxIndex.value + dir
-  if (next < 0 || next >= thumbnails.value.length) return
-  isSliding.value = true
-  lightboxIndex.value = next
-  window.setTimeout(() => (isSliding.value = false), 400)
-}
-
-const currentThumb = computed(() => thumbnails.value[lightboxIndex.value])
-
-// 键盘交互
-function onKeyDown(e: KeyboardEvent) {
-  if (!isOpen.value) return
-  if (e.key === 'Escape') closeLightbox()
-  if (e.key === 'ArrowRight') navigate(1)
-  if (e.key === 'ArrowLeft') navigate(-1)
-}
-watch(isOpen, open => {
-  if (open) window.addEventListener('keydown', onKeyDown)
-  else window.removeEventListener('keydown', onKeyDown)
-})
 
 // ----------------------------------------
 // CSS 变量：文件夹面板配色（基于 folder color 或主题色）
@@ -200,30 +225,33 @@ const folderCssVars = computed(() => {
         <!-- 标签 tab -->
         <div class="folder-panel folder-panel-tab" />
 
-        <!-- 扇形预览卡片（居中定位，由 transform 分散） -->
+        <!-- 扇形预览卡片（motion-v 驱动：展开/折叠 + 进入/退出动画） -->
         <div class="fan-center">
-          <div
-            v-for="(thumb, index) in previewThumbs"
-            :key="thumb.id + '-' + index"
-            class="fan-card"
-            :class="{ 'fan-card-hidden': isLoadingThumbs }"
-            :style="{
-              '--idx': index,
-              '--total': previewThumbs.length,
-              zIndex: 10 + index,
-            }"
-            @click.stop="openLightbox(index % thumbnails.length)"
-          >
-            <img
-              v-if="thumb.src"
-              :src="thumb.src"
-              :alt="thumb.title"
-              class="fan-card-img"
-              loading="lazy"
-            />
-            <div class="fan-card-overlay" />
-            <p class="fan-card-title">{{ thumb.title }}</p>
-          </div>
+          <AnimatePresence>
+            <Motion
+              v-for="(thumb, index) in previewThumbs"
+              :key="thumb.id + '-' + index"
+              as="div"
+              class="fan-card"
+              :initial="{ y: 0, x: 0, rotate: 0, scale: 0.4, opacity: 0 }"
+              :animate="getFanTarget(index, isHovered)"
+              :while-hover="{ scale: 1.25, y: -124 + (fanLayout[index]?.ty ?? 0), boxShadow: '0 20px 25px -5px rgba(0,0,0,0.3)' }"
+              :exit="{ y: 0, x: 0, rotate: 0, scale: 0.4, opacity: 0 }"
+              :transition="{ ...FAN_TRANSITION, delay: isHovered ? getFanDelay(index) : 0 }"
+              :style="{ zIndex: 10 + index }"
+              @click.stop="previewFile(index % thumbnails.length)"
+            >
+              <img
+                v-if="thumb.src"
+                :src="thumb.src"
+                :alt="thumb.title"
+                class="fan-card-img"
+                loading="lazy"
+              />
+              <div class="fan-card-overlay" />
+              <p class="fan-card-title">{{ thumb.title }}</p>
+            </Motion>
+          </AnimatePresence>
           <!-- 加载占位 -->
           <div v-if="isLoadingThumbs && previewThumbs.length === 0" class="fan-loading">
             <span class="material-icons" style="font-size: 16px">hourglass_top</span>
@@ -247,62 +275,6 @@ const folderCssVars = computed(() => {
         <span>悬停预览</span>
       </div>
     </div>
-
-    <!-- 缩略图大图预览（轻量 lightbox，点击外部关闭） -->
-    <Teleport to="body">
-      <div
-        v-if="isOpen"
-        class="lightbox"
-        @click="closeLightbox"
-      >
-        <div class="lightbox-backdrop" />
-        <button class="lightbox-close" @click.stop="closeLightbox">
-          <X :size="20" :stroke-width="2.5" />
-        </button>
-        <button
-          v-if="thumbnails.length > 1"
-          class="lightbox-nav lightbox-prev"
-          :disabled="lightboxIndex <= 0"
-          @click.stop="navigate(-1)"
-        >
-          <ChevronLeft :size="24" :stroke-width="3" />
-        </button>
-        <div class="lightbox-content" @click.stop>
-          <img
-            v-if="currentThumb"
-            :src="currentThumb.src"
-            :alt="currentThumb.title"
-            class="lightbox-img"
-            :key="currentThumb.id"
-          />
-          <div class="lightbox-caption">
-            <h3 class="lightbox-title">{{ currentThumb?.title }}</h3>
-            <div class="lightbox-dots">
-              <button
-                v-for="(t, idx) in thumbnails"
-                :key="t.id"
-                class="lightbox-dot"
-                :class="{ active: idx === lightboxIndex }"
-                @click.stop="lightboxIndex = idx"
-              />
-            </div>
-            <span class="lightbox-counter">{{ lightboxIndex + 1 }} / {{ thumbnails.length }}</span>
-            <button class="lightbox-open" @click.stop="openFolder">
-              <span>打开文件夹</span>
-              <ExternalLink :size="14" />
-            </button>
-          </div>
-        </div>
-        <button
-          v-if="thumbnails.length > 1"
-          class="lightbox-nav lightbox-next"
-          :disabled="lightboxIndex >= thumbnails.length - 1"
-          @click.stop="navigate(1)"
-        >
-          <ChevronRight :size="24" :stroke-width="3" />
-        </button>
-      </div>
-    </Teleport>
   </div>
 </template>
 
@@ -436,31 +408,9 @@ const folderCssVars = computed(() => {
   border: 1px solid color-mix(in oklch, var(--foreground) 5%, transparent);
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
   background: var(--muted);
-  /* 由 --idx/--total 计算扇形位置 */
-  transform: translateY(0) translateX(0) rotate(0deg) scale(0.4);
-  opacity: 0;
-  transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.7s ease;
-  transition-delay: calc(var(--idx) * 50ms);
+  /* transform / opacity 由 motion-v 驱动，此处不再设 transition */
 }
-.fan-card-hidden {
-  opacity: 0 !important;
-}
-
-.folder-card:hover .fan-card {
-  /* 中间索引居中，两侧分散 + 旋转 + 上移 */
-  --factor: calc((var(--idx) - (var(--total) - 1) / 2) / ((var(--total) - 1) / 2 || 1));
-  --rotation: calc(var(--factor) * 25deg);
-  --tx: calc(var(--factor) * 85px);
-  --ty: calc(abs(var(--factor)) * 12px);
-  transform: translateY(calc(-100px + var(--ty))) translateX(var(--tx)) rotate(var(--rotation)) scale(1);
-  opacity: 1;
-}
-.fan-card:hover {
-  /* 卡片自身 hover：上浮 + 高亮 */
-  transform: translateY(-124px) translateX(var(--tx)) rotate(var(--rotation)) scale(1.25) !important;
-  z-index: 99 !important;
-  box-shadow: 0 20px 25px -5px color-mix(in oklch, var(--folder-accent) 40%, transparent);
-}
+/* 注：hover 上浮 + 缩放由 motion-v 的 whileHover 接管，避免与动画 transform 冲突 */
 
 .fan-card-img {
   width: 100%;
@@ -548,163 +498,5 @@ const folderCssVars = computed(() => {
 .folder-card:hover .folder-hint {
   opacity: 0;
   transform: translateX(-50%) translateY(10px);
-}
-
-/* ---------- Lightbox ---------- */
-.lightbox {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-  animation: lightbox-fade-in 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-@keyframes lightbox-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-.lightbox-backdrop {
-  position: absolute;
-  inset: 0;
-  background: color-mix(in oklch, var(--background) 90%, transparent);
-  backdrop-filter: blur(40px);
-}
-.lightbox-close,
-.lightbox-nav {
-  position: absolute;
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 9999px;
-  background: color-mix(in oklch, var(--muted) 30%, transparent);
-  backdrop-filter: blur(20px);
-  border: 1px solid color-mix(in oklch, var(--foreground) 10%, transparent);
-  color: var(--foreground);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-.lightbox-close {
-  top: 1.5rem;
-  right: 1.5rem;
-  width: 48px;
-  height: 48px;
-}
-.lightbox-close:hover {
-  background: var(--muted);
-}
-.lightbox-nav {
-  top: 50%;
-  transform: translateY(-50%);
-  width: 56px;
-  height: 56px;
-}
-.lightbox-nav:hover {
-  transform: translateY(-50%) scale(1.1);
-}
-.lightbox-nav:active {
-  transform: translateY(-50%) scale(0.95);
-}
-.lightbox-prev { left: 1rem; }
-.lightbox-next { right: 1rem; }
-.lightbox-nav:disabled {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.lightbox-content {
-  position: relative;
-  z-index: 10;
-  width: 100%;
-  max-width: 64rem;
-  border-radius: 1.5rem;
-  overflow: hidden;
-  border: 1px solid color-mix(in oklch, var(--foreground) 10%, transparent);
-  background: var(--card);
-  box-shadow: 0 35px 60px -15px rgba(0, 0, 0, 0.5);
-  animation: lightbox-zoom-in 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-}
-@keyframes lightbox-zoom-in {
-  from { transform: scale(0.92); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
-.lightbox-img {
-  width: 100%;
-  max-height: 60vh;
-  object-fit: cover;
-  display: block;
-  user-select: none;
-}
-.lightbox-caption {
-  padding: 1.75rem 2rem;
-  border-top: 1px solid color-mix(in oklch, var(--foreground) 5%, transparent);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1.5rem;
-}
-.lightbox-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--foreground);
-  margin: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.lightbox-dots {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  margin-top: 0.5rem;
-}
-.lightbox-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 9999px;
-  background: color-mix(in oklch, var(--muted-foreground) 30%, transparent);
-  border: none;
-  cursor: pointer;
-  transition: all 0.5s ease;
-  padding: 0;
-}
-.lightbox-dot.active {
-  background: var(--foreground);
-  transform: scale(1.5);
-}
-.lightbox-counter {
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: color-mix(in oklch, var(--muted-foreground) 60%, transparent);
-}
-.lightbox-open {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  font-size: 0.875rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--primary-foreground);
-  background: var(--primary);
-  border: none;
-  border-radius: 0.75rem;
-  cursor: pointer;
-  box-shadow: 0 10px 15px -3px color-mix(in oklch, var(--primary) 30%, transparent);
-  transition: all 0.3s ease;
-  flex-shrink: 0;
-}
-.lightbox-open:hover {
-  filter: brightness(1.1);
-  transform: scale(1.05);
-}
-.lightbox-open:active {
-  transform: scale(0.95);
 }
 </style>
