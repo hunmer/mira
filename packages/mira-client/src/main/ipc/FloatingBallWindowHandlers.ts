@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow, app } from 'electron'
+import { ipcMain, BrowserWindow, Menu, app } from 'electron'
 import * as fs from 'fs'
 import * as path from 'path'
 import { FloatingWindowHandler } from './FloatingWindowHandler'
@@ -73,6 +73,25 @@ export class FloatingBallWindowHandlers {
               const mainWasHidden = !!main && (main.isMinimized() || !main.isVisible())
               if (mainWasHidden) self.showMainWindow()
               self.forwardToMain({ type: 'fb-click', mainWasHidden })
+            },
+            // 右键菜单：原生 Menu.popup，坐标由渲染层提供（屏幕坐标）
+            'fb-context-menu': (data) => {
+              const menu = Menu.buildFromTemplate([
+                {
+                  label: '隐藏本次',
+                  click: () => self.hide(),
+                },
+                {
+                  label: '始终隐藏',
+                  click: () => self.forwardToMain({ type: 'fb-hide-always' }),
+                },
+                { type: 'separator' },
+                {
+                  label: '打开设置',
+                  click: () => self.openSettings(),
+                },
+              ])
+              menu.popup({ x: Math.round(Number(data.x) || 0), y: Math.round(Number(data.y) || 0) })
             },
             // 接收文件拖放：转发主渲染进程，并激活主窗口
             'fb-file-drop': (data) => {
@@ -249,6 +268,12 @@ export class FloatingBallWindowHandlers {
     if (main.isMinimized()) main.restore()
     main.show()
     main.focus()
+  }
+
+  /** 打开设置：唤起主窗口并通知主渲染进程跳转到设置页 */
+  private openSettings(): void {
+    this.showMainWindow()
+    this.forwardToMain({ type: 'fb-open-settings' })
   }
 
   private getMainWindow(): BrowserWindow | null {

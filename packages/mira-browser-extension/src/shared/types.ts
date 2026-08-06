@@ -63,6 +63,11 @@ export interface UploadTask {
 export type UIMode = 'popup' | 'sidePanel';
 
 /**
+ * 主题:auto 跟随系统偏好,light/dark 手动覆盖
+ */
+export type Theme = 'auto' | 'light' | 'dark';
+
+/**
  * 扩展设置
  */
 export interface ExtensionSettings {
@@ -73,6 +78,7 @@ export interface ExtensionSettings {
   folderId?: string;
   tags: string[];
   uiMode: UIMode;
+  theme: Theme;
   dragPopoverEnabled: boolean;
   dropZoneEnabled: boolean;
   snifferEnabled: boolean;
@@ -80,6 +86,8 @@ export interface ExtensionSettings {
   autoScrollEnabled: boolean;
   /** 滚动间隔(ms) */
   autoScrollDelay: number;
+  /** 前端高清大图升级(maxurl),默认开 */
+  imuEnabled: boolean;
 }
 
 /**
@@ -92,12 +100,14 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   libraryId: '',
   tags: [],
   uiMode: 'popup',
+  theme: 'auto',
   dragPopoverEnabled: true,
   dropZoneEnabled: true,
   snifferEnabled: false,
   snifferKinds: ['image', 'audio', 'video'],
   autoScrollEnabled: false,
   autoScrollDelay: 800,
+  imuEnabled: true,
 };
 
 /**

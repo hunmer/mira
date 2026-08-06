@@ -63,9 +63,10 @@ async function initFloatingBall() {
       <div
         class="floating-ball fb-pulse"
         :class="{ 'is-dragging': isDragging, 'is-dragover': isDragover, 'is-file-received': isFileReceived }"
-        title="拖拽移动 · 拖入文件上传 · 单击触发动作"
+        title="拖拽移动 · 拖入文件上传 · 单击触发动作 · 右键打开菜单"
         @mousedown="handleDragStart"
         @click="handleClick"
+        @contextmenu.prevent="handleContextMenu"
       >
         <div class="folder-back">
           <div class="folder-page page-left"><i></i><i></i><i></i><i></i></div>
@@ -112,6 +113,10 @@ async function initFloatingBall() {
           return
         }
         bridge.send({ type: 'fb-click', timestamp: Date.now() })
+      },
+      // 右键菜单：把屏幕坐标发给主进程，由原生 Menu.popup 弹出
+      handleContextMenu(e) {
+        bridge.send({ type: 'fb-context-menu', x: e.screenX, y: e.screenY, timestamp: Date.now() })
       },
       // ===== 自定义 JS 拖拽（全向自由移动，主进程 setPosition）=====
       handleDragStart(e) {

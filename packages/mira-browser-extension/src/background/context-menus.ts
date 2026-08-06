@@ -8,11 +8,18 @@ export interface ContextMenuDeps {
 export function setupContextMenus(deps: ContextMenuDeps): void {
   // 安装时创建菜单
   const menus: chrome.contextMenus.CreateProperties[] = [
+    // 页面右键:截图三件套
     { id: 'mira-capture-visible', title: 'Mira · 截图可视区域', contexts: ['page', 'image'] },
     { id: 'mira-capture-fullpage', title: 'Mira · 整页截图', contexts: ['page'] },
     { id: 'mira-capture-selection', title: 'Mira · 选区截图', contexts: ['page'] },
-    { id: 'separator', type: 'separator', contexts: ['image'] },
-    { id: 'mira-upload-image', title: 'Mira · 上传此图片', contexts: ['image'] },
+    // 图片右键:收藏到素材库(即上传此图片到当前库)
+    { id: 'mira-separator-img', type: 'separator', contexts: ['image'] },
+    { id: 'mira-favorite-image', title: 'Mira · 收藏到素材库', contexts: ['image'] },
+    // 扩展图标右键:快捷截图入口(Chrome 不支持拖到工具栏图标,以右键图标代替)
+    { id: 'mira-separator-action', type: 'separator', contexts: ['action'] },
+    { id: 'mira-action-capture-visible', title: '截图可视区域', contexts: ['action'] },
+    { id: 'mira-action-capture-fullpage', title: '整页截图', contexts: ['action'] },
+    { id: 'mira-action-capture-selection', title: '选区截图', contexts: ['action'] },
   ];
   // 清理旧的再建(chrome.runtime.onInstalled 时调用更佳)
   chrome.contextMenus.removeAll(() => {
@@ -23,14 +30,19 @@ export function setupContextMenus(deps: ContextMenuDeps): void {
     if (!tab?.id) return;
     switch (info.menuItemId) {
       case 'mira-capture-visible':
+      case 'mira-action-capture-visible':
         await deps.captureVisible(tab.id);
         break;
       case 'mira-capture-fullpage':
+      case 'mira-action-capture-fullpage':
         await deps.captureFullPage(tab.id);
         break;
       case 'mira-capture-selection':
+      case 'mira-action-capture-selection':
         await deps.captureSelection(tab.id);
         break;
+      // 收藏到素材库 = 上传此图片(沿用 uploadImageUrl:fetch → File → 当前库)
+      case 'mira-favorite-image':
       case 'mira-upload-image':
         if (info.srcUrl) await deps.uploadImageUrl(info.srcUrl);
         break;

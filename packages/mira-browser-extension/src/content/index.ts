@@ -3,6 +3,7 @@ import { createSniffer } from './sniffer';
 import { createDragDrop, type DragDropPayload } from './dragdrop';
 import { createAutoScroller } from './autoscroll';
 import { drawSelection } from './overlay/selection';
+import { upgradeImageUrl } from '@/shared/imu';
 
 // 嗅探上报:发给 service worker(SNIFFER_REPORT)
 const sniffer = createSniffer(resources => {
@@ -11,6 +12,20 @@ const sniffer = createSniffer(resources => {
 
 // 拖拽上传:发给 service worker
 const dragdrop = createDragDrop({
+  // 取当前素材库的文件夹列表(用于拖放浮层右侧目录)
+  async getFolders() {
+    try {
+      const settings: any = await chrome.runtime.sendMessage({ type: 'CONFIG_GET' });
+      if (!settings?.libraryId) return [];
+      const res = await chrome.runtime.sendMessage({
+        type: 'FOLDER_LIST',
+        payload: { libraryId: settings.libraryId },
+      });
+      return (res as any[]) ?? [];
+    } catch {
+      return [];
+    }
+  },
   onUpload(payload: DragDropPayload) {
     if (payload.file) {
       // File 跨上下文序列化
@@ -20,17 +35,32 @@ const dragdrop = createDragDrop({
           payload: {
             files: [{ name: payload.file!.name, type: payload.file!.type, buffer }],
             libraryId: '', // service worker 用默认 libraryId
+            folderId: payload.folderId != null ? String(payload.folderId) : undefined,
           },
         }).catch(() => {});
       });
     } else if (payload.url) {
-      chrome.runtime.sendMessage({
-        type: 'UPLOAD_FROM_URL',
-        payload: { url: payload.url, kind: payload.kind, libraryId: '' },
-      }).catch(() => {});
+      uploadUrl(payload.url, payload.kind, payload.folderId);
     }
   },
 });
+
+/** 网页图片上传:开启高清升级时,先用 maxurl 取原图候选,取最优一个发 service worker 下载 */
+async function uploadUrl(url: string, kind: 'image' | 'video', folderId?: number) {
+  let best = url;
+  try {
+    const settings: any = await chrome.runtime.sendMessage({ type: 'CONFIG_GET' });
+    if (settings?.imuEnabled) {
+      const candidates = await upgradeImageUrl(url, { timeout: 12000 });
+      // upgradeImageUrl 返回 [...升级候选, 原 url];取第一个非原 url(若有),否则原 url
+      best = candidates[0] ?? url;
+    }
+  } catch { /* 升级失败沿用原 url */ }
+  chrome.runtime.sendMessage({
+    type: 'UPLOAD_FROM_URL',
+    payload: { url: best, kind, libraryId: '', folderId },
+  }).catch(() => {});
+}
 
 const scroller = createAutoScroller();
 
@@ -89,7 +119,8 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   return false;
 });
 
-// 初始化:根据当前设置启用 dragdrop
+// 初始化:根据当前设置启用 dragdrop / sniffer(嗅探开关持久化 —— 开启后刷新/新开页自动启用)
 chrome.runtime.sendMessage({ type: 'CONFIG_GET' }).then((settings: any) => {
   if (settings?.dragPopoverEnabled === false) dragdrop.setEnabled(false);
+  if (settings?.snifferEnabled) sniffer.start(settings.snifferKinds);
 }).catch(() => {});

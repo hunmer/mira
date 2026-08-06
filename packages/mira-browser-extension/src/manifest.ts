@@ -28,6 +28,13 @@ export default defineManifest({
   side_panel: {
     default_path: 'src/ui/sidepanel.html',
   },
+  // maxurl.user.js 注入页面 MAIN world 提取高清大图(规避扩展 CSP 对 eval 的禁令)
+  web_accessible_resources: [
+    {
+      resources: ['maxurl.user.js'],
+      matches: ['<all_urls>'],
+    },
+  ],
   content_scripts: [{
     matches: ['<all_urls>'],
     js: ['src/content/index.ts'],

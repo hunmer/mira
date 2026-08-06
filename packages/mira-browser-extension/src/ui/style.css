@@ -1,4 +1,6 @@
-:root {
+/* 暗色(默认) */
+:root,
+:root[data-theme="dark"] {
   --bg: #0f0f10;
   --bg-elev: #1a1a1c;
   --fg: #fafafa;
@@ -8,6 +10,20 @@
   --primary-fg: #052e16;
   --danger: #ef4444;
   --radius: 8px;
+  color-scheme: dark;
+}
+/* 亮色 */
+:root[data-theme="light"] {
+  --bg: #ffffff;
+  --bg-elev: #f4f4f5;
+  --fg: #18181b;
+  --muted: #71717a;
+  --border: #e4e4e7;
+  --primary: #16a34a;
+  --primary-fg: #ffffff;
+  --danger: #dc2626;
+  --radius: 8px;
+  color-scheme: light;
 }
 * { box-sizing: border-box; }
 html, body {

@@ -5,7 +5,7 @@ import { createCapturer } from './capturer';
 import { createRouter, broadcast } from './message-router';
 import { setupContextMenus } from './context-menus';
 import { isRequest, type Request as MiraRequest } from '@/shared/messages';
-import type { SniffedResource } from '@/shared/types';
+import type { SniffedResource, ExtensionSettings } from '@/shared/types';
 
 // 嗅探快照:每 tab 最近一次资源
 const sniffSnapshots = new Map<number, SniffedResource[]>();
@@ -97,22 +97,38 @@ onSettingsChange(async settings => {
   } else {
     chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false });
   }
-  // sniffer / dragdrop 开关 → 通知当前 tab
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (tab?.id) {
-    chrome.tabs
-      .sendMessage(tab.id, {
-        type: 'DISPATCH_DRAGDROP',
-        payload: { enabled: settings.dragPopoverEnabled },
-      })
-      .catch(() => {});
-    chrome.tabs
-      .sendMessage(tab.id, {
-        type: settings.snifferEnabled ? 'SNIFFER_START' : 'SNIFFER_STOP',
-        payload: settings.snifferEnabled ? { kinds: settings.snifferKinds } : undefined,
-      })
-      .catch(() => {});
+  // sniffer / dragdrop 开关 → 通知所有 tab(否则切到后台 tab 时开关不生效)
+  const tabs = await chrome.tabs.query({});
+  for (const tab of tabs) {
+    if (!tab.id) continue;
+    applyFeatureSettings(tab.id, settings);
   }
+});
+
+/**
+ * 把当前嗅探/拖拽开关下发到单个 tab。
+ * chrome:// 等不可注入页会 reject,统一吞掉。
+ */
+function applyFeatureSettings(tabId: number, settings: ExtensionSettings): void {
+  chrome.tabs
+    .sendMessage(tabId, {
+      type: 'DISPATCH_DRAGDROP',
+      payload: { enabled: settings.dragPopoverEnabled },
+    })
+    .catch(() => {});
+  chrome.tabs
+    .sendMessage(tabId, {
+      type: settings.snifferEnabled ? 'SNIFFER_START' : 'SNIFFER_STOP',
+      payload: settings.snifferEnabled ? { kinds: settings.snifferKinds } : undefined,
+    })
+    .catch(() => {});
+}
+
+// 页面导航完成 → 按当前设置启停嗅探(覆盖刷新 / 新开 tab / 页内跳转)
+chrome.tabs.onUpdated.addListener(async (tabId, info) => {
+  if (info.status !== 'complete') return;
+  const settings = await getSettings();
+  applyFeatureSettings(tabId, settings);
 });
 
 // 启动初始化

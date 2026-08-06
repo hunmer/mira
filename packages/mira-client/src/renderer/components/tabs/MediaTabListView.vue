@@ -131,6 +131,7 @@
           <!-- 瀑布流视图 -->
           <div v-if="viewMode === 'waterfall'" class="w-full h-full min-h-96">
             <WaterfallComponent
+              ref="waterfallRef"
               :key="`waterfall-${viewMode}`"
               :items="paginatedMediaItems"
               :selected-items="selectedItems"
@@ -142,7 +143,7 @@
               @contextmenu="handleMediaContextMenu"
               @media-select="handleMediaSelect"
               @media-delete="handleMediaDelete"
-              @after-render="() => {}"
+              @after-render="handleWaterfallAfterRender"
             />
           </div>
 
@@ -496,6 +497,7 @@ const selectedItems = computed(() => homeController.selectedItems?.value || [])
 const cardSize = computed(() => homeController.cardSize?.value || 'medium')
 const columnsPerRow = computed(() => homeController.columnsPerRow?.value || 6)
 const dynamicColumnWidth = computed(() => homeController.dynamicColumnWidth?.value || 200)
+const waterfallRef = ref<InstanceType<typeof WaterfallComponent> | null>(null)
 // 使用MediaTabData的分页状态
 const currentPage = computed(() => mediaTabData.currentPage.value)
 
@@ -1032,8 +1034,26 @@ const handleCtrlWheel = (event: WheelEvent) => {
 
 // 处理视图模式切换（使用 tab 独立的 viewMode）
 const handleViewModeChange = async (mode: 'grid' | 'list' | 'waterfall') => {
+  const previousMode = viewMode.value
   await mediaTabData.setViewMode(mode)
   await nextTick()
+
+  if (mode === 'waterfall') {
+    console.debug('[DEBUG-wf-tab] view-mode-change', {
+      tabId: props.tabId,
+      from: previousMode,
+      to: mode,
+      hasWaterfallRef: Boolean(waterfallRef.value)
+    })
+    waterfallRef.value?.refresh()
+  }
+}
+
+const handleWaterfallAfterRender = () => {
+  console.debug('[DEBUG-wf-tab] waterfall-after-render', {
+    tabId: props.tabId,
+    itemCount: paginatedMediaItems.value.length
+  })
 }
 
 

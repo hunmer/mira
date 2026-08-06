@@ -38,15 +38,15 @@
       --fb-bg-end: #8b5cf6;
       --fb-icon: #ffffff;
       --fb-ring: rgba(255, 255, 255, 0.35);
-      --fb-shadow: 0 8px 24px -4px rgba(79, 70, 229, 0.55), 0 4px 10px -2px rgba(0, 0, 0, 0.3);
-      --fb-shadow-drag: 0 14px 36px -6px rgba(79, 70, 229, 0.7), 0 8px 18px -4px rgba(0, 0, 0, 0.4);
+      --fb-shadow: 0 4px 12px -3px rgba(79, 70, 229, 0.32), 0 2px 6px -1px rgba(0, 0, 0, 0.18);
+      --fb-shadow-drag: 0 7px 18px -4px rgba(79, 70, 229, 0.4), 0 3px 8px -2px rgba(0, 0, 0, 0.22);
       --fb-glow: rgba(139, 92, 246, 0.45);
       --fb-drop: #10b981;
     }
 
     /* 深色主题下保持鲜明（悬浮球本身偏亮，仅微调阴影） */
     :root.dark {
-      --fb-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.6), 0 4px 10px -2px rgba(0, 0, 0, 0.5);
+      --fb-shadow: 0 4px 12px -3px rgba(0, 0, 0, 0.42), 0 2px 6px -1px rgba(0, 0, 0, 0.3);
     }
 
     * { box-sizing: border-box; }
@@ -105,7 +105,7 @@
       inset: 7px 5px 3px;
       border-radius: 8px;
       background: #18151b;
-      box-shadow: inset 0 0 10px 7px rgba(79, 73, 85, 0.3), var(--fb-shadow);
+      box-shadow: inset 0 0 7px 4px rgba(79, 73, 85, 0.22), var(--fb-shadow);
     }
 
     .folder-back::before {
@@ -215,8 +215,8 @@
 
     /* 文件夹待机呼吸 */
     @keyframes fb-pulse {
-      0%, 100% { filter: drop-shadow(0 5px 7px rgba(0, 0, 0, 0.22)); }
-      50% { filter: drop-shadow(0 7px 10px rgba(99, 102, 241, 0.38)); }
+      0%, 100% { filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.14)); }
+      50% { filter: drop-shadow(0 4px 7px rgba(99, 102, 241, 0.22)); }
     }
 
     .floating-ball.fb-pulse {

@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import { useConnection } from '@/ui/composables/useConnection';
 import { useBackground } from '@/ui/composables/useBackground';
+import { useSettings } from '@/ui/composables/useSettings';
+import { resolveTheme, applyTheme, watchSystemTheme } from '@/ui/theme';
 import ConnectionForm from '@/ui/components/ConnectionForm.vue';
 import GlobalHeader from '@/ui/components/GlobalHeader.vue';
 import TabBar from '@/ui/components/TabBar.vue';
@@ -12,16 +14,31 @@ import SettingsView from '@/ui/components/settings/SettingsView.vue';
 
 const props = defineProps<{ containerMode: 'popup' | 'sidePanel' }>();
 const { status, verify, libraries } = useConnection();
+const { settings, load, update } = useSettings();
 const bg = useBackground();
 const activeTab = ref('upload');
 
 const authenticated = computed(() => status.value === 'connected');
 
+// 主题:settings.theme 变化或系统主题(auto 时)变化 → 应用
+watch(() => settings.value.theme, t => applyTheme(resolveTheme(t)), { immediate: true });
+const unwatchSystem = watchSystemTheme(resolved => {
+  if (settings.value.theme === 'auto') applyTheme(resolved);
+});
+
 onMounted(async () => {
+  await load();
   await verify();
+  // 清理脏值:记住的素材库已被删/换服务器时清空,避免上传到不存在的库
+  const lid = settings.value.libraryId;
+  if (lid && libraries.value.length && !libraries.value.some(l => l.id === lid)) {
+    await update({ libraryId: '' });
+  }
   // 监听认证过期 → 切回登录
   bg.onAuthExpired(() => { status.value = 'idle'; });
 });
+
+onUnmounted(unwatchSystem);
 
 function onConnected() {
   status.value = 'connected';

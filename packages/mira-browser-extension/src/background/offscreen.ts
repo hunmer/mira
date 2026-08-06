@@ -1,6 +1,7 @@
 let offscreenReady = false;
 
-const OFFSCREEN_URL = 'offscreen/index.html';
+// 与 @crxjs 保留目录的产物路径一致(源 src/offscreen/index.html → dist/src/offscreen/index.html)
+const OFFSCREEN_URL = 'src/offscreen/index.html';
 
 /**
  * 确保 offscreen document 已创建(MV3 service worker 无 DOM,需 offscreen 做 Canvas)

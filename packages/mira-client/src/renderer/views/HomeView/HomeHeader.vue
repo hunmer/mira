@@ -50,7 +50,7 @@ watch(userAvatarUrl, () => { avatarLoadError.value = false })
   <!-- 紧凑右侧悬浮栏：用户头像菜单 + 窗口控制 -->
   <header class="flex items-center justify-end gap-1 px-2 py-1.5 rounded-2xl border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur-xl shadow-[0_12px_40px_rgba(99,102,241,0.10)] w-fit ml-auto">
     <!-- 切换详情侧栏 -->
-    <TooltipProvider>
+    <TooltipProvider disable-hoverable-content>
       <Tooltip>
         <TooltipTrigger as-child>
           <button
@@ -147,7 +147,7 @@ watch(userAvatarUrl, () => { avatarLoadError.value = false })
     <!-- 窗口控制按钮 - 仅桌面端显示 -->
     <template v-if="isDesktop">
       <div class="h-5 border-l border-border/60 mx-1"></div>
-      <TooltipProvider>
+      <TooltipProvider disable-hoverable-content>
         <Tooltip>
           <TooltipTrigger as-child>
             <button
@@ -160,7 +160,7 @@ watch(userAvatarUrl, () => { avatarLoadError.value = false })
           <TooltipContent side="bottom">最小化</TooltipContent>
         </Tooltip>
       </TooltipProvider>
-      <TooltipProvider>
+      <TooltipProvider disable-hoverable-content>
         <Tooltip>
           <TooltipTrigger as-child>
             <button
@@ -173,7 +173,7 @@ watch(userAvatarUrl, () => { avatarLoadError.value = false })
           <TooltipContent side="bottom">最大化</TooltipContent>
         </Tooltip>
       </TooltipProvider>
-      <TooltipProvider>
+      <TooltipProvider disable-hoverable-content>
         <Tooltip>
           <TooltipTrigger as-child>
             <button

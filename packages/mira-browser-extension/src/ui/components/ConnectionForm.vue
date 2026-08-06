@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useConnection } from '@/ui/composables/useConnection';
 import { useSettings } from '@/ui/composables/useSettings';
 import Button from '@/ui/components/ui/Button.vue';
@@ -7,7 +7,7 @@ import Input from '@/ui/components/ui/Input.vue';
 
 const emit = defineEmits<{ connected: [] }>();
 const { login } = useConnection();
-const { update } = useSettings();
+const { settings, update, load } = useSettings();
 
 const serverURL = ref('http://localhost:8081');
 const username = ref('');
@@ -15,12 +15,20 @@ const password = ref('');
 const error = ref('');
 const loading = ref(false);
 
+// 预填上次保存的服务器地址/账号,避免每次重新输入
+onMounted(async () => {
+  await load();
+  if (settings.value.serverURL) serverURL.value = settings.value.serverURL;
+  if (settings.value.username) username.value = settings.value.username;
+});
+
 async function submit() {
   error.value = '';
   loading.value = true;
   try {
     await login(serverURL.value, username.value, password.value);
-    await update({ libraryId: '' }); // 触发后续默认选库
+    // 保留上次选择的素材库(若已存在),仅在从未选过时留空触发后续默认选库
+    if (!settings.value.libraryId) await update({ libraryId: '' });
     emit('connected');
   } catch (e: any) {
     error.value = e?.message ?? '登录失败';

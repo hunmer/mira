@@ -39,6 +39,9 @@ const { settings, update } = useSettings();
           @update:model-value="v => update({ autoScrollDelay: Number(v) || 800 })"
         />
       </div>
+      <div class="row" title="拖图/嗅探/右键上传时,前端先用 maxurl 提取高清原图">
+        <span>高清大图升级</span><Switch :model-value="settings.imuEnabled" @update:model-value="v => update({ imuEnabled: v })" />
+      </div>
     </section>
   </div>
 </template>

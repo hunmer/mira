@@ -79,11 +79,12 @@ export function createRouter(deps: RouterDeps): RequestHandler {
         // service worker fetch url → Blob → File(规避 content script CORS)
         const res = await fetch(req.payload.url);
         const blob = await res.blob();
-        const filename = req.payload.url.split('/').pop() || `resource-${Date.now()}`;
-        const file = new File([blob], filename, { type: blob.type });
+        const filename = req.payload.url.split('/').pop()?.split('?')[0] || `resource-${Date.now()}`;
+        const file = new File([blob], filename, { type: blob.type || 'image/*' });
         deps.uploader.enqueue({
           file,
           libraryId: req.payload.libraryId || settings.libraryId,
+          folderId: req.payload.folderId != null ? String(req.payload.folderId) : undefined,
           source: 'sniffer',
         });
         return { enqueued: 1 };

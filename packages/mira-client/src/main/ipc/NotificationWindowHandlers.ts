@@ -265,7 +265,7 @@ export class NotificationWindowHandlers {
           resizable: false,
           movable: true,
           alwaysOnTop: true,
-          skipTaskbar: true,
+          skipTaskbar: false,
           acceptFirstMouse: true,
           showLoading: false,
           htmlFileName: 'notification-window.html',
@@ -359,10 +359,10 @@ export class NotificationWindowHandlers {
           win.setFocusable(true)
         }
         this.doShow()
-        if (!app.isPackaged) {
-          console.info('[NotificationDebug][main] opening notification DevTools', { id })
-          win?.webContents.openDevTools({ mode: 'detach', activate: true })
-        }
+        // if (!app.isPackaged) {
+        //   console.info('[NotificationDebug][main] opening notification DevTools', { id })
+        //   win?.webContents.openDevTools({ mode: 'detach', activate: true })
+        // }
       }
     })()
 

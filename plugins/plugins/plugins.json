@@ -31,12 +31,12 @@
   },
   {
     "name": "mira_duplicate_scanner",
-    "enabled": true,
+    "enabled": false,
     "path": "mira_duplicate_scanner"
   },
   {
     "name": "mira_eagle_extension",
-    "enabled": true,
+    "enabled": false,
     "path": "mira_eagle_extension"
   }
 ]
