@@ -108,7 +108,9 @@ const electronAPI: ElectronAPI = {
     clearCache: () =>
       ipcRenderer.invoke('plugin:clear-cache'),
     installFromMarketplace: (marketUrl: string, entry: any) =>
-      ipcRenderer.invoke('plugin:install-from-marketplace', marketUrl, entry)
+      ipcRenderer.invoke('plugin:install-from-marketplace', marketUrl, entry),
+    computeFileChecksums: (pluginId: string) =>
+      ipcRenderer.invoke('plugin:compute-file-checksums', pluginId)
   },
 
   // 插件窗口管理 API（打开插件 dist 的独立 BrowserWindow）

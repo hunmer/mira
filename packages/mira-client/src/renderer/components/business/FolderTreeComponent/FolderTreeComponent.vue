@@ -1163,28 +1163,13 @@ onUnmounted(() => {
 
 .tree-scroll {
   overflow-x: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+  scrollbar-width: none;
   padding-right: 4px;
   margin-right: -4px;
 }
 
 .tree-scroll::-webkit-scrollbar {
-  width: 6px;
-  height: 0;
-}
-
-.tree-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.tree-scroll::-webkit-scrollbar-thumb {
-  background-color: rgba(156, 163, 175, 0.3);
-  border-radius: 3px;
-}
-
-.tree-scroll::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(156, 163, 175, 0.5);
+  display: none;
 }
 
 .sidebar-locate-active {

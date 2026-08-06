@@ -5,7 +5,8 @@ import type {
   BaseResponse,
   PluginContext,
   MarketplaceCatalog,
-  MarketplacePluginEntry
+  MarketplacePluginEntry,
+  MarketplacePluginFile
 } from '../../shared/types'
 import { toRaw } from 'vue'
 import { pluginSystem } from './PluginSystemCore'
@@ -404,6 +405,24 @@ export class PluginService {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
       return { success: false, message: errorMessage }
+    }
+  }
+
+  /**
+   * 计算本地已安装插件的文件 sha256 清单（更新检查用）。
+   * 通过主进程 IPC 读取 pluginsDirectory/<pluginId>/ 下的文件并计算 sha256。
+   * @returns 与市场条目 files 字段结构一致的清单；非 Electron 环境或失败返回空数组。
+   */
+  public async getLocalFileChecksums(pluginId: string): Promise<MarketplacePluginFile[]> {
+    if (!this.isElectronEnvironment) return []
+    try {
+      const result = await (window as any).electronAPI.plugin.computeFileChecksums(pluginId)
+      if (result?.success && Array.isArray(result.data)) {
+        return result.data as MarketplacePluginFile[]
+      }
+      return []
+    } catch {
+      return []
     }
   }
 

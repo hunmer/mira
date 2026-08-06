@@ -16,8 +16,11 @@ import { execFile, spawn } from 'child_process'
 const PACKAGE_NAME = 'mira-app-server'
 const REGISTRY_LATEST_URL = `https://registry.npmjs.org/${PACKAGE_NAME}/latest`
 
-// Windows 下 npm 全局 bin 是 .cmd shim，execFile 需显式指定可执行文件名
-const NPM_BIN = process.platform === 'win32' ? 'npm.cmd' : 'npm'
+// Windows 下 npm 是 npm.cmd shim。Node.js 在 CVE-2024-27980 修复后，
+// 不带 shell:true 直接 spawn .cmd/.bat 文件会抛 EINVAL，因此统一用 'npm' + shell:true
+// 让系统解析；非 Windows 直接执行无需 shell。
+const NPM_BIN = 'npm'
+const IS_WIN = process.platform === 'win32'
 
 export interface InstalledVersionInfo {
   installed: boolean
@@ -74,7 +77,7 @@ export class ServerDeployHandlers {
       execFile(
         NPM_BIN,
         ['ls', '-g', PACKAGE_NAME, '--json', '--depth=0'],
-        { maxBuffer: 2 * 1024 * 1024 },
+        { maxBuffer: 2 * 1024 * 1024, shell: IS_WIN },
         (error, stdout, stderr) => {
           // npm ls 对未安装/版本不匹配会以非零退出，但 stdout 仍含 JSON
           const out = stdout?.trim()
@@ -146,7 +149,8 @@ export class ServerDeployHandlers {
   ): Promise<{ success: boolean; data?: UpdateResult; message?: string }> {
     return new Promise(resolve => {
       const child = spawn(NPM_BIN, ['install', '-g', `${PACKAGE_NAME}@latest`], {
-        shell: false,
+        // Windows 需 shell:true 才能解析 npm.cmd（CVE-2024-27980 后强制）
+        shell: IS_WIN,
       })
 
       const emit = (p: UpdateProgress) => {
@@ -178,7 +182,7 @@ export class ServerDeployHandlers {
           execFile(
             NPM_BIN,
             ['ls', '-g', PACKAGE_NAME, '--json', '--depth=0'],
-            { maxBuffer: 2 * 1024 * 1024 },
+            { maxBuffer: 2 * 1024 * 1024, shell: IS_WIN },
             (_err2, stdout) => {
               let version: string | undefined
               try {

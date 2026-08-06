@@ -438,6 +438,7 @@ export interface ElectronAPI {
     getConfig: () => Promise<BaseResponse>
     clearCache: () => Promise<BaseResponse>
     installFromMarketplace: (marketUrl: string, entry: MarketplacePluginEntry) => Promise<BaseResponse>
+    computeFileChecksums: (pluginId: string) => Promise<BaseResponse & { data?: MarketplacePluginFile[] }>
   }
 
   // 插件窗口管理 API（打开插件 dist 的独立 BrowserWindow）

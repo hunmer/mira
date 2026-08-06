@@ -133,6 +133,21 @@
                   <TooltipContent side="top">刷新插件列表</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
+              <!-- 检查更新按钮（仅本地插件 tab 显示） -->
+              <TooltipProvider v-if="activeTab === 'local' && marketplaceUrl" :ignore-non-keyboard-focus="true">
+                <Tooltip>
+                  <TooltipTrigger as-child>
+                    <button
+                      @click="checkUpdates"
+                      :disabled="pluginStore.isCheckingUpdates"
+                      class="p-2 rounded-lg hover:bg-muted dark:hover:bg-muted transition-colors text-muted-foreground dark:text-muted-foreground disabled:opacity-50"
+                    >
+                      <span class="material-icons text-base" :class="{ 'animate-spin': pluginStore.isCheckingUpdates }">sync</span>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">检查插件更新{{ pluginUpdateCount > 0 ? `（${pluginUpdateCount} 个可更新）` : '' }}</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <!-- 添加插件按钮 -->
               <TooltipProvider :ignore-non-keyboard-focus="true">
                 <Tooltip>
@@ -161,7 +176,15 @@
               >
                 <div class="flex items-start justify-between mb-3">
                   <div class="flex-1">
-                    <h3 class="font-medium text-foreground dark:text-muted-foreground">{{ plugin.config.pluginName }}</h3>
+                    <div class="flex items-center gap-2">
+                      <h3 class="font-medium text-foreground dark:text-muted-foreground">{{ plugin.config.pluginName }}</h3>
+                      <span
+                        v-if="getPluginUpdate(plugin.config.pluginId)"
+                        class="px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300"
+                      >
+                        可更新<span v-if="getPluginUpdate(plugin.config.pluginId)?.fileMismatch && !getPluginUpdate(plugin.config.pluginId)?.versionOutdated">（文件已改）</span>
+                      </span>
+                    </div>
                     <p class="text-xs text-muted-foreground dark:text-muted-foreground mt-1">{{ plugin.config.description }}</p>
                   </div>
                   <!-- 启用/禁用开关 -->
@@ -199,6 +222,14 @@
                     class="text-xs text-muted-foreground dark:text-muted-foreground hover:text-foreground dark:hover:text-muted-foreground"
                   >
                     重载
+                  </button>
+                  <button
+                    v-if="getPluginUpdate(plugin.config.pluginId)"
+                    @click="updateLocalPlugin(plugin.config.pluginId)"
+                    :disabled="isInstalling(plugin.config.pluginId)"
+                    class="text-xs text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 disabled:opacity-50"
+                  >
+                    {{ isInstalling(plugin.config.pluginId) ? '更新中...' : '更新' }}
                   </button>
                   <button
                     @click="removePlugin(plugin)"
@@ -522,6 +553,9 @@ const marketplaceUrlList = computed(() => {
 })
 const installingIds = ref<Set<string>>(new Set())
 
+// 本地插件可更新数量（来自 store 的 pluginUpdates）
+const pluginUpdateCount = computed(() => pluginStore.pluginUpdates?.size || 0)
+
 // 计算属性
 const filteredLocalPlugins = computed(() => {
   let plugins = pluginStore.localPlugins || []
@@ -727,6 +761,56 @@ const installMarketplacePlugin = async (entry: MarketplacePluginEntry) => {
   }
 }
 
+/**
+ * 取某插件的更新信息（无则返回 undefined）
+ */
+const getPluginUpdate = (pluginId: string) => pluginStore.pluginUpdates?.get(pluginId)
+
+/**
+ * 手动触发检查更新
+ */
+const checkUpdates = async () => {
+  try {
+    const result = await pluginStore.checkPluginUpdates()
+    if ((result as any).success) {
+      const count = (result as any).data?.count ?? 0
+      toast.add({
+        severity: count > 0 ? 'info' : 'success',
+        summary: count > 0 ? '发现可用更新' : '已是最新',
+        detail: count > 0 ? `共 ${count} 个插件可更新` : '所有插件均为最新版本',
+        life: 3000
+      })
+    } else {
+      toast.add({
+        severity: 'warn',
+        summary: '检查更新',
+        detail: (result as any).message || (result as any).error || '无法检查更新',
+        life: 4000
+      })
+    }
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: '检查更新失败',
+      detail: error instanceof Error ? error.message : '未知错误',
+      life: 5000
+    })
+  }
+}
+
+/**
+ * 更新单个本地插件（走市场安装流程覆盖）
+ */
+const updateLocalPlugin = async (pluginId: string) => {
+  const update = pluginStore.pluginUpdates?.get(pluginId)
+  if (!update?.entry) return
+  await installMarketplacePlugin(update.entry)
+  // 更新完成后清除该插件的更新标记
+  if (pluginStore.pluginUpdates) {
+    pluginStore.pluginUpdates.delete(pluginId)
+  }
+}
+
 const togglePlugin = async (plugin: PluginRuntime) => {
   try {
     if (plugin.status !== 'disabled') {
@@ -876,11 +960,14 @@ watch(isVisible, async (visible) => {
   }
 })
 
-// 切换到插件市场标签时按需加载目录
+// 切换到插件市场标签时按需加载目录；切换到本地标签且配置了市场源时静默检查更新
 watch(activeTab, async (tab) => {
   if (tab === 'online' && !isMarketplaceInitialized.value) {
     isMarketplaceInitialized.value = true
     await loadMarketplace()
+  } else if (tab === 'local' && marketplaceUrl.value && !pluginStore.isCheckingUpdates) {
+    // 后台静默检查更新（不弹 toast，仅刷新徽章）
+    pluginStore.checkPluginUpdates().catch(() => {})
   }
 })
 

@@ -147,35 +147,35 @@ onBeforeUnmount(() => {
     <!-- 版本状态条：真实检测本地已装版本 + npm 最新版 -->
     <div
       :class="cn(
-        'mb-3 flex items-center gap-2 rounded-2xl p-2.5 text-xs transition-colors',
+        'mb-3 flex items-start gap-2 rounded-2xl p-2.5 text-xs transition-colors',
         isDarkMode ? 'bg-neutral-950 text-neutral-300' : 'bg-neutral-100 text-neutral-700',
       )"
     >
       <!-- 状态图标 -->
       <span
         v-if="deployStatus === 'checking' || updateInProgress"
-        class="material-icons text-sm animate-spin text-muted-foreground"
+        class="material-icons text-sm animate-spin text-muted-foreground shrink-0"
       >sync</span>
       <span
         v-else-if="deployStatus === 'up-to-date'"
-        class="material-icons text-sm text-emerald-500"
+        class="material-icons text-sm text-emerald-500 shrink-0"
       >check_circle</span>
       <span
         v-else-if="deployStatus === 'update-available'"
-        class="material-icons text-sm text-amber-500"
+        class="material-icons text-sm text-amber-500 shrink-0"
       >arrow_upward</span>
       <span
         v-else-if="deployStatus === 'not-installed'"
-        class="material-icons text-sm text-muted-foreground"
+        class="material-icons text-sm text-muted-foreground shrink-0"
       >download</span>
       <span
         v-else-if="deployStatus === 'error'"
-        class="material-icons text-sm text-destructive"
+        class="material-icons text-sm text-destructive shrink-0"
       >error</span>
-      <span v-else class="material-icons text-sm text-muted-foreground">dns</span>
+      <span v-else class="material-icons text-sm text-muted-foreground shrink-0">dns</span>
 
-      <!-- 状态文案 -->
-      <span class="flex-1 min-w-0 truncate">
+      <!-- 状态文案：允许换行，避免长报错信息撑破容器 -->
+      <span class="flex-1 min-w-0 break-words">
         <template v-if="deployStatus === 'checking'">正在检测已安装版本…</template>
         <template v-else-if="updateInProgress">正在更新…{{ updateLog.length ? `（${updateLog.length} 行输出）` : '' }}</template>
         <template v-else-if="deployStatus === 'up-to-date'">

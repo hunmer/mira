@@ -10,6 +10,14 @@
  *   node scripts/build-client-plugins-index.mjs --watch    # 监听变化自动重建
  *   node scripts/build-client-plugins-index.mjs --serve    # 在 8080 起静态服务（仅生成一次索引）
  *   node scripts/build-client-plugins-index.mjs --watch --serve  # 监听 + 起静态服务
+ *   node scripts/build-client-plugins-index.mjs --sync <installDir>  # 生成后同步覆盖到安装目录
+ *   node scripts/build-client-plugins-index.mjs --watch --serve --sync <installDir>  # 全开
+ *
+ * --sync <installDir>:
+ *   生成索引后，把每个插件按 pluginId 同步到 <installDir>/<pluginId>/。
+ *   先用整目录 checksum 与目标已存在目录对比，一致则跳过（零写入）；
+ *   不一致则删旧目录、按 IGNORED_NAMES 过滤后逐文件覆盖。
+ *   安装目录路径需显式传入（如 Electron 的 userData/plugins 目录）。
  *
  * 设计要点:
  *   - 零运行时依赖，仅用 Node 内置模块；
@@ -21,10 +29,10 @@
  */
 
 import { createHash } from 'node:crypto'
-import { readFile, readdir, stat, writeFile, rename, access } from 'node:fs/promises'
+import { readFile, readdir, stat, writeFile, rename, access, rm, mkdir, copyFile } from 'node:fs/promises'
 import { existsSync, watch } from 'node:fs'
 import { createServer } from 'node:http'
-import { join, relative, sep, posix, dirname, extname, normalize } from 'node:path'
+import { join, relative, sep, posix, dirname, extname, normalize, isAbsolute, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -239,6 +247,21 @@ function resolvePort(argv) {
   return 8080
 }
 
+/**
+ * 解析 --sync 安装目录参数，返回绝对路径或 null。
+ * 相对路径基于 cwd 解析。
+ */
+function resolveSyncDir(argv) {
+  const idx = argv.indexOf('--sync')
+  if (idx === -1 || !argv[idx + 1]) return null
+  const dir = argv[idx + 1].trim()
+  if (!dir) {
+    err('--sync 需要提供一个目录路径')
+    return null
+  }
+  return isAbsolute(dir) ? dir : resolve(process.cwd(), dir)
+}
+
 /** 常见 MIME 类型映射（未知类型回退 application/octet-stream） */
 const MIME = {
   '.json': 'application/json; charset=utf-8',
@@ -325,6 +348,98 @@ function startStaticServer(port) {
   return server
 }
 
+/**
+ * 计算目标安装目录中某插件的整目录 checksum（与 buildEntry 用的算法一致）。
+ * 用于判定是否需要覆盖：源与目标 checksum 相同则跳过。
+ * 目标目录不存在时返回 null。
+ * @param {string} pluginTargetDir 安装目录下的 <pluginId> 子目录绝对路径
+ * @returns {Promise<string|null>}
+ */
+async function targetChecksum(pluginTargetDir) {
+  try {
+    await access(pluginTargetDir)
+  } catch {
+    return null
+  }
+  const relFiles = await collectFiles(pluginTargetDir)
+  const files = []
+  for (const rel of relFiles) {
+    const fp = await fileFingerprint(join(pluginTargetDir, rel))
+    files.push({ path: rel, ...fp })
+  }
+  return dirChecksum(files)
+}
+
+/**
+ * 把单个插件源目录同步覆盖到安装目录下的 <pluginId>/。
+ * - checksum 一致 → 跳过（不写入）
+ * - 不一致/不存在 → 删旧目录，按 IGNORED_NAMES 过滤后逐文件复制
+ * @param {object} entry 索引条目（含 pluginId、checksum、files）
+ * @param {string} sourceDir 源插件目录绝对路径（online_client_plugins/plugins/<dir>）
+ * @param {string} installDir 安装根目录绝对路径
+ * @returns {Promise<'skip'|'updated'>}
+ */
+async function syncPlugin(entry, sourceDir, installDir) {
+  const targetDir = join(installDir, entry.pluginId)
+  const existing = await targetChecksum(targetDir)
+
+  // 内容一致则跳过（同一目录或内容相同的目录都算）
+  if (existing && existing === entry.checksum) {
+    return 'skip'
+  }
+
+  // 删除旧目录（若存在）再重建
+  await rm(targetDir, { recursive: true, force: true })
+  await mkdir(targetDir, { recursive: true })
+
+  // 逐文件复制（复用 collectFiles，按 IGNORED_NAMES 过滤）
+  const relFiles = await collectFiles(sourceDir)
+  for (const rel of relFiles) {
+    const dest = join(targetDir, rel)
+    await mkdir(dirname(dest), { recursive: true })
+    await copyFile(join(sourceDir, rel), dest)
+  }
+  return 'updated'
+}
+
+/**
+ * 同步全部插件到安装目录。
+ * @param {object[]} entries 索引条目数组
+ * @param {string} installDir 安装根目录绝对路径
+ */
+async function syncAll(entries, installDir) {
+  try {
+    await access(installDir)
+  } catch {
+    await mkdir(installDir, { recursive: true })
+    log(`📥 创建安装目录: ${installDir}`)
+  }
+
+  let updated = 0
+  let skipped = 0
+  const errors = []
+  for (const entry of entries) {
+    // entry.directory 形如 "plugins/<dir>"，源目录绝对路径
+    const sourceDir = join(ROOT, entry.directory)
+    try {
+      const r = await syncPlugin(entry, sourceDir, installDir)
+      if (r === 'skip') {
+        skipped++
+      } else {
+        updated++
+        log(`⬆️  已同步: ${entry.pluginName} (${entry.pluginId})`)
+      }
+    } catch (e) {
+      errors.push(`${entry.pluginId}: ${e.message}`)
+      err(`同步失败 ${entry.pluginId}: ${e.message}`)
+    }
+  }
+  log(`📦 同步完成: ${updated} 更新, ${skipped} 跳过 → ${installDir}`)
+  if (errors.length) {
+    err(`同步存在 ${errors.length} 个错误（见上）`)
+  }
+}
+
 /** 原子写入 JSON（写 .tmp 再 rename） */
 async function writeIndex(catalog) {
   const json = JSON.stringify(catalog, null, 2) + '\n'
@@ -334,7 +449,7 @@ async function writeIndex(catalog) {
 }
 
 let running = false
-async function run(reason) {
+async function run(reason, syncDir) {
   if (running) return
   running = true
   try {
@@ -344,6 +459,10 @@ async function run(reason) {
     log(`✅ 已生成 ${INDEX_PATH}: ${catalog.plugins.length} 个插件`)
     if (errors.length) {
       err(`存在 ${errors.length} 个错误（见上）`)
+    }
+    // 若指定了安装目录，生成索引后同步覆盖
+    if (syncDir) {
+      await syncAll(catalog.plugins, syncDir)
     }
   } catch (e) {
     err('生成索引失败:', e.message)
@@ -357,8 +476,13 @@ async function main() {
   const argv = process.argv
   const watchMode = argv.includes('--watch')
   const serveMode = argv.includes('--serve')
+  const syncDir = resolveSyncDir(argv)
 
-  await run('初始化')
+  if (syncDir) {
+    log(`📥 同步模式已启用，安装目录: ${syncDir}`)
+  }
+
+  await run('初始化', syncDir)
 
   if (watchMode) {
     if (!existsSync(PLUGINS_DIR)) {
@@ -368,7 +492,7 @@ async function main() {
     let debounce
     const trigger = (label) => {
       clearTimeout(debounce)
-      debounce = setTimeout(() => run(label), 300)
+      debounce = setTimeout(() => run(label, syncDir), 300)
     }
     try {
       watch(PLUGINS_DIR, { recursive: true }, (eventType, filename) => {

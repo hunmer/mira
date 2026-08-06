@@ -8,7 +8,8 @@ import type {
   PluginRuntime,
   PluginManagerConfig,
   BaseResponse,
-  MarketplacePluginEntry
+  MarketplacePluginEntry,
+  MarketplacePluginFile
 } from '../../shared/types'
 
 /**
@@ -59,6 +60,9 @@ export class PluginHandler {
 
     // 插件市场（HTTP 静态源）
     ipcMain.handle('plugin:install-from-marketplace', this.handleInstallFromMarketplace.bind(this))
+
+    // 更新检查：计算本地插件文件 sha256 清单，供渲染进程与市场条目比对
+    ipcMain.handle('plugin:compute-file-checksums', this.handleComputeFileChecksums.bind(this))
 
     logger.info('PluginHandler', 'Plugin IPC handlers registered')
   }
@@ -662,6 +666,77 @@ export class PluginHandler {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
       logger.error('PluginHandler', `Failed to install plugin from marketplace: ${errorMessage}`)
+      return { success: false, message: errorMessage }
+    }
+  }
+
+  /**
+   * 计算指定插件目录下所有文件的 sha256 清单。
+   * 用于更新检查：渲染进程将本清单与市场条目的 entry.files 逐文件比对。
+   * 过滤规则与索引构建脚本（scripts/build-client-plugins-index.mjs）的 IGNORED_NAMES 一致。
+   */
+  private async computeFileChecksums(pluginDir: string): Promise<MarketplacePluginFile[]> {
+    const IGNORED_NAMES = new Set(['node_modules', '.git', 'dist', 'build', '.DS_Store', 'Thumbs.db'])
+    const out: MarketplacePluginFile[] = []
+    const stack: string[] = ['.']
+
+    while (stack.length) {
+      const rel = stack.pop()!
+      const abs = path.join(pluginDir, rel)
+      let entryStat
+      try {
+        entryStat = await fs.stat(abs)
+      } catch {
+        continue
+      }
+      if (entryStat.isDirectory()) {
+        const entries = await fs.readdir(abs, { withFileTypes: true })
+        for (const e of entries) {
+          if (IGNORED_NAMES.has(e.name)) continue
+          stack.push(path.join(rel, e.name))
+        }
+      } else if (entryStat.isFile()) {
+        const buf = await fs.readFile(abs)
+        const checksum = 'sha256:' + createHash('sha256').update(buf).digest('hex')
+        // posix 相对路径，与市场索引格式一致
+        const posixPath = rel.split(path.sep).join('/')
+        out.push({ path: posixPath, size: buf.length, checksum })
+      }
+    }
+    // 按 path 排序，保证可重现
+    out.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0))
+    return out
+  }
+
+  /**
+   * IPC：计算本地插件的文件 sha256 清单
+   * 入参 pluginId，目标目录为 pluginsDirectory/<pluginId>/
+   */
+  private async handleComputeFileChecksums(
+    _event: Electron.IpcMainInvokeEvent,
+    pluginId: string
+  ): Promise<BaseResponse> {
+    try {
+      if (!this.config?.pluginsDirectory) {
+        return { success: false, message: '未配置本地插件目录' }
+      }
+      if (!pluginId) {
+        return { success: false, message: '缺少 pluginId' }
+      }
+
+      const pluginDir = path.join(this.config.pluginsDirectory, pluginId)
+      try {
+        await fs.access(pluginDir)
+      } catch {
+        // 目录不存在，返回空清单（视作无文件可比对）
+        return { success: true, message: 'plugin directory not found', data: [] }
+      }
+
+      const files = await this.computeFileChecksums(pluginDir)
+      return { success: true, message: `computed ${files.length} files`, data: files }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      logger.error('PluginHandler', `Failed to compute file checksums for ${pluginId}: ${errorMessage}`)
       return { success: false, message: errorMessage }
     }
   }

@@ -72,6 +72,11 @@ export const usePluginStore = defineStore('plugin', () => {
   const marketplaceError = ref<string | null>(null)
   const marketplaceLastUpdated = ref<Date | null>(null)
 
+  // 插件更新检查状态
+  // key: pluginId；value: { entry: 市场条目, versionOutdated: 版本落后, fileMismatch: 文件不一致 }
+  const pluginUpdates = ref<Map<string, { entry: MarketplacePluginEntry; versionOutdated: boolean; fileMismatch: boolean }>>(new Map())
+  const isCheckingUpdates = ref(false)
+
   // 搜索和过滤状态
   const searchQuery = ref('')
   const filterStatus = ref<'all' | 'installed' | 'available' | 'enabled'>('all')
@@ -786,6 +791,95 @@ export const usePluginStore = defineStore('plugin', () => {
     }
   }
 
+  /**
+   * 简单的语义化版本比较：返回正数表示 a 更新，负数表示 b 更新，0 表示相等
+   */
+  const compareVersions = (a: string, b: string): number => {
+    const pa = (a || '').split('.').map((n) => parseInt(n, 10) || 0)
+    const pb = (b || '').split('.').map((n) => parseInt(n, 10) || 0)
+    const len = Math.max(pa.length, pb.length)
+    for (let i = 0; i < len; i++) {
+      const da = pa[i] || 0
+      const db = pb[i] || 0
+      if (da !== db) return da - db
+    }
+    return 0
+  }
+
+  /**
+   * 检查本地已安装插件是否有更新。
+   * 判定条件（满足任一即标记可更新）：
+   *   1. 市场条目版本 > 本地版本；
+   *   2. 市场条目提供 files 清单，且与本地文件 sha256 列表对不上。
+   * 无市场源 / 无市场目录时静默返回空。
+   * 结果写入 pluginUpdates。
+   */
+  const checkPluginUpdates = async () => {
+    // 清空旧结果
+    pluginUpdates.value = new Map()
+
+    const settingsStore = useSettingsStore()
+    const marketUrl = (settingsStore.settings.clientPluginMarketUrl || '').trim()
+    if (!marketUrl) return { success: false, message: '未配置插件市场源地址' }
+
+    // 确保市场目录已加载
+    if (!marketplacePlugins.value || marketplacePlugins.value.length === 0) {
+      await fetchMarketplaceCatalog()
+    }
+    const catalog = marketplacePlugins.value || []
+    if (catalog.length === 0) return { success: false, message: '插件市场目录为空' }
+
+    isCheckingUpdates.value = true
+    try {
+      const updates = new Map<string, { entry: MarketplacePluginEntry; versionOutdated: boolean; fileMismatch: boolean }>()
+      const localList = localPlugins.value || []
+
+      for (const local of localList) {
+        const entry = catalog.find((e) => e.pluginId === local.config.pluginId)
+        if (!entry) continue // 市场无此插件，跳过
+
+        let versionOutdated = false
+        let fileMismatch = false
+
+        // 1. 版本对比：市场版本 > 本地版本
+        if (compareVersions(entry.version, local.config.version) > 0) {
+          versionOutdated = true
+        }
+
+        // 2. 文件 sha256 对比：仅当市场条目提供 files 清单时
+        if (!versionOutdated && entry.files && entry.files.length > 0) {
+          const localFiles = await pluginService.getLocalFileChecksums(local.config.pluginId)
+          // 数量不同 → 视为不一致
+          if (localFiles.length !== entry.files.length) {
+            fileMismatch = true
+          } else {
+            // 按 path 建立 checksum 映射比对
+            const marketMap = new Map(entry.files.map((f) => [f.path, f.checksum]))
+            for (const lf of localFiles) {
+              const expected = marketMap.get(lf.path)
+              if (expected === undefined || expected !== lf.checksum) {
+                fileMismatch = true
+                break
+              }
+            }
+          }
+        }
+
+        if (versionOutdated || fileMismatch) {
+          updates.set(local.config.pluginId, { entry, versionOutdated, fileMismatch })
+        }
+      }
+
+      pluginUpdates.value = updates
+      return { success: true, data: { count: updates.size } }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to check plugin updates'
+      return { success: false, error: errorMessage }
+    } finally {
+      isCheckingUpdates.value = false
+    }
+  }
+
   // ==================== 状态管理操作 ====================
 
   /**
@@ -897,6 +991,10 @@ export const usePluginStore = defineStore('plugin', () => {
     marketplaceError,
     marketplaceLastUpdated,
 
+    // 插件更新检查状态
+    pluginUpdates,
+    isCheckingUpdates,
+
     // 计算属性
     totalPlugins,
     installedPlugins,
@@ -946,6 +1044,7 @@ export const usePluginStore = defineStore('plugin', () => {
     // 插件市场操作
     fetchMarketplaceCatalog,
     installMarketplacePlugin,
+    checkPluginUpdates,
 
     // 脚本管理（从模块导入）
     injectPluginsToDocument,

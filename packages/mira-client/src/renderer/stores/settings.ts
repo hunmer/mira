@@ -323,6 +323,24 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   /**
+   * 解析默认插件目录：AppData 下用户数据目录 + /plugins。
+   * 通过 IPC 从主进程获取 userData 路径（Electron 环境）；
+   * 非 Electron 环境则返回空字符串。
+   */
+  const resolveDefaultPluginsDirectory = async (): Promise<string> => {
+    try {
+      const electronAPI = (window as any).electronAPI
+      if (!electronAPI?.app?.getPath) return ''
+      const userData = await electronAPI.app.getPath('userData')
+      if (!userData) return ''
+      return `${userData}/plugins`
+    } catch (err) {
+      console.warn('Failed to resolve default plugins directory:', err)
+      return ''
+    }
+  }
+
+  /**
    * 加载设置从本地存储
    * @returns Promise<void>
    */
@@ -338,6 +356,17 @@ export const useSettingsStore = defineStore('settings', () => {
         migrateMarketUrls()
       } else {
       }
+
+      // 插件目录兜底：未配置时默认使用 AppData 下 userData/plugins，
+      // 并写回设置落库，避免安装市场插件时报「未配置本地插件目录」。
+      if (!settings.value.pluginsDirectory) {
+        const defaultDir = await resolveDefaultPluginsDirectory()
+        if (defaultDir) {
+          settings.value.pluginsDirectory = defaultDir
+          await saveSettings()
+        }
+      }
+
       // 初始化插件服务（如果配置了插件目录且启用了自动加载，且尚未初始化）
       if (settings.value.pluginsDirectory && settings.value.autoLoadPlugins && !isPluginSystemInitialized.value) {
         try {

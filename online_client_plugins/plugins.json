@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-06T08:43:16.858Z",
+  "generatedAt": "2026-08-06T09:22:09.329Z",
   "plugins": [
     {
       "pluginId": "b1c2d3e4-5f60-4a7b-8c9d-0a1b2c3d4e5f",
@@ -24,8 +24,8 @@
       "directory": "plugins/mira-welcome-demo",
       "icon": null,
       "readme": "README.md",
-      "size": 3056,
-      "checksum": "sha256:ae636a57b411379344276464d25b8abf3cde1a542628f8f519d359e16e643c75",
+      "size": 4552,
+      "checksum": "sha256:ee8e314b93f33c14116648e78342883a54c8961a24b37eb8ef763d9f66a66b28",
       "files": [
         {
           "path": "README.md",
@@ -39,8 +39,8 @@
         },
         {
           "path": "index.js",
-          "size": 1732,
-          "checksum": "sha256:429e8f5f747564fc25aee2c8a5ea98e595d8d1b0426f1678c2eeede30015aa54"
+          "size": 3228,
+          "checksum": "sha256:bdc0c595cd365bcf5effc27b5b31943461e00511bcf2084aca4c785425521dc8"
         }
       ]
     },
