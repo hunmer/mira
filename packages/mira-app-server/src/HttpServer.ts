@@ -2,6 +2,7 @@ import { Express, Router } from 'express';
 import http from 'http';
 import express from 'express';
 import fs from 'fs';
+import path from 'path';
 import axios from "axios";
 import { AuthRouter } from "./routes/AuthRouter";
 import { UserRouter } from "./routes/UserRouter";
@@ -226,6 +227,12 @@ export class MiraHttpServer {
 
         // 静态文件中间件
         this.app.use('/static', express.static('public'));
+
+        // Dashboard 静态托管：构建产物位于 dist/dashboard（相对运行目录）
+        const dashboardDir = path.resolve(process.cwd(), 'dist', 'dashboard');
+        this.app.use('/dashboard', express.static(dashboardDir));
+        // 根路径重定向到 dashboard
+        this.app.get('/', (req, res) => res.redirect('/dashboard/'));
 
         // 统一权限中间件（CORS + body parser 之后、路由注册之前）
         this.app.use('/api', createHttpPermissionMiddleware(

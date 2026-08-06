@@ -179,23 +179,28 @@ export function useConnectionFlow(state: LoginFlowState) {
           websocketUrl: wsUrl,
           ...(state.authToken.value && { authToken: state.authToken.value }),
         })
+      } else if (state.authToken.value) {
+        await serverListStore.updateServer(existingServer.id, { authToken: state.authToken.value })
       }
       await serverListStore.setActiveServer(existingServer?.id || lib.id, { reconnect: false })
 
-      // 通过 MiraSDKService 连接
-      await miraSDKService.connect({
-        serverUrl: state.serverAddress.value.replace(/\/$/, ''),
-        websocketUrl: wsUrl,
-        timeout: 30000,
-        ...(state.authToken.value && { apiKey: state.authToken.value }),
-      })
-
-      // 设置认证状态
+      // SDK 连接会从 authStore 读取 token，必须先写入认证状态。
       if (state.healthData.value?.authRequired !== false) {
         authStore.user = { username: state.credentials.username, role: state.userRole.value } as any
         authStore.token = state.authToken.value
         authStore.tokenExpiration = new Date(Date.now() + 24 * 60 * 60 * 1000)
         await authStore.persistAuthState()
+      }
+
+      // 通过 MiraSDKService 连接
+      const connectResult = await miraSDKService.connect({
+        serverUrl: state.serverAddress.value.replace(/\/$/, ''),
+        websocketUrl: wsUrl,
+        timeout: 30000,
+        ...(state.authToken.value && { apiKey: state.authToken.value }),
+      })
+      if (!connectResult.success) {
+        throw new Error(connectResult.message || 'SDK 连接失败')
       }
 
       // 持久化用户选中的素材库，使 initializeHomeView() 能拾起，
@@ -216,6 +221,29 @@ export function useConnectionFlow(state: LoginFlowState) {
     } finally {
       state.loading.value = false
     }
+  }
+
+  async function connectToDeployedLibrary(defaultLibraryId: string) {
+    state.serverName.value = '本地 Mira 服务'
+    state.serverAddress.value = 'http://127.0.0.1:8081'
+    state.wsAddress.value = 'ws://127.0.0.1:8018'
+    state.currentStep.value = 1
+
+    await testConnection()
+    if (state.currentStep.value === 2) {
+      state.credentials.username = 'admin'
+      state.credentials.password = 'admin123'
+      await handleLogin()
+    }
+    if (state.currentStep.value !== 3) return
+
+    const defaultLibrary = libraries.value.find(library => library.id === defaultLibraryId)
+    if (!defaultLibrary) {
+      state.error.value = '默认素材库不存在，请重新执行部署'
+      return
+    }
+    selectedLibraryId.value = defaultLibrary.id
+    await connectToLibrary()
   }
 
   function handleStepBack() {
@@ -256,6 +284,7 @@ export function useConnectionFlow(state: LoginFlowState) {
     handleRegister,
     fetchLibraries,
     connectToLibrary,
+    connectToDeployedLibrary,
     isLibraryAccessible,
     handleStepBack,
   }

@@ -27,6 +27,9 @@ const SERVER_BIN = 'mira-app-server'
 const IS_WIN = process.platform === 'win32'
 const HTTP_PORT = 8081
 const WS_PORT = 8018
+const DEFAULT_ADMIN_USERNAME = 'admin'
+const DEFAULT_ADMIN_PASSWORD = 'admin123'
+const DEFAULT_LIBRARY_NAME = '默认素材库'
 
 export interface InstalledVersionInfo {
   installed: boolean
@@ -137,6 +140,71 @@ export class ServerDeployHandlers {
     }
   }
 
+  private async requestServer<T>(pathname: string, init?: RequestInit): Promise<T> {
+    const response = await fetch(`http://127.0.0.1:${HTTP_PORT}${pathname}`, {
+      ...init,
+      headers: {
+        'Content-Type': 'application/json',
+        ...init?.headers,
+      },
+      signal: AbortSignal.timeout(10000),
+    })
+    const text = await response.text()
+    let body: any = null
+    try {
+      body = text ? JSON.parse(text) : null
+    } catch {
+      body = text
+    }
+    if (!response.ok) {
+      throw new Error(body?.message || body?.error || `HTTP ${response.status}`)
+    }
+    return body as T
+  }
+
+  private async ensureDefaultLibrary(dataPath: string, onOutput: (line: string) => void): Promise<string> {
+    const login = await this.requestServer<{ data?: { accessToken?: string } }>('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({
+        username: DEFAULT_ADMIN_USERNAME,
+        password: DEFAULT_ADMIN_PASSWORD,
+      }),
+    })
+    const token = login.data?.accessToken
+    if (!token) throw new Error('默认管理员登录成功但未返回访问令牌')
+    onOutput(`已使用默认管理员 ${DEFAULT_ADMIN_USERNAME} 登录`)
+
+    const headers = { Authorization: `Bearer ${token}` }
+    const libraryPath = path.join(dataPath, 'default-library')
+    await mkdir(libraryPath, { recursive: true })
+    const libraries = await this.requestServer<Array<{ id: string; name: string; path?: string }>>(
+      '/api/libraries',
+      { headers },
+    )
+    const existing = libraries.find(library =>
+      library.path === libraryPath || library.name === DEFAULT_LIBRARY_NAME,
+    )
+    if (existing) {
+      onOutput(`默认素材库已存在：${existing.name} (${existing.id})`)
+      return existing.id
+    }
+
+    const created = await this.requestServer<{ id: string; name: string }>('/api/libraries', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        name: DEFAULT_LIBRARY_NAME,
+        path: libraryPath,
+        description: 'Mira 自动部署创建的默认素材库',
+        customFields: { enableAutoSync: true },
+      }),
+    })
+    if (!created.id) throw new Error('默认素材库创建成功但未返回 ID')
+    onOutput(`已创建 ${created.name} (${created.id})`)
+    onOutput(`素材库目录：${libraryPath}`)
+    return created.id
+  }
+
   private getServerExecutable(): Promise<string> {
     return new Promise((resolve, reject) => {
       execFile(
@@ -167,7 +235,15 @@ export class ServerDeployHandlers {
     const child = spawn(
       executable,
       ['start', '--http-port', String(HTTP_PORT), '--ws-port', String(WS_PORT), '--data-path', dataPath],
-      { shell: IS_WIN, windowsHide: true },
+      {
+        shell: IS_WIN,
+        windowsHide: true,
+        env: {
+          ...process.env,
+          INITIAL_ADMIN_USERNAME: DEFAULT_ADMIN_USERNAME,
+          INITIAL_ADMIN_PASSWORD: DEFAULT_ADMIN_PASSWORD,
+        },
+      },
     )
     this.serverProcess = child
     let startError: Error | null = null
@@ -205,7 +281,7 @@ export class ServerDeployHandlers {
 
   private async handleDeploy(
     event: IpcMainInvokeEvent,
-  ): Promise<{ success: boolean; message?: string }> {
+  ): Promise<{ success: boolean; data?: { defaultLibraryId: string }; message?: string }> {
     if (this.deploymentInProgress) {
       return { success: false, message: '已有部署任务正在执行' }
     }
@@ -261,7 +337,12 @@ export class ServerDeployHandlers {
         if (health.detail) output(health.detail)
       })
 
-      return { success: true }
+      let defaultLibraryId = ''
+      await runStep(6, async output => {
+        defaultLibraryId = await this.ensureDefaultLibrary(dataPath, output)
+      })
+
+      return { success: true, data: { defaultLibraryId } }
     } catch (error) {
       return {
         success: false,

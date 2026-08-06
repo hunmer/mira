@@ -8,7 +8,8 @@
     "mira-app-server": "dist/cli.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build:dashboard": "node scripts/copy-dashboard.mjs",
+    "build": "pnpm run build:dashboard && tsc",
     "rebuild": "pnpm run build",
     "start": "node dist/index.js",
     "start:ts": "node --inspect -r ts-node/register src/index.ts",

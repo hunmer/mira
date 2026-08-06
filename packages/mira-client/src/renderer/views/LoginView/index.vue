@@ -62,6 +62,7 @@ const {
   handleLogin,
   handleRegister,
   connectToLibrary,
+  connectToDeployedLibrary,
   isLibraryAccessible,
   handleStepBack,
 } = useConnectionFlow({
@@ -179,7 +180,7 @@ onMounted(async () => {
       />
 
       <!-- 部署指南入口 + 对话框 -->
-      <DeployGuideDialog />
+      <DeployGuideDialog @connect="connectToDeployedLibrary" />
     </Motion>
   </div>
 </template>

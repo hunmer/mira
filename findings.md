@@ -7,6 +7,10 @@
 - The deployment order must be runtime check, global package install, data-directory setup, server start, then health check so the configured directory can be passed to the start command.
 - The smallest compatible contract is one `serverDeploy.deploy()` invoke plus progress events containing `stepId`, status, and output line; command execution remains entirely in the Electron main process.
 - Global CLI startup resolves the executable from `npm prefix -g`, avoiding desktop-app PATH differences; health reuse requires a Mira `/health` JSON body with `status: "ok"`.
+- The server already creates the default `admin/admin123` super-user idempotently during startup.
+- Default-library provisioning can use authenticated `GET/POST /api/libraries`; creation requires `name` and `path`, and the API returns the created library object directly.
+- Immediate connection should remain in `useConnectionFlow`: set the local server address, run health detection, authenticate when required, select the deployment-returned library ID, then reuse `connectToLibrary()` for store persistence and navigation.
+- Per-step output will use a manual expanded-ID set: output opens the running step, success closes it, and failure leaves it open.
 
 - `HANDOFF.md`: the feature belongs primarily to the Vue plugin window using `@woven-canvas/vue`.
 - Canvas project switching remounts `WovenCanvas` by `currentProjectId`; persistence uses IndexedDB.

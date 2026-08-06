@@ -5,6 +5,8 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
+  // 部署在 app-server 的 /dashboard 路径下，构建产物资源需使用 /dashboard/ 前缀
+  base: '/dashboard/',
   plugins: [
     vue(),
     ...(process.env.NODE_ENV !== 'production' ? [vueDevTools()] : []),

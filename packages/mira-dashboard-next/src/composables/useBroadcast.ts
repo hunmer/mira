@@ -24,7 +24,7 @@ export function useBroadcast() {
     }
     sending.value = true
     try {
-      const payload: Record<string, any> = { message: msg }
+      const payload: { message: string; title?: string; clientIds?: string[] } = { message: msg }
       if (broadcastTitle.value.trim()) {
         payload.title = broadcastTitle.value.trim()
       }

@@ -40,6 +40,11 @@
 - Final scoped dependency, SFC, Viewer.js method wiring, cleanup, and whitespace checks passed.
 
 ## 2026-08-07
+- Started the follow-up deployment UX, default-library provisioning, and immediate-connection task.
+- Confirmed the built-in default admin and selected an idempotent API-based default-library provisioning flow.
+- Added backend default-library provisioning, deployment-result library ID, collapsible per-step output, fixed dialog height, and the immediate-connection event flow.
+- Moved auth-state persistence before the final SDK connection, refreshed tokens for saved servers, and made SDK connection failures explicit.
+- Renderer, Electron main-process, and preload production builds passed; scoped diff checks passed and filtered type diagnostics contained no changed-file errors.
 - Started the login deployment guide implementation task and preserved the existing user edit in `ServerStep.vue`.
 - Confirmed the checklist is simulated and selected a main-process five-step deployment pipeline with per-step progress events.
 - Added the real main-process deployment pipeline, preload/shared API contract, and renderer-side per-step output handling.

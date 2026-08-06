@@ -1,9 +1,13 @@
 # Task Plan
 
 ## Goal
-Implement real deployment execution for the login deployment guide, with per-step output delivered to and handled by the backend.
+Extend the real deployment guide with collapsible step output, fixed dialog sizing, default library provisioning, and one-click login into that library.
 
 ## Phases
+- [complete] Inspect current login/auth/library APIs and the user's overlapping LoginView changes.
+- [complete] Define the idempotent default-user/library provisioning and post-deploy connection contract.
+- [complete] Implement backend provisioning, collapsible deployment UI, fixed dialog sizing, and immediate connection.
+- [complete] Run focused verification and document acceptance steps.
 - [complete] Inspect the deployment dialog, existing login/server flow, and Electron/backend execution bridge.
 - [complete] Define the smallest compatible step execution and output contract.
 - [complete] Implement real deployment and per-step backend output handling.
@@ -53,3 +57,4 @@ Implement real deployment execution for the login deployment guide, with per-ste
 | `Synced` runtime queries are valid but its base ECS type is rejected by Vue `useQuery`'s CanvasComponent constraint | 1 | Add one local `unknown` adapter at the query boundary; keep all returned Block/Frame data strictly typed. |
 | Normalizing two existing mixed-line-ending files made added CRLF lines fail `git diff --check` | 1 | Rewrote only the changed blocks with their original LF convention; scoped diff check then passed. |
 | Full client `vue-tsc` reported numerous existing unrelated errors | 1 | Filtered diagnostics to the four deployment files; no matching errors were reported, and all three relevant production builds passed. |
+| First checklist patch assumed an explicit `defineOptions` call that the component does not contain | 1 | Split the patch against the component's actual script and template blocks. |

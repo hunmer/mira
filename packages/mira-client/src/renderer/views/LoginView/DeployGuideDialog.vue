@@ -16,6 +16,10 @@ import { environment } from '@renderer/utils'
 
 defineOptions({ name: 'DeployGuideDialog' })
 
+const emit = defineEmits<{
+  connect: [defaultLibraryId: string]
+}>()
+
 // 是否为 Electron 环境（决定部署对话框展示在线部署组件还是手动指南）
 const isElectron = environment.isElectron
 
@@ -36,6 +40,11 @@ function handleManualGuideOpenChange(open: boolean) {
     showDeployGuide.value = true
   }
 }
+
+function handleConnect(defaultLibraryId: string) {
+  showDeployGuide.value = false
+  emit('connect', defaultLibraryId)
+}
 </script>
 
 <template>
@@ -51,7 +60,7 @@ function handleManualGuideOpenChange(open: boolean) {
 
   <!-- 部署指南对话框 -->
   <Dialog :open="showDeployGuide" @update:open="showDeployGuide = $event">
-    <DialogContent class="sm:max-w-[460px]">
+    <DialogContent class="h-[min(760px,calc(100vh-2rem))] grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden sm:max-w-[520px]">
       <DialogHeader>
         <DialogTitle>部署指南</DialogTitle>
         <DialogDescription>
@@ -60,12 +69,14 @@ function handleManualGuideOpenChange(open: boolean) {
       </DialogHeader>
 
       <!-- Electron：展示在线部署组件 -->
-      <div v-if="isElectron" class="flex justify-center">
-        <DeploymentChecklist />
+      <div v-if="isElectron" class="flex min-h-0 justify-center overflow-hidden">
+        <DeploymentChecklist @connect="handleConnect" />
       </div>
 
       <!-- 非 Electron：直接展示手动部署指南 -->
-      <ManualDeployGuide v-else />
+      <div v-else class="min-h-0 overflow-y-auto">
+        <ManualDeployGuide />
+      </div>
 
       <DialogFooter v-if="isElectron" class="gap-2 sm:justify-center">
         <Button type="button" variant="outline" size="sm" @click="openManualGuide">

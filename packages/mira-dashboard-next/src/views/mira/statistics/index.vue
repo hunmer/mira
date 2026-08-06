@@ -24,7 +24,7 @@ import { Input } from '@/components/ui/input'
 import { RiNotificationLine, RiLoader4Line } from '@remixicon/vue'
 
 const { t } = useI18n()
-const { dialogOpen: broadcastDialogOpen, broadcastTitle, broadcastMsg, sending, openDialog: openBroadcastDialog, sendBroadcast } = useBroadcast()
+const { dialogOpen: broadcastDialogOpen, broadcastTitle, broadcastMsg, sending, sendBroadcast } = useBroadcast()
 
 function openBroadcastWithSummary() {
   const lines = recentUploads.value.flatMap(day =>

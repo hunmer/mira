@@ -31,6 +31,10 @@ interface DeploymentProgress {
   line?: string
 }
 
+const emit = defineEmits<{
+  connect: [defaultLibraryId: string]
+}>()
+
 const settingsStore = useSettingsStore()
 // 复用 settingsStore 已有的主题计算（支持 light/dark/auto）
 const isDarkMode = computed(() => settingsStore.isDarkMode)
@@ -89,15 +93,35 @@ const defaultTasks: Task[] = [
     status: 'pending',
     info: null,
   },
+  {
+    id: 6,
+    title: '创建默认素材库',
+    subtitle: '使用默认管理员创建或复用“默认素材库”。',
+    status: 'pending',
+    info: null,
+  },
 ]
 
 const tasks = ref<Task[]>(defaultTasks.map(t => ({ ...t })))
 const pipelineStatus = ref<PipelineStatus>('idle')
+const expandedTaskIds = ref<Set<number>>(new Set())
+const defaultLibraryId = ref('')
 
 let running = false
 
 function updateTask(taskId: number, update: Partial<Task>) {
   tasks.value = tasks.value.map(task => (task.id === taskId ? { ...task, ...update } : task))
+}
+
+function setTaskExpanded(taskId: number, expanded: boolean) {
+  const next = new Set(expandedTaskIds.value)
+  if (expanded) next.add(taskId)
+  else next.delete(taskId)
+  expandedTaskIds.value = next
+}
+
+function toggleTask(taskId: number) {
+  setTaskExpanded(taskId, !expandedTaskIds.value.has(taskId))
 }
 
 function appendTaskOutput(taskId: number, line: string) {
@@ -111,15 +135,20 @@ async function runPipeline() {
   if (running || updateInProgress.value || !window.electronAPI?.serverDeploy) return
   running = true
   pipelineStatus.value = 'running'
+  defaultLibraryId.value = ''
+  expandedTaskIds.value = new Set()
   tasks.value = tasks.value.map(t => ({ ...t, status: 'pending', info: null }))
 
   const api = window.electronAPI.serverDeploy
   const onProgress = (progress: DeploymentProgress) => {
     if (progress.type === 'status' && progress.status) {
       updateTask(progress.stepId, { status: progress.status })
+      if (progress.status === 'success') setTaskExpanded(progress.stepId, false)
+      if (progress.status === 'failed') setTaskExpanded(progress.stepId, true)
     }
     if (progress.type === 'output' && progress.line) {
       appendTaskOutput(progress.stepId, progress.line)
+      setTaskExpanded(progress.stepId, true)
     }
   }
   api.removeDeployProgressListener()
@@ -136,6 +165,10 @@ async function runPipeline() {
       pipelineStatus.value = 'failed'
       return
     }
+    if (!result.data?.defaultLibraryId) {
+      throw new Error('部署完成，但未获取到默认素材库 ID')
+    }
+    defaultLibraryId.value = result.data.defaultLibraryId
     pipelineStatus.value = 'success'
     await checkVersion()
   } catch (error) {
@@ -149,6 +182,10 @@ async function runPipeline() {
     api.removeDeployProgressListener()
     running = false
   }
+}
+
+function connectNow() {
+  if (defaultLibraryId.value) emit('connect', defaultLibraryId.value)
 }
 
 // ---- 图标（贴近原 React 版的精简 SVG）----
@@ -165,7 +202,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="flex w-full flex-col font-sans select-none">
+  <div class="flex h-full min-h-0 w-full flex-col font-sans">
     <!-- 版本状态条：真实检测本地已装版本 + npm 最新版 -->
     <div
       :class="cn(
@@ -247,7 +284,7 @@ onBeforeUnmount(() => {
     </div>
 
     <!-- Tasks -->
-    <div class="flex flex-col gap-2.5">
+    <div class="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pr-1">
       <div v-for="task in tasks" :key="task.id" class="relative flex w-full flex-col items-center">
         <div :class="cn('relative z-10 flex w-full items-center justify-between rounded-2xl p-2.5 transition-colors duration-300', isDarkMode ? 'bg-neutral-950 text-neutral-200' : 'bg-neutral-100/90 text-neutral-800')">
           <div class="flex w-full items-center justify-between">
@@ -307,6 +344,17 @@ onBeforeUnmount(() => {
 
             <!-- Status indicator -->
             <div class="flex items-center gap-2">
+              <button
+                v-if="task.info"
+                type="button"
+                class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-none bg-transparent text-current opacity-60 transition-opacity hover:opacity-100"
+                :title="expandedTaskIds.has(task.id) ? '折叠输出' : '展开输出'"
+                @click.stop="toggleTask(task.id)"
+              >
+                <span class="material-icons text-base">
+                  {{ expandedTaskIds.has(task.id) ? 'expand_less' : 'expand_more' }}
+                </span>
+              </button>
               <div :class="cn('flex h-5.5 w-5.5 items-center justify-center rounded-full transition-all duration-300', task.status === 'success' ? (isDarkMode ? 'bg-neutral-100 text-neutral-950' : 'bg-neutral-950 text-white') : task.status === 'running' ? (isDarkMode ? 'bg-neutral-800 text-neutral-100' : 'bg-white text-neutral-950 shadow-sm') : task.status === 'failed' ? (isDarkMode ? 'bg-red-950/60 text-red-300' : 'bg-red-100 font-bold text-red-950') : task.status === 'skipped' ? (isDarkMode ? 'bg-amber-950/60 text-amber-300' : 'bg-amber-100 font-bold text-amber-950') : (isDarkMode ? 'bg-neutral-800' : 'bg-neutral-200'))">
                 <AnimatePresence mode="wait">
                   <Motion v-if="task.status === 'success'" key="success-icon" :initial="{ scale: 0, rotate: -45 }" :animate="{ scale: 1, rotate: 0 }" :exit="{ scale: 0 }" :transition="{ type: 'spring', stiffness: 350, damping: 18 }">
@@ -335,7 +383,7 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- Info panel (expandable) -->
-        <div :class="cn('z-0 grid w-[90%] transition-all duration-300 ease-in-out', task.info ? '-mt-3.5 grid-rows-[1fr] opacity-100' : 'pointer-events-none mt-0 grid-rows-[0fr] opacity-0')">
+        <div :class="cn('z-0 grid w-[90%] transition-all duration-300 ease-in-out', task.info && expandedTaskIds.has(task.id) ? '-mt-3.5 grid-rows-[1fr] opacity-100' : 'pointer-events-none mt-0 grid-rows-[0fr] opacity-0')">
           <div class="min-h-0 overflow-hidden">
             <div :class="cn('max-h-24 overflow-y-auto whitespace-pre-wrap break-all rounded-b-2xl px-3.5 pt-5 pb-2.5 font-mono text-[9.5px] leading-relaxed transition-colors duration-300', isDarkMode ? 'bg-neutral-800 text-neutral-200' : 'bg-neutral-200/90 text-neutral-800')">
               {{ task.info }}
@@ -355,9 +403,9 @@ onBeforeUnmount(() => {
         <div :class="cn('h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent', isDarkMode ? 'text-neutral-300' : 'text-neutral-700')" />
         <span>正在部署...</span>
       </Motion>
-      <Motion v-else-if="pipelineStatus === 'success'" as="div" :class="cn('flex w-full items-center justify-center gap-1.5 rounded-2xl py-2.5 font-sans text-xs font-bold transition-colors', isDarkMode ? 'bg-emerald-950/60 text-emerald-300' : 'bg-emerald-100 text-emerald-900')">
+      <Motion v-else-if="pipelineStatus === 'success'" as="button" type="button" @click="connectNow" :while-tap="{ scale: 0.98 }" :class="cn('flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-2xl border-none py-2.5 font-sans text-xs font-bold transition-colors', isDarkMode ? 'bg-emerald-950/60 text-emerald-300 hover:bg-emerald-950/80' : 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200')">
         <svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5L6.5 12L13 4.5" /></svg>
-        部署完成
+        部署完成，立即连接
       </Motion>
       <Motion v-else as="button" @click="runPipeline" :while-tap="{ scale: 0.98 }" :class="cn('flex w-full items-center justify-center gap-1.5 rounded-2xl py-2.5 font-sans text-xs font-bold transition-colors border-none cursor-pointer', isDarkMode ? 'bg-neutral-800 text-neutral-200 hover:bg-neutral-700' : 'bg-neutral-200 text-neutral-800 hover:bg-neutral-300')">
         <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

@@ -519,7 +519,11 @@ export interface ElectronAPI {
       message?: string
     }>
     /** 执行完整的本地部署流水线 */
-    deploy: () => Promise<{ success: boolean; message?: string }>
+    deploy: () => Promise<{
+      success: boolean
+      data?: { defaultLibraryId: string }
+      message?: string
+    }>
     /** 监听更新进度（安装过程的 stdout/stderr 输出） */
     onUpdateProgress: (callback: (progress: {
       type: 'data' | 'done' | 'error'
