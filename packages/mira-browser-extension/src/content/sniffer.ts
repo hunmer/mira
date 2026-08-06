@@ -166,8 +166,10 @@ export function createSniffer(onUpdate: (resources: SniffedResource[]) => void):
       try {
         perfObs = new PerformanceObserver(list => {
           for (const e of list.getEntries()) {
-            if (!isMediaInitiator(e.initiatorType)) continue;
-            const kind = e.initiatorType === 'img' ? 'image' : (e.initiatorType as ResourceKind);
+            // initiatorType 仅存在于 PerformanceResourceTiming
+            const initiatorType = (e as PerformanceResourceTiming).initiatorType;
+            if (!isMediaInitiator(initiatorType)) continue;
+            const kind = initiatorType === 'img' ? 'image' : (initiatorType as ResourceKind);
             if (!kinds.includes(kind)) continue;
             if (DATA_URL_RE.test(e.name)) continue;
             const r: SniffedResource = {
