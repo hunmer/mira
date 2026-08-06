@@ -135,6 +135,67 @@ export const initializeGlobalPluginSystem = () => {
             }
           }
         }
+      },
+
+      // 插件贡献（UI 入口）注册中心
+      // 插件通过 register 向宿主 HomeView 右侧栏注册自定义 UI 入口，
+      // 宿主 PluginContributionBar 订阅变化并以 popover 渲染 render() 返回的内容。
+      contributions: {
+        list: [] as any[],
+        listeners: [] as ((contributions: any[]) => void)[],
+
+        register: (contribution: any) => {
+          const list = (window as any).pluginSystem.contributions.list
+          const idx = list.findIndex((c: any) => c.id === contribution.id)
+          if (idx >= 0) {
+            list[idx] = contribution
+          } else {
+            list.push(contribution)
+          }
+          console.log(`🧩 Contribution registered: ${contribution.id} (${contribution.title})`)
+          ;(window as any).pluginSystem.contributions.emit()
+        },
+
+        unregister: (id: string) => {
+          const list = (window as any).pluginSystem.contributions.list
+          const idx = list.findIndex((c: any) => c.id === id)
+          if (idx >= 0) {
+            list.splice(idx, 1)
+            console.log(`🧩 Contribution unregistered: ${id}`)
+            ;(window as any).pluginSystem.contributions.emit()
+          }
+        },
+
+        getContributions: () => {
+          return (window as any).pluginSystem.contributions.list
+        },
+
+        subscribe: (fn: (contributions: any[]) => void) => {
+          ;(window as any).pluginSystem.contributions.listeners.push(fn)
+          // 立即推送一次当前状态
+          try {
+            fn((window as any).pluginSystem.contributions.list)
+          } catch (err) {
+            console.error('contribution subscribe initial push failed:', err)
+          }
+          return () => {
+          const arr = (window as any).pluginSystem.contributions.listeners
+            const i = arr.indexOf(fn)
+            if (i > -1) arr.splice(i, 1)
+          }
+        },
+
+        // 内部：通知所有订阅者
+        emit: () => {
+          const snapshot = (window as any).pluginSystem.contributions.list.slice()
+          ;(window as any).pluginSystem.contributions.listeners.forEach((fn: (c: any[]) => void) => {
+            try {
+              fn(snapshot)
+            } catch (err) {
+              console.error('contribution listener error:', err)
+            }
+          })
+        }
       }
     } as PluginSystemAPI
 

@@ -17,6 +17,7 @@ import HomeHeader from './HomeHeader.vue'
 import HomeSidebar from './HomeSidebar.vue'
 import HomeTabsBar from './HomeTabsBar.vue'
 import HomeDialogs from './HomeDialogs.vue'
+import PluginContributionBar from './PluginContributionBar.vue'
 
 // Store imports
 import { useTagStore } from '@renderer/stores/tag'
@@ -427,6 +428,9 @@ onUnmounted(() => {
           ? 'absolute top-3 right-3 z-20'
           : 'shrink-0 min-w-0'"
       >
+        <!-- 插件贡献栏：横向展示所有已注册 contribution 的插件图标，点击弹出插件自定义内容 -->
+        <PluginContributionBar />
+
         <HomeHeader
           :is-desktop="isDesktop"
           @upload="showFileUploadDialog = true"

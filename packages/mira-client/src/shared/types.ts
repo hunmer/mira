@@ -192,6 +192,27 @@ export interface PluginAPI {
     setLocalFile: (libraryId: string, fileId: string, localPath: string) => void
     setLocalFiles: (libraryId: string, filePathMap: Record<string, string>) => void
   }
+
+  // 插件窗口管理（打开插件 dist 的独立 BrowserWindow）
+  window: {
+    openPluginWindow: (opts: PluginWindowOpenOptions) => Promise<{ success: boolean; windowId?: string; message?: string }>
+  }
+}
+
+// 打开插件窗口的参数
+export interface PluginWindowOpenOptions {
+  /** 插件 id（用于在 pluginsDirectory/<pluginId>/ 下定位） */
+  pluginId: string
+  /** 入口文件相对插件目录的路径，默认 'dist/index.html' */
+  entry?: string
+  /** 窗口标题，默认取插件名 */
+  title?: string
+  /** 窗口宽度，默认 1200 */
+  width?: number
+  /** 窗口高度，默认 800 */
+  height?: number
+  /** 传递给窗口页面的查询参数（拼到 URL query 上） */
+  query?: Record<string, string>
 }
 
 // 插件管理器配置
@@ -417,6 +438,12 @@ export interface ElectronAPI {
     getConfig: () => Promise<BaseResponse>
     clearCache: () => Promise<BaseResponse>
     installFromMarketplace: (marketUrl: string, entry: MarketplacePluginEntry) => Promise<BaseResponse>
+  }
+
+  // 插件窗口管理 API（打开插件 dist 的独立 BrowserWindow）
+  pluginWindow: {
+    open: (opts: PluginWindowOpenOptions) => Promise<{ success: boolean; windowId?: string; message?: string }>
+    close: (windowId: string) => Promise<{ success: boolean; message?: string }>
   }
 
   // 拖拽功能 API

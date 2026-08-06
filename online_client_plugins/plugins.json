@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-05T03:52:11.692Z",
+  "generatedAt": "2026-08-06T07:57:34.792Z",
   "plugins": [
     {
       "pluginId": "b1c2d3e4-5f60-4a7b-8c9d-0a1b2c3d4e5f",
@@ -41,6 +41,84 @@
           "path": "index.js",
           "size": 1732,
           "checksum": "sha256:429e8f5f747564fc25aee2c8a5ea98e595d8d1b0426f1678c2eeede30015aa54"
+        }
+      ]
+    },
+    {
+      "pluginId": "c3f4a5b6-7d8e-4f90-8a1b-2c3d4e5f6a7b",
+      "pluginName": "自由白板",
+      "version": "1.0.0",
+      "description": "基于 @woven-canvas/vue 的自由无限画板插件。在右侧栏提供画布工程管理入口（新建/编辑/删除/打开），每个工程在独立窗口中加载，支持本地优先持久化。",
+      "author": "Mira Team",
+      "homepage": "https://github.com/mira-team/mira-whiteboard",
+      "category": "productivity",
+      "tags": [
+        "白板",
+        "画布",
+        "协作",
+        "效率"
+      ],
+      "minAppVersion": "1.0.0",
+      "platform": [
+        "win32",
+        "darwin",
+        "linux"
+      ],
+      "directory": "plugins/mira-whiteboard",
+      "icon": null,
+      "readme": "README.md",
+      "size": 24395,
+      "checksum": "sha256:492754719a0cea36b461705b2466813f064dd340cfc9d34f1ddd01de634b321d",
+      "files": [
+        {
+          "path": "vite.config.ts",
+          "size": 632,
+          "checksum": "sha256:3f8be4f5cda2705f8bfb171abc7e908898207b94c61bbb0ec9b124ab7be2ce97"
+        },
+        {
+          "path": "tsconfig.json",
+          "size": 520,
+          "checksum": "sha256:f72fcda7d5b56390df6ef215c24b6a34db9d4d4005b87545b333c58edd866b0e"
+        },
+        {
+          "path": "src/shims-vue.d.ts",
+          "size": 326,
+          "checksum": "sha256:567b21ea3c09f827e8e35747d246d10914ad530b4b1c667b58507a7b3737fe9f"
+        },
+        {
+          "path": "src/main.ts",
+          "size": 320,
+          "checksum": "sha256:a4798e1f4cb95bdfd0369e1182d7db00a77d89eb5b2746fa8487c856d1767003"
+        },
+        {
+          "path": "src/App.vue",
+          "size": 3959,
+          "checksum": "sha256:9ac4580aa00be4b62ed9dffcea97d9beeb62d5e74d355d852d9965b7e2902df6"
+        },
+        {
+          "path": "README.md",
+          "size": 4520,
+          "checksum": "sha256:823f21e631e09e0f303702f02cd833e5523ff56271ab173e15bf02fc6dfc474b"
+        },
+        {
+          "path": "plugin.json",
+          "size": 760,
+          "checksum": "sha256:11a49b8cb54ef3966c7344911740253886e5a821c0035cab4d9ce914c7aa829c"
+        },
+        {
+          "path": "package.json",
+          "size": 440,
+          "checksum": "sha256:275ecde6c942c5035d19f9d128a2ce001bc160c63a96b393d7f0e834dd6bfe3c"
+        },
+        {
+          "path": "index.js",
+          "size": 12618,
+          "checksum": "sha256:f4dc7061342fed9d7556736a5c84ebe0dee6c91494caf5f5b49d3c091a0f2357"
+        },
+        {
+          "path": "index.html",
+          "size": 300,
+          "checksum": "sha256:6b48b5f5a9c3e40bf2c4612daa31b8ae685f97dccf9d2af79a10bcd8567910fd"
         }
       ]
     }

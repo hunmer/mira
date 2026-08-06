@@ -14,6 +14,7 @@ import { ShortcutHandlers } from './ShortcutHandlers'
 import { AutoUpdateHandlers } from './AutoUpdateHandlers'
 import { NotificationHandlers } from './NotificationHandlers'
 import { ServerDeployHandlers } from './ServerDeployHandlers'
+import { PluginWindowHandlers } from './PluginWindowHandlers'
 import { getAutoUpdater } from '../services/useAutoUpdater'
 
 /**
@@ -36,6 +37,7 @@ export class IPCHandlers {
   private autoUpdateHandlers: AutoUpdateHandlers
   private notificationHandlers: NotificationHandlers
   private serverDeployHandlers: ServerDeployHandlers
+  private pluginWindowHandlers: PluginWindowHandlers
 
   constructor() {
     this.pluginHandler = new PluginHandler()
@@ -53,9 +55,14 @@ export class IPCHandlers {
     this.autoUpdateHandlers = new AutoUpdateHandlers()
     this.notificationHandlers = new NotificationHandlers()
     this.serverDeployHandlers = new ServerDeployHandlers()
+    // 插件窗口处理器依赖 pluginHandler 解析插件目录
+    this.pluginWindowHandlers = new PluginWindowHandlers(this.pluginHandler)
 
     // 注册本地插件管理
     this.pluginHandler.registerHandlers()
+
+    // 注册插件窗口管理（打开插件 dist 的独立 BrowserWindow）
+    this.pluginWindowHandlers.registerHandlers()
 
     // 注册自动更新
     this.autoUpdateHandlers.registerHandlers()
@@ -226,5 +233,8 @@ export class IPCHandlers {
 
     // 清理后端部署处理器
     this.serverDeployHandlers.cleanup()
+
+    // 清理插件窗口处理器
+    this.pluginWindowHandlers.cleanup()
   }
 }

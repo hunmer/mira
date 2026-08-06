@@ -545,6 +545,36 @@ export class PluginService {
         }
       },
 
+      // 插件窗口管理API：打开插件 dist 的独立 BrowserWindow
+      // 默认 pluginId 为当前插件，避免插件误开他人窗口。
+      window: {
+        openPluginWindow: async (opts: {
+          pluginId?: string
+          entry?: string
+          title?: string
+          width?: number
+          height?: number
+          query?: Record<string, string>
+        }) => {
+          const finalOpts = {
+            pluginId: config.pluginId,
+            entry: 'dist/index.html',
+            ...opts,
+          }
+          const w: any = typeof window !== 'undefined' ? (window as any).electronAPI : undefined
+          if (!w?.pluginWindow?.open) {
+            return { success: false, message: '插件窗口 API 在当前环境不可用（仅 Electron）' }
+          }
+          try {
+            return await w.pluginWindow.open(finalOpts)
+          } catch (error) {
+            const msg = error instanceof Error ? error.message : String(error)
+            console.error(`[${config.pluginName}] openPluginWindow failed:`, error)
+            return { success: false, message: msg }
+          }
+        }
+      },
+
       // 插件系统核心API
       pluginSystem
     }

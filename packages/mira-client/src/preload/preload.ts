@@ -111,6 +111,14 @@ const electronAPI: ElectronAPI = {
       ipcRenderer.invoke('plugin:install-from-marketplace', marketUrl, entry)
   },
 
+  // 插件窗口管理 API（打开插件 dist 的独立 BrowserWindow）
+  pluginWindow: {
+    open: (opts: any) =>
+      ipcRenderer.invoke('plugin-window:open', opts),
+    close: (windowId: string) =>
+      ipcRenderer.invoke('plugin-window:close', windowId)
+  },
+
   // 拖拽功能 API
   dragDrop: {
     startDrag: (filePath: string, iconInfo?: { iconPath?: string; iconType?: string }) =>
