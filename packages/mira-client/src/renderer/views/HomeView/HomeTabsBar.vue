@@ -79,8 +79,8 @@ function handleTabContextMenu(tab: TabItem, event: MouseEvent) {
 
     <ContextMenu>
       <ContextMenuTrigger as-child>
-        <LayoutGroup id="home-tabs">
-          <div ref="tabScrollContainer" class="flex items-end gap-1 h-full">
+        <div ref="tabScrollContainer" class="flex items-end gap-1 h-full">
+          <LayoutGroup id="home-tabs">
             <button v-for="tab in props.activeTabs" :key="tab.id" :data-active-tab="tab.active" :class="[
               'group relative flex items-center space-x-1 shrink-0 text-xs font-medium transition-colors duration-150',
               // 激活/非激活统一基础高度，差异化的背景交给下方共享 layoutId 指示器滑动
@@ -107,8 +107,8 @@ function handleTabContextMenu(tab: TabItem, event: MouseEvent) {
                 <span class="material-icons text-xs">close</span>
               </button>
             </button>
-          </div>
-        </LayoutGroup>
+          </LayoutGroup>
+        </div>
       </ContextMenuTrigger>
       <ContextMenuContent>
         <ContextMenuItem v-for="item in props.tabContextMenuItems" :key="item.label" @click="item.command?.()">

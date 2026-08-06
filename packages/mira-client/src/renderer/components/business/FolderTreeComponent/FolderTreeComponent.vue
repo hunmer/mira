@@ -158,7 +158,7 @@
                   v-if="stat.children.length"
                   class="folder-chevron material-icons text-base mr-1 text-muted-foreground hover:text-muted-foreground select-none"
                   :class="{ 'folder-chevron--open': stat.open }"
-                  @click.stop="stat.open = !stat.open"
+                  @click.stop="toggleNode(stat, $event)"
                 >
                   chevron_right
                 </span>
@@ -200,7 +200,7 @@
                   v-if="stat.children.length"
                   class="folder-chevron material-icons text-base mr-1 text-muted-foreground hover:text-muted-foreground select-none"
                   :class="{ 'folder-chevron--open': stat.open }"
-                  @click.stop="stat.open = !stat.open"
+                  @click.stop="toggleNode(stat, $event)"
                 >
                   chevron_right
                 </span>
@@ -929,6 +929,65 @@ function handleBaseCategoryClick(category: any) {
   })
 }
 
+// 折叠/展开切换：展开交给库（子节点重新挂载，由 CSS 滑入动画处理）；
+// 折叠先拦截——把后代节点从右滑出，等动画结束再真正 stat.open=false（库随即移除 DOM）。
+// 解决 he-tree 折叠即移除 DOM、无法做退出动画的硬限制。
+const COLLAPSE_EXIT_MS = 160
+
+function getDescendantRows(targetRow: HTMLElement): HTMLElement[] {
+  const targetLevel = Number(targetRow.getAttribute('aria-level') || 0)
+  if (!targetLevel) return []
+  const out: HTMLElement[] = []
+  let el = targetRow.nextElementSibling as HTMLElement | null
+  while (el) {
+    const lvl = Number(el.getAttribute('aria-level') || 0)
+    // 遇到同级或更高级的节点，说明后代序列结束
+    if (lvl > 0 && lvl <= targetLevel) break
+    out.push(el)
+    el = el.nextElementSibling as HTMLElement | null
+  }
+  return out
+}
+
+function toggleNode(stat: any, evt: MouseEvent) {
+  // 展开：直接交给库
+  if (!stat.open) {
+    stat.open = true
+    return
+  }
+  // 折叠：拦截，先播退出动画
+  const trigger = evt.currentTarget as HTMLElement
+  const targetRow = trigger.closest<HTMLElement>('.tree-node')
+  if (!targetRow) {
+    stat.open = false
+    return
+  }
+  const descendants = getDescendantRows(targetRow)
+  if (descendants.length === 0) {
+    stat.open = false
+    return
+  }
+  // 先测量每行真实高度（含 padding/margin），写进内联 style 作为 transition 起点，
+  // 避免用固定 max-height 截断超长/多行节点。
+  descendants.forEach(row => {
+    row.style.maxHeight = `${row.offsetHeight}px`
+  })
+  // 强制 reflow，让起始高度先生效，再挂 leaving 类（带上 transition 声明）
+  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+  descendants[0]?.offsetHeight
+  descendants.forEach(row => row.classList.add('tree-node-leaving'))
+  requestAnimationFrame(() => {
+    descendants.forEach(row => row.classList.add('tree-node-leaving-to'))
+  })
+  window.setTimeout(() => {
+    stat.open = false
+    descendants.forEach(row => {
+      row.classList.remove('tree-node-leaving', 'tree-node-leaving-to')
+      row.style.maxHeight = ''
+    })
+  }, COLLAPSE_EXIT_MS)
+}
+
 function handleNodeClick(node: HeTreeNode) {
   // 选择模式激活：点击节点执行选中/取消选中，不触发常规 select
   if (selectionActive.value) {
@@ -1219,15 +1278,16 @@ onUnmounted(() => {
 }
 
 /*
-  展开时子节点「从左滑入」。
-  为什么用纯 CSS @keyframes 而非 motion-v：
-  - he-tree 折叠时把子节点从 visibleStats 过滤掉，子 DOM 立即卸载；
-    motion-v 的 <AnimatePresence> 拿不到退出时机，做不出退出动画，
-    且它需直接持有带 key 的子节点列表，而节点列表是 he-tree 内部 v-for 渲染的，
-    无法在它和内容间插一层而不破坏拖拽/虚拟列表。
-  - 纯 CSS：展开时子节点重新挂载 → @keyframes 自然触发一次，零 JS、GPU 加速。
-  - 仅做「进入」位移（左→右）；折叠沿用库原生行为（DOM 即时移除），避免与拖拽/虚拟列表冲突。
-  - 只在 .tree-mounted 容器内启用：跳过组件首次渲染批次，避免侧栏/对话框打开时整列滑动。
+  子节点「滑入 / 滑出」。
+  - 展开（进入）：he-tree 把子节点重新挂载 → @keyframes 自然触发一次，从左滑入。
+  - 折叠（退出）：在 toggleNode 里拦截，先给后代行加 .tree-node-leaving/-to 类播放
+    从右滑出，160ms 后再 stat.open=false 让库移除 DOM。
+    这样绕开了「he-tree 折叠即移除 DOM、做不了退出动画」的硬限制。
+  - 为什么不用 motion-v：它需要 <AnimatePresence> 直接持有带 key 的子节点列表，
+    而列表是 he-tree 内部 v-for 渲染的，无法在它和内容间插层而不破坏拖拽/虚拟列表。
+  - 只在 .tree-mounted 内启用进入动画，跳过组件首次渲染批次。
+  - 方向相反（进：左→右；出：右→左）；退出更快利索（220ms → 160ms），符合
+    「release 永远快」原则。
 */
 .tree-mounted .tree-node {
   animation: tree-node-slide-in 220ms cubic-bezier(0.23, 1, 0.32, 1) both;
@@ -1242,6 +1302,37 @@ onUnmounted(() => {
     opacity: 1;
     transform: translateX(0);
   }
+}
+
+/*
+  折叠退出：用 transition 而非 keyframes——可被中断/重定向（连续点 chevron 时不会跳变）。
+  .tree-node-leaving 锁定起始态，.tree-node-leaving-to 切到终点态触发过渡。
+  同时清掉进入动画（animation: ... both 会锁定 transform 终态，覆盖 transition 目标）。
+  叠加 max-height 收缩：后代滑出的同时收起自身高度，让下方行平滑上移，
+  避免库移除 DOM 那一刻发生「跳一下」。
+*/
+.tree-node.tree-node-leaving {
+  animation: none;
+  opacity: 1;
+  transform: translateX(0);
+  /* 起始 max-height 由 JS 内联写入（真实行高），这里只声明可过渡 */
+  overflow: hidden;
+  transition:
+    opacity 160ms cubic-bezier(0.4, 0, 1, 1),
+    transform 160ms cubic-bezier(0.4, 0, 1, 1),
+    max-height 160ms cubic-bezier(0.4, 0, 1, 1),
+    margin 160ms cubic-bezier(0.4, 0, 1, 1),
+    padding 160ms cubic-bezier(0.4, 0, 1, 1);
+}
+
+.tree-node.tree-node-leaving.tree-node-leaving-to {
+  opacity: 0;
+  transform: translateX(8px);
+  max-height: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 /* reduced-motion：保留 opacity（辅助理解），去掉位移/高度形变 */
@@ -1265,6 +1356,11 @@ onUnmounted(() => {
 
   .tree-mounted .tree-node {
     animation: none;
+  }
+
+  .tree-node.tree-node-leaving {
+    transition: opacity 150ms ease;
+    transform: none;
   }
 }
 </style>
