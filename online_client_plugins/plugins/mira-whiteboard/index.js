@@ -1,15 +1,15 @@
 /**
  * 自由白板插件（mira-whiteboard）
  *
- * 架构（双进程侧 + 窗口行为）：
+ * 架构（单组合窗口）：
  *   1. 本文件 index.js —— 宿主侧脚本，被注入到 Mira 主窗口 document。
  *      职责：仅注册插件实例工厂 + 一个「window 行为」UI 贡献（右侧栏入口）。
- *      点击图标 → 调 ctx.openPluginWindow 打开插件主界面（工程管理）窗口。
- *   2. dist/index.html —— 工程管理 SPA（Vue），由插件主界面窗口加载。
- *      职责：展示画布工程列表（新建/重命名/删除），点击工程 → 打开画布窗口。
- *      数据存 localStorage（窗口内只有 electronAPI.pluginWindow，无宿主 api.storage）。
- *   3. dist/canvas.html —— 画布 SPA（@woven-canvas/vue），由工程管理窗口再开的子窗口加载。
- *      职责：渲染无限画布，按 projectId（location.search）持久化到 IndexedDB。
+ *      点击图标 → 调 ctx.openPluginWindow 打开「自由画板」组合窗口。
+ *   2. dist/index.html —— 自由画板组合窗口（Vue SPA），由插件窗口加载。
+ *      一个窗口同时承载：左侧工程列表（新建/重命名/删除）+ 右侧画布。
+ *      画布按 projectId（localStorage 维护）持久化到 IndexedDB（@woven-canvas/vue）。
+ *      窗口自定义 Electron 菜单栏：【项目】子菜单列出工程，点击切换画布；
+ *      不再继承 Mira 主窗口的全局菜单。
  *
  * 契约：window 行为贡献（behavior:'window' + onActivate）见宿主 renderer/plugins/types.ts。
  */
@@ -30,7 +30,7 @@
     }
 
     /**
-     * 注册右侧栏 UI 贡献（window 行为：点击直接打开插件主界面窗口）
+     * 注册右侧栏 UI 贡献（window 行为：点击直接打开自由画板组合窗口）
      */
     registerContribution() {
       const ps = typeof window !== 'undefined' ? window.pluginSystem : null
@@ -44,23 +44,57 @@
         id: CONTRIBUTION_ID,
         pluginId: PLUGIN_ID,
         title: '自由画板',
-        description: '打开自由画板，管理并打开画布工程',
+        description: '打开自由画板，管理画布工程并直接绘画',
         icon: { type: 'material', value: 'dashboard_customize' },
-        // 默认行为：点击图标直接打开插件主界面窗口
+        // 默认行为：点击图标直接打开自由画板组合窗口
         behavior: 'window',
         // ctx 由宿主提供：{ api, openPluginWindow }
         onActivate: (ctx) => {
           return ctx.openPluginWindow({
             pluginId: PLUGIN_ID,
             entry: 'dist/index.html',
-            title: '自由画板 - 工程管理',
-            width: 720,
-            height: 640,
+            title: '自由画板',
+            width: 1280,
+            height: 800,
           })
         },
       })
+      this.unregisterMediaMenu = this.api.media?.registerContextMenu?.({
+        id: 'mira-whiteboard:add-to-canvas',
+        label: '添加到画布',
+        icon: 'add_to_photos',
+        onSelect: (files) => this.openWithMedia(files),
+      })
       this.contributionRegistered = true
       this.api.log.info('自由白板贡献已注册（window 行为）')
+    }
+
+    /**
+     * 「添加到画布」右键菜单回调：把媒体投递到已打开的画板窗口。
+     * 已打开则通过 pluginWindow.send('media:add') 投递（窗口会插入到当前工程，
+     * 无当前工程时自动新建一个）；否则开窗并在 URL 上带 ?media=。
+     */
+    async openWithMedia(files) {
+      const w = typeof window !== 'undefined' ? window.electronAPI : null
+      if (!w?.pluginWindow?.open) return { success: false, message: '插件窗口 API 不可用' }
+      // IPC 只接受可结构化克隆的数据，插件回调可能收到宿主的响应式对象。
+      const serializableFiles = JSON.parse(JSON.stringify(files || []))
+      const delivered = await w.pluginWindow.send?.(
+        PLUGIN_ID,
+        'dist/index.html',
+        'media:add',
+        serializableFiles,
+      )
+      if (delivered?.delivered) return delivered
+      const media = encodeURIComponent(JSON.stringify(serializableFiles))
+      return w.pluginWindow.open({
+        pluginId: PLUGIN_ID,
+        entry: 'dist/index.html',
+        title: '自由画板',
+        width: 1280,
+        height: 800,
+        query: { media },
+      })
     }
 
     async cleanup() {
@@ -69,6 +103,7 @@
         ps.contributions.unregister(CONTRIBUTION_ID)
         this.contributionRegistered = false
       }
+      if (this.unregisterMediaMenu) this.unregisterMediaMenu()
       this.api.log.info('自由白板插件已清理')
     }
   }

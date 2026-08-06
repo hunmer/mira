@@ -1,4 +1,4 @@
-import { ref, computed, watch, toRef } from 'vue'
+import { ref, computed, watch, toRef, onBeforeUnmount } from 'vue'
 import type { FileInfo } from '../../../../../shared/types'
 import type { MenuItem } from '@/renderer/types/menu'
 import { appService } from '@renderer/services'
@@ -36,6 +36,9 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
   const mediaStore = useMediaStore()
   const showDetailSidebar = toRef(mediaStore, 'showDetailSidebar')
   const toggleDetailSidebar = () => mediaStore.toggleDetailSidebar()
+  const menuVersion = ref(0)
+  const menuTimer = setInterval(() => { menuVersion.value++ }, 500)
+  onBeforeUnmount(() => clearInterval(menuTimer))
 
   watch([folderPopoverOpen, tagPopoverOpen], ([folderOpen, tagOpen]) => {
     const libId = libraryStore.currentLibrary?.id || 'default'
@@ -116,6 +119,48 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
     })
   }
 
+  // 插件回调跨 IPC 传递时必须是普通可克隆对象，不能把 Vue reactive Proxy 传出去。
+  const getSerializableTargetFiles = (): FileInfo[] => {
+    const files = getTargetFiles()
+    try {
+      return JSON.parse(JSON.stringify(files))
+    } catch (error) {
+      console.warn('[plugin-context-menu] failed to serialize selected files', error)
+      return files.map(file => ({ ...file }))
+    }
+  }
+
+  const pluginContextMenus = computed((): MenuItem[] => {
+    void menuVersion.value
+    const ps: any = (window as any).pluginSystem
+    const menus = ps?.mediaContextMenus?.getAll?.() || []
+    const contributions = ps?.contributions?.getContributions?.() || []
+    const groups = new Map<string, any>()
+    for (const menu of menus) {
+      if (!menu?.id || !menu?.label || typeof menu.onSelect !== 'function') continue
+      let group = groups.get(menu.pluginId)
+      if (!group) {
+        const contribution = contributions.find((c: any) => c.pluginId === menu.pluginId)
+        group = {
+          label: contribution?.title || ps?.getPlugin?.(menu.pluginId)?.pluginName || menu.pluginId,
+          icon: contribution?.icon?.type === 'material' ? contribution.icon.value : undefined,
+          items: [],
+        }
+        groups.set(menu.pluginId, group)
+      }
+      group.items.push({
+        label: menu.label,
+        icon: menu.icon,
+        command: async () => {
+          const files = getSerializableTargetFiles()
+          if (files.length === 0) return
+          await menu.onSelect(files)
+        },
+      })
+    }
+    return Array.from(groups.values()).map((group: any) => ({ ...group, items: group.items }))
+  })
+
   const contextMenuItems = computed((): MenuItem[] => {
     // 回收站视图：只提供恢复（+ 查看 / 定位）
     if (props.isTrash) {
@@ -180,6 +225,11 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
       {
         separator: true
       },
+      ...(
+        pluginContextMenus.value.length
+          ? [{ label: '调用插件', icon: 'extension', items: pluginContextMenus.value }, { separator: true }]
+          : []
+      ),
       {
         label: props.selectedItems.length > 1 ? `设置文件夹 (${props.selectedItems.length})` : '设置文件夹',
         shortcut: 'Ctrl+M',

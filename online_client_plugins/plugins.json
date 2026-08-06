@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-06T10:33:46.381Z",
+  "generatedAt": "2026-08-06T11:23:34.373Z",
   "plugins": [
     {
       "pluginId": "b1c2d3e4-5f60-4a7b-8c9d-0a1b2c3d4e5f",
@@ -67,13 +67,13 @@
       "directory": "plugins/mira-whiteboard",
       "icon": null,
       "readme": "README.md",
-      "size": 1219781,
-      "checksum": "sha256:908f89fe30be73df90488c3594b5feeda523d15b35ea9061eb6649b3c3e55ee4",
+      "size": 1223867,
+      "checksum": "sha256:5df3bccf61f759ab133dfb2b995fd2a4cfc1cdf17765afd4b7d8afef2497d195",
       "files": [
         {
           "path": "README.md",
-          "size": 5972,
-          "checksum": "sha256:670f5bb952c7f64cdd97d6fe8e23a41f7aa47c15380b4f3d27c3889239412a8f"
+          "size": 6781,
+          "checksum": "sha256:cdd0f6de451c246fc75ab26ef39a5646a242a5dd9fd84501b9f993857f01e8db"
         },
         {
           "path": "plugin.json",
@@ -87,23 +87,18 @@
         },
         {
           "path": "index.js",
-          "size": 3585,
-          "checksum": "sha256:8d7a0f9225943e4db045e4803e477eb8358f5bf596acebfa46800c962d96a8ca"
+          "size": 4977,
+          "checksum": "sha256:a01c8135a315015fa43fe55de66a4e5643df7736b43557b47fd6f09cd462da75"
         },
         {
           "path": "HANDOFF.md",
-          "size": 10912,
-          "checksum": "sha256:3f9427385f0a26e8ce0f1206a50face942c877749bfe79a2510b5751420b5da1"
+          "size": 11793,
+          "checksum": "sha256:a6cb77f8fd97a1e0c243206511d0c2295a4c98f8bcc37fd59f0ffd2f461d82d3"
         },
         {
           "path": "dist/index.html",
-          "size": 503,
-          "checksum": "sha256:54476af6bd9f25bea036f43abdbcbc8e2253ac04881ce25f48b6412ff762e8e5"
-        },
-        {
-          "path": "dist/canvas.html",
-          "size": 486,
-          "checksum": "sha256:8d8e629aa6646fd0eb7d9a138a62d6a5dc40ba276fa863e6b896e10f3b284efa"
+          "size": 401,
+          "checksum": "sha256:54806c9e78f3c606d5d02b9dafc6d7696f913925c92509c30f1fd0296233dd50"
         },
         {
           "path": "dist/assets/material-icons-kAwBdRge.woff2",
@@ -111,29 +106,14 @@
           "checksum": "sha256:8265f64786397d6b832d1ca0aafdf149ad84e72759fffa9f7272e91a0fb015d1"
         },
         {
-          "path": "dist/assets/main-DKzp_LuI.js",
-          "size": 4172,
-          "checksum": "sha256:bad538fb87323eae514c25bc50ed2a3d043a9ccb7a44f04d000b545646f62039"
+          "path": "dist/assets/index-CoyPhgGD.js",
+          "size": 1032196,
+          "checksum": "sha256:364f4f518737278729d488d080e4d9f3c395f4ce19deb40c5ed47d8a1daa91dc"
         },
         {
-          "path": "dist/assets/main-CVGuFSd0.css",
-          "size": 2762,
-          "checksum": "sha256:4166ac79499bd012fec59dd9cb9feed6beed99793ed07fa5ec36f777089f6538"
-        },
-        {
-          "path": "dist/assets/loadMaterialIcons-BEB088MU.js",
-          "size": 83238,
-          "checksum": "sha256:b3dbed535fd2ed1436b185f2321afd8d14a6c6efc90a25520ccca425c2a4c9c2"
-        },
-        {
-          "path": "dist/assets/canvas-WeOctIt_.js",
-          "size": 942918,
-          "checksum": "sha256:b1f41efea7940b350c2598cc2335a1b0f09997a47cce2d65c62ede696018f9de"
-        },
-        {
-          "path": "dist/assets/canvas-BmCmdlgk.css",
-          "size": 35681,
-          "checksum": "sha256:2fa04c6b524ad33a7572e4eac88eb11e0190d9ab1f569a623403e0ed3c97cd95"
+          "path": "dist/assets/index-BBmauUCG.css",
+          "size": 38167,
+          "checksum": "sha256:6c69fdd4f68e39b2c4420b152ff0fa7f5d241b7ba097692906d71d392aefd1ea"
         }
       ]
     }

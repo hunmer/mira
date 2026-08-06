@@ -18,6 +18,10 @@ import HomeSidebar from './HomeSidebar.vue'
 import HomeTabsBar from './HomeTabsBar.vue'
 import HomeDialogs from './HomeDialogs.vue'
 import PluginContributionBar from './PluginContributionBar.vue'
+import HistoryPanel from './HistoryPanel.vue'
+
+// shadcn Tabs（底部双 tab：详情 / 历史）
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 
 // Store imports
 import { useTagStore } from '@renderer/stores/tag'
@@ -25,6 +29,7 @@ import { useAuthStore } from '@renderer/stores/auth'
 import { useMediaStore } from '@renderer/stores/media'
 import { useLibraryStore } from '@renderer/stores/library'
 import { useSettingsStore } from '@renderer/stores/settings'
+import { useViewHistoryStore } from '@renderer/stores/viewHistory'
 
 // Controller import
 import { useHomeController } from '@renderer/controllers/HomeController'
@@ -48,6 +53,7 @@ const authStore = useAuthStore()
 const mediaStore = useMediaStore()
 const libraryStore = useLibraryStore()
 const settingsStore = useSettingsStore()
+const viewHistoryStore = useViewHistoryStore()
 const router = useRouter()
 
 // ============================================
@@ -62,6 +68,24 @@ const detailLibraryId = computed(() => libraryStore.currentLibrary?.id || 'defau
 const handleDetailTagAdd = (tagName: string) => homeController.handleTagAdd(tagName)
 const handleDetailTagRemove = (tagName: string) => homeController.handleTagRemove(tagName)
 const handleDetailFolderChange = (folderId: string) => homeController.handleFolderChange(folderId)
+
+// 右侧详情面板的底部双 tab（详情 / 历史）激活态；侧栏折叠重开时保持上次选择
+const detailPanelTab = ref<'detail' | 'history'>('detail')
+
+// 历史列表项点击 → 进入预览路由（与 SearchHandlers.openFile 跳转方式一致）
+const openFilePreview = (file: any) => {
+  if (!file) return
+  router.push({
+    path: '/file-preview',
+    query: {
+      id: file.id,
+      libraryId: file.libraryId || detailLibraryId.value,
+      title: file.title || file.name,
+      path: file.path || file.url || '',
+      mimeType: file.mimeType || 'application/octet-stream',
+    },
+  })
+}
 
 // 侧边栏定位（供 Tab 管理的右键菜单使用）
 const sidebarRef = ref<{ locateItem: (type: 'folder' | 'tag', id: string) => void | Promise<void> }>()
@@ -261,6 +285,9 @@ onMounted(async () => {
     console.error('[HomeView] performInitialization failed:', e)
   }
 
+  // 浏览历史：恢复当前激活素材库的最近查看记录（异常静默）
+  viewHistoryStore.restoreFromStorage().catch((e) => console.warn('[HomeView] 恢复浏览历史失败:', e))
+
   registerGlobalEvents(
     handleActivateLastTab,
     handleReopenClosedTab,
@@ -444,16 +471,41 @@ onUnmounted(() => {
             v-if="showDetailSidebar"
             class="w-72 flex-1 min-w-0 rounded-2xl border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur-xl shadow-[0_12px_40px_var(--shadow-primary-md)] overflow-hidden flex flex-col"
           >
-            <div class="p-4 flex-1 overflow-y-auto">
-              <MediaDetailComponent
-                :item="detailSidebarItem"
-                :items="detailSidebarItems"
-                :library-id="detailLibraryId"
-                @tag-add="handleDetailTagAdd"
-                @tag-remove="handleDetailTagRemove"
-                @folder-change="handleDetailFolderChange"
-              />
-            </div>
+            <!-- 底部双 tab：内容在上，tab 条在底部 -->
+            <Tabs v-model="detailPanelTab" class="flex-1 min-h-0 flex flex-col gap-0">
+              <!-- 内容区（在上）：详情 / 历史 -->
+              <TabsContent value="detail" class="flex-1 min-h-0 overflow-y-auto p-4">
+                <MediaDetailComponent
+                  :item="detailSidebarItem"
+                  :items="detailSidebarItems"
+                  :library-id="detailLibraryId"
+                  @tag-add="handleDetailTagAdd"
+                  @tag-remove="handleDetailTagRemove"
+                  @folder-change="handleDetailFolderChange"
+                />
+              </TabsContent>
+              <TabsContent value="history" class="flex-1 min-h-0 overflow-hidden p-4">
+                <HistoryPanel :library-id="detailLibraryId" @open="openFilePreview" />
+              </TabsContent>
+
+              <!-- tab 条（底部）：详情 / 历史，纯图标 + 极简 label -->
+              <TabsList class="shrink-0 h-9 w-full grid grid-cols-2 rounded-none border-t border-border/60 bg-transparent p-0">
+                <TabsTrigger
+                  value="detail"
+                  class="flex items-center justify-center gap-1 rounded-md border-0 text-xs text-muted-foreground data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none"
+                >
+                  <span class="material-icons text-sm">info_outline</span>
+                  <span>详情</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="history"
+                  class="flex items-center justify-center gap-1 rounded-md border-0 text-xs text-muted-foreground data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none"
+                >
+                  <span class="material-icons text-sm">history</span>
+                  <span>历史</span>
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
           </aside>
         </Transition>
       </div>

@@ -118,7 +118,9 @@ const electronAPI: ElectronAPI = {
     open: (opts: any) =>
       ipcRenderer.invoke('plugin-window:open', opts),
     close: (windowId: string) =>
-      ipcRenderer.invoke('plugin-window:close', windowId)
+      ipcRenderer.invoke('plugin-window:close', windowId),
+    send: (pluginId: string, entry: string, channel: string, data: any) =>
+      ipcRenderer.invoke('plugin-window:send', pluginId, entry, channel, data)
   },
 
   // 拖拽功能 API

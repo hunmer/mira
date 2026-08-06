@@ -196,6 +196,23 @@ export const initializeGlobalPluginSystem = () => {
             }
           })
         }
+      },
+
+      mediaContextMenus: {
+        list: [] as any[],
+        register: (item: any) => {
+          const list = (window as any).pluginSystem.mediaContextMenus.list
+          const idx = list.findIndex((x: any) => x.id === item.id)
+          if (idx >= 0) list[idx] = item
+          else list.push(item)
+          return () => (window as any).pluginSystem.mediaContextMenus.unregister(item.id)
+        },
+        unregister: (id: string) => {
+          const list = (window as any).pluginSystem.mediaContextMenus.list
+          const idx = list.findIndex((x: any) => x.id === id)
+          if (idx >= 0) list.splice(idx, 1)
+        },
+        getAll: () => (window as any).pluginSystem.mediaContextMenus.list.slice(),
       }
     } as PluginSystemAPI
 

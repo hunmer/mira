@@ -191,6 +191,7 @@ export interface PluginAPI {
   media: {
     setLocalFile: (libraryId: string, fileId: string, localPath: string) => void
     setLocalFiles: (libraryId: string, filePathMap: Record<string, string>) => void
+    registerContextMenu: (item: { id: string; label: string; icon?: string; onSelect: (files: FileInfo[]) => void | Promise<void> }) => () => void
   }
 
   // 插件窗口管理（打开插件 dist 的独立 BrowserWindow）
@@ -445,6 +446,12 @@ export interface ElectronAPI {
   pluginWindow: {
     open: (opts: PluginWindowOpenOptions) => Promise<{ success: boolean; windowId?: string; message?: string }>
     close: (windowId: string) => Promise<{ success: boolean; message?: string }>
+    send: (pluginId: string, entry: string, channel: string, data: any) => Promise<{ success: boolean; delivered: boolean }>
+    onMessage?: (callback: (channel: string, data: any) => void) => () => void
+    /** 设置本窗口的专属菜单栏（per-window，Windows/Linux 生效） */
+    setMenu?: (template: any[]) => Promise<{ success: boolean; message?: string }>
+    /** 监听本窗口菜单点击（payload 含 action 与任意附加字段，如 projectId） */
+    onMenuAction?: (callback: (payload: { action: string; [key: string]: any }) => void) => () => void
   }
 
   // 拖拽功能 API

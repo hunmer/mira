@@ -1,4 +1,5 @@
-import { ipcMain, BrowserWindow, app } from 'electron'
+import { ipcMain, BrowserWindow, Menu, app } from 'electron'
+import type { MenuItemConstructorOptions } from 'electron'
 import * as fs from 'fs/promises'
 import * as path from 'path'
 import { logger } from '../utils/Logger'
@@ -54,6 +55,11 @@ export class PluginWindowHandlers {
   public registerHandlers(): void {
     ipcMain.handle('plugin-window:open', this.handleOpen.bind(this))
     ipcMain.handle('plugin-window:close', this.handleClose.bind(this))
+    ipcMain.handle('plugin-window:send', this.handleSend.bind(this))
+    // 设置发起窗口的专属菜单栏（per-window menu）。
+    // 插件窗口默认继承全局 Menu.setApplicationMenu，这里允许每个窗口
+    // 用 win.setMenu 替换成自己的模板（Windows/Linux 生效）。
+    ipcMain.handle('plugin-window:set-menu', this.handleSetMenu.bind(this))
     logger.info('PluginWindowHandlers', 'Plugin window IPC handlers registered')
   }
 
@@ -201,6 +207,95 @@ export class PluginWindowHandlers {
     }
   }
 
+  private async handleSend(
+    _event: Electron.IpcMainInvokeEvent,
+    pluginId: string,
+    entry: string,
+    channel: string,
+    data: any
+  ): Promise<{ success: boolean; delivered: boolean }> {
+    const prefix = `${pluginId}:${entry}:`
+    const targets = Array.from(this.windows.entries())
+      .filter(([id, win]) => id.startsWith(prefix) && !win.isDestroyed())
+      .map(([, win]) => win)
+    const target = targets.find(win => win.isFocused()) || targets[targets.length - 1]
+    if (!target) return { success: true, delivered: false }
+    target.webContents.send('plugin-window:message', channel, data)
+    target.show()
+    target.focus()
+    return { success: true, delivered: true }
+  }
+
+  /**
+   * 为发起请求的插件窗口设置专属菜单栏。
+   *
+   * 背景：插件窗口默认继承全局应用菜单（Menu.setApplicationMenu），
+   * 但全局菜单的点击事件硬编码转发到主窗口（见 MenuHandlers），
+   * 对插件窗口毫无意义。这里让插件窗口能把自己的菜单模板发给主进程，
+   * 主进程按字段挂 click 后用 win.setMenu 替换该窗口的菜单栏。
+   *
+   * 模板字段约定（与渲染进程 MenuService 的 route/action 风格对齐）：
+   *   - { action, ...payload } → click 时把 { action, ...payload } 通过
+   *     'plugin-window:menu-action' channel 发回本窗口的渲染进程，由插件 SPA 自行处理。
+   *   - { role }                → 原样透传给 Electron（reload/devTools/zoom/minimize/close…）。
+   *   - { type: 'separator' }   → 分隔符。
+   *   - { type: 'radio'|'checkbox', checked } → 透传（用于"当前工程"勾选态）。
+   *
+   * 注意：win.setMenu 只在 Windows / Linux 生效；macOS 仍走全局菜单
+   * （Electron 限制）。本应用主平台为 win32，可接受。
+   */
+  private async handleSetMenu(
+    event: Electron.IpcMainInvokeEvent,
+    template: any[]
+  ): Promise<{ success: boolean; message?: string }> {
+    try {
+      const win = BrowserWindow.fromWebContents(event.sender)
+      if (!win || win.isDestroyed()) {
+        return { success: false, message: '发起窗口已销毁' }
+      }
+      const processed = this.buildMenuTemplate(template, win)
+      if (processed.length === 0) {
+        win.setMenu(null)
+      } else {
+        win.setMenu(Menu.buildFromTemplate(processed))
+      }
+      return { success: true }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error)
+      logger.error('PluginWindowHandlers', `Failed to set plugin window menu: ${msg}`)
+      return { success: false, message: msg }
+    }
+  }
+
+  /**
+   * 递归处理菜单模板：按字段挂 click（action → 转发回窗口渲染进程），
+   * role / separator / radio / checkbox 原样透传。
+   */
+  private buildMenuTemplate(template: any[], win: BrowserWindow): MenuItemConstructorOptions[] {
+    return (template || []).map((item) => {
+      const processed: MenuItemConstructorOptions = { label: item.label }
+      if (item.type) processed.type = item.type
+      if (item.accelerator) processed.accelerator = item.accelerator
+      if (item.enabled === false) processed.enabled = false
+      if (item.visible === false) processed.visible = false
+      if (item.checked === true) processed.checked = true
+      if (item.role) processed.role = item.role
+      if (Array.isArray(item.submenu)) {
+        processed.submenu = this.buildMenuTemplate(item.submenu, win)
+      }
+      // 带自定义 action 的项：click 时把整个 payload（含 action 与任意附加字段，
+      // 如 projectId）通过专用 channel 发回该窗口的渲染进程。
+      if (item.action && !item.role) {
+        processed.click = () => {
+          if (!win.isDestroyed()) {
+            win.webContents.send('plugin-window:menu-action', item)
+          }
+        }
+      }
+      return processed
+    })
+  }
+
   /**
    * 资源清理：关闭所有插件窗口并移除 IPC 处理器
    */
@@ -214,5 +309,7 @@ export class PluginWindowHandlers {
 
     ipcMain.removeHandler('plugin-window:open')
     ipcMain.removeHandler('plugin-window:close')
+    ipcMain.removeHandler('plugin-window:send')
+    ipcMain.removeHandler('plugin-window:set-menu')
   }
 }

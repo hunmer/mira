@@ -5,7 +5,8 @@
 import type {
   PluginInfo,
   PluginRuntime,
-  PluginManagerConfig
+  PluginManagerConfig,
+  FileInfo
 } from '../../shared/types'
 
 // 扩展的插件信息类型，支持本地状态
@@ -107,6 +108,14 @@ export interface PluginContribution {
   ) => (() => void) | void
 }
 
+export interface PluginMediaContextMenu {
+  id: string
+  pluginId: string
+  label: string
+  icon?: string
+  onSelect: (files: FileInfo[]) => void | Promise<void>
+}
+
 // 插件系统全局API类型
 export interface PluginSystemAPI {
   plugins: Map<string, any>
@@ -137,6 +146,12 @@ export interface PluginSystemAPI {
     getContributions: () => PluginContribution[]
     /** 订阅贡献变化，返回取消订阅函数 */
     subscribe: (fn: (contributions: PluginContribution[]) => void) => () => void
+  }
+  mediaContextMenus: {
+    list: PluginMediaContextMenu[]
+    register: (item: PluginMediaContextMenu) => () => void
+    unregister: (id: string) => void
+    getAll: () => PluginMediaContextMenu[]
   }
 }
 

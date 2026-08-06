@@ -77,16 +77,34 @@
             <span v-if="item.icon" class="material-icons text-base mr-2">{{ item.icon }}</span>
             <span>{{ item.label }}</span>
           </ContextMenuSubTrigger>
-          <ContextMenuSubContent class="w-44">
-            <ContextMenuItem
-              v-for="(sub, j) in item.items"
-              :key="j"
-              :disabled="sub.disabled"
-              @select="executeMenuCommand(sub)"
-            >
-              <span v-if="sub.icon" class="material-icons text-base mr-2">{{ sub.icon }}</span>
-              <span>{{ sub.label }}</span>
-            </ContextMenuItem>
+          <ContextMenuSubContent class="w-max min-w-44 max-w-[min(24rem,calc(100vw-1rem))]">
+            <template v-for="(sub, j) in item.items" :key="j">
+              <ContextMenuSub v-if="sub.items?.length">
+                <ContextMenuSubTrigger :disabled="sub.disabled">
+                  <span v-if="sub.icon" class="material-icons text-base mr-2">{{ sub.icon }}</span>
+                  <span class="whitespace-normal break-words">{{ sub.label }}</span>
+                </ContextMenuSubTrigger>
+                <ContextMenuSubContent class="w-max min-w-44 max-w-[min(24rem,calc(100vw-1rem))]">
+                  <ContextMenuItem
+                    v-for="(leaf, k) in sub.items"
+                    :key="k"
+                    :disabled="leaf.disabled"
+                    @select="executeMenuCommand(leaf)"
+                  >
+                    <span v-if="leaf.icon" class="material-icons text-base mr-2">{{ leaf.icon }}</span>
+                    <span class="whitespace-normal break-words">{{ leaf.label }}</span>
+                  </ContextMenuItem>
+                </ContextMenuSubContent>
+              </ContextMenuSub>
+              <ContextMenuItem
+                v-else
+                :disabled="sub.disabled"
+                @select="executeMenuCommand(sub)"
+              >
+                <span v-if="sub.icon" class="material-icons text-base mr-2">{{ sub.icon }}</span>
+                <span class="whitespace-normal break-words">{{ sub.label }}</span>
+              </ContextMenuItem>
+            </template>
           </ContextMenuSubContent>
         </ContextMenuSub>
         <ContextMenuItem v-else :disabled="item.disabled" @select="executeMenuCommand(item)">

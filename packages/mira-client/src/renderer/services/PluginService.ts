@@ -631,6 +631,11 @@ export class PluginService {
           } catch (error) {
             console.error(`[${config.pluginName}] Failed to set local files:`, error)
           }
+        },
+        registerContextMenu: (item: any) => {
+          const ps: any = (window as any).pluginSystem
+          if (!ps?.mediaContextMenus?.register) return () => undefined
+          return ps.mediaContextMenus.register({ ...item, pluginId: config.pluginId })
         }
       },
 

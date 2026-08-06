@@ -34,6 +34,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { miraSDKService } from '../services/MiraSDKService'
+import { useViewHistoryStore } from '../stores/viewHistory'
 
 // 导入预览组件
 import ImagePreview from '../components/preview/ImagePreview.vue'
@@ -47,6 +48,7 @@ const route = useRoute()
 const isLoading = ref(false)
 const error = ref('')
 const fileInfo = ref<any>(null)
+const viewHistoryStore = useViewHistoryStore()
 
 // 计算属性：根据文件类型选择预览组件
 const previewComponent = computed(() => {
@@ -162,6 +164,13 @@ const loadFileInfo = async (): Promise<void> => {
     } catch (sdkError) {
       console.warn('SDK获取文件信息失败，使用基础信息:', sdkError)
       fileInfo.value = baseFileInfo
+    }
+
+    // 记录浏览历史（仅成功加载的预览留痕），异常时静默忽略，不影响预览主流程
+    try {
+      await viewHistoryStore.addViewRecord(fileInfo.value, libraryId)
+    } catch (e) {
+      console.warn('记录浏览历史失败:', e)
     }
 
     console.log('✅ 文件信息加载成功:', fileInfo.value)
