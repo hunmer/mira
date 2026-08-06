@@ -13,3 +13,22 @@
 - `git diff --check` passed.
 - Started the whiteboard image preview Dialog task: reuse the existing Mira preview information architecture and connect it to canvas image double-clicks.
 - Read the existing Mira image preview and identified its reusable three-column information architecture.
+- Confirmed the Woven image component schema, AssetManager display URL API, and DOM entity-id hook for double-click handling.
+- Completed implementation research and selected a teleported modal component with document-capture double-click handling.
+- Added `CanvasImagePreview.vue` with thumbnail rail, central zoomable viewer, image navigation, information panel, loading/error states, and double-click/keyboard handling.
+- Mounted the preview bridge inside `WovenCanvas` in `App.vue`.
+- Static integration inspection found both the component mount and three-column Dialog structure; full-worktree whitespace check was blocked by unrelated existing edits.
+- Isolated AssetManager URL failures per image so one unavailable asset cannot prevent the rest of the preview list from rendering.
+- Vue SFC compilation passed for `CanvasImagePreview.vue` and `App.vue`; scoped whitespace checks passed.
+- Full Vite build was intentionally not run because the user previously interrupted automated build verification.
+- Started follow-up fixes for non-responsive Frame release, crowded multi-select toolbar spacing, and replacing image double-click preview with a toolbar action.
+- Reworked Frame release to synchronously preserve child world positions, clear parent references, and delete the empty Frame in one editor context.
+- Grouped custom toolbar controls with explicit spacing and replaced double-click preview activation with a single-image toolbar event.
+- Scoped Vue SFC compilation passed for both changed components; temporary `[DEBUG-frame-release]` probes were removed after confirming the new path and event wiring.
+- Final scoped verification passed: no double-click listener, debug probe, trailing whitespace, or SFC compile error remains.
+- Started follow-up work to mirror `ImageViewerComponent.vue:58-117` controls and fix multi-select-only toolbar crowding.
+- Added preview-only rotation/flip/reset/fullscreen state and replaced the old status footer markup with the requested floating control set.
+- Normalized multi-select MenuButton/MenuDropdown triggers to fixed geometry with an 8px group gap and no flex shrink.
+- Scoped SFC compilation passed for both updated components; selector inspection confirmed the multi-select dropdown width and requested nine preview controls.
+- Removed the temporary `[DEBUG-toolbar-spacing]` probe and the obsolete footer selector after confirming the targeted geometry.
+- Final scoped SFC, toolbar geometry, preview control, cleanup, and whitespace checks passed.

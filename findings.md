@@ -17,3 +17,16 @@
 - Whiteboard image preview must resolve image URLs from Woven Canvas `Image`/`Asset` components through the injected AssetManager, and derive available dimensions/transform data from `Block`.
 - `CanvasMediaBridge` is defined inline in `App.vue`; imported media is fetched into a `File` and passed to `useImageCreation`, so the canvas persists asset identifiers rather than the original media-library object.
 - `App.vue` already has a project-management modal pattern (`wb-dialog-mask` / `wb-dialog`) that the image preview can match without adding a dialog dependency.
+- Each Woven image entity has `Block`, `Image` (`width`, `height`, `alt`) and `Asset` (`identifier`) components; `AssetManager.getDisplayUrl(identifier, dimensions)` is the supported URL resolver.
+- Canvas block DOM nodes expose `data-entity-id`, so a capture-phase `dblclick` listener can identify image entities without modifying Woven Canvas internals.
+- `WOVEN_CANVAS_KEY` is publicly exported and exposes `getAssetManager()`, while `useQuery` returns named refs (`block`, `image`, `asset`) for each matching entity.
+- `CanvasContextMenu.vue` already establishes the safe event pattern: document-level capture, scope by `.wb-canvas`, then resolve `.wov-block[data-entity-id]`.
+- Frame release currently queues `AssignFrameChildren` and `RemoveBlock` from inside `nextEditorTick`; no direct entity mutation occurs in the click callback, making command timing the leading cause of the no-op.
+- Core publicly exports `cascadeDelete`; direct child reparenting can preserve each world position with `Block.getWorldPosition` / `Block.setWorldPosition` before deleting the empty Frame.
+- Custom toolbar controls are consecutive direct children with no group `gap`; wrapping them in an action group provides predictable spacing without changing the native `FloatingMenuBar`.
+- Image preview can be opened from `CanvasSelectionToolbar` through a scoped custom window event, allowing the document-level double-click listener to be removed entirely.
+- The Frame release no-op was caused by relying on queued commands from inside `nextEditorTick`; direct reparenting plus `cascadeDelete` makes the state change synchronous in the active editor context.
+- Multi-select crowding is specific to `MenuDropdown`: its `.wov-menu-dropdown-trigger` has no width or padding, while `.wov-menu-button` has `padding: 0 8px`; container `gap` alone cannot normalize their visual geometry.
+- `ImageViewerComponent.vue:58-117` uses a floating bottom pill with zoom in/out/reset, rotate left/right, horizontal/vertical flip, reset-all, and fullscreen controls separated into groups.
+- The multi-select fix targets the confirmed dropdown geometry mismatch: all three custom triggers are now fixed at 36px with 8px group spacing and `flex-shrink: 0`; native toolbar geometry is unchanged.
+- The preview toolbar actions are local view state only and do not mutate the selected canvas image's Block transform.

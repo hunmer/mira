@@ -181,7 +181,15 @@ export const FolderOperations = {
   },
 
   async getAllFolders(this: CoreAccessible): Promise<Record<string, any>[]> {
-    const rows = await this.getSql('SELECT * FROM folders ORDER BY sort_index ASC, id ASC', []);
+    // 相关子查询带出每个文件夹「直接」所属的非回收文件数；
+    // 递归总数（含子文件夹）由前端 buildFolderTree 求和上推。
+    // 依赖 idx_files_folder_recycled 索引避免 N 次全表扫描。
+    const rows = await this.getSql(
+      `SELECT f.*,
+        (SELECT COUNT(*) FROM files WHERE folder_id = f.id AND recycled = 0) AS file_count
+       FROM folders f ORDER BY sort_index ASC, id ASC`,
+      []
+    );
     return rows.map(row => this.rowToMap(row));
   },
 

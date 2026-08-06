@@ -19,6 +19,7 @@ import { computed, ref, defineComponent, h, onMounted, onBeforeUnmount, watch, n
 import { WovenCanvas, useImageCreation } from '@woven-canvas/vue'
 import '@woven-canvas/vue/style.css'
 import CanvasContextMenu from './CanvasContextMenu.vue'
+import CanvasImagePreview from './CanvasImagePreview.vue'
 import CanvasSelectionToolbar from './CanvasSelectionToolbar.vue'
 
 interface Project {
@@ -360,6 +361,7 @@ onBeforeUnmount(() => {
       >
         <CanvasMediaBridge />
         <CanvasContextMenu />
+        <CanvasImagePreview />
         <template #floating-menu>
           <CanvasSelectionToolbar />
         </template>

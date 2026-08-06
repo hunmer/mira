@@ -1003,8 +1003,10 @@ function handleNodeClick(node: HeTreeNode, stat: any, event: MouseEvent) {
     return
   }
 
+  // 有子节点的父节点：仅展开/折叠，不触发 select（避免打开新标签页）
   if (stat.children?.length) {
     void toggleNode(stat, event)
+    return
   }
 
   searchQuery.value = ''

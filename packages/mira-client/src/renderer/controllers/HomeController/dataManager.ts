@@ -87,12 +87,16 @@ export class HomeDataManager {
         .map((folder: any) => {
           const children = buildFolderTree(folders, folder.id, depth + 1)
 
+          // badge 显示「含所有子层级的总数」：自身直接文件数 + 所有后代之和
+          const selfCount = folder.file_count ?? folder.fileCount ?? 0
+          const totalCount = selfCount + children.reduce((s, c) => s + (c.count || 0), 0)
+
           return {
             id: folder.id.toString(),
             label: folder.title || folder.name || `Folder ${folder.id}`,
             icon: 'folder',
             iconColor: folder.color ? `#${folder.color.toString(16).padStart(6, '0')}` : 'text-gray-500',
-            count: folder.fileCount || 0,
+            count: totalCount,
             active: this.selectedFolder.value === folder.id.toString(),
             expanded: false,
             level: depth,

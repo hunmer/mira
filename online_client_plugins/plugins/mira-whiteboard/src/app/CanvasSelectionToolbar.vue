@@ -5,11 +5,11 @@ import {
   addComponent,
   AssignFrameChildren,
   Block,
+  cascadeDelete,
   createBlock,
   deselectAll,
   Frame,
   getChildren,
-  RemoveBlock,
   selectBlock,
   Selected,
 } from '@woven-canvas/core'
@@ -183,13 +183,22 @@ function releaseFrame() {
   const frameId = selected.value[0].entityId
   nextEditorTick((ctx) => {
     const childIds = getChildren(ctx, frameId)
-    AssignFrameChildren.spawn(ctx, {
-      assignments: childIds.map((entityId) => ({ entityId, frameId: null })),
+    childIds.forEach((entityId) => {
+      const worldPosition = Block.getWorldPosition(ctx, entityId)
+      Block.write(ctx, entityId).parentId = null
+      Block.setWorldPosition(ctx, entityId, worldPosition)
     })
-    RemoveBlock.spawn(ctx, { entityId: frameId })
     deselectAll(ctx)
+    cascadeDelete(ctx, frameId)
     childIds.forEach((entityId) => selectBlock(ctx, entityId))
   })
+}
+
+function openImagePreview() {
+  if (!isSingleImage.value) return
+  window.dispatchEvent(new CustomEvent('whiteboard:open-image-preview', {
+    detail: { entityId: selected.value[0].entityId },
+  }))
 }
 
 function alignSelection(alignment: Alignment) {
@@ -229,7 +238,7 @@ function flipImage(axis: 0 | 1) {
 
 <template>
   <div class="wb-selection-toolbar">
-    <template v-if="isMultiSelection">
+    <div v-if="isMultiSelection" class="wb-toolbar-actions wb-toolbar-actions--multi">
       <MenuButton title="创建成 Frame" @click="createFrameFromSelection">
         <span class="material-icons">select_all</span>
       </MenuButton>
@@ -288,25 +297,28 @@ function flipImage(axis: 0 | 1) {
           </div>
         </template>
       </MenuDropdown>
-      <div class="wb-toolbar-divider" />
-    </template>
+    </div>
+    <div v-if="isMultiSelection" class="wb-toolbar-divider" />
 
-    <template v-if="isSingleImage">
+    <div v-if="isSingleImage" class="wb-toolbar-actions">
+      <MenuButton title="查看大图" @click="openImagePreview">
+        <span class="material-icons">open_in_full</span>
+      </MenuButton>
       <MenuButton title="水平翻转" @click="flipImage(0)">
         <span class="material-icons">flip</span>
       </MenuButton>
       <MenuButton title="垂直翻转" @click="flipImage(1)">
         <span class="material-icons wb-flip-vertical">flip</span>
       </MenuButton>
-      <div class="wb-toolbar-divider" />
-    </template>
+    </div>
+    <div v-if="isSingleImage" class="wb-toolbar-divider" />
 
-    <template v-if="isSingleFrame">
+    <div v-if="isSingleFrame" class="wb-toolbar-actions">
       <MenuButton title="解除 Frame" @click="releaseFrame">
         <span class="material-icons">layers_clear</span>
       </MenuButton>
-      <div class="wb-toolbar-divider" />
-    </template>
+    </div>
+    <div v-if="isSingleFrame" class="wb-toolbar-divider" />
 
     <FloatingMenuBar />
   </div>
@@ -326,6 +338,17 @@ function flipImage(axis: 0 | 1) {
   background: transparent;
   border-radius: 0;
   box-shadow: none;
+}
+.wb-toolbar-actions { height: 100%; display: flex; align-items: center; gap: 4px; }
+.wb-toolbar-actions--multi { flex-shrink: 0; gap: 8px; padding: 0 4px; }
+.wb-toolbar-actions--multi :deep(.wov-menu-button),
+.wb-toolbar-actions--multi :deep(.wov-menu-dropdown-trigger) {
+  width: 36px;
+  min-width: 36px;
+  height: 100%;
+  flex: 0 0 36px;
+  padding: 0;
+  border-radius: 6px;
 }
 .wb-toolbar-divider { width: 1px; height: 24px; margin: 0 4px; background: var(--wov-gray-600, #2e3338); }
 .material-icons { font-size: 19px; }

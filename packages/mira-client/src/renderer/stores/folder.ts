@@ -14,6 +14,8 @@ export interface Folder {
   updatedAt?: string
   children?: Folder[]
   fileCount?: number
+  /** 文件夹下非回收站的文件数（后端 getAllFolders 返回的真实字段） */
+  file_count?: number
 }
 
 // 扩展的文件夹信息类型，支持临时状态

@@ -13,6 +13,8 @@ export interface Folder {
     description?: string;
     createdAt?: string;
     updatedAt?: string;
+    /** 文件夹下非回收站的文件数（后端 getAllFolders 返回） */
+    file_count?: number;
 }
 
 /**

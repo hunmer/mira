@@ -109,7 +109,7 @@
         <!-- 操作按钮 -->
         <div class="pt-4 border-t border-border">
           <div class="grid grid-cols-2 gap-2">
-            <button class="px-3 py-2 text-sm bg-primary text-primary rounded-md hover:bg-primary flex items-center justify-center space-x-1">
+            <button class="px-3 py-2 text-sm bg-primary/10 text-primary rounded-md hover:bg-primary/20 flex items-center justify-center space-x-1">
               <span class="material-symbols-outlined text-sm">download</span>
               <span>下载</span>
             </button>
@@ -121,7 +121,7 @@
               <span class="material-symbols-outlined text-sm">edit</span>
               <span>编辑</span>
             </button>
-            <button class="px-3 py-2 text-sm bg-destructive text-destructive rounded-md hover:bg-destructive flex items-center justify-center space-x-1">
+            <button class="px-3 py-2 text-sm bg-destructive/10 text-destructive rounded-md hover:bg-destructive/20 flex items-center justify-center space-x-1">
               <span class="material-symbols-outlined text-sm">delete</span>
               <span>删除</span>
             </button>

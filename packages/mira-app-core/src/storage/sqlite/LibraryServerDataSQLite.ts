@@ -96,6 +96,12 @@ export class LibraryServerDataSQLite {
     try {
       await this.executeSql('ALTER TABLE files ADD COLUMN website TEXT');
     } catch {}
+
+    // 文件夹素材数 badge：getAllFolders 用相关子查询按 folder_id 统计文件数，
+    // 该复合索引避免每个文件夹都全表扫描 files 表。
+    await this.executeSql(
+      'CREATE INDEX IF NOT EXISTS idx_files_folder_recycled ON files(folder_id, recycled)'
+    );
   }
 
   // --- 事务管理 ---
