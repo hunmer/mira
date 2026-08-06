@@ -1,0 +1,18 @@
+:root {
+  --bg: #0f0f10;
+  --bg-elev: #1a1a1c;
+  --fg: #fafafa;
+  --muted: #a1a1aa;
+  --border: #27272a;
+  --primary: #4ade80;
+  --primary-fg: #052e16;
+  --danger: #ef4444;
+  --radius: 8px;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--fg);
+  font: 13px/1.5 system-ui, -apple-system, sans-serif;
+}
+#app { width: 100%; min-height: 100vh; }
