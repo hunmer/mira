@@ -13,8 +13,6 @@ import { runLocalServerScript } from '../services/LocalServerService'
  * - 一键更新（npm install -g mira-app-server@latest，实时推送进度）
  * - 完整部署（环境检查、安装、数据目录、启动、健康检查）
  *
- * 注意：mira-app-server 的 CLI 版本号是硬编码的（commander program.version('1.0.17')），
- * 与 package.json 实际版本不一致，因此版本检测走 npm ls 而非 --version。
  */
 
 const PACKAGE_NAME = 'mira-app-server'
