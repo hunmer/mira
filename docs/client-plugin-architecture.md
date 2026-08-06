@@ -16,6 +16,7 @@
 - [插件市场分发](#插件市场分发)
 - [更新检查](#更新检查)
 - [UI 贡献（Contributions）](#ui 贡献contributions)
+- [素材上下文菜单](#素材上下文菜单)
 - [插件独立窗口](#插件独立窗口)
 - [状态持久化与恢复](#状态持久化与恢复)
 - [IPC 通道一览](#ipc-通道一览)
@@ -91,6 +92,7 @@ interface PluginRuntime {
 | `instancesFactory` | `Map<id, () => any>` | 实例工厂（插件脚本自行注册） |
 | `instances` | `Map<id, instance>` | 已创建的插件实例 |
 | `contributions` | 注册中心 | UI 贡献入口（见下文） |
+| `mediaContextMenus` | 注册中心 | 媒体网格右键菜单（见下文） |
 | `events` | 事件总线 | on/emit/off |
 
 关键方法：`registerPlugin`、`registerPluginInstance`、`getPluginInstanceFactory`、`loadPluginInstance(id, ctx)`、`unloadPluginInstance(id)`、`getPluginInstance(id)`。
@@ -269,13 +271,42 @@ reloadLocalPlugin(pluginId)
 | `events` | emit/on/off | 基于 `window.dispatchEvent(CustomEvent('plugin_<id>_<event>'))` |
 | `ui` | showNotification / showDialog | 通知与对话框 |
 | `storage` | set/get/has/delete | 基于 ConfigStorage，key 前缀 `plugin_<id>_`，**实际为 async** |
-| `media` | setLocalFile / setLocalFiles | 动态 import mediaStore（避免循环依赖） |
+| `media` | setLocalFile / setLocalFiles / registerContextMenu | 本地文件关联与媒体网格右键菜单注册 |
 | `window` | openPluginWindow(opts) | 打开插件独立窗口，**默认 pluginId 锁定为当前插件** |
 | `dom`* | querySelector / createElement 等 | 直通 document |
 | `http`* | get / post | fetch + json |
 | `app` | version / platform / isDev | 应用信息 |
 
 > *`dom`、`http`、`pluginSystem` 由 `createPluginContext` 额外提供，但不在 `PluginAPI` 类型定义中（通过 `as any` 绕过）。
+
+### 注册媒体上下文菜单
+
+插件可以向媒体网格右键菜单注册操作。宿主会按插件 Contribution 自动分组，菜单层级为：
+
+```text
+调用插件 → 插件图标 + 插件名称 → 菜单项
+```
+
+注册接口位于 `context.api.media.registerContextMenu`：
+
+```javascript
+const unregister = api.media.registerContextMenu({
+  id: 'my-plugin:send-to-board',
+  label: '发送到我的画板',
+  icon: 'add_to_photos',
+  async onSelect(files) {
+    // files 是普通、可结构化克隆的 FileInfo[]，不是 Vue Proxy
+    console.log('选中的素材:', files)
+  },
+})
+
+// cleanup 时注销
+unregister()
+```
+
+`onSelect(files)` 接收当前右键目标对应的素材列表：单选时为当前素材，多选时为当前选中的全部素材。菜单回调边界会将响应式对象转换为普通 JSON 对象，插件不应依赖 Vue 响应式能力。
+
+菜单注册项的 `id` 在全局范围内必须唯一；插件禁用或清理时应调用返回的注销函数。
 
 ---
 
@@ -365,6 +396,20 @@ const unsubscribe = window.pluginSystem.contributions.subscribe((list) => {
 
 `register`/`unregister` 内部调 `emit()`，对所有 listeners 推送 `list.slice()` 快照。
 
+## 素材上下文菜单
+
+素材上下文菜单使用独立的 `window.pluginSystem.mediaContextMenus` 注册中心：
+
+```ts
+interface PluginMediaContextMenu {
+  id: string
+  pluginId: string
+  label: string
+  icon?: string                 // Material Icons 名称
+  onSelect: (files: FileInfo[]) => void | Promise<void>
+}
+```
+
 ---
 
 ## 插件独立窗口
@@ -385,8 +430,48 @@ ctx.openPluginWindow({ pluginId, entry?, title?, width?, height?, query? })
 ```
 
 - `entry` 默认 `dist/index.html`——**插件需自行构建 dist**（如 `pnpm build`），否则打开失败。
-- 插件窗口的 preload（`plugin-window-preload.js`）只暴露最小白名单 `electronAPI.pluginWindow.{open,close}`，不暴露 fs/插件管理 API（最小权限）。
+- 插件窗口的 preload（`plugin-window-preload.js`）只暴露最小白名单 `electronAPI.pluginWindow.{open,close,send,onMessage}`，不暴露 fs/插件管理 API（最小权限）。
 - `query` 通过 `document.location.search` 传递，插件 SPA 可据此区分不同实例（如 whiteboard 按 `projectId`）。
+
+### 插件窗口间消息
+
+主窗口可向已存在的插件窗口发送结构化消息：
+
+```ts
+await window.electronAPI.pluginWindow.send(
+  pluginId,
+  'dist/canvas.html',
+  'media:add',
+  files,
+)
+```
+
+返回值为 `{ success, delivered }`。`delivered=false` 表示没有匹配的已打开窗口，调用方通常应改为打开管理窗口或创建新实例。
+
+插件窗口通过 preload 监听消息：
+
+```javascript
+const off = window.electronAPI.pluginWindow.onMessage((channel, data) => {
+  if (channel === 'media:add') {
+    // 处理素材列表
+  }
+})
+// 页面卸载前调用 off()
+```
+
+窗口匹配使用 `${pluginId}:${entry}:` 前缀；同一入口存在多个窗口时优先投递到当前聚焦窗口，否则投递到最近创建的窗口。IPC 数据必须是可结构化克隆的普通对象，不能直接传 Vue Proxy、函数或 DOM 节点。
+
+### mira-whiteboard 插入流程
+
+`mira-whiteboard` 注册 `mira-whiteboard:add-to-canvas` 菜单项“添加到画布”：
+
+1. 菜单回调接收素材列表。
+2. 先通过 `plugin-window.send(..., 'media:add', files)` 尝试投递到已有 `canvas.html` 窗口。
+3. 如果没有已打开画布，打开 `dist/index.html` 工程管理窗口，并通过 `media` query 传递素材列表。
+4. 用户选择工程后，管理窗口打开 `dist/canvas.html?projectId=...&media=...`。
+5. 画布窗口在 `<WovenCanvas>` 子树内调用 `useImageCreation().createImageBlock()`，根据素材 `url` 或 `thumbnailPath` 下载并插入图片块。
+
+只有提供可访问 URL 的素材能自动插入；仅有本地路径的素材需要额外的文件读取能力。
 
 ---
 
@@ -436,7 +521,7 @@ ctx.openPluginWindow({ pluginId, entry?, title?, width?, height?, query? })
 | `plugin:update-config` / `plugin:get-config` / `plugin:clear-cache` | 配置管理 |
 | `plugin:enable` / `plugin:disable` / `plugin:reload` / `plugin:execute` | ⚠️ 仅记日志返回 success，**真正逻辑在渲染进程 operationManager** |
 
-`PluginWindowHandlers`：`plugin-window:open` / `plugin-window:close`。
+`PluginWindowHandlers`：`plugin-window:open` / `plugin-window:close` / `plugin-window:send`。
 
 ---
 
@@ -452,7 +537,7 @@ ctx.openPluginWindow({ pluginId, entry?, title?, width?, height?, query? })
 | `src/renderer/services/GlobalPluginManager.ts` | 应用级插件初始化编排（initialize / enableAllPlugins） |
 | `src/renderer/services/InitializationService.ts` | 启动流程（插件初始化在 20%-40% 阶段） |
 | `src/renderer/stores/plugin.ts` | Pinia store：状态管理 + 业务编排（启用/禁用/市场/更新检查/持久化） |
-| `src/renderer/plugins/instanceManager.ts` | `window.pluginSystem` 对象 + contributions 注册中心 + 状态监控 |
+| `src/renderer/plugins/instanceManager.ts` | `window.pluginSystem` 对象 + contributions/mediaContextMenus 注册中心 + 状态监控 |
 | `src/renderer/plugins/operationManager.ts` | enable/disable/reload/通用操作分发（含 factory 等待重试） |
 | `src/renderer/plugins/scriptManager.ts` | 脚本注入（`<script>` 标签 + onload 注册） |
 | `src/renderer/plugins/storage.ts` | 持久化（LibraryStorage key='plugins'） |
@@ -471,6 +556,7 @@ ctx.openPluginWindow({ pluginId, entry?, title?, width?, height?, query? })
 1. **脚本必须是 IIFE**：插件入口作为普通 `<script>` 注入，不能用 `module.exports`（会抛 `module is not defined`）或 ESM `import`。
 2. **PLUGIN_ID 必须与 plugin.json 一致**：否则 `enableLocalPluginNew` 找不到 factory，报 `Plugin factory not registered`。
 3. **IPC 不能传 Vue Proxy**：市场安装时 `entry` 来自 Pinia 响应式状态，跨 IPC 前必须 `toPlainObject`（递归 toRaw），否则抛"对象不能被克隆"。
+   媒体菜单 `onSelect(files)` 同样只应传递普通 `FileInfo[]`；向 `pluginWindow.send` 发送的数据不能包含 Proxy、函数或 DOM 节点。
 4. **插件窗口需自建 dist**：`openPluginWindow` 默认加载 `dist/index.html`，插件须自行构建。
 5. **`window.pluginSystem` 双实现**：PluginSystemCore（旧，先挂）与 instanceManager（新，覆盖）。运行时以 instanceManager 为准。
 6. **主进程 enable/disable 是占位**：`plugin:enable` 等 4 个 channel 仅记日志，真正逻辑在渲染进程 operationManager。

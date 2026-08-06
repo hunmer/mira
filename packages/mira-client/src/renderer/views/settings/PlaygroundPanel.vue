@@ -13,9 +13,9 @@
           <span class="material-icons text-base">notifications</span>
           通知
         </TabsTrigger>
-        <TabsTrigger value="placeholder" class="flex items-center gap-2">
-          <span class="material-icons text-base">extension</span>
-          更多（敬请期待）
+        <TabsTrigger value="form" class="flex items-center gap-2">
+          <span class="material-icons text-base">description</span>
+          声明式表单
         </TabsTrigger>
       </TabsList>
 
@@ -181,11 +181,36 @@
         </div>
       </TabsContent>
 
-      <!-- ============ 占位 Tab ============ -->
-      <TabsContent value="placeholder" class="mt-4">
-        <div class="rounded-lg border border-dashed border-border p-8 text-center">
-          <span class="material-icons text-4xl text-muted-foreground mb-2 block">construction</span>
-          <p class="text-sm text-muted-foreground">更多演示分类将在此陆续添加。</p>
+      <!-- ============ 声明式表单 Tab ============ -->
+      <TabsContent value="form" class="space-y-4 mt-4">
+        <div class="space-y-1">
+          <p class="text-sm font-semibold text-foreground dark:text-muted-foreground">声明式表单（VeeValidate + Zod）</p>
+          <p class="text-xs text-muted-foreground">
+            传入一个 zod schema + 字段元数据数组，组件自动渲染、校验并提交。无需手写 errors / validateForm。
+          </p>
+        </div>
+
+        <Card class="bg-background/40">
+          <CardContent class="pt-6">
+            <SchemaForm
+              :schema="formSchema"
+              :fields="formFields"
+              :initial-values="formInitialValues"
+              title="服务器配置示例"
+              form-description="所有字段均由下方 schema 驱动校验。"
+              submit-text="提交"
+              :submitting="formSubmitting"
+              @submit="onFormSubmit"
+              @cancel="onFormCancel"
+              @invalid="onFormInvalid"
+            />
+          </CardContent>
+        </Card>
+
+        <!-- 提交结果预览 -->
+        <div v-if="formResult" class="space-y-2">
+          <p class="text-sm font-semibold text-foreground dark:text-muted-foreground">提交结果（已通过校验）</p>
+          <pre class="rounded-lg border border-border bg-muted/40 p-3 text-xs overflow-auto max-h-60">{{ formResult }}</pre>
         </div>
       </TabsContent>
     </Tabs>
@@ -194,8 +219,12 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { z } from 'zod'
+import { toast } from 'vue-sonner'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { SchemaForm, type SchemaField } from '@/renderer/components/business/SchemaForm'
 import type { NotificationPayload, FloatingWindowPosition, NotificationAnimation } from '@/shared/types'
 
 const activeTab = ref('notification')
@@ -336,5 +365,76 @@ function showCustom() {
     duration: custom.value.duration,
     animation: custom.value.animation,
   })
+}
+
+// ============ 声明式表单 Demo ============
+
+// zod schema：数据类型 + 校验规则的单一真源
+const formSchema = z.object({
+  name: z.string().min(2, '名称至少 2 个字符').max(50, '名称不能超过 50 个字符'),
+  type: z.enum(['admin', 'user', 'guest'], { message: '请选择类型' }),
+  level: z.number().min(0).max(100),
+  enabled: z.boolean(),
+  tags: z.array(z.string()).optional(),
+  description: z.string().max(200, '描述不能超过 200 个字符').optional(),
+  birthday: z.date().optional(),
+})
+
+// 字段元数据：驱动渲染
+const formFields: SchemaField[] = [
+  { name: 'name', label: '名称', type: 'text', required: true, placeholder: '请输入名称' },
+  { name: 'type', label: '类型', type: 'select', required: true, placeholder: '请选择类型',
+    options: [
+      { label: '管理员', value: 'admin' },
+      { label: '用户', value: 'user' },
+      { label: '访客', value: 'guest' },
+    ],
+  },
+  { name: 'level', label: '等级', type: 'slider', min: 0, max: 100, step: 1 },
+  { name: 'enabled', label: '启用', type: 'switch', description: '关闭后该条目将不可用' },
+  { name: 'tags', label: '标签', type: 'checkbox-group',
+    options: [
+      { label: '内部', value: 'internal' },
+      { label: '公开', value: 'public' },
+      { label: '归档', value: 'archived' },
+    ],
+  },
+  { name: 'birthday', label: '生日', type: 'date' },
+  { name: 'description', label: '描述', type: 'textarea', colSpan: 2, placeholder: '可选描述' },
+]
+
+const formInitialValues = {
+  name: '',
+  type: undefined,
+  level: 30,
+  enabled: true,
+  tags: [],
+  description: '',
+}
+
+const formSubmitting = ref(false)
+const formResult = ref<string>('')
+
+type FormValues = z.infer<typeof formSchema>
+
+function onFormSubmit(values: Record<string, unknown>) {
+  const data = values as FormValues
+  formSubmitting.value = true
+  // 模拟异步提交
+  setTimeout(() => {
+    formResult.value = JSON.stringify(data, null, 2)
+    formSubmitting.value = false
+    toast.success('表单提交成功', { description: '数据已通过 zod 校验' })
+  }, 600)
+}
+
+function onFormCancel() {
+  formResult.value = ''
+  toast('已取消')
+}
+
+function onFormInvalid(errors: Record<string, string>) {
+  const first = Object.values(errors)[0]
+  toast.error('校验未通过', { description: first || '请检查表单字段' })
 }
 </script>
