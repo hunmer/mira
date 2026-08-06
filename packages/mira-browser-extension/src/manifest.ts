@@ -15,9 +15,15 @@ export default defineManifest({
     service_worker: 'src/background/index.ts',
     type: 'module',
   },
+  icons: {
+    '16': 'icons/icon16.png',
+    '48': 'icons/icon48.png',
+    '128': 'icons/icon128.png',
+  },
   action: {
     default_popup: 'src/ui/popup.html',
     default_title: 'Mira',
+    default_icon: { '16': 'icons/icon16.png', '48': 'icons/icon48.png' },
   },
   side_panel: {
     default_path: 'src/ui/sidepanel.html',
