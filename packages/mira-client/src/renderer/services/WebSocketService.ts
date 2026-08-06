@@ -452,7 +452,7 @@ function doShowImportNotification(): void {
     type: 'success',
     icon: thumb || 'file_download_done',
     icons: importNotifyThumbs,
-    duration: 60000,
+    duration: 6000,
     actions: [{ id: 'view', label: '查看' }],
     data: fileIdResolved
       ? { fileId: fileIdResolved, count, previewType: importNotifyLastPreviewType }

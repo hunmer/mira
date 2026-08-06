@@ -206,7 +206,8 @@ export function useFolderOperations(emit: FolderOperationsEmits) {
         await new Promise(resolve => setTimeout(resolve, 100))
         emit['refresh-folders']()
       } else {
-        await miraSDKService.deleteTag(libraryId, currentItem.id)
+        const tagId = parseInt(String(currentItem.id).replace(/^tag-/, ''), 10)
+        await miraSDKService.deleteTag(libraryId, tagId)
         emit['tag-delete'](currentItem)
         await new Promise(resolve => setTimeout(resolve, 100))
         emit['refresh-tags']()

@@ -25,6 +25,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   select: [raw: any]
+  /** 预览文件（跳转 preview 路由），父级据此关闭对话框 */
+  preview: [file: any]
 }>()
 
 const router = useRouter()
@@ -166,12 +168,14 @@ const openFolder = () => {
   emit('select', folder.value)
 }
 
-// 点击缩略图：直接跳转 preview 路由（不再弹 lightbox）
+// 点击缩略图：直接跳转 preview 路由，并通知父级关闭对话框
 const previewFile = (index: number) => {
   if (thumbnails.value.length === 0) return
   const realIndex = index % thumbnails.value.length
   const file = thumbnails.value[realIndex]
   if (!file?.id) return
+  // 先通知对话框关闭（避免预览页被对话框遮挡）
+  emit('preview', file)
   router.push({
     path: '/file-preview',
     query: {

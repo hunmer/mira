@@ -59,6 +59,8 @@ const props = withDefaults(
 const emit = defineEmits<{
   'update:visible': [value: boolean]
   select: [raw: any]
+  /** 预览文件（卡片内点击缩略图时触发），同时关闭对话框 */
+  preview: [file: any]
 }>()
 
 // ----------------------------------------
@@ -170,6 +172,12 @@ const onSelectItem = (raw: any) => {
   emit('update:visible', false)
 }
 
+// 自定义卡片通过 onPreview 回调预览文件（同时关闭对话框）
+const onPreviewItem = (file: any) => {
+  emit('preview', file)
+  emit('update:visible', false)
+}
+
 // 关闭时重置
 watch(
   () => props.visible,
@@ -260,7 +268,7 @@ const isSearching = computed(() => trimmedQuery.value.length > 0)
               :item="item"
               :library-id="libraryId"
               :class="!cardComponent ? 'group/card card-item default-card' : ''"
-              v-bind="cardComponent ? { onSelect: onSelectItem } : {}"
+              v-bind="cardComponent ? { onSelect: onSelectItem, onPreview: onPreviewItem } : {}"
               @click="!cardComponent ? onCardClick(item) : null"
             >
               <template v-if="!cardComponent">

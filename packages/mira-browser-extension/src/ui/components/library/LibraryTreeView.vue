@@ -71,6 +71,12 @@ function onRootDragOver(e: DragEvent) {
   e.dataTransfer!.dropEffect = 'copy';
   rootHover.value = true;
 }
+function onRootDragLeave(e: DragEvent) {
+  const container = e.currentTarget as HTMLElement | null;
+  const next = e.relatedTarget;
+  if (container && next instanceof Node && container.contains(next)) return;
+  rootHover.value = false;
+}
 function onRootDrop(e: DragEvent) {
   e.preventDefault();
   rootHover.value = false;
@@ -85,6 +91,7 @@ function onRootDropFiles(files: File[]) {
 
 // ---- 节点落点 → 上传到目标文件夹 / 标签 ----
 function onDrop(node: LibraryTreeNode, e: DragEvent) {
+  rootHover.value = false;
   const { files, urls } = parseDrop(e);
   if (props.mode === 'folder') {
     if (files.length) addFiles(files, settings.value.libraryId, undefined, String(node.id));
@@ -126,7 +133,7 @@ const noData = computed(() => !loading.value && !error.value && count.value === 
 </script>
 
 <template>
-  <div class="view" @dragover="onRootDragOver" @drop="onRootDrop">
+  <div class="view" @dragover="onRootDragOver" @dragleave="onRootDragLeave" @drop="onRootDrop">
     <!-- 顶部:拖放/点击选择上传到素材库根目录 -->
     <Dropzone @drop="onRootDropFiles" />
 

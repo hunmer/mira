@@ -1,12 +1,14 @@
 import type { Folder } from 'mira-app-core/shared/sdk';
 import { dbg } from '@/shared/debug';
+import { urlKind } from '@/shared/drag-data';
+import type { ResourceKind } from '@/shared/types';
 
 export interface DragDropPayload {
   /** 已有 File(本地拖动文件) */
   file?: File;
   /** 或仅有 url(网页图片) */
   url?: string;
-  kind: 'image' | 'video';
+  kind: ResourceKind;
   /** 目标文件夹 id(根区/不设文件夹时为 undefined) */
   folderId?: number;
 }
@@ -26,6 +28,34 @@ const POPOVER_Z = 2147483646; // 仅次于选区覆盖层
 const SCROLL_EDGE = 48; // 距视口顶/底多少像素触发自动滚动
 const SCROLL_STEP = 12; // 每帧滚动像素
 
+export interface DragSource {
+  url: string;
+  kind: ResourceKind;
+}
+
+/** 解析页面内可拖拽的媒体或链接；链接包裹媒体时优先媒体本身。 */
+export function resolveDragSource(target: Element | null): DragSource | null {
+  const element = target?.closest('img, video, a[href]');
+  if (!element) return null;
+
+  if (element instanceof HTMLImageElement) {
+    const url = element.currentSrc || element.src;
+    return url ? { url, kind: 'image' } : null;
+  }
+  if (element instanceof HTMLVideoElement) {
+    const url = element.currentSrc || element.src || element.querySelector('source')?.src;
+    return url ? { url, kind: 'video' } : null;
+  }
+
+  const nestedMedia = element.querySelector('img, video');
+  if (nestedMedia) {
+    const mediaSource = resolveDragSource(nestedMedia);
+    if (mediaSource) return mediaSource;
+  }
+  const url = (element as HTMLAnchorElement).href;
+  return url ? { url, kind: urlKind(url) } : null;
+}
+
 export function createDragDrop(handlers: DragDropHandlers): DragDropController {
   let enabled = true;
   let overlay: HTMLDivElement | null = null;
@@ -34,12 +64,11 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
 
   function onDragStart(e: DragEvent) {
     if (!enabled) { dbg.log('dragdrop', 'dragstart ignored (disabled)'); return; }
-    const target = e.target as HTMLElement;
-    const isImg = target?.tagName === 'IMG';
-    const isVideo = target?.tagName === 'VIDEO';
-    dbg.log('dragdrop', 'dragstart', { tag: target?.tagName, isImg, isVideo, enabled });
-    if (!isImg && !isVideo) return;
-    showOverlay(isVideo ? 'video' : 'image', target);
+    const target = e.target instanceof Element ? e.target : null;
+    const source = resolveDragSource(target);
+    dbg.log('dragdrop', 'dragstart', { tag: target?.tagName, source, enabled });
+    if (!source) return;
+    showOverlay(source);
   }
 
   function onDragEnd() {
@@ -72,7 +101,7 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
     if (scrollTimer) { clearInterval(scrollTimer); scrollTimer = null; }
   }
 
-  function makeDropZone(label: string, folderId: number | undefined, kind: 'image' | 'video', target: HTMLElement): HTMLDivElement {
+  function makeDropZone(label: string, folderId: number | undefined, source: DragSource): HTMLDivElement {
     const zone = document.createElement('div');
     zone.className = 'mira-dropzone';
     zone.textContent = label;
@@ -82,21 +111,19 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
       ev.preventDefault();
       hideOverlay();
       const dtFile = ev.dataTransfer?.files?.[0];
-      dbg.info('dragdrop', 'drop', { hasFile: !!dtFile, folderId, targetTag: target?.tagName });
+      dbg.info('dragdrop', 'drop', { hasFile: !!dtFile, folderId, source });
       if (dtFile) {
-        handlers.onUpload({ file: dtFile, kind, folderId });
+        handlers.onUpload({ file: dtFile, kind: source.kind, folderId });
         return;
       }
-      const url = (target as HTMLImageElement).currentSrc || (target as HTMLImageElement).src;
-      if (url) handlers.onUpload({ url, kind, folderId });
-      else dbg.warn('dragdrop', 'drop: no file and no url on target');
+      handlers.onUpload({ url: source.url, kind: source.kind, folderId });
     });
     return zone;
   }
 
-  function showOverlay(kind: 'image' | 'video', target: HTMLElement) {
+  function showOverlay(source: DragSource) {
     hideOverlay();
-    dbg.info('dragdrop', 'showOverlay', { kind, hasGetFolders: !!handlers.getFolders });
+    dbg.info('dragdrop', 'showOverlay', { source, hasGetFolders: !!handlers.getFolders });
     overlay = document.createElement('div');
     overlay.className = 'mira-overlay';
 
@@ -109,7 +136,7 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
     body.className = 'mira-overlay-body';
 
     // 左侧:不设文件夹(根区)
-    const root = makeDropZone('📂 不设文件夹', undefined, kind, target);
+    const root = makeDropZone('📂 不设文件夹', undefined, source);
     root.classList.add('mira-root');
     body.appendChild(root);
 
@@ -141,7 +168,7 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
         return;
       }
       for (const f of folders) {
-        const zone = makeDropZone('📁 ' + (f.title || `#${f.id}`), f.id, kind, target);
+        const zone = makeDropZone('📁 ' + (f.title || `#${f.id}`), f.id, source);
         zone.classList.add('mira-folder-item');
         listScroll.appendChild(zone);
       }

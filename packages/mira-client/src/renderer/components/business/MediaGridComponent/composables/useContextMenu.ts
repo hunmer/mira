@@ -8,6 +8,7 @@ import { useFolderStore } from '@renderer/stores/folder'
 import { useMediaStore } from '@renderer/stores/media'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { runBatchOperation } from '@renderer/composables/useBatchOperation'
+import { copyToClipboard } from '@renderer/utils/helpers'
 
 interface UseContextMenuProps {
   selectedItems: string[]
@@ -106,6 +107,15 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
     await handler(item)
   }
 
+  // 复制当前文件信息的 JSON 到剪贴板
+  const copyFileInfoJSON = (item: FileInfo) => {
+    const json = JSON.stringify(item, null, 2)
+    copyToClipboard(json).then(ok => {
+      if (ok) console.log('文件信息已复制到剪贴板')
+      else console.error('复制文件信息失败')
+    })
+  }
+
   const contextMenuItems = computed((): MenuItem[] => {
     // 回收站视图：只提供恢复（+ 查看 / 定位）
     if (props.isTrash) {
@@ -117,6 +127,10 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
             mediaStore.setDetailSidebarFiles([item])
             if (!showDetailSidebar.value) toggleDetailSidebar()
           })
+        },
+        {
+          label: '复制文件信息JSON',
+          command: () => runWithCurrentItem((item) => copyFileInfoJSON(item))
         },
         { separator: true },
         {
@@ -158,6 +172,10 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
           mediaStore.setDetailSidebarFiles([item])
           if (!showDetailSidebar.value) toggleDetailSidebar()
         })
+      },
+      {
+        label: '复制文件信息JSON',
+        command: () => runWithCurrentItem((item) => copyFileInfoJSON(item))
       },
       {
         separator: true

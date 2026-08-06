@@ -50,18 +50,19 @@ describe('parseDrop', () => {
     expect(urls.sort()).toEqual(['http://b.com/y.jpg', 'https://a.com/x.png']);
   });
 
-  it('text/html:从 <img src> / <a href> 抠出链接', () => {
+  it('text/html:图片被链接包裹时只提取图片,不上传外层页面', () => {
     const { urls } = parseDrop(
       makeEvent({
-        types: ['text/html'],
+        types: ['text/uri-list', 'text/html', 'text/plain'],
         data: {
+          'text/uri-list': 'https://site.com/page',
           'text/html':
             '<a href="https://site.com/page"><img src="https://cdn.site.com/img.webp"></a>',
+          'text/plain': 'https://site.com/page',
         },
       }),
     );
-    expect(urls).toContain('https://cdn.site.com/img.webp');
-    expect(urls).toContain('https://site.com/page');
+    expect(urls).toEqual(['https://cdn.site.com/img.webp']);
   });
 
   it('text/plain 裸链接也被识别', () => {

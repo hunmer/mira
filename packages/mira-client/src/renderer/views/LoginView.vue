@@ -73,7 +73,26 @@
             >
               <span class="material-icons text-lg text-primary dark:text-primary">dns</span>
               <div class="flex flex-col min-w-0 flex-1">
-                <span class="font-semibold text-sm text-foreground dark:text-muted-foreground truncate">{{ server.name }}</span>
+                <div class="flex items-center gap-2">
+                  <span class="font-semibold text-sm text-foreground dark:text-muted-foreground truncate">{{ server.name }}</span>
+                  <!-- 后端可用性徽标 -->
+                  <Badge
+                    :variant="'outline'"
+                    :class="backendStatusClass(server.id)"
+                    class="shrink-0 gap-1 px-1.5 py-0 text-[10px]"
+                  >
+                    <span
+                      v-if="backendStatus[server.id] === 'checking'"
+                      class="material-icons text-[10px] animate-spin"
+                    >sync</span>
+                    <span
+                      v-else
+                      class="w-1.5 h-1.5 rounded-full"
+                      :class="backendStatusDotClass(server.id)"
+                    />
+                    {{ backendStatusLabel(server.id) }}
+                  </Badge>
+                </div>
                 <span class="text-xs text-muted-foreground dark:text-muted-foreground truncate">{{ server.serverUrl }}</span>
               </div>
               <Button variant="ghost" size="icon-sm" class="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 text-muted-foreground hover:text-destructive" @click.stop="openDeleteDialog(server)">
@@ -238,6 +257,54 @@
         </Button>
       </div>
 
+      <!-- 部署指南入口 -->
+      <button
+        type="button"
+        class="w-full mt-2 flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-primary dark:text-muted-foreground dark:hover:text-primary bg-transparent border-none cursor-pointer transition-colors"
+        @click="showDeployGuide = true"
+      >
+        <span class="material-icons text-sm">rocket_launch</span>
+        部署指南
+      </button>
+
+      <!-- 部署指南对话框 -->
+      <Dialog :open="showDeployGuide" @update:open="showDeployGuide = $event">
+        <DialogContent class="sm:max-w-[460px]">
+          <DialogHeader>
+            <DialogTitle>部署指南</DialogTitle>
+            <DialogDescription>
+              {{ isElectron ? '使用在线部署向导一键完成，或查看手动部署指南。' : '按以下步骤手动部署 mira-app-server 后端。' }}
+            </DialogDescription>
+          </DialogHeader>
+
+          <!-- Electron：展示在线部署组件 -->
+          <div v-if="isElectron" class="flex justify-center">
+            <DeploymentChecklist />
+          </div>
+
+          <!-- 非 Electron：直接展示手动部署指南 -->
+          <ManualDeployGuide v-else />
+
+          <DialogFooter v-if="isElectron" class="gap-2 sm:justify-center">
+            <Button type="button" variant="outline" size="sm" @click="openManualGuide">
+              <span class="material-icons text-sm">menu_book</span>
+              手动部署指南
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <!-- 手动部署指南对话框（点击「手动部署指南」按钮弹出，关闭后回到部署指南） -->
+      <Dialog :open="showManualGuide" @update:open="handleManualGuideOpenChange">
+        <DialogContent class="sm:max-w-[560px]">
+          <DialogHeader>
+            <DialogTitle>手动部署指南</DialogTitle>
+            <DialogDescription>按以下步骤在本地或服务器上部署 mira-app-server。</DialogDescription>
+          </DialogHeader>
+          <ManualDeployGuide />
+        </DialogContent>
+      </Dialog>
+
     </Motion>
   </div>
 </template>
@@ -257,11 +324,21 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from '@/components/ui/dialog'
 import { Loader2 } from 'lucide-vue-next'
 import {
   AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import DeploymentChecklist from '@renderer/components/business/DeploymentChecklist.vue'
+import ManualDeployGuide from '@renderer/components/business/ManualDeployGuide.vue'
+import { environment } from '@renderer/utils'
 import type { HealthResponse, Library } from 'mira-app-core/shared/sdk'
+
+// 是否为 Electron 环境（决定部署对话框展示在线部署组件还是手动指南）
+const isElectron = environment.isElectron
 
 const router = useRouter()
 const route = useRoute()
@@ -281,6 +358,29 @@ const wsAddress = ref('')
 const showWsField = ref(false)
 const showAddForm = ref(false)
 const deleteTarget = ref<ServerConfig | null>(null)
+
+// 后端可用性检测：记录每个 serverId 的健康检查状态
+// 'online' | 'offline' | 'checking' | 'unknown'
+type BackendStatus = 'online' | 'offline' | 'checking' | 'unknown'
+const backendStatus = ref<Record<string, BackendStatus>>({})
+
+// 部署指南对话框状态
+const showDeployGuide = ref(false)
+const showManualGuide = ref(false)
+
+// 打开手动部署指南：先关闭部署对话框，避免两个对话框层叠遮挡
+function openManualGuide() {
+  showDeployGuide.value = false
+  showManualGuide.value = true
+}
+
+// 关闭手动部署指南时，回到部署指南（仅 Electron：手动指南是从部署指南内打开的）
+function handleManualGuideOpenChange(open: boolean) {
+  showManualGuide.value = open
+  if (!open && isElectron) {
+    showDeployGuide.value = true
+  }
+}
 
 function openDeleteDialog(server: ServerConfig) {
   deleteTarget.value = server
@@ -303,6 +403,61 @@ async function handleDeleteServer() {
 }
 const selectedServerId = ref('')
 const healthData = ref<HealthResponse | null>(null)
+
+// ---- 后端可用性检测 ----
+// 对单个服务器并发调用 getHealth()，更新 backendStatus。
+// 检测是独立的轻量请求，不影响用户操作；失败统一标记为 offline。
+async function checkBackendStatus(server: ServerConfig) {
+  backendStatus.value = { ...backendStatus.value, [server.id]: 'checking' }
+  try {
+    const { MiraClient } = await import('mira-app-core/shared/sdk')
+    const client = new MiraClient(server.serverUrl.replace(/\/$/, ''))
+    // 给健康检查一个较短超时，避免离线服务器拖住整个列表
+    // getHealth() 经 HttpClient 已自动解包 { code, data } 外层，
+    // 返回的即内层对象，健康信号是 status === 'ok'（无 success 字段）。
+    const health = await Promise.race([
+      client.system().getHealth(),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000)),
+    ])
+    backendStatus.value = {
+      ...backendStatus.value,
+      [server.id]: health?.status === 'ok' ? 'online' : 'offline',
+    }
+  } catch {
+    backendStatus.value = { ...backendStatus.value, [server.id]: 'offline' }
+  }
+}
+
+// 并发检测所有已保存的服务器后端可用性
+function checkAllBackends() {
+  serverListStore.services.forEach(s => checkBackendStatus(s))
+}
+
+function backendStatusLabel(id: string): string {
+  switch (backendStatus.value[id]) {
+    case 'online': return '在线'
+    case 'offline': return '离线'
+    case 'checking': return '检测中'
+    default: return '未检测'
+  }
+}
+
+function backendStatusClass(id: string): string {
+  switch (backendStatus.value[id]) {
+    case 'online': return 'text-emerald-600 dark:text-emerald-400 border-emerald-500/40'
+    case 'offline': return 'text-destructive dark:text-destructive border-destructive/40'
+    case 'checking': return 'text-muted-foreground border-border'
+    default: return 'text-muted-foreground border-border'
+  }
+}
+
+function backendStatusDotClass(id: string): string {
+  switch (backendStatus.value[id]) {
+    case 'online': return 'bg-emerald-500'
+    case 'offline': return 'bg-destructive'
+    default: return 'bg-muted-foreground'
+  }
+}
 
 // Step 2
 const showPassword = ref(false)
@@ -550,5 +705,8 @@ onMounted(async () => {
     serverAddress.value = activeServer.serverUrl
     serverName.value = activeServer.name
   }
+
+  // 并发检测所有已保存服务器的后端可用性（用于列表徽标展示）
+  checkAllBackends()
 })
 </script>

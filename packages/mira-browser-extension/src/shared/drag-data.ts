@@ -36,13 +36,17 @@ function parseUriList(raw: string): string[] {
  * dataTransfer 的 text/html 通常是单个 <img> 或 <a> 片段。
  */
 function extractUrlsFromHtml(html: string): string[] {
-  const urls = new Set<string>();
+  const imageUrls = new Set<string>();
   const imgRe = /<img[^>]+src=["']([^"']+)["']/gi;
-  const aRe = /<a[^>]+href=["']([^"']+)["']/gi;
   let m: RegExpExecArray | null;
-  while ((m = imgRe.exec(html))) urls.add(m[1]);
-  while ((m = aRe.exec(html))) urls.add(m[1]);
-  return [...urls];
+  while ((m = imgRe.exec(html))) imageUrls.add(m[1]);
+  // 图片被 <a> 包裹时，href 通常是图片所在页面，不是待上传资源。
+  if (imageUrls.size) return [...imageUrls];
+
+  const linkUrls = new Set<string>();
+  const aRe = /<a[^>]+href=["']([^"']+)["']/gi;
+  while ((m = aRe.exec(html))) linkUrls.add(m[1]);
+  return [...linkUrls];
 }
 
 /** 判断字符串是否像 url(http/https/相对协议) */
@@ -69,26 +73,35 @@ export function parseDrop(e: DragEvent): ParsedDrop {
   const files = Array.from(dt.files ?? []);
   dbg.log('drag', 'parseDrop start', { types, fileCount: files.length });
 
-  // 链接:优先 text/uri-list(标准),其次 text/html(富文本),最后 text/plain(裸链接)
+  // 链接:含图片的富文本优先,避免把图片外层页面 href 当成资源;
+  // 无图片时再回退到标准 URI-list / 裸文本。
   const urls = new Set<string>();
-  const uriList = dt.getData('text/uri-list');
-  if (uriList) {
-    dbg.log('drag', 'uri-list raw', uriList);
-    for (const u of parseUriList(uriList)) urls.add(u);
-  }
   const html = dt.getData('text/html');
+  const htmlUrls = html ? extractUrlsFromHtml(html) : [];
+  const htmlHasImage = /<img\b/i.test(html);
   if (html) {
     dbg.log('drag', 'text/html raw', html);
-    for (const u of extractUrlsFromHtml(html)) urls.add(u);
-  }
-  const text = dt.getData('text/plain');
-  if (text) {
-    dbg.log('drag', 'text/plain raw', text);
-    // 多行文本逐行判断,只收像 url 的行
-    for (const line of text.split(/\r?\n/)) {
-      const t = line.trim();
-      if (looksLikeUrl(t)) urls.add(t);
+    if (htmlHasImage) {
+      for (const u of htmlUrls) urls.add(u);
     }
+  }
+  if (!htmlHasImage) {
+    const uriList = dt.getData('text/uri-list');
+    if (uriList) {
+      dbg.log('drag', 'uri-list raw', uriList);
+      for (const u of parseUriList(uriList)) urls.add(u);
+    }
+    const text = dt.getData('text/plain');
+    if (text) {
+      dbg.log('drag', 'text/plain raw', text);
+      // 多行文本逐行判断,只收像 url 的行
+      for (const line of text.split(/\r?\n/)) {
+        const t = line.trim();
+        if (looksLikeUrl(t)) urls.add(t);
+      }
+    }
+    // 没有标准 URI / 纯文本时，才回退到 HTML 中的链接。
+    if (!urls.size) for (const u of htmlUrls) urls.add(u);
   }
 
   // data:image base64 可能出现在 text/uri-list 或 text/plain,上面已收

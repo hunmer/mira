@@ -243,7 +243,7 @@
     />
 
     <!-- 删除确认对话框 -->
-    <AlertDialog v-model:open="ops.showDeleteDialog.value">
+    <AlertDialog v-if="showDeleteDialog" :open="true" @update:open="showDeleteDialog = $event">
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>确认删除</AlertDialogTitle>
@@ -260,14 +260,14 @@
           </label>
         </div>
         <AlertDialogFooter>
-          <AlertDialogCancel @click="ops.showDeleteDialog.value = false">取消</AlertDialogCancel>
-          <AlertDialogAction @click="ops.confirmDelete">删除</AlertDialogAction>
+          <AlertDialogCancel>取消</AlertDialogCancel>
+          <AlertDialogAction class="bg-destructive hover:bg-destructive text-white" @click="ops.confirmDelete">删除</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
 
     <!-- 批量删除确认对话框 -->
-    <AlertDialog v-model:open="ops.showBatchDeleteDialog.value">
+    <AlertDialog v-if="showBatchDeleteDialog" :open="true" @update:open="showBatchDeleteDialog = $event">
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>确认批量删除</AlertDialogTitle>
@@ -284,14 +284,17 @@
           </label>
         </div>
         <AlertDialogFooter>
-          <AlertDialogCancel @click="ops.showBatchDeleteDialog.value = false">取消</AlertDialogCancel>
-          <AlertDialogAction @click="ops.confirmBatchDelete">删除</AlertDialogAction>
+          <AlertDialogCancel>取消</AlertDialogCancel>
+          <AlertDialogAction class="bg-destructive hover:bg-destructive text-white" @click="ops.confirmBatchDelete">删除</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
 
     <!-- 拖拽移动确认对话框 -->
-    <AlertDialog v-model:open="showDragConfirm">
+    <AlertDialog
+      :open="showDragConfirm"
+      @update:open="showDragConfirm = $event"
+    >
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>确认移动</AlertDialogTitle>
@@ -300,8 +303,8 @@
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel @click="cancelDragMove">取消</AlertDialogCancel>
-          <AlertDialogAction @click="confirmDragMove">确认移动</AlertDialogAction>
+          <Button type="button" variant="outline" @click="cancelDragMove">取消</Button>
+          <Button type="button" @click="confirmDragMove">确认移动</Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
@@ -331,6 +334,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import type { FolderItem } from '@renderer/types/components'
 import { useFolderOperations } from './composables/useFolderOperations'
@@ -862,6 +866,7 @@ const ops = useFolderOperations({
   'tag-delete': () => {},
   'refresh-tags': () => emit('refresh'),
 })
+const { showDeleteDialog, showBatchDeleteDialog } = ops
 
 const contextMenuItems = computed(() => {
   // 选择模式激活时：右键菜单仅展示「删除」

@@ -6,6 +6,7 @@ import { drawSelection } from './overlay/selection';
 import { upgradeImageUrl } from '@/shared/imu';
 import { fileToStaged } from '@/shared/staged-file';
 import { dbg } from '@/shared/debug';
+import type { ResourceKind } from '@/shared/types';
 
 dbg.info('content', 'script loaded', { url: location.href, readyState: document.readyState });
 
@@ -57,7 +58,7 @@ const dragdrop = createDragDrop({
 });
 
 /** 网页图片上传:开启高清升级时,先用 maxurl 取原图候选,取最优一个发 service worker 下载 */
-async function uploadUrl(url: string, kind: 'image' | 'video', folderId?: number) {
+async function uploadUrl(url: string, kind: ResourceKind, folderId?: number) {
   let best = url;
   try {
     const settings: any = await chrome.runtime.sendMessage({ type: 'CONFIG_GET' });
@@ -71,7 +72,7 @@ async function uploadUrl(url: string, kind: 'image' | 'video', folderId?: number
   } catch (e) { dbg.warn('content', 'uploadUrl upgrade failed, use original', e); /* 升级失败沿用原 url */ }
   chrome.runtime.sendMessage({
     type: 'UPLOAD_FROM_URL',
-    payload: { url: best, kind, libraryId: '', folderId },
+    payload: { url: best, kind, libraryId: '', folderId, referrer: location.href },
   }).then(() => dbg.log('content', 'UPLOAD_FROM_URL sent', { url: best }))
     .catch(e => dbg.error('content', 'UPLOAD_FROM_URL send failed', e));
 }

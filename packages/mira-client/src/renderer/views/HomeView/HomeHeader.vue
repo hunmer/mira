@@ -2,7 +2,6 @@
 import { ref, computed, watch } from 'vue'
 import { Dropdown } from '@/renderer/components/common/Dropdown'
 import { useAuthStore } from '@/renderer/stores/auth'
-import { useDashboardStore } from '@/renderer/stores/dashboard'
 import { useMediaStore } from '@/renderer/stores/media'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { environment } from '@renderer/utils'
@@ -26,16 +25,10 @@ const emit = defineEmits<{
 }>()
 
 const authStore = useAuthStore()
-const dashboardStore = useDashboardStore()
 const mediaStore = useMediaStore()
 const avatarLoadError = ref(false)
 
 const userAvatarUrl = computed(() => {
-  const userId = authStore.user?.id
-  const baseUrl = dashboardStore.dashboardBaseUrl
-  if (userId && baseUrl) {
-    return dashboardStore.getUserAvatarUrl(userId)
-  }
   const avatar = (authStore.user as any)?.avatar
   if (!avatar) return ''
   const base = (miraSDKService.getConnectionConfig()?.serverUrl || '').replace(/\/$/, '')
