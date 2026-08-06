@@ -104,6 +104,11 @@ export class PluginService {
    */
   public async discoverAndLoadPlugins(): Promise<BaseResponse> {
     try {
+      // 快照当前运行时状态：刷新（discover）时若某插件仍在运行（脚本已注入、
+      // 实例已加载），需保留其 status/context，避免 UI 把"已加载"插件重置为
+      // 禁用。store 的 restoreLocalPluginStates 仅在持久化有记录时才恢复，
+      // 无法保证覆盖所有正在运行的插件，因此这里优先沿用运行时真实状态。
+      const previousPlugins = new Map(this.plugins)
       this.plugins.clear()
 
       // 1. 加载本地插件（仅在Electron环境）
@@ -112,12 +117,14 @@ export class PluginService {
 
         if (result.success && result.data) {
           for (const runtime of result.data) {
-            // 新发现的插件默认为禁用状态,不创建上下文
-            // 注意:插件的启用/禁用状态将由 store 的 restoreLocalPluginStates 方法处理
+            // 若该插件此前已在运行（status 非 disabled），保留其真实状态与上下文；
+            // 否则默认禁用，交由 store 的 restoreLocalPluginStates 处理启用状态。
+            const existing = previousPlugins.get(runtime.config.pluginId)
+            const keepRuntime = existing && existing.status !== 'disabled'
             const pluginRuntime: PluginRuntime = {
               ...runtime,
-              status: 'disabled', // 默认禁用
-              context: undefined  // 不创建上下文
+              status: keepRuntime ? existing!.status : 'disabled',
+              context: keepRuntime ? existing!.context : undefined
             }
             this.plugins.set(runtime.config.pluginId, pluginRuntime)
           }

@@ -95,6 +95,7 @@ const showSettingsDialog = ref(false)
 const showAccessDeniedDialog = ref(false)
 const showFolderManageDialog = ref(false)
 const showTagManageDialog = ref(false)
+const showAboutDialog = ref(false)
 
 // ============================================
 // Tab管理
@@ -368,6 +369,7 @@ onUnmounted(() => {
             @add-server="handleAddServer"
             @manage-folders="showFolderManageDialog = true"
             @manage-tags="showTagManageDialog = true"
+            @show-about="showAboutDialog = true"
           />
         </ResizablePanel>
 
@@ -483,6 +485,7 @@ onUnmounted(() => {
       v-model:show-access-denied-dialog="showAccessDeniedDialog"
       v-model:show-folder-manage-dialog="showFolderManageDialog"
       v-model:show-tag-manage-dialog="showTagManageDialog"
+      v-model:show-about-dialog="showAboutDialog"
       :editing-server="editingServer"
       :upload-initial-folder-id="uploadInitialFolderId"
       :upload-initial-tag-ids="uploadInitialTagIds"

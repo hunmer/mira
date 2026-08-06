@@ -7,6 +7,7 @@ import PluginsDialog from '@renderer/components/business/PluginsDialog.vue'
 import SettingsDialog from '@renderer/components/business/SettingsDialog.vue'
 import FolderManageDialog from '@renderer/components/business/FolderManageDialog.vue'
 import TagManageDialog from '@renderer/components/business/TagManageDialog.vue'
+import AboutDialog from '@renderer/components/business/AboutDialog.vue'
 import {
   AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
   AlertDialogDescription, AlertDialogFooter, AlertDialogAction
@@ -26,6 +27,7 @@ const showSettingsDialog = defineModel<boolean>('showSettingsDialog', { required
 const showAccessDeniedDialog = defineModel<boolean>('showAccessDeniedDialog', { required: true })
 const showFolderManageDialog = defineModel<boolean>('showFolderManageDialog', { required: true })
 const showTagManageDialog = defineModel<boolean>('showTagManageDialog', { required: true })
+const showAboutDialog = defineModel<boolean>('showAboutDialog', { required: true })
 
 defineProps<{
   editingServer: ServerConfig | null
@@ -122,6 +124,11 @@ const emit = defineEmits<{
   <TagManageDialog
     v-model:visible="showTagManageDialog"
     @select="emit('selectTag', $event)"
+  />
+
+  <!-- 关于对话框 -->
+  <AboutDialog
+    v-model:visible="showAboutDialog"
   />
 
   <!-- 权限不足对话框 -->

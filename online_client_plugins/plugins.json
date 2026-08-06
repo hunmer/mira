@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-06T09:22:09.329Z",
+  "generatedAt": "2026-08-06T09:42:47.750Z",
   "plugins": [
     {
       "pluginId": "b1c2d3e4-5f60-4a7b-8c9d-0a1b2c3d4e5f",
@@ -67,13 +67,13 @@
       "directory": "plugins/mira-whiteboard",
       "icon": null,
       "readme": "README.md",
-      "size": 24395,
-      "checksum": "sha256:492754719a0cea36b461705b2466813f064dd340cfc9d34f1ddd01de634b321d",
+      "size": 27683,
+      "checksum": "sha256:8585e3c391c9b12b83ef4dbea521c607a73c9d95d9bec23169cb1121314ac3ae",
       "files": [
         {
           "path": "vite.config.ts",
-          "size": 632,
-          "checksum": "sha256:3f8be4f5cda2705f8bfb171abc7e908898207b94c61bbb0ec9b124ab7be2ce97"
+          "size": 955,
+          "checksum": "sha256:9cbf86b4e380e68017fe93aab74f7aea0041fd23f862c6e0bd1490ba073be964"
         },
         {
           "path": "tsconfig.json",
@@ -86,19 +86,29 @@
           "checksum": "sha256:567b21ea3c09f827e8e35747d246d10914ad530b4b1c667b58507a7b3737fe9f"
         },
         {
-          "path": "src/main.ts",
+          "path": "src/manager/main.ts",
+          "size": 352,
+          "checksum": "sha256:ff39383d210a0dbfefcb89f30598e65cb49bf95660fac52873ffbbd4a857acca"
+        },
+        {
+          "path": "src/manager/App.vue",
+          "size": 9870,
+          "checksum": "sha256:0db6562001e047d7fdcc2df78377b48d544c46fa705b5f2f3ddf1d130a916fc8"
+        },
+        {
+          "path": "src/canvas/main.ts",
           "size": 320,
           "checksum": "sha256:a4798e1f4cb95bdfd0369e1182d7db00a77d89eb5b2746fa8487c856d1767003"
         },
         {
-          "path": "src/App.vue",
+          "path": "src/canvas/App.vue",
           "size": 3959,
           "checksum": "sha256:9ac4580aa00be4b62ed9dffcea97d9beeb62d5e74d355d852d9965b7e2902df6"
         },
         {
           "path": "README.md",
-          "size": 4520,
-          "checksum": "sha256:823f21e631e09e0f303702f02cd833e5523ff56271ab173e15bf02fc6dfc474b"
+          "size": 5972,
+          "checksum": "sha256:670f5bb952c7f64cdd97d6fe8e23a41f7aa47c15380b4f3d27c3889239412a8f"
         },
         {
           "path": "plugin.json",
@@ -112,13 +122,18 @@
         },
         {
           "path": "index.js",
-          "size": 12618,
-          "checksum": "sha256:f4dc7061342fed9d7556736a5c84ebe0dee6c91494caf5f5b49d3c091a0f2357"
+          "size": 3585,
+          "checksum": "sha256:8d7a0f9225943e4db045e4803e477eb8358f5bf596acebfa46800c962d96a8ca"
         },
         {
           "path": "index.html",
-          "size": 300,
-          "checksum": "sha256:6b48b5f5a9c3e40bf2c4612daa31b8ae685f97dccf9d2af79a10bcd8567910fd"
+          "size": 323,
+          "checksum": "sha256:ddd8f1c98fbe47f3b18dfeaef94a0c8a30414ff0f4388b0b49a7161e3cb81ed2"
+        },
+        {
+          "path": "canvas.html",
+          "size": 301,
+          "checksum": "sha256:b46aa5b0f452b750b7423ee8f2c86fda44cd50befcffc607160d4cb2ded0b0a4"
         }
       ]
     }

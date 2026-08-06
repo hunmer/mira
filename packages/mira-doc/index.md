@@ -6,7 +6,7 @@ hero:
   text: "智能文件管理与自动化平台"
   tagline: "🚀 让文件管理变得简单，让自动化触手可及"
   image:
-    src: /logo.svg
+    src: /logo.png
     alt: Mira
   actions:
     - theme: brand

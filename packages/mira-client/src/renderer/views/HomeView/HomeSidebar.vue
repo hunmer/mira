@@ -14,6 +14,7 @@ import { useServerListStore } from '@/renderer/stores/serverList'
 import { useAuthStore } from '@/renderer/stores/auth'
 import { useToast } from '@/renderer/composables/useToast'
 import type { LocalFsNode } from '../../../shared/types'
+import miraLogo from '@/renderer/assets/mira-logo.png'
 
 defineOptions({ name: 'HomeSidebar' })
 
@@ -41,6 +42,8 @@ const emit = defineEmits<{
   manageFolders: []
   /** 打开标签管理对话框 */
   manageTags: []
+  /** 打开关于对话框 */
+  showAbout: []
   /** 导入本地文件夹：抛出根路径 + 递归目录树给父级 */
   importFolder: [payload: { rootPath: string; tree: LocalFsNode[] }]
 }>()
@@ -192,7 +195,20 @@ defineExpose({ locateItem })
 
 <template>
   <!-- 素材库选择（从 HomeHeader 迁入，位于侧栏顶部） -->
-  <div class="shrink-0 px-2 pt-2 pb-1">
+  <div class="shrink-0 px-2 pt-2 pb-1 flex items-center gap-2">
+    <button
+      type="button"
+      class="size-7 shrink-0 rounded-lg hover:opacity-80 active:scale-95 transition cursor-pointer"
+      title="关于 Mira"
+      @click="emit('showAbout')"
+    >
+      <img
+        :src="miraLogo"
+        alt="Mira"
+        class="size-full rounded-lg"
+        draggable="false"
+      />
+    </button>
     <Dropdown
       :offset="{ x: 0, y: 4 }"
       placement="bottom-start"

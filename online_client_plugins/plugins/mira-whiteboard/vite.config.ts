@@ -1,8 +1,10 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import { fileURLToPath, URL } from 'node:url'
+import { resolve, fileURLToPath, URL } from 'node:url'
 
-// 白板 dist SPA 构建配置
+// 白板 dist SPA 构建配置（多页）
+//   - index.html  → 工程管理（插件主界面窗口加载）
+//   - canvas.html → 画布（工程管理窗口再开的子窗口加载）
 // 产物输出到 dist/，由插件窗口（PluginWindowHandlers）通过 loadFile 加载。
 export default defineConfig({
   plugins: [vue()],
@@ -16,7 +18,13 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
-    // 单页应用，无需分 chunk 过多优化
     target: 'chrome100',
+    rollupOptions: {
+      // 多页入口：每个 html 一个独立 chunk
+      input: {
+        main: resolve(__dirname, 'index.html'),
+        canvas: resolve(__dirname, 'canvas.html'),
+      },
+    },
   },
 })

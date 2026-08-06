@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow } from 'electron'
+import { ipcMain, BrowserWindow, app } from 'electron'
 import * as fs from 'fs/promises'
 import * as path from 'path'
 import { logger } from '../utils/Logger'
@@ -97,10 +97,11 @@ export class PluginWindowHandlers {
 
   /**
    * 计算 windowId
+   * 同时纳入 entry，避免「主界面窗口」与「画布窗口」这类同插件不同入口的窗口互相覆盖复用。
    */
-  private getWindowId(pluginId: string, query?: Record<string, string>): string {
+  private getWindowId(pluginId: string, entry: string, query?: Record<string, string>): string {
     const projectId = query?.projectId || query?.id || 'default'
-    return `${pluginId}:${projectId}`
+    return `${pluginId}:${entry}:${projectId}`
   }
 
   /**
@@ -116,7 +117,7 @@ export class PluginWindowHandlers {
       }
 
       const entry = opts.entry || 'dist/index.html'
-      const windowId = this.getWindowId(opts.pluginId, opts.query)
+      const windowId = this.getWindowId(opts.pluginId, entry, opts.query)
       const entryPath = await this.resolveEntryPath(opts.pluginId, entry)
 
       // 复用已存在的窗口：聚焦并重新加载（切换 query）
@@ -151,8 +152,13 @@ export class PluginWindowHandlers {
         webPreferences: {
           nodeIntegration: false,
           contextIsolation: true,
-          // 插件 dist 是普通前端 SPA，不注入主进程 preload
-          sandbox: true,
+          sandbox: false,
+          // 注入专用 preload：暴露最小化的 electronAPI.pluginWindow，
+          // 让插件主界面能够再次打开子窗口（例如画板管理 → 画布窗口）。
+          // sandbox 须为 false，否则 preload 无法 require('electron')。
+          preload: app.isPackaged
+            ? path.join(__dirname, '../dist-preload/plugin-window-preload.js')
+            : path.join(__dirname, '../src/preload/plugin-window-preload.js'),
         },
       })
 
