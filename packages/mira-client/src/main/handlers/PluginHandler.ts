@@ -270,6 +270,27 @@ export class PluginHandler {
   }
 
   /**
+   * 根据插件 ID 查询插件实际所在目录（actualDirectory）。
+   *
+   * 插件目录名不一定等于 pluginId（可能是 mira-whiteboard 这类语义名），
+   * 因此必须通过 discoverPlugins 扫描后取 actualDirectory，
+   * 否则会拼出 pluginsDirectory/<pluginId>/ 这样的错误路径。
+   * 供 PluginWindowHandlers 解析窗口入口时使用。
+   */
+  public async getPluginActualDirectory(pluginId: string): Promise<string> {
+    if (!this.config?.pluginsDirectory) return ''
+    try {
+      const configs = await this.discoverPlugins()
+      const cfg = configs.find(c => c.pluginId === pluginId)
+      if (cfg?.actualDirectory) return cfg.actualDirectory
+    } catch (error) {
+      logger.warn('PluginHandler', `getPluginActualDirectory failed for ${pluginId}`, { error })
+    }
+    // 兜底：按 pluginId 作为目录名
+    return this.getPluginDirectory(pluginId)
+  }
+
+  /**
    * 获取所有插件
    */
   private async handleGetAllPlugins(

@@ -61,13 +61,9 @@ const loadError = ref<string | null>(null)
 </template>
 
 <style>
-/* Material Icons：尝试加载本地字体（主窗口已注册），失败则用文字回退 */
-@font-face {
-  font-family: 'Material Icons';
-  font-style: normal;
-  font-weight: 400;
-  src: local('Material Icons'), local('MaterialIcons-Regular');
-}
+/* Material Icons 字体由 main.ts 的 loadMaterialIcons() 动态注入
+   （import 字体文件触发 vite asset 处理，避免在 <style> 里写 url() 被
+   原样保留导致字体不进 dist）。这里不再声明 @font-face。 */
 
 html,
 body,

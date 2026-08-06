@@ -1,6 +1,10 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import { resolve, fileURLToPath, URL } from 'node:url'
+import { fileURLToPath, URL } from 'node:url'
+import { dirname, resolve } from 'node:path'
+
+// ESM 下没有 __dirname，从 import.meta.url 派生
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 // 白板 dist SPA 构建配置（多页）
 //   - index.html  → 工程管理（插件主界面窗口加载）

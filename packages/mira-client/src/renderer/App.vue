@@ -33,16 +33,20 @@
       </DialogContent>
     </Dialog>
 
-    <!-- 全局确认对话框 -->
-    <AlertDialog>
-      <AlertDialogContent class="fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg">
+    <!-- 全局确认对话框（消费 useConfirm 的 confirmState）
+         z-index 高于普通 Dialog(z-50)，确保从其他对话框内弹出时显示在最上层。
+         用普通 Button 而非 AlertDialogAction/Cancel：后两者内部是 DialogClose，
+         点击会自动 onOpenChange(false)，与确认回调的执行时序耦合，曾导致
+         “点确认无反应”。这里完全由 confirmState 控制开关，按钮逻辑自管。 -->
+    <AlertDialog :open="confirmState.visible" @update:open="(open: boolean) => { if (!open) onConfirmCancel() }">
+      <AlertDialogContent class="fixed left-[50%] top-[50%] z-[100] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg">
         <AlertDialogHeader>
-          <AlertDialogTitle />
-          <AlertDialogDescription />
+          <AlertDialogTitle>{{ confirmState.header || '确认操作' }}</AlertDialogTitle>
+          <AlertDialogDescription>{{ confirmState.message }}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>取消</AlertDialogCancel>
-          <AlertDialogAction>确认</AlertDialogAction>
+          <Button variant="outline" @click="onConfirmCancel">{{ confirmState.rejectLabel || '取消' }}</Button>
+          <Button @click="onConfirmAccept">{{ confirmState.acceptLabel || '确认' }}</Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
@@ -81,6 +85,7 @@ import { onMounted, onUnmounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import GlobalLoading from './components/GlobalLoading.vue'
 import { useSettingsStore } from './stores/settings'
+import { confirmState } from './composables/useConfirm'
 
 // Import shadcn components
 import { Toaster } from '@/components/ui/sonner'
@@ -91,8 +96,6 @@ import {
   AlertDialogTitle,
   AlertDialogDescription,
   AlertDialogFooter,
-  AlertDialogCancel,
-  AlertDialogAction,
 } from '@/components/ui/alert-dialog'
 import {
   Dialog,
@@ -166,6 +169,27 @@ const handleGlobalLoadingCancel = () => {
   globalLoading.isVisible = false
   globalLoading.showCancel = false
   console.log('🚫 Global loading cancelled by user')
+}
+
+// ==================== 全局确认对话框处理 ====================
+// 消费 useConfirm 的 confirmState：把 confirm.require(...) 调用渲染成可见的 AlertDialog。
+// 用普通 Button 而非 AlertDialogAction/Cancel，避免 reka-ui DialogClose 自动关闭
+// 与确认回调的时序耦合。开关完全由 confirmState.visible 控制。
+const onConfirmAccept = () => {
+  const cb = confirmState.value.onAccept
+  // 先关闭并清空，再执行回调（回调可能是 async，不阻塞 UI）
+  confirmState.value.visible = false
+  confirmState.value.onAccept = undefined
+  try {
+    cb?.()
+  } catch (e) {
+    console.error('[confirm] accept handler error:', e)
+  }
+}
+
+const onConfirmCancel = () => {
+  confirmState.value.visible = false
+  confirmState.value.onAccept = undefined
 }
 
 // 键盘快捷键处理

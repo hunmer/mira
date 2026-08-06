@@ -2,7 +2,8 @@
 /**
  * PluginContributionBar —— HomeView 右侧栏顶部的「插件图标列表」。
  *
- * 订阅 window.pluginSystem.contributions，把所有已注册 contribution 的插件渲染为横向图标。
+ * 订阅 window.pluginSystem.contributions，把所有已注册 contribution 的插件渲染为图标。
+ * 默认横向排列；当 vertical=true 时改为纵向（用于详情侧栏折叠后作为独立竖条贴在第三列右侧）。
  *
  * 点击图标的行为由 contribution.behavior 决定：
  *   - 'window'（默认）：直接调 onActivate（一般在此 openPluginWindow 打开插件主界面）
@@ -12,12 +13,20 @@
  */
 import { ref, onMounted, onBeforeUnmount, defineComponent, h } from 'vue'
 import { Dropdown } from '@/renderer/components/common/Dropdown'
+import { useToast } from '@renderer/composables/useToast'
 import type { PluginContribution, PluginContributionRenderContext } from '@renderer/plugins/types'
 
 defineOptions({ name: 'PluginContributionBar' })
 
+/**
+ * vertical=true 时整体改为纵向排列。
+ * 用于详情侧栏折叠后，把插件图标栏作为独立的竖条贴在第三列右侧边缘展示。
+ */
+withDefaults(defineProps<{ vertical?: boolean }>(), { vertical: false })
+
 const contributions = ref<PluginContribution[]>([])
 let unsubscribe: (() => void) | null = null
+const toast = useToast()
 
 const getPluginSystem = (): any => (window as any).pluginSystem
 
@@ -95,12 +104,24 @@ function buildCtx(contribution: PluginContribution): PluginContributionRenderCon
 
 /**
  * window 行为：点击直接触发 onActivate（一般打开插件主界面窗口）。
+ * 包装 onActivate：捕获同步抛错，并对返回值/异步结果做失败提示。
  */
 async function onWindowActivate(contribution: PluginContribution) {
+  let result: any
   try {
-    await contribution.onActivate?.(buildCtx(contribution))
-  } catch (e) {
+    result = await contribution.onActivate?.(buildCtx(contribution))
+  } catch (e: any) {
     console.error(`[PluginContributionBar] onActivate failed for ${contribution.id}:`, e)
+    toast.add({ severity: 'error', summary: '插件启动失败', detail: e?.message || String(e), life: 5000 })
+    return
+  }
+  // onActivate 返回了 openPluginWindow 的结果（或 Promise<result>）时检查
+  if (result && typeof result === 'object' && result.success === false) {
+    const detail = result.message || '未知错误'
+    const hint = /不存在|dist/.test(detail)
+      ? '（请在插件目录执行 pnpm install && pnpm build 生成 dist）'
+      : ''
+    toast.add({ severity: 'error', summary: '插件窗口打开失败', detail: `${detail}${hint}`, life: 6000 })
   }
 }
 
@@ -157,7 +178,10 @@ function iconContent(icon: PluginContribution['icon']): string {
 <template>
   <div
     v-if="contributions.length > 0"
-    class="flex items-center gap-1 px-2 py-1.5 rounded-2xl border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur-xl shadow-[0_12px_40px_rgba(99,102,241,0.10)]"
+    class="rounded-2xl border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur-xl shadow-[0_12px_40px_rgba(99,102,241,0.10)]"
+    :class="vertical
+      ? 'flex flex-col items-center gap-1 px-1.5 py-2'
+      : 'flex items-center gap-1 px-2 py-1.5'"
   >
     <template v-for="contribution in contributions" :key="contribution.id">
       <!-- window 行为：纯按钮，点击直开插件主界面 -->

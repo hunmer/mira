@@ -49,6 +49,29 @@ pnpm dev:client-plugins
 
 校验失败时脚本以非零退出码退出，便于接入 CI。
 
+### 构建期文件过滤（不进安装包）
+
+索引脚本默认会**排除构建期文件**，避免把源码、构建配置、锁文件等打进市场安装包。默认排除（相对插件根）：
+
+- `src/`（源码；构建产物应在 `dist/`）
+- `vite.config.*`、`tsconfig*.json`（构建 / 类型配置）
+- `index.html`、`*.html`（插件根的 HTML 入口；运行时入口是 `dist/index.html`）
+- `pnpm-lock.yaml`、`package-lock.json`、`yarn.lock`（锁文件）
+- `.gitignore`、`.pluginignore`、`.eslintrc*`、`.prettierrc*`
+
+硬排除（任何情况都不进）：`node_modules`、`.git`、`.DS_Store`、`Thumbs.db`。
+
+> 预构建产物（`dist/`、`build/`）**不在排除列表**——带 SPA 窗口的插件必须把构建好的 `dist/` 一起分发，否则客户端安装后无法加载入口。
+
+**自定义排除**：在插件根目录放一个 `.pluginignore`（gitignore 语法，支持 `!` 取反），按顺序追加在默认规则之后、最后命中的规则生效。例如想保留 `src/`：
+
+```
+# .pluginignore
+!src/
+```
+
+纯 JS 插件（只有 `index.js`）默认不受影响。
+
 > 💡 **本地调试一条命令搞定**：`pnpm dev:client-plugins` 现在同时**监听重建索引**并**在 `http://localhost:8080` 起静态服务**（自带 `Access-Control-Allow-Origin: *`，客户端可直接跨域拉取）。端口可用环境变量 `PORT=9000` 或 CLI `--port 9000` 覆盖。客户端「插件市场源」填 `http://localhost:8080` 即可。
 >
 > 如只想重建索引不想起服务，用 `pnpm build:client-plugins-index`（单次）或手动 `node scripts/build-client-plugins-index.mjs --watch`（仅监听）；只想起服务，用 `node scripts/build-client-plugins-index.mjs --serve`。

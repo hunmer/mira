@@ -69,11 +69,11 @@ function handleTabContextMenu(tab: TabItem, event: MouseEvent) {
 <template>
   <div class="flex h-full items-end gap-0.5">
     <!-- 返回：激活上一次的 tab -->
-    <div class="flex items-center gap-0.5 shrink-0 mb-0.5 mr-1">
+    <div class="flex items-end gap-0.5 shrink-0 mr-1">
       <button
-        class="h-8 w-8 flex items-center justify-center rounded-full text-muted-foreground hover:text-primary hover:bg-white/50 hover:backdrop-blur-xl transition-[color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-95"
+        class="h-6 w-8 flex items-center justify-center rounded-full text-muted-foreground hover:text-primary hover:bg-white/50 hover:backdrop-blur-xl transition-[color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-95"
         title="激活上一次的tab (Ctrl+Shift+Tab)" @click="props.onActivateLastTab">
-        <span class="material-icons">arrow_back</span>
+        <span class="material-icons text-xl">arrow_back</span>
       </button>
     </div>
 

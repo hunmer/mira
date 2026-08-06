@@ -346,6 +346,45 @@ export class PluginService {
   }
 
   /**
+   * 重新加载单个本地插件。
+   * 从主进程重新获取该插件的最新配置/目录，更新内部运行时表（保留运行状态）。
+   * 注意：脚本清理与重新注入由调用方（operationManager）负责，这里只刷新元数据。
+   * @param pluginId 插件 ID
+   */
+  public async reloadPlugin(pluginId: string): Promise<BaseResponse> {
+    if (!this.isElectronEnvironment) {
+      return { success: false, message: 'Local plugin reload only available in Electron environment' }
+    }
+    if (!pluginId) {
+      return { success: false, message: '缺少 pluginId' }
+    }
+
+    try {
+      const result = await (window as any).electronAPI.plugin.get(pluginId)
+      if (!result.success || !result.data) {
+        return { success: false, message: result.message || `Plugin not found: ${pluginId}` }
+      }
+
+      const runtime = result.data as PluginRuntime
+      // 保留该插件原有的运行状态（重载前后启用状态不变）
+      const existing = this.plugins.get(pluginId)
+      const status = existing?.status && existing.status !== 'disabled' ? existing.status : 'disabled'
+      const context = existing?.context
+
+      this.plugins.set(pluginId, {
+        ...runtime,
+        status,
+        context
+      })
+
+      return { success: true, message: `Plugin ${pluginId} reloaded`, data: this.plugins.get(pluginId) }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      return { success: false, message: errorMessage }
+    }
+  }
+
+  /**
    * 获取插件配置
    */
   public getConfig(): PluginManagerConfig | null {

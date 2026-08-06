@@ -46,7 +46,132 @@ const INDEX_VERSION = 1
 const REQUIRED_FIELDS = ['pluginName', 'pluginId', 'version']
 
 // 默认忽略的文件 / 目录名（不进入索引与 checksum 计算）
-const IGNORED_NAMES = new Set(['node_modules', '.git', 'dist', 'build', '.DS_Store', 'Thumbs.db'])
+// 注意：dist / build 不在忽略列表内 —— 预构建产物（如白板插件的 dist/）属于可分发内容，
+// 必须随市场安装包一起下发，否则客户端安装后无法加载插件窗口入口。
+const IGNORED_NAMES = new Set(['node_modules', '.git', '.DS_Store', 'Thumbs.db'])
+
+/**
+ * 默认忽略的「仅构建期」文件 glob（相对插件根）。
+ *
+ * 这些文件是构建 SPA 类插件的输入/工具链，运行时不需要，不应进入安装包：
+ *   src/                  源码（构建产物在 dist/）
+ *   vite.config.*         构建配置
+ *   tsconfig*.json        TS 配置
+ *   index.html / *.html   插件根的 HTML 入口（vite 构建输入；运行时入口是 dist/index.html）
+ *   pnpm-lock.yaml / *lock*  锁文件
+ *   .gitignore / .pluginignore
+ *   .eslintrc* / .prettierrc*  代码规范配置
+ *
+ * 纯 JS 插件（只有 index.js）默认不受影响：没有 src/、没有 html、没有 vite 配置。
+ * 单个插件可在根目录放 .pluginignore 覆盖默认（与 gitignore 语法一致，空行/#注释忽略）。
+ */
+const DEFAULT_IGNORE_GLOBS = [
+  'src/',
+  'vite.config.*',
+  'vite.config.*.js',
+  'vite.config.*.ts',
+  'vite.config.*.mjs',
+  'vite.config.*.cjs',
+  'tsconfig*.json',
+  'index.html',
+  '*.html',
+  'pnpm-lock.yaml',
+  'package-lock.json',
+  'yarn.lock',
+  '.gitignore',
+  '.pluginignore',
+  '.eslintrc*',
+  '.prettierrc*',
+]
+
+/**
+ * 极简 glob 匹配：
+ *   - 支持 *（不含路径分隔符）、**（跨目录）、行尾 / 表目录
+ *   - 不支持 ?、字符类 []、复杂嵌套
+ *   - 注意：本函数只判断「模式是否匹配该路径」（忽略 ! 取反语义，取反由 shouldIgnore 处理）
+ * 覆盖本项目用到的模式，避免引入第三方依赖。
+ * @param {string} pattern glob 模式（posix，可能带 ! 前缀）
+ * @param {string} posixRel 相对插件根的 posix 路径
+ * @param {boolean} isDir 当前路径是否目录
+ */
+function matchGlob(pattern, posixRel, isDir) {
+  const neg = pattern.startsWith('!')
+  const p = neg ? pattern.slice(1) : pattern
+  // 行尾 '/' → 表目录（匹配该目录及其下所有内容）
+  const dirOnly = p.endsWith('/')
+  const pat = dirOnly ? p.slice(0, -1) : p
+  // 锚定到根：模式按段与路径匹配
+  const regex = globToRegex(pat)
+  // 完全匹配 / 前缀匹配（目录及其子内容）
+  const matchedFull = regex.test(posixRel)
+  // 若模式本身不带 **，也允许它匹配某一级目录前缀（使 'src' 命中 'src/a.ts'）
+  let matchedPrefix = false
+  if (!pat.includes('**')) {
+    const segs = posixRel.split('/')
+    for (let i = 1; i <= segs.length; i++) {
+      if (regex.test(segs.slice(0, i).join('/'))) {
+        matchedPrefix = true
+        break
+      }
+    }
+  }
+  // 返回「原始匹配结果」（不含取反），! 由 shouldIgnore 解释
+  return matchedFull || matchedPrefix
+}
+
+/** 把简单 glob 转成正则 */
+function globToRegex(glob) {
+  let re = ''
+  for (let i = 0; i < glob.length; i++) {
+    const c = glob[i]
+    if (c === '*') {
+      if (glob[i + 1] === '*') {
+        // **  跨任意层级
+        re += '.*'
+        i++
+        // 吃掉可能紧跟的 '/'
+        if (glob[i + 1] === '/') i++
+      } else {
+        // *  不含路径分隔符
+        re += '[^/]*'
+      }
+    } else if ('.+^$(){}|[]\\'.includes(c)) {
+      re += '\\' + c
+    } else {
+      re += c
+    }
+  }
+  return new RegExp('^' + re + '$')
+}
+
+/**
+ * 解析 .pluginignore（gitignore 风格），返回 glob 模式数组。
+ * 空行与 # 开头的注释忽略；保留行序；支持前缀 ! 取反。
+ * @param {string} content
+ * @returns {string[]}
+ */
+function parseIgnoreFile(content) {
+  return content
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0 && !l.startsWith('#'))
+}
+
+/**
+ * 判断某个相对路径是否应被忽略。
+ * @param {string} posixRel 相对插件根的 posix 路径
+ * @param {boolean} isDir 是否目录
+ * @param {string[]} patterns 当前生效的 glob 模式（默认 + .pluginignore，按顺序）
+ */
+function shouldIgnore(posixRel, isDir, patterns) {
+  let ignored = false
+  for (const pat of patterns) {
+    if (matchGlob(pat, posixRel, isDir)) {
+      ignored = !pat.startsWith('!')
+    }
+  }
+  return ignored
+}
 
 const log = (...args) => console.log('[client-plugins-index]', ...args)
 const warn = (...args) => console.warn('[client-plugins-index] ⚠️', ...args)
@@ -56,11 +181,14 @@ const err = (...args) => console.error('[client-plugins-index] ❌', ...args)
 const toPosix = (p) => p.split(sep).join(posix.sep)
 
 /**
- * 递归收集目录下的所有文件相对路径（已忽略 IGNORED_NAMES）。
+ * 递归收集目录下的所有文件相对路径。
+ * 应用三层过滤：IGNORED_NAMES（硬忽略）→ DEFAULT_IGNORE_GLOBS（构建期文件）→ 插件自定义 .pluginignore。
  * @param {string} dir 绝对目录
+ * @param {string[]} extraIgnore 插件自定义 glob（已读取并合并，按序追加）
  * @returns {Promise<string[]>} 相对 dir 的 posix 路径列表
  */
-async function collectFiles(dir) {
+async function collectFiles(dir, extraIgnore = []) {
+  const patterns = [...DEFAULT_IGNORE_GLOBS, ...extraIgnore]
   const out = []
   const stack = ['.']
   while (stack.length) {
@@ -71,10 +199,15 @@ async function collectFiles(dir) {
       const entries = await readdir(abs, { withFileTypes: true })
       for (const e of entries) {
         if (IGNORED_NAMES.has(e.name)) continue
+        const childRel = toPosix(join(rel, e.name))
+        // 目录命中 ignore（前缀匹配）时整棵子树跳过，避免无谓遍历
+        if (shouldIgnore(childRel, true, patterns)) continue
         stack.push(join(rel, e.name))
       }
     } else if (entryStat.isFile()) {
-      out.push(toPosix(rel))
+      const posixRel = toPosix(rel)
+      if (shouldIgnore(posixRel, false, patterns)) continue
+      out.push(posixRel)
     }
   }
   return out
@@ -136,12 +269,20 @@ async function buildEntry(pluginAbsDir) {
   }
   validateConfig(config, dirName)
 
-  // 收集全部文件指纹
-  const relFiles = await collectFiles(pluginAbsDir)
+  // 读取插件自定义 .pluginignore（可选，gitignore 风格），追加在默认忽略之后
+  let extraIgnore = []
+  try {
+    const ignoreRaw = await readFile(join(pluginAbsDir, '.pluginignore'), 'utf-8')
+    extraIgnore = parseIgnoreFile(ignoreRaw)
+  } catch {
+    // 无 .pluginignore，使用默认
+  }
+
+  // 收集全部文件指纹（已按默认 + 自定义规则过滤构建期文件）
+  const relFiles = await collectFiles(pluginAbsDir, extraIgnore)
   const files = []
   let totalSize = 0
   for (const rel of relFiles) {
-    // 再次过滤保险（collectFiles 已忽略，这里防御性跳过 plugin.json 自身之外的必要项之外的不变）
     const fp = await fileFingerprint(join(pluginAbsDir, rel))
     files.push({ path: rel, size: fp.size, checksum: fp.checksum })
     totalSize += fp.size

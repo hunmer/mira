@@ -54,14 +54,6 @@ const router = useRouter()
 // 第三列：详情面板状态（数据由 MediaTabListView 同步到 mediaStore）
 // ============================================
 const showDetailSidebar = computed(() => mediaStore.showDetailSidebar)
-// 侧栏是否已完全折叠：仅在隐藏动画结束后才为 true。
-// 用 showDetailSidebar 控制显隐，用 sidebarCollapsed 控制布局（父容器悬浮 / Tabs 右侧留白），
-// 这样隐藏动画期间父容器仍占位，避免 <aside> 过早失去 flex 尺寸导致内容被挤压。
-const sidebarCollapsed = ref(!mediaStore.showDetailSidebar)
-watch(showDetailSidebar, visible => {
-  if (visible) sidebarCollapsed.value = false
-})
-const onDetailSidebarLeave = () => { sidebarCollapsed.value = true }
 const sidebarMediaItems = computed(() => mediaStore.detailSidebarFiles)
 const detailSidebarItem = computed(() => sidebarMediaItems.value.length === 1 ? sidebarMediaItems.value[0] : undefined)
 const detailSidebarItems = computed(() => sidebarMediaItems.value.length > 1 ? sidebarMediaItems.value : undefined)
@@ -348,6 +340,20 @@ onUnmounted(() => {
 
 <template>
   <div class="home-view h-screen flex flex-col text-[13px] relative" style="background: linear-gradient(to bottom right, var(--glass-tint-1), var(--glass-tint-2), var(--glass-tint-3))">
+    <!-- HomeHeader 始终悬浮于右上角，与详情侧栏开关无关（不再参与第三列布局） -->
+    <HomeHeader
+      class="absolute top-3 right-3 z-30"
+      :is-desktop="isDesktop"
+      @upload="showFileUploadDialog = true"
+      @plugins="showPluginsDialog = true"
+      @shortcuts="showShortcutDialog = true"
+      @settings="showSettingsDialog = true"
+      @logout="handleLogout"
+      @window-minimize="handleWindowMinimize"
+      @window-maximize="handleWindowMaximize"
+      @window-close="handleWindowClose"
+    />
+
     <!-- 主内容区域（左侧栏 + 中间内容 + 右侧列） -->
     <div class="flex flex-1 min-h-0 p-3 gap-3">
       <ResizablePanelGroup direction="horizontal" auto-save-id="home-sidebar" class="flex-1 min-w-0 !overflow-visible">
@@ -377,12 +383,9 @@ onUnmounted(() => {
 
         <!-- 中间列：Tabs 条 + 内容面板 -->
         <ResizablePanel :default-size="80" :min-size="50" class="flex flex-col min-w-0 !overflow-visible">
-          <!-- Tabs 条（固定高度与右侧 HomeHeader 对齐，内容面板顶与详情面板顶对齐；隐藏滚动条） -->
-          <!-- 侧栏隐藏时 HomeHeader 悬浮于右上角，为避免遮挡 tabs，右侧留出 header 宽度 -->
-          <div
-            class="shrink-0 h-[56px] px-2 flex items-end overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden transition-[padding] duration-150"
-            :class="sidebarCollapsed ? 'pr-[220px]' : 'pr-2'"
-          >
+          <!-- Tabs 条（固定高度与右侧悬浮 HomeHeader 对齐，隐藏滚动条）。
+               HomeHeader 始终悬浮于右上角，右侧固定留出 header 宽度避免遮挡 tabs -->
+          <div class="shrink-0 h-[56px] px-2 pr-[220px] flex items-end overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <HomeTabsBar
               :active-tabs="activeTabs"
               :tab-context-menu-items="tabContextMenuItems"
@@ -422,29 +425,13 @@ onUnmounted(() => {
         </ResizablePanel>
       </ResizablePanelGroup>
 
-      <!-- 右侧列：详情侧栏可见时为常规列（Header 在上、侧栏在下，互不重叠）；
-           侧栏隐藏时整体悬浮于右上角，仅留 Header，中间内容自动占满全宽 -->
-      <div
-        class="flex flex-col gap-3 transition-[position] duration-200"
-        :class="sidebarCollapsed
-          ? 'absolute top-3 right-3 z-20'
-          : 'shrink-0 min-w-0'"
-      >
+      <!-- 右侧列：始终保持常规列布局（不随侧栏开关切换 display）。
+           HomeHeader 已抽离为始终悬浮于右上角，这里顶部留出 Header 高度避免被遮挡。
+           折叠时只剩纵向 PluginContributionBar 竖条；展开时纵向竖条 + 详情面板。 -->
+      <div class="shrink-0 min-w-0 flex flex-col gap-3 pt-14">
 
-        <HomeHeader
-          :is-desktop="isDesktop"
-          @upload="showFileUploadDialog = true"
-          @plugins="showPluginsDialog = true"
-          @shortcuts="showShortcutDialog = true"
-          @settings="showSettingsDialog = true"
-          @logout="handleLogout"
-          @window-minimize="handleWindowMinimize"
-          @window-maximize="handleWindowMaximize"
-          @window-close="handleWindowClose"
-        />
-
-        <!-- 插件贡献栏：横向展示所有已注册 contribution 的插件图标，点击弹出插件自定义内容 -->
-        <PluginContributionBar />
+        <!-- 插件贡献栏：始终纵向展示在第三列（Header 下方） -->
+        <PluginContributionBar vertical />
 
         <!-- 图片详情面板 -->
         <Transition
@@ -452,7 +439,6 @@ onUnmounted(() => {
           leave-active-class="transition-[transform,opacity] duration-150 ease-[cubic-bezier(0.4,0,1,1)]"
           enter-from-class="opacity-0 translate-x-4"
           leave-to-class="opacity-0 translate-x-4"
-          @after-leave="onDetailSidebarLeave"
         >
           <aside
             v-if="showDetailSidebar"

@@ -59,40 +59,19 @@ export class PluginWindowHandlers {
 
   /**
    * 解析插件入口文件绝对路径。
-   * 优先 pluginsDirectory/<pluginId>/<entry>，其次用插件 actualDirectory。
+   *
+   * 插件目录名不一定等于 pluginId（可能是 mira-whiteboard 这类语义目录名），
+   * 因此通过 PluginHandler.getPluginActualDirectory 取扫描到的 actualDirectory，
+   * 再拼上 entry。该路径随后会在 handleOpen 中做存在性校验。
    */
   private async resolveEntryPath(pluginId: string, entry: string): Promise<string> {
-    const pluginsDir = (this.pluginHandler as any).config?.pluginsDirectory as string | undefined
-
-    // 1. 尝试 pluginsDirectory/<pluginId>/<entry>
-    if (pluginsDir) {
-      const candidate = path.join(pluginsDir, pluginId, entry)
-      try {
-        await fs.access(candidate)
-        return candidate
-      } catch {
-        // 落到下一个查找路径
-      }
+    const base = await this.pluginHandler.getPluginActualDirectory(pluginId)
+    if (!base) {
+      // 兜底：按 pluginId 作为目录名（极少走到）
+      const pluginsDir = (this.pluginHandler as any).config?.pluginsDirectory as string | undefined
+      return pluginsDir ? path.join(pluginsDir, pluginId, entry) : path.join(pluginId, entry)
     }
-
-    // 2. 兜底：从 PluginHandler 发现的插件里取 actualDirectory
-    try {
-      const getAll = (this.pluginHandler as any).discoverPlugins
-      if (typeof getAll === 'function') {
-        const configs = await getAll.call(this.pluginHandler)
-        const cfg = configs?.find((c: any) => c.pluginId === pluginId)
-        const base = cfg?.actualDirectory || (pluginsDir ? path.join(pluginsDir, pluginId) : '')
-        if (base) {
-          const candidate = path.join(base, entry)
-          return candidate
-        }
-      }
-    } catch (e) {
-      logger.warn('PluginWindowHandlers', `Failed to discover plugin dir for ${pluginId}`, { error: e })
-    }
-
-    // 返回最可能的标准路径（即使不存在，也便于上层给出明确错误）
-    return pluginsDir ? path.join(pluginsDir, pluginId, entry) : path.join(pluginId, entry)
+    return path.join(base, entry)
   }
 
   /**
