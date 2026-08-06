@@ -73,6 +73,24 @@ logout               # clear current profile's token (stays logged-out until nex
 3. Capture a `libraryId` with `--json libraries list`, then pipe to the operation you need (`files list <id>`, `tags list <id>`, …). Most data commands take `libraryId` as the first positional arg.
 4. When scripting multiple steps, pass `--json` and parse; when showing the user a result, omit it for a readable table.
 
+## MCP server mode (`--mcp`)
+
+The same binary also runs as a **Model Context Protocol server** over stdio, exposing the full SDK as 50 tools an MCP client (Claude, other agents) can call directly. This is the preferred integration when an agent connects to Mira programmatically rather than shelling out to CLI subcommands.
+
+```bash
+# Start the MCP server (stdio transport). Connects to the default server or -s override.
+node packages/mira-app-server/dist/cli.js --mcp [-s http://host:8081] [--token <tok>] [--debug]
+```
+
+- **Tool naming**: `<module>_<action>` — e.g. `libraries_list`, `files_upload`, `tags_create`, `db_tables`, `system_health`, `auth_login`. One-to-one with CLI subcommands.
+- **Auth model is identical to the CLI**: tools reuse the current profile's token. Before any data tool, either (a) pre-run `mira-app-server login` so a profile exists, or (b) call the `auth_login` tool first — it saves the credential and immediately makes subsequent tools work.
+- **No-auth tools**: `system_health`, `system_info` work without login.
+- **Error convention**: failures return `{ isError: true, content: [{type:'text', text: message}] }`. An "未登录" error means call `auth_login` first.
+- **stdout is sacred**: in `--mcp` mode the server writes ONLY JSON-RPC to stdout; all logs go to stderr (`--debug` enables `[mira-mcp]` diagnostics). Do not expect human-readable output.
+- **`files_upload`** takes a `paths` array of LOCAL file paths (the server reads & streams them); `files_download` writes to `output` (or CWD) and returns `{savedTo, bytes}`.
+
+When choosing between CLI subcommand vs MCP tool: MCP is for agent clients speaking the protocol; CLI subcommands are for shell/one-shot use. The capabilities are the same.
+
 ## Command reference
 
 Every module's full subcommand list + flags is in `references/`. Read the relevant file when you need exact syntax for a module:

@@ -28,8 +28,40 @@ import { registerDevices } from './cli/commands/devices';
 import { registerDatabase } from './cli/commands/database';
 import { registerSystem } from './cli/commands/system';
 
+// MCP 服务（懒加载，避免在非 MCP 模式下加载 SDK）
+import { startMcpServer } from './mcp/server';
+
 // 加载环境变量
 dotenv.config();
+
+/**
+ * MCP 模式短路检测：
+ * 当命令行包含 --mcp 时，直接启动 MCP 服务（stdio），不进入 commander 命令流。
+ * 这样可保证 stdout 仅承载 JSON-RPC（MCP 协议要求），帮助信息也不会污染输出。
+ */
+async function maybeRunMcp(): Promise<boolean> {
+    const argv = process.argv.slice(2);
+    if (!argv.includes('--mcp') && !argv.includes('-mcp')) {
+        return false;
+    }
+
+    // 简易解析 --server / --token / --debug（复用 commander 风格但独立处理，避免 commander 副作用）
+    const getOpt = (name: string): string | undefined => {
+        const i = argv.indexOf(name);
+        return i >= 0 ? argv[i + 1] : undefined;
+    };
+    try {
+        await startMcpServer({
+            server: getOpt('--server') || getOpt('-s'),
+            token: getOpt('--token'),
+            debug: argv.includes('--debug') || process.env.MIRA_MCP_DEBUG === '1',
+        });
+        return true;
+    } catch (error) {
+        process.stderr.write(`❌ MCP server failed to start: ${error}\n`);
+        process.exit(1);
+    }
+}
 
 // 从 package.json 读取真实版本号
 // 编译产物位于 dist/，package.json 在其上一级目录
@@ -147,10 +179,17 @@ registerDatabase(program);
 // 系统
 registerSystem(program);
 
-// 解析命令行参数
-program.parse(process.argv);
+// 主流程：先检测 MCP 模式，否则进入 commander 命令派发
+(async () => {
+    if (await maybeRunMcp()) {
+        return; // MCP 模式已接管，进程由 stdio transport 保持运行
+    }
 
-// 如果没有提供命令，显示帮助
-if (!process.argv.slice(2).length) {
-    program.outputHelp();
-}
+    // 解析命令行参数
+    program.parse(process.argv);
+
+    // 如果没有提供命令，显示帮助
+    if (!process.argv.slice(2).length) {
+        program.outputHelp();
+    }
+})();
