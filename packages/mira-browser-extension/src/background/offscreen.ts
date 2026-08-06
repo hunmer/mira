@@ -5,6 +5,10 @@ const OFFSCREEN_URL = 'src/offscreen/index.html';
 
 /**
  * 确保 offscreen document 已创建(MV3 service worker 无 DOM,需 offscreen 做 Canvas)
+ *
+ * reasons 必须是 Chrome 合法值(见 chrome.offscreen.Reason 枚举)。
+ * Canvas convertToBlob 产出 Blob,用 BLOBS;不可用 IMAGE_PROCESSING(那是 Firefox/Edge 的,
+ * Chrome 会拒绝)。DOM_PARSER / DOM_SCRAPING 也合法,但 BLOBS 最贴合本用途。
  */
 export async function ensureOffscreen(): Promise<void> {
   if (offscreenReady) return;
@@ -13,8 +17,9 @@ export async function ensureOffscreen(): Promise<void> {
   if (!existing) {
     await chrome.offscreen.createDocument({
       url: OFFSCREEN_URL,
-      reasons: ['IMAGE_PROCESSING' as chrome.offscreen.Reason],
-      justification: '截图拼接与裁剪需要 Canvas',
+      // 用枚举成员(Reason 是 enum,字符串字面量不直接兼容);BLOBS 对应 Canvas convertToBlob
+      reasons: [chrome.offscreen.Reason.BLOBS],
+      justification: '截图拼接与裁剪需要 Canvas convertToBlob',
     });
   }
   offscreenReady = true;

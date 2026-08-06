@@ -1,4 +1,5 @@
 import type { Folder } from 'mira-app-core/shared/sdk';
+import { dbg } from '@/shared/debug';
 
 export interface DragDropPayload {
   /** 已有 File(本地拖动文件) */
@@ -32,23 +33,31 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
   let pendingFolders: Promise<Folder[]> | null = null;
 
   function onDragStart(e: DragEvent) {
-    if (!enabled) return;
+    if (!enabled) { dbg.log('dragdrop', 'dragstart ignored (disabled)'); return; }
     const target = e.target as HTMLElement;
     const isImg = target?.tagName === 'IMG';
     const isVideo = target?.tagName === 'VIDEO';
+    dbg.log('dragdrop', 'dragstart', { tag: target?.tagName, isImg, isVideo, enabled });
     if (!isImg && !isVideo) return;
     showOverlay(isVideo ? 'video' : 'image', target);
   }
 
   function onDragEnd() {
+    dbg.log('dragdrop', 'dragend → hideOverlay');
     hideOverlay();
   }
 
   /** 懒加载文件夹列表(dragstart 时触发,多次 dragstart 复用同一次请求) */
   function fetchFolders(): Promise<Folder[]> {
-    if (!handlers.getFolders) return Promise.resolve([]);
+    if (!handlers.getFolders) { dbg.log('dragdrop', 'no getFolders handler'); return Promise.resolve([]); }
     if (!pendingFolders) {
-      pendingFolders = handlers.getFolders().catch(() => [] as Folder[]);
+      pendingFolders = handlers.getFolders().then(f => {
+        dbg.log('dragdrop', 'fetchFolders ok', { count: f.length });
+        return f;
+      }).catch(e => {
+        dbg.error('dragdrop', 'fetchFolders failed', e);
+        return [] as Folder[];
+      });
       // 下一次 dragstart 重新拉取
       setTimeout(() => { pendingFolders = null; }, 5000);
     }
@@ -73,18 +82,21 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
       ev.preventDefault();
       hideOverlay();
       const dtFile = ev.dataTransfer?.files?.[0];
+      dbg.info('dragdrop', 'drop', { hasFile: !!dtFile, folderId, targetTag: target?.tagName });
       if (dtFile) {
         handlers.onUpload({ file: dtFile, kind, folderId });
         return;
       }
       const url = (target as HTMLImageElement).currentSrc || (target as HTMLImageElement).src;
       if (url) handlers.onUpload({ url, kind, folderId });
+      else dbg.warn('dragdrop', 'drop: no file and no url on target');
     });
     return zone;
   }
 
   function showOverlay(kind: 'image' | 'video', target: HTMLElement) {
     hideOverlay();
+    dbg.info('dragdrop', 'showOverlay', { kind, hasGetFolders: !!handlers.getFolders });
     overlay = document.createElement('div');
     overlay.className = 'mira-overlay';
 

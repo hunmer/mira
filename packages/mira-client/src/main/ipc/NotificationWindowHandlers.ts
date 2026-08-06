@@ -265,7 +265,7 @@ export class NotificationWindowHandlers {
           resizable: false,
           movable: true,
           alwaysOnTop: true,
-          skipTaskbar: false,
+          skipTaskbar: true,
           acceptFirstMouse: true,
           showLoading: false,
           htmlFileName: 'notification-window.html',

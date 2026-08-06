@@ -2,6 +2,7 @@ import type { UploadTask, UploadSource } from '@/shared/types';
 // CRITICAL CORRECTION: brief wrote `from 'mira-app-core'` — root pkg does NOT export UploadResult.
 // Use the SDK subpath (confirmed in Task 7).
 import type { UploadResult } from 'mira-app-core/shared/sdk';
+import { dbg } from '@/shared/debug';
 
 export const MAX_CONCURRENCY = 3;
 const MAX_RETRY = 2;
@@ -113,6 +114,7 @@ export function createUploader(deps: UploaderDeps): Uploader {
         task.percent = 100;
         task.result = result;
         controllers.delete(task.id);
+        dbg.info('upload', 'success', { id: task.id, name: task.file.name, result });
         notify();
         scheduleSuccessRemoval(task.id);
         return;
@@ -132,6 +134,7 @@ export function createUploader(deps: UploaderDeps): Uploader {
         task.status = 'failed';
         task.error = e?.message ?? String(e);
         controllers.delete(task.id);
+        dbg.error('upload', 'failed', { id: task.id, name: task.file.name, error: task.error });
         notify();
         return;
       }
@@ -169,6 +172,7 @@ export function createUploader(deps: UploaderDeps): Uploader {
         createdAt: Date.now(),
       };
       queue.push(task);
+      dbg.info('upload', 'enqueue', { id: task.id, source: input.source, name: input.file.name, size: input.file.size, libraryId: input.libraryId, folderId: input.folderId });
       notify();
       pump();
       return task.id;

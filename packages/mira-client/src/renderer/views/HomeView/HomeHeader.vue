@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { Dropdown } from '@/renderer/components/common/Dropdown'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useAuthStore } from '@/renderer/stores/auth'
 import { useDashboardStore } from '@/renderer/stores/dashboard'
 import { useMediaStore } from '@/renderer/stores/media'
@@ -50,22 +49,15 @@ watch(userAvatarUrl, () => { avatarLoadError.value = false })
   <!-- 紧凑右侧悬浮栏：用户头像菜单 + 窗口控制 -->
   <header class="flex items-center justify-end gap-1 px-2 py-1.5 rounded-2xl border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur-xl shadow-[0_12px_40px_rgba(99,102,241,0.10)] w-fit ml-auto">
     <!-- 切换详情侧栏 -->
-    <TooltipProvider disable-hoverable-content>
-      <Tooltip>
-        <TooltipTrigger as-child>
-          <button
-            class="h-8 w-8 flex items-center justify-center rounded-lg transition-[color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-95"
-            :class="mediaStore.showDetailSidebar
-              ? 'text-primary hover:bg-primary/10'
-              : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'"
-            @click="mediaStore.toggleDetailSidebar()"
-          >
-            <span class="material-icons" style="font-size: 18px;">view_sidebar</span>
-          </button>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">{{ mediaStore.showDetailSidebar ? '隐藏详情侧栏' : '显示详情侧栏' }}</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <button
+      class="h-8 w-8 flex items-center justify-center rounded-lg transition-[color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-95"
+      :class="mediaStore.showDetailSidebar
+        ? 'text-primary hover:bg-primary/10'
+        : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'"
+      @click="mediaStore.toggleDetailSidebar()"
+    >
+      <span class="material-icons" style="font-size: 18px;">view_sidebar</span>
+    </button>
 
     <!-- 用户头像 + 功能菜单（原 HomeToolbar 功能并入） -->
     <Dropdown
@@ -147,45 +139,24 @@ watch(userAvatarUrl, () => { avatarLoadError.value = false })
     <!-- 窗口控制按钮 - 仅桌面端显示 -->
     <template v-if="isDesktop">
       <div class="h-5 border-l border-border/60 mx-1"></div>
-      <TooltipProvider disable-hoverable-content>
-        <Tooltip>
-          <TooltipTrigger as-child>
-            <button
-              class="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
-              @click="emit('windowMinimize')"
-            >
-              <span class="material-icons" style="font-size: 16px;">remove</span>
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">最小化</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-      <TooltipProvider disable-hoverable-content>
-        <Tooltip>
-          <TooltipTrigger as-child>
-            <button
-              class="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
-              @click="emit('windowMaximize')"
-            >
-              <span class="material-icons" style="font-size: 16px;">crop_square</span>
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">最大化</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-      <TooltipProvider disable-hoverable-content>
-        <Tooltip>
-          <TooltipTrigger as-child>
-            <button
-              class="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
-              @click="emit('windowClose')"
-            >
-              <span class="material-icons" style="font-size: 16px;">close</span>
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">关闭</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <button
+        class="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+        @click="emit('windowMinimize')"
+      >
+        <span class="material-icons" style="font-size: 16px;">remove</span>
+      </button>
+      <button
+        class="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+        @click="emit('windowMaximize')"
+      >
+        <span class="material-icons" style="font-size: 16px;">crop_square</span>
+      </button>
+      <button
+        class="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+        @click="emit('windowClose')"
+      >
+        <span class="material-icons" style="font-size: 16px;">close</span>
+      </button>
     </template>
   </header>
 </template>

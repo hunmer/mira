@@ -9,6 +9,8 @@ import { login, withAuth } from './mira-client';
 import { stagedToFile } from '@/shared/staged-file';
 import type { Uploader } from './uploader';
 import type { SniffedResource } from '@/shared/types';
+import { dbg } from '@/shared/debug';
+import { sendToContent } from './inject';
 
 export interface RouterDeps {
   uploader: Uploader;
@@ -34,6 +36,7 @@ export function broadcast(event: Event): void {
 export function createRouter(deps: RouterDeps): RequestHandler {
   return async (req, _sender) => {
     if (!isRequest(req)) return undefined;
+    dbg.log('router', 'request', req.type, (req as any).payload);
 
     switch (req.type) {
       case 'AUTH_LOGIN': {
@@ -104,26 +107,26 @@ export function createRouter(deps: RouterDeps): RequestHandler {
         await deps.captureSelection(req.payload.tabId);
         return { success: true };
       case 'SNIFFER_START':
-        await chrome.tabs.sendMessage(req.payload.tabId, {
+        await sendToContent(req.payload.tabId, {
           type: 'SNIFFER_START',
           payload: { kinds: req.payload.kinds },
         });
         return { success: true };
       case 'SNIFFER_STOP':
-        await chrome.tabs.sendMessage(req.payload.tabId, { type: 'SNIFFER_STOP' });
+        await sendToContent(req.payload.tabId, { type: 'SNIFFER_STOP' });
         return { success: true };
       case 'SNIFFER_QUERY': {
         // 从内存快照返回(getSniffSnapshot 由 index.ts 注入)
         return { resources: deps.getSniffSnapshot(req.payload.tabId) };
       }
       case 'AUTOSCROLL_START':
-        await chrome.tabs.sendMessage(req.payload.tabId, {
+        await sendToContent(req.payload.tabId, {
           type: 'AUTOSCROLL_START',
           payload: { delay: (await getSettings()).autoScrollDelay },
         });
         return { success: true };
       case 'AUTOSCROLL_STOP':
-        await chrome.tabs.sendMessage(req.payload.tabId, { type: 'AUTOSCROLL_STOP' });
+        await sendToContent(req.payload.tabId, { type: 'AUTOSCROLL_STOP' });
         return { success: true };
       default:
         return undefined;

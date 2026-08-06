@@ -6,6 +6,9 @@ import { createRouter, broadcast } from './message-router';
 import { setupContextMenus } from './context-menus';
 import { isRequest, type Request as MiraRequest } from '@/shared/messages';
 import type { SniffedResource, ExtensionSettings } from '@/shared/types';
+import { dbg } from '@/shared/debug';
+
+dbg.info('bg', 'service worker loaded');
 
 // 嗅探快照:每 tab 最近一次资源
 const sniffSnapshots = new Map<number, SniffedResource[]>();
@@ -53,6 +56,7 @@ uploader.onQueueChange(tasks => {
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   // content script 上报嗅探结果(内部消息,非 Request)
   if (msg?.type === 'SNIFFER_REPORT' && sender.tab?.id) {
+    dbg.log('bg', 'SNIFFER_REPORT', { tabId: sender.tab.id, count: (msg.resources as any[])?.length });
     sniffSnapshots.set(sender.tab.id, msg.resources as SniffedResource[]);
     broadcast({
       type: 'SNIFFER_FOUND',

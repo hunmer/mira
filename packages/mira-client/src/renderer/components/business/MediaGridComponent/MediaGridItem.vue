@@ -66,13 +66,16 @@
       </div>
 
       <!-- 预览放大镜按钮：悬浮卡片时显示，悬浮按钮弹出 hovercard 预览 -->
+      <!-- 注意：v-show 不能放在 <HoverCard> 上 —— HoverCard 根节点是 fragment（PopperRoot 仅 renderSlot），
+           在 fragment 上应用指令会触发 "Runtime directive used on component with non-element root node" 警告且不生效。
+           故放到真实 <button> 元素上。 -->
       <HoverCard
-        v-show="!isVideoPlaying"
         :open-delay="200"
         :close-delay="150"
       >
         <HoverCardTrigger as-child>
           <button
+            v-show="!isVideoPlaying"
             class="absolute bottom-12 right-2 z-10 w-7 h-7 rounded-full bg-black/55 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-black/75 transition-opacity"
             title="预览"
             @click.stop

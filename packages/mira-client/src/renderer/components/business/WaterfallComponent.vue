@@ -14,6 +14,7 @@
     @pointerdown.capture="focusSelectionBox"
   >
     <Masonry
+      ref="masonryRef"
       :data="waterfallItems"
       :get-key="getKey"
       :get-meta="getMeta"
@@ -142,12 +143,13 @@ const props = withDefaults(defineProps<Props>(), {
   maxColSpan: 3,
   layoutTransition: true,
   layoutMode: 'fill',
-  lazyRootMargin: '800px 0px'
+  lazyRootMargin: '1500px 0px'
 })
 
 const emit = defineEmits<Emits>()
 
 const selectionBoxRef = ref<InstanceType<typeof SelectionBox> | null>(null)
+const masonryRef = ref<InstanceType<typeof Masonry> | null>(null)
 const thumbnailRatios = ref<Record<string, number>>({})
 const thumbnailRatiosReady = ref(false)
 const initialRatioPreloadCount = computed(() => Math.max(props.columnsPerRow * 4, 16))
@@ -197,11 +199,6 @@ const getItemUrl = (item: FileInfo): string => item.thumbnailPath || item.url ||
 const preloadThumbnailRatios = async (items: FileInfo[]) => {
   const currentVersion = ++preloadVersion
   thumbnailRatiosReady.value = false
-  console.debug('[DEBUG-wf-tab] ratio-preload-start', {
-    itemCount: items.length,
-    headCount: initialRatioPreloadCount.value
-  })
-
   // 首屏前 N 个：同步预加载，等真实比例再渲染（避免首屏布局抖动）。
   const headEntries = await Promise.all(items.slice(0, initialRatioPreloadCount.value).map(async (item) => {
     const ratio = await loadThumbnailRatio(item.id, getItemUrl(item))
@@ -226,11 +223,6 @@ const preloadThumbnailRatios = async (items: FileInfo[]) => {
 
   thumbnailRatios.value = publishedRatios
   thumbnailRatiosReady.value = true
-  console.debug('[DEBUG-wf-tab] ratio-layout-published', {
-    itemCount: items.length,
-    measuredCount: Object.keys(publishedRatios).length
-  })
-
   // 首屏外比例仅写入跨实例缓存，不能修改当前已发布布局。
   void loadRemainingRatios(items)
 }
@@ -252,7 +244,6 @@ const loadRemainingRatios = async (items: FileInfo[]) => {
     }
   }
   await Promise.all(Array.from({ length: Math.min(RATIO_CONCURRENCY, pending.length) }, runWorker))
-  console.debug('[DEBUG-wf-tab] ratio-cache-warmed', { loadedCount: pending.length })
 }
 
 watch(
@@ -403,15 +394,10 @@ const handleAfterRender = () => {
   emit('after-render')
 }
 
-// 暴露重新渲染方法（响应式已自动重算，refresh 作为保险触发一次重新布局）
-const forceTick = ref(0)
+// 视图切换后重新读取容器宽度并重算布局，不重复加载缩略图比例。
 const refresh = () => {
-  forceTick.value++
+  masonryRef.value?.refresh()
 }
-// watch forceTick 触发 thumbnailRatio 重新读取（无副作用，仅触发依赖收集）
-watch(forceTick, () => {
-  void preloadThumbnailRatios(props.items)
-})
 
 const handleImageError = (url: string) => {
   console.error('Image load error:', url)
@@ -476,13 +462,11 @@ defineExpose({
 })
 
 onMounted(() => {
-  console.debug('[DEBUG-wf-tab] waterfall-mounted', { itemCount: props.items.length })
   window.addEventListener('keydown', handleDeleteKeyDown)
   document.addEventListener('edit-action', handleEditAction)
 })
 
 onUnmounted(() => {
-  console.debug('[DEBUG-wf-tab] waterfall-unmounted', { itemCount: props.items.length })
   window.removeEventListener('keydown', handleDeleteKeyDown)
   document.removeEventListener('edit-action', handleEditAction)
   stopVideoPreview()

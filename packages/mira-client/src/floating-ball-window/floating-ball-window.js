@@ -74,7 +74,6 @@ async function initFloatingBall() {
           <div class="folder-page page-right"><i></i><i></i><i></i><i></i></div>
         </div>
         <div class="folder-front"></div>
-        <span class="folder-status material-icons">{{ isFileReceived ? 'check' : 'add' }}</span>
         <div class="fb-drop-hint" :class="{ 'is-visible': isDragover }">松开导入</div>
       </div>
     `,
@@ -114,9 +113,9 @@ async function initFloatingBall() {
         }
         bridge.send({ type: 'fb-click', timestamp: Date.now() })
       },
-      // 右键菜单：把屏幕坐标发给主进程，由原生 Menu.popup 弹出
-      handleContextMenu(e) {
-        bridge.send({ type: 'fb-context-menu', x: e.screenX, y: e.screenY, timestamp: Date.now() })
+      // 右键菜单：仅发触发信号，主进程用 screen.getCursorScreenPoint() 取真实光标坐标
+      handleContextMenu() {
+        bridge.send({ type: 'fb-context-menu', timestamp: Date.now() })
       },
       // ===== 自定义 JS 拖拽（全向自由移动，主进程 setPosition）=====
       handleDragStart(e) {
@@ -226,14 +225,9 @@ function extractExt(name) {
 
 function receiveFileAnimation() {
   const ball = document.querySelector('.floating-ball')
-  const status = ball && ball.querySelector('.folder-status')
   if (!ball) return
   ball.classList.remove('is-file-received')
   void ball.offsetWidth
   ball.classList.add('is-file-received')
-  if (status) status.textContent = 'check'
-  setTimeout(() => {
-    ball.classList.remove('is-file-received')
-    if (status) status.textContent = 'add'
-  }, 700)
+  setTimeout(() => ball.classList.remove('is-file-received'), 700)
 }

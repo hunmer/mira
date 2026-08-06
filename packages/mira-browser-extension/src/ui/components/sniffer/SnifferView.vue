@@ -22,6 +22,7 @@ function toggle(id: string) {
 }
 
 async function onToggle(on: boolean) {
+  console.log('[mira-ext][sniffer-ui] onToggle', on, { libraryId: settings.value.libraryId });
   await update({ snifferEnabled: on });
   on ? await start() : await stop();
   if (on) load();

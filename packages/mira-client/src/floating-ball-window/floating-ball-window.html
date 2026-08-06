@@ -70,6 +70,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      padding: 16px;
       pointer-events: auto;
       -webkit-app-region: no-drag !important;
     }
@@ -80,7 +81,6 @@
       height: 62px;
       cursor: grab;
       position: relative;
-      margin-top: 18px;
       perspective: 180px;
       transition: transform 0.2s ease, filter 0.2s ease;
       user-select: none;
@@ -129,7 +129,7 @@
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 7px 7px 11px 11px;
       background: linear-gradient(180deg, rgba(66, 56, 76, 0.96), rgba(35, 31, 40, 0.98));
-      box-shadow: inset 0 1px rgba(255, 255, 255, 0.08), 0 7px 15px rgba(0, 0, 0, 0.34);
+      box-shadow: inset 0 1px rgba(255, 255, 255, 0.08), 0 2px 5px rgba(0, 0, 0, 0.18);
       transform-origin: bottom center;
       transition: transform 0.42s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.2s ease;
     }
@@ -144,7 +144,7 @@
       padding: 7px 5px;
       border-radius: 5px;
       background: linear-gradient(180deg, #f0eff6, #d9d7e5);
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.32);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.18);
       transition: transform 0.48s cubic-bezier(0.2, 0.9, 0.2, 1);
     }
 
@@ -174,29 +174,6 @@
     .floating-ball.is-dragover .page-center { transform: translate(-50%, -38px) rotate(1deg); }
     .floating-ball.is-dragover .page-right { transform: translate(15%, -32px) rotate(11deg); }
 
-    .folder-status {
-      position: absolute;
-      z-index: 30;
-      left: 50%;
-      bottom: 13px;
-      width: 23px;
-      height: 23px;
-      display: grid;
-      place-items: center;
-      transform: translateX(-50%);
-      border-radius: 50%;
-      color: #fff;
-      background: rgba(99, 102, 241, 0.9);
-      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
-      font-size: 17px !important;
-      transition: background 0.2s ease, transform 0.2s ease;
-    }
-
-    .floating-ball.is-dragover .folder-status {
-      background: #10b981 !important;
-      transform: translateX(-50%) scale(1.12);
-    }
-
     /* 文件已成功接收：合拢文件夹并闪烁确认 */
     @keyframes fb-received {
       0% { transform: scale(1.04); filter: drop-shadow(0 0 0 rgba(16, 185, 129, 0)); }
@@ -208,8 +185,7 @@
       animation: fb-received 0.7s ease-out;
     }
 
-    .floating-ball.is-file-received .folder-front,
-    .floating-ball.is-file-received .folder-status {
+    .floating-ball.is-file-received .folder-front {
       background: var(--fb-drop);
     }
 

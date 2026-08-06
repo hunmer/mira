@@ -47,8 +47,8 @@ export class FloatingBallWindowHandlers {
         super({
           name: 'floating-ball',
           title: 'Mira 悬浮球',
-          width: 112,
-          height: 96,
+          width: 130,
+          height: 110,
           position: 'bottom-right',
           margin: 24,
           movable: true,
@@ -74,8 +74,10 @@ export class FloatingBallWindowHandlers {
               if (mainWasHidden) self.showMainWindow()
               self.forwardToMain({ type: 'fb-click', mainWasHidden })
             },
-            // 右键菜单：原生 Menu.popup，坐标由渲染层提供（屏幕坐标）
-            'fb-context-menu': (data) => {
+            // 右键菜单：原生 Menu.popup。
+            // 直接读鼠标屏幕坐标——透明无边框窗口的 contextmenu 事件坐标不可靠，
+            // 用 screen.getCursorScreenPoint() 拿到确定位置。
+            'fb-context-menu': () => {
               const menu = Menu.buildFromTemplate([
                 {
                   label: '隐藏本次',
@@ -91,7 +93,9 @@ export class FloatingBallWindowHandlers {
                   click: () => self.openSettings(),
                 },
               ])
-              menu.popup({ x: Math.round(Number(data.x) || 0), y: Math.round(Number(data.y) || 0) })
+              const { screen: screenMod } = require('electron') as typeof import('electron')
+              const { x, y } = screenMod.getCursorScreenPoint()
+              menu.popup({ x: Math.round(x), y: Math.round(y) })
             },
             // 接收文件拖放：转发主渲染进程，并激活主窗口
             'fb-file-drop': (data) => {

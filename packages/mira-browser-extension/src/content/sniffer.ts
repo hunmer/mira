@@ -1,4 +1,5 @@
 import type { SniffedResource, ResourceKind } from '@/shared/types';
+import { dbg } from '@/shared/debug';
 
 const MIN_IMAGE_SIZE = 32; // 小于此尺寸过滤(图标/占位图)
 const DATA_URL_RE = /^data:/i;
@@ -140,6 +141,7 @@ export function createSniffer(onUpdate: (resources: SniffedResource[]) => void):
 
   function scan() {
     const fresh = extractFromDOM(kinds);
+    dbg.log('sniffer', 'scan', { kinds, freshCount: fresh.length });
     resources = mergeResources(resources, fresh);
     scheduleReport();
   }
@@ -148,6 +150,7 @@ export function createSniffer(onUpdate: (resources: SniffedResource[]) => void):
     if (reportTimer) return;
     reportTimer = setTimeout(() => {
       reportTimer = null;
+      dbg.log('sniffer', 'report', { totalCount: resources.length });
       onUpdate([...resources]);
     }, 500);
   }
@@ -161,6 +164,7 @@ export function createSniffer(onUpdate: (resources: SniffedResource[]) => void):
     start(k) {
       kinds = k;
       resources = [];
+      dbg.info('sniffer', 'start', { kinds, hasBody: !!document.body, imgCount: document.querySelectorAll('img').length });
       scan();
       // PerformanceObserver:抓懒加载/动态资源
       try {
@@ -177,17 +181,20 @@ export function createSniffer(onUpdate: (resources: SniffedResource[]) => void):
               occurrences: 1, sniffedAt: Date.now(),
             };
             resources = mergeResources(resources, [r]);
+            dbg.log('sniffer', 'perf found', { kind, url: e.name });
             scheduleReport();
           }
         });
         perfObs.observe({ entryTypes: ['resource'] });
-      } catch { /* PerformanceObserver 不可用 */ }
+      } catch (e) { dbg.warn('sniffer', 'PerformanceObserver unavailable', e); /* PerformanceObserver 不可用 */ }
 
       // MutationObserver:新节点触发增量扫描
       mutObs = new MutationObserver(() => scheduleScan());
-      mutObs.observe(document.body, { childList: true, subtree: true });
+      if (document.body) mutObs.observe(document.body, { childList: true, subtree: true });
+      else dbg.warn('sniffer', 'no document.body to observe');
     },
     stop() {
+      dbg.info('sniffer', 'stop');
       perfObs?.disconnect();
       mutObs?.disconnect();
       if (scanTimer) clearTimeout(scanTimer);

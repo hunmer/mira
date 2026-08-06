@@ -174,8 +174,8 @@ async function handleFloatingBallMessage(data: any) {
       console.error('关闭悬浮球设置失败:', e)
     }
   } else if (data.type === 'fb-open-settings') {
-    // 打开设置：跳转到设置页的悬浮球分区（主进程已负责唤起主窗口）
-    router.push({ name: 'Settings', query: { tab: 'floating-ball' } })
+    // 打开设置对话框（主进程已负责唤起主窗口）
+    showSettingsDialog.value = true
   }
 }
 

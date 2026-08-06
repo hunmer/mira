@@ -2,8 +2,18 @@
 import { useSettings } from '@/ui/composables/useSettings';
 import Input from '@/ui/components/ui/Input.vue';
 import Switch from '@/ui/components/ui/Switch.vue';
+import { setDebug, refreshDebugFlag } from '@/shared/debug';
+import { ref, onMounted } from 'vue';
 
 const { settings, update } = useSettings();
+
+// 调试日志开关(独立于 ExtensionSettings,存 chrome.storage.local 的 mira_debug)
+const debugOn = ref(false);
+onMounted(async () => { debugOn.value = await refreshDebugFlag(); });
+async function onToggleDebug(v: boolean) {
+  debugOn.value = v;
+  setDebug(v);
+}
 </script>
 
 <template>
@@ -41,6 +51,12 @@ const { settings, update } = useSettings();
       </div>
       <div class="row" title="拖图/嗅探/右键上传时,前端先用 maxurl 提取高清原图">
         <span>高清大图升级</span><Switch :model-value="settings.imuEnabled" @update:model-value="v => update({ imuEnabled: v })" />
+      </div>
+    </section>
+    <section>
+      <h3>调试</h3>
+      <div class="row" title="开启后 console 输出 [mira-ext][*] 详细日志(截图/嗅探/拖拽/上传)">
+        <span>调试日志</span><Switch :model-value="debugOn" @update:model-value="onToggleDebug" />
       </div>
     </section>
   </div>
