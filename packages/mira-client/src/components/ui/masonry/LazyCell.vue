@@ -131,7 +131,7 @@ onBeforeUnmount(() => {
       class="h-full w-full transition-opacity duration-150"
       :class="props.revealed ? 'visible opacity-100' : 'invisible opacity-0'"
     >
-      <slot />
+      <slot :preload="active" />
     </div>
   </div>
 </template>

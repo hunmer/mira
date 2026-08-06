@@ -1,6 +1,14 @@
 <template>
   <img
-    v-if="currentSrc && !hasError"
+    v-if="currentSrc && !hasError && preload"
+    :src="currentSrc"
+    :alt="alt"
+    :class="imgClass"
+    @load="onLoad"
+    @error="onError"
+  />
+  <img
+    v-else-if="currentSrc && !hasError"
     v-lazy="currentSrc"
     :alt="alt"
     :class="imgClass"
@@ -27,10 +35,13 @@ const props = withDefaults(defineProps<{
   alt?: string
   imgClass?: string
   iconSize?: string
+  /** 直接加载图片，供上层在进入预加载区时使用。 */
+  preload?: boolean
 }>(), {
   alt: '',
   imgClass: '',
-  iconSize: '2rem'
+  iconSize: '2rem',
+  preload: false
 })
 
 const emit = defineEmits<{

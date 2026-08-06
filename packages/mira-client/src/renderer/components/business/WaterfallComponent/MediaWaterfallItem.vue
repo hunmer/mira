@@ -29,6 +29,7 @@
         <MediaThumbnail
           :file-id="item.id"
           :src="url"
+          :preload="preload"
           :filename="item.name"
           :alt="item.name"
           img-class="w-full h-full object-contain"
@@ -127,6 +128,8 @@ interface Props {
   isVideoPlaying?: boolean
   isMuted?: boolean
   progress?: number
+  /** Masonry 已进入预加载区，立即请求缩略图。 */
+  preload?: boolean
 }
 
 interface Emits extends MediaItemEmits {
@@ -138,7 +141,8 @@ const props = withDefaults(defineProps<Props>(), {
   isVideoPlaying: false,
   isMuted: false,
   progress: 0,
-  ratio: 1
+  ratio: 1,
+  preload: false
 })
 
 const emit = defineEmits<Emits>()

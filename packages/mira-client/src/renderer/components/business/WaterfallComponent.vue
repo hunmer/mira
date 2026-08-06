@@ -25,7 +25,7 @@
       :lazy-root-margin="lazyRootMargin"
       @after-render="handleAfterRender"
     >
-      <template #default="{ item }">
+      <template #default="{ item, preload }">
         <MediaWaterfallItem
           :item="item"
           :url="item.url"
@@ -34,6 +34,7 @@
           :is-video-playing="currentVideoItem?.id === item.id"
           :is-muted="settingsStore.settings.videoPreviewMuted"
           :progress="videoProgress[item.id] || 0"
+          :preload="preload"
           @click="handleItemClick"
           @double-click="handleItemDoubleClick"
           @context-menu="handleItemContextMenu"
@@ -141,7 +142,7 @@ const props = withDefaults(defineProps<Props>(), {
   maxColSpan: 3,
   layoutTransition: true,
   layoutMode: 'fill',
-  lazyRootMargin: '300px 0px'
+  lazyRootMargin: '800px 0px'
 })
 
 const emit = defineEmits<Emits>()

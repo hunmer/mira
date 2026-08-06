@@ -460,7 +460,9 @@ watch(
           @ready="handleCellReady(p.key)"
           @hidden="handleCellHidden(p.key)"
         >
-          <slot :item="p.item" :index="p.index" />
+          <template #default="{ preload }">
+            <slot :item="p.item" :index="p.index" :preload="preload" />
+          </template>
         </LazyCell>
       </Motion>
     </AnimatePresence>
