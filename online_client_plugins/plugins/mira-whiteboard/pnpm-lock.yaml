@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@woven-canvas/core':
+        specifier: ^1.1.0
+        version: 1.1.0(typescript@5.9.3)
       '@woven-canvas/vue':
         specifier: ^1.4.0
         version: 1.4.0(2aa198774f57ef2a01a861d83315bfc4)

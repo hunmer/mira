@@ -19,7 +19,7 @@
             <span 
               v-for="tag in controller.currentImage.value?.tags"
               :key="tag"
-              class="inline-flex items-center rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary"
+              class="inline-flex items-center rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground"
             >
               <span class="material-symbols-outlined text-sm mr-1">label</span>
               {{ tag }}

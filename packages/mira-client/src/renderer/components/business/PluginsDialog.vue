@@ -175,17 +175,28 @@
                 class="border border-border dark:border-border rounded-lg p-4 hover:shadow-md transition-shadow"
               >
                 <div class="flex items-start justify-between mb-3">
-                  <div class="flex-1">
-                    <div class="flex items-center gap-2">
-                      <h3 class="font-medium text-foreground dark:text-muted-foreground">{{ plugin.config.pluginName }}</h3>
-                      <span
-                        v-if="getPluginUpdate(plugin.config.pluginId)"
-                        class="px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300"
-                      >
-                        可更新<span v-if="getPluginUpdate(plugin.config.pluginId)?.fileMismatch && !getPluginUpdate(plugin.config.pluginId)?.versionOutdated">（文件已改）</span>
-                      </span>
+                  <div class="flex-1 flex items-start gap-2">
+                    <PluginIcon
+                      :plugin-id="plugin.config.pluginId"
+                      :directory="plugin.directory"
+                      :icon="plugin.config.icon"
+                      :name="plugin.config.pluginName"
+                      :size="32"
+                      rounded="md"
+                      class="mt-0.5"
+                    />
+                    <div class="min-w-0">
+                      <div class="flex items-center gap-2">
+                        <h3 class="font-medium text-foreground dark:text-muted-foreground truncate">{{ plugin.config.pluginName }}</h3>
+                        <span
+                          v-if="getPluginUpdate(plugin.config.pluginId)"
+                          class="px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300"
+                        >
+                          可更新<span v-if="getPluginUpdate(plugin.config.pluginId)?.fileMismatch && !getPluginUpdate(plugin.config.pluginId)?.versionOutdated">（文件已改）</span>
+                        </span>
+                      </div>
+                      <p class="text-xs text-muted-foreground dark:text-muted-foreground mt-1">{{ plugin.config.description }}</p>
                     </div>
-                    <p class="text-xs text-muted-foreground dark:text-muted-foreground mt-1">{{ plugin.config.description }}</p>
                   </div>
                   <!-- 启用/禁用开关 -->
                   <button
@@ -303,9 +314,21 @@
                   class="border border-border dark:border-border rounded-lg p-4 hover:shadow-md transition-shadow"
                 >
                   <div class="flex items-start justify-between mb-3">
-                    <div class="flex-1">
-                      <h3 class="font-medium text-foreground dark:text-muted-foreground">{{ entry.pluginName }}</h3>
-                      <p class="text-xs text-muted-foreground dark:text-muted-foreground mt-1">{{ entry.description }}</p>
+                    <div class="flex-1 flex items-start gap-2">
+                      <PluginIcon
+                        :plugin-id="entry.pluginId"
+                        :base-url="marketplaceUrl"
+                        :directory="entry.directory"
+                        :icon="entry.icon || undefined"
+                        :name="entry.pluginName"
+                        :size="32"
+                        rounded="md"
+                        class="mt-0.5"
+                      />
+                      <div class="min-w-0">
+                        <h3 class="font-medium text-foreground dark:text-muted-foreground truncate">{{ entry.pluginName }}</h3>
+                        <p class="text-xs text-muted-foreground dark:text-muted-foreground mt-1">{{ entry.description }}</p>
+                      </div>
                     </div>
                     <span
                       v-if="getMarketStatus(entry).badge"
@@ -508,6 +531,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { AcceptableValue } from 'reka-ui'
+import PluginIcon from '@/renderer/components/common/PluginIcon.vue'
 
 // 组件属性
 interface Props {

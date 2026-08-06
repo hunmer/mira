@@ -4,6 +4,7 @@
   "priority": 1,
   "version": "1.0.0",
   "index": "index.js",
+  "icon": "icon.png",
   "tags": ["白板", "画布", "协作", "效率"],
   "category": "productivity",
   "description": "基于 @woven-canvas/vue 的自由无限画板插件。在右侧栏提供画布工程管理入口（新建/编辑/删除/打开），每个工程在独立窗口中加载，支持本地优先持久化。",

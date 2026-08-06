@@ -21,6 +21,7 @@
       :columns="columns"
       :gap="gap"
       :class="waterfallClass"
+      :enter-animation="initialEnterAnimation"
       :layout-transition="layoutTransition"
       :layout-mode="layoutMode"
       :lazy-root-margin="lazyRootMargin"
@@ -152,6 +153,7 @@ const selectionBoxRef = ref<InstanceType<typeof SelectionBox> | null>(null)
 const masonryRef = ref<InstanceType<typeof Masonry> | null>(null)
 const thumbnailRatios = ref<Record<string, number>>({})
 const thumbnailRatiosReady = ref(false)
+const initialEnterAnimation = ref(true)
 const initialRatioPreloadCount = computed(() => Math.max(props.columnsPerRow * 4, 16))
 const settingsStore = useSettingsStore()
 const { focusSelectionBox, isSelectionBoxFocused } = useFocusedSelectAll(selectionBoxRef, props, emit)
@@ -198,7 +200,6 @@ const getItemUrl = (item: FileInfo): string => item.thumbnailPath || item.url ||
 
 const preloadThumbnailRatios = async (items: FileInfo[]) => {
   const currentVersion = ++preloadVersion
-  thumbnailRatiosReady.value = false
   // 首屏前 N 个：同步预加载，等真实比例再渲染（避免首屏布局抖动）。
   const headEntries = await Promise.all(items.slice(0, initialRatioPreloadCount.value).map(async (item) => {
     const ratio = await loadThumbnailRatio(item.id, getItemUrl(item))
@@ -391,6 +392,9 @@ const handleItemContextMenu = (item: FileInfo, event: MouseEvent) => {
 }
 
 const handleAfterRender = () => {
+  if (initialEnterAnimation.value && waterfallItems.value.length > 0) {
+    initialEnterAnimation.value = false
+  }
   emit('after-render')
 }
 

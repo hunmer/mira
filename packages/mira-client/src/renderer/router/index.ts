@@ -82,6 +82,17 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
+    path: '/playground',
+    name: 'Playground',
+    component: () => import('../views/PlaygroundView.vue'),
+    meta: {
+      title: 'Playground',
+      requiresAuth: true,
+      requiresConnection: true,
+      icon: 'science'
+    }
+  },
+  {
     path: '/menu-test',
     name: 'MenuTest',
     component: () => import('../views/MenuTestView.vue'),
@@ -234,6 +245,7 @@ router.afterEach(() => {
 // 路由工具函数
 export const navigateToHome = () => router.push({ name: 'Home' })
 export const navigateToSettings = () => router.push({ name: 'Settings' })
+export const navigateToPlayground = () => router.push({ name: 'Playground' })
 export const navigateToPlugins = () => router.push({ name: 'PluginMarketplace' })
 export const navigateToLocalPlugins = () => router.push({ name: 'LocalPlugins' })
 export const navigateToFileUpload = () => router.push({ name: 'FileUpload' })

@@ -18,6 +18,8 @@
 import { computed, ref, defineComponent, h, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { WovenCanvas, useImageCreation } from '@woven-canvas/vue'
 import '@woven-canvas/vue/style.css'
+import CanvasContextMenu from './CanvasContextMenu.vue'
+import CanvasSelectionToolbar from './CanvasSelectionToolbar.vue'
 
 interface Project {
   id: string
@@ -357,6 +359,10 @@ onBeforeUnmount(() => {
         class="wb-canvas"
       >
         <CanvasMediaBridge />
+        <CanvasContextMenu />
+        <template #floating-menu>
+          <CanvasSelectionToolbar />
+        </template>
       </WovenCanvas>
 
       <!-- 顶部工程切换条（最左侧：可编辑工程名；右侧：dots 打开管理对话框） -->

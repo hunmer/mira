@@ -64,20 +64,59 @@ export class PluginWindowHandlers {
   }
 
   /**
-   * 解析插件入口文件绝对路径。
+   * 解析插件根目录绝对路径。
    *
    * 插件目录名不一定等于 pluginId（可能是 mira-whiteboard 这类语义目录名），
-   * 因此通过 PluginHandler.getPluginActualDirectory 取扫描到的 actualDirectory，
-   * 再拼上 entry。该路径随后会在 handleOpen 中做存在性校验。
+   * 因此通过 PluginHandler.getPluginActualDirectory 取扫描到的 actualDirectory。
+   * 找不到时按 pluginId 作为目录名兜底。
+   */
+  private async resolvePluginBase(pluginId: string): Promise<string> {
+    const base = await this.pluginHandler.getPluginActualDirectory(pluginId)
+    if (base) return base
+    const pluginsDir = (this.pluginHandler as any).config?.pluginsDirectory as string | undefined
+    return pluginsDir ? path.join(pluginsDir, pluginId) : pluginId
+  }
+
+  /**
+   * 解析插件入口文件绝对路径（pluginBase + entry）。
+   * 该路径随后会在 handleOpen 中做存在性校验。
    */
   private async resolveEntryPath(pluginId: string, entry: string): Promise<string> {
-    const base = await this.pluginHandler.getPluginActualDirectory(pluginId)
-    if (!base) {
-      // 兜底：按 pluginId 作为目录名（极少走到）
-      const pluginsDir = (this.pluginHandler as any).config?.pluginsDirectory as string | undefined
-      return pluginsDir ? path.join(pluginsDir, pluginId, entry) : path.join(pluginId, entry)
-    }
+    const base = await this.resolvePluginBase(pluginId)
     return path.join(base, entry)
+  }
+
+  /**
+   * 解析插件窗口图标绝对路径（若有）。
+   *
+   * 读取插件 actualDirectory 与 plugin.json 的 icon 字段，拼出图标文件绝对路径，
+   * 并校验文件确实存在。返回 null 表示该插件未声明图标或图标文件缺失，
+   * 调用方应回退到默认窗口图标（不设置 BrowserWindow.icon）。
+   *
+   * 入参为已解析好的插件目录，避免重复扫描 discoverPlugins。
+   */
+  private async resolveIconPath(pluginId: string, baseDir: string): Promise<string | null> {
+    try {
+      // 读取 plugin.json 中的 icon 字段
+      const pluginJsonPath = path.join(baseDir, 'plugin.json')
+      const content = await fs.readFile(pluginJsonPath, 'utf-8')
+      const config = JSON.parse(content) as { icon?: string }
+      const iconFile = config?.icon?.trim()
+      if (!iconFile) return null
+
+      // icon 可能是绝对路径或相对插件目录的路径
+      const iconPath = path.isAbsolute(iconFile) ? iconFile : path.join(baseDir, iconFile)
+      try {
+        await fs.access(iconPath)
+        return iconPath
+      } catch {
+        logger.warn('PluginWindowHandlers', `Plugin ${pluginId} icon declared but file missing: ${iconPath}`)
+        return null
+      }
+    } catch {
+      // plugin.json 读取/解析失败：交由 resolveEntryPath 单独报错，这里静默
+      return null
+    }
   }
 
   /**
@@ -123,6 +162,10 @@ export class PluginWindowHandlers {
         return { success: false, message: msg }
       }
 
+      // 解析插件图标（若有）：从插件根目录读 plugin.json 的 icon 字段
+      const baseDir = await this.resolvePluginBase(opts.pluginId)
+      const iconPath = await this.resolveIconPath(opts.pluginId, baseDir)
+
       const width = opts.width && opts.width > 0 ? opts.width : 1200
       const height = opts.height && opts.height > 0 ? opts.height : 800
       const title = opts.title || '插件窗口'
@@ -134,6 +177,8 @@ export class PluginWindowHandlers {
         frame: true,
         show: false,
         backgroundColor: '#ffffff',
+        // 插件声明的图标（plugin.json 的 icon 字段）；缺省回退到默认窗口图标
+        ...(iconPath ? { icon: iconPath } : {}),
         webPreferences: {
           nodeIntegration: false,
           contextIsolation: true,

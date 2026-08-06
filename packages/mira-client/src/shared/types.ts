@@ -105,6 +105,7 @@ export interface LocalPluginConfig {
   priority: number // 加载优先级，越大优先级越高
   version: string
   index: string // 入口文件，默认'index.js'
+  icon?: string // 插件图标文件（相对插件目录的路径，如 'icon.png'）
   tags: string[]
   category?: string // 插件分类
   description: string

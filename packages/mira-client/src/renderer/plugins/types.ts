@@ -45,8 +45,14 @@ export interface PluginStateData {
  * 宿主已加载 Material Icons 字体，推荐使用 material 类型避免路径解析。
  */
 export interface PluginContributionIcon {
-  /** 'material' = Material Icons 字体类名值；'emoji' = emoji 字符；'text' = 单字符 */
-  type: 'material' | 'emoji' | 'text'
+  /**
+   * 图标类型：
+   * - 'material'：Material Icons 字体类名值（宿主已加载字体）
+   * - 'emoji'：emoji 字符
+   * - 'text'：单字符
+   * - 'image'：图片资源路径（相对插件目录或绝对/URL；宿主用插件目录解析）
+   */
+  type: 'material' | 'emoji' | 'text' | 'image'
   value: string
 }
 

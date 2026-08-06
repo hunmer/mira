@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { Dropdown } from '@/renderer/components/common/Dropdown'
 import { useAuthStore } from '@/renderer/stores/auth'
 import { useMediaStore } from '@/renderer/stores/media'
@@ -26,6 +27,7 @@ const emit = defineEmits<{
 
 const authStore = useAuthStore()
 const mediaStore = useMediaStore()
+const router = useRouter()
 const avatarLoadError = ref(false)
 
 const userAvatarUrl = computed(() => {
@@ -99,6 +101,13 @@ watch(userAvatarUrl, () => { avatarLoadError.value = false })
             >
               <span class="material-icons text-base">keyboard</span>
               <span>快捷键设置</span>
+            </button>
+            <button
+              class="w-full flex items-center space-x-2 p-2 text-muted-foreground hover:text-foreground hover:bg-primary/5 rounded-lg text-sm transition-colors"
+              @click="router.push({ name: 'Playground' }); close()"
+            >
+              <span class="material-icons text-base">science</span>
+              <span>Playground</span>
             </button>
             <button
               class="w-full flex items-center space-x-2 p-2 text-muted-foreground hover:text-foreground hover:bg-primary/5 rounded-lg text-sm transition-colors"

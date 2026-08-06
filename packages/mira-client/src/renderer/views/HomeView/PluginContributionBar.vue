@@ -13,6 +13,7 @@
  */
 import { ref, onMounted, onBeforeUnmount, defineComponent, h } from 'vue'
 import { Dropdown } from '@/renderer/components/common/Dropdown'
+import PluginIcon from '@/renderer/components/common/PluginIcon.vue'
 import { useToast } from '@renderer/composables/useToast'
 import type { PluginContribution, PluginContributionRenderContext } from '@renderer/plugins/types'
 
@@ -165,14 +166,6 @@ const ContributionHost = defineComponent({
     return () => h('div', { ref: root })
   },
 })
-
-/**
- * 渲染图标内容。
- */
-function iconContent(icon: PluginContribution['icon']): string {
-  if (!icon) return '?'
-  return icon.value ?? '?'
-}
 </script>
 
 <template>
@@ -192,15 +185,12 @@ function iconContent(icon: PluginContribution['icon']): string {
         :aria-label="contribution.title"
         @click="onWindowActivate(contribution)"
       >
-        <span
-          v-if="!contribution.icon || contribution.icon.type === 'material'"
-          class="material-icons"
-          style="font-size: 18px;"
-        >{{ iconContent(contribution.icon) }}</span>
-        <span
-          v-else
-          class="text-base leading-none"
-        >{{ iconContent(contribution.icon) }}</span>
+        <PluginIcon
+          :plugin-id="contribution.pluginId"
+          :contribution-icon="contribution.icon"
+          :size="18"
+          rounded="sm"
+        />
       </button>
 
       <!-- popover 行为：Dropdown 弹出 render 返回的内容 -->
@@ -215,15 +205,12 @@ function iconContent(icon: PluginContribution['icon']): string {
             :title="contribution.title"
             :aria-label="contribution.title"
           >
-            <span
-              v-if="!contribution.icon || contribution.icon.type === 'material'"
-              class="material-icons"
-              style="font-size: 18px;"
-            >{{ iconContent(contribution.icon) }}</span>
-            <span
-              v-else
-              class="text-base leading-none"
-            >{{ iconContent(contribution.icon) }}</span>
+            <PluginIcon
+              :plugin-id="contribution.pluginId"
+              :contribution-icon="contribution.icon"
+              :size="18"
+              rounded="sm"
+            />
           </button>
         </template>
         <template #content="{ close }">
