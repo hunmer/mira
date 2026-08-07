@@ -47,7 +47,7 @@ const registryOptions = [
 // 复用 settingsStore 已有的主题计算（支持 light/dark/auto）
 const isDarkMode = computed(() => settingsStore.isDarkMode)
 
-// 版本检测 + 更新（真实检测，仅 Electron 可用）
+// 版本检测（仅用于徽标状态展示）；实际安装/更新走下方 runPipeline 部署通道
 const {
   status: deployStatus,
   installedVersion,
@@ -56,7 +56,6 @@ const {
   updateInProgress,
   updateLog,
   checkVersion,
-  runUpdate,
 } = useServerDeploy()
 
 // 打开组件即检测已安装版本
@@ -242,7 +241,7 @@ onBeforeUnmount(() => {
         <template v-else>等待检测</template>
       </span>
 
-      <!-- 操作按钮 -->
+      <!-- 操作按钮：走完整部署流水线（与下方「启动部署」一致） -->
       <button
         v-if="deployStatus === 'update-available' && !updateInProgress"
         type="button"
@@ -252,7 +251,7 @@ onBeforeUnmount(() => {
             ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30'
             : 'bg-amber-100 text-amber-700 hover:bg-amber-200',
         )"
-        @click="runUpdate({ registry, proxy: proxy || undefined })"
+        @click="runPipeline"
       >
         {{ installedVersion ? '更新' : '安装' }}
       </button>

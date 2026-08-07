@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, watch } from 'vue'
+import { onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/renderer/stores/auth'
 import { useServerListStore } from '@/renderer/stores/serverList'
@@ -97,12 +97,14 @@ watch(error, (val) => {
   }
 })
 
+// 后端可用性徽标定时刷新（避免停留在过期状态）
+const BACKEND_CHECK_INTERVAL_MS = 10000
+let backendCheckTimer: ReturnType<typeof setInterval> | null = null
+
 onMounted(async () => {
   authStore.clearError()
-  if (window.electronAPI?.serverAutoStart) {
-    const ready = await window.electronAPI.serverAutoStart.waitReady()
-    if (!ready.success) return
-  }
+  // 注：local server 启动等待已在 App.vue 的 ServerStartupLoading 中处理，
+  // 这里不再重复等待 —— 手动选择/填写服务器地址的场景本就不依赖 local server。
   await serverListStore.initializeServerList()
 
   // 用最近活跃的服务器预填地址
@@ -112,8 +114,18 @@ onMounted(async () => {
     serverName.value = activeServer.name
   }
 
-  // 并发检测所有已保存服务器的后端可用性（用于列表徽标展示）
+  // 并发检测所有已保存服务器的后端可用性（用于列表徽标展示），并周期性刷新
   checkAllBackends(serverListStore.services)
+  backendCheckTimer = setInterval(() => {
+    checkAllBackends(serverListStore.services)
+  }, BACKEND_CHECK_INTERVAL_MS)
+})
+
+onBeforeUnmount(() => {
+  if (backendCheckTimer) {
+    clearInterval(backendCheckTimer)
+    backendCheckTimer = null
+  }
 })
 </script>
 

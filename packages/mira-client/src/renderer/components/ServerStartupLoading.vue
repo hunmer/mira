@@ -1,25 +1,22 @@
 <template>
   <div v-if="visible" class="fixed inset-0 z-[9999] flex items-center justify-center bg-background">
     <div class="w-full max-w-sm px-6 text-center">
-      <div v-if="!failed" class="loader mx-auto mb-8" aria-hidden="true">
+      <div class="loader mx-auto mb-8" aria-hidden="true">
         <div v-for="index in 8" :key="index" class="box" :class="`box${index - 1}`">
           <div />
         </div>
         <div class="ground"><div /></div>
       </div>
-      <h1 class="text-lg font-semibold text-foreground">{{ failed ? '服务器启动失败' : '正在启动服务器' }}</h1>
+      <h1 class="text-lg font-semibold text-foreground">正在启动服务器</h1>
       <p class="mt-2 text-sm leading-relaxed text-muted-foreground">{{ message }}</p>
-      <button v-if="failed" type="button" class="mt-5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90" @click="emit('retry')">重试</button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-withDefaults(defineProps<{ visible: boolean; failed?: boolean; message?: string }>(), {
-  failed: false,
+withDefaults(defineProps<{ visible: boolean; message?: string }>(), {
   message: '等待 mira-app-server 健康检查通过…',
 })
-const emit = defineEmits<{ retry: [] }>()
 </script>
 
 <style scoped>
