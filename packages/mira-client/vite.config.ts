@@ -5,7 +5,7 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 import Inspect from 'vite-plugin-inspect'
 import { fileURLToPath, URL } from 'node:url'
 import { resolve } from 'node:path'
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 
 // 获取编辑器配置
 function getEditor() {
@@ -30,7 +30,14 @@ function getEditor() {
 }
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  const isElectron = mode === 'electron'
+
+  // 从 package.json 读取版本号，注入为全局常量（网页端无法访问 electronAPI.getVersion）
+  const pkg = JSON.parse(readFileSync(resolve(__dirname, 'package.json'), 'utf-8'))
+  const appVersion = pkg.version || '0.0.0'
+
+  return {
   plugins: [
     vue({
       template: {
@@ -49,7 +56,7 @@ export default defineConfig({
     })] : []),
     // 只在开发环境启用 Vite Inspect
     ...(process.env.NODE_ENV !== 'production' ? [Inspect()] : []),
-      electron([
+      ...(isElectron ? [electron([
         {
           // 主进程入口文件
           entry: 'src/main/main.ts',
@@ -109,7 +116,7 @@ export default defineConfig({
             }
           },
         },
-      ]),
+      ])] : []),
     ],
     resolve: {
       alias: {
@@ -207,6 +214,8 @@ export default defineConfig({
     define: {
       __VUE_OPTIONS_API__: true,
       __VUE_PROD_DEVTOOLS__: true,
-      __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: false
+      __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: false,
+      __APP_VERSION__: JSON.stringify(appVersion),
     }
-  })
+  }
+})

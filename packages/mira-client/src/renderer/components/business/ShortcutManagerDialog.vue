@@ -68,7 +68,7 @@
 
                   <!-- 全局标识 -->
                   <span v-if="binding.isGlobal" class="inline-flex items-center px-2 py-1 rounded text-xs font-medium
-                                 bg-primary text-primary dark:bg-primary/50 dark:text-primary">
+                                 bg-primary/10 text-primary dark:bg-primary/50 dark:text-primary-foreground">
                     <span class="material-icons text-xs mr-1">public</span>
                     全局
                   </span>

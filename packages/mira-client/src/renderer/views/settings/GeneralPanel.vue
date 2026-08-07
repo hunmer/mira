@@ -14,6 +14,16 @@
           @update:checked="handleAutoStartChange"
         />
       </div>
+      <div class="flex items-center justify-between gap-4 py-3">
+        <div>
+          <p class="text-foreground dark:text-muted-foreground text-base font-normal leading-normal">关闭时隐藏窗口</p>
+          <p class="text-muted-foreground dark:text-muted-foreground text-sm">点击关闭按钮时隐藏到系统托盘</p>
+        </div>
+        <Switch
+          :checked="settingsStore.settings.closeToTray"
+          @update:checked="(enabled: boolean) => handleSettingChange('closeToTray', enabled)"
+        />
+      </div>
     </div>
 
     <!-- 本地化设置 -->

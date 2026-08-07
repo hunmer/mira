@@ -14,6 +14,7 @@ import { ShortcutHandlers } from './ShortcutHandlers'
 import { AutoUpdateHandlers } from './AutoUpdateHandlers'
 import { NotificationHandlers } from './NotificationHandlers'
 import { ServerDeployHandlers } from './ServerDeployHandlers'
+import { ServerControlHandlers } from './ServerControlHandlers'
 import { PluginWindowHandlers } from './PluginWindowHandlers'
 import { getAutoUpdater } from '../services/useAutoUpdater'
 
@@ -30,6 +31,7 @@ export class IPCHandlers {
   private shortcutHandlers: ShortcutHandlers
   private autoUpdateHandlers: AutoUpdateHandlers
   private serverDeployHandlers: ServerDeployHandlers
+  private serverControlHandlers: ServerControlHandlers
   private pluginWindowHandlers: PluginWindowHandlers
 
   constructor() {
@@ -49,6 +51,7 @@ export class IPCHandlers {
     this.shortcutHandlers = new ShortcutHandlers()
     this.autoUpdateHandlers = new AutoUpdateHandlers()
     this.serverDeployHandlers = new ServerDeployHandlers()
+    this.serverControlHandlers = new ServerControlHandlers()
     // 插件窗口处理器依赖 pluginHandler 解析插件目录
     this.pluginWindowHandlers = new PluginWindowHandlers(this.pluginHandler)
 
@@ -230,6 +233,13 @@ export class IPCHandlers {
 
     // 清理后端部署处理器
     this.serverDeployHandlers.cleanup()
+
+    // 清理后端运行控制处理器
+    this.serverControlHandlers.cleanup()
+    ipcMain.removeAllListeners('server-control:start')
+    ipcMain.removeAllListeners('server-control:stop')
+    ipcMain.removeAllListeners('server-control:restart')
+    ipcMain.removeAllListeners('server-control:status')
 
     // 清理插件窗口处理器
     this.pluginWindowHandlers.cleanup()

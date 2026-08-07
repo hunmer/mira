@@ -22,6 +22,7 @@ import { SettingsRouter } from './routes/SettingsRouter'
 import { StatisticsRouter } from './routes/StatisticsRouter';
 import { ThumbRouter } from './routes/ThumbRouter';
 import { createHttpPermissionMiddleware } from './middleware/permission';
+import { logRingBuffer } from './services/LogRingBuffer';
 
 // HTTP请求日志中间件
 interface RequestLogData {
@@ -381,6 +382,39 @@ export class MiraHttpServer {
                 timestamp: new Date().toISOString(),
                 uptime: process.uptime(),
                 version: process.env.npm_package_version || '1.0.0'
+            });
+        });
+
+        // 服务端日志流（SSE）—— 供本地控制台订阅后端运行日志。
+        // 与 /health 同级、不挂权限中间件：仅本地 127.0.0.1 控制台使用。
+        // 连接建立后先回放环形缓冲中「最近 100 条」历史，再实时推送新日志。
+        this.app.get('/api/logs/stream', (req, res) => {
+            res.writeHead(200, {
+                'Content-Type': 'text/event-stream',
+                'Cache-Control': 'no-cache, no-transform',
+                Connection: 'keep-alive',
+                'X-Accel-Buffering': 'no',
+            });
+            res.write(': connected\n\n');
+
+            // 1) 回放历史
+            const history = logRingBuffer.recent();
+            res.write(`event: history\ndata: ${JSON.stringify(history)}\n\n`);
+
+            // 2) 订阅实时日志
+            const unsubscribe = logRingBuffer.subscribe(entry => {
+                res.write(`data: ${JSON.stringify(entry)}\n\n`);
+            });
+
+            // 周期性心跳，防止中间代理因空闲关闭连接
+            const heartbeat = setInterval(() => {
+                res.write(': ping\n\n');
+            }, 15000);
+
+            // 客户端断开时清理订阅与定时器，避免内存泄漏
+            req.on('close', () => {
+                unsubscribe();
+                clearInterval(heartbeat);
             });
         });
 

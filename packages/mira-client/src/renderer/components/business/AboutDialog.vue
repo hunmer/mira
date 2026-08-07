@@ -54,8 +54,8 @@
           </button>
         </div>
 
-        <!-- 更新区域 -->
-        <div class="w-full mt-5">
+        <!-- 更新区域（仅 Electron 环境显示，dev 网页隐藏） -->
+        <div v-if="environment.isElectron" class="w-full mt-5">
           <!-- 检查更新按钮 -->
           <button
             v-if="updateState === 'idle'"
@@ -143,6 +143,7 @@
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useToast } from '@renderer/composables/useToast'
+import { environment } from '@renderer/utils'
 import miraLogo from '@/renderer/assets/mira-logo.png'
 
 interface Props {
@@ -219,6 +220,11 @@ const unregisterUpdaterEvents = () => {
 }
 
 const loadVersion = async () => {
+  // 网页端降级：使用 vite 注入的 package.json 版本号
+  if (!environment.isElectron) {
+    appVersion.value = __APP_VERSION__
+    return
+  }
   try {
     const res = await window.electronAPI.updater.getVersion()
     if (res?.success) appVersion.value = res.version
@@ -227,7 +233,7 @@ const loadVersion = async () => {
     try {
       appVersion.value = await window.electronAPI.app.getVersion()
     } catch {
-      appVersion.value = '—'
+      appVersion.value = __APP_VERSION__
     }
   }
 }

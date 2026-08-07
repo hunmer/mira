@@ -549,6 +549,39 @@ export interface ElectronAPI {
     waitReady: () => Promise<{ success: boolean; message?: string }>
   }
 
+  // 后端运行控制（启用 / 停止 / 重启 / 状态）
+  serverControl: {
+    /** 启动本地后端（mira-server-service.mjs start） */
+    start: () => Promise<{ success: boolean; message?: string }>
+    /** 停止本地后端 */
+    stop: () => Promise<{ success: boolean; message?: string }>
+    /** 重启本地后端（stop + start） */
+    restart: () => Promise<{ success: boolean; message?: string }>
+    /** 查询运行状态（healthy / managed / pid / ports） */
+    status: () => Promise<{
+      success: boolean
+      message?: string
+      status?: {
+        healthy: boolean
+        managed: boolean
+        pid: number | null
+        httpPort: number
+        dataPath: string
+        logFile: string
+      }
+    }>
+    /** 监听启停动作的实时进度（stdout/stderr 行与结束事件） */
+    onProgress: (callback: (progress: {
+      type: 'data' | 'done'
+      action: 'start' | 'stop' | 'restart'
+      line?: string
+      success?: boolean
+      message?: string
+    }) => void) => void
+    /** 移除进度监听 */
+    removeProgressListener: () => void
+  }
+
   // 通知 API
   notification: {
     show: (options: { title: string; body?: string; silent?: boolean }) => Promise<{ success: boolean; error?: string }>

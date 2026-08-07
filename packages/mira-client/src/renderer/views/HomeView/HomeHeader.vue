@@ -1,12 +1,23 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { Dropdown } from '@/renderer/components/common/Dropdown'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+} from '@/components/ui/dropdown-menu'
 import { useAuthStore } from '@/renderer/stores/auth'
 import { useMediaStore } from '@/renderer/stores/media'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { environment } from '@renderer/utils'
 import { shortcutService } from '@renderer/services/ShortcutService'
+import ServerControlDialog from '@/renderer/components/business/ServerControlDialog.vue'
 
 defineOptions({ name: 'HomeHeader' })
 
@@ -29,6 +40,8 @@ const authStore = useAuthStore()
 const mediaStore = useMediaStore()
 const router = useRouter()
 const avatarLoadError = ref(false)
+/** 服务端控制对话框可见性（自包含在 HomeHeader 内） */
+const showServerDialog = ref(false)
 
 const userAvatarUrl = computed(() => {
   const avatar = (authStore.user as any)?.avatar
@@ -84,12 +97,9 @@ const openDashboard = async () => {
     </button>
 
     <!-- 用户头像 + 功能菜单（原 HomeToolbar 功能并入） -->
-    <Dropdown
-      placement="bottom-end"
-      min-width="200px"
-    >
-      <template #trigger>
-        <button class="h-8 w-8 flex items-center justify-center rounded-full hover:bg-primary/10 transition-colors">
+    <DropdownMenu>
+      <DropdownMenuTrigger as-child>
+        <button class="h-8 w-8 flex items-center justify-center rounded-full hover:bg-primary/10 transition-colors outline-none">
           <img
             v-if="userAvatarUrl && !avatarLoadError"
             :src="userAvatarUrl"
@@ -101,71 +111,64 @@ const openDashboard = async () => {
             {{ authStore.userDisplayName?.charAt(0)?.toUpperCase() || '?' }}
           </div>
         </button>
-      </template>
-      <template #content="{ close }">
-        <div class="p-2">
-          <!-- 用户信息 -->
-          <div class="px-2 pt-1 pb-2">
-            <div class="text-sm font-medium truncate">{{ authStore.userDisplayName }}</div>
-            <div v-if="authStore.user?.role" class="text-xs text-muted-foreground">{{ authStore.user.role }}</div>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent class="min-w-[220px]" align="end" :side-offset="8">
+        <!-- 用户信息 -->
+        <DropdownMenuLabel class="font-normal">
+          <div class="flex flex-col space-y-1">
+            <div class="text-sm font-medium leading-none truncate">{{ authStore.userDisplayName }}</div>
+            <div v-if="authStore.user?.role" class="text-xs leading-none text-muted-foreground">{{ authStore.user.role }}</div>
           </div>
-          <div class="border-t border-border/60 pt-1 space-y-0.5">
-            <button
-              class="w-full flex items-center space-x-2 p-2 text-muted-foreground hover:text-foreground hover:bg-primary/5 rounded-lg text-sm transition-colors"
-              @click="emit('upload'); close()"
-            >
-              <span class="material-icons text-base">upload_file</span>
-              <span>上传文件</span>
-            </button>
-            <button
-              class="w-full flex items-center space-x-2 p-2 text-muted-foreground hover:text-foreground hover:bg-primary/5 rounded-lg text-sm transition-colors"
-              @click="emit('plugins'); close()"
-            >
-              <span class="material-icons text-base">extension</span>
-              <span>插件管理</span>
-            </button>
-            <button
-              class="w-full flex items-center space-x-2 p-2 text-muted-foreground hover:text-foreground hover:bg-primary/5 rounded-lg text-sm transition-colors"
-              @click="emit('shortcuts'); close()"
-            >
-              <span class="material-icons text-base">keyboard</span>
-              <span>快捷键设置</span>
-            </button>
-            <button
-              class="w-full flex items-center space-x-2 p-2 text-muted-foreground hover:text-foreground hover:bg-primary/5 rounded-lg text-sm transition-colors"
-              @click="router.push({ name: 'Playground' }); close()"
-            >
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem @select="emit('upload')">
+          <span class="material-icons text-base">upload_file</span>
+          <span>上传文件</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem @select="emit('plugins')">
+          <span class="material-icons text-base">extension</span>
+          <span>插件管理</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem @select="emit('shortcuts')">
+          <span class="material-icons text-base">keyboard</span>
+          <span>快捷键设置</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem @select="emit('settings')">
+          <span class="material-icons text-base">settings</span>
+          <span>应用设置</span>
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        <!-- 高级：Playground / 开发者工具 / 服务端 -->
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            <span class="material-icons text-base">tune</span>
+            <span>高级</span>
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent class="min-w-[200px]">
+            <DropdownMenuItem @select="router.push({ name: 'Playground' })">
               <span class="material-icons text-base">science</span>
               <span>Playground</span>
-            </button>
-            <button
-              class="w-full flex items-center space-x-2 p-2 text-muted-foreground hover:text-foreground hover:bg-primary/5 rounded-lg text-sm transition-colors"
-              @click="emit('settings'); close()"
-            >
-              <span class="material-icons text-base">settings</span>
-              <span>应用设置</span>
-            </button>
-            <button
-              v-if="environment.isElectron"
-              class="w-full flex items-center space-x-2 p-2 text-muted-foreground hover:text-foreground hover:bg-primary/5 rounded-lg text-sm transition-colors"
-              @click="shortcutService.executeAction('dev.devtools'); close()"
-            >
+            </DropdownMenuItem>
+            <DropdownMenuItem v-if="environment.isElectron" @select="shortcutService.executeAction('dev.devtools')">
               <span class="material-icons text-base">code</span>
               <span>开发者工具</span>
-            </button>
-          </div>
-          <div class="border-t border-border/60 mt-1 pt-1">
-            <button
-              class="w-full flex items-center space-x-2 p-2 text-destructive hover:bg-destructive/10 rounded-lg text-sm transition-colors"
-              @click="emit('logout'); close()"
-            >
-              <span class="material-icons text-base">logout</span>
-              <span>退出登录</span>
-            </button>
-          </div>
-        </div>
-      </template>
-    </Dropdown>
+            </DropdownMenuItem>
+            <DropdownMenuItem v-if="environment.isElectron" @select="showServerDialog = true">
+              <span class="material-icons text-base">dns</span>
+              <span>服务端</span>
+            </DropdownMenuItem>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+
+        <DropdownMenuSeparator />
+        <DropdownMenuItem variant="destructive" @select="emit('logout')">
+          <span class="material-icons text-base">logout</span>
+          <span>退出登录</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
 
     <!-- 窗口控制按钮 - 仅桌面端显示 -->
     <template v-if="isDesktop">
@@ -190,4 +193,7 @@ const openDashboard = async () => {
       </button>
     </template>
   </header>
+
+  <!-- 服务端控制对话框（自包含，仅 Electron 环境） -->
+  <ServerControlDialog v-if="environment.isElectron" v-model:open="showServerDialog" />
 </template>

@@ -224,7 +224,12 @@ export class MiraSDKService {
     if (!this.client) throw new Error('Not connected to Mira server')
 
     try {
-      const result = await this.client.tags().updateTag(libraryId, Number(tagId), {
+      // 标签树节点 id 形如 "tag-123"，去掉前缀后才能转换为数字 ID
+      const numericId = Number(String(tagId).replace(/^tag-/, ''))
+      if (!Number.isFinite(numericId)) {
+        throw new Error(`Invalid tag id: ${tagId}`)
+      }
+      const result = await this.client.tags().updateTag(libraryId, numericId, {
         title: updates.name,
         color: updates.color,
         description: updates.description,

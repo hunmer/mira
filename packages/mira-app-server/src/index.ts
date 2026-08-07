@@ -7,11 +7,16 @@ import { ServerPlugin } from './ServerPlugin';
 import { MiraWebsocketServer } from './WebSocketServer';
 import { MiraHttpServer } from './server';
 import { ThumbnailService } from './services/ThumbnailService';
+import { installLogCapture } from './services/logCapture';
 import express from 'express';
 
 // 加载环境变量 - 先加载根目录的 .env，再加载本地的 .env
 dotenv.config({ path: path.join(__dirname, '../../../.env') });
 dotenv.config();
+
+// 尽早安装 console 拦截，让 SSE 日志端点能回放启动阶段的历史日志。
+// 幂等：重复调用安全。
+installLogCapture();
 
 async function startServer() {
   try {

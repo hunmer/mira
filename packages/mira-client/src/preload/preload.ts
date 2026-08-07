@@ -240,6 +240,20 @@ const electronAPI: ElectronAPI = {
     waitReady: () => ipcRenderer.invoke('server-autostart:wait-ready'),
   },
 
+  // 后端运行控制（启用 / 停止 / 重启 / 状态）—— 供「服务端」控制对话框使用
+  serverControl: {
+    start: () => ipcRenderer.invoke('server-control:start'),
+    stop: () => ipcRenderer.invoke('server-control:stop'),
+    restart: () => ipcRenderer.invoke('server-control:restart'),
+    status: () => ipcRenderer.invoke('server-control:status'),
+    onProgress: (callback: (progress: any) => void) => {
+      ipcRenderer.on('server-control:progress', (_event, progress) => callback(progress))
+    },
+    removeProgressListener: () => {
+      ipcRenderer.removeAllListeners('server-control:progress')
+    },
+  },
+
   // 通知 API
   notification: {
     show: (options: { title: string; body?: string; silent?: boolean }) =>

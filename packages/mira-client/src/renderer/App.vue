@@ -1,7 +1,7 @@
 <template>
   <div id="app" class="h-screen w-screen overflow-hidden bg-background">
-    <!-- iOS风格拖拽横条 -->
-    <div class="drag-handle-bar">
+    <!-- iOS风格拖拽横条（仅 Electron 窗口显示，dev 网页隐藏） -->
+    <div v-if="environment.isElectron" class="drag-handle-bar">
       <div class="drag-handle-indicator"></div>
     </div>
 

@@ -17,6 +17,7 @@ export class TrayService {
   private static instance: TrayService | null = null
   private tray: Tray | null = null
   private mainWindow: BrowserWindow | null = null
+  private showMainWindowCallback: (() => void) | null = null
   private settings: TraySettings = {
     enabled: true,
     clickAction: 'toggle'
@@ -34,14 +35,20 @@ export class TrayService {
   /**
    * 初始化托盘
    */
-  public init(mainWindow: BrowserWindow): void {
+  public init(mainWindow: BrowserWindow, showMainWindow: () => void): void {
     this.mainWindow = mainWindow
+    this.showMainWindowCallback = showMainWindow
     
     if (this.settings.enabled) {
       this.createTray()
     }
 
     logger.info('TrayService', 'Tray service initialized', { enabled: this.settings.enabled })
+  }
+
+  /** 主窗口重建后刷新引用 */
+  public setMainWindow(mainWindow: BrowserWindow): void {
+    this.mainWindow = mainWindow
   }
 
   /**
@@ -165,7 +172,10 @@ export class TrayService {
    * 处理托盘单击事件
    */
   private handleTrayClick(): void {
-    if (!this.mainWindow) return
+    if (!this.mainWindow || this.mainWindow.isDestroyed()) {
+      this.showMainWindow()
+      return
+    }
 
     switch (this.settings.clickAction) {
       case 'toggle':
@@ -196,7 +206,10 @@ export class TrayService {
    * 显示主窗口
    */
   private showMainWindow(): void {
-    if (!this.mainWindow) return
+    if (!this.mainWindow || this.mainWindow.isDestroyed()) {
+      this.showMainWindowCallback?.()
+      return
+    }
 
     if (this.mainWindow.isMinimized()) {
       this.mainWindow.restore()
@@ -217,7 +230,7 @@ export class TrayService {
    * 隐藏主窗口
    */
   private hideMainWindow(): void {
-    if (!this.mainWindow) return
+    if (!this.mainWindow || this.mainWindow.isDestroyed()) return
 
     this.mainWindow.hide()
     
@@ -311,12 +324,18 @@ export class TrayService {
     return process.platform !== 'linux' || !!process.env.DISPLAY
   }
 
+  /** 托盘已创建且可作为窗口关闭后的入口 */
+  public isActive(): boolean {
+    return Boolean(this.tray && !this.tray.isDestroyed())
+  }
+
   /**
    * 清理资源
    */
   public cleanup(): void {
     this.destroyTray()
     this.mainWindow = null
+    this.showMainWindowCallback = null
     logger.info('TrayService', 'Tray service cleaned up')
   }
 }

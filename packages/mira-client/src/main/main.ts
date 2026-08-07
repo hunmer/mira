@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, ipcMain } from 'electron'
 import { IPCHandlers } from './ipc/handlers'
 import { ProtocolService } from './services/ProtocolService'
 import { TrayService } from './services/TrayService'
@@ -17,10 +17,13 @@ class MiraApplication {
   private ipcHandlers: IPCHandlers | null = null
   private protocolService: ProtocolService | null = null
   private trayService: TrayService | null = null
+  private isQuitting = false
 
   constructor() {
     this.setupEnvironment()
-    this.setupSingleInstance()
+    if (!this.setupSingleInstance()) {
+      return
+    }
 
     // 设置日志级别
     // 在打包环境中，检查 app.isPackaged 来确定是否为生产环境
@@ -70,14 +73,14 @@ class MiraApplication {
    * 强制确保只有一个应用实例运行。
    * 若已有实例，立即退出；否则监听 second-instance 以聚焦首个实例窗口。
    */
-  private setupSingleInstance() {
+  private setupSingleInstance(): boolean {
     const gotTheLock = app.requestSingleInstanceLock()
 
     if (!gotTheLock) {
       // 如果已经有实例在运行，立即退出
       logger.info('MiraApplication', 'Another instance is already running, quitting immediately...')
       setImmediate(() => app.quit())
-      return
+      return false
     }
 
     // 当尝试运行第二个实例时，聚焦到第一个实例的窗口
@@ -93,15 +96,14 @@ class MiraApplication {
         logger.info('MiraApplication', 'Protocol URL detected in second instance', { url: protocolUrl })
       }
 
-      const win = this.windows.getWindow()
-      if (win) {
-        if (win.isMinimized()) {
-          win.restore()
-        }
-        win.focus()
-        win.show()
+      if (app.isReady()) {
+        this.showMainWindow()
+      } else {
+        void app.whenReady().then(() => this.showMainWindow())
       }
     })
+
+    return true
   }
 
   /**
@@ -130,7 +132,7 @@ class MiraApplication {
     app.whenReady().then(async () => {
       logger.info('MiraApplication', 'App is ready')
 
-      this.windows.create()
+      this.createMainWindow()
       this.setupIPC()
       this.setupProtocol()
       this.setupTray()
@@ -154,23 +156,26 @@ class MiraApplication {
 
       app.on('activate', () => {
         logger.debug('MiraApplication', 'App activated')
-        // macOS 特定行为
-        if (BrowserWindow.getAllWindows().length === 0) {
-          this.windows.create()
-        }
+        this.showMainWindow()
       })
+    })
+
+    ipcMain.on('window:set-close-to-tray', (_event, enabled: boolean) => {
+      this.windows.setCloseToTray(Boolean(enabled))
     })
 
     // 当所有窗口关闭时退出应用（除了 macOS）
     app.on('window-all-closed', () => {
       logger.info('MiraApplication', 'All windows closed')
-      if (process.platform !== 'darwin') {
+      if (process.platform !== 'darwin' && (this.isQuitting || !this.trayService?.isActive())) {
         app.quit()
       }
     })
 
     // 应用即将退出
     app.on('before-quit', () => {
+      this.isQuitting = true
+      this.windows.prepareToQuit()
       logger.info('MiraApplication', 'App is about to quit')
       try {
         const output = runLocalServerScriptSync('stop')
@@ -196,6 +201,20 @@ class MiraApplication {
     process.on('SIGHUP', quitGracefully)
   }
 
+  private createMainWindow(): BrowserWindow {
+    const win = this.windows.create()
+    this.ipcHandlers?.setMainWindow(win)
+    this.trayService?.setMainWindow(win)
+    return win
+  }
+
+  private showMainWindow(): void {
+    if (!this.windows.getWindow()) {
+      this.createMainWindow()
+    }
+    this.windows.show()
+  }
+
   private setupIPC() {
     // 初始化 IPC 处理器
     this.ipcHandlers = new IPCHandlers()
@@ -219,7 +238,7 @@ class MiraApplication {
 
       try {
         // 确保主窗口可见
-        this.windows.show()
+        this.showMainWindow()
 
         // 发送服务器导入数据到渲染进程
         this.windows.send('protocol:server-import', data)
@@ -234,7 +253,7 @@ class MiraApplication {
       logger.info('MiraApplication', 'Handling openTab protocol', { data })
 
       try {
-        this.windows.show()
+        this.showMainWindow()
         this.windows.send('protocol:open-tab', data)
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error)
@@ -255,7 +274,7 @@ class MiraApplication {
     // 初始化托盘服务
     const win = this.windows.getWindow()
     if (win) {
-      this.trayService?.init(win)
+      this.trayService?.init(win, () => this.showMainWindow())
       logger.info('MiraApplication', 'Tray service initialized')
     }
   }

@@ -16,9 +16,15 @@ import { injectConsoleHook } from '../utils/consoleHook'
 export class MainWindowService {
   private mainWindow: BrowserWindow | null = null
   private windowState: WindowStateKeeper | null = null
+  private closeToTray = false
+  private isQuitting = false
 
   /** 创建并配置主窗口，加载渲染进程入口 */
   create(): BrowserWindow {
+    if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+      return this.mainWindow
+    }
+
     logger.info('MainWindowService', 'Creating main window')
 
     // 创建窗口状态管理器
@@ -144,6 +150,14 @@ export class MainWindowService {
     // 浮动窗口通过该标识将点击事件准确转发给主窗口，生产和开发环境都必须设置。
     ;(this.mainWindow as BrowserWindow & { aliasName?: string }).aliasName = 'Mira'
 
+    this.mainWindow.on('close', event => {
+      if (!this.closeToTray || this.isQuitting) return
+
+      event.preventDefault()
+      this.mainWindow?.hide()
+      logger.info('MainWindowService', 'Main window hidden on close')
+    })
+
     // 窗口关闭时清理引用
     this.mainWindow.on('closed', () => {
       clearTimeout(showFallbackTimer)
@@ -201,7 +215,18 @@ export class MainWindowService {
 
   /** 获取主窗口引用（可能为 null） */
   getWindow(): BrowserWindow | null {
-    return this.mainWindow
+    return this.mainWindow && !this.mainWindow.isDestroyed() ? this.mainWindow : null
+  }
+
+  /** 设置关闭按钮是否改为隐藏窗口 */
+  setCloseToTray(enabled: boolean): void {
+    this.closeToTray = enabled
+    logger.info('MainWindowService', 'Close-to-tray setting updated', { enabled })
+  }
+
+  /** 应用退出时允许窗口真正关闭 */
+  prepareToQuit(): void {
+    this.isQuitting = true
   }
 
   /**
@@ -209,7 +234,7 @@ export class MainWindowService {
    * 若窗口最小化会先还原，并保证聚焦；macOS 下会显示 Dock。
    */
   show(): void {
-    if (!this.mainWindow) return
+    if (!this.mainWindow || this.mainWindow.isDestroyed()) return
 
     if (this.mainWindow.isMinimized()) {
       this.mainWindow.restore()

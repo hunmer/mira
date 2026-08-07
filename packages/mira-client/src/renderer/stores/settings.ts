@@ -17,6 +17,7 @@ export interface AppSettings {
   theme: 'light' | 'dark' | 'auto'
   language: string
   autoStartServer: boolean
+  closeToTray: boolean
 
   // 主题风格覆盖（'' | 'mira' | 'lyra' | 'luma' | 'rhea' | 'custom'）
   themeStyle: string
@@ -138,6 +139,7 @@ export const useSettingsStore = defineStore('settings', () => {
     theme: 'auto',
     language: 'zh-CN',
     autoStartServer: false,
+    closeToTray: false,
 
     // 主题风格 / 主色覆盖
     themeStyle: '',
@@ -388,6 +390,8 @@ export const useSettingsStore = defineStore('settings', () => {
         }
       } else if (isPluginSystemInitialized.value) {
       }
+
+      window.electronAPI?.send('window:set-close-to-tray', settings.value.closeToTray)
     } catch (err) {
       error.value = 'Failed to load settings from local storage'
     }
@@ -401,6 +405,7 @@ export const useSettingsStore = defineStore('settings', () => {
     try {
       const settingsToSave = JSON.stringify(settings.value)
       await ConfigStorage.setItem('mira-settings', settingsToSave)
+      window.electronAPI?.send('window:set-close-to-tray', settings.value.closeToTray)
     } catch (err) {
       error.value = 'Failed to save settings to local storage'
     }
@@ -475,6 +480,7 @@ export const useSettingsStore = defineStore('settings', () => {
       theme: 'auto',
       language: 'zh-CN',
       autoStartServer: false,
+      closeToTray: false,
 
       themeStyle: '',
       themeStyleCustomCss: '',
