@@ -476,33 +476,7 @@ html, body, #app {
   filter: contrast(1.5);
 }
 
-/* 滚动条样式 */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background-color: var(--muted-foreground);
-  border-radius: 4px;
-  transition: background-color 150ms ease;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background-color: var(--muted-foreground);
-}
-
-.dark ::-webkit-scrollbar-thumb {
-  background-color: var(--muted);
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-  background-color: var(--muted-foreground);
-}
+/* 滚动条样式统一在 main.css 中定义（极细 3px 风格），此处不再重复 */
 
 /* 焦点样式 */
 :focus-visible {

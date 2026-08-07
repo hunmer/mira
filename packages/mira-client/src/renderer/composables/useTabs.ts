@@ -894,6 +894,18 @@ export function useTabs() {
   }
 
   /**
+   * 是否可以激活上一次的tab（供 UI 显示禁用态）
+   * 依赖响应式的 tabs，激活/关闭等操作都会改变 tabs 从而触发重新计算
+   */
+  const canActivateLastTab = computed(() => {
+    const currentActiveTab = getCurrentTab()
+    const lastActivatedTab = tabHistory.getLastActivatedTab(currentActiveTab?.id)
+    if (!lastActivatedTab) return false
+    // 上一次激活的 tab 必须仍然存在
+    return tabs.value.some(tab => tab.id === lastActivatedTab.id)
+  })
+
+  /**
    * 重新打开最后关闭的tab
    */
   const reopenLastClosedTab = async () => {
@@ -1018,6 +1030,7 @@ export function useTabs() {
 
     // Tab历史方法
     activateLastTab,
+    canActivateLastTab,
     reopenLastClosedTab
   }
 }

@@ -26,6 +26,7 @@ const props = defineProps<{
   activeTabs: TabItem[]
   tabContextMenuItems: TabContextMenuItem[]
   isTabClosable: (tabId: string) => boolean
+  canActivateLastTab: boolean
   onActivateLastTab: () => void
   onSwitchTab: (tabId: string) => void
   onCloseTab: (tabId: string) => void
@@ -71,8 +72,15 @@ function handleTabContextMenu(tab: TabItem, event: MouseEvent) {
     <!-- 返回：激活上一次的 tab -->
     <div class="flex items-end gap-0.5 shrink-0 mr-1">
       <button
-        class="h-6 w-8 flex items-center justify-center rounded-full text-muted-foreground hover:text-primary hover:bg-white/50 hover:backdrop-blur-xl transition-[color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-95"
-        title="激活上一次的tab (Ctrl+Shift+Tab)" @click="props.onActivateLastTab">
+        :disabled="!props.canActivateLastTab"
+        :title="props.canActivateLastTab ? '激活上一次的tab (Ctrl+Shift+Tab)' : '没有可返回的 tab'"
+        :class="[
+          'h-6 w-8 flex items-center justify-center rounded-full transition-[color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]',
+          props.canActivateLastTab
+            ? 'text-muted-foreground hover:text-primary hover:bg-white/50 hover:backdrop-blur-xl active:scale-95'
+            : 'text-muted-foreground/40 cursor-not-allowed'
+        ]"
+        @click="props.onActivateLastTab">
         <span class="material-icons text-xl">arrow_back</span>
       </button>
     </div>

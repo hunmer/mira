@@ -33,12 +33,14 @@
       :orientation="config.orientation"
       :opts="carouselOpts"
       :plugins="autoplayPlugin"
+      @init-api="onCarouselInit"
+      @wheel="onWheel"
     >
       <CarouselContent class="h-full">
         <CarouselItem
           v-for="(img, idx) in images"
           :key="img.id"
-          :class="slideBasisClass"
+          :class="[slideBasisClass, config.orientation === 'vertical' ? 'h-full' : '']"
         >
           <div
             class="group/img relative flex h-full w-full cursor-pointer items-center justify-center overflow-hidden rounded-md bg-muted/40"
@@ -249,6 +251,20 @@ const autoplayPlugin = computed(() => {
   const delay = Math.max(500, Number(config.value.autoplayDuration) || 4000)
   return [Autoplay({ delay, stopOnInteraction: false, stopOnMouseEnter: true })]
 })
+
+// Embla 原生支持拖拽；滚轮事件需按方向主动驱动 snap，避免被仪表盘外层滚动吞掉。
+const carouselApi = ref<any>(null)
+function onCarouselInit(api: any) {
+  carouselApi.value = api
+}
+function onWheel(event: WheelEvent) {
+  if (config.value.orientation !== 'vertical' || !carouselApi.value || images.value.length < 2) return
+  if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return
+  event.preventDefault()
+  event.stopPropagation()
+  if (event.deltaY > 0) carouselApi.value.scrollNext()
+  else carouselApi.value.scrollPrev()
+}
 
 /**
  * Carousel 重建 key：方向 / 每屏张数 / autoplay 参数任一变化都重建，

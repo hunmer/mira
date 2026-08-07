@@ -155,3 +155,48 @@
     box-shadow: none !important;
   }
 }
+
+/*
+  全局滚动条：极细风格。
+  WebKit（Chromium/Electron）走 ::-webkit-scrollbar；Firefox 走 scrollbar-width/color。
+  统一 6px 宽度，hover 时 8px，半透明灰色，贴合明暗主题。
+*/
+* {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(0.7 0 0 / 35%) transparent;
+}
+
+.dark * {
+  scrollbar-color: oklch(0.5 0 0 / 45%) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 3px;
+  height: 3px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: oklch(0.7 0 0 / 35%);
+  border-radius: 9999px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: oklch(0.5 0 0 / 45%);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  width: 5px;
+  background: oklch(0.6 0 0 / 55%);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.6 0 0 / 65%);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}

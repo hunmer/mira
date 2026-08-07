@@ -35,6 +35,54 @@ export class AppHandlers {
     ipcMain.handle('dev:toggle-devtools', this.handleAppToggleDevTools.bind(this))
     ipcMain.handle('dev:force-reload', this.handleDevForceReload.bind(this))
 
+    // 打开独立 BrowserWindow 加载指定 URL（如服务器 /dashboard）
+    ipcMain.handle('window:open-url', this.handleOpenUrl.bind(this))
+  }
+
+  /**
+   * 打开一个独立的 BrowserWindow 加载指定 URL。
+   * 用于在新窗口中访问外部页面（如服务器 dashboard），不复用主窗口。
+   */
+  private async handleOpenUrl(
+    _event: IpcMainInvokeEvent,
+    url: string,
+    options?: { width?: number; height?: number; title?: string }
+  ): Promise<{ success: boolean; message?: string }> {
+    try {
+      if (!url || typeof url !== 'string') {
+        return { success: false, message: 'url 不能为空' }
+      }
+      const win = new BrowserWindow({
+        width: options?.width && options.width > 0 ? options.width : 1280,
+        height: options?.height && options.height > 0 ? options.height : 800,
+        title: options?.title || 'Mira',
+        frame: true,
+        show: false,
+        backgroundColor: '#ffffff',
+        webPreferences: {
+          nodeIntegration: false,
+          contextIsolation: true,
+          sandbox: true,
+        },
+      })
+
+      // 外部链接交给系统默认浏览器，避免在 dashboard 窗口内再开窗口
+      win.webContents.setWindowOpenHandler(({ url: targetUrl }) => {
+        require('electron').shell.openExternal(targetUrl)
+        return { action: 'deny' }
+      })
+
+      win.once('ready-to-show', () => {
+        win.show()
+        win.focus()
+      })
+
+      await win.loadURL(url)
+      return { success: true }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error)
+      return { success: false, message: msg }
+    }
   }
 
   handleAppToggleDevTools(event: IpcMainInvokeEvent): void {

@@ -33,6 +33,7 @@ export function useHomeTabManagement(
     getCurrentTab,
     setTabNeedUpdate,
     activateLastTab,
+    canActivateLastTab,
     reopenLastClosedTab
   } = tabsComposable
 
@@ -424,6 +425,7 @@ export function useHomeTabManagement(
     switchToTabWithCallback,
     closeTabWithCallback,
     handleActivateLastTab,
+    canActivateLastTab,
     handleReopenClosedTab,
     handleCloseCurrentTab,
     refreshCurrentTabAfterLibrarySwitch,

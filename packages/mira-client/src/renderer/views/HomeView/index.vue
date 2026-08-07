@@ -133,6 +133,7 @@ const {
   handleActivateLastTab,
   handleReopenClosedTab,
   handleCloseCurrentTab,
+  canActivateLastTab,
   refreshCurrentTabAfterLibrarySwitch
 } = tabManagement
 
@@ -418,6 +419,7 @@ onUnmounted(() => {
               :active-tabs="activeTabs"
               :tab-context-menu-items="tabContextMenuItems"
               :is-tab-closable="tabsComposable.isTabClosable"
+              :can-activate-last-tab="canActivateLastTab"
               :on-activate-last-tab="handleActivateLastTab"
               :on-switch-tab="switchToTabWithCallback"
               :on-close-tab="closeTabWithCallback"
