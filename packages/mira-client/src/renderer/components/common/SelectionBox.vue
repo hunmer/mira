@@ -2,6 +2,7 @@
   <div
     ref="containerRef"
     class="selection-container relative w-full h-full select-none pointer-events-auto [&>*]:pointer-events-auto"
+    :style="{ minHeight: contentHeight ? `${contentHeight}px` : undefined }"
   >
     <!-- 选择框 -->
     <div
@@ -73,34 +74,17 @@ const altMode = ref(false)
 const itemsToRemove = ref(new Set<string>())
 const initialSelectedItems = ref(new Set<string>())
 const selectableRects = ref<SelectableRect[]>([])
+const contentHeight = ref(0)
+
+const syncContentHeight = () => {
+  if (containerRef.value) {
+    contentHeight.value = Math.max(contentHeight.value, containerRef.value.scrollHeight)
+  }
+}
 let animationFrameId: number | null = null
 let autoScrollFrameId: number | null = null
 let pendingMouseEvent: MouseEvent | null = null
 let lastMouseEvent: MouseEvent | null = null
-
-const debugSelection = (event: string, extra: Record<string, unknown> = {}) => {
-  if (!containerRef.value) return
-  const container = containerRef.value
-  const scrollContainer = getScrollContainer()
-  const masonry = container.querySelector('.masonry-container') as HTMLElement | null
-  console.debug('[DEBUG-selection-box]', event, {
-    container: {
-      clientHeight: container.clientHeight,
-      offsetHeight: container.offsetHeight,
-      scrollHeight: container.scrollHeight,
-      rect: container.getBoundingClientRect().toJSON()
-    },
-    masonry: masonry
-      ? { clientHeight: masonry.clientHeight, offsetHeight: masonry.offsetHeight, rect: masonry.getBoundingClientRect().toJSON() }
-      : null,
-    scrollContainer: scrollContainer
-      ? { className: scrollContainer.className, clientHeight: scrollContainer.clientHeight, scrollHeight: scrollContainer.scrollHeight, scrollTop: scrollContainer.scrollTop }
-      : { windowScrollY: window.scrollY },
-    startPos: startPos.value,
-    currentPos: currentPos.value,
-    ...extra
-  })
-}
 
 // 监听 modelValue 变化
 watch(() => props.modelValue, (newValue) => {
@@ -168,13 +152,13 @@ const startSelection = (e: MouseEvent) => {
 
   // 只有在空白区域才启动选择
   const pos = getRelativePosition(e)
+  syncContentHeight()
   startPos.value = pos
   currentPos.value = pos
   altMode.value = e.altKey
   itemsToRemove.value.clear()
   initialSelectedItems.value = new Set(selectedItems.value)
   refreshSelectableRects()
-  debugSelection('start', { clientX: e.clientX, clientY: e.clientY })
 
   emit('selection-start', e)
 
@@ -194,8 +178,10 @@ const updateSelection = (e: MouseEvent) => {
 
   if (!containerRef.value) return
 
-  currentPos.value = getRelativePosition(e)
-  debugSelection('update', { clientX: e.clientX, clientY: e.clientY })
+  const relativePos = getRelativePosition(e)
+  const ownScrollableX = containerRef.value.scrollWidth > containerRef.value.clientWidth
+  relativePos.x = Math.max(0, Math.min(relativePos.x, containerRef.value.clientWidth + (ownScrollableX ? containerRef.value.scrollLeft : 0)))
+  currentPos.value = relativePos
   updateSelectedItems()
   handleAutoScroll(e)
 }
@@ -315,16 +301,19 @@ const handleAutoScroll = (e: MouseEvent) => {
   const scrollContainer = container.scrollHeight > container.clientHeight || container.scrollWidth > container.clientWidth
     ? container
     : getScrollContainer()
+  const edgeRect = scrollContainer && scrollContainer !== container
+    ? scrollContainer.getBoundingClientRect()
+    : rect
   const canScrollContainerY = !!scrollContainer && scrollContainer.scrollHeight > scrollContainer.clientHeight
   const canScrollContainerX = !!scrollContainer && scrollContainer.scrollWidth > scrollContainer.clientWidth
-  const deltaY = e.clientY < rect.top + props.scrollThreshold
+  const deltaY = e.clientY < edgeRect.top + props.scrollThreshold
     ? -props.scrollAutoSpeed
-    : e.clientY > rect.bottom - props.scrollThreshold
+    : e.clientY > edgeRect.bottom - props.scrollThreshold
       ? props.scrollAutoSpeed
       : 0
-  const deltaX = e.clientX < rect.left + props.scrollThreshold
+  const deltaX = e.clientX < edgeRect.left + props.scrollThreshold
     ? -props.scrollAutoSpeed
-    : e.clientX > rect.right - props.scrollThreshold
+    : e.clientX > edgeRect.right - props.scrollThreshold
       ? props.scrollAutoSpeed
       : 0
 
@@ -342,15 +331,13 @@ const handleAutoScroll = (e: MouseEvent) => {
     const previous = scrollContainer!.scrollLeft
     scrollContainer!.scrollLeft += deltaX
     moved ||= scrollContainer!.scrollLeft !== previous
-  } else if (deltaX) {
-    const previous = window.scrollX
-    window.scrollBy(deltaX, 0)
-    moved ||= window.scrollX !== previous
   }
 
   if (moved) {
-    currentPos.value = getRelativePosition(e)
-    debugSelection('auto-scroll', { clientX: e.clientX, clientY: e.clientY, moved })
+    const next = getRelativePosition(e)
+    const ownScrollableX = container.scrollWidth > container.clientWidth
+    next.x = Math.max(0, Math.min(next.x, container.clientWidth + (ownScrollableX ? container.scrollLeft : 0)))
+    currentPos.value = next
     updateSelectedItems()
     lastMouseEvent = e
     if (autoScrollFrameId === null) {
@@ -378,8 +365,8 @@ const clearSelection = (e?: MouseEvent) => {
 
 // 处理滚动事件
 const handleScroll = () => {
+  syncContentHeight()
   if (selecting.value) {
-    debugSelection('scroll')
     refreshSelectableRects()
     updateSelectedItems()
   }
@@ -626,6 +613,10 @@ onMounted(() => {
     containerRef.value.addEventListener('scroll', handleScroll)
   }
   window.addEventListener('scroll', handleScroll, true)
+  window.requestAnimationFrame(() => {
+    syncContentHeight()
+    window.requestAnimationFrame(syncContentHeight)
+  })
 })
 
 onUnmounted(() => {

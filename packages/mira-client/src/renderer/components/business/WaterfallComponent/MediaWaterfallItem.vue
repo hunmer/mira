@@ -5,7 +5,7 @@
     :class="[
       'waterfall-card media-waterfall-item group relative cursor-pointer transition-all duration-200 rounded-xl overflow-hidden h-full w-full',
       isSelected
-        ? 'ring-2 ring-primary'
+        ? 'is-selected'
         : 'shadow-sm hover:shadow-[0_12px_36px_rgba(99,102,241,0.15)] hover:-translate-y-0.5'
     ]"
     @click="handleClick"
@@ -218,3 +218,15 @@ const {
   emit
 })
 </script>
+
+<style scoped>
+.media-waterfall-item.is-selected::after {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  border: 2px solid var(--primary);
+  border-radius: inherit;
+  pointer-events: none;
+  content: '';
+}
+</style>

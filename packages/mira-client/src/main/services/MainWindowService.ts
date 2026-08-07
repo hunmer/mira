@@ -166,31 +166,31 @@ export class MainWindowService {
     })
 
     // 监听窗口状态变化
-    this.mainWindow.on('resize', () => {
-      const bounds = this.mainWindow?.getBounds()
-      logger.debug('MainWindowService', 'Window resized', bounds)
-    })
+    // this.mainWindow.on('resize', () => {
+    //   const bounds = this.mainWindow?.getBounds()
+    //   logger.debug('MainWindowService', 'Window resized', bounds)
+    // })
 
-    this.mainWindow.on('move', () => {
-      const bounds = this.mainWindow?.getBounds()
-      logger.debug('MainWindowService', 'Window moved', bounds)
-    })
+    // this.mainWindow.on('move', () => {
+    //   const bounds = this.mainWindow?.getBounds()
+    //   logger.debug('MainWindowService', 'Window moved', bounds)
+    // })
 
-    this.mainWindow.on('maximize', () => {
-      logger.debug('MainWindowService', 'Window maximized')
-    })
+    // this.mainWindow.on('maximize', () => {
+    //   logger.debug('MainWindowService', 'Window maximized')
+    // })
 
-    this.mainWindow.on('unmaximize', () => {
-      logger.debug('MainWindowService', 'Window unmaximized')
-    })
+    // this.mainWindow.on('unmaximize', () => {
+    //   logger.debug('MainWindowService', 'Window unmaximized')
+    // })
 
-    this.mainWindow.on('enter-full-screen', () => {
-      logger.debug('MainWindowService', 'Window entered fullscreen')
-    })
+    // this.mainWindow.on('enter-full-screen', () => {
+    //   logger.debug('MainWindowService', 'Window entered fullscreen')
+    // })
 
-    this.mainWindow.on('leave-full-screen', () => {
-      logger.debug('MainWindowService', 'Window left fullscreen')
-    })
+    // this.mainWindow.on('leave-full-screen', () => {
+    //   logger.debug('MainWindowService', 'Window left fullscreen')
+    // })
 
     // 处理外部链接
     this.mainWindow.webContents.setWindowOpenHandler(({ url }) => {
