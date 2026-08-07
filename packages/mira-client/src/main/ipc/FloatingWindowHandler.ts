@@ -410,6 +410,7 @@ export class FloatingWindowHandler {
     this.messagePort = port1
 
     this.messagePort.on('message', (event) => {
+      console.log(`📥 [${this.options.name}] 收到 MessagePort 消息:`, event.data)
       this.handleMessage(event.data)
     })
     this.messagePort.start()
@@ -489,7 +490,10 @@ export class FloatingWindowHandler {
    * 处理来自浮动窗口的消息（内置 + 业务转发）
    */
   protected handleMessage(data: any): void {
-    if (!data || !data.type) return
+    if (!data || !data.type) {
+      console.warn(`⚠️ [${this.options.name}] 忽略无效消息:`, data)
+      return
+    }
 
     const ctx: FloatingWindowMessageContext = {
       window: this.window,

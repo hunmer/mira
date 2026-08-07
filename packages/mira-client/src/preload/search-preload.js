@@ -38,7 +38,11 @@ ipcRenderer.on('search-handler-message', (event, data) => {
 contextBridge.exposeInMainWorld('electronAPI', {
   // IPC 监听器
   on: (channel, callback) => {
-    const validChannels = ['search-handler-message'];
+    const validChannels = [
+      'search-handler-message',
+      'search-request-from-search-window',
+      'search-results',
+    ];
     if (validChannels.includes(channel)) {
       // 移除旧的监听器
       ipcRenderer.removeAllListeners(channel);

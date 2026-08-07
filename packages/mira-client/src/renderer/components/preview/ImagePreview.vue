@@ -3,8 +3,8 @@
     <!-- 顶部工具栏 -->
     <header class="flex h-16 flex-shrink-0 items-center justify-between border-b border-border bg-white px-6">
       <div class="flex items-center space-x-4">
-        <button 
-          class="rounded-full p-2 hover:bg-muted"
+        <button
+          class="flex h-9 w-9 items-center justify-center rounded-full hover:bg-muted"
           @click="controller.goBack"
         >
           <span class="material-icons text-muted-foreground">arrow_back</span>
@@ -28,14 +28,8 @@
         </div>
       </div>
       <div class="flex items-center space-x-2">
-        <button class="rounded-full p-2 hover:bg-muted">
+        <button class="flex h-9 w-9 items-center justify-center rounded-full hover:bg-muted">
           <span class="material-symbols-outlined text-muted-foreground">more_horiz</span>
-        </button>
-        <button 
-          class="rounded-full p-2 hover:bg-muted"
-          @click="controller.closePreview"
-        >
-          <span class="material-icons text-muted-foreground">close</span>
         </button>
       </div>
     </header>
@@ -77,15 +71,15 @@
           </div>
           <div class="flex items-center space-x-4">
             <span>{{ controller.currentImageIndex.value + 1 }} / {{ controller.imageItems.value.length }}</span>
-            <button 
-              class="rounded-full p-1 hover:bg-muted"
+            <button
+              class="flex h-7 w-7 items-center justify-center rounded-full hover:bg-muted"
               :disabled="controller.currentImageIndex.value === 0"
               @click="controller.previousImage"
             >
               <span class="material-symbols-outlined text-muted-foreground">navigate_before</span>
             </button>
-            <button 
-              class="rounded-full p-1 hover:bg-muted"
+            <button
+              class="flex h-7 w-7 items-center justify-center rounded-full hover:bg-muted"
               :disabled="controller.currentImageIndex.value === controller.imageItems.value.length - 1"
               @click="controller.nextImage"
             >

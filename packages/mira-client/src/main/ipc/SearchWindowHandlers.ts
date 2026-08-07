@@ -121,13 +121,21 @@ export class SearchWindowHandlers {
   private forwardToMainRenderer(data: any): void {
     const mainWindow = this.getMainWindow()
     if (mainWindow && !mainWindow.isDestroyed()) {
+      console.log('📤 [SearchWindowHandlers] 转发消息到主渲染进程:', data)
       mainWindow.webContents.send('search-request-from-search-window', data)
+    } else {
+      console.error('❌ [SearchWindowHandlers] 主渲染窗口不可用，消息未转发:', data)
     }
   }
 
   private getMainWindow(): BrowserWindow | null {
     const windows = BrowserWindow.getAllWindows()
-    return windows.find((w) => w !== this.handler.getWindow()) || null
+    const searchWindow = this.handler.getWindow()
+    return (
+      windows.find((w: any) => w !== searchWindow && w.aliasName === 'Mira') ||
+      windows.find((w) => w !== searchWindow) ||
+      null
+    )
   }
 
   /**
