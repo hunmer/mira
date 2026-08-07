@@ -94,7 +94,7 @@ export class HomeDataManager {
           return {
             id: folder.id.toString(),
             label: folder.title || folder.name || `Folder ${folder.id}`,
-            icon: 'folder',
+            icon: folder.icon || 'folder',
             iconColor: folder.color ? `#${folder.color.toString(16).padStart(6, '0')}` : 'text-gray-500',
             count: totalCount,
             active: this.selectedFolder.value === folder.id.toString(),

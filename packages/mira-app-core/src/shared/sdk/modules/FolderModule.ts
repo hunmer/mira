@@ -10,6 +10,7 @@ export interface Folder {
     parent_id?: number | undefined;
     path?: string;
     color?: number;
+    icon?: string;
     description?: string;
     createdAt?: string;
     updatedAt?: string;
@@ -36,6 +37,7 @@ export interface CreateFolderRequest {
     title: string;
     parent_id?: number;
     color?: number;
+    icon?: string;
     description?: string;
 }
 
@@ -48,6 +50,7 @@ export interface UpdateFolderRequest {
     title?: string;
     parent_id?: number;
     color?: number;
+    icon?: string;
     description?: string;
 }
 
@@ -190,6 +193,7 @@ export class FolderModule {
      * @param parentId 父文件夹ID（可选）
      * @param color 文件夹颜色（可选，数字类型）
      * @param description 文件夹描述（可选）
+     * @param icon 文夹夹图标（可选，Material Icons 图标名）
      * @returns Promise<Folder>
      */
     async createFolder(
@@ -197,9 +201,10 @@ export class FolderModule {
         title: string,
         parentId?: number,
         color?: number,
-        description?: string
+        description?: string,
+        icon?: string
     ): Promise<Folder> {
-        return await this.create({ libraryId, title, parent_id: parentId, color, description });
+        return await this.create({ libraryId, title, parent_id: parentId, color, icon, description });
     }
 
     /**
@@ -212,7 +217,7 @@ export class FolderModule {
     async updateFolder(
         libraryId: string,
         id: number,
-        updates: { title?: string; parent_id?: number; color?: number; description?: string }
+        updates: { title?: string; parent_id?: number; color?: number; icon?: string; description?: string }
     ): Promise<Folder> {
         return await this.update({ libraryId, id, ...updates });
     }

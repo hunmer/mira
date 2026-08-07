@@ -9,6 +9,7 @@ export interface Folder {
   parent_id?: number
   path?: string
   color?: number
+  icon?: string
   description?: string
   createdAt?: string
   updatedAt?: string

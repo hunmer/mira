@@ -7,6 +7,7 @@ export interface Tag {
   id: number
   title: string
   color?: number
+  icon?: string
   description?: string
   createdAt?: string
   updatedAt?: string

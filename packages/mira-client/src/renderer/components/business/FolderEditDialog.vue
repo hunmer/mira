@@ -29,6 +29,20 @@
           </div>
 
           <div>
+            <label class="block text-sm font-medium text-foreground mb-2">图标</label>
+            <div class="flex items-center gap-3">
+              <IconPicker
+                v-model="formData.icon"
+                :default-icon="defaultItemIcon"
+                :color="selectedColorHex"
+              />
+              <span class="text-xs text-muted-foreground">
+                {{ formData.icon ? formData.icon : `默认（${defaultItemIcon}）` }}
+              </span>
+            </div>
+          </div>
+
+          <div>
             <label for="folderDescription" class="block text-sm font-medium text-foreground mb-1">描述</label>
             <textarea
               id="folderDescription"
@@ -126,6 +140,7 @@ import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import ConfigStorage from '@renderer/utils/ConfigStorage'
+import IconPicker from './IconPicker.vue'
 import type { FolderItem } from '../../types/components'
 
 /** “创建后自动打开” 偏好的本地存储键 */
@@ -153,7 +168,7 @@ interface Props {
 
 interface Emits {
   (e: 'close'): void
-  (e: 'save', data: { title: string; parentId?: number; color?: number; description?: string; autoOpenTab?: boolean }): void
+  (e: 'save', data: { title: string; parentId?: number; color?: number; description?: string; icon?: string; autoOpenTab?: boolean }): void
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -177,12 +192,21 @@ const formData = ref({
   parentId: undefined as number | undefined,
   color: null as number | null,
   description: '',
+  icon: '',
 })
 
 const errors = ref({ title: '' })
 const isEdit = computed(() => !!props.folder)
 const itemTypeText = computed(() => props.itemType === 'tag' ? '标签' : '文件夹')
 const parentTypeText = computed(() => props.itemType === 'tag' ? '父标签' : '父文件夹')
+// 默认图标：标签为 label，文件夹为 folder
+const defaultItemIcon = computed(() => props.itemType === 'tag' ? 'label' : 'folder')
+// 当前选中颜色对应的十六进制色值，用于图标预览
+const selectedColorHex = computed(() => {
+  const color = formData.value.color
+  if (!color || typeof color !== 'number' || color <= 0) return ''
+  return `#${color.toString(16).padStart(6, '0')}`
+})
 
 const colorOptions = [
   { value: null, class: 'bg-accent border-2 border-dashed border-border', label: '无颜色' },
@@ -266,6 +290,10 @@ const handleSubmit = async () => {
       autoOpenTab: !isEdit.value && autoOpenTab.value,
     }
     if (formData.value.color !== null) saveData.color = formData.value.color
+    // 仅当用户选了自定义图标时传递，空字符串表示使用默认
+    if (formData.value.icon && formData.value.icon.trim()) {
+      saveData.icon = formData.value.icon.trim()
+    }
     console.log('[FolderEditDialog] handleSubmit:', { autoOpenTab: autoOpenTab.value, isEdit: isEdit.value, saveDataAutoOpen: saveData.autoOpenTab })
     emit('save', saveData)
   } catch (err) {
@@ -281,7 +309,7 @@ const handleCancel = () => {
 }
 
 const resetForm = () => {
-  formData.value = { title: '', parentId: undefined, color: null, description: '' }
+  formData.value = { title: '', parentId: undefined, color: null, description: '', icon: '' }
   errors.value = { title: '' }
   selectedParentId.value = null
   autoOpenTab.value = loadAutoOpenTab()
@@ -299,6 +327,7 @@ watch(() => props.visible, (newValue) => {
         parentId: folderData.parent_id || undefined,
         color: folderData.color || 1,
         description: folderData.description || '',
+        icon: folderData.icon || '',
       }
       if (formData.value.parentId) {
         selectedParentId.value = formData.value.parentId.toString()

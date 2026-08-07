@@ -76,7 +76,7 @@ export class LibraryServerDataSQLite {
         title TEXT NOT NULL,
         parent_id INTEGER,
         color INTEGER,
-        icon INTEGER,
+        icon TEXT,
         sort_index INTEGER DEFAULT 0,
         FOREIGN KEY(parent_id) REFERENCES tags(id)
       )

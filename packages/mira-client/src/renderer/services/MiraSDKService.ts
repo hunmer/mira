@@ -203,7 +203,8 @@ export class MiraSDKService {
     libraryId: string,
     name: string,
     color?: number,
-    description?: string
+    description?: string,
+    icon?: string
   ): Promise<any> {
     if (!this.client) throw new Error('Not connected to Mira server')
 
@@ -212,7 +213,8 @@ export class MiraSDKService {
         libraryId,
         title: name,
         color,
-        description
+        description,
+        icon
       })
       return result
     } catch (error) {
@@ -221,7 +223,7 @@ export class MiraSDKService {
     }
   }
 
-  async updateTag(libraryId: string, tagId: string | number, updates: { name?: string; color?: number; description?: string }): Promise<any> {
+  async updateTag(libraryId: string, tagId: string | number, updates: { name?: string; color?: number; description?: string; icon?: string }): Promise<any> {
     if (!this.client) throw new Error('Not connected to Mira server')
 
     try {
@@ -234,6 +236,7 @@ export class MiraSDKService {
         title: updates.name,
         color: updates.color,
         description: updates.description,
+        icon: updates.icon,
       })
       return result
     } catch (error) {
@@ -832,12 +835,13 @@ export class MiraSDKService {
     title: string,
     parentId?: number,
     color?: number,
-    description?: string
+    description?: string,
+    icon?: string
   ): Promise<any> {
     if (!this.client) throw new Error('Not connected to Mira server')
 
     try {
-      const result = await this.client.folders().createFolder(libraryId, title, parentId, color, description)
+      const result = await this.client.folders().createFolder(libraryId, title, parentId, color, description, icon)
       return result
     } catch (error) {
       console.error('MiraSDKService: Failed to create folder', error)
@@ -856,6 +860,7 @@ export class MiraSDKService {
       color?: number;
       description?: string;
       parent_id?: number;
+      icon?: string;
     }
   ): Promise<any> {
     if (!this.client) throw new Error('Not connected to Mira server')

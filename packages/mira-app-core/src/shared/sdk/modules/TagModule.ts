@@ -9,6 +9,7 @@ export interface Tag {
     title: string;
     parent_id?: number | undefined;
     color?: number;
+    icon?: string;
     description?: string;
     createdAt?: string;
     updatedAt?: string;
@@ -35,6 +36,7 @@ export interface CreateTagRequest {
     title: string;
     parent_id?: number;
     color?: number;
+    icon?: string;
     description?: string;
 }
 
@@ -47,6 +49,7 @@ export interface UpdateTagRequest {
     title?: string;
     parent_id?: number;
     color?: number;
+    icon?: string;
     description?: string;
 }
 
@@ -185,8 +188,10 @@ export class TagModule {
      * 便捷方法：创建标签
      * @param libraryId 素材库ID
      * @param title 标签标题
+     * @param parentId 父标签ID（可选）
      * @param color 标签颜色（可选，数字类型）
      * @param description 标签描述（可选）
+     * @param icon 标签图标（可选，Material Icons 图标名）
      * @returns Promise<Tag>
      */
     async createTag(
@@ -194,9 +199,10 @@ export class TagModule {
         title: string,
         parentId?: number,
         color?: number,
-        description?: string
+        description?: string,
+        icon?: string
     ): Promise<Tag> {
-        return await this.create({ libraryId, title, parent_id: parentId, color, description });
+        return await this.create({ libraryId, title, parent_id: parentId, color, icon, description });
     }
 
     /**
@@ -209,7 +215,7 @@ export class TagModule {
     async updateTag(
         libraryId: string,
         id: number,
-        updates: { title?: string; parent_id?: number; color?: number; description?: string }
+        updates: { title?: string; parent_id?: number; color?: number; icon?: string; description?: string }
     ): Promise<Tag> {
         return await this.update({ libraryId, id, ...updates });
     }

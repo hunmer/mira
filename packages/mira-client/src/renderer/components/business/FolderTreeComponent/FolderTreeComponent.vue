@@ -1,26 +1,17 @@
 <template>
-  <div
-    ref="treeContainerRef"
-    class="folder-tree-container w-full"
-    @dragover.capture="handleTreeDragOver"
-    @dragleave.capture="handleTreeDragLeave"
-    @drop.capture="handleTreeDrop"
-  >
+  <div ref="treeContainerRef" class="folder-tree-container w-full" @dragover.capture="handleTreeDragOver"
+    @dragleave.capture="handleTreeDragLeave" @drop.capture="handleTreeDrop">
     <!-- 基础分类 (仅文件夹模式) -->
     <div v-if="showBaseCategories && itemType === 'folder'" class="mb-4">
       <ul class="space-y-0.5">
         <li v-for="folder in baseCategoriesConfig" :key="folder.id">
           <ContextMenu v-if="folder.id === 'trash'">
             <ContextMenuTrigger as-child>
-              <a
-                :data-folder-tree-node-id="folder.id"
-                :class="[
-                  'flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-primary/5 cursor-pointer transition-colors',
-                  selectedKey === folder.id ? 'bg-primary/10 text-primary font-medium' : 'text-foreground',
-                  locatingNodeId === folder.id ? 'sidebar-locate-active' : ''
-                ]"
-                @click.prevent="handleBaseCategoryClick(folder)"
-              >
+              <a :data-folder-tree-node-id="folder.id" :class="[
+                'flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-primary/5 cursor-pointer transition-colors',
+                selectedKey === folder.id ? 'bg-primary/10 text-primary font-medium' : 'text-foreground',
+                locatingNodeId === folder.id ? 'sidebar-locate-active' : ''
+              ]" @click.prevent="handleBaseCategoryClick(folder)">
                 <span class="flex items-center">
                   <span :class="`material-icons mr-2 text-lg ${folder.iconColor || 'text-muted-foreground'}`">
                     {{ folder.icon }}
@@ -38,16 +29,11 @@
               </ContextMenuItem>
             </ContextMenuContent>
           </ContextMenu>
-          <a
-            v-else
-            :data-folder-tree-node-id="folder.id"
-            :class="[
-              'flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-primary/5 cursor-pointer transition-colors',
-              selectedKey === folder.id ? 'bg-primary/10 text-primary font-medium' : 'text-foreground',
-              locatingNodeId === folder.id ? 'sidebar-locate-active' : ''
-            ]"
-            @click.prevent="handleBaseCategoryClick(folder)"
-          >
+          <a v-else :data-folder-tree-node-id="folder.id" :class="[
+            'flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-primary/5 cursor-pointer transition-colors',
+            selectedKey === folder.id ? 'bg-primary/10 text-primary font-medium' : 'text-foreground',
+            locatingNodeId === folder.id ? 'sidebar-locate-active' : ''
+          ]" @click.prevent="handleBaseCategoryClick(folder)">
             <span class="flex items-center">
               <span :class="`material-icons mr-2 text-lg ${folder.iconColor || 'text-muted-foreground'}`">
                 {{ folder.icon }}
@@ -66,35 +52,29 @@
     <div v-if="!hideHeader" class="flex items-center justify-between px-2 mb-2">
       <h2 class="text-xs font-semibold text-muted-foreground leading-5">{{ sectionTitle }}</h2>
       <div class="header-actions flex items-center gap-0.5 -mr-1">
-        <button
-          @click="toggleSearch"
+        <button @click="toggleSearch"
           class="header-action-btn flex h-5 w-5 items-center justify-center text-muted-foreground hover:text-muted-foreground rounded"
-          :class="{ 'text-primary': showSearch }"
-          :title="`搜索${sectionTitle}...`"
-        >
+          :class="{ 'text-primary': showSearch }" :title="`搜索${sectionTitle}...`">
           <span class="material-icons leading-none" style="font-size: 18px">search</span>
         </button>
-        <button
-          v-if="selectionEnabled"
-          @click="toggleSelectionMode"
+        <button v-if="selectionEnabled" @click="toggleSelectionMode"
           class="header-action-btn flex h-5 w-5 items-center justify-center text-muted-foreground hover:text-muted-foreground rounded"
           :class="{ 'text-primary': selectionActive }"
-          :title="selectionActive ? `退出${selectionModeLabel}（已选 ${selectionCount}）` : `${selectionModeLabel}模式`"
-        >
-          <span class="material-icons leading-none" style="font-size: 18px">{{ isMultiMode ? 'checklist' : 'check_box_outline_blank' }}</span>
+          :title="selectionActive ? `退出${selectionModeLabel}（已选 ${selectionCount}）` : `${selectionModeLabel}模式`">
+          <span class="material-icons leading-none" style="font-size: 18px">{{ isMultiMode ? 'checklist' :
+            'check_box_outline_blank' }}</span>
         </button>
-        <button
-          @click="ops.handleAdd(itemType)"
+        <button @click="ops.handleAdd(itemType)"
           class="header-action-btn flex h-5 w-5 items-center justify-center text-muted-foreground hover:text-muted-foreground rounded"
-          :title="`添加${sectionTitle}`"
-        >
+          :title="`添加${sectionTitle}`">
           <span class="material-icons leading-none" style="font-size: 18px">add</span>
         </button>
       </div>
     </div>
 
     <!-- 多选工具条 -->
-    <div v-if="selectionActive && isMultiMode" class="flex items-center justify-between px-2 mb-2 text-xs text-muted-foreground">
+    <div v-if="selectionActive && isMultiMode"
+      class="flex items-center justify-between px-2 mb-2 text-xs text-muted-foreground">
       <span>已选 {{ selectionCount }} 项</span>
       <div class="flex items-center gap-2">
         <button class="text-primary hover:underline" @click="selectAll">全选</button>
@@ -106,13 +86,8 @@
     <Transition name="search-slide">
       <div v-if="showSearch" class="search-shell px-2 mb-2">
         <div class="search-shell-inner">
-          <input
-            ref="searchInputRef"
-            v-model="searchQuery"
-            type="text"
-            :placeholder="`搜索${sectionTitle}...`"
-            class="w-full px-3 py-1.5 text-xs border border-border rounded-full bg-white/60 dark:bg-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
-          />
+          <input ref="searchInputRef" v-model="searchQuery" type="text" :placeholder="`搜索${sectionTitle}...`"
+            class="w-full px-3 py-1.5 text-xs border border-border rounded-full bg-white/60 dark:bg-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30" />
         </div>
       </div>
     </Transition>
@@ -121,50 +96,31 @@
     <ContextMenu>
       <ContextMenuTrigger as-child>
         <div v-if="treeData.length > 0" class="tree-scroll max-h-64 overflow-y-auto">
-          <Draggable
-            v-if="draggable"
-            ref="treeRef"
-            v-model="treeData"
-            :eachDroppable="eachDroppable"
-            @before-drag-start="onBeforeDragStart"
-            @after-drop="onAfterDrop"
-          >
+          <Draggable v-if="draggable" ref="treeRef" v-model="treeData" :eachDroppable="eachDroppable"
+            @before-drag-start="onBeforeDragStart" @after-drop="onAfterDrop">
             <template #default="{ node, stat }">
-              <div
-                :data-folder-tree-node-id="node.id"
-                :class="[
-                  'flex items-center min-h-8 py-1 px-2 rounded-lg cursor-pointer transition-colors',
-                  'hover:bg-primary/5',
-                  selectedKey === node.id ? 'bg-primary/10 text-primary font-medium' : '',
-                  selectionActive && isNodeSelected(node) ? 'bg-primary/10' : '',
-                  dragOverNodeId === node.id ? 'ring-2 ring-primary/50 bg-primary/10' : '',
-                  locatingNodeId === node.id ? 'sidebar-locate-active' : ''
-                ]"
-                @click="handleNodeClick(node, stat, $event)"
-                @contextmenu="handleNodeContextMenu(node, $event)"
-                @dragover="handleNodeDragOver($event, node)"
-                @dragleave="handleNodeDragLeave($event, node)"
-                @drop.stop="handleNodeDrop($event, node)"
-              >
-                <Checkbox
-                  v-if="showNodeCheckbox"
-                  :model-value="getNodeCheckState(node) === true"
-                  :indeterminate="getNodeCheckState(node) === 'indeterminate'"
-                  class="mr-1.5"
-                  @update:model-value="onNodeCheckChange(node, $event)"
-                  @click.stop
-                />
-                <span
-                  v-if="stat.children.length"
+              <div :data-folder-tree-node-id="node.id" :class="[
+                'flex items-center min-h-8 py-1 px-2 rounded-lg cursor-pointer transition-colors',
+                'hover:bg-primary/5',
+                selectedKey === node.id ? 'bg-primary/10 text-primary font-medium' : '',
+                selectionActive && isNodeSelected(node) ? 'bg-primary/10' : '',
+                dragOverNodeId === node.id ? 'ring-2 ring-primary/50 bg-primary/10' : '',
+                locatingNodeId === node.id ? 'sidebar-locate-active' : ''
+              ]" @click="handleNodeClick(node, stat, $event)" @contextmenu="handleNodeContextMenu(node, $event)"
+                @dragover="handleNodeDragOver($event, node)" @dragleave="handleNodeDragLeave($event, node)"
+                @drop.stop="handleNodeDrop($event, node)">
+                <Checkbox v-if="showNodeCheckbox" :model-value="getNodeCheckState(node) === true"
+                  :indeterminate="getNodeCheckState(node) === 'indeterminate'" class="mr-1.5"
+                  @update:model-value="onNodeCheckChange(node, $event)" @click.stop />
+                <span v-if="stat.children.length"
                   class="folder-chevron material-icons text-base mr-1 text-muted-foreground hover:text-muted-foreground select-none"
-                  :class="{ 'folder-chevron--open': stat.open }"
-                  @click.stop="toggleNode(stat, $event)"
-                >
+                  :class="{ 'folder-chevron--open': stat.open }" @click.stop="toggleNode(stat, $event)">
                   chevron_right
                 </span>
                 <!-- 叶子节点占位：仅在展示 checkbox 时保留，用于与父节点图标对齐；无 checkbox 时隐藏，让图标贴最左侧 -->
                 <span v-else-if="showNodeCheckbox" class="inline-block w-5"></span>
-                <span class="material-icons mr-2 text-lg" :style="{ color: getNodeColor(node) }">{{ node.icon || defaultIcon }}</span>
+                <span class="material-icons mr-2 text-lg" :style="{ color: getNodeColor(node) }">{{ node.icon ||
+                  defaultIcon }}</span>
                 <span class="flex-1 truncate text-sm">{{ node.label }}</span>
                 <span v-if="node.count" class="text-xs text-muted-foreground ml-2">{{ node.count }}</span>
               </div>
@@ -172,41 +128,28 @@
           </Draggable>
           <BaseTree v-else ref="treeRef" v-model="treeData">
             <template #default="{ node, stat }">
-              <div
-                :data-folder-tree-node-id="node.id"
-                :class="[
-                  'flex items-center min-h-8 py-1 px-2 rounded-lg cursor-pointer transition-colors',
-                  'hover:bg-primary/5',
-                  selectedKey === node.id ? 'bg-primary/10 text-primary font-medium' : '',
-                  selectionActive && isNodeSelected(node) ? 'bg-primary/10' : '',
-                  dragOverNodeId === node.id ? 'ring-2 ring-primary/50 bg-primary/10' : '',
-                  locatingNodeId === node.id ? 'sidebar-locate-active' : ''
-                ]"
-                @click="handleNodeClick(node, stat, $event)"
-                @contextmenu="handleNodeContextMenu(node, $event)"
-                @dragover="handleNodeDragOver($event, node)"
-                @dragleave="handleNodeDragLeave($event, node)"
-                @drop.stop="handleNodeDrop($event, node)"
-              >
-                <Checkbox
-                  v-if="showNodeCheckbox"
-                  :model-value="getNodeCheckState(node) === true"
-                  :indeterminate="getNodeCheckState(node) === 'indeterminate'"
-                  class="mr-1.5"
-                  @update:model-value="onNodeCheckChange(node, $event)"
-                  @click.stop
-                />
-                <span
-                  v-if="stat.children.length"
+              <div :data-folder-tree-node-id="node.id" :class="[
+                'flex items-center min-h-8 py-1 px-2 rounded-lg cursor-pointer transition-colors',
+                'hover:bg-primary/5',
+                selectedKey === node.id ? 'bg-primary/10 text-primary font-medium' : '',
+                selectionActive && isNodeSelected(node) ? 'bg-primary/10' : '',
+                dragOverNodeId === node.id ? 'ring-2 ring-primary/50 bg-primary/10' : '',
+                locatingNodeId === node.id ? 'sidebar-locate-active' : ''
+              ]" @click="handleNodeClick(node, stat, $event)" @contextmenu="handleNodeContextMenu(node, $event)"
+                @dragover="handleNodeDragOver($event, node)" @dragleave="handleNodeDragLeave($event, node)"
+                @drop.stop="handleNodeDrop($event, node)">
+                <Checkbox v-if="showNodeCheckbox" :model-value="getNodeCheckState(node) === true"
+                  :indeterminate="getNodeCheckState(node) === 'indeterminate'" class="mr-1.5"
+                  @update:model-value="onNodeCheckChange(node, $event)" @click.stop />
+                <span v-if="stat.children.length"
                   class="folder-chevron material-icons text-base mr-1 text-muted-foreground hover:text-muted-foreground select-none"
-                  :class="{ 'folder-chevron--open': stat.open }"
-                  @click.stop="toggleNode(stat, $event)"
-                >
+                  :class="{ 'folder-chevron--open': stat.open }" @click.stop="toggleNode(stat, $event)">
                   chevron_right
                 </span>
                 <!-- 叶子节点占位：仅在展示 checkbox 时保留，用于与父节点图标对齐；无 checkbox 时隐藏，让图标贴最左侧 -->
                 <span v-else-if="showNodeCheckbox" class="inline-block w-5"></span>
-                <span class="material-icons mr-2 text-lg" :style="{ color: getNodeColor(node) }">{{ node.icon || defaultIcon }}</span>
+                <span class="material-icons mr-2 text-lg" :style="{ color: getNodeColor(node) }">{{ node.icon ||
+                  defaultIcon }}</span>
                 <span class="flex-1 truncate text-sm">{{ node.label }}</span>
                 <span v-if="node.count" class="text-xs text-muted-foreground ml-2">{{ node.count }}</span>
               </div>
@@ -227,34 +170,22 @@
 
     <!-- 空状态 -->
     <div v-if="treeData.length === 0" class="flex flex-col items-center justify-center py-8 text-muted-foreground">
-      <span class="material-icons text-4xl mb-2 text-muted-foreground">{{ itemType === 'folder' ? 'folder_open' : 'label' }}</span>
+      <span class="material-icons text-4xl mb-2 text-muted-foreground">{{ itemType === 'folder' ? 'folder_open' :
+        'label'
+        }}</span>
       <p class="text-sm text-center">还没有任何的{{ sectionTitle }}</p>
-      <p class="text-xs text-muted-foreground mt-1">点击上方的 + 按钮添加新{{ sectionTitle }}</p>
     </div>
 
     <!-- 通用编辑对话框（Teleport 到 body，避免被侧栏等祖先容器的 transform/filter 等限制为局部定位） -->
     <Teleport to="body">
-      <FolderEditDialog
-        :visible="ops.showEditDialog.value"
-        :folder="ops.editingItem.value"
-        :parent-folder="ops.editingParentItem.value"
-        :available-folders="folders"
-        :item-type="ops.editingItemType.value"
-        :dialog-title="ops.dialogTitle.value"
-        @close="ops.handleEditDialogClose"
-        @save="ops.handleItemSave"
-      />
+      <FolderEditDialog :visible="ops.showEditDialog.value" :folder="ops.editingItem.value"
+        :parent-folder="ops.editingParentItem.value" :available-folders="folders" :item-type="ops.editingItemType.value"
+        :dialog-title="ops.dialogTitle.value" @close="ops.handleEditDialogClose" @save="ops.handleItemSave" />
     </Teleport>
 
     <!-- 通用移动对话框 -->
-    <FolderMoveDialog
-      :visible="ops.showMoveDialog.value"
-      :folder="ops.movingItem.value"
-      :available-folders="folders"
-      :item-type="ops.movingItemType.value"
-      @close="ops.handleMoveDialogClose"
-      @move="ops.handleItemMove"
-    />
+    <FolderMoveDialog :visible="ops.showMoveDialog.value" :folder="ops.movingItem.value" :available-folders="folders"
+      :item-type="ops.movingItemType.value" @close="ops.handleMoveDialogClose" @move="ops.handleItemMove" />
 
     <!-- 删除确认对话框 -->
     <AlertDialog v-if="showDeleteDialog" :open="true" @update:open="showDeleteDialog = $event">
@@ -268,14 +199,16 @@
           </AlertDialogDescription>
         </AlertDialogHeader>
         <div v-if="ops.deletingType.value === 'folder'" class="flex items-center space-x-2 px-1">
-          <Checkbox id="deleteWithFiles" :model-value="Boolean(ops.deleteWithFiles.value)" @update:model-value="ops.deleteWithFiles.value = $event === true" />
+          <Checkbox id="deleteWithFiles" :model-value="Boolean(ops.deleteWithFiles.value)"
+            @update:model-value="ops.deleteWithFiles.value = $event === true" />
           <label for="deleteWithFiles" class="text-sm text-muted-foreground cursor-pointer select-none">
             同时删除文件夹内的文件（不勾选则文件移至未分类）
           </label>
         </div>
         <AlertDialogFooter>
           <AlertDialogCancel>取消</AlertDialogCancel>
-          <AlertDialogAction class="bg-destructive hover:bg-destructive text-white" @click="ops.confirmDelete">删除</AlertDialogAction>
+          <AlertDialogAction class="bg-destructive hover:bg-destructive text-white" @click="ops.confirmDelete">删除
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
@@ -292,23 +225,22 @@
           </AlertDialogDescription>
         </AlertDialogHeader>
         <div v-if="ops.batchDeletingType.value === 'folder'" class="flex items-center space-x-2 px-1">
-          <Checkbox id="batchDeleteWithFiles" :model-value="Boolean(ops.deleteWithFiles.value)" @update:model-value="ops.deleteWithFiles.value = $event === true" />
+          <Checkbox id="batchDeleteWithFiles" :model-value="Boolean(ops.deleteWithFiles.value)"
+            @update:model-value="ops.deleteWithFiles.value = $event === true" />
           <label for="batchDeleteWithFiles" class="text-sm text-muted-foreground cursor-pointer select-none">
             同时删除文件夹内的文件（不勾选则文件移至未分类）
           </label>
         </div>
         <AlertDialogFooter>
           <AlertDialogCancel>取消</AlertDialogCancel>
-          <AlertDialogAction class="bg-destructive hover:bg-destructive text-white" @click="ops.confirmBatchDelete">删除</AlertDialogAction>
+          <AlertDialogAction class="bg-destructive hover:bg-destructive text-white" @click="ops.confirmBatchDelete">删除
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
 
     <!-- 拖拽移动确认对话框 -->
-    <AlertDialog
-      :open="showDragConfirm"
-      @update:open="showDragConfirm = $event"
-    >
+    <AlertDialog :open="showDragConfirm" @update:open="showDragConfirm = $event">
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>确认移动</AlertDialogTitle>
@@ -496,9 +428,9 @@ function resolveInternalDraggedFileIds(e: DragEvent): string[] {
 }
 
 function clearInternalDragState() {
-  ;(window as any).__miraInternalDrag = false
-  ;(window as any).__miraInternalDragFileIds = []
-  ;(window as any).__miraInternalDragFilePaths = []
+  ; (window as any).__miraInternalDrag = false
+    ; (window as any).__miraInternalDragFileIds = []
+    ; (window as any).__miraInternalDragFilePaths = []
 }
 
 function findDropNode(target: EventTarget | null): HeTreeNode | null {
@@ -842,7 +774,7 @@ function convertTagsToNodes(tags: any[]): HeTreeNode[] {
   return tags.map(t => ({
     id: `tag-${t.id}`,
     label: t.name || t.title || t.label,
-    icon: 'label',
+    icon: t.icon || 'label',
     count: t.fileCount || t.count,
     color: t.color,
     nodeType: 'tag',
@@ -880,17 +812,17 @@ const treeData = computed<HeTreeNode[]>(() => {
 
 // 操作
 const ops = useFolderOperations({
-  'folder-add': () => {},
-  'folder-edit': () => {},
-  'folder-move': () => {},
-  'folder-clone': () => {},
-  'folder-delete': () => {},
+  'folder-add': () => { },
+  'folder-edit': () => { },
+  'folder-move': () => { },
+  'folder-clone': () => { },
+  'folder-delete': () => { },
   'refresh-folders': () => emit('refresh'),
-  'tag-add': () => {},
-  'tag-edit': () => {},
-  'tag-move': () => {},
-  'tag-clone': () => {},
-  'tag-delete': () => {},
+  'tag-add': () => { },
+  'tag-edit': () => { },
+  'tag-move': () => { },
+  'tag-clone': () => { },
+  'tag-delete': () => { },
   'refresh-tags': () => emit('refresh'),
 })
 const { showDeleteDialog, showBatchDeleteDialog } = ops
@@ -964,13 +896,13 @@ function getTargetRow(event: MouseEvent): HTMLElement | null {
 function animateChildRows(rows: HTMLElement[], phase: 'expand' | 'collapse'): Promise<void> {
   const keyframes: Keyframe[] = phase === 'expand'
     ? [
-        { transform: 'translateX(-24px)', opacity: 0 },
-        { transform: 'translateX(0)', opacity: 1 },
-      ]
+      { transform: 'translateX(-24px)', opacity: 0 },
+      { transform: 'translateX(0)', opacity: 1 },
+    ]
     : [
-        { transform: 'translateX(0)', opacity: 1 },
-        { transform: 'translateX(24px)', opacity: 0 },
-      ]
+      { transform: 'translateX(0)', opacity: 1 },
+      { transform: 'translateX(24px)', opacity: 0 },
+    ]
   const animations = rows.map(row => row.animate(keyframes, {
     duration: CHILDREN_SLIDE_MS,
     easing: 'cubic-bezier(0.23, 1, 0.32, 1)',
@@ -1200,9 +1132,11 @@ onUnmounted(() => {
   0% {
     filter: brightness(1);
   }
+
   50% {
     filter: brightness(1.18);
   }
+
   100% {
     filter: brightness(1);
   }
@@ -1285,6 +1219,7 @@ onUnmounted(() => {
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .search-slide-enter-active,
   .search-slide-leave-active {
     transition: opacity 150ms ease;

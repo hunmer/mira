@@ -1,16 +1,12 @@
 <template>
   <div
     class="p-2 media-list-view flex-1 flex flex-col w-full bg-transparent overflow-hidden relative h-full text-[13px]"
-    @dragover.prevent="canUpload && handleDragOver($event)"
-    @dragleave.prevent="canUpload && handleDragLeave($event)"
-    @drop.prevent="canUpload && handleDrop($event)"
-  >
+    @dragover.prevent="canUpload && handleDragOver($event)" @dragleave.prevent="canUpload && handleDragLeave($event)"
+    @drop.prevent="canUpload && handleDrop($event)">
     <!-- 拖拽上传覆盖层 -->
     <Transition name="fade">
-      <div
-        v-if="isDragOver && canUpload"
-        class="absolute inset-0 z-50 bg-primary/10 border-2 border-dashed border-primary rounded-lg flex items-center justify-center pointer-events-none"
-      >
+      <div v-if="isDragOver && canUpload"
+        class="absolute inset-0 z-50 bg-primary/10 border-2 border-dashed border-primary rounded-lg flex items-center justify-center pointer-events-none">
         <div class="text-center">
           <span class="material-icons text-5xl text-primary mb-2">cloud_upload</span>
           <p class="text-primary font-medium text-lg">释放文件以上传</p>
@@ -21,54 +17,32 @@
     <!-- 顶部筛选栏和工具按钮 -->
     <div class="flex space-x-3 " style="align-items: baseline">
       <div class="flex-1 min-w-0">
-        <FilterBar
-          :filters="filterRules"
-          :is-all-selected="isAllSelected"
-          :folder-tree-items="folderTreeItems"
-          :tag-tree-items="tagTreeItems"
-          :sort="sortField"
-          :order="sortOrder"
-          @select-all="handleSelectAll"
-          @filter-change="handleFilterChange"
-          @filter-clear="handleFilterClear"
-          @sort-change="handleSortChange"
-        />
+        <FilterBar :filters="filterRules" :is-all-selected="isAllSelected" :folder-tree-items="folderTreeItems"
+          :tag-tree-items="tagTreeItems" :sort="sortField" :order="sortOrder" @select-all="handleSelectAll"
+          @filter-change="handleFilterChange" @filter-clear="handleFilterClear" @sort-change="handleSortChange" />
       </div>
       <div class="flex-shrink-0 flex items-center space-x-2">
         <!-- 视图切换下拉菜单 -->
-        <Dropdown
-          :offset="{ x: 0, y: 4 }"
-          placement="bottom-start"
-          min-width="120px"
-        >
+        <Dropdown :offset="{ x: 0, y: 4 }" placement="bottom-start" min-width="120px">
           <template #trigger>
             <button
               class="flex items-center space-x-1 rounded-lg border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur shadow-sm hover:bg-white/60 dark:hover:bg-muted transition-colors"
-              :title="getViewModeTitle(viewMode)"
-              style="padding: 6px;"
-            >
-              <span class="material-icons text-sm text-muted-foreground dark:text-muted-foreground">{{ getViewModeIcon(viewMode) }}</span>
+              :title="getViewModeTitle(viewMode)" style="padding: 6px;">
+              <span class="material-icons text-sm text-muted-foreground dark:text-muted-foreground">{{
+                getViewModeIcon(viewMode) }}</span>
               <span class="material-icons text-sm text-muted-foreground">keyboard_arrow_down</span>
             </button>
           </template>
 
           <template #content="{ close }">
             <div class="py-1">
-              <button
-                v-for="mode in viewModes"
-                :key="mode.value"
-                :class="[
-                  'w-full flex items-center space-x-2 px-3 py-2 text-sm rounded-lg hover:bg-primary/5 transition-colors',
-                  viewMode === mode.value ? 'bg-primary/10 text-primary' : 'text-foreground dark:text-muted-foreground'
-                ]"
-                @click="handleViewModeChange(mode.value as 'grid' | 'list' | 'waterfall'); close()"
-              >
+              <button v-for="mode in viewModes" :key="mode.value" :class="[
+                'w-full flex items-center space-x-2 px-3 py-2 text-sm rounded-lg hover:bg-primary/5 transition-colors',
+                viewMode === mode.value ? 'bg-primary/10 text-primary' : 'text-foreground dark:text-muted-foreground'
+              ]" @click="handleViewModeChange(mode.value as 'grid' | 'list' | 'waterfall'); close()">
                 <span class="material-icons text-sm">{{ mode.icon }}</span>
                 <span>{{ mode.label }}</span>
-                <span
-                  v-if="viewMode === mode.value"
-                  class="material-icons text-sm ml-auto text-primary"
-                >
+                <span v-if="viewMode === mode.value" class="material-icons text-sm ml-auto text-primary">
                   check
                 </span>
               </button>
@@ -79,9 +53,7 @@
         <!-- 刷新按钮 -->
         <button
           class="flex items-center space-x-1 px-3 py-1.5 text-sm text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur shadow-sm transition-colors"
-          @click="handleRefresh"
-          title="刷新数据"
-        >
+          @click="handleRefresh" title="刷新数据">
           <span class="material-icons text-base" :class="{ 'animate-spin': isLoading }">refresh</span>
         </button>
 
@@ -92,140 +64,85 @@
     <div class="flex-1 flex overflow-hidden relative">
       <div class="flex-1 flex flex-col min-w-0">
         <!-- 媒体内容 - files 和 trash 都使用统一的视图 -->
-        <div class="flex-1 overflow-y-auto w-full min-w-0 p-1" @wheel="handleCtrlWheel">
+        <div class="flex-1 overflow-y-auto w-full min-w-0" @wheel="handleCtrlWheel">
           <!-- 网格视图 -->
-          <MediaGridComponent
-            v-if="viewMode === 'grid'"
-            :key="`grid-${viewMode}`"
+          <MediaGridComponent v-if="viewMode === 'grid'" :key="`grid-${viewMode}`" class="p-5"
             :items="paginatedMediaItems"
-            :selected-items="selectedItems"
-            :card-size="cardSize"
-            :columns-per-row="columnsPerRow"
-            :is-trash="viewType === 'trash'"
-            @media-click="handleMediaClick"
-            @media-double-click="handleMediaDoubleClick"
-            @media-select="handleMediaSelect"
-            @media-context-menu="handleMediaContextMenu"
-            @media-info="handleMediaInfo"
-            @media-set-folder="handleMediaSetFolder"
-            @media-set-tags="handleMediaSetTags"
-            @media-delete="handleMediaDelete"
-            @media-restore="handleMediaRestore"
-          />
+            :selected-items="selectedItems" :card-size="cardSize" :columns-per-row="columnsPerRow"
+            :is-trash="viewType === 'trash'" @media-click="handleMediaClick"
+            @media-double-click="handleMediaDoubleClick" @media-select="handleMediaSelect"
+            @media-context-menu="handleMediaContextMenu" @media-info="handleMediaInfo"
+            @media-set-folder="handleMediaSetFolder" @media-set-tags="handleMediaSetTags"
+            @media-delete="handleMediaDelete" @media-restore="handleMediaRestore" />
 
           <!-- 列表视图 -->
-          <MediaListComponent
-            v-if="viewMode === 'list'"
-            :key="`list-${viewMode}`"
+          <MediaListComponent v-if="viewMode === 'list'" :key="`list-${viewMode}`" class="p-5"
             :items="paginatedMediaItems"
-            :selected-items="selectedItems"
-            :is-trash="viewType === 'trash'"
-            @click="handleMediaClick"
-            @dblclick="handleMediaDoubleClick"
-            @media-context-menu="handleMediaContextMenu"
-            @media-info="handleMediaInfo"
-            @media-set-folder="handleMediaSetFolder"
-            @media-set-tags="handleMediaSetTags"
-            @media-select="handleMediaSelect"
-            @media-delete="handleMediaDelete"
-            @media-restore="handleMediaRestore"
-          />
+            :selected-items="selectedItems" :is-trash="viewType === 'trash'" @click="handleMediaClick"
+            @dblclick="handleMediaDoubleClick" @media-context-menu="handleMediaContextMenu"
+            @media-info="handleMediaInfo" @media-set-folder="handleMediaSetFolder" @media-set-tags="handleMediaSetTags"
+            @media-select="handleMediaSelect" @media-delete="handleMediaDelete" @media-restore="handleMediaRestore" />
 
           <!-- 瀑布流视图 -->
           <div v-if="viewMode === 'waterfall'" class="w-full h-full min-h-96">
-            <WaterfallComponent
-              ref="waterfallRef"
-              :key="`waterfall-${viewMode}`"
+            <WaterfallComponent ref="waterfallRef" :key="`waterfall-${viewMode}`" class="p-5"
               :items="paginatedMediaItems"
-              :selected-items="selectedItems"
-              :is-trash="viewType === 'trash'"
-              :column-width="dynamicColumnWidth"
-              :columns-per-row="columnsPerRow"
-              :gap="16"
-              @click="handleMediaClick"
-              @dblclick="handleMediaDoubleClick"
-              @media-context-menu="handleMediaContextMenu"
-              @media-info="handleMediaInfo"
-              @media-set-folder="handleMediaSetFolder"
-              @media-set-tags="handleMediaSetTags"
-              @media-select="handleMediaSelect"
-              @media-delete="handleMediaDelete"
-              @media-restore="handleMediaRestore"
-            />
+              :selected-items="selectedItems" :is-trash="viewType === 'trash'" :column-width="dynamicColumnWidth"
+              :columns-per-row="columnsPerRow" :gap="16" @click="handleMediaClick" @dblclick="handleMediaDoubleClick"
+              @media-context-menu="handleMediaContextMenu" @media-info="handleMediaInfo"
+              @media-set-folder="handleMediaSetFolder" @media-set-tags="handleMediaSetTags"
+              @media-select="handleMediaSelect" @media-delete="handleMediaDelete" @media-restore="handleMediaRestore" />
           </div>
 
           <!-- 如果没有匹配的视图模式 -->
-          <div v-if="!['grid', 'list', 'waterfall'].includes(viewMode)" class="flex items-center justify-center h-40 text-muted-foreground dark:text-muted-foreground">
+          <div v-if="!['grid', 'list', 'waterfall'].includes(viewMode)"
+            class="flex items-center justify-center h-40 text-muted-foreground dark:text-muted-foreground">
             未知的视图模式: {{ viewMode }}
           </div>
         </div>
 
         <!-- 浮动操作栏 -->
         <div
-          class="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center space-x-4 bg-white/60 dark:bg-muted/80 backdrop-blur-xl shadow-[0_12px_36px_rgba(99,102,241,0.15)] rounded-full p-1.5 border border-white/60 dark:border-border"
-        >
+          class="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center space-x-4 bg-white/60 dark:bg-muted/80 backdrop-blur-xl shadow-[0_12px_36px_rgba(99,102,241,0.15)] rounded-full p-1.5 border border-white/60 dark:border-border">
           <!-- 操作按钮 - 仅在选中文件时显示 -->
-          <div
-            v-if="selectedItems.length > 0"
-            class="flex items-center space-x-2"
-          >
+          <div v-if="selectedItems.length > 0" class="flex items-center space-x-2">
             <!-- 反选 -->
-            <button
-              class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
-              title="反选"
-              @click="handleInvertSelection"
-            >
+            <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors" title="反选"
+              @click="handleInvertSelection">
               <span class="material-symbols-outlined text-muted-foreground dark:text-muted-foreground">swap_horiz</span>
             </button>
             <!-- 取消选择 -->
-            <button
-              class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
-              title="取消选择"
-              @click="handleClearSelection"
-            >
+            <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors" title="取消选择"
+              @click="handleClearSelection">
               <span class="material-symbols-outlined text-muted-foreground dark:text-muted-foreground">deselect</span>
             </button>
             <div class="h-6 border-l border-border dark:border-border"></div>
 
             <!-- 回收站：恢复文件 / 彻底删除 -->
             <template v-if="isTrash">
-              <button
-                class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
-                :title="`恢复文件 (${selectedItems.length})`"
-                @click="handleToolbarAction('restore')"
-              >
+              <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
+                :title="`恢复文件 (${selectedItems.length})`" @click="handleToolbarAction('restore')">
                 <span class="material-symbols-outlined text-muted-foreground dark:text-muted-foreground">restore</span>
               </button>
-              <button
-                class="p-2 rounded-full hover:bg-destructive/10 group transition-colors"
-                :title="`彻底删除 (${selectedItems.length})`"
-                @click="handleToolbarAction('purge')"
-              >
-                <span class="material-symbols-outlined text-muted-foreground dark:text-muted-foreground group-hover:text-destructive dark:group-hover:text-destructive">delete_forever</span>
+              <button class="p-2 rounded-full hover:bg-destructive/10 group transition-colors"
+                :title="`彻底删除 (${selectedItems.length})`" @click="handleToolbarAction('purge')">
+                <span
+                  class="material-symbols-outlined text-muted-foreground dark:text-muted-foreground group-hover:text-destructive dark:group-hover:text-destructive">delete_forever</span>
               </button>
             </template>
 
             <!-- 普通视图：复制 / 打开 / 删除 -->
             <template v-else>
-              <button
-                class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
-                title="复制"
-                @click="handleToolbarAction('copy')"
-              >
+              <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors" title="复制"
+                @click="handleToolbarAction('copy')">
                 <span class="material-icons text-muted-foreground dark:text-muted-foreground">content_copy</span>
               </button>
-              <button
-                class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
-                title="打开"
-                @click="handleToolbarAction('open')"
-              >
+              <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors" title="打开"
+                @click="handleToolbarAction('open')">
                 <span class="material-icons text-muted-foreground dark:text-muted-foreground">open_in_new</span>
               </button>
-              <button
-                class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
-                :title="`删除 (${selectedItems.length})`"
-                @click="handleToolbarAction('delete')"
-              >
+              <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
+                :title="`删除 (${selectedItems.length})`" @click="handleToolbarAction('delete')">
                 <span class="material-icons text-muted-foreground dark:text-muted-foreground">delete</span>
               </button>
             </template>
@@ -233,15 +150,10 @@
           </div>
 
           <!-- 分页控件 - 只有多页时显示 -->
-          <div
-            v-if="totalPages > 1"
-            class="flex items-center space-x-1 text-muted-foreground dark:text-muted-foreground text-xs"
-          >
-            <button
-              class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
-              :disabled="currentPage === 1"
-              @click="handlePreviousPage"
-            >
+          <div v-if="totalPages > 1"
+            class="flex items-center space-x-1 text-muted-foreground dark:text-muted-foreground text-xs">
+            <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
+              :disabled="currentPage === 1" @click="handlePreviousPage">
               <span class="material-symbols-outlined text-sm">chevron_left</span>
             </button>
 
@@ -249,23 +161,16 @@
               <!-- 省略号 -->
               <span v-if="page.number === -1" class="px-1">...</span>
               <!-- 页码按钮 -->
-              <button
-                v-else
-                :class="[
-                  'px-2 py-1 rounded-full hover:bg-primary/10 min-w-[28px] transition-colors',
-                  page.active ? 'bg-primary text-primary-foreground font-semibold shadow-sm hover:bg-primary' : ''
-                ]"
-                @click="handlePageChange(page.number)"
-              >
+              <button v-else :class="[
+                'px-2 py-1 rounded-full hover:bg-primary/10 min-w-[28px] transition-colors',
+                page.active ? 'bg-primary text-primary-foreground font-semibold shadow-sm hover:bg-primary' : ''
+              ]" @click="handlePageChange(page.number)">
                 {{ page.number }}
               </button>
             </template>
 
-            <button
-              class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
-              :disabled="currentPage === totalPages"
-              @click="handleNextPage"
-            >
+            <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
+              :disabled="currentPage === totalPages" @click="handleNextPage">
               <span class="material-symbols-outlined text-sm">chevron_right</span>
             </button>
           </div>
@@ -274,13 +179,11 @@
     </div>
 
     <!-- 底部状态栏 -->
-    <footer class="flex items-center justify-between px-2 pt-2 shrink-0 text-xs border-t border-white/60 dark:border-border">
+    <footer
+      class="flex items-center justify-between px-2 pt-2 shrink-0 text-xs border-t border-white/60 dark:border-border">
       <div class="flex-1 flex items-center space-x-6 min-w-0">
         <!-- 路由状态 / 面包屑导航 -->
-        <Breadcrumb
-          :items="breadcrumbItems"
-          @select="handleBreadcrumbClick"
-        />
+        <Breadcrumb :items="breadcrumbItems" @select="handleBreadcrumbClick" />
 
         <!-- 当前路径和文件数 -->
         <div class="flex items-center space-x-1 flex-shrink-0">
@@ -307,26 +210,33 @@
 
         <!-- 列数调整滑块 -->
         <div v-if="viewMode === 'grid' || viewMode === 'waterfall'" class="flex items-center space-x-2">
-          <input
-            class="w-24 h-1 bg-accent dark:bg-muted rounded-lg appearance-none cursor-pointer"
-            type="range"
-            min="2"
-            max="8"
-            :value="columnsPerRow"
-            @input="handleColumnsChange"
-            title="调整列数"
-          />
+          <input class="w-24 h-1 bg-accent dark:bg-muted rounded-lg appearance-none cursor-pointer" type="range" min="2"
+            max="8" :value="columnsPerRow" @input="handleColumnsChange" title="调整列数" />
         </div>
       </div>
     </footer>
 
+    <!-- 批量删除确认对话框 -->
+    <AlertDialog :open="deleteDialogOpen" @update:open="deleteDialogOpen = $event">
+      <AlertDialogContent class="sm:max-w-md">
+        <AlertDialogHeader>
+          <AlertDialogTitle>确认删除</AlertDialogTitle>
+          <AlertDialogDescription>
+            确定要删除选中的 {{ selectedItems.length }} 个文件吗？文件将被移至回收站，此操作可在回收站中恢复。
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>取消</AlertDialogCancel>
+          <AlertDialogAction class="bg-destructive text-white hover:bg-destructive/90" @click="confirmDelete">
+            删除
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
     <!-- 文件上传对话框 -->
-    <FileUploadDialog
-      v-model:visible="showUploadDialog"
-      :initial-files="droppedFiles"
-      :initial-folder-id="uploadFolderId"
-      :initial-tag-ids="uploadTagIds"
-    />
+    <FileUploadDialog v-model:visible="showUploadDialog" :initial-files="droppedFiles"
+      :initial-folder-id="uploadFolderId" :initial-tag-ids="uploadTagIds" />
   </div>
 </template>
 
@@ -353,6 +263,16 @@ import FileUploadDialog from '@renderer/components/business/FileUploadDialog.vue
 import FilterBar from '@/renderer/components/business/FilterBar/FilterBar.vue'
 import Breadcrumb from '@/renderer/components/common/Breadcrumb.vue'
 import { Dropdown } from '@/renderer/components/common/Dropdown'
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction
+} from '@/components/ui/alert-dialog'
 import type { FileInfo } from '../../../shared/types'
 import type { FilterRule } from '@/renderer/types/filter'
 
@@ -555,8 +475,8 @@ const isAllSelected = computed(() => {
   const items = paginatedMediaItems.value
   const selected = selectedItems.value
   return items.length > 0 &&
-         selected.length === items.length &&
-         items.every(item => selected.includes(item.id))
+    selected.length === items.length &&
+    items.every(item => selected.includes(item.id))
 })
 
 // 从 MediaTabData 获取数据（优先使用缓存数据）
@@ -1003,26 +923,36 @@ const handleToolbarAction = async (action: string) => {
   }
 
   if (action === 'delete') {
-    const ids = selectedItems.value
-    if (ids.length === 0) return
-    const cachedFiles = mediaTabData.getCachedData().data
-    let failed = 0
-    for (const id of ids) {
-      const file = cachedFiles.find((f: FileInfo) => f.id === id)
-      const libraryId = file?.libraryId || libraryStore.currentLibrary?.id
-      if (!libraryId) { failed++; continue }
-      try {
-        await appService.deleteFile(libraryId, id)
-      } catch {
-        failed++
-      }
-    }
-    if (failed > 0) console.error(`删除失败: ${failed} 个文件`)
-    homeController.selectedItems.value = []
-    await handleRefresh()
+    // 批量删除前需用户确认
+    if (selectedItems.value.length === 0) return
+    deleteDialogOpen.value = true
     return
   }
   homeController.handleToolbarAction(action)
+}
+
+// 批量删除确认弹窗
+const deleteDialogOpen = ref(false)
+
+const confirmDelete = async () => {
+  deleteDialogOpen.value = false
+  const ids = selectedItems.value
+  if (ids.length === 0) return
+  const cachedFiles = mediaTabData.getCachedData().data
+  let failed = 0
+  for (const id of ids) {
+    const file = cachedFiles.find((f: FileInfo) => f.id === id)
+    const libraryId = file?.libraryId || libraryStore.currentLibrary?.id
+    if (!libraryId) { failed++; continue }
+    try {
+      await appService.deleteFile(libraryId, id)
+    } catch {
+      failed++
+    }
+  }
+  if (failed > 0) console.error(`删除失败: ${failed} 个文件`)
+  homeController.selectedItems.value = []
+  await handleRefresh()
 }
 
 // 反选当前页
@@ -1214,6 +1144,7 @@ watch(
 .fade-leave-active {
   transition: opacity 0.15s ease;
 }
+
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;

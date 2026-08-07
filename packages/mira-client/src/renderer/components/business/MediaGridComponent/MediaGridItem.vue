@@ -60,7 +60,7 @@
       <!-- 文件类型标识 (非视频预览状态时显示) -->
       <div
         v-show="!isVideoPlaying"
-        class="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded"
+        class="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded"
       >
         {{ fileExtension }}
       </div>
@@ -76,7 +76,7 @@
         <HoverCardTrigger as-child>
           <button
             v-show="!isVideoPlaying"
-            class="absolute bottom-12 right-2 z-10 w-7 h-7 rounded-full bg-black/55 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-black/75 transition-opacity"
+            class="absolute -top-1 -right-1 z-10 h-7 w-7 rounded-bl-full bg-black/55 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-black/75 transition-opacity"
             title="预览"
             @click.stop
             @pointerdown.stop

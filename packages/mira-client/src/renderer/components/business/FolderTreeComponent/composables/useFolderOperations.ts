@@ -306,6 +306,7 @@ export function useFolderOperations(emit: FolderOperationsEmits) {
     parentId?: number
     color?: number
     description?: string
+    icon?: string
     autoOpenTab?: boolean
   }) {
     if (!libraryStore.currentLibrary) return
@@ -316,14 +317,14 @@ export function useFolderOperations(emit: FolderOperationsEmits) {
       if (editingItem.value) {
         if (itemType === 'folder') {
           await miraSDKService.updateFolder(libraryId, parseInt(editingItem.value.id), {
-            title: data.title, parent_id: data.parentId, color: data.color, description: data.description,
+            title: data.title, parent_id: data.parentId, color: data.color, description: data.description, icon: data.icon,
           })
           emit['folder-edit'](editingItem.value)
           await new Promise(resolve => setTimeout(resolve, 100))
           emit['refresh-folders']()
         } else {
           await miraSDKService.updateTag(libraryId, editingItem.value.id, {
-            name: data.title, color: data.color, description: data.description,
+            name: data.title, color: data.color, description: data.description, icon: data.icon,
           })
           emit['tag-edit'](editingItem.value)
           await new Promise(resolve => setTimeout(resolve, 100))
@@ -332,7 +333,7 @@ export function useFolderOperations(emit: FolderOperationsEmits) {
       } else {
         if (itemType === 'folder') {
           const result = await miraSDKService.createFolder(
-            libraryId, data.title, data.parentId, data.color, data.description,
+            libraryId, data.title, data.parentId, data.color, data.description, data.icon,
           )
           console.log('[useFolderOperations] createFolder result:', result, 'autoOpenTab:', data.autoOpenTab)
           const folderId = typeof result === 'object' ? result.id : result
@@ -348,7 +349,7 @@ export function useFolderOperations(emit: FolderOperationsEmits) {
           }
         } else {
           const result = await miraSDKService.createTag(
-            libraryId, data.title, data.color, data.description,
+            libraryId, data.title, data.color, data.description, data.icon,
           )
           console.log('[useFolderOperations] createTag result:', result, 'autoOpenTab:', data.autoOpenTab)
           const tagId = typeof result === 'object' ? result.id : result
