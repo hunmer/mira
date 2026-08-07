@@ -55,6 +55,7 @@
     "@radix-icons/vue": "^1.0.0",
     "@tailwindcss/vite": "4.0.17",
     "@tanstack/vue-table": "^8.21.3",
+    "@vee-validate/zod": "^4.13.0",
     "@vitejs/plugin-vue": "^5.2.1",
     "@vueuse/core": "^14.3.0",
     "autoprefixer": "^10.4.21",
@@ -68,6 +69,7 @@
     "filepond": "^4.32.8",
     "filepond-plugin-file-validate-size": "^2.2.8",
     "filepond-plugin-file-validate-type": "^1.2.9",
+    "grid-layout-plus": "2.0.0-beta.0",
     "lodash-es": "^4.17.21",
     "lucide-vue-next": "^1.0.0",
     "mira-app-core": "workspace:*",
@@ -87,15 +89,14 @@
     "v-viewer": "^3.0.22",
     "vaul-vue": "^0.4.1",
     "vee-validate": "^4.13.0",
-    "@vee-validate/zod": "^4.13.0",
-    "zod": "^3.23.8",
     "viewerjs": "^1.11.7",
     "vite": "^6.2.0",
     "vue": "3.5.13",
     "vue-filepond": "^7.0.4",
     "vue-router": "^4.5.1",
     "vue-sonner": "^2.0.9",
-    "vue3-lazyload": "^0.3.8"
+    "vue3-lazyload": "^0.3.8",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.0.17",

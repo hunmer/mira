@@ -226,11 +226,31 @@ export class MiraHttpServer {
         this.app.use(express.urlencoded({ extended: true }));
 
         // 静态文件中间件
-        this.app.use('/static', express.static('public'));
+        // 注意：路径必须基于编译产物所在目录（__dirname），而不是 process.cwd()。
+        // 否则通过 npm 安装后在任意目录启动时，会找不到 public/dashboard 资源。
+        const publicDir = path.resolve(__dirname, '..', 'public');
+        this.app.use('/static', express.static(publicDir));
 
-        // Dashboard 静态托管：构建产物位于 dist/dashboard（相对运行目录）
-        const dashboardDir = path.resolve(process.cwd(), 'dist', 'dashboard');
-        this.app.use('/dashboard', express.static(dashboardDir));
+        // Dashboard 静态托管：构建产物位于与本文件同级的 dist/dashboard 下。
+        const dashboardDir = path.resolve(__dirname, 'dashboard');
+        this.app.use(
+            '/dashboard',
+            express.static(dashboardDir, {
+                // SPA 回退：未命中的静态资源回落到 index.html，保证前端路由可刷新
+                setHeaders: (res, filePath) => {
+                    if (path.extname(filePath) === '.html') {
+                        res.setHeader('Cache-Control', 'no-cache');
+                    }
+                },
+            }),
+        );
+        // 前端路由（如 /dashboard/foo）刷新时回落到 dashboard 的 index.html
+        this.app.get(/^\/dashboard(?:\/.*)?$/, (req, res, next) => {
+            const indexFile = path.join(dashboardDir, 'index.html');
+            res.sendFile(indexFile, (err) => {
+                if (err && !res.headersSent) next();
+            });
+        });
         // 根路径重定向到 dashboard
         this.app.get('/', (req, res) => res.redirect('/dashboard/'));
 

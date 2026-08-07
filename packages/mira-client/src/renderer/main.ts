@@ -32,6 +32,9 @@ import 'vue-sonner/style.css'
 // @hunmer/vue-masonry 瀑布流组件样式(scoped CSS 产物,需独立引入)
 import '@hunmer/vue-masonry/style.css'
 
+// grid-layout-plus 仪表盘布局样式（v2 单独发布 style.css，需在入口引入一次）
+import 'grid-layout-plus/style.css'
+
 // 设置全局错误处理
 setupGlobalErrorHandler()
 
