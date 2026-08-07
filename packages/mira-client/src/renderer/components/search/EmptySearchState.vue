@@ -1,7 +1,7 @@
 <template>
   <div class="empty-search-state text-center py-12">
-    <div class="empty-icon mb-6">
-      <span class="material-icons text-6xl text-muted-foreground">{{ getEmptyIcon() }}</span>
+    <div class="empty-icon mb-6 flex justify-center">
+      <StatusImage name="no_result" size="6rem" />
     </div>
     
     <div class="empty-content">
@@ -32,6 +32,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import StatusImage from '@renderer/components/common/StatusImage.vue'
 
 interface Props {
   keyword: string
@@ -48,23 +49,6 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 defineEmits<Emits>()
-
-/**
- * 获取空状态图标
- */
-const getEmptyIcon = (): string => {
-  const serviceTitle = props.serviceTitle.toLowerCase()
-  
-  if (serviceTitle.includes('文档') || serviceTitle.includes('文件')) {
-    return 'description_off'
-  } else if (serviceTitle.includes('标签')) {
-    return 'label_off'
-  } else if (serviceTitle.includes('文件夹')) {
-    return 'folder_off'
-  } else {
-    return 'search_off'
-  }
-}
 
 /**
  * 获取空状态标题

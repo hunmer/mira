@@ -6,7 +6,7 @@
     >
       <!-- 加载中状态 -->
       <div v-if="isLoading" class="absolute inset-0 flex flex-col items-center justify-center text-white/70 bg-black">
-        <span class="material-icons animate-spin text-5xl mb-2">hourglass_empty</span>
+        <StatusImage name="loading" size="3rem" :spin="true" img-class="mb-2" />
         <span class="text-sm mt-2">加载中...</span>
       </div>
 
@@ -42,7 +42,7 @@
 
       <!-- 错误状态 -->
       <div v-if="hasError" class="absolute inset-0 flex flex-col items-center justify-center text-white/70 bg-black">
-        <span class="material-icons text-5xl mb-2">error_outline</span>
+        <StatusImage name="load_failed" size="3rem" img-class="mb-2" />
         <span class="text-sm mt-2">视频加载失败</span>
       </div>
 
@@ -64,6 +64,7 @@
 
 <script setup lang="ts">
 import { ref, watch, onUnmounted, type Ref } from 'vue'
+import StatusImage from './StatusImage.vue'
 
 interface Props {
   /** 视频 URL */

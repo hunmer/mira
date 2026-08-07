@@ -11,7 +11,7 @@
       class="flex flex-1 cursor-pointer flex-col items-center justify-center gap-1 px-2 text-center text-muted-foreground"
       @click="loadImages"
     >
-      <span class="material-icons text-2xl">cloud_off</span>
+      <StatusImage name="error" size="2rem" />
       <span class="text-xs">{{ error }}</span>
       <span class="text-xs text-primary">点击重试</span>
     </div>
@@ -21,7 +21,7 @@
       v-else-if="images.length === 0"
       class="flex flex-1 flex-col items-center justify-center gap-1 text-muted-foreground"
     >
-      <span class="material-icons text-2xl">photo_library</span>
+      <StatusImage name="empty" size="2rem" />
       <span class="text-xs">暂无图片</span>
     </div>
 
@@ -89,6 +89,7 @@ import { useRouter } from 'vue-router'
 import Autoplay from 'embla-carousel-autoplay'
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
+import StatusImage from '@renderer/components/common/StatusImage.vue'
 import { useLibraryStore } from '@renderer/stores/library'
 
 /**

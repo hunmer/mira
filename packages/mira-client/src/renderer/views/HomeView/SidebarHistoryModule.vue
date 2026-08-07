@@ -17,6 +17,7 @@ import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { useViewHistoryStore } from '@renderer/stores/viewHistory'
 import { getExtIconUrl } from '@renderer/utils/extIconHelper'
 import { Empty, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
+import StatusImage from '@renderer/components/common/StatusImage.vue'
 import type { FileInfo } from '../../../shared/types'
 
 type Mode = 'recent_added' | 'recent_viewed'
@@ -181,7 +182,7 @@ onMounted(() => {
       <!-- 空状态 -->
       <Empty v-else-if="isEmpty" class="py-6">
         <EmptyMedia variant="icon">
-          <span class="material-icons">{{ mode === 'recent_added' ? 'inbox' : 'history' }}</span>
+          <StatusImage name="empty" size="1.5rem" />
         </EmptyMedia>
         <EmptyTitle>{{ mode === 'recent_added' ? '暂无文件' : '暂无浏览记录' }}</EmptyTitle>
       </Empty>

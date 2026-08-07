@@ -26,11 +26,11 @@
       </VViewer>
       
       <!-- 无图片时的占位符 -->
-      <div 
+      <div
         v-if="!image"
         class="flex items-center justify-center w-96 h-96 bg-accent rounded-lg"
       >
-        <span class="material-icons text-muted-foreground text-6xl">image</span>
+        <StatusImage name="empty" size="6rem" />
       </div>
     </div>
 
@@ -51,7 +51,7 @@
       class="absolute inset-0 flex items-center justify-center bg-white/80"
     >
       <div class="flex flex-col items-center space-y-2">
-        <span class="material-icons text-muted-foreground text-6xl">broken_image</span>
+        <StatusImage name="load_failed" size="6rem" />
         <span class="text-sm text-muted-foreground">图片加载失败</span>
       </div>
     </div>
@@ -122,6 +122,7 @@
 <script setup lang="ts">
 import { ref, watch, computed, nextTick } from 'vue'
 import { component as VViewer } from 'v-viewer'
+import StatusImage from '@renderer/components/common/StatusImage.vue'
 import type { FileInfo } from '../../../shared/types'
 import { getCacheBustedPreviewImageSource, getPreviewImageSource } from '../../utils/fileUtils'
 

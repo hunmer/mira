@@ -15,10 +15,14 @@
       :class="placeholderClass"
     >
       <div v-if="showSkeleton" class="shimmer w-full h-full rounded"></div>
-      <div v-else class="flex flex-col items-center gap-2 text-muted-foreground">
-        <span class="material-icons text-2xl">image</span>
-        <span v-if="showPlaceholderText" class="text-xs">{{ placeholderText }}</span>
-      </div>
+      <StatusImage
+        v-else
+        name="loading"
+        size="2rem"
+        :spin="true"
+        :text="showPlaceholderText ? placeholderText : undefined"
+        img-class="text-2xl"
+      />
     </div>
 
     <!-- 错误状态 -->
@@ -28,9 +32,9 @@
       :class="errorClass"
     >
       <div class="flex flex-col items-center gap-2 text-muted-foreground">
-        <span class="material-icons text-2xl text-destructive">warning</span>
+        <StatusImage name="load_failed" size="2rem" img-class="text-2xl text-destructive" />
         <span class="text-xs">{{ errorText }}</span>
-        <button 
+        <button
           v-if="allowRetry"
           @click="retry"
           class="text-xs text-primary-600 hover:text-primary-700 underline"
@@ -78,6 +82,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { Progress } from '@/components/ui/progress'
+import StatusImage from './StatusImage.vue'
 
 // Props
 interface Props {

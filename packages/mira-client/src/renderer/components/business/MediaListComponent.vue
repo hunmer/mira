@@ -31,7 +31,7 @@
         <TableRow v-if="items.length === 0">
           <TableCell colspan="7">
             <div class="flex flex-col items-center justify-center h-64 text-muted-foreground">
-              <span class="material-icons text-4xl mb-2">folder_open</span>
+              <StatusImage name="empty" size="4rem" container-class="mb-2" />
               <p class="text-lg font-medium">暂无文件</p>
               <p class="text-sm">选择不同的筛选条件查看文件</p>
             </div>
@@ -157,6 +157,7 @@ import { PopoverRoot, PopoverTrigger, PopoverPortal, PopoverContent } from 'radi
 import VideoPreviewPopover from '@renderer/components/common/VideoPreviewPopover.vue'
 import SelectionBox from '@renderer/components/common/SelectionBox.vue'
 import MediaThumbnail from '@renderer/components/common/MediaThumbnail.vue'
+import StatusImage from '@renderer/components/common/StatusImage.vue'
 import { useVideoPreview } from '@renderer/composables/useVideoPreview'
 import type { FileInfo } from '../../../shared/types'
 import { getMediaFileUrl } from '@renderer/utils/fileUtils'

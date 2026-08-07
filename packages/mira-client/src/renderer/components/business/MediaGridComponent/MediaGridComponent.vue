@@ -63,7 +63,7 @@
           v-if="props.items.length === 0"
           class="absolute inset-0 flex flex-col items-center justify-center h-64 text-muted-foreground"
         >
-          <span class="material-icons text-6xl mb-4">folder_open</span>
+          <StatusImage name="empty" size="6rem" container-class="mb-4" />
           <h3 class="text-lg font-medium mb-2">暂无文件</h3>
           <p class="text-sm">拖拽文件到此处或点击上传按钮添加文件</p>
         </div>
@@ -167,6 +167,7 @@ import SelectionBox from '../../common/SelectionBox.vue'
 import FolderTreeComponent from '../FolderTreeComponent/FolderTreeComponent.vue'
 import MediaItem from './MediaGridItem.vue'
 import VideoPreviewContainer from './VideoPreviewContainer.vue'
+import StatusImage from '@renderer/components/common/StatusImage.vue'
 import type { FileInfo } from '../../../../shared/types'
 import { useSettingsStore } from '../../../stores/settings'
 import { useSelection } from './composables/useSelection'

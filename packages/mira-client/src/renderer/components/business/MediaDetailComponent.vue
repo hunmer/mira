@@ -3,7 +3,7 @@
     <!-- 无数据占位 -->
     <Empty v-if="displayItems.length === 0" class="flex-1">
       <EmptyMedia variant="icon">
-        <span class="material-icons">info_outline</span>
+        <StatusImage name="empty" size="1.5rem" />
       </EmptyMedia>
       <EmptyTitle>选择文件以查看详情</EmptyTitle>
     </Empty>
@@ -15,10 +15,7 @@
         <div class="relative w-full flex items-center justify-center" style="height: 192px;">
           <!-- 加载中占位符 -->
           <div v-if="imageLoadState === 'loading'" class="absolute inset-0 flex items-center justify-center">
-            <div class="flex flex-col items-center text-muted-foreground">
-              <span class="material-icons animate-pulse">image</span>
-              <span class="text-xs mt-1">加载中...</span>
-            </div>
+            <StatusImage name="loading" size="1.5rem" :spin="true" text="加载中..." />
           </div>
 
           <!-- 错误占位符 - 使用文件类型图标 -->
@@ -69,7 +66,7 @@
               v-if="multiImageLoadStates[item.id] === 'loading' || multiImageLoadStates[item.id] === undefined"
               class="stack-placeholder absolute w-full h-full top-0 left-0 rounded-xl shadow-[0_2px_6px_rgba(0,0,0,0.1)] border-2 border-white bg-muted rounded-lg flex items-center justify-center"
             >
-              <span class="material-icons text-muted-foreground text-xl">image</span>
+              <StatusImage name="loading" size="1.25rem" :spin="true" img-class="text-xl" />
             </div>
 
             <!-- 错误占位符 -->
@@ -77,7 +74,7 @@
               v-else-if="multiImageLoadStates[item.id] === 'error'"
               class="stack-placeholder absolute w-full h-full top-0 left-0 rounded-xl shadow-[0_2px_6px_rgba(0,0,0,0.1)] border-2 border-white bg-destructive flex items-center justify-center"
             >
-              <span class="material-icons text-destructive text-xl">broken_image</span>
+              <StatusImage name="load_failed" size="1.25rem" img-class="text-xl text-destructive" />
             </div>
 
             <!-- 正常显示图片 -->
@@ -296,6 +293,7 @@ import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { webSocketService } from '@renderer/services/WebSocketService'
 import { Empty, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { Input } from '@/components/ui/input'
+import StatusImage from '@renderer/components/common/StatusImage.vue'
 import { getExtIconUrl } from '@renderer/utils/extIconHelper'
 import { runBatchOperation } from '@renderer/composables/useBatchOperation'
 
