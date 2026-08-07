@@ -12,6 +12,11 @@ import {
   removePrimaryColor,
 } from '@renderer/utils/theme-style'
 
+/**
+ * 媒体项可展示的字段，用于底部状态栏「眼睛」开关控制三个视图的展示信息。
+ */
+export type ItemField = 'filename' | 'format' | 'size' | 'folder' | 'tags'
+
 export interface AppSettings {
   // 界面设置
   theme: 'light' | 'dark' | 'auto'
@@ -46,6 +51,12 @@ export interface AppSettings {
 
   // 媒体预览设置
   videoPreviewMuted: boolean
+
+  /**
+   * 媒体项展示字段开关（grid / waterfall / list 三个视图共用）。
+   * 控制卡片/行上展示哪些信息：文件名 / 格式 / 大小 / 文件夹 / 标签。
+   */
+  visibleItemFields: ItemField[]
 
   // 导入设置
   directImportMode: boolean
@@ -173,6 +184,8 @@ export const useSettingsStore = defineStore('settings', () => {
 
     // 媒体预览设置
     videoPreviewMuted: true,
+    // 媒体项展示字段：默认全部展示
+    visibleItemFields: ['filename', 'format', 'size', 'folder', 'tags'],
 
     // 导入设置
     directImportMode: false,
@@ -538,6 +551,7 @@ export const useSettingsStore = defineStore('settings', () => {
       lazyLoading: true,
       maxConcurrentUploads: 3,
       videoPreviewMuted: true,
+      visibleItemFields: ['filename', 'format', 'size', 'folder', 'tags'],
       directImportMode: false,
       floatingBallEnabled: false,
       floatingBallClickAction: 'openUpload',

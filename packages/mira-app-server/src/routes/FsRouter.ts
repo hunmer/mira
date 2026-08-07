@@ -4,6 +4,7 @@ import * as path from 'path';
 import fg from 'fast-glob';
 import { MiraServer } from '..';
 import { LibraryServerDataSQLite } from 'mira-app-core/storage/sqlite';
+import { createSyncFilter, getIgnoreGlobs, ShouldSyncFn } from '../sync/SyncFilter';
 
 interface FileEntry {
     name: string;
@@ -242,7 +243,8 @@ export class FsRouter {
                     return;
                 }
 
-                const result = await this.syncLibrary(libraryPath, dbService);
+                const customFields = dbService.config.customFields;
+                const result = await this.syncLibrary(libraryPath, dbService, customFields);
                 res.json({ success: true, data: result });
             } catch (error: any) {
                 res.status(500).json({ error: error.message || 'Failed to sync' });
@@ -250,37 +252,42 @@ export class FsRouter {
         });
     }
 
-    private async scanDiskFiles(libraryPath: string): Promise<string[]> {
+    private async scanDiskFiles(
+        libraryPath: string,
+        customFields: Record<string, any> | undefined,
+    ): Promise<string[]> {
+        // fast-glob 的 ignore 只能表达「排除」，无法表达白名单的「强制包含」。
+        // 因此先用默认 + 用户黑名单做粗筛（让 fast-glob 少跑文件），
+        // 再用 createSyncFilter() 的 shouldSync 做一次精确判定，应用白名单覆盖。
+        const ignore = getIgnoreGlobs(customFields);
+        const shouldSync: ShouldSyncFn = createSyncFilter(customFields);
+
         const entries = await fg('**/*', {
             cwd: libraryPath,
             absolute: true,
             dot: false,
-            ignore: [
-                'thumbs/**',
-                'thumbs',
-                '**/thumbs/**',
-                '**/.*',
-                '**/*.db',
-                '**/*.db-journal',
-                '**/*.db-wal',
-                '**/*.db-shm',
-                '**/*.tmp',
-                '**/*.temp',
-            ],
+            ignore,
             onlyFiles: true,
             suppressErrors: true,
         });
-        // 过滤掉空文件
+        // 过滤掉空文件，并应用白名单覆盖（shouldSync）
         return entries.filter((p) => {
-            try { return fs.statSync(p).size > 0; } catch { return false; }
+            try {
+                if (fs.statSync(p).size === 0) return false;
+            } catch {
+                return false;
+            }
+            const rel = path.relative(libraryPath, p).replace(/\\/g, '/');
+            return shouldSync(rel);
         });
     }
 
     private async syncLibrary(
         libraryPath: string,
         dbService: LibraryServerDataSQLite,
+        customFields: Record<string, any> | undefined,
     ): Promise<{ scanned: number; added: number; removed: number }> {
-        const diskFiles = await this.scanDiskFiles(libraryPath);
+        const diskFiles = await this.scanDiskFiles(libraryPath, customFields);
         const diskSet = new Set(diskFiles);
 
         // 直接用 SQL 查询，避免 getFiles 的 processingFiles 处理

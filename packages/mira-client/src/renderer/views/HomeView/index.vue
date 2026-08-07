@@ -71,6 +71,28 @@ const handleDetailFolderChange = (folderId: string) => homeController.handleFold
 // 右侧详情面板的底部双 tab（详情 / 历史）激活态；侧栏折叠重开时保持上次选择
 const detailPanelTab = ref<'detail' | 'history'>('detail')
 
+// 第三列详情面板：resizable 折叠态。与 mediaStore.showDetailSidebar 双向同步——
+// 用户拖拽至 min 之下会触发 collapsible 折叠（emit collapse），HomeHeader 按钮则通过
+// store 显式调用 collapse()/expand()，二者共用同一个布尔事实来源。
+const detailPanelRef = ref<InstanceType<typeof ResizablePanel>>()
+const isDetailCollapsed = ref(false)
+
+// showDetailSidebar（按钮切换）→ 驱动面板 collapse/expand
+watch(showDetailSidebar, (show) => {
+  const api = detailPanelRef.value as any
+  if (!api) return
+  if (show && api.isCollapsed?.value) api.expand()
+  else if (!show && api.isExpanded?.value) api.collapse()
+}, { flush: 'post' })
+
+// 拖拽折叠 / HomeHeader 按钮的最终落点：把折叠态回写 store，
+// 让 HomeHeader 的 view_sidebar 图标高亮与实际状态一致。
+// 直接写 store 内部 ref（showDetailSidebar 是 computed 只读，不可赋值）。
+watch(isDetailCollapsed, (collapsed) => {
+  if (collapsed && mediaStore.showDetailSidebar) mediaStore.showDetailSidebar = false
+  else if (!collapsed && !mediaStore.showDetailSidebar) mediaStore.showDetailSidebar = true
+})
+
 // 历史列表项点击 → 进入预览路由（与 SearchHandlers.openFile 跳转方式一致）
 const openFilePreview = (file: any) => {
   if (!file) return
@@ -393,11 +415,11 @@ onUnmounted(() => {
       @window-close="handleWindowClose"
     />
 
-    <!-- 主内容区域（左侧栏 + 中间内容 + 右侧列） -->
+    <!-- 主内容区域（左侧栏 + 中间内容 + 右侧信息栏，三列均可拖拽调整宽度） -->
     <div class="flex flex-1 min-h-0 p-3 gap-3">
-      <ResizablePanelGroup direction="horizontal" auto-save-id="home-sidebar" class="flex-1 min-w-0 !overflow-visible">
+      <ResizablePanelGroup direction="horizontal" auto-save-id="home-layout" class="flex-1 min-w-0 !overflow-visible">
         <!-- 左侧侧边栏（玻璃面板） -->
-        <ResizablePanel :default-size="20" :min-size="15" class="rounded-2xl border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur-xl shadow-[0_12px_40px_var(--shadow-primary-md)] flex flex-col overflow-hidden">
+        <ResizablePanel :default-size="18" :min-size="14" :max-size="30" class="rounded-2xl border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur-xl shadow-[0_12px_40px_var(--shadow-primary-md)] flex flex-col overflow-hidden">
           <HomeSidebar
             ref="sidebarRef"
             :home-controller="homeController"
@@ -420,10 +442,11 @@ onUnmounted(() => {
           />
         </ResizablePanel>
 
-        <ResizableHandle class="w-3 bg-transparent hover:bg-transparent focus-visible:ring-0" />
+        <!-- 分隔描边：12px 命中区 + 居中 2px 细线，hover 高亮，呈现可拖拽分隔线 -->
+        <ResizableHandle class="w-3 bg-transparent hover:bg-primary/5 focus-visible:ring-0 transition-colors after:w-0.5 after:bg-border/50 hover:after:bg-primary/40" />
 
         <!-- 中间列：Tabs 条 + 内容面板 -->
-        <ResizablePanel :default-size="80" :min-size="50" class="flex flex-col min-w-0 !overflow-visible">
+        <ResizablePanel :default-size="54" :min-size="30" class="flex flex-col min-w-0 !overflow-visible">
           <!-- Tabs 条（固定高度与右侧悬浮 HomeHeader 对齐，隐藏滚动条）。
                HomeHeader 始终悬浮于右上角，右侧固定留出 header 宽度避免遮挡 tabs -->
           <div class="shrink-0 h-[56px] px-2 pr-[220px] flex items-end overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -465,26 +488,31 @@ onUnmounted(() => {
             </main>
           </div>
         </ResizablePanel>
-      </ResizablePanelGroup>
 
-      <!-- 右侧列：始终保持常规列布局（不随侧栏开关切换 display）。
-           HomeHeader 已抽离为始终悬浮于右上角，这里顶部留出 Header 高度避免被遮挡。
-           折叠时只剩纵向 PluginContributionBar 竖条；展开时纵向竖条 + 详情面板。 -->
-      <div class="shrink-0 min-w-0 flex flex-col gap-3 pt-14">
+        <!-- 分隔描边：中间列 ↔ 右侧信息栏 -->
+        <ResizableHandle class="w-3 bg-transparent hover:bg-primary/5 focus-visible:ring-0 transition-colors after:w-0.5 after:bg-border/50 hover:after:bg-primary/40" />
 
-        <!-- 插件贡献栏：始终纵向展示在第三列（Header 下方） -->
-        <PluginContributionBar vertical />
-
-        <!-- 图片详情面板 -->
-        <Transition
-          enter-active-class="transition-[transform,opacity] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]"
-          leave-active-class="transition-[transform,opacity] duration-150 ease-[cubic-bezier(0.4,0,1,1)]"
-          enter-from-class="opacity-0 translate-x-4"
-          leave-to-class="opacity-0 translate-x-4"
+        <!-- 右侧信息栏：可拖拽调整宽度，并通过 showDetailSidebar 折叠/展开。
+             HomeHeader 始终悬浮于右上角，顶部留出 pt-14 避免被遮挡。
+             折叠时缩到 collapsedSize 仅剩纵向 PluginContributionBar 竖条；展开时竖条 + 详情面板。 -->
+        <ResizablePanel
+          ref="detailPanelRef"
+          :default-size="28"
+          :min-size="20"
+          :max-size="40"
+          :collapsed-size="7"
+          collapsible
+          @collapse="isDetailCollapsed = true"
+          @expand="isDetailCollapsed = false"
+          class="flex flex-col min-w-0 gap-3 pt-14"
         >
+          <!-- 插件贡献栏：始终纵向展示在第三列（Header 下方） -->
+          <PluginContributionBar vertical />
+
+          <!-- 图片详情面板 -->
           <aside
-            v-if="showDetailSidebar"
-            class="w-72 flex-1 min-w-0 rounded-2xl border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur-xl shadow-[0_12px_40px_var(--shadow-primary-md)] overflow-hidden flex flex-col"
+            v-if="!isDetailCollapsed"
+            class="flex-1 min-h-0 rounded-2xl border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur-xl shadow-[0_12px_40px_var(--shadow-primary-md)] overflow-hidden flex flex-col"
           >
             <!-- 底部双 tab：内容在上，tab 条在底部 -->
             <Tabs v-model="detailPanelTab" class="flex-1 min-h-0 flex flex-col gap-0">
@@ -512,8 +540,8 @@ onUnmounted(() => {
               </TabsList>
             </Tabs>
           </aside>
-        </Transition>
-      </div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </div>
 
     <!-- 所有对话框 -->

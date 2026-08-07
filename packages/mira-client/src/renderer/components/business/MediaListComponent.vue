@@ -31,16 +31,19 @@
             <Checkbox :model-value="isAllSelected" @update:model-value="toggleSelectAll" />
           </TableHead>
           <TableHead class="w-20 min-w-20 max-w-20">预览</TableHead>
-          <TableHead class="max-w-[200px]">文件名</TableHead>
-          <TableHead class="w-24 min-w-24 max-w-24">大小</TableHead>
+          <TableHead v-if="showFilename" class="max-w-[200px]">文件名</TableHead>
+          <TableHead v-if="showFormat" class="w-20 min-w-20 max-w-20">格式</TableHead>
+          <TableHead v-if="showSize" class="w-24 min-w-24 max-w-24">大小</TableHead>
           <TableHead class="w-28 min-w-28 max-w-28">分辨率</TableHead>
+          <TableHead v-if="showFolder" class="w-32 min-w-32 max-w-32">文件夹</TableHead>
+          <TableHead v-if="showTags" class="w-40 min-w-40 max-w-40">标签</TableHead>
           <TableHead class="w-40 min-w-40 max-w-40">创建时间</TableHead>
           <TableHead class="w-24 min-w-24 max-w-24 text-right">操作</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         <TableRow v-if="items.length === 0">
-          <TableCell colspan="7">
+          <TableCell :colspan="tableColumnCount">
             <div class="flex flex-col items-center justify-center h-64 text-muted-foreground">
               <StatusImage name="empty" size="medium" container-class="mb-2" />
               <p class="text-lg font-medium">暂无文件</p>
@@ -138,17 +141,19 @@
           </TableCell>
 
           <!-- 文件名列 -->
-          <TableCell>
-            <div class="flex flex-col min-w-0">
-              <span class="text-sm font-medium text-foreground truncate">{{ item.name }}</span>
-              <span class="text-xs text-primary px-2 py-0.5 bg-primary/10 rounded-full inline-block w-fit mt-1">
-                {{ getFileExtension(item.name) }}
-              </span>
-            </div>
+          <TableCell v-if="showFilename">
+            <span class="text-sm font-medium text-foreground truncate">{{ item.name }}</span>
+          </TableCell>
+
+          <!-- 格式列 -->
+          <TableCell v-if="showFormat">
+            <span class="text-xs text-primary px-2 py-0.5 bg-primary/10 rounded-full inline-block w-fit">
+              {{ getFileExtension(item.name) }}
+            </span>
           </TableCell>
 
           <!-- 文件大小列 -->
-          <TableCell>
+          <TableCell v-if="showSize">
             <span class="text-sm text-foreground">{{ formatFileSize(item.size || 0) }}</span>
           </TableCell>
 
@@ -157,6 +162,27 @@
             <span v-if="item.metadata?.width && item.metadata?.height" class="text-sm text-foreground">
               {{ item.metadata.width }}×{{ item.metadata.height }}
             </span>
+            <span v-else class="text-sm text-muted-foreground">-</span>
+          </TableCell>
+
+          <!-- 文件夹列 -->
+          <TableCell v-if="showFolder">
+            <span v-if="getFolderName(item.folderId)" class="text-sm text-foreground truncate">{{ getFolderName(item.folderId) }}</span>
+            <span v-else class="text-sm text-muted-foreground">-</span>
+          </TableCell>
+
+          <!-- 标签列 -->
+          <TableCell v-if="showTags">
+            <div v-if="getTagNames(item.tags).length > 0" class="flex items-center flex-wrap gap-1">
+              <span
+                v-for="name in getTagNames(item.tags).slice(0, 3)"
+                :key="name"
+                class="text-xs text-primary px-2 py-0.5 bg-primary/10 rounded-full inline-block max-w-[100px] truncate"
+              >{{ name }}</span>
+              <span v-if="getTagNames(item.tags).length > 3" class="text-xs text-muted-foreground">
+                +{{ getTagNames(item.tags).length - 3 }}
+              </span>
+            </div>
             <span v-else class="text-sm text-muted-foreground">-</span>
           </TableCell>
 
@@ -206,6 +232,9 @@ import { useVideoPreview } from '@renderer/composables/useVideoPreview'
 import type { FileInfo } from '../../../shared/types'
 import { getMediaFileUrl, getCacheBustedPreviewImageSource } from '@renderer/utils/fileUtils'
 import { useDeleteSelectedItems } from './MediaGridComponent/composables/useDeleteSelectedItems'
+import { useSettingsStore } from '@renderer/stores/settings'
+import { useFolderStore } from '@renderer/stores/folder'
+import { useTagStore } from '@renderer/stores/tag'
 import { useFocusedSelectAll } from './MediaGridComponent/composables/useFocusedSelectAll'
 
 interface Props {
@@ -247,6 +276,41 @@ const selectedIds = computed({
 })
 
 const isSelected = (id: string) => props.selectedItems.includes(id)
+
+// ============================================
+// 展示字段控制（受全局设置 visibleItemFields 驱动）
+// ============================================
+const settingsStore = useSettingsStore()
+const folderStore = useFolderStore()
+const tagStore = useTagStore()
+
+const visibleFields = computed(() => settingsStore.settings.visibleItemFields)
+const showFilename = computed(() => visibleFields.value.includes('filename'))
+const showFormat = computed(() => visibleFields.value.includes('format'))
+const showSize = computed(() => visibleFields.value.includes('size'))
+const showFolder = computed(() => visibleFields.value.includes('folder'))
+const showTags = computed(() => visibleFields.value.includes('tags'))
+
+// 固定列：选择 / 预览 / 分辨率 / 创建时间 / 操作 = 5 列
+const tableColumnCount = computed(() => {
+  let count = 5
+  if (showFilename.value) count++
+  if (showFormat.value) count++
+  if (showSize.value) count++
+  if (showFolder.value) count++
+  if (showTags.value) count++
+  return count
+})
+
+const getFolderName = (folderId?: string): string => {
+  if (folderId === undefined || folderId === null || folderId === '') return ''
+  return folderStore.getFolderById(Number(folderId))?.title || ''
+}
+
+const getTagNames = (tags?: string[]): string[] => {
+  const ids = tags || []
+  return ids.map(id => tagStore.tags.find(t => String(t.id) === String(id))?.title || String(id))
+}
 
 const isAllSelected = computed(() => {
   if (props.items.length === 0) return false

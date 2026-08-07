@@ -49,6 +49,9 @@ function getDefaultForm(): LibraryFormData {
     icon: '', enableHash: false, enableAutoSync: false, enableThumbScan: true,
     pluginsDir: '',
     allowedRoles: ['super', 'admin', 'user'],
+    syncFilterMode: 'blacklist',
+    syncBlacklist: '',
+    syncWhitelist: '',
   }
 }
 
@@ -68,6 +71,9 @@ function openEdit(lib: Library) {
     enableHash: lib.customFields?.enableHash ?? false,
     enableAutoSync: lib.customFields?.enableAutoSync ?? false,
     enableThumbScan: lib.customFields?.enableThumbScan ?? true,
+    syncFilterMode: (lib.customFields?.syncFilterMode === 'whitelist' ? 'whitelist' : 'blacklist'),
+    syncBlacklist: lib.customFields?.syncBlacklist ?? '',
+    syncWhitelist: lib.customFields?.syncWhitelist ?? '',
     allowedRoles: (lib as any).allowedRoles ?? ['super', 'admin', 'user'],
     _id: lib.id,
   }
@@ -77,10 +83,17 @@ function openEdit(lib: Library) {
 async function handleSave() {
   if (!editingLib.value) return
   try {
-    const { _id, enableHash, enableAutoSync, enableThumbScan, ...rest } = editingLib.value as LibraryFormData & { _id?: string }
+    const {
+      _id, enableHash, enableAutoSync, enableThumbScan,
+      syncFilterMode, syncBlacklist, syncWhitelist,
+      ...rest
+    } = editingLib.value as LibraryFormData & { _id?: string }
     const data = {
       ...rest,
-      customFields: { enableHash, enableAutoSync, enableThumbScan },
+      customFields: {
+        enableHash, enableAutoSync, enableThumbScan,
+        syncFilterMode, syncBlacklist, syncWhitelist,
+      },
     }
     if (_id) {
       await libraryApi.update(_id, data)

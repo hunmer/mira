@@ -298,18 +298,15 @@ const waterfallItems = computed(() => {
   }))
 })
 
-// Masonry 响应式列数：对齐原 breakpoints 行为（移动优先）
-// 原断点：1200+ 用 columnsPerRow；800+ 缩到 75%；500+ 缩到 50%；其余最少 2 列
-// 映射到 Tailwind 断点（sm640/md768/lg1024/xl1280）
+// 与网格视图保持一致：相同的列数设置应得到接近的卡片宽度。
 const columns = computed<MasonryColumns>(() => {
-  const md = Math.max(Math.floor(props.columnsPerRow * 0.75), 2)
-  const sm = Math.max(Math.floor(props.columnsPerRow * 0.5), 2)
+  const count = Math.max(props.columnsPerRow, 2)
   return {
-    base: 2,
-    sm,
-    md,
-    lg: md,
-    xl: props.columnsPerRow
+    base: count,
+    sm: count,
+    md: count,
+    lg: count,
+    xl: count
   }
 })
 

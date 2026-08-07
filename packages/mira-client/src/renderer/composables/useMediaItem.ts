@@ -63,6 +63,10 @@ export function useMediaItem(options: UseMediaItemOptions) {
     return itemRef.value.mimeType.startsWith('video/')
   })
 
+  const isImage = computed((): boolean => {
+    return itemRef.value.mimeType.startsWith('image/')
+  })
+
   // 获取文件类型
   const getFileType = (fileItem: FileInfo): string => {
     if (!fileItem.mimeType) return 'document'
@@ -143,6 +147,7 @@ export function useMediaItem(options: UseMediaItemOptions) {
     // 计算属性
     imageSrc,
     fileExtension,
+    isImage,
     isVideo,
 
     // 工具函数

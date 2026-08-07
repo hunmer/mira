@@ -100,78 +100,83 @@
         </div>
 
         <!-- 浮动操作栏 -->
-        <div
-          class="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center space-x-4 bg-white/60 dark:bg-muted/80 backdrop-blur-xl shadow-[0_12px_36px_rgba(99,102,241,0.15)] rounded-full p-1.5 border border-white/60 dark:border-border">
-          <!-- 操作按钮 - 仅在选中文件时显示 -->
-          <div v-if="selectedItems.length > 0" class="flex items-center space-x-2">
-            <!-- 反选 -->
-            <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors" title="反选"
-              @click="handleInvertSelection">
-              <span class="material-symbols-outlined text-muted-foreground dark:text-muted-foreground">swap_horiz</span>
-            </button>
-            <!-- 取消选择 -->
-            <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors" title="取消选择"
-              @click="handleClearSelection">
-              <span class="material-symbols-outlined text-muted-foreground dark:text-muted-foreground">deselect</span>
-            </button>
-            <div class="h-6 border-l border-border dark:border-border"></div>
+        <div class="absolute bottom-8 left-0 right-0 flex justify-center pointer-events-none z-30">
+          <Transition name="toolbar-zoom" appear>
+            <div v-if="showFloatingToolbar" ref="toolbarRef"
+              class="pointer-events-auto flex items-center space-x-4 bg-white/60 dark:bg-muted/80 backdrop-blur-xl shadow-[0_12px_36px_rgba(99,102,241,0.15)] rounded-full p-1.5 border border-white/60 dark:border-border"
+              style="transform-origin: center;">
+              <!-- 操作按钮 - 仅在选中文件时显示 -->
+              <div v-if="selectedItems.length > 0" class="flex items-center space-x-2">
+                <!-- 反选 -->
+                <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors" title="反选"
+                  @click="handleInvertSelection">
+                  <span class="material-symbols-outlined text-muted-foreground dark:text-muted-foreground">swap_horiz</span>
+                </button>
+                <!-- 取消选择 -->
+                <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors" title="取消选择"
+                  @click="handleClearSelection">
+                  <span class="material-symbols-outlined text-muted-foreground dark:text-muted-foreground">deselect</span>
+                </button>
+                <div class="h-6 border-l border-border dark:border-border"></div>
 
-            <!-- 回收站：恢复文件 / 彻底删除 -->
-            <template v-if="isTrash">
-              <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
-                :title="`恢复文件 (${selectedItems.length})`" @click="handleToolbarAction('restore')">
-                <span class="material-symbols-outlined text-muted-foreground dark:text-muted-foreground">restore</span>
-              </button>
-              <button class="p-2 rounded-full hover:bg-destructive/10 group transition-colors"
-                :title="`彻底删除 (${selectedItems.length})`" @click="handleToolbarAction('purge')">
-                <span
-                  class="material-symbols-outlined text-muted-foreground dark:text-muted-foreground group-hover:text-destructive dark:group-hover:text-destructive">delete_forever</span>
-              </button>
-            </template>
+                <!-- 回收站：恢复文件 / 彻底删除 -->
+                <template v-if="isTrash">
+                  <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
+                    :title="`恢复文件 (${selectedItems.length})`" @click="handleToolbarAction('restore')">
+                    <span class="material-symbols-outlined text-muted-foreground dark:text-muted-foreground">restore</span>
+                  </button>
+                  <button class="p-2 rounded-full hover:bg-destructive/10 group transition-colors"
+                    :title="`彻底删除 (${selectedItems.length})`" @click="handleToolbarAction('purge')">
+                    <span
+                      class="material-symbols-outlined text-muted-foreground dark:text-muted-foreground group-hover:text-destructive dark:group-hover:text-destructive">delete_forever</span>
+                  </button>
+                </template>
 
-            <!-- 普通视图：复制 / 打开 / 删除 -->
-            <template v-else>
-              <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors" title="复制"
-                @click="handleToolbarAction('copy')">
-                <span class="material-icons text-muted-foreground dark:text-muted-foreground">content_copy</span>
-              </button>
-              <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors" title="打开"
-                @click="handleToolbarAction('open')">
-                <span class="material-icons text-muted-foreground dark:text-muted-foreground">open_in_new</span>
-              </button>
-              <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
-                :title="`删除 (${selectedItems.length})`" @click="handleToolbarAction('delete')">
-                <span class="material-icons text-muted-foreground dark:text-muted-foreground">delete</span>
-              </button>
-            </template>
-            <div class="h-6 border-l border-border dark:border-border"></div>
-          </div>
+                <!-- 普通视图：复制 / 打开 / 删除 -->
+                <template v-else>
+                  <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors" title="复制"
+                    @click="handleToolbarAction('copy')">
+                    <span class="material-icons text-muted-foreground dark:text-muted-foreground">content_copy</span>
+                  </button>
+                  <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors" title="打开"
+                    @click="handleToolbarAction('open')">
+                    <span class="material-icons text-muted-foreground dark:text-muted-foreground">open_in_new</span>
+                  </button>
+                  <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
+                    :title="`删除 (${selectedItems.length})`" @click="handleToolbarAction('delete')">
+                    <span class="material-icons text-muted-foreground dark:text-muted-foreground">delete</span>
+                  </button>
+                </template>
+                <div class="h-6 border-l border-border dark:border-border"></div>
+              </div>
 
-          <!-- 分页控件 - 只有多页时显示 -->
-          <div v-if="totalPages > 1"
-            class="flex items-center space-x-1 text-muted-foreground dark:text-muted-foreground text-xs">
-            <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
-              :disabled="currentPage === 1" @click="handlePreviousPage">
-              <span class="material-symbols-outlined text-sm">chevron_left</span>
-            </button>
+              <!-- 分页控件 - 只有多页时显示 -->
+              <div v-if="totalPages > 1"
+                class="flex items-center space-x-1 text-muted-foreground dark:text-muted-foreground text-xs">
+                <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
+                  :disabled="currentPage === 1" @click="handlePreviousPage">
+                  <span class="material-symbols-outlined text-sm">chevron_left</span>
+                </button>
 
-            <template v-for="page in paginationPages" :key="page.number">
-              <!-- 省略号 -->
-              <span v-if="page.number === -1" class="px-1">...</span>
-              <!-- 页码按钮 -->
-              <button v-else :class="[
-                'px-2 py-1 rounded-full hover:bg-primary/10 min-w-[28px] transition-colors',
-                page.active ? 'bg-primary text-primary-foreground font-semibold shadow-sm hover:bg-primary' : ''
-              ]" @click="handlePageChange(page.number)">
-                {{ page.number }}
-              </button>
-            </template>
+                <template v-for="page in paginationPages" :key="page.number">
+                  <!-- 省略号 -->
+                  <span v-if="page.number === -1" class="px-1">...</span>
+                  <!-- 页码按钮 -->
+                  <button v-else :class="[
+                    'px-2 py-1 rounded-full hover:bg-primary/10 min-w-[28px] transition-colors',
+                    page.active ? 'bg-primary text-primary-foreground font-semibold shadow-sm hover:bg-primary' : ''
+                  ]" @click="handlePageChange(page.number)">
+                    {{ page.number }}
+                  </button>
+                </template>
 
-            <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
-              :disabled="currentPage === totalPages" @click="handleNextPage">
-              <span class="material-symbols-outlined text-sm">chevron_right</span>
-            </button>
-          </div>
+                <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
+                  :disabled="currentPage === totalPages" @click="handleNextPage">
+                  <span class="material-symbols-outlined text-sm">chevron_right</span>
+                </button>
+              </div>
+            </div>
+          </Transition>
         </div>
       </div>
     </div>
@@ -211,6 +216,29 @@
           <input class="w-24 h-1 bg-accent dark:bg-muted rounded-lg appearance-none cursor-pointer" type="range" min="2"
             max="8" :value="columnsPerRow" @input="handleColumnsChange" title="调整列数" />
         </div>
+
+        <!-- 展示字段开关：控制三个视图下媒体项展示哪些信息 -->
+        <Dropdown :offset="{ x: 0, y: 8 }" placement="top-end">
+          <template #trigger>
+            <button
+              class="flex items-center rounded-lg border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur shadow-sm hover:bg-white/60 dark:hover:bg-muted transition-colors"
+              title="展示字段设置" style="padding: 6px;">
+              <span class="material-icons text-sm text-muted-foreground dark:text-muted-foreground">visibility</span>
+            </button>
+          </template>
+
+          <template #content>
+            <div class="min-w-[160px] p-2">
+              <h3 class="font-medium text-foreground text-sm mb-2 px-1">展示字段</h3>
+              <label v-for="col in itemFieldOptions" :key="col.key"
+                class="flex items-center space-x-2 px-2 py-1.5 rounded-lg hover:bg-primary/5 cursor-pointer">
+                <Checkbox :model-value="isItemFieldVisible(col.key)"
+                  @update:model-value="val => toggleItemField(col.key, val === true)" />
+                <span class="text-sm text-foreground">{{ col.label }}</span>
+              </label>
+            </div>
+          </template>
+        </Dropdown>
       </div>
     </footer>
 
@@ -260,6 +288,7 @@ import FileUploadDialog from '@renderer/components/business/FileUploadDialog.vue
 import FilterBar from '@/renderer/components/business/FilterBar/FilterBar.vue'
 import Breadcrumb from '@/renderer/components/common/Breadcrumb.vue'
 import { Dropdown } from '@/renderer/components/common/Dropdown'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   AlertDialog,
   AlertDialogContent,
@@ -272,6 +301,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import type { FileInfo } from '../../../shared/types'
 import type { FilterRule } from '@/renderer/types/filter'
+import type { ItemField } from '@renderer/stores/settings'
 
 // Props
 interface Props {
@@ -426,10 +456,47 @@ const cardSize = computed(() => homeController.cardSize?.value || 'medium')
 const columnsPerRow = computed(() => homeController.columnsPerRow?.value || 6)
 const dynamicColumnWidth = computed(() => homeController.dynamicColumnWidth?.value || 200)
 const waterfallRef = ref<InstanceType<typeof WaterfallComponent> | null>(null)
+
 // 使用MediaTabData的分页状态
 const currentPage = computed(() => mediaTabData.currentPage.value)
 
 const totalPages = computed(() => mediaTabData.totalPages.value)
+
+// 浮动操作栏：FLIP 宽度过渡 + 显示/隐藏缩放
+const toolbarRef = ref<HTMLElement | null>(null)
+// 浮动栏可见条件：有选中项 或 存在分页
+const showFloatingToolbar = computed(() => selectedItems.value.length > 0 || totalPages.value > 1)
+// 记录宽度变化前的值，用于 FLIP 反转
+let prevToolbarWidth = 0
+
+watch(showFloatingToolbar, (visible) => {
+  // 浮动栏即将显示：清除历史宽度，避免首次进入时出现错误的 scaleX
+  if (visible) prevToolbarWidth = 0
+})
+
+// 监听内部内容变化（选中态 / 分页），在 DOM 更新前后用 FLIP 实现丝滑宽度过渡
+watch([() => selectedItems.value.length, totalPages], () => {
+  const el = toolbarRef.value
+  // First：记录变化前的宽度
+  if (el && el.offsetWidth > 0) {
+    prevToolbarWidth = el.offsetWidth
+  }
+  // Last：DOM 更新后，对比新旧宽度做反转过渡
+  nextTick(() => {
+    const el = toolbarRef.value
+    if (!el || !prevToolbarWidth || prevToolbarWidth === el.offsetWidth) return
+    const ratio = prevToolbarWidth / el.offsetWidth
+    // Invert：瞬间应用反转 scale（无过渡）
+    el.style.transition = 'none'
+    el.style.transform = `scaleX(${ratio})`
+    // 强制浏览器刷新，使上面的"无过渡"状态生效
+    void el.offsetWidth
+    // Play：过渡回 1
+    el.style.transition = 'transform 240ms cubic-bezier(0.4, 0, 0.2, 1)'
+    el.style.transform = 'scaleX(1)'
+    prevToolbarWidth = el.offsetWidth
+  })
+})
 
 const paginationPages = computed(() => {
   // 简单的分页页码计算
@@ -1018,6 +1085,29 @@ const handleColumnsChange = (event: Event) => {
   homeController.handleColumnsChange(event)
 }
 
+// ============================================
+// 展示字段开关（控制三个视图下媒体项展示哪些信息）
+// ============================================
+const itemFieldOptions: { key: ItemField; label: string }[] = [
+  { key: 'filename', label: '文件名' },
+  { key: 'format', label: '格式' },
+  { key: 'size', label: '大小' },
+  { key: 'folder', label: '文件夹' },
+  { key: 'tags', label: '标签' }
+]
+
+const isItemFieldVisible = (field: ItemField) => {
+  return settingsStore.settings.visibleItemFields.includes(field)
+}
+
+const toggleItemField = async (field: ItemField, checked: boolean) => {
+  const current = settingsStore.settings.visibleItemFields
+  const next = checked
+    ? [...current, field]
+    : current.filter(f => f !== field)
+  await settingsStore.updateSetting('visibleItemFields', next)
+}
+
 const handleCtrlWheel = (event: WheelEvent) => {
   if (!event.ctrlKey) return
   if (viewMode.value !== 'grid' && viewMode.value !== 'waterfall') return
@@ -1145,6 +1235,21 @@ watch(
 
 .fade-enter-from,
 .fade-leave-to {
+  opacity: 0;
+}
+
+/* 浮动操作栏：放大/缩小进入退出 */
+.toolbar-zoom-enter-active {
+  transition: transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 200ms ease;
+}
+
+.toolbar-zoom-leave-active {
+  transition: transform 150ms ease-in, opacity 150ms ease;
+}
+
+.toolbar-zoom-enter-from,
+.toolbar-zoom-leave-to {
+  transform: scale(0.6);
   opacity: 0;
 }
 

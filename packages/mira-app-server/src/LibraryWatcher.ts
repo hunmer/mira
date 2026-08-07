@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { LibraryServerDataSQLite } from 'mira-app-core/storage/sqlite';
 import { MiraWebsocketServer } from './WebSocketServer';
+import { createSyncFilter, ShouldSyncFn } from './sync/SyncFilter';
 
 interface PendingUnlink {
   id: number;
@@ -20,12 +21,16 @@ export class LibraryWatcher {
   private pendingUnlinks = new Map<string, PendingUnlink>();
   private ignoredPaths = new Set<string>();
   private usePolling = false;
+  /** 基于 customFields 的同步过滤判定（黑名单/白名单，gitignore 语义） */
+  private shouldSync: ShouldSyncFn;
 
   constructor(libraryService: LibraryServerDataSQLite, webSocketServer: MiraWebsocketServer) {
     this.libraryService = libraryService;
     this.webSocketServer = webSocketServer;
     this.libraryPath = libraryService.config.customFields?.path || libraryService.config.path || '';
     this.libraryId = libraryService.getLibraryId();
+    // 读取库配置里的黑白名单（多行文本），构造统一的过滤函数
+    this.shouldSync = createSyncFilter(libraryService.config.customFields);
   }
 
   async start(): Promise<void> {
@@ -50,19 +55,8 @@ export class LibraryWatcher {
       ignored: (filePath: string) => {
         const rel = path.relative(this.libraryPath, filePath).replace(/\\/g, '/');
         if (rel === '') return false;
-        return rel.startsWith('thumbs') ||
-          rel.startsWith('thumbs/') ||
-          rel.includes('/thumbs/') ||
-          rel === '.trash' ||
-          rel.startsWith('.trash/') ||
-          rel.includes('/.trash/') ||
-          rel.includes('/.') ||
-          rel.endsWith('.db') ||
-          rel.endsWith('.db-journal') ||
-          rel.endsWith('.db-wal') ||
-          rel.endsWith('.db-shm') ||
-          rel.endsWith('.tmp') ||
-          rel.endsWith('.temp');
+        // shouldSync 返回 true 表示要同步 → chokidar 的 ignored 语义相反
+        return !this.shouldSync(rel);
       },
       awaitWriteFinish: {
         stabilityThreshold: 1000,
@@ -89,10 +83,7 @@ export class LibraryWatcher {
       console.error(`[Watcher] Error for library ${this.libraryId}:`, error);
     });
 
-    // 启动时扫描已有文件，同步未入库的
-    this.initialSync();
-
-    console.log(`[Watcher] Started watching: ${this.libraryPath}`);
+    console.log(`[Watcher] Started watching: ${this.libraryPath}${this.usePolling ? ' (polling)' : ''}`);
   }
 
   // 启动时扫描文件夹，把未入库的文件导入
@@ -160,21 +151,10 @@ export class LibraryWatcher {
     return results;
   }
 
+  /** 文件是否应被忽略（不参与扫描/同步）。规则来自 createSyncFilter()。 */
   private shouldIgnore(rel: string): boolean {
     if (rel === '') return false;
-    return rel.startsWith('thumbs') ||
-      rel.startsWith('thumbs/') ||
-      rel.includes('/thumbs/') ||
-      rel === '.trash' ||
-      rel.startsWith('.trash/') ||
-      rel.includes('/.trash/') ||
-      rel.includes('/.') ||
-      rel.endsWith('.db') ||
-      rel.endsWith('.db-journal') ||
-      rel.endsWith('.db-wal') ||
-      rel.endsWith('.db-shm') ||
-      rel.endsWith('.tmp') ||
-      rel.endsWith('.temp');
+    return !this.shouldSync(rel);
   }
 
   ignorePath(filePath: string): void {

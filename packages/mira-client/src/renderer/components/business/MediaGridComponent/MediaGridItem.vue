@@ -20,7 +20,7 @@
       <!-- 图片/缩略图容器 (视频播放时隐藏) -->
       <div
         v-show="!isVideoPlaying"
-        class="relative w-full h-[200px] rounded-xl overflow-hidden shadow-sm group-hover:shadow-[0_12px_36px_rgba(99,102,241,0.15)] transition-shadow"
+        class="relative w-full h-[200px] rounded-xl overflow-hidden shadow-sm"
       >
         <!-- 懒加载图片 -->
         <MediaThumbnail
@@ -28,7 +28,9 @@
           :src="imageSrcComputed ?? ''"
           :filename="item.name"
           :alt="item.name"
-          img-class="w-full h-full object-cover transition-opacity duration-300 lazy-image"
+          :img-class="isImage
+            ? 'w-full h-full object-cover transition-[opacity,transform] duration-500 ease-out will-change-transform group-hover:scale-105 lazy-image'
+            : 'w-full h-full object-cover transition-opacity duration-300 lazy-image'"
         />
       </div>
 
@@ -59,7 +61,7 @@
 
       <!-- 文件类型标识 (非视频预览状态时显示) -->
       <div
-        v-show="!isVideoPlaying"
+        v-show="!isVideoPlaying && showFormat"
         class="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded"
       >
         {{ fileExtension }}
@@ -76,7 +78,7 @@
         <HoverCardTrigger as-child>
           <button
             v-show="!isVideoPlaying"
-            class="absolute -top-1 -right-1 z-10 h-7 w-7 rounded-bl-full bg-black/55 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-black/75 transition-opacity"
+            class="absolute top-0 right-0 z-10 h-7 w-7 rounded-bl-full bg-black/55 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-black/75 transition-opacity"
             title="预览"
             @click.stop
             @pointerdown.stop
@@ -117,18 +119,57 @@
         ></div>
       </div>
 
-      <!-- 文件名 (非视频预览时显示) -->
+      <!-- 信息块 (非视频预览时显示) -->
       <div
-        v-show="!isVideoPlaying"
-        class="absolute bottom-0 left-0 right-0 p-2 rounded-b-xl"
+        v-show="!isVideoPlaying && hasVisibleInfo"
+        class="absolute bottom-0 left-0 right-0 p-2 rounded-b-xl space-y-0.5"
         :class="isSelected ? 'bg-primary/90' : 'bg-white/80 dark:bg-muted/80 backdrop-blur'"
       >
+        <!-- 文件名 -->
         <h3
+          v-if="showFilename"
           class="text-sm font-semibold truncate"
           :class="isSelected ? 'text-white' : 'text-foreground dark:text-muted-foreground'"
         >
           {{ item.name }}
         </h3>
+        <!-- 大小 -->
+        <p
+          v-if="showSize && item.size"
+          class="text-xs truncate"
+          :class="isSelected ? 'text-white/85' : 'text-muted-foreground dark:text-muted-foreground'"
+        >
+          {{ formatFileSize(item.size) }}
+        </p>
+        <!-- 文件夹 + 标签：合并成一行支持换行的 badge list -->
+        <div
+          v-if="(showFolder && folderName) || (showTags && tagNames.length > 0)"
+          class="flex flex-wrap gap-1 pt-0.5"
+        >
+          <span
+            v-if="showFolder && folderName"
+            class="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full truncate max-w-[100px]"
+            :class="isSelected
+              ? 'bg-white/25 text-white'
+              : 'bg-primary/10 text-primary dark:text-primary'"
+          >
+            <span class="material-icons" style="font-size: 10px; margin-right: 2px;">folder</span>
+            {{ folderName }}
+          </span>
+          <span
+            v-for="name in (showTags ? tagNames.slice(0, 5) : [])"
+            :key="name"
+            class="text-[10px] px-1.5 py-0.5 rounded-full truncate max-w-[80px]"
+            :class="isSelected
+              ? 'bg-white/25 text-white'
+              : 'bg-primary/10 text-primary dark:text-primary'"
+          >{{ name }}</span>
+          <span
+            v-if="showTags && tagNames.length > 5"
+            class="text-[10px] px-1 py-0.5"
+            :class="isSelected ? 'text-white/85' : 'text-muted-foreground dark:text-muted-foreground'"
+          >+{{ tagNames.length - 5 }}</span>
+        </div>
       </div>
     </div>
   </div>
@@ -141,6 +182,9 @@ import MediaThumbnail from '@renderer/components/common/MediaThumbnail.vue'
 import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card'
 import { getCacheBustedPreviewImageSource } from '@renderer/utils/fileUtils'
 import { useMediaItem, type MediaItemEmits } from '@renderer/composables/useMediaItem'
+import { useSettingsStore } from '@renderer/stores/settings'
+import { useFolderStore } from '@renderer/stores/folder'
+import { useTagStore } from '@renderer/stores/tag'
 
 interface Props {
   item: FileInfo
@@ -169,6 +213,8 @@ const previewSrc = computed(() => getCacheBustedPreviewImageSource(props.item) |
 const {
   imageSrc: imageSrcComputed,
   fileExtension,
+  isImage,
+  formatFileSize,
   getLocalFile,
   handleClick,
   handleDoubleClick,
@@ -181,6 +227,40 @@ const {
   item: toRef(props, 'item'),
   emit
 })
+
+// ============================================
+// 展示字段控制（受全局设置 visibleItemFields 驱动）
+// ============================================
+const settingsStore = useSettingsStore()
+const folderStore = useFolderStore()
+const tagStore = useTagStore()
+
+const visibleFields = computed(() => settingsStore.settings.visibleItemFields)
+const showFilename = computed(() => visibleFields.value.includes('filename'))
+const showFormat = computed(() => visibleFields.value.includes('format'))
+const showSize = computed(() => visibleFields.value.includes('size'))
+const showFolder = computed(() => visibleFields.value.includes('folder'))
+const showTags = computed(() => visibleFields.value.includes('tags'))
+
+const folderName = computed(() => {
+  const id = props.item.folderId
+  if (id === undefined || id === null || id === '') return ''
+  return folderStore.getFolderById(Number(id))?.title || ''
+})
+
+const tagNames = computed<string[]>(() => {
+  const ids = props.item.tags || []
+  return ids
+    .map(id => tagStore.tags.find(t => String(t.id) === String(id))?.title || String(id))
+})
+
+// 是否有任何信息需要展示（用于决定浮层显隐）
+const hasVisibleInfo = computed(() =>
+  showFilename.value
+  || (showSize.value && props.item.size)
+  || (showFolder.value && folderName.value)
+  || (showTags.value && tagNames.value.length > 0)
+)
 </script>
 
 <style scoped>
