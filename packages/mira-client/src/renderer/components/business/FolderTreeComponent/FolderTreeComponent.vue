@@ -62,8 +62,8 @@
       </ul>
     </div>
 
-    <!-- 标题栏 + 搜索 + 多选 + 添加 -->
-    <div class="flex items-center justify-between px-2 mb-2">
+    <!-- 标题栏 + 搜索 + 多选 + 添加（外层提供统一标题时隐藏） -->
+    <div v-if="!hideHeader" class="flex items-center justify-between px-2 mb-2">
       <h2 class="text-xs font-semibold text-muted-foreground leading-5">{{ sectionTitle }}</h2>
       <div class="header-actions flex items-center gap-0.5 -mr-1">
         <button
@@ -399,6 +399,12 @@ interface Props {
     iconColor?: string
     count?: number
   }>
+  /**
+   * 隐藏组件自带标题栏（含搜索/多选/添加按钮）。
+   * 当外层用 Collapsible 提供统一标题时设为 true，避免双标题。
+   * 隐藏后这些能力通过 defineExpose 暴露给外层调用。
+   */
+  hideHeader?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -407,6 +413,7 @@ const props = withDefaults(defineProps<Props>(), {
   draggable: false,
   selectionMode: 'none',
   title: '',
+  hideHeader: false,
   folders: () => [],
   baseCategoriesConfig: () => [
     { id: 'all', label: '全部', icon: 'folder_open', iconColor: 'text-muted-foreground' },
@@ -808,7 +815,14 @@ async function locateNode(id: string): Promise<boolean> {
   return true
 }
 
-defineExpose({ locateNode })
+defineExpose({
+  locateNode,
+  /** 供外层标题栏调用（hideHeader=true 时） */
+  showSearch,
+  toggleSearch,
+  toggleSelectionMode,
+  handleAdd: () => ops.handleAdd(props.itemType),
+})
 
 // 数据转换：FolderItem[] -> HeTreeNode[]
 function convertFoldersToNodes(items: FolderItem[]): HeTreeNode[] {

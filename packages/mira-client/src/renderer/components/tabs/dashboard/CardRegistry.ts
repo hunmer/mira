@@ -1,5 +1,7 @@
 import type { Component } from 'vue'
 import type { LayoutItem } from 'grid-layout-plus'
+import type { z } from 'zod'
+import type { SchemaField } from '@/renderer/components/business/SchemaForm'
 
 /**
  * 卡片注册表 —— Dashboard 可自由添加卡片的「管理器」。
@@ -31,6 +33,16 @@ export interface CardSizeSuggestion {
 export type CardClickBehavior = 'none' | 'refresh' | 'navigate' | 'custom'
 
 /**
+ * 卡片配置字段描述。
+ *
+ * 直接复用 SchemaForm 的 SchemaField（与 PlaygroundPanel 的声明式表单一致），
+ * 这样「打开小组件配置窗口」对话框可直接把 configFields 喂给 <SchemaForm>，
+ * 无需在卡片侧重复定义控件渲染逻辑。字段联动可借助 zod refine / SchemaField 的
+ * description 说明。
+ */
+export type CardConfigField = SchemaField
+
+/**
  * 卡片类型定义。
  * - `component` 既可以是已注册的全局组件名（string），也可以是直接 import 的组件对象。
  *   使用异步组件 / defineAsyncComponent 可实现按需加载。
@@ -56,6 +68,20 @@ export interface CardDefinition {
   component: Component | string
   /** 默认透传给卡片组件的 props（每个实例共享，注意不要传响应式引用） */
   defaultProps?: Record<string, any>
+
+  /**
+   * 卡片可配置项的字段定义（SchemaField[]）。声明后，「打开小组件配置窗口」
+   * 对话框会把这些字段直接喂给 SchemaForm 自动渲染控件。
+   * 未声明 configFields 的卡片在配置窗口里只展示「无可用配置」。
+   */
+  configFields?: CardConfigField[]
+  /**
+   * 配置项的 zod schema：数据类型 + 校验规则的单一真源，与 configFields 的 name 对齐。
+   * 未提供时配置对话框退化为不做校验的宽松提交。
+   */
+  configSchema?: z.ZodType
+  /** 配置项的默认值，新建卡片实例时会与 defaultProps 合并写入实例 */
+  defaultConfig?: Record<string, any>
 }
 
 /** 注册结果 */
@@ -131,6 +157,22 @@ export class CardRegistry {
   /** 获取所有在菜单中可见的定义 */
   getMenuVisible(): CardDefinition[] {
     return this.getAll().filter((d) => d.visibleInMenu !== false)
+  }
+
+  /** 某类卡片是否支持配置（声明了 configFields） */
+  hasConfig(type: string): boolean {
+    const def = this.get(type)
+    return !!(def && def.configFields && def.configFields.length > 0)
+  }
+
+  /**
+   * 取某类卡片某个实例当前生效的配置：实例自身 config 与类型 defaultConfig 合并，
+   * 实例值优先。用于卡片渲染与配置对话框回填。
+   */
+  resolveConfig(type: string, instanceConfig?: Record<string, any>): Record<string, any> {
+    const def = this.get(type)
+    if (!def) return { ...(instanceConfig ?? {}) }
+    return { ...(def.defaultConfig ?? {}), ...(instanceConfig ?? {}) }
   }
 
   /**

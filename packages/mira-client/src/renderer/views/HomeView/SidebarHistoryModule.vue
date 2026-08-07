@@ -1,14 +1,16 @@
 <script setup lang="ts">
 /**
- * HistoryPanel —— HomeView 右侧详情面板「历史」tab 的内容。
+ * SidebarHistoryModule —— HomeSidebar 单模式列表组件。
  *
- * 顶部一个两段式分段控件切换两种模式：
- *   - 最近添加：miraSDKService.listFiles(libraryId, { sort: 'imported_at', order: 'desc', limit })
- *   - 最近查看：useViewHistoryStore() 中按当前素材库过滤的浏览记录
- *
- * 列表项点击 → emit('open', item)，由父组件路由跳转到 /file-preview。
+ * 一个实例只负责一种数据源，由 mode prop 决定：
+ *   - recent_added：miraSDKService.listFiles(libraryId, { sort: 'imported_at', order: 'desc', limit })
+ *   - recent_viewed：useViewHistoryStore() 中按当前素材库过滤的浏览记录
  *
  * 历史记录按素材库隔离（LibraryStorage 自动按库 key 分桶），切换素材库后自动重新加载。
+ * 列表项点击 → emit('open', item)，由 HomeSidebar 继续抛给父级路由跳转。
+ *
+ * 说明：本组件由原 HistoryPanel.vue 移植；最初的「分段控件切换两种模式」
+ * 已拆成两个独立模块（recent_added / recent_viewed），各用一个本组件实例。
  */
 import { ref, computed, watch, onMounted } from 'vue'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
@@ -19,13 +21,16 @@ import type { FileInfo } from '../../../shared/types'
 
 type Mode = 'recent_added' | 'recent_viewed'
 
-const props = defineProps<{ libraryId: string }>()
+const props = defineProps<{
+  libraryId: string
+  /** 本实例展示的数据源 */
+  mode: Mode
+}>()
 const emit = defineEmits<{ (e: 'open', file: FileInfo | any): void }>()
 
-const mode = ref<Mode>('recent_added')
 const viewHistoryStore = useViewHistoryStore()
 
-// 最近添加：远程拉取
+// ====== 最近添加：远程拉取 ======
 const recentAdded = ref<FileInfo[]>([])
 const loadingAdded = ref(false)
 const addedError = ref('')
@@ -48,7 +53,7 @@ const fetchRecentAdded = async (libraryId: string) => {
     })
     recentAdded.value = result.files || []
   } catch (e: any) {
-    console.error('[HistoryPanel] 加载最近添加失败:', e)
+    console.error('[SidebarHistoryModule] 加载最近添加失败:', e)
     addedError.value = e?.message || '加载失败'
     recentAdded.value = []
   } finally {
@@ -56,7 +61,7 @@ const fetchRecentAdded = async (libraryId: string) => {
   }
 }
 
-// 最近查看：来自浏览历史 store（按当前库过滤）
+// ====== 最近查看：来自浏览历史 store（按当前库过滤） ======
 const recentViewed = computed(() => viewHistoryStore.getLibraryRecords(props.libraryId))
 
 // 当前模式下的展示列表（统一成带 thumbnail/name/time 的结构）
@@ -72,8 +77,8 @@ interface DisplayRow {
 }
 
 const displayRows = computed<DisplayRow[]>(() => {
-  if (mode.value === 'recent_added') {
-    return recentAdded.value.map(f => ({
+  if (props.mode === 'recent_added') {
+    return recentAdded.value.map((f) => ({
       id: String(f.id),
       name: f.name,
       mimeType: f.mimeType,
@@ -84,7 +89,7 @@ const displayRows = computed<DisplayRow[]>(() => {
       time: f.createdAt || (f as any).updatedAt,
     }))
   }
-  return recentViewed.value.map(r => ({
+  return recentViewed.value.map((r) => ({
     id: r.fileId,
     name: r.name,
     mimeType: r.mimeType,
@@ -97,7 +102,7 @@ const displayRows = computed<DisplayRow[]>(() => {
 })
 
 const isEmpty = computed(() => displayRows.value.length === 0)
-const isLoading = computed(() => mode.value === 'recent_added' && loadingAdded.value)
+const isLoading = computed(() => props.mode === 'recent_added' && loadingAdded.value)
 
 const handleRowClick = (row: DisplayRow) => {
   emit('open', {
@@ -142,75 +147,39 @@ const formatSize = (bytes?: number): string => {
   return `${size.toFixed(1)} ${units[i]}`
 }
 
-// 切换到「最近添加」时（首次或后续）拉取
-const ensureRecentAdded = () => {
-  if (mode.value === 'recent_added') fetchRecentAdded(props.libraryId)
-}
-watch(mode, (m) => {
-  if (m === 'recent_added') fetchRecentAdded(props.libraryId)
-})
-
-// 切库重新加载
+// recent_added 模式：切库重新加载
 watch(
   () => props.libraryId,
   (lib) => {
-    if (mode.value === 'recent_added') fetchRecentAdded(lib)
-    // 最近查看模式：store 已按库隔离，computed 自动刷新
-  }
+    if (props.mode === 'recent_added') fetchRecentAdded(lib)
+    // recent_viewed 模式：store 已按库隔离，computed 自动刷新
+  },
 )
 
-onMounted(ensureRecentAdded)
+onMounted(() => {
+  if (props.mode === 'recent_added') fetchRecentAdded(props.libraryId)
+})
 </script>
 
 <template>
-  <div class="flex flex-col h-full">
-    <!-- 顶部分段控件 -->
-    <div class="shrink-0 mb-3">
-      <div class="inline-flex w-full p-0.5 rounded-lg bg-muted/70 text-xs">
-        <button
-          :class="[
-            'flex-1 flex items-center justify-center gap-1 py-1.5 rounded-md transition-colors',
-            mode === 'recent_added'
-              ? 'bg-background text-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground',
-          ]"
-          @click="mode = 'recent_added'"
-        >
-          <span class="material-icons text-sm">schedule</span>
-          <span>最近添加</span>
-        </button>
-        <button
-          :class="[
-            'flex-1 flex items-center justify-center gap-1 py-1.5 rounded-md transition-colors',
-            mode === 'recent_viewed'
-              ? 'bg-background text-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground',
-          ]"
-          @click="mode = 'recent_viewed'"
-        >
-          <span class="material-icons text-sm">history</span>
-          <span>最近查看</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- 列表 -->
-    <div class="flex-1 min-h-0 overflow-y-auto -mx-1 px-1">
+  <div class="flex flex-col">
+    <!-- 列表（自身限高滚动，适配侧栏空间） -->
+    <div class="max-h-72 overflow-y-auto -mx-1 px-1">
       <!-- 加载中 -->
-      <div v-if="isLoading" class="flex flex-col items-center justify-center h-full text-muted-foreground">
+      <div v-if="isLoading" class="flex flex-col items-center justify-center py-6 text-muted-foreground">
         <span class="material-icons animate-pulse mb-1">hourglass_top</span>
         <span class="text-xs">加载中...</span>
       </div>
 
-      <!-- 错误 -->
-      <div v-else-if="addedError && mode === 'recent_added'" class="flex flex-col items-center justify-center h-full text-center px-4">
+      <!-- 错误（仅最近添加模式） -->
+      <div v-else-if="addedError && mode === 'recent_added'" class="flex flex-col items-center justify-center py-6 text-center px-2">
         <span class="material-icons text-muted-foreground mb-1">cloud_off</span>
         <p class="text-xs text-muted-foreground mb-2">{{ addedError }}</p>
         <button class="text-xs text-primary hover:underline" @click="fetchRecentAdded(libraryId)">重试</button>
       </div>
 
       <!-- 空状态 -->
-      <Empty v-else-if="isEmpty" class="flex-1">
+      <Empty v-else-if="isEmpty" class="py-6">
         <EmptyMedia variant="icon">
           <span class="material-icons">{{ mode === 'recent_added' ? 'inbox' : 'history' }}</span>
         </EmptyMedia>

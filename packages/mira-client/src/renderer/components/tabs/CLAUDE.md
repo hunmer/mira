@@ -42,6 +42,11 @@ TabViewRenderer.vue (在 common/ 目录, 通用渲染器)
   component 可为异步组件（`defineAsyncComponent`）。第三方插件可运行时注册。
 - 布局持久化：`stores/dashboardLayout.ts` 负责保存 LayoutItem[] 与 instance→type 映射到 ConfigStorage。
 - 编辑模式：HomeTabView 右上角「编辑」开关，开启后卡片展示拖拽 handle 与删除按钮。
+- 卡片配置（声明式表单）：卡片可声明 `configFields: SchemaField[]` + `configSchema: z.ZodType`
+  （复用 `@/renderer/components/business/SchemaForm`），「添加卡片」菜单的「小组件配置」区
+  或卡片编辑态齿轮按钮会打开 `CardConfigDialog`，由 SchemaForm 自动渲染并校验。
+- 内置卡片：`dashboard/cards/` 下有 `HitokotoCard.vue`（一言）与 `AlbumCard.vue`
+  （相册，shadcn-vue Carousel，数据源参考 HistoryPanel）。
 
 ## Tab 类型对应关系
 

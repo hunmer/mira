@@ -18,9 +18,8 @@ import HomeSidebar from './HomeSidebar.vue'
 import HomeTabsBar from './HomeTabsBar.vue'
 import HomeDialogs from './HomeDialogs.vue'
 import PluginContributionBar from './PluginContributionBar.vue'
-import HistoryPanel from './HistoryPanel.vue'
 
-// shadcn Tabs（底部双 tab：详情 / 历史）
+// shadcn Tabs（右侧详情面板：保留 tabs 壳结构供未来扩展）
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 
 // Store imports
@@ -390,6 +389,7 @@ onUnmounted(() => {
             ref="sidebarRef"
             :home-controller="homeController"
             :tags="tagStore.tags"
+            :library-id="detailLibraryId"
             @folder-select="handleFolderSelect"
             @tag-select="handleTagSelect"
             @refresh-folders="handleRefreshFolders"
@@ -403,6 +403,7 @@ onUnmounted(() => {
             @manage-folders="showFolderManageDialog = true"
             @manage-tags="showTagManageDialog = true"
             @show-about="showAboutDialog = true"
+            @history-open="openFilePreview"
           />
         </ResizablePanel>
 
@@ -473,7 +474,7 @@ onUnmounted(() => {
           >
             <!-- 底部双 tab：内容在上，tab 条在底部 -->
             <Tabs v-model="detailPanelTab" class="flex-1 min-h-0 flex flex-col gap-0">
-              <!-- 内容区（在上）：详情 / 历史 -->
+              <!-- 内容区（在上）：详情 -->
               <TabsContent value="detail" class="flex-1 min-h-0 overflow-y-auto p-4">
                 <MediaDetailComponent
                   :item="detailSidebarItem"
@@ -484,25 +485,15 @@ onUnmounted(() => {
                   @folder-change="handleDetailFolderChange"
                 />
               </TabsContent>
-              <TabsContent value="history" class="flex-1 min-h-0 overflow-hidden p-4">
-                <HistoryPanel :library-id="detailLibraryId" @open="openFilePreview" />
-              </TabsContent>
 
-              <!-- tab 条（底部）：详情 / 历史，纯图标 + 极简 label -->
-              <TabsList class="shrink-0 h-9 w-full grid grid-cols-2 rounded-none border-t border-border/60 bg-transparent p-0">
+              <!-- tab 条（底部）：详情 -->
+              <TabsList class="shrink-0 h-9 w-full grid grid-cols-1 rounded-none border-t border-border/60 bg-transparent p-0">
                 <TabsTrigger
                   value="detail"
                   class="flex items-center justify-center gap-1 rounded-md border-0 text-xs text-muted-foreground data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none"
                 >
                   <span class="material-icons text-sm">info_outline</span>
                   <span>详情</span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="history"
-                  class="flex items-center justify-center gap-1 rounded-md border-0 text-xs text-muted-foreground data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none"
-                >
-                  <span class="material-icons text-sm">history</span>
-                  <span>历史</span>
                 </TabsTrigger>
               </TabsList>
             </Tabs>

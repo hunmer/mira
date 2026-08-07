@@ -24,6 +24,8 @@ export interface CardInstanceMeta {
   type: string
   /** 透传给卡片组件的 props（每实例独立） */
   props?: Record<string, any>
+  /** 卡片实例的配置项（对应 CardDefinition.configFields，每实例独立） */
+  config?: Record<string, any>
 }
 
 export const useDashboardLayoutStore = defineStore('dashboardLayout', () => {
@@ -199,7 +201,15 @@ export const useDashboardLayoutStore = defineStore('dashboardLayout', () => {
     if (!item) return null
 
     layout.value = [...layout.value, item]
-    instances.value = { ...instances.value, [instanceId]: { type, props: { ...(def.defaultProps ?? {}) } } }
+    instances.value = {
+      ...instances.value,
+      [instanceId]: {
+        type,
+        props: { ...(def.defaultProps ?? {}) },
+        // 用卡片类型的默认配置初始化实例配置（若有）
+        config: { ...(def.defaultConfig ?? {}) },
+      },
+    }
     await persist()
     return instanceId
   }
@@ -242,6 +252,23 @@ export const useDashboardLayoutStore = defineStore('dashboardLayout', () => {
     await persist()
   }
 
+  /** 整体替换某个实例的配置项（配置对话框保存时调用） */
+  async function updateInstanceConfig(instanceId: string, config: Record<string, any>) {
+    if (!instances.value[instanceId]) return
+    instances.value = {
+      ...instances.value,
+      [instanceId]: { ...instances.value[instanceId], config: { ...config } },
+    }
+    await persist()
+  }
+
+  /** 取某个实例当前生效的配置（与类型 defaultConfig 合并，实例值优先） */
+  function getConfig(instanceId: string | number): Record<string, any> {
+    const meta = instances.value[String(instanceId)]
+    if (!meta) return {}
+    return cardRegistry.resolveConfig(meta.type, meta.config)
+  }
+
   /** 清空所有卡片（不删除已注册的类型定义） */
   async function clearAll() {
     layout.value = []
@@ -261,6 +288,8 @@ export const useDashboardLayoutStore = defineStore('dashboardLayout', () => {
     removeCard,
     applyLayout,
     updateInstanceProps,
+    updateInstanceConfig,
+    getConfig,
     clearAll,
   }
 })
