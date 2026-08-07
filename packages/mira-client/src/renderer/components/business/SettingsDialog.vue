@@ -3,34 +3,55 @@
     :open="isVisible"
     @update:open="isVisible = $event"
   >
-    <DialogContent class="settings-dialog sm:max-w-[60vw] sm:max-h-[60vh] overflow-hidden grid-rows-[auto_1fr_auto]">
+    <DialogContent class="settings-dialog sm:max-w-[60vw] sm:max-h-[70vh] overflow-hidden grid-rows-[auto_1fr_auto]">
       <DialogHeader>
         <DialogTitle>设置</DialogTitle>
       </DialogHeader>
-      <div class="min-h-[400px] h-full flex flex-col">
+      <div class="h-[70vh] flex flex-col">
         <!-- 顶部图标导航 -->
         <nav class="border-b border-white/60 dark:border-border shrink-0">
           <div class="flex items-center justify-center gap-1 sm:gap-2 px-4 py-3 overflow-x-auto">
-            <button
-              v-for="section in settingSections"
-              :key="section.id"
-              type="button"
-              class="group flex flex-col items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl cursor-pointer transition-colors duration-200 hover:bg-muted/50"
-              :class="activeSection === section.id ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground'"
-              @click="activeSection = section.id"
-            >
-              <span class="material-icons text-[28px] leading-none transition-transform duration-200 group-hover:scale-125">{{ section.icon }}</span>
-              <span
-                class="h-4 leading-none text-xs font-medium whitespace-nowrap transition-opacity duration-200"
-                :class="activeSection === section.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
-              >{{ section.name }}</span>
-            </button>
+            <LayoutGroup id="settings-nav">
+              <button
+                v-for="section in settingSections"
+                :key="section.id"
+                type="button"
+                class="group relative flex items-start justify-center h-14 pt-2.5 rounded-xl cursor-pointer transition-all duration-200"
+                :class="[
+                  activeSection === section.id
+                    ? 'w-20 px-3 text-primary'
+                    : 'w-16 px-2 text-muted-foreground hover:text-foreground hover:bg-muted/50',
+                ]"
+                @click="activeSection = section.id"
+                @mouseenter="hoveredSection = section.id"
+                @mouseleave="hoveredSection = null"
+              >
+                <!-- 激活态背景：共享 layoutId，切换 tab 时由 motion-v 在按钮间平滑滑动 -->
+                <Motion
+                  v-if="activeSection === section.id"
+                  layoutId="settings-active-tab"
+                  :transition="{ type: 'spring', stiffness: 400, damping: 32 }"
+                  class="absolute inset-0 z-0 rounded-xl bg-primary/10"
+                />
+                <span
+                  class="relative z-[1] material-icons text-[28px] leading-none transition-transform duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]"
+                  :class="activeSection === section.id ? 'scale-125' : 'group-hover:scale-125'"
+                >{{ section.icon }}</span>
+                <!-- 副标题：绝对定位，不占布局空间；激活或 hover 时淡入 -->
+                <span
+                  class="absolute top-[34px] left-1/2 -translate-x-1/2 z-[1] text-xs font-medium whitespace-nowrap pointer-events-none transition-opacity duration-200"
+                  :class="activeSection === section.id || isHovered(section.id) ? 'opacity-100' : 'opacity-0'"
+                >{{ section.name }}</span>
+              </button>
+            </LayoutGroup>
           </div>
         </nav>
 
         <!-- 动态组件渲染 -->
         <div class="flex-1 p-4 overflow-y-auto min-h-0">
-          <component :is="currentComponent" />
+          <Transition name="panel-fade" mode="out-in">
+            <component :is="currentComponent" :key="activeSection" />
+          </Transition>
         </div>
       </div>
     </DialogContent>
@@ -39,6 +60,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
+import { Motion, LayoutGroup } from 'motion-v'
 import { useSettingsStore } from '../../stores/settings'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
@@ -81,6 +103,10 @@ const isVisible = computed({
 
 const activeSection = ref('general')
 
+// 当前 hover 的分类 id，用于控制副标题显隐
+const hoveredSection = ref<string | null>(null)
+const isHovered = (id: string) => hoveredSection.value === id
+
 // 计算属性
 const currentComponent = computed(() => {
   const componentMap: Record<string, any> = {
@@ -111,3 +137,19 @@ watch(isVisible, async (visible) => {
   }
 })
 </script>
+
+<style scoped>
+/* 切换 tab 内容渐显动画 */
+.panel-fade-enter-active,
+.panel-fade-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.panel-fade-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+.panel-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+</style>

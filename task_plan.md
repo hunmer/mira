@@ -27,6 +27,9 @@ Add a General settings toggle that installs/removes an OS login item for the scr
 - [complete] Inspect the existing Mira image preview, whiteboard image data, and double-click event flow.
 - [complete] Implement the whiteboard image preview Dialog and connect double-click opening.
 - [complete] Run focused build/static verification and document acceptance steps.
+- [complete] Compare context-menu handling across media item views and identify the waterfall-only break.
+- [complete] Implement the smallest compatible waterfall context-menu fix.
+- [complete] Run focused verification and document acceptance steps.
 - [complete] Inspect Woven block hierarchy, deletion, selection, and camera-focus APIs.
 - [complete] Implement the fixed object-manager trigger and node sidebar.
 - [complete] Run focused build/static verification and document acceptance steps.
@@ -68,3 +71,4 @@ Add a General settings toggle that installs/removes an OS login item for the scr
 | First checklist patch assumed an explicit `defineOptions` call that the component does not contain | 1 | Split the patch against the component's actual script and template blocks. |
 | Main-process TypeScript check is blocked by existing `DragDropHandler` and mixed Vite-version errors | 1 | Confirmed no diagnostics reference the new lifecycle service/handler changes; production main build passes. |
 | Standalone `status` returns exit code 1 when the service is stopped | 1 | This is intentional CLI status semantics; it still emits the JSON health/managed state and does not mutate files. |
+| Restoring the changed waterfall line to CRLF made `git diff --check` report trailing whitespace | 1 | Kept the changed line as LF, matching the repository's established handling for this mixed-line-ending file; scoped diff check passes. |

@@ -74,3 +74,5 @@
 - Frame integration was verified through real canvas box-selection and the existing create-Frame action: two child shapes displayed `Frame`, while the Frame node itself displayed `画布根级`.
 - Auto-start uses Electron login-item settings with `--mira-server-startup`; that mode runs the packaged lifecycle script and exits without normal app cleanup.
 - The setting is read from the OS on mount and persisted in the existing settings store after a successful IPC update.
+- The shared `MediaContextMenu` resolves the target item during capture, while Radix opens the menu from its trigger handler during bubbling.
+- `MediaWaterfallItem.vue` uniquely used `@contextmenu.prevent`; this marks the event as default-prevented before it reaches Radix, so its composed trigger handler skips opening. Grid uses plain `@contextmenu`, and list relies on the shared wrapper.

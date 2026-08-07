@@ -67,9 +67,8 @@
         <div class="flex-1 overflow-y-auto w-full min-w-0" @wheel="handleCtrlWheel">
           <!-- 网格视图 -->
           <MediaGridComponent v-if="viewMode === 'grid'" :key="`grid-${viewMode}`" class="p-5"
-            :items="paginatedMediaItems"
-            :selected-items="selectedItems" :card-size="cardSize" :columns-per-row="columnsPerRow"
-            :is-trash="viewType === 'trash'" @media-click="handleMediaClick"
+            :items="paginatedMediaItems" :selected-items="selectedItems" :card-size="cardSize"
+            :columns-per-row="columnsPerRow" :is-trash="viewType === 'trash'" @media-click="handleMediaClick"
             @media-double-click="handleMediaDoubleClick" @media-select="handleMediaSelect"
             @media-context-menu="handleMediaContextMenu" @media-info="handleMediaInfo"
             @media-set-folder="handleMediaSetFolder" @media-set-tags="handleMediaSetTags"
@@ -77,21 +76,20 @@
 
           <!-- 列表视图 -->
           <MediaListComponent v-if="viewMode === 'list'" :key="`list-${viewMode}`" class="p-5"
-            :items="paginatedMediaItems"
-            :selected-items="selectedItems" :is-trash="viewType === 'trash'" @click="handleMediaClick"
-            @dblclick="handleMediaDoubleClick" @media-context-menu="handleMediaContextMenu"
+            :items="paginatedMediaItems" :selected-items="selectedItems" :is-trash="viewType === 'trash'"
+            @click="handleMediaClick" @dblclick="handleMediaDoubleClick" @media-context-menu="handleMediaContextMenu"
             @media-info="handleMediaInfo" @media-set-folder="handleMediaSetFolder" @media-set-tags="handleMediaSetTags"
             @media-select="handleMediaSelect" @media-delete="handleMediaDelete" @media-restore="handleMediaRestore" />
 
           <!-- 瀑布流视图 -->
           <div v-if="viewMode === 'waterfall'" class="w-full h-full min-h-96">
             <WaterfallComponent ref="waterfallRef" :key="`waterfall-${viewMode}`" class="p-5"
-              :items="paginatedMediaItems"
-              :selected-items="selectedItems" :is-trash="viewType === 'trash'" :column-width="dynamicColumnWidth"
-              :columns-per-row="columnsPerRow" :gap="16" @click="handleMediaClick" @dblclick="handleMediaDoubleClick"
-              @media-context-menu="handleMediaContextMenu" @media-info="handleMediaInfo"
-              @media-set-folder="handleMediaSetFolder" @media-set-tags="handleMediaSetTags"
-              @media-select="handleMediaSelect" @media-delete="handleMediaDelete" @media-restore="handleMediaRestore" />
+              :items="paginatedMediaItems" :selected-items="selectedItems" :is-trash="viewType === 'trash'"
+              :column-width="dynamicColumnWidth" :columns-per-row="columnsPerRow" :gap="16" @click="handleMediaClick"
+              @dblclick="handleMediaDoubleClick" @media-context-menu="handleMediaContextMenu"
+              @media-info="handleMediaInfo" @media-set-folder="handleMediaSetFolder"
+              @media-set-tags="handleMediaSetTags" @media-select="handleMediaSelect" @media-delete="handleMediaDelete"
+              @media-restore="handleMediaRestore" />
           </div>
 
           <!-- 如果没有匹配的视图模式 -->
@@ -186,7 +184,7 @@
         <Breadcrumb :items="breadcrumbItems" @select="handleBreadcrumbClick" />
 
         <!-- 当前路径和文件数 -->
-        <div class="flex items-center space-x-1 flex-shrink-0">
+        <div v-if="filteredMediaItems.length > 0" class="flex items-center space-x-1 flex-shrink-0 me-2">
           <span class="text-muted-foreground dark:text-muted-foreground">
             {{ filteredMediaItems.length }} 个文件
           </span>
@@ -252,7 +250,6 @@ import { appService } from '@renderer/services'
 import { useTagStore } from '@renderer/stores/tag'
 import { useHomeController } from '@renderer/controllers/HomeController'
 import type { BreadcrumbItem } from '@renderer/controllers/HomeController'
-import { useTabs } from '@renderer/composables/useTabs'
 import { useMediaOperations, useFilters, useViewModeConfig } from '@renderer/composables'
 // import { useTabPagination } from '@renderer/composables/useTabPagination' // 已替换为MediaTabData
 import { useMediaTabData } from '@renderer/composables/useMediaTabData'
@@ -313,7 +310,6 @@ const mediaStore = useMediaStore()
 const folderStore = useFolderStore()
 const libraryStore = useLibraryStore()
 const homeController = useHomeController()
-const { createTabFromFolder, createTabFromTag } = useTabs()
 
 // 使用独立的Tab分页状态管理 (已由MediaTabData替代)
 // const tabPagination = useTabPagination(props.tabId)
@@ -567,23 +563,25 @@ const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
 })
 
 /**
- * 面包屑点击：打开对应的 文件夹/标签 Tab（已存在则切换过去）。
+ * 面包屑点击：原地替换当前 Tab 的内容（不新开/切换 Tab）。
  */
 const handleBreadcrumbClick = (item: BreadcrumbItem) => {
+  let kind: 'folder' | 'tag' | 'all'
+  let payload: { id?: string; title?: string } = {}
   if (item.id === 'all') {
-    createTabFromFolder({ id: 'all', title: '全部文件' }, props.libraryId)
+    kind = 'all'
+  } else if (item.id.startsWith('folder-')) {
+    kind = 'folder'
+    payload.id = item.id.slice('folder-'.length)
+    payload.title = item.label
+  } else if (item.id.startsWith('tag-')) {
+    kind = 'tag'
+    payload.id = item.id.slice('tag-'.length)
+    payload.title = item.label
+  } else {
     return
   }
-  if (item.id.startsWith('folder-')) {
-    // createTabFromFolder 会自行识别已存在的 tab 并切换
-    const folderId = item.id.slice('folder-'.length)
-    createTabFromFolder({ id: folderId, title: item.label }, props.libraryId)
-    return
-  }
-  if (item.id.startsWith('tag-')) {
-    const tagId = item.id.slice('tag-'.length)
-    createTabFromTag({ id: tagId, title: item.label }, props.libraryId)
-  }
+  window.dispatchEvent(new CustomEvent('home-tab-replace', { detail: { kind, payload } }))
 }
 
 // 选中项变化时同步 FileInfo 到全局 store

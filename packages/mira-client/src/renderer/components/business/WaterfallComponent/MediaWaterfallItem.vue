@@ -15,7 +15,7 @@
       class="relative w-full h-full"
       :style="mediaContainerStyle"
       @dblclick="handleDoubleClick"
-      @contextmenu.prevent="handleContextMenu"
+      @contextmenu="handleContextMenu"
       @mouseenter="handleMouseEnter"
       @mouseleave="handleMouseLeave"
       @mousemove="handleMouseMove"

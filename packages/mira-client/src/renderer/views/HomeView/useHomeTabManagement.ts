@@ -7,7 +7,7 @@ import { useLibraryStore } from '@/renderer/stores/library'
 import { useMediaStore } from '@renderer/stores/media'
 import { useHomeController } from '@renderer/controllers/HomeController'
 import { tabRegistryAPI, type TabViewConfig } from '@renderer/api/TabRegistryAPI'
-import { cacheTabData, useMediaTabData } from '@renderer/composables/useMediaTabData'
+import { cacheTabData, clearTabCache, useMediaTabData } from '@renderer/composables/useMediaTabData'
 import {
   useHomeRouteHandler
 } from '@renderer/modules/home'
@@ -376,6 +376,74 @@ export function useHomeTabManagement(
     switchToTabWithCallback(activeTab.id)
   }
 
+  /**
+   * 原地替换当前 Tab 的内容（保留同一个 Tab 槽位）。
+   * 用于面包屑点击：不新建/切换 Tab，而是把当前 Tab 变成目标 文件夹/标签/全部文件。
+   */
+  const replaceCurrentTab = async (
+    kind: 'folder' | 'tag' | 'all',
+    payload: { id?: string; title?: string; label?: string }
+  ) => {
+    const current = getCurrentTab()
+    if (!current) return
+
+    const libraryId = current.data?.libraryId
+
+    // 1. 计算新的 tab 元数据（与 createTabFromFolder/Tag 保持一致）
+    let newId = current.id
+    let newType = current.type
+    let newData = current.data
+    let newLabel = current.label
+    let newIcon = current.icon
+
+    if (kind === 'all') {
+      newId = 'all'
+      newType = 'all'
+      newLabel = '全部文件'
+      newIcon = 'folder'
+      newData = { ...current.data, id: 'all', title: '全部文件', libraryId }
+    } else if (kind === 'folder') {
+      const folderId = String(payload.id)
+      newId = folderId.startsWith('folder-') ? folderId : `folder-${folderId}`
+      newType = 'folder'
+      newIcon = 'folder'
+      newLabel = payload.title || payload.label || folderId
+      newData = { ...current.data, id: folderId, title: newLabel, libraryId }
+    } else {
+      // tag
+      const tagId = String(payload.id)
+      newId = tagId.startsWith('tag-') ? tagId : `tag-${tagId}`
+      newType = 'tag'
+      newIcon = 'label'
+      newLabel = payload.title || `标签: ${payload.label || tagId}`
+      newData = { ...current.data, id: tagId, title: newLabel, libraryId }
+    }
+
+    // 2. 原地更新当前 tab（保留槽位，id 变化以匹配新内容并触发视图配置重新拉取）
+    const oldId = current.id
+    Object.assign(current, {
+      id: newId,
+      type: newType,
+      data: newData,
+      label: newLabel,
+      icon: newIcon,
+      needUpdate: true
+    })
+
+    // 3. 清除旧 id 的视图配置缓存，并主动为新 id 加载视图配置
+    delete tabViewConfigMap.value[oldId]
+    await loadTabViewConfig(current)
+    currentTabViewConfig.value = tabViewConfigMap.value[newId] ?? null
+
+    // 4. 清掉媒体数据缓存 & 标记需要更新，触发重新加载
+    clearTabCache(newId)
+    setTabNeedUpdate(newId, true)
+
+    // 5. 同步路由 / 控制器状态，并触发数据懒加载
+    await handleTabSwitch(current)
+    switchToTabWithCallback(newId)
+  }
+
   // 关闭Tab的包装方法
   const closeTabWithCallback = async (tabId: string) => {
     await closeTab(tabId, {
@@ -429,6 +497,7 @@ export function useHomeTabManagement(
     handleReopenClosedTab,
     handleCloseCurrentTab,
     refreshCurrentTabAfterLibrarySwitch,
+    replaceCurrentTab,
     loadTabData,
 
     // 分页状态管理

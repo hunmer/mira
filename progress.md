@@ -74,3 +74,7 @@
 - Final production build and scoped `vue-tsc` passed; Frame membership, focus selection, deletion, desktop layout, and mobile layout were verified in browser automation.
 - Implemented the General settings “自启动服务” switch, system login-item IPC, preload/shared API contract, and hidden startup-only main-process branch.
 - Main, preload, and full renderer production builds passed; scoped `git diff --check` passed.
+- Started the waterfall media-item context-menu regression task.
+- Removed the waterfall item's local `contextmenu.prevent` modifier so the shared Radix context-menu trigger receives a non-cancelled event, matching the working grid view.
+- Client renderer production build and scoped `git diff --check` passed; only existing Vite/Rollup warnings remain.
+- Final diff remains exactly one functional line; the changed line uses LF because Git flags newly added CRLF content in this existing mixed-line-ending file.

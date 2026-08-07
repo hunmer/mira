@@ -49,7 +49,7 @@
       </div>
       
       <!-- 多选模式 - 叠放相册效果 -->
-      <div v-else class="relative">
+      <div v-if="displayItems.length > 1" class="relative">
         <div class="image-stack relative w-[120px] h-[120px] mx-auto">
           <div
             v-for="(item, index) in displayItems.slice(0, 4)"
