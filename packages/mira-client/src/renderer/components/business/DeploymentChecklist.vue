@@ -36,6 +36,14 @@ const emit = defineEmits<{
 }>()
 
 const settingsStore = useSettingsStore()
+const registry = ref('https://registry.npmjs.org/')
+const proxy = ref('')
+const registryOptions = [
+  { label: 'npm 官方', region: '国外', value: 'https://registry.npmjs.org/' },
+  { label: 'npmmirror（阿里）', region: '国内', value: 'https://registry.npmmirror.com/' },
+  { label: '腾讯云', region: '国内', value: 'https://mirrors.cloud.tencent.com/npm/' },
+  { label: '华为云', region: '国内', value: 'https://repo.huaweicloud.com/repository/npm/' },
+]
 // 复用 settingsStore 已有的主题计算（支持 light/dark/auto）
 const isDarkMode = computed(() => settingsStore.isDarkMode)
 
@@ -74,27 +82,13 @@ const defaultTasks: Task[] = [
   },
   {
     id: 3,
-    title: '配置数据目录',
-    subtitle: '在应用数据目录中创建 mira-app-server 持久化目录。',
-    status: 'pending',
-    info: null,
-  },
-  {
-    id: 4,
     title: '启动服务器',
     subtitle: 'mira-app-server start --http-port 8081 --ws-port 8018',
     status: 'pending',
     info: null,
   },
   {
-    id: 5,
-    title: '健康检查并连接',
-    subtitle: 'GET /health 返回 status: ok。',
-    status: 'pending',
-    info: null,
-  },
-  {
-    id: 6,
+    id: 4,
     title: '创建默认素材库',
     subtitle: '使用默认管理员创建或复用“默认素材库”。',
     status: 'pending',
@@ -155,7 +149,7 @@ async function runPipeline() {
   api.onDeployProgress(onProgress)
 
   try {
-    const result = await api.deploy()
+    const result = await api.deploy({ registry: registry.value, proxy: proxy.value || undefined })
     if (!result.success) {
       const current = tasks.value.find(task => task.status === 'running')
       if (current) {
@@ -258,7 +252,7 @@ onBeforeUnmount(() => {
             ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30'
             : 'bg-amber-100 text-amber-700 hover:bg-amber-200',
         )"
-        @click="runUpdate"
+        @click="runUpdate({ registry, proxy: proxy || undefined })"
       >
         {{ installedVersion ? '更新' : '安装' }}
       </button>
@@ -281,6 +275,22 @@ onBeforeUnmount(() => {
       )"
     >
       <div v-for="(line, i) in updateLog" :key="i">{{ line }}</div>
+    </div>
+
+    <div :class="cn('mb-3 grid gap-2 rounded-2xl p-3 text-xs', isDarkMode ? 'bg-neutral-950 text-neutral-200' : 'bg-neutral-100 text-neutral-800')">
+      <label class="grid gap-1">
+        <span class="font-semibold">npm 镜像站</span>
+        <select v-model="registry" class="h-8 rounded-lg border border-border bg-background px-2 text-xs">
+          <option v-for="option in registryOptions" :key="option.value" :value="option.value">
+            {{ option.label }}（{{ option.region }}）
+          </option>
+          <option disabled>清华大学（国内，已停止 npm 镜像服务）</option>
+        </select>
+      </label>
+      <label class="grid gap-1">
+        <span class="font-semibold">代理设置（可选）</span>
+        <input v-model="proxy" type="url" placeholder="http://127.0.0.1:7890" class="h-8 rounded-lg border border-border bg-background px-2 text-xs" />
+      </label>
     </div>
 
     <!-- Tasks -->

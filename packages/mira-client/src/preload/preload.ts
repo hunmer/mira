@@ -215,10 +215,10 @@ const electronAPI: ElectronAPI = {
       ipcRenderer.invoke('server-deploy:getInstalledVersion'),
     getLatestVersion: () =>
       ipcRenderer.invoke('server-deploy:getLatestVersion'),
-    update: () =>
-      ipcRenderer.invoke('server-deploy:update'),
-    deploy: () =>
-      ipcRenderer.invoke('server-deploy:deploy'),
+    update: (options?: { registry?: string; proxy?: string }) =>
+      ipcRenderer.invoke('server-deploy:update', options),
+    deploy: (options?: { registry?: string; proxy?: string }) =>
+      ipcRenderer.invoke('server-deploy:deploy', options),
     onUpdateProgress: (callback: (progress: any) => void) => {
       ipcRenderer.on('server-deploy:update-progress', (_event, progress) => callback(progress))
     },

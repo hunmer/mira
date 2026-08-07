@@ -70,15 +70,19 @@ async function isHealthy() {
   }
 }
 
-function resolveExecutable() {
-  const prefix = execFileSync('npm', ['prefix', '-g'], {
+function resolveServerCli() {
+  const globalRoot = execFileSync('npm', ['root', '-g'], {
     encoding: 'utf8',
     shell: IS_WIN,
     windowsHide: true,
   }).trim()
-  return IS_WIN
-    ? path.join(prefix, `${PACKAGE_NAME}.cmd`)
-    : path.join(prefix, 'bin', PACKAGE_NAME)
+  const packageDir = path.join(globalRoot, PACKAGE_NAME)
+  const packageJson = JSON.parse(readFileSync(path.join(packageDir, 'package.json'), 'utf8'))
+  const binPath = typeof packageJson.bin === 'string'
+    ? packageJson.bin
+    : packageJson.bin?.[PACKAGE_NAME]
+  if (!binPath) throw new Error(`Server CLI entry not found in ${PACKAGE_NAME}/package.json`)
+  return path.resolve(packageDir, binPath)
 }
 
 function stopProcessTree(pid) {
@@ -109,22 +113,23 @@ async function startService() {
   mkdirSync(stateDir, { recursive: true })
   mkdirSync(dataPath, { recursive: true })
   writeFileSync(configPointerFile, JSON.stringify({ stateDir, dataPath, httpPort, wsPort }, null, 2))
-  const executable = resolveExecutable()
-  if (!existsSync(executable)) {
-    throw new Error(`Server executable not found: ${executable}`)
+  const serverCli = resolveServerCli()
+  if (!existsSync(serverCli)) {
+    throw new Error(`Server CLI not found: ${serverCli}`)
   }
 
   const logFd = openSync(logFile, 'a')
   const child = spawn(
-    executable,
-    ['start', '--http-port', String(httpPort), '--ws-port', String(wsPort), '--data-path', dataPath],
+    process.execPath,
+    [serverCli, 'start', '--http-port', String(httpPort), '--ws-port', String(wsPort), '--data-path', dataPath],
     {
       detached: true,
-      shell: IS_WIN,
+      shell: false,
       windowsHide: true,
       stdio: ['ignore', logFd, logFd],
       env: {
         ...process.env,
+        ELECTRON_RUN_AS_NODE: '1',
         INITIAL_ADMIN_USERNAME: 'admin',
         INITIAL_ADMIN_PASSWORD: 'admin123',
       },
@@ -135,7 +140,7 @@ async function startService() {
   child.unref()
   writeFileSync(stateFile, JSON.stringify({
     pid: child.pid,
-    executable,
+    executable: serverCli,
     dataPath,
     httpPort,
     wsPort,

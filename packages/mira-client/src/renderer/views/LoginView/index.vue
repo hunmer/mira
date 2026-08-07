@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/renderer/stores/auth'
 import { useServerListStore } from '@/renderer/stores/serverList'
 import { Motion } from 'motion-v'
 import Aurora from '@renderer/components/Aurora.vue'
+import { useToast } from '@renderer/composables/useToast'
 
 // LoginView 子组件
 import LoginStepper from './LoginStepper.vue'
@@ -88,6 +89,14 @@ function handleClose() {
   }
 }
 
+// 错误提示改为 toast
+const toast = useToast()
+watch(error, (val) => {
+  if (val) {
+    toast.add({ severity: 'error', detail: val, life: 4000 })
+  }
+})
+
 onMounted(async () => {
   authStore.clearError()
   await serverListStore.initializeServerList()
@@ -123,15 +132,6 @@ onMounted(async () => {
 
       <!-- Stepper -->
       <LoginStepper :current-step="currentStep" :health-data="healthData" />
-
-      <!-- Error banner -->
-      <div v-if="error" class="bg-destructive/10 dark:bg-destructive/30 border border-destructive/40 dark:border-destructive/40 text-destructive dark:text-destructive p-3 rounded-lg text-sm flex items-center gap-2 relative mb-4">
-        <span class="material-icons text-xl shrink-0">error</span>
-        {{ error }}
-        <button type="button" class="absolute right-2 top-1/2 -translate-y-1/2 bg-transparent border-none text-destructive dark:text-destructive cursor-pointer p-1" @click="error = ''">
-          <span class="material-icons text-base">close</span>
-        </button>
-      </div>
 
       <!-- Step 1: Server Connection -->
       <ServerStep

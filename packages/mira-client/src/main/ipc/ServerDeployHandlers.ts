@@ -29,6 +29,7 @@ const WS_PORT = 8018
 const DEFAULT_ADMIN_USERNAME = 'admin'
 const DEFAULT_ADMIN_PASSWORD = 'admin123'
 const DEFAULT_LIBRARY_NAME = '默认素材库'
+interface NpmOptions { registry?: string; proxy?: string }
 
 export interface InstalledVersionInfo {
   installed: boolean
@@ -87,9 +88,10 @@ export class ServerDeployHandlers {
     command: string,
     args: string[],
     onOutput: (line: string) => void,
+    env?: NodeJS.ProcessEnv,
   ): Promise<void> {
     return new Promise((resolve, reject) => {
-      const child = spawn(command, args, { shell: IS_WIN, windowsHide: true })
+      const child = spawn(command, args, { shell: IS_WIN, windowsHide: true, env })
       let settled = false
 
       const emitChunk = (chunk: Buffer | string) => {
@@ -114,6 +116,21 @@ export class ServerDeployHandlers {
         else reject(new Error(`${command} 退出码 ${exitCode ?? -1}`))
       })
     })
+  }
+
+  private npmEnv(options?: NpmOptions): NodeJS.ProcessEnv {
+    const env = { ...process.env }
+    const setUrl = (value: string | undefined, keys: string[]) => {
+      if (!value?.trim()) return
+      const url = new URL(value.trim())
+      if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+        throw new Error('npm 镜像和代理仅支持 http/https 地址')
+      }
+      keys.forEach(key => { env[key] = url.toString() })
+    }
+    setUrl(options?.registry, ['npm_config_registry'])
+    setUrl(options?.proxy, ['npm_config_proxy', 'npm_config_https_proxy', 'HTTP_PROXY', 'HTTPS_PROXY'])
+    return env
   }
 
   private async checkHealth(): Promise<{ ok: boolean; detail?: string }> {
@@ -209,6 +226,7 @@ export class ServerDeployHandlers {
 
   private async handleDeploy(
     event: IpcMainInvokeEvent,
+    options?: NpmOptions,
   ): Promise<{ success: boolean; data?: { defaultLibraryId: string }; message?: string }> {
     if (this.deploymentInProgress) {
       return { success: false, message: '已有部署任务正在执行' }
@@ -244,29 +262,23 @@ export class ServerDeployHandlers {
 
       await runStep(2, async output => {
         output(`执行 npm install -g ${PACKAGE_NAME}@latest`)
-        await this.runCommand(NPM_BIN, ['install', '-g', `${PACKAGE_NAME}@latest`], output)
+        if (options?.registry?.trim()) output(`npm 镜像：${options.registry.trim()}`)
+        if (options?.proxy?.trim()) output('npm 代理：已启用')
+        await this.runCommand(NPM_BIN, ['install', '-g', `${PACKAGE_NAME}@latest`], output, this.npmEnv(options))
       })
 
       const dataPath = path.join(app.getPath('userData'), PACKAGE_NAME)
-      await runStep(3, async output => {
-        await mkdir(dataPath, { recursive: true })
-        output(`数据目录：${dataPath}`)
-      })
+      await mkdir(dataPath, { recursive: true })
 
-      await runStep(4, async output => {
+      await runStep(3, async output => {
         output(`启动 ${SERVER_BIN}，HTTP ${HTTP_PORT} / WebSocket ${WS_PORT}`)
         await this.startServer(output)
-      })
-
-      await runStep(5, async output => {
         const health = await this.checkHealth()
         if (!health.ok) throw new Error('健康检查失败')
-        output(`GET http://127.0.0.1:${HTTP_PORT}/health`)
-        if (health.detail) output(health.detail)
       })
 
       let defaultLibraryId = ''
-      await runStep(6, async output => {
+      await runStep(4, async output => {
         defaultLibraryId = await this.ensureDefaultLibrary(dataPath, output)
       })
 
@@ -361,11 +373,13 @@ export class ServerDeployHandlers {
    */
   private async handleUpdate(
     _event: IpcMainInvokeEvent,
+    options?: NpmOptions,
   ): Promise<{ success: boolean; data?: UpdateResult; message?: string }> {
     return new Promise(resolve => {
       const child = spawn(NPM_BIN, ['install', '-g', `${PACKAGE_NAME}@latest`], {
         // Windows 需 shell:true 才能解析 npm.cmd（CVE-2024-27980 后强制）
         shell: IS_WIN,
+        env: this.npmEnv(options),
       })
 
       const emit = (p: UpdateProgress) => {

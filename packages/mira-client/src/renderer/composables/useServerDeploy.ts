@@ -87,7 +87,7 @@ export function useServerDeploy() {
     }
   }
 
-  async function runUpdate(): Promise<void> {
+  async function runUpdate(options?: { registry?: string; proxy?: string }): Promise<void> {
     if (!isElectron || updateInProgress.value) return
     updateInProgress.value = true
     updateLog.value = []
@@ -99,7 +99,7 @@ export function useServerDeploy() {
     api.onUpdateProgress(onProgress)
 
     try {
-      const res = await api.update()
+      const res = await api.update(options)
       if (res.success) {
         // 更新成功后刷新版本状态
         await checkVersion()

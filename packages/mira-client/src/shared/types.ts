@@ -513,13 +513,13 @@ export interface ElectronAPI {
       data: { latest: string | null; error?: string }
     }>
     /** 一键更新到最新版（spawn npm install -g，实时推送进度事件） */
-    update: () => Promise<{
+    update: (options?: { registry?: string; proxy?: string }) => Promise<{
       success: boolean
       data?: { success: boolean; version?: string; message?: string }
       message?: string
     }>
     /** 执行完整的本地部署流水线 */
-    deploy: () => Promise<{
+    deploy: (options?: { registry?: string; proxy?: string }) => Promise<{
       success: boolean
       data?: { defaultLibraryId: string }
       message?: string

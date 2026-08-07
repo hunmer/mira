@@ -51,7 +51,7 @@ function handleConnect(defaultLibraryId: string) {
   <!-- 部署指南入口 -->
   <button
     type="button"
-    class="w-full mt-2 flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-primary dark:text-muted-foreground dark:hover:text-primary bg-transparent border-none cursor-pointer transition-colors"
+    class="w-full mt-3 flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-primary dark:text-muted-foreground dark:hover:text-primary bg-transparent border-none cursor-pointer transition-colors"
     @click="showDeployGuide = true"
   >
     <span class="material-icons text-sm">rocket_launch</span>
@@ -60,7 +60,7 @@ function handleConnect(defaultLibraryId: string) {
 
   <!-- 部署指南对话框 -->
   <Dialog :open="showDeployGuide" @update:open="showDeployGuide = $event">
-    <DialogContent class="h-[min(760px,calc(100vh-2rem))] grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden sm:max-w-[520px]">
+    <DialogContent class="max-h-[min(760px,calc(100vh-2rem))] grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden sm:max-w-[520px]">
       <DialogHeader>
         <DialogTitle>部署指南</DialogTitle>
         <DialogDescription>

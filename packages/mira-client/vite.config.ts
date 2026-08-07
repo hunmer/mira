@@ -41,7 +41,11 @@ export default defineConfig({
     }),
     // 只在开发环境启用 Vue DevTools
     ...(process.env.NODE_ENV !== 'production' ? [vueDevTools({
-      launchEditor: getEditor()
+      launchEditor: getEditor(),
+      componentInspector: {
+        // Ctrl+Shift+D 触发审查元素模式，点击页面元素跳转到 IDE 对应代码
+        toggleComboKey: 'control-shift-d'
+      }
     })] : []),
     // 只在开发环境启用 Vite Inspect
     ...(process.env.NODE_ENV !== 'production' ? [Inspect()] : []),

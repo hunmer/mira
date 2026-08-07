@@ -86,12 +86,27 @@ async function handleDeleteServer() {
         <div
           v-for="server in services"
           :key="server.id"
-          class="flex items-center gap-3 p-3 border-2 rounded-xl cursor-pointer transition-all group"
+          class="relative flex items-center gap-3 p-3 border-2 rounded-xl cursor-pointer transition-all overflow-hidden group"
           :class="loading && selectedServerId === server.id
             ? 'border-primary dark:border-primary bg-primary/15 dark:bg-primary/10'
             : 'border-border dark:border-border hover:border-primary dark:hover:border-primary hover:bg-primary/10 dark:hover:bg-primary/10'"
           @click="emit('quickConnect', server)"
         >
+          <!-- 连接中 loader 遮罩 -->
+          <div
+            v-if="loading && selectedServerId === server.id"
+            class="absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-[1px]"
+          >
+            <div class="flex items-center gap-2 text-primary dark:text-primary">
+              <Loader2 class="w-4 h-4 animate-spin" />
+              <span class="text-xs font-medium">连接中...</span>
+            </div>
+          </div>
+          <!-- 顶部扫描线动效 -->
+          <div
+            v-if="loading && selectedServerId === server.id"
+            class="absolute inset-x-0 top-0 h-0.5 bg-primary/70 dark:bg-primary/70 animate-[scan_1.2s_ease-in-out_infinite]"
+          />
           <span class="material-icons text-lg text-primary dark:text-primary">dns</span>
           <div class="flex flex-col min-w-0 flex-1">
             <div class="flex items-center gap-2">
@@ -169,3 +184,14 @@ async function handleDeleteServer() {
     </form>
   </div>
 </template>
+
+<style scoped>
+@keyframes scan {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+</style>
