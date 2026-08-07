@@ -1,10 +1,5 @@
 <template>
   <div class="w-80 flex-shrink-0 bg-white flex flex-col border-l border-border">
-    <!-- 顶部标题 -->
-    <div class="border-b border-border p-4">
-      <h2 class="text-lg font-semibold text-foreground">详细信息</h2>
-    </div>
-
     <!-- 内容区域 -->
     <div class="flex-grow overflow-y-auto p-4">
       <!-- 详细信息内容 -->
@@ -14,7 +9,7 @@
           <img 
             :alt="image.name"
             :src="imageSrc"
-            class="rounded-lg object-cover w-full h-48 cursor-pointer"
+            class="rounded-lg object-contain w-full max-h-[300px] cursor-pointer"
           />
           <div class="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
             {{ getFileExtension(image) }}

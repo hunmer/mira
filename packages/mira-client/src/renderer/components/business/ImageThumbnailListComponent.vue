@@ -7,7 +7,7 @@
         v-memo="[index === currentImageIndex, image.thumbnailPath, image.url, cacheKey]"
         :alt="image.name"
         :class="[
-          'h-24 w-24 cursor-pointer rounded-lg border-2 object-cover',
+          'w-24 cursor-pointer rounded-lg border-2 object-contain',
           index === currentImageIndex
             ? 'border-primary'
             : 'border-transparent hover:border-border'

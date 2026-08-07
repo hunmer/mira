@@ -1,5 +1,5 @@
 <template>
-  <div class="relative flex flex-grow flex-col items-center justify-center p-8">
+  <div class="relative flex flex-grow flex-col items-center justify-center w-full">
     <!-- 图片容器 - 使用 VViewer 组件的内嵌模式 -->
     <div class="flex flex-grow items-center justify-center w-full h-full min-h-[400px]">
       <VViewer
@@ -121,7 +121,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, nextTick } from 'vue'
+import { ref, watch, computed, nextTick, onMounted, onUnmounted } from 'vue'
 import { component as VViewer } from 'v-viewer'
 import StatusImage from '@renderer/components/common/StatusImage.vue'
 import type { FileInfo } from '../../../shared/types'
@@ -309,6 +309,21 @@ const toggleFullscreen = () => {
   }
   emit('toggle-fullscreen')
 }
+
+// 窗口退出全屏时，同步退出 ViewerJS 的内嵌全屏模式
+const handleDocumentFullscreenChange = () => {
+  if (!document.fullscreenElement && viewerInstance.value?.fulled) {
+    viewerInstance.value.exit?.()
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('fullscreenchange', handleDocumentFullscreenChange)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('fullscreenchange', handleDocumentFullscreenChange)
+})
 
 // 监听图片变化，重置状态
 watch(() => props.image, (newImage, oldImage) => {
