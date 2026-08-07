@@ -39,7 +39,9 @@
          点击会自动 onOpenChange(false)，与确认回调的执行时序耦合，曾导致
          “点确认无反应”。这里完全由 confirmState 控制开关，按钮逻辑自管。 -->
     <AlertDialog :open="confirmState.visible" @update:open="(open: boolean) => { if (!open) onConfirmCancel() }">
-      <AlertDialogContent class="fixed left-[50%] top-[50%] z-[100] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg">
+      <!-- z-[100] 让确认框层叠在普通 Dialog(z-50) 之上；
+           背景与动画样式由 AlertDialogContent 内部统一提供（玻璃质感，与 Dialog 一致）。 -->
+      <AlertDialogContent class="z-[100] max-w-lg">
         <AlertDialogHeader>
           <AlertDialogTitle>{{ confirmState.header || '确认操作' }}</AlertDialogTitle>
           <AlertDialogDescription>{{ confirmState.message }}</AlertDialogDescription>
@@ -203,6 +205,7 @@ const onConfirmAccept = () => {
   // 先关闭并清空，再执行回调（回调可能是 async，不阻塞 UI）
   confirmState.value.visible = false
   confirmState.value.onAccept = undefined
+  confirmState.value.onReject = undefined
   try {
     cb?.()
   } catch (e) {
@@ -211,8 +214,15 @@ const onConfirmAccept = () => {
 }
 
 const onConfirmCancel = () => {
+  const cb = confirmState.value.onReject
   confirmState.value.visible = false
   confirmState.value.onAccept = undefined
+  confirmState.value.onReject = undefined
+  try {
+    cb?.()
+  } catch (e) {
+    console.error('[confirm] reject handler error:', e)
+  }
 }
 
 // 键盘快捷键处理

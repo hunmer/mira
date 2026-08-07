@@ -1,15 +1,11 @@
 <template>
-  <div v-if="visible" class="fixed inset-0 flex items-center justify-center z-50">
-    <div class="bg-black bg-opacity-50 absolute inset-0" @click="handleCancel"></div>
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-md relative">
-      <div class="px-6 py-4 border-b border-border flex items-center justify-between">
-        <h2 class="text-xl font-semibold text-foreground">移动文件夹</h2>
-        <button @click="handleCancel" class="text-muted-foreground hover:text-foreground">
-          <span class="material-icons">close</span>
-        </button>
-      </div>
+  <Dialog :open="props.visible" @update:open="handleOpenChange">
+    <DialogContent class="sm:max-w-md max-h-[90vh]">
+      <DialogHeader>
+        <DialogTitle>移动文件夹</DialogTitle>
+      </DialogHeader>
 
-      <div class="px-6 py-4">
+      <div class="overflow-y-auto pr-1 -mr-1">
         <div v-if="folder" class="mb-4 p-3 bg-muted rounded-md">
           <div class="flex items-center space-x-2">
             <span class="material-icons text-muted-foreground">folder</span>
@@ -59,24 +55,26 @@
         </div>
       </div>
 
-      <div class="px-6 py-4 border-t border-border flex justify-end space-x-3">
-        <button type="button" @click="handleCancel" class="px-4 py-2 text-foreground bg-muted hover:bg-accent rounded-md transition-colors" :disabled="isLoading">取消</button>
-        <button type="button" @click="handleMove" class="px-4 py-2 bg-primary text-white hover:bg-primary rounded-md transition-colors flex items-center space-x-2" :disabled="isLoading">
+      <DialogFooter class="mt-2">
+        <Button variant="secondary" :disabled="isLoading" @click="handleCancel">取消</Button>
+        <Button :disabled="isLoading" @click="handleMove">
           <svg v-if="isLoading" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
           <span>{{ isLoading ? '移动中...' : '移动' }}</span>
-        </button>
-      </div>
-    </div>
-  </div>
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { BaseTree } from '@he-tree/vue'
 import '@he-tree/vue/style/default.css'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import type { FolderItem } from '../../types/components'
 
 interface Props {
@@ -146,6 +144,11 @@ const handleMove = async () => {
 const handleCancel = () => {
   resetForm()
   emit('close')
+}
+
+// 桥接 Dialog 的 open 状态变化：点击遮罩/ESC 等关闭操作时触发 close 事件
+const handleOpenChange = (open: boolean) => {
+  if (!open) handleCancel()
 }
 
 const resetForm = () => {

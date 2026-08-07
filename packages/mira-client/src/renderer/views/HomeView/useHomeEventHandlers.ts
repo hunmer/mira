@@ -9,6 +9,8 @@ import {
   useHomeFolderHandler
 } from '@renderer/modules/home'
 import { clearTabCache } from '@renderer/composables/useMediaTabData'
+import { useConfirm } from '@renderer/composables/useConfirm'
+import { useToast } from '@renderer/composables/useToast'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 
 export function useHomeEventHandlers(
@@ -23,6 +25,8 @@ export function useHomeEventHandlers(
   const tagStore = useTagStore()
   const tagHandler = useHomeTagHandler()
   const folderHandler = useHomeFolderHandler()
+  const confirm = useConfirm()
+  const toast = useToast()
 
   // 文件夹选择处理
   const handleFolderSelect = async (folder: any) => {
@@ -143,23 +147,43 @@ export function useHomeEventHandlers(
       return
     }
 
-    if (!window.confirm('确定要清空回收站吗？此操作不可撤销。')) return
-
-    try {
-      const result = await miraSDKService.emptyTrash(libraryId)
-      clearTabCache()
-      setAllTabsNeedUpdate(true)
-      const currentTab = getCurrentTab()
-      if (currentTab) {
-        switchToTabWithCallback(currentTab.id)
+    // 弹出确认对话框（替代原生 window.confirm）
+    confirm.require({
+      header: '清空回收站',
+      message: '确定要清空回收站吗？此操作不可撤销。',
+      acceptLabel: '清空',
+      rejectLabel: '取消',
+      accept: async () => {
+        try {
+          const result = await miraSDKService.emptyTrash(libraryId)
+          clearTabCache()
+          setAllTabsNeedUpdate(true)
+          const currentTab = getCurrentTab()
+          if (currentTab) {
+            switchToTabWithCallback(currentTab.id)
+          }
+          console.log(`已清空回收站，删除 ${result.deletedCount} 个文件`)
+        } catch (error: any) {
+          console.error('清空回收站失败:', error)
+          if (error?.message?.includes('403') || error?.error?.includes('权限不足')) {
+            // 用 Toast 通知替代原生 alert
+            toast.add({
+              severity: 'error',
+              summary: '权限不足',
+              detail: '清空回收站需要管理员权限',
+              life: 4000
+            })
+          } else {
+            toast.add({
+              severity: 'error',
+              summary: '清空回收站失败',
+              detail: error?.message || '未知错误',
+              life: 4000
+            })
+          }
+        }
       }
-      console.log(`已清空回收站，删除 ${result.deletedCount} 个文件`)
-    } catch (error: any) {
-      console.error('清空回收站失败:', error)
-      if (error?.message?.includes('403') || error?.error?.includes('权限不足')) {
-        alert('权限不足，清空回收站需要管理员权限')
-      }
-    }
+    })
   }
 
   // 注册全局事件监听

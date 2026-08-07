@@ -2,10 +2,7 @@
   <div class="filter-bar flex items-center space-x-4 mb-4 text-muted-foreground">
     <!-- 全选控制 -->
     <label class="flex items-center space-x-1 cursor-pointer select-none">
-      <Checkbox
-        :model-value="isAllSelected"
-        @update:model-value="handleSelectAllChange"
-      />
+      <Checkbox :model-value="isAllSelected" @update:model-value="handleSelectAllChange" />
     </label>
 
     <div class="h-5 border-l border-border"></div>
@@ -13,17 +10,9 @@
     <!-- 筛选器 -->
     <div class="flex items-center space-x-3">
       <template v-for="filter in filters" :key="filter.id">
-        <Dropdown
-          :offset="{ x: 0, y: 8 }"
-          placement="bottom-start"
-          :close-on-content-click="false"
-        >
+        <Dropdown :offset="{ x: 0, y: 8 }" placement="bottom-start" :close-on-content-click="false">
           <template #trigger="{ isOpen }">
-            <Button
-              variant="ghost"
-              size="xs"
-              :class="getFilterButtonClass(filter, isOpen)"
-            >
+            <Button variant="ghost" size="xs" :class="getFilterButtonClass(filter, isOpen)">
               <span class="relative">
                 <span class="material-icons text-sm">{{ filter.icon }}</span>
                 <span v-if="hasActiveFilters(filter)"
@@ -39,13 +28,9 @@
               <!-- 文件夹筛选器 -->
               <div v-if="filter.type === 'folders'">
                 <div class="max-h-[300px] overflow-y-auto p-2">
-                  <FolderTreeComponent
-                    item-type="folder"
-                    :folders="folderTreeItems || []"
+                  <FolderTreeComponent item-type="folder" :folders="folderTreeItems || []"
                     :selected-key="filter.selectedValues?.[0] != null ? String(filter.selectedValues[0]) : ''"
-                    @select="(item: any) => updateFilterValues(filter, item.id ? [item.id] : [])"
-                    @refresh="() => {}"
-                  />
+                    @select="(item: any) => updateFilterValues(filter, item.id ? [item.id] : [])" @refresh="() => { }" />
                 </div>
                 <div class="p-3 border-t border-border flex justify-end space-x-2">
                   <Button variant="ghost" size="sm" @click="clearFilter(filter); close()">清除</Button>
@@ -56,12 +41,8 @@
               <!-- 标签筛选器 -->
               <div v-else-if="filter.type === 'tags'">
                 <div class="max-h-[300px] overflow-y-auto p-2">
-                  <FolderTreeComponent
-                    item-type="tag"
-                    :tags="tagTreeItems || []"
-                    @select="(item: any) => handleTagFilterSelect(filter, item)"
-                    @refresh="() => {}"
-                  />
+                  <FolderTreeComponent item-type="tag" :tags="tagTreeItems || []"
+                    @select="(item: any) => handleTagFilterSelect(filter, item)" @refresh="() => { }" />
                 </div>
                 <div class="p-3 border-t border-border flex justify-end space-x-2">
                   <Button variant="ghost" size="sm" @click="clearFilter(filter); close()">清除</Button>
@@ -73,11 +54,8 @@
               <div v-else-if="filter.type === 'urls'">
                 <div class="p-3">
                   <h3 class="font-medium text-foreground mb-3">网址筛选</h3>
-                  <Input
-                    :model-value="filter.value"
-                    placeholder="输入网址或域名..."
-                    @update:model-value="(val) => handleFilterInput(filter, val as string)"
-                  />
+                  <Input :model-value="filter.value" placeholder="输入网址或域名..."
+                    @update:model-value="(val) => handleFilterInput(filter, val as string)" />
                 </div>
                 <div class="p-3 border-t border-border flex justify-end space-x-2">
                   <Button variant="ghost" size="sm" @click="clearFilter(filter); close()">清除</Button>
@@ -89,11 +67,8 @@
               <div v-else-if="filter.type === 'title'">
                 <div class="p-3">
                   <h3 class="font-medium text-foreground mb-3">标题筛选</h3>
-                  <Input
-                    :model-value="filter.value"
-                    placeholder="输入标题关键词..."
-                    @update:model-value="(val) => handleFilterInput(filter, val as string)"
-                  />
+                  <Input :model-value="filter.value" placeholder="输入标题关键词..."
+                    @update:model-value="(val) => handleFilterInput(filter, val as string)" />
                 </div>
                 <div class="p-3 border-t border-border flex justify-end space-x-2">
                   <Button variant="ghost" size="sm" @click="clearFilter(filter); close()">清除</Button>
@@ -106,16 +81,10 @@
                 <div class="p-3">
                   <h3 class="font-medium text-foreground mb-3">文件大小</h3>
 
-                  <RadioGroup
-                    :model-value="filter.selectedPreset || ''"
-                    class="space-y-2 mb-4"
-                    @update:model-value="(val) => handleSizePresetChange(filter, val as string)"
-                  >
-                    <div
-                      v-for="preset in sizePresets"
-                      :key="preset.id"
-                      class="flex items-center space-x-2 cursor-pointer"
-                    >
+                  <RadioGroup :model-value="filter.selectedPreset || ''" class="space-y-2 mb-4"
+                    @update:model-value="(val) => handleSizePresetChange(filter, val as string)">
+                    <div v-for="preset in sizePresets" :key="preset.id"
+                      class="flex items-center space-x-2 cursor-pointer">
                       <RadioGroupItem :value="preset.id" />
                       <Label class="text-sm cursor-pointer">{{ preset.label }}</Label>
                     </div>
@@ -129,21 +98,13 @@
                       <div v-if="filter.selectedPreset === 'custom'" class="grid grid-cols-2 gap-2">
                         <div>
                           <Label class="block text-xs text-muted-foreground mb-1">最小值</Label>
-                          <Input
-                            type="number"
-                            :model-value="filter.customMin?.toString() ?? ''"
-                            placeholder="0"
-                            @update:model-value="(val) => { filter.customMin = val ? Number(val) : undefined; updateCustomSizeRange(filter) }"
-                          />
+                          <Input type="number" :model-value="filter.customMin?.toString() ?? ''" placeholder="0"
+                            @update:model-value="(val) => { filter.customMin = val ? Number(val) : undefined; updateCustomSizeRange(filter) }" />
                         </div>
                         <div>
                           <Label class="block text-xs text-muted-foreground mb-1">最大值</Label>
-                          <Input
-                            type="number"
-                            :model-value="filter.customMax?.toString() ?? ''"
-                            placeholder="无限制"
-                            @update:model-value="(val) => { filter.customMax = val ? Number(val) : undefined; updateCustomSizeRange(filter) }"
-                          />
+                          <Input type="number" :model-value="filter.customMax?.toString() ?? ''" placeholder="无限制"
+                            @update:model-value="(val) => { filter.customMax = val ? Number(val) : undefined; updateCustomSizeRange(filter) }" />
                         </div>
                       </div>
                     </div>
@@ -159,16 +120,10 @@
               <div v-else-if="filter.type === 'category'">
                 <div class="p-3">
                   <h3 class="font-medium text-foreground mb-3">媒体类别</h3>
-                  <RadioGroup
-                    :model-value="filter.selectedCategory || ''"
-                    class="space-y-2"
-                    @update:model-value="(val) => selectCategory(filter, val as string)"
-                  >
-                    <div
-                      v-for="category in categoryOptions"
-                      :key="category.value"
-                      class="flex items-center space-x-2 cursor-pointer hover:bg-muted px-2 py-1 rounded"
-                    >
+                  <RadioGroup :model-value="filter.selectedCategory || ''" class="space-y-2"
+                    @update:model-value="(val) => selectCategory(filter, val as string)">
+                    <div v-for="category in categoryOptions" :key="category.value"
+                      class="flex items-center space-x-2 cursor-pointer hover:bg-muted px-2 py-1 rounded">
                       <RadioGroupItem :value="category.value" />
                       <span class="material-icons text-sm text-muted-foreground">{{ category.icon }}</span>
                       <Label class="text-sm cursor-pointer">{{ category.label }}</Label>
@@ -190,19 +145,12 @@
 
     <!-- 排序器 -->
     <div class="flex items-center space-x-3">
-      <Dropdown
-        :offset="{ x: 0, y: 8 }"
-        placement="bottom-start"
-      >
+      <Dropdown :offset="{ x: 0, y: 8 }" placement="bottom-start">
         <template #trigger="{ isOpen }">
-          <Button
-            variant="ghost"
-            size="xs"
-            :class="isOpen ? 'text-primary bg-primary/10 rounded-lg' : 'text-muted-foreground hover:text-foreground hover:bg-primary/5 rounded-lg'"
-          >
+          <Button variant="ghost" size="xs"
+            :class="isOpen ? 'text-primary bg-primary/10 rounded-lg' : 'text-muted-foreground hover:text-foreground hover:bg-primary/5 rounded-lg'">
             <span class="material-icons text-sm">sort</span>
             <span class="text-sm">{{ getSortDisplayText() }}</span>
-            <span class="material-icons text-xs">keyboard_arrow_down</span>
           </Button>
         </template>
 
@@ -212,16 +160,10 @@
 
             <div class="mb-4">
               <Label class="block text-xs text-muted-foreground mb-2">排序字段</Label>
-              <RadioGroup
-                :model-value="sortField"
-                class="space-y-2"
-                @update:model-value="(val) => updateSort(val as string, sortOrder)"
-              >
-                <div
-                  v-for="option in sortOptions"
-                  :key="option.value"
-                  class="flex items-center space-x-2 cursor-pointer hover:bg-muted px-2 py-1 rounded"
-                >
+              <RadioGroup :model-value="sortField" class="space-y-2"
+                @update:model-value="(val) => updateSort(val as string, sortOrder)">
+                <div v-for="option in sortOptions" :key="option.value"
+                  class="flex items-center space-x-2 cursor-pointer hover:bg-muted px-2 py-1 rounded">
                   <RadioGroupItem :value="option.value" />
                   <span class="material-icons text-sm text-muted-foreground">{{ option.icon }}</span>
                   <Label class="text-sm cursor-pointer">{{ option.label }}</Label>
@@ -231,11 +173,8 @@
 
             <div class="border-t border-border pt-3 mb-3">
               <Label class="block text-xs text-muted-foreground mb-2">排序顺序</Label>
-              <RadioGroup
-                :model-value="sortOrder"
-                class="space-y-2"
-                @update:model-value="(val) => updateSort(sortField, val as string)"
-              >
+              <RadioGroup :model-value="sortOrder" class="space-y-2"
+                @update:model-value="(val) => updateSort(sortField, val as string)">
                 <div class="flex items-center space-x-2 cursor-pointer hover:bg-muted px-2 py-1 rounded">
                   <RadioGroupItem value="desc" />
                   <span class="material-icons text-sm text-muted-foreground">arrow_downward</span>

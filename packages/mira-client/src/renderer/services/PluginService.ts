@@ -11,6 +11,8 @@ import type {
 } from '../../shared/types'
 import { toRaw } from 'vue'
 import { pluginSystem } from './PluginSystemCore'
+import { useConfirm } from '@renderer/composables/useConfirm'
+import { useToast } from '@renderer/composables/useToast'
 
 /**
  * 递归剥离对象的响应式 Proxy，返回可被 Electron IPC（structured clone）克隆的纯对象。
@@ -561,16 +563,37 @@ export class PluginService {
       
       // UI交互
       ui: {
-        showNotification: (_message: string, _type: 'info' | 'success' | 'warning' | 'error' = 'info') => {
-          // TODO: 集成实际的通知系统
+        showNotification: (message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info') => {
+          // 通过全局 Toast 系统展示通知（替代原生 alert）
+          useToast().add({
+            severity: type === 'warning' ? 'warn' : type,
+            summary: config.pluginName,
+            detail: message,
+            life: 3000
+          })
         },
-        showDialog: async (options: { title: string; message: string; type: 'info' | 'confirm' }): Promise<boolean> => {
-          if (options.type === 'confirm') {
-            return confirm(`${options.title}\n\n${options.message}`)
-          } else {
-            alert(`${options.title}\n\n${options.message}`)
-            return true
+        showDialog: (options: { title: string; message: string; type: 'info' | 'confirm' }): Promise<boolean> => {
+          // info 类型：仅提示，返回已解决的 Promise
+          if (options.type !== 'confirm') {
+            useToast().add({
+              severity: 'info',
+              summary: options.title,
+              detail: options.message,
+              life: 4000
+            })
+            return Promise.resolve(true)
           }
+          // confirm 类型：弹出全局确认对话框（替代原生 window.confirm）
+          return new Promise<boolean>(resolve => {
+            useConfirm().require({
+              header: options.title,
+              message: options.message,
+              acceptLabel: '确认',
+              rejectLabel: '取消',
+              accept: () => resolve(true),
+              reject: () => resolve(false)
+            })
+          })
         }
       },
       

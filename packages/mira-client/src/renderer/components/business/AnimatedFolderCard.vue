@@ -8,7 +8,7 @@
  *
  * 仅依赖 Vue ref/computed + CSS 3D 变换 + @lucide/vue 图标，无额外运行时依赖。
  */
-import { ref, computed, watch } from 'vue'
+import { ref, computed, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Motion, AnimatePresence } from 'motion-v'
 import { useMediaStore } from '@renderer/stores/media'
@@ -39,6 +39,10 @@ const PREVIEW_COUNT = 5 // 扇形展开的预览卡片数
 // 状态
 // ----------------------------------------
 const isHovered = ref(false)
+const folderCardWrapRef = ref<HTMLElement>()
+const folderStageRef = ref<HTMLElement>()
+const previewLayerRef = ref<HTMLElement>()
+const previewLayerPosition = ref({ left: 0, top: 0 })
 
 // 缩略图项：保留跳转 preview 路由所需的字段（id/libraryId/title/path/mimeType）
 interface ThumbItem {
@@ -157,12 +161,45 @@ watch(isHovered, h => {
 // ----------------------------------------
 // 交互
 // ----------------------------------------
+const updatePreviewLayerPosition = () => {
+  const stage = folderStageRef.value
+  if (!stage) return
+  const rect = stage.getBoundingClientRect()
+  previewLayerPosition.value = {
+    left: rect.left + rect.width / 2,
+    top: rect.top + rect.height / 2,
+  }
+}
+
+const startTrackingPreviewLayer = () => {
+  updatePreviewLayerPosition()
+  window.addEventListener('scroll', updatePreviewLayerPosition, true)
+  window.addEventListener('resize', updatePreviewLayerPosition)
+}
+
+const stopTrackingPreviewLayer = () => {
+  window.removeEventListener('scroll', updatePreviewLayerPosition, true)
+  window.removeEventListener('resize', updatePreviewLayerPosition)
+}
+
 const onEnter = () => {
+  startTrackingPreviewLayer()
   isHovered.value = true
 }
-const onLeave = () => {
+
+const onLeave = (event: MouseEvent) => {
+  if (event.relatedTarget instanceof Node && previewLayerRef.value?.contains(event.relatedTarget)) return
   isHovered.value = false
+  stopTrackingPreviewLayer()
 }
+
+const onPreviewLayerLeave = (event: MouseEvent) => {
+  if (event.relatedTarget instanceof Node && folderCardWrapRef.value?.contains(event.relatedTarget)) return
+  isHovered.value = false
+  stopTrackingPreviewLayer()
+}
+
+onUnmounted(stopTrackingPreviewLayer)
 
 const openFolder = () => {
   emit('select', folder.value)
@@ -213,9 +250,10 @@ const folderCssVars = computed(() => {
 </script>
 
 <template>
-  <div class="folder-card-wrap" @mouseenter="onEnter" @mouseleave="onLeave">
+  <div ref="folderCardWrapRef" class="folder-card-wrap" @mouseenter="onEnter" @mouseleave="onLeave">
     <div
       class="folder-card"
+      :class="{ 'is-hovered': isHovered }"
       :style="folderCssVars"
       @click="openFolder"
     >
@@ -223,44 +261,11 @@ const folderCssVars = computed(() => {
       <div class="folder-glow" />
 
       <!-- 3D 文件夹主体 + 扇形预览卡片 -->
-      <div class="folder-stage">
+      <div ref="folderStageRef" class="folder-stage">
         <!-- 后板 -->
         <div class="folder-panel folder-panel-back" />
         <!-- 标签 tab -->
         <div class="folder-panel folder-panel-tab" />
-
-        <!-- 扇形预览卡片（motion-v 驱动：展开/折叠 + 进入/退出动画） -->
-        <div class="fan-center">
-          <AnimatePresence>
-            <Motion
-              v-for="(thumb, index) in previewThumbs"
-              :key="thumb.id + '-' + index"
-              as="div"
-              class="fan-card"
-              :initial="{ y: 0, x: 0, rotate: 0, scale: 0.4, opacity: 0 }"
-              :animate="getFanTarget(index, isHovered)"
-              :while-hover="{ scale: 1.25, y: -124 + (fanLayout[index]?.ty ?? 0), boxShadow: '0 20px 25px -5px rgba(0,0,0,0.3)' }"
-              :exit="{ y: 0, x: 0, rotate: 0, scale: 0.4, opacity: 0 }"
-              :transition="{ ...FAN_TRANSITION, delay: isHovered ? getFanDelay(index) : 0 }"
-              :style="{ zIndex: 10 + index }"
-              @click.stop="previewFile(index % thumbnails.length)"
-            >
-              <img
-                v-if="thumb.src"
-                :src="thumb.src"
-                :alt="thumb.title"
-                class="fan-card-img"
-                loading="lazy"
-              />
-              <div class="fan-card-overlay" />
-              <p class="fan-card-title">{{ thumb.title }}</p>
-            </Motion>
-          </AnimatePresence>
-          <!-- 加载占位 -->
-          <div v-if="isLoadingThumbs && previewThumbs.length === 0" class="fan-loading">
-            <span class="material-icons" style="font-size: 16px">hourglass_top</span>
-          </div>
-        </div>
 
         <!-- 前板 -->
         <div class="folder-panel folder-panel-front" />
@@ -279,6 +284,47 @@ const folderCssVars = computed(() => {
         <span>悬停预览</span>
       </div>
     </div>
+
+    <!-- 脱离滚动容器，避免位于容器边缘时被裁剪 -->
+    <Teleport to="body">
+      <div
+        ref="previewLayerRef"
+        class="fan-center fan-preview-layer"
+        :class="{ 'is-hovered': isHovered }"
+        :style="{ left: `${previewLayerPosition.left}px`, top: `${previewLayerPosition.top}px` }"
+        @mouseleave="onPreviewLayerLeave"
+      >
+        <AnimatePresence>
+          <Motion
+            v-for="(thumb, index) in previewThumbs"
+            :key="thumb.id + '-' + index"
+            as="div"
+            class="fan-card"
+            :initial="{ y: 0, x: 0, rotate: 0, scale: 0.4, opacity: 0 }"
+            :animate="getFanTarget(index, isHovered)"
+            :while-hover="{ scale: 1.25, y: -124 + (fanLayout[index]?.ty ?? 0), boxShadow: '0 20px 25px -5px rgba(0,0,0,0.3)' }"
+            :exit="{ y: 0, x: 0, rotate: 0, scale: 0.4, opacity: 0 }"
+            :transition="{ ...FAN_TRANSITION, delay: isHovered ? getFanDelay(index) : 0 }"
+            :style="{ zIndex: 10 + index }"
+            @click.stop="previewFile(index % thumbnails.length)"
+          >
+            <img
+              v-if="thumb.src"
+              :src="thumb.src"
+              :alt="thumb.title"
+              class="fan-card-img"
+              loading="lazy"
+            />
+            <div class="fan-card-overlay" />
+            <p class="fan-card-title">{{ thumb.title }}</p>
+          </Motion>
+        </AnimatePresence>
+        <!-- 加载占位 -->
+        <div v-if="isLoadingThumbs && previewThumbs.length === 0" class="fan-loading">
+          <span class="material-icons" style="font-size: 16px">hourglass_top</span>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -305,7 +351,7 @@ const folderCssVars = computed(() => {
   perspective: 1200px;
 }
 
-.folder-card:hover {
+.folder-card:is(:hover, .is-hovered) {
   box-shadow: 0 25px 50px -12px color-mix(in oklch, var(--folder-accent) 25%, transparent);
   border-color: color-mix(in oklch, var(--folder-accent) 40%, transparent);
   transform: scale(1.04) rotate(-1.5deg);
@@ -320,7 +366,7 @@ const folderCssVars = computed(() => {
   transition: opacity 0.7s ease;
   pointer-events: none;
 }
-.folder-card:hover .folder-glow {
+.folder-card:is(:hover, .is-hovered) .folder-glow {
   opacity: 0.12;
 }
 
@@ -351,7 +397,7 @@ const folderCssVars = computed(() => {
   z-index: 10;
   filter: brightness(0.9);
 }
-.folder-card:hover .folder-panel-back {
+.folder-card:is(:hover, .is-hovered) .folder-panel-back {
   transform: rotateX(-20deg) scaleY(1.05);
 }
 
@@ -365,7 +411,7 @@ const folderCssVars = computed(() => {
   left: calc(50% - 64px + 16px);
   filter: brightness(0.85);
 }
-.folder-card:hover .folder-panel-tab {
+.folder-card:is(:hover, .is-hovered) .folder-panel-tab {
   transform: rotateX(-30deg) translateY(-3px);
 }
 
@@ -376,7 +422,7 @@ const folderCssVars = computed(() => {
   top: calc(50% - 48px + 4px);
   z-index: 30;
 }
-.folder-card:hover .folder-panel-front {
+.folder-card:is(:hover, .is-hovered) .folder-panel-front {
   transform: rotateX(35deg) translateY(12px);
 }
 
@@ -387,7 +433,7 @@ const folderCssVars = computed(() => {
   pointer-events: none;
   z-index: 31;
 }
-.folder-card:hover .folder-panel-front-shine {
+.folder-card:is(:hover, .is-hovered) .folder-panel-front-shine {
   transform: rotateX(35deg) translateY(12px);
 }
 
@@ -398,6 +444,18 @@ const folderCssVars = computed(() => {
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 20;
+}
+
+.fan-preview-layer {
+  position: fixed;
+  z-index: 100;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.fan-preview-layer:not(.is-hovered) .fan-card {
+  pointer-events: none;
 }
 
 .fan-card {
@@ -412,6 +470,7 @@ const folderCssVars = computed(() => {
   border: 1px solid color-mix(in oklch, var(--foreground) 5%, transparent);
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
   background: var(--muted);
+  pointer-events: auto;
   /* transform / opacity 由 motion-v 驱动，此处不再设 transition */
 }
 /* 注：hover 上浮 + 缩放由 motion-v 的 whileHover 接管，避免与动画 transform 冲突 */
@@ -470,7 +529,7 @@ const folderCssVars = computed(() => {
   margin: 1rem 0 0;
   transition: transform 0.5s ease;
 }
-.folder-card:hover .folder-title {
+.folder-card:is(:hover, .is-hovered) .folder-title {
   transform: translateY(2px);
 }
 .folder-count {
@@ -480,7 +539,7 @@ const folderCssVars = computed(() => {
   margin: 0.25rem 0 0;
   transition: opacity 0.5s ease;
 }
-.folder-card:hover .folder-count {
+.folder-card:is(:hover, .is-hovered) .folder-count {
   opacity: 0.8;
 }
 
@@ -499,7 +558,7 @@ const folderCssVars = computed(() => {
   color: color-mix(in oklch, var(--muted-foreground) 50%, transparent);
   transition: all 0.5s ease;
 }
-.folder-card:hover .folder-hint {
+.folder-card:is(:hover, .is-hovered) .folder-hint {
   opacity: 0;
   transform: translateX(-50%) translateY(10px);
 }

@@ -172,25 +172,66 @@ const openDashboard = async () => {
 
     <!-- 窗口控制按钮 - 仅桌面端显示 -->
     <template v-if="isDesktop">
-      <div class="h-5 border-l border-border/60 mx-1"></div>
-      <button
-        class="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
-        @click="emit('windowMinimize')"
-      >
-        <span class="material-icons" style="font-size: 16px;">remove</span>
-      </button>
-      <button
-        class="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
-        @click="emit('windowMaximize')"
-      >
-        <span class="material-icons" style="font-size: 16px;">crop_square</span>
-      </button>
-      <button
-        class="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
-        @click="emit('windowClose')"
-      >
-        <span class="material-icons" style="font-size: 16px;">close</span>
-      </button>
+      <!-- macOS：红绿灯样式（关闭/最小化/最大化） -->
+      <template v-if="environment.isMac">
+        <div class="group flex items-center gap-2 ml-1">
+          <button
+            class="w-3 h-3 rounded-full bg-[#ff5f57] flex items-center justify-center text-black/50 transition-transform active:scale-95"
+            style="box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.15);"
+            title="关闭"
+            @click="emit('windowClose')"
+          >
+            <svg class="w-2 h-2 opacity-0 group-hover:opacity-100" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+              <line x1="3" y1="3" x2="9" y2="9" />
+              <line x1="9" y1="3" x2="3" y2="9" />
+            </svg>
+          </button>
+          <button
+            class="w-3 h-3 rounded-full bg-[#febc2e] flex items-center justify-center text-black/50 transition-transform active:scale-95"
+            style="box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.15);"
+            title="最小化"
+            @click="emit('windowMinimize')"
+          >
+            <svg class="w-2 h-2 opacity-0 group-hover:opacity-100" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+              <line x1="3" y1="6" x2="9" y2="6" />
+            </svg>
+          </button>
+          <button
+            class="w-3 h-3 rounded-full bg-[#28c840] flex items-center justify-center text-black/50 transition-transform active:scale-95"
+            style="box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.15);"
+            title="最大化"
+            @click="emit('windowMaximize')"
+          >
+            <svg class="w-2 h-2 opacity-0 group-hover:opacity-100" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 4 L4 6 L6 4 Z" />
+              <path d="M8 8 L8 6 L6 8 Z" />
+            </svg>
+          </button>
+        </div>
+      </template>
+
+      <!-- Windows/Linux：常规按钮 -->
+      <template v-else>
+        <div class="h-5 border-l border-border/60 mx-1"></div>
+        <button
+          class="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+          @click="emit('windowMinimize')"
+        >
+          <span class="material-icons" style="font-size: 16px;">remove</span>
+        </button>
+        <button
+          class="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+          @click="emit('windowMaximize')"
+        >
+          <span class="material-icons" style="font-size: 16px;">crop_square</span>
+        </button>
+        <button
+          class="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+          @click="emit('windowClose')"
+        >
+          <span class="material-icons" style="font-size: 16px;">close</span>
+        </button>
+      </template>
     </template>
 
     <!-- 服务端控制对话框（自包含，仅 Electron 环境） -->

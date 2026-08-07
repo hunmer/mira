@@ -8,6 +8,7 @@ const confirmState = ref<{
   acceptLabel?: string
   rejectLabel?: string
   onAccept?: () => void
+  onReject?: () => void
 }>({
   visible: false,
 })
@@ -30,6 +31,7 @@ export function useConfirm() {
         acceptLabel: options.acceptLabel || 'Confirm',
         rejectLabel: options.rejectLabel || 'Cancel',
         onAccept: options.accept,
+        onReject: options.reject,
       }
     },
     close: () => {
