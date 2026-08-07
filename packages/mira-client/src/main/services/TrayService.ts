@@ -247,8 +247,6 @@ export class TrayService {
 
     if (process.platform === 'win32') {
       iconName = 'tray-icon.ico'
-    } else if (process.platform === 'darwin') {
-      iconName = 'tray-iconTemplate.png'
     } else {
       iconName = 'tray-icon.png'
     }
