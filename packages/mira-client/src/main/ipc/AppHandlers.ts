@@ -66,6 +66,11 @@ export class AppHandlers {
         },
       })
 
+      // 去掉从全局应用菜单（Menu.setApplicationMenu）继承的菜单栏。
+      // 该窗口用于加载外部 URL（如服务器 dashboard），主窗口的应用菜单对它无意义。
+      // 注意：win.setMenu 只在 Windows / Linux 生效；macOS 仍走全局菜单（Electron 限制）。
+      win.setMenu(null)
+
       // 外部链接交给系统默认浏览器，避免在 dashboard 窗口内再开窗口
       win.webContents.setWindowOpenHandler(({ url: targetUrl }) => {
         require('electron').shell.openExternal(targetUrl)

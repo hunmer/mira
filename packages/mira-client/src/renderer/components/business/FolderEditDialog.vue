@@ -125,7 +125,22 @@ import '@he-tree/vue/style/default.css'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
+import ConfigStorage from '@renderer/utils/ConfigStorage'
 import type { FolderItem } from '../../types/components'
+
+/** “创建后自动打开” 偏好的本地存储键 */
+const AUTO_OPEN_TAB_KEY = 'mira-folder-auto-open-tab'
+
+/** 从本地存储读取“创建后自动打开”偏好（默认开启） */
+function loadAutoOpenTab(): boolean {
+  try {
+    const stored = localStorage.getItem(AUTO_OPEN_TAB_KEY)
+    if (stored !== null) return JSON.parse(stored) === true
+  } catch (error) {
+    console.warn(`Failed to load localStorage key "${AUTO_OPEN_TAB_KEY}":`, error)
+  }
+  return true
+}
 
 interface Props {
   visible: boolean
@@ -150,7 +165,12 @@ const emit = defineEmits<Emits>()
 const isLoading = ref(false)
 const error = ref<string | null>(null)
 const selectedParentId = ref<string | null>(null)
-const autoOpenTab = ref(true)
+const autoOpenTab = ref(loadAutoOpenTab())
+
+// “创建后自动打开”偏好持久化到本地
+watch(autoOpenTab, (value) => {
+  ConfigStorage.setItem(AUTO_OPEN_TAB_KEY, JSON.stringify(value))
+})
 
 const formData = ref({
   title: '',
@@ -264,7 +284,7 @@ const resetForm = () => {
   formData.value = { title: '', parentId: undefined, color: null, description: '' }
   errors.value = { title: '' }
   selectedParentId.value = null
-  autoOpenTab.value = true
+  autoOpenTab.value = loadAutoOpenTab()
   error.value = null
   isLoading.value = false
 }

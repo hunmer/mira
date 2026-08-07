@@ -1,22 +1,31 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { Layout, ReadonlyLayout } from 'grid-layout-plus'
+import type { Layout, LayoutItem, ReadonlyLayout } from 'grid-layout-plus'
 import ConfigStorage from '@renderer/utils/ConfigStorage'
 import { cardRegistry } from '@renderer/components/tabs/dashboard/CardRegistry'
 
 /**
- * Dashboard 布局持久化 Store。
+ * Dashboard 布局持久化 Store（多 layout 版本）。
+ *
+ * 数据模型：
+ * - 一个 Dashboard 由若干「布局（DashboardLayout）」组成，每个布局有自己独立的
+ *   卡片实例集合（layout + instances）以及标题/图标。
+ * - 同一时刻只有一个布局处于「激活」状态（activeLayoutId），界面只渲染激活布局。
  *
  * 持久化策略：
- * - localStorage（经 ConfigStorage 封装）保存两份数据：
- *   1) `mira-dashboard-layout`：LayoutItem[]（位置/尺寸），key 为 instanceId
- *   2) `mira-dashboard-instances`：instanceId -> { type, props? } 映射，记录每个实例是哪类卡片
- * - 读取时合并两份：若 Layout 中存在某个 instanceId 但 instances 里没有对应 type，
- *   说明卡片类型已卸载，则忽略该项（避免渲染报错）。
+ * - localStorage（经 ConfigStorage）保存一个聚合键 `mira-dashboard-layouts`，
+ *   内容为 { version, activeId, layouts: DashboardLayout[] }。
+ * - 旧版本（单 layout）使用扁平的两个键 `mira-dashboard-layout` / `mira-dashboard-instances`，
+ *   load() 时若新键不存在则自动迁移旧数据为一个默认布局，平滑升级。
  */
 
-const LAYOUT_KEY = 'mira-dashboard-layout'
-const INSTANCES_KEY = 'mira-dashboard-instances'
+/** 聚合存储的 schema 版本，便于日后再次升级 */
+const STORAGE_VERSION = 2
+/** 新版聚合键 */
+const LAYOUTS_KEY = 'mira-dashboard-layouts'
+/** 旧版扁平键（仅用于一次性迁移） */
+const LEGACY_LAYOUT_KEY = 'mira-dashboard-layout'
+const LEGACY_INSTANCES_KEY = 'mira-dashboard-instances'
 
 /** 卡片实例元数据：把 instanceId 关联到一个已注册的卡片 type */
 export interface CardInstanceMeta {
@@ -28,49 +37,152 @@ export interface CardInstanceMeta {
   config?: Record<string, any>
 }
 
-export const useDashboardLayoutStore = defineStore('dashboardLayout', () => {
+/** 单个布局的数据结构 */
+export interface DashboardLayout {
+  /** 唯一 id */
+  id: string
+  /** 展示标题 */
+  name: string
+  /** Material icon 名（可选，用于 tab 区分） */
+  icon?: string
   /** 当前布局项（位置/尺寸） */
-  const layout = ref<Layout>([])
+  layout: Layout
   /** instanceId -> 卡片实例元数据 */
-  const instances = ref<Record<string, CardInstanceMeta>>({})
+  instances: Record<string, CardInstanceMeta>
+  /** 创建时间戳 */
+  createdAt: number
+  /** 最后更新时间戳 */
+  updatedAt: number
+  /**
+   * 是否为默认布局。默认布局不可删除，用于保证 Dashboard 永远至少有一个布局。
+   * 全局内同一时刻应只有一个 isDefault=true 的布局（load 时会校正）。
+   */
+  isDefault?: boolean
+}
+
+/** 聚合持久化结构 */
+interface DashboardLayoutsData {
+  version: number
+  activeId: string | null
+  layouts: DashboardLayout[]
+}
+
+/** 生成 id：时间戳 + 随机串 */
+function genId(prefix: string): string {
+  return `${prefix}__${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
+}
+
+/** 当前时间戳 */
+function now(): number {
+  return Date.now()
+}
+
+export const useDashboardLayoutStore = defineStore('dashboardLayout', () => {
+  /** 所有布局 */
+  const layouts = ref<DashboardLayout[]>([])
+  /** 当前激活布局 id */
+  const activeId = ref<string | null>(null)
   /** 是否已从存储加载完成 */
   const loaded = ref(false)
 
-  /**
-   * 实际可渲染的布局项：过滤掉「type 未注册 / 已被卸载」的孤儿项，
-   * 避免布局里残留了已删除卡片类型导致渲染崩溃。
-   */
-  const renderableLayout = computed<Layout>(() =>
-    layout.value.filter((item) => {
-      const meta = instances.value[item.i]
-      return !!meta && cardRegistry.has(meta.type)
-    }),
+  /** 当前激活的布局（可能为 null，例如数据加载异常时） */
+  const activeLayout = computed<DashboardLayout | null>(
+    () => layouts.value.find((l) => l.id === activeId.value) ?? null,
   )
 
-  /** 读取 instance 元数据 */
+  /**
+   * 实际可渲染的布局项：取激活布局，过滤掉「type 未注册 / 已被卸载」的孤儿项，
+   * 避免布局里残留了已删除卡片类型导致渲染崩溃。
+   * 无激活布局时返回空数组。
+   */
+  const renderableLayout = computed<Layout>(() => {
+    const active = activeLayout.value
+    if (!active) return []
+    return active.layout.filter((item) => {
+      const meta = active.instances[item.i]
+      return !!meta && cardRegistry.has(meta.type)
+    })
+  })
+
+  /** 读取 instance 元数据（基于激活布局） */
   function getMeta(instanceId: string | number): CardInstanceMeta | undefined {
-    return instances.value[String(instanceId)]
+    return activeLayout.value?.instances[String(instanceId)]
   }
 
-  /** 从存储加载布局与实例映射 */
+  /** 标记激活布局为已更新（在本地修改后调用） */
+  function touchActive() {
+    const active = activeLayout.value
+    if (active) active.updatedAt = now()
+  }
+
+  /**
+   * 从存储加载布局数据。
+   * - 优先读取新版聚合键；
+   * - 若不存在，尝试从旧版扁平键迁移；
+   * - 若都没有，初始化一个默认空布局。
+   */
   async function load() {
     if (loaded.value) return
     try {
-      const [layoutRaw, instancesRaw] = await Promise.all([
-        ConfigStorage.getItem(LAYOUT_KEY),
-        ConfigStorage.getItem(INSTANCES_KEY),
-      ])
-      const parsed = layoutRaw ? (JSON.parse(layoutRaw) as Layout) : []
-      layout.value = sanitizeLayout(parsed)
-      instances.value = instancesRaw ? (JSON.parse(instancesRaw) as Record<string, CardInstanceMeta>) : {}
-      // 清洗若修正了数据，立即回写一次，避免下次再加载到坏数据
-      if (layout.value !== parsed) persist()
+      const raw = await ConfigStorage.getItem(LAYOUTS_KEY)
+      if (raw) {
+        const parsed = JSON.parse(raw) as DashboardLayoutsData
+        layouts.value = (parsed.layouts ?? []).map((l) => ({
+          ...l,
+          // 对每个布局的 layout 做清洗，兼容历史脏数据
+          layout: sanitizeLayout(l.layout ?? []),
+          instances: l.instances ?? {},
+        }))
+        activeId.value =
+          parsed.activeId && layouts.value.some((l) => l.id === parsed.activeId)
+            ? parsed.activeId
+            : layouts.value[0]?.id ?? null
+      } else {
+        // 尝试迁移旧版数据
+        await migrateFromLegacy()
+      }
+      // 兜底：至少保证有一个布局
+      if (layouts.value.length === 0) {
+        const def = createLayout('默认布局', { isDefault: true })
+        layouts.value = [def]
+        activeId.value = def.id
+      }
+      if (!activeId.value) activeId.value = layouts.value[0].id
+      // 校正默认布局标记：全局有且仅有一个 isDefault=true 的布局
+      ensureSingleDefault()
+      await persist()
     } catch (e) {
       console.warn('[dashboardLayout] 加载失败，使用空布局:', e)
-      layout.value = []
-      instances.value = {}
+      const def = createLayout('默认布局', { isDefault: true })
+      layouts.value = [def]
+      activeId.value = def.id
     } finally {
       loaded.value = true
+    }
+  }
+
+  /** 从旧版扁平键迁移为一个默认布局 */
+  async function migrateFromLegacy() {
+    try {
+      const [layoutRaw, instancesRaw] = await Promise.all([
+        ConfigStorage.getItem(LEGACY_LAYOUT_KEY),
+        ConfigStorage.getItem(LEGACY_INSTANCES_KEY),
+      ])
+      if (!layoutRaw && !instancesRaw) return
+      const parsedLayout = layoutRaw ? (JSON.parse(layoutRaw) as Layout) : []
+      const parsedInstances = instancesRaw
+        ? (JSON.parse(instancesRaw) as Record<string, CardInstanceMeta>)
+        : {}
+      const def = createLayout('默认布局', {
+        layout: sanitizeLayout(parsedLayout),
+        instances: parsedInstances,
+        isDefault: true,
+      })
+      layouts.value = [def]
+      activeId.value = def.id
+      console.info('[dashboardLayout] 已从旧版数据迁移到多布局模型')
+    } catch (e) {
+      console.warn('[dashboardLayout] 迁移旧数据失败:', e)
     }
   }
 
@@ -109,7 +221,7 @@ export const useDashboardLayoutStore = defineStore('dashboardLayout', () => {
    * 交由 grid-layout-plus 首次渲染时的 verticalCompactor + collisionMode='push'
    * 自动重新排布，从而保留卡片而非丢弃。
    */
-  function sanitizeItem(item: Layout[number]): Layout[number] | null {
+  function sanitizeItem(item: LayoutItem): LayoutItem | null {
     const x = safeNonNegInt(item.x, 0)
     const y = safeNonNegInt(item.y, 0)
     const w = safeNonNegInt(item.w, 1)
@@ -117,7 +229,7 @@ export const useDashboardLayoutStore = defineStore('dashboardLayout', () => {
     if (x === null || y === null || w === null || h === null) return null
 
     // 统一克隆一份再改写，避免原地修改输入；最后判断是否真的变化过
-    const next: Layout[number] = { ...item }
+    const next: LayoutItem = { ...item }
     next.x = x
     next.y = y
     next.w = w
@@ -168,22 +280,68 @@ export const useDashboardLayoutStore = defineStore('dashboardLayout', () => {
   /** 持久化布局与实例映射 */
   async function persist() {
     try {
-      await Promise.all([
-        ConfigStorage.setItem(LAYOUT_KEY, JSON.stringify(layout.value)),
-        ConfigStorage.setItem(INSTANCES_KEY, JSON.stringify(instances.value)),
-      ])
+      const data: DashboardLayoutsData = {
+        version: STORAGE_VERSION,
+        activeId: activeId.value,
+        layouts: layouts.value,
+      }
+      await ConfigStorage.setItem(LAYOUTS_KEY, JSON.stringify(data))
     } catch (e) {
       console.warn('[dashboardLayout] 保存失败:', e)
     }
   }
 
+  /** 构造一个新的 DashboardLayout（内部使用） */
+  function createLayout(
+    name: string,
+    init?: Partial<Pick<DashboardLayout, 'layout' | 'instances' | 'icon' | 'isDefault'>>,
+  ): DashboardLayout {
+    const ts = now()
+    return {
+      id: genId('layout'),
+      name,
+      icon: init?.icon,
+      layout: init?.layout ?? [],
+      instances: init?.instances ?? {},
+      createdAt: ts,
+      updatedAt: ts,
+      isDefault: init?.isDefault,
+    }
+  }
+
   /**
-   * 添加一个卡片实例。
+   * 校正默认布局标记，保证全局内「有且仅有一个 isDefault=true」的布局。
+   * - 若没有任何布局被标记为默认，则把第一个布局设为默认；
+   * - 若有多个被标记，则只保留第一个，其余清除标记。
+   * 在 load() 之后、以及任何可能改变默认布局存在性的操作后调用。
+   */
+  function ensureSingleDefault() {
+    if (layouts.value.length === 0) return
+    let found = false
+    for (const l of layouts.value) {
+      if (!found && l.isDefault) {
+        found = true
+      } else {
+        l.isDefault = false
+      }
+    }
+    if (!found) layouts.value[0].isDefault = true
+  }
+
+  /** 判断指定布局是否为（不可删除的）默认布局 */
+  function isDefaultLayout(id: string): boolean {
+    return !!layouts.value.find((l) => l.id === id)?.isDefault
+  }
+
+  /**
+   * 添加一个卡片实例（写入激活布局）。
    * @param type 卡片类型（需已在 cardRegistry 注册）
    * @param position 可选初始位置；默认追加到布局底部
    * @returns 新实例的 instanceId，失败返回 null
    */
   async function addCard(type: string, position?: { x?: number; y?: number }): Promise<string | null> {
+    const active = activeLayout.value
+    if (!active) return null
     const def = cardRegistry.get(type)
     if (!def) {
       console.warn(`[dashboardLayout] 卡片类型 "${type}" 未注册`)
@@ -200,9 +358,9 @@ export const useDashboardLayoutStore = defineStore('dashboardLayout', () => {
     })
     if (!item) return null
 
-    layout.value = [...layout.value, item]
-    instances.value = {
-      ...instances.value,
+    active.layout = [...active.layout, item]
+    active.instances = {
+      ...active.instances,
       [instanceId]: {
         type,
         props: { ...(def.defaultProps ?? {}) },
@@ -210,77 +368,190 @@ export const useDashboardLayoutStore = defineStore('dashboardLayout', () => {
         config: { ...(def.defaultConfig ?? {}) },
       },
     }
+    touchActive()
     await persist()
     return instanceId
   }
 
   /**
-   * 计算布局的「下一空行」y 坐标：取所有项 (y + h) 的最大值。
+   * 计算激活布局的「下一空行」y 坐标：取所有项 (y + h) 的最大值。
    * 空布局返回 0。
    */
   function computeNextRowY(): number {
-    if (layout.value.length === 0) return 0
-    return layout.value.reduce((max, item) => Math.max(max, item.y + item.h), 0)
+    const active = activeLayout.value
+    if (!active || active.layout.length === 0) return 0
+    return active.layout.reduce((max, item) => Math.max(max, item.y + item.h), 0)
   }
 
-  /** 删除一个卡片实例 */
+  /** 删除一个卡片实例（从激活布局） */
   async function removeCard(instanceId: string) {
-    layout.value = layout.value.filter((item) => item.i !== instanceId)
-    const next = { ...instances.value }
+    const active = activeLayout.value
+    if (!active) return
+    active.layout = active.layout.filter((item) => item.i !== instanceId)
+    const next = { ...active.instances }
     delete next[instanceId]
-    instances.value = next
+    active.instances = next
+    touchActive()
     await persist()
   }
 
   /**
    * grid-layout-plus 通过 v-model:layout / @update:layout 回传新的 Layout 数组。
    * v2 的 update:layout 事件传入的是 ReadonlyLayout（深只读），这里深拷贝成可变 Layout
-   * 再写入 state 并持久化（debounce 由调用方按需加）。
+   * 再写入激活布局的 state 并持久化（debounce 由调用方按需加）。
    */
   function applyLayout(next: ReadonlyLayout) {
-    layout.value = next.map((item): Layout[number] => ({ ...item }))
+    const active = activeLayout.value
+    if (!active) return
+    active.layout = next.map((item): LayoutItem => ({ ...item }))
+    touchActive()
     persist()
   }
 
-  /** 更新某个实例的 props */
+  /** 更新某个实例的 props（基于激活布局） */
   async function updateInstanceProps(instanceId: string, props: Record<string, any>) {
-    if (!instances.value[instanceId]) return
-    instances.value = {
-      ...instances.value,
-      [instanceId]: { ...instances.value[instanceId], props: { ...instances.value[instanceId].props, ...props } },
+    const active = activeLayout.value
+    if (!active || !active.instances[instanceId]) return
+    const cur = active.instances[instanceId]
+    active.instances = {
+      ...active.instances,
+      [instanceId]: { ...cur, props: { ...cur.props, ...props } },
     }
+    touchActive()
     await persist()
   }
 
-  /** 整体替换某个实例的配置项（配置对话框保存时调用） */
+  /** 整体替换某个实例的配置项（配置对话框保存时调用，基于激活布局） */
   async function updateInstanceConfig(instanceId: string, config: Record<string, any>) {
-    if (!instances.value[instanceId]) return
-    instances.value = {
-      ...instances.value,
-      [instanceId]: { ...instances.value[instanceId], config: { ...config } },
+    const active = activeLayout.value
+    if (!active || !active.instances[instanceId]) return
+    const cur = active.instances[instanceId]
+    active.instances = {
+      ...active.instances,
+      [instanceId]: { ...cur, config: { ...config } },
     }
+    touchActive()
     await persist()
   }
 
-  /** 取某个实例当前生效的配置（与类型 defaultConfig 合并，实例值优先） */
+  /** 取某个实例当前生效的配置（与类型 defaultConfig 合并，实例值优先；基于激活布局） */
   function getConfig(instanceId: string | number): Record<string, any> {
-    const meta = instances.value[String(instanceId)]
+    const active = activeLayout.value
+    if (!active) return {}
+    const meta = active.instances[String(instanceId)]
     if (!meta) return {}
     return cardRegistry.resolveConfig(meta.type, meta.config)
   }
 
-  /** 清空所有卡片（不删除已注册的类型定义） */
+  // ============== 布局（layout）管理 ==============
+
+  /** 新增一个布局并切换为激活 */
+  async function addLayout(name: string, icon?: string): Promise<string | null> {
+    const trimmed = name.trim()
+    if (!trimmed) return null
+    const layout = createLayout(trimmed, { icon })
+    layouts.value = [...layouts.value, layout]
+    activeId.value = layout.id
+    await persist()
+    return layout.id
+  }
+
+  /** 重命名一个布局 */
+  async function renameLayout(id: string, name: string): Promise<boolean> {
+    const trimmed = name.trim()
+    if (!trimmed) return false
+    const target = layouts.value.find((l) => l.id === id)
+    if (!target) return false
+    target.name = trimmed
+    target.updatedAt = now()
+    await persist()
+    return true
+  }
+
+  /** 更新一个布局的图标 */
+  async function updateLayoutIcon(id: string, icon?: string): Promise<boolean> {
+    const target = layouts.value.find((l) => l.id === id)
+    if (!target) return false
+    target.icon = icon
+    target.updatedAt = now()
+    await persist()
+    return true
+  }
+
+  /**
+   * 删除一个布局。
+   * - 不允许删除默认布局（isDefault=true 的布局永远保留）。
+   * - 删除当前激活布局时，自动切换到剩余布局中的第一个。
+   * @returns 是否删除成功
+   */
+  async function removeLayout(id: string): Promise<boolean> {
+    if (isDefaultLayout(id)) {
+      console.warn('[dashboardLayout] 默认布局不可删除')
+      return false
+    }
+    const idx = layouts.value.findIndex((l) => l.id === id)
+    if (idx === -1) return false
+    layouts.value = layouts.value.filter((l) => l.id !== id)
+    if (activeId.value === id) {
+      activeId.value = layouts.value[0].id
+    }
+    await persist()
+    return true
+  }
+
+  /** 切换激活布局 */
+  async function switchLayout(id: string) {
+    if (!layouts.value.some((l) => l.id === id)) return
+    if (activeId.value === id) return
+    activeId.value = id
+    await persist()
+  }
+
+  /** 复制一个布局（含其全部卡片与配置） */
+  async function duplicateLayout(id: string, newName?: string): Promise<string | null> {
+    const src = layouts.value.find((l) => l.id === id)
+    if (!src) return null
+    // 复制时给每个卡片实例生成新的 instanceId，避免冲突
+    const idMap = new Map<string, string>()
+    const newInstances: Record<string, CardInstanceMeta> = {}
+    for (const [oldId, meta] of Object.entries(src.instances)) {
+      const newId = genId(meta.type)
+      idMap.set(oldId, newId)
+      newInstances[newId] = { ...meta, props: { ...meta.props }, config: { ...meta.config } }
+    }
+    const newLayoutItems: Layout = src.layout.map((item) => {
+      const mapped = idMap.get(String(item.i)) ?? String(item.i)
+      return { ...item, i: mapped }
+    })
+    const layout = createLayout(newName?.trim() || `${src.name} 副本`, {
+      layout: newLayoutItems,
+      instances: newInstances,
+      icon: src.icon,
+    })
+    layouts.value = [...layouts.value, layout]
+    activeId.value = layout.id
+    await persist()
+    return layout.id
+  }
+
+  /** 清空所有布局（重置为单个默认空布局） */
   async function clearAll() {
-    layout.value = []
-    instances.value = {}
+    const def = createLayout('默认布局', { isDefault: true })
+    layouts.value = [def]
+    activeId.value = def.id
     await persist()
   }
 
   return {
-    layout,
-    instances,
+    // state
+    layouts,
+    activeId,
     loaded,
+    // getters
+    activeLayout,
     renderableLayout,
+    isDefaultLayout,
+    // 卡片实例（基于激活布局）
     getMeta,
     load,
     persist,
@@ -290,6 +561,13 @@ export const useDashboardLayoutStore = defineStore('dashboardLayout', () => {
     updateInstanceProps,
     updateInstanceConfig,
     getConfig,
+    // 布局管理
+    addLayout,
+    renameLayout,
+    updateLayoutIcon,
+    removeLayout,
+    switchLayout,
+    duplicateLayout,
     clearAll,
   }
 })

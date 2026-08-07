@@ -7,7 +7,6 @@
         <span>仪表盘</span>
       </div>
       <div class="flex items-center gap-1">
-        <!-- 添加卡片 -->
         <div ref="addMenuRef" class="relative">
           <button
             class="flex items-center gap-1 rounded-md px-2 py-1.5 text-sm text-foreground/80 transition-colors hover:bg-accent hover:text-accent-foreground"
@@ -98,6 +97,60 @@
       </div>
     </div>
 
+    <!-- 布局切换条 -->
+    <div class="dashboard-layouts-bar flex items-center gap-1 overflow-x-auto border-b px-3 py-1.5">
+      <div
+        v-for="layout in store.layouts"
+        :key="layout.id"
+        class="dashboard-layout-chip group flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
+        :class="
+          layout.id === store.activeId
+            ? 'bg-primary/10 text-primary'
+            : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+        "
+        @click="store.switchLayout(layout.id)"
+      >
+        <span class="material-icons text-sm">{{ layout.icon || 'dashboard' }}</span>
+        <span class="max-w-[10rem] truncate">{{ layout.name }}</span>
+        <!-- 默认布局标记（不可删除） -->
+        <span
+          v-if="store.isDefaultLayout(layout.id)"
+          class="material-icons text-[10px] text-muted-foreground/60"
+          title="默认布局（不可删除）"
+        >
+          lock
+        </span>
+        <!-- 右侧操作（hover 显示） -->
+        <span class="flex items-center" @click.stop>
+          <button
+            class="ml-0.5 flex h-4 w-4 items-center justify-center rounded text-muted-foreground/70 opacity-0 transition-opacity hover:bg-accent hover:text-foreground group-hover:opacity-100"
+            title="重命名"
+            @click="openLayoutDialog('edit', layout.id)"
+          >
+            <span class="material-icons text-xs">edit</span>
+          </button>
+          <button
+            v-if="!store.isDefaultLayout(layout.id)"
+            class="ml-0.5 flex h-4 w-4 items-center justify-center rounded text-muted-foreground/70 opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+            title="删除布局"
+            @click="openDeleteConfirm(layout.id)"
+          >
+            <span class="material-icons text-xs">close</span>
+          </button>
+        </span>
+      </div>
+
+      <!-- 新建布局 -->
+      <button
+        class="flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        title="新建布局"
+        @click="openLayoutDialog('create')"
+      >
+        <span class="material-icons text-sm">add</span>
+        <span class="hidden sm:inline">新建布局</span>
+      </button>
+    </div>
+
     <!-- 空状态 -->
     <div
       v-if="store.renderableLayout.length === 0"
@@ -118,6 +171,7 @@
     <!-- 网格布局 -->
     <div v-else class="dashboard-grid-scroll flex-1 overflow-auto p-3">
       <GridLayout
+        :key="store.activeId || 'active'"
         :layout="store.renderableLayout"
         :col-num="12"
         :row-height="60"
@@ -164,6 +218,36 @@
 
     <!-- 小组件配置窗口 -->
     <CardConfigDialog v-model="configDialogOpen" :instance-id="configTargetId" />
+
+    <!-- 布局 新增/编辑 对话框 -->
+    <LayoutDialog v-model="layoutDialogOpen" :mode="layoutDialogMode" :layout-id="layoutDialogTargetId" />
+
+    <!-- 删除布局确认对话框 -->
+    <AlertDialog :open="deleteDialogOpen" @update:open="deleteDialogOpen = $event">
+      <AlertDialogContent class="sm:max-w-md">
+        <AlertDialogHeader>
+          <AlertDialogTitle>确认删除布局</AlertDialogTitle>
+          <AlertDialogDescription>
+            <template v-if="deleteTargetLayout">
+              确定要删除布局「{{ deleteTargetLayout.name }}」吗？
+              <span v-if="deleteTargetLayout.layout.length > 0">
+                该布局下的 {{ deleteTargetLayout.layout.length }} 个小组件将一并删除。
+              </span>
+              此操作不可撤销。
+            </template>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>取消</AlertDialogCancel>
+          <AlertDialogAction
+            class="bg-destructive text-white hover:bg-destructive/90"
+            @click="confirmDeleteLayout"
+          >
+            删除
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   </div>
 </template>
 
@@ -176,6 +260,17 @@ import { cardRegistry } from './dashboard/CardRegistry'
 import { registerBuiltinCards } from './dashboard/cards'
 import DashboardCardShell from './dashboard/DashboardCardShell.vue'
 import CardConfigDialog from './dashboard/CardConfigDialog.vue'
+import LayoutDialog from './dashboard/LayoutDialog.vue'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
 interface Props {
   tabId?: string
@@ -270,6 +365,44 @@ async function onAddCard(type: string) {
   await store.addCard(type)
   // 添加后自动进入编辑模式，方便调整位置
   if (!editMode.value) editMode.value = true
+}
+
+/** 布局（layout）对话框状态 */
+const layoutDialogOpen = ref(false)
+const layoutDialogMode = ref<'create' | 'edit'>('create')
+const layoutDialogTargetId = ref<string | undefined>(undefined)
+
+function openLayoutDialog(mode: 'create' | 'edit', layoutId?: string) {
+  // 阻止冒泡到布局 chip 的 click（切换激活），避免打开对话框时同时切走
+  layoutDialogMode.value = mode
+  layoutDialogTargetId.value = layoutId
+  layoutDialogOpen.value = true
+}
+
+/** 删除布局确认对话框状态 */
+const deleteDialogOpen = ref(false)
+const deleteTargetId = ref<string | undefined>(undefined)
+/** 当前要删除的布局对象（用于对话框文案展示） */
+const deleteTargetLayout = computed(() =>
+  deleteTargetId.value ? store.layouts.find((l) => l.id === deleteTargetId.value) : null,
+)
+
+/**
+ * 打开删除确认对话框。
+ * 默认布局不会显示删除按钮，此处仍做一道防御：默认布局直接忽略。
+ */
+function openDeleteConfirm(layoutId: string) {
+  if (store.isDefaultLayout(layoutId)) return
+  deleteTargetId.value = layoutId
+  deleteDialogOpen.value = true
+}
+
+/** 确认删除：执行 store.removeLayout 并关闭对话框 */
+async function confirmDeleteLayout() {
+  if (!deleteTargetId.value) return
+  await store.removeLayout(deleteTargetId.value)
+  deleteDialogOpen.value = false
+  deleteTargetId.value = undefined
 }
 
 /** 布局更新（拖拽/缩放）：v2 的 update:layout 携带 (layout, meta)，这里只需 layout */
