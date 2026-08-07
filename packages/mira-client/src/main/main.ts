@@ -172,25 +172,13 @@ class MiraApplication {
     // 应用即将退出
     app.on('before-quit', () => {
       logger.info('MiraApplication', 'App is about to quit')
-      let autoStartEnabled = false
       try {
-        autoStartEnabled = app.getLoginItemSettings({ args: ['--mira-server-startup'] }).openAtLogin
+        const output = runLocalServerScriptSync('stop')
+        if (output) logger.info('LocalServerService', output)
       } catch (error) {
-        logger.warn('LocalServerService', 'Unable to read system auto-start state; stopping local backend', {
+        logger.warn('LocalServerService', 'Local backend stop failed', {
           error: error instanceof Error ? error.message : String(error),
         })
-      }
-      if (autoStartEnabled) {
-        logger.info('LocalServerService', 'System auto-start is enabled; keeping local backend alive')
-      } else {
-        try {
-          const output = runLocalServerScriptSync('stop')
-          if (output) logger.info('LocalServerService', output)
-        } catch (error) {
-          logger.warn('LocalServerService', 'Local backend stop failed', {
-            error: error instanceof Error ? error.message : String(error),
-          })
-        }
       }
       this.cleanup()
     })

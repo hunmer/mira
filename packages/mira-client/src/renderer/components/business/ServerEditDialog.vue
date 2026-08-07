@@ -104,15 +104,14 @@
               认证方式
             </label>
             <!-- 认证方式切换 -->
-            <div class="flex items-center space-x-3">
-              <Toggle
-                :modelValue="authTokenMode"
-                @update:modelValue="authTokenMode = $event"
-                class="w-20"
-              >
-                {{ authTokenMode ? 'Token' : 'Auth' }}
-              </Toggle>
-            </div>
+            <ToggleGroup
+              type="single"
+              :model-value="formData.authMethod"
+              @update:model-value="handleAuthMethodChange"
+            >
+              <ToggleGroupItem value="credentials">Auth</ToggleGroupItem>
+              <ToggleGroupItem value="token">Token</ToggleGroupItem>
+            </ToggleGroup>
           </div>
 
           <!-- 用户名密码输入框 -->
@@ -324,7 +323,7 @@
 import { ref, computed, watch } from 'vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { Toggle } from '@/components/ui/toggle'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Switch } from '@/components/ui/switch'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useServerListStore, type ServerConfig } from '@renderer/stores/serverList'
@@ -388,20 +387,22 @@ const formData = ref({
   smbPath: ''
 })
 
-// ToggleButton 的计算属性
-const authTokenMode = computed({
-  get: () => formData.value.authMethod === 'token',
-  set: (value: boolean) => {
-    formData.value.authMethod = value ? 'token' : 'credentials'
-    if (!value) {
-      formData.value.authToken = '' // 切换到密码模式时清空 token
-    } else {
-      // 切换到 token 模式时清空用户名密码
-      formData.value.username = ''
-      formData.value.password = ''
-    }
+// 认证方式：仅读 computed（切换通过 handleAuthMethodChange）
+const authTokenMode = computed(() => formData.value.authMethod === 'token')
+
+// ToggleGroup 切换处理（点击已选中项时值为 undefined，需忽略）
+const handleAuthMethodChange = (value: string | undefined) => {
+  if (!value || value === formData.value.authMethod) return
+  formData.value.authMethod = value
+  if (value === 'token') {
+    // 切换到 token 模式时清空用户名密码
+    formData.value.username = ''
+    formData.value.password = ''
+  } else {
+    // 切换到密码模式时清空 token
+    formData.value.authToken = ''
   }
-})
+}
 
 const errors = ref<{
   id?: string

@@ -8,6 +8,7 @@ import { useLibraryStore } from '@/renderer/stores/library'
 import { useFolderStore } from '@renderer/stores/folder'
 import { useTagStore } from '@renderer/stores/tag'
 import { createTabScopeId } from '@renderer/composables/TabPersistence'
+import { watch } from 'vue'
 import type { LibraryInfo } from '../../../shared/types'
 import type { ServerConfig } from '@renderer/stores/serverList'
 import type { Ref } from 'vue'
@@ -69,6 +70,13 @@ export function useHomeLibraryManagement(
     showServerEditDialog.value = false
     editingServer.value = null
   }
+
+  // 编辑框关闭时（取消或保存），回弹到服务器管理对话框
+  watch(showServerEditDialog, (visible) => {
+    if (!visible) {
+      showServerManagementDialog.value = true
+    }
+  })
 
   const handleAddLibrary = handleAddServer
   const handleEditLibrary = handleEditServer

@@ -120,7 +120,7 @@ async function startService() {
 
   const logFd = openSync(logFile, 'a')
   const child = spawn(
-    process.execPath,
+    'node',
     [serverCli, 'start', '--http-port', String(httpPort), '--ws-port', String(wsPort), '--data-path', dataPath],
     {
       detached: true,

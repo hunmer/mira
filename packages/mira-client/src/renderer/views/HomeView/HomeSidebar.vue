@@ -607,10 +607,11 @@ defineExpose({ locateItem })
   color: var(--muted-foreground);
   transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1);
   transform-origin: center center;
+  transform: rotate(-90deg);
 }
 
 .section-header .chevron--open {
-  transform: rotate(90deg);
+  transform: rotate(0deg);
 }
 
 .section-header .title-icon {

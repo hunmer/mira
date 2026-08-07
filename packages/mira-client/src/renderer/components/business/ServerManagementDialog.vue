@@ -45,7 +45,7 @@
             <button
               v-if="server.id !== activeServerId"
               @click="handleSetActive(server.id)"
-              class="p-2 text-muted-foreground hover:text-primary hover:bg-primary rounded-lg transition-colors"
+              class="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
               title="设为当前服务器"
             >
               <span class="material-icons text-sm">radio_button_unchecked</span>
@@ -54,7 +54,7 @@
             <!-- 编辑按钮 -->
             <button
               @click="handleEdit(server)"
-              class="p-2 text-muted-foreground hover:text-primary hover:bg-primary rounded-lg transition-colors"
+              class="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
               title="编辑服务器"
             >
               <span class="material-icons text-sm">edit</span>
@@ -64,7 +64,7 @@
             <button
               @click="handleDelete(server)"
               :disabled="servers.length === 1"
-              class="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              class="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               title="删除服务器"
             >
               <span class="material-icons text-sm">delete</span>
@@ -76,22 +76,13 @@
 
     <!-- 底部操作栏 -->
     <DialogFooter>
-      <div class="flex items-center justify-between w-full">
-        <button
-          @click="handleAddNew"
-          class="flex items-center space-x-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary transition-colors"
-        >
-          <span class="material-icons text-sm">add</span>
-          <span>连接服务器</span>
-        </button>
-
-        <button
-          @click="handleClose"
-          class="px-4 py-2 text-muted-foreground hover:bg-muted rounded-lg transition-colors"
-        >
-          关闭
-        </button>
-      </div>
+      <button
+        @click="handleAddNew"
+        class="flex items-center justify-center space-x-2 w-full px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary transition-colors"
+      >
+        <span class="material-icons text-sm">add</span>
+        <span>连接服务器</span>
+      </button>
     </DialogFooter>
     </DialogContent>
   </Dialog>
@@ -174,10 +165,6 @@ const formatDate = (dateString: string) => {
     month: 'short',
     day: 'numeric'
   })
-}
-
-const handleClose = () => {
-  emit('update:visible', false)
 }
 
 const handleSetActive = async (serverId: string) => {
