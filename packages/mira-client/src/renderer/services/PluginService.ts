@@ -6,7 +6,8 @@ import type {
   PluginContext,
   MarketplaceCatalog,
   MarketplacePluginEntry,
-  MarketplacePluginFile
+  MarketplacePluginFile,
+  PluginInstallProgress
 } from '../../shared/types'
 import { toRaw } from 'vue'
 import { pluginSystem } from './PluginSystemCore'
@@ -431,7 +432,7 @@ export class PluginService {
    * @param marketUrl 市场源根地址
    * @param entry 市场目录中的插件条目
    */
-  public async installMarketplacePlugin(marketUrl: string, entry: MarketplacePluginEntry): Promise<BaseResponse> {
+  public async installMarketplacePlugin(marketUrl: string, entry: MarketplacePluginEntry): Promise<BaseResponse & { cancelled?: boolean }> {
     try {
       if (!this.isElectronEnvironment) {
         return { success: false, message: '插件市场安装仅在 Electron 环境可用' }
@@ -452,6 +453,37 @@ export class PluginService {
       const errorMessage = error instanceof Error ? error.message : String(error)
       return { success: false, message: errorMessage }
     }
+  }
+
+  /**
+   * 取消正在进行的插件市场安装
+   * @param pluginId 插件ID
+   */
+  public async cancelInstall(pluginId: string): Promise<BaseResponse> {
+    if (!this.isElectronEnvironment) {
+      return { success: false, message: '插件市场安装仅在 Electron 环境可用' }
+    }
+    try {
+      return await (window as any).electronAPI.plugin.cancelInstall(pluginId)
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      return { success: false, message: errorMessage }
+    }
+  }
+
+  /**
+   * 订阅插件市场安装进度事件（由主进程逐块下载时回推）。
+   * @returns 反订阅函数（调用后移除监听）
+   */
+  public onInstallProgress(callback: (progress: PluginInstallProgress) => void): () => void {
+    if (!this.isElectronEnvironment) {
+      return () => {}
+    }
+    const api = (window as any).electronAPI.plugin.onInstallProgress
+    if (typeof api === 'function') {
+      return api(callback)
+    }
+    return () => {}
   }
 
   /**

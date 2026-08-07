@@ -6,7 +6,7 @@
     :double-click-to-clear="true"
     :realtime-selection="true"
     :min-selection-size="8"
-    class="waterfall-wrapper w-full h-full"
+    class="waterfall-wrapper w-full min-h-full"
     tabindex="0"
     @selection-update="handleSelectionUpdate"
     @item-click="handleSelectionItemClick"

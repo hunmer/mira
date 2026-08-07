@@ -354,29 +354,57 @@
                     </span>
                   </div>
                   <div class="flex items-center justify-end space-x-2 mt-3 pt-3 border-t border-border dark:border-border">
-                    <button
-                      v-if="getMarketStatus(entry).action === 'install'"
-                      @click="installMarketplacePlugin(entry)"
-                      :disabled="isInstalling(entry.pluginId)"
-                      class="text-xs px-3 py-1 rounded bg-primary text-white hover:bg-primary transition-colors disabled:opacity-50"
-                    >
-                      {{ isInstalling(entry.pluginId) ? '安装中...' : '安装' }}
-                    </button>
-                    <button
-                      v-else-if="getMarketStatus(entry).action === 'update'"
-                      @click="installMarketplacePlugin(entry)"
-                      :disabled="isInstalling(entry.pluginId)"
-                      class="text-xs px-3 py-1 rounded bg-green-500 text-white hover:bg-green-600 transition-colors disabled:opacity-50"
-                    >
-                      {{ isInstalling(entry.pluginId) ? '更新中...' : '更新' }}
-                    </button>
-                    <button
-                      v-else
-                      disabled
-                      class="text-xs px-3 py-1 rounded bg-muted dark:bg-muted text-muted-foreground dark:text-muted-foreground cursor-default"
-                    >
-                      已安装
-                    </button>
+                    <!-- 安装中：显示进度条 + 取消按钮 -->
+                    <div v-if="isInstalling(entry.pluginId)" class="flex items-center justify-end w-full gap-2">
+                      <div class="flex-1 flex items-center gap-2">
+                        <div class="flex-1 h-1.5 bg-muted dark:bg-muted rounded-full overflow-hidden">
+                          <div
+                            class="h-full bg-primary transition-all duration-150 rounded-full"
+                            :style="{ width: getInstallPercent(entry.pluginId) + '%' }"
+                          ></div>
+                        </div>
+                        <span class="text-xs text-muted-foreground dark:text-muted-foreground whitespace-nowrap tabular-nums">
+                          {{ getInstallPhase(entry.pluginId) === 'verifying' ? '校验中' : getInstallPercent(entry.pluginId) + '%' }}
+                        </span>
+                      </div>
+                      <TooltipProvider :ignore-non-keyboard-focus="true">
+                        <Tooltip>
+                          <TooltipTrigger as-child>
+                            <button
+                              @click="cancelInstall(entry)"
+                              class="p-1 rounded text-destructive dark:text-destructive hover:bg-destructive/10 transition-colors"
+                            >
+                              <span class="material-icons text-base">close</span>
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">取消安装</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <!-- 非安装中：常规按钮 -->
+                    <template v-else>
+                      <button
+                        v-if="getMarketStatus(entry).action === 'install'"
+                        @click="installMarketplacePlugin(entry)"
+                        class="text-xs px-3 py-1 rounded bg-primary text-white hover:bg-primary transition-colors"
+                      >
+                        安装
+                      </button>
+                      <button
+                        v-else-if="getMarketStatus(entry).action === 'update'"
+                        @click="installMarketplacePlugin(entry)"
+                        class="text-xs px-3 py-1 rounded bg-green-500 text-white hover:bg-green-600 transition-colors"
+                      >
+                        更新
+                      </button>
+                      <button
+                        v-else
+                        disabled
+                        class="text-xs px-3 py-1 rounded bg-muted dark:bg-muted text-muted-foreground dark:text-muted-foreground cursor-default"
+                      >
+                        已安装
+                      </button>
+                    </template>
                   </div>
                 </div>
 
@@ -753,6 +781,13 @@ const installMarketplacePlugin = async (entry: MarketplacePluginEntry) => {
         detail: `${entry.pluginName} 已安装，可在「本地插件」中启用`,
         life: 4000
       })
+    } else if ((result as any).cancelled) {
+      toast.add({
+        severity: 'info',
+        summary: '已取消',
+        detail: `${entry.pluginName} 安装已取消`,
+        life: 3000
+      })
     } else {
       toast.add({
         severity: 'error',
@@ -771,6 +806,27 @@ const installMarketplacePlugin = async (entry: MarketplacePluginEntry) => {
   } finally {
     installingIds.value.delete(entry.pluginId)
   }
+}
+
+/**
+ * 取消正在进行的插件安装
+ */
+const cancelInstall = (entry: MarketplacePluginEntry) => {
+  pluginStore.cancelMarketInstall(entry.pluginId).catch(() => {})
+}
+
+/**
+ * 取某插件的安装进度百分比
+ */
+const getInstallPercent = (pluginId: string): number => {
+  return pluginStore.marketInstallProgress?.get(pluginId)?.percent ?? 0
+}
+
+/**
+ * 取某插件的安装阶段
+ */
+const getInstallPhase = (pluginId: string): string => {
+  return pluginStore.marketInstallProgress?.get(pluginId)?.phase ?? 'downloading'
 }
 
 /**

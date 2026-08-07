@@ -17,7 +17,7 @@ interface Props {
   separator?: string
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   separator: 'chevron_right'
 })
 

@@ -7,7 +7,7 @@ import { ref, computed } from 'vue'
 import { MockDataGenerator } from '../utils/mockData'
 import { pluginService } from '../services/PluginService'
 import { useSettingsStore } from './settings'
-import type { MarketplacePluginEntry } from '../../shared/types'
+import type { MarketplacePluginEntry, PluginInstallProgress } from '../../shared/types'
 
 // 导入分离的插件模块
 import {
@@ -75,6 +75,17 @@ export const usePluginStore = defineStore('plugin', () => {
   // key: pluginId；value: { entry: 市场条目, versionOutdated: 版本落后, fileMismatch: 文件不一致 }
   const pluginUpdates = ref<Map<string, { entry: MarketplacePluginEntry; versionOutdated: boolean; fileMismatch: boolean }>>(new Map())
   const isCheckingUpdates = ref(false)
+
+  // 插件市场安装进度：key: pluginId，value: { percent, phase, transferred, total }
+  // 由主进程逐块下载时回推，驱动 UI 进度条
+  const marketInstallProgress = ref<Map<string, { percent: number; phase: PluginInstallProgress['phase']; transferred: number; total: number }>>(new Map())
+
+  // 订阅主进程安装进度事件（仅注册一次）
+  pluginService.onInstallProgress((p: PluginInstallProgress) => {
+    const next = new Map(marketInstallProgress.value)
+    next.set(p.pluginId, { percent: p.percent, phase: p.phase, transferred: p.transferred, total: p.total })
+    marketInstallProgress.value = next
+  })
 
   // 搜索和过滤状态
   const searchQuery = ref('')
@@ -769,6 +780,11 @@ export const usePluginStore = defineStore('plugin', () => {
     }
     pendingOperations.value.add(operationId)
 
+    // 初始化进度
+    const initProgress = new Map(marketInstallProgress.value)
+    initProgress.set(entry.pluginId, { percent: 0, phase: 'downloading', transferred: 0, total: 0 })
+    marketInstallProgress.value = initProgress
+
     try {
       const settingsStore = useSettingsStore()
       const marketUrl = (settingsStore.settings.clientPluginMarketUrl || '').trim()
@@ -787,7 +803,21 @@ export const usePluginStore = defineStore('plugin', () => {
       return { success: false, error: errorMessage }
     } finally {
       pendingOperations.value.delete(operationId)
+      // 清除进度（延迟一点，避免进度条在 100% 之前闪烁消失）
+      const clear = () => {
+        const next = new Map(marketInstallProgress.value)
+        next.delete(entry.pluginId)
+        marketInstallProgress.value = next
+      }
+      setTimeout(clear, 300)
     }
+  }
+
+  /**
+   * 取消正在进行的插件市场安装
+   */
+  const cancelMarketInstall = async (pluginId: string) => {
+    return await pluginService.cancelInstall(pluginId)
   }
 
   /**
@@ -994,6 +1024,9 @@ export const usePluginStore = defineStore('plugin', () => {
     pluginUpdates,
     isCheckingUpdates,
 
+    // 插件市场安装进度
+    marketInstallProgress,
+
     // 计算属性
     totalPlugins,
     installedPlugins,
@@ -1043,6 +1076,7 @@ export const usePluginStore = defineStore('plugin', () => {
     // 插件市场操作
     fetchMarketplaceCatalog,
     installMarketplacePlugin,
+    cancelMarketInstall,
     checkPluginUpdates,
 
     // 脚本管理（从模块导入）

@@ -78,6 +78,30 @@ let autoScrollFrameId: number | null = null
 let pendingMouseEvent: MouseEvent | null = null
 let lastMouseEvent: MouseEvent | null = null
 
+const debugSelection = (event: string, extra: Record<string, unknown> = {}) => {
+  if (!containerRef.value) return
+  const container = containerRef.value
+  const scrollContainer = getScrollContainer()
+  const masonry = container.querySelector('.masonry-container') as HTMLElement | null
+  console.debug('[DEBUG-selection-box]', event, {
+    container: {
+      clientHeight: container.clientHeight,
+      offsetHeight: container.offsetHeight,
+      scrollHeight: container.scrollHeight,
+      rect: container.getBoundingClientRect().toJSON()
+    },
+    masonry: masonry
+      ? { clientHeight: masonry.clientHeight, offsetHeight: masonry.offsetHeight, rect: masonry.getBoundingClientRect().toJSON() }
+      : null,
+    scrollContainer: scrollContainer
+      ? { className: scrollContainer.className, clientHeight: scrollContainer.clientHeight, scrollHeight: scrollContainer.scrollHeight, scrollTop: scrollContainer.scrollTop }
+      : { windowScrollY: window.scrollY },
+    startPos: startPos.value,
+    currentPos: currentPos.value,
+    ...extra
+  })
+}
+
 // 监听 modelValue 变化
 watch(() => props.modelValue, (newValue) => {
   selectedItems.value = new Set(newValue)
@@ -150,6 +174,7 @@ const startSelection = (e: MouseEvent) => {
   itemsToRemove.value.clear()
   initialSelectedItems.value = new Set(selectedItems.value)
   refreshSelectableRects()
+  debugSelection('start', { clientX: e.clientX, clientY: e.clientY })
 
   emit('selection-start', e)
 
@@ -169,19 +194,8 @@ const updateSelection = (e: MouseEvent) => {
 
   if (!containerRef.value) return
 
-  // 限制选择框范围在容器内
-  const scrollLeft = containerRef.value.scrollLeft
-  const scrollTop = containerRef.value.scrollTop
-  const containerWidth = containerRef.value.clientWidth
-  const containerHeight = containerRef.value.clientHeight
-
-  let relativePos = getRelativePosition(e)
-
-  // 限制坐标在容器范围内
-  relativePos.x = Math.max(0, Math.min(relativePos.x, containerWidth + scrollLeft))
-  relativePos.y = Math.max(0, Math.min(relativePos.y, containerHeight + scrollTop))
-
-  currentPos.value = relativePos
+  currentPos.value = getRelativePosition(e)
+  debugSelection('update', { clientX: e.clientX, clientY: e.clientY })
   updateSelectedItems()
   handleAutoScroll(e)
 }
@@ -335,10 +349,8 @@ const handleAutoScroll = (e: MouseEvent) => {
   }
 
   if (moved) {
-    const next = getRelativePosition(e)
-    next.x = Math.max(0, Math.min(next.x, container.clientWidth + container.scrollLeft))
-    next.y = Math.max(0, Math.min(next.y, container.clientHeight + container.scrollTop))
-    currentPos.value = next
+    currentPos.value = getRelativePosition(e)
+    debugSelection('auto-scroll', { clientX: e.clientX, clientY: e.clientY, moved })
     updateSelectedItems()
     lastMouseEvent = e
     if (autoScrollFrameId === null) {
@@ -367,6 +379,7 @@ const clearSelection = (e?: MouseEvent) => {
 // 处理滚动事件
 const handleScroll = () => {
   if (selecting.value) {
+    debugSelection('scroll')
     refreshSelectableRects()
     updateSelectedItems()
   }

@@ -9,7 +9,8 @@ import type {
   PluginManagerConfig,
   BaseResponse,
   MarketplacePluginEntry,
-  MarketplacePluginFile
+  MarketplacePluginFile,
+  PluginInstallProgress
 } from '../../shared/types'
 
 /**
@@ -20,6 +21,8 @@ import type {
 export class PluginHandler {
   private config: PluginManagerConfig | null = null
   private scanInterval: NodeJS.Timeout | null = null
+  // 正在进行的插件市场安装：key=pluginId，value=AbortController（用于取消下载）
+  private activeInstalls = new Map<string, AbortController>()
 
   constructor() {
     // registerHandlers 将由 IPCHandlers 调用
@@ -60,6 +63,7 @@ export class PluginHandler {
 
     // 插件市场（HTTP 静态源）
     ipcMain.handle('plugin:install-from-marketplace', this.handleInstallFromMarketplace.bind(this))
+    ipcMain.handle('plugin:cancel-install', this.handleCancelInstall.bind(this))
 
     // 更新检查：计算本地插件文件 sha256 清单，供渲染进程与市场条目比对
     ipcMain.handle('plugin:compute-file-checksums', this.handleComputeFileChecksums.bind(this))
@@ -574,19 +578,50 @@ export class PluginHandler {
   }
 
   /**
-   * 下载单个文件并以 UTF-8 buffer 返回（插件市场文件通常较小，这里直接全量读取）
+   * 下载单个文件并以 buffer 返回
+   * 流式读取 response.body 以便逐块上报进度；可通过 signal 取消下载。
    * 校验 sha256（当提供 checksum 时），不一致则抛错。
    */
   private async downloadAndVerifyFile(
     fileUrl: string,
-    expectedChecksum?: string
+    expectedChecksum?: string,
+    signal?: AbortSignal,
+    onChunk?: (byteLen: number) => void
   ): Promise<Buffer> {
-    const response = await fetch(fileUrl)
+    const response = await fetch(fileUrl, { signal })
     if (!response.ok) {
       throw new Error(`下载失败 (${response.status}): ${fileUrl}`)
     }
-    const buf = Buffer.from(await response.arrayBuffer())
 
+    // 流式读取，逐块累加并上报进度
+    const reader = response.body?.getReader()
+    if (!reader) {
+      // 无法获取 reader（理论上不会发生），退化为全量读取
+      const buf = Buffer.from(await response.arrayBuffer())
+      if (onChunk) onChunk(buf.length)
+      return this.verifyChecksum(buf, expectedChecksum, fileUrl)
+    }
+
+    const chunks: Buffer[] = []
+    let total = 0
+    for (;;) {
+      const { done, value } = await reader.read()
+      if (done) break
+      if (value) {
+        const chunk = Buffer.isBuffer(value) ? value : Buffer.from(value)
+        chunks.push(chunk)
+        total += chunk.length
+        if (onChunk) onChunk(chunk.length)
+      }
+    }
+    const buf = Buffer.concat(chunks, total)
+    return this.verifyChecksum(buf, expectedChecksum, fileUrl)
+  }
+
+  /**
+   * 校验 buffer 的 sha256（当提供 checksum 时），不一致则抛错
+   */
+  private verifyChecksum(buf: Buffer, expectedChecksum: string | undefined, fileUrl: string): Buffer {
     if (expectedChecksum) {
       const expected = expectedChecksum.startsWith('sha256:')
         ? expectedChecksum.slice(7)
@@ -600,14 +635,52 @@ export class PluginHandler {
   }
 
   /**
+   * 取消正在进行的插件市场安装
+   */
+  private async handleCancelInstall(
+    _event: Electron.IpcMainInvokeEvent,
+    pluginId: string
+  ): Promise<BaseResponse> {
+    const controller = this.activeInstalls.get(pluginId)
+    if (controller) {
+      controller.abort()
+      logger.info('PluginHandler', `Cancelled marketplace install: ${pluginId}`)
+      return { success: true, message: '已取消' }
+    }
+    return { success: false, message: '该插件未在安装中' }
+  }
+
+  /**
+   * 向渲染进程回推安装进度
+   */
+  private sendInstallProgress(
+    sender: Electron.WebContents,
+    progress: PluginInstallProgress
+  ): void {
+    if (!sender.isDestroyed()) {
+      sender.send('plugin:install-progress', progress)
+    }
+  }
+
+  /**
    * 从插件市场安装插件
    * 把远程插件目录下载到本地 pluginsDirectory/<pluginId>/，随后走与本地插件一致的加载流程。
+   * 下载过程流式读取并逐块上报进度（plugin:install-progress），可通过 plugin:cancel-install 取消。
    */
   private async handleInstallFromMarketplace(
-    _event: Electron.IpcMainInvokeEvent,
+    event: Electron.IpcMainInvokeEvent,
     marketUrl: string,
     entry: MarketplacePluginEntry
-  ): Promise<BaseResponse> {
+  ): Promise<BaseResponse & { cancelled?: boolean }> {
+    // 重复安装直接拒绝
+    if (this.activeInstalls.has(entry?.pluginId)) {
+      return { success: false, message: '该插件正在安装中' }
+    }
+
+    const controller = new AbortController()
+    const { signal } = controller
+    const sender = event.sender
+
     try {
       if (!this.config?.pluginsDirectory) {
         return { success: false, message: '未配置本地插件目录，无法安装' }
@@ -615,6 +688,8 @@ export class PluginHandler {
       if (!entry?.pluginId || !entry?.directory) {
         return { success: false, message: '市场插件条目信息不完整' }
       }
+
+      this.activeInstalls.set(entry.pluginId, controller)
 
       const base = this.normalizeMarketUrl(marketUrl)
       if (!base) {
@@ -634,16 +709,36 @@ export class PluginHandler {
       }
       await fs.mkdir(targetDir, { recursive: true })
 
-      // 逐文件下载并校验
-      const files = entry.files && entry.files.length > 0
-        ? entry.files
-        : null
+      // 计算总字节数：优先用文件清单累加，否则退化为目录总大小
+      const files = entry.files && entry.files.length > 0 ? entry.files : null
+      const totalBytes = files ? files.reduce((s, f) => s + (f.size || 0), 0) : Math.max(entry.size || 0, 0)
+      let transferred = 0
+
+      const emitProgress = (phase: PluginInstallProgress['phase']) => {
+        const percent = totalBytes > 0 ? Math.min(100, Math.floor((transferred / totalBytes) * 100)) : 0
+        this.sendInstallProgress(sender, {
+          pluginId: entry.pluginId,
+          percent,
+          transferred,
+          total: totalBytes,
+          phase
+        })
+      }
+      emitProgress('downloading')
 
       if (files) {
         for (const f of files) {
           // entry.directory 是相对市场根（如 plugins/<id>），f.path 是相对插件目录
           const fileUrl = `${base}/${entry.directory}/${f.path}`
-          const buf = await this.downloadAndVerifyFile(fileUrl, f.checksum)
+          const buf = await this.downloadAndVerifyFile(
+            fileUrl,
+            f.checksum,
+            signal,
+            (byteLen) => {
+              transferred += byteLen
+              emitProgress('downloading')
+            }
+          )
           const dest = path.join(targetDir, path.normalize(f.path))
           await fs.mkdir(path.dirname(dest), { recursive: true })
           await fs.writeFile(dest, buf)
@@ -654,7 +749,15 @@ export class PluginHandler {
 
         // 先拉 plugin.json 确定入口
         const pluginJsonUrl = `${base}/${entry.directory}/plugin.json`
-        const pluginJsonBuf = await this.downloadAndVerifyFile(pluginJsonUrl)
+        const pluginJsonBuf = await this.downloadAndVerifyFile(
+          pluginJsonUrl,
+          undefined,
+          signal,
+          (byteLen) => {
+            transferred += byteLen
+            emitProgress('downloading')
+          }
+        )
         await fs.writeFile(path.join(targetDir, 'plugin.json'), pluginJsonBuf)
 
         let entryFile = 'index.js'
@@ -666,9 +769,20 @@ export class PluginHandler {
         }
 
         const entryUrl = `${base}/${entry.directory}/${entryFile}`
-        const entryBuf = await this.downloadAndVerifyFile(entryUrl)
+        const entryBuf = await this.downloadAndVerifyFile(
+          entryUrl,
+          undefined,
+          signal,
+          (byteLen) => {
+            transferred += byteLen
+            emitProgress('downloading')
+          }
+        )
         await fs.writeFile(path.join(targetDir, entryFile), entryBuf)
       }
+
+      // 下载完成，进入校验阶段
+      emitProgress('verifying')
 
       // 验证安装结果：plugin.json 可解析且字段齐全
       const installedConfig = await this.parsePluginConfig(targetDir)
@@ -678,6 +792,7 @@ export class PluginHandler {
         return { success: false, message: '安装后校验 plugin.json 失败，已回滚' }
       }
 
+      emitProgress('done')
       logger.info('PluginHandler', `Plugin installed from marketplace: ${installedConfig.pluginName} v${installedConfig.version}`)
       return {
         success: true,
@@ -685,9 +800,30 @@ export class PluginHandler {
         data: { directory: targetDir, config: installedConfig }
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      logger.error('PluginHandler', `Failed to install plugin from marketplace: ${errorMessage}`)
-      return { success: false, message: errorMessage }
+      const isCancelled = error instanceof Error && error.name === 'AbortError'
+      const errorMessage = isCancelled ? '已取消' : (error instanceof Error ? error.message : String(error))
+
+      if (isCancelled) {
+        logger.info('PluginHandler', `Marketplace install cancelled: ${entry?.pluginId}`)
+      } else {
+        logger.error('PluginHandler', `Failed to install plugin from marketplace: ${errorMessage}`)
+      }
+
+      // 取消或失败：清理半成品目录
+      if (entry?.pluginId && this.config?.pluginsDirectory) {
+        const targetDir = path.join(this.config.pluginsDirectory, entry.pluginId)
+        try {
+          await fs.rm(targetDir, { recursive: true, force: true })
+        } catch {
+          // 忽略清理失败
+        }
+      }
+
+      return { success: false, cancelled: isCancelled, message: errorMessage }
+    } finally {
+      if (entry?.pluginId) {
+        this.activeInstalls.delete(entry.pluginId)
+      }
     }
   }
 

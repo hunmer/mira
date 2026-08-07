@@ -109,8 +109,15 @@ const electronAPI: ElectronAPI = {
       ipcRenderer.invoke('plugin:clear-cache'),
     installFromMarketplace: (marketUrl: string, entry: any) =>
       ipcRenderer.invoke('plugin:install-from-marketplace', marketUrl, entry),
+    cancelInstall: (pluginId: string) =>
+      ipcRenderer.invoke('plugin:cancel-install', pluginId),
     computeFileChecksums: (pluginId: string) =>
-      ipcRenderer.invoke('plugin:compute-file-checksums', pluginId)
+      ipcRenderer.invoke('plugin:compute-file-checksums', pluginId),
+    onInstallProgress: (callback: (progress: any) => void) => {
+      const handler = (_event: any, progress: any) => callback(progress)
+      ipcRenderer.on('plugin:install-progress', handler)
+      return () => ipcRenderer.removeListener('plugin:install-progress', handler)
+    }
   },
 
   // 插件窗口管理 API（打开插件 dist 的独立 BrowserWindow）

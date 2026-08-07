@@ -261,6 +261,15 @@ export interface MarketplaceCatalog {
   plugins: MarketplacePluginEntry[]
 }
 
+// 插件市场安装进度（主进程逐文件流式下载时回推到渲染进程）
+export interface PluginInstallProgress {
+  pluginId: string
+  percent: number // 0-100
+  transferred: number // 已下载字节数
+  total: number // 总字节数
+  phase: 'downloading' | 'verifying' | 'done'
+}
+
 // 系统信息
 export interface SystemInfo {
   version: string
@@ -438,8 +447,10 @@ export interface ElectronAPI {
     updateConfig: (config: any) => Promise<BaseResponse>
     getConfig: () => Promise<BaseResponse>
     clearCache: () => Promise<BaseResponse>
-    installFromMarketplace: (marketUrl: string, entry: MarketplacePluginEntry) => Promise<BaseResponse>
+    installFromMarketplace: (marketUrl: string, entry: MarketplacePluginEntry) => Promise<BaseResponse & { cancelled?: boolean }>
+    cancelInstall: (pluginId: string) => Promise<BaseResponse>
     computeFileChecksums: (pluginId: string) => Promise<BaseResponse & { data?: MarketplacePluginFile[] }>
+    onInstallProgress?: (callback: (progress: PluginInstallProgress) => void) => () => void
   }
 
   // 插件窗口管理 API（打开插件 dist 的独立 BrowserWindow）

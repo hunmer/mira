@@ -13,13 +13,9 @@
       <!-- 单选模式 -->
       <div v-if="displayItems.length === 1" class="relative">
         <div class="relative w-full flex items-center justify-center" style="height: 192px;">
-          <!-- 加载中占位符 -->
-          <div v-if="imageLoadState === 'loading'" class="absolute inset-0 flex items-center justify-center">
-            <StatusImage name="loading" size="large" :spin="true" text="加载中..." text-class="text-xs" />
-          </div>
 
           <!-- 错误占位符 - 使用文件类型图标 -->
-          <div v-else-if="imageLoadState === 'error'" class="absolute inset-0 flex flex-col items-center justify-center">
+          <div v-if="imageLoadState === 'error'" class="absolute inset-0 flex flex-col items-center justify-center">
               <img :src="getExtIconUrl(displayItems[0]?.name || '')" class="w-16 h-16 object-contain opacity-60" />
  
           </div>
