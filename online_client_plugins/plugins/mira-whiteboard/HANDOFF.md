@@ -92,7 +92,7 @@ mira-whiteboard/
 | 画布切换机制 | `<WovenCanvas :key="currentProjectId">`，换 key → 重挂 → 换 documentId |
 | 菜单 IPC | 渲染进程 → `plugin-window:set-menu`(template) → 主进程 `win.setMenu`；点击 → `plugin-window:menu-action`(payload) 回窗口 |
 | 图片剪贴板 / 外部拖拽 | `pluginWindow.copyImage(payload)` 写系统图片剪贴板；`pluginWindow.startImageDrag(payload)` 将图片写入临时文件并调用 Electron `webContents.startDrag` |
-| 媒体投递 | 宿主侧 `pluginWindow.send(PLUGIN_ID, 'dist/index.html', 'media:add', files)` → 窗口 `onMessage('media:add')` 接收并插入当前工程（无当前工程则自动新建一个）|
+| 媒体投递 | 宿主侧 `pluginWindow.send(PLUGIN_ID, 'dist/index.html', 'media:add', files)` → 窗口 `onMessage('media:add')` 接收并插入当前工程（无当前工程则自动新建一个）；每张图片创建成功后自动适配画布、居中并选中新节点 |
 
 > 组合窗口内**只有 `window.electronAPI.pluginWindow`**（来自专用 preload），没有宿主的 api.storage / 事件系统，所以工程列表走 localStorage。
 

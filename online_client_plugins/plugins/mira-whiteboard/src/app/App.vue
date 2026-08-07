@@ -16,7 +16,8 @@
  *      工程列表或当前工程变化时重建菜单（watch）。
  */
 import { computed, ref, defineComponent, h, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
-import { WovenCanvas, useImageCreation } from '@woven-canvas/vue'
+import { WovenCanvas, useEditorContext, useImageCreation } from '@woven-canvas/vue'
+import { Block, Camera, deselectAll, Screen, selectBlock } from '@woven-canvas/core'
 import '@woven-canvas/vue/style.css'
 import CanvasContextMenu from './CanvasContextMenu.vue'
 import CanvasImagePreview from './CanvasImagePreview.vue'
@@ -180,6 +181,33 @@ const CanvasMediaBridge = defineComponent({
   name: 'CanvasMediaBridge',
   setup() {
     const { createImageBlock } = useImageCreation()
+    const { nextEditorTick } = useEditorContext()
+
+    const focusImage = (entityId: number) => {
+      nextEditorTick((ctx) => {
+        const corners = Block.getCorners(ctx, entityId)
+        const xs = corners.map((point) => point[0])
+        const ys = corners.map((point) => point[1])
+        const left = Math.min(...xs)
+        const right = Math.max(...xs)
+        const top = Math.min(...ys)
+        const bottom = Math.max(...ys)
+        const screen = Screen.read(ctx)
+        const contentWidth = Math.max(1, right - left)
+        const contentHeight = Math.max(1, bottom - top)
+        const zoom = Math.min(1.5, Math.max(0.05, Math.min(
+          screen.width / (contentWidth + 96),
+          screen.height / (contentHeight + 96),
+        )))
+        const camera = Camera.write(ctx)
+        camera.zoom = zoom
+        camera.left = (left + right) / 2 - screen.width / zoom / 2
+        camera.top = (top + bottom) / 2 - screen.height / zoom / 2
+        deselectAll(ctx)
+        selectBlock(ctx, entityId)
+      })
+    }
+
     const insertMedia = async (files: any[]) => {
       for (const [index, media] of (files || []).entries()) {
         const source = media?.url || media?.thumbnailPath
@@ -191,7 +219,8 @@ const CanvasMediaBridge = defineComponent({
           const file = new File([blob], media.name || `media-${index}`, {
             type: media.mimeType || blob.type,
           })
-          await createImageBlock(file, index * 260, 0)
+          const entityId = await createImageBlock(file, index * 260, 0)
+          focusImage(entityId)
         } catch (error) {
           console.warn('[whiteboard] insert media failed', media?.id, error)
         }

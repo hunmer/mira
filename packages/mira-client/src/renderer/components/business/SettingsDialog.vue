@@ -3,11 +3,11 @@
     :open="isVisible"
     @update:open="isVisible = $event"
   >
-    <DialogContent class="settings-dialog sm:max-w-[60vw] sm:max-h-[70vh] overflow-hidden grid-rows-[auto_1fr_auto]">
+    <DialogContent class="settings-dialog sm:max-w-[60vw] sm:max-h-[70vh] overflow-hidden grid-rows-[auto_1fr]">
       <DialogHeader>
         <DialogTitle>设置</DialogTitle>
       </DialogHeader>
-      <div class="h-[70vh] flex flex-col">
+      <div class="flex flex-col min-h-0 overflow-hidden">
         <!-- 顶部图标导航 -->
         <nav class="border-b border-white/60 dark:border-border shrink-0">
           <div class="flex items-center justify-center gap-1 sm:gap-2 px-4 py-3 overflow-x-auto">

@@ -792,7 +792,19 @@ export const usePluginStore = defineStore('plugin', () => {
         return { success: false, message: '未配置插件市场源地址' }
       }
 
-      const result = await pluginService.installMarketplacePlugin(marketUrl, entry)
+      // 构建产物可能在市场列表打开后发生变化。安装前重拉目录，确保传给
+      // 主进程的文件清单与当前静态源内容属于同一次索引生成结果。
+      const catalogResult = await fetchMarketplaceCatalog()
+      if (!catalogResult.success) {
+        const detail = 'message' in catalogResult ? catalogResult.message : catalogResult.error
+        return { success: false, message: detail || '刷新插件市场目录失败' }
+      }
+      const latestEntry = marketplacePlugins.value.find(item => item.pluginId === entry.pluginId)
+      if (!latestEntry) {
+        return { success: false, message: '插件已不在当前市场目录中' }
+      }
+
+      const result = await pluginService.installMarketplacePlugin(marketUrl, latestEntry)
       if (result.success) {
         // 安装成功后刷新本地插件列表
         await loadLocalPlugins()

@@ -53,7 +53,7 @@ function handleExitComplete() {
           :transition="{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }"
           :class="
             cn(
-              'bg-white/70 dark:bg-muted/80 backdrop-blur-xl fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] gap-4 rounded-2xl border border-white/60 dark:border-border p-6 shadow-[0_24px_60px_rgba(99,102,241,0.15)] sm:max-w-lg',
+              'bg-white/70 dark:bg-muted/80 backdrop-blur-xl fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] gap-4 rounded-2xl border border-white/60 dark:border-border p-6 shadow-[0_24px_60px_rgba(99,102,241,0.15)] [interpolate-size:allow-keywords] transition-[width,height,max-width,max-height] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] sm:max-w-lg',
               props.class,
             )"
         >

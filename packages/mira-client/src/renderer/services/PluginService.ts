@@ -413,7 +413,7 @@ export class PluginService {
         return { success: false, message: '市场源地址为空' }
       }
       const catalogUrl = `${base}/plugins.json`
-      const response = await fetch(catalogUrl)
+      const response = await fetch(catalogUrl, { cache: 'no-store' })
       if (!response.ok) {
         return { success: false, message: `拉取市场目录失败 (${response.status}): ${catalogUrl}` }
       }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, shallowRef, watch } from 'vue'
 import { FloatingMenuBar, MenuButton, MenuDropdown, useEditorContext, useQuery } from '@woven-canvas/vue'
 import {
   addComponent,
@@ -37,7 +37,8 @@ const layoutRows = ref(1)
 const layoutColumns = ref(1)
 const layoutRowGap = ref(24)
 const layoutColumnGap = ref(24)
-const imageDragPayload = ref<CanvasImageTransferPayload | null>(null)
+// IPC 只能接收可结构化克隆的数据；避免深层 ref 把 payload 包装成 Vue Proxy。
+const imageDragPayload = shallowRef<CanvasImageTransferPayload | null>(null)
 let imageDragResolveVersion = 0
 const autoLayoutPresets: AutoLayoutPreset[] = [
   { id: 'compact', label: '紧凑网格', description: '8 px 间距' },
@@ -262,6 +263,8 @@ function handleImageDragStart(event: DragEvent) {
     event.preventDefault()
     return
   }
+  // Electron 的 startDrag 会接管原生拖拽；取消 HTML5 默认拖拽，避免松手后事件会话残留。
+  event.preventDefault()
   event.dataTransfer?.setData('text/plain', imageDragPayload.value.fileName)
   startImageDrag(imageDragPayload.value)
 }

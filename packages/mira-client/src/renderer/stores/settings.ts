@@ -209,7 +209,7 @@ export const useSettingsStore = defineStore('settings', () => {
     enablePluginSandbox: false,
     trustedPlugins: [],
     clientPluginMarketUrl: '', // 客户端插件市场当前选中的源地址，留空表示未选择
-    clientPluginMarketUrls: [], // 客户端插件市场源地址列表
+    clientPluginMarketUrls: ['https://raw.githubusercontent.com/hunmer/mira/refs/heads/main/online_client_plugins/'], // 客户端插件市场源地址列表
 
     // 网络设置
     networkProxyEnabled: false, // 默认不启用代理

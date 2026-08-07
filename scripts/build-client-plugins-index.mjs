@@ -433,6 +433,8 @@ function startStaticServer(port) {
     // 始终允许跨域（客户端跨域拉取必需）
     res.setHeader('Access-Control-Allow-Origin', '*')
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
+    // 开发市场源内容会被 watch 实时替换，禁止缓存以免目录校验值与文件内容错位。
+    res.setHeader('Cache-Control', 'no-store')
     if (req.method === 'OPTIONS') {
       res.writeHead(204)
       res.end()

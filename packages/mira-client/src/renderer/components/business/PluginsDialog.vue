@@ -960,7 +960,9 @@ const removePlugin = (plugin: PluginRuntime) => {
 const refreshPlugins = async () => {
   isRefreshing.value = true
   try {
-    const result = await pluginStore.discoverLocalPlugins()
+    const result = activeTab.value === 'online'
+      ? await pluginStore.fetchMarketplaceCatalog()
+      : await pluginStore.discoverLocalPlugins()
     if (!result.success) {
       toast.add({
         severity: 'error',
