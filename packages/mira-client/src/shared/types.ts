@@ -285,7 +285,6 @@ export interface SystemHealth {
   status: 'healthy' | 'warning' | 'error' | 'disconnected'
   timestamp: string
   details?: Record<string, any>
-  dashboardPort?: number
   isDocker?: boolean
 }
 
@@ -547,6 +546,7 @@ export interface ElectronAPI {
   serverAutoStart: {
     get: () => Promise<{ success: boolean; enabled: boolean; message?: string }>
     set: (enabled: boolean) => Promise<{ success: boolean; enabled: boolean; message?: string }>
+    waitReady: () => Promise<{ success: boolean; message?: string }>
   }
 
   // 通知 API

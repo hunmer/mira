@@ -774,7 +774,6 @@ export class MiraSDKService {
       return {
         status: 'healthy' as const,
         timestamp: new Date().toISOString(),
-        dashboardPort: (health as any).dashboardPort || 5173,
         isDocker: !!(health as any).isDocker,
       }
     } catch (error) {

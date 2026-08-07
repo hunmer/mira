@@ -352,7 +352,6 @@ export class MiraHttpServer {
                     isDocker,
                     authRequired: settings.authRequired,
                     allowRegistration: settings.allowRegistration,
-                    dashboardPort: settings.dashboardPort || 5173
                 }
             });
         });

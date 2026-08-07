@@ -6,6 +6,8 @@ export interface LocalServerScriptOptions {
   onOutput?: (line: string) => void
 }
 
+let serverStartPromise: Promise<void> | null = null
+
 function getScriptPath(): string {
   return app.isPackaged
     ? path.join(process.resourcesPath, 'scripts', 'mira-server-service.mjs')
@@ -62,6 +64,16 @@ export function runLocalServerScript(
       else reject(new Error(`Local server script exited with code ${exitCode ?? -1}`))
     })
   })
+}
+
+export function ensureLocalServerStarted(options: LocalServerScriptOptions = {}): Promise<void> {
+  if (!serverStartPromise) {
+    serverStartPromise = runLocalServerScript('start', options).catch(error => {
+      serverStartPromise = null
+      throw error
+    })
+  }
+  return serverStartPromise
 }
 
 export function runLocalServerScriptSync(command: 'stop'): string {

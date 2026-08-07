@@ -237,6 +237,7 @@ const electronAPI: ElectronAPI = {
   serverAutoStart: {
     get: () => ipcRenderer.invoke('server-autostart:get'),
     set: (enabled: boolean) => ipcRenderer.invoke('server-autostart:set', enabled),
+    waitReady: () => ipcRenderer.invoke('server-autostart:wait-ready'),
   },
 
   // 通知 API

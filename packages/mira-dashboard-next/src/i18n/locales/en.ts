@@ -84,7 +84,6 @@ export default {
     serverSettings: 'Server Settings',
     authRequired: 'Require Authentication',
     allowRegistration: 'Allow Registration',
-    dashboardPort: 'Dashboard Port',
   },
   library: {
     title: 'Library Management',

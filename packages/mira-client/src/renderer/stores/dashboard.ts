@@ -23,10 +23,9 @@ export const useDashboardStore = defineStore('dashboard', () => {
         return
       }
 
-      const health = await miraSDKService.getSystemHealth()
-      const port = health.dashboardPort || 5173
+      // dashboard 直接由后端服务器在 /dashboard 路径下提供，无需独立端口
       const serverUrl = new URL(config.serverUrl)
-      dashboardBaseUrl.value = `${serverUrl.protocol}//${serverUrl.hostname}:${port}`
+      dashboardBaseUrl.value = `${serverUrl.protocol}//${serverUrl.host}`
     } catch (e: any) {
       error.value = e.message || '加载失败'
     } finally {
@@ -36,23 +35,25 @@ export const useDashboardStore = defineStore('dashboard', () => {
 
   function buildUrl(path: string, params?: Record<string, string>) {
     if (!dashboardBaseUrl.value) return ''
+    // dashboard 由后端服务器在 /dashboard 路径下提供
+    const fullPath = `/dashboard${path}`
     if (!params || !Object.values(params).some(Boolean)) {
-      return `${dashboardBaseUrl.value}${path}`
+      return `${dashboardBaseUrl.value}${fullPath}`
     }
     const qs = Object.entries(params)
       .filter(([, v]) => v)
       .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
       .join('&')
-    const separator = path.includes('?') ? '&' : '?'
+    const separator = fullPath.includes('?') ? '&' : '?'
     // hash 路由：把参数拼在 hash 内的 query string 里，而不是 hash 前面
-    const hashIdx = path.indexOf('#')
+    const hashIdx = fullPath.indexOf('#')
     if (hashIdx !== -1) {
-      const beforeHash = path.slice(0, hashIdx)
-      const afterHash = path.slice(hashIdx + 1)
+      const beforeHash = fullPath.slice(0, hashIdx)
+      const afterHash = fullPath.slice(hashIdx + 1)
       const sep = afterHash.includes('?') ? '&' : '?'
       return `${dashboardBaseUrl.value}${beforeHash}#${afterHash}${sep}${qs}`
     }
-    return `${dashboardBaseUrl.value}${path}${separator}${qs}`
+    return `${dashboardBaseUrl.value}${fullPath}${separator}${qs}`
   }
 
   function getUserAvatarUrl(userId: string) {

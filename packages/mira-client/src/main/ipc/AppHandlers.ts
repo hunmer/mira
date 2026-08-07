@@ -1,4 +1,5 @@
 import { ipcMain, IpcMainInvokeEvent, app, BrowserWindow } from 'electron'
+import { ensureLocalServerStarted } from '../services/LocalServerService'
 
 /**
  * 应用和窗口控制 IPC 处理器
@@ -28,6 +29,7 @@ export class AppHandlers {
     // 服务自启动（系统登录项）
     ipcMain.handle('server-autostart:get', this.handleServerAutoStartGet.bind(this))
     ipcMain.handle('server-autostart:set', this.handleServerAutoStartSet.bind(this))
+    ipcMain.handle('server-autostart:wait-ready', this.handleServerAutoStartWaitReady.bind(this))
 
     ipcMain.handle('app:toggle-devtools', this.handleAppToggleDevTools.bind(this))
     ipcMain.handle('dev:toggle-devtools', this.handleAppToggleDevTools.bind(this))
@@ -159,6 +161,15 @@ export class AppHandlers {
       return { success: true, enabled: settings.openAtLogin }
     } catch (error) {
       return { success: false, enabled: false, message: error instanceof Error ? error.message : String(error) }
+    }
+  }
+
+  private async handleServerAutoStartWaitReady(_event: IpcMainInvokeEvent): Promise<{ success: boolean; message?: string }> {
+    try {
+      await ensureLocalServerStarted()
+      return { success: true }
+    } catch (error) {
+      return { success: false, message: error instanceof Error ? error.message : String(error) }
     }
   }
 }

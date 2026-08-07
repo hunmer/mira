@@ -200,6 +200,9 @@ export class IPCHandlers {
     ipcMain.removeAllListeners('app:quit')
     ipcMain.removeAllListeners('app:getVersion')
     ipcMain.removeAllListeners('app:getPath')
+    ipcMain.removeAllListeners('server-autostart:get')
+    ipcMain.removeAllListeners('server-autostart:set')
+    ipcMain.removeAllListeners('server-autostart:wait-ready')
 
     // 文件系统操作
     ipcMain.removeAllListeners('fs:readDir')

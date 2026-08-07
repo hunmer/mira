@@ -61,6 +61,12 @@
       :show-cancel="globalLoading.showCancel"
       @cancel="handleGlobalLoadingCancel"
     />
+    <ServerStartupLoading
+      :visible="serverStartup.visible"
+      :failed="serverStartup.failed"
+      :message="serverStartup.message"
+      @retry="waitForServerStartup"
+    />
     
     <!-- 应用主内容 -->
     <div class="flex h-full">
@@ -84,6 +90,7 @@
 import { onMounted, onUnmounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import GlobalLoading from './components/GlobalLoading.vue'
+import ServerStartupLoading from './components/ServerStartupLoading.vue'
 import { useSettingsStore } from './stores/settings'
 import { confirmState } from './composables/useConfirm'
 
@@ -131,6 +138,25 @@ const globalLoading = reactive({
   showProgress: false,
   showCancel: false
 })
+
+const serverStartup = reactive({
+  visible: environment.isElectron && !!window.electronAPI?.serverAutoStart,
+  failed: false,
+  message: '等待 mira-app-server 健康检查通过…',
+})
+
+const waitForServerStartup = async () => {
+  if (!serverStartup.visible || !window.electronAPI?.serverAutoStart) return
+  serverStartup.failed = false
+  serverStartup.message = '等待 mira-app-server 健康检查通过…'
+  const result = await window.electronAPI.serverAutoStart.waitReady()
+  if (result.success) {
+    serverStartup.visible = false
+  } else {
+    serverStartup.failed = true
+    serverStartup.message = result.message || '后端服务未能启动，请检查部署日志后重试。'
+  }
+}
 
 // 更新对话框状态
 const updateDialog = reactive({
@@ -428,6 +454,7 @@ const cleanupElectronListeners = () => {
 onMounted(() => {
   document.addEventListener('keydown', handleKeydown)
   setupElectronListeners()
+  void waitForServerStartup()
 
   // 应用主题
   settingsStore.applyTheme()

@@ -4,6 +4,26 @@ import ConfigStorage from '@renderer/utils/ConfigStorage'
 
 const DEFAULT_WS_PORT = '8018'
 
+const normalizeServerUrl = (value: string): string => {
+  try {
+    const url = new URL(value.trim())
+    if (url.hostname === 'localhost' || url.hostname === '::1') url.hostname = '127.0.0.1'
+    return url.toString().replace(/\/$/, '')
+  } catch {
+    return value.trim()
+  }
+}
+
+const serverAddressKey = (value: string): string => {
+  try {
+    const url = new URL(normalizeServerUrl(value))
+    const port = url.port || (url.protocol === 'https:' ? '443' : '80')
+    return `${url.protocol}//${url.hostname}:${port}`.toLowerCase()
+  } catch {
+    return normalizeServerUrl(value).toLowerCase()
+  }
+}
+
 const createWebSocketUrl = (serverUrl: string): string => {
   try {
     const url = new URL(serverUrl)
@@ -85,17 +105,31 @@ export const useServerListStore = defineStore('serverList', () => {
     error.value = null
 
     try {
+      const normalizedServerUrl = normalizeServerUrl(config.serverUrl)
       const newServer: ServerConfig = {
         ...config,
         id: config.id, // 必须提供ID
+        serverUrl: normalizedServerUrl,
+        websocketUrl: normalizeServerUrl(config.websocketUrl),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       }
 
-      services.value.push(newServer)
-      
+      const sameAddress = services.value.filter(server =>
+        server.id !== newServer.id && serverAddressKey(server.serverUrl) === serverAddressKey(newServer.serverUrl),
+      )
+      const previousActiveId = activeServerId.value
+      services.value = services.value.filter(server =>
+        server.id === newServer.id || !sameAddress.some(duplicate => duplicate.id === server.id),
+      )
+      const existingIndex = services.value.findIndex(server => server.id === newServer.id)
+      if (existingIndex >= 0) services.value[existingIndex] = newServer
+      else services.value.push(newServer)
+
       // 如果是第一个素材库，设为活跃状态
       if (services.value.length === 1) {
+        activeServerId.value = newServer.id
+      } else if (sameAddress.some(server => server.id === previousActiveId)) {
         activeServerId.value = newServer.id
       }
 
@@ -121,10 +155,26 @@ export const useServerListStore = defineStore('serverList', () => {
     }
 
     try {
+      const nextServerUrl = updates.serverUrl
+        ? normalizeServerUrl(updates.serverUrl)
+        : services.value[index].serverUrl
       services.value[index] = {
         ...services.value[index],
         ...updates,
+        serverUrl: nextServerUrl,
+        ...(updates.websocketUrl ? { websocketUrl: normalizeServerUrl(updates.websocketUrl) } : {}),
         updatedAt: new Date().toISOString()
+      }
+      const duplicateIds = services.value
+        .filter((server, serverIndex) =>
+          serverIndex !== index && serverAddressKey(server.serverUrl) === serverAddressKey(nextServerUrl),
+        )
+        .map(server => server.id)
+      if (duplicateIds.length) {
+        services.value = services.value.filter(server => !duplicateIds.includes(server.id))
+        if (activeServerId.value && duplicateIds.includes(activeServerId.value)) {
+          activeServerId.value = services.value.find(server => server.id === id)?.id || services.value[0]?.id || null
+        }
       }
 
       await persistServerListState()
@@ -287,8 +337,21 @@ export const useServerListStore = defineStore('serverList', () => {
 
       const serverListData = JSON.parse(stored)
       
-      services.value = serverListData.services || []
-      activeServerId.value = serverListData.activeServerId || (services.value.length > 0 ? services.value[0].id : null)
+      const normalizedServices = (serverListData.services || []).map((server: ServerConfig) => ({
+        ...server,
+        serverUrl: normalizeServerUrl(server.serverUrl),
+        websocketUrl: normalizeServerUrl(server.websocketUrl),
+      }))
+      const seenAddresses = new Set<string>()
+      services.value = normalizedServices.reverse().filter(server => {
+        const key = serverAddressKey(server.serverUrl)
+        if (seenAddresses.has(key)) return false
+        seenAddresses.add(key)
+        return true
+      }).reverse()
+      activeServerId.value = serverListData.activeServerId && services.value.some(server => server.id === serverListData.activeServerId)
+        ? serverListData.activeServerId
+        : (services.value.length > 0 ? services.value[0].id : null)
       
       // 如果没有素材库，创建默认的
       if (services.value.length === 0) {
@@ -304,13 +367,13 @@ export const useServerListStore = defineStore('serverList', () => {
    * 初始化默认素材库
    */
   const initializeDefaultLibraries = async () => {
-    const baseHost = location.hostname
-    const defaultLibraries: ServerConfig[] = [
+      const defaultServerUrl = 'http://127.0.0.1:8081'
+      const defaultLibraries: ServerConfig[] = [
       {
         id: 'default-server', // 默认库ID
         name: '素材库',
-        serverUrl: `${location.protocol}//${baseHost}:8081`,
-        websocketUrl: createWebSocketUrl(`${location.protocol}//${baseHost}:8081`),
+        serverUrl: defaultServerUrl,
+        websocketUrl: createWebSocketUrl(defaultServerUrl),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       }
@@ -346,6 +409,7 @@ export const useServerListStore = defineStore('serverList', () => {
     error.value = null
 
     try {
+      const normalizedServerUrl = normalizeServerUrl(serverUrl)
       // 导入MiraSDKService来获取库列表
       const { miraSDKService } = await import('../services/MiraSDKService')
       
@@ -356,19 +420,19 @@ export const useServerListStore = defineStore('serverList', () => {
       const ServerConfigs: ServerConfig[] = serverLibraries.map(server => ({
         id: server.id, // 使用真实的服务器库ID
         name: server.name,
-        serverUrl: serverUrl,
-        websocketUrl: createWebSocketUrl(serverUrl),
+        serverUrl: normalizedServerUrl,
+        websocketUrl: createWebSocketUrl(normalizedServerUrl),
         isActive: false,
         createdAt: server.createdAt,
         updatedAt: server.updatedAt
       }))
 
       // 检查是否已存在相同服务器的库
-      const existingServer = services.value.find(lib => lib.serverUrl === serverUrl)
+      const existingServer = services.value.find(lib => serverAddressKey(lib.serverUrl) === serverAddressKey(normalizedServerUrl))
       
       if (existingServer) {
         // 更新现有服务器的库列表
-        services.value = services.value.filter(lib => lib.serverUrl !== serverUrl)
+        services.value = services.value.filter(lib => serverAddressKey(lib.serverUrl) !== serverAddressKey(normalizedServerUrl))
         services.value.push(...ServerConfigs)
       } else {
         // 添加新服务器的库

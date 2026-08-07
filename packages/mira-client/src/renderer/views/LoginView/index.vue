@@ -99,6 +99,10 @@ watch(error, (val) => {
 
 onMounted(async () => {
   authStore.clearError()
+  if (window.electronAPI?.serverAutoStart) {
+    const ready = await window.electronAPI.serverAutoStart.waitReady()
+    if (!ready.success) return
+  }
   await serverListStore.initializeServerList()
 
   // 用最近活跃的服务器预填地址
@@ -179,8 +183,8 @@ onMounted(async () => {
         @back="handleStepBack"
       />
 
-      <!-- 部署指南入口 + 对话框 -->
-      <DeployGuideDialog @connect="connectToDeployedLibrary" />
+      <!-- 部署指南入口 + 对话框（仅 step 1 展示） -->
+      <DeployGuideDialog v-if="currentStep === 1" @connect="connectToDeployedLibrary" />
     </Motion>
   </div>
 </template>

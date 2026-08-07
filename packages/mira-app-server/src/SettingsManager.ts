@@ -4,13 +4,11 @@ import * as path from 'path';
 export interface ServerSettings {
     authRequired: boolean;
     allowRegistration: boolean;
-    dashboardPort?: number;
 }
 
 const DEFAULT_SETTINGS: ServerSettings = {
     authRequired: true,
     allowRegistration: true,
-    dashboardPort: 5173,
 };
 
 export class SettingsManager {

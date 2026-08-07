@@ -36,7 +36,7 @@ import { TrayService } from './services/TrayService'
 // import { inspect } from 'node:util'
 import { logger } from './utils/Logger'
 import { getAutoUpdater } from './services/useAutoUpdater'
-import { runLocalServerScript, runLocalServerScriptSync } from './services/LocalServerService'
+import { ensureLocalServerStarted, runLocalServerScript, runLocalServerScriptSync } from './services/LocalServerService'
 
 // function formatArgs(args: any[]): string {
 //   return args.map(a =>
@@ -140,7 +140,7 @@ class MiraApplication {
   private setupServerStartupApp() {
     app.whenReady().then(async () => {
       try {
-        await runLocalServerScript('start', {
+        await ensureLocalServerStarted({
           onOutput: line => logger.info('LocalServerService', line),
         })
       } catch (error) {
@@ -166,7 +166,7 @@ class MiraApplication {
       this.setupTray()
 
       // 本地服务由独立生命周期脚本管理；启动检查不阻塞窗口显示。
-      void runLocalServerScript('start', {
+      void ensureLocalServerStarted({
         onOutput: line => logger.info('LocalServerService', line),
       }).catch(error => {
         logger.warn('LocalServerService', 'Local backend auto-start failed', {
@@ -202,13 +202,25 @@ class MiraApplication {
     // 应用即将退出
     app.on('before-quit', () => {
       logger.info('MiraApplication', 'App is about to quit')
+      let autoStartEnabled = false
       try {
-        const output = runLocalServerScriptSync('stop')
-        if (output) logger.info('LocalServerService', output)
+        autoStartEnabled = app.getLoginItemSettings({ args: ['--mira-server-startup'] }).openAtLogin
       } catch (error) {
-        logger.warn('LocalServerService', 'Local backend stop failed', {
+        logger.warn('LocalServerService', 'Unable to read system auto-start state; stopping local backend', {
           error: error instanceof Error ? error.message : String(error),
         })
+      }
+      if (autoStartEnabled) {
+        logger.info('LocalServerService', 'System auto-start is enabled; keeping local backend alive')
+      } else {
+        try {
+          const output = runLocalServerScriptSync('stop')
+          if (output) logger.info('LocalServerService', output)
+        } catch (error) {
+          logger.warn('LocalServerService', 'Local backend stop failed', {
+            error: error instanceof Error ? error.message : String(error),
+          })
+        }
       }
       this.cleanup()
     })
