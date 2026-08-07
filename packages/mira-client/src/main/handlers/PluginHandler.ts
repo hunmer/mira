@@ -1,5 +1,6 @@
 import { ipcMain, dialog } from 'electron'
 import { logger } from '../utils/Logger'
+import { DownloadService } from '../services/DownloadService'
 import * as fs from 'fs/promises'
 import * as path from 'path'
 import { createHash } from 'crypto'
@@ -23,6 +24,8 @@ export class PluginHandler {
   private scanInterval: NodeJS.Timeout | null = null
   // 正在进行的插件市场安装：key=pluginId，value=AbortController（用于取消下载）
   private activeInstalls = new Map<string, AbortController>()
+  // 通用下载服务（带 HTTP 代理 / 进度 / 取消 / sha256 校验）
+  private downloader = DownloadService.getInstance()
 
   constructor() {
     // registerHandlers 将由 IPCHandlers 调用
@@ -579,8 +582,9 @@ export class PluginHandler {
 
   /**
    * 下载单个文件并以 buffer 返回
-   * 流式读取 response.body 以便逐块上报进度；可通过 signal 取消下载。
-   * 校验 sha256（当提供 checksum 时），不一致则抛错。
+   * 委托给 DownloadService：流式读取逐块上报进度；可通过 signal 取消下载；
+   * 校验 sha256（当提供 checksum 时），不一致则抛错。下载自动走当前生效的代理
+   * （见 DownloadService.setProxy）。
    */
   private async downloadAndVerifyFile(
     fileUrl: string,
@@ -588,50 +592,11 @@ export class PluginHandler {
     signal?: AbortSignal,
     onChunk?: (byteLen: number) => void
   ): Promise<Buffer> {
-    const response = await fetch(fileUrl, { signal })
-    if (!response.ok) {
-      throw new Error(`下载失败 (${response.status}): ${fileUrl}`)
-    }
-
-    // 流式读取，逐块累加并上报进度
-    const reader = response.body?.getReader()
-    if (!reader) {
-      // 无法获取 reader（理论上不会发生），退化为全量读取
-      const buf = Buffer.from(await response.arrayBuffer())
-      if (onChunk) onChunk(buf.length)
-      return this.verifyChecksum(buf, expectedChecksum, fileUrl)
-    }
-
-    const chunks: Buffer[] = []
-    let total = 0
-    for (;;) {
-      const { done, value } = await reader.read()
-      if (done) break
-      if (value) {
-        const chunk = Buffer.isBuffer(value) ? value : Buffer.from(value)
-        chunks.push(chunk)
-        total += chunk.length
-        if (onChunk) onChunk(chunk.length)
-      }
-    }
-    const buf = Buffer.concat(chunks, total)
-    return this.verifyChecksum(buf, expectedChecksum, fileUrl)
-  }
-
-  /**
-   * 校验 buffer 的 sha256（当提供 checksum 时），不一致则抛错
-   */
-  private verifyChecksum(buf: Buffer, expectedChecksum: string | undefined, fileUrl: string): Buffer {
-    if (expectedChecksum) {
-      const expected = expectedChecksum.startsWith('sha256:')
-        ? expectedChecksum.slice(7)
-        : expectedChecksum
-      const actual = createHash('sha256').update(buf).digest('hex')
-      if (actual !== expected) {
-        throw new Error(`校验失败: ${fileUrl}\n期望 sha256=${expected}\n实际 sha256=${actual}`)
-      }
-    }
-    return buf
+    return this.downloader.downloadFile(fileUrl, {
+      checksum: expectedChecksum,
+      signal,
+      onChunk,
+    })
   }
 
   /**

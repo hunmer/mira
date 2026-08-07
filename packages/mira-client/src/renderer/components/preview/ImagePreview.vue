@@ -1,7 +1,7 @@
 <template>
   <div class="image-preview-view bg-muted h-screen flex flex-col text-[13px]">
     <!-- 顶部工具栏 -->
-    <header class="flex h-16 flex-shrink-0 items-center justify-between border-b border-border bg-white px-6">
+    <header class="flex h-16 flex-shrink-0 items-center justify-between border-b border-border bg-background px-6">
       <div class="flex items-center space-x-4">
         <button
           class="flex h-9 w-9 items-center justify-center rounded-full hover:bg-muted"
@@ -60,7 +60,7 @@
         />
 
         <!-- 底部状态栏 -->
-        <footer class="flex h-10 flex-shrink-0 items-center justify-between border-t border-border bg-white px-6 text-xs text-muted-foreground">
+        <footer class="flex h-10 flex-shrink-0 items-center justify-between border-t border-border bg-background px-6 text-xs text-muted-foreground">
           <div class="flex items-center space-x-4">
             <span>尺寸: {{ controller.currentImage.value?.metadata?.width || 0 }}x{{ controller.currentImage.value?.metadata?.height || 0 }}</span>
             <span>大小: {{ formatFileSize(controller.currentImage.value?.size) }}</span>

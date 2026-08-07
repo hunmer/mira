@@ -2,7 +2,6 @@
   <div class="p-4 space-y-6">
     <!-- 服务设置 -->
     <div>
-      <h3 class="text-foreground dark:text-muted-foreground text-lg font-bold leading-tight tracking-[-0.015em] pb-2 pt-4">服务设置</h3>
       <div class="flex items-center justify-between gap-4 py-3">
         <div>
           <p class="text-foreground dark:text-muted-foreground text-base font-normal leading-normal">自启动服务</p>
@@ -28,7 +27,6 @@
 
     <!-- 本地化设置 -->
     <div>
-      <h3 class="text-foreground dark:text-muted-foreground text-lg font-bold leading-tight tracking-[-0.015em] pb-2 pt-4">本地化设置</h3>
       <div class="flex flex-wrap items-end gap-4 py-3">
         <div class="flex flex-col min-w-40 flex-1">
           <label class="text-foreground dark:text-muted-foreground text-base font-medium leading-normal pb-2">语言</label>

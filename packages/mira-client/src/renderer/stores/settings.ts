@@ -73,6 +73,12 @@ export interface AppSettings {
   trustedPlugins: string[]
   clientPluginMarketUrl: string // 客户端插件市场当前选中的源地址（HTTP 静态服务），留空表示未选择
   clientPluginMarketUrls: string[] // 客户端插件市场源地址列表（可配置多个，便于在「插件市场」中切换）
+
+  // 网络设置
+  /** 是否启用 HTTP 代理（对插件下载、市场目录拉取、应用自更新等所有网络请求生效） */
+  networkProxyEnabled: boolean
+  /** 代理地址，例如 http://127.0.0.1:7890；启用代理时必填 */
+  networkProxyUrl: string
 }
 
 // 添加素材库类型定义
@@ -190,7 +196,11 @@ export const useSettingsStore = defineStore('settings', () => {
     enablePluginSandbox: false,
     trustedPlugins: [],
     clientPluginMarketUrl: '', // 客户端插件市场当前选中的源地址，留空表示未选择
-    clientPluginMarketUrls: [] // 客户端插件市场源地址列表
+    clientPluginMarketUrls: [], // 客户端插件市场源地址列表
+
+    // 网络设置
+    networkProxyEnabled: false, // 默认不启用代理
+    networkProxyUrl: '' // 代理地址，启用代理时填写
   })
   
   const isConnected = ref(false)
@@ -327,6 +337,26 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   /**
+   * 把当前网络代理配置推送给主进程，使其立即生效于：
+   *   1. DownloadService —— undici 全局 dispatcher（主进程 fetch / 插件下载）
+   *   2. Electron session —— 渲染层 fetch（如插件市场目录拉取）
+   * 在非 Electron 环境下静默跳过。
+   */
+  const pushProxyToMain = async () => {
+    try {
+      const electronAPI = (window as any).electronAPI
+      const network = electronAPI?.network
+      if (!network?.setProxy) return
+      await network.setProxy({
+        enabled: !!settings.value.networkProxyEnabled,
+        url: (settings.value.networkProxyUrl || '').trim(),
+      })
+    } catch (err) {
+      console.warn('Failed to push proxy config to main:', err)
+    }
+  }
+
+  /**
    * 解析默认插件目录：AppData 下用户数据目录 + /plugins。
    * 通过 IPC 从主进程获取 userData 路径（Electron 环境）；
    * 非 Electron 环境则返回空字符串。
@@ -392,6 +422,10 @@ export const useSettingsStore = defineStore('settings', () => {
       }
 
       window.electronAPI?.send('window:set-close-to-tray', settings.value.closeToTray)
+
+      // 把持久化的代理配置同步给主进程（启动后立即生效；主进程在更早的启动阶段
+      // 已自行读盘应用，这里保证后续设置变更的回写也能即时反映）
+      await pushProxyToMain()
     } catch (err) {
       error.value = 'Failed to load settings from local storage'
     }
@@ -430,7 +464,7 @@ export const useSettingsStore = defineStore('settings', () => {
       applyPrimaryColorOverride()
     } else if (key === 'language') {
       // 这里可以添加语言切换逻辑
-    } else if (key === 'pluginsDirectory' || key === 'autoLoadPlugins' || 
+    } else if (key === 'pluginsDirectory' || key === 'autoLoadPlugins' ||
                key === 'enablePluginDevMode' || key === 'enablePluginSandbox') {
       // 插件相关设置变更时重新初始化插件服务
       if (settings.value.pluginsDirectory && settings.value.autoLoadPlugins) {
@@ -449,6 +483,9 @@ export const useSettingsStore = defineStore('settings', () => {
           error.value = 'Failed to reinitialize plugin service'
         }
       }
+    } else if (key === 'networkProxyEnabled' || key === 'networkProxyUrl') {
+      // 网络代理设置变更时，立即推送到主进程生效
+      await pushProxyToMain()
     }
   }
 
@@ -516,7 +553,11 @@ export const useSettingsStore = defineStore('settings', () => {
       enablePluginSandbox: false,
       trustedPlugins: [],
       clientPluginMarketUrl: '',
-      clientPluginMarketUrls: []
+      clientPluginMarketUrls: [],
+
+      // 网络设置
+      networkProxyEnabled: false,
+      networkProxyUrl: ''
     }
 
     settings.value = defaultSettings

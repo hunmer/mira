@@ -1,7 +1,6 @@
 <template>
   <div class="p-4 space-y-6">
     <div>
-      <h3 class="text-foreground dark:text-muted-foreground text-lg font-bold leading-tight tracking-[-0.015em] pb-2 pt-4">数据管理</h3>
       <p class="text-muted-foreground dark:text-muted-foreground text-sm">导入或导出应用设置</p>
     </div>
 

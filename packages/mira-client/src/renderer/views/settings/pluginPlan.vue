@@ -1,7 +1,6 @@
 <template>
   <div class="p-4 space-y-6">
     <div>
-      <h3 class="text-foreground dark:text-muted-foreground text-lg font-bold leading-tight tracking-[-0.015em] pb-2 pt-4">插件目录配置</h3>
       <div class="space-y-4">
         <div>
           <p class="text-foreground dark:text-muted-foreground text-base font-normal leading-normal">当前插件目录</p>
@@ -38,7 +37,6 @@
     </div>
 
     <div>
-      <h3 class="text-foreground dark:text-muted-foreground text-lg font-bold leading-tight tracking-[-0.015em] pb-2 pt-4">插件市场源</h3>
       <div class="space-y-4">
         <div>
           <p class="text-foreground dark:text-muted-foreground text-base font-normal leading-normal">市场源地址列表</p>

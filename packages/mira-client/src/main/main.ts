@@ -1,8 +1,11 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain, session } from 'electron'
+import * as fs from 'fs/promises'
+import * as path from 'path'
 import { IPCHandlers } from './ipc/handlers'
 import { ProtocolService } from './services/ProtocolService'
 import { TrayService } from './services/TrayService'
 import { MainWindowService } from './services/MainWindowService'
+import { DownloadService } from './services/DownloadService'
 import { logger } from './utils/Logger'
 import { getAutoUpdater } from './services/useAutoUpdater'
 import { ensureLocalServerStarted, runLocalServerScriptSync } from './services/LocalServerService'
@@ -132,6 +135,9 @@ class MiraApplication {
     app.whenReady().then(async () => {
       logger.info('MiraApplication', 'App is ready')
 
+      // 应用持久化的网络代理配置（主进程 fetch + Electron session）
+      await this.applyPersistedProxy()
+
       this.createMainWindow()
       this.setupIPC()
       this.setupProtocol()
@@ -199,6 +205,31 @@ class MiraApplication {
     process.on('SIGTERM', quitGracefully)
     // macOS 下 SIGHUP 常见于父进程（vite）退出时
     process.on('SIGHUP', quitGracefully)
+  }
+
+  /**
+   * 读取持久化的网络代理配置并应用：
+   *   1. DownloadService.setProxy —— 设置 undici 全局 dispatcher（主进程 fetch）
+   *   2. session.defaultSession.setProxy —— 渲染层 fetch（如插件市场目录拉取）
+   *
+   * 配置文件路径与渲染层 ConfigStorage 一致：resources/configs/mira-settings.json。
+   */
+  private async applyPersistedProxy(): Promise<void> {
+    try {
+      const settingsPath = path.join(process.cwd(), 'resources', 'configs', 'mira-settings.json')
+      const raw = await fs.readFile(settingsPath, 'utf8')
+      const parsed = JSON.parse(raw)
+      const enabled = !!parsed?.networkProxyEnabled
+      const url = (parsed?.networkProxyUrl || '').trim()
+      const proxyRules = enabled && url ? url : 'direct://'
+
+      DownloadService.getInstance().setProxy({ enabled, url })
+      await session.defaultSession.setProxy({ proxyRules })
+      logger.info('MiraApplication', `Persisted proxy applied (enabled=${enabled}, url=${url || '-'})`)
+    } catch (err) {
+      // 首次启动或文件不存在时静默使用直连
+      logger.debug('MiraApplication', `No persisted proxy config, using direct connection (${err instanceof Error ? err.message : String(err)})`)
+    }
   }
 
   private createMainWindow(): BrowserWindow {

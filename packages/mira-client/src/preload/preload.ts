@@ -120,6 +120,16 @@ const electronAPI: ElectronAPI = {
     }
   },
 
+  // 网络代理管理 API
+  network: {
+    setProxy: (config: { enabled: boolean; url: string }) =>
+      ipcRenderer.invoke('network:set-proxy', config),
+    getProxy: () =>
+      ipcRenderer.invoke('network:get-proxy'),
+    testProxy: (config: { enabled: boolean; url: string }) =>
+      ipcRenderer.invoke('network:test-proxy', config)
+  },
+
   // 插件窗口管理 API（打开插件 dist 的独立 BrowserWindow）
   pluginWindow: {
     open: (opts: any) =>

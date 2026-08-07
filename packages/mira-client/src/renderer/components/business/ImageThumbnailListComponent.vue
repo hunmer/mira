@@ -1,5 +1,5 @@
 <template>
-  <div class="w-28 flex-shrink-0 bg-white p-2 flex flex-col items-center border-r border-border">
+  <div class="w-28 flex-shrink-0 bg-background p-2 flex flex-col items-center border-r border-border">
     <div class="flex-grow space-y-3 overflow-y-auto pr-1">
       <img
         v-for="(image, index) in images"

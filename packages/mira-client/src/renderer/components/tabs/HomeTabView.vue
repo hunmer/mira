@@ -1,5 +1,5 @@
 <template>
-  <div class="home-dashboard flex h-full flex-col bg-background">
+  <div class="home-dashboard flex h-full flex-col bg-transparent">
     <!-- 顶部工具栏 -->
     <div class="dashboard-toolbar flex items-center justify-between border-b px-4 py-2">
       <div class="flex items-center gap-2 text-sm font-medium">

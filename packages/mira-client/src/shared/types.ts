@@ -383,6 +383,24 @@ export interface LoginCredentials {
   password: string
 }
 
+// HTTP 代理配置（网络设置）
+export interface ProxyConfig {
+  /** 是否启用代理 */
+  enabled: boolean
+  /** 代理地址，例如 http://127.0.0.1:7890 */
+  url: string
+}
+
+// 代理测试结果
+export interface ProxyTestResult {
+  success: boolean
+  /** HTTP 状态码（请求未发出/超时时为 undefined） */
+  statusCode?: number
+  /** 本次探测耗时（毫秒） */
+  elapsedMs?: number
+  message: string
+}
+
 // Electron API 接口定义
 export interface ElectronAPI {
   isDevelopment: boolean,
@@ -451,6 +469,13 @@ export interface ElectronAPI {
     cancelInstall: (pluginId: string) => Promise<BaseResponse>
     computeFileChecksums: (pluginId: string) => Promise<BaseResponse & { data?: MarketplacePluginFile[] }>
     onInstallProgress?: (callback: (progress: PluginInstallProgress) => void) => () => void
+  }
+
+  // 网络代理管理 API
+  network: {
+    setProxy: (config: ProxyConfig) => Promise<BaseResponse>
+    getProxy: () => Promise<BaseResponse & { data?: ProxyConfig }>
+    testProxy: (config: ProxyConfig) => Promise<ProxyTestResult>
   }
 
   // 插件窗口管理 API（打开插件 dist 的独立 BrowserWindow）

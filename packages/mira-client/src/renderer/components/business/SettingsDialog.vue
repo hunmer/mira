@@ -7,36 +7,31 @@
       <DialogHeader>
         <DialogTitle>设置</DialogTitle>
       </DialogHeader>
-      <div class="min-h-[400px] h-full flex gap-3">
-        <!-- 左侧分类面板 -->
-        <aside class="w-64 flex flex-col">
-          <div class="p-4 flex-1">
-            <div class="flex flex-col gap-1">
-              <div
-                v-for="section in settingSections"
-                :key="section.id"
-                  class="flex items-center gap-3 px-3 py-2 cursor-pointer rounded-lg transition-colors"
-                  :class="activeSection === section.id ? 'bg-primary/10 text-primary' : 'hover:bg-white/50 dark:hover:bg-muted/60 text-foreground dark:text-muted-foreground'"
-                @click="activeSection = section.id"
-              >
-                <span class="material-icons text-lg">{{ section.icon }}</span>
-                <p class="text-sm font-medium">{{ section.name }}</p>
-              </div>
-            </div>
+      <div class="min-h-[400px] h-full flex flex-col">
+        <!-- 顶部图标导航 -->
+        <nav class="border-b border-white/60 dark:border-border shrink-0">
+          <div class="flex items-center justify-center gap-1 sm:gap-2 px-4 py-3 overflow-x-auto">
+            <button
+              v-for="section in settingSections"
+              :key="section.id"
+              type="button"
+              class="group flex flex-col items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl cursor-pointer transition-colors duration-200 hover:bg-muted/50"
+              :class="activeSection === section.id ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground'"
+              @click="activeSection = section.id"
+            >
+              <span class="material-icons text-[28px] leading-none transition-transform duration-200 group-hover:scale-125">{{ section.icon }}</span>
+              <span
+                class="h-4 leading-none text-xs font-medium whitespace-nowrap transition-opacity duration-200"
+                :class="activeSection === section.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
+              >{{ section.name }}</span>
+            </button>
           </div>
-        </aside>
+        </nav>
 
-        <!-- 右侧设置面板 -->
-        <main class="flex-1 flex flex-col">
-          <div class="p-4 border-b border-white/60 dark:border-border">
-            <p class="text-foreground dark:text-muted-foreground text-2xl font-bold">{{ getCurrentSectionName() }}</p>
-          </div>
-
-          <!-- 动态组件渲染 -->
-          <div class="flex-1 p-4 overflow-y-auto">
-            <component :is="currentComponent" />
-          </div>
-        </main>
+        <!-- 动态组件渲染 -->
+        <div class="flex-1 p-4 overflow-y-auto min-h-0">
+          <component :is="currentComponent" />
+        </div>
       </div>
     </DialogContent>
   </Dialog>
@@ -53,6 +48,7 @@ import NotificationsPanel from '../../views/settings/NotificationsPanel.vue'
 import ImportPanel from '../../views/settings/ImportPanel.vue'
 import FloatingBallPanel from '../../views/settings/FloatingBallPanel.vue'
 import PluginsPanel from '../../views/settings/pluginPlan.vue'
+import NetworkPanel from '../../views/settings/NetworkPanel.vue'
 import DataPanel from '../../views/settings/DataPanel.vue'
 
 // 导入配置
@@ -93,15 +89,11 @@ const currentComponent = computed(() => {
     import: ImportPanel,
     'floating-ball': FloatingBallPanel,
     plugins: PluginsPanel,
+    network: NetworkPanel,
     data: DataPanel
   }
   return componentMap[activeSection.value] || GeneralPanel
 })
-
-const getCurrentSectionName = () => {
-  const section = settingSections.find(s => s.id === activeSection.value)
-  return section?.name || '设置'
-}
 
 // 按需初始化标志
 const isInitialized = ref(false)

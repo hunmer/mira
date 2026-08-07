@@ -1,7 +1,6 @@
 <template>
   <div class="p-4 space-y-6">
     <div>
-      <h3 class="text-foreground dark:text-muted-foreground text-lg font-bold leading-tight tracking-[-0.015em] pb-2 pt-4">通知设置</h3>
       <div class="space-y-4">
         <div class="flex items-center justify-between py-2">
           <div>

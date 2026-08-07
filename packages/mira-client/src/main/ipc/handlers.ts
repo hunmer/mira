@@ -12,6 +12,7 @@ import { FloatingBallWindowHandlers } from './FloatingBallWindowHandlers'
 import { MenuHandlers } from './MenuHandlers'
 import { ShortcutHandlers } from './ShortcutHandlers'
 import { AutoUpdateHandlers } from './AutoUpdateHandlers'
+import { NetworkHandlers } from './NetworkHandlers'
 import { NotificationHandlers } from './NotificationHandlers'
 import { ServerDeployHandlers } from './ServerDeployHandlers'
 import { ServerControlHandlers } from './ServerControlHandlers'
@@ -30,6 +31,7 @@ export class IPCHandlers {
   private menuHandlers: MenuHandlers
   private shortcutHandlers: ShortcutHandlers
   private autoUpdateHandlers: AutoUpdateHandlers
+  private networkHandlers: NetworkHandlers
   private serverDeployHandlers: ServerDeployHandlers
   private serverControlHandlers: ServerControlHandlers
   private pluginWindowHandlers: PluginWindowHandlers
@@ -50,6 +52,7 @@ export class IPCHandlers {
     this.menuHandlers = new MenuHandlers()
     this.shortcutHandlers = new ShortcutHandlers()
     this.autoUpdateHandlers = new AutoUpdateHandlers()
+    this.networkHandlers = new NetworkHandlers()
     this.serverDeployHandlers = new ServerDeployHandlers()
     this.serverControlHandlers = new ServerControlHandlers()
     // 插件窗口处理器依赖 pluginHandler 解析插件目录
@@ -63,6 +66,9 @@ export class IPCHandlers {
 
     // 注册自动更新
     this.autoUpdateHandlers.registerHandlers()
+
+    // 注册网络/代理管理
+    this.networkHandlers.registerHandlers()
 
     // 注册搜索结果处理
     this.registerSearchResultHandlers()
@@ -230,6 +236,9 @@ export class IPCHandlers {
 
     // 清理自动更新处理器
     this.autoUpdateHandlers.cleanup()
+
+    // 清理网络/代理处理器
+    this.networkHandlers.cleanup()
 
     // 清理后端部署处理器
     this.serverDeployHandlers.cleanup()

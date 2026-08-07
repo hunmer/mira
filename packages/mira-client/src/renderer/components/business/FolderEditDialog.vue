@@ -1,7 +1,7 @@
 <template>
   <div v-if="visible" class="fixed inset-0 flex items-center justify-center z-50">
     <div class="bg-black/50 absolute inset-0" @click="handleCancel"></div>
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-md relative">
+    <div class="bg-background rounded-lg shadow-xl w-full max-w-md relative">
       <div class="px-6 py-4 border-b border-border flex items-center justify-between">
         <h2 class="text-xl font-semibold text-foreground">
           {{ props.dialogTitle || (isEdit ? '编辑文件夹' : '创建文件夹') }}

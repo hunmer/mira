@@ -1,9 +1,8 @@
 <template>
   <div class="p-4 space-y-6">
-    <h3 class="text-foreground dark:text-muted-foreground text-lg font-bold leading-tight tracking-[-0.015em] pb-2 pt-4">悬浮球</h3>
-
-    <!-- 启用悬浮球 -->
-    <div class="flex items-center justify-between py-3">
+    <div>
+      <!-- 启用悬浮球 -->
+      <div class="flex items-center justify-between py-3">
       <div>
         <p class="text-sm font-medium text-foreground dark:text-muted-foreground">启用悬浮球</p>
         <p class="text-xs text-muted-foreground dark:text-muted-foreground mt-1">
@@ -54,6 +53,7 @@
           重置位置
         </button>
       </div>
+    </div>
     </div>
   </div>
 </template>
