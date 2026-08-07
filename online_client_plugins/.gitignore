@@ -5,6 +5,10 @@ node_modules/
 dist/
 build/
 
+# 插件构建产物需要提交
+!plugins/*/dist/
+!plugins/*/dist/**
+
 # 系统/编辑器
 .DS_Store
 Thumbs.db
