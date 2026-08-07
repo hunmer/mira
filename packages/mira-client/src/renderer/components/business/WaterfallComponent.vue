@@ -13,6 +13,17 @@
     @clear-selection="handleClearSelection"
     @pointerdown.capture="focusSelectionBox"
   >
+    <MediaContextMenu
+      :items="props.items"
+      :selected-items="props.selectedItems"
+      :is-trash="props.isTrash"
+      @media-context-menu="(item, event) => emit('media-context-menu', item, event)"
+      @media-info="(item) => emit('media-info', item)"
+      @media-set-folder="(item) => emit('media-set-folder', item)"
+      @media-set-tags="(item) => emit('media-set-tags', item)"
+      @media-delete="(item) => emit('media-delete', item)"
+      @media-restore="(item) => emit('media-restore', item)"
+    >
     <Masonry
       ref="masonryRef"
       :data="waterfallItems"
@@ -39,7 +50,6 @@
           :preload="preload"
           @click="handleItemClick"
           @double-click="handleItemDoubleClick"
-          @context-menu="handleItemContextMenu"
           @mouse-enter="handleMouseEnter"
           @mouse-leave="handleMouseLeave"
           @mouse-move="handleMouseMove"
@@ -63,12 +73,14 @@
         </MediaWaterfallItem>
       </template>
     </Masonry>
+    </MediaContextMenu>
   </SelectionBox>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import SelectionBox from '../common/SelectionBox.vue'
+import MediaContextMenu from './MediaContextMenu.vue'
 import MediaWaterfallItem from './WaterfallComponent/MediaWaterfallItem.vue'
 import VideoPreviewContainer from './MediaGridComponent/VideoPreviewContainer.vue'
 import { Masonry, type MasonryColumns, type MasonryItemMeta } from '@hunmer/vue-masonry'
@@ -86,6 +98,7 @@ import {
 interface Props {
   items: FileInfo[]
   selectedItems?: string[]
+  isTrash?: boolean
   columnWidth?: number
   columnsPerRow?: number
   gap?: number
@@ -120,14 +133,19 @@ interface Props {
 interface Emits {
   (e: 'click', item: FileInfo): void
   (e: 'dblclick', item: FileInfo): void
-  (e: 'contextmenu', item: FileInfo, event: MouseEvent): void
+  (e: 'media-context-menu', item: FileInfo, event: MouseEvent): void
   (e: 'after-render'): void
   (e: 'media-select', item: FileInfo, selected: boolean): void
   (e: 'media-delete', item: FileInfo): void
+  (e: 'media-info', item: FileInfo): void
+  (e: 'media-set-folder', item: FileInfo): void
+  (e: 'media-set-tags', item: FileInfo): void
+  (e: 'media-restore', item: FileInfo): void
 }
 
 const props = withDefaults(defineProps<Props>(), {
   selectedItems: () => [],
+  isTrash: false,
   columnWidth: 220,
   columnsPerRow: 4,
   gap: 16,
@@ -385,10 +403,6 @@ const handleClearSelection = () => {
 
 const handleItemDoubleClick = (item: FileInfo) => {
   emit('dblclick', item)
-}
-
-const handleItemContextMenu = (item: FileInfo, event: MouseEvent) => {
-  emit('contextmenu', item, event)
 }
 
 const handleAfterRender = () => {

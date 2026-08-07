@@ -119,13 +119,16 @@
             :key="`list-${viewMode}`"
             :items="paginatedMediaItems"
             :selected-items="selectedItems"
+            :is-trash="viewType === 'trash'"
             @click="handleMediaClick"
             @dblclick="handleMediaDoubleClick"
-            @contextmenu="handleMediaContextMenu"
-            @preview="handleMediaInfo"
-            @download="() => {}"
+            @media-context-menu="handleMediaContextMenu"
+            @media-info="handleMediaInfo"
+            @media-set-folder="handleMediaSetFolder"
+            @media-set-tags="handleMediaSetTags"
             @media-select="handleMediaSelect"
             @media-delete="handleMediaDelete"
+            @media-restore="handleMediaRestore"
           />
 
           <!-- 瀑布流视图 -->
@@ -135,14 +138,19 @@
               :key="`waterfall-${viewMode}`"
               :items="paginatedMediaItems"
               :selected-items="selectedItems"
+              :is-trash="viewType === 'trash'"
               :column-width="dynamicColumnWidth"
               :columns-per-row="columnsPerRow"
               :gap="16"
               @click="handleMediaClick"
               @dblclick="handleMediaDoubleClick"
-              @contextmenu="handleMediaContextMenu"
+              @media-context-menu="handleMediaContextMenu"
+              @media-info="handleMediaInfo"
+              @media-set-folder="handleMediaSetFolder"
+              @media-set-tags="handleMediaSetTags"
               @media-select="handleMediaSelect"
               @media-delete="handleMediaDelete"
+              @media-restore="handleMediaRestore"
             />
           </div>
 

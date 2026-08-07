@@ -54,6 +54,7 @@
           :selected-items="selectedItems"
           :card-size="cardSize"
           :columns-per-row="columnsPerRow"
+          :is-trash="isTrash"
           @media-click="handleMediaClick"
           @media-double-click="handleMediaDoubleClick"
           @media-select="handleMediaSelect"
@@ -62,6 +63,7 @@
           @media-set-folder="handleMediaSetFolder"
           @media-set-tags="handleMediaSetTags"
           @media-delete="handleMediaDelete"
+          @media-restore="handleMediaRestore"
         />
 
         <!-- 列表视图 -->
@@ -70,13 +72,16 @@
           :key="`content-list-${viewMode}`"
           :items="items"
           :selected-items="selectedItems"
+          :is-trash="isTrash"
           @click="handleMediaClick"
           @dblclick="handleMediaDoubleClick"
-          @contextmenu="handleMediaContextMenu"
-          @preview="handleMediaInfo"
-          @download="(item) => console.log('Download:', item)"
+          @media-context-menu="handleMediaContextMenu"
+          @media-info="handleMediaInfo"
+          @media-set-folder="handleMediaSetFolder"
+          @media-set-tags="handleMediaSetTags"
           @media-select="handleMediaSelect"
           @media-delete="handleMediaDelete"
+          @media-restore="handleMediaRestore"
         />
 
         <!-- 瀑布流视图 -->
@@ -85,14 +90,19 @@
             :key="`content-waterfall-${viewMode}`"
             :items="items"
             :selected-items="selectedItems"
+            :is-trash="isTrash"
             :column-width="dynamicColumnWidth"
             :columns-per-row="columnsPerRow"
             :gap="16"
             @click="handleMediaClick"
             @dblclick="handleMediaDoubleClick"
-            @contextmenu="handleMediaContextMenu"
+            @media-context-menu="handleMediaContextMenu"
+            @media-info="handleMediaInfo"
+            @media-set-folder="handleMediaSetFolder"
+            @media-set-tags="handleMediaSetTags"
             @media-select="handleMediaSelect"
             @media-delete="handleMediaDelete"
+            @media-restore="handleMediaRestore"
             @after-render="() => console.log('✅ 内容 Waterfall 组件已渲染，数据项数量:', items.length)"
           />
         </div>
@@ -140,12 +150,15 @@ interface Props {
   isLoading?: boolean
   /** 加载提示信息 */
   loadingMessage?: string
+  /** 是否为回收站视图 */
+  isTrash?: boolean
 }
 
 withDefaults(defineProps<Props>(), {
   subtitle: '',
   isLoading: false,
-  loadingMessage: '正在加载内容...'
+  loadingMessage: '正在加载内容...',
+  isTrash: false
 })
 
 // Emits
@@ -158,6 +171,7 @@ const emit = defineEmits<{
   'media-set-folder': [item: FileInfo, folderId: string]
   'media-set-tags': [item: FileInfo, tagIds: string[]]
   'media-delete': [item: FileInfo]
+  'media-restore': [item: FileInfo]
   'toggle-detail-sidebar': []
 }>()
 
@@ -194,5 +208,9 @@ const handleMediaSetTags = (item: FileInfo) => {
 
 const handleMediaDelete = (item: FileInfo) => {
   emit('media-delete', item)
+}
+
+const handleMediaRestore = (item: FileInfo) => {
+  emit('media-restore', item)
 }
 </script>

@@ -13,9 +13,18 @@
     @clear-selection="handleClearSelection"
     @pointerdown.capture="focusSelectionBox"
   >
-    <!-- 右键菜单 -->
-    <ContextMenu>
-      <ContextMenuTrigger as-child>
+    <!-- 右键菜单（与列表/瀑布流共用 MediaContextMenu） -->
+    <MediaContextMenu
+      :items="props.items"
+      :selected-items="props.selectedItems"
+      :is-trash="props.isTrash"
+      @media-context-menu="(item, event) => emit('media-context-menu', item, event)"
+      @media-info="(item) => emit('media-info', item)"
+      @media-set-folder="(item) => emit('media-set-folder', item)"
+      @media-set-tags="(item) => emit('media-set-tags', item)"
+      @media-delete="(item) => emit('media-delete', item)"
+      @media-restore="(item) => emit('media-restore', item)"
+    >
       <div class="h-full flex flex-col">
         <div
           class="grid gap-6"
@@ -34,7 +43,6 @@
             :progress="videoProgress[item.id] || 0"
             @click="handleMediaItemClick"
             @double-click="handleDoubleClick"
-            @context-menu="handleContextMenu"
             @mouse-enter="handleMouseEnter"
             @mouse-leave="handleMouseLeave"
             @mouse-move="handleMouseMove"
@@ -70,103 +78,15 @@
           <EmptyDescription>拖拽文件到此处或点击上传按钮添加文件</EmptyDescription>
         </Empty>
       </div>
-    </ContextMenuTrigger>
-    <ContextMenuContent class="w-52">
-      <template v-for="(item, i) in contextMenuItems" :key="i">
-        <ContextMenuSeparator v-if="item.separator" />
-        <ContextMenuSub v-else-if="item.items?.length">
-          <ContextMenuSubTrigger :disabled="item.disabled">
-            <span v-if="item.icon" class="material-icons text-base mr-2">{{ item.icon }}</span>
-            <span>{{ item.label }}</span>
-          </ContextMenuSubTrigger>
-          <ContextMenuSubContent class="w-max min-w-44 max-w-[min(24rem,calc(100vw-1rem))]">
-            <template v-for="(sub, j) in item.items" :key="j">
-              <ContextMenuSub v-if="sub.items?.length">
-                <ContextMenuSubTrigger :disabled="sub.disabled">
-                  <span v-if="sub.icon" class="material-icons text-base mr-2">{{ sub.icon }}</span>
-                  <span class="whitespace-normal break-words">{{ sub.label }}</span>
-                </ContextMenuSubTrigger>
-                <ContextMenuSubContent class="w-max min-w-44 max-w-[min(24rem,calc(100vw-1rem))]">
-                  <ContextMenuItem
-                    v-for="(leaf, k) in sub.items"
-                    :key="k"
-                    :disabled="leaf.disabled"
-                    @select="executeMenuCommand(leaf)"
-                  >
-                    <span v-if="leaf.icon" class="material-icons text-base mr-2">{{ leaf.icon }}</span>
-                    <span class="whitespace-normal break-words">{{ leaf.label }}</span>
-                  </ContextMenuItem>
-                </ContextMenuSubContent>
-              </ContextMenuSub>
-              <ContextMenuItem
-                v-else
-                :disabled="sub.disabled"
-                @select="executeMenuCommand(sub)"
-              >
-                <span v-if="sub.icon" class="material-icons text-base mr-2">{{ sub.icon }}</span>
-                <span class="whitespace-normal break-words">{{ sub.label }}</span>
-              </ContextMenuItem>
-            </template>
-          </ContextMenuSubContent>
-        </ContextMenuSub>
-        <ContextMenuItem v-else :disabled="item.disabled" @select="executeMenuCommand(item)">
-          <span v-if="item.icon" class="material-icons text-base mr-2">{{ item.icon }}</span>
-          <span class="flex-1">{{ item.label }}</span>
-          <span v-if="item.shortcut" class="ml-auto text-xs text-muted-foreground">{{ item.shortcut }}</span>
-        </ContextMenuItem>
-      </template>
-    </ContextMenuContent>
-  </ContextMenu>
-
-    <!-- 文件夹选择 Popover -->
-    <Popover v-model:open="folderPopoverOpen">
-      <PopoverTrigger as-child>
-        <div :style="{ position: 'fixed', left: popoverPosition.x + 'px', top: popoverPosition.y + 'px', width: '1px', height: '1px' }"></div>
-      </PopoverTrigger>
-      <PopoverContent class="w-80 p-2">
-        <FolderTreeComponent
-          item-type="folder"
-          :folders="folderTreeNodes"
-          :show-base-categories="false"
-          :default-show-search="true"
-          @select="handleFolderSelect"
-        />
-      </PopoverContent>
-    </Popover>
-
-    <!-- 标签选择 Popover -->
-    <Popover v-model:open="tagPopoverOpen">
-      <PopoverTrigger as-child>
-        <div :style="{ position: 'fixed', left: popoverPosition.x + 'px', top: popoverPosition.y + 'px', width: '1px', height: '1px' }"></div>
-      </PopoverTrigger>
-      <PopoverContent class="w-80 p-2">
-        <FolderTreeComponent
-          item-type="tag"
-          :tags="tagStore.tags"
-:default-show-search="true"
-          @select="handleTagSelect"
-        />
-      </PopoverContent>
-    </Popover>
+    </MediaContextMenu>
   </SelectionBox>
 </template>
 
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { throttle } from 'throttle-debounce'
-import {
-  ContextMenu,
-  ContextMenuTrigger,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSeparator,
-  ContextMenuSub,
-  ContextMenuSubContent,
-  ContextMenuSubTrigger,
-} from '@/components/ui/context-menu'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import SelectionBox from '../../common/SelectionBox.vue'
-import FolderTreeComponent from '../FolderTreeComponent/FolderTreeComponent.vue'
+import MediaContextMenu from '../MediaContextMenu.vue'
 import MediaItem from './MediaGridItem.vue'
 import VideoPreviewContainer from './VideoPreviewContainer.vue'
 import StatusImage from '@renderer/components/common/StatusImage.vue'
@@ -174,12 +94,10 @@ import { Empty, EmptyMedia, EmptyTitle, EmptyDescription } from '@/components/ui
 import type { FileInfo } from '../../../../shared/types'
 import { useSettingsStore } from '../../../stores/settings'
 import { useSelection } from './composables/useSelection'
-import { useContextMenu } from './composables/useContextMenu'
 import { useDragDrop } from './composables/useDragDrop'
 import { useVideoHover } from './composables/useVideoHover'
 import { useDeleteSelectedItems } from './composables/useDeleteSelectedItems'
 import { useFocusedSelectAll } from './composables/useFocusedSelectAll'
-import type { MenuItem } from '@/renderer/types/menu'
 
 interface Props {
   items: FileInfo[]
@@ -220,18 +138,6 @@ const {
   handleMediaItemClick
 } = useSelection(props, emit)
 
-const {
-  contextMenuItems,
-  handleContextMenu: contextMenuHandler,
-  folderPopoverOpen,
-  tagPopoverOpen,
-  popoverPosition,
-  folderTreeNodes,
-  handleFolderSelect,
-  handleTagSelect,
-  tagStore,
-} = useContextMenu(props, emit)
-
 const { handlePointerDown } = useDragDrop(props)
 
 const {
@@ -254,23 +160,9 @@ const handleDoubleClick = (item: FileInfo) => {
   emit('media-double-click', item)
 }
 
-const handleContextMenu = (item: FileInfo, event: MouseEvent) => {
-  contextMenuHandler(item, event)
-}
-
 const { handleDeleteKeyDown, handleEditAction } = useDeleteSelectedItems(props, emit, {
   isActive: isSelectionBoxFocused
 })
-
-const executeMenuCommand = async (item: MenuItem) => {
-  if (item.disabled || !item.command) return
-
-  try {
-    await item.command()
-  } catch (error) {
-    console.error('Failed to execute media context menu command:', item.label, error)
-  }
-}
 
 const seekVideo = throttle(100, (item: FileInfo, event: MouseEvent) => {
   if (!currentVideoItem.value || currentVideoItem.value.id !== item.id) return

@@ -13,6 +13,17 @@
     @clear-selection="handleClearSelection"
     @pointerdown.capture="focusSelectionBox"
   >
+    <MediaContextMenu
+      :items="props.items"
+      :selected-items="props.selectedItems"
+      :is-trash="props.isTrash"
+      @media-context-menu="(item, event) => emit('media-context-menu', item, event)"
+      @media-info="(item) => emit('media-info', item)"
+      @media-set-folder="(item) => emit('media-set-folder', item)"
+      @media-set-tags="(item) => emit('media-set-tags', item)"
+      @media-delete="(item) => emit('media-delete', item)"
+      @media-restore="(item) => emit('media-restore', item)"
+    >
     <Table class="w-full">
       <TableHeader>
         <TableRow>
@@ -45,7 +56,6 @@
           class="cursor-pointer hover:bg-primary/5 transition-colors"
           @click="handleItemClick(item, $event)"
           @dblclick="emit('dblclick', item)"
-          @contextmenu="emit('contextmenu', item, $event)"
         >
           <!-- 选择列 -->
           <TableCell>
@@ -177,6 +187,7 @@
         </TableRow>
       </TableBody>
     </Table>
+    </MediaContextMenu>
   </SelectionBox>
 </template>
 
@@ -187,6 +198,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { PopoverRoot, PopoverTrigger, PopoverPortal, PopoverContent } from 'radix-vue'
 import VideoPreviewPopover from '@renderer/components/common/VideoPreviewPopover.vue'
 import SelectionBox from '@renderer/components/common/SelectionBox.vue'
+import MediaContextMenu from './MediaContextMenu.vue'
 import MediaThumbnail from '@renderer/components/common/MediaThumbnail.vue'
 import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card'
 import StatusImage from '@renderer/components/common/StatusImage.vue'
@@ -199,19 +211,26 @@ import { useFocusedSelectAll } from './MediaGridComponent/composables/useFocused
 interface Props {
   items: FileInfo[]
   selectedItems: string[]
+  isTrash?: boolean
 }
 
 interface Emits {
   (e: 'click', item: FileInfo, event: MouseEvent): void
   (e: 'dblclick', item: FileInfo): void
-  (e: 'contextmenu', item: FileInfo, event: MouseEvent): void
+  (e: 'media-context-menu', item: FileInfo, event: MouseEvent): void
   (e: 'preview', item: FileInfo): void
   (e: 'download', item: FileInfo): void
   (e: 'media-select', item: FileInfo, selected: boolean): void
   (e: 'media-delete', item: FileInfo): void
+  (e: 'media-info', item: FileInfo): void
+  (e: 'media-set-folder', item: FileInfo): void
+  (e: 'media-set-tags', item: FileInfo): void
+  (e: 'media-restore', item: FileInfo): void
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  isTrash: false
+})
 const emit = defineEmits<Emits>()
 
 const selectionBoxRef = ref<InstanceType<typeof SelectionBox> | null>(null)
