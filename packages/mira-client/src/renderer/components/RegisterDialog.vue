@@ -270,7 +270,7 @@ const validateEmail = (email: string) => {
   return true
 }
 
-const validatePassword = (password: string) => {
+const validatePassword = (_password: string) => {
   return true
 }
 

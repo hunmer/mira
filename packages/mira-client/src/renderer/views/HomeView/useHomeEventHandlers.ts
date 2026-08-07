@@ -162,15 +162,6 @@ export function useHomeEventHandlers(
     }
   }
 
-  // 快捷键事件处理
-  const handleShortcutActivateLastTab = () => {
-    // 这个方法会在主入口文件中连接到实际的处理函数
-  }
-
-  const handleShortcutReopenClosedTab = () => {
-    // 这个方法会在主入口文件中连接到实际的处理函数
-  }
-
   // 注册全局事件监听
   const registerGlobalEvents = (
     handleActivateLastTab: () => void,

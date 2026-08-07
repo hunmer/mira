@@ -45,13 +45,13 @@ const sizeClass: Record<string, string> = {
           v-bind="$attrs"
           :model-value="displayValue"
           readonly
-          :class="cn(sizeClass[size] ?? '', showIcon && 'pl-9')"
+          :class="cn(size ? (sizeClass[size] ?? '') : '', showIcon && 'pl-9')"
         />
         <span v-if="showIcon" class="absolute left-2.5 top-1/2 -translate-y-1/2 material-icons text-base text-muted-foreground">calendar_today</span>
       </div>
     </PopoverTrigger>
     <PopoverContent class="w-auto p-0" align="start">
-      <Calendar v-model="dateValue" @update:model-value="open = false" />
+      <Calendar v-model="dateValue as any" @update:model-value="open = false" />
     </PopoverContent>
   </Popover>
 </template>

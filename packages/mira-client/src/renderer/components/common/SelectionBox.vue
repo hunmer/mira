@@ -17,7 +17,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 
 interface SelectionBoxProps {
   modelValue?: string[]
@@ -168,7 +168,6 @@ const updateSelection = (e: MouseEvent) => {
   if (!containerRef.value) return
 
   // 限制选择框范围在容器内
-  const containerRect = containerRef.value.getBoundingClientRect()
   const scrollLeft = containerRef.value.scrollLeft
   const scrollTop = containerRef.value.scrollTop
   const containerWidth = containerRef.value.clientWidth
@@ -203,7 +202,7 @@ const scheduleSelectionUpdate = (e: MouseEvent) => {
 }
 
 // 结束选择
-const endSelection = (e: MouseEvent) => {
+const endSelection = (_e: MouseEvent) => {
   if (selecting.value) {
     if (altMode.value) {
       itemsToRemove.value.forEach(itemId => {

@@ -153,7 +153,7 @@ export function useLocalStorage<T>(
   // 读取存储值
   const loadValue = () => {
     try {
-      const item = ConfigStorage.getItem(key)
+      const item = localStorage.getItem(key)
       if (item) {
         storedValue.value = JSON.parse(item)
       }

@@ -146,7 +146,6 @@ export class InitializationService {
     
     try {
       const authStore = useAuthStore()
-      const settingsStore = useSettingsStore()
       const libraryStore = useLibraryStore()
       
       // 第一步：确保用户已认证

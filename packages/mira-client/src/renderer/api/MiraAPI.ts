@@ -30,8 +30,18 @@ export class MiraAPI {
 
   // Mira Client 实例
   private miraClient: MiraClient | null = null
-  private isConnected: boolean = false
-  private connectionConfig: MiraConnectionConfig | null = null
+  private _isConnected: boolean = false
+  private _connectionConfig: MiraConnectionConfig | null = null
+
+  /** 当前是否已连接 Mira Server */
+  public get isConnected(): boolean {
+    return this._isConnected
+  }
+
+  /** 当前连接配置 */
+  public get connectionConfig(): MiraConnectionConfig | null {
+    return this._connectionConfig
+  }
 
   private constructor() {
     // 初始化服务
@@ -215,17 +225,17 @@ export class MiraAPI {
         })
 
         // 保存连接配置
-        this.connectionConfig = config
+        this._connectionConfig = config
 
         // 测试连接
         await this.mira.testConnection()
-        this.isConnected = true
+        this._isConnected = true
         
         console.log('[MiraAPI] Connected successfully')
         return { success: true, message: 'Connected successfully' }
       } catch (error) {
         console.error('[MiraAPI] Connection failed:', error)
-        this.isConnected = false
+        this._isConnected = false
         return { 
           success: false, 
           message: error instanceof Error ? error.message : 'Unknown error' 
@@ -235,8 +245,8 @@ export class MiraAPI {
 
     disconnect: async (): Promise<{ success: boolean }> => {
       this.miraClient = null
-      this.isConnected = false
-      this.connectionConfig = null
+      this._isConnected = false
+      this._connectionConfig = null
       console.log('[MiraAPI] Disconnected')
       return { success: true }
     },
@@ -319,12 +329,19 @@ export class MiraAPI {
 
       getUser: async (): Promise<UserInfo> => {
         if (!this.miraClient) throw new Error('Mira client not initialized')
-        
+
         try {
           console.log('[MiraAPI] Getting current user info')
           const result = await this.miraClient.user().getInfo()
           console.log('[MiraAPI] Got current user info successfully')
-          return result
+          // 适配本地 UserInfo 类型（sdk 中 id 为 number，本地为 string）
+          return {
+            id: String(result.id),
+            username: result.username,
+            realName: result.realName,
+            avatar: result.avatar,
+            role: result.role
+          } as UserInfo
         } catch (error) {
           console.error('[MiraAPI] Failed to get current user info:', error)
           throw error
@@ -413,14 +430,15 @@ export class MiraAPI {
         }
       },
 
-      createLibrary: async (name: string, description?: string): Promise<any> => {
+      createLibrary: async (name: string, description?: string, path: string = ''): Promise<any> => {
         if (!this.miraClient) throw new Error('Mira client not initialized')
-        
+
         try {
           console.log('[MiraAPI] Creating library', { name, description })
-          const result = await this.miraClient.libraries().create({ 
-            name, 
-            description: description || '' 
+          const result = await this.miraClient.libraries().create({
+            name,
+            path,
+            description: description || ''
           })
           console.log('[MiraAPI] Library created successfully', { name })
           return result

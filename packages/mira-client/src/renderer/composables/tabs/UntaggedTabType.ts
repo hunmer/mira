@@ -1,5 +1,5 @@
 import { MediaViewTabType } from '../TabTypes'
-import type { TabContext, TabViewConfig } from '../TabRegistry'
+import type { TabContext } from '../TabRegistry'
 
 export class UntaggedTabType extends MediaViewTabType {
   name = 'untagged'

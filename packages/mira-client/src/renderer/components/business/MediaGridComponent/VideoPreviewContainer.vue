@@ -3,7 +3,7 @@
     <VideoPreview
       v-if="currentVideoItem"
       :key="`video-${currentVideoItem.id}`"
-      :ref="el => setVideoPreviewRef(el, currentVideoItem.id)"
+      :ref="(el: any) => setVideoPreviewRef(el, currentVideoItem?.id ?? '')"
       :src="videoSrc"
       :muted="isMuted"
       :auto-jump="false"
@@ -60,7 +60,7 @@ const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
 // 优先使用 localFile（本地/SMB 映射路径），回退到 HTTP path
-const videoSrc = computed(() => getMediaFileUrl(props.currentVideoItem))
+const videoSrc = computed(() => getMediaFileUrl(props.currentVideoItem ?? undefined))
 
 const posterSrc = computed(() => toFileUrl(props.currentVideoItem?.thumbnailPath))
 

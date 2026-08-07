@@ -3,10 +3,11 @@ import {
   AlertDialogOverlay,
   type AlertDialogOverlayProps,
 } from 'reka-ui'
+import type { HTMLAttributes } from 'vue'
 import { computed } from 'vue'
 import { cn } from '@/lib/utils'
 
-const props = defineProps<AlertDialogOverlayProps>()
+const props = defineProps<AlertDialogOverlayProps & { class?: HTMLAttributes['class'] }>()
 const delegatedProps = computed(() => {
   const { class: _, ...delegated } = props
   return delegated

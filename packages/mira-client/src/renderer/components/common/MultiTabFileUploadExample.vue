@@ -60,7 +60,7 @@
 
         <div class="mt-4">
           <div class="flex items-center">
-            <Checkbox :model-value="autoUpload" @update:model-value="autoUpload = $event" />
+            <Checkbox :model-value="Boolean(autoUpload)" @update:model-value="autoUpload = $event === true" />
             <label for="auto-upload" class="ml-2">自动上传</label>
           </div>
         </div>
@@ -224,7 +224,7 @@ const onUploadStart = (files: File[]) => {
   updateStats()
 }
 
-const onUploadProgress = (item: UploadItem) => {
+const onUploadProgress = (_item: UploadItem) => {
   // 可以在这里添加进度相关的处理逻辑
   // 为了避免日志过多，这里不记录每次进度更新
 }

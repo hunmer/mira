@@ -1,5 +1,4 @@
 import { miraSDKService } from './MiraSDKService'
-import { useHomeController } from '../controllers/HomeController'
 import { useRouter } from 'vue-router'
 import { FileInfo } from '@/shared/types'
 

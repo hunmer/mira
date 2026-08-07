@@ -1,5 +1,5 @@
 import { MediaViewTabType } from '../TabTypes'
-import type { TabContext, TabViewConfig } from '../TabRegistry'
+import type { TabContext } from '../TabRegistry'
 import { useTagStore } from '../../stores/tag'
 
 export class TagTabType extends MediaViewTabType {

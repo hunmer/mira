@@ -58,7 +58,11 @@ const onOpenChange = (val: boolean) => {
   if (props.disabled && val) return
   if (open.value === val) return
   open.value = val
-  emit(val ? 'open' : 'close', undefined as never)
+  if (val) {
+    emit('open')
+  } else {
+    emit('close')
+  }
   emit('toggle', val)
 }
 

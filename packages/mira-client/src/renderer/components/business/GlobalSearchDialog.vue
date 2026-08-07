@@ -32,13 +32,6 @@ const {
 } = useGlobalSearch()
 
 /**
- * 处理对话框隐藏事件
- */
-const handleDialogHide = (): void => {
-  hideSearchDialog()
-}
-
-/**
  * 处理 Dialog open 状态变化
  */
 const handleOpenChange = (open: boolean): void => {

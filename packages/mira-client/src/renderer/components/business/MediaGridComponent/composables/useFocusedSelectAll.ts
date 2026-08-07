@@ -1,5 +1,5 @@
 import { onMounted, onUnmounted, type Ref } from 'vue'
-import type { FileInfo } from '../../../../shared/types'
+import type { FileInfo } from '../../../../../shared/types'
 
 interface SelectAllProps {
   items: FileInfo[]

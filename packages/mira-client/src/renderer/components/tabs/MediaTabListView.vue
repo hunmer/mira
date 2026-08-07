@@ -426,7 +426,7 @@ const {
 
 // 响应式状态
 const isLoading = ref(false)
-const sortField = ref<string>('imported_at')
+const sortField = ref<'imported_at' | 'id' | 'name' | 'size' | 'stars' | 'folder_id' | 'tags' | 'custom_fields'>('imported_at')
 const sortOrder = ref<'asc' | 'desc'>('desc')
 
 // 拖拽上传
@@ -444,7 +444,7 @@ const uploadTagIds = ref<string[]>([])
 const settingsStore = useSettingsStore()
 const toast = useToast()
 
-const handleDragOver = (e: DragEvent) => {
+const handleDragOver = (_e: DragEvent) => {
   if ((window as any).__miraInternalDrag) return
   isDragOver.value = true
 }
@@ -591,9 +591,6 @@ const currentTabContent = computed(() => {
   }
 })
 
-// 侧边栏文件直接从全局 store 读取
-const sidebarMediaItems = computed(() => mediaStore.detailSidebarFiles)
-
 // 选中项变化时同步 FileInfo 到全局 store
 watch([selectedItems, () => paginatedMediaItems.value], ([ids, items]) => {
   if (!ids || ids.length === 0) {
@@ -725,7 +722,6 @@ const handleMediaContextMenu = (item: FileInfo, event: MouseEvent) => {
 const handleSelectAll = () => {
   // 使用本地的 paginatedMediaItems 而不是 homeController 的
   const items = paginatedMediaItems.value
-  const currentSelected = selectedItems.value
 
   if (isAllSelected.value) {
     // 取消全选
@@ -865,7 +861,7 @@ const handleFilterClear = async (filter: FilterRule) => {
   }
 
   // 确保 props.filters 中的简单键值对格式筛选器被保留
-  Object.entries(props.filters).forEach(([key, value]) => {
+  Object.entries(props.filters).forEach(([_key, value]) => {
     // 跳过 FilterRule 格式的筛选器，只保留简单键值对
     if (value === null || typeof value !== 'object') {
       // 保留简单格式的初始筛选器
@@ -883,7 +879,7 @@ const handleFilterClear = async (filter: FilterRule) => {
 }
 
 const handleSortChange = async (field: string, order: string) => {
-  sortField.value = field
+  sortField.value = field as 'imported_at' | 'id' | 'name' | 'size' | 'stars' | 'folder_id' | 'tags' | 'custom_fields'
   sortOrder.value = order as 'asc' | 'desc'
   await fetchPageData(1)
 }
@@ -1066,7 +1062,7 @@ const initializeFilterRules = () => {
       if (tagsValue && typeof tagsValue === 'object' && 'selectedValues' in tagsValue) {
         // 如果是 FilterRule 格式
         tagsFilter.selectedValues = tagsValue.selectedValues || []
-        tagsFilter.active = tagsFilter.selectedValues.length > 0
+        tagsFilter.active = (tagsFilter.selectedValues || []).length > 0
       } else if (Array.isArray(tagsValue)) {
         // 如果是数组格式
         tagsFilter.selectedValues = tagsValue
@@ -1077,7 +1073,7 @@ const initializeFilterRules = () => {
 }
 
 // 监听Tab ID变化，初始化MediaTabData
-watch(() => props.tabId, async (newTabId, oldTabId) => {
+watch(() => props.tabId, async (newTabId, _oldTabId) => {
   if (newTabId && props.libraryId) {
     // 初始化 filterRules
     initializeFilterRules()
@@ -1112,11 +1108,11 @@ onUnmounted(() => {
 // 监听器
 watch(
   () => [props.tabId, props.libraryId, props.filters],
-  ([newTabId, newLibraryId, newFilters], [oldTabId, oldLibraryId, oldFilters]) => {
+  ([_newTabId, _newLibraryId, newFilters], [_oldTabId, _oldLibraryId, oldFilters]) => {
     // 如果 filters 变化，重新初始化过滤器
     if (JSON.stringify(newFilters) !== JSON.stringify(oldFilters)) {
       // 重新构建初始过滤器
-      let initialFilters = { ...newFilters }
+      let initialFilters: Record<string, any> = { ...((newFilters as Record<string, any>) || {}) }
       if (props.viewType === 'trash') {
         initialFilters.recycled = 1
       }

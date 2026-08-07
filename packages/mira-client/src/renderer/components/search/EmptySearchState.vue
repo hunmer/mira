@@ -47,7 +47,7 @@ const props = withDefaults(defineProps<Props>(), {
   showSuggestions: true
 })
 
-const emit = defineEmits<Emits>()
+defineEmits<Emits>()
 
 /**
  * 获取空状态图标

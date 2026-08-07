@@ -3,7 +3,6 @@ import { useRouter, useRoute } from 'vue-router'
 import { api as viewerApi } from 'v-viewer'  // 保留备用，现在主要使用内嵌组件
 import 'viewerjs/dist/viewer.css'
 import { useMediaStore } from '../stores/media'
-import { useLibraryStore } from '../stores/library'
 import { getPreviewImageSource } from '../utils/fileUtils'
 import type { FileInfo } from '../../shared/types'
 
@@ -11,7 +10,6 @@ export class ImagePreviewController {
   private router = useRouter()
   private route = useRoute()
   private mediaStore = useMediaStore()
-  private libraryStore = useLibraryStore()
 
   // 响应式状态
   public currentImageIndex = ref<number>(0)
@@ -69,24 +67,8 @@ export class ImagePreviewController {
         }
       }
     )
-    
+
     // 延迟初始化 - 将在实际需要时调用 initializeIfNeeded
-  }
-
-  /**
-   * 按需初始化数据 - 只在确实需要预览时才加载
-   */
-  private async initializeIfNeeded(): Promise<void> {
-    if (this.libraryStore.currentLibrary) {
-      const libraryId = this.libraryStore.currentLibrary.id
-
-      // 只在预览时按需加载，避免初始化时的全量获取
-      if (this.mediaStore.files.length === 0) {
-        // 可以考虑使用 fetchFilesForTab 的方式按需加载
-        // 或者在这里添加一个轻量级的图片文件获取方法
-        console.log('Image preview may need data, consider lazy loading implementation')
-      }
-    }
   }
 
   /**

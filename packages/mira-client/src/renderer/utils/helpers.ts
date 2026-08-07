@@ -16,7 +16,7 @@ function getPinyin(text: string): { full: string; first: string } {
   }
 
   try {
-    const result = pinyin(text, { style: pinyin.STYLE_NORMAL })
+    const result = pinyin(text, { style: 0 /* ENUM_PINYIN_STYLE.NORMAL */ })
     const full = result.map(arr => arr[0] || '').join('').toLowerCase()
     const first = result.map(arr => (arr[0] || '')[0] || '').join('').toLowerCase()
     const data = { full, first }

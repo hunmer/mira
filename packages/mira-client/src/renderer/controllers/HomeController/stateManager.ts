@@ -106,7 +106,7 @@ export class HomeStateManager {
    * @param onPageReset - 页面重置回调
    */
   public applyFiltersToTab = (
-    tabId: string,
+    _tabId: string,
     filters: Record<string, any>,
     filterConditions: any,
     onPageReset?: () => void

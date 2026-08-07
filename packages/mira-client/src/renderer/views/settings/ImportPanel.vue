@@ -22,7 +22,7 @@ import { Switch } from '@/components/ui/switch'
 const settingsStore = useSettingsStore()
 const toast = useToast()
 
-const handleSettingChange = async (key: string, value: any) => {
+const handleSettingChange = async (key: string, _value: any) => {
   try {
     await settingsStore.saveSettings()
     toast.add({

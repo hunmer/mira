@@ -110,7 +110,7 @@ async function onResetPosition() {
   }
 }
 
-const handleSettingChange = async (key: string, value: any) => {
+const handleSettingChange = async (key: string, _value: any) => {
   try {
     await settingsStore.saveSettings()
     toast.add({

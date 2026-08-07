@@ -12,7 +12,7 @@
             </div>
           </div>
           <div class="text-xs text-muted-foreground">
-            服务器: {{ settingsStore.settings.serverUrl }}
+            服务器: {{ serverListStore.activeServer?.serverUrl || '未连接' }}
           </div>
         </CardContent>
       </Card>
@@ -39,10 +39,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useSettingsStore } from '../../stores/settings'
-import { useToast } from '@/renderer/composables/useToast'
+import { useServerListStore } from '../../stores/serverList'
 import { Card, CardContent } from '@/components/ui/card'
 
 const settingsStore = useSettingsStore()
+const serverListStore = useServerListStore()
 
 // 计算属性
 const connectionStatusColor = computed(() => {
@@ -82,17 +83,4 @@ const systemPlatform = computed(() => {
 })
 
 const appVersion = computed(() => '1.0.0')
-
-const cacheSize = computed(() => {
-  return settingsStore.settings.cacheSize * 1024 * 1024 // Convert MB to bytes
-})
-
-// 方法
-const formatBytes = (bytes: number): string => {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-}
 </script>

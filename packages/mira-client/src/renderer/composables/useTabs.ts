@@ -1,5 +1,5 @@
 import { ref, computed, watch, nextTick } from 'vue'
-import { tabRegistry, type TabContext, type TabTypeDefinition, type TabViewConfig } from './TabRegistry'
+import { tabRegistry, type TabContext, type TabViewConfig } from './TabRegistry'
 import { quickInitTabSystem } from './initTabSystem'
 import { tabPersistence, type TabState } from './TabPersistence'
 import { restoreTabViewMode, registerViewModeChangeCallback, clearTabCache } from './useMediaTabData'

@@ -319,7 +319,7 @@ export const useMediaStore = defineStore('media', () => {
       })
 
       // 然后处理 FilterRule 对象格式的筛选器（来自 FilterBar）
-      Object.entries(tabInfo.filters).forEach(([key, filterRule]: [string, any]) => {
+      Object.entries(tabInfo.filters).forEach(([_key, filterRule]: [string, any]) => {
         if (!filterRule || typeof filterRule !== 'object' || !filterRule.id) {
           return
         }

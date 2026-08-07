@@ -172,9 +172,9 @@ const selectPluginDirectory = async () => {
         console.warn('选择目录结果格式异常:', result.data)
         showToast('warn', '警告', '选择的目录路径无效')
       }
-    } else if (!result.success && result.error) {
-      console.error('选择目录失败:', result.error)
-      showToast('error', '错误', result.error || '选择目录失败')
+    } else if (!result.success && result.message) {
+      console.error('选择目录失败:', result.message)
+      showToast('error', '错误', result.message || '选择目录失败')
     }
     // 如果 result.success 为 false 但没有 error，可能是用户取消了选择
   } catch (error) {

@@ -87,7 +87,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, reactive, ref } from 'vue'
+import { onMounted, onUnmounted, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import GlobalLoading from './components/GlobalLoading.vue'
 import ServerStartupLoading from './components/ServerStartupLoading.vue'
@@ -187,7 +187,7 @@ if (environment.isElectron) {
 }
 
 // 初始化全局快捷键系统
-const shortcuts = useAutoShortcuts()
+useAutoShortcuts()
 
 
 // 处理全局Loading取消
@@ -239,85 +239,6 @@ const handleKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Escape') {
     // 可以在这里添加清除选择等操作
   }
-}
-
-// 向上查找具有 data-file 或 data-files 属性的元素
-const findElementWithDataFile = (element: HTMLElement | null): HTMLElement | null => {
-  let currentElement = element
-
-  while (currentElement && currentElement !== document.documentElement) {
-    if (currentElement.hasAttribute('data-file') || currentElement.hasAttribute('data-files')) {
-      return currentElement
-    }
-    currentElement = currentElement.parentElement
-  }
-
-  return null
-}
-
-
-// 检测拖拽元素并提取图标信息
-const extractDragIcon = (event: DragEvent): { iconPath?: string; iconType?: string } => {
-  const target = event.target as HTMLElement
-
-  // 向上查找具有 data-file 属性的元素（已有逻辑）
-  let currentElement: HTMLElement | null = target
-  let elementWithDataFile: HTMLElement | null = null
-
-  while (currentElement && currentElement !== document.documentElement) {
-    if (currentElement.hasAttribute('data-file')) {
-      elementWithDataFile = currentElement
-      break
-    }
-    currentElement = currentElement.parentElement
-  }
-
-  if (!elementWithDataFile) {
-    return {}
-  }
-
-  // 在该元素及其子元素中查找图片
-  const findImageInElement = (element: HTMLElement): { iconPath?: string; iconType?: string } => {
-    // 检查元素本身是否为图片
-    if (element.tagName === 'IMG') {
-      const img = element as HTMLImageElement
-      if (img.src) {
-        console.log('🖼️ 检测到图片元素, src:', img.src)
-        return {
-          iconPath: img.src,
-          iconType: 'element-image'
-        }
-      }
-    }
-
-    // 检查背景图片
-    const computedStyle = window.getComputedStyle(element)
-    const backgroundImage = computedStyle.backgroundImage
-    if (backgroundImage && backgroundImage !== 'none') {
-      const match = backgroundImage.match(/url\(['"]?(.*?)['"]?\)/)
-      if (match && match[1]) {
-        console.log('🎨 检测到背景图片:', match[1])
-        return {
-          iconPath: match[1],
-          iconType: 'background-image'
-        }
-      }
-    }
-
-    // 在子元素中查找图片
-    const imgElement = element.querySelector('img')
-    if (imgElement && imgElement.src) {
-      console.log('🔍 在子元素中找到图片:', imgElement.src)
-      return {
-        iconPath: imgElement.src,
-        iconType: 'child-image'
-      }
-    }
-
-    return {}
-  }
-
-  return findImageInElement(elementWithDataFile)
 }
 
 // 监听主进程事件
@@ -462,7 +383,7 @@ onMounted(() => {
   // 初始化拖拽横条状态 - 始终启用拖拽
   const dragBar = document.querySelector('.drag-handle-bar') as HTMLElement
   if (dragBar) {
-    dragBar.style.webkitAppRegion = 'drag'
+    ;(dragBar.style as any).webkitAppRegion = 'drag'
   }
 })
 

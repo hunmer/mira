@@ -81,7 +81,7 @@ export const sleep = (ms: number): Promise<void> => {
 export const storage = {
   get<T>(key: string, defaultValue: T): T {
     try {
-      const item = ConfigStorage.getItem(key)
+      const item = localStorage.getItem(key)
       return item ? JSON.parse(item) : defaultValue
     } catch {
       return defaultValue

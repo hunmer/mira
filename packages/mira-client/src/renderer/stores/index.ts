@@ -60,7 +60,7 @@ export async function initializeStores() {
     await mediaStore.restoreMediaState()
     
     // 6. 恢复插件状态
-    await pluginStore.restorePluginState()
+    await pluginStore.restoreState()
     
     // 7. 文件夹和标签状态在需要时动态加载，不需要在此初始化
     // folderStore 和 tagStore 将在 InitializationService 中按需加载
@@ -86,7 +86,6 @@ export async function clearAllStores() {
   const { useAuthStore } = await import('./auth')
   const { useLibraryStore } = await import('./library')
   const { useMediaStore } = await import('./media')
-  const { useSettingsStore } = await import('./settings')
   const { usePluginStore } = await import('./plugin')
   const { useFolderStore } = await import('./folder')
   const { useTagStore } = await import('./tag')
@@ -95,7 +94,6 @@ export async function clearAllStores() {
   const authStore = useAuthStore()
   const libraryStore = useLibraryStore()
   const mediaStore = useMediaStore()
-  const settingsStore = useSettingsStore()
   const pluginStore = usePluginStore()
   const folderStore = useFolderStore()
   const tagStore = useTagStore()

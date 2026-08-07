@@ -283,7 +283,7 @@ const setupResizeObserver = () => {
 // 生命周期
 onMounted(() => {
   nextTick(() => {
-    updateDimensions()
+    throttledResize()
     setupResizeObserver()
     // 初始化移动设备状态
     const mobileThreshold = BREAKPOINTS[props.mobileBreakpoint]

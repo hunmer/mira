@@ -1,12 +1,38 @@
-import { ref, computed, inject, watch } from 'vue'
-import { useTabs } from './useTabs'
+import { computed, inject, watch, reactive } from 'vue'
 
 /**
  * Tab级别的分页状态管理
  * 每个Tab组件使用独立的分页状态，避免全局状态冲突
  */
+
+// Tab 分页状态的本地存储（useTabs 尚未暴露分页接口，使用本地 Map 保存）
+interface TabPaginationState {
+  currentPage: number
+  totalRecords: number
+  itemsPerPage: number
+  isServerPagination: boolean
+}
+
+const paginationStates = new Map<string, TabPaginationState>()
+
+const getTabPaginationState = (id: string): TabPaginationState => {
+  if (!paginationStates.has(id)) {
+    paginationStates.set(id, reactive<TabPaginationState>({
+      currentPage: 1,
+      totalRecords: 0,
+      itemsPerPage: 20,
+      isServerPagination: false
+    }))
+  }
+  return paginationStates.get(id)!
+}
+
+const updateTabPaginationState = (id: string, updates: Partial<TabPaginationState>) => {
+  const state = getTabPaginationState(id)
+  Object.assign(state, updates)
+}
+
 export function useTabPagination(tabId?: string) {
-  const { getTabPaginationState, updateTabPaginationState } = useTabs()
 
   // 如果没有提供tabId，尝试从注入的props中获取
   const currentTabId = tabId || inject<string>('tabId', '')

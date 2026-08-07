@@ -23,6 +23,7 @@ export class ElectronService {
    */
   private createMockAPI(): ElectronAPI {
     return {
+      // 开发环境 mock 仅实现基础字段，其余按需补全
       isDevelopment: false,
       isProduction: true,
       invoke: async () => ({ success: false, message: 'Mock API - not implemented' }),
@@ -30,71 +31,9 @@ export class ElectronService {
       on: () => {},
       removeAllListeners: () => {},
       platform: 'win32',
-      // 注意：这里不再包含 mira 对象，因为 Mira SDK 已经独立出来
-      mira: {
-        connect: async () => ({ success: false, message: 'Mock API' }),
-        disconnect: async () => ({ success: true, message: 'Mock API' }),
-        testConnection: async () => ({ success: false, message: 'Mock API' }),
-        auth: {
-          login: async () => ({ 
-            id: 'mock', 
-            username: 'mock-user', 
-            realName: 'Mock User' 
-          } as any),
-          register: async () => ({ 
-            id: 'mock', 
-            username: 'mock-user', 
-            realName: 'Mock User' 
-          } as any),
-          logout: async () => ({ success: true, message: 'Mock API' }),
-          getUser: async () => ({ 
-            id: 'mock', 
-            username: 'mock-user', 
-            realName: 'Mock User' 
-          } as any)
-        },
-        files: {
-          list: async () => [],
-          upload: async () => ({ success: false, message: 'Mock API' }),
-          download: async () => new Blob(),
-          delete: async () => ({ success: false, message: 'Mock API' })
-        },
-        library: {
-          getLibraries: async () => [],
-          createLibrary: async () => ({ 
-            id: 'mock', 
-            name: 'Mock Library', 
-            type: 'mock',
-            path: '',
-            fileCount: 0,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          } as any),
-          addToLibrary: async () => ({ success: false, message: 'Mock API' })
-        },
-        plugins: {
-          list: async () => [],
-          install: async () => ({ success: false, message: 'Mock API' }),
-          uninstall: async () => ({ success: false, message: 'Mock API' }),
-          execute: async () => ({ success: false, message: 'Mock API' })
-        },
-        system: {
-          info: async () => ({
-            version: '1.0.0',
-            platform: 'win32',
-            arch: 'x64',
-            nodeVersion: '18.0.0',
-            uptime: 1000,
-            memory: { total: 8000000000, used: 4000000000, available: 4000000000 },
-            disk: { total: 500000000000, used: 250000000000, available: 250000000000 }
-          } as any),
-          health: async () => ({
-            status: 'healthy' as const,
-            timestamp: new Date().toISOString()
-          })
-        }
-      },
-      
+      // 以下字段仅为满足 ElectronAPI 类型，开发环境 mock 暂未完整实现
+      process: (typeof process !== 'undefined' ? process : {} as NodeJS.Process),
+
       // Protocol handling API
       protocol: {
         registerHandler: async () => ({ success: false, message: 'Mock API' }),
@@ -111,7 +50,7 @@ export class ElectronService {
         flash: async () => ({ success: false, message: 'Mock API' }),
         setTooltip: async () => ({ success: false, message: 'Mock API' })
       }
-    }
+    } as unknown as ElectronAPI
   }
 
   /**

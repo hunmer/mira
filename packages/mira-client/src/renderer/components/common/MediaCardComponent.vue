@@ -214,26 +214,6 @@ const videoPreview = useVideoPreview({
 })
 
 // 方法
-const handleClick = () => {
-  if (props.selectable) {
-    handleSelect(!props.selected)
-  }
-  emit('click', props.item)
-}
-
-const handleDoubleClick = () => {
-  emit('double-click', props.item)
-}
-
-const handleContextMenu = (event: MouseEvent) => {
-  event.preventDefault()
-  emit('context-menu', props.item, event)
-}
-
-const handleSelect = (selected: boolean) => {
-  emit('select', props.item, selected)
-}
-
 const handleImageLoad = () => {
   isImageLoaded.value = true
 }

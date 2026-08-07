@@ -343,7 +343,7 @@ export const useServerListStore = defineStore('serverList', () => {
         websocketUrl: normalizeServerUrl(server.websocketUrl),
       }))
       const seenAddresses = new Set<string>()
-      services.value = normalizedServices.reverse().filter(server => {
+      services.value = normalizedServices.reverse().filter((server: ServerConfig) => {
         const key = serverAddressKey(server.serverUrl)
         if (seenAddresses.has(key)) return false
         seenAddresses.add(key)

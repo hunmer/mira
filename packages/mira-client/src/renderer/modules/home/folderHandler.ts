@@ -62,7 +62,6 @@ export function useHomeFolderHandler() {
       currentFolder.value = {
         id: folderId,
         title: options?.title || null,
-        label: options?.label,
         libraryId: options?.libraryId || null,
         path: options?.path
       }

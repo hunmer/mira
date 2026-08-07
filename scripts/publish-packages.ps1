@@ -1,4 +1,4 @@
-# 批量发布 mira workspace 的公开包 (PowerShell 版): core -> server
+﻿# 批量发布 mira workspace 的公开包 (PowerShell 版): core -> server
 # 依赖顺序: server 依赖 core (workspace:*), 故 core 先发。
 #
 # 用法 (在 PowerShell 交互终端执行):
@@ -62,9 +62,9 @@ Write-Host ""
 foreach ($short in $Packages) {
     $pkg = Get-DirOf $short
     $dir = Join-Path $Root "packages/$pkg"
-    $pkgJsonPath = Join-Path $dir "package.json"
+    $pkgJsonPath = (Join-Path $dir "package.json") -replace '\\', '/'
     if (-not (Test-Path $pkgJsonPath)) {
-        Write-Host "    ! 跳过 $short: 找不到 $pkgJsonPath" -ForegroundColor Yellow
+        Write-Host "    ! 跳过 ${short}: 找不到 $pkgJsonPath" -ForegroundColor Yellow
         continue
     }
     $name    = (node -p "require('$pkgJsonPath').name").Trim()
@@ -123,7 +123,7 @@ Write-Host "======================================== =="
 Write-Host "完成:" -ForegroundColor Green
 foreach ($short in $Packages) {
     $pkg = Get-DirOf $short
-    $pkgJsonPath = Join-Path $Root "packages/$pkg/package.json"
+    $pkgJsonPath = (Join-Path $Root "packages/$pkg/package.json") -replace '\\', '/'
     if (Test-Path $pkgJsonPath) {
         $name    = (node -p "require('$pkgJsonPath').name").Trim()
         $version = (node -p "require('$pkgJsonPath').version").Trim()

@@ -241,7 +241,7 @@ const handleUploadStart = async (files: File[]) => {
   addFilesToQueue()
 }
 
-const handleUploadProgress = (item: any) => {
+const handleUploadProgress = (_item: any) => {
   // 进度在组件内部处理，这里可以添加额外逻辑
 }
 
@@ -348,8 +348,6 @@ const clearAllFiles = async () => {
       uploadHistoryStore.clearAllRecords()
     }
 
-    selectedFiles.value = []
-    selectAll.value = false
     await refreshFiles()
   } catch (error) {
     console.error('Failed to clear files:', error)
@@ -382,14 +380,8 @@ const deleteFile = async (file: any) => {
 }
 
 // 素材库选择处理
-const handleLibraryChange = (event: any) => {
-  selectedLibraryId.value = event.value
-  // 切换素材库时刷新文件列表
-  refreshFiles()
-}
-
-const handleLibrarySelectChange = (value: string) => {
-  selectedLibraryId.value = value
+const handleLibrarySelectChange = (value: any) => {
+  selectedLibraryId.value = String(value)
   // 切换素材库时刷新文件列表
   refreshFiles()
 }

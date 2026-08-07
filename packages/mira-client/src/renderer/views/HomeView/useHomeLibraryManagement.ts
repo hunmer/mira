@@ -8,7 +8,7 @@ import { useLibraryStore } from '@/renderer/stores/library'
 import { useFolderStore } from '@renderer/stores/folder'
 import { useTagStore } from '@renderer/stores/tag'
 import { createTabScopeId } from '@renderer/composables/TabPersistence'
-import type { CollectionInfo } from '@shared/types'
+import type { LibraryInfo } from '../../../shared/types'
 import type { ServerConfig } from '@renderer/stores/serverList'
 import type { Ref } from 'vue'
 
@@ -28,7 +28,7 @@ export function useHomeLibraryManagement(
     initializeDefaultLibrary
   } = useLibraryManagement(serverListStore)
 
-  const handleSelectCollection = async (collection: CollectionInfo) => {
+  const handleSelectCollection = async (collection: LibraryInfo) => {
     console.log('Selecting library', collection.name, collection.id)
 
     try {

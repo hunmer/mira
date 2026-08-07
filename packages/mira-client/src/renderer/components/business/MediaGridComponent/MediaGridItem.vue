@@ -25,7 +25,7 @@
         <!-- 懒加载图片 -->
         <MediaThumbnail
           :file-id="item.id"
-          :src="imageSrcComputed"
+          :src="imageSrcComputed ?? ''"
           :filename="item.name"
           :alt="item.name"
           img-class="w-full h-full object-cover transition-opacity duration-300 lazy-image"

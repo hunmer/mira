@@ -3,9 +3,9 @@ import { useMediaStore } from '../../stores/media'
 import { useFolderStore } from '../../stores/folder'
 import { useTagStore } from '../../stores/tag'
 import { useLibraryStore } from '../../stores/library'
-import type { NavigationItem, FolderItem, SearchFilter } from '../../types/components'
+import type { FolderItem, SearchFilter } from '../../types/components'
 import type { FileInfo } from '../../../shared/types'
-import type { FilterConditions, BreadcrumbItem, QuickFilter } from './types'
+import type { FilterConditions, QuickFilter } from './types'
 import { HomeControllerUtils } from './utils'
 
 /**

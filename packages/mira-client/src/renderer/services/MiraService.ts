@@ -1,5 +1,3 @@
-import { environment } from '../utils'
-
 /**
  * Mira 服务 - 前端版本
  * 处理与 Mira 服务器的连接和业务逻辑

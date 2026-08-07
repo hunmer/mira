@@ -47,7 +47,7 @@
       v-else-if="mode === 'tabs'"
       type="single"
       :model-value="selectedTheme"
-      @update:model-value="(value: string) => { if (value) { selectedTheme = value as any; handleThemeChange() } }"
+      @update:model-value="(value: any) => { if (value) { selectedTheme = value as any; handleThemeChange() } }"
       class="theme-tabs"
     >
       <ToggleGroupItem v-for="opt in themeOptions" :key="opt.value" :value="opt.value" class="flex items-center gap-2">

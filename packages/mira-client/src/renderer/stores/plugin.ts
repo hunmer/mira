@@ -46,8 +46,7 @@ import {
 
   // 状态持久化
   persistPluginState,
-  restorePluginState,
-  clearPluginState
+  restorePluginState
 } from '../plugins'
 
 /**

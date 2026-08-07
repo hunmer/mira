@@ -3,7 +3,7 @@
  * 提供媒体项的事件处理、状态计算等共享逻辑
  */
 import { computed, type Ref } from 'vue'
-import type { FileInfo } from '../../../shared/types'
+import type { FileInfo } from '../../shared/types'
 
 export interface MediaItemEmits {
   (e: 'click', item: FileInfo, event: MouseEvent): void

@@ -10,9 +10,9 @@
                 <Tooltip>
                   <TooltipTrigger as-child>
                     <Button
-                      :variant="getButtonVariant(button)"
+                      :variant="(getButtonVariant(button) as any)"
                       :disabled="button.disabled"
-                      :size="getButtonSize()"
+                      :size="(getButtonSize() as any)"
                       class="transition-all duration-200 hover:scale-105"
                       @click="handleButtonClick(button)"
                     >
@@ -75,8 +75,8 @@ const getButtonVariant = (button: ToolbarButton) => {
     'danger': 'destructive'
   }
 
-  if (variant === 'minimal') return 'ghost'
-  if (button.variant === 'secondary' && variant === 'default') return 'outline'
+  if (props.variant === 'minimal') return 'ghost'
+  if (button.variant === 'secondary' && props.variant === 'default') return 'outline'
 
   return variantMap[button.variant || 'secondary'] || 'secondary'
 }

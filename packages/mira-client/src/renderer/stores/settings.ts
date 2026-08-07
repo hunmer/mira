@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import { miraSDKService } from '../services/MiraSDKService'
 import { miraAPI } from '../api/MiraAPI'
-import type { MiraConnectionConfig, SystemInfo, SystemHealth } from '../../shared/types'
+import type { SystemInfo, SystemHealth } from '../../shared/types'
 import ConfigStorage from '@renderer/utils/ConfigStorage'
 import {
   THEME_STYLES,
@@ -469,9 +469,7 @@ export const useSettingsStore = defineStore('settings', () => {
    * @param preserveConnection - 是否保留连接信息，默认为true
    * @returns Promise<void>
    */
-  const resetSettings = async (preserveConnection = true) => {
-    const oldSettings = { ...settings.value }
-    
+  const resetSettings = async (_preserveConnection = true) => {
     // 重置为默认值
     const defaultSettings: AppSettings = {
       theme: 'auto',

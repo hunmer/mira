@@ -268,7 +268,7 @@
           </AlertDialogDescription>
         </AlertDialogHeader>
         <div v-if="ops.deletingType.value === 'folder'" class="flex items-center space-x-2 px-1">
-          <Checkbox id="deleteWithFiles" :model-value="ops.deleteWithFiles.value" @update:model-value="ops.deleteWithFiles.value = $event" />
+          <Checkbox id="deleteWithFiles" :model-value="Boolean(ops.deleteWithFiles.value)" @update:model-value="ops.deleteWithFiles.value = $event === true" />
           <label for="deleteWithFiles" class="text-sm text-muted-foreground cursor-pointer select-none">
             同时删除文件夹内的文件（不勾选则文件移至未分类）
           </label>
@@ -292,7 +292,7 @@
           </AlertDialogDescription>
         </AlertDialogHeader>
         <div v-if="ops.batchDeletingType.value === 'folder'" class="flex items-center space-x-2 px-1">
-          <Checkbox id="batchDeleteWithFiles" :model-value="ops.deleteWithFiles.value" @update:model-value="ops.deleteWithFiles.value = $event" />
+          <Checkbox id="batchDeleteWithFiles" :model-value="Boolean(ops.deleteWithFiles.value)" @update:model-value="ops.deleteWithFiles.value = $event === true" />
           <label for="batchDeleteWithFiles" class="text-sm text-muted-foreground cursor-pointer select-none">
             同时删除文件夹内的文件（不勾选则文件移至未分类）
           </label>

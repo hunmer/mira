@@ -27,7 +27,7 @@ export {
 
 export {
   BaseTabType,
-  MediaTabType
+  MediaViewTabType
 } from './TabTypes'
 
 // 内置Tab类型
@@ -64,15 +64,6 @@ export type {
 export {
   useTabs
 } from './useTabs'
-
-// 演示和测试工具
-export {
-  useTabSystemDemo
-} from './TabSystemDemo'
-
-export {
-  useTabSystemFixesDemo
-} from './TabSystemFixes'
 
 // 持久化工具
 export {
@@ -134,9 +125,9 @@ export type {
  *
  * 4. 继承内置基类：
  * ```ts
- * import { MediaTabType } from '@renderer/composables/TabSystem'
+ * import { MediaViewTabType } from '@renderer/composables/TabSystem'
  *
- * class MyMediaTab extends MediaTabType {
+ * class MyMediaTab extends MediaViewTabType {
  *   name = 'my-media-tab'
  *   displayName = '我的媒体Tab'
  *   icon = 'photo'

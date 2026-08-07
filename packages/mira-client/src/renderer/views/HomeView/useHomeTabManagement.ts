@@ -9,9 +9,7 @@ import { useHomeController } from '@renderer/controllers/HomeController'
 import { tabRegistryAPI, type TabViewConfig } from '@renderer/api/TabRegistryAPI'
 import { cacheTabData, useMediaTabData } from '@renderer/composables/useMediaTabData'
 import {
-  useHomeRouteHandler,
-  useHomeTagHandler,
-  useHomeFolderHandler
+  useHomeRouteHandler
 } from '@renderer/modules/home'
 
 export function useHomeTabManagement(
@@ -219,7 +217,7 @@ export function useHomeTabManagement(
   })
 
   // Tab右键菜单事件处理
-  const handleTabContextMenu = (tab: TabItem, event: MouseEvent) => {
+  const handleTabContextMenu = (tab: TabItem, _event: MouseEvent) => {
     currentContextTab.value = tab
   }
 
@@ -317,8 +315,8 @@ export function useHomeTabManagement(
       const tabWithLibrary = {
         ...tab,
         libraryId: libraryStore.currentLibrary.id,
-        sort: tab.sort || 'imported_at',
-        order: tab.order || 'desc'
+        sort: 'imported_at' as const,
+        order: 'desc' as const
       }
 
       const result = await mediaStore.fetchFilesForTab(

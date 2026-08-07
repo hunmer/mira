@@ -663,18 +663,6 @@ const filteredMarketplacePlugins = computed(() => {
   return plugins
 })
 
-// 方法
-const getCategoryTitle = () => {
-  switch (selectedCategory.value) {
-    case 'all': return '全部集成'
-    case 'communication': return '通讯工具'
-    case 'documentation': return '文档工具'
-    case 'productivity': return '效率工具'
-    case 'development': return '开发工具'
-    default: return '集成管理'
-  }
-}
-
 // ==================== 插件市场方法 ====================
 
 /**
@@ -892,7 +880,6 @@ const removePlugin = (plugin: PluginRuntime) => {
   confirm.require({
     message: `确定要卸载插件 "${plugin.config.pluginName}" 吗？`,
     header: '确认卸载',
-    icon: 'pi pi-exclamation-triangle',
     accept: async () => {
       try {
         await pluginStore.uninstallLocalPlugin(plugin.config.pluginId, plugin.directory, plugin.config.pluginName)

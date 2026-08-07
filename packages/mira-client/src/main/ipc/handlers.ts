@@ -23,37 +23,31 @@ import { getAutoUpdater } from '../services/useAutoUpdater'
  */
 export class IPCHandlers {
   private pluginHandler: PluginHandler
-  private dragDropHandler: DragDropHandler
-  private protocolHandlers: ProtocolHandlers
-  private trayHandlers: TrayHandlers
-  private appHandlers: AppHandlers
-  private fileSystemHandlers: FileSystemHandlers
-  private systemHandlers: SystemHandlers
   private searchWindowHandlers: SearchWindowHandlers
   private notificationWindowHandlers: NotificationWindowHandlers
   private floatingBallHandlers: FloatingBallWindowHandlers
   private menuHandlers: MenuHandlers
   private shortcutHandlers: ShortcutHandlers
   private autoUpdateHandlers: AutoUpdateHandlers
-  private notificationHandlers: NotificationHandlers
   private serverDeployHandlers: ServerDeployHandlers
   private pluginWindowHandlers: PluginWindowHandlers
 
   constructor() {
     this.pluginHandler = new PluginHandler()
-    this.dragDropHandler = new DragDropHandler()
-    this.protocolHandlers = new ProtocolHandlers()
-    this.trayHandlers = new TrayHandlers()
-    this.appHandlers = new AppHandlers()
-    this.fileSystemHandlers = new FileSystemHandlers()
-    this.systemHandlers = new SystemHandlers()
+    // 这些 handler 在构造时即注册各自的 IPC 监听，实例只需保持存活即可
+    new DragDropHandler()
+    new ProtocolHandlers()
+    new TrayHandlers()
+    new AppHandlers()
+    new FileSystemHandlers()
+    new SystemHandlers()
+    new NotificationHandlers()
     this.searchWindowHandlers = new SearchWindowHandlers()
     this.notificationWindowHandlers = new NotificationWindowHandlers()
     this.floatingBallHandlers = new FloatingBallWindowHandlers()
     this.menuHandlers = new MenuHandlers()
     this.shortcutHandlers = new ShortcutHandlers()
     this.autoUpdateHandlers = new AutoUpdateHandlers()
-    this.notificationHandlers = new NotificationHandlers()
     this.serverDeployHandlers = new ServerDeployHandlers()
     // 插件窗口处理器依赖 pluginHandler 解析插件目录
     this.pluginWindowHandlers = new PluginWindowHandlers(this.pluginHandler)

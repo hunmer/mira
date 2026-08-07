@@ -24,10 +24,6 @@ export class HomeInteractionHandler {
   public isServerPagination = ref(false)
 
   // 回调函数（私有变量，用于服务端分页）
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  private _getCurrentTabCallback: (() => any) | null = null
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  private _getCurrentLibraryCallback: (() => any) | null = null
 
   /**
    * 分页页码
@@ -153,21 +149,21 @@ export class HomeInteractionHandler {
    * 处理导航点击
    * @param item - 导航项目
    */
-  public handleNavigation = (item: NavigationItem): void => {
+  public handleNavigation = (_item: NavigationItem): void => {
   }
 
   /**
    * 处理导航选择
    * @param item - 导航项目
    */
-  public handleNavigationSelect = (item: NavigationItem): void => {
+  public handleNavigationSelect = (_item: NavigationItem): void => {
   }
 
   /**
    * 处理媒体点击
    * @param item - 媒体项目
    */
-  public handleMediaClick = (item: FileInfo): void => {
+  public handleMediaClick = (_item: FileInfo): void => {
   }
 
   /**
@@ -204,14 +200,14 @@ export class HomeInteractionHandler {
    * @param item - 媒体项目
    * @param event - 鼠标事件
    */
-  public handleMediaContextMenu = (item: FileInfo, event: MouseEvent): void => {
+  public handleMediaContextMenu = (_item: FileInfo, _event: MouseEvent): void => {
   }
 
   /**
    * 处理文件夹选择
    * @param folder - 文件夹项目
    */
-  public handleFolderSelect = (folder: FolderItem): void => {
+  public handleFolderSelect = (_folder: FolderItem): void => {
   }
 
   /**
@@ -219,14 +215,14 @@ export class HomeInteractionHandler {
    * @param folder - 文件夹项目
    * @param expanded - 是否展开
    */
-  public handleFolderExpand = (folder: FolderItem, expanded: boolean): void => {
+  public handleFolderExpand = (_folder: FolderItem, _expanded: boolean): void => {
   }
 
   /**
    * 处理面包屑点击
    * @param crumb - 面包屑项目
    */
-  public handleBreadcrumbClick = (crumb: BreadcrumbItem): void => {
+  public handleBreadcrumbClick = (_crumb: BreadcrumbItem): void => {
   }
 
   /**
@@ -332,15 +328,13 @@ export class HomeInteractionHandler {
   /**
    * 设置获取当前Tab的回调函数
    */
-  public setGetCurrentTabCallback = (callback: () => any): void => {
-    this._getCurrentTabCallback = callback
+  public setGetCurrentTabCallback = (_callback: () => any): void => {
   }
 
   /**
    * 设置获取当前库的回调函数
    */
-  public setGetCurrentLibraryCallback = (callback: () => any): void => {
-    this._getCurrentLibraryCallback = callback
+  public setGetCurrentLibraryCallback = (_callback: () => any): void => {
   }
 
   /**

@@ -147,7 +147,7 @@ export class HomeController {
       if (result.success) {
         console.log(`✅ 重新加载了第${this.interactionHandler.currentPage.value}页数据: ${result.data?.length} 个文件`)
       } else {
-        console.error('❌ 加载当前页数据失败:', result.error)
+        console.error('❌ 加载当前页数据失败:', (result as any).error)
       }
     } catch (error) {
       console.error('❌ 加载当前页数据异常:', error)

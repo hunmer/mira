@@ -11,7 +11,7 @@ export abstract class BaseTabType implements TabTypeDefinition {
   cacheable?: boolean = true
 
   // 默认视图配置 - 子类需要重写此方法
-  getViewConfig(context: TabContext): TabViewConfig {
+  getViewConfig(_context: TabContext): TabViewConfig {
     return {
       component: 'div',
       props: {
@@ -20,28 +20,28 @@ export abstract class BaseTabType implements TabTypeDefinition {
     }
   }
 
-  async onInit(context: TabContext): Promise<TabResult> {
+  async onInit(_context: TabContext): Promise<TabResult> {
     console.log(`🎯 BaseTabType.onInit: ${this.name}`)
     return { success: true }
   }
 
-  async onActive(context: TabContext): Promise<TabResult> {
+  async onActive(_context: TabContext): Promise<TabResult> {
     console.log(`▶️ BaseTabType.onActive: ${this.name}`)
     return { success: true }
   }
 
-  async onInactive(context: TabContext): Promise<TabResult> {
+  async onInactive(_context: TabContext): Promise<TabResult> {
     console.log(`⏸️ BaseTabType.onInactive: ${this.name}`)
     return { success: true }
   }
 
-  async onClose(context: TabContext): Promise<TabResult> {
+  async onClose(_context: TabContext): Promise<TabResult> {
     console.log(`🔚 BaseTabType.onClose: ${this.name}`)
     return { success: true }
   }
 
   // 数据加载钩子变为可选，某些tab可能不需要数据加载
-  async onDataLoad?(context: TabContext, pagination?: { limit?: number; offset?: number }): Promise<TabResult>
+  async onDataLoad?(_context: TabContext, pagination?: { limit?: number; offset?: number }): Promise<TabResult>
 
   // 默认：不响应任何事件
   shouldUpdateForEvent(_tabData: any, _eventData: any): boolean {

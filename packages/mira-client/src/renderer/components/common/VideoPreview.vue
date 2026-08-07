@@ -58,7 +58,7 @@ const initPlyr = () => {
       muted: muted.value, // 静音状态
       autoplay: false, // 不自动播放
       loop: { active: true }, // 循环播放
-      ratio: null, // 不设置固定比例，让容器决定
+      ratio: undefined, // 不设置固定比例，让容器决定
       displayDuration: false, // 不显示时长
       invertTime: false, // 不反转时间显示
       toggleInvert: false // 禁用时间反转切换
@@ -143,11 +143,11 @@ const videoAPI = {
             .join('')
         } catch (e) {
           console.warn('URL encoding failed, using original:', e)
-          encodedSrc = src.replaceAll('#', '%23')
+          encodedSrc = src.replace(/#/g, '%23')
         }
       } else if (src) {
         // 非本地路径，只处理 # 字符
-        encodedSrc = src.replaceAll('#', '%23')
+        encodedSrc = src.replace(/#/g, '%23')
       }
 
       plyrInstance.value.source = {
@@ -259,7 +259,7 @@ onMounted(() => {
 })
 
 // 监听props变化
-watch(src, (newSrc, oldSrc) => {
+watch(src, (newSrc, _oldSrc) => {
   // src changed
   if (newSrc && plyrInstance.value) {
     videoAPI.setSrc(newSrc)

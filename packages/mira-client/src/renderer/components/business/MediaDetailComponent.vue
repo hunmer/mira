@@ -581,15 +581,6 @@ const handleMultiImageError = (item: FileInfo) => {
   }
 }
 
-// 获取图片加载状态
-const getImageLoadState = (item: FileInfo): 'loading' | 'loaded' | 'error' => {
-  const imageSrc = item.thumbnailPath || item.url
-  if (imageSrc && imageLoadErrorCache.has(imageSrc)) {
-    return 'error'
-  }
-  return 'loading'
-}
-
 const getFolderName = (folderId?: string): string => {
   if (!folderId) return '未分类'
   return folderId === 'default' ? '默认文件夹' : `文件夹 ${folderId}`

@@ -594,10 +594,9 @@ const removePlugin = (plugin: PluginRuntime) => {
   confirm.require({
     message: `确定要卸载插件 "${plugin.config.pluginName}" 吗？`,
     header: '确认卸载',
-    icon: 'pi pi-exclamation-triangle',
     accept: async () => {
       try {
-        await pluginStore.removeLocalPlugin(plugin.config.pluginId)
+        await pluginStore.uninstallLocalPlugin(plugin.config.pluginId, plugin.directory, plugin.config.pluginName)
 
         toast.add({
           severity: 'success',

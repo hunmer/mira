@@ -37,7 +37,7 @@ interface Emits {
   (e: 'media-delete', item: FileInfo): void
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   columnsPerRow: 4
 })
 const emit = defineEmits<Emits>()

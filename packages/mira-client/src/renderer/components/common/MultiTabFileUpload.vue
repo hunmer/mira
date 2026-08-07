@@ -216,7 +216,7 @@
                       <hr class="my-4">
 
                       <h4 class="font-medium text-foreground mb-3 text-sm">文件大小</h4>
-                      <RadioGroup :model-value="selectedFileSize" @update:model-value="selectedFileSize = $event" class="space-y-2">
+                      <RadioGroup :model-value="selectedFileSize" @update:model-value="selectedFileSize = String($event)" class="space-y-2">
                         <div v-for="size in fileSizes" :key="size.value" class="flex items-center">
                           <RadioGroupItem :value="size.value" class="mr-2" />
                           <span class="text-sm text-foreground">{{ size.label }}</span>
@@ -402,7 +402,7 @@
                       <div class="font-medium">{{ uploadItem.file.name }}</div>
                       <div class="text-sm text-muted-foreground">
                         {{ formatFileSize(uploadItem.file.size) }} •
-                        上传于 {{ formatUploadTime(uploadItem.uploadedAt) }}
+                        上传于 {{ formatUploadTime(uploadItem.uploadedAt ?? new Date()) }}
                       </div>
                     </div>
                   </div>
@@ -535,7 +535,6 @@ const uploadedFiles = ref<UploadItem[]>([])
 const searchQuery = ref('')
 const showFilterMenu = ref(false)
 const selectedUploadedFiles = ref<string[]>([])
-const pageSize = ref(10)
 const sortField = ref<'name' | 'size' | 'uploadedAt'>('uploadedAt')
 const sortOrder = ref<'asc' | 'desc'>('desc')
 
@@ -597,8 +596,8 @@ const uploadTimes = ref([
 ])
 
 // 标签页切换处理
-const updateCurrentTab = (value: string) => {
-  currentTabValue.value = value
+const updateCurrentTab = (value: string | number) => {
+  currentTabValue.value = String(value)
 }
 
 // 文件选择处理
@@ -982,12 +981,6 @@ const handleClearAllFiles = () => {
 
 const handleRefreshFiles = () => {
   emit('refresh-files')
-}
-
-const handleSortChange = (event: any) => {
-  sortField.value = event.sortField
-  sortOrder.value = event.sortOrder === 1 ? 'asc' : 'desc'
-  emit('sort-change', sortField.value, sortOrder.value)
 }
 
 // 过滤器操作

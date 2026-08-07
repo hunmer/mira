@@ -713,9 +713,11 @@ export class MiraSDKService {
    */
   async getLibraries(): Promise<LibraryInfo[]> {
     if (!this.client) throw new Error('Not connected to Mira server')
-    
+
     try {
-      return await this.client.libraries().getAll()
+      const libs = await this.client.libraries().getAll()
+      // 适配本地 LibraryInfo 类型（补充 type 字段）
+      return libs.map(lib => ({ ...lib, type: 'local' } as LibraryInfo))
     } catch (error) {
       console.error('MiraSDKService: Failed to get librarys', error)
       throw error
@@ -729,8 +731,7 @@ export class MiraSDKService {
       await this.client.libraries().createLocal(
         name,
         '', // path - 需要根据实际需求设置
-        description || '',
-        { type: 'local' }
+        description || ''
       )
 
       // 转换为 LibraryInfo 类型

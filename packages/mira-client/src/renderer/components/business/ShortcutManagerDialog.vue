@@ -152,13 +152,13 @@
               请按下快捷键组合...
             </div>
             <div v-else class="flex items-center gap-1">
-              <template v-for="(key, keyIndex) in newBinding.shortcut.split('+')" :key="keyIndex">
+              <template v-for="(key, keyIndex) in (newBinding.shortcut ?? '').split('+')" :key="keyIndex">
                 <kbd
                   class="px-2 py-1 text-xs font-sans font-semibold text-muted-foreground dark:text-border
                            bg-muted dark:bg-muted border border-border dark:border-muted-foreground rounded">
                   {{ formatKeyDisplay(key) }}
                 </kbd>
-                <span v-if="keyIndex < newBinding.shortcut.split('+').length - 1" class="text-muted-foreground mx-1">+</span>
+                <span v-if="keyIndex < (newBinding.shortcut ?? '').split('+').length - 1" class="text-muted-foreground mx-1">+</span>
               </template>
             </div>
           </div>
@@ -211,7 +211,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'

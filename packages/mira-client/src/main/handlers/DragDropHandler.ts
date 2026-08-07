@@ -90,7 +90,8 @@ export class DragDropHandler {
       if (validatedPaths.length === 1) {
         targetWindow.webContents.startDrag({ file: validatedPaths[0], icon })
       } else {
-        targetWindow.webContents.startDrag({ files: validatedPaths, icon })
+        // files 会覆盖 file 字段，这里用首个路径作为占位以满足 Item 类型
+        targetWindow.webContents.startDrag({ file: validatedPaths[0], files: validatedPaths, icon })
       }
 
       return { success: true }

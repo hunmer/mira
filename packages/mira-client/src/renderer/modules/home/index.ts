@@ -62,7 +62,9 @@ export function useHomeModules() {
     
     // 初始化路由处理
     const routeCleanup = await routeHandler.initialize()
-    cleanupFunctions.push(routeCleanup)
+    if (routeCleanup) {
+      cleanupFunctions.push(routeCleanup)
+    }
     
     console.log('✅ 首页模块初始化完成')
     

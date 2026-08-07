@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow } from 'electron'
 import { join } from 'node:path'
 function createWindowStateKeeper(options: { defaultWidth: number; defaultHeight: number; file: string; maximize?: boolean; fullScreen?: boolean }) {
   const fs = require('node:fs')
@@ -36,7 +36,7 @@ import { TrayService } from './services/TrayService'
 // import { inspect } from 'node:util'
 import { logger } from './utils/Logger'
 import { getAutoUpdater } from './services/useAutoUpdater'
-import { ensureLocalServerStarted, runLocalServerScript, runLocalServerScriptSync } from './services/LocalServerService'
+import { ensureLocalServerStarted, runLocalServerScriptSync } from './services/LocalServerService'
 
 // function formatArgs(args: any[]): string {
 //   return args.map(a =>

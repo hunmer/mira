@@ -82,7 +82,7 @@ export const useLibraryStore = defineStore('libraries', () => {
    * @param description - 集合描述
    * @returns Promise<{success: boolean, data?: LibraryInfo, error?: string}>
    */
-  const createLibrary = async (name: string, description?: string) => {
+  const createLibrary = async (_name: string, _description?: string) => {
     // TODO 调用API创建
   }
 
@@ -93,7 +93,7 @@ export const useLibraryStore = defineStore('libraries', () => {
    * @param updates - 更新数据
    * @returns Promise<{success: boolean, data?: LibraryInfo, error?: string}>
    */
-  const updateLibrary = async (id: string, updates: Partial<LibraryInfo>) => {
+  const updateLibrary = async (_id: string, _updates: Partial<LibraryInfo>) => {
    // TODO 调用API更新
   }
 
@@ -103,7 +103,7 @@ export const useLibraryStore = defineStore('libraries', () => {
    * @param id - 集合ID
    * @returns Promise<{success: boolean, error?: string}>
    */
-  const deleteLibrary = async (id: string) => {
+  const deleteLibrary = async (_id: string) => {
     // TODO 调用API删除
   }
 

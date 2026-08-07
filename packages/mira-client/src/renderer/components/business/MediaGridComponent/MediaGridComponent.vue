@@ -296,11 +296,11 @@ const toggleVideoMute = async () => {
 }
 
 // Video preview event handlers
-const onVideoPreviewLoaded = (payload: { duration: number }) => {
+const onVideoPreviewLoaded = () => {
   // console.log('Video loaded with duration:', payload.duration)
 }
 
-const onVideoPreviewTimeUpdate = (payload: { currentTime: number, progress: number }) => {
+const onVideoPreviewTimeUpdate = () => {
   // 这个事件已经通过 updateVideoProgress 处理了
 }
 

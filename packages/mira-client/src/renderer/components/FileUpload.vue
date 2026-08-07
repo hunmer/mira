@@ -80,7 +80,7 @@ const acceptedFileTypes = computed(() => {
   return [props.accept]
 })
 
-const handleAddFile = (error: any, file: any) => {
+const handleAddFile = (error: any, _file: any) => {
   if (error) {
     emit('error', { error: error.message })
     return

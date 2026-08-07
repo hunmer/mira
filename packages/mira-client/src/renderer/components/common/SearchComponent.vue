@@ -115,7 +115,7 @@
             v-if="filter.type === 'text'"
             :model-value="String(activeFilters[filter.key] || '')"
             class="flex-1 h-8 text-xs"
-            @update:model-value="(value: string | undefined) => { if (value !== undefined) activeFilters[filter.key] = value }"
+            @update:model-value="(value: string | number) => { activeFilters[filter.key] = value }"
           />
           
           <!-- 选择器 -->
@@ -291,16 +291,18 @@ const handleClickOutside = (event: Event) => {
 onMounted(() => {
   // 加载搜索历史
   if (props.showHistory) {
-    try {
-      const history = ConfigStorage.getItem('mira-search-history')
-      if (history) {
-        searchHistory.value = JSON.parse(history)
+    void (async () => {
+      try {
+        const history = await ConfigStorage.getItem('mira-search-history')
+        if (history) {
+          searchHistory.value = JSON.parse(history)
+        }
+      } catch (error) {
+        console.warn('Failed to load search history:', error)
       }
-    } catch (error) {
-      console.warn('Failed to load search history:', error)
-    }
+    })()
   }
-  
+
   document.addEventListener('click', handleClickOutside)
 })
 
