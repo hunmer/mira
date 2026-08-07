@@ -420,15 +420,15 @@ defineExpose({ locateItem })
       @update:open="onModuleOpenChange(mod.id, $event)"
       class="sidebar-section"
     >
-      <!-- 统一标题栏（折叠手柄 + 模块图标 + 标题 + 操作按钮） -->
+      <!-- 统一标题栏（模块图标 + 标题 + 操作按钮 + 折叠手柄） -->
       <CollapsibleTrigger as-child>
         <header class="section-header">
+          <span class="material-icons title-icon">{{ mod.icon }}</span>
+          <h2 class="section-title">{{ mod.title }}</h2>
           <span
             class="material-icons chevron"
             :class="{ 'chevron--open': isModuleOpen(mod.id) }"
           >expand_more</span>
-          <span class="material-icons title-icon">{{ mod.icon }}</span>
-          <h2 class="section-title">{{ mod.title }}</h2>
 
           <!-- 文件夹树操作按钮（调用 FolderTreeComponent 暴露的方法） -->
           <template v-if="mod.id === 'folders'">
@@ -601,6 +601,8 @@ defineExpose({ locateItem })
 }
 
 .section-header .chevron {
+  order: 99;
+  margin-left: auto;
   font-size: 18px;
   color: var(--muted-foreground);
   transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1);

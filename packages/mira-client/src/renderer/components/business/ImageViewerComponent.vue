@@ -3,6 +3,7 @@
     <!-- 图片容器 - 使用 VViewer 组件的内嵌模式 -->
     <div class="flex flex-grow items-center justify-center w-full h-full min-h-[400px]">
       <VViewer
+        v-show="!error"
         :key="viewerKey"
         ref="viewerRef"
         :options="viewerOptions"

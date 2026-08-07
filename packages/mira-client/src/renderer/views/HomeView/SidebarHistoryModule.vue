@@ -18,7 +18,6 @@ import { useViewHistoryStore } from '@renderer/stores/viewHistory'
 import { getExtIconUrl } from '@renderer/utils/extIconHelper'
 import { Empty, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import StatusImage from '@renderer/components/common/StatusImage.vue'
-import MediaPreviewContent from '@renderer/components/common/MediaPreviewContent.vue'
 import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card'
 import type { FileInfo } from '../../../shared/types'
 
@@ -119,16 +118,6 @@ const handleRowClick = (row: DisplayRow) => {
     libraryId: props.libraryId,
   } as FileInfo)
 }
-
-// 构造 MediaPreviewContent 所需的最小 FileInfo（预览源由 url/path 推导）
-const toPreviewItem = (row: DisplayRow): FileInfo => ({
-  id: row.id,
-  name: row.name,
-  mimeType: row.mimeType || '',
-  thumbnailPath: row.thumbnailPath,
-  url: row.url,
-  path: row.path,
-} as FileInfo)
 
 // 相对时间格式化（中文，轻量实现，避免引入额外依赖）
 const formatRelative = (iso?: string): string => {
@@ -237,9 +226,13 @@ onMounted(() => {
               side="right"
               align="start"
               :side-offset="8"
-              class="w-auto border-0 bg-transparent p-0 shadow-none"
+              class="w-auto max-w-[320px] max-h-[320px] border-0 bg-transparent p-0 shadow-none"
             >
-              <MediaPreviewContent :item="toPreviewItem(row)" />
+              <img
+                :src="row.thumbnailPath || row.url"
+                :alt="row.name"
+                class="block max-w-[320px] max-h-[320px] w-auto h-auto object-contain rounded-lg ring-1 ring-black/10 shadow-lg"
+              />
             </HoverCardContent>
           </HoverCard>
 

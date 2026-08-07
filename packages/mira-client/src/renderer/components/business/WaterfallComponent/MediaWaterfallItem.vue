@@ -99,9 +99,13 @@
           side="top"
           align="end"
           :side-offset="8"
-          class="w-auto border-0 bg-transparent p-0 shadow-none"
+          class="w-auto max-w-[480px] max-h-[320px] border-0 bg-transparent p-0 shadow-none"
         >
-          <MediaPreviewContent :item="item" />
+          <img
+            :src="previewSrc"
+            :alt="item.name"
+            class="block max-w-[480px] max-h-[320px] w-auto h-auto object-contain rounded-lg ring-1 ring-black/10 shadow-lg"
+          />
         </HoverCardContent>
       </HoverCard>
 
@@ -146,8 +150,8 @@
 <script setup lang="ts">
 import { computed, toRef, watch } from 'vue'
 import MediaThumbnail from '@renderer/components/common/MediaThumbnail.vue'
-import MediaPreviewContent from '@renderer/components/common/MediaPreviewContent.vue'
 import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card'
+import { getCacheBustedPreviewImageSource } from '@renderer/utils/fileUtils'
 import type { FileInfo } from '../../../../shared/types'
 import { useMediaItem, type MediaItemEmits } from '@renderer/composables/useMediaItem'
 
@@ -181,6 +185,9 @@ const emit = defineEmits<Emits>()
 const mediaContainerStyle = computed(() => ({
   aspectRatio: `${props.ratio} / 1`
 }))
+
+// hovercard 预览图：优先原图（带缓存破坏），保证清晰
+const previewSrc = computed(() => getCacheBustedPreviewImageSource(props.item) || props.url || '')
 
 // 调试：监控视频播放状态变化
 watch(() => props.isVideoPlaying, (isPlaying) => {

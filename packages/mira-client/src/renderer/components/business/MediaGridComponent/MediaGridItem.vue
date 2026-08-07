@@ -88,9 +88,13 @@
           side="top"
           align="end"
           :side-offset="8"
-          class="w-auto border-0 bg-transparent p-0 shadow-none"
+          class="w-auto max-w-[480px] max-h-[320px] border-0 bg-transparent p-0 shadow-none"
         >
-          <MediaPreviewContent :item="item" />
+          <img
+            :src="previewSrc"
+            :alt="item.name"
+            class="block max-w-[480px] max-h-[320px] w-auto h-auto object-contain rounded-lg ring-1 ring-black/10 shadow-lg"
+          />
         </HoverCardContent>
       </HoverCard>
 
@@ -131,11 +135,11 @@
 </template>
 
 <script setup lang="ts">
-import { toRef } from 'vue'
+import { computed, toRef } from 'vue'
 import type { FileInfo } from '../../../../shared/types'
 import MediaThumbnail from '@renderer/components/common/MediaThumbnail.vue'
-import MediaPreviewContent from '@renderer/components/common/MediaPreviewContent.vue'
 import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card'
+import { getCacheBustedPreviewImageSource } from '@renderer/utils/fileUtils'
 import { useMediaItem, type MediaItemEmits } from '@renderer/composables/useMediaItem'
 
 interface Props {
@@ -158,7 +162,8 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>()
 
-// 记录图片加载失败状态
+// hovercard 预览图：优先原图（带缓存破坏），保证清晰而非使用裁切缩略图
+const previewSrc = computed(() => getCacheBustedPreviewImageSource(props.item) || '')
 
 // 使用媒体项逻辑
 const {
