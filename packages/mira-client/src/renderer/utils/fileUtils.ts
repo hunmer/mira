@@ -1,4 +1,5 @@
 import type { FileInfo } from '../../shared/types'
+import { environment } from './index'
 
 /**
  * 文件处理工具函数
@@ -41,6 +42,10 @@ export function toCacheBustedFileUrl(path: string | undefined, cacheKey?: string
 }
 
 export function getPreviewImageSource(image: FileInfo | undefined): string | undefined {
+  // 网页端浏览器禁止访问 file://，跳过 localFile，统一走 HTTP path/url
+  if (!environment.isElectron) {
+    return image?.path || image?.url
+  }
   return image?.localFile || image?.path || image?.url
 }
 

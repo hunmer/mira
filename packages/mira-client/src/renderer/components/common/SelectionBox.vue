@@ -74,7 +74,9 @@ const itemsToRemove = ref(new Set<string>())
 const initialSelectedItems = ref(new Set<string>())
 const selectableRects = ref<SelectableRect[]>([])
 let animationFrameId: number | null = null
+let autoScrollFrameId: number | null = null
 let pendingMouseEvent: MouseEvent | null = null
+let lastMouseEvent: MouseEvent | null = null
 
 // 监听 modelValue 变化
 watch(() => props.modelValue, (newValue) => {
@@ -184,6 +186,18 @@ const updateSelection = (e: MouseEvent) => {
   handleAutoScroll(e)
 }
 
+const getScrollContainer = (): HTMLElement | null => {
+  let parent = containerRef.value?.parentElement || null
+  while (parent) {
+    const style = window.getComputedStyle(parent)
+    if (/(auto|scroll|overlay)/.test(style.overflowY) || /(auto|scroll|overlay)/.test(style.overflowX)) {
+      return parent
+    }
+    parent = parent.parentElement
+  }
+  return null
+}
+
 const scheduleSelectionUpdate = (e: MouseEvent) => {
   if (!selecting.value) return
 
@@ -215,6 +229,11 @@ const endSelection = (_e: MouseEvent) => {
   }
 
   selecting.value = false
+  lastMouseEvent = null
+  if (autoScrollFrameId !== null) {
+    window.cancelAnimationFrame(autoScrollFrameId)
+    autoScrollFrameId = null
+  }
   altMode.value = false
   initialSelectedItems.value.clear()
   selectableRects.value = []
@@ -273,22 +292,61 @@ const updateSelectedItems = () => {
   }
 }
 
-// 自动滚动功能
+// 自动滚动功能：鼠标停在边缘时持续滚动，并同步选区坐标
 const handleAutoScroll = (e: MouseEvent) => {
-  if (!containerRef.value) return
+  if (!containerRef.value || !selecting.value) return
 
-  const rect = containerRef.value.getBoundingClientRect()
+  const container = containerRef.value
+  const rect = container.getBoundingClientRect()
+  const scrollContainer = container.scrollHeight > container.clientHeight || container.scrollWidth > container.clientWidth
+    ? container
+    : getScrollContainer()
+  const canScrollContainerY = !!scrollContainer && scrollContainer.scrollHeight > scrollContainer.clientHeight
+  const canScrollContainerX = !!scrollContainer && scrollContainer.scrollWidth > scrollContainer.clientWidth
+  const deltaY = e.clientY < rect.top + props.scrollThreshold
+    ? -props.scrollAutoSpeed
+    : e.clientY > rect.bottom - props.scrollThreshold
+      ? props.scrollAutoSpeed
+      : 0
+  const deltaX = e.clientX < rect.left + props.scrollThreshold
+    ? -props.scrollAutoSpeed
+    : e.clientX > rect.right - props.scrollThreshold
+      ? props.scrollAutoSpeed
+      : 0
 
-  if (e.clientY < rect.top + props.scrollThreshold) {
-    containerRef.value.scrollTop -= props.scrollAutoSpeed
-  } else if (e.clientY > rect.bottom - props.scrollThreshold) {
-    containerRef.value.scrollTop += props.scrollAutoSpeed
+  let moved = false
+  if (deltaY && canScrollContainerY) {
+    const previous = scrollContainer!.scrollTop
+    scrollContainer!.scrollTop += deltaY
+    moved ||= scrollContainer!.scrollTop !== previous
+  } else if (deltaY) {
+    const previous = window.scrollY
+    window.scrollBy(0, deltaY)
+    moved ||= window.scrollY !== previous
+  }
+  if (deltaX && canScrollContainerX) {
+    const previous = scrollContainer!.scrollLeft
+    scrollContainer!.scrollLeft += deltaX
+    moved ||= scrollContainer!.scrollLeft !== previous
+  } else if (deltaX) {
+    const previous = window.scrollX
+    window.scrollBy(deltaX, 0)
+    moved ||= window.scrollX !== previous
   }
 
-  if (e.clientX < rect.left + props.scrollThreshold) {
-    containerRef.value.scrollLeft -= props.scrollAutoSpeed
-  } else if (e.clientX > rect.right - props.scrollThreshold) {
-    containerRef.value.scrollLeft += props.scrollAutoSpeed
+  if (moved) {
+    const next = getRelativePosition(e)
+    next.x = Math.max(0, Math.min(next.x, container.clientWidth + container.scrollLeft))
+    next.y = Math.max(0, Math.min(next.y, container.clientHeight + container.scrollTop))
+    currentPos.value = next
+    updateSelectedItems()
+    lastMouseEvent = e
+    if (autoScrollFrameId === null) {
+      autoScrollFrameId = window.requestAnimationFrame(() => {
+        autoScrollFrameId = null
+        if (lastMouseEvent) handleAutoScroll(lastMouseEvent)
+      })
+    }
   }
 }
 
@@ -448,6 +506,7 @@ const handleItemClick = (itemId: string, event: MouseEvent) => {
 // 全局鼠标事件监听
 const handleGlobalMouseMove = (e: MouseEvent) => {
   if (selecting.value) {
+    lastMouseEvent = e
     scheduleSelectionUpdate(e)
   }
 }
@@ -553,6 +612,7 @@ onMounted(() => {
     containerRef.value.addEventListener('dblclick', clearSelection)
     containerRef.value.addEventListener('scroll', handleScroll)
   }
+  window.addEventListener('scroll', handleScroll, true)
 })
 
 onUnmounted(() => {
@@ -565,6 +625,10 @@ onUnmounted(() => {
     window.cancelAnimationFrame(animationFrameId)
     animationFrameId = null
   }
+  if (autoScrollFrameId !== null) {
+    window.cancelAnimationFrame(autoScrollFrameId)
+    autoScrollFrameId = null
+  }
 
   // 清理容器事件监听
   if (containerRef.value) {
@@ -572,6 +636,7 @@ onUnmounted(() => {
     containerRef.value.removeEventListener('dblclick', clearSelection)
     containerRef.value.removeEventListener('scroll', handleScroll)
   }
+  window.removeEventListener('scroll', handleScroll, true)
 })
 </script>
 

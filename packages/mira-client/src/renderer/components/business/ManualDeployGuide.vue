@@ -119,37 +119,6 @@ const options = [
       </ul>
     </div>
 
-    <!-- Web 管理面板（Dashboard）安装 -->
-    <div class="flex flex-col gap-3 pt-2 border-t border-border dark:border-border">
-      <div class="flex items-center gap-2 pt-1">
-        <span class="material-icons text-base text-primary">dashboard</span>
-        <span class="font-semibold text-sm text-foreground">Web 管理面板（可选）</span>
-      </div>
-      <ol class="flex flex-col gap-3">
-        <li v-for="(step, idx) in dashboardSteps" :key="'dash-' + idx" class="flex flex-col gap-1.5">
-          <div class="flex items-center gap-2">
-            <span class="font-semibold text-sm text-foreground">{{ step.title }}</span>
-          </div>
-          <p class="text-xs text-muted-foreground leading-relaxed">{{ step.desc }}</p>
-          <div
-            v-if="step.command"
-            class="group flex items-center justify-between gap-2 rounded-lg bg-muted dark:bg-muted/60 border border-border dark:border-border px-3 py-2"
-          >
-            <code class="font-mono text-[11px] text-foreground break-all">{{ step.command }}</code>
-            <button
-              type="button"
-              class="shrink-0 p-1 rounded text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors border-none bg-transparent cursor-pointer"
-              title="复制"
-              @click="copyCommand(step.command, 'dash-' + idx)"
-            >
-              <Check v-if="copied === 'dash-' + idx" class="w-3.5 h-3.5 text-emerald-500" />
-              <Copy v-else class="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </li>
-      </ol>
-    </div>
-
     <p class="text-[11px] text-muted-foreground leading-relaxed">
       提示：启动后回到本页，在服务器列表点击「添加服务器」并填入对应的
       <code class="font-mono">http://&lt;主机IP&gt;:8081</code> 即可连接。

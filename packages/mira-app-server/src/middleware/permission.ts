@@ -16,6 +16,8 @@ const PUBLIC_ROUTES: Set<string> = new Set([
 // 不需要鉴权的路由前缀（支持动态路径参数）
 const PUBLIC_PREFIXES = [
     '/user/avatar/',
+    // 服务端日志流（SSE）：供本地控制台订阅后端运行日志，GET 只读，仅本地使用
+    '/logs/stream',
 ];
 
 // 需要做素材库 allowedRoles 校验的路由前缀

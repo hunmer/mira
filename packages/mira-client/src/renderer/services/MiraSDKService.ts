@@ -4,6 +4,7 @@ import { useMediaStore } from '../stores/media'
 import { useAuthStore } from '../stores/auth'
 import { useSettingsStore } from '../stores/settings'
 import { toFileUrl } from '../utils/fileUtils'
+import { environment } from '../utils'
 
 /** 给 HTTP 资源 URL 追加 token 参数（用于 <img>/<video> 等无法设 header 的场景） */
 function appendToken(url: string | undefined): string | undefined {
@@ -550,11 +551,12 @@ export class MiraSDKService {
             }
           }
           // Docker 无 SMB：localFile 和 thumbnailPath 都留空，回退到 HTTP URL
-        } else {
-          // 本地部署：服务端路径就是本机路径，直接用
+        } else if (environment.isElectron) {
+          // 本地部署 + Electron：服务端路径就是本机路径，可直接 file:// 访问，省一次 HTTP
           localFile = file.file_path
           thumbnailPath = file.thumb_path
         }
+        // 网页端：localFile/thumbnailPath 留空，回退到 HTTP URL（file.path / file.thumb）
 
         return {
           id: file.id.toString(),
@@ -619,6 +621,10 @@ export class MiraSDKService {
       const file = await (this.client.files() as any).getFile(libraryId, fileId, webSocketService.getClientId())
       
       // 转换为 FileInfo 类型
+      // 网页端不使用本地路径（浏览器禁止 file:// 访问）：
+      //   - path 字段已是 HTTP URL（toFileUrl 对 http 原样返回），Electron/网页均安全
+      //   - 缩略图：Electron 用本地 thumbnail_path 走 file://；网页回退到 HTTP thumb
+      const useLocalThumb = environment.isElectron
       const fileInfo: FileInfo = {
         id: file.id.toString(),
         name: file.title || file.name, // 优先使用 title，如果没有则使用 name
@@ -631,7 +637,7 @@ export class MiraSDKService {
         tags: typeof file.tags === 'string' ? JSON.parse(file.tags || '[]') : (file.tags || []),
         folderId: file.folder_id?.toString(),
         hash: file.hash || '',
-        thumbnailPath: appendToken(toFileUrl(file.thumbnail_path)),
+        thumbnailPath: appendToken(toFileUrl(useLocalThumb ? file.thumbnail_path : (file.thumb || undefined))),
         libraryId: libraryId
       }
       

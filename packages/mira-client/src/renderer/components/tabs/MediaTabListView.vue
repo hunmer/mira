@@ -224,8 +224,11 @@
             <div class="h-6 border-l border-border dark:border-border"></div>
           </div>
 
-          <!-- 分页控件 - 始终显示 -->
-          <div class="flex items-center space-x-1 text-muted-foreground dark:text-muted-foreground text-xs">
+          <!-- 分页控件 - 只有多页时显示 -->
+          <div
+            v-if="totalPages > 1"
+            class="flex items-center space-x-1 text-muted-foreground dark:text-muted-foreground text-xs"
+          >
             <button
               class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
               :disabled="currentPage === 1"
@@ -264,19 +267,15 @@
 
     <!-- 底部状态栏 -->
     <footer class="flex items-center justify-between px-2 pt-2 shrink-0 text-xs border-t border-white/60 dark:border-border">
-      <div class="flex-1 flex items-center space-x-6">
-        <!-- 路由状态 -->
-        <div class="flex items-center space-x-1">
-          <span class="material-icons text-sm" :style="{ color: currentTabContent.iconColor }">
-            {{ currentTabContent.icon }}
-          </span>
-          <span class="text-foreground dark:text-muted-foreground font-medium">
-            {{ currentTabContent.label }}
-          </span>
-        </div>
+      <div class="flex-1 flex items-center space-x-6 min-w-0">
+        <!-- 路由状态 / 面包屑导航 -->
+        <Breadcrumb
+          :items="breadcrumbItems"
+          @select="handleBreadcrumbClick"
+        />
 
         <!-- 当前路径和文件数 -->
-        <div class="flex items-center space-x-1">
+        <div class="flex items-center space-x-1 flex-shrink-0">
           <span class="text-muted-foreground dark:text-muted-foreground">
             {{ filteredMediaItems.length }} 个文件
           </span>
@@ -291,8 +290,8 @@
           </span>
         </div>
 
-        <!-- 分页信息 -->
-        <div class="flex items-center space-x-1">
+        <!-- 分页信息 - 只有多页时显示 -->
+        <div v-if="totalPages > 1" class="flex items-center space-x-1">
           <span class="text-muted-foreground dark:text-muted-foreground">
             第 {{ currentPage }} / {{ totalPages }} 页
           </span>
@@ -327,12 +326,15 @@
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useMediaStore } from '@renderer/stores/media'
 import { useLibraryStore } from '@renderer/stores/library'
+import { useFolderStore } from '@renderer/stores/folder'
 import { useSettingsStore } from '@renderer/stores/settings'
 import { useToast } from '@renderer/composables/useToast'
 import { runBatchOperation } from '@renderer/composables/useBatchOperation'
 import { appService } from '@renderer/services'
 import { useTagStore } from '@renderer/stores/tag'
 import { useHomeController } from '@renderer/controllers/HomeController'
+import type { BreadcrumbItem } from '@renderer/controllers/HomeController'
+import { useTabs } from '@renderer/composables/useTabs'
 import { useMediaOperations, useFilters, useViewModeConfig } from '@renderer/composables'
 // import { useTabPagination } from '@renderer/composables/useTabPagination' // 已替换为MediaTabData
 import { useMediaTabData } from '@renderer/composables/useMediaTabData'
@@ -341,6 +343,7 @@ import MediaListComponent from '@renderer/components/business/MediaListComponent
 import WaterfallComponent from '@renderer/components/business/WaterfallComponent.vue'
 import FileUploadDialog from '@renderer/components/business/FileUploadDialog.vue'
 import FilterBar from '@/renderer/components/business/FilterBar/FilterBar.vue'
+import Breadcrumb from '@/renderer/components/common/Breadcrumb.vue'
 import { Dropdown } from '@/renderer/components/common/Dropdown'
 import type { FileInfo } from '../../../shared/types'
 import type { FilterRule } from '@/renderer/types/filter'
@@ -379,8 +382,10 @@ const emit = defineEmits<{
 // 获取共享状态和控制器
 const tagStore = useTagStore()
 const mediaStore = useMediaStore()
+const folderStore = useFolderStore()
 const libraryStore = useLibraryStore()
 const homeController = useHomeController()
+const { createTabFromFolder, createTabFromTag } = useTabs()
 
 // 使用独立的Tab分页状态管理 (已由MediaTabData替代)
 // const tabPagination = useTabPagination(props.tabId)
@@ -564,32 +569,94 @@ const filteredMediaItems = computed(() => {
   return homeController.filteredMediaItems?.value || []
 })
 
-// Tab内容信息 - 需要从外部注入或通过props传递
-const currentTabContent = computed(() => {
-  // viewType 只有 'files' 和 'trash'，直接使用
-  // icon 和 iconColor 应该从 props 或其他地方传入，这里提供默认值
-  const getIconInfo = () => {
-    // 如果有 folder 筛选器，显示文件夹图标
-    if (props.filters?.folder) {
-      return { icon: 'folder', iconColor: '#6B7280' }
-    }
-    // 如果有 tags 筛选器，显示标签图标
-    if (props.filters?.tags) {
-      return { icon: 'label', iconColor: '#10B981' }
-    }
-    // 默认显示文件图标
-    return { icon: 'folder_open', iconColor: '#3B82F6' }
+/**
+ * 面包屑导航：显示当前 文件夹/标签 的层级路径。
+ * - 文件夹：通过 parent_id 向上回溯，得到 全部文件 / 父文件夹 / 子文件夹
+ * - 标签：标签为扁平结构，得到 全部文件 / 标签：xxx
+ * - 回收站：单条 回收站
+ * 最后一项标记为 active（当前位置，不可点击）。
+ */
+const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
+  const items: BreadcrumbItem[] = []
+
+  // 回收站：仅一条
+  if (props.viewType === 'trash') {
+    items.push({ id: 'trash', label: '回收站', icon: 'delete', active: true })
+    return items
   }
 
-  const iconInfo = getIconInfo()
+  // 根节点：全部文件（点击会打开 all 文件夹 Tab）
+  items.push({ id: 'all', label: '全部文件', icon: 'folder' })
 
-  return {
-    type: props.viewType, // 'files' 或 'trash'
-    icon: iconInfo.icon,
-    iconColor: iconInfo.iconColor,
-    label: props.label || (props.viewType === 'files' ? '全部文件' : '回收站')
+  // 文件夹：沿 parent_id 向上回溯父级链
+  const folderRaw = props.filters?.folder
+  if (folderRaw !== undefined && folderRaw !== null && folderRaw !== '=null') {
+    const folderId = Number(folderRaw)
+    if (Number.isFinite(folderId)) {
+      const chain: BreadcrumbItem[] = []
+      const seen = new Set<number>() // 防止循环引用
+      let current = folderStore.getFolderById(folderId)
+      while (current && !seen.has(current.id)) {
+        seen.add(current.id)
+        chain.unshift({
+          id: `folder-${current.id}`,
+          label: current.title || String(current.id),
+          icon: 'folder'
+        })
+        const parentId = current.parent_id
+        if (parentId == null || parentId === 0) break
+        current = folderStore.getFolderById(parentId)
+      }
+      items.push(...chain)
+    }
   }
+
+  // 标签：扁平结构，selectedValues 可能有多个
+  const tagsValue = props.filters?.tags
+  if (tagsValue && typeof tagsValue === 'object' && 'selectedValues' in tagsValue) {
+    const selectedValues = (tagsValue as any).selectedValues as (string | number)[] | undefined
+    if (Array.isArray(selectedValues)) {
+      selectedValues.forEach(tagId => {
+        const numericId = Number(tagId)
+        const tag = Number.isFinite(numericId)
+          ? tagStore.tags.find(t => t.id === numericId)
+          : undefined
+        const label = tag?.title || `标签：${tagId}`
+        items.push({
+          id: `tag-${tagId}`,
+          label,
+          icon: 'label'
+        })
+      })
+    }
+  }
+
+  // 最后一项为当前位置
+  if (items.length > 0) {
+    items[items.length - 1].active = true
+  }
+  return items
 })
+
+/**
+ * 面包屑点击：打开对应的 文件夹/标签 Tab（已存在则切换过去）。
+ */
+const handleBreadcrumbClick = (item: BreadcrumbItem) => {
+  if (item.id === 'all') {
+    createTabFromFolder({ id: 'all', title: '全部文件' }, props.libraryId)
+    return
+  }
+  if (item.id.startsWith('folder-')) {
+    // createTabFromFolder 会自行识别已存在的 tab 并切换
+    const folderId = item.id.slice('folder-'.length)
+    createTabFromFolder({ id: folderId, title: item.label }, props.libraryId)
+    return
+  }
+  if (item.id.startsWith('tag-')) {
+    const tagId = item.id.slice('tag-'.length)
+    createTabFromTag({ id: tagId, title: item.label }, props.libraryId)
+  }
+}
 
 // 选中项变化时同步 FileInfo 到全局 store
 watch([selectedItems, () => paginatedMediaItems.value], ([ids, items]) => {

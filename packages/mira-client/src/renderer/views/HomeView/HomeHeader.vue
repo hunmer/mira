@@ -192,8 +192,8 @@ const openDashboard = async () => {
         <span class="material-icons" style="font-size: 16px;">close</span>
       </button>
     </template>
-  </header>
 
-  <!-- 服务端控制对话框（自包含，仅 Electron 环境） -->
-  <ServerControlDialog v-if="environment.isElectron" v-model:open="showServerDialog" />
+    <!-- 服务端控制对话框（自包含，仅 Electron 环境） -->
+    <ServerControlDialog v-if="environment.isElectron" v-model:open="showServerDialog" />
+  </header>
 </template>
