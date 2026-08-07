@@ -76,6 +76,35 @@
         {{ fileExtension }}
       </div>
 
+      <!-- 预览放大镜按钮：hover 时显示，悬浮按钮弹出 hovercard 预览 -->
+      <!-- 注意：v-show 不能放在 <HoverCard> 上 —— HoverCard 根节点是 fragment（PopperRoot 仅 renderSlot），
+           在 fragment 上应用指令会触发 "Runtime directive used on component with non-element root node" 警告且不生效。
+           故放到真实 <button> 元素上。 -->
+      <HoverCard
+        :open-delay="200"
+        :close-delay="150"
+      >
+        <HoverCardTrigger as-child>
+          <button
+            v-show="!isVideoPlaying"
+            class="absolute bottom-12 right-2 z-10 w-7 h-7 rounded-full bg-black/55 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-black/75 transition-opacity"
+            title="预览"
+            @click.stop
+            @pointerdown.stop
+          >
+            <span class="material-icons text-base">search</span>
+          </button>
+        </HoverCardTrigger>
+        <HoverCardContent
+          side="top"
+          align="end"
+          :side-offset="8"
+          class="w-auto border-0 bg-transparent p-0 shadow-none"
+        >
+          <MediaPreviewContent :item="item" />
+        </HoverCardContent>
+      </HoverCard>
+
       <!-- 视频播放图标 -->
       <div
         v-show="isVideo && !isVideoPlaying"
@@ -117,6 +146,8 @@
 <script setup lang="ts">
 import { computed, toRef, watch } from 'vue'
 import MediaThumbnail from '@renderer/components/common/MediaThumbnail.vue'
+import MediaPreviewContent from '@renderer/components/common/MediaPreviewContent.vue'
+import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card'
 import type { FileInfo } from '../../../../shared/types'
 import { useMediaItem, type MediaItemEmits } from '@renderer/composables/useMediaItem'
 

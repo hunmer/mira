@@ -18,6 +18,8 @@ import { useViewHistoryStore } from '@renderer/stores/viewHistory'
 import { getExtIconUrl } from '@renderer/utils/extIconHelper'
 import { Empty, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import StatusImage from '@renderer/components/common/StatusImage.vue'
+import MediaPreviewContent from '@renderer/components/common/MediaPreviewContent.vue'
+import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card'
 import type { FileInfo } from '../../../shared/types'
 
 type Mode = 'recent_added' | 'recent_viewed'
@@ -118,6 +120,16 @@ const handleRowClick = (row: DisplayRow) => {
   } as FileInfo)
 }
 
+// 构造 MediaPreviewContent 所需的最小 FileInfo（预览源由 url/path 推导）
+const toPreviewItem = (row: DisplayRow): FileInfo => ({
+  id: row.id,
+  name: row.name,
+  mimeType: row.mimeType || '',
+  thumbnailPath: row.thumbnailPath,
+  url: row.url,
+  path: row.path,
+} as FileInfo)
+
 // 相对时间格式化（中文，轻量实现，避免引入额外依赖）
 const formatRelative = (iso?: string): string => {
   if (!iso) return ''
@@ -182,7 +194,7 @@ onMounted(() => {
       <!-- 空状态 -->
       <Empty v-else-if="isEmpty" class="py-6">
         <EmptyMedia variant="icon">
-          <StatusImage name="empty" size="1.5rem" />
+          <StatusImage name="empty" size="small" />
         </EmptyMedia>
         <EmptyTitle>{{ mode === 'recent_added' ? '暂无文件' : '暂无浏览记录' }}</EmptyTitle>
       </Empty>
@@ -196,21 +208,40 @@ onMounted(() => {
           :title="row.name"
           @click="handleRowClick(row)"
         >
-          <!-- 缩略图 / 文件类型图标 -->
-          <div class="shrink-0 w-10 h-10 rounded-md overflow-hidden bg-muted flex items-center justify-center">
-            <img
+          <!-- 缩略图 / 文件类型图标（hover 弹出大图预览） -->
+          <HoverCard
+            :open-delay="300"
+            :close-delay="150"
+          >
+            <HoverCardTrigger as-child>
+              <div
+                class="shrink-0 w-10 h-10 rounded-md overflow-hidden bg-muted flex items-center justify-center"
+                :class="{ 'cursor-pointer hover:ring-2 hover:ring-primary/40': row.thumbnailPath || row.url }"
+              >
+                <img
+                  v-if="row.thumbnailPath || row.url"
+                  :src="row.thumbnailPath || row.url"
+                  :alt="row.name"
+                  class="w-full h-full object-cover"
+                  @error="(e: any) => { e.target.style.display = 'none' }"
+                />
+                <img
+                  v-else
+                  :src="getExtIconUrl(row.name)"
+                  class="w-6 h-6 object-contain opacity-60"
+                />
+              </div>
+            </HoverCardTrigger>
+            <HoverCardContent
               v-if="row.thumbnailPath || row.url"
-              :src="row.thumbnailPath || row.url"
-              :alt="row.name"
-              class="w-full h-full object-cover"
-              @error="(e: any) => { e.target.style.display = 'none' }"
-            />
-            <img
-              v-else
-              :src="getExtIconUrl(row.name)"
-              class="w-6 h-6 object-contain opacity-60"
-            />
-          </div>
+              side="right"
+              align="start"
+              :side-offset="8"
+              class="w-auto border-0 bg-transparent p-0 shadow-none"
+            >
+              <MediaPreviewContent :item="toPreviewItem(row)" />
+            </HoverCardContent>
+          </HoverCard>
 
           <!-- 文件名 + 时间 -->
           <div class="flex-1 min-w-0">

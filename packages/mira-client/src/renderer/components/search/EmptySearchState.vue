@@ -1,7 +1,7 @@
 <template>
   <div class="empty-search-state text-center py-12">
     <div class="empty-icon mb-6 flex justify-center">
-      <StatusImage name="no_result" size="6rem" />
+      <StatusImage name="no_result" size="large" />
     </div>
     
     <div class="empty-content">

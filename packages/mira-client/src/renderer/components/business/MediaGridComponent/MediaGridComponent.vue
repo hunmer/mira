@@ -16,7 +16,7 @@
     <!-- 右键菜单 -->
     <ContextMenu>
       <ContextMenuTrigger as-child>
-      <div>
+      <div class="h-full flex flex-col">
         <div
           class="grid gap-6"
           :style="{
@@ -59,14 +59,16 @@
         </div>
 
         <!-- 空状态 -->
-        <div
+        <Empty
           v-if="props.items.length === 0"
-          class="absolute inset-0 flex flex-col items-center justify-center h-64 text-muted-foreground"
+          class="min-h-full"
         >
-          <StatusImage name="empty" size="6rem" container-class="mb-4" />
-          <h3 class="text-lg font-medium mb-2">暂无文件</h3>
-          <p class="text-sm">拖拽文件到此处或点击上传按钮添加文件</p>
-        </div>
+          <EmptyMedia>
+            <StatusImage name="empty" size="large" />
+          </EmptyMedia>
+          <EmptyTitle>暂无文件</EmptyTitle>
+          <EmptyDescription>拖拽文件到此处或点击上传按钮添加文件</EmptyDescription>
+        </Empty>
       </div>
     </ContextMenuTrigger>
     <ContextMenuContent class="w-52">
@@ -168,6 +170,7 @@ import FolderTreeComponent from '../FolderTreeComponent/FolderTreeComponent.vue'
 import MediaItem from './MediaGridItem.vue'
 import VideoPreviewContainer from './VideoPreviewContainer.vue'
 import StatusImage from '@renderer/components/common/StatusImage.vue'
+import { Empty, EmptyMedia, EmptyTitle, EmptyDescription } from '@/components/ui/empty'
 import type { FileInfo } from '../../../../shared/types'
 import { useSettingsStore } from '../../../stores/settings'
 import { useSelection } from './composables/useSelection'

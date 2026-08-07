@@ -30,7 +30,7 @@
         v-if="!image"
         class="flex items-center justify-center w-96 h-96 bg-accent rounded-lg"
       >
-        <StatusImage name="empty" size="6rem" />
+        <StatusImage name="empty" size="large" />
       </div>
     </div>
 
@@ -51,7 +51,7 @@
       class="absolute inset-0 flex items-center justify-center bg-white/80"
     >
       <div class="flex flex-col items-center space-y-2">
-        <StatusImage name="load_failed" size="6rem" />
+        <StatusImage name="load_failed" size="large" />
         <span class="text-sm text-muted-foreground">图片加载失败</span>
       </div>
     </div>

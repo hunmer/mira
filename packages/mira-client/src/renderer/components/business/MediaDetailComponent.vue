@@ -2,8 +2,8 @@
   <div class="flex flex-col h-full space-y-4">
     <!-- 无数据占位 -->
     <Empty v-if="displayItems.length === 0" class="flex-1">
-      <EmptyMedia variant="icon">
-        <StatusImage name="empty" size="1.5rem" />
+      <EmptyMedia>
+        <StatusImage name="empty" size="large" />
       </EmptyMedia>
       <EmptyTitle>选择文件以查看详情</EmptyTitle>
     </Empty>
@@ -15,7 +15,7 @@
         <div class="relative w-full flex items-center justify-center" style="height: 192px;">
           <!-- 加载中占位符 -->
           <div v-if="imageLoadState === 'loading'" class="absolute inset-0 flex items-center justify-center">
-            <StatusImage name="loading" size="1.5rem" :spin="true" text="加载中..." />
+            <StatusImage name="loading" size="large" :spin="true" text="加载中..." text-class="text-xs" />
           </div>
 
           <!-- 错误占位符 - 使用文件类型图标 -->
@@ -66,7 +66,7 @@
               v-if="multiImageLoadStates[item.id] === 'loading' || multiImageLoadStates[item.id] === undefined"
               class="stack-placeholder absolute w-full h-full top-0 left-0 rounded-xl shadow-[0_2px_6px_rgba(0,0,0,0.1)] border-2 border-white bg-muted rounded-lg flex items-center justify-center"
             >
-              <StatusImage name="loading" size="1.25rem" :spin="true" img-class="text-xl" />
+              <StatusImage name="loading" size="small" :spin="true" />
             </div>
 
             <!-- 错误占位符 -->
@@ -74,7 +74,7 @@
               v-else-if="multiImageLoadStates[item.id] === 'error'"
               class="stack-placeholder absolute w-full h-full top-0 left-0 rounded-xl shadow-[0_2px_6px_rgba(0,0,0,0.1)] border-2 border-white bg-destructive flex items-center justify-center"
             >
-              <StatusImage name="load_failed" size="1.25rem" img-class="text-xl text-destructive" />
+              <StatusImage name="load_failed" size="small" img-class="text-destructive" />
             </div>
 
             <!-- 正常显示图片 -->

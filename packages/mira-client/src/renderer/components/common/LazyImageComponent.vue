@@ -18,10 +18,9 @@
       <StatusImage
         v-else
         name="loading"
-        size="2rem"
+        size="small"
         :spin="true"
         :text="showPlaceholderText ? placeholderText : undefined"
-        img-class="text-2xl"
       />
     </div>
 
@@ -32,7 +31,7 @@
       :class="errorClass"
     >
       <div class="flex flex-col items-center gap-2 text-muted-foreground">
-        <StatusImage name="load_failed" size="2rem" img-class="text-2xl text-destructive" />
+        <StatusImage name="load_failed" size="small" img-class="text-destructive" />
         <span class="text-xs">{{ errorText }}</span>
         <button
           v-if="allowRetry"

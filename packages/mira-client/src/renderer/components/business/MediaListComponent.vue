@@ -31,7 +31,7 @@
         <TableRow v-if="items.length === 0">
           <TableCell colspan="7">
             <div class="flex flex-col items-center justify-center h-64 text-muted-foreground">
-              <StatusImage name="empty" size="4rem" container-class="mb-2" />
+              <StatusImage name="empty" size="medium" container-class="mb-2" />
               <p class="text-lg font-medium">暂无文件</p>
               <p class="text-sm">选择不同的筛选条件查看文件</p>
             </div>
@@ -54,46 +54,73 @@
 
           <!-- 缩略图列 -->
           <TableCell>
-            <PopoverRoot v-model:open="videoPreviewStates[item.id]">
-              <PopoverTrigger as-child>
-                <div
-                  class="w-16 h-16 rounded-lg overflow-hidden bg-muted flex items-center justify-center cursor-pointer"
-                  @mouseenter="handleThumbnailHover(item)"
-                  @mouseleave="handleThumbnailLeave(item)"
-                >
-                  <MediaThumbnail
-                    :file-id="item.id"
-                    :src="item.thumbnailPath || item.url || ''"
-                    :filename="item.name"
-                    :alt="item.name"
-                    img-class="w-full h-full object-cover"
-                  />
-                </div>
-              </PopoverTrigger>
+            <div class="group relative inline-flex">
+              <PopoverRoot v-model:open="videoPreviewStates[item.id]">
+                <PopoverTrigger as-child>
+                  <div
+                    class="w-16 h-16 rounded-lg overflow-hidden bg-muted flex items-center justify-center cursor-pointer"
+                    @mouseenter="handleThumbnailHover(item)"
+                    @mouseleave="handleThumbnailLeave(item)"
+                  >
+                    <MediaThumbnail
+                      :file-id="item.id"
+                      :src="item.thumbnailPath || item.url || ''"
+                      :filename="item.name"
+                      :alt="item.name"
+                      img-class="w-full h-full object-cover"
+                    />
+                  </div>
+                </PopoverTrigger>
 
-              <PopoverPortal v-if="getFileType(item) === 'video'">
-                <PopoverContent
-                  v-if="videoPreviewStates[item.id] && videoPreview.currentVideoItem.value"
+                <PopoverPortal v-if="getFileType(item) === 'video'">
+                  <PopoverContent
+                    v-if="videoPreviewStates[item.id] && videoPreview.currentVideoItem.value"
+                    side="right"
+                    :side-offset="10"
+                    align="center"
+                    class="popover-content"
+                    @pointerenter="() => handlePopoverEnter(item.id)"
+                    @pointerleave="() => handlePopoverLeave(item.id)"
+                  >
+                    <VideoPreviewPopover
+                      :video-url="videoPreview.currentVideoItem.value.url || ''"
+                      :current-time="videoPreview.currentTime.value"
+                      :duration="videoPreview.duration.value"
+                      :video-ref="videoPreview.videoRef"
+                      :width="320"
+                      :height="180"
+                      @video-loaded="videoPreview.handleVideoLoaded"
+                      @time-update="(time) => videoPreview.currentTime.value = time"
+                    />
+                  </PopoverContent>
+                </PopoverPortal>
+              </PopoverRoot>
+
+              <!-- 预览放大镜按钮：hover 时显示，悬浮按钮弹出 hovercard 预览 -->
+              <HoverCard
+                :open-delay="200"
+                :close-delay="150"
+              >
+                <HoverCardTrigger as-child>
+                  <button
+                    class="absolute top-0.5 right-0.5 z-10 w-5 h-5 rounded-full bg-black/55 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-black/75 transition-opacity"
+                    title="预览"
+                    @click.stop
+                    @pointerdown.stop
+                  >
+                    <span class="material-icons" style="font-size: 12px;">search</span>
+                  </button>
+                </HoverCardTrigger>
+                <HoverCardContent
                   side="right"
-                  :side-offset="10"
                   align="center"
-                  class="popover-content"
-                  @pointerenter="() => handlePopoverEnter(item.id)"
-                  @pointerleave="() => handlePopoverLeave(item.id)"
+                  :side-offset="8"
+                  class="w-auto border-0 bg-transparent p-0 shadow-none"
                 >
-                  <VideoPreviewPopover
-                    :video-url="videoPreview.currentVideoItem.value.url || ''"
-                    :current-time="videoPreview.currentTime.value"
-                    :duration="videoPreview.duration.value"
-                    :video-ref="videoPreview.videoRef"
-                    :width="320"
-                    :height="180"
-                    @video-loaded="videoPreview.handleVideoLoaded"
-                    @time-update="(time) => videoPreview.currentTime.value = time"
-                  />
-                </PopoverContent>
-              </PopoverPortal>
-            </PopoverRoot>
+                  <MediaPreviewContent :item="item" />
+                </HoverCardContent>
+              </HoverCard>
+            </div>
           </TableCell>
 
           <!-- 文件名列 -->
@@ -157,6 +184,8 @@ import { PopoverRoot, PopoverTrigger, PopoverPortal, PopoverContent } from 'radi
 import VideoPreviewPopover from '@renderer/components/common/VideoPreviewPopover.vue'
 import SelectionBox from '@renderer/components/common/SelectionBox.vue'
 import MediaThumbnail from '@renderer/components/common/MediaThumbnail.vue'
+import MediaPreviewContent from '@renderer/components/common/MediaPreviewContent.vue'
+import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card'
 import StatusImage from '@renderer/components/common/StatusImage.vue'
 import { useVideoPreview } from '@renderer/composables/useVideoPreview'
 import type { FileInfo } from '../../../shared/types'

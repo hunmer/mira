@@ -157,22 +157,16 @@
 }
 
 /*
-  全局滚动条：极细风格。
-  WebKit（Chromium/Electron）走 ::-webkit-scrollbar；Firefox 走 scrollbar-width/color。
-  统一 6px 宽度，hover 时 8px，半透明灰色，贴合明暗主题。
+  全局滚动条：极细风格（3px，hover 5px）。
+  仅面向 Chromium（Electron），只使用 ::-webkit-scrollbar。
+  切勿在此设置 `scrollbar-width` / `scrollbar-color`：新版 Chromium 一旦遇到
+  非 auto 的 scrollbar-width，会切换到"标准滚动条"渲染路径，从而完全忽略下方
+  ::-webkit-scrollbar 的精确 width/height，导致 3px 不生效。
 */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: oklch(0.7 0 0 / 35%) transparent;
-}
-
-.dark * {
-  scrollbar-color: oklch(0.5 0 0 / 45%) transparent;
-}
-
 ::-webkit-scrollbar {
-  width: 3px;
-  height: 3px;
+  /* !important：覆盖各组件局部的 4px/6px/8px 宽度覆盖，统一为 3px */
+  width: 3px !important;
+  height: 3px !important;
 }
 
 ::-webkit-scrollbar-track {

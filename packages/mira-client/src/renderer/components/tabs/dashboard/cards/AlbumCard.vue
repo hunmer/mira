@@ -11,7 +11,7 @@
       class="flex flex-1 cursor-pointer flex-col items-center justify-center gap-1 px-2 text-center text-muted-foreground"
       @click="loadImages"
     >
-      <StatusImage name="error" size="2rem" />
+      <StatusImage name="error" size="small" />
       <span class="text-xs">{{ error }}</span>
       <span class="text-xs text-primary">点击重试</span>
     </div>
@@ -21,7 +21,7 @@
       v-else-if="images.length === 0"
       class="flex flex-1 flex-col items-center justify-center gap-1 text-muted-foreground"
     >
-      <StatusImage name="empty" size="2rem" />
+      <StatusImage name="empty" size="small" />
       <span class="text-xs">暂无图片</span>
     </div>
 
