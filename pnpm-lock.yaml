@@ -389,6 +389,9 @@ importers:
       grid-layout-plus:
         specifier: 2.0.0-beta.0
         version: 2.0.0-beta.0(vue@3.5.13(typescript@5.7.3))
+      hls.js:
+        specifier: ^1.6.17
+        version: 1.6.17
       lodash-es:
         specifier: ^4.17.21
         version: 4.18.1
@@ -4988,6 +4991,9 @@ packages:
 
   hey-listen@1.0.8:
     resolution: {integrity: sha512-COpmrF2NOg4TBWUJ5UVyaCU2A88wEMkUPK4hNqyCkqHbxT92BbvfjoSozkAIIm6XhicGlJHhFdullInrdhwU8Q==}
+
+  hls.js@1.6.17:
+    resolution: {integrity: sha512-NUplVGVuc1hSPwdB/9/cbRkUmLrYi75/hqiXKdA+l300pJNxDu96R7jRb2imDzWJqIUF4I5ThmAdp9GvOCXsuQ==}
 
   hono@4.12.23:
     resolution: {integrity: sha512-eIaZ9qDgu7XV0pxOCrg7/WhnQ6Ivm22UcxhXx/A3dcbqbbYgBEkc6e/J/s7j2tS96zoB0S9VBdLwQNCWwUo4LA==}
@@ -13282,6 +13288,8 @@ snapshots:
       '@babel/runtime': 7.29.2
 
   hey-listen@1.0.8: {}
+
+  hls.js@1.6.17: {}
 
   hono@4.12.23: {}
 

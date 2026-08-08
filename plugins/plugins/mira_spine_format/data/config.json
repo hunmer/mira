@@ -1,5 +1,7 @@
 {
   "animation": "idle",
-  "fallbackToDefault": true,
-  "timeoutMs": 120000
+  "timeoutMs": 60000,
+  "width": 512,
+  "height": 512,
+  "background": "#eef0f3"
 }

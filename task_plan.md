@@ -58,6 +58,14 @@ Phase 6 complete
 - [x] Add focused smoke verification and run server/client verification
 - **Status:** complete
 
+### Phase 9: JIT Audio/Video Preview
+- [ ] Trace existing video/audio players, URL handling, and FFmpeg format coverage
+- [ ] Expand FFmpeg thumbnail generation for browser-incompatible media
+- [ ] Add authenticated JIT HLS playlist and segment streaming under temp cache
+- [ ] Wire browser preview players to HLS for converted formats
+- [ ] Build, smoke-test seekable segment generation, and restart the service
+- **Status:** in_progress
+
 ### Phase 9: Ghostscript Delegate Guard
 - [x] Reproduce PDF failure and verify missing Ghostscript
 - [x] Disable PDF/EPS/AI thumbnail registration when Ghostscript is unavailable

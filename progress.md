@@ -2,6 +2,12 @@
 
 ## Session: 2026-08-08
 
+### Phase 9: JIT Audio/Video Preview
+- **Status:** in progress
+- Actions taken:
+  - Read the user-provided JIT HLS reference implementation.
+  - Chose system FFmpeg CLI with temp-cache output and no static binary package.
+
 ### Phase 8: Browser-safe Image Preview
 - **Status:** complete
 - Actions taken:

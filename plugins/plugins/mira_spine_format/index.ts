@@ -1,10 +1,7 @@
-import { execFile } from 'child_process';
 import fs from 'fs';
-import os from 'os';
 import path from 'path';
-import { promisify } from 'util';
+import { renderIdleFrame } from './renderIdle';
 
-const execFileAsync = promisify(execFile);
 const FORMAT_ID = 'mira_spine_format';
 const FORMAT_EXTENSIONS = ['skel'];
 const THUMBNAIL_EXTENSIONS = ['skel'];
@@ -26,14 +23,13 @@ interface FileFormatManager {
 interface PluginConfig {
   /** 优先渲染的动画名（找不到则回退首个动画） */
   animation: string;
-  /** 回退时是否渲染默认动画（不传 -s） */
-  fallbackToDefault: boolean;
   /** 渲染超时（ms） */
   timeoutMs: number;
-  /** 自定义 CLI 可执行文件路径（覆盖自动探测） */
-  cliCommand?: string;
-  /** spine-exporter 包根目录（覆盖自动探测，用于 require.resolve） */
-  exporterPath?: string;
+  /** 缩略图宽高 */
+  width: number;
+  height: number;
+  /** 缩略图背景色（十六进制） */
+  background: string;
 }
 
 class MiraSpineFormatPlugin {
@@ -57,14 +53,16 @@ class MiraSpineFormatPlugin {
       thumbnail: (srcPath, destPath) => this.generateThumbnail(srcPath, destPath),
     });
 
-    console.log(`[${this.pluginName}] registered .skel parser and thumbnail generator (animation=${this.config.animation})`);
+    console.log(`[${this.pluginName}] registered .skel parser and thumbnail generator (spine-canvaskit 4.2+, animation=${this.config.animation})`);
   }
 
   private loadConfig(): PluginConfig {
     const defaults: PluginConfig = {
       animation: 'idle',
-      fallbackToDefault: true,
-      timeoutMs: 120000,
+      timeoutMs: 60000,
+      width: 512,
+      height: 512,
+      background: '#eef0f3',
     };
     const configPath = path.join(this.pluginDataDir, 'config.json');
     try {
@@ -73,8 +71,10 @@ class MiraSpineFormatPlugin {
         ...defaults,
         ...saved,
         animation: String(saved.animation || defaults.animation),
-        fallbackToDefault: saved.fallbackToDefault !== false,
-        timeoutMs: Math.max(5000, Math.min(300000, Number(saved.timeoutMs) || defaults.timeoutMs)),
+        timeoutMs: Math.max(5000, Math.min(180000, Number(saved.timeoutMs) || defaults.timeoutMs)),
+        width: Math.max(64, Math.min(2048, Number(saved.width) || defaults.width)),
+        height: Math.max(64, Math.min(2048, Number(saved.height) || defaults.height)),
+        background: String(saved.background || defaults.background),
       };
     } catch {
       fs.writeFileSync(configPath, JSON.stringify(defaults, null, 2));
@@ -82,29 +82,13 @@ class MiraSpineFormatPlugin {
     }
   }
 
-  /**
-   * 解析 .skel 元数据。
-   * 简易实现：读取文件头判定二进制/JSON，统计同目录配套文件存在性。
-   * 不依赖 spine 运行时，避免重量级解析。
-   */
+  /** 解析 .skel 元数据：版本探测 + 配套文件检查 */
   private async processFile(filePath: string, context: Record<string, any> = {}) {
     const stat = await fs.promises.stat(filePath);
     const dir = path.dirname(filePath);
     const base = path.basename(filePath, path.extname(filePath));
     const atlasPath = path.join(dir, `${base}.atlas`);
-    const jsonPath = path.join(dir, `${base}.json`);
     const pngPath = path.join(dir, `${base}.png`);
-
-    // 判定骨架格式：.skel 二进制 or .json 文本（这里 filePath 一定是 .skel）
-    const head = Buffer.alloc(1);
-    const fd = await fs.promises.open(filePath, 'r');
-    try {
-      await fd.read(head, 0, 1, 0);
-    } finally {
-      await fd.close();
-    }
-    const firstByte = head[0];
-    const isJson = firstByte === 0x7b || firstByte === 0x5b; // '{' or '['
 
     const exists = async (p: string) => {
       try {
@@ -117,119 +101,58 @@ class MiraSpineFormatPlugin {
 
     return {
       format: path.extname(filePath).slice(1).toLowerCase(),
-      skeletonFormat: isJson ? 'json' : 'binary',
       size: stat.size,
       hasAtlas: await exists(atlasPath),
       hasPng: await exists(pngPath),
-      hasJsonSibling: await exists(jsonPath),
       ...context,
     };
   }
 
   /**
-   * 生成 idle 动作首帧缩略图。
+   * 用 spine-canvaskit 渲染 idle 动作首帧 PNG 缩略图。
    *
-   * spine-exporter CLI 以「目录」为输入（递归查找同名 .skel+.atlas+.png），
-   * 因此用 srcPath 所在目录作为 --inputDir，渲染到临时目录后取首个 PNG 移到 destPath。
+   * spine-canvaskit 仅支持 Spine 4.2+；3.8 资源会抛错并被 catch（仅记日志，不阻断）。
+   * 3.8 资源仍可在客户端 hovercard 实时预览，只是无服务端缩略图。
+   *
+   * atlas 命名不一定与 .skel 同名（如 spineboy-pro.skel 配 spineboy.atlas），
+   * 故在同目录查找：优先同名 .atlas，否则取首个 .atlas。png 由 atlas 内容引用自动加载。
    */
   private async generateThumbnail(srcPath: string, destPath: string): Promise<void> {
     fs.mkdirSync(path.dirname(destPath), { recursive: true });
 
-    const dir = path.dirname(srcPath);
-    const base = path.basename(srcPath, path.extname(srcPath));
-    const atlasPath = path.join(dir, `${base}.atlas`);
-    const pngPath = path.join(dir, `${base}.png`);
-
-    // 校验三件套（缺一不可渲染）
-    if (!fs.existsSync(atlasPath) || !fs.existsSync(pngPath)) {
-      console.warn(`[${this.pluginName}] missing atlas/png sibling for ${srcPath}, skip thumbnail`);
+    const atlasPath = this.resolveAtlas(srcPath);
+    if (!atlasPath) {
+      console.warn(`[${this.pluginName}] no .atlas found for ${srcPath}, skip thumbnail`);
       return;
     }
 
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'spine-thumb-'));
     try {
-      const cli = this.resolveCli();
-      // 第一遍：尝试指定动画（idle）
-      let usedAnimation = this.config.animation;
-      try {
-        await this.runExporter(cli, dir, tmpDir, this.config.animation);
-      } catch (err) {
-        // 回退：不指定动画，渲染默认/首个
-        if (this.config.fallbackToDefault) {
-          console.warn(`[${this.pluginName}] animation "${this.config.animation}" failed, fallback to default:`, (err as any)?.message || err);
-          await this.runExporter(cli, dir, tmpDir);
-          usedAnimation = 'default';
-        } else {
-          throw err;
-        }
-      }
-
-      // 找输出 PNG：优先匹配 *<animation>*，否则取首个 .png
-      const png = await this.pickOutputPng(tmpDir, base, usedAnimation);
-      if (!png) {
-        console.warn(`[${this.pluginName}] no PNG produced in ${tmpDir}`);
-        return;
-      }
-      await fs.promises.copyFile(png, destPath);
-      console.log(`[${this.pluginName}] thumbnail generated: ${destPath} (animation=${usedAnimation})`);
+      await renderIdleFrame(srcPath, atlasPath, destPath, {
+        animation: this.config.animation,
+        width: this.config.width,
+        height: this.config.height,
+        background: this.config.background,
+        timeoutMs: this.config.timeoutMs,
+      });
+      console.log(`[${this.pluginName}] thumbnail generated: ${destPath} (animation=${this.config.animation})`);
     } catch (error: any) {
-      // 与 mira_3d_format 一致：失败不阻断，仅记日志
-      console.error(`[${this.pluginName}] generateThumbnail failed:`, error?.stderr || error?.message || error);
-    } finally {
-      // 清理临时目录
-      fs.rmSync(tmpDir, { recursive: true, force: true });
+      // 失败不阻断（与 mira_3d_format 一致）。3.8 资源会在此报版本不匹配。
+      console.error(`[${this.pluginName}] generateThumbnail failed:`, error?.message || error);
     }
   }
 
-  /** 调用 spine-export-cli，渲染到 outDir */
-  private async runExporter(cli: string, inputDir: string, outDir: string, animation?: string): Promise<void> {
-    const args = [
-      cli,
-      '--inputDir', inputDir,
-      '-e', 'png',
-      '-o', path.join(outDir, '{assetName}_{animationName}'),
-    ];
-    if (animation) {
-      args.push('-s', animation);
-    }
-    await execFileAsync(process.execPath, args, {
-      timeout: this.config.timeoutMs,
-      windowsHide: true,
-      maxBuffer: 1024 * 1024 * 8,
-    });
-  }
-
-  /** 在输出目录挑选结果 PNG：优先匹配动画名，否则首个 */
-  private async pickOutputPng(outDir: string, assetName: string, animation: string): Promise<string | null> {
-    const entries = await fs.promises.readdir(outDir);
-    const pngs = entries.filter((f) => f.toLowerCase().endsWith('.png')).map((f) => path.join(outDir, f));
-    if (!pngs.length) return null;
-    // 优先：包含动画名
-    const byAnim = pngs.find((p) => path.basename(p).toLowerCase().includes(animation.toLowerCase()));
-    if (byAnim) return byAnim;
-    // 次选：包含 assetName
-    const byAsset = pngs.find((p) => path.basename(p).toLowerCase().includes(assetName.toLowerCase()));
-    if (byAsset) return byAsset;
-    // 兜底：首个
-    return pngs[0];
-  }
-
-  /** 解析 spine-exporter CLI 路径：自定义 > 包内 dist/cli/index.js */
-  private resolveCli(): string {
-    if (this.config.cliCommand) return this.config.cliCommand;
+  /** 查找 atlas：同名优先，否则同目录首个 .atlas */
+  private resolveAtlas(srcPath: string): string | null {
+    const dir = path.dirname(srcPath);
+    const base = path.basename(srcPath, path.extname(srcPath));
+    const sameName = path.join(dir, `${base}.atlas`);
+    if (fs.existsSync(sameName)) return sameName;
     try {
-      // bin 字段指向 dist/cli/index.js
-      const exporterPath = this.config.exporterPath
-        ? require.resolve(this.config.exporterPath)
-        : require.resolve('spine-exporter');
-      const cliEntry = path.join(path.dirname(exporterPath), 'cli', 'index.js');
-      if (fs.existsSync(cliEntry)) return cliEntry;
-      // 兜底：返回包根目录的 dist/cli/index.js
-      const guess = path.join(path.dirname(require.resolve('spine-exporter/package.json')), 'dist', 'cli', 'index.js');
-      if (fs.existsSync(guess)) return guess;
-      throw new Error(`spine-exporter CLI entry not found near ${exporterPath}`);
-    } catch (error) {
-      throw new Error('spine-exporter is not installed; run pnpm install in the plugin directory');
+      const entries = fs.readdirSync(dir);
+      const atlas = entries.find((f) => f.toLowerCase().endsWith('.atlas'));
+      return atlas ? path.join(dir, atlas) : null;
+    } catch {
+      return null;
     }
   }
 

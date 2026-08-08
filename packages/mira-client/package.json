@@ -66,6 +66,7 @@
     "filepond-plugin-file-validate-size": "^2.2.8",
     "filepond-plugin-file-validate-type": "^1.2.9",
     "grid-layout-plus": "2.0.0-beta.0",
+    "hls.js": "^1.6.17",
     "lodash-es": "^4.17.21",
     "lucide-vue-next": "^1.0.0",
     "md-editor-v3": "^6.5.6",
@@ -91,9 +92,9 @@
     "viewerjs": "^1.11.7",
     "vite": "^6.2.0",
     "vue": "3.5.13",
+    "vue-draggable-plus": "^0.6.1",
     "vue-filepond": "^7.0.4",
     "vue-router": "^4.5.1",
-    "vue-draggable-plus": "^0.6.1",
     "vue-sonner": "^2.0.9",
     "vue3-lazyload": "^0.3.8",
     "zod": "^3.23.8"

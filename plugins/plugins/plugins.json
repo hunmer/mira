@@ -46,7 +46,7 @@
   },
   {
     "name": "mira_spine_format",
-    "enabled": false,
+    "enabled": true,
     "path": "mira_spine_format"
   }
 ]

@@ -18,6 +18,9 @@ export interface ThumbnailGenerator {
 }
 
 const execFileAsync = promisify(execFile);
+const HLS_SEGMENT_DURATION = 4;
+const VIDEO_EXTENSIONS = ['mp4', 'mov', 'avi', 'mkv', 'flv', 'webm', 'wmv', 'm4v', 'mpg', 'mpeg', 'mts', 'm2ts', 'ts', '3gp'];
+const AUDIO_EXTENSIONS = ['mp3', 'm4a', 'wav', 'flac', 'aac', 'ogg', 'opus', 'wma', 'ape', 'alac'];
 const IMAGE_MAGICK_EXTENSIONS = [
   'tif', 'tiff', 'psd', 'psb', 'heic', 'heif', 'cr2', 'cr3', 'nef', 'arw', 'dng', 'orf', 'rw2', 'raf',
   'jp2', 'j2k', 'jpc', 'exr', 'hdr', 'tga', 'pcx', 'dds', 'dcm', 'dpx', 'fits', 'pdf', 'eps', 'ai',
@@ -73,7 +76,7 @@ class ImageThumbnailGenerator implements ThumbnailGenerator {
 
 class VideoThumbnailGenerator implements ThumbnailGenerator {
   name = 'video';
-  supportedExtensions = ['mp4', 'mov', 'avi', 'mkv', 'flv', 'webm'];
+  supportedExtensions = VIDEO_EXTENSIONS;
 
   async generate(srcPath: string, destPath: string): Promise<void> {
     return new Promise<void>((resolve) => {
@@ -93,6 +96,29 @@ class VideoThumbnailGenerator implements ThumbnailGenerator {
   }
 }
 
+class AudioThumbnailGenerator implements ThumbnailGenerator {
+  name = 'audio';
+  supportedExtensions = AUDIO_EXTENSIONS;
+
+  constructor(private readonly binary: string) {}
+
+  async generate(srcPath: string, destPath: string): Promise<void> {
+    fs.mkdirSync(path.dirname(destPath), { recursive: true });
+    await execFileAsync(this.binary, [
+      '-nostdin', '-y', '-i', srcPath,
+      '-filter_complex', 'aformat=channel_layouts=mono,showwavespic=s=200x200:colors=0x4f46e5',
+      '-frames:v', '1', destPath,
+    ], { windowsHide: true, maxBuffer: 1024 * 1024 * 4 });
+  }
+}
+
+interface HlsPreviewMetadata {
+  duration: number;
+  totalSegments: number;
+  hasVideo: boolean;
+  cacheDir: string;
+}
+
 export class ThumbnailService {
   private generators: ThumbnailGenerator[] = [];
   private extMap: Map<string, ThumbnailGenerator> = new Map();
@@ -101,22 +127,31 @@ export class ThumbnailService {
   private wsServer: MiraWebsocketServer | null = null;
   private readonly imageMagickPath: string | null;
   private readonly ghostscriptPath: string | null;
+  private readonly ffmpegPath: string | null;
+  private readonly ffprobePath: string | null;
   private previewTasks = new Map<string, Promise<string>>();
+  private hlsMetadataTasks = new Map<string, Promise<HlsPreviewMetadata>>();
+  private hlsSegmentTasks = new Map<string, Promise<string>>();
 
   constructor() {
     this.taskQueue = new Queue({ concurrency: 5, autostart: true });
 
     try {
-      let ffmpegPath = process.env.FFMPEG_PATH;
-      if (!ffmpegPath) {
-        ffmpegPath = which.sync('ffmpeg');
-      }
-      if (ffmpegPath) {
-        ffmpeg.setFfmpegPath(ffmpegPath);
-        console.log('ThumbnailService: ffmpeg found at', ffmpegPath);
-      }
+      this.ffmpegPath = process.env.FFMPEG_PATH || which.sync('ffmpeg');
+      ffmpeg.setFfmpegPath(this.ffmpegPath);
+      console.log('ThumbnailService: ffmpeg found at', this.ffmpegPath);
     } catch {
+      this.ffmpegPath = null;
       console.warn('ThumbnailService: ffmpeg not found. Set FFMPEG_PATH or install ffmpeg.');
+    }
+
+    try {
+      this.ffprobePath = process.env.FFPROBE_PATH || which.sync('ffprobe');
+      ffmpeg.setFfprobePath(this.ffprobePath);
+      console.log('ThumbnailService: ffprobe found at', this.ffprobePath);
+    } catch {
+      this.ffprobePath = null;
+      console.warn('ThumbnailService: ffprobe not found. Set FFPROBE_PATH or install ffprobe.');
     }
 
     try {
@@ -136,6 +171,7 @@ export class ThumbnailService {
 
     this.registerGenerator(new ImageThumbnailGenerator());
     this.registerGenerator(new VideoThumbnailGenerator());
+    if (this.ffmpegPath) this.registerGenerator(new AudioThumbnailGenerator(this.ffmpegPath));
     if (this.imageMagickPath) {
       const supportedExtensions = this.ghostscriptPath
         ? IMAGE_MAGICK_EXTENSIONS
@@ -195,6 +231,84 @@ export class ThumbnailService {
       .then(() => destPath)
       .finally(() => this.previewTasks.delete(destPath));
     this.previewTasks.set(destPath, task);
+    return task;
+  }
+
+  async getHlsPlaylist(srcPath: string, cacheDir: string, cacheKey: string, segmentQuery = ''): Promise<string> {
+    const meta = await this.getHlsMetadata(srcPath, cacheDir, cacheKey);
+    let playlist = `#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:${HLS_SEGMENT_DURATION}\n#EXT-X-MEDIA-SEQUENCE:0\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-INDEPENDENT-SEGMENTS\n`;
+    for (let index = 0; index < meta.totalSegments; index++) {
+      const duration = Math.min(HLS_SEGMENT_DURATION, meta.duration - index * HLS_SEGMENT_DURATION);
+      playlist += `#EXTINF:${duration.toFixed(3)},\nsegment/${index}.ts${segmentQuery}\n`;
+    }
+    return `${playlist}#EXT-X-ENDLIST\n`;
+  }
+
+  async getHlsSegmentPath(srcPath: string, cacheDir: string, cacheKey: string, segmentIndex: number): Promise<string> {
+    if (!this.ffmpegPath) throw new Error('FFmpeg is not installed');
+    const meta = await this.getHlsMetadata(srcPath, cacheDir, cacheKey);
+    if (!Number.isInteger(segmentIndex) || segmentIndex < 0 || segmentIndex >= meta.totalSegments) {
+      throw new RangeError('Invalid HLS segment');
+    }
+
+    const destPath = path.join(meta.cacheDir, `segment-${segmentIndex}.ts`);
+    if (await fs.promises.stat(destPath).catch(() => null)) return destPath;
+    const pending = this.hlsSegmentTasks.get(destPath);
+    if (pending) return pending;
+
+    const start = segmentIndex * HLS_SEGMENT_DURATION;
+    const duration = Math.min(HLS_SEGMENT_DURATION, meta.duration - start);
+    const tempPath = `${destPath}.${process.pid}.${Date.now()}.tmp`;
+    const args = ['-nostdin', '-y', '-ss', String(start), '-i', srcPath, '-t', String(duration), '-map', '0:v:0?', '-map', '0:a:0?', '-sn', '-dn'];
+    if (meta.hasVideo) {
+      args.push('-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2', '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency', '-pix_fmt', 'yuv420p', '-g', '48', '-force_key_frames', `expr:gte(t,n_forced*${HLS_SEGMENT_DURATION})`);
+    }
+    args.push('-c:a', 'aac', '-b:a', '160k', '-output_ts_offset', String(start), '-avoid_negative_ts', 'make_zero', '-fflags', '+genpts', '-muxdelay', '0', '-f', 'mpegts', tempPath);
+
+    const task = execFileAsync(this.ffmpegPath, args, { windowsHide: true, maxBuffer: 1024 * 1024 * 8 })
+      .then(async () => {
+        await fs.promises.rename(tempPath, destPath);
+        return destPath;
+      })
+      .catch(async error => {
+        await fs.promises.unlink(tempPath).catch(() => undefined);
+        throw error;
+      })
+      .finally(() => this.hlsSegmentTasks.delete(destPath));
+    this.hlsSegmentTasks.set(destPath, task);
+    return task;
+  }
+
+  private async getHlsMetadata(srcPath: string, cacheDir: string, cacheKey: string): Promise<HlsPreviewMetadata> {
+    if (!this.ffmpegPath || !this.ffprobePath) throw new Error('FFmpeg and ffprobe are required');
+    const stat = await fs.promises.stat(srcPath);
+    const key = crypto.createHash('sha256').update(`${cacheKey}:${stat.size}:${stat.mtimeMs}`).digest('hex');
+    const existing = this.hlsMetadataTasks.get(key);
+    if (existing) return existing;
+
+    const task = execFileAsync(this.ffprobePath, [
+      '-v', 'error', '-show_entries', 'format=duration:stream=codec_type', '-of', 'json', srcPath,
+    ], { windowsHide: true, maxBuffer: 1024 * 1024 * 4 }).then(async result => {
+      const data = JSON.parse(String(result.stdout));
+      const duration = Number(data.format?.duration || 0);
+      if (!Number.isFinite(duration) || duration <= 0) throw new Error('Media duration is unavailable');
+      const streams = Array.isArray(data.streams) ? data.streams : [];
+      if (!streams.some((stream: any) => stream.codec_type === 'video' || stream.codec_type === 'audio')) {
+        throw new Error('No audio or video stream found');
+      }
+      const mediaCacheDir = path.join(cacheDir, 'hls', key);
+      await fs.promises.mkdir(mediaCacheDir, { recursive: true });
+      return {
+        duration,
+        totalSegments: Math.ceil(duration / HLS_SEGMENT_DURATION),
+        hasVideo: streams.some((stream: any) => stream.codec_type === 'video'),
+        cacheDir: mediaCacheDir,
+      };
+    }).catch(error => {
+      this.hlsMetadataTasks.delete(key);
+      throw error;
+    });
+    this.hlsMetadataTasks.set(key, task);
     return task;
   }
 

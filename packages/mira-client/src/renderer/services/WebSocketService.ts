@@ -406,6 +406,7 @@ function showDesktopNotification(title: string, body?: string): void {
 function appendThumbToken(url: string | undefined): string | undefined {
   if (!url) return url
   if (!/^https?:/i.test(url)) return url
+  if (/[?&]token=/i.test(url)) return url
   const token = useAuthStore().token
   if (!token) return url
   const sep = url.includes('?') ? '&' : '?'
@@ -786,8 +787,9 @@ function setupEventListeners(libraryStore: any): void {
   // 监听缩略图生成事件
   webSocketService.addEventListener('thumbnail::generated', (data) => {
     console.log('Thumbnail generated:', data)
+    const thumbUrl = appendThumbToken(toFileUrl(data.thumb))
     window.dispatchEvent(new CustomEvent('thumbnail-updated', {
-      detail: { fileId: String(data.id), thumbPath: data.thumb }
+      detail: { fileId: String(data.id), thumbPath: thumbUrl }
     }))
     // 缩略图就绪后补发到最近一次导入通知（file::created 时缩略图尚未生成）
     updateImportThumbIfPending(data.id, data.thumb)

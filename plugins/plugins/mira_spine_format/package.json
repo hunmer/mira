@@ -1,7 +1,7 @@
 {
   "name": "mira_spine_format",
-  "version": "1.0.0",
-  "description": "Spine .skel parser and idle-first-frame thumbnail generator for Mira",
+  "version": "1.1.0",
+  "description": "Spine .skel parser and idle-first-frame thumbnail generator for Mira (spine-canvaskit, 4.2+)",
   "author": "Mira Team",
   "license": "ISC",
   "main": "dist/index.js",
@@ -14,16 +14,15 @@
     "tags": ["Spine", "skel", "骨骼动画", "缩略图"]
   },
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "render": "node dist/renderIdle.js"
   },
   "dependencies": {
-    "spine-exporter": "^0.8.0"
+    "@esotericsoftware/spine-canvaskit": "^4.2.0",
+    "canvaskit-wasm": "^0.41.1"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
     "typescript": "^5.7.0"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": ["canvas", "gl", "sharp"]
   }
 }

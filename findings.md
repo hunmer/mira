@@ -64,5 +64,14 @@
 - Existing file endpoints stream with `fs.createReadStream` and are protected by the common `/api` middleware.
 - Use `/api/files/preview/:libraryId/:fileId`, not an `:id` file parameter: the current permission extractor checks `params.id` before `params.libraryId`, so a second `:id` would interfere with library-role lookup.
 - No ImageMagick Node dependency exists or is needed; Node `child_process.execFile` can invoke the installed CLI safely without shell interpolation.
+
+## JIT Audio/Video Preview
+- The server already resolves the system FFmpeg executable; no static binary package is needed.
+- Existing video thumbnails cover only `mp4/mov/avi/mkv/flv/webm`; audio has no thumbnail generator.
+- `VideoPlayerComponent.vue` uses Plyr over a native `<video>` element. Plyr does not decode HLS itself.
+- `AudioPreview.vue` binds the original URL directly to `<audio>`.
+- `hls.js` is not installed, so Chromium/Electron need it for JIT HLS playback; Safari can use native HLS.
+- Relative segment URLs do not inherit the playlist query string. The generated playlist must append the incoming `apiKey` query to each segment URI.
+- Preserve unrelated active changes in `WebSocketService.ts` and the Spine plugin.
 - PDF conversion reproduced the reported `PDFDelegateFailed` error. `gswin64c`, `gswin32c`, `gs`, `pdftoppm`, `mutool`, and `pdftocairo` are unavailable as usable system commands; ImageMagick policy is not the cause.
 - Thumbnail startup now excludes PDF/EPS/AI when Ghostscript is absent, while the on-demand preview API returns an explicit Ghostscript-required error for those extensions.

@@ -1,28 +1,39 @@
 # Mira Spine Format
 
-服务端插件：为 Spine 3.8 `.skel` 文件注册格式识别与 idle 动作首帧 PNG 缩略图生成。
+服务端插件：为 Spine **4.2+** `.skel` 文件注册格式识别与 idle 动作首帧 PNG 缩略图生成。
 
-- 格式扩展：`.skel`（atlas/png 为配套资源，不单独注册）。
-- 缩略图：调用 [`spine-exporter`](https://github.com/Nattsu39/spine-exporter) CLI 渲染 **idle** 动作第一帧；找不到 idle 时回退默认/首个动画。
-- 输入要求：`.skel` + 同名 `.atlas` + 同名 `.png` 位于同一目录。
+## 渲染方案
+
+使用官方 [`@esotericsoftware/spine-canvaskit`](https://esotericsoftware.com/spine-canvaskit)（CanvasKit/Skia WASM）无头渲染，**无需任何原生编译**（不依赖 cairo/canvas/gl）。
+
+> ⚠️ **版本限制**：spine-canvaskit 仅支持 Spine **4.2+**（npm 最低 4.2.48，无 3.8 版本）。
+> 3.8 资源会渲染失败（仅记日志，不阻断），但仍可在客户端 hovercard 实时预览（客户端用 pixi-spine 3.8）。
+> `.skel` 的运行时版本必须与编辑器导出版本精确匹配（4.3 资源用 4.3 运行时）。
+
+## 缩略图生成流程
+
+1. 查找 `.atlas`（同名优先，否则同目录首个 `.atlas`；png 由 atlas 内容引用自动加载）
+2. `spine-canvaskit` 加载 atlas + skeleton
+3. 选动画：优先 `idle`，否则首个动画
+4. 按 skeleton bounds 适配画布缩放
+5. 渲染首帧 → `surface.makeImageSnapshot().encodeToBytes()` → PNG
 
 ## 配置（data/config.json）
 
 ```json
 {
   "animation": "idle",
-  "fallbackToDefault": true,
-  "timeoutMs": 120000,
-  "cliCommand": null,
-  "exporterPath": null
+  "timeoutMs": 60000,
+  "width": 512,
+  "height": 512,
+  "background": "#eef0f3"
 }
 ```
 
-- `animation`：优先渲染的动画名。
-- `fallbackToDefault`：指定动画失败时是否回退渲染默认动画。
-- `timeoutMs`：单次渲染超时。
-- `cliCommand`：自定义 CLI 入口 JS（覆盖自动探测）。
-- `exporterPath`：自定义 spine-exporter 包路径（用于 `require.resolve`）。
+- `animation`：优先渲染的动画名（找不到则回退首个）。
+- `timeoutMs`：单次渲染超时（含 CanvasKit WASM 初始化）。
+- `width` / `height`：缩略图尺寸。
+- `background`：背景色（十六进制）。
 
 ## 构建
 
@@ -30,3 +41,11 @@
 pnpm install --ignore-workspace
 pnpm run build
 ```
+
+依赖仅 `@esotericsoftware/spine-canvaskit` + `canvaskit-wasm`，无原生模块，安装即用。
+
+## 技术细节
+
+- spine-canvaskit / canvaskit-wasm 为 ESM，CommonJS 插件用动态 `import()` 加载。
+- CanvasKit 的 JS glue 与 wasm 必须同一版本（默认 `bin/` 与 `full/` 不可混用，否则 wasm 表索引崩溃）。本插件统一用 `canvaskit-wasm/full`。
+- Node 下 `CanvasKitInit` 需 `locateFile` 定位 `bin/full/canvaskit.wasm`。
