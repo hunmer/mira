@@ -27,5 +27,10 @@
     "name": "mira_eagle_extension",
     "enabled": true,
     "path": "node_modules/mira_eagle_extension"
+  },
+  {
+    "name": "mira_3d_format",
+    "enabled": true,
+    "path": "node_modules/mira_3d_format"
   }
 ]

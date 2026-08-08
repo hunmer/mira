@@ -1,0 +1,20 @@
+{
+  "pluginName": "3D 格式预览",
+  "pluginId": "d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70",
+  "priority": 10,
+  "version": "1.1.0",
+  "index": "index.js",
+  "tags": ["3D", "GLB", "GLTF", "预览"],
+  "category": "development",
+  "description": "为 GLB/GLTF 文件提供可交互的 3D 线框缩略图和详情查看入口，验证自定义格式插件 API。",
+  "author": "Mira Team",
+  "homepage": "https://github.com/mira-team/mira-3d-format-preview",
+  "enable": true,
+  "config": {},
+  "hotkey": {},
+  "events": [],
+  "dependencies": [],
+  "permissions": ["ui", "dom"],
+  "minAppVersion": "1.0.0",
+  "platform": ["win32", "darwin", "linux"]
+}

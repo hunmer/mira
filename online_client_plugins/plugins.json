@@ -1,7 +1,70 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-08T04:05:34.303Z",
+  "generatedAt": "2026-08-08T05:23:07.321Z",
   "plugins": [
+    {
+      "pluginId": "d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70",
+      "pluginName": "3D 格式预览",
+      "version": "1.1.0",
+      "description": "为 GLB/GLTF 文件提供可交互的 3D 线框缩略图和详情查看入口，验证自定义格式插件 API。",
+      "author": "Mira Team",
+      "homepage": "https://github.com/mira-team/mira-3d-format-preview",
+      "category": "development",
+      "tags": [
+        "3D",
+        "GLB",
+        "GLTF",
+        "预览"
+      ],
+      "minAppVersion": "1.0.0",
+      "platform": [
+        "win32",
+        "darwin",
+        "linux"
+      ],
+      "directory": "plugins/mira-3d-format-preview",
+      "icon": null,
+      "readme": "README.md",
+      "size": 1008005,
+      "checksum": "sha256:edf6c7ad6f07b8e0cd56f422f5a58f7a60e76245128fd312bd744da8afb7570a",
+      "files": [
+        {
+          "path": "README.md",
+          "size": 723,
+          "checksum": "sha256:9ed2cb6c62a8f0e48794ae13d3fd506cf69c7a30f491c598d1ebacafe4dbc67d"
+        },
+        {
+          "path": "plugin.json",
+          "size": 648,
+          "checksum": "sha256:f305b731f4d1abe337a9d5379398cfbf7bf60bc2bcf1ed4537ee6670189f76cd"
+        },
+        {
+          "path": "package.json",
+          "size": 487,
+          "checksum": "sha256:750f2b79bbc2f1d653cb3ee6bbada9e0915c47c5dc0ad7d93ddb310af1902a8f"
+        },
+        {
+          "path": "index.js",
+          "size": 5122,
+          "checksum": "sha256:0feae321c6f09913d05e9b08abf83f1717263007b542d127c01e597229382a0d"
+        },
+        {
+          "path": "dist/index.html",
+          "size": 403,
+          "checksum": "sha256:0068f806ad79611d0a4b1ca248645c667da5c32f3a3829abdd455afa06bf1f71"
+        },
+        {
+          "path": "dist/assets/index-vQe37hF-.css",
+          "size": 1818,
+          "checksum": "sha256:1f1690d2735ebfac4bbb875b683fcc488cafd3cb354cc2f9182cc6b1752c068a"
+        },
+        {
+          "path": "dist/assets/index-EqlPFEGu.js",
+          "size": 998804,
+          "checksum": "sha256:807a80c34fe3aa9a67a611ae365fd75efe772087bb7691eec57b8b0f667095cf"
+        }
+      ]
+    },
     {
       "pluginId": "b1c2d3e4-5f60-4a7b-8c9d-0a1b2c3d4e5f",
       "pluginName": "欢迎示例插件",

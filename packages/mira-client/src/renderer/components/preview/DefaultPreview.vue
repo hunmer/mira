@@ -1,6 +1,13 @@
 <template>
   <div class="w-full h-full flex justify-center items-center bg-muted">
-    <div class="flex flex-col items-center gap-8 p-12 bg-white rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.1)] max-w-[500px] w-[90%]">
+    <div class="relative flex flex-col items-center gap-8 p-12 bg-white rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.1)] max-w-[500px] w-[90%]">
+      <button @click="goBack" class="absolute top-3 left-3 flex justify-center items-center w-9 h-9 border-none rounded-full cursor-pointer bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground transition-colors" title="返回上一页">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 12H5" />
+          <path d="M12 19l-7-7 7-7" />
+        </svg>
+      </button>
+
       <div class="flex justify-center items-center w-[100px] h-[100px] bg-accent rounded-full">
         <span class="text-5xl">{{ getFileIcon() }}</span>
       </div>
@@ -123,6 +130,14 @@ const formatDate = (dateString: string): string => {
     })
   } catch {
     return dateString
+  }
+}
+
+const goBack = (): void => {
+  if (window.history.length > 1) {
+    window.history.back()
+  } else {
+    window.close()
   }
 }
 

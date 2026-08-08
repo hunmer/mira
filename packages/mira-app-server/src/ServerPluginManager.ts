@@ -35,6 +35,7 @@ export interface ServerFileFormatHandler {
     id: string;
     extensions?: string[];
     mimeTypes?: string[];
+    thumbnailExtensions?: string[];
     process?: (filePath: string, context?: Record<string, any>) => any | Promise<any>;
     thumbnail?: (srcPath: string, destPath: string) => Promise<void>;
 }
@@ -183,7 +184,7 @@ export class ServerPluginManager {
         if (handler.thumbnail) {
             const generator: ThumbnailGenerator = {
                 name: key,
-                supportedExtensions: (handler.extensions || []).map(ext => ext.replace(/^\./, '').toLowerCase()),
+                supportedExtensions: (handler.thumbnailExtensions || handler.extensions || []).map(ext => ext.replace(/^\./, '').toLowerCase()),
                 generate: handler.thumbnail,
             };
             this.server.backend.thumbnailService.registerGenerator(generator);

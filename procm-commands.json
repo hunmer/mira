@@ -1,0 +1,9 @@
+{
+  "commands": {
+    "mira-app-server-dev": {
+      "script": "pnpm",
+      "args": ["--filter", "mira-app-server", "run", "dev"],
+      "cwd": "D:/mira_typescript"
+    }
+  }
+}

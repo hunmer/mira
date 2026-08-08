@@ -54,6 +54,26 @@
 |-----------|-------|---------|------------|
 | 2026-08-08 | `ServerEditDialog.vue:110` `AcceptableValue` not assignable to `string | undefined` | 1 | Unrelated pre-existing type error; no change made |
 
+### Backend Process
+- Added `procm-commands.json` with `mira-app-server-dev`.
+- Started backend through procm-mcp direct process API, process ID `gGBjCzdL`.
+- Logs report health endpoint `GET /api/health` returned `200` and libraries/plugins loaded.
+
+### 3D Market Plugin
+- Added `online_client_plugins/plugins/mira-3d-format-preview/`.
+- Registered GLB/GLTF custom format handlers for interactive thumbnail and detail open.
+- Regenerated `online_client_plugins/plugins.json`; catalog now contains 3 plugins.
+- `node --check` passed for the plugin entry.
+- Upgraded the plugin to a complete Vue 3 + TresJS + Three.js project (v1.1.0).
+- Added a Vite-built detail window using `TresCanvas`, `GLTFModel`, and `OrbitControls`.
+- Installed dependencies, passed plugin `vue-tsc`, and rebuilt distributable `dist/` assets.
+
+### 3D Server Plugin
+- Added `plugins/plugins/mira_3d_format/` with `@gltf-transform/core` parsing and `render-glb` thumbnail generation.
+- Added `thumbnailExtensions` support to `ServerPluginManager` so GLTF parsing does not invoke the GLB-only renderer.
+- Linked the plugin into `packages/mira-app-server/src/plugins/node_modules` and enabled it in runtime `plugins.json`.
+- Verified on procm-mcp alternate ports `8091/8021`: plugin loaded and `/health` returned `status: ok`; verification process was stopped afterward.
+
 ## 5-Question Reboot Check
 | Question | Answer |
 |----------|--------|

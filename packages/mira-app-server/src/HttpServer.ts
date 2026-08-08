@@ -233,7 +233,12 @@ export class MiraHttpServer {
         this.app.use('/static', express.static(publicDir));
 
         // Dashboard 静态托管：构建产物位于与本文件同级的 dist/dashboard 下。
-        const dashboardDir = path.resolve(__dirname, 'dashboard');
+        // dev 模式下用 ts-node 直接跑 src/，__dirname 指向 src/，此时回退到项目根的 dist/dashboard
+        // （该目录由 pnpm build:dashboard 生成的构建产物）。
+        let dashboardDir = path.resolve(__dirname, 'dashboard');
+        if (!fs.existsSync(dashboardDir)) {
+            dashboardDir = path.resolve(__dirname, '..', 'dist', 'dashboard');
+        }
         this.app.use(
             '/dashboard',
             express.static(dashboardDir, {

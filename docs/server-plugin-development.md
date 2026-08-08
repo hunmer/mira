@@ -72,6 +72,7 @@ const unregister = pluginManager.registerFileFormat('my_plugin', {
   id: 'glb',
   extensions: ['glb', 'gltf'],
   mimeTypes: ['model/gltf-binary'],
+  thumbnailExtensions: ['glb'],
   async process(filePath, context) {
     // 在 Node 中读取/解析 filePath，返回可序列化结果
     return { filePath, size: (await fs.promises.stat(filePath)).size, ...context };
@@ -85,7 +86,7 @@ const unregister = pluginManager.registerFileFormat('my_plugin', {
 unregister();
 ```
 
-需要主动处理文件时调用 `pluginManager.processFile(filePath, { mimeType, ... })`。缩略图回调会自动接入现有 `ThumbnailService` 的文件创建和待处理扫描流程。
+需要主动处理文件时调用 `pluginManager.processFile(filePath, { mimeType, ... })`。缩略图回调会自动接入现有 `ThumbnailService` 的文件创建和待处理扫描流程；`thumbnailExtensions` 可限制哪些格式真正进入缩略图生成器。
 
 ## package.json
 
