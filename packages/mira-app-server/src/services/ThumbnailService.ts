@@ -4,6 +4,9 @@ import fs from 'fs';
 import fg from 'fast-glob';
 import Queue from 'queue';
 import which from 'which';
+import crypto from 'crypto';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
 import { EventArgs } from 'mira-app-core';
 import { ILibraryServerData } from 'mira-app-core/storage/sqlite';
 import { MiraWebsocketServer } from '../WebSocketServer';
@@ -12,6 +15,36 @@ export interface ThumbnailGenerator {
   name: string;
   supportedExtensions: string[];
   generate(srcPath: string, destPath: string): Promise<void>;
+}
+
+const execFileAsync = promisify(execFile);
+const IMAGE_MAGICK_EXTENSIONS = [
+  'tif', 'tiff', 'psd', 'psb', 'heic', 'heif', 'cr2', 'cr3', 'nef', 'arw', 'dng', 'orf', 'rw2', 'raf',
+  'jp2', 'j2k', 'jpc', 'exr', 'hdr', 'tga', 'pcx', 'dds', 'dcm', 'dpx', 'fits', 'pdf', 'eps', 'ai',
+  'ico', 'cur', 'xpm', 'xbm'
+];
+const GHOSTSCRIPT_EXTENSIONS = new Set(['pdf', 'eps', 'ai']);
+
+class ImageMagickThumbnailGenerator implements ThumbnailGenerator {
+  name = 'imagemagick-image';
+  supportedExtensions: string[];
+
+  constructor(private readonly binary: string, supportedExtensions: string[]) {
+    this.supportedExtensions = supportedExtensions;
+  }
+
+  async generate(srcPath: string, destPath: string): Promise<void> {
+    await runImageMagick(this.binary, srcPath, destPath, 200, 'png');
+  }
+}
+
+async function runImageMagick(binary: string, srcPath: string, destPath: string, maxDimension: number, format: 'png' | 'webp'): Promise<void> {
+  fs.mkdirSync(path.dirname(destPath), { recursive: true });
+  const input = `${srcPath}[0]`;
+  const args = [input, '-auto-orient', '-flatten', '-resize', `${maxDimension}x${maxDimension}>`, '-strip'];
+  if (format === 'webp') args.push('-quality', '88');
+  args.push(`${format}:${destPath}`);
+  await execFileAsync(binary, args, { windowsHide: true, maxBuffer: 1024 * 1024 * 4 });
 }
 
 class ImageThumbnailGenerator implements ThumbnailGenerator {
@@ -66,6 +99,9 @@ export class ThumbnailService {
   private taskQueue: Queue;
   private progress: Map<string, { total: number; completed: number }> = new Map();
   private wsServer: MiraWebsocketServer | null = null;
+  private readonly imageMagickPath: string | null;
+  private readonly ghostscriptPath: string | null;
+  private previewTasks = new Map<string, Promise<string>>();
 
   constructor() {
     this.taskQueue = new Queue({ concurrency: 5, autostart: true });
@@ -83,8 +119,29 @@ export class ThumbnailService {
       console.warn('ThumbnailService: ffmpeg not found. Set FFMPEG_PATH or install ffmpeg.');
     }
 
+    try {
+      this.imageMagickPath = process.env.IMAGEMAGICK_PATH || which.sync('magick');
+      console.log('ThumbnailService: ImageMagick found at', this.imageMagickPath);
+    } catch {
+      this.imageMagickPath = null;
+      console.warn('ThumbnailService: ImageMagick not found. Install ImageMagick to preview RAW/PSD/TIFF files.');
+    }
+
+    this.ghostscriptPath = ['gswin64c', 'gs'].map(name => {
+      try { return which.sync(name); } catch { return null; }
+    }).find(Boolean) || null;
+    if (!this.ghostscriptPath) {
+      console.warn('ThumbnailService: Ghostscript not found. PDF/EPS/AI thumbnails are disabled.');
+    }
+
     this.registerGenerator(new ImageThumbnailGenerator());
     this.registerGenerator(new VideoThumbnailGenerator());
+    if (this.imageMagickPath) {
+      const supportedExtensions = this.ghostscriptPath
+        ? IMAGE_MAGICK_EXTENSIONS
+        : IMAGE_MAGICK_EXTENSIONS.filter(ext => !GHOSTSCRIPT_EXTENSIONS.has(ext));
+      this.registerGenerator(new ImageMagickThumbnailGenerator(this.imageMagickPath, supportedExtensions));
+    }
   }
 
   setWebSocketServer(server: MiraWebsocketServer): void {
@@ -116,6 +173,31 @@ export class ThumbnailService {
     return [...this.generators];
   }
 
+  hasImageMagick(): boolean {
+    return this.imageMagickPath !== null;
+  }
+
+  async getPreviewPath(srcPath: string, cacheDir: string, cacheKey: string): Promise<string> {
+    if (!this.imageMagickPath) throw new Error('ImageMagick is not installed');
+    const stat = await fs.promises.stat(srcPath);
+    const extension = path.extname(srcPath).toLowerCase().slice(1);
+    if (GHOSTSCRIPT_EXTENSIONS.has(extension) && !this.ghostscriptPath) {
+      throw new Error('Ghostscript is required to preview PDF/EPS/AI files');
+    }
+    const key = crypto.createHash('sha256').update(`${cacheKey}:${stat.size}:${stat.mtimeMs}`).digest('hex');
+    const destPath = path.join(cacheDir, `${key}.webp`);
+    const existing = await fs.promises.stat(destPath).catch(() => null);
+    if (existing) return destPath;
+
+    const pending = this.previewTasks.get(destPath);
+    if (pending) return pending;
+    const task = runImageMagick(this.imageMagickPath, srcPath, destPath, 4096, 'webp')
+      .then(() => destPath)
+      .finally(() => this.previewTasks.delete(destPath));
+    this.previewTasks.set(destPath, task);
+    return task;
+  }
+
   private getGeneratorForFile(filePath: string): ThumbnailGenerator | null {
     const ext = path.extname(filePath).toLowerCase().slice(1);
     return this.extMap.get(ext) || null;
@@ -133,7 +215,8 @@ export class ThumbnailService {
         await generator.generate(filePath, thumbPath);
 
         if (fs.existsSync(thumbPath)) {
-          result.thumb = thumbPath;
+          // WebSocket 事件与文件列表接口统一广播可直接加载的缩略图 URL。
+          result.thumb = await dbService.getItemThumbPath(result, { isUrlFile: true });
           await dbService.updateFile(result.id, { thumb: 1 }); // return value unused
           console.log('Thumbnail generated:', thumbPath);
           this.wsServer?.broadcastLibraryEvent(libraryId, 'thumbnail::generated', result);

@@ -1,6 +1,8 @@
 import type { FileInfo } from '../../shared/types'
 import { environment } from './index'
 
+export const CONVERTED_IMAGE_EXTENSIONS = ['tif', 'tiff', 'psd', 'psb', 'heic', 'heif', 'cr2', 'cr3', 'nef', 'arw', 'dng', 'orf', 'rw2', 'raf', 'jp2', 'j2k', 'jpc', 'exr', 'hdr', 'tga', 'pcx', 'dds', 'dcm', 'dpx', 'fits', 'eps', 'ai', 'cur', 'xpm', 'xbm']
+
 /**
  * 文件处理工具函数
  */
@@ -42,9 +44,14 @@ export function toCacheBustedFileUrl(path: string | undefined, cacheKey?: string
 }
 
 export function getPreviewImageSource(image: FileInfo | undefined): string | undefined {
+  const extension = getFileExtension(image?.name || '')
+  const remoteSource = image?.path || image?.url
+  if (CONVERTED_IMAGE_EXTENSIONS.includes(extension) && remoteSource?.match(/^https?:\/\//)) {
+    return remoteSource.replace('/api/files/file/', '/api/files/preview/')
+  }
   // 网页端浏览器禁止访问 file://，跳过 localFile，统一走 HTTP path/url
   if (!environment.isElectron) {
-    return image?.path || image?.url
+    return remoteSource
   }
   return image?.localFile || image?.path || image?.url
 }
@@ -86,7 +93,7 @@ export function getFileExtension(filename: string): string {
 export function getFileType(filename: string): 'image' | 'video' | 'audio' | 'document' | 'other' {
   const ext = getFileExtension(filename)
   
-  const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'ico']
+  const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'ico', ...CONVERTED_IMAGE_EXTENSIONS]
   const videoExts = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv', '3gp']
   const audioExts = ['mp3', 'wav', 'flac', 'aac', 'ogg', 'wma', 'm4a']
   const documentExts = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'rtf']

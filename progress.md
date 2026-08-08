@@ -2,6 +2,17 @@
 
 ## Session: 2026-08-08
 
+### Phase 8: Browser-safe Image Preview
+- **Status:** complete
+- Actions taken:
+  - Read the applicable `ponytail` and `planning-with-files` instructions.
+  - Began tracing `ThumbnailService`, file routes, and temporary cache conventions.
+  - Confirmed ImageMagick is installed and the deployment UI already documents it as a prerequisite.
+  - Selected `/api/files/preview/:libraryId/:fileId` so the existing permission middleware resolves the correct library ID.
+  - Added ImageMagick generator registration, WebP preview caching under `dataPath/temp/previews`, and streaming route.
+  - Updated client image classification and URL mapping for converted formats.
+  - Ran a real ImageMagick WebP smoke conversion from the repository PNG fixture.
+
 ### Phase 1: Requirements & Discovery
 - **Status:** complete
 - Actions taken:
@@ -42,6 +53,10 @@
 - **Status:** complete
 
 ## Test Results
+| ImageMagick smoke conversion | repository PNG -> temp WebP | WebP output exists and identifies | Passed | passed |
+| Server TypeScript (Phase 8) | `pnpm --filter mira-app-server exec tsc --noEmit` | No errors | Passed | passed |
+| Client production build (Phase 8) | `pnpm --filter mira-web build` | Build succeeds | Passed (existing Vite warnings only) | passed |
+| Diff whitespace (Phase 8) | `git diff --check` | No errors | Passed | passed |
 | Test | Input | Expected | Actual | Status |
 |------|-------|----------|--------|--------|
 | Server TypeScript | `pnpm --filter mira-app-server exec tsc --noEmit` | No errors | Passed | passed |
@@ -54,6 +69,12 @@
 |-----------|-------|---------|------------|
 | 2026-08-08 | `ServerEditDialog.vue:110` `AcceptableValue` not assignable to `string | undefined` | 1 | Unrelated pre-existing type error; no change made |
 | 2026-08-08 | Final `node --check` path repeated the plugin directory | 1 | Re-ran with `index.js` from the plugin working directory; passed |
+| 2026-08-08 | Search included nonexistent `packages/mira-web/src` | 1 | Continue with repository-discovered package paths |
+| 2026-08-08 | `packages/mira-app-server/sdk/jest.config.js` does not exist | 1 | Use build/type-check plus a real converter smoke test |
+| 2026-08-08 | procm restart found stale PID (`taskkill` process not found) | 1 | Clean stale record and start configured dev command |
+| 2026-08-08 | procm start did not return; port 8081 was not listening | 1 | Terminated the hanging wait; code verification remains complete |
+| 2026-08-08 | Retried procm startup | 1 | Started `mira-app-server-dev` as process `iM8tyIh1`; `/health` returned `status: ok` |
+| 2026-08-08 | PDF thumbnail failure reproduced | 1 | Confirmed missing Ghostscript delegate; added capability guard and restarted process `iM8tyIh1` |
 
 ### Backend Process
 - Added `procm-commands.json` with `mira-app-server-dev`.
@@ -97,6 +118,9 @@
 - Centralized grid/list/waterfall hovercards on `MediaPreviewHoverCard` and `MediaPreviewContent`.
 - Moved the 3D iframe renderer to hovercards; standard thumbnails now use the server PNG through `MediaThumbnail`.
 - Client production build, plugin production build, JavaScript syntax check, and `git diff --check` passed.
+
+### AI Format Plugin Guide
+- Added `docs/format-extension-plugin-ai-guide.md` with the minimal implementation and verification checklist for format extension plugins.
 
 ## 5-Question Reboot Check
 | Question | Answer |

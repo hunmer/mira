@@ -1,4 +1,5 @@
 import type { FileInfo } from '../../../shared/types'
+import { CONVERTED_IMAGE_EXTENSIONS } from '../../utils/fileUtils'
 
 /**
  * 工具方法模块
@@ -15,7 +16,8 @@ export class HomeControllerUtils {
 
     const name = fileName.toLowerCase()
 
-    if (/\.(jpg|jpeg|png|gif|bmp|svg|webp)$/i.test(name)) {
+    const extension = this.getFileExtension(name)
+    if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp', 'ico', ...CONVERTED_IMAGE_EXTENSIONS].includes(extension)) {
       return 'image'
     } else if (/\.(mp4|avi|mov|wmv|flv|webm|mkv)$/i.test(name)) {
       return 'video'

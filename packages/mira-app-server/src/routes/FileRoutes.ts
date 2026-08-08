@@ -316,6 +316,37 @@ export class FileRoutes {
             }
         });
 
+        // 按需生成浏览器可展示的大图，结果只缓存到服务端 temp 目录
+        this.router.get('/preview/:libraryId/:fileId', async (req: Request, res: Response) => {
+            try {
+                const { libraryId, fileId } = req.params;
+                const obj = this.backend.libraries!.getLibrary(libraryId);
+                if (!obj) return res.status(404).send('Library not found');
+
+                const item = await obj.libraryService.getFile(parseInt(fileId, 10));
+                if (!item) return res.status(404).send('File not found');
+                const filePath = await obj.libraryService.getItemFilePath(item);
+                if (!filePath || !fs.existsSync(filePath)) return res.status(404).send('File not found');
+
+                const previewPath = await this.backend.thumbnailService.getPreviewPath(
+                    filePath,
+                    path.join(this.backend.dataPath, 'temp', 'previews'),
+                    `${libraryId}:${fileId}`,
+                );
+                const stat = await fs.promises.stat(previewPath);
+                res.setHeader('Content-Type', 'image/webp');
+                res.setHeader('Content-Length', stat.size);
+                res.setHeader('Cache-Control', 'private, max-age=86400');
+                fs.createReadStream(previewPath).on('error', (error) => {
+                    console.error('Preview stream error:', error);
+                    if (!res.headersSent) res.status(500).send('Preview stream error');
+                }).pipe(res);
+            } catch (err) {
+                console.error('Error generating preview:', err);
+                res.status(500).send('Preview generation failed');
+            }
+        });
+
         // 获取文件内容 - 支持 Range 请求
         this.router.get('/file/:libraryId/:id', async (req: Request, res: Response) => {
             const ret = await this.parseLibraryItem(req, res);

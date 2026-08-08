@@ -70,6 +70,49 @@ importers:
         specifier: ^2.2.0
         version: 2.2.12(typescript@5.7.3)
 
+  online_client_plugins/plugins/mira-spine-format-preview:
+    dependencies:
+      class-variance-authority:
+        specifier: ^0.7.1
+        version: 0.7.1
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      lucide-vue-next:
+        specifier: ^1.0.0
+        version: 1.0.0(vue@3.5.41(typescript@5.7.3))
+      reka-ui:
+        specifier: ^2.9.7
+        version: 2.10.1(vue@3.5.41(typescript@5.7.3))
+      tailwind-merge:
+        specifier: ^3.0.2
+        version: 3.0.2
+      vue:
+        specifier: ^3.5.17
+        version: 3.5.41(typescript@5.7.3)
+    devDependencies:
+      '@tailwindcss/vite':
+        specifier: ^4.0.17
+        version: 4.0.17(vite@6.4.2(@types/node@22.19.19)(jiti@2.7.0)(lightningcss@1.32.0)(stylus@0.57.0)(yaml@2.9.0))
+      '@vitejs/plugin-vue':
+        specifier: ^5.2.0
+        version: 5.2.4(vite@6.4.2(@types/node@22.19.19)(jiti@2.7.0)(lightningcss@1.32.0)(stylus@0.57.0)(yaml@2.9.0))(vue@3.5.41(typescript@5.7.3))
+      tailwindcss:
+        specifier: ^4.0.17
+        version: 4.0.17
+      tw-animate-css:
+        specifier: ^1.4.0
+        version: 1.4.0
+      typescript:
+        specifier: ^5.7.0
+        version: 5.7.3
+      vite:
+        specifier: ^6.1.0
+        version: 6.4.2(@types/node@22.19.19)(jiti@2.7.0)(lightningcss@1.32.0)(stylus@0.57.0)(yaml@2.9.0)
+      vue-tsc:
+        specifier: ^2.2.0
+        version: 2.2.12(typescript@5.7.3)
+
   online_client_plugins/plugins/mira-whiteboard:
     dependencies:
       '@woven-canvas/core':

@@ -26,7 +26,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import { getFileTypeIcon } from '@renderer/utils/fileUtils'
+import { getFileTypeIcon, toFileUrl } from '@renderer/utils/fileUtils'
 import { getExtIconUrl } from '@renderer/utils/extIconHelper'
 import type { FileInfo } from '../../../shared/types'
 import { getPluginFileFormat } from '@renderer/plugins/instanceManager'
@@ -63,15 +63,6 @@ let customCleanup: (() => void) | void
 const customFormat = computed(() => props.file ? getPluginFileFormat(props.file) : undefined)
 const shouldRenderCustom = computed(() => Boolean(customFormat.value?.renderThumbnail))
 
-function toFileUrl(path: string): string {
-  if (!path) return ''
-  if (/^(https?|file):/.test(path)) return path
-  const normalized = path.replace(/\\/g, '/')
-  if (/^[a-zA-Z]:/.test(normalized)) return `file:///${normalized}`
-  if (normalized.startsWith('//')) return `file:${normalized}`
-  return `file://${normalized}`
-}
-
 watch(() => props.src, (src) => {
   currentSrc.value = src
   hasError.value = false
@@ -81,6 +72,7 @@ function onThumbnailUpdate(event: Event) {
   const { fileId, thumbPath } = (event as CustomEvent).detail
   if (fileId === props.fileId && thumbPath) {
     const url = toFileUrl(thumbPath)
+    if (!url) return
     currentSrc.value = `${url}${url.includes('?') ? '&' : '?'}_t=${Date.now()}`
     hasError.value = false
   }

@@ -3,7 +3,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { api as viewerApi } from 'v-viewer'  // 保留备用，现在主要使用内嵌组件
 import 'viewerjs/dist/viewer.css'
 import { useMediaStore } from '../stores/media'
-import { getPreviewImageSource } from '../utils/fileUtils'
+import { CONVERTED_IMAGE_EXTENSIONS, getPreviewImageSource } from '../utils/fileUtils'
 import type { FileInfo } from '../../shared/types'
 
 export class ImagePreviewController {
@@ -159,7 +159,8 @@ export class ImagePreviewController {
     
     const name = fileName.toLowerCase()
     
-    if (/\.(jpg|jpeg|png|gif|bmp|svg|webp)$/i.test(name)) {
+    const extension = name.slice(name.lastIndexOf('.') + 1)
+    if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp', 'ico', ...CONVERTED_IMAGE_EXTENSIONS].includes(extension)) {
       return 'image'
     } else if (/\.(mp4|avi|mov|wmv|flv|webm|mkv)$/i.test(name)) {
       return 'video'

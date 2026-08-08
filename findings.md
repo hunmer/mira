@@ -53,3 +53,16 @@
 - The existing `MediaPreviewContent.vue` is the shared hovercard content boundary; adding `renderHoverCard` there keeps plugin-specific DOM lifecycle centralized.
 - Grid, list, and waterfall views had duplicate image-only hovercard markup and now use `MediaPreviewHoverCard.vue`.
 - The 3D plugin only registers `renderHoverCard`; normal thumbnails stay on the host image pipeline and use server-generated PNG files.
+
+## Browser-safe Image Preview
+- `ThumbnailService` currently registers FFmpeg generators only for common browser images and videos.
+- Unsupported image extensions have no generator, so create/scan paths skip them entirely.
+- Existing generated thumbnails are PNG files under the library `thumbs` directory.
+- `FileRoutes` already uses `<backend.dataPath>/temp`; the preview cache should reuse that backend temp root and remain outside the asset library.
+- The working tree contains unrelated/user changes in plugin catalog and documentation; preserve them.
+- ImageMagick 7.1.2 is installed locally as `magick.exe`; deployment UI already instructs users to install ImageMagick.
+- Existing file endpoints stream with `fs.createReadStream` and are protected by the common `/api` middleware.
+- Use `/api/files/preview/:libraryId/:fileId`, not an `:id` file parameter: the current permission extractor checks `params.id` before `params.libraryId`, so a second `:id` would interfere with library-role lookup.
+- No ImageMagick Node dependency exists or is needed; Node `child_process.execFile` can invoke the installed CLI safely without shell interpolation.
+- PDF conversion reproduced the reported `PDFDelegateFailed` error. `gswin64c`, `gswin32c`, `gs`, `pdftoppm`, `mutool`, and `pdftocairo` are unavailable as usable system commands; ImageMagick policy is not the cause.
+- Thumbnail startup now excludes PDF/EPS/AI when Ghostscript is absent, while the on-demand preview API returns an explicit Ghostscript-required error for those extensions.

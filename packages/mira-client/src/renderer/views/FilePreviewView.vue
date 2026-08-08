@@ -39,6 +39,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { miraSDKService } from '../services/MiraSDKService'
 import { useViewHistoryStore } from '../stores/viewHistory'
+import { CONVERTED_IMAGE_EXTENSIONS } from '../utils/fileUtils'
 
 // 导入预览组件
 import ImagePreview from '../components/preview/ImagePreview.vue'
@@ -63,7 +64,7 @@ const previewComponent = computed(() => {
   const extension = getFileExtension(fileInfo.value.name || fileInfo.value.title || '')
 
   // 图片文件
-  if (mimeType.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(extension)) {
+  if (mimeType.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'ico', ...CONVERTED_IMAGE_EXTENSIONS].includes(extension)) {
     return ImagePreview
   }
 

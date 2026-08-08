@@ -1,0 +1,5 @@
+{
+  "animation": "idle",
+  "fallbackToDefault": true,
+  "timeoutMs": 120000
+}

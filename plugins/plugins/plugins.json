@@ -43,5 +43,10 @@
     "name": "mira_3d_format",
     "enabled": true,
     "path": "mira_3d_format"
+  },
+  {
+    "name": "mira_spine_format",
+    "enabled": false,
+    "path": "mira_spine_format"
   }
 ]

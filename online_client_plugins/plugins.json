@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-08T07:24:38.222Z",
+  "generatedAt": "2026-08-08T08:17:07.434Z",
   "plugins": [
     {
       "pluginId": "d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70",
@@ -62,6 +62,84 @@
           "path": "dist/assets/index-BfDU9UVV.css",
           "size": 40073,
           "checksum": "sha256:9fe1be6e20fa7e4c537ea4eba66ea8afd3fd60da1105c2ca62246ec20fd427b1"
+        }
+      ]
+    },
+    {
+      "pluginId": "e5f6a7b8-c9d0-4e1f-8a2b-3c4d5e6f7081",
+      "pluginName": "Spine 格式预览",
+      "version": "1.0.0",
+      "description": "为 Spine 3.8 .skel 文件提供可交互的骨骼动画预览（骨骼树查看/显隐、动画切换、皮肤切换），缩略图由服务端渲染 idle 首帧。",
+      "author": "Mira Team",
+      "homepage": "https://github.com/mira-team/mira-spine-format-preview",
+      "category": "development",
+      "tags": [
+        "Spine",
+        "skel",
+        "骨骼动画",
+        "预览"
+      ],
+      "minAppVersion": "1.0.0",
+      "platform": [
+        "win32",
+        "darwin",
+        "linux"
+      ],
+      "directory": "plugins/mira-spine-format-preview",
+      "icon": null,
+      "readme": null,
+      "size": 1402902,
+      "checksum": "sha256:a44e4148eba1d22c3f8af5d98ad364f758a67102a7af2f4c6b5f562b76d0305b",
+      "files": [
+        {
+          "path": "public/vendor/pixi-spine-3.8-4.0.6.js",
+          "size": 148206,
+          "checksum": "sha256:60c6a0f32d6b391015c2fff0c112c89ab3823aa495d79483fee59bcf2035f3ef"
+        },
+        {
+          "path": "public/vendor/pixi-7.3.3.min.js",
+          "size": 454845,
+          "checksum": "sha256:97f839f755b300177d6fc61903d1bb50c0f101687c88c4b3a9e94f68059286df"
+        },
+        {
+          "path": "plugin.json",
+          "size": 717,
+          "checksum": "sha256:4935684548dc3f03371bd23ae11cecbe31a9b2d2574c44295b8f6f896d0b53f9"
+        },
+        {
+          "path": "package.json",
+          "size": 677,
+          "checksum": "sha256:5c013a0e5b9e79de44dcabe89de8b5ebce83bf545baf0672a57b61cd3cb59cfe"
+        },
+        {
+          "path": "index.js",
+          "size": 5734,
+          "checksum": "sha256:be2f0a33e240d97be1a7f65777ea0eb3532b8d88f6b8b41dbcfbb04ee59cfa76"
+        },
+        {
+          "path": "dist/vendor/pixi-spine-3.8-4.0.6.js",
+          "size": 148206,
+          "checksum": "sha256:60c6a0f32d6b391015c2fff0c112c89ab3823aa495d79483fee59bcf2035f3ef"
+        },
+        {
+          "path": "dist/vendor/pixi-7.3.3.min.js",
+          "size": 454845,
+          "checksum": "sha256:97f839f755b300177d6fc61903d1bb50c0f101687c88c4b3a9e94f68059286df"
+        },
+        {
+          "path": "dist/index.html",
+          "size": 708,
+          "checksum": "sha256:feba503da9a54e035f6a2c88416657584a0bff4bb6d9369347e8d27d428a4271"
+        },
+        {
+          "path": "dist/assets/index-D8CAFAQM.css",
+          "size": 29775,
+          "checksum": "sha256:a13188c6e9741d0de1f9847cb5f95f51b8583d4473f7683e2350473427c14cf2"
+        },
+        {
+          "path": "dist/assets/index-CBGGs_S3.js",
+          "size": 159189,
+          "checksum": "sha256:e591f2217794836554c3508dfbc1ab638faa4fb3c2e25059b93c0ab902efb6ff"
         }
       ]
     },
