@@ -1,44 +1,35 @@
 <template>
   <div class="video-preview-view bg-muted dark:bg-muted h-screen flex flex-col text-[13px]">
     <!-- 顶部工具栏 -->
-    <header class="flex h-16 flex-shrink-0 items-center justify-between border-b border-border dark:border-border bg-white dark:bg-muted px-6">
-      <div class="flex items-center space-x-4">
-        <button
-          class="rounded-full p-2 hover:bg-muted dark:hover:bg-muted"
-          @click="controller.goBack"
-        >
-          <span class="material-icons text-muted-foreground dark:text-muted-foreground">arrow_back</span>
-        </button>
+    <PreviewHeader :file-info="controller.currentVideo.value || {}">
+      <template #left-extra>
         <div class="flex items-center space-x-2">
-          <span class="text-lg font-semibold text-foreground dark:text-muted-foreground">{{ controller.currentVideo.value?.name || 'Unknown Video' }}</span>
-          <div class="flex items-center space-x-2">
-            <span class="inline-flex items-center rounded-md bg-muted dark:bg-muted px-2 py-1 text-xs font-medium text-muted-foreground dark:text-muted-foreground">
-              <span class="material-symbols-outlined text-sm mr-1">folder</span>
-              {{ controller.currentVideo.value?.folderId || '/Videos' }}
-            </span>
-            <span
-              v-for="tag in controller.currentVideo.value?.tags"
-              :key="tag"
-              class="inline-flex items-center rounded-md bg-primary dark:bg-primary/30 px-2 py-1 text-xs font-medium text-primary dark:text-primary"
-            >
-              <span class="material-symbols-outlined text-sm mr-1">label</span>
-              {{ tag }}
-            </span>
-          </div>
+          <span class="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
+            <span class="material-symbols-outlined text-sm mr-1">folder</span>
+            {{ controller.currentVideo.value?.folderId || '/Videos' }}
+          </span>
+          <span
+            v-for="tag in controller.currentVideo.value?.tags"
+            :key="tag"
+            class="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
+          >
+            <span class="material-symbols-outlined text-sm mr-1">label</span>
+            {{ tag }}
+          </span>
         </div>
-      </div>
-      <div class="flex items-center space-x-2">
-        <button class="rounded-full p-2 hover:bg-muted dark:hover:bg-muted">
-          <span class="material-symbols-outlined text-muted-foreground dark:text-muted-foreground">more_horiz</span>
+      </template>
+      <template #right-actions>
+        <button class="flex h-9 w-9 items-center justify-center rounded-full hover:bg-muted">
+          <span class="material-symbols-outlined text-muted-foreground">more_horiz</span>
         </button>
         <button
-          class="rounded-full p-2 hover:bg-muted dark:hover:bg-muted"
+          class="flex h-9 w-9 items-center justify-center rounded-full hover:bg-muted"
           @click="controller.closePreview"
         >
-          <span class="material-icons text-muted-foreground dark:text-muted-foreground">close</span>
+          <span class="material-icons text-muted-foreground">close</span>
         </button>
-      </div>
-    </header>
+      </template>
+    </PreviewHeader>
 
     <!-- 主内容区域 -->
     <div class="flex flex-grow overflow-hidden">
@@ -104,6 +95,7 @@ import { onMounted, onUnmounted } from 'vue'
 import VideoThumbnailListComponent from '../business/VideoThumbnailListComponent.vue'
 import VideoPlayerComponent from '../business/VideoPlayerComponent.vue'
 import VideoFileInfoComponent from '../business/VideoFileInfoComponent.vue'
+import PreviewHeader from './PreviewHeader.vue'
 import { useVideoPreviewController } from '../../controllers/VideoPreviewController'
 
 // 使用控制器

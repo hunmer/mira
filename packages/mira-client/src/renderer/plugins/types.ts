@@ -125,10 +125,14 @@ export interface PluginMediaContextMenu {
 export interface PluginFileFormat {
   id: string
   pluginId: string
+  title?: string
+  icon?: string
+  openByDefault?: boolean
   extensions?: string[]
   mimeTypes?: string[]
   renderThumbnail?: (container: HTMLElement, file: FileInfo) => (() => void) | void
   renderHoverCard?: (container: HTMLElement, file: FileInfo) => (() => void) | void
+  getPreviewUrl?: (file: FileInfo) => string | Promise<string>
   open?: (file: FileInfo) => boolean | void | Promise<boolean | void>
 }
 
@@ -174,6 +178,7 @@ export interface PluginSystemAPI {
     register: (format: PluginFileFormat) => () => void
     unregister: (id: string) => void
     getForFile: (file: FileInfo) => PluginFileFormat | undefined
+    getAllForFile: (file: FileInfo) => PluginFileFormat[]
     getAll: () => PluginFileFormat[]
   }
 }

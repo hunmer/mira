@@ -1,4 +1,5 @@
 import { ref, computed, watch, toRef, onBeforeUnmount } from 'vue'
+import { useRouter } from 'vue-router'
 import type { FileInfo } from '../../../../../shared/types'
 import type { MenuItem } from '@/renderer/types/menu'
 import { appService } from '@renderer/services'
@@ -9,6 +10,7 @@ import { useMediaStore } from '@renderer/stores/media'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { runBatchOperation } from '@renderer/composables/useBatchOperation'
 import { copyToClipboard } from '@renderer/utils/helpers'
+import { getPluginFileFormats } from '@renderer/plugins/instanceManager'
 
 interface UseContextMenuProps {
   selectedItems: string[]
@@ -26,6 +28,7 @@ interface UseContextMenuEmits {
 }
 
 export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuEmits) {
+  const router = useRouter()
   const currentContextItem = ref<FileInfo | null>(null)
   const folderPopoverOpen = ref(false)
   const tagPopoverOpen = ref(false)
@@ -120,6 +123,31 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
     })
   }
 
+  const openFileInNewWindow = (item: FileInfo) => {
+    const query = new URLSearchParams({
+      id: String(item.id),
+      libraryId: String(item.libraryId || libraryStore.currentLibrary?.id || ''),
+      title: item.name || '',
+      path: item.path || item.url || '',
+      mimeType: item.mimeType || '',
+    })
+    const url = new URL(window.location.href)
+    url.hash = `/file-preview?${query}`
+    if (appService.isElectron) {
+      void window.electronAPI?.invoke('window:open-url', url.href, {
+        width: 1280,
+        height: 800,
+        title: item.name || '文件预览',
+      }).then((result) => {
+        if (!result?.success) console.warn('[media-preview] 新窗口打开失败:', result?.message)
+      }).catch((error) => console.warn('[media-preview] 新窗口打开失败:', error))
+    } else {
+      if (!window.open(url.href, '_blank', 'noopener,noreferrer')) {
+        console.warn('[media-preview] 新标签页被浏览器拦截')
+      }
+    }
+  }
+
   // 插件回调跨 IPC 传递时必须是普通可克隆对象，不能把 Vue reactive Proxy 传出去。
   const getSerializableTargetFiles = (): FileInfo[] => {
     const files = getTargetFiles()
@@ -160,6 +188,35 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
       })
     }
     return Array.from(groups.values()).map((group: any) => ({ ...group, items: group.items }))
+  })
+
+  const openWithItems = computed((): MenuItem[] => {
+    void menuVersion.value
+    const file = currentContextItem.value
+    if (!file) return []
+    return getPluginFileFormats(file)
+      .filter(format => format.getPreviewUrl || format.open)
+      .map(format => ({
+        label: format.title || '插件',
+        icon: format.icon || 'extension',
+        command: () => runWithCurrentItem(async item => {
+          if (format.getPreviewUrl) {
+            await router.push({
+              path: '/file-preview',
+              query: {
+                id: String(item.id),
+                libraryId: String(item.libraryId || libraryStore.currentLibrary?.id || ''),
+                title: item.name || '',
+                path: item.path || item.url || '',
+                mimeType: item.mimeType || '',
+                viewer: format.id,
+              },
+            })
+            return
+          }
+          await format.open?.(item)
+        }),
+      }))
   })
 
   const contextMenuItems = computed((): MenuItem[] => {
@@ -223,6 +280,16 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
         label: '复制文件信息JSON',
         command: () => runWithCurrentItem((item) => copyFileInfoJSON(item))
       },
+      {
+        label: '新窗口打开',
+        icon: 'open_in_new',
+        command: () => runWithCurrentItem((item) => openFileInNewWindow(item))
+      },
+      ...(openWithItems.value.length ? [{
+        label: '其他打开方式',
+        icon: 'open_with',
+        items: openWithItems.value,
+      }] : []),
       {
         separator: true
       },

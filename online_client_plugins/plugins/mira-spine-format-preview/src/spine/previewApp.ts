@@ -1,5 +1,5 @@
 /**
- * SpinePreviewApp：Spine 展示节点的轻量 PIXI 渲染封装（仅 3.8）。
+ * SpinePreviewApp：Spine 展示节点的轻量 PIXI 渲染封装（4.2）。
  *
  * 从 game-asset-canvas 的 SpinePreviewApp.js 移植：
  *   init / setSpine / setAnimation / setSkin / setPlaybackSpeed / play|pause / _onTick / fitView / destroy
@@ -9,7 +9,7 @@
  *   - 用 TS 类型（PIXI/spine 为 any）
  *   - fitView 内联（不依赖 ViewUtils.calculateFitTransform）
  */
-import { PIXI } from './runtime'
+import { PIXI, updateWorldTransform } from './runtime'
 
 /** 把 spine bounds 适配进画布的缩放/平移 */
 function calculateFitTransform(
@@ -174,7 +174,7 @@ export class SpinePreviewApp {
     if (!this.spine) return
     this.spine.skeleton.setSkinByName(name)
     this.spine.skeleton.setSlotsToSetupPose()
-    this.spine.skeleton.updateWorldTransform()
+    updateWorldTransform(this.spine.skeleton)
   }
 
   /** 渲染循环：playing 时推进动画 state */
@@ -182,7 +182,7 @@ export class SpinePreviewApp {
     const dt = this.app.ticker.deltaMS / 1000
     if (this.spine) {
       if (this.playing) this.spine.update(dt)
-      else this.spine.skeleton.updateWorldTransform()
+      else updateWorldTransform(this.spine.skeleton)
       this.spineContainer.updateTransform()
     }
   }

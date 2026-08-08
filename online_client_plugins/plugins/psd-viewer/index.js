@@ -3,8 +3,8 @@
  * PSD 分层预览插件入口（IIFE）。
  *
  * 职责：
- * 1. 注册 .psd / .psb 文件格式（renderHoverCard 用 iframe 加载本地分层预览；
- *    open 打开独立窗口完整预览）。
+ * 1. 注册 .psd / .psb 文件格式（renderHoverCard 用 iframe 加载悬停预览；
+ *    getPreviewUrl 由宿主 IframePreview 加载完整预览）。
  * 2. PSD 二进制由 iframe 内 fetch 主文件 URL（file.path 已带 token）后交给 ag-psd 解析。
  *
  * 注意：FileInfo.path 由 MiraSDKService 构建为带 token 的完整可 fetch URL；
@@ -36,6 +36,17 @@
       if (v !== undefined && v !== null && v !== '') usp.set(k, String(v))
     }
     return usp.toString()
+  }
+
+  function getPreviewUrl(file) {
+    if (!pluginBaseUrl) return ''
+    const viewerUrl = new URL('dist/index.html', pluginBaseUrl)
+    viewerUrl.search = buildQuery({
+      fileId: String(file.id || ''),
+      psdUrl: resolvePsdUrl(file),
+      fileName: file.name || 'PSD',
+    })
+    return viewerUrl.toString()
   }
 
   function mountHoverCard(container, file, api) {
@@ -117,30 +128,13 @@
       const { api } = this.context
       const unregister = api.media.registerFileFormat({
         id: 'mira-psd',
+        title: 'PSD 分层预览',
+        icon: 'layers',
+        openByDefault: false,
         extensions: ['psd', 'psb'],
         mimeTypes: ['image/vnd.adobe.photoshop'],
+        getPreviewUrl,
         renderHoverCard: (container, file) => mountHoverCard(container, file, api),
-        open: async (file) => {
-          try {
-            const psdUrl = resolvePsdUrl(file)
-            if (!psdUrl) throw new Error('PSD 文件 URL 不可用')
-            await api.window.openPluginWindow({
-              pluginId: PLUGIN_ID,
-              entry: 'dist/index.html',
-              title: `PSD 预览 - ${file.name || '文件'}`,
-              width: 1280,
-              height: 820,
-              query: {
-                psdUrl,
-                fileName: file.name || 'PSD',
-              },
-            })
-          } catch (error) {
-            api.log.error('PSD preview open failed', error)
-            api.ui.showNotification(error?.message || 'PSD 预览打开失败', 'error')
-          }
-          return true
-        },
       })
       registrations.push(unregister)
       api.log.info('PSD viewer registered for .psd/.psb (ag-psd, browser-local)')

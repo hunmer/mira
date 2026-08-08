@@ -6,7 +6,7 @@
   "index": "index.js",
   "tags": ["Spine", "skel", "骨骼动画", "预览"],
   "category": "development",
-  "description": "为 Spine 3.8 .skel 文件提供可交互的骨骼动画预览（骨骼树查看/显隐、动画切换、皮肤切换），缩略图由服务端渲染 idle 首帧。",
+  "description": "为 Spine 4.2 .skel/.spine 文件提供可交互的骨骼动画预览（骨骼树查看/显隐、动画切换、皮肤切换），缩略图由服务端渲染 idle 首帧。",
   "author": "Mira Team",
   "homepage": "https://github.com/mira-team/mira-spine-format-preview",
   "enable": true,

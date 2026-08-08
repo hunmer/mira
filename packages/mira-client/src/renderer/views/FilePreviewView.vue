@@ -47,7 +47,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { miraSDKService } from '../services/MiraSDKService'
 import { useViewHistoryStore } from '../stores/viewHistory'
 import { AUDIO_EXTENSIONS, CONVERTED_IMAGE_EXTENSIONS, VIDEO_EXTENSIONS } from '../utils/fileUtils'
-import { getPluginFileFormat } from '../plugins/instanceManager'
+import { getPluginFileFormat, getPluginFileFormats } from '../plugins/instanceManager'
 
 // 导入预览组件
 import ImagePreview from '../components/preview/ImagePreview.vue'
@@ -65,28 +65,21 @@ const error = ref('')
 const fileInfo = ref<any>(null)
 const viewHistoryStore = useViewHistoryStore()
 
-const pluginPreviewUrl = computed(() => {
-  const file = fileInfo.value
-  if (!file) return ''
-  const extension = getFileExtension(file.name || file.title || '')
-  if (!['glb', 'gltf'].includes(extension)) return ''
-  const format = getPluginFileFormat(file)
-  const info = format?.pluginId ? (window as any).pluginSystem?.getPlugin?.(format.pluginId) : undefined
-  const base = info?.config?.url || info?.config?.actualDirectory
-  if (!base) return ''
+const pluginPreviewUrl = ref('')
+
+const refreshPluginPreviewUrl = async (file: any): Promise<void> => {
+  pluginPreviewUrl.value = ''
+  const viewerId = route.query.viewer as string | undefined
+  const format = file
+    ? getPluginFileFormats(file).find(item => item.id === viewerId) || getPluginFileFormat(file)
+    : undefined
+  if (!format?.getPreviewUrl) return
   try {
-    const url = new URL(`${String(base).replace(/\/+$/, '')}/dist/index.html`)
-    // 详情页使用完整 viewer，不能传 embed=1（该模式会隐藏场景/材质/动画面板）。
-    url.searchParams.delete('embed')
-    url.searchParams.set('fileUrl', String(file.path || file.url || ''))
-    url.searchParams.set('fileName', String(file.name || file.title || '3D model'))
-    url.searchParams.set('mimeType', String(file.mimeType || ''))
-    url.searchParams.set('fileId', String(file.id || ''))
-    return url.href
-  } catch {
-    return ''
+    pluginPreviewUrl.value = await format.getPreviewUrl(file)
+  } catch (error) {
+    console.warn('插件预览地址生成失败:', error)
   }
-})
+}
 
 // 计算属性：根据文件类型选择预览组件
 const previewComponent = computed(() => {
@@ -176,6 +169,8 @@ const loadFileInfo = async (): Promise<void> => {
       console.warn('SDK获取文件信息失败，使用基础信息:', sdkError)
       fileInfo.value = baseFileInfo
     }
+
+    await refreshPluginPreviewUrl(fileInfo.value)
 
     // 记录浏览历史（仅成功加载的预览留痕），异常时静默忽略，不影响预览主流程
     try {

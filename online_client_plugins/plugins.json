@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-08T12:00:07.813Z",
+  "generatedAt": "2026-08-08T12:49:31.529Z",
   "plugins": [
     {
       "pluginId": "d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70",
@@ -25,8 +25,8 @@
       "directory": "plugins/mira-3d-format-preview",
       "icon": null,
       "readme": "README.md",
-      "size": 1149732,
-      "checksum": "sha256:654077976b3ce8027e92c1ff5fa867940e6be8e9e6d08d3c28af3ab802a7829c",
+      "size": 1150222,
+      "checksum": "sha256:abec2dfb8024cf120be32d39abce3610a8bfb073ff5de943f34c1d44c2f0bc0d",
       "files": [
         {
           "path": "README.md",
@@ -45,8 +45,8 @@
         },
         {
           "path": "index.js",
-          "size": 4468,
-          "checksum": "sha256:dacb8c6a89ff128dd46db27a70f6ec53b109583852e8579b9f606c95404bd4ba"
+          "size": 4958,
+          "checksum": "sha256:ec8283db1f0d1783d55c0f7fc28da604fcfdc86e2609b385188f28edd3c70b47"
         },
         {
           "path": "dist/index.html",
@@ -69,7 +69,7 @@
       "pluginId": "e5f6a7b8-c9d0-4e1f-8a2b-3c4d5e6f7081",
       "pluginName": "Spine 格式预览",
       "version": "1.0.0",
-      "description": "为 Spine 3.8 .skel 文件提供可交互的骨骼动画预览（骨骼树查看/显隐、动画切换、皮肤切换），缩略图由服务端渲染 idle 首帧。",
+      "description": "为 Spine 4.2 .skel/.spine 文件提供可交互的骨骼动画预览（骨骼树查看/显隐、动画切换、皮肤切换），缩略图由服务端渲染 idle 首帧。",
       "author": "Mira Team",
       "homepage": "https://github.com/mira-team/mira-spine-format-preview",
       "category": "development",
@@ -88,13 +88,13 @@
       "directory": "plugins/mira-spine-format-preview",
       "icon": null,
       "readme": null,
-      "size": 1414575,
-      "checksum": "sha256:1def3aa4dc50d2256f1a8c35b98c0ab5f5795b76a224668174d4b47f1b986297",
+      "size": 1494262,
+      "checksum": "sha256:3f1bb39658a236a7c5dc969de71dcd1a5b479dc97df0095fecb9d185c43fdcf4",
       "files": [
         {
-          "path": "public/vendor/pixi-spine-3.8-4.0.6.js",
-          "size": 148206,
-          "checksum": "sha256:60c6a0f32d6b391015c2fff0c112c89ab3823aa495d79483fee59bcf2035f3ef"
+          "path": "public/vendor/spine-pixi-v7-4.2.63.min.js",
+          "size": 187895,
+          "checksum": "sha256:0ffc0699e0392085d15338aa8d543a621711f06857fde337ec8d895e1e8bce15"
         },
         {
           "path": "public/vendor/pixi-7.3.3.min.js",
@@ -103,23 +103,23 @@
         },
         {
           "path": "plugin.json",
-          "size": 717,
-          "checksum": "sha256:4935684548dc3f03371bd23ae11cecbe31a9b2d2574c44295b8f6f896d0b53f9"
+          "size": 724,
+          "checksum": "sha256:adede3d9cc5fc47ea93b16cf3a8072318e6a8d4b23d60d272d318e9ad0e71087"
         },
         {
           "path": "package.json",
           "size": 677,
-          "checksum": "sha256:5c013a0e5b9e79de44dcabe89de8b5ebce83bf545baf0672a57b61cd3cb59cfe"
+          "checksum": "sha256:81b1aa0b1d0f4a88f37b77159b1282b7f5ba99c09eea5e71689ecdffcb0e267b"
         },
         {
           "path": "index.js",
-          "size": 7404,
-          "checksum": "sha256:174c0cbd83181788e453e68dbedbe6cbb5fdd6b05ddc978a21bf5b544ed5a933"
+          "size": 7115,
+          "checksum": "sha256:2053108aaf2c223fc7befe5fa1c80f1403d2791e9ff75329515d28457ce0bf53"
         },
         {
-          "path": "dist/vendor/pixi-spine-3.8-4.0.6.js",
-          "size": 148206,
-          "checksum": "sha256:60c6a0f32d6b391015c2fff0c112c89ab3823aa495d79483fee59bcf2035f3ef"
+          "path": "dist/vendor/spine-pixi-v7-4.2.63.min.js",
+          "size": 187895,
+          "checksum": "sha256:0ffc0699e0392085d15338aa8d543a621711f06857fde337ec8d895e1e8bce15"
         },
         {
           "path": "dist/vendor/pixi-7.3.3.min.js",
@@ -128,18 +128,18 @@
         },
         {
           "path": "dist/index.html",
-          "size": 708,
-          "checksum": "sha256:96a54b86543a1c2e067e161fc3155e1aac0f5a40809d26f6f9522c3a5b284bd2"
+          "size": 701,
+          "checksum": "sha256:e2773abe99a9a94161944d09bf7ccfb2544a3d62b22df6ff7171d0dd0d506434"
+        },
+        {
+          "path": "dist/assets/index-DJWFR0FL.js",
+          "size": 159787,
+          "checksum": "sha256:a5db39dbb7400d2f7b68f33ef4dcb6ca9d907a4064bc4e044c772ceedcb299c1"
         },
         {
           "path": "dist/assets/index-Df3vIJ2v.css",
           "size": 39778,
           "checksum": "sha256:e9e1cdab8a932e6a27df0c958525a6833bf1ac4196d2af1b67a0e794c5f1e6ac"
-        },
-        {
-          "path": "dist/assets/index-CZvzTFST.js",
-          "size": 159189,
-          "checksum": "sha256:e591f2217794836554c3508dfbc1ab638faa4fb3c2e25059b93c0ab902efb6ff"
         }
       ]
     },
@@ -287,8 +287,8 @@
       "directory": "plugins/psd-viewer",
       "icon": null,
       "readme": "README.md",
-      "size": 548197,
-      "checksum": "sha256:e0461de1303eb5f019bdbe597c5d80b573afbf7e4f46f08c6f420711b15eae0b",
+      "size": 547893,
+      "checksum": "sha256:0a17b293ef0e0f3971859ade7e406425d3ab55a093c6bc0796b25d66b7e4929d",
       "files": [
         {
           "path": "README.md",
@@ -307,8 +307,8 @@
         },
         {
           "path": "index.js",
-          "size": 5733,
-          "checksum": "sha256:e1817dfc18b4c66c9d6fe95ed7bf72357a64113ce654ec4f81a66d94a3797156"
+          "size": 5429,
+          "checksum": "sha256:27a733e862a1a60ad5208e4f841263159cf776f058a9fa2aa45572a006ea9c57"
         },
         {
           "path": "dist/index.html",

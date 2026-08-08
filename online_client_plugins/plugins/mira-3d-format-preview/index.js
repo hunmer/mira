@@ -79,6 +79,16 @@
     }
   }
 
+  function getPreviewUrl(file) {
+    if (!pluginBaseUrl) return ''
+    const viewerUrl = new URL('dist/index.html', pluginBaseUrl)
+    viewerUrl.searchParams.set('fileUrl', toPreviewUrl(file.url || file.path || file.localFile || ''))
+    viewerUrl.searchParams.set('fileName', file.name || '3D model')
+    viewerUrl.searchParams.set('mimeType', file.mimeType || '')
+    viewerUrl.searchParams.set('fileId', String(file.id || ''))
+    return viewerUrl.toString()
+  }
+
   class ThreeFormatPreviewPlugin {
     constructor(context) {
       this.context = context
@@ -90,6 +100,7 @@
         id: 'mira-3d-model',
         extensions: ['glb', 'gltf'],
         mimeTypes: ['model/gltf-binary', 'model/gltf+json'],
+        getPreviewUrl,
         renderHoverCard: mountHoverCard,
         open: (file) => {
           const w = window.electronAPI

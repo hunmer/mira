@@ -4,7 +4,7 @@ declare module '*.vue' {
   export default component
 }
 
-// PIXI / pixi-spine 由 index.html 的 UMD <script> 注入到 window
+// PIXI / Spine 4.2 由 index.html 的 UMD <script> 注入到 window
 declare global {
   interface Window {
     PIXI: any

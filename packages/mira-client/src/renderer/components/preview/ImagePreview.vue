@@ -1,38 +1,29 @@
 <template>
   <div class="image-preview-view bg-muted h-screen flex flex-col text-[13px]">
     <!-- 顶部工具栏 -->
-    <header class="flex h-16 flex-shrink-0 items-center justify-between border-b border-border bg-background px-6">
-      <div class="flex items-center space-x-4">
-        <button
-          class="flex h-9 w-9 items-center justify-center rounded-full hover:bg-muted"
-          @click="controller.goBack"
-        >
-          <span class="material-icons text-muted-foreground">arrow_back</span>
-        </button>
+    <PreviewHeader :file-info="controller.currentImage.value || {}">
+      <template #left-extra>
         <div class="flex items-center space-x-2">
-          <span class="text-lg font-semibold text-foreground">{{ controller.currentImage.value?.name || 'Loading...' }}</span>
-          <div class="flex items-center space-x-2">
-            <span class="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
-              <span class="material-symbols-outlined text-sm mr-1">folder</span>
-              {{ controller.currentImage.value?.folderId || '/Pictures' }}
-            </span>
-            <span 
-              v-for="tag in controller.currentImage.value?.tags"
-              :key="tag"
-              class="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
-            >
-              <span class="material-symbols-outlined text-sm mr-1">label</span>
-              {{ tag }}
-            </span>
-          </div>
+          <span class="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
+            <span class="material-symbols-outlined text-sm mr-1">folder</span>
+            {{ controller.currentImage.value?.folderId || '/Pictures' }}
+          </span>
+          <span
+            v-for="tag in controller.currentImage.value?.tags"
+            :key="tag"
+            class="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
+          >
+            <span class="material-symbols-outlined text-sm mr-1">label</span>
+            {{ tag }}
+          </span>
         </div>
-      </div>
-      <div class="flex items-center space-x-2">
+      </template>
+      <template #right-actions>
         <button class="flex h-9 w-9 items-center justify-center rounded-full hover:bg-muted">
           <span class="material-symbols-outlined text-muted-foreground">more_horiz</span>
         </button>
-      </div>
-    </header>
+      </template>
+    </PreviewHeader>
 
     <!-- 主内容区域 -->
     <div class="flex flex-grow overflow-hidden">
@@ -107,6 +98,7 @@ import { onMounted, onUnmounted } from 'vue'
 import ImageThumbnailListComponent from '../business/ImageThumbnailListComponent.vue'
 import ImageViewerComponent from '../business/ImageViewerComponent.vue'
 import ImageInfoComponent from '../business/ImageInfoComponent.vue'
+import PreviewHeader from './PreviewHeader.vue'
 import { useImagePreviewController } from '../../controllers/ImagePreviewController'
 
 // 使用控制器

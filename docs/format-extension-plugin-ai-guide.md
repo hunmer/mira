@@ -31,6 +31,8 @@ const unregister = api.media.registerFileFormat({
   renderThumbnail(container, file) {},
   // 可选：只在 hovercard 打开时创建交互内容。返回 cleanup。
   renderHoverCard(container, file) {},
+  // 可选：返回详情页 IframePreview 使用的完整 URL，可异步。
+  getPreviewUrl(file) { return 'https://example.test/viewer?file=...' },
   // 可选：接管双击详情打开；返回 true 才算已处理。
   open(file) { return false },
 })
@@ -40,6 +42,7 @@ const unregister = api.media.registerFileFormat({
 
 - 扩展名可带或不带 `.`，匹配不区分大小写。
 - `file` 是完整 `FileInfo`，优先使用 `file.url`、`file.thumbnailPath` 和 `file.mimeType`。
+- iframe 详情预览应实现 `getPreviewUrl`，插件负责构造完整 viewer URL，宿主只展示返回的地址，不解析格式资源。
 - 清理函数必须移除 DOM、事件监听器、定时器和 iframe `postMessage` 监听。
 - 需要独立窗口时，使用 `api.window.openPluginWindow`，入口通常为 `dist/index.html`。
 - 不要持久化或打印包含认证 token 的文件 URL。
@@ -103,6 +106,7 @@ const jsonUrl = client.files().getExtraFileUrl(libraryId, fileId, 'hero.json')
 ```
 
 `getExtraFileUrl` 生成带认证参数的 HTTP 地址，适合 iframe、`<img>` 等无法自定义请求头的场景；不要把 token 写入日志或持久化。
+Spine 客户端插件应在 `getPreviewUrl(file)` 内选择骨架、atlas 和贴图并返回完整 viewer URL，宿主不得拼接这些参数。
 
 ## 构建、索引与验证
 
@@ -127,7 +131,7 @@ cd "D:/mira_typescript"
 pnpm --filter mira-app-server exec tsc --noEmit
 ```
 
-验收重点：普通缩略图不创建 iframe/WebGL；hovercard 打开后才创建交互内容；关闭或切换文件后资源被清理；详情打开未接管时仍走宿主默认路由。
+验收重点：普通缩略图不创建 iframe/WebGL；hovercard 打开后才创建交互内容；关闭或切换文件后资源被清理；实现 `getPreviewUrl` 的格式在详情页使用 `IframePreview`；详情打开未接管时仍走宿主默认路由。
 
 ## 关键文件
 

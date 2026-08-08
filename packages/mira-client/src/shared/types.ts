@@ -195,10 +195,14 @@ export interface PluginAPI {
     registerContextMenu: (item: { id: string; label: string; icon?: string; onSelect: (files: FileInfo[]) => void | Promise<void> }) => () => void
     registerFileFormat: (format: {
       id: string
+      title?: string
+      icon?: string
+      openByDefault?: boolean
       extensions?: string[]
       mimeTypes?: string[]
       renderThumbnail?: (container: HTMLElement, file: FileInfo) => (() => void) | void
       renderHoverCard?: (container: HTMLElement, file: FileInfo) => (() => void) | void
+      getPreviewUrl?: (file: FileInfo) => string | Promise<string>
       open?: (file: FileInfo) => boolean | void | Promise<boolean | void>
     }) => () => void
     getExtraFileList: (libraryId: string, fileId: string) => Promise<string[]>

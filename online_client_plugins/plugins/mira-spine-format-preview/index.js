@@ -71,6 +71,17 @@
     return usp.toString()
   }
 
+  async function getPreviewUrl(file, api) {
+    if (!pluginBaseUrl) throw new Error('Spine viewer URL unavailable')
+    const { skel, atlas, png } = await resolveResourceUrls(file, api)
+    const viewerUrl = new URL('dist/index.html', pluginBaseUrl)
+    viewerUrl.search = buildQuery({
+      skelUrl: skel, atlasUrl: atlas, pngUrl: png,
+      fileName: file.name || 'Spine',
+    })
+    return viewerUrl.toString()
+  }
+
   function mountHoverCard(container, file, api) {
     const thumbnailUrl = file.thumbnailPath || ''
     let timeoutId
@@ -146,32 +157,11 @@
         id: 'mira-spine',
         extensions: ['skel', 'spine'],
         mimeTypes: ['application/x-spine'],
+        getPreviewUrl: (file) => getPreviewUrl(file, api),
         renderHoverCard: (container, file) => mountHoverCard(container, file, api),
-        open: async (file) => {
-          try {
-            const { skel, atlas, png } = await resolveResourceUrls(file, api)
-            await api.window.openPluginWindow({
-            pluginId: PLUGIN_ID,
-            entry: 'dist/index.html',
-            title: `Spine 预览 - ${file.name || '角色'}`,
-            width: 1280,
-            height: 820,
-            query: {
-              skelUrl: skel,
-              atlasUrl: atlas,
-              pngUrl: png,
-              fileName: file.name || 'Spine',
-            },
-            })
-          } catch (error) {
-            api.log.error('Spine preview open failed', error)
-            api.ui.showNotification(error?.message || 'Spine 预览打开失败', 'error')
-          }
-          return true
-        },
       })
       registrations.push(unregister)
-      api.log.info('Spine format preview registered for .skel/.spine (3.8)')
+      api.log.info('Spine format preview registered for .skel/.spine (4.2)')
     }
 
     async cleanup() {

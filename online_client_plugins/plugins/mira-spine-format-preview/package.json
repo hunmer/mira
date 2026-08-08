@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Spine 3.8 skeletal animation preview plugin for Mira",
+  "description": "Spine 4.2 skeletal animation preview plugin for Mira",
   "scripts": {
     "build": "vite build",
     "dev": "vite"

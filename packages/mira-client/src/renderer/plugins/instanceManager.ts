@@ -247,6 +247,8 @@ export const initializeGlobalPluginSystem = () => {
         },
         getForFile: (file: FileInfo) =>
           (window as any).pluginSystem.fileFormats.list.find((format: PluginFileFormat) => matchesFileFormat(format, file)),
+        getAllForFile: (file: FileInfo) =>
+          (window as any).pluginSystem.fileFormats.list.filter((format: PluginFileFormat) => matchesFileFormat(format, file)),
         getAll: () => (window as any).pluginSystem.fileFormats.list.slice(),
       }
     } as PluginSystemAPI
@@ -264,6 +266,12 @@ export const initializeGlobalPluginSystem = () => {
 export const getPluginFileFormat = (file: FileInfo): PluginFileFormat | undefined => {
   if (typeof window === 'undefined') return undefined
   return (window as any).pluginSystem?.fileFormats?.getForFile(file)
+}
+
+export const getPluginFileFormats = (file: FileInfo): PluginFileFormat[] => {
+  if (typeof window === 'undefined') return []
+  const formats = (window as any).pluginSystem?.fileFormats
+  return formats?.getAllForFile?.(file) || formats?.getAll?.().filter((format: PluginFileFormat) => matchesFileFormat(format, file)) || []
 }
 
 /**

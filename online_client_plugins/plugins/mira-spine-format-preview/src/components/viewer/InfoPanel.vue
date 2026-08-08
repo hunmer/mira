@@ -22,7 +22,7 @@ defineProps<{
     </dl>
     <div v-if="spineVersion" class="flex items-center gap-2 pt-1">
       <Badge variant="secondary">Spine {{ spineVersion }}</Badge>
-      <Badge variant="outline">3.8 运行时</Badge>
+            <Badge variant="outline">4.2 运行时</Badge>
     </div>
     <p class="pt-1 text-[11px] leading-relaxed text-muted-foreground/70">
       此预览器为只读模式：支持骨骼查看、显隐切换、动画/皮肤切换，不提供骨骼编辑能力。

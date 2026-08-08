@@ -6,6 +6,7 @@ import type { NavigationItem, FolderItem, SearchFilter } from '../../types/compo
 import type { FileInfo } from '../../../shared/types'
 import type { BreadcrumbItem, QuickFilter, PaginationPage } from './types'
 import { HomeControllerUtils } from './utils'
+import { environment } from '../../utils'
 
 /**
  * 用户交互处理模块
@@ -173,7 +174,7 @@ export class HomeInteractionHandler {
    */
   public handleMediaDoubleClick = async (item: FileInfo): Promise<void> => {
     const customFormat = getPluginFileFormat(item)
-    if (customFormat?.open && await customFormat.open(item)) return
+    if (environment.isElectron && customFormat?.openByDefault !== false && customFormat?.open && await customFormat.open(item)) return
     const fileType = HomeControllerUtils.getFileTypeFromInfo(item)
     if (fileType === 'image') {
       this.router.push(`/image-preview/${item.id}`)

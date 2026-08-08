@@ -1,16 +1,16 @@
 /**
- * Spine 资源加载器（仅 3.8）。
+ * Spine 4.2 资源加载器。
  *
  * 从 game-asset-canvas 的 SpineLoader.js 移植，删除 4.2 路由分支：
  *   - 去除 loadSpine42Runtime / useSpine42 / SpineTexture / Physics 相关逻辑
  *   - 保留 SkeletonBinary（.skel 二进制）+ SkeletonJson（.json）双格式
  *   - 保留 loadSpine / getAnimations / getSkins / getBoneTree / BoneVisibility
  *
- * pixi-spine-3.8-4.0.6 覆盖 3.8 格式（碧蓝航线等老游戏资源）。
+ * 使用官方 Spine 4.2 runtime，兼容 Spine 4.2.x 资源。
  *
  * 输入支持 dataUrl 或原文；这里 dist 运行在浏览器，资源经 fetch 拿到后传入。
  */
-import { PIXI, getSpineRuntime } from './runtime'
+import { PIXI, getSpineRuntime, updateWorldTransform } from './runtime'
 
 export interface SpineInput {
   /** .skel 二进制（ArrayBuffer/Uint8Array）或 .json 文本 */
@@ -30,8 +30,38 @@ async function dataUrlToArrayBuffer(dataUrl: string): Promise<Uint8Array> {
   return new Uint8Array(buf)
 }
 
+function waitForTexture(baseTexture: any): Promise<void> {
+  if (baseTexture.valid) return Promise.resolve()
+  return new Promise((resolve, reject) => {
+    let timer: ReturnType<typeof setTimeout>
+    const poll = setInterval(() => {
+      if (baseTexture.valid) {
+        cleanup()
+        resolve()
+      }
+    }, 16)
+    const cleanup = () => {
+      clearTimeout(timer)
+      clearInterval(poll)
+      baseTexture.off?.('loaded', onLoaded)
+      baseTexture.off?.('error', onError)
+    }
+    const onLoaded = () => { cleanup(); resolve() }
+    const onError = (error: unknown) => {
+      cleanup()
+      reject(new Error(`Spine 贴图加载失败: ${error instanceof Error ? error.message : String(error)}`))
+    }
+    baseTexture.once?.('loaded', onLoaded)
+    baseTexture.once?.('error', onError)
+    timer = setTimeout(() => {
+      cleanup()
+      reject(new Error('Spine 贴图加载超时'))
+    }, 30000)
+  })
+}
+
 /**
- * 加载 Spine 资源并构造 Spine 实例（PIXI.spine.Spine）。
+ * 加载 Spine 资源并构造 Spine 实例（window.spine.Spine）。
  * @throws 解析失败 / 无骨骼
  */
 export async function loadSpine({ skel, atlas, png, name = 'spine' }: SpineInput): Promise<any> {
@@ -65,15 +95,16 @@ export async function loadSpine({ skel, atlas, png, name = 'spine' }: SpineInput
     throw new Error('骨架数据格式不支持')
   }
 
-  const { Spine, SkeletonBinary, SkeletonJson, TextureAtlas, AtlasAttachmentLoader } = getSpineRuntime()
+  const { Spine, SkeletonBinary, SkeletonJson, TextureAtlas, AtlasAttachmentLoader, SpineTexture } = getSpineRuntime()
 
   // 2. 加载贴图（PIXI.BaseTexture.from 兼容 dataUrl 与 URL）
   const baseTexture = PIXI.BaseTexture.from(png)
+  await waitForTexture(baseTexture)
 
-  // 3. 解析 atlas（3.8：TextureAtlas 接收 textureLoader 回调）
-  const spineAtlas = new TextureAtlas(atlas, (_line: string, callback: (tex: any) => void) => {
-    callback(baseTexture)
-  })
+  // 3. 解析 atlas，再把 SpineTexture 显式绑定到每个 page。
+  const spineTexture = SpineTexture.from(baseTexture)
+  const spineAtlas = new TextureAtlas(atlas)
+  for (const page of spineAtlas.pages) page.setTexture(spineTexture)
   const attachmentLoader = new AtlasAttachmentLoader(spineAtlas)
 
   // 4. 解析骨架
@@ -90,10 +121,13 @@ export async function loadSpine({ skel, atlas, png, name = 'spine' }: SpineInput
     throw new Error('Spine 解析失败：无骨骼数据')
   }
 
-  // 5. 构造 Spine 实例（3.8：构造函数直接接收 skeletonData）
-  const spine = new Spine(spineData)
+  // 5. 构造 Spine 实例，关闭内部 ticker，沿用宿主渲染循环
+  const spine = new Spine({ skeletonData: spineData, autoUpdate: false })
   spine.name = name
   if (!spine.spineData) spine.spineData = spineData
+  const updateWorldTransformNative = spine.skeleton.updateWorldTransform.bind(spine.skeleton)
+  spine.skeleton.updateWorldTransform = (physics = getSpineRuntime().Physics.update) =>
+    updateWorldTransformNative(physics)
 
   // 记录版本（UI 提示用）
   spine._spineVersion = spineData.version || 'unknown'
@@ -188,7 +222,7 @@ export class BoneVisibility {
       }
     }
     this.saved.set(name, savedSlots)
-    spine.skeleton.updateWorldTransform()
+    updateWorldTransform(spine.skeleton)
   }
 
   /** 显示一根骨骼（及其子级）相关的所有 slot attachment */
@@ -200,7 +234,7 @@ export class BoneVisibility {
     const savedSlots = this.saved.get(name) || []
     for (const { slot, attachment } of savedSlots) slot.setAttachment(attachment)
     this.saved.delete(name)
-    spine.skeleton.updateWorldTransform()
+    updateWorldTransform(spine.skeleton)
   }
 
   /** 切换显隐 */
@@ -227,6 +261,6 @@ export class BoneVisibility {
     }
     this.hidden.clear()
     this.saved.clear()
-    if (spine?.skeleton) spine.skeleton.updateWorldTransform()
+    updateWorldTransform(spine?.skeleton)
   }
 }
