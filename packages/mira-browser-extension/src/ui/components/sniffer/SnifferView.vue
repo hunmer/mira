@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useBackground } from '@/ui/composables/useBackground';
 import { useSniffer } from '@/ui/composables/useSniffer';
 import { useSettings } from '@/ui/composables/useSettings';
-import type { SnifferViewMode } from '@/shared/types';
+import type { SnifferViewMode, SniffedResource } from '@/shared/types';
 import Switch from '@/ui/components/ui/Switch.vue';
 import Button from '@/ui/components/ui/Button.vue';
 import Input from '@/ui/components/ui/Input.vue';
@@ -119,8 +119,22 @@ function toggle(id: string) {
   selected.value = s;
 }
 
+// 全选 / 反选:基于当前 resources。全选态判断与「反选」语义合并到同一按钮。
+function toggleSelectAll() {
+  const ids = resources.value.map(r => r.id);
+  // 已全部选中 → 清空;否则全选
+  if (ids.length > 0 && ids.every(id => selected.value.has(id))) {
+    selected.value = new Set();
+  } else {
+    selected.value = new Set(ids);
+  }
+}
+const allSelected = computed(() => {
+  const ids = resources.value.map(r => r.id);
+  return ids.length > 0 && ids.every(id => selected.value.has(id));
+});
+
 async function onToggle(on: boolean) {
-  console.log('[mira-ext][sniffer-ui] onToggle', on, { libraryId: settings.value.libraryId });
   await update({ snifferEnabled: on });
   on ? await start() : await stop();
   if (on) await refreshTarget();
@@ -148,6 +162,25 @@ async function uploadSelected() {
   }
   selected.value.clear();
 }
+
+/** url 末段当文件名;解码失败回退 resource */
+function filenameOf(r: SniffedResource): string {
+  const raw = r.url.split('/').pop()?.split('?')[0];
+  if (!raw) return `resource-${r.id}`;
+  try { return decodeURIComponent(raw); } catch { return raw; }
+}
+
+async function downloadSelected() {
+  const targets = resources.value.filter(r => selected.value.has(r.id));
+  if (!targets.length) return;
+  const items = targets.map(r => ({
+    url: r.url,
+    filename: filenameOf(r),
+    referrer: r.referrer || r.pageUrl,
+  }));
+  await bg.downloadResources(items);
+  selected.value.clear();
+}
 </script>
 
 <template>
@@ -157,8 +190,37 @@ async function uploadSelected() {
       <Switch :model-value="settings.snifferEnabled" @update:model-value="onToggle" />
     </div>
     <div class="target-bar">
-      <label for="sniffer-target">{{ t('sniffer.targetTab') }}</label>
-      <select id="sniffer-target" v-model="tabIdRef" :disabled="!settings.snifferEnabled">
+      <!-- 全选 / 反选(基于当前 resources) -->
+      <button
+        type="button"
+        class="select-all"
+        :class="{ checked: allSelected }"
+        :disabled="!resources.length"
+        :title="t('sniffer.selectAll')"
+        :aria-label="t('sniffer.selectAll')"
+        @click="toggleSelectAll"
+      >
+        <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
+          <path
+            v-if="allSelected"
+            d="M3.5 8.5l3 3 6-6.5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <path
+            v-else
+            d="M3.5 8h9"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+          />
+        </svg>
+      </button>
+      <select id="sniffer-target" v-model="tabIdRef" :disabled="!settings.snifferEnabled" :title="t('sniffer.targetTab')">
         <option value="all">{{ t('sniffer.allTabs') }}</option>
         <option v-for="tab in tabs" :key="tab.id" :value="tab.id">
           {{ tab.active ? t('sniffer.currentPrefix') : '' }}{{ tab.title || tab.url || `Tab ${tab.id}` }}
@@ -195,20 +257,21 @@ async function uploadSelected() {
         </button>
       </div>
 
-      <!-- 自动滚动:图标入口 → popover 设间隔 + 开始/停止 -->
+      <!-- 自动滚动:dots 入口 → dropdown 设间隔 + 开始/停止 -->
       <div class="autoscroll-wrap">
         <button
           type="button"
           class="icon-entry"
-          :class="{ active: autoScrollRunning }"
+          :class="{ active: autoScrollRunning || autoScrollOpen }"
           :title="t('autoscroll.title')"
           :aria-label="t('autoscroll.title')"
           @click="toggleAutoScrollPopover"
         >
-          <!-- 向下滚动箭头图标 -->
-          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-            <path d="M12 3a1 1 0 0 1 1 1v11.59l3.3-3.3a1 1 0 0 1 1.4 1.42l-5 5a1 1 0 0 1-1.4 0l-5-5a1 1 0 1 1 1.4-1.42l3.3 3.3V4a1 1 0 0 1 1-1z" fill="currentColor"/>
-            <path d="M5 21h14a1 1 0 1 1 0 2H5a1 1 0 1 1 0-2z" fill="currentColor" opacity=".5"/>
+          <!-- 三点(dots)图标 -->
+          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+            <circle cx="8" cy="3" r="1.5" fill="currentColor"/>
+            <circle cx="8" cy="8" r="1.5" fill="currentColor"/>
+            <circle cx="8" cy="13" r="1.5" fill="currentColor"/>
           </svg>
         </button>
         <!-- popover 面板 -->
@@ -228,28 +291,62 @@ async function uploadSelected() {
       </div>
     </div>
     <MasonryView
-      v-if="settings.snifferView === 'masonry'"
+      v-if="settings.snifferView === 'masonry' && resources.length"
       :resources="resources"
       :selected="selected"
       @toggle="toggle"
     />
     <ResourceList
-      v-else
+      v-else-if="settings.snifferView !== 'masonry' && resources.length"
       :resources="resources"
       :selected="selected"
       @toggle="toggle"
     />
-    <Button v-if="selected.size" @click="uploadSelected">{{ t('sniffer.uploadSelected', { n: selected.size }) }}</Button>
+    <!-- 空态占位 -->
+    <div v-else class="empty">
+      <span class="big">{{ settings.snifferEnabled ? '🔍' : '🐽' }}</span>
+      <span>{{ settings.snifferEnabled ? t('sniffer.empty') : t('sniffer.emptyOff') }}</span>
+      <span class="hint">{{ settings.snifferEnabled ? t('sniffer.emptyHint') : t('sniffer.emptyOffHint') }}</span>
+    </div>
+    <div v-if="selected.size" class="actions">
+      <Button @click="uploadSelected">{{ t('sniffer.uploadSelected', { n: selected.size }) }}</Button>
+      <Button variant="ghost" @click="downloadSelected">{{ t('sniffer.downloadSelected', { n: selected.size }) }}</Button>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .view { display: flex; flex-direction: column; height: 100%; }
+
+/* 空态占位 */
+.empty {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px; padding: 24px 12px; text-align: center;
+  color: var(--muted); font-size: 12px;
+}
+.empty .big { font-size: 32px; margin-bottom: 4px; }
+.empty .hint { font-size: 11px; opacity: 0.7; }
 .bar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); }
 .bar label { flex: 1; }
 .target-bar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); }
 .target-bar label { white-space: nowrap; }
 .target-bar select { min-width: 0; flex: 1; padding: 4px; background: var(--bg); color: var(--fg); border: 1px solid var(--border); }
+
+/* 全选 / 反选按钮(左上角) */
+.select-all {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; flex-shrink: 0; padding: 0;
+  background: var(--bg-elev); color: var(--muted);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.select-all:hover:not(:disabled) { color: var(--fg); }
+.select-all.checked { background: var(--primary); color: var(--primary-fg); border-color: var(--primary); }
+.select-all:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* 底部选中操作栏 */
+.actions { display: flex; gap: 8px; padding: 8px 12px; border-top: 1px solid var(--border); }
 
 /* 视图切换 segmented 控件 */
 .view-toggle { display: inline-flex; gap: 0; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }

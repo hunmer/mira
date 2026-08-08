@@ -62,6 +62,13 @@ export function useBackground() {
     async cancelUpload(id: string) {
       return send({ type: 'UPLOAD_CANCEL', payload: { id } });
     },
+    /** 下载选中资源:单文件直下,多文件 zip 打包 */
+    async downloadResources(items: { url: string; filename: string; referrer?: string }[]) {
+      return send<{ success: boolean; count?: number; error?: string }>({
+        type: 'DOWNLOAD_RESOURCES',
+        payload: { items },
+      });
+    },
     async captureVisible(tabId: number) {
       return send({ type: 'CAPTURE_VISIBLE', payload: { tabId } });
     },

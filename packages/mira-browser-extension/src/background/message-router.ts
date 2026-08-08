@@ -145,6 +145,57 @@ export function createRouter(deps: RouterDeps): RequestHandler {
       case 'UPLOAD_CANCEL':
         deps.uploader.cancelTask(req.payload.id);
         return { success: true };
+      case 'DOWNLOAD_RESOURCES': {
+        const items = req.payload.items;
+        // 单文件:直接交给浏览器下载(走原始 url,referrer 由浏览器按 tab 处理)
+        if (items.length === 1) {
+          await chrome.downloads.download({ url: items[0].url, filename: items[0].filename, saveAs: false });
+          return { success: true, count: 1 };
+        }
+        // 多文件:逐个 fetch(host_permissions 覆盖跨域)→ zip 打包 → 下载
+        const { zipSync } = await import('fflate');
+        const files: Record<string, Uint8Array> = {};
+        let ok = 0;
+        for (const item of items) {
+          try {
+            const res = await fetch(item.url, {
+              credentials: 'include',
+              ...(item.referrer ? {
+                referrer: item.referrer,
+                referrerPolicy: 'no-referrer-when-downgrade' as ReferrerPolicy,
+              } : {}),
+            });
+            const buf = new Uint8Array(await res.arrayBuffer());
+            // 同名冲突时加序号避免覆盖
+            let name = item.filename;
+            if (files[name]) {
+              const dot = name.lastIndexOf('.');
+              const base = dot > 0 ? name.slice(0, dot) : name;
+              const ext = dot > 0 ? name.slice(dot) : '';
+              let i = 1;
+              while (files[`${base} (${i})${ext}`]) i++;
+              name = `${base} (${i})${ext}`;
+            }
+            files[name] = buf;
+            ok++;
+          } catch {
+            // 单个失败不阻断整体打包
+          }
+        }
+        if (ok === 0) return { success: false, error: 'no resource fetched' };
+        const zipped = zipSync(files);
+        // service worker 里 createObjectURL 可用;blob 传给 downloads API
+        const blob = new Blob([zipped], { type: 'application/zip' });
+        const objectUrl = URL.createObjectURL(blob);
+        await chrome.downloads.download({
+          url: objectUrl,
+          filename: `sniffer-${Date.now()}.zip`,
+          saveAs: false,
+        });
+        // 下载器拷贝 objectUrl 后即可释放
+        setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+        return { success: true, count: ok };
+      }
       case 'CAPTURE_VISIBLE':
         await deps.captureVisible(req.payload.tabId);
         return { success: true };
