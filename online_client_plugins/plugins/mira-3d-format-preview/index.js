@@ -98,29 +98,12 @@
       const { api } = this.context
       const unregister = api.media.registerFileFormat({
         id: 'mira-3d-model',
+        title: '3D 模型预览',
+        icon: 'view_in_ar',
         extensions: ['glb', 'gltf'],
         mimeTypes: ['model/gltf-binary', 'model/gltf+json'],
         getPreviewUrl,
         renderHoverCard: mountHoverCard,
-        open: (file) => {
-          const w = window.electronAPI
-          if (!w?.pluginWindow?.open) {
-            api.ui.showNotification('当前环境不支持打开 3D 窗口', 'warning')
-            return true
-          }
-          return w.pluginWindow.open({
-            pluginId: PLUGIN_ID,
-            entry: 'dist/index.html',
-            title: `3D 预览 - ${file.name || '模型'}`,
-            width: 1280,
-            height: 860,
-            query: {
-              fileUrl: toPreviewUrl(file.url || file.path || file.localFile || ''),
-              fileName: file.name || '3D model',
-              mimeType: file.mimeType || '',
-            },
-          }).then(() => true)
-        },
       })
       registrations.push(unregister)
       api.log.info('3D format preview registered for GLB/GLTF')

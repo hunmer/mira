@@ -38,7 +38,11 @@ import { miraSDKService } from '../../services/MiraSDKService'
 import { getPluginFileFormats } from '../../plugins/instanceManager'
 import type { PluginFileFormat } from '../../plugins/types'
 
-const props = withDefaults(defineProps<{ fileInfo: any; saveVisible?: boolean; saving?: boolean }>(), { saveVisible: false, saving: false })
+const props = withDefaults(defineProps<{ fileInfo: any; saveVisible?: boolean; saving?: boolean; showOpenWith?: boolean }>(), {
+  saveVisible: false,
+  saving: false,
+  showOpenWith: true,
+})
 const emit = defineEmits<{ save: []; renamed: [name: string]; error: [message: string] }>()
 const router = useRouter()
 const titleInput = ref<HTMLInputElement | null>(null)
@@ -49,7 +53,9 @@ const formatVersion = ref(0)
 const formatTimer = setInterval(() => { formatVersion.value++ }, 500)
 const openFormats = computed(() => {
   void formatVersion.value
-  return props.fileInfo?.id ? getPluginFileFormats(props.fileInfo).filter(format => format.getPreviewUrl || format.open) : []
+  return props.showOpenWith && props.fileInfo?.id
+    ? getPluginFileFormats(props.fileInfo).filter(format => format.getPreviewUrl || format.open)
+    : []
 })
 
 const goBack = () => window.history.length > 1 ? router.back() : router.push('/')

@@ -93,6 +93,7 @@ interface PluginRuntime {
 | `instances` | `Map<id, instance>` | 已创建的插件实例 |
 | `contributions` | 注册中心 | UI 贡献入口（见下文） |
 | `mediaContextMenus` | 注册中心 | 媒体网格右键菜单（见下文） |
+| `fileFormats` | 注册中心 | 自定义文件格式、预览地址与打开方式（见下文） |
 | `events` | 事件总线 | on/emit/off |
 
 关键方法：`registerPlugin`、`registerPluginInstance`、`getPluginInstanceFactory`、`loadPluginInstance(id, ctx)`、`unloadPluginInstance(id)`、`getPluginInstance(id)`。
@@ -304,15 +305,36 @@ const unregister = api.media.registerContextMenu({
 unregister()
 ```
 
-### 自定义文件格式（缩略图与详情打开）
+### 自定义文件格式与多种打开方式
 
-`registerFileFormat` 按文件扩展名或 MIME 类型匹配。`renderThumbnail` 获得宿主提供的 `div`，用于列表/网格中的静态缩略图；`renderHoverCard` 获得 hovercard 内容容器，用于按需创建交互式 DOM、canvas 或 iframe。两个钩子都可返回清理函数，宿主会在文件切换/组件卸载时调用。
+`registerFileFormat` 按文件扩展名或 MIME 类型匹配。同一种文件可以匹配多个注册项：`fileFormats.getForFile(file)` 返回第一个，`fileFormats.getAllForFile(file)` 返回全部。宿主使用全部匹配项生成以下入口：
+
+- `PreviewHeader.vue` 右侧的格式图标。
+- 媒体网格右键菜单中的“其他打开方式”子菜单。
+
+`renderThumbnail` 获得列表/网格中的静态缩略图容器；`renderHoverCard` 获得 hovercard 内容容器。两个钩子都可返回清理函数，宿主会在文件切换或组件卸载时调用。
+
+格式注册字段：
+
+| 字段 | 必填 | 说明 |
+|------|------|------|
+| `id` | 是 | 格式处理器唯一 ID，也是 `/file-preview` 的 `viewer` 参数 |
+| `title` | 否 | 打开方式显示名称 |
+| `icon` | 否 | Material Symbols 图标名，默认 `extension` |
+| `extensions` / `mimeTypes` | 至少一项 | 文件匹配条件，不区分大小写，扩展名可带或不带 `.` |
+| `openByDefault` | 否 | 仅影响双击默认行为；设为 `false` 时保留宿主默认路由 |
+| `getPreviewUrl(file)` | 否 | 返回完整 Viewer URL，由宿主 `IframePreview` 内嵌显示，可异步 |
+| `open(file)` | 否 | 旧式或特殊打开逻辑；没有 `getPreviewUrl` 时由打开方式入口调用 |
+| `renderThumbnail` / `renderHoverCard` | 否 | 自定义缩略图和悬停预览 |
 
 ```javascript
 const unregister = api.media.registerFileFormat({
-  id: 'model-viewer',
-  extensions: ['glb', 'gltf'],
-  mimeTypes: ['model/gltf-binary', 'model/gltf+json'],
+  id: 'psd-layer-viewer',
+  title: 'PSD 分层预览',
+  icon: 'layers',
+  openByDefault: false,
+  extensions: ['psd', 'psb'],
+  mimeTypes: ['image/vnd.adobe.photoshop'],
   renderThumbnail(container, file) {
     const image = document.createElement('img')
     image.src = file.thumbnailPath || ''
@@ -322,18 +344,37 @@ const unregister = api.media.registerFileFormat({
     return () => container.replaceChildren()
   },
   renderHoverCard(container, file) {
-    // 仅 hovercard 打开时创建交互式预览（例如 iframe/WebGL）
-    container.textContent = `3D: ${file.name}`
+    // 仅 hovercard 打开时创建交互式预览。
+    container.textContent = `PSD: ${file.name}`
     return () => container.replaceChildren()
   },
-  async open(file) {
-    // 返回 true 表示插件已接管详情打开；false/undefined 继续使用宿主默认路由
-    await api.window.openPluginWindow({ title: file.name, query: { fileId: file.id } })
-    return true
+  getPreviewUrl(file) {
+    const url = new URL('dist/index.html', pluginBaseUrl)
+    url.searchParams.set('fileUrl', file.path || file.url || '')
+    url.searchParams.set('fileName', file.name || '')
+    return url.toString()
   },
 })
 // 插件 cleanup 中调用 unregister()
 ```
+
+#### 内嵌预览调用链
+
+```text
+顶部格式图标 / 右键“其他打开方式”
+  → router.push('/file-preview?...&viewer=<format.id>')
+  → FilePreviewView 按 viewer 从 getAllForFile(file) 精确选择格式
+  → format.getPreviewUrl(file)
+  → IframePreview.vue 加载返回的完整 URL
+```
+
+实现 `getPreviewUrl` 时，插件负责解析自身资源并构造完整 URL；宿主不拼接插件专用参数。详情 Viewer 不应传 hovercard 使用的 `embed=1`，否则可能隐藏完整工具栏或面板。
+
+`IframePreview` 内部的 `PreviewHeader` 会隐藏格式打开图标，防止当前插件 Viewer 重复打开自身；其他预览页和媒体右键菜单仍展示可用的其他打开方式。
+
+双击文件仍遵循宿主默认类型路由。只有格式同时实现 `open()` 且 `openByDefault !== false` 时，Electron 客户端才允许该格式优先接管双击。需要保留图片默认 `/image-preview/:id`、同时提供插件打开方式时，应实现 `getPreviewUrl` 并设置 `openByDefault: false`，无需实现 `open()`。
+
+为了兼容旧插件，没有 `getPreviewUrl` 但实现了 `open()` 的格式仍会显示在两处打开方式入口中，并直接执行 `open(file)`。
 
 `onSelect(files)` 接收当前右键目标对应的素材列表：单选时为当前素材，多选时为当前选中的全部素材。菜单回调边界会将响应式对象转换为普通 JSON 对象，插件不应依赖 Vue 响应式能力。
 
@@ -569,6 +610,10 @@ const off = window.electronAPI.pluginWindow.onMessage((channel, data) => {
 | `src/renderer/services/InitializationService.ts` | 启动流程（插件初始化在 20%-40% 阶段） |
 | `src/renderer/stores/plugin.ts` | Pinia store：状态管理 + 业务编排（启用/禁用/市场/更新检查/持久化） |
 | `src/renderer/plugins/instanceManager.ts` | `window.pluginSystem` 对象 + contributions/mediaContextMenus 注册中心 + 状态监控 |
+| `src/renderer/components/preview/PreviewHeader.vue` | 预览标题栏 + 匹配格式的打开方式图标 |
+| `src/renderer/components/preview/IframePreview.vue` | 在宿主预览布局中内嵌插件 Viewer URL |
+| `src/renderer/components/business/MediaGridComponent/composables/useContextMenu.ts` | 媒体右键菜单 + “其他打开方式”入口 |
+| `src/renderer/views/FilePreviewView.vue` | 按 `viewer` 选择格式并调用 `getPreviewUrl` |
 | `src/renderer/plugins/operationManager.ts` | enable/disable/reload/通用操作分发（含 factory 等待重试） |
 | `src/renderer/plugins/scriptManager.ts` | 脚本注入（`<script>` 标签 + onload 注册） |
 | `src/renderer/plugins/storage.ts` | 持久化（LibraryStorage key='plugins'） |
