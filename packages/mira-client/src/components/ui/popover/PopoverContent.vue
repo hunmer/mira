@@ -56,7 +56,7 @@ const initialTransform = computed(() => {
         :transition="{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }"
         :class="
           cn(
-            'bg-white/65 dark:bg-muted/70 backdrop-blur-xl text-popover-foreground data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 z-50 w-72 max-w-(--reka-popover-content-available-width) rounded-2xl border border-white/60 dark:border-border p-4 shadow-[0_12px_40px_rgba(99,102,241,0.12)] origin-(--reka-popover-content-transform-origin) outline-hidden',
+            'bg-white/65 dark:bg-muted/70 backdrop-blur-xl text-popover-foreground data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 z-50 w-72 max-w-(--reka-popover-content-available-width) rounded-2xl border border-white/60 dark:border-border p-4 origin-(--reka-popover-content-transform-origin) outline-hidden',
             props.class,
           )
         "

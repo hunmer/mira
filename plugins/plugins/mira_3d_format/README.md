@@ -14,7 +14,10 @@ Mira 服务端 GLB/GLTF 自定义格式插件。
 
 ```powershell
 pnpm install
+pnpm run rebuild:native
 pnpm run build
 ```
 
-Linux 无显示环境需要安装 Mesa/Xvfb，具体运行环境要求见 `render-glb` 文档。可通过插件数据目录的 `data/config.json` 调整 `width`、`height`、`timeoutMs` 和 `renderCommand`。
+`render-glb` 依赖 `gl` 原生 headless WebGL 模块。pnpm 可能出于安全策略跳过依赖构建脚本，因此必须执行 `pnpm run rebuild:native`；如果安装环境阻止本地编译，需要先准备 C++ 编译工具链。Linux 无显示环境还需要 Mesa/Xvfb，具体运行环境要求见 `render-glb` 文档。
+
+可通过插件数据目录的 `data/config.json` 调整 `width`、`height`、`timeoutMs` 和 `renderCommand`。

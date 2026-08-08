@@ -35,7 +35,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
         :animate="{ opacity: 1, transform: 'translate3d(0, 0, 0) scale(1)' }"
         :transition="{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }"
         :class="cn(
-          'bg-white/65 dark:bg-muted/70 backdrop-blur-xl text-popover-foreground data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 z-50 max-h-(--reka-context-menu-content-available-height) min-w-[8rem] overflow-visible rounded-xl border border-white/60 dark:border-border p-1 shadow-[0_12px_40px_rgba(99,102,241,0.12)]',
+          'bg-white/65 dark:bg-muted/70 backdrop-blur-xl text-popover-foreground data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 z-50 max-h-(--reka-context-menu-content-available-height) min-w-[8rem] overflow-visible rounded-xl border border-white/60 dark:border-border p-1',
           props.class,
         )"
       >

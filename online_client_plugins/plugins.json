@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-08T05:44:24.238Z",
+  "generatedAt": "2026-08-08T05:59:48.871Z",
   "plugins": [
     {
       "pluginId": "d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70",
       "pluginName": "3D 格式预览",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "description": "为 GLB/GLTF 文件提供可交互的 3D 线框缩略图和详情查看入口，验证自定义格式插件 API。",
       "author": "Mira Team",
       "homepage": "https://github.com/mira-team/mira-3d-format-preview",
@@ -25,8 +25,8 @@
       "directory": "plugins/mira-3d-format-preview",
       "icon": null,
       "readme": "README.md",
-      "size": 1008005,
-      "checksum": "sha256:edf6c7ad6f07b8e0cd56f422f5a58f7a60e76245128fd312bd744da8afb7570a",
+      "size": 1007855,
+      "checksum": "sha256:7309ef2fc2f50f808313f4d8274d339b760a0a468025250b6b74bc667f45252b",
       "files": [
         {
           "path": "README.md",
@@ -36,12 +36,12 @@
         {
           "path": "plugin.json",
           "size": 648,
-          "checksum": "sha256:f305b731f4d1abe337a9d5379398cfbf7bf60bc2bcf1ed4537ee6670189f76cd"
+          "checksum": "sha256:0d8cd25fcb9f9439823a3574c43882b72d58e10a48e15e2e1f3d08cc569374a2"
         },
         {
           "path": "package.json",
           "size": 487,
-          "checksum": "sha256:750f2b79bbc2f1d653cb3ee6bbada9e0915c47c5dc0ad7d93ddb310af1902a8f"
+          "checksum": "sha256:def1f6dcc552db7fcc454c17236b0975740f830e1ce2b70ee7693ab2da4efab4"
         },
         {
           "path": "index.js",
@@ -51,7 +51,7 @@
         {
           "path": "dist/index.html",
           "size": 403,
-          "checksum": "sha256:0068f806ad79611d0a4b1ca248645c667da5c32f3a3829abdd455afa06bf1f71"
+          "checksum": "sha256:dcd69f197dc7ec6509c25ddc71e9c430c65863e02a126f3ab83f9acffae0e87a"
         },
         {
           "path": "dist/assets/index-vQe37hF-.css",
@@ -59,9 +59,9 @@
           "checksum": "sha256:1f1690d2735ebfac4bbb875b683fcc488cafd3cb354cc2f9182cc6b1752c068a"
         },
         {
-          "path": "dist/assets/index-EqlPFEGu.js",
-          "size": 998804,
-          "checksum": "sha256:807a80c34fe3aa9a67a611ae365fd75efe772087bb7691eec57b8b0f667095cf"
+          "path": "dist/assets/index-BjIJiu-g.js",
+          "size": 998654,
+          "checksum": "sha256:6157bde8df7997953621a6064943be62500627c8b9becae8267396f8b9d9662f"
         }
       ]
     },

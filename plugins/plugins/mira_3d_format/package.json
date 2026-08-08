@@ -13,7 +13,11 @@
     "category": "storage",
     "tags": ["3D", "GLB", "GLTF", "缩略图"]
   },
-  "scripts": { "build": "tsc" },
+  "scripts": {
+    "build": "tsc",
+    "rebuild:native": "npm rebuild gl --build-from-source",
+    "postinstall": "npm run rebuild:native"
+  },
   "dependencies": {
     "@gltf-transform/core": "^4.4.2",
     "render-glb": "^0.2.0"
@@ -21,5 +25,8 @@
   "devDependencies": {
     "@types/node": "^20.10.0",
     "typescript": "^5.7.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["gl"]
   }
 }

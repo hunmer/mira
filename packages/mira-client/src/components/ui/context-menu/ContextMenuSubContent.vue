@@ -30,7 +30,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
       :transition="{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }"
       :class="
         cn(
-          'bg-popover text-popover-foreground data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 z-50 min-w-[8rem] origin-(--reka-context-menu-content-transform-origin) overflow-visible rounded-md border p-1 shadow-lg',
+          'bg-popover text-popover-foreground data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 z-50 min-w-[8rem] origin-(--reka-context-menu-content-transform-origin) overflow-visible rounded-md border p-1',
           props.class,
         )
       "

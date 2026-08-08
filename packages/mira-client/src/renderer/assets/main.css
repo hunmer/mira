@@ -162,12 +162,6 @@
   这里恢复面板阴影：box-shadow 复用 Tailwind 已计算好的 --tw-shadow 变量组合，
   无需重复阴影值；特异性 (0,2,0) + !important 可覆盖上方 *:focus 的 (0,1,0)。
 */
-[data-slot="dropdown-menu-content"]:focus,
-[data-slot="dropdown-menu-sub-content"]:focus,
-[data-slot="context-menu-content"]:focus,
-[data-slot="context-menu-sub-content"]:focus,
-[data-slot="popover-content"]:focus,
-[data-slot="select-content"]:focus,
 [data-slot="hover-card-content"]:focus {
   box-shadow:
     var(--tw-inset-shadow, 0 0 #0000),
@@ -193,6 +187,24 @@
 
 .dark [data-reka-popper-content-wrapper]:has(> [data-slot="dropdown-menu-content"]),
 .dark [data-reka-popper-content-wrapper]:has(> [data-slot="dropdown-menu-sub-content"]) {
+  filter: drop-shadow(0 16px 48px rgba(0, 0, 0, 0.5));
+}
+
+/* context-menu / popover / select 同方案：阴影挂 popper 容器，
+   打开即常显，与焦点/hover 无关，结构上免疫 *:focus 的 box-shadow 清除 */
+[data-reka-popper-content-wrapper]:has(> [data-slot="context-menu-content"]),
+[data-reka-popper-content-wrapper]:has(> [data-slot="context-menu-sub-content"]),
+[data-reka-popper-content-wrapper]:has(> [data-slot="popover-content"]),
+[data-reka-popper-content-wrapper]:has(> [data-slot="select-content"]) {
+  filter:
+    drop-shadow(0 16px 48px rgba(0, 0, 0, 0.16))
+    drop-shadow(0 4px 12px rgba(99, 102, 241, 0.10));
+}
+
+.dark [data-reka-popper-content-wrapper]:has(> [data-slot="context-menu-content"]),
+.dark [data-reka-popper-content-wrapper]:has(> [data-slot="context-menu-sub-content"]),
+.dark [data-reka-popper-content-wrapper]:has(> [data-slot="popover-content"]),
+.dark [data-reka-popper-content-wrapper]:has(> [data-slot="select-content"]) {
   filter: drop-shadow(0 16px 48px rgba(0, 0, 0, 0.5));
 }
 

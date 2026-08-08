@@ -74,6 +74,17 @@
 - Linked the plugin into `packages/mira-app-server/src/plugins/node_modules` and enabled it in runtime `plugins.json`.
 - Verified on procm-mcp alternate ports `8091/8021`: plugin loaded and `/health` returned `status: ok`; verification process was stopped afterward.
 
+### 3D Detail Loading Fix
+- Confirmed the file endpoint returns a valid GLB (`67 6C 54 46`) with HTTP 200.
+- Root cause: Cientos `GLTFModel` exposes no `load` or `error` events, leaving the page-owned loading flag unchanged.
+- Added `ModelScene.vue` using `useGLTF` state/error refs and explicit `loaded`/`error` emits; plugin bumped to `1.1.1`.
+
+### 3D Thumbnail Native Runtime Fix
+- Reproduced the reported `gl` binding error: pnpm had skipped `gl` build scripts.
+- Ran `npm rebuild gl --build-from-source`; `webgl.node` was generated successfully.
+- Rendered the reported GLB to a 256x256 PNG successfully with `render-glb`.
+- Added `rebuild:native` and `postinstall` scripts plus deployment instructions.
+
 ## 5-Question Reboot Check
 | Question | Answer |
 |----------|--------|

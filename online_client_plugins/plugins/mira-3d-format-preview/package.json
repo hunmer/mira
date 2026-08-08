@@ -1,6 +1,6 @@
 {
   "name": "mira-3d-format-preview",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": true,
   "type": "module",
   "description": "TresJS GLB/GLTF preview plugin for Mira",

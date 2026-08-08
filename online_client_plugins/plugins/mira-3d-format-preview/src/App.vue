@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { TresCanvas } from '@tresjs/core'
-import { OrbitControls, GLTFModel } from '@tresjs/cientos'
+import { OrbitControls } from '@tresjs/cientos'
+import ModelScene from './ModelScene.vue'
 
 const params = new URLSearchParams(window.location.search)
 const fileName = ref(params.get('fileName') || '3D model')
@@ -41,7 +42,7 @@ function closeWindow() {
       <TresCanvas v-if="modelPath" clear-color="#0b121b" shadows>
         <TresPerspectiveCamera :position="[4, 3, 6]" :look-at="[0, 0, 0]" />
         <OrbitControls make-default />
-        <GLTFModel :path="modelPath" draco @load="onModelLoaded" @error="onModelError" />
+        <ModelScene :path="modelPath" @loaded="onModelLoaded" @error="onModelError" />
         <TresAmbientLight :intensity="1.2" />
         <TresDirectionalLight :position="[4, 6, 4]" :intensity="2" cast-shadow />
         <TresGridHelper :args="[10, 10, '#294458', '#162633']" />
