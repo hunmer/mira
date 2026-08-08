@@ -111,6 +111,18 @@ export default {
     emptyLibraries: '当前服务器下暂无素材库,请先在服务端创建。',
     fileCount: '{n} 个文件',
   },
+  tree: {
+    createSibling: '新建同级',
+    createChild: '新建子{type}',
+    delete: '删除',
+    createPrompt: '请输入{type}名称',
+    newName: '新建{type}{n}',
+    createFailed: '创建失败:{error}',
+    deleteFolderConfirm: '确定删除文件夹「{name}」?',
+    deleteFilesConfirm: '是否同时删除其中的文件?\n(取消则仅删除文件夹,文件移到根目录)',
+    deleteTagConfirm: '确定删除标签「{name}」?',
+    deleteFailed: '删除失败:{error}',
+  },
   server: {
     manager: '服务器管理',
     add: '新增服务器',

@@ -9,7 +9,7 @@ const props = defineProps<{
   fetchDirs: (path?: string) => Promise<TreeNode[]>
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   select: [value: string]
   mkdir: [node: TreeNode]
 }>()
@@ -35,6 +35,14 @@ async function toggle() {
   }
   props.node.expanded = !props.node.expanded
 }
+
+// 点击文件夹名：选中并默认展开（已展开的不折叠，折叠仍由箭头控制）
+async function selectNode() {
+  emit('select', props.node.value)
+  if (!props.node.isLeaf && !props.node.expanded) {
+    await toggle()
+  }
+}
 </script>
 
 <template>
@@ -52,7 +60,7 @@ async function toggle() {
       />
       <span v-else class="w-4 shrink-0" />
       <RiFolderLine class="size-4 shrink-0 text-muted-foreground" />
-      <span class="min-w-0 flex-1 truncate" @click="$emit('select', node.value)">{{ node.label }}</span>
+      <span class="min-w-0 flex-1 truncate" @click="selectNode">{{ node.label }}</span>
       <RiAddLine
         class="size-3.5 shrink-0 cursor-pointer opacity-30 hover:opacity-100"
         @click.stop="$emit('mkdir', node)"

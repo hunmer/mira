@@ -79,6 +79,23 @@ export function createRouter(deps: RouterDeps): RequestHandler {
         return loginTo(req.payload.serverURL, req.payload.username, req.payload.password);
       case 'LIB_LIST':
         return withAuth((client: MiraClient) => client.libraries().getAll());
+      case 'NODE_CREATE':
+        // kind 区分:同一入口走 folders/tags 的 create
+        return withAuth(async (client: MiraClient) => {
+          const { kind, libraryId, title, parentId } = req.payload;
+          if (kind === 'folder') {
+            return client.folders().create({ libraryId, title, parent_id: parentId });
+          }
+          return client.tags().create({ libraryId, title, parent_id: parentId });
+        });
+      case 'NODE_DELETE':
+        return withAuth(async (client: MiraClient) => {
+          const { kind, libraryId, id, deleteFiles } = req.payload;
+          if (kind === 'folder') {
+            return client.folders().delete({ libraryId, id, deleteFiles });
+          }
+          return client.tags().delete({ libraryId, id });
+        });
       case 'FOLDER_LIST':
         return withAuth((client: MiraClient) =>
           client.folders().getAll(req.payload.libraryId),

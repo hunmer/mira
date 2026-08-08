@@ -31,6 +31,27 @@ export type Request =
   | { type: 'LIB_LIST' }
   | { type: 'FOLDER_LIST'; payload: { libraryId: string } }
   | { type: 'TAG_LIST'; payload: { libraryId: string } }
+  // 文件夹 / 标签 CRUD(create/delete 统一入口,kind 区分)
+  | {
+      type: 'NODE_CREATE';
+      payload: {
+        kind: 'folder' | 'tag';
+        libraryId: string;
+        title: string;
+        /** 父节点 id;0/undefined 为根 */
+        parentId?: number;
+      };
+    }
+  | {
+      type: 'NODE_DELETE';
+      payload: {
+        kind: 'folder' | 'tag';
+        libraryId: string;
+        id: number;
+        /** 仅 folder:是否连同其下文件一起删除(默认 false 仅删空目录结构) */
+        deleteFiles?: boolean;
+      };
+    }
   // 上传
   | {
       type: 'UPLOAD_FILES';
@@ -74,7 +95,7 @@ export type ContentCommand =
 const REQUEST_TYPES = new Set<Request['type']>([
   'AUTH_LOGIN', 'AUTH_VERIFY', 'CONFIG_GET', 'CONFIG_SET',
   'SERVERS_LIST', 'SERVERS_SAVE', 'SERVER_ACTIVATE', 'SERVER_TEST',
-  'LIB_LIST', 'FOLDER_LIST', 'TAG_LIST',
+  'LIB_LIST', 'FOLDER_LIST', 'TAG_LIST', 'NODE_CREATE', 'NODE_DELETE',
   'UPLOAD_FILES', 'UPLOAD_FROM_URL', 'UPLOAD_STATUS', 'UPLOAD_CANCEL',
   'CAPTURE_VISIBLE', 'CAPTURE_FULLPAGE', 'CAPTURE_SELECTION',
   'SNIFFER_START', 'SNIFFER_STOP', 'SNIFFER_QUERY',

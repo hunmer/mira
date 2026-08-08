@@ -59,9 +59,11 @@ export function useHomeFolderHandler() {
       console.log('📁 打开文件夹:', { folderId, options })
       
       // 更新当前文件夹状态
+      // 优先级：title > label > null
+      // （快捷分类 全部/未分类/回收站 等只提供 label，缺失时不能回落到 id）
       currentFolder.value = {
         id: folderId,
-        title: options?.title || null,
+        title: options?.title || options?.label || null,
         libraryId: options?.libraryId || null,
         path: options?.path
       }

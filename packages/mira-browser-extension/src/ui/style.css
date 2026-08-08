@@ -32,3 +32,29 @@ html, body {
   font: 13px/1.5 system-ui, -apple-system, sans-serif;
 }
 #app { width: 100%; min-height: 100vh; }
+
+/*
+ * Material Icons —— 本地字体(从 miri-client 同步的 ttf)。
+ * MV3 扩展 CSP 禁止远程字体,故字体文件放 public/fonts/,构建时原样拷到 dist/。
+ * 用法:<span class="material-icons">folder</span>,与桌面端一致。
+ */
+@font-face {
+  font-family: 'Material Icons';
+  font-style: normal;
+  font-weight: 400;
+  src: url('/fonts/material-icons.ttf') format('truetype');
+}
+.material-icons {
+  font-family: 'Material Icons';
+  font-weight: normal;
+  font-style: normal;
+  display: inline-block;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}

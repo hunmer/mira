@@ -13,8 +13,10 @@ import { useI18n } from 'vue-i18n';
 import { useLibraryTree, filterTree, collectIds, flattenTree } from '@/ui/composables/useLibraryTree';
 import { useSettings } from '@/ui/composables/useSettings';
 import { useUploadQueue } from '@/ui/composables/useUploadQueue';
+import { useBackground } from '@/ui/composables/useBackground';
 import LibraryTree from './LibraryTree.vue';
 import Dropzone from '@/ui/components/upload/Dropzone.vue';
+import ContextMenu from '@/ui/components/ui/ContextMenu.vue';
 import { parseDrop, canAcceptDrop, urlKind } from '@/shared/drag-data';
 import { dbg } from '@/shared/debug';
 import type { LibraryTreeNode } from '@/shared/types';
@@ -24,6 +26,7 @@ const props = defineProps<{ mode: 'folder' | 'tag' }>();
 const { t } = useI18n();
 const { settings } = useSettings();
 const { addFiles } = useUploadQueue();
+const bg = useBackground();
 const { tree, count, loading, error, load } = useLibraryTree(props.mode);
 
 // ---- 展开/折叠状态 ----
@@ -130,6 +133,87 @@ const titleText = computed(() => props.mode === 'folder' ? t('common.folder') : 
 const unitText = computed(() => props.mode === 'folder' ? t('library.folderUnit') : t('library.tagUnit'));
 
 const noData = computed(() => !loading.value && !error.value && count.value === 0);
+
+// ---- 右键菜单:新建同级 / 新建子级 / 删除 ----
+// menu:右键的节点 + 坐标;为 null 时菜单关闭
+const menu = ref<{ node: LibraryTreeNode; x: number; y: number } | null>(null);
+
+function onContextMenu(node: LibraryTreeNode, x: number, y: number) {
+  menu.value = { node, x, y };
+}
+function closeMenu() {
+  menu.value = null;
+}
+
+/**
+ * 新建节点(sibling/child 由 level 决定 parentId):
+ *  - sibling:与目标节点同级 → parentId = node.parentId
+ *  - child:作为目标节点的子级 → parentId = node.id
+ *
+ * 用 prompt 收集名称(默认「新建文件夹/标签 N」),空名取消。
+ */
+async function createNode(level: 'sibling' | 'child') {
+  const target = menu.value?.node;
+  if (!target) return;
+  const parentId = level === 'sibling' ? target.parentId : target.id;
+  closeMenu();
+
+  const libId = settings.value.libraryId;
+  if (!libId) return;
+  const defaultName = t('tree.newName', { type: titleText.value, n: count.value + 1 });
+  // eslint-disable-next-line no-alert
+  const title = prompt(t('tree.createPrompt', { type: titleText.value }), defaultName);
+  if (!title?.trim()) return;
+
+  try {
+    await bg.createNode(props.mode, libId, title.trim(), parentId || undefined);
+    await load(libId);
+    // 新建子级:展开其父,使新节点可见
+    if (level === 'child') {
+      const next = new Set(expanded.value);
+      next.add(target.id);
+      expanded.value = next;
+    }
+  } catch (e: any) {
+    dbg.warn('lib-tree', 'createNode failed', { error: e?.message });
+    // eslint-disable-next-line no-alert
+    alert(t('tree.createFailed', { error: e?.message ?? String(e) }));
+  }
+}
+
+/**
+ * 删除节点。folder 支持连文件一起删(二次确认 + deleteFiles 提示)。
+ */
+async function deleteNode() {
+  const target = menu.value?.node;
+  if (!target) return;
+  closeMenu();
+
+  const libId = settings.value.libraryId;
+  if (!libId) return;
+
+  let deleteFiles = false;
+  if (props.mode === 'folder') {
+    // folder:询问是否连文件一起删(浏览器原生 confirm)
+    // eslint-disable-next-line no-alert
+    const ok = confirm(t('tree.deleteFolderConfirm', { name: target.title }));
+    if (!ok) return;
+    // eslint-disable-next-line no-alert
+    deleteFiles = confirm(t('tree.deleteFilesConfirm'));
+  } else {
+    // eslint-disable-next-line no-alert
+    if (!confirm(t('tree.deleteTagConfirm', { name: target.title }))) return;
+  }
+
+  try {
+    await bg.deleteNode(props.mode, libId, target.id, deleteFiles);
+    await load(libId);
+  } catch (e: any) {
+    dbg.warn('lib-tree', 'deleteNode failed', { error: e?.message });
+    // eslint-disable-next-line no-alert
+    alert(t('tree.deleteFailed', { error: e?.message ?? String(e) }));
+  }
+}
 </script>
 
 <template>
@@ -189,8 +273,17 @@ const noData = computed(() => !loading.value && !error.value && count.value === 
         :matched="matched"
         @toggle="toggle"
         @drop="onDrop"
+        @contextmenu="onContextMenu"
       />
     </div>
+
+    <!-- 右键菜单:新建同级 / 新建子级 / 删除 -->
+    <ContextMenu v-if="menu" :x="menu.x" :y="menu.y" @close="closeMenu">
+      <button @click="createNode('sibling')">{{ t('tree.createSibling') }}</button>
+      <button @click="createNode('child')">{{ t('tree.createChild', { type: titleText }) }}</button>
+      <div class="sep" />
+      <button class="danger" @click="deleteNode">{{ t('tree.delete') }}</button>
+    </ContextMenu>
   </div>
 </template>
 

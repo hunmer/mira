@@ -70,10 +70,10 @@ const toggleRole = (role: string) => {
           <Label>{{ t('library.path') }}</Label>
           <PathTreeSelect v-model="form.path" :placeholder="t('library.pathPlaceholder')" />
         </div>
-        <div class="space-y-2">
+        <!-- <div class="space-y-2">
           <Label>{{ t('library.icon') }}</Label>
           <Input v-model="form.icon" :placeholder="t('library.iconPlaceholder')" />
-        </div>
+        </div> -->
         <div class="flex items-center gap-2">
           <input id="enableHash" v-model="form.enableHash" type="checkbox" class="size-4 rounded border-input" />
           <Label for="enableHash">{{ t('library.enableHash') }}</Label>

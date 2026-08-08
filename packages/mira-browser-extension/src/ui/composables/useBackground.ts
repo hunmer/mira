@@ -46,6 +46,13 @@ export function useBackground() {
     async listTags(libraryId: string) {
       return send<Tag[]>({ type: 'TAG_LIST', payload: { libraryId } });
     },
+    // ---- 文件夹 / 标签 CRUD(create/delete 统一入口) ----
+    async createNode(kind: 'folder' | 'tag', libraryId: string, title: string, parentId?: number) {
+      return send({ type: 'NODE_CREATE', payload: { kind, libraryId, title, parentId } });
+    },
+    async deleteNode(kind: 'folder' | 'tag', libraryId: string, id: number, deleteFiles?: boolean) {
+      return send({ type: 'NODE_DELETE', payload: { kind, libraryId, id, deleteFiles } });
+    },
     async uploadFiles(files: StagedFile[], libraryId: string, tags?: string[], folderId?: string) {
       return send({ type: 'UPLOAD_FILES', payload: { files, libraryId, tags, folderId } });
     },

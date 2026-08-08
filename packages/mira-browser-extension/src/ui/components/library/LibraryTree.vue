@@ -33,6 +33,8 @@ const emit = defineEmits<{
   toggle: [id: number];
   /** 拖放到某节点:带原始 DragEvent,父级用 parseDrop 提取 files / urls */
   drop: [node: LibraryTreeNode, e: DragEvent];
+  /** 右键菜单:带节点 + 鼠标坐标,父级弹 ContextMenu */
+  contextmenu: [node: LibraryTreeNode, x: number, y: number];
 }>();
 
 // 当前被拖拽悬停的节点 id(用于高亮落点)
@@ -41,6 +43,13 @@ const dragOverId = ref<number | null>(null);
 function onToggle(node: LibraryTreeNode) {
   // 仅有子节点的项可折叠/展开
   if (node.children.length) emit('toggle', node.id);
+}
+
+// 右键:阻止浏览器默认菜单,把节点 + 鼠标坐标抛给父级
+function onContextMenu(e: MouseEvent, node: LibraryTreeNode) {
+  e.preventDefault();
+  e.stopPropagation();
+  emit('contextmenu', node, e.clientX, e.clientY);
 }
 
 // ---- 拖拽落点 ----
@@ -104,6 +113,7 @@ function iconStyle(node: LibraryTreeNode): Record<string, string> {
         @dragover="onDragOver($event, node)"
         @drop="onDrop($event, node)"
         @click="onToggle(node)"
+        @contextmenu="onContextMenu($event, node)"
       >
         <!-- 展开/折叠:有子节点显示切换图标;无子节点占位对齐 -->
         <span class="toggle" :class="{ invisible: !node.children.length }">
@@ -181,6 +191,7 @@ function iconStyle(node: LibraryTreeNode): Record<string, string> {
         :matched="matched"
         @toggle="emit('toggle', $event)"
         @drop="(n, f) => emit('drop', n, f)"
+        @contextmenu="(n, x, y) => emit('contextmenu', n, x, y)"
       />
     </li>
   </ul>

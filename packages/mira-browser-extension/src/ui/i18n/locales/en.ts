@@ -111,6 +111,18 @@ export default {
     emptyLibraries: 'No libraries on this server. Create one on the server first.',
     fileCount: '{n} files',
   },
+  tree: {
+    createSibling: 'New sibling',
+    createChild: 'New sub-{type}',
+    delete: 'Delete',
+    createPrompt: 'Enter {type} name',
+    newName: 'New {type} {n}',
+    createFailed: 'Create failed: {error}',
+    deleteFolderConfirm: 'Delete folder "{name}"?',
+    deleteFilesConfirm: 'Also delete the files inside?\n(Cancel to delete the folder only; files move to root)',
+    deleteTagConfirm: 'Delete tag "{name}"?',
+    deleteFailed: 'Delete failed: {error}',
+  },
   server: {
     manager: 'Server management',
     add: 'Add server',

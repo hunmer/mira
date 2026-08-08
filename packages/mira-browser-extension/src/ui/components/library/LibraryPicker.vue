@@ -12,6 +12,7 @@ import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useConnection } from '@/ui/composables/useConnection';
 import { useSettings } from '@/ui/composables/useSettings';
+import LibIcon from './LibIcon.vue';
 import type { Library } from 'mira-app-core/shared/sdk';
 
 const { t } = useI18n();
@@ -19,12 +20,6 @@ const { libraries, refreshLibraries } = useConnection();
 const { update } = useSettings();
 
 onMounted(refreshLibraries);
-
-// 图标:库自带的 icon 字段优先,否则按文件类型给默认 emoji
-function icon(lib: Library): string {
-  if (lib.icon) return lib.icon;
-  return '🗂️';
-}
 
 function desc(lib: Library): string {
   if (lib.description) return lib.description;
@@ -53,7 +48,7 @@ async function pick(lib: Library) {
 
     <div v-else class="grid">
       <button v-for="lib in sorted" :key="lib.id" class="card" @click="pick(lib)">
-        <span class="icon">{{ icon(lib) }}</span>
+        <LibIcon class="icon" :name="lib.icon" :size="26" />
         <span class="name" :title="lib.name">{{ lib.name }}</span>
         <span class="desc" :title="desc(lib)">{{ desc(lib) }}</span>
       </button>
@@ -65,6 +60,8 @@ async function pick(lib: Library) {
 .picker {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
   height: 100%;
   padding: 12px;
   overflow-y: auto;
@@ -109,7 +106,7 @@ async function pick(lib: Library) {
   min-height: 84px;
 }
 .card:hover { border-color: var(--primary); transform: translateY(-1px); }
-.icon { font-size: 22px; line-height: 1; }
+.icon { line-height: 1; }
 .name {
   font-size: 13px; font-weight: 600;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;

@@ -6,7 +6,7 @@
  *   并带「点此重试」tooltip;点击点 → 立即探活重试
  * - 点击某 badge → 切换激活服务器(emit switch,由父组件触发 useConnection.switchServer)
  * - 列表为空时显示「+ 添加服务器」(emit manage)
- * - 右侧⚙ → emit manage(打开 ServerManagerView)
+ * - 右侧⚙ → emit manage(打开 ServerManagerView);失败时换成 ↻ 重试按钮
  *
  * 切换/管理由父组件协调(需要联动 status 与全屏覆盖)。
  */
@@ -78,38 +78,6 @@ const isFailed = computed(() => status.value === 'failed');
     >↻</button>
     <button
       v-else
-      class="manage"
-      :title="t('server.manager')"
-      :aria-label="t('server.manager')"
-      @click="$emit('manage')"
-    >
-      <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
-        <path d="M19.43 12.98a7.8 7.8 0 0 0 0-1.96l2.11-1.65a.5.5 0 0 0 .12-.64l-2-3.46a.5.5 0 0 0-.6-.22l-2.49 1a7.3 7.3 0 0 0-1.7-.98l-.38-2.65A.5.5 0 0 0 14 2h-4a.5.5 0 0 0-.5.42l-.38 2.65c-.61.25-1.18.58-1.7.98l-2.49-1a.5.5 0 0 0-.6.22l-2 3.46a.5.5 0 0 0 .12.64l2.11 1.65a7.8 7.8 0 0 0 0 1.96l-2.11 1.65a.5.5 0 0 0-.12.64l2 3.46a.5.5 0 0 0 .6.22l2.49-1c.52.4 1.09.73 1.7.98l.38 2.65c.05.24.26.42.5.42h4c.24 0 .45-.18.5-.42l.38-2.65c.61-.25 1.18-.58 1.7-.98l2.49 1a.5.5 0 0 0 .6-.22l2-3.46a.5.5 0 0 0-.12-.64l-2.11-1.65zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z" fill="currentColor"/>
-      </svg>
-    </button>
-  </div>
-</template>
-</script>
-
-<template>
-  <div class="bar">
-    <span class="dot" :style="{ background: statusColor }" :title="status" />
-    <div class="badges">
-      <button
-        v-for="s in servers"
-        :key="s.id"
-        class="badge"
-        :class="{ active: s.id === activeServer?.id }"
-        :title="s.serverURL"
-        @click="$emit('switch', s.id)"
-      >
-        {{ s.name }}
-      </button>
-      <button v-if="!servers.length" class="badge add" @click="$emit('manage')">
-        + {{ t('server.add') }}
-      </button>
-    </div>
-    <button
       class="manage"
       :title="t('server.manager')"
       :aria-label="t('server.manager')"

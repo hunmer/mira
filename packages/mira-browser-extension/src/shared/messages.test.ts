@@ -22,6 +22,17 @@ describe('messages 类型守卫', () => {
     })).toBe(true);
   });
 
+  it('isRequest 识别文件夹/标签 CRUD Request', () => {
+    expect(isRequest({
+      type: 'NODE_CREATE',
+      payload: { kind: 'folder', libraryId: 'lib1', title: 'x', parentId: 0 },
+    })).toBe(true);
+    expect(isRequest({
+      type: 'NODE_DELETE',
+      payload: { kind: 'tag', libraryId: 'lib1', id: 5 },
+    })).toBe(true);
+  });
+
   it('isRequest 拒绝未知 type', () => {
     expect(isRequest({ type: 'UNKNOWN' })).toBe(false);
     expect(isRequest(null)).toBe(false);

@@ -79,7 +79,7 @@ async function executeSql() {
   }
 }
 
-watch(selectedLib, () => { tables.value = []; rows.value = []; columns.value = []; loadTables() })
+watch(selectedLib, () => { tables.value = []; rows.value = []; columns.value = []; loadTables() }, { immediate: true })
 </script>
 
 <template>
