@@ -3,11 +3,9 @@
  * 全屏大图查看器。
  *
  * 消费 useImageViewer().state:state 非空时 Teleport 到 body 渲染全屏遮罩 +
- * contain 大图。核心交互「鼠标移动后关闭」:打开后给一段宽限期(让用户先看到图),
- * 宽限期过后任何 mousemove/touchmove 即关闭。同时保留点击遮罩 / ESC 关闭作为兜底
- * (纯「移动即关」无法静止欣赏,宽限期 + 显式关闭两者互补)。
+ * contain 大图。关闭方式:点击遮罩空白 / 右上角 × / ESC。
  */
-import { ref, watch, onUnmounted, nextTick } from 'vue';
+import { ref, watch, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useImageViewer } from '@/ui/composables/useImageViewer';
 
@@ -15,51 +13,32 @@ const { t } = useI18n();
 const { state, close } = useImageViewer();
 
 const loading = ref(true);
-let graceTimer: ReturnType<typeof setTimeout> | null = null;
 
 function reset() {
   loading.value = true;
-  if (graceTimer) {
-    clearTimeout(graceTimer);
-    graceTimer = null;
-  }
-  window.removeEventListener('mousemove', onMove);
-  window.removeEventListener('touchmove', onMove);
   document.removeEventListener('keydown', onKey);
 }
 
-/** 宽限期后的鼠标/触摸移动 → 关闭查看器 */
-function onMove() {
-  close();
-}
 /** ESC → 关闭 */
 function onKey(e: KeyboardEvent) {
   if (e.key === 'Escape') close();
 }
 
-// state 由 null→{url} 触发打开:挂载宽限期 + 事件
+// state 变化:打开时绑 ESC,关闭时清理
 watch(
   () => state.value,
-  async (s, prev) => {
-    // 关闭(prev 非空 → null):清理
+  (s, prev) => {
     if (!s) {
+      // 关闭 / 已关闭:确保清理
       reset();
       return;
     }
-    // 切换图片(s/prev 都非空):仅重置 loading,不重新挂事件
-    if (prev) {
-      loading.value = true;
-      return;
+    if (!prev) {
+      // null → {url} 首次打开:绑 ESC
+      document.addEventListener('keydown', onKey);
     }
-    // 首次打开:绑兜底事件(ESC 立即生效),mousemove 延迟到宽限期后绑定
+    // 每次新 url 都重置 loading 占位
     loading.value = true;
-    await nextTick();
-    document.addEventListener('keydown', onKey);
-    graceTimer = setTimeout(() => {
-      // 宽限期(800ms)内不打断用户看图;之后鼠标一动即关
-      window.addEventListener('mousemove', onMove);
-      window.addEventListener('touchmove', onMove);
-    }, 800);
   },
   { immediate: true },
 );
@@ -99,8 +78,6 @@ onUnmounted(reset);
   display: flex;
   align-items: center;
   justify-content: center;
-  /* 避免遮罩本身的移动事件被图片挡住后体验割裂 */
-  cursor: zoom-out;
 }
 .loading {
   position: absolute;

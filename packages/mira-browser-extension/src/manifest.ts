@@ -8,7 +8,7 @@ export default defineManifest({
   description: '截图、拖拽上传、资源嗅探到 Mira 素材库',
   permissions: [
     'activeTab', 'tabs', 'storage', 'scripting',
-    'contextMenus', 'sidePanel', 'offscreen', 'commands',
+    'contextMenus', 'sidePanel', 'offscreen', 'commands', 'downloads',
   ],
   host_permissions: ['<all_urls>'],
   background: {

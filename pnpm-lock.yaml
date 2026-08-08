@@ -173,12 +173,15 @@ importers:
       '@hunmer/vue-masonry':
         specifier: workspace:*
         version: link:../vue-masonry
+      fflate:
+        specifier: ^0.8.3
+        version: 0.8.3
       mira-app-core:
         specifier: workspace:*
         version: link:../mira-app-core
       motion-v:
         specifier: ^2.2.1
-        version: 2.2.1(@vueuse/core@14.3.0(vue@3.5.13(typescript@5.7.3)))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vue@3.5.13(typescript@5.7.3))
+        version: 2.2.1(@vueuse/core@14.4.0(vue@3.5.13(typescript@5.7.3)))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vue@3.5.13(typescript@5.7.3))
       vue:
         specifier: ^3.4.0
         version: 3.5.13(typescript@5.7.3)
@@ -458,8 +461,8 @@ importers:
         specifier: ^4.15.1
         version: 4.15.1(vue@3.5.13(typescript@5.7.3))(zod@3.25.76)
       '@vueuse/core':
-        specifier: ^14.3.0
-        version: 14.3.0(vue@3.5.13(typescript@5.7.3))
+        specifier: ^14.4.0
+        version: 14.4.0(vue@3.5.13(typescript@5.7.3))
       axios:
         specifier: ^1.16.1
         version: 1.16.1
@@ -476,8 +479,8 @@ importers:
         specifier: ^3.4.0
         version: 3.4.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       reka-ui:
-        specifier: ^2.9.7
-        version: 2.9.7(vue@3.5.13(typescript@5.7.3))
+        specifier: ^2.10.1
+        version: 2.10.1(vue@3.5.13(typescript@5.7.3))
       shadcn-vue:
         specifier: ^2.7.3
         version: 2.7.4(@cfworker/json-schema@4.1.1)(babel-plugin-macros@3.1.0)(eslint@9.39.4(jiti@2.7.0))(magicast@0.3.5)(vue@3.5.13(typescript@5.7.3))
@@ -538,7 +541,7 @@ importers:
     dependencies:
       motion-v:
         specifier: ^2.0.0
-        version: 2.2.1(@vueuse/core@14.3.0(vue@3.5.13(typescript@5.7.3)))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vue@3.5.13(typescript@5.7.3))
+        version: 2.2.1(@vueuse/core@14.4.0(vue@3.5.13(typescript@5.7.3)))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vue@3.5.13(typescript@5.7.3))
     devDependencies:
       '@vitejs/plugin-vue':
         specifier: ^5.2.4
@@ -2837,17 +2840,30 @@ packages:
     peerDependencies:
       vue: ^3.5.0
 
+  '@vueuse/core@14.4.0':
+    resolution: {integrity: sha512-X4WHz1HlCzCBoYXesUkifzzWBAcZgXG8Fi5iNPQg/epdzOB3gu8Fawj3hvuwYR1nGcXGnvxwYYcUC/71++svtQ==}
+    peerDependencies:
+      vue: ^3.5.0
+
   '@vueuse/metadata@10.11.1':
     resolution: {integrity: sha512-IGa5FXd003Ug1qAZmyE8wF3sJ81xGLSqTqtQ6jaVfkeZ4i5kS2mwQF61yhVqojRnenVew5PldLyRgvdl4YYuSw==}
 
   '@vueuse/metadata@14.3.0':
     resolution: {integrity: sha512-BwxmbAzwAVF50+MW57GXOUEV61nFBGnlBvrTqj49PqWJu3uw7hdu72ztXeZ33RdZtDY6kO+bfCAE1PCn88Tktw==}
 
+  '@vueuse/metadata@14.4.0':
+    resolution: {integrity: sha512-swx/255R6JyHZFJhx845iz5CRWDZdCfvkZOpACWc5+c5WHcG24mv8gUT1WIdFQaHt6dq79rvILd9QnCWiyVm9g==}
+
   '@vueuse/shared@10.11.1':
     resolution: {integrity: sha512-LHpC8711VFZlDaYUXEBbFBCQ7GS3dVU9mjOhhMhXP6txTV4EhYQg/KGnQuvt/sPAtoUKq7VVUnL6mVtFoL42sA==}
 
   '@vueuse/shared@14.3.0':
     resolution: {integrity: sha512-bZpge9eSXwa4ToSiqJ7j6KRwhAsneMFoSz3LMWKQDkqimm3D/tbFlrklrs/IOqC8tEcYmXQZJ6N0UrjhBirVCg==}
+    peerDependencies:
+      vue: ^3.5.0
+
+  '@vueuse/shared@14.4.0':
+    resolution: {integrity: sha512-JRgY90Sz8DDtPMsaDflvPMp9xYk69JZAmbuDvAquUVXKr2gEjqtzGNTTthLfckH0BzBqvnu31gb4a8TGLRe79g==}
     peerDependencies:
       vue: ^3.5.0
 
@@ -4274,6 +4290,9 @@ packages:
     peerDependenciesMeta:
       picomatch:
         optional: true
+
+  fflate@0.8.3:
+    resolution: {integrity: sha512-tbZNuJrLwGUp3zshBtdy4W+ORxZuIh8a5ilyIEQDC5rY1f3U20JMry0Ll3WBzU58EZKsEuJFXhb5gwv8CsPvgA==}
 
   file-entry-cache@8.0.0:
     resolution: {integrity: sha512-XXTUwCvisa5oacNGRP9SfNtYBNAMi+RPwBFmblZEF7N7swHYQS6/Zfk7SRwx4D5j3CH211YNRco1DEMNVfZCnQ==}
@@ -6194,6 +6213,11 @@ packages:
   regexp-tree@0.1.27:
     resolution: {integrity: sha512-iETxpjK6YoRWJG5o6hXLwvjYAoW+FEZn9os0PD/b6AP6xQwsa/Y7lCVgIixBbUPMfhu+i2LtdeAqVTgGlQarfA==}
     hasBin: true
+
+  reka-ui@2.10.1:
+    resolution: {integrity: sha512-drcOQ4rQtDYAcGCsyQBqQg8QQ+H3B+zDaMJU0h8KPEPMa7g9BHu3zcOi4OB39XJSWizceFoNO0Z9tctSGLOXqg==}
+    peerDependencies:
+      vue: '>= 3.4.0'
 
   reka-ui@2.9.7:
     resolution: {integrity: sha512-aX7foYYR20v4+majO58OJJdBNfLMm0eJb448l9N4JVy8JB7GXOr4H/S4a+J1pkcoxZH8Cb7YHpJ855+miAm7sA==}
@@ -10139,9 +10163,18 @@ snapshots:
       '@vueuse/shared': 14.3.0(vue@3.5.13(typescript@5.7.3))
       vue: 3.5.13(typescript@5.7.3)
 
+  '@vueuse/core@14.4.0(vue@3.5.13(typescript@5.7.3))':
+    dependencies:
+      '@types/web-bluetooth': 0.0.21
+      '@vueuse/metadata': 14.4.0
+      '@vueuse/shared': 14.4.0(vue@3.5.13(typescript@5.7.3))
+      vue: 3.5.13(typescript@5.7.3)
+
   '@vueuse/metadata@10.11.1': {}
 
   '@vueuse/metadata@14.3.0': {}
+
+  '@vueuse/metadata@14.4.0': {}
 
   '@vueuse/shared@10.11.1(vue@3.5.13(typescript@5.7.3))':
     dependencies:
@@ -10151,6 +10184,10 @@ snapshots:
       - vue
 
   '@vueuse/shared@14.3.0(vue@3.5.13(typescript@5.7.3))':
+    dependencies:
+      vue: 3.5.13(typescript@5.7.3)
+
+  '@vueuse/shared@14.4.0(vue@3.5.13(typescript@5.7.3))':
     dependencies:
       vue: 3.5.13(typescript@5.7.3)
 
@@ -11892,6 +11929,8 @@ snapshots:
     optionalDependencies:
       picomatch: 4.0.4
 
+  fflate@0.8.3: {}
+
   file-entry-cache@8.0.0:
     dependencies:
       flat-cache: 4.0.1
@@ -13335,6 +13374,19 @@ snapshots:
       - react
       - react-dom
 
+  motion-v@2.2.1(@vueuse/core@14.4.0(vue@3.5.13(typescript@5.7.3)))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vue@3.5.13(typescript@5.7.3)):
+    dependencies:
+      '@vueuse/core': 14.4.0(vue@3.5.13(typescript@5.7.3))
+      framer-motion: 12.40.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      hey-listen: 1.0.8
+      motion-dom: 12.40.0
+      motion-utils: 12.39.0
+      vue: 3.5.13(typescript@5.7.3)
+    transitivePeerDependencies:
+      - '@emotion/is-prop-valid'
+      - react
+      - react-dom
+
   mrmime@2.0.1: {}
 
   ms@2.0.0: {}
@@ -13999,6 +14051,22 @@ snapshots:
 
   regexp-tree@0.1.27: {}
 
+  reka-ui@2.10.1(vue@3.5.13(typescript@5.7.3)):
+    dependencies:
+      '@floating-ui/dom': 1.7.6
+      '@floating-ui/vue': 1.1.11(vue@3.5.13(typescript@5.7.3))
+      '@internationalized/date': 3.12.3
+      '@internationalized/number': 3.6.6
+      '@tanstack/vue-virtual': 3.13.24(vue@3.5.13(typescript@5.7.3))
+      '@vueuse/core': 14.4.0(vue@3.5.13(typescript@5.7.3))
+      '@vueuse/shared': 14.3.0(vue@3.5.13(typescript@5.7.3))
+      aria-hidden: 1.2.6
+      defu: 6.1.7
+      ohash: 2.0.11
+      vue: 3.5.13(typescript@5.7.3)
+    transitivePeerDependencies:
+      - '@vue/composition-api'
+
   reka-ui@2.9.7(vue@3.5.13(typescript@5.7.3)):
     dependencies:
       '@floating-ui/dom': 1.7.6
@@ -14006,7 +14074,7 @@ snapshots:
       '@internationalized/date': 3.12.3
       '@internationalized/number': 3.6.6
       '@tanstack/vue-virtual': 3.13.24(vue@3.5.13(typescript@5.7.3))
-      '@vueuse/core': 14.3.0(vue@3.5.13(typescript@5.7.3))
+      '@vueuse/core': 14.4.0(vue@3.5.13(typescript@5.7.3))
       '@vueuse/shared': 14.3.0(vue@3.5.13(typescript@5.7.3))
       aria-hidden: 1.2.6
       defu: 6.1.7
@@ -14276,7 +14344,7 @@ snapshots:
       postcss: 8.5.14
       postcss-selector-parser: 7.1.1
       prompts: 2.4.2
-      reka-ui: 2.9.7(vue@3.5.13(typescript@5.7.3))
+      reka-ui: 2.10.1(vue@3.5.13(typescript@5.7.3))
       semver: 7.8.0
       stringify-object: 6.0.0
       tailwindcss: 4.3.0

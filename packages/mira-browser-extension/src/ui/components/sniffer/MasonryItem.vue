@@ -2,14 +2,12 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { SniffedResource } from '@/shared/types';
-import { useImagePreview } from '@/ui/composables/useImagePreview';
 import { useImageViewer } from '@/ui/composables/useImageViewer';
 
 const { t } = useI18n();
 const props = defineProps<{ resource: SniffedResource; selected: boolean }>();
 defineEmits<{ toggle: [] }>();
 
-const preview = useImagePreview();
 const viewer = useImageViewer();
 
 /** 可预览的大图 url(图片用原图,video 用 poster);非可视媒体返回 null */
@@ -20,26 +18,11 @@ const previewUrl = computed(() => {
   return null;
 });
 
-function onEnter(e: MouseEvent) {
-  const url = previewUrl.value;
-  if (url) preview.show(url, e.clientX, e.clientY);
-}
-function onMove(e: MouseEvent) {
-  const url = previewUrl.value;
-  if (url) preview.show(url, e.clientX, e.clientY);
-}
-function onLeave() {
-  preview.hide();
-}
-
 /** 右上角「查看大图」:打开全屏查看器 */
 function openLarge(e: MouseEvent) {
   e.stopPropagation();
   const url = previewUrl.value;
-  if (url) {
-    preview.hide();
-    viewer.open(url);
-  }
+  if (url) viewer.open(url);
 }
 </script>
 
@@ -51,18 +34,12 @@ function openLarge(e: MouseEvent) {
       :src="resource.url"
       class="media"
       loading="lazy"
-      @mouseenter="onEnter"
-      @mousemove="onMove"
-      @mouseleave="onLeave"
     />
     <img
       v-else-if="resource.kind === 'video' && resource.poster"
       :src="resource.poster"
       class="media"
       loading="lazy"
-      @mouseenter="onEnter"
-      @mousemove="onMove"
-      @mouseleave="onLeave"
     />
     <div v-else class="media icon">{{ resource.kind === 'audio' ? '🎵' : '🎬' }}</div>
 

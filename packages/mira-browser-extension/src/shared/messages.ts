@@ -60,6 +60,8 @@ export type Request =
   | { type: 'UPLOAD_FROM_URL'; payload: { url: string; kind: ResourceKind; libraryId: string; folderId?: number; tags?: string[]; referrer?: string } }
   | { type: 'UPLOAD_STATUS' }
   | { type: 'UPLOAD_CANCEL'; payload: { id: string } }
+  // 下载选中(单文件直接下载,多文件 zip 打包)
+  | { type: 'DOWNLOAD_RESOURCES'; payload: { items: { url: string; filename: string; referrer?: string }[] } }
   // 截图
   | { type: 'CAPTURE_VISIBLE'; payload: { tabId: number } }
   | { type: 'CAPTURE_FULLPAGE'; payload: { tabId: number } }

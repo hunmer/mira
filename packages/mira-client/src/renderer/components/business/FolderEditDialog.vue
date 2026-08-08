@@ -16,12 +16,6 @@
                 :default-icon="defaultItemIcon"
                 :color="selectedColorHex"
               />
-              <span
-                class="text-[11px] text-muted-foreground max-w-[3.5rem] text-center truncate"
-                :title="formData.icon || defaultItemIcon"
-              >
-                {{ formData.icon || '默认' }}
-              </span>
             </div>
 
             <!-- 右侧：标题（第一行）+ 描述（第二行） -->
@@ -55,7 +49,7 @@
             </label>
 
             <div v-if="parentNodes.length > 0" class="border rounded-md max-h-48 overflow-y-auto p-2">
-              <BaseTree :data="parentNodes">
+              <BaseTree v-model="parentNodes">
                 <template #default="{ node, stat }">
                   <div
                     :class="[
@@ -76,8 +70,11 @@
                 </template>
               </BaseTree>
             </div>
-            <div v-else class="text-center py-4 text-muted-foreground text-sm">
-              没有{{ parentTypeText }}，选择{{ props.itemType === 'tag' ? '根标签' : '根目录' }}创建顶层{{ itemTypeText }}
+            <div v-else class="flex flex-col items-center justify-center py-6 text-muted-foreground">
+              <span class="material-icons text-3xl mb-1.5">
+                {{ props.itemType === 'tag' ? 'label_off' : 'folder_open' }}
+              </span>
+              <p class="text-sm text-center">没有可选的{{ parentTypeText }}，将创建为顶层{{ itemTypeText }}</p>
             </div>
 
             <p class="text-muted-foreground text-xs mt-2">
@@ -246,10 +243,17 @@ function toParentNodes(items: FolderItem[]): ParentNode[] {
   }))
 }
 
-const parentNodes = computed((): ParentNode[] => {
-  const filtered = props.folder ? filterFolders(props.availableFolders, props.folder.id) : props.availableFolders
-  return toParentNodes(filtered)
-})
+// 使用可写 ref 而非 computed：BaseTree 通过 v-model 在内部状态变更（展开/折叠同步）时
+// 会回写 modelValue，computed 是只读的会触发 Vue 告警，因此用 ref + watch 维护。
+const parentNodes = ref<ParentNode[]>([])
+watch(
+  () => [props.availableFolders, props.folder?.id] as const,
+  () => {
+    const filtered = props.folder ? filterFolders(props.availableFolders, props.folder.id) : props.availableFolders
+    parentNodes.value = toParentNodes(filtered)
+  },
+  { immediate: true, deep: true }
+)
 
 function selectParent(node: ParentNode) {
   selectedParentId.value = node.id

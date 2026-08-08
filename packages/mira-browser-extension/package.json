@@ -13,15 +13,16 @@
   },
   "dependencies": {
     "@hunmer/vue-masonry": "workspace:*",
-    "motion-v": "^2.2.1",
+    "fflate": "^0.8.3",
     "mira-app-core": "workspace:*",
+    "motion-v": "^2.2.1",
     "vue": "^3.4.0",
     "vue-i18n": "^11.4.4"
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.0.0-beta.28",
-    "@vitejs/plugin-vue": "^5.0.0",
     "@types/chrome": "^0.0.260",
+    "@vitejs/plugin-vue": "^5.0.0",
     "@vitest/coverage-v8": "^1.6.0",
     "jsdom": "^24.0.0",
     "typescript": "^5.3.3",
