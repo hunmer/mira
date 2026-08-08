@@ -178,6 +178,25 @@
 }
 
 /*
+  dropdown 菜单阴影改挂在 reka popper 容器上（filter: drop-shadow）：
+  1) 容器自身永不获得焦点，结构上免疫上方 *:focus 的 box-shadow 清除，
+     面板打开即常显阴影，与 focus/hover 状态无关；
+  2) drop-shadow 跟随内容实际绘制形状（含圆角、半透明背景），视觉等同 box-shadow；
+  3) 面板自身不再带 shadow-* 类，避免与容器阴影叠加变重。
+*/
+[data-reka-popper-content-wrapper]:has(> [data-slot="dropdown-menu-content"]),
+[data-reka-popper-content-wrapper]:has(> [data-slot="dropdown-menu-sub-content"]) {
+  filter:
+    drop-shadow(0 16px 48px rgba(0, 0, 0, 0.16))
+    drop-shadow(0 4px 12px rgba(99, 102, 241, 0.10));
+}
+
+.dark [data-reka-popper-content-wrapper]:has(> [data-slot="dropdown-menu-content"]),
+.dark [data-reka-popper-content-wrapper]:has(> [data-slot="dropdown-menu-sub-content"]) {
+  filter: drop-shadow(0 16px 48px rgba(0, 0, 0, 0.5));
+}
+
+/*
   全局滚动条：极细风格（3px，hover 5px）。
   仅面向 Chromium（Electron），只使用 ::-webkit-scrollbar。
   切勿在此设置 `scrollbar-width` / `scrollbar-color`：新版 Chromium 一旦遇到
