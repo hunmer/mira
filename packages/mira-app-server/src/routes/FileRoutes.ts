@@ -161,22 +161,37 @@ export class FileRoutes {
                             // 处理物理文件替换
                             try {
                                 const existingFilePath = await obj.libraryService.getItemFilePath(existingFile);
-                                if (existingFilePath && require('fs').existsSync(existingFilePath)) {
-                                    // 删除旧文件
-                                    require('fs').unlinkSync(existingFilePath);
-                                }
-
                                 // 计算新文件的目标路径
                                 const targetDir = await obj.libraryService.getItemPath({ ...existingFile, ...updateData });
-                                const targetPath = require('path').join(targetDir, updateData.name);
+                                const targetPath = path.join(targetDir, updateData.name);
 
                                 // 确保目标目录存在
-                                if (!require('fs').existsSync(targetDir)) {
-                                    require('fs').mkdirSync(targetDir, { recursive: true });
+                                if (!fs.existsSync(targetDir)) {
+                                    fs.mkdirSync(targetDir, { recursive: true });
                                 }
 
-                                // 移动新文件到正确位置
-                                require('fs').renameSync(file.path, targetPath);
+                                const isCrossDevice = path.parse(file.path).root.toLowerCase() !== path.parse(targetPath).root.toLowerCase();
+                                if (isCrossDevice) {
+                                    console.info('[Upload] Cross-device update, using copy/unlink:', file.path, '->', targetPath);
+                                    fs.copyFileSync(file.path, targetPath);
+                                    fs.unlinkSync(file.path);
+                                } else {
+                                    if (existingFilePath && fs.existsSync(existingFilePath)) {
+                                        fs.unlinkSync(existingFilePath);
+                                    }
+                                    try {
+                                        fs.renameSync(file.path, targetPath);
+                                    } catch (error: any) {
+                                        if (error?.code !== 'EXDEV') throw error;
+                                        console.info('[Upload] Cross-device update, using copy/unlink:', file.path, '->', targetPath);
+                                        fs.copyFileSync(file.path, targetPath);
+                                        fs.unlinkSync(file.path);
+                                    }
+                                }
+
+                                if (existingFilePath && existingFilePath !== targetPath && fs.existsSync(existingFilePath)) {
+                                    fs.unlinkSync(existingFilePath);
+                                }
 
                                 // 更新数据库中的path字段
                                 updateData.path = targetPath;
@@ -373,7 +388,8 @@ export class FileRoutes {
                     res.setHeader('Content-Type', contentType);
                     res.setHeader('Content-Length', fileSize);
                     res.setHeader('Cache-Control', 'public, max-age=3600');
-                    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(fileName)}"`);
+                    const disposition = contentType === 'application/pdf' ? 'inline' : 'attachment';
+                    res.setHeader('Content-Disposition', `${disposition}; filename="${encodeURIComponent(fileName)}"`);
 
                     // 创建完整文件流
                     const stream = fs.createReadStream(filePath);
@@ -742,6 +758,11 @@ export class FileRoutes {
                     return res.status(400).json({ code: 400, message: 'libraryId, fileId, name are required' });
                 }
 
+                const requestedName = path.basename(String(name).trim());
+                if (!requestedName) {
+                    return res.status(400).json({ code: 400, message: 'name is required' });
+                }
+
                 const obj = this.backend.libraries!.getLibrary(libraryId);
                 if (!obj) return res.status(404).json({ code: 404, message: 'Library not found' });
 
@@ -752,18 +773,25 @@ export class FileRoutes {
                 const { result: siblings } = await obj.libraryService.getFiles({
                     filters: { folder: file.folder_id || '=null' },
                 });
-                const duplicate = siblings.find((f: any) => f.name === name && String(f.id) !== String(fileId));
-                if (duplicate) {
-                    return res.status(409).json({ code: 409, message: '同文件夹下已存在同名文件', data: { conflictId: duplicate.id } });
+                const usedNames = new Set(
+                    siblings
+                        .filter((f: any) => String(f.id) !== String(fileId))
+                        .map((f: any) => String(f.name).toLowerCase())
+                );
+                const extension = path.extname(requestedName);
+                const basename = path.basename(requestedName, extension);
+                let resolvedName = requestedName;
+                for (let index = 1; usedNames.has(resolvedName.toLowerCase()); index++) {
+                    resolvedName = `${basename} (${index})${extension}`;
                 }
 
                 // 重命名物理文件
                 const oldPath = await obj.libraryService.getItemFilePath(file);
-                const { success: updated, oldData } = await obj.libraryService.updateFile(parseInt(fileId), { name });
+                const { success: updated, oldData } = await obj.libraryService.updateFile(parseInt(fileId), { name: resolvedName });
 
                 if (updated && oldPath) {
                     const dir = path.dirname(oldPath);
-                    const newPath = path.join(dir, name);
+                    const newPath = path.join(dir, resolvedName);
                     if (fs.existsSync(oldPath) && oldPath !== newPath) {
                         try { fs.renameSync(oldPath, newPath); } catch (e) { console.error('Rename file error:', e); }
                     }

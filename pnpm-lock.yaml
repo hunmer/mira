@@ -306,6 +306,9 @@ importers:
       motion-v:
         specifier: ^2.2.1
         version: 2.2.1(@vueuse/core@14.3.0(vue@3.5.13(typescript@5.7.3)))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vue@3.5.13(typescript@5.7.3))
+      pdfobject:
+        specifier: ^2.3.1
+        version: 2.3.1
       pinia:
         specifier: ^3.0.3
         version: 3.0.4(typescript@5.7.3)(vue@3.5.13(typescript@5.7.3))
@@ -394,6 +397,9 @@ importers:
       '@types/node':
         specifier: ^22.13.13
         version: 22.19.19
+      '@types/pdfobject':
+        specifier: ^2.2.5
+        version: 2.2.5
       '@types/throttle-debounce':
         specifier: ^5.0.2
         version: 5.0.2
@@ -2655,6 +2661,9 @@ packages:
 
   '@types/pbf@3.0.5':
     resolution: {integrity: sha512-j3pOPiEcWZ34R6a6mN07mUkM4o4Lwf6hPNt8eilOeZhTFbxFXmKhvXl9Y28jotFPaI1bpPDJsbCprUoNke6OrA==}
+
+  '@types/pdfobject@2.2.5':
+    resolution: {integrity: sha512-7gD5tqc/RUDq0PyoLemL0vEHxBYi+zY0WVaFAx/Y0jBsXFgot1vB9No1GhDZGwRGJMCIZbgAb74QG9MTyTNU/g==}
 
   '@types/plist@3.0.5':
     resolution: {integrity: sha512-E6OCaRmAe4WDmWNsL/9RMqdkkzDCY1etutkflWk4c+AcjDU07Pcz1fQwTX0TQz+Pxqn9i4L1TU3UFpjnrcDgxA==}
@@ -6081,6 +6090,9 @@ packages:
   pbf@3.3.0:
     resolution: {integrity: sha512-XDF38WCH3z5OV/OVa8GKUNtLAyneuzbCisx7QUCF8Q6Nutx0WnJrQe5O+kOtBlLfRNUws98Y58Lblp+NJG5T4Q==}
     hasBin: true
+
+  pdfobject@2.3.1:
+    resolution: {integrity: sha512-vluuGiSDmMGpOvWFGiUY4trNB8aGKLDVxIXuuGHjX0kK3bMxCANUVtLivctE7uejLBScWCnbVarKatFVvdwXaQ==}
 
   pe-library@0.4.1:
     resolution: {integrity: sha512-eRWB5LBz7PpDu4PUlwT0PhnQfTQJlDDdPa35urV4Osrm0t0AqQFGn+UIkU3klZvwJ8KPO3VbBFsXquA6p6kqZw==}
@@ -10135,6 +10147,8 @@ snapshots:
   '@types/parse-json@4.0.2': {}
 
   '@types/pbf@3.0.5': {}
+
+  '@types/pdfobject@2.2.5': {}
 
   '@types/plist@3.0.5':
     dependencies:
@@ -14301,6 +14315,8 @@ snapshots:
     dependencies:
       ieee754: 1.2.1
       resolve-protobuf-schema: 2.1.0
+
+  pdfobject@2.3.1: {}
 
   pe-library@0.4.1: {}
 

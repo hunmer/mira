@@ -450,12 +450,11 @@ export class FileModule {
     }
 
     /**
-     * 重命名文件（含同名检测）
+     * 重命名文件（同名时自动追加序号后缀）
      * @param libraryId 素材库ID
      * @param fileId 文件ID
      * @param name 新文件名
      * @returns Promise<FileData>
-     * @throws 409 同文件夹下已存在同名文件
      */
     async renameFile(libraryId: string, fileId: string | number, name: string): Promise<FileData> {
         return await this.httpClient.post<FileData>('/api/files/rename', {

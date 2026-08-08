@@ -11,7 +11,10 @@
       <div class="text-center p-8 bg-white rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.1)] max-w-[400px]">
         <h3 class="text-destructive mb-4">加载失败</h3>
         <p>{{ error }}</p>
-        <button @click="loadFileInfo" class="bg-primary text-white border-none px-4 py-2 rounded cursor-pointer mt-4 hover:bg-primary">重试</button>
+        <div class="flex justify-center gap-3 mt-4">
+          <button @click="router.back()" class="bg-muted text-foreground border-none px-4 py-2 rounded cursor-pointer hover:bg-accent">返回</button>
+          <button @click="loadFileInfo" class="bg-primary text-white border-none px-4 py-2 rounded cursor-pointer hover:bg-primary">重试</button>
+        </div>
       </div>
     </div>
 
@@ -24,6 +27,7 @@
           :is="previewComponent"
           :file-info="fileInfo"
           @error="handlePreviewError"
+          @renamed="handleFileRenamed"
         />
       </div>
     </div>
@@ -32,7 +36,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { miraSDKService } from '../services/MiraSDKService'
 import { useViewHistoryStore } from '../stores/viewHistory'
 
@@ -45,6 +49,7 @@ import DefaultPreview from '../components/preview/DefaultPreview.vue'
 
 // 响应式数据
 const route = useRoute()
+const router = useRouter()
 const isLoading = ref(false)
 const error = ref('')
 const fileInfo = ref<any>(null)
@@ -159,6 +164,13 @@ const loadFileInfo = async (): Promise<void> => {
 const handlePreviewError = (errorMessage: string): void => {
   console.error('预览组件错误:', errorMessage)
   error.value = `文件预览失败: ${errorMessage}`
+}
+
+const handleFileRenamed = (name: string): void => {
+  if (!fileInfo.value) return
+  fileInfo.value.name = name
+  fileInfo.value.title = name
+  router.replace({ query: { ...route.query, title: name } })
 }
 
 // 监听路由变化
