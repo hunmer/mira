@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-08T06:19:39.292Z",
+  "generatedAt": "2026-08-08T06:43:22.771Z",
   "plugins": [
     {
       "pluginId": "d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70",
@@ -25,8 +25,8 @@
       "directory": "plugins/mira-3d-format-preview",
       "icon": null,
       "readme": "README.md",
-      "size": 1151846,
-      "checksum": "sha256:85d5ae9c72586df3e07b632020d3b22ba25b7dd86f756bd8692d57c6bef4226b",
+      "size": 1150154,
+      "checksum": "sha256:6f69778a423743c24b43d40a2d14f62e23cddb8e405d67d70541e826ca74dffd",
       "files": [
         {
           "path": "README.md",
@@ -51,17 +51,17 @@
         {
           "path": "dist/index.html",
           "size": 403,
-          "checksum": "sha256:9a1a3db700524a0d49b755264242c4192eb63d2db299ed9c5a3d15a9e6f75e6d"
+          "checksum": "sha256:c6fed5522e7507eb8d854d5c09120b654a85ea97aae6e6960d90a9c295a0b028"
         },
         {
-          "path": "dist/assets/index-Dnm3nXVX.js",
-          "size": 1102779,
-          "checksum": "sha256:d5832531d72cad3d485f4d3d6cdd15d878ca70906c1d2152b6057b1512f52de4"
+          "path": "dist/assets/index-CTCcaK6E.js",
+          "size": 1100676,
+          "checksum": "sha256:e0c451d94c6995d9fd28468c9d30f1599ee6e5a3cf9381d1b02c8042416f98bd"
         },
         {
-          "path": "dist/assets/index-CuB9q4UJ.css",
-          "size": 39662,
-          "checksum": "sha256:5fc4e7514ac52946afc446faba8f2bb3b9aee9faf8e7a00f7a2f27a5040ceb75"
+          "path": "dist/assets/index-BfDU9UVV.css",
+          "size": 40073,
+          "checksum": "sha256:9fe1be6e20fa7e4c537ea4eba66ea8afd3fd60da1105c2ca62246ec20fd427b1"
         }
       ]
     },

@@ -145,8 +145,9 @@ export function fitCameraToObject(object?: THREE.Object3D | null) {
   const size = box.getSize(new THREE.Vector3())
   const center = box.getCenter(new THREE.Vector3())
 
-  const cameraRef = c.camera as unknown as Ref<THREE.PerspectiveCamera>
-  const cam = cameraRef?.value ?? (c.camera as unknown as THREE.PerspectiveCamera)
+  // TresContext.camera = useCameraManager 返回值 { cameras, activeCamera, ... }
+  // 真实相机在 activeCamera.value
+  const cam = (c.camera as any)?.activeCamera?.value as THREE.PerspectiveCamera | undefined
   if (!cam) return
 
   const maxDim = Math.max(size.x, size.y, size.z) || 1
@@ -185,12 +186,12 @@ export function setWireframe(on: boolean) {
 export function exportScreenshot(fileName = 'model') {
   const c = ctx()
   if (!c) return
-  const renderer = (c.renderer as any)?.webGLRenderer
+  // TresContext.renderer = { instance: WebGLRenderer, ... }
+  const renderer = (c.renderer as any)?.instance
   if (!renderer) return
   try {
-    const cameraRef = c.camera as unknown as Ref<THREE.PerspectiveCamera>
-    const cam = cameraRef?.value ?? (c.camera as unknown as THREE.PerspectiveCamera)
-    renderer.render(c.scene, cam)
+    const cam = (c.camera as any)?.activeCamera?.value as THREE.PerspectiveCamera | undefined
+    if (cam) renderer.render(c.scene.value, cam)
   } catch {
     /* 忽略 */
   }

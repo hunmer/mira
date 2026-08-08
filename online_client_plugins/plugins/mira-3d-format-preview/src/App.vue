@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { onBeforeUnmount, shallowRef } from 'vue'
+import { computed, onBeforeUnmount, ref, shallowRef } from 'vue'
 import type * as THREE from 'three'
 import { TresCanvas } from '@tresjs/core'
 import { OrbitControls } from '@tresjs/cientos'
-import { Loader2, X } from 'lucide-vue-next'
-// 注：X 仅用于空状态图标；closeWindow 由宿主窗口标题栏提供
+import { FolderOpen, Loader2, X } from 'lucide-vue-next'
+import { Button } from '@/components/ui/button'
 import ModelScene from './ModelScene.vue'
-import ModelRig from './components/viewer/ModelRig.vue'
 import ViewerToolbar from './components/viewer/ViewerToolbar.vue'
 import SceneTree from './components/viewer/SceneTree.vue'
 import PropertyPanel from './components/viewer/PropertyPanel.vue'
@@ -14,32 +13,75 @@ import {
   ctxRef,
   fitCameraToObject,
   sceneRoot,
+  selectedMaterial,
+  selectedObject,
   store,
 } from '@/composables/useViewerStore'
-import { disposeHighlight } from '@/composables/useHighlight'
+import { clearHighlight, disposeHighlight } from '@/composables/useHighlight'
 
 // 从 URL query 读取文件信息
 const params = new URLSearchParams(window.location.search)
 store.fileName = params.get('fileName') || '3D model'
 store.fileUrl = params.get('fileUrl') || ''
 store.mimeType = params.get('mimeType') || ''
-const modelPath = store.fileUrl
-const isLocalFile = modelPath.startsWith('file:')
 
-// 加载到的模型根（交给 ModelRig 渲染）
-const modelRoot = shallowRef<THREE.Object3D | null>(null)
-// 动画 actions（ModelRig ready 时写入）
+// iframe embed 模式：?embed=1，只展示最简全屏预览（画布 + 模型 + 轻量加载/错误提示）
+const isEmbed = params.get('embed') === '1' || params.get('embed') === 'true'
+
+// 响应式模型路径：换文件时改变，useGLTF 内部 watch path 自动重载
+const modelPath = computed(() => store.fileUrl)
+const isLocalFile = computed(() => modelPath.value.startsWith('file:') || modelPath.value.startsWith('blob:'))
+
+// 当前本地文件的 blob URL（换文件/卸载时需 revoke，避免内存泄漏）
+let currentObjectUrl = ''
+
+// 动画 actions（ModelScene 加载完成时写入）
 const actions = shallowRef<Record<string, THREE.AnimationAction | undefined>>({})
 
-function onModelLoaded(model: any) {
-  const root = model?.scene as THREE.Object3D | undefined
-  if (root) {
-    // 保留动画片段到根对象，供 ModelRig 的 useAnimations 读取
-    ;(root as any).animations = model.animations || []
-    modelRoot.value = root
+// 隐藏的文件选择 input
+const fileInput = ref<HTMLInputElement | null>(null)
+
+/** 工具栏“打开”入口：触发系统文件选择器 */
+function openFileDialog() {
+  fileInput.value?.click()
+}
+
+/** 选择本地 glb/gltf → 生成 blob URL → 切换模型 */
+function onFileChosen(e: Event) {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  // 重置 input.value，允许重复选同一文件
+  input.value = ''
+  if (!file) return
+  // 格式校验
+  const name = file.name.toLowerCase()
+  if (!name.endsWith('.glb') && !name.endsWith('.gltf')) {
+    store.loadError = '仅支持 .glb / .gltf 文件'
+    return
   }
-  // 等画布挂载后适配相机
-  requestAnimationFrame(() => fitCameraToObject(root))
+  // 清理上一个 blob
+  if (currentObjectUrl) {
+    URL.revokeObjectURL(currentObjectUrl)
+    currentObjectUrl = ''
+  }
+  currentObjectUrl = URL.createObjectURL(file)
+  // 重置旧模型相关状态
+  clearHighlight()
+  selectedObject.value = null
+  selectedMaterial.value = null
+  store.loadError = ''
+  // 不手动设 isLoading：ModelScene 的 watch(useGLTF.isLoading) 会自然同步
+  store.fileName = file.name
+  store.mimeType = file.type || (name.endsWith('.glb') ? 'model/gltf-binary' : 'model/gltf+json')
+  // 赋值触发重载（useGLTF 内部 watch path）
+  store.fileUrl = currentObjectUrl
+}
+
+/** ModelScene 加载完成回调：拿到动画 actions，并适配相机 */
+function onModelLoaded(a: Record<string, THREE.AnimationAction | undefined>) {
+  actions.value = a
+  // 等画布渲染一帧后适配相机
+  requestAnimationFrame(() => fitCameraToObject(sceneRoot.value))
 }
 
 function onModelError(error: unknown) {
@@ -48,95 +90,137 @@ function onModelError(error: unknown) {
 
 function onCanvasReady(ctx: any) {
   ctxRef.value = ctx
-  // 适配相机（若模型已先于 ctx 就绪）
   if (sceneRoot.value) fitCameraToObject(sceneRoot.value)
-}
-
-function onActionsReady(a: Record<string, THREE.AnimationAction | undefined>) {
-  actions.value = a
 }
 
 onBeforeUnmount(() => {
   disposeHighlight()
+  if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl)
 })
 </script>
 
 <template>
   <main class="flex h-full w-full flex-col bg-background text-foreground">
-    <!-- 顶栏工具条 -->
-    <ViewerToolbar />
+    <!-- ============ iframe embed 模式：仅全屏画布 + 轻量提示 ============ -->
+    <div v-if="isEmbed" class="relative h-full w-full">
+      <TresCanvas clear-color="#0b121b" shadows @ready="onCanvasReady">
+        <TresPerspectiveCamera :position="([4, 3, 6] as any)" :fov="45" />
+        <OrbitControls make-default :enable-damping="true" :auto-rotate="store.autoRotate" />
 
-    <!-- 三栏主体 -->
-    <div class="flex min-h-0 flex-1">
-      <!-- 左栏：场景树 -->
-      <aside class="scroll-thin flex w-60 shrink-0 flex-col overflow-hidden border-r bg-card/40 xl:w-72">
-        <SceneTree :actions="actions" />
-      </aside>
+        <ModelScene v-if="modelPath" :path="modelPath" @loaded="onModelLoaded" @error="onModelError" />
 
-      <!-- 中栏：画布 -->
-      <section class="relative min-w-0 flex-1">
-        <TresCanvas v-if="modelPath" clear-color="#0b121b" shadows @ready="onCanvasReady">
-          <TresPerspectiveCamera :position="([4, 3, 6] as any)" :fov="45" />
-          <OrbitControls make-default :enable-damping="true" />
+        <TresAmbientLight :intensity="0.8" />
+        <TresDirectionalLight :position="([5, 8, 5] as any)" :intensity="1.4" cast-shadow />
+        <TresDirectionalLight :position="([-4, 3, -3] as any)" :intensity="0.4" />
+      </TresCanvas>
 
-          <Suspense>
-            <ModelScene :path="modelPath" @loaded="onModelLoaded" @error="onModelError" />
-            <ModelRig v-if="modelRoot" :model="modelRoot" @ready="onActionsReady" />
-          </Suspense>
+      <!-- 轻量加载指示（右下角） -->
+      <div
+        v-if="store.isLoading"
+        class="absolute bottom-3 right-3 z-10 flex items-center gap-2 rounded-full bg-black/50 px-3 py-1.5 text-xs text-white backdrop-blur-sm"
+      >
+        <Loader2 class="size-3.5 animate-spin" />
+        加载中…
+      </div>
 
-          <!-- 灯光 -->
-          <TresAmbientLight :intensity="0.6" />
-          <TresDirectionalLight :position="([5, 8, 5] as any)" :intensity="1.4" cast-shadow />
-          <TresDirectionalLight :position="([-4, 3, -3] as any)" :intensity="0.4" />
-
-          <!-- 网格地面 -->
-          <TresGridHelper
-            v-if="store.showGrid"
-            :args="[20, 20, '#294458', '#162633']"
-            :position="([0, 0, 0] as any)"
-          />
-        </TresCanvas>
-
-        <!-- 空状态 -->
-        <div
-          v-else
-          class="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground"
-        >
-          <X class="size-8 opacity-40" />
-          <strong class="text-base text-foreground">未提供模型路径</strong>
-          <span class="text-sm">请从媒体网格双击 GLB/GLTF 文件打开。</span>
-        </div>
-
-        <!-- 加载遮罩 -->
-        <div
-          v-if="store.isLoading"
-          class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-background/70 backdrop-blur-sm"
-        >
-          <Loader2 class="size-7 animate-spin text-primary" />
-          <span class="text-sm text-muted-foreground">正在加载模型…</span>
-        </div>
-
-        <!-- 错误横幅 -->
-        <div
-          v-if="store.loadError"
-          class="absolute bottom-4 left-1/2 z-10 max-w-[80%] -translate-x-1/2 rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-2 text-center text-sm text-red-300"
-        >
-          {{ store.loadError }}
-        </div>
-
-        <!-- 底部提示 -->
-        <div
-          class="pointer-events-none absolute bottom-2 left-3 flex items-center gap-3 text-xs text-muted-foreground/70"
-        >
-          <span>拖拽旋转 · 滚轮缩放 · 右键平移</span>
-          <span v-if="isLocalFile" class="text-amber-400/70">本地文件</span>
-        </div>
-      </section>
-
-      <!-- 右栏：属性面板 -->
-      <aside class="scroll-thin flex w-64 shrink-0 flex-col overflow-hidden border-l bg-card/40 xl:w-72">
-        <PropertyPanel />
-      </aside>
+      <!-- 轻量错误提示（居中底部） -->
+      <div
+        v-if="store.loadError"
+        class="absolute bottom-3 left-1/2 z-10 max-w-[80%] -translate-x-1/2 rounded-md bg-red-900/70 px-3 py-1.5 text-center text-xs text-red-200 backdrop-blur-sm"
+      >
+        {{ store.loadError }}
+      </div>
     </div>
+
+    <!-- ============ 完整预览模式 ============ -->
+    <template v-else>
+      <!-- 顶栏工具条 -->
+      <ViewerToolbar @open="openFileDialog" />
+
+      <!-- 三栏主体 -->
+      <div class="flex min-h-0 flex-1">
+        <!-- 左栏：场景树 -->
+        <aside class="scroll-thin flex w-60 shrink-0 flex-col overflow-hidden border-r bg-card/40 xl:w-72">
+          <SceneTree :actions="actions" />
+        </aside>
+
+        <!-- 中栏：画布 -->
+        <section class="relative min-w-0 flex-1">
+          <!-- 隐藏的文件选择器 -->
+          <input
+            ref="fileInput"
+            type="file"
+            accept=".glb,.gltf,model/gltf-binary,model/gltf+json"
+            class="hidden"
+            @change="onFileChosen"
+          />
+
+          <!-- TresCanvas 始终挂载，避免动态挂载渲染器导致的状态抖动 -->
+          <TresCanvas clear-color="#0b121b" shadows @ready="onCanvasReady">
+            <TresPerspectiveCamera :position="([4, 3, 6] as any)" :fov="45" />
+            <OrbitControls make-default :enable-damping="true" />
+
+            <!-- useGLTF 内部 watch path，换文件自动重载 -->
+            <ModelScene v-if="modelPath" :path="modelPath" @loaded="onModelLoaded" @error="onModelError" />
+
+            <!-- 灯光 -->
+            <TresAmbientLight :intensity="0.6" />
+            <TresDirectionalLight :position="([5, 8, 5] as any)" :intensity="1.4" cast-shadow />
+            <TresDirectionalLight :position="([-4, 3, -3] as any)" :intensity="0.4" />
+
+            <!-- 网格地面 -->
+            <TresGridHelper
+              v-if="store.showGrid"
+              :args="[20, 20, '#294458', '#162633']"
+              :position="([0, 0, 0] as any)"
+            />
+          </TresCanvas>
+
+          <!-- 空状态（覆盖在画布上） -->
+          <div
+            v-if="!modelPath"
+            class="absolute inset-0 z-[5] flex flex-col items-center justify-center gap-3 bg-background text-muted-foreground"
+          >
+            <X class="size-8 opacity-40" />
+            <strong class="text-base text-foreground">未提供模型</strong>
+            <span class="text-sm">点击下方按钮选择本地 GLB/GLTF 文件，或从媒体网格双击打开。</span>
+            <Button size="sm" class="mt-1 gap-1.5" @click="openFileDialog">
+              <FolderOpen class="size-4" />
+              打开模型文件
+            </Button>
+          </div>
+
+          <!-- 加载遮罩 -->
+          <div
+            v-if="store.isLoading"
+            class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-background/70 backdrop-blur-sm"
+          >
+            <Loader2 class="size-7 animate-spin text-primary" />
+            <span class="text-sm text-muted-foreground">正在加载模型…</span>
+          </div>
+
+          <!-- 错误横幅 -->
+          <div
+            v-if="store.loadError"
+            class="absolute bottom-4 left-1/2 z-10 max-w-[80%] -translate-x-1/2 rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-2 text-center text-sm text-red-300"
+          >
+            {{ store.loadError }}
+          </div>
+
+          <!-- 底部提示 -->
+          <div
+            class="pointer-events-none absolute bottom-2 left-3 flex items-center gap-3 text-xs text-muted-foreground/70"
+          >
+            <span>拖拽旋转 · 滚轮缩放 · 右键平移</span>
+            <span v-if="isLocalFile" class="text-amber-400/70">本地文件</span>
+          </div>
+        </section>
+
+        <!-- 右栏：属性面板 -->
+        <aside class="scroll-thin flex w-64 shrink-0 flex-col overflow-hidden border-l bg-card/40 xl:w-72">
+          <PropertyPanel />
+        </aside>
+      </div>
+    </template>
   </main>
 </template>

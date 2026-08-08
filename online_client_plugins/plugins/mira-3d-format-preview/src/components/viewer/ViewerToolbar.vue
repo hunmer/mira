@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Box, Grid3x3, ImageDown, LocateFixed, Pause, Play, RotateCcw, X } from 'lucide-vue-next'
+import { Box, FolderOpen, Grid3x3, ImageDown, LocateFixed, Pause, Play, RotateCcw, X } from 'lucide-vue-next'
+
+const emit = defineEmits<{ (e: 'open'): void }>()
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
@@ -78,6 +80,11 @@ function onScreenshot() {
 
     <!-- 视图工具 -->
     <div class="flex items-center gap-1">
+      <Button size="sm" variant="default" class="gap-1.5" title="打开本地模型文件" @click="emit('open')">
+        <FolderOpen class="size-4" />
+        <span class="hidden sm:inline">打开</span>
+      </Button>
+      <Separator orientation="vertical" class="mx-0.5 h-5" />
       <Button
         size="icon-sm"
         :variant="store.wireframe ? 'default' : 'ghost'"
