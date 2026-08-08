@@ -85,6 +85,12 @@
 - Rendered the reported GLB to a 256x256 PNG successfully with `render-glb`.
 - Added `rebuild:native` and `postinstall` scripts plus deployment instructions.
 
+### 3D Iframe Thumbnail
+- Replaced the placeholder canvas renderer with a real `dist/index.html?embed=1&fileUrl=...` iframe.
+- Added embed `postMessage` loaded/error events; plugin falls back to `thumbnailPath` on error or 30-second timeout.
+- Restored custom-format renderer priority in `MediaThumbnail.vue` and suppressed the empty-registry factory warning.
+- Plugin/host builds and deterministic iframe/fallback harnesses passed; client plugin bumped to `1.2.1`.
+
 ## 5-Question Reboot Check
 | Question | Answer |
 |----------|--------|

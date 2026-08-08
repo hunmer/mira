@@ -27,6 +27,7 @@ store.mimeType = params.get('mimeType') || ''
 
 // iframe embed 模式：?embed=1，只展示最简全屏预览（画布 + 模型 + 轻量加载/错误提示）
 const isEmbed = params.get('embed') === '1' || params.get('embed') === 'true'
+const embedFileId = params.get('fileId') || ''
 
 // 响应式模型路径：换文件时改变，useGLTF 内部 watch path 自动重载
 const modelPath = computed(() => store.fileUrl)
@@ -80,12 +81,18 @@ function onFileChosen(e: Event) {
 /** ModelScene 加载完成回调：拿到动画 actions，并适配相机 */
 function onModelLoaded(a: Record<string, THREE.AnimationAction | undefined>) {
   actions.value = a
+  if (isEmbed) {
+    window.parent.postMessage({ type: 'mira-3d-preview-loaded', fileId: embedFileId }, '*')
+  }
   // 等画布渲染一帧后适配相机
   requestAnimationFrame(() => fitCameraToObject(sceneRoot.value))
 }
 
 function onModelError(error: unknown) {
   store.loadError = error instanceof Error ? error.message : '无法加载模型，请检查文件 URL 或权限'
+  if (isEmbed) {
+    window.parent.postMessage({ type: 'mira-3d-preview-error', fileId: embedFileId }, '*')
+  }
 }
 
 function onCanvasReady(ctx: any) {

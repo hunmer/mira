@@ -61,8 +61,7 @@ const extIconUrl = computed(() => getExtIconUrl(props.filename || ''))
 const customContainer = ref<HTMLElement | null>(null)
 let customCleanup: (() => void) | void
 const customFormat = computed(() => props.file ? getPluginFileFormat(props.file) : undefined)
-const hasGeneratedThumbnail = ref(Boolean(props.file?.thumbnailPath))
-const shouldRenderCustom = computed(() => Boolean(customFormat.value?.renderThumbnail && !hasGeneratedThumbnail.value))
+const shouldRenderCustom = computed(() => Boolean(customFormat.value?.renderThumbnail))
 
 function toFileUrl(path: string): string {
   if (!path) return ''
@@ -78,16 +77,11 @@ watch(() => props.src, (src) => {
   hasError.value = false
 })
 
-watch(() => props.file?.thumbnailPath, (thumbnailPath) => {
-  if (thumbnailPath) hasGeneratedThumbnail.value = true
-})
-
 function onThumbnailUpdate(event: Event) {
   const { fileId, thumbPath } = (event as CustomEvent).detail
   if (fileId === props.fileId && thumbPath) {
     const url = toFileUrl(thumbPath)
     currentSrc.value = `${url}${url.includes('?') ? '&' : '?'}_t=${Date.now()}`
-    hasGeneratedThumbnail.value = true
     hasError.value = false
   }
 }
@@ -95,7 +89,6 @@ function onThumbnailUpdate(event: Event) {
 function onLoad() { emit('load') }
 function onError() {
   hasError.value = true
-  if (customFormat.value?.renderThumbnail) hasGeneratedThumbnail.value = false
   emit('error')
 }
 

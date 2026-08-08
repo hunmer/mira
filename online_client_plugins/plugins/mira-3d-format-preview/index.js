@@ -1,102 +1,82 @@
-/* global window */
+/* global window, document */
 ;(function () {
   const PLUGIN_ID = 'd4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70'
   const registrations = []
-
-  function project(point, rx, ry, scale, width, height) {
-    let x = point[0]
-    let y = point[1] * Math.cos(rx) - point[2] * Math.sin(rx)
-    let z = point[1] * Math.sin(rx) + point[2] * Math.cos(rx)
-    const rotatedX = x * Math.cos(ry) - z * Math.sin(ry)
-    const rotatedZ = x * Math.sin(ry) + z * Math.cos(ry)
-    const perspective = scale / (1 + rotatedZ / 5)
-    return [width / 2 + rotatedX * perspective, height / 2 + y * perspective]
-  }
-
-  function drawCube(canvas, rx, ry, scale) {
-    const context = canvas.getContext('2d')
-    if (!context) return
-    const width = canvas.width
-    const height = canvas.height
-    const points = [
-      [-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1],
-      [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1],
-    ].map((point) => project(point, rx, ry, scale, width, height))
-    const edges = [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7], [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]]
-    context.clearRect(0, 0, width, height)
-    context.strokeStyle = '#79e2c0'
-    context.lineWidth = Math.max(1, width / 90)
-    edges.forEach(([from, to]) => {
-      context.beginPath()
-      context.moveTo(points[from][0], points[from][1])
-      context.lineTo(points[to][0], points[to][1])
-      context.stroke()
-    })
-  }
-
-  function mountViewer(container, file, large) {
-    const canvas = document.createElement('canvas')
-    const size = large ? 560 : 160
-    canvas.width = size
-    canvas.height = size
-    canvas.style.width = '100%'
-    canvas.style.height = '100%'
-    canvas.style.display = 'block'
-    canvas.style.cursor = 'grab'
-    container.replaceChildren(canvas)
-
-    let rx = 0.55
-    let ry = -0.6
-    let raf = 0
-    let dragging = false
-    let lastX = 0
-    let lastY = 0
-
-    const render = () => {
-      if (!dragging) ry += 0.008
-      drawCube(canvas, rx, ry, large ? 150 : 42)
-      raf = requestAnimationFrame(render)
-    }
-    const onPointerDown = (event) => {
-      dragging = true
-      lastX = event.clientX
-      lastY = event.clientY
-      canvas.style.cursor = 'grabbing'
-      canvas.setPointerCapture(event.pointerId)
-    }
-    const onPointerMove = (event) => {
-      if (!dragging) return
-      ry += (event.clientX - lastX) * 0.01
-      rx += (event.clientY - lastY) * 0.01
-      lastX = event.clientX
-      lastY = event.clientY
-    }
-    const onPointerUp = () => {
-      dragging = false
-      canvas.style.cursor = 'grab'
-    }
-    canvas.addEventListener('pointerdown', onPointerDown)
-    canvas.addEventListener('pointermove', onPointerMove)
-    canvas.addEventListener('pointerup', onPointerUp)
-    canvas.addEventListener('pointercancel', onPointerUp)
-    render()
-
-    return () => {
-      cancelAnimationFrame(raf)
-      canvas.removeEventListener('pointerdown', onPointerDown)
-      canvas.removeEventListener('pointermove', onPointerMove)
-      canvas.removeEventListener('pointerup', onPointerUp)
-      canvas.removeEventListener('pointercancel', onPointerUp)
-      container.replaceChildren()
-    }
-  }
+  const currentScriptUrl = document.currentScript?.src || ''
+  const pluginBaseUrl = currentScriptUrl ? new URL('.', currentScriptUrl) : null
 
   function toPreviewUrl(value) {
     if (!value) return ''
-    if (/^(https?|file):/i.test(value)) return value
+    if (/^(https?|file|blob):/i.test(value)) return value
     const normalized = value.replace(/\\/g, '/')
     if (/^[a-zA-Z]:/.test(normalized)) return `file:///${normalized}`
     return normalized
+  }
+
+  function mountThumbnail(container, file) {
+    const fileUrl = toPreviewUrl(file.url || file.path || file.localFile || '')
+    const thumbnailUrl = file.thumbnailPath || ''
+    let timeoutId
+    let disposed = false
+
+    const showFallback = () => {
+      if (disposed || !thumbnailUrl) return
+      const image = document.createElement('img')
+      image.src = thumbnailUrl
+      image.alt = file.name || '3D model thumbnail'
+      image.style.cssText = 'display:block;width:100%;height:100%;object-fit:cover'
+      container.replaceChildren(image)
+    }
+
+    if (!pluginBaseUrl || !fileUrl) {
+      showFallback()
+      return () => {
+        disposed = true
+        container.replaceChildren()
+      }
+    }
+
+    const viewerUrl = new URL('dist/index.html', pluginBaseUrl)
+    viewerUrl.searchParams.set('embed', '1')
+    viewerUrl.searchParams.set('fileUrl', fileUrl)
+    viewerUrl.searchParams.set('fileName', file.name || '3D model')
+    viewerUrl.searchParams.set('mimeType', file.mimeType || '')
+    viewerUrl.searchParams.set('fileId', String(file.id || ''))
+
+    const iframe = document.createElement('iframe')
+    iframe.src = viewerUrl.toString()
+    iframe.title = file.name || '3D model preview'
+    iframe.loading = 'lazy'
+    iframe.allow = 'fullscreen'
+    iframe.style.cssText = 'display:block;width:100%;height:100%;border:0;background:#0b121b'
+
+    const onMessage = (event) => {
+      if (event.source !== iframe.contentWindow) return
+      if (event.data?.fileId !== String(file.id || '')) return
+      if (event.data?.type === 'mira-3d-preview-loaded') {
+        clearTimeout(timeoutId)
+      } else if (event.data?.type === 'mira-3d-preview-error') {
+        clearTimeout(timeoutId)
+        showFallback()
+      }
+    }
+    const onIframeError = () => {
+      clearTimeout(timeoutId)
+      showFallback()
+    }
+
+    window.addEventListener('message', onMessage)
+    iframe.addEventListener('error', onIframeError)
+    container.replaceChildren(iframe)
+    timeoutId = window.setTimeout(showFallback, 30000)
+
+    return () => {
+      disposed = true
+      clearTimeout(timeoutId)
+      window.removeEventListener('message', onMessage)
+      iframe.removeEventListener('error', onIframeError)
+      container.replaceChildren()
+    }
   }
 
   class ThreeFormatPreviewPlugin {
@@ -110,7 +90,7 @@
         id: 'mira-3d-model',
         extensions: ['glb', 'gltf'],
         mimeTypes: ['model/gltf-binary', 'model/gltf+json'],
-        renderThumbnail: (container, file) => mountViewer(container, file, false),
+        renderThumbnail: mountThumbnail,
         open: (file) => {
           const w = window.electronAPI
           if (!w?.pluginWindow?.open) {
@@ -147,7 +127,7 @@
   }
 
   function setup() {
-    if (window.pluginSystem && window.pluginSystem.registerPluginInstance) {
+    if (window.pluginSystem?.registerPluginInstance) {
       window.pluginSystem.registerPluginInstance(PLUGIN_ID, initialize)
     } else {
       setTimeout(setup, 100)

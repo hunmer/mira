@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-08T06:43:22.771Z",
+  "generatedAt": "2026-08-08T06:50:02.036Z",
   "plugins": [
     {
       "pluginId": "d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70",
       "pluginName": "3D 格式预览",
-      "version": "1.2.0",
+      "version": "1.2.1",
       "description": "为 GLB/GLTF 文件提供可交互的 3D 线框缩略图和详情查看入口，验证自定义格式插件 API。",
       "author": "Mira Team",
       "homepage": "https://github.com/mira-team/mira-3d-format-preview",
@@ -25,38 +25,38 @@
       "directory": "plugins/mira-3d-format-preview",
       "icon": null,
       "readme": "README.md",
-      "size": 1150154,
-      "checksum": "sha256:6f69778a423743c24b43d40a2d14f62e23cddb8e405d67d70541e826ca74dffd",
+      "size": 1149729,
+      "checksum": "sha256:a658f13a220d6fc133ff42fdc88c751c347f80beed104f48edd67a917c066539",
       "files": [
         {
           "path": "README.md",
-          "size": 2451,
-          "checksum": "sha256:32fb087b6dba404ca5f03153284b9dfafd0443bfa35623b2ae3c4f767c968b1e"
+          "size": 2509,
+          "checksum": "sha256:cc73eabf1c7c26bccf8232dd35600aa15a6d9b5be6d586ad2dd888433f539a0a"
         },
         {
           "path": "plugin.json",
           "size": 648,
-          "checksum": "sha256:c5907deeeec7d028305242e9492e0275db706223d54f2feb4a94735ec08cf291"
+          "checksum": "sha256:c0687ce293cf1b8df64097a748ceb5d1787ea5cdb816a74deeb5f7d3d983706c"
         },
         {
           "path": "package.json",
           "size": 781,
-          "checksum": "sha256:27041fd8abeb1ba38e4d2a54292f547411a39feabac9befedb7a705ae13af884"
+          "checksum": "sha256:d0337f5c03e964f3954b7017d4bd04c6336c3f469fb5ed806fab427b69c7f533"
         },
         {
           "path": "index.js",
-          "size": 5122,
-          "checksum": "sha256:0feae321c6f09913d05e9b08abf83f1717263007b542d127c01e597229382a0d"
+          "size": 4468,
+          "checksum": "sha256:2c5da35311eea987add5c2cd0a45fc9d2afda6caca1a284307a23563e5502b4d"
         },
         {
           "path": "dist/index.html",
           "size": 403,
-          "checksum": "sha256:c6fed5522e7507eb8d854d5c09120b654a85ea97aae6e6960d90a9c295a0b028"
+          "checksum": "sha256:3b049499d03ebf31cf431c35eea6e1f792071488c7b1b058608e12ed69fa74dc"
         },
         {
-          "path": "dist/assets/index-CTCcaK6E.js",
-          "size": 1100676,
-          "checksum": "sha256:e0c451d94c6995d9fd28468c9d30f1599ee6e5a3cf9381d1b02c8042416f98bd"
+          "path": "dist/assets/index-Cblv2XT6.js",
+          "size": 1100847,
+          "checksum": "sha256:04fca8c097fca5e53e731e574020cfbbd04ddc8c8efd16000e09f0de6a6fd608"
         },
         {
           "path": "dist/assets/index-BfDU9UVV.css",
