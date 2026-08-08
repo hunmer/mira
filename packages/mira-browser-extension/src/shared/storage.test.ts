@@ -43,6 +43,22 @@ describe('storage', () => {
     expect(merged.snifferEnabled).toBe(false);
   });
 
+  it('mergeWithDefaults 把损坏的 tags/null/字符串 归一化为数组', () => {
+    // null / undefined / 字符串 / 对象都不应漏过去(下游 .join 会崩);
+    // 用 as any 模拟存储里的脏数据(类型层面不允许,但运行时可能存在)
+    expect(mergeWithDefaults({ tags: null } as any).tags).toEqual([]);
+    expect(mergeWithDefaults({ tags: undefined } as any).tags).toEqual([]);
+    expect(mergeWithDefaults({ tags: 'a,b' } as any).tags).toEqual([]);
+    expect(mergeWithDefaults({ tags: { 0: 'x' } } as any).tags).toEqual([]);
+    // 正常数组原样保留
+    expect(mergeWithDefaults({ tags: ['a', 'b'] }).tags).toEqual(['a', 'b']);
+  });
+
+  it('mergeWithDefaults 把损坏的 snifferKinds 归一化为数组', () => {
+    expect(mergeWithDefaults({ snifferKinds: null } as any).snifferKinds).toEqual(DEFAULT_SETTINGS.snifferKinds);
+    expect(mergeWithDefaults({ snifferKinds: ['image'] }).snifferKinds).toEqual(['image']);
+  });
+
   it('loadSettings 返回合并默认值的完整设置', async () => {
     localStore[STORAGE_KEYS.local] = { serverURL: 'http://y' };
     const { loadSettings } = await import('./storage');

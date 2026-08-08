@@ -25,7 +25,7 @@ async function onToggleDebug(v: boolean) {
       <h3>{{ t('settings.groupTarget') }}</h3>
       <label>{{ t('settings.defaultTags') }}</label>
       <Input
-        :model-value="settings.tags.join(',')"
+        :model-value="(settings.tags ?? []).join(',')"
         @update:model-value="v => update({ tags: v.split(',').map(s => s.trim()).filter(Boolean) })"
       />
     </section>

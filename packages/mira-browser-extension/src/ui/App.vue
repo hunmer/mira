@@ -12,11 +12,12 @@ import GlobalHeader from '@/ui/components/GlobalHeader.vue';
 import TabBar from '@/ui/components/TabBar.vue';
 import ScreenshotView from '@/ui/components/screenshot/ScreenshotView.vue';
 import SnifferView from '@/ui/components/sniffer/SnifferView.vue';
-import SettingsView from '@/ui/components/settings/SettingsView.vue';
+import SettingsOverlay from '@/ui/components/settings/SettingsOverlay.vue';
 import LibraryTreeView from '@/ui/components/library/LibraryTreeView.vue';
 import LibraryPicker from '@/ui/components/library/LibraryPicker.vue';
 import ServerBar from '@/ui/components/server/ServerBar.vue';
 import ServerManagerView from '@/ui/components/server/ServerManagerView.vue';
+import DialogHost from '@/ui/components/ui/DialogHost.vue';
 
 const { t } = useI18n();
 const props = defineProps<{ containerMode: 'popup' | 'sidePanel' }>();
@@ -125,16 +126,11 @@ function onConnected() {
       <!-- 服务器管理全屏覆盖 -->
       <ServerManagerView v-if="showServerManager" @close="showServerManager = false" />
       <!-- 设置全屏覆盖 -->
-      <div v-if="showSettings" class="overlay">
-        <div class="overlay-top">
-          <span class="overlay-title">{{ t('tab.settings') }}</span>
-          <button class="overlay-close" :title="t('common.close')" @click="showSettings = false">×</button>
-        </div>
-        <div class="overlay-body">
-          <SettingsView />
-        </div>
-      </div>
+      <SettingsOverlay v-if="showSettings" @close="showSettings = false" />
     </template>
+
+    <!-- 全局弹窗宿主(始终挂载,不受 booting/authenticated 状态影响) -->
+    <DialogHost />
   </div>
 </template>
 
@@ -169,32 +165,4 @@ function onConnected() {
   transition: color .12s, background .12s;
 }
 .settings-btn:hover { color: var(--fg); background: var(--bg-elev); }
-
-/* 设置覆盖层(与 ServerManagerView 同款全屏) */
-.overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 50;
-  display: flex;
-  flex-direction: column;
-  background: var(--bg);
-}
-.overlay-top {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--border);
-}
-.overlay-title { flex: 1; font-size: 14px; font-weight: 600; }
-.overlay-close {
-  background: transparent;
-  border: none;
-  color: var(--muted);
-  font-size: 18px;
-  line-height: 1;
-  cursor: pointer;
-}
-.overlay-close:hover { color: var(--fg); }
-.overlay-body { flex: 1; overflow-y: auto; }
 </style>

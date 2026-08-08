@@ -14,6 +14,7 @@ import { useLibraryTree, filterTree, collectIds, flattenTree } from '@/ui/compos
 import { useSettings } from '@/ui/composables/useSettings';
 import { useUploadQueue } from '@/ui/composables/useUploadQueue';
 import { useBackground } from '@/ui/composables/useBackground';
+import { useDialog } from '@/ui/composables/useDialog';
 import LibraryTree from './LibraryTree.vue';
 import Dropzone from '@/ui/components/upload/Dropzone.vue';
 import ContextMenu from '@/ui/components/ui/ContextMenu.vue';
@@ -27,6 +28,7 @@ const { t } = useI18n();
 const { settings } = useSettings();
 const { addFiles } = useUploadQueue();
 const bg = useBackground();
+const dialog = useDialog();
 const { tree, count, loading, error, load } = useLibraryTree(props.mode);
 
 // ---- 展开/折叠状态 ----
@@ -150,7 +152,7 @@ function closeMenu() {
  *  - sibling:与目标节点同级 → parentId = node.parentId
  *  - child:作为目标节点的子级 → parentId = node.id
  *
- * 用 prompt 收集名称(默认「新建文件夹/标签 N」),空名取消。
+ * 用弹窗收集名称(默认「新建文件夹/标签 N」),空名/取消则放弃。
  */
 async function createNode(level: 'sibling' | 'child') {
   const target = menu.value?.node;
@@ -161,8 +163,10 @@ async function createNode(level: 'sibling' | 'child') {
   const libId = settings.value.libraryId;
   if (!libId) return;
   const defaultName = t('tree.newName', { type: titleText.value, n: count.value + 1 });
-  // eslint-disable-next-line no-alert
-  const title = prompt(t('tree.createPrompt', { type: titleText.value }), defaultName);
+  const title = await dialog.prompt({
+    title: t('tree.createPrompt', { type: titleText.value }),
+    defaultValue: defaultName,
+  });
   if (!title?.trim()) return;
 
   try {
@@ -176,8 +180,11 @@ async function createNode(level: 'sibling' | 'child') {
     }
   } catch (e: any) {
     dbg.warn('lib-tree', 'createNode failed', { error: e?.message });
-    // eslint-disable-next-line no-alert
-    alert(t('tree.createFailed', { error: e?.message ?? String(e) }));
+    await dialog.alert({
+      title: t('common.failed'),
+      message: t('tree.createFailed', { error: e?.message ?? String(e) }),
+      danger: true,
+    });
   }
 }
 
@@ -194,15 +201,18 @@ async function deleteNode() {
 
   let deleteFiles = false;
   if (props.mode === 'folder') {
-    // folder:询问是否连文件一起删(浏览器原生 confirm)
-    // eslint-disable-next-line no-alert
-    const ok = confirm(t('tree.deleteFolderConfirm', { name: target.title }));
-    if (!ok) return;
-    // eslint-disable-next-line no-alert
-    deleteFiles = confirm(t('tree.deleteFilesConfirm'));
+    if (!(await dialog.confirm({
+      message: t('tree.deleteFolderConfirm', { name: target.title }),
+      danger: true,
+    }))) return;
+    deleteFiles = await dialog.confirm({
+      message: t('tree.deleteFilesConfirm'),
+    });
   } else {
-    // eslint-disable-next-line no-alert
-    if (!confirm(t('tree.deleteTagConfirm', { name: target.title }))) return;
+    if (!(await dialog.confirm({
+      message: t('tree.deleteTagConfirm', { name: target.title }),
+      danger: true,
+    }))) return;
   }
 
   try {
@@ -210,8 +220,11 @@ async function deleteNode() {
     await load(libId);
   } catch (e: any) {
     dbg.warn('lib-tree', 'deleteNode failed', { error: e?.message });
-    // eslint-disable-next-line no-alert
-    alert(t('tree.deleteFailed', { error: e?.message ?? String(e) }));
+    await dialog.alert({
+      title: t('common.failed'),
+      message: t('tree.deleteFailed', { error: e?.message ?? String(e) }),
+      danger: true,
+    });
   }
 }
 </script>

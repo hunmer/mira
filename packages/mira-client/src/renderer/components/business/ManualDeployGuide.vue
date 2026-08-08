@@ -14,6 +14,16 @@ interface Step {
   command?: string
 }
 
+const userAgent = navigator.userAgent.toLowerCase()
+const dependencyInstall = userAgent.includes('windows')
+  ? {
+      desc: '使用 winget 安装 FFmpeg 和 ImageMagick。',
+      command: 'winget install --id Gyan.FFmpeg -e; winget install --id ImageMagick.ImageMagick -e',
+    }
+  : userAgent.includes('mac')
+    ? { desc: '使用 Homebrew 安装 FFmpeg 和 ImageMagick。', command: 'brew install ffmpeg imagemagick' }
+    : { desc: 'Debian / Ubuntu 使用 apt 安装 FFmpeg 和 ImageMagick。', command: 'sudo apt update && sudo apt install -y ffmpeg imagemagick' }
+
 const steps: Step[] = [
   {
     title: '1. 安装 Node.js',
@@ -21,43 +31,28 @@ const steps: Step[] = [
     command: 'node -v && npm -v',
   },
   {
-    title: '2. 安装 mira-app-server',
+    title: '2. 安装媒体处理依赖',
+    ...dependencyInstall,
+  },
+  {
+    title: '3. 安装 mira-app-server',
     desc: '推荐全局安装，安装后可在任意目录使用 mira-app-server 命令。',
     command: 'npm install -g mira-app-server',
   },
   {
-    title: '3. 启动服务器',
+    title: '4. 启动服务器',
     desc: '使用默认配置启动（HTTP 端口 8081 / WebSocket 端口 8018）。',
     command: 'mira-app-server start',
   },
   {
-    title: '4. 自定义端口 / 数据目录',
+    title: '5. 自定义端口 / 数据目录',
     desc: '可选：通过参数自定义 HTTP、WebSocket 端口与数据目录。',
     command: 'mira-app-server start --http-port 8081 --ws-port 8018 --data-path ./data',
   },
   {
-    title: '5. 校验健康状态',
+    title: '6. 校验健康状态',
     desc: '服务启动后，访问健康检查接口应返回 success: true。',
     command: 'curl http://localhost:8081/api/system/health',
-  },
-]
-
-// Dashboard（Web 管理面板）安装步骤，源自 mira-dashboard-next/README.md
-const dashboardSteps: Step[] = [
-  {
-    title: '1. 进入 dashboard 目录并安装依赖',
-    desc: '使用 pnpm 安装依赖（Vue 3 + shadcn-vue + Tailwind CSS 4）。',
-    command: 'pnpm install',
-  },
-  {
-    title: '2. 启动开发服务器',
-    desc: '默认 5173 端口，开发模式下 /api/* 自动代理到 mira-app-server（127.0.0.1:8081）。',
-    command: 'pnpm dev',
-  },
-  {
-    title: '3. 构建生产产物',
-    desc: '可选：构建后用 preview 预览生产版本。',
-    command: 'pnpm build && pnpm preview',
   },
 ]
 

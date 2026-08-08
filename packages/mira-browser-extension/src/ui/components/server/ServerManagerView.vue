@@ -13,6 +13,7 @@ import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useServers } from '@/ui/composables/useServers';
 import { useConnection } from '@/ui/composables/useConnection';
+import { useDialog } from '@/ui/composables/useDialog';
 import Button from '@/ui/components/ui/Button.vue';
 import Input from '@/ui/components/ui/Input.vue';
 
@@ -21,6 +22,7 @@ const emit = defineEmits<{ close: [] }>();
 
 const { servers, activeServer, add, edit, remove, test } = useServers();
 const { switchServer } = useConnection();
+const dialog = useDialog();
 
 // 表单态:null=列表;否则正在编辑/新增这条(新增时 isNew=true,id 临时空)
 type Draft = { id: string; name: string; serverURL: string; username: string; password: string };
@@ -95,7 +97,10 @@ async function testConn() {
 }
 
 async function onRemove(id: string) {
-  if (!confirm(t('server.confirmDelete'))) return;
+  if (!(await dialog.confirm({
+    message: t('server.confirmDelete'),
+    danger: true,
+  }))) return;
   await remove(id);
 }
 

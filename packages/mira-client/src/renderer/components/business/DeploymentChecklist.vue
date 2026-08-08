@@ -74,20 +74,27 @@ const defaultTasks: Task[] = [
   },
   {
     id: 2,
+    title: '安装媒体处理依赖',
+    subtitle: '安装 FFmpeg 和 ImageMagick。',
+    status: 'pending',
+    info: null,
+  },
+  {
+    id: 3,
     title: '全局安装 mira-app-server',
     subtitle: 'npm install -g mira-app-server，等待包安装完成。',
     status: 'pending',
     info: null,
   },
   {
-    id: 3,
+    id: 4,
     title: '启动服务器',
     subtitle: 'mira-app-server start --http-port 8081 --ws-port 8018',
     status: 'pending',
     info: null,
   },
   {
-    id: 4,
+    id: 5,
     title: '创建默认素材库',
     subtitle: '使用默认管理员创建或复用“默认素材库”。',
     status: 'pending',
@@ -305,15 +312,21 @@ onBeforeUnmount(() => {
                   <path d="M8 1L2 4.5v7L8 15l6-3.5v-7L8 1zm0 2.3l3.8 2.2v5L8 12.7 4.2 10.5v-5L8 3.3z" />
                   <MotionPath v-if="task.status === 'running'" d="M5 8h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none" :animate="{ pathLength: [0, 1] }" :transition="{ repeat: Infinity, duration: 1.2, ease: 'easeInOut' }" />
                 </svg>
-                <!-- Task id 2: download / package -->
+                <!-- Task id 2/3: download / package -->
                 <svg v-else-if="task.id === 2" class="h-4.5 w-4.5 text-current" viewBox="0 0 16 16" fill="currentColor">
                   <path d="M2.5 9a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v4a1.5 1.5 0 0 1-1.5 1.5h-8A1.5 1.5 0 0 1 2.5 13V9z" />
                   <MotionG :animate="task.status === 'running' ? { y: [-2.5, 2] } : { y: 0 }" :transition="task.status === 'running' ? { repeat: Infinity, duration: 0.85, ease: 'easeInOut' } : {}">
                     <path d="M8 1.5a1 1 0 0 1 1 1V6h1.8a.8.8 0 0 1 .56 1.36l-2.8 2.8a.8.8 0 0 1-1.12 0l-2.8-2.8A.8.8 0 0 1 5.2 6H7V2.5a1 1 0 0 1 1-1z" />
                   </MotionG>
                 </svg>
-                <!-- Task id 3: server / chip -->
                 <svg v-else-if="task.id === 3" class="h-4.5 w-4.5 text-current" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M2.5 9a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v4a1.5 1.5 0 0 1-1.5 1.5h-8A1.5 1.5 0 0 1 2.5 13V9z" />
+                  <MotionG :animate="task.status === 'running' ? { y: [-2.5, 2] } : { y: 0 }" :transition="task.status === 'running' ? { repeat: Infinity, duration: 0.85, ease: 'easeInOut' } : {}">
+                    <path d="M8 1.5a1 1 0 0 1 1 1V6h1.8a.8.8 0 0 1 .56 1.36l-2.8 2.8a.8.8 0 0 1-1.12 0l-2.8-2.8A.8.8 0 0 1 5.2 6H7V2.5a1 1 0 0 1 1-1z" />
+                  </MotionG>
+                </svg>
+                <!-- Task id 4: server / chip -->
+                <svg v-else-if="task.id === 4" class="h-4.5 w-4.5 text-current" viewBox="0 0 16 16" fill="currentColor">
                   <rect x="3" y="3" width="10" height="10" rx="2" />
                   <rect x="5.5" y="1" width="1.5" height="2" rx="0.5" />
                   <rect x="9" y="1" width="1.5" height="2" rx="0.5" />
@@ -326,17 +339,11 @@ onBeforeUnmount(() => {
                   <rect x="5.5" y="5.5" width="5" height="5" rx="1" :fill="isDarkMode ? '#0a0a0a' : '#ffffff'" />
                   <MotionRect x="6.5" y="6.5" width="3" height="3" rx="0.5" fill="currentColor" :animate="task.status === 'running' ? { scale: [1, 1.2, 1], opacity: [0.6, 1, 0.6] } : {}" :transition="task.status === 'running' ? { repeat: Infinity, duration: 1, ease: 'easeInOut' } : {}" style="transform-origin: 8px 8px" />
                 </svg>
-                <!-- Task id 4: layers (config) -->
-                <svg v-else-if="task.id === 4" class="h-4.5 w-4.5 text-current" viewBox="0 0 16 16" fill="currentColor">
+                <!-- Task id 5: layers (config) -->
+                <svg v-else class="h-4.5 w-4.5 text-current" viewBox="0 0 16 16" fill="currentColor">
                   <path d="M8 1.5L1.5 5 8 8.5 14.5 5 8 1.5z" />
                   <path d="M2 7.2l6 3.3 6-3.3v1.8l-6 3.3-6-3.3V7.2z" />
                   <path d="M2 10.7l6 3.3 6-3.3v1.8l-6 3.3-6-3.3v-1.8z" />
-                </svg>
-                <!-- Task id 5: check connection -->
-                <svg v-else class="h-4.5 w-4.5 text-current" viewBox="0 0 16 16" fill="currentColor">
-                  <rect x="2" y="2" width="7" height="9" rx="1.5" opacity="0.5" />
-                  <rect x="6.5" y="5" width="7" height="9" rx="1.5" />
-                  <MotionRect v-if="task.status === 'running'" x="2" y="2" width="7" height="9" rx="1.5" fill="currentColor" :animate="{ x: [0, 4.5], y: [0, 3], opacity: [0.9, 0] }" :transition="{ repeat: Infinity, duration: 1.1, ease: 'easeInOut' }" />
                 </svg>
               </div>
 

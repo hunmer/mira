@@ -13,6 +13,13 @@ export default {
     folder: '文件夹',
     tag: '标签',
   },
+  dialog: {
+    alert: '提示',
+    confirm: '确认',
+    prompt: '输入',
+    ok: '确定',
+    cancel: '取消',
+  },
   app: {
     connecting: '连接中…',
   },

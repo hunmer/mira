@@ -55,6 +55,7 @@ export function useHomeEventHandlers(
     const success = await tagHandler.openTag(tag.id, {
       libraryId: libraryStore.currentLibrary?.id,
       title: tag.title || tag.name,
+      label: tag.label,
       color: tag.color
     })
 

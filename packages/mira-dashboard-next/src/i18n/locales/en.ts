@@ -19,6 +19,8 @@ export default {
     success: 'Success',
     failed: 'Failed',
     confirmDelete: 'Confirm delete?',
+    deleteWarningTitle: 'Confirm deletion',
+    deleteWarningDesc: 'This action cannot be undone. Are you sure you want to delete?',
     total: '{n} items',
     back: 'Back',
   },

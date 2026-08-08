@@ -30,6 +30,8 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
 import { toast } from 'vue-sonner'
 import {
   RiSearchLine, RiMoreLine, RiSettings3Line, RiStopCircleLine,
@@ -37,6 +39,7 @@ import {
 } from '@remixicon/vue'
 
 const { t } = useI18n()
+const { confirmDialog, requireConfirm } = useConfirmDialog()
 const { selectedId: activeTab } = useLibrary()
 
 // core state
@@ -179,7 +182,7 @@ async function saveConfig() {
 }
 
 async function uninstallPlugin(plugin: Plugin) {
-  if (!confirm(t('common.confirmDelete'))) return
+  if (!(await requireConfirm())) return
   try {
     await pluginApi.uninstall(plugin.name, plugin.libraryId)
     toast.success(t('common.success'))
@@ -607,5 +610,13 @@ onMounted(loadPlugins)
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <!-- Delete confirmation -->
+    <ConfirmDialog
+      v-bind="confirmDialog"
+      @update:open="confirmDialog.open = $event"
+      @confirm="confirmDialog.resolve(true)"
+      @cancel="confirmDialog.resolve(false)"
+    />
   </div>
 </template>

@@ -11,12 +11,15 @@ import {
 } from '@/components/ui/table'
 import LibraryFormDialog from './LibraryFormDialog.vue'
 import type { LibraryFormData } from './LibraryFormDialog.vue'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
 import { toast } from 'vue-sonner'
 import {
   RiAddLine, RiSearchLine, RiEditLine, RiDeleteBinLine,
 } from '@remixicon/vue'
 
 const { t } = useI18n()
+const { confirmDialog, requireConfirm } = useConfirmDialog()
 const { loadLibraries: refreshGlobalLibs } = useLibrary()
 const libraries = ref<Library[]>([])
 const loading = ref(false)
@@ -109,7 +112,7 @@ async function handleSave() {
 }
 
 async function handleDelete(id: string) {
-  if (!confirm(t('common.confirmDelete'))) return
+  if (!(await requireConfirm())) return
   try {
     await libraryApi.delete(id)
     toast.success(t('common.success'))
@@ -202,6 +205,14 @@ onMounted(loadLibraries)
       :is-edit="!!editingLib?._id"
       @update:open="dialogOpen = $event"
       @save="handleSave"
+    />
+
+    <!-- Delete confirmation -->
+    <ConfirmDialog
+      v-bind="confirmDialog"
+      @update:open="confirmDialog.open = $event"
+      @confirm="confirmDialog.resolve(true)"
+      @cancel="confirmDialog.resolve(false)"
     />
   </div>
 </template>

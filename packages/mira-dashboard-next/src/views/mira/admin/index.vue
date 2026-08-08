@@ -12,10 +12,13 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
 import { toast } from 'vue-sonner'
 import { RiAddLine, RiEditLine, RiDeleteBinLine } from '@remixicon/vue'
 
 const { t } = useI18n()
+const { confirmDialog, requireConfirm } = useConfirmDialog()
 const admins = ref<User[]>([])
 const loading = ref(false)
 const dialogOpen = ref(false)
@@ -69,7 +72,7 @@ async function handleSave() {
 }
 
 async function handleDelete(id: string) {
-  if (!confirm(t('common.confirmDelete'))) return
+  if (!(await requireConfirm())) return
   try {
     await adminApi.delete(id)
     toast.success(t('common.success'))
@@ -167,5 +170,13 @@ onMounted(loadAdmins)
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <!-- Delete confirmation -->
+    <ConfirmDialog
+      v-bind="confirmDialog"
+      @update:open="confirmDialog.open = $event"
+      @confirm="confirmDialog.resolve(true)"
+      @cancel="confirmDialog.resolve(false)"
+    />
   </div>
 </template>

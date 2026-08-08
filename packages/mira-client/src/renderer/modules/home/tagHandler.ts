@@ -48,6 +48,7 @@ export function useHomeTagHandler() {
   const openTag = async (tagId: string, options?: {
     libraryId?: string
     title?: string
+    label?: string
     color?: string
   }) => {
     try {
@@ -57,19 +58,20 @@ export function useHomeTagHandler() {
       console.log('🏷️ 打开标签:', { tagId, options })
       
       // 更新当前标签状态
+      // 优先级：title > label > null（树节点只提供 label 时不能回落到 id）
       currentTag.value = {
         id: tagId,
-        title: options?.title || null,
+        title: options?.title || options?.label || null,
         libraryId: options?.libraryId || null,
         color: options?.color
       }
-      
+
       // 如果有libraryId，确保标签数据已加载
       if (options?.libraryId) {
         await tagStore.fetchTags(options.libraryId)
-        
-        // 从store中获取完整的标签信息
-        const tagInfo = tagStore.tags.find((tag: any) => tag.id === tagId)
+
+        // 从store中获取完整的标签信息（tag.id 为 number，tagId 为 string，需宽松比较）
+        const tagInfo = tagStore.tags.find((tag: any) => String(tag.id) === String(tagId))
         if (tagInfo) {
           currentTag.value = {
             ...currentTag.value,

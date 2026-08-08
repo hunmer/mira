@@ -19,6 +19,8 @@ export default {
     success: '操作成功',
     failed: '操作失败',
     confirmDelete: '确认删除？',
+    deleteWarningTitle: '确认删除',
+    deleteWarningDesc: '此操作无法撤销，确定要删除吗？',
     total: '共 {n} 条',
     back: '返回',
   },

@@ -72,8 +72,8 @@ export function useHomeFolderHandler() {
       if (options?.libraryId) {
         await folderStore.fetchFolders(options.libraryId)
         
-        // 从store中获取完整的文件夹信息
-        const folderInfo = folderStore.folders.find((folder: any) => folder.id === folderId)
+        // 从store中获取完整的文件夹信息（folder.id 为 number，folderId 为 string，需宽松比较）
+        const folderInfo = folderStore.folders.find((folder: any) => String(folder.id) === String(folderId))
         if (folderInfo) {
           currentFolder.value = {
             ...currentFolder.value,

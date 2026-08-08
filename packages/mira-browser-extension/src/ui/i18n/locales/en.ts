@@ -13,6 +13,13 @@ export default {
     folder: 'Folders',
     tag: 'Tags',
   },
+  dialog: {
+    alert: 'Notice',
+    confirm: 'Confirm',
+    prompt: 'Input',
+    ok: 'OK',
+    cancel: 'Cancel',
+  },
   app: {
     connecting: 'Connecting…',
   },
