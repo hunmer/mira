@@ -84,11 +84,38 @@ export type UIMode = 'popup' | 'sidePanel';
 export type Theme = 'auto' | 'light' | 'dark';
 
 /**
+ * 单个服务器连接配置。
+ *
+ * 多服务器改造后,扩展可保存多个服务器并通过 activeServerId 切换;
+ * 顶层 serverURL/username/password 仅作迁移期兼容字段(由激活服务器同步写入)。
+ */
+export interface ServerConfig {
+  /** crypto.randomUUID() */
+  id: string;
+  /** 显示名,如「本机开发」 */
+  name: string;
+  /** http://localhost:8081 */
+  serverURL: string;
+  username: string;
+  password: string;
+}
+
+/**
  * 扩展设置
  */
 export interface ExtensionSettings {
+  /**
+   * 多服务器列表(改造后的主存储)。
+   * 顶层 serverURL/username/password 仅保留用于迁移与 ensureClient 兜底。
+   */
+  servers: ServerConfig[];
+  /** 当前激活服务器 id;为空表示尚未选择(进连接界面手动选) */
+  activeServerId: string;
+  /** @deprecated 迁移兼容:与 activeServer 的凭据保持同步,供旧路径读取 */
   serverURL: string;
+  /** @deprecated 迁移兼容 */
   username: string;
+  /** @deprecated 迁移兼容 */
   password: string;
   libraryId: string;
   folderId?: string;
@@ -114,6 +141,8 @@ export interface ExtensionSettings {
  * 默认设置(开箱不崩)
  */
 export const DEFAULT_SETTINGS: ExtensionSettings = {
+  servers: [],
+  activeServerId: '',
   serverURL: '',
   username: '',
   password: '',

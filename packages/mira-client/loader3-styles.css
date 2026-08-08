@@ -1,0 +1,225 @@
+@keyframes box-move0 {
+  12%: {
+    transform: translate(var(--x), var(--y))
+  },
+  25%, 52%: {
+    transform: translate(0, 0)
+  },
+  80%: {
+    transform: translate(0, -32px)
+  },
+  90%, 100%: {
+    transform: translate(0, 188px)
+  }
+}
+
+@keyframes box-scale0 {
+  6%: {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0)
+  },
+  14%, 100%: {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1)
+  }
+}
+
+@keyframes box-move1 {
+  16%: {
+    transform: translate(var(--x), var(--y))
+  },
+  29%, 52%: {
+    transform: translate(0, 0)
+  },
+  80%: {
+    transform: translate(0, -32px)
+  },
+  90%, 100%: {
+    transform: translate(0, 188px)
+  }
+}
+
+@keyframes box-scale1 {
+  10%: {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0)
+  },
+  18%, 100%: {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1)
+  }
+}
+
+@keyframes box-move2 {
+  20%: {
+    transform: translate(var(--x), var(--y))
+  },
+  33%, 52%: {
+    transform: translate(0, 0)
+  },
+  80%: {
+    transform: translate(0, -32px)
+  },
+  90%, 100%: {
+    transform: translate(0, 188px)
+  }
+}
+
+@keyframes box-scale2 {
+  14%: {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0)
+  },
+  22%, 100%: {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1)
+  }
+}
+
+@keyframes box-move3 {
+  24%: {
+    transform: translate(var(--x), var(--y))
+  },
+  37%, 52%: {
+    transform: translate(0, 0)
+  },
+  80%: {
+    transform: translate(0, -32px)
+  },
+  90%, 100%: {
+    transform: translate(0, 188px)
+  }
+}
+
+@keyframes box-scale3 {
+  18%: {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0)
+  },
+  26%, 100%: {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1)
+  }
+}
+
+@keyframes box-move4 {
+  28%: {
+    transform: translate(var(--x), var(--y))
+  },
+  41%, 52%: {
+    transform: translate(0, 0)
+  },
+  80%: {
+    transform: translate(0, -32px)
+  },
+  90%, 100%: {
+    transform: translate(0, 188px)
+  }
+}
+
+@keyframes box-scale4 {
+  22%: {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0)
+  },
+  30%, 100%: {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1)
+  }
+}
+
+@keyframes box-move5 {
+  32%: {
+    transform: translate(var(--x), var(--y))
+  },
+  45%, 52%: {
+    transform: translate(0, 0)
+  },
+  80%: {
+    transform: translate(0, -32px)
+  },
+  90%, 100%: {
+    transform: translate(0, 188px)
+  }
+}
+
+@keyframes box-scale5 {
+  26%: {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0)
+  },
+  34%, 100%: {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1)
+  }
+}
+
+@keyframes box-move6 {
+  36%: {
+    transform: translate(var(--x), var(--y))
+  },
+  49%, 52%: {
+    transform: translate(0, 0)
+  },
+  80%: {
+    transform: translate(0, -32px)
+  },
+  90%, 100%: {
+    transform: translate(0, 188px)
+  }
+}
+
+@keyframes box-scale6 {
+  30%: {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0)
+  },
+  38%, 100%: {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1)
+  }
+}
+
+@keyframes box-move7 {
+  40%: {
+    transform: translate(var(--x), var(--y))
+  },
+  53%, 52%: {
+    transform: translate(0, 0)
+  },
+  80%: {
+    transform: translate(0, -32px)
+  },
+  90%, 100%: {
+    transform: translate(0, 188px)
+  }
+}
+
+@keyframes box-scale7 {
+  34%: {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(0)
+  },
+  42%, 100%: {
+    transform: rotateY(-47deg) rotateX(-15deg) rotateZ(15deg) scale(1)
+  }
+}
+
+@keyframes ground {
+  0%, 65%: {
+    transform: rotateX(90deg) rotateY(0deg) translate(-48px, -120px) translateZ(100px) scale(0)
+  },
+  75%, 90%: {
+    transform: rotateX(90deg) rotateY(0deg) translate(-48px, -120px) translateZ(100px) scale(1)
+  },
+  100%: {
+    transform: rotateX(90deg) rotateY(0deg) translate(-48px, -120px) translateZ(100px) scale(0)
+  }
+}
+
+@keyframes ground-shine {
+  0%, 70%: {
+    opacity: 0
+  },
+  75%, 87%: {
+    opacity: 0.2
+  },
+  100%: {
+    opacity: 0
+  }
+}
+
+@keyframes mask {
+  0%, 65%: {
+    opacity: 0
+  },
+  66%, 100%: {
+    opacity: 1
+  }
+}
+

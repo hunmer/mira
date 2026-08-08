@@ -1,5 +1,5 @@
 import type { Request, Event } from '@/shared/messages';
-import type { ExtensionSettings, UploadTask, SniffedResource, ResourceKind } from '@/shared/types';
+import type { ExtensionSettings, ServerConfig, UploadTask, SniffedResource, ResourceKind } from '@/shared/types';
 import type { StagedFile } from '@/shared/types';
 import type { Folder, Tag } from 'mira-app-core/shared/sdk';
 
@@ -20,6 +20,22 @@ export function useBackground() {
     },
     async setSettings(partial: Partial<ExtensionSettings>) {
       return send<ExtensionSettings>({ type: 'CONFIG_SET', payload: partial });
+    },
+    // ---- 多服务器 ----
+    async listServers() {
+      return send<{ servers: ServerConfig[]; activeServerId: string }>({ type: 'SERVERS_LIST' });
+    },
+    async saveServers(servers: ServerConfig[]) {
+      return send<ExtensionSettings>({ type: 'SERVERS_SAVE', payload: { servers } });
+    },
+    async activateServer(id: string) {
+      return send<ExtensionSettings>({ type: 'SERVER_ACTIVATE', payload: { id } });
+    },
+    async testServer(serverURL: string, username: string, password: string) {
+      return send<{ ok: boolean; error?: string }>({
+        type: 'SERVER_TEST',
+        payload: { serverURL, username, password },
+      });
     },
     async listLibraries() {
       return send({ type: 'LIB_LIST' });

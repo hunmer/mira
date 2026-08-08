@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { mergeWithDefaults, STORAGE_KEYS } from './storage';
+import { mergeWithDefaults, STORAGE_KEYS, migrateServersIfNeeded } from './storage';
 import { DEFAULT_SETTINGS } from './types';
 
 // mock chrome.storage(在测试里用一个内存实现)
@@ -62,5 +62,58 @@ describe('storage', () => {
     await saveSession({ token: 'tok123' });
     const sess = await loadSession();
     expect(sess.token).toBe('tok123');
+  });
+
+  it('默认设置含多服务器字段(servers 空 / activeServerId 空)', () => {
+    expect(DEFAULT_SETTINGS.servers).toEqual([]);
+    expect(DEFAULT_SETTINGS.activeServerId).toBe('');
+  });
+
+  it('mergeWithDefaults 补齐多服务器字段', () => {
+    const merged = mergeWithDefaults({ serverURL: 'http://x' });
+    expect(merged.servers).toEqual([]);
+    expect(merged.activeServerId).toBe('');
+  });
+
+  describe('migrateServersIfNeeded', () => {
+    it('servers 已有内容时不迁移', async () => {
+      localStore[STORAGE_KEYS.local] = {
+        servers: [{ id: 's1', name: 'A', serverURL: 'http://a', username: 'u', password: 'p' }],
+        activeServerId: 's1',
+      };
+      const { loadSettings } = await import('./storage');
+      const before = await loadSettings();
+      const after = await migrateServersIfNeeded(before);
+      expect(after.servers.length).toBe(1);
+      expect(after.servers[0].id).toBe('s1');
+    });
+
+    it('无旧凭据时不迁移(留给用户手动新增)', async () => {
+      localStore[STORAGE_KEYS.local] = { serverURL: '' };
+      const { loadSettings } = await import('./storage');
+      const before = await loadSettings();
+      const after = await migrateServersIfNeeded(before);
+      expect(after.servers).toEqual([]);
+      expect(after.activeServerId).toBe('');
+    });
+
+    it('有旧顶层凭据时迁移为首条服务器并激活', async () => {
+      localStore[STORAGE_KEYS.local] = {
+        serverURL: 'http://localhost:8081',
+        username: 'admin',
+        password: 'admin123',
+      };
+      const { loadSettings } = await import('./storage');
+      const before = await loadSettings();
+      const after = await migrateServersIfNeeded(before);
+      expect(after.servers.length).toBe(1);
+      expect(after.servers[0].serverURL).toBe('http://localhost:8081');
+      expect(after.servers[0].username).toBe('admin');
+      expect(after.activeServerId).toBe(after.servers[0].id);
+      // 持久化到 storage
+      const stored = await loadSettings();
+      expect(stored.servers.length).toBe(1);
+      expect(stored.activeServerId).toBe(after.servers[0].id);
+    });
   });
 });

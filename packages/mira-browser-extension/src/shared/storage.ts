@@ -1,4 +1,4 @@
-import { DEFAULT_SETTINGS, type ExtensionSettings } from './types';
+import { DEFAULT_SETTINGS, type ExtensionSettings, type ServerConfig } from './types';
 
 export const STORAGE_KEYS = {
   /** chrome.storage.local key —— 持久设置 */
@@ -6,6 +6,16 @@ export const STORAGE_KEYS = {
   /** chrome.storage.session key —— token / password(运行期) */
   session: 'mira_session',
 } as const;
+
+/**
+ * 生成服务器 id。优先用 crypto.randomUUID,不可用时回退时间戳+随机。
+ */
+export function newServerId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `srv_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
 
 export interface SessionData {
   token?: string;
@@ -62,4 +72,32 @@ export async function saveSession(partial: Partial<SessionData>): Promise<Sessio
  */
 export async function clearSession(): Promise<void> {
   await chrome.storage.session.remove(STORAGE_KEYS.session);
+}
+
+/**
+ * 多服务器迁移:若 settings.servers 为空但存在旧顶层凭据(serverURL 非空),
+ * 用旧凭据构造首条 ServerConfig 并设为激活;同时把顶层凭据保留为兼容字段。
+ *
+ * 幂等:servers 已有内容或旧 serverURL 为空时直接返回当前 settings。
+ */
+export async function migrateServersIfNeeded(settings: ExtensionSettings): Promise<ExtensionSettings> {
+  // 已有服务器列表 → 无需迁移
+  if (settings.servers.length > 0) return settings;
+  // 无旧凭据 → 首次使用,留给用户在连接界面手动新增
+  if (!settings.serverURL) return settings;
+
+  const server: ServerConfig = {
+    id: settings.activeServerId || newServerId(),
+    name: '默认服务器',
+    serverURL: settings.serverURL,
+    username: settings.username,
+    password: settings.password,
+  };
+  const merged: ExtensionSettings = {
+    ...settings,
+    servers: [server],
+    activeServerId: server.id,
+  };
+  await chrome.storage.local.set({ [STORAGE_KEYS.local]: merged });
+  return merged;
 }

@@ -1,5 +1,6 @@
 import type {
   ExtensionSettings,
+  ServerConfig,
   StagedFile,
   SniffedResource,
   ResourceKind,
@@ -15,6 +16,17 @@ export type Request =
   | { type: 'AUTH_VERIFY' }
   | { type: 'CONFIG_GET' }
   | { type: 'CONFIG_SET'; payload: Partial<ExtensionSettings> }
+  // 多服务器
+  | { type: 'SERVERS_LIST' }
+  | { type: 'SERVERS_SAVE'; payload: { servers: ServerConfig[] } }
+  | {
+      type: 'SERVER_ACTIVATE';
+      payload: { id: string };
+    }
+  | {
+      type: 'SERVER_TEST';
+      payload: { serverURL: string; username: string; password: string };
+    }
   // 素材库
   | { type: 'LIB_LIST' }
   | { type: 'FOLDER_LIST'; payload: { libraryId: string } }
@@ -61,6 +73,7 @@ export type ContentCommand =
 
 const REQUEST_TYPES = new Set<Request['type']>([
   'AUTH_LOGIN', 'AUTH_VERIFY', 'CONFIG_GET', 'CONFIG_SET',
+  'SERVERS_LIST', 'SERVERS_SAVE', 'SERVER_ACTIVATE', 'SERVER_TEST',
   'LIB_LIST', 'FOLDER_LIST', 'TAG_LIST',
   'UPLOAD_FILES', 'UPLOAD_FROM_URL', 'UPLOAD_STATUS', 'UPLOAD_CANCEL',
   'CAPTURE_VISIBLE', 'CAPTURE_FULLPAGE', 'CAPTURE_SELECTION',

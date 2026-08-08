@@ -51,6 +51,7 @@ export default {
     hasAccount: '已有账号？',
     goRegister: '去注册',
     goLogin: '去登录',
+    defaultCredentials: '默认账号：admin / admin123',
   },
   profile: {
     title: '个人中心',

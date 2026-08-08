@@ -56,6 +56,9 @@ async function handleLogin() {
           <Button type="submit" class="w-full" :disabled="loading">
             {{ loading ? t('common.loading') : t('auth.login') }}
           </Button>
+          <p class="rounded-md bg-muted px-3 py-2 text-center text-xs text-muted-foreground">
+            {{ t('auth.defaultCredentials') }}
+          </p>
           <p class="text-center text-sm text-muted-foreground">
             {{ t('auth.noAccount') }}
             <router-link to="/register" class="text-primary hover:underline">{{ t('auth.goRegister') }}</router-link>

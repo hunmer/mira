@@ -5,12 +5,17 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { Theme } from '@/shared/types';
 import UploadQueueButton from '@/ui/components/upload/UploadQueueButton.vue';
+import ServerBar from '@/ui/components/server/ServerBar.vue';
 
 const { t } = useI18n();
 const { status, libraries } = useConnection();
 const { settings, update } = useSettings();
 const props = defineProps<{ screenshotOpen?: boolean }>();
-const emit = defineEmits<{ 'toggle-screenshot': [] }>();
+const emit = defineEmits<{
+  'toggle-screenshot': [];
+  'manage-servers': [];
+  'switch-server': [id: string];
+}>();
 
 const statusColor = computed(() => ({
   idle: '#71717a', connecting: '#eab308', connected: '#4ade80', failed: '#ef4444',
@@ -32,20 +37,28 @@ async function cycleTheme() {
 </script>
 
 <template>
-  <div class="header">
-    <span class="dot" :style="{ background: statusColor }" />
-    <select class="lib" :value="settings.libraryId" @change="onLibChange">
-      <option value="" disabled>{{ t('header.selectLibrary') }}</option>
-      <option v-for="lib in libraries" :key="lib.id" :value="lib.id">{{ lib.name }}</option>
-    </select>
-    <button class="screenshot" @click="emit('toggle-screenshot')">{{ t('header.screenshot') }}</button>
-    <UploadQueueButton />
-    <button class="theme" :title="t('header.themeTitle', { theme: settings.theme })" @click="cycleTheme">{{ themeLabel }}</button>
-    <div v-if="props.screenshotOpen" class="screenshot-menu"><slot name="screenshot-menu" /></div>
+  <div class="head-wrap">
+    <!-- 服务器栏:状态点 + badge 列表 + 管理按钮 -->
+    <ServerBar
+      @manage="emit('manage-servers')"
+      @switch="emit('switch-server', $event)"
+    />
+    <div class="header">
+      <span class="dot" :style="{ background: statusColor }" />
+      <select class="lib" :value="settings.libraryId" @change="onLibChange">
+        <option value="" disabled>{{ t('header.selectLibrary') }}</option>
+        <option v-for="lib in libraries" :key="lib.id" :value="lib.id">{{ lib.name }}</option>
+      </select>
+      <button class="screenshot" @click="emit('toggle-screenshot')">{{ t('header.screenshot') }}</button>
+      <UploadQueueButton />
+      <button class="theme" :title="t('header.themeTitle', { theme: settings.theme })" @click="cycleTheme">{{ themeLabel }}</button>
+      <div v-if="props.screenshotOpen" class="screenshot-menu"><slot name="screenshot-menu" /></div>
+    </div>
   </div>
 </template>
 
 <style scoped>
+.head-wrap { display: flex; flex-direction: column; }
 .header { position: relative; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); }
 .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .lib { flex: 1; min-width: 0; background: transparent; color: var(--fg); border: none; font: inherit; }

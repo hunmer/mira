@@ -51,6 +51,7 @@ export default {
     hasAccount: 'Already have an account?',
     goRegister: 'Register',
     goLogin: 'Login',
+    defaultCredentials: 'Default account: admin / admin123',
   },
   profile: {
     title: 'Profile',

@@ -5,7 +5,7 @@ import type { MiraClient } from 'mira-app-core/shared/sdk';
 import type { Request, Event } from '@/shared/messages';
 import { isRequest } from '@/shared/messages';
 import { getSettings, updateSettings } from './settings';
-import { login, withAuth } from './mira-client';
+import { login, withAuth, loginTo, activateServer } from './mira-client';
 import { stagedToFile } from '@/shared/staged-file';
 import type { Uploader } from './uploader';
 import type { SniffedResource } from '@/shared/types';
@@ -58,6 +58,25 @@ export function createRouter(deps: RouterDeps): RequestHandler {
         return getSettings();
       case 'CONFIG_SET':
         return updateSettings(req.payload);
+      case 'SERVERS_LIST': {
+        const s = await getSettings();
+        return { servers: s.servers, activeServerId: s.activeServerId };
+      }
+      case 'SERVERS_SAVE':
+        return updateSettings({ servers: req.payload.servers });
+      case 'SERVER_ACTIVATE': {
+        const current = await getSettings();
+        const merged = await activateServer(req.payload.id, current);
+        // 写回(含 activeServerId + 同步的顶层兼容字段)
+        return updateSettings({
+          activeServerId: merged.activeServerId,
+          serverURL: merged.serverURL,
+          username: merged.username,
+          password: merged.password,
+        });
+      }
+      case 'SERVER_TEST':
+        return loginTo(req.payload.serverURL, req.payload.username, req.payload.password);
       case 'LIB_LIST':
         return withAuth((client: MiraClient) => client.libraries().getAll());
       case 'FOLDER_LIST':

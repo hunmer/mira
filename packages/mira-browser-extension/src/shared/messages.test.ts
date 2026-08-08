@@ -12,6 +12,16 @@ describe('messages 类型守卫', () => {
     })).toBe(true);
   });
 
+  it('isRequest 识别多服务器 Request', () => {
+    expect(isRequest({ type: 'SERVERS_LIST' })).toBe(true);
+    expect(isRequest({ type: 'SERVERS_SAVE', payload: { servers: [] } })).toBe(true);
+    expect(isRequest({ type: 'SERVER_ACTIVATE', payload: { id: 's1' } })).toBe(true);
+    expect(isRequest({
+      type: 'SERVER_TEST',
+      payload: { serverURL: 'http://x', username: 'u', password: 'p' },
+    })).toBe(true);
+  });
+
   it('isRequest 拒绝未知 type', () => {
     expect(isRequest({ type: 'UNKNOWN' })).toBe(false);
     expect(isRequest(null)).toBe(false);
