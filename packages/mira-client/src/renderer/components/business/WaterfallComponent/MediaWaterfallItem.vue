@@ -26,8 +26,9 @@
         class="absolute inset-0 overflow-hidden"
         :class="{ 'opacity-0': isVideoPlaying }"
       >
-        <MediaThumbnail
-          :file-id="item.id"
+      <MediaThumbnail
+        :file-id="item.id"
+        :file="item"
           :src="url"
           :preload="preload"
           :filename="item.name"

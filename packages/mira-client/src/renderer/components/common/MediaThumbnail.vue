@@ -1,6 +1,7 @@
 <template>
+  <div v-if="customFormat?.renderThumbnail" ref="customContainer" :class="imgClass" />
   <img
-    v-if="currentSrc && !hasError && preload"
+    v-else-if="currentSrc && !hasError && preload"
     :src="currentSrc"
     :alt="alt"
     :class="imgClass"
@@ -27,6 +28,8 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { getFileTypeIcon } from '@renderer/utils/fileUtils'
 import { getExtIconUrl } from '@renderer/utils/extIconHelper'
+import type { FileInfo } from '../../../shared/types'
+import { getPluginFileFormat } from '@renderer/plugins/instanceManager'
 
 const props = withDefaults(defineProps<{
   fileId: string
@@ -37,6 +40,7 @@ const props = withDefaults(defineProps<{
   iconSize?: string
   /** 直接加载图片，供上层在进入预加载区时使用。 */
   preload?: boolean
+  file?: FileInfo
 }>(), {
   alt: '',
   imgClass: '',
@@ -54,6 +58,9 @@ const hasError = ref(false)
 
 const fallbackIcon = computed(() => getFileTypeIcon(props.filename || ''))
 const extIconUrl = computed(() => getExtIconUrl(props.filename || ''))
+const customContainer = ref<HTMLElement | null>(null)
+let customCleanup: (() => void) | void
+const customFormat = computed(() => props.file ? getPluginFileFormat(props.file) : undefined)
 
 function toFileUrl(path: string): string {
   if (!path) return ''
@@ -81,6 +88,24 @@ function onThumbnailUpdate(event: Event) {
 function onLoad() { emit('load') }
 function onError() { hasError.value = true; emit('error') }
 
-onMounted(() => window.addEventListener('thumbnail-updated', onThumbnailUpdate))
-onUnmounted(() => window.removeEventListener('thumbnail-updated', onThumbnailUpdate))
+function renderCustomThumbnail() {
+  if (customCleanup) customCleanup()
+  customCleanup = undefined
+  if (!customContainer.value || !customFormat.value?.renderThumbnail || !props.file) return
+  customContainer.value.replaceChildren()
+  try {
+    customCleanup = customFormat.value.renderThumbnail(customContainer.value, props.file)
+  } catch (error) {
+    console.error('Plugin thumbnail renderer failed:', error)
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('thumbnail-updated', onThumbnailUpdate)
+  renderCustomThumbnail()
+})
+onUnmounted(() => {
+  window.removeEventListener('thumbnail-updated', onThumbnailUpdate)
+  if (customCleanup) customCleanup()
+})
 </script>

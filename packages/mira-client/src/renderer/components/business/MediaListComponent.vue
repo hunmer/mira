@@ -77,6 +77,7 @@
                   >
                     <MediaThumbnail
                       :file-id="item.id"
+                      :file="item"
                       :src="item.thumbnailPath || item.url || ''"
                       :filename="item.name"
                       :alt="item.name"

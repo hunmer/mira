@@ -63,6 +63,30 @@ export function init(inst: any) {
 | `pluginManager.server.backend` | 后端实例（httpServer、thumbnailService 等） |
 | `dbService` | 当前素材库的数据库服务 |
 
+## 自定义文件格式处理
+
+插件可以注册格式处理器。宿主按扩展名或 MIME 类型匹配，并把服务端本地文件路径传给 `process`；路径只在回调期间使用，不应写入响应或日志。
+
+```typescript
+const unregister = pluginManager.registerFileFormat('my_plugin', {
+  id: 'glb',
+  extensions: ['glb', 'gltf'],
+  mimeTypes: ['model/gltf-binary'],
+  async process(filePath, context) {
+    // 在 Node 中读取/解析 filePath，返回可序列化结果
+    return { filePath, size: (await fs.promises.stat(filePath)).size, ...context };
+  },
+  async thumbnail(srcPath, destPath) {
+    // 可选：使用 render-glb、three 的 Node 渲染器或其他无头方案生成 destPath
+  },
+});
+
+// 插件 cleanup 中调用；卸载时宿主也会自动清理
+unregister();
+```
+
+需要主动处理文件时调用 `pluginManager.processFile(filePath, { mimeType, ... })`。缩略图回调会自动接入现有 `ThumbnailService` 的文件创建和待处理扫描流程。
+
 ## package.json
 
 不依赖 mira 包：

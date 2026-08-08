@@ -691,6 +691,11 @@ export class PluginService {
           const ps: any = (window as any).pluginSystem
           if (!ps?.mediaContextMenus?.register) return () => undefined
           return ps.mediaContextMenus.register({ ...item, pluginId: config.pluginId })
+        },
+        registerFileFormat: (format: any) => {
+          const ps: any = (window as any).pluginSystem
+          if (!ps?.fileFormats?.register) return () => undefined
+          return ps.fileFormats.register({ ...format, pluginId: config.pluginId })
         }
       },
 

@@ -122,6 +122,15 @@ export interface PluginMediaContextMenu {
   onSelect: (files: FileInfo[]) => void | Promise<void>
 }
 
+export interface PluginFileFormat {
+  id: string
+  pluginId: string
+  extensions?: string[]
+  mimeTypes?: string[]
+  renderThumbnail?: (container: HTMLElement, file: FileInfo) => (() => void) | void
+  open?: (file: FileInfo) => boolean | void | Promise<boolean | void>
+}
+
 // 插件系统全局API类型
 export interface PluginSystemAPI {
   plugins: Map<string, any>
@@ -158,6 +167,13 @@ export interface PluginSystemAPI {
     register: (item: PluginMediaContextMenu) => () => void
     unregister: (id: string) => void
     getAll: () => PluginMediaContextMenu[]
+  }
+  fileFormats: {
+    list: PluginFileFormat[]
+    register: (format: PluginFileFormat) => () => void
+    unregister: (id: string) => void
+    getForFile: (file: FileInfo) => PluginFileFormat | undefined
+    getAll: () => PluginFileFormat[]
   }
 }
 

@@ -271,7 +271,7 @@ reloadLocalPlugin(pluginId)
 | `events` | emit/on/off | 基于 `window.dispatchEvent(CustomEvent('plugin_<id>_<event>'))` |
 | `ui` | showNotification / showDialog | 通知与对话框 |
 | `storage` | set/get/has/delete | 基于 ConfigStorage，key 前缀 `plugin_<id>_`，**实际为 async** |
-| `media` | setLocalFile / setLocalFiles / registerContextMenu | 本地文件关联与媒体网格右键菜单注册 |
+| `media` | setLocalFile / setLocalFiles / registerContextMenu / registerFileFormat | 本地文件关联、媒体网格右键菜单和自定义格式处理注册 |
 | `window` | openPluginWindow(opts) | 打开插件独立窗口，**默认 pluginId 锁定为当前插件** |
 | `dom`* | querySelector / createElement 等 | 直通 document |
 | `http`* | get / post | fetch + json |
@@ -302,6 +302,29 @@ const unregister = api.media.registerContextMenu({
 
 // cleanup 时注销
 unregister()
+```
+
+### 自定义文件格式（缩略图与详情打开）
+
+`registerFileFormat` 按文件扩展名或 MIME 类型匹配。`renderThumbnail` 获得宿主提供的 `div`，可以直接创建交互式 DOM、canvas，或在插件自己的构建产物中挂载 TresJS；返回的清理函数会在文件切换/组件卸载时调用。
+
+```javascript
+const unregister = api.media.registerFileFormat({
+  id: 'model-viewer',
+  extensions: ['glb', 'gltf'],
+  mimeTypes: ['model/gltf-binary', 'model/gltf+json'],
+  renderThumbnail(container, file) {
+    container.textContent = `3D: ${file.name}`
+    container.onclick = () => api.ui.showNotification('打开 3D 模型')
+    return () => { container.onclick = null }
+  },
+  async open(file) {
+    // 返回 true 表示插件已接管详情打开；false/undefined 继续使用宿主默认路由
+    await api.window.openPluginWindow({ title: file.name, query: { fileId: file.id } })
+    return true
+  },
+})
+// 插件 cleanup 中调用 unregister()
 ```
 
 `onSelect(files)` 接收当前右键目标对应的素材列表：单选时为当前素材，多选时为当前选中的全部素材。菜单回调边界会将响应式对象转换为普通 JSON 对象，插件不应依赖 Vue 响应式能力。

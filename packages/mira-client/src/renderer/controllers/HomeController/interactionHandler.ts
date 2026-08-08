@@ -1,5 +1,6 @@
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { getPluginFileFormat } from '@renderer/plugins/instanceManager'
 import { useGlobalSearch } from '../../composables/useGlobalSearch'
 import type { NavigationItem, FolderItem, SearchFilter } from '../../types/components'
 import type { FileInfo } from '../../../shared/types'
@@ -170,7 +171,9 @@ export class HomeInteractionHandler {
    * 处理媒体双击
    * @param item - 媒体项目
    */
-  public handleMediaDoubleClick = (item: FileInfo): void => {
+  public handleMediaDoubleClick = async (item: FileInfo): Promise<void> => {
+    const customFormat = getPluginFileFormat(item)
+    if (customFormat?.open && await customFormat.open(item)) return
     const fileType = HomeControllerUtils.getFileTypeFromInfo(item)
     if (fileType === 'image') {
       this.router.push(`/image-preview/${item.id}`)

@@ -25,6 +25,7 @@
         <!-- 懒加载图片 -->
         <MediaThumbnail
           :file-id="item.id"
+          :file="item"
           :src="imageSrcComputed ?? ''"
           :filename="item.name"
           :alt="item.name"

@@ -3,7 +3,18 @@
  * 负责插件实例的创建、生命周期管理和全局API
  */
 
-import type { PluginSystemAPI } from './types'
+import type { PluginSystemAPI, PluginFileFormat } from './types'
+import type { FileInfo } from '../../shared/types'
+
+const normalizeFormatValue = (value: string): string => value.trim().toLowerCase().replace(/^\./, '')
+const matchesFileFormat = (format: PluginFileFormat, file: FileInfo): boolean => {
+  const extension = (file.extension || file.name?.split('.').pop() || '').toLowerCase()
+  const mimeType = (file.mimeType || '').toLowerCase()
+  return !!(
+    format.extensions?.some(ext => normalizeFormatValue(ext) === extension) ||
+    format.mimeTypes?.some(mime => mime.toLowerCase() === mimeType)
+  )
+}
 
 /**
  * 初始化全局插件系统API
@@ -213,11 +224,34 @@ export const initializeGlobalPluginSystem = () => {
           if (idx >= 0) list.splice(idx, 1)
         },
         getAll: () => (window as any).pluginSystem.mediaContextMenus.list.slice(),
+      },
+      fileFormats: {
+        list: [] as PluginFileFormat[],
+        register: (format: PluginFileFormat) => {
+          const list = (window as any).pluginSystem.fileFormats.list
+          const index = list.findIndex((item: PluginFileFormat) => item.id === format.id)
+          if (index >= 0) list[index] = format
+          else list.push(format)
+          return () => (window as any).pluginSystem.fileFormats.unregister(format.id)
+        },
+        unregister: (id: string) => {
+          const list = (window as any).pluginSystem.fileFormats.list
+          const index = list.findIndex((item: PluginFileFormat) => item.id === id)
+          if (index >= 0) list.splice(index, 1)
+        },
+        getForFile: (file: FileInfo) =>
+          (window as any).pluginSystem.fileFormats.list.find((format: PluginFileFormat) => matchesFileFormat(format, file)),
+        getAll: () => (window as any).pluginSystem.fileFormats.list.slice(),
       }
     } as PluginSystemAPI
 
     console.log('🌐 Global plugin system initialized')
   }
+}
+
+export const getPluginFileFormat = (file: FileInfo): PluginFileFormat | undefined => {
+  if (typeof window === 'undefined') return undefined
+  return (window as any).pluginSystem?.fileFormats?.getForFile(file)
 }
 
 /**

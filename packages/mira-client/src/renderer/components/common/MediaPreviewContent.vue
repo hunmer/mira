@@ -7,6 +7,7 @@
     <MediaThumbnail
       v-if="kind === 'image'"
       :file-id="item.id"
+      :file="item"
       :src="imageSrc"
       :filename="item.name"
       :alt="item.name"

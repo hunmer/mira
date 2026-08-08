@@ -193,6 +193,13 @@ export interface PluginAPI {
     setLocalFile: (libraryId: string, fileId: string, localPath: string) => void
     setLocalFiles: (libraryId: string, filePathMap: Record<string, string>) => void
     registerContextMenu: (item: { id: string; label: string; icon?: string; onSelect: (files: FileInfo[]) => void | Promise<void> }) => () => void
+    registerFileFormat: (format: {
+      id: string
+      extensions?: string[]
+      mimeTypes?: string[]
+      renderThumbnail?: (container: HTMLElement, file: FileInfo) => (() => void) | void
+      open?: (file: FileInfo) => boolean | void | Promise<boolean | void>
+    }) => () => void
   }
 
   // 插件窗口管理（打开插件 dist 的独立 BrowserWindow）

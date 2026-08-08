@@ -5,6 +5,7 @@ import { MiraClient } from 'mira-app-core/shared/sdk';
 import * as fs from 'fs';
 import * as path from 'path';
 import type { Request, Response } from 'express';
+import type { ThumbnailGenerator } from './services/ThumbnailService';
 
 export interface PluginConfig {
     name: string;
@@ -30,6 +31,14 @@ export interface HttpHookDefinition {
     handler: HttpHookHandler;
 }
 
+export interface ServerFileFormatHandler {
+    id: string;
+    extensions?: string[];
+    mimeTypes?: string[];
+    process?: (filePath: string, context?: Record<string, any>) => any | Promise<any>;
+    thumbnail?: (srcPath: string, destPath: string) => Promise<void>;
+}
+
 export class ServerPluginManager {
     pluginsDir: string;
     public server: MiraWebsocketServer;
@@ -38,6 +47,7 @@ export class ServerPluginManager {
     private loadedPlugins: Map<string, any> = new Map();
     private miraClient: MiraClient;
     private httpHooks: HttpHookDefinition[] = [];
+    private fileFormatHandlers = new Map<string, { pluginName: string; handler: ServerFileFormatHandler }>();
     fields: Record<string, any>[] = [];
 
     constructor({ server, dbService, pluginsDir }: { server: MiraWebsocketServer, dbService: ILibraryServerData, pluginsDir?: string }) {
@@ -160,6 +170,49 @@ export class ServerPluginManager {
         });
     }
 
+    registerFileFormat(pluginName: string, handler: ServerFileFormatHandler): () => void {
+        if (!handler.id || (!handler.extensions?.length && !handler.mimeTypes?.length)) {
+            throw new Error('File format registration error: id and extensions or mimeTypes are required');
+        }
+        const key = `${pluginName}:${handler.id}`;
+        const previous = this.fileFormatHandlers.get(key);
+        if (previous?.handler.thumbnail) {
+            this.server.backend.thumbnailService.unregisterGenerator(key);
+        }
+        this.fileFormatHandlers.set(key, { pluginName, handler });
+        if (handler.thumbnail) {
+            const generator: ThumbnailGenerator = {
+                name: key,
+                supportedExtensions: (handler.extensions || []).map(ext => ext.replace(/^\./, '').toLowerCase()),
+                generate: handler.thumbnail,
+            };
+            this.server.backend.thumbnailService.registerGenerator(generator);
+        }
+        return () => this.unregisterFileFormat(pluginName, handler.id);
+    }
+
+    unregisterFileFormat(pluginName: string, id: string): boolean {
+        const key = `${pluginName}:${id}`;
+        const entry = this.fileFormatHandlers.get(key);
+        if (!entry) return false;
+        if (entry.handler.thumbnail) this.server.backend.thumbnailService.unregisterGenerator(key);
+        return this.fileFormatHandlers.delete(key);
+    }
+
+    getFileFormatHandlers(): ServerFileFormatHandler[] {
+        return Array.from(this.fileFormatHandlers.values()).map(({ handler }) => ({ ...handler }));
+    }
+
+    async processFile(filePath: string, context: Record<string, any> = {}): Promise<any> {
+        const extension = path.extname(filePath).toLowerCase().slice(1);
+        const mimeType = String(context.mimeType || '').toLowerCase();
+        const entry = Array.from(this.fileFormatHandlers.values()).find(({ handler }) =>
+            handler.extensions?.some(ext => ext.replace(/^\./, '').toLowerCase() === extension) ||
+            handler.mimeTypes?.some(mime => mime.toLowerCase() === mimeType)
+        );
+        return entry?.handler.process ? entry.handler.process(filePath, context) : undefined;
+    }
+
     async runHttpHooks(context: HttpHookContext): Promise<boolean> {
         for (const hook of this.httpHooks) {
             if (!this.matchesHttpHook(hook, context)) continue;
@@ -194,6 +247,10 @@ export class ServerPluginManager {
                 } catch (error) {
                     console.error(`Error cleaning up plugin ${name}:`, error);
                 }
+            }
+
+            for (const [key, entry] of this.fileFormatHandlers) {
+                if (entry.pluginName === name) this.unregisterFileFormat(name, key.slice(name.length + 1));
             }
 
             this.loadedPlugins.delete(name);
