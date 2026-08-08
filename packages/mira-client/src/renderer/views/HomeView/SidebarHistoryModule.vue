@@ -182,8 +182,8 @@ onMounted(() => {
 
       <!-- 空状态 -->
       <Empty v-else-if="isEmpty" class="py-6">
-        <EmptyMedia variant="icon">
-          <StatusImage name="empty" size="small" />
+        <EmptyMedia>
+          <StatusImage name="empty" size="medium" />
         </EmptyMedia>
         <EmptyTitle>{{ mode === 'recent_added' ? '暂无文件' : '暂无浏览记录' }}</EmptyTitle>
       </Empty>

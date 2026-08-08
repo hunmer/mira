@@ -83,7 +83,7 @@ function onConnected() {
 
 <style scoped>
 .app { display: flex; flex-direction: column; height: 100vh; background: var(--bg); }
-.app.popup { width: 380px; max-height: 600px; }
+.app.popup { width: 380px; height: 600px; }
 .content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
 .booting { display: flex; align-items: center; justify-content: center; height: 100vh; color: var(--muted); }
 </style>

@@ -336,6 +336,9 @@ importers:
       typescript:
         specifier: ~5.7.2
         version: 5.7.3
+      undici:
+        specifier: ^6.21.3
+        version: 6.25.0
       v-viewer:
         specifier: ^3.0.22
         version: 3.0.23(viewerjs@1.11.7)(vue@3.5.13(typescript@5.7.3))
