@@ -114,6 +114,29 @@ export class FileModule {
     }
 
     /**
+     * 覆盖写入文件内容（保留文件 ID、目录和元数据）。
+     */
+    async writeFile(
+        libraryId: string,
+        fileId: string | number,
+        content: Blob | string | ArrayBuffer,
+        options: { name?: string; contentType?: string } = {}
+    ): Promise<UploadResponse> {
+        const blob = content instanceof Blob
+            ? content
+            : new Blob([content], { type: options.contentType || 'application/octet-stream' });
+        const file = new File([blob], options.name || 'file', {
+            type: options.contentType || blob.type || 'application/octet-stream'
+        });
+        const formData = new FormData();
+        formData.append('files', file);
+        formData.append('libraryId', libraryId);
+        formData.append('fileId', String(fileId));
+        formData.append('name', options.name || file.name);
+        return await this.httpClient.upload<UploadResponse>('/api/files/upload', formData);
+    }
+
+    /**
      * 删除文件
      * @param libraryId 素材库ID
      * @param fileId 文件ID

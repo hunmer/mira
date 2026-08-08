@@ -157,6 +157,27 @@
 }
 
 /*
+  例外：浮层面板打开时 reka-ui 会把焦点移到面板自身，上面的全局 focus 重置
+  会连带把面板阴影去掉（表现为"hover 到 item 上阴影才出现"）。
+  这里恢复面板阴影：box-shadow 复用 Tailwind 已计算好的 --tw-shadow 变量组合，
+  无需重复阴影值；特异性 (0,2,0) + !important 可覆盖上方 *:focus 的 (0,1,0)。
+*/
+[data-slot="dropdown-menu-content"]:focus,
+[data-slot="dropdown-menu-sub-content"]:focus,
+[data-slot="context-menu-content"]:focus,
+[data-slot="context-menu-sub-content"]:focus,
+[data-slot="popover-content"]:focus,
+[data-slot="select-content"]:focus,
+[data-slot="hover-card-content"]:focus {
+  box-shadow:
+    var(--tw-inset-shadow, 0 0 #0000),
+    var(--tw-inset-ring-shadow, 0 0 #0000),
+    var(--tw-ring-offset-shadow, 0 0 #0000),
+    var(--tw-ring-shadow, 0 0 #0000),
+    var(--tw-shadow, 0 0 #0000) !important;
+}
+
+/*
   全局滚动条：极细风格（3px，hover 5px）。
   仅面向 Chromium（Electron），只使用 ::-webkit-scrollbar。
   切勿在此设置 `scrollbar-width` / `scrollbar-color`：新版 Chromium 一旦遇到

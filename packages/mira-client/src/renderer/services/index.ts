@@ -97,6 +97,15 @@ export class AppService {
     return await miraSDKService.downloadFile(libraryId, fileId)
   }
 
+  async writeFile(
+    libraryId: string,
+    fileId: string,
+    content: Blob | string | ArrayBuffer,
+    options?: { name?: string; contentType?: string }
+  ): Promise<any> {
+    return await miraSDKService.writeFile(libraryId, fileId, content, options)
+  }
+
   async deleteFile(libraryId: string, fileId: string, moveToRecycleBin: boolean = true): Promise<BaseResponse> {
     return await miraSDKService.deleteFile(libraryId, fileId, moveToRecycleBin)
   }

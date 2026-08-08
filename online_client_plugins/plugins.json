@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-07T17:10:52.581Z",
+  "generatedAt": "2026-08-08T03:29:19.538Z",
   "plugins": [
     {
       "pluginId": "b1c2d3e4-5f60-4a7b-8c9d-0a1b2c3d4e5f",
@@ -28,6 +28,11 @@
       "checksum": "sha256:ee8e314b93f33c14116648e78342883a54c8961a24b37eb8ef763d9f66a66b28",
       "files": [
         {
+          "path": "README.md",
+          "size": 522,
+          "checksum": "sha256:1d97fdbd0faafec78c9e7b63f718083712bd038d8e047ee44a4d66f985960419"
+        },
+        {
           "path": "plugin.json",
           "size": 802,
           "checksum": "sha256:7fe3f8955ca482a75dbd2f3272e9a9740821f7d1f3b16c1d6f4c8999512a206e"
@@ -36,11 +41,6 @@
           "path": "index.js",
           "size": 3228,
           "checksum": "sha256:bdc0c595cd365bcf5effc27b5b31943461e00511bcf2084aca4c785425521dc8"
-        },
-        {
-          "path": "README.md",
-          "size": 522,
-          "checksum": "sha256:1d97fdbd0faafec78c9e7b63f718083712bd038d8e047ee44a4d66f985960419"
         }
       ]
     },
@@ -71,6 +71,11 @@
       "checksum": "sha256:61e5f6206f0d0bd5b1e82bc0aebe040a24f4db6d965f26177b5cb958b27d57a8",
       "files": [
         {
+          "path": "README.md",
+          "size": 6781,
+          "checksum": "sha256:cdd0f6de451c246fc75ab26ef39a5646a242a5dd9fd84501b9f993857f01e8db"
+        },
+        {
           "path": "plugin.json",
           "size": 782,
           "checksum": "sha256:537441ecc46e62beed919f7711e6c2f97d048d2db095e2a3dee004edef9ae8b1"
@@ -91,6 +96,11 @@
           "checksum": "sha256:f6d67580e4fbb5bb4943cd84cbbfef5dafb40477fa406baaeda75e49c8665ffd"
         },
         {
+          "path": "HANDOFF.md",
+          "size": 12324,
+          "checksum": "sha256:8e3c1aefada5d06ba5f15e26690e37bc4c6e9e96f03a4486c5027e339bf2852c"
+        },
+        {
           "path": "dist/index.html",
           "size": 401,
           "checksum": "sha256:89dec5147b4fe516257a3f8bfd016ebd1177117d8c6199a4fb817dfd8cdac842"
@@ -109,16 +119,6 @@
           "path": "dist/assets/index-BcbA4H_R.css",
           "size": 60938,
           "checksum": "sha256:eb8ffc4f7d59e3da4c4641ab54f50a2e18a9d40d83ebc202a1bec01f0b90b418"
-        },
-        {
-          "path": "README.md",
-          "size": 6781,
-          "checksum": "sha256:cdd0f6de451c246fc75ab26ef39a5646a242a5dd9fd84501b9f993857f01e8db"
-        },
-        {
-          "path": "HANDOFF.md",
-          "size": 12324,
-          "checksum": "sha256:8e3c1aefada5d06ba5f15e26690e37bc4c6e9e96f03a4486c5027e339bf2852c"
         }
       ]
     }

@@ -176,6 +176,17 @@ export class HomeInteractionHandler {
       this.router.push(`/image-preview/${item.id}`)
     } else if (fileType === 'video') {
       this.router.push(`/video-preview/${item.id}`)
+    } else {
+      this.router.push({
+        path: '/file-preview',
+        query: {
+          id: item.id,
+          libraryId: item.libraryId || '',
+          title: item.name || '',
+          path: item.path || '',
+          mimeType: item.mimeType || ''
+        }
+      })
     }
   }
 

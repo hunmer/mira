@@ -6,6 +6,10 @@
         <div class="flex gap-4 text-sm text-muted-foreground">
           <span v-if="fileInfo.mimeType" class="px-2 py-1 bg-muted rounded">{{ fileInfo.mimeType }}</span>
           <span v-if="fileInfo.size" class="px-2 py-1 bg-muted rounded">{{ formatFileSize(fileInfo.size) }}</span>
+          <button v-if="isMarkdown" :disabled="isSaving" @click="saveMarkdown"
+            class="ml-auto bg-primary text-white border-none px-4 py-2 rounded cursor-pointer disabled:opacity-50">
+            {{ isSaving ? '保存中...' : '保存' }}
+          </button>
         </div>
       </div>
 
@@ -20,6 +24,11 @@
         <div v-else class="flex justify-center items-center flex-1 text-destructive text-center">
           <p>无法加载PDF文件</p>
         </div>
+      </div>
+
+      <!-- Markdown 编辑器 -->
+      <div v-else-if="isMarkdown" class="flex-1 min-h-0 bg-white m-4 rounded-lg shadow-[0_2px_4px_rgba(0,0,0,0.1)] overflow-hidden">
+        <MdEditor v-model="textContent" class="h-full" />
       </div>
 
       <!-- 文本文件预览 -->
@@ -45,7 +54,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { MdEditor } from 'md-editor-v3'
+import 'md-editor-v3/lib/style.css'
+import { miraSDKService } from '../../services/MiraSDKService'
 
 interface Props {
   fileInfo: any
@@ -57,6 +69,7 @@ const emit = defineEmits<{
 }>()
 
 const textContent = ref('')
+const isSaving = ref(false)
 
 const documentUrl = computed(() => {
   if (!props.fileInfo) return ''
@@ -64,7 +77,7 @@ const documentUrl = computed(() => {
   if (props.fileInfo.url) {
     return props.fileInfo.url
   }
-  
+
   if (props.fileInfo.path) {
     return props.fileInfo.path
   }
@@ -84,6 +97,11 @@ const isTextFile = computed(() => {
   
   return mimeType.startsWith('text/') || 
          ['txt', 'md', 'json', 'xml', 'csv', 'log'].some(ext => fileName.endsWith(`.${ext}`))
+})
+
+const isMarkdown = computed(() => {
+  const fileName = (props.fileInfo?.name || props.fileInfo?.title || '').toLowerCase()
+  return fileName.endsWith('.md') || props.fileInfo?.mimeType?.toLowerCase() === 'text/markdown'
 })
 
 const formatFileSize = (bytes: number): string => {
@@ -110,25 +128,47 @@ const downloadFile = (): void => {
 }
 
 const loadTextContent = async (): Promise<void> => {
-  if (!isTextFile.value || !documentUrl.value) return
-  
+  if (!isTextFile.value || (!documentUrl.value && !(props.fileInfo.libraryId && props.fileInfo.id))) return
+
   try {
-    const response = await fetch(documentUrl.value)
-    if (response.ok) {
-      textContent.value = await response.text()
-    } else {
-      throw new Error('加载文本失败')
+    if (props.fileInfo.libraryId && props.fileInfo.id) {
+      const blob = await miraSDKService.downloadFile(props.fileInfo.libraryId, props.fileInfo.id)
+      textContent.value = await blob.text()
+      return
     }
+    const response = await fetch(documentUrl.value)
+    if (!response.ok) throw new Error('加载文本失败')
+    textContent.value = await response.text()
   } catch (error) {
     console.error('加载文本内容失败:', error)
     emit('error', '加载文本内容失败')
   }
 }
 
+const saveMarkdown = async (): Promise<void> => {
+  if (!isMarkdown.value || !props.fileInfo.libraryId || !props.fileInfo.id || isSaving.value) return
+
+  try {
+    isSaving.value = true
+    await miraSDKService.writeFile(props.fileInfo.libraryId, props.fileInfo.id, textContent.value, {
+      name: props.fileInfo.name || props.fileInfo.title || 'document.md',
+      contentType: 'text/markdown'
+    })
+  } catch (error) {
+    console.error('保存 Markdown 失败:', error)
+    emit('error', '保存 Markdown 失败')
+  } finally {
+    isSaving.value = false
+  }
+}
 onMounted(() => {
   if (isTextFile.value) {
     loadTextContent()
   }
+})
+
+onBeforeUnmount(() => {
+  if (documentUrl.value.startsWith('blob:')) URL.revokeObjectURL(documentUrl.value)
 })
 </script>
 
