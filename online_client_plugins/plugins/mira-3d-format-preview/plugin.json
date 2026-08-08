@@ -2,7 +2,7 @@
   "pluginName": "3D 格式预览",
   "pluginId": "d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70",
   "priority": 10,
-  "version": "1.1.1",
+  "version": "1.2.0",
   "index": "index.js",
   "tags": ["3D", "GLB", "GLTF", "预览"],
   "category": "development",

@@ -1,5 +1,5 @@
 <template>
-  <div v-if="customFormat?.renderThumbnail" ref="customContainer" :class="imgClass" />
+  <div v-if="shouldRenderCustom" ref="customContainer" :class="imgClass" />
   <img
     v-else-if="currentSrc && !hasError && preload"
     :src="currentSrc"
@@ -25,7 +25,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { getFileTypeIcon } from '@renderer/utils/fileUtils'
 import { getExtIconUrl } from '@renderer/utils/extIconHelper'
 import type { FileInfo } from '../../../shared/types'
@@ -61,6 +61,8 @@ const extIconUrl = computed(() => getExtIconUrl(props.filename || ''))
 const customContainer = ref<HTMLElement | null>(null)
 let customCleanup: (() => void) | void
 const customFormat = computed(() => props.file ? getPluginFileFormat(props.file) : undefined)
+const hasGeneratedThumbnail = ref(Boolean(props.file?.thumbnailPath))
+const shouldRenderCustom = computed(() => Boolean(customFormat.value?.renderThumbnail && !hasGeneratedThumbnail.value))
 
 function toFileUrl(path: string): string {
   if (!path) return ''
@@ -76,17 +78,26 @@ watch(() => props.src, (src) => {
   hasError.value = false
 })
 
+watch(() => props.file?.thumbnailPath, (thumbnailPath) => {
+  if (thumbnailPath) hasGeneratedThumbnail.value = true
+})
+
 function onThumbnailUpdate(event: Event) {
   const { fileId, thumbPath } = (event as CustomEvent).detail
   if (fileId === props.fileId && thumbPath) {
     const url = toFileUrl(thumbPath)
     currentSrc.value = `${url}${url.includes('?') ? '&' : '?'}_t=${Date.now()}`
+    hasGeneratedThumbnail.value = true
     hasError.value = false
   }
 }
 
 function onLoad() { emit('load') }
-function onError() { hasError.value = true; emit('error') }
+function onError() {
+  hasError.value = true
+  if (customFormat.value?.renderThumbnail) hasGeneratedThumbnail.value = false
+  emit('error')
+}
 
 function renderCustomThumbnail() {
   if (customCleanup) customCleanup()
@@ -99,6 +110,16 @@ function renderCustomThumbnail() {
     console.error('Plugin thumbnail renderer failed:', error)
   }
 }
+
+watch(shouldRenderCustom, async (enabled) => {
+  if (!enabled) {
+    if (customCleanup) customCleanup()
+    customCleanup = undefined
+    return
+  }
+  await nextTick()
+  renderCustomThumbnail()
+})
 
 onMounted(() => {
   window.addEventListener('thumbnail-updated', onThumbnailUpdate)

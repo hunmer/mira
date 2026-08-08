@@ -44,7 +44,7 @@ export const initializeGlobalPluginSystem = () => {
 
         // 检查是否有匹配的插件配置
         const registeredPlugins = (window as any).pluginSystem.plugins
-        if (registeredPlugins) {
+        if (registeredPlugins?.size > 0) {
           let found = false
           for (const [registeredId] of registeredPlugins) {
             if (registeredId === pluginId) {

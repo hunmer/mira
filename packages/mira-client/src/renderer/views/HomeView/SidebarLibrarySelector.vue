@@ -105,7 +105,7 @@ const onSelectCollection = (collection: any, close: () => void) => {
       </template>
 
       <template #content="{ close }">
-        <div>
+        <div class="bg-popover rounded-2xl">
           <div class="p-2">
             <div class="text-xs text-muted-foreground mb-2">选择素材库</div>
             <!-- 素材库列表 -->

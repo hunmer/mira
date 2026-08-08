@@ -228,7 +228,7 @@
           </template>
 
           <template #content>
-            <div class="min-w-[160px] p-2">
+            <div class="min-w-[160px] rounded-2xl bg-popover p-2">
               <h3 class="font-medium text-foreground text-sm mb-2 px-1">展示字段</h3>
               <label v-for="col in itemFieldOptions" :key="col.key"
                 class="flex items-center space-x-2 px-2 py-1.5 rounded-lg hover:bg-primary/5 cursor-pointer">
