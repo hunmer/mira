@@ -1,16 +1,56 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { SniffedResource } from '@/shared/types';
+import { useImagePreview } from '@/ui/composables/useImagePreview';
 const { t } = useI18n();
-defineProps<{ resource: SniffedResource; selected: boolean }>();
+const props = defineProps<{ resource: SniffedResource; selected: boolean }>();
 defineEmits<{ toggle: [] }>();
+
+const preview = useImagePreview();
+
+/** 可悬浮预览的大图 url(图片用原图,video 用 poster);非可视媒体返回 null */
+const previewUrl = computed(() => {
+  const r = props.resource;
+  if (r.kind === 'image') return r.url;
+  if (r.kind === 'video' && r.poster) return r.poster;
+  return null;
+});
+
+function onEnter(e: MouseEvent) {
+  const url = previewUrl.value;
+  if (url) preview.show(url, e.clientX, e.clientY);
+}
+function onMove(e: MouseEvent) {
+  const url = previewUrl.value;
+  if (url) preview.show(url, e.clientX, e.clientY);
+}
+function onLeave() {
+  preview.hide();
+}
 </script>
 
 <template>
   <div class="item" @click="$emit('toggle')">
     <input type="checkbox" :checked="selected" @click.stop="$emit('toggle')" />
-    <img v-if="resource.kind === 'image'" :src="resource.url" class="thumb" loading="lazy" />
-    <img v-else-if="resource.kind === 'video' && resource.poster" :src="resource.poster" class="thumb" loading="lazy" />
+    <img
+      v-if="resource.kind === 'image'"
+      :src="resource.url"
+      class="thumb"
+      loading="lazy"
+      @mouseenter="onEnter"
+      @mousemove="onMove"
+      @mouseleave="onLeave"
+    />
+    <img
+      v-else-if="resource.kind === 'video' && resource.poster"
+      :src="resource.poster"
+      class="thumb"
+      loading="lazy"
+      @mouseenter="onEnter"
+      @mousemove="onMove"
+      @mouseleave="onLeave"
+    />
     <div v-else class="thumb icon">{{ resource.kind === 'audio' ? '🎵' : '🎬' }}</div>
     <div class="meta">
       <div class="url">{{ resource.url.split('/').pop() }}</div>

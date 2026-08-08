@@ -86,6 +86,14 @@ export default {
     masonryView: '瀑布流视图',
     uploadSelected: '上传选中 ({n})',
     source: '来源：{title}',
+    viewLarge: '查看大图',
+  },
+  autoscroll: {
+    title: '自动滚动',
+    hint: '在当前页面按间隔自动向下滚动,触发懒加载以嗅探更多资源。',
+    delay: '间隔',
+    start: '开始滚动',
+    stop: '停止滚动',
   },
   screenshot: {
     visible: '可视区域截图',
@@ -127,6 +135,7 @@ export default {
     createFailed: '创建失败:{error}',
     deleteFolderConfirm: '确定删除文件夹「{name}」?',
     deleteFilesConfirm: '是否同时删除其中的文件?\n(取消则仅删除文件夹,文件移到根目录)',
+    deleteFilesCheck: '同时删除其中的文件',
     deleteTagConfirm: '确定删除标签「{name}」?',
     deleteFailed: '删除失败:{error}',
   },

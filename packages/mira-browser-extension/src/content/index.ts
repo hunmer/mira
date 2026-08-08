@@ -103,7 +103,10 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         sendResponse({ ok: true });
         return true;
       case 'AUTOSCROLL_START':
-        scroller.start({ delay: msg.payload.delay }).then(() => sendResponse({ done: true }));
+        // 立即响应「已开始」,滚动循环在后台跑(可能持续很久);否则调用方
+        // await sendMessage 会一直挂起,直到整段滚动结束。
+        scroller.start({ delay: msg.payload.delay }).catch(() => {});
+        sendResponse({ ok: true });
         return true;
       case 'AUTOSCROLL_STOP':
         scroller.stop();

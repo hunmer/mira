@@ -26,7 +26,6 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
-  upload: []
   plugins: []
   shortcuts: []
   settings: []
@@ -121,10 +120,6 @@ const openDashboard = async () => {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem @select="emit('upload')">
-          <span class="material-icons text-base">upload_file</span>
-          <span>上传文件</span>
-        </DropdownMenuItem>
         <DropdownMenuItem @select="emit('plugins')">
           <span class="material-icons text-base">extension</span>
           <span>插件管理</span>

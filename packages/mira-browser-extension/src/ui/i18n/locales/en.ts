@@ -86,6 +86,14 @@ export default {
     masonryView: 'Masonry view',
     uploadSelected: 'Upload selected ({n})',
     source: 'Source: {title}',
+    viewLarge: 'View large',
+  },
+  autoscroll: {
+    title: 'Auto scroll',
+    hint: 'Auto-scroll the current page at the set interval to trigger lazy-loading and sniff more resources.',
+    delay: 'Interval',
+    start: 'Start',
+    stop: 'Stop',
   },
   screenshot: {
     visible: 'Visible screenshot',
@@ -127,6 +135,7 @@ export default {
     createFailed: 'Create failed: {error}',
     deleteFolderConfirm: 'Delete folder "{name}"?',
     deleteFilesConfirm: 'Also delete the files inside?\n(Cancel to delete the folder only; files move to root)',
+    deleteFilesCheck: 'Also delete the files inside',
     deleteTagConfirm: 'Delete tag "{name}"?',
     deleteFailed: 'Delete failed: {error}',
   },

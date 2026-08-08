@@ -2,10 +2,11 @@
 /**
  * 全局弹窗宿主:消费 useDialog 的模块级 state.current,渲染遮罩 + 居中卡片。
  *
- * 支持 alert / confirm / prompt 三态,由 state.kind 决定按钮与输入框。
+ * 支持 alert / confirm / prompt / confirmCheck 四态,由 state.kind 决定按钮与输入框。
+ * confirmCheck 在正文下方多一个复选框(需 state.checkboxLabel),确认时带回勾选态。
  * 一次只显示一个弹窗(单例)。Teleport 到 body,避开父级 overflow 裁剪。
  * - 点遮罩 / ESC / 关闭× → 视为取消(alert 视为确定)
- * - 确认 → resolve(true / 输入值);取消 → resolve(false / null)
+ * - 确认 → resolve(true / 输入值 / {ok,checked});取消 → resolve(false / null)
  */
 import { computed, nextTick, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -16,12 +17,13 @@ import Input from './Input.vue';
 const { t } = useI18n();
 const { state, _resolve } = useDialog();
 const input = ref('');
+const checked = ref(false);
 // Input.vue 根元素就是 <input>,组件实例 $el 即输入框 DOM
 const inputEl = ref<any>(null);
 
 const dlg = computed(() => state.value);
 
-// 弹窗打开(prompt)时:初始化输入值并聚焦
+// 弹窗打开时按 kind 初始化本地态
 watch(
   () => dlg.value?.kind,
   async kind => {
@@ -29,6 +31,9 @@ watch(
       input.value = dlg.value?.defaultValue ?? '';
       await nextTick();
       (inputEl.value?.$el as HTMLInputElement | null)?.focus();
+    }
+    if (kind === 'confirmCheck') {
+      checked.value = !!dlg.value?.checkboxChecked;
     }
   },
 );
@@ -45,12 +50,14 @@ const cancelText = computed(() => dlg.value?.cancelText ?? t('dialog.cancel'));
 function onOk() {
   const k = dlg.value?.kind;
   if (k === 'prompt') _resolve(input.value);
+  else if (k === 'confirmCheck') _resolve({ ok: true, checked: checked.value });
   else if (k === 'confirm') _resolve(true);
   else _resolve(undefined);
 }
 function onCancel() {
   const k = dlg.value?.kind;
   if (k === 'prompt') _resolve(null);
+  else if (k === 'confirmCheck') _resolve({ ok: false, checked: checked.value });
   else _resolve(false);
 }
 function onMaskClick() {
@@ -79,6 +86,11 @@ function onKey(e: KeyboardEvent) {
           @keydown.enter="onOk"
           @keydown.escape="onCancel"
         />
+        <!-- confirmCheck:复选框 -->
+        <label v-if="dlg.checkboxLabel" class="check">
+          <input v-model="checked" type="checkbox" />
+          <span>{{ dlg.checkboxLabel }}</span>
+        </label>
         <div class="ops">
           <!-- alert:仅一个确定按钮 -->
           <template v-if="dlg.kind === 'alert'">
@@ -119,5 +131,10 @@ function onKey(e: KeyboardEvent) {
 }
 .title { font-size: 14px; font-weight: 600; color: var(--fg); }
 .msg { margin: 0; font-size: 12px; color: var(--muted); white-space: pre-wrap; word-break: break-word; }
+.check {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--fg); cursor: pointer; user-select: none;
+}
+.check input { accent-color: var(--primary); cursor: pointer; }
 .ops { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
 </style>

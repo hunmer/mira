@@ -51,14 +51,6 @@ async function onToggleDebug(v: boolean) {
     <section>
       <h3>{{ t('settings.groupCapture') }}</h3>
       <div class="row"><span>{{ t('settings.sniffer') }}</span><Switch :model-value="settings.snifferEnabled" @update:model-value="v => update({ snifferEnabled: v })" /></div>
-      <div class="row"><span>{{ t('settings.autoScroll') }}</span><Switch :model-value="settings.autoScrollEnabled" @update:model-value="v => update({ autoScrollEnabled: v })" /></div>
-      <div class="row">
-        <span>{{ t('settings.autoScrollDelay') }}</span>
-        <Input
-          type="number" :model-value="String(settings.autoScrollDelay)"
-          @update:model-value="v => update({ autoScrollDelay: Number(v) || 800 })"
-        />
-      </div>
       <div class="row" :title="t('settings.imuHint')">
         <span>{{ t('settings.imu') }}</span><Switch :model-value="settings.imuEnabled" @update:model-value="v => update({ imuEnabled: v })" />
       </div>

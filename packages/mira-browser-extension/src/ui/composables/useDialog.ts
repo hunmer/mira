@@ -14,7 +14,7 @@
  */
 import { ref } from 'vue';
 
-export type DialogKind = 'alert' | 'confirm' | 'prompt';
+export type DialogKind = 'alert' | 'confirm' | 'prompt' | 'confirmCheck';
 
 export interface DialogOptions {
   /** 标题(可选,缺省用 kind 默认标题) */
@@ -31,12 +31,22 @@ export interface DialogOptions {
   cancelText?: string;
   /** 确认按钮是否用危险色(删除场景) */
   danger?: boolean;
+  /** 复选框文案;提供则在正文下方渲染一个复选框(见 confirmCheck) */
+  checkboxLabel?: string;
+  /** 复选框默认勾选状态(默认 false) */
+  checkboxChecked?: boolean;
 }
 
 interface DialogState extends DialogOptions {
   kind: DialogKind;
-  /** resolve 当前 promise(true/false/value) */
+  /** resolve 当前 promise(true/false/value/{ok,checked}) */
   resolve: (v: any) => void;
+}
+
+/** confirmCheck 的返回:取消为 null,否则带 ok + 复选框终值 */
+export interface ConfirmCheckResult {
+  ok: boolean;
+  checked: boolean;
 }
 
 /** 当前弹窗;为 null 表示无弹窗。DialogHost 据此渲染。 */
@@ -70,12 +80,28 @@ export function useDialog() {
     });
   }
 
+  /**
+   * 带复选框的确认弹窗:正文下方渲染一个复选框(需提供 checkboxLabel)。
+   * 返回 { ok, checked };点取消/遮罩/ESC 时 ok=false 并带回当前勾选态。
+   * 用于「删除文件夹? ☐ 同时删除其中的文件」这种合并二次确认的场景。
+   */
+  function confirmCheck(options: DialogOptions): Promise<ConfirmCheckResult> {
+    return new Promise<ConfirmCheckResult>(resolve => {
+      current.value = {
+        kind: 'confirmCheck',
+        ...options,
+        resolve: (r: ConfirmCheckResult) => resolve(r),
+      };
+    });
+  }
+
   return {
     /** 当前弹窗 state(供 DialogHost 读) */
     state: current,
     alert,
     confirm,
     prompt,
+    confirmCheck,
     /** 内部:DialogHost 点确定/取消/关闭时调用 */
     _resolve: done,
   };

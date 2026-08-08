@@ -7,44 +7,44 @@
 
       <div class="overflow-y-auto pr-1 -mr-1">
         <form @submit.prevent="handleSubmit" class="space-y-4">
-          <div>
-            <label for="folderTitle" class="block text-sm font-medium text-foreground mb-1">
-              {{ itemTypeText }}名称 <span class="text-destructive">*</span>
-            </label>
-            <Input
-              id="folderTitle"
-              v-model="formData.title"
-              :placeholder="`请输入${itemTypeText}名称`"
-              class="w-full"
-              :class="{ 'border-destructive': errors.title }"
-              @input="clearError('title')"
-            />
-            <p v-if="errors.title" class="text-destructive text-sm mt-1">{{ errors.title }}</p>
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-foreground mb-2">图标</label>
-            <div class="flex items-center gap-3">
+          <!-- 图标 + 标题 + 描述：图标在左，右侧第一行标题，第二行描述 -->
+          <div class="flex gap-3 items-start">
+            <!-- 左侧：图标选择 -->
+            <div class="flex flex-col items-center gap-1.5 pt-1 shrink-0">
               <IconPicker
                 v-model="formData.icon"
                 :default-icon="defaultItemIcon"
                 :color="selectedColorHex"
               />
-              <span class="text-xs text-muted-foreground">
-                {{ formData.icon ? formData.icon : `默认（${defaultItemIcon}）` }}
+              <span
+                class="text-[11px] text-muted-foreground max-w-[3.5rem] text-center truncate"
+                :title="formData.icon || defaultItemIcon"
+              >
+                {{ formData.icon || '默认' }}
               </span>
             </div>
-          </div>
 
-          <div>
-            <label for="folderDescription" class="block text-sm font-medium text-foreground mb-1">描述</label>
-            <textarea
-              id="folderDescription"
-              v-model="formData.description"
-              :placeholder="`请输入${itemTypeText}描述（可选）`"
-              rows="3"
-              class="w-full px-3 py-2 border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary resize-none"
-            ></textarea>
+            <!-- 右侧：标题（第一行）+ 描述（第二行） -->
+            <div class="flex-1 min-w-0 space-y-2">
+              <div>
+                <Input
+                  id="folderTitle"
+                  v-model="formData.title"
+                  :placeholder="`${itemTypeText}名称 *`"
+                  class="w-full"
+                  :class="{ 'border-destructive': errors.title }"
+                  @input="clearError('title')"
+                />
+                <p v-if="errors.title" class="text-destructive text-xs mt-1">{{ errors.title }}</p>
+              </div>
+              <textarea
+                id="folderDescription"
+                v-model="formData.description"
+                :placeholder="`${itemTypeText}描述（可选）`"
+                rows="2"
+                class="w-full px-3 py-2 text-sm border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary resize-none"
+              ></textarea>
+            </div>
           </div>
 
           <div>
@@ -87,18 +87,18 @@
 
           <div>
             <label class="block text-sm font-medium text-foreground mb-2">{{ itemTypeText }}颜色</label>
-            <div class="flex space-x-2">
-              <Button
+            <div class="flex flex-wrap gap-2">
+              <button
                 v-for="color in colorOptions"
                 :key="String(color.value)"
-                variant="ghost"
-                size="icon"
+                type="button"
                 @click="formData.color = color.value"
-                class="w-8 h-8 rounded-full border-2"
-                :class="[color.class, formData.color === color.value ? 'border-border' : 'border-border']"
+                :title="color.label"
+                class="w-8 h-8 rounded-full border-2 flex items-center justify-center transition-colors hover:scale-110"
+                :class="[color.class, formData.color === color.value ? 'ring-2 ring-offset-2 ring-primary' : 'border-border']"
               >
                 <span v-if="formData.color === color.value" class="material-icons text-white text-sm">check</span>
-              </Button>
+              </button>
             </div>
           </div>
 

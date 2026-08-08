@@ -189,7 +189,8 @@ async function createNode(level: 'sibling' | 'child') {
 }
 
 /**
- * 删除节点。folder 支持连文件一起删(二次确认 + deleteFiles 提示)。
+ * 删除节点。folder 用单弹窗 + 复选框(是否同时删除其中的文件);
+ * tag 用普通确认弹窗。
  */
 async function deleteNode() {
   const target = menu.value?.node;
@@ -201,13 +202,14 @@ async function deleteNode() {
 
   let deleteFiles = false;
   if (props.mode === 'folder') {
-    if (!(await dialog.confirm({
+    // 单弹窗:确认删除 + 复选框「同时删除其中的文件」
+    const r = await dialog.confirmCheck({
       message: t('tree.deleteFolderConfirm', { name: target.title }),
+      checkboxLabel: t('tree.deleteFilesCheck'),
       danger: true,
-    }))) return;
-    deleteFiles = await dialog.confirm({
-      message: t('tree.deleteFilesConfirm'),
     });
+    if (!r.ok) return;
+    deleteFiles = r.checked;
   } else {
     if (!(await dialog.confirm({
       message: t('tree.deleteTagConfirm', { name: target.title }),

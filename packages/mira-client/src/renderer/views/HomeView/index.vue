@@ -405,7 +405,6 @@ onUnmounted(() => {
     <HomeHeader
       class="absolute top-3 right-3 z-30"
       :is-desktop="isDesktop"
-      @upload="showFileUploadDialog = true"
       @plugins="showPluginsDialog = true"
       @shortcuts="showShortcutDialog = true"
       @settings="showSettingsDialog = true"
@@ -431,6 +430,7 @@ onUnmounted(() => {
             @refresh-tags="handleRefreshTags"
             @empty-trash="handleEmptyTrash"
             @import-folder="handleImportFolder"
+            @upload="showFileUploadDialog = true"
             @select-collection="handleSelectCollectionAndRefresh"
             @access-denied="showAccessDeniedDialog = true"
             @show-library-management="showLibraryManagement"

@@ -71,6 +71,13 @@ export function useBackground() {
     async captureSelection(tabId: number) {
       return send({ type: 'CAPTURE_SELECTION', payload: { tabId } });
     },
+    // ---- 自动滚动(在当前页面执行,嗅探滚动加载场景用) ----
+    async autoScrollStart(tabId: number) {
+      return send({ type: 'AUTOSCROLL_START', payload: { tabId } });
+    },
+    async autoScrollStop(tabId: number) {
+      return send({ type: 'AUTOSCROLL_STOP', payload: { tabId } });
+    },
     async snifferQuery(tabId: number) {
       return send<{ resources: SniffedResource[] }>({ type: 'SNIFFER_QUERY', payload: { tabId } });
     },

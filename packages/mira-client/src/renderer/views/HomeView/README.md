@@ -5,6 +5,13 @@
 ```
 HomeView/
 ├── index.vue                      # 主入口文件（模板 + 逻辑整合）
+├── HomeSidebar.vue                # 左侧栏编排壳（透传 props/emits + 转发 locateItem）
+├── SidebarLibrarySelector.vue     # 左侧栏顶部：素材库选择 + 关于入口
+├── SidebarToolbar.vue             # 左侧栏工具栏：导入/文件夹管理/标签管理/自定义布局
+├── SidebarModuleList.vue          # 左侧栏模块化 Collapsible 列表 + locateItem 暴露
+├── SidebarHistoryModule.vue       # 最新添加 / 历史查看 单模式列表
+├── SidebarLayoutDialog.vue        # 自定义布局（模块顺序/启用）对话框
+├── sidebarModules.ts              # 侧栏模块 id/标题/图标/描述 集中定义
 ├── useHomeUIState.ts              # UI状态管理
 ├── useHomeTabManagement.ts        # Tab管理逻辑
 ├── useHomeLibraryManagement.ts    # 素材库管理逻辑
@@ -16,6 +23,18 @@ HomeView/
 ## 🎯 重构目标
 
 将原本1100+行的单文件组件拆分为多个功能模块,提高代码可维护性和可读性。
+
+## 🧩 HomeSidebar 拆分说明
+
+`HomeSidebar.vue` 按功能拆为三个子组件，自身降为纯编排壳（orchestrator）：
+
+| 组件 | 职责 | 对外 emit / expose |
+|------|------|---------------------|
+| `SidebarLibrarySelector.vue` | 顶部素材库下拉 + 关于入口；权限校验 / 定位本地目录 | `selectCollection` / `accessDenied` / `showLibraryManagement` / `addServer` / `showAbout` |
+| `SidebarToolbar.vue` | 导入下拉（上传文件 / 导入文件夹）+ 文件夹管理 / 标签管理 / 自定义布局按钮；内聚 `SidebarLayoutDialog` | `upload` / `importFolder` / `manageFolders` / `manageTags` |
+| `SidebarModuleList.vue` | 模块化 Collapsible 列表（快捷分类 / 文件夹树 / 标签树 / 最新添加 / 历史查看）+ 底部搜索胶囊 | `folderSelect` / `tagSelect` / `refreshFolders` / `refreshTags` / `emptyTrash` / `historyOpen`；`defineExpose({ locateItem })` |
+
+`HomeSidebar.vue` 仅做 props/emits 透传与 `locateItem` expose 转发，对外契约（props、15 个 emit、`sidebarRef.locateItem`）与拆分前完全一致，父级 `index.vue` 与 `useHomeTabManagement.ts` 无需改动。
 
 ## 📦 模块说明
 

@@ -18,6 +18,8 @@ import LibraryPicker from '@/ui/components/library/LibraryPicker.vue';
 import ServerBar from '@/ui/components/server/ServerBar.vue';
 import ServerManagerView from '@/ui/components/server/ServerManagerView.vue';
 import DialogHost from '@/ui/components/ui/DialogHost.vue';
+import ImageHovercard from '@/ui/components/ui/ImageHovercard.vue';
+import ImageViewer from '@/ui/components/ui/ImageViewer.vue';
 
 const { t } = useI18n();
 const props = defineProps<{ containerMode: 'popup' | 'sidePanel' }>();
@@ -31,7 +33,9 @@ const showSettings = ref(false);
 
 // 启动时先处于 connecting(自动登录中),避免登录界面一闪而过
 const booting = ref(true);
-const authenticated = computed(() => status.value === 'connected');
+// 已进入主界面:idle 才显示登录界面。connecting/connected/failed 都保留主界面,
+// 避免切换服务器(status→connecting)或心跳失败(status→failed)时登录界面一闪而过。
+const authenticated = computed(() => status.value !== 'idle');
 
 // 未选素材库时:整页展示卡片选择网格(不显示 header / tabs / 底部服务器栏)
 const needsLibrary = computed(() => !settings.value.libraryId);
@@ -131,6 +135,9 @@ function onConnected() {
 
     <!-- 全局弹窗宿主(始终挂载,不受 booting/authenticated 状态影响) -->
     <DialogHost />
+    <!-- 嗅探缩略图悬浮预览卡 + 全屏大图查看器(始终挂载,Teleport 到 body) -->
+    <ImageHovercard />
+    <ImageViewer />
   </div>
 </template>
 

@@ -1,7 +1,46 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import type { SniffedResource } from '@/shared/types';
-defineProps<{ resource: SniffedResource; selected: boolean }>();
+import { useImagePreview } from '@/ui/composables/useImagePreview';
+import { useImageViewer } from '@/ui/composables/useImageViewer';
+
+const { t } = useI18n();
+const props = defineProps<{ resource: SniffedResource; selected: boolean }>();
 defineEmits<{ toggle: [] }>();
+
+const preview = useImagePreview();
+const viewer = useImageViewer();
+
+/** 可预览的大图 url(图片用原图,video 用 poster);非可视媒体返回 null */
+const previewUrl = computed(() => {
+  const r = props.resource;
+  if (r.kind === 'image') return r.url;
+  if (r.kind === 'video' && r.poster) return r.poster;
+  return null;
+});
+
+function onEnter(e: MouseEvent) {
+  const url = previewUrl.value;
+  if (url) preview.show(url, e.clientX, e.clientY);
+}
+function onMove(e: MouseEvent) {
+  const url = previewUrl.value;
+  if (url) preview.show(url, e.clientX, e.clientY);
+}
+function onLeave() {
+  preview.hide();
+}
+
+/** 右上角「查看大图」:打开全屏查看器 */
+function openLarge(e: MouseEvent) {
+  e.stopPropagation();
+  const url = previewUrl.value;
+  if (url) {
+    preview.hide();
+    viewer.open(url);
+  }
+}
 </script>
 
 <template>
@@ -12,12 +51,18 @@ defineEmits<{ toggle: [] }>();
       :src="resource.url"
       class="media"
       loading="lazy"
+      @mouseenter="onEnter"
+      @mousemove="onMove"
+      @mouseleave="onLeave"
     />
     <img
       v-else-if="resource.kind === 'video' && resource.poster"
       :src="resource.poster"
       class="media"
       loading="lazy"
+      @mouseenter="onEnter"
+      @mousemove="onMove"
+      @mouseleave="onLeave"
     />
     <div v-else class="media icon">{{ resource.kind === 'audio' ? '🎵' : '🎬' }}</div>
 
@@ -34,6 +79,22 @@ defineEmits<{ toggle: [] }>();
         />
       </svg>
     </div>
+
+    <!-- 右上角「查看大图」:仅可预览媒体显示,hover 卡片时显现,点击进入全屏查看器 -->
+    <button
+      v-if="previewUrl"
+      type="button"
+      class="zoom"
+      :title="t('sniffer.viewLarge')"
+      :aria-label="t('sniffer.viewLarge')"
+      @click="openLarge"
+    >
+      <!-- 放大镜图标 -->
+      <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+        <circle cx="7" cy="7" r="4.2" fill="none" stroke="#fff" stroke-width="1.6"/>
+        <path d="M10.2 10.2L14 14" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+    </button>
 
     <!-- 底部叠加 meta(hover 显隐) -->
     <div class="meta">
@@ -96,6 +157,31 @@ defineEmits<{ toggle: [] }>();
 .check.on {
   background: var(--primary);
   border-color: var(--primary);
+}
+
+/* 右上角「查看大图」按钮 */
+.zoom {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s;
+}
+.card:hover .zoom {
+  opacity: 1;
+}
+.zoom:hover {
+  background: rgba(0, 0, 0, 0.65);
 }
 
 /* 底部 meta */

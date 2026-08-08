@@ -77,7 +77,7 @@ const selectableRects = ref<SelectableRect[]>([])
 const contentHeight = ref(0)
 
 const syncContentHeight = () => {
-  if (containerRef.value) {
+  if (containerRef.value && !selecting.value) {
     contentHeight.value = Math.max(contentHeight.value, containerRef.value.scrollHeight)
   }
 }
@@ -181,6 +181,7 @@ const updateSelection = (e: MouseEvent) => {
   const relativePos = getRelativePosition(e)
   const ownScrollableX = containerRef.value.scrollWidth > containerRef.value.clientWidth
   relativePos.x = Math.max(0, Math.min(relativePos.x, containerRef.value.clientWidth + (ownScrollableX ? containerRef.value.scrollLeft : 0)))
+  relativePos.y = Math.max(0, Math.min(relativePos.y, contentHeight.value))
   currentPos.value = relativePos
   updateSelectedItems()
   handleAutoScroll(e)
@@ -337,6 +338,7 @@ const handleAutoScroll = (e: MouseEvent) => {
     const next = getRelativePosition(e)
     const ownScrollableX = container.scrollWidth > container.clientWidth
     next.x = Math.max(0, Math.min(next.x, container.clientWidth + (ownScrollableX ? container.scrollLeft : 0)))
+    next.y = Math.max(0, Math.min(next.y, contentHeight.value))
     currentPos.value = next
     updateSelectedItems()
     lastMouseEvent = e
