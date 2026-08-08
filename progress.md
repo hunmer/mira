@@ -2,6 +2,28 @@
 
 ## Session: 2026-08-08
 
+### Phase 10: Spine Bundle Format
+- **Status:** in progress
+- Actions taken:
+  - Read the Spine plugin handoff and applicable skill instructions.
+  - Restored existing planning context and recorded the new phase.
+  - Confirmed CodeGraph is available; no source files changed yet.
+  - Traced the Spine server/client implementations, file module, and plugin route infrastructure.
+  - Identified library-local file IDs as the reason HTTP routes require `libraryId` context.
+  - Rejected `registerHttpHook` and `ServerPlugin.registerRoute` for endpoint creation after reading their actual contracts.
+  - Selected a generic `FileRoutes` endpoint backed by optional format-handler extra-file methods.
+  - Defined the tentative authenticated route shape and confirmed the viewer already accepts JSON skeleton data.
+  - Confirmed `yauzl` is already installed and client file records carry `libraryId`.
+  - Identified the need for SDK-generated authenticated URLs for the separate preview window.
+  - Verified query-token authentication is supported and selected `fileId` route naming to preserve library permission checks.
+  - Added core format-handler extra-file operations, authenticated routes, and Core SDK list/Blob/URL methods.
+  - Added safe Spine ZIP temp caching and `.spine` thumbnail extraction.
+  - Wired client plugin API and Spine preview plugin to SDK-generated resource URLs.
+  - Built core and reinstalled server workspace dependencies.
+  - Restarted `mira-app-server-dev` via procm; verified Spine plugin registration in startup logs.
+  - Ran Mira CLI health check and a real upload -> SDK list/get -> permanent delete integration smoke.
+  - Completed Phase 10.
+
 ### Phase 9: JIT Audio/Video Preview
 - **Status:** in progress
 - Actions taken:
@@ -87,6 +109,10 @@
 | 2026-08-08 | procm start did not return; port 8081 was not listening | 1 | Terminated the hanging wait; code verification remains complete |
 | 2026-08-08 | Retried procm startup | 1 | Started `mira-app-server-dev` as process `iM8tyIh1`; `/health` returned `status: ok` |
 | 2026-08-08 | PDF thumbnail failure reproduced | 1 | Confirmed missing Ghostscript delegate; added capability guard and restarted process `iM8tyIh1` |
+| 2026-08-08 | PowerShell `rg` rejected `**/package.json` as a path | 1 | Switched to `rg --files -g "package.json"` discovery |
+| 2026-08-08 | Guessed permission middleware path caused parallel read failure | 1 | Switched to path discovery and fault-isolated reads |
+| 2026-08-08 | Spine plugin could not resolve `yauzl` before install | 1 | Install declared plugin dependencies and rerun TypeScript |
+| 2026-08-08 | `pnpm --filter mira-client` matched no package | 1 | Rerun with `mira-web` |
 
 ### Backend Process
 - Added `procm-commands.json` with `mira-app-server-dev`.

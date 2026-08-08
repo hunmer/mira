@@ -22,8 +22,15 @@
     <div v-else-if="fileInfo" class="flex flex-col h-full">
       <!-- 预览区域 -->
       <div class="flex-1 overflow-hidden relative">
+        <IframePreview
+          v-if="pluginPreviewUrl"
+          :src="pluginPreviewUrl"
+          :title="fileInfo.name || '插件预览'"
+          :file-info="fileInfo"
+        />
         <!-- 根据文件类型渲染不同的预览组件 -->
         <component
+          v-else
           :is="previewComponent"
           :file-info="fileInfo"
           @error="handlePreviewError"
@@ -40,6 +47,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { miraSDKService } from '../services/MiraSDKService'
 import { useViewHistoryStore } from '../stores/viewHistory'
 import { AUDIO_EXTENSIONS, CONVERTED_IMAGE_EXTENSIONS, VIDEO_EXTENSIONS } from '../utils/fileUtils'
+import { getPluginFileFormat } from '../plugins/instanceManager'
 
 // 导入预览组件
 import ImagePreview from '../components/preview/ImagePreview.vue'
@@ -47,6 +55,7 @@ import VideoPreview from '../components/preview/VideoPreview.vue'
 import AudioPreview from '../components/preview/AudioPreview.vue'
 import DocumentPreview from '../components/preview/DocumentPreview.vue'
 import DefaultPreview from '../components/preview/DefaultPreview.vue'
+import IframePreview from '../components/preview/IframePreview.vue'
 
 // 响应式数据
 const route = useRoute()
@@ -55,6 +64,29 @@ const isLoading = ref(false)
 const error = ref('')
 const fileInfo = ref<any>(null)
 const viewHistoryStore = useViewHistoryStore()
+
+const pluginPreviewUrl = computed(() => {
+  const file = fileInfo.value
+  if (!file) return ''
+  const extension = getFileExtension(file.name || file.title || '')
+  if (!['glb', 'gltf'].includes(extension)) return ''
+  const format = getPluginFileFormat(file)
+  const info = format?.pluginId ? (window as any).pluginSystem?.getPlugin?.(format.pluginId) : undefined
+  const base = info?.config?.url || info?.config?.actualDirectory
+  if (!base) return ''
+  try {
+    const url = new URL(`${String(base).replace(/\/+$/, '')}/dist/index.html`)
+    // 详情页使用完整 viewer，不能传 embed=1（该模式会隐藏场景/材质/动画面板）。
+    url.searchParams.delete('embed')
+    url.searchParams.set('fileUrl', String(file.path || file.url || ''))
+    url.searchParams.set('fileName', String(file.name || file.title || '3D model'))
+    url.searchParams.set('mimeType', String(file.mimeType || ''))
+    url.searchParams.set('fileId', String(file.id || ''))
+    return url.href
+  } catch {
+    return ''
+  }
+})
 
 // 计算属性：根据文件类型选择预览组件
 const previewComponent = computed(() => {

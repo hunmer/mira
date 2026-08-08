@@ -13,6 +13,7 @@ import { toRaw } from 'vue'
 import { pluginSystem } from './PluginSystemCore'
 import { useConfirm } from '@renderer/composables/useConfirm'
 import { useToast } from '@renderer/composables/useToast'
+import { miraSDKService } from './MiraSDKService'
 
 /**
  * 递归剥离对象的响应式 Proxy，返回可被 Electron IPC（structured clone）克隆的纯对象。
@@ -93,6 +94,10 @@ export class PluginService {
 
       // 发现并加载所有插件（本地+在线）
       await this.discoverAndLoadPlugins()
+      console.debug('[PLUGIN-DEBUG][initialize:done]', {
+        online: Array.from(this.onlinePlugins.keys()),
+        plugins: Array.from(this.plugins.keys())
+      })
 
       this.isInitialized = true
       return { success: true, message: 'Plugin service initialized successfully' }
@@ -136,6 +141,7 @@ export class PluginService {
       }
 
       // 2. 加载在线插件
+      console.debug('[PLUGIN-DEBUG][discover:online]', Array.from(this.onlinePlugins.keys()))
       for (const [pluginId, config] of this.onlinePlugins) {
         const runtime: PluginRuntime = {
           config,
@@ -225,6 +231,10 @@ export class PluginService {
   private async loadOnlinePluginsFromStorage(): Promise<void> {
     try {
       const stored = await ConfigStorage.getItem('mira-online-plugins')
+      console.debug('[PLUGIN-DEBUG][storage:load]', {
+        hasStored: !!stored,
+        length: stored?.length ?? 0
+      })
       if (stored) {
         const configs: OnlinePluginConfig[] = JSON.parse(stored)
         this.onlinePlugins.clear()
@@ -232,8 +242,10 @@ export class PluginService {
         for (const config of configs) {
           this.onlinePlugins.set(config.pluginId, config)
         }
+        console.debug('[PLUGIN-DEBUG][storage:load] restored', Array.from(this.onlinePlugins.keys()))
       }
     } catch (error) {
+      console.error('[PLUGIN-DEBUG][storage:load] failed', error)
     }
   }
 
@@ -243,8 +255,14 @@ export class PluginService {
   private async saveOnlinePluginsToStorage(): Promise<void> {
     try {
       const configs = Array.from(this.onlinePlugins.values())
-      await ConfigStorage.setItem('mira-online-plugins', JSON.stringify(configs))
+      const serialized = JSON.stringify(configs)
+      await ConfigStorage.setItem('mira-online-plugins', serialized)
+      console.debug('[PLUGIN-DEBUG][storage:save]', {
+        plugins: configs.map(config => config.pluginId),
+        length: serialized.length
+      })
     } catch (error) {
+      console.error('[PLUGIN-DEBUG][storage:save] failed', error)
     }
   }
 
@@ -770,7 +788,13 @@ export class PluginService {
           const ps: any = (window as any).pluginSystem
           if (!ps?.fileFormats?.register) return () => undefined
           return ps.fileFormats.register({ ...format, pluginId: config.pluginId })
-        }
+        },
+        getExtraFileList: (libraryId: string, fileId: string) =>
+          miraSDKService.getExtraFileList(libraryId, fileId),
+        getExtraFile: (libraryId: string, fileId: string, fileName: string) =>
+          miraSDKService.getExtraFile(libraryId, fileId, fileName),
+        getExtraFileUrl: (libraryId: string, fileId: string, fileName: string) =>
+          miraSDKService.getExtraFileUrl(libraryId, fileId, fileName)
       },
 
       // 插件窗口管理API：打开插件 dist 的独立 BrowserWindow
@@ -791,7 +815,28 @@ export class PluginService {
           }
           const w: any = typeof window !== 'undefined' ? (window as any).electronAPI : undefined
           if (!w?.pluginWindow?.open) {
-            return { success: false, message: '插件窗口 API 在当前环境不可用（仅 Electron）' }
+            const pluginBase = (config as OnlinePluginConfig).url || config.actualDirectory
+            if (!pluginBase || typeof window === 'undefined') {
+              return { success: false, message: '插件地址不可用' }
+            }
+            try {
+              const entry = String(finalOpts.entry || 'dist/index.html').replace(/^\/+/, '')
+              const url = new URL(`${pluginBase.replace(/\/+$/, '')}/${entry}`)
+              Object.entries(finalOpts.query || {}).forEach(([key, value]) => {
+                url.searchParams.set(key, String(value))
+              })
+              const features = [
+                finalOpts.width && `width=${finalOpts.width}`,
+                finalOpts.height && `height=${finalOpts.height}`
+              ].filter(Boolean).join(',')
+              const opened = window.open(url.href, '_blank', features || undefined)
+              return opened
+                ? { success: true, data: { url: url.href } }
+                : { success: false, message: '浏览器阻止了插件窗口，请允许弹出窗口' }
+            } catch (error) {
+              const msg = error instanceof Error ? error.message : String(error)
+              return { success: false, message: msg }
+            }
           }
           try {
             return await w.pluginWindow.open(finalOpts)

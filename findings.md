@@ -75,3 +75,34 @@
 - Preserve unrelated active changes in `WebSocketService.ts` and the Spine plugin.
 - PDF conversion reproduced the reported `PDFDelegateFailed` error. `gswin64c`, `gswin32c`, `gs`, `pdftoppm`, `mutool`, and `pdftocairo` are unavailable as usable system commands; ImageMagick policy is not the cause.
 - Thumbnail startup now excludes PDF/EPS/AI when Ghostscript is absent, while the on-demand preview API returns an explicit Ghostscript-required error for those extensions.
+
+## Spine Bundle Format
+- Requested container format: `.spine`, physically a ZIP containing `.atlas`, `.json`, and `.png` resources.
+- Extracted resources must live under backend temp storage, outside media libraries.
+- SDK contract requested: list extra filenames by file ID and fetch one extra file by file ID plus filename; HTTP routes must resolve names server-side and must not expose extraction paths.
+- Existing uncommitted workspace changes are user-owned and must be preserved.
+- CodeGraph confirms the existing Spine server plugin registers only a file-format handler; `.spine` is not yet supported.
+- `ServerPluginManager.registerHttpHook` intercepts matching requests but does not create endpoints; plugin-owned routes use the existing `ServerPlugin` route mechanism.
+- Media file IDs are library-local. A backend route needs library context even if a higher-level SDK wrapper later hides it.
+- The existing `FileModule` is the smallest SDK home for extra-file list/content helpers.
+- The current client plugin derives sibling `file://` paths from `.skel`; `.spine` must instead consume server-generated URLs and cannot expose temp paths.
+- `ServerPlugin.registerRoute` is UI route metadata, not an Express endpoint. There is no plugin API for arbitrary HTTP endpoints.
+- Minimal architecture: extend `ServerFileFormatHandler` with optional extra-file operations; add generic authenticated routes to core `FileRoutes`; dispatch by the stored file's extension through its library plugin manager.
+- Core resolves `libraryId + fileId` to the authoritative source path. The plugin receives that path and returns safe filenames or a resolved temp file descriptor.
+- SDK transport already supports JSON GET and authenticated Blob download, so no new HTTP client primitive or dependency is needed.
+- Proposed core routes: `GET /api/files/extra/:libraryId/:id` for relative names and `GET /api/files/extra/:libraryId/:id/:name` for one resource; both inherit `/api` permission middleware and carry library scope in path params.
+- `FileRoutes` already has authoritative `libraryService.getFile()` plus `getItemFilePath()` patterns and stream response handling to reuse.
+- The current Spine viewer can load either binary `.skel` or JSON skeleton content, so a bundle may contain either; user examples use `.json`.
+- `yauzl` is already a direct dependency of `mira-app-server` and its plugin package set; use it instead of adding a ZIP library.
+- Client `FileInfo` includes optional `libraryId`, which is enough for SDK calls when media items are normalized correctly.
+- Client plugins currently receive no raw SDK in `PluginAPI`; the media API can expose narrowly scoped extra-file helpers backed by the existing `MiraSDKService`.
+- Hovercard and plugin BrowserWindow are separate renderer contexts. Blob URLs are suitable for same-context fetch but not a robust cross-window contract; SDK should also construct authenticated HTTP URLs from its configured base URL.
+- Permission middleware incorrectly prioritizes `req.params.id` as the library ID. New routes must name the media record parameter `fileId`, not `id`, so `req.params.libraryId` is used for allowed-role checks.
+- `yauzl` is available only under the server package, not the standalone Spine plugin path; dependency ownership must match the final extraction location.
+- Implemented handler-owned extra-file operations with generic core routing; core never returns the plugin's resolved temp path.
+- Spine bundle extraction allows `.atlas/.json/.skel/.png`, preserves safe relative paths, limits entries and uncompressed sizes, and invalidates cache on source size/mtime changes.
+- Existing `.skel` preview/thumbnail behavior remains registered alongside new `.spine` behavior.
+- The global permission middleware runs before Express route params are populated, so new extra-file routes add an explicit library `allowedRoles` check in addition to authentication.
+- Verification: server tsc, Spine plugin tsc/build, Core build, host production build, client plugin build, JS syntax, and diff check passed. Host `vue-tsc` remains blocked only by pre-existing `ServerEditDialog.vue:110`.
+- Verification: procm restarted backend; logs show Spine generator loaded for `[skel, spine]`; Mira CLI health returned `status: ok`.
+- Integration smoke: uploaded temporary `.spine`, SDK listed `hero.atlas/hero.json/hero.png`, SDK fetched `hero.json`, then test file was permanently deleted.

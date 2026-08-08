@@ -3,8 +3,8 @@
  * Spine 格式预览插件入口（IIFE）。
  *
  * 职责：
- * 1. 注册 .skel 文件格式（renderHoverCard 用 iframe embed 预览；open 打开独立窗口）。
- * 2. 从 .skel 的真实磁盘路径推导同目录 .atlas / .png 三件套 URL，传给 dist/index.html。
+ * 1. 注册 .skel/.spine 文件格式（renderHoverCard 用 iframe embed 预览；open 打开独立窗口）。
+ * 2. .skel 使用同目录资源；.spine 通过 SDK 获取服务端临时解压资源 URL。
  *
  * 注意：FileInfo.url 在 SDK 中未填充，使用 file.localFile（真实磁盘路径）|| file.path。
  * atlas/png 不单独注册，避免与图片缩略图冲突。
@@ -34,6 +34,35 @@
     return { skel: url, atlas: base + '.atlas', png: base + '.png' }
   }
 
+  function getExtension(file) {
+    return String(file.extension || file.name?.split('.').pop() || '').replace(/^\./, '').toLowerCase()
+  }
+
+  function pickFile(files, extensions, preferredBase) {
+    const matches = files.filter((name) => extensions.some((ext) => name.toLowerCase().endsWith(ext)))
+    return matches.find((name) => name.split('/').pop().replace(/\.[^/.]+$/, '').toLowerCase() === preferredBase) || matches[0] || ''
+  }
+
+  async function resolveResourceUrls(file, api) {
+    if (getExtension(file) !== 'spine') {
+      return deriveSiblingUrls(file.localFile || file.path || file.url || '')
+    }
+    const libraryId = String(file.libraryId || '')
+    const fileId = String(file.id || '')
+    if (!libraryId || !fileId) throw new Error('Spine 文件缺少素材库或文件 ID')
+    const files = await api.media.getExtraFileList(libraryId, fileId)
+    const preferredBase = String(file.name || '').replace(/\.spine$/i, '').toLowerCase()
+    const skeleton = pickFile(files, ['.json', '.skel'], preferredBase)
+    const atlas = pickFile(files, ['.atlas'], preferredBase)
+    const png = pickFile(files, ['.png'], preferredBase)
+    if (!skeleton || !atlas || !png) throw new Error('Spine 包缺少 .json/.skel、.atlas 或 .png')
+    return {
+      skel: api.media.getExtraFileUrl(libraryId, fileId, skeleton),
+      atlas: api.media.getExtraFileUrl(libraryId, fileId, atlas),
+      png: api.media.getExtraFileUrl(libraryId, fileId, png),
+    }
+  }
+
   function buildQuery(params) {
     const usp = new URLSearchParams()
     for (const [k, v] of Object.entries(params)) {
@@ -42,12 +71,13 @@
     return usp.toString()
   }
 
-  function mountHoverCard(container, file) {
-    const rawPath = file.localFile || file.path || file.url || ''
-    const { skel, atlas, png } = deriveSiblingUrls(rawPath)
+  function mountHoverCard(container, file, api) {
     const thumbnailUrl = file.thumbnailPath || ''
     let timeoutId
     let disposed = false
+    let iframe
+    let onMessage
+    let onIframeError
 
     const showFallback = () => {
       if (disposed || !thumbnailUrl) return
@@ -58,57 +88,49 @@
       container.replaceChildren(image)
     }
 
-    if (!pluginBaseUrl || !skel) {
-      showFallback()
-      return () => {
-        disposed = true
-        container.replaceChildren()
-      }
-    }
-
-    const viewerUrl = new URL('dist/index.html', pluginBaseUrl)
-    const qs = buildQuery({
-      embed: '1',
-      fileId: String(file.id || ''),
-      skelUrl: skel,
-      atlasUrl: atlas,
-      pngUrl: png,
-      fileName: file.name || 'Spine',
-    })
-    viewerUrl.search = qs
-
-    const iframe = document.createElement('iframe')
-    iframe.src = viewerUrl.toString()
-    iframe.title = file.name || 'Spine preview'
-    iframe.loading = 'lazy'
-    iframe.allow = 'fullscreen'
-    iframe.style.cssText = 'display:block;width:100%;height:100%;border:0;background:#eef0f3'
-
-    const onMessage = (event) => {
-      if (event.source !== iframe.contentWindow) return
-      if (event.data?.fileId !== String(file.id || '')) return
-      if (event.data?.type === 'mira-spine-preview-loaded') {
-        clearTimeout(timeoutId)
-      } else if (event.data?.type === 'mira-spine-preview-error') {
-        clearTimeout(timeoutId)
+    ;(async () => {
+      try {
+        if (!pluginBaseUrl) throw new Error('Spine viewer URL unavailable')
+        const { skel, atlas, png } = await resolveResourceUrls(file, api)
+        if (disposed || !skel) return
+        const viewerUrl = new URL('dist/index.html', pluginBaseUrl)
+        viewerUrl.search = buildQuery({
+          embed: '1', fileId: String(file.id || ''), skelUrl: skel, atlasUrl: atlas, pngUrl: png,
+          fileName: file.name || 'Spine',
+        })
+        iframe = document.createElement('iframe')
+        iframe.src = viewerUrl.toString()
+        iframe.title = file.name || 'Spine preview'
+        iframe.loading = 'lazy'
+        iframe.allow = 'fullscreen'
+        iframe.style.cssText = 'display:block;width:100%;height:100%;border:0;background:#eef0f3'
+        onMessage = (event) => {
+          if (event.source !== iframe.contentWindow || event.data?.fileId !== String(file.id || '')) return
+          if (event.data?.type === 'mira-spine-preview-loaded') clearTimeout(timeoutId)
+          else if (event.data?.type === 'mira-spine-preview-error') {
+            clearTimeout(timeoutId)
+            showFallback()
+          }
+        }
+        onIframeError = () => {
+          clearTimeout(timeoutId)
+          showFallback()
+        }
+        window.addEventListener('message', onMessage)
+        iframe.addEventListener('error', onIframeError)
+        container.replaceChildren(iframe)
+        timeoutId = window.setTimeout(showFallback, 30000)
+      } catch (error) {
+        api.log.error('Spine preview resources failed', error)
         showFallback()
       }
-    }
-    const onIframeError = () => {
-      clearTimeout(timeoutId)
-      showFallback()
-    }
-
-    window.addEventListener('message', onMessage)
-    iframe.addEventListener('error', onIframeError)
-    container.replaceChildren(iframe)
-    timeoutId = window.setTimeout(showFallback, 30000)
+    })()
 
     return () => {
       disposed = true
       clearTimeout(timeoutId)
-      window.removeEventListener('message', onMessage)
-      iframe.removeEventListener('error', onIframeError)
+      if (onMessage) window.removeEventListener('message', onMessage)
+      if (iframe && onIframeError) iframe.removeEventListener('error', onIframeError)
       container.replaceChildren()
     }
   }
@@ -122,18 +144,13 @@
       const { api } = this.context
       const unregister = api.media.registerFileFormat({
         id: 'mira-spine',
-        extensions: ['skel'],
+        extensions: ['skel', 'spine'],
         mimeTypes: ['application/x-spine'],
-        renderHoverCard: mountHoverCard,
-        open: (file) => {
-          const w = window.electronAPI
-          if (!w?.pluginWindow?.open) {
-            api.ui.showNotification('当前环境不支持打开 Spine 预览窗口', 'warning')
-            return true
-          }
-          const rawPath = file.localFile || file.path || file.url || ''
-          const { skel, atlas, png } = deriveSiblingUrls(rawPath)
-          return w.pluginWindow.open({
+        renderHoverCard: (container, file) => mountHoverCard(container, file, api),
+        open: async (file) => {
+          try {
+            const { skel, atlas, png } = await resolveResourceUrls(file, api)
+            await api.window.openPluginWindow({
             pluginId: PLUGIN_ID,
             entry: 'dist/index.html',
             title: `Spine 预览 - ${file.name || '角色'}`,
@@ -145,11 +162,16 @@
               pngUrl: png,
               fileName: file.name || 'Spine',
             },
-          }).then(() => true)
+            })
+          } catch (error) {
+            api.log.error('Spine preview open failed', error)
+            api.ui.showNotification(error?.message || 'Spine 预览打开失败', 'error')
+          }
+          return true
         },
       })
       registrations.push(unregister)
-      api.log.info('Spine format preview registered for .skel (3.8)')
+      api.log.info('Spine format preview registered for .skel/.spine (3.8)')
     }
 
     async cleanup() {

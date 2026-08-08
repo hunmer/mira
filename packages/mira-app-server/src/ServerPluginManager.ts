@@ -38,6 +38,8 @@ export interface ServerFileFormatHandler {
     thumbnailExtensions?: string[];
     process?: (filePath: string, context?: Record<string, any>) => any | Promise<any>;
     thumbnail?: (srcPath: string, destPath: string) => Promise<void>;
+    getExtraFileList?: (filePath: string, context?: Record<string, any>) => string[] | Promise<string[]>;
+    getExtraFile?: (filePath: string, fileName: string, context?: Record<string, any>) => string | Promise<string>;
 }
 
 export class ServerPluginManager {
@@ -212,6 +214,23 @@ export class ServerPluginManager {
             handler.mimeTypes?.some(mime => mime.toLowerCase() === mimeType)
         );
         return entry?.handler.process ? entry.handler.process(filePath, context) : undefined;
+    }
+
+    async getExtraFileList(filePath: string, context: Record<string, any> = {}): Promise<string[] | undefined> {
+        const handler = this.getFileFormatHandler(filePath);
+        return handler?.getExtraFileList?.(filePath, context);
+    }
+
+    async getExtraFile(filePath: string, fileName: string, context: Record<string, any> = {}): Promise<string | undefined> {
+        const handler = this.getFileFormatHandler(filePath);
+        return handler?.getExtraFile?.(filePath, fileName, context);
+    }
+
+    private getFileFormatHandler(filePath: string): ServerFileFormatHandler | undefined {
+        const extension = path.extname(filePath).toLowerCase().slice(1);
+        return Array.from(this.fileFormatHandlers.values()).find(({ handler }) =>
+            handler.extensions?.some(ext => ext.replace(/^\./, '').toLowerCase() === extension)
+        )?.handler;
     }
 
     async runHttpHooks(context: HttpHookContext): Promise<boolean> {

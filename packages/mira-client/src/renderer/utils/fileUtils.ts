@@ -14,8 +14,12 @@ export const HLS_PREVIEW_EXTENSIONS = ['mov', 'avi', 'mkv', 'flv', 'wmv', 'm4v',
  * 本地路径转 file:// URL，用于 <img src> 等
  * 已是 http/https/file 协议的路径直接返回
  */
-export function toFileUrl(path: string | undefined): string | undefined {
-  if (!path) return path
+export function toFileUrl(path: unknown): string | undefined {
+  if (path && typeof path === 'object') {
+    const value = path as Record<string, unknown>
+    path = value.url ?? value.path ?? value.filePath ?? value.localFile ?? value.href
+  }
+  if (typeof path !== 'string' || !path) return undefined
   if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('file://')) return path
   let normalized = path.replace(/\\/g, '/')
   if (normalized.match(/^[a-zA-Z]:/)) {

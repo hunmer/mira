@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import multer from 'multer';
 import { MiraServer } from '../server';
+import { canAccessLibrary } from '../middleware/permission';
 
 export class FileRoutes {
     private router: Router;
@@ -318,6 +319,49 @@ export class FileRoutes {
             } catch (err) {
                 console.error('Error serving thumbnail:', err);
                 res.status(500).send('Internal server error');
+            }
+        });
+
+        // 获取容器格式插件暴露的附属文件列表，真实解压路径不对外返回。
+        this.router.get('/extra/:libraryId/:fileId', async (req: Request, res: Response) => {
+            try {
+                if (!this.canAccessExtraFileLibrary(req)) return res.status(403).json({ code: 403, message: 'Access denied' });
+                const ret = await this.resolveExtraFileSource(req.params.libraryId, req.params.fileId);
+                if (!ret) return res.status(404).json({ code: 404, message: 'File not found' });
+                const files = await ret.pluginManager.getExtraFileList(ret.filePath, {
+                    libraryId: req.params.libraryId,
+                    fileId: req.params.fileId,
+                });
+                if (!files) return res.status(404).json({ code: 404, message: 'File format has no extra files' });
+                res.json({ code: 0, data: files });
+            } catch (error) {
+                console.error('Error listing extra files:', error);
+                res.status(400).json({ code: 400, message: error instanceof Error ? error.message : 'Failed to list extra files' });
+            }
+        });
+
+        // 文件名由格式插件解析；这里只流式返回插件确认过的临时文件。
+        this.router.get('/extra/:libraryId/:fileId/*', async (req: Request, res: Response) => {
+            try {
+                if (!this.canAccessExtraFileLibrary(req)) return res.status(403).send('Access denied');
+                const ret = await this.resolveExtraFileSource(req.params.libraryId, req.params.fileId);
+                if (!ret) return res.status(404).send('File not found');
+                const fileName = req.params[0];
+                if (!fileName) return res.status(400).send('Extra file name is required');
+                const extraPath = await ret.pluginManager.getExtraFile(ret.filePath, fileName, {
+                    libraryId: req.params.libraryId,
+                    fileId: req.params.fileId,
+                });
+                if (!extraPath || !fs.existsSync(extraPath)) return res.status(404).send('Extra file not found');
+                const stat = await fs.promises.stat(extraPath);
+                if (!stat.isFile()) return res.status(404).send('Extra file not found');
+                res.setHeader('Content-Type', this.getContentType(path.extname(extraPath).toLowerCase()));
+                res.setHeader('Content-Length', stat.size);
+                res.setHeader('Cache-Control', 'private, max-age=86400');
+                fs.createReadStream(extraPath).pipe(res);
+            } catch (error) {
+                console.error('Error serving extra file:', error);
+                res.status(400).send(error instanceof Error ? error.message : 'Failed to serve extra file');
             }
         });
 
@@ -1000,6 +1044,21 @@ export class FileRoutes {
         return { library: obj.libraryService, item };
     }
 
+    private async resolveExtraFileSource(libraryId: string, fileId: string): Promise<{ filePath: string, pluginManager: any } | undefined> {
+        const obj = this.backend.libraries!.getLibrary(libraryId);
+        if (!obj) return undefined;
+        const item = await obj.libraryService.getFile(parseInt(fileId, 10));
+        if (!item) return undefined;
+        const filePath = await obj.libraryService.getItemFilePath(item);
+        if (!filePath || !fs.existsSync(filePath)) return undefined;
+        return { filePath, pluginManager: obj.pluginManager };
+    }
+
+    private canAccessExtraFileLibrary(req: Request): boolean {
+        const config = this.backend.libraries!.getLibraryConfig(req.params.libraryId);
+        return canAccessLibrary(config, (req as any).user?.role);
+    }
+
     private getContentType(ext: string): string {
         const mimeTypes: Record<string, string> = {
             '.png': 'image/png',
@@ -1010,6 +1069,7 @@ export class FileRoutes {
             '.txt': 'text/plain',
             '.html': 'text/html',
             '.json': 'application/json',
+            '.atlas': 'text/plain; charset=utf-8',
             '.mp4': 'video/mp4',
             '.m4v': 'video/mp4',
             '.mov': 'video/quicktime',

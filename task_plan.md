@@ -72,6 +72,14 @@ Phase 6 complete
 - [x] Rebuild, restart via procm, and verify clean startup logs
 - **Status:** complete
 
+### Phase 10: Spine Bundle Format
+- [x] Trace server plugin routes, file-id resolution, SDK file APIs, and Spine plugin flow
+- [x] Define safe `.spine` ZIP extraction and temp-cache contract
+- [x] Implement backend plugin extraction, thumbnail generation, and extra-file HTTP routes
+- [x] Add SDK methods and adapt the client Spine plugin to `.spine`
+- [x] Run focused security, type, build, and integration checks
+- **Status:** complete
+
 ## Key Questions
 1. Where are client and server plugin APIs constructed, activated, and disposed?
 2. What file metadata is available at thumbnail and detail-open time?
@@ -93,6 +101,10 @@ Phase 6 complete
 | Server `test` script references missing `sdk/jest.config.js` | 1 | Verify with server type-check/build and a real ImageMagick conversion harness |
 | procm restart failed because recorded PID was already absent | 1 | Remove stale process record, then start the configured command |
 | procm start did not return and port 8081 remained closed | 1 | Terminated the hanging tool wait; report service restart as unavailable |
+| PowerShell `rg` rejected the literal `**/package.json` path | 1 | Use `rg --files -g "package.json"` and pass discovered paths to `rg` |
+| Parallel read failed when guessed permission middleware path did not exist | 1 | Use `rg --files` discovery and `Promise.allSettled` for independent reads |
+| Spine plugin type-check could not resolve newly declared `yauzl` dependency | 1 | Install the plugin package dependencies, then rerun type-check |
+| Client verification used package filter `mira-client`, which matches no workspace package | 1 | Rerun type-check/build with actual package name `mira-web` |
 
 ## Notes
 - Re-read this plan before API design and implementation.

@@ -1,10 +1,11 @@
 import fs from 'fs';
 import path from 'path';
 import { renderIdleFrame } from './renderIdle';
+import { SpineBundleCache, SpineBundleContents } from './spineBundle';
 
 const FORMAT_ID = 'mira_spine_format';
-const FORMAT_EXTENSIONS = ['skel'];
-const THUMBNAIL_EXTENSIONS = ['skel'];
+const FORMAT_EXTENSIONS = ['skel', 'spine'];
+const THUMBNAIL_EXTENSIONS = ['skel', 'spine'];
 
 interface ServerFileFormatHandler {
   id: string;
@@ -13,6 +14,8 @@ interface ServerFileFormatHandler {
   thumbnailExtensions?: string[];
   process?: (filePath: string, context?: Record<string, any>) => Promise<any>;
   thumbnail?: (srcPath: string, destPath: string) => Promise<void>;
+  getExtraFileList?: (filePath: string, context?: Record<string, any>) => Promise<string[]>;
+  getExtraFile?: (filePath: string, fileName: string, context?: Record<string, any>) => Promise<string>;
 }
 
 interface FileFormatManager {
@@ -36,6 +39,7 @@ class MiraSpineFormatPlugin {
   private readonly pluginName = FORMAT_ID;
   private readonly pluginDataDir: string;
   private readonly config: PluginConfig;
+  private readonly bundles: SpineBundleCache;
   private unregisterFormat?: () => void;
 
   constructor(inst: any) {
@@ -43,6 +47,7 @@ class MiraSpineFormatPlugin {
     this.pluginDataDir = path.join(pluginManager.getPluginDir(this.pluginName), 'data');
     fs.mkdirSync(this.pluginDataDir, { recursive: true });
     this.config = this.loadConfig();
+    this.bundles = new SpineBundleCache(path.join(inst.server.backend.dataPath, 'temp', 'spine'));
 
     this.unregisterFormat = pluginManager.registerFileFormat(this.pluginName, {
       id: this.pluginName,
@@ -51,9 +56,11 @@ class MiraSpineFormatPlugin {
       thumbnailExtensions: THUMBNAIL_EXTENSIONS,
       process: (filePath, context) => this.processFile(filePath, context),
       thumbnail: (srcPath, destPath) => this.generateThumbnail(srcPath, destPath),
+      getExtraFileList: (filePath) => this.getExtraFileList(filePath),
+      getExtraFile: (filePath, fileName) => this.bundles.resolve(filePath, fileName),
     });
 
-    console.log(`[${this.pluginName}] registered .skel parser and thumbnail generator (spine-canvaskit 4.2+, animation=${this.config.animation})`);
+    console.log(`[${this.pluginName}] registered .skel/.spine parser and thumbnail generator (spine-canvaskit 4.2+, animation=${this.config.animation})`);
   }
 
   private loadConfig(): PluginConfig {
@@ -85,6 +92,17 @@ class MiraSpineFormatPlugin {
   /** 解析 .skel 元数据：版本探测 + 配套文件检查 */
   private async processFile(filePath: string, context: Record<string, any> = {}) {
     const stat = await fs.promises.stat(filePath);
+    if (path.extname(filePath).toLowerCase() === '.spine') {
+      const bundle = await this.bundles.prepare(filePath);
+      return {
+        format: 'spine',
+        size: stat.size,
+        extraFiles: bundle.files,
+        hasAtlas: bundle.files.some(file => file.toLowerCase().endsWith('.atlas')),
+        hasPng: bundle.files.some(file => file.toLowerCase().endsWith('.png')),
+        ...context,
+      };
+    }
     const dir = path.dirname(filePath);
     const base = path.basename(filePath, path.extname(filePath));
     const atlasPath = path.join(dir, `${base}.atlas`);
@@ -120,14 +138,27 @@ class MiraSpineFormatPlugin {
   private async generateThumbnail(srcPath: string, destPath: string): Promise<void> {
     fs.mkdirSync(path.dirname(destPath), { recursive: true });
 
-    const atlasPath = this.resolveAtlas(srcPath);
+    let skeletonPath = srcPath;
+    let atlasPath: string | null;
+    if (path.extname(srcPath).toLowerCase() === '.spine') {
+      try {
+        const bundle = await this.bundles.prepare(srcPath);
+        skeletonPath = this.findResource(bundle, ['.json', '.skel']) || srcPath;
+        atlasPath = this.findResource(bundle, ['.atlas']);
+      } catch (error: any) {
+        console.error(`[${this.pluginName}] extract bundle failed:`, error?.message || error);
+        return;
+      }
+    } else {
+      atlasPath = this.resolveAtlas(srcPath);
+    }
     if (!atlasPath) {
       console.warn(`[${this.pluginName}] no .atlas found for ${srcPath}, skip thumbnail`);
       return;
     }
 
     try {
-      await renderIdleFrame(srcPath, atlasPath, destPath, {
+      await renderIdleFrame(skeletonPath, atlasPath, destPath, {
         animation: this.config.animation,
         width: this.config.width,
         height: this.config.height,
@@ -139,6 +170,16 @@ class MiraSpineFormatPlugin {
       // 失败不阻断（与 mira_3d_format 一致）。3.8 资源会在此报版本不匹配。
       console.error(`[${this.pluginName}] generateThumbnail failed:`, error?.message || error);
     }
+  }
+
+  private async getExtraFileList(filePath: string): Promise<string[]> {
+    if (path.extname(filePath).toLowerCase() !== '.spine') return [];
+    return (await this.bundles.prepare(filePath)).files;
+  }
+
+  private findResource(bundle: SpineBundleContents, extensions: string[]): string | null {
+    const file = bundle.files.find(name => extensions.includes(path.extname(name).toLowerCase()));
+    return file ? path.join(bundle.root, ...file.split('/')) : null;
   }
 
   /** 查找 atlas：同名优先，否则同目录首个 .atlas */

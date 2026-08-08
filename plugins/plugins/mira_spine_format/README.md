@@ -1,6 +1,8 @@
 # Mira Spine Format
 
-服务端插件：为 Spine **4.2+** `.skel` 文件注册格式识别与 idle 动作首帧 PNG 缩略图生成。
+服务端插件：为 Spine `.skel` 和 ZIP 容器 `.spine` 注册格式识别、附属文件访问与 idle 动作首帧 PNG 缩略图生成。
+
+`.spine` 解压到服务端 `data/temp/spine` 缓存，不写入素材库。SDK 通过文件 ID 列出并访问包内 `.atlas/.json/.skel/.png`，HTTP 地址不暴露临时目录。
 
 ## 渲染方案
 
@@ -42,7 +44,7 @@ pnpm install --ignore-workspace
 pnpm run build
 ```
 
-依赖仅 `@esotericsoftware/spine-canvaskit` + `canvaskit-wasm`，无原生模块，安装即用。
+依赖仅 `@esotericsoftware/spine-canvaskit`、`canvaskit-wasm` 和纯 JS ZIP 读取器 `yauzl`，无原生模块，安装即用。
 
 ## 技术细节
 

@@ -6,9 +6,66 @@
 // 插件实例存储
 const pluginInstances = new Map<string, any>()
 const pluginFactories = new Map<string, Function>()
+const registeredPlugins = new Map<string, any>()
+const contributions = new Map<string, any>()
+const contributionListeners = new Set<(items: any[]) => void>()
+const fileFormats = new Map<string, any>()
 
 // 插件系统核心对象
 export const pluginSystem = {
+  /** 注册插件配置（与 instanceManager 的全局 API 保持兼容） */
+  plugins: registeredPlugins,
+  registerPlugin(pluginId: string, pluginInfo: any) {
+    registeredPlugins.set(pluginId, pluginInfo)
+  },
+  contributions: {
+    list: [] as any[],
+    register(contribution: any) {
+      contributions.set(contribution.id, contribution)
+      const snapshot = Array.from(contributions.values())
+      this.list = snapshot
+      contributionListeners.forEach(listener => listener(snapshot))
+      console.log(`🧩 Contribution registered: ${contribution.id} (${contribution.title})`)
+    },
+    unregister(id: string) {
+      contributions.delete(id)
+      const snapshot = Array.from(contributions.values())
+      this.list = snapshot
+      contributionListeners.forEach(listener => listener(snapshot))
+    },
+    getContributions() {
+      return Array.from(contributions.values())
+    },
+    subscribe(listener: (items: any[]) => void) {
+      contributionListeners.add(listener)
+      listener(Array.from(contributions.values()))
+      return () => contributionListeners.delete(listener)
+    }
+  },
+  fileFormats: {
+    list: [] as any[],
+    register(format: any) {
+      fileFormats.set(format.id, format)
+      this.list = Array.from(fileFormats.values())
+      return () => this.unregister(format.id)
+    },
+    unregister(id: string) {
+      fileFormats.delete(id)
+      this.list = Array.from(fileFormats.values())
+    },
+    getForFile(file: any) {
+      const extension = String(file?.extension || file?.name?.split('.').pop() || '').toLowerCase()
+      const mimeType = String(file?.mimeType || '').toLowerCase()
+      return Array.from(fileFormats.values()).find((format: any) =>
+        format.extensions?.some((item: string) => String(item).replace(/^\./, '').toLowerCase() === extension) ||
+        format.mimeTypes?.some((item: string) => String(item).toLowerCase() === mimeType)
+      )
+    },
+    getAll() {
+      return Array.from(fileFormats.values())
+    }
+  },
+
   /**
    * 注册插件实例工厂
    */
@@ -59,6 +116,14 @@ export const pluginSystem = {
     return pluginFactories.get(pluginId)
   },
 
+  getPlugin(pluginId: string) {
+    return registeredPlugins.get(pluginId)
+  },
+
+  getAllPlugins() {
+    return Array.from(registeredPlugins.values())
+  },
+
   /**
    * 获取所有已注册的插件ID
    */
@@ -89,6 +154,10 @@ export const pluginSystem = {
     
     pluginInstances.clear()
     pluginFactories.clear()
+    registeredPlugins.clear()
+    contributions.clear()
+    contributionListeners.clear()
+    fileFormats.clear()
   }
 }
 
@@ -96,10 +165,21 @@ export const pluginSystem = {
 export function initializePluginSystem() {
   // 将插件系统暴露到全局
   if (typeof window !== 'undefined') {
+    const existing = (window as any).pluginSystem
+    console.debug('[PLUGIN-DEBUG][core:init]', {
+      readyState: document.readyState,
+      hadExisting: !!existing,
+      existingMethods: existing ? Object.keys(existing).sort() : [],
+      existingRegisterPlugin: typeof existing?.registerPlugin,
+      existingRegisterPluginInstance: typeof existing?.registerPluginInstance
+    })
     // instanceManager 会先建立包含插件注册、贡献和文件格式 API 的完整对象；
     // DOMContentLoaded 触发时不能再用精简核心对象覆盖它。
-    if (!(window as any).pluginSystem) {
+    if (!existing) {
       (window as any).pluginSystem = pluginSystem
+      console.debug('[PLUGIN-DEBUG][core:init] installed core pluginSystem')
+    } else {
+      console.debug('[PLUGIN-DEBUG][core:init] preserved existing pluginSystem')
     }
   }
   

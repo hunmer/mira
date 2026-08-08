@@ -153,6 +153,14 @@ export class HttpClient {
         return response.data;
     }
 
+    /** 构造可供 img/iframe 等元素直接访问的鉴权 URL。 */
+    getUrl(url: string): string {
+        const resolved = new URL(url, this.config.baseURL.endsWith('/') ? this.config.baseURL : `${this.config.baseURL}/`);
+        const token = this.config.getToken?.() || this.config.token;
+        if (token) resolved.searchParams.set('token', token);
+        return resolved.toString();
+    }
+
     /**
      * 提取响应数据
      * 支持不同的响应格式

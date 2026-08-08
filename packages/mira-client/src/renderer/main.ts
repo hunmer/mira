@@ -76,6 +76,16 @@ const initializeApp = async () => {
     // 先初始化设置
     const settingsStore = useSettingsStore()
     await settingsStore.initialize()
+
+    // Web 环境的在线插件已由 settingsStore 恢复，这里同步到插件 Store 并注入入口脚本。
+    if (!environment.isElectron && miraAPI.pluginService.initialized) {
+      const { usePluginStore } = await import('./stores/plugin')
+      const pluginStore = usePluginStore()
+      await pluginStore.loadLocalPlugins()
+      for (const plugin of pluginStore.localPlugins.filter(plugin => plugin.status === 'loaded')) {
+        await pluginStore.enableLocalPluginNew(plugin.config.pluginId)
+      }
+    }
     
     // 在 Electron 环境下初始化菜单服务
     if (environment.isElectron) {

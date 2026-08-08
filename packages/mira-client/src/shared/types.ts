@@ -201,6 +201,9 @@ export interface PluginAPI {
       renderHoverCard?: (container: HTMLElement, file: FileInfo) => (() => void) | void
       open?: (file: FileInfo) => boolean | void | Promise<boolean | void>
     }) => () => void
+    getExtraFileList: (libraryId: string, fileId: string) => Promise<string[]>
+    getExtraFile: (libraryId: string, fileId: string, fileName: string) => Promise<Blob>
+    getExtraFileUrl: (libraryId: string, fileId: string, fileName: string) => string
   }
 
   // 插件窗口管理（打开插件 dist 的独立 BrowserWindow）

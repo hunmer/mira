@@ -58,12 +58,51 @@ pluginManager.registerFileFormat('my_plugin', {
   thumbnailExtensions: ['abc'],
   process: async (filePath, context) => ({ /* 可序列化结果 */ }),
   thumbnail: async (srcPath, destPath) => { /* 写入 PNG/JPEG */ },
+  // 可选：容器格式的附属文件能力
+  getExtraFileList: async (filePath, context) => ['data.json', 'texture.png'],
+  getExtraFile: async (filePath, fileName, context) => resolveValidatedTempFile(filePath, fileName),
 })
 ```
 
 - `thumbnail` 接收本地源路径和目标路径；只为实际支持渲染的扩展填写 `thumbnailExtensions`。
 - `process` 用于解析元数据或执行格式专属处理，返回值必须可序列化。
+- `getExtraFileList` 返回容器内的相对文件名数组，不得返回服务器绝对路径。
+- `getExtraFile` 接收客户端指定的相对文件名，必须由插件校验后返回已解压的文件路径；核心路由只负责流式输出，不把该路径放入响应。
+- 容器解压目录应放在服务端 `dataPath/temp` 下，不能写入素材库目录；应限制条目数量、单文件大小、总解压大小，并拒绝绝对路径和 `..` 目录穿越。
+- 核心 HTTP 路由为：
+  - `GET /api/files/extra/:libraryId/:fileId`：返回文件名列表。
+  - `GET /api/files/extra/:libraryId/:fileId/:fileName`：返回单个附属文件。
+- `fileId` 是素材库内 ID，不能省略 `libraryId`。文件名包含子目录时，客户端应按路径段编码。
 - 插件卸载时由管理器清理注册项；自有资源仍需自行释放。
+
+### `.spine` ZIP 容器示例
+
+`.spine` 本质是 ZIP，典型内容如下：
+
+```text
+hero.spine
+├── hero.atlas
+├── hero.json        # 也可以是 hero.skel
+└── hero.png
+```
+
+服务端插件流程：
+
+1. `extensions: ['spine']` 声明格式，`thumbnailExtensions: ['spine']` 声明缩略图入口。
+2. 首次处理时将 ZIP 解压到 `data/temp/spine/<cache-key>/`。
+3. 从解压目录选择 `.json`/`.skel`、`.atlas` 和贴图，调用 Spine headless runtime 生成 PNG 缩略图。
+4. `getExtraFileList` 返回例如 `['hero.atlas', 'hero.json', 'hero.png']`。
+5. `getExtraFile` 只允许访问列表中的文件名，并返回经过校验的临时文件路径。
+
+客户端插件不要拼接解压目录。宿主 SDK 已提供：
+
+```ts
+const files = await client.files().getExtraFileList(libraryId, fileId)
+const json = await client.files().getExtraFile(libraryId, fileId, 'hero.json')
+const jsonUrl = client.files().getExtraFileUrl(libraryId, fileId, 'hero.json')
+```
+
+`getExtraFileUrl` 生成带认证参数的 HTTP 地址，适合 iframe、`<img>` 等无法自定义请求头的场景；不要把 token 写入日志或持久化。
 
 ## 构建、索引与验证
 
@@ -97,4 +136,6 @@ pnpm --filter mira-app-server exec tsc --noEmit
 - 缩略图宿主：`packages/mira-client/src/renderer/components/common/MediaThumbnail.vue`
 - 通用 hovercard：`packages/mira-client/src/renderer/components/common/MediaPreviewHoverCard.vue`、`MediaPreviewContent.vue`
 - 服务端格式注册：`packages/mira-app-server/src/ServerPluginManager.ts`
+- 服务端附属文件路由：`packages/mira-app-server/src/routes/FileRoutes.ts`
+- Core SDK 文件模块：`packages/mira-app-core/src/shared/sdk/modules/FileModule.ts`
 - 市场索引：`online_client_plugins/plugins.json`

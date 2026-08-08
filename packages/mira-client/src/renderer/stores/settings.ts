@@ -415,11 +415,12 @@ export const useSettingsStore = defineStore('settings', () => {
       }
 
       // 初始化插件服务（如果配置了插件目录且启用了自动加载，且尚未初始化）
-      if (settings.value.pluginsDirectory && settings.value.autoLoadPlugins && !isPluginSystemInitialized.value) {
+      const isWebRuntime = typeof window !== 'undefined' && !(window as any).electronAPI
+      if ((isWebRuntime || (settings.value.pluginsDirectory && settings.value.autoLoadPlugins)) && !isPluginSystemInitialized.value) {
         try {
           // 创建简单的配置对象，只包含基本数据类型
           const pluginConfig = {
-            pluginsDirectory: settings.value.pluginsDirectory,
+            pluginsDirectory: settings.value.pluginsDirectory || '',
             autoLoad: settings.value.autoLoadPlugins,
             enableDevMode: settings.value.enablePluginDevMode,
             maxLoadTime: settings.value.maxPluginLoadTime,

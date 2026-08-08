@@ -21,6 +21,12 @@ const matchesFileFormat = (format: PluginFileFormat, file: FileInfo): boolean =>
  */
 export const initializeGlobalPluginSystem = () => {
   if (typeof window !== 'undefined') {
+    const previous = (window as any).pluginSystem
+    console.debug('[PLUGIN-DEBUG][instance:init] replacing pluginSystem', {
+      hadExisting: !!previous,
+      previousMethods: previous ? Object.keys(previous).sort() : [],
+      previousRegisterPlugin: typeof previous?.registerPlugin
+    })
     ;(window as any).pluginSystem = {
       // 插件注册表
       plugins: new Map(),
@@ -244,6 +250,12 @@ export const initializeGlobalPluginSystem = () => {
         getAll: () => (window as any).pluginSystem.fileFormats.list.slice(),
       }
     } as PluginSystemAPI
+
+    console.debug('[PLUGIN-DEBUG][instance:init] installed pluginSystem', {
+      methods: Object.keys((window as any).pluginSystem).sort(),
+      registerPlugin: typeof (window as any).pluginSystem.registerPlugin,
+      registerPluginInstance: typeof (window as any).pluginSystem.registerPluginInstance
+    })
 
     console.log('🌐 Global plugin system initialized')
   }

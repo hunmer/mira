@@ -90,15 +90,27 @@ function buildCtx(contribution: PluginContribution): PluginContributionRenderCon
     api,
     openPluginWindow: (opts) => {
       const w = (window as any).electronAPI
-      if (!w?.pluginWindow?.open) {
-        return Promise.resolve({ success: false, message: '插件窗口 API 在当前环境不可用' })
+      if (w?.pluginWindow?.open) {
+        return w.pluginWindow.open({
+          entry: 'dist/index.html',
+          ...opts,
+          pluginId: opts.pluginId || contribution.pluginId,
+        })
       }
-      return w.pluginWindow.open({
-        // 默认指向当前贡献所属插件、dist/index.html；调用者可通过 opts 覆盖
-        entry: 'dist/index.html',
-        ...opts,
-        pluginId: opts.pluginId || contribution.pluginId,
-      })
+      const info = getPluginSystem()?.getPlugin?.(contribution.pluginId)
+      const base = info?.config?.url || info?.config?.actualDirectory
+      if (!base) return Promise.resolve({ success: false, message: '插件地址不可用' })
+      try {
+        const entry = String(opts.entry || 'dist/index.html').replace(/^\/+/, '')
+        const url = new URL(`${String(base).replace(/\/+$/, '')}/${entry}`)
+        Object.entries(opts.query || {}).forEach(([key, value]) => url.searchParams.set(key, String(value)))
+        const opened = window.open(url.href, '_blank')
+        return Promise.resolve(opened
+          ? { success: true, data: { url: url.href } }
+          : { success: false, message: '浏览器阻止了插件窗口，请允许弹出窗口' })
+      } catch (error) {
+        return Promise.resolve({ success: false, message: error instanceof Error ? error.message : String(error) })
+      }
     },
   }
 }

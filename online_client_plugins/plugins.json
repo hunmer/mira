@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-08T09:07:09.292Z",
+  "generatedAt": "2026-08-08T11:00:21.983Z",
   "plugins": [
     {
       "pluginId": "d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70",
@@ -88,8 +88,8 @@
       "directory": "plugins/mira-spine-format-preview",
       "icon": null,
       "readme": null,
-      "size": 1402902,
-      "checksum": "sha256:a44e4148eba1d22c3f8af5d98ad364f758a67102a7af2f4c6b5f562b76d0305b",
+      "size": 1414575,
+      "checksum": "sha256:1def3aa4dc50d2256f1a8c35b98c0ab5f5795b76a224668174d4b47f1b986297",
       "files": [
         {
           "path": "public/vendor/pixi-spine-3.8-4.0.6.js",
@@ -113,8 +113,8 @@
         },
         {
           "path": "index.js",
-          "size": 5734,
-          "checksum": "sha256:be2f0a33e240d97be1a7f65777ea0eb3532b8d88f6b8b41dbcfbb04ee59cfa76"
+          "size": 7404,
+          "checksum": "sha256:174c0cbd83181788e453e68dbedbe6cbb5fdd6b05ddc978a21bf5b544ed5a933"
         },
         {
           "path": "dist/vendor/pixi-spine-3.8-4.0.6.js",
@@ -129,15 +129,15 @@
         {
           "path": "dist/index.html",
           "size": 708,
-          "checksum": "sha256:feba503da9a54e035f6a2c88416657584a0bff4bb6d9369347e8d27d428a4271"
+          "checksum": "sha256:96a54b86543a1c2e067e161fc3155e1aac0f5a40809d26f6f9522c3a5b284bd2"
         },
         {
-          "path": "dist/assets/index-D8CAFAQM.css",
-          "size": 29775,
-          "checksum": "sha256:a13188c6e9741d0de1f9847cb5f95f51b8583d4473f7683e2350473427c14cf2"
+          "path": "dist/assets/index-Df3vIJ2v.css",
+          "size": 39778,
+          "checksum": "sha256:e9e1cdab8a932e6a27df0c958525a6833bf1ac4196d2af1b67a0e794c5f1e6ac"
         },
         {
-          "path": "dist/assets/index-CBGGs_S3.js",
+          "path": "dist/assets/index-CZvzTFST.js",
           "size": 159189,
           "checksum": "sha256:e591f2217794836554c3508dfbc1ab638faa4fb3c2e25059b93c0ab902efb6ff"
         }

@@ -489,4 +489,23 @@ export class FileModule {
             data,
         });
     }
+
+    async getExtraFileList(libraryId: string, fileId: string | number): Promise<string[]> {
+        return await this.httpClient.get<string[]>(
+            `/api/files/extra/${encodeURIComponent(libraryId)}/${encodeURIComponent(String(fileId))}`
+        );
+    }
+
+    async getExtraFile(libraryId: string, fileId: string | number, fileName: string): Promise<Blob> {
+        return await this.httpClient.download(this.getExtraFilePath(libraryId, fileId, fileName));
+    }
+
+    getExtraFileUrl(libraryId: string, fileId: string | number, fileName: string): string {
+        return this.httpClient.getUrl(this.getExtraFilePath(libraryId, fileId, fileName));
+    }
+
+    private getExtraFilePath(libraryId: string, fileId: string | number, fileName: string): string {
+        const encodedName = fileName.replace(/\\/g, '/').split('/').map(encodeURIComponent).join('/');
+        return `/api/files/extra/${encodeURIComponent(libraryId)}/${encodeURIComponent(String(fileId))}/${encodedName}`;
+    }
 }

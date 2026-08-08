@@ -675,6 +675,21 @@ export class MiraSDKService {
     }
   }
 
+  async getExtraFileList(libraryId: string, fileId: string): Promise<string[]> {
+    if (!this.client) throw new Error('Not connected to Mira server')
+    return await this.client.files().getExtraFileList(libraryId, fileId)
+  }
+
+  async getExtraFile(libraryId: string, fileId: string, fileName: string): Promise<Blob> {
+    if (!this.client) throw new Error('Not connected to Mira server')
+    return await this.client.files().getExtraFile(libraryId, fileId, fileName)
+  }
+
+  getExtraFileUrl(libraryId: string, fileId: string, fileName: string): string {
+    if (!this.client) throw new Error('Not connected to Mira server')
+    return this.client.files().getExtraFileUrl(libraryId, fileId, fileName)
+  }
+
   async writeFile(
     libraryId: string,
     fileId: string,
