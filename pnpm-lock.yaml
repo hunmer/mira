@@ -359,6 +359,9 @@ importers:
       colorthief:
         specifier: ^2.6.0
         version: 2.7.0
+      cropper-next-vue:
+        specifier: ^0.3.1
+        version: 0.3.1(vue@3.5.13(typescript@5.7.3))
       electron-log:
         specifier: ^5.4.3
         version: 5.4.4
@@ -3950,6 +3953,12 @@ packages:
 
   crelt@1.0.7:
     resolution: {integrity: sha512-aK6BbWfhf4U/wCcLHKPJl/xa6VkVstRaPywWtMKGwuOLc/wZTyQYuoxgvZnNsBvv7Kg3YTBQYYBCggcviQczuA==}
+
+  cropper-next-vue@0.3.1:
+    resolution: {integrity: sha512-B80WRLPavJ/xAjDEofPWLEqnMy99yzXy+Kpak3wMFf+X/TqebvhvBL3fM0P5ZHLRq0v9k0qSAqFjukBhHc3XZA==}
+    engines: {node: '>=22.0.0'}
+    peerDependencies:
+      vue: ^3.0.0
 
   cross-dirname@0.1.0:
     resolution: {integrity: sha512-+R08/oI0nl3vfPcqftZRpytksBXDzOUveBq/NBVx0sUp1axwzPQrKinNx5yd5sxPu8j1wIy8AfnVQ+5eFdha6Q==}
@@ -12023,6 +12032,10 @@ snapshots:
   create-require@1.1.1: {}
 
   crelt@1.0.7: {}
+
+  cropper-next-vue@0.3.1(vue@3.5.13(typescript@5.7.3)):
+    dependencies:
+      vue: 3.5.13(typescript@5.7.3)
 
   cross-dirname@0.1.0:
     optional: true

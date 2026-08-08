@@ -8,6 +8,7 @@ export class FileRoutes {
     private router: Router;
     private backend: MiraServer;
     private upload!: multer.Multer;
+    private coverUpload!: multer.Multer;
 
     constructor(backend: MiraServer) {
         this.backend = backend;
@@ -37,6 +38,10 @@ export class FileRoutes {
             limits: {
                 fileSize: 2048 * 1024 * 1024, // 2GB per file
             }
+        });
+        this.coverUpload = multer({
+            storage: multer.memoryStorage(),
+            limits: { fileSize: 10 * 1024 * 1024 },
         });
     }
 
@@ -313,6 +318,97 @@ export class FileRoutes {
             } catch (err) {
                 console.error('Error serving thumbnail:', err);
                 res.status(500).send('Internal server error');
+            }
+        });
+
+        // 覆盖素材缩略图；客户端裁切组件统一导出 PNG。
+        this.router.post('/cover/:libraryId/:id', this.coverUpload.single('cover'), async (req: Request, res: Response) => {
+            try {
+                const { libraryId, id } = req.params;
+                const fileId = Number(id);
+                const cover = req.file;
+                if (!Number.isInteger(fileId) || fileId <= 0 || !cover) {
+                    return res.status(400).json({ code: 400, message: 'Valid file id and cover are required' });
+                }
+                if (!cover.buffer.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) {
+                    return res.status(400).json({ code: 400, message: 'Cover must be a PNG image' });
+                }
+
+                const obj = this.backend.libraries!.getLibrary(libraryId);
+                if (!obj) return res.status(404).json({ code: 404, message: 'Library not found' });
+                const item = await obj.libraryService.getFile(fileId);
+                if (!item) return res.status(404).json({ code: 404, message: 'File not found' });
+
+                const thumbPath = await obj.libraryService.getItemThumbPath(item, { isNetworkImage: false });
+                await fs.promises.mkdir(path.dirname(thumbPath), { recursive: true });
+                await fs.promises.writeFile(thumbPath, cover.buffer);
+                await obj.libraryService.updateFile(fileId, { thumb: 1 });
+
+                const result = await obj.libraryService.getFile(fileId);
+                result.thumb = await obj.libraryService.getItemThumbPath(result, { isUrlFile: true });
+                this.backend.webSocketServer?.broadcastLibraryEvent(libraryId, 'thumbnail::generated', result);
+                res.json({ code: 0, message: 'Cover updated', data: result });
+            } catch (error) {
+                console.error('Error setting file cover:', error);
+                res.status(500).json({ code: 500, message: 'Failed to set cover' });
+            }
+        });
+
+        // JIT HLS 播放列表：只描述时间轴，分片在播放器请求时生成
+        this.router.get('/preview/:libraryId/:fileId/index.m3u8', async (req: Request, res: Response) => {
+            try {
+                const { libraryId, fileId } = req.params;
+                const obj = this.backend.libraries!.getLibrary(libraryId);
+                if (!obj) return res.status(404).send('Library not found');
+                const item = await obj.libraryService.getFile(parseInt(fileId, 10));
+                if (!item) return res.status(404).send('File not found');
+                const filePath = await obj.libraryService.getItemFilePath(item);
+                if (!filePath || !fs.existsSync(filePath)) return res.status(404).send('File not found');
+
+                const tokenQuery = typeof req.query.token === 'string'
+                    ? `?token=${encodeURIComponent(req.query.token)}`
+                    : '';
+                const playlist = await this.backend.thumbnailService.getHlsPlaylist(
+                    filePath,
+                    path.join(this.backend.dataPath, 'temp', 'previews'),
+                    `${libraryId}:${fileId}`,
+                    tokenQuery,
+                );
+                res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
+                res.setHeader('Cache-Control', 'private, max-age=3600');
+                res.send(playlist);
+            } catch (err) {
+                console.error('Error generating HLS playlist:', err);
+                res.status(500).send('HLS playlist generation failed');
+            }
+        });
+
+        // JIT HLS 分片：按进度条请求的序号转换，完成后从 temp 缓存流式返回
+        this.router.get('/preview/:libraryId/:fileId/segment/:segment.ts', async (req: Request, res: Response) => {
+            try {
+                const { libraryId, fileId, segment } = req.params;
+                const obj = this.backend.libraries!.getLibrary(libraryId);
+                if (!obj) return res.status(404).send('Library not found');
+                const item = await obj.libraryService.getFile(parseInt(fileId, 10));
+                if (!item) return res.status(404).send('File not found');
+                const filePath = await obj.libraryService.getItemFilePath(item);
+                if (!filePath || !fs.existsSync(filePath)) return res.status(404).send('File not found');
+
+                const segmentPath = await this.backend.thumbnailService.getHlsSegmentPath(
+                    filePath,
+                    path.join(this.backend.dataPath, 'temp', 'previews'),
+                    `${libraryId}:${fileId}`,
+                    Number(segment),
+                );
+                const stat = await fs.promises.stat(segmentPath);
+                res.setHeader('Content-Type', 'video/mp2t');
+                res.setHeader('Content-Length', stat.size);
+                res.setHeader('Cache-Control', 'private, max-age=86400');
+                fs.createReadStream(segmentPath).pipe(res);
+            } catch (err) {
+                if (err instanceof RangeError) return res.status(400).send(err.message);
+                console.error('Error generating HLS segment:', err);
+                res.status(500).send('HLS segment generation failed');
             }
         });
 
@@ -915,7 +1011,17 @@ export class FileRoutes {
             '.html': 'text/html',
             '.json': 'application/json',
             '.mp4': 'video/mp4',
+            '.m4v': 'video/mp4',
+            '.mov': 'video/quicktime',
+            '.avi': 'video/x-msvideo',
+            '.webm': 'video/webm',
+            '.mkv': 'video/x-matroska',
             '.mp3': 'audio/mpeg',
+            '.m4a': 'audio/mp4',
+            '.wav': 'audio/wav',
+            '.flac': 'audio/flac',
+            '.aac': 'audio/aac',
+            '.ogg': 'audio/ogg',
             '.zip': 'application/zip',
             '.doc': 'application/msword',
             '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',

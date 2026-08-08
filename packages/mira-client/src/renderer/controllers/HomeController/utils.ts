@@ -1,5 +1,5 @@
 import type { FileInfo } from '../../../shared/types'
-import { CONVERTED_IMAGE_EXTENSIONS } from '../../utils/fileUtils'
+import { AUDIO_EXTENSIONS, CONVERTED_IMAGE_EXTENSIONS, VIDEO_EXTENSIONS } from '../../utils/fileUtils'
 
 /**
  * 工具方法模块
@@ -19,9 +19,9 @@ export class HomeControllerUtils {
     const extension = this.getFileExtension(name)
     if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp', 'ico', ...CONVERTED_IMAGE_EXTENSIONS].includes(extension)) {
       return 'image'
-    } else if (/\.(mp4|avi|mov|wmv|flv|webm|mkv)$/i.test(name)) {
+    } else if (VIDEO_EXTENSIONS.includes(extension)) {
       return 'video'
-    } else if (/\.(mp3|wav|flac|aac|ogg|wma)$/i.test(name)) {
+    } else if (AUDIO_EXTENSIONS.includes(extension)) {
       return 'audio'
     } else {
       return 'document'
@@ -34,12 +34,10 @@ export class HomeControllerUtils {
    * @returns 文件类型
    */
   static getFileTypeFromInfo(item: FileInfo): 'image' | 'video' | 'audio' | 'document' | 'folder' {
-    if (!item.mimeType) return 'document'
-
-    if (item.mimeType.startsWith('image/')) return 'image'
-    if (item.mimeType.startsWith('video/')) return 'video'
-    if (item.mimeType.startsWith('audio/')) return 'audio'
-    return 'document'
+    if (item.mimeType?.startsWith('image/')) return 'image'
+    if (item.mimeType?.startsWith('video/')) return 'video'
+    if (item.mimeType?.startsWith('audio/')) return 'audio'
+    return this.getFileType(item.name)
   }
 
   /**

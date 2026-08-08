@@ -7,6 +7,12 @@
 - Actions taken:
   - Read the user-provided JIT HLS reference implementation.
   - Chose system FFmpeg CLI with temp-cache output and no static binary package.
+  - Added `hls.js` for Chromium/Electron playback; installation reported only existing workspace peer/deprecation warnings.
+  - Client type-check remains blocked by the pre-existing `ServerEditDialog.vue:110` `AcceptableValue` mismatch.
+  - Real video smoke passed: 10 seconds produced 3 HLS segments; token query propagated to segment URIs; audio waveform thumbnail generated.
+  - Real audio-only HLS smoke passed: 5 seconds produced 2 MPEG-TS segments.
+  - Verified segment 2 starts at PTS `8.000000`; removed `-avoid_negative_ts make_zero` because it reset the seek offset.
+  - Persistent server is listening on port 8081; `/health` returned `status: ok` after the procm start attempt.
 
 ### Phase 8: Browser-safe Image Preview
 - **Status:** complete

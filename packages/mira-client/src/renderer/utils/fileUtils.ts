@@ -2,6 +2,9 @@ import type { FileInfo } from '../../shared/types'
 import { environment } from './index'
 
 export const CONVERTED_IMAGE_EXTENSIONS = ['tif', 'tiff', 'psd', 'psb', 'heic', 'heif', 'cr2', 'cr3', 'nef', 'arw', 'dng', 'orf', 'rw2', 'raf', 'jp2', 'j2k', 'jpc', 'exr', 'hdr', 'tga', 'pcx', 'dds', 'dcm', 'dpx', 'fits', 'eps', 'ai', 'cur', 'xpm', 'xbm']
+export const VIDEO_EXTENSIONS = ['mp4', 'mov', 'avi', 'mkv', 'flv', 'webm', 'wmv', 'm4v', 'mpg', 'mpeg', 'mts', 'm2ts', 'ts', '3gp']
+export const AUDIO_EXTENSIONS = ['mp3', 'm4a', 'wav', 'flac', 'aac', 'ogg', 'opus', 'wma', 'ape', 'alac']
+export const HLS_PREVIEW_EXTENSIONS = ['mov', 'avi', 'mkv', 'flv', 'wmv', 'm4v', 'mpg', 'mpeg', 'mts', 'm2ts', 'ts', '3gp', 'flac', 'aac', 'opus', 'wma', 'ape', 'alac']
 
 /**
  * 文件处理工具函数
@@ -60,6 +63,18 @@ export function getMediaFileUrl(file: FileInfo | undefined): string {
   return toFileUrl(getPreviewImageSource(file)) || ''
 }
 
+export function getMediaPreviewSource(file: FileInfo | undefined): string {
+  const extension = getFileExtension(file?.name || '')
+  const remoteSource = file?.path || file?.url
+  if (HLS_PREVIEW_EXTENSIONS.includes(extension) && remoteSource?.match(/^https?:\/\//)) {
+    const [url, query] = remoteSource.split('?', 2)
+    const previewUrl = url.replace('/api/files/file/', '/api/files/preview/')
+    if (previewUrl !== url) return `${previewUrl}/index.m3u8${query ? `?${query}` : ''}`
+  }
+  if (!environment.isElectron) return remoteSource || ''
+  return toFileUrl(file?.localFile || remoteSource) || ''
+}
+
 export function getCacheBustedPreviewImageSource(
   image: FileInfo | undefined,
   cacheKey?: string | number
@@ -94,13 +109,11 @@ export function getFileType(filename: string): 'image' | 'video' | 'audio' | 'do
   const ext = getFileExtension(filename)
   
   const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'ico', ...CONVERTED_IMAGE_EXTENSIONS]
-  const videoExts = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv', '3gp']
-  const audioExts = ['mp3', 'wav', 'flac', 'aac', 'ogg', 'wma', 'm4a']
   const documentExts = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'rtf']
   
   if (imageExts.includes(ext)) return 'image'
-  if (videoExts.includes(ext)) return 'video'
-  if (audioExts.includes(ext)) return 'audio'
+  if (VIDEO_EXTENSIONS.includes(ext)) return 'video'
+  if (AUDIO_EXTENSIONS.includes(ext)) return 'audio'
   if (documentExts.includes(ext)) return 'document'
   
   return 'other'

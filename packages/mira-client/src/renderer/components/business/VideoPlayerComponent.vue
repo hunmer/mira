@@ -39,9 +39,10 @@
 import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 // @ts-ignore
 import Plyr from 'plyr'
+import Hls from 'hls.js'
 import 'plyr/dist/plyr.css'
 import type { FileInfo } from '../../../shared/types'
-import { getMediaFileUrl } from '@renderer/utils/fileUtils'
+import { getMediaPreviewSource } from '@renderer/utils/fileUtils'
 
 interface Props {
   video?: FileInfo
@@ -68,6 +69,7 @@ let player: Plyr | null = null
 let loadVersion = 0
 let cleanupLoadListeners: (() => void) | null = null
 let initializingPlayer = false
+let hls: Hls | null = null
 
 // Plyr 配置选项
 const plyrOptions = {
@@ -159,19 +161,7 @@ const plyrOptions = {
 }
 
 // 绑定 Plyr 事件（只调用一次）
-const getVideoSrc = getMediaFileUrl
-
-const buildPlayerSource = (video: FileInfo) => ({
-  type: 'video' as const,
-  title: video.name,
-  sources: [
-    {
-      src: getVideoSrc(video),
-      type: video.mimeType || 'video/mp4',
-    }
-  ],
-  poster: video.thumbnailPath || undefined
-})
+const getVideoSrc = getMediaPreviewSource
 
 const removeLoadListeners = () => {
   cleanupLoadListeners?.()
@@ -248,9 +238,26 @@ const beginLoad = (video: HTMLVideoElement, currentVideo: FileInfo): boolean => 
   return true
 }
 
-const applyNativeSource = (video: HTMLVideoElement, currentVideo: FileInfo) => {
+const applySource = (video: HTMLVideoElement, currentVideo: FileInfo) => {
+  hls?.destroy()
+  hls = null
   video.poster = currentVideo.thumbnailPath || ''
-  video.src = getVideoSrc(currentVideo)
+  const src = getVideoSrc(currentVideo)
+  if (src.includes('.m3u8') && Hls.isSupported()) {
+    video.removeAttribute('src')
+    hls = new Hls({ enableWorker: true, lowLatencyMode: false })
+    hls.on(Hls.Events.ERROR, (_event, data) => {
+      if (!data.fatal) return
+      error.value = true
+      loading.value = false
+      emit('error', data)
+    })
+    hls.loadSource(src)
+    hls.attachMedia(video)
+    return
+  }
+  video.src = src
+  video.load()
 }
 
 const bindPlayerEvents = () => {
@@ -276,7 +283,8 @@ const updateSource = () => {
 
   if (!beginLoad(videoElement.value, props.video)) return
 
-  player.source = buildPlayerSource(props.video)
+  player.pause()
+  applySource(videoElement.value, props.video)
 }
 
 // 初始化 Plyr 播放器（只调用一次）
@@ -290,10 +298,9 @@ const initializePlayer = async () => {
 
     if (!beginLoad(videoElement.value, props.video)) return
 
-    applyNativeSource(videoElement.value, props.video)
+    applySource(videoElement.value, props.video)
     player = new Plyr(videoElement.value, plyrOptions)
     bindPlayerEvents()
-    videoElement.value.load()
   } catch (err) {
     console.error('Failed to initialize Plyr player:', err)
     error.value = true
@@ -329,6 +336,8 @@ onMounted(() => {
 onUnmounted(() => {
   loadVersion++
   removeLoadListeners()
+  hls?.destroy()
+  hls = null
 
   if (player) {
     player.destroy()

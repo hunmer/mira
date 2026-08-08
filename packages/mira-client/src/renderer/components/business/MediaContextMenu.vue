@@ -85,6 +85,11 @@
       />
     </PopoverContent>
   </Popover>
+
+  <CoverCropDialog
+    v-model:open="coverCropOpen"
+    :item="currentContextItem"
+  />
 </template>
 
 <script setup lang="ts">
@@ -100,6 +105,7 @@ import {
 } from '@/components/ui/context-menu'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import FolderTreeComponent from './FolderTreeComponent/FolderTreeComponent.vue'
+import CoverCropDialog from './CoverCropDialog.vue'
 import { useContextMenu } from './MediaGridComponent/composables/useContextMenu'
 import type { FileInfo } from '../../../shared/types'
 import type { MenuItem } from '@/renderer/types/menu'
@@ -125,10 +131,12 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<Emits>()
 
 const {
+  currentContextItem,
   contextMenuItems,
   handleContextMenu,
   folderPopoverOpen,
   tagPopoverOpen,
+  coverCropOpen,
   popoverPosition,
   folderTreeNodes,
   handleFolderSelect,

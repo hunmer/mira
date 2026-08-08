@@ -39,7 +39,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { miraSDKService } from '../services/MiraSDKService'
 import { useViewHistoryStore } from '../stores/viewHistory'
-import { CONVERTED_IMAGE_EXTENSIONS } from '../utils/fileUtils'
+import { AUDIO_EXTENSIONS, CONVERTED_IMAGE_EXTENSIONS, VIDEO_EXTENSIONS } from '../utils/fileUtils'
 
 // 导入预览组件
 import ImagePreview from '../components/preview/ImagePreview.vue'
@@ -69,12 +69,12 @@ const previewComponent = computed(() => {
   }
 
   // 视频文件
-  if (mimeType.startsWith('video/') || ['mp4', 'webm', 'ogg', 'avi', 'mov', 'wmv', 'flv', 'mkv'].includes(extension)) {
+  if (mimeType.startsWith('video/') || VIDEO_EXTENSIONS.includes(extension)) {
     return VideoPreview
   }
 
   // 音频文件
-  if (mimeType.startsWith('audio/') || ['mp3', 'wav', 'ogg', 'aac', 'flac', 'm4a'].includes(extension)) {
+  if (mimeType.startsWith('audio/') || AUDIO_EXTENSIONS.includes(extension)) {
     return AudioPreview
   }
 

@@ -113,6 +113,17 @@ export class FileModule {
         return await this.httpClient.download(`/api/files/download/${libraryId}/${fileId}`);
     }
 
+    /** 覆盖素材封面。 */
+    async setCover(libraryId: string, fileId: string | number, cover: Blob): Promise<FileData> {
+        const formData = new FormData();
+        formData.append('cover', new File([cover], 'cover.png', { type: 'image/png' }));
+        const response = await this.httpClient.upload<{ data: FileData }>(
+            `/api/files/cover/${encodeURIComponent(libraryId)}/${fileId}`,
+            formData
+        );
+        return response.data;
+    }
+
     /**
      * 覆盖写入文件内容（保留文件 ID、目录和元数据）。
      */

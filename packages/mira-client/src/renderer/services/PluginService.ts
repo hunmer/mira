@@ -437,7 +437,7 @@ export class PluginService {
   public async installMarketplacePlugin(marketUrl: string, entry: MarketplacePluginEntry): Promise<BaseResponse & { cancelled?: boolean }> {
     try {
       if (!this.isElectronEnvironment) {
-        return { success: false, message: '插件市场安装仅在 Electron 环境可用' }
+        return await this.installMarketplacePluginForWeb(marketUrl, entry)
       }
 
       // entry 来自 Pinia 响应式状态，是 Vue 的 Proxy；Electron IPC 的 structured
@@ -451,6 +451,80 @@ export class PluginService {
         await this.discoverAndLoadPlugins()
       }
       return result
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      return { success: false, message: errorMessage }
+    }
+  }
+
+  /**
+   * Web 环境无法写入 pluginsDirectory，改为保存远程插件配置并通过
+   * scriptManager 的动态 script 注入加载入口脚本。
+   */
+  private async installMarketplacePluginForWeb(
+    marketUrl: string,
+    entry: MarketplacePluginEntry
+  ): Promise<BaseResponse> {
+    const base = (marketUrl || '').trim().replace(/\/+$/, '')
+    if (!base) return { success: false, message: '市场源地址为空' }
+
+    try {
+      const directory = entry.directory.replace(/^\/+|\/+$/g, '')
+      const marketOrigin = new URL(base)
+      if (!['http:', 'https:'].includes(marketOrigin.protocol) || !directory || directory.includes('..')) {
+        return { success: false, message: '市场源地址或插件目录不合法' }
+      }
+      const pluginUrl = `${base}/${directory}`
+      const manifestResponse = await fetch(`${pluginUrl}/plugin.json`, { cache: 'no-store' })
+      if (!manifestResponse.ok) {
+        return { success: false, message: `拉取插件配置失败 (${manifestResponse.status})` }
+      }
+
+      const manifest = (await manifestResponse.json()) as Partial<LocalPluginConfig>
+      const pluginId = manifest.pluginId || entry.pluginId
+      if (pluginId !== entry.pluginId) {
+        return { success: false, message: '插件配置中的 pluginId 与市场条目不一致' }
+      }
+      const index = manifest.index || 'index.js'
+      if (!/^[-\w./]+$/.test(index) || index.includes('..')) {
+        return { success: false, message: '插件入口文件路径不合法' }
+      }
+
+      const config: OnlinePluginConfig = {
+        pluginName: manifest.pluginName || entry.pluginName,
+        pluginId,
+        priority: manifest.priority ?? 0,
+        version: manifest.version || entry.version,
+        index,
+        icon: manifest.icon,
+        tags: manifest.tags || entry.tags || [],
+        category: manifest.category || entry.category,
+        description: manifest.description || entry.description,
+        author: manifest.author || entry.author,
+        homepage: manifest.homepage || entry.homepage,
+        enable: manifest.enable ?? false,
+        config: manifest.config || {},
+        hotkey: manifest.hotkey || {},
+        events: manifest.events || [],
+        dependencies: manifest.dependencies || [],
+        permissions: manifest.permissions,
+        minAppVersion: manifest.minAppVersion || entry.minAppVersion,
+        platform: manifest.platform || entry.platform,
+        actualDirectory: pluginUrl,
+        url: pluginUrl,
+        isOnline: true,
+        lastUpdated: new Date().toISOString()
+      }
+
+      this.onlinePlugins.set(pluginId, config)
+      this.plugins.set(pluginId, {
+        config,
+        status: 'loaded',
+        directory: pluginUrl,
+        context: this.createPluginContext(config)
+      })
+      await this.saveOnlinePluginsToStorage()
+      return { success: true, message: 'Web plugin installed successfully' }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
       return { success: false, message: errorMessage }

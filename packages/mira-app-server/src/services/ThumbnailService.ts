@@ -263,7 +263,7 @@ export class ThumbnailService {
     if (meta.hasVideo) {
       args.push('-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2', '-c:v', 'libx264', '-preset', 'ultrafast', '-tune', 'zerolatency', '-pix_fmt', 'yuv420p', '-g', '48', '-force_key_frames', `expr:gte(t,n_forced*${HLS_SEGMENT_DURATION})`);
     }
-    args.push('-c:a', 'aac', '-b:a', '160k', '-output_ts_offset', String(start), '-avoid_negative_ts', 'make_zero', '-fflags', '+genpts', '-muxdelay', '0', '-f', 'mpegts', tempPath);
+    args.push('-c:a', 'aac', '-b:a', '160k', '-output_ts_offset', String(start), '-fflags', '+genpts', '-muxdelay', '0', '-f', 'mpegts', tempPath);
 
     const task = execFileAsync(this.ffmpegPath, args, { windowsHide: true, maxBuffer: 1024 * 1024 * 8 })
       .then(async () => {

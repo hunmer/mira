@@ -96,7 +96,11 @@ export const pluginSystem = {
 export function initializePluginSystem() {
   // 将插件系统暴露到全局
   if (typeof window !== 'undefined') {
-    (window as any).pluginSystem = pluginSystem
+    // instanceManager 会先建立包含插件注册、贡献和文件格式 API 的完整对象；
+    // DOMContentLoaded 触发时不能再用精简核心对象覆盖它。
+    if (!(window as any).pluginSystem) {
+      (window as any).pluginSystem = pluginSystem
+    }
   }
   
   // 页面卸载时清理所有插件

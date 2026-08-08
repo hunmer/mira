@@ -685,6 +685,11 @@ export class MiraSDKService {
     return await this.client.files().writeFile(libraryId, fileId, content, options)
   }
 
+  async setFileCover(libraryId: string, fileId: string, cover: Blob): Promise<any> {
+    if (!this.client) throw new Error('Not connected to Mira server')
+    return await this.client.files().setCover(libraryId, fileId, cover)
+  }
+
   async deleteFile(libraryId: string, fileId: string, moveToRecycleBin: boolean = true): Promise<BaseResponse> {
     if (!this.client) throw new Error('Not connected to Mira server')
 

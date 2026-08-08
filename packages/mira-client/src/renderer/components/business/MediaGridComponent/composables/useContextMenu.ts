@@ -29,6 +29,7 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
   const currentContextItem = ref<FileInfo | null>(null)
   const folderPopoverOpen = ref(false)
   const tagPopoverOpen = ref(false)
+  const coverCropOpen = ref(false)
   const popoverPosition = ref({ x: 0, y: 0 })
   const tagStore = useTagStore()
   const folderStore = useFolderStore()
@@ -245,6 +246,13 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
         })
       },
       {
+        label: '设置封面',
+        icon: 'image',
+        command: () => runWithCurrentItem(() => {
+          coverCropOpen.value = true
+        })
+      },
+      {
         separator: true
       },
       ...([
@@ -285,6 +293,7 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
     handleContextMenu,
     folderPopoverOpen,
     tagPopoverOpen,
+    coverCropOpen,
     popoverPosition,
     folderTreeNodes,
     handleFolderSelect,

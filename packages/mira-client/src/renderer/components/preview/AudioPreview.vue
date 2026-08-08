@@ -8,7 +8,7 @@
 
       <audio
         v-if="audioUrl"
-        :src="audioUrl"
+        ref="audioElement"
         controls
         preload="metadata"
         @error="onAudioError"
@@ -25,7 +25,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
+import Hls from 'hls.js'
+import { getMediaPreviewSource } from '../../utils/fileUtils'
 
 interface Props {
   fileInfo: any
@@ -35,22 +37,33 @@ const props = defineProps<Props>()
 const emit = defineEmits<{
   error: [message: string]
 }>()
+const audioElement = ref<HTMLAudioElement | null>(null)
+let hls: Hls | null = null
 
 const audioUrl = computed(() => {
-  if (!props.fileInfo) return ''
-  
-  // 如果有直接的URL
-  if (props.fileInfo.url) {
-    return props.fileInfo.url
-  }
-  
-  // 临时使用文件路径
-  if (props.fileInfo.path) {
-    return props.fileInfo.path
-  }
-  
-  return ''
+  return getMediaPreviewSource(props.fileInfo)
 })
+
+watch(audioUrl, async (url) => {
+  await nextTick()
+  const audio = audioElement.value
+  if (!audio || !url) return
+  hls?.destroy()
+  hls = null
+  if (url.includes('.m3u8') && Hls.isSupported()) {
+    hls = new Hls({ enableWorker: true, lowLatencyMode: false })
+    hls.on(Hls.Events.ERROR, (_event, data) => {
+      if (data.fatal) emit('error', '音频流加载失败')
+    })
+    hls.loadSource(url)
+    hls.attachMedia(audio)
+  } else {
+    audio.src = url
+    audio.load()
+  }
+}, { immediate: true })
+
+onUnmounted(() => hls?.destroy())
 
 const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return '0 B'

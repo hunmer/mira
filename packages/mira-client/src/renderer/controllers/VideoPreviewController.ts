@@ -2,6 +2,7 @@ import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useMediaStore } from '../stores/media'
 import type { FileInfo } from '../../shared/types'
+import { getFileType } from '../utils/fileUtils'
 
 export class VideoPreviewController {
   private router = useRouter()
@@ -21,9 +22,7 @@ export class VideoPreviewController {
 
   // 视频数据 - 从媒体存储获取
   public videos = computed<FileInfo[]>(() => {
-    return this.mediaStore.files.filter((file: FileInfo) => 
-      file.mimeType.startsWith('video/')
-    )
+    return this.mediaStore.files.filter((file: FileInfo) => getFileType(file.name) === 'video')
   })
 
   constructor() {
