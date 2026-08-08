@@ -68,15 +68,18 @@ const fileInput = ref<HTMLInputElement>()
 const imageUrl = ref('')
 const uploading = ref(false)
 const libraryStore = useLibraryStore()
+let objectUrl = ''
 
 const releaseImage = () => {
-  if (imageUrl.value) URL.revokeObjectURL(imageUrl.value)
+  if (objectUrl) URL.revokeObjectURL(objectUrl)
+  objectUrl = ''
   imageUrl.value = ''
   if (fileInput.value) fileInput.value.value = ''
 }
 
 watch(() => props.open, open => {
-  if (!open) releaseImage()
+  if (open) imageUrl.value = props.item?.thumbnailPath || ''
+  else releaseImage()
 })
 onBeforeUnmount(releaseImage)
 
@@ -86,7 +89,8 @@ const onFileChange = (event: Event) => {
   const file = (event.target as HTMLInputElement).files?.[0]
   if (!file) return
   releaseImage()
-  imageUrl.value = URL.createObjectURL(file)
+  objectUrl = URL.createObjectURL(file)
+  imageUrl.value = objectUrl
 }
 
 const saveCover = async () => {

@@ -87,34 +87,56 @@ export async function renderIdleFrame(
 
   try {
     const atlas = await loadTextureAtlas(ck, atlasPath, (p: string) => Promise.resolve(readFile(p)))
-    const skeletonData = await loadSkeletonData(srcPath, atlas, (p: string) => Promise.resolve(readFile(p)))
-
-    const drawable = new SkeletonDrawable(skeletonData)
-    const skel = drawable.skeleton
-
-    // 选动画：优先 idle，否则首个
+    const readSkeleton = loadSkeletonData
+      ? () => loadSkeletonData(srcPath, atlas, (p: string) => Promise.resolve(readFile(p)))
+      : async () => {
+        const loader = new spine.AtlasAttachmentLoader(atlas)
+        const bytes = readFile(srcPath)
+        if (path.extname(srcPath).toLowerCase() === '.json') {
+          return new spine.SkeletonJson(loader).readSkeletonData(new TextDecoder().decode(bytes))
+        }
+        return new spine.SkeletonBinary(loader).readSkeletonData(bytes)
+      }
+    const skeletonData = await readSkeleton()
     const animNames = skeletonData.animations.map((a: any) => a.name)
     const target = animNames.includes(animation) ? animation : animNames[0]
     if (!target) throw new Error('骨架无动画')
-    drawable.animationState.setAnimation(0, target, true)
+
+    let skel: any
+    let updateSkeleton: () => void
+    if (SkeletonDrawable) {
+      const drawable = new SkeletonDrawable(skeletonData)
+      skel = drawable.skeleton
+      drawable.animationState.setAnimation(0, target, true)
+      updateSkeleton = () => drawable.update(0)
+    } else {
+      const state = new spine.AnimationState(new spine.AnimationStateData(skeletonData))
+      skel = new spine.Skeleton(skeletonData)
+      state.setAnimation(0, target, true)
+      updateSkeleton = () => {
+        state.update(0)
+        state.apply(skel)
+        skel.updateWorldTransform(spine.Physics.update)
+      }
+    }
 
     // 适配画布：让角色居中
     skel.x = width / 2
     skel.y = height * 0.85
     // 先 update 一次让 skeleton 计算 bounds，再按 bounds 缩放
-    drawable.update(0)
+    updateSkeleton()
 
     // bounds 适配缩放
     const bounds = computeBounds(ck, skel, width, height)
     skel.scaleX = bounds.scale
     skel.scaleY = bounds.scale
     // 缩放后重新 update 让 bounds 生效
-    drawable.update(0)
+    updateSkeleton()
 
     const renderer = new SkeletonRenderer(ck)
     const canvas = surface.getCanvas()
     canvas.clear(parseColor(ck, background))
-    renderer.render(canvas, drawable)
+    renderer.render(canvas, skel)
 
     const image = surface.makeImageSnapshot()
     const pngBytes = image.encodeToBytes()

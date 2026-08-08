@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-08T11:00:21.983Z",
+  "generatedAt": "2026-08-08T12:00:07.813Z",
   "plugins": [
     {
       "pluginId": "d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70",
@@ -260,6 +260,80 @@
           "path": "dist/assets/index-BcbA4H_R.css",
           "size": 60938,
           "checksum": "sha256:eb8ffc4f7d59e3da4c4641ab54f50a2e18a9d40d83ebc202a1bec01f0b90b418"
+        }
+      ]
+    },
+    {
+      "pluginId": "ea4f60c2-0e0d-41e2-b224-f436fbb4487b",
+      "pluginName": "PSD 分层预览",
+      "version": "1.0.0",
+      "description": "为 .psd/.psb 文件提供浏览器本地分层预览（图层树显隐、可见性切换、normal + opacity 合成），缩略图由服务端渲染。",
+      "author": "Mira Team",
+      "homepage": "https://github.com/mira-team/mira-psd-viewer",
+      "category": "development",
+      "tags": [
+        "PSD",
+        "PSB",
+        "Photoshop",
+        "图层",
+        "分层预览"
+      ],
+      "minAppVersion": "1.0.0",
+      "platform": [
+        "win32",
+        "darwin",
+        "linux"
+      ],
+      "directory": "plugins/psd-viewer",
+      "icon": null,
+      "readme": "README.md",
+      "size": 548197,
+      "checksum": "sha256:e0461de1303eb5f019bdbe597c5d80b573afbf7e4f46f08c6f420711b15eae0b",
+      "files": [
+        {
+          "path": "README.md",
+          "size": 2694,
+          "checksum": "sha256:763e3c385e9a436a2adf66cc79801f1e91cb705f07dff54d03ee29c47f3ecf0e"
+        },
+        {
+          "path": "plugin.json",
+          "size": 701,
+          "checksum": "sha256:0d4bc553a505b15eece71d683653759a296bc004b0c65a3dec145319ae75b046"
+        },
+        {
+          "path": "package.json",
+          "size": 657,
+          "checksum": "sha256:ad8b34948fe980a4d887929744f247db89fdb08eb6f8aae32b7c051e67a7b44f"
+        },
+        {
+          "path": "index.js",
+          "size": 5733,
+          "checksum": "sha256:e1817dfc18b4c66c9d6fe95ed7bf72357a64113ce654ec4f81a66d94a3797156"
+        },
+        {
+          "path": "dist/index.html",
+          "size": 417,
+          "checksum": "sha256:b5f07eace6f2d24201ce85cea898227d9dcd7d78e435432f474dbefa4250226e"
+        },
+        {
+          "path": "dist/assets/psdWorker-oZFAK-O5.js",
+          "size": 197289,
+          "checksum": "sha256:655f5750b10134c3baec7b5c7d3498657c8a536c01abb1ce630dc1a2da7ff592"
+        },
+        {
+          "path": "dist/assets/index-jLWidxh6.js",
+          "size": 111369,
+          "checksum": "sha256:1efcdadd1f6f0d07981366b2417051ff260ca4c3de9ff799c7026c537dab8be7"
+        },
+        {
+          "path": "dist/assets/index-DE_Myy-p.js",
+          "size": 195891,
+          "checksum": "sha256:2625446e0be819c34372c6ffa18b61e1a3e5dd4564a7fcede7cd391b5307f356"
+        },
+        {
+          "path": "dist/assets/index-B0TL7tWw.css",
+          "size": 33446,
+          "checksum": "sha256:fcf21c53fb1d1ef348aba43415f3fae84ab6263228ca255c86bc9567484e878c"
         }
       ]
     }

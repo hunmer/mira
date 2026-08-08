@@ -18,7 +18,7 @@
     "render": "node dist/renderIdle.js"
   },
   "dependencies": {
-    "@esotericsoftware/spine-canvaskit": "^4.2.0",
+    "@esotericsoftware/spine-canvaskit": "4.2.48",
     "canvaskit-wasm": "^0.41.1",
     "yauzl": "^3.2.0"
   },
