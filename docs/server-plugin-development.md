@@ -88,6 +88,8 @@ unregister();
 
 需要主动处理文件时调用 `pluginManager.processFile(filePath, { mimeType, ... })`。缩略图回调会自动接入现有 `ThumbnailService` 的文件创建和待处理扫描流程；`thumbnailExtensions` 可限制哪些格式真正进入缩略图生成器。
 
+使用 `render-glb` 时，插件安装后必须执行原生依赖构建（`npm rebuild gl --build-from-source`）。Windows 需要可用的 C++ 编译工具链；Linux 无显示环境还需要 Mesa/Xvfb。
+
 ## package.json
 
 不依赖 mira 包：
