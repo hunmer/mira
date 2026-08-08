@@ -2,7 +2,7 @@
 
 市场示例插件，使用 Vue 3 + TresJS + Three.js + shadcn-vue，注册 `glb` / `gltf` 自定义格式处理。
 
-- 媒体网格缩略图优先通过 iframe 加载 `dist/index.html?embed=1`，显示真实 TresJS 模型；加载失败或超时后回退服务端 PNG 缩略图。
+- 媒体网格缩略图显示服务端生成的 PNG；仅在 hovercard 打开时通过 iframe 加载 `dist/index.html?embed=1`，加载失败或超时后回退 PNG。
 - 双击文件打开独立预览窗口，提供完整的三栏式 3D 预览器。
 
 ## 预览器功能（v1.2）

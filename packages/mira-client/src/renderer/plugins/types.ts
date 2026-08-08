@@ -128,6 +128,7 @@ export interface PluginFileFormat {
   extensions?: string[]
   mimeTypes?: string[]
   renderThumbnail?: (container: HTMLElement, file: FileInfo) => (() => void) | void
+  renderHoverCard?: (container: HTMLElement, file: FileInfo) => (() => void) | void
   open?: (file: FileInfo) => boolean | void | Promise<boolean | void>
 }
 

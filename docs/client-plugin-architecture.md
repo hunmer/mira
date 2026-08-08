@@ -306,7 +306,7 @@ unregister()
 
 ### 自定义文件格式（缩略图与详情打开）
 
-`registerFileFormat` 按文件扩展名或 MIME 类型匹配。`renderThumbnail` 获得宿主提供的 `div`，可以直接创建交互式 DOM、canvas，或在插件自己的构建产物中挂载 TresJS；返回的清理函数会在文件切换/组件卸载时调用。
+`registerFileFormat` 按文件扩展名或 MIME 类型匹配。`renderThumbnail` 获得宿主提供的 `div`，用于列表/网格中的静态缩略图；`renderHoverCard` 获得 hovercard 内容容器，用于按需创建交互式 DOM、canvas 或 iframe。两个钩子都可返回清理函数，宿主会在文件切换/组件卸载时调用。
 
 ```javascript
 const unregister = api.media.registerFileFormat({
@@ -314,9 +314,17 @@ const unregister = api.media.registerFileFormat({
   extensions: ['glb', 'gltf'],
   mimeTypes: ['model/gltf-binary', 'model/gltf+json'],
   renderThumbnail(container, file) {
+    const image = document.createElement('img')
+    image.src = file.thumbnailPath || ''
+    image.alt = file.name
+    image.style.cssText = 'width:100%;height:100%;object-fit:cover'
+    container.replaceChildren(image)
+    return () => container.replaceChildren()
+  },
+  renderHoverCard(container, file) {
+    // 仅 hovercard 打开时创建交互式预览（例如 iframe/WebGL）
     container.textContent = `3D: ${file.name}`
-    container.onclick = () => api.ui.showNotification('打开 3D 模型')
-    return () => { container.onclick = null }
+    return () => container.replaceChildren()
   },
   async open(file) {
     // 返回 true 表示插件已接管详情打开；false/undefined 继续使用宿主默认路由

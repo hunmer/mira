@@ -111,33 +111,13 @@
               </PopoverRoot>
 
               <!-- 预览放大镜按钮：hover 时显示，悬浮按钮弹出 hovercard 预览 -->
-              <HoverCard
-                :open-delay="200"
-                :close-delay="150"
-              >
-                <HoverCardTrigger as-child>
-                  <button
-                    class="absolute top-0.5 right-0.5 z-10 w-5 h-5 rounded-full bg-black/55 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-black/75 transition-opacity"
-                    title="预览"
-                    @click.stop
-                    @pointerdown.stop
-                  >
-                    <span class="material-icons" style="font-size: 12px;">search</span>
-                  </button>
-                </HoverCardTrigger>
-                <HoverCardContent
-                  side="right"
-                  align="center"
-                  :side-offset="8"
-                  class="w-auto max-w-[480px] max-h-[320px] border-0 bg-transparent p-0 shadow-none"
-                >
-                  <img
-                    :src="getPreviewSrc(item)"
-                    :alt="item.name"
-                    class="block max-w-[480px] max-h-[320px] w-auto h-auto object-contain rounded-lg ring-1 ring-black/10 shadow-lg"
-                  />
-                </HoverCardContent>
-              </HoverCard>
+              <MediaPreviewHoverCard
+                :item="item"
+                button-class="absolute top-0.5 right-0.5 z-10 w-5 h-5 rounded-full bg-black/55 text-white"
+                icon-class="text-[12px]"
+                side="right"
+                align="center"
+              />
             </div>
           </TableCell>
 
@@ -227,11 +207,11 @@ import VideoPreviewPopover from '@renderer/components/common/VideoPreviewPopover
 import SelectionBox from '@renderer/components/common/SelectionBox.vue'
 import MediaContextMenu from './MediaContextMenu.vue'
 import MediaThumbnail from '@renderer/components/common/MediaThumbnail.vue'
-import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card'
+import MediaPreviewHoverCard from '@renderer/components/common/MediaPreviewHoverCard.vue'
 import StatusImage from '@renderer/components/common/StatusImage.vue'
 import { useVideoPreview } from '@renderer/composables/useVideoPreview'
 import type { FileInfo } from '../../../shared/types'
-import { getMediaFileUrl, getCacheBustedPreviewImageSource } from '@renderer/utils/fileUtils'
+import { getMediaFileUrl } from '@renderer/utils/fileUtils'
 import { useDeleteSelectedItems } from './MediaGridComponent/composables/useDeleteSelectedItems'
 import { useSettingsStore } from '@renderer/stores/settings'
 import { useFolderStore } from '@renderer/stores/folder'
@@ -418,7 +398,6 @@ const videoPreview = useVideoPreview({
 const getVideoUrl = getMediaFileUrl
 
 // hovercard 预览图：优先原图（带缓存破坏），保证清晰
-const getPreviewSrc = (item: FileInfo) => getCacheBustedPreviewImageSource(item) || item.thumbnailPath || item.url || ''
 
 const handleThumbnailHover = (data: FileInfo) => {
   if (getFileType(data) === 'video') {

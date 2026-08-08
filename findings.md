@@ -47,3 +47,9 @@
 
 ## Visual/Browser Findings
 - No browser or image inspection performed.
+
+## Hovercard-only 3D Preview
+- `renderThumbnail` was the reason every visible 3D tile created an iframe/WebGL context.
+- The existing `MediaPreviewContent.vue` is the shared hovercard content boundary; adding `renderHoverCard` there keeps plugin-specific DOM lifecycle centralized.
+- Grid, list, and waterfall views had duplicate image-only hovercard markup and now use `MediaPreviewHoverCard.vue`.
+- The 3D plugin only registers `renderHoverCard`; normal thumbnails stay on the host image pipeline and use server-generated PNG files.

@@ -53,6 +53,7 @@
 | Timestamp | Error | Attempt | Resolution |
 |-----------|-------|---------|------------|
 | 2026-08-08 | `ServerEditDialog.vue:110` `AcceptableValue` not assignable to `string | undefined` | 1 | Unrelated pre-existing type error; no change made |
+| 2026-08-08 | Final `node --check` path repeated the plugin directory | 1 | Re-ran with `index.js` from the plugin working directory; passed |
 
 ### Backend Process
 - Added `procm-commands.json` with `mira-app-server-dev`.
@@ -90,6 +91,12 @@
 - Added embed `postMessage` loaded/error events; plugin falls back to `thumbnailPath` on error or 30-second timeout.
 - Restored custom-format renderer priority in `MediaThumbnail.vue` and suppressed the empty-registry factory warning.
 - Plugin/host builds and deterministic iframe/fallback harnesses passed; client plugin bumped to `1.2.1`.
+
+### Hovercard-only 3D Preview
+- Added the generic `renderHoverCard` file-format hook.
+- Centralized grid/list/waterfall hovercards on `MediaPreviewHoverCard` and `MediaPreviewContent`.
+- Moved the 3D iframe renderer to hovercards; standard thumbnails now use the server PNG through `MediaThumbnail`.
+- Client production build, plugin production build, JavaScript syntax check, and `git diff --check` passed.
 
 ## 5-Question Reboot Check
 | Question | Answer |

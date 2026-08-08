@@ -4,7 +4,7 @@
 Add client and server plugin APIs for custom file formats, covering thumbnail/detail rendering and path-based backend processing, then document and verify the extension flow with a 3D-capable example where appropriate.
 
 ## Current Phase
-Phase 1
+Phase 6 complete
 
 ## Phases
 
@@ -39,6 +39,13 @@ Phase 1
 - [x] Complete planning records and hand off concise acceptance steps
 - **Status:** complete
 
+### Phase 6: Hovercard-only 3D Preview
+- [x] Add a generic custom hovercard renderer to the client file-format API
+- [x] Route grid/list/waterfall hovercards through shared preview content
+- [x] Move the 3D iframe renderer from thumbnails to hovercards
+- [x] Build the client and 3D plugin, then regenerate the marketplace index
+- **Status:** complete
+
 ## Key Questions
 1. Where are client and server plugin APIs constructed, activated, and disposed?
 2. What file metadata is available at thumbnail and detail-open time?
@@ -55,6 +62,7 @@ Phase 1
 | Error | Attempt | Resolution |
 |-------|---------|------------|
 | `mira-web` `vue-tsc` fails in existing `ServerEditDialog.vue:110` (`AcceptableValue` nullability) | 1 | Confirmed unrelated to changed files; server/client production build still passes |
+| `node --check` used a duplicated plugin-relative path during final verification | 1 | Re-ran from the plugin directory with `node --check "index.js"`; passed |
 
 ## Notes
 - Re-read this plan before API design and implementation.

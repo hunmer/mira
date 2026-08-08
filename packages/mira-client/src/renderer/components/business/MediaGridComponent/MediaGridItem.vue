@@ -72,34 +72,14 @@
       <!-- 注意：v-show 不能放在 <HoverCard> 上 —— HoverCard 根节点是 fragment（PopperRoot 仅 renderSlot），
            在 fragment 上应用指令会触发 "Runtime directive used on component with non-element root node" 警告且不生效。
            故放到真实 <button> 元素上。 -->
-      <HoverCard
-        :open-delay="200"
-        :close-delay="150"
-      >
-        <HoverCardTrigger as-child>
-          <button
-            v-show="!isVideoPlaying"
-            class="absolute top-0 right-0 z-10 h-7 w-7 rounded-bl-full bg-black/55 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-black/75 transition-opacity"
-            title="预览"
-            @click.stop
-            @pointerdown.stop
-          >
-            <span class="material-icons text-base">search</span>
-          </button>
-        </HoverCardTrigger>
-        <HoverCardContent
-          side="top"
-          align="end"
-          :side-offset="8"
-          class="w-auto max-w-[480px] max-h-[320px] border-0 bg-transparent p-0 shadow-none"
-        >
-          <img
-            :src="previewSrc"
-            :alt="item.name"
-            class="block max-w-[480px] max-h-[320px] w-auto h-auto object-contain rounded-lg ring-1 ring-black/10 shadow-lg"
-          />
-        </HoverCardContent>
-      </HoverCard>
+      <MediaPreviewHoverCard
+        v-if="!isVideoPlaying"
+        :item="item"
+        button-class="absolute top-0 right-0 z-10 h-7 w-7 rounded-bl-full bg-black/55 text-white"
+        icon-class="text-base"
+        side="top"
+        align="end"
+      />
 
       <!-- 选择框 -->
       <div
@@ -180,8 +160,7 @@
 import { computed, toRef } from 'vue'
 import type { FileInfo } from '../../../../shared/types'
 import MediaThumbnail from '@renderer/components/common/MediaThumbnail.vue'
-import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card'
-import { getCacheBustedPreviewImageSource } from '@renderer/utils/fileUtils'
+import MediaPreviewHoverCard from '@renderer/components/common/MediaPreviewHoverCard.vue'
 import { useMediaItem, type MediaItemEmits } from '@renderer/composables/useMediaItem'
 import { useSettingsStore } from '@renderer/stores/settings'
 import { useFolderStore } from '@renderer/stores/folder'
@@ -206,9 +185,6 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<Emits>()
-
-// hovercard 预览图：优先原图（带缓存破坏），保证清晰而非使用裁切缩略图
-const previewSrc = computed(() => getCacheBustedPreviewImageSource(props.item) || '')
 
 // 使用媒体项逻辑
 const {

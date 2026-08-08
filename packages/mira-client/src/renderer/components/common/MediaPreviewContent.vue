@@ -3,9 +3,11 @@
     class="media-preview-content flex items-center justify-center overflow-hidden rounded-lg bg-black"
     :style="{ width: width + 'px', height: height + 'px' }"
   >
+    <div v-if="customHoverCard" ref="customContainer" class="h-full w-full" />
+
     <!-- 图片预览：复用 MediaThumbnail（懒加载 / fallback / 缩略图更新事件）-->
     <MediaThumbnail
-      v-if="kind === 'image'"
+      v-else-if="kind === 'image'"
       :file-id="item.id"
       :file="item"
       :src="imageSrc"
@@ -61,6 +63,7 @@ import {
   getFileTypeIcon,
 } from '@renderer/utils/fileUtils'
 import { getExtIconUrl } from '@renderer/utils/extIconHelper'
+import { getPluginFileFormat } from '@renderer/plugins/instanceManager'
 
 interface Props {
   item: FileInfo
@@ -77,6 +80,21 @@ const props = withDefaults(defineProps<Props>(), {
   height: 320,
   muted: true,
 })
+
+const customContainer = ref<HTMLElement | null>(null)
+let customCleanup: (() => void) | void
+const customHoverCard = computed(() => getPluginFileFormat(props.item)?.renderHoverCard)
+
+function renderCustomHoverCard() {
+  customCleanup?.()
+  customCleanup = undefined
+  if (!customContainer.value || !customHoverCard.value) return
+  try {
+    customCleanup = customHoverCard.value(customContainer.value, props.item)
+  } catch (error) {
+    console.error('Plugin hovercard renderer failed:', error)
+  }
+}
 
 /** 按 mime 类型分发预览内容 */
 const kind = computed<'image' | 'video' | 'audio' | 'unknown'>(() => {
@@ -122,9 +140,15 @@ const onVideoError = (error: Event) => {
 
 // 挂载后给 Plyr 一拍初始化时间再播放
 onMounted(() => {
+  renderCustomHoverCard()
   if (kind.value === 'video') {
     nextTick(() => setTimeout(playVideo, 100))
   }
+})
+
+watch([customHoverCard, () => props.item.id], async () => {
+  await nextTick()
+  renderCustomHoverCard()
 })
 
 // 切换 item 时重置播放
@@ -138,6 +162,7 @@ watch(
 )
 
 onBeforeUnmount(() => {
+  customCleanup?.()
   pauseVideo()
 })
 </script>

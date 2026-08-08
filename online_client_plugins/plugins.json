@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-08T06:50:02.036Z",
+  "generatedAt": "2026-08-08T07:24:38.222Z",
   "plugins": [
     {
       "pluginId": "d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70",
@@ -25,13 +25,13 @@
       "directory": "plugins/mira-3d-format-preview",
       "icon": null,
       "readme": "README.md",
-      "size": 1149729,
-      "checksum": "sha256:a658f13a220d6fc133ff42fdc88c751c347f80beed104f48edd67a917c066539",
+      "size": 1149732,
+      "checksum": "sha256:654077976b3ce8027e92c1ff5fa867940e6be8e9e6d08d3c28af3ab802a7829c",
       "files": [
         {
           "path": "README.md",
-          "size": 2509,
-          "checksum": "sha256:cc73eabf1c7c26bccf8232dd35600aa15a6d9b5be6d586ad2dd888433f539a0a"
+          "size": 2512,
+          "checksum": "sha256:3877f0a25be0b6671c468766eb3990221e605d2d4a7884aac164d4741ffb90e9"
         },
         {
           "path": "plugin.json",
@@ -46,7 +46,7 @@
         {
           "path": "index.js",
           "size": 4468,
-          "checksum": "sha256:2c5da35311eea987add5c2cd0a45fc9d2afda6caca1a284307a23563e5502b4d"
+          "checksum": "sha256:dacb8c6a89ff128dd46db27a70f6ec53b109583852e8579b9f606c95404bd4ba"
         },
         {
           "path": "dist/index.html",

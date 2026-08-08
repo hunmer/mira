@@ -13,7 +13,7 @@
     return normalized
   }
 
-  function mountThumbnail(container, file) {
+  function mountHoverCard(container, file) {
     const fileUrl = toPreviewUrl(file.url || file.path || file.localFile || '')
     const thumbnailUrl = file.thumbnailPath || ''
     let timeoutId
@@ -90,7 +90,7 @@
         id: 'mira-3d-model',
         extensions: ['glb', 'gltf'],
         mimeTypes: ['model/gltf-binary', 'model/gltf+json'],
-        renderThumbnail: mountThumbnail,
+        renderHoverCard: mountHoverCard,
         open: (file) => {
           const w = window.electronAPI
           if (!w?.pluginWindow?.open) {
