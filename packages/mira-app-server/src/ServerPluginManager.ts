@@ -49,6 +49,38 @@ export interface ServerFileFormatHandler {
     thumbnail?: (srcPath: string, destPath: string) => Promise<void>;
     getExtraFileList?: (filePath: string, context?: Record<string, any>) => string[] | Promise<string[]>;
     getExtraFile?: (filePath: string, fileName: string, context?: Record<string, any>) => string | Promise<string>;
+    viewers?: ServerPreviewViewerDefinition[];
+}
+
+export interface ServerPreviewViewerContext {
+    libraryId: string;
+    fileId: string;
+    file: Record<string, any>;
+    filePath: string;
+    fileUrl: string;
+    getExtraFileUrl: (fileName: string) => string;
+}
+
+export interface ServerPreviewViewerDefinition {
+    viewerId: string;
+    title: string;
+    entry: string;
+    icon?: string;
+    priority?: number;
+    extensions?: string[];
+    mimeTypes?: string[];
+    getQuery?: (context: ServerPreviewViewerContext) => Record<string, unknown> | Promise<Record<string, unknown>>;
+}
+
+export interface ResolvedPreviewViewer {
+    viewerId: string;
+    pluginId: string;
+    pluginName: string;
+    serverPluginName: string;
+    title: string;
+    iframeUrl: string;
+    priority: number;
+    icon?: string;
 }
 
 export class ServerPluginManager {
@@ -249,6 +281,64 @@ export class ServerPluginManager {
 
     getFileFormatHandlers(): ServerFileFormatHandler[] {
         return Array.from(this.fileFormatHandlers.values()).map(({ handler }) => ({ ...handler }));
+    }
+
+    async getPreviewViewers(context: ServerPreviewViewerContext): Promise<ResolvedPreviewViewer[]> {
+        const extension = String(context.file.extension || path.extname(context.file.name || context.filePath)).replace(/^\./, '').toLowerCase();
+        const mimeType = String(context.file.mimeType || context.file.mime_type || '').toLowerCase();
+        const manifests = new Map(this.getLoadedWebPlugins().map(manifest => [manifest.serverPluginName, manifest]));
+        const resolved: ResolvedPreviewViewer[] = [];
+
+        for (const { pluginName, handler } of this.fileFormatHandlers.values()) {
+            const handlerMatches =
+                handler.extensions?.some(ext => ext.replace(/^\./, '').toLowerCase() === extension) ||
+                handler.mimeTypes?.some(mime => mime.toLowerCase() === mimeType);
+            if (!handlerMatches || !handler.viewers?.length) continue;
+
+            const manifest = manifests.get(pluginName);
+            if (!manifest) continue;
+
+            for (const viewer of handler.viewers) {
+                const viewerMatches =
+                    (!viewer.extensions?.length && !viewer.mimeTypes?.length) ||
+                    viewer.extensions?.some(ext => ext.replace(/^\./, '').toLowerCase() === extension) ||
+                    viewer.mimeTypes?.some(mime => mime.toLowerCase() === mimeType);
+                if (!viewerMatches) continue;
+
+                const webDir = path.resolve(this.getPluginWebDir(pluginName));
+                const entryPath = path.resolve(webDir, viewer.entry);
+                const relativeEntry = path.relative(webDir, entryPath);
+                if (relativeEntry.startsWith('..') || path.isAbsolute(relativeEntry) || !fs.existsSync(entryPath)) {
+                    console.warn(`Skipping invalid preview Viewer entry: ${pluginName}/${viewer.entry}`);
+                    continue;
+                }
+
+                try {
+                    const query = await viewer.getQuery?.(context) || {};
+                    const search = new URLSearchParams();
+                    for (const [key, value] of Object.entries(query)) {
+                        if (value !== undefined && value !== null && value !== '') search.set(key, String(value));
+                    }
+                    const encodedEntry = relativeEntry.split(path.sep).map(encodeURIComponent).join('/');
+                    const iframePath = `/server-plugins/${encodeURIComponent(context.libraryId)}/${encodeURIComponent(pluginName)}/${encodedEntry}`;
+                    const searchString = search.toString();
+                    resolved.push({
+                        viewerId: viewer.viewerId,
+                        pluginId: manifest.pluginId,
+                        pluginName: manifest.pluginName,
+                        serverPluginName: pluginName,
+                        title: viewer.title,
+                        iframeUrl: searchString ? `${iframePath}?${searchString}` : iframePath,
+                        priority: viewer.priority ?? (Number(manifest.priority) || 0),
+                        icon: viewer.icon,
+                    });
+                } catch (error) {
+                    console.warn(`Failed to resolve preview Viewer ${pluginName}:${viewer.viewerId}:`, error);
+                }
+            }
+        }
+
+        return resolved.sort((a, b) => b.priority - a.priority || a.title.localeCompare(b.title));
     }
 
     async processFile(filePath: string, context: Record<string, any> = {}): Promise<any> {

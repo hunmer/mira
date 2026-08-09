@@ -2,6 +2,37 @@
 
 ## Session: 2026-08-10
 
+### Phase 14: Multi-Viewer Preview API
+- **Status:** in progress
+- Actions taken:
+  - Confirmed the API must return all matching plugin iframe viewers, not one selected URL.
+  - Restored the existing planning context and appended Phase 14 without replacing prior work.
+  - Selected `files().getPreviewViewers(libraryId, fileId)` as the SDK surface.
+  - Confirmed `FileModule`, `ServerWebPlugin`, and `getLoadedWebPlugins()` are the existing ownership boundaries to extend.
+  - Rejected a manifest-only template after confirming Spine requires async bundle resource discovery.
+  - Selected server format-handler Viewer resolvers plus request-token propagation for protected nested file URLs.
+  - Added the Core SDK response types and `FileModule.getPreviewViewers()` URL normalization.
+  - Added the backend route and multi-handler Viewer aggregation in `ServerPluginManager`.
+  - Registered Viewer resolvers in the 3D, PSD, and Spine server plugins; Spine reuses bundle resource discovery.
+  - Core full build was blocked by the already-recorded test-file top-level-await and Auth mock errors; no new diagnostic referenced the changed files.
+  - SDK ESM build, focused SDK type-check, server reinstall, server TypeScript, 3D build, and Spine build passed.
+  - PSD standalone build reached an existing package-local `which` declaration/install gap; targeted package repair is in progress.
+  - PSD source passed a focused type-check using the Server package's declared `node`/`which` types.
+  - Multi-Viewer aggregation smoke passed with two matching plugins, priority ordering, and encoded nested file URL assertions.
+  - Confirmed generated ESM, CommonJS, and declaration artifacts contain `getPreviewViewers`.
+  - Final `git diff --check` passed; Phase 14 implementation and static verification are complete.
+
+### Phase 14 Verification
+- `mira-app-core build:sdk:esm`: passed.
+- Focused Core SDK TypeScript check: passed.
+- `pnpm install` from `mira-app-server`: passed.
+- Server `tsc --noEmit`: passed.
+- 3D and Spine plugin builds: passed.
+- PSD focused TypeScript check: passed.
+- Multi-Viewer aggregation smoke: passed (two results, priority order, encoded file URL).
+- Full Core build: blocked only by previously recorded test-file errors.
+- Persistent server restart: not run because `procm-mcp` is unavailable.
+
 ### Phase 12: Local Format Plugin Installation Repair
 - **Status:** complete
 - Actions taken:
@@ -13,6 +44,14 @@
   - Updated the 3D native rebuild command for npm 11 and declared both local plugin dependencies in the server plugin package.
   - Ran `npm install` in the server plugin container; both local packages were installed and the Node 22 `gl` native build completed.
   - Left 19 existing npm audit findings unchanged because `npm audit fix --force` is outside scope and may introduce breaking upgrades.
+
+### Phase 13: Server Web Plugin URL Loading Repair
+- **Status:** complete
+- Actions taken:
+  - Read the attached Electron console log and traced the malformed URL to string concatenation in `scriptManager.ts`.
+  - Added `resolvePluginFilePath` to preserve HTTP(S) query parameters while appending the plugin entry path.
+  - Applied the resolver to both development file validation and script injection.
+  - Verified the resolved URL shape and ran `pnpm --filter mira-web build` successfully.
   - Built both plugins successfully and resolved both packages from the exact server plugin paths.
   - Loaded the native `gl` binding under Node 22 ABI 127 and confirmed `webgl.node` exists.
   - Executed both plugin `init` functions in an isolated loader; 3D registered `glb/gltf` and Spine registered `skel/spine`.

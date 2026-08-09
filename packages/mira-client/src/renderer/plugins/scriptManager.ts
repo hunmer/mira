@@ -4,7 +4,7 @@
  */
 
 import type { PluginRuntime } from './types'
-import { convertToScriptUrl, validatePluginFile } from './utils'
+import { convertToScriptUrl, resolvePluginFilePath, validatePluginFile } from './utils'
 import { environment } from '../utils'
 
 /**
@@ -40,7 +40,7 @@ export const injectPluginsToDocument = async (plugins: PluginRuntime[]) => {
           }
 
           // 验证插件文件路径
-          const entryFilePath = `${plugin.directory}/${plugin.config.index}`
+          const entryFilePath = resolvePluginFilePath(plugin.directory, plugin.config.index)
 
           // 在开发模式下预先检查文件
           if (environment.isDevelopment) {
@@ -91,7 +91,7 @@ export const injectPluginScript = async (plugin: PluginRuntime): Promise<boolean
 
       // 构建插件入口文件的完整路径
       // plugin.directory 现在包含实际的插件目录路径
-      const entryFilePath = `${plugin.directory}/${plugin.config.index}`
+      const entryFilePath = resolvePluginFilePath(plugin.directory, plugin.config.index)
 
       // 使用工具函数转换路径
       const scriptSrc = convertToScriptUrl(entryFilePath)

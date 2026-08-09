@@ -4,7 +4,7 @@
 Add client and server plugin APIs for custom file formats, covering thumbnail/detail rendering and path-based backend processing, then document and verify the extension flow with a 3D-capable example where appropriate.
 
 ## Current Phase
-Phase 12 complete
+Phase 14 complete
 
 ## Phases
 
@@ -97,6 +97,21 @@ Phase 12 complete
 - [x] Check server health and verify plugin initialization with an isolated loader
 - **Status:** complete
 
+### Phase 13: Server Web Plugin URL Loading Repair
+- [x] Reproduce the malformed token-bearing entry URL from the client log
+- [x] Fix URL resolution for validation and script injection
+- [x] Run focused checks and affected client build
+- [x] Record acceptance steps
+- **Status:** complete
+
+### Phase 14: Multi-Viewer Preview API
+- [x] Trace SDK response unwrapping, file lookup, Web plugin metadata, and registered format ownership
+- [x] Define a server-side Viewer resolver contract supporting multiple viewers per format
+- [x] Implement `files().getPreviewViewers(libraryId, fileId)` and matching backend route
+- [x] Update bundled iframe Viewer plugin registrations
+- [x] Add focused tests and verify Core SDK build plus Server install/type-check
+- **Status:** complete
+
 ## Key Questions
 1. Where are client and server plugin APIs constructed, activated, and disposed?
 2. What file metadata is available at thumbnail and detail-open time?
@@ -108,6 +123,9 @@ Phase 12 complete
 |----------|-----------|
 | Match existing plugin lifecycle and registration conventions | Keeps cleanup and ownership behavior consistent |
 | Treat interactive Vue thumbnail content and detail-open interception as separate capabilities | A format may need either or both |
+| Return all matching iframe viewers instead of one preview URL | A file format may be supported by multiple plugins/viewers |
+| Keep built-in non-iframe preview selection client-side | The new endpoint represents plugin-provided iframe viewers only |
+| Resolve viewers through server format handlers, not manifest templates alone | Spine needs asynchronous extra-resource discovery before its iframe URL can be built |
 
 ## Errors Encountered
 | Error | Attempt | Resolution |
@@ -125,6 +143,9 @@ Phase 12 complete
 | Spine plugin type-check could not resolve newly declared `yauzl` dependency | 1 | Install the plugin package dependencies, then rerun type-check |
 | Client verification used package filter `mira-client`, which matches no workspace package | 1 | Rerun type-check/build with actual package name `mira-web` |
 | Core full build includes existing SDK `.test.ts` files with CommonJS-incompatible top-level await and an unrelated Auth mock type error | 1 | Use the SDK ESM build and focused source type-check; do not repeat the same full build |
+| Phase 14 Core full build hit the same existing test-file top-level-await/Auth mock errors | 1 | Use SDK ESM build plus focused source type-check, then reinstall Server dependencies |
+| PSD plugin standalone build could not find `which` declarations and reported missing local `node_modules` | 1 | Confirmed the plugin root is outside the pnpm workspace; focused source type-check passed using Server's declared `node`/`which` type roots |
+| Dist inspection used a repository-root-relative path while running from the Server package | 1 | Re-run once with the absolute Core dist path |
 | Server TypeScript rejected Express wildcard access at `req.params[0]` | 1 | Cast params to its runtime string record before accessing the wildcard key |
 | Client type-check also reports an existing lazy-plugin type mismatch at `main.ts:51` | 1 | Confirm changed client files introduce no errors via production build and scoped diagnostics |
 | Mira CLI library listing requires login and no CLI profile is configured | 1 | Keep validation read-only; verify health plus local manifest/asset contracts without assuming credentials |

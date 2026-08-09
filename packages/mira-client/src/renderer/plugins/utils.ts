@@ -40,6 +40,24 @@ export const convertToScriptUrl = (filePath: string): string => {
 }
 
 /**
+ * Resolve a plugin entry file without placing the filename after the URL query.
+ * Server plugin directories include an authentication token in the query string.
+ */
+export const resolvePluginFilePath = (directory: string, fileName: string): string => {
+  if (directory.startsWith('http://') || directory.startsWith('https://')) {
+    const base = new URL(directory)
+    const search = base.search
+    base.pathname = base.pathname.replace(/\/+$/, '') + '/'
+    base.search = ''
+    const resolved = new URL(fileName.replace(/^\/+/, ''), base)
+    resolved.search = search
+    return resolved.toString()
+  }
+
+  return `${directory.replace(/[\\/]$/, '')}/${fileName.replace(/^[/\\]+/, '')}`
+}
+
+/**
  * 验证插件文件是否存在（仅在开发模式下）
  */
 export const validatePluginFile = async (filePath: string): Promise<boolean> => {

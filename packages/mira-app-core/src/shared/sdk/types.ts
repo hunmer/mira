@@ -175,6 +175,23 @@ export interface ServerWebPlugin {
     platform?: string[];
 }
 
+export interface PreviewViewer {
+    viewerId: string;
+    pluginId: string;
+    pluginName: string;
+    serverPluginName: string;
+    title: string;
+    iframeUrl: string;
+    priority: number;
+    icon?: string;
+}
+
+export interface PreviewViewersResponse {
+    libraryId: string;
+    fileId: string;
+    viewers: PreviewViewer[];
+}
+
 export interface InstallPluginRequest {
     name: string;
     version?: string;

@@ -920,6 +920,70 @@ export class FileRoutes {
             }
         });
 
+        // 获取文件可用的全部插件 iframe Viewer
+        this.router.post('/getPreviewViewers', async (req: Request, res: Response) => {
+            try {
+                const { libraryId, fileId, clientId } = req.body;
+                if (!libraryId || !fileId) {
+                    return res.status(400).json({
+                        code: 400,
+                        message: 'libraryId and fileId are required',
+                        data: null
+                    });
+                }
+
+                const obj = this.backend.libraries!.getLibrary(libraryId);
+                if (!obj) {
+                    return res.status(404).json({ code: 404, message: 'Library not found', data: null });
+                }
+
+                const allowed = await obj.pluginManager.runHttpHooks({
+                    libraryId,
+                    clientId,
+                    method: req.method,
+                    path: '/api/files/getPreviewViewers',
+                    req,
+                    res,
+                    fields: this.backend.webSocketServer?.getClientFields(libraryId, clientId),
+                });
+                if (!allowed || res.headersSent) return;
+
+                const file = await obj.libraryService.getFile(parseInt(fileId, 10));
+                if (!file) {
+                    return res.status(404).json({ code: 404, message: 'File not found', data: null });
+                }
+
+                const filePath = await obj.libraryService.getItemFilePath(file, { isUrlFile: false });
+                const requestToken = req.headers.authorization?.replace(/^Bearer\s+/i, '') ||
+                    (typeof req.query.token === 'string' ? req.query.token : '');
+                const fileUrl = this.appendToken(
+                    await obj.libraryService.getItemFilePath(file, { isUrlFile: true }),
+                    requestToken
+                );
+                const viewers = await obj.pluginManager.getPreviewViewers({
+                    libraryId: String(libraryId),
+                    fileId: String(fileId),
+                    file: { ...file, libraryId },
+                    filePath,
+                    fileUrl,
+                    getExtraFileUrl: (fileName: string) => this.buildExtraFileUrl(fileUrl, libraryId, fileId, fileName, requestToken),
+                });
+
+                res.json({
+                    code: 0,
+                    message: 'Success',
+                    data: { libraryId: String(libraryId), fileId: String(fileId), viewers }
+                });
+            } catch (error) {
+                console.error('Error getting preview Viewers:', error);
+                res.status(500).json({
+                    code: 500,
+                    message: 'Internal server error while getting preview Viewers',
+                    data: null
+                });
+            }
+        });
+
         // 重命名文件（含同名检测）
         this.router.post('/rename', async (req: Request, res: Response) => {
             try {
@@ -1057,6 +1121,23 @@ export class FileRoutes {
     private canAccessExtraFileLibrary(req: Request): boolean {
         const config = this.backend.libraries!.getLibraryConfig(req.params.libraryId);
         return canAccessLibrary(config, (req as any).user?.role);
+    }
+
+    private appendToken(url: string, token: string): string {
+        if (!token) return url;
+        const resolved = new URL(url);
+        resolved.searchParams.set('token', token);
+        return resolved.toString();
+    }
+
+    private buildExtraFileUrl(fileUrl: string, libraryId: string, fileId: string, fileName: string, token: string): string {
+        const resolved = new URL(fileUrl);
+        const apiIndex = resolved.pathname.indexOf('/api/files/file/');
+        const prefix = apiIndex >= 0 ? resolved.pathname.slice(0, apiIndex) : '';
+        const encodedName = fileName.replace(/\\/g, '/').split('/').map(encodeURIComponent).join('/');
+        resolved.pathname = `${prefix}/api/files/extra/${encodeURIComponent(String(libraryId))}/${encodeURIComponent(String(fileId))}/${encodedName}`;
+        resolved.search = '';
+        return this.appendToken(resolved.toString(), token);
     }
 
     private getContentType(ext: string): string {

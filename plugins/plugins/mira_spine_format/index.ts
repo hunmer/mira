@@ -16,6 +16,14 @@ interface ServerFileFormatHandler {
   thumbnail?: (srcPath: string, destPath: string) => Promise<void>;
   getExtraFileList?: (filePath: string, context?: Record<string, any>) => Promise<string[]>;
   getExtraFile?: (filePath: string, fileName: string, context?: Record<string, any>) => Promise<string>;
+  viewers?: Array<{
+    viewerId: string;
+    title: string;
+    entry: string;
+    priority?: number;
+    extensions?: string[];
+    getQuery?: (context: any) => Record<string, unknown> | Promise<Record<string, unknown>>;
+  }>;
 }
 
 interface FileFormatManager {
@@ -54,6 +62,14 @@ class MiraSpineFormatPlugin {
       extensions: FORMAT_EXTENSIONS,
       mimeTypes: ['application/x-spine'],
       thumbnailExtensions: THUMBNAIL_EXTENSIONS,
+      viewers: [{
+        viewerId: 'mira-spine',
+        title: 'Spine 格式预览',
+        entry: 'dist/index.html',
+        priority: 10,
+        extensions: ['spine'],
+        getQuery: (context) => this.getPreviewQuery(context),
+      }],
       process: (filePath, context) => this.processFile(filePath, context),
       thumbnail: (srcPath, destPath) => this.generateThumbnail(srcPath, destPath),
       getExtraFileList: (filePath) => this.getExtraFileList(filePath),
@@ -175,6 +191,27 @@ class MiraSpineFormatPlugin {
   private async getExtraFileList(filePath: string): Promise<string[]> {
     if (path.extname(filePath).toLowerCase() !== '.spine') return [];
     return (await this.bundles.prepare(filePath)).files;
+  }
+
+  private async getPreviewQuery(context: any): Promise<Record<string, string>> {
+    const files = await this.getExtraFileList(context.filePath);
+    const preferredBase = String(context.file.name || '').replace(/\.spine$/i, '').toLowerCase();
+    const pick = (extensions: string[]) => {
+      const matches = files.filter(name => extensions.some(ext => name.toLowerCase().endsWith(ext)));
+      return matches.find(name => path.basename(name, path.extname(name)).toLowerCase() === preferredBase) || matches[0] || '';
+    };
+    const skeleton = pick(['.json', '.skel']);
+    const atlas = pick(['.atlas']);
+    const png = pick(['.png']);
+    if (!skeleton || !atlas || !png) {
+      throw new Error('Spine bundle is missing skeleton, atlas, or PNG resources');
+    }
+    return {
+      skelUrl: context.getExtraFileUrl(skeleton),
+      atlasUrl: context.getExtraFileUrl(atlas),
+      pngUrl: context.getExtraFileUrl(png),
+      fileName: context.file.name || 'Spine',
+    };
   }
 
   private findResource(bundle: SpineBundleContents, extensions: string[]): string | null {

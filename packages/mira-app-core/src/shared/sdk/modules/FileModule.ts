@@ -3,6 +3,7 @@ import {
     UploadFileRequest,
     UploadResponse,
     BaseResponse,
+    PreviewViewersResponse,
 } from '../types';
 
 /**
@@ -356,6 +357,26 @@ export class FileModule {
             fileId: fileId.toString(),
             clientId
         });
+    }
+
+    /** 获取所有可用于该文件的插件 iframe Viewer。 */
+    async getPreviewViewers(
+        libraryId: string,
+        fileId: string | number,
+        clientId?: string
+    ): Promise<PreviewViewersResponse> {
+        const response = await this.httpClient.post<PreviewViewersResponse>('/api/files/getPreviewViewers', {
+            libraryId,
+            fileId: fileId.toString(),
+            clientId,
+        });
+        return {
+            ...response,
+            viewers: response.viewers.map(viewer => ({
+                ...viewer,
+                iframeUrl: this.httpClient.getUrl(viewer.iframeUrl),
+            })),
+        };
     }
 
     /**

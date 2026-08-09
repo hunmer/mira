@@ -16,6 +16,24 @@ interface ThumbnailService {
   unregisterGenerator(name: string): void;
 }
 
+interface FileFormatManager {
+  registerFileFormat(pluginName: string, handler: {
+    id: string;
+    extensions: string[];
+    mimeTypes?: string[];
+    viewers: Array<{
+      viewerId: string;
+      title: string;
+      icon?: string;
+      entry: string;
+      priority?: number;
+      getQuery: (context: any) => Record<string, unknown>;
+    }>;
+  }): () => void;
+  getPluginDir(name: string): string;
+  server: any;
+}
+
 class ImageMagickGenerator implements ThumbnailGenerator {
   name = 'imagemagick';
   supportedExtensions: string[];
@@ -47,9 +65,10 @@ class ThumbImageMagickPlugin {
   private configs: Record<string, any> = {};
   private pluginDataDir: string;
   private pluginName = 'mira_thumb_imagemagick';
+  private unregisterFormat?: () => void;
 
   constructor(inst: any) {
-    const { pluginManager } = inst;
+    const pluginManager = inst.pluginManager as FileFormatManager;
 
     this.pluginDataDir = path.join(pluginManager.getPluginDir(this.pluginName), 'data');
     if (!fs.existsSync(this.pluginDataDir)) {
@@ -57,6 +76,24 @@ class ThumbImageMagickPlugin {
     }
 
     this.loadConfig({ enableExts: ['psd'], magickPath: '' });
+
+    this.unregisterFormat = pluginManager.registerFileFormat(this.pluginName, {
+      id: 'mira-psd',
+      extensions: ['psd', 'psb'],
+      mimeTypes: ['image/vnd.adobe.photoshop'],
+      viewers: [{
+        viewerId: 'mira-psd',
+        title: 'PSD 分层预览',
+        icon: 'layers',
+        entry: 'dist/index.html',
+        priority: 10,
+        getQuery: ({ file, fileId, fileUrl }) => ({
+          fileId,
+          psdUrl: fileUrl,
+          fileName: file.name || 'PSD',
+        }),
+      }],
+    });
 
     const backend = pluginManager.server.backend;
     this.thumbnailService = backend.thumbnailService || null;
@@ -108,6 +145,14 @@ class ThumbImageMagickPlugin {
 
   private saveConfig() {
     fs.writeFileSync(path.join(this.pluginDataDir, 'config.json'), JSON.stringify(this.configs, null, 2));
+  }
+
+  cleanup(): void {
+    this.unregisterFormat?.();
+    this.unregisterFormat = undefined;
+    if (this.generator && this.thumbnailService) {
+      this.thumbnailService.unregisterGenerator(this.generator.name);
+    }
   }
 }
 

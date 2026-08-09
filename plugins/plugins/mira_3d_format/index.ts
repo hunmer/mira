@@ -16,6 +16,14 @@ interface ServerFileFormatHandler {
   thumbnailExtensions?: string[];
   process?: (filePath: string, context?: Record<string, any>) => Promise<any>;
   thumbnail?: (srcPath: string, destPath: string) => Promise<void>;
+  viewers?: Array<{
+    viewerId: string;
+    title: string;
+    icon?: string;
+    entry: string;
+    priority?: number;
+    getQuery?: (context: any) => Record<string, unknown> | Promise<Record<string, unknown>>;
+  }>;
 }
 
 interface FileFormatManager {
@@ -46,6 +54,19 @@ class Mira3DFormatPlugin {
       extensions: FORMAT_EXTENSIONS,
       mimeTypes: ['model/gltf-binary', 'model/gltf+json'],
       thumbnailExtensions: THUMBNAIL_EXTENSIONS,
+      viewers: [{
+        viewerId: 'mira-3d-model',
+        title: '3D 模型预览',
+        icon: 'view_in_ar',
+        entry: 'dist/index.html',
+        priority: 10,
+        getQuery: ({ file, fileId, fileUrl }) => ({
+          fileUrl,
+          fileName: file.name || '3D model',
+          mimeType: file.mimeType || file.mime_type || '',
+          fileId,
+        }),
+      }],
       process: (filePath, context) => this.processFile(filePath, context),
       thumbnail: (srcPath, destPath) => this.generateThumbnail(srcPath, destPath),
     });

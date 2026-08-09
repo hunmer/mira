@@ -141,6 +141,30 @@
 - The active port 8081 process is a non-watch `ts-node/register src/index.ts` process. It remains healthy but requires a procm-managed restart before the new routes are live.
 - No procm-mcp tool is available in this session, and Mira CLI has no authenticated profile, so live authenticated list verification remains an acceptance step rather than an implementation gap.
 
+## Server Web Plugin Loading Error (2026-08-10)
+- The Electron log requests `.../mira_3d_format?token=<token>/index.js`; string concatenation appended the entry filename after the query string.
+- The malformed URL makes 3D resolve the directory route/HTML (strict MIME rejection) and makes Spine return 404.
+- Both development validation and actual script injection build this path in `scriptManager.ts`; a shared URL resolver must preserve query parameters while appending the entry path.
+
+## Multi-Viewer Preview API (2026-08-10)
+- Required SDK shape is plural: one file may match multiple plugin viewers.
+- Each result needs a stable `viewerId`, plugin identity/display metadata, iframe URL, and priority.
+- The endpoint returns plugin iframe viewers only; built-in host previews remain a client concern.
+- No matching plugin should be a successful empty `viewers` array, not an error.
+- Existing 3D client plugin registers `getPreviewUrl` dynamically from `web/index.js`; the server manifest currently has no declarative file-format/viewer metadata, so backend matching needs a small manifest contract.
+- `FileModule` is the direct SDK owner; no new top-level client module is needed.
+- Existing `ServerWebPlugin` metadata already provides plugin identity and an authenticated static asset base URL through `PluginModule.getWeb()`.
+- The minimal backend contract is a declarative `viewers[]` array in each Web plugin manifest. The server must not execute browser plugin JavaScript to discover `getPreviewUrl` callbacks.
+- Revised after inspecting Spine: a manifest-only URL template is insufficient because Spine asynchronously lists/extracts bundle resources before constructing its URL.
+- Viewer declarations/resolution should therefore be owned by `ServerFileFormatHandler`, which already owns extension/MIME matching and plugin-specific file processing. Core aggregates all matching handlers instead of selecting the first one.
+- Core should combine handler results with the owning Web plugin manifest/static base path; plugin-specific resolvers may return async query parameters.
+- Server Web assets are public, but original file and extra-resource API URLs are authenticated. The route can reuse the SDK request's Bearer/query token when constructing nested resource URLs.
+- The SDK should resolve returned relative iframe URLs through `HttpClient.getUrl()`, matching `PluginModule.getWeb()` behavior.
+- ImageMagick currently registers only a thumbnail generator; it must also register a lightweight server format handler for PSD/PSB Viewer discovery.
+- Implemented output is sorted by descending priority and preserves every matching Viewer across handlers/plugins.
+- Core ESM and CommonJS SDK artifacts plus declarations contain the new method despite the full build's pre-existing test compilation errors.
+- Persistent backend restart remains an acceptance step because `procm-mcp` is unavailable in this session.
+
 ## Local Format Plugin Installation Repair
 - Both failures resolved absolute package paths below `packages/mira-app-server/src/plugins/node_modules`; those package entries were missing because the plugin container did not declare 3D or Spine as dependencies.
 - Added both plugins as local `file:` dependencies so future installs recreate their links instead of removing manually created links.
