@@ -138,19 +138,19 @@ export class TagModule {
     /**
      * 创建标签
      * @param request 创建请求
-     * @returns Promise<Tag>
+     * @returns Promise<number> 新建标签的 id
      */
-    async create(request: CreateTagRequest): Promise<Tag> {
-        return await this.httpClient.post<Tag>('/api/tags/create', request);
+    async create(request: CreateTagRequest): Promise<number> {
+        return await this.httpClient.post<number>('/api/tags/create', request);
     }
 
     /**
      * 更新标签
      * @param request 更新请求
-     * @returns Promise<Tag>
+     * @returns Promise<boolean> 更新成功返回 true
      */
-    async update(request: UpdateTagRequest): Promise<Tag> {
-        return await this.httpClient.put<Tag>('/api/tags/update', request);
+    async update(request: UpdateTagRequest): Promise<boolean> {
+        return await this.httpClient.put<boolean>('/api/tags/update', request);
     }
 
     /**
@@ -192,7 +192,7 @@ export class TagModule {
      * @param color 标签颜色（可选，数字类型）
      * @param description 标签描述（可选）
      * @param icon 标签图标（可选，Material Icons 图标名）
-     * @returns Promise<Tag>
+     * @returns Promise<number> 新建标签的 id
      */
     async createTag(
         libraryId: string,
@@ -201,7 +201,7 @@ export class TagModule {
         color?: number,
         description?: string,
         icon?: string
-    ): Promise<Tag> {
+    ): Promise<number> {
         return await this.create({ libraryId, title, parent_id: parentId, color, icon, description });
     }
 
@@ -210,13 +210,13 @@ export class TagModule {
      * @param libraryId 素材库ID
      * @param id 标签ID
      * @param updates 更新数据
-     * @returns Promise<Tag>
+     * @returns Promise<boolean> 更新成功返回 true
      */
     async updateTag(
         libraryId: string,
         id: number,
         updates: { title?: string; parent_id?: number; color?: number; icon?: string; description?: string }
-    ): Promise<Tag> {
+    ): Promise<boolean> {
         return await this.update({ libraryId, id, ...updates });
     }
 

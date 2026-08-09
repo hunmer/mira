@@ -2,8 +2,48 @@
   "commands": {
     "mira-app-server-dev": {
       "script": "pnpm",
-      "args": ["--filter", "mira-app-server", "run", "dev"],
-      "cwd": "D:/mira_typescript"
+      "args": [
+        "--filter",
+        "mira-app-server",
+        "run",
+        "dev"
+      ]
+    },
+    "mira-client-dev": {
+      "script": "pnpm",
+      "args": [
+        "-C",
+        "packages/mira-client",
+        "run",
+        "dev"
+      ]
+    },
+    "mira-client-dev-win": {
+      "script": "pnpm",
+      "args": [
+        "-C",
+        "packages/mira-client",
+        "run",
+        "dev"
+      ]
+    },
+    "mira-dashboard-next-dev": {
+      "script": "pnpm",
+      "args": [
+        "-C",
+        "packages/mira-dashboard-next",
+        "run",
+        "dev"
+      ]
+    },
+    "mira-dashboard-next-dev-win": {
+      "script": "pnpm",
+      "args": [
+        "-C",
+        "packages/mira-dashboard-next",
+        "run",
+        "dev"
+      ]
     }
   }
 }

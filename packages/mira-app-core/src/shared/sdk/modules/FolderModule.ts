@@ -140,19 +140,19 @@ export class FolderModule {
     /**
      * 创建文件夹
      * @param request 创建请求
-     * @returns Promise<Folder>
+     * @returns Promise<number> 新建文件夹的 id
      */
-    async create(request: CreateFolderRequest): Promise<Folder> {
-        return await this.httpClient.post<Folder>('/api/folders/create', request);
+    async create(request: CreateFolderRequest): Promise<number> {
+        return await this.httpClient.post<number>('/api/folders/create', request);
     }
 
     /**
      * 更新文件夹
      * @param request 更新请求
-     * @returns Promise<Folder>
+     * @returns Promise<boolean> 更新成功返回 true
      */
-    async update(request: UpdateFolderRequest): Promise<Folder> {
-        return await this.httpClient.put<Folder>('/api/folders/update', request);
+    async update(request: UpdateFolderRequest): Promise<boolean> {
+        return await this.httpClient.put<boolean>('/api/folders/update', request);
     }
 
     /**
@@ -194,7 +194,7 @@ export class FolderModule {
      * @param color 文件夹颜色（可选，数字类型）
      * @param description 文件夹描述（可选）
      * @param icon 文夹夹图标（可选，Material Icons 图标名）
-     * @returns Promise<Folder>
+     * @returns Promise<number> 新建文件夹的 id
      */
     async createFolder(
         libraryId: string,
@@ -203,7 +203,7 @@ export class FolderModule {
         color?: number,
         description?: string,
         icon?: string
-    ): Promise<Folder> {
+    ): Promise<number> {
         return await this.create({ libraryId, title, parent_id: parentId, color, icon, description });
     }
 
@@ -212,13 +212,13 @@ export class FolderModule {
      * @param libraryId 素材库ID
      * @param id 文件夹ID
      * @param updates 更新数据
-     * @returns Promise<Folder>
+     * @returns Promise<boolean> 更新成功返回 true
      */
     async updateFolder(
         libraryId: string,
         id: number,
         updates: { title?: string; parent_id?: number; color?: number; icon?: string; description?: string }
-    ): Promise<Folder> {
+    ): Promise<boolean> {
         return await this.update({ libraryId, id, ...updates });
     }
 

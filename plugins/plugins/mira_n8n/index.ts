@@ -1,7 +1,8 @@
 import { ServerPluginManager, MiraWebsocketServer, ServerPlugin, ws } from 'mira-app-server';
 import { ILibraryServerData } from 'mira-app-core/storage/sqlite';
 import { MiraHttpServer } from 'mira-app-server/dist/server';
-import { EventManager } from 'mira-app-core/dist';
+import { EventManager } from 'mira-app-core';
+import { Request, Response } from 'express';
 
 interface WebhookConfig {
     title: string;
@@ -47,7 +48,7 @@ class MiraN8N extends ServerPlugin {
         });
 
         // 添加新的webhook配置
-        this.httpServer.httpRouter.registerRounter(libraryId, '/n8n/list', 'post', async (req: { body: { title: any; events: any; token: any; }; }, res: { status: (arg0: number) => { (): any; new(): any; json: { (arg0: { success: boolean; error: string; }): void; new(): any; }; }; json: (arg0: { success: boolean; data: { title: string; events: string[]; token: string; id: string; }; }) => void; }) => {
+        this.httpServer.httpRouter.registerRounter(libraryId, '/n8n/list', 'post', async (req: Request, res: Response) => {
             try {
                 const { title, events, token } = req.body;
                 if (!title || !events || !token) {
@@ -77,7 +78,7 @@ class MiraN8N extends ServerPlugin {
         });
 
         // 删除webhook配置
-        this.httpServer.httpRouter.registerRounter(libraryId, '/n8n/list/:id', 'delete', async (req: { params: { id: any; }; }, res: { status: (arg0: number) => { (): any; new(): any; json: { (arg0: { success: boolean; error: string; }): void; new(): any; }; }; json: (arg0: { success: boolean; message: string; }) => void; }) => {
+        this.httpServer.httpRouter.registerRounter(libraryId, '/n8n/list/:id', 'delete', async (req: Request, res: Response) => {
             try {
                 const { id } = req.params;
                 if (!this.configs.list[id]) {

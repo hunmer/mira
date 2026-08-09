@@ -25,7 +25,7 @@
   },
   {
     "name": "mira_eagle_extension",
-    "enabled": true,
+    "enabled": false,
     "path": "node_modules/mira_eagle_extension"
   },
   {
