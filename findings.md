@@ -165,6 +165,14 @@
 - Core ESM and CommonJS SDK artifacts plus declarations contain the new method despite the full build's pre-existing test compilation errors.
 - Persistent backend restart remains an acceptance step because `procm-mcp` is unavailable in this session.
 
+## Core Production Build Boundary (2026-08-10)
+- `pnpm run build` fails because production `tsc` includes SDK `*.test.ts` files.
+- Top-level-await diagnostics and the heterogeneous `batch<T>` test are test-compilation concerns, not production source errors.
+- Preferred fix: exclude test files from production TypeScript compilation while leaving Vitest's own discovery unchanged.
+- Core `tsconfig.json` currently includes all `src/**/*`; all seven failing files match `src/**/*.test.ts`.
+- `vitest.config.ts` independently includes `src/**/*.test.ts`, so TypeScript production excludes do not disable test discovery.
+- Full Core build now passes. Vitest collection still finds 7 files and 59 tests when test bodies are skipped with a never-matching name pattern.
+
 ## Local Format Plugin Installation Repair
 - Both failures resolved absolute package paths below `packages/mira-app-server/src/plugins/node_modules`; those package entries were missing because the plugin container did not declare 3D or Spine as dependencies.
 - Added both plugins as local `file:` dependencies so future installs recreate their links instead of removing manually created links.

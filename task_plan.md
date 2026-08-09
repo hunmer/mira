@@ -4,7 +4,7 @@
 Add client and server plugin APIs for custom file formats, covering thumbnail/detail rendering and path-based backend processing, then document and verify the extension flow with a 3D-capable example where appropriate.
 
 ## Current Phase
-Phase 14 complete
+Phase 15 complete
 
 ## Phases
 
@@ -112,6 +112,12 @@ Phase 14 complete
 - [x] Add focused tests and verify Core SDK build plus Server install/type-check
 - **Status:** complete
 
+### Phase 15: Core Production Build Boundary
+- [x] Inspect Core TypeScript and Vitest file inclusion
+- [x] Exclude test files from the production TypeScript build with the smallest config change
+- [x] Verify full Core build and confirm Vitest still discovers SDK tests
+- **Status:** complete
+
 ## Key Questions
 1. Where are client and server plugin APIs constructed, activated, and disposed?
 2. What file metadata is available at thumbnail and detail-open time?
@@ -146,6 +152,7 @@ Phase 14 complete
 | Phase 14 Core full build hit the same existing test-file top-level-await/Auth mock errors | 1 | Use SDK ESM build plus focused source type-check, then reinstall Server dependencies |
 | PSD plugin standalone build could not find `which` declarations and reported missing local `node_modules` | 1 | Confirmed the plugin root is outside the pnpm workspace; focused source type-check passed using Server's declared `node`/`which` type roots |
 | Dist inspection used a repository-root-relative path while running from the Server package | 1 | Re-run once with the absolute Core dist path |
+| Vitest 1.6 treated `vitest list` as a filename filter and found no file named `list` | 1 | Use `vitest run --testNamePattern='(?!)'` to collect configured tests while skipping all test bodies |
 | Server TypeScript rejected Express wildcard access at `req.params[0]` | 1 | Cast params to its runtime string record before accessing the wildcard key |
 | Client type-check also reports an existing lazy-plugin type mismatch at `main.ts:51` | 1 | Confirm changed client files introduce no errors via production build and scoped diagnostics |
 | Mira CLI library listing requires login and no CLI profile is configured | 1 | Keep validation read-only; verify health plus local manifest/asset contracts without assuming credentials |

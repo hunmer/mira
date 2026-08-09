@@ -104,6 +104,10 @@ onBeforeUnmount(() => {
   disposeHighlight()
   if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl)
 })
+
+// 手机端 drawer 开关：左=场景树，右=属性面板
+const leftDrawerOpen = ref(false)
+const rightDrawerOpen = ref(false)
 </script>
 
 <template>
@@ -142,14 +146,30 @@ onBeforeUnmount(() => {
     <!-- ============ 完整预览模式 ============ -->
     <template v-else>
       <!-- 顶栏工具条 -->
-      <ViewerToolbar @open="openFileDialog" />
+      <ViewerToolbar @open="openFileDialog" @open-left="leftDrawerOpen = true" @open-right="rightDrawerOpen = true" />
 
       <!-- 三栏主体 -->
       <div class="flex min-h-0 flex-1">
-        <!-- 左栏：场景树 -->
-        <aside class="scroll-thin flex w-60 shrink-0 flex-col overflow-hidden border-r bg-card/40 xl:w-72">
+        <!-- 左栏：场景树（桌面端常驻） -->
+        <aside
+          class="scroll-thin fixed inset-y-0 left-0 z-40 flex w-72 shrink-0 flex-col overflow-hidden border-r bg-card/95 shadow-xl transition-transform duration-200 ease-out md:static md:z-auto md:w-60 md:translate-x-0 md:bg-card/40 md:shadow-none xl:w-72"
+          :class="leftDrawerOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'"
+        >
+          <!-- 手机端关闭按钮 -->
+          <div class="flex justify-end p-2 md:hidden">
+            <Button size="icon-sm" variant="ghost" title="关闭" @click="leftDrawerOpen = false">
+              <X class="size-4" />
+            </Button>
+          </div>
           <SceneTree :actions="actions" />
         </aside>
+
+        <!-- 手机端左 drawer 遮罩 -->
+        <div
+          v-if="leftDrawerOpen"
+          class="fixed inset-0 z-30 bg-black/50 md:hidden"
+          @click="leftDrawerOpen = false"
+        />
 
         <!-- 中栏：画布 -->
         <section class="relative min-w-0 flex-1">
@@ -223,10 +243,26 @@ onBeforeUnmount(() => {
           </div>
         </section>
 
-        <!-- 右栏：属性面板 -->
-        <aside class="scroll-thin flex w-64 shrink-0 flex-col overflow-hidden border-l bg-card/40 xl:w-72">
+        <!-- 右栏：属性面板（桌面端常驻） -->
+        <aside
+          class="scroll-thin fixed inset-y-0 right-0 z-40 flex w-72 shrink-0 flex-col overflow-hidden border-l bg-card/95 shadow-xl transition-transform duration-200 ease-out md:static md:z-auto md:w-64 md:translate-x-0 md:bg-card/40 md:shadow-none xl:w-72"
+          :class="rightDrawerOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'"
+        >
+          <!-- 手机端关闭按钮 -->
+          <div class="flex justify-end p-2 md:hidden">
+            <Button size="icon-sm" variant="ghost" title="关闭" @click="rightDrawerOpen = false">
+              <X class="size-4" />
+            </Button>
+          </div>
           <PropertyPanel />
         </aside>
+
+        <!-- 手机端右 drawer 遮罩 -->
+        <div
+          v-if="rightDrawerOpen"
+          class="fixed inset-0 z-30 bg-black/50 md:hidden"
+          @click="rightDrawerOpen = false"
+        />
       </div>
     </template>
   </main>

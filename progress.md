@@ -2,6 +2,18 @@
 
 ## Session: 2026-08-10
 
+### Phase 15: Core Production Build Boundary
+- **Status:** in progress
+- Actions taken:
+  - Reproduced from the user-provided output that production `tsc` includes seven SDK test files.
+  - Selected a production build-boundary fix instead of changing module semantics or weakening test types.
+  - Added production excludes for `src/**/*.test.ts` and `src/**/*.spec.ts`; Vitest configuration remains unchanged.
+  - Full `pnpm run build` passed (`tsc` plus SDK ESM build).
+  - `vitest list` is unsupported in Vitest 1.6 and was interpreted as a filename filter; switched to collection with a never-matching test-name pattern.
+  - Vitest collected 7 SDK test files and 59 tests with all test bodies skipped.
+  - Reinstalled workspace dependencies from `mira-app-server` as required after the Core build.
+  - Final diff contains only the Core production test excludes; `git diff --check` passed.
+
 ### Phase 14: Multi-Viewer Preview API
 - **Status:** in progress
 - Actions taken:

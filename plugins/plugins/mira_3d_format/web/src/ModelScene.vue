@@ -48,7 +48,10 @@ watch([isLoading, state], ([loading, model]) => {
 
 // 模型根 ref（primitive），供 useAnimations 挂载；clips 从 state 派生
 const rootRef = ref<THREE.Object3D | null>(null)
-const clips = computed<THREE.AnimationClip[]>(() => state.value?.animations || [])
+// 关键：root 未挂载前返回空数组，避免 useAnimations 在 root=null 时调用 clipAction 报错
+const clips = computed<THREE.AnimationClip[]>(() =>
+  rootRef.value ? (state.value?.animations || []) : [],
+)
 
 // 顶层调用（composable 须同步注册）：useAnimations 内部 watch clips 与 modelRef
 const { actions } = useAnimations(clips, rootRef as any)
