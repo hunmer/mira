@@ -196,20 +196,28 @@ describeOrSkip('TagModule + FolderModule', () => {
             expect(file.id).toBe(sampleId);
         });
 
-        it('getFilesByFolder 能调用并返回 { result, ... } 结构', async () => {
-            // 先从全量数据找一个真实归属某文件夹的文件 id
+        it('getFilesByFolder 真正按文件夹过滤（返回的文件均属该文件夹）', async () => {
+            // 先从全量数据找一个真实归属某文件夹的文件
             const list: any = await client.files().getFiles({
                 libraryId: LIBRARY_ID,
                 filters: { limit: 100 },
             });
             const withFolder = list.result.find((f: any) => f.folder_id != null);
             if (!withFolder) return; // 无文件归属文件夹则跳过
-            // getFilesByFolder 走 getFiles，返回 { result, limit, offset, total } 对象
-            // 注：服务端 folder_id 过滤当前不生效，这里只验证调用链路与结构正确
+            // getFilesByFolder 走 getFiles，filters.folder 过滤应生效
             const inFolder: any = await client.files().getFilesByFolder(LIBRARY_ID, withFolder.folder_id);
-            expect(inFolder).toBeDefined();
             expect(Array.isArray(inFolder.result)).toBe(true);
-            expect(typeof inFolder.total).toBe('number');
+            expect(inFolder.total).toBeGreaterThan(0);
+            // 关键断言：返回的每个文件 folder_id 都等于目标文件夹
+            inFolder.result.forEach((f: any) => expect(f.folder_id).toBe(withFolder.folder_id));
+        });
+
+        it('getFilesByFolder(null) 返回未分类文件（folder_id 均为 null）', async () => {
+            const uncat: any = await client.files().getFilesByFolder(LIBRARY_ID, null as any);
+            expect(Array.isArray(uncat.result)).toBe(true);
+            if (uncat.result.length > 0) {
+                uncat.result.forEach((f: any) => expect(f.folder_id).toBeNull());
+            }
         });
     });
 

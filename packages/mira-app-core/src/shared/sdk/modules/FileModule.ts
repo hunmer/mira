@@ -12,7 +12,16 @@ export interface FileFilters {
     title?: string;
     extension?: string;
     tags?: string[];
-    folder_id?: number;
+    /**
+     * 文件夹过滤。注意：后端 getFiles 读取的 key 是 `folder`（不是 folder_id）。
+     * - 传数字：按该文件夹过滤
+     * - 传 null：查"未分类"（folder_id IS NULL OR folder_id = 0）
+     */
+    folder?: number | null;
+    /** 分类过滤（后端按扩展名集合映射）：image | video | audio */
+    category?: 'image' | 'video' | 'audio';
+    /** 0=正常（默认），1=回收站 */
+    recycled?: number;
     size_min?: number;
     size_max?: number;
     created_after?: string;
@@ -372,11 +381,11 @@ export class FileModule {
     /**
      * 便捷方法：按文件夹筛选文件
      * @param libraryId 素材库ID
-     * @param folderId 文件夹ID
+     * @param folderId 文件夹ID（传 null 表示查未分类）
      * @returns Promise<FilesListResponse>
      */
-    async getFilesByFolder(libraryId: string, folderId: number): Promise<FileData[]> {
-        return await this.getFiles({ libraryId, filters: { folder_id: folderId } });
+    async getFilesByFolder(libraryId: string, folderId: number | null): Promise<FileData[]> {
+        return await this.getFiles({ libraryId, filters: { folder: folderId } });
     }
 
     /**

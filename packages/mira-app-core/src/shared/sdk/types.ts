@@ -226,7 +226,16 @@ export interface FileFilters {
     title?: string;
     extension?: string;
     tags?: string[];
-    folder_id?: number;
+    /**
+     * 文件夹过滤。后端 getFiles 读取 key 是 `folder`（不是 folder_id）。
+     * - 数字：按该文件夹过滤
+     * - null：查"未分类"（folder_id IS NULL OR folder_id = 0）
+     */
+    folder?: number | null;
+    /** 分类过滤（后端按扩展名集合映射）：image | video | audio */
+    category?: 'image' | 'video' | 'audio';
+    /** 0=正常（默认），1=回收站 */
+    recycled?: number;
     size_min?: number;
     size_max?: number;
     created_after?: string;
