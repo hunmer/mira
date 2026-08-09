@@ -140,3 +140,12 @@
 - Server plugin synchronization can run both after library initialization and from the dialog; refresh must unload the previous instance and script after a successful fetch before reinjection to avoid duplicate registrations.
 - The active port 8081 process is a non-watch `ts-node/register src/index.ts` process. It remains healthy but requires a procm-managed restart before the new routes are live.
 - No procm-mcp tool is available in this session, and Mira CLI has no authenticated profile, so live authenticated list verification remains an acceptance step rather than an implementation gap.
+
+## Local Format Plugin Installation Repair
+- Both failures resolved absolute package paths below `packages/mira-app-server/src/plugins/node_modules`; those package entries were missing because the plugin container did not declare 3D or Spine as dependencies.
+- Added both plugins as local `file:` dependencies so future installs recreate their links instead of removing manually created links.
+- `mira-cli plugins install` targets a running server and marketplace packages; it cannot repair a missing local development package before plugin loading.
+- `mira_3d_format` now uses the npm 11-compatible `npm_config_build_from_source=true` environment form instead of the deprecated CLI flag.
+- Node 22 built and loaded `gl` successfully; `webgl.node` exists and matches ABI 127.
+- Both plugin builds, server-path module resolution, exported `init` functions, and isolated format registration passed.
+- Mira CLI health passed on the existing server. The process predates installation and is not watch-based, so one controlled restart is still required; `procm-mcp` is unavailable in this session.

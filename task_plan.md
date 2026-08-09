@@ -4,7 +4,7 @@
 Add client and server plugin APIs for custom file formats, covering thumbnail/detail rendering and path-based backend processing, then document and verify the extension flow with a 3D-capable example where appropriate.
 
 ## Current Phase
-Phase 11 complete
+Phase 12 complete
 
 ## Phases
 
@@ -89,6 +89,14 @@ Phase 11 complete
 - [x] Build/test affected packages and review the final diff
 - **Status:** complete
 
+### Phase 12: Local Format Plugin Installation Repair
+- [x] Trace server plugin resolution and existing local install mechanism
+- [x] Update the 3D native rebuild script for npm 11
+- [x] Restore 3D and Spine plugin packages under the server plugin node_modules
+- [x] Build both plugins and verify server-side module resolution
+- [x] Check server health and verify plugin initialization with an isolated loader
+- **Status:** complete
+
 ## Key Questions
 1. Where are client and server plugin APIs constructed, activated, and disposed?
 2. What file metadata is available at thumbnail and detail-open time?
@@ -106,6 +114,8 @@ Phase 11 complete
 |-------|---------|------------|
 | `mira-web` `vue-tsc` fails in existing `ServerEditDialog.vue:110` (`AcceptableValue` nullability) | 1 | Confirmed unrelated to changed files; server/client production build still passes |
 | `node --check` used a duplicated plugin-relative path during final verification | 1 | Re-ran from the plugin directory with `node --check "index.js"`; passed |
+| Initial CodeGraph context call used `query` instead of required `task` | 1 | Retried once with the documented `task` argument and obtained loader context |
+| `npm install` reported 19 audit findings in the legacy plugin dependency tree | 1 | Kept scope to local plugin installation; did not apply unrelated breaking dependency upgrades |
 | Parallel search referenced nonexistent `packages/mira-web/src` | 1 | Use the actual package paths discovered via `rg --files` |
 | Server `test` script references missing `sdk/jest.config.js` | 1 | Verify with server type-check/build and a real ImageMagick conversion harness |
 | procm restart failed because recorded PID was already absent | 1 | Remove stale process record, then start the configured command |

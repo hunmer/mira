@@ -1,6 +1,8 @@
 {
-  "contentToolbar.selectAll": "全选",
-  "contentToolbar.selectNone": "取消选择",
-  "contentToolbar.images": "图片",
-  "contentToolbar.videos": "视频"
+  "contentToolbar": {
+    "selectAll": "全选",
+    "selectNone": "取消选择",
+    "images": "图片",
+    "videos": "视频"
+  }
 }

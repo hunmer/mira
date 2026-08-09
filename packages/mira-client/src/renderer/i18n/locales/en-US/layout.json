@@ -1,6 +1,8 @@
 {
-  "contentToolbar.selectAll": "Select all",
-  "contentToolbar.selectNone": "Deselect",
-  "contentToolbar.images": "Images",
-  "contentToolbar.videos": "Videos"
+  "contentToolbar": {
+    "selectAll": "Select all",
+    "selectNone": "Deselect",
+    "images": "Images",
+    "videos": "Videos"
+  }
 }

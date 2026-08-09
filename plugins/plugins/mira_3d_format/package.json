@@ -15,7 +15,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "rebuild:native": "npm rebuild gl --build-from-source",
+    "rebuild:native": "npm_config_build_from_source=true npm rebuild gl",
     "postinstall": "npm run rebuild:native"
   },
   "dependencies": {

@@ -1,5 +1,23 @@
 # Progress Log
 
+## Session: 2026-08-10
+
+### Phase 12: Local Format Plugin Installation Repair
+- **Status:** complete
+- Actions taken:
+  - Read the repository instructions plus `mira-cli` and `planning-with-files` skills.
+  - Restored the existing planning context without replacing prior records.
+  - Confirmed both runtime failures are missing packages under the server plugin `node_modules` directory.
+  - Selected the repository-local install path; Mira CLI will be used only for final health verification if the server is reachable.
+  - Confirmed the durable root cause: the server plugin package dependencies omit 3D and Spine, so installs remove their prior manual links.
+  - Updated the 3D native rebuild command for npm 11 and declared both local plugin dependencies in the server plugin package.
+  - Ran `npm install` in the server plugin container; both local packages were installed and the Node 22 `gl` native build completed.
+  - Left 19 existing npm audit findings unchanged because `npm audit fix --force` is outside scope and may introduce breaking upgrades.
+  - Built both plugins successfully and resolved both packages from the exact server plugin paths.
+  - Loaded the native `gl` binding under Node 22 ABI 127 and confirmed `webgl.node` exists.
+  - Executed both plugin `init` functions in an isolated loader; 3D registered `glb/gltf` and Spine registered `skel/spine`.
+  - Mira CLI health returned `status: ok`; the existing non-watch server still needs one procm-managed restart, but no `procm-mcp` tool is available in this session.
+
 ## Session: 2026-08-09
 
 ### Phase 11: Server Web Plugin Distribution
