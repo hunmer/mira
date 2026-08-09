@@ -106,3 +106,37 @@
 - Verification: server tsc, Spine plugin tsc/build, Core build, host production build, client plugin build, JS syntax, and diff check passed. Host `vue-tsc` remains blocked only by pre-existing `ServerEditDialog.vue:110`.
 - Verification: procm restarted backend; logs show Spine generator loaded for `[skel, spine]`; Mira CLI health returned `status: ok`.
 - Integration smoke: uploaded temporary `.spine`, SDK listed `hero.atlas/hero.json/hero.png`, SDK fetched `hero.json`, then test file was permanently deleted.
+
+## Server Web Plugin Distribution
+- User requirement: relocate projects under `online_client_plugins/plugins` into each matching server plugin's `web` directory.
+- Server must expose enabled server Web plugin metadata and dist assets over HTTP.
+- Desktop client must show a “服务器插件” tab with local-style cards; entries default enabled, can be toggled, and cannot be uninstalled.
+- Desktop loading should reuse the existing Web client's server-plugin loading mechanism.
+- CodeGraph confirms desktop and Web share `packages/mira-client/src/renderer/services/PluginService.ts`; it already manages online plugin configs and discovery.
+- `ServerPluginManager` owns the per-library `plugins.json`, loaded-plugin map, and authoritative plugin directory, so server Web plugin metadata should be derived there.
+- `ServerPlugin` already knows its plugin directory, making `<plugin>/web/dist` the natural static asset root.
+- Confirmed explicit directory mappings: `mira-3d-format-preview` -> `mira_3d_format`, and `mira-spine-format-preview` -> `mira_spine_format`.
+- `mira-welcome-demo`, `mira-whiteboard`, and `psd-viewer` have no explicit same-purpose server plugin in the indexed tree; inspect their manifests/usages before deciding migration scope.
+- The server already has `getPluginDistDir()` for backend runtime code, so Web assets must use a distinct `<plugin>/web/dist` helper/path.
+- The worktree had no pre-existing source changes; only the three planning files are modified by this task.
+- `PluginService` is initialized in both Web and Electron runtimes; local plugins are Electron-only while online plugins are runtime-neutral.
+- Server plugin enablement and client preference are separate concerns: the API should list server-enabled Web plugins, while each client persists only its own disabled IDs (default-enabled semantics).
+- `psd-viewer` functionally pairs with `mira_thumb_imagemagick`, whose enabled PSD thumbnail support supplies the backend half of PSD preview.
+- `mira-welcome-demo` and `mira-whiteboard` are client-only features with no corresponding backend plugin; the requirement's “对应后端插件” qualifier means they should remain in the online-client catalog unless repository metadata proves otherwise.
+- Existing backend plugins already contain frontend `components/*.js` dashboard routes; inspect that Web component-loading mechanism before finalizing the new dist endpoint contract.
+- `HttpRouter` already serves plugin files at `/plugins/:libraryId/:pluginName/*`, resolving against plugin dist/root with traversal protection; this is the Web client's existing server-asset mechanism.
+- `PluginRoutes` is mounted under `/api/plugins` and already aggregates plugins from all enabled libraries, so `GET /api/plugins/web` is the minimal metadata endpoint.
+- The Core SDK `PluginModule` owns `/api/plugins` calls and should expose the new list method/types for the client instead of adding ad hoc fetch code.
+- Remote plugin loading already accepts an HTTP `directory`/`url` and injects `<directory>/<index>`; server entries can be represented in the same runtime format without installation.
+- The existing static route reads every asset as UTF-8 text, which is invalid for images/WASM/vendor binaries; server Web assets need `sendFile`/streaming with normal MIME handling.
+- New Web asset serving should resolve only under `<plugin>/web` and retain the older dashboard-component route unchanged for compatibility.
+- Each migrated Web project already has `plugin.json` with complete client runtime metadata and an `index.js` entry; the server list can validate/read that manifest directly.
+- The 3D/Spine entries reference `dist/index.html` relative to `index.js`, so moving the whole project under `<server-plugin>/web` preserves URLs without source edits.
+- Script/iframe resource URLs must include the current auth token because browser element loads cannot attach SDK authorization headers.
+- `HttpClient.getUrl()` already builds absolute authenticated element URLs; expose server Web plugin URLs through the SDK/module using this helper.
+- Client plugin service initializes before the server connection, so server plugin synchronization must also run after connection/library selection and on dialog refresh.
+- The API should accept `libraryId` to reflect that server plugin enablement is per library and avoid cross-library duplicates.
+- Backend plugin npm `files` allowlists must include `web/**/*`; otherwise installed server plugins would omit the migrated client code even though repository-local development works.
+- Server plugin synchronization can run both after library initialization and from the dialog; refresh must unload the previous instance and script after a successful fetch before reinjection to avoid duplicate registrations.
+- The active port 8081 process is a non-watch `ts-node/register src/index.ts` process. It remains healthy but requires a procm-managed restart before the new routes are live.
+- No procm-mcp tool is available in this session, and Mira CLI has no authenticated profile, so live authenticated list verification remains an acceptance step rather than an implementation gap.

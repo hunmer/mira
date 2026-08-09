@@ -5,7 +5,7 @@
   "author": "Mira Team",
   "license": "ISC",
   "main": "dist/index.js",
-  "files": ["dist/**/*", "package.json", "README.md"],
+  "files": ["dist/**/*", "web/**/*", "package.json", "README.md"],
   "mira": {
     "id": "mira_3d_format",
     "title": "3D 格式处理",

@@ -13,6 +13,15 @@ export interface PluginConfig {
     path: string;
 }
 
+export interface ServerWebPluginManifest {
+    pluginName: string;
+    pluginId: string;
+    version: string;
+    index: string;
+    serverPluginName: string;
+    [key: string]: any;
+}
+
 export interface HttpHookContext {
     libraryId: string;
     clientId?: string;
@@ -85,6 +94,42 @@ export class ServerPluginManager {
 
     getPluginDistDir(pluginName: string): string {
         return path.join(this.getPluginDir(pluginName), 'dist');
+    }
+
+    getPluginWebDir(pluginName: string): string {
+        return path.join(this.getPluginDir(pluginName), 'web');
+    }
+
+    getLoadedWebPlugins(): ServerWebPluginManifest[] {
+        const plugins: ServerWebPluginManifest[] = [];
+
+        for (const pluginName of this.loadedPlugins.keys()) {
+            const webDir = this.getPluginWebDir(pluginName);
+            const manifestPath = path.join(webDir, 'plugin.json');
+            if (!fs.existsSync(manifestPath)) continue;
+
+            try {
+                const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+                const index = typeof manifest.index === 'string' ? manifest.index : 'index.js';
+                const resolvedIndex = path.resolve(webDir, index);
+                const relativeIndex = path.relative(path.resolve(webDir), resolvedIndex);
+                if (!manifest.pluginId || !manifest.pluginName || relativeIndex.startsWith('..') || path.isAbsolute(relativeIndex) || !fs.existsSync(resolvedIndex)) {
+                    console.warn(`Skipping invalid Web plugin manifest: ${manifestPath}`);
+                    continue;
+                }
+
+                plugins.push({
+                    ...manifest,
+                    index,
+                    version: manifest.version || '1.0.0',
+                    serverPluginName: pluginName,
+                });
+            } catch (error) {
+                console.error(`Error reading Web plugin manifest for ${pluginName}:`, error);
+            }
+        }
+
+        return plugins;
     }
 
     private getPluginConfig(pluginName: string): PluginConfig | undefined {

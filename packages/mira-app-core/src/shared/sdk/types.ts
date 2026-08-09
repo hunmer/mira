@@ -150,6 +150,31 @@ export interface PluginsByLibrary {
     plugins: Plugin[];
 }
 
+export interface ServerWebPlugin {
+    pluginName: string;
+    pluginId: string;
+    version: string;
+    index: string;
+    serverPluginName: string;
+    libraryId: string;
+    url: string;
+    priority?: number;
+    icon?: string;
+    tags?: string[];
+    category?: string;
+    description?: string;
+    author?: string;
+    homepage?: string;
+    enable?: boolean;
+    config?: Record<string, any>;
+    hotkey?: Record<string, any>;
+    events?: string[];
+    dependencies?: string[];
+    permissions?: string[];
+    minAppVersion?: string;
+    platform?: string[];
+}
+
 export interface InstallPluginRequest {
     name: string;
     version?: string;

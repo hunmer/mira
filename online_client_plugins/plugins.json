@@ -1,148 +1,7 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-08T12:57:43.851Z",
+  "generatedAt": "2026-08-09T03:40:51.571Z",
   "plugins": [
-    {
-      "pluginId": "d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70",
-      "pluginName": "3D 格式预览",
-      "version": "1.2.1",
-      "description": "为 GLB/GLTF 文件提供可交互的 3D 线框缩略图和详情查看入口，验证自定义格式插件 API。",
-      "author": "Mira Team",
-      "homepage": "https://github.com/mira-team/mira-3d-format-preview",
-      "category": "development",
-      "tags": [
-        "3D",
-        "GLB",
-        "GLTF",
-        "预览"
-      ],
-      "minAppVersion": "1.0.0",
-      "platform": [
-        "win32",
-        "darwin",
-        "linux"
-      ],
-      "directory": "plugins/mira-3d-format-preview",
-      "icon": null,
-      "readme": "README.md",
-      "size": 1149581,
-      "checksum": "sha256:2e38ec28af542ea5c89d6a249428266475d7e08963947429b56e5a84d0112e7f",
-      "files": [
-        {
-          "path": "README.md",
-          "size": 2512,
-          "checksum": "sha256:3877f0a25be0b6671c468766eb3990221e605d2d4a7884aac164d4741ffb90e9"
-        },
-        {
-          "path": "plugin.json",
-          "size": 648,
-          "checksum": "sha256:c0687ce293cf1b8df64097a748ceb5d1787ea5cdb816a74deeb5f7d3d983706c"
-        },
-        {
-          "path": "package.json",
-          "size": 781,
-          "checksum": "sha256:d0337f5c03e964f3954b7017d4bd04c6336c3f469fb5ed806fab427b69c7f533"
-        },
-        {
-          "path": "index.js",
-          "size": 4317,
-          "checksum": "sha256:c24b51146e825cd8e16677d3cbdf4288328f789f53326623d24508cff9db89e0"
-        },
-        {
-          "path": "dist/index.html",
-          "size": 403,
-          "checksum": "sha256:3b049499d03ebf31cf431c35eea6e1f792071488c7b1b058608e12ed69fa74dc"
-        },
-        {
-          "path": "dist/assets/index-Cblv2XT6.js",
-          "size": 1100847,
-          "checksum": "sha256:04fca8c097fca5e53e731e574020cfbbd04ddc8c8efd16000e09f0de6a6fd608"
-        },
-        {
-          "path": "dist/assets/index-BfDU9UVV.css",
-          "size": 40073,
-          "checksum": "sha256:9fe1be6e20fa7e4c537ea4eba66ea8afd3fd60da1105c2ca62246ec20fd427b1"
-        }
-      ]
-    },
-    {
-      "pluginId": "e5f6a7b8-c9d0-4e1f-8a2b-3c4d5e6f7081",
-      "pluginName": "Spine 格式预览",
-      "version": "1.0.0",
-      "description": "为 Spine 4.2 .skel/.spine 文件提供可交互的骨骼动画预览（骨骼树查看/显隐、动画切换、皮肤切换），缩略图由服务端渲染 idle 首帧。",
-      "author": "Mira Team",
-      "homepage": "https://github.com/mira-team/mira-spine-format-preview",
-      "category": "development",
-      "tags": [
-        "Spine",
-        "skel",
-        "骨骼动画",
-        "预览"
-      ],
-      "minAppVersion": "1.0.0",
-      "platform": [
-        "win32",
-        "darwin",
-        "linux"
-      ],
-      "directory": "plugins/mira-spine-format-preview",
-      "icon": null,
-      "readme": null,
-      "size": 1494262,
-      "checksum": "sha256:3f1bb39658a236a7c5dc969de71dcd1a5b479dc97df0095fecb9d185c43fdcf4",
-      "files": [
-        {
-          "path": "public/vendor/spine-pixi-v7-4.2.63.min.js",
-          "size": 187895,
-          "checksum": "sha256:0ffc0699e0392085d15338aa8d543a621711f06857fde337ec8d895e1e8bce15"
-        },
-        {
-          "path": "public/vendor/pixi-7.3.3.min.js",
-          "size": 454845,
-          "checksum": "sha256:97f839f755b300177d6fc61903d1bb50c0f101687c88c4b3a9e94f68059286df"
-        },
-        {
-          "path": "plugin.json",
-          "size": 724,
-          "checksum": "sha256:adede3d9cc5fc47ea93b16cf3a8072318e6a8d4b23d60d272d318e9ad0e71087"
-        },
-        {
-          "path": "package.json",
-          "size": 677,
-          "checksum": "sha256:81b1aa0b1d0f4a88f37b77159b1282b7f5ba99c09eea5e71689ecdffcb0e267b"
-        },
-        {
-          "path": "index.js",
-          "size": 7115,
-          "checksum": "sha256:2053108aaf2c223fc7befe5fa1c80f1403d2791e9ff75329515d28457ce0bf53"
-        },
-        {
-          "path": "dist/vendor/spine-pixi-v7-4.2.63.min.js",
-          "size": 187895,
-          "checksum": "sha256:0ffc0699e0392085d15338aa8d543a621711f06857fde337ec8d895e1e8bce15"
-        },
-        {
-          "path": "dist/vendor/pixi-7.3.3.min.js",
-          "size": 454845,
-          "checksum": "sha256:97f839f755b300177d6fc61903d1bb50c0f101687c88c4b3a9e94f68059286df"
-        },
-        {
-          "path": "dist/index.html",
-          "size": 701,
-          "checksum": "sha256:e2773abe99a9a94161944d09bf7ccfb2544a3d62b22df6ff7171d0dd0d506434"
-        },
-        {
-          "path": "dist/assets/index-DJWFR0FL.js",
-          "size": 159787,
-          "checksum": "sha256:a5db39dbb7400d2f7b68f33ef4dcb6ca9d907a4064bc4e044c772ceedcb299c1"
-        },
-        {
-          "path": "dist/assets/index-Df3vIJ2v.css",
-          "size": 39778,
-          "checksum": "sha256:e9e1cdab8a932e6a27df0c958525a6833bf1ac4196d2af1b67a0e794c5f1e6ac"
-        }
-      ]
-    },
     {
       "pluginId": "b1c2d3e4-5f60-4a7b-8c9d-0a1b2c3d4e5f",
       "pluginName": "欢迎示例插件",
@@ -169,11 +28,6 @@
       "checksum": "sha256:ee8e314b93f33c14116648e78342883a54c8961a24b37eb8ef763d9f66a66b28",
       "files": [
         {
-          "path": "README.md",
-          "size": 522,
-          "checksum": "sha256:1d97fdbd0faafec78c9e7b63f718083712bd038d8e047ee44a4d66f985960419"
-        },
-        {
           "path": "plugin.json",
           "size": 802,
           "checksum": "sha256:7fe3f8955ca482a75dbd2f3272e9a9740821f7d1f3b16c1d6f4c8999512a206e"
@@ -182,6 +36,11 @@
           "path": "index.js",
           "size": 3228,
           "checksum": "sha256:bdc0c595cd365bcf5effc27b5b31943461e00511bcf2084aca4c785425521dc8"
+        },
+        {
+          "path": "README.md",
+          "size": 522,
+          "checksum": "sha256:1d97fdbd0faafec78c9e7b63f718083712bd038d8e047ee44a4d66f985960419"
         }
       ]
     },
@@ -212,11 +71,6 @@
       "checksum": "sha256:61e5f6206f0d0bd5b1e82bc0aebe040a24f4db6d965f26177b5cb958b27d57a8",
       "files": [
         {
-          "path": "README.md",
-          "size": 6781,
-          "checksum": "sha256:cdd0f6de451c246fc75ab26ef39a5646a242a5dd9fd84501b9f993857f01e8db"
-        },
-        {
           "path": "plugin.json",
           "size": 782,
           "checksum": "sha256:537441ecc46e62beed919f7711e6c2f97d048d2db095e2a3dee004edef9ae8b1"
@@ -237,11 +91,6 @@
           "checksum": "sha256:f6d67580e4fbb5bb4943cd84cbbfef5dafb40477fa406baaeda75e49c8665ffd"
         },
         {
-          "path": "HANDOFF.md",
-          "size": 12324,
-          "checksum": "sha256:8e3c1aefada5d06ba5f15e26690e37bc4c6e9e96f03a4486c5027e339bf2852c"
-        },
-        {
           "path": "dist/index.html",
           "size": 401,
           "checksum": "sha256:89dec5147b4fe516257a3f8bfd016ebd1177117d8c6199a4fb817dfd8cdac842"
@@ -260,80 +109,16 @@
           "path": "dist/assets/index-BcbA4H_R.css",
           "size": 60938,
           "checksum": "sha256:eb8ffc4f7d59e3da4c4641ab54f50a2e18a9d40d83ebc202a1bec01f0b90b418"
-        }
-      ]
-    },
-    {
-      "pluginId": "ea4f60c2-0e0d-41e2-b224-f436fbb4487b",
-      "pluginName": "PSD 分层预览",
-      "version": "1.0.0",
-      "description": "为 .psd/.psb 文件提供浏览器本地分层预览（图层树显隐、可见性切换、normal + opacity 合成），缩略图由服务端渲染。",
-      "author": "Mira Team",
-      "homepage": "https://github.com/mira-team/mira-psd-viewer",
-      "category": "development",
-      "tags": [
-        "PSD",
-        "PSB",
-        "Photoshop",
-        "图层",
-        "分层预览"
-      ],
-      "minAppVersion": "1.0.0",
-      "platform": [
-        "win32",
-        "darwin",
-        "linux"
-      ],
-      "directory": "plugins/psd-viewer",
-      "icon": null,
-      "readme": "README.md",
-      "size": 547893,
-      "checksum": "sha256:0a17b293ef0e0f3971859ade7e406425d3ab55a093c6bc0796b25d66b7e4929d",
-      "files": [
+        },
         {
           "path": "README.md",
-          "size": 2694,
-          "checksum": "sha256:763e3c385e9a436a2adf66cc79801f1e91cb705f07dff54d03ee29c47f3ecf0e"
+          "size": 6781,
+          "checksum": "sha256:cdd0f6de451c246fc75ab26ef39a5646a242a5dd9fd84501b9f993857f01e8db"
         },
         {
-          "path": "plugin.json",
-          "size": 701,
-          "checksum": "sha256:0d4bc553a505b15eece71d683653759a296bc004b0c65a3dec145319ae75b046"
-        },
-        {
-          "path": "package.json",
-          "size": 657,
-          "checksum": "sha256:ad8b34948fe980a4d887929744f247db89fdb08eb6f8aae32b7c051e67a7b44f"
-        },
-        {
-          "path": "index.js",
-          "size": 5429,
-          "checksum": "sha256:27a733e862a1a60ad5208e4f841263159cf776f058a9fa2aa45572a006ea9c57"
-        },
-        {
-          "path": "dist/index.html",
-          "size": 417,
-          "checksum": "sha256:b5f07eace6f2d24201ce85cea898227d9dcd7d78e435432f474dbefa4250226e"
-        },
-        {
-          "path": "dist/assets/psdWorker-oZFAK-O5.js",
-          "size": 197289,
-          "checksum": "sha256:655f5750b10134c3baec7b5c7d3498657c8a536c01abb1ce630dc1a2da7ff592"
-        },
-        {
-          "path": "dist/assets/index-jLWidxh6.js",
-          "size": 111369,
-          "checksum": "sha256:1efcdadd1f6f0d07981366b2417051ff260ca4c3de9ff799c7026c537dab8be7"
-        },
-        {
-          "path": "dist/assets/index-DE_Myy-p.js",
-          "size": 195891,
-          "checksum": "sha256:2625446e0be819c34372c6ffa18b61e1a3e5dd4564a7fcede7cd391b5307f356"
-        },
-        {
-          "path": "dist/assets/index-B0TL7tWw.css",
-          "size": 33446,
-          "checksum": "sha256:fcf21c53fb1d1ef348aba43415f3fae84ab6263228ca255c86bc9567484e878c"
+          "path": "HANDOFF.md",
+          "size": 12324,
+          "checksum": "sha256:8e3c1aefada5d06ba5f15e26690e37bc4c6e9e96f03a4486c5027e339bf2852c"
         }
       ]
     }

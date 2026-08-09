@@ -5,7 +5,7 @@
   "author": "hunmer",
   "license": "ISC",
   "main": "dist/index.js",
-  "files": ["dist/**/*"],
+  "files": ["dist/**/*", "web/**/*"],
   "mira": {
     "id": "mira_thumb_imagemagick",
     "title": "ImageMagick 缩略图",

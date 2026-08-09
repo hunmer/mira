@@ -260,6 +260,29 @@ export class MiraHttpServer {
         // 根路径重定向到 dashboard
         this.app.get('/', (req, res) => res.redirect('/dashboard/'));
 
+        // 服务端插件的前端构建产物是公开代码资源。放在鉴权中间件之前，确保
+        // iframe 内的 JS/CSS/wasm 等相对资源无需重复传递 token。
+        this.app.get('/server-plugins/:libraryId/:pluginName/*', (req, res) => {
+            const { libraryId, pluginName } = req.params;
+            const library = this.backend.libraries?.getLibrary(libraryId);
+            const pluginManager = library?.pluginManager;
+            if (!pluginManager || !pluginManager.isPluginLoaded(pluginName)) {
+                return res.status(404).json({ error: 'Server plugin not found' });
+            }
+
+            const webDir = path.resolve(pluginManager.getPluginWebDir(pluginName));
+            const assetPath = path.resolve(webDir, (req.params as Record<string, string>)[0] || '');
+            const relativePath = path.relative(webDir, assetPath);
+            if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
+                return res.status(403).json({ error: 'Access denied' });
+            }
+            if (!fs.existsSync(assetPath) || !fs.statSync(assetPath).isFile()) {
+                return res.status(404).json({ error: 'File not found' });
+            }
+
+            res.sendFile(assetPath);
+        });
+
         // 统一权限中间件（CORS + body parser 之后、路由注册之前）
         this.app.use('/api', createHttpPermissionMiddleware(
             this.authRouter.getAuthService(),

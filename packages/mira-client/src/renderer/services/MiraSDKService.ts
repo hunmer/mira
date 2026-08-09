@@ -1,4 +1,4 @@
-import { MiraClient } from 'mira-app-core/shared/sdk'
+import { MiraClient, type ServerWebPlugin } from 'mira-app-core/shared/sdk'
 import { initializeWebSocket, webSocketService } from './WebSocketService'
 import { useMediaStore } from '../stores/media'
 import { useAuthStore } from '../stores/auth'
@@ -836,6 +836,11 @@ export class MiraSDKService {
    */
   getConnectionConfig(): MiraConnectionConfig | null {
     return this.connectionConfig
+  }
+
+  async getServerWebPlugins(libraryId: string): Promise<ServerWebPlugin[]> {
+    if (!this.client) throw new Error('Not connected to Mira server')
+    return await this.client.plugins().getWeb(libraryId)
   }
 
   /**

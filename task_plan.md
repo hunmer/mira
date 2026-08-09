@@ -4,7 +4,7 @@
 Add client and server plugin APIs for custom file formats, covering thumbnail/detail rendering and path-based backend processing, then document and verify the extension flow with a 3D-capable example where appropriate.
 
 ## Current Phase
-Phase 6 complete
+Phase 11 complete
 
 ## Phases
 
@@ -80,6 +80,15 @@ Phase 6 complete
 - [x] Run focused security, type, build, and integration checks
 - **Status:** complete
 
+### Phase 11: Server Web Plugin Distribution
+- [x] Trace server plugin metadata/static routes, Web remote loading, and desktop plugin dialog state
+- [x] Move online client plugin projects into matching server plugin `web` directories
+- [x] Add an HTTP API for enabled server Web plugins and their dist assets
+- [x] Add a desktop “服务器插件” tab with enabled-by-default toggles and no uninstall action
+- [x] Load enabled server plugins through the existing Web remote-plugin path
+- [x] Build/test affected packages and review the final diff
+- **Status:** complete
+
 ## Key Questions
 1. Where are client and server plugin APIs constructed, activated, and disposed?
 2. What file metadata is available at thumbnail and detail-open time?
@@ -105,6 +114,10 @@ Phase 6 complete
 | Parallel read failed when guessed permission middleware path did not exist | 1 | Use `rg --files` discovery and `Promise.allSettled` for independent reads |
 | Spine plugin type-check could not resolve newly declared `yauzl` dependency | 1 | Install the plugin package dependencies, then rerun type-check |
 | Client verification used package filter `mira-client`, which matches no workspace package | 1 | Rerun type-check/build with actual package name `mira-web` |
+| Core full build includes existing SDK `.test.ts` files with CommonJS-incompatible top-level await and an unrelated Auth mock type error | 1 | Use the SDK ESM build and focused source type-check; do not repeat the same full build |
+| Server TypeScript rejected Express wildcard access at `req.params[0]` | 1 | Cast params to its runtime string record before accessing the wildcard key |
+| Client type-check also reports an existing lazy-plugin type mismatch at `main.ts:51` | 1 | Confirm changed client files introduce no errors via production build and scoped diagnostics |
+| Mira CLI library listing requires login and no CLI profile is configured | 1 | Keep validation read-only; verify health plus local manifest/asset contracts without assuming credentials |
 
 ## Notes
 - Re-read this plan before API design and implementation.

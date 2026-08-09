@@ -121,6 +121,9 @@ export interface LocalPluginConfig {
   maxAppVersion?: string // 最高应用版本要求
   platform?: string[] // 支持的平台 ['win32', 'darwin', 'linux']
   actualDirectory?: string // 插件实际所在的目录路径
+  source?: 'local' | 'online' | 'server'
+  serverPluginName?: string
+  libraryId?: string
 }
 
 // 插件运行时状态

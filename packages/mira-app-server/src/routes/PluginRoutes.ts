@@ -161,6 +161,31 @@ export class PluginRoutes {
     }
 
     private setupRoutes(): void {
+        // 获取素材库当前启用、且提供 Web 前端的服务端插件
+        this.router.get('/web', async (req: Request, res: Response) => {
+            try {
+                const libraryId = typeof req.query.libraryId === 'string' ? req.query.libraryId : '';
+                if (!libraryId) {
+                    return res.status(400).json({ error: 'Library ID is required' });
+                }
+
+                const validation = this.validateLibrary(libraryId);
+                if (!validation.valid) {
+                    return res.status(404).json({ error: validation.error });
+                }
+
+                const plugins = validation.library!.pluginManager!.getLoadedWebPlugins().map((plugin: any) => ({
+                    ...plugin,
+                    libraryId,
+                    url: `/server-plugins/${encodeURIComponent(libraryId)}/${encodeURIComponent(plugin.serverPluginName)}`,
+                }));
+                res.json(plugins);
+            } catch (error) {
+                console.error('Error getting server Web plugins:', error);
+                res.status(500).json({ error: 'Failed to get server Web plugins' });
+            }
+        });
+
         // 获取插件列表
         this.router.get('/', async (req: Request, res: Response) => {
             try {

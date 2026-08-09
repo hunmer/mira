@@ -9,3 +9,4 @@ packages:
   - 'packages/mira-browser-extension'
   - 'packages/vue-masonry'
   - 'online_client_plugins/plugins/*'
+  - 'plugins/plugins/*/web'

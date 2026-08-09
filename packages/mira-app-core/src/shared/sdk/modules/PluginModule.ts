@@ -4,6 +4,7 @@ import {
     PluginsByLibrary,
     InstallPluginRequest,
     BaseResponse,
+    ServerWebPlugin,
 } from '../types';
 
 /**
@@ -27,6 +28,17 @@ export class PluginModule {
      */
     async getByLibrary(): Promise<PluginsByLibrary[]> {
         return await this.httpClient.get<PluginsByLibrary[]>('/api/plugins/by-library');
+    }
+
+    /** 获取指定素材库启用的服务端 Web 插件。 */
+    async getWeb(libraryId: string): Promise<ServerWebPlugin[]> {
+        const plugins = await this.httpClient.get<ServerWebPlugin[]>('/api/plugins/web', {
+            params: { libraryId },
+        });
+        return plugins.map(plugin => ({
+            ...plugin,
+            url: this.httpClient.getUrl(plugin.url),
+        }));
     }
 
     /**

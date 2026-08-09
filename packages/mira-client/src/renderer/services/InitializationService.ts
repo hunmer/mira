@@ -211,6 +211,14 @@ export class InitializationService {
         await miraSDKService.initWebSocketForLibrary(selectedLibraryId)
       } catch { /* non-fatal */ }
 
+      // 素材库确定后同步其启用的服务端 Web 插件。
+      try {
+        const { usePluginStore } = await import('../stores/plugin')
+        await usePluginStore().syncServerPlugins(selectedLibraryId)
+      } catch (error) {
+        console.warn('Failed to load server Web plugins:', error)
+      }
+
       // 第五步：加载标签列表
       initState.updateStep('加载标签列表', 90)
       await this.loadTagList(selectedLibraryId)

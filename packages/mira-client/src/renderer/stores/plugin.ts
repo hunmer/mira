@@ -57,6 +57,7 @@ export const usePluginStore = defineStore('plugin', () => {
   // ==================== 状态定义 ====================
   const plugins = ref<ExtendedPluginInfo[]>([])
   const localPlugins = ref<PluginRuntime[]>([])
+  const serverPlugins = ref<PluginRuntime[]>([])
   const currentPlugin = ref<ExtendedPluginInfo | null>(null)
   const isLoading = ref(false)
   const error = ref<string | null>(null)
@@ -564,11 +565,13 @@ export const usePluginStore = defineStore('plugin', () => {
       console.log('🔄 Store.loadLocalPlugins - 开始加载插件')
       // 使用renderer进程PluginService
       const plugins = pluginService.getAllPlugins()
+      const local = plugins.filter(plugin => plugin.config.source !== 'server')
 
       // 从持久化状态恢复插件的enabled状态
-      await restoreLocalPluginStates(plugins)
+      await restoreLocalPluginStates(local)
 
-      localPlugins.value = plugins
+      localPlugins.value = local
+      serverPlugins.value = plugins.filter(plugin => plugin.config.source === 'server')
 
       // 将本地插件注入到document中
       await injectPluginsToDocument(plugins)
@@ -578,6 +581,39 @@ export const usePluginStore = defineStore('plugin', () => {
       const errorMessage = handleError(err, 'Failed to load local plugins')
       return { success: false, message: errorMessage }
     }
+  }
+
+  const syncServerPlugins = async (libraryId: string) => {
+    const previousPlugins = [...serverPlugins.value]
+    const result = await pluginService.syncServerPlugins(libraryId)
+    if (!result.success) return result
+
+    for (const plugin of previousPlugins) {
+      if (plugin.status !== 'disabled') {
+        await disableLocalPluginNew(plugin.config.pluginId, { value: previousPlugins }, pendingOperations.value, setError)
+      }
+      cleanupPluginScript(plugin.config.pluginId)
+    }
+
+    serverPlugins.value = pluginService.getServerPlugins()
+    const enabledPlugins = serverPlugins.value.filter(plugin => plugin.status !== 'disabled')
+    await injectPluginsToDocument(enabledPlugins)
+    for (const plugin of enabledPlugins) {
+      await enableLocalPluginNew(plugin.config.pluginId, serverPlugins, pendingOperations.value, setError)
+    }
+    return { success: true, data: serverPlugins.value, message: result.message }
+  }
+
+  const enableServerPlugin = async (pluginId: string) => {
+    const result = await enableLocalPluginNew(pluginId, serverPlugins, pendingOperations.value, setError)
+    if (result.success) await pluginService.setServerPluginEnabled(pluginId, true)
+    return result
+  }
+
+  const disableServerPlugin = async (pluginId: string) => {
+    const result = await disableLocalPluginNew(pluginId, serverPlugins, pendingOperations.value, setError)
+    if (result.success) await pluginService.setServerPluginEnabled(pluginId, false)
+    return result
   }
 
   /**
@@ -1014,6 +1050,7 @@ export const usePluginStore = defineStore('plugin', () => {
     // 状态
     plugins,
     localPlugins,
+    serverPlugins,
     currentPlugin,
     isLoading,
     error,
@@ -1082,6 +1119,9 @@ export const usePluginStore = defineStore('plugin', () => {
     importPluginFromUrl,
     uninstallLocalPlugin,
     discoverLocalPlugins,
+    syncServerPlugins,
+    enableServerPlugin,
+    disableServerPlugin,
     selectPluginDirectory,
     selectZipFile,
 

@@ -12,11 +12,11 @@
         <aside class="w-56 flex flex-col">
           <!-- 插件类型切换 -->
           <div class="p-4">
-            <div class="bg-white/40 dark:bg-muted/40 rounded-lg p-1 flex border border-white/60 dark:border-border">
+            <div class="bg-white/40 dark:bg-muted/40 rounded-lg p-1 grid grid-cols-3 border border-white/60 dark:border-border">
               <button
                 @click="activeTab = 'local'"
                 :class="[
-                  'flex-1 text-sm py-2 px-3 rounded-md font-medium transition-colors',
+                  'text-xs py-2 px-1 rounded-md font-medium transition-colors',
                   activeTab === 'local'
                     ? 'bg-primary/10 text-primary shadow-sm'
                     : 'text-muted-foreground dark:text-muted-foreground hover:text-foreground'
@@ -25,9 +25,20 @@
                 本地插件
               </button>
               <button
+                @click="activeTab = 'server'"
+                :class="[
+                  'text-xs py-2 px-1 rounded-md font-medium transition-colors',
+                  activeTab === 'server'
+                    ? 'bg-primary/10 text-primary shadow-sm'
+                    : 'text-muted-foreground dark:text-muted-foreground hover:text-foreground'
+                ]"
+              >
+                服务器插件
+              </button>
+              <button
                 @click="activeTab = 'online'"
                 :class="[
-                  'flex-1 text-sm py-2 px-3 rounded-md font-medium transition-colors',
+                  'text-xs py-2 px-1 rounded-md font-medium transition-colors',
                   activeTab === 'online'
                     ? 'bg-primary/10 text-primary shadow-sm'
                     : 'text-muted-foreground dark:text-muted-foreground hover:text-foreground'
@@ -119,7 +130,7 @@
                 />
               </div>
               <!-- 刷新按钮 -->
-              <TooltipProvider :ignore-non-keyboard-focus="true">
+              <TooltipProvider v-if="activeTab === 'local'" :ignore-non-keyboard-focus="true">
                 <Tooltip>
                   <TooltipTrigger as-child>
                     <button
@@ -260,8 +271,73 @@
               </div>
             </div>
 
+            <!-- 服务器插件列表 -->
+            <div v-else-if="activeTab === 'server'" class="grid grid-cols-2 gap-4">
+              <div
+                v-for="plugin in filteredServerPlugins"
+                :key="plugin.config.pluginId"
+                class="border border-border dark:border-border rounded-lg p-4 hover:shadow-md transition-shadow"
+              >
+                <div class="flex items-start justify-between mb-3">
+                  <div class="flex-1 flex items-start gap-2 min-w-0">
+                    <PluginIcon
+                      :plugin-id="plugin.config.pluginId"
+                      :directory="plugin.directory"
+                      :icon="plugin.config.icon"
+                      :name="plugin.config.pluginName"
+                      :size="32"
+                      rounded="md"
+                      class="mt-0.5"
+                    />
+                    <div class="min-w-0">
+                      <h3 class="font-medium text-foreground dark:text-muted-foreground truncate">{{ plugin.config.pluginName }}</h3>
+                      <p class="text-xs text-muted-foreground dark:text-muted-foreground mt-1">{{ plugin.config.description }}</p>
+                    </div>
+                  </div>
+                  <button
+                    @click="toggleServerPlugin(plugin)"
+                    :class="[
+                      'ml-3 w-10 h-6 rounded-full relative transition-colors shrink-0',
+                      plugin.status !== 'disabled' ? 'bg-green-500' : 'bg-accent dark:bg-muted'
+                    ]"
+                    :aria-label="plugin.status !== 'disabled' ? '禁用服务器插件' : '启用服务器插件'"
+                  >
+                    <span
+                      :class="[
+                        'absolute top-1 w-4 h-4 rounded-full bg-white transition-transform',
+                        plugin.status !== 'disabled' ? 'left-5' : 'left-1'
+                      ]"
+                    ></span>
+                  </button>
+                </div>
+                <div class="flex items-center justify-between text-xs text-muted-foreground dark:text-muted-foreground">
+                  <span>{{ plugin.config.author }}</span>
+                  <span>v{{ plugin.config.version }}</span>
+                </div>
+                <div v-if="plugin.error" class="mt-2 text-xs text-destructive dark:text-destructive bg-destructive/10 p-2 rounded">
+                  {{ plugin.error }}
+                </div>
+                <div class="flex items-center justify-between mt-3 pt-3 border-t border-border dark:border-border">
+                  <button
+                    @click="showPluginDetails(plugin)"
+                    class="text-xs text-primary dark:text-primary hover:text-primary"
+                  >
+                    详情
+                  </button>
+                  <span class="text-xs text-muted-foreground">由服务器提供</span>
+                </div>
+              </div>
+
+              <div v-if="filteredServerPlugins.length === 0" class="col-span-2 text-center py-12">
+                <span class="material-icons text-6xl text-muted-foreground dark:text-muted-foreground">dns</span>
+                <p class="text-muted-foreground dark:text-muted-foreground mt-4">
+                  {{ searchQuery ? '没有找到匹配的插件' : '当前素材库没有服务器插件' }}
+                </p>
+              </div>
+            </div>
+
             <!-- 在线插件市场 -->
-            <div v-else>
+            <div v-else-if="activeTab === 'online'">
               <!-- 插件源切换 -->
               <div v-if="marketplaceUrlList.length > 0" class="flex items-center gap-2 mb-3">
                 <span class="text-sm text-muted-foreground dark:text-muted-foreground whitespace-nowrap">插件源</span>
@@ -553,6 +629,7 @@ import { useToast } from '@/renderer/composables/useToast'
 import { useConfirm } from '@/renderer/composables/useConfirm'
 import { usePluginStore } from '@renderer/stores/plugin'
 import { useSettingsStore } from '@renderer/stores/settings'
+import { useLibraryStore } from '@renderer/stores/library'
 import type { PluginRuntime } from '../../../shared/types'
 import type { MarketplacePluginEntry } from '../../../shared/types'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -582,6 +659,7 @@ const toast = useToast()
 const confirm = useConfirm()
 const pluginStore = usePluginStore()
 const settingsStore = useSettingsStore()
+const libraryStore = useLibraryStore()
 
 // 响应式状态
 const isVisible = computed({
@@ -589,7 +667,7 @@ const isVisible = computed({
   set: (value) => emit('update:visible', value)
 })
 
-const activeTab = ref<'local' | 'online'>('local')
+const activeTab = ref<'local' | 'server' | 'online'>('local')
 const selectedCategory = ref('all')
 const searchQuery = ref('')
 const isRefreshing = ref(false)
@@ -647,6 +725,32 @@ const filteredLocalPlugins = computed(() => {
     )
   }
 
+  return plugins
+})
+
+const filteredServerPlugins = computed(() => {
+  let plugins = pluginStore.serverPlugins || []
+  if (selectedCategory.value !== 'all') {
+    plugins = plugins.filter(plugin => {
+      const category = plugin.config.category || 'other'
+      const tags = plugin.config.tags || []
+      const aliases: Record<string, string[]> = {
+        communication: ['通讯', 'communication'],
+        documentation: ['文档', 'documentation'],
+        productivity: ['效率', 'productivity'],
+        development: ['开发', 'development']
+      }
+      return category === selectedCategory.value || (aliases[selectedCategory.value] || []).some(tag => tags.includes(tag))
+    })
+  }
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    plugins = plugins.filter(plugin =>
+      plugin.config.pluginName.toLowerCase().includes(query) ||
+      plugin.config.description.toLowerCase().includes(query) ||
+      plugin.config.author.toLowerCase().includes(query)
+    )
+  }
   return plugins
 })
 
@@ -908,6 +1012,22 @@ const togglePlugin = async (plugin: PluginRuntime) => {
   }
 }
 
+const toggleServerPlugin = async (plugin: PluginRuntime) => {
+  try {
+    const result = plugin.status !== 'disabled'
+      ? await pluginStore.disableServerPlugin(plugin.config.pluginId)
+      : await pluginStore.enableServerPlugin(plugin.config.pluginId)
+    if (!result.success) throw new Error(result.message)
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: '操作失败',
+      detail: error instanceof Error ? error.message : '未知错误',
+      life: 5000
+    })
+  }
+}
+
 const showPluginDetails = (plugin: PluginRuntime) => {
   selectedPlugin.value = plugin
   showDetailsDialog.value = true
@@ -962,7 +1082,9 @@ const refreshPlugins = async () => {
   try {
     const result = activeTab.value === 'online'
       ? await pluginStore.fetchMarketplaceCatalog()
-      : await pluginStore.discoverLocalPlugins()
+      : activeTab.value === 'server'
+        ? await pluginStore.syncServerPlugins(libraryStore.currentLibrary?.id || '')
+        : await pluginStore.discoverLocalPlugins()
     if (!result.success) {
       toast.add({
         severity: 'error',
@@ -1019,6 +1141,7 @@ const installPluginFromFile = async () => {
 // 按需初始化标志
 const isInitialized = ref(false)
 const isMarketplaceInitialized = ref(false)
+const isServerPluginsInitialized = ref(false)
 
 // 监听对话框打开，按需刷新插件列表
 watch(isVisible, async (visible) => {
@@ -1034,6 +1157,10 @@ watch(activeTab, async (tab) => {
   if (tab === 'online' && !isMarketplaceInitialized.value) {
     isMarketplaceInitialized.value = true
     await loadMarketplace()
+  } else if (tab === 'server' && !isServerPluginsInitialized.value) {
+    isServerPluginsInitialized.value = true
+    const libraryId = libraryStore.currentLibrary?.id
+    if (libraryId) await pluginStore.syncServerPlugins(libraryId)
   } else if (tab === 'local' && marketplaceUrl.value && !pluginStore.isCheckingUpdates) {
     // 后台静默检查更新（不弹 toast，仅刷新徽章）
     pluginStore.checkPluginUpdates().catch(() => {})

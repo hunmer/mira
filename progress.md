@@ -1,5 +1,48 @@
 # Progress Log
 
+## Session: 2026-08-09
+
+### Phase 11: Server Web Plugin Distribution
+- **Status:** complete
+- Actions taken:
+  - Read the applicable repository instructions and `planning-with-files` skill.
+  - Restored existing planning context and appended Phase 11 without replacing prior records.
+  - Confirmed CodeGraph tools are available; source discovery is next.
+  - Queried CodeGraph for server plugin management, desktop plugin UI, and Web remote loading.
+  - Confirmed the shared `PluginService` online-plugin path is the intended client loading mechanism.
+  - Enumerated online client and backend plugin trees through CodeGraph.
+  - Identified two explicit client/server format-plugin pairs and three client-only plugins requiring scope confirmation from repository metadata.
+  - Verified the source worktree is otherwise clean.
+  - Selected a separate client-side disabled-ID preference for server plugins so they remain non-installable/non-uninstallable remote entries.
+  - Mapped `psd-viewer` to `mira_thumb_imagemagick` by backend responsibility.
+  - Kept the two client-only plugins out of migration scope pending any contrary metadata.
+  - Located the existing authenticated plugin API, SDK module, and `/plugins/:libraryId/:pluginName/*` static asset route.
+  - Chose the existing remote script injection path for server Web plugins.
+  - Verified the existing static route is text-only and therefore unsuitable for all migrated dist assets.
+  - Confirmed migrated format-plugin entry scripts use relative dist URLs and need no internal path rewrite.
+  - Identified initialization ordering: plugin service starts before server connection, requiring an explicit post-connect/library sync.
+  - Selected SDK-authenticated asset URL construction using existing `HttpClient.getUrl()`.
+  - Added server-side loaded Web manifest discovery, `GET /api/plugins/web`, and public binary-safe Web asset serving.
+  - Added the Core SDK `ServerWebPlugin` contract and `PluginModule.getWeb()`.
+  - Added client server-plugin source metadata, disabled-ID persistence, per-library synchronization, and post-library initialization loading.
+  - Reused existing remote script injection and plugin instance enable/disable lifecycle for server plugins.
+  - Added the “服务器插件” dialog tab with local-style cards, per-client toggles, refresh, and no uninstall action.
+  - Moved 3D, Spine, and PSD client projects into their matching server plugin `web` directories.
+  - Removed migrated entries from the online client plugin catalog and added server Web projects to the pnpm workspace.
+  - Refreshed the workspace lockfile; only existing deprecation/peer warnings were reported.
+  - Core full build was blocked by pre-existing SDK test-file top-level-await and Auth mock type errors; recorded for alternate verification.
+  - All three migrated Web plugins passed `vue-tsc`.
+  - Client type-check reported only existing errors in `ServerEditDialog.vue:110` and `main.ts:51`.
+  - Fixed the one server wildcard route typing error found by the first server check.
+  - Server TypeScript, client production build, and all three migrated plugin builds passed.
+  - Mira CLI health passed; authenticated library listing was unavailable because no CLI login profile exists.
+  - Verified all three manifests through an isolated `ServerPluginManager` harness.
+  - Added `web/**/*` to each backend plugin package's publish allowlist.
+  - Made server-plugin refresh idempotent by unloading previous instances and scripts only after a successful list sync.
+  - Rebuilt the client after the idempotence fix; production build passed.
+  - Completed diff/whitespace review and npm pack dry-runs; all three packages include `web/plugin.json`.
+  - Did not restart the non-watch 8081 process because procm-mcp is unavailable in this session.
+
 ## Session: 2026-08-08
 
 ### Phase 10: Spine Bundle Format

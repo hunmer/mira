@@ -43,6 +43,12 @@ interface OnlinePluginConfig extends LocalPluginConfig {
   lastUpdated?: string
 }
 
+interface ServerPluginConfig extends OnlinePluginConfig {
+  source: 'server'
+  serverPluginName: string
+  libraryId: string
+}
+
 /**
  * 前端插件管理服务
  * 统一管理本地和在线插件，支持 Electron 和 Web 环境
@@ -52,6 +58,8 @@ export class PluginService {
   private static instance: PluginService | null = null
   private plugins = new Map<string, PluginRuntime>()
   private onlinePlugins = new Map<string, OnlinePluginConfig>() // 新增：用户添加的在线插件
+  private serverPlugins = new Map<string, ServerPluginConfig>()
+  private disabledServerPluginIds = new Set<string>()
   private config: PluginManagerConfig | null = null
   private isElectronEnvironment: boolean
   private isInitialized = false
@@ -83,6 +91,7 @@ export class PluginService {
       
       // 加载在线插件配置
       await this.loadOnlinePluginsFromStorage()
+      await this.loadDisabledServerPluginsFromStorage()
       
       // 在Electron环境中，初始化本地插件系统
       if (this.isElectronEnvironment) {
@@ -150,6 +159,16 @@ export class PluginService {
           context: this.createPluginContext(config) // 为在线插件也创建上下文
         }
         this.plugins.set(pluginId, runtime)
+      }
+
+      // 3. 服务端 Web 插件使用相同的远程脚本加载机制，但不属于本地安装项
+      for (const [pluginId, config] of this.serverPlugins) {
+        this.plugins.set(pluginId, {
+          config,
+          status: this.disabledServerPluginIds.has(pluginId) ? 'disabled' : 'loaded',
+          directory: config.url,
+          context: this.createPluginContext(config)
+        })
       }
 
       return {
@@ -264,6 +283,89 @@ export class PluginService {
     } catch (error) {
       console.error('[PLUGIN-DEBUG][storage:save] failed', error)
     }
+  }
+
+  private async loadDisabledServerPluginsFromStorage(): Promise<void> {
+    try {
+      const stored = await ConfigStorage.getItem('mira-disabled-server-plugins')
+      const pluginIds = stored ? JSON.parse(stored) : []
+      this.disabledServerPluginIds = new Set(Array.isArray(pluginIds) ? pluginIds : [])
+    } catch (error) {
+      console.warn('Failed to restore disabled server plugins:', error)
+      this.disabledServerPluginIds.clear()
+    }
+  }
+
+  private async saveDisabledServerPluginsToStorage(): Promise<void> {
+    await ConfigStorage.setItem(
+      'mira-disabled-server-plugins',
+      JSON.stringify(Array.from(this.disabledServerPluginIds))
+    )
+  }
+
+  public async syncServerPlugins(libraryId: string): Promise<BaseResponse> {
+    try {
+      const entries = await miraSDKService.getServerWebPlugins(libraryId)
+      for (const [pluginId] of this.serverPlugins) {
+        if ((this.plugins.get(pluginId)?.config.source) === 'server') this.plugins.delete(pluginId)
+      }
+      this.serverPlugins.clear()
+
+      for (const entry of entries) {
+        const config: ServerPluginConfig = {
+          pluginName: entry.pluginName,
+          pluginId: entry.pluginId,
+          priority: entry.priority ?? 0,
+          version: entry.version,
+          index: entry.index || 'index.js',
+          icon: entry.icon,
+          tags: entry.tags || [],
+          category: entry.category,
+          description: entry.description || '',
+          author: entry.author || '',
+          homepage: entry.homepage,
+          enable: !this.disabledServerPluginIds.has(entry.pluginId),
+          config: entry.config || {},
+          hotkey: entry.hotkey || {},
+          events: entry.events || [],
+          dependencies: entry.dependencies || [],
+          permissions: entry.permissions,
+          minAppVersion: entry.minAppVersion,
+          platform: entry.platform,
+          actualDirectory: entry.url,
+          url: entry.url,
+          isOnline: true,
+          source: 'server',
+          serverPluginName: entry.serverPluginName,
+          libraryId: entry.libraryId,
+          lastUpdated: new Date().toISOString()
+        }
+        this.serverPlugins.set(config.pluginId, config)
+        this.plugins.set(config.pluginId, {
+          config,
+          status: config.enable ? 'loaded' : 'disabled',
+          directory: config.url,
+          context: this.createPluginContext(config)
+        })
+      }
+
+      return { success: true, data: this.getServerPlugins(), message: `Loaded ${entries.length} server plugins` }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      return { success: false, message }
+    }
+  }
+
+  public getServerPlugins(): PluginRuntime[] {
+    return Array.from(this.plugins.values()).filter(plugin => plugin.config.source === 'server')
+  }
+
+  public async setServerPluginEnabled(pluginId: string, enabled: boolean): Promise<void> {
+    if (enabled) this.disabledServerPluginIds.delete(pluginId)
+    else this.disabledServerPluginIds.add(pluginId)
+    const config = this.serverPlugins.get(pluginId)
+    if (config) config.enable = enabled
+    await this.saveDisabledServerPluginsToStorage()
   }
 
   /**
