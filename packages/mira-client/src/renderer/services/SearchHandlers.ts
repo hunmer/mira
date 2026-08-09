@@ -1,6 +1,9 @@
 import { miraSDKService } from './MiraSDKService'
 import { useRouter } from 'vue-router'
 import { FileInfo } from '@/shared/types'
+import i18n from '../i18n'
+
+const t = i18n.global.t.bind(i18n.global)
 
 // 搜索类型接口
 export interface SearchType {
@@ -38,21 +41,21 @@ export class SearchHandlers {
     // 注册默认的搜索类型
     this.registeredSearchTypes.set('files', {
       id: 'files',
-      title: '文件',
+      title: t('services.searchHandlers.typeFiles'),
       icon: 'insert_drive_file',
       handler: this.searchFiles.bind(this)
     })
 
     this.registeredSearchTypes.set('tags', {
       id: 'tags',
-      title: '标签',
+      title: t('services.searchHandlers.typeTags'),
       icon: 'label',
       handler: this.searchTags.bind(this)
     })
 
     this.registeredSearchTypes.set('folders', {
       id: 'folders',
-      title: '文件夹',
+      title: t('services.searchHandlers.typeFolders'),
       icon: 'folder',
       handler: this.searchFolders.bind(this)
     })
@@ -67,12 +70,12 @@ export class SearchHandlers {
       const isConnected = miraSDKService.isClientConnected()
       return {
         connected: isConnected,
-        message: isConnected ? 'Mira设备已连接' : 'Mira设备未连接'
+        message: isConnected ? t('services.searchHandlers.miraConnected') : t('services.searchHandlers.miraDisconnected')
       }
     } catch (error) {
       return {
         connected: false,
-        message: error instanceof Error ? error.message : '检查连接状态失败'
+        message: error instanceof Error ? error.message : t('services.searchHandlers.checkConnectionFailed')
       }
     }
   }
@@ -170,7 +173,7 @@ export class SearchHandlers {
         default:
           await this.sendResultToSearchWindow({
             type: 'error',
-            error: `未知的请求类型: ${data.type}`,
+            error: t('services.searchHandlers.unknownRequestType', { type: data.type }),
             requestId: data.requestId,
             timestamp: Date.now()
           })
@@ -180,7 +183,7 @@ export class SearchHandlers {
       // 发送错误响应
       await this.sendResultToSearchWindow({
         type: 'error',
-        error: error instanceof Error ? error.message : '处理请求失败',
+        error: error instanceof Error ? error.message : t('services.searchHandlers.handleRequestFailed'),
         requestId: data.requestId,
         timestamp: Date.now()
       })
@@ -229,7 +232,7 @@ export class SearchHandlers {
         // 搜索指定类型
         const searchHandler = this.registeredSearchTypes.get(searchType)
         if (!searchHandler) {
-          throw new Error(`未知的搜索类型: ${searchType}`)
+          throw new Error(t('services.searchHandlers.unknownSearchType', { type: searchType }))
         }
         
         results = await searchHandler.handler(keyword)
@@ -271,14 +274,14 @@ export class SearchHandlers {
 
       // 进一步过滤匹配关键词的文件（客户端过滤）
       return files
-        .filter((file: any) => 
+        .filter((file: any) =>
           file.name?.toLowerCase().includes(keyword.toLowerCase()) ||
           file.title?.toLowerCase().includes(keyword.toLowerCase()) ||
           file.description?.toLowerCase().includes(keyword.toLowerCase())
         )
         .map((file: FileInfo) => ({
           type: 'file',
-          title: file.name || '未知文件',
+          title: file.name || t('services.searchHandlers.unknownFile'),
           path: file.path || file.url || '',
           size: file.size ? this.formatFileSize(file.size) : undefined,
           modifiedTime: file.updatedAt,
@@ -318,12 +321,12 @@ export class SearchHandlers {
         })
         .map((folder: any) => ({
           type: 'folder',
-          title: folder.title || folder.name || '未知文件夹',
+          title: folder.title || folder.name || t('services.searchHandlers.unknownFolder'),
           path: `/folders/${folder.id}`,
           itemCount: folder.fileCount || 0,
           modifiedTime: folder.updatedAt || folder.createdAt,
           id: folder.id,
-          description: folder.description || '无描述',
+          description: folder.description || t('services.searchHandlers.noDescription'),
           libraryId: folder.libraryId
         }))
         .slice(0, 10) // 限制结果数量
@@ -359,11 +362,11 @@ export class SearchHandlers {
         })
         .map((tag: any) => ({
           type: 'tag',
-          title: tag.title || tag.name || '未知标签',
+          title: tag.title || tag.name || t('services.searchHandlers.unknownTag'),
           path: `/tags/${tag.id}`,
           id: tag.id,
           color: tag.color || '#666666',
-          description: tag.description || '无描述',
+          description: tag.description || t('services.searchHandlers.noDescription'),
           fileCount: tag.fileCount || 0,
           libraryId: tag.libraryId
         }))
@@ -415,7 +418,7 @@ export class SearchHandlers {
     try {
       // 验证必要参数
       if (!item.id) {
-        throw new Error('文件ID不能为空')
+        throw new Error(t('services.searchHandlers.fileIdEmpty'))
       }
 
       // 获取当前库ID作为fallback
@@ -424,26 +427,30 @@ export class SearchHandlers {
         const { useMediaStore } = await import('../stores/media')
         const mediaStore = useMediaStore()
         libraryId = mediaStore.currentLibraryId
-        
+
         if (!libraryId) {
-          throw new Error('无法确定库ID，请先选择一个媒体库')
+          throw new Error(t('services.searchHandlers.cannotDetermineLibraryId'))
         }
       }
 
       // 使用类的router实例
+      const fallbackName = item.title || item.name || t('services.searchHandlers.unknownFile')
       await this.router.push({
         path: '/file-preview',
         query: {
           id: item.id,
           libraryId: libraryId,
-          title: item.title || item.name || '未知文件',
+          title: fallbackName,
           path: item.path || '',
           mimeType: item.mimeType || 'application/octet-stream'
         }
       })
     } catch (error) {
       console.error('❌ 打开文件失败:', error)
-      throw new Error(`无法打开文件 "${item.title || item.name || '未知文件'}": ${error instanceof Error ? error.message : '未知错误'}`)
+      throw new Error(t('services.searchHandlers.openFileFailed', {
+        name: item.title || item.name || t('services.searchHandlers.unknownFile'),
+        message: error instanceof Error ? error.message : t('services.searchHandlers.unknownError')
+      }))
     }
   }
 
@@ -451,11 +458,11 @@ export class SearchHandlers {
    * 打开文件夹/收藏夹 - 跳转到根路由并传递文件夹参数
    */
   private async openFolder(item: any): Promise<void> {
-    
+
     try {
       // 验证必要参数
       if (!item.id) {
-        throw new Error('文件夹ID不能为空')
+        throw new Error(t('services.searchHandlers.folderIdEmpty'))
       }
 
       // 获取当前库ID作为fallback
@@ -464,24 +471,28 @@ export class SearchHandlers {
         const { useMediaStore } = await import('../stores/media')
         const mediaStore = useMediaStore()
         libraryId = mediaStore.currentLibraryId
-        
+
         if (!libraryId) {
-          throw new Error('无法确定库ID，请先选择一个媒体库')
+          throw new Error(t('services.searchHandlers.cannotDetermineLibraryId'))
         }
       }
 
       // 使用类的router实例
+      const fallbackName = item.title || item.name || t('services.searchHandlers.unknownFolder')
       await this.router.push({
         path: '/',
         query: {
           folder: item.id,
           libraryId: libraryId,
-          title: item.title || item.name || '未知文件夹'
+          title: fallbackName
         }
       })
     } catch (error) {
       console.error('❌ 打开文件夹失败:', error)
-      throw new Error(`无法打开文件夹 "${item.title || item.name || '未知文件夹'}": ${error instanceof Error ? error.message : '未知错误'}`)
+      throw new Error(t('services.searchHandlers.openFolderFailed', {
+        name: item.title || item.name || t('services.searchHandlers.unknownFolder'),
+        message: error instanceof Error ? error.message : t('services.searchHandlers.unknownError')
+      }))
     }
   }
 
@@ -489,11 +500,11 @@ export class SearchHandlers {
    * 打开标签视图 - 跳转到根路由并传递标签参数
    */
   private async openTag(item: any): Promise<void> {
-    
+
     try {
       // 验证必要参数
       if (!item.id) {
-        throw new Error('标签ID不能为空')
+        throw new Error(t('services.searchHandlers.tagIdEmpty'))
       }
 
       // 获取当前库ID作为fallback
@@ -502,25 +513,29 @@ export class SearchHandlers {
         const { useMediaStore } = await import('../stores/media')
         const mediaStore = useMediaStore()
         libraryId = mediaStore.currentLibraryId
-        
+
         if (!libraryId) {
-          throw new Error('无法确定库ID，请先选择一个媒体库')
+          throw new Error(t('services.searchHandlers.cannotDetermineLibraryId'))
         }
       }
 
       // 使用类的router实例
+      const fallbackName = item.title || item.name || t('services.searchHandlers.unknownTag')
       await this.router.push({
         path: '/',
         query: {
           tag: item.id,
           libraryId: libraryId,
-          title: item.title || item.name || '未知标签',
+          title: fallbackName,
           color: item.color || '#666666'
         }
       })
     } catch (error) {
       console.error('❌ 打开标签失败:', error)
-      throw new Error(`无法打开标签 "${item.title || item.name || '未知标签'}": ${error instanceof Error ? error.message : '未知错误'}`)
+      throw new Error(t('services.searchHandlers.openTagFailed', {
+        name: item.title || item.name || t('services.searchHandlers.unknownTag'),
+        message: error instanceof Error ? error.message : t('services.searchHandlers.unknownError')
+      }))
     }
   }
 

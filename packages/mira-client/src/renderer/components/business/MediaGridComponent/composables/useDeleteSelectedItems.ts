@@ -1,4 +1,5 @@
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { FileInfo } from '../../../../../shared/types'
 import { appService } from '../../../../services'
 import { useLibraryStore } from '../../../../stores/library'
@@ -30,6 +31,7 @@ export function useDeleteSelectedItems(
   emit: UseDeleteSelectedItemsEmits,
   options: UseDeleteSelectedItemsOptions = {}
 ) {
+  const { t } = useI18n()
   const isDeletingSelectedItems = ref(false)
 
   const deleteSelectedItems = async () => {
@@ -50,10 +52,10 @@ export function useDeleteSelectedItems(
 
       await runBatchOperation(selectedFiles, async (file) => {
         const libraryId = file.libraryId || libraryStore.currentLibrary?.id
-        if (!libraryId) throw new Error('缺少库ID')
+        if (!libraryId) throw new Error(t('business.deleteSelectedItems.missingLibraryId'))
         await appService.deleteFile(libraryId, file.id)
         deletedFiles.push(file)
-      }, { label: '删除' })
+      }, { label: t('business.contextMenu.delete') })
 
       deletedFiles.forEach(file => {
         emit('media-select', file, false)

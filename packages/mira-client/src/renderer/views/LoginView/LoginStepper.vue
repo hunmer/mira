@@ -19,21 +19,21 @@ defineProps<{
       <StepperTrigger>
         <StepperIndicator>1</StepperIndicator>
       </StepperTrigger>
-      <div class="text-xs text-muted-foreground dark:text-muted-foreground mt-1 text-center">服务器</div>
+      <div class="text-xs text-muted-foreground dark:text-muted-foreground mt-1 text-center">{{ $t('views.loginStepper.server') }}</div>
     </StepperItem>
     <div class="flex-1 h-0.5 bg-accent dark:bg-muted mx-2 self-center -mt-4" />
     <StepperItem :step="2" :completed="currentStep > 2" :disabled="!healthData || healthData.authRequired === false">
       <StepperTrigger>
         <StepperIndicator>2</StepperIndicator>
       </StepperTrigger>
-      <div class="text-xs text-muted-foreground dark:text-muted-foreground mt-1 text-center">认证</div>
+      <div class="text-xs text-muted-foreground dark:text-muted-foreground mt-1 text-center">{{ $t('views.loginStepper.auth') }}</div>
     </StepperItem>
     <div class="flex-1 h-0.5 bg-accent dark:bg-muted mx-2 self-center -mt-4" />
     <StepperItem :step="3" :disabled="currentStep < 3">
       <StepperTrigger>
         <StepperIndicator>3</StepperIndicator>
       </StepperTrigger>
-      <div class="text-xs text-muted-foreground dark:text-muted-foreground mt-1 text-center">素材库</div>
+      <div class="text-xs text-muted-foreground dark:text-muted-foreground mt-1 text-center">{{ $t('views.loginStepper.library') }}</div>
     </StepperItem>
   </Stepper>
 </template>

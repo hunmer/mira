@@ -14,17 +14,17 @@
     <!-- 加载状态作为覆盖层，不能卸载已缓存的视图实例。 -->
     <div v-if="loading" class="absolute inset-0 z-10 flex items-center justify-center bg-background/80">
       <i class="pi pi-spinner pi-spin text-2xl text-muted-foreground"></i>
-      <span class="ml-2 text-muted-foreground">加载中...</span>
+      <span class="ml-2 text-muted-foreground">{{ $t('commonUi.tabViewRenderer.loading') }}</span>
     </div>
 
     <!-- 错误状态 -->
     <div v-if="error" class="absolute inset-0 z-10 flex flex-col items-center justify-center h-full text-center p-8 bg-background/80">
       <i class="pi pi-exclamation-triangle text-4xl text-destructive mb-4"></i>
-      <h3 class="text-lg font-semibold text-foreground mb-2">视图加载失败</h3>
+      <h3 class="text-lg font-semibold text-foreground mb-2">{{ $t('commonUi.tabViewRenderer.loadFailedTitle') }}</h3>
       <p class="text-muted-foreground mb-4">{{ error }}</p>
       <Button @click="retry" severity="secondary" outlined>
         <i class="pi pi-refresh mr-2"></i>
-        重试
+        {{ $t('commonUi.tabViewRenderer.retry') }}
       </Button>
     </div>
 
@@ -43,14 +43,15 @@
     <!-- 空状态（没有配置视图） -->
     <div v-if="!loading && !error && (!viewConfig || !componentInstance)" class="flex flex-col items-center justify-center h-full text-center p-8">
       <i class="pi pi-inbox text-4xl text-muted-foreground mb-4"></i>
-      <h3 class="text-lg font-semibold text-muted-foreground mb-2">暂无视图</h3>
-      <p class="text-muted-foreground">该Tab类型尚未配置视图组件</p>
+      <h3 class="text-lg font-semibold text-muted-foreground mb-2">{{ $t('commonUi.tabViewRenderer.emptyTitle') }}</h3>
+      <p class="text-muted-foreground">{{ $t('commonUi.tabViewRenderer.emptyDesc') }}</p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, shallowRef, computed, watch, onMounted, onUnmounted, nextTick, markRaw } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Button } from '@/components/ui/button'
 import type { TabViewConfig } from '@renderer/composables/TabRegistry'
 
@@ -60,6 +61,8 @@ interface Props {
   viewConfig?: TabViewConfig | null
   cacheable?: boolean
 }
+
+const { t } = useI18n()
 
 const props = withDefaults(defineProps<Props>(), {
   cacheable: true
@@ -117,7 +120,7 @@ const loadComponent = async () => {
       // 字符串组件名，从映射中查找
       const componentLoader = componentMap[component]
       if (!componentLoader) {
-        throw new Error(`未知的组件类型: ${component}`)
+        throw new Error(t('commonUi.tabViewRenderer.unknownComponentType', { name: component }))
       }
 
       const module = await componentLoader()
@@ -138,7 +141,7 @@ const loadComponent = async () => {
     console.debug('[DEBUG-wf-tab] renderer-load-complete', { tabId: props.tabId })
   } catch (err: any) {
     console.error('🚨 TabViewRenderer: 组件加载失败', err)
-    error.value = err.message || '未知错误'
+    error.value = err.message || t('commonUi.tabViewRenderer.unknownError')
     loading.value = false
   }
 }
@@ -155,7 +158,7 @@ const retry = () => {
 // 处理组件运行时错误
 const handleComponentError = (err: any) => {
   console.error('🚨 TabViewRenderer: 组件运行时错误', err)
-  error.value = '组件运行时错误: ' + (err.message || '未知错误')
+  error.value = t('commonUi.tabViewRenderer.runtimeError', { message: err.message || t('commonUi.tabViewRenderer.unknownError') })
 }
 
 // 监听视图配置变化

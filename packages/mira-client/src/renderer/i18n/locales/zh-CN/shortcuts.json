@@ -1,0 +1,156 @@
+{
+  "actions": {
+    "appSearch": {
+      "title": "全局搜索",
+      "description": "打开全局搜索对话框"
+    },
+    "appSettings": {
+      "title": "打开设置",
+      "description": "打开应用设置页面"
+    },
+    "appHelp": {
+      "title": "帮助文档",
+      "description": "打开帮助文档"
+    },
+    "appQuit": {
+      "title": "退出应用",
+      "description": "关闭应用程序"
+    },
+    "navHome": {
+      "title": "返回首页",
+      "description": "导航到首页"
+    },
+    "navActivateLastTab": {
+      "title": "激活上一次的tab",
+      "description": "切换到上一次激活的标签页"
+    },
+    "navReopenClosedTab": {
+      "title": "打开最后关闭的tab",
+      "description": "重新打开最近关闭的标签页"
+    },
+    "navLibrary": {
+      "title": "媒体库",
+      "description": "打开媒体库页面"
+    },
+    "navPlugins": {
+      "title": "插件管理",
+      "description": "打开插件管理页面"
+    },
+    "navBack": {
+      "title": "后退",
+      "description": "返回上一页"
+    },
+    "navForward": {
+      "title": "前进",
+      "description": "前进到下一页"
+    },
+    "navRefresh": {
+      "title": "刷新页面",
+      "description": "重新加载当前页面"
+    },
+    "mediaPlayPause": {
+      "title": "播放/暂停",
+      "description": "切换媒体播放状态"
+    },
+    "mediaStop": {
+      "title": "停止播放",
+      "description": "停止媒体播放"
+    },
+    "mediaNext": {
+      "title": "下一个",
+      "description": "播放下一个媒体文件"
+    },
+    "mediaPrevious": {
+      "title": "上一个",
+      "description": "播放上一个媒体文件"
+    },
+    "mediaVolumeUp": {
+      "title": "音量增加",
+      "description": "提高播放音量"
+    },
+    "mediaVolumeDown": {
+      "title": "音量减少",
+      "description": "降低播放音量"
+    },
+    "mediaMute": {
+      "title": "静音切换",
+      "description": "切换静音状态"
+    },
+    "mediaFullscreen": {
+      "title": "全屏切换",
+      "description": "切换全屏模式"
+    },
+    "editSelectAll": {
+      "title": "全选",
+      "description": "选择所有内容"
+    },
+    "editCopy": {
+      "title": "复制",
+      "description": "复制选中内容"
+    },
+    "editPaste": {
+      "title": "粘贴",
+      "description": "粘贴剪贴板内容"
+    },
+    "editCut": {
+      "title": "剪切",
+      "description": "剪切选中内容"
+    },
+    "editDelete": {
+      "title": "删除",
+      "description": "删除选中项目"
+    },
+    "editUndo": {
+      "title": "撤销",
+      "description": "撤销上一个操作"
+    },
+    "editRedo": {
+      "title": "重做",
+      "description": "重做上一个操作"
+    },
+    "viewZoomIn": {
+      "title": "放大",
+      "description": "放大视图"
+    },
+    "viewZoomOut": {
+      "title": "缩小",
+      "description": "缩小视图"
+    },
+    "viewZoomReset": {
+      "title": "重置缩放",
+      "description": "重置到原始大小"
+    },
+    "viewToggleSidebar": {
+      "title": "切换侧边栏",
+      "description": "显示/隐藏侧边栏"
+    },
+    "viewGridView": {
+      "title": "网格视图",
+      "description": "切换到网格视图"
+    },
+    "viewListView": {
+      "title": "列表视图",
+      "description": "切换到列表视图"
+    },
+    "windowMinimize": {
+      "title": "最小化窗口",
+      "description": "最小化当前窗口"
+    },
+    "windowMaximize": {
+      "title": "最大化窗口",
+      "description": "最大化/还原窗口"
+    },
+    "tabCloseCurrent": {
+      "title": "关闭当前标签页",
+      "description": "关闭当前激活的标签页"
+    },
+    "devDevtools": {
+      "title": "开发者工具",
+      "description": "打开开发者工具"
+    },
+    "devReload": {
+      "title": "强制刷新",
+      "description": "强制重新加载应用"
+    }
+  }
+}

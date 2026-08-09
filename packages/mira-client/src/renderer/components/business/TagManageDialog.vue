@@ -33,8 +33,8 @@ const items = computed<BrowserItem[]>(() =>
 <template>
   <GroupedCardBrowserDialog
     :visible="props.visible"
-    title="标签管理"
-    item-type-label="标签"
+    :title="$t('business.tagManageDialog.title')"
+    :item-type-label="$t('business.tagManageDialog.itemTypeLabel')"
     empty-icon="label_off"
     :items="items"
     @update:visible="emit('update:visible', $event)"

@@ -1,4 +1,5 @@
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import Queue from 'queue'
 import { useToast } from '@/renderer/composables/useToast'
 import { useMediaStore } from '@renderer/stores/media'
@@ -8,6 +9,7 @@ import { FILE_LIMITS } from './types'
 export function useUploadQueue() {
   const toast = useToast()
   const mediaStore = useMediaStore()
+  const { t } = useI18n()
 
   const uploadingFileIds = ref<Set<string>>(new Set())
   const uploadProgressMap = ref<Map<string, number>>(new Map())
@@ -66,7 +68,7 @@ export function useUploadQueue() {
         if (pendingFile.localPath) {
           const bytesRes = await window.electronAPI.fs.readFileBytes(pendingFile.localPath)
           if (!bytesRes.success || !bytesRes.data) {
-            throw new Error(bytesRes.message || '读取本地文件失败')
+            throw new Error(bytesRes.message || t('business.uploadQueue.readLocalFileFailed'))
           }
           uploadFile = new File([bytesRes.data], pendingFile.file.name, {
             type: pendingFile.file.type || 'application/octet-stream',
@@ -86,7 +88,7 @@ export function useUploadQueue() {
           uploadingFileIds.value.delete(pendingFile.id)
           callback?.(undefined, result)
         } else {
-          throw new Error(result.error || '上传失败')
+          throw new Error(result.error || t('business.uploadQueue.uploadFailed'))
         }
       } catch (error) {
         clearInterval(progressInterval)
@@ -95,8 +97,8 @@ export function useUploadQueue() {
         callback?.(error as Error)
         toast.add({
           severity: 'error',
-          summary: '上传失败',
-          detail: `文件 ${pendingFile.file.name}: ${(error as Error).message}`,
+          summary: t('business.uploadQueue.uploadFailedTitle'),
+          detail: t('business.uploadQueue.uploadFailedDetail', { name: pendingFile.file.name, message: (error as Error).message }),
           life: 5000
         })
       }

@@ -1,15 +1,18 @@
 import { MediaViewTabType } from '../TabTypes'
 import type { TabContext } from '../TabRegistry'
+import i18n from '../../i18n'
 
 export class TrashTabType extends MediaViewTabType {
   name = 'trash'
-  displayName = '回收站'
+  get displayName() {
+    return i18n.global.t('composables.trashTab.displayName')
+  }
   icon = 'delete'
   allowMultipleInstances = false // 只允许一个回收站tab
   cacheable = true
 
   protected getLabel(_context: TabContext): string {
-    return '回收站'
+    return i18n.global.t('composables.trashTab.label')
   }
 
   protected getTabFilters(_context: TabContext): Record<string, any> {

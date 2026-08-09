@@ -1,32 +1,31 @@
 // 设置分类配置
+// name 字段存的是 i18n key（settings.sections.{id}），消费处需用 t() 渲染
 export interface SettingSection {
   id: string
-  name: string
+  name: string // i18n key: settings.sections.{id}
   icon: string
 }
 
 export const settingSections: SettingSection[] = [
-  { id: 'general', name: 'General', icon: 'settings' },
-  { id: 'notifications', name: 'Notifications', icon: 'notifications' },
-  { id: 'import', name: '导入选项', icon: 'upload_file' },
-  { id: 'floating-ball', name: '悬浮球', icon: 'bubble_chart' },
-  { id: 'plugins', name: 'Plugins', icon: 'extension' },
-  { id: 'network', name: '网络', icon: 'lan' },
-  { id: 'data', name: 'Data', icon: 'storage' }
+  { id: 'general', name: 'settings.sections.general', icon: 'settings' },
+  { id: 'notifications', name: 'settings.sections.notifications', icon: 'notifications' },
+  { id: 'import', name: 'settings.sections.import', icon: 'upload_file' },
+  { id: 'floating-ball', name: 'settings.sections.floatingBall', icon: 'bubble_chart' },
+  { id: 'plugins', name: 'settings.sections.plugins', icon: 'extension' },
+  { id: 'network', name: 'settings.sections.network', icon: 'lan' },
+  { id: 'data', name: 'settings.sections.data', icon: 'storage' }
 ]
 
-// 语言选项配置
+// 语言选项配置（仅保留简体中文与 English）
 export const languageOptions = [
   { label: '简体中文', value: 'zh-CN' },
-  { label: 'English', value: 'en-US' },
-  { label: '繁體中文', value: 'zh-TW' },
-  { label: '日本語', value: 'ja-JP' }
+  { label: 'English', value: 'en-US' }
 ]
 
-// 主题选项配置
+// 主题选项配置（label 存 i18n key: settings.themeLight/Dark/Auto）
 export const themeOptions = [
-  { label: '浅色', value: 'light' },
-  { label: '深色', value: 'dark' },
-  { label: '自动', value: 'auto' }
+  { label: 'settings.themeLight', value: 'light' },
+  { label: 'settings.themeDark', value: 'dark' },
+  { label: 'settings.themeAuto', value: 'auto' }
 ]
 

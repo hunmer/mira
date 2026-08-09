@@ -1,3 +1,5 @@
+import i18n from '../i18n'
+
 export interface MenuItemConfig {
   id: string
   label?: string
@@ -31,6 +33,8 @@ export class MenuService {
     this.initializeDefaultMenus()
   }
 
+  private t = i18n.global.t.bind(i18n.global)
+
   public static getInstance(): MenuService {
     if (!MenuService.instance) {
       MenuService.instance = new MenuService()
@@ -45,30 +49,30 @@ export class MenuService {
     // 文件菜单
     this.menus.set('file', {
       id: 'file',
-      label: '文件',
+      label: this.t('services.menu.file'),
       submenu: [
         {
           id: 'connect-server',
-          label: '连接到服务器',
+          label: this.t('services.menu.fileConnectServer'),
           accelerator: 'CmdOrCtrl+Shift+C',
           action: 'showConnectionDialog'
         },
         {
           id: 'disconnect-server',
-          label: '断开连接',
+          label: this.t('services.menu.fileDisconnect'),
           accelerator: 'CmdOrCtrl+Shift+D',
           action: 'disconnect'
         },
         { id: 'file-separator-1', type: 'separator' },
         {
           id: 'import-files',
-          label: '导入文件',
+          label: this.t('services.menu.fileImportFiles'),
           accelerator: 'CmdOrCtrl+I',
           action: 'showImportDialog'
         },
         {
           id: 'export-selected',
-          label: '导出选中项',
+          label: this.t('services.menu.fileExportSelected'),
           accelerator: 'CmdOrCtrl+E',
           action: 'exportSelected'
         },
@@ -78,80 +82,80 @@ export class MenuService {
     // 编辑菜单
     this.menus.set('edit', {
       id: 'edit',
-      label: '编辑',
+      label: this.t('services.menu.edit'),
       submenu: [
-        { id: 'undo', label: '撤销', role: 'undo' },
-        { id: 'redo', label: '重做', role: 'redo' },
+        { id: 'undo', label: this.t('services.menu.editUndo'), role: 'undo' },
+        { id: 'redo', label: this.t('services.menu.editRedo'), role: 'redo' },
         { id: 'edit-separator-1', type: 'separator' },
-        { id: 'cut', label: '剪切', role: 'cut' },
-        { id: 'copy', label: '复制', role: 'copy' },
-        { id: 'paste', label: '粘贴', role: 'paste' },
-        { id: 'select-all', label: '全选', role: 'selectAll' }
+        { id: 'cut', label: this.t('services.menu.editCut'), role: 'cut' },
+        { id: 'copy', label: this.t('services.menu.editCopy'), role: 'copy' },
+        { id: 'paste', label: this.t('services.menu.editPaste'), role: 'paste' },
+        { id: 'select-all', label: this.t('services.menu.editSelectAll'), role: 'selectAll' }
       ]
     })
 
     // 视图菜单
     this.menus.set('view', {
       id: 'view',
-      label: '视图',
+      label: this.t('services.menu.view'),
       submenu: [
         {
           id: 'refresh',
-          label: '刷新',
+          label: this.t('services.menu.viewRefresh'),
           accelerator: 'CmdOrCtrl+R',
           action: 'refresh'
         },
         { id: 'view-separator-1', type: 'separator' },
-        { id: 'reload', label: '重新加载', role: 'reload' },
-        { id: 'force-reload', label: '强制重新加载', role: 'forceReload' },
-        { id: 'toggle-dev-tools', label: '开发者工具', role: 'toggleDevTools' },
+        { id: 'reload', label: this.t('services.menu.viewReload'), role: 'reload' },
+        { id: 'force-reload', label: this.t('services.menu.viewForceReload'), role: 'forceReload' },
+        { id: 'toggle-dev-tools', label: this.t('services.menu.viewDevTools'), role: 'toggleDevTools' },
         { id: 'view-separator-2', type: 'separator' },
-        { id: 'reset-zoom', label: '实际大小', role: 'resetZoom' },
-        { id: 'zoom-in', label: '放大', role: 'zoomIn' },
-        { id: 'zoom-out', label: '缩小', role: 'zoomOut' },
+        { id: 'reset-zoom', label: this.t('services.menu.viewActualSize'), role: 'resetZoom' },
+        { id: 'zoom-in', label: this.t('services.menu.viewZoomIn'), role: 'zoomIn' },
+        { id: 'zoom-out', label: this.t('services.menu.viewZoomOut'), role: 'zoomOut' },
         { id: 'view-separator-3', type: 'separator' },
-        { id: 'toggle-fullscreen', label: '全屏', role: 'togglefullscreen' }
+        { id: 'toggle-fullscreen', label: this.t('services.menu.viewFullscreen'), role: 'togglefullscreen' }
       ]
     })
 
     // 导航菜单 - 基于路由动态生成
     this.menus.set('navigation', {
       id: 'navigation',
-      label: '导航',
+      label: this.t('services.menu.navigation'),
       submenu: [
         {
           id: 'nav-home',
-          label: '主页',
+          label: this.t('services.menu.navHome'),
           accelerator: 'CmdOrCtrl+1',
           route: 'Home'
         },
         {
           id: 'nav-file-preview',
-          label: '文件预览',
+          label: this.t('services.menu.navFilePreview'),
           accelerator: 'CmdOrCtrl+2',
           route: 'FilePreview'
         },
         {
           id: 'nav-plugins',
-          label: '插件市场',
+          label: this.t('services.menu.navPlugins'),
           accelerator: 'CmdOrCtrl+3',
           route: 'PluginMarketplace'
         },
         {
           id: 'nav-local-plugins',
-          label: '本地插件',
+          label: this.t('services.menu.navLocalPlugins'),
           accelerator: 'CmdOrCtrl+4',
           route: 'LocalPlugins'
         },
         {
           id: 'nav-upload',
-          label: '文件上传',
+          label: this.t('services.menu.navUpload'),
           accelerator: 'CmdOrCtrl+5',
           route: 'FileUpload'
         },
         {
           id: 'nav-settings',
-          label: '设置',
+          label: this.t('services.menu.navSettings'),
           accelerator: 'CmdOrCtrl+6',
           route: 'Settings'
         }
@@ -161,31 +165,31 @@ export class MenuService {
     // 窗口菜单
     this.menus.set('window', {
       id: 'window',
-      label: '窗口',
+      label: this.t('services.menu.window'),
       submenu: [
-        { id: 'minimize', label: '最小化', role: 'minimize' },
-        { id: 'close', label: '关闭', role: 'close' }
+        { id: 'minimize', label: this.t('services.menu.windowMinimize'), role: 'minimize' },
+        { id: 'close', label: this.t('services.menu.windowClose'), role: 'close' }
       ]
     })
 
     // 帮助菜单
     this.menus.set('help', {
       id: 'help',
-      label: '帮助',
+      label: this.t('services.menu.help'),
       submenu: [
         {
           id: 'about',
-          label: '关于 Mira',
+          label: this.t('services.menu.helpAbout'),
           action: 'showAbout'
         },
         {
           id: 'window-state-info',
-          label: '窗口状态信息',
+          label: this.t('services.menu.helpWindowStateInfo'),
           action: 'showWindowStateInfo'
         },
         {
           id: 'check-updates',
-          label: '检查更新',
+          label: this.t('services.menu.helpCheckUpdates'),
           action: 'checkUpdates'
         }
       ]
@@ -407,7 +411,7 @@ export class MenuService {
       
       navigationMenu.submenu.push({
         id: `nav-${route.name?.toLowerCase() || 'unknown'}`,
-        label: route.meta?.title || route.name || '未知页面',
+        label: route.meta?.title || route.name || this.t('services.menu.unknownPage'),
         accelerator,
         route: route.name
       })

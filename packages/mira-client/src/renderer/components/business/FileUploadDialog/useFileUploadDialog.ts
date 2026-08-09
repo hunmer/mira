@@ -1,4 +1,5 @@
 import { ref, computed, watch, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useServerListStore } from '@renderer/stores/serverList'
 import { useLibraryStore } from '@renderer/stores/library'
 import { useToast } from '@/renderer/composables/useToast'
@@ -12,6 +13,7 @@ import { useFileFilters } from './useFileFilters'
 
 export function useFileUploadDialog(props: Props, emit: Emits) {
   const toast = useToast()
+  const { t } = useI18n()
   const serverListStore = useServerListStore()
   const libraryStore = useLibraryStore()
 
@@ -157,12 +159,12 @@ export function useFileUploadDialog(props: Props, emit: Emits) {
   async function importWithStructure() {
     if (isImportingStructure.value) return
     if (!currentLibrary.value) {
-      toast.add({ severity: 'error', summary: '错误', detail: '请先选择一个素材库', life: 3000 })
+      toast.add({ severity: 'error', summary: t('business.uploadDialog.errorTitle'), detail: t('business.uploadDialog.selectLibraryFirst'), life: 3000 })
       return
     }
     const tree = localTree.localTree.value
     if (!tree || tree.length === 0) {
-      toast.add({ severity: 'warn', summary: '提示', detail: '没有可导入的文件夹结构', life: 3000 })
+      toast.add({ severity: 'warn', summary: t('business.uploadDialog.hintTitle'), detail: t('business.uploadDialog.noStructureToImport'), life: 3000 })
       return
     }
 
@@ -195,7 +197,7 @@ export function useFileUploadDialog(props: Props, emit: Emits) {
           serverId = typeof result === 'object' ? result?.id : result
         }
         if (serverId === undefined || serverId === null) {
-          throw new Error(`创建文件夹失败: ${node.name}`)
+          throw new Error(t('business.uploadDialog.createFolderFailedWithName', { name: node.name }))
         }
         pathToServerId.set(node.path, serverId)
         existing.set(`${parentServerId ?? 0}:${node.name}`, serverId)
@@ -209,8 +211,8 @@ export function useFileUploadDialog(props: Props, emit: Emits) {
       console.error('按结构导入失败:', error)
       toast.add({
         severity: 'error',
-        summary: '导入失败',
-        detail: error instanceof Error ? error.message : '创建文件夹失败',
+        summary: t('business.uploadDialog.importFailedTitle'),
+        detail: error instanceof Error ? error.message : t('business.uploadDialog.createFolderFailed'),
         life: 5000
       })
       return
@@ -234,19 +236,19 @@ export function useFileUploadDialog(props: Props, emit: Emits) {
     isImportingStructure.value = false
     toast.add({
       severity: 'success',
-      summary: '已应用结构',
-      detail: `已按原有结构创建文件夹并应用到 ${applied} 个文件`,
+      summary: t('business.uploadDialog.structureAppliedTitle'),
+      detail: t('business.uploadDialog.structureAppliedDetail', { count: applied }),
       life: 3000
     })
   }
 
   function startUpload() {
     if (!currentLibrary.value) {
-      toast.add({ severity: 'error', summary: '错误', detail: '请先选择一个素材库', life: 3000 })
+      toast.add({ severity: 'error', summary: t('business.uploadDialog.errorTitle'), detail: t('business.uploadDialog.selectLibraryFirst'), life: 3000 })
       return
     }
     if (fileManagement.pendingFiles.value.length === 0) {
-      toast.add({ severity: 'warn', summary: '提示', detail: '没有待上传的文件', life: 3000 })
+      toast.add({ severity: 'warn', summary: t('business.uploadDialog.hintTitle'), detail: t('business.uploadDialog.noFilesToUpload'), life: 3000 })
       return
     }
 

@@ -1,15 +1,18 @@
 import { MediaViewTabType } from '../TabTypes'
 import type { TabContext } from '../TabRegistry'
+import i18n from '../../i18n'
 
 export class UntaggedTabType extends MediaViewTabType {
   name = 'untagged'
-  displayName = '未标签'
+  get displayName() {
+    return i18n.global.t('composables.untaggedTab.displayName')
+  }
   icon = 'label_off'
   allowMultipleInstances = false // 只允许一个未标签tab
   cacheable = true
 
   protected getLabel(_context: TabContext): string {
-    return '未标签'
+    return i18n.global.t('composables.untaggedTab.label')
   }
 
   protected getTabFilters(_context: TabContext): Record<string, any> {

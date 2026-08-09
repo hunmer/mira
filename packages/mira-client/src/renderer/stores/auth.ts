@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { miraSDKService } from '../services/MiraSDKService'
 import { LibraryStorage } from '../utils/LibraryStorage'
 import type { UserInfo, LoginCredentials } from '../../shared/types'
+import i18n from '../i18n'
 
 /**
  * Mira助手类
@@ -35,21 +36,21 @@ class MiraHelper {
     
     // 将技术错误转换为用户友好的消息
     if (errorMessage.includes('HTTP_ERROR') || errorMessage.includes('用户名或密码错误')) {
-      return '用户名或密码错误，请检查后重试'
+      return i18n.global.t('stores.auth.invalidCredentials')
     } else if (errorMessage.includes('Network') || errorMessage.includes('fetch') || errorMessage.includes('网络')) {
-      return '网络连接失败，请检查网络设置'
+      return i18n.global.t('stores.auth.networkFailed')
     } else if (errorMessage.includes('timeout') || errorMessage.includes('超时')) {
-      return '连接超时，请稍后重试'
+      return i18n.global.t('stores.auth.timeout')
     } else if (errorMessage.includes('unauthorized') || errorMessage.includes('401')) {
-      return '认证失败，请重新登录'
+      return i18n.global.t('stores.auth.unauthorized')
     } else if (errorMessage.includes('forbidden') || errorMessage.includes('403')) {
-      return '权限不足，无法执行此操作'
+      return i18n.global.t('stores.auth.forbidden')
     } else if (errorMessage.includes('not found') || errorMessage.includes('404')) {
-      return '请求的资源不存在'
+      return i18n.global.t('stores.auth.notFound')
     } else if (errorMessage.includes('server') || errorMessage.includes('500')) {
-      return '服务器内部错误，请稍后重试'
+      return i18n.global.t('stores.auth.serverError')
     }
-    
+
     return errorMessage
   }
 }
@@ -112,7 +113,7 @@ export const useAuthStore = defineStore('auth', () => {
         })
 
         if (!connectResult.success) {
-          throw new Error(`连接服务器失败: ${connectResult.message}`)
+          throw new Error(i18n.global.t('stores.auth.connectServerFailed', { message: connectResult.message }))
         }
       }
 
@@ -190,7 +191,7 @@ export const useAuthStore = defineStore('auth', () => {
         })
 
         if (!connectResult.success) {
-          throw new Error(`连接服务器失败: ${connectResult.message}`)
+          throw new Error(i18n.global.t('stores.auth.connectServerFailed', { message: connectResult.message }))
         }
       }
 

@@ -12,6 +12,7 @@
  * 由原 HomeSidebar 拆出，逻辑零改动。
  */
 import { ref, computed, onActivated, onDeactivated, nextTick, reactive } from 'vue'
+import { useI18n } from 'vue-i18n'
 import FolderTreeComponent from '@renderer/components/business/FolderTreeComponent/FolderTreeComponent.vue'
 import SidebarHistoryModule from './SidebarHistoryModule.vue'
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible'
@@ -25,6 +26,8 @@ import { useHomeSidebarLayoutStore } from '@/renderer/stores/homeSidebarLayout'
 import { getModuleDef, type SidebarModuleId } from './sidebarModules'
 
 defineOptions({ name: 'SidebarModuleList' })
+
+const { t } = useI18n()
 
 defineProps<{
   homeController: {
@@ -78,10 +81,10 @@ const ensureModuleOpen = (id: SidebarModuleId) => {
 // 快捷分类模块（原 FolderTreeComponent 的 baseCategories）
 // ============================================
 const baseCategories = computed(() => [
-  { id: 'all', label: '全部', icon: 'folder_open', iconColor: 'text-muted-foreground' },
-  { id: 'uncategorized', label: '未分类', icon: 'folder_special', iconColor: 'text-muted-foreground' },
-  { id: 'untagged', label: '未标签', icon: 'label_off', iconColor: 'text-muted-foreground' },
-  { id: 'trash', label: '回收站', icon: 'delete', iconColor: 'text-destructive' },
+  { id: 'all', label: t('views.sidebarModuleList.all'), icon: 'folder_open', iconColor: 'text-muted-foreground' },
+  { id: 'uncategorized', label: t('views.sidebarModuleList.uncategorized'), icon: 'folder_special', iconColor: 'text-muted-foreground' },
+  { id: 'untagged', label: t('views.sidebarModuleList.untagged'), icon: 'label_off', iconColor: 'text-muted-foreground' },
+  { id: 'trash', label: t('views.sidebarModuleList.trash'), icon: 'delete', iconColor: 'text-destructive' },
 ])
 
 const handleBaseCategoryClick = (category: any) => {
@@ -181,14 +184,14 @@ defineExpose({ locateItem })
               <button
                 class="header-action-btn"
                 :class="{ 'text-primary': folderTreeRef?.showSearch }"
-                title="搜索文件夹..."
+                :title="$t('views.sidebarModuleList.searchFolders')"
                 @click="folderTreeRef?.toggleSearch?.()"
               >
                 <span class="material-icons leading-none" style="font-size: 18px">search</span>
               </button>
               <button
                 class="header-action-btn"
-                title="添加文件夹"
+                :title="$t('views.sidebarModuleList.addFolder')"
                 @click="folderTreeRef?.handleAdd?.()"
               >
                 <span class="material-icons leading-none" style="font-size: 18px">add</span>
@@ -202,14 +205,14 @@ defineExpose({ locateItem })
               <button
                 class="header-action-btn"
                 :class="{ 'text-primary': tagTreeRef?.showSearch }"
-                title="搜索标签..."
+                :title="$t('views.sidebarModuleList.searchTags')"
                 @click="tagTreeRef?.toggleSearch?.()"
               >
                 <span class="material-icons leading-none" style="font-size: 18px">search</span>
               </button>
               <button
                 class="header-action-btn"
-                title="添加标签"
+                :title="$t('views.sidebarModuleList.addTag')"
                 @click="tagTreeRef?.handleAdd?.()"
               >
                 <span class="material-icons leading-none" style="font-size: 18px">add</span>
@@ -243,7 +246,7 @@ defineExpose({ locateItem })
               </ContextMenuTrigger>
               <ContextMenuContent class="w-48">
                 <ContextMenuItem @click="emit('emptyTrash')">
-                  <span>清空回收站</span>
+                  <span>{{ $t('views.sidebarModuleList.emptyTrash') }}</span>
                 </ContextMenuItem>
               </ContextMenuContent>
             </ContextMenu>
@@ -315,7 +318,7 @@ defineExpose({ locateItem })
       @click="homeController.toggleSearch"
     >
       <span class="material-icons text-sm">search</span>
-      <span>搜索</span>
+      <span>{{ $t('views.sidebarModuleList.search') }}</span>
     </button>
   </div>
 </template>

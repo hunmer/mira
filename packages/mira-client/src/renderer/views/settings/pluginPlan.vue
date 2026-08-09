@@ -3,35 +3,35 @@
     <div>
       <div class="space-y-4">
         <div>
-          <p class="text-foreground dark:text-muted-foreground text-base font-normal leading-normal">当前插件目录</p>
+          <p class="text-foreground dark:text-muted-foreground text-base font-normal leading-normal">{{ $t('views.pluginsPanel.directoryTitle') }}</p>
           <div class="flex gap-2 mt-1">
-            <Input v-model="pluginDirectory" placeholder="选择插件目录..." class="flex-1" readonly />
+            <Input v-model="pluginDirectory" :placeholder="$t('views.pluginsPanel.directoryPlaceholder')" class="flex-1" readonly />
             <Button variant="secondary" @click="selectPluginDirectory">
-              <span class="material-icons mr-2">folder_open</span>浏览
+              <span class="material-icons mr-2">folder_open</span>{{ $t('views.pluginsPanel.browse') }}
             </Button>
           </div>
-          <p class="text-muted-foreground dark:text-muted-foreground text-sm">插件将从此目录加载，建议使用独立的文件夹</p>
+          <p class="text-muted-foreground dark:text-muted-foreground text-sm">{{ $t('views.pluginsPanel.directoryDesc') }}</p>
         </div>
 
         <div class="flex items-center justify-between py-2">
           <div>
-            <p class="text-foreground dark:text-muted-foreground text-base font-normal leading-normal">自动扫描插件</p>
-            <p class="text-muted-foreground dark:text-muted-foreground text-sm">启动时自动扫描并加载插件目录中的插件</p>
+            <p class="text-foreground dark:text-muted-foreground text-base font-normal leading-normal">{{ $t('views.pluginsPanel.autoScanTitle') }}</p>
+            <p class="text-muted-foreground dark:text-muted-foreground text-sm">{{ $t('views.pluginsPanel.autoScanDesc') }}</p>
           </div>
           <Switch :checked="autoScanEnabled" @update:checked="autoScanEnabled = $event" />
         </div>
 
         <div v-if="autoScanEnabled">
-          <p class="text-foreground dark:text-muted-foreground text-base font-normal leading-normal">扫描间隔</p>
+          <p class="text-foreground dark:text-muted-foreground text-base font-normal leading-normal">{{ $t('views.pluginsPanel.scanIntervalTitle') }}</p>
           <Select v-model="scanInterval" class="mt-1">
             <SelectTrigger class="w-full">
-              <SelectValue placeholder="选择扫描间隔" />
+              <SelectValue :placeholder="$t('views.pluginsPanel.selectScanInterval')" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem v-for="opt in scanIntervalOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</SelectItem>
             </SelectContent>
           </Select>
-          <p class="text-muted-foreground dark:text-muted-foreground text-sm">定期检查插件目录变化</p>
+          <p class="text-muted-foreground dark:text-muted-foreground text-sm">{{ $t('views.pluginsPanel.scanIntervalDesc') }}</p>
         </div>
       </div>
     </div>
@@ -39,9 +39,9 @@
     <div>
       <div class="space-y-4">
         <div>
-          <p class="text-foreground dark:text-muted-foreground text-base font-normal leading-normal">市场源地址列表</p>
+          <p class="text-foreground dark:text-muted-foreground text-base font-normal leading-normal">{{ $t('views.pluginsPanel.marketListTitle') }}</p>
           <p class="text-muted-foreground dark:text-muted-foreground text-sm mt-1">
-            指向插件市场静态 HTTP 服务的根地址（需提供 plugins.json）。可配置多个源，在「插件市场」标签中通过下拉框切换。
+            {{ $t('views.pluginsPanel.marketListDesc') }}
           </p>
 
           <!-- 已配置的源列表 -->
@@ -53,7 +53,7 @@
             >
               <Input
                 :model-value="url"
-                placeholder="例如 http://localhost:8080"
+                :placeholder="$t('views.pluginsPanel.marketUrlPlaceholder')"
                 class="flex-1"
                 @update:model-value="(val) => updateMarketUrl(index, val)"
                 @blur="saveMarketUrls"
@@ -62,7 +62,7 @@
                 variant="ghost"
                 size="icon-sm"
                 @click="removeMarketUrl(index)"
-                title="删除"
+                :title="$t('views.pluginsPanel.delete')"
               >
                 <span class="material-icons">delete</span>
               </Button>
@@ -73,12 +73,12 @@
           <div class="flex gap-2 mt-3">
             <Input
               v-model="newMarketUrl"
-              placeholder="输入新的市场源地址后点击添加"
+              :placeholder="$t('views.pluginsPanel.newMarketPlaceholder')"
               class="flex-1"
               @keydown.enter="addMarketUrl"
             />
             <Button variant="secondary" @click="addMarketUrl">
-              <span class="material-icons mr-1">add</span>添加
+              <span class="material-icons mr-1">add</span>{{ $t('views.pluginsPanel.add') }}
             </Button>
           </div>
         </div>
@@ -88,12 +88,12 @@
     <AlertDialog :open="showResetDialog" @update:open="showResetDialog = $event">
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>重置插件设置</AlertDialogTitle>
-          <AlertDialogDescription>确定要重置所有插件设置到默认值吗？此操作不可撤销。</AlertDialogDescription>
+          <AlertDialogTitle>{{ $t('views.pluginsPanel.resetTitle') }}</AlertDialogTitle>
+          <AlertDialogDescription>{{ $t('views.pluginsPanel.resetDesc') }}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel @click="showResetDialog = false">取消</AlertDialogCancel>
-          <AlertDialogAction @click="confirmReset">确认重置</AlertDialogAction>
+          <AlertDialogCancel @click="showResetDialog = false">{{ $t('views.pluginsPanel.cancel') }}</AlertDialogCancel>
+          <AlertDialogAction @click="confirmReset">{{ $t('views.pluginsPanel.confirmReset') }}</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
@@ -101,7 +101,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { usePluginStore } from '@renderer/stores/plugin'
 import { useSettingsStore } from '@renderer/stores/settings'
 import ConfigStorage from '@renderer/utils/ConfigStorage'
@@ -114,6 +115,7 @@ import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, A
 // 组合式API
 const pluginStore = usePluginStore()
 const settingsStore = useSettingsStore()
+const { t } = useI18n()
 
 // 响应式数据
 const pluginDirectory = ref('')
@@ -127,14 +129,14 @@ const resetting = ref(false)
 const showResetDialog = ref(false)
 
 // 扫描间隔选项
-const scanIntervalOptions = [
-  { label: '15秒', value: 15000 },
-  { label: '30秒', value: 30000 },
-  { label: '1分钟', value: 60000 },
-  { label: '5分钟', value: 300000 },
-  { label: '10分钟', value: 600000 },
-  { label: '禁用', value: 0 }
-]
+const scanIntervalOptions = computed(() => [
+  { label: t('views.pluginsPanel.interval15s'), value: 15000 },
+  { label: t('views.pluginsPanel.interval30s'), value: 30000 },
+  { label: t('views.pluginsPanel.interval1m'), value: 60000 },
+  { label: t('views.pluginsPanel.interval5m'), value: 300000 },
+  { label: t('views.pluginsPanel.interval10m'), value: 600000 },
+  { label: t('views.pluginsPanel.intervalDisabled'), value: 0 }
+])
 
 // 显示通知的方法
 const showToast = (severity: 'success' | 'error' | 'warn' | 'info', summary: string, detail: string) => {
@@ -147,37 +149,37 @@ const showToast = (severity: 'success' | 'error' | 'warn' | 'info', summary: str
 const selectPluginDirectory = async () => {
   try {
     // 使用插件 store 的目录选择方法
-    const result = await pluginStore.selectPluginDirectory('选择插件目录')
+    const result = await pluginStore.selectPluginDirectory(t('views.pluginsPanel.selectDirectory'))
     console.log('selectPluginDirectory result:', result)
 
     if (result.success && result.data) {
       // 确保我们获取的是路径字符串
       let selectedPath: string | undefined
-      
+
       if (typeof result.data === 'string') {
         selectedPath = result.data
       } else if (typeof result.data === 'object' && result.data) {
         // 处理对象格式的返回值
-        selectedPath = (result.data as any).path || 
-                      (result.data as any).filePath || 
+        selectedPath = (result.data as any).path ||
+                      (result.data as any).filePath ||
                       (result.data as any).data
       }
-      
+
       if (selectedPath) {
         pluginDirectory.value = selectedPath
-        showToast('success', '成功', `已选择插件目录: ${selectedPath}`)
+        showToast('success', t('views.common.settingSaved'), t('views.pluginsPanel.selectSuccess', { path: selectedPath }))
       } else {
         console.warn('选择目录结果格式异常:', result.data)
-        showToast('warn', '警告', '选择的目录路径无效')
+        showToast('warn', t('views.common.saveFailed'), t('views.pluginsPanel.selectInvalid'))
       }
     } else if (!result.success && result.message) {
       console.error('选择目录失败:', result.message)
-      showToast('error', '错误', result.message || '选择目录失败')
+      showToast('error', t('views.common.saveFailed'), result.message || t('views.pluginsPanel.selectFailed'))
     }
     // 如果 result.success 为 false 但没有 error，可能是用户取消了选择
   } catch (error) {
     console.error('选择目录失败:', error)
-    showToast('error', '错误', '选择目录失败')
+    showToast('error', t('views.common.saveFailed'), t('views.pluginsPanel.selectFailed'))
   }
 }
 
@@ -201,10 +203,10 @@ const confirmReset = async () => {
     ConfigStorage.removeItem('mira-plugin-extended-settings')
 
     showResetDialog.value = false
-    showToast('success', '成功', '插件设置已重置为默认值')
+    showToast('success', t('views.common.settingSaved'), t('views.pluginsPanel.resetSuccess'))
   } catch (error) {
     console.error('重置设置失败:', error)
-    showToast('error', '错误', '重置设置失败')
+    showToast('error', t('views.common.saveFailed'), t('views.pluginsPanel.resetFailed'))
   } finally {
     resetting.value = false
   }
@@ -233,7 +235,7 @@ const saveMarketUrls = async () => {
     })
   } catch (error) {
     console.error('保存市场源失败:', error)
-    showToast('error', '错误', '保存插件市场源列表失败')
+    showToast('error', t('views.common.saveFailed'), t('views.pluginsPanel.saveMarketFailed'))
   }
 }
 
@@ -246,17 +248,17 @@ const updateMarketUrl = (index: number, val: string | number) => {
 const addMarketUrl = async () => {
   const url = (newMarketUrl.value || '').trim()
   if (!url) {
-    showToast('warn', '警告', '请输入市场源地址')
+    showToast('warn', t('views.common.saveFailed'), t('views.pluginsPanel.marketEmptyWarn'))
     return
   }
   if (clientPluginMarketUrls.value.includes(url)) {
-    showToast('warn', '警告', '该源地址已存在')
+    showToast('warn', t('views.common.saveFailed'), t('views.pluginsPanel.marketDuplicateWarn'))
     return
   }
   clientPluginMarketUrls.value.push(url)
   newMarketUrl.value = ''
   await saveMarketUrls()
-  showToast('success', '成功', '已添加市场源')
+  showToast('success', t('views.common.settingSaved'), t('views.pluginsPanel.marketAddedSuccess'))
 }
 
 // 删除指定市场源
@@ -301,7 +303,7 @@ const loadCurrentSettings = async () => {
     }
   } catch (error) {
     console.error('加载设置失败:', error)
-    showToast('error', '错误', '加载插件设置失败，使用默认设置')
+    showToast('error', t('views.common.saveFailed'), t('views.pluginsPanel.loadFailed'))
     pluginDirectory.value = ''
     autoScanEnabled.value = true
     scanInterval.value = 30000

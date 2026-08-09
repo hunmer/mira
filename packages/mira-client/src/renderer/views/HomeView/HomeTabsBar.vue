@@ -73,7 +73,7 @@ function handleTabContextMenu(tab: TabItem, event: MouseEvent) {
     <div class="flex items-end gap-0.5 shrink-0 mr-1">
       <button
         :disabled="!props.canActivateLastTab"
-        :title="props.canActivateLastTab ? '激活上一次的tab (Ctrl+Shift+Tab)' : '没有可返回的 tab'"
+        :title="props.canActivateLastTab ? $t('views.homeTabsBar.activateLastTab') : $t('views.homeTabsBar.noTabToReturn')"
         :class="[
           'h-6 w-8 flex items-center justify-center rounded-full transition-[color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]',
           props.canActivateLastTab

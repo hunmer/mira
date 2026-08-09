@@ -5,14 +5,14 @@
   >
     <DialogContent class="sm:max-w-[600px]">
       <DialogHeader>
-        <DialogTitle>服务器管理</DialogTitle>
+        <DialogTitle>{{ $t('business.serverManagementDialog.title') }}</DialogTitle>
       </DialogHeader>
     <!-- 服务器列表 -->
     <div class="max-h-[400px] overflow-y-auto">
       <div v-if="servers.length === 0" class="flex flex-col items-center p-6 text-center">
         <span class="material-icons text-muted-foreground text-4xl mb-4">folder_off</span>
-        <p class="text-muted-foreground mb-2">暂无服务器</p>
-        <p class="text-xs text-muted-foreground">点击下方按钮连接您的第一个服务器</p>
+        <p class="text-muted-foreground mb-2">{{ $t('business.serverManagementDialog.emptyTitle') }}</p>
+        <p class="text-xs text-muted-foreground">{{ $t('business.serverManagementDialog.emptyDesc') }}</p>
       </div>
 
       <div v-else class="space-y-2">
@@ -30,12 +30,12 @@
                   v-if="server.id === activeServerId"
                   class="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full"
                 >
-                  当前
+                  {{ $t('business.serverManagementDialog.current') }}
                 </span>
               </div>
               <p class="text-sm text-muted-foreground truncate">{{ server.serverUrl }}</p>
               <p class="text-xs text-muted-foreground">
-                创建于 {{ formatDate(server.createdAt) }}
+                {{ $t('business.serverManagementDialog.createdAt', { date: formatDate(server.createdAt) }) }}
               </p>
             </div>
           </div>
@@ -46,7 +46,7 @@
               v-if="server.id !== activeServerId"
               @click="handleSetActive(server.id)"
               class="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
-              title="设为当前服务器"
+              :title="$t('business.serverManagementDialog.setCurrent')"
             >
               <span class="material-icons text-sm">radio_button_unchecked</span>
             </button>
@@ -55,7 +55,7 @@
             <button
               @click="handleEdit(server)"
               class="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
-              title="编辑服务器"
+              :title="$t('business.serverManagementDialog.edit')"
             >
               <span class="material-icons text-sm">edit</span>
             </button>
@@ -65,7 +65,7 @@
               @click="handleDelete(server)"
               :disabled="servers.length === 1"
               class="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              title="删除服务器"
+              :title="$t('business.serverManagementDialog.delete')"
             >
               <span class="material-icons text-sm">delete</span>
             </button>
@@ -81,7 +81,7 @@
         class="flex items-center justify-center space-x-2 w-full px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary transition-colors"
       >
         <span class="material-icons text-sm">add</span>
-        <span>连接服务器</span>
+        <span>{{ $t('business.serverManagementDialog.connectServer') }}</span>
       </button>
     </DialogFooter>
     </DialogContent>
@@ -94,16 +94,16 @@
   >
     <DialogContent class="sm:max-w-[400px]">
       <DialogHeader>
-        <DialogTitle>确认删除</DialogTitle>
+        <DialogTitle>{{ $t('business.serverManagementDialog.confirmDeleteTitle') }}</DialogTitle>
       </DialogHeader>
     <div class="flex items-start space-x-3">
       <span class="material-icons text-destructive text-2xl">warning</span>
       <div>
         <p class="text-foreground mb-2">
-          确定要删除服务器 "<strong>{{ deleteTarget?.name }}</strong>" 吗？
+          {{ $t('business.serverManagementDialog.confirmDeleteMsg', { name: deleteTarget?.name }) }}
         </p>
         <p class="text-sm text-muted-foreground">
-          此操作不会删除服务器上的数据，仅从本地配置中移除。
+          {{ $t('business.serverManagementDialog.confirmDeleteDesc') }}
         </p>
       </div>
     </div>
@@ -114,13 +114,13 @@
           @click="showDeleteConfirm = false"
           class="px-4 py-2 text-muted-foreground hover:bg-muted rounded-lg transition-colors"
         >
-          取消
+          {{ $t('business.serverManagementDialog.cancel') }}
         </button>
         <button
           @click="confirmDelete"
           class="px-4 py-2 bg-destructive text-white rounded-lg hover:bg-destructive transition-colors"
         >
-          删除
+          {{ $t('business.serverManagementDialog.deleteBtn') }}
         </button>
       </div>
     </DialogFooter>

@@ -43,7 +43,7 @@
     >
       <div class="flex flex-col items-center space-y-2">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        <span class="text-sm text-muted-foreground">加载中...</span>
+        <span class="text-sm text-muted-foreground">{{ $t('business.imageView.loading') }}</span>
       </div>
     </div>
 
@@ -54,7 +54,7 @@
     >
       <div class="flex flex-col items-center space-y-2">
         <StatusImage name="load_failed" size="large" />
-        <span class="text-sm text-muted-foreground">图片加载失败</span>
+        <span class="text-sm text-muted-foreground">{{ $t('business.imageView.loadFailed') }}</span>
       </div>
     </div>
 

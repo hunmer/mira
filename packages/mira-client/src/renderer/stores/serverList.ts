@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import ConfigStorage from '@renderer/utils/ConfigStorage'
+import i18n from '../i18n'
 
 const DEFAULT_WS_PORT = '8018'
 
@@ -371,7 +372,7 @@ export const useServerListStore = defineStore('serverList', () => {
       const defaultLibraries: ServerConfig[] = [
       {
         id: 'default-server', // 默认库ID
-        name: '素材库',
+        name: i18n.global.t('stores.serverList.defaultLibraryName'),
         serverUrl: defaultServerUrl,
         websocketUrl: createWebSocketUrl(defaultServerUrl),
         createdAt: new Date().toISOString(),

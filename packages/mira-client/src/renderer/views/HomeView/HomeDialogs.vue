@@ -55,23 +55,23 @@ const emit = defineEmits<{
     <div class="bg-white dark:bg-muted rounded-lg p-6 max-w-md mx-4">
       <div class="flex items-center mb-4">
         <span class="material-icons text-yellow-500 mr-3">warning</span>
-        <h3 class="text-lg font-semibold">没有可用的素材库</h3>
+        <h3 class="text-lg font-semibold">{{ $t('views.homeDialogs.noLibraryTitle') }}</h3>
       </div>
       <p class="text-muted-foreground dark:text-muted-foreground mb-6">
-        系统检测到您还没有创建任何素材库。素材库是用来管理和组织您的媒体文件的。
+        {{ $t('views.homeDialogs.noLibraryDesc') }}
       </p>
       <div class="flex justify-end space-x-3">
         <button
           @click="showNoLibraryDialog = false"
           class="px-4 py-2 text-muted-foreground hover:bg-muted rounded-md"
         >
-          稍后创建
+          {{ $t('views.homeDialogs.later') }}
         </button>
         <button
           @click="emit('createLibrary')"
           class="px-4 py-2 bg-primary text-white hover:bg-primary rounded-md"
         >
-          创建素材库
+          {{ $t('views.homeDialogs.createLibrary') }}
         </button>
       </div>
     </div>
@@ -135,13 +135,13 @@ const emit = defineEmits<{
   <AlertDialog v-model:open="showAccessDeniedDialog">
     <AlertDialogContent>
       <AlertDialogHeader>
-        <AlertDialogTitle>权限不足</AlertDialogTitle>
+        <AlertDialogTitle>{{ $t('views.homeDialogs.accessDeniedTitle') }}</AlertDialogTitle>
         <AlertDialogDescription>
-          您的角色没有访问该素材库的权限，请选择其他素材库。
+          {{ $t('views.homeDialogs.accessDeniedDesc') }}
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
-        <AlertDialogAction @click="showAccessDeniedDialog = false">确定</AlertDialogAction>
+        <AlertDialogAction @click="showAccessDeniedDialog = false">{{ $t('views.homeDialogs.ok') }}</AlertDialogAction>
       </AlertDialogFooter>
     </AlertDialogContent>
   </AlertDialog>

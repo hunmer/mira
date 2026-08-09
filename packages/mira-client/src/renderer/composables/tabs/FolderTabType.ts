@@ -1,10 +1,13 @@
 import { MediaViewTabType } from '../TabTypes'
 import type { TabContext } from '../TabRegistry'
 import { useFolderStore } from '../../stores/folder'
+import i18n from '../../i18n'
 
 export class FolderTabType extends MediaViewTabType {
   name = 'folder'
-  displayName = '文件夹'
+  get displayName() {
+    return i18n.global.t('composables.folderTab.displayName')
+  }
   icon = 'folder'
   allowMultipleInstances = true // 允许多个文件夹tab
   cacheable = true
@@ -18,12 +21,12 @@ export class FolderTabType extends MediaViewTabType {
       const folder = folderStore.folders.find(f => f.id === parseInt(folderId.toString()))
 
       if (folder) {
-        return folder.title || folder.path || `文件夹 ${folderId}`
+        return folder.title || folder.path || i18n.global.t('composables.folderTab.fallbackLabel', { id: folderId })
       }
     }
 
     // 回退到 context 中的数据
-    return context.tabData?.name || context.tabData?.title || `文件夹 ${folderId || 'unknown'}`
+    return context.tabData?.name || context.tabData?.title || i18n.global.t('composables.folderTab.fallbackLabel', { id: folderId || 'unknown' })
   }
 
   protected getTabFilters(context: TabContext): Record<string, any> {

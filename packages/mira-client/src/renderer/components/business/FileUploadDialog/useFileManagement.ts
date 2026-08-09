@@ -1,4 +1,5 @@
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useToast } from '@/renderer/composables/useToast'
 import type { PendingFile, LocalFsNode } from './types'
 import { FILE_LIMITS } from './types'
@@ -30,6 +31,7 @@ function guessMimeFromExt(ext?: string): string {
 
 export function useFileManagement() {
   const toast = useToast()
+  const { t } = useI18n()
 
   const pendingFiles = ref<PendingFile[]>([])
   const selectedPendingIds = ref<string[]>([])
@@ -39,8 +41,8 @@ export function useFileManagement() {
     if (files.length + pendingFiles.value.length > FILE_LIMITS.MAX_FILES_PER_BATCH) {
       toast.add({
         severity: 'warn',
-        summary: '文件数量过多',
-        detail: `单次最多只能上传 ${FILE_LIMITS.MAX_FILES_PER_BATCH} 个文件`,
+        summary: t('business.fileManagement.tooManyFilesTitle'),
+        detail: t('business.fileManagement.tooManyFilesDetail', { count: FILE_LIMITS.MAX_FILES_PER_BATCH }),
         life: 5000
       })
       return
@@ -52,8 +54,8 @@ export function useFileManagement() {
     if (totalSize > FILE_LIMITS.MAX_TOTAL_SIZE) {
       toast.add({
         severity: 'warn',
-        summary: '文件总大小过大',
-        detail: `文件总大小不能超过 ${formatFileSize(FILE_LIMITS.MAX_TOTAL_SIZE)}`,
+        summary: t('business.fileManagement.totalSizeTooLargeTitle'),
+        detail: t('business.fileManagement.totalSizeTooLargeDetail', { size: formatFileSize(FILE_LIMITS.MAX_TOTAL_SIZE) }),
         life: 5000
       })
       return
@@ -94,8 +96,8 @@ export function useFileManagement() {
     if (collected.length + pendingFiles.value.length > FILE_LIMITS.MAX_FILES_PER_BATCH) {
       toast.add({
         severity: 'warn',
-        summary: '文件数量过多',
-        detail: `单次最多只能上传 ${FILE_LIMITS.MAX_FILES_PER_BATCH} 个文件`,
+        summary: t('business.fileManagement.tooManyFilesTitle'),
+        detail: t('business.fileManagement.tooManyFilesDetail', { count: FILE_LIMITS.MAX_FILES_PER_BATCH }),
         life: 5000
       })
       return
@@ -107,8 +109,8 @@ export function useFileManagement() {
     if (totalSize > FILE_LIMITS.MAX_TOTAL_SIZE) {
       toast.add({
         severity: 'warn',
-        summary: '文件总大小过大',
-        detail: `文件总大小不能超过 ${formatFileSize(FILE_LIMITS.MAX_TOTAL_SIZE)}`,
+        summary: t('business.fileManagement.totalSizeTooLargeTitle'),
+        detail: t('business.fileManagement.totalSizeTooLargeDetail', { size: formatFileSize(FILE_LIMITS.MAX_TOTAL_SIZE) }),
         life: 5000
       })
       return

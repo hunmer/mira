@@ -20,7 +20,7 @@
         name="loading"
         size="small"
         :spin="true"
-        :text="showPlaceholderText ? placeholderText : undefined"
+        :text="showPlaceholderText ? placeholderTextResolved : undefined"
       />
     </div>
 
@@ -32,13 +32,13 @@
     >
       <div class="flex flex-col items-center gap-2 text-muted-foreground">
         <StatusImage name="load_failed" size="small" img-class="text-destructive" />
-        <span class="text-xs">{{ errorText }}</span>
+        <span class="text-xs">{{ errorTextResolved }}</span>
         <button
           v-if="allowRetry"
           @click="retry"
           class="text-xs text-primary-600 hover:text-primary-700 underline"
         >
-          重试
+          {{ $t('commonUi.lazyImage.retry') }}
         </button>
       </div>
     </div>
@@ -80,8 +80,11 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Progress } from '@/components/ui/progress'
 import StatusImage from './StatusImage.vue'
+
+const { t } = useI18n()
 
 // Props
 interface Props {
@@ -104,8 +107,8 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   alt: '',
-  placeholderText: '加载中...',
-  errorText: '加载失败',
+  placeholderText: '',
+  errorText: '',
   lazy: true,
   showSkeleton: true,
   showPlaceholderText: false,
@@ -139,6 +142,9 @@ const retryCount = ref(0)
 const shouldLoad = computed(() => {
   return !props.lazy || inView.value
 })
+
+const placeholderTextResolved = computed(() => props.placeholderText || t('commonUi.lazyImage.loading'))
+const errorTextResolved = computed(() => props.errorText || t('commonUi.lazyImage.loadFailed'))
 
 const aspectRatioClass = computed(() => {
   const ratios = {

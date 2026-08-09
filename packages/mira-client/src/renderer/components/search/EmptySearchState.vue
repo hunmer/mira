@@ -14,7 +14,7 @@
       
       <!-- 搜索建议 -->
       <div v-if="suggestions.length > 0" class="search-suggestions">
-        <p class="text-muted-foreground text-xs mb-2">建议尝试：</p>
+        <p class="text-muted-foreground text-xs mb-2">{{ t('search.emptySearchState.suggestionsLabel') }}</p>
         <div class="flex flex-wrap justify-center gap-2">
           <button
             v-for="suggestion in suggestions"
@@ -32,7 +32,10 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import StatusImage from '@renderer/components/common/StatusImage.vue'
+
+const { t } = useI18n()
 
 interface Props {
   keyword: string
@@ -54,29 +57,29 @@ defineEmits<Emits>()
  * 获取空状态标题
  */
 const getEmptyTitle = (): string => {
-  return `未找到相关${props.serviceTitle}`
+  return t('search.emptySearchState.notFound', { title: props.serviceTitle })
 }
 
 /**
  * 获取空状态描述
  */
 const getEmptyDescription = (): string => {
-  const descriptions = [
-    '尝试使用不同的关键词',
-    '检查拼写是否正确',
-    '使用更短的搜索词',
-    '尝试使用同义词'
-  ]
-  
   // 根据关键词长度和服务类型给出不同建议
   if (props.keyword.length < 2) {
-    return '请输入至少2个字符进行搜索'
+    return t('search.emptySearchState.descTooShort')
   }
-  
+
   if (props.keyword.length > 20) {
-    return '搜索词过长，请尝试使用更短的关键词'
+    return t('search.emptySearchState.descTooLong')
   }
-  
+
+  const descriptions = [
+    t('search.emptySearchState.descTryDifferentKeywords'),
+    t('search.emptySearchState.descCheckSpelling'),
+    t('search.emptySearchState.descUseShorter'),
+    t('search.emptySearchState.descUseSynonyms')
+  ]
+
   // 随机返回一个建议
   return descriptions[Math.floor(Math.random() * descriptions.length)]
 }
@@ -86,15 +89,30 @@ const getEmptyDescription = (): string => {
  */
 const suggestions = computed((): string[] => {
   if (!props.showSuggestions) return []
-  
+
   const serviceTitle = props.serviceTitle.toLowerCase()
-  
+
   if (serviceTitle.includes('文档') || serviceTitle.includes('文件')) {
-    return ['图片', '视频', 'PDF', '文档']
+    return [
+      t('search.emptySearchState.suggestionImage'),
+      t('search.emptySearchState.suggestionVideo'),
+      t('search.emptySearchState.suggestionPdf'),
+      t('search.emptySearchState.suggestionDocument')
+    ]
   } else if (serviceTitle.includes('标签')) {
-    return ['重要', '工作', '个人', '项目']
+    return [
+      t('search.emptySearchState.suggestionImportant'),
+      t('search.emptySearchState.suggestionWork'),
+      t('search.emptySearchState.suggestionPersonal'),
+      t('search.emptySearchState.suggestionProject')
+    ]
   } else if (serviceTitle.includes('文件夹')) {
-    return ['下载', '文档', '图片', '视频']
+    return [
+      t('search.emptySearchState.suggestionDownload'),
+      t('search.emptySearchState.suggestionDocument'),
+      t('search.emptySearchState.suggestionImage'),
+      t('search.emptySearchState.suggestionVideo')
+    ]
   } else {
     return []
   }

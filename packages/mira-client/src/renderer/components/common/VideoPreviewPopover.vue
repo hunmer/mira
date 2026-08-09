@@ -7,7 +7,7 @@
       <!-- 加载中状态 -->
       <div v-if="isLoading" class="absolute inset-0 flex flex-col items-center justify-center text-white/70 bg-black">
         <StatusImage name="loading" size="small" :spin="true" img-class="mb-2" />
-        <span class="text-sm mt-2">加载中...</span>
+        <span class="text-sm mt-2">{{ $t('commonUi.videoPreviewPopover.loading') }}</span>
       </div>
 
       <!-- 视频元素 -->
@@ -43,7 +43,7 @@
       <!-- 错误状态 -->
       <div v-if="hasError" class="absolute inset-0 flex flex-col items-center justify-center text-white/70 bg-black">
         <StatusImage name="load_failed" size="small" img-class="mb-2" />
-        <span class="text-sm mt-2">视频加载失败</span>
+        <span class="text-sm mt-2">{{ $t('commonUi.videoPreviewPopover.loadFailed') }}</span>
       </div>
 
       <!-- 视频进度条 -->

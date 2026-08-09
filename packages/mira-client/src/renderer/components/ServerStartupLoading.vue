@@ -7,15 +7,15 @@
         </div>
         <div class="ground"><div /></div>
       </div>
-      <h1 class="text-lg font-semibold text-foreground">正在启动服务器</h1>
-      <p class="mt-2 text-sm leading-relaxed text-muted-foreground">{{ message }}</p>
+      <h1 class="text-lg font-semibold text-foreground">{{ $t('commonUi.serverStartupLoading.title') }}</h1>
+      <p class="mt-2 text-sm leading-relaxed text-muted-foreground">{{ message || $t('commonUi.serverStartupLoading.defaultMessage') }}</p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 withDefaults(defineProps<{ visible: boolean; message?: string }>(), {
-  message: '等待 mira-app-server 健康检查通过…',
+  message: '',
 })
 </script>
 

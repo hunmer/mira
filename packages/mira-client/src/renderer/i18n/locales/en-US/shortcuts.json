@@ -1,0 +1,156 @@
+{
+  "actions": {
+    "appSearch": {
+      "title": "Global Search",
+      "description": "Open the global search dialog"
+    },
+    "appSettings": {
+      "title": "Open Settings",
+      "description": "Open the application settings page"
+    },
+    "appHelp": {
+      "title": "Help Documentation",
+      "description": "Open the help documentation"
+    },
+    "appQuit": {
+      "title": "Quit Application",
+      "description": "Close the application"
+    },
+    "navHome": {
+      "title": "Back to Home",
+      "description": "Navigate to the home page"
+    },
+    "navActivateLastTab": {
+      "title": "Activate last tab",
+      "description": "Switch to the last activated tab"
+    },
+    "navReopenClosedTab": {
+      "title": "Reopen last closed tab",
+      "description": "Reopen the most recently closed tab"
+    },
+    "navLibrary": {
+      "title": "Media Library",
+      "description": "Open the media library page"
+    },
+    "navPlugins": {
+      "title": "Plugin Manager",
+      "description": "Open the plugin manager page"
+    },
+    "navBack": {
+      "title": "Back",
+      "description": "Go back to the previous page"
+    },
+    "navForward": {
+      "title": "Forward",
+      "description": "Go forward to the next page"
+    },
+    "navRefresh": {
+      "title": "Refresh Page",
+      "description": "Reload the current page"
+    },
+    "mediaPlayPause": {
+      "title": "Play/Pause",
+      "description": "Toggle media playback"
+    },
+    "mediaStop": {
+      "title": "Stop",
+      "description": "Stop media playback"
+    },
+    "mediaNext": {
+      "title": "Next",
+      "description": "Play the next media file"
+    },
+    "mediaPrevious": {
+      "title": "Previous",
+      "description": "Play the previous media file"
+    },
+    "mediaVolumeUp": {
+      "title": "Volume Up",
+      "description": "Increase playback volume"
+    },
+    "mediaVolumeDown": {
+      "title": "Volume Down",
+      "description": "Decrease playback volume"
+    },
+    "mediaMute": {
+      "title": "Toggle Mute",
+      "description": "Toggle mute state"
+    },
+    "mediaFullscreen": {
+      "title": "Toggle Fullscreen",
+      "description": "Toggle fullscreen mode"
+    },
+    "editSelectAll": {
+      "title": "Select All",
+      "description": "Select all content"
+    },
+    "editCopy": {
+      "title": "Copy",
+      "description": "Copy the selected content"
+    },
+    "editPaste": {
+      "title": "Paste",
+      "description": "Paste clipboard content"
+    },
+    "editCut": {
+      "title": "Cut",
+      "description": "Cut the selected content"
+    },
+    "editDelete": {
+      "title": "Delete",
+      "description": "Delete the selected items"
+    },
+    "editUndo": {
+      "title": "Undo",
+      "description": "Undo the last action"
+    },
+    "editRedo": {
+      "title": "Redo",
+      "description": "Redo the last action"
+    },
+    "viewZoomIn": {
+      "title": "Zoom In",
+      "description": "Zoom in the view"
+    },
+    "viewZoomOut": {
+      "title": "Zoom Out",
+      "description": "Zoom out the view"
+    },
+    "viewZoomReset": {
+      "title": "Reset Zoom",
+      "description": "Reset to original size"
+    },
+    "viewToggleSidebar": {
+      "title": "Toggle Sidebar",
+      "description": "Show/hide the sidebar"
+    },
+    "viewGridView": {
+      "title": "Grid View",
+      "description": "Switch to grid view"
+    },
+    "viewListView": {
+      "title": "List View",
+      "description": "Switch to list view"
+    },
+    "windowMinimize": {
+      "title": "Minimize Window",
+      "description": "Minimize the current window"
+    },
+    "windowMaximize": {
+      "title": "Maximize Window",
+      "description": "Maximize/restore the window"
+    },
+    "tabCloseCurrent": {
+      "title": "Close Current Tab",
+      "description": "Close the currently active tab"
+    },
+    "devDevtools": {
+      "title": "Developer Tools",
+      "description": "Open developer tools"
+    },
+    "devReload": {
+      "title": "Force Reload",
+      "description": "Force reload the application"
+    }
+  }
+}

@@ -3,17 +3,17 @@
     <!-- 加载状态 -->
     <div v-if="isLoading" class="flex flex-col justify-center items-center h-full gap-4">
       <div class="loading-spinner"></div>
-      <p>正在加载文件信息...</p>
+      <p>{{ $t('views.filePreviewView.loading') }}</p>
     </div>
 
     <!-- 错误状态 -->
     <div v-else-if="error" class="flex justify-center items-center h-full">
       <div class="text-center p-8 bg-white rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.1)] max-w-[400px]">
-        <h3 class="text-destructive mb-4">加载失败</h3>
+        <h3 class="text-destructive mb-4">{{ $t('views.filePreviewView.loadFailed') }}</h3>
         <p>{{ error }}</p>
         <div class="flex justify-center gap-3 mt-4">
-          <button @click="router.back()" class="bg-muted text-foreground border-none px-4 py-2 rounded cursor-pointer hover:bg-accent">返回</button>
-          <button @click="loadFileInfo" class="bg-primary text-white border-none px-4 py-2 rounded cursor-pointer hover:bg-primary">重试</button>
+          <button @click="router.back()" class="bg-muted text-foreground border-none px-4 py-2 rounded cursor-pointer hover:bg-accent">{{ $t('views.filePreviewView.back') }}</button>
+          <button @click="loadFileInfo" class="bg-primary text-white border-none px-4 py-2 rounded cursor-pointer hover:bg-primary">{{ $t('views.filePreviewView.retry') }}</button>
         </div>
       </div>
     </div>
@@ -25,7 +25,7 @@
         <IframePreview
           v-if="pluginPreviewUrl"
           :src="pluginPreviewUrl"
-          :title="fileInfo.name || '插件预览'"
+          :title="fileInfo.name || $t('views.filePreviewView.pluginPreview')"
           :file-info="fileInfo"
         />
         <!-- 根据文件类型渲染不同的预览组件 -->
@@ -43,6 +43,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { miraSDKService } from '../services/MiraSDKService'
 import { useViewHistoryStore } from '../stores/viewHistory'
@@ -60,6 +61,7 @@ import IframePreview from '../components/preview/IframePreview.vue'
 // 响应式数据
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 const isLoading = ref(false)
 const error = ref('')
 const fileInfo = ref<any>(null)
@@ -127,7 +129,7 @@ const loadFileInfo = async (): Promise<void> => {
   const libraryId = route.query.libraryId as string
 
   if (!fileId || !libraryId) {
-    error.value = '缺少必要的文件ID或库ID参数'
+    error.value = t('views.filePreviewView.missingParams')
     return
   }
 
@@ -138,8 +140,8 @@ const loadFileInfo = async (): Promise<void> => {
     // 先使用query参数创建基础文件信息
     const baseFileInfo = {
       id: fileId,
-      title: route.query.title as string || '未知文件',
-      name: route.query.title as string || '未知文件',
+      title: route.query.title as string || t('views.filePreviewView.unknownFile'),
+      name: route.query.title as string || t('views.filePreviewView.unknownFile'),
       mimeType: route.query.mimeType as string || '',
       path: route.query.path as string || '',
       url: route.query.path as string || '',
@@ -182,7 +184,7 @@ const loadFileInfo = async (): Promise<void> => {
     console.log('✅ 文件信息加载成功:', fileInfo.value)
   } catch (err) {
     console.error('❌ 文件信息加载失败:', err)
-    error.value = err instanceof Error ? err.message : '加载文件信息失败'
+    error.value = err instanceof Error ? err.message : t('views.filePreviewView.loadInfoFailed')
   } finally {
     isLoading.value = false
   }
@@ -191,7 +193,7 @@ const loadFileInfo = async (): Promise<void> => {
 // 处理预览错误
 const handlePreviewError = (errorMessage: string): void => {
   console.error('预览组件错误:', errorMessage)
-  error.value = `文件预览失败: ${errorMessage}`
+  error.value = t('views.filePreviewView.previewFailed', { message: errorMessage })
 }
 
 const handleFileRenamed = (name: string): void => {

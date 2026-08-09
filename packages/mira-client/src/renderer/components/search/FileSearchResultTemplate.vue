@@ -55,6 +55,9 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 interface FileItem {
   id: string
@@ -109,25 +112,25 @@ const fileType = computed((): string => {
   const mimeType = props.item.mimeType || ''
   
   if (mimeType.startsWith('image/')) {
-    return '图片'
+    return t('search.fileSearchResult.fileTypeImage')
   } else if (mimeType.startsWith('video/')) {
-    return '视频'
+    return t('search.fileSearchResult.fileTypeVideo')
   } else if (mimeType.startsWith('audio/')) {
-    return '音频'
+    return t('search.fileSearchResult.fileTypeAudio')
   } else if (mimeType.includes('pdf')) {
-    return 'PDF'
+    return t('search.fileSearchResult.fileTypePdf')
   } else if (mimeType.includes('word') || mimeType.includes('document')) {
-    return '文档'
+    return t('search.fileSearchResult.fileTypeDocument')
   } else if (mimeType.includes('sheet') || mimeType.includes('excel')) {
-    return '表格'
+    return t('search.fileSearchResult.fileTypeSpreadsheet')
   } else if (mimeType.includes('presentation') || mimeType.includes('powerpoint')) {
-    return '演示'
+    return t('search.fileSearchResult.fileTypePresentation')
   } else if (mimeType.includes('text/')) {
-    return '文本'
+    return t('search.fileSearchResult.fileTypeText')
   } else if (mimeType.includes('zip') || mimeType.includes('archive')) {
-    return '压缩包'
+    return t('search.fileSearchResult.fileTypeArchive')
   } else {
-    return '文件'
+    return t('search.fileSearchResult.fileTypeFile')
   }
 })
 
@@ -158,11 +161,11 @@ const formattedDate = computed((): string => {
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
   
   if (diffDays === 1) {
-    return '今天'
+    return t('search.fileSearchResult.dateToday')
   } else if (diffDays === 2) {
-    return '昨天'
+    return t('search.fileSearchResult.dateYesterday')
   } else if (diffDays <= 7) {
-    return `${diffDays} 天前`
+    return t('search.fileSearchResult.dateDaysAgo', { days: diffDays })
   } else {
     return date.toLocaleDateString('zh-CN', {
       year: 'numeric',

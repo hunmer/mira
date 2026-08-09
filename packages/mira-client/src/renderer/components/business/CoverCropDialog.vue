@@ -2,7 +2,7 @@
   <Dialog :open="open" @update:open="emit('update:open', $event)">
     <DialogContent class="sm:max-w-[760px] grid-rows-[auto_minmax(0,1fr)_auto] max-h-[90vh] overflow-hidden">
       <DialogHeader>
-        <DialogTitle>设置封面</DialogTitle>
+        <DialogTitle>{{ $t('business.coverCropDialog.title') }}</DialogTitle>
         <DialogDescription>{{ item?.name }}</DialogDescription>
       </DialogHeader>
 
@@ -24,22 +24,22 @@
           @click="chooseImage"
         >
           <ImagePlus class="size-10" />
-          <span>选择图片</span>
+          <span>{{ $t('business.coverCropDialog.chooseImage') }}</span>
         </button>
       </div>
 
       <DialogFooter class="sm:justify-between">
         <div class="flex gap-1">
-          <Button v-if="imageUrl" variant="outline" size="sm" @click="chooseImage">更换图片</Button>
-          <Button v-if="imageUrl" variant="ghost" size="icon-sm" title="向左旋转" @click="cropperRef?.rotateLeft()"><RotateCcw /></Button>
-          <Button v-if="imageUrl" variant="ghost" size="icon-sm" title="向右旋转" @click="cropperRef?.rotateRight()"><RotateCw /></Button>
-          <Button v-if="imageUrl" variant="ghost" size="icon-sm" title="缩小" @click="cropperRef?.zoomOut()"><ZoomOut /></Button>
-          <Button v-if="imageUrl" variant="ghost" size="icon-sm" title="放大" @click="cropperRef?.zoomIn()"><ZoomIn /></Button>
+          <Button v-if="imageUrl" variant="outline" size="sm" @click="chooseImage">{{ $t('business.coverCropDialog.changeImage') }}</Button>
+          <Button v-if="imageUrl" variant="ghost" size="icon-sm" :title="$t('business.coverCropDialog.rotateLeft')" @click="cropperRef?.rotateLeft()"><RotateCcw /></Button>
+          <Button v-if="imageUrl" variant="ghost" size="icon-sm" :title="$t('business.coverCropDialog.rotateRight')" @click="cropperRef?.rotateRight()"><RotateCw /></Button>
+          <Button v-if="imageUrl" variant="ghost" size="icon-sm" :title="$t('business.coverCropDialog.zoomOut')" @click="cropperRef?.zoomOut()"><ZoomOut /></Button>
+          <Button v-if="imageUrl" variant="ghost" size="icon-sm" :title="$t('business.coverCropDialog.zoomIn')" @click="cropperRef?.zoomIn()"><ZoomIn /></Button>
         </div>
         <div class="flex justify-end gap-2">
-          <Button variant="outline" :disabled="uploading" @click="emit('update:open', false)">取消</Button>
+          <Button variant="outline" :disabled="uploading" @click="emit('update:open', false)">{{ $t('business.coverCropDialog.cancel') }}</Button>
           <Button :disabled="!imageUrl || uploading" @click="saveCover">
-            {{ uploading ? '上传中...' : '保存封面' }}
+            {{ uploading ? $t('business.coverCropDialog.uploading') : $t('business.coverCropDialog.save') }}
           </Button>
         </div>
       </DialogFooter>
@@ -51,6 +51,7 @@
 
 <script setup lang="ts">
 import { onBeforeUnmount, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ImagePlus, RotateCcw, RotateCw, ZoomIn, ZoomOut } from '@lucide/vue'
 import { VueCropper } from 'cropper-next-vue'
 import 'cropper-next-vue/style.css'
@@ -68,6 +69,7 @@ const fileInput = ref<HTMLInputElement>()
 const imageUrl = ref('')
 const uploading = ref(false)
 const libraryStore = useLibraryStore()
+const { t } = useI18n()
 let objectUrl = ''
 
 const releaseImage = () => {
@@ -97,7 +99,7 @@ const saveCover = async () => {
   if (!props.item || !cropperRef.value) return
   const libraryId = props.item.libraryId || libraryStore.currentLibrary?.id
   if (!libraryId) {
-    toast.error('无法确定素材库')
+    toast.error(t('business.coverCropDialog.libraryNotFound'))
     return
   }
 
@@ -105,11 +107,11 @@ const saveCover = async () => {
   try {
     const blob = await cropperRef.value.getCropBlob()
     await miraSDKService.setFileCover(libraryId, props.item.id, blob)
-    toast.success('封面已更新')
+    toast.success(t('business.coverCropDialog.coverUpdated'))
     emit('update:open', false)
   } catch (error) {
     console.error('Failed to set media cover:', error)
-    toast.error('设置封面失败')
+    toast.error(t('business.coverCropDialog.setCoverFailed'))
   } finally {
     uploading.value = false
   }

@@ -23,6 +23,9 @@ import VueViewer from 'v-viewer'
 // vue3-lazyload setup
 import VueLazyload from 'vue3-lazyload'
 
+// vue-i18n 国际化
+import i18n from './i18n'
+
 import './assets/main.css'
 // vue-sonner 样式需独立加载：放在 main.css（经 Tailwind v4 PostCSS 处理）中会被
 // @import 链 / layer 重排影响，导致 [data-sonner-toaster] 的 position/z-index 失效，
@@ -47,6 +50,7 @@ const pinia = createPinia()
 // 安装插件
 app.use(pinia)
 app.use(router)
+app.use(i18n)
 app.use(VueViewer)
 app.use(VueLazyload, {
   loading: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%23f3f4f6'/%3E%3Cpath d='M85 85h30v30H85z' fill='%23d1d5db' opacity='0.5'/%3E%3C/svg%3E",

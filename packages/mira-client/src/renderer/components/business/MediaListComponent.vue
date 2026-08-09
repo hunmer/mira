@@ -30,15 +30,15 @@
           <TableHead class="w-12 min-w-12 max-w-12">
             <Checkbox :model-value="isAllSelected" @update:model-value="toggleSelectAll" />
           </TableHead>
-          <TableHead class="w-20 min-w-20 max-w-20">预览</TableHead>
-          <TableHead v-if="showFilename" class="max-w-[200px]">文件名</TableHead>
-          <TableHead v-if="showFormat" class="w-20 min-w-20 max-w-20">格式</TableHead>
-          <TableHead v-if="showSize" class="w-24 min-w-24 max-w-24">大小</TableHead>
-          <TableHead class="w-28 min-w-28 max-w-28">分辨率</TableHead>
-          <TableHead v-if="showFolder" class="w-32 min-w-32 max-w-32">文件夹</TableHead>
-          <TableHead v-if="showTags" class="w-40 min-w-40 max-w-40">标签</TableHead>
-          <TableHead class="w-40 min-w-40 max-w-40">创建时间</TableHead>
-          <TableHead class="w-24 min-w-24 max-w-24 text-right">操作</TableHead>
+          <TableHead class="w-20 min-w-20 max-w-20">{{ $t('business.mediaListComponent.colPreview') }}</TableHead>
+          <TableHead v-if="showFilename" class="max-w-[200px]">{{ $t('business.mediaListComponent.colFilename') }}</TableHead>
+          <TableHead v-if="showFormat" class="w-20 min-w-20 max-w-20">{{ $t('business.mediaListComponent.colFormat') }}</TableHead>
+          <TableHead v-if="showSize" class="w-24 min-w-24 max-w-24">{{ $t('business.mediaListComponent.colSize') }}</TableHead>
+          <TableHead class="w-28 min-w-28 max-w-28">{{ $t('business.mediaListComponent.colResolution') }}</TableHead>
+          <TableHead v-if="showFolder" class="w-32 min-w-32 max-w-32">{{ $t('business.mediaListComponent.colFolder') }}</TableHead>
+          <TableHead v-if="showTags" class="w-40 min-w-40 max-w-40">{{ $t('business.mediaListComponent.colTags') }}</TableHead>
+          <TableHead class="w-40 min-w-40 max-w-40">{{ $t('business.mediaListComponent.colCreatedAt') }}</TableHead>
+          <TableHead class="w-24 min-w-24 max-w-24 text-right">{{ $t('business.mediaListComponent.colActions') }}</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -46,8 +46,8 @@
           <TableCell :colspan="tableColumnCount">
             <div class="flex flex-col items-center justify-center h-64 text-muted-foreground">
               <StatusImage name="empty" size="medium" container-class="mb-2" />
-              <p class="text-lg font-medium">暂无文件</p>
-              <p class="text-sm">选择不同的筛选条件查看文件</p>
+              <p class="text-lg font-medium">{{ $t('business.mediaListComponent.emptyTitle') }}</p>
+              <p class="text-sm">{{ $t('business.mediaListComponent.emptyDesc') }}</p>
             </div>
           </TableCell>
         </TableRow>
@@ -178,14 +178,14 @@
               <button
                 class="p-2 text-muted-foreground hover:text-muted-foreground rounded-full hover:bg-muted"
                 @click.stop="emit('preview', item)"
-                title="预览"
+                :title="$t('business.mediaListComponent.previewTitle')"
               >
                 <span class="material-icons text-sm">visibility</span>
               </button>
               <button
                 class="p-2 text-muted-foreground hover:text-muted-foreground rounded-full hover:bg-muted"
                 @click.stop="emit('download', item)"
-                title="下载"
+                :title="$t('business.mediaListComponent.downloadTitle')"
               >
                 <span class="material-icons text-sm">download</span>
               </button>

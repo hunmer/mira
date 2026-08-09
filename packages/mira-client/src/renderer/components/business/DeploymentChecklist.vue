@@ -8,6 +8,7 @@
  * 点击「启动部署」后，通过 Electron 主进程执行真实命令，并逐步展示后台输出。
  */
 import { ref, computed, onBeforeUnmount, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Motion, AnimatePresence, motion } from 'motion-v'
 import { useSettingsStore } from '@renderer/stores/settings'
 import { useServerDeploy } from '@renderer/composables/useServerDeploy'
@@ -36,14 +37,15 @@ const emit = defineEmits<{
 }>()
 
 const settingsStore = useSettingsStore()
+const { t } = useI18n()
 const registry = ref('https://registry.npmjs.org/')
 const proxy = ref('')
-const registryOptions = [
-  { label: 'npm 官方', region: '国外', value: 'https://registry.npmjs.org/' },
-  { label: 'npmmirror（阿里）', region: '国内', value: 'https://registry.npmmirror.com/' },
-  { label: '腾讯云', region: '国内', value: 'https://mirrors.cloud.tencent.com/npm/' },
-  { label: '华为云', region: '国内', value: 'https://repo.huaweicloud.com/repository/npm/' },
-]
+const registryOptions = computed(() => [
+  { label: t('business.deploymentChecklist.registryOfficial'), region: t('business.deploymentChecklist.regionOverseas'), value: 'https://registry.npmjs.org/' },
+  { label: t('business.deploymentChecklist.registryNpmmirror'), region: t('business.deploymentChecklist.regionDomestic'), value: 'https://registry.npmmirror.com/' },
+  { label: t('business.deploymentChecklist.registryTencent'), region: t('business.deploymentChecklist.regionDomestic'), value: 'https://mirrors.cloud.tencent.com/npm/' },
+  { label: t('business.deploymentChecklist.registryHuawei'), region: t('business.deploymentChecklist.regionDomestic'), value: 'https://repo.huaweicloud.com/repository/npm/' },
+])
 // 复用 settingsStore 已有的主题计算（支持 light/dark/auto）
 const isDarkMode = computed(() => settingsStore.isDarkMode)
 
@@ -64,45 +66,45 @@ onMounted(() => {
 })
 
 // 默认部署步骤（贴合 mira-app-server README 真实流程）
-const defaultTasks: Task[] = [
+const defaultTasks = computed<Task[]>(() => [
   {
     id: 1,
-    title: '安装 Node.js 运行环境',
-    subtitle: 'Node.js >= 18，验证 node -v / npm -v。',
+    title: t('business.deploymentChecklist.task1Title'),
+    subtitle: t('business.deploymentChecklist.task1Subtitle'),
     status: 'pending',
     info: null,
   },
   {
     id: 2,
-    title: '安装媒体处理依赖',
-    subtitle: '安装 FFmpeg 和 ImageMagick。',
+    title: t('business.deploymentChecklist.task2Title'),
+    subtitle: t('business.deploymentChecklist.task2Subtitle'),
     status: 'pending',
     info: null,
   },
   {
     id: 3,
-    title: '全局安装 mira-app-server',
-    subtitle: 'npm install -g mira-app-server，等待包安装完成。',
+    title: t('business.deploymentChecklist.task3Title'),
+    subtitle: t('business.deploymentChecklist.task3Subtitle'),
     status: 'pending',
     info: null,
   },
   {
     id: 4,
-    title: '启动服务器',
-    subtitle: 'mira-app-server start --http-port 8081 --ws-port 8018',
+    title: t('business.deploymentChecklist.task4Title'),
+    subtitle: t('business.deploymentChecklist.task4Subtitle'),
     status: 'pending',
     info: null,
   },
   {
     id: 5,
-    title: '创建默认素材库',
-    subtitle: '使用默认管理员创建或复用“默认素材库”。',
+    title: t('business.deploymentChecklist.task5Title'),
+    subtitle: t('business.deploymentChecklist.task5Subtitle'),
     status: 'pending',
     info: null,
   },
-]
+])
 
-const tasks = ref<Task[]>(defaultTasks.map(t => ({ ...t })))
+const tasks = ref<Task[]>(defaultTasks.value.map(t => ({ ...t })))
 const pipelineStatus = ref<PipelineStatus>('idle')
 const expandedTaskIds = ref<Set<number>>(new Set())
 const defaultLibraryId = ref('')
@@ -166,7 +168,7 @@ async function runPipeline() {
       return
     }
     if (!result.data?.defaultLibraryId) {
-      throw new Error('部署完成，但未获取到默认素材库 ID')
+      throw new Error(t('business.deploymentChecklist.noDefaultLibrary'))
     }
     defaultLibraryId.value = result.data.defaultLibraryId
     pipelineStatus.value = 'success'
@@ -235,17 +237,17 @@ onBeforeUnmount(() => {
 
       <!-- 状态文案：允许换行，避免长报错信息撑破容器 -->
       <span class="flex-1 min-w-0 break-words">
-        <template v-if="deployStatus === 'checking'">正在检测已安装版本…</template>
-        <template v-else-if="updateInProgress">正在更新…{{ updateLog.length ? `（${updateLog.length} 行输出）` : '' }}</template>
+        <template v-if="deployStatus === 'checking'">{{ $t('business.deploymentChecklist.statusChecking') }}</template>
+        <template v-else-if="updateInProgress">{{ $t('business.deploymentChecklist.statusUpdating', { log: updateLog.length ? $t('business.deploymentChecklist.updateLogLines', { count: updateLog.length }) : '' }) }}</template>
         <template v-else-if="deployStatus === 'up-to-date'">
-          已安装 v{{ installedVersion }}（最新）
+          {{ $t('business.deploymentChecklist.statusUpToDate', { version: installedVersion }) }}
         </template>
         <template v-else-if="deployStatus === 'update-available'">
-          {{ installedVersion ? `已装 v${installedVersion}，` : '未安装，' }}最新 v{{ latestVersion }}
+          {{ installedVersion ? $t('business.deploymentChecklist.statusUpdateAvailableInstalled', { installed: installedVersion, latest: latestVersion }) : $t('business.deploymentChecklist.statusUpdateAvailableNotInstalled', { latest: latestVersion }) }}
         </template>
-        <template v-else-if="deployStatus === 'not-installed'">未安装 mira-app-server</template>
-        <template v-else-if="deployStatus === 'error'">检测失败：{{ deployError }}</template>
-        <template v-else>等待检测</template>
+        <template v-else-if="deployStatus === 'not-installed'">{{ $t('business.deploymentChecklist.statusNotInstalled') }}</template>
+        <template v-else-if="deployStatus === 'error'">{{ $t('business.deploymentChecklist.statusError', { error: deployError }) }}</template>
+        <template v-else>{{ $t('business.deploymentChecklist.statusWaiting') }}</template>
       </span>
 
       <!-- 操作按钮：走完整部署流水线（与下方「启动部署」一致） -->
@@ -260,7 +262,7 @@ onBeforeUnmount(() => {
         )"
         @click="runPipeline"
       >
-        {{ installedVersion ? '更新' : '安装' }}
+        {{ installedVersion ? $t('business.deploymentChecklist.actionUpdate') : $t('business.deploymentChecklist.actionInstall') }}
       </button>
       <button
         v-if="deployStatus === 'error'"
@@ -268,7 +270,7 @@ onBeforeUnmount(() => {
         class="shrink-0 rounded-lg px-2 py-1 text-[11px] font-semibold text-muted-foreground hover:text-foreground border border-border bg-transparent cursor-pointer transition-colors"
         @click="checkVersion"
       >
-        重试
+        {{ $t('common.retry') }}
       </button>
     </div>
 
@@ -285,16 +287,16 @@ onBeforeUnmount(() => {
 
     <div :class="cn('mb-3 grid gap-2 rounded-2xl p-3 text-xs', isDarkMode ? 'bg-neutral-950 text-neutral-200' : 'bg-neutral-100 text-neutral-800')">
       <label class="grid gap-1">
-        <span class="font-semibold">npm 镜像站</span>
+        <span class="font-semibold">{{ $t('business.deploymentChecklist.npmRegistryLabel') }}</span>
         <select v-model="registry" class="h-8 rounded-lg border border-border bg-background px-2 text-xs">
           <option v-for="option in registryOptions" :key="option.value" :value="option.value">
             {{ option.label }}（{{ option.region }}）
           </option>
-          <option disabled>清华大学（国内，已停止 npm 镜像服务）</option>
+          <option disabled>{{ $t('business.deploymentChecklist.registryTsinghua') }}</option>
         </select>
       </label>
       <label class="grid gap-1">
-        <span class="font-semibold">代理设置（可选）</span>
+        <span class="font-semibold">{{ $t('business.deploymentChecklist.proxyLabel') }}</span>
         <input v-model="proxy" type="url" placeholder="http://127.0.0.1:7890" class="h-8 rounded-lg border border-border bg-background px-2 text-xs" />
       </label>
     </div>
@@ -364,7 +366,7 @@ onBeforeUnmount(() => {
                 v-if="task.info"
                 type="button"
                 class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-none bg-transparent text-current opacity-60 transition-opacity hover:opacity-100"
-                :title="expandedTaskIds.has(task.id) ? '折叠输出' : '展开输出'"
+                :title="expandedTaskIds.has(task.id) ? $t('business.deploymentChecklist.collapseOutput') : $t('business.deploymentChecklist.expandOutput')"
                 @click.stop="toggleTask(task.id)"
               >
                 <span class="material-icons text-base">
@@ -413,22 +415,22 @@ onBeforeUnmount(() => {
     <div class="mt-3">
       <Motion v-if="pipelineStatus === 'idle'" as="button" @click="runPipeline" :while-tap="{ scale: 0.98 }" :class="cn('flex w-full items-center justify-center gap-1.5 rounded-2xl py-2.5 font-sans text-xs font-bold transition-colors border-none cursor-pointer', isDarkMode ? 'bg-neutral-100 text-neutral-950 hover:bg-neutral-200' : 'bg-neutral-950 text-white hover:bg-neutral-900')">
         <svg class="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" /></svg>
-        启动部署
+        {{ $t('business.deploymentChecklist.startDeploy') }}
       </Motion>
       <Motion v-else-if="pipelineStatus === 'running'" as="div" :class="cn('flex w-full items-center justify-center gap-2 rounded-2xl py-2.5 font-sans text-xs font-bold transition-colors duration-300', isDarkMode ? 'bg-neutral-800 text-neutral-300' : 'bg-neutral-200 text-neutral-700')">
         <div :class="cn('h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent', isDarkMode ? 'text-neutral-300' : 'text-neutral-700')" />
-        <span>正在部署...</span>
+        <span>{{ $t('business.deploymentChecklist.deploying') }}</span>
       </Motion>
       <Motion v-else-if="pipelineStatus === 'success'" as="button" type="button" @click="connectNow" :while-tap="{ scale: 0.98 }" :class="cn('flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-2xl border-none py-2.5 font-sans text-xs font-bold transition-colors', isDarkMode ? 'bg-emerald-950/60 text-emerald-300 hover:bg-emerald-950/80' : 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200')">
         <svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5L6.5 12L13 4.5" /></svg>
-        部署完成，立即连接
+        {{ $t('business.deploymentChecklist.deployComplete') }}
       </Motion>
       <Motion v-else as="button" @click="runPipeline" :while-tap="{ scale: 0.98 }" :class="cn('flex w-full items-center justify-center gap-1.5 rounded-2xl py-2.5 font-sans text-xs font-bold transition-colors border-none cursor-pointer', isDarkMode ? 'bg-neutral-800 text-neutral-200 hover:bg-neutral-700' : 'bg-neutral-200 text-neutral-800 hover:bg-neutral-300')">
         <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
           <polyline points="3 3 3 8 8 8" />
         </svg>
-        部署失败（重试）
+        {{ $t('business.deploymentChecklist.deployFailed') }}
       </Motion>
     </div>
   </div>

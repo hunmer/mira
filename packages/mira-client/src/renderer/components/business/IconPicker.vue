@@ -4,7 +4,7 @@
       <button
         type="button"
         class="icon-picker-trigger flex items-center justify-center w-10 h-10 rounded-full border border-border bg-muted/50 hover:bg-accent hover:border-primary/50 transition-colors text-foreground"
-        :title="modelValue || defaultIcon || '选择图标'"
+        :title="modelValue || defaultIcon || $t('business.iconPicker.selectIcon')"
       >
         <span class="material-icons text-xl" :style="iconStyle">{{ modelValue || defaultIcon || 'extension' }}</span>
       </button>
@@ -25,20 +25,20 @@
               ref="searchInputRef"
               v-model="search"
               type="text"
-              placeholder="搜索图标..."
+              :placeholder="$t('business.iconPicker.searchPlaceholder')"
               class="w-full pl-8 pr-3 py-1.5 text-sm border border-border rounded-full bg-white/70 dark:bg-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
               @keydown.esc="open = false"
             />
           </div>
           <div class="flex items-center justify-between mt-1.5 px-1">
-            <span class="text-[11px] text-muted-foreground">{{ filtered.length }} 个图标</span>
+            <span class="text-[11px] text-muted-foreground">{{ $t('business.iconPicker.iconCount', { count: filtered.length }) }}</span>
             <button
               v-if="modelValue"
               type="button"
               class="text-[11px] text-primary hover:underline"
               @click="selectIcon('')"
             >
-              使用默认
+              {{ $t('business.iconPicker.useDefault') }}
             </button>
           </div>
         </div>
@@ -60,7 +60,7 @@
           </div>
           <div v-else class="flex flex-col items-center justify-center py-8 text-muted-foreground">
             <span class="material-icons text-3xl mb-2">search_off</span>
-            <p class="text-xs">没有匹配的图标</p>
+            <p class="text-xs">{{ $t('business.iconPicker.noMatch') }}</p>
           </div>
         </div>
 

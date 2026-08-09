@@ -1,0 +1,60 @@
+{
+  "documentPreview": {
+    "loadPdfFailed": "Failed to load PDF file",
+    "noTextContent": "Unable to load text content",
+    "loadTextFailed": "Failed to load text content",
+    "saveMarkdownFailed": "Failed to save Markdown",
+    "saveFailed": "Save failed ({status})",
+    "unsupportedType": "This document type is not supported for preview",
+    "download": "Download file"
+  },
+  "videoPreview": {
+    "resolution": "Resolution",
+    "size": "Size",
+    "format": "Format",
+    "createdAt": "Created"
+  },
+  "imagePreview": {
+    "dimensions": "Dimensions",
+    "size": "Size",
+    "format": "Format",
+    "createdAt": "Created"
+  },
+  "previewHeader": {
+    "back": "Back",
+    "clickToRename": "Click to rename",
+    "openWith": "Open with {name}",
+    "plugin": "plugin",
+    "saving": "Saving...",
+    "save": "Save",
+    "unknownFile": "Unknown file",
+    "openWithFailed": "Failed to open file with plugin",
+    "renameFailed": "Failed to rename file"
+  },
+  "defaultPreview": {
+    "back": "Go back",
+    "unknownFile": "Unknown file",
+    "fileType": "File type",
+    "fileSize": "File size",
+    "modifiedAt": "Modified",
+    "description": "Description",
+    "download": "Download file",
+    "copyInfo": "Copy file info",
+    "copyFileName": "Filename: {value}",
+    "copyType": "Type: {value}",
+    "copySize": "Size: {value}",
+    "copyModifiedAt": "Modified: {value}",
+    "unknown": "Unknown"
+  },
+  "iframePreview": {
+    "loadFailed": "Failed to load plugin preview"
+  },
+  "audioPreview": {
+    "unknownTitle": "Unknown audio file",
+    "fileSize": "File size",
+    "notSupported": "Your browser does not support audio playback",
+    "noAudioUrl": "Unable to get audio file",
+    "streamLoadFailed": "Failed to load audio stream",
+    "loadFailed": "Failed to load audio"
+  }
+}

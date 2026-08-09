@@ -5,7 +5,7 @@
       <EmptyMedia>
         <StatusImage name="empty" size="large" />
       </EmptyMedia>
-      <EmptyTitle>选择文件以查看详情</EmptyTitle>
+      <EmptyTitle>{{ $t('business.mediaDetailComponent.emptyTitle') }}</EmptyTitle>
     </Empty>
     <template v-else>
     <!-- 预览图 - 支持多选相册效果 -->
@@ -92,14 +92,14 @@
           </div>
           <!-- 文件数量显示 -->
           <div class="absolute top-1 left-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded z-10">
-            {{ displayItems.length }} 个文件
+            {{ $t('business.mediaDetailComponent.fileCount', { count: displayItems.length }) }}
           </div>
         </div>
       </div>
     </div>
     <!-- 文件名编辑 - 仅单选模式 -->
     <div v-if="!isMultiSelect && displayItems[0]">
-      <label class="block text-xs font-medium text-muted-foreground mb-1">文件名</label>
+      <label class="block text-xs font-medium text-muted-foreground mb-1">{{ $t('business.mediaDetailComponent.fileName') }}</label>
       <Input
         v-model="editName"
         type="text"
@@ -113,7 +113,7 @@
 
     <!-- Website 编辑 - 仅单选模式 -->
     <div v-if="!isMultiSelect && displayItems[0]">
-      <label class="block text-xs font-medium text-muted-foreground mb-1">网址</label>
+      <label class="block text-xs font-medium text-muted-foreground mb-1">{{ $t('business.mediaDetailComponent.website') }}</label>
       <Input
         v-model="editWebsite"
         type="text"
@@ -138,12 +138,12 @@
     <!-- 标签管理 -->
     <div>
       <div class="flex items-center justify-between mb-2">
-        <h3 class="font-semibold text-foreground text-sm">标签</h3>
+        <h3 class="font-semibold text-foreground text-sm">{{ $t('business.mediaDetailComponent.tags') }}</h3>
         <Popover v-model:open="tagPopoverOpen">
           <PopoverTrigger as-child>
             <button class="text-primary text-xs hover:text-primary flex items-center gap-0.5">
               <span class="material-icons text-sm">{{ hasTags ? 'edit' : 'add' }}</span>
-              <span>{{ hasTags ? '编辑' : (isMultiSelect ? '批量设置' : '设置标签') }}</span>
+              <span>{{ hasTags ? $t('business.mediaDetailComponent.editTags') : (isMultiSelect ? $t('business.mediaDetailComponent.batchSetTags') : $t('business.mediaDetailComponent.setTags')) }}</span>
             </button>
           </PopoverTrigger>
           <PopoverContent align="end" side="bottom" class="w-80 p-2">
@@ -178,19 +178,19 @@
             <button class="ml-1 text-primary text-xs hover:text-primary" @click="handleRemoveTag(tag)">×</button>
           </span>
         </template>
-        <span v-else class="text-muted-foreground text-xs">暂无标签</span>
+        <span v-else class="text-muted-foreground text-xs">{{ $t('business.mediaDetailComponent.noTags') }}</span>
       </div>
     </div>
 
     <!-- 文件夹信息 -->
     <div>
       <div class="flex items-center justify-between mb-2">
-        <h3 class="font-semibold text-foreground text-sm">文件夹</h3>
+        <h3 class="font-semibold text-foreground text-sm">{{ $t('business.mediaDetailComponent.folder') }}</h3>
         <Popover v-model:open="folderPopoverOpen">
           <PopoverTrigger as-child>
             <button class="text-primary text-xs hover:text-primary flex items-center gap-0.5">
               <span class="material-icons text-sm">{{ displayItems[0]?.folderId ? 'edit' : 'add' }}</span>
-              <span>{{ displayItems[0]?.folderId ? '编辑' : (isMultiSelect ? '批量设置' : '设置') }}</span>
+              <span>{{ displayItems[0]?.folderId ? $t('business.mediaDetailComponent.editFolder') : (isMultiSelect ? $t('business.mediaDetailComponent.batchSetFolder') : $t('business.mediaDetailComponent.setFolder')) }}</span>
             </button>
           </PopoverTrigger>
           <PopoverContent align="end" side="bottom" class="w-80 p-2">
@@ -211,7 +211,7 @@
         </div>
         <div v-else class="bg-muted text-muted-foreground text-xs px-3 py-2 rounded-lg flex items-center">
           <span class="material-icons mr-2 text-muted-foreground">folder_open</span>
-          未分类
+          {{ $t('business.mediaDetailComponent.uncategorized') }}
         </div>
       </template>
       <template v-else-if="mergedInfo">
@@ -227,46 +227,46 @@
         </div>
         <div v-else class="bg-muted text-muted-foreground text-xs px-3 py-2 rounded-lg flex items-center">
           <span class="material-icons mr-2 text-muted-foreground">folder_open</span>
-          多个文件未分类
+          {{ $t('business.mediaDetailComponent.multiUncategorized') }}
         </div>
       </template>
     </div>
 
     <!-- 基本信息 -->
     <div>
-      <h3 class="font-semibold text-foreground text-sm mb-2">基本信息</h3>
+      <h3 class="font-semibold text-foreground text-sm mb-2">{{ $t('business.mediaDetailComponent.basicInfo') }}</h3>
       <div class="text-xs space-y-2 text-muted-foreground">
         <!-- 单选模式 -->
         <template v-if="!isMultiSelect && displayItems[0]">
           <div class="flex justify-between">
-            <span>大小</span>
+            <span>{{ $t('business.mediaDetailComponent.size') }}</span>
             <span>{{ formatFileSize(displayItems[0].size) }}</span>
           </div>
           <div class="flex justify-between">
-            <span>修改日期</span>
+            <span>{{ $t('business.mediaDetailComponent.modifiedDate') }}</span>
             <span>{{ formatDate(displayItems[0].updatedAt || displayItems[0].createdAt) }}</span>
           </div>
           <div class="flex justify-between">
-            <span>创建日期</span>
+            <span>{{ $t('business.mediaDetailComponent.createdDate') }}</span>
             <span>{{ formatDate(displayItems[0].createdAt) }}</span>
           </div>
           <div v-if="isImageFile(displayItems[0]) && displayItems[0].metadata" class="flex justify-between">
-            <span>尺寸</span>
+            <span>{{ $t('business.mediaDetailComponent.dimensions') }}</span>
             <span>{{ displayItems[0].metadata.width }} x {{ displayItems[0].metadata.height }}</span>
           </div>
           <div v-if="isVideoFile(displayItems[0]) && displayItems[0].metadata" class="flex justify-between">
-            <span>时长</span>
+            <span>{{ $t('business.mediaDetailComponent.duration') }}</span>
             <span>{{ formatDuration(displayItems[0].metadata.duration) }}</span>
           </div>
         </template>
         <!-- 多选模式 -->
         <template v-else-if="isMultiSelect && mergedInfo">
           <div class="flex justify-between">
-            <span>选中数量</span>
-            <span>{{ mergedInfo.count }} 个文件</span>
+            <span>{{ $t('business.mediaDetailComponent.selectedCount') }}</span>
+            <span>{{ $t('business.mediaDetailComponent.fileCountWithTotal', { count: mergedInfo.count }) }}</span>
           </div>
           <div class="flex justify-between">
-            <span>总大小</span>
+            <span>{{ $t('business.mediaDetailComponent.totalSize') }}</span>
             <span>{{ formatFileSize(mergedInfo.totalSize) }}</span>
           </div>
         </template>
@@ -279,6 +279,7 @@
 
 <script setup lang="ts">
 import { toRefs, ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { FileInfo } from '../../../shared/types'
 import ColorThief from 'colorthief'
 import FolderTreeComponent from './FolderTreeComponent/FolderTreeComponent.vue'
@@ -315,6 +316,7 @@ const emit = defineEmits<Emits>()
 const { item, items, libraryId } = toRefs(props)
 const tagStore = useTagStore()
 const folderStore = useFolderStore()
+const { t } = useI18n()
 
 // Popover 控制状态
 const tagPopoverOpen = ref(false)
@@ -433,9 +435,9 @@ const handleNameBlur = async () => {
     await miraSDKService.renameFile(libId, file.id, newName)
   } catch (e: any) {
     if (e?.response?.status === 409 || e?.response?.data?.code === 409) {
-      nameError.value = '同文件夹下已存在同名文件'
+      nameError.value = t('business.mediaDetailComponent.nameConflict')
     } else {
-      nameError.value = '重命名失败'
+      nameError.value = t('business.mediaDetailComponent.renameFailed')
       editName.value = file.name
     }
   } finally {
@@ -576,8 +578,8 @@ const handleMultiImageError = (item: FileInfo) => {
 }
 
 const getFolderName = (folderId?: string): string => {
-  if (!folderId) return '未分类'
-  return folderId === 'default' ? '默认文件夹' : `文件夹 ${folderId}`
+  if (!folderId) return t('business.mediaDetailComponent.uncategorized')
+  return folderId === 'default' ? t('business.mediaDetailComponent.defaultFolder') : t('business.mediaDetailComponent.folderIdLabel', { id: folderId })
 }
 
 const hasTags = computed(() => {
@@ -594,7 +596,7 @@ const handleFolderSelect = async (folderItem: any) => {
     const libId = file.libraryId || 'default'
     await client.folders().setFileFolder({ libraryId: libId, fileId: parseInt(file.id), folder: parseInt(folderItem.id) })
     file.folderId = String(folderItem.id)
-  }, { label: '设置文件夹' })
+  }, { label: t('business.mediaDetailComponent.setFolderAction') })
   emit('folder-change', folderItem.id)
 }
 
@@ -609,7 +611,7 @@ const handleTagSelect = async (tagData: any) => {
     await client.tags().addTagsToFile(libId, parseInt(file.id), [tagName])
     if (!file.tags) file.tags = []
     if (!file.tags.includes(tagName)) file.tags.push(tagName)
-  }, { label: '设置标签' })
+  }, { label: t('business.mediaDetailComponent.setTagAction') })
   emit('tag-add', tagName)
 }
 
@@ -624,7 +626,7 @@ const handleRemoveTag = async (tag: string) => {
       const idx = file.tags.indexOf(tag)
       if (idx !== -1) file.tags.splice(idx, 1)
     }
-  }, { label: '移除标签' })
+  }, { label: t('business.mediaDetailComponent.removeTagAction') })
   emit('tag-remove', tag)
 }
 

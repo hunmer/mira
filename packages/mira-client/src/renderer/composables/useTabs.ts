@@ -4,6 +4,7 @@ import { quickInitTabSystem } from './initTabSystem'
 import { tabPersistence, type TabState } from './TabPersistence'
 import { restoreTabViewMode, registerViewModeChangeCallback, clearTabCache } from './useMediaTabData'
 import { tabHistory } from './TabHistory'
+import i18n from '../i18n'
 
 // ============================================
 // 类型定义
@@ -31,7 +32,7 @@ let globalHasSetupEffects = false // 标记是否已设置副作用（watch和�
 
 const createHomeTab = (): TabItem => ({
   id: 'home',
-  label: '首页',
+  label: i18n.global.t('composables.useTabs.homeLabel'),
   icon: 'home',
   iconColor: '#3B82F6',
   type: 'home',
@@ -143,7 +144,7 @@ async function initializeTabsSystem() {
 
   globalTabs.value = [{
     id: 'home',
-    label: '首页',
+    label: i18n.global.t('composables.useTabs.homeLabel'),
     icon: 'home',
     iconColor: '#3B82F6',
     type: 'home',
@@ -218,7 +219,7 @@ export function useTabs() {
       createDefaultHomeTab()
       return [{
         id: 'home',
-        label: '首页',
+        label: i18n.global.t('composables.useTabs.homeLabel'),
         icon: 'home',
         iconColor: '#3B82F6',
         type: 'home',
@@ -235,7 +236,7 @@ export function useTabs() {
       try {
         await createTabFromRegisteredType('home', {
           id: 'home',
-          label: '首页'
+          label: i18n.global.t('composables.useTabs.homeLabel')
         })
       } catch (error) {
         console.error('❌ 创建默认home tab失败:', error)
@@ -250,7 +251,7 @@ export function useTabs() {
       return {
         type: 'files' as const,
         id: 'home',
-        label: '首页',
+        label: i18n.global.t('composables.useTabs.homeLabel'),
         icon: 'home',
         iconColor: '#6B7280'
       }
@@ -427,7 +428,7 @@ export function useTabs() {
     // 获取正确的标签名，优先级: title > name > label > id
     const originalTagId = String(tag.id || tag.name)
     const tagName = tag.title || tag.name || tag.label || originalTagId
-    const tabLabel = `标签: ${tagName}`
+    const tabLabel = i18n.global.t('composables.tagTab.tabLabel', { name: tagName })
 
     // 确保tab ID不会重复添加前缀
     const tagId = originalTagId.startsWith('tag-') ? originalTagId : `tag-${originalTagId}`
@@ -460,7 +461,7 @@ export function useTabs() {
     
     const clonedTab: TabItem = {
       id: `${tab.id}-clone-${Date.now()}`,
-      label: `${tab.label} (副本)`,
+      label: `${tab.label} ${i18n.global.t('composables.useTabs.copySuffix')}`,
       icon: tab.icon,
       iconColor: tab.iconColor,
       type: tab.type,

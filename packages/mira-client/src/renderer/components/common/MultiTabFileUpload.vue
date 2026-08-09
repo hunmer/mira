@@ -7,7 +7,7 @@
           class="flex items-center gap-2"
         >
           <i class="pi pi-cloud-upload"></i>
-          <span>文件上传区域</span>
+          <span>{{ $t('commonUi.multiTabFileUpload.tabUploadArea') }}</span>
         </TabsTrigger>
         <TabsTrigger
           value="uploading"
@@ -15,7 +15,7 @@
         >
           <i class="pi pi-spin pi-spinner" v-if="uploadingFiles.length > 0"></i>
           <i class="pi pi-clock" v-else></i>
-          <span>正在上传</span>
+          <span>{{ $t('commonUi.multiTabFileUpload.tabUploading') }}</span>
           <Badge v-if="uploadingFiles.length > 0" variant="outline">{{ uploadingFiles.length }}</Badge>
         </TabsTrigger>
         <TabsTrigger
@@ -23,7 +23,7 @@
           class="flex items-center gap-2"
         >
           <i class="pi pi-check-circle"></i>
-          <span>已上传</span>
+          <span>{{ $t('commonUi.multiTabFileUpload.tabUploaded') }}</span>
           <Badge v-if="uploadedFiles.length > 0" variant="secondary">{{ uploadedFiles.length }}</Badge>
         </TabsTrigger>
       </TabsList>
@@ -42,14 +42,14 @@
             >
               <div class="flex flex-col items-center justify-center">
                 <i class="pi pi-cloud-upload text-6xl text-primary mb-4"></i>
-                <h3 class="text-xl font-semibold mb-2">拖拽文件到这里</h3>
-                <p class="text-muted-foreground mb-4">或者点击选择文件</p>
+                <h3 class="text-xl font-semibold mb-2">{{ $t('commonUi.multiTabFileUpload.dragHere') }}</h3>
+                <p class="text-muted-foreground mb-4">{{ $t('commonUi.multiTabFileUpload.orClickSelect') }}</p>
                 <Button
                   variant="outline"
                   @click.stop="triggerFileSelect"
                 >
                   <i class="pi pi-plus mr-2"></i>
-                  选择文件
+                  {{ $t('commonUi.multiTabFileUpload.selectFiles') }}
                 </Button>
               </div>
             </div>
@@ -67,13 +67,13 @@
             <!-- 选中的文件预览 -->
             <div v-if="selectedFiles.length > 0" class="selected-files mt-4">
               <div class="flex items-center justify-between mb-3">
-                <h4 class="font-semibold">已选择的文件 ({{ selectedFiles.length }})</h4>
+                <h4 class="font-semibold">{{ $t('commonUi.multiTabFileUpload.selectedFiles', { count: selectedFiles.length }) }}</h4>
                 <Button
                   :disabled="selectedFiles.length === 0"
                   @click="startUpload"
                 >
                   <i class="pi pi-upload mr-2"></i>
-                  开始上传
+                  {{ $t('commonUi.multiTabFileUpload.startUpload') }}
                 </Button>
               </div>
               <div class="file-list space-y-2">
@@ -107,7 +107,7 @@
           <div class="uploading-area p-4">
             <div v-if="uploadingFiles.length === 0" class="opacity-80 text-center py-8">
               <i class="pi pi-info-circle text-4xl text-muted-foreground mb-4"></i>
-              <p class="text-muted-foreground">暂无正在上传的文件</p>
+              <p class="text-muted-foreground">{{ $t('commonUi.multiTabFileUpload.noUploading') }}</p>
             </div>
 
             <div v-else class="uploading-list space-y-3">
@@ -155,9 +155,9 @@
             <!-- 文件列表头部 -->
             <div class="flex justify-between items-center mb-4 p-4 pb-0">
               <div class="flex items-center">
-                <h2 class="text-lg font-semibold text-foreground mr-2">已上传文件</h2>
+                <h2 class="text-lg font-semibold text-foreground mr-2">{{ $t('commonUi.multiTabFileUpload.uploadedFiles') }}</h2>
                 <span class="text-sm text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-                  {{ totalUploadedFiles }} 个文件
+                  {{ $t('commonUi.multiTabFileUpload.fileCount', { count: totalUploadedFiles }) }}
                 </span>
               </div>
 
@@ -167,7 +167,7 @@
                   <input
                     v-model="searchQuery"
                     class="pl-10 pr-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                    placeholder="搜索文件..."
+                    :placeholder="$t('commonUi.multiTabFileUpload.searchFiles')"
                     type="text"
                   />
                   <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">search</span>
@@ -179,7 +179,7 @@
                     class="flex items-center space-x-2 px-4 py-2 border border-border rounded-lg text-foreground hover:bg-muted transition-colors"
                   >
                     <span class="material-icons">filter_list</span>
-                    <span>过滤</span>
+                    <span>{{ $t('commonUi.multiTabFileUpload.filter') }}</span>
                     <span v-if="activeFilters.length > 0" class="bg-primary text-white text-xs rounded-full px-2 py-0.5 ml-1">
                       {{ activeFilters.length }}
                     </span>
@@ -192,15 +192,15 @@
                   >
                     <div class="p-4">
                       <div class="flex justify-between items-center mb-3">
-                        <h3 class="font-medium text-foreground">过滤器</h3>
+                        <h3 class="font-medium text-foreground">{{ $t('commonUi.multiTabFileUpload.filters') }}</h3>
                         <button
                           @click="clearFilters"
                           class="text-xs text-muted-foreground hover:text-foreground underline"
                         >
-                          清除所有
+                          {{ $t('commonUi.multiTabFileUpload.clearAll') }}
                         </button>
                       </div>
-                      <h4 class="font-medium text-foreground mb-3 text-sm">文件类型</h4>
+                      <h4 class="font-medium text-foreground mb-3 text-sm">{{ $t('commonUi.multiTabFileUpload.fileType') }}</h4>
                       <div class="space-y-2">
                         <label v-for="type in fileTypes" :key="type.value" class="flex items-center cursor-pointer">
                           <Checkbox
@@ -215,7 +215,7 @@
 
                       <hr class="my-4">
 
-                      <h4 class="font-medium text-foreground mb-3 text-sm">文件大小</h4>
+                      <h4 class="font-medium text-foreground mb-3 text-sm">{{ $t('commonUi.multiTabFileUpload.fileSize') }}</h4>
                       <RadioGroup :model-value="selectedFileSize" @update:model-value="selectedFileSize = String($event)" class="space-y-2">
                         <div v-for="size in fileSizes" :key="size.value" class="flex items-center">
                           <RadioGroupItem :value="size.value" class="mr-2" />
@@ -225,7 +225,7 @@
 
                       <hr class="my-4">
 
-                      <h4 class="font-medium text-foreground mb-3 text-sm">上传时间</h4>
+                      <h4 class="font-medium text-foreground mb-3 text-sm">{{ $t('commonUi.multiTabFileUpload.uploadTime') }}</h4>
                       <div class="space-y-2">
                         <label v-for="time in uploadTimes" :key="time.value" class="flex items-center cursor-pointer">
                           <Checkbox
@@ -242,13 +242,13 @@
                           @click="clearFilters"
                           class="text-sm text-muted-foreground hover:text-foreground"
                         >
-                          清除过滤
+                          {{ $t('commonUi.multiTabFileUpload.clearFilter') }}
                         </button>
                         <button
                           @click="showFilterMenu = false"
                           class="text-sm bg-primary text-white px-3 py-1 rounded hover:bg-primary"
                         >
-                          应用
+                          {{ $t('commonUi.multiTabFileUpload.apply') }}
                         </button>
                       </div>
                     </div>
@@ -259,7 +259,7 @@
 
             <!-- 操作按钮 -->
             <div class="flex justify-between items-center mb-4 px-4">
-              <p class="text-muted-foreground">在这里可以查看和管理您上传的文件。</p>
+              <p class="text-muted-foreground">{{ $t('commonUi.multiTabFileUpload.manageHint') }}</p>
 
               <div class="flex items-center space-x-2">
                 <button
@@ -267,7 +267,7 @@
                   class="flex items-center space-x-2 px-3 py-1.5 border border-border rounded-lg text-foreground hover:bg-muted text-sm transition-colors"
                 >
                   <span class="material-icons text-sm">delete_sweep</span>
-                  <span>清空全部</span>
+                  <span>{{ $t('commonUi.multiTabFileUpload.clearAllFiles') }}</span>
                 </button>
 
                 <button
@@ -276,7 +276,7 @@
                   class="flex items-center space-x-2 px-3 py-1.5 border border-border rounded-lg text-foreground hover:bg-muted text-sm transition-colors disabled:opacity-50"
                 >
                   <span class="material-icons text-sm" :class="{ 'animate-spin': isLoading }">refresh</span>
-                  <span>刷新</span>
+                  <span>{{ $t('commonUi.multiTabFileUpload.refresh') }}</span>
                 </button>
               </div>
             </div>
@@ -287,7 +287,7 @@
                 <div v-if="isLoading" class="p-8 text-center text-muted-foreground">
                   <div class="flex items-center justify-center">
                     <span class="material-icons animate-spin mr-2">refresh</span>
-                    加载中...
+                    {{ $t('commonUi.multiTabFileUpload.loading') }}
                   </div>
                 </div>
                 <Table v-else>
@@ -300,24 +300,24 @@
                         />
                       </TableHead>
                       <TableHead class="cursor-pointer select-none" @click="toggleSort('name')">
-                        文件名
+                        {{ $t('commonUi.multiTabFileUpload.fileName') }}
                         <span v-if="sortField === 'name'" class="material-icons text-xs align-middle">
                           {{ sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
                         </span>
                       </TableHead>
                       <TableHead class="cursor-pointer select-none" @click="toggleSort('size')">
-                        文件大小
+                        {{ $t('commonUi.multiTabFileUpload.fileSizeCol') }}
                         <span v-if="sortField === 'size'" class="material-icons text-xs align-middle">
                           {{ sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
                         </span>
                       </TableHead>
                       <TableHead class="cursor-pointer select-none" @click="toggleSort('uploadedAt')">
-                        上传时间
+                        {{ $t('commonUi.multiTabFileUpload.uploadTimeCol') }}
                         <span v-if="sortField === 'uploadedAt'" class="material-icons text-xs align-middle">
                           {{ sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
                         </span>
                       </TableHead>
-                      <TableHead>操作</TableHead>
+                      <TableHead>{{ $t('commonUi.multiTabFileUpload.operation') }}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -325,7 +325,7 @@
                       <TableCell :colspan="5" class="p-8 text-center text-muted-foreground">
                         <div class="flex flex-col items-center">
                           <span class="material-icons text-4xl text-muted-foreground/50 mb-2">folder_open</span>
-                          <p>{{ searchQuery ? '没有找到匹配的文件' : '还没有上传任何文件' }}</p>
+                          <p>{{ searchQuery ? $t('commonUi.multiTabFileUpload.noMatch') : $t('commonUi.multiTabFileUpload.noFiles') }}</p>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -358,7 +358,7 @@
                           <button
                             @click="handleDeleteFile(data)"
                             class="text-destructive hover:text-destructive/80 transition-colors"
-                            title="删除"
+                            :title="$t('commonUi.multiTabFileUpload.delete')"
                           >
                             <span class="material-icons">delete</span>
                           </button>
@@ -375,18 +375,18 @@
           <div v-else class="uploaded-area p-4">
             <div v-if="uploadedFiles.length === 0" class="opacity-80 text-center py-8">
               <i class="pi pi-check-circle text-4xl text-muted-foreground mb-4"></i>
-              <p class="text-muted-foreground">暂无已上传的文件</p>
+              <p class="text-muted-foreground">{{ $t('commonUi.multiTabFileUpload.noUploaded') }}</p>
             </div>
 
             <div v-else>
               <div class="flex items-center justify-between mb-4">
-                <h4 class="font-semibold">已上传文件 ({{ uploadedFiles.length }})</h4>
+                <h4 class="font-semibold">{{ $t('commonUi.multiTabFileUpload.uploadedFilesCount', { count: uploadedFiles.length }) }}</h4>
                 <Button
                   variant="destructive"
                   @click="clearUploadedFiles"
                 >
                   <i class="pi pi-trash mr-2"></i>
-                  清空列表
+                  {{ $t('commonUi.multiTabFileUpload.clearList') }}
                 </Button>
               </div>
 
@@ -402,7 +402,7 @@
                       <div class="font-medium">{{ uploadItem.file.name }}</div>
                       <div class="text-sm text-muted-foreground">
                         {{ formatFileSize(uploadItem.file.size) }} •
-                        上传于 {{ formatUploadTime(uploadItem.uploadedAt ?? new Date()) }}
+                        {{ $t('commonUi.multiTabFileUpload.uploadedAt', { time: formatUploadTime(uploadItem.uploadedAt ?? new Date()) }) }}
                       </div>
                     </div>
                   </div>
@@ -418,7 +418,7 @@
                             <i class="pi pi-download"></i>
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>下载</TooltipContent>
+                        <TooltipContent>{{ $t('commonUi.multiTabFileUpload.download') }}</TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                     <TooltipProvider>
@@ -432,7 +432,7 @@
                             <i class="pi pi-times"></i>
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>删除</TooltipContent>
+                        <TooltipContent>{{ $t('commonUi.multiTabFileUpload.delete') }}</TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   </div>
@@ -448,6 +448,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
@@ -463,6 +464,8 @@ import {
   TableCell,
 } from '@/components/ui/table'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+
+const { t } = useI18n()
 
 interface UploadItem {
   file: File
@@ -570,29 +573,29 @@ const selectedFileSize = ref<string>('')
 const selectedUploadTime = ref<string[]>([])
 
 // 过滤选项
-const fileTypes = ref([
-  { value: 'image', label: '图片' },
-  { value: 'video', label: '视频' },
-  { value: 'audio', label: '音频' },
-  { value: 'document', label: '文档' },
-  { value: 'archive', label: '压缩包' },
-  { value: 'unknown', label: '其他' }
+const fileTypes = computed(() => [
+  { value: 'image', label: t('commonUi.multiTabFileUpload.filterTypeImage') },
+  { value: 'video', label: t('commonUi.multiTabFileUpload.filterTypeVideo') },
+  { value: 'audio', label: t('commonUi.multiTabFileUpload.filterTypeAudio') },
+  { value: 'document', label: t('commonUi.multiTabFileUpload.filterTypeDocument') },
+  { value: 'archive', label: t('commonUi.multiTabFileUpload.filterTypeArchive') },
+  { value: 'unknown', label: t('commonUi.multiTabFileUpload.filterTypeOther') }
 ])
 
-const fileSizes = ref([
-  { value: '', label: '全部大小' },
-  { value: 'small', label: '小于 1MB' },
-  { value: 'medium', label: '1MB - 10MB' },
-  { value: 'large', label: '10MB - 100MB' },
-  { value: 'xlarge', label: '大于 100MB' }
+const fileSizes = computed(() => [
+  { value: '', label: t('commonUi.multiTabFileUpload.sizeAll') },
+  { value: 'small', label: t('commonUi.multiTabFileUpload.sizeSmall') },
+  { value: 'medium', label: t('commonUi.multiTabFileUpload.sizeMedium') },
+  { value: 'large', label: t('commonUi.multiTabFileUpload.sizeLarge') },
+  { value: 'xlarge', label: t('commonUi.multiTabFileUpload.sizeXlarge') }
 ])
 
-const uploadTimes = ref([
-  { value: '', label: '全部时间' },
-  { value: 'today', label: '今天' },
-  { value: 'week', label: '本周' },
-  { value: 'month', label: '本月' },
-  { value: 'year', label: '今年' }
+const uploadTimes = computed(() => [
+  { value: '', label: t('commonUi.multiTabFileUpload.timeAll') },
+  { value: 'today', label: t('commonUi.multiTabFileUpload.timeToday') },
+  { value: 'week', label: t('commonUi.multiTabFileUpload.timeWeek') },
+  { value: 'month', label: t('commonUi.multiTabFileUpload.timeMonth') },
+  { value: 'year', label: t('commonUi.multiTabFileUpload.timeYear') }
 ])
 
 // 标签页切换处理
@@ -675,7 +678,7 @@ const startUpload = () => {
   const filesToUpload = selectedFiles.value.map(file => ({
     file,
     progress: 0,
-    status: '准备上传',
+    status: t('commonUi.multiTabFileUpload.statusPreparing'),
     id: Date.now() + Math.random().toString(36).substr(2, 9)
   }))
 
@@ -695,7 +698,7 @@ const startUpload = () => {
 
 const uploadFile = async (item: UploadItem) => {
   try {
-    item.status = '正在上传'
+    item.status = t('commonUi.multiTabFileUpload.statusUploading')
     emit('upload-progress', item)
 
     // 模拟上传进度
@@ -716,7 +719,7 @@ const uploadFile = async (item: UploadItem) => {
     await uploadProgress()
 
     // 上传完成
-    item.status = '上传完成'
+    item.status = t('commonUi.multiTabFileUpload.statusCompleted')
     item.uploadedAt = new Date()
 
     // 从上传队列移动到已上传队列
@@ -729,7 +732,7 @@ const uploadFile = async (item: UploadItem) => {
     emit('upload-complete', item)
 
   } catch (error) {
-    item.status = '上传失败'
+    item.status = t('commonUi.multiTabFileUpload.statusFailed')
     emit('upload-error', item, error as string)
   }
 }
@@ -829,9 +832,9 @@ const getFileType = (mimeType: string): string => {
 // 活跃过滤器
 const activeFilters = computed(() => {
   const filters = []
-  if (selectedFileTypes.value.length > 0) filters.push('类型')
-  if (selectedFileSize.value) filters.push('大小')
-  if (selectedUploadTime.value.length > 0) filters.push('时间')
+  if (selectedFileTypes.value.length > 0) filters.push(t('commonUi.multiTabFileUpload.activeFilterType'))
+  if (selectedFileSize.value) filters.push(t('commonUi.multiTabFileUpload.activeFilterSize'))
+  if (selectedUploadTime.value.length > 0) filters.push(t('commonUi.multiTabFileUpload.activeFilterTime'))
   return filters
 })
 

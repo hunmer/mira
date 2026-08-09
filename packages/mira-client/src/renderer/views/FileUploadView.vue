@@ -8,15 +8,15 @@
           class="flex items-center text-muted-foreground dark:text-muted-foreground hover:text-foreground transition-colors"
         >
           <span class="material-icons mr-2">arrow_back_ios</span>
-          返回主页
+          {{ $t('views.fileUploadView.backHome') }}
         </router-link>
 
         <!-- 素材库选择器 -->
         <div class="flex items-center space-x-2">
-          <span class="text-sm text-muted-foreground dark:text-muted-foreground">素材库:</span>
+          <span class="text-sm text-muted-foreground dark:text-muted-foreground">{{ $t('views.fileUploadView.library') }}</span>
           <Select v-model="selectedLibraryId" @update:model-value="handleLibrarySelectChange">
             <SelectTrigger class="w-48">
-              <SelectValue placeholder="选择素材库" />
+              <SelectValue :placeholder="$t('views.fileUploadView.selectLibrary')" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem v-for="lib in libraryOptions" :key="lib.id" :value="lib.id">{{ lib.name }}</SelectItem>
@@ -27,24 +27,24 @@
 
       <!-- 队列状态显示 -->
       <div v-if="queueStats.pending > 0 || queueStats.running > 0" class="mb-6">
-        <h3 class="text-lg font-semibold text-foreground dark:text-muted-foreground mb-4">上传队列状态</h3>
+        <h3 class="text-lg font-semibold text-foreground dark:text-muted-foreground mb-4">{{ $t('views.fileUploadView.queueStatus') }}</h3>
         <div class="bg-primary p-4 rounded-lg">
           <div class="grid grid-cols-4 gap-4 text-center">
             <div>
               <div class="text-2xl font-bold text-primary">{{ queueStats.pending }}</div>
-              <div class="text-sm text-muted-foreground dark:text-muted-foreground">等待中</div>
+              <div class="text-sm text-muted-foreground dark:text-muted-foreground">{{ $t('views.fileUploadView.pending') }}</div>
             </div>
             <div>
               <div class="text-2xl font-bold text-orange-600">{{ queueStats.running }}</div>
-              <div class="text-sm text-muted-foreground dark:text-muted-foreground">上传中</div>
+              <div class="text-sm text-muted-foreground dark:text-muted-foreground">{{ $t('views.fileUploadView.uploading') }}</div>
             </div>
             <div>
               <div class="text-2xl font-bold text-green-600">{{ queueStats.completed }}</div>
-              <div class="text-sm text-muted-foreground dark:text-muted-foreground">已完成</div>
+              <div class="text-sm text-muted-foreground dark:text-muted-foreground">{{ $t('views.fileUploadView.completed') }}</div>
             </div>
             <div>
               <div class="text-2xl font-bold text-destructive">{{ queueStats.failed }}</div>
-              <div class="text-sm text-muted-foreground dark:text-muted-foreground">失败</div>
+              <div class="text-sm text-muted-foreground dark:text-muted-foreground">{{ $t('views.fileUploadView.failed') }}</div>
             </div>
           </div>
         </div>
@@ -79,6 +79,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useServerListStore } from '../stores/serverList'
 import { useMediaStore } from '../stores/media'
 import { useUploadHistoryStore } from '../stores/uploadHistory'
@@ -92,6 +93,7 @@ const serverListStore = useServerListStore()
 const mediaStore = useMediaStore()
 const uploadHistoryStore = useUploadHistoryStore()
 const toast = useToast()
+const { t } = useI18n()
 
 // 响应式数据
 const multiTabUploadRef = ref()
@@ -185,8 +187,8 @@ const handleFilesSelected = (files: File[]) => {
   if (files.length > FILE_LIMITS.MAX_FILES_PER_BATCH) {
     toast.add({
       severity: 'warn',
-      summary: '文件数量过多',
-      detail: `单次最多只能上传 ${FILE_LIMITS.MAX_FILES_PER_BATCH} 个文件`,
+      summary: t('views.fileUploadView.tooManyFiles'),
+      detail: t('views.fileUploadView.tooManyFilesDetail', { n: FILE_LIMITS.MAX_FILES_PER_BATCH }),
       life: 5000
     })
     return
@@ -197,8 +199,8 @@ const handleFilesSelected = (files: File[]) => {
   if (totalSize > FILE_LIMITS.MAX_TOTAL_SIZE) {
     toast.add({
       severity: 'warn',
-      summary: '文件总大小过大',
-      detail: `文件总大小不能超过 ${formatFileSize(FILE_LIMITS.MAX_TOTAL_SIZE)}`,
+      summary: t('views.fileUploadView.totalSizeTooLarge'),
+      detail: t('views.fileUploadView.totalSizeTooLargeDetail', { size: formatFileSize(FILE_LIMITS.MAX_TOTAL_SIZE) }),
       life: 5000
     })
     return
@@ -211,8 +213,8 @@ const handleUploadStart = async (files: File[]) => {
   if (!currentLibrary.value) {
     toast.add({
       severity: 'error',
-      summary: '错误',
-      detail: '请先选择一个素材库',
+      summary: t('views.fileUploadView.error'),
+      detail: t('views.fileUploadView.selectLibraryFirst'),
       life: 3000
     })
     return
@@ -281,8 +283,8 @@ const handleUploadError = (item: any, error: string) => {
 
   toast.add({
     severity: 'error',
-    summary: '上传失败',
-    detail: `文件 ${item.file.name}: ${error}`,
+    summary: t('views.fileUploadView.uploadFailed'),
+    detail: t('views.fileUploadView.uploadFailedDetail', { name: item.file.name, error }),
     life: 5000
   })
 }
@@ -291,7 +293,7 @@ const handleUploadError = (item: any, error: string) => {
 const createUploadJob = (file: File) => {
   return (callback?: (error?: Error, result?: any) => void) => {
     if (!currentLibrary.value) {
-      const error = new Error('请先选择素材库')
+      const error = new Error(t('views.fileUploadView.selectLibraryFirstError'))
       callback?.(error)
       return
     }
@@ -302,7 +304,7 @@ const createUploadJob = (file: File) => {
         if (result.success) {
           callback?.(undefined, result)
         } else {
-          throw new Error(result.error || '上传失败')
+          throw new Error(result.error || t('views.fileUploadView.uploadFailed'))
         }
       })
       .catch(error => {
@@ -321,8 +323,8 @@ const refreshFiles = async () => {
     console.error('Failed to refresh local files:', error)
     toast.add({
       severity: 'error',
-      summary: '刷新失败',
-      detail: '无法读取本地上传记录',
+      summary: t('views.fileUploadView.refreshFailed'),
+      detail: t('views.fileUploadView.refreshFailedDetail'),
       life: 3000
     })
   }
@@ -332,8 +334,8 @@ const clearAllFiles = async () => {
   if (files.value.length === 0) {
     toast.add({
       severity: 'warn',
-      summary: '提示',
-      detail: '没有文件可以清空',
+      summary: t('views.fileUploadView.tip'),
+      detail: t('views.fileUploadView.noFilesToClear'),
       life: 3000
     })
     return
@@ -353,8 +355,8 @@ const clearAllFiles = async () => {
     console.error('Failed to clear files:', error)
     toast.add({
       severity: 'error',
-      summary: '清空失败',
-      detail: '清空文件时发生错误',
+      summary: t('views.fileUploadView.clearFailed'),
+      detail: t('views.fileUploadView.clearFailedDetail'),
       life: 3000
     })
   }
@@ -372,8 +374,8 @@ const deleteFile = async (file: any) => {
     console.error('Failed to delete file:', error)
     toast.add({
       severity: 'error',
-      summary: '删除失败',
-      detail: `删除文件 ${file.name} 失败`,
+      summary: t('views.fileUploadView.deleteFailed'),
+      detail: t('views.fileUploadView.deleteFailedDetail', { name: file.name }),
       life: 3000
     })
   }

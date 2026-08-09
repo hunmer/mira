@@ -56,10 +56,10 @@
         <!-- 底部状态栏 -->
         <footer class="flex h-10 flex-shrink-0 items-center justify-between border-t border-border dark:border-border bg-white dark:bg-muted px-6 text-xs text-muted-foreground dark:text-muted-foreground">
           <div class="flex items-center space-x-4">
-            <span>分辨率: {{ controller.currentVideo.value?.metadata?.width || 0 }}x{{ controller.currentVideo.value?.metadata?.height || 0 }}</span>
-            <span>大小: {{ formatFileSize(controller.currentVideo.value?.size) }}</span>
-            <span>格式: {{ getFileFormat(controller.currentVideo.value?.name) }}</span>
-            <span>创建时间: {{ formatDate(controller.currentVideo.value?.createdAt) }}</span>
+            <span>{{ $t('preview.videoPreview.resolution') }}: {{ controller.currentVideo.value?.metadata?.width || 0 }}x{{ controller.currentVideo.value?.metadata?.height || 0 }}</span>
+            <span>{{ $t('preview.videoPreview.size') }}: {{ formatFileSize(controller.currentVideo.value?.size) }}</span>
+            <span>{{ $t('preview.videoPreview.format') }}: {{ getFileFormat(controller.currentVideo.value?.name) }}</span>
+            <span>{{ $t('preview.videoPreview.createdAt') }}: {{ formatDate(controller.currentVideo.value?.createdAt) }}</span>
           </div>
           <div class="flex items-center space-x-4">
             <span>{{ controller.currentVideoIndex.value + 1 }} / {{ controller.videos.value.length }}</span>

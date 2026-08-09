@@ -32,7 +32,7 @@
         <!-- 加载信息 -->
         <div class="space-y-3">
           <h3 class="text-lg max-sm:text-base font-semibold text-foreground dark:text-muted-foreground">
-            {{ title }}
+            {{ title || $t('commonUi.globalLoading.defaultTitle') }}
           </h3>
           <p v-if="message" class="text-sm text-muted-foreground dark:text-muted-foreground leading-relaxed">
             {{ message }}
@@ -41,7 +41,7 @@
           <!-- 进度条（可选） -->
           <div v-if="showProgress && progress !== undefined" class="mt-4">
             <div class="flex justify-between text-xs text-muted-foreground dark:text-muted-foreground mb-1">
-              <span>进度</span>
+              <span>{{ $t('commonUi.globalLoading.progress') }}</span>
               <span>{{ Math.round(progress) }}%</span>
             </div>
             <div class="w-full bg-accent dark:bg-muted rounded-full h-2">
@@ -58,7 +58,7 @@
               @click="handleCancel"
               class="px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted dark:hover:text-muted-foreground dark:hover:bg-muted rounded-md transition-colors"
             >
-              取消
+              {{ $t('commonUi.globalLoading.cancel') }}
             </button>
           </div>
         </div>
@@ -68,6 +68,7 @@
 </template>
 
 <script setup lang="ts">
+
 // Props
 interface Props {
   isVisible?: boolean
@@ -80,7 +81,7 @@ interface Props {
 
 withDefaults(defineProps<Props>(), {
   isVisible: false,
-  title: '加载中...',
+  title: '',
   message: '',
   progress: undefined,
   showProgress: false,

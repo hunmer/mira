@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { miraSDKService } from '../services/MiraSDKService'
 import { LibraryStorage } from '../utils/LibraryStorage'
 import type { FileInfo } from '../../shared/types'
+import i18n from '../i18n'
 
 // 扩展的文件信息类型，支持临时状态和本地操作状态
 interface ExtendedFileInfo extends FileInfo {
@@ -288,7 +289,7 @@ export const useMediaStore = defineStore('media', () => {
       if (libraryStore.currentLibrary?.id) {
         libraryId = libraryStore.currentLibrary.id
       } else {
-        return { success: false, error: '无法获取素材库ID：请确保已选择素材库' }
+        return { success: false, error: i18n.global.t('stores.media.missingLibraryId') }
       }
     }
 

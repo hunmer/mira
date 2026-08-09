@@ -13,7 +13,7 @@
     >
       <StatusImage name="error" size="small" />
       <span class="text-xs">{{ error }}</span>
-      <span class="text-xs text-primary">点击重试</span>
+      <span class="text-xs text-primary">{{ $t('tabs.albumCard.clickRetry') }}</span>
     </div>
 
     <!-- 空状态 -->
@@ -22,7 +22,7 @@
       class="flex flex-1 flex-col items-center justify-center gap-1 text-muted-foreground"
     >
       <StatusImage name="empty" size="small" />
-      <span class="text-xs">暂无图片</span>
+      <span class="text-xs">{{ $t('tabs.albumCard.noImages') }}</span>
     </div>
 
     <!-- 轮播：key 随配置整体变化，确保方向/每屏数量/自动播放参数切换后重建 Embla -->
@@ -86,6 +86,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import Autoplay from 'embla-carousel-autoplay'
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
@@ -157,6 +158,7 @@ const config = computed(() => {
 
 const libraryStore = useLibraryStore()
 const router = useRouter()
+const { t } = useI18n()
 const loading = ref(true)
 const error = ref('')
 const images = ref<AlbumImage[]>([])
@@ -182,7 +184,7 @@ async function loadImages() {
   if (!libraryId) {
     images.value = []
     loading.value = false
-    error.value = '未选择素材库'
+    error.value = t('tabs.albumCard.noLibrary')
     return
   }
   loading.value = true
@@ -208,7 +210,7 @@ async function loadImages() {
       }))
   } catch (e: any) {
     console.error('[AlbumCard] 加载失败:', e)
-    error.value = e?.message || '加载失败'
+    error.value = e?.message || t('tabs.albumCard.loadFailed')
     images.value = []
   } finally {
     loading.value = false

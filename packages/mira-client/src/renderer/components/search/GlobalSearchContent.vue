@@ -8,7 +8,7 @@
           ref="searchInputRef"
           v-model="searchKeyword"
           class="bg-transparent text-muted-foreground placeholder-gray-500 ml-2 w-full focus:outline-none"
-          placeholder="搜索 (支持拼音、模糊关键字)"
+          :placeholder="t('search.globalSearch.placeholder')"
           type="text"
           @keydown="handleSearchInputKeydown"
           @input="handleSearchInput"
@@ -36,7 +36,7 @@
         @click="setActiveTab(service.id)"
       >
         <span class="material-icons text-sm mr-1">{{ service.icon }}</span>
-        {{ service.title }}
+        {{ resolveServiceText(service.title) }}
         
         <!-- 数量徽章 -->
         <span 
@@ -54,7 +54,7 @@
         <!-- 加载状态 -->
         <div v-if="globalSearchState.isSearching" class="flex items-center justify-center py-8">
           <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          <span class="ml-2 text-muted-foreground">搜索中...</span>
+          <span class="ml-2 text-muted-foreground">{{ t('search.globalSearch.searching') }}</span>
         </div>
 
         <!-- 搜索结果列表 -->
@@ -62,7 +62,7 @@
           v-else-if="currentSearchResults.length > 0" 
           class="space-y-1 max-h-80 overflow-y-auto"
           role="listbox"
-          :aria-label="`${currentService?.title}搜索结果`"
+          :aria-label="t('search.globalSearch.searchResultsAria', { title: resolveServiceText(currentService?.title) })"
         >
           <li
             v-for="(item, index) in currentSearchResults"
@@ -90,16 +90,16 @@
         <EmptySearchState 
           v-else-if="searchKeyword.trim()"
           :keyword="searchKeyword"
-          :service-title="currentService?.title || ''"
+          :service-title="resolveServiceText(currentService?.title) || ''"
           @search="handleSuggestionSearch"
         />
 
         <!-- 初始状态 -->
         <div v-else class="empty-initial-state text-center py-12">
           <span class="material-icons text-6xl text-muted-foreground mb-4">search</span>
-          <p class="text-muted-foreground text-lg mb-2">开始搜索</p>
+          <p class="text-muted-foreground text-lg mb-2">{{ t('search.globalSearch.startSearch') }}</p>
           <p class="text-muted-foreground text-sm">
-            输入关键词搜索{{ currentService?.title || '内容' }}
+            {{ t('search.globalSearch.searchHint', { service: resolveServiceText(currentService?.title) || t('search.globalSearch.defaultContent') }) }}
           </p>
         </div>
       </div>
@@ -109,21 +109,21 @@
     <div class="search-footer p-4 border-t border-border flex justify-between items-center text-sm text-muted-foreground">
       <div class="flex items-center space-x-4">
         <div class="flex items-center space-x-1">
-          <span>切换</span>
+          <span>{{ t('search.globalSearch.switchTab') }}</span>
           <kbd class="bg-muted px-2 py-1 rounded-md">Tab</kbd>
         </div>
         <div class="flex items-center space-x-1">
-          <span>移动</span>
+          <span>{{ t('search.globalSearch.navigate') }}</span>
           <kbd class="bg-muted px-2 py-1 rounded-md">↑</kbd>
           <kbd class="bg-muted px-2 py-1 rounded-md">↓</kbd>
         </div>
         <div class="flex items-center space-x-1">
-          <span>选中</span>
+          <span>{{ t('search.globalSearch.select') }}</span>
           <kbd class="bg-muted px-2 py-1 rounded-md">↵</kbd>
         </div>
       </div>
       <div class="flex items-center space-x-1">
-        <span>关闭</span>
+        <span>{{ t('search.globalSearch.close') }}</span>
         <kbd class="bg-muted px-2 py-1 rounded-md">ESC</kbd>
       </div>
     </div>
@@ -132,9 +132,25 @@
 
 <script setup lang="ts">
 import { ref, onMounted, nextTick, defineAsyncComponent } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useGlobalSearch } from '../../composables/useGlobalSearch'
 // @ts-ignore
 import EmptySearchState from './EmptySearchState.vue'
+
+const { t, te } = useI18n()
+
+/**
+ * 解析搜索服务的 title/desc。
+ * 搜索服务文件中的值现在是 i18n key（如 'services.searchServices.files.title'），
+ * 需要用 t() 翻译；其它情况（如插件注册的纯文本）原样返回。
+ */
+const resolveServiceText = (value: string | undefined): string => {
+  if (!value) return ''
+  if (value.startsWith('services.') && te(value)) {
+    return t(value)
+  }
+  return value
+}
 
 // 动态导入搜索结果模板组件
 const FileSearchResultTemplate = defineAsyncComponent(() => import('./FileSearchResultTemplate.vue'))

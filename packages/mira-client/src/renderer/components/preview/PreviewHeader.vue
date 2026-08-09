@@ -1,13 +1,13 @@
 <template>
   <header class="flex h-16 flex-shrink-0 items-center justify-between border-b border-border bg-background px-6">
     <div class="flex min-w-0 items-center gap-4">
-      <button class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full hover:bg-muted" title="返回" @click="goBack">
+      <button class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full hover:bg-muted" :title="$t('preview.previewHeader.back')" @click="goBack">
         <span class="material-icons text-muted-foreground">arrow_back</span>
       </button>
       <input v-if="renaming" ref="titleInput" v-model="title" :disabled="savingRename"
         class="min-w-0 flex-1 border-b border-primary bg-transparent px-1 py-1 text-foreground outline-none"
         @blur="commitRename" @keydown.enter.prevent="commitRename" @keydown.esc.prevent="cancelRename" />
-      <button v-else class="min-w-0 truncate text-left text-lg font-semibold text-foreground hover:text-primary" title="点击重命名" @click="startRename">
+      <button v-else class="min-w-0 truncate text-left text-lg font-semibold text-foreground hover:text-primary" :title="$t('preview.previewHeader.clickToRename')" @click="startRename">
         {{ title }}
       </button>
       <slot name="left-extra" />
@@ -18,13 +18,13 @@
         v-for="format in openFormats"
         :key="format.id"
         class="flex h-9 w-9 items-center justify-center rounded-full hover:bg-muted"
-        :title="`使用${format.title || '插件'}打开`"
+        :title="$t('preview.previewHeader.openWith', { name: format.title || $t('preview.previewHeader.plugin') })"
         @click="openWith(format)"
       >
         <span class="material-symbols-outlined text-muted-foreground">{{ format.icon || 'extension' }}</span>
       </button>
       <button v-if="saveVisible" :disabled="saving" class="rounded bg-primary px-4 py-2 text-white disabled:opacity-50" @click="$emit('save')">
-        {{ saving ? '保存中...' : '保存' }}
+        {{ saving ? $t('preview.previewHeader.saving') : $t('preview.previewHeader.save') }}
       </button>
       <slot name="right-actions" />
     </div>
@@ -34,6 +34,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { miraSDKService } from '../../services/MiraSDKService'
 import { getPluginFileFormats } from '../../plugins/instanceManager'
 import type { PluginFileFormat } from '../../plugins/types'
@@ -45,8 +46,9 @@ const props = withDefaults(defineProps<{ fileInfo: any; saveVisible?: boolean; s
 })
 const emit = defineEmits<{ save: []; renamed: [name: string]; error: [message: string] }>()
 const router = useRouter()
+const { t } = useI18n()
 const titleInput = ref<HTMLInputElement | null>(null)
-const title = ref(props.fileInfo?.title || props.fileInfo?.name || '未知文件')
+const title = ref(props.fileInfo?.title || props.fileInfo?.name || t('preview.previewHeader.unknownFile'))
 const renaming = ref(false)
 const savingRename = ref(false)
 const formatVersion = ref(0)
@@ -77,14 +79,14 @@ const openWith = async (format: PluginFileFormat) => {
     }
     await format.open?.(props.fileInfo)
   } catch (error) {
-    emit('error', error instanceof Error ? error.message : '插件打开文件失败')
+    emit('error', error instanceof Error ? error.message : t('preview.previewHeader.openWithFailed'))
   }
 }
 const startRename = async () => { renaming.value = true; await nextTick(); titleInput.value?.focus(); titleInput.value?.select() }
-const cancelRename = () => { renaming.value = false; title.value = props.fileInfo?.title || props.fileInfo?.name || '未知文件' }
+const cancelRename = () => { renaming.value = false; title.value = props.fileInfo?.title || props.fileInfo?.name || t('preview.previewHeader.unknownFile') }
 const commitRename = async () => {
   const name = title.value.trim()
-  const oldName = props.fileInfo?.title || props.fileInfo?.name || '未知文件'
+  const oldName = props.fileInfo?.title || props.fileInfo?.name || t('preview.previewHeader.unknownFile')
   if (!name || name === oldName || savingRename.value) return cancelRename()
   try {
     savingRename.value = true
@@ -92,7 +94,7 @@ const commitRename = async () => {
     renaming.value = false
     emit('renamed', name)
   } catch (error) {
-    emit('error', error instanceof Error ? error.message : '重命名文件失败')
+    emit('error', error instanceof Error ? error.message : t('preview.previewHeader.renameFailed'))
   } finally { savingRename.value = false }
 }
 const formatFileSize = (bytes: number) => {

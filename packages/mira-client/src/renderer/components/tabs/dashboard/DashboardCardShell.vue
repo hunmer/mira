@@ -22,7 +22,7 @@
         <button
           v-if="configurable"
           class="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground"
-          title="配置"
+          :title="$t('tabs.dashboardCardShell.config')"
           @click="emit('config')"
         >
           <span class="material-icons text-sm">tune</span>
@@ -39,14 +39,14 @@
             class="dashboard-drag-handle flex h-6 w-6 cursor-grab select-none items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground active:cursor-grabbing"
             role="button"
             tabindex="0"
-            aria-label="拖拽移动（按住并拖动）"
-            title="拖拽移动（按住并拖动）"
+            :aria-label="$t('tabs.dashboardCardShell.dragHandle')"
+            :title="$t('tabs.dashboardCardShell.dragHandle')"
           >
             <span class="material-icons text-sm">drag_indicator</span>
           </div>
           <button
             class="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-            title="删除卡片"
+            :title="$t('tabs.dashboardCardShell.removeCard')"
             @click="emit('remove')"
           >
             <span class="material-icons text-sm">close</span>

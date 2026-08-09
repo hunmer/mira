@@ -4,9 +4,9 @@
       <!-- 启用悬浮球 -->
       <div class="flex items-center justify-between py-3">
       <div>
-        <p class="text-sm font-medium text-foreground dark:text-muted-foreground">启用悬浮球</p>
+        <p class="text-sm font-medium text-foreground dark:text-muted-foreground">{{ $t('views.floatingBallPanel.enableTitle') }}</p>
         <p class="text-xs text-muted-foreground dark:text-muted-foreground mt-1">
-          开启后显示一个常驻悬浮球，支持拖拽移动、拖入文件快速上传，单击触发下方设定的动作
+          {{ $t('views.floatingBallPanel.enableDesc') }}
         </p>
       </div>
       <Switch
@@ -18,19 +18,19 @@
     <!-- 单击行为 -->
     <div class="flex flex-col gap-2 py-3">
       <div>
-        <p class="text-sm font-medium text-foreground dark:text-muted-foreground">单击悬浮球时</p>
-        <p class="text-xs text-muted-foreground dark:text-muted-foreground mt-1">选择单击悬浮球触发的动作</p>
+        <p class="text-sm font-medium text-foreground dark:text-muted-foreground">{{ $t('views.floatingBallPanel.clickActionTitle') }}</p>
+        <p class="text-xs text-muted-foreground dark:text-muted-foreground mt-1">{{ $t('views.floatingBallPanel.clickActionDesc') }}</p>
       </div>
       <Select
         :model-value="settingsStore.settings.floatingBallClickAction"
         @update:model-value="(val: any) => handleSettingChange('floatingBallClickAction', val)"
       >
         <SelectTrigger class="w-64">
-          <SelectValue placeholder="选择动作" />
+          <SelectValue :placeholder="$t('views.floatingBallPanel.selectAction')" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="openUpload">打开文件上传对话框</SelectItem>
-          <SelectItem value="toggleMain">显示 / 隐藏主窗口</SelectItem>
+          <SelectItem value="openUpload">{{ $t('views.floatingBallPanel.openUpload') }}</SelectItem>
+          <SelectItem value="toggleMain">{{ $t('views.floatingBallPanel.toggleMain') }}</SelectItem>
         </SelectContent>
       </Select>
     </div>
@@ -39,9 +39,9 @@
     <div class="py-3 border-t border-border dark:border-border">
       <div class="flex items-center justify-between">
         <div>
-          <p class="text-sm font-medium text-foreground dark:text-muted-foreground">位置</p>
+          <p class="text-sm font-medium text-foreground dark:text-muted-foreground">{{ $t('views.floatingBallPanel.position') }}</p>
           <p class="text-xs text-muted-foreground dark:text-muted-foreground mt-1">
-            当前坐标：<span v-if="position" class="font-mono">x: {{ position.x }}, y: {{ position.y }}</span><span v-else class="italic">默认（右下角）</span>
+            {{ $t('views.floatingBallPanel.positionDesc') }}<span v-if="position" class="font-mono">x: {{ position.x }}, y: {{ position.y }}</span><span v-else class="italic">{{ $t('views.floatingBallPanel.positionDefault') }}</span>
           </p>
         </div>
         <button
@@ -50,7 +50,7 @@
           @click="onResetPosition"
         >
           <span class="material-icons" style="font-size: 14px">restart_alt</span>
-          重置位置
+          {{ $t('views.floatingBallPanel.resetPosition') }}
         </button>
       </div>
     </div>
@@ -60,6 +60,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '../../stores/settings'
 import { useToast } from '@/renderer/composables/useToast'
 import { Switch } from '@/components/ui/switch'
@@ -67,6 +68,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 
 const settingsStore = useSettingsStore()
 const toast = useToast()
+const { t } = useI18n()
 
 const position = ref<{ x: number; y: number } | null>(null)
 const isResetting = ref(false)
@@ -102,9 +104,9 @@ async function onResetPosition() {
   try {
     await window.electronAPI?.floatingBall?.setPosition(null)
     await refreshPosition()
-    toast.add({ severity: 'success', summary: '已重置', detail: '悬浮球位置已重置到右下角', life: 2000 })
+    toast.add({ severity: 'success', summary: t('views.floatingBallPanel.resetDone'), detail: t('views.floatingBallPanel.resetDoneDetail'), life: 2000 })
   } catch (e) {
-    toast.add({ severity: 'error', summary: '重置失败', detail: String(e), life: 3000 })
+    toast.add({ severity: 'error', summary: t('views.floatingBallPanel.resetFailed'), detail: String(e), life: 3000 })
   } finally {
     isResetting.value = false
   }
@@ -115,15 +117,15 @@ const handleSettingChange = async (key: string, _value: any) => {
     await settingsStore.saveSettings()
     toast.add({
       severity: 'success',
-      summary: '设置已保存',
-      detail: `${key} 设置已成功更新`,
+      summary: t('views.common.settingSaved'),
+      detail: t('views.common.settingUpdated', { key }),
       life: 2000
     })
   } catch (error) {
     toast.add({
       severity: 'error',
-      summary: '保存失败',
-      detail: error instanceof Error ? error.message : '保存设置时发生错误',
+      summary: t('views.common.saveFailed'),
+      detail: error instanceof Error ? error.message : t('views.common.saveError'),
       life: 5000
     })
   }

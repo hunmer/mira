@@ -13,7 +13,7 @@
                 <span class="material-icons text-lg">arrow_back</span>
               </button>
             </TooltipTrigger>
-            <TooltipContent side="bottom">返回</TooltipContent>
+            <TooltipContent side="bottom">{{ $t('views.playgroundView.back') }}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
         <span class="material-icons text-lg">science</span>

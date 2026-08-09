@@ -1,0 +1,45 @@
+{
+  "auth": {
+    "invalidCredentials": "Incorrect username or password, please check and try again",
+    "networkFailed": "Network connection failed, please check your network settings",
+    "timeout": "Connection timed out, please try again later",
+    "unauthorized": "Authentication failed, please log in again",
+    "forbidden": "Insufficient permissions to perform this action",
+    "notFound": "The requested resource was not found",
+    "serverError": "Internal server error, please try again later",
+    "connectServerFailed": "Failed to connect to server: {message}"
+  },
+  "media": {
+    "missingLibraryId": "Cannot get library ID: please make sure a library is selected"
+  },
+  "settings": {
+    "statusConnected": "Connected",
+    "statusConnecting": "Connecting...",
+    "statusReconnecting": "Reconnecting...",
+    "statusError": "Connection error",
+    "statusDisconnected": "Disconnected"
+  },
+  "plugin": {
+    "marketUrlNotConfigured": "Plugin marketplace source URL is not configured",
+    "fetchCatalogFailed": "Failed to fetch the plugin marketplace catalog",
+    "pluginInstalling": "This plugin is already being installed",
+    "pluginNotInCatalog": "The plugin is no longer in the current marketplace catalog",
+    "refreshCatalogFailed": "Failed to refresh the plugin marketplace catalog",
+    "catalogEmpty": "The plugin marketplace catalog is empty"
+  },
+  "serverList": {
+    "defaultLibraryName": "Library"
+  },
+  "dashboard": {
+    "notConnected": "Not connected to server",
+    "missingServerUrl": "Cannot get server address",
+    "loadFailed": "Failed to load"
+  },
+  "dashboardLayout": {
+    "defaultLayoutName": "Default layout",
+    "duplicateLayoutSuffix": " (copy)"
+  },
+  "viewHistory": {
+    "unknownFile": "Unknown file"
+  }
+}

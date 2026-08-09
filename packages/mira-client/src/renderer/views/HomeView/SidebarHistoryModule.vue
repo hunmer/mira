@@ -13,6 +13,7 @@
  * 已拆成两个独立模块（recent_added / recent_viewed），各用一个本组件实例。
  */
 import { ref, computed, watch, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { useViewHistoryStore } from '@renderer/stores/viewHistory'
 import { getExtIconUrl } from '@renderer/utils/extIconHelper'
@@ -20,6 +21,8 @@ import { Empty, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import StatusImage from '@renderer/components/common/StatusImage.vue'
 import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card'
 import type { FileInfo } from '../../../shared/types'
+
+const { t } = useI18n()
 
 type Mode = 'recent_added' | 'recent_viewed'
 
@@ -56,7 +59,7 @@ const fetchRecentAdded = async (libraryId: string) => {
     recentAdded.value = result.files || []
   } catch (e: any) {
     console.error('[SidebarHistoryModule] 加载最近添加失败:', e)
-    addedError.value = e?.message || '加载失败'
+    addedError.value = e?.message || t('views.common.unknownError')
     recentAdded.value = []
   } finally {
     loadingAdded.value = false
@@ -119,22 +122,22 @@ const handleRowClick = (row: DisplayRow) => {
   } as FileInfo)
 }
 
-// 相对时间格式化（中文，轻量实现，避免引入额外依赖）
+// 相对时间格式化（轻量实现，避免引入额外依赖）
 const formatRelative = (iso?: string): string => {
   if (!iso) return ''
-  const t = new Date(iso).getTime()
-  if (Number.isNaN(t)) return ''
-  const diff = Date.now() - t
+  const ts = new Date(iso).getTime()
+  if (Number.isNaN(ts)) return ''
+  const diff = Date.now() - ts
   const sec = Math.floor(diff / 1000)
-  if (sec < 60) return '刚刚'
+  if (sec < 60) return t('views.sidebarHistoryModule.justNow')
   const min = Math.floor(sec / 60)
-  if (min < 60) return `${min} 分钟前`
+  if (min < 60) return t('views.sidebarHistoryModule.minutesAgo', { n: min })
   const hr = Math.floor(min / 60)
-  if (hr < 24) return `${hr} 小时前`
+  if (hr < 24) return t('views.sidebarHistoryModule.hoursAgo', { n: hr })
   const day = Math.floor(hr / 24)
-  if (day < 7) return `${day} 天前`
+  if (day < 7) return t('views.sidebarHistoryModule.daysAgo', { n: day })
   // 超过一周回退到日期
-  return new Date(t).toLocaleDateString('zh-CN')
+  return new Date(ts).toLocaleDateString('zh-CN')
 }
 
 const formatSize = (bytes?: number): string => {
@@ -170,14 +173,14 @@ onMounted(() => {
       <!-- 加载中 -->
       <div v-if="isLoading" class="flex flex-col items-center justify-center py-6 text-muted-foreground">
         <span class="material-icons animate-pulse mb-1">hourglass_top</span>
-        <span class="text-xs">加载中...</span>
+        <span class="text-xs">{{ $t('views.sidebarHistoryModule.loading') }}</span>
       </div>
 
       <!-- 错误（仅最近添加模式） -->
       <div v-else-if="addedError && mode === 'recent_added'" class="flex flex-col items-center justify-center py-6 text-center px-2">
         <span class="material-icons text-muted-foreground mb-1">cloud_off</span>
         <p class="text-xs text-muted-foreground mb-2">{{ addedError }}</p>
-        <button class="text-xs text-primary hover:underline" @click="fetchRecentAdded(libraryId)">重试</button>
+        <button class="text-xs text-primary hover:underline" @click="fetchRecentAdded(libraryId)">{{ $t('views.sidebarHistoryModule.retry') }}</button>
       </div>
 
       <!-- 空状态 -->
@@ -185,7 +188,7 @@ onMounted(() => {
         <EmptyMedia>
           <StatusImage name="empty" size="medium" />
         </EmptyMedia>
-        <EmptyTitle>{{ mode === 'recent_added' ? '暂无文件' : '暂无浏览记录' }}</EmptyTitle>
+        <EmptyTitle>{{ mode === 'recent_added' ? $t('views.sidebarHistoryModule.emptyFiles') : $t('views.sidebarHistoryModule.emptyHistory') }}</EmptyTitle>
       </Empty>
 
       <!-- 列表内容 -->

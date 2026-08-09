@@ -7,7 +7,7 @@
           'hover:bg-black/75 transition-opacity opacity-0 group-hover:opacity-100',
           buttonClass
         ]"
-        title="预览"
+        :title="$t('commonUi.mediaPreviewHoverCard.preview')"
         @click.stop
         @pointerdown.stop
       >

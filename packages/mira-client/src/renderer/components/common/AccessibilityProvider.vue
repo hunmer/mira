@@ -9,7 +9,7 @@
       class="skip-link"
       @click="focusMainContent"
     >
-      跳转到主内容
+      {{ $t('commonUi.accessibility.skipToMain') }}
     </a>
     
     <!-- 键盘导航提示 -->
@@ -20,7 +20,7 @@
       aria-live="polite"
     >
       <div v-if="currentFocus" class="text-center">
-        使用 Tab 键导航，回车键激活，ESC 键退出
+        {{ $t('commonUi.accessibility.keyboardHint') }}
       </div>
     </div>
     
@@ -56,6 +56,9 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick, provide } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 // 无障碍访问上下文
 const AccessibilityKey = Symbol('accessibility')
@@ -246,7 +249,7 @@ const cleanupMediaQueries = () => {
 // 路由变化公告
 const announceRouteChange = (to: any) => {
   if (props.announceRouteChanges && to.meta?.title) {
-    announce(`已导航到 ${to.meta.title}`)
+    announce(t('commonUi.accessibility.navigatedTo', { title: to.meta.title }))
   }
 }
 
@@ -263,7 +266,7 @@ onMounted(() => {
   
   // 初始化时的公告
   nextTick(() => {
-    announce('页面已加载')
+    announce(t('commonUi.accessibility.pageLoaded'))
   })
 })
 

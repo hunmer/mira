@@ -1,6 +1,7 @@
 import { h } from 'vue'
 import { toast } from 'vue-sonner'
 import { Progress } from '@/components/ui/progress'
+import i18n from '../i18n'
 
 interface BatchOptions {
   label: string
@@ -27,8 +28,10 @@ export async function runBatchOperation<T>(
     const current = completed + failed
     const percent = Math.round((current / total) * 100)
     const text = done
-      ? (failed === 0 ? `${options.label}完成 ${completed}/${total}` : `${options.label}完成: 成功${completed}, 失败${failed}`)
-      : `${options.label} ${current}/${total}`
+      ? (failed === 0
+        ? i18n.global.t('composables.useBatchOperation.completedAll', { label: options.label, completed, total })
+        : i18n.global.t('composables.useBatchOperation.completedWithFailures', { label: options.label, completed, failed }))
+      : i18n.global.t('composables.useBatchOperation.progress', { label: options.label, current, total })
 
     if (done) {
       toast.dismiss(toastId)

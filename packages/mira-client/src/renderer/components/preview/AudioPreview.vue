@@ -2,8 +2,8 @@
   <div class="w-full h-full flex justify-center items-center bg-[#f8f9fa]">
     <div class="flex flex-col items-center gap-8 p-8 bg-white rounded-lg shadow-md max-w-[500px] w-[90%]">
       <div class="text-center">
-        <h3 class="m-0 mb-2 text-[#333]">{{ fileInfo.title || fileInfo.name || '未知音频文件' }}</h3>
-        <p v-if="fileInfo.size" class="text-[#666] text-[0.9rem] m-0">文件大小: {{ formatFileSize(fileInfo.size) }}</p>
+        <h3 class="m-0 mb-2 text-[#333]">{{ fileInfo.title || fileInfo.name || $t('preview.audioPreview.unknownTitle') }}</h3>
+        <p v-if="fileInfo.size" class="text-[#666] text-[0.9rem] m-0">{{ $t('preview.audioPreview.fileSize') }}: {{ formatFileSize(fileInfo.size) }}</p>
       </div>
 
       <audio
@@ -14,11 +14,11 @@
         @error="onAudioError"
         class="w-full outline-none"
       >
-        您的浏览器不支持音频播放
+        {{ $t('preview.audioPreview.notSupported') }}
       </audio>
 
       <div v-else class="text-[#e74c3c] text-center">
-        <p>无法获取音频文件</p>
+        <p>{{ $t('preview.audioPreview.noAudioUrl') }}</p>
       </div>
     </div>
   </div>
@@ -26,6 +26,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import Hls from 'hls.js'
 import { getMediaPreviewSource } from '../../utils/fileUtils'
 
@@ -34,6 +35,7 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+const { t } = useI18n()
 const emit = defineEmits<{
   error: [message: string]
 }>()
@@ -53,7 +55,7 @@ watch(audioUrl, async (url) => {
   if (url.includes('.m3u8') && Hls.isSupported()) {
     hls = new Hls({ enableWorker: true, lowLatencyMode: false })
     hls.on(Hls.Events.ERROR, (_event, data) => {
-      if (data.fatal) emit('error', '音频流加载失败')
+      if (data.fatal) emit('error', t('preview.audioPreview.streamLoadFailed'))
     })
     hls.loadSource(url)
     hls.attachMedia(audio)
@@ -76,6 +78,6 @@ const formatFileSize = (bytes: number): string => {
 }
 
 const onAudioError = (): void => {
-  emit('error', '音频加载失败')
+  emit('error', t('preview.audioPreview.loadFailed'))
 }
 </script>

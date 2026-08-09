@@ -16,7 +16,7 @@
         {{ item.title }}
       </p>
       <div class="flex items-center space-x-2 text-sm text-muted-foreground">
-        <span>{{ item.fileCount || 0 }} 个文件</span>
+        <span>{{ t('search.tagSearchResult.fileCount', { count: item.fileCount || 0 }) }}</span>
         <span v-if="item.description">•</span>
         <span v-if="item.description" class="truncate">{{ item.description }}</span>
       </div>
@@ -33,6 +33,9 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 interface TagItem {
   id: number

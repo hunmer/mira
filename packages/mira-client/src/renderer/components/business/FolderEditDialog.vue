@@ -2,7 +2,7 @@
   <Dialog :open="props.visible" @update:open="handleOpenChange">
     <DialogContent class="sm:max-w-md max-h-[90vh]">
       <DialogHeader>
-        <DialogTitle>{{ props.dialogTitle || (isEdit ? '编辑文件夹' : '创建文件夹') }}</DialogTitle>
+        <DialogTitle>{{ props.dialogTitle || (isEdit ? $t('business.folderEditDialog.editTitle') : $t('business.folderEditDialog.createTitle')) }}</DialogTitle>
       </DialogHeader>
 
       <div class="overflow-y-auto pr-1 -mr-1">
@@ -24,7 +24,7 @@
                 <Input
                   id="folderTitle"
                   v-model="formData.title"
-                  :placeholder="`${itemTypeText}名称 *`"
+                  :placeholder="$t('business.folderEditDialog.namePlaceholder', { type: itemTypeText })"
                   class="w-full"
                   :class="{ 'border-destructive': errors.title }"
                   @input="clearError('title')"
@@ -34,7 +34,7 @@
               <textarea
                 id="folderDescription"
                 v-model="formData.description"
-                :placeholder="`${itemTypeText}描述（可选）`"
+                :placeholder="$t('business.folderEditDialog.descriptionPlaceholder', { type: itemTypeText })"
                 rows="2"
                 class="w-full px-3 py-2 text-sm border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary resize-none"
               ></textarea>
@@ -45,7 +45,7 @@
             <label class="flex items-center space-x-2 p-2 border rounded-md hover:bg-muted cursor-pointer mb-3">
               <input type="radio" :value="undefined" v-model="formData.parentId" @change="selectedParentId = null" class="text-primary" />
               <span class="material-icons text-muted-foreground">{{ props.itemType === 'tag' ? 'label' : 'home' }}</span>
-              <span>{{ props.itemType === 'tag' ? '根标签' : '根目录' }}</span>
+              <span>{{ props.itemType === 'tag' ? $t('business.folderEditDialog.rootTag') : $t('business.folderEditDialog.rootFolder') }}</span>
             </label>
 
             <div v-if="parentNodes.length > 0" class="border rounded-md max-h-48 overflow-y-auto p-2">
@@ -74,16 +74,16 @@
               <span class="material-icons text-3xl mb-1.5">
                 {{ props.itemType === 'tag' ? 'label_off' : 'folder_open' }}
               </span>
-              <p class="text-sm text-center">没有可选的{{ parentTypeText }}，将创建为顶层{{ itemTypeText }}</p>
+              <p class="text-sm text-center">{{ $t('business.folderEditDialog.noParentEmpty', { type: itemTypeText }) }}</p>
             </div>
 
             <p class="text-muted-foreground text-xs mt-2">
-              选择{{ parentTypeText }}，或选择{{ props.itemType === 'tag' ? '根标签' : '根目录' }}创建顶层{{ itemTypeText }}
+              {{ props.itemType === 'tag' ? $t('business.folderEditDialog.selectParentHintTag', { parentType: parentTypeText, type: itemTypeText }) : $t('business.folderEditDialog.selectParentHintFolder', { parentType: parentTypeText, type: itemTypeText }) }}
             </p>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-foreground mb-2">{{ itemTypeText }}颜色</label>
+            <label class="block text-sm font-medium text-foreground mb-2">{{ $t('business.folderEditDialog.colorLabel', { type: itemTypeText }) }}</label>
             <div class="flex flex-wrap gap-2">
               <button
                 v-for="color in colorOptions"
@@ -101,7 +101,7 @@
 
           <div v-if="!isEdit" class="flex items-center space-x-2">
             <Checkbox id="autoOpenTab" v-model="autoOpenTab" />
-            <Label for="autoOpenTab" class="text-sm text-foreground cursor-pointer">创建后自动打开</Label>
+            <Label for="autoOpenTab" class="text-sm text-foreground cursor-pointer">{{ $t('business.folderEditDialog.autoOpenTab') }}</Label>
           </div>
 
           <div v-if="error" class="bg-destructive border border-destructive rounded-md p-3">
@@ -111,13 +111,13 @@
       </div>
 
       <DialogFooter class="mt-2">
-        <Button variant="secondary" :disabled="isLoading" @click="handleCancel">取消</Button>
+        <Button variant="secondary" :disabled="isLoading" @click="handleCancel">{{ $t('business.folderEditDialog.cancel') }}</Button>
         <Button :disabled="isLoading || !formData.title?.trim()" @click="handleSubmit">
           <svg v-if="isLoading" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
-          <span>{{ isLoading ? '保存中...' : (isEdit ? '更新' : '创建') }}</span>
+          <span>{{ isLoading ? $t('business.folderEditDialog.saving') : (isEdit ? $t('business.folderEditDialog.update') : $t('business.folderEditDialog.create')) }}</span>
         </Button>
       </DialogFooter>
     </DialogContent>
@@ -126,6 +126,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { BaseTree } from '@he-tree/vue'
 import '@he-tree/vue/style/default.css'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
@@ -170,6 +171,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<Emits>()
+const { t } = useI18n()
 
 const isLoading = ref(false)
 const error = ref<string | null>(null)
@@ -191,8 +193,8 @@ const formData = ref({
 
 const errors = ref({ title: '' })
 const isEdit = computed(() => !!props.folder)
-const itemTypeText = computed(() => props.itemType === 'tag' ? '标签' : '文件夹')
-const parentTypeText = computed(() => props.itemType === 'tag' ? '父标签' : '父文件夹')
+const itemTypeText = computed(() => props.itemType === 'tag' ? t('business.folderEditDialog.typeTag') : t('business.folderEditDialog.typeFolder'))
+const parentTypeText = computed(() => props.itemType === 'tag' ? t('business.folderEditDialog.parentTag') : t('business.folderEditDialog.parentFolder'))
 // 默认图标：标签为 label，文件夹为 folder
 const defaultItemIcon = computed(() => props.itemType === 'tag' ? 'label' : 'folder')
 // 当前选中颜色对应的十六进制色值，用于图标预览
@@ -202,17 +204,17 @@ const selectedColorHex = computed(() => {
   return `#${color.toString(16).padStart(6, '0')}`
 })
 
-const colorOptions = [
-  { value: null, class: 'bg-accent border-2 border-dashed border-border', label: '无颜色' },
-  { value: 0x3B82F6, class: 'bg-primary', label: '蓝色' },
-  { value: 0x10B981, class: 'bg-green-500', label: '绿色' },
-  { value: 0xF59E0B, class: 'bg-yellow-500', label: '黄色' },
-  { value: 0xEF4444, class: 'bg-destructive', label: '红色' },
-  { value: 0x8B5CF6, class: 'bg-purple-500', label: '紫色' },
-  { value: 0xEC4899, class: 'bg-pink-500', label: '粉色' },
-  { value: 0x6366F1, class: 'bg-primary', label: '靛蓝' },
-  { value: 0x6B7280, class: 'bg-muted', label: '灰色' }
-]
+const colorOptions = computed(() => [
+  { value: null, class: 'bg-accent border-2 border-dashed border-border', label: t('business.folderEditDialog.colorNone') },
+  { value: 0x3B82F6, class: 'bg-primary', label: t('business.folderEditDialog.colorBlue') },
+  { value: 0x10B981, class: 'bg-green-500', label: t('business.folderEditDialog.colorGreen') },
+  { value: 0xF59E0B, class: 'bg-yellow-500', label: t('business.folderEditDialog.colorYellow') },
+  { value: 0xEF4444, class: 'bg-destructive', label: t('business.folderEditDialog.colorRed') },
+  { value: 0x8B5CF6, class: 'bg-purple-500', label: t('business.folderEditDialog.colorPurple') },
+  { value: 0xEC4899, class: 'bg-pink-500', label: t('business.folderEditDialog.colorPink') },
+  { value: 0x6366F1, class: 'bg-primary', label: t('business.folderEditDialog.colorIndigo') },
+  { value: 0x6B7280, class: 'bg-muted', label: t('business.folderEditDialog.colorGray') }
+])
 
 function getNodeColor(node: any): string {
   const color = node?.color
@@ -269,11 +271,11 @@ const validateForm = () => {
   errors.value.title = ''
   error.value = null
   if (!formData.value.title?.trim()) {
-    errors.value.title = `请输入${itemTypeText.value}名称`
+    errors.value.title = t('business.folderEditDialog.nameRequired', { type: itemTypeText.value })
     return false
   }
   if (formData.value.title.trim().length > 100) {
-    errors.value.title = `${itemTypeText.value}名称不能超过100个字符`
+    errors.value.title = t('business.folderEditDialog.nameTooLong', { type: itemTypeText.value })
     return false
   }
   return true
@@ -298,7 +300,7 @@ const handleSubmit = async () => {
     console.log('[FolderEditDialog] handleSubmit:', { autoOpenTab: autoOpenTab.value, isEdit: isEdit.value, saveDataAutoOpen: saveData.autoOpenTab })
     emit('save', saveData)
   } catch (err) {
-    error.value = err instanceof Error ? err.message : '保存失败'
+    error.value = err instanceof Error ? err.message : t('business.folderEditDialog.saveFailed')
   } finally {
     isLoading.value = false
   }

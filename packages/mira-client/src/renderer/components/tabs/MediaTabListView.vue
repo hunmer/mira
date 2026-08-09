@@ -9,7 +9,7 @@
         class="absolute inset-0 z-50 bg-primary/10 border-2 border-dashed border-primary rounded-lg flex items-center justify-center pointer-events-none">
         <div class="text-center">
           <span class="material-icons text-5xl text-primary mb-2">cloud_upload</span>
-          <p class="text-primary font-medium text-lg">释放文件以上传</p>
+          <p class="text-primary font-medium text-lg">{{ $t('tabs.mediaTabListView.releaseToUpload') }}</p>
         </div>
       </div>
     </Transition>
@@ -53,7 +53,7 @@
         <!-- 刷新按钮 -->
         <button
           class="flex items-center space-x-1 px-3 py-1.5 text-sm text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur shadow-sm transition-colors"
-          @click="handleRefresh" title="刷新数据">
+          @click="handleRefresh" :title="$t('tabs.mediaTabListView.refreshData')">
           <span class="material-icons text-base" :class="{ 'animate-spin': isLoading }">refresh</span>
         </button>
 
@@ -95,7 +95,7 @@
           <!-- 如果没有匹配的视图模式 -->
           <div v-if="!['grid', 'list', 'waterfall'].includes(viewMode)"
             class="flex items-center justify-center h-40 text-muted-foreground dark:text-muted-foreground">
-            未知的视图模式: {{ viewMode }}
+            {{ $t('tabs.mediaTabListView.unknownViewMode', { mode: viewMode }) }}
           </div>
         </div>
 
@@ -108,12 +108,14 @@
               <!-- 操作按钮 - 仅在选中文件时显示 -->
               <div v-if="selectedItems.length > 0" class="flex items-center space-x-2">
                 <!-- 反选 -->
-                <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors" title="反选"
+                <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
+                  :title="$t('tabs.mediaTabListView.invertSelection')"
                   @click="handleInvertSelection">
                   <span class="material-symbols-outlined text-muted-foreground dark:text-muted-foreground">swap_horiz</span>
                 </button>
                 <!-- 取消选择 -->
-                <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors" title="取消选择"
+                <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
+                  :title="$t('tabs.mediaTabListView.clearSelection')"
                   @click="handleClearSelection">
                   <span class="material-symbols-outlined text-muted-foreground dark:text-muted-foreground">deselect</span>
                 </button>
@@ -122,11 +124,11 @@
                 <!-- 回收站：恢复文件 / 彻底删除 -->
                 <template v-if="isTrash">
                   <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
-                    :title="`恢复文件 (${selectedItems.length})`" @click="handleToolbarAction('restore')">
+                    :title="$t('tabs.mediaTabListView.restoreFiles', { count: selectedItems.length })" @click="handleToolbarAction('restore')">
                     <span class="material-symbols-outlined text-muted-foreground dark:text-muted-foreground">restore</span>
                   </button>
                   <button class="p-2 rounded-full hover:bg-destructive/10 group transition-colors"
-                    :title="`彻底删除 (${selectedItems.length})`" @click="handleToolbarAction('purge')">
+                    :title="$t('tabs.mediaTabListView.purgeFiles', { count: selectedItems.length })" @click="handleToolbarAction('purge')">
                     <span
                       class="material-symbols-outlined text-muted-foreground dark:text-muted-foreground group-hover:text-destructive dark:group-hover:text-destructive">delete_forever</span>
                   </button>
@@ -134,16 +136,16 @@
 
                 <!-- 普通视图：复制 / 打开 / 删除 -->
                 <template v-else>
-                  <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors" title="复制"
+                  <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors" :title="$t('common.copy')"
                     @click="handleToolbarAction('copy')">
                     <span class="material-icons text-muted-foreground dark:text-muted-foreground">content_copy</span>
                   </button>
-                  <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors" title="打开"
+                  <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors" :title="$t('tabs.mediaTabListView.open')"
                     @click="handleToolbarAction('open')">
                     <span class="material-icons text-muted-foreground dark:text-muted-foreground">open_in_new</span>
                   </button>
                   <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
-                    :title="`删除 (${selectedItems.length})`" @click="handleToolbarAction('delete')">
+                    :title="$t('tabs.mediaTabListView.deleteFiles', { count: selectedItems.length })" @click="handleToolbarAction('delete')">
                     <span class="material-icons text-muted-foreground dark:text-muted-foreground">delete</span>
                   </button>
                 </template>
@@ -191,7 +193,7 @@
         <!-- 当前路径和文件数 -->
         <div v-if="filteredMediaItems.length > 0" class="flex items-center space-x-1 flex-shrink-0 me-2">
           <span class="text-muted-foreground dark:text-muted-foreground">
-            {{ filteredMediaItems.length }} 个文件
+            {{ $t('tabs.mediaTabListView.fileCount', { count: filteredMediaItems.length }) }}
           </span>
         </div>
       </div>
@@ -200,21 +202,21 @@
         <!-- 已选择素材 - 仅在有选择时显示 -->
         <div v-if="selectedItems.length > 0" class="flex items-center space-x-1">
           <span class="text-primary font-medium">
-            已选择 {{ selectedItems.length }} 个素材
+            {{ $t('tabs.mediaTabListView.selectedCount', { count: selectedItems.length }) }}
           </span>
         </div>
 
         <!-- 分页信息 - 只有多页时显示 -->
         <div v-if="totalPages > 1" class="flex items-center space-x-1">
           <span class="text-muted-foreground dark:text-muted-foreground">
-            第 {{ currentPage }} / {{ totalPages }} 页
+            {{ $t('tabs.mediaTabListView.pageInfo', { current: currentPage, total: totalPages }) }}
           </span>
         </div>
 
         <!-- 列数调整滑块 -->
         <div v-if="viewMode === 'grid' || viewMode === 'waterfall'" class="flex items-center space-x-2">
           <input class="w-24 h-1 bg-accent dark:bg-muted rounded-lg appearance-none cursor-pointer" type="range" min="2"
-            max="8" :value="columnsPerRow" @input="handleColumnsChange" title="调整列数" />
+            max="8" :value="columnsPerRow" @input="handleColumnsChange" :title="$t('tabs.mediaTabListView.adjustColumns')" />
         </div>
 
         <!-- 展示字段开关：控制三个视图下媒体项展示哪些信息 -->
@@ -222,14 +224,14 @@
           <template #trigger>
             <button
               class="flex items-center rounded-lg border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur shadow-sm hover:bg-white/60 dark:hover:bg-muted transition-colors"
-              title="展示字段设置" style="padding: 6px;">
+              :title="$t('tabs.mediaTabListView.fieldSettingsTitle')" style="padding: 6px;">
               <span class="material-icons text-sm text-muted-foreground dark:text-muted-foreground">visibility</span>
             </button>
           </template>
 
           <template #content>
             <div class="min-w-[160px] rounded-2xl bg-popover p-2">
-              <h3 class="font-medium text-foreground text-sm mb-2 px-1">展示字段</h3>
+              <h3 class="font-medium text-foreground text-sm mb-2 px-1">{{ $t('tabs.mediaTabListView.displayFields') }}</h3>
               <label v-for="col in itemFieldOptions" :key="col.key"
                 class="flex items-center space-x-2 px-2 py-1.5 rounded-lg hover:bg-primary/5 cursor-pointer">
                 <Checkbox :model-value="isItemFieldVisible(col.key)"
@@ -246,15 +248,15 @@
     <AlertDialog :open="deleteDialogOpen" @update:open="deleteDialogOpen = $event">
       <AlertDialogContent class="sm:max-w-md">
         <AlertDialogHeader>
-          <AlertDialogTitle>确认删除</AlertDialogTitle>
+          <AlertDialogTitle>{{ $t('tabs.mediaTabListView.confirmDeleteTitle') }}</AlertDialogTitle>
           <AlertDialogDescription>
-            确定要删除选中的 {{ selectedItems.length }} 个文件吗？文件将被移至回收站，此操作可在回收站中恢复。
+            {{ $t('tabs.mediaTabListView.confirmDeleteDesc', { count: selectedItems.length }) }}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>取消</AlertDialogCancel>
+          <AlertDialogCancel>{{ $t('common.cancel') }}</AlertDialogCancel>
           <AlertDialogAction class="bg-destructive text-white hover:bg-destructive/90" @click="confirmDelete">
-            删除
+            {{ $t('common.delete') }}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -268,6 +270,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useMediaStore } from '@renderer/stores/media'
 import { useLibraryStore } from '@renderer/stores/library'
 import { useFolderStore } from '@renderer/stores/folder'
@@ -303,6 +306,8 @@ import type { FileInfo } from '../../../shared/types'
 import type { FilterRule } from '@/renderer/types/filter'
 import type { ItemField } from '@renderer/stores/settings'
 
+const { t } = useI18n()
+
 // Props
 interface Props {
   tabId: string
@@ -322,7 +327,7 @@ const props = withDefaults(defineProps<Props>(), {
   showFilters: true,
   showPagination: true,
   pageSize: 999,
-  emptyMessage: '暂无文件'
+  emptyMessage: ''
 })
 
 // Emits
@@ -429,7 +434,7 @@ const handleDrop = async (e: DragEvent) => {
   if (settingsStore.settings.directImportMode) {
     const libraryId = libraryStore.currentLibrary?.id
     if (!libraryId) {
-      toast.add({ severity: 'error', summary: '错误', detail: '未选择素材库', life: 3000 })
+      toast.add({ severity: 'error', summary: t('tabs.mediaTabListView.errorSummary'), detail: t('tabs.mediaTabListView.noLibraryDetail'), life: 3000 })
       return
     }
     const metadata: Record<string, any> = {}
@@ -438,7 +443,7 @@ const handleDrop = async (e: DragEvent) => {
     for (const file of files) {
       mediaStore.uploadFile(file, libraryId, Object.keys(metadata).length > 0 ? metadata : undefined)
     }
-    toast.add({ severity: 'success', summary: '直接导入', detail: `正在上传 ${files.length} 个文件`, life: 2000 })
+    toast.add({ severity: 'success', summary: t('tabs.mediaTabListView.directImportSummary'), detail: t('tabs.mediaTabListView.uploadingFilesDetail', { count: files.length }), life: 2000 })
     return
   }
 
@@ -572,12 +577,12 @@ const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
 
   // 回收站：仅一条
   if (props.viewType === 'trash') {
-    items.push({ id: 'trash', label: '回收站', icon: 'delete', active: true })
+    items.push({ id: 'trash', label: t('tabs.mediaTabListView.trashBreadcrumb'), icon: 'delete', active: true })
     return items
   }
 
   // 根节点：全部文件（点击会打开 all 文件夹 Tab）
-  items.push({ id: 'all', label: '全部文件', icon: 'folder' })
+  items.push({ id: 'all', label: t('tabs.mediaTabListView.allFilesBreadcrumb'), icon: 'folder' })
 
   // 文件夹：沿 parent_id 向上回溯父级链
   const folderRaw = props.filters?.folder
@@ -612,7 +617,7 @@ const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
         const tag = Number.isFinite(numericId)
           ? tagStore.tags.find(t => t.id === numericId)
           : undefined
-        const label = tag?.title || `标签：${tagId}`
+        const label = tag?.title || t('tabs.mediaTabListView.tagBreadcrumb', { name: tagId })
         items.push({
           id: `tag-${tagId}`,
           label,
@@ -812,7 +817,7 @@ const handleFilterChange = async (filter: FilterRule) => {
         mergedFilters.folders = {
           id: 'folders',
           selectedValues: filter.selectedValues,
-          label: '文件夹筛选'
+          label: t('tabs.mediaTabListView.filterFolders')
         }
       } else {
         delete mergedFilters.folders
@@ -823,7 +828,7 @@ const handleFilterChange = async (filter: FilterRule) => {
         mergedFilters.tags = {
           id: 'tags',
           selectedValues: filter.selectedValues,
-          label: '标签筛选'
+          label: t('tabs.mediaTabListView.filterTagsLabel')
         }
       } else {
         delete mergedFilters.tags
@@ -835,7 +840,7 @@ const handleFilterChange = async (filter: FilterRule) => {
         mergedFilters.urls = {
           id: 'urls',
           value: filter.value.trim(),
-          label: '网址筛选'
+          label: t('tabs.mediaTabListView.filterUrls')
         }
       } else {
         delete mergedFilters.urls
@@ -846,7 +851,7 @@ const handleFilterChange = async (filter: FilterRule) => {
         mergedFilters.title = {
           id: 'title',
           value: filter.value.trim(),
-          label: '标题筛选'
+          label: t('tabs.mediaTabListView.filterTitle')
         }
       } else {
         delete mergedFilters.title
@@ -860,7 +865,7 @@ const handleFilterChange = async (filter: FilterRule) => {
         sizeMax: filter.sizeMax,
         customMin: filter.customMin,
         customMax: filter.customMax,
-        label: '大小筛选'
+        label: t('tabs.mediaTabListView.filterSize')
       }
       break
     case 'category':
@@ -868,7 +873,7 @@ const handleFilterChange = async (filter: FilterRule) => {
         mergedFilters.category = {
           id: 'category',
           selectedCategory: filter.selectedCategory,
-          label: '类别筛选'
+          label: t('tabs.mediaTabListView.filterCategory')
         }
       } else {
         delete mergedFilters.category
@@ -957,9 +962,9 @@ const handleToolbarAction = async (action: string) => {
 
     await runBatchOperation(files, async (file) => {
       const libraryId = file.libraryId || libraryStore.currentLibrary?.id
-      if (!libraryId) throw new Error('缺少库ID')
+      if (!libraryId) throw new Error(t('tabs.mediaTabListView.missingLibraryId'))
       await appService.restoreFile(libraryId, file.id)
-    }, { label: '恢复文件' })
+    }, { label: t('tabs.mediaTabListView.restoreBatchLabel') })
 
     homeController.selectedItems.value = []
     await handleRefresh()
@@ -977,10 +982,10 @@ const handleToolbarAction = async (action: string) => {
 
     await runBatchOperation(files, async (file) => {
       const libraryId = file.libraryId || libraryStore.currentLibrary?.id
-      if (!libraryId) throw new Error('缺少库ID')
+      if (!libraryId) throw new Error(t('tabs.mediaTabListView.missingLibraryId'))
       // 彻底删除：跳过回收站
       await appService.deleteFile(libraryId, file.id, false)
-    }, { label: '彻底删除' })
+    }, { label: t('tabs.mediaTabListView.purgeBatchLabel') })
 
     homeController.selectedItems.value = []
     await handleRefresh()
@@ -1088,13 +1093,13 @@ const handleColumnsChange = (event: Event) => {
 // ============================================
 // 展示字段开关（控制三个视图下媒体项展示哪些信息）
 // ============================================
-const itemFieldOptions: { key: ItemField; label: string }[] = [
-  { key: 'filename', label: '文件名' },
-  { key: 'format', label: '格式' },
-  { key: 'size', label: '大小' },
-  { key: 'folder', label: '文件夹' },
-  { key: 'tags', label: '标签' }
-]
+const itemFieldOptions = computed<{ key: ItemField; label: string }[]>(() => [
+  { key: 'filename', label: t('tabs.mediaTabListView.fieldFilename') },
+  { key: 'format', label: t('tabs.mediaTabListView.fieldFormat') },
+  { key: 'size', label: t('tabs.mediaTabListView.fieldSize') },
+  { key: 'folder', label: t('tabs.mediaTabListView.fieldFolder') },
+  { key: 'tags', label: t('tabs.mediaTabListView.fieldTags') }
+])
 
 const isItemFieldVisible = (field: ItemField) => {
   return settingsStore.settings.visibleItemFields.includes(field)

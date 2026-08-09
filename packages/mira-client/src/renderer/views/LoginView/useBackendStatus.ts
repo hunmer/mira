@@ -6,6 +6,7 @@
  */
 import { ref } from 'vue'
 import type { ServerConfig } from '@renderer/stores/serverList'
+import i18n from '../../i18n'
 
 // 'online' | 'offline' | 'checking' | 'unknown'
 export type BackendStatus = 'online' | 'offline' | 'checking' | 'unknown'
@@ -43,10 +44,10 @@ export function useBackendStatus() {
 
   function backendStatusLabel(id: string): string {
     switch (backendStatus.value[id]) {
-      case 'online': return '在线'
-      case 'offline': return '离线'
-      case 'checking': return '检测中'
-      default: return '未检测'
+      case 'online': return i18n.global.t('views.backendStatus.online')
+      case 'offline': return i18n.global.t('views.backendStatus.offline')
+      case 'checking': return i18n.global.t('views.backendStatus.checking')
+      default: return i18n.global.t('views.backendStatus.unknown')
     }
   }
 

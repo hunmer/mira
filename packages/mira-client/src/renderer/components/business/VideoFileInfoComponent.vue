@@ -3,7 +3,7 @@
     <!-- 顶部标题 -->
     <div class="border-b border-border dark:border-border">
       <div class="py-4 px-4">
-        <h2 class="text-lg font-semibold text-foreground dark:text-muted-foreground">文件信息</h2>
+        <h2 class="text-lg font-semibold text-foreground dark:text-muted-foreground">{{ $t('business.videoFileInfoComponent.title') }}</h2>
       </div>
     </div>
 
@@ -12,7 +12,7 @@
 
       <!-- 缩略图预览 -->
       <div v-if="video?.thumbnailPath" class="space-y-4">
-        <h3 class="text-sm font-medium text-foreground dark:text-muted-foreground border-b border-border dark:border-border pb-2">缩略图</h3>
+        <h3 class="text-sm font-medium text-foreground dark:text-muted-foreground border-b border-border dark:border-border pb-2">{{ $t('business.videoFileInfoComponent.thumbnail') }}</h3>
         <div class="flex justify-center">
           <img
             :src="video.thumbnailPath"
@@ -24,22 +24,22 @@
 
       <!-- 基本信息 -->
       <div class="space-y-4">
-        <h3 class="text-sm font-medium text-foreground dark:text-muted-foreground border-b border-border dark:border-border pb-2">基本信息</h3>
+        <h3 class="text-sm font-medium text-foreground dark:text-muted-foreground border-b border-border dark:border-border pb-2">{{ $t('business.videoFileInfoComponent.basicInfo') }}</h3>
         <div class="space-y-3">
           <div class="flex justify-between">
-            <span class="text-sm text-muted-foreground dark:text-muted-foreground">文件名:</span>
+            <span class="text-sm text-muted-foreground dark:text-muted-foreground">{{ $t('business.videoFileInfoComponent.fileName') }}</span>
             <span class="text-sm text-foreground dark:text-muted-foreground text-right max-w-48 truncate" :title="video?.name">{{ video?.name || '-' }}</span>
           </div>
           <div class="flex justify-between">
-            <span class="text-sm text-muted-foreground dark:text-muted-foreground">格式:</span>
+            <span class="text-sm text-muted-foreground dark:text-muted-foreground">{{ $t('business.videoFileInfoComponent.format') }}</span>
             <span class="text-sm text-foreground dark:text-muted-foreground">{{ getFileFormat(video?.name) }}</span>
           </div>
           <div class="flex justify-between">
-            <span class="text-sm text-muted-foreground dark:text-muted-foreground">大小:</span>
+            <span class="text-sm text-muted-foreground dark:text-muted-foreground">{{ $t('business.videoFileInfoComponent.size') }}</span>
             <span class="text-sm text-foreground dark:text-muted-foreground">{{ formatFileSize(video?.size) }}</span>
           </div>
           <div class="flex justify-between">
-            <span class="text-sm text-muted-foreground dark:text-muted-foreground">MIME类型:</span>
+            <span class="text-sm text-muted-foreground dark:text-muted-foreground">{{ $t('business.videoFileInfoComponent.mimeType') }}</span>
             <span class="text-sm text-foreground dark:text-muted-foreground">{{ video?.mimeType || '-' }}</span>
           </div>
         </div>
@@ -47,24 +47,24 @@
 
       <!-- 媒体信息 -->
       <div class="space-y-4">
-        <h3 class="text-sm font-medium text-foreground dark:text-muted-foreground border-b border-border dark:border-border pb-2">媒体信息</h3>
+        <h3 class="text-sm font-medium text-foreground dark:text-muted-foreground border-b border-border dark:border-border pb-2">{{ $t('business.videoFileInfoComponent.mediaInfo') }}</h3>
         <div class="space-y-3">
           <div class="flex justify-between">
-            <span class="text-sm text-muted-foreground dark:text-muted-foreground">分辨率:</span>
+            <span class="text-sm text-muted-foreground dark:text-muted-foreground">{{ $t('business.videoFileInfoComponent.resolution') }}</span>
             <span class="text-sm text-foreground dark:text-muted-foreground">
               {{ video?.metadata?.width || 0 }}x{{ video?.metadata?.height || 0 }}
             </span>
           </div>
           <div class="flex justify-between">
-            <span class="text-sm text-muted-foreground dark:text-muted-foreground">时长:</span>
+            <span class="text-sm text-muted-foreground dark:text-muted-foreground">{{ $t('business.videoFileInfoComponent.duration') }}</span>
             <span class="text-sm text-foreground dark:text-muted-foreground">{{ formatDuration(currentTime) }}</span>
           </div>
           <div class="flex justify-between">
-            <span class="text-sm text-muted-foreground dark:text-muted-foreground">比特率:</span>
+            <span class="text-sm text-muted-foreground dark:text-muted-foreground">{{ $t('business.videoFileInfoComponent.bitrate') }}</span>
             <span class="text-sm text-foreground dark:text-muted-foreground">{{ video?.metadata?.bitrate ? formatBitrate(video.metadata.bitrate) : '-' }}</span>
           </div>
           <div class="flex justify-between">
-            <span class="text-sm text-muted-foreground dark:text-muted-foreground">帧率:</span>
+            <span class="text-sm text-muted-foreground dark:text-muted-foreground">{{ $t('business.videoFileInfoComponent.frameRate') }}</span>
             <span class="text-sm text-foreground dark:text-muted-foreground">{{ video?.metadata?.frameRate ? `${video.metadata.frameRate} fps` : '-' }}</span>
           </div>
         </div>
@@ -72,14 +72,14 @@
 
       <!-- 文件路径信息 -->
       <div class="space-y-4">
-        <h3 class="text-sm font-medium text-foreground dark:text-muted-foreground border-b border-border dark:border-border pb-2">位置信息</h3>
+        <h3 class="text-sm font-medium text-foreground dark:text-muted-foreground border-b border-border dark:border-border pb-2">{{ $t('business.videoFileInfoComponent.locationInfo') }}</h3>
         <div class="space-y-3">
           <div class="flex justify-between">
-            <span class="text-sm text-muted-foreground dark:text-muted-foreground">文件夹ID:</span>
+            <span class="text-sm text-muted-foreground dark:text-muted-foreground">{{ $t('business.videoFileInfoComponent.folderId') }}</span>
             <span class="text-sm text-foreground dark:text-muted-foreground">{{ video?.folderId || '-' }}</span>
           </div>
           <div class="flex justify-between">
-            <span class="text-sm text-muted-foreground dark:text-muted-foreground">完整路径:</span>
+            <span class="text-sm text-muted-foreground dark:text-muted-foreground">{{ $t('business.videoFileInfoComponent.fullPath') }}</span>
             <span class="text-sm text-foreground dark:text-muted-foreground text-right max-w-48 truncate" :title="video?.path">{{ video?.path || '-' }}</span>
           </div>
         </div>
@@ -87,18 +87,18 @@
 
       <!-- 时间信息 -->
       <div class="space-y-4">
-        <h3 class="text-sm font-medium text-foreground dark:text-muted-foreground border-b border-border dark:border-border pb-2">时间信息</h3>
+        <h3 class="text-sm font-medium text-foreground dark:text-muted-foreground border-b border-border dark:border-border pb-2">{{ $t('business.videoFileInfoComponent.timeInfo') }}</h3>
         <div class="space-y-3">
           <div class="flex justify-between">
-            <span class="text-sm text-muted-foreground dark:text-muted-foreground">创建时间:</span>
+            <span class="text-sm text-muted-foreground dark:text-muted-foreground">{{ $t('business.videoFileInfoComponent.createdAt') }}</span>
             <span class="text-sm text-foreground dark:text-muted-foreground">{{ formatDate(video?.createdAt) }}</span>
           </div>
           <div class="flex justify-between">
-            <span class="text-sm text-muted-foreground dark:text-muted-foreground">更新时间:</span>
+            <span class="text-sm text-muted-foreground dark:text-muted-foreground">{{ $t('business.videoFileInfoComponent.updatedAt') }}</span>
             <span class="text-sm text-foreground dark:text-muted-foreground">{{ formatDate(video?.updatedAt) }}</span>
           </div>
           <div class="flex justify-between">
-            <span class="text-sm text-muted-foreground dark:text-muted-foreground">文件哈希:</span>
+            <span class="text-sm text-muted-foreground dark:text-muted-foreground">{{ $t('business.videoFileInfoComponent.fileHash') }}</span>
             <span class="text-sm text-foreground dark:text-muted-foreground text-right max-w-48 truncate" :title="video?.hash">{{ video?.hash || '-' }}</span>
           </div>
         </div>
@@ -106,7 +106,7 @@
 
       <!-- 标签信息 -->
       <div v-if="video?.tags && video.tags.length > 0" class="space-y-4">
-        <h3 class="text-sm font-medium text-foreground dark:text-muted-foreground border-b border-border dark:border-border pb-2">标签</h3>
+        <h3 class="text-sm font-medium text-foreground dark:text-muted-foreground border-b border-border dark:border-border pb-2">{{ $t('business.videoFileInfoComponent.tags') }}</h3>
         <div class="flex flex-wrap gap-2">
           <span
             v-for="tag in video.tags"

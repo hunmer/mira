@@ -26,7 +26,7 @@
 
         <!-- 标签管理 -->
         <div>
-          <h4 class="font-semibold text-foreground mb-2 text-sm">标签</h4>
+          <h4 class="font-semibold text-foreground mb-2 text-sm">{{ $t('business.imageInfoComponent.tags') }}</h4>
           <div class="flex flex-wrap gap-2 items-center">
             <span 
               v-for="tag in image?.tags"
@@ -54,7 +54,7 @@
             <input 
               v-model="newTag"
               type="text"
-              placeholder="输入新标签"
+              :placeholder="$t('business.imageInfoComponent.newTagPlaceholder')"
               class="flex-1 px-2 py-1 text-xs border border-border rounded"
               @keyup.enter="addTag"
               @keyup.escape="cancelAddTag"
@@ -63,39 +63,39 @@
               class="px-2 py-1 text-xs bg-primary text-white rounded hover:bg-primary"
               @click="addTag"
             >
-              添加
+              {{ $t('business.imageInfoComponent.add') }}
             </button>
-            <button 
+            <button
               class="px-2 py-1 text-xs bg-muted text-white rounded hover:bg-muted"
               @click="cancelAddTag"
             >
-              取消
+              {{ $t('business.imageInfoComponent.cancel') }}
             </button>
           </div>
         </div>
 
         <!-- 基本信息 -->
         <div>
-          <h4 class="font-semibold text-foreground mb-2 text-sm">基本信息</h4>
+          <h4 class="font-semibold text-foreground mb-2 text-sm">{{ $t('business.imageInfoComponent.basicInfo') }}</h4>
           <div class="text-xs space-y-2 text-muted-foreground">
             <div class="flex justify-between">
-              <span>文件大小</span>
+              <span>{{ $t('business.imageInfoComponent.fileSize') }}</span>
               <span>{{ formatFileSize(image?.size) }}</span>
             </div>
             <div class="flex justify-between">
-              <span>图片尺寸</span>
+              <span>{{ $t('business.imageInfoComponent.dimensions') }}</span>
               <span>{{ image?.metadata?.width || 0 }} x {{ image?.metadata?.height || 0 }}</span>
             </div>
             <div class="flex justify-between">
-              <span>创建时间</span>
+              <span>{{ $t('business.imageInfoComponent.createdAt') }}</span>
               <span>{{ formatDate(image?.createdAt) }}</span>
             </div>
             <div class="flex justify-between">
-              <span>修改时间</span>
+              <span>{{ $t('business.imageInfoComponent.updatedAt') }}</span>
               <span>{{ formatDate(image?.updatedAt || image?.createdAt) }}</span>
             </div>
             <div class="flex justify-between">
-              <span>文件格式</span>
+              <span>{{ $t('business.imageInfoComponent.fileFormat') }}</span>
               <span>{{ getFileFormat(image?.name) }}</span>
             </div>
           </div>
@@ -106,19 +106,19 @@
           <div class="grid grid-cols-2 gap-2">
             <button class="px-3 py-2 text-sm bg-primary/10 text-primary rounded-md hover:bg-primary/20 flex items-center justify-center space-x-1">
               <span class="material-symbols-outlined text-sm">download</span>
-              <span>下载</span>
+              <span>{{ $t('business.imageInfoComponent.download') }}</span>
             </button>
             <button class="px-3 py-2 text-sm bg-green-100 text-green-700 rounded-md hover:bg-green-200 flex items-center justify-center space-x-1">
               <span class="material-symbols-outlined text-sm">share</span>
-              <span>分享</span>
+              <span>{{ $t('business.imageInfoComponent.share') }}</span>
             </button>
             <button class="px-3 py-2 text-sm bg-orange-100 text-orange-700 rounded-md hover:bg-orange-200 flex items-center justify-center space-x-1">
               <span class="material-symbols-outlined text-sm">edit</span>
-              <span>编辑</span>
+              <span>{{ $t('business.imageInfoComponent.edit') }}</span>
             </button>
             <button class="px-3 py-2 text-sm bg-destructive/10 text-destructive rounded-md hover:bg-destructive/20 flex items-center justify-center space-x-1">
               <span class="material-symbols-outlined text-sm">delete</span>
-              <span>删除</span>
+              <span>{{ $t('business.imageInfoComponent.delete') }}</span>
             </button>
           </div>
         </div>

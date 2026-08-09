@@ -6,6 +6,9 @@ import { useFolderStore } from '../stores/folder'
 import { useTagStore } from '../stores/tag'
 import { useGlobalInitializationState } from '../composables/useInitializationState'
 import { globalPluginManager } from './GlobalPluginManager'
+import i18n from '../i18n'
+
+const t = i18n.global.t.bind(i18n.global)
 
 /* 应用初始化服务
  * 处理用户认证后的应用初始化流程
@@ -47,16 +50,16 @@ export class InitializationService {
     try {
       // 显示全局加载器并执行初始化
       await initState.startInitialization([
-        '加载素材库配置',
-        '初始化插件系统',
-        '启用所有插件',
-        '连接服务器',
-        '验证用户身份',
-        '初始化完成'
+        t('services.initialization.stepLoadLibraryConfig'),
+        t('services.initialization.stepInitPlugins'),
+        t('services.initialization.stepEnablePlugins'),
+        t('services.initialization.stepConnectServer'),
+        t('services.initialization.stepVerifyIdentity'),
+        t('services.initialization.stepInitComplete')
       ])
 
       // 初始化插件系统
-      initState.updateStep('初始化插件系统', 20)
+      initState.updateStep(t('services.initialization.stepInitPlugins'), 20)
       try {
         await globalPluginManager.initialize()
         // 标记插件系统已初始化，防止settings store重复初始化
@@ -65,46 +68,46 @@ export class InitializationService {
         // 插件初始化失败不阻止应用启动
         // 插件初始化失败不阻止应用启动，只记录警告
       }
-      initState.completeStep('初始化插件系统')
+      initState.completeStep(t('services.initialization.stepInitPlugins'))
 
       // 启用所有插件
-      initState.updateStep('启用所有插件', 40)
+      initState.updateStep(t('services.initialization.stepEnablePlugins'), 40)
       try {
         const enableResult = await globalPluginManager.enableAllPlugins()
         if (!enableResult.success) {
-          const errorMessage = `部分插件启用失败: ${enableResult.errors.join(', ')}`
-          throw new Error(`插件启用失败，无法继续连接服务器: ${errorMessage}`)
+          const errorMessage = t('services.initialization.pluginEnablePartialFailed', { errors: enableResult.errors.join(', ') })
+          throw new Error(t('services.initialization.pluginEnableFailed', { message: errorMessage }))
         }
       } catch (error) {
         // 重新抛出错误，阻止应用启动
         throw error
       }
-      initState.completeStep('启用所有插件')
+      initState.completeStep(t('services.initialization.stepEnablePlugins'))
 
       // 连接服务器
-      initState.updateStep('连接服务器', 60)
+      initState.updateStep(t('services.initialization.stepConnectServer'), 60)
       const connectionResult = await this.connectToServer(initState)
       if (!connectionResult.success) {
-        throw new Error(connectionResult.error || '连接服务器失败')
+        throw new Error(connectionResult.error || t('services.initialization.connectServerFailed'))
       }
-      initState.completeStep('连接服务器')
-      
+      initState.completeStep(t('services.initialization.stepConnectServer'))
+
       // 认证初始化
       if (!authStore.isLoggedIn) {
-        initState.updateStep('验证用户身份', 90)
+        initState.updateStep(t('services.initialization.stepVerifyIdentity'), 90)
         await authStore.initializeAuthAfterConnection()
         if (!authStore.isLoggedIn) {
-          throw new Error('认证失败')
+          throw new Error(t('services.initialization.authFailed'))
         }
-        initState.completeStep('验证用户身份')
+        initState.completeStep(t('services.initialization.stepVerifyIdentity'))
       }
-      
+
       // 初始化成功
       await initState.completeInitialization()
       return { success: true }
-      
+
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : '应用初始化失败'
+      const errorMessage = error instanceof Error ? error.message : t('services.initialization.appInitFailed')
       await initState.completeInitialization(false, errorMessage)
       return { success: false, error: errorMessage }
     }
@@ -134,29 +137,29 @@ export class InitializationService {
     
     // 定义初始化步骤
     const steps = [
-      '检查用户认证',
-      '获取素材库列表',
-      '选择默认素材库',
-      '加载文件夹结构',
-      '加载标签列表'
+      t('services.initialization.homeStepCheckAuth'),
+      t('services.initialization.homeStepFetchLibraries'),
+      t('services.initialization.homeStepSelectLibrary'),
+      t('services.initialization.homeStepLoadFolders'),
+      t('services.initialization.homeStepLoadTags')
     ]
-    
+
     // 开始初始化
     initState.startInitialization(steps)
-    
+
     try {
       const authStore = useAuthStore()
       const libraryStore = useLibraryStore()
-      
+
       // 第一步：确保用户已认证
-      initState.updateStep('检查用户认证', 10)
+      initState.updateStep(t('services.initialization.homeStepCheckAuth'), 10)
       if (!authStore.isLoggedIn) {
         throw new Error('User not authenticated')
       }
-      initState.completeStep('检查用户认证')
-      
+      initState.completeStep(t('services.initialization.homeStepCheckAuth'))
+
       // 第二步：先恢复持久化的素材库选择，再从服务器获取列表
-      initState.updateStep('获取素材库列表', 30)
+      initState.updateStep(t('services.initialization.homeStepFetchLibraries'), 30)
       await libraryStore.restoreLibraryState()
       const previousLibraryId = libraryStore.currentLibrary?.id
 
@@ -168,7 +171,7 @@ export class InitializationService {
       const libraryResult = await libraryStore.fetchLibraries()
 
       if (!libraryResult.success) {
-        initState.setStepError('获取素材库列表', libraryResult.error || 'Unknown error')
+        initState.setStepError(t('services.initialization.homeStepFetchLibraries'), libraryResult.error || 'Unknown error')
         throw new Error(`Failed to fetch librarys: ${libraryResult.error}`)
       }
 
@@ -178,32 +181,32 @@ export class InitializationService {
         libraryStore.currentLibrary = libraryStore.getLibraryById(previousLibraryId) as any
       }
 
-      initState.completeStep('获取素材库列表')
+      initState.completeStep(t('services.initialization.homeStepFetchLibraries'))
 
       // 第三步：确定要使用的素材库
-      initState.updateStep('选择默认素材库', 50)
+      initState.updateStep(t('services.initialization.homeStepSelectLibrary'), 50)
       let selectedLibraryId = await this.selectLibrary(libraryStore)
-      
+
       if (!selectedLibraryId) {
-        initState.completeStep('选择默认素材库')
-        initState.completeInitialization(false, '没有可用的素材库')
+        initState.completeStep(t('services.initialization.homeStepSelectLibrary'))
+        initState.completeInitialization(false, t('services.initialization.noLibraryAvailable'))
         this.lastInitializationTime = new Date()
         return { success: false, error: 'NO_LIBRARY_AVAILABLE' } // 返回特殊错误码，让UI处理
       }
 
-      initState.completeStep('选择默认素材库')
-      
+      initState.completeStep(t('services.initialization.homeStepSelectLibrary'))
+
       // 设置当前素材库
       const selectedLibrary = libraryStore.getLibraryById(selectedLibraryId)
       if (selectedLibrary) {
         libraryStore.currentLibrary = selectedLibrary
         await this.setTabScope(selectedLibraryId)
       }
-      
+
       // 第四步：加载文件夹结构
-      initState.updateStep('加载文件夹结构', 70)
+      initState.updateStep(t('services.initialization.homeStepLoadFolders'), 70)
       await this.loadFolderStructure(selectedLibraryId)
-      initState.completeStep('加载文件夹结构')
+      initState.completeStep(t('services.initialization.homeStepLoadFolders'))
 
       // WebSocket 初始化（library 已确定）
       try {
@@ -220,9 +223,9 @@ export class InitializationService {
       }
 
       // 第五步：加载标签列表
-      initState.updateStep('加载标签列表', 90)
+      initState.updateStep(t('services.initialization.homeStepLoadTags'), 90)
       await this.loadTagList(selectedLibraryId)
-      initState.completeStep('加载标签列表')
+      initState.completeStep(t('services.initialization.homeStepLoadTags'))
       
       this.lastInitializationTime = new Date()
       initState.completeInitialization(true)
@@ -350,7 +353,7 @@ export class InitializationService {
   public async performInitialization(updateMessage?: (message: string) => void): Promise<{success: boolean, error?: string}> {
     try {
       // 步骤 1: 加载素材库列表
-      updateMessage?.('正在加载素材库列表...')
+      updateMessage?.(t('services.initialization.loadingLibraryList'))
 
       const { useServerListStore } = await import('../stores/serverList')
       const serverListStore = useServerListStore()
@@ -360,11 +363,11 @@ export class InitializationService {
       // 检查是否有活跃的素材库
       const activeLibrary = serverListStore.activeServer
       if (!activeLibrary) {
-        return { success: false, error: '未找到之前连接的素材库' }
+        return { success: false, error: t('services.initialization.noPreviousLibrary') }
       }
 
       // 步骤 2: 连接服务器
-      updateMessage?.(`正在连接到 ${activeLibrary.name}...`)
+      updateMessage?.(t('services.initialization.connectingTo', { name: activeLibrary.name }))
 
       // 使用SDK服务直接连接
       const { miraSDKService } = await import('../services/MiraSDKService')
@@ -385,7 +388,7 @@ export class InitializationService {
 
       // 如果token认证失败但有保存的凭据，尝试用用户名密码重新连接
       if (!connectResult.success && activeLibrary.authToken && activeLibrary.savedCredentials) {
-        updateMessage?.(`使用保存的凭据重新连接到 ${activeLibrary.name}...`)
+        updateMessage?.(t('services.initialization.reconnectingWithCredentials', { name: activeLibrary.name }))
 
         const credentialConfig = {
           serverUrl: activeLibrary.serverUrl,
@@ -399,23 +402,23 @@ export class InitializationService {
       }
 
       if (!connectResult.success) {
-        const errorMessage = connectResult.message || '连接失败'
+        const errorMessage = connectResult.message || t('services.initialization.connectFailed')
         return { success: false, error: errorMessage }
       }
 
       // 步骤 3: 验证身份
-      updateMessage?.('正在验证用户身份...')
+      updateMessage?.(t('services.initialization.verifyingIdentity'))
 
       const authStore = useAuthStore()
       await authStore.initializeAuthAfterConnection()
 
       // 步骤 4: 完成
-      updateMessage?.('初始化完成')
+      updateMessage?.(t('services.initialization.initComplete'))
 
       return { success: true }
 
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : '初始化失败'
+      const errorMessage = error instanceof Error ? error.message : t('services.initialization.initFailed')
       return { success: false, error: errorMessage }
     }
   }
@@ -436,10 +439,10 @@ export class InitializationService {
       // 检查是否有活跃的素材库
       const activeLibrary = serverListStore.activeServer
       if (!activeLibrary) {
-        return { success: false, error: '未找到之前连接的素材库' }
+        return { success: false, error: t('services.initialization.noPreviousLibrary') }
       }
 
-      initState.updateMessage?.(`正在连接到 ${activeLibrary.name}...`)
+      initState.updateMessage?.(t('services.initialization.connectingTo', { name: activeLibrary.name }))
 
       // 使用SDK服务直接连接
       const { miraSDKService } = await import('../services/MiraSDKService')
@@ -460,7 +463,7 @@ export class InitializationService {
 
       // 如果token认证失败但有保存的凭据，尝试用用户名密码重新连接
       if (!connectResult.success && activeLibrary.authToken && activeLibrary.savedCredentials) {
-        initState.updateMessage?.(`使用保存的凭据重新连接到 ${activeLibrary.name}...`)
+        initState.updateMessage?.(t('services.initialization.reconnectingWithCredentials', { name: activeLibrary.name }))
 
         const credentialConfig = {
           serverUrl: activeLibrary.serverUrl,
@@ -474,14 +477,14 @@ export class InitializationService {
       }
 
       if (!connectResult.success) {
-        const errorMessage = connectResult.message || '连接失败'
+        const errorMessage = connectResult.message || t('services.initialization.connectFailed')
         return { success: false, error: errorMessage }
       }
 
       return { success: true }
 
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : '连接服务器失败'
+      const errorMessage = error instanceof Error ? error.message : t('services.initialization.connectServerFailed')
       return { success: false, error: errorMessage }
     }
   }

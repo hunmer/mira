@@ -1,4 +1,5 @@
 ﻿import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { FolderItem } from '@renderer/types/components'
 import type { MenuItem } from '@/renderer/types/menu'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
@@ -24,6 +25,7 @@ export interface FolderOperationsEmits {
 
 export function useFolderOperations(emit: FolderOperationsEmits) {
   const libraryStore = useLibraryStore()
+  const { t } = useI18n()
 
   const currentContextFolder = ref<FolderItem | null>(null)
   const currentContextTag = ref<any | null>(null)
@@ -34,13 +36,12 @@ export function useFolderOperations(emit: FolderOperationsEmits) {
   const editingParentItem = ref<any | null>(null)
   const editingItemType = ref<ContextType>('folder')
   const dialogTitle = computed(() => {
-    const itemTypeName = editingItemType.value === 'folder' ? '文件夹' : '标签'
-    if (editingItem.value) return `编辑${itemTypeName}`
+    const isFolder = editingItemType.value === 'folder'
+    if (editingItem.value) return isFolder ? t('business.folderOperations.editFolder') : t('business.folderOperations.editTag')
     if (editingParentItem.value) {
-      const subItemName = editingItemType.value === 'folder' ? '子文件夹' : '子标签'
-      return `添加${subItemName}`
+      return isFolder ? t('business.folderOperations.addSubFolder') : t('business.folderOperations.addSubTag')
     }
-    return `添加${itemTypeName}`
+    return isFolder ? t('business.folderOperations.addFolder') : t('business.folderOperations.addTag')
   })
 
   // 移动对话框
@@ -57,38 +58,38 @@ export function useFolderOperations(emit: FolderOperationsEmits) {
   function createContextMenuItems(type: ContextType): MenuItem[] {
     const isFolder = type === 'folder'
     const currentItem = isFolder ? currentContextFolder.value : currentContextTag.value
-    const itemLabel = isFolder ? '文件夹' : '标签'
-    const subItemLabel = isFolder ? '子文件夹' : '子标签'
+    const addItemLabel = isFolder ? t('business.folderOperations.addFolder') : t('business.folderOperations.addTag')
+    const addSubItemLabel = isFolder ? t('business.folderOperations.addSubFolder') : t('business.folderOperations.addSubTag')
 
     return [
       {
-        label: `添加${itemLabel}`,
+        label: addItemLabel,
         command: () => handleItemOperation('add', type),
       },
       {
-        label: `添加${subItemLabel}`,
+        label: addSubItemLabel,
         command: () => handleItemOperation('addSub', type),
         disabled: !currentItem,
       },
       { separator: true },
       {
-        label: '编辑',
+        label: t('business.folderOperations.edit'),
         command: () => handleItemOperation('edit', type),
         disabled: !currentItem,
       },
       {
-        label: '移动',
+        label: t('business.folderOperations.move'),
         command: () => handleItemOperation('move', type),
         disabled: !currentItem,
       },
       {
-        label: '克隆',
+        label: t('business.folderOperations.clone'),
         command: () => handleItemOperation('clone', type),
         disabled: !currentItem,
       },
       { separator: true },
       {
-        label: '删除',
+        label: t('business.folderOperations.delete'),
         command: () => handleItemOperation('delete', type),
         disabled: !currentItem,
         class: 'text-red-600',
@@ -160,7 +161,7 @@ export function useFolderOperations(emit: FolderOperationsEmits) {
         const folder = currentItem as FolderItem
         const folderData = (folder as any).data || folder
         const result = await miraSDKService.cloneFolder(
-          libraryId, parseInt(folder.id), `${folder.label} (副本)`, folderData.parent_id,
+          libraryId, parseInt(folder.id), `${folder.label}${t('business.folderOperations.copySuffix')}`, folderData.parent_id,
         )
         if (result) {
           emit['folder-clone'](folder)
@@ -170,7 +171,7 @@ export function useFolderOperations(emit: FolderOperationsEmits) {
       } else {
         const tag = currentItem
         const result = await miraSDKService.createTag(
-          libraryId, `${tag.name || tag.title || tag.label} (副本)`, tag.color, tag.description,
+          libraryId, `${tag.name || tag.title || tag.label}${t('business.folderOperations.copySuffix')}`, tag.color, tag.description,
         )
         if (result) {
           emit['tag-clone'](tag)

@@ -1,0 +1,83 @@
+{
+  "homeTab": {
+    "displayName": "Home"
+  },
+  "allTab": {
+    "displayName": "All files"
+  },
+  "folderTab": {
+    "displayName": "Folders",
+    "fallbackLabel": "Folder {id}",
+    "filterLabel": "Tag filter"
+  },
+  "tagTab": {
+    "displayName": "Tags",
+    "fallbackLabel": "Tag {id}",
+    "filterLabel": "Tag filter",
+    "tabLabel": "Tag: {name}"
+  },
+  "trashTab": {
+    "displayName": "Trash",
+    "label": "Trash"
+  },
+  "uncategorizedTab": {
+    "displayName": "Uncategorized",
+    "label": "Uncategorized"
+  },
+  "untaggedTab": {
+    "displayName": "Untagged",
+    "label": "Untagged"
+  },
+  "tabTypes": {
+    "undefinedView": "Undefined view component: {name}"
+  },
+  "tabRegistry": {
+    "typeNotFound": "Tab type \"{name}\" does not exist",
+    "nameRequired": "Tab type must have a valid name property",
+    "displayNameRequired": "Tab type must have a valid displayName property",
+    "iconRequired": "Tab type must have a valid icon property"
+  },
+  "useTabs": {
+    "homeLabel": "Home",
+    "copySuffix": "(copy)"
+  },
+  "useFilters": {
+    "filterFolders": "Folders",
+    "filterTags": "Tags",
+    "filterCategory": "Category",
+    "filterUrls": "URL",
+    "filterTitle": "Title",
+    "filterSize": "Size"
+  },
+  "useViewModeConfig": {
+    "gridView": "Grid view",
+    "listView": "List view",
+    "waterfallView": "Waterfall view"
+  },
+  "useNotification": {
+    "success": "Success",
+    "error": "Error",
+    "warning": "Warning",
+    "info": "Info"
+  },
+  "useLoading": {
+    "loading": "Loading..."
+  },
+  "useInitializationState": {
+    "preparing": "Preparing...",
+    "initComplete": "Initialization complete",
+    "initFailed": "Initialization failed"
+  },
+  "useServerDeploy": {
+    "updateFailed": "Update failed"
+  },
+  "useTabSystemInit": {
+    "builtinTypesInitFailed": "Failed to initialize built-in tab types",
+    "builtinTypesNotRegistered": "Some built-in tab types are not registered correctly"
+  },
+  "useBatchOperation": {
+    "progress": "{label} {current}/{total}",
+    "completedAll": "{label} done {completed}/{total}",
+    "completedWithFailures": "{label} done: {completed} succeeded, {failed} failed"
+  }
+}

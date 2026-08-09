@@ -4,7 +4,7 @@
     <div class="dashboard-toolbar flex items-center justify-between border-b px-4 py-2">
       <div class="flex items-center gap-2 text-sm font-medium">
         <span class="material-icons text-base text-primary">dashboard</span>
-        <span>仪表盘</span>
+        <span>{{ $t('tabs.homeTabView.dashboard') }}</span>
       </div>
       <div class="flex items-center gap-1">
         <div ref="addMenuRef" class="relative">
@@ -13,7 +13,7 @@
             @click="addMenuOpen = !addMenuOpen"
           >
             <span class="material-icons text-base">add</span>
-            <span class="hidden sm:inline">添加卡片</span>
+            <span class="hidden sm:inline">{{ $t('tabs.homeTabView.addCard') }}</span>
           </button>
           <!-- 下拉菜单 -->
           <Transition name="dashboard-menu">
@@ -21,7 +21,7 @@
               v-if="addMenuOpen"
               class="dashboard-add-menu absolute right-0 z-50 mt-1 w-72 overflow-hidden rounded-lg border bg-popover shadow-lg"
             >
-              <div class="border-b px-3 py-2 text-xs text-muted-foreground">添加卡片</div>
+              <div class="border-b px-3 py-2 text-xs text-muted-foreground">{{ $t('tabs.homeTabView.addCard') }}</div>
               <div class="max-h-72 overflow-y-auto py-1">
                 <button
                   v-for="def in menuCards"
@@ -43,13 +43,13 @@
                   </span>
                 </button>
                 <div v-if="menuCards.length === 0" class="px-3 py-4 text-center text-xs text-muted-foreground">
-                  暂无可添加的卡片
+                  {{ $t('tabs.homeTabView.noCardsToAdd') }}
                 </div>
               </div>
 
               <!-- 打开小组件配置窗口 -->
               <div class="border-t border-border">
-                <div class="border-b px-3 py-2 text-xs text-muted-foreground">小组件配置</div>
+                <div class="border-b px-3 py-2 text-xs text-muted-foreground">{{ $t('tabs.homeTabView.widgetConfig') }}</div>
                 <div class="max-h-60 overflow-y-auto py-1">
                   <button
                     v-for="entry in configurableCards"
@@ -65,7 +65,7 @@
                     </span>
                     <span class="flex-1 overflow-hidden">
                       <span class="block truncate text-sm font-medium">{{ entry.title }}</span>
-                      <span class="block truncate text-xs text-muted-foreground">点击配置此小组件</span>
+                      <span class="block truncate text-xs text-muted-foreground">{{ $t('tabs.homeTabView.clickToConfig') }}</span>
                     </span>
                     <span class="material-icons ml-auto text-base text-muted-foreground">tune</span>
                   </button>
@@ -73,7 +73,7 @@
                     v-if="configurableCards.length === 0"
                     class="px-3 py-4 text-center text-xs text-muted-foreground"
                   >
-                    暂无可配置的小组件
+                    {{ $t('tabs.homeTabView.noWidgetsToConfig') }}
                   </div>
                 </div>
               </div>
@@ -92,7 +92,7 @@
           @click="editMode = !editMode"
         >
           <span class="material-icons text-base">{{ editMode ? 'check' : 'edit' }}</span>
-          <span class="hidden sm:inline">{{ editMode ? '完成' : '编辑' }}</span>
+          <span class="hidden sm:inline">{{ editMode ? $t('tabs.homeTabView.done') : $t('tabs.homeTabView.edit') }}</span>
         </button>
       </div>
     </div>
@@ -116,7 +116,7 @@
         <span
           v-if="store.isDefaultLayout(layout.id)"
           class="material-icons text-[10px] text-muted-foreground/60"
-          title="默认布局（不可删除）"
+          :title="$t('tabs.homeTabView.defaultLayoutLock')"
         >
           lock
         </span>
@@ -124,7 +124,7 @@
         <span class="flex items-center" @click.stop>
           <button
             class="ml-0.5 flex h-4 w-4 items-center justify-center rounded text-muted-foreground/70 opacity-0 transition-opacity hover:bg-accent hover:text-foreground group-hover:opacity-100"
-            title="重命名"
+            :title="$t('tabs.homeTabView.rename')"
             @click="openLayoutDialog('edit', layout.id)"
           >
             <span class="material-icons text-xs">edit</span>
@@ -132,7 +132,7 @@
           <button
             v-if="!store.isDefaultLayout(layout.id)"
             class="ml-0.5 flex h-4 w-4 items-center justify-center rounded text-muted-foreground/70 opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
-            title="删除布局"
+            :title="$t('tabs.homeTabView.deleteLayout')"
             @click="openDeleteConfirm(layout.id)"
           >
             <span class="material-icons text-xs">close</span>
@@ -143,11 +143,11 @@
       <!-- 新建布局 -->
       <button
         class="flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-        title="新建布局"
+        :title="$t('tabs.homeTabView.createLayout')"
         @click="openLayoutDialog('create')"
       >
         <span class="material-icons text-sm">add</span>
-        <span class="hidden sm:inline">新建布局</span>
+        <span class="hidden sm:inline">{{ $t('tabs.homeTabView.createLayout') }}</span>
       </button>
     </div>
 
@@ -157,14 +157,14 @@
       class="flex flex-1 flex-col items-center justify-center gap-3 text-muted-foreground"
     >
       <span class="material-icons text-5xl">dashboard_customize</span>
-      <p class="text-sm">还没有任何卡片，点击右上角「添加卡片」开始自定义你的仪表盘</p>
+      <p class="text-sm">{{ $t('tabs.homeTabView.emptyHint') }}</p>
       <button
         v-if="menuCards.length > 0"
         class="mt-2 flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90"
         @click="addMenuOpen = true"
       >
         <span class="material-icons text-base">add</span>
-        添加卡片
+        {{ $t('tabs.homeTabView.addCard') }}
       </button>
     </div>
 
@@ -207,7 +207,7 @@
                   :config="store.getConfig(item.i)"
                 />
                 <div v-else class="flex h-full items-center justify-center text-xs text-muted-foreground">
-                  卡片组件未注册
+                  {{ $t('tabs.homeTabView.cardNotRegistered') }}
                 </div>
               </div>
             </template>
@@ -226,24 +226,24 @@
     <AlertDialog :open="deleteDialogOpen" @update:open="deleteDialogOpen = $event">
       <AlertDialogContent class="sm:max-w-md">
         <AlertDialogHeader>
-          <AlertDialogTitle>确认删除布局</AlertDialogTitle>
+          <AlertDialogTitle>{{ $t('tabs.homeTabView.confirmDeleteLayoutTitle') }}</AlertDialogTitle>
           <AlertDialogDescription>
             <template v-if="deleteTargetLayout">
-              确定要删除布局「{{ deleteTargetLayout.name }}」吗？
+              {{ $t('tabs.homeTabView.confirmDeleteLayoutDesc', { name: deleteTargetLayout.name }) }}
               <span v-if="deleteTargetLayout.layout.length > 0">
-                该布局下的 {{ deleteTargetLayout.layout.length }} 个小组件将一并删除。
+                {{ $t('tabs.homeTabView.confirmDeleteLayoutWidgets', { count: deleteTargetLayout.layout.length }) }}
               </span>
-              此操作不可撤销。
+              {{ $t('tabs.homeTabView.irreversible') }}
             </template>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>取消</AlertDialogCancel>
+          <AlertDialogCancel>{{ $t('common.cancel') }}</AlertDialogCancel>
           <AlertDialogAction
             class="bg-destructive text-white hover:bg-destructive/90"
             @click="confirmDeleteLayout"
           >
-            删除
+            {{ $t('common.delete') }}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -253,6 +253,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { GridLayout, GridItem } from 'grid-layout-plus'
 import type { ReadonlyLayout, ResizeConfig } from 'grid-layout-plus'
 import { useDashboardLayoutStore } from '@renderer/stores/dashboardLayout'
@@ -286,6 +287,7 @@ registerBuiltinCards()
 
 const store = useDashboardLayoutStore()
 const editMode = ref(false)
+const { t } = useI18n()
 
 /**
  * 缩放手柄配置：默认 8 个方向（四条边 + 四个角）都可起缩放。
@@ -312,7 +314,7 @@ function cardComponent(instanceId: string | number) {
   return defOf(instanceId)?.component ?? null
 }
 function cardTitle(instanceId: string | number) {
-  return defOf(instanceId)?.title ?? '卡片'
+  return defOf(instanceId)?.title ?? t('tabs.homeTabView.cardFallbackTitle')
 }
 function cardIcon(instanceId: string | number) {
   return defOf(instanceId)?.icon ?? 'extension'

@@ -83,9 +83,9 @@ const disabledView = computed<ModuleItem[]>(() =>
   <Dialog v-model:open="open">
     <DialogContent class="sm:max-w-lg">
       <DialogHeader>
-        <DialogTitle>自定义侧边栏布局</DialogTitle>
+        <DialogTitle>{{ $t('views.sidebarLayoutDialog.title') }}</DialogTitle>
         <DialogDescription>
-          拖拽调整左侧栏模块顺序；把模块拖到「未启用」可隐藏，拖回「已启用」即可恢复。
+          {{ $t('views.sidebarLayoutDialog.description') }}
         </DialogDescription>
       </DialogHeader>
 
@@ -94,7 +94,7 @@ const disabledView = computed<ModuleItem[]>(() =>
         <div class="flex flex-col">
           <div class="flex items-center gap-1.5 mb-2 text-xs font-semibold text-foreground">
             <span class="material-icons text-sm text-primary">check_circle</span>
-            <span>已启用</span>
+            <span>{{ $t('views.sidebarLayoutDialog.enabled') }}</span>
           </div>
           <VueDraggable
             v-model="enabledList"
@@ -122,7 +122,7 @@ const disabledView = computed<ModuleItem[]>(() =>
         <div class="flex flex-col">
           <div class="flex items-center gap-1.5 mb-2 text-xs font-semibold text-muted-foreground">
             <span class="material-icons text-sm">remove_circle_outline</span>
-            <span>未启用</span>
+            <span>{{ $t('views.sidebarLayoutDialog.disabled') }}</span>
           </div>
           <VueDraggable
             v-model="disabledList"
@@ -144,14 +144,14 @@ const disabledView = computed<ModuleItem[]>(() =>
               </div>
             </div>
             <div v-if="disabledView.length === 0" class="text-[11px] text-muted-foreground/60 text-center py-4">
-              所有模块均已启用
+              {{ $t('views.sidebarLayoutDialog.allEnabled') }}
             </div>
           </VueDraggable>
         </div>
       </div>
 
       <DialogFooter>
-        <Button type="button" @click="open = false">完成</Button>
+        <Button type="button" @click="open = false">{{ $t('views.sidebarLayoutDialog.done') }}</Button>
       </DialogFooter>
     </DialogContent>
   </Dialog>

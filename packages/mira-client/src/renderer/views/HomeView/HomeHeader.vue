@@ -78,7 +78,7 @@ const openDashboard = async () => {
     <!-- 打开服务器 Dashboard -->
     <button
       class="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
-      title="打开 Dashboard"
+      :title="$t('views.homeHeader.openDashboard')"
       @click="openDashboard"
     >
       <span class="material-icons" style="font-size: 18px;">dashboard</span>
@@ -122,15 +122,15 @@ const openDashboard = async () => {
         <DropdownMenuSeparator />
         <DropdownMenuItem @select="emit('plugins')">
           <span class="material-icons text-base">extension</span>
-          <span>插件管理</span>
+          <span>{{ $t('views.homeHeader.plugins') }}</span>
         </DropdownMenuItem>
         <DropdownMenuItem @select="emit('shortcuts')">
           <span class="material-icons text-base">keyboard</span>
-          <span>快捷键设置</span>
+          <span>{{ $t('views.homeHeader.shortcuts') }}</span>
         </DropdownMenuItem>
         <DropdownMenuItem @select="emit('settings')">
           <span class="material-icons text-base">settings</span>
-          <span>应用设置</span>
+          <span>{{ $t('views.homeHeader.settings') }}</span>
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />
@@ -139,7 +139,7 @@ const openDashboard = async () => {
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
             <span class="material-icons text-base">tune</span>
-            <span>高级</span>
+            <span>{{ $t('views.homeHeader.advanced') }}</span>
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent class="min-w-[200px]">
             <DropdownMenuItem @select="router.push({ name: 'Playground' })">
@@ -148,11 +148,11 @@ const openDashboard = async () => {
             </DropdownMenuItem>
             <DropdownMenuItem v-if="environment.isElectron" @select="shortcutService.executeAction('dev.devtools')">
               <span class="material-icons text-base">code</span>
-              <span>开发者工具</span>
+              <span>{{ $t('views.homeHeader.developerTools') }}</span>
             </DropdownMenuItem>
             <DropdownMenuItem v-if="environment.isElectron" @select="showServerDialog = true">
               <span class="material-icons text-base">dns</span>
-              <span>服务端</span>
+              <span>{{ $t('views.homeHeader.server') }}</span>
             </DropdownMenuItem>
           </DropdownMenuSubContent>
         </DropdownMenuSub>
@@ -160,7 +160,7 @@ const openDashboard = async () => {
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" @select="emit('logout')">
           <span class="material-icons text-base">logout</span>
-          <span>退出登录</span>
+          <span>{{ $t('views.homeHeader.logout') }}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -173,7 +173,7 @@ const openDashboard = async () => {
           <button
             class="w-3 h-3 rounded-full bg-[#ff5f57] flex items-center justify-center text-black/50 transition-transform active:scale-95"
             style="box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.15);"
-            title="关闭"
+            :title="$t('views.homeHeader.close')"
             @click="emit('windowClose')"
           >
             <svg class="w-2 h-2 opacity-0 group-hover:opacity-100" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
@@ -184,7 +184,7 @@ const openDashboard = async () => {
           <button
             class="w-3 h-3 rounded-full bg-[#febc2e] flex items-center justify-center text-black/50 transition-transform active:scale-95"
             style="box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.15);"
-            title="最小化"
+            :title="$t('views.homeHeader.minimize')"
             @click="emit('windowMinimize')"
           >
             <svg class="w-2 h-2 opacity-0 group-hover:opacity-100" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
@@ -194,7 +194,7 @@ const openDashboard = async () => {
           <button
             class="w-3 h-3 rounded-full bg-[#28c840] flex items-center justify-center text-black/50 transition-transform active:scale-95"
             style="box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.15);"
-            title="最大化"
+            :title="$t('views.homeHeader.maximize')"
             @click="emit('windowMaximize')"
           >
             <svg class="w-2 h-2 opacity-0 group-hover:opacity-100" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">

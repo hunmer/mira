@@ -33,6 +33,9 @@ const toPlainObject = <T>(obj: T): T => {
   return result as T
 }
 import ConfigStorage from '@renderer/utils/ConfigStorage'
+import i18n from '../i18n'
+
+const t = i18n.global.t.bind(i18n.global)
 
 /**
  * 在线插件配置
@@ -195,7 +198,7 @@ export class PluginService {
 
       // 检查插件ID是否已存在
       if (this.onlinePlugins.has(config.pluginId) || this.plugins.has(config.pluginId)) {
-        return { success: false, message: '插件ID已存在' }
+        return { success: false, message: t('services.plugin.pluginIdExists') }
       }
 
       // 添加到在线插件映射
@@ -227,7 +230,7 @@ export class PluginService {
     try {
       const config = this.onlinePlugins.get(pluginId)
       if (!config) {
-        return { success: false, message: '在线插件不存在' }
+        return { success: false, message: t('services.plugin.onlinePluginNotFound') }
       }
 
       // 从映射中移除
@@ -479,7 +482,7 @@ export class PluginService {
       return { success: false, message: 'Local plugin reload only available in Electron environment' }
     }
     if (!pluginId) {
-      return { success: false, message: '缺少 pluginId' }
+      return { success: false, message: t('services.plugin.pluginIdMissing') }
     }
 
     try {
@@ -530,16 +533,16 @@ export class PluginService {
     try {
       const base = (marketUrl || '').trim().replace(/\/+$/, '')
       if (!base) {
-        return { success: false, message: '市场源地址为空' }
+        return { success: false, message: t('services.plugin.marketUrlEmpty') }
       }
       const catalogUrl = `${base}/plugins.json`
       const response = await fetch(catalogUrl, { cache: 'no-store' })
       if (!response.ok) {
-        return { success: false, message: `拉取市场目录失败 (${response.status}): ${catalogUrl}` }
+        return { success: false, message: t('services.plugin.fetchMarketCatalogFailed', { status: response.status, url: catalogUrl }) }
       }
       const catalog = (await response.json()) as MarketplaceCatalog
       if (!catalog || !Array.isArray(catalog.plugins)) {
-        return { success: false, message: '市场目录格式不正确' }
+        return { success: false, message: t('services.plugin.marketCatalogInvalid') }
       }
       return { success: true, data: catalog, message: `Loaded ${catalog.plugins.length} marketplace plugins` }
     } catch (error) {
@@ -586,28 +589,28 @@ export class PluginService {
     entry: MarketplacePluginEntry
   ): Promise<BaseResponse> {
     const base = (marketUrl || '').trim().replace(/\/+$/, '')
-    if (!base) return { success: false, message: '市场源地址为空' }
+    if (!base) return { success: false, message: t('services.plugin.marketUrlEmpty') }
 
     try {
       const directory = entry.directory.replace(/^\/+|\/+$/g, '')
       const marketOrigin = new URL(base)
       if (!['http:', 'https:'].includes(marketOrigin.protocol) || !directory || directory.includes('..')) {
-        return { success: false, message: '市场源地址或插件目录不合法' }
+        return { success: false, message: t('services.plugin.marketUrlOrDirInvalid') }
       }
       const pluginUrl = `${base}/${directory}`
       const manifestResponse = await fetch(`${pluginUrl}/plugin.json`, { cache: 'no-store' })
       if (!manifestResponse.ok) {
-        return { success: false, message: `拉取插件配置失败 (${manifestResponse.status})` }
+        return { success: false, message: t('services.plugin.fetchPluginConfigFailed', { status: manifestResponse.status }) }
       }
 
       const manifest = (await manifestResponse.json()) as Partial<LocalPluginConfig>
       const pluginId = manifest.pluginId || entry.pluginId
       if (pluginId !== entry.pluginId) {
-        return { success: false, message: '插件配置中的 pluginId 与市场条目不一致' }
+        return { success: false, message: t('services.plugin.pluginIdMismatch') }
       }
       const index = manifest.index || 'index.js'
       if (!/^[-\w./]+$/.test(index) || index.includes('..')) {
-        return { success: false, message: '插件入口文件路径不合法' }
+        return { success: false, message: t('services.plugin.pluginEntryInvalid') }
       }
 
       const config: OnlinePluginConfig = {
@@ -657,7 +660,7 @@ export class PluginService {
    */
   public async cancelInstall(pluginId: string): Promise<BaseResponse> {
     if (!this.isElectronEnvironment) {
-      return { success: false, message: '插件市场安装仅在 Electron 环境可用' }
+      return { success: false, message: t('services.plugin.installOnlyInElectron') }
     }
     try {
       return await (window as any).electronAPI.plugin.cancelInstall(pluginId)
@@ -782,8 +785,8 @@ export class PluginService {
             useConfirm().require({
               header: options.title,
               message: options.message,
-              acceptLabel: '确认',
-              rejectLabel: '取消',
+              acceptLabel: t('services.plugin.confirmLabel'),
+              rejectLabel: t('services.plugin.cancelLabel'),
               accept: () => resolve(true),
               reject: () => resolve(false)
             })
@@ -919,7 +922,7 @@ export class PluginService {
           if (!w?.pluginWindow?.open) {
             const pluginBase = (config as OnlinePluginConfig).url || config.actualDirectory
             if (!pluginBase || typeof window === 'undefined') {
-              return { success: false, message: '插件地址不可用' }
+              return { success: false, message: t('services.plugin.pluginUrlUnavailable') }
             }
             try {
               const entry = String(finalOpts.entry || 'dist/index.html').replace(/^\/+/, '')
@@ -934,7 +937,7 @@ export class PluginService {
               const opened = window.open(url.href, '_blank', features || undefined)
               return opened
                 ? { success: true, data: { url: url.href } }
-                : { success: false, message: '浏览器阻止了插件窗口，请允许弹出窗口' }
+                : { success: false, message: t('services.plugin.popupBlocked') }
             } catch (error) {
               const msg = error instanceof Error ? error.message : String(error)
               return { success: false, message: msg }

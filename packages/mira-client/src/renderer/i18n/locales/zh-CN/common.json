@@ -1,0 +1,22 @@
+{
+  "ok": "确定",
+  "cancel": "取消",
+  "save": "保存",
+  "delete": "删除",
+  "edit": "编辑",
+  "confirm": "确认",
+  "close": "关闭",
+  "retry": "重试",
+  "loading": "加载中...",
+  "search": "搜索",
+  "copy": "复制",
+  "copied": "已复制",
+  "yes": "是",
+  "no": "否",
+  "all": "全部",
+  "none": "无",
+  "more": "更多",
+  "refresh": "刷新",
+  "export": "导出",
+  "import": "导入"
+}

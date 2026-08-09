@@ -2,6 +2,7 @@ import { z } from 'zod'
 import HitokotoCard from './HitokotoCard.vue'
 import AlbumCard from './AlbumCard.vue'
 import { cardRegistry } from '../CardRegistry'
+import i18n from '../../../../i18n'
 
 /**
  * Dashboard 内置卡片注册入口。
@@ -17,8 +18,8 @@ export function registerBuiltinCards() {
 
   cardRegistry.register({
     type: 'hitokoto',
-    title: '一言',
-    description: '随机展示一条名言 / 台词 / 诗句',
+    title: i18n.global.t('tabs.builtinCards.hitokotoTitle'),
+    description: i18n.global.t('tabs.builtinCards.hitokotoDesc'),
     icon: 'format_quote',
     iconColor: '#8B5CF6',
     visibleInMenu: true,
@@ -36,8 +37,8 @@ export function registerBuiltinCards() {
 
   cardRegistry.register({
     type: 'album',
-    title: '相册',
-    description: '以轮播形式展示素材库最近的图片',
+    title: i18n.global.t('tabs.builtinCards.albumTitle'),
+    description: i18n.global.t('tabs.builtinCards.albumDesc'),
     icon: 'photo_library',
     iconColor: '#EC4899',
     visibleInMenu: true,
@@ -56,47 +57,47 @@ export function registerBuiltinCards() {
     configFields: [
       {
         name: 'autoplay',
-        label: '自动播放',
+        label: i18n.global.t('tabs.builtinCards.albumConfigAutoplay'),
         type: 'switch',
-        description: '开启后按设定间隔自动切换图片',
+        description: i18n.global.t('tabs.builtinCards.albumConfigAutoplayDesc'),
         colSpan: 2,
       },
       {
         name: 'autoplayDuration',
-        label: '自动播放间隔',
+        label: i18n.global.t('tabs.builtinCards.albumConfigAutoplayDuration'),
         type: 'slider',
         min: 1000,
         max: 30000,
         step: 500,
-        description: '每次切换的间隔时间（毫秒），仅在自动播放开启时生效',
+        description: i18n.global.t('tabs.builtinCards.albumConfigAutoplayDurationDesc'),
         colSpan: 2,
       },
       {
         name: 'showArrows',
-        label: '显示左右切换按钮',
+        label: i18n.global.t('tabs.builtinCards.albumConfigShowArrows'),
         type: 'switch',
-        description: '关闭后只能靠自动播放或键盘方向键切换',
+        description: i18n.global.t('tabs.builtinCards.albumConfigShowArrowsDesc'),
         colSpan: 2,
       },
       {
         name: 'slidesPerView',
-        label: '每屏显示图片数',
+        label: i18n.global.t('tabs.builtinCards.albumConfigSlidesPerView'),
         type: 'slider',
         min: 1,
         max: 6,
         step: 1,
-        description: '同时展示多张图片（1-6），方向为竖向时按列布局',
+        description: i18n.global.t('tabs.builtinCards.albumConfigSlidesPerViewDesc'),
         colSpan: 2,
       },
       {
         name: 'orientation',
-        label: '方向',
+        label: i18n.global.t('tabs.builtinCards.albumConfigOrientation'),
         type: 'select',
         options: [
-          { label: '横向', value: 'horizontal' },
-          { label: '竖向', value: 'vertical' },
+          { label: i18n.global.t('tabs.builtinCards.albumConfigOrientationHorizontal'), value: 'horizontal' },
+          { label: i18n.global.t('tabs.builtinCards.albumConfigOrientationVertical'), value: 'vertical' },
         ],
-        description: '横向：左右滑动；竖向：上下滑动',
+        description: i18n.global.t('tabs.builtinCards.albumConfigOrientationDesc'),
         colSpan: 2,
       },
     ],

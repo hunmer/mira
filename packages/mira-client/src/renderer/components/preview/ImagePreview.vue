@@ -53,12 +53,12 @@
         <!-- 底部状态栏 -->
         <footer class="flex h-10 flex-shrink-0 items-center justify-between border-t border-border bg-background px-6 text-xs text-muted-foreground">
           <div class="flex items-center space-x-4">
-            <span>尺寸: {{ controller.currentImage.value?.metadata?.width || 0 }}x{{ controller.currentImage.value?.metadata?.height || 0 }}</span>
-            <span>大小: {{ formatFileSize(controller.currentImage.value?.size) }}</span>
+            <span>{{ $t('preview.imagePreview.dimensions') }}: {{ controller.currentImage.value?.metadata?.width || 0 }}x{{ controller.currentImage.value?.metadata?.height || 0 }}</span>
+            <span>{{ $t('preview.imagePreview.size') }}: {{ formatFileSize(controller.currentImage.value?.size) }}</span>
           </div>
           <div class="flex items-center space-x-4">
-            <span>格式: {{ getFileFormat(controller.currentImage.value?.name) }}</span>
-            <span>创建时间: {{ formatDate(controller.currentImage.value?.createdAt) }}</span>
+            <span>{{ $t('preview.imagePreview.format') }}: {{ getFileFormat(controller.currentImage.value?.name) }}</span>
+            <span>{{ $t('preview.imagePreview.createdAt') }}: {{ formatDate(controller.currentImage.value?.createdAt) }}</span>
           </div>
           <div class="flex items-center space-x-4">
             <span>{{ controller.currentImageIndex.value + 1 }} / {{ controller.imageItems.value.length }}</span>

@@ -3,7 +3,7 @@
     <file-pond
       ref="pond"
       :name="name"
-      :label-idle="chooseLabel || 'Drop files here or <span class=&quot;filepond--label-action&quot;>Browse</span>'"
+      :label-idle="chooseLabel || $t('commonUi.fileUpload.defaultChooseLabel')"
       :allow-multiple="true"
       :accepted-file-types="acceptedFileTypes"
       :max-file-size="maxFileSize"
@@ -19,6 +19,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onBeforeUnmount } from 'vue'
+import { useI18n } from 'vue-i18n'
 import vueFilePond from 'vue-filepond'
 
 // Import FilePond plugins
@@ -47,7 +48,7 @@ const props = withDefaults(defineProps<Props>(), {
   name: 'files',
   accept: '*',
   maxFileSize: 5000000, // 5MB default
-  chooseLabel: '选择文件',
+  chooseLabel: '',
   auto: false,
   mode: 'basic'
 })
@@ -60,6 +61,7 @@ interface Emits {
 }
 
 const emit = defineEmits<Emits>()
+const { t } = useI18n()
 
 const pond = ref()
 const files = ref([])
@@ -127,7 +129,7 @@ const handleProcessFile = (error: any, file: any) => {
 }
 
 const handleError = (error: any) => {
-  emit('error', { error: error.message || '文件处理错误' })
+  emit('error', { error: error.message || t('commonUi.fileUpload.errFileProcess') })
 }
 
 // Method to clear files

@@ -480,8 +480,8 @@ onUnmounted(() => {
                 <div v-if="!currentTab" class="flex items-center justify-center h-full">
                   <div class="text-center rounded-2xl border border-white/60 dark:border-border bg-white/50 dark:bg-muted/70 backdrop-blur-xl shadow-[0_12px_40px_var(--shadow-primary-md)] px-10 py-8">
                     <span class="material-icons text-6xl text-primary/60 mb-4 animate-[fadeUp_300ms_cubic-bezier(0.23,1,0.32,1)_both]">home</span>
-                    <h2 class="text-xl font-medium text-foreground mb-2 animate-[fadeUp_300ms_cubic-bezier(0.23,1,0.32,1)_60ms_both]">欢迎使用 Mira</h2>
-                    <p class="text-muted-foreground animate-[fadeUp_300ms_cubic-bezier(0.23,1,0.32,1)_120ms_both]">从左侧选择文件夹或标签来开始浏览您的媒体文件</p>
+                    <h2 class="text-xl font-medium text-foreground mb-2 animate-[fadeUp_300ms_cubic-bezier(0.23,1,0.32,1)_60ms_both]">{{ $t('views.homeView.welcomeTitle') }}</h2>
+                    <p class="text-muted-foreground animate-[fadeUp_300ms_cubic-bezier(0.23,1,0.32,1)_120ms_both]">{{ $t('views.homeView.welcomeSubtitle') }}</p>
                   </div>
                 </div>
               </div>
@@ -535,7 +535,7 @@ onUnmounted(() => {
                   class="flex items-center justify-center gap-1 rounded-md border-0 text-xs text-muted-foreground data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none"
                 >
                   <span class="material-icons text-sm">info_outline</span>
-                  <span>详情</span>
+                  <span>{{ $t('views.homeView.detail') }}</span>
                 </TabsTrigger>
               </TabsList>
             </Tabs>

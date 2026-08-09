@@ -14,7 +14,7 @@
                 : 'text-text-light-secondary dark:text-text-dark-secondary hover:bg-muted dark:hover:bg-muted'
             ]"
           >
-            <i class="material-icons mr-3">all_inclusive</i> 全部集成
+            <i class="material-icons mr-3">all_inclusive</i> {{ $t('business.integrationsList.allIntegrations') }}
           </button>
           <button
             @click="selectedCategory = 'communication'"
@@ -25,7 +25,7 @@
                 : 'text-text-light-secondary dark:text-text-dark-secondary hover:bg-muted dark:hover:bg-muted'
             ]"
           >
-            <i class="material-icons mr-3">chat_bubble_outline</i> 通讯
+            <i class="material-icons mr-3">chat_bubble_outline</i> {{ $t('business.integrationsList.communication') }}
           </button>
           <button
             @click="selectedCategory = 'documentation'"
@@ -36,7 +36,7 @@
                 : 'text-text-light-secondary dark:text-text-dark-secondary hover:bg-muted dark:hover:bg-muted'
             ]"
           >
-            <i class="material-icons mr-3">description</i> 文档
+            <i class="material-icons mr-3">description</i> {{ $t('business.integrationsList.documentation') }}
           </button>
           <button
             @click="selectedCategory = 'productivity'"
@@ -47,7 +47,7 @@
                 : 'text-text-light-secondary dark:text-text-dark-secondary hover:bg-muted dark:hover:bg-muted'
             ]"
           >
-            <i class="material-icons mr-3">trending_up</i> 效率工具
+            <i class="material-icons mr-3">trending_up</i> {{ $t('business.integrationsList.productivity') }}
           </button>
           <button
             @click="selectedCategory = 'development'"
@@ -58,7 +58,7 @@
                 : 'text-text-light-secondary dark:text-text-dark-secondary hover:bg-muted dark:hover:bg-muted'
             ]"
           >
-            <i class="material-icons mr-3">code</i> 开发工具
+            <i class="material-icons mr-3">code</i> {{ $t('business.integrationsList.development') }}
           </button>
         </nav>
 
@@ -74,7 +74,7 @@
                   : 'text-text-light-secondary dark:text-text-dark-secondary'
               ]"
             >
-              本地插件
+              {{ $t('business.integrationsList.localPlugins') }}
             </button>
             <button
               @click="activeTab = 'online'"
@@ -85,7 +85,7 @@
                   : 'text-text-light-secondary dark:text-text-dark-secondary'
               ]"
             >
-              在线插件
+              {{ $t('business.integrationsList.onlinePlugins') }}
             </button>
           </div>
         </div>
@@ -108,7 +108,7 @@
                     <i class="pi pi-arrow-left"></i>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="top">返回上一页</TooltipContent>
+                <TooltipContent side="top">{{ $t('business.integrationsList.back') }}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
             <h1 class="text-xl font-semibold text-text-light-primary dark:text-text-dark-primary">
@@ -131,7 +131,7 @@
                     <i class="pi pi-refresh"></i>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="top">刷新插件列表</TooltipContent>
+                <TooltipContent side="top">{{ $t('business.integrationsList.refreshList') }}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
             <!-- 添加插件按钮 -->
@@ -145,7 +145,7 @@
                     <i class="pi pi-plus"></i>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="top">添加新插件</TooltipContent>
+                <TooltipContent side="top">{{ $t('business.integrationsList.addNew') }}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
@@ -166,7 +166,7 @@
                 <i class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-text-light-secondary dark:text-text-dark-secondary">search</i>
                 <Input
                   v-model="searchQuery"
-                  placeholder="搜索集成..."
+                  :placeholder="$t('business.integrationsList.searchPlaceholder')"
                   class="pl-10 pr-4 py-2 w-64 border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-text-light-primary dark:text-text-dark-primary"
                 />
               </div>
@@ -194,16 +194,16 @@
                     <i class="pi pi-box text-6xl text-muted-foreground"></i>
                   </div>
                   <h3 class="text-xl font-medium text-foreground  mb-3">
-                    {{ searchQuery ? '没有找到匹配的插件' : '暂无插件' }}
+                    {{ searchQuery ? $t('business.integrationsList.noMatchTitle') : $t('business.integrationsList.emptyTitle') }}
                   </h3>
                   <p class="text-muted-foreground dark:text-muted-foreground mb-6 max-w-md mx-auto">
-                    {{ searchQuery ? '请尝试调整搜索条件' : '开始使用本地插件来扩展应用功能' }}
+                    {{ searchQuery ? $t('business.integrationsList.noMatchDesc') : $t('business.integrationsList.emptyDesc') }}
                   </p>
                   <Button
                     v-if="!searchQuery"
                     @click="showAddPluginDialog = true"
                   >
-                    添加插件
+                    {{ $t('business.integrationsList.addPlugin') }}
                   </Button>
                 </CardContent>
               </Card>
@@ -218,10 +218,10 @@
                   <i class="pi pi-cloud text-6xl text-muted-foreground"></i>
                 </div>
                 <h3 class="text-xl font-medium text-foreground  mb-3">
-                  在线插件功能开发中
+                  {{ $t('business.integrationsList.onlineDevelopingTitle') }}
                 </h3>
                 <p class="text-muted-foreground dark:text-muted-foreground mb-6 max-w-md mx-auto">
-                  在线插件市场功能正在开发中，敬请期待。
+                  {{ $t('business.integrationsList.onlineDevelopingDesc') }}
                 </p>
               </CardContent>
             </Card>
@@ -272,12 +272,12 @@
     >
       <SheetContent side="right" class="w-full md:w-80 lg:w-[30rem] h-full overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>插件详情 - {{ selectedPlugin?.config.pluginName }}</SheetTitle>
+          <SheetTitle>{{ $t('business.integrationsList.detailTitle', { name: selectedPlugin?.config.pluginName }) }}</SheetTitle>
         </SheetHeader>
       <div v-if="selectedPlugin" class="space-y-4">
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium mb-1">插件ID</label>
+            <label class="block text-sm font-medium mb-1">{{ $t('business.integrationsList.pluginId') }}</label>
             <Input
               :value="selectedPlugin.config.pluginId"
               readonly
@@ -285,7 +285,7 @@
             />
           </div>
           <div>
-            <label class="block text-sm font-medium mb-1">版本</label>
+            <label class="block text-sm font-medium mb-1">{{ $t('business.integrationsList.version') }}</label>
             <Input
               :value="selectedPlugin.config.version"
               readonly
@@ -295,7 +295,7 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium mb-1">描述</label>
+          <label class="block text-sm font-medium mb-1">{{ $t('business.integrationsList.description') }}</label>
           <Textarea
             :value="selectedPlugin.config.description"
             readonly
@@ -306,7 +306,7 @@
 
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium mb-1">作者</label>
+            <label class="block text-sm font-medium mb-1">{{ $t('business.integrationsList.author') }}</label>
             <Input
               :value="selectedPlugin.config.author"
               readonly
@@ -314,9 +314,9 @@
             />
           </div>
           <div>
-            <label class="block text-sm font-medium mb-1">主页</label>
+            <label class="block text-sm font-medium mb-1">{{ $t('business.integrationsList.homepage') }}</label>
             <Input
-              :value="selectedPlugin.config.homepage || '无'"
+              :value="selectedPlugin.config.homepage || $t('business.integrationsList.none')"
               readonly
               class="w-full"
             />
@@ -324,7 +324,7 @@
         </div>
 
         <div v-if="selectedPlugin.config.dependencies && selectedPlugin.config.dependencies.length > 0">
-          <label class="block text-sm font-medium mb-1">依赖插件</label>
+          <label class="block text-sm font-medium mb-1">{{ $t('business.integrationsList.dependencies') }}</label>
           <div class="flex flex-wrap gap-1">
             <Badge
               v-for="dep in selectedPlugin.config.dependencies"
@@ -338,7 +338,7 @@
         </div>
 
         <div v-if="selectedPlugin.config.hotkey && Object.keys(selectedPlugin.config.hotkey).length > 0">
-          <label class="block text-sm font-medium mb-1">快捷键</label>
+          <label class="block text-sm font-medium mb-1">{{ $t('business.integrationsList.hotkey') }}</label>
           <div class="space-y-1">
             <div
               v-for="(action, key) in selectedPlugin.config.hotkey"
@@ -352,7 +352,7 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium mb-1">插件目录</label>
+          <label class="block text-sm font-medium mb-1">{{ $t('business.integrationsList.directory') }}</label>
           <Input
             :value="selectedPlugin.directory"
             readonly
@@ -361,7 +361,7 @@
         </div>
 
         <div v-if="selectedPlugin.error">
-          <label class="block text-sm font-medium mb-1">错误信息</label>
+          <label class="block text-sm font-medium mb-1">{{ $t('business.integrationsList.errorMessage') }}</label>
           <Textarea
             :value="selectedPlugin.error"
             readonly
@@ -380,11 +380,11 @@
     >
       <DialogContent class="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>添加新插件</DialogTitle>
+          <DialogTitle>{{ $t('business.integrationsList.addDialogTitle') }}</DialogTitle>
         </DialogHeader>
       <div class="space-y-4">
         <p class="text-muted-foreground dark:text-muted-foreground">
-          选择要添加插件的方式：
+          {{ $t('business.integrationsList.addDialogDesc') }}
         </p>
         <div class="grid gap-3">
           <Card
@@ -392,11 +392,11 @@
             class="cursor-pointer hover:shadow-md transition-shadow border-2 border-transparent hover:border-primary/20"
           >
             <CardContent>
-              <div class="flex items-center p-2">
+                <div class="flex items-center p-2">
                 <i class="pi pi-folder-open text-2xl text-primary mr-4"></i>
                 <div>
-                  <h4 class="font-medium">从文件夹添加</h4>
-                  <p class="text-sm text-muted-foreground">选择包含插件的文件夹</p>
+                  <h4 class="font-medium">{{ $t('business.integrationsList.addFromFolder') }}</h4>
+                  <p class="text-sm text-muted-foreground">{{ $t('business.integrationsList.addFromFolderDesc') }}</p>
                 </div>
               </div>
             </CardContent>
@@ -407,11 +407,11 @@
             class="cursor-pointer hover:shadow-md transition-shadow border-2 border-transparent hover:border-primary/20"
           >
             <CardContent>
-              <div class="flex items-center p-2">
+                <div class="flex items-center p-2">
                 <i class="pi pi-file-zip text-2xl text-primary mr-4"></i>
                 <div>
-                  <h4 class="font-medium">从文件安装</h4>
-                  <p class="text-sm text-muted-foreground">安装 ZIP 格式的插件包</p>
+                  <h4 class="font-medium">{{ $t('business.integrationsList.installFromFile') }}</h4>
+                  <p class="text-sm text-muted-foreground">{{ $t('business.integrationsList.installFromFileDesc') }}</p>
                 </div>
               </div>
             </CardContent>
@@ -425,6 +425,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useToast } from '@/renderer/composables/useToast'
 import { useConfirm } from '@/renderer/composables/useConfirm'
 import { usePluginStore } from '../../stores/plugin'
@@ -444,6 +445,7 @@ import { Textarea } from '@/components/ui/textarea'
 // 组合式API
 const toast = useToast()
 const confirm = useConfirm()
+const { t } = useI18n()
 const pluginStore = usePluginStore()
 
 // 响应式状态
@@ -526,23 +528,23 @@ const visiblePages = computed(() => {
 // 方法
 const getCategoryTitle = () => {
   switch (selectedCategory.value) {
-    case 'all': return '全部集成'
-    case 'communication': return '通讯工具'
-    case 'documentation': return '文档工具'
-    case 'productivity': return '效率工具'
-    case 'development': return '开发工具'
-    default: return '集成管理'
+    case 'all': return t('business.integrationsList.categoryAll')
+    case 'communication': return t('business.integrationsList.categoryCommunication')
+    case 'documentation': return t('business.integrationsList.categoryDocumentation')
+    case 'productivity': return t('business.integrationsList.categoryProductivity')
+    case 'development': return t('business.integrationsList.categoryDevelopment')
+    default: return t('business.integrationsList.categoryDefault')
   }
 }
 
 const getCategoryDescription = () => {
   switch (selectedCategory.value) {
-    case 'all': return '管理所有已安装的插件和集成'
-    case 'communication': return '聊天、邮件和团队协作工具'
-    case 'documentation': return '文档创建和管理工具'
-    case 'productivity': return '提高工作效率的工具'
-    case 'development': return '开发和编程相关工具'
-    default: return '连接各种渠道以获得最佳性能'
+    case 'all': return t('business.integrationsList.descAll')
+    case 'communication': return t('business.integrationsList.descCommunication')
+    case 'documentation': return t('business.integrationsList.descDocumentation')
+    case 'productivity': return t('business.integrationsList.descProductivity')
+    case 'development': return t('business.integrationsList.descDevelopment')
+    default: return t('business.integrationsList.descDefault')
   }
 }
 
@@ -558,8 +560,8 @@ const handlePluginToggle = async (plugin: PluginRuntime, shouldEnable: boolean) 
   } catch (error) {
     toast.add({
       severity: 'error',
-      summary: '操作失败',
-      detail: error instanceof Error ? error.message : '未知错误',
+      summary: t('business.integrationsList.toggleFailed'),
+      detail: error instanceof Error ? error.message : t('business.integrationsList.unknownError'),
       life: 5000
     })
   }
@@ -576,15 +578,15 @@ const reloadPlugin = async (plugin: PluginRuntime) => {
 
     toast.add({
       severity: 'success',
-      summary: '重载成功',
+      summary: t('business.integrationsList.reloadSuccess'),
       detail: plugin.config.pluginName,
       life: 3000
     })
   } catch (error) {
     toast.add({
       severity: 'error',
-      summary: '重载失败',
-      detail: error instanceof Error ? error.message : '未知错误',
+      summary: t('business.integrationsList.reloadFailed'),
+      detail: error instanceof Error ? error.message : t('business.integrationsList.unknownError'),
       life: 5000
     })
   }
@@ -592,23 +594,23 @@ const reloadPlugin = async (plugin: PluginRuntime) => {
 
 const removePlugin = (plugin: PluginRuntime) => {
   confirm.require({
-    message: `确定要卸载插件 "${plugin.config.pluginName}" 吗？`,
-    header: '确认卸载',
+    message: t('business.integrationsList.confirmUninstallMsg', { name: plugin.config.pluginName }),
+    header: t('business.integrationsList.confirmUninstallHeader'),
     accept: async () => {
       try {
         await pluginStore.uninstallLocalPlugin(plugin.config.pluginId, plugin.directory, plugin.config.pluginName)
 
         toast.add({
           severity: 'success',
-          summary: '卸载成功',
+          summary: t('business.integrationsList.uninstallSuccess'),
           detail: plugin.config.pluginName,
           life: 3000
         })
       } catch (error) {
         toast.add({
           severity: 'error',
-          summary: '卸载失败',
-          detail: error instanceof Error ? error.message : '未知错误',
+          summary: t('business.integrationsList.uninstallFailed'),
+          detail: error instanceof Error ? error.message : t('business.integrationsList.unknownError'),
           life: 5000
         })
       }
@@ -625,16 +627,16 @@ const refreshPlugins = async () => {
     if (!result.success) {
       toast.add({
         severity: 'error',
-        summary: '刷新失败',
-        detail: result.message || '未知错误',
+        summary: t('business.integrationsList.refreshFailed'),
+        detail: result.message || t('business.integrationsList.unknownError'),
         life: 5000
       })
     }
   } catch (error) {
     toast.add({
       severity: 'error',
-      summary: '刷新失败',
-      detail: error instanceof Error ? error.message : '未知错误',
+      summary: t('business.integrationsList.refreshFailed'),
+      detail: error instanceof Error ? error.message : t('business.integrationsList.unknownError'),
       life: 5000
     })
   } finally {
@@ -646,12 +648,12 @@ const selectPluginDirectory = async () => {
   showAddPluginDialog.value = false
 
   try {
-    const result = await pluginStore.selectPluginDirectory('选择插件文件夹')
+    const result = await pluginStore.selectPluginDirectory(t('business.integrationsList.addFromFolderDesc'))
     if (result.success && result.data) {
       toast.add({
         severity: 'success',
-        summary: '插件已添加',
-        detail: '正在扫描插件...',
+        summary: t('business.integrationsList.pluginAdded'),
+        detail: t('business.integrationsList.scanningPlugin'),
         life: 3000
       })
 
@@ -661,8 +663,8 @@ const selectPluginDirectory = async () => {
   } catch (error) {
     toast.add({
       severity: 'error',
-      summary: '添加失败',
-      detail: error instanceof Error ? error.message : '未知错误',
+      summary: t('business.integrationsList.addFailed'),
+      detail: error instanceof Error ? error.message : t('business.integrationsList.unknownError'),
       life: 5000
     })
   }
@@ -673,8 +675,8 @@ const installPluginFromFile = async () => {
 
   toast.add({
     severity: 'info',
-    summary: '功能开发中',
-    detail: '从文件安装插件功能正在开发中',
+    summary: t('business.integrationsList.developingTitle'),
+    detail: t('business.integrationsList.developingDesc'),
     life: 3000
   })
 }

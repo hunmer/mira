@@ -4,8 +4,8 @@
     <div>
       <div class="flex items-center justify-between gap-4 py-3">
         <div>
-          <p class="text-foreground dark:text-muted-foreground text-base font-normal leading-normal">自启动服务</p>
-          <p class="text-muted-foreground dark:text-muted-foreground text-sm">系统登录时自动启动 mira-app-server，即使 Mira 主程序未打开</p>
+          <p class="text-foreground dark:text-muted-foreground text-base font-normal leading-normal">{{ t('settings.autoStartServer') }}</p>
+          <p class="text-muted-foreground dark:text-muted-foreground text-sm">{{ t('settings.autoStartServerDesc') }}</p>
         </div>
         <Switch
           :checked="autoStartServer"
@@ -15,8 +15,8 @@
       </div>
       <div class="flex items-center justify-between gap-4 py-3">
         <div>
-          <p class="text-foreground dark:text-muted-foreground text-base font-normal leading-normal">关闭时隐藏窗口</p>
-          <p class="text-muted-foreground dark:text-muted-foreground text-sm">点击关闭按钮时隐藏到系统托盘</p>
+          <p class="text-foreground dark:text-muted-foreground text-base font-normal leading-normal">{{ t('settings.closeToTray') }}</p>
+          <p class="text-muted-foreground dark:text-muted-foreground text-sm">{{ t('settings.closeToTrayDesc') }}</p>
         </div>
         <Switch
           :checked="settingsStore.settings.closeToTray"
@@ -29,13 +29,13 @@
     <div>
       <div class="flex flex-wrap items-end gap-4 py-3">
         <div class="flex flex-col min-w-40 flex-1">
-          <label class="text-foreground dark:text-muted-foreground text-base font-medium leading-normal pb-2">语言</label>
+          <label class="text-foreground dark:text-muted-foreground text-base font-medium leading-normal pb-2">{{ t('settings.language') }}</label>
           <Select
             :model-value="settingsStore.settings.language"
             @update:model-value="(value: any) => handleSettingChange('language', value)"
           >
             <SelectTrigger class="w-full">
-              <SelectValue placeholder="选择语言" />
+              <SelectValue :placeholder="t('settings.selectLanguage')" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem v-for="opt in languageOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</SelectItem>
@@ -48,7 +48,7 @@
     <!-- 主题（视觉卡片预览） -->
     <div>
       <label class="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2.5 block">
-        主题
+        {{ t('settings.theme') }}
       </label>
       <div class="flex gap-3">
         <button
@@ -87,7 +87,7 @@
     <!-- 配色（Primary Color） -->
     <div>
       <label class="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2.5 block">
-        主色调
+        {{ t('settings.primaryColor') }}
       </label>
       <div class="flex items-center gap-2">
         <button
@@ -129,14 +129,14 @@
     <!-- 风格（Style） -->
     <div>
       <label class="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2.5 block">
-        风格
+        {{ t('settings.style') }}
       </label>
       <Select
         :model-value="settingsStore.settings.themeStyle"
         @update:model-value="(value: any) => handleSettingChange('themeStyle', value)"
       >
         <SelectTrigger class="w-full">
-          <SelectValue placeholder="选择风格..." />
+          <SelectValue :placeholder="t('settings.selectStyle')" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem v-for="opt in styleOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</SelectItem>
@@ -147,7 +147,7 @@
         :model-value="settingsStore.settings.themeStyleCustomCss"
         @update:model-value="(value: string | number) => handleSettingChange('themeStyleCustomCss', String(value))"
         class="mt-2 font-mono text-xs min-h-40"
-        placeholder="粘贴 CSS 变量到这里..."
+        :placeholder="t('settings.customCssPlaceholder')"
       />
       <Button
         v-if="settingsStore.settings.themeStyle === 'custom'"
@@ -165,6 +165,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '../../stores/settings'
 import { useToast } from '@/renderer/composables/useToast'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
@@ -173,9 +174,11 @@ import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { ExternalLink } from 'lucide-vue-next'
 import { DEFAULT_PRIMARY_COLORS } from '@renderer/utils/theme-style'
+import { languageOptions } from './settingsConfig'
 
 const settingsStore = useSettingsStore()
 const toast = useToast()
+const { t } = useI18n()
 
 const autoStartServer = ref(false)
 const autoStartServerLoading = ref(false)
@@ -203,13 +206,13 @@ const handleAutoStartChange = async (enabled: boolean) => {
   autoStartServerLoading.value = true
   try {
     const result = await window.electronAPI.serverAutoStart.set(enabled)
-    if (!result.success) throw new Error(result.message || '系统登录项设置失败')
+    if (!result.success) throw new Error(result.message || t('settings.autoStartFailed'))
     autoStartServer.value = result.enabled
     await settingsStore.updateSetting('autoStartServer', result.enabled)
-    toast.add({ severity: 'success', summary: '设置已保存', detail: result.enabled ? '服务将在系统登录时自动启动' : '已关闭服务自启动', life: 2000 })
+    toast.add({ severity: 'success', summary: t('settings.settingSaved'), detail: result.enabled ? t('settings.autoStartEnabledToast') : t('settings.autoStartDisabledToast'), life: 2000 })
   } catch (error) {
     autoStartServer.value = previous
-    toast.add({ severity: 'error', summary: '保存失败', detail: error instanceof Error ? error.message : '设置服务自启动时发生错误', life: 5000 })
+    toast.add({ severity: 'error', summary: t('settings.saveFailed'), detail: error instanceof Error ? error.message : t('settings.saveError'), life: 5000 })
   } finally {
     autoStartServerLoading.value = false
   }
@@ -224,17 +227,9 @@ const isCustomPrimaryColor = computed(() => {
   return !!c && !DEFAULT_PRIMARY_COLORS.includes(c)
 })
 
-// 选项配置
-const languageOptions = [
-  { label: '简体中文', value: 'zh-CN' },
-  { label: 'English', value: 'en-US' },
-  { label: '繁體中文', value: 'zh-TW' },
-  { label: '日本語', value: 'ja-JP' }
-]
-
 const themeOptions = [
   {
-    label: '浅色',
+    label: t('settings.themeLight'),
     value: 'light' as const,
     preview: `
       <path fill="#e5e5e5" d="M0 0h88v70H0z" />
@@ -245,7 +240,7 @@ const themeOptions = [
       <rect fill="#e5e5e5" height="4" rx="2" width="29" x="20" y="56" />`,
   },
   {
-    label: '深色',
+    label: t('settings.themeDark'),
     value: 'dark' as const,
     preview: `
       <path fill="#171717" d="M0 0h88v70H0z" />
@@ -256,7 +251,7 @@ const themeOptions = [
       <rect fill="#404040" height="4" rx="2" width="29" x="20" y="56" />`,
   },
   {
-    label: '自动',
+    label: t('settings.themeAuto'),
     value: 'auto' as const,
     preview: `
       <path fill="#e5e5e5" d="M0 0h44v70H0z" />
@@ -292,16 +287,16 @@ const handleSettingChange = async (key: string, value: any) => {
 
     toast.add({
       severity: 'success',
-      summary: '设置已保存',
-      detail: `${key} 设置已成功更新`,
+      summary: t('settings.settingSaved'),
+      detail: t('settings.settingUpdated', { key }),
       life: 2000
     })
   } catch (error) {
     console.error('Setting change error:', error, 'Value:', value)
     toast.add({
       severity: 'error',
-      summary: '保存失败',
-      detail: error instanceof Error ? error.message : '保存设置时发生错误',
+      summary: t('settings.saveFailed'),
+      detail: error instanceof Error ? error.message : t('settings.saveError'),
       life: 5000
     })
   }

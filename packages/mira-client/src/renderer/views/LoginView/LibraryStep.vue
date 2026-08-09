@@ -31,8 +31,8 @@ function select(lib: Library) {
 
 <template>
   <div class="flex flex-col gap-4">
-    <div v-if="loading" class="text-center py-8 text-muted-foreground dark:text-muted-foreground">加载素材库...</div>
-    <div v-else-if="libraries.length === 0" class="text-center py-8 text-muted-foreground dark:text-muted-foreground">没有可用的素材库</div>
+    <div v-if="loading" class="text-center py-8 text-muted-foreground dark:text-muted-foreground">{{ $t('views.libraryStep.loading') }}</div>
+    <div v-else-if="libraries.length === 0" class="text-center py-8 text-muted-foreground dark:text-muted-foreground">{{ $t('views.libraryStep.empty') }}</div>
     <div v-else class="flex flex-col gap-2 max-h-60 overflow-y-auto">
       <div
         v-for="lib in libraries"
@@ -58,10 +58,10 @@ function select(lib: Library) {
     </div>
     <Button class="w-full" :disabled="!selectedLibraryId || loading" @click="emit('connect')">
       <Loader2 v-if="loading" class="animate-spin" />
-      连接
+      {{ $t('views.libraryStep.connect') }}
     </Button>
     <Button type="button" variant="ghost" class="w-full" @click="emit('back')" :disabled="loading">
-      上一步
+      {{ $t('views.libraryStep.previous') }}
     </Button>
   </div>
 </template>

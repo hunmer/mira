@@ -1,4 +1,5 @@
 import { reactive, computed } from 'vue'
+import i18n from '../i18n'
 
 export interface InitializationStep {
   id: string
@@ -44,7 +45,7 @@ export function useInitializationState() {
    */
   const startInitialization = (steps: string[] = []) => {
     state.isInitializing = true
-    state.currentStep = '准备中...'
+    state.currentStep = i18n.global.t('composables.useInitializationState.preparing')
     state.progress = 0
     state.error = null
     state.startTime = new Date()
@@ -124,7 +125,7 @@ export function useInitializationState() {
     
     if (success) {
       state.progress = 100
-      state.currentStep = '初始化完成'
+      state.currentStep = i18n.global.t('composables.useInitializationState.initComplete')
       // 标记所有步骤为完成
       state.steps.forEach(step => {
         if (!step.error) {
@@ -138,8 +139,8 @@ export function useInitializationState() {
         state.isInitializing = false
       }, 1000)
     } else {
-      state.error = error || '初始化失败'
-      state.currentStep = '初始化失败'
+      state.error = error || i18n.global.t('composables.useInitializationState.initFailed')
+      state.currentStep = i18n.global.t('composables.useInitializationState.initFailed')
     }
   }
 

@@ -1,0 +1,60 @@
+{
+  "documentPreview": {
+    "loadPdfFailed": "无法加载 PDF 文件",
+    "noTextContent": "无法加载文本内容",
+    "loadTextFailed": "加载文本内容失败",
+    "saveMarkdownFailed": "保存 Markdown 失败",
+    "saveFailed": "保存失败 ({status})",
+    "unsupportedType": "此文档类型暂不支持预览",
+    "download": "下载文件"
+  },
+  "videoPreview": {
+    "resolution": "分辨率",
+    "size": "大小",
+    "format": "格式",
+    "createdAt": "创建时间"
+  },
+  "imagePreview": {
+    "dimensions": "尺寸",
+    "size": "大小",
+    "format": "格式",
+    "createdAt": "创建时间"
+  },
+  "previewHeader": {
+    "back": "返回",
+    "clickToRename": "点击重命名",
+    "openWith": "使用{name}打开",
+    "plugin": "插件",
+    "saving": "保存中...",
+    "save": "保存",
+    "unknownFile": "未知文件",
+    "openWithFailed": "插件打开文件失败",
+    "renameFailed": "重命名文件失败"
+  },
+  "defaultPreview": {
+    "back": "返回上一页",
+    "unknownFile": "未知文件",
+    "fileType": "文件类型",
+    "fileSize": "文件大小",
+    "modifiedAt": "修改时间",
+    "description": "描述",
+    "download": "下载文件",
+    "copyInfo": "复制文件信息",
+    "copyFileName": "文件名: {value}",
+    "copyType": "类型: {value}",
+    "copySize": "大小: {value}",
+    "copyModifiedAt": "修改时间: {value}",
+    "unknown": "未知"
+  },
+  "iframePreview": {
+    "loadFailed": "无法加载插件预览"
+  },
+  "audioPreview": {
+    "unknownTitle": "未知音频文件",
+    "fileSize": "文件大小",
+    "notSupported": "您的浏览器不支持音频播放",
+    "noAudioUrl": "无法获取音频文件",
+    "streamLoadFailed": "音频流加载失败",
+    "loadFailed": "音频加载失败"
+  }
+}

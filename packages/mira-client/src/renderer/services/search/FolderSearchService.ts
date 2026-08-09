@@ -8,8 +8,8 @@ import type { SearchService } from '../../types/search'
  */
 export const folderSearchService: SearchService = {
   id: 'folders',
-  title: '文件夹',
-  desc: '搜索文件夹名称、路径和描述',
+  title: 'services.searchServices.folders.title',
+  desc: 'services.searchServices.folders.desc',
   icon: 'folder',
   
   /**

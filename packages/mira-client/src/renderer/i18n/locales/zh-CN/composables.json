@@ -1,0 +1,83 @@
+{
+  "homeTab": {
+    "displayName": "首页"
+  },
+  "allTab": {
+    "displayName": "全部文件"
+  },
+  "folderTab": {
+    "displayName": "文件夹",
+    "fallbackLabel": "文件夹 {id}",
+    "filterLabel": "标签筛选"
+  },
+  "tagTab": {
+    "displayName": "标签",
+    "fallbackLabel": "标签 {id}",
+    "filterLabel": "标签筛选",
+    "tabLabel": "标签: {name}"
+  },
+  "trashTab": {
+    "displayName": "回收站",
+    "label": "回收站"
+  },
+  "uncategorizedTab": {
+    "displayName": "未分类",
+    "label": "未分类"
+  },
+  "untaggedTab": {
+    "displayName": "未标签",
+    "label": "未标签"
+  },
+  "tabTypes": {
+    "undefinedView": "未定义视图组件: {name}"
+  },
+  "tabRegistry": {
+    "typeNotFound": "Tab类型 \"{name}\" 不存在",
+    "nameRequired": "Tab类型必须有有效的name属性",
+    "displayNameRequired": "Tab类型必须有有效的displayName属性",
+    "iconRequired": "Tab类型必须有有效的icon属性"
+  },
+  "useTabs": {
+    "homeLabel": "首页",
+    "copySuffix": "(副本)"
+  },
+  "useFilters": {
+    "filterFolders": "文件夹",
+    "filterTags": "标签",
+    "filterCategory": "类别",
+    "filterUrls": "网址",
+    "filterTitle": "标题",
+    "filterSize": "大小"
+  },
+  "useViewModeConfig": {
+    "gridView": "网格视图",
+    "listView": "列表视图",
+    "waterfallView": "瀑布流视图"
+  },
+  "useNotification": {
+    "success": "成功",
+    "error": "错误",
+    "warning": "警告",
+    "info": "信息"
+  },
+  "useLoading": {
+    "loading": "加载中..."
+  },
+  "useInitializationState": {
+    "preparing": "准备中...",
+    "initComplete": "初始化完成",
+    "initFailed": "初始化失败"
+  },
+  "useServerDeploy": {
+    "updateFailed": "更新失败"
+  },
+  "useTabSystemInit": {
+    "builtinTypesInitFailed": "内置Tab类型初始化失败",
+    "builtinTypesNotRegistered": "部分内置Tab类型未正确注册"
+  },
+  "useBatchOperation": {
+    "progress": "{label} {current}/{total}",
+    "completedAll": "{label}完成 {completed}/{total}",
+    "completedWithFailures": "{label}完成: 成功{completed}, 失败{failed}"
+  }
+}

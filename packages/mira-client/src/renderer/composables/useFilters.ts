@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import type { FilterRule } from '@/renderer/types/filter'
 import type { TabItem } from './useTabs'
+import i18n from '../i18n'
 
 /**
  * 筛选器功能 Composable
@@ -13,42 +14,42 @@ export function useFilters() {
     {
       id: 'folders',
       type: 'folders',
-      label: '文件夹',
+      label: i18n.global.t('composables.useFilters.filterFolders'),
       icon: 'folder',
       selectedValues: []
     },
     {
       id: 'tags',
       type: 'tags',
-      label: '标签',
+      label: i18n.global.t('composables.useFilters.filterTags'),
       icon: 'label',
       selectedValues: []
     },
     {
       id: 'category',
       type: 'category',
-      label: '类别',
+      label: i18n.global.t('composables.useFilters.filterCategory'),
       icon: 'filter_list',
       selectedCategory: ''
     },
     {
       id: 'urls',
       type: 'urls',
-      label: '网址',
+      label: i18n.global.t('composables.useFilters.filterUrls'),
       icon: 'link',
       value: ''
     },
     {
       id: 'title',
       type: 'title',
-      label: '标题',
+      label: i18n.global.t('composables.useFilters.filterTitle'),
       icon: 'title',
       value: ''
     },
     {
       id: 'size',
       type: 'size',
-      label: '大小',
+      label: i18n.global.t('composables.useFilters.filterSize'),
       icon: 'aspect_ratio',
       selectedPreset: ''
     }

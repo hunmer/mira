@@ -7,6 +7,9 @@ import type { FolderItem, SearchFilter } from '../../types/components'
 import type { FileInfo } from '../../../shared/types'
 import type { FilterConditions, QuickFilter } from './types'
 import { HomeControllerUtils } from './utils'
+import i18n from '../../i18n'
+
+const t = i18n.global.t.bind(i18n.global)
 
 /**
  * 数据管理模块
@@ -93,7 +96,7 @@ export class HomeDataManager {
 
           return {
             id: folder.id.toString(),
-            label: folder.title || folder.name || `Folder ${folder.id}`,
+            label: folder.title || folder.name || t('services.dataManager.folderFallbackLabel', { id: folder.id }),
             icon: folder.icon || 'folder',
             iconColor: folder.color ? `#${folder.color.toString(16).padStart(6, '0')}` : 'text-gray-500',
             count: totalCount,
@@ -120,23 +123,23 @@ export class HomeDataManager {
     return [
       {
         id: 'folders',
-        label: `文件夹 (${folderCount})`,
+        label: t('services.dataManager.quickFilterFolders', { count: folderCount }),
         icon: 'folder',
         active: true
       },
       {
         id: 'tags',
-        label: `标签 (${tagCount})`,
+        label: t('services.dataManager.quickFilterTags', { count: tagCount }),
         icon: 'label'
       },
       {
         id: 'urls',
-        label: '网址',
+        label: t('services.dataManager.quickFilterUrls'),
         icon: 'link'
       },
       {
         id: 'size',
-        label: '大小',
+        label: t('services.dataManager.quickFilterSize'),
         icon: 'aspect_ratio'
       }
     ]
@@ -208,14 +211,14 @@ export class HomeDataManager {
   public searchFilters = ref<SearchFilter[]>([
     {
       key: 'type',
-      label: '类型',
+      label: t('services.dataManager.filterType'),
       value: null,
       type: 'select',
       options: [
-        { label: '全部', value: null },
-        { label: '图片', value: 'image' },
-        { label: '视频', value: 'video' },
-        { label: '音频', value: 'audio' }
+        { label: t('services.dataManager.filterTypeAll'), value: null },
+        { label: t('services.dataManager.filterTypeImage'), value: 'image' },
+        { label: t('services.dataManager.filterTypeVideo'), value: 'video' },
+        { label: t('services.dataManager.filterTypeAudio'), value: 'audio' }
       ]
     }
   ])
@@ -225,7 +228,7 @@ export class HomeDataManager {
    */
   public currentPath = computed(() => {
     const currentLibrary = this.libraryStore.currentLibrary
-    return currentLibrary?.name || '素材库'
+    return currentLibrary?.name || t('services.dataManager.defaultLibraryName')
   })
 
   /**

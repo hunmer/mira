@@ -1,0 +1,55 @@
+{
+  "fileSearchResult": {
+    "fileTypeImage": "Image",
+    "fileTypeVideo": "Video",
+    "fileTypeAudio": "Audio",
+    "fileTypePdf": "PDF",
+    "fileTypeDocument": "Document",
+    "fileTypeSpreadsheet": "Spreadsheet",
+    "fileTypePresentation": "Presentation",
+    "fileTypeText": "Text",
+    "fileTypeArchive": "Archive",
+    "fileTypeFile": "File",
+    "dateToday": "Today",
+    "dateYesterday": "Yesterday",
+    "dateDaysAgo": "{days} days ago"
+  },
+  "emptySearchState": {
+    "suggestionsLabel": "Try these:",
+    "notFound": "No related {title} found",
+    "descTryDifferentKeywords": "Try different keywords",
+    "descCheckSpelling": "Check your spelling",
+    "descUseShorter": "Use shorter search terms",
+    "descUseSynonyms": "Try synonyms",
+    "descTooShort": "Please enter at least 2 characters to search",
+    "descTooLong": "Search term too long, try shorter keywords",
+    "suggestionImage": "Image",
+    "suggestionVideo": "Video",
+    "suggestionPdf": "PDF",
+    "suggestionDocument": "Document",
+    "suggestionImportant": "Important",
+    "suggestionWork": "Work",
+    "suggestionPersonal": "Personal",
+    "suggestionProject": "Project",
+    "suggestionDownload": "Downloads"
+  },
+  "tagSearchResult": {
+    "fileCount": "{count} files"
+  },
+  "folderSearchResult": {
+    "rootFolder": "(Root)",
+    "fileCount": "{count} files"
+  },
+  "globalSearch": {
+    "placeholder": "Search (supports pinyin, fuzzy keywords)",
+    "searching": "Searching...",
+    "searchResultsAria": "{title} search results",
+    "startSearch": "Start searching",
+    "searchHint": "Type to search {service}",
+    "defaultContent": "content",
+    "switchTab": "Switch",
+    "navigate": "Navigate",
+    "select": "Select",
+    "close": "Close"
+  }
+}

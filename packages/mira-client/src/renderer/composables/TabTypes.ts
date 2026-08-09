@@ -1,4 +1,5 @@
 import type { TabTypeDefinition, TabContext, TabResult, TabViewConfig } from './TabRegistry'
+import i18n from '../i18n'
 
 // 抽象基类 - 所有Tab类型的基础
 export abstract class BaseTabType implements TabTypeDefinition {
@@ -15,7 +16,7 @@ export abstract class BaseTabType implements TabTypeDefinition {
     return {
       component: 'div',
       props: {
-        innerHTML: `<div>未定义视图组件: ${this.name}</div>`
+        innerHTML: `<div>${i18n.global.t('composables.tabTypes.undefinedView', { name: this.name })}</div>`
       }
     }
   }

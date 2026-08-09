@@ -9,6 +9,7 @@
  * 仅依赖 Vue ref/computed + CSS 3D 变换 + @lucide/vue 图标，无额外运行时依赖。
  */
 import { ref, computed, onUnmounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { Motion, AnimatePresence } from 'motion-v'
 import { useMediaStore } from '@renderer/stores/media'
@@ -32,6 +33,7 @@ const emit = defineEmits<{
 const router = useRouter()
 const mediaStore = useMediaStore()
 const libraryStore = useLibraryStore()
+const { t } = useI18n()
 
 const PREVIEW_COUNT = 5 // 扇形展开的预览卡片数
 
@@ -218,7 +220,7 @@ const previewFile = (index: number) => {
     query: {
       id: file.id,
       libraryId: file.libraryId || effectiveLibraryId.value,
-      title: file.title || '未命名',
+      title: file.title || t('business.animatedFolderCard.untitled'),
       path: file.path || '',
       mimeType: file.mimeType || 'application/octet-stream',
     },
@@ -275,13 +277,13 @@ const folderCssVars = computed(() => {
       <!-- 标题 + 计数 -->
       <div class="folder-meta">
         <h3 class="folder-title">{{ title }}</h3>
-        <p class="folder-count">{{ totalCount }} 个文件</p>
+        <p class="folder-count">{{ $t('business.animatedFolderCard.fileCount', { count: totalCount }) }}</p>
       </div>
 
       <!-- 悬停提示 -->
       <div class="folder-hint">
         <span class="material-icons" style="font-size: 13px">touch_app</span>
-        <span>悬停预览</span>
+        <span>{{ $t('business.animatedFolderCard.hoverHint') }}</span>
       </div>
     </div>
 

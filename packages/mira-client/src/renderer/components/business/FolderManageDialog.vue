@@ -40,8 +40,8 @@ const items = computed<BrowserItem[]>(() =>
 <template>
   <GroupedCardBrowserDialog
     :visible="props.visible"
-    title="文件夹管理"
-    item-type-label="文件夹"
+    :title="$t('business.folderManageDialog.title')"
+    :item-type-label="$t('business.folderManageDialog.itemTypeLabel')"
     empty-icon="folder_off"
     :items="items"
     :card-component="AnimatedFolderCard"

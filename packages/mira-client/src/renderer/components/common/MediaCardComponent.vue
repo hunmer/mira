@@ -22,7 +22,7 @@
         <span class="material-icons text-primary" style="font-size: 4rem;">folder</span>
         <div class="mt-2 font-semibold text-foreground">{{ item.name }}</div>
         <div v-if="item.metadata?.itemCount" class="mt-1 text-xs text-muted-foreground">
-          {{ item.metadata.itemCount }} 项
+          {{ $t('commonUi.mediaCardComponent.itemCount', { count: item.metadata.itemCount }) }}
         </div>
       </div>
       
@@ -157,7 +157,7 @@
               <span class="material-icons">visibility</span>
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="top">预览</TooltipContent>
+          <TooltipContent side="top">{{ $t('commonUi.mediaCardComponent.preview') }}</TooltipContent>
         </Tooltip>
       </TooltipProvider>
       <TooltipProvider>
@@ -167,7 +167,7 @@
               <span class="material-icons">download</span>
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="top">下载</TooltipContent>
+          <TooltipContent side="top">{{ $t('commonUi.mediaCardComponent.download') }}</TooltipContent>
         </Tooltip>
       </TooltipProvider>
       <TooltipProvider>
@@ -177,7 +177,7 @@
               <span class="material-icons">more_vert</span>
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="top">更多</TooltipContent>
+          <TooltipContent side="top">{{ $t('commonUi.mediaCardComponent.more') }}</TooltipContent>
         </Tooltip>
       </TooltipProvider>
     </div>

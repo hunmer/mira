@@ -7,12 +7,12 @@
           <div class="flex items-center gap-3 mb-3">
             <span class="material-icons text-2xl" :class="connectionStatusColor">language</span>
             <div>
-              <h3 class="font-semibold text-foreground dark:text-muted-foreground">连接状态</h3>
+              <h3 class="font-semibold text-foreground dark:text-muted-foreground">{{ $t('views.overviewPanel.connectionStatus') }}</h3>
               <p class="text-sm text-muted-foreground dark:text-muted-foreground">{{ connectionStatusText }}</p>
             </div>
           </div>
           <div class="text-xs text-muted-foreground">
-            服务器: {{ serverListStore.activeServer?.serverUrl || '未连接' }}
+            {{ $t('views.overviewPanel.server') }} {{ serverListStore.activeServer?.serverUrl || $t('views.overviewPanel.notConnected') }}
           </div>
         </CardContent>
       </Card>
@@ -23,12 +23,12 @@
           <div class="flex items-center gap-3 mb-3">
             <span class="material-icons text-2xl text-primary">computer</span>
             <div>
-              <h3 class="font-semibold text-foreground dark:text-muted-foreground">系统信息</h3>
+              <h3 class="font-semibold text-foreground dark:text-muted-foreground">{{ $t('views.overviewPanel.systemInfo') }}</h3>
               <p class="text-sm text-muted-foreground dark:text-muted-foreground">{{ systemPlatform }}</p>
             </div>
           </div>
           <div class="text-xs text-muted-foreground">
-            版本: {{ appVersion }}
+            {{ $t('views.overviewPanel.version') }} {{ appVersion }}
           </div>
         </CardContent>
       </Card>
@@ -38,12 +38,14 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '../../stores/settings'
 import { useServerListStore } from '../../stores/serverList'
 import { Card, CardContent } from '@/components/ui/card'
 
 const settingsStore = useSettingsStore()
 const serverListStore = useServerListStore()
+const { t } = useI18n()
 
 // 计算属性
 const connectionStatusColor = computed(() => {
@@ -63,15 +65,15 @@ const connectionStatusColor = computed(() => {
 const connectionStatusText = computed(() => {
   switch (settingsStore.connectionStatus) {
     case 'connected':
-      return '已连接'
+      return t('views.overviewPanel.connected')
     case 'connecting':
-      return '连接中...'
+      return t('views.overviewPanel.connecting')
     case 'reconnecting':
-      return '重新连接中...'
+      return t('views.overviewPanel.reconnecting')
     case 'error':
-      return '连接失败'
+      return t('views.overviewPanel.connectionFailed')
     default:
-      return '未连接'
+      return t('views.overviewPanel.notConnected')
   }
 })
 

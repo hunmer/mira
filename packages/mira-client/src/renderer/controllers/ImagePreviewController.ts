@@ -5,6 +5,7 @@ import 'viewerjs/dist/viewer.css'
 import { useMediaStore } from '../stores/media'
 import { CONVERTED_IMAGE_EXTENSIONS, getPreviewImageSource } from '../utils/fileUtils'
 import type { FileInfo } from '../../shared/types'
+import i18n from '../i18n'
 
 export class ImagePreviewController {
   private router = useRouter()
@@ -314,7 +315,7 @@ export class ImagePreviewController {
       this.similarImages.value = this.imageItems.value.filter((img: FileInfo) => img.id !== this.currentImageId.value)
     } catch (error) {
       console.error('Search similar images failed:', error)
-      this.error.value = '搜索相似图片失败'
+      this.error.value = i18n.global.t('services.imagePreview.searchSimilarFailed')
     } finally {
       this.loading.value = false
     }

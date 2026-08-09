@@ -1,0 +1,32 @@
+{
+  "autoStartServer": "Launch service at startup",
+  "autoStartServerDesc": "Automatically start mira-app-server on system login, even when Mira is not running",
+  "closeToTray": "Hide window on close",
+  "closeToTrayDesc": "Hide to system tray when clicking the close button",
+  "language": "Language",
+  "selectLanguage": "Select language",
+  "theme": "Theme",
+  "primaryColor": "Primary color",
+  "style": "Style",
+  "selectStyle": "Select style...",
+  "customCssPlaceholder": "Paste CSS variables here...",
+  "autoStartEnabledToast": "The service will start automatically on system login",
+  "autoStartDisabledToast": "Service auto-start has been disabled",
+  "settingSaved": "Settings saved",
+  "saveFailed": "Save failed",
+  "autoStartFailed": "Failed to set system login item",
+  "settingUpdated": "{key} setting updated successfully",
+  "saveError": "An error occurred while saving settings",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "themeAuto": "Auto",
+  "sections": {
+    "general": "General",
+    "notifications": "Notifications",
+    "import": "Import",
+    "floatingBall": "Floating Ball",
+    "plugins": "Plugins",
+    "network": "Network",
+    "data": "Data"
+  }
+}

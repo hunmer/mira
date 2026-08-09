@@ -12,6 +12,7 @@ import { clearTabCache } from '@renderer/composables/useMediaTabData'
 import { useConfirm } from '@renderer/composables/useConfirm'
 import { useToast } from '@renderer/composables/useToast'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
+import i18n from '../../i18n'
 
 export function useHomeEventHandlers(
   createTabFromFolder: any,
@@ -150,10 +151,10 @@ export function useHomeEventHandlers(
 
     // 弹出确认对话框（替代原生 window.confirm）
     confirm.require({
-      header: '清空回收站',
-      message: '确定要清空回收站吗？此操作不可撤销。',
-      acceptLabel: '清空',
-      rejectLabel: '取消',
+      header: i18n.global.t('views.homeEvent.emptyTrashHeader'),
+      message: i18n.global.t('views.homeEvent.emptyTrashMessage'),
+      acceptLabel: i18n.global.t('views.homeEvent.emptyTrashAccept'),
+      rejectLabel: i18n.global.t('views.homeEvent.emptyTrashReject'),
       accept: async () => {
         try {
           const result = await miraSDKService.emptyTrash(libraryId)
@@ -170,15 +171,15 @@ export function useHomeEventHandlers(
             // 用 Toast 通知替代原生 alert
             toast.add({
               severity: 'error',
-              summary: '权限不足',
-              detail: '清空回收站需要管理员权限',
+              summary: i18n.global.t('views.homeEvent.errPermissionTitle'),
+              detail: i18n.global.t('views.homeEvent.errPermissionDetail'),
               life: 4000
             })
           } else {
             toast.add({
               severity: 'error',
-              summary: '清空回收站失败',
-              detail: error?.message || '未知错误',
+              summary: i18n.global.t('views.homeEvent.errEmptyTrashTitle'),
+              detail: error?.message || i18n.global.t('views.homeEvent.errUnknown'),
               life: 4000
             })
           }

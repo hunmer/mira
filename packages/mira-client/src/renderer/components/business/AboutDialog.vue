@@ -2,7 +2,7 @@
   <Dialog :open="isVisible" @update:open="isVisible = $event">
     <DialogContent class="sm:max-w-[440px]">
       <DialogHeader>
-        <DialogTitle class="sr-only">关于 Mira</DialogTitle>
+        <DialogTitle class="sr-only">{{ $t('business.aboutDialog.title') }}</DialogTitle>
       </DialogHeader>
 
       <div class="flex flex-col items-center text-center -mt-2">
@@ -15,14 +15,14 @@
         />
 
         <h2 class="text-xl font-semibold tracking-tight">Mira Media Library</h2>
-        <p class="text-muted-foreground text-sm mt-1">智能媒体素材管理库</p>
+        <p class="text-muted-foreground text-sm mt-1">{{ $t('business.aboutDialog.subtitle') }}</p>
 
         <!-- 版本 -->
         <div class="mt-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/60 rounded-full px-3 py-1">
           <span class="material-icons text-[14px]">tag</span>
           <span>v{{ appVersion }}</span>
           <span v-if="latestVersion && latestVersion !== appVersion" class="text-primary font-medium">
-            · 最新 v{{ latestVersion }}
+            · {{ $t('business.aboutDialog.latestVersion', { version: latestVersion }) }}
           </span>
         </div>
 
@@ -30,13 +30,13 @@
         <div class="w-full mt-5 space-y-2 text-left text-sm">
           <div class="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
             <span class="text-muted-foreground flex items-center gap-1.5">
-              <span class="material-icons text-[16px]">person</span>开发者
+              <span class="material-icons text-[16px]">person</span>{{ $t('business.aboutDialog.developer') }}
             </span>
             <span class="font-medium">Mira Team</span>
           </div>
           <div class="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
             <span class="text-muted-foreground flex items-center gap-1.5">
-              <span class="material-icons text-[16px]">code</span>技术栈
+              <span class="material-icons text-[16px]">code</span>{{ $t('business.aboutDialog.techStack') }}
             </span>
             <span class="font-medium">Electron · Vue 3</span>
           </div>
@@ -45,7 +45,7 @@
             @click="openProjectUrl"
           >
             <span class="text-muted-foreground flex items-center gap-1.5">
-              <span class="material-icons text-[16px]">link</span>项目地址
+              <span class="material-icons text-[16px]">link</span>{{ $t('business.aboutDialog.projectUrl') }}
             </span>
             <span class="font-medium text-primary inline-flex items-center gap-1">
               GitHub
@@ -64,7 +64,7 @@
             @click="checkForUpdates"
           >
             <span class="material-icons text-[18px]">system_update</span>
-            检查更新
+            {{ $t('business.aboutDialog.checkUpdate') }}
           </button>
 
           <!-- 检查中 -->
@@ -73,7 +73,7 @@
             class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-muted text-muted-foreground text-sm font-medium px-4 py-2.5"
           >
             <span class="material-icons text-[18px] animate-spin">progress_activity</span>
-            正在检查更新…
+            {{ $t('business.aboutDialog.checking') }}
           </div>
 
           <!-- 已是最新 -->
@@ -82,13 +82,13 @@
             class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-green-500/10 text-green-600 dark:text-green-400 text-sm font-medium px-4 py-2.5"
           >
             <span class="material-icons text-[18px]">check_circle</span>
-            当前已是最新版本
+            {{ $t('business.aboutDialog.upToDate') }}
           </div>
 
           <!-- 发现新版本 + 下载 -->
           <div v-else-if="updateState === 'available' || updateState === 'downloading'" class="space-y-2">
             <div class="rounded-xl bg-primary/10 text-primary px-3 py-2 text-sm">
-              发现新版本 <span class="font-semibold">v{{ updateInfo?.version }}</span>
+              {{ $t('business.aboutDialog.newVersionFound') }} <span class="font-semibold">v{{ updateInfo?.version }}</span>
             </div>
             <div v-if="downloadProgress !== null" class="w-full h-1.5 rounded-full bg-muted overflow-hidden">
               <div
@@ -102,14 +102,14 @@
               @click="downloadUpdate"
             >
               <span class="material-icons text-[18px]">download</span>
-              下载更新
+              {{ $t('business.aboutDialog.downloadUpdate') }}
             </button>
             <div
               v-else
               class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-muted text-muted-foreground text-sm font-medium px-4 py-2.5"
             >
               <span class="material-icons text-[18px] animate-spin">progress_activity</span>
-              下载中 {{ Math.round(downloadProgress ?? 0) }}%
+              {{ $t('business.aboutDialog.downloading', { percent: Math.round(downloadProgress ?? 0) }) }}
             </div>
           </div>
 
@@ -120,7 +120,7 @@
             @click="installUpdate"
           >
             <span class="material-icons text-[18px]">restart_alt</span>
-            下载完成，重启并安装
+            {{ $t('business.aboutDialog.downloaded') }}
           </button>
 
           <!-- 出错 -->
@@ -129,7 +129,7 @@
             class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-destructive/10 text-destructive text-sm font-medium px-4 py-2.5"
           >
             <span class="material-icons text-[18px]">error_outline</span>
-            {{ errorMessage || '检查更新失败' }}
+            {{ errorMessage || $t('business.aboutDialog.checkFailed') }}
           </div>
         </div>
 
@@ -141,6 +141,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useToast } from '@renderer/composables/useToast'
 import { environment } from '@renderer/utils'
@@ -157,6 +158,7 @@ interface Emits {
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 const toast = useToast()
+const { t } = useI18n()
 
 const isVisible = computed({
   get: () => props.visible,
@@ -208,7 +210,7 @@ const registerUpdaterEvents = () => {
       updateState.value = 'downloaded'
     }),
     api.onUpdateError((error: any) => {
-      errorMessage.value = error?.message || '更新失败'
+      errorMessage.value = error?.message || t('business.aboutDialog.updateFailed')
       updateState.value = 'error'
     })
   )
@@ -256,7 +258,7 @@ onBeforeUnmount(unregisterUpdaterEvents)
 const checkForUpdates = async () => {
   const api = window.electronAPI?.updater
   if (!api) {
-    toast.add({ severity: 'warn', detail: '当前环境不支持自动更新', life: 3000 })
+    toast.add({ severity: 'warn', detail: t('business.aboutDialog.updaterNotSupported'), life: 3000 })
     return
   }
   updateState.value = 'checking'
@@ -264,7 +266,7 @@ const checkForUpdates = async () => {
   const res = await api.check()
   if (!res.success) {
     updateState.value = 'error'
-    errorMessage.value = res.error || '检查更新失败'
+    errorMessage.value = res.error || t('business.aboutDialog.checkFailed')
     return
   }
   // 有 updateInfo 表示有更新（onUpdateAvailable 也会把状态置为 available）
@@ -281,7 +283,7 @@ const downloadUpdate = async () => {
   const res = await window.electronAPI.updater.download()
   if (!res.success) {
     updateState.value = 'error'
-    errorMessage.value = res.error || '下载更新失败'
+    errorMessage.value = res.error || t('business.aboutDialog.downloadFailed')
   } else {
     updateState.value = 'downloading'
   }

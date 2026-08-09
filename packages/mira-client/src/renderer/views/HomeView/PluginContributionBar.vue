@@ -12,12 +12,15 @@
  * 无任何 contribution 时整体隐藏（不占位）。
  */
 import { ref, onMounted, onBeforeUnmount, defineComponent, h } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Dropdown } from '@/renderer/components/common/Dropdown'
 import PluginIcon from '@/renderer/components/common/PluginIcon.vue'
 import { useToast } from '@renderer/composables/useToast'
 import type { PluginContribution, PluginContributionRenderContext } from '@renderer/plugins/types'
 
 defineOptions({ name: 'PluginContributionBar' })
+
+const { t } = useI18n()
 
 /**
  * vertical=true 时整体改为纵向排列。
@@ -99,7 +102,7 @@ function buildCtx(contribution: PluginContribution): PluginContributionRenderCon
       }
       const info = getPluginSystem()?.getPlugin?.(contribution.pluginId)
       const base = info?.config?.url || info?.config?.actualDirectory
-      if (!base) return Promise.resolve({ success: false, message: '插件地址不可用' })
+      if (!base) return Promise.resolve({ success: false, message: t('views.pluginContributionBar.pluginUrlUnavailable') })
       try {
         const entry = String(opts.entry || 'dist/index.html').replace(/^\/+/, '')
         const url = new URL(`${String(base).replace(/\/+$/, '')}/${entry}`)
@@ -107,7 +110,7 @@ function buildCtx(contribution: PluginContribution): PluginContributionRenderCon
         const opened = window.open(url.href, '_blank')
         return Promise.resolve(opened
           ? { success: true, data: { url: url.href } }
-          : { success: false, message: '浏览器阻止了插件窗口，请允许弹出窗口' })
+          : { success: false, message: t('views.pluginContributionBar.browserBlocked') })
       } catch (error) {
         return Promise.resolve({ success: false, message: error instanceof Error ? error.message : String(error) })
       }
@@ -125,16 +128,16 @@ async function onWindowActivate(contribution: PluginContribution) {
     result = await contribution.onActivate?.(buildCtx(contribution))
   } catch (e: any) {
     console.error(`[PluginContributionBar] onActivate failed for ${contribution.id}:`, e)
-    toast.add({ severity: 'error', summary: '插件启动失败', detail: e?.message || String(e), life: 5000 })
+    toast.add({ severity: 'error', summary: t('views.pluginContributionBar.activateFailed'), detail: e?.message || String(e), life: 5000 })
     return
   }
   // onActivate 返回了 openPluginWindow 的结果（或 Promise<result>）时检查
   if (result && typeof result === 'object' && result.success === false) {
-    const detail = result.message || '未知错误'
+    const detail = result.message || t('views.common.unknownError')
     const hint = /不存在|dist/.test(detail)
-      ? '（请在插件目录执行 pnpm install && pnpm build 生成 dist）'
+      ? t('views.pluginContributionBar.buildHint')
       : ''
-    toast.add({ severity: 'error', summary: '插件窗口打开失败', detail: `${detail}${hint}`, life: 6000 })
+    toast.add({ severity: 'error', summary: t('views.pluginContributionBar.windowOpenFailed'), detail: `${detail}${hint}`, life: 6000 })
   }
 }
 
@@ -164,7 +167,7 @@ const ContributionHost = defineComponent({
         cleanup = props.contribution.render(el, buildCtx(props.contribution))
       } catch (e) {
         console.error(`[PluginContributionBar] render failed for ${props.contribution.id}:`, e)
-        el.textContent = '插件内容渲染失败'
+        el.textContent = t('views.pluginContributionBar.renderFailed')
       }
     })
 

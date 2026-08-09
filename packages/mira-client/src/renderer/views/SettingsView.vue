@@ -13,7 +13,7 @@
                 <span class="material-icons text-lg">arrow_back</span>
               </button>
             </TooltipTrigger>
-            <TooltipContent side="bottom">返回</TooltipContent>
+            <TooltipContent side="bottom">{{ $t('views.settingsView.back') }}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
         <span class="material-icons text-lg">settings</span>
@@ -25,14 +25,14 @@
           @click="importSettings"
         >
           <span class="material-icons text-sm">upload</span>
-          导入设置
+          {{ $t('views.settingsView.importSettings') }}
         </button>
         <button
           class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary transition-colors"
           @click="exportSettings"
         >
           <span class="material-icons text-sm">download</span>
-          导出设置
+          {{ $t('views.settingsView.exportSettings') }}
         </button>
       </div>
     </header>
@@ -55,7 +55,7 @@
                 <div class="text-foreground dark:text-muted-foreground">
                   <span class="material-icons text-lg">{{ section.icon }}</span>
                 </div>
-                <p class="text-foreground dark:text-muted-foreground text-sm font-medium leading-normal">{{ section.name }}</p>
+                <p class="text-foreground dark:text-muted-foreground text-sm font-medium leading-normal">{{ t(section.name) }}</p>
               </div>
             </div>
           </div>
@@ -90,6 +90,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useSettingsStore } from '../stores/settings'
 import { useToast } from '@/renderer/composables/useToast'
@@ -109,6 +110,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 const router = useRouter()
 const settingsStore = useSettingsStore()
 const toast = useToast()
+const { t } = useI18n()
 
 // 响应式状态
 const activeSection = ref('overview')
@@ -130,7 +132,7 @@ const currentComponent = computed(() => {
 // 方法
 const getCurrentSectionName = () => {
   const section = settingSections.find(s => s.id === activeSection.value)
-  return section?.name || 'Settings'
+  return section?.name || t('views.settingsView.settingsFallback')
 }
 
 const goBack = () => {
@@ -149,8 +151,8 @@ const openFeedback = () => {
   // 打开反馈页面或对话框
   toast.add({
     severity: 'info',
-    summary: '反馈功能',
-    detail: '反馈功能即将推出',
+    summary: t('views.settingsView.feedbackTitle'),
+    detail: t('views.settingsView.feedbackDetail'),
     life: 3000
   })
 }

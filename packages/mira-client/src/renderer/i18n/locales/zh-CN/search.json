@@ -1,0 +1,55 @@
+{
+  "fileSearchResult": {
+    "fileTypeImage": "图片",
+    "fileTypeVideo": "视频",
+    "fileTypeAudio": "音频",
+    "fileTypePdf": "PDF",
+    "fileTypeDocument": "文档",
+    "fileTypeSpreadsheet": "表格",
+    "fileTypePresentation": "演示",
+    "fileTypeText": "文本",
+    "fileTypeArchive": "压缩包",
+    "fileTypeFile": "文件",
+    "dateToday": "今天",
+    "dateYesterday": "昨天",
+    "dateDaysAgo": "{days} 天前"
+  },
+  "emptySearchState": {
+    "suggestionsLabel": "建议尝试：",
+    "notFound": "未找到相关{title}",
+    "descTryDifferentKeywords": "尝试使用不同的关键词",
+    "descCheckSpelling": "检查拼写是否正确",
+    "descUseShorter": "使用更短的搜索词",
+    "descUseSynonyms": "尝试使用同义词",
+    "descTooShort": "请输入至少2个字符进行搜索",
+    "descTooLong": "搜索词过长，请尝试使用更短的关键词",
+    "suggestionImage": "图片",
+    "suggestionVideo": "视频",
+    "suggestionPdf": "PDF",
+    "suggestionDocument": "文档",
+    "suggestionImportant": "重要",
+    "suggestionWork": "工作",
+    "suggestionPersonal": "个人",
+    "suggestionProject": "项目",
+    "suggestionDownload": "下载"
+  },
+  "tagSearchResult": {
+    "fileCount": "{count} 个文件"
+  },
+  "folderSearchResult": {
+    "rootFolder": "(根目录)",
+    "fileCount": "{count} 个文件"
+  },
+  "globalSearch": {
+    "placeholder": "搜索 (支持拼音、模糊关键字)",
+    "searching": "搜索中...",
+    "searchResultsAria": "{title}搜索结果",
+    "startSearch": "开始搜索",
+    "searchHint": "输入关键词搜索{service}",
+    "defaultContent": "内容",
+    "switchTab": "切换",
+    "navigate": "移动",
+    "select": "选中",
+    "close": "关闭"
+  }
+}

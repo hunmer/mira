@@ -80,7 +80,7 @@ async function handleDeleteServer() {
           @click="showAddForm = true"
         >
           <span class="material-icons text-2xl text-muted-foreground dark:text-muted-foreground">add</span>
-          <span class="text-sm text-muted-foreground dark:text-muted-foreground">添加服务器</span>
+          <span class="text-sm text-muted-foreground dark:text-muted-foreground">{{ $t('views.serverStep.addServer') }}</span>
         </div>
         <!-- Existing Server Cards -->
         <div
@@ -99,7 +99,7 @@ async function handleDeleteServer() {
           >
             <div class="flex items-center gap-2 text-primary dark:text-primary">
               <Loader2 class="w-4 h-4 animate-spin" />
-              <span class="text-xs font-medium">连接中...</span>
+              <span class="text-xs font-medium">{{ $t('views.serverStep.connecting') }}</span>
             </div>
           </div>
           <!-- 顶部扫描线动效 -->
@@ -137,19 +137,19 @@ async function handleDeleteServer() {
         </div>
       </div>
       <div v-if="services.length === 0" class="text-center py-4 text-sm text-muted-foreground dark:text-muted-foreground">
-        还没有添加过服务器
+        {{ $t('views.serverStep.noServers') }}
       </div>
 
       <!-- Delete Confirmation Dialog -->
       <AlertDialog v-if="deleteTarget" :open="true" @update:open="handleDeleteDialogOpenChange">
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>删除服务器</AlertDialogTitle>
-            <AlertDialogDescription>确定要删除「{{ deleteTarget?.name }}」吗？此操作不可撤销。</AlertDialogDescription>
+            <AlertDialogTitle>{{ $t('views.serverStep.deleteTitle') }}</AlertDialogTitle>
+            <AlertDialogDescription>{{ $t('views.serverStep.deleteDesc', { name: deleteTarget?.name }) }}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <Button type="button" variant="outline" @click="closeDeleteDialog">取消</Button>
-            <Button type="button" class="bg-destructive hover:bg-destructive text-white" @click="handleDeleteServer">删除</Button>
+            <Button type="button" variant="outline" @click="closeDeleteDialog">{{ $t('views.serverStep.cancel') }}</Button>
+            <Button type="button" class="bg-destructive hover:bg-destructive text-white" @click="handleDeleteServer">{{ $t('views.serverStep.delete') }}</Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -159,27 +159,27 @@ async function handleDeleteServer() {
     <form v-else @submit.prevent="emit('testConnection')" class="flex flex-col gap-4 relative">
       <button type="button" class="absolute -top-1 right-0 flex items-center gap-1 text-xs text-muted-foreground hover:text-muted-foreground dark:text-muted-foreground dark:hover:text-muted-foreground bg-transparent border-none cursor-pointer" @click="showAddForm = false">
         <span class="material-icons text-sm">arrow_back</span>
-        返回列表
+        {{ $t('views.serverStep.backToList') }}
       </button>
       <div class="flex flex-col gap-1">
-        <Label>服务器名称</Label>
-        <Input v-model="serverName" type="text" placeholder="服务器名称" required />
+        <Label>{{ $t('views.serverStep.serverName') }}</Label>
+        <Input v-model="serverName" type="text" :placeholder="$t('views.serverStep.serverName')" required />
       </div>
       <div class="flex flex-col gap-1">
-        <Label>服务器地址</Label>
+        <Label>{{ $t('views.serverStep.serverAddress') }}</Label>
         <Input v-model="serverAddress" type="text" placeholder="http://192.168.1.100" required />
       </div>
       <Button type="button" variant="ghost" size="sm" @click="showWsField = !showWsField">
         <span class="material-icons text-sm">{{ showWsField ? 'expand_less' : 'expand_more' }}</span>
-        WebSocket 地址
+        {{ $t('views.serverStep.wsAddressToggle') }}
       </Button>
       <div v-if="showWsField" class="flex flex-col gap-1">
-        <Label>WebSocket 地址</Label>
-        <Input v-model="wsAddress" type="text" placeholder="默认 8081" />
+        <Label>{{ $t('views.serverStep.wsAddressLabel') }}</Label>
+        <Input v-model="wsAddress" type="text" :placeholder="$t('views.serverStep.wsPortPlaceholder')" />
       </div>
       <Button type="submit" class="w-full" :disabled="loading">
         <Loader2 v-if="loading" class="animate-spin" />
-        {{ loading ? '连接中...' : '下一步' }}
+        {{ loading ? $t('views.serverStep.connecting') : $t('views.serverStep.next') }}
       </Button>
     </form>
   </div>

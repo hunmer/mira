@@ -18,16 +18,16 @@
           <pre>{{ textContent }}</pre>
         </div>
         <div v-else class="flex justify-center items-center flex-1 text-destructive text-center">
-          <p>无法加载文本内容</p>
+          <p>{{ $t('preview.documentPreview.noTextContent') }}</p>
         </div>
       </div>
 
       <!-- 其他文档类型 -->
       <div v-else class="flex flex-col justify-center items-center flex-1 gap-4">
         <div class="text-6xl opacity-50">📄</div>
-        <p>此文档类型暂不支持预览</p>
+        <p>{{ $t('preview.documentPreview.unsupportedType') }}</p>
         <button v-if="documentUrl" @click="downloadFile" class="bg-primary text-white border-none px-6 py-3 rounded cursor-pointer text-base hover:bg-primary">
-          下载文件
+          {{ $t('preview.documentPreview.download') }}
         </button>
       </div>
     </div>
@@ -36,6 +36,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import * as PDFObject from 'pdfobject'
 import { MdEditor } from 'md-editor-v3'
 import 'md-editor-v3/lib/style.css'
@@ -47,6 +48,7 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+const { t } = useI18n()
 const emit = defineEmits<{
   error: [message: string]
   renamed: [name: string]
@@ -90,7 +92,7 @@ const isMarkdown = computed(() => {
 
 const embedPDF = async (): Promise<void> => {
   if (!isPDF.value) return
-  if (!documentUrl.value) return emit('error', '无法加载 PDF 文件')
+  if (!documentUrl.value) return emit('error', t('preview.documentPreview.loadPdfFailed'))
   await nextTick()
   if (pdfContainer.value) {
     PDFObject.embed(documentUrl.value, pdfContainer.value, { width: '100%', height: '100%' })
@@ -123,10 +125,10 @@ const loadTextContent = async (): Promise<void> => {
       textContent.value = await blob.text()
       return
     }
-    throw new Error('加载文本失败')
+    throw new Error('Failed to load text content')
   } catch (error) {
     console.error('加载文本内容失败:', error)
-    emit('error', '加载文本内容失败')
+    emit('error', t('preview.documentPreview.loadTextFailed'))
   }
 }
 
@@ -151,11 +153,11 @@ const saveMarkdown = async (): Promise<void> => {
       formData.append('fileId', props.fileInfo.id)
       formData.append('name', name)
       const response = await fetch(writeUrl, { method: 'POST', body: formData })
-      if (!response.ok) throw new Error(`保存失败 (${response.status})`)
+      if (!response.ok) throw new Error(t('preview.documentPreview.saveFailed', { status: response.status }))
     }
   } catch (error) {
     console.error('保存 Markdown 失败:', error)
-    emit('error', '保存 Markdown 失败')
+    emit('error', t('preview.documentPreview.saveMarkdownFailed'))
   } finally {
     isSaving.value = false
   }

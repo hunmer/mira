@@ -4,7 +4,7 @@
     <!-- 基础分类 (仅文件夹模式) -->
     <div v-if="showBaseCategories && itemType === 'folder'" class="mb-4">
       <ul class="space-y-0.5">
-        <li v-for="folder in baseCategoriesConfig" :key="folder.id">
+        <li v-for="folder in resolvedBaseCategories" :key="folder.id">
           <ContextMenu v-if="folder.id === 'trash'">
             <ContextMenuTrigger as-child>
               <a :data-folder-tree-node-id="folder.id" :class="[
@@ -25,7 +25,7 @@
             </ContextMenuTrigger>
             <ContextMenuContent class="w-48">
               <ContextMenuItem @click="emit('empty-trash')">
-                <span>清空回收站</span>
+                <span>{{ $t('business.folderTreeComponent.emptyTrash') }}</span>
               </ContextMenuItem>
             </ContextMenuContent>
           </ContextMenu>
@@ -54,19 +54,19 @@
       <div class="header-actions flex items-center gap-0.5 -mr-1">
         <button @click="toggleSearch"
           class="header-action-btn flex h-5 w-5 items-center justify-center text-muted-foreground hover:text-muted-foreground rounded"
-          :class="{ 'text-primary': showSearch }" :title="`搜索${sectionTitle}...`">
+          :class="{ 'text-primary': showSearch }" :title="$t('business.groupedCardBrowserDialog.searchPlaceholder', { type: sectionTitle })">
           <span class="material-icons leading-none" style="font-size: 18px">search</span>
         </button>
         <button v-if="selectionEnabled" @click="toggleSelectionMode"
           class="header-action-btn flex h-5 w-5 items-center justify-center text-muted-foreground hover:text-muted-foreground rounded"
           :class="{ 'text-primary': selectionActive }"
-          :title="selectionActive ? `退出${selectionModeLabel}（已选 ${selectionCount}）` : `${selectionModeLabel}模式`">
+          :title="selectionActive ? $t('business.folderTreeComponent.exitMultiSelect', { mode: selectionModeLabel, count: selectionCount }) : $t('business.folderTreeComponent.multiSelectMode', { mode: selectionModeLabel })">
           <span class="material-icons leading-none" style="font-size: 18px">{{ isMultiMode ? 'checklist' :
             'check_box_outline_blank' }}</span>
         </button>
         <button @click="ops.handleAdd(itemType)"
           class="header-action-btn flex h-5 w-5 items-center justify-center text-muted-foreground hover:text-muted-foreground rounded"
-          :title="`添加${sectionTitle}`">
+          :title="$t('business.folderTreeComponent.add', { title: sectionTitle })">
           <span class="material-icons leading-none" style="font-size: 18px">add</span>
         </button>
       </div>
@@ -75,10 +75,10 @@
     <!-- 多选工具条 -->
     <div v-if="selectionActive && isMultiMode"
       class="flex items-center justify-between px-2 mb-2 text-xs text-muted-foreground">
-      <span>已选 {{ selectionCount }} 项</span>
+      <span>{{ $t('business.folderTreeComponent.selectedCount', { count: selectionCount }) }}</span>
       <div class="flex items-center gap-2">
-        <button class="text-primary hover:underline" @click="selectAll">全选</button>
-        <button class="text-muted-foreground hover:underline" @click="clearSelection">清空</button>
+        <button class="text-primary hover:underline" @click="selectAll">{{ $t('business.folderTreeComponent.selectAll') }}</button>
+        <button class="text-muted-foreground hover:underline" @click="clearSelection">{{ $t('business.folderTreeComponent.clear') }}</button>
       </div>
     </div>
 
@@ -86,7 +86,7 @@
     <Transition name="search-slide">
       <div v-if="showSearch" class="search-shell px-2 mb-2">
         <div class="search-shell-inner">
-          <input ref="searchInputRef" v-model="searchQuery" type="text" :placeholder="`搜索${sectionTitle}...`"
+          <input ref="searchInputRef" v-model="searchQuery" type="text" :placeholder="$t('business.groupedCardBrowserDialog.searchPlaceholder', { type: sectionTitle })"
             class="w-full px-3 py-1.5 text-xs border border-border rounded-full bg-white/60 dark:bg-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30" />
         </div>
       </div>
@@ -173,7 +173,7 @@
       <span class="material-icons text-4xl mb-2 text-muted-foreground">{{ itemType === 'folder' ? 'folder_open' :
         'label'
         }}</span>
-      <p class="text-sm text-center">还没有任何的{{ sectionTitle }}</p>
+      <p class="text-sm text-center">{{ $t('business.folderTreeComponent.empty', { title: sectionTitle }) }}</p>
     </div>
 
     <!-- 通用编辑对话框（Teleport 到 body，避免被侧栏等祖先容器的 transform/filter 等限制为局部定位） -->
@@ -191,23 +191,21 @@
     <AlertDialog v-if="showDeleteDialog" :open="true" @update:open="showDeleteDialog = $event">
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>确认删除</AlertDialogTitle>
+          <AlertDialogTitle>{{ $t('business.folderTreeComponent.confirmDeleteTitle') }}</AlertDialogTitle>
           <AlertDialogDescription>
-            确定要删除{{ ops.deletingType.value === 'folder' ? '文件夹' : '标签' }} "{{
-              (ops.deletingItem.value as any)?.label || (ops.deletingItem.value as any)?.name
-            }}" 吗？此操作不可撤销。
+            {{ $t('business.folderTreeComponent.confirmDeleteDesc', { type: ops.deletingType.value === 'folder' ? $t('business.folderTreeComponent.typeFolder') : $t('business.folderTreeComponent.typeTag'), name: (ops.deletingItem.value as any)?.label || (ops.deletingItem.value as any)?.name }) }}
           </AlertDialogDescription>
-        </AlertDialogHeader>
-        <div v-if="ops.deletingType.value === 'folder'" class="flex items-center space-x-2 px-1">
-          <Checkbox id="deleteWithFiles" :model-value="Boolean(ops.deleteWithFiles.value)"
-            @update:model-value="ops.deleteWithFiles.value = $event === true" />
-          <label for="deleteWithFiles" class="text-sm text-muted-foreground cursor-pointer select-none">
-            同时删除文件夹内的文件（不勾选则文件移至未分类）
-          </label>
-        </div>
-        <AlertDialogFooter>
-          <AlertDialogCancel>取消</AlertDialogCancel>
-          <AlertDialogAction class="bg-destructive hover:bg-destructive text-white" @click="ops.confirmDelete">删除
+          </AlertDialogHeader>
+          <div v-if="ops.deletingType.value === 'folder'" class="flex items-center space-x-2 px-1">
+            <Checkbox id="deleteWithFiles" :model-value="Boolean(ops.deleteWithFiles.value)"
+              @update:model-value="ops.deleteWithFiles.value = $event === true" />
+            <label for="deleteWithFiles" class="text-sm text-muted-foreground cursor-pointer select-none">
+              {{ $t('business.folderTreeComponent.deleteWithFilesLabel') }}
+            </label>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{{ $t('business.folderTreeComponent.cancel') }}</AlertDialogCancel>
+            <AlertDialogAction class="bg-destructive hover:bg-destructive text-white" @click="ops.confirmDelete">{{ $t('business.folderTreeComponent.delete') }}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -217,23 +215,21 @@
     <AlertDialog v-if="showBatchDeleteDialog" :open="true" @update:open="showBatchDeleteDialog = $event">
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>确认批量删除</AlertDialogTitle>
+          <AlertDialogTitle>{{ $t('business.folderTreeComponent.confirmBatchDeleteTitle') }}</AlertDialogTitle>
           <AlertDialogDescription>
-            确定要删除已选中的 {{ ops.batchDeleteTotalCount.value }} 个{{
-              ops.batchDeletingType.value === 'folder' ? '文件夹' : '标签'
-            }}吗？此操作不可撤销。
+            {{ $t('business.folderTreeComponent.confirmBatchDeleteDesc', { count: ops.batchDeleteTotalCount.value, type: ops.batchDeletingType.value === 'folder' ? $t('business.folderTreeComponent.typeFolder') : $t('business.folderTreeComponent.typeTag') }) }}
           </AlertDialogDescription>
-        </AlertDialogHeader>
-        <div v-if="ops.batchDeletingType.value === 'folder'" class="flex items-center space-x-2 px-1">
-          <Checkbox id="batchDeleteWithFiles" :model-value="Boolean(ops.deleteWithFiles.value)"
-            @update:model-value="ops.deleteWithFiles.value = $event === true" />
-          <label for="batchDeleteWithFiles" class="text-sm text-muted-foreground cursor-pointer select-none">
-            同时删除文件夹内的文件（不勾选则文件移至未分类）
-          </label>
-        </div>
-        <AlertDialogFooter>
-          <AlertDialogCancel>取消</AlertDialogCancel>
-          <AlertDialogAction class="bg-destructive hover:bg-destructive text-white" @click="ops.confirmBatchDelete">删除
+          </AlertDialogHeader>
+          <div v-if="ops.batchDeletingType.value === 'folder'" class="flex items-center space-x-2 px-1">
+            <Checkbox id="batchDeleteWithFiles" :model-value="Boolean(ops.deleteWithFiles.value)"
+              @update:model-value="ops.deleteWithFiles.value = $event === true" />
+            <label for="batchDeleteWithFiles" class="text-sm text-muted-foreground cursor-pointer select-none">
+              {{ $t('business.folderTreeComponent.deleteWithFilesLabel') }}
+            </label>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{{ $t('business.folderTreeComponent.cancel') }}</AlertDialogCancel>
+            <AlertDialogAction class="bg-destructive hover:bg-destructive text-white" @click="ops.confirmBatchDelete">{{ $t('business.folderTreeComponent.delete') }}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -243,14 +239,14 @@
     <AlertDialog :open="showDragConfirm" @update:open="showDragConfirm = $event">
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>确认移动</AlertDialogTitle>
-          <AlertDialogDescription>
-            确定将文件夹「{{ dragConfirmInfo.dragName }}」移动到{{ dragConfirmInfo.targetLabel }}吗？
-          </AlertDialogDescription>
+        <AlertDialogTitle>{{ $t('business.folderTreeComponent.confirmDragMoveTitle') }}</AlertDialogTitle>
+        <AlertDialogDescription>
+          {{ $t('business.folderTreeComponent.confirmDragMoveDesc', { name: dragConfirmInfo.dragName, target: dragConfirmInfo.targetLabel }) }}
+        </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <Button type="button" variant="outline" @click="cancelDragMove">取消</Button>
-          <Button type="button" @click="confirmDragMove">确认移动</Button>
+          <Button type="button" variant="outline" @click="cancelDragMove">{{ $t('business.folderTreeComponent.cancel') }}</Button>
+          <Button type="button" @click="confirmDragMove">{{ $t('business.folderTreeComponent.confirmMove') }}</Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
@@ -259,6 +255,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Draggable, BaseTree, dragContext } from '@he-tree/vue'
 import '@he-tree/vue/style/default.css'
 import {
@@ -347,12 +344,7 @@ const props = withDefaults(defineProps<Props>(), {
   title: '',
   hideHeader: false,
   folders: () => [],
-  baseCategoriesConfig: () => [
-    { id: 'all', label: '全部', icon: 'folder_open', iconColor: 'text-muted-foreground' },
-    { id: 'uncategorized', label: '未分类', icon: 'folder_special', iconColor: 'text-muted-foreground' },
-    { id: 'untagged', label: '未标签', icon: 'label_off', iconColor: 'text-muted-foreground' },
-    { id: 'trash', label: '回收站', icon: 'delete', iconColor: 'text-destructive' },
-  ],
+  baseCategoriesConfig: () => [],
 })
 
 interface Emits {
@@ -367,9 +359,20 @@ const libraryStore = useLibraryStore()
 const mediaStore = useMediaStore()
 const settingsStore = useSettingsStore()
 const toast = useToast()
+const { t } = useI18n()
 const isFolder = computed(() => props.itemType === 'folder')
 const defaultIcon = computed(() => isFolder.value ? 'folder' : 'label')
-const sectionTitle = computed(() => props.title || (isFolder.value ? '文件夹' : '标签'))
+const sectionTitle = computed(() => props.title || (isFolder.value ? t('business.folderTreeComponent.sectionFolder') : t('business.folderTreeComponent.sectionTag')))
+// 基础分类：未传入时使用内置默认（带本地化 label）
+const resolvedBaseCategories = computed(() => {
+  if (props.baseCategoriesConfig && props.baseCategoriesConfig.length > 0) return props.baseCategoriesConfig
+  return [
+    { id: 'all', label: t('business.folderTreeComponent.baseAll'), icon: 'folder_open', iconColor: 'text-muted-foreground' },
+    { id: 'uncategorized', label: t('business.folderTreeComponent.baseUncategorized'), icon: 'folder_special', iconColor: 'text-muted-foreground' },
+    { id: 'untagged', label: t('business.folderTreeComponent.baseUntagged'), icon: 'label_off', iconColor: 'text-muted-foreground' },
+    { id: 'trash', label: t('business.folderTreeComponent.baseTrash'), icon: 'delete', iconColor: 'text-destructive' },
+  ]
+})
 
 // 拖拽 drop 状态
 const dragOverNodeId = ref<string | null>(null)
@@ -522,7 +525,7 @@ async function processNodeDrop(e: DragEvent, node: HeTreeNode) {
     for (const file of files) {
       mediaStore.uploadFile(file, libraryId, metadata)
     }
-    toast.add({ severity: 'success', detail: `正在上传 ${files.length} 个文件到「${node.label}」`, life: 2000 })
+    toast.add({ severity: 'success', detail: t('business.folderTreeComponent.uploadingFiles', { count: files.length, name: node.label }), life: 2000 })
     return
   }
 
@@ -537,7 +540,7 @@ async function processNodeDrop(e: DragEvent, node: HeTreeNode) {
       console.error('Upload failed:', err)
     }
   }
-  toast.add({ severity: 'success', detail: `已上传 ${files.length} 个文件到「${node.label}」`, life: 2000 })
+  toast.add({ severity: 'success', detail: t('business.folderTreeComponent.uploadedFiles', { count: files.length, name: node.label }), life: 2000 })
 }
 
 async function handleInternalDrop(libraryId: string, fileIds: string[], node: HeTreeNode) {
@@ -558,7 +561,7 @@ async function handleInternalDrop(libraryId: string, fileIds: string[], node: He
     }
   }
   if (success > 0) {
-    toast.add({ severity: 'success', detail: `已将 ${success} 个文件${isFolder.value ? '移入' : '打上标签'}「${node.label}」`, life: 2000 })
+    toast.add({ severity: 'success', detail: isFolder.value ? t('business.folderTreeComponent.movedToFolder', { count: success, name: node.label }) : t('business.folderTreeComponent.taggedFiles', { count: success, name: node.label }), life: 2000 })
   }
 }
 
@@ -582,7 +585,7 @@ function toggleSearch() {
 // selectionMode 由 prop 决定能力；selectionActive 表示当前是否已进入选择状态
 const selectionEnabled = computed(() => props.selectionMode !== 'none')
 const isMultiMode = computed(() => props.selectionMode === 'multi')
-const selectionModeLabel = computed(() => isMultiMode.value ? '多选' : '单选')
+const selectionModeLabel = computed(() => isMultiMode.value ? t('business.folderTreeComponent.multiSelectLabel') : t('business.folderTreeComponent.singleSelectLabel'))
 const selectionActive = ref(false)
 const selectedNodeIds = ref<Set<string>>(new Set())
 // 选择模式下当前选中的节点数量
@@ -830,9 +833,8 @@ const { showDeleteDialog, showBatchDeleteDialog } = ops
 const contextMenuItems = computed(() => {
   // 选择模式激活时：右键菜单仅展示「删除」
   if (selectionActive.value) {
-    const itemLabel = isFolder.value ? '文件夹' : '标签'
     const { nodes, total } = collectSelectedTopLevelNodes()
-    const label = total > 0 ? `删除${itemLabel} (${total})` : `删除${itemLabel}`
+    const label = total > 0 ? (isFolder.value ? t('business.folderTreeComponent.deleteFolderCountAction', { count: total }) : t('business.folderTreeComponent.deleteTagCountAction', { count: total })) : (isFolder.value ? t('business.folderTreeComponent.deleteFolderAction') : t('business.folderTreeComponent.deleteTagAction'))
     return [
       {
         label,
@@ -1028,7 +1030,7 @@ function onAfterDrop() {
   // 跨层级移动：弹确认前先存好新兄弟排序
   const dragName = dragNode.data.label as string
   const parentLabel = dragNode.parent?.data?.label ?? ''
-  const targetLabel = newParentId ? `「${parentLabel}」下` : '根目录'
+  const targetLabel = newParentId ? t('business.folderTreeComponent.dragTargetChild', { name: parentLabel }) : t('business.folderTreeComponent.dragTargetRoot')
   const newSiblingIds = collectSiblingSortItems(dragNode)
 
   dragConfirmInfo.value = { dragId: draggedId, dragName, newParentId, targetLabel, newSiblingIds }

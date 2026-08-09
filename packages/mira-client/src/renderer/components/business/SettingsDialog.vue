@@ -5,7 +5,7 @@
   >
     <DialogContent class="settings-dialog sm:max-w-[60vw] sm:max-h-[70vh] overflow-hidden grid-rows-[auto_1fr]">
       <DialogHeader>
-        <DialogTitle>设置</DialogTitle>
+        <DialogTitle>{{ $t('business.settingsDialog.title') }}</DialogTitle>
       </DialogHeader>
       <div class="flex flex-col min-h-0 overflow-hidden">
         <!-- 顶部图标导航 -->
@@ -41,7 +41,7 @@
                 <span
                   class="absolute top-[34px] left-1/2 -translate-x-1/2 z-[1] text-xs font-medium whitespace-nowrap pointer-events-none transition-opacity duration-200"
                   :class="activeSection === section.id || isHovered(section.id) ? 'opacity-100' : 'opacity-0'"
-                >{{ section.name }}</span>
+                >{{ t(section.name) }}</span>
               </button>
             </LayoutGroup>
           </div>
@@ -60,6 +60,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Motion, LayoutGroup } from 'motion-v'
 import { useSettingsStore } from '../../stores/settings'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -91,6 +92,7 @@ interface Emits {
 }
 
 const emit = defineEmits<Emits>()
+const { t } = useI18n()
 
 // Store
 const settingsStore = useSettingsStore()
@@ -132,7 +134,7 @@ watch(isVisible, async (visible) => {
       await settingsStore.loadSettings()
       isInitialized.value = true
     } catch (error) {
-      console.error('加载设置失败:', error)
+      console.error(t('business.settingsDialog.loadFailed'), error)
     }
   }
 })

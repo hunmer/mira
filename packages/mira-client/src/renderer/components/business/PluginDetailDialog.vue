@@ -73,7 +73,7 @@
               
               <!-- 功能特性 -->
               <div v-if="plugin.features && plugin.features.length" class="mt-6">
-                <h3 class="text-lg font-semibold text-foreground mb-3">主要功能</h3>
+                <h3 class="text-lg font-semibold text-foreground mb-3">{{ $t('business.pluginDetailDialog.mainFeatures') }}</h3>
                 <ul class="space-y-2">
                   <li v-for="feature in plugin.features" :key="feature" class="flex items-start">
                     <span class="material-icons text-green-500 mr-2 mt-0.5 text-sm">check_circle</span>
@@ -88,14 +88,14 @@
               <div v-if="plugin.changelog && plugin.changelog.length" class="space-y-4">
                 <div v-for="change in plugin.changelog" :key="change.version" class="border-l-4 border-primary pl-4">
                   <div class="flex items-center gap-2 mb-1">
-                    <h4 class="font-semibold text-foreground">版本 {{ change.version }}</h4>
+                    <h4 class="font-semibold text-foreground">{{ $t('business.pluginDetailDialog.versionLabel', { version: change.version }) }}</h4>
                     <span class="text-sm text-muted-foreground">{{ formatDate(change.date) }}</span>
                   </div>
                   <p class="text-muted-foreground">{{ change.description }}</p>
                 </div>
               </div>
               <div v-else class="text-center py-8 text-muted-foreground">
-                暂无版本记录
+                {{ $t('business.pluginDetailDialog.noChangelog') }}
               </div>
             </div>
           </div>
@@ -104,7 +104,7 @@
           <div v-if="plugin.screenshots && plugin.screenshots.length" class="mt-8">
             <div class="relative">
               <img
-                :alt="`${plugin.name} 截图 ${currentScreenshot + 1}`"
+                :alt="$t('business.pluginDetailDialog.screenshotAlt', { name: plugin.name, index: currentScreenshot + 1 })"
                 class="rounded-lg shadow-lg mx-auto w-full max-h-96 object-contain"
                 :src="plugin.screenshots[currentScreenshot]"
               />
@@ -148,9 +148,9 @@
               >
                 <span v-if="isInstalling" class="material-icons mr-2 animate-spin">refresh</span>
                 <span v-else class="material-icons mr-2">download</span>
-                {{ isInstalling ? '安装中...' : '安装' }}
+                {{ isInstalling ? $t('business.pluginDetailDialog.installing') : $t('business.pluginDetailDialog.install') }}
               </button>
-              
+
               <button
                 v-else
                 @click="handleUninstall"
@@ -159,7 +159,7 @@
               >
                 <span v-if="isUninstalling" class="material-icons mr-2 animate-spin">refresh</span>
                 <span v-else class="material-icons mr-2">delete</span>
-                {{ isUninstalling ? '卸载中...' : '卸载' }}
+                {{ isUninstalling ? $t('business.pluginDetailDialog.uninstalling') : $t('business.pluginDetailDialog.uninstall') }}
               </button>
 
               <button
@@ -168,18 +168,18 @@
                 class="bg-white hover:bg-muted text-foreground font-bold py-3 px-6 rounded-lg w-full flex items-center justify-center text-lg border border-border mb-6 transition-colors"
               >
                 <span class="material-icons mr-2">home</span>
-                查看主页
+                {{ $t('business.pluginDetailDialog.viewHomepage') }}
               </button>
 
               <!-- 插件信息 -->
               <div class="space-y-4 text-sm text-muted-foreground">
                 <div class="flex items-center">
                   <span class="material-icons text-base mr-3 w-5 text-center">person</span>
-                  <span>由 <strong>{{ plugin.author || '未知开发者' }}</strong> 开发</span>
+                  <span v-html="$t('business.pluginDetailDialog.developedBy', { author: plugin.author || $t('business.pluginDetailDialog.unknownAuthor') })"></span>
                 </div>
                 <div class="flex items-center">
                   <span class="material-icons text-base mr-3 w-5 text-center">info</span>
-                  <span>版本 {{ plugin.version }}</span>
+                  <span>{{ $t('business.pluginDetailDialog.versionStat', { version: plugin.version }) }}</span>
                 </div>
                 <div v-if="plugin.fileSize" class="flex items-center">
                   <span class="material-icons text-base mr-3 w-5 text-center">storage</span>
@@ -189,7 +189,7 @@
 
               <!-- 标签分类 -->
               <div v-if="plugin.tags && plugin.tags.length" class="mt-6 pt-6 border-t border-border">
-                <h3 class="font-semibold text-foreground mb-3">类别</h3>
+                <h3 class="font-semibold text-foreground mb-3">{{ $t('business.pluginDetailDialog.category') }}</h3>
                 <div class="flex flex-wrap gap-2">
                   <span
                     v-for="tag in plugin.tags"
@@ -212,16 +212,16 @@
                            i - 0.5 <= plugin.rating ? 'star_half' : 'star_border' }}
                       </span>
                     </div>
-                    <div>{{ formatNumber(plugin.reviews) || 0 }} 评价</div>
+                    <div>{{ $t('business.pluginDetailDialog.reviewsLabel', { count: formatNumber(plugin.reviews) || 0 }) }}</div>
                   </div>
                 </div>
                 <div>
                   <div class="font-bold text-lg text-foreground">{{ formatNumber(plugin.downloads) || 'N/A' }}</div>
-                  <div class="text-sm text-muted-foreground">下载</div>
+                  <div class="text-sm text-muted-foreground">{{ $t('business.pluginDetailDialog.downloadsLabel') }}</div>
                 </div>
                 <div>
                   <div class="font-bold text-lg text-foreground">{{ formatNumber(plugin.users) || 'N/A' }}</div>
-                  <div class="text-sm text-muted-foreground">用户</div>
+                  <div class="text-sm text-muted-foreground">{{ $t('business.pluginDetailDialog.usersLabel') }}</div>
                 </div>
               </div>
             </div>
@@ -235,6 +235,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useToast } from '@/renderer/composables/useToast'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
@@ -283,6 +284,7 @@ const emit = defineEmits<{
 
 // 组合式 API
 const toast = useToast()
+const { t } = useI18n()
 
 // 响应式状态
 const isInstalling = ref(false)
@@ -291,10 +293,10 @@ const activeTab = ref('overview')
 const currentScreenshot = ref(0)
 
 // 标签页配置
-const tabs = [
-  { label: '插件介绍', value: 'overview' },
-  { label: '版本记录', value: 'changelog' }
-]
+const tabs = computed(() => [
+  { label: t('business.pluginDetailDialog.tabOverview'), value: 'overview' },
+  { label: t('business.pluginDetailDialog.tabChangelog'), value: 'changelog' }
+])
 
 // Computed
 const dialogVisible = computed({
@@ -315,15 +317,15 @@ const handleInstall = async () => {
     emit('install', props.plugin)
     toast.add({
       severity: 'success',
-      summary: '安装成功',
-      detail: `插件 "${props.plugin.name}" 已成功安装`,
+      summary: t('business.pluginDetailDialog.installSuccess'),
+      detail: t('business.pluginDetailDialog.installSuccessDetail', { name: props.plugin.name }),
       life: 3000
     })
   } catch (error) {
     toast.add({
       severity: 'error',
-      summary: '安装失败',
-      detail: error instanceof Error ? error.message : '未知错误',
+      summary: t('business.pluginDetailDialog.installFailed'),
+      detail: error instanceof Error ? error.message : t('business.pluginDetailDialog.unknownError'),
       life: 5000
     })
   } finally {
@@ -339,15 +341,15 @@ const handleUninstall = async () => {
     emit('uninstall', props.plugin)
     toast.add({
       severity: 'success',
-      summary: '卸载成功',
-      detail: `插件 "${props.plugin.name}" 已成功卸载`,
+      summary: t('business.pluginDetailDialog.uninstallSuccess'),
+      detail: t('business.pluginDetailDialog.uninstallSuccessDetail', { name: props.plugin.name }),
       life: 3000
     })
   } catch (error) {
     toast.add({
       severity: 'error',
-      summary: '卸载失败',
-      detail: error instanceof Error ? error.message : '未知错误',
+      summary: t('business.pluginDetailDialog.uninstallFailed'),
+      detail: error instanceof Error ? error.message : t('business.pluginDetailDialog.unknownError'),
       life: 5000
     })
   } finally {

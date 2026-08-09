@@ -2,7 +2,7 @@
   <div v-if="isVisible" class="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000]" @click.self="closeDialog">
     <div class="bg-white rounded-xl shadow-[0_10px_25px_rgba(0,0,0,0.15)] w-full max-w-[500px] max-h-[90vh] overflow-y-auto m-4">
       <div class="flex items-center justify-between p-6 pb-0 border-b border-border mb-6">
-        <h2 class="text-xl font-semibold text-foreground m-0">用户注册</h2>
+        <h2 class="text-xl font-semibold text-foreground m-0">{{ $t('commonUi.registerDialog.title') }}</h2>
         <button class="bg-transparent border-none text-muted-foreground cursor-pointer p-1 rounded transition-colors duration-200 hover:text-muted-foreground" @click="closeDialog">
           <span class="material-icons">close</span>
         </button>
@@ -10,12 +10,12 @@
       
       <form @submit.prevent="handleSubmit" class="px-6 pb-6 flex flex-col gap-6">
         <div class="flex flex-col gap-2">
-          <label for="username" class="text-sm font-medium text-foreground">用户名</label>
+          <label for="username" class="text-sm font-medium text-foreground">{{ $t('commonUi.registerDialog.username') }}</label>
           <input
             id="username"
             v-model="formData.username"
             type="text"
-            placeholder="请输入用户名"
+            :placeholder="$t('commonUi.registerDialog.usernamePlaceholder')"
             :class="{ 'error': errors.username }"
             required
           />
@@ -23,37 +23,37 @@
         </div>
 
         <div class="flex flex-col gap-2">
-          <label for="email" class="text-sm font-medium text-foreground">邮箱</label>
+          <label for="email" class="text-sm font-medium text-foreground">{{ $t('commonUi.registerDialog.email') }}</label>
           <input
             id="email"
             v-model="formData.email"
             type="email"
-            placeholder="请输入邮箱地址"
+            :placeholder="$t('commonUi.registerDialog.emailPlaceholder')"
             :class="{ 'error': errors.email }"
           />
           <div v-if="errors.email" class="text-destructive text-sm">{{ errors.email }}</div>
         </div>
 
         <div class="flex flex-col gap-2">
-          <label for="realName" class="text-sm font-medium text-foreground">真实姓名</label>
+          <label for="realName" class="text-sm font-medium text-foreground">{{ $t('commonUi.registerDialog.realName') }}</label>
           <input
             id="realName"
             v-model="formData.realName"
             type="text"
-            placeholder="请输入真实姓名"
+            :placeholder="$t('commonUi.registerDialog.realNamePlaceholder')"
             :class="{ 'error': errors.realName }"
           />
           <div v-if="errors.realName" class="text-destructive text-sm">{{ errors.realName }}</div>
         </div>
 
         <div class="flex flex-col gap-2">
-          <label for="password" class="text-sm font-medium text-foreground">密码</label>
+          <label for="password" class="text-sm font-medium text-foreground">{{ $t('commonUi.registerDialog.password') }}</label>
           <div class="relative">
             <input
               id="password"
               v-model="formData.password"
               :type="showPassword ? 'text' : 'password'"
-              placeholder="请输入密码"
+              :placeholder="$t('commonUi.registerDialog.passwordPlaceholder')"
               :class="{ 'error': errors.password }"
               required
             />
@@ -69,13 +69,13 @@
         </div>
 
         <div class="flex flex-col gap-2">
-          <label for="confirmPassword" class="text-sm font-medium text-foreground">确认密码</label>
+          <label for="confirmPassword" class="text-sm font-medium text-foreground">{{ $t('commonUi.registerDialog.confirmPassword') }}</label>
           <div class="relative">
             <input
               id="confirmPassword"
               v-model="formData.confirmPassword"
               :type="showConfirmPassword ? 'text' : 'password'"
-              placeholder="请再次输入密码"
+              :placeholder="$t('commonUi.registerDialog.confirmPasswordPlaceholder')"
               :class="{ 'error': errors.confirmPassword }"
               required
             />
@@ -101,7 +101,7 @@
             @click="closeDialog"
             :disabled="isLoading"
           >
-            取消
+            {{ $t('commonUi.registerDialog.cancel') }}
           </button>
           <button
             type="submit"
@@ -109,7 +109,7 @@
             :disabled="isLoading || !isFormValid"
           >
             <span v-if="isLoading" class="loading-spinner"></span>
-            注册
+            {{ $t('commonUi.registerDialog.submit') }}
           </button>
         </div>
       </form>
@@ -119,6 +119,7 @@
 
 <script setup lang="ts">
 import { reactive, ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 
 // Props
@@ -138,6 +139,7 @@ const emit = defineEmits<Emits>()
 
 // Store
 const authStore = useAuthStore()
+const { t } = useI18n()
 
 // 状态
 const isLoading = ref(false)
@@ -222,7 +224,7 @@ const validateForm = () => {
   let isValid = true
 
   if (!formData.username.trim()) {
-    errors.username = '请输入用户名'
+    errors.username = t('commonUi.registerDialog.errUsernameRequired')
     isValid = false
   } else if (!validateUsername(formData.username)) {
     isValid = false
@@ -233,14 +235,14 @@ const validateForm = () => {
   }
 
   if (!formData.password) {
-    errors.password = '请输入密码'
+    errors.password = t('commonUi.registerDialog.errPasswordRequired')
     isValid = false
   } else if (!validatePassword(formData.password)) {
     isValid = false
   }
 
   if (!formData.confirmPassword) {
-    errors.confirmPassword = '请确认密码'
+    errors.confirmPassword = t('commonUi.registerDialog.errConfirmRequired')
     isValid = false
   } else if (!validateConfirmPassword(formData.confirmPassword)) {
     isValid = false
@@ -251,11 +253,11 @@ const validateForm = () => {
 
 const validateUsername = (username: string) => {
   if (username.length < 3) {
-    errors.username = '用户名至少需要3个字符'
+    errors.username = t('commonUi.registerDialog.errUsernameMinLength')
     return false
   }
   if (!/^[a-zA-Z0-9_\u4e00-\u9fa5]+$/.test(username)) {
-    errors.username = '用户名只能包含字母、数字、下划线和中文'
+    errors.username = t('commonUi.registerDialog.errUsernameInvalid')
     return false
   }
   return true
@@ -264,7 +266,7 @@ const validateUsername = (username: string) => {
 const validateEmail = (email: string) => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   if (!emailRegex.test(email)) {
-    errors.email = '请输入有效的邮箱地址'
+    errors.email = t('commonUi.registerDialog.errEmailInvalid')
     return false
   }
   return true
@@ -276,7 +278,7 @@ const validatePassword = (_password: string) => {
 
 const validateConfirmPassword = (confirmPassword: string) => {
   if (confirmPassword !== formData.password) {
-    errors.confirmPassword = '两次输入的密码不一致'
+    errors.confirmPassword = t('commonUi.registerDialog.errConfirmMismatch')
     return false
   }
   return true
@@ -302,10 +304,10 @@ const handleSubmit = async () => {
       emit('registered', result.data)
       closeDialog()
     } else {
-      error.value = result.error || '注册失败'
+      error.value = result.error || t('commonUi.registerDialog.errRegisterFailed')
     }
   } catch (err) {
-    error.value = err instanceof Error ? err.message : '注册失败'
+    error.value = err instanceof Error ? err.message : t('commonUi.registerDialog.errRegisterFailed')
   } finally {
     isLoading.value = false
   }

@@ -78,7 +78,7 @@ const onSelectCollection = (collection: any, close: () => void) => {
     <button
       type="button"
       class="size-7 shrink-0 rounded-lg hover:opacity-80 active:scale-95 transition cursor-pointer"
-      title="关于 Mira"
+      :title="$t('views.sidebarLibrarySelector.about')"
       @click="emit('showAbout')"
     >
       <img
@@ -99,7 +99,7 @@ const onSelectCollection = (collection: any, close: () => void) => {
           class="w-full flex items-center space-x-2 text-sm font-medium rounded-xl bg-primary/10 text-primary hover:bg-primary/15 transition-colors px-3 py-2"
         >
           <span class="material-icons">folder</span>
-          <span class="truncate flex-1 text-left">{{ libraryStore.currentLibrary?.name || '未选择素材库' }}</span>
+          <span class="truncate flex-1 text-left">{{ libraryStore.currentLibrary?.name || $t('views.sidebarLibrarySelector.noLibrary') }}</span>
           <span class="material-symbols-outlined text-primary/60">keyboard_arrow_down</span>
         </button>
       </template>
@@ -107,7 +107,7 @@ const onSelectCollection = (collection: any, close: () => void) => {
       <template #content="{ close }">
         <div class="bg-popover rounded-2xl">
           <div class="p-2">
-            <div class="text-xs text-muted-foreground mb-2">选择素材库</div>
+            <div class="text-xs text-muted-foreground mb-2">{{ $t('views.sidebarLibrarySelector.selectLibrary') }}</div>
             <!-- 素材库列表 -->
             <div v-if="libraryStore.libraries && libraryStore.libraries.length > 0">
               <div
@@ -124,8 +124,8 @@ const onSelectCollection = (collection: any, close: () => void) => {
                   <div>
                     <div class="font-medium text-sm">{{ collection.name }}</div>
                     <div class="text-xs text-muted-foreground">
-                      {{ collection.fileCount }} 个文件 · {{ collection.type }}
-                      <span v-if="!canAccessLibrary(collection)" class="text-destructive"> · 权限不足</span>
+                      {{ $t('views.sidebarLibrarySelector.fileCount', { count: collection.fileCount, type: collection.type }) }}
+                      <span v-if="!canAccessLibrary(collection)" class="text-destructive"> · {{ $t('views.sidebarLibrarySelector.accessDenied') }}</span>
                     </div>
                   </div>
                 </div>
@@ -133,7 +133,7 @@ const onSelectCollection = (collection: any, close: () => void) => {
                   <button
                     v-if="getLibraryLocalPath(collection)"
                     class="p-1 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
-                    title="定位到目录"
+                    :title="$t('views.sidebarLibrarySelector.locate')"
                     @click="openLibraryFolder(collection, $event)"
                   >
                     <span class="material-icons text-sm">folder_open</span>
@@ -153,8 +153,8 @@ const onSelectCollection = (collection: any, close: () => void) => {
               <div class="mb-2">
                 <span class="material-icons text-muted-foreground text-2xl">library_books</span>
               </div>
-              <div class="text-sm">暂无可用素材库</div>
-              <div class="text-xs mt-1">请先连接到服务器或添加素材库</div>
+              <div class="text-sm">{{ $t('views.sidebarLibrarySelector.emptyTitle') }}</div>
+              <div class="text-xs mt-1">{{ $t('views.sidebarLibrarySelector.emptyDesc') }}</div>
             </div>
 
             <div class="border-t border-border/60 mt-2 pt-2 space-y-1">
@@ -163,14 +163,14 @@ const onSelectCollection = (collection: any, close: () => void) => {
                 @click="emit('showLibraryManagement'); close()"
               >
                 <span class="material-icons">settings</span>
-                <span>服务器设置</span>
+                <span>{{ $t('views.sidebarLibrarySelector.serverSettings') }}</span>
               </button>
               <button
                 class="w-full flex items-center space-x-2 p-2 text-primary hover:bg-primary/10 rounded-lg text-sm transition-colors"
                 @click="emit('addServer'); close()"
               >
                 <span class="material-icons">add</span>
-                <span>连接服务器</span>
+                <span>{{ $t('views.sidebarLibrarySelector.connectServer') }}</span>
               </button>
             </div>
           </div>

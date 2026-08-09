@@ -1,4 +1,5 @@
 import { ref, computed, type Ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useToast } from '@/renderer/composables/useToast'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 import type { Folder, Tag, PendingFile } from './types'
@@ -6,6 +7,7 @@ import type { FolderItem } from '@renderer/types/components'
 
 export function useFolderTagPanel() {
   const toast = useToast()
+  const { t } = useI18n()
 
   const folders = ref<Folder[]>([])
   const tags = ref<Tag[]>([])
@@ -65,23 +67,23 @@ export function useFolderTagPanel() {
       console.error('加载文件夹和标签失败:', error)
       toast.add({
         severity: 'error',
-        summary: '加载失败',
-        detail: '无法加载文件夹和标签数据',
+        summary: t('business.folderTagPanel.loadFailedTitle'),
+        detail: t('business.folderTagPanel.loadFailedDetail'),
         life: 3000
       })
     }
   }
 
   function getFolderName(id: string | number | undefined): string {
-    if (id === undefined || id === null) return '未知文件夹'
+    if (id === undefined || id === null) return t('business.folderTagPanel.unknownFolder')
     const sid = String(id)
-    return folders.value.find((f) => String(f.id) === sid)?.title || '未知文件夹'
+    return folders.value.find((f) => String(f.id) === sid)?.title || t('business.folderTagPanel.unknownFolder')
   }
 
   function getTagName(id: string | number | undefined): string {
-    if (id === undefined || id === null) return '未知标签'
+    if (id === undefined || id === null) return t('business.folderTagPanel.unknownTag')
     const sid = String(id)
-    return tags.value.find((t) => String(t.id) === sid)?.title || '未知标签'
+    return tags.value.find((tg) => String(tg.id) === sid)?.title || t('business.folderTagPanel.unknownTag')
   }
 
   function handleFolderSelect(folder: FolderItem) {
@@ -125,11 +127,12 @@ export function useFolderTagPanel() {
       }
     })
 
-    const scope = selectedIds.length > 0 ? `${targetIds.length} 个选中文件` : '全部文件'
     toast.add({
       severity: 'success',
-      summary: '已应用',
-      detail: `已为${scope}设置元数据`,
+      summary: t('business.folderTagPanel.appliedTitle'),
+      detail: selectedIds.length > 0
+        ? t('business.folderTagPanel.appliedDetailSelected', { count: targetIds.length })
+        : t('business.folderTagPanel.appliedDetailAll'),
       life: 2000
     })
   }

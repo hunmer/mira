@@ -5,15 +5,15 @@
   >
     <DialogContent class="file-upload-dialog sm:max-w-[90vw] h-[85vh] grid grid-rows-[auto_1fr_auto] overflow-hidden">
       <DialogHeader>
-        <DialogTitle>文件上传</DialogTitle>
+        <DialogTitle>{{ $t('business.fileUploadDialog.title') }}</DialogTitle>
       </DialogHeader>
       <div class="file-upload-content flex flex-col min-h-[400px] overflow-hidden">
         <!-- 顶部队列状态 -->
         <div v-if="queueStats.pending > 0 || queueStats.running > 0" class="flex items-center justify-end space-x-4 text-sm mb-4 px-1">
-          <span class="text-primary dark:text-primary">等待中: {{ queueStats.pending }}</span>
-          <span class="text-orange-600 dark:text-orange-400">上传中: {{ queueStats.running }}</span>
-          <span class="text-green-600 dark:text-green-400">已完成: {{ queueStats.completed }}</span>
-          <span v-if="queueStats.failed > 0" class="text-destructive dark:text-destructive">失败: {{ queueStats.failed }}</span>
+          <span class="text-primary dark:text-primary">{{ $t('business.fileUploadDialog.pending', { count: queueStats.pending }) }}</span>
+          <span class="text-orange-600 dark:text-orange-400">{{ $t('business.fileUploadDialog.uploading', { count: queueStats.running }) }}</span>
+          <span class="text-green-600 dark:text-green-400">{{ $t('business.fileUploadDialog.completed', { count: queueStats.completed }) }}</span>
+          <span v-if="queueStats.failed > 0" class="text-destructive dark:text-destructive">{{ $t('business.fileUploadDialog.failed', { count: queueStats.failed }) }}</span>
         </div>
 
         <!-- 主体内容区域 -->
@@ -36,10 +36,10 @@
             <button
               class="mt-2 w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-primary dark:bg-primary text-white text-xs font-medium hover:bg-primary dark:hover:bg-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               :disabled="isImportingStructure || localTreeData.length === 0"
-              :title="localTreeData.length === 0 ? '请先导入文件夹' : '按本地目录层级在素材库下创建对应文件夹并应用到待上传文件'"
+              :title="localTreeData.length === 0 ? $t('business.fileUploadDialog.importStructureTooltipEmpty') : $t('business.fileUploadDialog.importStructureTooltip')"
               @click="importWithStructure"
             >
-              <span>{{ isImportingStructure ? '导入中...' : '按原有结构创建文件夹' }}</span>
+              <span>{{ isImportingStructure ? $t('business.fileUploadDialog.importing') : $t('business.fileUploadDialog.importStructure') }}</span>
             </button>
           </div>
 
@@ -66,9 +66,9 @@
               <!-- 文件列表头部 -->
               <div class="flex items-center justify-between px-4 py-3 border-b border-border dark:border-border">
                 <div class="flex items-center space-x-2">
-                  <span class="text-sm font-medium text-foreground dark:text-muted-foreground">待上传文件</span>
+                  <span class="text-sm font-medium text-foreground dark:text-muted-foreground">{{ $t('business.fileUploadDialog.pendingFiles') }}</span>
                   <span v-if="pendingFiles.length > 0" class="text-xs text-muted-foreground dark:text-muted-foreground bg-muted dark:bg-muted px-2 py-0.5 rounded-full">
-                    {{ filteredPendingFiles.length }} / {{ pendingFiles.length }} 个
+                    {{ $t('business.fileUploadDialog.fileCount', { shown: filteredPendingFiles.length, total: pendingFiles.length }) }}
                   </span>
                 </div>
                 <div class="flex items-center space-x-2">
@@ -77,14 +77,14 @@
                     class="text-xs text-muted-foreground dark:text-muted-foreground hover:text-foreground dark:hover:text-muted-foreground"
                     @click="clearSelection"
                   >
-                    取消选择 ({{ selectedPendingIds.length }})
+                    {{ $t('business.fileUploadDialog.cancelSelection', { count: selectedPendingIds.length }) }}
                   </button>
                   <button
                     v-if="pendingFiles.length > 0"
                     class="text-xs text-destructive dark:text-destructive hover:text-destructive dark:hover:text-destructive"
                     @click="handleClearAll"
                   >
-                    清空全部
+                    {{ $t('business.fileUploadDialog.clearAll') }}
                   </button>
                 </div>
               </div>
@@ -94,28 +94,28 @@
                 <!-- 格式 -->
                 <Select v-model="formatFilter">
                   <SelectTrigger class="h-7 w-24 text-xs">
-                    <SelectValue placeholder="格式" />
+                    <SelectValue :placeholder="$t('business.fileUploadDialog.formatPlaceholder')" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">全部格式</SelectItem>
-                    <SelectItem value="image">图片</SelectItem>
-                    <SelectItem value="video">视频</SelectItem>
-                    <SelectItem value="audio">音频</SelectItem>
-                    <SelectItem value="document">文档</SelectItem>
-                    <SelectItem value="other">其他</SelectItem>
+                    <SelectItem value="all">{{ $t('business.fileUploadDialog.formatAll') }}</SelectItem>
+                    <SelectItem value="image">{{ $t('business.fileUploadDialog.formatImage') }}</SelectItem>
+                    <SelectItem value="video">{{ $t('business.fileUploadDialog.formatVideo') }}</SelectItem>
+                    <SelectItem value="audio">{{ $t('business.fileUploadDialog.formatAudio') }}</SelectItem>
+                    <SelectItem value="document">{{ $t('business.fileUploadDialog.formatDocument') }}</SelectItem>
+                    <SelectItem value="other">{{ $t('business.fileUploadDialog.formatOther') }}</SelectItem>
                   </SelectContent>
                 </Select>
                 <!-- 文件大小 -->
                 <Select v-if="sizeFilter !== 'custom'" v-model="sizeFilter" @update:model-value="onSizeFilterChange">
                   <SelectTrigger class="h-7 w-28 text-xs">
-                    <SelectValue placeholder="文件大小" />
+                    <SelectValue :placeholder="$t('business.fileUploadDialog.sizePlaceholder')" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">全部大小</SelectItem>
+                    <SelectItem value="all">{{ $t('business.fileUploadDialog.sizeAll') }}</SelectItem>
                     <SelectItem value="lt1m">&lt; 1MB</SelectItem>
                     <SelectItem value="1to10m">1 - 10MB</SelectItem>
                     <SelectItem value="gt10m">&gt; 10MB</SelectItem>
-                    <SelectItem value="custom">自定义...</SelectItem>
+                    <SelectItem value="custom">{{ $t('business.fileUploadDialog.sizeCustom') }}</SelectItem>
                   </SelectContent>
                 </Select>
                 <!-- 文件大小：自定义区间（双滑块） -->
@@ -129,7 +129,7 @@
                         class="material-icons ml-1 text-muted-foreground hover:text-destructive"
                         style="font-size: 14px"
                         @click.stop="sizePopoverOpen = false; sizeFilter = 'all'"
-                        title="清除自定义"
+                        :title="$t('business.fileUploadDialog.clearCustom')"
                       >close</span>
                     </button>
                   </PopoverTrigger>
@@ -148,8 +148,8 @@
                         >{{ u.label }}</button>
                       </div>
                       <div class="flex items-center justify-between text-xs text-muted-foreground dark:text-muted-foreground">
-                        <span>最小 {{ sizeRangeDisplay[0] }} {{ unitLabel }}</span>
-                        <span>最大 {{ sizeRangeDisplay[1] }} {{ unitLabel }}</span>
+                        <span>{{ $t('business.fileUploadDialog.sizeMin', { value: sizeRangeDisplay[0], unit: unitLabel }) }}</span>
+                        <span>{{ $t('business.fileUploadDialog.sizeMax', { value: sizeRangeDisplay[1], unit: unitLabel }) }}</span>
                       </div>
                       <Slider
                         v-model="sizeRangeDisplay"
@@ -188,19 +188,19 @@
                   <input
                     v-model="nameFilter"
                     type="text"
-                    placeholder="文件名"
+                    :placeholder="$t('business.fileUploadDialog.namePlaceholder')"
                     class="h-7 w-full pl-7 pr-2 text-xs rounded-md border border-border dark:border-border bg-transparent focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                 </div>
                 <!-- 命中数提示 -->
                 <span v-if="hasActiveFilter" class="text-xs text-muted-foreground whitespace-nowrap">
-                  命中 {{ matchedCount }}
+                  {{ $t('business.fileUploadDialog.matchedCount', { count: matchedCount }) }}
                 </span>
                 <!-- 切换隐藏不符合条件 -->
                 <button
                   class="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:text-muted-foreground dark:hover:text-muted-foreground hover:bg-muted dark:hover:bg-muted transition-colors"
                   :class="{ 'text-primary dark:text-primary': hideNonMatching }"
-                  :title="hideNonMatching ? '显示不符合条件的文件' : '隐藏不符合条件的文件'"
+                  :title="hideNonMatching ? $t('business.fileUploadDialog.hideNonMatchingTitle') : $t('business.fileUploadDialog.showNonMatchingTitle')"
                   @click="hideNonMatching = !hideNonMatching"
                 >
                   <span class="material-icons leading-none" style="font-size: 18px">
@@ -229,8 +229,8 @@
                     @click="triggerFileSelect(fileInputRef)"
                   >
                     <span class="material-icons text-5xl mb-2">cloud_upload</span>
-                    <p>拖拽文件到此处</p>
-                    <p class="text-xs mt-1">或点击选择文件（最多 {{ FILE_LIMITS.MAX_FILES_PER_BATCH }} 个）</p>
+                    <p>{{ $t('business.fileUploadDialog.emptyTitle') }}</p>
+                    <p class="text-xs mt-1">{{ $t('business.fileUploadDialog.emptyDesc', { count: FILE_LIMITS.MAX_FILES_PER_BATCH }) }}</p>
                   </div>
 
                   <!-- 文件网格：Masonry 按容器宽度响应式分列 -->
@@ -264,7 +264,7 @@
                             v-if="file.preview && isImageFile(file.file.type)"
                             :src="file.preview"
                             class="w-full h-full object-cover"
-                            alt="预览"
+                            alt=""
                           />
                           <!-- 视频预览 -->
                           <div v-else-if="isVideoFile(file.file.type)" class="w-full h-full flex items-center justify-center bg-purple-100 dark:bg-purple-900/30">
@@ -272,7 +272,7 @@
                               v-if="file.preview"
                               :src="file.preview"
                               class="w-full h-full object-cover"
-                              alt="视频封面"
+                              alt=""
                             />
                             <span v-else class="material-icons text-4xl text-purple-400">videocam</span>
                           </div>
@@ -304,7 +304,7 @@
                           >
                             <div class="text-center text-white">
                               <div class="text-2xl font-bold">{{ getUploadProgress(file.id) }}%</div>
-                              <div class="text-xs">上传中...</div>
+                              <div class="text-xs">{{ $t('business.fileUploadDialog.uploadingFile') }}</div>
                             </div>
                           </div>
 
@@ -313,7 +313,7 @@
                             v-if="!matchesFilters(file)"
                             class="absolute inset-0 bg-muted/30 flex items-center justify-center pointer-events-none"
                           >
-                            <span class="text-xs text-white bg-muted/80 px-2 py-0.5 rounded">不符合条件</span>
+                            <span class="text-xs text-white bg-muted/80 px-2 py-0.5 rounded">{{ $t('business.fileUploadDialog.notMatched') }}</span>
                           </div>
                         </div>
 
@@ -386,10 +386,10 @@
       </div>
       <DialogFooter class="flex-row w-full sm:justify-between">
         <div class="flex items-center space-x-2">
-          <span class="text-sm text-muted-foreground dark:text-muted-foreground">素材库:</span>
+          <span class="text-sm text-muted-foreground dark:text-muted-foreground">{{ $t('business.fileUploadDialog.libraryLabel') }}</span>
           <Select v-model="selectedLibraryId" @update:model-value="(v: any) => handleLibrarySelectChange(v)">
             <SelectTrigger class="w-48">
-              <SelectValue placeholder="选择素材库" />
+              <SelectValue :placeholder="$t('business.fileUploadDialog.libraryPlaceholder')" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem v-for="lib in libraryOptions" :key="lib.id" :value="lib.id">{{ lib.name }}</SelectItem>
@@ -403,7 +403,7 @@
         >
           <span class="flex items-center gap-2">
             <span class="material-icons text-sm">upload</span>
-            开始上传 ({{ pendingFiles.length }})
+            {{ $t('business.fileUploadDialog.startUpload', { count: pendingFiles.length }) }}
           </span>
         </button>
       </DialogFooter>

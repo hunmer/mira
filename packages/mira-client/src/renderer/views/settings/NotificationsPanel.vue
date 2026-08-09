@@ -4,8 +4,8 @@
       <div class="space-y-4">
         <div class="flex items-center justify-between py-2">
           <div>
-            <p class="text-foreground dark:text-muted-foreground text-base font-normal leading-normal">启用通知</p>
-            <p class="text-muted-foreground dark:text-muted-foreground text-sm">接收应用状态和操作结果通知</p>
+            <p class="text-foreground dark:text-muted-foreground text-base font-normal leading-normal">{{ $t('views.notificationsPanel.enableTitle') }}</p>
+            <p class="text-muted-foreground dark:text-muted-foreground text-sm">{{ $t('views.notificationsPanel.enableDesc') }}</p>
           </div>
           <Switch
             :checked="settingsStore.settings.enableNotifications"
@@ -15,8 +15,8 @@
 
         <div class="flex items-center justify-between py-2">
           <div>
-            <p class="text-foreground dark:text-muted-foreground text-base font-normal leading-normal">导入文件通知</p>
-            <p class="text-muted-foreground dark:text-muted-foreground text-sm">文件导入完成时弹出桌面通知（批量导入会聚合为一条）</p>
+            <p class="text-foreground dark:text-muted-foreground text-base font-normal leading-normal">{{ $t('views.notificationsPanel.importTitle') }}</p>
+            <p class="text-muted-foreground dark:text-muted-foreground text-sm">{{ $t('views.notificationsPanel.importDesc') }}</p>
           </div>
           <Switch
             :checked="settingsStore.settings.enableImportNotifications"
@@ -29,12 +29,14 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '../../stores/settings'
 import { useToast } from '@/renderer/composables/useToast'
 import { Switch } from '@/components/ui/switch'
 
 const settingsStore = useSettingsStore()
 const toast = useToast()
+const { t } = useI18n()
 
 // 方法
 const handleSettingChange = async (key: string, value: any) => {
@@ -46,16 +48,16 @@ const handleSettingChange = async (key: string, value: any) => {
 
     toast.add({
       severity: 'success',
-      summary: '设置已保存',
-      detail: `${key} 设置已成功更新`,
+      summary: t('views.common.settingSaved'),
+      detail: t('views.common.settingUpdated', { key }),
       life: 2000
     })
   } catch (error) {
     console.error('Setting change error:', error, 'Value:', value)
     toast.add({
       severity: 'error',
-      summary: '保存失败',
-      detail: error instanceof Error ? error.message : '保存设置时发生错误',
+      summary: t('views.common.saveFailed'),
+      detail: error instanceof Error ? error.message : t('views.common.saveError'),
       life: 5000
     })
   }

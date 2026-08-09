@@ -5,7 +5,8 @@
  * 展示 mira-app-server 的安装、启动、配置、校验步骤。
  * 内容源自 packages/mira-app-server/README.md，供 LoginView 的部署对话框使用。
  */
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Check, Copy } from 'lucide-vue-next'
 
 interface Step {
@@ -14,47 +15,49 @@ interface Step {
   command?: string
 }
 
+const { t } = useI18n()
+
 const userAgent = navigator.userAgent.toLowerCase()
-const dependencyInstall = userAgent.includes('windows')
+const dependencyInstall = computed(() => userAgent.includes('windows')
   ? {
-      desc: '使用 winget 安装 FFmpeg 和 ImageMagick。',
+      desc: t('business.manualDeployGuide.step2DescWin'),
       command: 'winget install --id Gyan.FFmpeg -e; winget install --id ImageMagick.ImageMagick -e',
     }
   : userAgent.includes('mac')
-    ? { desc: '使用 Homebrew 安装 FFmpeg 和 ImageMagick。', command: 'brew install ffmpeg imagemagick' }
-    : { desc: 'Debian / Ubuntu 使用 apt 安装 FFmpeg 和 ImageMagick。', command: 'sudo apt update && sudo apt install -y ffmpeg imagemagick' }
+    ? { desc: t('business.manualDeployGuide.step2DescMac'), command: 'brew install ffmpeg imagemagick' }
+    : { desc: t('business.manualDeployGuide.step2DescLinux'), command: 'sudo apt update && sudo apt install -y ffmpeg imagemagick' })
 
-const steps: Step[] = [
+const steps = computed<Step[]>(() => [
   {
-    title: '1. 安装 Node.js',
-    desc: '需要 Node.js >= 18。安装后运行 node -v 与 npm -v 验证。',
+    title: t('business.manualDeployGuide.step1Title'),
+    desc: t('business.manualDeployGuide.step1Desc'),
     command: 'node -v && npm -v',
   },
   {
-    title: '2. 安装媒体处理依赖',
-    ...dependencyInstall,
+    title: t('business.manualDeployGuide.step2Title'),
+    ...dependencyInstall.value,
   },
   {
-    title: '3. 安装 mira-app-server',
-    desc: '推荐全局安装，安装后可在任意目录使用 mira-app-server 命令。',
+    title: t('business.manualDeployGuide.step3Title'),
+    desc: t('business.manualDeployGuide.step3Desc'),
     command: 'npm install -g mira-app-server',
   },
   {
-    title: '4. 启动服务器',
-    desc: '使用默认配置启动（HTTP 端口 8081 / WebSocket 端口 8018）。',
+    title: t('business.manualDeployGuide.step4Title'),
+    desc: t('business.manualDeployGuide.step4Desc'),
     command: 'mira-app-server start',
   },
   {
-    title: '5. 自定义端口 / 数据目录',
-    desc: '可选：通过参数自定义 HTTP、WebSocket 端口与数据目录。',
+    title: t('business.manualDeployGuide.step5Title'),
+    desc: t('business.manualDeployGuide.step5Desc'),
     command: 'mira-app-server start --http-port 8081 --ws-port 8018 --data-path ./data',
   },
   {
-    title: '6. 校验健康状态',
-    desc: '服务启动后，访问健康检查接口应返回 success: true。',
+    title: t('business.manualDeployGuide.step6Title'),
+    desc: t('business.manualDeployGuide.step6Desc'),
     command: 'curl http://localhost:8081/api/system/health',
   },
-]
+])
 
 const copied = ref<string | null>(null)
 async function copyCommand(cmd: string, key: string) {
@@ -69,12 +72,12 @@ async function copyCommand(cmd: string, key: string) {
   }
 }
 
-const options = [
-  { flag: '--http-port <port>', desc: 'HTTP 服务器端口（默认 8081）' },
-  { flag: '--ws-port <port>', desc: 'WebSocket 服务器端口（默认 8018）' },
-  { flag: '--data-path <path>', desc: '数据目录路径（默认 ./data）' },
-  { flag: '--help', desc: '显示帮助信息' },
-]
+const options = computed(() => [
+  { flag: '--http-port <port>', desc: t('business.manualDeployGuide.optionHttpPort') },
+  { flag: '--ws-port <port>', desc: t('business.manualDeployGuide.optionWsPort') },
+  { flag: '--data-path <path>', desc: t('business.manualDeployGuide.optionDataPath') },
+  { flag: '--help', desc: t('business.manualDeployGuide.optionHelp') },
+])
 </script>
 
 <template>
@@ -94,7 +97,7 @@ const options = [
           <button
             type="button"
             class="shrink-0 p-1 rounded text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors border-none bg-transparent cursor-pointer"
-            title="复制"
+            :title="$t('business.manualDeployGuide.copy')"
             @click="copyCommand(step.command, 'srv-' + idx)"
           >
             <Check v-if="copied === 'srv-' + idx" class="w-3.5 h-3.5 text-emerald-500" />
@@ -105,7 +108,7 @@ const options = [
     </ol>
 
     <div class="rounded-lg border border-border dark:border-border bg-muted/40 dark:bg-muted/30 p-3">
-      <p class="text-xs font-semibold text-foreground mb-2">可用选项</p>
+      <p class="text-xs font-semibold text-foreground mb-2">{{ $t('business.manualDeployGuide.optionsTitle') }}</p>
       <ul class="flex flex-col gap-1.5">
         <li v-for="opt in options" :key="opt.flag" class="flex flex-col gap-0.5">
           <code class="font-mono text-[11px] text-primary">{{ opt.flag }}</code>
@@ -115,8 +118,7 @@ const options = [
     </div>
 
     <p class="text-[11px] text-muted-foreground leading-relaxed">
-      提示：启动后回到本页，在服务器列表点击「添加服务器」并填入对应的
-      <code class="font-mono">http://&lt;主机IP&gt;:8081</code> 即可连接。
+      {{ $t('business.manualDeployGuide.tip') }}
     </p>
   </div>
 </template>

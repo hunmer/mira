@@ -2,7 +2,7 @@
   <Dialog :open="props.visible" @update:open="handleOpenChange">
     <DialogContent class="sm:max-w-md max-h-[90vh]">
       <DialogHeader>
-        <DialogTitle>移动文件夹</DialogTitle>
+        <DialogTitle>{{ $t('business.folderMoveDialog.title') }}</DialogTitle>
       </DialogHeader>
 
       <div class="overflow-y-auto pr-1 -mr-1">
@@ -11,16 +11,16 @@
             <span class="material-icons text-muted-foreground">folder</span>
             <span class="font-medium text-foreground">{{ folder.label }}</span>
           </div>
-          <p class="text-sm text-muted-foreground mt-1">选择新的父文件夹位置</p>
+          <p class="text-sm text-muted-foreground mt-1">{{ $t('business.folderMoveDialog.selectParentHint') }}</p>
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-foreground mb-2">移动到</label>
+          <label class="block text-sm font-medium text-foreground mb-2">{{ $t('business.folderMoveDialog.moveTo') }}</label>
           <div class="mb-3">
             <label class="flex items-center space-x-2 p-2 border rounded-md hover:bg-muted cursor-pointer">
               <input type="radio" :value="undefined" v-model="selectedParentId" class="text-primary" />
               <span class="material-icons text-muted-foreground">home</span>
-              <span>根目录</span>
+              <span>{{ $t('business.folderMoveDialog.rootFolder') }}</span>
             </label>
           </div>
 
@@ -46,7 +46,7 @@
           </div>
 
           <p class="text-xs text-muted-foreground mt-2">
-            选择文件夹作为新的父目录，或选择根目录将文件夹移动到顶层
+            {{ $t('business.folderMoveDialog.hint') }}
           </p>
         </div>
 
@@ -56,13 +56,13 @@
       </div>
 
       <DialogFooter class="mt-2">
-        <Button variant="secondary" :disabled="isLoading" @click="handleCancel">取消</Button>
+        <Button variant="secondary" :disabled="isLoading" @click="handleCancel">{{ $t('business.folderMoveDialog.cancel') }}</Button>
         <Button :disabled="isLoading" @click="handleMove">
           <svg v-if="isLoading" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
-          <span>{{ isLoading ? '移动中...' : '移动' }}</span>
+          <span>{{ isLoading ? $t('business.folderMoveDialog.moving') : $t('business.folderMoveDialog.move') }}</span>
         </Button>
       </DialogFooter>
     </DialogContent>
@@ -71,6 +71,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { BaseTree } from '@he-tree/vue'
 import '@he-tree/vue/style/default.css'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
@@ -94,6 +95,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<Emits>()
+const { t } = useI18n()
 
 const isLoading = ref(false)
 const error = ref<string | null>(null)
@@ -135,7 +137,7 @@ const handleMove = async () => {
       newParentId: selectedParentId.value != null ? (typeof selectedParentId.value === 'string' ? parseInt(selectedParentId.value) : selectedParentId.value) : undefined,
     })
   } catch (err) {
-    error.value = err instanceof Error ? err.message : '移动失败'
+    error.value = err instanceof Error ? err.message : t('business.folderMoveDialog.moveFailed')
   } finally {
     isLoading.value = false
   }

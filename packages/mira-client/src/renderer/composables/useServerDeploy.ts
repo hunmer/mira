@@ -9,6 +9,7 @@
  */
 import { ref, computed, onBeforeUnmount } from 'vue'
 import { environment } from '@renderer/utils'
+import i18n from '../i18n'
 
 export type DeployStatus =
   | 'idle' // 未检测
@@ -104,7 +105,7 @@ export function useServerDeploy() {
         // 更新成功后刷新版本状态
         await checkVersion()
       } else {
-        errorMessage.value = res.message || res.data?.message || '更新失败'
+        errorMessage.value = res.message || res.data?.message || i18n.global.t('composables.useServerDeploy.updateFailed')
       }
     } catch (err) {
       errorMessage.value = err instanceof Error ? err.message : String(err)

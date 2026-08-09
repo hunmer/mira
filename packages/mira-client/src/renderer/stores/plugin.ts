@@ -10,6 +10,7 @@ import { useSettingsStore } from './settings'
 import type { MarketplacePluginEntry, PluginInstallProgress } from '../../shared/types'
 
 // 导入分离的插件模块
+import i18n from '../i18n'
 import {
   // 类型
   type ExtendedPluginInfo,
@@ -779,8 +780,8 @@ export const usePluginStore = defineStore('plugin', () => {
 
     if (!marketUrl) {
       marketplacePlugins.value = []
-      marketplaceError.value = '未配置插件市场源地址'
-      return { success: false, message: '未配置插件市场源地址' }
+      marketplaceError.value = i18n.global.t('stores.plugin.marketUrlNotConfigured')
+      return { success: false, message: i18n.global.t('stores.plugin.marketUrlNotConfigured') }
     }
 
     isMarketplaceLoading.value = true
@@ -793,7 +794,7 @@ export const usePluginStore = defineStore('plugin', () => {
         marketplaceLastUpdated.value = new Date()
         return { success: true, data: catalog }
       } else {
-        marketplaceError.value = result.message || '拉取插件市场目录失败'
+        marketplaceError.value = result.message || i18n.global.t('stores.plugin.fetchCatalogFailed')
         return { success: false, message: marketplaceError.value }
       }
     } catch (err) {
@@ -812,7 +813,7 @@ export const usePluginStore = defineStore('plugin', () => {
   const installMarketplacePlugin = async (entry: MarketplacePluginEntry) => {
     const operationId = `market-install-${entry.pluginId}`
     if (pendingOperations.value.has(operationId)) {
-      return { success: false, message: '该插件正在安装中' }
+      return { success: false, message: i18n.global.t('stores.plugin.pluginInstalling') }
     }
     pendingOperations.value.add(operationId)
 
@@ -825,7 +826,7 @@ export const usePluginStore = defineStore('plugin', () => {
       const settingsStore = useSettingsStore()
       const marketUrl = (settingsStore.settings.clientPluginMarketUrl || '').trim()
       if (!marketUrl) {
-        return { success: false, message: '未配置插件市场源地址' }
+        return { success: false, message: i18n.global.t('stores.plugin.marketUrlNotConfigured') }
       }
 
       // 构建产物可能在市场列表打开后发生变化。安装前重拉目录，确保传给
@@ -833,11 +834,11 @@ export const usePluginStore = defineStore('plugin', () => {
       const catalogResult = await fetchMarketplaceCatalog()
       if (!catalogResult.success) {
         const detail = 'message' in catalogResult ? catalogResult.message : catalogResult.error
-        return { success: false, message: detail || '刷新插件市场目录失败' }
+        return { success: false, message: detail || i18n.global.t('stores.plugin.refreshCatalogFailed') }
       }
       const latestEntry = marketplacePlugins.value.find(item => item.pluginId === entry.pluginId)
       if (!latestEntry) {
-        return { success: false, message: '插件已不在当前市场目录中' }
+        return { success: false, message: i18n.global.t('stores.plugin.pluginNotInCatalog') }
       }
 
       const result = await pluginService.installMarketplacePlugin(marketUrl, latestEntry)
@@ -897,14 +898,14 @@ export const usePluginStore = defineStore('plugin', () => {
 
     const settingsStore = useSettingsStore()
     const marketUrl = (settingsStore.settings.clientPluginMarketUrl || '').trim()
-    if (!marketUrl) return { success: false, message: '未配置插件市场源地址' }
+    if (!marketUrl) return { success: false, message: i18n.global.t('stores.plugin.marketUrlNotConfigured') }
 
     // 确保市场目录已加载
     if (!marketplacePlugins.value || marketplacePlugins.value.length === 0) {
       await fetchMarketplaceCatalog()
     }
     const catalog = marketplacePlugins.value || []
-    if (catalog.length === 0) return { success: false, message: '插件市场目录为空' }
+    if (catalog.length === 0) return { success: false, message: i18n.global.t('stores.plugin.catalogEmpty') }
 
     isCheckingUpdates.value = true
     try {

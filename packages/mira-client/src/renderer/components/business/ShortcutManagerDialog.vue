@@ -2,7 +2,7 @@
   <Dialog :open="isVisible" @update:open="isVisible = $event">
     <DialogContent class="shortcut-manager-dialog">
       <DialogHeader>
-        <DialogTitle>快捷键设置</DialogTitle>
+        <DialogTitle>{{ $t('business.shortcutManagerDialog.title') }}</DialogTitle>
       </DialogHeader>
       <div class="shortcut-manager-content flex flex-col flex-1 overflow-hidden min-h-0">
         <!-- 搜索栏 -->
@@ -12,7 +12,7 @@
             <input v-model="searchQuery" class="w-full pl-10 pr-4 py-2 rounded-lg bg-muted dark:bg-muted
                      border border-border dark:border-foreground
                      text-foreground 
-                     focus:outline-none" placeholder="搜索快捷键" type="text" />
+                     focus:outline-none" :placeholder="$t('business.shortcutManagerDialog.searchPlaceholder')" type="text" />
           </div>
         </div>
 
@@ -70,7 +70,7 @@
                   <span v-if="binding.isGlobal" class="inline-flex items-center px-2 py-1 rounded text-xs font-medium
                                  bg-primary/10 text-primary dark:bg-primary/50 dark:text-primary-foreground">
                     <span class="material-icons text-xs mr-1">public</span>
-                    全局
+                    {{ $t('business.shortcutManagerDialog.globalBadge') }}
                   </span>
 
                   <!-- 编辑按钮 -->
@@ -95,7 +95,7 @@
                          hover:bg-muted dark:hover:bg-foreground hover:border-primary-500
                          dark:hover:border-primary-400 transition-all" @click="showAddDialog = true">
                 <span class="material-icons text-base mr-2">add</span>
-                <span class="text-sm font-medium">添加新快捷键</span>
+                <span class="text-sm font-medium">{{ $t('business.shortcutManagerDialog.addNew') }}</span>
               </button>
             </div>
           </div>
@@ -107,7 +107,7 @@
         <button class="px-4 py-2 text-sm font-medium text-muted-foreground dark:text-muted-foreground
                hover:text-foreground dark:hover:text-border transition-colors cursor-pointer"
           @click="resetToDefaults">
-          恢复默认
+          {{ $t('business.shortcutManagerDialog.resetDefault') }}
         </button>
       </DialogFooter>
     </DialogContent>
@@ -117,20 +117,20 @@
   <Dialog :open="showAddDialog" @update:open="showAddDialog = $event">
     <DialogContent class="add-shortcut-dialog sm:max-w-[40vw] max-h-[80vh] flex flex-col">
       <DialogHeader>
-        <DialogTitle>{{ editingBinding ? '编辑快捷键' : '添加快捷键' }}</DialogTitle>
+        <DialogTitle>{{ editingBinding ? $t('business.shortcutManagerDialog.editTitle') : $t('business.shortcutManagerDialog.addTitle') }}</DialogTitle>
       </DialogHeader>
       <div class="add-shortcut-content space-y-4 overflow-y-auto flex-1">
         <!-- 选择动作 -->
         <div>
           <label class="block text-sm font-medium text-foreground  mb-2">
-            选择动作
+            {{ $t('business.shortcutManagerDialog.selectAction') }}
           </label>
           <Select v-model="newBinding.actionId">
             <SelectTrigger class="w-full">
-              <SelectValue placeholder="请选择动作" />
+              <SelectValue :placeholder="$t('business.shortcutManagerDialog.actionPlaceholder')" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem v-for="action in availableActions" :key="action.id" :value="action.id">{{ action.title }}
+              <SelectItem v-for="action in availableActions" :key="action.id" :value="action.id">{{ resolveActionText(action.title) }}
               </SelectItem>
             </SelectContent>
           </Select>
@@ -139,17 +139,17 @@
         <!-- 录制快捷键 -->
         <div>
           <label class="block text-sm font-medium text-foreground  mb-2">
-            快捷键组合
+            {{ $t('business.shortcutManagerDialog.shortcutCombo') }}
           </label>
           <div ref="recordRef" class="w-full px-3 py-2 border-2 rounded-md cursor-pointer transition-colors" :class="isRecording
             ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
   : 'border-border dark:border-foreground bg-background dark:bg-muted'" @click="startRecording"
             @keydown="handleKeyRecord" tabindex="0">
             <div v-if="!newBinding.shortcut && !isRecording" class="text-muted-foreground dark:text-muted-foreground">
-              点击此处录制快捷键...
+              {{ $t('business.shortcutManagerDialog.clickToRecord') }}
             </div>
             <div v-else-if="isRecording" class="text-primary-600 dark:text-primary-400">
-              请按下快捷键组合...
+              {{ $t('business.shortcutManagerDialog.recording') }}
             </div>
             <div v-else class="flex items-center gap-1">
               <template v-for="(key, keyIndex) in (newBinding.shortcut ?? '').split('+')" :key="keyIndex">
@@ -168,16 +168,16 @@
         <div class="space-y-3">
           <label class="flex items-center">
             <Checkbox :checked="newBinding.isGlobal" @update:checked="newBinding.isGlobal = $event" />
-            <span class="ml-2 text-sm text-foreground ">全局快捷键（在后台也可触发）</span>
+            <span class="ml-2 text-sm text-foreground ">{{ $t('business.shortcutManagerDialog.globalShortcut') }}</span>
           </label>
 
           <div>
             <label class="block text-sm font-medium text-foreground  mb-2">
-              优先级
+              {{ $t('business.shortcutManagerDialog.priority') }}
             </label>
             <input v-model.number="newBinding.priority" type="number" min="0" max="100" class="w-full px-3 py-2 border border-border dark:border-foreground rounded-md
-                     bg-background dark:bg-muted text-foreground 
-                     focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="0-100，数值越大优先级越高" />
+                     bg-background dark:bg-muted text-foreground
+                     focus:outline-none focus:ring-2 focus:ring-primary-500" :placeholder="$t('business.shortcutManagerDialog.priorityPlaceholder')" />
           </div>
         </div>
 
@@ -187,7 +187,7 @@
           <div class="flex">
             <span class="material-icons text-yellow-600 dark:text-yellow-400 mr-2">warning</span>
             <div class="text-sm text-yellow-800 dark:text-yellow-200">
-              快捷键冲突：<strong>{{ shortcutConflict }}</strong> 已被使用
+              {{ $t('business.shortcutManagerDialog.conflictMsg', { name: shortcutConflict }) }}
             </div>
           </div>
         </div>
@@ -197,12 +197,12 @@
           <button class="px-4 py-2 text-sm font-medium text-muted-foreground dark:text-muted-foreground
                  hover:text-foreground dark:hover:text-border transition-colors cursor-pointer"
             @click="cancelAdd">
-            取消
+            {{ $t('business.shortcutManagerDialog.cancel') }}
           </button>
           <button class="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700
                  rounded-md transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             :disabled="!canSaveBinding" @click="saveBinding">
-            {{ editingBinding ? '更新' : '添加' }}
+            {{ editingBinding ? $t('business.shortcutManagerDialog.update') : $t('business.shortcutManagerDialog.add') }}
           </button>
         </div>
       </DialogFooter>
@@ -212,6 +212,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -232,6 +233,20 @@ interface Emits {
 }
 
 const emit = defineEmits<Emits>()
+const { t, te } = useI18n()
+
+/**
+ * 解析快捷键动作的 title/description。
+ * defaultShortcuts.ts 中的值现在是 i18n key（如 'shortcuts.actions.appSearch.title'），
+ * 需要用 t() 翻译；其它情况（如插件注册的纯文本动作）原样返回。
+ */
+const resolveActionText = (value: string | undefined): string => {
+  if (!value) return ''
+  if (value.startsWith('shortcuts.actions.') && te(value)) {
+    return t(value)
+  }
+  return value
+}
 
 // 响应式状态
 const isVisible = computed({
@@ -256,13 +271,13 @@ const newBinding = ref<Partial<ShortcutBinding>>({
 })
 
 // 类别定义
-const categories = ref([
-  { id: 'general', name: '常规', icon: 'tune' },
-  { id: 'navigation', name: '导航', icon: 'navigation' },
-  { id: 'media', name: '媒体', icon: 'play_arrow' },
-  { id: 'editing', name: '编辑', icon: 'edit' },
-  { id: 'view', name: '视图', icon: 'visibility' },
-  { id: 'system', name: '系统', icon: 'settings' }
+const categories = computed(() => [
+  { id: 'general', name: t('business.shortcutManagerDialog.categoryGeneral'), icon: 'tune' },
+  { id: 'navigation', name: t('business.shortcutManagerDialog.categoryNavigation'), icon: 'navigation' },
+  { id: 'media', name: t('business.shortcutManagerDialog.categoryMedia'), icon: 'play_arrow' },
+  { id: 'editing', name: t('business.shortcutManagerDialog.categoryEditing'), icon: 'edit' },
+  { id: 'view', name: t('business.shortcutManagerDialog.categoryView'), icon: 'visibility' },
+  { id: 'system', name: t('business.shortcutManagerDialog.categorySystem'), icon: 'settings' }
 ])
 
 // 计算属性
@@ -289,10 +304,12 @@ const filteredBindings = computed((): ShortcutBinding[] => {
     const query = searchQuery.value.toLowerCase()
     bindings = bindings.filter(binding => {
       const action = shortcutService.getAllActions().find(a => a.id === binding.actionId)
+      const title = action ? resolveActionText(action.title) : ''
+      const desc = action ? resolveActionText(action.description) : ''
       return (
         binding.shortcut.toLowerCase().includes(query) ||
-        action?.title.toLowerCase().includes(query) ||
-        action?.description?.toLowerCase().includes(query)
+        title.toLowerCase().includes(query) ||
+        desc.toLowerCase().includes(query)
       )
     })
   }
@@ -310,7 +327,7 @@ const shortcutConflict = computed((): string => {
 
   if (existing) {
     const action = shortcutService.getAllActions().find(a => a.id === existing.actionId)
-    return action?.title || existing.actionId
+    return action?.title ? resolveActionText(action.title) : existing.actionId
   }
 
   return ''
@@ -327,17 +344,19 @@ const canSaveBinding = computed((): boolean => {
 // 方法
 const getCurrentCategoryName = (): string => {
   const category = categories.value.find(c => c.id === selectedCategory.value)
-  return category?.name || '全部'
+  return category?.name || t('business.shortcutManagerDialog.categoryAll')
 }
 
 const getActionTitle = (actionId: string): string => {
   const action = shortcutService.getAllActions().find(a => a.id === actionId)
-  return action?.title || actionId
+  if (!action?.title) return actionId
+  return resolveActionText(action.title)
 }
 
 const getActionDescription = (actionId: string): string => {
   const action = shortcutService.getAllActions().find(a => a.id === actionId)
-  return action?.description || ''
+  if (!action?.description) return ''
+  return resolveActionText(action.description)
 }
 
 const formatKeyDisplay = (key: string): string => {
@@ -485,7 +504,7 @@ const resetToDefaults = async (): Promise<void> => {
     // 触发列表更新
     refreshTrigger.value++
   } catch (error) {
-    console.error('重置快捷键失败:', error)
+    console.error(t('business.shortcutManagerDialog.resetFailed'), error)
     // 可以添加错误提示
   }
 }

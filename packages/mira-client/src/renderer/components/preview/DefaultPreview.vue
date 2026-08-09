@@ -1,7 +1,7 @@
 <template>
   <div class="w-full h-full flex justify-center items-center bg-muted">
     <div class="relative flex flex-col items-center gap-8 p-12 bg-white rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.1)] max-w-[500px] w-[90%]">
-      <button @click="goBack" class="absolute top-3 left-3 flex justify-center items-center w-9 h-9 border-none rounded-full cursor-pointer bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground transition-colors" title="返回上一页">
+      <button @click="goBack" class="absolute top-3 left-3 flex justify-center items-center w-9 h-9 border-none rounded-full cursor-pointer bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground transition-colors" :title="$t('preview.defaultPreview.back')">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M19 12H5" />
           <path d="M12 19l-7-7 7-7" />
@@ -13,37 +13,37 @@
       </div>
 
       <div class="text-center w-full">
-        <h3 class="m-0 mb-6 text-foreground text-2xl break-words">{{ fileInfo.title || fileInfo.name || '未知文件' }}</h3>
+        <h3 class="m-0 mb-6 text-foreground text-2xl break-words">{{ fileInfo.title || fileInfo.name || $t('preview.defaultPreview.unknownFile') }}</h3>
 
         <div class="flex flex-col gap-3 mb-8 text-left">
           <div v-if="fileInfo.mimeType" class="detail-item flex justify-between p-2 bg-muted rounded">
-            <span class="label font-medium text-muted-foreground min-w-[80px]">文件类型:</span>
+            <span class="label font-medium text-muted-foreground min-w-[80px]">{{ $t('preview.defaultPreview.fileType') }}:</span>
             <span class="value text-foreground break-words flex-1 text-right">{{ fileInfo.mimeType }}</span>
           </div>
 
           <div v-if="fileInfo.size" class="detail-item flex justify-between p-2 bg-muted rounded">
-            <span class="label font-medium text-muted-foreground min-w-[80px]">文件大小:</span>
+            <span class="label font-medium text-muted-foreground min-w-[80px]">{{ $t('preview.defaultPreview.fileSize') }}:</span>
             <span class="value text-foreground break-words flex-1 text-right">{{ formatFileSize(fileInfo.size) }}</span>
           </div>
 
           <div v-if="fileInfo.updatedAt" class="detail-item flex justify-between p-2 bg-muted rounded">
-            <span class="label font-medium text-muted-foreground min-w-[80px]">修改时间:</span>
+            <span class="label font-medium text-muted-foreground min-w-[80px]">{{ $t('preview.defaultPreview.modifiedAt') }}:</span>
             <span class="value text-foreground break-words flex-1 text-right">{{ formatDate(fileInfo.updatedAt) }}</span>
           </div>
 
           <div v-if="fileInfo.description" class="detail-item flex justify-between p-2 bg-muted rounded">
-            <span class="label font-medium text-muted-foreground min-w-[80px]">描述:</span>
+            <span class="label font-medium text-muted-foreground min-w-[80px]">{{ $t('preview.defaultPreview.description') }}:</span>
             <span class="value text-foreground break-words flex-1 text-right">{{ fileInfo.description }}</span>
           </div>
         </div>
 
         <div class="flex gap-4 justify-center flex-wrap">
           <button v-if="downloadUrl" @click="downloadFile" class="px-6 py-3 border-none rounded-md cursor-pointer text-[0.95rem] transition-all duration-200 bg-primary text-white hover:bg-primary">
-            下载文件
+            {{ $t('preview.defaultPreview.download') }}
           </button>
 
           <button @click="copyFileInfo" class="px-6 py-3 border-none rounded-md cursor-pointer text-[0.95rem] transition-all duration-200 bg-muted text-white hover:bg-muted">
-            复制文件信息
+            {{ $t('preview.defaultPreview.copyInfo') }}
           </button>
         </div>
       </div>
@@ -53,12 +53,14 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 interface Props {
   fileInfo: any
 }
 
 const props = defineProps<Props>()
+const { t } = useI18n()
 
 const downloadUrl = computed(() => {
   return props.fileInfo?.url || props.fileInfo?.path || ''
@@ -151,11 +153,12 @@ const downloadFile = (): void => {
 }
 
 const copyFileInfo = (): void => {
+  const unknown = t('preview.defaultPreview.unknown')
   const info = [
-    `文件名: ${props.fileInfo.title || props.fileInfo.name || '未知'}`,
-    `类型: ${props.fileInfo.mimeType || '未知'}`,
-    `大小: ${props.fileInfo.size ? formatFileSize(props.fileInfo.size) : '未知'}`,
-    `修改时间: ${props.fileInfo.updatedAt ? formatDate(props.fileInfo.updatedAt) : '未知'}`
+    t('preview.defaultPreview.copyFileName', { value: props.fileInfo.title || props.fileInfo.name || unknown }),
+    t('preview.defaultPreview.copyType', { value: props.fileInfo.mimeType || unknown }),
+    t('preview.defaultPreview.copySize', { value: props.fileInfo.size ? formatFileSize(props.fileInfo.size) : unknown }),
+    t('preview.defaultPreview.copyModifiedAt', { value: props.fileInfo.updatedAt ? formatDate(props.fileInfo.updatedAt) : unknown })
   ].join('\n')
   
   navigator.clipboard.writeText(info).then(() => {

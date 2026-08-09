@@ -11,6 +11,7 @@
  * SSE 仅在对话框打开时建立；关闭 / 卸载时断开，避免泄漏。
  */
 import { ref, computed, watch, nextTick, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   Dialog,
   DialogContent,
@@ -25,6 +26,7 @@ defineOptions({ name: 'ServerControlDialog' })
 
 const props = defineProps<{ open: boolean }>()
 const emit = defineEmits<{ 'update:open': [value: boolean] }>()
+const { t } = useI18n()
 
 interface LogEntry {
   timestamp?: string
@@ -57,8 +59,8 @@ let reconnectAttempts = 0
 let statusTimer: ReturnType<typeof setTimeout> | null = null
 
 const statusText = computed(() => {
-  if (healthy.value === null) return '未知'
-  return healthy.value ? '运行中' : '已停止'
+  if (healthy.value === null) return t('business.serverControlDialog.statusUnknown')
+  return healthy.value ? t('business.serverControlDialog.statusRunning') : t('business.serverControlDialog.statusStopped')
 })
 
 /** 把任意日志条目规范化为渲染条目 */
@@ -217,12 +219,12 @@ function pollUntilSettled(totalAttempts = 20, intervalMs = 1000) {
 async function runAction(action: 'start' | 'stop' | 'restart') {
   if (pendingAction.value) return
   pendingAction.value = action
-  const labelMap = { start: '启动', stop: '停止', restart: '重启' }
-  appendLog(toRenderLog(`—— 开始${labelMap[action]}后端 ——`, 'action'))
+  const labelKeyMap = { start: 'actionStart', stop: 'actionStop', restart: 'actionRestart' } as const
+  appendLog(toRenderLog(t(`business.serverControlDialog.${labelKeyMap[action]}Begin`), 'action'))
   try {
     const res = await window.electronAPI.serverControl[action]()
     appendLog(toRenderLog(
-      res.success ? `—— ${labelMap[action]}完成 ——` : `—— ${labelMap[action]}失败：${res.message || '未知错误'} ——`,
+      res.success ? t(`business.serverControlDialog.${labelKeyMap[action]}Complete`) : t(`business.serverControlDialog.${labelKeyMap[action]}Failed`, { message: res.message || t('business.serverControlDialog.statusUnknown') }),
       res.success ? 'action' : 'error',
     ))
     // 启动 / 重启后轮询健康；停止直接刷新一次
@@ -232,7 +234,7 @@ async function runAction(action: 'start' | 'stop' | 'restart') {
       refreshStatus()
     }
   } catch (error) {
-    appendLog(toRenderLog(`—— ${labelMap[action]}异常：${error instanceof Error ? error.message : String(error)} ——`, 'error'))
+    appendLog(toRenderLog(t(`business.serverControlDialog.${labelKeyMap[action]}Error`, { message: error instanceof Error ? error.message : String(error) }), 'error'))
     refreshStatus()
   } finally {
     pendingAction.value = null
@@ -286,9 +288,9 @@ onUnmounted(() => {
       <DialogHeader>
         <DialogTitle class="flex items-center gap-2">
           <span class="material-icons text-primary">dns</span>
-          服务端控制台
+          {{ $t('business.serverControlDialog.title') }}
         </DialogTitle>
-        <DialogDescription class="sr-only">查看本地后端运行日志并控制启停</DialogDescription>
+        <DialogDescription class="sr-only">{{ $t('business.serverControlDialog.description') }}</DialogDescription>
       </DialogHeader>
 
       <!-- 状态栏 -->
@@ -298,14 +300,14 @@ onUnmounted(() => {
             class="inline-block w-2 h-2 rounded-full"
             :class="healthy === null ? 'bg-muted-foreground' : healthy ? 'bg-green-500' : 'bg-red-500'"
           ></span>
-          <span class="text-muted-foreground">状态：</span>
+          <span class="text-muted-foreground">{{ $t('business.serverControlDialog.statusLabel') }}</span>
           <span :class="healthy ? 'text-green-600 dark:text-green-400' : 'text-foreground'">{{ statusText }}</span>
         </div>
         <div v-if="pid" class="text-muted-foreground">PID: <span class="text-foreground font-mono">{{ pid }}</span></div>
-        <div v-if="!sseConnected && open" class="text-xs text-amber-600 dark:text-amber-400">日志流未连接，重试中…</div>
+        <div v-if="!sseConnected && open" class="text-xs text-amber-600 dark:text-amber-400">{{ $t('business.serverControlDialog.logStreamDisconnected') }}</div>
         <Button variant="ghost" size="xs" class="ml-auto" :disabled="statusLoading" @click="refreshStatus">
           <span class="material-icons text-sm">refresh</span>
-          刷新
+          {{ $t('business.serverControlDialog.refresh') }}
         </Button>
       </div>
 
@@ -313,7 +315,7 @@ onUnmounted(() => {
       <div class="flex items-center gap-2">
         <Button size="sm" :disabled="pendingAction !== null || healthy === true" @click="runAction('start')">
           <span class="material-icons text-sm">play_arrow</span>
-          启用
+          {{ $t('business.serverControlDialog.start') }}
         </Button>
         <Button
           variant="outline"
@@ -322,7 +324,7 @@ onUnmounted(() => {
           @click="runAction('stop')"
         >
           <span class="material-icons text-sm">stop</span>
-          停止
+          {{ $t('business.serverControlDialog.stop') }}
         </Button>
         <Button
           variant="outline"
@@ -331,12 +333,12 @@ onUnmounted(() => {
           @click="runAction('restart')"
         >
           <span class="material-icons text-sm">restart_alt</span>
-          重启
+          {{ $t('business.serverControlDialog.restart') }}
         </Button>
-        <span v-if="pendingAction" class="text-xs text-muted-foreground ml-1">执行中…</span>
+        <span v-if="pendingAction" class="text-xs text-muted-foreground ml-1">{{ $t('business.serverControlDialog.executing') }}</span>
         <Button variant="ghost" size="xs" class="ml-auto" @click="logs = []">
           <span class="material-icons text-sm">delete_sweep</span>
-          清空
+          {{ $t('business.serverControlDialog.clear') }}
         </Button>
       </div>
 
@@ -346,7 +348,7 @@ onUnmounted(() => {
         class="flex-1 min-h-[320px] overflow-auto rounded-lg border border-border bg-zinc-950 text-zinc-100 p-3 font-mono text-xs leading-relaxed"
         @scroll="onLogScroll"
       >
-        <div v-if="logs.length === 0" class="text-zinc-500 italic">暂无日志…</div>
+        <div v-if="logs.length === 0" class="text-zinc-500 italic">{{ $t('business.serverControlDialog.noLogs') }}</div>
         <div
           v-for="(log, index) in logs"
           :key="index"

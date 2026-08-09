@@ -5,6 +5,7 @@
  * 这里集中维护模块 id、标题、图标与描述，供 HomeSidebar 渲染和
  * SidebarLayoutDialog 列表共用，避免两处重复维护文案。
  */
+import i18n from '../../i18n'
 
 export type SidebarModuleId =
   | 'shortcuts'
@@ -28,33 +29,33 @@ export interface SidebarModuleDef {
 export const SIDEBAR_MODULES: SidebarModuleDef[] = [
   {
     id: 'shortcuts',
-    title: '快捷分类',
+    title: i18n.global.t('views.sidebarModule.shortcutsTitle'),
     icon: 'bookmarks',
-    description: '全部 / 未分类 / 未标签 / 回收站',
+    description: i18n.global.t('views.sidebarModule.shortcutsDesc'),
   },
   {
     id: 'folders',
-    title: '文件夹树',
+    title: i18n.global.t('views.sidebarModule.foldersTitle'),
     icon: 'folder',
-    description: '按目录层级浏览所有文件夹',
+    description: i18n.global.t('views.sidebarModule.foldersDesc'),
   },
   {
     id: 'tags',
-    title: '标签树',
+    title: i18n.global.t('views.sidebarModule.tagsTitle'),
     icon: 'sell',
-    description: '按标签浏览所有素材',
+    description: i18n.global.t('views.sidebarModule.tagsDesc'),
   },
   {
     id: 'recent_added',
-    title: '最新添加',
+    title: i18n.global.t('views.sidebarModule.recentAddedTitle'),
     icon: 'schedule',
-    description: '最近导入的素材',
+    description: i18n.global.t('views.sidebarModule.recentAddedDesc'),
   },
   {
     id: 'recent_viewed',
-    title: '历史查看',
+    title: i18n.global.t('views.sidebarModule.recentViewedTitle'),
     icon: 'history',
-    description: '最近浏览过的素材记录',
+    description: i18n.global.t('views.sidebarModule.recentViewedDesc'),
   },
 ]
 

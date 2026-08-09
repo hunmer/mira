@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { miraSDKService } from '../services/MiraSDKService'
+import i18n from '../i18n'
 
 export const useDashboardStore = defineStore('dashboard', () => {
   const loading = ref(true)
@@ -13,13 +14,13 @@ export const useDashboardStore = defineStore('dashboard', () => {
       error.value = ''
 
       if (!miraSDKService.isClientConnected()) {
-        error.value = '未连接到服务器'
+        error.value = i18n.global.t('stores.dashboard.notConnected')
         return
       }
 
       const config = miraSDKService.getConnectionConfig()
       if (!config?.serverUrl) {
-        error.value = '无法获取服务器地址'
+        error.value = i18n.global.t('stores.dashboard.missingServerUrl')
         return
       }
 
@@ -27,7 +28,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
       const serverUrl = new URL(config.serverUrl)
       dashboardBaseUrl.value = `${serverUrl.protocol}//${serverUrl.host}`
     } catch (e: any) {
-      error.value = e.message || '加载失败'
+      error.value = e.message || i18n.global.t('stores.dashboard.loadFailed')
     } finally {
       loading.value = false
     }

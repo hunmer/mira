@@ -1,5 +1,6 @@
 import type { FilterRule } from '@/renderer/types/filter'
 import type { Component } from 'vue'
+import i18n from '../i18n'
 
 // Tab生命周期返回结果
 export interface TabResult<T = any> {
@@ -115,7 +116,7 @@ export class TabRegistry {
         this.registeredTypes.delete(typeName)
         return { success: true }
       } else {
-        return { success: false, error: `Tab类型 "${typeName}" 不存在` }
+        return { success: false, error: i18n.global.t('composables.tabRegistry.typeNotFound', { name: typeName }) }
       }
     } catch (error) {
       return { success: false, error: String(error) }
@@ -134,15 +135,15 @@ export class TabRegistry {
    */
   validateType(type: TabTypeDefinition): TabResult {
     if (!type.name || typeof type.name !== 'string') {
-      return { success: false, error: 'Tab类型必须有有效的name属性' }
+      return { success: false, error: i18n.global.t('composables.tabRegistry.nameRequired') }
     }
 
     if (!type.displayName || typeof type.displayName !== 'string') {
-      return { success: false, error: 'Tab类型必须有有效的displayName属性' }
+      return { success: false, error: i18n.global.t('composables.tabRegistry.displayNameRequired') }
     }
 
     if (!type.icon || typeof type.icon !== 'string') {
-      return { success: false, error: 'Tab类型必须有有效的icon属性' }
+      return { success: false, error: i18n.global.t('composables.tabRegistry.iconRequired') }
     }
 
     return { success: true }

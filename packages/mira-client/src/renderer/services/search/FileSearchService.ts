@@ -8,8 +8,8 @@ import type { SearchService } from '../../types/search'
  */
 export const fileSearchService: SearchService = {
   id: 'files',
-  title: '文档',
-  desc: '搜索文件名、描述和内容',
+  title: 'services.searchServices.files.title',
+  desc: 'services.searchServices.files.desc',
   icon: 'description',
   
   /**

@@ -74,8 +74,8 @@
           <EmptyMedia>
             <StatusImage name="empty" size="large" />
           </EmptyMedia>
-          <EmptyTitle>暂无文件</EmptyTitle>
-          <EmptyDescription>拖拽文件到此处或点击上传按钮添加文件</EmptyDescription>
+          <EmptyTitle>{{ $t('business.mediaGridComponent.emptyTitle') }}</EmptyTitle>
+          <EmptyDescription>{{ $t('business.mediaGridComponent.emptyDesc') }}</EmptyDescription>
         </Empty>
       </div>
     </MediaContextMenu>

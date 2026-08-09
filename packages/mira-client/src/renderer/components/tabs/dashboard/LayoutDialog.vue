@@ -2,23 +2,23 @@
   <Dialog v-model:open="open">
     <DialogContent class="sm:max-w-md">
       <DialogHeader>
-        <DialogTitle>{{ isEdit ? '编辑布局' : '新建布局' }}</DialogTitle>
+        <DialogTitle>{{ isEdit ? $t('tabs.layoutDialog.editTitle') : $t('tabs.layoutDialog.createTitle') }}</DialogTitle>
         <DialogDescription>
-          {{ isEdit ? '修改当前布局的标题与图标' : '为仪表盘创建一个新的布局，每个布局拥有独立的小组件与布局配置' }}
+          {{ isEdit ? $t('tabs.layoutDialog.editDesc') : $t('tabs.layoutDialog.createDesc') }}
         </DialogDescription>
       </DialogHeader>
 
       <form class="space-y-4 py-2" @submit.prevent="onSubmit">
         <!-- 标题 -->
         <div class="space-y-2">
-          <label for="layout-name" class="block text-sm font-medium text-foreground">标题</label>
+          <label for="layout-name" class="block text-sm font-medium text-foreground">{{ $t('tabs.layoutDialog.titleLabel') }}</label>
           <Input
             id="layout-name"
             ref="nameInputRef"
             v-model="form.name"
             class="w-full"
             :class="{ 'border-destructive': errors.name }"
-            placeholder="请输入布局标题"
+            :placeholder="$t('tabs.layoutDialog.namePlaceholder')"
             maxlength="32"
             :data-invalid="!!errors.name"
           />
@@ -27,13 +27,13 @@
 
         <!-- 图标 -->
         <div class="space-y-2">
-          <label class="block text-sm font-medium text-foreground">图标（可选）</label>
+          <label class="block text-sm font-medium text-foreground">{{ $t('tabs.layoutDialog.iconLabel') }}</label>
           <div class="flex flex-wrap items-center gap-1.5">
             <button
               type="button"
               class="flex h-8 w-8 items-center justify-center rounded-md border text-muted-foreground transition-colors"
               :class="!form.icon ? 'border-primary bg-primary/10 text-primary' : 'hover:bg-accent'"
-              title="不使用图标"
+              :title="$t('tabs.layoutDialog.noIcon')"
               @click="form.icon = undefined"
             >
               <span class="material-icons text-base">block</span>
@@ -60,7 +60,7 @@
             class="rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent"
             @click="open = false"
           >
-            取消
+            {{ $t('common.cancel') }}
           </button>
           <button
             type="button"
@@ -68,7 +68,7 @@
             :disabled="!canSubmit"
             @click="onSubmit"
           >
-            {{ isEdit ? '保存' : '创建' }}
+            {{ isEdit ? $t('common.save') : $t('tabs.layoutDialog.create') }}
           </button>
         </div>
       </DialogFooter>
@@ -78,6 +78,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   Dialog,
   DialogContent,
@@ -114,6 +115,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{ (e: 'update:modelValue', v: boolean): void }>()
 
 const store = useDashboardLayoutStore()
+const { t } = useI18n()
 
 const open = computed({
   get: () => props.modelValue,
@@ -153,8 +155,8 @@ const canSubmit = computed(() => form.value.name.trim().length > 0 && !errors.va
 function validate(): boolean {
   const next: { name?: string } = {}
   const name = form.value.name.trim()
-  if (!name) next.name = '请输入标题'
-  else if (name.length > 32) next.name = '标题不能超过 32 个字符'
+  if (!name) next.name = t('tabs.layoutDialog.nameRequired')
+  else if (name.length > 32) next.name = t('tabs.layoutDialog.nameTooLong')
   // 新建模式：标题去重（允许与其它布局同名，但提示一下）
   errors.value = next
   return !next.name

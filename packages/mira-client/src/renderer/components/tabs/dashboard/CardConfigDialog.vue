@@ -2,7 +2,7 @@
   <Dialog v-model:open="open">
     <DialogContent class="sm:max-w-lg">
       <DialogHeader>
-        <DialogTitle>小组件配置</DialogTitle>
+        <DialogTitle>{{ $t('tabs.cardConfigDialog.title') }}</DialogTitle>
         <DialogDescription v-if="cardTitle">
           {{ cardTitle }}
         </DialogDescription>
@@ -11,7 +11,7 @@
       <!-- 无可配置项 -->
       <div v-if="!hasFields" class="py-8 text-center text-sm text-muted-foreground">
         <span class="material-icons mb-2 block text-2xl">tune</span>
-        此小组件暂无可配置项
+        {{ $t('tabs.cardConfigDialog.noConfigFields') }}
       </div>
 
       <!-- 声明式表单：复用 SchemaForm，字段与校验来自 CardDefinition -->
@@ -21,8 +21,8 @@
         :fields="fields"
         :initial-values="initialValues"
         layout="single"
-        submit-text="保存"
-        cancel-text="取消"
+        :submit-text="$t('common.save')"
+        :cancel-text="$t('common.cancel')"
         :submitting="submitting"
         @submit="onSubmit"
         @cancel="onCancel"

@@ -140,11 +140,11 @@ onBeforeUnmount(() => {
     />
     <Motion layout class="relative z-[1] w-full max-w-[440px] p-8 bg-white/90 dark:bg-muted/90 backdrop-blur-xl rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.3)] dark:shadow-[0_10px_40px_rgba(0,0,0,0.6)] border border-white/30 dark:border-border/50 max-[480px]:m-4 max-[480px]:p-6">
       <!-- Close button -->
-      <button class="absolute top-4 right-4 w-8 h-8 border-none bg-transparent text-muted-foreground hover:text-muted-foreground cursor-pointer flex items-center justify-center rounded transition-colors" @click="handleClose" title="关闭">
+      <button class="absolute top-4 right-4 w-8 h-8 border-none bg-transparent text-muted-foreground hover:text-muted-foreground cursor-pointer flex items-center justify-center rounded transition-colors" @click="handleClose" :title="$t('views.loginView.close')">
         <span class="material-icons">close</span>
       </button>
 
-      <h1 class="text-center text-2xl font-bold text-foreground dark:text-muted-foreground mb-6">连接服务器</h1>
+      <h1 class="text-center text-2xl font-bold text-foreground dark:text-muted-foreground mb-6">{{ $t('views.loginView.connectServer') }}</h1>
 
       <!-- Stepper -->
       <LoginStepper :current-step="currentStep" :health-data="healthData" />

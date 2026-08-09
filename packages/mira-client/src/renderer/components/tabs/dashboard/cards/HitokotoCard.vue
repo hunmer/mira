@@ -9,7 +9,7 @@
     <div v-else-if="error" class="flex flex-1 cursor-pointer flex-col items-center justify-center gap-2" @click="fetch">
       <span class="material-icons text-2xl text-muted-foreground">wifi_off</span>
       <span class="text-center text-xs text-muted-foreground">{{ error }}</span>
-      <span class="text-xs text-primary">点击重试</span>
+      <span class="text-xs text-primary">{{ $t('tabs.hitokotoCard.clickRetry') }}</span>
     </div>
 
     <!-- 一言内容 -->
@@ -30,6 +30,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 /**
  * 一言卡片（Dashboard 测试卡片）
@@ -46,6 +47,7 @@ interface HitokotoData {
   creator?: string
 }
 
+const { t } = useI18n()
 const loading = ref(true)
 const error = ref('')
 const data = ref<HitokotoData>({ id: 0, hitokoto: '' })
@@ -57,10 +59,10 @@ async function fetch() {
   error.value = ''
   try {
     const res = await window.fetch('https://v1.hitokoto.cn/')
-    if (!res.ok) throw new Error(`请求失败 (${res.status})`)
+    if (!res.ok) throw new Error(t('tabs.hitokotoCard.requestFailed', { status: res.status }))
     data.value = (await res.json()) as HitokotoData
   } catch (e: any) {
-    error.value = e?.message || '获取一言失败'
+    error.value = e?.message || t('tabs.hitokotoCard.fetchFailed')
   } finally {
     loading.value = false
   }

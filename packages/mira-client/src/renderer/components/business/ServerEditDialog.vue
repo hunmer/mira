@@ -5,7 +5,7 @@
   >
     <DialogContent class="server-edit-dialog sm:max-w-[700px] max-h-[90vh]">
       <DialogHeader>
-        <DialogTitle>{{ isEdit ? '编辑服务器' : '连接服务器' }}</DialogTitle>
+        <DialogTitle>{{ isEdit ? $t('business.serverEditDialog.editTitle') : $t('business.serverEditDialog.createTitle') }}</DialogTitle>
       </DialogHeader>
     <div class="max-h-[calc(90vh-180px)] overflow-y-auto p-6 pb-4">
       <form @submit.prevent="handleSubmit" class="space-y-6">
@@ -14,7 +14,7 @@
           <!-- 服务器名称 -->
           <div class="form-field">
             <label for="name" class="block text-sm font-medium text-foreground mb-2">
-              服务器名称 *
+              {{ $t('business.serverEditDialog.nameLabel') }}
             </label>
             <Input
               id="name"
@@ -23,7 +23,7 @@
                 'w-full',
                 errors.name ? 'border-destructive' : ''
               ]"
-              placeholder="请输入服务器名称"
+              :placeholder="$t('business.serverEditDialog.namePlaceholder')"
               :data-invalid="!!errors.name"
             />
             <span v-if="errors.name" class="text-destructive text-sm mt-1">{{ errors.name }}</span>
@@ -32,7 +32,7 @@
           <!-- 服务器 ID -->
           <div class="form-field">
             <label for="id" class="block text-sm font-medium text-foreground mb-2">
-              服务器 ID *
+              {{ $t('business.serverEditDialog.idLabel') }}
             </label>
             <Input
               id="id"
@@ -41,13 +41,13 @@
                 'w-full',
                 errors.id ? 'border-destructive' : ''
               ]"
-              placeholder="请输入或使用生成的 ID"
+              :placeholder="$t('business.serverEditDialog.idPlaceholder')"
               :data-invalid="!!errors.id"
               :readonly="isEdit"
             />
             <span v-if="errors.id" class="text-destructive text-sm mt-1">{{ errors.id }}</span>
             <p class="text-xs text-muted-foreground mt-1">
-              {{ isEdit ? '编辑时无法修改 ID' : '唯一标识符，用于区分不同的服务器' }}
+              {{ isEdit ? $t('business.serverEditDialog.idEditHint') : $t('business.serverEditDialog.idCreateHint') }}
             </p>
           </div>
         </div>
@@ -57,7 +57,7 @@
           <!-- 服务器地址 -->
           <div class="form-field">
             <label for="serverUrl" class="block text-sm font-medium text-foreground mb-2">
-              服务器地址 *
+              {{ $t('business.serverEditDialog.serverUrlLabel') }}
             </label>
             <Input
               id="serverUrl"
@@ -71,14 +71,14 @@
             />
             <span v-if="errors.serverUrl" class="text-destructive text-sm mt-1">{{ errors.serverUrl }}</span>
             <p class="text-xs text-muted-foreground mt-1">
-              WebSocket地址将自动根据服务器地址生成
+              {{ $t('business.serverEditDialog.serverUrlHint') }}
             </p>
           </div>
 
           <!-- WebSocket 地址 -->
           <div class="form-field">
             <label for="websocketUrl" class="block text-sm font-medium text-foreground mb-2">
-              WebSocket 地址 *
+              {{ $t('business.serverEditDialog.wsUrlLabel') }}
             </label>
             <Input
               id="websocketUrl"
@@ -92,7 +92,7 @@
             />
             <span v-if="errors.websocketUrl" class="text-destructive text-sm mt-1">{{ errors.websocketUrl }}</span>
             <p class="text-xs text-muted-foreground mt-1">
-              用于实时通信的 WebSocket 连接地址
+              {{ $t('business.serverEditDialog.wsUrlHint') }}
             </p>
           </div>
         </div>
@@ -101,7 +101,7 @@
         <div class="form-field">
           <div class="flex items-center justify-between mb-4">
             <label class="block text-sm font-medium text-foreground">
-              认证方式
+              {{ $t('business.serverEditDialog.authMethod') }}
             </label>
             <!-- 认证方式切换 -->
             <ToggleGroup
@@ -118,7 +118,7 @@
           <div v-if="!authTokenMode" class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label for="username" class="block text-sm font-medium text-foreground mb-2">
-                用户名
+                {{ $t('business.serverEditDialog.usernameLabel') }}
               </label>
               <Input
                 id="username"
@@ -127,18 +127,18 @@
                   'w-full',
                   errors.username ? 'border-destructive' : ''
                 ]"
-                placeholder="请输入用户名"
+                :placeholder="$t('business.serverEditDialog.usernamePlaceholder')"
                 :data-invalid="!!errors.username"
               />
               <span v-if="errors.username" class="text-destructive text-sm mt-1">{{ errors.username }}</span>
               <p class="text-xs text-muted-foreground mt-1">
-                连接服务器时需要的用户名
+                {{ $t('business.serverEditDialog.usernameHint') }}
               </p>
             </div>
 
             <div>
               <label for="password" class="block text-sm font-medium text-foreground mb-2">
-                密码
+                {{ $t('business.serverEditDialog.passwordLabel') }}
               </label>
               <Input
                 id="password"
@@ -147,13 +147,13 @@
                   'w-full',
                   errors.password ? 'border-destructive' : ''
                 ]"
-                placeholder="请输入密码"
+                :placeholder="$t('business.serverEditDialog.passwordPlaceholder')"
                 :data-invalid="!!errors.password"
                 type="password"
               />
               <span v-if="errors.password" class="text-destructive text-sm mt-1">{{ errors.password }}</span>
               <p class="text-xs text-muted-foreground mt-1">
-                连接服务器时需要的密码
+                {{ $t('business.serverEditDialog.passwordHint') }}
               </p>
             </div>
           </div>
@@ -161,7 +161,7 @@
           <!-- Token 输入框 -->
           <div v-if="authTokenMode" class="space-y-2">
             <label for="authTokenValue" class="block text-sm font-medium text-foreground">
-              API Token
+              {{ $t('business.serverEditDialog.authTokenLabel') }}
             </label>
             <Input
               id="authTokenValue"
@@ -170,13 +170,13 @@
                 'w-full',
                 errors.authToken ? 'border-destructive' : ''
               ]"
-              placeholder="请输入 API Token"
+              :placeholder="$t('business.serverEditDialog.authTokenPlaceholder')"
               :data-invalid="!!errors.authToken"
               type="password"
             />
             <span v-if="errors.authToken" class="text-destructive text-sm mt-1">{{ errors.authToken }}</span>
             <p class="text-xs text-muted-foreground">
-              使用 API Token 可以跳过用户名密码认证
+              {{ $t('business.serverEditDialog.authTokenHint') }}
             </p>
           </div>
         </div>
@@ -188,14 +188,14 @@
             class="flex items-center space-x-2 text-green-600 text-sm p-3 bg-green-50 rounded-lg border border-green-200"
           >
             <span class="material-icons text-sm">check_circle</span>
-            <span>连接测试成功</span>
+            <span>{{ $t('business.serverEditDialog.connectionSuccess') }}</span>
           </div>
           <div
             v-else
             class="flex items-center space-x-2 text-destructive text-sm p-3 bg-destructive rounded-lg border border-destructive"
           >
             <span class="material-icons text-sm">error</span>
-            <span>连接测试失败: {{ connectionTestResult.error }}</span>
+            <span>{{ $t('business.serverEditDialog.connectionFailed', { error: connectionTestResult.error }) }}</span>
           </div>
         </div>
 
@@ -203,7 +203,7 @@
         <div class="form-field mt-4">
           <div class="flex items-center justify-between mb-4">
             <label class="text-sm font-medium text-foreground">
-              SMB 共享
+              {{ $t('business.serverEditDialog.smbLabel') }}
             </label>
             <div class="flex items-center space-x-3">
               <Switch
@@ -219,7 +219,7 @@
             <!-- 挂载路径 -->
             <div>
               <label for="mountPath" class="block text-sm font-medium text-foreground mb-2">
-                挂载路径
+                {{ $t('business.serverEditDialog.mountPathLabel') }}
               </label>
               <Input
                 id="mountPath"
@@ -233,14 +233,14 @@
               />
               <span v-if="errors.mountPath" class="text-destructive text-sm mt-1">{{ errors.mountPath }}</span>
               <p class="text-xs text-muted-foreground mt-1">
-                服务器上的挂载路径前缀
+                {{ $t('business.serverEditDialog.mountPathHint') }}
               </p>
             </div>
 
             <!-- SMB 路径 -->
             <div>
               <label for="smbPath" class="block text-sm font-medium text-foreground mb-2">
-                SMB 路径
+                {{ $t('business.serverEditDialog.smbPathLabel') }}
               </label>
               <Input
                 id="smbPath"
@@ -254,7 +254,7 @@
               />
               <span v-if="errors.smbPath" class="text-destructive text-sm mt-1">{{ errors.smbPath }}</span>
               <p class="text-xs text-muted-foreground mt-1">
-                SMB 共享的网络路径，用于本地文件访问
+                {{ $t('business.serverEditDialog.smbPathHint') }}
               </p>
             </div>
           </div>
@@ -269,11 +269,11 @@
             @update:checked="formData.saveCredentials = $event"
           />
           <label for="saveCredentials" class="text-sm text-foreground">
-            保存登录信息（如果服务器需要认证）
+            {{ $t('business.serverEditDialog.saveCredentialsLabel') }}
           </label>
         </div>
         <p class="text-xs text-muted-foreground mt-1">
-          勾选后，首次登录时会保存您的用户名和密码（加密存储）
+          {{ $t('business.serverEditDialog.saveCredentialsHint') }}
         </p>
       </div>
       </form>
@@ -291,7 +291,7 @@
           <span class="material-icons text-sm" :class="{ 'animate-spin': isTesting }">
             {{ isTesting ? 'sync' : 'wifi_find' }}
           </span>
-          <span>{{ isTesting ? '连接测试中...' : '测试连接' }}</span>
+          <span>{{ isTesting ? $t('business.serverEditDialog.testing') : $t('business.serverEditDialog.testConnection') }}</span>
         </button>
 
         <!-- 右侧：操作按钮 -->
@@ -301,7 +301,7 @@
             @click="handleClose"
             class="px-4 py-2 text-muted-foreground hover:bg-muted rounded-lg transition-colors"
           >
-            取消
+            {{ $t('business.serverEditDialog.cancel') }}
           </button>
           <button
             type="button"
@@ -310,7 +310,7 @@
             class="flex items-center space-x-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <span v-if="isSubmitting" class="material-icons text-sm animate-spin">sync</span>
-            <span>{{ isEdit ? '保存' : '添加' }}</span>
+            <span>{{ isEdit ? $t('business.serverEditDialog.save') : $t('business.serverEditDialog.add') }}</span>
           </button>
         </div>
       </div>
@@ -321,6 +321,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
@@ -340,6 +341,7 @@ interface Emits {
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
+const { t } = useI18n()
 
 const serverListStore = useServerListStore()
 const DEFAULT_WS_PORT = '8018'
@@ -427,7 +429,7 @@ const connectionTestResult = ref<{
 const validateServerUrl = () => {
   const url = formData.value.serverUrl.trim()
   if (url && !url.match(/^https?:\/\/.+/)) {
-    errors.value.serverUrl = '请输入有效的服务器地址（如：http://localhost:8081）'
+    errors.value.serverUrl = t('business.serverEditDialog.errServerUrl')
   } else if (errors.value.serverUrl) {
     delete errors.value.serverUrl
   }
@@ -524,49 +526,49 @@ const validateForm = () => {
   errors.value = {}
 
   if (!formData.value.id.trim()) {
-    errors.value.id = '请输入服务器ID'
+    errors.value.id = t('business.serverEditDialog.errIdRequired')
   } else if (!/^[a-zA-Z0-9_-]+$/.test(formData.value.id.trim())) {
-    errors.value.id = 'ID只能包含字母、数字、下划线和连字符'
+    errors.value.id = t('business.serverEditDialog.errIdInvalid')
   }
 
   if (!formData.value.name.trim()) {
-    errors.value.name = '请输入服务器名称'
+    errors.value.name = t('business.serverEditDialog.errNameRequired')
   }
 
   if (!formData.value.serverUrl.trim()) {
-    errors.value.serverUrl = '请输入服务器地址'
+    errors.value.serverUrl = t('business.serverEditDialog.errServerUrlRequired')
   } else {
     validateServerUrl()
   }
 
   if (!formData.value.websocketUrl.trim()) {
-    errors.value.websocketUrl = '请输入 WebSocket 地址'
+    errors.value.websocketUrl = t('business.serverEditDialog.errWsUrlRequired')
   } else if (!formData.value.websocketUrl.match(/^wss?:\/\/.+/)) {
-    errors.value.websocketUrl = '请输入有效的 WebSocket 地址（如：ws://localhost:8018）'
+    errors.value.websocketUrl = t('business.serverEditDialog.errWsUrlInvalid')
   }
 
   // 认证验证
   if (authTokenMode.value) {
     if (!formData.value.authToken.trim()) {
-      errors.value.authToken = '请输入 API Token'
+      errors.value.authToken = t('business.serverEditDialog.errAuthTokenRequired')
     }
   } else {
     // 用户名密码模式的验证可以设为可选，或者根据需要设为必填
     // if (!formData.value.username.trim()) {
-    //   errors.value.username = '请输入用户名'
+    //   errors.value.username = t('business.serverEditDialog.errUsernameRequired')
     // }
     // if (!formData.value.password.trim()) {
-    //   errors.value.password = '请输入密码'
+    //   errors.value.password = t('business.serverEditDialog.errPasswordRequired')
     // }
   }
 
   // SMB 验证
   if (formData.value.smbEnabled) {
     if (!formData.value.mountPath.trim()) {
-      errors.value.mountPath = '启用 SMB 时必须输入挂载路径'
+      errors.value.mountPath = t('business.serverEditDialog.errMountPathRequired')
     }
     if (!formData.value.smbPath.trim()) {
-      errors.value.smbPath = '启用 SMB 时必须输入 SMB 路径'
+      errors.value.smbPath = t('business.serverEditDialog.errSmbPathRequired')
     }
   }
 
@@ -588,7 +590,7 @@ const testConnection = async () => {
   } catch (error) {
     connectionTestResult.value = {
       success: false,
-      error: error instanceof Error ? error.message : '未知错误'
+      error: error instanceof Error ? error.message : t('business.serverEditDialog.unknownError')
     }
   } finally {
     isTesting.value = false

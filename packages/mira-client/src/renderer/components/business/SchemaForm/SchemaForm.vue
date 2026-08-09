@@ -1,15 +1,23 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Button } from '@/components/ui/button'
 import { useSchemaForm } from './useSchemaForm'
 import FieldRenderer from './FieldRenderer.vue'
 import type { SchemaFormEmits, SchemaFormProps } from './types'
 
+const { t } = useI18n()
+
 const props = withDefaults(defineProps<SchemaFormProps>(), {
   layout: 'grid',
-  submitText: '提交',
-  cancelText: '取消',
+  submitText: '',
+  cancelText: '',
   submitting: false,
 })
+
+// 默认按钮文案本地化（props 未传入时回退）
+const resolvedSubmitText = computed(() => props.submitText || t('business.schemaForm.submit'))
+const resolvedCancelText = computed(() => props.cancelText || t('business.schemaForm.cancel'))
 
 const emit = defineEmits<SchemaFormEmits>()
 
@@ -44,10 +52,10 @@ const { onSubmit } = useSchemaForm(props, emit)
     <!-- 操作区 -->
     <div class="flex justify-end gap-3 pt-2">
       <Button type="button" variant="outline" @click="emit('cancel')">
-        {{ cancelText }}
+        {{ resolvedCancelText }}
       </Button>
       <Button type="submit" :disabled="submitting">
-        {{ submitText }}
+        {{ resolvedSubmitText }}
       </Button>
     </div>
   </form>

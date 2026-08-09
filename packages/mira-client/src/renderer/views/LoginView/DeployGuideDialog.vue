@@ -55,16 +55,16 @@ function handleConnect(defaultLibraryId: string) {
     @click="showDeployGuide = true"
   >
     <span class="material-icons text-sm">rocket_launch</span>
-    部署指南
+    {{ $t('views.deployGuideDialog.guide') }}
   </button>
 
   <!-- 部署指南对话框 -->
   <Dialog :open="showDeployGuide" @update:open="showDeployGuide = $event">
     <DialogContent class="max-h-[min(760px,calc(100vh-2rem))] grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden sm:max-w-[520px]">
       <DialogHeader>
-        <DialogTitle>部署指南</DialogTitle>
+        <DialogTitle>{{ $t('views.deployGuideDialog.title') }}</DialogTitle>
         <DialogDescription>
-          {{ isElectron ? '使用在线部署向导一键完成，或查看手动部署指南。' : '按以下步骤手动部署 mira-app-server 后端。' }}
+          {{ isElectron ? $t('views.deployGuideDialog.descElectron') : $t('views.deployGuideDialog.descManual') }}
         </DialogDescription>
       </DialogHeader>
 
@@ -81,7 +81,7 @@ function handleConnect(defaultLibraryId: string) {
       <DialogFooter v-if="isElectron" class="gap-2 sm:justify-center">
         <Button type="button" variant="outline" size="sm" @click="openManualGuide">
           <span class="material-icons text-sm">menu_book</span>
-          手动部署指南
+          {{ $t('views.deployGuideDialog.manualGuide') }}
         </Button>
       </DialogFooter>
     </DialogContent>
@@ -91,8 +91,8 @@ function handleConnect(defaultLibraryId: string) {
   <Dialog :open="showManualGuide" @update:open="handleManualGuideOpenChange">
     <DialogContent class="sm:max-w-[560px]">
       <DialogHeader>
-        <DialogTitle>手动部署指南</DialogTitle>
-        <DialogDescription>按以下步骤在本地或服务器上部署 mira-app-server。</DialogDescription>
+        <DialogTitle>{{ $t('views.deployGuideDialog.manualTitle') }}</DialogTitle>
+        <DialogDescription>{{ $t('views.deployGuideDialog.manualDesc') }}</DialogDescription>
       </DialogHeader>
       <ManualDeployGuide />
     </DialogContent>

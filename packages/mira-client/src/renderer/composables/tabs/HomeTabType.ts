@@ -1,9 +1,12 @@
 import { BaseTabType } from '../TabTypes'
 import type { TabContext, TabResult, TabViewConfig } from '../TabRegistry'
+import i18n from '../../i18n'
 
 export class HomeTabType extends BaseTabType {
   name = 'home'
-  displayName = '首页'
+  get displayName() {
+    return i18n.global.t('composables.homeTab.displayName')
+  }
   icon = 'home'
   iconColor = '#3B82F6'
   allowMultipleInstances = false // 首页只允许一个实例

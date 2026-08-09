@@ -23,12 +23,12 @@
                 ? 'bg-primary text-primary hover:bg-primary'
                 : 'bg-muted text-foreground hover:bg-accent'
             ]"
-            :title="showDetailSidebar ? '隐藏详情面板' : '显示详情面板'"
+            :title="showDetailSidebar ? $t('business.mediaContentView.hideDetailPanel') : $t('business.mediaContentView.showDetailPanel')"
           >
             <span class="material-icons text-lg mr-1">
               {{ showDetailSidebar ? 'visibility_off' : 'visibility' }}
             </span>
-            {{ showDetailSidebar ? '隐藏详情' : '显示详情' }}
+            {{ showDetailSidebar ? $t('business.mediaContentView.hideDetail') : $t('business.mediaContentView.showDetail') }}
           </button>
         </div>
       </div>
@@ -40,7 +40,7 @@
       >
         <div class="text-center">
           <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-          <p class="text-muted-foreground">{{ loadingMessage }}</p>
+          <p class="text-muted-foreground">{{ loadingMessage || $t('business.mediaContentView.loading') }}</p>
         </div>
       </div>
 
@@ -109,7 +109,7 @@
 
         <!-- 未知视图模式 -->
         <div v-else class="flex items-center justify-center h-40 text-muted-foreground">
-          未知的视图模式: {{ viewMode }}
+          {{ $t('business.mediaContentView.unknownViewMode', { mode: viewMode }) }}
         </div>
       </div>
     </div>
@@ -157,7 +157,7 @@ interface Props {
 withDefaults(defineProps<Props>(), {
   subtitle: '',
   isLoading: false,
-  loadingMessage: '正在加载内容...',
+  loadingMessage: '',
   isTrash: false
 })
 

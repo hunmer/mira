@@ -11,6 +11,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ToolbarComponent } from '../common'
 import type { ToolbarGroup } from '../../types/components'
 
@@ -24,6 +25,7 @@ interface Emits {
 
 const props = defineProps<Props>()
 defineEmits<Emits>()
+const { t } = useI18n()
 
 const toolbarGroups = computed((): ToolbarGroup[] => [
   {
@@ -32,13 +34,13 @@ const toolbarGroups = computed((): ToolbarGroup[] => [
       {
         id: 'select-all',
         icon: 'check_box',
-        label: '全选',
+        label: t('layout.contentToolbar.selectAll'),
         variant: 'secondary'
       },
       {
         id: 'select-none',
         icon: 'check_box_outline_blank',
-        label: '取消选择',
+        label: t('layout.contentToolbar.selectNone'),
         variant: 'secondary',
         disabled: props.selectedCount === 0
       }
@@ -51,13 +53,13 @@ const toolbarGroups = computed((): ToolbarGroup[] => [
       {
         id: 'filter-images',
         icon: 'image',
-        label: '图片',
+        label: t('layout.contentToolbar.images'),
         variant: 'secondary'
       },
       {
         id: 'filter-videos',
         icon: 'video',
-        label: '视频',
+        label: t('layout.contentToolbar.videos'),
         variant: 'secondary'
       }
     ]

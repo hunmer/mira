@@ -1,11 +1,11 @@
 <template>
   <div class="min-h-screen bg-[#f5f5f5] dark:bg-muted">
     <div class="p-6 space-y-6">
-      <h2 class="text-2xl font-bold text-foreground dark:text-muted-foreground">菜单 API 测试</h2>
-      
+      <h2 class="text-2xl font-bold text-foreground dark:text-muted-foreground">{{ $t('views.menuTestView.title') }}</h2>
+
       <!-- 菜单管理 -->
       <div class="bg-white dark:bg-muted p-4 rounded-lg shadow">
-        <h3 class="text-lg font-semibold mb-4">菜单管理</h3>
+        <h3 class="text-lg font-semibold mb-4">{{ $t('views.menuTestView.menuManagement') }}</h3>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <!-- 添加自定义菜单 -->
@@ -14,7 +14,7 @@
               @click="addCustomMenu"
               class="w-full px-4 py-2 bg-primary text-white rounded hover:bg-primary"
             >
-              添加自定义菜单
+              {{ $t('views.menuTestView.addCustomMenu') }}
             </button>
           </div>
 
@@ -24,7 +24,7 @@
               @click="removeCustomMenu"
               class="w-full px-4 py-2 bg-destructive text-white rounded hover:bg-destructive"
             >
-              移除自定义菜单
+              {{ $t('views.menuTestView.removeCustomMenu') }}
             </button>
           </div>
 
@@ -34,7 +34,7 @@
               @click="updateNavigationMenu"
               class="w-full px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
             >
-              同步路由到导航菜单
+              {{ $t('views.menuTestView.syncNavMenu') }}
             </button>
           </div>
         </div>
@@ -42,42 +42,42 @@
 
       <!-- 菜单项管理 -->
       <div class="bg-white dark:bg-muted p-4 rounded-lg shadow">
-        <h3 class="text-lg font-semibold mb-4">菜单项管理</h3>
-        
+        <h3 class="text-lg font-semibold mb-4">{{ $t('views.menuTestView.menuItemManagement') }}</h3>
+
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <button
             @click="addMenuItem"
             class="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
           >
-            添加菜单项
+            {{ $t('views.menuTestView.addMenuItem') }}
           </button>
 
           <button
             @click="removeMenuItem"
             class="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600"
           >
-            移除菜单项
+            {{ $t('views.menuTestView.removeMenuItem') }}
           </button>
 
           <button
             @click="toggleMenuItemEnabled"
             class="px-4 py-2 bg-teal-500 text-white rounded hover:bg-teal-600"
           >
-            切换菜单项启用状态
+            {{ $t('views.menuTestView.toggleEnabled') }}
           </button>
 
           <button
             @click="toggleMenuItemVisible"
             class="px-4 py-2 bg-primary text-white rounded hover:bg-primary"
           >
-            切换菜单项可见性
+            {{ $t('views.menuTestView.toggleVisible') }}
           </button>
         </div>
       </div>
 
       <!-- 当前菜单状态 -->
       <div class="bg-white dark:bg-muted p-4 rounded-lg shadow">
-        <h3 class="text-lg font-semibold mb-4">当前菜单状态</h3>
+        <h3 class="text-lg font-semibold mb-4">{{ $t('views.menuTestView.currentMenuState') }}</h3>
         
         <div class="space-y-4">
           <div v-for="menu in currentMenus" :key="menu.id" class="border rounded p-3">
@@ -108,16 +108,16 @@
           @click="refreshMenuState"
           class="mt-4 px-4 py-2 bg-muted dark:bg-muted text-white rounded hover:bg-muted"
         >
-          刷新菜单状态
+          {{ $t('views.menuTestView.refreshMenuState') }}
         </button>
       </div>
 
       <!-- 操作日志 -->
       <div class="bg-white dark:bg-muted p-4 rounded-lg shadow">
-        <h3 class="text-lg font-semibold mb-4">操作日志</h3>
+        <h3 class="text-lg font-semibold mb-4">{{ $t('views.menuTestView.operationLogs') }}</h3>
         <div class="bg-muted dark:bg-muted p-3 rounded h-40 overflow-y-auto">
-          <div 
-            v-for="(log, index) in logs" 
+          <div
+            v-for="(log, index) in logs"
             :key="index"
             class="text-sm text-foreground dark:text-muted-foreground mb-1"
           >
@@ -128,7 +128,7 @@
           @click="clearLogs"
           class="mt-2 px-3 py-1 bg-muted text-white text-sm rounded hover:bg-muted"
         >
-          清空日志
+          {{ $t('views.menuTestView.clearLogs') }}
         </button>
       </div>
     </div>
@@ -137,11 +137,13 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { miraAPI } from '../api/MiraAPI'
 import type { MenuConfig, MenuItemConfig } from '../services/MenuService'
 
 const router = useRouter()
+const { t } = useI18n()
 const currentMenus = ref<MenuConfig[]>([])
 const logs = ref<Array<{ time: string; message: string }>>([])
 
@@ -165,9 +167,9 @@ const clearLogs = () => {
 const refreshMenuState = () => {
   try {
     currentMenus.value = miraAPI.menu.getAllMenus()
-    addLog('菜单状态已刷新')
+    addLog(t('views.menuTestView.logRefreshed'))
   } catch (error) {
-    addLog(`刷新菜单状态失败: ${error}`)
+    addLog(t('views.menuTestView.logRefreshFailed', { error }))
   }
 }
 
@@ -176,34 +178,34 @@ const addCustomMenu = () => {
   try {
     const customMenu: MenuConfig = {
       id: 'custom',
-      label: '自定义菜单',
+      label: t('views.menuTestView.customMenu'),
       submenu: [
         {
           id: 'custom-action-1',
-          label: '自定义动作 1',
+          label: t('views.menuTestView.customAction1'),
           accelerator: 'CmdOrCtrl+Shift+1',
           action: 'customAction1'
         },
         {
           id: 'custom-action-2',
-          label: '自定义动作 2',
+          label: t('views.menuTestView.customAction2'),
           accelerator: 'CmdOrCtrl+Shift+2',
           action: 'customAction2'
         },
         { id: 'custom-separator', type: 'separator' },
         {
           id: 'custom-route',
-          label: '跳转到设置',
+          label: t('views.menuTestView.goToSettings'),
           route: 'Settings'
         }
       ]
     }
 
     miraAPI.menu.addMenu(customMenu)
-    addLog('已添加自定义菜单')
+    addLog(t('views.menuTestView.logAddedCustom'))
     refreshMenuState()
   } catch (error) {
-    addLog(`添加自定义菜单失败: ${error}`)
+    addLog(t('views.menuTestView.logAddCustomFailed', { error }))
   }
 }
 
@@ -211,10 +213,10 @@ const addCustomMenu = () => {
 const removeCustomMenu = () => {
   try {
     miraAPI.menu.removeMenu('custom')
-    addLog('已移除自定义菜单')
+    addLog(t('views.menuTestView.logRemovedCustom'))
     refreshMenuState()
   } catch (error) {
-    addLog(`移除自定义菜单失败: ${error}`)
+    addLog(t('views.menuTestView.logRemoveCustomFailed', { error }))
   }
 }
 
@@ -223,10 +225,10 @@ const updateNavigationMenu = () => {
   try {
     const routes = router.getRoutes().filter(route => !route.meta?.hideInNav)
     miraAPI.menu.updateNavigationFromRoutes(routes)
-    addLog(`已根据 ${routes.length} 个路由更新导航菜单`)
+    addLog(t('views.menuTestView.logUpdatedNav', { n: routes.length }))
     refreshMenuState()
   } catch (error) {
-    addLog(`更新导航菜单失败: ${error}`)
+    addLog(t('views.menuTestView.logUpdateNavFailed', { error }))
   }
 }
 
@@ -235,16 +237,16 @@ const addMenuItem = () => {
   try {
     const newItem: MenuItemConfig = {
       id: 'test-menu-item',
-      label: '测试菜单项',
+      label: t('views.menuTestView.testMenuItem'),
       accelerator: 'CmdOrCtrl+T',
       route: 'Home'
     }
 
     miraAPI.menu.addMenuItem('file', newItem, 1) // 添加到文件菜单的第二个位置
-    addLog('已在文件菜单中添加测试菜单项')
+    addLog(t('views.menuTestView.logAddedMenuItem'))
     refreshMenuState()
   } catch (error) {
-    addLog(`添加菜单项失败: ${error}`)
+    addLog(t('views.menuTestView.logAddMenuItemFailed', { error }))
   }
 }
 
@@ -252,10 +254,10 @@ const addMenuItem = () => {
 const removeMenuItem = () => {
   try {
     miraAPI.menu.removeMenuItem('file', 'test-menu-item')
-    addLog('已移除测试菜单项')
+    addLog(t('views.menuTestView.logRemovedMenuItem'))
     refreshMenuState()
   } catch (error) {
-    addLog(`移除菜单项失败: ${error}`)
+    addLog(t('views.menuTestView.logRemoveMenuItemFailed', { error }))
   }
 }
 
@@ -264,17 +266,17 @@ const toggleMenuItemEnabled = () => {
   try {
     const menu = miraAPI.menu.getMenu('file')
     const item = menu?.submenu.find(item => item.id === 'import-files')
-    
+
     if (item) {
       const newEnabled = !(item.enabled !== false)
       miraAPI.menu.setMenuItemEnabled('file', 'import-files', newEnabled)
-      addLog(`已${newEnabled ? '启用' : '禁用'}导入文件菜单项`)
+      addLog(t('views.menuTestView.logToggleEnabled', { action: newEnabled ? t('views.menuTestView.enabled') : t('views.menuTestView.disabled') }))
       refreshMenuState()
     } else {
-      addLog('未找到导入文件菜单项')
+      addLog(t('views.menuTestView.logMenuItemNotFound'))
     }
   } catch (error) {
-    addLog(`切换菜单项启用状态失败: ${error}`)
+    addLog(t('views.menuTestView.logToggleEnabledFailed', { error }))
   }
 }
 
@@ -283,22 +285,22 @@ const toggleMenuItemVisible = () => {
   try {
     const menu = miraAPI.menu.getMenu('file')
     const item = menu?.submenu.find(item => item.id === 'export-selected')
-    
+
     if (item) {
       const newVisible = !(item.visible !== false)
       miraAPI.menu.setMenuItemVisible('file', 'export-selected', newVisible)
-      addLog(`已${newVisible ? '显示' : '隐藏'}导出菜单项`)
+      addLog(t('views.menuTestView.logToggleVisible', { action: newVisible ? t('views.menuTestView.shown') : t('views.menuTestView.hidden') }))
       refreshMenuState()
     } else {
-      addLog('未找到导出菜单项')
+      addLog(t('views.menuTestView.logExportNotFound'))
     }
   } catch (error) {
-    addLog(`切换菜单项可见性失败: ${error}`)
+    addLog(t('views.menuTestView.logToggleVisibleFailed', { error }))
   }
 }
 
 onMounted(() => {
-  addLog('菜单测试页面已加载')
+  addLog(t('views.menuTestView.pageLoaded'))
   refreshMenuState()
 })
 </script>

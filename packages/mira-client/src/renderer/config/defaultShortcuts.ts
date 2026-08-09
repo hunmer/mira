@@ -3,13 +3,17 @@ import type { ShortcutConfig, ShortcutAction, ShortcutBinding } from '../service
 /**
  * 默认动作定义
  * 这些动作代表应用中的常见操作
+ *
+ * 国际化说明：title/description 存放 i18n key（见 i18n/locales/{zh-CN,en-US}/shortcuts.json）。
+ * actionId（如 'app.search'）映射为 key：去掉点并转驼峰（'app.search' -> 'shortcuts.actions.appSearch.title'）。
+ * 消费处（如 ShortcutManagerDialog.vue）需用 t() 渲染这些 key；若值已是普通文本（非 key），原样显示。
  */
 export const defaultActions: ShortcutAction[] = [
   // 常规操作
   {
     id: 'app.search',
-    title: '全局搜索',
-    description: '打开全局搜索对话框',
+    title: 'shortcuts.actions.appSearch.title',
+    description: 'shortcuts.actions.appSearch.description',
     category: 'general',
     icon: 'search',
     callback: () => {
@@ -19,8 +23,8 @@ export const defaultActions: ShortcutAction[] = [
   },
   {
     id: 'app.settings',
-    title: '打开设置',
-    description: '打开应用设置页面',
+    title: 'shortcuts.actions.appSettings.title',
+    description: 'shortcuts.actions.appSettings.description',
     category: 'general',
     icon: 'settings',
     callback: () => {
@@ -29,8 +33,8 @@ export const defaultActions: ShortcutAction[] = [
   },
   {
     id: 'app.help',
-    title: '帮助文档',
-    description: '打开帮助文档',
+    title: 'shortcuts.actions.appHelp.title',
+    description: 'shortcuts.actions.appHelp.description',
     category: 'general',
     icon: 'help',
     callback: () => {
@@ -39,8 +43,8 @@ export const defaultActions: ShortcutAction[] = [
   },
   {
     id: 'app.quit',
-    title: '退出应用',
-    description: '关闭应用程序',
+    title: 'shortcuts.actions.appQuit.title',
+    description: 'shortcuts.actions.appQuit.description',
     category: 'system',
     icon: 'exit_to_app',
     callback: () => {
@@ -51,8 +55,8 @@ export const defaultActions: ShortcutAction[] = [
   // 导航操作
   {
     id: 'nav.home',
-    title: '返回首页',
-    description: '导航到首页',
+    title: 'shortcuts.actions.navHome.title',
+    description: 'shortcuts.actions.navHome.description',
     category: 'navigation',
     icon: 'home',
     callback: () => {
@@ -61,8 +65,8 @@ export const defaultActions: ShortcutAction[] = [
   },
   {
     id: 'nav.activate-last-tab',
-    title: '激活上一次的tab',
-    description: '切换到上一次激活的标签页',
+    title: 'shortcuts.actions.navActivateLastTab.title',
+    description: 'shortcuts.actions.navActivateLastTab.description',
     category: 'navigation',
     icon: 'history',
     callback: () => {
@@ -71,8 +75,8 @@ export const defaultActions: ShortcutAction[] = [
   },
   {
     id: 'nav.reopen-closed-tab',
-    title: '打开最后关闭的tab',
-    description: '重新打开最近关闭的标签页',
+    title: 'shortcuts.actions.navReopenClosedTab.title',
+    description: 'shortcuts.actions.navReopenClosedTab.description',
     category: 'navigation',
     icon: 'restore',
     callback: () => {
@@ -81,8 +85,8 @@ export const defaultActions: ShortcutAction[] = [
   },
   {
     id: 'nav.library',
-    title: '媒体库',
-    description: '打开媒体库页面',
+    title: 'shortcuts.actions.navLibrary.title',
+    description: 'shortcuts.actions.navLibrary.description',
     category: 'navigation',
     icon: 'video_library',
     callback: () => {
@@ -91,8 +95,8 @@ export const defaultActions: ShortcutAction[] = [
   },
   {
     id: 'nav.plugins',
-    title: '插件管理',
-    description: '打开插件管理页面',
+    title: 'shortcuts.actions.navPlugins.title',
+    description: 'shortcuts.actions.navPlugins.description',
     category: 'navigation',
     icon: 'extension',
     callback: () => {
@@ -101,8 +105,8 @@ export const defaultActions: ShortcutAction[] = [
   },
   {
     id: 'nav.back',
-    title: '后退',
-    description: '返回上一页',
+    title: 'shortcuts.actions.navBack.title',
+    description: 'shortcuts.actions.navBack.description',
     category: 'navigation',
     icon: 'arrow_back',
     callback: () => {
@@ -111,8 +115,8 @@ export const defaultActions: ShortcutAction[] = [
   },
   {
     id: 'nav.forward',
-    title: '前进',
-    description: '前进到下一页',
+    title: 'shortcuts.actions.navForward.title',
+    description: 'shortcuts.actions.navForward.description',
     category: 'navigation',
     icon: 'arrow_forward',
     callback: () => {
@@ -121,8 +125,8 @@ export const defaultActions: ShortcutAction[] = [
   },
   {
     id: 'nav.refresh',
-    title: '刷新页面',
-    description: '重新加载当前页面',
+    title: 'shortcuts.actions.navRefresh.title',
+    description: 'shortcuts.actions.navRefresh.description',
     category: 'navigation',
     icon: 'refresh',
     callback: () => {
@@ -133,8 +137,8 @@ export const defaultActions: ShortcutAction[] = [
   // 媒体操作
   {
     id: 'media.play-pause',
-    title: '播放/暂停',
-    description: '切换媒体播放状态',
+    title: 'shortcuts.actions.mediaPlayPause.title',
+    description: 'shortcuts.actions.mediaPlayPause.description',
     category: 'media',
     icon: 'play_arrow',
     callback: () => {
@@ -143,8 +147,8 @@ export const defaultActions: ShortcutAction[] = [
   },
   {
     id: 'media.stop',
-    title: '停止播放',
-    description: '停止媒体播放',
+    title: 'shortcuts.actions.mediaStop.title',
+    description: 'shortcuts.actions.mediaStop.description',
     category: 'media',
     icon: 'stop',
     callback: () => {
@@ -153,8 +157,8 @@ export const defaultActions: ShortcutAction[] = [
   },
   {
     id: 'media.next',
-    title: '下一个',
-    description: '播放下一个媒体文件',
+    title: 'shortcuts.actions.mediaNext.title',
+    description: 'shortcuts.actions.mediaNext.description',
     category: 'media',
     icon: 'skip_next',
     callback: () => {
@@ -163,8 +167,8 @@ export const defaultActions: ShortcutAction[] = [
   },
   {
     id: 'media.previous',
-    title: '上一个',
-    description: '播放上一个媒体文件',
+    title: 'shortcuts.actions.mediaPrevious.title',
+    description: 'shortcuts.actions.mediaPrevious.description',
     category: 'media',
     icon: 'skip_previous',
     callback: () => {
@@ -173,8 +177,8 @@ export const defaultActions: ShortcutAction[] = [
   },
   {
     id: 'media.volume-up',
-    title: '音量增加',
-    description: '提高播放音量',
+    title: 'shortcuts.actions.mediaVolumeUp.title',
+    description: 'shortcuts.actions.mediaVolumeUp.description',
     category: 'media',
     icon: 'volume_up',
     callback: () => {
@@ -183,8 +187,8 @@ export const defaultActions: ShortcutAction[] = [
   },
   {
     id: 'media.volume-down',
-    title: '音量减少',
-    description: '降低播放音量',
+    title: 'shortcuts.actions.mediaVolumeDown.title',
+    description: 'shortcuts.actions.mediaVolumeDown.description',
     category: 'media',
     icon: 'volume_down',
     callback: () => {
@@ -193,8 +197,8 @@ export const defaultActions: ShortcutAction[] = [
   },
   {
     id: 'media.mute',
-    title: '静音切换',
-    description: '切换静音状态',
+    title: 'shortcuts.actions.mediaMute.title',
+    description: 'shortcuts.actions.mediaMute.description',
     category: 'media',
     icon: 'volume_off',
     callback: () => {
@@ -203,8 +207,8 @@ export const defaultActions: ShortcutAction[] = [
   },
   {
     id: 'media.fullscreen',
-    title: '全屏切换',
-    description: '切换全屏模式',
+    title: 'shortcuts.actions.mediaFullscreen.title',
+    description: 'shortcuts.actions.mediaFullscreen.description',
     category: 'media',
     icon: 'fullscreen',
     callback: () => {
@@ -215,8 +219,8 @@ export const defaultActions: ShortcutAction[] = [
   // 编辑操作
   {
     id: 'edit.select-all',
-    title: '全选',
-    description: '选择所有内容',
+    title: 'shortcuts.actions.editSelectAll.title',
+    description: 'shortcuts.actions.editSelectAll.description',
     category: 'editing',
     icon: 'select_all',
     callback: () => {
@@ -225,8 +229,8 @@ export const defaultActions: ShortcutAction[] = [
   },
   {
     id: 'edit.copy',
-    title: '复制',
-    description: '复制选中内容',
+    title: 'shortcuts.actions.editCopy.title',
+    description: 'shortcuts.actions.editCopy.description',
     category: 'editing',
     icon: 'content_copy',
     callback: () => {
@@ -235,8 +239,8 @@ export const defaultActions: ShortcutAction[] = [
   },
   {
     id: 'edit.paste',
-    title: '粘贴',
-    description: '粘贴剪贴板内容',
+    title: 'shortcuts.actions.editPaste.title',
+    description: 'shortcuts.actions.editPaste.description',
     category: 'editing',
     icon: 'content_paste',
     callback: () => {
@@ -245,8 +249,8 @@ export const defaultActions: ShortcutAction[] = [
   },
   {
     id: 'edit.cut',
-    title: '剪切',
-    description: '剪切选中内容',
+    title: 'shortcuts.actions.editCut.title',
+    description: 'shortcuts.actions.editCut.description',
     category: 'editing',
     icon: 'content_cut',
     callback: () => {
@@ -255,8 +259,8 @@ export const defaultActions: ShortcutAction[] = [
   },
   {
     id: 'edit.delete',
-    title: '删除',
-    description: '删除选中项目',
+    title: 'shortcuts.actions.editDelete.title',
+    description: 'shortcuts.actions.editDelete.description',
     category: 'editing',
     icon: 'delete',
     callback: () => {
@@ -265,8 +269,8 @@ export const defaultActions: ShortcutAction[] = [
   },
   {
     id: 'edit.undo',
-    title: '撤销',
-    description: '撤销上一个操作',
+    title: 'shortcuts.actions.editUndo.title',
+    description: 'shortcuts.actions.editUndo.description',
     category: 'editing',
     icon: 'undo',
     callback: () => {
@@ -275,8 +279,8 @@ export const defaultActions: ShortcutAction[] = [
   },
   {
     id: 'edit.redo',
-    title: '重做',
-    description: '重做上一个操作',
+    title: 'shortcuts.actions.editRedo.title',
+    description: 'shortcuts.actions.editRedo.description',
     category: 'editing',
     icon: 'redo',
     callback: () => {
@@ -287,8 +291,8 @@ export const defaultActions: ShortcutAction[] = [
   // 视图操作
   {
     id: 'view.zoom-in',
-    title: '放大',
-    description: '放大视图',
+    title: 'shortcuts.actions.viewZoomIn.title',
+    description: 'shortcuts.actions.viewZoomIn.description',
     category: 'view',
     icon: 'zoom_in',
     callback: () => {
@@ -297,8 +301,8 @@ export const defaultActions: ShortcutAction[] = [
   },
   {
     id: 'view.zoom-out',
-    title: '缩小',
-    description: '缩小视图',
+    title: 'shortcuts.actions.viewZoomOut.title',
+    description: 'shortcuts.actions.viewZoomOut.description',
     category: 'view',
     icon: 'zoom_out',
     callback: () => {
@@ -307,8 +311,8 @@ export const defaultActions: ShortcutAction[] = [
   },
   {
     id: 'view.zoom-reset',
-    title: '重置缩放',
-    description: '重置到原始大小',
+    title: 'shortcuts.actions.viewZoomReset.title',
+    description: 'shortcuts.actions.viewZoomReset.description',
     category: 'view',
     icon: 'zoom_out_map',
     callback: () => {
@@ -317,8 +321,8 @@ export const defaultActions: ShortcutAction[] = [
   },
   {
     id: 'view.toggle-sidebar',
-    title: '切换侧边栏',
-    description: '显示/隐藏侧边栏',
+    title: 'shortcuts.actions.viewToggleSidebar.title',
+    description: 'shortcuts.actions.viewToggleSidebar.description',
     category: 'view',
     icon: 'menu',
     callback: () => {
@@ -327,8 +331,8 @@ export const defaultActions: ShortcutAction[] = [
   },
   {
     id: 'view.grid-view',
-    title: '网格视图',
-    description: '切换到网格视图',
+    title: 'shortcuts.actions.viewGridView.title',
+    description: 'shortcuts.actions.viewGridView.description',
     category: 'view',
     icon: 'grid_view',
     callback: () => {
@@ -337,8 +341,8 @@ export const defaultActions: ShortcutAction[] = [
   },
   {
     id: 'view.list-view',
-    title: '列表视图',
-    description: '切换到列表视图',
+    title: 'shortcuts.actions.viewListView.title',
+    description: 'shortcuts.actions.viewListView.description',
     category: 'view',
     icon: 'view_list',
     callback: () => {
@@ -349,8 +353,8 @@ export const defaultActions: ShortcutAction[] = [
   // 窗口操作 (仅Electron)
   {
     id: 'window.minimize',
-    title: '最小化窗口',
-    description: '最小化当前窗口',
+    title: 'shortcuts.actions.windowMinimize.title',
+    description: 'shortcuts.actions.windowMinimize.description',
     category: 'system',
     icon: 'minimize',
     callback: () => {
@@ -359,8 +363,8 @@ export const defaultActions: ShortcutAction[] = [
   },
   {
     id: 'window.maximize',
-    title: '最大化窗口',
-    description: '最大化/还原窗口',
+    title: 'shortcuts.actions.windowMaximize.title',
+    description: 'shortcuts.actions.windowMaximize.description',
     category: 'system',
     icon: 'crop_square',
     callback: () => {
@@ -369,8 +373,8 @@ export const defaultActions: ShortcutAction[] = [
   },
   {
     id: 'tab.close-current',
-    title: '关闭当前标签页',
-    description: '关闭当前激活的标签页',
+    title: 'shortcuts.actions.tabCloseCurrent.title',
+    description: 'shortcuts.actions.tabCloseCurrent.description',
     category: 'navigation',
     icon: 'close',
     callback: () => {
@@ -381,8 +385,8 @@ export const defaultActions: ShortcutAction[] = [
   // 开发调试
   {
     id: 'dev.devtools',
-    title: '开发者工具',
-    description: '打开开发者工具',
+    title: 'shortcuts.actions.devDevtools.title',
+    description: 'shortcuts.actions.devDevtools.description',
     category: 'system',
     icon: 'bug_report',
     callback: () => {
@@ -391,8 +395,8 @@ export const defaultActions: ShortcutAction[] = [
   },
   {
     id: 'dev.reload',
-    title: '强制刷新',
-    description: '强制重新加载应用',
+    title: 'shortcuts.actions.devReload.title',
+    description: 'shortcuts.actions.devReload.description',
     category: 'system',
     icon: 'refresh',
     callback: () => {

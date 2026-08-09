@@ -16,10 +16,10 @@
     <div class="folder-info flex-1 min-w-0">
       <p class="font-semibold text-white truncate" :title="item.title">
         {{ item.title }}
-        <span v-if="isRootFolder" class="text-xs text-primary ml-1">(根目录)</span>
+        <span v-if="isRootFolder" class="text-xs text-primary ml-1">{{ t('search.folderSearchResult.rootFolder') }}</span>
       </p>
       <div class="flex items-center space-x-2 text-sm text-muted-foreground">
-        <span>{{ item.fileCount || 0 }} 个文件</span>
+        <span>{{ t('search.folderSearchResult.fileCount', { count: item.fileCount || 0 }) }}</span>
         <span v-if="item.path">•</span>
         <span v-if="item.path" class="truncate" :title="item.path">{{ item.path }}</span>
       </div>
@@ -52,6 +52,9 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 interface FolderItem {
   id: number

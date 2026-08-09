@@ -1,6 +1,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useToast } from '@/renderer/composables/useToast'
 import ConfigStorage from '@renderer/utils/ConfigStorage'
+import i18n from '../i18n'
 
 // 导出tabs相关功能
 export { useTabs, type TabItem } from './useTabs'
@@ -29,7 +30,7 @@ export function useNotification() {
   const showSuccess = (message: string, summary?: string) => {
     toast.add({
       severity: 'success',
-      summary: summary || '成功',
+      summary: summary || i18n.global.t('composables.useNotification.success'),
       detail: message,
       life: 3000
     })
@@ -38,7 +39,7 @@ export function useNotification() {
   const showError = (message: string, summary?: string) => {
     toast.add({
       severity: 'error',
-      summary: summary || '错误',
+      summary: summary || i18n.global.t('composables.useNotification.error'),
       detail: message,
       life: 5000
     })
@@ -47,7 +48,7 @@ export function useNotification() {
   const showWarning = (message: string, summary?: string) => {
     toast.add({
       severity: 'warn',
-      summary: summary || '警告',
+      summary: summary || i18n.global.t('composables.useNotification.warning'),
       detail: message,
       life: 4000
     })
@@ -56,7 +57,7 @@ export function useNotification() {
   const showInfo = (message: string, summary?: string) => {
     toast.add({
       severity: 'info',
-      summary: summary || '信息',
+      summary: summary || i18n.global.t('composables.useNotification.info'),
       detail: message,
       life: 3000
     })
@@ -79,7 +80,7 @@ export function useLoading(initialState: boolean = false) {
 
   const startLoading = (message?: string) => {
     isLoading.value = true
-    loadingMessage.value = message || '加载中...'
+    loadingMessage.value = message || i18n.global.t('composables.useLoading.loading')
   }
 
   const stopLoading = () => {

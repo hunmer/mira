@@ -11,6 +11,7 @@ import {
   applyPrimaryColor,
   removePrimaryColor,
 } from '@renderer/utils/theme-style'
+import i18n from '../i18n'
 
 /**
  * 媒体项可展示的字段，用于底部状态栏「眼睛」开关控制三个视图的展示信息。
@@ -300,15 +301,15 @@ export const useSettingsStore = defineStore('settings', () => {
   const connectionStatusText = computed(() => {
     switch (connectionStatus.value) {
       case 'connected':
-        return '已连接'
+        return i18n.global.t('stores.settings.statusConnected')
       case 'connecting':
-        return '连接中...'
+        return i18n.global.t('stores.settings.statusConnecting')
       case 'reconnecting':
-        return '重新连接中...'
+        return i18n.global.t('stores.settings.statusReconnecting')
       case 'error':
-        return '连接错误'
+        return i18n.global.t('stores.settings.statusError')
       default:
-        return '未连接'
+        return i18n.global.t('stores.settings.statusDisconnected')
     }
   })
 
@@ -399,6 +400,13 @@ export const useSettingsStore = defineStore('settings', () => {
         // 合并设置，确保新增的设置项有默认值
         settings.value = { ...settings.value, ...parsed }
 
+        // 同步持久化的语言到 vue-i18n（i18n 初始化时只读了 localStorage，
+        // 生产环境文件存储的真实值在此校正）
+        const lang = (settings.value as any).language
+        if (lang) {
+          import('../i18n').then(({ setLocale }) => setLocale(lang))
+        }
+
         // 插件市场源：向后兼容迁移（旧版本仅有单一 clientPluginMarketUrl）
         migrateMarketUrls()
       } else {
@@ -477,7 +485,11 @@ export const useSettingsStore = defineStore('settings', () => {
     } else if (key === 'primaryColor') {
       applyPrimaryColorOverride()
     } else if (key === 'language') {
-      // 这里可以添加语言切换逻辑
+      // 同步切换 vue-i18n 全局语言
+      // 动态 import 避免模块加载顺序问题
+      import('../i18n').then(({ setLocale }) => {
+        setLocale(value as 'zh-CN' | 'en-US')
+      })
     } else if (key === 'pluginsDirectory' || key === 'autoLoadPlugins' ||
                key === 'enablePluginDevMode' || key === 'enablePluginSandbox') {
       // 插件相关设置变更时重新初始化插件服务

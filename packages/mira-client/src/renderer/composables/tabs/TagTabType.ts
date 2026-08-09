@@ -1,10 +1,13 @@
 import { MediaViewTabType } from '../TabTypes'
 import type { TabContext } from '../TabRegistry'
 import { useTagStore } from '../../stores/tag'
+import i18n from '../../i18n'
 
 export class TagTabType extends MediaViewTabType {
   name = 'tag'
-  displayName = '标签'
+  get displayName() {
+    return i18n.global.t('composables.tagTab.displayName')
+  }
   icon = 'label'
   iconColor = '#10B981'
   allowMultipleInstances = true // 允许多个标签tab
@@ -26,12 +29,12 @@ export class TagTabType extends MediaViewTabType {
       }
 
       if (tag) {
-        return tag.title || `标签 ${tagId}`
+        return tag.title || i18n.global.t('composables.tagTab.fallbackLabel', { id: tagId })
       }
     }
 
     // 回退到 context 中的数据
-    return context.name || context.tagName || context.tabData?.name || context.tabData?.title || `标签 ${tagId || 'unknown'}`
+    return context.name || context.tagName || context.tabData?.name || context.tabData?.title || i18n.global.t('composables.tagTab.fallbackLabel', { id: tagId || 'unknown' })
   }
 
   protected getTabFilters(context: TabContext): Record<string, any> {
@@ -55,7 +58,7 @@ export class TagTabType extends MediaViewTabType {
       tags: {
         id: 'tags',
         selectedValues: [tagIdentifier],
-        label: '标签筛选'
+        label: i18n.global.t('composables.tagTab.filterLabel')
       }
     } : {}
   }

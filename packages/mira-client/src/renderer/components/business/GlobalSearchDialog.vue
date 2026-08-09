@@ -7,7 +7,7 @@
   >
     <DialogContent class="global-search-dialog sm:max-w-[600px]">
       <DialogHeader>
-        <DialogTitle>全局搜索</DialogTitle>
+        <DialogTitle>{{ $t('business.globalSearchDialog.title') }}</DialogTitle>
       </DialogHeader>
       <GlobalSearchContent />
     </DialogContent>

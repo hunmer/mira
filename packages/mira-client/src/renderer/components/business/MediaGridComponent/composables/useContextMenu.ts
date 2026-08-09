@@ -1,5 +1,6 @@
 import { ref, computed, watch, toRef, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import type { FileInfo } from '../../../../../shared/types'
 import type { MenuItem } from '@/renderer/types/menu'
 import { appService } from '@renderer/services'
@@ -29,6 +30,7 @@ interface UseContextMenuEmits {
 
 export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuEmits) {
   const router = useRouter()
+  const { t } = useI18n()
   const currentContextItem = ref<FileInfo | null>(null)
   const folderPopoverOpen = ref(false)
   const tagPopoverOpen = ref(false)
@@ -85,7 +87,7 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
       await client.folders().setFileFolder({ libraryId: libId, fileId: parseInt(file.id), folder: parseInt(folderItem.id) })
       file.folderId = String(folderItem.id)
       emit('media-set-folder', file)
-    }, { label: '设置文件夹' })
+    }, { label: t('business.contextMenu.setFolder') })
   }
 
   const handleTagSelect = async (tagData: any) => {
@@ -101,7 +103,7 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
       if (!file.tags) file.tags = []
       if (!file.tags.includes(tagName)) file.tags.push(tagName)
       emit('media-set-tags', file)
-    }, { label: '设置标签' })
+    }, { label: t('business.contextMenu.setTags') })
   }
 
   const runWithCurrentItem = async (handler: (item: FileInfo) => void | Promise<void>) => {
@@ -137,7 +139,7 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
       void window.electronAPI?.invoke('window:open-url', url.href, {
         width: 1280,
         height: 800,
-        title: item.name || '文件预览',
+        title: item.name || t('business.contextMenu.filePreview'),
       }).then((result) => {
         if (!result?.success) console.warn('[media-preview] 新窗口打开失败:', result?.message)
       }).catch((error) => console.warn('[media-preview] 新窗口打开失败:', error))
@@ -197,7 +199,7 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
     return getPluginFileFormats(file)
       .filter(format => format.getPreviewUrl || format.open)
       .map(format => ({
-        label: format.title || '插件',
+        label: format.title || t('business.contextMenu.pluginDefault'),
         icon: format.icon || 'extension',
         command: () => runWithCurrentItem(async item => {
           if (format.getPreviewUrl) {
@@ -224,7 +226,7 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
     if (props.isTrash) {
       return [
         {
-          label: '查看信息',
+          label: t('business.contextMenu.viewInfo'),
           shortcut: 'Ctrl+I',
           command: () => runWithCurrentItem(async (item) => {
             mediaStore.setDetailSidebarFiles([item])
@@ -232,12 +234,12 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
           })
         },
         {
-          label: '复制文件信息JSON',
+          label: t('business.contextMenu.copyFileInfoJson'),
           command: () => runWithCurrentItem((item) => copyFileInfoJSON(item))
         },
         { separator: true },
         {
-          label: props.selectedItems.length > 1 ? `恢复文件 (${props.selectedItems.length})` : '恢复文件',
+          label: props.selectedItems.length > 1 ? t('business.contextMenu.restoreFileCount', { count: props.selectedItems.length }) : t('business.contextMenu.restoreFile'),
           shortcut: 'Ctrl+R',
           command: () => runWithCurrentItem(async () => {
             const files = getTargetFiles()
@@ -247,11 +249,11 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
               if (!libraryId) return
               await appService.restoreFile(libraryId, file.id)
               emit('media-restore', file)
-            }, { label: '恢复文件' })
+            }, { label: t('business.contextMenu.restoreFile') })
           })
         },
         {
-          label: props.selectedItems.length > 1 ? `彻底删除 (${props.selectedItems.length})` : '彻底删除',
+          label: props.selectedItems.length > 1 ? t('business.contextMenu.permanentDeleteCount', { count: props.selectedItems.length }) : t('business.contextMenu.permanentDelete'),
           command: () => runWithCurrentItem(async () => {
             const files = getTargetFiles()
             if (files.length === 0) return
@@ -260,7 +262,7 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
               if (!libraryId) return
               await appService.deleteFile(libraryId, file.id, false)
               emit('media-delete', file)
-            }, { label: '彻底删除' })
+            }, { label: t('business.contextMenu.permanentDelete') })
           })
         }
       ]
@@ -269,7 +271,7 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
     // 普通文件视图：原有菜单
     return [
       {
-        label: '查看信息',
+        label: t('business.contextMenu.viewInfo'),
         shortcut: 'Ctrl+I',
         command: () => runWithCurrentItem(async (item) => {
           mediaStore.setDetailSidebarFiles([item])
@@ -277,16 +279,16 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
         })
       },
       {
-        label: '复制文件信息JSON',
+        label: t('business.contextMenu.copyFileInfoJson'),
         command: () => runWithCurrentItem((item) => copyFileInfoJSON(item))
       },
       {
-        label: '新窗口打开',
+        label: t('business.contextMenu.openInNewWindow'),
         icon: 'open_in_new',
         command: () => runWithCurrentItem((item) => openFileInNewWindow(item))
       },
       ...(openWithItems.value.length ? [{
-        label: '其他打开方式',
+        label: t('business.contextMenu.otherOpenWith'),
         icon: 'open_with',
         items: openWithItems.value,
       }] : []),
@@ -295,25 +297,25 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
       },
       ...(
         pluginContextMenus.value.length
-          ? [{ label: '调用插件', icon: 'extension', items: pluginContextMenus.value }, { separator: true }]
+          ? [{ label: t('business.contextMenu.invokePlugin'), icon: 'extension', items: pluginContextMenus.value }, { separator: true }]
           : []
       ),
       {
-        label: props.selectedItems.length > 1 ? `设置文件夹 (${props.selectedItems.length})` : '设置文件夹',
+        label: props.selectedItems.length > 1 ? t('business.contextMenu.setFolderCount', { count: props.selectedItems.length }) : t('business.contextMenu.setFolder'),
         shortcut: 'Ctrl+M',
         command: () => runWithCurrentItem(() => {
           setTimeout(() => { folderPopoverOpen.value = true }, 100)
         })
       },
       {
-        label: props.selectedItems.length > 1 ? `设置标签 (${props.selectedItems.length})` : '设置标签',
+        label: props.selectedItems.length > 1 ? t('business.contextMenu.setTagsCount', { count: props.selectedItems.length }) : t('business.contextMenu.setTags'),
         shortcut: 'Ctrl+T',
         command: () => runWithCurrentItem(() => {
           setTimeout(() => { tagPopoverOpen.value = true }, 100)
         })
       },
       {
-        label: '设置封面',
+        label: t('business.contextMenu.setCover'),
         icon: 'image',
         command: () => runWithCurrentItem(() => {
           coverCropOpen.value = true
@@ -324,7 +326,7 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
       },
       ...([
         currentContextItem.value?.localFile && {
-          label: '定位到文件夹',
+          label: t('business.contextMenu.locateFolder'),
           command: () => {
             const api = (window as any).electronAPI
             api?.fs?.showItemInFolder(currentContextItem.value!.localFile!)
@@ -332,7 +334,7 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
         }
       ].filter(Boolean) as MenuItem[]),
       {
-        label: props.selectedItems.length > 1 ? `删除 (${props.selectedItems.length})` : '删除',
+        label: props.selectedItems.length > 1 ? t('business.contextMenu.deleteCount', { count: props.selectedItems.length }) : t('business.contextMenu.delete'),
         shortcut: 'Delete',
         command: () => runWithCurrentItem(async () => {
           const files = getTargetFiles()
@@ -342,7 +344,7 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
             if (!libraryId) return
             await appService.deleteFile(libraryId, file.id)
             emit('media-delete', file)
-          }, { label: '删除' })
+          }, { label: t('business.contextMenu.delete') })
         })
       }
     ]

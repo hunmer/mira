@@ -5,6 +5,9 @@ import { useSettingsStore } from '../stores/settings'
 import { useTabs } from '../composables/useTabs'
 import ConfigStorage from '../utils/ConfigStorage'
 import { toFileUrl } from '../utils/fileUtils'
+import i18n from '../i18n'
+
+const t = i18n.global.t.bind(i18n.global)
 
 export interface WebSocketEventData {
   eventName: string
@@ -439,10 +442,10 @@ function doShowImportNotification(): void {
   const thumb = importNotifyLastThumb
   const fileIdResolved = importNotifyLastFileId
 
-  const title = count > 1 ? `已导入 ${count} 个文件` : '文件导入完成'
+  const title = count > 1 ? t('services.webSocket.importedNFiles', { count }) : t('services.webSocket.fileImportComplete')
   const body = count > 1
-    ? (name ? `最后导入：${name}` : '批量导入完成')
-    : (name || '新文件已添加到媒体库')
+    ? (name ? t('services.webSocket.lastImported', { name }) : t('services.webSocket.batchImportComplete'))
+    : (name || t('services.webSocket.newFileAdded'))
 
   // 使用自定义通知窗口（桌面右下角悬浮卡片）。
   // icon 优先用最后一个文件的缩略图（URL），无缩略图则回退 Material Icon。
@@ -454,7 +457,7 @@ function doShowImportNotification(): void {
     icon: thumb || 'file_download_done',
     icons: importNotifyThumbs,
     duration: 6000,
-    actions: [{ id: 'view', label: '查看' }],
+    actions: [{ id: 'view', label: t('services.webSocket.viewAction') }],
     data: fileIdResolved
       ? { fileId: fileIdResolved, count, previewType: importNotifyLastPreviewType }
       : undefined,
@@ -577,28 +580,28 @@ function showEagleImportGroup(group: EagleImportGroup): void {
   const failed = states.filter((status) => status === 'failed').length
   const lastName = [...group.names.values()].at(-1)
   const complete = preparing === 0
-  let title = total > 1 ? `正在导入 ${total} 个文件` : '正在下载图片'
-  let body = lastName || '正在准备图片'
+  let title = total > 1 ? t('services.webSocket.importingNFiles', { count: total }) : t('services.webSocket.downloadingImage')
+  let body = lastName || t('services.webSocket.preparingImage')
   let type: 'info' | 'success' | 'warning' | 'error' = 'info'
   let icon = group.thumbs.at(-1) || 'downloading'
 
   if (complete && failed === 0) {
-    title = total > 1 ? `已导入 ${total} 个文件` : '文件导入完成'
-    body = lastName || '图片已添加到媒体库'
+    title = total > 1 ? t('services.webSocket.importedNFiles', { count: total }) : t('services.webSocket.fileImportComplete')
+    body = lastName || t('services.webSocket.imageAddedToLibrary')
     type = 'success'
     icon = group.thumbs.at(-1) || 'file_download_done'
   } else if (complete && succeeded === 0) {
-    title = total > 1 ? `${failed} 个文件导入失败` : '图片下载失败'
-    body = group.failureMessage || lastName || '未能下载图片'
+    title = total > 1 ? t('services.webSocket.nFilesImportFailed', { count: failed }) : t('services.webSocket.imageDownloadFailed')
+    body = group.failureMessage || lastName || t('services.webSocket.imageDownloadFailedReason')
     type = 'error'
     icon = 'error'
   } else if (complete) {
-    title = `已导入 ${succeeded} 个，${failed} 个失败`
-    body = group.failureMessage || lastName || '部分图片未能下载'
+    title = t('services.webSocket.importedNFailedN', { succeeded, failed })
+    body = group.failureMessage || lastName || t('services.webSocket.someImagesFailed')
     type = 'warning'
     icon = group.thumbs.at(-1) || 'warning'
   } else if (failed > 0) {
-    body = `已完成 ${succeeded} 个，失败 ${failed} 个，剩余 ${preparing} 个`
+    body = t('services.webSocket.completedNFailedNRemainingN', { succeeded, failed, preparing })
     type = 'warning'
   }
 
@@ -610,7 +613,7 @@ function showEagleImportGroup(group: EagleImportGroup): void {
     icon,
     icons: group.thumbs,
     duration: complete ? 60000 : 0,
-    actions: succeeded > 0 ? [{ id: 'view', label: '查看' }] : [],
+    actions: succeeded > 0 ? [{ id: 'view', label: t('services.webSocket.viewAction') }] : [],
     data: group.lastFileId
       ? { fileId: group.lastFileId, count: total, previewType: group.lastPreviewType }
       : undefined,
@@ -665,7 +668,7 @@ function completeEagleImportNotification(data: any): boolean {
   const fileName = data?.name || data?.title || data?.fileName
   group.states.set(id, data.downloadFailed ? 'failed' : 'success')
   if (fileName) group.names.set(id, String(fileName))
-  if (data.downloadFailed) group.failureMessage = '图片下载失败，已保存为 URL 引用'
+  if (data.downloadFailed) group.failureMessage = t('services.webSocket.imageDownloadFailedSavedAsUrl')
   if (data.id !== undefined && data.id !== null) {
     group.lastFileId = String(data.id)
     eagleImportGroupsByFileId.set(group.lastFileId, group)

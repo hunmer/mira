@@ -8,7 +8,7 @@
         </span>
         <Input
           v-model="searchQuery"
-          placeholder="搜索文件夹..."
+          :placeholder="$t('commonUi.sidebarNav.searchFolders')"
           class="w-full h-8 text-xs pl-9"
         />
       </div>

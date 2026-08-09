@@ -9,6 +9,7 @@
  * 由原 HomeSidebar 拆出，逻辑零改动。自定义布局对话框内聚在此处（layoutDialogOpen 仅本组件使用）。
  */
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -20,6 +21,8 @@ import { useToast } from '@/renderer/composables/useToast'
 import type { LocalFsNode } from '../../../shared/types'
 
 defineOptions({ name: 'SidebarToolbar' })
+
+const { t } = useI18n()
 
 const emit = defineEmits<{
   /** 打开文件上传对话框 */
@@ -44,12 +47,12 @@ async function handleImportFolder() {
   if (isImporting.value) return
   isImporting.value = true
   try {
-    const dirRes = await window.electronAPI.fs.selectDirectory('选择要导入的文件夹')
+    const dirRes = await window.electronAPI.fs.selectDirectory(t('views.sidebarToolbar.selectImportFolder'))
     if (!dirRes.success || !dirRes.path) return // 用户取消
 
     const treeRes = await window.electronAPI.fs.readDirTree(dirRes.path)
     if (!treeRes.success || !treeRes.data) {
-      toast.add({ severity: 'error', summary: '导入失败', detail: treeRes.message || '读取文件夹结构失败', life: 3000 })
+      toast.add({ severity: 'error', summary: t('views.sidebarToolbar.importFailed'), detail: treeRes.message || t('views.sidebarToolbar.readTreeFailed'), life: 3000 })
       return
     }
 
@@ -58,8 +61,8 @@ async function handleImportFolder() {
     console.error('导入文件夹失败:', error)
     toast.add({
       severity: 'error',
-      summary: '导入失败',
-      detail: error instanceof Error ? error.message : '未知错误',
+      summary: t('views.sidebarToolbar.importFailed'),
+      detail: error instanceof Error ? error.message : t('views.common.unknownError'),
       life: 3000,
     })
   } finally {
@@ -76,7 +79,7 @@ async function handleImportFolder() {
         <button
           class="flex h-8 w-8 items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           :disabled="isImporting"
-          title="导入"
+          :title="$t('views.sidebarToolbar.import')"
         >
           <span class="material-icons leading-none" style="font-size: 18px">
             {{ isImporting ? 'hourglass_top' : 'drive_folder_upload' }}
@@ -86,11 +89,11 @@ async function handleImportFolder() {
       <DropdownMenuContent align="start" class="w-40">
         <DropdownMenuItem @click="emit('upload')">
           <span class="material-icons text-base mr-2">upload_file</span>
-          <span>上传文件</span>
+          <span>{{ $t('views.sidebarToolbar.uploadFile') }}</span>
         </DropdownMenuItem>
         <DropdownMenuItem @click="handleImportFolder">
           <span class="material-icons text-base mr-2">folder_open</span>
-          <span>导入文件夹</span>
+          <span>{{ $t('views.sidebarToolbar.importFolder') }}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -98,7 +101,7 @@ async function handleImportFolder() {
     <!-- 文件夹管理 -->
     <button
       class="flex h-8 w-8 items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-      title="文件夹管理"
+      :title="$t('views.sidebarToolbar.manageFolders')"
       @click="emit('manageFolders')"
     >
       <span class="material-icons leading-none" style="font-size: 18px">drive_file_move</span>
@@ -107,7 +110,7 @@ async function handleImportFolder() {
     <!-- 标签管理 -->
     <button
       class="flex h-8 w-8 items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-      title="标签管理"
+      :title="$t('views.sidebarToolbar.manageTags')"
       @click="emit('manageTags')"
     >
       <span class="material-icons leading-none" style="font-size: 18px">sell</span>
@@ -116,7 +119,7 @@ async function handleImportFolder() {
     <!-- 自定义布局 -->
     <button
       class="flex h-8 w-8 items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-      title="自定义布局"
+      :title="$t('views.sidebarToolbar.customizeLayout')"
       @click="layoutDialogOpen = true"
     >
       <span class="material-icons leading-none" style="font-size: 18px">dashboard_customize</span>

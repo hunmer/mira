@@ -11,6 +11,7 @@ import { cacheTabData, clearTabCache, useMediaTabData } from '@renderer/composab
 import {
   useHomeRouteHandler
 } from '@renderer/modules/home'
+import i18n from '../../i18n'
 
 export function useHomeTabManagement(
   sidebarRef?: Ref<{ locateItem: (type: 'folder' | 'tag', id: string) => void | Promise<void> } | null | undefined>
@@ -173,7 +174,7 @@ export function useHomeTabManagement(
     }
     return [
       {
-        label: '在侧边栏中定位当前项',
+        label: i18n.global.t('views.homeTab.ctxLocateItem'),
         icon: 'my_location',
         command: () => {
           const tab = currentContextTab.value
@@ -184,7 +185,7 @@ export function useHomeTabManagement(
         }
       },
       {
-        label: '克隆标签',
+        label: i18n.global.t('views.homeTab.ctxCloneTab'),
         icon: 'content_copy',
         command: () => {
           if (currentContextTab.value) {
@@ -196,7 +197,7 @@ export function useHomeTabManagement(
         separator: true
       },
       {
-        label: '关闭标签',
+        label: i18n.global.t('views.homeTab.ctxCloseTab'),
         icon: 'close',
         command: async () => {
           if (currentContextTab.value && activeTabs.value.length > 1) {
@@ -206,7 +207,7 @@ export function useHomeTabManagement(
         disabled: activeTabs.value.length <= 1
       },
       {
-        label: '关闭其他标签',
+        label: i18n.global.t('views.homeTab.ctxCloseOthers'),
         icon: 'clear_all',
         command: () => {
           if (currentContextTab.value) {
@@ -399,9 +400,9 @@ export function useHomeTabManagement(
     if (kind === 'all') {
       newId = 'all'
       newType = 'all'
-      newLabel = '全部文件'
+      newLabel = i18n.global.t('views.homeTab.allFilesLabel')
       newIcon = 'folder'
-      newData = { ...current.data, id: 'all', title: '全部文件', libraryId }
+      newData = { ...current.data, id: 'all', title: i18n.global.t('views.homeTab.allFilesLabel'), libraryId }
     } else if (kind === 'folder') {
       const folderId = String(payload.id)
       newId = folderId.startsWith('folder-') ? folderId : `folder-${folderId}`
@@ -415,7 +416,7 @@ export function useHomeTabManagement(
       newId = tagId.startsWith('tag-') ? tagId : `tag-${tagId}`
       newType = 'tag'
       newIcon = 'label'
-      newLabel = payload.title || `标签: ${payload.label || tagId}`
+      newLabel = payload.title || i18n.global.t('views.homeTab.tagLabel', { label: payload.label || tagId })
       newData = { ...current.data, id: tagId, title: newLabel, libraryId }
     }
 

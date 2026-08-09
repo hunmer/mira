@@ -5,6 +5,7 @@ import { useAuthStore } from '../stores/auth'
 import { useSettingsStore } from '../stores/settings'
 import { toFileUrl } from '../utils/fileUtils'
 import { environment } from '../utils'
+import i18n from '../i18n'
 
 /** 给 HTTP 资源 URL 追加 token 参数（用于 <img>/<video> 等无法设 header 的场景） */
 function appendToken(url: string | undefined): string | undefined {
@@ -1003,7 +1004,7 @@ export class MiraSDKService {
       }
 
       // 创建新文件夹
-      const clonedTitle = newTitle || `${originalFolder.title || originalFolder.label || originalFolder.name} (副本)`
+      const clonedTitle = newTitle || i18n.global.t('services.sdkService.folderCopySuffix', { name: originalFolder.title || originalFolder.label || originalFolder.name })
       const result = await this.createFolder(
         libraryId,
         clonedTitle,

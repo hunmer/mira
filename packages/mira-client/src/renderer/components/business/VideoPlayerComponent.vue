@@ -16,7 +16,7 @@
         >
           <div class="text-center">
             <span class="material-icons text-muted-foreground text-8xl mb-4 block">videocam_off</span>
-            <p class="text-muted-foreground text-lg">无可用视频</p>
+            <p class="text-muted-foreground text-lg">{{ $t('business.videoPlayerComponent.noVideo') }}</p>
           </div>
         </div>
         
@@ -27,7 +27,7 @@
         >
           <div class="flex flex-col items-center space-y-2 text-white">
             <span class="material-icons text-destructive text-6xl">error</span>
-            <span class="text-sm">视频加载失败</span>
+            <span class="text-sm">{{ $t('business.videoPlayerComponent.loadFailed') }}</span>
           </div>
         </div>
       </div>
@@ -36,7 +36,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, watch, onMounted, onUnmounted, nextTick, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 // @ts-ignore
 import Plyr from 'plyr'
 import Hls from 'hls.js'
@@ -60,6 +61,7 @@ interface Emits {
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
+const { t } = useI18n()
 
 // 响应式数据
 const videoElement = ref<HTMLVideoElement>()
@@ -72,45 +74,45 @@ let initializingPlayer = false
 let hls: Hls | null = null
 
 // Plyr 配置选项
-const plyrOptions = {
+const plyrOptions = computed(() => ({
   controls: [
     'play-large',
-    'restart', 
+    'restart',
     'rewind',
-    'play', 
+    'play',
     'fast-forward',
-    'progress', 
+    'progress',
     'current-time',
     'duration',
-    'mute', 
+    'mute',
     'volume',
     'captions',
-    'settings', 
+    'settings',
     'pip',
     'airplay',
     'fullscreen'
   ],
   settings: ['captions', 'quality', 'speed'],
-  keyboard: { 
-    focused: true, 
-    global: false 
+  keyboard: {
+    focused: true,
+    global: false
   },
-  tooltips: { 
-    controls: true, 
-    seek: true 
+  tooltips: {
+    controls: true,
+    seek: true
   },
-  captions: { 
-    active: false, 
-    language: 'auto' 
+  captions: {
+    active: false,
+    language: 'auto'
   },
-  fullscreen: { 
-    enabled: true, 
+  fullscreen: {
+    enabled: true,
     fallback: true,
-    iosNative: false 
+    iosNative: false
   },
-  speed: { 
-    selected: 1, 
-    options: [0.5, 0.75, 1, 1.25, 1.5, 2] 
+  speed: {
+    selected: 1,
+    options: [0.5, 0.75, 1, 1.25, 1.5, 2]
   },
   quality: {
     default: 720,
@@ -122,43 +124,43 @@ const plyrOptions = {
   hideControls: true,
   resetOnEnd: false,
   i18n: {
-    restart: '重新开始',
-    rewind: '快退 {seektime} 秒',
-    play: '播放',
-    pause: '暂停',
-    fastForward: '快进 {seektime} 秒',
-    seek: '跳转',
-    seekLabel: '{currentTime} / {duration}',
-    played: '已播放',
-    buffered: '已缓冲',
-    currentTime: '当前时间',
-    duration: '总时长',
-    volume: '音量',
-    mute: '静音',
-    unmute: '取消静音',
-    enableCaptions: '启用字幕',
-    disableCaptions: '禁用字幕',
-    download: '下载',
-    enterFullscreen: '进入全屏',
-    exitFullscreen: '退出全屏',
-    frameTitle: '{title} 播放器',
-    captions: '字幕',
-    settings: '设置',
-    pip: '画中画',
-    menuBack: '返回上级菜单',
-    speed: '播放速度',
-    normal: '正常',
-    quality: '画质',
-    loop: '循环',
-    start: '开始',
-    end: '结束',
-    all: '全部',
-    reset: '重置',
-    disabled: '禁用',
-    enabled: '启用',
-    advertisement: '广告'
+    restart: t('business.videoPlayerComponent.plyrRestart'),
+    rewind: t('business.videoPlayerComponent.plyrRewind'),
+    play: t('business.videoPlayerComponent.plyrPlay'),
+    pause: t('business.videoPlayerComponent.plyrPause'),
+    fastForward: t('business.videoPlayerComponent.plyrFastForward'),
+    seek: t('business.videoPlayerComponent.plyrSeek'),
+    seekLabel: t('business.videoPlayerComponent.plyrSeekLabel'),
+    played: t('business.videoPlayerComponent.plyrPlayed'),
+    buffered: t('business.videoPlayerComponent.plyrBuffered'),
+    currentTime: t('business.videoPlayerComponent.plyrCurrentTime'),
+    duration: t('business.videoPlayerComponent.plyrDuration'),
+    volume: t('business.videoPlayerComponent.plyrVolume'),
+    mute: t('business.videoPlayerComponent.plyrMute'),
+    unmute: t('business.videoPlayerComponent.plyrUnmute'),
+    enableCaptions: t('business.videoPlayerComponent.plyrEnableCaptions'),
+    disableCaptions: t('business.videoPlayerComponent.plyrDisableCaptions'),
+    download: t('business.videoPlayerComponent.plyrDownload'),
+    enterFullscreen: t('business.videoPlayerComponent.plyrEnterFullscreen'),
+    exitFullscreen: t('business.videoPlayerComponent.plyrExitFullscreen'),
+    frameTitle: t('business.videoPlayerComponent.plyrFrameTitle'),
+    captions: t('business.videoPlayerComponent.plyrCaptions'),
+    settings: t('business.videoPlayerComponent.plyrSettings'),
+    pip: t('business.videoPlayerComponent.plyrPip'),
+    menuBack: t('business.videoPlayerComponent.plyrMenuBack'),
+    speed: t('business.videoPlayerComponent.plyrSpeed'),
+    normal: t('business.videoPlayerComponent.plyrNormal'),
+    quality: t('business.videoPlayerComponent.plyrQuality'),
+    loop: t('business.videoPlayerComponent.plyrLoop'),
+    start: t('business.videoPlayerComponent.plyrStart'),
+    end: t('business.videoPlayerComponent.plyrEnd'),
+    all: t('business.videoPlayerComponent.plyrAll'),
+    reset: t('business.videoPlayerComponent.plyrReset'),
+    disabled: t('business.videoPlayerComponent.plyrDisabled'),
+    enabled: t('business.videoPlayerComponent.plyrEnabled'),
+    advertisement: t('business.videoPlayerComponent.plyrAdvertisement')
   }
-}
+}))
 
 // 绑定 Plyr 事件（只调用一次）
 const getVideoSrc = getMediaPreviewSource
@@ -299,7 +301,7 @@ const initializePlayer = async () => {
     if (!beginLoad(videoElement.value, props.video)) return
 
     applySource(videoElement.value, props.video)
-    player = new Plyr(videoElement.value, plyrOptions)
+    player = new Plyr(videoElement.value, plyrOptions.value)
     bindPlayerEvents()
   } catch (err) {
     console.error('Failed to initialize Plyr player:', err)

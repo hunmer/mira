@@ -33,8 +33,8 @@
                     @select="(item: any) => updateFilterValues(filter, item.id ? [item.id] : [])" @refresh="() => { }" />
                 </div>
                 <div class="p-3 border-t border-border flex justify-end space-x-2">
-                  <Button variant="ghost" size="sm" @click="clearFilter(filter); close()">清除</Button>
-                  <Button size="sm" @click="close()">确定</Button>
+                  <Button variant="ghost" size="sm" @click="clearFilter(filter); close()">{{ $t('business.filterBar.clear') }}</Button>
+                  <Button size="sm" @click="close()">{{ $t('business.filterBar.confirm') }}</Button>
                 </div>
               </div>
 
@@ -45,41 +45,41 @@
                     @select="(item: any) => handleTagFilterSelect(filter, item)" @refresh="() => { }" />
                 </div>
                 <div class="p-3 border-t border-border flex justify-end space-x-2">
-                  <Button variant="ghost" size="sm" @click="clearFilter(filter); close()">清除</Button>
-                  <Button size="sm" @click="close()">确定</Button>
+                  <Button variant="ghost" size="sm" @click="clearFilter(filter); close()">{{ $t('business.filterBar.clear') }}</Button>
+                  <Button size="sm" @click="close()">{{ $t('business.filterBar.confirm') }}</Button>
                 </div>
               </div>
 
               <!-- 网址筛选器 -->
               <div v-else-if="filter.type === 'urls'">
                 <div class="p-3">
-                  <h3 class="font-medium text-foreground mb-3">网址筛选</h3>
-                  <Input :model-value="filter.value" placeholder="输入网址或域名..."
+                  <h3 class="font-medium text-foreground mb-3">{{ $t('business.filterBar.urlFilterTitle') }}</h3>
+                  <Input :model-value="filter.value" :placeholder="$t('business.filterBar.urlPlaceholder')"
                     @update:model-value="(val) => handleFilterInput(filter, val as string)" />
                 </div>
                 <div class="p-3 border-t border-border flex justify-end space-x-2">
-                  <Button variant="ghost" size="sm" @click="clearFilter(filter); close()">清除</Button>
-                  <Button size="sm" @click="close()">确定</Button>
+                  <Button variant="ghost" size="sm" @click="clearFilter(filter); close()">{{ $t('business.filterBar.clear') }}</Button>
+                  <Button size="sm" @click="close()">{{ $t('business.filterBar.confirm') }}</Button>
                 </div>
               </div>
 
               <!-- 标题筛选器 -->
               <div v-else-if="filter.type === 'title'">
                 <div class="p-3">
-                  <h3 class="font-medium text-foreground mb-3">标题筛选</h3>
-                  <Input :model-value="filter.value" placeholder="输入标题关键词..."
+                  <h3 class="font-medium text-foreground mb-3">{{ $t('business.filterBar.titleFilterTitle') }}</h3>
+                  <Input :model-value="filter.value" :placeholder="$t('business.filterBar.titlePlaceholder')"
                     @update:model-value="(val) => handleFilterInput(filter, val as string)" />
                 </div>
                 <div class="p-3 border-t border-border flex justify-end space-x-2">
-                  <Button variant="ghost" size="sm" @click="clearFilter(filter); close()">清除</Button>
-                  <Button size="sm" @click="close()">确定</Button>
+                  <Button variant="ghost" size="sm" @click="clearFilter(filter); close()">{{ $t('business.filterBar.clear') }}</Button>
+                  <Button size="sm" @click="close()">{{ $t('business.filterBar.confirm') }}</Button>
                 </div>
               </div>
 
               <!-- 大小筛选器 -->
               <div v-else-if="filter.type === 'size'">
                 <div class="p-3">
-                  <h3 class="font-medium text-foreground mb-3">文件大小</h3>
+                  <h3 class="font-medium text-foreground mb-3">{{ $t('business.filterBar.sizeTitle') }}</h3>
 
                   <RadioGroup :model-value="filter.selectedPreset || ''" class="space-y-2 mb-4"
                     @update:model-value="(val) => handleSizePresetChange(filter, val as string)">
@@ -92,18 +92,18 @@
                     <div class="border-t border-border pt-3">
                       <div class="flex items-center space-x-2 cursor-pointer mb-3">
                         <RadioGroupItem value="custom" />
-                        <Label class="text-sm cursor-pointer">自定义范围</Label>
+                        <Label class="text-sm cursor-pointer">{{ $t('business.filterBar.sizeCustom') }}</Label>
                       </div>
 
                       <div v-if="filter.selectedPreset === 'custom'" class="grid grid-cols-2 gap-2">
                         <div>
-                          <Label class="block text-xs text-muted-foreground mb-1">最小值</Label>
+                          <Label class="block text-xs text-muted-foreground mb-1">{{ $t('business.filterBar.sizeMinLabel') }}</Label>
                           <Input type="number" :model-value="filter.customMin?.toString() ?? ''" placeholder="0"
                             @update:model-value="(val) => { filter.customMin = val ? Number(val) : undefined; updateCustomSizeRange(filter) }" />
                         </div>
                         <div>
-                          <Label class="block text-xs text-muted-foreground mb-1">最大值</Label>
-                          <Input type="number" :model-value="filter.customMax?.toString() ?? ''" placeholder="无限制"
+                          <Label class="block text-xs text-muted-foreground mb-1">{{ $t('business.filterBar.sizeMaxLabel') }}</Label>
+                          <Input type="number" :model-value="filter.customMax?.toString() ?? ''" :placeholder="$t('business.filterBar.sizeMaxPlaceholder')"
                             @update:model-value="(val) => { filter.customMax = val ? Number(val) : undefined; updateCustomSizeRange(filter) }" />
                         </div>
                       </div>
@@ -111,15 +111,15 @@
                   </RadioGroup>
                 </div>
                 <div class="p-3 border-t border-border flex justify-end space-x-2">
-                  <Button variant="ghost" size="sm" @click="clearFilter(filter); close()">清除</Button>
-                  <Button size="sm" @click="close()">确定</Button>
+                  <Button variant="ghost" size="sm" @click="clearFilter(filter); close()">{{ $t('business.filterBar.clear') }}</Button>
+                  <Button size="sm" @click="close()">{{ $t('business.filterBar.confirm') }}</Button>
                 </div>
               </div>
 
               <!-- 类别筛选器 -->
               <div v-else-if="filter.type === 'category'">
                 <div class="p-3">
-                  <h3 class="font-medium text-foreground mb-3">媒体类别</h3>
+                  <h3 class="font-medium text-foreground mb-3">{{ $t('business.filterBar.categoryTitle') }}</h3>
                   <RadioGroup :model-value="filter.selectedCategory || ''" class="space-y-2"
                     @update:model-value="(val) => selectCategory(filter, val as string)">
                     <div v-for="category in categoryOptions" :key="category.value"
@@ -131,8 +131,8 @@
                   </RadioGroup>
                 </div>
                 <div class="p-3 border-t border-border flex justify-end space-x-2">
-                  <Button variant="ghost" size="sm" @click="clearFilter(filter); close()">清除</Button>
-                  <Button size="sm" @click="close()">确定</Button>
+                  <Button variant="ghost" size="sm" @click="clearFilter(filter); close()">{{ $t('business.filterBar.clear') }}</Button>
+                  <Button size="sm" @click="close()">{{ $t('business.filterBar.confirm') }}</Button>
                 </div>
               </div>
             </div>
@@ -156,10 +156,10 @@
 
         <template #content>
           <div class="min-w-[240px] p-3">
-            <h3 class="font-medium text-foreground mb-3">排序设置</h3>
+            <h3 class="font-medium text-foreground mb-3">{{ $t('business.filterBar.sortTitle') }}</h3>
 
             <div class="mb-4">
-              <Label class="block text-xs text-muted-foreground mb-2">排序字段</Label>
+              <Label class="block text-xs text-muted-foreground mb-2">{{ $t('business.filterBar.sortFieldLabel') }}</Label>
               <RadioGroup :model-value="sortField" class="space-y-2"
                 @update:model-value="(val) => updateSort(val as string, sortOrder)">
                 <div v-for="option in sortOptions" :key="option.value"
@@ -172,24 +172,24 @@
             </div>
 
             <div class="border-t border-border pt-3 mb-3">
-              <Label class="block text-xs text-muted-foreground mb-2">排序顺序</Label>
+              <Label class="block text-xs text-muted-foreground mb-2">{{ $t('business.filterBar.sortOrderLabel') }}</Label>
               <RadioGroup :model-value="sortOrder" class="space-y-2"
                 @update:model-value="(val) => updateSort(sortField, val as string)">
                 <div class="flex items-center space-x-2 cursor-pointer hover:bg-muted px-2 py-1 rounded">
                   <RadioGroupItem value="desc" />
                   <span class="material-icons text-sm text-muted-foreground">arrow_downward</span>
-                  <Label class="text-sm cursor-pointer">降序</Label>
+                  <Label class="text-sm cursor-pointer">{{ $t('business.filterBar.orderDesc') }}</Label>
                 </div>
                 <div class="flex items-center space-x-2 cursor-pointer hover:bg-muted px-2 py-1 rounded">
                   <RadioGroupItem value="asc" />
                   <span class="material-icons text-sm text-muted-foreground">arrow_upward</span>
-                  <Label class="text-sm cursor-pointer">升序</Label>
+                  <Label class="text-sm cursor-pointer">{{ $t('business.filterBar.orderAsc') }}</Label>
                 </div>
               </RadioGroup>
             </div>
 
             <div class="pt-3 border-t border-border flex justify-end">
-              <Button variant="ghost" size="sm" @click="resetSort()">重置为默认</Button>
+              <Button variant="ghost" size="sm" @click="resetSort()">{{ $t('business.filterBar.resetDefault') }}</Button>
             </div>
           </div>
         </template>
@@ -199,7 +199,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Dropdown } from '@/renderer/components/common/Dropdown'
 import FolderTreeComponent from '@renderer/components/business/FolderTreeComponent/FolderTreeComponent.vue'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -249,21 +250,22 @@ interface Emits {
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
+const { t } = useI18n()
 
 const handleSelectAllChange = () => {
   emit('select-all')
 }
 
-const sortOptions: SortOption[] = [
-  { value: 'imported_at', label: '导入时间', icon: 'schedule' },
-  { value: 'id', label: 'ID', icon: 'tag' },
-  { value: 'name', label: '名称', icon: 'sort_by_alpha' },
-  { value: 'size', label: '文件大小', icon: 'storage' },
-  { value: 'stars', label: '星标', icon: 'star' },
-  { value: 'folder_id', label: '文件夹', icon: 'folder' },
-  { value: 'tags', label: '标签', icon: 'label' },
-  { value: 'custom_fields', label: '自定义字段', icon: 'settings' },
-]
+const sortOptions = computed<SortOption[]>(() => [
+  { value: 'imported_at', label: t('business.filterBar.sortFieldImportedAt'), icon: 'schedule' },
+  { value: 'id', label: t('business.filterBar.sortFieldId'), icon: 'tag' },
+  { value: 'name', label: t('business.filterBar.sortFieldName'), icon: 'sort_by_alpha' },
+  { value: 'size', label: t('business.filterBar.sortFieldSize'), icon: 'storage' },
+  { value: 'stars', label: t('business.filterBar.sortFieldStars'), icon: 'star' },
+  { value: 'folder_id', label: t('business.filterBar.sortFieldFolder'), icon: 'folder' },
+  { value: 'tags', label: t('business.filterBar.sortFieldTags'), icon: 'label' },
+  { value: 'custom_fields', label: t('business.filterBar.sortFieldCustomFields'), icon: 'settings' },
+])
 
 const sortField = ref<string>(props.sort || 'imported_at')
 const sortOrder = ref<string>(props.order || 'desc')
@@ -276,18 +278,18 @@ watch(() => props.order, (newOrder) => {
   if (newOrder) sortOrder.value = newOrder
 })
 
-const sizePresets: SizePreset[] = [
-  { id: 'small', label: '小文件 (< 1MB)', max: 1024 * 1024 },
-  { id: 'medium', label: '中等文件 (1MB - 10MB)', min: 1024 * 1024, max: 10 * 1024 * 1024 },
-  { id: 'large', label: '大文件 (10MB - 100MB)', min: 10 * 1024 * 1024, max: 100 * 1024 * 1024 },
-  { id: 'huge', label: '超大文件 (> 100MB)', min: 100 * 1024 * 1024 },
-]
+const sizePresets = computed<SizePreset[]>(() => [
+  { id: 'small', label: t('business.filterBar.sizePresetSmall'), max: 1024 * 1024 },
+  { id: 'medium', label: t('business.filterBar.sizePresetMedium'), min: 1024 * 1024, max: 10 * 1024 * 1024 },
+  { id: 'large', label: t('business.filterBar.sizePresetLarge'), min: 10 * 1024 * 1024, max: 100 * 1024 * 1024 },
+  { id: 'huge', label: t('business.filterBar.sizePresetHuge'), min: 100 * 1024 * 1024 },
+])
 
-const categoryOptions: CategoryOption[] = [
-  { value: 'video', label: '视频', icon: 'videocam' },
-  { value: 'audio', label: '音频', icon: 'audiotrack' },
-  { value: 'image', label: '图片', icon: 'image' },
-]
+const categoryOptions = computed<CategoryOption[]>(() => [
+  { value: 'video', label: t('business.filterBar.categoryVideo'), icon: 'videocam' },
+  { value: 'audio', label: t('business.filterBar.categoryAudio'), icon: 'audiotrack' },
+  { value: 'image', label: t('business.filterBar.categoryImage'), icon: 'image' },
+])
 
 const getFilterButtonClass = (filter: FilterRule, isOpen: boolean) => {
   const hasActive = hasActiveFilters(filter)
@@ -359,7 +361,7 @@ const handleSizePresetChange = (filter: FilterRule, value: string) => {
     filter.selectedPreset = 'custom'
     filter.active = !!(filter.customMin || filter.customMax)
   } else {
-    const preset = sizePresets.find(p => p.id === value)
+    const preset = sizePresets.value.find(p => p.id === value)
     if (preset) {
       filter.selectedPreset = preset.id
       filter.sizeMin = preset.min
@@ -399,9 +401,9 @@ const clearFilter = (filter: FilterRule) => {
 }
 
 const getSortDisplayText = () => {
-  const option = sortOptions.find(opt => opt.value === sortField.value)
+  const option = sortOptions.value.find(opt => opt.value === sortField.value)
   const orderText = sortOrder.value === 'asc' ? '↑' : '↓'
-  return option ? `${option.label} ${orderText}` : '排序'
+  return option ? `${option.label} ${orderText}` : t('business.filterBar.sortDefault')
 }
 
 const updateSort = (field: string, order: string) => {

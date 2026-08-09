@@ -49,7 +49,7 @@
       }"
     >
       <Progress class="h-1 w-24" />
-      <span class="ml-2 text-sm text-muted-foreground">加载中...</span>
+      <span class="ml-2 text-sm text-muted-foreground">{{ $t('commonUi.virtualScroll.loading') }}</span>
     </div>
   </div>
 </template>

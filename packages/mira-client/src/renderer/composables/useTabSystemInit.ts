@@ -9,6 +9,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useTabs } from './useTabs'
 import { initializeBuiltInTabTypes, isTabTypesInitialized } from './tabs'
 import { tabRegistryAPI } from '../api/TabRegistryAPI'
+import i18n from '../i18n'
 
 export interface TabSystemInitOptions {
   defaultTabType?: string
@@ -61,7 +62,7 @@ export function useTabSystemInit(options: TabSystemInitOptions = {}) {
       // 1. 初始化内置Tab类型
       const typesInitialized = initializeBuiltInTabTypes()
       if (!typesInitialized) {
-        throw new Error('内置Tab类型初始化失败')
+        throw new Error(i18n.global.t('composables.useTabSystemInit.builtinTypesInitFailed'))
       }
 
       log(`内置Tab类型初始化成功，共注册 ${registrationStats.value.builtIn} 个类型`)
@@ -87,7 +88,7 @@ export function useTabSystemInit(options: TabSystemInitOptions = {}) {
       )
 
       if (!allTypesRegistered) {
-        throw new Error('部分内置Tab类型未正确注册')
+        throw new Error(i18n.global.t('composables.useTabSystemInit.builtinTypesNotRegistered'))
       }
 
       isInitialized.value = true

@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { LibraryStorage } from '../utils/LibraryStorage'
+import i18n from '../i18n'
 
 /**
  * 浏览历史记录接口
@@ -63,7 +64,7 @@ export const useViewHistoryStore = defineStore('viewHistory', () => {
     const record: ViewRecord = {
       fileId: String(file.id),
       libraryId,
-      name: file.name || file.title || '未知文件',
+      name: file.name || file.title || i18n.global.t('stores.viewHistory.unknownFile'),
       mimeType: file.mimeType || '',
       thumbnailPath: file.thumbnailPath,
       url: file.url,

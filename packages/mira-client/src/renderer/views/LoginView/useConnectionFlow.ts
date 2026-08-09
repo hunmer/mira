@@ -18,6 +18,7 @@ import { useLibraryStore } from '@renderer/stores/library'
 import { useServerListStore, type ServerConfig } from '@renderer/stores/serverList'
 import { saveCredentials, loadCredentials } from './useSavedCredentials'
 import type { HealthResponse, Library } from 'mira-app-core/shared/sdk'
+import i18n from '../../i18n'
 
 /** index.vue 透传进来的共享状态切片 */
 export interface LoginFlowState {
@@ -80,7 +81,7 @@ export function useConnectionFlow(state: LoginFlowState) {
   // 步骤 1：测试连接
   async function testConnection() {
     if (!state.serverAddress.value.trim()) {
-      state.error.value = '请输入服务器地址'
+      state.error.value = i18n.global.t('views.connectionFlow.errServerAddressRequired')
       return
     }
     state.loading.value = true
@@ -102,7 +103,7 @@ export function useConnectionFlow(state: LoginFlowState) {
         state.currentStep.value = 2
       }
     } catch (err: any) {
-      state.error.value = '无法连接服务器，请检查地址'
+      state.error.value = i18n.global.t('views.connectionFlow.errCannotConnect')
     } finally {
       state.loading.value = false
     }
@@ -111,7 +112,7 @@ export function useConnectionFlow(state: LoginFlowState) {
   // 步骤 2：登录
   async function handleLogin() {
     if (!state.credentials.username.trim() || !state.credentials.password) {
-      state.error.value = '请输入用户名和密码'
+      state.error.value = i18n.global.t('views.connectionFlow.errCredentialsRequired')
       return
     }
     state.loading.value = true
@@ -127,7 +128,7 @@ export function useConnectionFlow(state: LoginFlowState) {
       state.currentStep.value = 3
       await fetchLibraries(client)
     } catch (err: any) {
-      state.error.value = '登录失败，请检查用户名和密码'
+      state.error.value = i18n.global.t('views.connectionFlow.errLoginFailed')
     } finally {
       state.loading.value = false
     }
@@ -149,7 +150,7 @@ export function useConnectionFlow(state: LoginFlowState) {
         selectedLibraryId.value = accessible[0].id
       }
     } catch {
-      state.error.value = '获取素材库列表失败'
+      state.error.value = i18n.global.t('views.connectionFlow.errFetchLibraries')
     } finally {
       state.loading.value = false
     }
@@ -200,7 +201,7 @@ export function useConnectionFlow(state: LoginFlowState) {
         ...(state.authToken.value && { apiKey: state.authToken.value }),
       })
       if (!connectResult.success) {
-        throw new Error(connectResult.message || 'SDK 连接失败')
+        throw new Error(connectResult.message || i18n.global.t('views.connectionFlow.errSdkConnect'))
       }
 
       // 持久化用户选中的素材库，使 initializeHomeView() 能拾起，
@@ -217,14 +218,14 @@ export function useConnectionFlow(state: LoginFlowState) {
       const redirect = route.query.redirect as string
       await router.push(redirect || '/')
     } catch (err: any) {
-      state.error.value = '连接失败：' + (err.message || '未知错误')
+      state.error.value = i18n.global.t('views.connectionFlow.errConnectFailed', { message: err.message || i18n.global.t('views.connectionFlow.errUnknown') })
     } finally {
       state.loading.value = false
     }
   }
 
   async function connectToDeployedLibrary(defaultLibraryId: string) {
-    state.serverName.value = '本地 Mira 服务'
+    state.serverName.value = i18n.global.t('views.connectionFlow.localServerName')
     state.serverAddress.value = 'http://127.0.0.1:8081'
     state.wsAddress.value = 'ws://127.0.0.1:8018'
     state.currentStep.value = 1
@@ -239,7 +240,7 @@ export function useConnectionFlow(state: LoginFlowState) {
 
     const defaultLibrary = libraries.value.find(library => library.id === defaultLibraryId)
     if (!defaultLibrary) {
-      state.error.value = '默认素材库不存在，请重新执行部署'
+      state.error.value = i18n.global.t('views.connectionFlow.errDefaultLibraryMissing')
       return
     }
     selectedLibraryId.value = defaultLibrary.id
@@ -256,11 +257,11 @@ export function useConnectionFlow(state: LoginFlowState) {
 
   async function handleRegister() {
     if (!state.credentials.username.trim() || !state.credentials.password) {
-      state.error.value = '请输入用户名和密码'
+      state.error.value = i18n.global.t('views.connectionFlow.errCredentialsRequired')
       return
     }
     if (state.credentials.password !== state.registerForm.confirmPassword) {
-      state.error.value = '两次输入的密码不一致'
+      state.error.value = i18n.global.t('views.connectionFlow.errPasswordMismatch')
       return
     }
     state.loading.value = true
@@ -269,7 +270,7 @@ export function useConnectionFlow(state: LoginFlowState) {
       await tempClient.auth().register(state.credentials.username.trim(), state.credentials.password)
       await handleLogin()
     } catch (err: any) {
-      state.error.value = err instanceof Error ? err.message : '注册失败'
+      state.error.value = err instanceof Error ? err.message : i18n.global.t('views.connectionFlow.errRegisterFailed')
     } finally {
       state.loading.value = false
     }

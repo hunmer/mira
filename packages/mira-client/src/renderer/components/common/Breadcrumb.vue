@@ -36,7 +36,7 @@ const handleClick = (item: BreadcrumbItem, isLast: boolean) => {
   <nav
     v-if="items.length > 0"
     class="flex items-center min-w-0 flex-1"
-    aria-label="面包屑导航"
+    :aria-label="$t('commonUi.breadcrumb.ariaLabel')"
   >
     <template v-for="(item, index) in items" :key="item.id">
       <!-- 当前项（最后一项）：纯文本，不可点击 -->

@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import type { Layout, LayoutItem, ReadonlyLayout } from 'grid-layout-plus'
 import ConfigStorage from '@renderer/utils/ConfigStorage'
 import { cardRegistry } from '@renderer/components/tabs/dashboard/CardRegistry'
+import i18n from '../i18n'
 
 /**
  * Dashboard 布局持久化 Store（多 layout 版本）。
@@ -143,7 +144,7 @@ export const useDashboardLayoutStore = defineStore('dashboardLayout', () => {
       }
       // 兜底：至少保证有一个布局
       if (layouts.value.length === 0) {
-        const def = createLayout('默认布局', { isDefault: true })
+        const def = createLayout(i18n.global.t('stores.dashboardLayout.defaultLayoutName'), { isDefault: true })
         layouts.value = [def]
         activeId.value = def.id
       }
@@ -153,7 +154,7 @@ export const useDashboardLayoutStore = defineStore('dashboardLayout', () => {
       await persist()
     } catch (e) {
       console.warn('[dashboardLayout] 加载失败，使用空布局:', e)
-      const def = createLayout('默认布局', { isDefault: true })
+      const def = createLayout(i18n.global.t('stores.dashboardLayout.defaultLayoutName'), { isDefault: true })
       layouts.value = [def]
       activeId.value = def.id
     } finally {
@@ -173,7 +174,7 @@ export const useDashboardLayoutStore = defineStore('dashboardLayout', () => {
       const parsedInstances = instancesRaw
         ? (JSON.parse(instancesRaw) as Record<string, CardInstanceMeta>)
         : {}
-      const def = createLayout('默认布局', {
+      const def = createLayout(i18n.global.t('stores.dashboardLayout.defaultLayoutName'), {
         layout: sanitizeLayout(parsedLayout),
         instances: parsedInstances,
         isDefault: true,
@@ -523,7 +524,7 @@ export const useDashboardLayoutStore = defineStore('dashboardLayout', () => {
       const mapped = idMap.get(String(item.i)) ?? String(item.i)
       return { ...item, i: mapped }
     })
-    const layout = createLayout(newName?.trim() || `${src.name} 副本`, {
+    const layout = createLayout(newName?.trim() || (src.name + i18n.global.t('stores.dashboardLayout.duplicateLayoutSuffix')), {
       layout: newLayoutItems,
       instances: newInstances,
       icon: src.icon,
@@ -536,7 +537,7 @@ export const useDashboardLayoutStore = defineStore('dashboardLayout', () => {
 
   /** 清空所有布局（重置为单个默认空布局） */
   async function clearAll() {
-    const def = createLayout('默认布局', { isDefault: true })
+    const def = createLayout(i18n.global.t('stores.dashboardLayout.defaultLayoutName'), { isDefault: true })
     layouts.value = [def]
     activeId.value = def.id
     await persist()

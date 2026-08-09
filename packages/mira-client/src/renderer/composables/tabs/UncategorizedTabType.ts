@@ -1,15 +1,18 @@
 import { MediaViewTabType } from '../TabTypes'
 import type { TabContext } from '../TabRegistry'
+import i18n from '../../i18n'
 
 export class UncategorizedTabType extends MediaViewTabType {
   name = 'uncategorized'
-  displayName = '未分类'
+  get displayName() {
+    return i18n.global.t('composables.uncategorizedTab.displayName')
+  }
   icon = 'folder_special'
   allowMultipleInstances = false // 只允许一个未分类tab
   cacheable = true
 
   protected getLabel(_context: TabContext): string {
-    return '未分类'
+    return i18n.global.t('composables.uncategorizedTab.label')
   }
 
   protected getTabFilters(_context: TabContext): Record<string, any> {

@@ -2,13 +2,13 @@
   <Dialog :open="showImportDialog" @update:open="handleOpenChange">
     <DialogContent class="sm:max-w-[400px]">
       <DialogHeader>
-        <DialogTitle>导入设置</DialogTitle>
+        <DialogTitle>{{ $t('views.settingsImportExportDialog.title') }}</DialogTitle>
       </DialogHeader>
     <FileUpload
       name="settings"
       accept=".json"
       :max-file-size="1000000"
-      choose-label="选择设置文件"
+      :choose-label="$t('views.settingsImportExportDialog.chooseFile')"
       @select="handleFileSelect"
     />
     </DialogContent>
@@ -17,6 +17,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '../../stores/settings'
 import { useToast } from '@/renderer/composables/useToast'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -24,6 +25,7 @@ import FileUpload from '../../components/FileUpload.vue'
 
 const settingsStore = useSettingsStore()
 const toast = useToast()
+const { t } = useI18n()
 
 const showImportDialog = ref(false)
 
@@ -52,15 +54,15 @@ const exportSettings = async () => {
     
     toast.add({
       severity: 'success',
-      summary: '导出成功',
-      detail: '设置文件已成功导出',
+      summary: t('views.dataPanel.exportSuccess'),
+      detail: t('views.dataPanel.exportSuccessDetail'),
       life: 3000
     })
   } catch (error) {
     toast.add({
       severity: 'error',
-      summary: '导出失败',
-      detail: error instanceof Error ? error.message : '导出设置时发生错误',
+      summary: t('views.dataPanel.exportFailed'),
+      detail: error instanceof Error ? error.message : t('views.dataPanel.exportError'),
       life: 5000
     })
   }
@@ -76,26 +78,26 @@ const handleFileSelect = async (event: any) => {
     
     // 验证设置格式
     if (typeof importedSettings !== 'object' || !importedSettings.serverUrl) {
-      throw new Error('无效的设置文件格式')
+      throw new Error(t('views.dataPanel.invalidFormat'))
     }
-    
+
     // 合并设置
     Object.assign(settingsStore.settings, importedSettings)
     await settingsStore.saveSettings()
-    
+
     showImportDialog.value = false
-    
+
     toast.add({
       severity: 'success',
-      summary: '导入成功',
-      detail: '设置已成功导入并保存',
+      summary: t('views.dataPanel.importSuccess'),
+      detail: t('views.dataPanel.importSuccessDetail'),
       life: 3000
     })
   } catch (error) {
     toast.add({
       severity: 'error',
-      summary: '导入失败',
-      detail: error instanceof Error ? error.message : '导入设置时发生错误',
+      summary: t('views.dataPanel.importFailed'),
+      detail: error instanceof Error ? error.message : t('views.dataPanel.importError'),
       life: 5000
     })
   }

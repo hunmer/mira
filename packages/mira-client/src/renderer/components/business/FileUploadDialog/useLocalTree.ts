@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue'
 import type { Ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { FolderItem } from '@renderer/types/components'
 import type { LocalFsNode, PendingFile } from './types'
 
@@ -15,6 +16,7 @@ export const LOCAL_CATEGORY_UNGROUPED = 'ungrouped'
  * 注意：本地树仅用于浏览/筛选，不参与上传 metadata（metadata 由右侧素材库文件夹/标签面板决定）。
  */
 export function useLocalTree(pendingFiles: Ref<PendingFile[]>) {
+  const { t } = useI18n()
   // 导入的根路径与原始树
   const rootPath = ref<string>('')
   const localTree = ref<LocalFsNode[]>([])
@@ -65,13 +67,13 @@ export function useLocalTree(pendingFiles: Ref<PendingFile[]>) {
   const baseCategoriesConfig = computed(() => [
     {
       id: LOCAL_CATEGORY_ALL,
-      label: '全部',
+      label: t('business.localTree.categoryAll'),
       icon: 'folder_open',
       count: pendingFiles.value.length
     },
     {
       id: LOCAL_CATEGORY_UNGROUPED,
-      label: '未分组',
+      label: t('business.localTree.categoryUngrouped'),
       icon: 'folder_special',
       count: pendingFiles.value.filter((f) => !f.localDirPath).length
     }

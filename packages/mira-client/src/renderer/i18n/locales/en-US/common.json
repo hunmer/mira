@@ -1,0 +1,22 @@
+{
+  "ok": "OK",
+  "cancel": "Cancel",
+  "save": "Save",
+  "delete": "Delete",
+  "edit": "Edit",
+  "confirm": "Confirm",
+  "close": "Close",
+  "retry": "Retry",
+  "loading": "Loading...",
+  "search": "Search",
+  "copy": "Copy",
+  "copied": "Copied",
+  "yes": "Yes",
+  "no": "No",
+  "all": "All",
+  "none": "None",
+  "more": "More",
+  "refresh": "Refresh",
+  "export": "Export",
+  "import": "Import"
+}

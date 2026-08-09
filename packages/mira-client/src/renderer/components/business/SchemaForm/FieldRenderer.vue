@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -15,6 +16,8 @@ import type { SchemaField, SelectOption } from './types'
 const props = defineProps<{
   field: SchemaField
 }>()
+const { t } = useI18n()
+const selectPlaceholder = computed(() => t('business.schemaForm.selectPlaceholder'))
 
 const isTextType = computed(() => ['text', 'password', 'email'].includes(props.field.type))
 const inputType = computed(() => {
@@ -78,7 +81,7 @@ const optionValue = (opt: SelectOption) => String(opt.value)
       >
         <FormControl>
           <SelectTrigger class="w-full">
-            <SelectValue :placeholder="field.placeholder || '请选择'" />
+            <SelectValue :placeholder="field.placeholder || selectPlaceholder" />
           </SelectTrigger>
         </FormControl>
         <SelectContent>

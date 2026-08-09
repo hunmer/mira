@@ -9,6 +9,7 @@
  * 由父级决定打开 tab 的具体逻辑（复用 HomeView 的 handleFolderSelect / handleTagSelect）。
  */
 import { computed, nextTick, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   Dialog,
   DialogContent,
@@ -19,6 +20,8 @@ import {
 import { getPinyinFirstLetter, pinyinMatch } from '@renderer/utils/helpers'
 
 defineOptions({ name: 'GroupedCardBrowserDialog' })
+
+const { t } = useI18n()
 
 export interface BrowserItem {
   /** 原始数据（文件夹/标签对象），点击时原样回传 */
@@ -50,11 +53,14 @@ const props = withDefaults(
   }>(),
   {
     emptyIcon: 'folder_off',
-    itemTypeLabel: '项',
+    itemTypeLabel: '',
     cardComponent: undefined,
     libraryId: undefined,
   }
 )
+
+// 未传入 itemTypeLabel 时使用默认本地化值
+const resolvedItemTypeLabel = computed(() => props.itemTypeLabel || t('business.groupedCardBrowserDialog.defaultItemLabel'))
 
 const emit = defineEmits<{
   'update:visible': [value: boolean]
@@ -202,7 +208,7 @@ const isSearching = computed(() => trimmedQuery.value.length > 0)
         <DialogTitle class="flex items-center gap-2 text-lg">
           <span class="material-icons text-primary">{{ emptyIcon === 'folder_off' ? 'folder' : 'label' }}</span>
           {{ title }}
-          <span class="text-xs font-normal text-muted-foreground">{{ items.length }} 个{{ itemTypeLabel }}</span>
+          <span class="text-xs font-normal text-muted-foreground">{{ $t('business.groupedCardBrowserDialog.itemCount', { count: items.length, type: resolvedItemTypeLabel }) }}</span>
         </DialogTitle>
         <DialogDescription class="sr-only">{{ title }}</DialogDescription>
       </DialogHeader>
@@ -231,14 +237,14 @@ const isSearching = computed(() => trimmedQuery.value.length > 0)
           <input
             v-model="searchQuery"
             type="text"
-            :placeholder="`搜索${itemTypeLabel}…`"
+            :placeholder="$t('business.groupedCardBrowserDialog.searchPlaceholder', { type: resolvedItemTypeLabel })"
             class="w-full h-8 pl-7 pr-7 text-sm rounded-lg bg-muted/60 border border-border/60 focus:border-primary/50 focus:bg-background focus:outline-none focus:ring-1 focus:ring-primary/30 transition-colors placeholder:text-muted-foreground/70"
           />
           <button
             v-if="searchQuery"
             type="button"
             class="absolute right-1.5 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            title="清除"
+            :title="$t('business.groupedCardBrowserDialog.clear')"
             @click="searchQuery = ''"
           >
             <span class="material-icons" style="font-size: 14px">close</span>
@@ -250,8 +256,8 @@ const isSearching = computed(() => trimmedQuery.value.length > 0)
       <div ref="bodyRef" class="flex-1 overflow-y-auto px-5 pb-5 min-h-0" @scroll.passive="onBodyScroll">
         <div v-if="groups.length === 0" class="h-full flex flex-col items-center justify-center text-muted-foreground py-12">
           <span class="material-icons text-4xl mb-2 opacity-50">{{ isSearching ? 'search_off' : emptyIcon }}</span>
-          <div class="text-sm">{{ isSearching ? `未找到匹配的${itemTypeLabel}` : `暂无${itemTypeLabel}可展示` }}</div>
-          <div v-if="isSearching" class="text-xs mt-1 text-muted-foreground/70">尝试其他关键词</div>
+          <div class="text-sm">{{ isSearching ? $t('business.groupedCardBrowserDialog.notFound', { type: resolvedItemTypeLabel }) : $t('business.groupedCardBrowserDialog.empty', { type: resolvedItemTypeLabel }) }}</div>
+          <div v-if="isSearching" class="text-xs mt-1 text-muted-foreground/70">{{ $t('business.groupedCardBrowserDialog.tryOther') }}</div>
         </div>
 
         <div v-for="group in groups" :key="group.key" class="mb-4" :data-group-key="group.key">
@@ -282,7 +288,7 @@ const isSearching = computed(() => trimmedQuery.value.length > 0)
                 </span>
                 <span class="min-w-0 flex-1">
                   <span class="block text-sm font-medium text-foreground truncate">{{ item.label }}</span>
-                  <span v-if="item.count != null" class="block text-[11px] text-muted-foreground">{{ item.count }} 个文件</span>
+                  <span v-if="item.count != null" class="block text-[11px] text-muted-foreground">{{ $t('business.groupedCardBrowserDialog.fileCount', { count: item.count }) }}</span>
                 </span>
               </template>
             </component>

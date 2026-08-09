@@ -6,7 +6,7 @@
       <div class="relative flex-1">
         <Input
           :model-value="modelValue"
-          :placeholder="placeholder"
+          :placeholder="placeholderResolved"
           :disabled="disabled"
           class="w-full pl-10 pr-12 py-2 text-sm border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
           @input="handleInput"
@@ -51,7 +51,7 @@
       <!-- 搜索历史 -->
       <div v-if="searchHistory.length > 0 && !modelValue">
         <div class="px-3 py-2 text-xs font-semibold text-muted-foreground border-b border-border">
-          最近搜索
+          {{ $t('commonUi.search.recentSearches') }}
         </div>
         <div
           v-for="(item, index) in searchHistory.slice(0, 5)"
@@ -75,7 +75,7 @@
       <!-- 搜索建议 -->
       <div v-if="suggestions.length > 0">
         <div class="px-3 py-2 text-xs font-semibold text-muted-foreground border-b border-border">
-          建议
+          {{ $t('commonUi.search.suggestions') }}
         </div>
         <div
           v-for="(suggestion, index) in suggestions"
@@ -95,7 +95,7 @@
       class="absolute top-full left-0 right-0 mt-1 bg-white border border-border rounded-lg shadow-lg z-50 p-4"
     >
       <div class="flex items-center justify-between mb-3">
-        <h3 class="text-sm font-semibold text-foreground">高级筛选</h3>
+        <h3 class="text-sm font-semibold text-foreground">{{ $t('commonUi.search.advancedFilter') }}</h3>
         <Button
           variant="ghost"
           size="sm"
@@ -125,7 +125,7 @@
             @update:model-value="(value: any) => activeFilters[filter.key] = value"
           >
             <SelectTrigger class="flex-1 h-8">
-              <SelectValue placeholder="请选择" />
+              <SelectValue :placeholder="$t('commonUi.search.pleaseSelect')" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem v-for="opt in filter.options" :key="opt.value" :value="opt.value">{{ opt.label }}</SelectItem>
@@ -150,13 +150,13 @@
           size="sm"
           @click="resetFilters"
         >
-          重置
+          {{ $t('commonUi.search.reset') }}
         </Button>
         <Button
           size="sm"
           @click="applyFilters"
         >
-          应用
+          {{ $t('commonUi.search.apply') }}
         </Button>
       </div>
     </div>
@@ -165,6 +165,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
@@ -178,8 +179,10 @@ interface Props extends SearchComponentProps {
   suggestions?: string[]
 }
 
+const { t } = useI18n()
+
 const props = withDefaults(defineProps<Props>(), {
-  placeholder: '搜索...',
+  placeholder: '',
   showFilter: true,
   showHistory: true,
   disabled: false,
@@ -189,6 +192,9 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<SearchEvents>()
+
+// 占位符默认值（需 i18n）
+const placeholderResolved = computed(() => props.placeholder || t('commonUi.search.placeholder'))
 
 // 响应式数据
 const showSuggestions = ref(false)

@@ -1,9 +1,12 @@
 import { MediaViewTabType } from '../TabTypes'
 import type { TabContext } from '../TabRegistry'
+import i18n from '../../i18n'
 
 export class AllTabType extends MediaViewTabType {
   name = 'all'
-  displayName = '全部文件'
+  get displayName() {
+    return i18n.global.t('composables.allTab.displayName')
+  }
   icon = 'folder_open'
   iconColor = '#6B7280'
   allowMultipleInstances = false // 全部文件只允许一个实例

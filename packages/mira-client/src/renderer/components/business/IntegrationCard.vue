@@ -72,7 +72,7 @@
                 <i class="pi pi-info-circle"></i>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top">详情</TooltipContent>
+            <TooltipContent side="top">{{ $t('business.integrationCard.details') }}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
         <TooltipProvider>
@@ -86,7 +86,7 @@
                 <i class="pi pi-refresh"></i>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top">重载</TooltipContent>
+            <TooltipContent side="top">{{ $t('business.integrationCard.reload') }}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>
@@ -101,7 +101,7 @@
               <i class="pi pi-trash"></i>
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="top">卸载插件</TooltipContent>
+          <TooltipContent side="top">{{ $t('business.integrationCard.uninstall') }}</TooltipContent>
         </Tooltip>
       </TooltipProvider>
     </div>
@@ -109,6 +109,7 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import type { PluginRuntime } from '../../../shared/types'
 
 // shadcn 组件导入
@@ -125,6 +126,7 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+const { t } = useI18n()
 
 // 定义事件
 const emit = defineEmits<{
@@ -153,15 +155,15 @@ const getPluginStatusClass = (status: string) => {
 const getStatusText = (status: string) => {
   switch (status) {
     case 'loaded':
-      return '已加载'
+      return t('business.integrationCard.statusLoaded')
     case 'loading':
-      return '加载中'
+      return t('business.integrationCard.statusLoading')
     case 'error':
-      return '错误'
+      return t('business.integrationCard.statusError')
     case 'disabled':
-      return '已禁用'
+      return t('business.integrationCard.statusDisabled')
     default:
-      return '未知'
+      return t('business.integrationCard.statusUnknown')
   }
 }
 

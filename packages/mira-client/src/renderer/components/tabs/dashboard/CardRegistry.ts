@@ -2,6 +2,7 @@ import type { Component } from 'vue'
 import type { LayoutItem } from 'grid-layout-plus'
 import type { z } from 'zod'
 import type { SchemaField } from '@/renderer/components/business/SchemaForm'
+import i18n from '../../../i18n'
 
 /**
  * 卡片注册表 —— Dashboard 可自由添加卡片的「管理器」。
@@ -136,7 +137,7 @@ export class CardRegistry {
       this.definitions.delete(type)
       return { success: true }
     }
-    return { success: false, error: `卡片类型 "${type}" 不存在` }
+    return { success: false, error: i18n.global.t('tabs.cardRegistry.typeNotFound', { type }) }
   }
 
   /** 是否已注册 */
@@ -203,16 +204,16 @@ export class CardRegistry {
   /** 校验卡片定义 */
   validate(def: CardDefinition): CardRegistryResult {
     if (!def || !def.type || typeof def.type !== 'string') {
-      return { success: false, error: '卡片定义缺少有效的 type' }
+      return { success: false, error: i18n.global.t('tabs.cardRegistry.missingType') }
     }
     if (!def.title || typeof def.title !== 'string') {
-      return { success: false, error: `卡片 "${def.type}" 缺少有效的 title` }
+      return { success: false, error: i18n.global.t('tabs.cardRegistry.missingTitle', { type: def.type }) }
     }
     if (!def.component) {
-      return { success: false, error: `卡片 "${def.type}" 缺少 component` }
+      return { success: false, error: i18n.global.t('tabs.cardRegistry.missingComponent', { type: def.type }) }
     }
     if (!def.size || typeof def.size.defaultW !== 'number' || typeof def.size.defaultH !== 'number') {
-      return { success: false, error: `卡片 "${def.type}" 缺少有效的 size` }
+      return { success: false, error: i18n.global.t('tabs.cardRegistry.missingSize', { type: def.type }) }
     }
     return { success: true }
   }

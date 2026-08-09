@@ -22,7 +22,7 @@
       @update:model-value="handleThemeChange"
     >
       <SelectTrigger class="min-w-[140px]">
-        <SelectValue :placeholder="dropdownPlaceholder">
+        <SelectValue :placeholder="dropdownPlaceholderResolved">
           <div v-if="selectedTheme" class="flex items-center gap-2">
             <span class="material-icons">{{ getThemeIcon(selectedTheme) }}</span>
             <span>{{ getThemeLabel(selectedTheme) }}</span>
@@ -85,6 +85,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '../../stores/settings'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
@@ -101,17 +102,22 @@ interface Props {
   dropdownPlaceholder?: string
 }
 
+const { t } = useI18n()
+
 const props = withDefaults(defineProps<Props>(), {
   mode: 'button',
   showLabels: true,
   includeAuto: true,
   includeHighContrast: false,
   size: 'normal',
-  dropdownPlaceholder: '选择主题'
+  dropdownPlaceholder: ''
 })
 
 // Store
 const settingsStore = useSettingsStore()
+
+// 占位符默认值（需 i18n，因此放在 useI18n 之后用 computed 提供）
+const dropdownPlaceholderResolved = computed(() => props.dropdownPlaceholder || t('commonUi.themeSwitcher.selectTheme'))
 
 // 响应式状态
 const selectedTheme = ref(settingsStore.settings.theme)
@@ -119,38 +125,38 @@ const selectedTheme = ref(settingsStore.settings.theme)
 // 主题选项
 const themeOptions = computed(() => {
   const options = [
-    { 
-      label: '浅色', 
-      value: 'light', 
+    {
+      label: t('commonUi.themeSwitcher.light'),
+      value: 'light',
       icon: 'light_mode',
-      description: '浅色主题'
+      description: t('commonUi.themeSwitcher.light')
     },
-    { 
-      label: '深色', 
-      value: 'dark', 
+    {
+      label: t('commonUi.themeSwitcher.dark'),
+      value: 'dark',
       icon: 'dark_mode',
-      description: '深色主题'
+      description: t('commonUi.themeSwitcher.dark')
     }
   ]
-  
+
   if (props.includeAuto) {
-    options.push({ 
-      label: '跟随系统', 
-      value: 'auto', 
+    options.push({
+      label: t('commonUi.themeSwitcher.auto'),
+      value: 'auto',
       icon: 'computer',
-      description: '跟随系统设置'
+      description: t('commonUi.themeSwitcher.auto')
     })
   }
-  
+
   if (props.includeHighContrast) {
-    options.push({ 
-      label: '高对比度', 
-      value: 'high-contrast', 
+    options.push({
+      label: t('commonUi.themeSwitcher.highContrast'),
+      value: 'high-contrast',
       icon: 'visibility',
-      description: '高对比度主题'
+      description: t('commonUi.themeSwitcher.highContrast')
     })
   }
-  
+
   return options
 })
 
@@ -169,12 +175,12 @@ const currentThemeIcon = computed(() => {
 const buttonLabel = computed(() => {
   const theme = selectedTheme.value
   const labelMap = {
-    'light': '切换到深色主题',
-    'dark': '切换到浅色主题',
-    'auto': '当前跟随系统',
-    'high-contrast': '当前为高对比度'
+    'light': t('commonUi.themeSwitcher.switchToDark'),
+    'dark': t('commonUi.themeSwitcher.switchToLight'),
+    'auto': t('commonUi.themeSwitcher.currentAuto'),
+    'high-contrast': t('commonUi.themeSwitcher.currentHighContrast')
   }
-  return labelMap[theme as keyof typeof labelMap] || '切换主题'
+  return labelMap[theme as keyof typeof labelMap] || t('commonUi.themeSwitcher.switchTheme')
 })
 
 // 方法
@@ -190,10 +196,10 @@ const getThemeIcon = (theme: string) => {
 
 const getThemeLabel = (theme: string) => {
   const labelMap = {
-    'light': '浅色',
-    'dark': '深色',
-    'auto': '跟随系统',
-    'high-contrast': '高对比度'
+    'light': t('commonUi.themeSwitcher.light'),
+    'dark': t('commonUi.themeSwitcher.dark'),
+    'auto': t('commonUi.themeSwitcher.auto'),
+    'high-contrast': t('commonUi.themeSwitcher.highContrast')
   }
   return labelMap[theme as keyof typeof labelMap] || theme
 }
