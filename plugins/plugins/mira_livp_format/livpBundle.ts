@@ -1,8 +1,10 @@
 import crypto from 'crypto';
+import { execFile } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import sharp from 'sharp';
 import yauzl, { Entry } from 'yauzl';
+import { promisify } from 'util';
 
 const ALLOWED_EXTENSIONS = new Set(['.heic', '.heif', '.jpeg', '.jpg', '.mov', '.mp4']);
 const IMAGE_EXTENSIONS = new Set(['.heic', '.heif', '.jpeg', '.jpg']);
@@ -10,7 +12,9 @@ const VIDEO_EXTENSIONS = new Set(['.mov', '.mp4']);
 const MAX_ENTRIES = 100;
 const MAX_FILE_SIZE = 1024 * 1024 * 1024;
 const MAX_TOTAL_SIZE = 2 * 1024 * 1024 * 1024;
+const PREVIEW_MAX_DIMENSION = 2048;
 const OUTPUT_FILES = ['photo.png', 'video.mp4'];
+const execFileAsync = promisify(execFile);
 
 interface CacheManifest {
   fingerprint: string;
@@ -78,10 +82,17 @@ export class LivpBundleCache {
       const imagePath = path.join(extractedDir, image);
       const videoPath = path.join(extractedDir, video);
       const photoPath = path.join(cacheDir, OUTPUT_FILES[0]);
-      const metadata = await sharp(imagePath, { limitInputPixels: 268402689 })
-        .rotate()
-        .png()
-        .toFile(photoPath);
+      const imageExtension = path.extname(image).toLowerCase();
+      if (imageExtension === '.heic' || imageExtension === '.heif') {
+        await convertHeifToPng(imagePath, photoPath);
+      } else {
+        await sharp(imagePath, { limitInputPixels: 268402689 })
+          .rotate()
+          .resize({ width: PREVIEW_MAX_DIMENSION, height: PREVIEW_MAX_DIMENSION, fit: 'inside', withoutEnlargement: true })
+          .png()
+          .toFile(photoPath);
+      }
+      const metadata = await sharp(photoPath).metadata();
       await fs.promises.copyFile(videoPath, path.join(cacheDir, OUTPUT_FILES[1]));
 
       const manifest: CacheManifest = {
@@ -99,6 +110,20 @@ export class LivpBundleCache {
       throw error;
     }
   }
+}
+
+async function convertHeifToPng(sourcePath: string, destPath: string): Promise<void> {
+  const executable = process.env.IMAGEMAGICK_PATH || 'magick';
+  await execFileAsync(executable, [
+    sourcePath,
+    '-auto-orient',
+    '-resize', `${PREVIEW_MAX_DIMENSION}x${PREVIEW_MAX_DIMENSION}>`,
+    '-strip',
+    `png:${destPath}`,
+  ], {
+    windowsHide: true,
+    maxBuffer: 4 * 1024 * 1024,
+  });
 }
 
 function extractLivp(sourcePath: string, outputDir: string): Promise<string[]> {

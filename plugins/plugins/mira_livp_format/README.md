@@ -7,3 +7,5 @@
 - 受控的容器附加文件 URL
 
 插件使用 Mira 的 `registerFileFormat`、`getExtraFileList/getExtraFile` 和服务端 viewer API，不依赖 Eagle API。
+
+HEIC/HEIF 解码使用 Mira 服务端同样依赖的 ImageMagick。请确保 `magick` 在 PATH 中，或设置 `IMAGEMAGICK_PATH`。

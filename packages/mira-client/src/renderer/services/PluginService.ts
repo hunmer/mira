@@ -386,6 +386,15 @@ export class PluginService {
   }
 
   /**
+   * 同步插件运行状态。
+   * Store 中的 PluginRuntime 可能是 Vue Proxy，不能依赖它与内部 Map 始终共享引用。
+   */
+  public setPluginStatus(pluginId: string, status: PluginRuntime['status']): void {
+    const plugin = this.plugins.get(pluginId)
+    if (plugin) plugin.status = status
+  }
+
+  /**
    * 卸载插件
    */
   public async uninstallPlugin(pluginId: string, pluginDirectory: string, pluginName: string): Promise<BaseResponse> {

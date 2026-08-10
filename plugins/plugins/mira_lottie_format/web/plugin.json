@@ -1,0 +1,19 @@
+{
+  "pluginName": "dotLottie 格式支持",
+  "pluginId": "45b1903a-4457-4abd-824b-0d6aa29f5697",
+  "priority": 20,
+  "version": "1.0.0",
+  "index": "index.js",
+  "tags": ["Lottie", "dotLottie", "动画", "预览"],
+  "category": "productivity",
+  "description": "为 .lottie 文件提供静态缩略图与循环动画预览。",
+  "author": "Mira Team",
+  "enable": true,
+  "config": {},
+  "hotkey": {},
+  "events": [],
+  "dependencies": [],
+  "permissions": ["ui", "dom"],
+  "minAppVersion": "1.0.0",
+  "platform": ["win32", "darwin", "linux"]
+}

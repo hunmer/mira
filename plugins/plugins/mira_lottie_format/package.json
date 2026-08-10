@@ -1,0 +1,32 @@
+{
+  "name": "mira_lottie_format",
+  "version": "1.0.0",
+  "description": "dotLottie thumbnail and preview support for Mira",
+  "author": "Mira Team",
+  "license": "ISC",
+  "main": "dist/index.js",
+  "files": ["dist/**/*", "web/**/*", "package.json", "README.md"],
+  "mira": {
+    "id": "mira_lottie_format",
+    "title": "dotLottie 格式支持",
+    "icon": "animation",
+    "category": "storage",
+    "tags": ["Lottie", "dotLottie", "缩略图", "预览"]
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "npm run build && node test/smoke-test.js"
+  },
+  "dependencies": {
+    "@lottiefiles/dotlottie-web": "^0.79.0",
+    "@napi-rs/canvas": "^1.0.5",
+    "yauzl": "^3.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/yauzl": "^2.10.3",
+    "@types/yazl": "^3.3.0",
+    "typescript": "^5.7.0",
+    "yazl": "^3.3.1"
+  }
+}

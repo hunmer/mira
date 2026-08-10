@@ -64,7 +64,8 @@ pluginManager.registerFileFormat(pluginName, {
 - 目标路径必须经过 `path.resolve` 并确认位于缓存根目录内。
 - 解包写入临时目录，成功后再写 manifest；失败时递归清理缓存目录。
 - 通过 `pending` Map 合并相同源文件的并发解析。
-- 对 HEIC/HEIF 使用当前安全版本的 `sharp`（安装后运行 `npm audit`）；将输出统一为浏览器可显示的 PNG。
+- 真实 Apple HEIF 可能因大量 `iref` 引用触发 `sharp`/libheif 的默认安全限制。优先复用宿主 ImageMagick（`IMAGEMAGICK_PATH` 或 PATH 中的 `magick`）转为 PNG，不要关闭或无界放宽 libheif 安全限制；JPEG/JPG 可继续用当前安全版本的 `sharp`。安装后运行 `npm audit`。
+- 将静态预览最长边限制在合理范围（例如 2048 像素），避免全尺寸照片转 PNG 后体积显著放大。
 - 对 MOV/MP4 只在确认格式后暴露为固定白名单名称（例如 `video.mp4`），不得接受任意文件名。
 
 推荐把容器内部资源规范化为少量固定输出，例如 `photo.png` 和 `video.mp4`，让 viewer、缩略图和附加文件 API 使用同一份缓存结果。

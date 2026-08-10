@@ -42,5 +42,10 @@
     "name": "mira_livp_format",
     "enabled": true,
     "path": "node_modules/mira_livp_format"
+  },
+  {
+    "name": "mira_lottie_format",
+    "enabled": true,
+    "path": "node_modules/mira_lottie_format"
   }
 ]

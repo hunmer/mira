@@ -220,6 +220,12 @@ export const executeLocalPluginOperation = async (
       }
 
       if (result.success) {
+        if (operation === 'enable') {
+          pluginService.setPluginStatus(pluginId, 'loaded')
+        } else if (operation === 'disable') {
+          pluginService.setPluginStatus(pluginId, 'disabled')
+        }
+
         // 对于某些操作，避免重复调用loadLocalPlugins和persistPluginState
         // enable、disable、reload操作已经在内部处理了状态保存
         const skipReload = ['enable', 'disable', 'reload'].includes(operation)

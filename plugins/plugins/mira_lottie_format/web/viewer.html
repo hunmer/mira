@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>dotLottie 预览</title>
+    <style>
+      * { box-sizing: border-box; }
+      html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #111; color: #ddd; }
+      body { display: grid; grid-template-rows: minmax(0, 1fr) 44px; font: 13px system-ui, sans-serif; }
+      .stage { display: grid; place-items: center; min-height: 0; padding: 12px; }
+      dotlottie-player { display: block; width: 100%; height: 100%; max-width: 100%; max-height: 100%; }
+      .controls { display: flex; align-items: center; gap: 12px; padding: 0 14px; border-top: 1px solid #333; background: #1b1b1b; }
+      button { width: 32px; height: 32px; padding: 0; border: 0; background: transparent; color: inherit; cursor: pointer; font-size: 18px; }
+      input { flex: 1; min-width: 0; accent-color: #57b38c; }
+      output { width: 88px; text-align: right; font-variant-numeric: tabular-nums; }
+      .error { display: none; grid-row: 1 / -1; place-items: center; padding: 24px; text-align: center; }
+    </style>
+    <script src="./vendor/dotlottie-player.js"></script>
+  </head>
+  <body>
+    <div class="stage"><dotlottie-player mode="normal" autoplay loop></dotlottie-player></div>
+    <div class="controls">
+      <button id="toggle" type="button" aria-label="暂停">&#10074;&#10074;</button>
+      <input id="progress" type="range" min="0" max="100" value="0" aria-label="播放进度">
+      <output id="frames">0 / 0</output>
+    </div>
+    <div id="error" class="error">无法预览此 dotLottie 文件</div>
+    <script>
+      const params = new URLSearchParams(location.search)
+      const fileUrl = params.get('fileUrl') || ''
+      const fileId = params.get('fileId') || ''
+      const player = document.querySelector('dotlottie-player')
+      const toggle = document.querySelector('#toggle')
+      const progress = document.querySelector('#progress')
+      const frames = document.querySelector('#frames')
+      const error = document.querySelector('#error')
+      let totalFrames = 0
+      let paused = false
+
+      function fail(message) {
+        document.querySelector('.stage').style.display = 'none'
+        document.querySelector('.controls').style.display = 'none'
+        error.textContent = message || '无法预览此 dotLottie 文件'
+        error.style.display = 'grid'
+        parent.postMessage({ type: 'mira-lottie-preview-error', fileId }, '*')
+      }
+
+      async function start() {
+        if (!fileUrl) return fail('缺少 dotLottie 文件地址')
+        try {
+          await player.load(fileUrl)
+          const animation = player.getLottie()
+          totalFrames = Math.max(0, Math.ceil(animation?.totalFrames || 0))
+          frames.textContent = `0 / ${totalFrames}`
+          parent.postMessage({ type: 'mira-lottie-preview-loaded', fileId }, '*')
+        } catch (cause) {
+          fail(cause?.message || '无法加载 dotLottie 文件')
+        }
+      }
+
+      player.addEventListener('frame', (event) => {
+        const current = Math.max(0, Math.ceil(event.detail?.frame || 0))
+        progress.value = totalFrames ? String(current / totalFrames * 100) : '0'
+        frames.textContent = `${current} / ${totalFrames}`
+      })
+      toggle.addEventListener('click', () => {
+        paused = !paused
+        if (paused) player.pause()
+        else player.play()
+        toggle.innerHTML = paused ? '&#9654;' : '&#10074;&#10074;'
+        toggle.setAttribute('aria-label', paused ? '播放' : '暂停')
+      })
+      progress.addEventListener('input', () => player.seek(`${progress.value}%`))
+      start()
+    </script>
+  </body>
+</html>
