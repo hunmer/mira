@@ -3,7 +3,7 @@
     :open="isVisible"
     @update:open="isVisible = $event"
   >
-    <DialogContent class="settings-dialog sm:max-w-[60vw] sm:max-h-[70vh] overflow-hidden grid-rows-[auto_1fr]">
+    <DialogContent class="settings-dialog sm:max-w-[60vw] sm:h-[70vh] overflow-hidden grid-rows-[auto_1fr]">
       <DialogHeader>
         <DialogTitle>{{ $t('business.settingsDialog.title') }}</DialogTitle>
       </DialogHeader>

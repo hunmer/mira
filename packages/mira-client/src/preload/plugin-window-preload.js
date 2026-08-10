@@ -115,6 +115,12 @@ const mira = {
     openPath: (path) => ipcRenderer.invoke('plugin-window:mira-shell', 'openPath', path),
     showItemInFolder: (path) => ipcRenderer.invoke('plugin-window:mira-shell', 'showItemInFolder', path),
   },
+  network: {
+    getProxy: async () => {
+      const result = await ipcRenderer.invoke('network:get-proxy')
+      return result?.data || { enabled: false, url: '' }
+    },
+  },
   window: {
     show: () => invokeWindow('show'),
     showInactive: () => invokeWindow('showInactive'),

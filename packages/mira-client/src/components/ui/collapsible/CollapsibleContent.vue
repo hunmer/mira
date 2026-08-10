@@ -26,3 +26,13 @@ const isOpen = computed(() => !!rootContext.open.value)
     <slot />
   </CollapsibleContent>
 </template>
+
+<style scoped>
+[data-slot="collapsible-content"] {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border, oklch(0.92 0 0));
+  border-top: none;
+  border-radius: 0 0 0.75rem 0.75rem;
+  background: var(--muted, oklch(0.97 0 0));
+}
+</style>

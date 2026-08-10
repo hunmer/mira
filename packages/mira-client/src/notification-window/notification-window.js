@@ -137,27 +137,32 @@ async function initNotificationWindow() {
         <div class="notification-bar" :class="type"></div>
         <!-- 最左侧：缩略图 / 图标（大尺寸） -->
         <div class="notification-thumb-wrap" :class="type">
-          <div v-if="displayIcons.length > 1" class="notification-thumb-grid">
+          <template v-if="displayIcons.length > 1">
+            <div class="notification-thumb-grid">
+              <img
+                v-for="thumb in displayIcons"
+                :key="thumb"
+                :src="thumb"
+                class="notification-thumb-grid-item"
+                draggable="false"
+                referrerpolicy="no-referrer"
+                @error="$event.currentTarget.style.visibility = 'hidden'"
+                @mousedown.prevent
+              />
+            </div>
+            <span class="notification-thumb-badge" :class="type"></span>
+          </template>
+          <template v-else-if="isIconUrl">
             <img
-              v-for="thumb in displayIcons"
-              :key="thumb"
-              :src="thumb"
-              class="notification-thumb-grid-item"
+              :src="icon"
+              class="notification-thumb"
               draggable="false"
               referrerpolicy="no-referrer"
-              @error="$event.currentTarget.style.visibility = 'hidden'"
+              @error="onThumbError"
               @mousedown.prevent
             />
-          </div>
-          <img
-            v-else-if="isIconUrl"
-            :src="icon"
-            class="notification-thumb"
-            draggable="false"
-            referrerpolicy="no-referrer"
-            @error="onThumbError"
-            @mousedown.prevent
-          />
+            <span class="notification-thumb-badge" :class="type"></span>
+          </template>
           <span v-else class="material-icons notification-icon" :class="type">{{ displayIcon }}</span>
         </div>
         <!-- 右侧：信息区 -->

@@ -92,3 +92,5 @@ import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 ## 测试与质量
 
 无独立测试；以 `pnpm run build`（renderer + main + preload 三段构建）作为回归门禁。
+
+状态组件的 `v-model` 协议与旧版 radix-vue 不同，修改 Switch、Checkbox 等组件前先阅读 [Reka UI 状态绑定陷阱](../../../docs/reka-ui-binding-pitfalls.md)。

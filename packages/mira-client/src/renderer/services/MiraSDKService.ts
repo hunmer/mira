@@ -668,7 +668,11 @@ export class MiraSDKService {
     
     try {
       const result = await this.client.files().uploadFile(file, libraryId, metadata)
-      return TypeAdapter.normalizeBaseResponse(result)
+      const uploaded = result.results?.[0]
+      if (!uploaded?.success || !uploaded.result) {
+        throw new Error(uploaded?.error || 'File upload failed')
+      }
+      return { success: true, message: 'File uploaded successfully', data: uploaded.result }
     } catch (error) {
       console.error('MiraSDKService: File upload failed', error)
       throw error

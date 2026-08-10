@@ -13,8 +13,8 @@
           <p class="text-muted-foreground dark:text-muted-foreground text-sm">{{ $t('views.networkPanel.proxyDesc') }}</p>
         </div>
         <Switch
-          :checked="settingsStore.settings.networkProxyEnabled"
-          @update:checked="(enabled: boolean) => handleSettingChange('networkProxyEnabled', enabled)"
+          :model-value="settingsStore.settings.networkProxyEnabled"
+          @update:model-value="(enabled: boolean) => handleSettingChange('networkProxyEnabled', enabled)"
         />
       </div>
 

@@ -27,6 +27,7 @@ async function main() {
   const ipcRenderer = {
     invoke: (channel, ...args) => {
       invokes.push([channel, ...args])
+      if (channel === 'network:get-proxy') return Promise.resolve({ success: true, data: { enabled: true, url: 'http://127.0.0.1:7890' } })
       return Promise.resolve(true)
     },
     send: () => {},
@@ -75,6 +76,9 @@ async function main() {
   const image = eagle.clipboard.readImage()
   assert.deepEqual(image.getSize(), { width: 2, height: 3 })
   assert.deepEqual([...image.toJPEG(100)], [2])
+  await mira.item.addFromURL('https://example.com/result.jpg', { name: 'result.jpg' })
+  assert.equal(invokes.at(-1)[0], 'plugin-window:mira-item-add-from-url')
+  assert.equal(JSON.stringify(await mira.network.getProxy()), JSON.stringify({ enabled: true, url: 'http://127.0.0.1:7890' }))
   console.log('plugin-window Eagle compatibility: ok')
 }
 

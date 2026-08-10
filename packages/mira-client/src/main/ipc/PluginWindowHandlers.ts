@@ -3,8 +3,10 @@ import type { MenuItemConstructorOptions } from 'electron'
 import { mkdirSync, writeFileSync } from 'fs'
 import * as fs from 'fs/promises'
 import * as path from 'path'
+import { randomUUID } from 'node:crypto'
 import { logger } from '../utils/Logger'
 import type { PluginHandler } from '../handlers/PluginHandler'
+import { downloadService } from '../services/DownloadService'
 
 /**
  * 打开插件窗口的参数（与 shared/types.ts 的 PluginWindowOpenOptions 对齐）
@@ -50,6 +52,7 @@ interface PluginWindowImagePayload {
 export class PluginWindowHandlers {
   /** windowId → BrowserWindow */
   private windows = new Map<string, BrowserWindow>()
+  private importRequests = new Map<string, { resolve: (value: any) => void; reject: (reason: Error) => void; timer: ReturnType<typeof setTimeout> }>()
   /** 注入的 PluginHandler，用于读取 pluginsDirectory 与插件实际目录 */
   private pluginHandler: PluginHandler
 
@@ -76,6 +79,7 @@ export class PluginWindowHandlers {
     ipcMain.on('plugin-window:mira-clipboard', this.handleMiraClipboard.bind(this))
     ipcMain.on('plugin-window:mira-log', this.handleMiraLog.bind(this))
     ipcMain.handle('plugin-window:mira-item-add-from-url', this.handleMiraItemAddFromUrl.bind(this))
+    ipcMain.on('plugin-window:mira-item-add-from-url-result', this.handleMiraItemAddFromUrlResult.bind(this))
     logger.info('PluginWindowHandlers', 'Plugin window IPC handlers registered')
   }
 
@@ -212,6 +216,9 @@ export class PluginWindowHandlers {
           ],
         },
       })
+
+      // 插件窗口不应继承主窗口的全局菜单；插件可稍后通过 setMenu(template) 设置自己的菜单。
+      win.setMenu(null)
 
       this.windows.set(windowId, win)
 
@@ -481,8 +488,60 @@ export class PluginWindowHandlers {
     log('PluginWindow', message)
   }
 
-  private async handleMiraItemAddFromUrl(_event: Electron.IpcMainInvokeEvent, _url: string, _options: any): Promise<never> {
-    throw new Error('Mira 暂未提供插件窗口直接导入 URL 的宿主接口')
+  private async handleMiraItemAddFromUrl(_event: Electron.IpcMainInvokeEvent, url: string, options: any): Promise<any> {
+    let parsed: URL
+    try {
+      parsed = new URL(String(url))
+    } catch {
+      throw new Error('素材 URL 无效')
+    }
+    if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('仅支持 http/https 素材 URL')
+
+    const buffer = await downloadService.downloadFile(parsed.toString())
+    if (buffer.length === 0 || buffer.length > 100 * 1024 * 1024) throw new Error('素材为空或超过 100MB 限制')
+    const mainWindow = BrowserWindow.getAllWindows().find(
+      (win) => !win.isDestroyed() && (win as BrowserWindow & { aliasName?: string }).aliasName === 'Mira'
+    )
+    if (!mainWindow) throw new Error('Mira 主窗口不可用')
+
+    const requestId = randomUUID()
+    const result = new Promise<any>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        this.importRequests.delete(requestId)
+        reject(new Error('等待 Mira 上传结果超时'))
+      }, 120000)
+      this.importRequests.set(requestId, { resolve, reject, timer })
+    })
+    const name = this.getDownloadName(parsed, options)
+    mainWindow.webContents.send('plugin-window:mira-item-add-from-url', {
+      requestId,
+      url: parsed.toString(),
+      name,
+      mimeType: this.getMimeType(name),
+      data: buffer,
+      options: options && typeof options === 'object' ? options : {},
+    })
+    return result
+  }
+
+  private handleMiraItemAddFromUrlResult(_event: Electron.IpcMainEvent, requestId: string, result: any): void {
+    const request = this.importRequests.get(requestId)
+    if (!request) return
+    clearTimeout(request.timer)
+    this.importRequests.delete(requestId)
+    if (result?.success === false) request.reject(new Error(result.message || 'Mira 上传失败'))
+    else request.resolve(result)
+  }
+
+  private getDownloadName(url: URL, options: any): string {
+    const requested = typeof options?.name === 'string' ? options.name.trim() : ''
+    const fromUrl = path.basename(url.pathname).replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
+    return (requested || fromUrl || `mira-${Date.now()}.jpg`).slice(0, 180)
+  }
+
+  private getMimeType(name: string): string {
+    const ext = path.extname(name).toLowerCase()
+    return ({ '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.gif': 'image/gif', '.webp': 'image/webp', '.avif': 'image/avif' } as Record<string, string>)[ext] || 'application/octet-stream'
   }
 
   /**
@@ -534,6 +593,12 @@ export class PluginWindowHandlers {
     ipcMain.removeHandler('plugin-window:mira-window')
     ipcMain.removeHandler('plugin-window:mira-shell')
     ipcMain.removeHandler('plugin-window:mira-item-add-from-url')
+    ipcMain.removeAllListeners('plugin-window:mira-item-add-from-url-result')
+    for (const request of this.importRequests.values()) {
+      clearTimeout(request.timer)
+      request.reject(new Error('插件窗口服务已关闭'))
+    }
+    this.importRequests.clear()
     ipcMain.removeAllListeners('plugin-window:mira-app-info')
     ipcMain.removeAllListeners('plugin-window:mira-clipboard')
     ipcMain.removeAllListeners('plugin-window:mira-log')

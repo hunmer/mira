@@ -178,6 +178,7 @@
 
     /* 最左侧缩略图/图标容器（大尺寸，填满卡片高度） */
     .notification-thumb-wrap {
+      position: relative;
       width: 64px;
       flex-shrink: 0;
       align-self: stretch;
@@ -186,8 +187,25 @@
       justify-content: center;
       overflow: hidden;
       background: var(--nt-bg-hover);
-      border-right: 1px solid var(--nt-border);
     }
+
+    /* 缩略图右下角类型色点（仅图片模式显示） */
+    .notification-thumb-badge {
+      position: absolute;
+      right: 5px;
+      bottom: 5px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      box-shadow: 0 0 0 2px var(--nt-bg);
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .notification-thumb-badge.info { background: var(--nt-info); }
+    .notification-thumb-badge.success { background: var(--nt-success); }
+    .notification-thumb-badge.warning { background: var(--nt-warning); }
+    .notification-thumb-badge.error { background: var(--nt-error); }
 
     .notification-thumb-grid {
       width: 100%;
@@ -244,6 +262,7 @@
 
     .notification-title {
       flex: 1;
+      min-width: 0;
       font-size: 14px;
       font-weight: 600;
       color: var(--nt-text-title);

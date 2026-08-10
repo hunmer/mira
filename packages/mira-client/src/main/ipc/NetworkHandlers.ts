@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron'
+import { ipcMain, session } from 'electron'
 import { DownloadService, type ProxyConfig, type ProxyTestResult } from '../services/DownloadService'
 import { logger } from '../utils/Logger'
 
@@ -18,7 +18,12 @@ export class NetworkHandlers {
   registerHandlers(): void {
     ipcMain.handle(CHANNEL_SET_PROXY, async (_event, config: ProxyConfig) => {
       try {
-        this.downloader.setProxy(config || { enabled: false, url: '' })
+        const next = config || { enabled: false, url: '' }
+        this.downloader.setProxy(next)
+        await session.defaultSession.setProxy({
+          proxyRules: next.enabled && next.url.trim() ? next.url.trim() : 'direct://'
+        })
+        await session.defaultSession.closeAllConnections()
         return { success: true }
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err)

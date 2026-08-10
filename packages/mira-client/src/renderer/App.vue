@@ -119,12 +119,15 @@ import { Progress } from '@/components/ui/progress'
 import { SearchHandlers } from './services/SearchHandlers'
 import { environment } from './utils'
 import { useTabs } from './composables/useTabs'
+import { useLibraryStore } from './stores/library'
+import { miraSDKService } from './services/MiraSDKService'
 
 // 全局快捷键系统
 import { useAutoShortcuts } from './composables/useShortcuts'
 
 const router = useRouter()
 const settingsStore = useSettingsStore()
+const libraryStore = useLibraryStore()
 
 // 拖拽状态管理 - 简化为始终启用
 
@@ -306,6 +309,42 @@ const setupElectronListeners = () => {
     // 这里可以调用文件上传逻辑
   })
 
+  window.electronAPI.on('plugin-window:mira-item-add-from-url', async (request: any) => {
+    const reply = (result: any) => window.electronAPI.send('plugin-window:mira-item-add-from-url-result', request?.requestId, result)
+    try {
+      const libraryId = libraryStore.currentLibrary?.id
+      if (!libraryId) throw new Error('当前没有可用素材库')
+      const rawData = request?.data
+      const data = rawData instanceof Uint8Array
+        ? rawData
+        : rawData instanceof ArrayBuffer
+          ? new Uint8Array(rawData)
+          : rawData?.type === 'Buffer' && Array.isArray(rawData.data)
+            ? new Uint8Array(rawData.data)
+            : new Uint8Array(rawData || [])
+      const file = new File([data], request.name || 'mira-download', { type: request.mimeType || 'application/octet-stream' })
+      const options = request.options || {}
+      const metadata = {
+        folderId: Array.isArray(options.folders) ? options.folders[0] : undefined,
+        tags: Array.isArray(options.tags) ? options.tags : undefined,
+      }
+      const uploaded = await miraSDKService.uploadFile(file, libraryId, metadata)
+      if (!uploaded?.success || !uploaded.data?.id) throw new Error(uploaded?.message || 'Mira 上传失败')
+      try {
+        await miraSDKService.updateFile(libraryId, uploaded.data.id, {
+          website: typeof options.website === 'string' ? options.website : request.url,
+          notes: typeof options.annotation === 'string' ? options.annotation : undefined,
+          custom_fields: { source_url: request.url },
+        })
+      } catch (error) {
+        console.warn('[PluginWindow] 素材已上传，但来源元数据写入失败', error)
+      }
+      reply({ success: true, data: { id: uploaded.data.id }, message: uploaded.message })
+    } catch (error) {
+      reply({ success: false, message: error instanceof Error ? error.message : String(error) })
+    }
+  })
+
   // 监听 openTab 协议事件（来自 dashboard 等外部来源）
   window.electronAPI.on('protocol:open-tab', (data: any) => {
     console.log('Received openTab protocol:', data)
@@ -371,6 +410,7 @@ const cleanupElectronListeners = () => {
   window.electronAPI.removeAllListeners('navigate:settings')
   window.electronAPI.removeAllListeners('notification-from-window')
   window.electronAPI.removeAllListeners('files:import')
+  window.electronAPI.removeAllListeners('plugin-window:mira-item-add-from-url')
   window.electronAPI.removeAllListeners('protocol:open-tab')
   window.electronAPI.removeAllListeners('show-global-loading')
   window.electronAPI.removeAllListeners('hide-global-loading')

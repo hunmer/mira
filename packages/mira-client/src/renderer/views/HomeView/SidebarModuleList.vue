@@ -333,22 +333,28 @@ defineExpose({ locateItem })
   align-items: center;
   gap: 0.25rem;
   padding: 0.25rem 0.5rem;
-  margin-bottom: 0.25rem;
   cursor: pointer;
   user-select: none;
-  border-radius: 0.5rem;
-  transition: background-color 0.15s ease;
+  border-radius: 0.5rem 0.5rem 0 0;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  transition: filter 0.15s ease;
 }
 
 .section-header:hover {
-  background-color: color-mix(in oklch, var(--primary) 5%, transparent);
+  filter: brightness(0.95);
+}
+
+/* 折叠态：四角圆角（无内容衔接，恢复完整圆角） */
+.section-header[data-state="closed"] {
+  border-radius: 0.5rem;
 }
 
 .section-header .chevron {
   order: 99;
   margin-left: auto;
   font-size: 18px;
-  color: var(--muted-foreground);
+  color: var(--primary-foreground);
   transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1);
   transform-origin: center center;
   transform: rotate(-90deg);
@@ -360,14 +366,14 @@ defineExpose({ locateItem })
 
 .section-header .title-icon {
   font-size: 16px;
-  color: var(--muted-foreground);
+  color: var(--primary-foreground);
 }
 
 .section-title {
   flex: 1;
   font-size: 12px;
   font-weight: 600;
-  color: var(--muted-foreground);
+  color: var(--primary-foreground);
   line-height: 1.25rem;
 }
 
@@ -385,13 +391,20 @@ defineExpose({ locateItem })
   justify-content: center;
   width: 1.25rem;
   height: 1.25rem;
-  color: var(--muted-foreground);
+  color: var(--primary-foreground);
   border-radius: 0.25rem;
   transition: transform 160ms ease-out;
 }
 
 .header-action-btn:hover {
-  color: var(--muted-foreground);
+  color: var(--primary-foreground);
+  background: color-mix(in oklch, var(--primary-foreground) 15%, transparent);
+}
+
+/* 搜索激活态：在 primary 背景上用亮色高亮（覆盖全局 .text-primary） */
+.header-action-btn.text-primary {
+  color: var(--primary-foreground);
+  background: color-mix(in oklch, var(--primary-foreground) 25%, transparent);
 }
 
 .header-action-btn:active {
