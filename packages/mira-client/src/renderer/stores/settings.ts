@@ -31,6 +31,10 @@ export interface AppSettings {
   themeStyleCustomCss: string
   // 主色覆盖（hex，空字符串表示使用主题自带主色）
   primaryColor: string
+  // 全局字体缩放系数（1 = 默认根字号 16px；范围 0.85~1.3）
+  fontSizeScale: number
+  // 全局界面缩放系数（1 = 默认；范围 0.7~1.5），等比缩放整个窗口（含 px 元素）
+  uiZoom: number
 
   columnsPerRow: number
 
@@ -163,6 +167,8 @@ export const useSettingsStore = defineStore('settings', () => {
     themeStyle: '',
     themeStyleCustomCss: '',
     primaryColor: '',
+    fontSizeScale: 1,
+    uiZoom: 1,
 
     columnsPerRow: 4,
 
@@ -352,8 +358,8 @@ export const useSettingsStore = defineStore('settings', () => {
 
   /**
    * 把当前网络代理配置推送给主进程，使其立即生效于：
-   *   1. DownloadService —— undici 全局 dispatcher（主进程 fetch / 插件下载）
-   *   2. Electron session —— 渲染层 fetch（如插件市场目录拉取）
+   *   1. DownloadService —— 同步 HTTP_PROXY/HTTPS_PROXY 环境变量（供子进程）
+   *   2. Electron session —— 渲染层 fetch 与主进程 net.request 的代理
    * 在非 Electron 环境下静默跳过。
    */
   const pushProxyToMain = async () => {
@@ -484,6 +490,10 @@ export const useSettingsStore = defineStore('settings', () => {
       applyThemeStyleOverride()
     } else if (key === 'primaryColor') {
       applyPrimaryColorOverride()
+    } else if (key === 'fontSizeScale') {
+      applyFontSizeScale()
+    } else if (key === 'uiZoom') {
+      applyUiZoom()
     } else if (key === 'language') {
       // 同步切换 vue-i18n 全局语言
       // 动态 import 避免模块加载顺序问题
@@ -548,6 +558,8 @@ export const useSettingsStore = defineStore('settings', () => {
       themeStyle: '',
       themeStyleCustomCss: '',
       primaryColor: '',
+      fontSizeScale: 1,
+      uiZoom: 1,
 
       columnsPerRow: 4,
   
@@ -592,6 +604,8 @@ export const useSettingsStore = defineStore('settings', () => {
     applyTheme()
     applyThemeStyleOverride()
     applyPrimaryColorOverride()
+    applyFontSizeScale()
+    applyUiZoom()
   }
 
   // 连接功能已移至serverList store
@@ -676,6 +690,32 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   /**
+   * 应用全局字体缩放
+   * 通过设置 <html> 的 font-size，使所有 rem 单位（含 Tailwind 工具类）整体等比缩放
+   */
+  const applyFontSizeScale = () => {
+    const scale = settings.value.fontSizeScale
+    if (!scale || scale === 1) {
+      document.documentElement.style.removeProperty('font-size')
+    } else {
+      document.documentElement.style.fontSize = `${(16 * scale).toFixed(2)}px`
+    }
+  }
+
+  /**
+   * 应用全局界面缩放
+   * 通过 document.body.style.zoom 等比缩放整个窗口（含 px/rem 元素、图标），跨 web/electron 通用
+   */
+  const applyUiZoom = () => {
+    const zoom = settings.value.uiZoom
+    if (!zoom || zoom === 1) {
+      document.body.style.zoom = ''
+    } else {
+      document.body.style.zoom = String(zoom)
+    }
+  }
+
+  /**
    * 导出设置配置
    * @returns string - JSON格式的设置配置
    */
@@ -734,6 +774,8 @@ export const useSettingsStore = defineStore('settings', () => {
     // 应用主题风格 / 主色覆盖
     applyThemeStyleOverride()
     applyPrimaryColorOverride()
+    applyFontSizeScale()
+    applyUiZoom()
 
     // 监听系统主题变化
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')

@@ -6,7 +6,7 @@ import { logger } from '../utils/Logger'
  * 网络相关 IPC 处理器
  * - network:set-proxy  : 设置/更新进程级 HTTP 代理（立即生效）
  * - network:get-proxy  : 读取当前生效的代理配置
- * - network:test-proxy : 测试代理连通性（临时切换 dispatcher 探测，结束后恢复）
+ * - network:test-proxy : 测试代理连通性（临时切换 session 代理探测，结束后恢复）
  */
 const CHANNEL_SET_PROXY = 'network:set-proxy'
 const CHANNEL_GET_PROXY = 'network:get-proxy'

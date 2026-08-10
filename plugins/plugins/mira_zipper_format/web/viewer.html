@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>归档浏览</title>
+    <style>
+      * { box-sizing: border-box; }
+      html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+      body { display: flex; flex-direction: column; font: 14px system-ui, -apple-system, "Segoe UI", sans-serif; color: #1f2937; background: #f9fafb; }
+      header { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid #e5e7eb; background: #fff; }
+      header .icon { color: #6b7280; font-size: 18px; }
+      header .title { font-weight: 600; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      header .count { color: #9ca3af; font-size: 12px; }
+      .body { flex: 1; display: flex; min-height: 0; }
+      .tree { width: 280px; min-width: 180px; max-width: 50%; overflow: auto; border-right: 1px solid #e5e7eb; background: #fff; padding: 6px 0; }
+      .preview { flex: 1; overflow: auto; padding: 16px; display: grid; place-items: center; }
+      .node { display: flex; align-items: center; gap: 6px; padding: 3px 12px; cursor: pointer; white-space: nowrap; user-select: none; }
+      .node:hover { background: #f3f4f6; }
+      .node.active { background: #eef2ff; color: #4338ca; }
+      .node .nicon { width: 16px; text-align: center; color: #9ca3af; flex-shrink: 0; }
+      .node.dir .nicon { color: #6366f1; }
+      .node .name { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+      .node .size { color: #9ca3af; font-size: 11px; flex-shrink: 0; }
+      .children { padding-left: 14px; }
+      .placeholder { color: #9ca3af; text-align: center; }
+      .placeholder .big { font-size: 40px; margin-bottom: 8px; }
+      .text-preview { width: 100%; max-width: 960px; background: #fff; border: 1px solid #e5e7eb; border-radius: 6px; padding: 14px 16px; }
+      .text-preview pre { margin: 0; white-space: pre-wrap; word-break: break-word; font: 13px/1.5 ui-monospace, "Cascadia Code", Consolas, monospace; }
+      .image-wrap { width: 100%; height: 100%; display: grid; place-items: center; }
+      .image-wrap img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 4px; }
+      video, audio { width: 100%; max-width: 720px; }
+      .meta-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 6px; padding: 16px 20px; min-width: 240px; text-align: center; }
+      .meta-card .name { font-weight: 600; margin-bottom: 6px; word-break: break-all; }
+      .meta-card .row { color: #6b7280; font-size: 12px; margin: 2px 0; }
+      .error { color: #b91c1c; text-align: center; padding: 24px; }
+      .hidden { display: none !important; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <span class="icon">🗜️</span>
+      <span class="title" id="title">归档浏览</span>
+      <span class="count" id="count"></span>
+    </header>
+    <div class="body">
+      <div class="tree" id="tree"></div>
+      <div class="preview" id="preview">
+        <div class="placeholder"><div class="big">📂</div><div>选择左侧条目查看预览</div></div>
+      </div>
+    </div>
+    <script>
+      (function () {
+        var params = new URLSearchParams(location.search)
+        var fileId = params.get('fileId') || ''
+        var fileName = params.get('fileName') || 'Archive'
+        var indexUrl = params.get('indexUrl') || ''
+        var titleEl = document.getElementById('title')
+        var countEl = document.getElementById('count')
+        var treeEl = document.getElementById('tree')
+        var previewEl = document.getElementById('preview')
+
+        titleEl.textContent = fileName
+
+        function notifyError(message) {
+          parent.postMessage({ type: 'mira-zipper-preview-error', fileId: fileId, message: String(message || '') }, '*')
+        }
+        addEventListener('error', function (event) { notifyError(event.error || event.message) })
+        addEventListener('unhandledrejection', function (event) { notifyError(event.reason) })
+
+        // 从 indexUrl 推导 extra 文件 base 前缀 + token。
+        // indexUrl 形如: <prefix>/api/files/extra/<lib>/<file>/__index.json?token=...
+        function deriveExtraBase(url) {
+          var u = new URL(url, location.href)
+          var idx = u.pathname.indexOf('/api/files/extra/')
+          if (idx < 0) return null
+          var token = u.searchParams.get('token') || ''
+          var trimmed = u.pathname.slice(0, idx + '/api/files/extra/'.length) // 以 / 结尾
+          return { origin: u.origin, base: trimmed, token: token }
+        }
+
+        function entryUrl(extra, entryName) {
+          var encoded = entryName.replace(/\\/g, '/').split('/').map(encodeURIComponent).join('/')
+          var url = extra.origin + extra.base + encoded
+          if (extra.token) url += '?token=' + encodeURIComponent(extra.token)
+          return url
+        }
+
+        function formatSize(bytes) {
+          if (!bytes || bytes < 0) return ''
+          if (bytes < 1024) return bytes + ' B'
+          if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+          if (bytes < 1024 * 1024 * 1024) return (bytes / 1024 / 1024).toFixed(1) + ' MB'
+          return (bytes / 1024 / 1024 / 1024).toFixed(2) + ' GB'
+        }
+
+        function showError(message) {
+          previewEl.innerHTML = '<div class="error">' + message + '</div>'
+        }
+
+        function setPlaceholder(html) {
+          previewEl.innerHTML = html
+        }
+
+        function renderImage(extra, entry) {
+          previewEl.innerHTML = '<div class="image-wrap"><img alt=""></div>'
+          var img = previewEl.querySelector('img')
+          img.alt = entry.name
+          img.onerror = function () { showError('图片解码失败：' + entry.name) }
+          img.src = entryUrl(extra, entry.name)
+        }
+
+        function renderMedia(extra, entry, tag) {
+          previewEl.innerHTML = ''
+          var el = document.createElement(tag)
+          el.controls = true
+          el.onerror = function () { showError('媒体解码失败：' + entry.name) }
+          el.src = entryUrl(extra, entry.name)
+          previewEl.appendChild(el)
+        }
+
+        var TEXT_MAX = 256 * 1024
+        function renderText(extra, entry) {
+          if (entry.size > TEXT_MAX) {
+            renderMeta(entry, '文件过大，不支持文本预览')
+            return
+          }
+          fetch(entryUrl(extra, entry.name))
+            .then(function (resp) {
+              if (!resp.ok) throw new Error('HTTP ' + resp.status)
+              return resp.text()
+            })
+            .then(function (text) {
+              var box = document.createElement('div')
+              box.className = 'text-preview'
+              var pre = document.createElement('pre')
+              pre.textContent = text
+              box.appendChild(pre)
+              previewEl.innerHTML = ''
+              previewEl.appendChild(box)
+            })
+            .catch(function (err) { showError('文本读取失败：' + (err && err.message || err)) })
+        }
+
+        function renderMeta(entry, note) {
+          var html = '<div class="meta-card">'
+            + '<div class="name">' + escapeHtml(entry.name) + '</div>'
+            + '<div class="row">大小: ' + formatSize(entry.size) + '</div>'
+            + (entry.compressedSize ? '<div class="row">压缩后: ' + formatSize(entry.compressedSize) + '</div>' : '')
+            + '<div class="row" style="margin-top:10px;color:#9ca3af;">' + escapeHtml(note || '不支持内联预览') + '</div>'
+            + '</div>'
+          previewEl.innerHTML = html
+        }
+
+        function escapeHtml(s) {
+          return String(s).replace(/[&<>"']/g, function (c) {
+            return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]
+          })
+        }
+
+        function selectEntry(extra, entry) {
+          if (!entry || entry.isDir) return
+          markActive(entry.name)
+          if (entry.previewType === 'image') renderImage(extra, entry)
+          else if (entry.previewType === 'video') renderMedia(extra, entry, 'video')
+          else if (entry.previewType === 'audio') renderMedia(extra, entry, 'audio')
+          else if (entry.previewType === 'text') renderText(extra, entry)
+          else renderMeta(entry, '不支持内联预览')
+        }
+
+        var activeName = null
+        function markActive(name) {
+          activeName = name
+          var nodes = treeEl.querySelectorAll('.node.file')
+          for (var i = 0; i < nodes.length; i++) {
+            if (nodes[i].getAttribute('data-name') === name) nodes[i].classList.add('active')
+            else nodes[i].classList.remove('active')
+          }
+        }
+
+        function iconFor(entry) {
+          if (entry.isDir) return '📁'
+          if (entry.previewType === 'image') return '🖼️'
+          if (entry.previewType === 'video') return '🎬'
+          if (entry.previewType === 'audio') return '🎵'
+          if (entry.previewType === 'text') return '📄'
+          return '📦'
+        }
+
+        // 构建树：按路径分段组织。
+        function buildTree(entries, extra) {
+          // 隐式目录：从文件路径补齐中间目录节点。
+          var dirMap = {} // path -> {name, isDir:true, children:{}, size:0, _expanded:true}
+          var root = { name: '', isDir: true, children: {}, size: 0, _expanded: true }
+          function ensureDir(parts) {
+            var cur = root
+            var acc = ''
+            for (var i = 0; i < parts.length; i++) {
+              acc = acc ? acc + '/' + parts[i] : parts[i]
+              if (!cur.children[parts[i]]) {
+                cur.children[parts[i]] = { name: acc, isDir: true, children: {}, size: 0, _expanded: false }
+              }
+              cur = cur.children[parts[i]]
+            }
+            return cur
+          }
+          entries.forEach(function (entry) {
+            if (entry.isDir) {
+              var parts = entry.name.replace(/\/$/, '').split('/')
+              if (parts.length === 1 && parts[0] === '') return
+              ensureDir(parts)
+              return
+            }
+            var slash = entry.name.lastIndexOf('/')
+            if (slash >= 0) ensureDir(entry.name.slice(0, slash).split('/'))
+            var fileName = slash >= 0 ? entry.name.slice(slash + 1) : entry.name
+            var parent = slash >= 0 ? ensureDir(entry.name.slice(0, slash).split('/')) : root
+            parent.children[fileName] = entry
+          })
+          return root
+        }
+
+        function renderTree(node, extra, container) {
+          var keys = Object.keys(node.children).sort(function (a, b) {
+            var A = node.children[a], B = node.children[b]
+            if (A.isDir !== B.isDir) return A.isDir ? -1 : 1
+            return a.localeCompare(b)
+          })
+          keys.forEach(function (key) {
+            var child = node.children[key]
+            var displayName = child.isDir ? key : (key.indexOf('.') > -1 ? key : key)
+            var nodeEl = document.createElement('div')
+            nodeEl.className = 'node ' + (child.isDir ? 'dir' : 'file')
+            nodeEl.setAttribute('data-name', child.isDir ? '' : child.name)
+            var sizeText = child.isDir ? '' : formatSize(child.size)
+            nodeEl.innerHTML = '<span class="nicon">' + iconFor(child) + '</span>'
+              + '<span class="name">' + escapeHtml(displayName) + '</span>'
+              + (sizeText ? '<span class="size">' + sizeText + '</span>' : '')
+            container.appendChild(nodeEl)
+            if (child.isDir) {
+              var childWrap = document.createElement('div')
+              childWrap.className = 'children'
+              container.appendChild(childWrap)
+              renderTree(child, extra, childWrap)
+              nodeEl.addEventListener('click', function () {
+                childWrap.classList.toggle('hidden')
+              })
+            } else {
+              nodeEl.addEventListener('click', function () {
+                selectEntry(extra, child)
+              })
+            }
+          })
+        }
+
+        function renderAll(index, extra) {
+          var entries = index.entries || []
+          var fileCount = 0
+          entries.forEach(function (e) { if (!e.isDir) fileCount += 1 })
+          countEl.textContent = fileCount + ' 项'
+          treeEl.innerHTML = ''
+          var tree = buildTree(entries, extra)
+          renderTree(tree, extra, treeEl)
+          // 默认选第一个图片或第一个文件
+          var firstImage = null, firstFile = null
+          for (var i = 0; i < entries.length; i++) {
+            if (entries[i].isDir) continue
+            if (!firstFile) firstFile = entries[i]
+            if (!firstImage && entries[i].previewType === 'image') { firstImage = entries[i]; break }
+          }
+          if (firstImage || firstFile) selectEntry(extra, firstImage || firstFile)
+        }
+
+        function boot() {
+          if (!indexUrl) {
+            showError('启动参数缺失，无法加载归档索引')
+            notifyError('missing indexUrl')
+            return
+          }
+          var extra = deriveExtraBase(indexUrl)
+          if (!extra) {
+            showError('无法解析归档资源 URL')
+            notifyError('invalid indexUrl')
+            return
+          }
+          fetch(indexUrl)
+            .then(function (resp) {
+              if (!resp.ok) throw new Error('HTTP ' + resp.status)
+              return resp.json()
+            })
+            .then(function (index) {
+              if (!index || !Array.isArray(index.entries)) throw new Error('归档索引格式无效')
+              renderAll(index, extra)
+            })
+            .catch(function (err) {
+              showError('读取归档索引失败：' + (err && err.message || err))
+              notifyError(err && err.message || 'index fetch failed')
+            })
+        }
+
+        boot()
+      })()
+    </script>
+  </body>
+</html>

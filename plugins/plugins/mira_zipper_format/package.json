@@ -1,0 +1,29 @@
+{
+  "name": "mira_zipper_format",
+  "version": "1.0.0",
+  "description": "ZIP archive read-only browse/preview support for Mira",
+  "author": "Mira Team",
+  "license": "ISC",
+  "main": "dist/index.js",
+  "files": ["dist/**/*", "web/**/*", "package.json", "README.md"],
+  "mira": {
+    "id": "mira_zipper_format",
+    "title": "归档浏览",
+    "icon": "folder_zip",
+    "category": "storage",
+    "tags": ["zip", "archive", "归档", "压缩"]
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "npm run build && node test.js && node test-browser-bundle.js"
+  },
+  "dependencies": {
+    "sharp": "^0.35.3",
+    "yauzl": "^3.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/yauzl": "^2.10.3",
+    "typescript": "^5.7.0"
+  }
+}

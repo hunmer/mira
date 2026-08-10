@@ -53,5 +53,15 @@
     "name": "mira_pag_format",
     "enabled": true,
     "path": "mira_pag_format"
+  },
+  {
+    "name": "pdf-viewer",
+    "enabled": true,
+    "path": "pdf-viewer"
+  },
+  {
+    "name": "mira_zipper_format",
+    "enabled": true,
+    "path": "mira_zipper_format"
   }
 ]

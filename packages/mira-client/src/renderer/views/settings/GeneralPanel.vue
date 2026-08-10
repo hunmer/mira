@@ -160,6 +160,60 @@
         tweakcn.com
       </Button>
     </div>
+
+    <!-- 字体大小 -->
+    <div>
+      <div class="flex items-center justify-between gap-4 mb-2.5">
+        <div>
+          <label class="text-xs font-medium text-muted-foreground uppercase tracking-wider block">
+            {{ t('settings.fontSize') }}
+          </label>
+          <p class="text-muted-foreground text-sm mt-0.5">{{ t('settings.fontSizeDesc') }}</p>
+        </div>
+        <span class="text-xs font-medium text-foreground shrink-0 w-10 text-right tabular-nums">
+          {{ Math.round(settingsStore.settings.fontSizeScale * 100) }}%
+        </span>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="text-xs text-muted-foreground shrink-0 w-6">{{ t('settings.fontSizeSmall') }}</span>
+        <Slider
+          :model-value="[settingsStore.settings.fontSizeScale]"
+          :min="0.85"
+          :max="1.3"
+          :step="0.05"
+          class="flex-1"
+          @update:model-value="(v: number[] | undefined) => v && handleSettingChange('fontSizeScale', v[0])"
+        />
+        <span class="text-xs text-muted-foreground shrink-0 w-6">{{ t('settings.fontSizeLarge') }}</span>
+      </div>
+    </div>
+
+    <!-- 界面缩放 -->
+    <div>
+      <div class="flex items-center justify-between gap-4 mb-2.5">
+        <div>
+          <label class="text-xs font-medium text-muted-foreground uppercase tracking-wider block">
+            {{ t('settings.uiZoom') }}
+          </label>
+          <p class="text-muted-foreground text-sm mt-0.5">{{ t('settings.uiZoomDesc') }}</p>
+        </div>
+        <span class="text-xs font-medium text-foreground shrink-0 w-10 text-right tabular-nums">
+          {{ Math.round(settingsStore.settings.uiZoom * 100) }}%
+        </span>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="text-xs text-muted-foreground shrink-0 w-6">{{ t('settings.uiZoomSmall') }}</span>
+        <Slider
+          :model-value="[settingsStore.settings.uiZoom]"
+          :min="0.7"
+          :max="1.5"
+          :step="0.05"
+          class="flex-1"
+          @update:model-value="(v: number[] | undefined) => v && handleSettingChange('uiZoom', v[0])"
+        />
+        <span class="text-xs text-muted-foreground shrink-0 w-6">{{ t('settings.uiZoomLarge') }}</span>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -172,6 +226,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
+import { Slider } from '@/components/ui/slider'
 import { ExternalLink } from 'lucide-vue-next'
 import { DEFAULT_PRIMARY_COLORS } from '@renderer/utils/theme-style'
 import { languageOptions } from './settingsConfig'

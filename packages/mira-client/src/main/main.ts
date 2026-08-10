@@ -209,8 +209,8 @@ class MiraApplication {
 
   /**
    * 读取持久化的网络代理配置并应用：
-   *   1. DownloadService.setProxy —— 设置 undici 全局 dispatcher（主进程 fetch）
-   *   2. session.defaultSession.setProxy —— 渲染层 fetch（如插件市场目录拉取）
+   *   1. DownloadService.setProxy —— 同步 HTTP_PROXY/HTTPS_PROXY 环境变量（供子进程）
+   *   2. session.defaultSession.setProxy —— 渲染层 fetch 与主进程 net.request 的代理
    *
    * 配置文件路径与渲染层 ConfigStorage 一致：resources/configs/mira-settings.json。
    */

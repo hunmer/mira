@@ -1,6 +1,5 @@
 {
   "documentPreview": {
-    "loadPdfFailed": "Failed to load PDF file",
     "noTextContent": "Unable to load text content",
     "loadTextFailed": "Failed to load text content",
     "saveMarkdownFailed": "Failed to save Markdown",

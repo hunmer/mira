@@ -1,0 +1,19 @@
+{
+  "pluginName": "归档浏览",
+  "pluginId": "c3e7a1f2-9b4d-4e8a-b6c1-2f5d7a9e1b04",
+  "priority": 10,
+  "version": "1.0.0",
+  "index": "index.js",
+  "tags": ["zip", "archive", "归档", "压缩", "预览"],
+  "category": "productivity",
+  "description": "为 .zip 归档提供只读浏览预览：条目树、图片/文本/音视频内联预览，首图缩略图。",
+  "author": "Mira Team",
+  "enable": true,
+  "config": {},
+  "hotkey": {},
+  "events": [],
+  "dependencies": [],
+  "permissions": ["ui", "dom"],
+  "minAppVersion": "1.0.0",
+  "platform": ["win32", "darwin", "linux"]
+}

@@ -4,11 +4,8 @@
       <PreviewHeader :file-info="fileInfo" :save-visible="isMarkdown" :saving="isSaving" @save="saveMarkdown"
         @renamed="$emit('renamed', $event)" @error="$emit('error', $event)" />
 
-      <!-- PDF预览 -->
-      <div v-if="isPDF" ref="pdfContainer" class="pdfobject-container flex-1 min-h-0" />
-
       <!-- Markdown 编辑器 -->
-      <div v-else-if="isMarkdown" class="flex-1 min-h-0 bg-white overflow-hidden">
+      <div v-if="isMarkdown" class="flex-1 min-h-0 bg-white overflow-hidden">
         <MdEditor v-model="textContent" class="h-full" style="height: 100%" />
       </div>
 
@@ -35,9 +32,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
-import * as PDFObject from 'pdfobject'
 import { MdEditor } from 'md-editor-v3'
 import 'md-editor-v3/lib/style.css'
 import { miraSDKService } from '../../services/MiraSDKService'
@@ -56,7 +52,6 @@ const emit = defineEmits<{
 
 const textContent = ref('')
 const isSaving = ref(false)
-const pdfContainer = ref<HTMLElement | null>(null)
 const documentUrl = computed(() => {
   if (!props.fileInfo) return ''
 
@@ -71,12 +66,6 @@ const documentUrl = computed(() => {
   return ''
 })
 
-const isPDF = computed(() => {
-  const mimeType = props.fileInfo?.mimeType?.toLowerCase() || ''
-  const fileName = (props.fileInfo?.name || props.fileInfo?.title || '').toLowerCase()
-  return mimeType.includes('pdf') || fileName.endsWith('.pdf')
-})
-
 const isTextFile = computed(() => {
   const mimeType = props.fileInfo?.mimeType?.toLowerCase() || ''
   const fileName = (props.fileInfo?.name || props.fileInfo?.title || '').toLowerCase()
@@ -89,15 +78,6 @@ const isMarkdown = computed(() => {
   const fileName = (props.fileInfo?.name || props.fileInfo?.title || '').toLowerCase()
   return fileName.endsWith('.md') || props.fileInfo?.mimeType?.toLowerCase() === 'text/markdown'
 })
-
-const embedPDF = async (): Promise<void> => {
-  if (!isPDF.value) return
-  if (!documentUrl.value) return emit('error', t('preview.documentPreview.loadPdfFailed'))
-  await nextTick()
-  if (pdfContainer.value) {
-    PDFObject.embed(documentUrl.value, pdfContainer.value, { width: '100%', height: '100%' })
-  }
-}
 
 const downloadFile = (): void => {
   if (documentUrl.value) {
@@ -163,14 +143,11 @@ const saveMarkdown = async (): Promise<void> => {
   }
 }
 onMounted(() => {
-  if (isPDF.value) {
-    embedPDF()
-  } else if (isTextFile.value) {
+  if (isTextFile.value) {
     loadTextContent()
   }
 })
 
-watch(documentUrl, () => embedPDF())
 onBeforeUnmount(() => {
   if (documentUrl.value.startsWith('blob:')) URL.revokeObjectURL(documentUrl.value)
 })

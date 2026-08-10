@@ -1,0 +1,25 @@
+{
+  "name": "pdf-viewer",
+  "version": "1.0.0",
+  "description": "PDF 文档预览插件，使用浏览器内置 PDF 渲染能力，前端无需引入 PDF 依赖。",
+  "author": "hunmer",
+  "license": "ISC",
+  "main": "dist/index.js",
+  "files": ["dist/**/*", "web/**/*"],
+  "mira": {
+    "id": "pdf-viewer",
+    "title": "PDF 文档预览",
+    "icon": "📄",
+    "category": "storage",
+    "tags": ["PDF", "文档", "预览"]
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "npm run build && node test.js"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.3"
+  }
+}

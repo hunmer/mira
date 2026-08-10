@@ -1,6 +1,5 @@
 {
   "documentPreview": {
-    "loadPdfFailed": "无法加载 PDF 文件",
     "noTextContent": "无法加载文本内容",
     "loadTextFailed": "加载文本内容失败",
     "saveMarkdownFailed": "保存 Markdown 失败",

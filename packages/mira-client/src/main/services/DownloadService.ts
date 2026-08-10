@@ -5,20 +5,18 @@
  * 的文件下载能力。供 PluginHandler 的插件市场下载链路使用，未来其它主进程下载
  * 场景也可复用。
  *
- * 代理策略：调用 setProxy() 时通过 undici 的 setGlobalDispatcher 全局注入
- * ProxyAgent，从而使本进程内所有的 Node fetch（含本服务的 downloadFile）自动走
- * 代理；关闭时恢复为默认 Agent。同时同步写入/清除 HTTP_PROXY / HTTPS_PROXY 环境
- * 变量，让 electron-updater、npm 子进程等读 env 的组件也能受益。
+ * 代理策略：本服务自身不再管理 dispatcher。HTTP 代理由调用方通过
+ * Electron session.defaultSession.setProxy 统一配置（见 NetworkHandlers /
+ * MiraApplication.applyPersistedProxy）。这里所有请求均使用 Electron 的
+ * net.request，它会自动跟随当前 session 的代理规则。
  *
- * 注意：本服务对全局 dispatcher 做了进程级修改——目前 mira-client 主进程内
- * 所有 fetch 都期望走同一代理，这是预期行为。
+ * 注意：为兼容子进程 / electron-updater 等读 env 的组件，setProxy 仅负责
+ * 写入/清除 HTTP_PROXY / HTTPS_PROXY 环境变量。
  */
 import { createHash } from 'crypto'
+import { net } from 'electron'
+import { Readable } from 'stream'
 import { logger } from '../utils/Logger'
-
-// undici 随 Node 18+/Electron 内置，无需新增依赖。这里用 require 避免
-// 主进程 TS 项目的类型解析问题（undici 没有作为直接依赖安装）。
-const { ProxyAgent, Agent, setGlobalDispatcher, getGlobalDispatcher } = require('undici')
 
 export interface ProxyConfig {
   /** 是否启用代理 */
@@ -45,22 +43,83 @@ export interface ProxyTestResult {
   message: string
 }
 
+/**
+ * 用 Electron net.request 发起一次请求，返回 { statusCode, headers, body }。
+ * - 自动跟随当前 session 代理规则（session.defaultSession.setProxy 设置）。
+ * - 支持 AbortSignal 取消。
+ */
+function requestWithElectron(
+  url: string,
+  options: { method?: 'GET' | 'HEAD'; signal?: AbortSignal; timeoutMs?: number } = {}
+): Promise<{ statusCode: number; headers: Record<string, string[]>; stream: Readable }> {
+  const { method = 'GET', signal, timeoutMs = 0 } = options
+  return new Promise((resolve, reject) => {
+    const req = net.request(url)
+    req.setHeader('User-Agent', 'Mira-Desktop')
+    if (method === 'HEAD') req.method = 'HEAD'
+
+    let settled = false
+    const cleanup = () => {
+      if (timeoutMs > 0) clearTimeout(timer as any)
+      signal?.removeEventListener('abort', onAbort)
+    }
+    const onAbort = () => {
+      if (settled) return
+      settled = true
+      cleanup()
+      try { req.abort() } catch { /* ignore */ }
+      reject(new DOMException('The user aborted a request.', 'AbortError'))
+    }
+    const timer = timeoutMs > 0 ? setTimeout(() => {
+      if (settled) return
+      settled = true
+      cleanup()
+      try { req.abort() } catch { /* ignore */ }
+      reject(new Error(`请求超时（${timeoutMs}ms）：${url}`))
+    }, timeoutMs) : null
+
+    if (signal?.aborted) {
+      onAbort()
+      return
+    }
+    signal?.addEventListener('abort', onAbort)
+
+    req.on('response', (response) => {
+      if (settled) return
+      settled = true
+      cleanup()
+      const headers: Record<string, string[]> = {}
+      // Electron IncomingMessage headers 是 Record<string, string[]>
+      const rawHeaders = (response as any).headers || {}
+      for (const [k, v] of Object.entries(rawHeaders)) {
+        headers[k] = Array.isArray(v) ? (v as string[]) : [String(v)]
+      }
+      resolve({ statusCode: response.statusCode, headers, stream: Readable.fromWeb(response as any) })
+    })
+    req.on('error', (err) => {
+      if (settled) return
+      settled = true
+      cleanup()
+      reject(err)
+    })
+    req.on('abort', () => {
+      if (settled) return
+      settled = true
+      cleanup()
+      reject(new DOMException('The user aborted a request.', 'AbortError'))
+    })
+
+    req.end()
+  })
+}
+
 export class DownloadService {
   private static instance: DownloadService | null = null
 
   /** 当前生效的代理配置（缓存，便于 testProxy 时复用/恢复） */
   private currentProxy: ProxyConfig = { enabled: false, url: '' }
-  /** 默认 dispatcher（恢复代理关闭时使用） */
-  private defaultDispatcher: unknown = null
 
-  private constructor() {
-    try {
-      // 记录进程启动时的默认 dispatcher，关闭代理时恢复它
-      this.defaultDispatcher = getGlobalDispatcher()
-    } catch {
-      this.defaultDispatcher = null
-    }
-  }
+  private constructor() {}
 
   static getInstance(): DownloadService {
     if (!DownloadService.instance) {
@@ -70,7 +129,8 @@ export class DownloadService {
   }
 
   /**
-   * 设置进程级代理。会立即生效于此后所有的 fetch 调用。
+   * 同步 HTTP_PROXY / HTTPS_PROXY 环境变量，便于 electron-updater、npm 子进程
+   * 等读 env 的组件受益。实际网络请求的代理由 Electron session.setProxy 统一控制。
    */
   setProxy(config: ProxyConfig): void {
     const url = (config?.url || '').trim()
@@ -79,34 +139,17 @@ export class DownloadService {
     this.currentProxy = { enabled, url }
 
     if (enabled) {
-      try {
-        const agent = new ProxyAgent(url)
-        setGlobalDispatcher(agent)
-        // 同步环境变量，便于子进程 / electron-updater 等读取
-        process.env.HTTP_PROXY = url
-        process.env.HTTPS_PROXY = url
-        process.env.http_proxy = url
-        process.env.https_proxy = url
-        logger.info('DownloadService', `Proxy enabled: ${url}`)
-      } catch (err) {
-        logger.error('DownloadService', `Failed to set proxy ${url}: ${err instanceof Error ? err.message : String(err)}`)
-      }
+      process.env.HTTP_PROXY = url
+      process.env.HTTPS_PROXY = url
+      process.env.http_proxy = url
+      process.env.https_proxy = url
+      logger.info('DownloadService', `Proxy env set: ${url}`)
     } else {
-      // 恢复默认 dispatcher
-      try {
-        if (this.defaultDispatcher) {
-          setGlobalDispatcher(this.defaultDispatcher as any)
-        } else {
-          setGlobalDispatcher(new Agent())
-        }
-      } catch {
-        /* ignore */
-      }
       delete process.env.HTTP_PROXY
       delete process.env.HTTPS_PROXY
       delete process.env.http_proxy
       delete process.env.https_proxy
-      logger.info('DownloadService', 'Proxy disabled (direct connection)')
+      logger.info('DownloadService', 'Proxy env cleared (session-level proxy still applies)')
     }
   }
 
@@ -117,37 +160,24 @@ export class DownloadService {
 
   /**
    * 下载单个文件并以 Buffer 返回。
-   * 流式读取 response.body 以便逐块上报进度；可通过 signal 取消。
-   * 全局 dispatcher 已是 ProxyAgent 时，自动走代理，无需在此显式传 dispatcher。
+   * 使用 Electron net.request（自动跟随 session 代理），流式逐块上报进度；
+   * 可通过 signal 取消。
    */
   async downloadFile(fileUrl: string, opts: DownloadOptions = {}): Promise<Buffer> {
     const { checksum, signal, onChunk } = opts
 
-    const response = await fetch(fileUrl, { signal })
-    if (!response.ok) {
-      throw new Error(`下载失败 (${response.status}): ${fileUrl}`)
-    }
-
-    // 流式读取，逐块累加并上报进度
-    const reader = response.body?.getReader()
-    if (!reader) {
-      // 无法获取 reader（理论上不会发生），退化为全量读取
-      const buf = Buffer.from(await response.arrayBuffer())
-      if (onChunk) onChunk(buf.length)
-      return this.verifyChecksum(buf, checksum, fileUrl)
+    const { statusCode, stream } = await requestWithElectron(fileUrl, { signal })
+    if (statusCode >= 400 || statusCode < 200) {
+      throw new Error(`下载失败 (${statusCode}): ${fileUrl}`)
     }
 
     const chunks: Buffer[] = []
     let total = 0
-    for (;;) {
-      const { done, value } = await reader.read()
-      if (done) break
-      if (value) {
-        const chunk = Buffer.isBuffer(value) ? value : Buffer.from(value)
-        chunks.push(chunk)
-        total += chunk.length
-        if (onChunk) onChunk(chunk.length)
-      }
+    for await (const chunk of stream as any) {
+      const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as Uint8Array)
+      chunks.push(buf)
+      total += buf.length
+      if (onChunk) onChunk(buf.length)
     }
     const buf = Buffer.concat(chunks, total)
     return this.verifyChecksum(buf, checksum, fileUrl)
@@ -169,13 +199,17 @@ export class DownloadService {
   }
 
   /**
-   * 测试代理连通性。在临时切换到指定代理后发起一次探测请求，探测结束后
-   * 恢复原代理配置。这样无论用户是否已「保存」，都能先「测试」当前输入。
+   * 测试代理连通性。临时把 session 切换到指定代理后发起探测请求，探测结束后
+   * 恢复原 session 代理配置。这样无论用户是否已「保存」，都能先「测试」当前输入。
    *
    * @param config   待测试的代理配置
    * @param testUrl  探测目标 URL，默认使用一个轻量的 204 探测点
    */
-  async testProxy(config: ProxyConfig, testUrl = 'https://www.google.com/generate_204'): Promise<ProxyTestResult> {
+  async testProxy(
+    config: ProxyConfig,
+    testUrl = 'https://www.google.com/generate_204'
+  ): Promise<ProxyTestResult> {
+    const { session } = await import('electron')
     const url = (config?.url || '').trim()
     if (!config?.enabled || !url) {
       return { success: false, message: '未启用代理或代理地址为空' }
@@ -184,20 +218,18 @@ export class DownloadService {
     const previous = this.currentProxy
     const start = Date.now()
     try {
-      // 临时切换到待测代理
-      const agent = new ProxyAgent(url)
-      setGlobalDispatcher(agent)
-
-      const response = await fetch(testUrl, { signal: AbortSignal.timeout(8000) })
+      // 临时切换 session 代理到待测配置
+      await session.defaultSession.setProxy({ proxyRules: url })
+      const { statusCode } = await requestWithElectron(testUrl, { timeoutMs: 8000 })
       const elapsedMs = Date.now() - start
-      const ok = response.ok
+      const ok = statusCode >= 200 && statusCode < 400
       return {
         success: ok,
-        statusCode: response.status,
+        statusCode,
         elapsedMs,
         message: ok
-          ? `连接成功（${response.status}，${elapsedMs}ms）`
-          : `代理可达但返回异常状态码（${response.status}）`,
+          ? `连接成功（${statusCode}，${elapsedMs}ms）`
+          : `代理可达但返回异常状态码（${statusCode}）`,
       }
     } catch (err) {
       const elapsedMs = Date.now() - start
@@ -208,15 +240,14 @@ export class DownloadService {
         message: `代理测试失败（${elapsedMs}ms）：${message}`,
       }
     } finally {
-      // 恢复到测试前的代理状态
+      // 恢复到测试前的 session 代理状态
       try {
         if (previous.enabled && previous.url) {
-          setGlobalDispatcher(new ProxyAgent(previous.url))
-        } else if (this.defaultDispatcher) {
-          setGlobalDispatcher(this.defaultDispatcher as any)
+          await session.defaultSession.setProxy({ proxyRules: previous.url })
         } else {
-          setGlobalDispatcher(new Agent())
+          await session.defaultSession.setProxy({ proxyRules: 'direct://' })
         }
+        await session.defaultSession.closeAllConnections()
       } catch {
         /* ignore restore failure */
       }

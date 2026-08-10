@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PDF 文档预览</title>
+    <style>
+      html, body, iframe { width: 100%; height: 100%; margin: 0; border: 0; }
+      body { overflow: hidden; background: #f3f4f6; }
+    </style>
+  </head>
+  <body>
+    <iframe id="viewer" title="PDF 文档预览"></iframe>
+    <script>
+      const params = new URLSearchParams(location.search)
+      const pdfUrl = params.get('pdfUrl') || ''
+      const fileName = params.get('fileName') || 'PDF'
+      document.title = fileName
+      document.getElementById('viewer').title = fileName
+      document.getElementById('viewer').src = pdfUrl
+    </script>
+  </body>
+</html>
