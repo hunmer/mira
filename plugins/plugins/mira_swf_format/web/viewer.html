@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SWF Player</title>
+    <link rel="stylesheet" href="./viewer.css" />
+    <script>
+      window.RufflePlayer = window.RufflePlayer || {}
+      window.RufflePlayer.config = {
+        autoplay: 'on',
+        contextMenu: 'off',
+        splashScreen: false
+      }
+    </script>
+    <script src="./ruffle/ruffle.js"></script>
+    <script defer src="./viewer.js"></script>
+  </head>
+  <body>
+    <main id="viewer" aria-label="SWF player"></main>
+    <div id="status" role="status">Loading...</div>
+  </body>
+</html>

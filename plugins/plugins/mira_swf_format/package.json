@@ -1,0 +1,24 @@
+{
+  "name": "mira_swf_format",
+  "version": "1.0.0",
+  "description": "SWF metadata, FFmpeg thumbnails, and Ruffle-based preview support for Mira",
+  "author": "Mira Team",
+  "license": "ISC",
+  "main": "dist/index.js",
+  "files": ["dist/**/*", "web/**/*", "package.json", "README.md", "THIRD_PARTY_NOTICES.md"],
+  "mira": {
+    "id": "mira_swf_format",
+    "title": "SWF Format",
+    "icon": "movie",
+    "category": "storage",
+    "tags": ["SWF", "Flash", "Ruffle", "thumbnail", "preview"]
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "npm run build && node test.js"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.7.0"
+  }
+}

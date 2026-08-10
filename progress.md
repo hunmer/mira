@@ -8,6 +8,22 @@
 - Confirmed the source is a plain SWF viewer/thumbnail extension using bundled Ruffle assets.
 - Identified unrelated active worktree changes and will merge manifest/package updates without replacing them.
 - Initial parallel dependency scan was interrupted by an expected `rg` no-match exit code; subsequent discovery uses per-command normalization.
+- Confirmed no existing headless-browser dependency and selected the minimal server metadata + Ruffle Web viewer architecture.
+- Deliberately skipped server-side content screenshots because the Eagle implementation relies on an unavailable host API.
+- Added `mira_swf_format` server/Web plugin, copied the bundled Ruffle runtime with license notices, and registered both source/runtime manifests.
+- Plugin `npm test` passed; server plugin `npm install` passed with only the existing 19 audit findings.
+- CodeGraph confirmed the handler/viewer contract matches `ServerFileFormatHandler` and authenticated `fileUrl` flow.
+- Server TypeScript passed; installed package resolves through the expected Junction.
+- Restarted `mira-app-server-dev` through procm; logs show `mira_swf_format` registered and loaded, and CLI health is `status: ok`.
+- Final plugin smoke test and `npm pack --dry-run` passed (16 files, 15.9 MB unpacked including Ruffle WASM).
+
+### Phase 17: SWF FFmpeg Thumbnail
+- **Status:** in progress
+- Confirmed the bundled FFmpeg supports SWF and performed a real SWF-to-PNG conversion.
+- Added `.swf` thumbnail registration using the host-resolved FFmpeg executable.
+- Real plugin smoke test passed: generated a valid FLV1 SWF fixture and extracted a non-empty PNG first frame.
+- Restarted via procm; startup logs confirm `[swf]` thumbnail generator registration and successful Ruffle asset serving.
+- CLI health returned `status: ok`.
 
 ## Session: 2026-08-10
 

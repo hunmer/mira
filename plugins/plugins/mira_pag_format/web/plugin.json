@@ -1,0 +1,15 @@
+{
+  "pluginName": "PAG 格式预览",
+  "pluginId": "2c6f4ed1-d7b9-4d6a-b0f8-8e0c8c9e6a1f",
+  "priority": 20,
+  "version": "1.0.0",
+  "index": "index.js",
+  "tags": ["PAG", "Portable Animated Graphics", "动画", "预览"],
+  "category": "productivity",
+  "description": "为 .pag 文件提供动画预览与缩略图。",
+  "author": "Mira Team",
+  "enable": true,
+  "config": {}, "hotkey": {}, "events": [], "dependencies": [],
+  "permissions": ["ui", "dom"], "minAppVersion": "1.0.0",
+  "platform": ["win32", "darwin", "linux"]
+}

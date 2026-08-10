@@ -4,7 +4,7 @@
 Add client and server plugin APIs for custom file formats, covering thumbnail/detail rendering and path-based backend processing, then document and verify the extension flow with a 3D-capable example where appropriate.
 
 ## Current Phase
-Phase 16 in progress
+Phase 17 complete
 
 ## Phases
 
@@ -120,10 +120,16 @@ Phase 16 in progress
 
 ### Phase 16: SWF Format Plugin Migration
 - [x] Read migration instructions, plugin architecture docs, and Eagle source manifest
-- [ ] Define the minimal server/viewer boundary and inspect Ruffle runtime requirements
-- [ ] Implement and register the Mira SWF server/Web plugin
-- [ ] Build, run focused viewer/handler checks, and verify runtime installation
-- **Status:** in_progress
+- [x] Define the minimal server/viewer boundary and inspect Ruffle runtime requirements
+- [x] Implement and register the Mira SWF server/Web plugin
+- [x] Build, run focused viewer/handler checks, and verify runtime installation
+- **Status:** complete
+
+### Phase 17: SWF FFmpeg Thumbnail
+- [x] Confirm the bundled FFmpeg supports SWF demuxing and frame extraction
+- [x] Register an FFmpeg-backed SWF thumbnail handler
+- [x] Run a real SWF-to-PNG regression test and verify server registration
+- **Status:** complete
 
 ## Key Questions
 1. Where are client and server plugin APIs constructed, activated, and disposed?
@@ -161,6 +167,7 @@ Phase 16 in progress
 | Dist inspection used a repository-root-relative path while running from the Server package | 1 | Re-run once with the absolute Core dist path |
 | Vitest 1.6 treated `vitest list` as a filename filter and found no file named `list` | 1 | Use `vitest run --testNamePattern='(?!)'` to collect configured tests while skipping all test bodies |
 | Parallel SWF dependency scan stopped when `rg` found no matches and returned exit code 1 | 1 | Re-run independent scans with explicit exit-code normalization |
+| SWF resolution smoke used `./dist/index.js` from the server plugin container root | 1 | Resolve the installed package by name from the same container |
 | Server TypeScript rejected Express wildcard access at `req.params[0]` | 1 | Cast params to its runtime string record before accessing the wildcard key |
 | Client type-check also reports an existing lazy-plugin type mismatch at `main.ts:51` | 1 | Confirm changed client files introduce no errors via production build and scoped diagnostics |
 | Mira CLI library listing requires login and no CLI profile is configured | 1 | Keep validation read-only; verify health plus local manifest/asset contracts without assuming credentials |

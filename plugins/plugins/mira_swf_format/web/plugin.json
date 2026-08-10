@@ -1,0 +1,19 @@
+{
+  "pluginName": "SWF Format",
+  "pluginId": "b2389538-38f6-4cd9-92b9-54a450d588b0",
+  "priority": 10,
+  "version": "1.0.0",
+  "index": "index.js",
+  "tags": ["SWF", "Flash", "Ruffle", "preview"],
+  "category": "productivity",
+  "description": "Preview SWF files with the bundled Ruffle emulator.",
+  "author": "Mira Team",
+  "enable": true,
+  "config": {},
+  "hotkey": {},
+  "events": [],
+  "dependencies": [],
+  "permissions": ["ui", "dom"],
+  "minAppVersion": "1.0.0",
+  "platform": ["win32", "darwin", "linux"]
+}

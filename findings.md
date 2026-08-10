@@ -53,6 +53,13 @@
 - Playback and thumbnail rendering both use the bundled Ruffle WebAssembly runtime.
 - Mira migration should replace Eagle local-file APIs with the server format viewer query and authenticated source-file URL.
 - Existing uncommitted EPUB/Lottie/plugin-manifest changes are user-owned and must be preserved.
+- The repository has no Playwright/Puppeteer/Chromium screenshot dependency. Eagle's thumbnail path depends on `eagle.window.capturePage()` and cannot be directly ported to the server.
+- Minimal boundary: server registers `.swf`, parses the 8-byte SWF header, and supplies an authenticated `fileUrl`; Web viewer loads the bundled Ruffle runtime and reports iframe errors to the host.
+- Do not add a browser dependency solely for thumbnails. The host fallback thumbnail/icon remains available; interactive playback is limited to hover/detail viewers.
+- The bundled Ruffle distribution is self-contained. Internal Browserify wrappers are vendor implementation details, not ambient CommonJS requirements.
+- The configured FFmpeg reports SWF demuxing support and successfully converts a generated FLV1-in-SWF fixture to PNG.
+- `ThumbnailService` stores its resolved FFmpeg executable at runtime; the plugin reuses that host path and falls back to `FFMPEG_PATH`/`ffmpeg`.
+- Runtime log verification showed viewer.html, viewer.js, Ruffle JS, core JS, and WASM assets served with HTTP 200; only optional sourcemap requests returned 404.
 
 ## Hovercard-only 3D Preview
 - `renderThumbnail` was the reason every visible 3D tile created an iframe/WebGL context.

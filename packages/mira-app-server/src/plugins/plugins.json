@@ -52,5 +52,15 @@
     "name": "mira_epub_format",
     "enabled": true,
     "path": "node_modules/mira_epub_format"
+  },
+  {
+    "name": "mira_swf_format",
+    "enabled": true,
+    "path": "node_modules/mira_swf_format"
+  },
+  {
+    "name": "mira_pag_format",
+    "enabled": true,
+    "path": "node_modules/mira_pag_format"
   }
 ]

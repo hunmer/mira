@@ -1,0 +1,10 @@
+{
+  "name": "mira_pag_format",
+  "version": "1.0.0",
+  "description": "PAG format thumbnails and preview for Mira",
+  "main": "dist/index.js",
+  "files": ["dist/**/*", "web/**/*", "package.json"],
+  "scripts": { "build": "tsc" },
+  "dependencies": {},
+  "devDependencies": { "@types/node": "^20.10.0", "typescript": "^5.7.0" }
+}
