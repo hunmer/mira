@@ -1,0 +1,19 @@
+{
+  "pluginName": "EPUB Reader",
+  "pluginId": "f6a7b8c9-d0e1-4f2a-9b3c-4d5e6f708192",
+  "priority": 10,
+  "version": "1.0.0",
+  "index": "index.js",
+  "tags": ["EPUB", "ebook", "reader"],
+  "category": "productivity",
+  "description": "Read EPUB files with cover thumbnails, navigation, search, and display settings.",
+  "author": "Mira Team",
+  "enable": true,
+  "config": {},
+  "hotkey": {},
+  "events": [],
+  "dependencies": [],
+  "permissions": ["ui", "dom"],
+  "minAppVersion": "1.0.0",
+  "platform": ["win32", "darwin", "linux"]
+}

@@ -1,0 +1,29 @@
+{
+  "name": "mira_epub_format",
+  "version": "1.0.0",
+  "description": "EPUB metadata, cover thumbnail, and reader support for Mira",
+  "author": "Mira Team",
+  "license": "ISC",
+  "main": "dist/index.js",
+  "files": ["dist/**/*", "web/**/*", "package.json", "README.md"],
+  "mira": {
+    "id": "mira_epub_format",
+    "title": "EPUB Format",
+    "icon": "menu_book",
+    "category": "storage",
+    "tags": ["EPUB", "ebook", "thumbnail", "reader"]
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "npm run build && node test.js && node test-browser-bundle.js"
+  },
+  "dependencies": {
+    "sharp": "^0.35.3",
+    "yauzl": "^3.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/yauzl": "^2.10.3",
+    "typescript": "^5.7.0"
+  }
+}

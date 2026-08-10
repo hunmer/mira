@@ -82,6 +82,15 @@ viewer 应：
 - 启动参数不完整或静态图也失败时显示明确错误，并通过 `postMessage` 通知宿主（如实现 hover iframe 回退）。
 - 通过 `api.media.getExtraFileList/getExtraFileUrl` 构造客户端 `getPreviewUrl`；注册项的 `pluginId` 必须与 `web/plugin.json` 一致。
 
+复用 Eagle 已编译的 viewer 资产时，不能只检查入口 HTML。迁移前用 `rg` 扫描主 bundle 及其静态依赖中的 `require(`、`__dirname`、`module.exports`、`eagle.` 和未显式加载的全局变量（尤其 `i18next`）：
+
+- 优先从源代码重新构建为纯浏览器 bundle。只有缺少源工程时，才在迁移后的 bundle 内增加局部兼容代码。
+- 不要在 `window` 上伪造通用 `require`。只为实际调用的模块和函数做白名单映射；未知模块立即抛错。若 `__dirname` 还用于静态资源路径，显式映射到 viewer 根目录并验证图片 URL。
+- viewer 不需要国际化时，删除 `i18next` 等运行时依赖，使用固定文案或小型本地文案表。不要仅创建一个假的全局 `i18next` 来掩盖遗漏依赖。
+- Vue/React 首次渲染异常可能中断 DOM 挂载，随后出现 `null.querySelector` 等连锁错误。始终按控制台时间顺序修复第一个异常；只有首个异常消失后 DOM 仍缺失，才修改生命周期或加空值处理。
+- 连续出现运行时错误时，在 viewer 初始化、资源加载和 DOM 查询边界增加带插件名前缀的定向诊断信息；不要输出本地文件路径或 token。
+- 修改带 hash 文件名的复用 bundle 后，更新文件名或给入口 URL 增加版本参数，避免浏览器继续使用旧缓存。
+
 服务端 viewer 的 `entry` 必须在插件 `web/` 内存在；宿主从 `/server-plugins/<library>/<plugin>/<entry>` 托管它。不要为已有附加文件能力再添加自定义 HTTP 路由。
 
 ## 6. 清单、依赖与构建
@@ -102,12 +111,15 @@ viewer 应：
 2. 查日志确认 `ThumbnailService` 注册了目标扩展名且插件已加载；同时确认没有 `Failed to load plugin`。
 3. 用 `npx ts-node packages/mira-app-server/src/cli.ts --json system health` 检查服务返回 `status: ok`。
 4. 导入真实样本，人工确认缩略图、viewer 静态回退、视频循环和容器缺资源时的错误提示。
+5. 对复用的浏览器 bundle 留下最小回归检查：断言没有未提供的全局依赖，所有残留 `require` 目标都在白名单内。再从 `/server-plugins/<library>/<plugin>/...` 读取实际托管的 viewer 与 bundle，确认服务返回的是新版本，不要只检查磁盘文件。
 
 ## 常见错误
 
 - 只更新源码插件目录，忘记运行时 `node_modules` 的本地 file 依赖，导致 `Cannot find module`。
 - `plugin.json` 的 `pluginId` 与 IIFE 常量不一致，导致 factory 找不到。
 - 把 Eagle 的 `require`, `eagle.item`, `thumbnailURL`, `item.refreshThumbnail` 或本地路径 query 直接带入 Mira。
+- 入口改成 IIFE 后就认为迁移完成，遗漏已编译 chunk 内的 `require`、`__dirname` 或 `i18next`，导致纯浏览器 iframe 启动失败。
+- 看到 `null.querySelector` 就直接补空值判断，忽略更早的渲染异常已经阻止组件挂载。
 - 允许任意 ZIP entry 名称或任意附加文件名，造成路径穿越或缓存污染。
 - 将视频错误直接作为 viewer 总错误，丢失仍可用的静态照片回退。
 - 把 `dist/` 产物提交判断当成接口设计；以插件构建脚本和宿主加载路径为准。

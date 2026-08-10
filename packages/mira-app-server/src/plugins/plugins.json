@@ -47,5 +47,10 @@
     "name": "mira_lottie_format",
     "enabled": true,
     "path": "node_modules/mira_lottie_format"
+  },
+  {
+    "name": "mira_epub_format",
+    "enabled": true,
+    "path": "node_modules/mira_epub_format"
   }
 ]

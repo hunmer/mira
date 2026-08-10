@@ -140,6 +140,7 @@
     "mira_3d_format": "file:../../../../plugins/plugins/mira_3d_format",
     "mira_duplicate_scanner": "file:../../../../plugins/plugins/mira_duplicate_scanner",
     "mira_eagle_extension": "file:../../../../plugins/plugins/mira_eagle_extension",
+    "mira_epub_format": "file:../../../../plugins/plugins/mira_epub_format",
     "mira_livp_format": "file:../../../../plugins/plugins/mira_livp_format",
     "mira_lottie_format": "file:../../../../plugins/plugins/mira_lottie_format",
     "mira_spine_format": "file:../../../../plugins/plugins/mira_spine_format",

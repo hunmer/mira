@@ -48,6 +48,12 @@
 ## Visual/Browser Findings
 - No browser or image inspection performed.
 
+## SWF Format Plugin Migration
+- Source plugin is `eagle-plugin-swf` v1.0.1 and handles ordinary `.swf` files, not a ZIP/container format.
+- Playback and thumbnail rendering both use the bundled Ruffle WebAssembly runtime.
+- Mira migration should replace Eagle local-file APIs with the server format viewer query and authenticated source-file URL.
+- Existing uncommitted EPUB/Lottie/plugin-manifest changes are user-owned and must be preserved.
+
 ## Hovercard-only 3D Preview
 - `renderThumbnail` was the reason every visible 3D tile created an iframe/WebGL context.
 - The existing `MediaPreviewContent.vue` is the shared hovercard content boundary; adding `renderHoverCard` there keeps plugin-specific DOM lifecycle centralized.

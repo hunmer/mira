@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="./logo.png" />
+    <script>
+      window.eagle = {
+        app: { theme: 'LIGHT', platform: navigator.platform.toLowerCase().includes('mac') ? 'darwin' : 'win32' },
+        plugin: { manifest: { id: 'mira-epub-reader' } },
+        onPluginCreate: function (callback) { Promise.resolve().then(callback) }
+      }
+      function notifyError(error) {
+        parent.postMessage({ type: 'mira-epub-preview-error', fileId: new URLSearchParams(location.search).get('fileId') || '', message: String(error?.message || error) }, '*')
+      }
+      addEventListener('error', function (event) { notifyError(event.error || event.message) })
+      addEventListener('unhandledrejection', function (event) { notifyError(event.reason) })
+    </script>
+    <script type="module" crossorigin src="./assets/js/index-3e85d680.js?v=3"></script>
+    <link rel="modulepreload" crossorigin href="./assets/js/@vue-0abaa203.js" />
+    <link rel="modulepreload" crossorigin href="./assets/js/@element-plus-0eb908f2.js" />
+    <link rel="modulepreload" crossorigin href="./assets/js/@ctrl-ab5a38b7.js" />
+    <link rel="modulepreload" crossorigin href="./assets/js/@vueuse-a2bc4c81.js" />
+    <link rel="modulepreload" crossorigin href="./assets/js/@popperjs-8eb851c6.js" />
+    <link rel="modulepreload" crossorigin href="./assets/js/lodash-es-58c463ae.js" />
+    <link rel="modulepreload" crossorigin href="./assets/js/element-plus-d9ab7494.js" />
+    <link rel="modulepreload" crossorigin href="./assets/js/vue-9128ba93.js" />
+    <link rel="modulepreload" crossorigin href="./assets/js/@imengyu-0ae6bf7f.js" />
+    <link rel="modulepreload" crossorigin href="./assets/js/vue-tippy-00819d59.js" />
+    <link rel="modulepreload" crossorigin href="./assets/js/mousetrap-7826f5a8.js" />
+    <link rel="modulepreload" crossorigin href="./assets/js/vue-mousetrap-72e5ca11.js" />
+    <link rel="stylesheet" href="./assets/css/element-plus-9868bd61.css" />
+    <link rel="stylesheet" href="./assets/css/@imengyu-d330bfc1.css" />
+    <link rel="stylesheet" href="./assets/css/index-30de8696.css" />
+  </head>
+  <body>
+    <div id="app"></div>
+    <script src="./epub/js/libs/sanitize-html.min.js"></script>
+    <script src="./epub/js/libs/jszip.min.js"></script>
+    <script src="./epub/js/libs/epub.js"></script>
+    <script src="./epub/js/script.js"></script>
+  </body>
+</html>

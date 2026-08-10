@@ -2,6 +2,15 @@
 
 ## Session: 2026-08-10
 
+### Phase 16: SWF Format Plugin Migration
+- **Status:** in progress
+- Read the requested migration skill, server/client plugin documentation, existing format plugins, and Eagle SWF manifest.
+- Confirmed the source is a plain SWF viewer/thumbnail extension using bundled Ruffle assets.
+- Identified unrelated active worktree changes and will merge manifest/package updates without replacing them.
+- Initial parallel dependency scan was interrupted by an expected `rg` no-match exit code; subsequent discovery uses per-command normalization.
+
+## Session: 2026-08-10
+
 ### Phase 15: Core Production Build Boundary
 - **Status:** in progress
 - Actions taken:
