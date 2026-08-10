@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useAuthStore } from '@/renderer/stores/auth'
 import { useMediaStore } from '@/renderer/stores/media'
+import { useSettingsStore } from '@/renderer/stores/settings'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { environment } from '@renderer/utils'
 import { shortcutService } from '@renderer/services/ShortcutService'
@@ -37,8 +38,24 @@ const emit = defineEmits<{
 
 const authStore = useAuthStore()
 const mediaStore = useMediaStore()
+const settingsStore = useSettingsStore()
 const router = useRouter()
 const avatarLoadError = ref(false)
+
+/** ws 连接状态对应的 badge 圆点颜色 */
+const connectionDotClass = computed(() => {
+  switch (settingsStore.connectionStatus) {
+    case 'connected':
+      return 'bg-green-500'
+    case 'connecting':
+    case 'reconnecting':
+      return 'bg-yellow-500'
+    case 'error':
+      return 'bg-destructive'
+    default:
+      return 'bg-muted-foreground/60'
+  }
+})
 /** 服务端控制对话框可见性（自包含在 HomeHeader 内） */
 const showServerDialog = ref(false)
 
@@ -98,7 +115,7 @@ const openDashboard = async () => {
     <!-- 用户头像 + 功能菜单（原 HomeToolbar 功能并入） -->
     <DropdownMenu>
       <DropdownMenuTrigger as-child>
-        <button class="h-8 w-8 flex items-center justify-center rounded-full hover:bg-primary/10 transition-colors outline-none">
+        <button class="relative h-8 w-8 flex items-center justify-center rounded-full hover:bg-primary/10 transition-colors outline-none">
           <img
             v-if="userAvatarUrl && !avatarLoadError"
             :src="userAvatarUrl"
@@ -109,6 +126,12 @@ const openDashboard = async () => {
           <div v-else class="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-white text-xs font-medium shadow-sm">
             {{ authStore.userDisplayName?.charAt(0)?.toUpperCase() || '?' }}
           </div>
+          <!-- ws 连接状态指示圆点 -->
+          <span
+            class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ring-2 ring-background transition-colors"
+            :class="connectionDotClass"
+            :title="settingsStore.connectionStatusText"
+          />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent class="min-w-[220px]" align="end" :side-offset="8">

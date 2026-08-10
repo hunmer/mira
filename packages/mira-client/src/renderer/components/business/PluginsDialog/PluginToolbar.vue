@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { Motion, LayoutGroup } from 'motion-v'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { ExpandableButton } from '@renderer/components/common'
 import { usePluginStore } from '@renderer/stores/plugin'
 import { useLibraryStore } from '@renderer/stores/library'
 import { useToast } from '@/renderer/composables/useToast'
@@ -80,16 +81,23 @@ const refreshPlugins = async () => {
 
     <!-- 操作按钮组 -->
     <div class="flex items-center space-x-2">
-      <!-- 搜索框 -->
-      <InputGroup class="w-64">
-        <InputGroupAddon>
-          <span class="material-icons text-sm">search</span>
-        </InputGroupAddon>
-        <InputGroupInput
-          v-model="ctx.searchQuery.value"
-          :placeholder="t('business.pluginsDialog.searchPlaceholder')"
-        />
-      </InputGroup>
+      <!-- 搜索栏（点击展开/折叠） -->
+      <ExpandableButton
+        icon="search"
+        :expand-tooltip="t('business.pluginsDialog.searchPlaceholder')"
+        :collapse-tooltip="t('common.close')"
+        class="shrink-0"
+      >
+        <InputGroup class="w-64">
+          <InputGroupAddon>
+            <span class="material-icons text-sm">search</span>
+          </InputGroupAddon>
+          <InputGroupInput
+            v-model="ctx.searchQuery.value"
+            :placeholder="t('business.pluginsDialog.searchPlaceholder')"
+          />
+        </InputGroup>
+      </ExpandableButton>
 
       <!-- 刷新按钮 -->
       <TooltipProvider :ignore-non-keyboard-focus="true">

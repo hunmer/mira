@@ -9,6 +9,7 @@ export { default as VirtualScrollComponent } from './VirtualScrollComponent.vue'
 export { default as LazyImageComponent } from './LazyImageComponent.vue'
 export { default as ThemeSwitcherComponent } from './ThemeSwitcherComponent.vue'
 export { default as AnimationComponent } from './AnimationComponent.vue'
+export { default as ExpandableButton } from './ExpandableButton.vue'
 export { default as ResponsiveLayoutComponent } from './ResponsiveLayoutComponent.vue'
 export { default as AccessibilityProvider } from './AccessibilityProvider.vue'
 
