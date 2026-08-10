@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import PluginIcon from '@/renderer/components/common/PluginIcon.vue'
+import TiltCard from '@/renderer/components/common/TiltCard.vue'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import type { PluginRuntime, MarketplacePluginEntry } from '@/shared/types'
 import { getMarketStatus, getPluginUpdate, getInstallPercent, getInstallPhase, platformLabel } from './utils'
@@ -45,7 +46,7 @@ const error = computed(() => (isRuntime.value ? runtime.value!.error : ''))
 </script>
 
 <template>
-  <div
+  <TiltCard
     @click="ctx.selectPlugin({ kind, pluginId })"
     :class="[
       'border rounded-lg p-4 hover:shadow-md cursor-pointer transition-all',
@@ -252,5 +253,5 @@ const error = computed(() => (isRuntime.value ? runtime.value!.error : ''))
         </template>
       </template>
     </div>
-  </div>
+  </TiltCard>
 </template>
