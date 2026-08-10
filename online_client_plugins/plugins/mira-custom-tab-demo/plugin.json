@@ -1,0 +1,19 @@
+{
+  "pluginName": "自定义 Tab Demo",
+  "pluginId": "7e2d31a4-8a3f-4bd8-a44c-f5a7b2d0c901",
+  "priority": 1,
+  "version": "1.0.0",
+  "index": "index.js",
+  "tags": ["demo", "tab", "ui"],
+  "category": "development",
+  "description": "演示通过 Client API 注册自定义 Tab，并使用 DOM 回调渲染交互式 UI。",
+  "author": "Mira Team",
+  "enable": true,
+  "config": {},
+  "hotkey": {},
+  "events": [],
+  "dependencies": [],
+  "permissions": ["ui"],
+  "minAppVersion": "1.0.0",
+  "platform": ["win32", "darwin", "linux"]
+}

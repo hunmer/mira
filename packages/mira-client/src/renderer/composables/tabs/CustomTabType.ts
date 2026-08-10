@@ -9,9 +9,13 @@ export class CustomTabType extends BaseTabType {
   iconColor = '#6B7280'
 
   getViewConfig(context: TabContext): TabViewConfig {
+    const view = context.tabData?.component
+    const isDomRenderer = context.tabData?.renderMode === 'dom'
     return {
-      component: context.tabData?.component,
-      props: context.tabData?.props,
+      component: isDomRenderer ? 'PluginCustomTabView' : view,
+      props: isDomRenderer
+        ? { render: view, context: { ...(context.tabData?.renderContext || {}), tabId: context.tabId } }
+        : context.tabData?.props,
       key: `${this.name}-${context.tabId}`
     }
   }

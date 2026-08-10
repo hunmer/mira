@@ -1,8 +1,4 @@
 ;(function () {
-  const query = new URLSearchParams(window.location.search)
-  let selected = []
-  try { selected = JSON.parse(decodeURIComponent(query.get('media') || '[]')) } catch {}
-
   const dataUrl = (buffer, type) => {
     const bytes = new Uint8Array(buffer)
     let binary = ''
@@ -62,20 +58,4 @@
     showValidationMessage: (message) => window.alert(message),
   }
 
-  const eagle = {
-    app: { theme: 'LIGHT', platform: 'win', locale: 'en', isMac: /Mac/i.test(navigator.platform), isDarkColors: () => false },
-    plugin: { manifest: { name: 'Pinterest 视觉搜索' }, path: '' },
-    log: { info: console.info.bind(console), warn: console.warn.bind(console), error: console.error.bind(console) },
-    onPluginCreate: (fn) => document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', fn, { once: true }) : fn(),
-    onPluginRun: () => {},
-    onThemeChanged: () => {},
-    shell: { openExternal: (url) => window.open(url, '_blank', 'noopener,noreferrer') },
-    window: { isAlwaysOnTop: async () => false, setAlwaysOnTop: async () => {} },
-    clipboard: { readImage: () => ({ getSize: () => ({ width: 0, height: 0 }), toJPEG: () => new Uint8Array() }) },
-    item: {
-      getSelected: async () => selected,
-      addFromURL: async (url) => window.open(url, '_blank', 'noopener,noreferrer'),
-    },
-  }
-  window.eagle = eagle
 })()

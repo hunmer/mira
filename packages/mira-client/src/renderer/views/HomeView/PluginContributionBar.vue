@@ -2,8 +2,8 @@
 /**
  * PluginContributionBar —— HomeView 右侧栏顶部的「插件图标列表」。
  *
- * 订阅 window.pluginSystem.contributions，把所有已注册 contribution 的插件渲染为图标。
- * 默认横向排列；当 vertical=true 时改为纵向（用于详情侧栏折叠后作为独立竖条贴在第三列右侧）。
+ * 订阅 window.pluginSystem.contributions，把所有已注册 contribution 的插件渲染为图标，
+ * 水平排列展示。
  *
  * 点击图标的行为由 contribution.behavior 决定：
  *   - 'window'（默认）：直接调 onActivate（一般在此 openPluginWindow 打开插件主界面）
@@ -21,12 +21,6 @@ import type { PluginContribution, PluginContributionRenderContext } from '@rende
 defineOptions({ name: 'PluginContributionBar' })
 
 const { t } = useI18n()
-
-/**
- * vertical=true 时整体改为纵向排列。
- * 用于详情侧栏折叠后，把插件图标栏作为独立的竖条贴在第三列右侧边缘展示。
- */
-withDefaults(defineProps<{ vertical?: boolean }>(), { vertical: false })
 
 const contributions = ref<PluginContribution[]>([])
 let unsubscribe: (() => void) | null = null
@@ -186,10 +180,7 @@ const ContributionHost = defineComponent({
 <template>
   <div
     v-if="contributions.length > 0"
-    class="rounded-2xl border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur-xl shadow-[0_12px_40px_rgba(99,102,241,0.10)]"
-    :class="vertical
-      ? 'flex flex-col items-center gap-1 px-1.5 py-2'
-      : 'flex items-center gap-1 px-2 py-1.5'"
+    class="rounded-2xl border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur-xl shadow-[0_12px_40px_rgba(99,102,241,0.10)] flex items-center gap-1 px-2 py-1.5"
   >
     <template v-for="contribution in contributions" :key="contribution.id">
       <!-- window 行为：纯按钮，点击直开插件主界面 -->

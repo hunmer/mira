@@ -176,6 +176,11 @@ export interface PluginAPI {
     showDialog: (options: { title: string; message: string; type: 'info' | 'confirm' }) => Promise<boolean>
   }
 
+  tabs: {
+    registerCustomTab: (definition: PluginCustomTabDefinition) => () => void
+    openCustomTab: (id: string, data?: Record<string, any>) => Promise<any>
+  }
+
   // 应用信息
   app: {
     version: string
@@ -217,6 +222,19 @@ export interface PluginAPI {
   window: {
     openPluginWindow: (opts: PluginWindowOpenOptions) => Promise<{ success: boolean; windowId?: string; message?: string }>
   }
+}
+
+export interface PluginCustomTabDefinition {
+  id: string
+  label: string
+  icon?: string
+  iconColor?: string
+  render: (container: HTMLElement, context: {
+    pluginId: string
+    tabId: string
+    api: PluginAPI
+    data?: Record<string, any>
+  }) => (() => void) | void
 }
 
 // 打开插件窗口的参数

@@ -1,7 +1,48 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-10T07:01:52.242Z",
+  "generatedAt": "2026-08-10T07:47:19.903Z",
   "plugins": [
+    {
+      "pluginId": "7e2d31a4-8a3f-4bd8-a44c-f5a7b2d0c901",
+      "pluginName": "自定义 Tab Demo",
+      "version": "1.0.0",
+      "description": "演示通过 Client API 注册自定义 Tab，并使用 DOM 回调渲染交互式 UI。",
+      "author": "Mira Team",
+      "category": "development",
+      "tags": [
+        "demo",
+        "tab",
+        "ui"
+      ],
+      "minAppVersion": "1.0.0",
+      "platform": [
+        "win32",
+        "darwin",
+        "linux"
+      ],
+      "directory": "plugins/mira-custom-tab-demo",
+      "icon": null,
+      "readme": "README.md",
+      "size": 3953,
+      "checksum": "sha256:af0ca0a6fa196f6d260e383f81df9dd241993d9058a263d829c35a6178bb229a",
+      "files": [
+        {
+          "path": "README.md",
+          "size": 338,
+          "checksum": "sha256:949b12057ecd9a031e62a65f7f8099cf997b45f1251a81991abff413ad104739"
+        },
+        {
+          "path": "plugin.json",
+          "size": 537,
+          "checksum": "sha256:32bf7f8f52c9f08d5f9d80a822b56903438906e78724db1a277f40d81f4a6038"
+        },
+        {
+          "path": "index.js",
+          "size": 3078,
+          "checksum": "sha256:1772f031fb2d9dda7907fa34a7d0d3a38312ea0ae8b233f269b417469f850b33"
+        }
+      ]
+    },
     {
       "pluginId": "22069a4c-58e0-44d7-89d9-69f014158acd",
       "pluginName": "Pinterest 视觉搜索",
@@ -22,8 +63,8 @@
       "directory": "plugins/mira-pinterest-search",
       "icon": "icon.png",
       "readme": "README.md",
-      "size": 1873153,
-      "checksum": "sha256:7783dbd5923a515bbe65a99ca862384e55c6456a957848b68c2a0a59e168fcf3",
+      "size": 1871890,
+      "checksum": "sha256:172d965e803811e7792fc917979d99800e3e9dd7adbab500718be5e63f559bc3",
       "files": [
         {
           "path": "README.md",
@@ -312,8 +353,8 @@
         },
         {
           "path": "compat.js",
-          "size": 3558,
-          "checksum": "sha256:2e70358f101214e114939d84f010c2f62d21c51db72148516a9f61fdfff58f3a"
+          "size": 2401,
+          "checksum": "sha256:337e976280855bab41fe23af86391bc441cbb6788cd991d8f3ce9d07b5527f73"
         },
         {
           "path": "assets/js/vue-tippy-d6b9a0a4.js",
@@ -372,8 +413,8 @@
         },
         {
           "path": "assets/js/index-48b77d60.js",
-          "size": 109786,
-          "checksum": "sha256:7e28b83ddd804a7fe053bf3c7110a7a86dd59e4ebde262dd29d2c8096ddcbc61"
+          "size": 109680,
+          "checksum": "sha256:341597aada170f89761006e5195b1eafb2315ce79e38bccd154087d016063452"
         },
         {
           "path": "assets/js/escape-html-4ed993c7.js",

@@ -271,6 +271,7 @@ reloadLocalPlugin(pluginId)
 | `config` | get/set/has/delete | 读写 plugin.json 的 config 字段（**非**持久化存储） |
 | `events` | emit/on/off | 基于 `window.dispatchEvent(CustomEvent('plugin_<id>_<event>'))` |
 | `ui` | showNotification / showDialog | 通知与对话框 |
+| `tabs` | registerCustomTab / openCustomTab | 注册并打开宿主内的自定义 UI Tab |
 | `storage` | set/get/has/delete | 基于 ConfigStorage，key 前缀 `plugin_<id>_`，**实际为 async** |
 | `media` | setLocalFile / setLocalFiles / registerContextMenu / registerFileFormat | 本地文件关联、媒体网格右键菜单和自定义格式处理注册 |
 | `window` | openPluginWindow(opts) | 打开插件独立窗口，**默认 pluginId 锁定为当前插件** |
@@ -279,6 +280,25 @@ reloadLocalPlugin(pluginId)
 | `app` | version / platform / isDev | 应用信息 |
 
 > *`dom`、`http`、`pluginSystem` 由 `createPluginContext` 额外提供，但不在 `PluginAPI` 类型定义中（通过 `as any` 绕过）。
+
+### 注册自定义 Tab
+
+```javascript
+const unregister = api.tabs.registerCustomTab({
+  id: 'main',
+  label: '插件页面',
+  icon: 'widgets',
+  render(container, context) {
+    container.textContent = `Tab: ${context.tabId}`
+    return () => container.replaceChildren()
+  },
+})
+
+await api.tabs.openCustomTab('main')
+// cleanup 时调用 unregister()
+```
+
+自定义 Tab 是会话级视图，不跨应用重启持久化。`render` 返回的函数会在 Tab 关闭时执行。
 
 ### 注册媒体上下文菜单
 

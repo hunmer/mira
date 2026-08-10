@@ -25,6 +25,8 @@ export interface TabItem {
 export interface WebviewTabOptions {
   id?: string
   label?: string
+  icon?: string
+  iconColor?: string
   data?: Record<string, any>
   libraryId?: string
 }
@@ -32,7 +34,11 @@ export interface WebviewTabOptions {
 export interface CustomTabOptions extends Omit<WebviewTabOptions, 'data'> {
   props?: Record<string, any>
   data?: Record<string, any>
+  context?: Record<string, any>
+  renderMode?: 'component' | 'dom'
 }
+
+export type CustomTabView = Component | ((container: HTMLElement, context: any) => (() => void) | void)
 
 // ============================================
 // 全局单例状态（确保所有组件共享同一份状态）
@@ -564,6 +570,8 @@ export function useTabs() {
       libraryId?: string
       context?: Record<string, any>
       transient?: boolean
+      icon?: string
+      iconColor?: string
     } = {}
   ) => {
     const tabType = tabRegistry.getType(typeName)
@@ -596,8 +604,8 @@ export function useTabs() {
     const newTab: TabItem = {
       id: tabId,
       label: label || tabType.displayName,
-      icon: tabType.icon,
-      iconColor: tabType.iconColor,
+      icon: options.icon || tabType.icon,
+      iconColor: options.iconColor || tabType.iconColor,
       type: typeName,
       data: { ...data, libraryId },
       active: true,
@@ -643,10 +651,17 @@ export function useTabs() {
     })
   }
 
-  const createCustomTab = async (component: Component, options: CustomTabOptions = {}) => {
+  const createCustomTab = async (component: CustomTabView, options: CustomTabOptions = {}) => {
     return await createTabFromRegisteredType('custom', {
       ...options,
-      data: { ...options.data, component: markRaw(component), props: options.props },
+      data: {
+        ...options.data,
+        component: options.renderMode === 'dom' ? component : markRaw(component as Component),
+        props: options.props,
+        renderContext: options.context,
+        renderMode: options.renderMode
+      },
+      context: options.context,
       transient: true
     })
   }

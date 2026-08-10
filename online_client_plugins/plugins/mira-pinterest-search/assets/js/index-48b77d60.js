@@ -3164,9 +3164,6 @@ const app = createApp(_sfc_main);
 app.use(VueTippy);
 app.use(VueMousetrapPlugin).provide("mousetrap", app.config.globalProperties.$mousetrap);
 eagle.onPluginCreate(async () => {
-  process.on("uncaughtException", (error) => {
-    eagle.log.error("uncaughtException : " + error);
-  });
   app.mount("#app");
   toggleTheme();
 });

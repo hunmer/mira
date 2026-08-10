@@ -7,7 +7,8 @@ import type {
   MarketplaceCatalog,
   MarketplacePluginEntry,
   MarketplacePluginFile,
-  PluginInstallProgress
+  PluginInstallProgress,
+  PluginCustomTabDefinition
 } from '../../shared/types'
 import { toRaw } from 'vue'
 import { pluginSystem } from './PluginSystemCore'
@@ -726,6 +727,8 @@ export class PluginService {
    * 提供插件运行时需要的API和服务
    */
   public createPluginContext(config: LocalPluginConfig): PluginContext {
+    const customTabs = new Map<string, PluginCustomTabDefinition>()
+
     const api = {
       // 基础API
       log: {
@@ -799,6 +802,41 @@ export class PluginService {
               accept: () => resolve(true),
               reject: () => resolve(false)
             })
+          })
+        }
+      },
+
+      tabs: {
+        registerCustomTab: (definition: PluginCustomTabDefinition) => {
+          customTabs.set(definition.id, definition)
+          return () => {
+            customTabs.delete(definition.id)
+            void import('../composables/useTabs').then(async ({ useTabs }) => {
+              const tabs = useTabs()
+              const tabIds = tabs.tabs.value
+                .filter(tab => tab.type === 'custom' && tab.data?.renderContext?.pluginId === config.pluginId)
+                .map(tab => tab.id)
+              await Promise.all(tabIds.map(tabId => tabs.closeTab(tabId)))
+            })
+          }
+        },
+        openCustomTab: async (id: string, data: Record<string, any> = {}) => {
+          const definition = customTabs.get(id)
+          if (!definition) throw new Error(`Custom tab not registered: ${id}`)
+          const { useTabs } = await import('../composables/useTabs')
+          const tabId = `${config.pluginId}:${id}`
+          return await useTabs().createCustomTab(definition.render, {
+            id: tabId,
+            label: definition.label,
+            icon: definition.icon,
+            iconColor: definition.iconColor,
+            renderMode: 'dom',
+            data,
+            context: {
+              pluginId: config.pluginId,
+              api,
+              data
+            }
           })
         }
       },

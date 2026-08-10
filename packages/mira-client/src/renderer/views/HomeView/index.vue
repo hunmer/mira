@@ -505,8 +505,8 @@ onUnmounted(() => {
           @expand="isDetailCollapsed = false"
           class="flex flex-col min-w-0 gap-3 pt-14"
         >
-          <!-- 插件贡献栏：始终纵向展示在第三列（Header 下方） -->
-          <PluginContributionBar vertical />
+          <!-- 插件贡献栏：横向展示在第三列（Header 下方） -->
+          <PluginContributionBar />
 
           <!-- 图片详情面板 -->
           <aside

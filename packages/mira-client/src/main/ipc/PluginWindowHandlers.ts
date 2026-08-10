@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow, Menu, app, clipboard, nativeImage } from 'electron'
+import { ipcMain, BrowserWindow, Menu, app, clipboard, nativeImage, nativeTheme, shell } from 'electron'
 import type { MenuItemConstructorOptions } from 'electron'
 import { mkdirSync, writeFileSync } from 'fs'
 import * as fs from 'fs/promises'
@@ -70,6 +70,12 @@ export class PluginWindowHandlers {
     // 插件窗口默认继承全局 Menu.setApplicationMenu，这里允许每个窗口
     // 用 win.setMenu 替换成自己的模板（Windows/Linux 生效）。
     ipcMain.handle('plugin-window:set-menu', this.handleSetMenu.bind(this))
+    ipcMain.on('plugin-window:mira-app-info', this.handleMiraAppInfo.bind(this))
+    ipcMain.handle('plugin-window:mira-window', this.handleMiraWindow.bind(this))
+    ipcMain.handle('plugin-window:mira-shell', this.handleMiraShell.bind(this))
+    ipcMain.on('plugin-window:mira-clipboard', this.handleMiraClipboard.bind(this))
+    ipcMain.on('plugin-window:mira-log', this.handleMiraLog.bind(this))
+    ipcMain.handle('plugin-window:mira-item-add-from-url', this.handleMiraItemAddFromUrl.bind(this))
     logger.info('PluginWindowHandlers', 'Plugin window IPC handlers registered')
   }
 
@@ -199,15 +205,31 @@ export class PluginWindowHandlers {
           preload: app.isPackaged
             ? path.join(__dirname, '../dist-preload/plugin-window-preload.js')
             : path.join(__dirname, '../src/preload/plugin-window-preload.js'),
+          additionalArguments: [
+            `--mira-plugin-id=${opts.pluginId}`,
+            `--mira-plugin-name=${encodeURIComponent(title)}`,
+            `--mira-plugin-path=${encodeURIComponent(baseDir)}`,
+          ],
         },
       })
 
       this.windows.set(windowId, win)
 
+      const sendEvent = (name: string, value?: any) => {
+        if (!win.isDestroyed()) win.webContents.send('plugin-window:mira-event', name, value)
+      }
+      const themeListener = () => sendEvent('theme', nativeTheme.shouldUseDarkColors ? 'DARK' : 'LIGHT')
+      nativeTheme.on('updated', themeListener)
       // 窗口关闭后清理引用
       win.on('closed', () => {
         this.windows.delete(windowId)
+        nativeTheme.removeListener('updated', themeListener)
       })
+      win.on('show', () => sendEvent('show'))
+      win.on('hide', () => sendEvent('hide'))
+      win.on('close', () => sendEvent('beforeExit'))
+      win.on('focus', () => sendEvent('show'))
+      win.on('blur', () => sendEvent('hide'))
 
       win.once('ready-to-show', () => {
         win.show()
@@ -374,6 +396,95 @@ export class PluginWindowHandlers {
     }
   }
 
+  private handleMiraAppInfo(event: Electron.IpcMainEvent): void {
+    event.returnValue = {
+      version: app.getVersion(),
+      locale: app.getLocale(),
+      arch: process.arch,
+      platform: process.platform,
+      theme: nativeTheme.shouldUseDarkColors ? 'DARK' : 'LIGHT',
+      isDark: nativeTheme.shouldUseDarkColors,
+    }
+  }
+
+  private async handleMiraWindow(event: Electron.IpcMainInvokeEvent, action: string, ...args: any[]): Promise<any> {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (!win || win.isDestroyed()) throw new Error('插件窗口已关闭')
+    switch (action) {
+      case 'show': win.show(); win.focus(); return undefined
+      case 'showInactive': win.showInactive(); return undefined
+      case 'hide': win.hide(); return undefined
+      case 'focus': win.focus(); return undefined
+      case 'minimize': win.minimize(); return undefined
+      case 'isMinimized': return win.isMinimized()
+      case 'restore': win.restore(); return undefined
+      case 'maximize': win.maximize(); return undefined
+      case 'unmaximize': win.unmaximize(); return undefined
+      case 'isMaximized': return win.isMaximized()
+      case 'setFullScreen': win.setFullScreen(Boolean(args[0])); return undefined
+      case 'isFullScreen': return win.isFullScreen()
+      case 'setSize': win.setSize(Number(args[0]), Number(args[1])); return undefined
+      case 'getSize': return win.getSize()
+      case 'setBounds': win.setBounds(args[0] || {}); return undefined
+      case 'getBounds': return win.getBounds()
+      case 'setResizable': win.setResizable(Boolean(args[0])); return undefined
+      case 'isResizable': return win.isResizable()
+      case 'setAlwaysOnTop': win.setAlwaysOnTop(Boolean(args[0])); return undefined
+      case 'isAlwaysOnTop': return win.isAlwaysOnTop()
+      case 'setPosition': win.setPosition(Number(args[0]), Number(args[1])); return undefined
+      case 'getPosition': return win.getPosition()
+      case 'setOpacity': win.setOpacity(Math.max(0, Math.min(1, Number(args[0])))); return undefined
+      case 'getOpacity': return win.getOpacity()
+      case 'flashFrame': win.flashFrame(Boolean(args[0])); return undefined
+      default: throw new Error(`不支持的窗口操作: ${action}`)
+    }
+  }
+
+  private async handleMiraShell(_event: Electron.IpcMainInvokeEvent, action: string, value?: string): Promise<any> {
+    if (action === 'beep') return undefined
+    if (typeof value !== 'string' || !value) throw new Error('路径或 URL 不能为空')
+    if (action === 'openExternal') {
+      const url = new URL(value)
+      if (!['http:', 'https:', 'mailto:'].includes(url.protocol)) throw new Error('仅允许打开 http/https/mailto URL')
+      await shell.openExternal(value)
+      return undefined
+    }
+    if (action === 'openPath') return shell.openPath(value)
+    if (action === 'showItemInFolder') return shell.showItemInFolder(value)
+    throw new Error(`不支持的 shell 操作: ${action}`)
+  }
+
+  private handleMiraClipboard(event: Electron.IpcMainEvent, action: string, value?: any): void {
+    switch (action) {
+      case 'clear': clipboard.clear(); event.returnValue = undefined; return
+      case 'has': event.returnValue = clipboard.availableFormats().includes(String(value)); return
+      case 'writeText': clipboard.writeText(String(value ?? '')); event.returnValue = undefined; return
+      case 'readText': event.returnValue = clipboard.readText(); return
+      case 'writeHTML': clipboard.writeHTML(String(value ?? '')); event.returnValue = undefined; return
+      case 'readHTML': event.returnValue = clipboard.readHTML(); return
+      case 'readImage': {
+        const image = clipboard.readImage()
+        event.returnValue = {
+          size: image.getSize(),
+          png: image.toPNG(),
+          jpeg: image.toJPEG(100),
+        }
+        return
+      }
+      default: throw new Error(`不支持的剪贴板操作: ${action}`)
+    }
+  }
+
+  private handleMiraLog(_event: Electron.IpcMainEvent, level: string, args: any[]): void {
+    const message = (args || []).map((arg) => typeof arg === 'string' ? arg : JSON.stringify(arg)).join(' ')
+    const log = ({ debug: logger.debug, info: logger.info, warn: logger.warn, error: logger.error } as any)[level] || logger.info
+    log('PluginWindow', message)
+  }
+
+  private async handleMiraItemAddFromUrl(_event: Electron.IpcMainInvokeEvent, _url: string, _options: any): Promise<never> {
+    throw new Error('Mira 暂未提供插件窗口直接导入 URL 的宿主接口')
+  }
+
   /**
    * 递归处理菜单模板：按字段挂 click（action → 转发回窗口渲染进程），
    * role / separator / radio / checkbox 原样透传。
@@ -420,5 +531,11 @@ export class PluginWindowHandlers {
     ipcMain.removeHandler('plugin-window:copy-image')
     ipcMain.removeAllListeners('plugin-window:start-image-drag')
     ipcMain.removeHandler('plugin-window:set-menu')
+    ipcMain.removeHandler('plugin-window:mira-window')
+    ipcMain.removeHandler('plugin-window:mira-shell')
+    ipcMain.removeHandler('plugin-window:mira-item-add-from-url')
+    ipcMain.removeAllListeners('plugin-window:mira-app-info')
+    ipcMain.removeAllListeners('plugin-window:mira-clipboard')
+    ipcMain.removeAllListeners('plugin-window:mira-log')
   }
 }
