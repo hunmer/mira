@@ -658,6 +658,11 @@ const handleBreadcrumbClick = (item: BreadcrumbItem) => {
 
 // 选中项变化时同步 FileInfo 到全局 store
 watch([selectedItems, () => paginatedMediaItems.value], ([ids, items]) => {
+  console.log('[DEBUG-space-preview] selection changed', {
+    tabId: props.tabId,
+    selectedIds: ids,
+    pageItemCount: items.length,
+  })
   if (!ids || ids.length === 0) {
     mediaStore.clearDetailSidebar()
     emit('selectionChange', [])
@@ -778,6 +783,11 @@ const handleMediaDoubleClick = (item: FileInfo) => {
 }
 
 const handleMediaSelect = (item: FileInfo, selected: boolean) => {
+  console.log('[DEBUG-space-preview] item select', {
+    tabId: props.tabId,
+    itemId: item.id,
+    selected,
+  })
   homeController.handleMediaSelect(item, selected)
   emit('itemSelect', item, selected)
 }

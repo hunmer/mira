@@ -78,6 +78,16 @@ for (const dir of dirs) {
     } else {
       console.log('  (无 build 脚本，跳过)')
     }
+
+    // 进入插件的 web 子目录执行 build（若存在）
+    const webDir = join(dir, 'web')
+    if (existsSync(join(webDir, 'package.json'))) {
+      const webPkg = JSON.parse(readFileSync(join(webDir, 'package.json'), 'utf8'))
+      if (webPkg.scripts && webPkg.scripts.build) {
+        // web 目录用 npm（独立子项目）
+        run('npm run build', webDir)
+      }
+    }
   }
   count++
 }

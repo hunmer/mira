@@ -1,33 +1,13 @@
 [
   {
-    "name": "mira_demo",
-    "enabled": false,
-    "path": "mira_demo"
-  },
-  {
     "name": "mira_n8n",
     "enabled": false,
     "path": "mira_n8n"
   },
   {
-    "name": "mira_thumb",
-    "enabled": false,
-    "path": "mira_thumb"
-  },
-  {
-    "name": "mira_user",
-    "enabled": false,
-    "path": "mira_user"
-  },
-  {
-    "name": "upload_statistics",
-    "enabled": false,
-    "path": "upload_statistics"
-  },
-  {
-    "name": "mira_thumb_imagemagick",
-    "enabled": false,
-    "path": "mira_thumb_imagemagick"
+    "name": "psd-viewer",
+    "enabled": true,
+    "path": "psd-viewer"
   },
   {
     "name": "mira_duplicate_scanner",

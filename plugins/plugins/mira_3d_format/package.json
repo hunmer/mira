@@ -15,7 +15,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "rebuild:native": "npm_config_build_from_source=true npm rebuild gl",
+    "rebuild:native": "node -e \"process.env.npm_config_build_from_source='true';require('child_process').execSync('npm rebuild gl',{stdio:'inherit'})\"",
     "postinstall": "npm run rebuild:native"
   },
   "dependencies": {

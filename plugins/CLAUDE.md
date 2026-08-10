@@ -2,7 +2,7 @@
 
 Mira 服务端插件集合。每个插件继承 `ServerPlugin` 基类，在素材库加载时被 `ServerPluginManager` 动态加载。支持注册 HTTP 路由、WebSocket 事件监听、HTTP Hook 拦截、前端路由和缩略图生成器。
 
-当前活跃插件：mira_n8n (n8n 集成)、mira_thumb_imagemagick (ImageMagick 缩略图)、mira_duplicate_scanner (重复文件扫描)。
+当前活跃插件：mira_n8n (n8n 集成)、psd-viewer (PSD/PSB 分层查看)、mira_duplicate_scanner (重复文件扫描)。
 
 ## 约定
 
@@ -23,7 +23,7 @@ Mira 服务端插件集合。每个插件继承 `ServerPlugin` 基类，在素�
 | 插件 | 文档 |
 |------|------|
 | mira_n8n | [plugins/mira_n8n/CLAUDE.md](plugins/mira_n8n/CLAUDE.md) |
-| mira_thumb_imagemagick | [plugins/mira_thumb_imagemagick/CLAUDE.md](plugins/mira_thumb_imagemagick/CLAUDE.md) |
+| psd-viewer | [plugins/psd-viewer/CLAUDE.md](plugins/psd-viewer/CLAUDE.md) |
 | mira_duplicate_scanner | -- (无独立 CLAUDE.md) |
 | mira_thumb (旧版) | [old_plugins/mira_thumb/CLAUDE.md](old_plugins/mira_thumb/CLAUDE.md) |
 

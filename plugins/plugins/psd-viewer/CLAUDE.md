@@ -1,6 +1,6 @@
-# mira_thumb_imagemagick
+# psd-viewer
 
-ImageMagick 缩略图生成插件。扩展服务端内置 ThumbnailService，支持 PSD/AI/EPS/SVG/TIFF/DNG/HEIC 等专业格式。通过 `thumbnailService.registerGenerator()` 注册。
+PSD/PSB 分层查看器。插件只注册文件格式和查看器，缩略图由服务端内置 `ThumbnailService` 生成。
 
 ## 文件索引
 
@@ -14,8 +14,6 @@ ImageMagick 缩略图生成插件。扩展服务端内置 ThumbnailService，支
 | 文件 | 说明 |
 |------|------|
 | `index.ts` | 插件主实现 (117 行) |
-| `config.json` | 默认配置 |
-| `data/config.json` | 运行时配置 |
 | `package.json` | 包配置 (v1.0.0) |
 
 ## 扫描状态

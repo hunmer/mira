@@ -105,6 +105,11 @@ const selectionHistory = ref<FileInfo[]>([])
 const selectedIds = ref<Set<string>>(new Set())
 
 const handleItemSelect = (item: FileInfo, selected: boolean) => {
+  console.log('[DEBUG-space-preview] renderer received item select', {
+    tabId: props.tabId,
+    itemId: item.id,
+    selected,
+  })
   selectionHistory.value = selectionHistory.value.filter(entry => entry.id !== item.id)
   const nextIds = new Set(selectedIds.value)
   if (selected) {
@@ -120,6 +125,10 @@ const handleItemSelect = (item: FileInfo, selected: boolean) => {
 }
 
 const handleSelectionChange = (items: FileInfo[]) => {
+  console.log('[DEBUG-space-preview] renderer received selection change', {
+    tabId: props.tabId,
+    itemIds: items.map(item => item.id),
+  })
   const nextIds = new Set(items.map(item => item.id))
   for (const item of items) {
     if (!selectedIds.value.has(item.id)) selectionHistory.value.push(item)
@@ -141,22 +150,44 @@ const isEditableTarget = (target: EventTarget | null) => {
   return !!element && (element.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(element.tagName))
 }
 
+const consumePreviewShortcut = (event: KeyboardEvent) => {
+  event.preventDefault()
+  event.stopPropagation()
+}
+
 const handleKeydown = (event: KeyboardEvent) => {
-  if (!rootRef.value?.offsetParent || isEditableTarget(event.target)) return
+  if (event.code !== 'Space' && event.key !== ' ' && event.code !== 'Escape') return
+  const visible = !!rootRef.value?.getClientRects().length
+  const editable = isEditableTarget(event.target)
+  console.log('[DEBUG-space-preview] keydown', {
+    tabId: props.tabId,
+    code: event.code,
+    key: event.key,
+    visible,
+    editable,
+    selectedIds: [...selectedIds.value],
+    historyIds: selectionHistory.value.map(item => item.id),
+    previewItemId: previewItem.value?.id,
+  })
+  if (!visible || editable) return
   if (event.code === 'Escape' && previewItem.value) {
-    event.preventDefault()
+    consumePreviewShortcut(event)
     closePreview()
     return
   }
-  if (event.code !== 'Space') return
+  if (event.code !== 'Space' && event.key !== ' ') return
   if (previewItem.value) {
-    event.preventDefault()
+    consumePreviewShortcut(event)
     closePreview()
     return
   }
   const target = getPreviewTarget()
+  console.log('[DEBUG-space-preview] resolved target', {
+    tabId: props.tabId,
+    targetId: target?.id,
+  })
   if (!target) return
-  event.preventDefault()
+  consumePreviewShortcut(event)
   previewItem.value = target
 }
 
@@ -261,7 +292,8 @@ watch(
 
 // 组件生命周期
 onMounted(() => {
-  window.addEventListener('keydown', handleKeydown)
+  window.addEventListener('keydown', handleKeydown, true)
+  console.log('[DEBUG-space-preview] keydown listener registered', { tabId: props.tabId })
   console.log('🔧 TabViewRenderer: 组件挂载', {
     tabId: props.tabId,
     viewConfig: props.viewConfig
@@ -269,7 +301,8 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  window.removeEventListener('keydown', handleKeydown)
+  window.removeEventListener('keydown', handleKeydown, true)
+  console.log('[DEBUG-space-preview] keydown listener removed', { tabId: props.tabId })
   console.debug('[DEBUG-wf-tab] renderer-unmounted', { tabId: props.tabId })
   console.log('🔧 TabViewRenderer: 组件卸载', { tabId: props.tabId })
 

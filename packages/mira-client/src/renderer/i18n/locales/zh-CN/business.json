@@ -774,7 +774,8 @@
     "permanentDelete": "彻底删除",
     "permanentDeleteCount": "彻底删除 ({count})",
     "pluginDefault": "插件",
-    "filePreview": "文件预览"
+    "filePreview": "文件预览",
+    "more": "更多"
   },
   "deleteSelectedItems": {
     "missingLibraryId": "缺少库ID"

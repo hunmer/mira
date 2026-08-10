@@ -20,15 +20,14 @@
 HTTP 路由: GET/POST `/n8n/list`, DELETE `/n8n/list/:id`
 WebSocket 端口: 7457
 
-### mira_thumb_imagemagick (v1.0.0)
+### psd-viewer (v1.0.0)
 
 | 文件 | 说明 |
 |------|------|
-| `plugins/mira_thumb_imagemagick/index.ts` | 插件主实现 (117 行) |
-| `plugins/mira_thumb_imagemagick/config.json` | 默认配置 |
-| `plugins/mira_thumb_imagemagick/data/config.json` | 运行时配置 |
-| `plugins/mira_thumb_imagemagick/package.json` | 包配置 |
-| `plugins/mira_thumb_imagemagick/tsconfig.json` | TypeScript 配置 |
+| `plugins/psd-viewer/index.ts` | PSD/PSB 文件格式注册 |
+| `plugins/psd-viewer/package.json` | 包配置 |
+| `plugins/psd-viewer/tsconfig.json` | TypeScript 配置 |
+| `plugins/psd-viewer/web/` | PSD 分层查看器前端 |
 
 实现 ThumbnailGenerator 接口，支持格式: psd, ai, eps, svg, tiff, dng, heic 等
 

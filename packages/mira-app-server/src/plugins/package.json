@@ -141,7 +141,7 @@
     "mira_duplicate_scanner": "file:../../../../plugins/plugins/mira_duplicate_scanner",
     "mira_eagle_extension": "file:../../../../plugins/plugins/mira_eagle_extension",
     "mira_spine_format": "file:../../../../plugins/plugins/mira_spine_format",
-    "mira_thumb_imagemagick": "file:../../../../plugins/plugins/mira_thumb_imagemagick",
+    "psd-viewer": "file:../../../../plugins/plugins/psd-viewer",
     "mira-app-core": "^1.0.24",
     "mira-app-server": "^1.0.25",
     "mkdirp": "^1.0.4",

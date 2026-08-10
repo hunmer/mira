@@ -12,9 +12,9 @@
     "status": "inactive"
   },
   {
-    "name": "mira_thumb_imagemagick",
+    "name": "psd-viewer",
     "enabled": false,
-    "path": "node_modules/mira_thumb_imagemagick",
+    "path": "node_modules/psd-viewer",
     "status": "active"
   },
   {

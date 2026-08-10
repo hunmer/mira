@@ -27,7 +27,7 @@ PSD 二进制由 iframe 内 `fetch(file.path)` 获取 —— `file.path` 已被�
 ## 构建
 
 ```powershell
-cd "D:/mira_typescript/plugins/plugins/mira_thumb_imagemagick/web"
+cd "D:/mira_typescript/plugins/plugins/psd-viewer/web"
 pnpm install
 pnpm exec vue-tsc --noEmit -p "tsconfig.json"
 pnpm run build

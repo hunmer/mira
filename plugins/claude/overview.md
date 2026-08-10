@@ -24,7 +24,7 @@
 | 插件 | 版本 | 状态 | 职责 |
 |------|------|------|------|
 | mira_n8n | 1.0.7 | 活跃 | n8n 集成，独立 WebSocket 服务器 |
-| mira_thumb_imagemagick | 1.0.0 | 活跃 | ImageMagick 缩略图 (PSD/AI/EPS/SVG...) |
+| psd-viewer | 1.0.0 | 活跃 | PSD/PSB 分层查看器 |
 | mira_duplicate_scanner | 1.0.0 | 活跃 (enabled) | 重复文件扫描与删除 |
 | mira_thumb | 1.0.19 | 旧版目录 | ffmpeg 缩略图生成 (已移至 old_plugins/) |
 | mira_user | -- | 已移除 | 用户认证 (功能已内置于服务端) |

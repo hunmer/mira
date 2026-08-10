@@ -681,7 +681,7 @@ importers:
         specifier: ^2.2.0
         version: 2.2.12(typescript@5.7.3)
 
-  plugins/plugins/mira_thumb_imagemagick/web:
+  plugins/plugins/psd-viewer/web:
     dependencies:
       ag-psd:
         specifier: ^28.0.0

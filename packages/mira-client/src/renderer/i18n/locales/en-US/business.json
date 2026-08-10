@@ -774,7 +774,8 @@
     "permanentDelete": "Delete permanently",
     "permanentDeleteCount": "Delete permanently ({count})",
     "pluginDefault": "Plugin",
-    "filePreview": "File preview"
+    "filePreview": "File preview",
+    "more": "More"
   },
   "deleteSelectedItems": {
     "missingLibraryId": "Missing library ID"

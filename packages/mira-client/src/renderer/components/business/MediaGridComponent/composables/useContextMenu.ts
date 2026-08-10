@@ -1,4 +1,4 @@
-import { ref, computed, watch, toRef, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import type { FileInfo } from '../../../../../shared/types'
@@ -7,7 +7,6 @@ import { appService } from '@renderer/services'
 import { useLibraryStore } from '@renderer/stores/library'
 import { useTagStore } from '@renderer/stores/tag'
 import { useFolderStore } from '@renderer/stores/folder'
-import { useMediaStore } from '@renderer/stores/media'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { runBatchOperation } from '@renderer/composables/useBatchOperation'
 import { copyToClipboard } from '@renderer/utils/helpers'
@@ -39,9 +38,6 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
   const tagStore = useTagStore()
   const folderStore = useFolderStore()
   const libraryStore = useLibraryStore()
-  const mediaStore = useMediaStore()
-  const showDetailSidebar = toRef(mediaStore, 'showDetailSidebar')
-  const toggleDetailSidebar = () => mediaStore.toggleDetailSidebar()
   const menuVersion = ref(0)
   const menuTimer = setInterval(() => { menuVersion.value++ }, 500)
   onBeforeUnmount(() => clearInterval(menuTimer))
@@ -119,10 +115,7 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
   // 复制当前文件信息的 JSON 到剪贴板
   const copyFileInfoJSON = (item: FileInfo) => {
     const json = JSON.stringify(item, null, 2)
-    copyToClipboard(json).then(ok => {
-      if (ok) console.log('文件信息已复制到剪贴板')
-      else console.error('复制文件信息失败')
-    })
+    copyToClipboard(json)
   }
 
   const openFileInNewWindow = (item: FileInfo) => {
@@ -174,14 +167,12 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
         const contribution = contributions.find((c: any) => c.pluginId === menu.pluginId)
         group = {
           label: contribution?.title || ps?.getPlugin?.(menu.pluginId)?.pluginName || menu.pluginId,
-          icon: contribution?.icon?.type === 'material' ? contribution.icon.value : undefined,
           items: [],
         }
         groups.set(menu.pluginId, group)
       }
       group.items.push({
         label: menu.label,
-        icon: menu.icon,
         command: async () => {
           const files = getSerializableTargetFiles()
           if (files.length === 0) return
@@ -196,11 +187,10 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
     void menuVersion.value
     const file = currentContextItem.value
     if (!file) return []
-    return getPluginFileFormats(file)
+      return getPluginFileFormats(file)
       .filter(format => format.getPreviewUrl || format.open)
       .map(format => ({
         label: format.title || t('business.contextMenu.pluginDefault'),
-        icon: format.icon || 'extension',
         command: () => runWithCurrentItem(async item => {
           if (format.getPreviewUrl) {
             await router.push({
@@ -222,21 +212,21 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
   })
 
   const contextMenuItems = computed((): MenuItem[] => {
-    // 回收站视图：只提供恢复（+ 查看 / 定位）
+    // 复制文件信息 JSON —— 统一放入【更多】子菜单
+    const moreItems: MenuItem[] = [
+      {
+        label: t('business.contextMenu.copyFileInfoJson'),
+        command: () => runWithCurrentItem((item) => copyFileInfoJSON(item))
+      },
+    ]
+    const moreMenu: MenuItem = {
+      label: t('business.contextMenu.more'),
+      items: moreItems,
+    }
+
+    // 回收站视图：只提供恢复（+ 定位）
     if (props.isTrash) {
       return [
-        {
-          label: t('business.contextMenu.viewInfo'),
-          shortcut: 'Ctrl+I',
-          command: () => runWithCurrentItem(async (item) => {
-            mediaStore.setDetailSidebarFiles([item])
-            if (!showDetailSidebar.value) toggleDetailSidebar()
-          })
-        },
-        {
-          label: t('business.contextMenu.copyFileInfoJson'),
-          command: () => runWithCurrentItem((item) => copyFileInfoJSON(item))
-        },
         { separator: true },
         {
           label: props.selectedItems.length > 1 ? t('business.contextMenu.restoreFileCount', { count: props.selectedItems.length }) : t('business.contextMenu.restoreFile'),
@@ -264,32 +254,19 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
               emit('media-delete', file)
             }, { label: t('business.contextMenu.permanentDelete') })
           })
-        }
+        },
+        moreMenu
       ]
     }
 
     // 普通文件视图：原有菜单
     return [
       {
-        label: t('business.contextMenu.viewInfo'),
-        shortcut: 'Ctrl+I',
-        command: () => runWithCurrentItem(async (item) => {
-          mediaStore.setDetailSidebarFiles([item])
-          if (!showDetailSidebar.value) toggleDetailSidebar()
-        })
-      },
-      {
-        label: t('business.contextMenu.copyFileInfoJson'),
-        command: () => runWithCurrentItem((item) => copyFileInfoJSON(item))
-      },
-      {
         label: t('business.contextMenu.openInNewWindow'),
-        icon: 'open_in_new',
         command: () => runWithCurrentItem((item) => openFileInNewWindow(item))
       },
       ...(openWithItems.value.length ? [{
         label: t('business.contextMenu.otherOpenWith'),
-        icon: 'open_with',
         items: openWithItems.value,
       }] : []),
       {
@@ -297,7 +274,7 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
       },
       ...(
         pluginContextMenus.value.length
-          ? [{ label: t('business.contextMenu.invokePlugin'), icon: 'extension', items: pluginContextMenus.value }, { separator: true }]
+          ? [{ label: t('business.contextMenu.invokePlugin'), items: pluginContextMenus.value }, { separator: true }]
           : []
       ),
       {
@@ -316,7 +293,6 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
       },
       {
         label: t('business.contextMenu.setCover'),
-        icon: 'image',
         command: () => runWithCurrentItem(() => {
           coverCropOpen.value = true
         })
@@ -346,7 +322,8 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
             emit('media-delete', file)
           }, { label: t('business.contextMenu.delete') })
         })
-      }
+      },
+      moreMenu
     ]
   })
 
