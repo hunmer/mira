@@ -1,0 +1,19 @@
+{
+  "pluginName": "Pinterest 视觉搜索",
+  "pluginId": "22069a4c-58e0-44d7-89d9-69f014158acd",
+  "priority": 1,
+  "version": "1.1.9-mira.1",
+  "index": "index.js",
+  "icon": "icon.png",
+  "tags": ["Pinterest", "视觉搜索", "图片搜索"],
+  "category": "media",
+  "description": "对 Mira 中选中的图片执行 Pinterest 视觉搜索。",
+  "author": "Mira migration",
+  "enable": true,
+  "config": {},
+  "hotkey": {},
+  "events": [],
+  "dependencies": [],
+  "permissions": ["ui", "window"],
+  "platform": ["win32", "darwin", "linux"]
+}

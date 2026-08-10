@@ -1,4 +1,4 @@
-import { ref, computed, watch, nextTick } from 'vue'
+import { ref, computed, watch, nextTick, markRaw, type Component } from 'vue'
 import { tabRegistry, type TabContext, type TabViewConfig } from './TabRegistry'
 import { quickInitTabSystem } from './initTabSystem'
 import { tabPersistence, type TabState } from './TabPersistence'
@@ -19,6 +19,19 @@ export interface TabItem {
   active: boolean
   needUpdate?: boolean // 用于标识tab是否需要重新加载数据
   filters?: Record<string, any> // Tab 筛选条件
+  transient?: boolean // 不持久化包含运行时对象的Tab
+}
+
+export interface WebviewTabOptions {
+  id?: string
+  label?: string
+  data?: Record<string, any>
+  libraryId?: string
+}
+
+export interface CustomTabOptions extends Omit<WebviewTabOptions, 'data'> {
+  props?: Record<string, any>
+  data?: Record<string, any>
 }
 
 // ============================================
@@ -467,7 +480,8 @@ export function useTabs() {
       type: tab.type,
       data: tab.data,
       active: true,
-      needUpdate: true
+      needUpdate: true,
+      transient: tab.transient
     }
     
     tabs.value.push(clonedTab)
@@ -549,6 +563,7 @@ export function useTabs() {
       data?: any
       libraryId?: string
       context?: Record<string, any>
+      transient?: boolean
     } = {}
   ) => {
     const tabType = tabRegistry.getType(typeName)
@@ -586,7 +601,8 @@ export function useTabs() {
       type: typeName,
       data: { ...data, libraryId },
       active: true,
-      needUpdate: true // 新创建的tab需要加载数据
+      needUpdate: true, // 新创建的tab需要加载数据
+      transient: options.transient
     }
 
     // 创建Tab上下文
@@ -618,6 +634,21 @@ export function useTabs() {
       console.error(`❌ 创建Tab ${typeName} 失败:`, error)
       return null
     }
+  }
+
+  const createWebviewTab = async (url: string, options: WebviewTabOptions = {}) => {
+    return await createTabFromRegisteredType('webview', {
+      ...options,
+      data: { ...options.data, url }
+    })
+  }
+
+  const createCustomTab = async (component: Component, options: CustomTabOptions = {}) => {
+    return await createTabFromRegisteredType('custom', {
+      ...options,
+      data: { ...options.data, component: markRaw(component), props: options.props },
+      transient: true
+    })
   }
 
   /**
@@ -1012,6 +1043,8 @@ export function useTabs() {
 
     // 新的注册系统方法
     createTabFromRegisteredType,
+    createWebviewTab,
+    createCustomTab,
     executeTabLifecycle,
     setDefaultTab,
     ensureDefaultTabExists,

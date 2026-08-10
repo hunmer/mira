@@ -76,6 +76,8 @@ export class TabHistory {
     tab: TabItem,
     action: 'open' | 'close' | 'activate'
   ): Promise<void> {
+    if (tab.transient) return
+
     const historyItem: TabHistoryItem = {
       id: tab.id,
       label: tab.label,

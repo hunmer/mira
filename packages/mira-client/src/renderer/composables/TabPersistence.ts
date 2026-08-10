@@ -77,7 +77,7 @@ export class TabPersistence {
    */
   async saveTabsState(tabs: TabItem[], activeTabId: string): Promise<boolean> {
     try {
-      const tabsState: TabState[] = tabs.map(tab => ({
+      const tabsState: TabState[] = tabs.filter(tab => !tab.transient).map(tab => ({
         id: tab.id,
         label: tab.label,
         icon: tab.icon,

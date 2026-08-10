@@ -76,7 +76,7 @@ class MiraPagFormatPlugin {
         title: 'PAG 预览',
         icon: 'animation',
         entry: 'viewer.html',
-        getQuery: ({ fileUrl, file }: any) => ({ fileUrl, fileName: file?.name || 'PAG' }),
+        getQuery: ({ fileUrl, file }: any) => ({ fileUrl, fileName: file?.name || 'PAG', v: '1.0.1' }),
       }],
     });
   }

@@ -4,7 +4,7 @@ import ConfigStorage from '@renderer/utils/ConfigStorage'
 import i18n from '../i18n'
 
 // 导出tabs相关功能
-export { useTabs, type TabItem } from './useTabs'
+export { useTabs, type TabItem, type WebviewTabOptions, type CustomTabOptions } from './useTabs'
 
 // 导出媒体操作功能
 export { useMediaOperations } from './useMediaOperations'

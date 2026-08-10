@@ -10,6 +10,7 @@
   function getPreviewUrl(file) {
     if (!base) return ''
     const viewer = new URL('viewer.html', base)
+    viewer.searchParams.set('v', '1.0.1')
     viewer.searchParams.set('fileUrl', toFileUrl(file.url || file.localFile || file.path || ''))
     viewer.searchParams.set('fileName', file.name || 'PAG')
     return viewer.href
