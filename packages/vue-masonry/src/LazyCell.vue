@@ -169,6 +169,10 @@ onBeforeUnmount(() => {
 .lazy-cell__placeholder {
   position: absolute;
   inset: 0;
+  /* 圆角描边:外层 Masonry 定位框为 overflow:hidden 矩形,会裁掉普通 border 的圆角;
+     改用内描边实现圆角描边,既贴合圆角又不受外层裁切影响。 */
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 8%);
   animation: lazy-cell-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
