@@ -69,14 +69,22 @@
         addEventListener('unhandledrejection', function (event) { notifyError(event.reason) })
 
         // 从 indexUrl 推导 extra 文件 base 前缀 + token。
-        // indexUrl 形如: <prefix>/api/files/extra/<lib>/<file>/__index.json?token=...
+        // indexUrl 形如: <origin>/api/files/extra/<lib>/<file>/<entryPath...>?token=...
+        // 条目 base 必须保留到 <lib>/<file>/ 之后，否则条目 URL 会缺段导致 404。
         function deriveExtraBase(url) {
           var u = new URL(url, location.href)
-          var idx = u.pathname.indexOf('/api/files/extra/')
+          var marker = '/api/files/extra/'
+          var idx = u.pathname.indexOf(marker)
           if (idx < 0) return null
+          var afterMarker = u.pathname.slice(idx + marker.length) // <lib>/<file>/<entryPath...>
+          // <lib>/<file>/ 两段后必须紧跟 '/'，再之后才是条目路径。
+          var slashAfterLib = afterMarker.indexOf('/')
+          if (slashAfterLib < 0) return null
+          var slashAfterFile = afterMarker.indexOf('/', slashAfterLib + 1)
+          if (slashAfterFile < 0) return null
+          var base = u.origin + u.pathname.slice(0, idx + marker.length) + afterMarker.slice(0, slashAfterFile + 1)
           var token = u.searchParams.get('token') || ''
-          var trimmed = u.pathname.slice(0, idx + '/api/files/extra/'.length) // 以 / 结尾
-          return { origin: u.origin, base: trimmed, token: token }
+          return { origin: u.origin, base: base, token: token }
         }
 
         function entryUrl(extra, entryName) {

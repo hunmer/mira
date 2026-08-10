@@ -118,18 +118,35 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
     copyToClipboard(json)
   }
 
-  const openFileInNewWindow = (item: FileInfo) => {
-    const query = new URLSearchParams({
-      id: String(item.id),
-      libraryId: String(item.libraryId || libraryStore.currentLibrary?.id || ''),
-      title: item.name || '',
-      path: item.path || item.url || '',
-      mimeType: item.mimeType || '',
-    })
-    const url = new URL(window.location.href)
-    url.hash = `/file-preview?${query}`
+  // 新窗口打开：优先使用插件预览器的 iframeUrl（与 MediaPreviewContent.vue 一致），
+  // 无可用预览器时回退到 /file-preview 路由。
+  const openFileInNewWindow = async (item: FileInfo) => {
+    let targetUrl: string | null = null
+    try {
+      const libraryId = item.libraryId || libraryStore.currentLibrary?.id
+      if (libraryId) {
+        const viewers = await miraSDKService.getPreviewViewers(libraryId, item.id)
+        if (viewers.length > 0) targetUrl = viewers[0].iframeUrl
+      }
+    } catch (error) {
+      console.warn('[media-preview] 获取插件预览器失败，回退到 file-preview 路由', error)
+    }
+
+    if (!targetUrl) {
+      const query = new URLSearchParams({
+        id: String(item.id),
+        libraryId: String(item.libraryId || libraryStore.currentLibrary?.id || ''),
+        title: item.name || '',
+        path: item.path || item.url || '',
+        mimeType: item.mimeType || '',
+      })
+      const url = new URL(window.location.href)
+      url.hash = `/file-preview?${query}`
+      targetUrl = url.href
+    }
+
     if (appService.isElectron) {
-      void window.electronAPI?.invoke('window:open-url', url.href, {
+      void window.electronAPI?.invoke('window:open-url', targetUrl, {
         width: 1280,
         height: 800,
         title: item.name || t('business.contextMenu.filePreview'),
@@ -137,7 +154,7 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
         if (!result?.success) console.warn('[media-preview] 新窗口打开失败:', result?.message)
       }).catch((error) => console.warn('[media-preview] 新窗口打开失败:', error))
     } else {
-      if (!window.open(url.href, '_blank', 'noopener,noreferrer')) {
+      if (!window.open(targetUrl, '_blank', 'noopener,noreferrer')) {
         console.warn('[media-preview] 新标签页被浏览器拦截')
       }
     }
