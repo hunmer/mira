@@ -1,0 +1,4 @@
+interface:
+  display_name: "Mira Format Plugin Migration"
+  short_description: "Migrate Eagle formats into Mira plugins"
+  default_prompt: "Use -format-plugin-migration to migrate this Eagle format plugin into Mira."

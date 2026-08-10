@@ -47,6 +47,7 @@
   },
   "buildVersion": "1.0.1",
   "compression": "maximum",
+  "electronLanguages": ["zh-CN", "zh-TW", "en-US", "en-GB"],
   "artifactName": "${productName}-${version}-${arch}.${ext}",
   "generateUpdatesFilesForAllChannels": false,
   "win": {

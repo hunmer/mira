@@ -72,6 +72,19 @@ const pluginPreviewUrl = ref('')
 const refreshPluginPreviewUrl = async (file: any): Promise<void> => {
   pluginPreviewUrl.value = ''
   const viewerId = route.query.viewer as string | undefined
+  if (file?.libraryId && file?.id) {
+    try {
+      const viewers = await miraSDKService.getPreviewViewers(file.libraryId, file.id)
+      const viewer = viewers.find(item => item.viewerId === viewerId) || viewers[0]
+      if (viewer?.iframeUrl) {
+        pluginPreviewUrl.value = viewer.iframeUrl
+        return
+      }
+    } catch (error) {
+      console.warn('服务端预览地址获取失败:', error)
+    }
+  }
+
   const format = file
     ? getPluginFileFormats(file).find(item => item.id === viewerId) || getPluginFileFormat(file)
     : undefined

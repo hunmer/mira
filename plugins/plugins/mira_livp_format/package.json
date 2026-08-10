@@ -1,0 +1,28 @@
+{
+  "name": "mira_livp_format",
+  "version": "1.0.0",
+  "description": "LIVP Live Photo thumbnail and preview support for Mira",
+  "author": "Mira Team",
+  "license": "ISC",
+  "main": "dist/index.js",
+  "files": ["dist/**/*", "web/**/*", "package.json", "README.md"],
+  "mira": {
+    "id": "mira_livp_format",
+    "title": "LIVP 格式支持",
+    "icon": "live_photo",
+    "category": "storage",
+    "tags": ["LIVP", "Live Photo", "缩略图", "预览"]
+  },
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "sharp": "^0.35.3",
+    "yauzl": "^3.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/yauzl": "^2.10.3",
+    "typescript": "^5.7.0"
+  }
+}

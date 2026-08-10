@@ -1,0 +1,19 @@
+{
+  "pluginName": "LIVP 格式支持",
+  "pluginId": "8fbfb659-395d-4fe4-a745-a5aebe0f1dc0",
+  "priority": 20,
+  "version": "1.0.0",
+  "index": "index.js",
+  "tags": ["LIVP", "Live Photo", "动态照片", "预览"],
+  "category": "productivity",
+  "description": "为 .livp 文件提供静态缩略图与 Live Photo 循环播放预览。",
+  "author": "Mira Team",
+  "enable": true,
+  "config": {},
+  "hotkey": {},
+  "events": [],
+  "dependencies": [],
+  "permissions": ["ui", "dom"],
+  "minAppVersion": "1.0.0",
+  "platform": ["win32", "darwin", "linux"]
+}

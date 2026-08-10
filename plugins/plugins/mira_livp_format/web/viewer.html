@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Live Photo 预览</title>
+    <style>
+      * { box-sizing: border-box; }
+      html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #111; }
+      img, video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+      video { display: none; }
+      .error { display: none; place-items: center; width: 100%; height: 100%; padding: 24px; color: #ddd; font: 14px system-ui, sans-serif; text-align: center; }
+    </style>
+  </head>
+  <body>
+    <img id="photo" alt="">
+    <video id="video" muted autoplay loop playsinline controls></video>
+    <div id="error" class="error">无法预览此 Live Photo</div>
+    <script>
+      const params = new URLSearchParams(location.search)
+      const photo = document.querySelector('#photo')
+      const video = document.querySelector('#video')
+      const error = document.querySelector('#error')
+      const fileId = params.get('fileId') || ''
+      const imageUrl = params.get('imageUrl') || ''
+      const videoUrl = params.get('videoUrl') || ''
+      let photoFailed = false
+      let videoFailed = false
+      const fail = () => {
+        photo.style.display = 'none'
+        video.style.display = 'none'
+        error.style.display = 'grid'
+        parent.postMessage({ type: 'mira-livp-preview-error', fileId }, '*')
+      }
+
+      photo.alt = params.get('fileName') || 'Live Photo'
+      photo.addEventListener('load', () => {
+        parent.postMessage({ type: 'mira-livp-preview-loaded', fileId }, '*')
+      }, { once: true })
+      photo.addEventListener('error', () => {
+        photoFailed = true
+        photo.style.display = 'none'
+        if (videoFailed) fail()
+      }, { once: true })
+      video.addEventListener('canplay', () => {
+        photo.style.display = 'none'
+        video.style.display = 'block'
+        error.style.display = 'none'
+        video.play().catch(() => undefined)
+        parent.postMessage({ type: 'mira-livp-preview-loaded', fileId }, '*')
+      }, { once: true })
+      video.addEventListener('error', () => {
+        videoFailed = true
+        if (photoFailed) fail()
+      }, { once: true })
+      if (!imageUrl || !videoUrl) fail()
+      else {
+        photo.src = imageUrl
+        video.src = videoUrl
+      }
+    </script>
+  </body>
+</html>

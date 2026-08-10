@@ -56,7 +56,7 @@
       />
       <button
         type="button"
-        class="absolute right-12 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
+        class="absolute right-5 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
         :title="$t('common.close')"
         :aria-label="$t('common.close')"
         @click="closePreview"
