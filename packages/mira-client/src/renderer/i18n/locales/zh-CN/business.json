@@ -547,7 +547,10 @@
     "unknownError": "未知错误",
     "badgeUpdatable": "可更新",
     "badgeInstalled": "已安装",
-    "selectFolderTitle": "选择插件文件夹"
+    "selectFolderTitle": "选择插件文件夹",
+    "disable": "禁用",
+    "enable": "启用",
+    "platform": "支持平台"
   },
   "schemaForm": {
     "selectPlaceholder": "请选择",

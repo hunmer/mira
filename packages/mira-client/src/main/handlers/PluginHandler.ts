@@ -497,15 +497,29 @@ export class PluginHandler {
    */
   private async handleUninstallPlugin(
     _event: Electron.IpcMainInvokeEvent,
-    _pluginId: string,
+    pluginId: string,
     pluginDirectory: string,
     _pluginName: string
   ): Promise<BaseResponse> {
     try {
-      // 简单实现：删除插件目录
+      // 目录名可能与 pluginId 不同，优先使用扫描结果中的实际目录。
+      const discovered = await this.discoverPlugins()
+      const discoveredConfig = discovered.find(config => config.pluginId === pluginId)
+      const targetDirectory = discoveredConfig?.actualDirectory || pluginDirectory
+
+      if (!targetDirectory) {
+        return { success: false, message: '未找到插件目录' }
+      }
+
       try {
-        await fs.rm(pluginDirectory, { recursive: true, force: true })
-        logger.info('PluginHandler', `Plugin directory removed: ${pluginDirectory}`)
+        await fs.rm(targetDirectory, { recursive: true, force: true })
+        try {
+          await fs.access(targetDirectory)
+          return { success: false, message: '插件目录删除后仍然存在' }
+        } catch {
+          // 目录已删除
+        }
+        logger.info('PluginHandler', `Plugin directory removed: ${targetDirectory}`)
         return { success: true, message: 'Plugin uninstalled successfully' }
       } catch (deleteError) {
         logger.error('PluginHandler', `Failed to remove plugin directory: ${deleteError}`)

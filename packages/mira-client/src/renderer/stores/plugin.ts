@@ -727,6 +727,9 @@ export const usePluginStore = defineStore('plugin', () => {
       pluginName
     )
     if (result.success) {
+      // 卸载成功后立即移除本地运行时记录，避免通用操作管理器的刷新结果
+      // 将已卸载插件再次写入持久化状态。
+      localPlugins.value = localPlugins.value.filter(plugin => plugin.config.pluginId !== pluginId)
       await persistState()
     }
     return result

@@ -7,175 +7,128 @@
       <DialogHeader>
         <DialogTitle>{{ $t('business.pluginsDialog.title') }}</DialogTitle>
       </DialogHeader>
-      <div class="min-h-[400px] h-full flex gap-3">
-        <!-- 侧边栏 -->
-        <aside class="w-56 flex flex-col">
-          <!-- 插件类型切换 -->
-          <div class="p-4">
-            <div class="bg-white/40 dark:bg-muted/40 rounded-lg p-1 grid grid-cols-3 border border-white/60 dark:border-border">
-              <button
-                @click="activeTab = 'local'"
-                :class="[
-                  'text-xs py-2 px-1 rounded-md font-medium transition-colors',
-                  activeTab === 'local'
-                    ? 'bg-primary/10 text-primary shadow-sm'
-                    : 'text-muted-foreground dark:text-muted-foreground hover:text-foreground'
-                ]"
-              >
-                {{ $t('business.pluginsDialog.tabLocal') }}
-              </button>
-              <button
-                @click="activeTab = 'server'"
-                :class="[
-                  'text-xs py-2 px-1 rounded-md font-medium transition-colors',
-                  activeTab === 'server'
-                    ? 'bg-primary/10 text-primary shadow-sm'
-                    : 'text-muted-foreground dark:text-muted-foreground hover:text-foreground'
-                ]"
-              >
-                {{ $t('business.pluginsDialog.tabServer') }}
-              </button>
-              <button
-                @click="activeTab = 'online'"
-                :class="[
-                  'text-xs py-2 px-1 rounded-md font-medium transition-colors',
-                  activeTab === 'online'
-                    ? 'bg-primary/10 text-primary shadow-sm'
-                    : 'text-muted-foreground dark:text-muted-foreground hover:text-foreground'
-                ]"
-              >
-                {{ $t('business.pluginsDialog.tabMarket') }}
-              </button>
-            </div>
+      <div class="min-h-[400px] h-full flex flex-col gap-3">
+        <!-- 第一行：分类tab + 顶部操作栏 -->
+        <div class="flex items-center gap-3 flex-wrap">
+          <!-- 插件类型切换（分段控件） -->
+          <div class="bg-white/40 dark:bg-muted/40 rounded-lg p-1 grid grid-cols-3 border border-white/60 dark:border-border shrink-0">
+            <button
+              @click="activeTab = 'local'"
+              :class="[
+                'text-xs py-2 px-3 rounded-md font-medium transition-colors whitespace-nowrap',
+                activeTab === 'local'
+                  ? 'bg-primary/10 text-primary shadow-sm'
+                  : 'text-muted-foreground dark:text-muted-foreground hover:text-foreground'
+              ]"
+            >
+              {{ $t('business.pluginsDialog.tabLocal') }}
+            </button>
+            <button
+              @click="activeTab = 'server'"
+              :class="[
+                'text-xs py-2 px-3 rounded-md font-medium transition-colors whitespace-nowrap',
+                activeTab === 'server'
+                  ? 'bg-primary/10 text-primary shadow-sm'
+                  : 'text-muted-foreground dark:text-muted-foreground hover:text-foreground'
+              ]"
+            >
+              {{ $t('business.pluginsDialog.tabServer') }}
+            </button>
+            <button
+              @click="activeTab = 'online'"
+              :class="[
+                'text-xs py-2 px-3 rounded-md font-medium transition-colors whitespace-nowrap',
+                activeTab === 'online'
+                  ? 'bg-primary/10 text-primary shadow-sm'
+                  : 'text-muted-foreground dark:text-muted-foreground hover:text-foreground'
+              ]"
+            >
+              {{ $t('business.pluginsDialog.tabMarket') }}
+            </button>
           </div>
 
-          <!-- 分类导航 -->
-          <nav class="px-2 space-y-1 flex-grow">
-            <button
-              @click="selectedCategory = 'all'"
-              :class="[
-                'flex items-center w-full px-3 py-2 text-sm rounded-lg transition-colors',
-                selectedCategory === 'all'
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-muted-foreground dark:text-muted-foreground hover:bg-white/50 dark:hover:bg-muted/60'
-              ]"
-            >
-              <span class="material-icons text-base mr-2">all_inclusive</span>
-              {{ $t('business.pluginsDialog.allIntegrations') }}
-            </button>
-            <button
-              @click="selectedCategory = 'communication'"
-              :class="[
-                'flex items-center w-full px-3 py-2 text-sm rounded-lg transition-colors',
-                selectedCategory === 'communication'
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-muted-foreground dark:text-muted-foreground hover:bg-white/50 dark:hover:bg-muted/60'
-              ]"
-            >
-              <span class="material-icons text-base mr-2">chat_bubble_outline</span>
-              {{ $t('business.pluginsDialog.communication') }}
-            </button>
-            <button
-              @click="selectedCategory = 'documentation'"
-              :class="[
-                'flex items-center w-full px-3 py-2 text-sm rounded-lg transition-colors',
-                selectedCategory === 'documentation'
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-muted-foreground dark:text-muted-foreground hover:bg-white/50 dark:hover:bg-muted/60'
-              ]"
-            >
-              <span class="material-icons text-base mr-2">description</span>
-              {{ $t('business.pluginsDialog.documentation') }}
-            </button>
-            <button
-              @click="selectedCategory = 'productivity'"
-              :class="[
-                'flex items-center w-full px-3 py-2 text-sm rounded-lg transition-colors',
-                selectedCategory === 'productivity'
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-muted-foreground dark:text-muted-foreground hover:bg-white/50 dark:hover:bg-muted/60'
-              ]"
-            >
-              <span class="material-icons text-base mr-2">trending_up</span>
-              {{ $t('business.pluginsDialog.productivity') }}
-            </button>
-            <button
-              @click="selectedCategory = 'development'"
-              :class="[
-                'flex items-center w-full px-3 py-2 text-sm rounded-lg transition-colors',
-                selectedCategory === 'development'
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-muted-foreground dark:text-muted-foreground hover:bg-white/50 dark:hover:bg-muted/60'
-              ]"
-            >
-              <span class="material-icons text-base mr-2">code</span>
-              {{ $t('business.pluginsDialog.development') }}
-            </button>
-          </nav>
-        </aside>
+          <div class="flex-1"></div>
 
-        <!-- 主内容区 -->
-        <main class="flex-1 flex flex-col">
-          <!-- 顶部操作栏 -->
-          <header class="flex items-center justify-between px-4 py-3 border-b border-border dark:border-border">
-            <div class="flex items-center space-x-2">
-              <!-- 搜索框 -->
-              <div class="relative">
-                <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">search</span>
-                <input
-                  v-model="searchQuery"
-                  type="text"
-                  :placeholder="$t('business.pluginsDialog.searchPlaceholder')"
-                  class="pl-9 pr-4 py-2 w-64 border border-white/60 dark:border-border bg-white/40 dark:bg-muted/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm text-foreground dark:text-muted-foreground"
-                />
-              </div>
-              <!-- 刷新按钮 -->
-              <TooltipProvider v-if="activeTab === 'local'" :ignore-non-keyboard-focus="true">
-                <Tooltip>
-                  <TooltipTrigger as-child>
-                    <button
-                      @click="refreshPlugins"
-                      :disabled="isRefreshing"
-                      class="p-2 rounded-lg hover:bg-muted dark:hover:bg-muted transition-colors text-muted-foreground dark:text-muted-foreground disabled:opacity-50"
-                    >
-                      <span class="material-icons text-base" :class="{ 'animate-spin': isRefreshing }">refresh</span>
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">{{ $t('business.pluginsDialog.refreshList') }}</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <!-- 检查更新按钮（仅本地插件 tab 显示） -->
-              <TooltipProvider v-if="activeTab === 'local' && marketplaceUrl" :ignore-non-keyboard-focus="true">
-                <Tooltip>
-                  <TooltipTrigger as-child>
-                    <button
-                      @click="checkUpdates"
-                      :disabled="pluginStore.isCheckingUpdates"
-                      class="p-2 rounded-lg hover:bg-muted dark:hover:bg-muted transition-colors text-muted-foreground dark:text-muted-foreground disabled:opacity-50"
-                    >
-                      <span class="material-icons text-base" :class="{ 'animate-spin': pluginStore.isCheckingUpdates }">sync</span>
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">{{ pluginUpdateCount > 0 ? $t('business.pluginsDialog.checkUpdatesCount', { count: pluginUpdateCount }) : $t('business.pluginsDialog.checkUpdates') }}</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <!-- 添加插件按钮 -->
-              <TooltipProvider :ignore-non-keyboard-focus="true">
-                <Tooltip>
-                  <TooltipTrigger as-child>
-                    <button
-                      @click="showAddPluginDialog = true"
-                      class="p-2 rounded-lg bg-primary text-white hover:bg-primary transition-colors"
-                    >
-                      <span class="material-icons text-base">add</span>
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">{{ $t('business.pluginsDialog.addNew') }}</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+          <!-- 操作按钮组 -->
+          <div class="flex items-center space-x-2">
+            <!-- 搜索框 -->
+            <div class="relative">
+              <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">search</span>
+              <input
+                v-model="searchQuery"
+                type="text"
+                :placeholder="$t('business.pluginsDialog.searchPlaceholder')"
+                class="pl-9 pr-4 py-2 w-64 border border-white/60 dark:border-border bg-white/40 dark:bg-muted/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm text-foreground"
+              />
             </div>
-          </header>
+            <!-- 刷新按钮 -->
+            <TooltipProvider :ignore-non-keyboard-focus="true">
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <button
+                    @click="refreshPlugins"
+                    :disabled="isRefreshing"
+                    class="p-2 rounded-lg hover:bg-muted dark:hover:bg-muted transition-colors text-muted-foreground dark:text-muted-foreground disabled:opacity-50"
+                  >
+                    <span class="material-icons text-base" :class="{ 'animate-spin': isRefreshing }">refresh</span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top">{{ $t('business.pluginsDialog.refreshList') }}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <!-- 检查更新按钮（仅本地插件 tab 显示） -->
+            <TooltipProvider v-if="activeTab === 'local' && marketplaceUrl" :ignore-non-keyboard-focus="true">
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <button
+                    @click="checkUpdates"
+                    :disabled="pluginStore.isCheckingUpdates"
+                    class="p-2 rounded-lg hover:bg-muted dark:hover:bg-muted transition-colors text-muted-foreground dark:text-muted-foreground disabled:opacity-50"
+                  >
+                    <span class="material-icons text-base" :class="{ 'animate-spin': pluginStore.isCheckingUpdates }">sync</span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top">{{ pluginUpdateCount > 0 ? $t('business.pluginsDialog.checkUpdatesCount', { count: pluginUpdateCount }) : $t('business.pluginsDialog.checkUpdates') }}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <!-- 添加插件按钮 -->
+            <TooltipProvider :ignore-non-keyboard-focus="true">
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <button
+                    @click="showAddPluginDialog = true"
+                    class="p-2 rounded-lg bg-primary text-white hover:bg-primary transition-colors"
+                  >
+                    <span class="material-icons text-base">add</span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top">{{ $t('business.pluginsDialog.addNew') }}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        </div>
 
+        <!-- 第二行：类别横向滚动按钮栏 -->
+        <div class="flex items-center gap-2 overflow-x-auto pb-1 shrink-0">
+          <button
+            v-for="cat in categories"
+            :key="cat.value"
+            @click="selectedCategory = cat.value"
+            :class="[
+              'flex items-center px-3 py-1.5 text-sm rounded-full transition-colors whitespace-nowrap shrink-0 border',
+              selectedCategory === cat.value
+                ? 'bg-primary/10 text-primary border-primary/30'
+                : 'text-muted-foreground dark:text-muted-foreground hover:bg-white/50 dark:hover:bg-muted/60 border-transparent'
+            ]"
+          >
+            <span class="material-icons text-base mr-1.5">{{ cat.icon }}</span>
+            {{ $t(cat.label) }}
+          </button>
+        </div>
+
+        <!-- 主内容区 + 右侧详情栏 -->
+        <div class="flex-1 flex gap-3 min-h-0">
+          <main class="flex-1 flex flex-col min-w-0 border border-border dark:border-border rounded-lg overflow-hidden">
           <!-- 内容区域 -->
           <div class="flex-1 p-4 overflow-y-auto">
             <!-- 本地插件列表 -->
@@ -183,7 +136,13 @@
               <div
                 v-for="plugin in filteredLocalPlugins"
                 :key="plugin.config.pluginId"
-                class="border border-border dark:border-border rounded-lg p-4 hover:shadow-md transition-shadow"
+                @click="selectPlugin({ kind: 'local', pluginId: plugin.config.pluginId })"
+                :class="[
+                  'border rounded-lg p-4 hover:shadow-md cursor-pointer transition-all',
+                  isSelected('local', plugin.config.pluginId)
+                    ? 'border-primary ring-1 ring-primary/30 bg-primary/5'
+                    : 'border-border dark:border-border'
+                ]"
               >
                 <div class="flex items-start justify-between mb-3">
                   <div class="flex-1 flex items-start gap-2">
@@ -232,9 +191,9 @@
                 <div v-if="plugin.error" class="mt-2 text-xs text-destructive dark:text-destructive bg-destructive dark:bg-destructive/20 p-2 rounded">
                   {{ plugin.error }}
                 </div>
-                <div class="flex items-center space-x-2 mt-3 pt-3 border-t border-border dark:border-border">
+                <div class="flex items-center space-x-2 mt-3 pt-3 border-t border-border dark:border-border" @click.stop>
                   <button
-                    @click="showPluginDetails(plugin)"
+                    @click="selectPlugin({ kind: 'local', pluginId: plugin.config.pluginId })"
                     class="text-xs text-primary dark:text-primary hover:text-primary dark:hover:text-primary"
                   >
                     {{ $t('business.pluginsDialog.details') }}
@@ -276,7 +235,13 @@
               <div
                 v-for="plugin in filteredServerPlugins"
                 :key="plugin.config.pluginId"
-                class="border border-border dark:border-border rounded-lg p-4 hover:shadow-md transition-shadow"
+                @click="selectPlugin({ kind: 'server', pluginId: plugin.config.pluginId })"
+                :class="[
+                  'border rounded-lg p-4 hover:shadow-md cursor-pointer transition-all',
+                  isSelected('server', plugin.config.pluginId)
+                    ? 'border-primary ring-1 ring-primary/30 bg-primary/5'
+                    : 'border-border dark:border-border'
+                ]"
               >
                 <div class="flex items-start justify-between mb-3">
                   <div class="flex-1 flex items-start gap-2 min-w-0">
@@ -317,9 +282,9 @@
                 <div v-if="plugin.error" class="mt-2 text-xs text-destructive dark:text-destructive bg-destructive/10 p-2 rounded">
                   {{ plugin.error }}
                 </div>
-                <div class="flex items-center justify-between mt-3 pt-3 border-t border-border dark:border-border">
+                <div class="flex items-center justify-between mt-3 pt-3 border-t border-border dark:border-border" @click.stop>
                   <button
-                    @click="showPluginDetails(plugin)"
+                    @click="selectPlugin({ kind: 'server', pluginId: plugin.config.pluginId })"
                     class="text-xs text-primary dark:text-primary hover:text-primary"
                   >
                     {{ $t('business.pluginsDialog.details') }}
@@ -387,7 +352,13 @@
                 <div
                   v-for="entry in filteredMarketplacePlugins"
                   :key="entry.pluginId"
-                  class="border border-border dark:border-border rounded-lg p-4 hover:shadow-md transition-shadow"
+                  @click="selectPlugin({ kind: 'market', pluginId: entry.pluginId })"
+                  :class="[
+                    'border rounded-lg p-4 hover:shadow-md cursor-pointer transition-all',
+                    isSelected('market', entry.pluginId)
+                      ? 'border-primary ring-1 ring-primary/30 bg-primary/5'
+                      : 'border-border dark:border-border'
+                  ]"
                 >
                   <div class="flex items-start justify-between mb-3">
                     <div class="flex-1 flex items-start gap-2">
@@ -429,7 +400,7 @@
                       {{ platformLabel(p) }}
                     </span>
                   </div>
-                  <div class="flex items-center justify-end space-x-2 mt-3 pt-3 border-t border-border dark:border-border">
+                  <div class="flex items-center justify-end space-x-2 mt-3 pt-3 border-t border-border dark:border-border" @click.stop>
                     <!-- 安装中：显示进度条 + 取消按钮 -->
                     <div v-if="isInstalling(entry.pluginId)" class="flex items-center justify-end w-full gap-2">
                       <div class="flex-1 flex items-center gap-2">
@@ -494,96 +465,219 @@
               </div>
             </div>
           </div>
-        </main>
-      </div>
-    </DialogContent>
-  </Dialog>
+          </main>
 
-  <!-- 插件详情对话框 -->
-  <Dialog
-    :open="showDetailsDialog"
-    @update:open="showDetailsDialog = $event"
-  >
-    <DialogContent class="plugin-details-dialog sm:max-w-[500px]">
-      <DialogHeader>
-        <DialogTitle>{{ $t('business.pluginsDialog.detailTitle', { name: selectedPlugin?.config.pluginName }) }}</DialogTitle>
-      </DialogHeader>
-    <div v-if="selectedPlugin" class="space-y-4">
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm font-medium mb-1 text-foreground dark:text-muted-foreground">{{ $t('business.pluginsDialog.pluginId') }}</label>
-          <input
-            :value="selectedPlugin.config.pluginId"
-            readonly
-            class="w-full px-3 py-2 border border-border dark:border-border rounded bg-muted/50 dark:bg-muted/50 text-sm text-foreground dark:text-muted-foreground"
-          />
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-1 text-foreground dark:text-muted-foreground">{{ $t('business.pluginsDialog.version') }}</label>
-          <input
-            :value="selectedPlugin.config.version"
-            readonly
-            class="w-full px-3 py-2 border border-border dark:border-border rounded bg-muted/50 dark:bg-muted/50 text-sm text-foreground dark:text-muted-foreground"
-          />
-        </div>
-      </div>
-      <div>
-        <label class="block text-sm font-medium mb-1 text-foreground dark:text-muted-foreground">{{ $t('business.pluginsDialog.description') }}</label>
-        <textarea
-          :value="selectedPlugin.config.description"
-          readonly
-          rows="3"
-          class="w-full px-3 py-2 border border-border dark:border-border rounded bg-muted dark:bg-muted text-sm text-foreground dark:text-muted-foreground"
-        ></textarea>
-      </div>
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm font-medium mb-1 text-foreground dark:text-muted-foreground">{{ $t('business.pluginsDialog.author') }}</label>
-          <input
-            :value="selectedPlugin.config.author"
-            readonly
-            class="w-full px-3 py-2 border border-border dark:border-border rounded bg-muted/50 dark:bg-muted/50 text-sm text-foreground dark:text-muted-foreground"
-          />
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-1 text-foreground dark:text-muted-foreground">{{ $t('business.pluginsDialog.homepage') }}</label>
-          <input
-            :value="selectedPlugin.config.homepage || $t('business.pluginsDialog.none')"
-            readonly
-            class="w-full px-3 py-2 border border-border dark:border-border rounded bg-muted/50 dark:bg-muted/50 text-sm text-foreground dark:text-muted-foreground"
-          />
-        </div>
-      </div>
-      <div v-if="selectedPlugin.config.dependencies && selectedPlugin.config.dependencies.length > 0">
-        <label class="block text-sm font-medium mb-1 text-foreground dark:text-muted-foreground">{{ $t('business.pluginsDialog.dependencies') }}</label>
-        <div class="flex flex-wrap gap-1">
-          <span
-            v-for="dep in selectedPlugin.config.dependencies"
-            :key="dep"
-            class="px-2 py-1 bg-primary dark:bg-primary text-primary dark:text-primary rounded text-xs"
+          <!-- 右侧详情栏 -->
+          <aside
+            v-if="selectedDetail"
+            class="w-80 shrink-0 flex flex-col border border-border dark:border-border rounded-lg overflow-hidden"
           >
-            {{ dep }}
-          </span>
+            <!-- 详情头部 -->
+            <div class="flex items-start justify-between gap-2 p-4 border-b border-border dark:border-border">
+              <div class="flex items-start gap-2 min-w-0">
+                <!-- 本地/服务器插件图标 -->
+                <PluginIcon
+                  v-if="selectedRuntime"
+                  :plugin-id="selectedRuntime.config.pluginId"
+                  :directory="selectedRuntime.directory"
+                  :icon="selectedRuntime.config.icon"
+                  :name="selectedRuntime.config.pluginName"
+                  :size="36"
+                  rounded="md"
+                  class="mt-0.5"
+                />
+                <!-- 市场插件图标 -->
+                <PluginIcon
+                  v-else-if="selectedMarket"
+                  :plugin-id="selectedMarket.pluginId"
+                  :base-url="marketplaceUrl"
+                  :directory="selectedMarket.directory"
+                  :icon="selectedMarket.icon || undefined"
+                  :name="selectedMarket.pluginName"
+                  :size="36"
+                  rounded="md"
+                  class="mt-0.5"
+                />
+                <div class="min-w-0">
+                  <h3 class="font-medium text-foreground dark:text-muted-foreground truncate">
+                    {{ selectedRuntime?.config.pluginName || selectedMarket?.pluginName }}
+                  </h3>
+                  <p class="text-xs text-muted-foreground dark:text-muted-foreground mt-0.5 truncate">
+                    v{{ selectedRuntime?.config.version || selectedMarket?.version }} · {{ selectedRuntime?.config.author || selectedMarket?.author }}
+                  </p>
+                </div>
+              </div>
+              <button
+                @click="clearSelection"
+                class="p-1 rounded-lg hover:bg-muted dark:hover:bg-muted transition-colors text-muted-foreground dark:text-muted-foreground shrink-0"
+              >
+                <span class="material-icons text-base">close</span>
+              </button>
+            </div>
+
+            <!-- 详情内容（滚动） -->
+            <div class="flex-1 overflow-y-auto p-4 space-y-3 text-sm">
+              <!-- 描述 -->
+              <div>
+                <label class="block text-xs font-medium mb-1 text-muted-foreground dark:text-muted-foreground">{{ $t('business.pluginsDialog.description') }}</label>
+                <p class="text-foreground dark:text-muted-foreground">{{ selectedRuntime?.config.description || selectedMarket?.description }}</p>
+              </div>
+
+              <!-- 操作按钮 -->
+              <div v-if="selectedRuntime" class="flex flex-wrap items-center gap-2 pt-1">
+                <button
+                  v-if="selectedKind === 'local'"
+                  @click="togglePlugin(selectedRuntime)"
+                  :class="[
+                    'px-3 py-1.5 rounded text-xs font-medium transition-colors',
+                    selectedRuntime.status !== 'disabled'
+                      ? 'bg-green-500 text-white hover:bg-green-600'
+                      : 'bg-accent dark:bg-muted text-foreground dark:text-muted-foreground hover:bg-muted'
+                  ]"
+                >
+                  {{ selectedRuntime.status !== 'disabled' ? $t('business.pluginsDialog.disable') : $t('business.pluginsDialog.enable') }}
+                </button>
+                <button
+                  v-if="selectedKind === 'server'"
+                  @click="toggleServerPlugin(selectedRuntime)"
+                  :class="[
+                    'px-3 py-1.5 rounded text-xs font-medium transition-colors',
+                    selectedRuntime.status !== 'disabled'
+                      ? 'bg-green-500 text-white hover:bg-green-600'
+                      : 'bg-accent dark:bg-muted text-foreground dark:text-muted-foreground hover:bg-muted'
+                  ]"
+                >
+                  {{ selectedRuntime.status !== 'disabled' ? $t('business.pluginsDialog.disable') : $t('business.pluginsDialog.enable') }}
+                </button>
+                <button
+                  v-if="selectedKind === 'local'"
+                  @click="reloadPlugin(selectedRuntime)"
+                  class="px-3 py-1.5 rounded text-xs bg-muted dark:bg-muted text-foreground dark:text-muted-foreground hover:bg-muted dark:hover:bg-muted transition-colors"
+                >
+                  {{ $t('business.pluginsDialog.reload') }}
+                </button>
+                <button
+                  v-if="selectedKind === 'local' && getPluginUpdate(selectedRuntime.config.pluginId)"
+                  @click="updateLocalPlugin(selectedRuntime.config.pluginId)"
+                  :disabled="isInstalling(selectedRuntime.config.pluginId)"
+                  class="px-3 py-1.5 rounded text-xs bg-green-500 text-white hover:bg-green-600 transition-colors disabled:opacity-50"
+                >
+                  {{ isInstalling(selectedRuntime.config.pluginId) ? $t('business.pluginsDialog.updating') : $t('business.pluginsDialog.update') }}
+                </button>
+                <button
+                  v-if="selectedKind === 'local'"
+                  @click="removePlugin(selectedRuntime)"
+                  class="px-3 py-1.5 rounded text-xs bg-destructive/10 text-destructive dark:text-destructive hover:bg-destructive/20 transition-colors"
+                >
+                  {{ $t('business.pluginsDialog.uninstall') }}
+                </button>
+              </div>
+
+              <!-- 市场操作 -->
+              <div v-if="selectedMarket" class="flex flex-wrap items-center gap-2 pt-1">
+                <!-- 安装中 -->
+                <template v-if="isInstalling(selectedMarket.pluginId)">
+                  <div class="flex-1 flex items-center gap-2">
+                    <div class="flex-1 h-1.5 bg-muted dark:bg-muted rounded-full overflow-hidden">
+                      <div
+                        class="h-full bg-primary transition-all duration-150 rounded-full"
+                        :style="{ width: getInstallPercent(selectedMarket.pluginId) + '%' }"
+                      ></div>
+                    </div>
+                    <span class="text-xs text-muted-foreground dark:text-muted-foreground whitespace-nowrap tabular-nums">
+                      {{ getInstallPhase(selectedMarket.pluginId) === 'verifying' ? $t('business.pluginsDialog.verifying') : getInstallPercent(selectedMarket.pluginId) + '%' }}
+                    </span>
+                  </div>
+                  <button
+                    @click="cancelInstall(selectedMarket)"
+                    class="p-1 rounded text-destructive dark:text-destructive hover:bg-destructive/10 transition-colors"
+                  >
+                    <span class="material-icons text-base">close</span>
+                  </button>
+                </template>
+                <template v-else>
+                  <button
+                    v-if="getMarketStatus(selectedMarket).action === 'install'"
+                    @click="installMarketplacePlugin(selectedMarket)"
+                    class="px-3 py-1.5 rounded text-xs bg-primary text-white hover:bg-primary transition-colors"
+                  >
+                    {{ $t('business.pluginsDialog.install') }}
+                  </button>
+                  <button
+                    v-else-if="getMarketStatus(selectedMarket).action === 'update'"
+                    @click="installMarketplacePlugin(selectedMarket)"
+                    class="px-3 py-1.5 rounded text-xs bg-green-500 text-white hover:bg-green-600 transition-colors"
+                  >
+                    {{ $t('business.pluginsDialog.update') }}
+                  </button>
+                  <span
+                    v-else
+                    class="px-3 py-1.5 rounded text-xs bg-muted dark:bg-muted text-muted-foreground dark:text-muted-foreground"
+                  >
+                    {{ $t('business.pluginsDialog.installed') }}
+                  </span>
+                </template>
+              </div>
+
+              <!-- 字段表 -->
+              <div class="space-y-2 pt-1">
+                <div class="flex justify-between gap-2">
+                  <span class="text-muted-foreground dark:text-muted-foreground shrink-0">{{ $t('business.pluginsDialog.pluginId') }}</span>
+                  <span class="text-foreground dark:text-muted-foreground text-right break-all">{{ selectedRuntime?.config.pluginId || selectedMarket?.pluginId }}</span>
+                </div>
+                <div class="flex justify-between gap-2">
+                  <span class="text-muted-foreground dark:text-muted-foreground shrink-0">{{ $t('business.pluginsDialog.author') }}</span>
+                  <span class="text-foreground dark:text-muted-foreground text-right truncate">{{ selectedRuntime?.config.author || selectedMarket?.author }}</span>
+                </div>
+                <div class="flex justify-between gap-2">
+                  <span class="text-muted-foreground dark:text-muted-foreground shrink-0">{{ $t('business.pluginsDialog.homepage') }}</span>
+                  <a
+                    v-if="(selectedRuntime?.config.homepage || selectedMarket?.homepage)"
+                    :href="selectedRuntime?.config.homepage || selectedMarket?.homepage"
+                    target="_blank"
+                    class="text-primary hover:underline text-right truncate"
+                  >{{ selectedRuntime?.config.homepage || selectedMarket?.homepage }}</a>
+                  <span v-else class="text-muted-foreground">{{ $t('business.pluginsDialog.none') }}</span>
+                </div>
+                <div v-if="selectedRuntime?.directory || selectedMarket?.directory" class="flex justify-between gap-2">
+                  <span class="text-muted-foreground dark:text-muted-foreground shrink-0">{{ $t('business.pluginsDialog.directory') }}</span>
+                  <span class="text-foreground dark:text-muted-foreground text-right break-all text-xs">{{ selectedRuntime?.directory || selectedMarket?.directory }}</span>
+                </div>
+              </div>
+
+              <!-- 标签 -->
+              <div v-if="detailTags.length" class="pt-1">
+                <label class="block text-xs font-medium mb-1 text-muted-foreground dark:text-muted-foreground">{{ $t('business.pluginsDialog.dependencies') }}</label>
+                <div class="flex flex-wrap gap-1">
+                  <span
+                    v-for="tag in detailTags"
+                    :key="tag"
+                    class="px-2 py-0.5 bg-muted dark:bg-muted text-muted-foreground dark:text-muted-foreground rounded text-xs"
+                  >{{ tag }}</span>
+                </div>
+              </div>
+
+              <!-- 平台支持（市场） -->
+              <div v-if="selectedMarket?.platform?.length" class="pt-1">
+                <label class="block text-xs font-medium mb-1 text-muted-foreground dark:text-muted-foreground">{{ $t('business.pluginsDialog.platform') }}</label>
+                <div class="flex flex-wrap gap-1">
+                  <span
+                    v-for="p in selectedMarket.platform"
+                    :key="p"
+                    class="px-2 py-0.5 bg-muted dark:bg-muted text-muted-foreground dark:text-muted-foreground rounded text-xs"
+                  >{{ platformLabel(p) }}</span>
+                </div>
+              </div>
+
+              <!-- 错误信息（本地/服务器） -->
+              <div v-if="selectedRuntime?.error" class="pt-1">
+                <label class="block text-xs font-medium mb-1 text-destructive dark:text-destructive">{{ $t('business.pluginsDialog.errorMessage') }}</label>
+                <div class="text-xs text-destructive dark:text-destructive bg-destructive/10 p-2 rounded break-words">{{ selectedRuntime.error }}</div>
+              </div>
+            </div>
+          </aside>
         </div>
       </div>
-      <div>
-        <label class="block text-sm font-medium mb-1 text-foreground dark:text-muted-foreground">{{ $t('business.pluginsDialog.directory') }}</label>
-        <input
-          :value="selectedPlugin.directory"
-          readonly
-          class="w-full px-3 py-2 border border-border dark:border-border rounded bg-muted dark:bg-muted text-sm text-foreground dark:text-muted-foreground"
-        />
-      </div>
-      <div v-if="selectedPlugin.error">
-        <label class="block text-sm font-medium mb-1 text-foreground dark:text-muted-foreground">{{ $t('business.pluginsDialog.errorMessage') }}</label>
-        <textarea
-          :value="selectedPlugin.error"
-          readonly
-          rows="3"
-          class="w-full px-3 py-2 border border-border dark:border-border rounded bg-destructive dark:bg-destructive/20 text-sm text-destructive dark:text-destructive"
-        ></textarea>
-      </div>
-    </div>
     </DialogContent>
   </Dialog>
 
@@ -673,9 +767,21 @@ const activeTab = ref<'local' | 'server' | 'online'>('local')
 const selectedCategory = ref('all')
 const searchQuery = ref('')
 const isRefreshing = ref(false)
-const showDetailsDialog = ref(false)
 const showAddPluginDialog = ref(false)
-const selectedPlugin = ref<PluginRuntime | null>(null)
+
+// 选中插件：kind + pluginId（自动随列表变化刷新）
+type SelectedKind = 'local' | 'server' | 'market'
+const selectedKind = ref<SelectedKind | null>(null)
+const selectedPluginId = ref<string | null>(null)
+
+// 分类列表（用于横向滚动按钮栏）
+const categories = [
+  { value: 'all', icon: 'all_inclusive', label: 'business.pluginsDialog.allIntegrations' },
+  { value: 'communication', icon: 'chat_bubble_outline', label: 'business.pluginsDialog.communication' },
+  { value: 'documentation', icon: 'description', label: 'business.pluginsDialog.documentation' },
+  { value: 'productivity', icon: 'trending_up', label: 'business.pluginsDialog.productivity' },
+  { value: 'development', icon: 'code', label: 'business.pluginsDialog.development' }
+] as const
 
 // 插件市场相关
 const marketplaceUrl = computed(() => (settingsStore.settings.clientPluginMarketUrl || '').trim())
@@ -1030,10 +1136,56 @@ const toggleServerPlugin = async (plugin: PluginRuntime) => {
   }
 }
 
-const showPluginDetails = (plugin: PluginRuntime) => {
-  selectedPlugin.value = plugin
-  showDetailsDialog.value = true
+// 选中插件（点击卡片或详情按钮）
+const selectPlugin = ({ kind, pluginId }: { kind: SelectedKind; pluginId: string }) => {
+  // 再次点击同一项则收起
+  if (selectedKind.value === kind && selectedPluginId.value === pluginId) {
+    clearSelection()
+    return
+  }
+  selectedKind.value = kind
+  selectedPluginId.value = pluginId
 }
+
+const clearSelection = () => {
+  selectedKind.value = null
+  selectedPluginId.value = null
+}
+
+const isSelected = (kind: SelectedKind, pluginId: string): boolean =>
+  selectedKind.value === kind && selectedPluginId.value === pluginId
+
+// 当前选中的运行时插件（local/server）
+const selectedRuntime = computed<PluginRuntime | null>(() => {
+  if (!selectedPluginId.value) return null
+  if (selectedKind.value === 'local') {
+    return (pluginStore.localPlugins || []).find(p => p.config.pluginId === selectedPluginId.value) || null
+  }
+  if (selectedKind.value === 'server') {
+    return (pluginStore.serverPlugins || []).find(p => p.config.pluginId === selectedPluginId.value) || null
+  }
+  return null
+})
+
+// 当前选中的市场插件
+const selectedMarket = computed<MarketplacePluginEntry | null>(() => {
+  if (selectedKind.value !== 'market' || !selectedPluginId.value) return null
+  return (pluginStore.marketplacePlugins || []).find(e => e.pluginId === selectedPluginId.value) || null
+})
+
+// 右侧详情栏是否展示
+const selectedDetail = computed<boolean>(() => selectedRuntime.value !== null || selectedMarket.value !== null)
+
+// 详情栏标签（依赖或 tags）
+const detailTags = computed<string[]>(() => {
+  if (selectedRuntime.value) {
+    return selectedRuntime.value.config.dependencies || []
+  }
+  if (selectedMarket.value) {
+    return selectedMarket.value.tags || []
+  }
+  return []
+})
 
 const reloadPlugin = async (plugin: PluginRuntime) => {
   try {
@@ -1147,7 +1299,12 @@ const isServerPluginsInitialized = ref(false)
 
 // 监听对话框打开，按需刷新插件列表
 watch(isVisible, async (visible) => {
-  if (visible && !isInitialized.value) {
+  if (!visible) {
+    // 关闭时清空选中
+    clearSelection()
+    return
+  }
+  if (!isInitialized.value) {
     await nextTick()
     refreshPlugins()
     isInitialized.value = true
@@ -1156,6 +1313,8 @@ watch(isVisible, async (visible) => {
 
 // 切换到插件市场标签时按需加载目录；切换到本地标签且配置了市场源时静默检查更新
 watch(activeTab, async (tab) => {
+  // 切换 tab 时清空右侧栏选中，避免跨分类残留
+  clearSelection()
   if (tab === 'online' && !isMarketplaceInitialized.value) {
     isMarketplaceInitialized.value = true
     await loadMarketplace()

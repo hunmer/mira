@@ -547,7 +547,10 @@
     "unknownError": "Unknown error",
     "badgeUpdatable": "Updatable",
     "badgeInstalled": "Installed",
-    "selectFolderTitle": "Select plugin folder"
+    "selectFolderTitle": "Select plugin folder",
+    "disable": "Disable",
+    "enable": "Enable",
+    "platform": "Platform"
   },
   "schemaForm": {
     "selectPlaceholder": "Please select",
