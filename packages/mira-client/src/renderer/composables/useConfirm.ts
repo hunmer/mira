@@ -28,8 +28,10 @@ export function useConfirm() {
         visible: true,
         header: options.header,
         message: options.message,
-        acceptLabel: options.acceptLabel || 'Confirm',
-        rejectLabel: options.rejectLabel || 'Cancel',
+        // 不在此处写死默认文案，交由渲染层(App.vue)用 i18n 兜底，
+        // 否则这里给的常量会盖掉渲染层的本地化默认值。
+        acceptLabel: options.acceptLabel,
+        rejectLabel: options.rejectLabel,
         onAccept: options.accept,
         onReject: options.reject,
       }

@@ -17,9 +17,9 @@
     <Dialog v-model:open="updateDialog.visible">
       <DialogContent class="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>发现新版本 v{{ updateDialog.version }}</DialogTitle>
+          <DialogTitle>{{ $t('commonUi.updateDialog.title', { version: updateDialog.version }) }}</DialogTitle>
           <DialogDescription>
-            {{ updateDialog.releaseNotes || '新版本已就绪，建议立即更新以获得最新功能和修复。' }}
+            {{ updateDialog.releaseNotes || $t('commonUi.updateDialog.defaultReleaseNotes') }}
           </DialogDescription>
         </DialogHeader>
         <div v-if="updateDialog.downloading" class="space-y-2">
@@ -27,8 +27,8 @@
           <p class="text-sm text-muted-foreground text-center">{{ Math.round(updateDialog.progress) }}%</p>
         </div>
         <DialogFooter v-else>
-          <Button variant="outline" @click="updateDialog.visible = false">稍后</Button>
-          <Button @click="startDownload" :disabled="updateDialog.downloading">立即更新</Button>
+          <Button variant="outline" @click="updateDialog.visible = false">{{ $t('commonUi.updateDialog.later') }}</Button>
+          <Button @click="startDownload" :disabled="updateDialog.downloading">{{ $t('commonUi.updateDialog.updateNow') }}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -43,12 +43,12 @@
            背景与动画样式由 AlertDialogContent 内部统一提供（玻璃质感，与 Dialog 一致）。 -->
       <AlertDialogContent class="z-[100] max-w-lg">
         <AlertDialogHeader>
-          <AlertDialogTitle>{{ confirmState.header || '确认操作' }}</AlertDialogTitle>
+          <AlertDialogTitle>{{ confirmState.header || $t('commonUi.confirmDialog.defaultHeader') }}</AlertDialogTitle>
           <AlertDialogDescription>{{ confirmState.message }}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <Button variant="outline" @click="onConfirmCancel">{{ confirmState.rejectLabel || '取消' }}</Button>
-          <Button @click="onConfirmAccept">{{ confirmState.acceptLabel || '确认' }}</Button>
+          <Button variant="outline" @click="onConfirmCancel">{{ confirmState.rejectLabel || $t('commonUi.confirmDialog.reject') }}</Button>
+          <Button @click="onConfirmAccept">{{ confirmState.acceptLabel || $t('commonUi.confirmDialog.accept') }}</Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
@@ -130,9 +130,10 @@ const settingsStore = useSettingsStore()
 
 
 // 全局Loading状态管理
+// title/message 默认空串，由 GlobalLoading 组件用 i18n 兜底
 const globalLoading = reactive({
   isVisible: false,
-  title: '加载中...',
+  title: '',
   message: '',
   progress: undefined as number | undefined,
   showProgress: false,
@@ -141,12 +142,12 @@ const globalLoading = reactive({
 
 const serverStartup = reactive({
   visible: environment.isElectron && !!window.electronAPI?.serverAutoStart,
-  message: '等待 mira-app-server 健康检查通过…',
+  message: '',
 })
 
 const waitForServerStartup = async () => {
   if (!serverStartup.visible || !window.electronAPI?.serverAutoStart) return
-  serverStartup.message = '等待 mira-app-server 健康检查通过…'
+  serverStartup.message = ''
   const result = await window.electronAPI.serverAutoStart.waitReady()
   if (result.success) {
     serverStartup.visible = false
@@ -327,7 +328,7 @@ const setupElectronListeners = () => {
   }) => {
     globalLoading.isVisible = true
     globalLoading.message = message || ''
-    globalLoading.title = options?.title || '加载中...'
+    globalLoading.title = options?.title || ''
     globalLoading.progress = options?.progress
     globalLoading.showProgress = options?.showProgress || false
     globalLoading.showCancel = options?.showCancel || false

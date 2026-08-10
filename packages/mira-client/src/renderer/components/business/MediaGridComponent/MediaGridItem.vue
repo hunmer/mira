@@ -82,12 +82,15 @@
       />
 
       <!-- 选择框 -->
-      <div
-        v-if="isSelected"
-        class="absolute top-2 left-2 w-6 h-6 bg-primary rounded-full flex items-center justify-center"
-      >
-        <span class="material-icons text-white text-sm">check</span>
-      </div>
+      <Transition name="check-zoom" appear>
+        <div
+          v-if="isSelected"
+          class="absolute top-2 left-2 w-6 h-6 bg-primary rounded-full flex items-center justify-center"
+          style="transform-origin: center;"
+        >
+          <span class="material-icons text-white text-sm">check</span>
+        </div>
+      </Transition>
 
       <!-- 视频进度条 (仅在视频预览时显示) -->
       <div
@@ -243,6 +246,21 @@ const hasVisibleInfo = computed(() =>
 <style scoped>
 .material-icons {
   font-size: 18px;
+}
+
+/* 选择框：放大/缩小进入退出（参考 MediaTabListView 的 toolbar-zoom） */
+.check-zoom-enter-active {
+  transition: transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 200ms ease;
+}
+
+.check-zoom-leave-active {
+  transition: transform 150ms ease-in, opacity 150ms ease;
+}
+
+.check-zoom-enter-from,
+.check-zoom-leave-to {
+  transform: scale(0.6);
+  opacity: 0;
 }
 
 :deep(.lazy-image[lazy]),

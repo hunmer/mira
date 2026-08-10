@@ -10,7 +10,7 @@
 -->
 
 <template>
-  <div class="w-full h-full relative overflow-hidden">
+  <div ref="rootRef" class="w-full h-full relative overflow-hidden">
     <!-- 加载状态作为覆盖层，不能卸载已缓存的视图实例。 -->
     <div v-if="loading" class="absolute inset-0 z-10 flex items-center justify-center bg-background/80">
       <i class="pi pi-spinner pi-spin text-2xl text-muted-foreground"></i>
@@ -36,9 +36,34 @@
         v-bind="viewConfig.props"
         :key="viewConfig.key || tabId"
         @error="handleComponentError"
+        @item-select="handleItemSelect"
+        @selection-change="handleSelectionChange"
         class="w-full h-full"
       />
     </KeepAlive>
+
+    <!-- 空格预览：复用 hovercard 的预览内容，在当前 Tab 内全屏展示。 -->
+    <div
+      v-if="previewItem"
+      class="absolute inset-0 z-50 bg-black"
+      @click.stop
+      @pointerdown.stop
+    >
+      <MediaPreviewContent
+        :key="previewItem.id"
+        :item="previewItem"
+        class="!h-full !w-full !rounded-none"
+      />
+      <button
+        type="button"
+        class="absolute right-12 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
+        :title="$t('common.close')"
+        :aria-label="$t('common.close')"
+        @click="closePreview"
+      >
+        <span class="material-icons">close</span>
+      </button>
+    </div>
 
     <!-- 空状态（没有配置视图） -->
     <div v-if="!loading && !error && (!viewConfig || !componentInstance)" class="flex flex-col items-center justify-center h-full text-center p-8">
@@ -54,6 +79,8 @@ import { ref, shallowRef, computed, watch, onMounted, onUnmounted, nextTick, mar
 import { useI18n } from 'vue-i18n'
 import { Button } from '@/components/ui/button'
 import type { TabViewConfig } from '@renderer/composables/TabRegistry'
+import type { FileInfo } from '../../../shared/types'
+import MediaPreviewContent from '@renderer/components/common/MediaPreviewContent.vue'
 
 // Props 定义
 interface Props {
@@ -72,6 +99,66 @@ const props = withDefaults(defineProps<Props>(), {
 const loading = ref(false)
 const error = ref('')
 const componentInstance = shallowRef<any>(null)
+const rootRef = ref<HTMLElement | null>(null)
+const previewItem = ref<FileInfo | null>(null)
+const selectionHistory = ref<FileInfo[]>([])
+const selectedIds = ref<Set<string>>(new Set())
+
+const handleItemSelect = (item: FileInfo, selected: boolean) => {
+  selectionHistory.value = selectionHistory.value.filter(entry => entry.id !== item.id)
+  const nextIds = new Set(selectedIds.value)
+  if (selected) {
+    nextIds.add(item.id)
+    selectionHistory.value.push(item)
+  } else {
+    nextIds.delete(item.id)
+  }
+  selectedIds.value = nextIds
+  if (!selected && previewItem.value?.id === item.id) {
+    previewItem.value = null
+  }
+}
+
+const handleSelectionChange = (items: FileInfo[]) => {
+  const nextIds = new Set(items.map(item => item.id))
+  for (const item of items) {
+    if (!selectedIds.value.has(item.id)) selectionHistory.value.push(item)
+  }
+  selectedIds.value = nextIds
+  if (previewItem.value && !nextIds.has(previewItem.value.id)) previewItem.value = null
+}
+
+const getPreviewTarget = (): FileInfo | undefined => {
+  return [...selectionHistory.value].reverse().find(item => selectedIds.value.has(item.id))
+}
+
+const closePreview = () => {
+  previewItem.value = null
+}
+
+const isEditableTarget = (target: EventTarget | null) => {
+  const element = target as HTMLElement | null
+  return !!element && (element.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(element.tagName))
+}
+
+const handleKeydown = (event: KeyboardEvent) => {
+  if (!rootRef.value?.offsetParent || isEditableTarget(event.target)) return
+  if (event.code === 'Escape' && previewItem.value) {
+    event.preventDefault()
+    closePreview()
+    return
+  }
+  if (event.code !== 'Space') return
+  if (previewItem.value) {
+    event.preventDefault()
+    closePreview()
+    return
+  }
+  const target = getPreviewTarget()
+  if (!target) return
+  event.preventDefault()
+  previewItem.value = target
+}
 
 // 组件缓存
 const componentCache = new Map<string, any>()
@@ -174,6 +261,7 @@ watch(
 
 // 组件生命周期
 onMounted(() => {
+  window.addEventListener('keydown', handleKeydown)
   console.log('🔧 TabViewRenderer: 组件挂载', {
     tabId: props.tabId,
     viewConfig: props.viewConfig
@@ -181,6 +269,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown)
   console.debug('[DEBUG-wf-tab] renderer-unmounted', { tabId: props.tabId })
   console.log('🔧 TabViewRenderer: 组件卸载', { tabId: props.tabId })
 

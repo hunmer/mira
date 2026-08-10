@@ -332,7 +332,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 // Emits
 const emit = defineEmits<{
-  itemSelect: [item: any]
+  itemSelect: [item: FileInfo, selected: boolean]
   itemDoubleClick: [item: any]
   selectionChange: [items: any[]]
   filterChange: [filters: Record<string, any>]
@@ -660,12 +660,14 @@ const handleBreadcrumbClick = (item: BreadcrumbItem) => {
 watch([selectedItems, () => paginatedMediaItems.value], ([ids, items]) => {
   if (!ids || ids.length === 0) {
     mediaStore.clearDetailSidebar()
+    emit('selectionChange', [])
     return
   }
   const matched = items.filter((item: FileInfo) => ids.includes(item.id))
   if (matched.length > 0) {
     mediaStore.setDetailSidebarFiles(matched)
   }
+  emit('selectionChange', matched)
 }, { deep: true })
 
 const folderTreeItems = computed(() => homeController.folderTree.value || [])
@@ -777,7 +779,7 @@ const handleMediaDoubleClick = (item: FileInfo) => {
 
 const handleMediaSelect = (item: FileInfo, selected: boolean) => {
   homeController.handleMediaSelect(item, selected)
-  emit('itemSelect', item)
+  emit('itemSelect', item, selected)
 }
 
 const handleMediaContextMenu = (item: FileInfo, event: MouseEvent) => {

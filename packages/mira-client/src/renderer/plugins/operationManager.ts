@@ -227,11 +227,11 @@ export const executeLocalPluginOperation = async (
         if (!skipReload) {
           // 对于其他操作，需要重新获取插件列表
           const plugins = pluginService.getAllPlugins()
-          localPlugins.value = plugins
+          localPlugins.value = plugins.filter((plugin: PluginRuntime) => plugin.config.source !== 'server')
         } else {
           // 对于enable/disable操作，只需要重新同步本地插件状态
           const plugins = pluginService.getAllPlugins()
-          localPlugins.value = plugins
+          localPlugins.value = plugins.filter((plugin: PluginRuntime) => plugin.config.source !== 'server')
         }
       }
 

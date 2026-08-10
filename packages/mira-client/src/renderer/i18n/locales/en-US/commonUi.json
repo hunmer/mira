@@ -1,4 +1,15 @@
 {
+  "confirmDialog": {
+    "defaultHeader": "Confirm",
+    "accept": "Confirm",
+    "reject": "Cancel"
+  },
+  "updateDialog": {
+    "title": "New version available v{version}",
+    "defaultReleaseNotes": "A new version is ready. It's recommended to update now for the latest features and fixes.",
+    "later": "Later",
+    "updateNow": "Update now"
+  },
   "tabViewRenderer": {
     "loading": "Loading...",
     "loadFailedTitle": "Failed to load view",

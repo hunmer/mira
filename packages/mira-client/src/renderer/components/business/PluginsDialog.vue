@@ -122,7 +122,7 @@
             ]"
           >
             <span class="material-icons text-base mr-1.5">{{ cat.icon }}</span>
-            {{ $t(cat.label) }}
+            {{ cat.label }}
           </button>
         </div>
 
@@ -170,7 +170,7 @@
                   </div>
                   <!-- 启用/禁用开关 -->
                   <button
-                    @click="togglePlugin(plugin)"
+                    @click.stop="togglePlugin(plugin)"
                     :class="[
                       'ml-3 w-10 h-6 rounded-full relative transition-colors',
                       plugin.status !== 'disabled' ? 'bg-green-500' : 'bg-accent dark:bg-muted'
@@ -260,7 +260,7 @@
                     </div>
                   </div>
                   <button
-                    @click="toggleServerPlugin(plugin)"
+                    @click.stop="toggleServerPlugin(plugin)"
                     :class="[
                       'ml-3 w-10 h-6 rounded-full relative transition-colors shrink-0',
                       plugin.status !== 'disabled' ? 'bg-green-500' : 'bg-accent dark:bg-muted'
@@ -774,14 +774,44 @@ type SelectedKind = 'local' | 'server' | 'market'
 const selectedKind = ref<SelectedKind | null>(null)
 const selectedPluginId = ref<string | null>(null)
 
-// 分类列表（用于横向滚动按钮栏）
-const categories = [
-  { value: 'all', icon: 'all_inclusive', label: 'business.pluginsDialog.allIntegrations' },
-  { value: 'communication', icon: 'chat_bubble_outline', label: 'business.pluginsDialog.communication' },
-  { value: 'documentation', icon: 'description', label: 'business.pluginsDialog.documentation' },
-  { value: 'productivity', icon: 'trending_up', label: 'business.pluginsDialog.productivity' },
-  { value: 'development', icon: 'code', label: 'business.pluginsDialog.development' }
-] as const
+// 已知类别的图标映射（装饰用，不影响动态提取）
+const knownCategoryIcons: Record<string, string> = {
+  communication: 'chat_bubble_outline',
+  documentation: 'description',
+  productivity: 'trending_up',
+  development: 'code'
+}
+
+// 从当前 tab 的插件列表动态提取类别（去重），unknown/空 归为 'other'
+const categories = computed<{ value: string; label: string; icon: string }[]>(() => {
+  const set = new Set<string>()
+  if (activeTab.value === 'online') {
+    ;(pluginStore.marketplacePlugins || []).forEach(e => {
+      set.add((e.category || '').trim() || 'other')
+    })
+  } else {
+    const list = activeTab.value === 'server'
+      ? (pluginStore.serverPlugins || [])
+      : (pluginStore.localPlugins || [])
+    list.forEach(p => {
+      set.add((p.config.category || '').trim() || 'other')
+    })
+  }
+  // 'other' 始终排到最后，其余按字母序
+  const arr = [...set].sort((a, b) => {
+    if (a === 'other') return 1
+    if (b === 'other') return -1
+    return a.localeCompare(b)
+  })
+  return [
+    { value: 'all', label: t('business.pluginsDialog.allIntegrations'), icon: 'all_inclusive' },
+    ...arr.map(c => ({
+      value: c,
+      label: knownCategoryIcons[c] ? t(`business.pluginsDialog.${c}`) : c,
+      icon: knownCategoryIcons[c] || 'extension'
+    }))
+  ]
+})
 
 // 插件市场相关
 const marketplaceUrl = computed(() => (settingsStore.settings.clientPluginMarketUrl || '').trim())
@@ -798,28 +828,12 @@ const pluginUpdateCount = computed(() => pluginStore.pluginUpdates?.size || 0)
 const filteredLocalPlugins = computed(() => {
   let plugins = pluginStore.localPlugins || []
 
-  // 按分类筛选
+  // 按分类筛选（'other' 匹配未设置 category 的插件）
   if (selectedCategory.value !== 'all') {
+    const cat = selectedCategory.value
     plugins = plugins.filter(plugin => {
-      const category = plugin.config.category || 'other'
-      const tags = plugin.config.tags || []
-
-      switch (selectedCategory.value) {
-        case 'communication':
-          return category === 'communication' ||
-                 tags.includes('通讯') || tags.includes('communication')
-        case 'documentation':
-          return category === 'documentation' ||
-                 tags.includes('文档') || tags.includes('documentation')
-        case 'productivity':
-          return category === 'productivity' ||
-                 tags.includes('效率') || tags.includes('productivity')
-        case 'development':
-          return category === 'development' ||
-                 tags.includes('开发') || tags.includes('development')
-        default:
-          return true
-      }
+      const category = (plugin.config.category || '').trim() || 'other'
+      return category === cat
     })
   }
 
@@ -839,16 +853,10 @@ const filteredLocalPlugins = computed(() => {
 const filteredServerPlugins = computed(() => {
   let plugins = pluginStore.serverPlugins || []
   if (selectedCategory.value !== 'all') {
+    const cat = selectedCategory.value
     plugins = plugins.filter(plugin => {
-      const category = plugin.config.category || 'other'
-      const tags = plugin.config.tags || []
-      const aliases: Record<string, string[]> = {
-        communication: ['通讯', 'communication'],
-        documentation: ['文档', 'documentation'],
-        productivity: ['效率', 'productivity'],
-        development: ['开发', 'development']
-      }
-      return category === selectedCategory.value || (aliases[selectedCategory.value] || []).some(tag => tags.includes(tag))
+      const category = (plugin.config.category || '').trim() || 'other'
+      return category === cat
     })
   }
   if (searchQuery.value) {
@@ -868,25 +876,10 @@ const filteredMarketplacePlugins = computed(() => {
 
   // 按分类筛选
   if (selectedCategory.value !== 'all') {
+    const cat = selectedCategory.value
     plugins = plugins.filter(entry => {
-      const category = entry.category || ''
-      const tags = entry.tags || []
-      switch (selectedCategory.value) {
-        case 'communication':
-          return category === 'communication' ||
-                 tags.includes('通讯') || tags.includes('communication')
-        case 'documentation':
-          return category === 'documentation' ||
-                 tags.includes('文档') || tags.includes('documentation')
-        case 'productivity':
-          return category === 'productivity' ||
-                 tags.includes('效率') || tags.includes('productivity')
-        case 'development':
-          return category === 'development' ||
-                 tags.includes('开发') || tags.includes('development')
-        default:
-          return true
-      }
+      const category = (entry.category || '').trim() || 'other'
+      return category === cat
     })
   }
 
@@ -1313,8 +1306,9 @@ watch(isVisible, async (visible) => {
 
 // 切换到插件市场标签时按需加载目录；切换到本地标签且配置了市场源时静默检查更新
 watch(activeTab, async (tab) => {
-  // 切换 tab 时清空右侧栏选中，避免跨分类残留
+  // 切换 tab 时清空右侧栏选中，并重置类别过滤（不同 tab 类别集合不同）
   clearSelection()
+  selectedCategory.value = 'all'
   if (tab === 'online' && !isMarketplaceInitialized.value) {
     isMarketplaceInitialized.value = true
     await loadMarketplace()
