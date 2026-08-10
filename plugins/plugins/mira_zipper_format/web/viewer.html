@@ -89,7 +89,7 @@
 
         function entryUrl(extra, entryName) {
           var encoded = entryName.replace(/\\/g, '/').split('/').map(encodeURIComponent).join('/')
-          var url = extra.origin + extra.base + encoded
+          var url = extra.base + encoded
           if (extra.token) url += '?token=' + encodeURIComponent(extra.token)
           return url
         }

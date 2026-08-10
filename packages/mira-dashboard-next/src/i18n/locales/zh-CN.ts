@@ -104,6 +104,7 @@ export default {
     enableHash: '启用文件哈希校验',
     enableAutoSync: '启用自动同步（监控文件夹新文件）',
     enableThumbScan: '启动时扫描缺失缩略图',
+    enableAutoBackup: '启用 DB 自动备份（每天一次，保留 30 天）',
     pluginsDir: '插件目录',
     pluginsDirPlaceholder: '插件目录路径（可选）',
     namePlaceholder: '请输入资源库名称',

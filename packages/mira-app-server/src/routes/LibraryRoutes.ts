@@ -116,6 +116,7 @@ export class LibraryRoutes {
                         path: libraryPath,
                         enableHash: customFields?.enableHash || false,
                         enableAutoSync: customFields?.enableAutoSync ?? true,
+                        enableAutoBackup: customFields?.enableAutoBackup ?? true,
                         ...(customFields || {})
                     },
                     ...(allowedRoles && { allowedRoles }),

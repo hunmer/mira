@@ -30,6 +30,7 @@ for (const target of targets) {
 // plugin.json 的 pluginId 必须与 index.js 中的 PLUGIN_ID 一致。
 const pluginJson = JSON.parse(fs.readFileSync(path.join(webDir, 'plugin.json'), 'utf8'))
 const indexSrc = fs.readFileSync(path.join(webDir, 'index.js'), 'utf8')
+const viewerSrc = fs.readFileSync(path.join(webDir, 'viewer.html'), 'utf8')
 const m = indexSrc.match(/PLUGIN_ID\s*=\s*'([^']+)'/)
 assert(m, 'PLUGIN_ID 常量缺失')
 assert.strictEqual(
@@ -37,6 +38,7 @@ assert.strictEqual(
   m[1],
   'plugin.json pluginId 必须与 index.js 中的 PLUGIN_ID 一致',
 )
+assert.match(viewerSrc, /var url = extra\.base \+ encoded/, '条目 URL 不应重复拼接 origin')
 
 if (failed) {
   process.exitCode = 1

@@ -173,11 +173,18 @@ export class DownloadService {
 
     const chunks: Buffer[] = []
     let total = 0
-    for await (const chunk of stream as any) {
-      const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as Uint8Array)
-      chunks.push(buf)
-      total += buf.length
-      if (onChunk) onChunk(buf.length)
+    const onAbort = () => stream.destroy(new DOMException('The user aborted a request.', 'AbortError'))
+    signal?.addEventListener('abort', onAbort, { once: true })
+    try {
+      if (signal?.aborted) onAbort()
+      for await (const chunk of stream as any) {
+        const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as Uint8Array)
+        chunks.push(buf)
+        total += buf.length
+        if (onChunk) onChunk(buf.length)
+      }
+    } finally {
+      signal?.removeEventListener('abort', onAbort)
     }
     const buf = Buffer.concat(chunks, total)
     return this.verifyChecksum(buf, checksum, fileUrl)

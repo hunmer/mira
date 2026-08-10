@@ -659,6 +659,18 @@ export class PluginHandler {
     const controller = new AbortController()
     const { signal } = controller
     const sender = event.sender
+    const abortInstall = () => controller.abort()
+    const abortInstallOnNavigation = (
+      _event: Electron.Event,
+      _url: string,
+      _isInPlace: boolean,
+      isMainFrame: boolean
+    ) => {
+      if (isMainFrame) abortInstall()
+    }
+
+    sender.once('destroyed', abortInstall)
+    sender.on('did-start-navigation', abortInstallOnNavigation)
 
     try {
       if (!this.config?.pluginsDirectory) {
@@ -800,6 +812,8 @@ export class PluginHandler {
 
       return { success: false, cancelled: isCancelled, message: errorMessage }
     } finally {
+      sender.removeListener('destroyed', abortInstall)
+      sender.removeListener('did-start-navigation', abortInstallOnNavigation)
       if (entry?.pluginId) {
         this.activeInstalls.delete(entry.pluginId)
       }
@@ -927,6 +941,9 @@ export class PluginHandler {
     // 停止定时扫描
     this.stopPeriodicScan()
 
+    for (const controller of this.activeInstalls.values()) controller.abort()
+    this.activeInstalls.clear()
+
     // 移除所有IPC处理器
     ipcMain.removeHandler('plugin:initialize')
     ipcMain.removeHandler('plugin:getAll')
@@ -946,6 +963,7 @@ export class PluginHandler {
     ipcMain.removeHandler('plugin:get-config')
     ipcMain.removeHandler('plugin:clear-cache')
     ipcMain.removeHandler('plugin:install-from-marketplace')
+    ipcMain.removeHandler('plugin:cancel-install')
 
     logger.info('PluginHandler', 'Plugin IPC handlers cleaned up')
   }

@@ -9,7 +9,13 @@ export default defineConfig({
   base: '/dashboard/',
   plugins: [
     vue(),
-    ...(process.env.NODE_ENV !== 'production' ? [vueDevTools()] : []),
+    // 只在开发环境启用 Vue DevTools
+    // Ctrl+Shift+D 触发审查元素模式，点击页面元素跳转到 IDE 对应代码
+    ...(process.env.NODE_ENV !== 'production' ? [vueDevTools({
+      componentInspector: {
+        toggleComboKey: 'control-shift-d'
+      }
+    })] : []),
     tailwindcss(),
   ],
   resolve: {

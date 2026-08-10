@@ -104,6 +104,7 @@ export default {
     enableHash: 'Enable file hash verification',
     enableAutoSync: 'Enable auto sync (watch folder for new files)',
     enableThumbScan: 'Scan missing thumbnails on startup',
+    enableAutoBackup: 'Enable DB auto backup (daily, retain 30 days)',
     pluginsDir: 'Plugins Directory',
     pluginsDirPlaceholder: 'Plugins directory path (optional)',
     namePlaceholder: 'Enter library name',

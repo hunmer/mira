@@ -43,13 +43,9 @@ export const enableLocalPluginNew = async (
       const maxRetries = 10
       let factory = null
 
-      console.log(`🔍 Looking for plugin factory: ${pluginId}`)
-      console.log(`📋 Available factories:`, Array.from((window as any).pluginSystem?.instancesFactory?.keys() || []))
-
       while (retries < maxRetries && !factory) {
         factory = getPluginInstanceFactory(pluginId)
         if (!factory) {
-          console.log(`⏳ Retry ${retries + 1}/${maxRetries}: Factory not found for ${pluginId}`)
           await new Promise(resolve => setTimeout(resolve, 300))
           retries++
         }
@@ -59,11 +55,9 @@ export const enableLocalPluginNew = async (
         // 最后尝试：检查是否有其他可能的插件ID匹配
         const allFactories = (window as any).pluginSystem?.instancesFactory
         if (allFactories) {
-          console.log(`🔍 All available factory IDs:`, Array.from(allFactories.keys()))
           // 尝试按插件名称查找
           for (const [factoryId, factoryFn] of allFactories) {
             if (factoryId.includes(plugin.config.pluginName.toLowerCase().replace(/\s+/g, '-'))) {
-              console.log(`🎯 Found potential match by name: ${factoryId} for plugin ${plugin.config.pluginName}`)
               factory = factoryFn
               break
             }
@@ -83,7 +77,6 @@ export const enableLocalPluginNew = async (
         const { pluginService } = await import('../services/PluginService')
         context = pluginService.createPluginContext(plugin.config)
         plugin.context = context // 保存上下文到插件运行时
-        console.log(`🔧 Created new context for plugin: ${plugin.config.pluginName}`)
       }
 
       // 5. 加载插件实例

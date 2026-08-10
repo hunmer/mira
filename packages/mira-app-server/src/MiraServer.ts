@@ -5,6 +5,7 @@ import { ServerPluginManager } from "./ServerPluginManager";
 import { SettingsManager } from "./SettingsManager";
 import { ThumbnailService } from "./services/ThumbnailService";
 import path from "path";
+import { DatabaseBackupService } from './services/DatabaseBackupService';
 
 
 export interface ServerConfig {
@@ -22,6 +23,7 @@ export class MiraServer {
     thumbnailService!: ThumbnailService;
     config: ServerConfig;
     libraries?: LibraryStorage;
+    databaseBackupService!: DatabaseBackupService;
 
     constructor(config: ServerConfig = {}) {
         this.config = {
@@ -65,6 +67,9 @@ export class MiraServer {
             this.libraries = new LibraryStorage(this);
             this.libraries.loadAll().then((loaded: number) => console.log(`✅ ${loaded} Libraries loaded`));
 
+            this.databaseBackupService = new DatabaseBackupService(this.dataPath);
+            await this.databaseBackupService.start();
+
             console.log('✅ Mira Server started successfully!');
         } catch (error) {
             console.error('❌ Failed to start Mira Server:', error);
@@ -74,6 +79,8 @@ export class MiraServer {
 
     public async stop(): Promise<void> {
         console.log('🔄 Stopping Mira Server...');
+
+        this.databaseBackupService?.stop();
 
         if (this.httpServer) {
             await this.httpServer.stop();

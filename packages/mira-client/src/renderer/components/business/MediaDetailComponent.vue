@@ -124,6 +124,51 @@
       />
     </div>
 
+    <!-- 评分 - 仅单选模式 -->
+    <div v-if="!isMultiSelect && displayItems[0]">
+      <label class="block text-xs font-medium text-muted-foreground mb-1">{{ $t('business.mediaDetailComponent.rating') }}</label>
+      <div class="flex items-center gap-0.5">
+        <button
+          v-for="n in 5"
+          :key="n"
+          type="button"
+          class="p-0.5 rounded hover:bg-muted transition-colors"
+          :disabled="starsSaving"
+          @click="handleStarsChange(n)"
+          @mouseenter="hoverStars = n"
+          @mouseleave="hoverStars = 0"
+        >
+          <span
+            class="material-icons text-xl"
+            :class="(hoverStars || editStars) >= n ? 'text-amber-400' : 'text-muted-foreground/40'"
+          >{{ (hoverStars || editStars) >= n ? 'star' : 'star_border' }}</span>
+        </button>
+        <button
+          v-if="editStars > 0"
+          type="button"
+          class="ml-1 p-0.5 rounded hover:bg-muted text-muted-foreground"
+          :disabled="starsSaving"
+          :title="$t('business.mediaDetailComponent.rating')"
+          @click="handleStarsChange(0)"
+        >
+          <span class="material-icons text-base">close</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 备注 - 仅单选模式 -->
+    <div v-if="!isMultiSelect && displayItems[0]">
+      <label class="block text-xs font-medium text-muted-foreground mb-1">{{ $t('business.mediaDetailComponent.notes') }}</label>
+      <textarea
+        v-model="editNotes"
+        rows="3"
+        :placeholder="$t('business.mediaDetailComponent.notesPlaceholder')"
+        :disabled="notesSaving"
+        class="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-xs ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+        @blur="handleNotesBlur"
+      ></textarea>
+    </div>
+
     <!-- 文件URL - 仅单选模式显示 -->
     <div v-if="!isMultiSelect && displayItems[0]?.url" class="flex items-center bg-muted/60 border border-border/60 rounded-lg p-2">
       <span class="flex-1 text-xs truncate">{{ displayItems[0].url }}</span>
@@ -349,12 +394,17 @@ const folderTreeNodes = computed(() =>
 // WebSocket 实时更新覆盖层
 const realtimeUpdates = ref<Map<string, Partial<FileInfo>>>(new Map())
 
-// 文件名/website 编辑状态
+// 文件名/website/评分/备注 编辑状态
 const editName = ref('')
 const editWebsite = ref('')
+const editStars = ref(0)
+const editNotes = ref('')
+const hoverStars = ref(0)
 const nameError = ref('')
 const nameSaving = ref(false)
 const websiteSaving = ref(false)
+const starsSaving = ref(false)
+const notesSaving = ref(false)
 
 // 计算显示的文件列表（合并 WebSocket 实时更新）
 const displayItems = computed(() => {
@@ -415,6 +465,9 @@ watch(displayItems, (items) => {
   if (items.length === 1) {
     editName.value = items[0].name || ''
     editWebsite.value = (items[0] as any).website || ''
+    editStars.value = Number((items[0] as any).stars) || 0
+    editNotes.value = (items[0] as any).notes || ''
+    hoverStars.value = 0
     nameError.value = ''
   }
 }, { immediate: true, deep: true })
@@ -460,6 +513,43 @@ const handleWebsiteBlur = async () => {
     editWebsite.value = oldWebsite
   } finally {
     websiteSaving.value = false
+  }
+}
+
+// 评分更新（点击触发）
+const handleStarsChange = async (value: number) => {
+  const file = displayItems.value[0]
+  if (!file) return
+  const newStars = value
+  const oldStars = Number((file as any).stars) || 0
+  if (newStars === oldStars) return
+  editStars.value = newStars
+  starsSaving.value = true
+  try {
+    const libId = file.libraryId || libraryId?.value || 'default'
+    await miraSDKService.updateFile(libId, file.id, { stars: newStars })
+  } catch {
+    editStars.value = oldStars
+  } finally {
+    starsSaving.value = false
+  }
+}
+
+// 备注更新（blur 触发）
+const handleNotesBlur = async () => {
+  const file = displayItems.value[0]
+  if (!file) return
+  const newNotes = editNotes.value
+  const oldNotes = (file as any).notes || ''
+  if (newNotes === oldNotes) return
+  notesSaving.value = true
+  try {
+    const libId = file.libraryId || libraryId?.value || 'default'
+    await miraSDKService.updateFile(libId, file.id, { notes: newNotes })
+  } catch {
+    editNotes.value = oldNotes
+  } finally {
+    notesSaving.value = false
   }
 }
 

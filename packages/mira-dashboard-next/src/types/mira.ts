@@ -14,6 +14,7 @@ export interface Library {
   customFields?: {
     enableHash: boolean
     enableAutoSync?: boolean
+    enableAutoBackup?: boolean
     [key: string]: any
   }
 }

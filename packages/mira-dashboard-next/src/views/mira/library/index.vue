@@ -49,7 +49,7 @@ async function loadLibraries() {
 function getDefaultForm(): LibraryFormData {
   return {
     name: '', path: '', description: '',
-    icon: '', enableHash: false, enableAutoSync: false, enableThumbScan: true,
+    icon: '', enableHash: false, enableAutoSync: false, enableThumbScan: true, enableAutoBackup: true,
     pluginsDir: '',
     allowedRoles: ['super', 'admin', 'user'],
     syncFilterMode: 'blacklist',
@@ -74,6 +74,7 @@ function openEdit(lib: Library) {
     enableHash: lib.customFields?.enableHash ?? false,
     enableAutoSync: lib.customFields?.enableAutoSync ?? false,
     enableThumbScan: lib.customFields?.enableThumbScan ?? true,
+    enableAutoBackup: lib.customFields?.enableAutoBackup ?? true,
     syncFilterMode: (lib.customFields?.syncFilterMode === 'whitelist' ? 'whitelist' : 'blacklist'),
     syncBlacklist: lib.customFields?.syncBlacklist ?? '',
     syncWhitelist: lib.customFields?.syncWhitelist ?? '',
@@ -87,14 +88,14 @@ async function handleSave() {
   if (!editingLib.value) return
   try {
     const {
-      _id, enableHash, enableAutoSync, enableThumbScan,
+      _id, enableHash, enableAutoSync, enableThumbScan, enableAutoBackup,
       syncFilterMode, syncBlacklist, syncWhitelist,
       ...rest
     } = editingLib.value as LibraryFormData & { _id?: string }
     const data = {
       ...rest,
       customFields: {
-        enableHash, enableAutoSync, enableThumbScan,
+        enableHash, enableAutoSync, enableThumbScan, enableAutoBackup,
         syncFilterMode, syncBlacklist, syncWhitelist,
       },
     }
