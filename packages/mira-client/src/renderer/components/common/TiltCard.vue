@@ -8,7 +8,7 @@
  *
  * 仅依赖 motion-v（useMotionValue/useSpring/useMotionTemplate/useReducedMotion）+ cn 工具。
  */
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { Motion, useMotionTemplate, useMotionValue, useReducedMotion, useSpring } from 'motion-v'
 import { cn } from '@/lib/utils'
 import type { ClassValue } from 'clsx'
@@ -49,10 +49,14 @@ onMounted(() => {
   mq = window.matchMedia(HOVER_MQ)
   syncCanHover()
   mq.addEventListener?.('change', syncCanHover)
+  // nextTick 确保 slot 已渲染后再适配冲出平面
+  nextTick(initPop)
 })
 onUnmounted(() => {
   mq?.removeEventListener?.('change', syncCanHover)
   mq = null
+  mo?.disconnect()
+  mo = null
 })
 
 // 仅在「非减弱动效 + 精确指针」时启用倾斜与光晕
@@ -100,6 +104,52 @@ const onMouseLeave = () => {
   gy.set(50)
 }
 
+// ----------------------------------------
+// 冲出平面（pop-3D）：给任意子元素加 .tilt-pop 即可在悬停时 translateZ 浮起
+// ----------------------------------------
+const POP_SELECTOR = '.tilt-pop'
+const rootEl = ref<HTMLElement | null>(null)
+let mo: MutationObserver | null = null
+
+// 给单个元素打上 preserve-3d，并放开会压平 3D 的 overflow:hidden
+function mark3D(el: HTMLElement) {
+  if (el.dataset.tiltChain === '1') return
+  el.dataset.tiltChain = '1'
+  el.style.transformStyle = 'preserve-3d'
+  if (getComputedStyle(el).overflow === 'hidden') el.style.overflow = 'visible'
+}
+
+// 把 .tilt-pop 到根的祖先链全部标记为 3D 通路
+function ensure3DChain(root: HTMLElement) {
+  root.querySelectorAll<HTMLElement>(POP_SELECTOR).forEach(pop => {
+    mark3D(pop)
+    let cur = pop.parentElement
+    while (cur && cur !== root) {
+      mark3D(cur as HTMLElement)
+      cur = cur.parentElement
+    }
+  })
+}
+
+// 根据是否存在 .tilt-pop 切换根 overflow（pop 时需 visible 让冲出可见）
+function checkPop() {
+  const root = rootEl.value
+  if (!root) return
+  const hasPop = !!root.querySelector(POP_SELECTOR)
+  // '' 清除内联，让 class 上的 overflow-hidden 重新生效
+  root.style.overflow = hasPop ? 'visible' : ''
+  if (hasPop) ensure3DChain(root)
+}
+
+function initPop() {
+  const root = rootEl.value
+  if (!root || mo) return
+  checkPop()
+  mo = new MutationObserver(() => checkPop())
+  // slot 内容（如 img v-if）可能异步渲染，监听子树变化重新适配
+  mo.observe(root, { childList: true, subtree: true })
+}
+
 // 模板拼接出 transform / glare 背景
 const transform = useMotionTemplate`perspective(1000px) rotateX(${srx}deg) rotateY(${sry}deg)`
 const glareBg = useMotionTemplate`radial-gradient(circle at ${sgx}% ${sgy}%, var(--foreground), transparent 50%)`
@@ -107,9 +157,14 @@ const glareBg = useMotionTemplate`radial-gradient(circle at ${sgx}% ${sgy}%, var
 
 <template>
   <Motion
+    :ref="(node: any) => { rootEl = (node?.$el ?? node) as HTMLElement | null }"
     as="div"
     :style="{ transform, transformStyle: 'preserve-3d' }"
-    :class="cn('relative overflow-hidden rounded-2xl will-change-transform', props.class)"
+    :class="cn(
+      'relative overflow-hidden rounded-2xl will-change-transform',
+      isHovered && 'is-tilt-active',
+      props.class,
+    )"
     @mousemove="onMouseMove"
     @mouseleave="onMouseLeave"
   >
@@ -136,5 +191,27 @@ const glareBg = useMotionTemplate`radial-gradient(circle at ${sgx}% ${sgy}%, var
   opacity: 0.15;
   /* 进入时即时显现，无需过渡 */
   transition-duration: 0s;
+}
+</style>
+
+<!--
+  冲出平面：非 scoped，因为 .tilt-pop 应用在 slot 内容上。
+  悬停时（根带 .is-tilt-active）目标元素 translateZ + 微缩放，形成冲出视差。
+  --tilt-pop-z 控制浮起距离，默认 40px。
+-->
+<style>
+.tilt-pop {
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateZ(0);
+}
+.is-tilt-active .tilt-pop {
+  transform: translateZ(var(--tilt-pop-z, 40px)) scale(1.06);
+}
+@media (prefers-reduced-motion: reduce) {
+  .tilt-pop,
+  .is-tilt-active .tilt-pop {
+    transform: none;
+    transition: none;
+  }
 }
 </style>

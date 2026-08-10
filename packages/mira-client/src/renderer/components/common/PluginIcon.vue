@@ -196,7 +196,7 @@ watch(resolvedImageSrc, () => {
       :src="resolvedImageSrc!"
       :width="size"
       :height="size"
-      class="block max-w-full max-h-full object-contain"
+      class="tilt-pop block max-w-full max-h-full object-contain"
       loading="lazy"
       @error="imageFailed = true"
     />
