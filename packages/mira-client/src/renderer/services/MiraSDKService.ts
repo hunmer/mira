@@ -1,4 +1,4 @@
-import { MiraClient, type ServerWebPlugin } from 'mira-app-core/shared/sdk'
+import { MiraClient, type PreviewViewer, type ServerWebPlugin } from 'mira-app-core/shared/sdk'
 import { initializeWebSocket, webSocketService } from './WebSocketService'
 import { useMediaStore } from '../stores/media'
 import { useAuthStore } from '../stores/auth'
@@ -650,6 +650,17 @@ export class MiraSDKService {
       console.error('MiraSDKService: Failed to get file', error)
       throw error
     }
+  }
+
+  /** 获取当前文件可用的插件预览器。 */
+  async getPreviewViewers(libraryId: string, fileId: string | number): Promise<PreviewViewer[]> {
+    if (!this.client) throw new Error('Not connected to Mira server')
+    const response = await (this.client.files() as any).getPreviewViewers(
+      libraryId,
+      fileId,
+      webSocketService.getClientId()
+    )
+    return response?.viewers || []
   }
 
   async uploadFile(file: File, libraryId: string, metadata?: any): Promise<BaseResponse> {

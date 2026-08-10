@@ -73,16 +73,16 @@ const detailPanelTab = ref<'detail' | 'history'>('detail')
 
 // 第三列详情面板：resizable 折叠态。与 mediaStore.showDetailSidebar 双向同步——
 // 用户拖拽至 min 之下会触发 collapsible 折叠（emit collapse），HomeHeader 按钮则通过
-// store 显式调用 collapse()/expand()，二者共用同一个布尔事实来源。
+// store 将面板调整为 0 / 默认宽度，二者共用同一个布尔事实来源。
 const detailPanelRef = ref<InstanceType<typeof ResizablePanel>>()
 const isDetailCollapsed = ref(false)
+const detailPanelDefaultSize = 28
 
-// showDetailSidebar（按钮切换）→ 驱动面板 collapse/expand
+// showDetailSidebar（按钮切换）→ 驱动面板切换到 0 / 默认宽度
 watch(showDetailSidebar, (show) => {
   const api = detailPanelRef.value as any
   if (!api) return
-  if (show && api.isCollapsed?.value) api.expand()
-  else if (!show && api.isExpanded?.value) api.collapse()
+  api.resize(show ? detailPanelDefaultSize : 0)
 }, { flush: 'post' })
 
 // 拖拽折叠 / HomeHeader 按钮的最终落点：把折叠态回写 store，
@@ -492,15 +492,14 @@ onUnmounted(() => {
         <!-- 分隔描边：中间列 ↔ 右侧信息栏 -->
         <ResizableHandle class="w-3 bg-transparent hover:bg-primary/5 focus-visible:ring-0 transition-colors after:w-0.5 after:bg-border/50 hover:after:bg-primary/40" />
 
-        <!-- 右侧信息栏：可拖拽调整宽度，并通过 showDetailSidebar 折叠/展开。
-             HomeHeader 始终悬浮于右上角，顶部留出 pt-14 避免被遮挡。
-             折叠时缩到 collapsedSize 仅剩纵向 PluginContributionBar 竖条；展开时竖条 + 详情面板。 -->
+        <!-- 右侧信息栏：可拖拽调整宽度，并通过 showDetailSidebar 切换为 0 / 默认宽度。
+             HomeHeader 始终悬浮于右上角，顶部留出 pt-14 避免被遮挡。 -->
         <ResizablePanel
           ref="detailPanelRef"
-          :default-size="28"
+          :default-size="detailPanelDefaultSize"
           :min-size="20"
           :max-size="40"
-          :collapsed-size="7"
+          :collapsed-size="0"
           collapsible
           @collapse="isDetailCollapsed = true"
           @expand="isDetailCollapsed = false"
