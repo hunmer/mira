@@ -171,6 +171,8 @@ class WebSocketService {
     this.isConnecting.value = false
     this.reconnectAttempts = 0
     this.lastError.value = null
+    // 同步连接状态到 store（重连也走这里，否则状态会卡在 reconnecting）
+    useSettingsStore().setConnectionStatus('connected')
     this.startHeartbeat()
     this.openLibrarySession()
   }

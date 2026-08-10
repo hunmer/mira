@@ -45,7 +45,15 @@ interface ResponseLogData {
     responseTime: number;
 }
 
+// 日志忽略列表：匹配这些前缀的路径完全不输出日志
+const HTTP_LOG_IGNORE_PREFIXES = [
+    '/api/health',
+    '/api/logs/stream',
+];
+
 function createHttpLoggerMiddleware() {
+    // 记录上一次请求的地址，用于抑制无 body 的重复请求刷屏
+    let lastUrl = '';
     return (req: express.Request, res: express.Response, next: express.NextFunction) => {
         const startTime = Date.now();
         const timestamp = new Date().toISOString();
@@ -62,68 +70,56 @@ function createHttpLoggerMiddleware() {
             timestamp
         };
 
-        // 输出请求信息
-        console.log('\n' + '='.repeat(80));
-        console.log(`🔗 ${requestData.method.toUpperCase()} ${requestData.url}`);
+        // 命中忽略列表：直接跳过日志
+        const ignored = HTTP_LOG_IGNORE_PREFIXES.some(prefix => requestData.url.startsWith(prefix));
 
-        if (Object.keys(requestData.query).length > 0) {
-            console.log(`❓ Query Parameters:`, JSON.stringify(requestData.query, null, 2));
-        }
-
-        if (Object.keys(requestData.params).length > 0) {
-            console.log(`📍 Route Parameters:`, JSON.stringify(requestData.params, null, 2));
-        }
-
-        if (requestData.body && Object.keys(requestData.body).length > 0) {
-            console.log(`📦 Request Body:`, JSON.stringify(requestData.body, null, 2));
-        }
-
-
-        // 拦截响应
-        const originalSend = res.send;
-        const originalJson = res.json;
+        // 仅在未被忽略时拦截响应体（避免无谓的开销）
+        const originalSend = ignored ? null : res.send;
+        const originalJson = ignored ? null : res.json;
         let responseBody: any = null;
 
-        // 重写 send 方法
-        res.send = function (data: any) {
-            responseBody = data;
-            return originalSend.call(this, data);
-        };
+        if (!ignored) {
+            // 重写 send 方法
+            res.send = function (data: any) {
+                responseBody = data;
+                return originalSend!.call(this, data);
+            };
 
-        // 重写 json 方法
-        res.json = function (data: any) {
-            responseBody = data;
-            return originalJson.call(this, data);
-        };
+            // 重写 json 方法
+            res.json = function (data: any) {
+                responseBody = data;
+                return originalJson!.call(this, data);
+            };
+        }
 
         // 监听响应完成
         res.on('finish', () => {
+            if (ignored) return;
+
             const responseTime = Date.now() - startTime;
+            const statusCode = res.statusCode;
+            const hasBody = !!(requestData.body && typeof requestData.body === 'object' && Object.keys(requestData.body).length > 0);
 
-            const responseData: ResponseLogData = {
-                statusCode: res.statusCode,
-                statusMessage: res.statusMessage,
-                headers: res.getHeaders(),
-                body: responseBody,
-                responseTime
-            };
-
-            console.log(`[${responseData.statusCode}] ${responseData.responseTime}ms`);
-
-            // 输出响应体（截断）
-            if (responseBody != null) {
-                const MAX_LEN = 500;
-                let bodyStr: string;
-                try {
-                    bodyStr = typeof responseBody === 'string' ? responseBody : JSON.stringify(responseBody);
-                } catch {
-                    bodyStr = String(responseBody);
+            if (hasBody) {
+                // 有 body：输出较完整的信息
+                console.log(`🔗 ${requestData.method.toUpperCase()} ${requestData.url}`);
+                if (Object.keys(requestData.query).length > 0) {
+                    console.log(`❓ Query Parameters:`, requestData.query);
                 }
-                if (bodyStr.length > MAX_LEN) {
-                    console.log(`📤 Response (truncated ${bodyStr.length}→${MAX_LEN}): ${bodyStr.substring(0, MAX_LEN)}...`);
-                } else {
-                    console.log(`📤 Response: ${bodyStr}`);
+                if (Object.keys(requestData.params).length > 0) {
+                    console.log(`📍 Route Parameters:`, requestData.params);
                 }
+                console.log(`📦 Request Body:`, requestData.body);
+            } else if (requestData.url !== lastUrl) {
+                // 无 body 且地址与上次不同：仅输出合并的一行（请求行 + 状态 + 耗时）
+                console.log(`🔗 ${requestData.method.toUpperCase()} ${requestData.url} [${statusCode}] ${responseTime}ms`);
+            }
+            // 无 body 且地址与上次一致：不输出任何请求信息
+            lastUrl = requestData.url;
+
+            // 有 body 的请求额外输出响应体
+            if (hasBody && responseBody != null) {
+                console.log(`📤 Response:`, responseBody);
             }
         });
 
@@ -172,7 +168,7 @@ export class MiraHttpServer {
         this.httpRouter = new HttpRouter(backend);
         this.settingsRouter = new SettingsRouter(backend, this.authRouter);
         this.statisticsRouter = new StatisticsRouter(backend);
-        this.thumbRouter = new ThumbRouter(backend, backend.thumbnailService);
+        this.thumbRouter = new ThumbRouter(backend, backend.thumbnailService, backend.metadataService);
 
         this.setupMiddleware();
     }

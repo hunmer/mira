@@ -92,6 +92,7 @@ export class MetadataService {
   private readonly queue = new PQueue({ concurrency: 2 });
   private readonly rules: MetadataRule[] = [];
   private readonly extensionRules = new Map<string, MetadataRule>();
+  private readonly progress = new Map<string, { total: number; completed: number }>();
   private readonly exiftoolPath: string | null;
 
   constructor(exiftoolPath?: string | null) {
@@ -127,10 +128,10 @@ export class MetadataService {
     this.rebuildExtensionRules();
   }
 
-  enqueue(file: Record<string, any>, dbService: ILibraryServerData): void {
-    if (!this.exiftoolPath || !file?.id || !file?.path) return;
+  enqueue(file: Record<string, any>, dbService: ILibraryServerData, onSettled?: () => void): boolean {
+    if (!this.exiftoolPath || !file?.id || !file?.path) return false;
     const rule = this.extensionRules.get(path.extname(file.path).slice(1).toLowerCase());
-    if (!rule) return;
+    if (!rule) return false;
 
     void this.queue.add(async () => {
       try {
@@ -149,8 +150,49 @@ export class MetadataService {
         await dbService.updateFile(file.id, { metadata });
       } catch (error) {
         console.error(`MetadataService: failed to parse ${file.path}:`, error);
+      } finally {
+        onSettled?.();
       }
     });
+    return true;
+  }
+
+  async getStats(dbService: ILibraryServerData): Promise<Record<string, number | boolean>> {
+    const files = await this.getSupportedFiles(dbService);
+    const withMetadata = files.filter(file => file.metadata !== null && file.metadata !== undefined && file.metadata !== '').length;
+    const totalFiles = files.length;
+    return {
+      available: this.exiftoolPath !== null,
+      totalFiles,
+      withMetadata,
+      withoutMetadata: totalFiles - withMetadata,
+      metadataRate: totalFiles > 0 ? Math.round(withMetadata / totalFiles * 100) : 0,
+    };
+  }
+
+  async scanPending(libraryId: string, dbService: ILibraryServerData): Promise<{ available: boolean; queued: number }> {
+    if (!this.exiftoolPath) return { available: false, queued: 0 };
+    const pending = (await this.getSupportedFiles(dbService))
+      .filter(file => file.metadata === null || file.metadata === undefined || file.metadata === '');
+    const state = { total: pending.length, completed: 0 };
+    this.progress.set(libraryId, state);
+
+    for (const file of pending) {
+      this.enqueue(file, dbService, () => { state.completed++; });
+    }
+    return { available: true, queued: pending.length };
+  }
+
+  getProgressData(libraryId: string): Record<string, number | boolean> {
+    const state = this.progress.get(libraryId) || { total: 0, completed: 0 };
+    const remaining = Math.max(0, state.total - state.completed);
+    return {
+      totalPending: state.total,
+      completed: state.completed,
+      queueLength: remaining,
+      processing: remaining > 0,
+      progress: state.total > 0 ? Math.round(state.completed / state.total * 100) : 0,
+    };
   }
 
   clear(): void {
@@ -162,6 +204,11 @@ export class MetadataService {
     for (const rule of this.rules) {
       for (const extension of rule.supportedExtensions) this.extensionRules.set(extension, rule);
     }
+  }
+
+  private async getSupportedFiles(dbService: ILibraryServerData): Promise<Record<string, any>[]> {
+    const { result } = await dbService.getFiles({ filters: { limit: 9999999 }, isUrlFile: false });
+    return result.filter(file => this.extensionRules.has(path.extname(file.name || file.path || '').slice(1).toLowerCase()));
   }
 
   private async extractCover(file: Record<string, any>, dbService: ILibraryServerData): Promise<boolean> {

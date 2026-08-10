@@ -43,7 +43,7 @@ const router = createRouter({
         { path: 'device', name: 'Device', component: () => import('@/views/mira/device/index.vue'), meta: { roles: ['super', 'admin'] } },
         { path: 'file-manager', name: 'FileManager', component: () => import('@/views/mira/file-manager/index.vue'), meta: { roles: ['super', 'admin'] } },
         { path: 'statistics', name: 'Statistics', component: () => import('@/views/mira/statistics/index.vue') },
-        { path: 'thumbnail', name: 'Thumbnail', component: () => import('@/views/mira/thumbnail/index.vue'), meta: { roles: ['super', 'admin'] } },
+        { path: 'media', name: 'Media', component: () => import('@/views/mira/media/index.vue'), meta: { roles: ['super', 'admin'] } },
         { path: 'profile', name: 'Profile', component: () => import('@/views/mira/profile/index.vue') },
       ],
     },

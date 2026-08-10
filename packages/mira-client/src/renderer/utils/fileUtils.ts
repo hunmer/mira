@@ -112,7 +112,7 @@ export function getFileExtension(filename: string): string {
 export function getFileType(filename: string): 'image' | 'video' | 'audio' | 'document' | 'other' {
   const ext = getFileExtension(filename)
   
-  const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'ico', ...CONVERTED_IMAGE_EXTENSIONS]
+  const imageExts = ['jpg', 'jpeg', 'jfif', 'png', 'gif', 'bmp', 'webp', 'svg', 'avif', 'ico', ...CONVERTED_IMAGE_EXTENSIONS]
   const documentExts = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'rtf']
   
   if (imageExts.includes(ext)) return 'image'
@@ -170,11 +170,13 @@ export function getMimeType(filename: string): string {
     // 图片
     jpg: 'image/jpeg',
     jpeg: 'image/jpeg',
+    jfif: 'image/jpeg',
     png: 'image/png',
     gif: 'image/gif',
     bmp: 'image/bmp',
     webp: 'image/webp',
     svg: 'image/svg+xml',
+    avif: 'image/avif',
     ico: 'image/x-icon',
     
     // 视频

@@ -35,6 +35,7 @@ export default {
     fileManager: '文件管理',
     statistics: '上传统计',
     thumbnail: '缩略图管理',
+    media: '媒体管理',
   },
   auth: {
     login: '登录',
@@ -266,6 +267,22 @@ export default {
     statsFailed: '获取统计失败',
     loadLibrariesFailed: '获取素材库失败',
     rate: '缩略图完成率',
+  },
+  media: {
+    title: '媒体管理',
+    subtitle: '管理与生成媒体文件相关资源',
+  },
+  metadata: {
+    title: 'Metadata 管理',
+    subtitle: '检测并提取图片、视频和音频 metadata',
+    totalFiles: '支持解析的文件',
+    withMetadata: '已有 metadata',
+    withoutMetadata: '缺失 metadata',
+    remainingTasks: '剩余任务',
+    completed: '已完成',
+    startScan: '开始检测',
+    scanning: '正在检测...',
+    unavailable: 'ExifTool 不可用，请安装 ExifTool 或配置 EXIFTOOL_PATH',
   },
   fileManager: {
     title: '文件管理',

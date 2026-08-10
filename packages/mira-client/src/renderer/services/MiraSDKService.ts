@@ -652,6 +652,15 @@ export class MiraSDKService {
     }
   }
 
+  /** 批量获取文件 metadata，供瀑布流等布局计算使用。 */
+  async getFileMetadataByIds(
+    libraryId: string,
+    fileIds: Array<string | number>
+  ): Promise<Array<{ id: string; metadata?: Record<string, any>; width?: number; height?: number }>> {
+    if (!this.client) throw new Error('Not connected to Mira server')
+    return await this.client.files().getMetadataByIds(libraryId, fileIds)
+  }
+
   /** 获取当前文件可用的插件预览器。 */
   async getPreviewViewers(libraryId: string, fileId: string | number): Promise<PreviewViewer[]> {
     if (!this.client) throw new Error('Not connected to Mira server')

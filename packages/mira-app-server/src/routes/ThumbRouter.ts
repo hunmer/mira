@@ -1,14 +1,17 @@
 import { Router, Request, Response } from 'express';
 import { BaseRouter } from './BaseRouter';
 import { ThumbnailService } from '../services/ThumbnailService';
+import { MetadataService } from '../services/MetadataService';
 
 export class ThumbRouter extends BaseRouter {
   private router: Router;
   private thumbnailService: ThumbnailService;
+  private metadataService: MetadataService;
 
-  constructor(backend: any, thumbnailService: ThumbnailService) {
+  constructor(backend: any, thumbnailService: ThumbnailService, metadataService: MetadataService) {
     super(backend);
     this.thumbnailService = thumbnailService;
+    this.metadataService = metadataService;
     this.router = Router();
     this.setupRoutes();
   }
@@ -61,6 +64,31 @@ export class ThumbRouter extends BaseRouter {
 
       const data = await this.thumbnailService.syncThumbStatus(libraryId, validation.library.libraryService);
       res.json({ success: true, data });
+    });
+
+    this.router.get('/metadata/stats', async (req: Request, res: Response) => {
+      const validation = await this.validateLibrary(req.query.libraryId as string);
+      if (!validation.success) return res.status(validation.error!.code).json(validation.error);
+      res.json({ success: true, data: await this.metadataService.getStats(validation.library.libraryService) });
+    });
+
+    this.router.get('/metadata/scan', async (req: Request, res: Response) => {
+      const libraryId = req.query.libraryId as string;
+      const validation = await this.validateLibrary(libraryId);
+      if (!validation.success) return res.status(validation.error!.code).json(validation.error);
+      const data = await this.metadataService.scanPending(libraryId, validation.library.libraryService);
+      res.json({
+        success: data.available,
+        data,
+        message: data.available ? `已加入 ${data.queued} 个 metadata 任务` : 'ExifTool 不可用',
+      });
+    });
+
+    this.router.get('/metadata/progress', async (req: Request, res: Response) => {
+      const libraryId = req.query.libraryId as string;
+      const validation = await this.validateLibrary(libraryId);
+      if (!validation.success) return res.status(validation.error!.code).json(validation.error);
+      res.json({ success: true, data: this.metadataService.getProgressData(libraryId) });
     });
   }
 

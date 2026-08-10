@@ -35,6 +35,7 @@ export default {
     fileManager: 'File Manager',
     statistics: 'Statistics',
     thumbnail: 'Thumbnails',
+    media: 'Media',
   },
   auth: {
     login: 'Login',
@@ -266,6 +267,22 @@ export default {
     statsFailed: 'Failed to get stats',
     loadLibrariesFailed: 'Failed to load libraries',
     rate: 'Thumbnail rate',
+  },
+  media: {
+    title: 'Media',
+    subtitle: 'Manage and generate media file resources',
+  },
+  metadata: {
+    title: 'Metadata Management',
+    subtitle: 'Detect and extract metadata from images, videos, and audio',
+    totalFiles: 'Supported Files',
+    withMetadata: 'With Metadata',
+    withoutMetadata: 'Missing Metadata',
+    remainingTasks: 'Remaining Tasks',
+    completed: 'Completed',
+    startScan: 'Start Detection',
+    scanning: 'Detecting...',
+    unavailable: 'ExifTool is unavailable. Install it or set EXIFTOOL_PATH.',
   },
   fileManager: {
     title: 'File Manager',

@@ -50,10 +50,19 @@
   },
   "audioPreview": {
     "unknownTitle": "Unknown audio file",
+    "unknownArtist": "Unknown artist",
+    "unknownFolder": "/Audio",
     "fileSize": "File size",
     "notSupported": "Your browser does not support audio playback",
     "noAudioUrl": "Unable to get audio file",
     "streamLoadFailed": "Failed to load audio stream",
-    "loadFailed": "Failed to load audio"
+    "loadFailed": "Failed to load audio",
+    "play": "Play",
+    "pause": "Pause",
+    "previous": "Previous",
+    "next": "Next",
+    "shuffle": "Shuffle",
+    "loop": "Loop",
+    "loopOne": "Loop one"
   }
 }

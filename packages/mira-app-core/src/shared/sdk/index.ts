@@ -25,6 +25,7 @@ export { UserModule } from './modules/UserModule';
 export { LibraryModule } from './modules/LibraryModule';
 export { PluginModule } from './modules/PluginModule';
 export { FileModule } from './modules/FileModule';
+export type { FileMetadataDimensions } from './modules/FileModule';
 export { DatabaseModule } from './modules/DatabaseModule';
 export { DeviceModule } from './modules/DeviceModule';
 export { SystemModule } from './modules/SystemModule';

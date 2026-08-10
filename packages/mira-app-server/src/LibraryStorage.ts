@@ -39,7 +39,7 @@ export class LibraryStorage {
         const libraryId = dbConfig.id;
         let dbServer!: LibraryServerDataSQLite;
         dbServer = new LibraryServerDataSQLite(dbConfig, {
-            onFileImported: (file) => this.server.metadataService.enqueue(file, dbServer),
+            onFileImported: (file) => { this.server.metadataService.enqueue(file, dbServer); },
         });
         this.libraries[libraryId] = {
             libraryService: dbServer,
@@ -158,7 +158,7 @@ export class LibraryStorage {
 
                 let dbServer!: LibraryServerDataSQLite;
                 dbServer = new LibraryServerDataSQLite(config, {
-                    onFileImported: (file) => this.server.metadataService.enqueue(file, dbServer),
+                    onFileImported: (file) => { this.server.metadataService.enqueue(file, dbServer); },
                 });
                 this.libraries[libraryId].libraryService = dbServer;
                 await dbServer.initialize();

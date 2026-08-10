@@ -153,7 +153,7 @@ export class MiraWebsocketServer {
     }
 
     sendToWebsocket(ws: WebSocket, data: Record<string, any>): void {
-        console.log('Sending WebSocket message:', data);
+      // console.log('Sending WebSocket message:', data);
         ws.send(JSON.stringify(data));
     }
 

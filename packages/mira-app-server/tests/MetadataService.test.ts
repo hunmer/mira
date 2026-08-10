@@ -1,4 +1,4 @@
-import { BUILTIN_METADATA_RULES } from '../src/services/MetadataService';
+import { BUILTIN_METADATA_RULES, MetadataService } from '../src/services/MetadataService';
 
 const parse = async (name: string, raw: Record<string, any>) => {
   const rule = BUILTIN_METADATA_RULES.find(item => item.name === name)!;
@@ -50,5 +50,29 @@ describe('built-in metadata rules', () => {
       title: 'Track', artist: 'Artist', album: 'Album', duration: 180,
       sampleRate: 48000, bitDepth: 24, channels: 2, year: 2026, genre: 'Rock',
     });
+  });
+});
+
+describe('metadata scan status', () => {
+  it('counts supported files and reports unavailable ExifTool', async () => {
+    const service = new MetadataService(null);
+    const db = {
+      getFiles: async () => ({
+        result: [
+          { id: 1, name: 'ready.jpg', metadata: { width: 100 } },
+          { id: 2, name: 'pending.mp4', metadata: null },
+          { id: 3, name: 'ignored.txt', metadata: null },
+        ],
+      }),
+    } as any;
+
+    await expect(service.getStats(db)).resolves.toMatchObject({
+      available: false,
+      totalFiles: 2,
+      withMetadata: 1,
+      withoutMetadata: 1,
+      metadataRate: 50,
+    });
+    await expect(service.scanPending('library', db)).resolves.toEqual({ available: false, queued: 0 });
   });
 });

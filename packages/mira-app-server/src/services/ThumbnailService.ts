@@ -52,7 +52,7 @@ async function runImageMagick(binary: string, srcPath: string, destPath: string,
 
 class ImageThumbnailGenerator implements ThumbnailGenerator {
   name = 'image';
-  supportedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
+  supportedExtensions = ['jpg', 'jpeg', 'jfif', 'png', 'gif', 'bmp', 'webp', 'avif'];
 
   async generate(srcPath: string, destPath: string): Promise<void> {
     const thumbDir = path.dirname(destPath);

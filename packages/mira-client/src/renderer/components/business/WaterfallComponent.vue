@@ -94,6 +94,7 @@ import {
   getCachedThumbnailRatio,
   loadThumbnailRatio
 } from './WaterfallComponent/thumbnailRatioCache'
+import { miraSDKService } from '../../services/MiraSDKService'
 
 interface Props {
   items: FileInfo[]
@@ -170,6 +171,7 @@ const emit = defineEmits<Emits>()
 const selectionBoxRef = ref<InstanceType<typeof SelectionBox> | null>(null)
 const masonryRef = ref<InstanceType<typeof Masonry> | null>(null)
 const thumbnailRatios = ref<Record<string, number>>({})
+const metadataRatios = ref<Record<string, number>>({})
 const thumbnailRatiosReady = ref(false)
 const initialEnterAnimation = ref(true)
 const initialRatioPreloadCount = computed(() => Math.max(props.columnsPerRow * 4, 16))
@@ -216,10 +218,47 @@ let preloadVersion = 0
 
 const getItemUrl = (item: FileInfo): string => item.thumbnailPath || item.url || ''
 
+const getMetadataRatio = (item: FileInfo): number | null => {
+  const width = Number(item.metadata?.width)
+  const height = Number(item.metadata?.height)
+  return Number.isFinite(width) && width > 0 && Number.isFinite(height) && height > 0
+    ? width / height
+    : metadataRatios.value[item.id] || null
+}
+
+const preloadMetadataRatios = async (items: FileInfo[]) => {
+  const groups = new Map<string, FileInfo[]>()
+  for (const item of items) {
+    if (!item.libraryId) continue
+    const group = groups.get(item.libraryId) || []
+    group.push(item)
+    groups.set(item.libraryId, group)
+  }
+
+  await Promise.all([...groups].map(async ([libraryId, group]) => {
+    try {
+      const entries = await miraSDKService.getFileMetadataByIds(libraryId, group.map(item => item.id))
+      const next = { ...metadataRatios.value }
+      for (const entry of entries) {
+        const width = Number(entry.width)
+        const height = Number(entry.height)
+        if (Number.isFinite(width) && width > 0 && Number.isFinite(height) && height > 0) {
+          next[entry.id] = width / height
+        }
+      }
+      metadataRatios.value = next
+    } catch {
+      // metadata unavailable: the existing thumbnail ratio loader remains the fallback.
+    }
+  }))
+}
+
 const preloadThumbnailRatios = async (items: FileInfo[]) => {
   const currentVersion = ++preloadVersion
+  await preloadMetadataRatios(items)
+  if (currentVersion !== preloadVersion) return
   // 首屏前 N 个：同步预加载，等真实比例再渲染（避免首屏布局抖动）。
-  const headEntries = await Promise.all(items.slice(0, initialRatioPreloadCount.value).map(async (item) => {
+  const headEntries = await Promise.all(items.slice(0, initialRatioPreloadCount.value).filter(item => !getMetadataRatio(item)).map(async (item) => {
     const ratio = await loadThumbnailRatio(item.id, getItemUrl(item))
     return ratio ? [item.id, ratio] as const : null
   }))
@@ -233,6 +272,11 @@ const preloadThumbnailRatios = async (items: FileInfo[]) => {
 
     return ratios
   }, {})
+
+  for (const item of items) {
+    const ratio = getMetadataRatio(item)
+    if (ratio) publishedRatios[item.id] = ratio
+  }
 
   // 同时使用之前实例已缓存的比例；发布后本次实例不再修改，避免后台加载导致连续重排。
   for (const item of items) {
@@ -251,6 +295,7 @@ const loadingRatioIds = new Set<string>()
 const RATIO_CONCURRENCY = 12
 const loadRemainingRatios = async (items: FileInfo[]) => {
   const pending = items.filter(item => (
+    !getMetadataRatio(item) &&
     !getCachedThumbnailRatio(item.id, getItemUrl(item)) && !loadingRatioIds.has(item.id)
   ))
   let cursor = 0
@@ -282,6 +327,8 @@ const fallbackRatio = (item: FileInfo): number => {
 }
 
 const getItemRatio = (item: FileInfo): number => {
+  const metadataRatio = getMetadataRatio(item)
+  if (metadataRatio) return metadataRatio
   const thumbnailRatio = thumbnailRatios.value[item.id]
   if (thumbnailRatio) return thumbnailRatio
 

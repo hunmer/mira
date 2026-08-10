@@ -60,6 +60,13 @@ export interface FileData {
     imported_at: number;
 }
 
+export interface FileMetadataDimensions {
+    id: string;
+    metadata?: Record<string, any>;
+    width?: number;
+    height?: number;
+}
+
 /**
  * 文件列表响应
  */
@@ -356,6 +363,19 @@ export class FileModule {
             libraryId,
             fileId: fileId.toString(),
             clientId
+        });
+    }
+
+    /** 批量获取文件 metadata 及可用于布局的宽高。 */
+    async getMetadataByIds(
+        libraryId: string,
+        fileIds: Array<string | number>,
+        clientId?: string
+    ): Promise<FileMetadataDimensions[]> {
+        return await this.httpClient.post<FileMetadataDimensions[]>('/api/files/metadata', {
+            libraryId,
+            ids: fileIds.map(id => String(id)),
+            clientId,
         });
     }
 

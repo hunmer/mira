@@ -800,6 +800,52 @@ export class FileRoutes {
             }
         });
 
+        // 批量获取文件 metadata（瀑布流等布局只需要宽高时使用）
+        this.router.post('/metadata', async (req: Request, res: Response) => {
+            try {
+                const { libraryId, ids, clientId } = req.body;
+                if (!libraryId || !Array.isArray(ids)) {
+                    return res.status(400).json({ code: 400, message: 'libraryId and ids are required', data: null });
+                }
+                if (ids.length > 1000) {
+                    return res.status(400).json({ code: 400, message: 'ids cannot contain more than 1000 items', data: null });
+                }
+
+                const obj = this.backend.libraries!.getLibrary(libraryId);
+                if (!obj) return res.status(404).json({ code: 404, message: 'Library not found', data: null });
+
+                const allowed = await obj.pluginManager.runHttpHooks({
+                    libraryId,
+                    clientId,
+                    method: req.method,
+                    path: '/api/files/metadata',
+                    req,
+                    res,
+                    fields: this.backend.webSocketServer?.getClientFields(libraryId, clientId),
+                });
+                if (!allowed || res.headersSent) return;
+
+                const fileIds = [...new Set(ids.map((id: unknown) => Number(id)).filter(Number.isSafeInteger))];
+                const files = await Promise.all(fileIds.map(id => obj.libraryService.getFile(id)));
+                const data = files.filter(Boolean).map(file => {
+                    const metadata = file!.metadata && typeof file!.metadata === 'object' ? file!.metadata : undefined;
+                    const width = Number(metadata?.width);
+                    const height = Number(metadata?.height);
+                    return {
+                        id: String(file!.id),
+                        metadata,
+                        ...(Number.isFinite(width) && width > 0 ? { width } : {}),
+                        ...(Number.isFinite(height) && height > 0 ? { height } : {}),
+                    };
+                });
+
+                res.json({ code: 0, message: 'Success', data });
+            } catch (error) {
+                console.error('Error getting file metadata:', error);
+                res.status(500).json({ code: 500, message: 'Internal server error while getting file metadata', data: null });
+            }
+        });
+
         // 获取文件列表 - 支持过滤参数
         this.router.post('/getFiles', async (req: Request, res: Response) => {
             try {
