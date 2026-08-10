@@ -36,20 +36,16 @@
       </div>
     </template>
 
-    <!-- 图片预览：缩略图/原图 -->
-    <MediaThumbnail
+    <!-- 图片预览：viewerjs 内嵌查看器，支持滚轮缩放 -->
+    <VViewer
       v-else-if="!selectedViewer && !customHoverCard && viewersLoaded && kind === 'image'"
-      :file-id="item.id"
-      :file="item"
-      :src="imageSrc"
-      :filename="item.name"
-      :alt="item.name"
-      img-class="max-w-full max-h-full w-auto h-auto object-contain"
+      :key="imageSrc"
+      :options="viewerOptions"
+      :trigger="imageSrc"
+      class="media-preview-viewer h-full w-full"
     >
-      <template #fallback>
-        <StatusImage name="load_failed" size="small" img-class="text-destructive" />
-      </template>
-    </MediaThumbnail>
+      <img :src="imageSrc" :alt="item.name" class="media-preview-viewer-source" />
+    </VViewer>
 
     <!-- 视频预览：复用 VideoPreview（Plyr 驱动，自动循环播放）-->
     <VideoPreview
@@ -91,9 +87,8 @@
 import { computed, onMounted, onBeforeUnmount, ref, watch, nextTick } from 'vue'
 import type { FileInfo } from '../../../shared/types'
 import type { PreviewViewer } from 'mira-app-core/shared/sdk'
-import MediaThumbnail from '@renderer/components/common/MediaThumbnail.vue'
+import { component as VViewer } from 'v-viewer'
 import VideoPreview from '@renderer/components/common/VideoPreview.vue'
-import StatusImage from '@renderer/components/common/StatusImage.vue'
 import PluginIcon from '@renderer/components/common/PluginIcon.vue'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 import {
@@ -169,6 +164,25 @@ const kind = computed<'image' | 'video' | 'audio' | 'unknown'>(() => {
 /** 图片预览源：原图（带缓存破坏），保证预览清晰而非使用裁切缩略图 */
 const imageSrc = computed(() => getCacheBustedPreviewImageSource(props.item) || '')
 
+/** viewerjs 内嵌查看器配置：zoomable + 默认 zoomOnWheel 启用滚轮缩放 */
+const viewerOptions = {
+  inline: true,
+  button: false,
+  navbar: false,
+  title: false,
+  toolbar: false,
+  tooltip: false,
+  movable: true,
+  zoomable: true,
+  zoomOnWheel: true,
+  rotatable: true,
+  scalable: true,
+  transition: false,
+  keyboard: false,
+  backdrop: true,
+  focus: true,
+}
+
 /** 视频/音频预览源 */
 const videoSrc = computed(() => getMediaFileUrl(props.item))
 
@@ -234,5 +248,21 @@ onBeforeUnmount(() => {
 .media-preview-content {
   /* 让 portal 内容渲染在卡片之上 */
   position: relative;
+}
+
+/* viewerjs 内嵌查看器：撑满容器，保留黑色底 */
+.media-preview-viewer {
+  width: 100%;
+  height: 100%;
+}
+/* trigger 图片本身不参与显示 */
+.media-preview-viewer-source {
+  display: none;
+}
+.media-preview-viewer :deep(.viewer-container) {
+  background: transparent;
+}
+.media-preview-viewer :deep(.viewer-canvas) {
+  background: transparent;
 }
 </style>

@@ -443,7 +443,7 @@ onUnmounted(() => {
         </ResizablePanel>
 
         <!-- 分隔描边：12px 命中区 + 居中 2px 细线，hover 高亮，呈现可拖拽分隔线 -->
-        <ResizableHandle class="w-3 bg-transparent hover:bg-primary/5 focus-visible:ring-0 transition-colors after:w-0.5 after:bg-border/50 hover:after:bg-primary/40" />
+        <ResizableHandle class="group/handle w-3 bg-transparent hover:bg-primary/5 focus-visible:ring-0 transition-colors after:absolute after:inset-y-0 after:left-1/2 after:-translate-x-1/2 after:w-0.5 after:bg-transparent hover:after:bg-primary/40" />
 
         <!-- 中间列：Tabs 条 + 内容面板 -->
         <ResizablePanel :default-size="54" :min-size="30" class="flex flex-col min-w-0 !overflow-visible">
@@ -490,7 +490,7 @@ onUnmounted(() => {
         </ResizablePanel>
 
         <!-- 分隔描边：中间列 ↔ 右侧信息栏 -->
-        <ResizableHandle class="w-3 bg-transparent hover:bg-primary/5 focus-visible:ring-0 transition-colors after:w-0.5 after:bg-border/50 hover:after:bg-primary/40" />
+        <ResizableHandle class="group/handle w-3 bg-transparent hover:bg-primary/5 focus-visible:ring-0 transition-colors after:absolute after:inset-y-0 after:left-1/2 after:-translate-x-1/2 after:w-0.5 after:bg-transparent hover:after:bg-primary/40" />
 
         <!-- 右侧信息栏：可拖拽调整宽度，并通过 showDetailSidebar 切换为 0 / 默认宽度。
              HomeHeader 始终悬浮于右上角，顶部留出 pt-14 避免被遮挡。 -->

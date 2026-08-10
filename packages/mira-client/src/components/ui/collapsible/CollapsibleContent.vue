@@ -2,10 +2,14 @@
 import type { CollapsibleContentProps } from "reka-ui"
 import { CollapsibleContent } from "reka-ui"
 import { injectCollapsibleRootContext } from "reka-ui"
+import { Motion } from "motion-v"
 import { cn } from "@/lib/utils"
 import { computed } from "vue"
 
-const props = defineProps<CollapsibleContentProps & { class?: string }>()
+const props = withDefaults(
+  defineProps<CollapsibleContentProps & { class?: string; animated?: boolean }>(),
+  { animated: true },
+)
 
 const rootContext = injectCollapsibleRootContext()
 const isOpen = computed(() => !!rootContext.open.value)
@@ -13,11 +17,28 @@ const isOpen = computed(() => !!rootContext.open.value)
 
 <template>
   <!--
-    用 v-show 而非 v-if 卸载：保留子组件挂载状态与内部 ref
+    force-mount 始终保留子组件挂载状态与内部 ref
     （例如 FolderTreeComponent 折叠后仍保留展开节点、搜索态、暴露的方法）。
-    高度过渡交给外层 CSS（grid-template-rows / max-height）按需处理。
+    animated（默认开启）：外层 motion-v 做高度 0↔auto 过渡，overflow hidden 裁剪。
   -->
+  <Motion
+    v-if="animated"
+    as="div"
+    :initial="false"
+    :animate="{ height: isOpen ? 'auto' : 0 }"
+    :transition="{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }"
+    style="overflow: hidden;"
+  >
+    <CollapsibleContent
+      force-mount
+      data-slot="collapsible-content"
+      :class="cn(props.class)"
+    >
+      <slot />
+    </CollapsibleContent>
+  </Motion>
   <CollapsibleContent
+    v-else
     v-show="isOpen"
     force-mount
     data-slot="collapsible-content"
