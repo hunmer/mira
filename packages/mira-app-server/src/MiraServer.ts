@@ -4,6 +4,7 @@ import { MiraWebsocketServer } from "./server";
 import { ServerPluginManager } from "./ServerPluginManager";
 import { SettingsManager } from "./SettingsManager";
 import { ThumbnailService } from "./services/ThumbnailService";
+import { MetadataService } from "./services/MetadataService";
 import path from "path";
 import { DatabaseBackupService } from './services/DatabaseBackupService';
 
@@ -21,6 +22,7 @@ export class MiraServer {
     pluginManager?: ServerPluginManager;
     settingsManager!: SettingsManager;
     thumbnailService!: ThumbnailService;
+    metadataService!: MetadataService;
     config: ServerConfig;
     libraries?: LibraryStorage;
     databaseBackupService!: DatabaseBackupService;
@@ -47,6 +49,7 @@ export class MiraServer {
 
             // 初始化缩略图服务
             this.thumbnailService = new ThumbnailService();
+            this.metadataService = new MetadataService();
 
             // 启动HTTP服务器
             this.httpServer = new MiraHttpServer(this, this.config.dataPath);
@@ -81,6 +84,7 @@ export class MiraServer {
         console.log('🔄 Stopping Mira Server...');
 
         this.databaseBackupService?.stop();
+        this.metadataService?.clear();
 
         if (this.httpServer) {
             await this.httpServer.stop();

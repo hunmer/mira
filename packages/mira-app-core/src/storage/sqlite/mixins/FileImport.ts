@@ -42,7 +42,9 @@ export const FileImport = {
     };
 
     await (this as any).handleFile(filePath, fileData, options?.importType || 'copy');
-    return this.createFile(fileData);
+    const result = await this.createFile(fileData);
+    this.notifyFileImported(result);
+    return result;
   },
 
   async getFileFolder(this: CoreAccessible, fileId: number): Promise<Record<string, any>[]> {

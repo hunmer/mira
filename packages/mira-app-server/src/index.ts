@@ -7,6 +7,7 @@ import { ServerPlugin } from './ServerPlugin';
 import { MiraWebsocketServer } from './WebSocketServer';
 import { MiraHttpServer } from './server';
 import { ThumbnailService } from './services/ThumbnailService';
+import { MetadataService } from './services/MetadataService';
 import { installLogCapture } from './services/logCapture';
 import express from 'express';
 
@@ -62,8 +63,9 @@ async function startServer() {
 }
 
 // 导出服务器实例和启动函数
-export { MiraServer, startServer, ServerPluginManager, ServerPlugin, MiraWebsocketServer, MiraHttpServer, ThumbnailService, express, ws };
+export { MiraServer, startServer, ServerPluginManager, ServerPlugin, MiraWebsocketServer, MiraHttpServer, ThumbnailService, MetadataService, express, ws };
 export type { ThumbnailGenerator } from './services/ThumbnailService';
+export type { MetadataRule } from './services/MetadataService';
 export type { PluginRouteDefinition } from './ServerPlugin';
 export type { ILibraryServerData } from 'mira-app-core/storage/sqlite';
 

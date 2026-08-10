@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import type { Request, Response } from 'express';
 import type { ThumbnailGenerator } from './services/ThumbnailService';
+import type { MetadataRule } from './services/MetadataService';
 
 export interface PluginConfig {
     name: string;
@@ -47,6 +48,7 @@ export interface ServerFileFormatHandler {
     thumbnailExtensions?: string[];
     process?: (filePath: string, context?: Record<string, any>) => any | Promise<any>;
     thumbnail?: (srcPath: string, destPath: string) => Promise<void>;
+    metadata?: MetadataRule['parse'];
     getExtraFileList?: (filePath: string, context?: Record<string, any>) => string[] | Promise<string[]>;
     getExtraFile?: (filePath: string, fileName: string, context?: Record<string, any>) => string | Promise<string>;
     viewers?: ServerPreviewViewerDefinition[];
@@ -259,6 +261,9 @@ export class ServerPluginManager {
         if (previous?.handler.thumbnail) {
             this.server.backend.thumbnailService.unregisterGenerator(key);
         }
+        if (previous?.handler.metadata) {
+            this.server.backend.metadataService.unregisterRule(key);
+        }
         this.fileFormatHandlers.set(key, { pluginName, handler });
         if (handler.thumbnail) {
             const generator: ThumbnailGenerator = {
@@ -268,6 +273,13 @@ export class ServerPluginManager {
             };
             this.server.backend.thumbnailService.registerGenerator(generator);
         }
+        if (handler.metadata) {
+            this.server.backend.metadataService.registerRule({
+                name: key,
+                supportedExtensions: handler.extensions || [],
+                parse: handler.metadata,
+            });
+        }
         return () => this.unregisterFileFormat(pluginName, handler.id);
     }
 
@@ -276,6 +288,7 @@ export class ServerPluginManager {
         const entry = this.fileFormatHandlers.get(key);
         if (!entry) return false;
         if (entry.handler.thumbnail) this.server.backend.thumbnailService.unregisterGenerator(key);
+        if (entry.handler.metadata) this.server.backend.metadataService.unregisterRule(key);
         return this.fileFormatHandlers.delete(key);
     }
 

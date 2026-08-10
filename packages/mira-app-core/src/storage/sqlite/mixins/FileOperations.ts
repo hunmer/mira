@@ -8,8 +8,8 @@ export const FileOperations = {
       `INSERT INTO files(
         name, created_at, imported_at, size, hash,
         custom_fields, notes, stars, folder_id,
-        reference, path, thumb, recycled, tags, uploader
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        reference, path, thumb, recycled, tags, uploader, metadata
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         fileData.name,
         fileData.created_at,
@@ -26,6 +26,9 @@ export const FileOperations = {
         fileData.recycled ?? 0,
         fileData.tags,
         fileData.uploader ?? null,
+        fileData.metadata === undefined || typeof fileData.metadata === 'string'
+          ? fileData.metadata
+          : JSON.stringify(fileData.metadata),
       ]
     );
     return { id: result.lastID, ...fileData };
@@ -52,14 +55,17 @@ export const FileOperations = {
     addField('hash', fileData.hash);
     addField('custom_fields', fileData.custom_fields);
     addField('notes', fileData.notes);
-    addField('stars', fileData.stars ?? 0);
+    addField('stars', fileData.stars);
     addField('tags', fileData.tags);
     addField('folder_id', fileData.folder_id);
     addField('reference', fileData.reference);
     addField('path', fileData.path);
-    addField('thumb', fileData.thumb ?? 0);
-    addField('recycled', fileData.recycled ?? 0);
+    addField('thumb', fileData.thumb);
+    addField('recycled', fileData.recycled);
     addField('uploader', fileData.uploader);
+    addField('metadata', fileData.metadata === undefined || typeof fileData.metadata === 'string'
+      ? fileData.metadata
+      : JSON.stringify(fileData.metadata));
 
     if (fields.length === 0) return { success: false, oldData };
 
@@ -160,7 +166,12 @@ export const FileOperations = {
 
   async getFile(this: CoreAccessible, id: number): Promise<Record<string, any> | null> {
     const rows = await this.getSql('SELECT * FROM files WHERE id = ? LIMIT 1', [id]);
-    return rows.length > 0 ? this.rowToMap(rows[0]) : null;
+    if (rows.length === 0) return null;
+    const file = this.rowToMap(rows[0]);
+    if (typeof file.metadata === 'string') {
+      try { file.metadata = JSON.parse(file.metadata); } catch {}
+    }
+    return file;
   },
 
   async getFiles(this: CoreAccessible, options?: {

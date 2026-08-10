@@ -11,10 +11,12 @@ import { Statistics } from './mixins/Statistics';
 export class LibraryServerDataSQLite {
   private db: Database | null = null;
   private inTransaction = false;
+  private readonly fileImported?: (file: Record<string, any>) => void | Promise<void>;
   readonly config: Record<string, any>;
 
-  constructor(config: Record<string, any>, opts: any) {
+  constructor(config: Record<string, any>, opts: { onFileImported?: (file: Record<string, any>) => void | Promise<void> } = {}) {
     this.config = config;
+    this.fileImported = opts.onFileImported;
   }
 
   // 实时从 config 读取，确保 PUT /:id 更新 customFields 后立即生效，
@@ -54,6 +56,7 @@ export class LibraryServerDataSQLite {
         tags TEXT,
         uploader INTEGER,
         website TEXT,
+        metadata TEXT,
         FOREIGN KEY(folder_id) REFERENCES folders(id)
       )
     `);
@@ -95,6 +98,10 @@ export class LibraryServerDataSQLite {
 
     try {
       await this.executeSql('ALTER TABLE files ADD COLUMN website TEXT');
+    } catch {}
+
+    try {
+      await this.executeSql('ALTER TABLE files ADD COLUMN metadata TEXT');
     } catch {}
 
     // 文件夹素材数 badge：getAllFolders 用相关子查询按 folder_id 统计文件数，
@@ -170,8 +177,15 @@ export class LibraryServerDataSQLite {
 
   async getItemThumbPath(item: Record<string, any>, options?: { isUrlFile: boolean }): Promise<string> {
     const libraryPath = await this.getLibraryPath();
-    const fileName = item.hash ? `${item.hash}.png` : `${item.id}.png`;
-    const thumbFile = path.join(libraryPath, 'thumbs', fileName);
+    let metadata = item.metadata;
+    if (typeof metadata === 'string') {
+      try { metadata = JSON.parse(metadata); } catch {}
+    }
+    const key = item.hash || item.id;
+    const coverFile = path.join(libraryPath, 'thumbs', `${key}-cover.jpg`);
+    const thumbFile = metadata?.cover && fs.existsSync(coverFile)
+      ? coverFile
+      : path.join(libraryPath, 'thumbs', `${key}.png`);
     return options?.isUrlFile ? this.getPublicURL(`api/files/thumb/${this.getLibraryId()}/${item.id}`) : thumbFile;
   }
 
@@ -213,10 +227,15 @@ export class LibraryServerDataSQLite {
           customFields = JSON.parse(customFields);
         } catch {}
       }
+      let metadata = file.metadata;
+      if (typeof metadata === 'string') {
+        try { metadata = JSON.parse(metadata); } catch {}
+      }
       return {
         ...file,
         folder_name: await this.getFolderName(file.folder_id),
         custom_fields: customFields,
+        metadata,
         thumb: await this.getItemThumbPath(file, { isUrlFile }),
         path: await this.getItemFilePath(file, { isUrlFile }),
         file_path: await this.getItemFilePath(file, { isUrlFile: false }),
@@ -251,6 +270,13 @@ export class LibraryServerDataSQLite {
       i++;
     } while (fs.existsSync(newPath));
     return newPath;
+  }
+
+  notifyFileImported(file: Record<string, any>): void {
+    if (!this.fileImported) return;
+    Promise.resolve(this.fileImported(file)).catch(error => {
+      console.error('File import callback failed:', error);
+    });
   }
 
   async getFolderName(folderId?: number): Promise<string> {

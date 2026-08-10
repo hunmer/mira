@@ -37,7 +37,10 @@ export class LibraryStorage {
 
     async load(dbConfig: Record<string, any>): Promise<LibraryServerDataSQLite> {
         const libraryId = dbConfig.id;
-        const dbServer = new LibraryServerDataSQLite(dbConfig, { webSocketServer: this.webSocketServer });
+        let dbServer!: LibraryServerDataSQLite;
+        dbServer = new LibraryServerDataSQLite(dbConfig, {
+            onFileImported: (file) => this.server.metadataService.enqueue(file, dbServer),
+        });
         this.libraries[libraryId] = {
             libraryService: dbServer,
             eventManager: new EventManager()
@@ -153,7 +156,10 @@ export class LibraryStorage {
                     config = fileConfig;
                 }
 
-                const dbServer = new LibraryServerDataSQLite(config, { webSocketServer: this.server.getWebSocketServer() });
+                let dbServer!: LibraryServerDataSQLite;
+                dbServer = new LibraryServerDataSQLite(config, {
+                    onFileImported: (file) => this.server.metadataService.enqueue(file, dbServer),
+                });
                 this.libraries[libraryId].libraryService = dbServer;
                 await dbServer.initialize();
 
