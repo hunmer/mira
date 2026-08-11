@@ -29,6 +29,7 @@ export interface DragDropController {
 const POPOVER_Z = 2147483646; // 仅次于选区覆盖层
 const SCROLL_EDGE = 48; // 距视口顶/底多少像素触发自动滚动
 const SCROLL_STEP = 12; // 每帧滚动像素
+const SHOW_THRESHOLD = 8; // 拖拽超过此距离(px)才显示浮层,过滤点击误触
 
 export interface DragSource {
   url: string;
@@ -63,6 +64,8 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
   let overlay: HTMLDivElement | null = null;
   let scrollTimer: ReturnType<typeof setInterval> | null = null;
   let pendingFolders: Promise<Folder[]> | null = null;
+  // 拖拽起点(dragstart 记录,dragover 据此判断位移与方向)
+  let dragOrigin: { x: number; y: number; source: DragSource } | null = null;
 
   function onDragStart(e: DragEvent) {
     if (!enabled) { dbg.log('dragdrop', 'dragstart ignored (disabled)'); return; }
@@ -70,11 +73,24 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
     const source = resolveDragSource(target);
     dbg.log('dragdrop', 'dragstart', { tag: target?.tagName, source, enabled, x: e.clientX, y: e.clientY });
     if (!source) return;
-    showOverlay(source, e.clientX, e.clientY);
+    // 只记录起点,不立即显示 —— 等鼠标移动超过阈值后按实际拖拽方向弹出
+    dragOrigin = { x: e.clientX, y: e.clientY, source };
+    void fetchFolders(); // 预热文件夹拉取,移动达到阈值时已就绪
+  }
+
+  /** document 级 dragover:判断位移,首次超过阈值时按拖拽方向显示浮层 */
+  function onDragOverDoc(e: DragEvent) {
+    if (!dragOrigin || overlay) return; // 已显示或无起点不处理
+    const dx = e.clientX - dragOrigin.x;
+    const dy = e.clientY - dragOrigin.y;
+    if (Math.abs(dx) < SHOW_THRESHOLD && Math.abs(dy) < SHOW_THRESHOLD) return;
+    dbg.log('dragdrop', 'dragover exceed threshold → show', { dx, dy });
+    showOverlay(dragOrigin.source, e.clientX, e.clientY, dx, dy);
   }
 
   function onDragEnd() {
     dbg.log('dragdrop', 'dragend → hideOverlay');
+    dragOrigin = null;
     hideOverlay();
   }
 
@@ -124,37 +140,45 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
   }
 
   /**
-   * 把 overlay 定位到鼠标附近(left,top 为相对视口的像素坐标)。
-   * 默认显示在鼠标右下角;越界时翻转到左/上侧,保证不超出视口。
+   * 把 overlay 定位到鼠标附近,方向沿拖拽方向延伸。
+   * dx/dy 为自 dragstart 起的位移(用于判断主方向);越界时翻转到对侧。
+   * 例:向右下拖 → 浮层出现在鼠标右下;向左上拖 → 左上。
    */
-  function positionNear(x: number, y: number) {
+  function positionByDirection(x: number, y: number, dx: number, dy: number) {
     if (!overlay) return;
-    const MARGIN = 12; // 与鼠标的间距,避免遮挡光标
-    // 先让 overlay 渲染一帧拿到尺寸
+    const MARGIN = 12;
     requestAnimationFrame(() => {
       if (!overlay) return;
       const ow = overlay.offsetWidth;
       const oh = overlay.offsetHeight;
       const vw = window.innerWidth;
       const vh = window.innerHeight;
-      let left = x + MARGIN;
-      let top = y + MARGIN;
-      // 右侧放不下 → 放到鼠标左侧
-      if (left + ow > vw - 8) left = Math.max(8, x - MARGIN - ow);
-      // 下方放不下 → 放到鼠标上方
-      if (top + oh > vh - 8) top = Math.max(8, y - MARGIN - oh);
-      // 最终钳制在视口内
-      left = Math.min(left, Math.max(8, vw - ow - 8));
-      top = Math.min(top, Math.max(8, vh - oh - 8));
+      // 主方向:|dx|>=|dy| 按水平,否则按垂直
+      const horiz = Math.abs(dx) >= Math.abs(dy);
+      let left: number, top: number;
+      if (horiz) {
+        // 水平为主:沿 x 方向延伸(右拖→右侧,左拖→左侧),垂直居中于鼠标
+        left = dx >= 0 ? x + MARGIN : x - MARGIN - ow;
+        top = y - oh / 2;
+      } else {
+        // 垂直为主:沿 y 方向延伸(下拖→下方,上拖→上方),水平居中于鼠标
+        left = x - ow / 2;
+        top = dy >= 0 ? y + MARGIN : y - MARGIN - oh;
+      }
+      // 越界翻转/钳制
+      if (left + ow > vw - 8) left = Math.max(8, vw - ow - 8);
+      if (left < 8) left = 8;
+      if (top + oh > vh - 8) top = Math.max(8, vh - oh - 8);
+      if (top < 8) top = 8;
       overlay.style.left = left + 'px';
       overlay.style.top = top + 'px';
       overlay.classList.add('mira-ready');
     });
   }
 
-  function showOverlay(source: DragSource, x: number, y: number) {
+  function showOverlay(source: DragSource, x: number, y: number, dx: number, dy: number) {
     hideOverlay();
-    dbg.info('dragdrop', 'showOverlay', { source, hasGetFolders: !!handlers.getFolders, x, y });
+    dbg.info('dragdrop', 'showOverlay', { source, hasGetFolders: !!handlers.getFolders, x, y, dx, dy });
     overlay = document.createElement('div');
     overlay.className = 'mira-overlay';
 
@@ -229,7 +253,7 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
     });
 
     document.documentElement.appendChild(overlay);
-    positionNear(x, y);
+    positionByDirection(x, y, dx, dy);
   }
 
   /** 滚动文件夹列表(独立于页面滚动) */
@@ -251,14 +275,17 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
 
   // 捕获阶段,确保先于页面处理
   document.addEventListener('dragstart', onDragStart, true);
+  document.addEventListener('dragover', onDragOverDoc, true);
   document.addEventListener('dragend', onDragEnd, true);
   document.addEventListener('drop', onDragEnd, true);
 
   return {
-    setEnabled(v) { enabled = v; if (!v) hideOverlay(); },
+    setEnabled(v) { enabled = v; if (!v) { dragOrigin = null; hideOverlay(); } },
     destroy() {
       hideOverlay();
+      dragOrigin = null;
       document.removeEventListener('dragstart', onDragStart, true);
+      document.removeEventListener('dragover', onDragOverDoc, true);
       document.removeEventListener('dragend', onDragEnd, true);
       document.removeEventListener('drop', onDragEnd, true);
     },

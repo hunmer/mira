@@ -23,7 +23,7 @@ hero:
       link: /skill
     - theme: alt
       text: 🔗 GitHub
-      link: https://github.com/hunmer/mira_typescript
+      link: https://github.com/hunmer/mirat
 
 features:
   - icon: 📟

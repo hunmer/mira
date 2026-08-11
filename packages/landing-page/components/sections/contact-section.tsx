@@ -7,8 +7,8 @@ import { useI18n } from "@/lib/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 const APP_EMAIL = "support@mira.app";
-const GITHUB_URL = "https://github.com/hunmer/mira_typescript";
-const DOCS_URL = "https://github.com/hunmer/mira_typescript";
+const GITHUB_URL = "https://github.com/hunmer/mirat";
+const DOCS_URL = "https://github.com/hunmer/mirat";
 
 function BorderSeparator({ className }: React.ComponentProps<"div">) {
   return (

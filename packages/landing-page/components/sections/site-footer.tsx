@@ -6,8 +6,8 @@ import type { ComponentProps, ReactNode } from "react";
 import { Logo } from "@/components/logo";
 import { useI18n } from "@/lib/i18n/i18n-provider";
 
-const GITHUB_URL = "https://github.com/hunmer/mira_typescript";
-const ISSUE_URL = "https://github.com/hunmer/mira_typescript/issues";
+const GITHUB_URL = "https://github.com/hunmer/mirat";
+const ISSUE_URL = "https://github.com/hunmer/mirat/issues";
 
 type FooterLink = {
   title: string;

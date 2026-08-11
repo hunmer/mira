@@ -5,14 +5,14 @@
   "type": "module",
   "license": "MIT",
   "author": "hunmer",
-  "homepage": "https://github.com/hunmer/mira_typescript/tree/main/packages/vue-masonry",
+  "homepage": "https://github.com/hunmer/mirat/tree/main/packages/vue-masonry",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hunmer/mira_typescript.git",
+    "url": "git+https://github.com/hunmer/mirat.git",
     "directory": "packages/vue-masonry"
   },
   "bugs": {
-    "url": "https://github.com/hunmer/mira_typescript/issues"
+    "url": "https://github.com/hunmer/mirat/issues"
   },
   "keywords": [
     "vue",
