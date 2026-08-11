@@ -4,6 +4,10 @@ import { Tweets } from "@/components/tweets";
 import { getAllCategories } from "@/lib/utils/blocks-data";
 import type { Category } from "@/types";
 
+// 首页含社区推文等动态内容，改为 SSR 避免静态 prerender 时
+// 因构建环境差异（Vercel 单 worker / X API 网络）导致崩溃
+export const dynamic = "force-dynamic";
+
 export default function Page() {
   const categories = getAllCategories();
 
