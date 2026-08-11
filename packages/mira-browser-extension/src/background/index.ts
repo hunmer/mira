@@ -3,6 +3,7 @@ import { ensureClient, isAuthError } from './mira-client';
 import { createUploader } from './uploader';
 import { createCapturer } from './capturer';
 import { createRouter, broadcast } from './message-router';
+import { sendToContent } from './inject';
 import { setupContextMenus } from './context-menus';
 import { isRequest, type Request as MiraRequest } from '@/shared/messages';
 import type { SniffedResource, ExtensionSettings } from '@/shared/types';
@@ -127,7 +128,7 @@ onSettingsChange(async settings => {
   const tabs = await chrome.tabs.query({});
   for (const tab of tabs) {
     if (!tab.id) continue;
-    applyFeatureSettings(tab.id, settings);
+    void applyFeatureSettings(tab.id, settings);
   }
 });
 
@@ -135,26 +136,27 @@ onSettingsChange(async settings => {
  * 把当前嗅探/拖拽开关下发到单个 tab。
  * chrome:// 等不可注入页会 reject,统一吞掉。
  */
-function applyFeatureSettings(tabId: number, settings: ExtensionSettings): void {
-  chrome.tabs
-    .sendMessage(tabId, {
+async function applyFeatureSettings(tabId: number, settings: ExtensionSettings): Promise<void> {
+  // 扩展在已有页面加载/更新时不会重新注入 content script,用统一注入兜底确保拖拽入口存在。
+  try {
+    await sendToContent(tabId, {
       type: 'DISPATCH_DRAGDROP',
       payload: { enabled: settings.dragPopoverEnabled },
-    })
-    .catch(() => {});
-  chrome.tabs
-    .sendMessage(tabId, {
+    });
+    await sendToContent(tabId, {
       type: settings.snifferEnabled ? 'SNIFFER_START' : 'SNIFFER_STOP',
       payload: settings.snifferEnabled ? { kinds: settings.snifferKinds } : undefined,
-    })
-    .catch(() => {});
+    });
+  } catch {
+    // chrome:// 等不可注入页面静默忽略。
+  }
 }
 
 // 页面导航完成 → 按当前设置启停嗅探(覆盖刷新 / 新开 tab / 页内跳转)
 chrome.tabs.onUpdated.addListener(async (tabId, info) => {
   if (info.status !== 'complete') return;
   const settings = await getSettings();
-  applyFeatureSettings(tabId, settings);
+  void applyFeatureSettings(tabId, settings);
 });
 
 // 启动初始化
@@ -163,6 +165,12 @@ getSettings().then(settings => {
   if (settings.uiMode === 'sidePanel') {
     chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
   }
+  // service worker/扩展重新加载后,补齐已经打开的页面。
+  chrome.tabs.query({}).then(tabs => {
+    for (const tab of tabs) {
+      if (tab.id != null) void applyFeatureSettings(tab.id, settings);
+    }
+  }).catch(() => {});
 });
 
 // 安装时初始化右键菜单

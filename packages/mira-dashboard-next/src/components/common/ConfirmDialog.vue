@@ -40,7 +40,7 @@ function onCancel() {
         <AlertDialogCancel @click="onCancel">
           {{ props.cancelText }}
         </AlertDialogCancel>
-        <AlertDialogAction as-child>
+        <AlertDialogAction as-child variant="destructive">
           <Button variant="destructive" @click="onConfirm">
             {{ props.confirmText }}
           </Button>

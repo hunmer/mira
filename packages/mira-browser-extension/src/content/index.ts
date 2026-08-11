@@ -26,7 +26,7 @@ const dragdrop = createDragDrop({
   async getFolders() {
     try {
       const settings: any = await chrome.runtime.sendMessage({ type: 'CONFIG_GET' });
-      if (!settings?.libraryId) return [];
+      if (!settings?.libraryId) return null;
       const res = await chrome.runtime.sendMessage({
         type: 'FOLDER_LIST',
         payload: { libraryId: settings.libraryId },

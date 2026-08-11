@@ -95,6 +95,7 @@ export default {
     createLibrary: '新建资源库',
     editLibrary: '编辑资源库',
     deleteLibrary: '删除资源库',
+    deleteOnlyRemoveFromList: '此操作只会从素材库列表移除，不会删除真实素材库文件夹',
     path: '路径',
     type: '类型',
     fileCount: '文件数',

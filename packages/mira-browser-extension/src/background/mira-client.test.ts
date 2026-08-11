@@ -22,3 +22,44 @@ describe('isAuthError', () => {
     expect(isAuthError(new Error('boom'))).toBe(false);
   });
 });
+
+describe('autoRelogin', () => {
+  it('浏览器重启清空 session 后使用持久化凭据重登', async () => {
+    vi.resetModules();
+    const login = vi.fn().mockResolvedValue({ accessToken: 'fresh-token' });
+    const saveSession = vi.fn().mockResolvedValue({});
+
+    vi.doMock('mira-app-core/shared/sdk', () => ({
+      MiraClient: class {
+        auth() { return { login }; }
+      },
+    }));
+    vi.doMock('@/shared/storage', () => ({
+      STORAGE_KEYS: { session: 'mira_session' },
+      loadSettings: vi.fn().mockResolvedValue({
+        servers: [],
+        activeServerId: '',
+        serverURL: 'http://localhost:8081',
+        username: 'saved-user',
+        password: 'saved-pass',
+      }),
+      loadSession: vi.fn().mockResolvedValue({}),
+      saveSession,
+    }));
+
+    try {
+      const { autoRelogin } = await import('./mira-client');
+      await autoRelogin();
+
+      expect(login).toHaveBeenCalledWith('saved-user', 'saved-pass');
+      expect(saveSession).toHaveBeenCalledWith({
+        token: 'fresh-token',
+        username: 'saved-user',
+        password: 'saved-pass',
+      });
+    } finally {
+      vi.doUnmock('mira-app-core/shared/sdk');
+      vi.doUnmock('@/shared/storage');
+    }
+  });
+});

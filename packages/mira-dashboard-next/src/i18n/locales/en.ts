@@ -95,6 +95,7 @@ export default {
     createLibrary: 'New Library',
     editLibrary: 'Edit Library',
     deleteLibrary: 'Delete Library',
+    deleteOnlyRemoveFromList: 'This action only removes the library from the list and will not delete the actual library folder.',
     path: 'Path',
     type: 'Type',
     fileCount: 'Files',

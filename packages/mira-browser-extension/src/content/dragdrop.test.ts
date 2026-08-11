@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { resolveDragSource } from './dragdrop';
+import { folderEmptyMessage, resolveDragSource } from './dragdrop';
 
 describe('resolveDragSource', () => {
   it('识别普通链接并按 URL 推断类型', () => {
@@ -22,5 +22,10 @@ describe('resolveDragSource', () => {
 
   it('非媒体元素不显示 Popover', () => {
     expect(resolveDragSource(document.createElement('div'))).toBeNull();
+  });
+
+  it('未连接素材库时显示对应空状态', () => {
+    expect(folderEmptyMessage(null)).toBe('未连接素材库');
+    expect(folderEmptyMessage([])).toBe('暂无文件夹');
   });
 });

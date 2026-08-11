@@ -17,8 +17,8 @@ export interface DragDropPayload {
 
 export interface DragDropHandlers {
   onUpload: (payload: DragDropPayload) => void;
-  /** 取当前素材库的文件夹列表(用于浮层右侧目录);可选,无则不显示目录区 */
-  getFolders?: () => Promise<Folder[]>;
+  /** 取当前素材库的文件夹列表;未连接素材库时返回 null */
+  getFolders?: () => Promise<Folder[] | null>;
 }
 
 export interface DragDropController {
@@ -34,6 +34,10 @@ const SHOW_THRESHOLD = 8; // 拖拽超过此距离(px)才显示浮层,过滤点�
 export interface DragSource {
   url: string;
   kind: ResourceKind;
+}
+
+export function folderEmptyMessage(folders: Folder[] | null): string {
+  return folders === null ? '未连接素材库' : '暂无文件夹';
 }
 
 /** 解析页面内可拖拽的媒体或链接；链接包裹媒体时优先媒体本身。 */
@@ -63,7 +67,7 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
   let enabled = true;
   let overlay: HTMLDivElement | null = null;
   let scrollTimer: ReturnType<typeof setInterval> | null = null;
-  let pendingFolders: Promise<Folder[]> | null = null;
+  let pendingFolders: Promise<Folder[] | null> | null = null;
   // 拖拽起点(dragstart 记录,dragover 据此判断位移与方向)
   let dragOrigin: { x: number; y: number; source: DragSource } | null = null;
 
@@ -95,11 +99,11 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
   }
 
   /** 懒加载文件夹列表(dragstart 时触发,多次 dragstart 复用同一次请求) */
-  function fetchFolders(): Promise<Folder[]> {
+  function fetchFolders(): Promise<Folder[] | null> {
     if (!handlers.getFolders) { dbg.log('dragdrop', 'no getFolders handler'); return Promise.resolve([]); }
     if (!pendingFolders) {
       pendingFolders = handlers.getFolders().then(f => {
-        dbg.log('dragdrop', 'fetchFolders ok', { count: f.length });
+        dbg.log('dragdrop', 'fetchFolders ok', { count: f?.length ?? 0 });
         return f;
       }).catch(e => {
         dbg.error('dragdrop', 'fetchFolders failed', e);
@@ -215,10 +219,10 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
     // 异步填充文件夹
     fetchFolders().then(folders => {
       listScroll.removeChild(loading);
-      if (!folders.length) {
-        const empty = document.createElement('div');
-        empty.className = 'mira-folder-item mira-empty';
-        empty.textContent = '暂无文件夹';
+      if (folders === null || folders.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'mira-folder-item mira-empty';
+        empty.textContent = folderEmptyMessage(folders);
         listScroll.appendChild(empty);
         return;
       }

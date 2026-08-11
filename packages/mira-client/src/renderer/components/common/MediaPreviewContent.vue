@@ -1,7 +1,7 @@
 <template>
   <div
     class="media-preview-content flex items-center justify-center overflow-hidden rounded-lg bg-black"
-    :style="{ width: width + 'px', height: height + 'px' }"
+    :style="{ width: containerSize.width + 'px', height: containerSize.height + 'px' }"
   >
     <div v-if="customHoverCard && !selectedViewer" ref="customContainer" class="h-full w-full" />
 
@@ -163,6 +163,31 @@ const kind = computed<'image' | 'video' | 'audio' | 'unknown'>(() => {
 
 /** 图片预览源：原图（带缓存破坏），保证预览清晰而非使用裁切缩略图 */
 const imageSrc = computed(() => getCacheBustedPreviewImageSource(props.item) || '')
+
+/** 图片自然尺寸（预加载得到），用于容器等比缩放 */
+const imageDim = ref<{ w: number; h: number } | null>(null)
+
+watch(imageSrc, (src) => {
+  imageDim.value = null
+  if (!src || kind.value !== 'image') return
+  const img = new Image()
+  img.onload = () => {
+    imageDim.value = { w: img.naturalWidth || img.width, h: img.naturalHeight || img.height }
+  }
+  img.src = src
+}, { immediate: true })
+
+/** 容器尺寸：图片模式下等比缩放跟随图片（不超过 width/height 上限，不放大）；其他模式用 props */
+const containerSize = computed(() => {
+  if (kind.value !== 'image' || !imageDim.value || !imageDim.value.w || !imageDim.value.h) {
+    return { width: props.width, height: props.height }
+  }
+  const ratio = Math.min(props.width / imageDim.value.w, props.height / imageDim.value.h, 1)
+  return {
+    width: Math.round(imageDim.value.w * ratio),
+    height: Math.round(imageDim.value.h * ratio),
+  }
+})
 
 /** viewerjs 内嵌查看器配置：zoomable + 默认 zoomOnWheel 启用滚轮缩放 */
 const viewerOptions = {

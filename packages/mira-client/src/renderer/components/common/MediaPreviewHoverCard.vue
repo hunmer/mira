@@ -3,7 +3,7 @@
     <HoverCardTrigger as-child>
       <button
         :class="[
-          'z-10 rounded-full bg-black/55 text-white flex items-center justify-center',
+          'z-10 rounded-bl-full bg-black/55 text-white flex items-end justify-start p-0.5',
           'hover:bg-black/75 transition-opacity opacity-0 group-hover:opacity-100',
           buttonClass
         ]"
@@ -11,7 +11,7 @@
         @click.stop
         @pointerdown.stop
       >
-        <span class="material-icons" :class="iconClass">search</span>
+        <span class="material-icons inline-block translate-x-[3px] -translate-y-[3px]" :class="iconClass">search</span>
       </button>
     </HoverCardTrigger>
     <HoverCardContent

@@ -113,7 +113,9 @@ async function handleSave() {
 }
 
 async function handleDelete(id: string) {
-  if (!(await requireConfirm())) return
+  if (!(await requireConfirm({
+    description: t('library.deleteOnlyRemoveFromList'),
+  }))) return
   try {
     await libraryApi.delete(id)
     toast.success(t('common.success'))

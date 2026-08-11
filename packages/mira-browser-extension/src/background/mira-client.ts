@@ -89,15 +89,16 @@ export async function loginTo(serverURL: string, username: string, password: str
 }
 
 /**
- * token 失效时自动重登(用缓存的凭据)
- * @throws 'AUTH_EXPIRED' 若无缓存凭据
+ * token 失效时自动重登(session 凭据优先,浏览器重启后回退持久设置)
+ * @throws 'AUTH_EXPIRED' 若无可用凭据
  */
 export async function autoRelogin(): Promise<MiraClient> {
   const session = await loadSession();
-  if (!session.username || !session.password) {
+  const credentials = session.username && session.password ? session : await loadSettings();
+  if (!credentials.username || !credentials.password) {
     throw new Error('AUTH_EXPIRED');
   }
-  await login(session.username, session.password);
+  await login(credentials.username, credentials.password);
   return ensureClient();
 }
 
