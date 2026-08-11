@@ -22,7 +22,14 @@ const tweets = [
 ];
 
 const getTweet = unstable_cache(
-  async (id: string) => _getTweet(id),
+  async (id: string) => {
+    try {
+      return await _getTweet(id);
+    } catch {
+      // CI/Vercel 网络无法访问 X API 时返回 null，避免 prerender 失败
+      return null;
+    }
+  },
   ["tweet"],
   { revalidate: 3600 * 24 }
 );
