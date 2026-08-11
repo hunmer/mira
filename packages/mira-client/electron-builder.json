@@ -96,7 +96,7 @@
     "category": "public.app-category.photography",
     "darkModeSupport": true,
     "gatekeeperAssess": false,
-    "hardenedRuntime": false,
+    "hardenedRuntime": true,
     "artifactName": "${productName}-${version}-mac-${arch}.${ext}",
     "minimumSystemVersion": "10.15.0",
     "notarize": true

@@ -77,6 +77,19 @@ jobs:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: pnpm run ${{ matrix.script }}
 
+    - name: Upload build artifacts
+      # 每次构建都上传产物到 Actions（便于下载验证，不发布）
+      uses: actions/upload-artifact@v4
+      with:
+        name: mira-${{ matrix.platform }}-${{ github.sha }}
+        path: |
+          packages/mira-client/build/*.dmg
+          packages/mira-client/build/*.zip
+          packages/mira-client/build/*.exe
+          packages/mira-client/build/*.msi
+        if-no-files-found: ignore
+        retention-days: 14
+
     - name: Upload artifacts to GitHub Release
       # 仅 tag 推送时发布；main 推送只做构建验证
       if: startsWith(github.ref, 'refs/tags/')
