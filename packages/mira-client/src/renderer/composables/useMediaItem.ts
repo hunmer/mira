@@ -44,7 +44,10 @@ export function useMediaItem(options: UseMediaItemOptions) {
 
   // 文件扩展名
   const fileExtension = computed((): string => {
-    const ext = itemRef.value.extension || itemRef.value.name.split('.').pop()?.toUpperCase()
+    // 仅当文件名含点分隔时才取最后一段作为扩展名，避免无扩展名文件把整个文件名当作扩展名
+    const dotIdx = itemRef.value.name.lastIndexOf('.')
+    const ext = itemRef.value.extension
+      || (dotIdx > 0 ? itemRef.value.name.slice(dotIdx + 1).toUpperCase() : '')
     if (ext) return ext
 
     if (itemRef.value.mimeType.startsWith('image/')) {

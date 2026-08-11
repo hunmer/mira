@@ -66,9 +66,9 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
     if (!enabled) { dbg.log('dragdrop', 'dragstart ignored (disabled)'); return; }
     const target = e.target instanceof Element ? e.target : null;
     const source = resolveDragSource(target);
-    dbg.log('dragdrop', 'dragstart', { tag: target?.tagName, source, enabled });
+    dbg.log('dragdrop', 'dragstart', { tag: target?.tagName, source, enabled, x: e.clientX, y: e.clientY });
     if (!source) return;
-    showOverlay(source);
+    showOverlay(source, e.clientX, e.clientY);
   }
 
   function onDragEnd() {
@@ -121,9 +121,38 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
     return zone;
   }
 
-  function showOverlay(source: DragSource) {
+  /**
+   * 把 overlay 定位到鼠标附近(left,top 为相对视口的像素坐标)。
+   * 默认显示在鼠标右下角;越界时翻转到左/上侧,保证不超出视口。
+   */
+  function positionNear(x: number, y: number) {
+    if (!overlay) return;
+    const MARGIN = 12; // 与鼠标的间距,避免遮挡光标
+    // 先让 overlay 渲染一帧拿到尺寸
+    requestAnimationFrame(() => {
+      if (!overlay) return;
+      const ow = overlay.offsetWidth;
+      const oh = overlay.offsetHeight;
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      let left = x + MARGIN;
+      let top = y + MARGIN;
+      // 右侧放不下 → 放到鼠标左侧
+      if (left + ow > vw - 8) left = Math.max(8, x - MARGIN - ow);
+      // 下方放不下 → 放到鼠标上方
+      if (top + oh > vh - 8) top = Math.max(8, y - MARGIN - oh);
+      // 最终钳制在视口内
+      left = Math.min(left, Math.max(8, vw - ow - 8));
+      top = Math.min(top, Math.max(8, vh - oh - 8));
+      overlay.style.left = left + 'px';
+      overlay.style.top = top + 'px';
+      overlay.classList.add('mira-ready');
+    });
+  }
+
+  function showOverlay(source: DragSource, x: number, y: number) {
     hideOverlay();
-    dbg.info('dragdrop', 'showOverlay', { source, hasGetFolders: !!handlers.getFolders });
+    dbg.info('dragdrop', 'showOverlay', { source, hasGetFolders: !!handlers.getFolders, x, y });
     overlay = document.createElement('div');
     overlay.className = 'mira-overlay';
 
@@ -198,6 +227,7 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
     });
 
     document.documentElement.appendChild(overlay);
+    positionNear(x, y);
   }
 
   /** 滚动文件夹列表(独立于页面滚动) */
@@ -241,7 +271,7 @@ function ensureStyles() {
   style.id = 'mira-dragdrop-style';
   style.textContent = `
 .mira-overlay {
-  position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  position: fixed; left: 0; top: 0;
   z-index: ${POPOVER_Z};
   width: min(440px, 92vw); max-height: 80vh;
   background: rgba(24,24,27,.96); color: #fafafa;
@@ -250,7 +280,12 @@ function ensureStyles() {
   box-shadow: 0 8px 32px rgba(0,0,0,.4);
   display: flex; flex-direction: column; overflow: hidden;
   user-select: none;
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity .16s ease-out, transform .16s ease-out;
 }
+.mira-overlay.mira-ready { visibility: visible; opacity: 1; transform: translateY(0); }
 .mira-overlay-title { padding: 10px 14px; font-weight: 600; border-bottom: 1px solid #3f3f46; }
 .mira-overlay-body { display: flex; gap: 8px; padding: 12px; min-height: 0; }
 .mira-dropzone {

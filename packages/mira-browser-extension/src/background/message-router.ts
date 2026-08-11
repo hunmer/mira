@@ -11,6 +11,7 @@ import type { Uploader } from './uploader';
 import type { SniffedResource } from '@/shared/types';
 import { dbg } from '@/shared/debug';
 import { sendToContent } from './inject';
+import { resourceFilename } from '@/shared/resource-filename';
 
 export interface RouterDeps {
   uploader: Uploader;
@@ -129,7 +130,7 @@ export function createRouter(deps: RouterDeps): RequestHandler {
           } : {}),
         });
         const blob = await res.blob();
-        const filename = req.payload.url.split('/').pop()?.split('?')[0] || `resource-${Date.now()}`;
+        const filename = resourceFilename(req.payload.url, blob.type) || `resource-${Date.now()}`;
         const file = new File([blob], filename, { type: blob.type || 'image/*' });
         deps.uploader.enqueue({
           file,

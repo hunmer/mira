@@ -398,6 +398,29 @@ const selectFromClick = (item: FileInfo, event: MouseEvent) => {
     return
   }
 
+  // Shift 范围选择：以当前已选最后一项为锚，选中两者之间的所有项（与 Grid 视图一致）
+  if (event.shiftKey && props.selectedItems.length > 0) {
+    const lastSelectedId = props.selectedItems[props.selectedItems.length - 1]
+    const currentIndex = props.items.findIndex(i => i.id === item.id)
+    const lastIndex = props.items.findIndex(i => i.id === lastSelectedId)
+    if (currentIndex !== -1 && lastIndex !== -1) {
+      const start = Math.min(currentIndex, lastIndex)
+      const end = Math.max(currentIndex, lastIndex)
+      const rangeIds = new Set<string>()
+      for (let i = start; i <= end; i++) {
+        const rangeItem = props.items[i]
+        if (rangeItem) rangeIds.add(rangeItem.id)
+      }
+      props.items.forEach(currentItem => {
+        const inRange = rangeIds.has(currentItem.id)
+        const wasSelected = props.selectedItems.includes(currentItem.id)
+        if (inRange && !wasSelected) emit('media-select', currentItem, true)
+        else if (!inRange && wasSelected) emit('media-select', currentItem, false)
+      })
+      return
+    }
+  }
+
   if (event.ctrlKey || event.metaKey) {
     emit('media-select', item, !selected)
     return

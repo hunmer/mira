@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { useBackground } from '@/ui/composables/useBackground';
 import { useSniffer } from '@/ui/composables/useSniffer';
 import { useSettings } from '@/ui/composables/useSettings';
-import type { SnifferViewMode, SniffedResource } from '@/shared/types';
+import type { SnifferViewMode, SnifferSortOrder, SniffedResource } from '@/shared/types';
 import Switch from '@/ui/components/ui/Switch.vue';
 import Button from '@/ui/components/ui/Button.vue';
 import Input from '@/ui/components/ui/Input.vue';
@@ -29,6 +29,18 @@ const autoScrollRunning = ref(false);
 // 编辑用的本地值(字符串,适配 Input);开始滚动时再转 number 写入 settings
 const delayDraft = ref(String(settings.value.autoScrollDelay));
 watch(() => settings.value.autoScrollDelay, v => { delayDraft.value = String(v); });
+
+// ---- 过滤 popover ----
+const filterOpen = ref(false);
+// 尺寸过滤本地草稿(字符串,适配 Input);change 时再转 number 写入 settings
+const minWidthDraft = ref(String(settings.value.snifferMinWidth || ''));
+const minHeightDraft = ref(String(settings.value.snifferMinHeight || ''));
+watch(() => settings.value.snifferMinWidth, v => { minWidthDraft.value = v ? String(v) : ''; });
+watch(() => settings.value.snifferMinHeight, v => { minHeightDraft.value = v ? String(v) : ''; });
+// 过滤是否激活(任意尺寸过滤非 0)
+const filterActive = computed(() =>
+  settings.value.snifferMinWidth > 0 || settings.value.snifferMinHeight > 0,
+);
 
 function toggleAutoScrollPopover() {
   autoScrollOpen.value = !autoScrollOpen.value;
@@ -146,6 +158,44 @@ async function setView(view: SnifferViewMode) {
   await update({ snifferView: view });
 }
 
+// 排序方向切换:持久化到 settings
+async function setSortOrder(order: SnifferSortOrder) {
+  if (settings.value.snifferSortOrder === order) return;
+  await update({ snifferSortOrder: order });
+}
+
+// 尺寸过滤:change/blur 时把 draft 写入 settings(空或非法 → 0 = 不过滤)
+async function applyMinWidth() {
+  const n = Math.max(0, Math.floor(Number(minWidthDraft.value) || 0));
+  if (settings.value.snifferMinWidth !== n) await update({ snifferMinWidth: n });
+}
+async function applyMinHeight() {
+  const n = Math.max(0, Math.floor(Number(minHeightDraft.value) || 0));
+  if (settings.value.snifferMinHeight !== n) await update({ snifferMinHeight: n });
+}
+function resetSizeFilter() {
+  minWidthDraft.value = '';
+  minHeightDraft.value = '';
+  void update({ snifferMinWidth: 0, snifferMinHeight: 0 });
+}
+
+// 排序 + 尺寸过滤后的可见资源
+const visibleResources = computed(() => {
+  const order = settings.value.snifferSortOrder;
+  const mw = settings.value.snifferMinWidth;
+  const mh = settings.value.snifferMinHeight;
+  let arr = resources.value;
+  if (mw > 0 || mh > 0) {
+    arr = arr.filter(r =>
+      (mw <= 0 || (r.width ?? 0) >= mw) &&
+      (mh <= 0 || (r.height ?? 0) >= mh),
+    );
+  }
+  const sorted = [...arr];
+  sorted.sort((a, b) => order === 'desc' ? b.sniffedAt - a.sniffedAt : a.sniffedAt - b.sniffedAt);
+  return sorted;
+});
+
 async function uploadSelected() {
   const targets = resources.value.filter(r => selected.value.has(r.id));
   for (const r of targets) {
@@ -257,6 +307,58 @@ async function downloadSelected() {
         </button>
       </div>
 
+      <!-- 过滤入口:排序 + 尺寸过滤 -->
+      <div class="filter-wrap">
+        <button
+          type="button"
+          class="icon-entry"
+          :class="{ active: filterOpen || filterActive }"
+          :title="t('sniffer.filterTitle')"
+          :aria-label="t('sniffer.filterTitle')"
+          @click="filterOpen = !filterOpen"
+        >
+          <!-- 漏斗图标 -->
+          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+            <path d="M2 3.5h12L9.5 9v4l-3 1.5V9L2 3.5z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <div v-if="filterOpen" class="popover filter-popover">
+          <div class="popover-title">{{ t('sniffer.filterTitle') }}</div>
+          <!-- 排序 -->
+          <div class="filter-group">
+            <span class="filter-label">{{ t('sniffer.sortLabel') }}</span>
+            <div class="seg-group">
+              <button
+                type="button" class="seg"
+                :class="{ active: settings.snifferSortOrder === 'asc' }"
+                :title="t('sniffer.sortAsc')" @click="setSortOrder('asc')"
+              >{{ t('sniffer.sortAscShort') }}</button>
+              <button
+                type="button" class="seg"
+                :class="{ active: settings.snifferSortOrder === 'desc' }"
+                :title="t('sniffer.sortDesc')" @click="setSortOrder('desc')"
+              >{{ t('sniffer.sortDescShort') }}</button>
+            </div>
+          </div>
+          <!-- 最小宽度 -->
+          <label class="popover-row">
+            <span>{{ t('sniffer.minWidth') }}</span>
+            <Input v-model="minWidthDraft" type="number" min="0" placeholder="0" @change="applyMinWidth" @blur="applyMinWidth" />
+            <span class="unit">px</span>
+          </label>
+          <!-- 最小高度 -->
+          <label class="popover-row">
+            <span>{{ t('sniffer.minHeight') }}</span>
+            <Input v-model="minHeightDraft" type="number" min="0" placeholder="0" @change="applyMinHeight" @blur="applyMinHeight" />
+            <span class="unit">px</span>
+          </label>
+          <p class="popover-hint">{{ t('sniffer.sizeFilterHint') }}</p>
+          <div class="popover-ops">
+            <Button size="sm" variant="ghost" @click="resetSizeFilter">{{ t('sniffer.resetFilter') }}</Button>
+          </div>
+        </div>
+      </div>
+
       <!-- 自动滚动:dots 入口 → dropdown 设间隔 + 开始/停止 -->
       <div class="autoscroll-wrap">
         <button
@@ -291,14 +393,14 @@ async function downloadSelected() {
       </div>
     </div>
     <MasonryView
-      v-if="settings.snifferView === 'masonry' && resources.length"
-      :resources="resources"
+      v-if="settings.snifferView === 'masonry' && visibleResources.length"
+      :resources="visibleResources"
       :selected="selected"
       @toggle="toggle"
     />
     <ResourceList
-      v-else-if="settings.snifferView !== 'masonry' && resources.length"
-      :resources="resources"
+      v-else-if="settings.snifferView !== 'masonry' && visibleResources.length"
+      :resources="visibleResources"
       :selected="selected"
       @toggle="toggle"
     />
@@ -373,6 +475,14 @@ async function downloadSelected() {
 }
 .icon-entry:hover { color: var(--fg); }
 .icon-entry.active { color: var(--primary); border-color: var(--primary); }
+
+/* 过滤入口 + popover */
+.filter-wrap { position: relative; flex-shrink: 0; }
+.filter-popover { width: 240px; }
+.filter-group { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.filter-label { font-size: 12px; color: var(--muted); }
+.seg-group { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.seg-group .seg { width: auto; min-width: 40px; height: 26px; padding: 0 8px; font-size: 12px; }
 
 .popover {
   position: absolute;

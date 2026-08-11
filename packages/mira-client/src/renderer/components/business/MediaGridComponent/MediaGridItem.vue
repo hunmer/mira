@@ -63,7 +63,7 @@
       <!-- 文件类型标识 (非视频预览状态时显示) -->
       <div
         v-show="!isVideoPlaying && showFormat"
-        class="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded"
+        class="absolute top-2 left-2 max-w-[80px] truncate bg-black/50 text-white text-xs px-2 py-1 rounded"
       >
         {{ fileExtension }}
       </div>

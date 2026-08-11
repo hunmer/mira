@@ -9,6 +9,11 @@ export type ResourceKind = 'image' | 'audio' | 'video';
 export type SnifferViewMode = 'list' | 'masonry';
 
 /**
+ * 嗅探资源排序方向:asc 旧的在上 / desc 新的在上
+ */
+export type SnifferSortOrder = 'asc' | 'desc';
+
+/**
  * 界面语言:i18n locale
  */
 export type Locale = 'zh-CN' | 'en';
@@ -129,6 +134,12 @@ export interface ExtensionSettings {
   snifferEnabled: boolean;
   /** 嗅探资源展示视图:list 列表 / masonry 瀑布流 */
   snifferView: SnifferViewMode;
+  /** 嗅探资源排序方向:asc 旧的在上 / desc 新的在上 */
+  snifferSortOrder: SnifferSortOrder;
+  /** 嗅探图片最小宽度(px,0 不过滤) */
+  snifferMinWidth: number;
+  /** 嗅探图片最小高度(px,0 不过滤) */
+  snifferMinHeight: number;
   snifferKinds: ResourceKind[];
   autoScrollEnabled: boolean;
   /** 滚动间隔(ms) */
@@ -155,6 +166,9 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   dropZoneEnabled: true,
   snifferEnabled: false,
   snifferView: 'list',
+  snifferSortOrder: 'desc',
+  snifferMinWidth: 0,
+  snifferMinHeight: 0,
   snifferKinds: ['image', 'audio', 'video'],
   autoScrollEnabled: false,
   autoScrollDelay: 800,
