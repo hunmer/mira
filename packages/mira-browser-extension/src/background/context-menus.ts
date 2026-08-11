@@ -3,6 +3,8 @@ export interface ContextMenuDeps {
   captureFullPage: (tabId: number) => Promise<void>;
   captureSelection: (tabId: number) => Promise<void>;
   uploadImageUrl: (url: string) => Promise<void>;
+  /** 在指定 tab 打开「批量导入」对话框(由 content script 处理选区 → URL) */
+  openImportDialog: (tabId: number) => Promise<void>;
 }
 
 export function setupContextMenus(deps: ContextMenuDeps): void {
@@ -15,6 +17,9 @@ export function setupContextMenus(deps: ContextMenuDeps): void {
     // 图片右键:收藏到素材库(即上传此图片到当前库)
     { id: 'mira-separator-img', type: 'separator', contexts: ['image'] },
     { id: 'mira-favorite-image', title: 'Mira · 收藏到素材库', contexts: ['image'] },
+    // 选区右键:从选中文字里提取 URL 批量导入
+    { id: 'mira-separator-selection', type: 'separator', contexts: ['selection'] },
+    { id: 'mira-import-selection', title: 'Mira · 从选中批量导入', contexts: ['selection'] },
     // 扩展图标右键:快捷截图入口(Chrome 不支持拖到工具栏图标,以右键图标代替)
     { id: 'mira-separator-action', type: 'separator', contexts: ['action'] },
     { id: 'mira-action-capture-visible', title: '截图可视区域', contexts: ['action'] },
@@ -45,6 +50,10 @@ export function setupContextMenus(deps: ContextMenuDeps): void {
       case 'mira-favorite-image':
       case 'mira-upload-image':
         if (info.srcUrl) await deps.uploadImageUrl(info.srcUrl);
+        break;
+      // 从选中文字提取 URL 批量导入(选区→URL 提取在 content script 完成)
+      case 'mira-import-selection':
+        await deps.openImportDialog(tab.id);
         break;
     }
   });

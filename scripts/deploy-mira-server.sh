@@ -180,17 +180,21 @@ LOG_FILE="$RUN_DIR/mira-server.log"
 
 # 探测本发行版内是否已有 mira-app-server 进程在跑（不看 Windows 的，避免 WSL interop 误判）
 # 注意：不能用 curl localhost 探活 —— WSL2 的 localhost forwarding 会让本脚本误连到 Windows 主机上的同名服务
+# 用 -f 全命令行匹配，但要排除 grep 自身、本 deploy 脚本本身、以及 wsl interop 进程
 our_server_running() {
-    pgrep -af 'mira-app-server|dist/cli.js|dist/index.js' 2>/dev/null \
-        | grep -v grep | grep -q . && return 0 || return 1
+    # 匹配真实 server：node 运行 dist/cli.js 或 dist/index.js，且命令行含 start
+    # 用 [c]lie正则技巧避开 grep 自身
+    pgrep -af '[d]ist/(cli|index)\.js' 2>/dev/null | grep -q . && return 0
+    pgrep -af 'node.*mira-app-server.*start' 2>/dev/null | grep -v "$$" | grep -q . && return 0
+    return 1
 }
 
 HEALTH_URL="http://127.0.0.1:${HTTP_PORT}/health"
 
-if our_server_running; then
-    ok "检测到本发行版内已有 mira-app-server 进程，跳过启动"
+if our_server_running && curl -sf "$HEALTH_URL" >/dev/null 2>&1; then
+    ok "检测到本发行版内已有 mira-app-server 进程且 health 正常，跳过启动"
     # 复用既有 PID（取第一个匹配）
-    EXIST_PID=$(pgrep -f 'mira-app-server|dist/cli.js|dist/index.js' | head -1)
+    EXIST_PID=$(pgrep -f '[d]ist/(cli|index)\.js' | head -1)
     [[ -n "$EXIST_PID" ]] && echo "$EXIST_PID" > "$PID_FILE"
 else
     # 清理僵尸 PID 文件
@@ -250,9 +254,12 @@ fi
 
 # 列出现有库
 EXISTING_COUNT=$(mira-app-server --json libraries list 2>/dev/null \
-    | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{console.log(JSON.parse(s).length||0);}catch(e){console.log(0);}});' 2>/dev/null || echo 0)
+    | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{console.log(JSON.parse(s).length||0);}catch(e){console.log(0);}});' 2>/dev/null | tr -d '\n\r ' || echo 0)
+EXISTING_COUNT=${EXISTING_COUNT:-0}
+EXISTING_COUNT=${EXISTING_COUNT//[^0-9]/0}
+[[ "$EXISTING_COUNT" =~ ^[0-9]+$ ]] || EXISTING_COUNT=0
 
-if [[ "${EXISTING_COUNT:-0}" -gt 0 ]]; then
+if [[ "$EXISTING_COUNT" -gt 0 ]]; then
     ok "已存在 $EXISTING_COUNT 个素材库："
     mira-app-server libraries list || true
     if ! ask_yn "是否再创建一个新素材库?" n; then

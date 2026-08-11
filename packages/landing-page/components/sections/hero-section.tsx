@@ -4,6 +4,7 @@ import { motion, useReducedMotion, type Variants } from "motion/react";
 import type { ComponentProps, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { GridPattern } from "@/components/ui/grid-pattern";
+import { WebGLShader } from "@/components/ui/web-gl-shader";
 import { useI18n } from "@/lib/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
@@ -126,6 +127,14 @@ export function HeroSection() {
         width={40}
         x={5}
       />
+
+      {/* 流光背景：WebGL shader 输出黑底彩带，用 mix-blend-screen 叠加到网格之上 */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 z-0 mix-blend-screen"
+      >
+        <WebGLShader className="absolute inset-0 block h-full w-full" />
+      </div>
 
       {/* 四角加号装饰：旋转 + 缩放入场 */}
       {plusIconPositions.map((position, index) => (

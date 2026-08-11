@@ -7,6 +7,7 @@ import { LogoCloudSection } from "@/components/sections/logo-cloud-section";
 import { SiteFooterSection } from "@/components/sections/site-footer";
 import { SiteHeaderSection } from "@/components/sections/site-header";
 import { TestimonialsSection } from "@/components/sections/testimonials-section";
+import PhoneMockupBasic from "@/components/ui/phone-mockups-1";
 
 export default function HomePage() {
   return (
@@ -17,6 +18,8 @@ export default function HomePage() {
       <main className="flex grow flex-col">
         {/* 首屏：核心价值主张 + 主 CTA */}
         <HeroSection />
+        {/* 产品预览：iPhone 截图轮播 */}
+        <PhoneMockupBasic />
         {/* 核心价值：产品特性 */}
         <FeatureSection />
         {/* 社会证明：品牌 logo 信任背书 */}

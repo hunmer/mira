@@ -3,12 +3,67 @@ import { createSniffer } from './sniffer';
 import { createDragDrop, type DragDropPayload } from './dragdrop';
 import { createAutoScroller } from './autoscroll';
 import { drawSelection } from './overlay/selection';
+import { openImportDialog, extractUrls } from './overlay/import-dialog';
+import { urlKind } from '@/shared/drag-data';
 import { upgradeImageUrl } from '@/shared/imu';
 import { fileToStaged } from '@/shared/staged-file';
 import { dbg } from '@/shared/debug';
 import type { ResourceKind } from '@/shared/types';
+import type { Folder, Tag } from 'mira-app-core/shared/sdk';
 
 dbg.info('content', 'script loaded', { url: location.href, readyState: document.readyState });
+
+// ---- 当前素材库文件夹/标签的访问 helper(供 dragdrop 与 import-dialog 复用) ----
+
+/** 取当前激活 libraryId;未连接素材库返回 null */
+async function getLibraryId(): Promise<string | null> {
+  try {
+    const settings: any = await chrome.runtime.sendMessage({ type: 'CONFIG_GET' });
+    return settings?.libraryId || null;
+  } catch {
+    return null;
+  }
+}
+
+/** 取当前素材库文件夹列表;未连接素材库时返回 null */
+async function fetchFolders(): Promise<Folder[] | null> {
+  const libraryId = await getLibraryId();
+  if (!libraryId) return null;
+  try {
+    const res = await chrome.runtime.sendMessage({ type: 'FOLDER_LIST', payload: { libraryId } });
+    return (res as Folder[]) ?? [];
+  } catch {
+    return [];
+  }
+}
+
+/** 取当前素材库标签列表;未连接素材库时返回 null */
+async function fetchTags(): Promise<Tag[] | null> {
+  const libraryId = await getLibraryId();
+  if (!libraryId) return null;
+  try {
+    const res = await chrome.runtime.sendMessage({ type: 'TAG_LIST', payload: { libraryId } });
+    return (res as Tag[]) ?? [];
+  } catch {
+    return [];
+  }
+}
+
+/** 新建文件夹,返回新 id;失败返回 null */
+async function createFolder(title: string): Promise<number | null> {
+  const libraryId = await getLibraryId();
+  if (!libraryId) return null;
+  try {
+    const id = await chrome.runtime.sendMessage({
+      type: 'NODE_CREATE',
+      payload: { kind: 'folder', libraryId, title },
+    });
+    return typeof id === 'number' ? id : null;
+  } catch (e) {
+    dbg.error('content', 'createFolder failed', e);
+    return null;
+  }
+}
 
 // 嗅探上报:发给 service worker(SNIFFER_REPORT)
 const sniffer = createSniffer(resources => {
@@ -23,19 +78,9 @@ const sniffer = createSniffer(resources => {
 // 拖拽上传:发给 service worker
 const dragdrop = createDragDrop({
   // 取当前素材库的文件夹列表(用于拖放浮层右侧目录)
-  async getFolders() {
-    try {
-      const settings: any = await chrome.runtime.sendMessage({ type: 'CONFIG_GET' });
-      if (!settings?.libraryId) return null;
-      const res = await chrome.runtime.sendMessage({
-        type: 'FOLDER_LIST',
-        payload: { libraryId: settings.libraryId },
-      });
-      return (res as any[]) ?? [];
-    } catch {
-      return [];
-    }
-  },
+  getFolders: fetchFolders,
+  // 「➕ 新建文件夹」drop zone 调用
+  createFolder,
   onUpload(payload: DragDropPayload) {
     if (payload.file) {
       if (payload.sourceUrl) {
@@ -63,7 +108,7 @@ const dragdrop = createDragDrop({
 });
 
 /** 网页图片上传:开启高清升级时,先用 maxurl 取原图候选,取最优一个发 service worker 下载 */
-async function uploadUrl(url: string, kind: ResourceKind, folderId?: number) {
+async function uploadUrl(url: string, kind: ResourceKind, folderId?: number, tags?: string[]) {
   let best = url;
   try {
     const settings: any = await chrome.runtime.sendMessage({ type: 'CONFIG_GET' });
@@ -76,8 +121,15 @@ async function uploadUrl(url: string, kind: ResourceKind, folderId?: number) {
   } catch (e) { dbg.warn('content', 'uploadUrl upgrade failed, use original', e); /* 升级失败沿用原 url */ }
   chrome.runtime.sendMessage({
     type: 'UPLOAD_FROM_URL',
-    payload: { url: best, kind, libraryId: '', folderId, referrer: location.href },
+    payload: { url: best, kind, libraryId: '', folderId, tags, referrer: location.href },
   }).catch(e => dbg.error('content', 'UPLOAD_FROM_URL send failed', e));
+}
+
+/** 批量导入多张 URL:走 UPLOAD_FROM_URL(逐条),共用同一 folderId / tags。 */
+function batchUploadUrls(urls: string[], opts: { folderId?: number; tags?: string[] }) {
+  for (const u of urls) {
+    void uploadUrl(u, urlKind(u), opts.folderId, opts.tags);
+  }
 }
 
 const scroller = createAutoScroller();
@@ -127,6 +179,31 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         dbg.info('content', 'DRAW_SELECTION');
         drawSelection().then(rect => { dbg.log('content', 'DRAW_SELECTION rect', rect); sendResponse(rect); });
         return true;
+      case 'OPEN_IMPORT_DIALOG': {
+        // 从页面选区提取 URL;调用方可显式传 urls 覆盖
+        const explicit = msg.payload?.urls;
+        const urls = explicit && explicit.length > 0
+          ? explicit
+          : extractUrls(window.getSelection()?.toString() ?? '');
+        dbg.info('content', 'OPEN_IMPORT_DIALOG', { fromSelection: !explicit, count: urls.length });
+        if (!urls.length) {
+          sendResponse({ ok: false, error: 'no-urls' });
+          return true;
+        }
+        openImportDialog({
+          urls,
+          referrer: location.href,
+          getFolders: fetchFolders,
+          getTags: fetchTags,
+          createFolder,
+          onImport: payload => {
+            dbg.info('content', 'import-dialog submit', { count: payload.urls.length, folderId: payload.folderId, tags: payload.tags });
+            batchUploadUrls(payload.urls, { folderId: payload.folderId, tags: payload.tags });
+          },
+        });
+        sendResponse({ ok: true, count: urls.length });
+        return true;
+      }
     }
   }
 

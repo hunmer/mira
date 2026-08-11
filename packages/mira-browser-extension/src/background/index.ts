@@ -186,5 +186,9 @@ chrome.runtime.onInstalled.addListener(() => {
       const file = new File([blob], url.split('/').pop() || 'image', { type: blob.type });
       uploader.enqueue({ file, libraryId: settings.libraryId, source: 'dragdrop' });
     },
+    openImportDialog: async tabId => {
+      // content script 会从 window.getSelection().toString() 提取 URL 后开对话框
+      await sendToContent(tabId, { type: 'OPEN_IMPORT_DIALOG' });
+    },
   });
 });

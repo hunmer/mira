@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
 import { folderEmptyMessage, resolveDragSource } from './dragdrop';
+import type { DragDropHandlers } from './dragdrop';
 
 describe('resolveDragSource', () => {
   it('识别普通链接并按 URL 推断类型', () => {
@@ -27,5 +28,22 @@ describe('resolveDragSource', () => {
   it('未连接素材库时显示对应空状态', () => {
     expect(folderEmptyMessage(null)).toBe('未连接素材库');
     expect(folderEmptyMessage([])).toBe('暂无文件夹');
+  });
+});
+
+describe('DragDropHandlers.createFolder', () => {
+  it('接口接受可选 createFolder(用于「新建文件夹」drop zone)', () => {
+    // 仅类型层面验证:接口已扩展,允许 createFolder 可选
+    const handlers: DragDropHandlers = {
+      onUpload: () => {},
+      getFolders: async () => [],
+      createFolder: async title => title ? 42 : null,
+    };
+    expect(typeof handlers.createFolder).toBe('function');
+  });
+
+  it('createFolder 省略时仍合法(向后兼容)', () => {
+    const handlers: DragDropHandlers = { onUpload: () => {} };
+    expect(handlers.createFolder).toBeUndefined();
   });
 });
