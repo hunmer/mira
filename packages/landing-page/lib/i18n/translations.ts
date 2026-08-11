@@ -205,7 +205,7 @@ export const zh = {
   langToggle: {
     label: "切换语言",
   },
-} as const;
+};
 
 export const en: Dict = {
   nav: {
