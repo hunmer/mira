@@ -3,7 +3,7 @@ import { defineConfig } from 'vitepress'
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   title: "Mira 文档",
-  description: "Mira - 新时代的素材管理库",
+  description: "Mira - 新时代的素材管理软件",
   lang: 'zh-CN',
   base: '/mira-doc/',
   ignoreDeadLinks: true,

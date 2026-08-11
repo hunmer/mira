@@ -22,6 +22,33 @@ mira-app-server start --http-port 8081 --ws-port 8018 --data-path ./data
 服务器会自动创建管理员账号 **`admin` / `admin123`**，密码打印在启动日志中，请及时修改。
 :::
 
+## 客户端
+
+Mira 提供基于 Electron 的桌面客户端（**Mira Media Library**），用于浏览和管理文件库。安装后启动客户端，填入 Server 地址即可连接。
+
+### 下载
+
+从 GitHub Release 获取最新安装包：
+
+👉 <https://github.com/hunmer/mira_typescript/releases/latest>
+
+按平台选择对应文件（文件名形如 `Mira Media Library-<版本>-<平台>.<后缀>`）：
+
+| 平台 | 文件 | 说明 |
+|------|------|------|
+| Windows | `*-win-setup.exe` | NSIS 安装版，可选安装目录、自动创建快捷方式 |
+| Windows | `*-win-portable.exe` | 便携版，解压即用，无需安装 |
+| macOS | `*.dmg` | 磁盘镜像，提供 x64 与 arm64（Apple Silicon）两个架构 |
+
+### 安装
+
+- **Windows**：双击 `setup.exe` 按向导安装，或直接运行 `portable.exe`。
+- **macOS**：打开 `dmg`，将 Mira 拖入 `Applications`；首次启动若提示来源不明，到「系统设置 → 隐私与安全性」点击「仍要打开」。
+
+### 连接 Server
+
+客户端首次启动后，在登录界面填入 Server 地址（默认 `http://localhost:8081`）和账号（首次为 `admin` / `admin123`）即可使用。
+
 ## 外部依赖
 
 Mira 依赖 `ffmpeg`、`ImageMagick`、`exiftool` 处理媒体文件。一键检测与安装：

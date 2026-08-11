@@ -1,7 +1,7 @@
 {
   "name": "mira-doc",
   "version": "1.0.0",
-  "description": "Mira 系统完整文档 - 新时代的素材管理库",
+  "description": "Mira 系统完整文档 - 新时代的素材管理软件",
   "main": "index.js",
   "scripts": {
     "docs:dev": "vitepress dev",

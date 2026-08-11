@@ -1,6 +1,6 @@
-# Mira TypeScript — 新时代的素材管理库
+# Mira TypeScript — 新时代的素材管理软件
 
-Mira TypeScript 是基于 TypeScript 的 pnpm workspace monorepo,目标是构建新时代的素材管理库。核心能力:媒体文件组织/检索/预览/管理、多素材库(独立 SQLite)、插件化架构、实时 WebSocket、Web 管理面板、n8n 集成、跨平台 Electron 桌面客户端。
+Mira TypeScript 是基于 TypeScript 的 pnpm workspace monorepo,目标是构建新时代的素材管理软件。核心能力:媒体文件组织/检索/预览/管理、多素材库(独立 SQLite)、插件化架构、实时 WebSocket、Web 管理面板、n8n 集成、跨平台 Electron 桌面客户端。
 
 分层:核心库(`mira-app-core`)→ 服务端(`mira-app-server`)→ 客户端(`mira-client`,Electron + Vue 3)→ 管理面板(`mira-dashboard-next`),外加脚本工具、VitePress 文档、服务端插件集合。
 

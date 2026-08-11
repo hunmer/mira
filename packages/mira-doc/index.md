@@ -3,7 +3,7 @@ layout: home
 
 hero:
   name: "Mira"
-  text: "新时代的素材管理库"
+  text: "新时代的素材管理软件"
   tagline: "让文件管理变得简单，让自动化触手可及"
   image:
     src: /icon.ico
