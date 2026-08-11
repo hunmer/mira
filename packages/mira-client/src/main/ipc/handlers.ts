@@ -17,6 +17,7 @@ import { NotificationHandlers } from './NotificationHandlers'
 import { ServerDeployHandlers } from './ServerDeployHandlers'
 import { ServerControlHandlers } from './ServerControlHandlers'
 import { PluginWindowHandlers } from './PluginWindowHandlers'
+import { LoginWindowHandlers } from './LoginWindowHandlers'
 import { getAutoUpdater } from '../services/useAutoUpdater'
 
 /**
@@ -35,6 +36,8 @@ export class IPCHandlers {
   private serverDeployHandlers: ServerDeployHandlers
   private serverControlHandlers: ServerControlHandlers
   private pluginWindowHandlers: PluginWindowHandlers
+  private appHandlers: AppHandlers
+  private loginWindowHandlers: LoginWindowHandlers
 
   constructor() {
     this.pluginHandler = new PluginHandler()
@@ -42,7 +45,7 @@ export class IPCHandlers {
     new DragDropHandler()
     new ProtocolHandlers()
     new TrayHandlers()
-    new AppHandlers()
+    this.appHandlers = new AppHandlers()
     new FileSystemHandlers()
     new SystemHandlers()
     new NotificationHandlers()
@@ -57,12 +60,17 @@ export class IPCHandlers {
     this.serverControlHandlers = new ServerControlHandlers()
     // 插件窗口处理器依赖 pluginHandler 解析插件目录
     this.pluginWindowHandlers = new PluginWindowHandlers(this.pluginHandler)
+    // 登录子窗口处理器依赖 AppHandlers（取 dashboard 窗口引用回传 cookie）
+    this.loginWindowHandlers = new LoginWindowHandlers(this.appHandlers)
 
     // 注册本地插件管理
     this.pluginHandler.registerHandlers()
 
     // 注册插件窗口管理（打开插件 dist 的独立 BrowserWindow）
     this.pluginWindowHandlers.registerHandlers()
+
+    // 注册登录子窗口管理（dashboard 设置页 → 弹窗提取 cookie）
+    this.loginWindowHandlers.registerHandlers()
 
     // 注册自动更新
     this.autoUpdateHandlers.registerHandlers()
@@ -252,5 +260,8 @@ export class IPCHandlers {
 
     // 清理插件窗口处理器
     this.pluginWindowHandlers.cleanup()
+
+    // 清理登录子窗口处理器
+    this.loginWindowHandlers.cleanup()
   }
 }

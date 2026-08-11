@@ -15,6 +15,7 @@ import {
 import { useAuthStore } from '@/renderer/stores/auth'
 import { useMediaStore } from '@/renderer/stores/media'
 import { useSettingsStore } from '@/renderer/stores/settings'
+import { useUrlImportStore } from '@/renderer/stores/urlImport'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { environment } from '@renderer/utils'
 import { shortcutService } from '@renderer/services/ShortcutService'
@@ -39,6 +40,7 @@ const emit = defineEmits<{
 const authStore = useAuthStore()
 const mediaStore = useMediaStore()
 const settingsStore = useSettingsStore()
+const urlImportStore = useUrlImportStore()
 const router = useRouter()
 const avatarLoadError = ref(false)
 
@@ -82,6 +84,9 @@ const openDashboard = async () => {
       width: 1280,
       height: 800,
       title: 'Mira Dashboard',
+      // 标记为 dashboard 窗口：注入 dashboard-preload，
+      // 暴露 openLoginWindow / onLoginCookies 供设置页-下载 tab 使用
+      dashboard: true,
     })
   } else {
     window.open(url, '_blank', 'noopener')
@@ -99,6 +104,15 @@ const openDashboard = async () => {
       @click="openDashboard"
     >
       <span class="material-icons" style="font-size: 18px;">dashboard</span>
+    </button>
+
+    <!-- 从 URL 导入 -->
+    <button
+      class="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+      :title="$t('business.homeHeader.importFromUrl')"
+      @click="urlImportStore.open()"
+    >
+      <span class="material-icons" style="font-size: 18px;">cloud_download</span>
     </button>
 
     <!-- 切换详情侧栏 -->

@@ -690,7 +690,7 @@ export class MiraSDKService {
 
   async downloadFile(libraryId: string, fileId: string): Promise<Blob> {
     if (!this.client) throw new Error('Not connected to Mira server')
-    
+
     try {
       const result = await this.client.files().download(libraryId, fileId)
       return result
@@ -698,6 +698,39 @@ export class MiraSDKService {
       console.error('MiraSDKService: File download failed', error)
       throw error
     }
+  }
+
+  /**
+   * 从 URL 批量下载并入库（走后端下载执行器，按 host 匹配用户 cookie 站点）。
+   * 返回 { batchId, total }。进度通过 WebSocket 事件 download::progress / download::item 推送。
+   */
+  async startDownloadFromUrl(
+    libraryId: string,
+    urls: string[],
+    folderId?: number | null,
+  ): Promise<{ batchId: string; total: number }> {
+    const cfg = this.connectionConfig
+    if (!cfg) throw new Error('Not connected to Mira server')
+    const base = (cfg.serverUrl || '').replace(/\/$/, '')
+    const token = useAuthStore().token
+    const resp = await fetch(`${base}/api/download/start`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({
+        libraryId,
+        urls,
+        folderId: folderId ?? null,
+        clientId: webSocketService.getClientId(),
+      }),
+    })
+    const json = await resp.json()
+    if (!resp.ok || json?.code !== 0) {
+      throw new Error(json?.message || `下载启动失败 (${resp.status})`)
+    }
+    return json.data
   }
 
   async getExtraFileList(libraryId: string, fileId: string): Promise<string[]> {

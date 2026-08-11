@@ -24,7 +24,7 @@ import {
   RiDatabase2Line, RiSmartphoneLine,
   RiBarChart2Line, RiImageLine, RiFolderOpenLine,
   RiSunLine, RiMoonLine, RiComputerLine, RiGlobalLine,
-  RiLogoutBoxRLine, RiUser3Line, RiArrowGoBackLine,
+  RiLogoutBoxRLine, RiUser3Line, RiArrowGoBackLine, RiSettings3Line,
 } from '@remixicon/vue'
 
 const { t, locale } = useI18n()
@@ -50,6 +50,7 @@ const navItems = [
   { path: '/file-manager', icon: RiFolderOpenLine, key: 'fileManager', roles: ['super', 'admin'] },
   { path: '/statistics', icon: RiBarChart2Line, key: 'statistics', roles: ['super', 'admin', 'user'] },
   { path: '/media', icon: RiImageLine, key: 'media', roles: ['super', 'admin'] },
+  { path: '/settings', icon: RiSettings3Line, key: 'settings', roles: [] },
 ]
 
 const visibleNavItems = navItems.filter(

@@ -1,12 +1,21 @@
 import { ipcMain, IpcMainInvokeEvent, app, BrowserWindow } from 'electron'
+import * as path from 'path'
 import { ensureLocalServerStarted } from '../services/LocalServerService'
 
 /**
  * 应用和窗口控制 IPC 处理器
  */
 export class AppHandlers {
+  /** dashboard 窗口引用（供 LoginWindowHandlers 回传 cookie） */
+  private dashboardWindow: BrowserWindow | null = null
+
   constructor() {
     this.registerHandlers()
+  }
+
+  /** 获取当前 dashboard 窗口（可能为 null 或已销毁） */
+  public getDashboardWindow(): BrowserWindow | null {
+    return this.dashboardWindow && !this.dashboardWindow.isDestroyed() ? this.dashboardWindow : null
   }
 
   /**
@@ -42,15 +51,31 @@ export class AppHandlers {
   /**
    * 打开一个独立的 BrowserWindow 加载指定 URL。
    * 用于在新窗口中访问外部页面（如服务器 dashboard），不复用主窗口。
+   *
+   * 当 options.dashboard === true 时（用于打开 Mira dashboard 窗口）：
+   *   - 注入 dashboard-preload，暴露最小 electronAPI（openLoginWindow / onLoginCookies）
+   *   - sandbox:false 让 preload 能 require('electron')
+   *   - 保存窗口引用到 this.dashboardWindow，供 LoginWindowHandlers 回传 cookie
    */
   private async handleOpenUrl(
     _event: IpcMainInvokeEvent,
     url: string,
-    options?: { width?: number; height?: number; title?: string }
+    options?: { width?: number; height?: number; title?: string; dashboard?: boolean }
   ): Promise<{ success: boolean; message?: string }> {
     try {
       if (!url || typeof url !== 'string') {
         return { success: false, message: 'url 不能为空' }
+      }
+      const isDashboard = !!options?.dashboard
+      const webPreferences: Electron.WebPreferences = {
+        nodeIntegration: false,
+        contextIsolation: true,
+        sandbox: isDashboard ? false : true,
+      }
+      if (isDashboard) {
+        webPreferences.preload = app.isPackaged
+          ? path.join(__dirname, '../dist-preload/dashboard-preload.js')
+          : path.join(__dirname, '../src/preload/dashboard-preload.js')
       }
       const win = new BrowserWindow({
         width: options?.width && options.width > 0 ? options.width : 1280,
@@ -59,12 +84,13 @@ export class AppHandlers {
         frame: true,
         show: false,
         backgroundColor: '#ffffff',
-        webPreferences: {
-          nodeIntegration: false,
-          contextIsolation: true,
-          sandbox: true,
-        },
+        webPreferences,
       })
+
+      if (isDashboard) {
+        this.dashboardWindow = win
+        win.on('closed', () => { if (this.dashboardWindow === win) this.dashboardWindow = null })
+      }
 
       // 去掉从全局应用菜单（Menu.setApplicationMenu）继承的菜单栏。
       // 该窗口用于加载外部 URL（如服务器 dashboard），主窗口的应用菜单对它无意义。

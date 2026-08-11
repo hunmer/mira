@@ -71,6 +71,12 @@ export class MenuService {
           action: 'showImportDialog'
         },
         {
+          id: 'import-from-url',
+          label: this.t('services.menu.fileImportFromUrl'),
+          accelerator: 'CmdOrCtrl+Shift+I',
+          action: 'showImportFromUrlDialog'
+        },
+        {
           id: 'export-selected',
           label: this.t('services.menu.fileExportSelected'),
           accelerator: 'CmdOrCtrl+E',

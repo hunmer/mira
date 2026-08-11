@@ -45,6 +45,7 @@ const router = createRouter({
         { path: 'statistics', name: 'Statistics', component: () => import('@/views/mira/statistics/index.vue') },
         { path: 'media', name: 'Media', component: () => import('@/views/mira/media/index.vue'), meta: { roles: ['super', 'admin'] } },
         { path: 'profile', name: 'Profile', component: () => import('@/views/mira/profile/index.vue') },
+        { path: 'settings', name: 'Settings', component: () => import('@/views/mira/settings/index.vue') },
       ],
     },
     { path: '/:pathMatch(.*)*', name: 'NotFound', component: () => import('@/views/auth/not-found.vue') },

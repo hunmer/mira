@@ -62,7 +62,8 @@
     "help": "帮助",
     "helpAbout": "关于 Mira",
     "helpWindowStateInfo": "窗口状态信息",
-    "helpCheckUpdates": "检查更新"
+    "helpCheckUpdates": "检查更新",
+    "fileImportFromUrl": "从 URL 导入..."
   },
   "searchHandlers": {
     "typeFiles": "文件",

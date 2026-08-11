@@ -62,7 +62,8 @@
     "help": "Help",
     "helpAbout": "About Mira",
     "helpWindowStateInfo": "Window State Info",
-    "helpCheckUpdates": "Check for Updates"
+    "helpCheckUpdates": "Check for Updates",
+    "fileImportFromUrl": "Import from URL..."
   },
   "searchHandlers": {
     "typeFiles": "Files",

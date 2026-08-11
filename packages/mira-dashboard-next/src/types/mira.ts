@@ -24,6 +24,27 @@ export interface ServerSettings {
   allowRegistration: boolean
 }
 
+export interface CookieItem {
+  name: string
+  value: string
+  domain?: string
+  path?: string
+  expires?: string | number
+}
+
+export interface CookieSite {
+  id: number
+  userId: number
+  name: string
+  url: string
+  cookies: CookieItem[]
+  remark?: string
+  label?: string
+  isDefault?: boolean
+  createdAt: number
+  updatedAt: number
+}
+
 export interface Plugin {
   name: string
   version: string

@@ -19,6 +19,8 @@ import { TagRouter } from './routes/TagRouter';
 import { FolderRouter } from './routes/FolderRouter';
 import { FsRouter } from './routes/FsRouter';
 import { SettingsRouter } from './routes/SettingsRouter'
+import { CookieSitesRouter } from './routes/CookieSitesRouter';
+import { DownloadRoutes } from './routes/DownloadRoutes';
 import { StatisticsRouter } from './routes/StatisticsRouter';
 import { ThumbRouter } from './routes/ThumbRouter';
 import { createHttpPermissionMiddleware } from './middleware/permission';
@@ -147,6 +149,8 @@ export class MiraHttpServer {
     adminsRouter: AdminsRouter;
     httpRouter: HttpRouter;
     settingsRouter: SettingsRouter;
+    cookieSitesRouter: CookieSitesRouter;
+    downloadRoutes: DownloadRoutes;
     statisticsRouter: StatisticsRouter;
     thumbRouter: ThumbRouter;
 
@@ -167,6 +171,8 @@ export class MiraHttpServer {
         this.fsRouter = new FsRouter(backend);
         this.httpRouter = new HttpRouter(backend);
         this.settingsRouter = new SettingsRouter(backend, this.authRouter);
+        this.cookieSitesRouter = new CookieSitesRouter(this.authRouter);
+        this.downloadRoutes = new DownloadRoutes(backend, this.authRouter);
         this.statisticsRouter = new StatisticsRouter(backend);
         this.thumbRouter = new ThumbRouter(backend, backend.thumbnailService, backend.metadataService);
 
@@ -305,6 +311,8 @@ export class MiraHttpServer {
         this.app.use('/api/folders', this.folderRouter.getRouter());
         this.app.use('/api/fs', this.fsRouter.getRouter());
         this.app.use('/api/settings', this.settingsRouter.getRouter());
+        this.app.use('/api/cookie-sites', this.cookieSitesRouter.getRouter());
+        this.app.use('/api/download', this.downloadRoutes.getRouter());
         this.app.use('/api/statistics', this.statisticsRouter.getRouter());
         this.app.use('/api/thumb', this.thumbRouter.getRouter());
 

@@ -837,5 +837,28 @@
     "structureAppliedTitle": "已应用结构",
     "structureAppliedDetail": "已按原有结构创建文件夹并应用到 {count} 个文件",
     "noFilesToUpload": "没有待上传的文件"
+  },
+  "urlImportDialog": {
+    "title": "从 URL 导入",
+    "subtitle": "粘贴图片直链 URL（每行一个），将自动匹配站点 Cookie 下载并入库",
+    "placeholder": "每行一个图片 URL",
+    "targetFolder": "目标文件夹（可选）",
+    "noFolder": "不指定文件夹",
+    "start": "开始下载",
+    "starting": "提交中...",
+    "progress": "进度",
+    "total": "共 {n} 个",
+    "completed": "成功 {n}",
+    "failed": "失败 {n}",
+    "skipped": "跳过 {n}",
+    "done": "下载完成",
+    "emptyUrls": "请输入至少一个有效 URL",
+    "noLibrary": "请先选择一个素材库",
+    "startFailed": "下载启动失败",
+    "batchHint": "下载在服务器后台执行，关闭对话框不会中断。文件完成后会自动出现在列表中。",
+    "cookieHint": "如需登录态下载，请先在 Dashboard 设置 → 下载 配置站点 Cookie。"
+  },
+  "homeHeader": {
+    "importFromUrl": "从 URL 导入"
   }
 }

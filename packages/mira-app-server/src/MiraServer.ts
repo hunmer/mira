@@ -7,6 +7,7 @@ import { ThumbnailService } from "./services/ThumbnailService";
 import { MetadataService } from "./services/MetadataService";
 import path from "path";
 import { DatabaseBackupService } from './services/DatabaseBackupService';
+import { DownloadExecutorService } from './services/DownloadExecutorService';
 
 
 export interface ServerConfig {
@@ -26,6 +27,7 @@ export class MiraServer {
     config: ServerConfig;
     libraries?: LibraryStorage;
     databaseBackupService!: DatabaseBackupService;
+    downloadExecutor!: DownloadExecutorService;
 
     constructor(config: ServerConfig = {}) {
         this.config = {
@@ -72,6 +74,9 @@ export class MiraServer {
 
             this.databaseBackupService = new DatabaseBackupService(this.dataPath);
             await this.databaseBackupService.start();
+
+            // 下载执行器（消费 cookie 站点下载图片并入库）
+            this.downloadExecutor = new DownloadExecutorService(this);
 
             console.log('✅ Mira Server started successfully!');
         } catch (error) {

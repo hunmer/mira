@@ -2,7 +2,7 @@
  * 通知窗口专用入口文件 (Vue 版本)
  *
  * 基于通用 FloatingWindowCore 与主进程通信。
- * - 多实例并存：每条通知一个独立窗口，主进程侧窗口池管理堆叠
+ * - 同位置聚合：一个窗口渲染同一位置的多条通知
  * - 无初次 loading：页面加载后即就绪，等待 notification-content 下发内容
  * - 内容自适应：接收内容后测量实际高度回传 measure-ready
  * - 支持拖拽：卡片头部可拖动移动窗口，松手后主进程 clamp 到屏幕内
@@ -33,7 +33,7 @@ async function initNotificationWindow() {
   // 内容渲染后测量实际高度并回传，主进程据此调整窗口尺寸并重定位
   function reportMeasure() {
     Vue.nextTick(() => {
-      const card = document.querySelector('.notification-card')
+      const card = document.querySelector('.notification-list')
       if (card) {
         const rect = card.getBoundingClientRect()
         // 高度含 padding，留少量余量
@@ -65,6 +65,7 @@ async function initNotificationWindow() {
     data() {
       return {
         title: '',
+        items: [],
         body: '',
         icon: '',
         icons: [],
@@ -125,22 +126,22 @@ async function initNotificationWindow() {
       },
     },
     template: `
+      <div v-if="hasContent" class="notification-list" @mouseenter="handleMouseEnter" @mouseleave="handleMouseLeave">
       <div
-        v-if="hasContent"
+        v-for="(item, index) in items"
+        :key="item.notificationId || index"
         class="notification-card"
-        :class="[animationClass, { 'is-dragging': isDragging, 'is-draggable': draggable }]"
+        :class="[index === 0 ? animationClass : '', { 'is-dragging': isDragging, 'is-draggable': draggable }]"
         @mousedown="handleDragStart"
-        @click="handleCardClick"
-        @mouseenter="handleMouseEnter"
-        @mouseleave="handleMouseLeave"
+        @click="handleCardClick(item)"
       >
-        <div class="notification-bar" :class="type"></div>
+        <div class="notification-bar" :class="item.type || 'info'"></div>
         <!-- 最左侧：缩略图 / 图标（大尺寸） -->
-        <div class="notification-thumb-wrap" :class="type">
-          <template v-if="displayIcons.length > 1">
+        <div class="notification-thumb-wrap" :class="item.type || 'info'">
+          <template v-if="itemIcons(item).length > 1">
             <div class="notification-thumb-grid">
               <img
-                v-for="thumb in displayIcons"
+                v-for="thumb in itemIcons(item)"
                 :key="thumb"
                 :src="thumb"
                 class="notification-thumb-grid-item"
@@ -150,42 +151,43 @@ async function initNotificationWindow() {
                 @mousedown.prevent
               />
             </div>
-            <span class="notification-thumb-badge" :class="type"></span>
+            <span class="notification-thumb-badge" :class="item.type || 'info'"></span>
           </template>
-          <template v-else-if="isIconUrl">
+          <template v-else-if="itemIsIconUrl(item)">
             <img
-              :src="icon"
+              :src="item.icon"
               class="notification-thumb"
               draggable="false"
               referrerpolicy="no-referrer"
-              @error="onThumbError"
+              @error="$event.currentTarget.style.visibility = 'hidden'"
               @mousedown.prevent
             />
-            <span class="notification-thumb-badge" :class="type"></span>
+            <span class="notification-thumb-badge" :class="item.type || 'info'"></span>
           </template>
-          <span v-else class="material-icons notification-icon" :class="type">{{ displayIcon }}</span>
+          <span v-else class="material-icons notification-icon" :class="item.type || 'info'">{{ itemDisplayIcon(item) }}</span>
         </div>
         <!-- 右侧：信息区 -->
         <div class="notification-main">
           <div class="notification-header">
-            <div class="notification-title">{{ title }}</div>
+            <div class="notification-title">{{ item.title }}</div>
             <button class="notification-close" @click.stop="handleClose" @mousedown.stop title="关闭">
               <span class="material-icons" style="font-size:16px;">close</span>
             </button>
           </div>
-          <div v-if="html" class="notification-html" v-html="html"></div>
-          <p v-else-if="body" class="notification-body">{{ body }}</p>
-          <div v-if="actions && actions.length" class="notification-actions">
+          <div v-if="item.html" class="notification-html" v-html="item.html"></div>
+          <p v-else-if="item.body" class="notification-body">{{ item.body }}</p>
+          <div v-if="item.actions && item.actions.length" class="notification-actions">
             <button
-              v-for="action in actions"
+              v-for="action in item.actions"
               :key="action.id"
               class="notification-action"
-              @click.stop="handleAction(action)"
-              @pointerdown.stop="debugActionPointer(action, $event)"
+              @click.stop="handleAction(action, item)"
+              @pointerdown.stop="debugActionPointer(action, $event, item)"
               @mousedown.stop
             >{{ action.label }}</button>
           </div>
         </div>
+      </div>
       </div>
     `,
     mounted() {
@@ -204,6 +206,7 @@ async function initNotificationWindow() {
     },
     methods: {
       applyContent(payload) {
+        this.items = Array.isArray(payload.__items) ? payload.__items : [payload]
         this.title = payload.title || ''
         this.body = payload.body || ''
         this.icon = payload.icon || ''
@@ -222,28 +225,39 @@ async function initNotificationWindow() {
       onThumbError() {
         this._thumbFailed = true
       },
-      handleCardClick() {
+      itemIcons(item) {
+        return Array.isArray(item.icons) ? [...new Set(item.icons.filter((icon) => typeof icon === 'string' && /^(https?:|file:|data:|\/\/)/i.test(icon)))].slice(0, 4) : []
+      },
+      itemIsIconUrl(item) {
+        return typeof item.icon === 'string' && /^(https?:|file:|data:|\/\/)/i.test(item.icon)
+      },
+      itemDisplayIcon(item) {
+        if (item.icon && !this.itemIsIconUrl(item)) return item.icon
+        return { success: 'check_circle', warning: 'warning', error: 'error', info: 'notifications' }[item.type || 'info']
+      },
+      handleCardClick(item) {
         // 拖拽过则不触发点击
         if (this.dragMoved) {
           this.dragMoved = false
           return
         }
         // 回传业务数据（如 fileId），主进程转发给主渲染进程
-        bridge.send({ type: 'click', data: Vue.toRaw(this.data), timestamp: Date.now() })
+        bridge.send({ type: 'click', data: Vue.toRaw(item.data || null), notificationId: item.notificationId, timestamp: Date.now() })
       },
-      debugActionPointer(action, event) {
+      debugActionPointer(action, event, item) {
         console.info('[NotificationDebug] action pointerdown', {
           action,
           button: event.button,
           bridgeReady: bridge.isReady(),
-          data: this.data,
+          data: item.data,
         })
       },
-      handleAction(action) {
+      handleAction(action, item) {
         const message = {
           type: 'action',
           id: action.id,
-          data: Vue.toRaw(this.data),
+          data: Vue.toRaw(item.data || null),
+          notificationId: item.notificationId,
           timestamp: Date.now(),
         }
         console.info('[NotificationDebug] action click, sending message', {

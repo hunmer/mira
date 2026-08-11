@@ -837,5 +837,28 @@
     "structureAppliedTitle": "Structure applied",
     "structureAppliedDetail": "Folders created by original structure and applied to {count} files",
     "noFilesToUpload": "No files to upload"
+  },
+  "urlImportDialog": {
+    "title": "Import from URL",
+    "subtitle": "Paste direct image URLs (one per line). They will be downloaded with matching site cookies.",
+    "placeholder": "One image URL per line",
+    "targetFolder": "Target folder (optional)",
+    "noFolder": "No folder",
+    "start": "Start Download",
+    "starting": "Submitting...",
+    "progress": "Progress",
+    "total": "{n} total",
+    "completed": "{n} succeeded",
+    "failed": "{n} failed",
+    "skipped": "{n} skipped",
+    "done": "Download finished",
+    "emptyUrls": "Please enter at least one valid URL",
+    "noLibrary": "Please select a library first",
+    "startFailed": "Failed to start download",
+    "batchHint": "Downloads run on the server. Closing this dialog will not cancel them. Files appear automatically when done.",
+    "cookieHint": "For authenticated downloads, configure site cookies in Dashboard Settings - Download first."
+  },
+  "homeHeader": {
+    "importFromUrl": "Import from URL"
   }
 }

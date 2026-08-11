@@ -3,8 +3,11 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useLibrary } from '@/composables/useLibrary'
 import { fileManagerApi, fileApi } from '@/api'
+import { downloadApi, type DownloadProgress } from '@/api/modules/download'
 import PathTreeSelect from '@/components/PathTreeSelect.vue'
 import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
+import { Progress } from '@/components/ui/progress'
 import {
   Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList,
   BreadcrumbPage, BreadcrumbSeparator,
@@ -18,7 +21,7 @@ import {
 import {
   RiFolderLine, RiFileLine, RiMoreLine, RiHome4Line,
   RiCheckboxBlankLine, RiCheckboxCircleLine, RiDeleteBinLine, RiDragMoveLine,
-  RiUploadCloudLine, RiCloseLine, RiRefreshLine,
+  RiUploadCloudLine, RiCloseLine, RiRefreshLine, RiDownloadCloud2Line,
 } from '@remixicon/vue'
 import { toast } from 'vue-sonner'
 
@@ -76,6 +79,73 @@ const dragOver = ref(false)
 
 // 同步
 const syncing = ref(false)
+
+// URL 下载
+const urlDialogVisible = ref(false)
+const urlText = ref('')
+const urlDownloading = ref(false)
+const urlProgress = ref<DownloadProgress | null>(null)
+let urlPollTimer: ReturnType<typeof setInterval> | null = null
+
+function openUrlDialog() {
+  if (!selectedLibraryId.value) {
+    toast.error(t('fileManager.download.noLibrary'))
+    return
+  }
+  urlText.value = ''
+  urlProgress.value = null
+  urlDialogVisible.value = true
+}
+
+async function startUrlDownload() {
+  const urls = urlText.value.split(/\r?\n/).map((s) => s.trim()).filter((s) => /^https?:\/\//i.test(s))
+  if (urls.length === 0) {
+    toast.error(t('fileManager.download.empty'))
+    return
+  }
+  urlDownloading.value = true
+  urlProgress.value = null
+  try {
+    const res = await downloadApi.start({ libraryId: selectedLibraryId.value, urls })
+    const batchId = res.data?.data?.batchId
+    if (!batchId) throw new Error('no batchId')
+    pollUrlProgress(batchId)
+  } catch (e: any) {
+    toast.error(e.response?.data?.message || e.message || t('common.failed'))
+    urlDownloading.value = false
+  }
+}
+
+function pollUrlProgress(batchId: string) {
+  stopUrlPoll()
+  urlPollTimer = setInterval(async () => {
+    try {
+      const res = await downloadApi.progress(batchId)
+      const p = res.data?.data
+      if (!p) return
+      urlProgress.value = p
+      if (p.done) {
+        stopUrlPoll()
+        urlDownloading.value = false
+        const msg = `${t('fileManager.download.completed')}: ${p.completed}/${p.total}` +
+          (p.failed ? `, ${t('fileManager.download.failed')} ${p.failed}` : '') +
+          (p.skipped ? `, ${t('fileManager.download.skipped')} ${p.skipped}` : '')
+        toast.success(msg)
+        await loadItems()
+      }
+    } catch { /* ignore */ }
+  }, 1500)
+}
+
+function stopUrlPoll() {
+  if (urlPollTimer) { clearInterval(urlPollTimer); urlPollTimer = null }
+}
+
+const urlPercent = computed(() => {
+  const p = urlProgress.value
+  if (!p || !p.total) return 0
+  return Math.round(((p.completed + p.failed + p.skipped) / p.total) * 100)
+})
 
 const canUpload = computed(() => selectedLibraryId.value && uploadFiles.value.length > 0)
 
@@ -386,6 +456,7 @@ onUnmounted(() => {
   if (lassoRaf) cancelAnimationFrame(lassoRaf)
   document.removeEventListener('mousemove', onLassoMouseMove)
   document.removeEventListener('mouseup', onLassoMouseUp)
+  stopUrlPoll()
 })
 
 watch(selectedLibraryId, () => {
@@ -431,6 +502,10 @@ onMounted(() => {
         >
           <RiDeleteBinLine class="mr-1 size-4" />
           {{ t('fileManager.delete') }}
+        </Button>
+        <Button variant="outline" size="sm" :disabled="!selectedLibraryId" @click="openUrlDialog">
+          <RiDownloadCloud2Line class="mr-1 size-4" />
+          {{ t('fileManager.download.urlButton') }}
         </Button>
         <Button variant="outline" size="sm" :disabled="!selectedLibraryId || loading" @click="loadItems()">
           {{ t('common.refresh') }}
@@ -676,6 +751,47 @@ onMounted(() => {
         <div v-if="uploading" class="h-2 rounded-full bg-secondary">
           <div class="h-full rounded-full bg-primary transition-all" :style="{ width: `${uploadProgress}%` }" />
         </div>
+      </DialogContent>
+    </Dialog>
+
+    <!-- URL 下载对话框 -->
+    <Dialog :open="urlDialogVisible" @update:open="urlDialogVisible = $event">
+      <DialogContent class="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>{{ t('fileManager.download.urlButton') }}</DialogTitle>
+          <DialogDescription>
+            {{ t('fileManager.download.subtitle') }}
+            <span v-if="selectedLibrary" class="font-medium text-foreground">{{ selectedLibrary.name }}</span>
+          </DialogDescription>
+        </DialogHeader>
+        <div class="space-y-3 py-2">
+          <Textarea
+            v-model="urlText"
+            :placeholder="t('fileManager.download.placeholder')"
+            rows="8"
+            class="font-mono text-xs"
+            :disabled="urlDownloading"
+          />
+          <div v-if="urlProgress" class="space-y-2">
+            <Progress :model-value="urlPercent" />
+            <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+              <span>{{ t('fileManager.download.total', { n: urlProgress.total }) }}</span>
+              <span class="text-green-600">{{ t('fileManager.download.completed', { n: urlProgress.completed }) }}</span>
+              <span v-if="urlProgress.skipped" class="text-yellow-600">{{ t('fileManager.download.skipped', { n: urlProgress.skipped }) }}</span>
+              <span v-if="urlProgress.failed" class="text-destructive">{{ t('fileManager.download.failed', { n: urlProgress.failed }) }}</span>
+            </div>
+          </div>
+          <p v-else class="text-xs text-muted-foreground">{{ t('fileManager.download.cookieHint') }}</p>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" :disabled="urlDownloading" @click="urlDialogVisible = false">
+            {{ urlProgress?.done ? t('common.confirm') : t('common.cancel') }}
+          </Button>
+          <Button :disabled="urlDownloading || !urlText.trim()" @click="startUrlDownload">
+            <span v-if="urlDownloading" class="mr-1 size-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            {{ urlDownloading ? t('common.loading') : t('fileManager.download.start') }}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   </div>

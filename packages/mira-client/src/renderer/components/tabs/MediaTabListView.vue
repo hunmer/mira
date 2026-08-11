@@ -275,6 +275,7 @@ import { useMediaStore } from '@renderer/stores/media'
 import { useLibraryStore } from '@renderer/stores/library'
 import { useFolderStore } from '@renderer/stores/folder'
 import { useSettingsStore } from '@renderer/stores/settings'
+import { useUrlImportStore } from '@renderer/stores/urlImport'
 import { useToast } from '@renderer/composables/useToast'
 import { runBatchOperation } from '@renderer/composables/useBatchOperation'
 import { appService } from '@renderer/services'
@@ -406,6 +407,7 @@ const uploadFolderId = ref<string>()
 const uploadTagIds = ref<string[]>([])
 
 const settingsStore = useSettingsStore()
+const urlImportStore = useUrlImportStore()
 const toast = useToast()
 
 const handleDragOver = (_e: DragEvent) => {
@@ -423,7 +425,19 @@ const handleDragLeave = (e: DragEvent) => {
 const handleDrop = async (e: DragEvent) => {
   isDragOver.value = false
   if ((window as any).__miraInternalDrag) return
-  if (!e.dataTransfer?.files?.length) return
+
+  // 优先识别 http(s) 链接拖入（来自浏览器地址栏/链接的 text/uri-list 或 text/plain）
+  if (!e.dataTransfer?.files?.length) {
+    const uriList = e.dataTransfer?.getData('text/uri-list') || e.dataTransfer?.getData('text/plain') || ''
+    const urls = uriList.split(/\r?\n/).map((s) => s.trim()).filter((s) => /^https?:\/\//i.test(s))
+    if (urls.length > 0) {
+      const folder = props.filters?.folder
+      const folderIdNum = folder != null && Number.isFinite(Number(folder)) ? Number(folder) : null
+      urlImportStore.open({ urls, folderId: folderIdNum })
+      return
+    }
+    return
+  }
 
   const files = Array.from(e.dataTransfer.files)
   const folder = props.filters?.folder

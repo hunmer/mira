@@ -9,7 +9,8 @@ export default defineConfig({
         'search-preload': resolve(__dirname, 'src/preload/search-preload.js'),
         'notification-preload': resolve(__dirname, 'src/preload/notification-preload.js'),
         'floating-ball-preload': resolve(__dirname, 'src/preload/floating-ball-preload.js'),
-        'plugin-window-preload': resolve(__dirname, 'src/preload/plugin-window-preload.js')
+        'plugin-window-preload': resolve(__dirname, 'src/preload/plugin-window-preload.js'),
+        'dashboard-preload': resolve(__dirname, 'src/preload/dashboard-preload.js')
       },
       output: {
         format: 'cjs',

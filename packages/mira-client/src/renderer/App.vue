@@ -82,7 +82,9 @@
         </router-view>
       </main>
     </div>
-    
+
+    <!-- 从 URL 导入对话框（全局入口：菜单/工具栏/拖拽） -->
+    <UrlImportDialog />
   </div>
 </template>
 
@@ -91,7 +93,9 @@ import { onMounted, onUnmounted, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import GlobalLoading from './components/GlobalLoading.vue'
 import ServerStartupLoading from './components/ServerStartupLoading.vue'
+import UrlImportDialog from './components/business/UrlImportDialog.vue'
 import { useSettingsStore } from './stores/settings'
+import { useUrlImportStore } from './stores/urlImport'
 import { confirmState } from './composables/useConfirm'
 
 // Import shadcn components
@@ -128,6 +132,7 @@ import { useAutoShortcuts } from './composables/useShortcuts'
 const router = useRouter()
 const settingsStore = useSettingsStore()
 const libraryStore = useLibraryStore()
+const urlImportStore = useUrlImportStore()
 
 // 拖拽状态管理 - 简化为始终启用
 
@@ -309,6 +314,11 @@ const setupElectronListeners = () => {
     // 这里可以调用文件上传逻辑
   })
 
+  // 监听「从 URL 导入」菜单事件
+  window.electronAPI.on('files:import-from-url', () => {
+    urlImportStore.open()
+  })
+
   window.electronAPI.on('plugin-window:mira-item-add-from-url', async (request: any) => {
     const reply = (result: any) => window.electronAPI.send('plugin-window:mira-item-add-from-url-result', request?.requestId, result)
     try {
@@ -410,6 +420,7 @@ const cleanupElectronListeners = () => {
   window.electronAPI.removeAllListeners('navigate:settings')
   window.electronAPI.removeAllListeners('notification-from-window')
   window.electronAPI.removeAllListeners('files:import')
+  window.electronAPI.removeAllListeners('files:import-from-url')
   window.electronAPI.removeAllListeners('plugin-window:mira-item-add-from-url')
   window.electronAPI.removeAllListeners('protocol:open-tab')
   window.electronAPI.removeAllListeners('show-global-loading')

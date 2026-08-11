@@ -46,6 +46,8 @@ interface NotificationSlot {
   notificationId?: string
   /** 最近一次内容；窗口初次加载期间发生更新时，下发最终版本 */
   payload: NotificationPayload
+  /** 同一位置窗口内的通知列表 */
+  items: NotificationPayload[]
   /** 该通知专属的窗口处理器 */
   handler: FloatingWindowHandler
   /** 自动隐藏定时器 */
@@ -63,8 +65,8 @@ interface NotificationSlot {
 /**
  * 通知窗口管理器
  *
- * 采用「窗口池」架构：每条通知创建独立的 FloatingWindowHandler（独立 BrowserWindow），
- * 支持**多实例并存**，从默认右下角向上堆叠。
+ * 采用「窗口池」架构：每个位置创建一个 FloatingWindowHandler（独立 BrowserWindow），
+ * 同一窗口内聚合该位置的多条通知，不同位置仍可并存并堆叠。
  *
  * 修复要点：
  *   - 不触发全屏 loading（showLoading: false）
@@ -104,18 +106,23 @@ export class NotificationWindowHandlers {
    * 显示一条通知
    */
   public async showNotification(payload: NotificationPayload): Promise<void> {
-    const existing = payload.notificationId
-      ? this.slots.find((slot) => slot.notificationId === payload.notificationId)
-      : undefined
+    const position = payload.position ?? 'bottom-right'
+    const existing = this.slots.find((slot) => this.samePosition(slot.position, position))
     if (existing) {
+      const itemIndex = payload.notificationId
+        ? existing.items.findIndex((item) => item.notificationId === payload.notificationId)
+        : -1
+      if (itemIndex >= 0) existing.items[itemIndex] = payload
+      else existing.items.push(payload)
+      existing.payload = payload
       const duration = payload.duration ?? 5000
       existing.duration = duration
       existing.remaining = duration
-      existing.payload = payload
       existing.handler.sendMessage({
         type: 'notification-content',
         payload: {
           ...payload,
+          __items: existing.items,
           __animDir: this.animDirOf(existing.position),
           __draggable: this.isDraggable(existing.position),
         },
@@ -130,7 +137,6 @@ export class NotificationWindowHandlers {
     }
 
     const id = this.nextId++
-    const position = payload.position ?? 'bottom-right'
     const stackIndex = this.slots.length
 
     // 为该通知构建专属 handler。注意 IPC 通道前缀与 role 必须每条唯一，
@@ -142,6 +148,7 @@ export class NotificationWindowHandlers {
       id,
       notificationId: payload.notificationId,
       payload,
+      items: [payload],
       handler,
       timer: null,
       duration,
@@ -162,6 +169,7 @@ export class NotificationWindowHandlers {
         type: 'notification-content',
         payload: {
           ...slot.payload,
+          __items: slot.items,
           __animDir: this.animDirOf(position),
           __draggable: this.isDraggable(position),
         },
@@ -170,6 +178,10 @@ export class NotificationWindowHandlers {
 
     // 启动自动消失计时
     this.startAutoHide(slot)
+  }
+
+  private samePosition(a: FloatingWindowPosition, b: FloatingWindowPosition): boolean {
+    return JSON.stringify(a) === JSON.stringify(b)
   }
 
   /**

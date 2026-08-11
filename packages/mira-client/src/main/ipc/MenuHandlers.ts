@@ -136,6 +136,10 @@ export class MenuHandlers {
         case 'showImportDialog':
           await this.showImportDialog()
           break
+
+        case 'showImportFromUrlDialog':
+          this.sendToRenderer('files:import-from-url')
+          break
         
         case 'exportSelected':
           this.sendToRenderer('menu:export')

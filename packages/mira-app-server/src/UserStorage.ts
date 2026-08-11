@@ -73,6 +73,36 @@ export class UserStorage {
         await this.executeSql('CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)');
         await this.executeSql('CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token)');
         await this.executeSql('CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id)');
+
+        // 下载站点 cookie 管理（按用户私有，同一 url 可有多组，其中至多一组 is_default=1）
+        const createCookieSitesTable = `
+            CREATE TABLE IF NOT EXISTS cookie_sites (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                name TEXT NOT NULL,
+                url TEXT NOT NULL,
+                cookies TEXT NOT NULL DEFAULT '[]',
+                remark TEXT DEFAULT '',
+                label TEXT NOT NULL DEFAULT '',
+                is_default INTEGER NOT NULL DEFAULT 0,
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL,
+                FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        `;
+        await this.executeSql(createCookieSitesTable);
+        await this.executeSql('CREATE INDEX IF NOT EXISTS idx_cookie_sites_user ON cookie_sites(user_id)');
+        // 老库迁移：cookie_sites 表已存在但缺 label / is_default 列时补上（幂等）
+        await this.ensureColumn('cookie_sites', 'label', "TEXT NOT NULL DEFAULT ''");
+        await this.ensureColumn('cookie_sites', 'is_default', 'INTEGER NOT NULL DEFAULT 0');
+    }
+
+    /** 幂等加列：若表已存在但缺 col 列，则 ALTER TABLE ADD COLUMN。 */
+    private async ensureColumn(table: string, col: string, def: string): Promise<void> {
+        const rows = await this.getSql(`PRAGMA table_info(${table})`);
+        if (!rows.some((r: any) => r.name === col)) {
+            await this.executeSql(`ALTER TABLE ${table} ADD COLUMN ${col} ${def}`);
+        }
     }
 
     private async createDefaultAdmin(): Promise<void> {
@@ -431,5 +461,100 @@ export class UserStorage {
                 });
             });
         }
+    }
+
+    // ==================== Cookie 站点管理（按用户私有）====================
+    // 行 → CookieSite
+    private rowToCookieSite(row: any): any {
+        return {
+            id: row.id,
+            userId: row.user_id,
+            name: row.name,
+            url: row.url,
+            cookies: JSON.parse(row.cookies || '[]'),
+            remark: row.remark || '',
+            label: row.label || '',
+            isDefault: Boolean(row.is_default),
+            createdAt: row.created_at,
+            updatedAt: row.updated_at,
+        };
+    }
+
+    async listCookieSites(userId: number): Promise<any[]> {
+        const rows = await this.getSql(
+            'SELECT * FROM cookie_sites WHERE user_id = ? ORDER BY url ASC, is_default DESC, updated_at DESC',
+            [userId],
+        );
+        return rows.map((r) => this.rowToCookieSite(r));
+    }
+
+    async createCookieSite(userId: number, data: { name: string; url: string; remark?: string; cookies?: any[]; label?: string; isDefault?: boolean }): Promise<any> {
+        const now = Date.now();
+        const cookies = Array.isArray(data.cookies) ? data.cookies : [];
+        const isDefault = data.isDefault ? 1 : 0;
+        // 若设为默认，先把同 url 的其他组清零
+        if (isDefault) await this.clearDefaultForUrl(userId, data.url);
+        const result = await this.runSql(
+            `INSERT INTO cookie_sites (user_id, name, url, cookies, remark, label, is_default, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [userId, data.name, data.url, JSON.stringify(cookies), data.remark || '', data.label || '', isDefault, now, now],
+        );
+        const rows = await this.getSql('SELECT * FROM cookie_sites WHERE id = ?', [result.lastID]);
+        return rows.length ? this.rowToCookieSite(rows[0]) : null;
+    }
+
+    async updateCookieSite(userId: number, id: number, data: { name?: string; url?: string; remark?: string; cookies?: any[]; label?: string; isDefault?: boolean }): Promise<any | null> {
+        const fields: string[] = [];
+        const params: any[] = [];
+        if (data.name !== undefined) { fields.push('name = ?'); params.push(data.name); }
+        if (data.url !== undefined) { fields.push('url = ?'); params.push(data.url); }
+        if (data.remark !== undefined) { fields.push('remark = ?'); params.push(data.remark); }
+        if (data.label !== undefined) { fields.push('label = ?'); params.push(data.label); }
+        if (data.cookies !== undefined) {
+            fields.push('cookies = ?');
+            params.push(JSON.stringify(Array.isArray(data.cookies) ? data.cookies : []));
+        }
+        if (data.isDefault !== undefined) {
+            fields.push('is_default = ?');
+            params.push(data.isDefault ? 1 : 0);
+        }
+        if (fields.length === 0) {
+            const rows = await this.getSql('SELECT * FROM cookie_sites WHERE id = ? AND user_id = ?', [id, userId]);
+            return rows.length ? this.rowToCookieSite(rows[0]) : null;
+        }
+        fields.push('updated_at = ?'); params.push(Date.now());
+        params.push(id); params.push(userId);
+        await this.runSql(`UPDATE cookie_sites SET ${fields.join(', ')} WHERE id = ? AND user_id = ?`, params);
+        // 设为默认时联动清零同 url 其他组
+        if (data.isDefault) {
+            const rows = await this.getSql('SELECT url FROM cookie_sites WHERE id = ? AND user_id = ?', [id, userId]);
+            if (rows.length) await this.clearDefaultForUrl(userId, rows[0].url, id);
+        }
+        const rows = await this.getSql('SELECT * FROM cookie_sites WHERE id = ? AND user_id = ?', [id, userId]);
+        return rows.length ? this.rowToCookieSite(rows[0]) : null;
+    }
+
+    /** 把某用户某 url 下所有组 is_default 置 0，exceptId 对应的除外 */
+    private async clearDefaultForUrl(userId: number, url: string, exceptId?: number): Promise<void> {
+        if (exceptId != null) {
+            await this.runSql('UPDATE cookie_sites SET is_default = 0 WHERE user_id = ? AND url = ? AND id != ?', [userId, url, exceptId]);
+        } else {
+            await this.runSql('UPDATE cookie_sites SET is_default = 0 WHERE user_id = ? AND url = ?', [userId, url]);
+        }
+    }
+
+    /** 把指定组设为该站点的默认组（同 url 其他组自动取消） */
+    async setDefaultCookieSite(userId: number, id: number): Promise<any | null> {
+        const rows = await this.getSql('SELECT url FROM cookie_sites WHERE id = ? AND user_id = ?', [id, userId]);
+        if (!rows.length) return null;
+        await this.clearDefaultForUrl(userId, rows[0].url);
+        await this.runSql('UPDATE cookie_sites SET is_default = 1, updated_at = ? WHERE id = ? AND user_id = ?', [Date.now(), id, userId]);
+        const after = await this.getSql('SELECT * FROM cookie_sites WHERE id = ? AND user_id = ?', [id, userId]);
+        return after.length ? this.rowToCookieSite(after[0]) : null;
+    }
+
+    async deleteCookieSite(userId: number, id: number): Promise<boolean> {
+        const result = await this.runSql('DELETE FROM cookie_sites WHERE id = ? AND user_id = ?', [id, userId]);
+        return result.changes > 0;
     }
 }
