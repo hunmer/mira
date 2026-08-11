@@ -22,8 +22,8 @@ export interface MaskedThemeToggleProps {
  * Drive next-themes through the native View Transition API.
  * Falls back to a plain setTheme when the API is unavailable.
  */
-function useViewTransitionTheme() {
-	const { theme, setTheme } = useTheme();
+export function useViewTransitionTheme() {
+	const { theme, resolvedTheme, setTheme } = useTheme();
 
 	function setThemeWithTransition(next: string) {
 		if (next === theme) return;
@@ -47,11 +47,11 @@ function useViewTransitionTheme() {
 		});
 	}
 
-	return { theme, setThemeWithTransition };
+	return { theme, resolvedTheme, setThemeWithTransition };
 }
 
 /** Inline `<style>` injecting the global view-transition + mask keyframes. */
-function MaskedViewTransitionStyle({
+export function MaskedViewTransitionStyle({
 	maskGifUrl,
 	duration,
 }: {

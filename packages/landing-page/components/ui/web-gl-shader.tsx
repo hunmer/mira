@@ -48,7 +48,7 @@ export function WebGLShader({ className }: { className?: string }) {
       }
     `;
 
-    const fragmentShader = `
+      const fragmentShader = `
       precision highp float;
       uniform vec2 resolution;
       uniform float time;
@@ -69,7 +69,10 @@ export function WebGLShader({ className }: { className?: string }) {
         float g = 0.05 / abs(p.y + sin((gx + time) * xScale) * yScale);
         float b = 0.05 / abs(p.y + sin((bx + time) * xScale) * yScale);
 
-        gl_FragColor = vec4(r, g, b, 1.0);
+        // 背景透明：alpha 由最亮通道决定，避免黑底盖住下层内容；
+        // 这样亮色模式下 mix-blend-multiply 可见，暗色模式下 mix-blend-screen 依旧发光。
+        float a = clamp(max(max(r, g), b), 0.0, 1.0);
+        gl_FragColor = vec4(r, g, b, a);
       }
     `;
 
@@ -88,7 +91,7 @@ export function WebGLShader({ className }: { className?: string }) {
       }
       refs.renderer = renderer;
       refs.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      refs.renderer.setClearColor(new THREE.Color(0x000000), 1);
+      refs.renderer.setClearColor(new THREE.Color(0x000000), 0);
 
       refs.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, -1);
 

@@ -128,10 +128,11 @@ export function HeroSection() {
         x={5}
       />
 
-      {/* 流光背景：WebGL shader 输出黑底彩带，用 mix-blend-screen 叠加到网格之上 */}
+      {/* 流光背景：亮色 multiply（白底染色可见），暗色 screen（发光叠加）。
+          shader 背景透明，透明区域不参与混合，两种模式都不遮挡下层网格。 */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 z-0 mix-blend-screen"
+        className="pointer-events-none absolute inset-0 z-0 mix-blend-multiply dark:mix-blend-screen"
       >
         <WebGLShader className="absolute inset-0 block h-full w-full" />
       </div>
