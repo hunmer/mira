@@ -133,77 +133,14 @@ export class ServerDeployHandlers {
     return env
   }
 
-  private async commandAvailable(command: string, args = ['--version']): Promise<boolean> {
-    try {
-      await this.runCommand(command, args, () => {})
-      return true
-    } catch {
-      return false
-    }
-  }
-
-  private async installMediaDependencies(onOutput: (line: string) => void): Promise<void> {
-    const ffmpegInstalled = await this.commandAvailable('ffmpeg', ['-version'])
-    const imageMagickInstalled = await this.commandAvailable('magick', ['-version'])
-      || (!IS_WIN && await this.commandAvailable('convert', ['-version']))
-    const missing = [
-      ...(!ffmpegInstalled ? ['ffmpeg'] : []),
-      ...(!imageMagickInstalled ? ['imagemagick'] : []),
-    ]
-
-    if (!missing.length) {
-      onOutput('FFmpeg 和 ImageMagick 已安装')
-      return
-    }
-    onOutput(`需要安装：${missing.join(', ')}`)
-
-    if (IS_WIN) {
-      if (!await this.commandAvailable('winget')) {
-        throw new Error('未找到 winget，请通过手动部署指南安装 FFmpeg 和 ImageMagick')
-      }
-      const packageIds: Record<string, string> = {
-        ffmpeg: 'Gyan.FFmpeg',
-        imagemagick: 'ImageMagick.ImageMagick',
-      }
-      for (const dependency of missing) {
-        await this.runCommand('winget', [
-          'install', '--id', packageIds[dependency], '--exact', '--silent',
-          '--accept-package-agreements', '--accept-source-agreements', '--disable-interactivity',
-        ], onOutput)
-      }
-      return
-    }
-
-    if (process.platform === 'darwin') {
-      if (!await this.commandAvailable('brew')) {
-        throw new Error('未找到 Homebrew，请通过手动部署指南安装 FFmpeg 和 ImageMagick')
-      }
-      await this.runCommand('brew', ['install', ...missing], onOutput)
-      return
-    }
-
-    const packageManagers = [
-      { command: 'apt-get', prepare: ['update'], install: ['install', '-y'], packages: missing },
-      { command: 'dnf', prepare: null, install: ['install', '-y'], packages: missing.map(item => item === 'imagemagick' ? 'ImageMagick' : item) },
-      { command: 'pacman', prepare: null, install: ['-S', '--noconfirm'], packages: missing },
-      { command: 'apk', prepare: null, install: ['add'], packages: missing },
-    ]
-    const manager = await Promise.all(
-      packageManagers.map(async item => ({ ...item, available: await this.commandAvailable(item.command) })),
-    ).then(items => items.find(item => item.available))
-    if (!manager) throw new Error('未找到受支持的系统包管理器，请通过手动部署指南安装依赖')
-
-    const runPackageManager = async (args: string[]) => {
-      if (typeof process.getuid === 'function' && process.getuid() === 0) {
-        await this.runCommand(manager.command, args, onOutput)
-      } else if (await this.commandAvailable('pkexec')) {
-        await this.runCommand('pkexec', [manager.command, ...args], onOutput)
-      } else {
-        await this.runCommand('sudo', ['-n', manager.command, ...args], onOutput)
-      }
-    }
-    if (manager.prepare) await runPackageManager(manager.prepare)
-    await runPackageManager([...manager.install, ...manager.packages])
+  /**
+   * 运行 mira-app-server doctor --install
+   * 由后端 CLI 自检 ffmpeg / ImageMagick / exiftool，缺失时按平台自动安装。
+   * 必须在 npm install -g mira-app-server 完成后调用。
+   */
+  private async runDoctor(onOutput: (line: string) => void): Promise<void> {
+    onOutput(`执行 ${SERVER_BIN} doctor --install`)
+    await this.runCommand(SERVER_BIN, ['doctor', '--install'], onOutput)
   }
 
   private async checkHealth(): Promise<{ ok: boolean; detail?: string }> {
@@ -334,14 +271,14 @@ export class ServerDeployHandlers {
       })
 
       await runStep(2, async output => {
-        await this.installMediaDependencies(output)
-      })
-
-      await runStep(3, async output => {
         output(`执行 npm install -g ${PACKAGE_NAME}@latest`)
         if (options?.registry?.trim()) output(`npm 镜像：${options.registry.trim()}`)
         if (options?.proxy?.trim()) output('npm 代理：已启用')
         await this.runCommand(NPM_BIN, ['install', '-g', `${PACKAGE_NAME}@latest`], output, this.npmEnv(options))
+      })
+
+      await runStep(3, async output => {
+        await this.runDoctor(output)
       })
 
       const dataPath = path.join(app.getPath('userData'), PACKAGE_NAME)
