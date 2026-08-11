@@ -99,9 +99,7 @@
     "hardenedRuntime": false,
     "artifactName": "${productName}-${version}-mac-${arch}.${ext}",
     "minimumSystemVersion": "10.15.0",
-    "notarize": {
-      "teamId": "AC5S7QQL2Q"
-    }
+    "notarize": true
   },
   "dmg": {
     "title": "${productName} ${version}",
