@@ -12,15 +12,16 @@ import { createPortal } from "react-dom";
 import { LanguageToggle } from "@/components/language-toggle";
 import { MenuToggleIcon } from "@/components/menu-toggle-icon";
 import { Button } from "@/components/ui/button";
+import { MaskedThemeToggle } from "@/components/ui/mask-view-transition-theme-toggle";
 import {
   NavigationMenu,
   NavigationMenuLink,
   NavigationMenuList,
 } from "@/components/ui/navigation-menu";
+import { SITE_NAME } from "@/config/site";
 import { useScroll } from "@/hooks/use-scroll";
 import { useI18n } from "@/lib/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
-import { SITE_NAME } from "@/config/site";
 
 const GITHUB_URL = "https://github.com/hunmer/mira";
 
@@ -93,6 +94,7 @@ export function SiteHeaderSection() {
 
         <div className="hidden items-center gap-2 md:flex">
           <LanguageToggle />
+          <MaskedThemeToggle />
           <Button aria-label="GitHub" asChild size="icon" variant="ghost">
             <a href={GITHUB_URL} rel="noopener noreferrer" target="_blank">
               <GithubIcon className="size-4" />
@@ -107,6 +109,7 @@ export function SiteHeaderSection() {
 
         <div className="flex items-center gap-2 md:hidden">
           <LanguageToggle />
+          <MaskedThemeToggle />
           <Button
             aria-controls="mobile-menu"
             aria-expanded={open}

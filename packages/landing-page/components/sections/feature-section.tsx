@@ -6,10 +6,12 @@ import {
   useMotionTemplate,
   useMotionValue,
   useReducedMotion,
+  type MotionValue,
   type Variants,
 } from "motion/react";
+import { useEffect, useState, type MouseEvent } from "react";
 import type React from "react";
-import { GridPattern } from "@/components/ui/grid-pattern";
+import IrisLensCard from "@/components/ui/iris-lens-card";
 import { useI18n } from "@/lib/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
@@ -45,55 +47,92 @@ const iconVariants: Variants = {
   },
 };
 
-type FeatureCardPorps = React.ComponentProps<typeof motion.div> & {
+/** 把卡片编号格式化成两位 + 重复填充，用作 hover 背景的数字串 */
+function buildNumberString(index: number): string {
+  const label = String(index + 1).padStart(2, "0");
+  return label.repeat(Math.ceil(1500 / label.length));
+}
+
+interface NumberBackgroundProps {
+  mouseX: MotionValue<number>;
+  mouseY: MotionValue<number>;
+  numString: string;
+}
+
+/** hover 时跟随光标显现的数字背景层（机制借鉴 EvervaultCard） */
+function NumberBackground({ mouseX, mouseY, numString }: NumberBackgroundProps) {
+  const mask = useMotionTemplate`radial-gradient(220px at ${mouseX}px ${mouseY}px, white, transparent)`;
+  const style = { maskImage: mask, WebkitMaskImage: mask };
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
+      <motion.div
+        className="absolute inset-0 bg-gradient-to-tr from-emerald-500/50 via-cyan-500/30 to-blue-700/50 opacity-0 backdrop-blur-md transition duration-500 group-hover:opacity-100"
+        style={style}
+      />
+      <motion.div
+        className="absolute inset-0 opacity-0 mix-blend-overlay transition duration-500 group-hover:opacity-100"
+        style={style}
+      >
+        <p className="absolute inset-x-0 h-full break-words whitespace-pre-wrap font-mono text-xs font-bold text-white transition duration-500">
+          {numString}
+        </p>
+      </motion.div>
+    </div>
+  );
+}
+
+type FeatureCardProps = React.ComponentProps<typeof motion.div> & {
   feature: FeatureType;
+  index: number;
 };
 
-function FeatureCard({ feature, className, ...props }: FeatureCardPorps) {
-  const shouldReduceMotion = useReducedMotion();
-  const glowX = useMotionValue(0);
-  const glowY = useMotionValue(0);
-  const glow = useMotionTemplate`radial-gradient(200px circle at ${glowX}px ${glowY}px, color-mix(in oklab, var(--foreground) 8%, transparent), transparent 70%)`;
+function FeatureCard({ feature, index, className, ...props }: FeatureCardProps) {
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const [numString, setNumString] = useState("");
+
+  useEffect(() => {
+    setNumString(buildNumberString(index));
+  }, [index]);
+
+  function onMouseMove({ currentTarget, clientX, clientY }: MouseEvent<HTMLDivElement>) {
+    const { left, top } = currentTarget.getBoundingClientRect();
+    mouseX.set(clientX - left);
+    mouseY.set(clientY - top);
+  }
 
   return (
     <motion.div
-      className={cn("group relative overflow-hidden p-6", className)}
-      onMouseMove={(event) => {
-        const rect = event.currentTarget.getBoundingClientRect();
-        glowX.set(event.clientX - rect.left);
-        glowY.set(event.clientY - rect.top);
-      }}
+      className={cn("group", className)}
       variants={cardVariants}
       whileHover="hover"
+      onMouseMove={onMouseMove}
       {...props}
     >
-      {/* 鼠标追踪光晕 */}
-      {shouldReduceMotion ? null : (
-        <motion.div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 z-10 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-          style={{ background: glow }}
-        />
-      )}
-      <div className="-mt-2 -ml-20 pointer-events-none absolute top-0 left-1/2 size-full [mask-image:radial-gradient(farthest-side_at_top,white,transparent)]">
-        <GridPattern
-          className="absolute inset-0 size-full stroke-foreground/20"
-          height={40}
-          width={40}
-          x={5}
-        />
-      </div>
-      <motion.div className="inline-block" variants={iconVariants}>
-        <feature.icon
-          aria-hidden
-          className="size-6 text-foreground/75"
-          strokeWidth={1}
-        />
-      </motion.div>
-      <h3 className="mt-10 text-sm md:text-base">{feature.title}</h3>
-      <p className="relative z-20 mt-2 font-light text-muted-foreground text-xs">
-        {feature.description}
-      </p>
+      <IrisLensCard
+        heightClass="h-[220px]"
+        tilt={12}
+        contentDepth={40}
+        lensStrength={0.4}
+        holoEdge
+      >
+        <NumberBackground mouseX={mouseX} mouseY={mouseY} numString={numString} />
+        <div className="relative z-10 flex h-full flex-col justify-between">
+          <motion.div className="inline-block" variants={iconVariants}>
+            <feature.icon
+              aria-hidden
+              className="size-7 text-foreground/80"
+              strokeWidth={1}
+            />
+          </motion.div>
+          <div>
+            <h3 className="text-sm md:text-base">{feature.title}</h3>
+            <p className="mt-2 font-light text-muted-foreground text-xs">
+              {feature.description}
+            </p>
+          </div>
+        </div>
+      </IrisLensCard>
     </motion.div>
   );
 }
@@ -151,18 +190,14 @@ export function FeatureSection() {
         </motion.div>
 
         <motion.div
-          className="grid grid-cols-1 divide-x divide-y border-t border-l sm:grid-cols-2 md:grid-cols-3"
+          className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3"
           initial={shouldReduceMotion ? false : "hidden"}
           variants={containerVariants}
           viewport={{ once: true, margin: "-80px" }}
           whileInView="show"
         >
-          {features.map((feature) => (
-            <FeatureCard
-              className="last:border-r last:border-b"
-              feature={feature}
-              key={feature.title}
-            />
+          {features.map((feature, index) => (
+            <FeatureCard feature={feature} index={index} key={feature.title} />
           ))}
         </motion.div>
       </div>
