@@ -69,6 +69,7 @@ jobs:
         # macOS 公证密钥（缺失时 notarize.js 会自动跳过，不阻断构建）
         APPLE_ID: ${{ secrets.APPLE_ID }}
         APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+        APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
         APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         # Windows 代码签名证书（缺失则跳过签名）
         CSC_LINK: ${{ secrets.CSC_LINK }}

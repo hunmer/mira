@@ -98,7 +98,10 @@
     "gatekeeperAssess": false,
     "hardenedRuntime": false,
     "artifactName": "${productName}-${version}-mac-${arch}.${ext}",
-    "minimumSystemVersion": "10.15.0"
+    "minimumSystemVersion": "10.15.0",
+    "notarize": {
+      "teamId": "AC5S7QQL2Q"
+    }
   },
   "dmg": {
     "title": "${productName} ${version}",
@@ -171,7 +174,6 @@
     "plugs": ["default", "home", "removable-media"],
     "artifactName": "${productName}-${version}-linux.${ext}"
   },
-  "afterSign": "scripts/notarize.js",
   "beforeBuild": "scripts/before-build.js",
   "afterPack": "scripts/after-pack.js"
 }
