@@ -147,6 +147,11 @@ export function createRouter(deps: RouterDeps): RequestHandler {
       case 'UPLOAD_CANCEL':
         deps.uploader.cancelTask(req.payload.id);
         return { success: true };
+      case 'UPGRADE_IMAGE_URL':
+        return sendToContent<{ candidates: string[] }>(req.payload.tabId, {
+          type: 'UPGRADE_IMAGE_URL',
+          payload: { url: req.payload.url, timeout: req.payload.timeout },
+        }).then(result => result.candidates);
       case 'DOWNLOAD_RESOURCES': {
         const items = req.payload.items;
         dbg.info('download', 'download requested', { count: items.length });

@@ -18,7 +18,7 @@ export function useSniffer(currentTabId: () => number | 'all') {
       return;
     }
     const r = await bg.snifferQuery(target);
-    resources.value = r.resources;
+    resources.value = r.resources.map(resource => ({ ...resource, tabId: resource.tabId ?? target }));
   }
   async function start() {
     // 通过 setSettings 触发 service worker → content script
@@ -32,7 +32,7 @@ export function useSniffer(currentTabId: () => number | 'all') {
     if (currentTabId() === 'all') {
       void load();
     } else if (tabId === currentTabId()) {
-      resources.value = res;
+      resources.value = res.map(resource => ({ ...resource, tabId }));
     }
   });
   onUnmounted(off);

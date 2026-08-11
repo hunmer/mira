@@ -47,7 +47,8 @@
     "filterCategory": "Category",
     "filterUrls": "URL",
     "filterTitle": "Title",
-    "filterSize": "Size"
+    "filterSize": "Size",
+    "filterMetadata": "Metadata"
   },
   "useViewModeConfig": {
     "gridView": "Grid view",

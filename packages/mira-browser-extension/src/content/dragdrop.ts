@@ -6,6 +6,8 @@ import type { ResourceKind } from '@/shared/types';
 export interface DragDropPayload {
   /** 已有 File(本地拖动文件) */
   file?: File;
+  /** 文件来自网页媒体时保留原始 URL,用于 maxurl 升级 */
+  sourceUrl?: string;
   /** 或仅有 url(网页图片) */
   url?: string;
   kind: ResourceKind;
@@ -113,7 +115,7 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
       const dtFile = ev.dataTransfer?.files?.[0];
       dbg.info('dragdrop', 'drop', { hasFile: !!dtFile, folderId, source });
       if (dtFile) {
-        handlers.onUpload({ file: dtFile, kind: source.kind, folderId });
+        handlers.onUpload({ file: dtFile, sourceUrl: source.url, kind: source.kind, folderId });
         return;
       }
       handlers.onUpload({ url: source.url, kind: source.kind, folderId });

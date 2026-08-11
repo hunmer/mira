@@ -97,7 +97,7 @@ const openDashboard = async () => {
   <header class="flex items-center justify-end gap-1 px-2 py-1.5 rounded-2xl border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur-xl shadow-[0_12px_40px_rgba(99,102,241,0.10)] w-fit ml-auto">
     <!-- 打开服务器 Dashboard -->
     <button
-      class="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+      class="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer"
       :title="$t('views.homeHeader.openDashboard')"
       @click="openDashboard"
     >
@@ -106,7 +106,7 @@ const openDashboard = async () => {
 
     <!-- 切换详情侧栏 -->
     <button
-      class="h-8 w-8 flex items-center justify-center rounded-lg transition-[color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-95"
+      class="h-8 w-8 flex items-center justify-center rounded-lg transition-[color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-95 cursor-pointer"
       :class="mediaStore.showDetailSidebar
         ? 'text-primary hover:bg-primary/10'
         : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'"

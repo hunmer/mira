@@ -52,6 +52,14 @@ export function useFilters() {
       label: i18n.global.t('composables.useFilters.filterSize'),
       icon: 'aspect_ratio',
       selectedPreset: ''
+    },
+    {
+      id: 'metadata',
+      type: 'metadata',
+      label: i18n.global.t('composables.useFilters.filterMetadata'),
+      icon: 'photo_size_select_large',
+      metaField: 'dimension',
+      selectedMetaPreset: ''
     }
   ])
 
@@ -164,7 +172,7 @@ export function useFilters() {
         sizeMax: undefined,
         sizePreset: ''
       }
-      
+
       // 重置FilterBar状态
       resetFilterBar()
     }
@@ -186,6 +194,16 @@ export function useFilters() {
         rule.customMin = savedFilter.customMin
         rule.customMax = savedFilter.customMax
         rule.selectedCategory = savedFilter.selectedCategory || ''
+        rule.metaField = savedFilter.metaField || 'dimension'
+        rule.selectedMetaPreset = savedFilter.selectedMetaPreset || ''
+        rule.metaDimMin = savedFilter.metaDimMin
+        rule.metaDimMax = savedFilter.metaDimMax
+        rule.metaDurMin = savedFilter.metaDurMin
+        rule.metaDurMax = savedFilter.metaDurMax
+        rule.customDimMin = savedFilter.customDimMin
+        rule.customDimMax = savedFilter.customDimMax
+        rule.customDurMin = savedFilter.customDurMin
+        rule.customDurMax = savedFilter.customDurMax
         rule.active = savedFilter.active || false
       }
     })
@@ -202,6 +220,16 @@ export function useFilters() {
       rule.customMin = undefined
       rule.customMax = undefined
       rule.selectedCategory = ''
+      rule.metaField = 'dimension'
+      rule.selectedMetaPreset = ''
+      rule.metaDimMin = undefined
+      rule.metaDimMax = undefined
+      rule.metaDurMin = undefined
+      rule.metaDurMax = undefined
+      rule.customDimMin = undefined
+      rule.customDimMax = undefined
+      rule.customDurMin = undefined
+      rule.customDurMax = undefined
       rule.active = false
     })
   }

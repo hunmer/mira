@@ -53,7 +53,7 @@ const handleClick = (item: BreadcrumbItem, isLast: boolean) => {
       <button
         v-else
         type="button"
-        class="flex items-center space-x-1 text-muted-foreground dark:text-muted-foreground hover:text-primary dark:hover:text-primary transition-colors truncate"
+        class="flex items-center space-x-1 text-muted-foreground dark:text-muted-foreground hover:text-primary dark:hover:text-primary transition-colors truncate cursor-pointer"
         :title="item.label"
         @click="handleClick(item, false)"
       >

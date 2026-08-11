@@ -10,6 +10,7 @@ import Button from '@/ui/components/ui/Button.vue';
 import Input from '@/ui/components/ui/Input.vue';
 import ResourceList from './ResourceList.vue';
 import MasonryView from './MasonryView.vue';
+import { dbg } from '@/shared/debug';
 
 const { t } = useI18n();
 
@@ -240,11 +241,23 @@ const visibleResources = computed(() => {
 async function uploadSelected() {
   const targets = resources.value.filter(r => selected.value.has(r.id));
   for (const r of targets) {
+    let url = r.url;
+    if (settings.value.imuEnabled && r.tabId) {
+      try {
+        const candidates = await bg.upgradeImageUrl(r.tabId, r.url, 12000);
+        url = candidates[0] ?? r.url;
+        dbg.log('sniffer', 'upload selected upgraded', { original: r.url, url, candidates });
+      } catch (error) {
+        dbg.warn('sniffer', 'upload selected upgrade failed, use original', { url: r.url, error });
+      }
+    } else {
+      dbg.log('sniffer', 'upload selected maxurl skipped', { url: r.url, imuEnabled: settings.value.imuEnabled, tabId: r.tabId });
+    }
     // 资源上传走 UPLOAD_FROM_URL(service worker fetch → File → 队列)
-    chrome.runtime.sendMessage({
+    await chrome.runtime.sendMessage({
       type: 'UPLOAD_FROM_URL',
       payload: {
-        url: r.url,
+        url,
         kind: r.kind,
         libraryId: settings.value.libraryId,
         referrer: r.referrer || r.pageUrl,

@@ -47,7 +47,8 @@
     "filterCategory": "类别",
     "filterUrls": "网址",
     "filterTitle": "标题",
-    "filterSize": "大小"
+    "filterSize": "大小",
+    "filterMetadata": "元数据"
   },
   "useViewModeConfig": {
     "gridView": "网格视图",

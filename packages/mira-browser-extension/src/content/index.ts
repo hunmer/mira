@@ -38,6 +38,11 @@ const dragdrop = createDragDrop({
   },
   onUpload(payload: DragDropPayload) {
     if (payload.file) {
+      if (payload.sourceUrl) {
+        dbg.info('content', 'dragged file has source URL, upgrade via maxurl', { url: payload.sourceUrl });
+        uploadUrl(payload.sourceUrl, payload.kind, payload.folderId);
+        return;
+      }
       // File 跨上下文序列化 —— 必须用 fileToStaged(转 number[]),
       // 裸 ArrayBuffer / Uint8Array 经 sendMessage 结构化克隆会丢失/退化,见 staged-file.ts
       fileToStaged(payload.file).then(staged => {
@@ -137,6 +142,16 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg?.type === 'SCROLL_RESTORE') {
     window.scrollTo(0, restoreY);
     sendResponse({ ok: true });
+    return true;
+  }
+  if (msg?.type === 'UPGRADE_IMAGE_URL') {
+    dbg.info('content', 'UPGRADE_IMAGE_URL', { url: msg.payload?.url, timeout: msg.payload?.timeout });
+    upgradeImageUrl(msg.payload.url, { timeout: msg.payload?.timeout })
+      .then(candidates => sendResponse({ candidates }))
+      .catch(error => {
+        dbg.warn('content', 'UPGRADE_IMAGE_URL failed', { url: msg.payload?.url, error });
+        sendResponse({ candidates: [msg.payload.url] });
+      });
     return true;
   }
 

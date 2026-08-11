@@ -368,6 +368,12 @@ export const useMediaStore = defineStore('media', () => {
               filters.title = filterRule.value
             }
             break
+          case 'metadata':
+            if (filterRule.metaDimMin !== undefined) filters.metadata_dim_min = filterRule.metaDimMin
+            if (filterRule.metaDimMax !== undefined) filters.metadata_dim_max = filterRule.metaDimMax
+            if (filterRule.metaDurMin !== undefined) filters.metadata_duration_min = filterRule.metaDurMin
+            if (filterRule.metaDurMax !== undefined) filters.metadata_duration_max = filterRule.metaDurMax
+            break
         }
       })
     }

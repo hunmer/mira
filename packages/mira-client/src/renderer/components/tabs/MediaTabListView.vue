@@ -223,7 +223,7 @@
         <Dropdown :offset="{ x: 0, y: 8 }" placement="top-end">
           <template #trigger>
             <button
-              class="flex items-center rounded-lg border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur shadow-sm hover:bg-white/60 dark:hover:bg-muted transition-colors"
+              class="flex items-center rounded-lg border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur shadow-sm hover:bg-white/60 dark:hover:bg-muted transition-colors cursor-pointer"
               :title="$t('tabs.mediaTabListView.fieldSettingsTitle')" style="padding: 6px;">
               <span class="material-icons text-sm text-muted-foreground dark:text-muted-foreground">visibility</span>
             </button>

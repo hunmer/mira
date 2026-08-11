@@ -51,18 +51,33 @@ const effectiveExpanded = computed(() =>
 const isSearching = computed(() => query.value.trim().length > 0);
 
 // ---- 链接上传:走 service worker 的 UPLOAD_FROM_URL(fetch → File → 队列) ----
-function uploadUrls(urls: string[], target?: { folderId?: number; tags?: string[] }) {
+async function uploadUrls(urls: string[], target?: { folderId?: number; tags?: string[] }) {
   const libId = settings.value.libraryId;
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const tabId = tab?.id;
   for (const url of urls) {
-    dbg.info('drag', 'uploadUrls → UPLOAD_FROM_URL', { url, libId, ...target });
+    let uploadUrl = url;
+    if (settings.value.imuEnabled && tabId) {
+      try {
+        const candidates = await bg.upgradeImageUrl(tabId, url, 12000);
+        uploadUrl = candidates[0] ?? url;
+        dbg.log('drag', 'upload URL upgraded', { original: url, uploadUrl, candidates });
+      } catch (error) {
+        dbg.warn('drag', 'upload URL upgrade failed, use original', { url, error });
+      }
+    } else {
+      dbg.log('drag', 'upload URL maxurl skipped', { url, imuEnabled: settings.value.imuEnabled, tabId });
+    }
+    dbg.info('drag', 'uploadUrls → UPLOAD_FROM_URL', { url: uploadUrl, referrer: tab?.url, libId, ...target });
     chrome.runtime.sendMessage({
       type: 'UPLOAD_FROM_URL',
       payload: {
-        url,
-        kind: urlKind(url),
+        url: uploadUrl,
+        kind: urlKind(uploadUrl),
         libraryId: libId,
         folderId: target?.folderId,
         tags: target?.tags,
+        referrer: tab?.url,
       },
     });
   }
@@ -87,7 +102,7 @@ function onRootDrop(e: DragEvent) {
   rootHover.value = false;
   const { files, urls } = parseDrop(e);
   if (files.length) addFiles(files, settings.value.libraryId);
-  if (urls.length) uploadUrls(urls);
+  if (urls.length) void uploadUrls(urls);
 }
 /** 顶部 Dropzone 回调(点击选择 / 拖放到 dropzone)→ 上传到素材库根目录 */
 function onRootDropFiles(files: File[]) {
@@ -100,10 +115,10 @@ function onDrop(node: LibraryTreeNode, e: DragEvent) {
   const { files, urls } = parseDrop(e);
   if (props.mode === 'folder') {
     if (files.length) addFiles(files, settings.value.libraryId, undefined, String(node.id));
-    if (urls.length) uploadUrls(urls, { folderId: node.id });
+    if (urls.length) void uploadUrls(urls, { folderId: node.id });
   } else {
     if (files.length) addFiles(files, settings.value.libraryId, [node.title]);
-    if (urls.length) uploadUrls(urls, { tags: [node.title] });
+    if (urls.length) void uploadUrls(urls, { tags: [node.title] });
   }
 }
 

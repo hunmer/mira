@@ -193,7 +193,6 @@ export const FileOperations = {
     const tagIds = Array.isArray(filters.tags) ? filters.tags.map((id: any) => id.toString()) : [];
     const limit = parseInt(filters.limit?.toString() || '100') || 100;
     const offset = parseInt(filters.offset?.toString() || '0') || 0;
-    console.log({filters})
 
     if (filters.recycled !== undefined) {
       whereClauses.push('recycled = ?');
@@ -315,6 +314,32 @@ export const FileOperations = {
           params.push(convertValue(value));
         }
       }
+    }
+
+    // metadata 过滤：按最长边 MAX(width, height) 过滤
+    // SQLite 的 MAX(x,y) 是标量函数（非聚合），自动忽略 NULL 参数；
+    // width/height 都为 NULL 时返回 NULL，比较结果为 falsy，自然排除无尺寸字段的文件（如音频）。
+    // CAST AS REAL 确保 exiftool 返回的字符串数值（如 "1920"）正确数值比较。
+    if (filters.metadata_dim_min !== undefined || filters.metadata_dim_max !== undefined) {
+      const longest = `MAX(CAST(json_extract(metadata, '$.width') AS REAL), CAST(json_extract(metadata, '$.height') AS REAL))`;
+      if (filters.metadata_dim_min !== undefined) {
+        whereClauses.push(`${longest} >= ?`);
+        params.push(filters.metadata_dim_min);
+      }
+      if (filters.metadata_dim_max !== undefined) {
+        whereClauses.push(`${longest} <= ?`);
+        params.push(filters.metadata_dim_max);
+      }
+    }
+
+    // metadata 过滤：按时长 duration（秒）
+    if (filters.metadata_duration_min !== undefined) {
+      whereClauses.push(`CAST(json_extract(metadata, '$.duration') AS REAL) >= ?`);
+      params.push(filters.metadata_duration_min);
+    }
+    if (filters.metadata_duration_max !== undefined) {
+      whereClauses.push(`CAST(json_extract(metadata, '$.duration') AS REAL) <= ?`);
+      params.push(filters.metadata_duration_max);
     }
 
     const where = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';

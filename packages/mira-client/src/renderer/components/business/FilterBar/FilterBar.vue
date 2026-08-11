@@ -135,6 +135,94 @@
                   <Button size="sm" @click="close()">{{ $t('business.filterBar.confirm') }}</Button>
                 </div>
               </div>
+
+              <!-- 元数据筛选器（尺寸 / 时长） -->
+              <div v-else-if="filter.type === 'metadata'">
+                <div class="p-3">
+                  <h3 class="font-medium text-foreground mb-3">{{ $t('business.filterBar.metadataTitle') }}</h3>
+
+                  <!-- 子模式切换：尺寸 / 时长 -->
+                  <RadioGroup :model-value="filter.metaField || 'dimension'" class="flex space-x-4 mb-4"
+                    @update:model-value="(val) => handleMetaFieldChange(filter, val as 'dimension' | 'duration')">
+                    <div class="flex items-center space-x-2 cursor-pointer">
+                      <RadioGroupItem value="dimension" />
+                      <Label class="text-sm cursor-pointer">{{ $t('business.filterBar.metadataFieldDimension') }}</Label>
+                    </div>
+                    <div class="flex items-center space-x-2 cursor-pointer">
+                      <RadioGroupItem value="duration" />
+                      <Label class="text-sm cursor-pointer">{{ $t('business.filterBar.metadataFieldDuration') }}</Label>
+                    </div>
+                  </RadioGroup>
+
+                  <!-- 尺寸子模式 -->
+                  <template v-if="filter.metaField === 'duration' ? false : true">
+                    <RadioGroup :model-value="filter.selectedMetaPreset || ''" class="space-y-2 mb-4"
+                      @update:model-value="(val) => handleMetaPresetChange(filter, val as string)">
+                      <div v-for="preset in dimensionPresets" :key="preset.id"
+                        class="flex items-center space-x-2 cursor-pointer">
+                        <RadioGroupItem :value="preset.id" />
+                        <Label class="text-sm cursor-pointer">{{ preset.label }}</Label>
+                      </div>
+
+                      <div class="border-t border-border pt-3">
+                        <div class="flex items-center space-x-2 cursor-pointer mb-3">
+                          <RadioGroupItem value="custom" />
+                          <Label class="text-sm cursor-pointer">{{ $t('business.filterBar.sizeCustom') }}</Label>
+                        </div>
+
+                        <div v-if="filter.selectedMetaPreset === 'custom'" class="grid grid-cols-2 gap-2">
+                          <div>
+                            <Label class="block text-xs text-muted-foreground mb-1">{{ $t('business.filterBar.dimensionCustomMin') }}</Label>
+                            <Input type="number" :model-value="filter.customDimMin?.toString() ?? ''" placeholder="0"
+                              @update:model-value="(val) => { filter.customDimMin = val ? Number(val) : undefined; updateCustomMetaRange(filter) }" />
+                          </div>
+                          <div>
+                            <Label class="block text-xs text-muted-foreground mb-1">{{ $t('business.filterBar.dimensionCustomMax') }}</Label>
+                            <Input type="number" :model-value="filter.customDimMax?.toString() ?? ''" :placeholder="$t('business.filterBar.sizeMaxPlaceholder')"
+                              @update:model-value="(val) => { filter.customDimMax = val ? Number(val) : undefined; updateCustomMetaRange(filter) }" />
+                          </div>
+                        </div>
+                      </div>
+                    </RadioGroup>
+                  </template>
+
+                  <!-- 时长子模式 -->
+                  <template v-else>
+                    <RadioGroup :model-value="filter.selectedMetaPreset || ''" class="space-y-2 mb-4"
+                      @update:model-value="(val) => handleMetaPresetChange(filter, val as string)">
+                      <div v-for="preset in durationPresets" :key="preset.id"
+                        class="flex items-center space-x-2 cursor-pointer">
+                        <RadioGroupItem :value="preset.id" />
+                        <Label class="text-sm cursor-pointer">{{ preset.label }}</Label>
+                      </div>
+
+                      <div class="border-t border-border pt-3">
+                        <div class="flex items-center space-x-2 cursor-pointer mb-3">
+                          <RadioGroupItem value="custom" />
+                          <Label class="text-sm cursor-pointer">{{ $t('business.filterBar.sizeCustom') }}</Label>
+                        </div>
+
+                        <div v-if="filter.selectedMetaPreset === 'custom'" class="grid grid-cols-2 gap-2">
+                          <div>
+                            <Label class="block text-xs text-muted-foreground mb-1">{{ $t('business.filterBar.durationCustomMin') }}</Label>
+                            <Input type="number" :model-value="filter.customDurMin?.toString() ?? ''" placeholder="0"
+                              @update:model-value="(val) => { filter.customDurMin = val ? Number(val) : undefined; updateCustomMetaRange(filter) }" />
+                          </div>
+                          <div>
+                            <Label class="block text-xs text-muted-foreground mb-1">{{ $t('business.filterBar.durationCustomMax') }}</Label>
+                            <Input type="number" :model-value="filter.customDurMax?.toString() ?? ''" :placeholder="$t('business.filterBar.sizeMaxPlaceholder')"
+                              @update:model-value="(val) => { filter.customDurMax = val ? Number(val) : undefined; updateCustomMetaRange(filter) }" />
+                          </div>
+                        </div>
+                      </div>
+                    </RadioGroup>
+                  </template>
+                </div>
+                <div class="p-3 border-t border-border flex justify-end space-x-2">
+                  <Button variant="ghost" size="sm" @click="clearFilter(filter); close()">{{ $t('business.filterBar.clear') }}</Button>
+                  <Button size="sm" @click="close()">{{ $t('business.filterBar.confirm') }}</Button>
+                </div>
+              </div>
             </div>
           </template>
         </Dropdown>
@@ -285,6 +373,22 @@ const sizePresets = computed<SizePreset[]>(() => [
   { id: 'huge', label: t('business.filterBar.sizePresetHuge'), min: 100 * 1024 * 1024 },
 ])
 
+// metadata 过滤预设：按最长边（px）
+const dimensionPresets = computed<SizePreset[]>(() => [
+  { id: 'small', label: t('business.filterBar.dimensionPresetSmall'), max: 720 },
+  { id: 'medium', label: t('business.filterBar.dimensionPresetMedium'), min: 720, max: 1080 },
+  { id: 'large', label: t('business.filterBar.dimensionPresetLarge'), min: 1080, max: 2160 },
+  { id: 'huge', label: t('business.filterBar.dimensionPresetHuge'), min: 2160 },
+])
+
+// metadata 过滤预设：按时长（秒）
+const durationPresets = computed<SizePreset[]>(() => [
+  { id: 'short', label: t('business.filterBar.durationPresetShort'), max: 60 },
+  { id: 'medium', label: t('business.filterBar.durationPresetMedium'), min: 60, max: 600 },
+  { id: 'long', label: t('business.filterBar.durationPresetLong'), min: 600, max: 3600 },
+  { id: 'huge', label: t('business.filterBar.durationPresetHuge'), min: 3600 },
+])
+
 const categoryOptions = computed<CategoryOption[]>(() => [
   { value: 'video', label: t('business.filterBar.categoryVideo'), icon: 'videocam' },
   { value: 'audio', label: t('business.filterBar.categoryAudio'), icon: 'audiotrack' },
@@ -311,6 +415,8 @@ const hasActiveFilters = (filter: FilterRule) => {
       return filter.selectedPreset && filter.selectedPreset !== ''
     case 'category':
       return filter.selectedCategory && filter.selectedCategory !== ''
+    case 'metadata':
+      return !!(filter.metaDimMin || filter.metaDimMax || filter.metaDurMin || filter.metaDurMax)
     default:
       return false
   }
@@ -328,6 +434,8 @@ const getActiveFilterCount = (filter: FilterRule) => {
       return filter.selectedPreset && filter.selectedPreset !== '' ? 1 : 0
     case 'category':
       return filter.selectedCategory && filter.selectedCategory !== '' ? 1 : 0
+    case 'metadata':
+      return (filter.metaDimMin || filter.metaDimMax || filter.metaDurMin || filter.metaDurMax) ? 1 : 0
     default:
       return 0
   }
@@ -387,6 +495,68 @@ const selectCategory = (filter: FilterRule, value: string) => {
   emit('filter-change', filter)
 }
 
+// 切换 metadata 子模式（dimension / duration），清空另一模式的范围字段
+const handleMetaFieldChange = (filter: FilterRule, mode: 'dimension' | 'duration') => {
+  if (filter.metaField === mode) return
+  filter.metaField = mode
+  // 重置当前模式的预设与范围（保留另一模式的 custom 输入值以便切回）
+  filter.selectedMetaPreset = ''
+  if (mode === 'dimension') {
+    filter.metaDurMin = undefined
+    filter.metaDurMax = undefined
+  } else {
+    filter.metaDimMin = undefined
+    filter.metaDimMax = undefined
+  }
+  filter.active = !!(filter.metaDimMin || filter.metaDimMax || filter.metaDurMin || filter.metaDurMax)
+  emit('filter-change', filter)
+}
+
+// 选 metadata 预设（沿用 size 预设模式：预设 id 时直接写范围到 meta*Min/Max）
+const handleMetaPresetChange = (filter: FilterRule, value: string) => {
+  const presets = filter.metaField === 'duration' ? durationPresets.value : dimensionPresets.value
+  if (value === 'custom') {
+    filter.selectedMetaPreset = 'custom'
+    // 切到自定义时以当前 custom 输入值为准
+    if (filter.metaField === 'duration') {
+      filter.metaDurMin = filter.customDurMin
+      filter.metaDurMax = filter.customDurMax
+    } else {
+      filter.metaDimMin = filter.customDimMin
+      filter.metaDimMax = filter.customDimMax
+    }
+  } else {
+    const preset = presets.find(p => p.id === value)
+    if (preset) {
+      filter.selectedMetaPreset = preset.id
+      if (filter.metaField === 'duration') {
+        filter.metaDurMin = preset.min
+        filter.metaDurMax = preset.max
+      } else {
+        filter.metaDimMin = preset.min
+        filter.metaDimMax = preset.max
+      }
+    }
+  }
+  filter.active = !!(filter.metaDimMin || filter.metaDimMax || filter.metaDurMin || filter.metaDurMax)
+  emit('filter-change', filter)
+}
+
+// 自定义 metadata 范围输入变化
+const updateCustomMetaRange = (filter: FilterRule) => {
+  if (filter.selectedMetaPreset === 'custom') {
+    if (filter.metaField === 'duration') {
+      filter.metaDurMin = filter.customDurMin
+      filter.metaDurMax = filter.customDurMax
+    } else {
+      filter.metaDimMin = filter.customDimMin
+      filter.metaDimMax = filter.customDimMax
+    }
+    filter.active = !!(filter.metaDimMin || filter.metaDimMax || filter.metaDurMin || filter.metaDurMax)
+    emit('filter-change', filter)
+  }
+}
+
 const clearFilter = (filter: FilterRule) => {
   filter.selectedValues = []
   filter.value = ''
@@ -396,6 +566,16 @@ const clearFilter = (filter: FilterRule) => {
   filter.sizeMin = undefined
   filter.sizeMax = undefined
   filter.selectedCategory = ''
+  filter.metaField = 'dimension'
+  filter.selectedMetaPreset = ''
+  filter.metaDimMin = undefined
+  filter.metaDimMax = undefined
+  filter.metaDurMin = undefined
+  filter.metaDurMax = undefined
+  filter.customDimMin = undefined
+  filter.customDimMax = undefined
+  filter.customDurMin = undefined
+  filter.customDurMax = undefined
   filter.active = false
   emit('filter-clear', filter)
 }

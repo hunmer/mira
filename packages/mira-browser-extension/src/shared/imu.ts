@@ -30,6 +30,21 @@ const BRIDGE_FLAG = '__mira_imu_bridge__';
 const REQ_TAG = '__mira_imu_req__';
 const RES_TAG = '__mira_imu_res__';
 
+/** Pinterest 缩略图规则兜底: maxurl 可能因 HEAD/尺寸校验过滤掉 originals 候选。 */
+export function pinterestOriginalUrl(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    if (!/(?:^|\.)pinimg\.com$/i.test(parsed.hostname)) return null;
+    const match = parsed.pathname.match(/^\/(?:vwebp\/)?(?:\d+x(?:\d+)?|originals)\/(.+)$/i);
+    if (!match || parsed.pathname.includes('/originals/')) return null;
+    parsed.pathname = `/originals/${match[1]}`;
+    parsed.search = '';
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+}
+
 /** 页面 MAIN world 注入脚本源码(字符串,由 <script> 执行) */
 const BRIDGE_SOURCE = `
 (function(){
@@ -158,12 +173,16 @@ export async function upgradeImageUrl(url: string, opts: ImuOptions = {}): Promi
     ordered.push({ url: r.url, original: !!r.is_original });
   }
   ordered.sort((a, b) => Number(b.original) - Number(a.original));
-  const out = [...ordered.map(o => o.url), url];
+  const out = [...ordered.map(o => o.url)];
+  const pinterestOriginal = pinterestOriginalUrl(url);
+  if (pinterestOriginal && !out.includes(pinterestOriginal)) out.unshift(pinterestOriginal);
+  if (!out.includes(url)) out.push(url);
   dbg.log('imu', 'upgradeImageUrl result', {
     id,
     originalUrl: url,
     rawCount: result.length,
     acceptedCount: ordered.length,
+    pinterestFallback: pinterestOriginal,
     candidates: out,
   });
   return out;
