@@ -91,20 +91,16 @@
         "arch": ["x64", "arm64"]
       }
     ],
-    "icon": "build/icons/icon.icns",
+    "icon": "assets/icon.ico",
     "category": "public.app-category.photography",
     "darkModeSupport": true,
     "gatekeeperAssess": false,
-    "hardenedRuntime": true,
-    "entitlements": "build/entitlements.mac.plist",
-    "entitlementsInherit": "build/entitlements.mac.plist",
+    "hardenedRuntime": false,
     "artifactName": "${productName}-${version}-mac-${arch}.${ext}",
     "minimumSystemVersion": "10.15.0"
   },
   "dmg": {
     "title": "${productName} ${version}",
-    "icon": "build/icons/icon.icns",
-    "background": "build/icons/dmg-background.png",
     "contents": [
       {
         "x": 410,
