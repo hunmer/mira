@@ -1,5 +1,5 @@
 "use client";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import React from "react";
 import { useI18n } from "@/lib/i18n/i18n-provider";
 
@@ -79,6 +79,7 @@ function TestimonialsColumn(props: {
 
 export function TestimonialsSection() {
   const { t } = useI18n();
+  const shouldReduceMotion = useReducedMotion();
   const items = t.testimonials.items.map((it, i) => ({
     ...it,
     image: IMAGES[i] ?? IMAGES[0],
@@ -90,7 +91,13 @@ export function TestimonialsSection() {
   return (
     <section className="relative py-10">
       <div className="mx-auto max-w-5xl">
-        <div className="mx-auto flex max-w-sm flex-col items-center justify-center gap-4">
+        <motion.div
+          className="mx-auto flex max-w-sm flex-col items-center justify-center gap-4"
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          viewport={{ once: true, margin: "-60px" }}
+          whileInView={{ opacity: 1, y: 0 }}
+        >
           <div className="flex justify-center">
             <div className="rounded-lg border px-4 py-1">{t.testimonials.tag}</div>
           </div>
@@ -101,7 +108,7 @@ export function TestimonialsSection() {
           <p className="text-center text-muted-foreground text-sm">
             {t.testimonials.subtitle}
           </p>
-        </div>
+        </motion.div>
 
         <div className="mt-10 flex max-h-[740px] justify-center gap-6 overflow-hidden [mask-image:linear-gradient(to_bottom,transparent,black_25%,black_75%,transparent)]">
           <TestimonialsColumn duration={16} testimonials={firstColumn} />

@@ -1,5 +1,6 @@
 "use client";
 import { GithubIcon } from "lucide-react";
+import { motion, useReducedMotion } from "motion/react";
 import React from "react";
 import { createPortal } from "react-dom";
 import { LanguageToggle } from "@/components/language-toggle";
@@ -21,6 +22,7 @@ export function SiteHeaderSection() {
   const { t } = useI18n();
   const [open, setOpen] = React.useState(false);
   const scrolled = useScroll(10);
+  const shouldReduceMotion = useReducedMotion();
 
   React.useEffect(() => {
     if (open) {
@@ -40,11 +42,14 @@ export function SiteHeaderSection() {
   ];
 
   return (
-    <header
+    <motion.header
+      animate={{ y: 0, opacity: 1 }}
       className={cn("sticky top-0 z-50 w-full border-transparent border-b", {
         "border-border bg-background/95 backdrop-blur-lg supports-[backdrop-filter]:bg-background/50":
           scrolled,
       })}
+      initial={shouldReduceMotion ? false : { y: -56, opacity: 0 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
     >
       <nav className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between px-4">
         <div className="flex items-center gap-5">
@@ -124,7 +129,7 @@ export function SiteHeaderSection() {
           </Button>
         </div>
       </MobileMenu>
-    </header>
+    </motion.header>
   );
 }
 

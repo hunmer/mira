@@ -1,5 +1,6 @@
 "use client";
 
+import { motion, useReducedMotion } from "motion/react";
 import { InfiniteSlider } from "@/components/ui/infinite-slider";
 import { useI18n } from "@/lib/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
@@ -60,16 +61,31 @@ const logos = [
 
 export function LogoCloudSection() {
   const { t } = useI18n();
+  const shouldReduceMotion = useReducedMotion();
+
   return (
     <section className="relative mx-auto max-w-3xl py-10">
-      <h2 className="mb-5 text-center font-medium text-foreground text-xl tracking-tight md:text-3xl">
+      <motion.h2
+        className="mb-5 text-center font-medium text-foreground text-xl tracking-tight md:text-3xl"
+        initial={shouldReduceMotion ? false : { opacity: 0, y: 16 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        viewport={{ once: true, margin: "-60px" }}
+        whileInView={{ opacity: 1, y: 0 }}
+      >
         <span className="text-muted-foreground">{t.logoCloud.lead}</span>
         <br />
         <span className="font-semibold">{t.logoCloud.highlight}</span>
-      </h2>
+      </motion.h2>
       <div className="mx-auto my-5 h-px max-w-sm bg-border [mask-image:linear-gradient(to_right,transparent,black,transparent)]" />
 
-      <LogoCloud logos={logos} />
+      <motion.div
+        initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.98 }}
+        transition={{ duration: 0.8, delay: 0.15, ease: "easeOut" }}
+        viewport={{ once: true, margin: "-60px" }}
+        whileInView={{ opacity: 1, scale: 1 }}
+      >
+        <LogoCloud logos={logos} />
+      </motion.div>
 
       <div className="mt-5 h-px bg-border [mask-image:linear-gradient(to_right,transparent,black,transparent)]" />
     </section>

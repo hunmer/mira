@@ -1,6 +1,7 @@
 "use client";
 
 import { PlusIcon } from "lucide-react";
+import { motion, useReducedMotion } from "motion/react";
 import {
   Accordion,
   AccordionContent,
@@ -11,11 +12,18 @@ import { useI18n } from "@/lib/i18n/i18n-provider";
 
 export function FaqsSection() {
   const { t } = useI18n();
+  const shouldReduceMotion = useReducedMotion();
   const faqs = t.faqs.items;
 
   return (
     <section className="mx-auto grid w-full max-w-5xl grid-cols-1 py-20 md:grid-cols-2 lg:border-x">
-      <div className="px-4 pt-12 pb-6">
+      <motion.div
+        className="px-4 pt-12 pb-6"
+        initial={shouldReduceMotion ? false : { opacity: 0, x: -24 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        viewport={{ once: true, margin: "-80px" }}
+        whileInView={{ opacity: 1, x: 0 }}
+      >
         <div className="space-y-5">
           <h2 className="text-balance font-bold text-4xl md:text-6xl lg:font-black">
             {t.faqs.title}
@@ -28,8 +36,14 @@ export function FaqsSection() {
             </a>
           </p>
         </div>
-      </div>
-      <div className="relative place-content-center">
+      </motion.div>
+      <motion.div
+        className="relative place-content-center"
+        initial={shouldReduceMotion ? false : { opacity: 0, y: 24 }}
+        transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
+        viewport={{ once: true, margin: "-80px" }}
+        whileInView={{ opacity: 1, y: 0 }}
+      >
         {/* vertical guide line */}
         <div
           aria-hidden="true"
@@ -59,7 +73,7 @@ export function FaqsSection() {
             </AccordionItem>
           ))}
         </Accordion>
-      </div>
+      </motion.div>
     </section>
   );
 }

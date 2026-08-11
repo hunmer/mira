@@ -1,6 +1,7 @@
 "use client";
 
 import { BookOpenIcon, type LucideIcon, Mail, MapPin } from "lucide-react";
+import { motion, useReducedMotion, type Variants } from "motion/react";
 import type React from "react";
 import { useI18n } from "@/lib/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
@@ -14,6 +15,23 @@ function BorderSeparator({ className }: React.ComponentProps<"div">) {
     <div className={cn("absolute inset-x-0 h-px w-full border-b", className)} />
   );
 }
+
+const containerVariants: Variants = {
+  hidden: {},
+  show: {
+    transition: { staggerChildren: 0.12 },
+  },
+};
+
+const boxVariants: Variants = {
+  hidden: { opacity: 0, y: 24, filter: "blur(4px)" },
+  show: {
+    opacity: 1,
+    y: 0,
+    filter: "blur(0px)",
+    transition: { duration: 0.6, ease: "easeOut" },
+  },
+};
 
 type ContactBox = React.ComponentProps<"div"> & {
   icon: LucideIcon;
@@ -29,11 +47,12 @@ function Box({
   ...props
 }: ContactBox) {
   return (
-    <div
+    <motion.div
       className={cn(
         "flex flex-col justify-between border-b md:border-r md:border-b-0",
         className
       )}
+      variants={boxVariants}
     >
       <div className="flex items-center gap-x-3 border-b bg-secondary/50 p-4 dark:bg-secondary/20">
         <props.icon className="size-5 text-muted-foreground" strokeWidth={1} />
@@ -45,7 +64,7 @@ function Box({
       <div className="border-t p-4">
         <p className="text-muted-foreground text-sm">{description}</p>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -74,6 +93,7 @@ const XIcon = (props: React.ComponentProps<"svg">) => (
 
 export function ContactSection() {
   const { t } = useI18n();
+  const shouldReduceMotion = useReducedMotion();
   const c = t.contact;
 
   const socialLinks = [
@@ -91,12 +111,24 @@ export function ContactSection() {
 
   return (
     <div className="relative mx-auto w-full max-w-5xl lg:border-x">
-      <div className="flex grow flex-col justify-center px-4 py-18 md:items-center">
+      <motion.div
+        className="flex grow flex-col justify-center px-4 py-18 md:items-center"
+        initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        viewport={{ once: true, margin: "-80px" }}
+        whileInView={{ opacity: 1, y: 0 }}
+      >
         <h1 className="font-bold text-4xl md:text-5xl">{c.title}</h1>
         <p className="mb-5 text-base text-muted-foreground">{c.subtitle}</p>
-      </div>
+      </motion.div>
       <BorderSeparator />
-      <div className="grid md:grid-cols-3">
+      <motion.div
+        className="grid md:grid-cols-3"
+        initial={shouldReduceMotion ? false : "hidden"}
+        variants={containerVariants}
+        viewport={{ once: true, margin: "-80px" }}
+        whileInView="show"
+      >
         <Box description={c.emailDesc} icon={Mail} title={c.emailTitle}>
           <a
             className="font-medium font-mono text-sm tracking-wide hover:underline"
@@ -130,9 +162,15 @@ export function ContactSection() {
             {c.docsLink}
           </a>
         </Box>
-      </div>
+      </motion.div>
       <BorderSeparator />
-      <div className="z-1 flex h-full flex-col items-center justify-center gap-4 py-24">
+      <motion.div
+        className="z-1 flex h-full flex-col items-center justify-center gap-4 py-24"
+        initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        viewport={{ once: true, margin: "-80px" }}
+        whileInView={{ opacity: 1, y: 0 }}
+      >
         <h2 className="text-center font-medium text-2xl text-muted-foreground tracking-tight md:text-3xl">
           {c.communityLead} <span className="text-foreground">{c.communityHighlight}</span>
         </h2>
@@ -152,7 +190,7 @@ export function ContactSection() {
             </a>
           ))}
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

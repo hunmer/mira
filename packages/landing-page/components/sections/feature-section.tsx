@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
+import { motion, useReducedMotion, type Variants } from "motion/react";
 import type React from "react";
 import {
   Blocks,
@@ -20,13 +20,34 @@ type FeatureType = {
   description: string;
 };
 
-type FeatureCardPorps = React.ComponentProps<"div"> & {
+const containerVariants: Variants = {
+  hidden: {},
+  show: {
+    transition: { staggerChildren: 0.08 },
+  },
+};
+
+const cardVariants: Variants = {
+  hidden: { opacity: 0, y: 24, filter: "blur(4px)" },
+  show: {
+    opacity: 1,
+    y: 0,
+    filter: "blur(0px)",
+    transition: { duration: 0.6, ease: "easeOut" },
+  },
+};
+
+type FeatureCardPorps = React.ComponentProps<typeof motion.div> & {
   feature: FeatureType;
 };
 
 function FeatureCard({ feature, className, ...props }: FeatureCardPorps) {
   return (
-    <div className={cn("relative overflow-hidden p-6", className)} {...props}>
+    <motion.div
+      className={cn("relative overflow-hidden p-6", className)}
+      variants={cardVariants}
+      {...props}
+    >
       <div className="-mt-2 -ml-20 pointer-events-none absolute top-0 left-1/2 size-full [mask-image:radial-gradient(farthest-side_at_top,white,transparent)]">
         <GridPattern
           className="absolute inset-0 size-full stroke-foreground/20"
@@ -44,12 +65,13 @@ function FeatureCard({ feature, className, ...props }: FeatureCardPorps) {
       <p className="relative z-20 mt-2 font-light text-muted-foreground text-xs">
         {feature.description}
       </p>
-    </div>
+    </motion.div>
   );
 }
 
 export function FeatureSection() {
   const { t } = useI18n();
+  const shouldReduceMotion = useReducedMotion();
   const items = t.feature.items;
 
   const features: FeatureType[] = [
@@ -64,16 +86,28 @@ export function FeatureSection() {
   return (
     <section className="place-content-center py-20">
       <div className="mx-auto w-full max-w-5xl space-y-8 p-4">
-        <div className="mx-auto max-w-3xl text-center">
+        <motion.div
+          className="mx-auto max-w-3xl text-center"
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          viewport={{ once: true, margin: "-80px" }}
+          whileInView={{ opacity: 1, y: 0 }}
+        >
           <h2 className="text-balance font-medium text-2xl md:text-4xl lg:text-5xl">
             {t.feature.title}
           </h2>
           <p className="mt-4 text-balance text-muted-foreground text-sm md:text-base">
             {t.feature.subtitle}
           </p>
-        </div>
+        </motion.div>
 
-        <div className="grid grid-cols-1 divide-x divide-y border-t border-l sm:grid-cols-2 md:grid-cols-3">
+        <motion.div
+          className="grid grid-cols-1 divide-x divide-y border-t border-l sm:grid-cols-2 md:grid-cols-3"
+          initial={shouldReduceMotion ? false : "hidden"}
+          variants={containerVariants}
+          viewport={{ once: true, margin: "-80px" }}
+          whileInView="show"
+        >
           {features.map((feature) => (
             <FeatureCard
               className="last:border-r last:border-b"
@@ -81,7 +115,7 @@ export function FeatureSection() {
               key={feature.title}
             />
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );
