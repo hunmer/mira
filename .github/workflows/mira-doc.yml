@@ -31,8 +31,9 @@ jobs:
         cache: 'pnpm'
         cache-dependency-path: 'pnpm-lock.yaml'
 
-    - name: Install dependencies
-      run: pnpm install --frozen-lockfile
+    - name: Install dependencies (mira-doc 不在 workspace，单独安装)
+      working-directory: packages/mira-doc
+      run: pnpm install --no-frozen-lockfile
 
     - name: Patch base path for root domain
       working-directory: packages/mira-doc
