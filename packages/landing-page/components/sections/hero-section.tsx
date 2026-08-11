@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from "motion/react";
 import type { ComponentProps, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { GridPattern } from "@/components/ui/grid-pattern";
+import { useI18n } from "@/lib/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 type ViewAnimationProps = {
@@ -37,6 +38,8 @@ function AnimatedContainer({
 }
 
 export function HeroSection() {
+  const { t } = useI18n();
+
   return (
     <section className="relative mx-auto w-full max-w-5xl overflow-hidden lg:border-x">
       {/* 背景网格 */}
@@ -48,7 +51,7 @@ export function HeroSection() {
         x={5}
       />
 
-      {/* 四角加号装饰（沿用 cta-3 语言） */}
+      {/* 四角加号装饰 */}
       <PlusIcon
         aria-hidden="true"
         className="absolute top-[-12.5px] left-[-11.5px] z-1 size-6"
@@ -84,7 +87,7 @@ export function HeroSection() {
             className="group inline-flex items-center gap-2 rounded-full border bg-card/60 px-4 py-1.5 text-sm shadow backdrop-blur-sm transition-colors hover:bg-accent"
           >
             <SparklesIcon className="size-3.5 text-muted-foreground" />
-            <span className="font-medium">Introducing Efferd 2.0</span>
+            <span className="font-medium">{t.hero.badge}</span>
             <ArrowRightIcon className="size-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
           </a>
         </AnimatedContainer>
@@ -92,9 +95,9 @@ export function HeroSection() {
         {/* 主标题 */}
         <AnimatedContainer delay={0.15}>
           <h1 className="text-balance font-bold font-heading text-5xl tracking-tight md:text-7xl">
-            Build beautiful websites,{" "}
+            {t.hero.titleLead}{" "}
             <span className="bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-              at the speed of thought.
+              {t.hero.titleHighlight}
             </span>
           </h1>
         </AnimatedContainer>
@@ -102,8 +105,7 @@ export function HeroSection() {
         {/* 副标题 */}
         <AnimatedContainer delay={0.25}>
           <p className="max-w-2xl text-balance text-base text-muted-foreground md:text-lg">
-            A collection of beautifully crafted Shadcn UI blocks and components,
-            designed to help developers build modern websites with ease.
+            {t.hero.subtitle}
           </p>
         </AnimatedContainer>
 
@@ -111,20 +113,18 @@ export function HeroSection() {
         <AnimatedContainer delay={0.35}>
           <div className="mt-2 flex flex-col items-center gap-3 sm:flex-row">
             <Button size="lg" className="group">
-              Get Started
+              {t.hero.ctaPrimary}
               <ArrowRightIcon className="transition-transform group-hover:translate-x-0.5" />
             </Button>
             <Button size="lg" variant="outline">
-              Browse Blocks
+              {t.hero.ctaSecondary}
             </Button>
           </div>
         </AnimatedContainer>
 
         {/* 微提示 */}
         <AnimatedContainer delay={0.45}>
-          <p className="text-muted-foreground text-xs">
-            No credit card required · Free forever plan
-          </p>
+          <p className="text-muted-foreground text-xs">{t.hero.hint}</p>
         </AnimatedContainer>
       </div>
 

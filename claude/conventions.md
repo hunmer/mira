@@ -14,11 +14,14 @@
 - 错误处理:Express 错误中间件统一捕获,WebSocket 使用 `status: 'error'` 响应
 - 路由前缀 `/api/`,认证相关 `/api/auth/`,管理 `/api/admins/`
 
-## 插件系统
+## 插件系统(双协议)
 
-- 继承 `ServerPlugin` 基类,通过 `plugins.json` 注册
-- 必须导出 `init(inst): PluginClass` 工厂函数
-- 插件可注册 HTTP Hook、监听事件、注册前端路由、注册缩略图生成器
+通过 `plugins/plugins.json` 注册,导出 `init(inst)` 工厂。**两套并行协议**:
+
+- **旧协议(`extends ServerPlugin`)**:mira_n8n、mira_eagle_extension 等需深度介入服务端的插件。可注册 HTTP Hook、WebSocket 监听、缩略图生成器、前端路由
+- **新协议(格式插件)**:`init(inst)` 内调用 `inst.pluginManager.registerFileFormat(pluginName, handler)`,声明 `extensions`/`mimeTypes`/`thumbnailExtensions`/`thumbnail(src,dest)`/`viewers[]`。用于 mira_3d_format、mira_spine_format、mira_epub_format、mira_livp_format、mira_lottie_format、mira_pag_format、mira_swf_format、mira_zipper_format、pdf-viewer、psd-viewer 等
+- **客户端 web 插件**:格式插件 `web/` 子目录经 `plugins/plugins/*/web` 进入 workspace,内置 `plugin.json`(`pluginId`/`permissions`/`index`),由客户端动态加载
+- 插件配置持久化在 `{pluginDir}/data/`
 
 ## 通信协议
 

@@ -1,45 +1,24 @@
 "use client";
-import {
-  BarChart,
-  CodeIcon,
-  FileText,
-  GlobeIcon,
-  Handshake,
-  HelpCircle,
-  LayersIcon,
-  Leaf,
-  type LucideIcon,
-  PlugIcon,
-  RotateCcw,
-  Shield,
-  Star,
-  UserPlusIcon,
-  Users,
-} from "lucide-react";
+import { GithubIcon } from "lucide-react";
 import React from "react";
 import { createPortal } from "react-dom";
+import { LanguageToggle } from "@/components/language-toggle";
 import { Logo } from "@/components/logo";
 import { MenuToggleIcon } from "@/components/menu-toggle-icon";
 import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
-  NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
 import { useScroll } from "@/hooks/use-scroll";
+import { useI18n } from "@/lib/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
-type LinkItem = {
-  title: string;
-  href: string;
-  icon: LucideIcon;
-  description?: string;
-};
+const GITHUB_URL = "https://github.com/hunmer/mira_typescript";
 
 export function SiteHeaderSection() {
+  const { t } = useI18n();
   const [open, setOpen] = React.useState(false);
   const scrolled = useScroll(10);
 
@@ -53,6 +32,12 @@ export function SiteHeaderSection() {
       document.body.style.overflow = "";
     };
   }, [open]);
+
+  const links = [
+    { title: t.nav.features, href: "#" },
+    { title: t.nav.docs, href: "#" },
+    { title: t.nav.install, href: "#" },
+  ];
 
   return (
     <header
@@ -68,108 +53,75 @@ export function SiteHeaderSection() {
           </a>
           <NavigationMenu className="hidden md:flex">
             <NavigationMenuList>
-              <NavigationMenuItem>
-                <NavigationMenuTrigger className="bg-transparent">
-                  Product
-                </NavigationMenuTrigger>
-                <NavigationMenuContent className="bg-muted/50 p-1 pr-1.5 dark:bg-background">
-                  <ul className="grid w-lg grid-cols-2 gap-2 rounded-md border bg-popover p-2 shadow">
-                    {productLinks.map((item, i) => (
-                      <li key={i}>
-                        <ListItem {...item} />
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="p-2">
-                    <p className="text-muted-foreground text-sm">
-                      Interested?{" "}
-                      <a
-                        className="font-medium text-foreground hover:underline"
-                        href="#"
-                      >
-                        Schedule a demo
-                      </a>
-                    </p>
-                  </div>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
-              <NavigationMenuItem>
-                <NavigationMenuTrigger className="bg-transparent">
-                  Company
-                </NavigationMenuTrigger>
-                <NavigationMenuContent className="bg-muted/50 p-1 pr-1.5 pb-1.5 dark:bg-background">
-                  <div className="grid w-lg grid-cols-2 gap-2">
-                    <ul className="space-y-2 rounded-md border bg-popover p-2 shadow">
-                      {companyLinks.map((item, i) => (
-                        <li key={i}>
-                          <ListItem {...item} />
-                        </li>
-                      ))}
-                    </ul>
-                    <ul className="space-y-2 p-3">
-                      {companyLinks2.map((item, i) => (
-                        <li key={i}>
-                          <NavigationMenuLink
-                            className="flex-row items-center gap-x-2"
-                            href={item.href}
-                          >
-                            <item.icon className="size-4 text-foreground" />
-                            <span className="font-medium">{item.title}</span>
-                          </NavigationMenuLink>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
-              <NavigationMenuLink asChild className="px-4">
-                <a className="rounded-md p-2 hover:bg-accent" href="#">
-                  Pricing
-                </a>
-              </NavigationMenuLink>
+              {links.map((link) => (
+                <NavigationMenuLink asChild className="px-4" key={link.title}>
+                  <a className="rounded-md p-2 hover:bg-accent" href={link.href}>
+                    {link.title}
+                  </a>
+                </NavigationMenuLink>
+              ))}
             </NavigationMenuList>
           </NavigationMenu>
         </div>
+
         <div className="hidden items-center gap-2 md:flex">
-          <Button variant="outline">Sign In</Button>
-          <Button>Get Started</Button>
+          <LanguageToggle />
+          <Button asChild variant="ghost" size="icon" aria-label="GitHub">
+            <a href={GITHUB_URL} rel="noopener noreferrer" target="_blank">
+              <GithubIcon className="size-4" />
+            </a>
+          </Button>
+          <Button asChild>
+            <a href={GITHUB_URL} rel="noopener noreferrer" target="_blank">
+              {t.nav.getStarted}
+            </a>
+          </Button>
         </div>
-        <Button
-          aria-controls="mobile-menu"
-          aria-expanded={open}
-          aria-label="Toggle menu"
-          className="md:hidden"
-          onClick={() => setOpen(!open)}
-          size="icon"
-          variant="outline"
-        >
-          <MenuToggleIcon className="size-5" duration={300} open={open} />
-        </Button>
+
+        <div className="flex items-center gap-2 md:hidden">
+          <LanguageToggle />
+          <Button
+            aria-controls="mobile-menu"
+            aria-expanded={open}
+            aria-label={t.nav.openMenu}
+            onClick={() => setOpen(!open)}
+            size="icon"
+            variant="outline"
+          >
+            <MenuToggleIcon className="size-5" duration={300} open={open} />
+          </Button>
+        </div>
       </nav>
+
       <MobileMenu
         className="flex flex-col justify-between gap-2 overflow-y-auto"
         open={open}
       >
-        <NavigationMenu className="max-w-full">
-          <div className="flex w-full flex-col gap-y-2">
-            <span className="text-sm">Product</span>
-            {productLinks.map((link) => (
-              <ListItem key={link.title} {...link} />
-            ))}
-            <span className="text-sm">Company</span>
-            {companyLinks.map((link) => (
-              <ListItem key={link.title} {...link} />
-            ))}
-            {companyLinks2.map((link) => (
-              <ListItem key={link.title} {...link} />
-            ))}
-          </div>
-        </NavigationMenu>
+        <div className="flex w-full flex-col gap-y-2">
+          {links.map((link) => (
+            <a
+              key={link.title}
+              href={link.href}
+              className="rounded-md p-2 hover:bg-accent"
+            >
+              {link.title}
+            </a>
+          ))}
+          <a
+            href={GITHUB_URL}
+            rel="noopener noreferrer"
+            target="_blank"
+            className="rounded-md p-2 hover:bg-accent"
+          >
+            GitHub
+          </a>
+        </div>
         <div className="flex flex-col gap-2">
-          <Button className="w-full bg-transparent" variant="outline">
-            Sign In
+          <Button asChild className="w-full">
+            <a href={GITHUB_URL} rel="noopener noreferrer" target="_blank">
+              {t.nav.getStarted}
+            </a>
           </Button>
-          <Button className="w-full">Get Started</Button>
         </div>
       </MobileMenu>
     </header>
@@ -208,118 +160,3 @@ function MobileMenu({ open, children, className, ...props }: MobileMenuProps) {
     document.body
   );
 }
-
-function ListItem({
-  title,
-  description,
-  icon: Icon,
-  className,
-  href,
-  ...props
-}: React.ComponentProps<typeof NavigationMenuLink> & LinkItem) {
-  return (
-    <NavigationMenuLink
-      className={cn("w-full flex-row gap-x-2", className)}
-      {...props}
-      asChild
-    >
-      <a href={href}>
-        <div className="flex aspect-square size-12 items-center justify-center rounded-md border bg-background/40 shadow-sm">
-          <Icon className="size-5 text-foreground" />
-        </div>
-        <div className="flex flex-col items-start justify-center">
-          <span className="font-medium">{title}</span>
-          <span className="text-muted-foreground text-xs">{description}</span>
-        </div>
-      </a>
-    </NavigationMenuLink>
-  );
-}
-
-const productLinks: LinkItem[] = [
-  {
-    title: "Website Builder",
-    href: "#",
-    description: "Create responsive websites with ease",
-    icon: GlobeIcon,
-  },
-  {
-    title: "Cloud Platform",
-    href: "#",
-    description: "Deploy and scale apps in the cloud",
-    icon: LayersIcon,
-  },
-  {
-    title: "Team Collaboration",
-    href: "#",
-    description: "Tools to help your teams work better together",
-    icon: UserPlusIcon,
-  },
-  {
-    title: "Analytics",
-    href: "#",
-    description: "Track and analyze your website traffic",
-    icon: BarChart,
-  },
-  {
-    title: "Integrations",
-    href: "#",
-    description: "Connect your apps and services",
-    icon: PlugIcon,
-  },
-  {
-    title: "API",
-    href: "#",
-    description: "Build custom integrations with our API",
-    icon: CodeIcon,
-  },
-];
-
-const companyLinks: LinkItem[] = [
-  {
-    title: "About Us",
-    href: "#",
-    description: "Learn more about our story and team",
-    icon: Users,
-  },
-  {
-    title: "Customer Stories",
-    href: "#",
-    description: "See how we’ve helped our clients succeed",
-    icon: Star,
-  },
-  {
-    title: "Partnerships",
-    href: "#",
-    icon: Handshake,
-    description: "Collaborate with us for mutual growth",
-  },
-];
-
-const companyLinks2: LinkItem[] = [
-  {
-    title: "Terms of Service",
-    href: "#",
-    icon: FileText,
-  },
-  {
-    title: "Privacy Policy",
-    href: "#",
-    icon: Shield,
-  },
-  {
-    title: "Refund Policy",
-    href: "#",
-    icon: RotateCcw,
-  },
-  {
-    title: "Blog",
-    href: "#",
-    icon: Leaf,
-  },
-  {
-    title: "Help Center",
-    href: "#",
-    icon: HelpCircle,
-  },
-];

@@ -1,3 +1,5 @@
+"use client";
+
 import { PlusIcon } from "lucide-react";
 import {
   Accordion,
@@ -5,68 +7,24 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-
-const faqs = [
-  {
-    id: "item-1",
-    title: "What is Efferd?",
-    content:
-      "Efferd is a collection of beautifully crafted Shadcn UI blocks and components, designed to help developers build modern websites with ease.",
-  },
-  {
-    id: "item-2",
-    title: "Who can benefit from Efferd?",
-    content:
-      "Efferd is built for founders, product teams, and agencies that want to accelerate idea validation and delivery.",
-  },
-  {
-    id: "item-3",
-    title: "What features does Efferd include?",
-    content:
-      "Efferd offers a collaborative workspace where you can design and build beautiful web applications, with reusable UI blocks, deployment automation, and comprehensive analytics all in one place. With Efferd, you can streamline your team’s workflow and deliver high-quality websites quickly and efficiently.",
-  },
-  {
-    id: "item-4",
-    title: "Can I customize components in Efferd?",
-    content:
-      "Yes. Efferd offers editable design systems and code scaffolding so you can tailor blocks to your brand and workflow.",
-  },
-  {
-    id: "item-5",
-    title: "Does Efferd integrate with my existing tools?",
-    content:
-      "Efferd connects with popular source control, design tools, and cloud providers to fit into your current stack.",
-  },
-  {
-    id: "item-6",
-    title: "How do I get support while using Efferd?",
-    content:
-      "You can access detailed docs, community forums, and dedicated customer success channels for help at any time.",
-  },
-  {
-    id: "item-7",
-    title: "How do I get started with Efferd?",
-    content:
-      "You can access detailed docs, community forums, and dedicated customer success channels for help at any time.",
-  },
-];
+import { useI18n } from "@/lib/i18n/i18n-provider";
 
 export function FaqsSection() {
+  const { t } = useI18n();
+  const faqs = t.faqs.items;
+
   return (
     <section className="mx-auto grid w-full max-w-5xl grid-cols-1 py-20 md:grid-cols-2 lg:border-x">
       <div className="px-4 pt-12 pb-6">
         <div className="space-y-5">
           <h2 className="text-balance font-bold text-4xl md:text-6xl lg:font-black">
-            Frequently Asked Questions
+            {t.faqs.title}
           </h2>
+          <p className="text-muted-foreground">{t.faqs.subtitle}</p>
           <p className="text-muted-foreground">
-            Quick answers to common questions about Efferd. Open any question to
-            learn more.
-          </p>
-          <p className="text-muted-foreground">
-            {"Can't find what you're looking for? "}
+            {t.faqs.contactLead}{" "}
             <a className="text-primary hover:underline" href="#">
-              Contact Us
+              {t.faqs.contactLink}
             </a>
           </p>
         </div>
@@ -79,11 +37,11 @@ export function FaqsSection() {
         />
 
         <Accordion collapsible type="single">
-          {faqs.map((item) => (
+          {faqs.map((item, i) => (
             <AccordionItem
               className="group relative border-b pl-5 first:border-t last:border-b"
-              key={item.id}
-              value={item.id}
+              key={`faq-${i}`}
+              value={`item-${i + 1}`}
             >
               {/*  plus */}
               <PlusIcon

@@ -1,14 +1,13 @@
 "use client";
-import {
-  FacebookIcon,
-  InstagramIcon,
-  LinkedinIcon,
-  YoutubeIcon,
-} from "lucide-react";
+import { GithubIcon, LinkedinIcon, XIcon, YoutubeIcon } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import type React from "react";
 import type { ComponentProps, ReactNode } from "react";
 import { Logo } from "@/components/logo";
+import { useI18n } from "@/lib/i18n/i18n-provider";
+
+const GITHUB_URL = "https://github.com/hunmer/mira_typescript";
+const ISSUE_URL = "https://github.com/hunmer/mira_typescript/issues";
 
 type FooterLink = {
   title: string;
@@ -20,45 +19,6 @@ type FooterSection = {
   label: string;
   links: FooterLink[];
 };
-
-const footerLinks: FooterSection[] = [
-  {
-    label: "Product",
-    links: [
-      { title: "Features", href: "#" },
-      { title: "Pricing", href: "#" },
-      { title: "Testimonials", href: "#" },
-      { title: "Integration", href: "#" },
-    ],
-  },
-  {
-    label: "Company",
-    links: [
-      { title: "FAQs", href: "#" },
-      { title: "About Us", href: "#" },
-      { title: "Privacy Policy", href: "#" },
-      { title: "Terms of Services", href: "#" },
-    ],
-  },
-  {
-    label: "Resources",
-    links: [
-      { title: "Blog", href: "#" },
-      { title: "Changelog", href: "#" },
-      { title: "Brand", href: "#" },
-      { title: "Help", href: "#" },
-    ],
-  },
-  {
-    label: "Social Links",
-    links: [
-      { title: "Facebook", href: "#", icon: FacebookIcon },
-      { title: "Instagram", href: "#", icon: InstagramIcon },
-      { title: "Youtube", href: "#", icon: YoutubeIcon },
-      { title: "LinkedIn", href: "#", icon: LinkedinIcon },
-    ],
-  },
-];
 
 type ViewAnimationProps = {
   delay?: number;
@@ -91,6 +51,50 @@ function AnimatedContainer({
 }
 
 export function SiteFooterSection() {
+  const { t } = useI18n();
+  const p = t.footer.product;
+  const r = t.footer.resources;
+  const c = t.footer.community;
+
+  const footerLinks: FooterSection[] = [
+    {
+      label: t.footer.groups.product,
+      links: [
+        { title: p.features, href: "#" },
+        { title: p.install, href: "#" },
+        { title: p.cli, href: "#" },
+        { title: p.mcp, href: "#" },
+      ],
+    },
+    {
+      label: t.footer.groups.resources,
+      links: [
+        { title: r.docs, href: "#" },
+        { title: r.faqs, href: "#" },
+        { title: r.changelog, href: "#" },
+        { title: r.plugins, href: "#" },
+      ],
+    },
+    {
+      label: t.footer.groups.community,
+      links: [
+        { title: c.github, href: GITHUB_URL },
+        { title: c.issue, href: ISSUE_URL },
+        { title: c.skill, href: "#" },
+        { title: c.contributing, href: "#" },
+      ],
+    },
+    {
+      label: t.footer.groups.follow,
+      links: [
+        { title: "GitHub", href: GITHUB_URL, icon: GithubIcon },
+        { title: "X", href: "#", icon: XIcon },
+        { title: "Youtube", href: "#", icon: YoutubeIcon },
+        { title: "LinkedIn", href: "#", icon: LinkedinIcon },
+      ],
+    },
+  ];
+
   return (
     <footer className="relative mx-auto flex w-full max-w-5xl flex-col items-center justify-center rounded-t-4xl border-t bg-[radial-gradient(35%_128px_at_50%_0%,theme(backgroundColor.white/8%),transparent)] px-4 py-6 md:rounded-t-6xl md:px-6">
       <div className="-translate-x-1/2 -translate-y-1/2 absolute top-0 right-1/2 left-1/2 h-px w-1/3 rounded-full bg-foreground/20 blur" />
@@ -99,7 +103,7 @@ export function SiteFooterSection() {
         <AnimatedContainer className="space-y-4">
           <Logo className="h-4" />
           <p className="mt-8 text-muted-foreground text-sm md:mt-0">
-            &copy; {new Date().getFullYear()} efferd, All rights reserved
+            &copy; {new Date().getFullYear()} {t.footer.copyright}
           </p>
         </AnimatedContainer>
 

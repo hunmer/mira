@@ -18,49 +18,55 @@ d:\mira_typescript\
 │   ├── faq.md                     # 常见问题
 │   └── changelog.md               # 变更记录
 ├── .claude/
-│   └── index.json                 # 机器可读扫描索引(上次 2026-06-09)
+│   └── index.json                 # 机器可读扫描索引
+├── .agents/                       # Agent skills(含 mira-cli / procm-mcp 等)
 ├── package.json                   # 根级 monorepo 配置(@hunmer/mira-monorepo)
-├── pnpm-workspace.yaml            # workspace 定义
+├── pnpm-workspace.yaml            # workspace 定义(9 包 + 2 glob)
 ├── pnpm-lock.yaml
 ├── tsconfig.json                  # project references → core/server
 ├── dependency-switch-config-macos.json
 ├── dependency-switch-config-windows.json
 ├── packages/
-│   ├── mira-app-core/             # 核心库 (v2.0.1)
-│   ├── mira-app-server/           # 服务端 (v2.0.1)
-│   ├── mira-client/               # Electron 客户端 (v1.0.5)
+│   ├── mira-app-core/             # 核心库 (v2.0.3)
+│   ├── mira-app-server/           # 服务端 (v2.0.3)
+│   ├── mira-client/               # Electron 客户端 mira-web (v1.0.5)
 │   ├── mira-dashboard-next/       # Web 管理面板 (v0.0.0)
+│   ├── mira-browser-extension/    # Chrome MV3 扩展 (v0.1.0)
+│   ├── vue-masonry/               # 瀑布流组件 @hunmer/vue-masonry (v0.1.0)
 │   ├── mira-scripts-core/         # 脚本工具集 (v1.0.5)
-│   └── mira-doc/                  # 文档站 (v1.0.0)
+│   ├── mira-doc/                  # 文档站 (v1.0.0)
+│   └── landing-page/              # 官方落地页 efferd-ui (v0.1.0,独立 lockfile)
 ├── plugins/
 │   ├── CLAUDE.md                  # 插件集合文档
 │   ├── plugins/
-│   │   ├── plugins.json           # 插件注册配置
+│   │   ├── plugins.json           # 插件注册配置(13 个)
 │   │   ├── librarys.json          # 库配置
-│   │   ├── mira_n8n/              # n8n 集成插件 (v1.0.7)
-│   │   ├── mira_thumb_imagemagick/# ImageMagick 缩略图插件 (v1.0.0)
-│   │   └── mira_duplicate_scanner/# 重复文件扫描插件 (v1.0.0)
+│   │   ├── mira_n8n/              # n8n 集成 (v1.0.7,旧协议)
+│   │   ├── mira_duplicate_scanner/# 重复扫描 (v1.0.0,旧协议)
+│   │   ├── mira_eagle_extension/  # Eagle 协议 (v1.0.0,旧协议)
+│   │   ├── mira_3d_format/        # GLB/GLTF (v1.0.1,格式协议,+web)
+│   │   ├── mira_spine_format/     # Spine (v1.1.0,格式协议,+web)
+│   │   ├── mira_epub_format/      # EPUB (v1.0.0,格式协议,+web)
+│   │   ├── mira_livp_format/      # LIVP (v1.0.0,格式协议,+web)
+│   │   ├── mira_lottie_format/    # dotLottie (v1.0.0,格式协议,+web)
+│   │   ├── mira_pag_format/       # PAG (v1.0.0,格式协议,+web)
+│   │   ├── mira_swf_format/       # SWF (v1.0.0,格式协议,+web)
+│   │   ├── mira_zipper_format/    # ZIP (v1.0.0,格式协议,+web)
+│   │   ├── pdf-viewer/            # PDF 预览 (v1.0.0,格式协议,+web)
+│   │   └── psd-viewer/            # PSD 预览 (v1.0.0,格式协议,+web)
 │   └── old_plugins/
-│       └── mira_thumb/            # 旧版缩略图插件 (v1.0.19)
-├── online_client_plugins/         # 客户端插件(动态加载)
+│       └── mira_thumb/            # 旧版缩略图插件 (已弃用)
+├── online_client_plugins/         # 客户端在线插件(动态加载)
+│   ├── plugins.json               # 自动生成的索引
+│   └── plugins/                   # 各客户端插件(mira-3d-format-preview 等)
 ├── scripts/                       # 构建辅助(build-client-plugins-index.mjs 等)
 ├── docs/                          # 文档产物(typedoc / dependency-cruiser)
 ├── data/                          # 运行时数据
 ├── dist/                          # 构建输出
 ├── test/                          # 仓库级测试
-├── tool.js                        # 辅助工具脚本(25KB)
+├── tool.js                        # 辅助工具脚本
 └── deploy.bat                     # Windows 部署脚本
 ```
-
-## 工作区陈旧条目(磁盘不存在)
-
-- `packages/mira-server-sdk-examples`(workspace.yaml 列出但已移除)
-- `packages/n8n-nodes-mira-ws-trigger`(同上)
-
-## 迁移期临时产物(根目录,untracked)
-
-- `task_plan.md` / `progress.md` / `findings.md`:shadcn-vue 迁移计划与进度(Phase 1–8 已完成)
-- `handoff-dropdown-animation.md`:未决弹出层动画 bug 交接
 
 ## 已移除/合并模块
 
@@ -68,3 +74,4 @@ d:\mira_typescript\
 - `mira-storage-sqlite` → 合并到 `mira-app-core/src/storage/sqlite/`
 - `mira-server-sdk` → 合并到 `mira-app-core/src/shared/sdk/`
 - `mira_user` / `upload_statistics` 插件 → 功能内置于服务端
+- `mira_thumb_imagemagick` → 由格式插件体系 + 内置 ThumbnailService 取代

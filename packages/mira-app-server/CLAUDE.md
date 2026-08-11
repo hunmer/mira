@@ -25,6 +25,7 @@
 | [claude/overview.md](claude/overview.md) | 模块总览、职责、构建命令、依赖 |
 | [claude/conventions.md](claude/conventions.md) | 命名/路由/权限/插件/配置约定 |
 | [claude/module-responsibilities.md](claude/module-responsibilities.md) | 各模块/文件职责分解 |
+| [claude/plugin-system.md](claude/plugin-system.md) | **插件双协议调度详解**(ServerPlugin / registerFileFormat) |
 | [claude/entrypoints.md](claude/entrypoints.md) | 入口与启动流程（index / cli / MiraServer） |
 | [claude/public-interfaces.md](claude/public-interfaces.md) | HTTP / WebSocket 公开接口 |
 | [claude/dependencies-and-config.md](claude/dependencies-and-config.md) | 依赖、环境变量、配置文件 |
@@ -35,7 +36,8 @@
 
 ## 扫描状态
 
-- **扫描日期**: 2026-08-05
-- **包版本**: 2.0.1（`package.json`）；`src/cli.ts` 内嵌字符串仍为旧版本号（`1.0.17` / `v1.0.0`），未同步。
-- **扫描范围**: `package.json`、`src/` 顶层 + `routes/` / `handlers/` / `middleware/` / `services/` 目录、`src/index.ts`、`src/MiraServer.ts`、`src/cli.ts`、`src/server.ts`、`src/HttpServer.ts`、`src/WebSocketServer.ts`、`src/middleware/permission.ts`、`src/routes/BaseRouter.ts`、`src/SettingsManager.ts`、`src/ServerPluginManager.ts`（前若干行）、`src/plugins/plugins.json`、`data/librarys.json`、`.env.example`、`tsconfig.json`（未扫描）。`src/plugins/node_modules` 与 dist 产物未纳入。
-- **未扫描/未发现**: `sdk/` 目录在 `package.json` 中被引用（`sdk/jest.config.js`、`sdk/scripts/`、`sdk/examples/`、`sdk/tsconfig.json`）但当前会话未读取其内容；`API_REFERENCE.md` / `Dockerfile*` / `README.md` 未读取。
+- **扫描日期**: 2026-08-11(增量)
+- **包版本**: 2.0.3(`package.json`);`src/cli.ts` 内嵌字符串仍为旧版本号(`1.0.17` / `v1.0.0`),未同步。
+- **本次新增**: 深扫 `src/ServerPluginManager.ts` 全文(576 行),产出 [claude/plugin-system.md](claude/plugin-system.md) — 双协议调度、FileFormatManager↔ThumbnailService/MetadataService 联动、Web plugin manifest 解析、viewer iframe 解析、生命周期。
+- **扫描范围**: `package.json`、`src/` 顶层 + `routes/` / `handlers/` / `middleware/` / `services/` 目录、`src/index.ts`、`src/MiraServer.ts`、`src/cli.ts`、`src/server.ts`、`src/HttpServer.ts`、`src/WebSocketServer.ts`、`src/middleware/permission.ts`、`src/routes/BaseRouter.ts`、`src/SettingsManager.ts`、`src/ServerPluginManager.ts`(全量)、`src/plugins/plugins.json`、`data/librarys.json`、`.env.example`。`src/plugins/node_modules` 与 dist 产物未纳入。
+- **未扫描/未发现**: `src/ServerPlugin.ts` 基类实现细节、`HttpRouter.ts`(43K)中 `/server-plugins/` 静态服务与 `runHttpHooks` 调用点、`sdk/` 目录、`API_REFERENCE.md` / `Dockerfile*` / `README.md`。

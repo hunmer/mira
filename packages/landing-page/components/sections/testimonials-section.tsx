@@ -1,6 +1,7 @@
 "use client";
 import { motion } from "motion/react";
 import React from "react";
+import { useI18n } from "@/lib/i18n/i18n-provider";
 
 type Testimonial = {
   text: string;
@@ -8,6 +9,18 @@ type Testimonial = {
   name: string;
   role: string;
 };
+
+const IMAGES = [
+  "https://randomuser.me/api/portraits/women/1.jpg",
+  "https://randomuser.me/api/portraits/men/2.jpg",
+  "https://randomuser.me/api/portraits/women/3.jpg",
+  "https://randomuser.me/api/portraits/men/4.jpg",
+  "https://randomuser.me/api/portraits/women/5.jpg",
+  "https://randomuser.me/api/portraits/women/6.jpg",
+  "https://randomuser.me/api/portraits/men/7.jpg",
+  "https://randomuser.me/api/portraits/women/8.jpg",
+  "https://randomuser.me/api/portraits/men/9.jpg",
+];
 
 function TestimonialsColumn(props: {
   className?: string;
@@ -64,81 +77,29 @@ function TestimonialsColumn(props: {
   );
 }
 
-const testimonials: Testimonial[] = [
-  {
-    text: "This ERP revolutionized our operations, streamlining finance and inventory. The cloud-based platform keeps us productive, even remotely.",
-    image: "https://randomuser.me/api/portraits/women/1.jpg",
-    name: "Briana Patton",
-    role: "Operations Manager",
-  },
-  {
-    text: "Implementing this ERP was smooth and quick. The customizable, user-friendly interface made team training effortless.",
-    image: "https://randomuser.me/api/portraits/men/2.jpg",
-    name: "Bilal Ahmed",
-    role: "IT Manager",
-  },
-  {
-    text: "The support team is exceptional, guiding us through setup and providing ongoing assistance, ensuring our satisfaction.",
-    image: "https://randomuser.me/api/portraits/women/3.jpg",
-    name: "Saman Malik",
-    role: "Customer Support Lead",
-  },
-  {
-    text: "This ERP's seamless integration enhanced our business operations and efficiency. Highly recommend for its intuitive interface.",
-    image: "https://randomuser.me/api/portraits/men/4.jpg",
-    name: "Omar Raza",
-    role: "CEO",
-  },
-  {
-    text: "Its robust features and quick support have transformed our workflow, making us significantly more efficient.",
-    image: "https://randomuser.me/api/portraits/women/5.jpg",
-    name: "Zainab Hussain",
-    role: "Project Manager",
-  },
-  {
-    text: "The smooth implementation exceeded expectations. It streamlined processes, improving overall business performance.",
-    image: "https://randomuser.me/api/portraits/women/6.jpg",
-    name: "Aliza Khan",
-    role: "Business Analyst",
-  },
-  {
-    text: "Our business functions improved with a user-friendly design and positive customer feedback.",
-    image: "https://randomuser.me/api/portraits/men/7.jpg",
-    name: "Farhan Siddiqui",
-    role: "Marketing Director",
-  },
-  {
-    text: "They delivered a solution that exceeded expectations, understanding our needs and enhancing our operations.",
-    image: "https://randomuser.me/api/portraits/women/8.jpg",
-    name: "Sana Sheikh",
-    role: "Sales Manager",
-  },
-  {
-    text: "Using this ERP, our online presence and conversions significantly improved, boosting business performance.",
-    image: "https://randomuser.me/api/portraits/men/9.jpg",
-    name: "Hassan Ali",
-    role: "E-commerce Manager",
-  },
-];
-
-const firstColumn = testimonials.slice(0, 3);
-const secondColumn = testimonials.slice(3, 6);
-const thirdColumn = testimonials.slice(6, 9);
-
 export function TestimonialsSection() {
+  const { t } = useI18n();
+  const items = t.testimonials.items.map((it, i) => ({
+    ...it,
+    image: IMAGES[i] ?? IMAGES[0],
+  }));
+  const firstColumn = items.slice(0, 3);
+  const secondColumn = items.slice(3, 6);
+  const thirdColumn = items.slice(6, 9);
+
   return (
     <section className="relative py-10">
       <div className="mx-auto max-w-5xl">
         <div className="mx-auto flex max-w-sm flex-col items-center justify-center gap-4">
           <div className="flex justify-center">
-            <div className="rounded-lg border px-4 py-1">Testimonials</div>
+            <div className="rounded-lg border px-4 py-1">{t.testimonials.tag}</div>
           </div>
 
           <h2 className="font-bold text-3xl tracking-tighter lg:text-4xl">
-            What our users say
+            {t.testimonials.title}
           </h2>
           <p className="text-center text-muted-foreground text-sm">
-            See what our customers have to say about us.
+            {t.testimonials.subtitle}
           </p>
         </div>
 

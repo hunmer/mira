@@ -1,12 +1,13 @@
 "use client";
 
-import { type LucideIcon, Mail, MapPin, Phone } from "lucide-react";
+import { BookOpenIcon, type LucideIcon, Mail, MapPin } from "lucide-react";
 import type React from "react";
+import { useI18n } from "@/lib/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
-const APP_EMAIL = "mail@example.com";
-const APP_PHONE = "+92 300 1234567";
-const APP_PHONE_2 = "+92 321 9876543";
+const APP_EMAIL = "support@mira.app";
+const GITHUB_URL = "https://github.com/hunmer/mira_typescript";
+const DOCS_URL = "https://github.com/hunmer/mira_typescript";
 
 function BorderSeparator({ className }: React.ComponentProps<"div">) {
   return (
@@ -72,34 +73,31 @@ const XIcon = (props: React.ComponentProps<"svg">) => (
 );
 
 export function ContactSection() {
+  const { t } = useI18n();
+  const c = t.contact;
+
   const socialLinks = [
     {
       icon: GithubIcon,
-      href: "#",
+      href: GITHUB_URL,
       label: "GitHub",
     },
     {
       icon: XIcon,
-      href: "#",
-      label: "Twitter",
+      href: GITHUB_URL,
+      label: c.issueLabel,
     },
   ];
 
   return (
     <div className="relative mx-auto w-full max-w-5xl lg:border-x">
       <div className="flex grow flex-col justify-center px-4 py-18 md:items-center">
-        <h1 className="font-bold text-4xl md:text-5xl">Contact Us</h1>
-        <p className="mb-5 text-base text-muted-foreground">
-          Contact the support team at efferd.
-        </p>
+        <h1 className="font-bold text-4xl md:text-5xl">{c.title}</h1>
+        <p className="mb-5 text-base text-muted-foreground">{c.subtitle}</p>
       </div>
       <BorderSeparator />
       <div className="grid md:grid-cols-3">
-        <Box
-          description="We respond to all emails within 24 hours."
-          icon={Mail}
-          title="Email"
-        >
+        <Box description={c.emailDesc} icon={Mail} title={c.emailTitle}>
           <a
             className="font-medium font-mono text-sm tracking-wide hover:underline"
             href={`mailto:${APP_EMAIL}`}
@@ -107,41 +105,36 @@ export function ContactSection() {
             {APP_EMAIL}
           </a>
         </Box>
-        <Box
-          description="Drop by our office for a chat."
-          icon={MapPin}
-          title="Office"
-        >
-          <span className="font-medium font-mono text-sm tracking-wide">
-            Office # 100, 101 Second Floor Kohinoor 1, Faisalabad, Pakistan
-          </span>
+        <Box description={c.githubDesc} icon={MapPin} title={c.githubTitle}>
+          <a
+            className="block font-medium font-mono text-sm tracking-wide hover:underline break-all"
+            href={GITHUB_URL}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            {c.githubLink}
+          </a>
         </Box>
         <Box
           className="border-b-0 md:border-r-0"
-          description="We're available Mon-Fri, 9am-5pm."
-          icon={Phone}
-          title="Phone"
+          description={c.docsDesc}
+          icon={BookOpenIcon}
+          title={c.docsTitle}
         >
-          <div>
-            <a
-              className="block font-medium font-mono text-sm tracking-wide hover:underline"
-              href={`tel:${APP_PHONE}`}
-            >
-              {APP_PHONE}
-            </a>
-            <a
-              className="block font-medium font-mono text-sm tracking-wide hover:underline"
-              href={`tel:${APP_PHONE_2}`}
-            >
-              {APP_PHONE_2}
-            </a>
-          </div>
+          <a
+            className="block font-medium font-mono text-sm tracking-wide hover:underline"
+            href={DOCS_URL}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            {c.docsLink}
+          </a>
         </Box>
       </div>
       <BorderSeparator />
       <div className="z-1 flex h-full flex-col items-center justify-center gap-4 py-24">
         <h2 className="text-center font-medium text-2xl text-muted-foreground tracking-tight md:text-3xl">
-          Find us <span className="text-foreground">online</span>
+          {c.communityLead} <span className="text-foreground">{c.communityHighlight}</span>
         </h2>
         <div className="flex flex-wrap items-center gap-2">
           {socialLinks.map((link) => (

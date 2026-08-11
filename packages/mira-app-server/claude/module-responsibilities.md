@@ -11,8 +11,8 @@
 | `src/WebSocketServer.ts` | ~11K | `MiraWebsocketServer`：基于 `ws`，`libraryClients` 按 `libraryId` 分组管理连接、query 鉴权、`WebSocketRouter` 分发；定义 `ConnectedClient` / `WSUserInfo`。 |
 | `src/LibraryStorage.ts` | ~11K | 多素材库加载/卸载/启用/禁用，读取 `data/librarys.json`。 |
 | `src/LibraryWatcher.ts` | ~11K | chokidar 监视库目录变更。 |
-| `src/ServerPluginManager.ts` | ~12K | 插件生命周期、`plugins.json` 读取、HTTP Hook 注册与匹配、`MiraClient` 注入；定义 `PluginConfig`、`HttpHookDefinition`、`HttpHookContext`。 |
-| `src/ServerPlugin.ts` | ~4K | 插件基类 `ServerPlugin`、`PluginRouteDefinition`。 |
+| `src/ServerPluginManager.ts` | 576 行 | **双协议插件管理器**(per-library):协议 A `extends ServerPlugin`(HTTP Hook / 路由 / cleanup)、协议 B `registerFileFormat(ServerFileFormatHandler)`(联动 ThumbnailService + MetadataService + Web viewer iframe 解析);含生命周期(load/unload/reload/addPlugin)、Web plugin manifest 校验、插件列表元数据。详见 [plugin-system.md](plugin-system.md)。定义 `PluginConfig`、`HttpHookDefinition`、`HttpHookContext`、`ServerFileFormatHandler`、`ServerPreviewViewerDefinition`、`ResolvedPreviewViewer`。 |
+| `src/ServerPlugin.ts` | ~4K | 协议 A 插件基类 `ServerPlugin`(配置读写、路由注册)、`PluginRouteDefinition`。 |
 | `src/UserStorage.ts` | ~15K | 用户管理、认证、会话（SQLite `users.db`）。 |
 | `src/SettingsManager.ts` | ~52 行 | 全局设置：`ServerSettings`（`authRequired`、`allowRegistration`、`dashboardPort`）读写 `data/settings.json`，含默认值合并。 |
 | `src/types.ts` | ~32 行 | 共享类型：`User`、`Session`、`WebSocketMessage`。 |

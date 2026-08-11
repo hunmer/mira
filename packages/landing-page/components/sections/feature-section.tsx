@@ -1,13 +1,17 @@
+"use client";
+
+import { motion, useReducedMotion } from "motion/react";
 import type React from "react";
 import {
-  Cpu,
-  Fingerprint,
-  Pencil,
-  Settings2,
-  Sparkles,
-  Zap,
+  Blocks,
+  Boxes,
+  Cable,
+  MonitorDot,
+  Plug,
+  Terminal,
 } from "lucide-react";
 import { GridPattern } from "@/components/ui/grid-pattern";
+import { useI18n } from "@/lib/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 type FeatureType = {
@@ -20,11 +24,7 @@ type FeatureCardPorps = React.ComponentProps<"div"> & {
   feature: FeatureType;
 };
 
-function FeatureCard({
-  feature,
-  className,
-  ...props
-}: FeatureCardPorps) {
+function FeatureCard({ feature, className, ...props }: FeatureCardPorps) {
   return (
     <div className={cn("relative overflow-hidden p-6", className)} {...props}>
       <div className="-mt-2 -ml-20 pointer-events-none absolute top-0 left-1/2 size-full [mask-image:radial-gradient(farthest-side_at_top,white,transparent)]">
@@ -48,49 +48,28 @@ function FeatureCard({
   );
 }
 
-const features: FeatureType[] = [
-  {
-    title: "Faaast",
-    icon: Zap,
-    description: "It supports an entire helping developers and innovate.",
-  },
-  {
-    title: "Powerful",
-    icon: Cpu,
-    description: "It supports an entire helping developers and businesses.",
-  },
-  {
-    title: "Security",
-    icon: Fingerprint,
-    description: "It supports an helping developers businesses.",
-  },
-  {
-    title: "Customization",
-    icon: Pencil,
-    description: "It supports helping developers and businesses innovate.",
-  },
-  {
-    title: "Control",
-    icon: Settings2,
-    description: "It supports helping developers and businesses innovate.",
-  },
-  {
-    title: "Built for AI",
-    icon: Sparkles,
-    description: "It supports helping developers and businesses innovate.",
-  },
-];
-
 export function FeatureSection() {
+  const { t } = useI18n();
+  const items = t.feature.items;
+
+  const features: FeatureType[] = [
+    { title: items.cli.title, icon: Terminal, description: items.cli.description },
+    { title: items.mcp.title, icon: Cable, description: items.mcp.description },
+    { title: items.skill.title, icon: Blocks, description: items.skill.description },
+    { title: items.library.title, icon: Boxes, description: items.library.description },
+    { title: items.plugin.title, icon: Plug, description: items.plugin.description },
+    { title: items.device.title, icon: MonitorDot, description: items.device.description },
+  ];
+
   return (
     <section className="place-content-center py-20">
       <div className="mx-auto w-full max-w-5xl space-y-8 p-4">
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="text-balance font-medium text-2xl md:text-4xl lg:text-5xl">
-            Power. Speed. Control.
+            {t.feature.title}
           </h2>
           <p className="mt-4 text-balance text-muted-foreground text-sm md:text-base">
-            Everything you need to build fast, secure, scalable apps.
+            {t.feature.subtitle}
           </p>
         </div>
 

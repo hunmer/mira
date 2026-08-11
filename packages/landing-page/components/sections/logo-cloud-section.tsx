@@ -1,5 +1,7 @@
-// https://motion-primitives.com/docs/infinite-slider
+"use client";
+
 import { InfiniteSlider } from "@/components/ui/infinite-slider";
+import { useI18n } from "@/lib/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 type Logo = {
@@ -40,47 +42,30 @@ function LogoCloud({ className, logos, ...props }: LogoCloudProps) {
 }
 
 const logos = [
-  {
-    src: "https://svgl.app/library/nvidia-wordmark-light.svg",
-    alt: "Nvidia Logo",
-  },
-  {
-    src: "https://svgl.app/library/supabase_wordmark_light.svg",
-    alt: "Supabase Logo",
-  },
+  { src: "https://svgl.app/library/typescript.svg", alt: "TypeScript Logo" },
+  { src: "https://svgl.app/library/electron.svg", alt: "Electron Logo" },
+  { src: "https://svgl.app/library/nodejs.svg", alt: "Node.js Logo" },
+  { src: "https://svgl.app/library/react.svg", alt: "React Logo" },
+  { src: "https://svgl.app/library/sqlite.svg", alt: "SQLite Logo" },
+  { src: "https://svgl.app/library/ffmpeg.svg", alt: "FFmpeg Logo" },
   {
     src: "https://svgl.app/library/openai_wordmark_light.svg",
     alt: "OpenAI Logo",
   },
   {
-    src: "https://svgl.app/library/turso-wordmark-light.svg",
-    alt: "Turso Logo",
-  },
-  {
-    src: "https://svgl.app/library/vercel_wordmark.svg",
-    alt: "Vercel Logo",
-  },
-  {
-    src: "https://svgl.app/library/github_wordmark_light.svg",
-    alt: "GitHub Logo",
-  },
-  {
     src: "https://svgl.app/library/claude-ai-wordmark-icon_light.svg",
     alt: "Claude AI Logo",
-  },
-  {
-    src: "https://svgl.app/library/clerk-wordmark-light.svg",
-    alt: "Clerk Logo",
   },
 ];
 
 export function LogoCloudSection() {
+  const { t } = useI18n();
   return (
-    <section className="relative mx-auto max-w-3xl">
+    <section className="relative mx-auto max-w-3xl py-10">
       <h2 className="mb-5 text-center font-medium text-foreground text-xl tracking-tight md:text-3xl">
-        <span className="text-muted-foreground">Trusted by experts.</span>
+        <span className="text-muted-foreground">{t.logoCloud.lead}</span>
         <br />
-        <span className="font-semibold">Used by the leaders.</span>
+        <span className="font-semibold">{t.logoCloud.highlight}</span>
       </h2>
       <div className="mx-auto my-5 h-px max-w-sm bg-border [mask-image:linear-gradient(to_right,transparent,black,transparent)]" />
 
