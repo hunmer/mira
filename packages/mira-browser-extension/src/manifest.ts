@@ -9,6 +9,7 @@ export default defineManifest({
   permissions: [
     'activeTab', 'tabs', 'storage', 'scripting',
     'contextMenus', 'sidePanel', 'offscreen', 'commands', 'downloads',
+    'cookies', 'declarativeNetRequestWithHostAccess',
   ],
   host_permissions: ['<all_urls>'],
   background: {

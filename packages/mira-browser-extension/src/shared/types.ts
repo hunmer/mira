@@ -140,6 +140,8 @@ export interface ExtensionSettings {
   snifferMinWidth: number;
   /** 嗅探图片最小高度(px,0 不过滤) */
   snifferMinHeight: number;
+  /** 嗅探图片宽高比过滤(选中的比例 key,空数组不过滤) */
+  snifferAspectRatios: string[];
   snifferKinds: ResourceKind[];
   autoScrollEnabled: boolean;
   /** 滚动间隔(ms) */
@@ -169,6 +171,7 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   snifferSortOrder: 'desc',
   snifferMinWidth: 0,
   snifferMinHeight: 0,
+  snifferAspectRatios: [],
   snifferKinds: ['image', 'audio', 'video'],
   autoScrollEnabled: false,
   autoScrollDelay: 800,

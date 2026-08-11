@@ -37,9 +37,11 @@ const minWidthDraft = ref(String(settings.value.snifferMinWidth || ''));
 const minHeightDraft = ref(String(settings.value.snifferMinHeight || ''));
 watch(() => settings.value.snifferMinWidth, v => { minWidthDraft.value = v ? String(v) : ''; });
 watch(() => settings.value.snifferMinHeight, v => { minHeightDraft.value = v ? String(v) : ''; });
-// 过滤是否激活(任意尺寸过滤非 0)
+// 过滤是否激活(任意尺寸/比例过滤启用)
 const filterActive = computed(() =>
-  settings.value.snifferMinWidth > 0 || settings.value.snifferMinHeight > 0,
+  settings.value.snifferMinWidth > 0 ||
+  settings.value.snifferMinHeight > 0 ||
+  settings.value.snifferAspectRatios.length > 0,
 );
 
 function toggleAutoScrollPopover() {
@@ -173,23 +175,62 @@ async function applyMinHeight() {
   const n = Math.max(0, Math.floor(Number(minHeightDraft.value) || 0));
   if (settings.value.snifferMinHeight !== n) await update({ snifferMinHeight: n });
 }
+
+// 常见宽高比(key=显示值, value=实际比值)。匹配带容差 ±0.05
+const ASPECT_RATIOS: { key: string; value: number }[] = [
+  { key: '1:1', value: 1 },
+  { key: '4:3', value: 4 / 3 },
+  { key: '3:2', value: 3 / 2 },
+  { key: '16:9', value: 16 / 9 },
+  { key: '21:9', value: 21 / 9 },
+  { key: '3:4', value: 3 / 4 },
+  { key: '2:3', value: 2 / 3 },
+  { key: '9:16', value: 9 / 16 },
+];
+const ASPECT_TOLERANCE = 0.05;
+
+function isRatioSelected(key: string): boolean {
+  return settings.value.snifferAspectRatios.includes(key);
+}
+async function toggleRatio(key: string) {
+  const set = new Set(settings.value.snifferAspectRatios);
+  set.has(key) ? set.delete(key) : set.add(key);
+  await update({ snifferAspectRatios: [...set] });
+}
+
 function resetSizeFilter() {
   minWidthDraft.value = '';
   minHeightDraft.value = '';
-  void update({ snifferMinWidth: 0, snifferMinHeight: 0 });
+  void update({ snifferMinWidth: 0, snifferMinHeight: 0, snifferAspectRatios: [] });
 }
 
-// 排序 + 尺寸过滤后的可见资源
+// 排序 + 尺寸过滤(AND: px 阈值 与 比例命中均需满足)后的可见资源
 const visibleResources = computed(() => {
   const order = settings.value.snifferSortOrder;
   const mw = settings.value.snifferMinWidth;
   const mh = settings.value.snifferMinHeight;
+  const ratios = settings.value.snifferAspectRatios;
+  const ratioValues = ASPECT_RATIOS
+    .filter(r => ratios.includes(r.key))
+    .map(r => r.value);
+  const useSize = mw > 0 || mh > 0;
+  const useRatio = ratioValues.length > 0;
+
   let arr = resources.value;
-  if (mw > 0 || mh > 0) {
-    arr = arr.filter(r =>
-      (mw <= 0 || (r.width ?? 0) >= mw) &&
-      (mh <= 0 || (r.height ?? 0) >= mh),
-    );
+  if (useSize || useRatio) {
+    arr = arr.filter(r => {
+      const w = r.width ?? 0;
+      const h = r.height ?? 0;
+      // px 尺寸:宽高均需达阈值(未设阈值项跳过)
+      if (useSize && !((mw <= 0 || w >= mw) && (mh <= 0 || h >= mh))) return false;
+      // 比例:无尺寸数据直接排除;否则命中任一比例(OR)且带容差
+      if (useRatio) {
+        if (!w || !h) return false;
+        const actual = w / h;
+        if (!ratioValues.some(rv => Math.abs(actual - rv) <= ASPECT_TOLERANCE)) return false;
+      }
+      return true;
+    });
   }
   const sorted = [...arr];
   sorted.sort((a, b) => order === 'desc' ? b.sniffedAt - a.sniffedAt : a.sniffedAt - b.sniffedAt);
@@ -352,6 +393,18 @@ async function downloadSelected() {
             <Input v-model="minHeightDraft" type="number" min="0" placeholder="0" @change="applyMinHeight" @blur="applyMinHeight" />
             <span class="unit">px</span>
           </label>
+          <!-- 宽高比:多选 chip -->
+          <div class="filter-group-vertical">
+            <span class="filter-label">{{ t('sniffer.aspectRatio') }}</span>
+            <div class="ratio-chips">
+              <button
+                v-for="r in ASPECT_RATIOS" :key="r.key"
+                type="button" class="chip"
+                :class="{ active: isRatioSelected(r.key) }"
+                @click="toggleRatio(r.key)"
+              >{{ r.key }}</button>
+            </div>
+          </div>
           <p class="popover-hint">{{ t('sniffer.sizeFilterHint') }}</p>
           <div class="popover-ops">
             <Button size="sm" variant="ghost" @click="resetSizeFilter">{{ t('sniffer.resetFilter') }}</Button>
@@ -480,9 +533,23 @@ async function downloadSelected() {
 .filter-wrap { position: relative; flex-shrink: 0; }
 .filter-popover { width: 240px; }
 .filter-group { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.filter-group-vertical { display: flex; flex-direction: column; gap: 6px; }
 .filter-label { font-size: 12px; color: var(--muted); }
 .seg-group { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
 .seg-group .seg { width: auto; min-width: 40px; height: 26px; padding: 0 8px; font-size: 12px; }
+
+/* 宽高比多选 chip */
+.ratio-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  height: 24px; padding: 0 10px;
+  font-size: 12px; line-height: 1;
+  background: var(--bg-elev); color: var(--muted);
+  border: 1px solid var(--border); border-radius: 9999px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.chip:hover { color: var(--fg); }
+.chip.active { background: var(--primary); color: var(--primary-fg); border-color: var(--primary); }
 
 .popover {
   position: absolute;

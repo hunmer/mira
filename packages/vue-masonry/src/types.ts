@@ -77,3 +77,16 @@ export interface MasonryProps<T = any> {
   /** 懒加载触发的 rootMargin,默认 "300px" */
   lazyRootMargin?: string
 }
+
+/**
+ * Masonry 事件定义
+ */
+export interface MasonryEmits<T = any> {
+  /**
+   * 布局完成（含 fill 模式重排）后，按实际渲染顺序抛出 item 数组。
+   * 父组件可据此修正"视觉顺序 ≠ 数据源顺序"导致的逻辑（如 Shift 范围选择）。
+   */
+  (e: "layout-order", items: T[]): void
+  /** 布局渲染完成（兼容既有 after-render） */
+  (e: "after-render"): void
+}

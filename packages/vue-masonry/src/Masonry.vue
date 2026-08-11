@@ -19,6 +19,7 @@ import { cn } from "./utils"
 import LazyCell from "./LazyCell.vue"
 import type {
   MasonryColumns,
+  MasonryEmits,
   MasonryItemMeta,
   MasonryProps,
   MasonrySortOption
@@ -43,7 +44,7 @@ const props = withDefaults(defineProps<MasonryProps<VT>>(), {
   lazyRootMargin: "300px"
 })
 
-const emit = defineEmits<{ (e: "after-render"): void }>()
+const emit = defineEmits<MasonryEmits<VT>>()
 
 const revealedKeys = ref<Set<string | number>>(new Set())
 
@@ -432,10 +433,17 @@ function itemExit(): any {
     : { opacity: 0 }
 }
 
-/* 监听 placed 变化触发 after-render 事件(向上层暴露渲染完成) */
+/* 监听 placed 变化触发 after-render 事件(向上层暴露渲染完成)，并抛出实际渲染顺序 */
 watch(
   () => placed.value,
-  () => emit("after-render"),
+  (val) => {
+    emit("after-render")
+    // fill 模式下 placed.items 顺序 ≠ 数据源顺序；按实际渲染顺序抛出 item 数组，
+    // 供父组件修正"视觉顺序 ≠ 数据源顺序"相关逻辑（如 Shift 范围选择）
+    if (val.items.length > 0) {
+      emit("layout-order", val.items.map(p => p.item))
+    }
+  },
   { flush: "post" }
 )
 </script>

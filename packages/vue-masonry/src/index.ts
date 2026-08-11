@@ -3,5 +3,6 @@ export type {
   MasonryColumns,
   MasonryItemMeta,
   MasonrySortOption,
-  MasonryProps
+  MasonryProps,
+  MasonryEmits
 } from "./types"

@@ -37,6 +37,7 @@
       :layout-mode="layoutMode"
       :lazy-root-margin="lazyRootMargin"
       @after-render="handleAfterRender"
+      @layout-order="handleLayoutOrder"
     >
       <template #default="{ item, preload }">
         <MediaWaterfallItem
@@ -390,6 +391,13 @@ const handleItemClick = (item: FileInfo, _event: MouseEvent) => {
   emit('click', item)
 }
 
+// Masonry fill 模式会重排 item 视觉顺序，使其 ≠ props.items 数据源顺序。
+// 这里记录 Masonry 实际渲染顺序，用于修正 Shift 范围选择（按视觉顺序而非数据源顺序算区间）。
+const layoutOrder = ref<string[]>([])
+const handleLayoutOrder = (items: FileInfo[]) => {
+  layoutOrder.value = items.map(i => i.id)
+}
+
 const selectFromClick = (item: FileInfo, event: MouseEvent) => {
   const selected = props.selectedItems.includes(item.id)
 
@@ -398,19 +406,18 @@ const selectFromClick = (item: FileInfo, event: MouseEvent) => {
     return
   }
 
-  // Shift 范围选择：以当前已选最后一项为锚，选中两者之间的所有项（与 Grid 视图一致）
+  // Shift 范围选择：以当前已选最后一项为锚，选中两者之间的所有项（与 Grid 视图一致）。
+  // 注意：Masonry fill 模式会重排 item 视觉顺序，使其 ≠ props.items 数据源顺序。
+  // 因此按 Masonry 实际渲染顺序（layoutOrder）算区间，而非数据源顺序。
   if (event.shiftKey && props.selectedItems.length > 0) {
+    const order = layoutOrder.value.length > 0 ? layoutOrder.value : props.items.map(i => i.id)
     const lastSelectedId = props.selectedItems[props.selectedItems.length - 1]
-    const currentIndex = props.items.findIndex(i => i.id === item.id)
-    const lastIndex = props.items.findIndex(i => i.id === lastSelectedId)
+    const currentIndex = order.indexOf(item.id)
+    const lastIndex = order.indexOf(lastSelectedId)
     if (currentIndex !== -1 && lastIndex !== -1) {
       const start = Math.min(currentIndex, lastIndex)
       const end = Math.max(currentIndex, lastIndex)
-      const rangeIds = new Set<string>()
-      for (let i = start; i <= end; i++) {
-        const rangeItem = props.items[i]
-        if (rangeItem) rangeIds.add(rangeItem.id)
-      }
+      const rangeIds = new Set<string>(order.slice(start, end + 1))
       props.items.forEach(currentItem => {
         const inRange = rangeIds.has(currentItem.id)
         const wasSelected = props.selectedItems.includes(currentItem.id)

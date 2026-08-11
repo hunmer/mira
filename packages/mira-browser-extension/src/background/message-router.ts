@@ -12,6 +12,7 @@ import type { SniffedResource } from '@/shared/types';
 import { dbg } from '@/shared/debug';
 import { sendToContent } from './inject';
 import { resourceFilename } from '@/shared/resource-filename';
+import { fetchResource } from './resource-fetch';
 
 export interface RouterDeps {
   uploader: Uploader;
@@ -159,13 +160,8 @@ export function createRouter(deps: RouterDeps): RequestHandler {
         let ok = 0;
         for (const item of items) {
           try {
-            const res = await fetch(item.url, {
-              credentials: 'include',
-              ...(item.referrer ? {
-                referrer: item.referrer,
-                referrerPolicy: 'no-referrer-when-downgrade' as ReferrerPolicy,
-              } : {}),
-            });
+            const res = await fetchResource(item.url, item.referrer);
+            if (!res.ok) throw new Error(`resource fetch failed: ${res.status}`);
             const buf = new Uint8Array(await res.arrayBuffer());
             // 同名冲突时加序号避免覆盖
             let name = item.filename;
