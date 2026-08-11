@@ -47,10 +47,11 @@ export function SiteHeaderSection() {
     };
   }, [open]);
 
+  const DOCS_URL = "https://miraapp.cc/docs";
   const links = [
-    { title: t.nav.features, href: "#" },
-    { title: t.nav.docs, href: "#" },
-    { title: t.nav.install, href: "#" },
+    { title: t.nav.features, href: "#features" },
+    { title: t.nav.docs, href: DOCS_URL },
+    { title: t.nav.install, href: DOCS_URL },
   ];
 
   return (
@@ -65,7 +66,7 @@ export function SiteHeaderSection() {
     >
       <nav className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between px-4">
         <div className="flex items-center gap-5">
-          <a className="rounded-md p-2 hover:bg-accent" href="#">
+          <a className="rounded-md p-2 hover:bg-accent" href="/home">
             <Image
               alt={SITE_NAME}
               height={20}

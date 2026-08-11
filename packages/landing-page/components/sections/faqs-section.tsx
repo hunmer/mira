@@ -31,7 +31,7 @@ export function FaqsSection() {
           <p className="text-muted-foreground">{t.faqs.subtitle}</p>
           <p className="text-muted-foreground">
             {t.faqs.contactLead}{" "}
-            <a className="text-primary hover:underline" href="#">
+            <a className="text-primary hover:underline" href="#contact">
               {t.faqs.contactLink}
             </a>
           </p>

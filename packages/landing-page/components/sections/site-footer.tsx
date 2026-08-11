@@ -1,5 +1,5 @@
 "use client";
-import { GithubIcon, LinkedinIcon, XIcon, YoutubeIcon } from "lucide-react";
+import { GithubIcon } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import type React from "react";
 import type { ComponentProps, ReactNode } from "react";
@@ -8,6 +8,7 @@ import { useI18n } from "@/lib/i18n/i18n-provider";
 
 const GITHUB_URL = "https://github.com/hunmer/mira";
 const ISSUE_URL = "https://github.com/hunmer/mira/issues";
+const DOCS_URL = "https://miraapp.cc/docs";
 
 type FooterLink = {
   title: string;
@@ -60,19 +61,19 @@ export function SiteFooterSection() {
     {
       label: t.footer.groups.product,
       links: [
-        { title: p.features, href: "#" },
-        { title: p.install, href: "#" },
-        { title: p.cli, href: "#" },
-        { title: p.mcp, href: "#" },
+        { title: p.features, href: DOCS_URL },
+        { title: p.install, href: DOCS_URL },
+        { title: p.cli, href: DOCS_URL },
+        { title: p.mcp, href: DOCS_URL },
       ],
     },
     {
       label: t.footer.groups.resources,
       links: [
-        { title: r.docs, href: "#" },
-        { title: r.faqs, href: "#" },
-        { title: r.changelog, href: "#" },
-        { title: r.plugins, href: "#" },
+        { title: r.docs, href: DOCS_URL },
+        { title: r.faqs, href: "#faqs" },
+        { title: r.changelog, href: DOCS_URL },
+        { title: r.plugins, href: DOCS_URL },
       ],
     },
     {
@@ -80,18 +81,13 @@ export function SiteFooterSection() {
       links: [
         { title: c.github, href: GITHUB_URL },
         { title: c.issue, href: ISSUE_URL },
-        { title: c.skill, href: "#" },
-        { title: c.contributing, href: "#" },
+        { title: c.skill, href: DOCS_URL },
+        { title: c.contributing, href: DOCS_URL },
       ],
     },
     {
       label: t.footer.groups.follow,
-      links: [
-        { title: "GitHub", href: GITHUB_URL, icon: GithubIcon },
-        { title: "X", href: "#", icon: XIcon },
-        { title: "Youtube", href: "#", icon: YoutubeIcon },
-        { title: "LinkedIn", href: "#", icon: LinkedinIcon },
-      ],
+      links: [{ title: "GitHub", href: GITHUB_URL, icon: GithubIcon }],
     },
   ];
 

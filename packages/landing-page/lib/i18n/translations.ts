@@ -72,47 +72,47 @@ export const zh = {
     items: [
       {
         text: "Mira 把我散落在多个硬盘的素材整理得井井有条，配合 CLI 批量打标签，效率比以前高了十倍不止。",
-        name: "林晓宇",
+        name: "匿名用户 1",
         role: "视频创作者",
       },
       {
         text: "接入 MCP 后，我可以直接让 Claude 帮我检索库里的素材并归档，几乎不用手动操作，体验非常顺滑。",
-        name: "陈宇航",
+        name: "匿名用户 2",
         role: "独立开发者",
       },
       {
         text: "多个独立素材库的设计太实用了，工作和个人素材彻底隔离，启停随心，结构清晰。",
-        name: "王梦琪",
+        name: "匿名用户 3",
         role: "设计团队负责人",
       },
       {
         text: "插件生态让 Mira 能处理我们几乎所有格式，缩略图、预览、转码一条龙，省去了大量工具切换。",
-        name: "赵一帆",
+        name: "匿名用户 4",
         role: "后期工程师",
       },
       {
         text: "WebSocket 的实时设备监控让我们清楚地知道谁在何时连接，团队协作的素材安全有了保障。",
-        name: "刘思颖",
+        name: "匿名用户 5",
         role: "IT 管理员",
       },
       {
         text: "从安装到第一个素材库跑起来只花了五分钟，doctor 命令一键搞定 ffmpeg 依赖，新手友好度满分。",
-        name: "孙佳怡",
+        name: "匿名用户 6",
         role: "自媒体运营",
       },
       {
         text: "Skill 机制让 AI Agent 自动学会怎么操作素材库，简直是 AI 时代素材管理的正确打开方式。",
-        name: "周明远",
+        name: "匿名用户 7",
         role: "AI 应用工程师",
       },
       {
         text: "跨平台的桌面客户端做得很精致，Windows 和 Mac 体验一致，团队里两种系统都能无缝用。",
-        name: "吴婧文",
+        name: "匿名用户 8",
         role: "产品经理",
       },
       {
         text: "开源免费就能用到这样完整的功能，社区响应也很积极，已经把它推荐给了整个摄影小组。",
-        name: "黄子韬",
+        name: "匿名用户 9",
         role: "摄影师",
       },
     ],
@@ -277,47 +277,47 @@ export const en: Dict = {
     items: [
       {
         text: "Mira organized the media scattered across my drives neatly. With the CLI batch-tagging, my efficiency is more than ten times higher.",
-        name: "Lin Xiaoyu",
+        name: "Anonymous 1",
         role: "Video Creator",
       },
       {
         text: "After plugging in MCP, I let Claude search and archive assets in my library — almost zero manual work. The experience is silky smooth.",
-        name: "Chen Yuhang",
+        name: "Anonymous 2",
         role: "Indie Developer",
       },
       {
         text: "Multiple independent libraries is a brilliant design — work and personal media are fully isolated, start/stop on demand, crystal-clear structure.",
-        name: "Wang Mengqi",
+        name: "Anonymous 3",
         role: "Design Team Lead",
       },
       {
         text: "The plugin ecosystem lets Mira handle nearly every format we have — thumbnails, previews, transcoding in one stop, saving tons of tool switching.",
-        name: "Zhao Yifan",
+        name: "Anonymous 4",
         role: "Post-Production Engineer",
       },
       {
         text: "WebSocket real-time monitoring tells us exactly who connects when — our team's media security is in safe hands.",
-        name: "Liu Siying",
+        name: "Anonymous 5",
         role: "IT Administrator",
       },
       {
         text: "From install to first library running took five minutes. The doctor command handles ffmpeg deps in one shot — perfect for newcomers.",
-        name: "Sun Jiayi",
+        name: "Anonymous 6",
         role: "Content Operator",
       },
       {
         text: "The Skill mechanism teaches AI Agents how to operate the library automatically — the right way to do media management in the AI era.",
-        name: "Zhou Mingyuan",
+        name: "Anonymous 7",
         role: "AI Application Engineer",
       },
       {
         text: "The cross-platform desktop client is polished, with identical UX on Windows and Mac. Both work seamlessly across our team.",
-        name: "Wu Jingwen",
+        name: "Anonymous 8",
         role: "Product Manager",
       },
       {
         text: "Open source and free, yet this complete. The community is responsive — I've recommended it to my whole photography group.",
-        name: "Huang Zitao",
+        name: "Anonymous 9",
         role: "Photographer",
       },
     ],

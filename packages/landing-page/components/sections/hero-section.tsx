@@ -1,5 +1,5 @@
 "use client";
-import { ArrowRightIcon, PlusIcon, SparklesIcon } from "lucide-react";
+import { ArrowRightIcon, GithubIcon, PlusIcon, SparklesIcon } from "lucide-react";
 import { motion, useReducedMotion, type Variants } from "motion/react";
 import type { ComponentProps, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,9 @@ import { useI18n } from "@/lib/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 const MotionPlusIcon = motion.create(PlusIcon);
+
+const DOCS_URL = "https://miraapp.cc/docs";
+const RELEASE_URL = "https://github.com/hunmer/mira/releases";
 
 const titleContainerVariants: Variants = {
   hidden: {},
@@ -160,7 +163,7 @@ export function HeroSection() {
         <AnimatedContainer delay={0.05}>
           <a
             className="group inline-flex items-center gap-2 rounded-full border bg-card/60 px-4 py-1.5 text-sm shadow backdrop-blur-sm transition-colors hover:bg-accent"
-            href="#"
+            href={DOCS_URL}
           >
             <SparklesIcon className="size-3.5 text-muted-foreground" />
             <span className="font-medium">{t.hero.badge}</span>
@@ -208,9 +211,11 @@ export function HeroSection() {
               whileHover={shouldReduceMotion ? undefined : { scale: 1.04 }}
               whileTap={shouldReduceMotion ? undefined : { scale: 0.96 }}
             >
-              <Button className="group" size="lg">
-                {t.hero.ctaPrimary}
-                <ArrowRightIcon className="transition-transform group-hover:translate-x-0.5" />
+              <Button asChild className="group" size="lg">
+                <a href={DOCS_URL}>
+                  {t.hero.ctaPrimary}
+                  <ArrowRightIcon className="transition-transform group-hover:translate-x-0.5" />
+                </a>
               </Button>
             </motion.div>
             <motion.div
@@ -218,10 +223,52 @@ export function HeroSection() {
               whileHover={shouldReduceMotion ? undefined : { scale: 1.04 }}
               whileTap={shouldReduceMotion ? undefined : { scale: 0.96 }}
             >
-              <Button size="lg" variant="outline">
-                {t.hero.ctaSecondary}
+              <Button asChild size="lg" variant="outline">
+                <a href={DOCS_URL}>{t.hero.ctaSecondary}</a>
               </Button>
             </motion.div>
+          </div>
+        </AnimatedContainer>
+
+        {/* 应用商店下载 */}
+        <AnimatedContainer delay={0.4}>
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            <Button asChild className="h-11" variant="outline">
+              <a href={DOCS_URL}>
+                <PlayStoreIcon className="size-5" />
+                <div className="flex flex-col items-start justify-center pr-2 text-left">
+                  <span className="font-light text-[10px] leading-none tracking-tighter">
+                    GET IT ON
+                  </span>
+                  <p className="font-bold text-base leading-none">Google Play</p>
+                </div>
+              </a>
+            </Button>
+            <Button asChild className="h-11" variant="outline">
+              <a href={DOCS_URL}>
+                <AppleIcon className="size-5" />
+                <div className="flex flex-col items-start justify-center pr-2 text-left">
+                  <span className="text-[10px] leading-none tracking-tighter">
+                    Download on the
+                  </span>
+                  <p className="font-bold text-base leading-none">App Store</p>
+                </div>
+              </a>
+            </Button>
+
+            <Button asChild className="h-11" variant="outline">
+              <a href={RELEASE_URL}>
+                <GithubIcon className="size-5" />
+                <div className="flex flex-col items-start justify-center pr-2 text-left">
+                  <span className="font-light text-[10px] leading-none tracking-tighter">
+                    DOWNLOAD FROM
+                  </span>
+                  <p className="font-bold text-base leading-none">
+                    GitHub Release
+                  </p>
+                </div>
+              </a>
+            </Button>
           </div>
         </AnimatedContainer>
 
@@ -240,5 +287,38 @@ export function HeroSection() {
         )}
       />
     </section>
+  );
+}
+
+function PlayStoreIcon({
+  fill = "currentColor",
+  ...props
+}: React.ComponentProps<"svg">) {
+  return (
+    <svg fill={fill} viewBox="0 0 24 24" {...props}>
+      <path d="m21.762,9.942L4.67.378c-.721-.466-1.635-.504-2.393-.099-.768.411-1.246,1.208-1.246,2.08v19.282c0,.872.477,1.668,1.246,2.079.755.404,1.668.37,2.393-.098l17.092-9.564c.756-.423,1.207-1.192,1.207-2.058s-.451-1.635-1.207-2.058Zm-5.746-1.413l-2.36,2.36L5.302,2.534l10.714,5.995ZM2.604,21.906V2.094l9.941,9.906L2.604,21.906Zm2.698-.439l8.355-8.355,2.36,2.36-10.714,5.995Zm15.692-8.78l-3.552,1.987-2.674-2.674,2.674-2.674,3.552,1.987c.363.203.402.548.402.686s-.039.483-.402.686Z" />
+    </svg>
+  );
+}
+
+function AppleIcon({
+  fill = "currentColor",
+  ...props
+}: React.ComponentProps<"svg">) {
+  return (
+    <svg fill={fill} viewBox="0 0 24 24" {...props}>
+      <g id="_Group_2">
+        <g id="_Group_3">
+          <path
+            d="M18.546,12.763c0.024-1.87,1.004-3.597,2.597-4.576c-1.009-1.442-2.64-2.323-4.399-2.378    c-1.851-0.194-3.645,1.107-4.588,1.107c-0.961,0-2.413-1.088-3.977-1.056C6.122,5.927,4.25,7.068,3.249,8.867    c-2.131,3.69-0.542,9.114,1.5,12.097c1.022,1.461,2.215,3.092,3.778,3.035c1.529-0.063,2.1-0.975,3.945-0.975    c1.828,0,2.364,0.975,3.958,0.938c1.64-0.027,2.674-1.467,3.66-2.942c0.734-1.041,1.299-2.191,1.673-3.408    C19.815,16.788,18.548,14.879,18.546,12.763z"
+            id="_Path_"
+          />
+          <path
+            d="M15.535,3.847C16.429,2.773,16.87,1.393,16.763,0c-1.366,0.144-2.629,0.797-3.535,1.829    c-0.895,1.019-1.349,2.351-1.261,3.705C13.352,5.548,14.667,4.926,15.535,3.847z"
+            id="_Path_2"
+          />
+        </g>
+      </g>
+    </svg>
   );
 }

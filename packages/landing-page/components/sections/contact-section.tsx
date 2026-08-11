@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 const APP_EMAIL = "liaoyanjie2000@gmail.com";
 const GITHUB_URL = "https://github.com/hunmer/mira";
-const DOCS_URL = "https://github.com/hunmer/mira";
+const DOCS_URL = "https://miraapp.cc/docs";
 
 function BorderSeparator({ className }: React.ComponentProps<"div">) {
   return (
@@ -111,7 +111,7 @@ export function ContactSection() {
   ];
 
   return (
-    <div className="relative mx-auto w-full max-w-5xl lg:border-x">
+    <div className="relative mx-auto w-full max-w-5xl lg:border-x" id="contact">
       <motion.div
         className="flex grow flex-col justify-center px-4 py-18 md:items-center"
         initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
@@ -216,7 +216,7 @@ export function ContactSection() {
             alt={c.qqTitle}
             className="size-40 rounded-md object-contain md:size-44"
             height={176}
-            src="/qq-group.jpg"
+            src="/qq-group-code.jpg"
             width={176}
           />
           <div className="flex flex-col items-center gap-1">

@@ -1,26 +1,14 @@
 "use client";
+import { User } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import React from "react";
 import { useI18n } from "@/lib/i18n/i18n-provider";
 
 type Testimonial = {
   text: string;
-  image: string;
   name: string;
   role: string;
 };
-
-const IMAGES = [
-  "https://randomuser.me/api/portraits/women/1.jpg",
-  "https://randomuser.me/api/portraits/men/2.jpg",
-  "https://randomuser.me/api/portraits/women/3.jpg",
-  "https://randomuser.me/api/portraits/men/4.jpg",
-  "https://randomuser.me/api/portraits/women/5.jpg",
-  "https://randomuser.me/api/portraits/women/6.jpg",
-  "https://randomuser.me/api/portraits/men/7.jpg",
-  "https://randomuser.me/api/portraits/women/8.jpg",
-  "https://randomuser.me/api/portraits/men/9.jpg",
-];
 
 function TestimonialsColumn(props: {
   className?: string;
@@ -44,20 +32,16 @@ function TestimonialsColumn(props: {
         {[
           ...new Array(2).fill(0).map((_, index) => (
             <React.Fragment key={`column-${index}`}>
-              {props.testimonials.map(({ text, image, name, role }) => (
+              {props.testimonials.map(({ text, name, role }) => (
                 <div
                   className="w-full max-w-xs rounded-3xl border bg-card p-8 shadow-lg dark:bg-card/20 dark:shadow-foreground/10"
                   key={name}
                 >
                   <div>{text}</div>
                   <div className="mt-5 flex items-center gap-2">
-                    <img
-                      alt={name}
-                      className="h-10 w-10 rounded-full"
-                      height={40}
-                      src={image}
-                      width={40}
-                    />
+                    <div className="flex size-10 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+                      <User className="size-5" />
+                    </div>
                     <div className="flex flex-col">
                       <div className="font-medium leading-5 tracking-tight">
                         {name}
@@ -80,10 +64,7 @@ function TestimonialsColumn(props: {
 export function TestimonialsSection() {
   const { t } = useI18n();
   const shouldReduceMotion = useReducedMotion();
-  const items = t.testimonials.items.map((it, i) => ({
-    ...it,
-    image: IMAGES[i] ?? IMAGES[0],
-  }));
+  const items = t.testimonials.items;
   const firstColumn = items.slice(0, 3);
   const secondColumn = items.slice(3, 6);
   const thirdColumn = items.slice(6, 9);
