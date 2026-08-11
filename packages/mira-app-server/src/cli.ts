@@ -17,6 +17,7 @@ import path from 'path';
 import fs from 'fs';
 
 // 命令模块
+import { registerDoctor } from './cli/doctor';
 import { registerAuth } from './cli/commands/auth';
 import { registerUser } from './cli/commands/user';
 import { registerLibraries } from './cli/commands/libraries';
@@ -158,6 +159,8 @@ program
     });
 
 // ============ SDK 能力命令 ============
+// 环境依赖自检（顶层 doctor 命令）
+registerDoctor(program);
 // 认证与凭证
 registerAuth(program);
 // 用户

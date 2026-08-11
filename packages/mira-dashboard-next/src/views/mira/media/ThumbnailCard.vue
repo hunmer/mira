@@ -170,12 +170,14 @@ onBeforeUnmount(stopProgressMonitoring)
           <span v-if="loading" class="mr-1 size-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
           {{ t('common.refresh') }}
         </Button>
-        <Button size="sm" :disabled="!selectedLibraryId || isScanning" @click="startScan">
+        <Button
+          size="sm"
+          :variant="isScanning ? 'destructive' : 'default'"
+          :disabled="!selectedLibraryId"
+          @click="isScanning ? cancelScan() : startScan()"
+        >
           <span v-if="isScanning" class="mr-1 size-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
-          {{ isScanning ? t('thumbnail.scanning') : t('thumbnail.startScan') }}
-        </Button>
-        <Button size="sm" variant="destructive" :disabled="!isScanning" @click="cancelScan">
-          {{ t('thumbnail.cancelScan') }}
+          {{ isScanning ? t('thumbnail.cancelScan') : t('thumbnail.startScan') }}
         </Button>
         <Button size="sm" variant="outline" :disabled="!selectedLibraryId || syncing" @click="syncThumbs">
           <span v-if="syncing" class="mr-1 size-3 animate-spin rounded-full border-2 border-current border-t-transparent" />

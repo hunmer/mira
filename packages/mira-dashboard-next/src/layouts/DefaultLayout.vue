@@ -153,7 +153,6 @@ function handleLogout() {
         >
           <RiArrowGoBackLine class="size-4" />
         </Button>
-        <Separator orientation="vertical" class="mx-1 h-5" />
         <div class="flex-1" />
         <!-- Library selector -->
         <Select v-model="selectedId" :disabled="libsLoading || !libraries.length">
