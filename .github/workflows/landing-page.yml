@@ -1,6 +1,8 @@
 name: Deploy Landing Page
 
 # 仅在 push tag v* 时触发，部署 Next.js 到 Vercel（独立项目）
+# 采用 prebuilt 模式：在 runner 本地构建（已验证 21/21 prerender 成功），
+# 再把 .next 产物上传到 Vercel，避开 Vercel 端构建环境的 prerender bug
 on:
   push:
     tags:
@@ -33,7 +35,7 @@ jobs:
     - name: Install Vercel CLI
       run: npm install -g vercel@latest
 
-    - name: Deploy to Vercel (production)
+    - name: Pull Vercel project config (建立 .vercel 关联)
       working-directory: packages/landing-page
       env:
         VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
@@ -44,12 +46,22 @@ jobs:
           echo "❌ VERCEL_TOKEN secret 未配置"
           exit 1
         fi
-        # 让 Vercel 自动识别 Next.js 框架并构建
-        # 项目名 package.json 是 efferd-ui，用 --name 强制为 mira-landing 避免歧义
-        vercel deploy \
-          --prod \
-          --yes \
-          --token "$VERCEL_TOKEN" \
-          --name mira-landing \
-          --cwd .
+        # 拉取远端项目环境配置到本地（用于下一步本地 build）
+        vercel link --yes --token "$VERCEL_TOKEN" --cwd .
+
+    - name: Build locally with Vercel (产出 .vercel/output)
+      # vercel build 在 runner 本地按 Vercel 同样的流程构建，
+      # 但使用 runner 的 Node/环境（已验证 21/21 prerender 成功）
+      working-directory: packages/landing-page
+      env:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      run: vercel build --yes --token "$VERCEL_TOKEN" --cwd .
+
+    - name: Deploy prebuilt artifacts to Vercel (production)
+      # 直接上传上一步构建好的产物，跳过 Vercel 端再次构建
+      working-directory: packages/landing-page
+      env:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      run: |
+        vercel deploy --prebuilt --prod --yes --token "$VERCEL_TOKEN" --cwd .
         echo "✅ 部署完成"
