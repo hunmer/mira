@@ -42,8 +42,9 @@
     }
   ],
   "publish": {
-    "provider": "generic",
-    "url": "http://192.168.1.200/mira_client/"
+    "provider": "github",
+    "owner": "hunmer",
+    "repo": "mira"
   },
   "buildVersion": "1.0.1",
   "compression": "maximum",
@@ -91,7 +92,7 @@
         "arch": ["x64", "arm64"]
       }
     ],
-    "icon": "assets/icon.ico",
+    "icon": "assets/icon.icns",
     "category": "public.app-category.photography",
     "darkModeSupport": true,
     "gatekeeperAssess": false,
@@ -118,7 +119,7 @@
       "width": 540,
       "height": 380
     },
-    "artifactName": "${productName}-${version}-mac.${ext}"
+    "artifactName": "${productName}-${version}-mac-${arch}.${ext}"
   },
   "linux": {
     "target": [

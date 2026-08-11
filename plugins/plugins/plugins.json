@@ -6,7 +6,7 @@
   },
   {
     "name": "psd-viewer",
-    "enabled": true,
+    "enabled": false,
     "path": "psd-viewer"
   },
   {
@@ -26,42 +26,42 @@
   },
   {
     "name": "mira_spine_format",
-    "enabled": true,
+    "enabled": false,
     "path": "mira_spine_format"
   },
   {
     "name": "mira_livp_format",
-    "enabled": true,
+    "enabled": false,
     "path": "mira_livp_format"
   },
   {
     "name": "mira_lottie_format",
-    "enabled": true,
+    "enabled": false,
     "path": "mira_lottie_format"
   },
   {
     "name": "mira_epub_format",
-    "enabled": true,
+    "enabled": false,
     "path": "mira_epub_format"
   },
   {
     "name": "mira_swf_format",
-    "enabled": true,
+    "enabled": false,
     "path": "mira_swf_format"
   },
   {
     "name": "mira_pag_format",
-    "enabled": true,
+    "enabled": false,
     "path": "mira_pag_format"
   },
   {
     "name": "pdf-viewer",
-    "enabled": true,
+    "enabled": false,
     "path": "pdf-viewer"
   },
   {
     "name": "mira_zipper_format",
-    "enabled": true,
+    "enabled": false,
     "path": "mira_zipper_format"
   }
 ]

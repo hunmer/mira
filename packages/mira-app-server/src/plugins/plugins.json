@@ -1,77 +1,67 @@
 [
   {
-    "name": "mira_demo",
-    "enabled": false,
-    "path": "mira_demo",
-    "status": "inactive"
-  },
-  {
     "name": "mira_n8n",
     "enabled": false,
-    "path": "mira_n8n",
-    "status": "inactive"
+    "path": "mira_n8n"
   },
   {
     "name": "psd-viewer",
-    "enabled": true,
-    "path": "node_modules/psd-viewer",
-    "status": "active"
+    "enabled": false,
+    "path": "psd-viewer"
   },
   {
     "name": "mira_duplicate_scanner",
-    "enabled": true,
-    "path": "node_modules/mira_duplicate_scanner",
-    "status": "active"
+    "enabled": false,
+    "path": "mira_duplicate_scanner"
   },
   {
     "name": "mira_eagle_extension",
     "enabled": false,
-    "path": "node_modules/mira_eagle_extension"
+    "path": "mira_eagle_extension"
   },
   {
     "name": "mira_3d_format",
-    "enabled": true,
-    "path": "node_modules/mira_3d_format"
+    "enabled": false,
+    "path": "mira_3d_format"
   },
   {
     "name": "mira_spine_format",
-    "enabled": true,
-    "path": "node_modules/mira_spine_format"
+    "enabled": false,
+    "path": "mira_spine_format"
   },
   {
     "name": "mira_livp_format",
-    "enabled": true,
-    "path": "node_modules/mira_livp_format"
+    "enabled": false,
+    "path": "mira_livp_format"
   },
   {
     "name": "mira_lottie_format",
-    "enabled": true,
-    "path": "node_modules/mira_lottie_format"
+    "enabled": false,
+    "path": "mira_lottie_format"
   },
   {
     "name": "mira_epub_format",
-    "enabled": true,
-    "path": "node_modules/mira_epub_format"
+    "enabled": false,
+    "path": "mira_epub_format"
   },
   {
     "name": "mira_swf_format",
-    "enabled": true,
-    "path": "node_modules/mira_swf_format"
+    "enabled": false,
+    "path": "mira_swf_format"
   },
   {
     "name": "mira_pag_format",
-    "enabled": true,
-    "path": "node_modules/mira_pag_format"
+    "enabled": false,
+    "path": "mira_pag_format"
   },
   {
     "name": "pdf-viewer",
-    "enabled": true,
-    "path": "node_modules/pdf-viewer",
-    "status": "active"
+    "enabled": false,
+    "path": "pdf-viewer"
   },
   {
     "name": "mira_zipper_format",
-    "enabled": true,
-    "path": "node_modules/mira_zipper_format"
+    "enabled": false,
+    "path": "mira_zipper_format"
   }
 ]

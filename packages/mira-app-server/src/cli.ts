@@ -28,6 +28,7 @@ import { registerPlugins } from './cli/commands/plugins';
 import { registerDevices } from './cli/commands/devices';
 import { registerDatabase } from './cli/commands/database';
 import { registerSystem } from './cli/commands/system';
+import { enableAutoStart } from './cli/autostart';
 
 // MCP 服务（懒加载，避免在非 MCP 模式下加载 SDK）
 import { startMcpServer } from './mcp/server';
@@ -96,11 +97,24 @@ program
     .option('-w, --ws-port <number>', 'WebSocket port number', '8018')
     .option('-d, --data-path <path>', 'Data directory path')
     .option('--env <path>', 'Environment file path')
+    .option('--autostart', '注册为系统开机自启项并由系统托管启动（macOS=LaunchAgent / Linux=systemd / Windows=任务计划）')
     .action(async (options) => {
         try {
             // 如果指定了env文件，加载它
             if (options.env) {
                 dotenv.config({ path: path.resolve(options.env) });
+            }
+
+            if (options.autostart) {
+                console.log('🚀 注册系统开机自启并启动 Mira Server...');
+                const target = enableAutoStart({
+                    httpPort: parseInt(options.httpPort),
+                    wsPort: parseInt(options.wsPort),
+                    dataPath: options.dataPath,
+                });
+                console.log(`✅ 已注册开机自启并由系统托管：${target}`);
+                console.log('   服务现已运行；下次开机/登录将自动启动。');
+                return; // 不再前台启动实例（由系统机制拉起，避免双实例端口冲突）
             }
 
             console.log('🚀 Starting Mira Server with CLI...');

@@ -19,9 +19,15 @@ const PACK_CONFIG = {
 function getAppPath(context) {
   // 使用 electron-builder 提供的上下文信息
   if (context && context.appOutDir) {
+    // macOS 下 appOutDir 是输出目录，应用实际在其下的 .app 包内
+    if (PACK_CONFIG.platform === 'darwin') {
+      const appName = (context.packager && context.packager.appInfo && context.packager.appInfo.productFilename) || PACK_CONFIG.appName;
+      const appPackage = path.join(context.appOutDir, `${appName}.app`);
+      if (fs.existsSync(appPackage)) return appPackage;
+    }
     return context.appOutDir;
   }
-  
+
   // 备用方案：基于平台猜测路径
   const baseName = PACK_CONFIG.appName;
   

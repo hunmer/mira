@@ -206,7 +206,13 @@ async function signWindowsApp(appPath) {
 // 主函数
 async function main(context) {
   console.log('Processing code signing and notarization...\n');
-  
+
+  // 非 CI 环境跳过签名与公证（本地构建无证书，强制验证会导致构建失败）
+  if (process.env.CI !== 'true') {
+    console.log('⚠️  Skipping signing/notarization (not in CI environment)');
+    return;
+  }
+
   try {
     const targetPlatform = getTargetPlatform(context);
     if (targetPlatform !== 'darwin') {

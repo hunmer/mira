@@ -9,11 +9,14 @@ description: 从 21st.dev 复刻 UI 组件到本仓库（手机壳、卡片、He
 
 ## 核心认知
 
-21st.dev 的组件**源码不公开**，但每个组件页都有一个**公开的 CDN bundle**：
+21st.dev 的组件**源码不公开**，但每个组件页都有一个**公开的 CDN bundle**。URL 有两种形态，**都合法**：
 
 ```
-https://cdn.21st.dev/<author>/<component-id>/<variant>/bundle.<timestamp>-<uuid>.html
+https://cdn.21st.dev/<author>/<component-id>/<variant>/bundle.<timestamp>-<uuid>.html   # 长格式
+https://cdn.21st.dev/bundled/<id>.html                                                  # 短格式（也真实存在）
 ```
+
+> ⚠️ 别凭 URL「长得像不像」判断真假——短路径 `bundled/1111.html` 也可能是 200 OK 的真 bundle。**不确定就先 `curl -sIL` 验证**：`content-type: text/html` + 体积 100KB–500KB + 首部 `<!DOCTYPE html>` 才是真 bundle。
 
 这个 bundle 是 Vite 打包产物（一个 HTML，内含 React + 全部依赖 + 压缩 JS + 编译后的 Tailwind CSS）。**抓它、逆它、复刻它**，是本 skill 的全部工作。
 
@@ -42,9 +45,9 @@ wc -c bundle_tmp.html   # 通常 100KB-500KB
 
 ### 3. 逆向：提取组件源码
 
-bundle 里的 JS 是**压缩但未深度混淆**的 —— 变量名被缩短（`s`、`p`、`rt`），但：
+bundle 里的 JS 是**压缩但未深度混淆**的 —— 变量名被缩短（`s`、`p`、`rt`、`$g`、`Ng`），但：
 - **字符串字面量原样保留**：所有 className、SVG path `d`、props、示例数据 URL、aria-label 都在
-- **函数名通过 `i(fn,"OriginalName")` 保留**：每个函数结尾都有这个调用，能还原原名
+- **部分 bundle 用 `i(fn,"OriginalName")` 保留原名**：有的 bundle 每个函数结尾都有；有的**完全没有**，函数名就是压缩符号（`$g`/`Ng`/`a3`）。后者靠 **registry 映射表**（见步骤 3）还原语义，别死等 `i(fn,...)`
 - **JSX 结构完整**：`X.jsx` / `X.jsxs` 就是 React 的 `jsx`/`jsxs`
 
 提取策略（写个一次性 python 脚本，跑完就删）：
@@ -79,6 +82,55 @@ grep -oE "res\.cloudinary\.com[^\"']*" bundle_tmp.html | head
 grep -oE '.{80}rounded-full bg-black/60.{120}' bundle_tmp.html
 ```
 
+#### 定位「组件主体」的递进链路（关键）
+
+bundle 末尾的渲染入口几乎都是 **21st 预览外壳**（全屏 `h-screen` 容器 + 主题/demo 切换），不是组件本体。从外壳到真正组件常要走两步：
+
+1. **找 demo 外壳**：grep `h-screen` / `bg-background text-foreground`，里面 `jsx(选中组件,{})` 动态渲染。
+2. **找 registry 映射表**（外壳上方必有）：`const 名称=["SafariDemo"],映射={SafariDemo:$g}; 选中组件=Object.values(映射)[i]` —— 顺符号引用（`$g`）找下一定义。
+3. **demo 入口常是薄包装**：`function $g(){return jsx(Ng,{url:"...",src:"..."})}` —— 它只传示例数据，**真正实现是内部的 `Ng`**。别停在 `$g`，继续追 `Ng`。
+
+> 渲染入口 → registry 映射 → demo 包装 → 真正组件，**常两层间接**。停在哪一层都会拿到残缺 / 带示例数据的代码。
+
+#### 用平衡括号提取函数体（注意参数解构陷阱）
+
+定位到 `function Ng(...)` 后，用括号平衡取整个函数体。**陷阱**：必须从**函数体的 `{`**（即 `){` 之后那个）开始平衡，**不能**从参数解构 `{src,...}` 的第一个 `{` 开始 —— 否则会在解构对象的 `}` 处提前停止，得到几十字的残缺片段。
+
+```python
+def balanced_from(open_brace_idx):
+    depth = 0; j = open_brace_idx; instr = None; esc = False
+    while j < len(s):
+        c = s[j]
+        if instr:
+            if esc: esc = False
+            elif c == "\\": esc = True
+            elif c == instr: instr = None
+        else:
+            if c in '"\'`': instr = c
+            elif c == "{": depth += 1
+            elif c == "}":
+                depth -= 1
+                if depth == 0: return j
+        j += 1
+
+fn = s.find("function Ng")
+body_open = s.find("){", fn) + 1     # ← 关键：跳过参数列表，定位函数体 {
+body = s[fn : balanced_from(body_open) + 1]
+```
+
+#### 精确提取每个 JSX 节点的属性（别用固定字符窗口）
+
+解析 SVG/复杂 JSX 时，**别用** `grep -oE '.{N}xxx.{M}'` 或 `s[i:i+400]` 抓 props —— 固定窗口会跨到下一个节点，把别人的属性算到当前节点头上。正确做法：用平衡括号定每个 `F.jsx("tag",{...})` 的 props 对象边界，**只在 `children:` 之前**提 `key:"value"`。
+
+```python
+for m in re.finditer(r'F\.jsx(s)?\("([^"]+)",', body):
+    po = body.find("{", m.start())
+    pc = balanced_from(po)                       # 复用上面的函数
+    head = body[po + 1 : pc].split("children:")[0]
+    attrs = re.findall(r'([a-zA-Z]+):"([^"]*)"', head)
+    print(m.group(2), attrs)
+```
+
 ### 4. 还原成可读 TSX
 
 把压缩 JS 翻译回正常 React。对照规则：
@@ -87,7 +139,7 @@ grep -oE '.{80}rounded-full bg-black/60.{120}' bundle_tmp.html
 |---|---|
 | `X.jsx(Tag,{...})` | `<Tag {...} />` |
 | `X.jsxs(Tag,{children:[...]})` | `<Tag>...</Tag>` |
-| `i(fn,"Name")` | `fn` 的原名是 `Name`（给函数命名用） |
+| `i(fn,"Name")` | `fn` 的原名是 `Name`（**部分 bundle 才有**；没有时靠 registry 映射表还原） |
 | `In(...)` / `cn(...)` | `cn()` from `@/lib/utils`（clsx+tailwind-merge） |
 | `Pn` 配 `variant:"outline"` | shadcn `Button` |
 | `Qh` 配 `fill:!0` | `next/image` 的 `Image`（见下方决策） |
@@ -97,13 +149,17 @@ grep -oE '.{80}rounded-full bg-black/60.{120}' bundle_tmp.html
 
 **识别示例数据 vs 组件 props**：bundle 末尾通常有 `const xxx=[{src:"...",alt:"..."}]` 紧跟一个 `function yyy(){return X.jsx(Iv,{images:xxx})}` —— 那个常量数组就是 demo 数据，那个函数是 demo 入口。真正的组件是接受 props 的那个（如 `({images:s,...})=>...`）。
 
+更可靠的标志是 **registry 映射表**：`const 名称=["XxxDemo"],映射={XxxDemo:$g}` —— `$g` 是 demo 入口（传示例数据），它 `return jsx(真正的组件,{...})` 里那个才是要复刻的组件。
+
 ### 5. 关键决策点
 
 #### CSS 要不要提取？
 **通常不需要。** bundle 里的 `<style>` 是 Tailwind 编译产物（几万字符），复制进来反而冲突。21st 组件几乎全用标准 Tailwind 类 + 少量任意值（`fill-[#DADADA]`、`h-[410px]`），只要目标项目是 **Tailwind v4**，这些类开箱即用。
 
+**先判断动画属于组件还是预览外壳**：bundle 里搜到的 `@keyframes`（如 `ripple`）常常属于 **21st 预览外壳**（全屏 `h-screen` 容器 + `lab-bg` 这类背景效果），不是组件本身。外壳整段丢弃，**别把它误当组件 CSS 抽进来**。判断方法：动画的选择器/类名若出现在那个 `h-screen` demo 容器或它的背景层上，就是外壳的。
+
 **仅在以下情况才需要从 bundle 抽 CSS**：
-- 用到了 `@keyframes` 自定义动画（bundle 里搜 `@keyframes` / `animation:`）
+- 用到了属于**组件自身**的 `@keyframes` 自定义动画（搜 `@keyframes` / `animation:`，并确认挂在组件元素上而非外壳背景）
 - 有非 Tailwind 的原生 CSS（搜 `<style>` 里不以 `--tw-` 开头的规则）
 - 用了项目没装的工具类（如 `tw-animate-css` 的特定类）
 
@@ -116,6 +172,7 @@ grep -oE '.{80}rounded-full bg-black/60.{120}' bundle_tmp.html
 - 图片是项目内部/同源 → 用 `next/image`
 - 图片是外部域名 + 用户没要求配 next.config → **改用普通 `<img>`**（最小改动，避免动配置文件）。多数项目已全局关闭 biome `noImgElement` 规则，无 lint 负担
 - SVG 内嵌截图（`<foreignObject>` 里）→ **必须用 `<img>`**，next/image 在 SVG foreignObject 里行为异常
+- **SVG 原生 `<image href={src}>`**（整个组件本身就是个 `<svg>` mockup）→ 原样保留 `<image>`，**不走 next/image、无需配 `remotePatterns`**（SVG 渲染不经过 Next 图片优化管线，外部域名直接加载）
 
 如果决定配 next/image，加配置：
 
@@ -139,12 +196,15 @@ components/ui/<component-id>-utils/<子模块>.tsx      # 工具/子组件
 #### 客户端组件
 21st 组件几乎都有交互（useState/useEffect/事件），TSX 顶部加 `"use client";`。
 
+**例外：纯 SVG mockup**（手机壳、浏览器外框、设备框架这类整张图就是一个 `<svg>`）—— 无 useState、无事件、无 cn、无 lucide。这类**不需要 `"use client"`**（可作 Server Component），也不需要下述任何依赖。识别信号：组件 body 里全是 `F.jsx("path"/"circle"/"rect"/"image", ...)` 且没有任何 hook 调用。
+
 #### 依赖检查
 复刻前 grep 确认项目已有依赖，缺的再装：
 - `lucide-react`（图标）
 - shadcn `Button` 等组件（`@/components/ui/button`）
 - `motion` / `framer-motion`（动效组件）
 - `cn` 工具函数位置（可能是 `@/lib/utils` 或 `@/lib/utils/index`，**先 grep 确认**）
+- **纯 SVG mockup 零依赖**：图标全内联成 path、无 className 合并、无动效 → 上面这些一个都不需要，只要 React + Tailwind v4 任意值类
 
 ### 6. 落盘 + 集成
 
@@ -200,15 +260,20 @@ export function PhoneCarousel({ images }: { images: ImageItem[] }) {
 ## 常见坑
 
 - **bundle URL 的 query 参数**（`?theme=dark&dark=true`）保留，它影响预览样式；下载时可带可不带，源码一样
-- **`id` 冲突**：SVG 里硬编码的 `id="roundedCorners"` / `clipPath` 引用，如果同一页放多个实例会冲突。单实例场景忽略；多实例需把 id 改成 `useId()` 生成
+- **`id` 冲突**：SVG 里硬编码的 `id="path0"` / `id="roundedCorners"` / `clipPath` 引用，复制进项目后可能和别的组件撞名。**推荐默认就加组件前缀**（`safari-path0`、`safari-roundedBottom`），比事后再用 `useId()` 改更省事，且静态 SVG / Server Component 也适用（`useId()` 得是 client 组件）
 - **`i(fn,"name")` 的 `i`** 是 bundle 自定义的命名辅助函数，不是 React API，还原时直接删掉这个包裹，用 `"name"` 给函数命名即可
 - **压缩后的模板字符串**：`` `translateY(0px) ${a?"x":"y"}` `` 这种，还原时注意是反引号模板，别误读成普通字符串
-- **示例图片是别人的 cloudinary 账号**（`harshitproject`），复刻完提醒用户换成自己的图
+- **示例图片是别人的账号**（cloudinary 的 `harshitproject`、utfs.io 的各种链接），复刻完提醒用户换成自己的图
+- **平衡括号的参数解构陷阱**：从 `function Foo({a,b,...c})` 取函数体，必须从 `){` 之后的函数体 `{` 开始平衡，否则在解构对象的 `}` 处提前停止（见步骤 3）
+- **固定字符窗口抓 props 会跨节点**：`grep -oE '.{N}xxx.{M}'` 或 `s[i:i+400]` 会把下一个节点的属性也算进来；用平衡括号定每个 `jsx("tag",{...})` 边界，只在 `children:` 之前取直属属性
+- **别凭先验 grep 色值**：例如找 macOS 信号灯去 grep `#fc615d/#ff5f57` 可能根本找不到 —— 有的组件把信号灯画成中性灰圆点。以 bundle 实际内容为准，别套经验色值
+- **预览外壳的动画/背景不是组件**：`@keyframes ripple`、`lab-bg` 圆点背景等常属于 21st 预览外壳，复刻时丢弃，别抽进组件 CSS
 
 ## 完成检查清单
 
 - [ ] 用户给的 import 路径都能解析（无 `Cannot find module`）
 - [ ] `tsc --noEmit` 对新文件无错误
 - [ ] 临时文件（bundle、提取脚本）已删除
-- [ ] 如改用 `<img>` 替代 next/image，已说明原因
+- [ ] SVG 的 `id` / `clipPath` 已加组件前缀，避免跨组件撞名
+- [ ] 如改用 `<img>` / 原生 `<image>` 替代 next/image，已说明原因
 - [ ] 提醒用户：示例数据（图片/文案）需替换为自己的内容
