@@ -1,18 +1,33 @@
 name: Build and Push Docker Image
 
 # 单一 workflow 覆盖所有场景：
-#   - push main   → 构建 + 推送 ghcr (latest, latest-YYYYMMDD)
-#   - push tag v* → 构建 + 推送 ghcr (版本号, v版本号, latest)
-#   - PR to main  → 仅构建测试，不推送
+#   - push main   → 构建 + 推送 ghcr (latest, latest-YYYYMMDD)，paths 过滤增量触发
+#   - push tag v* → 构建 + 推送 ghcr (版本号, v版本号, latest)，全量触发（发布用）
+#   - PR to main  → 仅构建测试，不推送，paths 过滤
+# 注：paths 过滤仅对 branch push / PR 生效，tag push 忽略 paths（GitHub 限制）
 on:
   push:
     branches:
       - main
+    paths:
+      - 'packages/mira-app-server/**'
+      - 'packages/mira-app-core/**'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'package.json'
+      - '.github/workflows/docker.yml'
     tags:
       - 'v*'
   pull_request:
     branches:
       - main
+    paths:
+      - 'packages/mira-app-server/**'
+      - 'packages/mira-app-core/**'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'package.json'
+      - '.github/workflows/docker.yml'
 
 env:
   REGISTRY: ghcr.io

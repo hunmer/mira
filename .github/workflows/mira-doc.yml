@@ -1,8 +1,18 @@
 name: Deploy Mira Doc
 
-# 仅在 push tag v* 时触发，构建 VitePress 并部署到 Vercel（独立项目，根路径）
+# 触发条件：
+#   - push main（paths 过滤）→ 增量 CI，构建验证但不部署
+#   - push tag v*           → 正式发布，构建并部署到 Vercel（全量，tag 不受 paths 限制）
 on:
   push:
+    branches:
+      - main
+    paths:
+      - 'packages/mira-doc/**'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'package.json'
+      - '.github/workflows/mira-doc.yml'
     tags:
       - 'v*'
 
@@ -46,13 +56,17 @@ jobs:
         head -15 .vitepress/config.mts
 
     - name: Build VitePress
+      # main / tag 都跑构建，作为增量 CI 的验证
       working-directory: packages/mira-doc
       run: pnpm docs:build
 
     - name: Install Vercel CLI
+      if: startsWith(github.ref, 'refs/tags/')
       run: npm install -g vercel@latest
 
     - name: Deploy to Vercel (production)
+      # 仅 tag 推送时部署；main 推送只做构建验证
+      if: startsWith(github.ref, 'refs/tags/')
       working-directory: packages/mira-doc
       env:
         VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}

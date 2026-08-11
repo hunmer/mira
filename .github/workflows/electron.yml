@@ -1,8 +1,21 @@
 name: Electron Build
 
-# 仅在 push tag v* 时触发，构建 Windows/macOS 安装包并上传到 GitHub Release
+# 触发条件：
+#   - push main（paths 过滤）→ 增量 CI，构建测试但不发布
+#   - push tag v*           → 正式发布，构建并上传 GitHub Release（全量，tag 不受 paths 限制）
+# 注：main 推送时也构建产物但不应创建 release，job 内用 if 控制发布行为
 on:
   push:
+    branches:
+      - main
+    paths:
+      - 'packages/mira-client/**'
+      - 'packages/vue-masonry/**'
+      - 'packages/mira-app-core/**'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'package.json'
+      - '.github/workflows/electron.yml'
     tags:
       - 'v*'
 
@@ -64,6 +77,8 @@ jobs:
       run: pnpm run ${{ matrix.script }}
 
     - name: Upload artifacts to GitHub Release
+      # 仅 tag 推送时发布；main 推送只做构建验证
+      if: startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v2
       with:
         # 只上传实际安装包，排除 latest.yml / blockmap 等元数据（按需调整）
