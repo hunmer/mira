@@ -18,11 +18,13 @@ import {
 } from '@/components/ui/dropdown-menu'
 import SidebarLayoutDialog from './SidebarLayoutDialog.vue'
 import { useToast } from '@/renderer/composables/useToast'
+import { useUrlImportStore } from '@/renderer/stores/urlImport'
 import type { LocalFsNode } from '../../../shared/types'
 
 defineOptions({ name: 'SidebarToolbar' })
 
 const { t } = useI18n()
+const urlImportStore = useUrlImportStore()
 
 const emit = defineEmits<{
   /** 打开文件上传对话框 */
@@ -94,6 +96,10 @@ async function handleImportFolder() {
         <DropdownMenuItem @click="handleImportFolder">
           <span class="material-icons text-base mr-2">folder_open</span>
           <span>{{ $t('views.sidebarToolbar.importFolder') }}</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem @click="urlImportStore.open()">
+          <span class="material-icons text-base mr-2">cloud_download</span>
+          <span>{{ $t('business.homeHeader.importFromUrl') }}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

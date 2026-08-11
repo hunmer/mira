@@ -430,7 +430,18 @@
     "formSubmitSuccessDesc": "数据已通过 zod 校验",
     "cancelled": "已取消",
     "validationFailed": "校验未通过",
-    "validationFailedDesc": "请检查表单字段"
+    "validationFailedDesc": "请检查表单字段",
+    "glow": "发光组件",
+    "glowDesc": "基于 CSS Houdini @property 的发光阴影卡片/按钮。支持彩虹、单色、多色三种配色模式。",
+    "glowShadowTitle": "GlowingShadow 配色模式",
+    "glowShadowDesc": "依次为 rainbow（彩虹循环）、mono（单色）、multi（多色循环）。",
+    "glowRainbow": "彩虹",
+    "glowMono": "单色",
+    "glowMulti": "多色",
+    "glowButtonTitle": "GlowingButton 预设",
+    "glowButtonDesc": "预设配色 + 尺寸，可点击、支持键盘 Enter/Space。",
+    "glowClickCount": "已点击 {n} 次",
+    "glowDisabled": "禁用"
   },
   "settingsImportExportDialog": {
     "title": "导入设置",

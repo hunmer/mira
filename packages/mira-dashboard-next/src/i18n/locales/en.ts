@@ -331,6 +331,7 @@ export default {
     download: {
       subtitle: 'Manage download sites that require login and their cookies',
       addSite: 'Add Site',
+      customSite: 'Custom Site',
       presetSites: 'Preset Sites',
       presetHint: 'Click to quickly add common sites',
       loginGetCookie: 'Login to Get Cookie',

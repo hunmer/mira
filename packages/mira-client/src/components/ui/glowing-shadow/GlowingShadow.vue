@@ -13,7 +13,7 @@
  *   <GlowingShadow color-mode="mono" color="#3b82f6">Mono</GlowingShadow>
  *   <GlowingShadow color-mode="multi" :colors="['#ef4444','#a855f7','#22c55e']">Multi</GlowingShadow>
  */
-import { computed, type CSSProperties } from "vue"
+import { computed, useId, type CSSProperties } from "vue"
 
 type ColorMode = "rainbow" | "mono" | "multi"
 
@@ -22,6 +22,8 @@ interface Props {
   width?: number
   /** 卡片宽高比 */
   aspectRatio?: string
+  /** 容器内联样式（透传） */
+  style?: CSSProperties
   /** 配色模式 */
   colorMode?: ColorMode
   /** mono 模式颜色（任意 CSS 颜色） */
@@ -52,12 +54,11 @@ const props = withDefaults(defineProps<Props>(), {
   textColor: "hsl(260deg 10% 55%)",
 })
 
-// 解析任意 CSS 颜色 → hue（0-360）。借助浏览器原生临时 canvas。
+// 解析任意 CSS 颜色 → hue（0-360）。借助浏览器原生临时 canvas 规范化。
 function toHue(color: string): number {
   if (typeof document === "undefined") return 0
   const ctx = document.createElement("canvas").getContext("2d")
   if (!ctx) return 0
-  // 任意格式（hex/rgb/hsl/named）都能被规范成 rgba
   ctx.fillStyle = "#000"
   ctx.fillStyle = color
   const css = ctx.fillStyle as string
@@ -78,35 +79,38 @@ function toHue(color: string): number {
   return Math.round(h)
 }
 
-// multi 模式：把颜色列表解析成 hue 列表，并生成 keyframes。
-// mono：停止色相动画，固定 hue。rainbow：原版行为。
+// 每个实例唯一 keyframes 名，避免多个 multi 实例互相覆盖
+const uid = useId().replace(/[^a-zA-Z0-9-]/g, "")
+const multiAnimName = `glow-multi-hue-${uid}`
+
 const monoHue = computed(() => toHue(props.color))
 const multiHues = computed(() => {
-  // 用 round + 去重避免相邻颜色 hue 几乎相同导致看不出切换
+  // round + 去重，避免相邻颜色 hue 几乎相同导致看不出切换
   return Array.from(new Set(props.colors.map(c => toHue(c))))
 })
 const multiKeyframes = computed(() => {
   const hues = multiHues.value
   if (hues.length === 0) return ""
   if (hues.length === 1) {
-    return `@keyframes glow-multi-hue { 0% { --hue: ${hues[0]}; } 100% { --hue: ${hues[0]}; } }`
+    return `@keyframes ${multiAnimName} { 0% { --hue: ${hues[0]}; } 100% { --hue: ${hues[0]}; } }`
   }
   const stops = hues
     .map((h, i) => `${(i / (hues.length - 1) * 100).toFixed(2)}% { --hue: ${h}; }`)
     .join(" ")
-  return `@keyframes glow-multi-hue { ${stops} }`
+  return `@keyframes ${multiAnimName} { ${stops} }`
 })
 
 const containerStyle = computed<CSSProperties>(() => {
   const s: Record<string, string | number> = {
     "--card-width": `${props.width}px`,
+    "--card-aspect": props.aspectRatio,
     "--hue-speed": props.colorMode === "rainbow" ? props.hueSpeed : 1,
     "--animation-speed": props.animationSpeed,
     "--card-color": props.cardColor,
     "--text-color": props.textColor,
+    "--multi-anim": multiAnimName,
   }
   if (props.colorMode === "mono") {
-    // 锁定 hue，色相动画停掉
     s["--hue"] = monoHue.value
   }
   return s as CSSProperties
@@ -114,7 +118,7 @@ const containerStyle = computed<CSSProperties>(() => {
 </script>
 
 <template>
-  <!-- multi 模式需要运行时注入 keyframes；用 :deep 全局声明一次即可 -->
+  <!-- multi 模式运行时注入唯一 keyframes（全局） -->
   <component :is="'style'" v-if="colorMode === 'multi' && multiKeyframes">{{ multiKeyframes }}</component>
 
   <div
@@ -141,31 +145,29 @@ const containerStyle = computed<CSSProperties>(() => {
 <style scoped>
 @import "./glowing.css";
 
-/* rainbow：沿用原版 @property --hue 0→360 循环 */
-.is-rainbow .glow-content:before,
-.is-rainbow .glow {
-  animation-name: hue-animation, rotate-bg, rotate;
+/* rainbow：色相走 0→360 */
+.is-rainbow .glow-content:before {
+  animation: hue-animation var(--animation-speed) linear infinite,
+    rotate-bg var(--animation-speed) linear infinite;
 }
 .is-rainbow .glow:after {
-  animation-name: hue-animation;
+  animation: hue-animation var(--animation-speed) linear infinite;
 }
 
-/* mono：固定 hue，移除色相动画，只保留旋转/背景游走 */
+/* mono：固定 hue，仅保留背景游走，不跑色相动画 */
 .is-mono .glow-content:before {
   animation: rotate-bg var(--animation-speed) linear infinite;
-  transition: --bg-size var(--interaction-speed) ease;
 }
 .is-mono .glow:after {
   animation: none;
 }
 
-/* multi：色相走自定义 keyframes，名称 glow-multi-hue */
+/* multi：色相走运行时注入的 keyframes（每实例唯一名） */
 .is-multi .glow-content:before {
-  animation: glow-multi-hue var(--animation-speed) linear infinite,
+  animation: var(--multi-anim) var(--animation-speed) linear infinite,
     rotate-bg var(--animation-speed) linear infinite;
-  transition: --bg-size var(--interaction-speed) ease;
 }
 .is-multi .glow:after {
-  animation: glow-multi-hue var(--animation-speed) linear infinite;
+  animation: var(--multi-anim) var(--animation-speed) linear infinite;
 }
 </style>

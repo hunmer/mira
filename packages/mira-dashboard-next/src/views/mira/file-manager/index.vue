@@ -480,7 +480,7 @@ onMounted(() => {
         <p class="mt-1 text-sm text-muted-foreground">{{ t('fileManager.subtitle') }}</p>
       </div>
       <div class="flex gap-2">
-        <Button variant="outline" size="sm" :disabled="!selectedLibraryId" @click="openUploadDialog">
+        <Button v-if="selected.size === 0" variant="outline" size="sm" :disabled="!selectedLibraryId" @click="openUploadDialog">
           <RiUploadCloudLine class="mr-1 size-4" />
           {{ t('nav.fileUpload') }}
         </Button>
@@ -503,14 +503,14 @@ onMounted(() => {
           <RiDeleteBinLine class="mr-1 size-4" />
           {{ t('fileManager.delete') }}
         </Button>
-        <Button variant="outline" size="sm" :disabled="!selectedLibraryId" @click="openUrlDialog">
+        <Button v-if="selected.size === 0" variant="outline" size="sm" :disabled="!selectedLibraryId" @click="openUrlDialog">
           <RiDownloadCloud2Line class="mr-1 size-4" />
           {{ t('fileManager.download.urlButton') }}
         </Button>
-        <Button variant="outline" size="sm" :disabled="!selectedLibraryId || loading" @click="loadItems()">
+        <Button v-if="selected.size === 0" variant="outline" size="sm" :disabled="!selectedLibraryId || loading" @click="loadItems()">
           {{ t('common.refresh') }}
         </Button>
-        <Button variant="outline" size="sm" :disabled="!selectedLibraryId || syncing" @click="syncFiles">
+        <Button v-if="selected.size === 0" variant="outline" size="sm" :disabled="!selectedLibraryId || syncing" @click="syncFiles">
           <span v-if="syncing" class="mr-1 size-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
           <RiRefreshLine v-else class="mr-1 size-4" />
           {{ syncing ? t('fileManager.syncing') : t('fileManager.sync') }}

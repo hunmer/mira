@@ -15,9 +15,8 @@
  */
 import { computed, type CSSProperties } from "vue"
 import { cn } from "@/lib/utils"
-import { GlowingShadow } from "@/components/ui/glowing-shadow"
+import { GlowingShadow, type GlowColorMode } from "@/components/ui/glowing-shadow"
 
-type ColorMode = "rainbow" | "mono" | "multi"
 type Preset = "rainbow" | "mono" | "multi" | "blue" | "purple" | "green" | "sunset" | "ocean"
 type Size = "sm" | "default" | "lg"
 
@@ -25,7 +24,7 @@ interface Props {
   /** 预设配色，等价于一次性设置 colorMode + color/colors */
   preset?: Preset
   /** 显式配色模式（覆盖 preset 派生） */
-  colorMode?: ColorMode
+  colorMode?: GlowColorMode
   /** mono 颜色 */
   color?: string
   /** multi 颜色列表 */
@@ -53,7 +52,7 @@ const emit = defineEmits<{
   click: [event: MouseEvent]
 }>()
 
-const PRESETS: Record<Preset, { mode: ColorMode; color?: string; colors?: string[] }> = {
+const PRESETS: Record<Preset, { mode: GlowColorMode; color?: string; colors?: string[] }> = {
   rainbow: { mode: "rainbow" },
   mono: { mode: "mono", color: "#a855f7" },
   multi: { mode: "multi", colors: ["#ef4444", "#f59e0b", "#22c55e", "#3b82f6", "#a855f7"] },
@@ -73,7 +72,6 @@ const resolved = computed(() => {
   }
 })
 
-// 按钮尺寸：宽度、字号、内容内边距
 const SIZE_MAP: Record<Size, { width: number; fontSize: string }> = {
   sm: { width: 120, fontSize: "13px" },
   default: { width: 180, fontSize: "15px" },
@@ -86,11 +84,20 @@ const contentStyle = computed<CSSProperties>(() => ({
   fontSize: SIZE_MAP[props.size].fontSize,
   fontWeight: 600,
 }))
+const wrapperStyle = computed<CSSProperties>(() => ({
+  pointerEvents: props.disabled ? "none" : "auto",
+}))
+
+function onClick(e: MouseEvent) {
+  if (props.disabled) return
+  emit("click", e)
+}
 </script>
 
 <template>
   <GlowingShadow
     :class="cn('glow-button', { 'is-disabled': disabled }, props.class)"
+    :style="wrapperStyle"
     :width="width"
     :aspect-ratio="aspect"
     :color-mode="resolved.mode"
@@ -98,13 +105,12 @@ const contentStyle = computed<CSSProperties>(() => ({
     :colors="resolved.colors"
     :hue-speed="hueSpeed"
     :animation-speed="animationSpeed"
-    :style="{ pointerEvents: disabled ? 'none' : 'auto' }"
     role="button"
     :tabindex="disabled ? -1 : 0"
     :aria-disabled="disabled || undefined"
-    @click="!disabled && emit('click', $event)"
-    @keydown.enter.prevent="!disabled && emit('click', $event as unknown as MouseEvent)"
-    @keydown.space.prevent="!disabled && emit('click', $event as unknown as MouseEvent)"
+    @click="onClick"
+    @keydown.enter.prevent="onClick($event as unknown as MouseEvent)"
+    @keydown.space.prevent="onClick($event as unknown as MouseEvent)"
   >
     <span class="glow-button-content" :style="contentStyle">
       <slot />
@@ -125,7 +131,7 @@ const contentStyle = computed<CSSProperties>(() => ({
 .glow-button :deep(.glow-content) {
   padding: 0 1.2em;
 }
-.glow-button :deep(.glow-content .glow-button-content) {
+.glow-button :deep(.glow-button-content) {
   display: inline-flex;
   align-items: center;
   gap: 0.4em;

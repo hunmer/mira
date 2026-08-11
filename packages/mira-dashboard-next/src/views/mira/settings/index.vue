@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { cookieSiteApi } from '@/api'
 import type { CookieSite, CookieItem } from '@/types/mira'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -14,6 +14,10 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter,
   DialogHeader, DialogTitle,
 } from '@/components/ui/dialog'
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuLabel, DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu'
 import { toast } from 'vue-sonner'
 import {
   RiAddLine, RiDownloadCloud2Line, RiLoginBoxLine, RiEdit2Line,
@@ -74,14 +78,7 @@ const grouped = computed<SiteGroup[]>(() => {
   return Array.from(map.values())
 })
 
-// 已添加的 url 集合（用于预设区灰显）
-const addedUrls = computed(() => new Set(grouped.value.map((g) => g.key)))
-
 async function addPreset(preset: { name: string; url: string }) {
-  if (addedUrls.value.has(normalizeUrl(preset.url))) {
-    toast.success(t('settings.download.added'))
-    return
-  }
   try {
     await cookieSiteApi.create({ name: preset.name, url: preset.url })
     toast.success(t('settings.download.added'))
@@ -90,6 +87,9 @@ async function addPreset(preset: { name: string; url: string }) {
     toast.error(e.response?.data?.message || t('common.failed'))
   }
 }
+
+// 已添加的 url 集合（用于「添加站点」Dialog 提示同站点新增组）
+const addedUrls = computed(() => new Set(grouped.value.map((g) => g.key)))
 
 // ===== 添加/编辑 站点组 =====
 const showAdd = ref(false)
@@ -260,37 +260,34 @@ function cookieCount(site: CookieSite) {
       </TabsList>
 
       <TabsContent value="download" class="space-y-6 mt-4">
-        <!-- 预设站点 -->
-        <Card>
-          <CardHeader>
-            <CardTitle class="text-base">{{ t('settings.download.presetSites') }}</CardTitle>
-            <CardDescription>{{ t('settings.download.presetHint') }}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div class="flex flex-wrap gap-2">
-              <Button
-                v-for="p in PRESET_SITES"
-                :key="p.url"
-                variant="outline"
-                size="sm"
-                :disabled="addedUrls.has(normalizeUrl(p.url))"
-                @click="addPreset(p)"
-              >
-                <RiAddLine class="size-4 mr-1" />
-                {{ p.name }}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
         <!-- 站点分组列表 -->
         <Card>
           <CardHeader class="flex-row items-center justify-between space-y-0">
             <CardTitle class="text-base">{{ t('settings.download.addSite') }}</CardTitle>
-            <Button size="sm" @click="openAdd()">
-              <RiAddLine class="size-4 mr-1" />
-              {{ t('settings.download.addSite') }}
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger as-child>
+                <Button size="sm">
+                  <RiAddLine class="size-4 mr-1" />
+                  {{ t('settings.download.addSite') }}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" class="w-52">
+                <DropdownMenuLabel>{{ t('settings.download.presetSites') }}</DropdownMenuLabel>
+                <DropdownMenuItem
+                  v-for="p in PRESET_SITES"
+                  :key="p.url"
+                  @click="addPreset(p)"
+                >
+                  <RiAddLine class="size-4 mr-2" />
+                  {{ p.name }}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem @click="openAdd()">
+                  <RiEdit2Line class="size-4 mr-2" />
+                  {{ t('settings.download.customSite') }}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </CardHeader>
           <CardContent>
             <div v-if="loading" class="text-sm text-muted-foreground py-8 text-center">{{ t('common.loading') }}</div>

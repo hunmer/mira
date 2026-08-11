@@ -331,6 +331,7 @@ export default {
     download: {
       subtitle: '管理需要登录的下载站点及其 Cookie',
       addSite: '添加站点',
+      customSite: '自定义站点',
       presetSites: '预设站点',
       presetHint: '点击快速添加常用站点',
       loginGetCookie: '登录获取 Cookie',
