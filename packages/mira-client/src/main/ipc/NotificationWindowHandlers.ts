@@ -9,6 +9,8 @@ import type { NotificationAnimation } from '../../shared/types'
  * 通知窗口载荷（结构化字段 + 可选任意 HTML）
  */
 export interface NotificationPayload {
+  /** 窗口内部使用的稳定列表键 */
+  __itemKey?: number
   /** 业务通知 ID；重复调用 show 时原位更新同一通知 */
   notificationId?: string
   /** 标题（必填） */
@@ -85,6 +87,8 @@ export class NotificationWindowHandlers {
   private slots: NotificationSlot[] = []
   /** 自增 id */
   private nextId = 1
+  /** 同窗口列表项稳定键 */
+  private nextItemKey = 1
   /** 单条通知最大宽度 */
   private readonly WIDTH = 340
   /** 堆叠间距（含间隙） */
@@ -112,8 +116,14 @@ export class NotificationWindowHandlers {
       const itemIndex = payload.notificationId
         ? existing.items.findIndex((item) => item.notificationId === payload.notificationId)
         : -1
-      if (itemIndex >= 0) existing.items[itemIndex] = payload
-      else existing.items.push(payload)
+      if (itemIndex >= 0) {
+        existing.items[itemIndex] = {
+          ...payload,
+          __itemKey: existing.items[itemIndex].__itemKey,
+        }
+      } else {
+        existing.items.push({ ...payload, __itemKey: this.nextItemKey++ })
+      }
       existing.payload = payload
       const duration = payload.duration ?? 5000
       existing.duration = duration
@@ -148,7 +158,7 @@ export class NotificationWindowHandlers {
       id,
       notificationId: payload.notificationId,
       payload,
-      items: [payload],
+      items: [{ ...payload, __itemKey: this.nextItemKey++ }],
       handler,
       timer: null,
       duration,
@@ -194,7 +204,10 @@ export class NotificationWindowHandlers {
     }
     if (slot.remaining <= 0) return // 常驻
     slot.startedAt = Date.now()
-    slot.timer = setTimeout(() => this.dismissSlot(slot), slot.remaining)
+    slot.timer = setTimeout(() => {
+      slot.handler.sendMessage({ type: 'notification-auto-hide' })
+      slot.timer = setTimeout(() => this.dismissSlot(slot), 280)
+    }, slot.remaining)
   }
 
   /**

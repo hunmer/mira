@@ -52,6 +52,8 @@ async function initNotificationWindow() {
         console.info('[NotificationDebug] content received', data.payload)
         appVM.applyContent(data.payload)
         reportMeasure()
+      } else if (data.type === 'notification-auto-hide') {
+        appVM.isAutoHiding = true
       }
     },
     onReady: () => {
@@ -73,6 +75,7 @@ async function initNotificationWindow() {
         actions: [],
         html: '',
         hasContent: false,
+        isAutoHiding: false,
         isDragging: false,
         dragItem: null,
         dragStartCursor: null,
@@ -127,12 +130,12 @@ async function initNotificationWindow() {
       },
     },
     template: `
-      <div v-if="hasContent" class="notification-list" @mouseenter="handleMouseEnter" @mouseleave="handleMouseLeave">
+      <TransitionGroup v-if="hasContent" name="notification-position" tag="div" class="notification-list" :class="{ 'is-auto-hiding': isAutoHiding }" @mouseenter="handleMouseEnter" @mouseleave="handleMouseLeave">
       <div
         v-for="(item, index) in items"
-        :key="item.notificationId || index"
+        :key="item.__itemKey || item.notificationId || index"
         class="notification-card"
-        :class="[index === 0 ? animationClass : '', { 'is-dragging': dragItem === item, 'is-draggable': draggable }]"
+        :class="[animationClass, { 'is-dragging': dragItem === item, 'is-draggable': draggable }]"
         :style="itemStyle(item)"
         @mousedown="handleDragStart(item, $event)"
         @click="handleCardClick(item)"
@@ -190,7 +193,7 @@ async function initNotificationWindow() {
           </div>
         </div>
       </div>
-      </div>
+      </TransitionGroup>
     `,
     mounted() {
       document.addEventListener('contextmenu', (e) => e.preventDefault())
@@ -208,6 +211,7 @@ async function initNotificationWindow() {
     },
     methods: {
       applyContent(payload) {
+        this.isAutoHiding = false
         this.items = Array.isArray(payload.__items) ? payload.__items : [payload]
         this.title = payload.title || ''
         this.body = payload.body || ''

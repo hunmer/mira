@@ -101,6 +101,20 @@
       width: 100%;
     }
 
+    .notification-card.notification-position-move {
+      transition: transform 0.22s ease, background 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    @keyframes notification-auto-hide {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+
+    .notification-list.is-auto-hiding .notification-card {
+      animation: notification-auto-hide 0.25s ease forwards !important;
+      pointer-events: none;
+    }
+
     /* 通知卡片（右下角） */
     .notification-card {
       width: 320px;

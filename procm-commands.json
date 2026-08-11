@@ -44,6 +44,15 @@
         "run",
         "dev"
       ]
+    },
+    "mira-doc-dev": {
+      "script": "pnpm",
+      "args": [
+        "-C",
+        "packages/mira-doc",
+        "run",
+        "docs:dev"
+      ]
     }
   }
 }

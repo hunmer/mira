@@ -2,7 +2,7 @@
 
 ## 项目愿景
 
-Mira TypeScript 是一个基于 TypeScript 的 monorepo 项目,目标是构建一个**智能文件管理与自动化平台**。核心能力:
+Mira TypeScript 是一个基于 TypeScript 的 monorepo 项目,目标是构建一个**新时代的素材管理库**。核心能力:
 
 - 媒体文件的组织、检索、预览与管理(图片、视频、音频、文档)
 - 多素材库(Library)支持,每个库拥有独立的 SQLite 数据库
