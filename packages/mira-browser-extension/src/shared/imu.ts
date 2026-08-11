@@ -45,6 +45,11 @@ export function pinterestOriginalUrl(url: string): string | null {
   }
 }
 
+export function fallbackImageCandidates(url: string): string[] {
+  const pinterestOriginal = pinterestOriginalUrl(url);
+  return pinterestOriginal ? [pinterestOriginal, url] : [url];
+}
+
 /** 页面 MAIN world 注入脚本源码(字符串,由 <script> 执行) */
 const BRIDGE_SOURCE = `
 (function(){
@@ -99,7 +104,6 @@ let reqId = 0;
 
 function injectBridge(): void {
   if (bridgeInjected || typeof document === 'undefined') {
-    dbg.log('imu', 'bridge injection skipped', { bridgeInjected, hasDocument: typeof document !== 'undefined' });
     return;
   }
   dbg.log('imu', 'injecting MAIN-world bridge + maxurl script');
@@ -110,7 +114,6 @@ function injectBridge(): void {
   const imu = document.createElement('script');
   imu.src = chrome.runtime.getURL('maxurl.user.js');
   imu.onerror = () => dbg.warn('imu', 'maxurl.user.js script load failed (CSP?)', { src: imu.src });
-  imu.onload = () => dbg.log('imu', 'maxurl.user.js script loaded', { src: imu.src });
   (document.head || document.documentElement).appendChild(bridge);
   (document.head || document.documentElement).appendChild(imu);
   bridgeInjected = true;
@@ -133,7 +136,6 @@ function onMessage(ev: MessageEvent) {
   if (!resolve) return;
   pending.delete(d.id);
   if (d.error) dbg.warn('imu', 'MAIN-world maxurl error', { id: d.id, error: d.error });
-  else dbg.log('imu', 'MAIN-world response received', { id: d.id, count: Array.isArray(d.result) ? d.result.length : 0 });
   resolve(d.error ? null : (d.result as ImuResult[]));
 }
 
@@ -156,14 +158,17 @@ export async function upgradeImageUrl(url: string, opts: ImuOptions = {}): Promi
 
   const timeout = opts.timeout ?? 12000;
   const id = ++reqId;
-  dbg.log('imu', 'upgradeImageUrl request', { id, url, timeout });
   const result = await new Promise<ImuResult[] | null>(resolve => {
     const to = setTimeout(() => { pending.delete(id); dbg.warn('imu', 'upgradeImageUrl timeout', { id, url }); resolve(null); }, timeout);
-    pending.set(id, res => { clearTimeout(to); dbg.log('imu', 'upgradeImageUrl response', { id, hasResult: !!res, count: res?.length }); resolve(res); });
+    pending.set(id, res => { clearTimeout(to); resolve(res); });
     window.postMessage({ tag: REQ_TAG, id, url, iterations: 200 }, '*');
   });
 
-  if (!result || !result.length) { dbg.warn('imu', 'upgradeImageUrl: no result, fallback to original', url); return [url]; }
+  if (!result || !result.length) {
+    const fallback = fallbackImageCandidates(url);
+    dbg.warn('imu', 'no result, using fallback', { url, best: fallback[0] });
+    return fallback;
+  }
   const seen = new Set<string>();
   const ordered: { url: string; original: boolean }[] = [];
   for (const r of result) {
@@ -177,13 +182,6 @@ export async function upgradeImageUrl(url: string, opts: ImuOptions = {}): Promi
   const pinterestOriginal = pinterestOriginalUrl(url);
   if (pinterestOriginal && !out.includes(pinterestOriginal)) out.unshift(pinterestOriginal);
   if (!out.includes(url)) out.push(url);
-  dbg.log('imu', 'upgradeImageUrl result', {
-    id,
-    originalUrl: url,
-    rawCount: result.length,
-    acceptedCount: ordered.length,
-    pinterestFallback: pinterestOriginal,
-    candidates: out,
-  });
+  dbg.log('imu', 'result', { original: url, best: out[0], count: out.length, fallback: !!pinterestOriginal });
   return out;
 }

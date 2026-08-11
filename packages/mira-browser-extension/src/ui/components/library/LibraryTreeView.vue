@@ -61,14 +61,13 @@ async function uploadUrls(urls: string[], target?: { folderId?: number; tags?: s
       try {
         const candidates = await bg.upgradeImageUrl(tabId, url, 12000);
         uploadUrl = candidates[0] ?? url;
-        dbg.log('drag', 'upload URL upgraded', { original: url, uploadUrl, candidates });
+        dbg.log('drag', 'upgraded', { original: url, uploadUrl, count: candidates.length });
       } catch (error) {
         dbg.warn('drag', 'upload URL upgrade failed, use original', { url, error });
       }
     } else {
       dbg.log('drag', 'upload URL maxurl skipped', { url, imuEnabled: settings.value.imuEnabled, tabId });
     }
-    dbg.info('drag', 'uploadUrls → UPLOAD_FROM_URL', { url: uploadUrl, referrer: tab?.url, libId, ...target });
     chrome.runtime.sendMessage({
       type: 'UPLOAD_FROM_URL',
       payload: {

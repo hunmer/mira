@@ -9,7 +9,7 @@ function escapeRegex(value: string): string {
 async function getCookies(url: string, referrer?: string): Promise<chrome.cookies.Cookie[]> {
   const cookies = await chrome.cookies.getAll({ url });
   if (!referrer) {
-    dbg.log('download', 'cookies resolved', { url, regularCount: cookies.length, partitionedCount: 0 });
+    dbg.log('download', 'auth', { url, cookieCount: cookies.length });
     return cookies;
   }
 
@@ -24,12 +24,10 @@ async function getCookies(url: string, referrer?: string): Promise<chrome.cookie
         && other.path === cookie.path,
       ) === index,
     );
-    dbg.log('download', 'cookies resolved', {
+    dbg.log('download', 'auth', {
       url,
-      referrer,
-      regularCount: cookies.length,
+      cookieCount: allCookies.length,
       partitionedCount: partitioned.length,
-      totalCount: allCookies.length,
     });
     return allCookies;
   } catch (error) {
@@ -40,7 +38,6 @@ async function getCookies(url: string, referrer?: string): Promise<chrome.cookie
 
 /** 使用来源站点 Cookie/Referer 抓取资源，并在完成后立即移除临时请求规则。 */
 export async function fetchResource(url: string, referrer?: string): Promise<Response> {
-  dbg.log('download', 'resource fetch start', { url, referrer });
   const cookies = await getCookies(url, referrer);
   const requestHeaders: chrome.declarativeNetRequest.ModifyHeaderInfo[] = [];
   if (cookies.length) {
@@ -61,7 +58,7 @@ export async function fetchResource(url: string, referrer?: string): Promise<Res
 
   if (!requestHeaders.length) {
     const response = await fetch(url, { credentials: 'include' });
-    dbg.log('download', 'resource fetch response', { url, status: response.status, ok: response.ok, cookieCount: 0 });
+    dbg.log('download', 'response', { url, status: response.status });
     return response;
   }
 
@@ -82,21 +79,13 @@ export async function fetchResource(url: string, referrer?: string): Promise<Res
       },
     }],
   });
-  dbg.log('download', 'request rule installed', {
-    url,
-    ruleId,
-    cookieCount: cookies.length,
-    hasReferrer: !!referrer,
-  });
-
   try {
     const response = await fetch(url, { credentials: 'include' });
-    dbg.log('download', 'resource fetch response', {
+    dbg.log('download', 'response', {
       url,
       status: response.status,
-      ok: response.ok,
-      contentType: response.headers.get('content-type'),
-      contentLength: response.headers.get('content-length'),
+      type: response.headers.get('content-type'),
+      bytes: response.headers.get('content-length'),
     });
     return response;
   } catch (error) {
@@ -104,6 +93,5 @@ export async function fetchResource(url: string, referrer?: string): Promise<Res
     throw error;
   } finally {
     await chrome.declarativeNetRequest.updateSessionRules({ removeRuleIds: [ruleId] });
-    dbg.log('download', 'request rule removed', { url, ruleId });
   }
 }

@@ -39,7 +39,7 @@ export function broadcast(event: Event): void {
 export function createRouter(deps: RouterDeps): RequestHandler {
   return async (req, _sender) => {
     if (!isRequest(req)) return undefined;
-    dbg.log('router', 'request', req.type, (req as any).payload);
+    dbg.log('router', 'request', req.type);
 
     switch (req.type) {
       case 'AUTH_LOGIN': {
@@ -122,14 +122,12 @@ export function createRouter(deps: RouterDeps): RequestHandler {
       }
       case 'UPLOAD_FROM_URL': {
         const settings = await getSettings();
-        // service worker fetch url → Blob → File(规避 content script CORS)
-        const res = await fetch(req.payload.url, {
-          credentials: 'include',
-          ...(req.payload.referrer ? {
-            referrer: req.payload.referrer,
-            referrerPolicy: 'no-referrer-when-downgrade' as ReferrerPolicy,
-          } : {}),
-        });
+        // 读取来源站点 Cookie/Referer 后 fetch → Blob → File(规避 content script CORS)
+        const res = await fetchResource(req.payload.url, req.payload.referrer);
+        if (!res.ok) {
+          dbg.error('upload', 'UPLOAD_FROM_URL fetch failed', { url: req.payload.url, status: res.status });
+          throw new Error(`resource fetch failed: ${res.status}`);
+        }
         const blob = await res.blob();
         const filename = resourceFilename(req.payload.url, blob.type) || `resource-${Date.now()}`;
         const file = new File([blob], filename, { type: blob.type || 'image/*' });

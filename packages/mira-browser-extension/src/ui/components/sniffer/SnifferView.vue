@@ -246,7 +246,7 @@ async function uploadSelected() {
       try {
         const candidates = await bg.upgradeImageUrl(r.tabId, r.url, 12000);
         url = candidates[0] ?? r.url;
-        dbg.log('sniffer', 'upload selected upgraded', { original: r.url, url, candidates });
+        dbg.log('sniffer', 'upgraded', { original: r.url, url, count: candidates.length });
       } catch (error) {
         dbg.warn('sniffer', 'upload selected upgrade failed, use original', { url: r.url, error });
       }

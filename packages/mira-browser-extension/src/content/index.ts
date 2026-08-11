@@ -67,19 +67,17 @@ async function uploadUrl(url: string, kind: ResourceKind, folderId?: number) {
   let best = url;
   try {
     const settings: any = await chrome.runtime.sendMessage({ type: 'CONFIG_GET' });
-    dbg.info('content', 'uploadUrl', { url, kind, folderId, imuEnabled: settings?.imuEnabled });
     if (settings?.imuEnabled) {
       const candidates = await upgradeImageUrl(url, { timeout: 12000 });
       // upgradeImageUrl 返回 [...升级候选, 原 url];取第一个非原 url(若有),否则原 url
       best = candidates[0] ?? url;
-      dbg.log('content', 'uploadUrl upgraded', { original: url, best, candidates });
+      dbg.log('content', 'upgraded', { original: url, best, count: candidates.length });
     }
   } catch (e) { dbg.warn('content', 'uploadUrl upgrade failed, use original', e); /* 升级失败沿用原 url */ }
   chrome.runtime.sendMessage({
     type: 'UPLOAD_FROM_URL',
     payload: { url: best, kind, libraryId: '', folderId, referrer: location.href },
-  }).then(() => dbg.log('content', 'UPLOAD_FROM_URL sent', { url: best }))
-    .catch(e => dbg.error('content', 'UPLOAD_FROM_URL send failed', e));
+  }).catch(e => dbg.error('content', 'UPLOAD_FROM_URL send failed', e));
 }
 
 const scroller = createAutoScroller();

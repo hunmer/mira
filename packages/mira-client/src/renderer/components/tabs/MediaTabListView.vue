@@ -905,6 +905,23 @@ const handleFilterChange = async (filter: FilterRule) => {
         delete mergedFilters.category
       }
       break
+    case 'metadata': {
+      const hasMetaRange = filter.metaDimMin !== undefined || filter.metaDimMax !== undefined
+        || filter.metaDurMin !== undefined || filter.metaDurMax !== undefined
+      if (hasMetaRange) {
+        mergedFilters.metadata = {
+          id: 'metadata',
+          metaDimMin: filter.metaDimMin,
+          metaDimMax: filter.metaDimMax,
+          metaDurMin: filter.metaDurMin,
+          metaDurMax: filter.metaDurMax,
+          label: t('business.filterBar.metadataTitle')
+        }
+      } else {
+        delete mergedFilters.metadata
+      }
+      break
+    }
   }
 
   // 更新MediaTabData中的筛选器
@@ -948,6 +965,8 @@ const handleFilterClear = async (filter: FilterRule) => {
       delete mergedFilters.urls
     } else if (filter.id === 'size') {
       delete mergedFilters.size
+    } else if (filter.id === 'metadata') {
+      delete mergedFilters.metadata
     }
   }
 

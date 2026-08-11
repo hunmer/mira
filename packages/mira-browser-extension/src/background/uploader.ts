@@ -114,7 +114,7 @@ export function createUploader(deps: UploaderDeps): Uploader {
         task.percent = 100;
         task.result = result;
         controllers.delete(task.id);
-        dbg.info('upload', 'success', { id: task.id, name: task.file.name, result });
+        dbg.info('upload', 'success', { id: task.id, name: task.file.name });
         notify();
         scheduleSuccessRemoval(task.id);
         return;
@@ -172,7 +172,7 @@ export function createUploader(deps: UploaderDeps): Uploader {
         createdAt: Date.now(),
       };
       queue.push(task);
-      dbg.info('upload', 'enqueue', { id: task.id, source: input.source, name: input.file.name, size: input.file.size, libraryId: input.libraryId, folderId: input.folderId });
+      dbg.info('upload', 'enqueue', { id: task.id, source: input.source, name: input.file.name, size: input.file.size });
       notify();
       pump();
       return task.id;
