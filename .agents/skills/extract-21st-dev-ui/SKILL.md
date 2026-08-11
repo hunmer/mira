@@ -50,17 +50,35 @@ bundle 里的 JS 是**压缩但未深度混淆**的 —— 变量名被缩短（
 - **部分 bundle 用 `i(fn,"OriginalName")` 保留原名**：有的 bundle 每个函数结尾都有；有的**完全没有**，函数名就是压缩符号（`$g`/`Ng`/`a3`）。后者靠 **registry 映射表**（见步骤 3）还原语义，别死等 `i(fn,...)`
 - **JSX 结构完整**：`X.jsx` / `X.jsxs` 就是 React 的 `jsx`/`jsxs`
 
-提取策略（写个一次性 python 脚本，跑完就删）：
+提取策略：**优先用本 skill 自带的 `scripts/extract.py`**（固化了下面四类高频操作，省去每次手写一次性脚本）。四个子命令对应提取的四个阶段：
 
-```python
-import re
-s = open("bundle_tmp.html", encoding="utf-8", errors="ignore").read()
+| 子命令 | 作用 | 何时用 |
+|---|---|---|
+| `names` | 扫描 `s(sym,"OriginalName")` 模式，输出 压缩符号→原名 映射表 | 第一步：识别 `$g`/`Ng`/`Sr` 这些短符号到底是啥 |
+| `find` | 用 anchor 字符串定位，向前找最近的 `function`，打印片段 | 不确定函数名时，先用独有 className/SVG id 探路 |
+| `fn` | 平衡括号提取整个函数体（自动跳过参数解构陷阱）| 定位到函数名后，取干净完整的函数体 |
+| `jsx` | 解析代码里所有 `F.jsx("tag",{...})` 的直属属性 | 解析 SVG / 复杂 JSX，避免固定字符窗口跨节点 |
 
-# 用一个组件里独有的字符串定位，向前找最近的 'function '，向后取定长片段
-anchor = "roundedCorners"          # 例：手机壳组件独有的 clipPath id
-i = s.find(anchor)
-j = s.rfind("function ", 0, i)
-print(s[j : i + 4500])             # 打印出整个组件函数体
+脚本完整路径 `.agents/skills/extract-21st-dev-ui/scripts/extract.py`。**下文命令示例统一简写为 `python3 scripts/extract.py`，实际在项目根执行时应写全路径，或先 `cd .agents/skills/extract-21st-dev-ui`**（bundle 若在项目根，传绝对/相对路径均可）。`python3 scripts/extract.py --help` 看完整用法。
+
+#### 0. 先跑 `names` 看哪些原名被保留了
+
+```bash
+python3 scripts/extract.py bundle_tmp.html names
+# 输出示例：
+#   Sr  →  useMotionValue
+#   gg  →  useSpring
+#   ke  →  cn
+```
+
+> 部分 bundle **完全没有** `s(sym,"Name")` 模式 —— `names` 会提示未发现。此时只能靠下面的 registry 映射表（手读）还原语义。
+
+#### 1. `find`：用 anchor 探路（定位函数名）
+
+```bash
+# 用组件独有的字符串定位，脚本会自动向前找最近的 'function ' 并提示函数名
+python3 scripts/extract.py bundle_tmp.html find "roundedCorners" --after 4500
+# 输出：# 最近 function: sM @ 359988 (offset 64) + 代码片段
 ```
 
 常用 anchor（每个组件都有的特征字符串）：
@@ -92,43 +110,45 @@ bundle 末尾的渲染入口几乎都是 **21st 预览外壳**（全屏 `h-scree
 
 > 渲染入口 → registry 映射 → demo 包装 → 真正组件，**常两层间接**。停在哪一层都会拿到残缺 / 带示例数据的代码。
 
-#### 用平衡括号提取函数体（注意参数解构陷阱）
+#### 2. `fn`：平衡括号提取整个函数体（已处理参数解构陷阱）
 
-定位到 `function Ng(...)` 后，用括号平衡取整个函数体。**陷阱**：必须从**函数体的 `{`**（即 `){` 之后那个）开始平衡，**不能**从参数解构 `{src,...}` 的第一个 `{` 开始 —— 否则会在解构对象的 `}` 处提前停止，得到几十字的残缺片段。
+脚本内置的 `balanced_from` 处理字符串/转义/模板字符串，并自动从**函数体的 `{`**（即 `){` 之后那个）开始平衡，跳过参数解构 —— 不会在 `{src,...}` 的 `}` 处提前停止。
 
-```python
-def balanced_from(open_brace_idx):
-    depth = 0; j = open_brace_idx; instr = None; esc = False
-    while j < len(s):
-        c = s[j]
-        if instr:
-            if esc: esc = False
-            elif c == "\\": esc = True
-            elif c == instr: instr = None
-        else:
-            if c in '"\'`': instr = c
-            elif c == "{": depth += 1
-            elif c == "}":
-                depth -= 1
-                if depth == 0: return j
-        j += 1
+```bash
+# 直接传函数名
+python3 scripts/extract.py bundle_tmp.html fn sM
 
-fn = s.find("function Ng")
-body_open = s.find("){", fn) + 1     # ← 关键：跳过参数列表，定位函数体 {
-body = s[fn : balanced_from(body_open) + 1]
+# 不知道函数名？传 anchor 也行：脚本会向前找最近的 function 并自动定位其函数体
+python3 scripts/extract.py bundle_tmp.html fn "lensStrength"
+
+# 想看长度：--stats 在 stderr 输出字符数
+python3 scripts/extract.py bundle_tmp.html fn sM --stats
 ```
 
-#### 精确提取每个 JSX 节点的属性（别用固定字符窗口）
+> 仍需理解陷阱原理（见上）：脚本已规避，但你读输出时要确认拿到的是**完整函数体**（结尾应是 `}` 且长度合理，几十字就是被解构截断了）。
 
-解析 SVG/复杂 JSX 时，**别用** `grep -oE '.{N}xxx.{M}'` 或 `s[i:i+400]` 抓 props —— 固定窗口会跨到下一个节点，把别人的属性算到当前节点头上。正确做法：用平衡括号定每个 `F.jsx("tag",{...})` 的 props 对象边界，**只在 `children:` 之前**提 `key:"value"`。
+#### 3. `jsx`：精确提取每个 JSX 节点的属性（别用固定字符窗口）
 
-```python
-for m in re.finditer(r'F\.jsx(s)?\("([^"]+)",', body):
-    po = body.find("{", m.start())
-    pc = balanced_from(po)                       # 复用上面的函数
-    head = body[po + 1 : pc].split("children:")[0]
-    attrs = re.findall(r'([a-zA-Z]+):"([^"]*)"', head)
-    print(m.group(2), attrs)
+解析 SVG/复杂 JSX 时，**别用** `grep -oE '.{N}xxx.{M}'` 或 `s[i:i+400]` 抓 props —— 固定窗口会跨到下一个节点，把别人的属性算到当前节点头上。`jsx` 子命令用平衡括号定每个 `F.jsx("tag",{...})` 的 props 对象边界，**只在 `children:` 之前**提 `key:"value"`，同时识别 `aria-hidden:!0` / `fill:!0` 这类动态布尔/表达式属性。
+
+```bash
+# 典型流水线：fn 取函数体 → 管道喂给 jsx 解析属性
+python3 scripts/extract.py bundle_tmp.html fn sM \
+  | python3 scripts/extract.py jsx --stats
+
+# 或从文件读
+python3 scripts/extract.py bundle_tmp.html fn sM > /tmp/fn.txt
+python3 scripts/extract.py jsx --input /tmp/fn.txt
+```
+
+输出形如（每个 JSX 节点的直属属性，已剔除 children）：
+```
+<div>
+  className='pointer-events-none absolute inset-0 opacity-80'
+  borderRadius='inherit'
+  background='conic-gradient(from 0deg ...)'
+  animation='iris-spin 14s linear infinite'
+  padding={1}              # ← 动态属性自动用 {} 标注
 ```
 
 ### 4. 还原成可读 TSX
@@ -211,7 +231,8 @@ components/ui/<component-id>-utils/<子模块>.tsx      # 工具/子组件
 1. 按用户给的 import 结构创建文件
 2. 在目标页面 import 并放置到合适位置
 3. `npx tsc --noEmit -p tsconfig.json` 过一遍，grep 自己的新文件名确认无类型错误
-4. 清理临时文件（`bundle_tmp.html`、提取脚本）—— **别忘了删，否则污染 git status**
+4. 清理临时文件（`bundle_tmp.html`）—— **别忘了删，否则污染 git status**。
+   `scripts/extract.py` 是 skill 自带工具，**不要删**，下次复用
 
 ## 速查：一个典型提取过程的产物
 
@@ -273,7 +294,7 @@ export function PhoneCarousel({ images }: { images: ImageItem[] }) {
 
 - [ ] 用户给的 import 路径都能解析（无 `Cannot find module`）
 - [ ] `tsc --noEmit` 对新文件无错误
-- [ ] 临时文件（bundle、提取脚本）已删除
+- [ ] 临时文件（`bundle_tmp.html`）已删除（`scripts/extract.py` 是常驻工具，勿删）
 - [ ] SVG 的 `id` / `clipPath` 已加组件前缀，避免跨组件撞名
 - [ ] 如改用 `<img>` / 原生 `<image>` 替代 next/image，已说明原因
 - [ ] 提醒用户：示例数据（图片/文案）需替换为自己的内容

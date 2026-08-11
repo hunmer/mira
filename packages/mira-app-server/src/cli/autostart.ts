@@ -195,13 +195,19 @@ function disableWindows(): void {
 // ============================== 对外 API ==============================
 /** 注册并立即通过系统机制启动；返回注册文件/任务标识 */
 export function enableAutoStart(opts: AutoStartOptions): string {
+    let target: string;
     switch (process.platform) {
-        case 'darwin': return enableMacos(opts);
-        case 'linux': return enableLinux(opts);
-        case 'win32': return enableWindows(opts);
+        case 'darwin': target = enableMacos(opts); break;
+        case 'linux': target = enableLinux(opts); break;
+        case 'win32': target = enableWindows(opts); break;
         default:
             throw new Error(`不支持的平台：${process.platform}（仅支持 darwin / linux / win32）`);
     }
+    if (isVolatileNodePath(process.execPath)) {
+        console.warn(`⚠️  注册的 node 路径为版本相关目录：${process.execPath}`);
+        console.warn('   升级或切换 node 版本后自启可能失效；可运行 `mira-app-server autostart status` 检查，或重新 `start --autostart` 注册。');
+    }
+    return target;
 }
 
 /** 取消开机自启并停止系统托管的实例 */
@@ -212,5 +218,116 @@ export function disableAutoStart(): void {
         case 'win32': return disableWindows();
         default:
             throw new Error(`不支持的平台：${process.platform}`);
+    }
+}
+
+// ============================== 状态查询 ==============================
+export interface AutoStartStatus {
+    platform: string;
+    /** 是否已注册自启 */
+    registered: boolean;
+    /** 注册文件 / 任务标识（未注册时为预期位置） */
+    configFile: string;
+    /** 注册时记录的 node 路径（解析自配置文件） */
+    nodePath: string | null;
+    /** 该 node 路径当前是否仍存在 */
+    nodePathValid: boolean;
+    /** 是否为易变路径（nvm / homebrew Cellar 等随版本变化） */
+    nodePathVolatile: boolean;
+    /** 系统托管实例是否在运行（无法探测时为 null） */
+    running: boolean | null;
+}
+
+/** 判断 node 路径是否易变（nvm / homebrew Cellar 等版本相关目录） */
+export function isVolatileNodePath(p: string): boolean {
+    return /(\/\.nvm\/|\/nvm\/versions\/|\/Cellar\/node\/|\/opt\/homebrew\/opt\/node@)/.test(p)
+        || /\/node-v?\d+\.\d+/.test(p);
+}
+
+function macosPlistPath(): string {
+    return path.join(os.homedir(), 'Library', 'LaunchAgents', `${LABEL}.plist`);
+}
+function linuxServicePath(): string {
+    return path.join(os.homedir(), '.config', 'systemd', 'user', `${SERVICE_NAME}.service`);
+}
+function windowsLauncherPath(): string {
+    return path.join(runtimeDir(), 'mira-app-server-autostart.cmd');
+}
+
+function parseMacosNodePath(plist: string): string | null {
+    const m = plist.match(/<key>ProgramArguments<\/key>\s*<array>([\s\S]*?)<\/array>/);
+    if (!m) return null;
+    const s = m[1].match(/<string>([^<]+)<\/string>/);
+    return s ? s[1] : null;
+}
+function parseLinuxNodePath(service: string): string | null {
+    const m = service.match(/^ExecStart=(.+)$/m);
+    if (!m) return null;
+    return m[1].trim().split(/\s+/)[0].replace(/^['"]|['"]$/g, '');
+}
+function parseWindowsNodePath(cmd: string): string | null {
+    const line = cmd.split(/\r?\n/).find(l => l.trim() && !/^@echo/i.test(l.trim()));
+    if (!line) return null;
+    const m = line.match(/^"([^"]+)"/);
+    return m ? m[1] : line.trim().split(/\s+/)[0];
+}
+
+function makeStatus(registered: boolean, configFile: string, nodePath: string | null, running: boolean | null): AutoStartStatus {
+    return {
+        platform: process.platform,
+        registered,
+        configFile,
+        nodePath,
+        nodePathValid: nodePath ? fs.existsSync(nodePath) : false,
+        nodePathVolatile: nodePath ? isVolatileNodePath(nodePath) : false,
+        running,
+    };
+}
+
+function statusMacos(): AutoStartStatus {
+    const plistPath = macosPlistPath();
+    const exists = fs.existsSync(plistPath);
+    let nodePath: string | null = null;
+    if (exists) {
+        try { nodePath = parseMacosNodePath(fs.readFileSync(plistPath, 'utf-8')); } catch { /* ignore */ }
+    }
+    const running = exists
+        ? tryRun(`launchctl print gui/${process.getuid!()}/${LABEL}`) !== null
+        : false;
+    return makeStatus(exists, plistPath, nodePath, running);
+}
+
+function statusLinux(): AutoStartStatus {
+    const svcPath = linuxServicePath();
+    const exists = fs.existsSync(svcPath);
+    let nodePath: string | null = null;
+    if (exists) {
+        try { nodePath = parseLinuxNodePath(fs.readFileSync(svcPath, 'utf-8')); } catch { /* ignore */ }
+    }
+    let running: boolean | null = null;
+    if (exists) {
+        const r = tryRun(`systemctl --user is-active ${SERVICE_NAME}`);
+        running = r !== null && r.trim() === 'active';
+    }
+    return makeStatus(exists, svcPath, nodePath, running);
+}
+
+function statusWindows(): AutoStartStatus {
+    const launcherPath = windowsLauncherPath();
+    const taskExists = tryRun(`schtasks /Query /TN "${TASK_NAME}"`) !== null;
+    let nodePath: string | null = null;
+    if (fs.existsSync(launcherPath)) {
+        try { nodePath = parseWindowsNodePath(fs.readFileSync(launcherPath, 'utf-8')); } catch { /* ignore */ }
+    }
+    return makeStatus(taskExists, launcherPath, nodePath, taskExists);
+}
+
+/** 查询当前开机自启注册状态与 node 路径健康度 */
+export function statusAutoStart(): AutoStartStatus {
+    switch (process.platform) {
+        case 'darwin': return statusMacos();
+        case 'linux': return statusLinux();
+        case 'win32': return statusWindows();
+        default: return makeStatus(false, '', null, null);
     }
 }

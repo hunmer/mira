@@ -127,6 +127,19 @@ ok "构建工具就绪 (make=$(command -v make || echo none), g++=$(command -v g
 # ============================== 3. 安装 mira-app-server ==============================
 log "步骤 3/6 安装 mira-app-server"
 
+# 优先用本地仓库 build 产物（含最新改动，如 --autostart）；否则回退 npm registry 版
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+LOCAL_PKG="$REPO_ROOT/packages/mira-app-server"
+if [[ -f "$LOCAL_PKG/dist/cli.js" ]]; then
+    INSTALL_TARGET="$LOCAL_PKG"
+    log "使用本地仓库构建产物: $INSTALL_TARGET（含最新 --autostart 等改动）"
+    log "若源码有更新，请先在 packages/mira-app-server 执行 pnpm run build"
+else
+    warn "未找到本地构建产物 ($LOCAL_PKG/dist/cli.js)，回退 npm registry 版"
+    warn "registry 版可能不含 --autostart 等本地新增功能"
+    INSTALL_TARGET="mira-app-server"
+fi
+
 # 已装且可执行则跳过。需校验是 Linux 原生（非 Windows interop 的 /mnt/c/...）
 resolve_mira() {
     local p; p=$(command -v mira-app-server 2>/dev/null || true)
@@ -137,9 +150,12 @@ resolve_mira() {
 
 if [[ -n "$(resolve_mira)" ]]; then
     ok "mira-app-server 已存在: $(mira-app-server version 2>/dev/null | head -1)"
-else
-    log "npm 全局安装 mira-app-server ..."
-    ${SUDO:-} npm install -g mira-app-server || die "mira-app-server 安装失败"
+    ask_yn "是否卸载后重装?" n || { log "跳过安装"; SKIP_INSTALL=1; }
+fi
+
+if [[ "${SKIP_INSTALL:-0}" != "1" ]]; then
+    log "npm 全局安装: $INSTALL_TARGET"
+    ${SUDO:-} npm install -g "$INSTALL_TARGET" || die "mira-app-server 安装失败"
     ok "mira-app-server 安装完成"
 fi
 
@@ -177,27 +193,54 @@ RUN_DIR="$HOME/.mira"
 mkdir -p "$RUN_DIR"
 PID_FILE="$RUN_DIR/mira-server.pid"
 LOG_FILE="$RUN_DIR/mira-server.log"
+HEALTH_URL="http://127.0.0.1:${HTTP_PORT}/health"
+AUTOSTART_USED=0
 
 # 探测本发行版内是否已有 mira-app-server 进程在跑（不看 Windows 的，避免 WSL interop 误判）
 # 注意：不能用 curl localhost 探活 —— WSL2 的 localhost forwarding 会让本脚本误连到 Windows 主机上的同名服务
-# 用 -f 全命令行匹配，但要排除 grep 自身、本 deploy 脚本本身、以及 wsl interop 进程
 our_server_running() {
-    # 匹配真实 server：node 运行 dist/cli.js 或 dist/index.js，且命令行含 start
-    # 用 [c]lie正则技巧避开 grep 自身
     pgrep -af '[d]ist/(cli|index)\.js' 2>/dev/null | grep -q . && return 0
     pgrep -af 'node.*mira-app-server.*start' 2>/dev/null | grep -v "$$" | grep -q . && return 0
     return 1
 }
 
-HEALTH_URL="http://127.0.0.1:${HTTP_PORT}/health"
+# 是否有可用的 systemd user 实例（WSL 默认未启用 systemd）
+has_systemd_user() {
+    command -v systemctl >/dev/null 2>&1 || return 1
+    systemctl --user list-units >/dev/null 2>&1
+}
 
 if our_server_running && curl -sf "$HEALTH_URL" >/dev/null 2>&1; then
     ok "检测到本发行版内已有 mira-app-server 进程且 health 正常，跳过启动"
-    # 复用既有 PID（取第一个匹配）
-    EXIST_PID=$(pgrep -f '[d]ist/(cli|index)\.js' | head -1)
-    [[ -n "$EXIST_PID" ]] && echo "$EXIST_PID" > "$PID_FILE"
+elif has_systemd_user; then
+    # 有 systemd：用 --autostart（注册 user service 并立即启动，开机自启 + 登出后保活）
+    log "注册开机自启并启动: mira-app-server start --autostart --http-port $HTTP_PORT --ws-port $WS_PORT"
+    : > "$LOG_FILE"
+    if ! mira-app-server start --autostart \
+            --http-port "$HTTP_PORT" \
+            --ws-port "$WS_PORT" \
+            --data-path "$DATA_DIR"; then
+        err "启动失败，最近日志："
+        tail -n 30 "$LOG_FILE" >&2 || true
+        die "请检查 $LOG_FILE 或 systemctl --user status mira-app-server"
+    fi
+    log "等待 server 就绪 (最多 30s) ..."
+    READY=0
+    for i in $(seq 1 60); do
+        if curl -sf "$HEALTH_URL" >/dev/null 2>&1; then READY=1; break; fi
+        sleep 0.5
+    done
+    if [[ $READY -ne 1 ]]; then
+        err "server 启动超时，最近日志："
+        journalctl --user -u mira-app-server -n 30 --no-pager >&2 2>/dev/null || tail -n 30 "$LOG_FILE" >&2 || true
+        die "请检查 systemctl --user status mira-app-server"
+    fi
+    AUTOSTART_USED=1
+    ok "server 已就绪（由 systemd 托管，开机自启）"
 else
-    # 清理僵尸 PID 文件
+    # 无 systemd（WSL 默认等）：回退 nohup 手动管理，不会开机自启
+    warn "未检测到可用的 systemd user 实例（WSL 默认未启用 systemd）"
+    warn "改用 nohup 启动 —— 进程不会开机自启，重启后需重新运行本脚本"
     if [[ -f "$PID_FILE" ]] && ! kill -0 "$(cat "$PID_FILE" 2>/dev/null)" 2>/dev/null; then
         rm -f "$PID_FILE"
     fi
@@ -206,10 +249,7 @@ else
         kill "$(cat "$PID_FILE")" 2>/dev/null || true
         sleep 1
     fi
-
-    # 清空旧日志，避免读到上一轮的内容
     : > "$LOG_FILE"
-
     log "后台启动: mira-app-server start --http-port $HTTP_PORT --ws-port $WS_PORT"
     nohup mira-app-server start \
         --http-port "$HTTP_PORT" \
@@ -219,11 +259,9 @@ else
     NEW_PID=$!
     echo "$NEW_PID" > "$PID_FILE"
     disown 2>/dev/null || true
-
     log "等待 server 就绪 (最多 30s) ..."
     READY=0
     for i in $(seq 1 60); do
-        # 必须同时满足：PID 仍存活 + 日志含成功标记 + 本地 health 通
         if ! kill -0 "$NEW_PID" 2>/dev/null; then
             err "server 进程已退出，最近日志："
             tail -n 30 "$LOG_FILE" >&2 || true
@@ -299,12 +337,23 @@ echo "  访问地址 : http://localhost:${HTTP_PORT}"
 echo "  WebSocket: ws://localhost:${WS_PORT}"
 echo "  默认账号 : admin / admin123  （请尽快修改密码）"
 echo "  数据目录 : $DATA_DIR"
-echo "  日志文件 : $LOG_FILE"
-echo "  PID 文件 : $PID_FILE"
-echo
-echo "  常用命令:"
-echo "    mira-app-server system health          # 健康检查"
-echo "    mira-app-server libraries list         # 查看素材库"
-echo "    tail -f $LOG_FILE              # 看日志"
-echo "    kill \$(cat $PID_FILE)          # 停止服务"
+if [[ "$AUTOSTART_USED" == "1" ]]; then
+    echo "  自启配置 : ~/.config/systemd/user/mira-app-server.service"
+    echo
+    echo "  常用命令:"
+    echo "    mira-app-server system health            # 健康检查"
+    echo "    mira-app-server libraries list           # 查看素材库"
+    echo "    journalctl --user -u mira-app-server -f  # 看日志"
+    echo "    systemctl --user stop mira-app-server    # 停止服务"
+    echo "    systemctl --user disable mira-app-server # 取消开机自启"
+else
+    echo "  日志文件 : $LOG_FILE"
+    echo "  PID 文件 : $PID_FILE"
+    echo
+    echo "  常用命令:"
+    echo "    mira-app-server system health          # 健康检查"
+    echo "    mira-app-server libraries list         # 查看素材库"
+    echo "    tail -f $LOG_FILE              # 看日志"
+    echo "    kill \$(cat $PID_FILE)          # 停止服务（nohup 模式，不会自启）"
+fi
 echo "============================================================"

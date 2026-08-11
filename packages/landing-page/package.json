@@ -10,7 +10,7 @@
   },
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build",
+    "build": "pnpm install --ignore-workspace && next build",
     "start": "next start",
     "lint": "biome check",
     "format": "biome format --write",

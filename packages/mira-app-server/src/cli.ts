@@ -28,6 +28,7 @@ import { registerPlugins } from './cli/commands/plugins';
 import { registerDevices } from './cli/commands/devices';
 import { registerDatabase } from './cli/commands/database';
 import { registerSystem } from './cli/commands/system';
+import { registerAutoStart } from './cli/commands/autostart';
 import { enableAutoStart } from './cli/autostart';
 
 // MCP 服务（懒加载，避免在非 MCP 模式下加载 SDK）
@@ -195,6 +196,8 @@ registerDevices(program);
 registerDatabase(program);
 // 系统
 registerSystem(program);
+// 开机自启管理
+registerAutoStart(program);
 
 // 主流程：先检测 MCP 模式，否则进入 commander 命令派发
 (async () => {
