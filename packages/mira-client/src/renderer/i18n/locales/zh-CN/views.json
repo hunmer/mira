@@ -432,7 +432,7 @@
     "validationFailed": "校验未通过",
     "validationFailedDesc": "请检查表单字段",
     "glow": "发光组件",
-    "glowDesc": "基于 CSS Houdini @property 的发光阴影卡片/按钮。支持彩虹、单色、多色三种配色模式。",
+    "glowDesc": "基于 CSS Houdini {'@'}property 的发光阴影卡片/按钮。支持彩虹、单色、多色三种配色模式。",
     "glowShadowTitle": "GlowingShadow 配色模式",
     "glowShadowDesc": "依次为 rainbow（彩虹循环）、mono（单色）、multi（多色循环）。",
     "glowRainbow": "彩虹",

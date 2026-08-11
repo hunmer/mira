@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
 import fg from 'fast-glob';
+import { ZipArchive } from 'archiver';
 import { MiraServer } from '..';
 import { LibraryServerDataSQLite } from 'mira-app-core/storage/sqlite';
 import { createSyncFilter, getIgnoreGlobs, ShouldSyncFn } from '../sync/SyncFilter';
@@ -248,6 +249,81 @@ export class FsRouter {
                 res.json({ success: true, data: result });
             } catch (error: any) {
                 res.status(500).json({ error: error.message || 'Failed to sync' });
+            }
+        });
+
+        // 批量下载：单文件直接下原文件，多文件/含目录打包成 zip
+        this.router.post('/download', async (req: Request, res: Response) => {
+            try {
+                const { libraryId, paths } = req.body as { libraryId: string; paths: string[] };
+                if (!libraryId || !Array.isArray(paths) || paths.length === 0) {
+                    res.status(400).json({ error: 'libraryId and paths are required' });
+                    return;
+                }
+
+                const basePath = this.getLibraryPath(libraryId);
+                if (!basePath) {
+                    res.status(400).json({ error: 'Invalid libraryId' });
+                    return;
+                }
+                const resolvedBase = path.resolve(basePath);
+
+                // 解析为绝对路径，严格校验路径穿越
+                const safe: string[] = [];
+                for (const rel of paths) {
+                    const full = path.resolve(path.join(resolvedBase, rel));
+                    if (full.startsWith(resolvedBase) && fs.existsSync(full)) {
+                        safe.push(full);
+                    }
+                }
+                if (safe.length === 0) {
+                    res.status(400).json({ error: 'No valid files to download' });
+                    return;
+                }
+
+                // 单文件：直接流式下载原文件
+                if (safe.length === 1) {
+                    const filePath = safe[0];
+                    const stat = await fs.promises.stat(filePath);
+                    if (stat.isFile()) {
+                        const fileName = path.basename(filePath);
+                        res.setHeader('Content-Type', 'application/octet-stream');
+                        res.setHeader('Content-Length', stat.size);
+                        res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`);
+                        fs.createReadStream(filePath).on('error', (err) => {
+                            if (!res.headersSent) res.status(500).json({ error: err.message });
+                        }).pipe(res);
+                        return;
+                    }
+                }
+
+                // 多文件/含目录：流式打包 zip
+                const zipName = encodeURIComponent('download.zip');
+                res.setHeader('Content-Type', 'application/zip');
+                res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${zipName}`);
+
+                const archive = new ZipArchive({ zlib: { level: 5 } });
+                archive.on('error', (err: Error) => {
+                    if (!res.headersSent) res.status(500).json({ error: err.message });
+                    else res.end();
+                });
+                archive.on('warning', (err: any) => {
+                    if (err?.code !== 'ENOENT') console.warn('archiver warning:', err);
+                });
+                archive.pipe(res);
+
+                for (const full of safe) {
+                    const rel = path.relative(resolvedBase, full);
+                    const stat = await fs.promises.stat(full);
+                    if (stat.isDirectory()) {
+                        archive.directory(full, rel);
+                    } else {
+                        archive.file(full, { name: rel });
+                    }
+                }
+                archive.finalize();
+            } catch (error: any) {
+                if (!res.headersSent) res.status(500).json({ error: error.message || 'Failed to download' });
             }
         });
     }

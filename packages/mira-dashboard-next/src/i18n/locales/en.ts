@@ -309,6 +309,7 @@ export default {
     syncing: 'Syncing...',
     syncResult: 'Scanned {scanned} files, added {added}, removed {removed}',
     syncFailed: 'Sync failed',
+    downloadBatch: 'Batch Download',
     download: {
       urlButton: 'URL Download',
       subtitle: 'Download direct image URLs into current library:',

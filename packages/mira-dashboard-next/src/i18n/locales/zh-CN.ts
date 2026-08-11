@@ -309,6 +309,7 @@ export default {
     syncing: '同步中...',
     syncResult: '扫描 {scanned} 个文件，新增 {added} 个，移除 {removed} 个',
     syncFailed: '同步失败',
+    downloadBatch: '批量下载',
     download: {
       urlButton: 'URL 下载',
       subtitle: '下载图片直链到当前素材库：',

@@ -13,4 +13,7 @@ export const fileManagerApi = {
   sync(libraryId: string) {
     return client.post('/fs/sync', { libraryId })
   },
+  download(data: { libraryId: string; paths: string[] }) {
+    return client.post('/fs/download', data, { responseType: 'blob' })
+  },
 }

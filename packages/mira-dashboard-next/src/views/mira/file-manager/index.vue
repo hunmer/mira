@@ -80,6 +80,9 @@ const dragOver = ref(false)
 // 同步
 const syncing = ref(false)
 
+// 批量下载
+const downloading = ref(false)
+
 // URL 下载
 const urlDialogVisible = ref(false)
 const urlText = ref('')
@@ -363,6 +366,41 @@ function batchDelete() {
   }
 }
 
+async function batchDownload() {
+  if (!selectedLibraryId.value || selected.value.size === 0) return
+  downloading.value = true
+  try {
+    const resp = await fileManagerApi.download({
+      libraryId: selectedLibraryId.value,
+      paths: [...selected.value],
+    })
+    // 从 content-disposition 解析文件名（filename*=UTF-8''xxx 优先）
+    const cd = resp.headers?.['content-disposition'] || ''
+    let fileName = ''
+    const star = cd.match(/filename\*=UTF-8''([^;]+)/i)
+    if (star) fileName = decodeURIComponent(star[1])
+    if (!fileName) {
+      const plain = cd.match(/filename="?([^";]+)"?/i)
+      if (plain) fileName = plain[1]
+    }
+    if (!fileName) fileName = selected.value.size === 1 ? [...selected.value][0].split(/[/\\]/).pop() || 'download' : 'download.zip'
+
+    const blob = new Blob([resp.data as BlobPart])
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = fileName
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  } catch (e: any) {
+    toast.error(e.response?.data?.error || e.message || t('common.failed'))
+  } finally {
+    downloading.value = false
+  }
+}
+
 async function syncFiles() {
   if (!selectedLibraryId.value) return
   syncing.value = true
@@ -493,6 +531,17 @@ onMounted(() => {
         >
           <RiDragMoveLine class="mr-1 size-4" />
           {{ t('fileManager.move') }}
+        </Button>
+        <Button
+          v-if="selected.size > 0"
+          variant="outline"
+          size="sm"
+          :disabled="downloading"
+          @click="batchDownload"
+        >
+          <span v-if="downloading" class="mr-1 size-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+          <RiDownloadCloud2Line v-else class="mr-1 size-4" />
+          {{ t('fileManager.downloadBatch') }}
         </Button>
         <Button
           v-if="selected.size > 0"

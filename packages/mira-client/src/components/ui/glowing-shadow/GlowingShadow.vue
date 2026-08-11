@@ -22,6 +22,8 @@ interface Props {
   width?: number
   /** 卡片宽高比 */
   aspectRatio?: string
+  /** 圆角，未指定时用默认 3.6vw（适配大卡片）；按钮等小尺寸建议传 px */
+  radius?: string
   /** 容器内联样式（透传） */
   style?: CSSProperties
   /** 配色模式 */
@@ -45,6 +47,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   width: 480,
   aspectRatio: "1.5/1",
+  radius: undefined,
   colorMode: "rainbow",
   color: "#a855f7",
   colors: () => ["#ef4444", "#f59e0b", "#22c55e", "#3b82f6", "#a855f7"],
@@ -110,6 +113,9 @@ const containerStyle = computed<CSSProperties>(() => {
     "--text-color": props.textColor,
     "--multi-anim": multiAnimName,
   }
+  if (props.radius) {
+    s["--card-radius"] = props.radius
+  }
   if (props.colorMode === "mono") {
     s["--hue"] = monoHue.value
   }
@@ -118,9 +124,6 @@ const containerStyle = computed<CSSProperties>(() => {
 </script>
 
 <template>
-  <!-- multi 模式运行时注入唯一 keyframes（全局） -->
-  <component :is="'style'" v-if="colorMode === 'multi' && multiKeyframes">{{ multiKeyframes }}</component>
-
   <div
     class="glow-container"
     :class="[
@@ -135,6 +138,8 @@ const containerStyle = computed<CSSProperties>(() => {
     role="button"
     tabindex="0"
   >
+    <!-- multi 模式运行时注入唯一 keyframes（全局），放容器内部以保证组件为单根节点 -->
+    <component :is="'style'" v-if="colorMode === 'multi' && multiKeyframes">{{ multiKeyframes }}</component>
     <span class="glow" />
     <div class="glow-content">
       <slot />

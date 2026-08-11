@@ -432,7 +432,7 @@
     "validationFailed": "Validation failed",
     "validationFailedDesc": "Please check the form fields",
     "glow": "Glow",
-    "glowDesc": "Glowing shadow card/button based on CSS Houdini @property. Supports rainbow, mono and multi color modes.",
+    "glowDesc": "Glowing shadow card/button based on CSS Houdini {'@'}property. Supports rainbow, mono and multi color modes.",
     "glowShadowTitle": "GlowingShadow color modes",
     "glowShadowDesc": "rainbow (cycle), mono (single color), multi (multi-color cycle).",
     "glowRainbow": "Rainbow",

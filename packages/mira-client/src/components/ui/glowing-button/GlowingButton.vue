@@ -72,13 +72,14 @@ const resolved = computed(() => {
   }
 })
 
-const SIZE_MAP: Record<Size, { width: number; fontSize: string }> = {
-  sm: { width: 120, fontSize: "13px" },
-  default: { width: 180, fontSize: "15px" },
-  lg: { width: 240, fontSize: "17px" },
+const SIZE_MAP: Record<Size, { width: number; fontSize: string; radius: string }> = {
+  sm: { width: 120, fontSize: "13px", radius: "10px" },
+  default: { width: 180, fontSize: "15px", radius: "12px" },
+  lg: { width: 240, fontSize: "17px", radius: "14px" },
 }
 
 const width = computed(() => SIZE_MAP[props.size].width)
+const radius = computed(() => SIZE_MAP[props.size].radius)
 const aspect = "3.5/1" // 扁平按钮比例
 const contentStyle = computed<CSSProperties>(() => ({
   fontSize: SIZE_MAP[props.size].fontSize,
@@ -99,6 +100,7 @@ function onClick(e: MouseEvent) {
     :class="cn('glow-button', { 'is-disabled': disabled }, props.class)"
     :style="wrapperStyle"
     :width="width"
+    :radius="radius"
     :aspect-ratio="aspect"
     :color-mode="resolved.mode"
     :color="resolved.color"
