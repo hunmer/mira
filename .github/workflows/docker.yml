@@ -67,7 +67,9 @@ jobs:
       with:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
-        password: ${{ secrets.SECERT }} # 不允许GITHUB_TOKEN为变量名称
+        # 用 GitHub Actions 自动注入的 GITHUB_TOKEN，无需手动维护 PAT
+        # 前提：job 的 permissions.packages: write 已声明（见上方）
+        password: ${{ secrets.GITHUB_TOKEN }}
 
     # 仅在需要推送时生成 tag 元数据（main / tag）
     - name: Extract metadata
@@ -119,4 +121,4 @@ jobs:
           "/user/packages/container/${{ github.event.repository.name }}%2Fmira-app-server/visibility" \
           -f visibility='public' || echo "Package may already be public or requires manual setup"
       env:
-        GITHUB_TOKEN: ${{ secrets.SECERT }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
