@@ -17,6 +17,7 @@ RUN corepack enable && corepack prepare pnpm@10.24.0 --activate
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json ./
 COPY packages/mira-app-core/package.json ./packages/mira-app-core/
 COPY packages/mira-app-server/package.json ./packages/mira-app-server/
+COPY packages/mira-dashboard-next/package.json ./packages/mira-dashboard-next/
 
 ENV SETUPTOOLS_USE_DISTUTILS=stdlib
 ENV FFMPEG_PATH=/usr/bin/ffmpeg
@@ -30,6 +31,10 @@ COPY packages/mira-app-server/tsconfig.json ./packages/mira-app-server/
 
 COPY packages/mira-app-core/src ./packages/mira-app-core/src
 COPY packages/mira-app-server/src ./packages/mira-app-server/src
+# app-server 的 build 脚本会调用 scripts/copy-dashboard.mjs
+COPY packages/mira-app-server/scripts ./packages/mira-app-server/scripts
+# dashboard-next 源码（copy-dashboard.mjs 会构建它并把产物拷给 app-server）
+COPY packages/mira-dashboard-next ./packages/mira-dashboard-next
 
 RUN pnpm -C packages/mira-app-core run build
 RUN pnpm -C packages/mira-app-server run build
