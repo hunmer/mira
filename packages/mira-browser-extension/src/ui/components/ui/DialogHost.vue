@@ -27,7 +27,7 @@ const dlg = computed(() => state.value);
 watch(
   () => dlg.value?.kind,
   async kind => {
-    if (kind === 'prompt') {
+    if (kind === 'prompt' || kind === 'textarea') {
       input.value = dlg.value?.defaultValue ?? '';
       await nextTick();
       (inputEl.value?.$el as HTMLInputElement | null)?.focus();
@@ -49,14 +49,14 @@ const cancelText = computed(() => dlg.value?.cancelText ?? t('dialog.cancel'));
 // ---- 结果 ----
 function onOk() {
   const k = dlg.value?.kind;
-  if (k === 'prompt') _resolve(input.value);
+  if (k === 'prompt' || k === 'textarea') _resolve(input.value);
   else if (k === 'confirmCheck') _resolve({ ok: true, checked: checked.value });
   else if (k === 'confirm') _resolve(true);
   else _resolve(undefined);
 }
 function onCancel() {
   const k = dlg.value?.kind;
-  if (k === 'prompt') _resolve(null);
+  if (k === 'prompt' || k === 'textarea') _resolve(null);
   else if (k === 'confirmCheck') _resolve({ ok: false, checked: checked.value });
   else _resolve(false);
 }
@@ -67,8 +67,8 @@ function onMaskClick() {
 function onKey(e: KeyboardEvent) {
   if (!dlg.value) return;
   if (e.key === 'Escape') onCancel();
-  // prompt:回车确认;confirm:回车确认(避免误触)
-  if (e.key === 'Enter') onOk();
+  // 单行输入回车确认;textarea 保留换行
+  if (e.key === 'Enter' && dlg.value.kind !== 'textarea') onOk();
 }
 </script>
 
@@ -84,6 +84,13 @@ function onKey(e: KeyboardEvent) {
           v-model="input"
           :placeholder="dlg.placeholder"
           @keydown.enter="onOk"
+          @keydown.escape="onCancel"
+        />
+        <textarea
+          v-if="dlg.kind === 'textarea'"
+          v-model="input"
+          class="editor"
+          spellcheck="false"
           @keydown.escape="onCancel"
         />
         <!-- confirmCheck:复选框 -->
@@ -131,6 +138,7 @@ function onKey(e: KeyboardEvent) {
 }
 .title { font-size: 14px; font-weight: 600; color: var(--fg); }
 .msg { margin: 0; font-size: 12px; color: var(--muted); white-space: pre-wrap; word-break: break-word; }
+.editor { min-height: 260px; resize: vertical; padding: 8px; background: var(--bg); color: var(--fg); border: 1px solid var(--border); border-radius: var(--radius); font: 12px/1.45 monospace; }
 .check {
   display: flex; align-items: center; gap: 6px;
   font-size: 12px; color: var(--fg); cursor: pointer; user-select: none;

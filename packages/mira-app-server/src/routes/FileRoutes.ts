@@ -850,7 +850,6 @@ export class FileRoutes {
         this.router.post('/getFiles', async (req: Request, res: Response) => {
             try {
                 const { libraryId, filters = {}, clientId } = req.body;
-                console.log({filters})
                 if (!libraryId) {
                     return res.status(400).json({
                         code: 400,

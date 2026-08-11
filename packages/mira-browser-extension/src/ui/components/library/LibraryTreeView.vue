@@ -21,6 +21,7 @@ import ContextMenu from '@/ui/components/ui/ContextMenu.vue';
 import { parseDrop, canAcceptDrop, urlKind } from '@/shared/drag-data';
 import { dbg } from '@/shared/debug';
 import type { LibraryTreeNode } from '@/shared/types';
+import { runConcurrent } from '@/shared/concurrency';
 
 const props = defineProps<{ mode: 'folder' | 'tag' }>();
 
@@ -55,11 +56,11 @@ async function uploadUrls(urls: string[], target?: { folderId?: number; tags?: s
   const libId = settings.value.libraryId;
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   const tabId = tab?.id;
-  for (const url of urls) {
+  await runConcurrent(urls, 3, async url => {
     let uploadUrl = url;
     if (settings.value.imuEnabled && tabId) {
       try {
-        const candidates = await bg.upgradeImageUrl(tabId, url, 12000);
+        const candidates = await bg.upgradeImageUrl(tabId, url, undefined, settings.value.imuRules);
         uploadUrl = candidates[0] ?? url;
         dbg.log('drag', 'upgraded', { original: url, uploadUrl, count: candidates.length });
       } catch (error) {
@@ -79,7 +80,7 @@ async function uploadUrls(urls: string[], target?: { folderId?: number; tags?: s
         referrer: tab?.url,
       },
     });
-  }
+  });
 }
 
 // ---- 拖到空白区域 → 上传到素材库根目录 ----

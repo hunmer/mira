@@ -117,6 +117,19 @@ export class DownloadExecutorService {
                         custom_fields: { ...(result.custom_fields || {}), source_url: url },
                     });
                 } catch { /* 元数据写入失败不影响下载结果 */ }
+
+                const eventData = {
+                    ...result,
+                    libraryId,
+                    batchImport: true,
+                    batchId,
+                };
+                ws?.broadcastPluginEvent('file::created', {
+                    message: { type: 'file', action: 'create' },
+                    result: eventData,
+                    libraryId,
+                });
+                ws?.broadcastLibraryEvent(libraryId, 'file::created', eventData);
             }
             if (isDup) progress.skipped++; else progress.completed++;
 

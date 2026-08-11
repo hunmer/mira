@@ -5,6 +5,7 @@ import type {
   SniffedResource,
   ResourceKind,
   UploadStatus,
+  ImageUrlRule,
 } from './types';
 
 /**
@@ -58,9 +59,10 @@ export type Request =
       payload: { files: StagedFile[]; libraryId: string; tags?: string[]; folderId?: string };
     }
   | { type: 'UPLOAD_FROM_URL'; payload: { url: string; kind: ResourceKind; libraryId: string; folderId?: number; tags?: string[]; referrer?: string } }
+  | { type: 'BATCH_IMPORT'; payload: { urls: string[]; libraryId: string; folderId?: number } }
   | { type: 'UPLOAD_STATUS' }
   | { type: 'UPLOAD_CANCEL'; payload: { id: string } }
-  | { type: 'UPGRADE_IMAGE_URL'; payload: { tabId: number; url: string; timeout?: number } }
+  | { type: 'UPGRADE_IMAGE_URL'; payload: { tabId: number; url: string; timeout?: number; rules?: ImageUrlRule[] } }
   // 下载选中(单文件直接下载,多文件 zip 打包)
   | { type: 'DOWNLOAD_RESOURCES'; payload: { items: { url: string; filename: string; referrer?: string }[] } }
   // 截图
@@ -94,13 +96,13 @@ export type ContentCommand =
   | { type: 'START_SCROLL_CAPTURE'; payload: { delay: number } }
   | { type: 'DRAW_SELECTION' }
   | { type: 'DISPATCH_DRAGDROP'; payload: { enabled: boolean } }
-  | { type: 'UPGRADE_IMAGE_URL'; payload: { url: string; timeout?: number } };
+  | { type: 'UPGRADE_IMAGE_URL'; payload: { url: string; timeout?: number; rules?: ImageUrlRule[] } };
 
 const REQUEST_TYPES = new Set<Request['type']>([
   'AUTH_LOGIN', 'AUTH_VERIFY', 'CONFIG_GET', 'CONFIG_SET',
   'SERVERS_LIST', 'SERVERS_SAVE', 'SERVER_ACTIVATE', 'SERVER_TEST',
   'LIB_LIST', 'FOLDER_LIST', 'TAG_LIST', 'NODE_CREATE', 'NODE_DELETE',
-  'UPLOAD_FILES', 'UPLOAD_FROM_URL', 'UPLOAD_STATUS', 'UPLOAD_CANCEL', 'UPGRADE_IMAGE_URL', 'DOWNLOAD_RESOURCES',
+  'UPLOAD_FILES', 'UPLOAD_FROM_URL', 'BATCH_IMPORT', 'UPLOAD_STATUS', 'UPLOAD_CANCEL', 'UPGRADE_IMAGE_URL', 'DOWNLOAD_RESOURCES',
   'CAPTURE_VISIBLE', 'CAPTURE_FULLPAGE', 'CAPTURE_SELECTION',
   'SNIFFER_START', 'SNIFFER_STOP', 'SNIFFER_QUERY',
   'AUTOSCROLL_START', 'AUTOSCROLL_STOP',

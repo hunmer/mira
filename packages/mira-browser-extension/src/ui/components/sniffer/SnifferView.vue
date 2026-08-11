@@ -11,6 +11,7 @@ import Input from '@/ui/components/ui/Input.vue';
 import ResourceList from './ResourceList.vue';
 import MasonryView from './MasonryView.vue';
 import { dbg } from '@/shared/debug';
+import { runConcurrent } from '@/shared/concurrency';
 
 const { t } = useI18n();
 
@@ -240,12 +241,14 @@ const visibleResources = computed(() => {
 
 async function uploadSelected() {
   const targets = resources.value.filter(r => selected.value.has(r.id));
-  for (const r of targets) {
-    let url = r.url;
+  if (!targets.length) return;
+  const importUrls = new Map(targets.map(r => [r.id, r.url]));
+  await runConcurrent(targets, 3, async r => {
     if (settings.value.imuEnabled && r.tabId) {
       try {
-        const candidates = await bg.upgradeImageUrl(r.tabId, r.url, 12000);
-        url = candidates[0] ?? r.url;
+        const candidates = await bg.upgradeImageUrl(r.tabId, r.url, undefined, settings.value.imuRules);
+        const url = candidates[0] ?? r.url;
+        importUrls.set(r.id, url);
         dbg.log('sniffer', 'upgraded', { original: r.url, url, count: candidates.length });
       } catch (error) {
         dbg.warn('sniffer', 'upload selected upgrade failed, use original', { url: r.url, error });
@@ -253,17 +256,8 @@ async function uploadSelected() {
     } else {
       dbg.log('sniffer', 'upload selected maxurl skipped', { url: r.url, imuEnabled: settings.value.imuEnabled, tabId: r.tabId });
     }
-    // 资源上传走 UPLOAD_FROM_URL(service worker fetch → File → 队列)
-    await chrome.runtime.sendMessage({
-      type: 'UPLOAD_FROM_URL',
-      payload: {
-        url,
-        kind: r.kind,
-        libraryId: settings.value.libraryId,
-        referrer: r.referrer || r.pageUrl,
-      },
-    });
-  }
+  });
+  await bg.batchImport(targets.map(r => importUrls.get(r.id)!), settings.value.libraryId);
   selected.value.clear();
 }
 

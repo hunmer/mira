@@ -1,4 +1,4 @@
-import { DEFAULT_SETTINGS, type ExtensionSettings, type ServerConfig } from './types';
+import { DEFAULT_IMAGE_URL_RULES, DEFAULT_SETTINGS, type ExtensionSettings, type ImageUrlRule, type ServerConfig } from './types';
 
 export const STORAGE_KEYS = {
   /** chrome.storage.local key —— 持久设置 */
@@ -35,9 +35,24 @@ export function mergeWithDefaults(partial: Partial<ExtensionSettings>): Extensio
   // 非数组或缺失时回退默认,避免下游 .join / .map 之类崩溃
   const orDefault = <T>(v: unknown, fallback: T[]): T[] =>
     Array.isArray(v) ? v as T[] : fallback;
+  const validRules = (v: unknown): ImageUrlRule[] => Array.isArray(v)
+    ? v.filter(rule => {
+      if (!rule || typeof rule !== 'object'
+        || typeof (rule as ImageUrlRule).name !== 'string'
+        || typeof (rule as ImageUrlRule).host !== 'string'
+        || typeof (rule as ImageUrlRule).path !== 'string'
+        || typeof (rule as ImageUrlRule).replacement !== 'string') return false;
+      try {
+        new RegExp((rule as ImageUrlRule).host);
+        new RegExp((rule as ImageUrlRule).path);
+        return true;
+      } catch { return false; }
+    }) as ImageUrlRule[]
+    : DEFAULT_IMAGE_URL_RULES;
   merged.tags = orDefault(merged.tags, DEFAULT_SETTINGS.tags);
   merged.snifferKinds = orDefault(merged.snifferKinds, DEFAULT_SETTINGS.snifferKinds);
   merged.snifferAspectRatios = orDefault(merged.snifferAspectRatios, DEFAULT_SETTINGS.snifferAspectRatios);
+  merged.imuRules = validRules(merged.imuRules);
   return merged;
 }
 

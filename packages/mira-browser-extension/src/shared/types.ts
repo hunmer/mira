@@ -3,6 +3,20 @@
  */
 export type ResourceKind = 'image' | 'audio' | 'video';
 
+export interface ImageUrlRule {
+  name: string;
+  host: string;
+  path: string;
+  replacement: string;
+}
+
+export const DEFAULT_IMAGE_URL_RULES: ImageUrlRule[] = [{
+  name: 'Pinterest originals',
+  host: '(?:^|\\.)pinimg\\.com$',
+  path: '^/(?:vwebp/)?\\d+x(?:\\d+)?/(.+)$',
+  replacement: '/originals/$1',
+}];
+
 /**
  * 嗅探资源展示视图:list 列表 / masonry 瀑布流
  */
@@ -148,6 +162,8 @@ export interface ExtensionSettings {
   autoScrollDelay: number;
   /** 前端高清大图升级(maxurl),默认开 */
   imuEnabled: boolean;
+  /** 高清图 URL 替换规则(JSON 编辑后持久化) */
+  imuRules: ImageUrlRule[];
 }
 
 /**
@@ -176,6 +192,7 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   autoScrollEnabled: false,
   autoScrollDelay: 800,
   imuEnabled: true,
+  imuRules: DEFAULT_IMAGE_URL_RULES,
 };
 
 /**

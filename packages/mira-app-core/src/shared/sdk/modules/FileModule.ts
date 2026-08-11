@@ -4,6 +4,8 @@ import {
     UploadResponse,
     BaseResponse,
     PreviewViewersResponse,
+    BatchImportOptions,
+    BatchImportResponse,
 } from '../types';
 
 /**
@@ -256,6 +258,20 @@ export class FileModule {
         }
 
         return await this.upload(uploadRequest);
+    }
+
+    /** 从 URL 批量下载并导入到素材库。 */
+    async batchImport(
+        libraryId: string,
+        urls: string[],
+        options?: BatchImportOptions
+    ): Promise<BatchImportResponse> {
+        return await this.httpClient.post<BatchImportResponse>('/api/download/start', {
+            libraryId,
+            urls,
+            folderId: options?.folderId ?? null,
+            clientId: options?.clientId,
+        });
     }
 
     /**

@@ -68,7 +68,7 @@ async function uploadUrl(url: string, kind: ResourceKind, folderId?: number) {
   try {
     const settings: any = await chrome.runtime.sendMessage({ type: 'CONFIG_GET' });
     if (settings?.imuEnabled) {
-      const candidates = await upgradeImageUrl(url, { timeout: 12000 });
+      const candidates = await upgradeImageUrl(url, { rules: settings?.imuRules });
       // upgradeImageUrl 返回 [...升级候选, 原 url];取第一个非原 url(若有),否则原 url
       best = candidates[0] ?? url;
       dbg.log('content', 'upgraded', { original: url, best, count: candidates.length });
@@ -144,7 +144,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   }
   if (msg?.type === 'UPGRADE_IMAGE_URL') {
     dbg.info('content', 'UPGRADE_IMAGE_URL', { url: msg.payload?.url, timeout: msg.payload?.timeout });
-    upgradeImageUrl(msg.payload.url, { timeout: msg.payload?.timeout })
+    upgradeImageUrl(msg.payload.url, { timeout: msg.payload?.timeout, rules: msg.payload?.rules })
       .then(candidates => sendResponse({ candidates }))
       .catch(error => {
         dbg.warn('content', 'UPGRADE_IMAGE_URL failed', { url: msg.payload?.url, error });

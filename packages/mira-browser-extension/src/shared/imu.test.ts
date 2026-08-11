@@ -19,4 +19,13 @@ describe('pinterestOriginalUrl', () => {
         'https://i.pinimg.com/236x/5a/eb/23/image.jpg',
       ]);
   });
+
+  it('使用设置中的自定义规则替换 URL', () => {
+    expect(pinterestOriginalUrl('https://img.example.com/thumb/abc.jpg', [{
+      name: 'test',
+      host: 'img\\.example\\.com',
+      path: '^/thumb/(.+)$',
+      replacement: '/original/$1',
+    }])).toBe('https://img.example.com/original/abc.jpg');
+  });
 });

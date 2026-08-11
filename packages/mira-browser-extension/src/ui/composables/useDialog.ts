@@ -14,7 +14,7 @@
  */
 import { ref } from 'vue';
 
-export type DialogKind = 'alert' | 'confirm' | 'prompt' | 'confirmCheck';
+export type DialogKind = 'alert' | 'confirm' | 'prompt' | 'textarea' | 'confirmCheck';
 
 export interface DialogOptions {
   /** 标题(可选,缺省用 kind 默认标题) */
@@ -80,6 +80,12 @@ export function useDialog() {
     });
   }
 
+  function textarea(options: DialogOptions): Promise<string | null> {
+    return new Promise<string | null>(resolve => {
+      current.value = { kind: 'textarea', ...options, resolve: (v: string | null) => resolve(v) };
+    });
+  }
+
   /**
    * 带复选框的确认弹窗:正文下方渲染一个复选框(需提供 checkboxLabel)。
    * 返回 { ok, checked };点取消/遮罩/ESC 时 ok=false 并带回当前勾选态。
@@ -101,6 +107,7 @@ export function useDialog() {
     alert,
     confirm,
     prompt,
+    textarea,
     confirmCheck,
     /** 内部:DialogHost 点确定/取消/关闭时调用 */
     _resolve: done,

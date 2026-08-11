@@ -140,6 +140,12 @@ export function createRouter(deps: RouterDeps): RequestHandler {
         });
         return { enqueued: 1 };
       }
+      case 'BATCH_IMPORT':
+        return withAuth((client: MiraClient) => client.files().batchImport(
+          req.payload.libraryId,
+          req.payload.urls,
+          { folderId: req.payload.folderId },
+        ));
       case 'UPLOAD_STATUS':
         return deps.uploader.getQueue();
       case 'UPLOAD_CANCEL':
@@ -148,7 +154,7 @@ export function createRouter(deps: RouterDeps): RequestHandler {
       case 'UPGRADE_IMAGE_URL':
         return sendToContent<{ candidates: string[] }>(req.payload.tabId, {
           type: 'UPGRADE_IMAGE_URL',
-          payload: { url: req.payload.url, timeout: req.payload.timeout },
+          payload: { url: req.payload.url, timeout: req.payload.timeout, rules: req.payload.rules },
         }).then(result => result.candidates);
       case 'DOWNLOAD_RESOURCES': {
         const items = req.payload.items;

@@ -1,5 +1,5 @@
 import type { Request, Event } from '@/shared/messages';
-import type { ExtensionSettings, ServerConfig, UploadTask, SniffedResource, ResourceKind } from '@/shared/types';
+import type { ExtensionSettings, ServerConfig, UploadTask, SniffedResource, ResourceKind, ImageUrlRule } from '@/shared/types';
 import type { StagedFile } from '@/shared/types';
 import type { Folder, Tag } from 'mira-app-core/shared/sdk';
 
@@ -56,14 +56,20 @@ export function useBackground() {
     async uploadFiles(files: StagedFile[], libraryId: string, tags?: string[], folderId?: string) {
       return send({ type: 'UPLOAD_FILES', payload: { files, libraryId, tags, folderId } });
     },
+    async batchImport(urls: string[], libraryId: string, folderId?: number) {
+      return send<{ batchId: string; total: number }>({
+        type: 'BATCH_IMPORT',
+        payload: { urls, libraryId, folderId },
+      });
+    },
     async uploadStatus() {
       return send<UploadTask[]>({ type: 'UPLOAD_STATUS' });
     },
     async cancelUpload(id: string) {
       return send({ type: 'UPLOAD_CANCEL', payload: { id } });
     },
-    async upgradeImageUrl(tabId: number, url: string, timeout?: number) {
-      return send<string[]>({ type: 'UPGRADE_IMAGE_URL', payload: { tabId, url, timeout } });
+    async upgradeImageUrl(tabId: number, url: string, timeout?: number, rules?: ImageUrlRule[]) {
+      return send<string[]>({ type: 'UPGRADE_IMAGE_URL', payload: { tabId, url, timeout, rules } });
     },
     /** 下载选中资源:单文件直下,多文件 zip 打包 */
     async downloadResources(items: { url: string; filename: string; referrer?: string }[]) {

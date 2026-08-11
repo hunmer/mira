@@ -430,6 +430,7 @@ let importNotifyLastThumb = ''
 let importNotifyThumbs: string[] = []
 let importNotifyLastFileId: string | undefined
 let importNotifyLastPreviewType: 'image' | 'video' = 'image'
+let importNotifyIsBatch = false
 // 是否已展示（避免缩略图到达后重复展示）
 let importNotifyShown = false
 // 缩略图就绪前的最长等待时间（ms）：超时则用 Material Icon 兜底展示
@@ -444,8 +445,9 @@ function doShowImportNotification(): void {
   const thumb = importNotifyLastThumb
   const fileIdResolved = importNotifyLastFileId
 
-  const title = count > 1 ? t('services.webSocket.importedNFiles', { count }) : t('services.webSocket.fileImportComplete')
-  const body = count > 1
+  const showBatchCount = importNotifyIsBatch && count > 1
+  const title = showBatchCount ? t('services.webSocket.importedNFiles', { count }) : t('services.webSocket.fileImportComplete')
+  const body = showBatchCount
     ? (name ? t('services.webSocket.lastImported', { name }) : t('services.webSocket.batchImportComplete'))
     : (name || t('services.webSocket.newFileAdded'))
 
@@ -472,7 +474,8 @@ function notifyFileImported(
   fileName?: string,
   thumbRaw?: string,
   fileId?: string | number,
-  mimeType?: string
+  mimeType?: string,
+  isBatchImport = false
 ): void {
   const settingsStore = useSettingsStore()
   // 受主通知开关 + 导入文件通知开关共同控制
@@ -488,8 +491,10 @@ function notifyFileImported(
     importNotifyThumbs = []
     importNotifyLastFileId = undefined
     importNotifyLastPreviewType = 'image'
+    importNotifyIsBatch = false
   }
 
+  importNotifyIsBatch = importNotifyCount === 0 ? isBatchImport : importNotifyIsBatch && isBatchImport
   importNotifyCount += 1
   if (fileName) importNotifyLastName = fileName
   if (fileId !== undefined && fileId !== null) importNotifyLastFileId = String(fileId)
@@ -751,7 +756,8 @@ function setupEventListeners(libraryStore: any): void {
         data?.name || data?.title || data?.fileName,
         data?.thumb_path || data?.thumbnail_path || (typeof data?.thumb === 'string' ? data.thumb : undefined),
         data?.id,
-        data?.mimeType || data?.mime_type || data?.type
+        data?.mimeType || data?.mime_type || data?.type,
+        data?.batchImport === true
       )
     }
   })

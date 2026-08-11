@@ -83,17 +83,17 @@
 
                   <RadioGroup :model-value="filter.selectedPreset || ''" class="space-y-2 mb-4"
                     @update:model-value="(val) => handleSizePresetChange(filter, val as string)">
-                    <div v-for="preset in sizePresets" :key="preset.id"
+                    <label v-for="preset in sizePresets" :key="preset.id"
                       class="flex items-center space-x-2 cursor-pointer">
                       <RadioGroupItem :value="preset.id" />
-                      <Label class="text-sm cursor-pointer">{{ preset.label }}</Label>
-                    </div>
+                      <span class="text-sm cursor-pointer">{{ preset.label }}</span>
+                    </label>
 
                     <div class="border-t border-border pt-3">
-                      <div class="flex items-center space-x-2 cursor-pointer mb-3">
+                      <label class="flex items-center space-x-2 cursor-pointer mb-3">
                         <RadioGroupItem value="custom" />
-                        <Label class="text-sm cursor-pointer">{{ $t('business.filterBar.sizeCustom') }}</Label>
-                      </div>
+                        <span class="text-sm cursor-pointer">{{ $t('business.filterBar.sizeCustom') }}</span>
+                      </label>
 
                       <div v-if="filter.selectedPreset === 'custom'" class="grid grid-cols-2 gap-2">
                         <div>
@@ -122,12 +122,12 @@
                   <h3 class="font-medium text-foreground mb-3">{{ $t('business.filterBar.categoryTitle') }}</h3>
                   <RadioGroup :model-value="filter.selectedCategory || ''" class="space-y-2"
                     @update:model-value="(val) => selectCategory(filter, val as string)">
-                    <div v-for="category in categoryOptions" :key="category.value"
+                    <label v-for="category in categoryOptions" :key="category.value"
                       class="flex items-center space-x-2 cursor-pointer hover:bg-muted px-2 py-1 rounded">
                       <RadioGroupItem :value="category.value" />
                       <span class="material-icons text-sm text-muted-foreground">{{ category.icon }}</span>
-                      <Label class="text-sm cursor-pointer">{{ category.label }}</Label>
-                    </div>
+                      <span class="text-sm cursor-pointer">{{ category.label }}</span>
+                    </label>
                   </RadioGroup>
                 </div>
                 <div class="p-3 border-t border-border flex justify-end space-x-2">
@@ -142,33 +142,28 @@
                   <h3 class="font-medium text-foreground mb-3">{{ $t('business.filterBar.metadataTitle') }}</h3>
 
                   <!-- 子模式切换：尺寸 / 时长 -->
-                  <RadioGroup :model-value="filter.metaField || 'dimension'" class="flex space-x-4 mb-4"
-                    @update:model-value="(val) => handleMetaFieldChange(filter, val as 'dimension' | 'duration')">
-                    <div class="flex items-center space-x-2 cursor-pointer">
-                      <RadioGroupItem value="dimension" />
-                      <Label class="text-sm cursor-pointer">{{ $t('business.filterBar.metadataFieldDimension') }}</Label>
-                    </div>
-                    <div class="flex items-center space-x-2 cursor-pointer">
-                      <RadioGroupItem value="duration" />
-                      <Label class="text-sm cursor-pointer">{{ $t('business.filterBar.metadataFieldDuration') }}</Label>
-                    </div>
-                  </RadioGroup>
+                  <ToggleGroup type="single" :model-value="filter.metaField || 'dimension'" variant="outline" size="sm"
+                    class="w-full mb-4"
+                    @update:model-value="(val) => val && handleMetaFieldChange(filter, val as 'dimension' | 'duration')">
+                    <ToggleGroupItem value="dimension" class="flex-1">{{ $t('business.filterBar.metadataFieldDimension') }}</ToggleGroupItem>
+                    <ToggleGroupItem value="duration" class="flex-1">{{ $t('business.filterBar.metadataFieldDuration') }}</ToggleGroupItem>
+                  </ToggleGroup>
 
                   <!-- 尺寸子模式 -->
                   <template v-if="filter.metaField === 'duration' ? false : true">
                     <RadioGroup :model-value="filter.selectedMetaPreset || ''" class="space-y-2 mb-4"
                       @update:model-value="(val) => handleMetaPresetChange(filter, val as string)">
-                      <div v-for="preset in dimensionPresets" :key="preset.id"
+                      <label v-for="preset in dimensionPresets" :key="preset.id"
                         class="flex items-center space-x-2 cursor-pointer">
                         <RadioGroupItem :value="preset.id" />
-                        <Label class="text-sm cursor-pointer">{{ preset.label }}</Label>
-                      </div>
+                        <span class="text-sm cursor-pointer">{{ preset.label }}</span>
+                      </label>
 
                       <div class="border-t border-border pt-3">
-                        <div class="flex items-center space-x-2 cursor-pointer mb-3">
+                        <label class="flex items-center space-x-2 cursor-pointer mb-3">
                           <RadioGroupItem value="custom" />
-                          <Label class="text-sm cursor-pointer">{{ $t('business.filterBar.sizeCustom') }}</Label>
-                        </div>
+                          <span class="text-sm cursor-pointer">{{ $t('business.filterBar.sizeCustom') }}</span>
+                        </label>
 
                         <div v-if="filter.selectedMetaPreset === 'custom'" class="grid grid-cols-2 gap-2">
                           <div>
@@ -190,17 +185,17 @@
                   <template v-else>
                     <RadioGroup :model-value="filter.selectedMetaPreset || ''" class="space-y-2 mb-4"
                       @update:model-value="(val) => handleMetaPresetChange(filter, val as string)">
-                      <div v-for="preset in durationPresets" :key="preset.id"
+                      <label v-for="preset in durationPresets" :key="preset.id"
                         class="flex items-center space-x-2 cursor-pointer">
                         <RadioGroupItem :value="preset.id" />
-                        <Label class="text-sm cursor-pointer">{{ preset.label }}</Label>
-                      </div>
+                        <span class="text-sm cursor-pointer">{{ preset.label }}</span>
+                      </label>
 
                       <div class="border-t border-border pt-3">
-                        <div class="flex items-center space-x-2 cursor-pointer mb-3">
+                        <label class="flex items-center space-x-2 cursor-pointer mb-3">
                           <RadioGroupItem value="custom" />
-                          <Label class="text-sm cursor-pointer">{{ $t('business.filterBar.sizeCustom') }}</Label>
-                        </div>
+                          <span class="text-sm cursor-pointer">{{ $t('business.filterBar.sizeCustom') }}</span>
+                        </label>
 
                         <div v-if="filter.selectedMetaPreset === 'custom'" class="grid grid-cols-2 gap-2">
                           <div>
@@ -250,12 +245,12 @@
               <Label class="block text-xs text-muted-foreground mb-2">{{ $t('business.filterBar.sortFieldLabel') }}</Label>
               <RadioGroup :model-value="sortField" class="space-y-2"
                 @update:model-value="(val) => updateSort(val as string, sortOrder)">
-                <div v-for="option in sortOptions" :key="option.value"
+                <label v-for="option in sortOptions" :key="option.value"
                   class="flex items-center space-x-2 cursor-pointer hover:bg-muted px-2 py-1 rounded">
                   <RadioGroupItem :value="option.value" />
                   <span class="material-icons text-sm text-muted-foreground">{{ option.icon }}</span>
-                  <Label class="text-sm cursor-pointer">{{ option.label }}</Label>
-                </div>
+                  <span class="text-sm cursor-pointer">{{ option.label }}</span>
+                </label>
               </RadioGroup>
             </div>
 
@@ -263,16 +258,16 @@
               <Label class="block text-xs text-muted-foreground mb-2">{{ $t('business.filterBar.sortOrderLabel') }}</Label>
               <RadioGroup :model-value="sortOrder" class="space-y-2"
                 @update:model-value="(val) => updateSort(sortField, val as string)">
-                <div class="flex items-center space-x-2 cursor-pointer hover:bg-muted px-2 py-1 rounded">
+                <label class="flex items-center space-x-2 cursor-pointer hover:bg-muted px-2 py-1 rounded">
                   <RadioGroupItem value="desc" />
                   <span class="material-icons text-sm text-muted-foreground">arrow_downward</span>
-                  <Label class="text-sm cursor-pointer">{{ $t('business.filterBar.orderDesc') }}</Label>
-                </div>
-                <div class="flex items-center space-x-2 cursor-pointer hover:bg-muted px-2 py-1 rounded">
+                  <span class="text-sm cursor-pointer">{{ $t('business.filterBar.orderDesc') }}</span>
+                </label>
+                <label class="flex items-center space-x-2 cursor-pointer hover:bg-muted px-2 py-1 rounded">
                   <RadioGroupItem value="asc" />
                   <span class="material-icons text-sm text-muted-foreground">arrow_upward</span>
-                  <Label class="text-sm cursor-pointer">{{ $t('business.filterBar.orderAsc') }}</Label>
-                </div>
+                  <span class="text-sm cursor-pointer">{{ $t('business.filterBar.orderAsc') }}</span>
+                </label>
               </RadioGroup>
             </div>
 
@@ -295,6 +290,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Label } from '@/components/ui/label'
 import type { FilterRule } from '@/renderer/types/filter'
 

@@ -65,6 +65,12 @@ describe('storage', () => {
     expect(mergeWithDefaults({ snifferAspectRatios: ['1:1'] }).snifferAspectRatios).toEqual(['1:1']);
   });
 
+  it('mergeWithDefaults 过滤损坏的 imuRules', () => {
+    expect(mergeWithDefaults({ imuRules: [{ name: 'ok', host: 'x', path: 'y', replacement: 'z' }, { name: 'bad' }, { name: 'regex', host: '[', path: 'y', replacement: 'z' }] } as any).imuRules)
+      .toEqual([{ name: 'ok', host: 'x', path: 'y', replacement: 'z' }]);
+    expect(mergeWithDefaults({ imuRules: null } as any).imuRules).toEqual(DEFAULT_SETTINGS.imuRules);
+  });
+
   it('loadSettings 返回合并默认值的完整设置', async () => {
     localStore[STORAGE_KEYS.local] = { serverURL: 'http://y' };
     const { loadSettings } = await import('./storage');

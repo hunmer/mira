@@ -224,6 +224,16 @@ export interface UploadResponse {
     results: UploadResult[];
 }
 
+export interface BatchImportOptions {
+    folderId?: number | null;
+    clientId?: string;
+}
+
+export interface BatchImportResponse {
+    batchId: string;
+    total: number;
+}
+
 // 标签相关类型
 export interface Tag {
     id: number;
