@@ -1,6 +1,7 @@
 <template>
   <div
-    class="media-preview-content flex items-center justify-center overflow-hidden rounded-lg bg-black"
+    class="media-preview-content flex items-center justify-center overflow-hidden rounded-lg"
+    :class="{ 'bg-black': kind !== 'image' }"
     :style="{ width: containerSize.width + 'px', height: containerSize.height + 'px' }"
   >
     <div v-if="customHoverCard && !selectedViewer" ref="customContainer" class="h-full w-full" />
@@ -275,10 +276,12 @@ onBeforeUnmount(() => {
   position: relative;
 }
 
-/* viewerjs 内嵌查看器：撑满容器，保留黑色底 */
+/* viewerjs 内嵌查看器：撑满容器，圆角跟随外层裁剪 */
 .media-preview-viewer {
   width: 100%;
   height: 100%;
+  overflow: hidden;
+  border-radius: inherit;
 }
 /* trigger 图片本身不参与显示 */
 .media-preview-viewer-source {
@@ -286,6 +289,7 @@ onBeforeUnmount(() => {
 }
 .media-preview-viewer :deep(.viewer-container) {
   background: transparent;
+  border-radius: inherit;
 }
 .media-preview-viewer :deep(.viewer-canvas) {
   background: transparent;
