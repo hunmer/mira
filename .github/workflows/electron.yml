@@ -43,10 +43,12 @@ jobs:
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
 
-    - name: Build workspace dependency (@hunmer/vue-masonry)
-      # mira-client 通过 workspace:* 引用 @hunmer/vue-masonry/style.css，
-      # 该包需先构建出 dist/style.css 否则 rollup 解析失败
-      run: pnpm --filter @hunmer/vue-masonry build
+    - name: Build workspace dependencies
+      # mira-client 通过 workspace:* 引用以下包，它们的 dist 产物需先构建出来：
+      #   - @hunmer/vue-masonry  → dist/style.css, dist/vue-masonry.js
+      #   - mira-app-core        → dist/shared/sdk/*（MiraAPI.ts 引用）
+      # 用 pnpm recursive 按依赖顺序构建这两个包
+      run: pnpm --filter "@hunmer/vue-masonry" --filter "mira-app-core" build
 
     - name: Build & package (${{ matrix.platform }})
       working-directory: packages/mira-client
