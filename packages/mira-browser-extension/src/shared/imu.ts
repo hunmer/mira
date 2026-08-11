@@ -11,6 +11,8 @@
  * 参考 mira_eagle_extension/index.ts 的 upgradeImageUrlCandidates(过滤/排序逻辑)。
  */
 
+import { dbg } from './debug';
+
 export interface ImuResult {
   url: string;
   is_original?: boolean;
@@ -23,10 +25,6 @@ export interface ImuOptions {
   /** 单次升级超时(ms),超时返回 [url] */
   timeout?: number;
 }
-
-// 调试日志(避免循环依赖,这里用极简前缀)
-function imuLog(...args: any[]) { console.log('[mira-ext][imu]', ...args); }
-function imuWarn(...args: any[]) { console.warn('[mira-ext][imu]', ...args); }
 
 const BRIDGE_FLAG = '__mira_imu_bridge__';
 const REQ_TAG = '__mira_imu_req__';
@@ -85,16 +83,19 @@ let bridgeInjected = false;
 let reqId = 0;
 
 function injectBridge(): void {
-  if (bridgeInjected || typeof document === 'undefined') return;
-  imuLog('injecting MAIN-world bridge + maxurl script');
+  if (bridgeInjected || typeof document === 'undefined') {
+    dbg.log('imu', 'bridge injection skipped', { bridgeInjected, hasDocument: typeof document !== 'undefined' });
+    return;
+  }
+  dbg.log('imu', 'injecting MAIN-world bridge + maxurl script');
   // 注入桥接脚本(MAIN world):它再加载 maxurl
   const bridge = document.createElement('script');
   bridge.textContent = BRIDGE_SOURCE;
   // 加载 maxurl(web_accessible_resource,MAIN world 执行 → 暴露 $$IMU_EXPORT$$)
   const imu = document.createElement('script');
   imu.src = chrome.runtime.getURL('maxurl.user.js');
-  imu.onerror = () => imuWarn('maxurl.user.js script load failed (CSP?)');
-  imu.onload = () => imuLog('maxurl.user.js script loaded');
+  imu.onerror = () => dbg.warn('imu', 'maxurl.user.js script load failed (CSP?)', { src: imu.src });
+  imu.onload = () => dbg.log('imu', 'maxurl.user.js script loaded', { src: imu.src });
   (document.head || document.documentElement).appendChild(bridge);
   (document.head || document.documentElement).appendChild(imu);
   bridgeInjected = true;
@@ -116,6 +117,8 @@ function onMessage(ev: MessageEvent) {
   const resolve = pending.get(d.id);
   if (!resolve) return;
   pending.delete(d.id);
+  if (d.error) dbg.warn('imu', 'MAIN-world maxurl error', { id: d.id, error: d.error });
+  else dbg.log('imu', 'MAIN-world response received', { id: d.id, count: Array.isArray(d.result) ? d.result.length : 0 });
   resolve(d.error ? null : (d.result as ImuResult[]));
 }
 
@@ -130,7 +133,7 @@ function onMessage(ev: MessageEvent) {
 export async function upgradeImageUrl(url: string, opts: ImuOptions = {}): Promise<string[]> {
   // 非 content script 环境(如测试 / service worker)直接返回原 url
   if (typeof document === 'undefined' || typeof chrome?.runtime?.getURL !== 'function') {
-    imuWarn('upgradeImageUrl: not in content-script env, skip', { hasDoc: typeof document !== 'undefined' });
+    dbg.warn('imu', 'upgradeImageUrl: not in content-script env, skip', { hasDoc: typeof document !== 'undefined' });
     return [url];
   }
   injectBridge();
@@ -138,14 +141,14 @@ export async function upgradeImageUrl(url: string, opts: ImuOptions = {}): Promi
 
   const timeout = opts.timeout ?? 12000;
   const id = ++reqId;
-  imuLog('upgradeImageUrl request', { id, url, timeout });
+  dbg.log('imu', 'upgradeImageUrl request', { id, url, timeout });
   const result = await new Promise<ImuResult[] | null>(resolve => {
-    const to = setTimeout(() => { pending.delete(id); imuWarn('upgradeImageUrl timeout', { id, url }); resolve(null); }, timeout);
-    pending.set(id, res => { clearTimeout(to); imuLog('upgradeImageUrl response', { id, hasResult: !!res, count: res?.length }); resolve(res); });
+    const to = setTimeout(() => { pending.delete(id); dbg.warn('imu', 'upgradeImageUrl timeout', { id, url }); resolve(null); }, timeout);
+    pending.set(id, res => { clearTimeout(to); dbg.log('imu', 'upgradeImageUrl response', { id, hasResult: !!res, count: res?.length }); resolve(res); });
     window.postMessage({ tag: REQ_TAG, id, url, iterations: 200 }, '*');
   });
 
-  if (!result || !result.length) { imuWarn('upgradeImageUrl: no result, fallback to original', url); return [url]; }
+  if (!result || !result.length) { dbg.warn('imu', 'upgradeImageUrl: no result, fallback to original', url); return [url]; }
   const seen = new Set<string>();
   const ordered: { url: string; original: boolean }[] = [];
   for (const r of result) {
@@ -156,6 +159,12 @@ export async function upgradeImageUrl(url: string, opts: ImuOptions = {}): Promi
   }
   ordered.sort((a, b) => Number(b.original) - Number(a.original));
   const out = [...ordered.map(o => o.url), url];
-  imuLog('upgradeImageUrl result', { id, originalUrl: url, candidates: out.length, best: out[0] });
+  dbg.log('imu', 'upgradeImageUrl result', {
+    id,
+    originalUrl: url,
+    rawCount: result.length,
+    acceptedCount: ordered.length,
+    candidates: out,
+  });
   return out;
 }

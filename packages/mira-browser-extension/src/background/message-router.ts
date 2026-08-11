@@ -149,9 +149,11 @@ export function createRouter(deps: RouterDeps): RequestHandler {
         return { success: true };
       case 'DOWNLOAD_RESOURCES': {
         const items = req.payload.items;
+        dbg.info('download', 'download requested', { count: items.length });
         // 单文件:直接交给浏览器下载(走原始 url,referrer 由浏览器按 tab 处理)
         if (items.length === 1) {
-          await chrome.downloads.download({ url: items[0].url, filename: items[0].filename, saveAs: false });
+          const downloadId = await chrome.downloads.download({ url: items[0].url, filename: items[0].filename, saveAs: false });
+          dbg.info('download', 'single download started', { downloadId, url: items[0].url, filename: items[0].filename });
           return { success: true, count: 1 };
         }
         // 多文件:逐个 fetch(host_permissions 覆盖跨域)→ zip 打包 → 下载
@@ -175,20 +177,26 @@ export function createRouter(deps: RouterDeps): RequestHandler {
             }
             files[name] = buf;
             ok++;
-          } catch {
+            dbg.log('download', 'resource added to zip', { url: item.url, filename: name, bytes: buf.length });
+          } catch (error) {
+            dbg.warn('download', 'resource skipped', { url: item.url, filename: item.filename, error });
             // 单个失败不阻断整体打包
           }
         }
-        if (ok === 0) return { success: false, error: 'no resource fetched' };
+        if (ok === 0) {
+          dbg.error('download', 'all resources failed', { count: items.length });
+          return { success: false, error: 'no resource fetched' };
+        }
         const zipped = zipSync(files);
         // service worker 里 createObjectURL 可用;blob 传给 downloads API
         const blob = new Blob([zipped], { type: 'application/zip' });
         const objectUrl = URL.createObjectURL(blob);
-        await chrome.downloads.download({
+        const downloadId = await chrome.downloads.download({
           url: objectUrl,
           filename: `sniffer-${Date.now()}.zip`,
           saveAs: false,
         });
+        dbg.info('download', 'zip download started', { downloadId, requested: items.length, included: ok, bytes: zipped.length });
         // 下载器拷贝 objectUrl 后即可释放
         setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
         return { success: true, count: ok };

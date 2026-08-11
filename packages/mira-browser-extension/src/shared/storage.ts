@@ -27,7 +27,7 @@ export interface SessionData {
  * 用默认值合并部分设置,保证字段完整。
  *
  * 仅做浅合并:stored 里若存在某字段(哪怕是 null/错误类型),会覆盖默认值。
- * 故对已知「必须是数组」的字段(tags / snifferKinds)做类型归一化 ——
+ * 故对已知「必须是数组」的字段做类型归一化 ——
  * 非数组或缺失时回退默认,避免下游 `tags.join(...)` 之类崩溃。
  */
 export function mergeWithDefaults(partial: Partial<ExtensionSettings>): ExtensionSettings {
@@ -37,6 +37,7 @@ export function mergeWithDefaults(partial: Partial<ExtensionSettings>): Extensio
     Array.isArray(v) ? v as T[] : fallback;
   merged.tags = orDefault(merged.tags, DEFAULT_SETTINGS.tags);
   merged.snifferKinds = orDefault(merged.snifferKinds, DEFAULT_SETTINGS.snifferKinds);
+  merged.snifferAspectRatios = orDefault(merged.snifferAspectRatios, DEFAULT_SETTINGS.snifferAspectRatios);
   return merged;
 }
 

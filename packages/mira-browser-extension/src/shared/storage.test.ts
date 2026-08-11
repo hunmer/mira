@@ -59,6 +59,12 @@ describe('storage', () => {
     expect(mergeWithDefaults({ snifferKinds: ['image'] }).snifferKinds).toEqual(['image']);
   });
 
+  it('mergeWithDefaults 把损坏或缺失的 snifferAspectRatios 归一化为数组', () => {
+    expect(mergeWithDefaults({ snifferAspectRatios: null } as any).snifferAspectRatios).toEqual([]);
+    expect(mergeWithDefaults({ snifferAspectRatios: undefined } as any).snifferAspectRatios).toEqual([]);
+    expect(mergeWithDefaults({ snifferAspectRatios: ['1:1'] }).snifferAspectRatios).toEqual(['1:1']);
+  });
+
   it('loadSettings 返回合并默认值的完整设置', async () => {
     localStore[STORAGE_KEYS.local] = { serverURL: 'http://y' };
     const { loadSettings } = await import('./storage');

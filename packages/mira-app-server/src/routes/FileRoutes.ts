@@ -54,7 +54,7 @@ export class FileRoutes {
             const fields = req.body.fields ? JSON.parse(req.body.fields) : null;
             const payload = req.body.payload ? JSON.parse(req.body.payload) : null;
             const uploader = (req as any).user?.id || null;
-            console.log('[Upload] req.user:', JSON.stringify((req as any).user), '| uploader:', uploader);
+          console.log('[Upload] req.user:', (req as any).user, '| uploader:', uploader);
             const obj = this.backend.libraries!.getLibrary(libraryId);
             if (!obj) return res.status(404).send('Library not found');
 

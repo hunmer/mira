@@ -74,7 +74,7 @@ export default {
     imu: 'HD image upgrade',
     imuHint: 'When dragging/sniffing/right-click uploading, extract HD originals via maxurl first',
     debugLog: 'Debug log',
-    debugHint: 'When enabled, console outputs [mira-ext][*] detailed logs (screenshot/sniffer/drag/upload)',
+    debugHint: 'When enabled, console outputs [mira-ext][*] detailed logs (screenshot/sniffer/maxurl/download/upload)',
   },
   sniffer: {
     title: 'Resource sniffer',

@@ -74,7 +74,7 @@ export default {
     imu: '高清大图升级',
     imuHint: '拖图/嗅探/右键上传时,前端先用 maxurl 提取高清原图',
     debugLog: '调试日志',
-    debugHint: '开启后 console 输出 [mira-ext][*] 详细日志(截图/嗅探/拖拽/上传)',
+    debugHint: '开启后 console 输出 [mira-ext][*] 详细日志(截图/嗅探/maxurl/下载/上传)',
   },
   sniffer: {
     title: '资源嗅探',
