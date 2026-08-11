@@ -290,11 +290,9 @@ export class NotificationWindowHandlers {
             'measure-ready': (data) => {
               const h = Number(data.height)
               if (h > 0) this.resizeHeight(h)
-              // 高度校正后重定位（保持堆叠）
-              if (!this.measured) {
-                this.measured = true
-                self.positionSlot(this, position, stackIndex)
-              }
+              // 每次内容变化都重定位，确保追加/删除通知后窗口尺寸与堆叠同步
+              this.measured = true
+              self.positionSlot(this, position, stackIndex)
             },
             dismiss: () => {
               const slot = self.slots.find((s) => s.handler === this)
@@ -302,6 +300,10 @@ export class NotificationWindowHandlers {
             },
             click: (data) => {
               self.forwardToMainRenderer({ type: 'notification:click', id, data: data.data })
+            },
+            'dismiss-item': (data) => {
+              const slot = self.slots.find((s) => s.handler === this)
+              if (slot) self.dismissItem(slot, data.notificationId, data.index)
             },
             action: (data) => {
               console.info('[NotificationDebug][main] action received', { id, data })
@@ -314,39 +316,6 @@ export class NotificationWindowHandlers {
                 actionId: data.id,
                 data: data.data,
               })
-            },
-            // 自定义 JS 拖拽：仅水平、且只允许朝所在边缘外侧的单方向拖动
-            'nt-drag-start': () => {
-              const win = this.getWindow()
-              if (win && !win.isDestroyed()) {
-                const b = win.getBounds()
-                this.dragStartPos = { x: b.x, y: b.y }
-              }
-            },
-            'nt-drag-move': (data) => {
-              const win = this.getWindow()
-              if (!win || win.isDestroyed() || !this.dragStartPos) return
-              const axis = self.dragAxis(position)
-              if (axis.axis === 'vertical') {
-                // 垂直拖拽（top/bottom/center）：仅应用 deltaY，按方向限定符号
-                const dy = Number(data.deltaY || 0)
-                const allowedDy = axis.sign === 0 ? dy : Math.sign(axis.sign) * Math.max(Math.sign(axis.sign) * dy, 0)
-                const nx = this.dragStartPos.x // 水平锁定
-                const ny = this.dragStartPos.y + allowedDy
-                win.setPosition(Math.round(nx), Math.round(ny), false)
-              } else {
-                // 水平拖拽（四角/左右边缘）：仅应用 deltaX，按方向限定符号
-                const dx = Number(data.deltaX || 0)
-                const allowedDx = axis.sign === 0 ? dx : Math.sign(axis.sign) * Math.max(Math.sign(axis.sign) * dx, 0)
-                const nx = this.dragStartPos.x + allowedDx
-                const ny = this.dragStartPos.y // 垂直锁定
-                win.setPosition(Math.round(nx), Math.round(ny), false)
-              }
-            },
-            'nt-drag-end': () => {
-              this.dragStartPos = null
-              // 拖出屏幕过半则关闭，否则 clamp 回屏幕内
-              self.handleDropAfterDrag(this, id)
             },
             'hover-pause': () => {
               const slot = self.slots.find((s) => s.handler === this)
@@ -456,6 +425,28 @@ export class NotificationWindowHandlers {
 
     // 重排剩余通知（收缩堆叠间隙）
     this.relayout()
+  }
+
+  private dismissItem(slot: NotificationSlot, notificationId?: string, index?: number): void {
+    const itemIndex = notificationId
+      ? slot.items.findIndex((item) => item.notificationId === notificationId)
+      : Number.isInteger(index) ? index! : -1
+    if (itemIndex < 0 || itemIndex >= slot.items.length) return
+    slot.items.splice(itemIndex, 1)
+    if (slot.items.length === 0) {
+      this.dismissSlot(slot)
+      return
+    }
+    slot.payload = slot.items[slot.items.length - 1]
+    slot.handler.sendMessage({
+      type: 'notification-content',
+      payload: {
+        ...slot.payload,
+        __items: slot.items,
+        __animDir: this.animDirOf(slot.position),
+        __draggable: this.isDraggable(slot.position),
+      },
+    })
   }
 
   /**

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "testimonials-1",
+  "type": "registry:block",
+  "description": "Infinite vertical testimonial scroller with smooth motion and repeated card animation.",
+  "dependencies": [
+    "motion"
+  ],
+  "files": [
+    {
+      "path": "registry/blocks/testimonials/1/testimonials-columns.tsx",
+      "content": "\"use client\";\nimport { motion } from \"motion/react\";\nimport React from \"react\";\n\nexport type Testimonial = {\n  text: string;\n  image: string;\n  name: string;\n  role: string;\n};\n\nexport const TestimonialsColumn = (props: {\n  className?: string;\n  testimonials: Testimonial[];\n  duration?: number;\n}) => (\n  <div className={props.className}>\n    <motion.div\n      animate={{\n        translateY: \"-50%\",\n      }}\n      className=\"flex flex-col gap-6 pb-6\"\n      transition={{\n        duration: props.duration || 10,\n        repeat: Number.POSITIVE_INFINITY,\n        ease: \"linear\",\n        repeatType: \"loop\",\n      }}\n    >\n      {[\n        ...new Array(2).fill(0).map((_, index) => (\n          <React.Fragment key={`column-${index}`}>\n            {props.testimonials.map(({ text, image, name, role }) => (\n              <div\n                className=\"w-full max-w-xs rounded-3xl border bg-card p-8 shadow-lg dark:bg-card/20 dark:shadow-foreground/10\"\n                key={name}\n              >\n                <div>{text}</div>\n                <div className=\"mt-5 flex items-center gap-2\">\n                  <img\n                    alt={name}\n                    className=\"h-10 w-10 rounded-full\"\n                    height={40}\n                    src={image}\n                    width={40}\n                  />\n                  <div className=\"flex flex-col\">\n                    <div className=\"font-medium leading-5 tracking-tight\">\n                      {name}\n                    </div>\n                    <div className=\"leading-5 tracking-tight opacity-60\">\n                      {role}\n                    </div>\n                  </div>\n                </div>\n              </div>\n            ))}\n          </React.Fragment>\n        )),\n      ]}\n    </motion.div>\n  </div>\n);\n",
+      "type": "registry:component"
+    }
+  ],
+  "categories": [
+    "testimonials"
+  ]
+}

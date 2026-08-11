@@ -5,7 +5,7 @@
  * - 同位置聚合：一个窗口渲染同一位置的多条通知
  * - 无初次 loading：页面加载后即就绪，等待 notification-content 下发内容
  * - 内容自适应：接收内容后测量实际高度回传 measure-ready
- * - 支持拖拽：卡片头部可拖动移动窗口，松手后主进程 clamp 到屏幕内
+ * - 支持拖拽：每条卡片可在窗口内部横向滑动，滑出后只移除该条通知
  * - 悬停暂停自动消失
  */
 
@@ -74,8 +74,9 @@ async function initNotificationWindow() {
         html: '',
         hasContent: false,
         isDragging: false,
-        // 自定义拖拽追踪（相对增量，主进程 setPosition）
+        dragItem: null,
         dragStartCursor: null,
+        dragOffsetX: 0,
         // 本次按下是否真的发生过位移（用于区分点击与拖拽）
         dragMoved: false,
         // 出现动画类型
@@ -131,8 +132,9 @@ async function initNotificationWindow() {
         v-for="(item, index) in items"
         :key="item.notificationId || index"
         class="notification-card"
-        :class="[index === 0 ? animationClass : '', { 'is-dragging': isDragging, 'is-draggable': draggable }]"
-        @mousedown="handleDragStart"
+        :class="[index === 0 ? animationClass : '', { 'is-dragging': dragItem === item, 'is-draggable': draggable }]"
+        :style="itemStyle(item)"
+        @mousedown="handleDragStart(item, $event)"
         @click="handleCardClick(item)"
       >
         <div class="notification-bar" :class="item.type || 'info'"></div>
@@ -269,57 +271,41 @@ async function initNotificationWindow() {
       handleClose() {
         bridge.send({ type: 'dismiss', timestamp: Date.now() })
       },
-      // ===== 自定义 JS 拖拽（主进程 setPosition，实时 clamp 到屏幕内）=====
-      // 使用通知专有消息类型，避免与基类内置 drag-start（-webkit-app-region hack）冲突。
-      // 采用「延迟启动」：mousedown 仅记录起点，move 超过阈值才真正发起拖拽，
-      // 这样纯点击不会被误判为拖拽（保证 click 回调正常触发）。
-      handleDragStart(e) {
-        // 居中等不可拖拽位置直接放行（不启动拖拽）
-        if (!this.draggable) return
-        // 仅左键触发；忽略来自按钮等 no-drag 元素的事件（它们 @mousedown.stop 不会冒泡到这里）
+      itemStyle(item) {
+        return this.dragItem === item && this.dragOffsetX
+          ? { transform: `translateX(${this.dragOffsetX}px)` }
+          : null
+      },
+      handleDragStart(item, e) {
         if (e.button !== 0 || this.isDragging) return
+        this.dragItem = item
         this.dragMoved = false
         this.dragStartCursor = { x: e.screenX, y: e.screenY }
-        this._dragArmed = true // 蓄势：等待 move 超阈值才真正拖拽
+        this.dragOffsetX = 0
+        this._dragArmed = true
       },
       handleDragMove(e) {
         if (!this._dragArmed || !this.dragStartCursor) return
         const deltaX = e.screenX - this.dragStartCursor.x
-        const deltaY = e.screenY - this.dragStartCursor.y
-        // 超过阈值才真正启动拖拽（避免点击被吞）
         if (!this.isDragging) {
-          if (Math.abs(deltaX) < 4 && Math.abs(deltaY) < 4) return
+          if (Math.abs(deltaX) < 4) return
           this.isDragging = true
           this.dragMoved = true
-          // 真正开始拖拽时才通知主进程记录窗口起点
-          bridge.send({ type: 'nt-drag-start', timestamp: Date.now() })
         }
-        // rAF 节流，避免 mousemove 高频发消息淹没主进程
-        this._lastMove = { x: e.screenX, y: e.screenY }
-        if (this._rafId) return
-        this._rafId = requestAnimationFrame(() => {
-          this._rafId = 0
-          if (!this.isDragging || !this.dragStartCursor || !this._lastMove) return
-          const dX = this._lastMove.x - this.dragStartCursor.x
-          const dY = this._lastMove.y - this.dragStartCursor.y
-          // 同时发送 deltaX / deltaY，由主进程按所在位置选择轴并限定方向
-          bridge.send({ type: 'nt-drag-move', deltaX: dX, deltaY: dY, timestamp: Date.now() })
-        })
+        this.dragOffsetX = deltaX
       },
-      handleDragEnd(e) {
-        // 无论是否真正拖拽过，都清理蓄势状态
+      handleDragEnd() {
         this._dragArmed = false
-        if (!this.isDragging) {
-          this.dragStartCursor = null
-          return
+        const item = this.dragItem
+        const offset = this.dragOffsetX
+        if (this.isDragging && item && Math.abs(offset) > 100) {
+          const index = this.items.indexOf(item)
+          bridge.send({ type: 'dismiss-item', notificationId: item.notificationId, index, timestamp: Date.now() })
         }
         this.isDragging = false
+        this.dragItem = null
+        this.dragOffsetX = 0
         this.dragStartCursor = null
-        if (this._rafId) {
-          cancelAnimationFrame(this._rafId)
-          this._rafId = 0
-        }
-        bridge.send({ type: 'nt-drag-end', timestamp: Date.now() })
       },
       // 悬停暂停 / 离开恢复自动消失
       handleMouseEnter() {

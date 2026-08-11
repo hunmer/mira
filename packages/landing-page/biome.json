@@ -1,0 +1,28 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "extends": ["ultracite/core", "ultracite/react", "ultracite/next"],
+  "linter": {
+    "rules": {
+      "a11y": {
+        "noSvgWithoutTitle": "off",
+        "useValidAnchor": "off"
+      },
+      "performance": {
+        "noNamespaceImport": "off",
+        "noImgElement": "off"
+      },
+      "suspicious": {
+        "noArrayIndexKey": "info"
+      }
+    }
+  },
+  "files": {
+    "includes": [
+      "**/*",
+      "!components/ui",
+      "!public",
+      "!config/blocks.ts",
+      "!registry.json"
+    ]
+  }
+}
