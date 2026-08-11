@@ -1,0 +1,70 @@
+name: Electron Build
+
+# 仅在 push tag v* 时触发，构建 Windows/macOS 安装包并上传到 GitHub Release
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write  # 上传 release asset 需要
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false  # 一个平台失败不影响另一个
+      matrix:
+        include:
+          - os: windows-latest
+            platform: win
+            script: electron:build:win
+          - os: macos-latest
+            platform: mac
+            script: electron:build:mac
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'pnpm'
+        cache-dependency-path: 'pnpm-lock.yaml'
+
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+
+    - name: Build & package (${{ matrix.platform }})
+      working-directory: packages/mira-client
+      env:
+        # macOS 公证密钥（缺失时 notarize.js 会自动跳过，不阻断构建）
+        APPLE_ID: ${{ secrets.APPLE_ID }}
+        APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+        APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        # Windows 代码签名证书（缺失则跳过签名）
+        CSC_LINK: ${{ secrets.CSC_LINK }}
+        CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: pnpm run ${{ matrix.script }}
+
+    - name: Upload artifacts to GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        # 只上传实际安装包，排除 latest.yml / blockmap 等元数据（按需调整）
+        files: |
+          packages/mira-client/build/*.exe
+          packages/mira-client/build/*.dmg
+          packages/mira-client/build/*.zip
+          packages/mira-client/build/*.appx
+          packages/mira-client/build/*.msi
+        fail_on_unmatched_files: false
+        generate_release_notes: true

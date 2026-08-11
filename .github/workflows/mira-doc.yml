@@ -1,0 +1,73 @@
+name: Deploy Mira Doc
+
+# 仅在 push tag v* 时触发，构建 VitePress 并部署到 Vercel（独立项目，根路径）
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  # 部署到独立域名根路径，需把 VitePress 的 base 由 /mira-doc/ 改为 /
+  # 仅在 runner 临时工作区修改，不污染仓库
+  TARGET_BASE: '/'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'pnpm'
+        cache-dependency-path: 'pnpm-lock.yaml'
+
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+
+    - name: Patch base path for root domain
+      working-directory: packages/mira-doc
+      run: |
+        # 把 base: '/mira-doc/' 改为 base: '/'
+        sed -i "s|base: '/mira-doc/'|base: '${{ env.TARGET_BASE }}'|" .vitepress/config.mts
+        # favicon 路径同步调整
+        sed -i "s|href: '/mira-doc/icon.ico'|href: '/icon.ico'|" .vitepress/config.mts
+        echo "=== 修改后的 config 头部 ==="
+        head -15 .vitepress/config.mts
+
+    - name: Build VitePress
+      working-directory: packages/mira-doc
+      run: pnpm docs:build
+
+    - name: Install Vercel CLI
+      run: npm install -g vercel@latest
+
+    - name: Deploy to Vercel (production)
+      working-directory: packages/mira-doc
+      env:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_MIRA_DOC_PROJECT_ID }}
+        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      run: |
+        if [ -z "$VERCEL_TOKEN" ]; then
+          echo "❌ VERCEL_TOKEN secret 未配置"
+          exit 1
+        fi
+        # 直接部署 .vitepress/dist 静态产物为生产版本
+        # 首次运行若未配 VERCEL_PROJECT_ID，CLI 会按目录名(mira-doc)自动创建项目
+        vercel deploy .vitepress/dist \
+          --prod \
+          --yes \
+          --token "$VERCEL_TOKEN" \
+          --name mira-doc \
+          --cwd .
+        echo "✅ 部署完成"

@@ -1,0 +1,54 @@
+name: Deploy Landing Page
+
+# 仅在 push tag v* 时触发，部署 Next.js 到 Vercel（独立项目）
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'pnpm'
+        cache-dependency-path: 'pnpm-lock.yaml'
+
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+
+    - name: Install Vercel CLI
+      run: npm install -g vercel@latest
+
+    - name: Deploy to Vercel (production)
+      working-directory: packages/landing-page
+      env:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_LANDING_PROJECT_ID }}
+        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      run: |
+        if [ -z "$VERCEL_TOKEN" ]; then
+          echo "❌ VERCEL_TOKEN secret 未配置"
+          exit 1
+        fi
+        # 让 Vercel 自动识别 Next.js 框架并构建
+        # 项目名 package.json 是 efferd-ui，用 --name 强制为 mira-landing 避免歧义
+        vercel deploy \
+          --prod \
+          --yes \
+          --token "$VERCEL_TOKEN" \
+          --name mira-landing \
+          --cwd .
+        echo "✅ 部署完成"

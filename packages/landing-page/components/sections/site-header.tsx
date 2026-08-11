@@ -6,10 +6,10 @@ import {
   useReducedMotion,
   useSpring,
 } from "motion/react";
+import Image from "next/image";
 import React from "react";
 import { createPortal } from "react-dom";
 import { LanguageToggle } from "@/components/language-toggle";
-import { Logo } from "@/components/logo";
 import { MenuToggleIcon } from "@/components/menu-toggle-icon";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +20,7 @@ import {
 import { useScroll } from "@/hooks/use-scroll";
 import { useI18n } from "@/lib/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
+import { SITE_NAME } from "@/config/site";
 
 const GITHUB_URL = "https://github.com/hunmer/mira_typescript";
 
@@ -65,7 +66,13 @@ export function SiteHeaderSection() {
       <nav className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between px-4">
         <div className="flex items-center gap-5">
           <a className="rounded-md p-2 hover:bg-accent" href="#">
-            <Logo className="h-4" />
+            <Image
+              alt={SITE_NAME}
+              height={20}
+              priority
+              src="/icon.png"
+              width={20}
+            />
           </a>
           <NavigationMenu className="hidden md:flex">
             <NavigationMenuList>

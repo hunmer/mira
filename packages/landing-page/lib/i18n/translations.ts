@@ -151,7 +151,7 @@ export const zh = {
       {
         title: "是否开源免费？",
         content:
-          "Mira 是开源项目，代码托管在 GitHub（hunmer/mira_typescript），可免费使用。社区活跃，欢迎提交 Issue 与 PR。",
+          "Mira 是开源项目，代码托管在 GitHub（hunmer/mira），可免费使用。社区活跃，欢迎提交 Issue 与 PR。",
       },
       {
         title: "插件能做什么？",
@@ -167,7 +167,7 @@ export const zh = {
     emailTitle: "邮件",
     githubTitle: "GitHub",
     githubDesc: "源码、文档、Release 都在这里。",
-    githubLink: "github.com/hunmer/mira_typescript",
+    githubLink: "github.com/hunmer/mira",
     docsTitle: "文档",
     docsDesc: "CLI、MCP、Skill 文档齐全。",
     docsLink: "查看使用文档",
@@ -353,7 +353,7 @@ export const en: Dict = {
       {
         title: "Is it open source and free?",
         content:
-          "Mira is open source, hosted on GitHub (hunmer/mira_typescript) and free to use. The community is active — Issues and PRs welcome.",
+          "Mira is open source, hosted on GitHub (hunmer/mira) and free to use. The community is active — Issues and PRs welcome.",
       },
       {
         title: "What can plugins do?",
@@ -369,7 +369,7 @@ export const en: Dict = {
     emailTitle: "Email",
     githubTitle: "GitHub",
     githubDesc: "Source, docs and releases all live here.",
-    githubLink: "github.com/hunmer/mira_typescript",
+    githubLink: "github.com/hunmer/mira",
     docsTitle: "Docs",
     docsDesc: "Full docs for CLI, MCP and Skills.",
     docsLink: "Read the docs",
