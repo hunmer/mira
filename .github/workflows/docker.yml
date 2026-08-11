@@ -1,5 +1,9 @@
 name: Build and Push Docker Image
 
+# 单一 workflow 覆盖所有场景：
+#   - push main   → 构建 + 推送 ghcr (latest, latest-YYYYMMDD)
+#   - push tag v* → 构建 + 推送 ghcr (版本号, v版本号, latest)
+#   - PR to main  → 仅构建测试，不推送
 on:
   push:
     branches:
@@ -9,7 +13,7 @@ on:
   pull_request:
     branches:
       - main
-      
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}/mira-app-server
@@ -31,8 +35,8 @@ jobs:
       run: |
         echo "Checking workspace structure..."
         ls -la packages/
-        ls -la packages/mira-storage-sqlite/
-        ls -la packages/mira-storage-sqlite/src/
+        ls -la packages/mira-storage-sqlite/ 2>/dev/null || true
+        ls -la packages/mira-storage-sqlite/src/ 2>/dev/null || true
 
     - name: Set up Node.js
       uses: actions/setup-node@v4
@@ -48,29 +52,37 @@ jobs:
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
-      continue-on-error: true
-      
+
     - name: Show Docker version
       run: |
-        echo "Docker installation details:"
         docker --version
         docker buildx version
 
+    # PR 不需要登录、不推送
     - name: Log in to Container Registry
+      if: github.event_name != 'pull_request'
       uses: docker/login-action@v3
       with:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
         password: ${{ secrets.SECERT }} # 不允许GITHUB_TOKEN为变量名称
 
+    # 仅在需要推送时生成 tag 元数据（main / tag）
     - name: Extract metadata
       id: meta
+      if: github.event_name != 'pull_request'
       uses: docker/metadata-action@v5
       with:
         images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
         tags: |
-          type=raw,value=latest
-          type=raw,value=latest-{{date 'YYYYMMDD'}}
+          # main 和 tag 都打 latest
+          type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') }}
+          # 仅 main 打日期版
+          type=raw,value=latest-{{date 'YYYYMMDD'}},enable=${{ github.ref == 'refs/heads/main' }}
+          # tag 自动产出 semver：v1.2.3 → 1.2.3, 1.2, 1
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=semver,pattern={{major}}
 
     - name: Build and push Docker image
       id: build
@@ -78,7 +90,7 @@ jobs:
       with:
         context: .
         file: ./packages/mira-app-server/Dockerfile
-        push: true
+        push: ${{ github.event_name != 'pull_request' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         platforms: linux/amd64,linux/arm64
@@ -86,14 +98,15 @@ jobs:
         cache-to: type=gha,mode=max
 
     - name: Generate artifact attestation
+      if: github.event_name != 'pull_request'
       uses: actions/attest-build-provenance@v1
       with:
-        subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
+        subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
         subject-digest: ${{ steps.build.outputs.digest }}
         push-to-registry: true
 
     - name: Make package public
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
       run: |
         # 使用 GitHub CLI 设置包为公开
         echo "Setting package visibility to public..."
