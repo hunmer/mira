@@ -6,6 +6,7 @@ import {
     PreviewViewersResponse,
     BatchImportOptions,
     BatchImportResponse,
+    BatchImportItem,
 } from '../types';
 
 /**
@@ -115,6 +116,13 @@ export class FileModule {
 
         if (uploadRequest.clientId) {
             formData.append('clientId', uploadRequest.clientId);
+        }
+
+        if (uploadRequest.batchImport) {
+            formData.append('batchImport', 'true');
+        }
+        if (uploadRequest.urlItems?.length) {
+            formData.append('urlItems', JSON.stringify(uploadRequest.urlItems));
         }
 
         if (uploadRequest.fields) {
@@ -260,8 +268,29 @@ export class FileModule {
         return await this.upload(uploadRequest);
     }
 
-    /** 从 URL 批量下载并导入到素材库。 */
+    /** 直接上传已获取的二进制文件并批量导入，服务端不会再次下载 URL。 */
     async batchImport(
+        items: BatchImportItem[],
+        libraryId: string,
+        options?: BatchImportOptions
+    ): Promise<BatchImportResponse> {
+        const files = items.filter((item): item is File => typeof item !== 'string');
+        const urlItems = items.filter((item): item is string => typeof item === 'string');
+        const uploadRequest: UploadFileRequest = {
+            files,
+            libraryId,
+            clientId: options?.clientId,
+            batchImport: true,
+            urlItems,
+        };
+        if (options?.folderId !== undefined) {
+            uploadRequest.payload = { data: { folder_id: String(options.folderId) } };
+        }
+        return await this.upload(uploadRequest) as unknown as BatchImportResponse;
+    }
+
+    /** 使用服务端 Cookie 按 URL 批量下载并导入。 */
+    async batchImportFromUrls(
         libraryId: string,
         urls: string[],
         options?: BatchImportOptions

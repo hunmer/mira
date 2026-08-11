@@ -242,14 +242,14 @@ const visibleResources = computed(() => {
 async function uploadSelected() {
   const targets = resources.value.filter(r => selected.value.has(r.id));
   if (!targets.length) return;
-  const importUrls = new Map(targets.map(r => [r.id, r.url]));
-  await runConcurrent(targets, 3, async r => {
+  const importCandidates = new Map(targets.map(r => [r.id, [r.url]]));
+  await runConcurrent(targets, settings.value.batchImportConcurrency, async r => {
     if (settings.value.imuEnabled && r.tabId) {
       try {
         const candidates = await bg.upgradeImageUrl(r.tabId, r.url, undefined, settings.value.imuRules);
-        const url = candidates[0] ?? r.url;
-        importUrls.set(r.id, url);
-        dbg.log('sniffer', 'upgraded', { original: r.url, url, count: candidates.length });
+        const urls = [...new Set([...candidates, r.url])];
+        importCandidates.set(r.id, urls);
+        dbg.log('sniffer', 'upgraded', { original: r.url, url: urls[0], count: urls.length });
       } catch (error) {
         dbg.warn('sniffer', 'upload selected upgrade failed, use original', { url: r.url, error });
       }
@@ -257,7 +257,12 @@ async function uploadSelected() {
       dbg.log('sniffer', 'upload selected maxurl skipped', { url: r.url, imuEnabled: settings.value.imuEnabled, tabId: r.tabId });
     }
   });
-  await bg.batchImport(targets.map(r => importUrls.get(r.id)!), settings.value.libraryId);
+  await bg.batchImport(targets.map(r => ({
+    urls: importCandidates.get(r.id)!,
+    fallbackUrl: r.url,
+    filename: filenameOf(r),
+    referrer: r.referrer || r.pageUrl,
+  })), settings.value.libraryId);
   selected.value.clear();
 }
 

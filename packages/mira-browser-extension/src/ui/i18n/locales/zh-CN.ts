@@ -71,6 +71,8 @@ export default {
     sniffer: '资源嗅探',
     autoScroll: '自动滚动',
     autoScrollDelay: '滚动间隔(ms)',
+    batchImportConcurrency: '批量导入并发数',
+    batchImportConcurrencyHint: '同时解析和下载的资源数量，范围 1–10',
     imu: '高清大图升级',
     imuHint: '拖图/嗅探/右键上传时,前端先用 maxurl 提取高清原图',
     imuRules: '高清图替换规则',

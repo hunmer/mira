@@ -160,6 +160,8 @@ export interface ExtensionSettings {
   autoScrollEnabled: boolean;
   /** 滚动间隔(ms) */
   autoScrollDelay: number;
+  /** 批量导入时的 maxurl 解析和图片抓取并发数 */
+  batchImportConcurrency: number;
   /** 前端高清大图升级(maxurl),默认开 */
   imuEnabled: boolean;
   /** 高清图 URL 替换规则(JSON 编辑后持久化) */
@@ -191,6 +193,7 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   snifferKinds: ['image', 'audio', 'video'],
   autoScrollEnabled: false,
   autoScrollDelay: 800,
+  batchImportConcurrency: 3,
   imuEnabled: true,
   imuRules: DEFAULT_IMAGE_URL_RULES,
 };

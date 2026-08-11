@@ -57,6 +57,20 @@ export function pinterestOriginalUrl(url: string, rules: ImageUrlRule[] = DEFAUL
 
 export function fallbackImageCandidates(url: string, rules: ImageUrlRule[] = DEFAULT_IMAGE_URL_RULES): string[] {
   const pinterestOriginal = pinterestOriginalUrl(url, rules);
+  try {
+    const parsed = new URL(pinterestOriginal || url);
+    if (/(?:^|\.)pinimg\.com$/i.test(parsed.hostname)) {
+      const match = parsed.pathname.match(/^\/(?:vwebp\/)?(?:originals|\d+x(?:\d+)?)\/(.+)$/i);
+      if (match) {
+        const suffix = match[1];
+        return [...new Set([
+          pinterestOriginal || `${parsed.origin}/originals/${suffix}`,
+          ...['1200x', '736x', '564x', '474x', '236x'].map(size => `${parsed.origin}/${size}/${suffix}`),
+          url,
+        ])];
+      }
+    }
+  } catch { /* invalid URL falls through */ }
   return pinterestOriginal ? [pinterestOriginal, url] : [url];
 }
 
@@ -162,7 +176,7 @@ export async function upgradeImageUrl(url: string, opts: ImuOptions = {}): Promi
   const pinterestOriginal = pinterestOriginalUrl(url, rules);
   if (pinterestOriginal) {
     dbg.log('imu', 'Pinterest fast path', { original: url, best: pinterestOriginal });
-    return [pinterestOriginal, url];
+    return fallbackImageCandidates(url, rules);
   }
   // 非 content script 环境(如测试 / service worker)直接返回原 url
   if (typeof document === 'undefined' || typeof chrome?.runtime?.getURL !== 'function') {
@@ -195,9 +209,10 @@ export async function upgradeImageUrl(url: string, opts: ImuOptions = {}): Promi
   }
   ordered.sort((a, b) => Number(b.original) - Number(a.original));
   const out = [...ordered.map(o => o.url)];
+  for (const candidate of fallbackImageCandidates(url, rules)) {
+    if (!out.includes(candidate)) out.push(candidate);
+  }
   const pinterestFallback = pinterestOriginalUrl(url, rules);
-  if (pinterestFallback && !out.includes(pinterestFallback)) out.unshift(pinterestFallback);
-  if (!out.includes(url)) out.push(url);
   dbg.log('imu', 'result', { original: url, best: out[0], count: out.length, fallback: !!pinterestFallback });
   return out;
 }

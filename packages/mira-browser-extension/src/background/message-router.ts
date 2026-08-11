@@ -13,6 +13,7 @@ import { dbg } from '@/shared/debug';
 import { sendToContent } from './inject';
 import { resourceFilename } from '@/shared/resource-filename';
 import { fetchResource } from './resource-fetch';
+import { runConcurrent } from '@/shared/concurrency';
 
 export interface RouterDeps {
   uploader: Uploader;
@@ -141,11 +142,27 @@ export function createRouter(deps: RouterDeps): RequestHandler {
         return { enqueued: 1 };
       }
       case 'BATCH_IMPORT':
-        return withAuth((client: MiraClient) => client.files().batchImport(
-          req.payload.libraryId,
-          req.payload.urls,
-          { folderId: req.payload.folderId },
-        ));
+        return withAuth(async (client: MiraClient) => {
+          const settings = await getSettings();
+          const items: (File | string)[] = new Array(req.payload.items.length);
+          const indexedItems = req.payload.items.map((item, index) => ({ item, index }));
+          await runConcurrent(indexedItems, settings.batchImportConcurrency, async ({ item, index }) => {
+            let importedFile: File | undefined;
+            for (const url of item.urls) {
+              try {
+                const res = await fetchResource(url, item.referrer);
+                if (!res.ok) throw new Error(`resource fetch failed: ${res.status}`);
+                const blob = await res.blob();
+                importedFile = new File([blob], item.filename, { type: blob.type || 'application/octet-stream' });
+                break;
+              } catch (error) {
+                dbg.warn('upload', 'batch candidate fetch failed, try next size', { url, error });
+              }
+            }
+            items[index] = importedFile ?? item.fallbackUrl;
+          });
+          return client.files().batchImport(items, req.payload.libraryId, { folderId: req.payload.folderId });
+        });
       case 'UPLOAD_STATUS':
         return deps.uploader.getQueue();
       case 'UPLOAD_CANCEL':

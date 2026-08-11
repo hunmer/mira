@@ -184,7 +184,6 @@ export class ServerPluginManager {
         const config: PluginConfig[] = JSON.parse(
             fs.readFileSync(this.pluginsConfigPath, 'utf-8')
         );
-        console.log({ config })
         for (const pluginConfig of config) {
             if (pluginConfig.enabled) {
                 await this.loadPlugin(pluginConfig, reload);

@@ -65,6 +65,8 @@ export class DownloadExecutorService {
         };
         this.progress.set(batchId, progress);
 
+        console.log(`📥 [download] batch ${batchId} 入队，共 ${tasks.length} 个任务`);
+
         for (const task of tasks) {
             void this.queue.add(() => this.runOne(batchId, task, progress));
         }
@@ -78,6 +80,7 @@ export class DownloadExecutorService {
     private async runOne(batchId: string, task: DownloadTaskInput, progress: BatchProgress): Promise<void> {
         const { url, libraryId, userId, folderId, clientId } = task;
         const ws = this.backend.webSocketServer;
+        const t0 = Date.now();
         try {
             // 校验 library
             const libObj = this.backend.libraries?.getLibrary(libraryId);
@@ -92,6 +95,7 @@ export class DownloadExecutorService {
             const basename = this.guessFilename(url);
             const tmpPath = path.join(tempDir, `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${basename}`);
 
+            console.log(`⬇️ [download] batch ${batchId} 开始: ${url}${cookieHeader ? ' 【携带cookie】' : ''}`);
             const resp = await axios.get(url, {
                 responseType: 'stream',
                 headers: {
@@ -110,6 +114,7 @@ export class DownloadExecutorService {
                 { importType: 'move' },
             );
             const isDup = result?.duplicate === true;
+            console.log(`✅ [download] batch ${batchId} ${isDup ? '重复跳过' : '完成'} (${Date.now() - t0}ms): ${url} → fileId=${result?.id}`);
             if (!isDup && result?.id != null) {
                 // 补写来源 URL 到 custom_fields，便于追溯（与插件窗口 addFromUrl 模式一致）
                 try {
@@ -146,12 +151,16 @@ export class DownloadExecutorService {
             }
         } catch (e: any) {
             progress.failed++;
+            console.log(`❌ [download] batch ${batchId} 失败 (${Date.now() - t0}ms): ${url} → ${e?.message || e}`);
             ws?.broadcastLibraryEvent(libraryId, 'download::item', {
                 batchId, url, status: 'failed', error: e?.message || String(e), libraryId,
             });
         } finally {
             // 更新整体进度并推送
             progress.done = progress.completed + progress.failed + progress.skipped >= progress.total;
+            if (progress.done) {
+                console.log(`📦 [download] batch ${batchId} 全部完成: 成功 ${progress.completed} / 失败 ${progress.failed} / 重复 ${progress.skipped}`);
+            }
             ws?.broadcastLibraryEvent(libraryId, 'download::progress', { ...progress, libraryId });
             if (clientId) {
                 const wsClient = ws?.getWsClientById(libraryId, clientId);

@@ -53,6 +53,9 @@ export function mergeWithDefaults(partial: Partial<ExtensionSettings>): Extensio
   merged.snifferKinds = orDefault(merged.snifferKinds, DEFAULT_SETTINGS.snifferKinds);
   merged.snifferAspectRatios = orDefault(merged.snifferAspectRatios, DEFAULT_SETTINGS.snifferAspectRatios);
   merged.imuRules = validRules(merged.imuRules);
+  merged.batchImportConcurrency = Math.min(10, Math.max(1,
+    Math.floor(Number(merged.batchImportConcurrency) || DEFAULT_SETTINGS.batchImportConcurrency)
+  ));
   return merged;
 }
 

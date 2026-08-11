@@ -53,20 +53,35 @@ const HTTP_LOG_IGNORE_PREFIXES = [
     '/api/logs/stream',
 ];
 
+// 日志数据截断：序列化后超 MAX_LOG_CHARS 字符则截断并标注原始长度
+const MAX_LOG_CHARS = 500;
+function truncateLogData(data: any): any {
+    let text: string;
+    try {
+        text = typeof data === 'string' ? data : JSON.stringify(data);
+    } catch {
+        text = String(data);
+    }
+    if (text.length > MAX_LOG_CHARS) {
+        return `${text.slice(0, MAX_LOG_CHARS)}... (${text.length} chars, truncated)`;
+    }
+    return data;
+}
+
 function createHttpLoggerMiddleware() {
     // 记录上一次请求的地址，用于抑制无 body 的重复请求刷屏
     let lastUrl = '';
     return (req: express.Request, res: express.Response, next: express.NextFunction) => {
         const startTime = Date.now();
         const timestamp = new Date().toISOString();
-        // 记录请求信息
+        // 记录请求信息（body 延迟到 res.finish 时读取，避免在 express.json 解析前快照到空值）
         const requestData: RequestLogData = {
             method: req.method,
             url: req.originalUrl || req.url,
             headers: req.headers,
             query: req.query,
             params: req.params,
-            body: req.body,
+            body: undefined as any,
             ip: req.ip || req.connection.remoteAddress || 'unknown',
             userAgent: req.get('User-Agent') || 'unknown',
             timestamp
@@ -100,6 +115,8 @@ function createHttpLoggerMiddleware() {
 
             const responseTime = Date.now() - startTime;
             const statusCode = res.statusCode;
+            // 此时 express.json 已执行，req.body 是解析后的对象；保持引用同步
+            requestData.body = req.body;
             const hasBody = !!(requestData.body && typeof requestData.body === 'object' && Object.keys(requestData.body).length > 0);
 
             if (hasBody) {
@@ -111,7 +128,7 @@ function createHttpLoggerMiddleware() {
                 if (Object.keys(requestData.params).length > 0) {
                     console.log(`📍 Route Parameters:`, requestData.params);
                 }
-                console.log(`📦 Request Body:`, requestData.body);
+                console.log(`📦 Request Body:`, truncateLogData(requestData.body));
             } else if (requestData.url !== lastUrl) {
                 // 无 body 且地址与上次不同：仅输出合并的一行（请求行 + 状态 + 耗时）
                 console.log(`🔗 ${requestData.method.toUpperCase()} ${requestData.url} [${statusCode}] ${responseTime}ms`);
@@ -119,9 +136,14 @@ function createHttpLoggerMiddleware() {
             // 无 body 且地址与上次一致：不输出任何请求信息
             lastUrl = requestData.url;
 
-            // 有 body 的请求额外输出响应体
+            // 有 body 的请求额外输出响应体（超长截断）
             if (hasBody && responseBody != null) {
-                console.log(`📤 Response:`, responseBody);
+                const truncated = truncateLogData(responseBody);
+                if (typeof truncated === 'string') {
+                    console.log(`📤 Response: ${truncated}`);
+                } else {
+                    console.log(`📤 Response:`, truncated);
+                }
             }
         });
 

@@ -175,7 +175,7 @@ async function initNotificationWindow() {
         <div class="notification-main">
           <div class="notification-header">
             <div class="notification-title">{{ item.title }}</div>
-            <button class="notification-close" @click.stop="handleClose" @mousedown.stop title="关闭">
+            <button class="notification-close" @click.stop="handleClose(item, index)" @mousedown.stop title="关闭">
               <span class="material-icons" style="font-size:16px;">close</span>
             </button>
           </div>
@@ -272,8 +272,13 @@ async function initNotificationWindow() {
         })
         bridge.send(message)
       },
-      handleClose() {
-        bridge.send({ type: 'dismiss', timestamp: Date.now() })
+      handleClose(item, index) {
+        bridge.send({
+          type: 'dismiss-item',
+          notificationId: item.notificationId,
+          index,
+          timestamp: Date.now(),
+        })
       },
       itemStyle(item) {
         return this.dragItem === item && this.dragOffsetX

@@ -41,6 +41,13 @@ describe('storage', () => {
     expect(merged.serverURL).toBe('http://x');
     expect(merged.uiMode).toBe(DEFAULT_SETTINGS.uiMode);
     expect(merged.snifferEnabled).toBe(false);
+    expect(merged.batchImportConcurrency).toBe(3);
+  });
+
+  it('mergeWithDefaults 把批量导入并发数限制在 1 到 10', () => {
+    expect(mergeWithDefaults({ batchImportConcurrency: 0 }).batchImportConcurrency).toBe(3);
+    expect(mergeWithDefaults({ batchImportConcurrency: 20 }).batchImportConcurrency).toBe(10);
+    expect(mergeWithDefaults({ batchImportConcurrency: 4.8 }).batchImportConcurrency).toBe(4);
   });
 
   it('mergeWithDefaults 把损坏的 tags/null/字符串 归一化为数组', () => {

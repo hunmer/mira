@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
+import { randomUUID } from 'crypto';
 import multer from 'multer';
 import { MiraServer } from '../server';
 import { canAccessLibrary } from '../middleware/permission';
@@ -51,6 +52,11 @@ export class FileRoutes {
         this.router.post('/upload', this.upload.array('files'), async (req: Request, res: Response) => {
             const { libraryId, sourcePath, fileId } = req.body; // sourcePath是用户的本地文件位置，用来验证是否上传成功
             const clientId = req.body.clientId || null;
+            const isBatchImport = req.body.batchImport === 'true' || req.body.batchImport === true;
+            const batchId = isBatchImport ? randomUUID() : undefined;
+            const urlItems = isBatchImport && req.body.urlItems
+                ? JSON.parse(req.body.urlItems)
+                : [];
             const fields = req.body.fields ? JSON.parse(req.body.fields) : null;
             const payload = req.body.payload ? JSON.parse(req.body.payload) : null;
             const uploader = (req as any).user?.id || null;
@@ -74,7 +80,7 @@ export class FileRoutes {
             }
 
             // 解析上传的文件
-            const files = req.files as Express.Multer.File[];
+            const files = (req.files as Express.Multer.File[]) || [];
 
             // 如果是更新操作且没有文件，则只更新元数据
             if (isUpdateOperation && (!files || !files.length)) {
@@ -141,10 +147,28 @@ export class FileRoutes {
             }
 
             // 如果不是更新操作，或者是更新操作但有文件，则需要文件
-            if (!files || !files.length) return res.status(400).send('No files uploaded.');
+            if ((!files || !files.length) && !urlItems.length) return res.status(400).send('No files or URLs uploaded.');
 
             try {
                 const results = [];
+                let urlBatchId: string | undefined;
+                const validUrlItems = urlItems.filter((url: unknown) => typeof url === 'string' && /^https?:\/\//i.test(url));
+                if (validUrlItems.length) {
+                    const userId = (req as any).user?.id;
+                    if (!userId || !this.backend.downloadExecutor) {
+                        return res.status(503).send('URL import executor unavailable.');
+                    }
+                    urlBatchId = await this.backend.downloadExecutor.enqueueBatch(
+                        validUrlItems
+                            .map((url: string) => ({
+                                url,
+                                libraryId,
+                                userId,
+                                folderId: payload?.data?.folder_id ? Number(payload.data.folder_id) : null,
+                                clientId,
+                            })),
+                    );
+                }
                 for (const file of files) {
                     try {
                         // 生成唯一文件名并保存文件
@@ -269,15 +293,16 @@ export class FileRoutes {
 
                             // 发送WebSocket事件（命中重复时不广播 file::created，因为并没有新建文件）
                             if (this.backend.webSocketServer && !isDuplicate) {
+                                const eventData = { ...result, libraryId, ...(isBatchImport ? { batchImport: true, batchId } : {}) };
                                 this.backend.webSocketServer.broadcastPluginEvent('file::created', {
                                     message: {
                                         type: 'file',
                                         action: 'create',
                                         fields, payload
-                                    }, result, libraryId
+                                    }, result: eventData, libraryId
                                 });
 
-                                this.backend.webSocketServer?.broadcastLibraryEvent(libraryId, 'file::created', { ...result, libraryId });
+                                this.backend.webSocketServer?.broadcastLibraryEvent(libraryId, 'file::created', eventData);
                             }
 
                             // 命中重复也向上传方回传 file::uploaded（带 duplicate 标记），让前端能给出"已存在，已跳过"的提示
@@ -298,7 +323,12 @@ export class FileRoutes {
                         });
                     }
                 }
-                res.send({ results });
+                res.send(isBatchImport ? {
+                    batchId: batchId || urlBatchId,
+                    urlBatchId,
+                    total: files.length + validUrlItems.length,
+                    results,
+                } : { results });
             } catch (error) {
                 console.error('Error uploading files:', error);
                 res.status(500).send('Internal server error while processing the upload.');

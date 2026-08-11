@@ -204,6 +204,8 @@ export interface UploadFileRequest {
     libraryId: string;
     sourcePath?: string;
     clientId?: string;
+    batchImport?: boolean;
+    urlItems?: string[];
     fields?: any;
     payload?: {
         data: {
@@ -232,7 +234,10 @@ export interface BatchImportOptions {
 export interface BatchImportResponse {
     batchId: string;
     total: number;
+    results?: UploadResult[];
 }
+
+export type BatchImportItem = File | string;
 
 // 标签相关类型
 export interface Tag {

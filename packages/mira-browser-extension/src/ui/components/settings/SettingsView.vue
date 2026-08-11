@@ -87,6 +87,18 @@ async function resetImuRules() {
     <section>
       <h3>{{ t('settings.groupCapture') }}</h3>
       <div class="row"><span>{{ t('settings.sniffer') }}</span><Switch :model-value="settings.snifferEnabled" @update:model-value="v => update({ snifferEnabled: v })" /></div>
+      <div class="row" :title="t('settings.batchImportConcurrencyHint')">
+        <span>{{ t('settings.batchImportConcurrency') }}</span>
+        <Input
+          class="number-input"
+          type="number"
+          min="1"
+          max="10"
+          step="1"
+          :model-value="String(settings.batchImportConcurrency)"
+          @update:model-value="v => update({ batchImportConcurrency: Math.min(10, Math.max(1, Math.floor(Number(v) || 3))) })"
+        />
+      </div>
       <div class="row" :title="t('settings.imuHint')">
         <span>{{ t('settings.imu') }}</span><Switch :model-value="settings.imuEnabled" @update:model-value="v => update({ imuEnabled: v })" />
       </div>
@@ -116,4 +128,5 @@ h3 { margin: 0 0 8px; font-size: 13px; color: var(--muted); text-transform: uppe
 .rule-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
 label { font-size: 12px; color: var(--muted); display: block; margin: 6px 0 2px; }
 select { background: var(--bg); color: var(--fg); border: 1px solid var(--border); border-radius: 4px; padding: 2px 6px; }
+.number-input { width: 72px; }
 </style>

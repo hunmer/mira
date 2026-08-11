@@ -56,10 +56,10 @@ export function useBackground() {
     async uploadFiles(files: StagedFile[], libraryId: string, tags?: string[], folderId?: string) {
       return send({ type: 'UPLOAD_FILES', payload: { files, libraryId, tags, folderId } });
     },
-    async batchImport(urls: string[], libraryId: string, folderId?: number) {
+    async batchImport(items: { urls: string[]; fallbackUrl: string; filename: string; referrer?: string }[], libraryId: string, folderId?: number) {
       return send<{ batchId: string; total: number }>({
         type: 'BATCH_IMPORT',
-        payload: { urls, libraryId, folderId },
+        payload: { items, libraryId, folderId },
       });
     },
     async uploadStatus() {

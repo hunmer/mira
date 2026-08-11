@@ -71,6 +71,8 @@ export default {
     sniffer: 'Resource sniffer',
     autoScroll: 'Auto scroll',
     autoScrollDelay: 'Scroll interval (ms)',
+    batchImportConcurrency: 'Batch import concurrency',
+    batchImportConcurrencyHint: 'Resources resolved and downloaded concurrently, from 1 to 10',
     imu: 'HD image upgrade',
     imuHint: 'When dragging/sniffing/right-click uploading, extract HD originals via maxurl first',
     imuRules: 'HD image replacement rules',
