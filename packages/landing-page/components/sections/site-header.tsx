@@ -22,7 +22,7 @@ import { useI18n } from "@/lib/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 import { SITE_NAME } from "@/config/site";
 
-const GITHUB_URL = "https://github.com/hunmer/mirat";
+const GITHUB_URL = "https://github.com/hunmer/mira";
 
 export function SiteHeaderSection() {
   const { t } = useI18n();

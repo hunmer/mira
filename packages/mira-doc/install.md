@@ -30,7 +30,7 @@ Mira 提供基于 Electron 的桌面客户端（**Mira Media Library**），用�
 
 从 GitHub Release 获取最新安装包：
 
-👉 <https://github.com/hunmer/mirat/releases/latest>
+👉 <https://github.com/hunmer/mira/releases/latest>
 
 按平台选择对应文件（文件名形如 `Mira Media Library-<版本>-<平台>.<后缀>`）：
 
@@ -75,7 +75,7 @@ mira-app-server system health   # 返回 ok 即服务正常（无需登录）
 如需基于源码运行或参与开发：
 
 ```bash
-git clone https://github.com/hunmer/mirat.git
+git clone https://github.com/hunmer/mira.git
 cd mira_typescript
 pnpm install
 pnpm run install:deps   # 构建 mira-app-core 并安装到 mira-app-server

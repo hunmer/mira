@@ -1,14 +1,15 @@
 "use client";
 
-import { BookOpenIcon, type LucideIcon, Mail, MapPin } from "lucide-react";
+import { BookOpenIcon, type LucideIcon, Mail, MapPin, QrCode } from "lucide-react";
 import { motion, useReducedMotion, type Variants } from "motion/react";
+import Image from "next/image";
 import type React from "react";
 import { useI18n } from "@/lib/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
-const APP_EMAIL = "support@mira.app";
-const GITHUB_URL = "https://github.com/hunmer/mirat";
-const DOCS_URL = "https://github.com/hunmer/mirat";
+const APP_EMAIL = "liaoyanjie2000@gmail.com";
+const GITHUB_URL = "https://github.com/hunmer/mira";
+const DOCS_URL = "https://github.com/hunmer/mira";
 
 function BorderSeparator({ className }: React.ComponentProps<"div">) {
   return (
@@ -175,7 +176,7 @@ export function ContactSection() {
           {c.communityLead}{" "}
           <span className="text-foreground">{c.communityHighlight}</span>
         </h2>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center justify-center gap-2">
           {socialLinks.map((link) => (
             <motion.a
               className="flex items-center gap-x-2 rounded-full border bg-card px-3 py-1.5 shadow hover:bg-accent"
@@ -196,6 +197,33 @@ export function ContactSection() {
             </motion.a>
           ))}
         </div>
+
+        {/* QQ 群二维码 */}
+        <motion.div
+          className="flex flex-col items-center gap-3 rounded-xl border bg-card/50 p-5 shadow-sm"
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 16 }}
+          transition={{ duration: 0.5, ease: "easeOut", delay: 0.1 }}
+          viewport={{ once: true, margin: "-80px" }}
+          whileInView={{ opacity: 1, y: 0 }}
+        >
+          <div className="flex items-center gap-x-2">
+            <QrCode className="size-4 text-muted-foreground" />
+            <h3 className="font-heading font-medium text-base tracking-wide">
+              {c.qqTitle}
+            </h3>
+          </div>
+          <Image
+            alt={c.qqTitle}
+            className="size-40 rounded-md object-contain md:size-44"
+            height={176}
+            src="/qq-group.jpg"
+            width={176}
+          />
+          <div className="flex flex-col items-center gap-1">
+            <p className="text-muted-foreground text-xs">{c.qqDesc}</p>
+            <p className="text-muted-foreground/70 text-xs">{c.qqHint}</p>
+          </div>
+        </motion.div>
       </motion.div>
     </div>
   );

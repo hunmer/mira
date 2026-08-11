@@ -33,7 +33,7 @@ export default defineConfig({
     ],
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/hunmer/mirat' }
+      { icon: 'github', link: 'https://github.com/hunmer/mira' }
     ],
 
     footer: {
@@ -42,7 +42,7 @@ export default defineConfig({
     },
 
     editLink: {
-      pattern: 'https://github.com/hunmer/mirat/edit/main/packages/mira-doc/:path',
+      pattern: 'https://github.com/hunmer/mira/edit/main/packages/mira-doc/:path',
       text: '在 GitHub 上编辑此页'
     },
 

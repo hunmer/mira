@@ -165,7 +165,7 @@ const isVisible = computed({
   set: (value: boolean) => emit('update:visible', value)
 })
 
-const PROJECT_URL = 'https://github.com/hunmer/mirat'
+const PROJECT_URL = 'https://github.com/hunmer/mira'
 
 // 应用信息
 const appVersion = ref('—')

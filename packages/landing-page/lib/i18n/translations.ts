@@ -27,8 +27,8 @@ export const zh = {
     hint: "开源免费 · 跨平台 · 一键接入 Claude / ZCode 等 AI Agent",
   },
   logoCloud: {
-    lead: "基于现代技术栈构建",
-    highlight: "原生集成 AI 生态",
+    lead: "支持的文件格式",
+    highlight: "覆盖图片 · 文档 · 3D · 动画等",
   },
   feature: {
     title: "为素材管理而生",
@@ -174,6 +174,9 @@ export const zh = {
     communityLead: "加入",
     communityHighlight: "社区",
     issueLabel: "提交 Issue",
+    qqTitle: "QQ 群",
+    qqDesc: "扫码加入官方交流群，获取最新动态与技术支持。",
+    qqHint: "微信扫一扫 / QQ 扫一扫",
   },
   footer: {
     groups: {
@@ -227,8 +230,8 @@ export const en: Dict = {
     hint: "Open source · Cross-platform · One-click integration with Claude / ZCode and other AI Agents",
   },
   logoCloud: {
-    lead: "Built on a modern stack",
-    highlight: "Native AI ecosystem integration",
+    lead: "Supported file formats",
+    highlight: "Images · Documents · 3D · Animation & more",
   },
   feature: {
     title: "Built for media management",
@@ -376,6 +379,9 @@ export const en: Dict = {
     communityLead: "Join the",
     communityHighlight: "community",
     issueLabel: "Open an Issue",
+    qqTitle: "QQ Group",
+    qqDesc: "Scan to join the official group for updates and support.",
+    qqHint: "Scan with WeChat / QQ",
   },
   footer: {
     groups: {

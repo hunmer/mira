@@ -6,7 +6,7 @@ Mira 项目文档站,基于 VitePress 2.0-alpha。当前聚焦 Mira 的安装、
 
 - 内容语言 `zh-CN`
 - 入口配置:`.vitepress/config.mts`(导航/侧边栏/socialLinks/editLink/lastUpdated)
-- 编辑链接指向 `github.com/hunmer/mirat/edit/main/packages/mira-doc/:path`
+- 编辑链接指向 `github.com/hunmer/mira/edit/main/packages/mira-doc/:path`
 - `ignoreDeadLinks: true`(允许未完成链接)
 
 ## 命令
