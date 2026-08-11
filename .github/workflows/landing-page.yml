@@ -26,9 +26,9 @@ jobs:
         cache: 'pnpm'
         cache-dependency-path: 'pnpm-lock.yaml'
 
-    - name: Install dependencies (landing-page 不在 workspace，单独安装)
+    - name: Install dependencies (landing-page 不在 workspace，需忽略 workspace 配置独立安装)
       working-directory: packages/landing-page
-      run: pnpm install --no-frozen-lockfile
+      run: pnpm install --no-frozen-lockfile --ignore-workspace
 
     - name: Install Vercel CLI
       run: npm install -g vercel@latest
