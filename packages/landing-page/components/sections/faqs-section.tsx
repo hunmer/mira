@@ -53,7 +53,7 @@ export function FaqsSection() {
         <Accordion collapsible type="single">
           {faqs.map((item, i) => (
             <AccordionItem
-              className="group relative border-b pl-5 first:border-t last:border-b"
+              className="group relative border-b pl-5 transition-colors first:border-t last:border-b hover:bg-accent/40"
               key={`faq-${i}`}
               value={`item-${i + 1}`}
             >

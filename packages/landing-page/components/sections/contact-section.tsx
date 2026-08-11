@@ -139,7 +139,7 @@ export function ContactSection() {
         </Box>
         <Box description={c.githubDesc} icon={MapPin} title={c.githubTitle}>
           <a
-            className="block font-medium font-mono text-sm tracking-wide hover:underline break-all"
+            className="block break-all font-medium font-mono text-sm tracking-wide hover:underline"
             href={GITHUB_URL}
             rel="noopener noreferrer"
             target="_blank"
@@ -172,22 +172,28 @@ export function ContactSection() {
         whileInView={{ opacity: 1, y: 0 }}
       >
         <h2 className="text-center font-medium text-2xl text-muted-foreground tracking-tight md:text-3xl">
-          {c.communityLead} <span className="text-foreground">{c.communityHighlight}</span>
+          {c.communityLead}{" "}
+          <span className="text-foreground">{c.communityHighlight}</span>
         </h2>
         <div className="flex flex-wrap items-center gap-2">
           {socialLinks.map((link) => (
-            <a
+            <motion.a
               className="flex items-center gap-x-2 rounded-full border bg-card px-3 py-1.5 shadow hover:bg-accent"
               href={link.href}
               key={link.label}
               rel="noopener noreferrer"
               target="_blank"
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              whileHover={
+                shouldReduceMotion ? undefined : { y: -3, scale: 1.03 }
+              }
+              whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
             >
               <link.icon className="size-3.5 text-muted-foreground" />
               <span className="font-medium font-mono text-xs tracking-wide">
                 {link.label}
               </span>
-            </a>
+            </motion.a>
           ))}
         </div>
       </motion.div>

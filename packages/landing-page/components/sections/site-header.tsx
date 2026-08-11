@@ -1,6 +1,11 @@
 "use client";
 import { GithubIcon } from "lucide-react";
-import { motion, useReducedMotion } from "motion/react";
+import {
+  motion,
+  useScroll as useMotionScroll,
+  useReducedMotion,
+  useSpring,
+} from "motion/react";
 import React from "react";
 import { createPortal } from "react-dom";
 import { LanguageToggle } from "@/components/language-toggle";
@@ -23,6 +28,12 @@ export function SiteHeaderSection() {
   const [open, setOpen] = React.useState(false);
   const scrolled = useScroll(10);
   const shouldReduceMotion = useReducedMotion();
+  const { scrollYProgress } = useMotionScroll();
+  const progressScaleX = useSpring(scrollYProgress, {
+    stiffness: 140,
+    damping: 30,
+    mass: 0.4,
+  });
 
   React.useEffect(() => {
     if (open) {
@@ -60,7 +71,10 @@ export function SiteHeaderSection() {
             <NavigationMenuList>
               {links.map((link) => (
                 <NavigationMenuLink asChild className="px-4" key={link.title}>
-                  <a className="rounded-md p-2 hover:bg-accent" href={link.href}>
+                  <a
+                    className="rounded-md p-2 hover:bg-accent"
+                    href={link.href}
+                  >
                     {link.title}
                   </a>
                 </NavigationMenuLink>
@@ -71,7 +85,7 @@ export function SiteHeaderSection() {
 
         <div className="hidden items-center gap-2 md:flex">
           <LanguageToggle />
-          <Button asChild variant="ghost" size="icon" aria-label="GitHub">
+          <Button aria-label="GitHub" asChild size="icon" variant="ghost">
             <a href={GITHUB_URL} rel="noopener noreferrer" target="_blank">
               <GithubIcon className="size-4" />
             </a>
@@ -105,18 +119,18 @@ export function SiteHeaderSection() {
         <div className="flex w-full flex-col gap-y-2">
           {links.map((link) => (
             <a
-              key={link.title}
-              href={link.href}
               className="rounded-md p-2 hover:bg-accent"
+              href={link.href}
+              key={link.title}
             >
               {link.title}
             </a>
           ))}
           <a
+            className="rounded-md p-2 hover:bg-accent"
             href={GITHUB_URL}
             rel="noopener noreferrer"
             target="_blank"
-            className="rounded-md p-2 hover:bg-accent"
           >
             GitHub
           </a>
@@ -129,6 +143,13 @@ export function SiteHeaderSection() {
           </Button>
         </div>
       </MobileMenu>
+
+      {/* 滚动进度条 */}
+      <motion.div
+        aria-hidden="true"
+        className="absolute inset-x-0 bottom-0 h-0.5 origin-left bg-gradient-to-r from-transparent via-foreground/40 to-transparent"
+        style={{ scaleX: progressScaleX }}
+      />
     </motion.header>
   );
 }

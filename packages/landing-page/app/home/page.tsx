@@ -1,3 +1,4 @@
+import { MouseSpotlight } from "@/components/mouse-spotlight";
 import { ContactSection } from "@/components/sections/contact-section";
 import { FaqsSection } from "@/components/sections/faqs-section";
 import { FeatureSection } from "@/components/sections/feature-section";
@@ -10,6 +11,8 @@ import { TestimonialsSection } from "@/components/sections/testimonials-section"
 export default function HomePage() {
   return (
     <div className="relative flex min-h-screen flex-col bg-secondary/40 dark:bg-background">
+      {/* 全局鼠标跟随光效 */}
+      <MouseSpotlight />
       <SiteHeaderSection />
       <main className="flex grow flex-col">
         {/* 首屏：核心价值主张 + 主 CTA */}

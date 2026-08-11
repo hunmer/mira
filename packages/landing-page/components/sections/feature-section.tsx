@@ -1,15 +1,14 @@
 "use client";
 
-import { motion, useReducedMotion, type Variants } from "motion/react";
-import type React from "react";
+import { Blocks, Boxes, Cable, MonitorDot, Plug, Terminal } from "lucide-react";
 import {
-  Blocks,
-  Boxes,
-  Cable,
-  MonitorDot,
-  Plug,
-  Terminal,
-} from "lucide-react";
+  motion,
+  useMotionTemplate,
+  useMotionValue,
+  useReducedMotion,
+  type Variants,
+} from "motion/react";
+import type React from "react";
 import { GridPattern } from "@/components/ui/grid-pattern";
 import { useI18n } from "@/lib/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
@@ -35,6 +34,15 @@ const cardVariants: Variants = {
     filter: "blur(0px)",
     transition: { duration: 0.6, ease: "easeOut" },
   },
+  hover: {},
+};
+
+const iconVariants: Variants = {
+  hover: {
+    scale: 1.15,
+    rotate: -8,
+    transition: { type: "spring", stiffness: 300, damping: 15 },
+  },
 };
 
 type FeatureCardPorps = React.ComponentProps<typeof motion.div> & {
@@ -42,12 +50,31 @@ type FeatureCardPorps = React.ComponentProps<typeof motion.div> & {
 };
 
 function FeatureCard({ feature, className, ...props }: FeatureCardPorps) {
+  const shouldReduceMotion = useReducedMotion();
+  const glowX = useMotionValue(0);
+  const glowY = useMotionValue(0);
+  const glow = useMotionTemplate`radial-gradient(200px circle at ${glowX}px ${glowY}px, color-mix(in oklab, var(--foreground) 8%, transparent), transparent 70%)`;
+
   return (
     <motion.div
-      className={cn("relative overflow-hidden p-6", className)}
+      className={cn("group relative overflow-hidden p-6", className)}
+      onMouseMove={(event) => {
+        const rect = event.currentTarget.getBoundingClientRect();
+        glowX.set(event.clientX - rect.left);
+        glowY.set(event.clientY - rect.top);
+      }}
       variants={cardVariants}
+      whileHover="hover"
       {...props}
     >
+      {/* 鼠标追踪光晕 */}
+      {shouldReduceMotion ? null : (
+        <motion.div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-10 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+          style={{ background: glow }}
+        />
+      )}
       <div className="-mt-2 -ml-20 pointer-events-none absolute top-0 left-1/2 size-full [mask-image:radial-gradient(farthest-side_at_top,white,transparent)]">
         <GridPattern
           className="absolute inset-0 size-full stroke-foreground/20"
@@ -56,11 +83,13 @@ function FeatureCard({ feature, className, ...props }: FeatureCardPorps) {
           x={5}
         />
       </div>
-      <feature.icon
-        aria-hidden
-        className="size-6 text-foreground/75"
-        strokeWidth={1}
-      />
+      <motion.div className="inline-block" variants={iconVariants}>
+        <feature.icon
+          aria-hidden
+          className="size-6 text-foreground/75"
+          strokeWidth={1}
+        />
+      </motion.div>
       <h3 className="mt-10 text-sm md:text-base">{feature.title}</h3>
       <p className="relative z-20 mt-2 font-light text-muted-foreground text-xs">
         {feature.description}
@@ -75,12 +104,32 @@ export function FeatureSection() {
   const items = t.feature.items;
 
   const features: FeatureType[] = [
-    { title: items.cli.title, icon: Terminal, description: items.cli.description },
+    {
+      title: items.cli.title,
+      icon: Terminal,
+      description: items.cli.description,
+    },
     { title: items.mcp.title, icon: Cable, description: items.mcp.description },
-    { title: items.skill.title, icon: Blocks, description: items.skill.description },
-    { title: items.library.title, icon: Boxes, description: items.library.description },
-    { title: items.plugin.title, icon: Plug, description: items.plugin.description },
-    { title: items.device.title, icon: MonitorDot, description: items.device.description },
+    {
+      title: items.skill.title,
+      icon: Blocks,
+      description: items.skill.description,
+    },
+    {
+      title: items.library.title,
+      icon: Boxes,
+      description: items.library.description,
+    },
+    {
+      title: items.plugin.title,
+      icon: Plug,
+      description: items.plugin.description,
+    },
+    {
+      title: items.device.title,
+      icon: MonitorDot,
+      description: items.device.description,
+    },
   ];
 
   return (
