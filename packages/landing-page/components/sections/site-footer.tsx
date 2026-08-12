@@ -8,7 +8,7 @@ import { useI18n } from "@/lib/i18n/i18n-provider";
 
 const GITHUB_URL = "https://github.com/hunmer/mira";
 const ISSUE_URL = "https://github.com/hunmer/mira/issues";
-const DOCS_URL = "https://miraapp.cc/docs";
+const DOCS_URL = "http://miraapp.cc/docs";
 
 type FooterLink = {
   title: string;

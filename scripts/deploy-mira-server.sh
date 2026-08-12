@@ -381,9 +381,17 @@ log "步骤 5/5 创建第一个素材库"
 log "登录 admin 账号 ..."
 ADMIN_USER="admin"
 
-# 用指定密码尝试登录；成功返回 0
+# 用指定密码尝试登录；保留真实错误，避免把连接/profile 等问题误报成密码错误。
 login_with() {
-    mira-app-server login -u "$ADMIN_USER" -p "$1" -s "http://localhost:${HTTP_PORT}" >/dev/null 2>&1
+    local output attempt
+    for attempt in 1 2 3; do
+        if output=$(mira-app-server login -u "$ADMIN_USER" -p "$1" -s "http://127.0.0.1:${HTTP_PORT}" 2>&1); then
+            return 0
+        fi
+        [[ $attempt -lt 3 ]] && sleep 1
+    done
+    err "登录命令失败: ${output:-未知错误}"
+    return 1
 }
 
 # 隐藏输入读取密码（read -s 不回显）；AUTO 模式返回默认值
@@ -402,7 +410,7 @@ do_login() {
         ok "登录成功 (默认密码)"
         return 0
     fi
-    warn "默认密码登录失败（密码可能已被修改）"
+    warn "默认凭据登录未完成（可能是密码、连接或 CLI 配置问题）"
     while true; do
         echo "请选择:" >&2
         echo "  1) 手动输入密码尝试登录" >&2
@@ -419,7 +427,7 @@ do_login() {
                     stop_server
                     start_server
                     if login_with "$newpass"; then ok "登录成功"; return 0; fi
-                    warn "重置后登录仍失败"
+                    warn "重置后登录命令仍失败，请根据上方具体错误处理"
                 else
                     err "密码重置失败（registry 版可能不含此命令，需用本地构建产物）"
                 fi
@@ -427,7 +435,7 @@ do_login() {
             *)
                 pass=$(ask_pass "请输入 $ADMIN_USER 密码" "")
                 if login_with "$pass"; then ok "登录成功"; return 0; fi
-                warn "登录失败，密码错误"
+                warn "登录命令失败，请根据上方具体错误处理"
                 ;;
         esac
     done

@@ -73,7 +73,7 @@ export const mediaWaterfallMockData: MediaItem[] = Array.from(
 			rating: (i * 3) % 6, // 0..5
 			dimensions: `${w} × ${Math.round(w / ratio)}`,
 			createdAt: `2026-0${(i % 7) + 1}-${10 + (i % 18)}`,
-			website: i % 3 === 0 ? "https://mira.app" : undefined,
+			website: i % 3 === 0 ? "http://mira.app" : undefined,
 			description: DESC[i % DESC.length],
 		};
 	},

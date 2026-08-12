@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 
 const MotionPlusIcon = motion.create(PlusIcon);
 
-const DOCS_URL = "https://miraapp.cc/docs";
+const DOCS_URL = "http://miraapp.cc/docs";
 const RELEASE_URL = "https://github.com/hunmer/mira/releases";
 
 const titleContainerVariants: Variants = {

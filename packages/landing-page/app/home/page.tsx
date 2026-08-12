@@ -7,7 +7,7 @@ import { LogoCloudSection } from "@/components/sections/logo-cloud-section";
 import { SiteFooterSection } from "@/components/sections/site-footer";
 import { SiteHeaderSection } from "@/components/sections/site-header";
 import { TestimonialsSection } from "@/components/sections/testimonials-section";
-import { SafariBrowser } from "@/components/ui/safari-browser";
+import { DesktopPreviewSection } from "@/components/sections/desktop-preview-section";
 import PhoneMockupBasic from "@/components/ui/phone-mockups-1";
 
 export default function HomePage() {
@@ -21,20 +21,8 @@ export default function HomePage() {
         <HeroSection />
         {/* 产品预览：iPhone 截图轮播（移动端） */}
         <PhoneMockupBasic />
-        {/* 产品预览：Safari 浏览器外框（桌面端） */}
-        <section
-          className="relative w-full overflow-hidden py-6 md:py-10"
-          aria-label="Desktop browser preview"
-        >
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            {/* ⚠️ src 为 21st.dev 示例图（第三方 utfs.io），请替换为自己的产品截图；url 同理 */}
-            <SafariBrowser
-              src="https://utfs.io/f/dacf5051-c3ab-41f1-852a-98e4f24376c9-12vlav.jpg"
-              url="designali.in"
-              className="h-auto w-full"
-            />
-          </div>
-        </section>
+        {/* 产品预览：Safari 浏览器外框（桌面端）+ 下方缩略图列表切换展示内容 */}
+        <DesktopPreviewSection />
         {/* 核心价值：产品特性 */}
         <FeatureSection />
         {/* 社会证明：品牌 logo 信任背书 */}

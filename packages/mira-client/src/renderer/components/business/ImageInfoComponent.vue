@@ -108,11 +108,11 @@
               <span class="material-symbols-outlined text-sm">download</span>
               <span>{{ $t('business.imageInfoComponent.download') }}</span>
             </button>
-            <button class="px-3 py-2 text-sm bg-green-100 text-green-700 rounded-md hover:bg-green-200 flex items-center justify-center space-x-1">
+            <button class="px-3 py-2 text-sm bg-green-100 text-green-700 rounded-md hover:bg-green-200 dark:bg-green-900/30 dark:text-green-300 dark:hover:bg-green-900/50 flex items-center justify-center space-x-1">
               <span class="material-symbols-outlined text-sm">share</span>
               <span>{{ $t('business.imageInfoComponent.share') }}</span>
             </button>
-            <button class="px-3 py-2 text-sm bg-orange-100 text-orange-700 rounded-md hover:bg-orange-200 flex items-center justify-center space-x-1">
+            <button class="px-3 py-2 text-sm bg-orange-100 text-orange-700 rounded-md hover:bg-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:hover:bg-orange-900/50 flex items-center justify-center space-x-1">
               <span class="material-symbols-outlined text-sm">edit</span>
               <span>{{ $t('business.imageInfoComponent.edit') }}</span>
             </button>

@@ -48,7 +48,7 @@ export function SiteHeaderSection() {
     };
   }, [open]);
 
-  const DOCS_URL = "https://miraapp.cc/docs";
+  const DOCS_URL = "http://miraapp.cc/docs";
   const links = [
     { title: t.nav.features, href: "#features" },
     { title: t.nav.docs, href: DOCS_URL },

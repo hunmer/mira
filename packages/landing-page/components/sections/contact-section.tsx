@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 const APP_EMAIL = "liaoyanjie2000@gmail.com";
 const GITHUB_URL = "https://github.com/hunmer/mira";
-const DOCS_URL = "https://miraapp.cc/docs";
+const DOCS_URL = "http://miraapp.cc/docs";
 
 function BorderSeparator({ className }: React.ComponentProps<"div">) {
   return (

@@ -39,19 +39,16 @@ import {
 	Info,
 	Keyboard,
 	Layers,
-	Minus,
 	MoonStar,
 	Palette,
 	Puzzle,
 	Search,
 	Settings,
-	Square,
 	Star,
 	SunDim,
 	Tag as TagIcon,
 	Trash2,
 	Upload,
-	X,
 	type LucideIcon,
 } from "lucide-react";
 import {
@@ -836,16 +833,6 @@ function FloatingHeader() {
 			</HeaderBtn>
 			<HeaderBtn title="设置">
 				<Settings className="size-3.5" />
-			</HeaderBtn>
-			<span className="mx-1 h-3 w-px bg-black/10 dark:bg-white/10" />
-			<HeaderBtn title="最小化">
-				<Minus className="size-3.5" />
-			</HeaderBtn>
-			<HeaderBtn title="最大化">
-				<Square className="size-3" />
-			</HeaderBtn>
-			<HeaderBtn title="关闭" danger>
-				<X className="size-3.5" />
 			</HeaderBtn>
 		</div>
 	);
