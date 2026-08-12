@@ -12,6 +12,17 @@ export interface PluginConfig {
     name: string;
     enabled: boolean;
     path: string;
+    // 以下为从 package.json 提取并持久化的展示信息 (可选, 兼容旧 plugins.json)
+    version?: string;
+    description?: string;
+    author?: string;
+    main?: string;
+    icon?: string | null;
+    title?: string;
+    category?: string;
+    tags?: string[];
+    registry?: string;
+    installedAt?: string;
 }
 
 export interface ServerWebPluginManifest {
@@ -451,6 +462,52 @@ export class ServerPluginManager {
         return this.isPluginLoaded(name);
     }
 
+    /**
+     * 从插件目录的 package.json + icon 文件提取展示 meta
+     */
+    private extractPluginMeta(pluginName: string, pluginDir: string): {
+        version?: string; description?: string; author?: string; main?: string;
+        icon: string | null; title: string; category: string; tags?: string[];
+        dependencies: string[];
+    } {
+        let packageInfo: any = {};
+        try {
+            const packageJsonPath = path.join(pluginDir, 'package.json');
+            if (fs.existsSync(packageJsonPath)) {
+                packageInfo = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+            }
+        } catch (error) {
+            console.error(`Error reading package.json for plugin ${pluginName}:`, error);
+        }
+
+        // icon 文件优先, 其次 mira.icon, 最后 package.json 顶层 icon
+        let icon: string | null = null;
+        const iconExtensions = ['.png', '.jpg', '.jpeg', '.svg', '.ico', '.gif', '.webp'];
+        for (const ext of iconExtensions) {
+            if (fs.existsSync(path.join(pluginDir, `icon${ext}`))) {
+                icon = `/api/plugins/${pluginName}/icon${ext}`;
+                break;
+            }
+        }
+        const miraInfo = (packageInfo.mira || {}) as { title?: string; icon?: string; category?: string; tags?: string[] };
+
+        // author 可能是字符串或 { name, email } 对象
+        const authorRaw = packageInfo.author;
+        const author = typeof authorRaw === 'string' ? authorRaw : (authorRaw?.name || authorRaw);
+
+        return {
+            version: packageInfo.version,
+            description: packageInfo.description,
+            author,
+            main: packageInfo.main,
+            icon: icon || miraInfo.icon || packageInfo.icon || null,
+            title: miraInfo.title || packageInfo.title || pluginName,
+            category: miraInfo.category || packageInfo.category || 'general',
+            tags: miraInfo.tags || packageInfo.tags || [],
+            dependencies: Object.keys(packageInfo.dependencies || {}),
+        };
+    }
+
     getPluginsList(): any[] {
         const config: PluginConfig[] = JSON.parse(
             fs.readFileSync(this.pluginsConfigPath, 'utf-8')
@@ -458,45 +515,26 @@ export class ServerPluginManager {
 
         return config.map(pluginConfig => {
             const pluginDir = this.getPluginDir(pluginConfig.name);
-            let packageInfo = {};
+            const meta = this.extractPluginMeta(pluginConfig.name, pluginDir);
 
-            try {
-                const packageJsonPath = path.join(pluginDir, 'package.json');
-                if (fs.existsSync(packageJsonPath)) {
-                    packageInfo = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
-                }
-            } catch (error) {
-                console.error(`Error reading package.json for plugin ${pluginConfig.name}:`, error);
-            }
-
-            // 检查是否有图标文件
-            let icon = null;
-            const iconExtensions = ['.png', '.jpg', '.jpeg', '.svg', '.ico'];
-            for (const ext of iconExtensions) {
-                const iconPath = path.join(pluginDir, `icon${ext}`);
-                if (fs.existsSync(iconPath)) {
-                    // 返回相对于插件目录的路径，前端可以通过API获取
-                    icon = `/api/plugins/${pluginConfig.name}/icon${ext}`;
-                    break;
-                }
-            }
-
-            // 读取 package.json 中 mira 字段下的展示信息（title/icon/category/tags）
-            const miraInfo = ((packageInfo as any).mira || {}) as {
-                title?: string; icon?: string; category?: string; tags?: string[];
-            };
-
+            // 持久化字段优先, 缺失时 fallback package.json (meta)
             return {
                 name: pluginConfig.name,
                 enabled: pluginConfig.enabled,
                 path: pluginConfig.path,
-                ...packageInfo,
+                registry: pluginConfig.registry,
+                installedAt: pluginConfig.installedAt,
+                version: pluginConfig.version || meta.version || '1.0.0',
+                description: pluginConfig.description ?? meta.description ?? '',
+                author: pluginConfig.author ?? meta.author ?? 'Unknown',
+                main: pluginConfig.main || meta.main || 'index.js',
+                dependencies: meta.dependencies,
                 status: pluginConfig.enabled ? 'active' : 'inactive',
                 configurable: true,
-                icon: icon || miraInfo.icon || (packageInfo as any).icon || null, // 优先用 icon 文件，其次 mira.icon，最后 package.json 顶层 icon
-                title: miraInfo.title || (packageInfo as any).title || pluginConfig.name,
-                category: miraInfo.category || (packageInfo as any).category || 'general',
-                tags: miraInfo.tags || (packageInfo as any).tags || []
+                icon: pluginConfig.icon !== undefined ? pluginConfig.icon : meta.icon,
+                title: pluginConfig.title || meta.title || pluginConfig.name,
+                category: pluginConfig.category || meta.category || 'general',
+                tags: pluginConfig.tags || meta.tags || [],
             };
         });
     }
@@ -506,11 +544,27 @@ export class ServerPluginManager {
             fs.readFileSync(this.pluginsConfigPath, 'utf-8')
         );
 
+        // 从 package.json 自动提取展示 meta, 补全调用方未提供的字段并持久化
+        const pluginDir = path.join(this.pluginsDir, config.path);
+        const meta = this.extractPluginMeta(config.name, pluginDir);
+        const enriched: PluginConfig = {
+            ...config,
+            version: config.version || meta.version,
+            description: config.description ?? meta.description,
+            author: config.author ?? meta.author,
+            main: config.main || meta.main,
+            icon: config.icon !== undefined ? config.icon : meta.icon,
+            title: config.title || meta.title,
+            category: config.category || meta.category,
+            tags: config.tags || meta.tags,
+            installedAt: config.installedAt || new Date().toISOString(),
+        };
+
         const existingIndex = currentConfig.findIndex(p => p.name === config.name);
         if (existingIndex >= 0) {
-            currentConfig[existingIndex] = config;
+            currentConfig[existingIndex] = { ...currentConfig[existingIndex], ...enriched };
         } else {
-            currentConfig.push(config);
+            currentConfig.push(enriched);
         }
 
         fs.writeFileSync(this.pluginsConfigPath, JSON.stringify(currentConfig, null, 2));
@@ -518,6 +572,32 @@ export class ServerPluginManager {
         if (config.enabled) {
             await this.loadPlugin(config, true); // 使用 reload=true 确保新插件被加载
         }
+    }
+
+    /**
+     * 重新从 package.json 同步所有插件的展示 meta 到 plugins.json (供「检查更新」调用)
+     */
+    syncPluginsMeta(): number {
+        const config: PluginConfig[] = JSON.parse(
+            fs.readFileSync(this.pluginsConfigPath, 'utf-8')
+        );
+        for (let i = 0; i < config.length; i++) {
+            const pluginDir = this.getPluginDir(config[i].name);
+            const meta = this.extractPluginMeta(config[i].name, pluginDir);
+            config[i] = {
+                ...config[i],
+                version: meta.version || config[i].version,
+                description: meta.description ?? config[i].description,
+                author: meta.author ?? config[i].author,
+                main: meta.main || config[i].main,
+                icon: meta.icon,
+                title: meta.title || config[i].title,
+                category: meta.category || config[i].category,
+                tags: meta.tags || config[i].tags,
+            };
+        }
+        fs.writeFileSync(this.pluginsConfigPath, JSON.stringify(config, null, 2));
+        return config.length;
     }
 
     /**

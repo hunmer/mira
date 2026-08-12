@@ -16,7 +16,6 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
-import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -24,9 +23,6 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog'
-import {
-  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
-} from '@/components/ui/sheet'
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
@@ -36,7 +32,8 @@ import { useConfirmDialog } from '@/composables/useConfirmDialog'
 import { toast } from 'vue-sonner'
 import {
   RiSearchLine, RiMoreLine, RiSettings3Line, RiStopCircleLine,
-  RiStore2Line, RiInformationLine, RiExternalLinkLine, RiAddLine, RiUploadLine,
+  RiStore2Line, RiExternalLinkLine, RiAddLine, RiUploadLine,
+  RiRefreshLine,
 } from '@remixicon/vue'
 
 const { t } = useI18n()
@@ -48,10 +45,6 @@ const groups = ref<LibraryPlugins[]>([])
 const loading = ref(false)
 const searchQuery = ref('')
 const pluginRoutes = reactive<Record<string, PluginRoute[]>>({})
-
-// detail sheet
-const detailOpen = ref(false)
-const detailPlugin = ref<Plugin | null>(null)
 
 // config dialog
 const configDialog = ref(false)
@@ -78,6 +71,7 @@ interface StorePlugin {
   category?: string
   deps?: string
   version?: string
+  registry?: string
 }
 
 const { activeSource: activePluginSource } = usePluginSources()
@@ -108,6 +102,22 @@ function openStore() {
   // 每次打开都用当前选中的插件源刷新
   storePlugins.value = []
   loadStorePlugins()
+}
+
+// 检查更新: 从 package.json 重新同步插件 meta 到 plugins.json
+const syncing = ref(false)
+async function syncMeta() {
+  if (!activeTab.value) return
+  syncing.value = true
+  try {
+    await pluginApi.syncMeta(activeTab.value)
+    toast.success(t('common.success'))
+    await loadPlugins()
+  } catch {
+    toast.error(t('common.failed'))
+  } finally {
+    syncing.value = false
+  }
 }
 
 const installedNames = computed(() => groups.value.flatMap(g => g.plugins.map(p => p.name)))
@@ -152,6 +162,11 @@ function isIconUrl(icon?: string | null): boolean {
   return !!icon && (icon.startsWith('http') || icon.startsWith('/api/') || icon.startsWith('/'))
 }
 
+// icon 是否为 Material Icons 名称 (纯 ASCII 字母/数字/下划线, 非 emoji 非 URL)
+function isMaterialIcon(icon?: string | null): boolean {
+  return !!icon && !isIconUrl(icon) && /^[a-z0-9_]+$/i.test(icon)
+}
+
 async function loadPlugins() {
   loading.value = true
   try {
@@ -180,16 +195,10 @@ async function toggleStatus(plugin: Plugin, checked: boolean) {
   try {
     await pluginApi.updateStatus(plugin.libraryId!, plugin.name, newStatus)
     plugin.status = newStatus
-    if (detailPlugin.value?.name === plugin.name) detailPlugin.value.status = newStatus
     toast.success(t('common.success'))
   } catch {
     toast.error(t('common.failed'))
   }
-}
-
-function openDetail(plugin: Plugin) {
-  detailPlugin.value = plugin
-  detailOpen.value = true
 }
 
 async function openConfig(plugin: Plugin) {
@@ -198,7 +207,6 @@ async function openConfig(plugin: Plugin) {
     configJson.value = JSON.stringify(res.data, null, 2)
     configPlugin.value = plugin
     configDialog.value = true
-    detailOpen.value = false
   } catch {
     toast.error(t('common.failed'))
   }
@@ -221,17 +229,16 @@ async function uninstallPlugin(plugin: Plugin) {
   try {
     await pluginApi.uninstall(plugin.name, plugin.libraryId)
     toast.success(t('common.success'))
-    if (detailPlugin.value?.name === plugin.name) detailOpen.value = false
     await loadPlugins()
   } catch {
     toast.error(t('common.failed'))
   }
 }
 
-async function installFromStore(name: string) {
+async function installFromStore(name: string, registry?: string) {
   if (!activeTab.value) return
   try {
-    await pluginApi.install({ name, libraryId: activeTab.value })
+    await pluginApi.install({ name, libraryId: activeTab.value, registry })
     toast.success(t('common.success'))
     storeOpen.value = false
     setTimeout(loadPlugins, 2000)
@@ -321,22 +328,16 @@ onMounted(loadPlugins)
 
     <!-- main content -->
     <template v-else-if="groups.length">
-      <!-- toolbar: library select + search -->
+      <!-- toolbar: search (素材库跟随全局选中) + 检查更新 -->
       <div class="flex items-center gap-3">
-        <Select v-model="activeTab">
-          <SelectTrigger class="w-[200px]">
-            <SelectValue placeholder="选择素材库" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem v-for="g in groups" :key="g.id" :value="g.id">
-              {{ g.name }}
-            </SelectItem>
-          </SelectContent>
-        </Select>
         <div class="relative max-w-sm flex-1">
           <RiSearchLine class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input v-model="searchQuery" :placeholder="t('common.search')" class="pl-9" />
         </div>
+        <Button variant="outline" size="sm" :disabled="syncing || !activeTab" @click="syncMeta">
+          <RiRefreshLine class="mr-1 size-4" :class="{ 'animate-spin': syncing }" />
+          {{ syncing ? '同步中...' : '检查更新' }}
+        </Button>
       </div>
 
       <!-- plugin grid -->
@@ -344,9 +345,8 @@ onMounted(loadPlugins)
         <Card
           v-for="plugin in currentPlugins"
           :key="plugin.name"
-          class="group relative cursor-pointer overflow-hidden transition-all hover:shadow-md hover:-translate-y-0.5"
+          class="group relative overflow-hidden"
           :class="plugin.status === 'active' ? 'ring-1 ring-green-500/40' : ''"
-          @click="openDetail(plugin)"
         >
           <!-- active status bar -->
           <div
@@ -360,8 +360,9 @@ onMounted(loadPlugins)
                 class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-xl"
                 :class="plugin.status === 'active' ? 'bg-green-500/10' : ''"
               >
-                <span v-if="plugin.icon && !isIconUrl(plugin.icon)">{{ plugin.icon }}</span>
-                <img v-else-if="plugin.icon && isIconUrl(plugin.icon)" :src="plugin.icon" class="size-6 object-contain" />
+                <img v-if="plugin.icon && isIconUrl(plugin.icon)" :src="plugin.icon" class="size-6 object-contain" />
+                <span v-else-if="isMaterialIcon(plugin.icon)" class="material-icons text-xl">{{ plugin.icon }}</span>
+                <span v-else-if="plugin.icon">{{ plugin.icon }}</span>
                 <RiStore2Line v-else class="size-5 text-muted-foreground" />
               </div>
               <div class="min-w-0 flex-1">
@@ -381,9 +382,6 @@ onMounted(loadPlugins)
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem @click="openDetail(plugin)">
-                      <RiInformationLine class="mr-2 size-4" /> {{ t('plugin.detail') || '详情' }}
-                    </DropdownMenuItem>
                     <DropdownMenuItem v-if="plugin.configurable" @click="openConfig(plugin)">
                       <RiSettings3Line class="mr-2 size-4" /> {{ t('plugin.configure') }}
                     </DropdownMenuItem>
@@ -436,85 +434,6 @@ onMounted(loadPlugins)
       {{ t('common.noData') }}
     </div>
 
-    <!-- Detail Sheet -->
-    <Sheet :open="detailOpen" @update:open="detailOpen = $event">
-      <SheetContent class="sm:max-w-md overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle>{{ detailPlugin?.name }}</SheetTitle>
-          <SheetDescription>{{ detailPlugin?.description || '-' }}</SheetDescription>
-        </SheetHeader>
-
-        <div v-if="detailPlugin" class="mt-4 space-y-4">
-          <div class="space-y-3 text-sm">
-            <div class="flex justify-between">
-              <span class="text-muted-foreground">{{ t('plugin.version') }}</span>
-              <span>{{ detailPlugin.version }}</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-muted-foreground">{{ t('plugin.author') }}</span>
-              <span>{{ detailPlugin.author }}</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-muted-foreground">分类</span>
-              <span>{{ getCategoryName(detailPlugin.category) }}</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-muted-foreground">所属库</span>
-              <span>{{ detailPlugin.libraryName || detailPlugin.libraryId || '-' }}</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-muted-foreground">入口文件</span>
-              <span class="text-xs">{{ detailPlugin.main }}</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-muted-foreground">依赖</span>
-              <span>{{ detailPlugin.dependencies.length }} 个</span>
-            </div>
-            <div v-if="detailPlugin.tags?.length" class="flex flex-wrap items-center gap-1">
-              <span class="text-muted-foreground">标签</span>
-              <Badge v-for="tag in detailPlugin.tags" :key="tag" variant="outline" class="text-xs">{{ tag }}</Badge>
-            </div>
-          </div>
-
-          <Separator />
-
-          <!-- routes in detail -->
-          <div v-if="detailPlugin.libraryId && getRoutesForPlugin(detailPlugin.libraryId, detailPlugin.name).length">
-            <p class="mb-2 text-sm font-medium">插件入口</p>
-            <div class="flex flex-wrap gap-2">
-              <Button
-                v-for="route in getRoutesForPlugin(detailPlugin.libraryId!, detailPlugin.name)"
-                :key="route.path"
-                variant="outline"
-                size="sm"
-                class="gap-1"
-                @click="openRoute(route)"
-              >
-                {{ route.meta?.title || route.name }}
-                <RiExternalLinkLine class="size-3" />
-              </Button>
-            </div>
-          </div>
-
-          <div class="flex gap-2 pt-2">
-            <Button
-              v-if="detailPlugin.configurable"
-              class="flex-1"
-              @click="openConfig(detailPlugin)"
-            >
-              <RiSettings3Line class="mr-2 size-4" /> {{ t('plugin.configure') }}
-            </Button>
-            <Button
-              variant="destructive"
-              @click="uninstallPlugin(detailPlugin)"
-            >
-              <RiStopCircleLine class="mr-2 size-4" /> {{ t('plugin.uninstall') }}
-            </Button>
-          </div>
-        </div>
-      </SheetContent>
-    </Sheet>
-
     <!-- Config Dialog -->
     <Dialog :open="configDialog" @update:open="configDialog = $event">
       <DialogContent class="sm:max-w-lg">
@@ -536,67 +455,87 @@ onMounted(loadPlugins)
 
     <!-- Store Dialog -->
     <Dialog :open="storeOpen" @update:open="storeOpen = $event">
-      <DialogContent class="sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>{{ t('plugin.pluginStore') }}</DialogTitle>
-          <DialogDescription>
-            当前插件源：
-            <span v-if="activePluginSource" class="font-medium text-foreground">{{ activePluginSource.name }}</span>
-            <span v-else class="text-yellow-600 dark:text-yellow-400">未选择</span>
-            <span v-if="activePluginSource" class="ml-1 text-xs">（{{ activePluginSource.url }}）</span>
-          </DialogDescription>
+      <DialogContent class="w-[80vw] h-[80vh] max-w-[95vw] max-h-[90vh] sm:max-w-[95vw] flex flex-col gap-0 overflow-hidden p-0">
+        <DialogHeader class="flex flex-row items-start justify-between gap-3 px-6 pt-6 pb-2 shrink-0">
+          <div class="min-w-0">
+            <DialogTitle>{{ t('plugin.pluginStore') }}</DialogTitle>
+            <DialogDescription>
+              当前插件源：
+              <span v-if="activePluginSource" class="font-medium text-foreground">{{ activePluginSource.name }}</span>
+              <span v-else class="text-yellow-600 dark:text-yellow-400">未选择</span>
+              <span v-if="activePluginSource" class="ml-1 text-xs">（{{ activePluginSource.url }}）</span>
+            </DialogDescription>
+          </div>
+          <Button
+            variant="outline"
+            size="icon"
+            class="shrink-0"
+            :disabled="storeLoading || !activePluginSource"
+            title="刷新插件列表"
+            @click="loadStorePlugins"
+          >
+            <RiRefreshLine class="size-4" :class="{ 'animate-spin': storeLoading }" />
+          </Button>
         </DialogHeader>
 
-        <!-- 未选择源时的提示 -->
-        <div v-if="!activePluginSource" class="rounded-md border border-yellow-500/40 bg-yellow-500/5 p-3 text-sm text-muted-foreground">
-          请先在「设置 → 插件」中添加并选中一个插件源。
+        <!-- 顶部固定区: 未选源提示 或 搜索框 -->
+        <div class="px-6 pb-3 shrink-0">
+          <div v-if="!activePluginSource" class="rounded-md border border-yellow-500/40 bg-yellow-500/5 p-3 text-sm text-muted-foreground">
+            请先在「设置 → 插件」中添加并选中一个插件源。
+          </div>
+          <div v-else-if="storePlugins.length" class="relative">
+            <RiSearchLine class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input v-model="storeSearch" placeholder="搜索插件..." class="pl-9" />
+          </div>
         </div>
 
-        <div v-if="storePlugins.length" class="relative mb-4">
-          <RiSearchLine class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input v-model="storeSearch" placeholder="搜索插件..." class="pl-9" />
-        </div>
-
-        <ScrollArea class="max-h-[400px]">
-          <div class="space-y-3 pr-3">
-            <Card v-for="p in filteredStorePlugins" :key="p.name">
-              <CardContent class="flex items-start gap-4 py-4">
-                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-xl">
-                  <img v-if="p.icon && isIconUrl(p.icon)" :src="p.icon" class="size-6 object-contain" />
-                  <span v-else-if="p.icon">{{ p.icon }}</span>
-                  <RiStore2Line v-else class="size-5 text-muted-foreground" />
+        <!-- 卡片网格 (可滚动) -->
+        <ScrollArea class="flex-1 min-h-0">
+          <div class="grid grid-cols-1 gap-3 px-6 pb-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <Card v-for="p in filteredStorePlugins" :key="p.name" class="overflow-hidden">
+              <CardContent class="flex h-full flex-col gap-3 p-4">
+                <div class="flex items-start gap-3">
+                  <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-xl">
+                    <img v-if="p.icon && isIconUrl(p.icon)" :src="p.icon" class="size-6 object-contain" />
+                    <span v-else-if="isMaterialIcon(p.icon)" class="material-icons text-xl">{{ p.icon }}</span>
+                    <span v-else-if="p.icon">{{ p.icon }}</span>
+                    <RiStore2Line v-else class="size-5 text-muted-foreground" />
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <a
+                      :href="`https://www.npmjs.com/package/${p.name}`"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="block truncate text-sm font-medium text-primary hover:underline"
+                      @click.stop
+                    >{{ p.title || p.name }}</a>
+                    <p class="truncate text-xs text-muted-foreground">{{ p.name }}<span v-if="p.version"> · v{{ p.version }}</span></p>
+                  </div>
                 </div>
-                <div class="min-w-0 flex-1">
-                  <div class="flex items-center gap-2">
-                    <span class="font-medium">{{ p.title || p.name }}</span>
+                <p class="line-clamp-3 min-h-[3.75rem] text-sm text-muted-foreground">{{ p.description }}</p>
+                <div class="mt-auto flex items-center justify-between gap-2">
+                  <div class="flex min-w-0 items-center gap-1">
                     <Badge variant="outline" class="text-[10px]">{{ getCategoryName(p.category) }}</Badge>
                     <Badge v-if="installedNames.includes(p.name)" variant="secondary" class="text-[10px]">已安装</Badge>
                   </div>
-                  <p class="text-xs text-muted-foreground">{{ p.name }}</p>
-                  <p class="mt-1 text-sm text-muted-foreground">{{ p.description }}</p>
-                  <p v-if="p.deps !== '--'" class="mt-1 text-[11px] text-muted-foreground/60">依赖: {{ p.deps }}</p>
+                  <Button
+                    :disabled="installedNames.includes(p.name)"
+                    :variant="installedNames.includes(p.name) ? 'secondary' : 'default'"
+                    size="sm"
+                    class="shrink-0"
+                    @click="installFromStore(p.name, p.registry)"
+                  >
+                    {{ installedNames.includes(p.name) ? '已安装' : '安装' }}
+                  </Button>
                 </div>
-                <Button
-                  :disabled="installedNames.includes(p.name)"
-                  :variant="installedNames.includes(p.name) ? 'secondary' : 'default'"
-                  size="sm"
-                  @click="installFromStore(p.name)"
-                >
-                  {{ installedNames.includes(p.name) ? '已安装' : '安装' }}
-                </Button>
               </CardContent>
             </Card>
-
-            <div v-if="storeLoading" class="py-8 text-center text-sm text-muted-foreground">
-              加载中...
-            </div>
-            <div v-else-if="!activePluginSource" class="py-8 text-center text-sm text-muted-foreground">
-              请先在「设置 → 插件」中选择一个插件源
-            </div>
-            <div v-else-if="!filteredStorePlugins.length" class="py-8 text-center text-sm text-muted-foreground">
-              没有找到匹配的插件
-            </div>
           </div>
+
+          <!-- 空态 -->
+          <div v-if="storeLoading" class="py-12 text-center text-sm text-muted-foreground">加载中...</div>
+          <div v-else-if="!activePluginSource" class="py-12 text-center text-sm text-muted-foreground">请先在「设置 → 插件」中选择一个插件源</div>
+          <div v-else-if="!filteredStorePlugins.length" class="py-12 text-center text-sm text-muted-foreground">没有找到匹配的插件</div>
         </ScrollArea>
       </DialogContent>
     </Dialog>

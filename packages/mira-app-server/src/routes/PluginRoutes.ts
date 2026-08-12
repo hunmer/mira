@@ -226,7 +226,7 @@ export class PluginRoutes {
         // 安装插件（从npm）
         this.router.post('/install', async (req: Request, res: Response) => {
             try {
-                const { name, version = 'latest', libraryId, proxy, npmSource } = req.body;
+                const { name, version = 'latest', libraryId, proxy, npmSource, registry } = req.body;
 
                 if (!name) {
                     return res.status(400).json({ error: 'Plugin name is required' });
@@ -262,12 +262,12 @@ export class PluginRoutes {
                     env.HTTPS_PROXY = 'http://127.0.0.1:7890';
                 }
 
-                // npm 源映射
+                // npm 源映射: 优先用请求传入的自定义 registry, 否则按 npmSource 映射
                 const registryMap: Record<string, string> = {
                     npmmirror: 'https://registry.npmmirror.com',
                     npm: 'https://registry.npmjs.org',
                 };
-                const registry = registryMap[npmSource || 'npmmirror'] || registryMap.npmmirror;
+                const useRegistry = registry || registryMap[npmSource || 'npmmirror'] || registryMap.npmmirror;
 
                 // 初始化npm项目
                 spawnSync('npm', ['init', '-y'], {
@@ -276,7 +276,7 @@ export class PluginRoutes {
                     shell: true
                 });
 
-                const npmProcess = spawn('npm', ['install', packageName, '-save', '--registry', registry], {
+                const npmProcess = spawn('npm', ['install', packageName, '-save', '--registry', useRegistry], {
                     cwd: pluginsDir,
                     stdio: 'pipe',
                     env,
@@ -329,7 +329,8 @@ export class PluginRoutes {
                             await library.pluginManager!.addPlugin({
                                 name: name,
                                 enabled: false,
-                                path: `node_modules/${name}`
+                                path: `node_modules/${name}`,
+                                registry: useRegistry
                             });
 
                             res.json({
@@ -364,151 +365,22 @@ export class PluginRoutes {
             }
         });
 
-        // 上传安装插件
-        this.router.post('/upload', async (req: Request, res: Response) => {
+        // 同步插件 meta (从 package.json 重新提取并持久化到 plugins.json)
+        this.router.post('/sync-meta', async (req: Request, res: Response) => {
             try {
-                const multer = require('multer');
-                const yauzl = require('yauzl');
-
-                const storage = multer.memoryStorage();
-                const upload = multer({
-                    storage: storage,
-                    limits: { fileSize: 100 * 1024 * 1024 },
-                    fileFilter: (req: any, file: any, cb: any) => {
-                        if (file.mimetype === 'application/zip' ||
-                            file.mimetype === 'application/x-zip-compressed' ||
-                            file.originalname.endsWith('.zip') ||
-                            file.originalname.endsWith('.tar.gz')) {
-                            cb(null, true);
-                        } else {
-                            cb(new Error('只支持 .zip 和 .tar.gz 格式的插件包'), false);
-                        }
-                    }
-                }).single('file');
-
-                upload(req, res, async (err: any) => {
-                    if (err) {
-                        console.error('File upload error:', err);
-                        return res.status(400).json({ error: err.message || 'File upload failed' });
-                    }
-
-                    const file = (req as any).file;
-                    const libraryId = req.body.libraryId;
-
-                    if (!file) {
-                        return res.status(400).json({ error: 'No file uploaded' });
-                    }
-                    if (!libraryId) {
-                        return res.status(400).json({ error: 'No library ID provided' });
-                    }
-
-                    try {
-                        const validation = this.validateLibrary(libraryId);
-                        if (!validation.valid) {
-                            return res.status(400).json({ error: validation.error });
-                        }
-
-                        const library = validation.library!;
-                        let pluginsDir = library.pluginManager!.pluginsDir;
-
-                        if (!fs.existsSync(pluginsDir)) {
-                            fs.mkdirSync(pluginsDir, { recursive: true });
-                        }
-
-                        const tempFilePath = path.join(pluginsDir, `temp_${Date.now()}_${file.originalname}`);
-                        fs.writeFileSync(tempFilePath, file.buffer);
-
-                        let pluginName = '';
-                        let packageInfo: any = {};
-
-                        try {
-                            if (file.originalname.endsWith('.zip')) {
-                                await new Promise<void>((resolve, reject) => {
-                                    yauzl.open(tempFilePath, { lazyEntries: true }, (err: any, zipfile: any) => {
-                                        if (err) return reject(err);
-
-                                        zipfile.readEntry();
-                                        zipfile.on('entry', (entry: any) => {
-                                            if (/\/$/.test(entry.fileName)) {
-                                                zipfile.readEntry();
-                                            } else {
-                                                const outputPath = path.join(pluginsDir, entry.fileName);
-                                                const outputDir = path.dirname(outputPath);
-
-                                                if (!fs.existsSync(outputDir)) {
-                                                    fs.mkdirSync(outputDir, { recursive: true });
-                                                }
-
-                                                zipfile.openReadStream(entry, (err: any, readStream: any) => {
-                                                    if (err) return reject(err);
-
-                                                    const writeStream = fs.createWriteStream(outputPath);
-                                                    readStream.pipe(writeStream);
-
-                                                    writeStream.on('finish', () => {
-                                                        zipfile.readEntry();
-                                                    });
-
-                                                    writeStream.on('error', reject);
-                                                });
-                                            }
-                                        });
-
-                                        zipfile.on('end', () => {
-                                            resolve();
-                                        });
-
-                                        zipfile.on('error', reject);
-                                    });
-                                });
-                            } else {
-                                throw new Error('目前仅支持 .zip 格式的插件包');
-                            }
-
-                            if (fs.existsSync(tempFilePath)) {
-                                fs.unlinkSync(tempFilePath);
-                            }
-
-                            if (!pluginName) {
-                                pluginName = path.basename(file.originalname, path.extname(file.originalname));
-                            }
-
-                            if (library && library.pluginManager) {
-                                await library.pluginManager.addPlugin({
-                                    name: pluginName,
-                                    enabled: false,
-                                    path: 'node_modules/' + pluginName
-                                });
-                            }
-
-                            res.json({
-                                message: '插件上传安装成功',
-                                plugin: {
-                                    name: pluginName,
-                                    version: packageInfo.version || '1.0.0',
-                                    ...packageInfo
-                                }
-                            });
-
-                        } catch (extractError) {
-                            if (fs.existsSync(tempFilePath)) {
-                                fs.unlinkSync(tempFilePath);
-                            }
-                            throw extractError;
-                        }
-
-                    } catch (error) {
-                        console.error('Error processing uploaded plugin:', error);
-                        res.status(500).json({
-                            error: 'Failed to process uploaded plugin',
-                            details: (error as Error).message
-                        });
-                    }
-                });
-
+                const { libraryId } = req.body;
+                if (!libraryId) {
+                    return res.status(400).json({ error: 'Library ID is required' });
+                }
+                const validation = this.validateLibrary(libraryId);
+                if (!validation.valid) {
+                    return res.status(400).json({ error: validation.error });
+                }
+                const count = validation.library!.pluginManager!.syncPluginsMeta();
+                res.json({ success: true, count });
             } catch (error) {
-                console.error('Error uploading plugin:', error);
-                res.status(500).json({ error: 'Failed to upload plugin' });
+                console.error('Error syncing plugin meta:', error);
+                res.status(500).json({ error: 'Failed to sync plugin meta' });
             }
         });
 
@@ -637,18 +509,37 @@ export class PluginRoutes {
                                 fs.unlinkSync(tempFilePath);
                             }
 
-                            // 如果没有找到插件名称，使用文件名
-                            if (!pluginName) {
-                                pluginName = path.basename(file.originalname, path.extname(file.originalname));
+                            // 解压后从 package.json 识别真实插件名与顶层目录, 让 addPlugin 能提取 meta
+                            const baseName = path.basename(file.originalname, path.extname(file.originalname));
+                            let pluginPath = baseName;
+                            for (const entry of fs.readdirSync(pluginsDir)) {
+                                const pj = path.join(pluginsDir, entry, 'package.json');
+                                if (fs.existsSync(pj)) {
+                                    try {
+                                        packageInfo = JSON.parse(fs.readFileSync(pj, 'utf-8'));
+                                        pluginPath = entry;
+                                        break;
+                                    } catch (e) {
+                                        console.warn('Error reading package.json:', e);
+                                    }
+                                }
                             }
+                            // zip 无顶层目录时, package.json 直接在 pluginsDir 根的兜底
+                            if (!packageInfo.name) {
+                                const rootPj = path.join(pluginsDir, 'package.json');
+                                if (fs.existsSync(rootPj)) {
+                                    try { packageInfo = JSON.parse(fs.readFileSync(rootPj, 'utf-8')); } catch (e) { /* ignore */ }
+                                }
+                            }
+                            pluginName = packageInfo.name || baseName;
 
-                            // 为指定库或所有库的插件管理器添加新插件
+                            // 为指定库的插件管理器添加新插件 (addPlugin 会自动提取并持久化 meta)
                             const library = this.backend.libraries!.getLibrary(libraryId);
                             if (library && library.pluginManager) {
                                 await library.pluginManager.addPlugin({
                                     name: pluginName,
                                     enabled: false,
-                                    path: 'node_modules/' + pluginName
+                                    path: pluginPath
                                 });
                             }
 

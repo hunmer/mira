@@ -193,6 +193,7 @@ if (-not $NoIndex) {
             icon        = $icon
             category    = $cat
             deps        = $depsVal
+            registry    = ''
         }
     }
     $indexPath = Join-Path $PluginsRoot "plugins.recommend.json"

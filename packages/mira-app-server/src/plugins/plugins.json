@@ -42,7 +42,8 @@
   {
     "name": "mira_epub_format",
     "enabled": false,
-    "path": "mira_epub_format"
+    "path": "mira_epub_format",
+    "status": "inactive"
   },
   {
     "name": "mira_swf_format",

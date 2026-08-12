@@ -10,6 +10,13 @@ const SOURCES_KEY = 'mira.pluginSources'
 const ACTIVE_KEY = 'mira.pluginSourceActive'
 const LEGACY_KEY = 'mira.storePluginsUrl' // 旧的单 URL 字段, 一次性迁移
 
+// 内置默认源 (首次使用时预置, 用户删除后不会复活)
+const DEFAULT_SOURCE: PluginSource = {
+  id: 'official',
+  name: '官方插件源',
+  url: 'https://raw.githubusercontent.com/hunmer/mira/refs/heads/main/plugins/plugins/plugins.recommend.json',
+}
+
 function readSources(): PluginSource[] {
   try {
     const raw = localStorage.getItem(SOURCES_KEY)
@@ -24,13 +31,20 @@ function readSources(): PluginSource[] {
 const sources = ref<PluginSource[]>(readSources())
 const activeId = ref<string>(localStorage.getItem(ACTIVE_KEY) || '')
 
-// 一次性迁移旧的 storePluginsUrl -> 作为首个源并选中
-if (sources.value.length === 0 && !activeId.value) {
+// 首次初始化 (localStorage 从未写入过源): 迁移旧 URL 并预置默认源
+// 用 getItem===null 判断 "从未设置", 这样用户主动清空后默认源不会复活
+if (!localStorage.getItem(SOURCES_KEY)) {
   const legacy = (localStorage.getItem(LEGACY_KEY) || '').trim()
-  if (legacy) {
+  if (legacy && legacy !== DEFAULT_SOURCE.url) {
     sources.value.push({ id: 'legacy', name: '默认源', url: legacy })
-    activeId.value = 'legacy'
   }
+  if (!sources.value.some(s => s.url === DEFAULT_SOURCE.url)) {
+    sources.value.push({ ...DEFAULT_SOURCE })
+  }
+  if (!activeId.value) activeId.value = sources.value[0]?.id || ''
+  // 首次预置后立即落盘, 避免每次刷新重复初始化
+  localStorage.setItem(SOURCES_KEY, JSON.stringify(sources.value))
+  localStorage.setItem(ACTIVE_KEY, activeId.value)
 }
 
 watch(sources, val => localStorage.setItem(SOURCES_KEY, JSON.stringify(val)), { deep: true })
