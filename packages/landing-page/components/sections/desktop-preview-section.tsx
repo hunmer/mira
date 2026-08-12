@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/coverflow-carousel";
 import { MiraHomeLayout } from "@/components/ui/mira-home-layout";
 import { SafariBrowser } from "@/components/ui/safari-browser";
+import { withBasePath } from "@/lib/asset";
 
 /** "实时演示"占位缩略图 —— 内联 SVG data URI，标识实时组件占位，区别于静态截图。 */
 const PLACEHOLDER_SRC =
@@ -41,14 +42,14 @@ const SCREENSHOTS: ScreenshotConfig[] = [
 	{
 		title: "首页",
 		desc: "素材库主界面",
-		light: "/screenshots/screenshot-home-light.jpg",
-		dark: "/screenshots/screenshot-home-dark.jpg",
+		light: withBasePath("/screenshots/screenshot-home-light.jpg"),
+		dark: withBasePath("/screenshots/screenshot-home-dark.jpg"),
 	},
 	{
 		title: "预览",
 		desc: "媒体预览",
-		light: "/screenshots/screenshot-preview-light.jpg",
-		dark: "/screenshots/screenshot-preview-dark.jpg",
+		light: withBasePath("/screenshots/screenshot-preview-light.jpg"),
+		dark: withBasePath("/screenshots/screenshot-preview-dark.jpg"),
 	},
 ];
 
