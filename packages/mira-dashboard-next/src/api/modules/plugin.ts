@@ -17,8 +17,10 @@ export const pluginApi = {
     client.post('/plugins/toggle-status', { libraryId, pluginName, status }),
   configure: (name: string, config: Record<string, any>, libraryId?: string) =>
     client.put(`/plugins/${name}/config`, config, { params: { libraryId } }),
-  install: (data: { name: string; version?: string; libraryId: string; registry?: string }) =>
-    client.post('/plugins/install', data),
+  install: (
+    data: { name: string; version?: string; libraryId: string; registry?: string; npmSource?: string; proxy?: string },
+    signal?: AbortSignal,
+  ) => client.post('/plugins/install', data, signal ? { signal } : undefined),
   syncMeta: (libraryId: string) =>
     client.post('/plugins/sync-meta', { libraryId }),
   uninstall: (name: string, libraryId?: string) =>

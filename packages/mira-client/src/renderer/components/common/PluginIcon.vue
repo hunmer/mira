@@ -71,6 +71,10 @@ const roundedClass = computed(
 const isAbsoluteOrUrl = (p?: string): boolean =>
   !!p && /^(https?:|file:|data:|[a-zA-Z]:[\\/]|\/)/.test(p)
 
+/** 是否像图片 (http/file/data/盘符 URL, 或带图片扩展名); emoji / material 名返回 false */
+const isImageLike = (p?: string): boolean =>
+  !!p && (/^(https?:|file:|data:|[a-zA-Z]:[\\/])/.test(p) || /\.(png|jpe?g|svg|ico|gif|webp|bmp)$/i.test(p))
+
 /** 把任意本地路径规范化为可用 img src（参考 plugins/utils.ts convertToScriptUrl） */
 const toUrl = (p: string): string => {
   if (/^(https?:|file:|data:)/.test(p)) return p
@@ -104,21 +108,21 @@ const resolveDirAndIcon = (dir: string, iconFile: string): string | null => {
 const imageFailed = ref(false)
 
 const resolvedImageSrc = computed<string | null>(() => {
-  // 1. 显式 src（icon 直接是绝对路径/URL）
-  if (props.icon && isAbsoluteOrUrl(props.icon)) return toUrl(props.icon)
+  // 1. 显式 src（icon 直接是图片 URL/路径）
+  if (props.icon && isImageLike(props.icon)) return toUrl(props.icon)
 
   // 2. contribution 提供 image 类型图标：value 即图片路径（绝对/URL 优先，否则按目录解析）
   if (props.contributionIcon?.type === 'image' && props.contributionIcon.value) {
     const v = props.contributionIcon.value
-    if (isAbsoluteOrUrl(v)) return toUrl(v)
+    if (isImageLike(v)) return toUrl(v)
     const dir = props.directory || lookupDirectory()
     if (dir) return resolveDirAndIcon(dir, v)
   }
 
-  // 3. 目录 + 图标文件（显式 props 优先，否则从 pluginSystem 反查 config.icon）
+  // 3. 目录 + 图标文件（仅当 icon 像图片文件; emoji / material 名不走此处）
   const dir = props.directory || lookupDirectory()
   const iconFile = props.icon || lookupConfigIcon()
-  if (dir && iconFile) {
+  if (dir && iconFile && isImageLike(iconFile)) {
     return resolveDirAndIcon(dir, iconFile)
   }
   return null
@@ -153,14 +157,20 @@ function lookupConfigIcon(): string | undefined {
 
 /** 兜底 material/emoji/text 内容 */
 const fallbackValue = computed(() => {
+  // 显式 icon 为 emoji / material (非图片) 时优先用它
+  if (props.icon && !isImageLike(props.icon)) return props.icon
   if (props.contributionIcon?.value) return props.contributionIcon.value
   if (props.fallbackText) return props.fallbackText
   // 优先用显式传入的 name（市场卡片场景 pluginSystem 尚无此插件）
   if (props.name) return props.name.trim().charAt(0) || ''
-  return lookupPluginNameFirstChar() || '?'
+  return lookupPluginNameFirstChar() || ''
 })
 
 const fallbackType = computed<'material' | 'emoji' | 'text'>(() => {
+  // 显式 icon 为 emoji / material 时按内容判定类型 (纯 ASCII 字母/数字/下划线视为 material)
+  if (props.icon && !isImageLike(props.icon)) {
+    return /^[a-z0-9_]+$/.test(props.icon) ? 'material' : 'emoji'
+  }
   if (props.contributionIcon?.type && props.contributionIcon.type !== 'image') {
     return props.contributionIcon.type
   }

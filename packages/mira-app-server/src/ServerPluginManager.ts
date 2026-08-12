@@ -163,11 +163,24 @@ export class ServerPluginManager {
                     continue;
                 }
 
+                // 从插件 package.json 的 mira.icon 提取图标 (emoji / material 名), 供前端展示
+                let pkgIcon: string | undefined;
+                try {
+                    const pkgPath = path.join(this.getPluginDir(pluginName), 'package.json');
+                    if (fs.existsSync(pkgPath)) {
+                        const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
+                        pkgIcon = (pkg.mira && pkg.mira.icon) || pkg.icon;
+                    }
+                } catch (e) {
+                    console.warn(`Error reading package.json icon for ${pluginName}:`, e);
+                }
+
                 plugins.push({
                     ...manifest,
                     index,
                     version: manifest.version || '1.0.0',
                     serverPluginName: pluginName,
+                    icon: manifest.icon || pkgIcon,
                 });
             } catch (error) {
                 console.error(`Error reading Web plugin manifest for ${pluginName}:`, error);

@@ -235,15 +235,19 @@ async function uninstallPlugin(plugin: Plugin) {
   }
 }
 
+const installingName = ref<string | null>(null)
 async function installFromStore(name: string, registry?: string) {
-  if (!activeTab.value) return
+  if (!activeTab.value || installingName.value) return
+  installingName.value = name
   try {
     await pluginApi.install({ name, libraryId: activeTab.value, registry })
     toast.success(t('common.success'))
-    storeOpen.value = false
+    // 不关闭商店, 允许继续安装其他插件; 延后刷新本地列表
     setTimeout(loadPlugins, 2000)
   } catch {
     toast.error(t('common.failed'))
+  } finally {
+    installingName.value = null
   }
 }
 
@@ -259,41 +263,72 @@ function handleFileSelect(e: Event) {
   installFile.value = target.files?.[0] ?? null
 }
 
+const installController = ref<AbortController | null>(null)
+
 async function submitInstall() {
   if (!activeTab.value) return
+  // 先做表单校验, 不进入 loading 态
+  if (installTab.value === 'repository') {
+    if (!installForm.value.name) {
+      toast.error('请输入插件名称')
+      return
+    }
+  } else {
+    if (!installFile.value) {
+      toast.error('请选择插件包文件')
+      return
+    }
+  }
+
   installLoading.value = true
+  const controller = new AbortController()
+  installController.value = controller
   try {
     if (installTab.value === 'repository') {
-      if (!installForm.value.name) {
-        toast.error('请输入插件名称')
-        installLoading.value = false
-        return
-      }
       await pluginApi.install({
         name: installForm.value.name,
         version: installForm.value.version || undefined,
         libraryId: activeTab.value,
-      })
+        npmSource: installForm.value.npmSource,
+        proxy: installForm.value.proxy || undefined,
+      }, controller.signal)
     } else {
-      if (!installFile.value) {
-        toast.error('请选择插件包文件')
-        installLoading.value = false
-        return
-      }
       const formData = new FormData()
-      formData.append('file', installFile.value)
+      formData.append('file', installFile.value!)
       formData.append('libraryId', activeTab.value)
       await client.post('/plugins/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
+        signal: controller.signal,
       })
     }
     toast.success(t('common.success'))
-    installOpen.value = false
+    // 安装成功后不关闭对话框, 仅清空当前输入, 允许继续安装下一个
+    if (installTab.value === 'repository') {
+      installForm.value.name = ''
+      installForm.value.version = 'latest'
+    } else {
+      installFile.value = null
+    }
     setTimeout(loadPlugins, 2000)
   } catch {
-    toast.error(t('common.failed'))
+    // 用户主动取消不算错误
+    if (controller.signal.aborted) {
+      toast.info('已取消安装')
+    } else {
+      toast.error(t('common.failed'))
+    }
   } finally {
     installLoading.value = false
+    installController.value = null
+  }
+}
+
+// 取消: 安装中则中断请求, 非安装中则关闭对话框
+function cancelInstall() {
+  if (installController.value) {
+    installController.value.abort()
+  } else {
+    installOpen.value = false
   }
 }
 
@@ -519,13 +554,14 @@ onMounted(loadPlugins)
                     <Badge v-if="installedNames.includes(p.name)" variant="secondary" class="text-[10px]">已安装</Badge>
                   </div>
                   <Button
-                    :disabled="installedNames.includes(p.name)"
+                    :disabled="installedNames.includes(p.name) || installingName === p.name"
                     :variant="installedNames.includes(p.name) ? 'secondary' : 'default'"
                     size="sm"
                     class="shrink-0"
                     @click="installFromStore(p.name, p.registry)"
                   >
-                    {{ installedNames.includes(p.name) ? '已安装' : '安装' }}
+                    <RiRefreshLine v-if="installingName === p.name" class="mr-1 size-3.5 animate-spin" />
+                    {{ installingName === p.name ? '安装中' : (installedNames.includes(p.name) ? '已安装' : '安装') }}
                   </Button>
                 </div>
               </CardContent>
@@ -594,9 +630,12 @@ onMounted(loadPlugins)
         </Tabs>
 
         <DialogFooter>
-          <Button variant="outline" @click="installOpen = false">{{ t('common.cancel') }}</Button>
+          <Button variant="outline" @click="cancelInstall">
+            {{ installLoading ? '取消安装' : t('common.cancel') }}
+          </Button>
           <Button :disabled="installLoading" @click="submitInstall">
-            <RiAddLine v-if="!installLoading" class="mr-2 size-4" />
+            <RiRefreshLine v-if="installLoading" class="mr-2 size-4 animate-spin" />
+            <RiAddLine v-else class="mr-2 size-4" />
             {{ installLoading ? '安装中...' : '安装' }}
           </Button>
         </DialogFooter>
