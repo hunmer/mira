@@ -120,8 +120,8 @@ else
     warn "构建工具仍缺失 (make=$MAKE_BIN, g++=$GXX_BIN)，native 模块编译可能失败"
 fi
 
-# ============================== 3. 安装 mira-app-server ==============================
-log "步骤 3/6 安装 mira-app-server"
+# ============================== 2. 安装 mira-app-server ==============================
+log "步骤 2/5 安装 mira-app-server"
 
 # 优先用本地仓库 build 产物（含最新改动，如 --autostart）；否则回退 npm registry 版
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -155,8 +155,8 @@ if [[ "${SKIP_INSTALL:-0}" != "1" ]]; then
     ok "mira-app-server 安装完成"
 fi
 
-# ============================== 4. doctor ==============================
-log "步骤 4/6 外部依赖检测 (doctor)"
+# ============================== 3. doctor ==============================
+log "步骤 3/5 外部依赖检测 (doctor)"
 
 log "运行: mira-app-server doctor"
 # doctor 缺失项会以 exit code 2 退出，不能 set -e
@@ -180,8 +180,8 @@ else
     ok "外部依赖齐全"
 fi
 
-# ============================== 5. 启动 server ==============================
-log "步骤 5/6 启动 mira-app-server"
+# ============================== 4. 启动 server ==============================
+log "步骤 4/5 启动 mira-app-server"
 
 DATA_DIR="${MIRA_DATA_DIR:-$HOME/.mira-data}"
 mkdir -p "$DATA_DIR"
@@ -278,7 +278,7 @@ else
 fi
 
 # ============================== 6. 创建第一个素材库 ==============================
-log "步骤 6/6 创建第一个素材库"
+log "步骤 5/5 创建第一个素材库"
 
 log "登录 admin 账号 ..."
 if ! mira-app-server login -u admin -p admin123 -s "http://localhost:${HTTP_PORT}" >/dev/null 2>&1; then
