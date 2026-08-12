@@ -2,21 +2,48 @@
  * 通用工具函数
  */
 
-import pinyin from 'pinyin'
+import type pinyinType from 'pinyin'
+
+// pinyin 包含约 6MB 字典数据，改为按需懒加载，避免进入首屏 chunk。
+// 加载完成前 pinyinMatch / getPinyinFirstLetter 自动降级为「仅直接包含匹配」，
+// 不影响调用方（签名保持同步不变）。首次拼音搜索会触发加载，之后缓存复用。
+let pinyinFn: ((words: string, options?: { style: number }) => string[][]) | null = null
+let pinyinLoading = false
+
+function ensurePinyin() {
+  if (pinyinFn || pinyinLoading) return
+  pinyinLoading = true
+  import('pinyin')
+    .then(m => {
+      pinyinFn = ((m.default || m) as typeof pinyinType) as typeof pinyinFn
+    })
+    .catch(() => {
+      // 加载失败保持降级，不影响主流程
+    })
+    .finally(() => {
+      pinyinLoading = false
+    })
+}
 
 // 拼音缓存，避免重复计算
 const pinyinCache = new Map<string, { full: string; first: string }>()
 
 /**
- * 获取字符串的拼音（带缓存）
+ * 获取字符串的拼音（带缓存）。pinyin 库未加载完成时返回降级值。
  */
 function getPinyin(text: string): { full: string; first: string } {
   if (pinyinCache.has(text)) {
     return pinyinCache.get(text)!
   }
 
+  // 字典尚未加载：触发懒加载并返回降级值（拼音匹配暂退化为直接包含匹配）
+  if (!pinyinFn) {
+    ensurePinyin()
+    return { full: text.toLowerCase(), first: text.toLowerCase() }
+  }
+
   try {
-    const result = pinyin(text, { style: 0 /* ENUM_PINYIN_STYLE.NORMAL */ })
+    const result = pinyinFn(text, { style: 0 /* ENUM_PINYIN_STYLE.NORMAL */ })
     const full = result.map(arr => arr[0] || '').join('').toLowerCase()
     const first = result.map(arr => (arr[0] || '')[0] || '').join('').toLowerCase()
     const data = { full, first }
