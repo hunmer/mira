@@ -7,33 +7,33 @@
 ```
 mira_typescript/
 ├── packages/
-│   ├── mira-app-core/              # 核心库
-│   ├── mira-app-server/            # 后端服务
-│   ├── mira-dashboard/         # 前端管理面板 ⭐ 新增
-│   └── mira-storage-sqlite/    # SQLite 存储适配器
+│   ├── mira-app-core/          # 核心库（SDK / 存储 / 事件）
+│   ├── mira-app-server/        # 后端服务（HTTP + WebSocket）
+│   ├── mira-client/            # 桌面客户端（Electron）
+│   ├── mira-dashboard-next/    # Web 管理面板（新版）
+│   ├── mira-browser-extension/ # 浏览器扩展（网页采集）
+│   ├── mira-scripts-core/      # 数据处理工具集
+│   ├── mira-doc/               # 系统文档
+│   ├── vue-masonry/            # Vue 3 瀑布流组件
+│   └── landing-page/           # 项目官网落地页
 ├── plugins/                    # 插件目录
 ├── data/                       # 数据目录
 └── .vscode/                    # VS Code 配置
 ```
 
-## 功能特性
+## Packages 概览
 
-### 后端服务 (mira-app-server)
-- 🚀 基于 Node.js + TypeScript 的高性能服务
-- 📁 资源库管理（本地/远程）
-- 🔌 插件系统支持
-- 🌐 WebSocket 实时通信
-- 🗄️ SQLite 数据存储
-- 🔒 用户认证和权限管理
-
-### 前端管理面板 (mira-dashboard) ⭐ 新增
-- 🎨 基于 Vue 3 + Vite + TailwindCSS 的现代化界面
-- 📊 系统概览和统计信息
-- 📁 **资源库管理器** - 可视化管理所有资源库
-- 🔌 **插件管理器** - 插件的安装、配置、启用/禁用
-- 👥 **管理员管理** - 管理员账户的增删改查
-- 🗄️ **SQLite数据库预览** - 可视化数据库操作和SQL查询
-- 🔧 环境变量支持设置初始管理员
+| Package | 说明 |
+|---------|------|
+| [**mira-app-core**](./packages/mira-app-core/README.md) | 项目核心库（TypeScript）。提供共享的客户端 SDK（Http/WebSocket）、SQLite 存储抽象与事件管理，供 server / client / 扩展复用。 |
+| [**mira-app-server**](./packages/mira-app-server/README.md) | 后端服务。基于 HTTP + WebSocket 的独立 server，负责资源库管理、插件系统、用户认证、缩略图与元数据等。 |
+| [**mira-client**](./packages/mira-client/README.md) | 桌面客户端（Electron）。Mira 媒体库的桌面端应用，提供本地化的浏览与管理体验。 |
+| [**mira-dashboard-next**](./packages/mira-dashboard-next/README.md) | Web 管理面板（新版）。基于 Vue 3 + shadcn-vue + Tailwind CSS 4，包含系统概览、资源库/插件/管理员/设备管理、数据库预览等。 |
+| [**mira-browser-extension**](./packages/mira-browser-extension/README.md) | 浏览器扩展。网页采集入口，支持截图、拖拽上传、资源嗅探，将网页素材快速归档到 Mira。 |
+| [**mira-scripts-core**](./packages/mira-scripts-core/README.md) | 数据处理工具集。用于图书馆系统数据的转换与文件批量导入脚本。 |
+| [**mira-doc**](./packages/mira-doc/index.md) | 系统文档。涵盖安装、CLI、MCP、技能等使用说明（基于 VitePress）。 |
+| [**vue-masonry**](./packages/vue-masonry/README.md) | Vue 3 瀑布流组件库。支持响应式列数、跨列跨行、宽高比、懒加载与动画。 |
+| [**landing-page**](./packages/landing-page/README.md) | 项目官网落地页（Next.js）。对外展示 Mira 产品介绍与功能特性。 |
 
 ## 快速开始
 
@@ -68,160 +68,16 @@ cd packages/mira-app-server
 npm run dev
 
 # 启动前端管理面板
-cd packages/mira-dashboard
+cd packages/mira-dashboard-next
 npm run dev
 ```
 
 ### 3. 访问应用
 - **后端API**: http://localhost:8081
 - **WebSocket**: ws://localhost:8018
-- **前端管理面板**: http://localhost:3999 (需要安装 mira-dashboard)
+- **前端管理面板**: http://localhost:3999
 - **默认登录**: 用户名 `admin`，密码 `admin123`
-
-## 开发配置
-
-### VS Code 任务
-项目已配置完整的 VS Code 开发环境：
-
-- **start-mira-dashboard-dev**: 启动前端开发服务器
-- **build-mira-dashboard**: 构建前端生产版本
-- **start-full-stack**: 启动完整全栈应用
-- **build-full-stack**: 构建完整全栈应用
-
-### 调试配置
-- **Debug Mira Dashboard (Chrome/Edge)**: 前端调试
-- **Debug Full Stack**: 全栈调试
-
-### 环境变量配置
-在 `packages/mira-dashboard/.env` 中配置：
-
-```env
-# 应用配置
-APP_TITLE=Mira Dashboard
-API_BASE_URL=http://localhost:8081
-WS_BASE_URL=ws://localhost:8018
-
-# 初始管理员配置
-INITIAL_ADMIN_USERNAME=admin
-INITIAL_ADMIN_PASSWORD=admin123
-INITIAL_ADMIN_EMAIL=admin@mira.local
-```
-
-## 技术栈
-
-### 后端
-- **Node.js** + **TypeScript**
-- **Express.js** - Web 框架
-- **WebSocket** - 实时通信
-- **SQLite** - 数据存储
-- **插件系统** - 模块化扩展
-
-### 前端 ⭐
-- **Vue 3** - 前端框架（Composition API）
-- **Vite** - 构建工具
-- **TypeScript** - 类型安全
-- **Element Plus** - UI 组件库
-- **TailwindCSS** - CSS 框架
-- **Pinia** - 状态管理
-- **Axios** - HTTP 客户端
-
-## 项目结构
-
-### 前端管理面板详细结构
-```
-packages/mira-dashboard/
-├── src/
-│   ├── components/         # 可复用组件
-│   │   ├── StatCard.vue    # 统计卡片
-│   ├── layouts/            # 布局组件
-│   │   └── DashboardLayout.vue
-│   ├── views/              # 页面组件
-│   │   ├── Login.vue       # 登录页面
-│   │   ├── Overview.vue    # 系统概览
-│   │   ├── LibraryManager.vue    # 资源库管理器
-│   │   ├── PluginManager.vue     # 插件管理器
-│   │   ├── AdminManager.vue      # 管理员管理
-│   │   └── DatabaseViewer.vue    # 数据库预览器
-│   ├── router/             # 路由配置
-│   ├── stores/             # Pinia 状态管理
-│   ├── types/              # TypeScript 类型定义
-│   ├── utils/              # 工具函数
-│   └── style.css           # 全局样式
-└── README.md               # 详细使用说明
-```
-
-## 功能模块详解
-
-### 🎯 系统概览 (Overview)
-- 系统运行状态监控
-- 资源统计信息
-- 最近活动记录
-- 系统信息展示
-
-### 📁 资源库管理器 (LibraryManager)
-- 资源库的增删改查
-- 本地/远程资源库支持
-- 搜索和状态筛选
-- 文件数量和大小统计
-- 批量操作支持
-
-### 🔌 插件管理器 (PluginManager)
-- 插件安装（本地上传/远程仓库）
-- 插件配置管理（JSON 编辑器）
-- 插件状态控制（启用/禁用）
-- 插件更新和卸载
-- 依赖关系管理
-
-### 👥 管理员管理 (AdminManager)
-- 管理员账户创建和删除
-- 权限管理
-- 邮箱和密码管理
-- 环境变量初始管理员配置
-
-### 🗄️ 数据库预览器 (DatabaseViewer)
-- SQLite 数据库表浏览
-- 表结构查看
-- 数据的增删改查
-- SQL 查询执行
-- 数据导出（CSV 格式）
-
-## 插件开发
-
-系统支持插件扩展，插件目录：`plugins/`
-
-已包含示例插件：
-- **mira_thumb**: 缩略图生成
-- **mira_user**: 用户管理
-- **upload_statistics**: 上传统计
-
-## 构建和部署
-
-### 开发环境
-```bash
-npm run dev  # 所有包的开发模式
-```
-
-### 生产构建
-```bash
-npm run build  # 构建所有包
-```
-
-### 前端单独部署
-```bash
-cd packages/mira-dashboard
-npm run build
-# 部署 dist/ 目录到 Web 服务器
-```
-
-## 贡献指南
-
-1. Fork 项目
-2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 创建 Pull Request
 
 ## 许可证
 
 本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
-
