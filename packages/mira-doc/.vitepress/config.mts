@@ -5,7 +5,7 @@ export default defineConfig({
   title: "Mira 文档",
   description: "Mira - 新时代的素材管理软件",
   lang: 'zh-CN',
-  base: '/mira-doc/',
+  base: '/docs/',
   ignoreDeadLinks: true,
 
   head: [

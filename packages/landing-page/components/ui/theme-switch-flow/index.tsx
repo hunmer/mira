@@ -20,8 +20,8 @@ type Props = React.HTMLAttributes<HTMLDivElement> & {
 export function ThemeSwitchFlowGlassPro({
 	className,
 	intensity = 1,
-	maskGifUrl = "https://media.tenor.com/cyORI7kwShQAAAAi/shigure-ui-dance.gif",
-	duration = "3s",
+	maskGifUrl = "/theme-switch-flow/icon-animation.gif",
+	duration = "2.5s",
 	...props
 }: Props) {
 	const { resolvedTheme, setThemeWithTransition } = useViewTransitionTheme();

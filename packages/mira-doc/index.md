@@ -6,7 +6,7 @@ hero:
   text: "新时代的素材管理软件"
   tagline: "让文件管理变得简单，让自动化触手可及"
   image:
-    src: /icon.ico
+    src: /icon.webp
     alt: Mira
   actions:
     - theme: brand

@@ -153,6 +153,7 @@ if [[ "${SKIP_INSTALL:-0}" != "1" ]]; then
     log "npm 全局安装: $INSTALL_TARGET"
     ${SUDO:-} npm install -g --verbose "$INSTALL_TARGET" || die "mira-app-server 安装失败"
     ok "mira-app-server 安装完成"
+    INSTALLED=1
 fi
 
 # ============================== 3. doctor ==============================
@@ -162,15 +163,24 @@ log "运行: mira-app-server doctor"
 # doctor 缺失项会以 exit code 2 退出，不能 set -e
 mira-app-server doctor || true
 
-# 重新检测一次判断是否真有缺失（doctor --install 会调用 apt）
+# 重新检测一次判断是否真有缺失（doctor --install 会按平台调用对应包管理器）
 MISSING=$(mira-app-server doctor --json 2>/dev/null | node -e '
 let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
   try{const j=JSON.parse(s);console.log((j.summary&&j.summary.missing||[]).join(","));}catch(e){console.log("");}
 });' 2>/dev/null)
 
+# 探测本机包管理器，用于安装提示（避免硬编码 apt）
+detect_pkg_mgr() {
+    for pm in apt-get apt dnf yum pacman; do
+        command -v "$pm" >/dev/null 2>&1 && { echo "$pm"; return; }
+    done
+    echo ""
+}
+
 if [[ -n "$MISSING" && "$MISSING" != "" ]]; then
     warn "缺失: $MISSING"
-    if ask_yn "是否现在自动安装缺失依赖? (apt)" y; then
+    PKG_MGR=$(detect_pkg_mgr)
+    if ask_yn "是否现在自动安装缺失依赖? (${PKG_MGR:-未知包管理器})" y; then
         log "运行: mira-app-server doctor --install"
         mira-app-server doctor --install || warn "部分依赖可能未能自动安装，可稍后手动补齐"
     else
@@ -206,75 +216,107 @@ has_systemd_user() {
     systemctl --user list-units >/dev/null 2>&1
 }
 
-if our_server_running && curl -sf "$HEALTH_URL" >/dev/null 2>&1; then
-    ok "检测到本发行版内已有 mira-app-server 进程且 health 正常，跳过启动"
-elif has_systemd_user; then
-    # 有 systemd：用 --autostart（注册 user service 并立即启动，开机自启 + 登出后保活）
-    log "注册开机自启并启动: mira-app-server start --autostart --http-port $HTTP_PORT --ws-port $WS_PORT"
-    : > "$LOG_FILE"
-    if ! mira-app-server start --autostart \
+# 停止本发行版内的 mira-app-server（systemd 托管 + nohup 进程都覆盖）。
+# 用于密码重置等场景：旧进程持有 users.db 连接，直写 DB 后旧进程读不到，
+# 必须先停掉再重启，新进程才会加载最新数据。
+stop_server() {
+    if has_systemd_user && systemctl --user list-unit-files 2>/dev/null | grep -q 'mira-app-server'; then
+        log "停止 systemd 服务: mira-app-server"
+        systemctl --user stop mira-app-server 2>/dev/null || true
+    fi
+    # 兜底：杀掉所有相关 node 进程（nohup 启动的、或 systemd 残留）
+    pkill -f '[d]ist/(cli|index)\.js' 2>/dev/null || true
+    # 等待进程退出（最多 ~6s）
+    for i in $(seq 1 20); do
+        our_server_running || break
+        sleep 0.3
+    done
+    if our_server_running; then
+        warn "部分 server 进程未在预期时间内退出，可能需要手动 kill"
+    else
+        ok "已停止旧 server 进程"
+    fi
+}
+
+# 启动 server 并等待 health 就绪（systemd 优先，回退 nohup）。
+# 假定调用前已 stop_server 或确认无旧进程在跑。
+start_server() {
+    if has_systemd_user; then
+        # 有 systemd：用 --autostart（注册 user service 并立即启动，开机自启 + 登出后保活）
+        log "注册开机自启并启动: mira-app-server start --autostart --http-port $HTTP_PORT --ws-port $WS_PORT"
+        : > "$LOG_FILE"
+        if ! mira-app-server start --autostart \
+                --http-port "$HTTP_PORT" \
+                --ws-port "$WS_PORT" \
+                --data-path "$DATA_DIR"; then
+            err "启动失败，最近日志："
+            tail -n 30 "$LOG_FILE" >&2 || true
+            die "请检查 $LOG_FILE 或 systemctl --user status mira-app-server"
+        fi
+        log "等待 server 就绪 (最多 30s) ..."
+        READY=0
+        for i in $(seq 1 60); do
+            if curl -sf "$HEALTH_URL" >/dev/null 2>&1; then READY=1; break; fi
+            sleep 0.5
+        done
+        if [[ $READY -ne 1 ]]; then
+            err "server 启动超时，最近日志："
+            journalctl --user -u mira-app-server -n 30 --no-pager >&2 2>/dev/null || tail -n 30 "$LOG_FILE" >&2 || true
+            die "请检查 systemctl --user status mira-app-server"
+        fi
+        AUTOSTART_USED=1
+        ok "server 已就绪（由 systemd 托管，开机自启）"
+    else
+        # 无 systemd（WSL 默认等）：回退 nohup 手动管理，不会开机自启
+        warn "未检测到可用的 systemd user 实例（WSL 默认未启用 systemd）"
+        warn "改用 nohup 启动 —— 进程不会开机自启，重启后需重新运行本脚本"
+        if [[ -f "$PID_FILE" ]] && ! kill -0 "$(cat "$PID_FILE" 2>/dev/null)" 2>/dev/null; then
+            rm -f "$PID_FILE"
+        fi
+        : > "$LOG_FILE"
+        log "后台启动: mira-app-server start --http-port $HTTP_PORT --ws-port $WS_PORT"
+        nohup mira-app-server start \
             --http-port "$HTTP_PORT" \
             --ws-port "$WS_PORT" \
-            --data-path "$DATA_DIR"; then
-        err "启动失败，最近日志："
-        tail -n 30 "$LOG_FILE" >&2 || true
-        die "请检查 $LOG_FILE 或 systemctl --user status mira-app-server"
-    fi
-    log "等待 server 就绪 (最多 30s) ..."
-    READY=0
-    for i in $(seq 1 60); do
-        if curl -sf "$HEALTH_URL" >/dev/null 2>&1; then READY=1; break; fi
-        sleep 0.5
-    done
-    if [[ $READY -ne 1 ]]; then
-        err "server 启动超时，最近日志："
-        journalctl --user -u mira-app-server -n 30 --no-pager >&2 2>/dev/null || tail -n 30 "$LOG_FILE" >&2 || true
-        die "请检查 systemctl --user status mira-app-server"
-    fi
-    AUTOSTART_USED=1
-    ok "server 已就绪（由 systemd 托管，开机自启）"
-else
-    # 无 systemd（WSL 默认等）：回退 nohup 手动管理，不会开机自启
-    warn "未检测到可用的 systemd user 实例（WSL 默认未启用 systemd）"
-    warn "改用 nohup 启动 —— 进程不会开机自启，重启后需重新运行本脚本"
-    if [[ -f "$PID_FILE" ]] && ! kill -0 "$(cat "$PID_FILE" 2>/dev/null)" 2>/dev/null; then
-        rm -f "$PID_FILE"
-    fi
-    if [[ -f "$PID_FILE" ]] && kill -0 "$(cat "$PID_FILE" 2>/dev/null)" 2>/dev/null; then
-        warn "存在旧 PID $(cat "$PID_FILE")，先杀掉重启"
-        kill "$(cat "$PID_FILE")" 2>/dev/null || true
-        sleep 1
-    fi
-    : > "$LOG_FILE"
-    log "后台启动: mira-app-server start --http-port $HTTP_PORT --ws-port $WS_PORT"
-    nohup mira-app-server start \
-        --http-port "$HTTP_PORT" \
-        --ws-port "$WS_PORT" \
-        --data-path "$DATA_DIR" \
-        > "$LOG_FILE" 2>&1 &
-    NEW_PID=$!
-    echo "$NEW_PID" > "$PID_FILE"
-    disown 2>/dev/null || true
-    log "等待 server 就绪 (最多 30s) ..."
-    READY=0
-    for i in $(seq 1 60); do
-        if ! kill -0 "$NEW_PID" 2>/dev/null; then
-            err "server 进程已退出，最近日志："
+            --data-path "$DATA_DIR" \
+            > "$LOG_FILE" 2>&1 &
+        NEW_PID=$!
+        echo "$NEW_PID" > "$PID_FILE"
+        disown 2>/dev/null || true
+        log "等待 server 就绪 (最多 30s) ..."
+        READY=0
+        for i in $(seq 1 60); do
+            if ! kill -0 "$NEW_PID" 2>/dev/null; then
+                err "server 进程已退出，最近日志："
+                tail -n 30 "$LOG_FILE" >&2 || true
+                die "启动失败，请检查 $LOG_FILE"
+            fi
+            if grep -qE 'Mira Server started|listening|ready' "$LOG_FILE" 2>/dev/null \
+               && curl -sf "$HEALTH_URL" >/dev/null 2>&1; then
+                READY=1; break
+            fi
+            sleep 0.5
+        done
+        if [[ $READY -ne 1 ]]; then
+            err "server 启动超时，最近日志："
             tail -n 30 "$LOG_FILE" >&2 || true
-            die "启动失败，请检查 $LOG_FILE"
+            die "请检查 $LOG_FILE"
         fi
-        if grep -qE 'Mira Server started|listening|ready' "$LOG_FILE" 2>/dev/null \
-           && curl -sf "$HEALTH_URL" >/dev/null 2>&1; then
-            READY=1; break
-        fi
-        sleep 0.5
-    done
-    if [[ $READY -ne 1 ]]; then
-        err "server 启动超时，最近日志："
-        tail -n 30 "$LOG_FILE" >&2 || true
-        die "请检查 $LOG_FILE"
+        ok "server 已就绪 (pid $NEW_PID)"
     fi
-    ok "server 已就绪 (pid $NEW_PID)"
+}
+
+if our_server_running && curl -sf "$HEALTH_URL" >/dev/null 2>&1; then
+    if [[ "${INSTALLED:-0}" == "1" ]]; then
+        # 本次刚安装了新版本，但旧进程还在跑老代码 → 必须重启以加载新代码
+        warn "检测到旧进程在跑，但本次安装了新版本，重启以加载新代码 ..."
+        stop_server
+        start_server
+    else
+        ok "检测到本发行版内已有 mira-app-server 进程且 health 正常，跳过启动"
+    fi
+else
+    start_server
 fi
 
 # ============================== 5. 创建第一个素材库 ==============================
@@ -296,9 +338,13 @@ if ! try_login; then
         log "重置密码: mira-app-server user reset-password -u $ADMIN_USER --data-path $DATA_DIR"
         if mira-app-server user reset-password -u "$ADMIN_USER" -p "$ADMIN_PASS" -d "$DATA_DIR"; then
             ok "密码已重置（旧登录会话已全部失效）"
+            # reset 直写 users.db，旧 server 进程持有 DB 连接读不到新密码，必须重启
+            log "重启 server 以加载新密码 ..."
+            stop_server
+            start_server
             log "用新密码重新登录 ..."
             if ! try_login; then
-                die "新密码登录仍失败，请检查 server 日志: $LOG_FILE"
+                die "重启后新密码登录仍失败，请检查 server 日志: $LOG_FILE"
             fi
             ok "登录成功"
         else
