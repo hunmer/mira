@@ -142,10 +142,40 @@ export default defineConfig(({ mode }) => {
             'vue-vendor': ['vue', 'vue-router', 'pinia'],
             'utils': ['lodash-es'],
           },
-          // 优化 chunk 文件名
-          chunkFileNames: 'assets/js/[name]-[hash].js',
-          entryFileNames: 'assets/js/[name]-[hash].js',
-          assetFileNames: (assetInfo) => {
+      // 优化 chunk 文件名
+      chunkFileNames: 'assets/js/[name]-[hash].js',
+      entryFileNames: 'assets/js/[name]-[hash].js',
+      // 按依赖类别拆分 vendor，避免主入口 chunk 膨胀。
+      // 说明：即便被同步 import，被拆出的模块也会成为独立 chunk，主入口仅保留引用，
+      // 浏览器并行加载，运行时行为不变。
+      manualChunks(id) {
+        // 仅处理第三方依赖；应用源码交给 rollup 按路由/动态 import 自然切分
+        if (!id.includes('node_modules')) return
+        const p = id.replace(/\\/g, '/')
+        // Vue 全家桶
+        if (/[\/]node_modules[\/](vue|vue-router|pinia|vue-i18n|@vue[\/]/.test(p)) return 'vue-vendor'
+        // UI 组件库（reka-ui 是大头，被引用 240+ 次）
+        if (/[\/]node_modules[\/](reka-ui|radix-vue|@reka-ui|radix-icons)/.test(p)) return 'ui-vendor'
+        // 拼音字典（含 ~数 MB 数据，单独成 chunk）
+        if (/[\/]node_modules[\/]pinyin[\/]/.test(p)) return 'pinyin-vendor'
+        // 媒体播放 / 预览
+        if (/[\/]node_modules[\/](plyr|hls\.js|viewerjs|v-viewer)/.test(p)) return 'media-vendor'
+        // 富文本 / 代码编辑器
+        if (/[\/]node_modules[\/](md-editor-v3)/.test(p)) return 'editor-vendor'
+        // 布局 / 动画
+        if (/[\/]node_modules[\/](grid-layout-plus|@he-tree|motion-v)/.test(p)) return 'layout-vendor'
+        // 表单 / 表格 / 校验
+        if (/[\/]node_modules[\/](vee-validate|@vee-validate|@tanstack[\/]vue-table|zod)/.test(p)) return 'forms-vendor'
+        // 文件上传
+        if (/[\/]node_modules[\/](filepond|vue-filepond)/.test(p)) return 'upload-vendor'
+        // 图标
+        if (/[\/]node_modules[\/]lucide-vue-next/.test(p)) return 'icons-vendor'
+        // 通用工具
+        if (/[\/]node_modules[\/](lodash-es|class-variance-authority|clsx|tailwind-merge)/.test(p)) return 'utils-vendor'
+        // 其余第三方统一兜底
+        return 'vendor'
+      },
+      assetFileNames: (assetInfo) => {
             const fileName = assetInfo.name || 'unknown'
             const info = fileName.split('.')
             const extType = info[info.length - 1]

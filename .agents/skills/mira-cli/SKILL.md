@@ -58,6 +58,7 @@ logout               # clear current profile's token (stays logged-out until nex
 **First-run:** a fresh server auto-creates admin `admin` / password `admin123` (printed in server logs). Log in with those once, then change credentials if needed.
 
 **When a command fails with `❌ 未登录`** → run `login` first.
+**When `login` itself fails because the admin password was changed and is unknown** → recover with `user reset-password` (no login required — it writes `users.db` directly): `mira-app-server user reset-password -u admin -p <newpw> -d <dataPath>`, then `login`.
 **When it fails with a network/auth error on a known-good token** → the token expired or the server restarted; re-login.
 
 ## Output conventions (important for agents)
