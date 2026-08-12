@@ -19,5 +19,36 @@
     ],
     "installedAt": "2026-08-12T10:17:17.223Z",
     "status": "active"
+  },
+  {
+    "name": "mira_duplicate_scanner",
+    "enabled": false,
+    "path": "node_modules/mira_duplicate_scanner",
+    "registry": "https://registry.npmmirror.com",
+    "icon": null,
+    "title": "mira_duplicate_scanner",
+    "category": "general",
+    "tags": [],
+    "installedAt": "2026-08-12T12:02:36.842Z"
+  },
+  {
+    "name": "mira_epub_format",
+    "enabled": false,
+    "path": "node_modules/mira_epub_format",
+    "registry": "https://registry.npmmirror.com",
+    "version": "1.0.0",
+    "description": "EPUB metadata, cover thumbnail, and reader support for Mira",
+    "author": "Mira Team",
+    "main": "dist/index.js",
+    "icon": "menu_book",
+    "title": "EPUB Format",
+    "category": "storage",
+    "tags": [
+      "EPUB",
+      "ebook",
+      "thumbnail",
+      "reader"
+    ],
+    "installedAt": "2026-08-12T12:02:44.057Z"
   }
 ]
