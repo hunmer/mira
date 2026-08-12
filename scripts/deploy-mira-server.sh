@@ -277,13 +277,40 @@ else
     ok "server 已就绪 (pid $NEW_PID)"
 fi
 
-# ============================== 6. 创建第一个素材库 ==============================
+# ============================== 5. 创建第一个素材库 ==============================
 log "步骤 5/5 创建第一个素材库"
 
 log "登录 admin 账号 ..."
-if ! mira-app-server login -u admin -p admin123 -s "http://localhost:${HTTP_PORT}" >/dev/null 2>&1; then
-    warn "登录失败（server 启动日志里的初始密码可能已变）"
-    warn "可稍后手动执行: mira-app-server login"
+ADMIN_USER="admin"
+ADMIN_PASS="admin123"
+
+# 用当前 ADMIN_PASS 尝试登录；成功返回 0
+try_login() {
+    mira-app-server login -u "$ADMIN_USER" -p "$ADMIN_PASS" -s "http://localhost:${HTTP_PORT}" >/dev/null 2>&1
+}
+
+if ! try_login; then
+    warn "登录失败（密码可能已被修改）"
+    if ask_yn "是否重置 $ADMIN_USER 的密码并重新登录? (直连 users.db，无需旧密码)" y; then
+        ADMIN_PASS=$(ask_val "请输入新密码" "admin123")
+        log "重置密码: mira-app-server user reset-password -u $ADMIN_USER --data-path $DATA_DIR"
+        if mira-app-server user reset-password -u "$ADMIN_USER" -p "$ADMIN_PASS" -d "$DATA_DIR"; then
+            ok "密码已重置（旧登录会话已全部失效）"
+            log "用新密码重新登录 ..."
+            if ! try_login; then
+                die "新密码登录仍失败，请检查 server 日志: $LOG_FILE"
+            fi
+            ok "登录成功"
+        else
+            err "密码重置失败。"
+            err "若安装的是 npm registry 版可能不含此命令，需用本地构建产物重装。"
+            die "可手动执行: mira-app-server user reset-password -u admin -d \"$DATA_DIR\""
+        fi
+    else
+        die "未登录，无法继续。可稍后手动: mira-app-server login 或 mira-app-server user reset-password"
+    fi
+else
+    ok "登录成功"
 fi
 
 # 列出现有库

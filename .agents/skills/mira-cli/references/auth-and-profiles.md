@@ -48,3 +48,22 @@ auth remove <name>  (alias: rm)   # delete a profile; if it was current, current
 ```bash
 -s http://localhost:8081 --token <tok> auth add staging -u bob
 ```
+
+## user reset-password (recovery — no login needed)
+
+```bash
+user reset-password
+  -u, --username <username>   # default: admin
+  -p, --password <password>   # new password; omit to prompt (hidden, with confirm)
+  -d, --data-path <path>      # dir containing users.db; default DATA_PATH env or ./data
+```
+
+**This command bypasses HTTP/auth entirely** — it opens `users.db` directly, so it works when you cannot log in (forgotten/changed password). It updates the password hash and revokes ALL of that user's sessions (old tokens die immediately). Use it to recover a deployment whose admin password was changed and the new value is unknown:
+
+```bash
+mira-app-server user reset-password -u admin -p admin123 -d ~/.mira-data
+# then log in normally:
+mira-app-server login -u admin -p admin123
+```
+
+Data-path resolution mirrors the server (`MiraServer`): `-d` flag → `DATA_PATH` env → `<cwd>/data`. Run it on the server host (it touches the same `users.db` the running server uses; SQLite handles the brief concurrent write).

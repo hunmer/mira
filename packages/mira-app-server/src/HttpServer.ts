@@ -281,8 +281,30 @@ export class MiraHttpServer {
                 if (err && !res.headersSent) next();
             });
         });
-        // 根路径重定向到 dashboard
-        this.app.get('/', (req, res) => res.redirect('/dashboard/'));
+        // 根路径重定向到 web 前端（dashboard 仍可通过 /dashboard 直接访问）
+        this.app.get('/', (req, res) => res.redirect('/web/'));
+
+        // Web 前端（mira-client）静态托管：构建产物位于 app-server 根目录的 web/ 下。
+        // 由 pnpm build:web（scripts/copy-web.mjs）生成。
+        // dev 模式下 __dirname 指向 src/，prod 模式指向 dist/，均通过 '..' 回到 app-server 根。
+        const webDir = path.resolve(__dirname, '..', 'web');
+        this.app.use(
+            '/web',
+            express.static(webDir, {
+                setHeaders: (res, filePath) => {
+                    if (path.extname(filePath) === '.html') {
+                        res.setHeader('Cache-Control', 'no-cache');
+                    }
+                },
+            }),
+        );
+        // 前端路由（如 /web/foo）刷新时回落到 web 的 index.html
+        this.app.get(/^\/web(?:\/.*)?$/, (req, res, next) => {
+            const indexFile = path.join(webDir, 'index.html');
+            res.sendFile(indexFile, (err) => {
+                if (err && !res.headersSent) next();
+            });
+        });
 
         // 服务端插件的前端构建产物是公开代码资源。放在鉴权中间件之前，确保
         // iframe 内的 JS/CSS/wasm 等相对资源无需重复传递 token。

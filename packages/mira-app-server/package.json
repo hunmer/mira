@@ -9,7 +9,8 @@
   },
   "scripts": {
     "build:dashboard": "node scripts/copy-dashboard.mjs",
-    "build": "pnpm run build:dashboard && tsc",
+    "build:web": "node scripts/copy-web.mjs",
+    "build": "pnpm run build:dashboard && pnpm run build:web && tsc",
     "rebuild": "pnpm run build",
     "start": "node dist/index.js",
     "start:ts": "node --inspect -r ts-node/register src/index.ts",
@@ -29,6 +30,7 @@
   },
   "files": [
     "dist/**/*",
+    "web/**/*",
     "README.md"
   ],
   "publishConfig": {
