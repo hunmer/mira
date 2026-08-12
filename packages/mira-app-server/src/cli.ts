@@ -29,7 +29,7 @@ import { registerDevices } from './cli/commands/devices';
 import { registerDatabase } from './cli/commands/database';
 import { registerSystem } from './cli/commands/system';
 import { registerAutoStart } from './cli/commands/autostart';
-import { enableAutoStart } from './cli/autostart';
+import { enableAutoStart, statusAutoStart, stopAutoStart, restartAutoStart } from './cli/autostart';
 
 // MCP 服务（懒加载，避免在非 MCP 模式下加载 SDK）
 import { startMcpServer } from './mcp/server';
@@ -142,6 +142,48 @@ program
         } catch (error) {
             console.error('❌ Failed to start server:', error);
             process.exit(1);
+        }
+    });
+
+// ============ stop ============
+program
+    .command('stop')
+    .description('停止系统托管的 Mira 服务（保留开机自启注册；前台实例请用 Ctrl+C）')
+    .action(() => {
+        try {
+            const status = statusAutoStart();
+            if (!status.registered) {
+                console.error('❌ 未注册开机自启，无系统托管实例可停止。');
+                console.error('   前台启动的实例请用 Ctrl+C 退出；如需系统托管请用 `mira-app-server start --autostart`。');
+                process.exitCode = 1;
+                return;
+            }
+            stopAutoStart();
+            console.log('✅ 已停止 Mira 服务（开机自启注册已保留）。');
+        } catch (e: any) {
+            console.error(`❌ 停止失败：${e?.message || e}`);
+            process.exitCode = 1;
+        }
+    });
+
+// ============ restart ============
+program
+    .command('restart')
+    .description('重启系统托管的 Mira 服务')
+    .action(() => {
+        try {
+            const status = statusAutoStart();
+            if (!status.registered) {
+                console.error('❌ 未注册开机自启，无系统托管实例可重启。');
+                console.error('   如需系统托管请用 `mira-app-server start --autostart`。');
+                process.exitCode = 1;
+                return;
+            }
+            restartAutoStart();
+            console.log('✅ 已重启 Mira 服务。');
+        } catch (e: any) {
+            console.error(`❌ 重启失败：${e?.message || e}`);
+            process.exitCode = 1;
         }
     });
 

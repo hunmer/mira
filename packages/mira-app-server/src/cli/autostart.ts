@@ -221,6 +221,66 @@ export function disableAutoStart(): void {
     }
 }
 
+// ============================== 停止 / 重启（系统托管实例） ==============================
+// 与 disable 的区别：保留自启注册，下次开机/登录仍会自动拉起。
+// 仅作用于 `start --autostart` 注册的系统托管实例；前台 start 的实例请用 Ctrl+C 退出。
+
+function stopMacos(): void {
+    // bootout 卸载并停止当前会话实例；plist 保留，下次登录由 RunAtLoad 重新拉起
+    tryRun(`launchctl bootout gui/${process.getuid!()}/${LABEL} 2>/dev/null`);
+}
+function stopLinux(): void {
+    tryRun(`systemctl --user stop ${SERVICE_NAME} 2>/dev/null`);
+}
+function stopWindows(): void {
+    tryRun(`schtasks /End /TN "${TASK_NAME}"`);
+}
+
+/** 停止系统托管的实例（保留注册，幂等：对未运行的实例也返回成功） */
+export function stopAutoStart(): void {
+    switch (process.platform) {
+        case 'darwin': return stopMacos();
+        case 'linux': return stopLinux();
+        case 'win32': return stopWindows();
+        default:
+            throw new Error(`不支持的平台：${process.platform}`);
+    }
+}
+
+function restartMacos(): void {
+    const uid = process.getuid!();
+    const plistPath = macosPlistPath();
+    if (!fs.existsSync(plistPath)) {
+        throw new Error('未找到 LaunchAgent 配置，请先 `mira-app-server start --autostart` 注册。');
+    }
+    tryRun(`launchctl bootout gui/${uid}/${LABEL} 2>/dev/null`);
+    try {
+        run(`launchctl bootstrap gui/${uid} ${shellQuote(plistPath)}`);
+    } catch {
+        // fallback 到旧 API
+        tryRun(`launchctl unload -w ${shellQuote(plistPath)} 2>/dev/null`);
+        run(`launchctl load -w ${shellQuote(plistPath)}`);
+    }
+}
+function restartLinux(): void {
+    run(`systemctl --user restart ${SERVICE_NAME}`);
+}
+function restartWindows(): void {
+    tryRun(`schtasks /End /TN "${TASK_NAME}"`);
+    run(`schtasks /Run /TN "${TASK_NAME}"`);
+}
+
+/** 重启系统托管的实例 */
+export function restartAutoStart(): void {
+    switch (process.platform) {
+        case 'darwin': return restartMacos();
+        case 'linux': return restartLinux();
+        case 'win32': return restartWindows();
+        default:
+            throw new Error(`不支持的平台：${process.platform}`);
+    }
+}
+
 // ============================== 状态查询 ==============================
 export interface AutoStartStatus {
     platform: string;
