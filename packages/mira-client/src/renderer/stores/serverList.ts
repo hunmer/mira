@@ -368,8 +368,12 @@ export const useServerListStore = defineStore('serverList', () => {
    * 初始化默认素材库
    */
   const initializeDefaultLibraries = async () => {
-      const defaultServerUrl = 'http://127.0.0.1:8081'
-      const defaultLibraries: ServerConfig[] = [
+    const defaultServerLocation = new URL('http://127.0.0.1:8081')
+    if (location.protocol !== 'file:' && location.hostname !== 'localhost') {
+      defaultServerLocation.hostname = location.hostname
+    }
+    const defaultServerUrl = defaultServerLocation.toString().replace(/\/$/, '')
+    const defaultLibraries: ServerConfig[] = [
       {
         id: 'default-server', // 默认库ID
         name: i18n.global.t('stores.serverList.defaultLibraryName'),

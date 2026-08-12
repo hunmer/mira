@@ -1,11 +1,11 @@
 {
   "name": "mira_spine_format",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Spine .skel/.spine parser and idle-first-frame thumbnail generator for Mira (spine-canvaskit, 4.2+)",
   "author": "Mira Team",
   "license": "ISC",
   "main": "dist/index.js",
-  "files": ["dist/**/*", "web/**/*", "package.json", "README.md"],
+  "files": ["dist/**/*", "web/dist/**/*", "web/public/**/*", "web/index.html", "web/index.js", "web/plugin.json", "web/package.json", "package.json", "README.md"],
   "mira": {
     "id": "mira_spine_format",
     "title": "Spine 格式处理",

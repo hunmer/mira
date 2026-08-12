@@ -5,7 +5,7 @@
   "author": "hunmer",
   "license": "ISC",
   "main": "dist/index.js",
-  "files": ["dist/**/*", "web/**/*"],
+  "files": ["dist/**/*", "web/index.js", "web/plugin.json", "web/viewer.html"],
   "mira": {
     "id": "pdf-viewer",
     "title": "PDF 文档预览",

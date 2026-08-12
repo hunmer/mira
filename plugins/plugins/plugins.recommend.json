@@ -1,0 +1,119 @@
+[
+  {
+    "name": "mira_3d_format",
+    "version": "1.0.2",
+    "title": "3D 格式处理",
+    "description": "GLB/GLTF parser and GLB thumbnail generator for Mira",
+    "icon": "🧊",
+    "category": "storage",
+    "deps": "@gltf-transform/core, render-glb"
+  },
+  {
+    "name": "mira_duplicate_scanner",
+    "version": "1.0.0",
+    "title": "重复文件扫描",
+    "description": "扫描素材库中的重复文件，支持快速（哈希）与深度（内容比对）两种模式，并可在结果中批量删除冗余文件。",
+    "icon": "🔍",
+    "category": "utility",
+    "deps": "--"
+  },
+  {
+    "name": "mira_eagle_extension",
+    "version": "1.0.0",
+    "title": "Eagle 浏览器扩展支持",
+    "description": "在服务端复刻 Eagle 本地 HTTP 协议，让 Eagle 浏览器扩展无需改动即可把网页图片、截图、链接保存到 Mira 素材库。",
+    "icon": "🦅",
+    "category": "integration",
+    "deps": "--"
+  },
+  {
+    "name": "mira_epub_format",
+    "version": "1.0.0",
+    "title": "EPUB Format",
+    "description": "EPUB metadata, cover thumbnail, and reader support for Mira",
+    "icon": "menu_book",
+    "category": "storage",
+    "deps": "sharp, yauzl"
+  },
+  {
+    "name": "mira_livp_format",
+    "version": "1.0.0",
+    "title": "LIVP 格式支持",
+    "description": "LIVP Live Photo thumbnail and preview support for Mira",
+    "icon": "live_photo",
+    "category": "storage",
+    "deps": "sharp, yauzl"
+  },
+  {
+    "name": "mira_lottie_format",
+    "version": "1.0.0",
+    "title": "dotLottie 格式支持",
+    "description": "dotLottie thumbnail and preview support for Mira",
+    "icon": "animation",
+    "category": "storage",
+    "deps": "@lottiefiles/dotlottie-web, @napi-rs/canvas, yauzl"
+  },
+  {
+    "name": "mira_n8n",
+    "version": "1.0.7",
+    "title": "n8n 集成",
+    "description": "通过 Webhook 和 WebSocket 把 Mira 文件事件转发到 n8n 工作流引擎，实现跨应用自动化任务编排。",
+    "icon": "🔗",
+    "category": "integration",
+    "deps": "mira-app-server, mira-app-core"
+  },
+  {
+    "name": "mira_pag_format",
+    "version": "1.0.0",
+    "title": "mira_pag_format",
+    "description": "PAG format thumbnails and preview for Mira",
+    "icon": "",
+    "category": "general",
+    "deps": "--"
+  },
+  {
+    "name": "mira_spine_format",
+    "version": "1.1.1",
+    "title": "Spine 格式处理",
+    "description": "Spine .skel/.spine parser and idle-first-frame thumbnail generator for Mira (spine-canvaskit, 4.2+)",
+    "icon": "🦴",
+    "category": "storage",
+    "deps": "@esotericsoftware/spine-canvaskit, canvaskit-wasm, yauzl"
+  },
+  {
+    "name": "mira_swf_format",
+    "version": "1.0.0",
+    "title": "SWF Format",
+    "description": "SWF metadata, FFmpeg thumbnails, and Ruffle-based preview support for Mira",
+    "icon": "movie",
+    "category": "storage",
+    "deps": "--"
+  },
+  {
+    "name": "mira_zipper_format",
+    "version": "1.0.0",
+    "title": "归档浏览",
+    "description": "ZIP archive read-only browse/preview support for Mira",
+    "icon": "folder_zip",
+    "category": "storage",
+    "deps": "sharp, yauzl"
+  },
+  {
+    "name": "pdf-viewer",
+    "version": "1.0.0",
+    "title": "PDF 文档预览",
+    "description": "PDF 文档预览插件，使用浏览器内置 PDF 渲染能力，前端无需引入 PDF 依赖。",
+    "icon": "📄",
+    "category": "storage",
+    "deps": "--"
+  },
+  {
+    "name": "psd-viewer",
+    "version": "1.0.1",
+    "title": "PSD 分层查看器",
+    "description": "PSD/PSB 分层查看器，使用浏览器本地解析和渲染 PSD 文件。",
+    "icon": "🖼️",
+    "category": "storage",
+    "deps": "--"
+  }
+]

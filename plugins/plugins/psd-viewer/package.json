@@ -1,11 +1,11 @@
 {
   "name": "psd-viewer",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "PSD/PSB 分层查看器，使用浏览器本地解析和渲染 PSD 文件。",
   "author": "hunmer",
   "license": "ISC",
   "main": "dist/index.js",
-  "files": ["dist/**/*", "web/**/*"],
+  "files": ["dist/**/*", "web/dist/**/*", "web/index.html", "web/index.js", "web/plugin.json", "web/package.json", "web/README.md"],
   "mira": {
     "id": "psd-viewer",
     "title": "PSD 分层查看器",

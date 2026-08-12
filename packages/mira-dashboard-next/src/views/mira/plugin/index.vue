@@ -7,6 +7,7 @@ import type { LibraryPlugins } from '@/api/modules/plugin'
 import { pluginApi } from '@/api'
 import client from '@/api/client'
 import { useLibrary } from '@/composables/useLibrary'
+import { usePluginSources } from '@/composables/usePluginSources'
 import { registerPluginRoutes } from '@/router/pluginRoutes'
 import type { PluginRoute } from '@/router/pluginRoutes'
 import { Button } from '@/components/ui/button'
@@ -68,22 +69,56 @@ const installForm = ref({ name: '', version: 'latest', npmSource: 'npmmirror', p
 const installFile = ref<File | null>(null)
 const installLoading = ref(false)
 
-const storePlugins = [
-  { name: 'mira_user', title: '用户认证', description: '用户登录认证插件，通过 SDK 连接 Mira 服务端进行权限验证，支持多角色管理和会话管理。', icon: '👤', category: '安全', deps: 'mira-server-sdk' },
-  { name: 'mira_thumb', title: '缩略图生成', description: '自动为视频和图片生成缩略图，基于 ffmpeg 实现高效批量处理。', icon: '🖼️', category: '存储', deps: 'fluent-ffmpeg, queue' },
-  { name: 'upload_statistics', title: '上传统计', description: '记录和查询文件上传历史数据，提供上传量统计和趋势分析。', icon: '📊', category: '工具', deps: '--' },
-  { name: 'mira_n8n', title: 'n8n 集成', description: '通过 Webhook 和 WebSocket 将 Mira 事件转发到 n8n 工作流引擎，实现自动化任务编排。', icon: '🔗', category: '集成', deps: 'ws' },
-]
+// store: 从可配置的 JSON URL 拉取推荐插件列表
+interface StorePlugin {
+  name: string
+  title?: string
+  description?: string
+  icon?: string
+  category?: string
+  deps?: string
+  version?: string
+}
+
+const { activeSource: activePluginSource } = usePluginSources()
+const storePlugins = ref<StorePlugin[]>([])
+const storeLoading = ref(false)
+
+async function loadStorePlugins() {
+  const url = activePluginSource.value?.url
+  if (!url) { storePlugins.value = []; return }
+  storeLoading.value = true
+  try {
+    // 使用原生 fetch, 避开 axios 的 baseURL 限制, 支持任意静态 JSON 源
+    const res = await fetch(url)
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const data = await res.json()
+    const list = Array.isArray(data) ? data : (data?.plugins ?? [])
+    storePlugins.value = list.filter((p: any) => p && p.name)
+  } catch {
+    toast.error('推荐列表加载失败，请检查插件源 URL')
+    storePlugins.value = []
+  } finally {
+    storeLoading.value = false
+  }
+}
+
+function openStore() {
+  storeOpen.value = true
+  // 每次打开都用当前选中的插件源刷新
+  storePlugins.value = []
+  loadStorePlugins()
+}
 
 const installedNames = computed(() => groups.value.flatMap(g => g.plugins.map(p => p.name)))
 
 const filteredStorePlugins = computed(() => {
-  if (!storeSearch.value) return storePlugins
+  if (!storeSearch.value) return storePlugins.value
   const q = storeSearch.value.toLowerCase()
-  return storePlugins.filter(p =>
+  return storePlugins.value.filter(p =>
     p.name.toLowerCase().includes(q) ||
-    p.title.toLowerCase().includes(q) ||
-    p.description.toLowerCase().includes(q),
+    (p.title || '').toLowerCase().includes(q) ||
+    (p.description || '').toLowerCase().includes(q),
   )
 })
 
@@ -273,7 +308,7 @@ onMounted(loadPlugins)
         <Button variant="outline" @click="openInstallDialog">
           <RiAddLine class="mr-2 size-4" /> 安装插件
         </Button>
-        <Button @click="storeOpen = true">
+        <Button @click="openStore">
           <RiStore2Line class="mr-2 size-4" /> {{ t('plugin.pluginStore') }}
         </Button>
       </div>
@@ -504,10 +539,20 @@ onMounted(loadPlugins)
       <DialogContent class="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{{ t('plugin.pluginStore') }}</DialogTitle>
-          <DialogDescription>浏览并安装官方插件</DialogDescription>
+          <DialogDescription>
+            当前插件源：
+            <span v-if="activePluginSource" class="font-medium text-foreground">{{ activePluginSource.name }}</span>
+            <span v-else class="text-yellow-600 dark:text-yellow-400">未选择</span>
+            <span v-if="activePluginSource" class="ml-1 text-xs">（{{ activePluginSource.url }}）</span>
+          </DialogDescription>
         </DialogHeader>
 
-        <div class="relative mb-4">
+        <!-- 未选择源时的提示 -->
+        <div v-if="!activePluginSource" class="rounded-md border border-yellow-500/40 bg-yellow-500/5 p-3 text-sm text-muted-foreground">
+          请先在「设置 → 插件」中添加并选中一个插件源。
+        </div>
+
+        <div v-if="storePlugins.length" class="relative mb-4">
           <RiSearchLine class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input v-model="storeSearch" placeholder="搜索插件..." class="pl-9" />
         </div>
@@ -517,12 +562,14 @@ onMounted(loadPlugins)
             <Card v-for="p in filteredStorePlugins" :key="p.name">
               <CardContent class="flex items-start gap-4 py-4">
                 <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-xl">
-                  {{ p.icon }}
+                  <img v-if="p.icon && isIconUrl(p.icon)" :src="p.icon" class="size-6 object-contain" />
+                  <span v-else-if="p.icon">{{ p.icon }}</span>
+                  <RiStore2Line v-else class="size-5 text-muted-foreground" />
                 </div>
                 <div class="min-w-0 flex-1">
                   <div class="flex items-center gap-2">
-                    <span class="font-medium">{{ p.title }}</span>
-                    <Badge variant="outline" class="text-[10px]">{{ p.category }}</Badge>
+                    <span class="font-medium">{{ p.title || p.name }}</span>
+                    <Badge variant="outline" class="text-[10px]">{{ getCategoryName(p.category) }}</Badge>
                     <Badge v-if="installedNames.includes(p.name)" variant="secondary" class="text-[10px]">已安装</Badge>
                   </div>
                   <p class="text-xs text-muted-foreground">{{ p.name }}</p>
@@ -540,7 +587,13 @@ onMounted(loadPlugins)
               </CardContent>
             </Card>
 
-            <div v-if="!filteredStorePlugins.length" class="py-8 text-center text-sm text-muted-foreground">
+            <div v-if="storeLoading" class="py-8 text-center text-sm text-muted-foreground">
+              加载中...
+            </div>
+            <div v-else-if="!activePluginSource" class="py-8 text-center text-sm text-muted-foreground">
+              请先在「设置 → 插件」中选择一个插件源
+            </div>
+            <div v-else-if="!filteredStorePlugins.length" class="py-8 text-center text-sm text-muted-foreground">
               没有找到匹配的插件
             </div>
           </div>

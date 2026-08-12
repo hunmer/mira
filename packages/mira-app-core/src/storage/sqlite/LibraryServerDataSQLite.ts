@@ -236,8 +236,12 @@ export class LibraryServerDataSQLite {
         folder_name: await this.getFolderName(file.folder_id),
         custom_fields: customFields,
         metadata,
-        thumb: await this.getItemThumbPath(file, { isUrlFile }),
-        path: await this.getItemFilePath(file, { isUrlFile }),
+        thumb: isUrlFile
+          ? `/api/files/thumb/${this.getLibraryId()}/${file.id}`
+          : await this.getItemThumbPath(file, { isUrlFile: false }),
+        path: isUrlFile
+          ? `/api/files/file/${this.getLibraryId()}/${file.id}`
+          : await this.getItemFilePath(file, { isUrlFile: false }),
         file_path: await this.getItemFilePath(file, { isUrlFile: false }),
         thumb_path: await this.getItemThumbPath(file, { isUrlFile: false }),
       };

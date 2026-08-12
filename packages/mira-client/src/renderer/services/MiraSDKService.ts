@@ -4,6 +4,7 @@ import { useMediaStore } from '../stores/media'
 import { useAuthStore } from '../stores/auth'
 import { useSettingsStore } from '../stores/settings'
 import { toFileUrl } from '../utils/fileUtils'
+import { resolveServerUrl } from '../utils/serverUrl'
 import { environment } from '../utils'
 import i18n from '../i18n'
 
@@ -565,7 +566,7 @@ export class MiraSDKService {
         return {
           id: file.id.toString(),
           name: file.name,
-          path: appendToken(toFileUrl(file.path)),
+          path: appendToken(toFileUrl(resolveServerUrl(file.path, this.connectionConfig?.serverUrl))),
           size: file.size,
           extension: file.extension || this.getFileExtension(file.name),
           mimeType: file.mime_type || this.getMimeTypeFromExtension(file.name),
@@ -574,7 +575,7 @@ export class MiraSDKService {
           tags: typeof file.tags === 'string' ? JSON.parse(file.tags || '[]') : (file.tags || []),
           folderId: file.folder_id?.toString(),
           hash: file.hash || '',
-          thumbnailPath: appendToken(toFileUrl(thumbnailPath || file.thumb)),
+          thumbnailPath: appendToken(toFileUrl(thumbnailPath || resolveServerUrl(file.thumb, this.connectionConfig?.serverUrl))),
           libraryId: libraryId,
           localFile: localFile || file.localFile || (() => {
             try {

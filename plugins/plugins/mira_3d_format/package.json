@@ -1,11 +1,11 @@
 {
   "name": "mira_3d_format",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "GLB/GLTF parser and GLB thumbnail generator for Mira",
   "author": "Mira Team",
   "license": "ISC",
   "main": "dist/index.js",
-  "files": ["dist/**/*", "web/**/*", "package.json", "README.md"],
+  "files": ["dist/**/*", "web/dist/**/*", "web/index.html", "web/index.js", "web/plugin.json", "web/package.json", "web/README.md", "package.json", "README.md"],
   "mira": {
     "id": "mira_3d_format",
     "title": "3D 格式处理",
