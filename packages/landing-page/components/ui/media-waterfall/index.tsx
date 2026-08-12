@@ -21,6 +21,7 @@
 import { useCallback, useState } from "react";
 import { motion } from "motion/react";
 import { Check, Folder, Play } from "lucide-react";
+import { withBasePath } from "@/lib/asset";
 import { cn } from "@/lib/utils";
 
 export type MediaItem = {
@@ -49,10 +50,10 @@ const TAGS_POOL = ["设计", "风景", "人像", "UI", "图标", "插画", "摄�
 const RATIOS = [0.75, 0.8, 1, 1.25, 1.33, 1.5, 1.6, 0.85];
 const DESC = ["灵感参考素材", "项目配色收集", "构图与版式练习", "纹理与材质库", "视觉风格存档"];
 
-function imgUrl(seed: string, ratio: number) {
-	const w = 600;
-	const h = Math.round(w / ratio);
-	return `https://picsum.photos/seed/${seed}/${w}/${h}`;
+function imgUrl(seed: string) {
+	// 图片已预下载到 public/media/${seed}.jpg，按各卡片 ratio 固定尺寸，
+	// 避免运行时依赖外部服务；withBasePath 适配子路径部署。
+	return withBasePath(`/media/${seed}.jpg`);
 }
 
 export const mediaWaterfallMockData: MediaItem[] = Array.from(
@@ -63,7 +64,7 @@ export const mediaWaterfallMockData: MediaItem[] = Array.from(
 		const w = 1280 + i * 24;
 		return {
 			id: seed,
-			src: imgUrl(seed, ratio),
+			src: imgUrl(seed),
 			ratio,
 			title: `素材 ${String(i + 1).padStart(2, "0")}.png`,
 			size: `${(((i * 7 + 3) % 45) / 10 + 0.4).toFixed(1)} MB`,

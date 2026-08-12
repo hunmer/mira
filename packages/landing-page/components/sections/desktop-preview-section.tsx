@@ -110,7 +110,7 @@ export function DesktopPreviewSection() {
 
 				{/* 右侧垂直相册：md+ 绝对定位固定在右侧垂直居中（脱离文档流，不影响 SafariBrowser 居中）；
 				     移动端回退为下方堆叠。 */}
-				<div className="mx-auto mt-6 h-[400px] w-full max-w-[320px] md:absolute md:-right-[160px] md:top-1/2 md:z-10 md:mx-0 md:mt-0 md:h-[480px] md:w-[160px] md:max-w-none md:-translate-y-1/2">
+				<div className="mx-auto mt-6 h-[560px] w-full max-w-[320px] md:absolute md:-right-[160px] md:top-1/2 md:z-10 md:mx-0 md:mt-0 md:h-[680px] md:w-[160px] md:max-w-none md:-translate-y-1/2">
 					<CoverflowCarousel
 						slides={slides}
 						onSelect={handleSelect}
