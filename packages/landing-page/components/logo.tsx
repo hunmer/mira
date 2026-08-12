@@ -1,5 +1,6 @@
 import Image from "next/image";
 import type React from "react";
+import { withBasePath } from "@/lib/asset";
 import { cn } from "@/lib/utils";
 
 type LogoProps = Omit<
@@ -18,7 +19,7 @@ export const Logo = ({ alt = "Mira", className, ...props }: LogoProps) => (
     alt={alt}
     // 默认让宽度跟随高度等比缩放，调用方可通过 className 覆盖
     className={cn("h-auto w-auto", className)}
-    src="/icon.png"
+    src={withBasePath("/icon.png")}
     width={32}
     height={32}
     {...props}

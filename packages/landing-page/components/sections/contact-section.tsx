@@ -4,6 +4,7 @@ import { BookOpenIcon, type LucideIcon, Mail, MapPin, QrCode } from "lucide-reac
 import { motion, useReducedMotion, type Variants } from "motion/react";
 import Image from "next/image";
 import type React from "react";
+import { withBasePath } from "@/lib/asset";
 import { useI18n } from "@/lib/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
@@ -216,7 +217,7 @@ export function ContactSection() {
             alt={c.qqTitle}
             className="size-40 rounded-md object-contain md:size-44"
             height={176}
-            src="/qq-group-code.jpg"
+            src={withBasePath("/qq-group-code.jpg")}
             width={176}
           />
           <div className="flex flex-col items-center gap-1">

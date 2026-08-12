@@ -9,6 +9,7 @@ import {
 import Image from "next/image";
 import React from "react";
 import { createPortal } from "react-dom";
+import { withBasePath } from "@/lib/asset";
 import { LanguageToggle } from "@/components/language-toggle";
 import { MenuToggleIcon } from "@/components/menu-toggle-icon";
 import { Button } from "@/components/ui/button";
@@ -72,7 +73,7 @@ export function SiteHeaderSection() {
               alt={SITE_NAME}
               height={20}
               priority
-              src="/icon.png"
+              src={withBasePath("/icon.png")}
               width={20}
             />
           </a>

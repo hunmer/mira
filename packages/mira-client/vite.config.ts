@@ -141,12 +141,6 @@ export default defineConfig(({ mode }) => {
           // 优化 chunk 文件名
           chunkFileNames: 'assets/js/[name]-[hash].js',
       entryFileNames: 'assets/js/[name]-[hash].js',
-      // 将第三方依赖放入同一个 chunk，避免手工分组造成 vendor 之间的循环依赖。
-      manualChunks(id) {
-        // 仅处理第三方依赖；应用源码交给 rollup 按路由/动态 import 自然切分
-        if (!id.includes('node_modules')) return
-        return 'vendor'
-      },
       assetFileNames: (assetInfo) => {
             const fileName = assetInfo.name || 'unknown'
             const info = fileName.split('.')
