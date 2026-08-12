@@ -99,19 +99,15 @@ export function registerAuth(program: Command): void {
                 // server: 位置参数 > 全局 --server > 默认
                 const server = serverArg || program.opts().server || DEFAULT_SERVER;
                 const { client } = getAnonymousClient({ server });
-
-                // 检查服务器连通性
-                const available = await client.system().isServerAvailable();
-                if (!available) {
-                    throw new Error(`无法连接到服务器 ${server}，请确认服务器已启动`);
-                }
-
-                // 检查是否需要鉴权
-                const health = await client.system().getHealth();
-                const authRequired = health.authRequired;
-
                 let username = options.username;
                 let password = options.password;
+                let authRequired = true;
+
+                // 显式凭据直接登录，避免不同 SDK 版本的 health 解析阻断认证请求。
+                if (!username && !password) {
+                    const health = await client.system().getHealth();
+                    authRequired = health.authRequired !== false;
+                }
 
                 if (authRequired) {
                     if (!username) {
@@ -131,7 +127,9 @@ export function registerAuth(program: Command): void {
                 }
 
                 // 拉取用户信息
-                const userInfo = await client.user().getInfo();
+                const userInfo = authRequired
+                    ? await client.user().getInfo()
+                    : { username: username || 'anonymous' };
 
                 // 持久化 profile
                 const profile: CredentialProfile = {

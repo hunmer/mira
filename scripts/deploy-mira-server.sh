@@ -383,7 +383,7 @@ ADMIN_USER="admin"
 
 # 用指定密码尝试登录；保留真实错误，避免把连接/profile 等问题误报成密码错误。
 login_with() {
-    local output attempt
+    local output attempt payload response status body
     for attempt in 1 2 3; do
         if output=$(mira-app-server login -u "$ADMIN_USER" -p "$1" -s "http://127.0.0.1:${HTTP_PORT}" 2>&1); then
             return 0
@@ -391,6 +391,25 @@ login_with() {
         [[ $attempt -lt 3 ]] && sleep 1
     done
     err "登录命令失败: ${output:-未知错误}"
+
+    # 输出真实 HTTP 返回，便于区分密码错误与 CLI/SDK 解析错误；成功响应中的 token 必须脱敏。
+    response=$(curl -sS -w $'\n%{http_code}' "http://127.0.0.1:${HTTP_PORT}/api/health" 2>&1 || true)
+    status=${response##*$'\n'}
+    body=${response%$'\n'*}
+    err "GET /api/health HTTP $status"
+    printf '%s\n' "$body" >&2
+
+    payload=$(node -e 'process.stdout.write(JSON.stringify({username:process.argv[1],password:process.argv[2]}))' "$ADMIN_USER" "$1")
+    response=$(curl -sS -w $'\n%{http_code}' -H 'Content-Type: application/json' -d "$payload" \
+        "http://127.0.0.1:${HTTP_PORT}/api/auth/login" 2>&1 || true)
+    status=${response##*$'\n'}
+    body=${response%$'\n'*}
+    err "POST /api/auth/login HTTP $status"
+    printf '%s' "$body" | node -e '
+let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+  try { const j=JSON.parse(s); if(j?.data?.accessToken) j.data.accessToken="[REDACTED]"; console.error(JSON.stringify(j,null,2)); }
+  catch { console.error(s); }
+});'
     return 1
 }
 

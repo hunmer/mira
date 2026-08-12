@@ -244,7 +244,7 @@ export function HeroSection() {
         <AnimatedContainer delay={0.4}>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Button asChild className="h-11" variant="outline">
-              <a href={DOCS_URL}>
+              <a href={RELEASE_URL}>
                 <PlayStoreIcon className="size-5" />
                 <div className="flex flex-col items-start justify-center pr-2 text-left">
                   <span className="font-light text-[10px] leading-none tracking-tighter">
@@ -255,7 +255,7 @@ export function HeroSection() {
               </a>
             </Button>
             <Button asChild className="h-11" variant="outline">
-              <a href={DOCS_URL}>
+              <a href={RELEASE_URL}>
                 <AppleIcon className="size-5" />
                 <div className="flex flex-col items-start justify-center pr-2 text-left">
                   <span className="text-[10px] leading-none tracking-tighter">

@@ -97,7 +97,7 @@ export function DesktopPreviewSection() {
 			aria-label="Desktop browser preview"
 			className="relative w-full overflow-visible py-6 md:py-10"
 		>
-			<div className="relative mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+			<div className="relative mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-8">
 				{/* SafariBrowser 撑满容器宽度 = 满宽即居中；相册以绝对定位浮于右侧，不进入居中计算 */}
 				<SafariBrowser
 					className="h-auto w-full"
