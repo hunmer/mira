@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 一键部署 mira-app-server（Linux / WSL-Ubuntu 主脚本）
-# 流程：环境检查 → 全局安装 mira-app-server → doctor → 后台启动 → 引导创建第一个素材库
+# 流程：检查 Node.js → 全局安装 mira-app-server → doctor → 后台启动 → 引导创建第一个素材库
 #
 # 用法：
 #   ./deploy-mira-server.sh                      # 全交互
@@ -62,26 +62,14 @@ ask_val() { # ask_val <prompt> <default>
     echo "${reply:-$default}"
 }
 
-# ============================== 1. 环境断言 ==============================
-log "步骤 1/6 环境检查"
-
-# 防止误在 docker-desktop（busybox/ash）执行：那里没有 bash、没有 node
-if [[ ! -x /bin/bash ]]; then :; fi  # 自身已被 bash 跑过，仅占位
-if ! grep -qiE 'ubuntu|debian|linux mint' /etc/os-release 2>/dev/null; then
-    warn "未识别到 Ubuntu/Debian 系发行版（当前: $(uname -sr)）"
-    warn "脚本仅在 Ubuntu/Debian 上验证过，继续可能有兼容问题"
-    ask_yn "仍然继续吗?" n || die "已取消"
-fi
-
+# ============================== 1. Node.js ==============================
 if [[ $EUID -ne 0 ]]; then
     warn "未以 root 运行；npm 全局安装 / apt 可能需要 sudo，已自动调用 sudo"
     SUDO="sudo"
 else
     SUDO=""
 fi
-
-# ============================== 2. Node.js ==============================
-log "步骤 2/6 检查 Node.js"
+log "步骤 1/5 检查 Node.js"
 
 ensure_node() {
     if command -v node >/dev/null 2>&1; then
@@ -122,7 +110,15 @@ if ! command -v make >/dev/null 2>&1 || ! command -v g++ >/dev/null 2>&1; then
     ${SUDO:-} apt-get update -y >/dev/null 2>&1
     ${SUDO:-} apt-get install -y build-essential python3 make g++ >/dev/null 2>&1 || warn "构建工具安装失败，后续 npm install 可能报错"
 fi
-ok "构建工具就绪 (make=$(command -v make || echo none), g++=$(command -v g++ || echo none))"
+
+# 安装后重新检测实际状态，避免"失败"与"就绪"提示冲突
+MAKE_BIN=$(command -v make 2>/dev/null || echo none)
+GXX_BIN=$(command -v g++ 2>/dev/null || echo none)
+if [[ "$MAKE_BIN" != "none" && "$GXX_BIN" != "none" ]]; then
+    ok "构建工具就绪 (make=$MAKE_BIN, g++=$GXX_BIN)"
+else
+    warn "构建工具仍缺失 (make=$MAKE_BIN, g++=$GXX_BIN)，native 模块编译可能失败"
+fi
 
 # ============================== 3. 安装 mira-app-server ==============================
 log "步骤 3/6 安装 mira-app-server"
@@ -155,7 +151,7 @@ fi
 
 if [[ "${SKIP_INSTALL:-0}" != "1" ]]; then
     log "npm 全局安装: $INSTALL_TARGET"
-    ${SUDO:-} npm install -g "$INSTALL_TARGET" || die "mira-app-server 安装失败"
+    ${SUDO:-} npm install -g --verbose "$INSTALL_TARGET" || die "mira-app-server 安装失败"
     ok "mira-app-server 安装完成"
 fi
 
