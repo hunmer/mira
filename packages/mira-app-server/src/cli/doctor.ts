@@ -178,22 +178,92 @@ async function runShell(cmd: string): Promise<{ ok: boolean; error: string | nul
 }
 
 /**
- * dnf/yum 系（RHEL/Fedora/CentOS）安装前确保第三方仓库可用：
- *   - EPEL：提供 ImageMagick / perl-Image-ExifTool
- *   - RPM Fusion free：提供 ffmpeg
- * 默认 baseos/appstream 不含这些包。每条命令独立执行，单个失败不阻断
- * （可能已装或离线），后续包安装失败时会给出更明确的错误。
- * 幂等：仓库已启用时 install 会提示已安装，不影响后续。
+ * 镜像预设：国内镜像站的 EPEL / RPM Fusion 路径结构与官方一致，仅域名不同。
+ * official 不替换 baseurl（用各 repo 自带的 metalink）。
  */
-async function prepareDnfRepos(): Promise<void> {
-    if (!isJsonMode()) {
-        console.log('📦 确保 EPEL / RPM Fusion 仓库可用（RHEL 系提供 ffmpeg/ImageMagick/exiftool）...');
+interface Mirror {
+    id: string;
+    label: string;
+    host?: string; // undefined => 官方(metalink)，不替换仓库 baseurl
+}
+
+const MIRRORS: Mirror[] = [
+    { id: 'official', label: '官方源（默认，国内可能较慢）' },
+    { id: 'tuna', label: '清华大学 TUNA', host: 'mirrors.tuna.tsinghua.edu.cn' },
+    { id: 'ustc', label: '中国科学技术大学 USTC', host: 'mirrors.ustc.edu.cn' },
+    { id: 'aliyun', label: '阿里云', host: 'mirrors.aliyun.com' },
+];
+
+/** 解析 --mirror 参数：预设 id 或自定义 host 域名 */
+function resolveMirror(idOrHost?: string): Mirror {
+    if (!idOrHost || idOrHost === 'official') return MIRRORS[0];
+    const found = MIRRORS.find(m => m.id === idOrHost);
+    if (found) return found;
+    // 非 preset id，按自定义 host 处理
+    return { id: 'custom', label: idOrHost, host: idOrHost };
+}
+
+/** 获取 EL 主版本号（8/9）；失败回退 9 */
+async function getElVersion(): Promise<string> {
+    try {
+        const { stdout } = await execAsync('rpm -E %rhel', { windowsHide: true });
+        const v = stdout.trim();
+        if (/^\d+$/.test(v)) return v;
+    } catch {
+        // 非 RPM 系或 rpm 缺失
     }
-    // 用 %rhel 宏自动匹配 EL 版本（8/9）；rpm 在 RHEL 系必然存在
-    const epel = 'sudo dnf install -y epel-release';
-    const rpmfusion = 'sudo dnf install -y --nogpgcheck https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-$(rpm -E %rhel).noarch.rpm';
-    await runShell(epel);
-    await runShell(rpmfusion);
+    return '9';
+}
+
+/**
+ * 把指定 repo 文件的 baseurl 改为镜像地址，并在 baseurl 生效后注释掉 metalink。
+ * 幂等可逆：首次会备份 *.bak；仅在 sed 成功写入 baseurl 时才动 metalink，
+ *          避免出现「metalink 被注释、baseurl 又没设上」的破坏性中间态。
+ */
+async function applyMirrorToRepo(file: string, newBase: string): Promise<void> {
+    // 备份（仅首次，cp -n 不覆盖已有 .bak）
+    await runShell(`sudo cp -n "${file}" "${file}.bak" 2>/dev/null || true`);
+    // 整行替换任意 baseurl 行（注释或非注释）；单引号保护 $basearch 字面交给 dnf 展开
+    await runShell(`sudo sed -i 's|^[#[:space:]]*baseurl=.*|baseurl=${newBase}|' "${file}" 2>/dev/null || true`);
+    // 仅当存在生效 baseurl 时才注释 metalink（否则保持原状，仓库不破坏）
+    await runShell(`grep -q '^baseurl=' "${file}" 2>/dev/null && sudo sed -i 's|^[#[:space:]]*metalink=|#metalink=|' "${file}" 2>/dev/null || true`);
+}
+
+/**
+ * dnf/yum 系（RHEL/Fedora/CentOS）安装前确保第三方仓库可用：
+ *   - dnf-plugins-core：提供 `dnf config-manager`（启用仓库需要）
+ *   - EPEL：提供 ImageMagick / perl-Image-ExifTool
+ *   - RPM Fusion free：提供 ffmpeg 本体
+ *   - CRB(EL9)/powertools(EL8)：提供 ladspa 等 ffmpeg 依赖链构建包；
+ *     不启用会报 "nothing provides ladspa needed by rubberband"
+ * mirror 非 official 时，还会把 EPEL/RPMFusion 的仓库 baseurl 替换为镜像并刷新元数据。
+ * 每条命令独立执行，单个失败不阻断（可能已装或离线）。
+ */
+async function prepareDnfRepos(mirror: Mirror): Promise<void> {
+    if (!isJsonMode()) {
+        console.log(`📦 配置 RHEL 系仓库（镜像: ${mirror.label}）...`);
+    }
+    const el = await getElVersion();
+    const host = mirror.host || 'mirrors.rpmfusion.org';
+
+    // 1) dnf-plugins-core（config-manager）+ EPEL（ImageMagick / perl-Image-ExifTool）
+    await runShell('sudo dnf install -y dnf-plugins-core epel-release');
+    // 2) RPM Fusion free release 包（镜像或官方 URL）
+    await runShell(`sudo dnf install -y --nogpgcheck https://${host}/rpmfusion/free/el/rpmfusion-free-release-${el}.noarch.rpm`);
+    // 3) 启用 CRB(EL9)/powertools(EL8)：提供 ladspa 等 ffmpeg 依赖链构建包
+    //    RHEL（订阅版）无此仓库，失败则忽略，用户需手动启用 codeready-builder
+    await runShell('sudo dnf config-manager --set-enabled crb || sudo dnf config-manager --set-enabled powertools || true');
+    // 4) 非官方镜像：替换 EPEL + RPMFusion 仓库 baseurl，刷新元数据使镜像生效
+    if (mirror.host) {
+        const epelBase = `https://${mirror.host}/epel/${el}/Everything/$basearch/`;
+        const epelTestingBase = `https://${mirror.host}/epel/testing/${el}/Everything/$basearch/`;
+        const rpmfBase = `https://${mirror.host}/rpmfusion/free/el/${el}/$basearch/`;
+        await applyMirrorToRepo('/etc/yum.repos.d/epel.repo', epelBase);
+        await applyMirrorToRepo('/etc/yum.repos.d/epel-testing.repo', epelTestingBase);
+        await applyMirrorToRepo('/etc/yum.repos.d/rpmfusion-free.repo', rpmfBase);
+        await applyMirrorToRepo('/etc/yum.repos.d/rpmfusion-free-updates.repo', rpmfBase);
+        await runShell('sudo dnf clean all && sudo dnf makecache');
+    }
 }
 
 /** 检测单个工具：先看环境变量，再 which 候选名；可用时尝试取版本 */
@@ -299,19 +369,19 @@ export function registerDoctor(program: Command): void {
         .command('doctor')
         .description('检测 ffmpeg / ImageMagick / exiftool 等外部依赖是否可用；缺失时可自动安装')
         .option('--install', '检测到缺失项时自动尝试安装（按平台调用 winget/brew/apt/dnf 等；RHEL 系自动启用 EPEL/RPM Fusion）')
-        .action(async (options: { install?: boolean }) => {
+        .option('--mirror <name|host>', 'RHEL 系下载镜像：official/tuna/ustc/aliyun 或自定义域名（默认 official）', 'official')
+        .action(async (options: { install?: boolean; mirror?: string }) => {
             const results: ToolResult[] = [];
             for (const def of TOOLS) {
                 results.push(await checkTool(def));
             }
 
             if (options.install) {
-                // dnf/yum 系（RHEL/Fedora/CentOS）：安装前一次性启用 EPEL + RPM Fusion
-                // 默认仓库不含 ffmpeg/ImageMagick/exiftool，不启用则所有 dnf install 都会失败
+                // dnf/yum 系（RHEL/Fedora/CentOS）：安装前配置仓库（镜像 + EPEL + RPM Fusion + CRB）
                 if (platform() === 'linux') {
                     const det = detectLinuxInstaller();
                     if (det && (det.family === 'dnf' || det.family === 'yum')) {
-                        await prepareDnfRepos();
+                        await prepareDnfRepos(resolveMirror(options.mirror));
                     }
                 }
                 for (const def of TOOLS) {

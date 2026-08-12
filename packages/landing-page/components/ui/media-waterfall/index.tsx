@@ -122,7 +122,7 @@ function MediaWaterfallCard({ item, active, onSelect }: CardProps) {
 
 				{/* 视频播放标 */}
 				{item.kind === "video" && (
-					<div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+					<div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100">
 						<div className="rounded-full bg-black/50 p-3 backdrop-blur-sm">
 							<Play className="size-6 fill-white text-white" />
 						</div>
@@ -139,8 +139,9 @@ function MediaWaterfallCard({ item, active, onSelect }: CardProps) {
 				{/* 底部玻璃信息浮层（常显，还原原版） */}
 				<div
 					className={cn(
-						"absolute inset-x-0 bottom-0 space-y-0.5 rounded-b-xl p-2 backdrop-blur-sm",
+						"absolute inset-x-0 bottom-0 space-y-0.5 rounded-b-xl p-2 backdrop-blur-sm transition-opacity duration-200",
 						active ? "bg-primary/90" : "bg-white/70 dark:bg-muted/70",
+						item.kind === "video" && "group-hover:opacity-0",
 					)}
 				>
 					<h3
@@ -199,11 +200,10 @@ function MediaWaterfallCard({ item, active, onSelect }: CardProps) {
 
 export type MediaWaterfallProps = {
 	items?: MediaItem[];
-	/**
-	 * 作用在多列容器上的 className，默认响应式 2/3/4 列。
-	 * 可传 `columns-3 [column-gap:1.25rem]` 等覆盖。
-	 */
+	/** 作用在多列容器上的 className（一般只覆盖 column-gap） */
 	className?: string;
+	/** 理想列宽（px），浏览器据此按容器宽度自动算列数；默认 200 */
+	columnWidth?: number;
 	/** 当前活跃项 id（受控）；不传则内部自管 */
 	activeId?: string | null;
 	/** 点击卡片切换活跃项时回调，取消时传 null */
@@ -213,6 +213,7 @@ export type MediaWaterfallProps = {
 export function MediaWaterfall({
 	items = mediaWaterfallMockData,
 	className,
+	columnWidth = 200,
 	activeId: activeIdProp,
 	onActiveItemChange,
 }: MediaWaterfallProps) {
@@ -231,10 +232,8 @@ export function MediaWaterfall({
 
 	return (
 		<div
-			className={cn(
-				"columns-2 [column-gap:1rem] md:columns-3 lg:columns-4",
-				className,
-			)}
+			className={cn("[column-gap:1rem]", className)}
+			style={{ columnWidth }}
 		>
 			{items.map((item, i) => (
 				<motion.div

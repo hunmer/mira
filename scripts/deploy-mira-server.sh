@@ -120,6 +120,46 @@ else
     warn "构建工具仍缺失 (make=$MAKE_BIN, g++=$GXX_BIN)，native 模块编译可能失败"
 fi
 
+# ============================== server 进程管理函数（步骤2/4/5 均会用到，提前定义）==============================
+
+# 探测本发行版内是否已有 mira-app-server 进程在跑（不看 Windows 的，避免 WSL interop 误判）
+# 注意：不能用 curl localhost 探活 —— WSL2 的 localhost forwarding 会让本脚本误连到 Windows 主机上的同名服务
+our_server_running() {
+    pgrep -af '[d]ist/(cli|index)\.js' 2>/dev/null | grep -q . && return 0
+    pgrep -af 'node.*mira-app-server.*start' 2>/dev/null | grep -v "$$" | grep -q . && return 0
+    return 1
+}
+
+# 是否有可用的 systemd user 实例（WSL 默认未启用 systemd）
+has_systemd_user() {
+    command -v systemctl >/dev/null 2>&1 || return 1
+    systemctl --user list-units >/dev/null 2>&1
+}
+
+# 停止本发行版内的 mira-app-server。
+# 优先 `mira-app-server stop`（优雅停 systemd 托管实例，保留开机自启注册）；
+# 兜底 pkill 处理 nohup 启动 / 未注册 / 残留进程。
+# 安装新版本前、密码重置后都必须先停旧进程：旧进程跑老代码会让新版本无法生效，
+# 且旧进程持有 users.db 连接，直写 DB 后读不到新数据。
+stop_server() {
+    # 1) 优先 CLI stop（处理 systemd 托管实例；未注册时返回非0，无妨）
+    if command -v mira-app-server >/dev/null 2>&1; then
+        mira-app-server stop >/dev/null 2>&1 || true
+    fi
+    # 2) 兜底：杀掉 nohup 启动 / 残留进程
+    pkill -f '[d]ist/(cli|index)\.js' 2>/dev/null || true
+    # 3) 等待进程退出（最多 ~6s）
+    for i in $(seq 1 20); do
+        our_server_running || break
+        sleep 0.3
+    done
+    if our_server_running; then
+        warn "部分 server 进程未在预期时间内退出，可能需要手动 kill"
+    else
+        ok "已停止旧 server 进程"
+    fi
+}
+
 # ============================== 2. 安装 mira-app-server ==============================
 log "步骤 2/5 安装 mira-app-server"
 
@@ -144,12 +184,39 @@ resolve_mira() {
     echo "$p"
 }
 
-if [[ -n "$(resolve_mira)" ]]; then
-    ok "mira-app-server 已存在: $(mira-app-server version 2>/dev/null | head -1)"
-    ask_yn "是否卸载后重装?" n || { log "跳过安装"; SKIP_INSTALL=1; }
+# 已安装版本号
+get_installed_version() {
+    mira-app-server version 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1
+}
+
+# 待安装版本号（仅本地构建产物可读；registry 版无法预知，返回空）
+get_target_version() {
+    [[ -f "$LOCAL_PKG/package.json" ]] \
+        && node -e "try{console.log(require('$LOCAL_PKG/package.json').version)}catch{}" 2>/dev/null
+}
+
+# 安装前版本对比：决定是否需要安装/更新
+NEED_INSTALL=0
+INSTALLED_VER=$(get_installed_version)
+TARGET_VER=$(get_target_version)
+if [[ -z "$INSTALLED_VER" ]]; then
+    log "未检测到已安装的 mira-app-server，将首次安装"
+    NEED_INSTALL=1
+elif [[ -n "$TARGET_VER" && "$INSTALLED_VER" != "$TARGET_VER" ]]; then
+    ok "检测到新版本: v$INSTALLED_VER → v$TARGET_VER，将更新"
+    NEED_INSTALL=1
+else
+    ok "mira-app-server 当前版本 v$INSTALLED_VER${TARGET_VER:+（本地构建同版本）}"
+    ask_yn "是否强制重新安装?" n && NEED_INSTALL=1
 fi
 
-if [[ "${SKIP_INSTALL:-0}" != "1" ]]; then
+if [[ $NEED_INSTALL -eq 1 ]]; then
+    # 安装新版本前必须先 kill 旧进程：否则旧进程继续跑老代码（新版本不生效），
+    # 并占用 users.db 连接 / 端口
+    if our_server_running; then
+        log "安装前停止旧 server 进程 ..."
+        stop_server
+    fi
     log "npm 全局安装: $INSTALL_TARGET"
     ${SUDO:-} npm install -g --verbose "$INSTALL_TARGET" || die "mira-app-server 安装失败"
     ok "mira-app-server 安装完成"
@@ -177,12 +244,39 @@ detect_pkg_mgr() {
     echo ""
 }
 
+# 交互式选择软件源镜像（仅 dnf/yum 系有意义）；输出镜像 id 或 host，stdout 返回值
+# 菜单文字走 stderr，保证 $(select_mirror) 只捕获选中值
+select_mirror() {
+    if [[ $AUTO -eq 1 ]]; then echo "official"; return; fi
+    echo "请选择软件源镜像（影响 EPEL/RPMFusion 大包下载速度）:" >&2
+    echo "  1) 官方源（默认，国内可能较慢）" >&2
+    echo "  2) 清华大学 TUNA" >&2
+    echo "  3) 中国科学技术大学 USTC" >&2
+    echo "  4) 阿里云" >&2
+    echo "  5) 自定义域名" >&2
+    local choice
+    read -rp "选择 [1]: " choice
+    case "${choice:-1}" in
+        2) echo "tuna" ;;
+        3) echo "ustc" ;;
+        4) echo "aliyun" ;;
+        5) local host; read -rp "请输入镜像域名（如 mirrors.tuna.tsinghua.edu.cn）: " host; echo "${host:-official}" ;;
+        *) echo "official" ;;
+    esac
+}
+
 if [[ -n "$MISSING" && "$MISSING" != "" ]]; then
     warn "缺失: $MISSING"
     PKG_MGR=$(detect_pkg_mgr)
     if ask_yn "是否现在自动安装缺失依赖? (${PKG_MGR:-未知包管理器})" y; then
-        log "运行: mira-app-server doctor --install"
-        mira-app-server doctor --install || warn "部分依赖可能未能自动安装，可稍后手动补齐"
+        # dnf/yum 系：选镜像（影响 EPEL/RPMFusion 大包下载速度）
+        MIRROR_ARGS=""
+        if [[ "$PKG_MGR" == "dnf" || "$PKG_MGR" == "yum" ]]; then
+            MIRROR=$(select_mirror)
+            [[ -n "$MIRROR" && "$MIRROR" != "official" ]] && MIRROR_ARGS="--mirror $MIRROR"
+        fi
+        log "运行: mira-app-server doctor --install $MIRROR_ARGS"
+        mira-app-server doctor --install $MIRROR_ARGS || warn "部分依赖可能未能自动安装，可稍后手动补齐"
     else
         warn "跳过自动安装；缩略图/元数据相关功能将不可用"
     fi
@@ -201,42 +295,6 @@ PID_FILE="$RUN_DIR/mira-server.pid"
 LOG_FILE="$RUN_DIR/mira-server.log"
 HEALTH_URL="http://127.0.0.1:${HTTP_PORT}/health"
 AUTOSTART_USED=0
-
-# 探测本发行版内是否已有 mira-app-server 进程在跑（不看 Windows 的，避免 WSL interop 误判）
-# 注意：不能用 curl localhost 探活 —— WSL2 的 localhost forwarding 会让本脚本误连到 Windows 主机上的同名服务
-our_server_running() {
-    pgrep -af '[d]ist/(cli|index)\.js' 2>/dev/null | grep -q . && return 0
-    pgrep -af 'node.*mira-app-server.*start' 2>/dev/null | grep -v "$$" | grep -q . && return 0
-    return 1
-}
-
-# 是否有可用的 systemd user 实例（WSL 默认未启用 systemd）
-has_systemd_user() {
-    command -v systemctl >/dev/null 2>&1 || return 1
-    systemctl --user list-units >/dev/null 2>&1
-}
-
-# 停止本发行版内的 mira-app-server（systemd 托管 + nohup 进程都覆盖）。
-# 用于密码重置等场景：旧进程持有 users.db 连接，直写 DB 后旧进程读不到，
-# 必须先停掉再重启，新进程才会加载最新数据。
-stop_server() {
-    if has_systemd_user && systemctl --user list-unit-files 2>/dev/null | grep -q 'mira-app-server'; then
-        log "停止 systemd 服务: mira-app-server"
-        systemctl --user stop mira-app-server 2>/dev/null || true
-    fi
-    # 兜底：杀掉所有相关 node 进程（nohup 启动的、或 systemd 残留）
-    pkill -f '[d]ist/(cli|index)\.js' 2>/dev/null || true
-    # 等待进程退出（最多 ~6s）
-    for i in $(seq 1 20); do
-        our_server_running || break
-        sleep 0.3
-    done
-    if our_server_running; then
-        warn "部分 server 进程未在预期时间内退出，可能需要手动 kill"
-    else
-        ok "已停止旧 server 进程"
-    fi
-}
 
 # 启动 server 并等待 health 就绪（systemd 优先，回退 nohup）。
 # 假定调用前已 stop_server 或确认无旧进程在跑。
@@ -306,16 +364,14 @@ start_server() {
     fi
 }
 
-if our_server_running && curl -sf "$HEALTH_URL" >/dev/null 2>&1; then
-    if [[ "${INSTALLED:-0}" == "1" ]]; then
-        # 本次刚安装了新版本，但旧进程还在跑老代码 → 必须重启以加载新代码
-        warn "检测到旧进程在跑，但本次安装了新版本，重启以加载新代码 ..."
-        stop_server
-        start_server
-    else
-        ok "检测到本发行版内已有 mira-app-server 进程且 health 正常，跳过启动"
-    fi
+if [[ "${INSTALLED:-0}" == "1" ]]; then
+    # 本次安装/更新了新版本（旧进程已在步骤2停止）→ 启动新进程
+    start_server
+elif our_server_running && curl -sf "$HEALTH_URL" >/dev/null 2>&1; then
+    # 版本相同未重装，进程健康 → 保持运行（无需重启）
+    ok "mira-app-server 进程运行中 (v${INSTALLED_VER:-未知})，保持现状"
 else
+    # 进程未运行 → 启动
     start_server
 fi
 
@@ -324,40 +380,60 @@ log "步骤 5/5 创建第一个素材库"
 
 log "登录 admin 账号 ..."
 ADMIN_USER="admin"
-ADMIN_PASS="admin123"
 
-# 用当前 ADMIN_PASS 尝试登录；成功返回 0
-try_login() {
-    mira-app-server login -u "$ADMIN_USER" -p "$ADMIN_PASS" -s "http://localhost:${HTTP_PORT}" >/dev/null 2>&1
+# 用指定密码尝试登录；成功返回 0
+login_with() {
+    mira-app-server login -u "$ADMIN_USER" -p "$1" -s "http://localhost:${HTTP_PORT}" >/dev/null 2>&1
 }
 
-if ! try_login; then
-    warn "登录失败（密码可能已被修改）"
-    if ask_yn "是否重置 $ADMIN_USER 的密码并重新登录? (直连 users.db，无需旧密码)" y; then
-        ADMIN_PASS=$(ask_val "请输入新密码" "admin123")
-        log "重置密码: mira-app-server user reset-password -u $ADMIN_USER --data-path $DATA_DIR"
-        if mira-app-server user reset-password -u "$ADMIN_USER" -p "$ADMIN_PASS" -d "$DATA_DIR"; then
-            ok "密码已重置（旧登录会话已全部失效）"
-            # reset 直写 users.db，旧 server 进程持有 DB 连接读不到新密码，必须重启
-            log "重启 server 以加载新密码 ..."
-            stop_server
-            start_server
-            log "用新密码重新登录 ..."
-            if ! try_login; then
-                die "重启后新密码登录仍失败，请检查 server 日志: $LOG_FILE"
-            fi
-            ok "登录成功"
-        else
-            err "密码重置失败。"
-            err "若安装的是 npm registry 版可能不含此命令，需用本地构建产物重装。"
-            die "可手动执行: mira-app-server user reset-password -u admin -d \"$DATA_DIR\""
-        fi
-    else
-        die "未登录，无法继续。可稍后手动: mira-app-server login 或 mira-app-server user reset-password"
+# 隐藏输入读取密码（read -s 不回显）；AUTO 模式返回默认值
+ask_pass() {
+    local prompt="$1" def="${2:-}" pass
+    if [[ $AUTO -eq 1 ]]; then echo "$def"; return; fi
+    read -srp "$prompt: " pass
+    echo >&2
+    echo "$pass"
+}
+
+# 登录流程：先用默认密码，失败后让用户选择 手动输入 / 重置密码
+do_login() {
+    local choice newpass pass
+    if login_with "admin123"; then
+        ok "登录成功 (默认密码)"
+        return 0
     fi
-else
-    ok "登录成功"
-fi
+    warn "默认密码登录失败（密码可能已被修改）"
+    while true; do
+        echo "请选择:" >&2
+        echo "  1) 手动输入密码尝试登录" >&2
+        echo "  2) 重置 $ADMIN_USER 密码（忘记密码时，直连 users.db 重置）" >&2
+        if [[ $AUTO -eq 1 ]]; then choice=2; else read -rp "选择 [1]: " choice || return 1; fi
+        case "${choice:-1}" in
+            2)
+                newpass=$(ask_val "请输入新密码" "admin123")
+                log "重置密码: mira-app-server user reset-password -u $ADMIN_USER --data-path $DATA_DIR"
+                if mira-app-server user reset-password -u "$ADMIN_USER" -p "$newpass" -d "$DATA_DIR"; then
+                    ok "密码已重置（旧登录会话已全部失效）"
+                    # reset 直写 users.db，需重启 server 加载新密码
+                    log "重启 server 以加载新密码 ..."
+                    stop_server
+                    start_server
+                    if login_with "$newpass"; then ok "登录成功"; return 0; fi
+                    warn "重置后登录仍失败"
+                else
+                    err "密码重置失败（registry 版可能不含此命令，需用本地构建产物）"
+                fi
+                ;;
+            *)
+                pass=$(ask_pass "请输入 $ADMIN_USER 密码" "")
+                if login_with "$pass"; then ok "登录成功"; return 0; fi
+                warn "登录失败，密码错误"
+                ;;
+        esac
+    done
+}
+
+do_login || die "登录失败，无法继续。可稍后手动: mira-app-server login 或 mira-app-server user reset-password"
 
 # 列出现有库
 EXISTING_COUNT=$(mira-app-server --json libraries list 2>/dev/null \
