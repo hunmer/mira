@@ -1,111 +1,73 @@
-# Efferd
+# Mira
 
-<a href="https://github.com/shabanhr/efferd-ui/stargazers">
-<img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/shabanhr/efferd-ui?style=for-the-badge" />
+<a href="https://github.com/hunmer/mira/stargazers">
+<img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/hunmer/mira?style=for-the-badge" />
 </a>
-<a href="https://x.com/shabanhr">
-<img alt="Twitter Follow" src="https://img.shields.io/twitter/follow/shabanhr?style=for-the-badge&logo=x" />
+<a href="https://github.com/hunmer/mira/releases">
+<img alt="GitHub Release" src="https://img.shields.io/github/v/release/hunmer/mira?style=for-the-badge" />
 </a>
-<a href="https://github.com/shabanhr/efferd-ui/blob/main/LICENCE.md">
+<a href="./LICENCE.md">
 <img alt="License" src="https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge" />
 </a>
 
-## What is Efferd?
+> The next-generation media library manager — making file management simple and putting automation within reach.
 
-Efferd is a growing collection of beautifully crafted, production-ready UI blocks built on top of [Shadcn UI](https://ui.shadcn.com/). It's designed to help developers build modern, accessible, and responsive web applications with ease.
+## What is Mira?
+
+Mira is a next-generation media library manager. It makes file management simple and brings automation within reach through a complete CLI, MCP integration for AI agents, a Skill-based extensibility system, a rich plugin ecosystem, and real-time device monitoring.
+
+This package (`landing-page`) is Mira's marketing website, built with [Next.js](https://nextjs.org/) and [Tailwind CSS](https://tailwindcss.com/).
 
 ## Features
 
-- **Production-Ready Components**: Battle-tested UI blocks ready for your next project
-- **Built with Shadcn UI**: Leverages the power of Radix UI and Tailwind CSS
-- **Fully Customizable**: Easy to modify and extend to fit your design system
-- **TypeScript First**: Built with TypeScript for better developer experience
-- **Accessible**: Follows WAI-ARIA design patterns for better accessibility
-- **Responsive**: Works seamlessly across all device sizes
+- **Complete CLI** — Manage libraries, files, tags, folders, plugins, devices, and databases from a single command, with multi-profile credentials.
+- **MCP Integration** — Exposes ~50 tools as an MCP service, so AI agents like Claude / ZCode can operate Mira directly.
+- **Skill Extension** — A convention-based Skill mechanism that delivers on-demand, project-specific knowledge packs to AI agents.
+- **Flexible Library Management** — Create and manage multiple independent file libraries, each individually start/stop configurable.
+- **Rich Plugin Ecosystem** — A plugin marketplace with install / enable / disable / search to meet customization needs.
+- **Device Monitoring** — Real-time connection management and event push based on WebSocket.
 
-## 🛠️ Getting Started
+## Getting Started
 
 ### Prerequisites
 
-- Node.js 16.14 or later
-- Package manager: npm, yarn, pnpm, or bun
+- Node.js 18 or later
+- A package manager: npm, yarn, or pnpm
 - Git
 
 ### Installation
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/shabanhr/efferd-ui.git
-   cd efferd-ui
+   git clone https://github.com/hunmer/mira.git
+   cd mira/packages/landing-page
    ```
 
 2. **Install dependencies**
    ```bash
-   # Using npm
-   npm install
-   
-   # Using Yarn
-   yarn install
-   
-   # Using pnpm
    pnpm install
-   
-   # Using Bun
-   bun install
    ```
 
 3. **Run the development server**
    ```bash
-   # Using npm
-   npm run dev
-   
-   # Using Yarn
-   yarn dev
-   
-   # Using pnpm
    pnpm dev
-   
-   # Using Bun
-   bun run dev
    ```
 
 4. **Open in your browser**
-   
+
    Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
 
-## 🤝 Contributing
+## Documentation
 
-Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+Full documentation is available in the [`mira-doc`](../mira-doc) package.
 
-1. **Fork** the project
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a **Pull Request**
+## License
 
-### Development Guidelines
+Distributed under the MIT License. See [`LICENCE.md`](./LICENCE.md) for more information.
 
-- Follow the existing code style
-- Write clear commit messages
-- Ensure your code is properly typed
+## Acknowledgements
 
-## 🌟 Show Your Support
-
-Give a ⭐️ if this project helped you! Every star makes a difference and helps the project grow.
-
-## 📝 License
-
-Distributed under the MIT License. See `LICENSE` for more information.
-
-## 📬 Connect with Me
-
-- Twitter: [@shabanhr](https://x.com/shabanhr)
-
-## 🎨 Inspiration
-
-This project is inspired by the amazing work of the open-source community, especially:
-- [Shadcn UI](https://ui.shadcn.com/)
-- [Tailark](https://tailark.com/)
+This website is built on top of [efferd-ui](https://github.com/shabanhr/efferd-ui) by Shaban Haider, and [Shadcn UI](https://ui.shadcn.com/).
 
 ---
 

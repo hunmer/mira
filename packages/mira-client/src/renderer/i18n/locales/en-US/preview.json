@@ -30,6 +30,7 @@
     "openWithFailed": "Failed to open file with plugin",
     "renameFailed": "Failed to rename file"
   },
+  "toggleSidebar": "Toggle sidebar",
   "defaultPreview": {
     "back": "Go back",
     "unknownFile": "Unknown file",

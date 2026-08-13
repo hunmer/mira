@@ -30,6 +30,8 @@ export type SafariBrowserProps = {
 	url?: string;
 	/** 内容区渲染的任意 React 组件，优先级高于 src */
 	children?: ReactNode;
+	/** 点击内容区截图在新标签打开原图（仅 src 模式生效，children 模式忽略）。 */
+	imageOpenOnClick?: boolean;
 	/** 画布宽度，默认 1203（同时决定 viewBox 与宽高比） */
 	width?: number;
 	/** 画布高度，默认 753 */
@@ -40,6 +42,7 @@ export function SafariBrowser({
 	src,
 	url = "designali.in",
 	children,
+	imageOpenOnClick = false,
 	width = 1203,
 	height = 753,
 	className,
@@ -158,7 +161,16 @@ export function SafariBrowser({
 					<img
 						src={src}
 						alt={url}
-						className="size-full object-cover"
+						draggable={false}
+						onClick={
+							imageOpenOnClick
+								? () => window.open(src, "_blank", "noopener,noreferrer")
+								: undefined
+						}
+						className={cn(
+							"size-full select-none object-cover",
+							imageOpenOnClick && "cursor-zoom-in",
+						)}
 					/>
 				) : null}
 			</div>

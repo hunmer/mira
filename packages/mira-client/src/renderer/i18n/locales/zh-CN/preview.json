@@ -30,6 +30,7 @@
     "openWithFailed": "插件打开文件失败",
     "renameFailed": "重命名文件失败"
   },
+  "toggleSidebar": "切换侧栏",
   "defaultPreview": {
     "back": "返回上一页",
     "unknownFile": "未知文件",

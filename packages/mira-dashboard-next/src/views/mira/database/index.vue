@@ -120,7 +120,7 @@ await loadTables()
 
     <!-- SQL 查询对话框 -->
     <Dialog :open="showSqlDialog" @update:open="showSqlDialog = $event">
-      <DialogContent class="max-w-4xl">
+      <DialogContent class="flex h-[85vh] w-[85vw] max-w-[85vw] flex-col sm:max-w-[85vw]">
         <DialogHeader>
           <DialogTitle>SQL 查询</DialogTitle>
         </DialogHeader>
@@ -130,7 +130,7 @@ await loadTables()
           :rows="6"
           placeholder="请输入SQL查询语句..."
         />
-        <div v-if="sqlColumns.length" class="mt-4 max-h-72 overflow-auto rounded-md border">
+        <div v-if="sqlColumns.length" class="mt-4 flex min-h-0 flex-1 flex-col overflow-auto rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
@@ -154,14 +154,14 @@ await loadTables()
 
     <!-- 表数据对话框 -->
     <Dialog :open="showDataDialog" @update:open="showDataDialog = $event">
-      <DialogContent class="max-w-5xl">
+      <DialogContent class="flex h-[85vh] w-[85vw] max-w-[85vw] flex-col sm:max-w-[85vw]">
         <DialogHeader>
           <DialogTitle>表数据: {{ dataTableName }}</DialogTitle>
         </DialogHeader>
         <div v-if="dataLoading" class="py-8 text-center text-sm text-muted-foreground">
           {{ t('common.loading') }}
         </div>
-        <div v-else-if="dataColumns.length" class="max-h-96 overflow-auto">
+        <div v-else-if="dataColumns.length" class="min-h-0 flex-1 overflow-auto">
           <Table>
             <TableHeader>
               <TableRow>

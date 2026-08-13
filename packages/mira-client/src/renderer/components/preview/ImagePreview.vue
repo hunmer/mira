@@ -27,41 +27,124 @@
 
     <!-- 主内容区域 -->
     <div class="flex flex-grow overflow-hidden">
-      <!-- 左侧缩略图列表 -->
-      <ImageThumbnailListComponent
-        :images="controller.imageItems.value"
-        :current-image-index="controller.currentImageIndex.value"
-        :cache-key="controller.imageCacheKey.value"
-        @image-select="controller.handleImageSelect"
-      />
+      <!-- 桌面端：三列可拖拽布局 -->
+      <ResizablePanelGroup v-if="!isMobile" direction="horizontal" auto-save-id="image-preview-layout" class="flex-1 min-w-0">
+        <!-- 左侧缩略图列表（可折叠） -->
+        <ResizablePanel
+          ref="leftPanelRef"
+          :default-size="leftPanelDefaultSize"
+          :min-size="12"
+          :max-size="30"
+          :collapsed-size="0"
+          collapsible
+          @collapse="isLeftCollapsed = true"
+          @expand="isLeftCollapsed = false"
+        >
+          <ImageThumbnailListComponent v-bind="thumbnailBindings" class="h-full" />
+        </ResizablePanel>
 
-      <!-- 中间图片查看器 -->
-      <div class="relative flex flex-grow flex-col">
-        <ImageViewerComponent
-          :image="controller.currentImage.value"
-          :cache-key="controller.imageCacheKey.value"
-          :zoom="controller.zoom.value"
-          :rotation="controller.rotation.value"
-          @zoom-in="controller.handleZoomIn"
-          @zoom-out="controller.handleZoomOut"
-          @zoom-reset="controller.handleZoomReset"
-          @rotate-left="controller.handleRotateLeft"
-          @rotate-right="controller.handleRotateRight"
-          @toggle-fullscreen="controller.handleToggleFullscreen"
-        />
+        <!-- 分隔描边：点击（非拖拽）切换左侧栏 -->
+        <ResizableHandle v-on="leftHandleToggle" class="group/handle relative w-3 cursor-pointer bg-transparent transition-colors hover:bg-primary/5 after:absolute after:inset-y-0 after:left-1/2 after:w-0.5 after:-translate-x-1/2 after:bg-transparent hover:after:bg-primary/40" />
 
-        <!-- 底部状态栏 -->
-        <footer class="flex h-10 flex-shrink-0 items-center justify-between border-t border-border bg-background px-6 text-xs text-muted-foreground">
-          <div class="flex items-center space-x-4">
-            <span>{{ $t('preview.imagePreview.dimensions') }}: {{ controller.currentImage.value?.metadata?.width || 0 }}x{{ controller.currentImage.value?.metadata?.height || 0 }}</span>
-            <span>{{ $t('preview.imagePreview.size') }}: {{ formatFileSize(controller.currentImage.value?.size) }}</span>
-          </div>
-          <div class="flex items-center space-x-4">
-            <span>{{ $t('preview.imagePreview.format') }}: {{ getFileFormat(controller.currentImage.value?.name) }}</span>
-            <span>{{ $t('preview.imagePreview.createdAt') }}: {{ formatDate(controller.currentImage.value?.createdAt) }}</span>
-          </div>
-          <div class="flex items-center space-x-4">
-            <span>{{ controller.currentImageIndex.value + 1 }} / {{ controller.imageItems.value.length }}</span>
+        <!-- 中间图片查看器 -->
+        <ResizablePanel :default-size="56" :min-size="30" class="relative flex flex-col">
+          <!-- 左侧栏切换按钮（垂直居中） -->
+          <button
+            class="absolute left-0 top-1/2 z-20 flex h-28 w-8 -translate-y-1/2 items-center justify-center rounded-r-md border border-l-0 border-border/60 bg-background/70 text-muted-foreground shadow-sm backdrop-blur-md transition-colors hover:bg-background hover:text-primary"
+            :class="showLeftSidebar ? 'opacity-60 hover:opacity-100' : 'opacity-100'"
+            :title="$t('preview.toggleSidebar')"
+            @click="toggleLeftSidebar"
+          >
+            <span class="material-icons">{{ showLeftSidebar ? 'chevron_left' : 'chevron_right' }}</span>
+          </button>
+
+          <ImageViewerComponent v-bind="viewerBindings" />
+
+          <!-- 右侧栏切换按钮（垂直居中） -->
+          <button
+            class="absolute right-0 top-1/2 z-20 flex h-28 w-8 -translate-y-1/2 items-center justify-center rounded-l-md border border-r-0 border-border/60 bg-background/70 text-muted-foreground shadow-sm backdrop-blur-md transition-colors hover:bg-background hover:text-primary"
+            :title="$t('preview.toggleSidebar')"
+            @click="toggleRightSidebar"
+          >
+            <span class="material-icons">{{ showRightSidebar ? 'chevron_right' : 'chevron_left' }}</span>
+          </button>
+
+          <!-- 底部状态栏 -->
+          <footer class="flex h-10 flex-shrink-0 items-center justify-between border-t border-border bg-background px-6 text-xs text-muted-foreground">
+            <div class="flex items-center space-x-4">
+              <span>{{ $t('preview.imagePreview.dimensions') }}: {{ controller.currentImage.value?.metadata?.width || 0 }}x{{ controller.currentImage.value?.metadata?.height || 0 }}</span>
+              <span>{{ $t('preview.imagePreview.size') }}: {{ formatFileSize(controller.currentImage.value?.size) }}</span>
+            </div>
+            <div class="flex items-center space-x-4">
+              <span>{{ $t('preview.imagePreview.format') }}: {{ getFileFormat(controller.currentImage.value?.name) }}</span>
+              <span>{{ $t('preview.imagePreview.createdAt') }}: {{ formatDate(controller.currentImage.value?.createdAt) }}</span>
+            </div>
+            <div class="flex items-center space-x-4">
+              <span>{{ controller.currentImageIndex.value + 1 }} / {{ controller.imageItems.value.length }}</span>
+              <button
+                class="flex h-7 w-7 items-center justify-center rounded-full hover:bg-muted"
+                :disabled="controller.currentImageIndex.value === 0"
+                @click="controller.previousImage"
+              >
+                <span class="material-symbols-outlined text-muted-foreground">navigate_before</span>
+              </button>
+              <button
+                class="flex h-7 w-7 items-center justify-center rounded-full hover:bg-muted"
+                :disabled="controller.currentImageIndex.value === controller.imageItems.value.length - 1"
+                @click="controller.nextImage"
+              >
+                <span class="material-symbols-outlined text-muted-foreground">navigate_next</span>
+              </button>
+            </div>
+          </footer>
+        </ResizablePanel>
+
+        <!-- 分隔描边：点击（非拖拽）切换右侧栏 -->
+        <ResizableHandle v-on="rightHandleToggle" class="group/handle relative w-3 cursor-pointer bg-transparent transition-colors hover:bg-primary/5 after:absolute after:inset-y-0 after:left-1/2 after:w-0.5 after:-translate-x-1/2 after:bg-transparent hover:after:bg-primary/40" />
+
+        <!-- 右侧信息面板（可折叠） -->
+        <ResizablePanel
+          ref="rightPanelRef"
+          :default-size="rightPanelDefaultSize"
+          :min-size="18"
+          :max-size="35"
+          :collapsed-size="0"
+          collapsible
+          @collapse="isRightCollapsed = true"
+          @expand="isRightCollapsed = false"
+        >
+          <ImageInfoComponent v-bind="infoBindings" class="h-full" />
+        </ResizablePanel>
+      </ResizablePanelGroup>
+
+      <!-- 移动端：仅中间查看器（侧栏改抽屉，左右浮动按钮切换） -->
+      <div v-else class="relative flex flex-grow flex-col">
+        <!-- 左侧栏切换按钮（垂直居中） -->
+        <button
+          class="absolute left-0 top-1/2 z-20 flex h-28 w-8 -translate-y-1/2 items-center justify-center rounded-r-md border border-l-0 border-border/60 bg-background/70 text-muted-foreground shadow-sm backdrop-blur-md transition-colors hover:bg-background hover:text-primary"
+          :class="showLeftSidebar ? 'opacity-60 hover:opacity-100' : 'opacity-100'"
+          :title="$t('preview.toggleSidebar')"
+          @click="toggleLeftSidebar"
+        >
+          <span class="material-icons">{{ showLeftSidebar ? 'chevron_left' : 'chevron_right' }}</span>
+        </button>
+
+        <ImageViewerComponent v-bind="viewerBindings" />
+
+        <!-- 右侧栏切换按钮（垂直居中） -->
+        <button
+          class="absolute right-0 top-1/2 z-20 flex h-28 w-8 -translate-y-1/2 items-center justify-center rounded-l-md border border-r-0 border-border/60 bg-background/70 text-muted-foreground shadow-sm backdrop-blur-md transition-colors hover:bg-background hover:text-primary"
+          :class="showRightSidebar ? 'opacity-60 hover:opacity-100' : 'opacity-100'"
+          :title="$t('preview.toggleSidebar')"
+          @click="toggleRightSidebar"
+        >
+          <span class="material-icons">{{ showRightSidebar ? 'chevron_right' : 'chevron_left' }}</span>
+        </button>
+
+        <!-- 底部状态栏（移动端精简） -->
+        <footer class="flex h-10 flex-shrink-0 items-center justify-between border-t border-border bg-background px-4 text-xs text-muted-foreground">
+          <span>{{ controller.currentImageIndex.value + 1 }} / {{ controller.imageItems.value.length }}</span>
+          <div class="flex items-center space-x-2">
             <button
               class="flex h-7 w-7 items-center justify-center rounded-full hover:bg-muted"
               :disabled="controller.currentImageIndex.value === 0"
@@ -80,29 +163,96 @@
         </footer>
       </div>
 
-      <!-- 右侧信息面板 -->
-      <ImageInfoComponent
-        :image="controller.currentImage.value"
-        :cache-key="controller.imageCacheKey.value"
-        :similar-images="controller.similarImages.value"
-        @search-similar="controller.handleSearchSimilar"
-        @tag-add="controller.handleTagAdd"
-        @tag-remove="controller.handleTagRemove"
-      />
+      <!-- 移动端：左侧缩略图抽屉 -->
+      <Sheet v-if="isMobile" v-model:open="leftDrawerOpen">
+        <SheetContent side="left" class="w-[80%] max-w-[300px] gap-0 p-0">
+          <SheetTitle class="sr-only">{{ $t('preview.toggleSidebar') }}</SheetTitle>
+          <ImageThumbnailListComponent v-bind="thumbnailBindings" class="h-full" />
+        </SheetContent>
+      </Sheet>
+
+      <!-- 移动端：右侧信息抽屉 -->
+      <Sheet v-if="isMobile" v-model:open="rightDrawerOpen">
+        <SheetContent side="right" class="w-[85%] max-w-[340px] gap-0 p-0">
+          <SheetTitle class="sr-only">{{ $t('preview.toggleSidebar') }}</SheetTitle>
+          <ImageInfoComponent v-bind="infoBindings" class="h-full" />
+        </SheetContent>
+      </Sheet>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from '@/components/ui/resizable'
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import ImageThumbnailListComponent from '../business/ImageThumbnailListComponent.vue'
 import ImageViewerComponent from '../business/ImageViewerComponent.vue'
 import ImageInfoComponent from '../business/ImageInfoComponent.vue'
 import PreviewHeader from './PreviewHeader.vue'
 import { useImagePreviewController } from '../../controllers/ImagePreviewController'
+import { useCollapsibleSidebar } from '../../composables/useCollapsibleSidebar'
 
 // 使用控制器
 const controller = useImagePreviewController()
+
+// 左侧缩略图栏：桌面端 resizable + collapsible + 描边点击切换，移动端抽屉
+const {
+  isMobile,
+  showSidebar: showLeftSidebar,
+  toggleSidebar: toggleLeftSidebar,
+  panelRef: leftPanelRef,
+  isCollapsed: isLeftCollapsed,
+  drawerOpen: leftDrawerOpen,
+  handleToggle: leftHandleToggle,
+  defaultSize: leftPanelDefaultSize,
+} = useCollapsibleSidebar(20)
+
+// 右侧信息面板：同样可折叠 + 移动抽屉
+const {
+  showSidebar: showRightSidebar,
+  toggleSidebar: toggleRightSidebar,
+  panelRef: rightPanelRef,
+  isCollapsed: isRightCollapsed,
+  drawerOpen: rightDrawerOpen,
+  handleToggle: rightHandleToggle,
+  defaultSize: rightPanelDefaultSize,
+} = useCollapsibleSidebar(24)
+
+// 子组件绑定对象：桌面 inline 与移动抽屉共用，避免重复
+const thumbnailBindings = computed(() => ({
+  images: controller.imageItems.value,
+  currentImageIndex: controller.currentImageIndex.value,
+  cacheKey: controller.imageCacheKey.value,
+  onImageSelect: (...args: any[]) => {
+    ;(controller.handleImageSelect as (...a: any[]) => void)(...args)
+    if (isMobile.value) showLeftSidebar.value = false
+  },
+}))
+const viewerBindings = computed(() => ({
+  image: controller.currentImage.value,
+  cacheKey: controller.imageCacheKey.value,
+  zoom: controller.zoom.value,
+  rotation: controller.rotation.value,
+  onZoomIn: controller.handleZoomIn,
+  onZoomOut: controller.handleZoomOut,
+  onZoomReset: controller.handleZoomReset,
+  onRotateLeft: controller.handleRotateLeft,
+  onRotateRight: controller.handleRotateRight,
+  onToggleFullscreen: controller.handleToggleFullscreen,
+}))
+const infoBindings = computed(() => ({
+  image: controller.currentImage.value,
+  cacheKey: controller.imageCacheKey.value,
+  similarImages: controller.similarImages.value,
+  onSearchSimilar: controller.handleSearchSimilar,
+  onTagAdd: controller.handleTagAdd,
+  onTagRemove: controller.handleTagRemove,
+}))
 
 
 // 格式化文件大小

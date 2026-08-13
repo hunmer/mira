@@ -1,6 +1,6 @@
-# landing-page (efferd-ui)
+# landing-page (mira-landing-page)
 
-Mira 官方落地页 / 营销站(`efferd-ui`,v0.1.0,private)。**独立技术栈:Next.js 16 + React 19 + shadcn + Tailwind v4**,与 Mira 主链路(TypeScript/Vue/Electron)**无运行时依赖**,使用独立的 `pnpm-lock.yaml`。
+Mira 官方落地页 / 营销站(`mira-landing-page`,v0.1.0,private)。**独立技术栈:Next.js 16 + React 19 + shadcn + Tailwind v4**,与 Mira 主链路(TypeScript/Vue/Electron)**无运行时依赖**,使用独立的 `pnpm-lock.yaml`。
 
 ## 约定
 
@@ -15,12 +15,12 @@ Mira 官方落地页 / 营销站(`efferd-ui`,v0.1.0,private)。**独立技术栈
 
 | 命令 | 作用 |
 |------|------|
-| `pnpm --filter efferd-ui dev` | `next dev --turbopack` |
-| `pnpm --filter efferd-ui build` | `next build --turbopack` |
-| `pnpm --filter efferd-ui start` | `next start` |
-| `pnpm --filter efferd-ui lint` | `biome check` |
-| `pnpm --filter efferd-ui format` | `biome format --write` |
-| `pnpm --filter efferd-ui b:r` | 构建 shadcn registry(`tsx scripts/build-registry.mts && shadcn build`) |
+| `pnpm --filter mira-landing-page dev` | `next dev --turbopack` |
+| `pnpm --filter mira-landing-page build` | `next build --turbopack` |
+| `pnpm --filter mira-landing-page start` | `next start` |
+| `pnpm --filter mira-landing-page lint` | `biome check` |
+| `pnpm --filter mira-landing-page format` | `biome format --write` |
+| `pnpm --filter mira-landing-page b:r` | 构建 shadcn registry(`tsx scripts/build-registry.mts && shadcn build`) |
 
 ## 文件结构(顶层)
 

@@ -41,10 +41,13 @@ export function constructMetadata({
     description,
     keywords: [
       SITE_NAME,
-      "Shadcn UI",
-      "UI",
-      "Components",
-      "Blocks",
+      "media library",
+      "asset management",
+      "file manager",
+      "CLI",
+      "MCP",
+      "AI agent",
+      "plugins",
       ...(keywords || []),
     ],
     openGraph: {

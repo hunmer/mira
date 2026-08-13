@@ -1,12 +1,11 @@
 {
-  "name": "efferd-ui",
+  "name": "mira-landing-page",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "author": {
-    "name": "Shaban Haider",
-    "email": "sshahaider@gmail.com",
-    "url": "https://x.com/shabanhr"
+    "name": "hunmer",
+    "url": "https://github.com/hunmer"
   },
   "scripts": {
     "dev": "next dev --turbopack",

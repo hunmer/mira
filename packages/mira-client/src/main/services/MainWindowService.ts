@@ -59,7 +59,7 @@ export class MainWindowService {
       y: mainWindowState.y,
       width: mainWindowState.width,
       height: mainWindowState.height,
-      minWidth: 800,
+      minWidth: 400,
       minHeight: 600,
       movable: true,
       webPreferences: {

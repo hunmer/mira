@@ -70,7 +70,7 @@ export function LogoCloudSection() {
   const shouldReduceMotion = useReducedMotion();
 
   return (
-    <section className="relative mx-auto max-w-3xl py-10">
+    <section className="relative mx-auto w-full max-w-3xl overflow-hidden py-10">
       <motion.h2
         className="mb-5 text-center font-medium text-foreground text-xl tracking-tight md:text-3xl"
         initial={shouldReduceMotion ? false : { opacity: 0, y: 16 }}

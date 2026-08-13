@@ -4,6 +4,15 @@
     <PreviewHeader :file-info="controller.currentVideo.value || {}">
       <template #left-extra>
         <div class="flex items-center space-x-2">
+          <!-- 切换左侧缩略图栏（桌面 inline / 移动抽屉） -->
+          <button
+            class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full hover:bg-muted"
+            :class="showLeftSidebar ? 'text-primary' : 'text-muted-foreground'"
+            :title="$t('preview.toggleSidebar')"
+            @click="toggleLeftSidebar"
+          >
+            <span class="material-icons">view_list</span>
+          </button>
           <span class="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
             <span class="material-symbols-outlined text-sm mr-1">folder</span>
             {{ controller.currentVideo.value?.folderId || '/Videos' }}
@@ -33,36 +42,77 @@
 
     <!-- 主内容区域 -->
     <div class="flex flex-grow overflow-hidden">
-      <!-- 左侧视频缩略图列表 -->
-      <VideoThumbnailListComponent
-        :videos="controller.videos.value"
-        :current-video-id="controller.currentVideoId.value"
-        @video-select="controller.handleVideoSelect"
-      />
+      <!-- 桌面端：三列可拖拽布局 -->
+      <ResizablePanelGroup v-if="!isMobile" direction="horizontal" auto-save-id="video-preview-layout" class="flex-1 min-w-0">
+        <!-- 左侧视频缩略图列表（可折叠） -->
+        <ResizablePanel
+          ref="leftPanelRef"
+          :default-size="leftPanelDefaultSize"
+          :min-size="12"
+          :max-size="30"
+          :collapsed-size="0"
+          collapsible
+          @collapse="isLeftCollapsed = true"
+          @expand="isLeftCollapsed = false"
+        >
+          <VideoThumbnailListComponent v-bind="thumbnailBindings" class="h-full" />
+        </ResizablePanel>
 
-      <!-- 中间视频播放器 -->
-      <div class="relative flex flex-grow flex-col bg-white dark:bg-black">
-        <VideoPlayerComponent
-          :video="controller.currentVideo.value"
-          @play="controller.handlePlay"
-          @pause="controller.handlePause"
-          @ended="controller.handlePause"
-          @time-update="controller.handleTimeUpdate"
-          @duration-change="controller.handleDurationChange"
-          @volume-change="controller.handleVolumeChange"
-          @error="(err) => controller.error.value = err"
-        />
+        <!-- 分隔描边：点击（非拖拽）切换左侧栏 -->
+        <ResizableHandle v-on="leftHandleToggle" class="group/handle relative w-3 cursor-pointer bg-transparent transition-colors hover:bg-primary/5 after:absolute after:inset-y-0 after:left-1/2 after:w-0.5 after:-translate-x-1/2 after:bg-transparent hover:after:bg-primary/40" />
 
-        <!-- 底部状态栏 -->
-        <footer class="flex h-10 flex-shrink-0 items-center justify-between border-t border-border dark:border-border bg-white dark:bg-muted px-6 text-xs text-muted-foreground dark:text-muted-foreground">
-          <div class="flex items-center space-x-4">
-            <span>{{ $t('preview.videoPreview.resolution') }}: {{ controller.currentVideo.value?.metadata?.width || 0 }}x{{ controller.currentVideo.value?.metadata?.height || 0 }}</span>
-            <span>{{ $t('preview.videoPreview.size') }}: {{ formatFileSize(controller.currentVideo.value?.size) }}</span>
-            <span>{{ $t('preview.videoPreview.format') }}: {{ getFileFormat(controller.currentVideo.value?.name) }}</span>
-            <span>{{ $t('preview.videoPreview.createdAt') }}: {{ formatDate(controller.currentVideo.value?.createdAt) }}</span>
-          </div>
-          <div class="flex items-center space-x-4">
-            <span>{{ controller.currentVideoIndex.value + 1 }} / {{ controller.videos.value.length }}</span>
+        <!-- 中间视频播放器 -->
+        <ResizablePanel :default-size="56" :min-size="30" class="relative flex flex-col bg-white dark:bg-black">
+          <VideoPlayerComponent v-bind="viewerBindings" />
+
+          <!-- 底部状态栏 -->
+          <footer class="flex h-10 flex-shrink-0 items-center justify-between border-t border-border dark:border-border bg-white dark:bg-muted px-6 text-xs text-muted-foreground dark:text-muted-foreground">
+            <div class="flex items-center space-x-4">
+              <span>{{ $t('preview.videoPreview.resolution') }}: {{ controller.currentVideo.value?.metadata?.width || 0 }}x{{ controller.currentVideo.value?.metadata?.height || 0 }}</span>
+              <span>{{ $t('preview.videoPreview.size') }}: {{ formatFileSize(controller.currentVideo.value?.size) }}</span>
+              <span>{{ $t('preview.videoPreview.format') }}: {{ getFileFormat(controller.currentVideo.value?.name) }}</span>
+              <span>{{ $t('preview.videoPreview.createdAt') }}: {{ formatDate(controller.currentVideo.value?.createdAt) }}</span>
+            </div>
+            <div class="flex items-center space-x-4">
+              <span>{{ controller.currentVideoIndex.value + 1 }} / {{ controller.videos.value.length }}</span>
+              <button
+                class="rounded-full p-1 hover:bg-muted dark:hover:bg-muted"
+                :disabled="controller.currentVideoIndex.value === 0"
+                @click="controller.previousVideo"
+              >
+                <span class="material-symbols-outlined text-muted-foreground dark:text-muted-foreground">navigate_before</span>
+              </button>
+              <button
+                class="rounded-full p-1 hover:bg-muted dark:hover:bg-muted"
+                :disabled="controller.currentVideoIndex.value === controller.videos.value.length - 1"
+                @click="controller.nextVideo"
+              >
+                <span class="material-symbols-outlined text-muted-foreground dark:text-muted-foreground">navigate_next</span>
+              </button>
+            </div>
+          </footer>
+        </ResizablePanel>
+
+        <!-- 分隔描边 -->
+        <ResizableHandle class="group/handle relative w-3 bg-transparent transition-colors hover:bg-primary/5 after:absolute after:inset-y-0 after:left-1/2 after:w-0.5 after:-translate-x-1/2 after:bg-transparent hover:after:bg-primary/40" />
+
+        <!-- 右侧文件信息面板 -->
+        <ResizablePanel :default-size="24" :min-size="18" :max-size="35">
+          <VideoFileInfoComponent
+            :video="controller.currentVideo.value"
+            :current-time="controller.currentTime.value"
+          />
+        </ResizablePanel>
+      </ResizablePanelGroup>
+
+      <!-- 移动端：仅中间播放器（左侧改抽屉、右侧隐藏） -->
+      <div v-else class="relative flex flex-grow flex-col bg-white dark:bg-black">
+        <VideoPlayerComponent v-bind="viewerBindings" />
+
+        <!-- 底部状态栏（移动端精简） -->
+        <footer class="flex h-10 flex-shrink-0 items-center justify-between border-t border-border dark:border-border bg-white dark:bg-muted px-4 text-xs text-muted-foreground dark:text-muted-foreground">
+          <span>{{ controller.currentVideoIndex.value + 1 }} / {{ controller.videos.value.length }}</span>
+          <div class="flex items-center space-x-2">
             <button
               class="rounded-full p-1 hover:bg-muted dark:hover:bg-muted"
               :disabled="controller.currentVideoIndex.value === 0"
@@ -81,25 +131,66 @@
         </footer>
       </div>
 
-      <!-- 右侧文件信息面板 -->
-      <VideoFileInfoComponent
-        :video="controller.currentVideo.value"
-        :current-time="controller.currentTime.value"
-      />
+      <!-- 移动端：左侧缩略图抽屉 -->
+      <Sheet v-if="isMobile" v-model:open="leftDrawerOpen">
+        <SheetContent side="left" class="w-[80%] max-w-[300px] gap-0 p-0">
+          <SheetTitle class="sr-only">{{ $t('preview.toggleSidebar') }}</SheetTitle>
+          <VideoThumbnailListComponent v-bind="thumbnailBindings" class="h-full" />
+        </SheetContent>
+      </Sheet>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from '@/components/ui/resizable'
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import VideoThumbnailListComponent from '../business/VideoThumbnailListComponent.vue'
 import VideoPlayerComponent from '../business/VideoPlayerComponent.vue'
 import VideoFileInfoComponent from '../business/VideoFileInfoComponent.vue'
 import PreviewHeader from './PreviewHeader.vue'
 import { useVideoPreviewController } from '../../controllers/VideoPreviewController'
+import { useCollapsibleSidebar } from '../../composables/useCollapsibleSidebar'
 
 // 使用控制器
 const controller = useVideoPreviewController()
+
+// 左侧缩略图栏：桌面端 resizable + collapsible + 描边点击切换，移动端抽屉
+const {
+  isMobile,
+  showSidebar: showLeftSidebar,
+  toggleSidebar: toggleLeftSidebar,
+  panelRef: leftPanelRef,
+  isCollapsed: isLeftCollapsed,
+  drawerOpen: leftDrawerOpen,
+  handleToggle: leftHandleToggle,
+  defaultSize: leftPanelDefaultSize,
+} = useCollapsibleSidebar(20)
+
+// 子组件绑定对象：桌面 inline 与移动抽屉共用，避免重复
+const thumbnailBindings = computed(() => ({
+  videos: controller.videos.value,
+  currentVideoId: controller.currentVideoId.value,
+  onVideoSelect: (...args: any[]) => {
+    ;(controller.handleVideoSelect as (...a: any[]) => void)(...args)
+    if (isMobile.value) showLeftSidebar.value = false
+  },
+}))
+const viewerBindings = computed(() => ({
+  video: controller.currentVideo.value,
+  onPlay: controller.handlePlay,
+  onPause: controller.handlePause,
+  onEnded: controller.handlePause,
+  onTimeUpdate: controller.handleTimeUpdate,
+  onDurationChange: controller.handleDurationChange,
+  onVolumeChange: controller.handleVolumeChange,
+  onError: (err: any) => { controller.error.value = err },
+}))
 
 // 格式化文件大小
 const formatFileSize = (bytes?: number): string => {

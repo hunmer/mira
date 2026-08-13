@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MoonIcon, SunIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { withBasePath } from "@/lib/asset";
 import {
 	MaskedViewTransitionStyle,
 	useViewTransitionTheme,
@@ -20,7 +21,7 @@ type Props = React.HTMLAttributes<HTMLDivElement> & {
 export function ThemeSwitchFlowGlassPro({
 	className,
 	intensity = 1,
-	maskGifUrl = "/theme-switch-flow/icon-animation.gif",
+	maskGifUrl = withBasePath("/theme-switch-flow/icon-animation.gif"),
 	duration = "2.5s",
 	...props
 }: Props) {
