@@ -55,6 +55,9 @@ export interface FileInfo {
   metadata?: Record<string, any>
   libraryId?: string
   localFile?: string // SMB映射的本地文件路径
+  website?: string
+  stars?: number
+  notes?: string
 }
 
 // 收藏夹/库信息

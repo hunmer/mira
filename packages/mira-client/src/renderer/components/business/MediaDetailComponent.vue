@@ -352,14 +352,7 @@ interface Props {
   libraryId?: string // 素材库ID
 }
 
-interface Emits {
-  (e: 'tag-add', tag: string): void
-  (e: 'tag-remove', tag: string): void
-  (e: 'folder-change', folderId: string): void
-}
-
 const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
 
 // Access the item from props for use in functions
 const { item, items, libraryId } = toRefs(props)
@@ -513,6 +506,7 @@ const handleWebsiteBlur = async () => {
   try {
     const libId = file.libraryId || libraryId?.value || 'default'
     await miraSDKService.updateFile(libId, file.id, { website: newWebsite })
+    file.website = newWebsite
   } catch {
     editWebsite.value = oldWebsite
   } finally {
@@ -532,6 +526,7 @@ const handleStarsChange = async (value: number) => {
   try {
     const libId = file.libraryId || libraryId?.value || 'default'
     await miraSDKService.updateFile(libId, file.id, { stars: newStars })
+    file.stars = newStars
   } catch {
     editStars.value = oldStars
   } finally {
@@ -550,6 +545,7 @@ const handleNotesBlur = async () => {
   try {
     const libId = file.libraryId || libraryId?.value || 'default'
     await miraSDKService.updateFile(libId, file.id, { notes: newNotes })
+    file.notes = newNotes
   } catch {
     editNotes.value = oldNotes
   } finally {
@@ -673,7 +669,9 @@ const handleMultiImageError = (item: FileInfo) => {
 
 const getFolderName = (folderId?: string): string => {
   if (!folderId) return t('business.mediaDetailComponent.uncategorized')
-  return folderId === 'default' ? t('business.mediaDetailComponent.defaultFolder') : t('business.mediaDetailComponent.folderIdLabel', { id: folderId })
+  if (folderId === 'default') return t('business.mediaDetailComponent.defaultFolder')
+  const folder = folderStore.getFolderById(Number(folderId))
+  return folder?.title || t('business.mediaDetailComponent.folderIdLabel', { id: folderId })
 }
 
 const hasTags = computed(() => {
@@ -704,7 +702,6 @@ const handleFolderSelect = async (folderItem: any) => {
     await client.folders().setFileFolder({ libraryId: libId, fileId: parseInt(file.id), folder: parseInt(folderItem.id) })
     file.folderId = String(folderItem.id)
   }, { label: t('business.mediaDetailComponent.setFolderAction') })
-  emit('folder-change', folderItem.id)
 }
 
 const handleTagSelect = async (tagData: any) => {
@@ -723,7 +720,6 @@ const handleTagSelect = async (tagData: any) => {
     if (!file.tags) file.tags = []
     if (!file.tags.includes(tagName)) file.tags.push(tagName)
   }, { label: t('business.mediaDetailComponent.setTagAction') })
-  emit('tag-add', tagName)
 }
 
 const handleRemoveTag = async (tag: string) => {
@@ -738,7 +734,6 @@ const handleRemoveTag = async (tag: string) => {
       if (idx !== -1) file.tags.splice(idx, 1)
     }
   }, { label: t('business.mediaDetailComponent.removeTagAction') })
-  emit('tag-remove', tag)
 }
 
 // 获取标签名称

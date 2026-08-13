@@ -42,7 +42,6 @@
       v-else-if="!selectedViewer && !customHoverCard && viewersLoaded && kind === 'image'"
       :key="imageSrc"
       :options="viewerOptions"
-      :trigger="imageSrc"
       class="media-preview-viewer h-full w-full"
     >
       <img :src="imageSrc" :alt="item.name" class="media-preview-viewer-source" />

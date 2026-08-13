@@ -823,8 +823,25 @@ function setupEventListeners(libraryStore: any): void {
  * updated 事件按 tab 节流 300ms，避免批量更新时重复刷新
  */
 const refreshTimers = new Map<string, ReturnType<typeof setTimeout>>()
+const treeRefreshTimers = new Map<string, ReturnType<typeof setTimeout>>()
+const TREE_REFRESH_DELAY = 300
+
+function scheduleTreeRefresh(libraryStore: any, libraryId?: string): void {
+  const targetLibraryId = libraryId || libraryStore.currentLibrary?.id
+  if (!targetLibraryId) return
+
+  const existing = treeRefreshTimers.get(targetLibraryId)
+  if (existing) clearTimeout(existing)
+
+  treeRefreshTimers.set(targetLibraryId, setTimeout(() => {
+    treeRefreshTimers.delete(targetLibraryId)
+    libraryStore.refreshFolders?.(targetLibraryId)
+  }, TREE_REFRESH_DELAY))
+}
 
 function handleFileEvent(data: any, eventType: 'created' | 'updated' | 'deleted' | 'recovered'): void {
+  scheduleTreeRefresh(useLibraryStore(), data?.libraryId)
+
   const { markTabsForEvent, tabs } = useTabs()
   const markedIds = markTabsForEvent(data, eventType)
   if (markedIds.length === 0) return

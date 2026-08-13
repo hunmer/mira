@@ -55,7 +55,7 @@
         <!-- 刷新按钮 -->
         <button
           class="flex items-center space-x-1 px-3 py-1.5 text-sm text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur shadow-sm transition-colors"
-          @click="handleRefresh" :title="$t('tabs.mediaTabListView.refreshData')">
+          @click="handleManualRefresh" :title="$t('tabs.mediaTabListView.refreshData')">
           <span class="material-icons text-base" :class="{ 'animate-spin': isLoading }">refresh</span>
         </button>
 
@@ -684,10 +684,11 @@ watch([selectedItems, () => paginatedMediaItems.value], ([ids, items]) => {
     emit('selectionChange', [])
     return
   }
+  // 刷新分页数据时可能短暂为空；保留当前选中项和右侧详情，避免面板闪退为 empty
+  if (!items || items.length === 0) return
   const matched = items.filter((item: FileInfo) => ids.includes(item.id))
-  if (matched.length > 0) {
-    mediaStore.setDetailSidebarFiles(matched)
-  }
+  if (matched.length === 0) return
+  mediaStore.setDetailSidebarFiles(matched)
   emit('selectionChange', matched)
 }, { deep: true })
 
@@ -770,17 +771,21 @@ const fetchPageData = async (page: number) => {
   }
 }
 
-const handleRefresh = async () => {
-  homeController.selectedItems.value = []
+const handleRefresh = async (preserveSelection = false) => {
+  if (!preserveSelection) homeController.selectedItems.value = []
   await fetchPageData(1)
   emit('refresh')
 }
+
+const handleManualRefresh = () => handleRefresh()
 
 // WebSocket 活跃 tab 刷新回调
 const handleActiveTabRefresh = (e: Event) => {
   const { tabId } = (e as CustomEvent).detail
   if (tabId === props.tabId) {
-    handleRefresh()
+    const eventType = (e as CustomEvent).detail?.eventType
+    // 文件属性更新（标签/文件夹/备注/评分）不应清空当前选中项
+    handleRefresh(eventType === 'updated')
   }
 }
 

@@ -102,22 +102,16 @@ export function useDragDrop(props: { items: FileInfo[], selectedItems: string[] 
     const filePaths: string[] = []
 
     selectedFileIds.forEach(fileId => {
+      const file = props.items.find(item => item.id === fileId)
       const mediaItemElement = document.querySelector(`[data-selectable-id="${fileId}"]`) as HTMLElement
-      if (mediaItemElement) {
-        const dataFile = mediaItemElement.getAttribute('data-file')
-        if (dataFile && dataFile.trim()) {
-          draggableFileIds.push(fileId)
-          filePaths.push(dataFile)
-        } else {
-          const file = props.items.find(f => f.id === fileId)
-          if (file?.libraryId) {
-            const localPath = mediaStore.getLocalFile(file.libraryId, fileId)
-            if (localPath) {
-              draggableFileIds.push(fileId)
-              filePaths.push(localPath)
-            }
-          }
-        }
+      const dataFile = mediaItemElement?.getAttribute('data-file')
+      const localPath = dataFile?.trim()
+        || file?.localFile
+        || (file?.libraryId ? mediaStore.getLocalFile(file.libraryId, fileId) : undefined)
+
+      if (localPath) {
+        draggableFileIds.push(fileId)
+        filePaths.push(localPath)
       }
     })
 

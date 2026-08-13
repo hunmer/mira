@@ -20,7 +20,7 @@
         <div>
           <h3 class="font-semibold text-foreground mb-2">{{ image?.name || 'Unknown' }}</h3>
           <div class="text-xs text-muted-foreground bg-muted p-2 rounded">
-            {{ image?.folderId || '/Unknown' }}
+            {{ folderName }}
           </div>
         </div>
 
@@ -131,6 +131,7 @@
 import { computed, ref, watch } from 'vue'
 import type { FileInfo } from '../../../shared/types'
 import { getCacheBustedPreviewImageSource, getPreviewImageSource } from '../../utils/fileUtils'
+import { useFolderStore } from '../../stores/folder'
 
 interface Props {
   image?: FileInfo
@@ -149,6 +150,15 @@ const emit = defineEmits<Emits>()
 const showAddTag = ref(false)
 const newTag = ref('')
 const imageSrc = computed(() => getCacheBustedPreviewImageSource(props.image, props.cacheKey))
+
+const folderStore = useFolderStore()
+const folderName = computed(() => {
+  const folderId = props.image?.folderId
+  if (!folderId) return 'Unknown'
+  if (folderId === 'default') return 'Default'
+  const folder = folderStore.getFolderById(Number(folderId))
+  return folder?.title || String(folderId)
+})
 
 const describeImage = (image?: FileInfo): Record<string, unknown> | null => {
   if (!image) return null

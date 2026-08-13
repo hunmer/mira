@@ -44,7 +44,14 @@ export class TagTabType extends MediaViewTabType {
     const tagName = context.name || context.tagName || context.tabData?.name || context.tabData?.title
 
     // 优先使用tagId，如果没有则使用tagName
-    const tagIdentifier = tagId || tagName
+    // 标签树/Tab 的展示 ID 带有 `tag-` 前缀，但 files.tags 存储的是实际标签 ID。
+    // 生成请求筛选器时必须还原为数据库中的 ID，否则 getFiles 永远匹配不到。
+    const rawIdentifier = tagId || tagName
+    const normalizedIdentifier = typeof rawIdentifier === 'string'
+      ? rawIdentifier.replace(/^tag-/, '')
+      : rawIdentifier
+    const numericIdentifier = Number(normalizedIdentifier)
+    const tagIdentifier = Number.isFinite(numericIdentifier) ? numericIdentifier : normalizedIdentifier
 
     console.log('🏷️ TagTabType.getTabFilters:', {
       tagId,

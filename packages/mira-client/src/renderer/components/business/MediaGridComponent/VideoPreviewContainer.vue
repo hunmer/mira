@@ -6,6 +6,7 @@
       :ref="(el: any) => setVideoPreviewRef(el, currentVideoItem?.id ?? '')"
       :src="videoSrc"
       :muted="isMuted"
+      :fit="fit"
       :auto-jump="false"
       class="absolute inset-0"
       @loaded="onVideoPreviewLoaded"
@@ -17,8 +18,11 @@
     <img
       v-if="posterSrc && showPoster"
       :src="posterSrc"
-      class="absolute inset-0 w-full h-full object-cover pointer-events-none transition-opacity duration-200"
-      :class="showPoster ? 'opacity-100' : 'opacity-0'"
+      class="absolute inset-0 w-full h-full pointer-events-none transition-opacity duration-200"
+      :class="[
+        fit === 'contain' ? 'object-contain' : 'object-cover',
+        showPoster ? 'opacity-100' : 'opacity-0'
+      ]"
     />
   </div>
 </template>
@@ -45,6 +49,7 @@ interface VideoPreviewAPI {
 interface Props {
   currentVideoItem: FileInfo | null
   isMuted: boolean
+  fit?: 'cover' | 'contain'
 }
 
 interface Emits {
@@ -57,6 +62,7 @@ interface Emits {
 }
 
 const props = defineProps<Props>()
+const fit = computed(() => props.fit ?? 'cover')
 const emit = defineEmits<Emits>()
 
 // 优先使用 localFile（本地/SMB 映射路径），回退到 HTTP path

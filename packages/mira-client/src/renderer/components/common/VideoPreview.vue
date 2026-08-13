@@ -294,14 +294,29 @@ onUnmounted(() => {
   --plyr-control-spacing: 0;
   width: 100% !important;
   height: 100% !important;
-  aspect-ratio: inherit;
+  aspect-ratio: auto !important;
+  position: absolute !important;
+  inset: 0 !important;
 }
 
 :deep(.plyr__video-wrapper) {
   width: 100% !important;
   height: 100% !important;
   overflow: hidden;
-  aspect-ratio: inherit;
+  aspect-ratio: auto !important;
+  position: absolute !important;
+  inset: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Plyr 默认通过伪元素预留 16:9 高度；瀑布流容器已有确定尺寸，不能再叠加该比例。 */
+:deep(.plyr__video-wrapper::before) {
+  display: none !important;
+  padding: 0 !important;
+  content: none !important;
 }
 
 :deep(.plyr video) {
@@ -309,7 +324,7 @@ onUnmounted(() => {
   height: 100% !important;
   object-fit: v-bind(fit) !important;
   object-position: center !important;
-  aspect-ratio: inherit;
+  aspect-ratio: auto !important;
 }
 
 :deep(.plyr__controls) {
@@ -338,7 +353,7 @@ onUnmounted(() => {
   max-width: 100%;
   max-height: 100%;
   border-radius: inherit;
-  aspect-ratio: inherit;
+  aspect-ratio: auto !important;
 }
 
 :deep(.plyr__video-embed),
@@ -346,7 +361,7 @@ onUnmounted(() => {
   max-width: 100% !important;
   max-height: 100% !important;
   border-radius: inherit;
-  aspect-ratio: inherit;
+  aspect-ratio: auto !important;
 }
 
 :deep(.plyr--video .plyr__video-wrapper) {
@@ -358,6 +373,9 @@ onUnmounted(() => {
   position: absolute !important;
   top: 0 !important;
   left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  margin: auto !important;
   width: 100% !important;
   height: 100% !important;
   object-fit: v-bind(fit) !important;

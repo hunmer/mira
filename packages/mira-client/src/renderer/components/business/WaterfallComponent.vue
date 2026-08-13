@@ -66,6 +66,7 @@
               v-if="isPlaying"
               :current-video-item="videoItem"
               :is-muted="settingsStore.settings.videoPreviewMuted"
+              fit="contain"
               @video-loaded="onVideoPreviewLoaded"
               @video-time-update="onVideoPreviewTimeUpdate"
               @video-play="onVideoPreviewPlay"
@@ -194,8 +195,8 @@ const selectedIds = computed({
 
 // 使用拖放功能
 const { handlePointerDown } = useDragDrop({
-  items: props.items,
-  selectedItems: props.selectedItems || []
+  get items() { return props.items },
+  get selectedItems() { return props.selectedItems }
 })
 
 // 使用视频悬浮预览功能

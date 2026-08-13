@@ -301,6 +301,13 @@ export const useMediaStore = defineStore('media', () => {
       offset
     }
 
+    // Tab/标签树使用 `tag-<id>` 作为展示 ID，接口需要数据库中的数字标签 ID。
+    const normalizeTagId = (value: any) => {
+      const raw = String(value ?? '').replace(/^tag-/, '')
+      const numeric = Number(raw)
+      return Number.isFinite(numeric) ? numeric : raw
+    }
+
     // 转换筛选器格式：从MediaTabData格式转换为API格式
     if (tabInfo.filters) {
       // 首先处理简单键值对格式的筛选器（直接来自初始化）
@@ -311,7 +318,7 @@ export const useMediaStore = defineStore('media', () => {
         }
         if (key === 'tags') {
           if (value !== null) {
-            filters.tags = value
+            filters.tags = Array.isArray(value) ? value.map(normalizeTagId) : value
           }
           return
         }
@@ -338,7 +345,7 @@ export const useMediaStore = defineStore('media', () => {
             break
           case 'tags':
             if (filterRule.selectedValues && filterRule.selectedValues.length > 0) {
-              filters.tags = filterRule.selectedValues.map((id: any) => String(id))
+              filters.tags = filterRule.selectedValues.map(normalizeTagId)
             }
             break
           case 'urls':
@@ -400,7 +407,7 @@ export const useMediaStore = defineStore('media', () => {
         break
       case 'tag':
         if (tabInfo.data?.id || tabInfo.data?.name) {
-          filters.tags = [tabInfo.data.id || tabInfo.data.name]
+          filters.tags = [normalizeTagId(tabInfo.data.id || tabInfo.data.name)]
         }
         break
       case 'all':

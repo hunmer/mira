@@ -557,7 +557,7 @@ onUnmounted(() => {
           </div>
 
           <!-- 内容面板（玻璃磨砂） -->
-          <div class="flex-1 rounded-2xl border border-white/60 dark:border-border bg-white/30 dark:bg-muted/50 backdrop-blur-xl shadow-[0_12px_40px_var(--shadow-primary-md)] overflow-hidden flex flex-col">
+          <div class="flex-1 rounded-2xl border border-white/60 dark:border-border bg-white/30 dark:bg-muted/50 backdrop-blur-xl shadow-[0_12px_40px_var(--shadow-primary-md)] overflow-hidden flex flex-col p-1">
             <main ref="mainContentRef" class="flex-1 flex overflow-hidden relative min-w-0 p-2 gap-2 border border-primary/40 rounded-xl">
               <!-- Tab视图内容（占满） -->
               <div class="flex-1 min-w-0 overflow-hidden rounded-xl">

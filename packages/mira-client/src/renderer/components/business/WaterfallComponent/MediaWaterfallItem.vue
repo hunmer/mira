@@ -42,7 +42,7 @@
 
       <!-- 视频预览组件插槽 (绝对定位覆盖在缩略图上，pointer-events-none 确保鼠标事件穿透到父容器) -->
       <div
-        class="absolute inset-0 overflow-hidden pointer-events-none transition-opacity duration-200"
+        class="absolute inset-0 overflow-hidden pointer-events-none transition-opacity duration-200 bg-black"
         :class="isVideoPlaying ? 'opacity-100' : 'opacity-0'"
       >
         <slot
