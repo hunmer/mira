@@ -54,6 +54,8 @@ export class FileRoutes {
             const clientId = req.body.clientId || null;
             const isBatchImport = req.body.batchImport === 'true' || req.body.batchImport === true;
             const batchId = isBatchImport ? randomUUID() : undefined;
+            // 为每次 HTTP 上传请求生成独立标识，避免客户端通知聚合跨请求累计。
+            const uploadBatchId = randomUUID();
             const urlItems = isBatchImport && req.body.urlItems
                 ? JSON.parse(req.body.urlItems)
                 : [];
@@ -293,7 +295,12 @@ export class FileRoutes {
 
                             // 发送WebSocket事件（命中重复时不广播 file::created，因为并没有新建文件）
                             if (this.backend.webSocketServer && !isDuplicate) {
-                                const eventData = { ...result, libraryId, ...(isBatchImport ? { batchImport: true, batchId } : {}) };
+                                const eventData = {
+                                    ...result,
+                                    libraryId,
+                                    uploadBatchId,
+                                    ...(isBatchImport ? { batchImport: true, batchId } : {})
+                                };
                                 this.backend.webSocketServer.broadcastPluginEvent('file::created', {
                                     message: {
                                         type: 'file',

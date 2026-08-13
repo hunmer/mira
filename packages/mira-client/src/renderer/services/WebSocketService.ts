@@ -431,6 +431,7 @@ let importNotifyThumbs: string[] = []
 let importNotifyLastFileId: string | undefined
 let importNotifyLastPreviewType: 'image' | 'video' = 'image'
 let importNotifyIsBatch = false
+let importNotifyBatchId: string | undefined
 // 是否已展示（避免缩略图到达后重复展示）
 let importNotifyShown = false
 // 缩略图就绪前的最长等待时间（ms）：超时则用 Material Icon 兜底展示
@@ -475,15 +476,25 @@ function notifyFileImported(
   thumbRaw?: string,
   fileId?: string | number,
   mimeType?: string,
-  isBatchImport = false
+  isBatchImport = false,
+  uploadBatchId?: string
 ): void {
   const settingsStore = useSettingsStore()
   // 受主通知开关 + 导入文件通知开关共同控制
   if (!settingsStore.settings.enableNotifications) return
   if (!settingsStore.settings.enableImportNotifications) return
 
+  // 后端为每次上传请求分配独立批次 ID；批次切换时结束上一批，避免数量跨请求累加。
+  if (uploadBatchId && importNotifyBatchId && uploadBatchId !== importNotifyBatchId && importNotifyCount > 0) {
+    if (importNotifyTimer) {
+      clearTimeout(importNotifyTimer)
+      importNotifyTimer = null
+    }
+    doShowImportNotification()
+  }
+
   // 上一批已展示完毕，开始新一批：重置聚合状态
-  if (importNotifyShown) {
+  if (importNotifyShown || (uploadBatchId && uploadBatchId !== importNotifyBatchId)) {
     importNotifyShown = false
     importNotifyCount = 0
     importNotifyLastName = ''
@@ -493,6 +504,7 @@ function notifyFileImported(
     importNotifyLastPreviewType = 'image'
     importNotifyIsBatch = false
   }
+  if (uploadBatchId) importNotifyBatchId = uploadBatchId
 
   importNotifyIsBatch = importNotifyCount === 0 ? isBatchImport : importNotifyIsBatch && isBatchImport
   importNotifyCount += 1
@@ -757,7 +769,8 @@ function setupEventListeners(libraryStore: any): void {
         data?.thumb_path || data?.thumbnail_path || (typeof data?.thumb === 'string' ? data.thumb : undefined),
         data?.id,
         data?.mimeType || data?.mime_type || data?.type,
-        data?.batchImport === true
+        data?.batchImport === true,
+        data?.uploadBatchId
       )
     }
   })
