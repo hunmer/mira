@@ -310,6 +310,8 @@ interface Props {
   tags?: any[]
   itemType?: 'folder' | 'tag'
   selectedKey?: string
+  /** 初始化时已选中的节点 ID */
+  selectedKeys?: string[]
   showBaseCategories?: boolean
   defaultShowSearch?: boolean
   title?: string
@@ -592,7 +594,8 @@ function toggleSearch() {
 const selectionEnabled = computed(() => props.selectionMode !== 'none')
 const isMultiMode = computed(() => props.selectionMode === 'multi')
 const selectionModeLabel = computed(() => isMultiMode.value ? t('business.folderTreeComponent.multiSelectLabel') : t('business.folderTreeComponent.singleSelectLabel'))
-const selectionActive = ref(false)
+// 传入选择模式时直接进入选择状态，便于在弹窗中点击即选
+const selectionActive = ref(props.selectionMode !== 'none')
 const selectedNodeIds = ref<Set<string>>(new Set())
 // 选择模式下当前选中的节点数量
 const selectionCount = computed(() => selectedNodeIds.value.size)
@@ -605,8 +608,8 @@ function toggleSelectionMode() {
 }
 
 // 选择模式能力变化时，自动关闭已激活的选择状态并清空选中
-watch(() => props.selectionMode, () => {
-  selectionActive.value = false
+watch(() => props.selectionMode, (mode) => {
+  selectionActive.value = mode !== 'none'
   clearSelection()
 })
 
@@ -660,6 +663,15 @@ function onNodeCheckChange(node: HeTreeNode, checked: boolean | 'indeterminate')
     ids.forEach(id => next.delete(id))
   }
   selectedNodeIds.value = next
+  // 复选框交互同样通知外层，以便弹窗调用方即时应用节点
+  emit('select', {
+    label: node.label,
+    icon: node.icon || defaultIcon.value,
+    count: node.count,
+    ...node.originalData,
+    id: node.id,
+    selected: checked === true,
+  })
 }
 
 function selectAll() {
@@ -819,6 +831,19 @@ const treeData = computed<HeTreeNode[]>(() => {
   return q ? filterNodes(rawNodes.value, q) : rawNodes.value
 })
 
+// 数据加载或外部当前文件变化后，同步初始化选择状态
+watch([() => props.selectedKeys, rawNodes], ([keys]) => {
+  if (!selectionActive.value) return
+  const wanted = new Set((keys || []).map(String))
+  const available = new Set<string>()
+  const collect = (nodes: HeTreeNode[]) => nodes.forEach(node => {
+    available.add(String(node.id))
+    if (node.children) collect(node.children)
+  })
+  collect(rawNodes.value)
+  selectedNodeIds.value = new Set([...wanted].filter(id => available.has(id)))
+}, { immediate: true, deep: true })
+
 // 操作
 const ops = useFolderOperations({
   'folder-add': () => { },
@@ -953,6 +978,13 @@ function handleNodeClick(node: HeTreeNode, stat: any, event: MouseEvent) {
     } else {
       // 单选：仅选中当前节点
       selectSingle(node)
+      emit('select', {
+        label: node.label,
+        icon: node.icon || defaultIcon.value,
+        count: node.count,
+        ...node.originalData,
+        id: node.id,
+      })
     }
     return
   }

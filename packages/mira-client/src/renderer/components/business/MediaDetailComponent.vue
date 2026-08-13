@@ -195,7 +195,9 @@
             <FolderTreeComponent
               item-type="tag"
               :tags="tagStore.tags"
-:default-show-search="true"
+              selection-mode="multi"
+              :selected-keys="selectedTagKeys"
+              :default-show-search="true"
  
               @select="handleTagSelect"
             />
@@ -241,7 +243,9 @@
           <PopoverContent align="end" side="bottom" class="w-80 p-2">
             <FolderTreeComponent
               item-type="folder"
-:default-show-search="true"
+              selection-mode="single"
+              :selected-keys="selectedFolderKeys"
+              :default-show-search="true"
               :folders="folderTreeNodes"
               :show-base-categories="false"
               @select="handleFolderSelect"
@@ -677,11 +681,24 @@ const hasTags = computed(() => {
   return displayItems.value[0]?.tags && displayItems.value[0].tags.length > 0
 })
 
+const selectedFolderKeys = computed(() => {
+  const folders = isMultiSelect.value ? (mergedInfo.value?.folders || []) : (displayItems.value[0]?.folderId ? [displayItems.value[0].folderId] : [])
+  return folders.map(String)
+})
+
+const selectedTagKeys = computed(() => {
+  const tags = isMultiSelect.value ? (mergedInfo.value?.tags || []) : (displayItems.value[0]?.tags || [])
+  const cached = libraryId.value ? tagStore.getCachedTags(libraryId.value) : []
+  return tags.map(tag => {
+    const match = cached.find(t => String(t.id) === String(tag) || t.title === tag || (t as any).name === tag)
+    return `tag-${match?.id ?? tag}`
+  })
+})
+
 const handleFolderSelect = async (folderItem: any) => {
   const client = (miraSDKService as any).client
   if (!client) return
   const files = displayItems.value
-  folderPopoverOpen.value = false
   await runBatchOperation(files, async (file) => {
     const libId = file.libraryId || 'default'
     await client.folders().setFileFolder({ libraryId: libId, fileId: parseInt(file.id), folder: parseInt(folderItem.id) })
@@ -693,9 +710,13 @@ const handleFolderSelect = async (folderItem: any) => {
 const handleTagSelect = async (tagData: any) => {
   const client = (miraSDKService as any).client
   if (!client) return
-  const tagName = tagData.title || tagData.name
+  const tagName = tagData.title || tagData.name || tagData.label
+  if (!tagName) return
   const files = displayItems.value
-  tagPopoverOpen.value = false
+  if (tagData.selected === false) {
+    await handleRemoveTag(tagName)
+    return
+  }
   await runBatchOperation(files, async (file) => {
     const libId = file.libraryId || 'default'
     await client.tags().addTagsToFile(libId, parseInt(file.id), [tagName])

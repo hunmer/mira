@@ -1,4 +1,4 @@
-import { ref, computed, watch, type Ref } from 'vue'
+import { ref, computed, watch, nextTick, type Ref } from 'vue'
 import { useMediaQuery } from '@vueuse/core'
 
 /**
@@ -9,8 +9,13 @@ import { useMediaQuery } from '@vueuse/core'
  *
  * @param defaultSize 侧栏默认宽度占比（resizable 百分比）
  */
-export function useCollapsibleSidebar(defaultSize = 20) {
+export function useCollapsibleSidebar(defaultSize = 20, contentWidth?: number) {
   const isMobile = useMediaQuery('(max-width: 767px)')
+  const size = computed(() => {
+    if (!contentWidth || typeof window === 'undefined') return defaultSize
+    // ResizablePanel 使用百分比；按缩略图内容宽度换算，避免宽屏留下空白。
+    return Math.max(6, Math.min(30, (contentWidth / window.innerWidth) * 100))
+  })
 
   // 侧栏可见性：桌面端驱动 inline 面板，移动端驱动抽屉开关
   const showSidebar = ref(true)
@@ -21,7 +26,14 @@ export function useCollapsibleSidebar(defaultSize = 20) {
 
   // 按钮 / handle 点击切换 → 驱动面板切换到 默认宽度 / 0
   watch(showSidebar, (show) => {
-    panelRef.value?.resize(show ? defaultSize : 0)
+    panelRef.value?.resize(show ? size.value : 0)
+  }, { flush: 'post' })
+
+  // 面板实例在首次渲染后才注册。桌面端 showSidebar 默认就是 true，
+  // 因此仅监听 showSidebar 会漏掉初始化同步。
+  watch(panelRef, (panel) => {
+    if (!panel) return
+    nextTick(() => panel.resize(showSidebar.value ? size.value : 0))
   }, { flush: 'post' })
 
   // 拖拽折叠 → 回写 showSidebar，保持切换按钮高亮一致
@@ -75,6 +87,6 @@ export function useCollapsibleSidebar(defaultSize = 20) {
     isCollapsed,
     drawerOpen,
     handleToggle,
-    defaultSize,
+    defaultSize: size,
   }
 }

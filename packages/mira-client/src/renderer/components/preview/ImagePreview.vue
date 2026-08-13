@@ -33,7 +33,7 @@
         <ResizablePanel
           ref="leftPanelRef"
           :default-size="leftPanelDefaultSize"
-          :min-size="12"
+          :min-size="6"
           :max-size="30"
           :collapsed-size="0"
           collapsible
@@ -210,7 +210,7 @@ const {
   drawerOpen: leftDrawerOpen,
   handleToggle: leftHandleToggle,
   defaultSize: leftPanelDefaultSize,
-} = useCollapsibleSidebar(20)
+} = useCollapsibleSidebar(20, 128)
 
 // 右侧信息面板：同样可折叠 + 移动抽屉
 const {

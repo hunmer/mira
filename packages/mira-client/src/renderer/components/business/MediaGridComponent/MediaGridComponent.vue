@@ -7,6 +7,7 @@
     :realtime-selection="true"
     :min-selection-size="8"
     :enable-select-all-shortcut="true"
+    :enable-clear-selection-shortcut="true"
     class="flex-1 overflow-y-auto pb-16 relative"
     tabindex="0"
     @selection-update="handleSelectionUpdate"

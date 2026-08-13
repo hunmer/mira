@@ -7,6 +7,7 @@
     :realtime-selection="true"
     :min-selection-size="8"
     :enable-select-all-shortcut="true"
+    :enable-clear-selection-shortcut="true"
     class="media-list w-full overflow-auto"
     tabindex="0"
     @selection-update="handleSelectionUpdate"

@@ -1,6 +1,8 @@
 <template>
   <div
+    ref="mediaTabListViewRef"
     class="p-2 media-list-view flex-1 flex flex-col w-full bg-transparent overflow-hidden relative h-full text-[13px]"
+    @keydown.capture="handleDeleteKeyDown"
     @dragover.prevent="canUpload && handleDragOver($event)" @dragleave.prevent="canUpload && handleDragLeave($event)"
     @drop.prevent="canUpload && handleDrop($event)">
     <!-- 拖拽上传覆盖层 -->
@@ -1044,6 +1046,22 @@ const handleToolbarAction = async (action: string) => {
     return
   }
   homeController.handleToolbarAction(action)
+}
+
+const mediaTabListViewRef = ref<HTMLElement | null>(null)
+
+const handleDeleteKeyDown = (event: KeyboardEvent) => {
+  if (event.key !== 'Delete' || selectedItems.value.length === 0) return
+
+  const activeElement = document.activeElement
+  const selectionBox = activeElement instanceof HTMLElement
+    ? activeElement.closest('.selection-container')
+    : null
+  if (!selectionBox || !mediaTabListViewRef.value?.contains(selectionBox)) return
+
+  event.preventDefault()
+  event.stopImmediatePropagation()
+  void handleToolbarAction('delete')
 }
 
 // 批量删除确认弹窗

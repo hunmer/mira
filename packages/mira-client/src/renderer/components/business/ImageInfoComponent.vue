@@ -28,14 +28,14 @@
         <div>
           <h4 class="font-semibold text-foreground mb-2 text-sm">{{ $t('business.imageInfoComponent.tags') }}</h4>
           <div class="flex flex-wrap gap-2 items-center">
-            <span 
+            <span
               v-for="tag in image?.tags"
               :key="tag"
-              class="bg-primary text-primary text-xs px-2 py-1 rounded-full flex items-center"
+              class="bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full flex items-center"
             >
               {{ tag }}
-              <button 
-                class="ml-1 text-primary text-xs hover:text-primary"
+              <button
+                class="ml-1 text-primary-foreground/80 text-xs hover:text-primary-foreground"
                 @click="$emit('tag-remove', tag)"
               >
                 ×
