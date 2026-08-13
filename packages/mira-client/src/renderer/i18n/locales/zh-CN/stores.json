@@ -28,7 +28,9 @@
     "catalogEmpty": "插件市场目录为空"
   },
   "serverList": {
-    "defaultLibraryName": "素材库"
+    "defaultLibraryName": "素材库",
+    "imported": "服务器「{name}」已加入素材库列表",
+    "importFailed": "服务器导入失败"
   },
   "dashboard": {
     "notConnected": "未连接到服务器",

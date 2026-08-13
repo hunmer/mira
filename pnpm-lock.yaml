@@ -496,8 +496,8 @@ importers:
         specifier: ^3.4.0
         version: 3.4.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       reka-ui:
-        specifier: ^2.10.1
-        version: 2.10.1(vue@3.5.13(typescript@5.7.3))
+        specifier: ^2.10.3
+        version: 2.10.3(vue@3.5.13(typescript@5.7.3))
       shadcn-vue:
         specifier: ^2.7.3
         version: 2.7.4(@cfworker/json-schema@4.1.1)(babel-plugin-macros@3.1.0)(eslint@9.39.4(jiti@2.7.0))(magicast@0.3.5)(vue@3.5.13(typescript@5.7.3))
@@ -7118,6 +7118,11 @@ packages:
 
   reka-ui@2.10.1:
     resolution: {integrity: sha512-drcOQ4rQtDYAcGCsyQBqQg8QQ+H3B+zDaMJU0h8KPEPMa7g9BHu3zcOi4OB39XJSWizceFoNO0Z9tctSGLOXqg==}
+    peerDependencies:
+      vue: '>= 3.4.0'
+
+  reka-ui@2.10.3:
+    resolution: {integrity: sha512-nJGZbwcha8AcP2wbnjodfzsciTKBqp1mIzepC9Pi2xDI/YK3++ej3vpJOSPyxqrkq1Oorj4K+BdJkbVCV6x6ag==}
     peerDependencies:
       vue: '>= 3.4.0'
 
@@ -16122,22 +16127,6 @@ snapshots:
 
   regexp-tree@0.1.27: {}
 
-  reka-ui@2.10.1(vue@3.5.13(typescript@5.7.3)):
-    dependencies:
-      '@floating-ui/dom': 1.7.6
-      '@floating-ui/vue': 1.1.11(vue@3.5.13(typescript@5.7.3))
-      '@internationalized/date': 3.12.3
-      '@internationalized/number': 3.6.6
-      '@tanstack/vue-virtual': 3.13.24(vue@3.5.13(typescript@5.7.3))
-      '@vueuse/core': 14.4.0(vue@3.5.13(typescript@5.7.3))
-      '@vueuse/shared': 14.3.0(vue@3.5.13(typescript@5.7.3))
-      aria-hidden: 1.2.6
-      defu: 6.1.7
-      ohash: 2.0.11
-      vue: 3.5.13(typescript@5.7.3)
-    transitivePeerDependencies:
-      - '@vue/composition-api'
-
   reka-ui@2.10.1(vue@3.5.41(typescript@5.7.3)):
     dependencies:
       '@floating-ui/dom': 1.7.6
@@ -16167,6 +16156,22 @@ snapshots:
       defu: 6.1.7
       ohash: 2.0.11
       vue: 3.5.41(typescript@5.8.3)
+    transitivePeerDependencies:
+      - '@vue/composition-api'
+
+  reka-ui@2.10.3(vue@3.5.13(typescript@5.7.3)):
+    dependencies:
+      '@floating-ui/dom': 1.8.0
+      '@floating-ui/vue': 1.1.11(vue@3.5.13(typescript@5.7.3))
+      '@internationalized/date': 3.12.3
+      '@internationalized/number': 3.6.6
+      '@tanstack/vue-virtual': 3.13.24(vue@3.5.13(typescript@5.7.3))
+      '@vueuse/core': 14.4.0(vue@3.5.13(typescript@5.7.3))
+      '@vueuse/shared': 14.4.0(vue@3.5.13(typescript@5.7.3))
+      aria-hidden: 1.2.6
+      defu: 6.1.7
+      ohash: 2.0.11
+      vue: 3.5.13(typescript@5.7.3)
     transitivePeerDependencies:
       - '@vue/composition-api'
 
@@ -16450,7 +16455,7 @@ snapshots:
       postcss: 8.5.14
       postcss-selector-parser: 7.1.1
       prompts: 2.4.2
-      reka-ui: 2.10.1(vue@3.5.13(typescript@5.7.3))
+      reka-ui: 2.10.3(vue@3.5.13(typescript@5.7.3))
       semver: 7.8.0
       stringify-object: 6.0.0
       tailwindcss: 4.3.3

@@ -9,19 +9,23 @@ export class AdminsRouter {
         this.authRouter = authRouter;
         this.router = Router();
         this.setupRoutes();
+        this.setupTokenRoutes();
     }
 
     private setupRoutes(): void {
         // 管理员管理路由
         this.router.get('/', async (req, res) => {
             try {
+                const userStorage = this.authRouter.getAuthService().getUserStorage();
                 // 获取所有用户（管理员）
-                const users = await this.authRouter.getAuthService().getUserStorage().getAllUsers();
+                const users = await userStorage.getAllUsers();
+                const tokenCounts = await userStorage.getUserTokenCounts();
                 const admins = users.map((user: any) => ({
                     id: user.id.toString(),
                     username: user.username,
                     email: user.email || '',
                     role: user.role,
+                    tokenCount: tokenCounts.get(user.id) || 0,
                     createdAt: user.created_at ? new Date(user.created_at).toISOString() : new Date().toISOString(),
                     updatedAt: user.updated_at ? new Date(user.updated_at).toISOString() : new Date().toISOString()
                 }));
@@ -186,6 +190,79 @@ export class AdminsRouter {
                     message: '删除管理员失败',
                     error: error?.message || '未知错误'
                 });
+            }
+        });
+    }
+
+    // ==================== API Token 管理 ====================
+
+    private setupTokenRoutes(): void {
+        const getUserStorage = () => this.authRouter.getAuthService().getUserStorage();
+
+        // 列出用户的所有 token
+        this.router.get('/:id/tokens', async (req, res) => {
+            try {
+                const tokens = await getUserStorage().listUserTokens(parseInt(req.params.id));
+                res.json(tokens);
+            } catch (error: any) {
+                console.error('Error listing tokens:', error);
+                res.status(500).json({ success: false, message: '获取 Token 列表失败', error: error?.message });
+            }
+        });
+
+        // 创建 token（expiresInDays 为空时永不过期）
+        this.router.post('/:id/tokens', async (req, res) => {
+            try {
+                const { name, expiresInDays } = req.body || {};
+                const userId = parseInt(req.params.id);
+                const userStorage = getUserStorage();
+
+                const user = await userStorage.findUserById(userId);
+                if (!user) {
+                    return res.status(404).json({ success: false, message: '用户不存在' });
+                }
+
+                const days = typeof expiresInDays === 'number' && expiresInDays > 0 ? expiresInDays : null;
+                const token = await userStorage.createUserToken(userId, { name: name || '', expiresInDays: days });
+                res.json({ success: true, message: 'Token 创建成功', data: token });
+            } catch (error: any) {
+                console.error('Error creating token:', error);
+                res.status(500).json({ success: false, message: '创建 Token 失败', error: error?.message });
+            }
+        });
+
+        // 更新 token（名称 / 过期时间）
+        this.router.put('/:id/tokens/:tokenId', async (req, res) => {
+            try {
+                const { name, expiresInDays } = req.body || {};
+                const data: { name?: string; expiresInDays?: number | null } = {};
+                if (name !== undefined) data.name = name;
+                if (expiresInDays !== undefined) {
+                    data.expiresInDays = typeof expiresInDays === 'number' && expiresInDays > 0 ? expiresInDays : null;
+                }
+
+                const updated = await getUserStorage().updateUserToken(parseInt(req.params.id), parseInt(req.params.tokenId), data);
+                if (!updated) {
+                    return res.status(404).json({ success: false, message: 'Token 不存在' });
+                }
+                res.json({ success: true, message: 'Token 更新成功', data: updated });
+            } catch (error: any) {
+                console.error('Error updating token:', error);
+                res.status(500).json({ success: false, message: '更新 Token 失败', error: error?.message });
+            }
+        });
+
+        // 删除 token
+        this.router.delete('/:id/tokens/:tokenId', async (req, res) => {
+            try {
+                const success = await getUserStorage().deleteUserToken(parseInt(req.params.id), parseInt(req.params.tokenId));
+                if (!success) {
+                    return res.status(404).json({ success: false, message: 'Token 不存在' });
+                }
+                res.json({ success: true, message: 'Token 删除成功' });
+            } catch (error: any) {
+                console.error('Error deleting token:', error);
+                res.status(500).json({ success: false, message: '删除 Token 失败', error: error?.message });
             }
         });
     }

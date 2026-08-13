@@ -174,6 +174,23 @@ async function initSearchWindow() {
                   </div>
                 </div>
 
+                <!-- 骨架占位（等待搜索结果中） -->
+                <div v-else-if="isSearching" class="results-list skeleton-list">
+                  <div
+                    v-for="n in 6"
+                    :key="'skeleton-' + n"
+                    class="skeleton-item"
+                    :style="{ animationDelay: (n - 1) * 0.12 + 's' }"
+                  >
+                    <div class="skeleton-avatar"></div>
+                    <div class="skeleton-content">
+                      <div class="skeleton-line skeleton-title"></div>
+                      <div class="skeleton-line skeleton-path"></div>
+                    </div>
+                    <div class="skeleton-meta"></div>
+                  </div>
+                </div>
+
                 <!-- 空状态 -->
                 <div v-else-if="searchKeyword.trim()" class="empty-state">
                   <span class="material-icons empty-icon">search_off</span>

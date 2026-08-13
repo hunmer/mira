@@ -8,6 +8,18 @@ import * as crypto from 'crypto';
 
 import type { User, Session } from './types';
 
+/** expires_at 哨兵值：永不过期 */
+export const NEVER_EXPIRES = -1;
+
+/** API Token 信息（不含 user_id，面向接口输出） */
+export interface ApiTokenInfo {
+    id: number;
+    name: string;
+    token: string;
+    createdAt: number;
+    expiresAt: number; // -1 表示永不过期
+}
+
 export class UserStorage {
     private db: Database | null = null;
     private dbPath: string;
@@ -68,6 +80,10 @@ export class UserStorage {
 
         await this.executeSql(createUsersTable);
         await this.executeSql(createSessionsTable);
+
+        // 老库迁移：sessions 表补 name / kind 列（kind='token' 为手动创建的 API Token，'session' 为登录会话）
+        await this.ensureColumn('sessions', 'name', "TEXT NOT NULL DEFAULT ''");
+        await this.ensureColumn('sessions', 'kind', "TEXT NOT NULL DEFAULT 'session'");
 
         // 创建索引以提高查询性能
         await this.executeSql('CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)');
@@ -246,7 +262,7 @@ export class UserStorage {
         const query = `
             SELECT s.*, u.* FROM sessions s
             JOIN users u ON s.user_id = u.id
-            WHERE s.token = ? AND s.is_active = 1 AND s.expires_at > ? AND u.is_active = 1
+            WHERE s.token = ? AND s.is_active = 1 AND (s.expires_at = ${NEVER_EXPIRES} OR s.expires_at > ?) AND u.is_active = 1
             LIMIT 1
         `;
 
@@ -271,11 +287,95 @@ export class UserStorage {
         return result.changes > 0;
     }
 
-    // 清理过期会话
+    // 清理过期会话（expires_at = -1 表示永不过期，不清理）
     async cleanupExpiredSessions(): Promise<number> {
-        const query = 'DELETE FROM sessions WHERE expires_at < ? OR is_active = 0';
+        const query = `DELETE FROM sessions WHERE (expires_at != ${NEVER_EXPIRES} AND expires_at < ?) OR is_active = 0`;
         const result = await this.runSql(query, [Date.now()]);
         return result.changes;
+    }
+
+    // ==================== API Token 管理（基于 sessions 表，kind='token'）====================
+
+    private rowToApiToken(row: any): ApiTokenInfo {
+        return {
+            id: row.rowid ?? row.id,
+            name: row.name || '',
+            token: row.token,
+            createdAt: row.created_at,
+            expiresAt: row.expires_at,
+        };
+    }
+
+    /** 列出用户的所有 API Token（不含登录会话） */
+    async listUserTokens(userId: number): Promise<ApiTokenInfo[]> {
+        const rows = await this.getSql(
+            `SELECT rowid, * FROM sessions WHERE user_id = ? AND kind = 'token' AND is_active = 1 ORDER BY created_at DESC`,
+            [userId],
+        );
+        return rows.map((r) => this.rowToApiToken(r));
+    }
+
+    /** 创建 API Token。expiresInDays 为 null/undefined 时永不过期 */
+    async createUserToken(userId: number, data: { name?: string; expiresInDays?: number | null }): Promise<ApiTokenInfo> {
+        const token = this.generateToken(userId);
+        const now = Date.now();
+        const expiresAt = data.expiresInDays && data.expiresInDays > 0
+            ? now + data.expiresInDays * 24 * 60 * 60 * 1000
+            : NEVER_EXPIRES;
+
+        const result = await this.runSql(
+            `INSERT INTO sessions (token, user_id, created_at, expires_at, is_active, name, kind) VALUES (?, ?, ?, ?, 1, ?, 'token')`,
+            [token, userId, now, expiresAt, data.name || ''],
+        );
+        const rows = await this.getSql(`SELECT rowid, * FROM sessions WHERE rowid = ?`, [result.lastID]);
+        return this.rowToApiToken(rows[0]);
+    }
+
+    /** 更新 API Token（名称 / 过期时间）。expiresInDays 为 null 时改为永不过期，数值则从当前时间起重新计算 */
+    async updateUserToken(userId: number, tokenId: number, data: { name?: string; expiresInDays?: number | null }): Promise<ApiTokenInfo | null> {
+        const fields: string[] = [];
+        const params: any[] = [];
+        if (data.name !== undefined) {
+            fields.push('name = ?');
+            params.push(data.name);
+        }
+        if (data.expiresInDays !== undefined) {
+            const expiresAt = data.expiresInDays && data.expiresInDays > 0
+                ? Date.now() + data.expiresInDays * 24 * 60 * 60 * 1000
+                : NEVER_EXPIRES;
+            fields.push('expires_at = ?');
+            params.push(expiresAt);
+        }
+        if (fields.length) {
+            params.push(tokenId, userId);
+            await this.runSql(
+                `UPDATE sessions SET ${fields.join(', ')} WHERE rowid = ? AND user_id = ? AND kind = 'token'`,
+                params,
+            );
+        }
+        const rows = await this.getSql(`SELECT rowid, * FROM sessions WHERE rowid = ? AND user_id = ? AND kind = 'token'`, [tokenId, userId]);
+        return rows.length ? this.rowToApiToken(rows[0]) : null;
+    }
+
+    /** 删除 API Token */
+    async deleteUserToken(userId: number, tokenId: number): Promise<boolean> {
+        const result = await this.runSql(
+            `DELETE FROM sessions WHERE rowid = ? AND user_id = ? AND kind = 'token'`,
+            [tokenId, userId],
+        );
+        return result.changes > 0;
+    }
+
+    /** 各用户的 API Token 数量（user_id → count），用于列表展示 */
+    async getUserTokenCounts(): Promise<Map<number, number>> {
+        const rows = await this.getSql(
+            `SELECT user_id, COUNT(*) as count FROM sessions WHERE kind = 'token' AND is_active = 1 GROUP BY user_id`,
+        );
+        const map = new Map<number, number>();
+        for (const row of rows) {
+            map.set(row.user_id, row.count);
+        }
+        return map;
     }
 
     // 工具方法

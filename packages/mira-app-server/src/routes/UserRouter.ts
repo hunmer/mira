@@ -207,6 +207,28 @@ export class UserRouter {
             }
         });
 
+        // 获取当前用户的 API Token 列表（供分享链接等场景选择）
+        this.router.get('/tokens', async (req: Request, res: Response) => {
+            try {
+                const token = req.headers.authorization?.replace('Bearer ', '');
+                if (!token) {
+                    return res.status(401).json({ code: 401, message: '未提供认证令牌', data: null });
+                }
+
+                const authService = this.authRouter.getAuthService();
+                const user = await authService.validateToken(token);
+                if (!user) {
+                    return res.status(401).json({ code: 401, message: '无效或过期的认证令牌', data: null });
+                }
+
+                const tokens = await this.authRouter.getUserStorage().listUserTokens(user.id);
+                res.json(tokens);
+            } catch (error) {
+                console.error('List user tokens error:', error);
+                res.status(500).json({ code: 500, message: '服务器内部错误', data: null });
+            }
+        });
+
         // 获取头像
         this.router.get('/avatar/:userId', async (req: Request, res: Response) => {
             try {

@@ -12,10 +12,11 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog'
+import TokenManageDialog from './TokenManageDialog.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import { useConfirmDialog } from '@/composables/useConfirmDialog'
 import { toast } from 'vue-sonner'
-import { RiAddLine, RiEditLine, RiDeleteBinLine } from '@remixicon/vue'
+import { RiAddLine, RiEditLine, RiDeleteBinLine, RiKeyLine } from '@remixicon/vue'
 
 const { t } = useI18n()
 const { confirmDialog, requireConfirm } = useConfirmDialog()
@@ -23,6 +24,13 @@ const admins = ref<User[]>([])
 const loading = ref(false)
 const dialogOpen = ref(false)
 const editing = ref<{ id?: string; username: string; email: string; password: string; role: string } | null>(null)
+const tokenDialogOpen = ref(false)
+const tokenUser = ref<User | null>(null)
+
+function openTokenManage(user: User) {
+  tokenUser.value = user
+  tokenDialogOpen.value = true
+}
 
 async function loadAdmins() {
   loading.value = true
@@ -102,15 +110,16 @@ await loadAdmins()
             <TableHead>{{ t('admin.email') }}</TableHead>
             <TableHead>{{ t('admin.role') }}</TableHead>
             <TableHead>{{ t('common.createdAt') }}</TableHead>
+            <TableHead>{{ t('admin.token.count') }}</TableHead>
             <TableHead>{{ t('common.actions') }}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           <TableRow v-if="loading">
-            <TableCell :colspan="5" class="py-8 text-center text-muted-foreground">{{ t('common.loading') }}</TableCell>
+            <TableCell :colspan="6" class="py-8 text-center text-muted-foreground">{{ t('common.loading') }}</TableCell>
           </TableRow>
           <TableRow v-else-if="!admins.length">
-            <TableCell :colspan="5" class="py-8 text-center text-muted-foreground">{{ t('common.noData') }}</TableCell>
+            <TableCell :colspan="6" class="py-8 text-center text-muted-foreground">{{ t('common.noData') }}</TableCell>
           </TableRow>
           <TableRow v-for="admin in admins" :key="admin.id">
             <TableCell class="font-medium">{{ admin.username }}</TableCell>
@@ -121,6 +130,16 @@ await loadAdmins()
               </Badge>
             </TableCell>
             <TableCell class="text-muted-foreground">{{ admin.createdAt?.slice(0, 10) }}</TableCell>
+            <TableCell>
+              <Badge
+                class="cursor-pointer select-none"
+                variant="secondary"
+                :title="t('admin.token.manage')"
+                @click="openTokenManage(admin)"
+              >
+                <RiKeyLine class="mr-1 size-3" /> {{ admin.tokenCount ?? 0 }}
+              </Badge>
+            </TableCell>
             <TableCell>
               <div class="flex gap-1">
                 <Button variant="ghost" size="icon" @click="openEdit(admin)">
@@ -170,6 +189,14 @@ await loadAdmins()
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <!-- Token management dialog -->
+    <TokenManageDialog
+      :open="tokenDialogOpen"
+      :user="tokenUser"
+      @update:open="tokenDialogOpen = $event"
+      @changed="loadAdmins"
+    />
 
     <!-- Delete confirmation -->
     <ConfirmDialog

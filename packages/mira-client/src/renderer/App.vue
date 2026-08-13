@@ -129,6 +129,9 @@ import { miraSDKService } from './services/MiraSDKService'
 // 全局快捷键系统
 import { useAutoShortcuts } from './composables/useShortcuts'
 
+import { toast } from 'vue-sonner'
+import i18n from './i18n'
+
 const router = useRouter()
 const settingsStore = useSettingsStore()
 const libraryStore = useLibraryStore()
@@ -367,6 +370,37 @@ const setupElectronListeners = () => {
       tabs.createTabFromTag({ id: String(data.id), title: data.name }, data.libraryId)
     }
   })
+
+  // 监听 server_import 协议事件（来自 dashboard 分享链接），导入服务器配置
+  window.electronAPI.on('protocol:server-import', async (data: any) => {
+    console.log('Received server_import protocol:', data)
+    const serverUrl = typeof data?.serverUrl === 'string' ? data.serverUrl.trim() : ''
+    if (!serverUrl) return
+    try {
+      const { useServerListStore } = await import('./stores/serverList')
+      const serverListStore = useServerListStore()
+      // 先恢复本地已存列表，避免空 state 覆盖已有配置
+      await serverListStore.restoreServerListState()
+      const result = await serverListStore.addServer({
+        id: String(data.id || serverUrl),
+        name: typeof data.name === 'string' && data.name ? data.name : serverUrl,
+        serverUrl,
+        websocketUrl: typeof data.websocketUrl === 'string' && data.websocketUrl
+          ? data.websocketUrl
+          : serverUrl.replace(/^http/, 'ws'),
+        // 分享链接可携带 API Token，导入后免登录连接
+        ...(typeof data.authToken === 'string' && data.authToken ? { authToken: data.authToken } : {}),
+      })
+      if (result.success) {
+        toast.success(i18n.global.t('stores.serverList.imported', { name: typeof data.name === 'string' && data.name ? data.name : serverUrl }))
+      } else {
+        toast.error(i18n.global.t('stores.serverList.importFailed'))
+      }
+    } catch (error) {
+      console.error('Failed to import server:', error)
+      toast.error(i18n.global.t('stores.serverList.importFailed'))
+    }
+  })
   
   // 监听全局Loading事件
   window.electronAPI.on('show-global-loading', (message: string, options?: {
@@ -423,6 +457,7 @@ const cleanupElectronListeners = () => {
   window.electronAPI.removeAllListeners('files:import-from-url')
   window.electronAPI.removeAllListeners('plugin-window:mira-item-add-from-url')
   window.electronAPI.removeAllListeners('protocol:open-tab')
+  window.electronAPI.removeAllListeners('protocol:server-import')
   window.electronAPI.removeAllListeners('show-global-loading')
   window.electronAPI.removeAllListeners('hide-global-loading')
 

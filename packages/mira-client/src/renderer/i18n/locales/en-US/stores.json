@@ -28,7 +28,9 @@
     "catalogEmpty": "The plugin marketplace catalog is empty"
   },
   "serverList": {
-    "defaultLibraryName": "Library"
+    "defaultLibraryName": "Library",
+    "imported": "Server {name} added to library list",
+    "importFailed": "Failed to import server"
   },
   "dashboard": {
     "notConnected": "Not connected to server",

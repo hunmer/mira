@@ -1,5 +1,5 @@
 import client from '../client'
-import type { LoginForm, LoginResponse } from '@/types/auth'
+import type { LoginForm, LoginResponse, ApiToken } from '@/types/auth'
 
 export const authApi = {
   login: (data: LoginForm) => client.post<LoginResponse>('/auth/login', data),
@@ -11,4 +11,6 @@ export const authApi = {
     client.put('/user/change-password', data),
   uploadAvatar: (image: string) =>
     client.post('/user/avatar', { image }),
+  /** 当前用户的 API Token 列表 */
+  myTokens: () => client.get<ApiToken[]>('/user/tokens'),
 }
