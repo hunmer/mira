@@ -246,3 +246,19 @@
 ::-webkit-scrollbar-corner {
   background: transparent;
 }
+
+/* ===== 主题切换：圆形揭露动画（View Transitions API）=====
+   禁用 root 快照默认的 cross-fade；圆形 clip-path 动画由 JS 用
+   Web Animations API（element.animate + pseudoElement）注入，确保
+   圆心精确跟随点击坐标。 */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-old(root) {
+  z-index: 1;
+}
+::view-transition-new(root) {
+  z-index: 9999;
+}

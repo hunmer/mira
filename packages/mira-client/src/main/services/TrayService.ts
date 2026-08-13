@@ -161,13 +161,6 @@ export class TrayService {
       },
       { type: 'separator' },
       {
-        label: t('tray.about'),
-        click: () => {
-          this.showAbout()
-        }
-      },
-      { type: 'separator' },
-      {
         label: t('tray.quit'),
         click: () => {
           app.quit()

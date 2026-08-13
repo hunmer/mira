@@ -76,39 +76,53 @@ const toggleTheme = (event: MouseEvent) => {
     settingsStore.applyTheme()
     settingsStore.saveSettings().catch(console.error)
   }
-  revealThemeTransition(event.currentTarget as HTMLElement, apply)
+  revealThemeTransition(event, apply)
 }
 
 /**
- * 主题切换圆形揭露动画：以触发元素中心为圆心，
+ * 主题切换圆形揭露动画：以点击位置为圆心，
  * 目标主题快照（::view-transition-new(root)）从 0 扩展到覆盖全屏。
+ * 用 Web Animations API（pseudoElement 选项）把坐标内联进 clipPath，
+ * 避免在 view-transition 伪元素里用 var()/circle() 解析不可靠的问题。
  * 不支持 View Transitions API 或开启「减少动态效果」时降级为直接切换。
  */
-const revealThemeTransition = (target: HTMLElement, apply: () => void) => {
+const revealThemeTransition = (event: MouseEvent, apply: () => void) => {
   const doc = document as Document & {
-    startViewTransition?: (cb: () => void) => { finished: Promise<void> }
+    startViewTransition?: (cb: () => void) => {
+      ready: Promise<void>
+      finished: Promise<void>
+    }
   }
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   if (!doc.startViewTransition || reduceMotion) {
     apply()
     return
   }
-  const rect = target.getBoundingClientRect()
-  const x = rect.left + rect.width / 2
-  const y = rect.top + rect.height / 2
+  const x = event.clientX
+  const y = event.clientY
   // 圆心到视口最远角的距离，确保圆圈能完全覆盖屏幕
   const endRadius = Math.hypot(
     Math.max(x, window.innerWidth - x),
     Math.max(y, window.innerHeight - y),
   )
-  const root = document.documentElement
-  root.style.setProperty('--theme-toggle-x', `${x}px`)
-  root.style.setProperty('--theme-toggle-y', `${y}px`)
-  root.style.setProperty('--theme-toggle-r', `${endRadius}px`)
   const transition = doc.startViewTransition(apply)
-  transition.finished.finally(() => {
-    root.style.removeProperty('--theme-toggle-r')
-  })
+  transition.ready
+    .then(() => {
+      document.documentElement.animate(
+        {
+          clipPath: [
+            `circle(0px at ${x}px ${y}px)`,
+            `circle(${endRadius}px at ${x}px ${y}px)`,
+          ],
+        },
+        {
+          duration: 800,
+          easing: 'linear',
+          pseudoElement: '::view-transition-new(root)',
+        },
+      )
+    })
+    .catch(() => {}) // transition 可能被中断/跳过，忽略 reject
 }
 
 /**
