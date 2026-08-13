@@ -92,6 +92,7 @@
     "fileCount": "{shown} / {total} 个",
     "cancelSelection": "取消选择 ({count})",
     "clearAll": "清空全部",
+    "addFiles": "添加文件",
     "formatPlaceholder": "格式",
     "formatAll": "全部格式",
     "formatImage": "图片",

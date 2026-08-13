@@ -90,6 +90,7 @@
         icon-class="text-base"
         side="top"
         align="end"
+        @preview-enter="$emit('preview-enter')"
       />
 
       <!-- 视频播放图标 -->
@@ -194,6 +195,7 @@ interface Props {
 interface Emits extends MediaItemEmits {
   (e: 'image-error', url: string): void
   (e: 'toggle-mute'): void
+  (e: 'preview-enter'): void
 }
 
 const props = withDefaults(defineProps<Props>(), {

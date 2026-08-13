@@ -51,7 +51,7 @@
     <!-- 标题栏 + 搜索 + 多选 + 添加（外层提供统一标题时隐藏） -->
     <div v-if="!hideHeader" class="flex items-center justify-between px-2 mb-2">
       <h2 class="text-xs font-semibold text-muted-foreground leading-5">{{ sectionTitle }}</h2>
-      <div class="header-actions flex items-center gap-0.5 -mr-1">
+      <div v-if="!hideHeaderActions" class="header-actions flex items-center gap-0.5 -mr-1">
         <button @click="toggleSearch"
           class="header-action-btn flex h-5 w-5 items-center justify-center text-muted-foreground hover:text-muted-foreground rounded"
           :class="{ 'text-primary': showSearch }" :title="$t('business.groupedCardBrowserDialog.searchPlaceholder', { type: sectionTitle })">
@@ -334,6 +334,11 @@ interface Props {
    * 隐藏后这些能力通过 defineExpose 暴露给外层调用。
    */
   hideHeader?: boolean
+  /**
+   * 仅隐藏标题栏右侧操作按钮（搜索/多选/添加），保留标题文本。
+   * 用于只需浏览、不需要这些操作的场景（如本地目录浏览树）。
+   */
+  hideHeaderActions?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -343,6 +348,7 @@ const props = withDefaults(defineProps<Props>(), {
   selectionMode: 'none',
   title: '',
   hideHeader: false,
+  hideHeaderActions: false,
   folders: () => [],
   baseCategoriesConfig: () => [],
 })

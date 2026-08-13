@@ -251,15 +251,17 @@ export class LibraryRoutes {
                 if (libraryObj.libraryService) {
                     libraryObj.libraryService.config = updatedConfig;
 
-                    // 处理 watcher 启停
+                    // watcher 在构造时会编译同步过滤规则；配置更新后必须重建，
+                    // 否则已有 watcher 会继续使用旧规则（路径变更时也需要重建）。
                     const shouldWatch = updatedConfig.customFields?.enableAutoSync ?? true;
-                    if (shouldWatch && !libraryObj.watcher) {
-                        const watcher = new LibraryWatcher(libraryObj.libraryService, this.backend.getWebSocketServer());
-                        libraryObj.watcher = watcher;
-                        watcher.start();
-                    } else if (!shouldWatch && libraryObj.watcher) {
+                    if (libraryObj.watcher) {
                         await libraryObj.watcher.stop();
                         libraryObj.watcher = undefined;
+                    }
+                    if (shouldWatch) {
+                        const watcher = new LibraryWatcher(libraryObj.libraryService, this.backend.getWebSocketServer());
+                        libraryObj.watcher = watcher;
+                        await watcher.start();
                     }
                 } else if (libraryObj.savedConfig) {
                     // 更新保存的配置

@@ -2,12 +2,14 @@
   <HoverCard :open-delay="200" :close-delay="150">
     <HoverCardTrigger as-child>
       <button
+        data-media-preview-hovercard-trigger
         :class="[
           'z-10 rounded-bl-full bg-black/55 text-white flex items-end justify-start p-0.5',
           'hover:bg-black/75 transition-opacity opacity-0 group-hover:opacity-100',
           buttonClass
         ]"
         :title="$t('commonUi.mediaPreviewHoverCard.preview')"
+        @pointerenter="emit('preview-enter')"
         @click.stop
         @pointerdown.stop
       >
@@ -29,6 +31,10 @@
 import type { FileInfo } from '../../../shared/types'
 import MediaPreviewContent from '@renderer/components/common/MediaPreviewContent.vue'
 import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card'
+
+const emit = defineEmits<{
+  (e: 'preview-enter'): void
+}>()
 
 interface Props {
   /** 预览目标 */

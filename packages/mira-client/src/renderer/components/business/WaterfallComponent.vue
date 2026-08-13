@@ -58,6 +58,7 @@
           @pointer-down="handlePointerDown"
           @image-error="handleImageError"
           @toggle-mute="toggleVideoMute"
+          @preview-enter="stopVideoPreview(item.id)"
         >
           <template #video-preview="{ item: videoItem, isPlaying }">
             <VideoPreviewContainer

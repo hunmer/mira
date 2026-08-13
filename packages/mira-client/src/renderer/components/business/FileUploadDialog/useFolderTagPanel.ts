@@ -86,6 +86,56 @@ export function useFolderTagPanel() {
     return tags.value.find((tg) => String(tg.id) === sid)?.title || t('business.folderTagPanel.unknownTag')
   }
 
+  /** 0xRRGGBB 数字色转 hex；无效返回 undefined */
+  function colorToHex(color: number | null | undefined): string | undefined {
+    return typeof color === 'number' && color > 0
+      ? '#' + color.toString(16).padStart(6, '0')
+      : undefined
+  }
+
+  /** hex 转 rgba 字符串，格式不合法返回 undefined */
+  function hexToRgba(hex: string, alpha: number): string | undefined {
+    const h = hex.replace('#', '')
+    if (h.length !== 6) return undefined
+    const r = parseInt(h.slice(0, 2), 16)
+    const g = parseInt(h.slice(2, 4), 16)
+    const b = parseInt(h.slice(4, 6), 16)
+    if ([r, g, b].some(Number.isNaN)) return undefined
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`
+  }
+
+  function getFolderColor(id: string | number | undefined): string | undefined {
+    if (id === undefined || id === null) return undefined
+    const sid = String(id)
+    return colorToHex(folders.value.find((f) => String(f.id) === sid)?.color)
+  }
+
+  function getTagColor(id: string | number | undefined): string | undefined {
+    if (id === undefined || id === null) return undefined
+    const sid = String(id)
+    return colorToHex(tags.value.find((tg) => String(tg.id) === sid)?.color)
+  }
+
+  /**
+   * badge 内联样式：半透明底色 + 实色文字。
+   * 无颜色返回 undefined，交由默认 class 兜底。
+   */
+  function badgeStyleFromColor(id: string | number | undefined, type: 'folder' | 'tag') {
+    const hex = type === 'folder' ? getFolderColor(id) : getTagColor(id)
+    if (!hex) return undefined
+    const bg = hexToRgba(hex, 0.18)
+    if (!bg) return undefined
+    return { backgroundColor: bg, color: hex }
+  }
+
+  function getFolderBadgeStyle(id: string | number | undefined) {
+    return badgeStyleFromColor(id, 'folder')
+  }
+
+  function getTagBadgeStyle(id: string | number | undefined) {
+    return badgeStyleFromColor(id, 'tag')
+  }
+
   function handleFolderSelect(folder: FolderItem) {
     if (selectedTargetFolderId.value === folder.id) {
       selectedTargetFolderId.value = undefined
@@ -147,6 +197,10 @@ export function useFolderTagPanel() {
     loadFoldersAndTags,
     getFolderName,
     getTagName,
+    getFolderColor,
+    getTagColor,
+    getFolderBadgeStyle,
+    getTagBadgeStyle,
     handleFolderSelect,
     handleTagSelect,
     clearTargetSelection,

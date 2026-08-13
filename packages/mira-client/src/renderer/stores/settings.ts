@@ -451,6 +451,9 @@ export const useSettingsStore = defineStore('settings', () => {
 
       window.electronAPI?.send('window:set-close-to-tray', settings.value.closeToTray)
 
+      // 把持久化的语言同步给主进程，使托盘等主进程 UI 与用户设置一致
+      window.electronAPI?.send('tray:set-locale', settings.value.language)
+
       // 把持久化的代理配置同步给主进程（启动后立即生效；主进程在更早的启动阶段
       // 已自行读盘应用，这里保证后续设置变更的回写也能即时反映）
       await pushProxyToMain()
@@ -500,6 +503,8 @@ export const useSettingsStore = defineStore('settings', () => {
       import('../i18n').then(({ setLocale }) => {
         setLocale(value as 'zh-CN' | 'en-US')
       })
+      // 通知主进程更新托盘等 UI
+      window.electronAPI?.send('tray:set-locale', value as string)
     } else if (key === 'pluginsDirectory' || key === 'autoLoadPlugins' ||
                key === 'enablePluginDevMode' || key === 'enablePluginSandbox') {
       // 插件相关设置变更时重新初始化插件服务

@@ -41,8 +41,21 @@ export function useVideoHover() {
       (!hoveredElement.value || hoveredElement.value.matches(':hover'))
   }
 
+  const isHoverCardTrigger = (event?: MouseEvent) => {
+    if (!event) return false
+
+    return document
+      .elementFromPoint(event.clientX, event.clientY)
+      ?.closest('[data-media-preview-hovercard-trigger]') !== null
+  }
+
   const handleMouseEnter = (item: FileInfo, event?: MouseEvent) => {
     if (getFileType(item) !== 'video') return
+
+    if (isHoverCardTrigger(event)) {
+      resetVideoHover()
+      return
+    }
 
     clearHoverTimer()
     hoveredItem.value = item

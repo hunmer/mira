@@ -28,6 +28,7 @@
                   :selected-key="selectedLocalDir"
                   :show-base-categories="true"
                   :base-categories-config="baseCategoriesConfig"
+                  :hide-header-actions="true"
                   @select="handleLocalTreeSelect"
                 />
               </div>
@@ -72,6 +73,13 @@
                   </span>
                 </div>
                 <div class="flex items-center space-x-2">
+                  <button
+                    class="flex items-center gap-1 text-xs text-primary dark:text-primary font-medium hover:opacity-80"
+                    @click="triggerFileSelect(fileInputRef)"
+                  >
+                    <span class="material-icons text-sm">add</span>
+                    {{ $t('business.fileUploadDialog.addFiles') }}
+                  </button>
                   <button
                     v-if="selectedPendingIds.length > 0"
                     class="text-xs text-muted-foreground dark:text-muted-foreground hover:text-foreground dark:hover:text-muted-foreground"
@@ -219,10 +227,13 @@
                   :realtime-selection="true"
                   :min-selection-size="8"
                   :enable-select-all-shortcut="true"
+                  :enable-clear-selection-shortcut="true"
+                  :enable-delete-selection-shortcut="true"
                   class="h-full overflow-auto p-4"
                   tabindex="0"
                   @selection-update="handleSelectionUpdate"
                   @clear-selection="clearSelection"
+                  @delete-selection="handleDeleteSelection"
                 >
                   <!-- 空状态 -->
                   <div
@@ -330,7 +341,8 @@
                           <div class="flex items-center gap-1 mt-1 flex-wrap">
                             <span
                               v-if="file.folderId"
-                              class="text-xs bg-primary dark:bg-primary/30 text-primary dark:text-primary px-1.5 py-0.5 rounded"
+                              class="text-xs bg-primary/15 dark:bg-primary/25 text-primary dark:text-primary px-1.5 py-0.5 rounded"
+                              :style="getFolderBadgeStyle(file.folderId)"
                             >
                               <span class="material-icons text-xs align-middle mr-0.5">folder</span>
                               {{ getFolderName(file.folderId) }}
@@ -339,6 +351,7 @@
                               v-for="tagId in (file.tags || []).slice(0, 2)"
                               :key="tagId"
                               class="text-xs bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded"
+                              :style="getTagBadgeStyle(tagId)"
                             >
                               <span class="material-icons text-xs align-middle mr-0.5">label</span>
                               {{ getTagName(tagId) }}
@@ -507,7 +520,7 @@ function onSizeFilterChange(value: any) {
 // 解构给模板直接使用
 const { pendingFiles, selectedPendingIds, isDragOver, removePendingFile, clearAllPendingFiles } = fileManagement
 const { uploadingFileIds, queueStats, getUploadProgress } = uploadQueue
-const { selectedTargetFolderId, folderTreeData, tagTreeData, getFolderName, getTagName, handleFolderSelect, handleTagSelect, applyMetadataToFiles, loadFoldersAndTags } = folderTagPanel
+const { selectedTargetFolderId, folderTreeData, tagTreeData, getFolderName, getTagName, getFolderBadgeStyle, getTagBadgeStyle, handleFolderSelect, handleTagSelect, applyMetadataToFiles, loadFoldersAndTags } = folderTagPanel
 // 本地树（左栏）：仅浏览/筛选，不参与上传 metadata
 const {
   baseCategoriesConfig,
@@ -612,6 +625,10 @@ function handleSelectionUpdate(_ids: string[]) {
   // v-model 自动更新 selectedPendingIds
 }
 
+function handleDeleteSelection(ids: string[]) {
+  ids.forEach(id => removePendingFile(id))
+}
+
 // 清空全部文件时一并清空左侧本地文件夹树
 function handleClearAll() {
   clearAllPendingFiles()
@@ -641,7 +658,9 @@ async function handleFolderPanelRefresh() {
 }
 
 function handleTagTreeSelect(tag: any) {
-  const removedTagId = handleTagSelect(tag)
+  // FolderTreeComponent 的 tag 节点 id 带 'tag-' 前缀，还原为真实 id 再交给面板逻辑
+  const realTag = { ...tag, id: String(tag.id).replace(/^tag-/, '') }
+  const removedTagId = handleTagSelect(realTag)
   if (removedTagId) {
     const ids = selectedPendingIds.value.length > 0 ? selectedPendingIds.value : pendingFiles.value.map(f => f.id)
     ids.forEach(id => {

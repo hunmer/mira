@@ -54,6 +54,7 @@
       ref="videoPreviewRef"
       :src="videoSrc"
       :muted="muted"
+      fit="contain"
       class="h-full w-full"
       @error="onVideoError"
     />
@@ -178,8 +179,20 @@ watch(imageSrc, (src) => {
   img.src = src
 }, { immediate: true })
 
-/** 容器尺寸：图片模式下等比缩放跟随图片（不超过 width/height 上限，不放大）；其他模式用 props */
+/** 容器尺寸：图片和视频按媒体比例缩放到 width/height 上限内。 */
 const containerSize = computed(() => {
+  if (kind.value === 'video') {
+    const width = Number(props.item.metadata?.width)
+    const height = Number(props.item.metadata?.height)
+    if (Number.isFinite(width) && width > 0 && Number.isFinite(height) && height > 0) {
+      const ratio = Math.min(props.width / width, props.height / height)
+      return {
+        width: Math.round(width * ratio),
+        height: Math.round(height * ratio),
+      }
+    }
+  }
+
   if (kind.value !== 'image' || !imageDim.value || !imageDim.value.w || !imageDim.value.h) {
     return { width: props.width, height: props.height }
   }

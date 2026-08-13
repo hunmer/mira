@@ -31,6 +31,8 @@ interface SelectionBoxProps {
   scrollThreshold?: number
   minSelectionSize?: number
   enableSelectAllShortcut?: boolean
+  enableClearSelectionShortcut?: boolean
+  enableDeleteSelectionShortcut?: boolean
 }
 
 interface SelectionBoxEmits {
@@ -40,6 +42,7 @@ interface SelectionBoxEmits {
   (e: 'selection-end', selectedIds: string[]): void
   (e: 'item-click', itemId: string, event: MouseEvent): void
   (e: 'clear-selection'): void
+  (e: 'delete-selection', selectedIds: string[]): void
 }
 
 interface SelectableRect {
@@ -60,7 +63,9 @@ const props = withDefaults(defineProps<SelectionBoxProps>(), {
   scrollAutoSpeed: 10,
   scrollThreshold: 50,
   minSelectionSize: 5,
-  enableSelectAllShortcut: false
+  enableSelectAllShortcut: false,
+  enableClearSelectionShortcut: false,
+  enableDeleteSelectionShortcut: false
 })
 
 const emit = defineEmits<SelectionBoxEmits>()
@@ -559,6 +564,29 @@ const handleKeyDown = (e: KeyboardEvent) => {
   ) {
     e.preventDefault()
     selectAll()
+    return
+  }
+
+  if (
+    props.enableClearSelectionShortcut &&
+    e.key === 'Backspace' &&
+    containerRef.value?.contains(document.activeElement)
+  ) {
+    e.preventDefault()
+    clearSelection()
+    return
+  }
+
+  if (
+    props.enableDeleteSelectionShortcut &&
+    e.key === 'Delete' &&
+    containerRef.value?.contains(document.activeElement)
+  ) {
+    const selectedIds = Array.from(selectedItems.value)
+    if (selectedIds.length > 0) {
+      e.preventDefault()
+      emit('delete-selection', selectedIds)
+    }
     return
   }
 

@@ -663,15 +663,6 @@ export const defaultBindings: ShortcutBinding[] = [
     description: '关闭当前标签页快捷键'
   },
 
-	{
-		shortcut: 'Delete',
-		priority: 80,
-
-		actionId: 'edit.delete',
-		enabled: true,
-		description: '删除快捷键'
-	},
-
   // 开发调试快捷键
   {
     shortcut: 'F12',

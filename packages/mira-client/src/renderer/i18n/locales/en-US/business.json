@@ -92,6 +92,7 @@
     "fileCount": "{shown} / {total} files",
     "cancelSelection": "Cancel selection ({count})",
     "clearAll": "Clear All",
+    "addFiles": "Add Files",
     "formatPlaceholder": "Format",
     "formatAll": "All formats",
     "formatImage": "Image",

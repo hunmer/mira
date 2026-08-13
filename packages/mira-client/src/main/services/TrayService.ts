@@ -1,6 +1,7 @@
 import { Tray, Menu, nativeImage, BrowserWindow, app } from 'electron'
 import { join } from 'node:path'
 import { logger } from '../utils/Logger'
+import { t, setMainLocale, detectLocale, MainLocale } from '../i18n'
 
 /**
  * 托盘设置接口
@@ -38,7 +39,10 @@ export class TrayService {
   public init(mainWindow: BrowserWindow, showMainWindow: () => void): void {
     this.mainWindow = mainWindow
     this.showMainWindowCallback = showMainWindow
-    
+
+    // 此时 app 已 ready，根据系统语言设置初始 locale（渲染进程加载后会再次校正）
+    setMainLocale(detectLocale())
+
     if (this.settings.enabled) {
       this.createTray()
     }
@@ -80,6 +84,18 @@ export class TrayService {
   }
 
   /**
+   * 切换主进程语言并重建托盘菜单/提示
+   */
+  public updateLocale(locale: MainLocale): void {
+    setMainLocale(locale)
+    if (this.tray) {
+      this.tray.setToolTip(t('tray.tooltip'))
+      this.updateContextMenu()
+    }
+    logger.debug('TrayService', 'Tray locale updated', { locale })
+  }
+
+  /**
    * 创建托盘
    */
   private createTray(): void {
@@ -101,7 +117,7 @@ export class TrayService {
       this.tray = new Tray(trayIcon)
       
       // 设置工具提示
-      this.tray.setToolTip('Mira Media Library')
+      this.tray.setToolTip(t('tray.tooltip'))
       
       // 设置上下文菜单
       this.updateContextMenu()
@@ -138,27 +154,21 @@ export class TrayService {
 
     const contextMenu = Menu.buildFromTemplate([
       {
-        label: '显示主窗口',
+        label: t('tray.resetPosition'),
         click: () => {
-          this.showMainWindow()
-        }
-      },
-      {
-        label: '隐藏窗口',
-        click: () => {
-          this.hideMainWindow()
+          this.resetWindowPosition()
         }
       },
       { type: 'separator' },
       {
-        label: '关于 Mira',
+        label: t('tray.about'),
         click: () => {
           this.showAbout()
         }
       },
       { type: 'separator' },
       {
-        label: '退出',
+        label: t('tray.quit'),
         click: () => {
           app.quit()
         }
@@ -240,6 +250,31 @@ export class TrayService {
     }
 
     logger.debug('TrayService', 'Main window hidden via tray')
+  }
+
+  /**
+   * 重置窗口位置：展示窗口并居中显示
+   */
+  private resetWindowPosition(): void {
+    if (!this.mainWindow || this.mainWindow.isDestroyed()) {
+      this.showMainWindow()
+      return
+    }
+
+    // 最大化状态下先还原，否则居中无可见效果
+    if (this.mainWindow.isMaximized()) {
+      this.mainWindow.unmaximize()
+    }
+
+    this.mainWindow.show()
+    this.mainWindow.focus()
+    this.mainWindow.center()
+
+    if (process.platform === 'darwin') {
+      app.dock?.show()
+    }
+
+    logger.debug('TrayService', 'Window position reset to center')
   }
 
   /**

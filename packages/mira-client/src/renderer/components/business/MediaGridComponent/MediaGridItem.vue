@@ -79,6 +79,7 @@
         icon-class="text-base"
         side="top"
         align="end"
+        @preview-enter="$emit('preview-enter')"
       />
 
       <!-- 选择框 -->
@@ -179,6 +180,7 @@ interface Props {
 
 interface Emits extends MediaItemEmits {
   (e: 'toggle-mute'): void
+  (e: 'preview-enter'): void
 }
 
 const props = withDefaults(defineProps<Props>(), {

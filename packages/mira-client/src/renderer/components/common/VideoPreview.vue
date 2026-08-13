@@ -3,7 +3,8 @@
     <video
       ref="videoRef"
       :src="src"
-      class="rounded-lg object-cover w-full h-full block"
+      class="rounded-lg w-full h-full block"
+      :style="{ objectFit: fit }"
       :muted="muted"
       loop
       preload="auto"
@@ -21,6 +22,7 @@ import 'plyr/dist/plyr.css'
 interface Props {
   src?: string
   muted?: boolean
+  fit?: 'cover' | 'contain'
 }
 
 interface Emits {
@@ -33,11 +35,12 @@ interface Emits {
 
 const props = withDefaults(defineProps<Props>(), {
   muted: true,
+  fit: 'cover',
 })
 
 const emit = defineEmits<Emits>()
 
-const { src, muted } = toRefs(props)
+const { src, muted, fit } = toRefs(props)
 const videoRef = ref<HTMLVideoElement | null>(null)
 const plyrInstance = ref<Plyr | null>(null)
 
@@ -304,7 +307,7 @@ onUnmounted(() => {
 :deep(.plyr video) {
   width: 100% !important;
   height: 100% !important;
-  object-fit: cover !important;
+  object-fit: v-bind(fit) !important;
   object-position: center !important;
   aspect-ratio: inherit;
 }
@@ -357,7 +360,7 @@ onUnmounted(() => {
   left: 0 !important;
   width: 100% !important;
   height: 100% !important;
-  object-fit: cover !important;
+  object-fit: v-bind(fit) !important;
   object-position: center !important;
 }
 </style>
