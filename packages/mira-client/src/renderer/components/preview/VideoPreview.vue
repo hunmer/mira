@@ -4,23 +4,14 @@
     <PreviewHeader :file-info="controller.currentVideo.value || {}">
       <template #left-extra>
         <div class="flex items-center space-x-2">
-          <!-- 切换左侧缩略图栏（桌面 inline / 移动抽屉） -->
-          <button
-            class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full hover:bg-muted"
-            :class="showLeftSidebar ? 'text-primary' : 'text-muted-foreground'"
-            :title="$t('preview.toggleSidebar')"
-            @click="toggleLeftSidebar"
-          >
-            <span class="material-icons">view_list</span>
-          </button>
-          <span class="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
+          <span class="hidden items-center rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground md:inline-flex">
             <span class="material-symbols-outlined text-sm mr-1">folder</span>
             {{ controller.currentVideo.value?.folderId || '/Videos' }}
           </span>
           <span
             v-for="tag in controller.currentVideo.value?.tags"
             :key="tag"
-            class="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
+            class="hidden items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary md:inline-flex"
           >
             <span class="material-symbols-outlined text-sm mr-1">label</span>
             {{ tag }}
@@ -63,7 +54,26 @@
 
         <!-- 中间视频播放器 -->
         <ResizablePanel :default-size="56" :min-size="30" class="relative flex flex-col bg-white dark:bg-black">
+          <!-- 左侧栏切换按钮（贴边长条，垂直居中） -->
+          <button
+            class="absolute left-0 top-1/2 z-20 flex h-[50px] w-8 -translate-y-1/2 items-center justify-center rounded-r-md border border-l-0 border-border/60 bg-background/70 text-muted-foreground shadow-sm backdrop-blur-md transition-colors hover:bg-background hover:text-primary"
+            :class="showLeftSidebar ? 'opacity-60 hover:opacity-100' : 'opacity-100'"
+            :title="$t('preview.toggleSidebar')"
+            @click="toggleLeftSidebar"
+          >
+            <span class="material-icons">{{ showLeftSidebar ? 'chevron_left' : 'chevron_right' }}</span>
+          </button>
+
           <VideoPlayerComponent v-bind="viewerBindings" />
+
+          <!-- 右侧栏切换按钮（贴边长条，垂直居中） -->
+          <button
+            class="absolute right-0 top-1/2 z-20 flex h-[50px] w-8 -translate-y-1/2 items-center justify-center rounded-l-md border border-r-0 border-border/60 bg-background/70 text-muted-foreground shadow-sm backdrop-blur-md transition-colors hover:bg-background hover:text-primary"
+            :title="$t('preview.toggleSidebar')"
+            @click="toggleRightSidebar"
+          >
+            <span class="material-icons">{{ showRightSidebar ? 'chevron_right' : 'chevron_left' }}</span>
+          </button>
 
           <!-- 底部状态栏 -->
           <footer class="flex h-10 flex-shrink-0 items-center justify-between border-t border-border dark:border-border bg-white dark:bg-muted px-6 text-xs text-muted-foreground dark:text-muted-foreground">
@@ -93,21 +103,47 @@
           </footer>
         </ResizablePanel>
 
-        <!-- 分隔描边 -->
-        <ResizableHandle class="group/handle relative w-3 bg-transparent transition-colors hover:bg-primary/5 after:absolute after:inset-y-0 after:left-1/2 after:w-0.5 after:-translate-x-1/2 after:bg-transparent hover:after:bg-primary/40" />
+        <!-- 分隔描边：点击（非拖拽）切换右侧栏 -->
+        <ResizableHandle v-on="rightHandleToggle" class="group/handle relative w-3 cursor-pointer bg-transparent transition-colors hover:bg-primary/5 after:absolute after:inset-y-0 after:left-1/2 after:w-0.5 after:-translate-x-1/2 after:bg-transparent hover:after:bg-primary/40" />
 
-        <!-- 右侧文件信息面板 -->
-        <ResizablePanel :default-size="24" :min-size="18" :max-size="35">
-          <VideoFileInfoComponent
-            :video="controller.currentVideo.value"
-            :current-time="controller.currentTime.value"
-          />
+        <!-- 右侧文件信息面板（可折叠） -->
+        <ResizablePanel
+          ref="rightPanelRef"
+          :default-size="rightPanelDefaultSize"
+          :min-size="18"
+          :max-size="35"
+          :collapsed-size="0"
+          collapsible
+          @collapse="isRightCollapsed = true"
+          @expand="isRightCollapsed = false"
+        >
+          <VideoFileInfoComponent v-bind="infoBindings" class="h-full" />
         </ResizablePanel>
       </ResizablePanelGroup>
 
-      <!-- 移动端：仅中间播放器（左侧改抽屉、右侧隐藏） -->
+      <!-- 移动端：仅中间播放器（侧栏改抽屉，左右浮动按钮切换） -->
       <div v-else class="relative flex flex-grow flex-col bg-white dark:bg-black">
+        <!-- 左侧栏切换按钮（贴边长条，垂直居中） -->
+        <button
+          class="absolute left-0 top-1/2 z-20 flex h-[50px] w-8 -translate-y-1/2 items-center justify-center rounded-r-md border border-l-0 border-border/60 bg-background/70 text-muted-foreground shadow-sm backdrop-blur-md transition-colors hover:bg-background hover:text-primary"
+          :class="showLeftSidebar ? 'opacity-60 hover:opacity-100' : 'opacity-100'"
+          :title="$t('preview.toggleSidebar')"
+          @click="toggleLeftSidebar"
+        >
+          <span class="material-icons">{{ showLeftSidebar ? 'chevron_left' : 'chevron_right' }}</span>
+        </button>
+
         <VideoPlayerComponent v-bind="viewerBindings" />
+
+        <!-- 右侧栏切换按钮（贴边长条，垂直居中） -->
+        <button
+          class="absolute right-0 top-1/2 z-20 flex h-[50px] w-8 -translate-y-1/2 items-center justify-center rounded-l-md border border-r-0 border-border/60 bg-background/70 text-muted-foreground shadow-sm backdrop-blur-md transition-colors hover:bg-background hover:text-primary"
+          :class="showRightSidebar ? 'opacity-60 hover:opacity-100' : 'opacity-100'"
+          :title="$t('preview.toggleSidebar')"
+          @click="toggleRightSidebar"
+        >
+          <span class="material-icons">{{ showRightSidebar ? 'chevron_right' : 'chevron_left' }}</span>
+        </button>
 
         <!-- 底部状态栏（移动端精简） -->
         <footer class="flex h-10 flex-shrink-0 items-center justify-between border-t border-border dark:border-border bg-white dark:bg-muted px-4 text-xs text-muted-foreground dark:text-muted-foreground">
@@ -131,11 +167,19 @@
         </footer>
       </div>
 
-      <!-- 移动端：左侧缩略图抽屉 -->
+      <!-- 移动端：左侧缩略图抽屉（宽度自适应内容） -->
       <Sheet v-if="isMobile" v-model:open="leftDrawerOpen">
-        <SheetContent side="left" class="w-[80%] max-w-[300px] gap-0 p-0">
+        <SheetContent side="left" class="w-auto gap-0 p-0">
           <SheetTitle class="sr-only">{{ $t('preview.toggleSidebar') }}</SheetTitle>
           <VideoThumbnailListComponent v-bind="thumbnailBindings" class="h-full" />
+        </SheetContent>
+      </Sheet>
+
+      <!-- 移动端：右侧信息抽屉 -->
+      <Sheet v-if="isMobile" v-model:open="rightDrawerOpen">
+        <SheetContent side="right" class="w-[85%] max-w-[340px] gap-0 p-0">
+          <SheetTitle class="sr-only">{{ $t('preview.toggleSidebar') }}</SheetTitle>
+          <VideoFileInfoComponent v-bind="infoBindings" class="h-full" />
         </SheetContent>
       </Sheet>
     </div>
@@ -172,6 +216,17 @@ const {
   defaultSize: leftPanelDefaultSize,
 } = useCollapsibleSidebar(20)
 
+// 右侧信息面板：同样可折叠 + 移动抽屉
+const {
+  showSidebar: showRightSidebar,
+  toggleSidebar: toggleRightSidebar,
+  panelRef: rightPanelRef,
+  isCollapsed: isRightCollapsed,
+  drawerOpen: rightDrawerOpen,
+  handleToggle: rightHandleToggle,
+  defaultSize: rightPanelDefaultSize,
+} = useCollapsibleSidebar(24)
+
 // 子组件绑定对象：桌面 inline 与移动抽屉共用，避免重复
 const thumbnailBindings = computed(() => ({
   videos: controller.videos.value,
@@ -190,6 +245,10 @@ const viewerBindings = computed(() => ({
   onDurationChange: controller.handleDurationChange,
   onVolumeChange: controller.handleVolumeChange,
   onError: (err: any) => { controller.error.value = err },
+}))
+const infoBindings = computed(() => ({
+  video: controller.currentVideo.value,
+  currentTime: controller.currentTime.value,
 }))
 
 // 格式化文件大小

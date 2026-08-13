@@ -4,14 +4,14 @@
     <PreviewHeader :file-info="controller.currentImage.value || {}">
       <template #left-extra>
         <div class="flex items-center space-x-2">
-          <span class="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
+          <span class="hidden items-center rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground md:inline-flex">
             <span class="material-symbols-outlined text-sm mr-1">folder</span>
             {{ controller.currentImage.value?.folderId || '/Pictures' }}
           </span>
           <span
             v-for="tag in controller.currentImage.value?.tags"
             :key="tag"
-            class="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
+            class="hidden items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary md:inline-flex"
           >
             <span class="material-symbols-outlined text-sm mr-1">label</span>
             {{ tag }}
@@ -50,7 +50,7 @@
         <ResizablePanel :default-size="56" :min-size="30" class="relative flex flex-col">
           <!-- 左侧栏切换按钮（垂直居中） -->
           <button
-            class="absolute left-0 top-1/2 z-20 flex h-28 w-8 -translate-y-1/2 items-center justify-center rounded-r-md border border-l-0 border-border/60 bg-background/70 text-muted-foreground shadow-sm backdrop-blur-md transition-colors hover:bg-background hover:text-primary"
+            class="absolute left-0 top-1/2 z-20 flex h-[50px] w-8 -translate-y-1/2 items-center justify-center rounded-r-md border border-l-0 border-border/60 bg-background/70 text-muted-foreground shadow-sm backdrop-blur-md transition-colors hover:bg-background hover:text-primary"
             :class="showLeftSidebar ? 'opacity-60 hover:opacity-100' : 'opacity-100'"
             :title="$t('preview.toggleSidebar')"
             @click="toggleLeftSidebar"
@@ -62,7 +62,7 @@
 
           <!-- 右侧栏切换按钮（垂直居中） -->
           <button
-            class="absolute right-0 top-1/2 z-20 flex h-28 w-8 -translate-y-1/2 items-center justify-center rounded-l-md border border-r-0 border-border/60 bg-background/70 text-muted-foreground shadow-sm backdrop-blur-md transition-colors hover:bg-background hover:text-primary"
+            class="absolute right-0 top-1/2 z-20 flex h-[50px] w-8 -translate-y-1/2 items-center justify-center rounded-l-md border border-r-0 border-border/60 bg-background/70 text-muted-foreground shadow-sm backdrop-blur-md transition-colors hover:bg-background hover:text-primary"
             :title="$t('preview.toggleSidebar')"
             @click="toggleRightSidebar"
           >
@@ -121,7 +121,7 @@
       <div v-else class="relative flex flex-grow flex-col">
         <!-- 左侧栏切换按钮（垂直居中） -->
         <button
-          class="absolute left-0 top-1/2 z-20 flex h-28 w-8 -translate-y-1/2 items-center justify-center rounded-r-md border border-l-0 border-border/60 bg-background/70 text-muted-foreground shadow-sm backdrop-blur-md transition-colors hover:bg-background hover:text-primary"
+          class="absolute left-0 top-1/2 z-20 flex h-[50px] w-8 -translate-y-1/2 items-center justify-center rounded-r-md border border-l-0 border-border/60 bg-background/70 text-muted-foreground shadow-sm backdrop-blur-md transition-colors hover:bg-background hover:text-primary"
           :class="showLeftSidebar ? 'opacity-60 hover:opacity-100' : 'opacity-100'"
           :title="$t('preview.toggleSidebar')"
           @click="toggleLeftSidebar"
@@ -133,7 +133,7 @@
 
         <!-- 右侧栏切换按钮（垂直居中） -->
         <button
-          class="absolute right-0 top-1/2 z-20 flex h-28 w-8 -translate-y-1/2 items-center justify-center rounded-l-md border border-r-0 border-border/60 bg-background/70 text-muted-foreground shadow-sm backdrop-blur-md transition-colors hover:bg-background hover:text-primary"
+          class="absolute right-0 top-1/2 z-20 flex h-[50px] w-8 -translate-y-1/2 items-center justify-center rounded-l-md border border-r-0 border-border/60 bg-background/70 text-muted-foreground shadow-sm backdrop-blur-md transition-colors hover:bg-background hover:text-primary"
           :class="showRightSidebar ? 'opacity-60 hover:opacity-100' : 'opacity-100'"
           :title="$t('preview.toggleSidebar')"
           @click="toggleRightSidebar"
@@ -163,9 +163,9 @@
         </footer>
       </div>
 
-      <!-- 移动端：左侧缩略图抽屉 -->
+      <!-- 移动端：左侧缩略图抽屉（宽度自适应内容） -->
       <Sheet v-if="isMobile" v-model:open="leftDrawerOpen">
-        <SheetContent side="left" class="w-[80%] max-w-[300px] gap-0 p-0">
+        <SheetContent side="left" class="w-auto gap-0 p-0">
           <SheetTitle class="sr-only">{{ $t('preview.toggleSidebar') }}</SheetTitle>
           <ImageThumbnailListComponent v-bind="thumbnailBindings" class="h-full" />
         </SheetContent>

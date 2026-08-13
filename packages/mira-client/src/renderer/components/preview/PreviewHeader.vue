@@ -11,7 +11,7 @@
         {{ title }}
       </button>
       <slot name="left-extra" />
-      <span v-if="fileInfo.size" class="flex-shrink-0 text-sm text-muted-foreground">{{ formatFileSize(fileInfo.size) }}</span>
+      <span v-if="fileInfo.size" class="hidden flex-shrink-0 text-sm text-muted-foreground md:inline">{{ formatFileSize(fileInfo.size) }}</span>
     </div>
     <div class="flex flex-shrink-0 items-center gap-2">
       <button
