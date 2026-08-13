@@ -26,22 +26,7 @@
 
         <!-- 中间图片查看器 -->
         <ResizablePanel :default-size="56" :min-size="30" class="relative flex flex-col">
-          <!-- 左侧栏切换按钮（垂直居中） -->
-          <button
-            class="absolute left-0 top-1/2 z-20 flex h-[50px] w-8 -translate-y-1/2 items-center justify-center rounded-r-md border border-l-0 border-border/60 bg-background/70 text-muted-foreground shadow-sm backdrop-blur-md transition-colors hover:bg-background hover:text-primary"
-            :class="showLeftSidebar ? 'opacity-60 hover:opacity-100' : 'opacity-100'"
-            :title="$t('preview.toggleSidebar')" @click="toggleLeftSidebar">
-            <span class="material-icons">{{ showLeftSidebar ? 'chevron_left' : 'chevron_right' }}</span>
-          </button>
-
           <ImageViewerComponent v-bind="viewerBindings" />
-
-          <!-- 右侧栏切换按钮（垂直居中） -->
-          <button
-            class="absolute right-0 top-1/2 z-20 flex h-[50px] w-8 -translate-y-1/2 items-center justify-center rounded-l-md border border-r-0 border-border/60 bg-background/70 text-muted-foreground shadow-sm backdrop-blur-md transition-colors hover:bg-background hover:text-primary"
-            :title="$t('preview.toggleSidebar')" @click="toggleRightSidebar">
-            <span class="material-icons">{{ showRightSidebar ? 'chevron_right' : 'chevron_left' }}</span>
-          </button>
 
           <!-- 底部状态栏 -->
           <footer

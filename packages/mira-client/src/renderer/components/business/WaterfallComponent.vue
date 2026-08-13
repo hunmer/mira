@@ -343,8 +343,8 @@ watch(
   { immediate: true }
 )
 
-// hash fallback：未加载真实比例前给一个稳定占位比例，避免空白布局。
-// 占位值范围压在 [0.8, 1.3]，当前实例内保持不变，避免异步比例引发布局重排。
+// hash fallback：真实比例就绪前给一个稳定占位比例，避免新增项全部显示成同一高度。
+// 占位值范围压在 [0.8, 1.3]，真实比例整批发布后再统一重排。
 const fallbackRatio = (item: FileInfo): number => {
   const itemId = String(item.id)
   let seed = 0
