@@ -38,6 +38,8 @@ export class HomeFileOperations {
           const uniqueTags = [...new Set([...item.tags, ...tagArray])]
           item.tags = uniqueTags
 
+          await this.tagStore.refreshTags(libraryId)
+
           console.log(`✅ Tags added to file: ${tagArray.join(', ')}`)
         }
       } catch (error) {
@@ -233,6 +235,7 @@ export class HomeFileOperations {
           const updatedTags = item.tags.filter((t: string) => t !== tag)
           await client.tags().addTagsToFile(libraryId, fileId, updatedTags)
           item.tags = updatedTags
+          await this.tagStore.refreshTags(libraryId)
           console.log(`✅ Tag removed from file: ${tag}`)
         }
       } catch (error) {

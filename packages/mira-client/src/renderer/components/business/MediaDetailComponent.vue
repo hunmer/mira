@@ -8,319 +8,255 @@
       <EmptyTitle>{{ $t('business.mediaDetailComponent.emptyTitle') }}</EmptyTitle>
     </Empty>
     <template v-else>
-    <!-- 预览图 - 支持多选相册效果 -->
-    <div class="relative">
-      <!-- 单选模式 -->
-      <div v-if="displayItems.length === 1" class="relative">
-        <div class="relative w-full flex items-center justify-center" style="height: 192px;">
+      <!-- 预览图 - 支持多选相册效果 -->
+      <div class="relative">
+        <!-- 单选模式 -->
+        <div v-if="displayItems.length === 1" class="relative">
+          <div class="relative w-full flex items-center justify-center" style="height: 192px;">
 
-          <!-- 错误占位符 - 使用文件类型图标 -->
-          <div v-if="imageLoadState === 'error'" class="absolute inset-0 flex flex-col items-center justify-center">
+            <!-- 错误占位符 - 使用文件类型图标 -->
+            <div v-if="imageLoadState === 'error'" class="absolute inset-0 flex flex-col items-center justify-center">
               <img :src="getExtIconUrl(displayItems[0]?.name || '')" class="w-16 h-16 object-contain opacity-60" />
- 
-          </div>
 
-          <!-- 正常显示图片 -->
-          <img
-            v-show="imageLoadState === 'loaded'"
-            ref="previewImage"
-            :alt="displayItems[0].name"
-            :src="displayItems[0].url || displayItems[0].thumbnailPath"
-            class="rounded-xl object-contain max-w-full max-h-full"
-            @load="handleImageLoad"
-            @error="handleImageError"
-          />
-        </div>
-
-        <div class="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
-          {{ getFileExtension(displayItems[0]) }}
-        </div>
-      </div>
-
-      <!-- 颜色提取结果显示（在图片下方） -->
-      <div v-if="displayItems.length === 1 && extractedColors.length > 0" class="flex justify-center space-x-1 mt-2">
-        <div
-          v-for="(color, index) in extractedColors"
-          :key="index"
-          :style="{ backgroundColor: `rgb(${color[0]}, ${color[1]}, ${color[2]})` }"
-          class="w-6 h-6 rounded-full shadow-sm"
-          :title="`RGB(${color[0]}, ${color[1]}, ${color[2]})`"
-        ></div>
-      </div>
-      
-      <!-- 多选模式 - 叠放相册效果 -->
-      <div v-if="displayItems.length > 1" class="relative">
-        <div class="image-stack relative w-[120px] h-[120px] mx-auto">
-          <div
-            v-for="(item, index) in displayItems.slice(0, 4)"
-            :key="item.id"
-            class="stack-container absolute w-[100px] h-[100px] top-0 left-0"
-            :style="{ zIndex: index, left: `${index * 8}px`, top: `${index * 8}px` }"
-          >
-            <!-- 加载中占位符 -->
-            <div
-              v-if="multiImageLoadStates[item.id] === 'loading' || multiImageLoadStates[item.id] === undefined"
-              class="stack-placeholder absolute w-full h-full top-0 left-0 rounded-xl shadow-[0_2px_6px_rgba(0,0,0,0.1)] border-2 border-white bg-muted rounded-lg flex items-center justify-center"
-            >
-              <StatusImage name="loading" size="small" :spin="true" />
-            </div>
-
-            <!-- 错误占位符 -->
-            <div
-              v-else-if="multiImageLoadStates[item.id] === 'error'"
-              class="stack-placeholder absolute w-full h-full top-0 left-0 rounded-xl shadow-[0_2px_6px_rgba(0,0,0,0.1)] border-2 border-white bg-destructive flex items-center justify-center"
-            >
-              <StatusImage name="load_failed" size="small" img-class="text-destructive" />
             </div>
 
             <!-- 正常显示图片 -->
-            <img
-              v-show="multiImageLoadStates[item.id] === 'loaded'"
-              :alt="item.name"
-              :src="item.thumbnailPath || item.url"
-              class="stack-img absolute w-full h-full top-0 left-0 object-cover rounded-xl shadow-[0_2px_6px_rgba(0,0,0,0.1)] border-2 border-white"
-              @load="handleMultiImageLoad(item.id)"
-              @error="handleMultiImageError(item)"
-            />
+            <img v-show="imageLoadState === 'loaded'" ref="previewImage" :alt="displayItems[0].name"
+              :src="displayItems[0].url || displayItems[0].thumbnailPath"
+              class="rounded-xl object-contain max-w-full max-h-full" @load="handleImageLoad"
+              @error="handleImageError" />
           </div>
-          <!-- 更多文件提示 -->
-          <div
-            v-if="displayItems.length > 4"
-            class="absolute bottom-1 right-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded z-10"
-          >
-            +{{ displayItems.length - 4 }}
+
+          <div class="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+            {{ getFileExtension(displayItems[0]) }}
           </div>
-          <!-- 文件数量显示 -->
-          <div class="absolute top-1 left-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded z-10">
-            {{ $t('business.mediaDetailComponent.fileCount', { count: displayItems.length }) }}
+        </div>
+
+        <!-- 颜色提取结果显示（在图片下方） -->
+        <div v-if="displayItems.length === 1 && extractedColors.length > 0" class="flex justify-center space-x-1 mt-2">
+          <div v-for="(color, index) in extractedColors" :key="index"
+            :style="{ backgroundColor: `rgb(${color[0]}, ${color[1]}, ${color[2]})` }"
+            class="w-6 h-6 rounded-full shadow-sm" :title="`RGB(${color[0]}, ${color[1]}, ${color[2]})`"></div>
+        </div>
+
+        <!-- 多选模式 - 叠放相册效果 -->
+        <div v-if="displayItems.length > 1" class="relative">
+          <div class="image-stack relative w-[120px] h-[120px] mx-auto">
+            <div v-for="(item, index) in displayItems.slice(0, 4)" :key="item.id"
+              class="stack-container absolute w-[100px] h-[100px] top-0 left-0"
+              :style="{ zIndex: index, left: `${index * 8}px`, top: `${index * 8}px` }">
+              <!-- 加载中占位符 -->
+              <div v-if="multiImageLoadStates[item.id] === 'loading' || multiImageLoadStates[item.id] === undefined"
+                class="stack-placeholder absolute w-full h-full top-0 left-0 rounded-xl shadow-[0_2px_6px_rgba(0,0,0,0.1)] border-2 border-white bg-muted rounded-lg flex items-center justify-center">
+                <StatusImage name="loading" size="small" :spin="true" />
+              </div>
+
+              <!-- 错误占位符 -->
+              <div v-else-if="multiImageLoadStates[item.id] === 'error'"
+                class="stack-placeholder absolute w-full h-full top-0 left-0 rounded-xl shadow-[0_2px_6px_rgba(0,0,0,0.1)] border-2 border-white bg-destructive flex items-center justify-center">
+                <StatusImage name="load_failed" size="small" img-class="text-destructive" />
+              </div>
+
+              <!-- 正常显示图片 -->
+              <img v-show="multiImageLoadStates[item.id] === 'loaded'" :alt="item.name"
+                :src="item.thumbnailPath || item.url"
+                class="stack-img absolute w-full h-full top-0 left-0 object-cover rounded-xl shadow-[0_2px_6px_rgba(0,0,0,0.1)] border-2 border-white"
+                @load="handleMultiImageLoad(item.id)" @error="handleMultiImageError(item)" />
+            </div>
+            <!-- 更多文件提示 -->
+            <div v-if="displayItems.length > 4"
+              class="absolute bottom-1 right-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded z-10">
+              +{{ displayItems.length - 4 }}
+            </div>
+            <!-- 文件数量显示 -->
+            <div class="absolute top-1 left-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded z-10">
+              {{ $t('business.mediaDetailComponent.fileCount', { count: displayItems.length }) }}
+            </div>
           </div>
         </div>
       </div>
-    </div>
-    <!-- 文件名编辑 - 仅单选模式 -->
-    <div v-if="!isMultiSelect && displayItems[0]">
-      <label class="block text-xs font-medium text-muted-foreground mb-1">{{ $t('business.mediaDetailComponent.fileName') }}</label>
-      <Input
-        v-model="editName"
-        type="text"
-        :class="nameError ? 'border-destructive focus-visible:ring-destructive' : ''"
-        :disabled="nameSaving"
-        @blur="handleNameBlur"
-        @keydown.enter="handleNameBlur"
-      />
-      <p v-if="nameError" class="text-xs text-destructive mt-1">{{ nameError }}</p>
-    </div>
+      <!-- 文件名编辑 - 仅单选模式 -->
+      <div v-if="!isMultiSelect && displayItems[0]">
+        <label class="block text-xs font-medium text-muted-foreground mb-1">{{
+          $t('business.mediaDetailComponent.fileName') }}</label>
+        <Input v-model="editName" type="text"
+          :class="nameError ? 'border-destructive focus-visible:ring-destructive' : ''" :disabled="nameSaving"
+          @blur="handleNameBlur" @keydown.enter="handleNameBlur" />
+        <p v-if="nameError" class="text-xs text-destructive mt-1">{{ nameError }}</p>
+      </div>
 
-    <!-- Website 编辑 - 仅单选模式 -->
-    <div v-if="!isMultiSelect && displayItems[0]">
-      <label class="block text-xs font-medium text-muted-foreground mb-1">{{ $t('business.mediaDetailComponent.website') }}</label>
-      <Input
-        v-model="editWebsite"
-        type="text"
-        placeholder="https://"
-        :disabled="websiteSaving"
-        @blur="handleWebsiteBlur"
-        @keydown.enter="handleWebsiteBlur"
-      />
-    </div>
+      <!-- Website 编辑 - 仅单选模式 -->
+      <div v-if="!isMultiSelect && displayItems[0]">
+        <label class="block text-xs font-medium text-muted-foreground mb-1">{{
+          $t('business.mediaDetailComponent.website') }}</label>
+        <Input v-model="editWebsite" type="text" placeholder="https://" :disabled="websiteSaving"
+          @blur="handleWebsiteBlur" @keydown.enter="handleWebsiteBlur" />
+      </div>
 
-    <!-- 评分 - 仅单选模式 -->
-    <div v-if="!isMultiSelect && displayItems[0]">
-      <label class="block text-xs font-medium text-muted-foreground mb-1">{{ $t('business.mediaDetailComponent.rating') }}</label>
-      <div class="flex items-center gap-0.5">
-        <button
-          v-for="n in 5"
-          :key="n"
-          type="button"
-          class="p-0.5 rounded hover:bg-muted transition-colors"
-          :disabled="starsSaving"
-          @click="handleStarsChange(n)"
-          @mouseenter="hoverStars = n"
-          @mouseleave="hoverStars = 0"
-        >
-          <span
-            class="material-icons text-xl"
-            :class="(hoverStars || editStars) >= n ? 'text-amber-400' : 'text-muted-foreground/40'"
-          >{{ (hoverStars || editStars) >= n ? 'star' : 'star_border' }}</span>
+      <!-- 备注 - 仅单选模式 -->
+      <div v-if="!isMultiSelect && displayItems[0]">
+        <label class="block text-xs font-medium text-muted-foreground mb-1">{{ $t('business.mediaDetailComponent.notes')
+          }}</label>
+        <textarea v-model="editNotes" rows="3" :placeholder="$t('business.mediaDetailComponent.notesPlaceholder')"
+          :disabled="notesSaving"
+          class="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-xs ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+          @blur="handleNotesBlur"></textarea>
+      </div>
+
+
+      <!-- 评分 - 仅单选模式 -->
+      <div v-if="!isMultiSelect && displayItems[0]">
+        <label class="block text-xs font-medium text-muted-foreground mb-1">{{
+          $t('business.mediaDetailComponent.rating') }}</label>
+        <div class="flex items-center gap-0.5">
+          <button v-for="n in 5" :key="n" type="button" class="p-0.5 rounded hover:bg-muted transition-colors"
+            :disabled="starsSaving" @click="handleStarsChange(n)" @mouseenter="hoverStars = n"
+            @mouseleave="hoverStars = 0">
+            <span class="material-icons text-xl"
+              :class="(hoverStars || editStars) >= n ? 'text-amber-400' : 'text-muted-foreground/40'">{{ (hoverStars ||
+                editStars) >= n ? 'star' : 'star_border' }}</span>
+          </button>
+          <button v-if="editStars > 0" type="button" class="ml-1 p-0.5 rounded hover:bg-muted text-muted-foreground"
+            :disabled="starsSaving" :title="$t('business.mediaDetailComponent.rating')" @click="handleStarsChange(0)">
+            <span class="material-icons text-base">close</span>
+          </button>
+        </div>
+      </div>
+
+
+      <!-- 文件URL - 仅单选模式显示 -->
+      <div v-if="!isMultiSelect && displayItems[0]?.url"
+        class="flex items-center bg-muted/60 border border-border/60 rounded-lg p-2">
+        <span class="flex-1 text-xs truncate">{{ displayItems[0].url }}</span>
+        <button class="p-1 rounded-md hover:bg-muted" @click="copyToClipboard(displayItems[0].url)">
+          <span class="material-icons text-muted-foreground text-sm">link</span>
         </button>
-        <button
-          v-if="editStars > 0"
-          type="button"
-          class="ml-1 p-0.5 rounded hover:bg-muted text-muted-foreground"
-          :disabled="starsSaving"
-          :title="$t('business.mediaDetailComponent.rating')"
-          @click="handleStarsChange(0)"
-        >
-          <span class="material-icons text-base">close</span>
-        </button>
       </div>
-    </div>
 
-    <!-- 备注 - 仅单选模式 -->
-    <div v-if="!isMultiSelect && displayItems[0]">
-      <label class="block text-xs font-medium text-muted-foreground mb-1">{{ $t('business.mediaDetailComponent.notes') }}</label>
-      <textarea
-        v-model="editNotes"
-        rows="3"
-        :placeholder="$t('business.mediaDetailComponent.notesPlaceholder')"
-        :disabled="notesSaving"
-        class="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-xs ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
-        @blur="handleNotesBlur"
-      ></textarea>
-    </div>
-
-    <!-- 文件URL - 仅单选模式显示 -->
-    <div v-if="!isMultiSelect && displayItems[0]?.url" class="flex items-center bg-muted/60 border border-border/60 rounded-lg p-2">
-      <span class="flex-1 text-xs truncate">{{ displayItems[0].url }}</span>
-      <button
-        class="p-1 rounded-md hover:bg-muted"
-        @click="copyToClipboard(displayItems[0].url)"
-      >
-        <span class="material-icons text-muted-foreground text-sm">link</span>
-      </button>
-    </div>
-
-    <!-- 标签管理 -->
-    <div>
-      <div class="flex items-center justify-between mb-2">
-        <h3 class="font-semibold text-foreground text-sm">{{ $t('business.mediaDetailComponent.tags') }}</h3>
-        <Popover v-model:open="tagPopoverOpen">
-          <PopoverTrigger as-child>
-            <button class="text-primary text-xs hover:text-primary flex items-center gap-0.5">
-              <span class="material-icons text-sm">{{ hasTags ? 'edit' : 'add' }}</span>
-              <span>{{ hasTags ? $t('business.mediaDetailComponent.editTags') : (isMultiSelect ? $t('business.mediaDetailComponent.batchSetTags') : $t('business.mediaDetailComponent.setTags')) }}</span>
-            </button>
-          </PopoverTrigger>
-          <PopoverContent align="end" side="bottom" class="w-80 p-2">
-            <FolderTreeComponent
-              item-type="tag"
-              :tags="tagStore.tags"
-              selection-mode="multi"
-              :selected-keys="selectedTagKeys"
-              :default-show-search="true"
- 
-              @select="handleTagSelect"
-            />
-          </PopoverContent>
-        </Popover>
-      </div>
-      <div class="flex flex-wrap gap-2 items-center">
-        <template v-if="!isMultiSelect && displayItems[0]?.tags && displayItems[0].tags.length > 0">
-          <span
-            v-for="tag in displayItems[0].tags"
-            :key="tag"
-            class="bg-primary/10 text-primary text-xs px-2.5 py-1 rounded-full flex items-center"
-          >
-            {{ getTagName(tag) }}
-            <button class="ml-1 text-primary text-xs hover:text-primary" @click="handleRemoveTag(tag)">×</button>
-          </span>
-        </template>
-        <template v-else-if="isMultiSelect && mergedInfo && mergedInfo.tags.length > 0">
-          <span
-            v-for="tag in mergedInfo.tags"
-            :key="tag"
-            class="bg-primary/10 text-primary text-xs px-2.5 py-1 rounded-full flex items-center"
-          >
-            {{ getTagName(tag) }}
-            <button class="ml-1 text-primary text-xs hover:text-primary" @click="handleRemoveTag(tag)">×</button>
-          </span>
-        </template>
-        <span v-else class="text-muted-foreground text-xs">{{ $t('business.mediaDetailComponent.noTags') }}</span>
-      </div>
-    </div>
-
-    <!-- 文件夹信息 -->
-    <div>
-      <div class="flex items-center justify-between mb-2">
-        <h3 class="font-semibold text-foreground text-sm">{{ $t('business.mediaDetailComponent.folder') }}</h3>
-        <Popover v-model:open="folderPopoverOpen">
-          <PopoverTrigger as-child>
-            <button class="text-primary text-xs hover:text-primary flex items-center gap-0.5">
-              <span class="material-icons text-sm">{{ displayItems[0]?.folderId ? 'edit' : 'add' }}</span>
-              <span>{{ displayItems[0]?.folderId ? $t('business.mediaDetailComponent.editFolder') : (isMultiSelect ? $t('business.mediaDetailComponent.batchSetFolder') : $t('business.mediaDetailComponent.setFolder')) }}</span>
-            </button>
-          </PopoverTrigger>
-          <PopoverContent align="end" side="bottom" class="w-80 p-2">
-            <FolderTreeComponent
-              item-type="folder"
-              selection-mode="single"
-              :selected-keys="selectedFolderKeys"
-              :default-show-search="true"
-              :folders="folderTreeNodes"
-              :show-base-categories="false"
-              @select="handleFolderSelect"
-            />
-          </PopoverContent>
-        </Popover>
-      </div>
-      <template v-if="!isMultiSelect">
-        <div v-if="displayItems[0]?.folderId" class="bg-primary/10 text-primary text-xs px-3 py-2 rounded-lg flex items-center">
-          <span class="material-icons mr-2 text-primary">folder</span>
-          {{ getFolderName(displayItems[0].folderId) }}
+      <!-- 标签管理 -->
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="font-semibold text-foreground text-sm">{{ $t('business.mediaDetailComponent.tags') }}</h3>
+          <Popover v-model:open="tagPopoverOpen">
+            <PopoverTrigger as-child>
+              <button class="text-primary text-xs hover:text-primary flex items-center gap-0.5">
+                <span class="material-icons text-sm">{{ hasTags ? 'edit' : 'add' }}</span>
+                <span>{{ hasTags ? $t('business.mediaDetailComponent.editTags') : (isMultiSelect ?
+                  $t('business.mediaDetailComponent.batchSetTags') : $t('business.mediaDetailComponent.setTags'))
+                  }}</span>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="end" side="bottom" class="w-80 p-2">
+              <FolderTreeComponent item-type="tag" :tags="tagStore.tags" selection-mode="multi"
+                :selected-keys="selectedTagKeys" :default-show-search="true" @select="handleTagSelect" />
+            </PopoverContent>
+          </Popover>
         </div>
-        <div v-else class="bg-muted text-muted-foreground text-xs px-3 py-2 rounded-lg flex items-center">
-          <span class="material-icons mr-2 text-muted-foreground">folder_open</span>
-          {{ $t('business.mediaDetailComponent.uncategorized') }}
+        <div class="flex flex-wrap gap-2 items-center">
+          <template v-if="!isMultiSelect && displayItems[0]?.tags && displayItems[0].tags.length > 0">
+            <span v-for="tag in displayItems[0].tags" :key="tag"
+              class="bg-primary/10 text-primary text-xs px-2.5 py-1 rounded-full flex items-center">
+              {{ getTagName(tag) }}
+              <button class="ml-1 text-primary text-xs hover:text-primary" @click="handleRemoveTag(tag)">×</button>
+            </span>
+          </template>
+          <template v-else-if="isMultiSelect && mergedInfo && mergedInfo.tags.length > 0">
+            <span v-for="tag in mergedInfo.tags" :key="tag"
+              class="bg-primary/10 text-primary text-xs px-2.5 py-1 rounded-full flex items-center">
+              {{ getTagName(tag) }}
+              <button class="ml-1 text-primary text-xs hover:text-primary" @click="handleRemoveTag(tag)">×</button>
+            </span>
+          </template>
+          <span v-else class="text-muted-foreground text-xs">{{ $t('business.mediaDetailComponent.noTags') }}</span>
         </div>
-      </template>
-      <template v-else-if="mergedInfo">
-        <div v-if="mergedInfo.folders.length > 0" class="space-y-1">
-          <div
-            v-for="folderId in mergedInfo.folders"
-            :key="folderId"
-            class="bg-primary/10 text-primary text-xs px-3 py-2 rounded-lg flex items-center"
-          >
+      </div>
+
+      <!-- 文件夹信息 -->
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="font-semibold text-foreground text-sm">{{ $t('business.mediaDetailComponent.folder') }}</h3>
+          <Popover v-model:open="folderPopoverOpen">
+            <PopoverTrigger as-child>
+              <button class="text-primary text-xs hover:text-primary flex items-center gap-0.5">
+                <span class="material-icons text-sm">{{ displayItems[0]?.folderId ? 'edit' : 'add' }}</span>
+                <span>{{ displayItems[0]?.folderId ? $t('business.mediaDetailComponent.editFolder') : (isMultiSelect ?
+                  $t('business.mediaDetailComponent.batchSetFolder') : $t('business.mediaDetailComponent.setFolder'))
+                  }}</span>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="end" side="bottom" class="w-80 p-2">
+              <FolderTreeComponent item-type="folder" selection-mode="single" :selected-keys="selectedFolderKeys"
+                :default-show-search="true" :folders="folderTreeNodes" :show-base-categories="false"
+                @select="handleFolderSelect" />
+            </PopoverContent>
+          </Popover>
+        </div>
+        <template v-if="!isMultiSelect">
+          <div v-if="displayItems[0]?.folderId"
+            class="bg-primary/10 text-primary text-xs px-3 py-2 rounded-lg flex items-center">
             <span class="material-icons mr-2 text-primary">folder</span>
-            {{ getFolderName(folderId) }}
+            {{ getFolderName(displayItems[0].folderId) }}
           </div>
-        </div>
-        <div v-else class="bg-muted text-muted-foreground text-xs px-3 py-2 rounded-lg flex items-center">
-          <span class="material-icons mr-2 text-muted-foreground">folder_open</span>
-          {{ $t('business.mediaDetailComponent.multiUncategorized') }}
-        </div>
-      </template>
-    </div>
-
-    <!-- 基本信息 -->
-    <div>
-      <h3 class="font-semibold text-foreground text-sm mb-2">{{ $t('business.mediaDetailComponent.basicInfo') }}</h3>
-      <div class="text-xs space-y-2 text-muted-foreground">
-        <!-- 单选模式 -->
-        <template v-if="!isMultiSelect && displayItems[0]">
-          <div class="flex justify-between">
-            <span>{{ $t('business.mediaDetailComponent.size') }}</span>
-            <span>{{ formatFileSize(displayItems[0].size) }}</span>
-          </div>
-          <div class="flex justify-between">
-            <span>{{ $t('business.mediaDetailComponent.modifiedDate') }}</span>
-            <span>{{ formatDate(displayItems[0].updatedAt || displayItems[0].createdAt) }}</span>
-          </div>
-          <div class="flex justify-between">
-            <span>{{ $t('business.mediaDetailComponent.createdDate') }}</span>
-            <span>{{ formatDate(displayItems[0].createdAt) }}</span>
-          </div>
-          <div v-if="isImageFile(displayItems[0]) && displayItems[0].metadata" class="flex justify-between">
-            <span>{{ $t('business.mediaDetailComponent.dimensions') }}</span>
-            <span>{{ displayItems[0].metadata.width }} x {{ displayItems[0].metadata.height }}</span>
-          </div>
-          <div v-if="isVideoFile(displayItems[0]) && displayItems[0].metadata" class="flex justify-between">
-            <span>{{ $t('business.mediaDetailComponent.duration') }}</span>
-            <span>{{ formatDuration(displayItems[0].metadata.duration) }}</span>
+          <div v-else class="bg-muted text-muted-foreground text-xs px-3 py-2 rounded-lg flex items-center">
+            <span class="material-icons mr-2 text-muted-foreground">folder_open</span>
+            {{ $t('business.mediaDetailComponent.uncategorized') }}
           </div>
         </template>
-        <!-- 多选模式 -->
-        <template v-else-if="isMultiSelect && mergedInfo">
-          <div class="flex justify-between">
-            <span>{{ $t('business.mediaDetailComponent.selectedCount') }}</span>
-            <span>{{ $t('business.mediaDetailComponent.fileCountWithTotal', { count: mergedInfo.count }) }}</span>
+        <template v-else-if="mergedInfo">
+          <div v-if="mergedInfo.folders.length > 0" class="space-y-1">
+            <div v-for="folderId in mergedInfo.folders" :key="folderId"
+              class="bg-primary/10 text-primary text-xs px-3 py-2 rounded-lg flex items-center">
+              <span class="material-icons mr-2 text-primary">folder</span>
+              {{ getFolderName(folderId) }}
+            </div>
           </div>
-          <div class="flex justify-between">
-            <span>{{ $t('business.mediaDetailComponent.totalSize') }}</span>
-            <span>{{ formatFileSize(mergedInfo.totalSize) }}</span>
+          <div v-else class="bg-muted text-muted-foreground text-xs px-3 py-2 rounded-lg flex items-center">
+            <span class="material-icons mr-2 text-muted-foreground">folder_open</span>
+            {{ $t('business.mediaDetailComponent.multiUncategorized') }}
           </div>
         </template>
       </div>
-    </div>
+
+      <!-- 基本信息 -->
+      <div>
+        <h3 class="font-semibold text-foreground text-sm mb-2">{{ $t('business.mediaDetailComponent.basicInfo') }}</h3>
+        <div class="text-xs space-y-2 text-muted-foreground">
+          <!-- 单选模式 -->
+          <template v-if="!isMultiSelect && displayItems[0]">
+            <div class="flex justify-between">
+              <span>{{ $t('business.mediaDetailComponent.size') }}</span>
+              <span>{{ formatFileSize(displayItems[0].size) }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span>{{ $t('business.mediaDetailComponent.modifiedDate') }}</span>
+              <span>{{ formatDate(displayItems[0].updatedAt || displayItems[0].createdAt) }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span>{{ $t('business.mediaDetailComponent.createdDate') }}</span>
+              <span>{{ formatDate(displayItems[0].createdAt) }}</span>
+            </div>
+            <div v-if="isImageFile(displayItems[0]) && displayItems[0].metadata" class="flex justify-between">
+              <span>{{ $t('business.mediaDetailComponent.dimensions') }}</span>
+              <span>{{ displayItems[0].metadata.width }} x {{ displayItems[0].metadata.height }}</span>
+            </div>
+            <div v-if="isVideoFile(displayItems[0]) && displayItems[0].metadata" class="flex justify-between">
+              <span>{{ $t('business.mediaDetailComponent.duration') }}</span>
+              <span>{{ formatDuration(displayItems[0].metadata.duration) }}</span>
+            </div>
+          </template>
+          <!-- 多选模式 -->
+          <template v-else-if="isMultiSelect && mergedInfo">
+            <div class="flex justify-between">
+              <span>{{ $t('business.mediaDetailComponent.selectedCount') }}</span>
+              <span>{{ $t('business.mediaDetailComponent.fileCountWithTotal', { count: mergedInfo.count }) }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span>{{ $t('business.mediaDetailComponent.totalSize') }}</span>
+              <span>{{ formatFileSize(mergedInfo.totalSize) }}</span>
+            </div>
+          </template>
+        </div>
+      </div>
 
     </template>
   </div>
@@ -604,43 +540,43 @@ const multiImageLoadStates = ref<Record<string, 'loading' | 'loaded' | 'error'>>
 watch(() => displayItems.value
   .map(item => `${item.id}:${item.thumbnailPath || item.url || ''}`)
   .join('|'), () => {
-  const newItems = displayItems.value.map(item => ({
-    id: item.id,
-    src: item.thumbnailPath || item.url,
-  }))
-  // 重置单选模式加载状态
-  imageLoadState.value = 'loading'
-  // 检查缓存中是否已有错误状态（单选模式）
-  if (newItems.length === 1) {
-    const imageSrc = newItems[0].src
-    if (imageSrc && imageLoadErrorCache.has(imageSrc)) {
-      imageLoadState.value = 'error'
+    const newItems = displayItems.value.map(item => ({
+      id: item.id,
+      src: item.thumbnailPath || item.url,
+    }))
+    // 重置单选模式加载状态
+    imageLoadState.value = 'loading'
+    // 检查缓存中是否已有错误状态（单选模式）
+    if (newItems.length === 1) {
+      const imageSrc = newItems[0].src
+      if (imageSrc && imageLoadErrorCache.has(imageSrc)) {
+        imageLoadState.value = 'error'
+      }
     }
-  }
 
-  // 多选模式：只更新新增项，保留已加载/出错的状态
-  const prev = { ...multiImageLoadStates.value }
-  const states: Record<string, 'loading' | 'loaded' | 'error'> = {}
-  newItems.forEach(item => {
-    if (prev[item.id]) {
-      // 已存在的项保留之前的状态
-      states[item.id] = prev[item.id]
-    } else {
-      // 新增项：检查是否有缓存的错误状态
-      const imageSrc = item.src
-      states[item.id] = (imageSrc && imageLoadErrorCache.has(imageSrc)) ? 'error' : 'loading'
-    }
-  })
-  multiImageLoadStates.value = states
-}, { immediate: true })
+    // 多选模式：只更新新增项，保留已加载/出错的状态
+    const prev = { ...multiImageLoadStates.value }
+    const states: Record<string, 'loading' | 'loaded' | 'error'> = {}
+    newItems.forEach(item => {
+      if (prev[item.id]) {
+        // 已存在的项保留之前的状态
+        states[item.id] = prev[item.id]
+      } else {
+        // 新增项：检查是否有缓存的错误状态
+        const imageSrc = item.src
+        states[item.id] = (imageSrc && imageLoadErrorCache.has(imageSrc)) ? 'error' : 'loading'
+      }
+    })
+    multiImageLoadStates.value = states
+  }, { immediate: true })
 
 // 多选文件的合并信息
 const mergedInfo = computed(() => {
   if (!isMultiSelect.value) return null
-  
+
   const files = displayItems.value
   const totalSize = files.reduce((sum, file) => sum + (file.size || 0), 0)
-  
+
   // 合并所有标签（去重）
   const allTags = new Set<string>()
   files.forEach(file => {
@@ -648,7 +584,7 @@ const mergedInfo = computed(() => {
       file.tags.forEach(tag => allTags.add(tag))
     }
   })
-  
+
   // 合并所有文件夹（去重）
   const allFolders = new Set<string>()
   files.forEach(file => {
@@ -656,7 +592,7 @@ const mergedInfo = computed(() => {
       allFolders.add(file.folderId)
     }
   })
-  
+
   return {
     count: files.length,
     totalSize,
@@ -768,6 +704,7 @@ const handleTagSelect = async (tagData: any) => {
     if (!file.tags) file.tags = []
     if (!file.tags.includes(tagName)) file.tags.push(tagName)
   }, { label: t('business.mediaDetailComponent.setTagAction') })
+  await tagStore.refreshTags(libraryId.value || 'default')
 }
 
 const handleRemoveTag = async (tag: string) => {
@@ -782,6 +719,7 @@ const handleRemoveTag = async (tag: string) => {
       if (idx !== -1) file.tags.splice(idx, 1)
     }
   }, { label: t('business.mediaDetailComponent.removeTagAction') })
+  await tagStore.refreshTags(libraryId.value || 'default')
 }
 
 // 获取标签名称
@@ -818,12 +756,12 @@ const formatFileSize = (bytes?: number): string => {
   const units = ['B', 'KB', 'MB', 'GB']
   let size = bytes
   let unitIndex = 0
-  
+
   while (size >= 1024 && unitIndex < units.length - 1) {
     size /= 1024
     unitIndex++
   }
-  
+
   return `${size.toFixed(1)} ${units[unitIndex]}`
 }
 

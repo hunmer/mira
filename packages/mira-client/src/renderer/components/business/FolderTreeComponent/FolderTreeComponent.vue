@@ -291,6 +291,7 @@ import type { FolderItem } from '@renderer/types/components'
 import { useFolderOperations } from './composables/useFolderOperations'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { useLibraryStore } from '@renderer/stores/library'
+import { useTagStore } from '@renderer/stores/tag'
 import { useMediaStore } from '@renderer/stores/media'
 import { useSettingsStore } from '@renderer/stores/settings'
 import { useToast } from '@renderer/composables/useToast'
@@ -372,6 +373,7 @@ interface Emits {
 
 const emit = defineEmits<Emits>()
 const libraryStore = useLibraryStore()
+const tagStore = useTagStore()
 const mediaStore = useMediaStore()
 const settingsStore = useSettingsStore()
 const toast = useToast()
@@ -577,6 +579,9 @@ async function handleInternalDrop(libraryId: string, fileIds: string[], node: He
     }
   }
   if (success > 0) {
+    if (!isFolder.value) {
+      await tagStore.refreshTags(libraryId)
+    }
     toast.add({ severity: 'success', detail: isFolder.value ? t('business.folderTreeComponent.movedToFolder', { count: success, name: node.label }) : t('business.folderTreeComponent.taggedFiles', { count: success, name: node.label }), life: 2000 })
   }
 }

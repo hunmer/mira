@@ -100,6 +100,7 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
       if (!file.tags.includes(tagName)) file.tags.push(tagName)
       emit('media-set-tags', file)
     }, { label: t('business.contextMenu.setTags') })
+    await tagStore.refreshTags(libraryStore.currentLibrary?.id || 'default')
   }
 
   const runWithCurrentItem = async (handler: (item: FileInfo) => void | Promise<void>) => {
