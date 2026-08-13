@@ -58,10 +58,8 @@
 
   <!-- 文件夹选择 Popover -->
   <Popover v-model:open="folderPopoverOpen">
-    <PopoverTrigger as-child>
-      <div :style="{ position: 'fixed', left: popoverPosition.x + 'px', top: popoverPosition.y + 'px', width: '1px', height: '1px' }"></div>
-    </PopoverTrigger>
-    <PopoverContent class="w-80 p-2">
+    <PopoverAnchor :reference="popoverAnchor" />
+    <PopoverContent class="w-80 p-2" align="start" :side-offset="6">
       <FolderTreeComponent
         item-type="folder"
         :folders="folderTreeNodes"
@@ -74,10 +72,8 @@
 
   <!-- 标签选择 Popover -->
   <Popover v-model:open="tagPopoverOpen">
-    <PopoverTrigger as-child>
-      <div :style="{ position: 'fixed', left: popoverPosition.x + 'px', top: popoverPosition.y + 'px', width: '1px', height: '1px' }"></div>
-    </PopoverTrigger>
-    <PopoverContent class="w-80 p-2">
+    <PopoverAnchor :reference="popoverAnchor" />
+    <PopoverContent class="w-80 p-2" align="start" :side-offset="6">
       <FolderTreeComponent
         item-type="tag"
         :tags="tagStore.tags"
@@ -105,7 +101,7 @@ import {
   ContextMenuSubContent,
   ContextMenuSubTrigger,
 } from '@/components/ui/context-menu'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover'
 import FolderTreeComponent from './FolderTreeComponent/FolderTreeComponent.vue'
 import CoverCropDialog from './CoverCropDialog.vue'
 import { useContextMenu } from './MediaGridComponent/composables/useContextMenu'
@@ -150,6 +146,14 @@ const {
 
 const triggerRef = ref<HTMLElement | null>(null)
 const pointerPosition = ref<{ x: number; y: number } | null>(null)
+const popoverAnchor = {
+  getBoundingClientRect: () => new DOMRect(
+    popoverPosition.value.x,
+    popoverPosition.value.y,
+    0,
+    0,
+  ),
+}
 
 const trackPointerPosition = (event: PointerEvent) => {
   pointerPosition.value = { x: event.clientX, y: event.clientY }

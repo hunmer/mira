@@ -416,7 +416,14 @@ const displayItems = computed(() => {
   }
   return base.map(file => {
     const update = realtimeUpdates.value.get(file.id)
-    return update ? { ...file, ...update } : file
+    if (!update) return file
+    return {
+      ...file,
+      ...update,
+      // 详情补读仅用于元数据，媒体地址始终沿用列表中的可展示地址
+      url: file.url,
+      thumbnailPath: file.thumbnailPath,
+    }
   })
 })
 
@@ -597,12 +604,18 @@ const imageLoadState = ref<'loading' | 'loaded' | 'error'>('loading')
 const multiImageLoadStates = ref<Record<string, 'loading' | 'loaded' | 'error'>>({})
 
 // 监听显示项变化，重置加载状态
-watch(displayItems, (newItems) => {
+watch(() => displayItems.value
+  .map(item => `${item.id}:${item.thumbnailPath || item.url || ''}`)
+  .join('|'), () => {
+  const newItems = displayItems.value.map(item => ({
+    id: item.id,
+    src: item.thumbnailPath || item.url,
+  }))
   // 重置单选模式加载状态
   imageLoadState.value = 'loading'
   // 检查缓存中是否已有错误状态（单选模式）
   if (newItems.length === 1) {
-    const imageSrc = newItems[0].url || newItems[0].thumbnailPath
+    const imageSrc = newItems[0].src
     if (imageSrc && imageLoadErrorCache.has(imageSrc)) {
       imageLoadState.value = 'error'
     }
@@ -617,12 +630,12 @@ watch(displayItems, (newItems) => {
       states[item.id] = prev[item.id]
     } else {
       // 新增项：检查是否有缓存的错误状态
-      const imageSrc = item.thumbnailPath || item.url
+      const imageSrc = item.src
       states[item.id] = (imageSrc && imageLoadErrorCache.has(imageSrc)) ? 'error' : 'loading'
     }
   })
   multiImageLoadStates.value = states
-}, { immediate: true, deep: true })
+}, { immediate: true })
 
 // 多选文件的合并信息
 const mergedInfo = computed(() => {
