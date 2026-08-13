@@ -8,6 +8,7 @@ import { constructMetadata } from "@/lib/metadata";
 
 export const metadata = constructMetadata({
   canonicalUrl: "/",
+  manifest: "/site.webmanifest",
 });
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

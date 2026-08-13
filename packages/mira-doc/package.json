@@ -18,7 +18,7 @@
     "vitepress"
   ],
   "author": "Mira Team",
-  "license": "MIT",
+  "license": "ISC",
   "devDependencies": {
     "vitepress": "2.0.0-alpha.12"
   },

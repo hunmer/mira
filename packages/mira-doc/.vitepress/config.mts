@@ -9,7 +9,14 @@ export default defineConfig({
   ignoreDeadLinks: true,
 
   head: [
-    ['link', { rel: 'icon', type: 'image/x-icon', href: '/mira-doc/icon.ico' }]
+    ['link', { rel: 'icon', type: 'image/x-icon', href: '/mira-doc/icon.ico' }],
+    ['link', { rel: 'apple-touch-icon', href: '/mira-doc/apple-touch-icon.png' }],
+    ['link', { rel: 'manifest', href: '/mira-doc/site.webmanifest' }],
+    ['meta', { property: 'og:title', content: 'Mira 文档' }],
+    ['meta', { property: 'og:description', content: 'Mira - 新时代的素材管理软件' }],
+    ['meta', { property: 'og:image', content: '/mira-doc/og.png' }],
+    ['meta', { property: 'og:type', content: 'website' }],
+    ['meta', { name: 'twitter:card', content: 'summary_large_image' }]
   ],
 
   themeConfig: {

@@ -16,15 +16,15 @@
           </div>
         </div>
 
-        <div class="flex gap-6 min-h-0 flex-1 overflow-hidden">
-          <!-- 左侧类别导航 -->
-          <div class="w-1/4 shrink-0">
-            <nav class="space-y-1">
+        <div class="flex flex-col gap-3 min-h-0 flex-1 overflow-hidden lg:flex-row lg:gap-6">
+          <!-- 类别导航（移动端横向滚动条，桌面端左侧竖列） -->
+          <div class="w-full shrink-0 lg:w-1/4">
+            <nav class="flex gap-1 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible">
               <button v-for="category in categories" :key="category.id"
-                class="w-full flex items-center px-3 py-2.5 rounded-md text-sm transition-colors cursor-pointer border-l-4"
+                class="w-auto shrink-0 whitespace-nowrap flex items-center px-3 py-2.5 rounded-md text-sm transition-colors cursor-pointer border-l-4 lg:w-full"
                 :class="selectedCategory === category.id
-  ? 'bg-primary/10 dark:bg-primary/15 text-primary font-semibold border-primary'
-  : 'text-muted-foreground dark:text-muted-foreground hover:bg-muted dark:hover:bg-foreground border-transparent'"
+                  ? 'bg-primary/10 dark:bg-primary/15 text-primary font-semibold border-primary'
+                  : 'text-muted-foreground dark:text-muted-foreground hover:bg-muted dark:hover:bg-foreground border-transparent'"
                 @click="selectedCategory = category.id">
                 <span class="material-icons text-base mr-3">{{ category.icon }}</span>
                 {{ category.name }}
@@ -32,8 +32,8 @@
             </nav>
           </div>
 
-          <!-- 右侧快捷键列表 -->
-          <div class="w-3/4 flex flex-col min-h-0">
+          <!-- 快捷键列表（桌面端右侧 3/4） -->
+          <div class="w-full flex-1 flex flex-col min-h-0 lg:w-3/4 lg:flex-none">
             <h2 class="text-lg font-semibold text-foreground  mb-2 shrink-0">
               {{ getCurrentCategoryName() }}
             </h2>

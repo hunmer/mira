@@ -39,7 +39,7 @@
     "media-library"
   ],
   "author": "Mira Team",
-  "license": "MIT",
+  "license": "ISC",
   "description": "Mira Media Library Desktop Application",
   "dependencies": {
     "@he-tree/vue": "^2.10.5",

@@ -1,6 +1,43 @@
-# Mira TypeScript
+<div align="center">
+  <img src="./app-icon.png" alt="Mira" width="160" height="160" />
 
-一个基于 TypeScript 的现代化媒体资源管理系统，包含后端服务和前端管理面板。
+  <h1>Mira TypeScript</h1>
+
+  <p>一个基于 TypeScript 的现代化媒体资源管理系统，包含后端服务和前端管理面板。</p>
+
+  <p>
+    <a href="https://github.com/hunmer/mira/actions/workflows/docker.yml">
+      <img src="https://github.com/hunmer/mira/actions/workflows/docker.yml/badge.svg" alt="Docker" />
+    </a>
+    <a href="https://github.com/hunmer/mira/actions/workflows/electron.yml">
+      <img src="https://github.com/hunmer/mira/actions/workflows/electron.yml/badge.svg" alt="Electron Build" />
+    </a>
+    <a href="https://github.com/hunmer/mira/actions/workflows/landing-page.yml">
+      <img src="https://github.com/hunmer/mira/actions/workflows/landing-page.yml/badge.svg" alt="Deploy Landing Page" />
+    </a>
+    <a href="https://github.com/hunmer/mira/actions/workflows/mira-doc.yml">
+      <img src="https://github.com/hunmer/mira/actions/workflows/mira-doc.yml/badge.svg" alt="Deploy Mira Doc" />
+    </a>
+  </p>
+
+  <p>
+    <a href="https://github.com/hunmer/mira/stargazers">
+      <img src="https://img.shields.io/github/stars/hunmer/mira?style=social" alt="Stars" />
+    </a>
+    <a href="https://github.com/hunmer/mira/releases">
+      <img src="https://img.shields.io/github/v/release/hunmer/mira" alt="Release" />
+    </a>
+    <a href="https://github.com/hunmer/mira/issues">
+      <img src="https://img.shields.io/github/issues/hunmer/mira" alt="Issues" />
+    </a>
+    <img src="https://img.shields.io/github/last-commit/hunmer/mira" alt="Last Commit" />
+    <img src="https://img.shields.io/github/languages/top/hunmer/mira" alt="Top Language" />
+    <img src="https://img.shields.io/github/repo-size/hunmer/mira" alt="Repo Size" />
+    <a href="./LICENSE"><img src="https://img.shields.io/github/license/hunmer/mira" alt="License" /></a>
+  </p>
+</div>
+
+---
 
 ## 项目架构
 
@@ -80,4 +117,4 @@ npm run dev
 
 ## 许可证
 
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
+本项目采用 ISC 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。

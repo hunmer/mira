@@ -68,6 +68,49 @@ const userAvatarUrl = computed(() => {
 
 watch(userAvatarUrl, () => { avatarLoadError.value = false })
 
+/** 切换亮/暗主题（auto 模式下按当前实际生效主题取反） */
+const toggleTheme = (event: MouseEvent) => {
+  const newTheme = settingsStore.isDarkMode ? 'light' : 'dark'
+  const apply = () => {
+    settingsStore.settings.theme = newTheme
+    settingsStore.applyTheme()
+    settingsStore.saveSettings().catch(console.error)
+  }
+  revealThemeTransition(event.currentTarget as HTMLElement, apply)
+}
+
+/**
+ * 主题切换圆形揭露动画：以触发元素中心为圆心，
+ * 目标主题快照（::view-transition-new(root)）从 0 扩展到覆盖全屏。
+ * 不支持 View Transitions API 或开启「减少动态效果」时降级为直接切换。
+ */
+const revealThemeTransition = (target: HTMLElement, apply: () => void) => {
+  const doc = document as Document & {
+    startViewTransition?: (cb: () => void) => { finished: Promise<void> }
+  }
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  if (!doc.startViewTransition || reduceMotion) {
+    apply()
+    return
+  }
+  const rect = target.getBoundingClientRect()
+  const x = rect.left + rect.width / 2
+  const y = rect.top + rect.height / 2
+  // 圆心到视口最远角的距离，确保圆圈能完全覆盖屏幕
+  const endRadius = Math.hypot(
+    Math.max(x, window.innerWidth - x),
+    Math.max(y, window.innerHeight - y),
+  )
+  const root = document.documentElement
+  root.style.setProperty('--theme-toggle-x', `${x}px`)
+  root.style.setProperty('--theme-toggle-y', `${y}px`)
+  root.style.setProperty('--theme-toggle-r', `${endRadius}px`)
+  const transition = doc.startViewTransition(apply)
+  transition.finished.finally(() => {
+    root.style.removeProperty('--theme-toggle-r')
+  })
+}
+
 /**
  * 打开服务器 dashboard 页面。
  * Electron 下在新 BrowserWindow 中打开「当前服务器地址 + /dashboard」；
@@ -104,6 +147,15 @@ const openDashboard = async () => {
       @click="mediaStore.toggleDetailSidebar()"
     >
       <span class="material-icons" style="font-size: 18px;">view_sidebar</span>
+    </button>
+
+    <!-- 切换亮色/暗色主题 -->
+    <button
+      class="h-8 w-8 flex items-center justify-center rounded-lg transition-[color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-95 cursor-pointer text-muted-foreground hover:bg-primary/10 hover:text-primary"
+      :title="settingsStore.isDarkMode ? $t('commonUi.themeSwitcher.switchToLight') : $t('commonUi.themeSwitcher.switchToDark')"
+      @click="toggleTheme"
+    >
+      <span class="material-icons" style="font-size: 18px;">{{ settingsStore.isDarkMode ? 'light_mode' : 'dark_mode' }}</span>
     </button>
 
     <!-- 用户头像 + 功能菜单（原 HomeToolbar 功能并入） -->
