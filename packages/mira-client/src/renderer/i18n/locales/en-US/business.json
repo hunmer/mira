@@ -437,6 +437,10 @@
     "emptyTitle": "No files",
     "emptyDesc": "Drag files here or click the upload button to add files"
   },
+  "waterfallComponent": {
+    "emptyTitle": "No files",
+    "emptyDesc": "Drag files here or click the upload button to add files"
+  },
   "mediaListComponent": {
     "colPreview": "Preview",
     "colFilename": "File name",

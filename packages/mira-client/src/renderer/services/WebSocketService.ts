@@ -432,6 +432,9 @@ let importNotifyLastFileId: string | undefined
 let importNotifyLastPreviewType: 'image' | 'video' = 'image'
 let importNotifyIsBatch = false
 let importNotifyBatchId: string | undefined
+let importNotifySkipped = 0
+let importNotifyFailed = 0
+let importNotifyBatchCompleted = false
 // 是否已展示（避免缩略图到达后重复展示）
 let importNotifyShown = false
 // 缩略图就绪前的最长等待时间（ms）：超时则用 Material Icon 兜底展示
@@ -446,11 +449,17 @@ function doShowImportNotification(): void {
   const thumb = importNotifyLastThumb
   const fileIdResolved = importNotifyLastFileId
 
-  const showBatchCount = importNotifyIsBatch && count > 1
+  const showBatchCount = importNotifyIsBatch && count > 0
   const title = showBatchCount ? t('services.webSocket.importedNFiles', { count }) : t('services.webSocket.fileImportComplete')
-  const body = showBatchCount
-    ? (name ? t('services.webSocket.lastImported', { name }) : t('services.webSocket.batchImportComplete'))
-    : (name || t('services.webSocket.newFileAdded'))
+  const body = importNotifyBatchCompleted
+    ? t('services.webSocket.uploadBatchSummary', {
+        imported: count,
+        skipped: importNotifySkipped,
+        failed: importNotifyFailed,
+      })
+    : showBatchCount
+      ? (name ? t('services.webSocket.lastImported', { name }) : t('services.webSocket.batchImportComplete'))
+      : (name || t('services.webSocket.newFileAdded'))
 
   // 使用自定义通知窗口（桌面右下角悬浮卡片）。
   // icon 优先用最后一个文件的缩略图（URL），无缩略图则回退 Material Icon。
@@ -503,8 +512,12 @@ function notifyFileImported(
     importNotifyLastFileId = undefined
     importNotifyLastPreviewType = 'image'
     importNotifyIsBatch = false
+    importNotifySkipped = 0
+    importNotifyFailed = 0
+    importNotifyBatchCompleted = false
   }
-  if (uploadBatchId) importNotifyBatchId = uploadBatchId
+  importNotifyBatchId = uploadBatchId
+  if (uploadBatchId) importNotifyBatchCompleted = false
 
   importNotifyIsBatch = importNotifyCount === 0 ? isBatchImport : importNotifyIsBatch && isBatchImport
   importNotifyCount += 1
@@ -527,8 +540,41 @@ function notifyFileImported(
   if (importNotifyTimer) clearTimeout(importNotifyTimer)
   importNotifyTimer = setTimeout(() => {
     importNotifyTimer = null
+    if (importNotifyBatchId && !importNotifyBatchCompleted) return
     doShowImportNotification()
   }, IMPORT_THUMB_WAIT)
+}
+
+function completeUploadNotification(data: any): void {
+  const settingsStore = useSettingsStore()
+  if (!settingsStore.settings.enableNotifications || !settingsStore.settings.enableImportNotifications) return
+
+  const uploadBatchId = typeof data?.uploadBatchId === 'string' ? data.uploadBatchId : undefined
+  if (!uploadBatchId) return
+  if (importNotifyBatchId && importNotifyBatchId !== uploadBatchId && importNotifyCount > 0) {
+    doShowImportNotification()
+  }
+  if (importNotifyBatchId !== uploadBatchId || importNotifyShown) {
+    importNotifyShown = false
+    importNotifyCount = Number(data?.imported) || 0
+    importNotifyLastName = ''
+    importNotifyLastThumb = ''
+    importNotifyThumbs = []
+    importNotifyLastFileId = undefined
+    importNotifyLastPreviewType = 'image'
+  }
+  importNotifyBatchId = uploadBatchId
+  importNotifyCount = Number(data?.imported) || importNotifyCount
+  importNotifySkipped = Number(data?.skipped) || 0
+  importNotifyFailed = Number(data?.failed) || 0
+  importNotifyIsBatch = Number(data?.total) > 1
+  importNotifyBatchCompleted = true
+
+  if (importNotifyTimer) clearTimeout(importNotifyTimer)
+  importNotifyTimer = setTimeout(() => {
+    importNotifyTimer = null
+    doShowImportNotification()
+  }, importNotifyCount > 0 && !importNotifyLastThumb ? IMPORT_THUMB_WAIT : 0)
 }
 
 /**
@@ -543,6 +589,7 @@ function updateImportThumbIfPending(fileId: string | number, thumbRaw?: string):
   if (!thumb) return
   importNotifyLastThumb = thumb
   if (!importNotifyThumbs.includes(thumb)) importNotifyThumbs.push(thumb)
+  if (importNotifyBatchId && !importNotifyBatchCompleted) return
   // 缩略图已就绪，立即展示（取消等待定时器）
   if (importNotifyTimer) {
     clearTimeout(importNotifyTimer)
@@ -775,6 +822,11 @@ function setupEventListeners(libraryStore: any): void {
     }
   })
 
+  webSocketService.addEventListener('file::upload-completed', (data) => {
+    completeUploadNotification(data)
+    flushUploadBatchRefresh(data?.uploadBatchId)
+  })
+
   webSocketService.addEventListener('eagle::import-notification', (data) => {
     console.log('Eagle import notification:', data)
     if (data?.status === 'preparing') prepareEagleImportNotification(data)
@@ -833,11 +885,50 @@ function setupEventListeners(libraryStore: any): void {
 
 /**
  * 处理文件事件，判断是否需要刷新当前tab
- * updated 事件按 tab 节流 300ms，避免批量更新时重复刷新
+ * 文件事件按 tab 防抖 300ms，避免批量操作时重复刷新列表和瀑布流元数据
  */
 const refreshTimers = new Map<string, ReturnType<typeof setTimeout>>()
+const uploadBatchRefreshes = new Map<string, Map<string, { eventType: 'created', data: any }>>()
+const uploadBatchRefreshTimers = new Map<string, ReturnType<typeof setTimeout>>()
 const treeRefreshTimers = new Map<string, ReturnType<typeof setTimeout>>()
 const TREE_REFRESH_DELAY = 300
+const UPLOAD_BATCH_REFRESH_FALLBACK_DELAY = 2000
+
+function dispatchActiveTabRefresh(tabId: string, eventType: 'created' | 'updated' | 'deleted' | 'recovered', data: any): void {
+  window.dispatchEvent(new CustomEvent('active-tab-refresh', {
+    detail: { tabId, eventType, data }
+  }))
+}
+
+function flushUploadBatchRefresh(uploadBatchId?: string): void {
+  if (!uploadBatchId) return
+
+  const timer = uploadBatchRefreshTimers.get(uploadBatchId)
+  if (timer) clearTimeout(timer)
+  uploadBatchRefreshTimers.delete(uploadBatchId)
+
+  const pending = uploadBatchRefreshes.get(uploadBatchId)
+  uploadBatchRefreshes.delete(uploadBatchId)
+  if (!pending) return
+
+  const { tabs } = useTabs()
+  for (const [tabId, detail] of pending) {
+    if (!tabs.value.find(tab => tab.id === tabId)?.active) continue
+    dispatchActiveTabRefresh(tabId, detail.eventType, detail.data)
+  }
+}
+
+function queueUploadBatchRefresh(uploadBatchId: string, tabId: string, data: any): void {
+  const pending = uploadBatchRefreshes.get(uploadBatchId) || new Map()
+  pending.set(tabId, { eventType: 'created', data })
+  uploadBatchRefreshes.set(uploadBatchId, pending)
+
+  const existing = uploadBatchRefreshTimers.get(uploadBatchId)
+  if (existing) clearTimeout(existing)
+  uploadBatchRefreshTimers.set(uploadBatchId, setTimeout(() => {
+    flushUploadBatchRefresh(uploadBatchId)
+  }, UPLOAD_BATCH_REFRESH_FALLBACK_DELAY))
+}
 
 function scheduleTreeRefresh(libraryStore: any, libraryId?: string): void {
   const targetLibraryId = libraryId || libraryStore.currentLibrary?.id
@@ -863,19 +954,16 @@ function handleFileEvent(data: any, eventType: 'created' | 'updated' | 'deleted'
     const tab = tabs.value.find(t => t.id === tabId)
     if (!tab?.active) continue
 
-    if (eventType === 'updated') {
-      const existing = refreshTimers.get(tabId)
-      if (existing) clearTimeout(existing)
-      refreshTimers.set(tabId, setTimeout(() => {
-        refreshTimers.delete(tabId)
-        window.dispatchEvent(new CustomEvent('active-tab-refresh', {
-          detail: { tabId, eventType, data }
-        }))
-      }, 300))
-    } else {
-      window.dispatchEvent(new CustomEvent('active-tab-refresh', {
-        detail: { tabId, eventType, data }
-      }))
+    if (eventType === 'created' && typeof data?.uploadBatchId === 'string') {
+      queueUploadBatchRefresh(data.uploadBatchId, tabId, data)
+      continue
     }
+
+    const existing = refreshTimers.get(tabId)
+    if (existing) clearTimeout(existing)
+    refreshTimers.set(tabId, setTimeout(() => {
+      refreshTimers.delete(tabId)
+      dispatchActiveTabRefresh(tabId, eventType, data)
+    }, 300))
   }
 }

@@ -330,6 +330,18 @@ export class FileRoutes {
                         });
                     }
                 }
+                if (this.backend.webSocketServer && files.length > 0) {
+                    const imported = results.filter((item: any) => item.operation === 'create' && item.success).length;
+                    const skipped = results.filter((item: any) => item.operation === 'duplicate').length;
+                    const failed = results.filter((item: any) => !item.success && item.operation !== 'duplicate').length;
+                    this.backend.webSocketServer.broadcastLibraryEvent(libraryId, 'file::upload-completed', {
+                        uploadBatchId,
+                        total: files.length,
+                        imported,
+                        skipped,
+                        failed,
+                    });
+                }
                 res.send(isBatchImport ? {
                     batchId: batchId || urlBatchId,
                     urlBatchId,

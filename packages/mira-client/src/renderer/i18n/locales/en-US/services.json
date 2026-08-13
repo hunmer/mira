@@ -111,6 +111,7 @@
     "lastImported": "Last imported: {name}",
     "batchImportComplete": "Batch import complete",
     "newFileAdded": "New file added to media library",
+    "uploadBatchSummary": "Imported {imported} images successfully, {skipped} already existed, and {failed} failed to import",
     "viewAction": "View",
     "importingNFiles": "Importing {count} files",
     "downloadingImage": "Downloading image",

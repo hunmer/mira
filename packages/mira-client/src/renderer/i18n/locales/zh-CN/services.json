@@ -111,6 +111,7 @@
     "lastImported": "最后导入：{name}",
     "batchImportComplete": "批量导入完成",
     "newFileAdded": "新文件已添加到媒体库",
+    "uploadBatchSummary": "成功导入 {imported} 张图片，有 {skipped} 张已存在，{failed} 张导入失败",
     "viewAction": "查看",
     "importingNFiles": "正在导入 {count} 个文件",
     "downloadingImage": "正在下载图片",

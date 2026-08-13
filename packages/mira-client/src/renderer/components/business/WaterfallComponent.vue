@@ -78,6 +78,18 @@
         </MediaWaterfallItem>
       </template>
     </Masonry>
+
+    <!-- 空状态 -->
+    <Empty
+      v-if="props.items.length === 0"
+      class="min-h-full"
+    >
+      <EmptyMedia>
+        <StatusImage name="empty" size="large" />
+      </EmptyMedia>
+      <EmptyTitle>{{ $t('business.waterfallComponent.emptyTitle') }}</EmptyTitle>
+      <EmptyDescription>{{ $t('business.waterfallComponent.emptyDesc') }}</EmptyDescription>
+    </Empty>
     </MediaContextMenu>
   </SelectionBox>
 </template>
@@ -88,6 +100,8 @@ import SelectionBox from '../common/SelectionBox.vue'
 import MediaContextMenu from './MediaContextMenu.vue'
 import MediaWaterfallItem from './WaterfallComponent/MediaWaterfallItem.vue'
 import VideoPreviewContainer from './MediaGridComponent/VideoPreviewContainer.vue'
+import StatusImage from '../common/StatusImage.vue'
+import { Empty, EmptyMedia, EmptyTitle, EmptyDescription } from '@/components/ui/empty'
 import { Masonry, type MasonryColumns, type MasonryItemMeta } from '@hunmer/vue-masonry'
 import type { FileInfo } from '../../../shared/types'
 import { useSettingsStore } from '../../stores/settings'
@@ -264,8 +278,9 @@ const preloadThumbnailRatios = async (items: FileInfo[]) => {
   if (currentVersion !== preloadVersion) return
   // 首屏前 N 个：同步预加载，等真实比例再渲染（避免首屏布局抖动）。
   const headEntries = await Promise.all(items.slice(0, initialRatioPreloadCount.value).filter(item => !getMetadataRatio(item)).map(async (item) => {
-    const ratio = await loadThumbnailRatio(item.id, getItemUrl(item))
-    return ratio ? [item.id, ratio] as const : null
+    const itemId = String(item.id)
+    const ratio = await loadThumbnailRatio(itemId, getItemUrl(item))
+    return ratio ? [itemId, ratio] as const : null
   }))
 
   if (currentVersion !== preloadVersion) return
@@ -283,36 +298,41 @@ const preloadThumbnailRatios = async (items: FileInfo[]) => {
     if (ratio) publishedRatios[item.id] = ratio
   }
 
-  // 同时使用之前实例已缓存的比例；发布后本次实例不再修改，避免后台加载导致连续重排。
+  // 同时使用之前实例已缓存的比例。
   for (const item of items) {
-    const ratio = getCachedThumbnailRatio(item.id, getItemUrl(item))
+    const ratio = getCachedThumbnailRatio(String(item.id), getItemUrl(item))
     if (ratio) publishedRatios[item.id] = ratio
   }
 
   thumbnailRatios.value = publishedRatios
   thumbnailRatiosReady.value = true
-  // 首屏外比例仅写入跨实例缓存，不能修改当前已发布布局。
-  void loadRemainingRatios(items)
+  // 首屏外比例加载完成后一次性发布，触发新增项重新布局，避免逐张图片抖动。
+  void loadRemainingRatios(items, currentVersion)
 }
 
-// 异步预热其余比例（限并发），供下次实例或数据批次直接复用。
-const loadingRatioIds = new Set<string>()
+// 异步加载其余比例（限并发），整批完成后统一更新当前布局。
 const RATIO_CONCURRENCY = 12
-const loadRemainingRatios = async (items: FileInfo[]) => {
+const loadRemainingRatios = async (items: FileInfo[], currentVersion: number) => {
   const pending = items.filter(item => (
     !getMetadataRatio(item) &&
-    !getCachedThumbnailRatio(item.id, getItemUrl(item)) && !loadingRatioIds.has(item.id)
+    !getCachedThumbnailRatio(String(item.id), getItemUrl(item))
   ))
   let cursor = 0
   const runWorker = async () => {
     while (cursor < pending.length) {
       const item = pending[cursor++]
-      loadingRatioIds.add(item.id)
-      await loadThumbnailRatio(item.id, getItemUrl(item))
-      loadingRatioIds.delete(item.id)
+      await loadThumbnailRatio(String(item.id), getItemUrl(item))
     }
   }
   await Promise.all(Array.from({ length: Math.min(RATIO_CONCURRENCY, pending.length) }, runWorker))
+
+  if (currentVersion !== preloadVersion) return
+  const next = { ...thumbnailRatios.value }
+  for (const item of items) {
+    const ratio = getCachedThumbnailRatio(String(item.id), getItemUrl(item))
+    if (ratio) next[item.id] = ratio
+  }
+  thumbnailRatios.value = next
 }
 
 watch(
@@ -326,8 +346,9 @@ watch(
 // hash fallback：未加载真实比例前给一个稳定占位比例，避免空白布局。
 // 占位值范围压在 [0.8, 1.3]，当前实例内保持不变，避免异步比例引发布局重排。
 const fallbackRatio = (item: FileInfo): number => {
+  const itemId = String(item.id)
   let seed = 0
-  for (let i = 0; i < item.id.length; i++) seed = ((seed << 5) - seed + item.id.charCodeAt(i)) | 0
+  for (let i = 0; i < itemId.length; i++) seed = ((seed << 5) - seed + itemId.charCodeAt(i)) | 0
   return (Math.abs(seed) % 50) / 100 + 0.8
 }
 
@@ -499,6 +520,21 @@ const handleImageError = (url: string) => {
   console.error('Image load error:', url)
 }
 
+const handleThumbnailUpdated = async (event: Event) => {
+  const { fileId, thumbPath } = (event as CustomEvent).detail || {}
+  if (!fileId || !thumbPath) return
+
+  const item = props.items.find(file => String(file.id) === String(fileId))
+  if (!item) return
+
+  const ratio = await loadThumbnailRatio(String(item.id), thumbPath)
+  if (!ratio || !props.items.some(file => String(file.id) === String(fileId))) return
+  thumbnailRatios.value = {
+    ...thumbnailRatios.value,
+    [item.id]: ratio
+  }
+}
+
 // 视频静音切换
 const toggleVideoMute = async () => {
   const newMutedState = !settingsStore.settings.videoPreviewMuted
@@ -559,11 +595,13 @@ defineExpose({
 
 onMounted(() => {
   window.addEventListener('keydown', handleDeleteKeyDown)
+  window.addEventListener('thumbnail-updated', handleThumbnailUpdated)
   document.addEventListener('edit-action', handleEditAction)
 })
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleDeleteKeyDown)
+  window.removeEventListener('thumbnail-updated', handleThumbnailUpdated)
   document.removeEventListener('edit-action', handleEditAction)
   stopVideoPreview()
 })

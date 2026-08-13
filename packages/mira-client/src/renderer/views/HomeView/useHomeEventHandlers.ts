@@ -70,22 +70,15 @@ export function useHomeEventHandlers(
   // 刷新文件夹
   const handleRefreshFolders = async () => {
     console.log('Refreshing folders...')
-    // 刷新时清除所有tabs缓存并设置需要更新数据
-    clearTabCache() // 清除所有tab的缓存
-    setAllTabsNeedUpdate(true)
-
-    // 强制刷新文件夹数据
     try {
-      await homeController.handleRefresh()
+      const libraryId = libraryStore.currentLibrary?.id
+      if (!libraryId) return
+
+      const { useFolderStore } = await import('../../stores/folder')
+      await useFolderStore().refreshFolders(libraryId)
       console.log('✅ Folders refreshed successfully')
     } catch (error) {
       console.error('❌ Failed to refresh folders:', error)
-      // 即使出错也尝试重新获取当前库的文件夹
-      if (libraryStore.currentLibrary) {
-        const { useFolderStore } = await import('../../stores/folder')
-        const folderStore = useFolderStore()
-        await folderStore.refreshFolders(libraryStore.currentLibrary.id)
-      }
     }
   }
 
