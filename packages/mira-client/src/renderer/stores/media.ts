@@ -33,6 +33,8 @@ export const useMediaStore = defineStore('media', () => {
   // 详情面板全局状态
   const detailSidebarFiles = ref<FileInfo[]>([])
   const showDetailSidebar = ref(true)
+  // 左侧导航栏可见性（桌面端控制 inline 面板，移动端控制抽屉开关）
+  const showLeftSidebar = ref(true)
   const imagePreviewItems = ref<FileInfo[]>([])
 
   // 本地文件路径映射: {libraryId: {fileId: localPath}}
@@ -997,6 +999,10 @@ export const useMediaStore = defineStore('media', () => {
     showDetailSidebar.value = !showDetailSidebar.value
   }
 
+  const toggleLeftSidebar = () => {
+    showLeftSidebar.value = !showLeftSidebar.value
+  }
+
   const setImagePreviewItems = (files: FileInfo[]) => {
     imagePreviewItems.value = [...files]
   }
@@ -1080,6 +1086,10 @@ export const useMediaStore = defineStore('media', () => {
     showDetailSidebar,
     setDetailSidebarFiles,
     clearDetailSidebar,
-    toggleDetailSidebar
+    toggleDetailSidebar,
+
+    // 左侧导航栏
+    showLeftSidebar,
+    toggleLeftSidebar
   }
 })

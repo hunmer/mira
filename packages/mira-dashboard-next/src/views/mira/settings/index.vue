@@ -174,8 +174,7 @@ function openLoginWindow(site: CookieSite) {
 }
 
 let offLoginCookies: (() => void) | null = null
-onMounted(async () => {
-  await load()
+onMounted(() => {
   if (window.electronAPI?.onLoginCookies) {
     offLoginCookies = window.electronAPI.onLoginCookies(async ({ siteId, cookies }) => {
       try {
@@ -188,6 +187,7 @@ onMounted(async () => {
     })
   }
 })
+await load()
 onBeforeUnmount(() => { offLoginCookies?.() })
 
 // ===== 手动录入 cookie =====

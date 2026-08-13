@@ -32,6 +32,8 @@ const props = defineProps<{
   onCloseTab: (tabId: string) => void
   onContextMenu: (tab: TabItem, event: MouseEvent) => void
   onActiveTabIdChange?: (activeTabId: string | undefined) => void
+  onToggleLeftSidebar?: () => void
+  leftSidebarOpen?: boolean
 }>()
 
 // Tab 条滚动容器：切换 tab 时自动滚动到可见位置
@@ -69,6 +71,21 @@ function handleTabContextMenu(tab: TabItem, event: MouseEvent) {
 
 <template>
   <div class="flex h-full items-end gap-0.5">
+    <!-- 切换左侧栏（桌面端 inline / 移动端抽屉） -->
+    <div v-if="props.onToggleLeftSidebar" class="flex items-end shrink-0 mr-1">
+      <button
+        :title="$t('views.homeTabsBar.toggleLeftSidebar')"
+        :class="[
+          'h-6 w-8 flex items-center justify-center rounded-full transition-[color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-95',
+          props.leftSidebarOpen
+            ? 'text-primary hover:bg-white/50 hover:backdrop-blur-xl'
+            : 'text-muted-foreground hover:text-primary hover:bg-white/50 hover:backdrop-blur-xl'
+        ]"
+        @click="props.onToggleLeftSidebar?.()">
+        <span class="material-icons text-xl">menu</span>
+      </button>
+    </div>
+
     <!-- 返回：激活上一次的 tab -->
     <div class="flex items-end gap-0.5 shrink-0 mr-1">
       <button

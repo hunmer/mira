@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { User } from '@/types/auth'
 import { adminApi } from '@/api'
@@ -82,7 +82,7 @@ async function handleDelete(id: string) {
   }
 }
 
-onMounted(loadAdmins)
+await loadAdmins()
 </script>
 
 <template>

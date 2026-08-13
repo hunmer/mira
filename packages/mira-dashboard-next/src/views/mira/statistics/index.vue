@@ -83,7 +83,7 @@ watch(selectedLibraryId, loadStats)
 watch(timeRange, loadStats)
 
 // initial load
-loadStats()
+await loadStats()
 
 // ---- 趋势图 ----
 type ChartItem = { date: Date; fileCount: number; totalSizeMB: number }

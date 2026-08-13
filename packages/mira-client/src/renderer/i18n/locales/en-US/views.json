@@ -28,7 +28,9 @@
   },
   "homeTabsBar": {
     "activateLastTab": "Activate last tab (Ctrl+Shift+Tab)",
-    "noTabToReturn": "No tab to go back to"
+    "noTabToReturn": "No tab to go back to",
+    "toggleLeftSidebar": "Toggle left sidebar",
+    "toggleRightSidebar": "Toggle right sidebar"
   },
   "pluginContributionBar": {
     "activateFailed": "Plugin failed to start",

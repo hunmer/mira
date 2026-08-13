@@ -174,7 +174,6 @@ export function createSniffer(onUpdate: (resources: SniffedResource[]) => void):
       cleanup();
       kinds = k;
       resources = [];
-      dbg.info('sniffer', 'start', { kinds, hasBody: !!document.body, imgCount: document.querySelectorAll('img').length });
       scan();
       // PerformanceObserver:抓懒加载/动态资源
       try {

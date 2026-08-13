@@ -5,6 +5,7 @@ import { setApiBaseURL, getApiBaseURL, getDefaultBaseURL } from '@/api/client'
 import { Toaster } from '@/components/ui/sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import PageLoading from '@/components/common/PageLoading.vue'
 import {
   Dialog,
   DialogContent,
@@ -36,7 +37,14 @@ function resetDefault() {
 
 <template>
   <Toaster />
-  <router-view />
+  <router-view v-slot="{ Component }">
+    <Suspense>
+      <component :is="Component" />
+      <template #fallback>
+        <PageLoading />
+      </template>
+    </Suspense>
+  </router-view>
   <Button
     v-if="showSetting"
     variant="outline"

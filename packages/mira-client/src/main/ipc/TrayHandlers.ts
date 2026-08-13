@@ -23,7 +23,7 @@ export class TrayHandlers {
     ipcMain.handle('tray:get-settings', this.handleGetTraySettings.bind(this))
     ipcMain.handle('tray:is-supported', this.handleIsTraySupported.bind(this))
     ipcMain.handle('tray:flash', this.handleFlashTray.bind(this))
-    ipcMain.handle('tray:set-tooltip', this.handleSetTooltip.bind(this))
+    ipcMain.handle('tray:set-tooltip', this.handleSetTrayTooltip.bind(this))
 
     // 语言切换：渲染进程单向通知主进程更新托盘菜单（fire-and-forget）
     ipcMain.on('tray:set-locale', (_event, locale: MainLocale) => {

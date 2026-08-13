@@ -143,7 +143,6 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (isContentCommand(msg)) {
     switch (msg.type) {
       case 'SNIFFER_START':
-        dbg.info('content', 'SNIFFER_START', msg.payload);
         sniffer.start(msg.payload.kinds);
         sendResponse({ ok: true });
         return true;
@@ -153,7 +152,6 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         sendResponse({ ok: true });
         return true;
       case 'DISPATCH_DRAGDROP':
-        dbg.info('content', 'DISPATCH_DRAGDROP', msg.payload);
         dragdrop.setEnabled(msg.payload.enabled);
         sendResponse({ ok: true });
         return true;

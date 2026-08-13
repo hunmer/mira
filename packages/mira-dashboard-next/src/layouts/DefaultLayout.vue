@@ -17,6 +17,7 @@ import { Separator } from '@/components/ui/separator'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
+import PageLoading from '@/components/common/PageLoading.vue'
 import { toast } from 'vue-sonner'
 import { Toaster } from '@/components/ui/sonner'
 import {
@@ -199,7 +200,14 @@ function handleLogout() {
         </DropdownMenu>
       </header>
       <main class="flex-1 p-6">
-        <router-view />
+        <router-view v-slot="{ Component }">
+          <Suspense>
+            <component :is="Component" />
+            <template #fallback>
+              <PageLoading />
+            </template>
+          </Suspense>
+        </router-view>
       </main>
     </SidebarInset>
   </SidebarProvider>

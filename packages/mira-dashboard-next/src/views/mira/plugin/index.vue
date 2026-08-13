@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import type { Plugin } from '@/types/mira'
@@ -338,7 +338,7 @@ function openRoute(route: PluginRoute) {
   router.push(route.path)
 }
 
-onMounted(loadPlugins)
+await loadPlugins()
 </script>
 
 <template>
@@ -356,13 +356,8 @@ onMounted(loadPlugins)
       </div>
     </div>
 
-    <!-- loading -->
-    <div v-if="loading" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      <Card v-for="i in 6" :key="i"><CardContent class="h-48 animate-pulse" /></Card>
-    </div>
-
     <!-- main content -->
-    <template v-else-if="groups.length">
+    <template v-if="groups.length">
       <!-- toolbar: search (素材库跟随全局选中) + 检查更新 -->
       <div class="flex items-center gap-3">
         <div class="relative max-w-sm flex-1">

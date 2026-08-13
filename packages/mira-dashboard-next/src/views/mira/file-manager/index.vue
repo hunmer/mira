@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useLibrary } from '@/composables/useLibrary'
 import { fileManagerApi, fileApi } from '@/api'
@@ -504,9 +504,7 @@ watch(selectedLibraryId, () => {
   if (selectedLibraryId.value) loadItems()
 })
 
-onMounted(() => {
-  if (selectedLibraryId.value) loadItems()
-})
+if (selectedLibraryId.value) await loadItems()
 </script>
 
 <template>

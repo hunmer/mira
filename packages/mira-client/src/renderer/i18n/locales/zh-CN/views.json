@@ -28,7 +28,9 @@
   },
   "homeTabsBar": {
     "activateLastTab": "激活上一次的tab (Ctrl+Shift+Tab)",
-    "noTabToReturn": "没有可返回的 tab"
+    "noTabToReturn": "没有可返回的 tab",
+    "toggleLeftSidebar": "切换左侧栏",
+    "toggleRightSidebar": "切换右侧栏"
   },
   "pluginContributionBar": {
     "activateFailed": "插件启动失败",

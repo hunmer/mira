@@ -2,6 +2,7 @@
 defineOptions({ name: 'Home' })
 import { ref, computed, onMounted, onUnmounted, onActivated, onDeactivated, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useMediaQuery } from '@vueuse/core'
 
 // 布局组件
 import TabViewRenderer from '@renderer/components/common/TabViewRenderer.vue'
@@ -10,6 +11,7 @@ import {
   ResizablePanel,
   ResizableHandle,
 } from '@/components/ui/resizable'
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import MediaDetailComponent from '@renderer/components/business/MediaDetailComponent.vue'
 
 // 功能子组件
@@ -92,6 +94,106 @@ watch(isDetailCollapsed, (collapsed) => {
   if (collapsed && mediaStore.showDetailSidebar) mediaStore.showDetailSidebar = false
   else if (!collapsed && !mediaStore.showDetailSidebar) mediaStore.showDetailSidebar = true
 })
+
+// ============================================
+// 左侧导航栏：与第三列详情面板对称的 collapsible 折叠态
+// ============================================
+const showLeftSidebar = computed(() => mediaStore.showLeftSidebar)
+const leftPanelRef = ref<InstanceType<typeof ResizablePanel>>()
+const isLeftCollapsed = ref(false)
+const leftPanelDefaultSize = 18
+
+// 按钮 / handle 点击切换 → 驱动左侧面板切换到 默认宽度 / 0
+watch(showLeftSidebar, (show) => {
+  const api = leftPanelRef.value as any
+  if (!api) return
+  api.resize(show ? leftPanelDefaultSize : 0)
+}, { flush: 'post' })
+
+// 拖拽折叠 → 回写 store，保持 HomeTabsBar 切换按钮高亮一致
+watch(isLeftCollapsed, (collapsed) => {
+  if (collapsed && mediaStore.showLeftSidebar) mediaStore.showLeftSidebar = false
+  else if (!collapsed && !mediaStore.showLeftSidebar) mediaStore.showLeftSidebar = true
+})
+
+// ============================================
+// 移动端响应式：< 768px 时左右侧栏改用 Sheet 抽屉展示，默认隐藏
+// ============================================
+const isMobile = useMediaQuery('(max-width: 767px)')
+
+// 抽屉开关直接读写 store：桌面端 store 驱动 inline 面板，移动端驱动抽屉
+const leftDrawerOpen = computed({
+  get: () => mediaStore.showLeftSidebar,
+  set: (v) => { mediaStore.showLeftSidebar = v },
+})
+const rightDrawerOpen = computed({
+  get: () => mediaStore.showDetailSidebar,
+  set: (v) => { mediaStore.showDetailSidebar = v },
+})
+
+// 进入移动端时自动隐藏侧栏（inline 面板不渲染，抽屉默认关闭）
+watch(isMobile, (mobile) => {
+  if (mobile) {
+    mediaStore.showLeftSidebar = false
+    mediaStore.showDetailSidebar = false
+  }
+}, { immediate: true })
+
+// ============================================
+// 分割描边点击切换：区分「拖拽」与「点击」——按下后位移超过阈值视为拖拽，忽略 click
+// ============================================
+function makeHandleToggle(toggle: () => void) {
+  let downX = 0, downY = 0, moved = false
+  return {
+    pointerdown: (e: PointerEvent) => { downX = e.clientX; downY = e.clientY; moved = false },
+    pointermove: (e: PointerEvent) => {
+      if (Math.hypot(e.clientX - downX, e.clientY - downY) > 5) moved = true
+    },
+    click: (e: MouseEvent) => {
+      const dist = Math.hypot(e.clientX - downX, e.clientY - downY)
+      if (!moved && dist < 5) toggle()
+    },
+  }
+}
+const leftHandleToggle = makeHandleToggle(() => mediaStore.toggleLeftSidebar())
+const rightHandleToggle = makeHandleToggle(() => mediaStore.toggleDetailSidebar())
+
+// ============================================
+// HomeSidebar / 详情面板的 props & 事件绑定对象：桌面 inline 与移动抽屉共用，避免重复
+// ============================================
+const sidebarBindings = computed(() => ({
+  homeController: homeController,
+  tags: tagStore.tags,
+  libraryId: detailLibraryId.value,
+  onFolderSelect: (...args: any[]) => { (handleFolderSelect as (...a: any[]) => void)(...args); if (isMobile.value) mediaStore.showLeftSidebar = false },
+  onTagSelect: (...args: any[]) => { (handleTagSelect as (...a: any[]) => void)(...args); if (isMobile.value) mediaStore.showLeftSidebar = false },
+  onRefreshFolders: handleRefreshFolders,
+  onRefreshTags: handleRefreshTags,
+  onEmptyTrash: handleEmptyTrash,
+  onImportFolder: handleImportFolder,
+  onUpload: () => { showFileUploadDialog.value = true },
+  onSelectCollection: handleSelectCollectionAndRefresh,
+  onAccessDenied: () => { showAccessDeniedDialog.value = true },
+  onShowLibraryManagement: showLibraryManagement,
+  onAddServer: handleAddServer,
+  onManageFolders: () => { showFolderManageDialog.value = true },
+  onManageTags: () => { showTagManageDialog.value = true },
+  onShowAbout: () => { showAboutDialog.value = true },
+  onHistoryOpen: (file: any) => { openFilePreview(file); if (isMobile.value) mediaStore.showLeftSidebar = false },
+}))
+const detailBindings = computed(() => ({
+  item: detailSidebarItem.value,
+  items: detailSidebarItems.value,
+  libraryId: detailLibraryId.value,
+  onTagAdd: handleDetailTagAdd,
+  onTagRemove: handleDetailTagRemove,
+  onFolderChange: handleDetailFolderChange,
+}))
+
+// 顶部切换左侧栏：桌面 inline / 移动抽屉，统一走 store
+function handleToggleLeftSidebar() {
+  mediaStore.toggleLeftSidebar()
+}
 
 // 历史列表项点击 → 进入预览路由（与 SearchHandlers.openFile 跳转方式一致）
 const openFilePreview = (file: any) => {
@@ -416,34 +518,24 @@ onUnmounted(() => {
 
     <!-- 主内容区域（左侧栏 + 中间内容 + 右侧信息栏，三列均可拖拽调整宽度） -->
     <div class="flex flex-1 min-h-0 p-3 gap-3">
-      <ResizablePanelGroup direction="horizontal" auto-save-id="home-layout" class="flex-1 min-w-0 !overflow-visible">
-        <!-- 左侧侧边栏（玻璃面板） -->
-        <ResizablePanel :default-size="18" :min-size="14" :max-size="30" class="rounded-2xl border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur-xl shadow-[0_12px_40px_var(--shadow-primary-md)] flex flex-col overflow-hidden">
-          <HomeSidebar
-            ref="sidebarRef"
-            :home-controller="homeController"
-            :tags="tagStore.tags"
-            :library-id="detailLibraryId"
-            @folder-select="handleFolderSelect"
-            @tag-select="handleTagSelect"
-            @refresh-folders="handleRefreshFolders"
-            @refresh-tags="handleRefreshTags"
-            @empty-trash="handleEmptyTrash"
-            @import-folder="handleImportFolder"
-            @upload="showFileUploadDialog = true"
-            @select-collection="handleSelectCollectionAndRefresh"
-            @access-denied="showAccessDeniedDialog = true"
-            @show-library-management="showLibraryManagement"
-            @add-server="handleAddServer"
-            @manage-folders="showFolderManageDialog = true"
-            @manage-tags="showTagManageDialog = true"
-            @show-about="showAboutDialog = true"
-            @history-open="openFilePreview"
-          />
+      <!-- 桌面端：三列可拖拽布局 -->
+      <ResizablePanelGroup v-if="!isMobile" direction="horizontal" auto-save-id="home-layout" class="flex-1 min-w-0 !overflow-visible">
+        <!-- 左侧侧边栏（玻璃面板）：collapsible，点击描边/按钮切换显隐 -->
+        <ResizablePanel
+          ref="leftPanelRef"
+          :default-size="leftPanelDefaultSize"
+          :min-size="14"
+          :max-size="30"
+          :collapsed-size="0"
+          collapsible
+          @collapse="isLeftCollapsed = true"
+          @expand="isLeftCollapsed = false"
+          class="rounded-2xl border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur-xl shadow-[0_12px_40px_var(--shadow-primary-md)] flex flex-col overflow-hidden">
+          <HomeSidebar ref="sidebarRef" v-bind="sidebarBindings" />
         </ResizablePanel>
 
-        <!-- 分隔描边：12px 命中区 + 居中 2px 细线，hover 高亮，呈现可拖拽分隔线 -->
-        <ResizableHandle class="group/handle w-3 bg-transparent hover:bg-primary/5 focus-visible:ring-0 transition-colors after:absolute after:inset-y-0 after:left-1/2 after:-translate-x-1/2 after:w-0.5 after:bg-transparent hover:after:bg-primary/40" />
+        <!-- 分隔描边：12px 命中区 + 居中 2px 细线，hover 高亮；点击（非拖拽）切换左侧栏 -->
+        <ResizableHandle v-on="leftHandleToggle" class="group/handle w-3 cursor-pointer bg-transparent hover:bg-primary/5 focus-visible:ring-0 transition-colors after:absolute after:inset-y-0 after:left-1/2 after:-translate-x-1/2 after:w-0.5 after:bg-transparent hover:after:bg-primary/40" />
 
         <!-- 中间列：Tabs 条 + 内容面板 -->
         <ResizablePanel :default-size="54" :min-size="30" class="flex flex-col min-w-0 !overflow-visible">
@@ -459,6 +551,8 @@ onUnmounted(() => {
               :on-switch-tab="switchToTabWithCallback"
               :on-close-tab="closeTabWithCallback"
               :on-context-menu="handleTabContextMenu"
+              :on-toggle-left-sidebar="handleToggleLeftSidebar"
+              :left-sidebar-open="mediaStore.showLeftSidebar"
             />
           </div>
 
@@ -489,8 +583,8 @@ onUnmounted(() => {
           </div>
         </ResizablePanel>
 
-        <!-- 分隔描边：中间列 ↔ 右侧信息栏 -->
-        <ResizableHandle class="group/handle w-3 bg-transparent hover:bg-primary/5 focus-visible:ring-0 transition-colors after:absolute after:inset-y-0 after:left-1/2 after:-translate-x-1/2 after:w-0.5 after:bg-transparent hover:after:bg-primary/40" />
+        <!-- 分隔描边：中间列 ↔ 右侧信息栏；点击（非拖拽）切换右侧详情栏 -->
+        <ResizableHandle v-on="rightHandleToggle" class="group/handle w-3 cursor-pointer bg-transparent hover:bg-primary/5 focus-visible:ring-0 transition-colors after:absolute after:inset-y-0 after:left-1/2 after:-translate-x-1/2 after:w-0.5 after:bg-transparent hover:after:bg-primary/40" />
 
         <!-- 右侧信息栏：可拖拽调整宽度，并通过 showDetailSidebar 切换为 0 / 默认宽度。
              HomeHeader 始终悬浮于右上角，顶部留出 pt-14 避免被遮挡。 -->
@@ -517,14 +611,7 @@ onUnmounted(() => {
             <Tabs v-model="detailPanelTab" class="flex-1 min-h-0 flex flex-col gap-0">
               <!-- 内容区（在上）：详情 -->
               <TabsContent value="detail" class="flex-1 min-h-0 overflow-y-auto p-4">
-                <MediaDetailComponent
-                  :item="detailSidebarItem"
-                  :items="detailSidebarItems"
-                  :library-id="detailLibraryId"
-                  @tag-add="handleDetailTagAdd"
-                  @tag-remove="handleDetailTagRemove"
-                  @folder-change="handleDetailFolderChange"
-                />
+                <MediaDetailComponent v-bind="detailBindings" />
               </TabsContent>
 
               <!-- tab 条（底部）：详情 -->
@@ -541,6 +628,70 @@ onUnmounted(() => {
           </aside>
         </ResizablePanel>
       </ResizablePanelGroup>
+
+      <!-- 移动端：仅中间列（Tabs 条 + 内容），侧栏改用抽屉 -->
+      <div v-else class="flex flex-col flex-1 min-w-0 gap-3">
+        <!-- Tabs 条 -->
+        <div class="shrink-0 h-[56px] pl-2 pr-20 flex items-end overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <HomeTabsBar
+            :active-tabs="activeTabs"
+            :tab-context-menu-items="tabContextMenuItems"
+            :is-tab-closable="tabsComposable.isTabClosable"
+            :can-activate-last-tab="canActivateLastTab"
+            :on-activate-last-tab="handleActivateLastTab"
+            :on-switch-tab="switchToTabWithCallback"
+            :on-close-tab="closeTabWithCallback"
+            :on-context-menu="handleTabContextMenu"
+            :on-toggle-left-sidebar="handleToggleLeftSidebar"
+            :left-sidebar-open="mediaStore.showLeftSidebar"
+          />
+        </div>
+
+        <!-- 内容面板 -->
+        <div class="flex-1 rounded-2xl border border-white/60 dark:border-border bg-white/30 dark:bg-muted/50 backdrop-blur-xl shadow-[0_12px_40px_var(--shadow-primary-md)] overflow-hidden flex flex-col">
+          <main class="flex-1 flex overflow-hidden relative min-w-0 p-2 gap-2 border border-primary/40 rounded-xl">
+            <div class="flex-1 min-w-0 overflow-hidden rounded-xl">
+              <TabViewRenderer
+                v-for="tab in visitedTabs"
+                :key="tab.id"
+                v-show="currentTab?.id === tab.id"
+                :tab-id="tab.id"
+                :view-config="getTabViewConfigForTab(tab.id)"
+                :cacheable="true"
+                class="w-full h-full"
+              />
+              <div v-if="!currentTab" class="flex items-center justify-center h-full">
+                <div class="text-center rounded-2xl border border-white/60 dark:border-border bg-white/50 dark:bg-muted/70 backdrop-blur-xl shadow-[0_12px_40px_var(--shadow-primary-md)] px-10 py-8">
+                  <span class="material-icons text-6xl text-primary/60 mb-4 animate-[fadeUp_300ms_cubic-bezier(0.23,1,0.32,1)_both]">home</span>
+                  <h2 class="text-xl font-medium text-foreground mb-2 animate-[fadeUp_300ms_cubic-bezier(0.23,1,0.32,1)_60ms_both]">{{ $t('views.homeView.welcomeTitle') }}</h2>
+                  <p class="text-muted-foreground animate-[fadeUp_300ms_cubic-bezier(0.23,1,0.32,1)_120ms_both]">{{ $t('views.homeView.welcomeSubtitle') }}</p>
+                </div>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+
+      <!-- 移动端：左侧栏抽屉 -->
+      <Sheet v-if="isMobile" v-model:open="leftDrawerOpen">
+        <SheetContent side="left" class="w-[85%] max-w-[320px] p-0 gap-0">
+          <SheetTitle class="sr-only">{{ $t('views.homeTabsBar.toggleLeftSidebar') }}</SheetTitle>
+          <div class="flex flex-col flex-1 min-h-0 overflow-hidden">
+            <HomeSidebar ref="sidebarRef" v-bind="sidebarBindings" />
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <!-- 移动端：右侧详情抽屉 -->
+      <Sheet v-if="isMobile" v-model:open="rightDrawerOpen">
+        <SheetContent side="right" class="w-[90%] max-w-[380px] p-0 gap-0">
+          <SheetTitle class="sr-only">{{ $t('views.homeView.detail') }}</SheetTitle>
+          <PluginContributionBar />
+          <div class="flex-1 min-h-0 overflow-y-auto p-4">
+            <MediaDetailComponent v-bind="detailBindings" />
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
 
     <!-- 所有对话框 -->

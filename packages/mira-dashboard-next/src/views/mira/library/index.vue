@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Library } from '@/types/mira'
 import { libraryApi } from '@/api'
@@ -136,7 +136,7 @@ async function toggleStatus(lib: Library) {
   }
 }
 
-onMounted(loadLibraries)
+await loadLibraries()
 </script>
 
 <template>

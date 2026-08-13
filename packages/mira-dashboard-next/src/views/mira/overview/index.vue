@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
@@ -101,7 +100,7 @@ async function refreshData() {
   }
 }
 
-onMounted(refreshData)
+await refreshData()
 </script>
 
 <template>
@@ -123,10 +122,7 @@ onMounted(refreshData)
     </div>
 
     <!-- Stats -->
-    <div v-if="loading && !stats.libraries" class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      <Skeleton v-for="i in 4" :key="i" class="h-28" />
-    </div>
-    <div v-else class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <StatCard :title="t('overview.totalLibraries')" :value="stats.libraries" :icon="RiFolderLine" />
       <StatCard :title="t('overview.totalPlugins')" :value="stats.plugins" :icon="RiPuzzleLine" />
       <StatCard :title="t('overview.totalAdmins')" :value="stats.admins" :icon="RiUserSettingsLine" />

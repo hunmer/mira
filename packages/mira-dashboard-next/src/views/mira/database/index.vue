@@ -4,8 +4,6 @@ import { useI18n } from 'vue-i18n'
 import type { DatabaseTable, DatabaseRow } from '@/types/mira'
 import { useLibrary } from '@/composables/useLibrary'
 import client from '@/api/client'
-import { Card, CardContent } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -79,7 +77,8 @@ async function executeSql() {
   }
 }
 
-watch(selectedLib, () => { tables.value = []; rows.value = []; columns.value = []; loadTables() }, { immediate: true })
+watch(selectedLib, () => { tables.value = []; rows.value = []; columns.value = []; loadTables() })
+await loadTables()
 </script>
 
 <template>
@@ -92,13 +91,7 @@ watch(selectedLib, () => { tables.value = []; rows.value = []; columns.value = [
       </div>
     </div>
 
-    <Card v-if="loading">
-      <CardContent class="space-y-3 p-6">
-        <Skeleton v-for="i in 5" :key="i" class="h-8" />
-      </CardContent>
-    </Card>
-
-    <div v-else-if="tables.length" class="rounded-md border">
+    <div v-if="tables.length" class="rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>
@@ -165,8 +158,8 @@ watch(selectedLib, () => { tables.value = []; rows.value = []; columns.value = [
         <DialogHeader>
           <DialogTitle>表数据: {{ dataTableName }}</DialogTitle>
         </DialogHeader>
-        <div v-if="dataLoading" class="space-y-3 p-6">
-          <Skeleton v-for="i in 3" :key="i" class="h-8" />
+        <div v-if="dataLoading" class="py-8 text-center text-sm text-muted-foreground">
+          {{ t('common.loading') }}
         </div>
         <div v-else-if="dataColumns.length" class="max-h-96 overflow-auto">
           <Table>

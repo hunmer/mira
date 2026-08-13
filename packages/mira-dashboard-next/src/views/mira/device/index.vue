@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { DeviceInfo } from '@/types/mira'
 import { deviceApi } from '@/api'
@@ -82,7 +82,7 @@ async function disconnectDevice(id: string) {
   }
 }
 
-onMounted(loadDevices)
+await loadDevices()
 </script>
 
 <template>
