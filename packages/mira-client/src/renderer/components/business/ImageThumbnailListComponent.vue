@@ -1,29 +1,37 @@
 <template>
   <div class="w-28 flex-shrink-0 bg-background p-2 flex flex-col items-center border-r border-border">
     <div class="flex-grow space-y-3 overflow-y-auto pr-1">
-      <img
+      <div
         v-for="(image, index) in images"
         :key="image.id"
-        v-memo="[index === currentImageIndex, image.thumbnailPath, image.url, cacheKey]"
-        :alt="image.name"
         :class="[
-          'w-24 cursor-pointer rounded-lg border-2 object-contain',
+          'w-24 h-24 cursor-pointer rounded-lg border-2 flex items-center justify-center overflow-hidden',
           index === currentImageIndex
             ? 'border-primary'
             : 'border-transparent hover:border-border'
         ]"
-        :src="getImageSrc(image)"
         @click="handleImageSelect(index, image)"
-        loading="lazy"
-      />
+      >
+        <img
+          v-if="!failedImageIds.has(image.id)"
+          :alt="image.name"
+          class="max-h-full max-w-full object-contain"
+          :src="getImageSrc(image)"
+          @load="handleImageLoad(image.id)"
+          @error="handleImageError(image.id)"
+          loading="lazy"
+        />
+        <StatusImage v-else name="load_failed" size="medium" />
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { watch } from 'vue'
+import { ref, watch } from 'vue'
 import type { FileInfo } from '../../../shared/types'
 import { getPreviewImageSource, toCacheBustedFileUrl } from '../../utils/fileUtils'
+import StatusImage from '@renderer/components/common/StatusImage.vue'
 
 interface Props {
   images: FileInfo[]
@@ -37,9 +45,24 @@ interface Emits {
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
+const failedImageIds = ref(new Set<string>())
 
 const getImageSrc = (image: FileInfo): string | undefined => {
   return toCacheBustedFileUrl(image.thumbnailPath || image.url, props.cacheKey)
+}
+
+const handleImageLoad = (imageId: string): void => {
+  if (failedImageIds.value.has(imageId)) {
+    const nextFailedImageIds = new Set(failedImageIds.value)
+    nextFailedImageIds.delete(imageId)
+    failedImageIds.value = nextFailedImageIds
+  }
+}
+
+const handleImageError = (imageId: string): void => {
+  const nextFailedImageIds = new Set(failedImageIds.value)
+  nextFailedImageIds.add(imageId)
+  failedImageIds.value = nextFailedImageIds
 }
 
 watch(
@@ -69,6 +92,10 @@ watch(
   },
   { immediate: true }
 )
+
+watch(() => props.cacheKey, () => {
+  failedImageIds.value = new Set()
+})
 
 const handleImageSelect = (imageIndex: number, image: FileInfo): void => {
   console.debug('[ImagePreviewDebug][ThumbnailList] click', {

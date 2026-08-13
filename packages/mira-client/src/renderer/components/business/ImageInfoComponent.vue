@@ -7,10 +7,13 @@
         <!-- 图片预览 -->
         <div v-if="image" class="relative">
           <img 
+            v-if="!imageLoadError"
             :alt="image.name"
             :src="imageSrc"
             class="rounded-lg object-contain w-full max-h-[300px] cursor-pointer"
+            @error="handleImageError"
           />
+          <StatusImage v-else name="load_failed" size="medium" />
           <div class="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
             {{ getFileExtension(image) }}
           </div>
@@ -132,6 +135,7 @@ import { computed, ref, watch } from 'vue'
 import type { FileInfo } from '../../../shared/types'
 import { getCacheBustedPreviewImageSource, getPreviewImageSource } from '../../utils/fileUtils'
 import { useFolderStore } from '../../stores/folder'
+import StatusImage from '@renderer/components/common/StatusImage.vue'
 
 interface Props {
   image?: FileInfo
@@ -149,6 +153,7 @@ const emit = defineEmits<Emits>()
 // 响应式数据
 const showAddTag = ref(false)
 const newTag = ref('')
+const imageLoadError = ref(false)
 const imageSrc = computed(() => getCacheBustedPreviewImageSource(props.image, props.cacheKey))
 
 const folderStore = useFolderStore()
@@ -178,6 +183,7 @@ const describeImage = (image?: FileInfo): Record<string, unknown> | null => {
 watch(
   [() => props.image, () => props.cacheKey, imageSrc],
   ([image, cacheKey, src]) => {
+    imageLoadError.value = false
     console.debug('[ImagePreviewDebug][Info] props-change', {
       image: describeImage(image),
       cacheKey,
@@ -186,6 +192,10 @@ watch(
   },
   { immediate: true }
 )
+
+const handleImageError = () => {
+  imageLoadError.value = true
+}
 
 // 方法
 const addTag = () => {

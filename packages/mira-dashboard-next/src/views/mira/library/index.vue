@@ -11,11 +11,12 @@ import {
 } from '@/components/ui/table'
 import LibraryFormDialog from './LibraryFormDialog.vue'
 import type { LibraryFormData } from './LibraryFormDialog.vue'
+import ShareDialog from './ShareDialog.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import { useConfirmDialog } from '@/composables/useConfirmDialog'
 import { toast } from 'vue-sonner'
 import {
-  RiAddLine, RiSearchLine, RiEditLine, RiDeleteBinLine,
+  RiAddLine, RiSearchLine, RiEditLine, RiDeleteBinLine, RiShareLine,
 } from '@remixicon/vue'
 
 const { t } = useI18n()
@@ -26,6 +27,8 @@ const loading = ref(false)
 const searchQuery = ref('')
 const dialogOpen = ref(false)
 const editingLib = ref<(LibraryFormData & { _id?: string }) | null>(null)
+const shareOpen = ref(false)
+const sharingLib = ref<Library | null>(null)
 
 const filtered = computed(() => {
   if (!searchQuery.value) return libraries.value
@@ -62,6 +65,11 @@ function getDefaultForm(): LibraryFormData {
 function openCreate() {
   editingLib.value = { ...getDefaultForm() }
   dialogOpen.value = true
+}
+
+function openShare(lib: Library) {
+  sharingLib.value = lib
+  shareOpen.value = true
 }
 
 function openEdit(lib: Library) {
@@ -190,6 +198,9 @@ await loadLibraries()
             <TableCell>{{ lib.fileCount }}</TableCell>
             <TableCell>
               <div class="flex gap-1">
+                <Button variant="ghost" size="icon" :title="t('library.share')" @click="openShare(lib)">
+                  <RiShareLine class="size-4" />
+                </Button>
                 <Button variant="ghost" size="icon" @click="openEdit(lib)">
                   <RiEditLine class="size-4" />
                 </Button>
@@ -210,6 +221,13 @@ await loadLibraries()
       :is-edit="!!editingLib?._id"
       @update:open="dialogOpen = $event"
       @save="handleSave"
+    />
+
+    <!-- Share dialog -->
+    <ShareDialog
+      :open="shareOpen"
+      :library="sharingLib"
+      @update:open="shareOpen = $event"
     />
 
     <!-- Delete confirmation -->
