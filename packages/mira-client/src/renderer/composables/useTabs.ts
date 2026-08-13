@@ -540,6 +540,8 @@ export function useTabs() {
    */
   const markTabsForEvent = (eventData: any, _eventType: string): string[] => {
     const markedIds: string[] = []
+    // 文件属性更新由详情组件/WebSocket 局部同步，禁止标记 tab 重载，避免列表闪烁
+    if (_eventType === 'updated') return markedIds
     for (const tab of tabs.value) {
       const tabType = tabRegistry.getType(tab.type)
       if (!tabType?.shouldUpdateForEvent) continue

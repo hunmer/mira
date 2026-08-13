@@ -115,8 +115,9 @@ export class HomeInteractionHandler {
    * 当前选中的媒体项目
    */
   public getSelectedMediaItem(mediaItems: FileInfo[]): FileInfo | undefined {
-    if (this.selectedItems.value.length === 1) {
-      const id = this.selectedItems.value[0]
+    const selectedIds = [...new Set(this.selectedItems.value)]
+    if (selectedIds.length === 1) {
+      const id = selectedIds[0]
       return mediaItems.find(item => item.id === id)
     }
     return undefined

@@ -80,6 +80,14 @@
       "title": "Toggle Fullscreen",
       "description": "Toggle fullscreen mode"
     },
+    "mediaSetFolder": {
+      "title": "Set Folder",
+      "description": "Set the folder for the selected media"
+    },
+    "mediaSetTags": {
+      "title": "Set Tags",
+      "description": "Set tags for the selected media"
+    },
     "editSelectAll": {
       "title": "Select All",
       "description": "Select all content"

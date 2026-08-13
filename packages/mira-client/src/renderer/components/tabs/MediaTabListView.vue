@@ -472,7 +472,14 @@ const handleDrop = async (e: DragEvent) => {
 // 使用 tab 独立的 viewMode（从 MediaTabData 获取）
 const viewMode = computed(() => mediaTabData.viewMode.value)
 const isTrash = computed(() => props.viewType === 'trash')
-const selectedItems = computed(() => homeController.selectedItems?.value || [])
+const selectedItems = computed(() => [...new Set(homeController.selectedItems?.value || [])])
+
+// 文件更新刷新链路中可能重复写入同一 ID，统一在状态入口去重
+watch(() => homeController.selectedItems?.value, (ids) => {
+  if (!ids) return
+  const unique = [...new Set(ids)]
+  if (unique.length !== ids.length) homeController.selectedItems.value = unique
+}, { deep: true })
 const cardSize = computed(() => homeController.cardSize?.value || 'medium')
 const columnsPerRow = computed(() => homeController.columnsPerRow?.value || 6)
 const dynamicColumnWidth = computed(() => homeController.dynamicColumnWidth?.value || 200)
@@ -674,6 +681,11 @@ const handleBreadcrumbClick = (item: BreadcrumbItem) => {
 
 // 选中项变化时同步 FileInfo 到全局 store
 watch([selectedItems, () => paginatedMediaItems.value], ([ids, items]) => {
+  console.debug('[DEBUG-detail-refresh] selection watcher', {
+    tabId: props.tabId,
+    ids: [...ids],
+    itemIds: items.map((item: FileInfo) => item.id),
+  })
   console.log('[DEBUG-space-preview] selection changed', {
     tabId: props.tabId,
     selectedIds: ids,
@@ -772,6 +784,11 @@ const fetchPageData = async (page: number) => {
 }
 
 const handleRefresh = async (preserveSelection = false) => {
+  console.debug('[DEBUG-detail-refresh] handleRefresh', {
+    tabId: props.tabId,
+    preserveSelection,
+    selectedIds: [...selectedItems.value],
+  })
   if (!preserveSelection) homeController.selectedItems.value = []
   await fetchPageData(1)
   emit('refresh')
@@ -781,11 +798,19 @@ const handleManualRefresh = () => handleRefresh()
 
 // WebSocket 活跃 tab 刷新回调
 const handleActiveTabRefresh = (e: Event) => {
-  const { tabId } = (e as CustomEvent).detail
+  const { tabId, data } = (e as CustomEvent).detail
+  console.debug('[DEBUG-detail-refresh] active-tab-refresh', {
+    tabId,
+    eventType: (e as CustomEvent).detail?.eventType,
+    fileId: data?.fileId,
+    selectedIds: [...selectedItems.value],
+  })
   if (tabId === props.tabId) {
     const eventType = (e as CustomEvent).detail?.eventType
-    // 文件属性更新（标签/文件夹/备注/评分）不应清空当前选中项
-    handleRefresh(eventType === 'updated')
+    // 当前详情文件的属性已由详情组件同步，跳过整页重拉避免列表和详情闪烁。
+    const updatedId = data?.fileId != null ? String(data.fileId) : ''
+    if (eventType === 'updated') return
+    handleRefresh()
   }
 }
 

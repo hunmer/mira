@@ -116,6 +116,12 @@ export class TagRouter extends BaseRouter {
                 }
 
                 const result = await db.setFileTags(fileId, tagIds);
+                if (result.success) {
+                    const updatedFile = await db.getFile(parseInt(fileId));
+                    this.broadcastTagEvent('file::updated', libraryId, {
+                        ...updatedFile, libraryId, fileId: parseInt(fileId), old_data: result.oldData,
+                    });
+                }
                 this.sendSuccess(res, { fileId, tags: tagIds, success: result.success, old_data: result.oldData }, 'File tags set successfully');
             } catch (error) {
                 console.error('Set file tags error:', error);

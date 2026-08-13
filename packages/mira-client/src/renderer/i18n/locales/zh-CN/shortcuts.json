@@ -80,6 +80,14 @@
       "title": "全屏切换",
       "description": "切换全屏模式"
     },
+    "mediaSetFolder": {
+      "title": "设置文件夹",
+      "description": "为选中的媒体设置文件夹"
+    },
+    "mediaSetTags": {
+      "title": "设置标签",
+      "description": "为选中的媒体设置标签"
+    },
     "editSelectAll": {
       "title": "全选",
       "description": "选择所有内容"

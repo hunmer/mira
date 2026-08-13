@@ -2,6 +2,7 @@
   <ContextMenu>
     <ContextMenuTrigger as-child>
       <div
+        ref="triggerRef"
         class="contents"
         @contextmenu.capture="resolveAndOpen"
       >
@@ -93,6 +94,7 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted, onUnmounted, ref } from 'vue'
 import {
   ContextMenu,
   ContextMenuTrigger,
@@ -134,6 +136,8 @@ const {
   currentContextItem,
   contextMenuItems,
   handleContextMenu,
+  openFolderPopover,
+  openTagPopover,
   folderPopoverOpen,
   tagPopoverOpen,
   coverCropOpen,
@@ -143,6 +147,55 @@ const {
   handleTagSelect,
   tagStore,
 } = useContextMenu(props, emit)
+
+const triggerRef = ref<HTMLElement | null>(null)
+const pointerPosition = ref<{ x: number; y: number } | null>(null)
+
+const trackPointerPosition = (event: PointerEvent) => {
+  pointerPosition.value = { x: event.clientX, y: event.clientY }
+}
+
+const getShortcutTarget = () => {
+  if (props.isTrash || props.selectedItems.length === 0) return null
+
+  const item = props.items.find(file => props.selectedItems.includes(file.id))
+  if (!item) return null
+
+  const element = Array.from(triggerRef.value?.querySelectorAll<HTMLElement>('[data-selectable-id]') ?? [])
+    .find(candidate => candidate.dataset.selectableId === item.id)
+  if (!element || !element.checkVisibility()) return null
+
+  const rect = element.getBoundingClientRect()
+  return {
+    item,
+    position: pointerPosition.value ?? {
+      x: rect.left + Math.min(rect.width / 2, 160),
+      y: rect.top + Math.min(rect.height / 2, 120),
+    },
+  }
+}
+
+const handleSetFolderShortcut = () => {
+  const target = getShortcutTarget()
+  if (target) openFolderPopover(target.item, target.position)
+}
+
+const handleSetTagsShortcut = () => {
+  const target = getShortcutTarget()
+  if (target) openTagPopover(target.item, target.position)
+}
+
+onMounted(() => {
+  window.addEventListener('pointermove', trackPointerPosition, { passive: true })
+  document.addEventListener('shortcut:media-set-folder', handleSetFolderShortcut)
+  document.addEventListener('shortcut:media-set-tags', handleSetTagsShortcut)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('pointermove', trackPointerPosition)
+  document.removeEventListener('shortcut:media-set-folder', handleSetFolderShortcut)
+  document.removeEventListener('shortcut:media-set-tags', handleSetTagsShortcut)
+})
 
 // 右键命中解析：从事件目标向上找 data-selectable-id，再映射回 items 中的 FileInfo。
 // 三种视图（grid/list/waterfall）的每个条目根节点都已打上 data-selectable-id，

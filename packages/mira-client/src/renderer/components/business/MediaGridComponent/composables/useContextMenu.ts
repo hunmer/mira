@@ -112,6 +112,20 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
     await handler(item)
   }
 
+  const openFolderPopover = (item: FileInfo, position?: { x: number; y: number }) => {
+    currentContextItem.value = item
+    if (position) popoverPosition.value = position
+    tagPopoverOpen.value = false
+    folderPopoverOpen.value = true
+  }
+
+  const openTagPopover = (item: FileInfo, position?: { x: number; y: number }) => {
+    currentContextItem.value = item
+    if (position) popoverPosition.value = position
+    folderPopoverOpen.value = false
+    tagPopoverOpen.value = true
+  }
+
   // 复制当前文件信息的 JSON 到剪贴板
   const copyFileInfoJSON = (item: FileInfo) => {
     const json = JSON.stringify(item, null, 2)
@@ -296,16 +310,16 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
       ),
       {
         label: props.selectedItems.length > 1 ? t('business.contextMenu.setFolderCount', { count: props.selectedItems.length }) : t('business.contextMenu.setFolder'),
-        shortcut: 'Ctrl+M',
-        command: () => runWithCurrentItem(() => {
-          setTimeout(() => { folderPopoverOpen.value = true }, 100)
+        shortcut: 'Ctrl+E',
+        command: () => runWithCurrentItem((item) => {
+          setTimeout(() => openFolderPopover(item), 100)
         })
       },
       {
         label: props.selectedItems.length > 1 ? t('business.contextMenu.setTagsCount', { count: props.selectedItems.length }) : t('business.contextMenu.setTags'),
         shortcut: 'Ctrl+T',
-        command: () => runWithCurrentItem(() => {
-          setTimeout(() => { tagPopoverOpen.value = true }, 100)
+        command: () => runWithCurrentItem((item) => {
+          setTimeout(() => openTagPopover(item), 100)
         })
       },
       {
@@ -354,6 +368,8 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
     currentContextItem,
     contextMenuItems,
     handleContextMenu,
+    openFolderPopover,
+    openTagPopover,
     folderPopoverOpen,
     tagPopoverOpen,
     coverCropOpen,

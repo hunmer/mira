@@ -995,7 +995,13 @@ export const useMediaStore = defineStore('media', () => {
 
   // 详情面板操作
   const setDetailSidebarFiles = (files: FileInfo[]) => {
-    detailSidebarFiles.value = files
+    const seen = new Set<string>()
+    detailSidebarFiles.value = files.filter(file => {
+      const id = String(file.id)
+      if (seen.has(id)) return false
+      seen.add(id)
+      return true
+    })
   }
 
   const clearDetailSidebar = () => {

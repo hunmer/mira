@@ -215,6 +215,26 @@ export const defaultActions: ShortcutAction[] = [
       document.dispatchEvent(new CustomEvent('shortcut:media-fullscreen'))
     }
   },
+  {
+    id: 'media.set-folder',
+    title: 'shortcuts.actions.mediaSetFolder.title',
+    description: 'shortcuts.actions.mediaSetFolder.description',
+    category: 'media',
+    icon: 'folder',
+    callback: () => {
+      document.dispatchEvent(new CustomEvent('shortcut:media-set-folder'))
+    }
+  },
+  {
+    id: 'media.set-tags',
+    title: 'shortcuts.actions.mediaSetTags.title',
+    description: 'shortcuts.actions.mediaSetTags.description',
+    category: 'media',
+    icon: 'label',
+    callback: () => {
+      document.dispatchEvent(new CustomEvent('shortcut:media-set-tags'))
+    }
+  },
 
   // 编辑操作
   {
@@ -569,6 +589,20 @@ export const defaultBindings: ShortcutBinding[] = [
     actionId: 'media.fullscreen',
     enabled: true,
     description: '全屏快捷键'
+  },
+  {
+    shortcut: 'Ctrl+E',
+    priority: 80,
+    actionId: 'media.set-folder',
+    enabled: true,
+    description: '设置文件夹快捷键'
+  },
+  {
+    shortcut: 'Ctrl+T',
+    priority: 80,
+    actionId: 'media.set-tags',
+    enabled: true,
+    description: '设置标签快捷键'
   },
   {
     shortcut: 'Ctrl+Z',

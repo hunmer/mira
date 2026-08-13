@@ -390,6 +390,7 @@ const folderTreeNodes = computed(() =>
 
 // WebSocket 实时更新覆盖层
 const realtimeUpdates = ref<Map<string, Partial<FileInfo>>>(new Map())
+const localFieldOverrides = ref<Map<string, Partial<FileInfo>>>(new Map())
 
 // 文件名/website/评分/备注 编辑状态
 const editName = ref('')
@@ -423,8 +424,13 @@ const displayItems = computed(() => {
 const isMultiSelect = computed(() => displayItems.value.length > 1)
 
 // 选中文件变化时清除实时更新
-watch([item, items], () => {
-  realtimeUpdates.value = new Map()
+watch([item, items], ([newItem, newItems]) => {
+  const currentIds = new Set((newItems?.length ? newItems : (newItem ? [newItem] : [])).map(file => String(file.id)))
+  const next = new Map<string, Partial<FileInfo>>()
+  realtimeUpdates.value.forEach((value, id) => {
+    if (currentIds.has(String(id))) next.set(String(id), value)
+  })
+  realtimeUpdates.value = next
 })
 
 // WebSocket: 监听 file::updated 事件，刷新当前展示的文件信息
@@ -442,7 +448,8 @@ const handleFileWsUpdate = async (data: any) => {
   try {
     const updatedFile = await miraSDKService.getFile(eventLibId, fileId)
     const updates = new Map(realtimeUpdates.value)
-    updates.set(fileId, updatedFile)
+    const override = localFieldOverrides.value.get(fileId)
+    updates.set(fileId, override ? { ...updatedFile, ...override } : updatedFile)
     realtimeUpdates.value = updates
   } catch (e) {
     console.warn('Failed to fetch updated file:', e)
@@ -459,7 +466,8 @@ onUnmounted(() => {
 
 // 文件切换时同步编辑值
 watch(displayItems, (items) => {
-  if (items.length === 1) {
+  // 保存期间忽略 WebSocket 回推，避免服务端旧值覆盖用户正在编辑的表单
+  if (items.length === 1 && !nameSaving.value && !websiteSaving.value && !starsSaving.value && !notesSaving.value) {
     editName.value = items[0].name || ''
     editWebsite.value = (items[0] as any).website || ''
     editStars.value = Number((items[0] as any).stars) || 0
@@ -468,6 +476,33 @@ watch(displayItems, (items) => {
     nameError.value = ''
   }
 }, { immediate: true, deep: true })
+
+// 列表缓存可能只含基础字段；单文件详情打开时补读服务端完整字段，避免评分/备注回退为默认值
+watch(() => displayItems.value[0]?.id, async (fileId) => {
+  if (!fileId || isMultiSelect.value) return
+  const file = displayItems.value[0]
+  const libId = file?.libraryId || libraryId.value || 'default'
+  try {
+    const fresh = await miraSDKService.getFile(libId, fileId)
+    if (String(displayItems.value[0]?.id) !== String(fileId)) return
+    const updates = new Map(realtimeUpdates.value)
+    const override = localFieldOverrides.value.get(String(fileId))
+    updates.set(String(fileId), override ? { ...fresh, ...override } : fresh)
+    realtimeUpdates.value = updates
+  } catch (error) {
+    console.debug('[DEBUG-detail-refresh] detail fields fetch failed', { fileId, error })
+  }
+}, { immediate: true })
+
+const setLocalFieldOverride = (fileId: string, patch: Partial<FileInfo>) => {
+  const id = String(fileId)
+  const overrides = new Map(localFieldOverrides.value)
+  overrides.set(id, { ...(overrides.get(id) || {}), ...patch })
+  localFieldOverrides.value = overrides
+  const updates = new Map(realtimeUpdates.value)
+  updates.set(id, { ...(updates.get(id) || {}), ...patch })
+  realtimeUpdates.value = updates
+}
 
 // 文件名更新（blur/enter 触发）
 const handleNameBlur = async () => {
@@ -506,7 +541,8 @@ const handleWebsiteBlur = async () => {
   try {
     const libId = file.libraryId || libraryId?.value || 'default'
     await miraSDKService.updateFile(libId, file.id, { website: newWebsite })
-    file.website = newWebsite
+    console.debug('[DEBUG-detail-refresh] save website', { fileId: file.id })
+    setLocalFieldOverride(file.id, { website: newWebsite })
   } catch {
     editWebsite.value = oldWebsite
   } finally {
@@ -526,7 +562,8 @@ const handleStarsChange = async (value: number) => {
   try {
     const libId = file.libraryId || libraryId?.value || 'default'
     await miraSDKService.updateFile(libId, file.id, { stars: newStars })
-    file.stars = newStars
+    console.debug('[DEBUG-detail-refresh] save stars', { fileId: file.id, value: newStars })
+    setLocalFieldOverride(file.id, { stars: newStars })
   } catch {
     editStars.value = oldStars
   } finally {
@@ -545,7 +582,8 @@ const handleNotesBlur = async () => {
   try {
     const libId = file.libraryId || libraryId?.value || 'default'
     await miraSDKService.updateFile(libId, file.id, { notes: newNotes })
-    file.notes = newNotes
+    console.debug('[DEBUG-detail-refresh] save notes', { fileId: file.id })
+    setLocalFieldOverride(file.id, { notes: newNotes })
   } catch {
     editNotes.value = oldNotes
   } finally {
