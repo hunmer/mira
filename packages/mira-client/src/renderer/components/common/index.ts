@@ -12,6 +12,7 @@ export { default as AnimationComponent } from './AnimationComponent.vue'
 export { default as ExpandableButton } from './ExpandableButton.vue'
 export { default as ResponsiveLayoutComponent } from './ResponsiveLayoutComponent.vue'
 export { default as AccessibilityProvider } from './AccessibilityProvider.vue'
+export { default as PageSlide } from './PageSlide.vue'
 
 // 文件上传组件
 export { default as MultiTabFileUpload } from './MultiTabFileUpload.vue'
