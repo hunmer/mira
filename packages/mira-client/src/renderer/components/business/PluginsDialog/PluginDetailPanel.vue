@@ -11,7 +11,7 @@ const ctx = usePluginsDialog()
 <template>
   <aside
     v-if="ctx.selectedDetail.value"
-    class="w-80 shrink-0 flex flex-col border border-border dark:border-border rounded-lg overflow-hidden"
+    class="w-full shrink-0 max-h-[45vh] min-h-0 flex flex-col border border-border dark:border-border rounded-lg overflow-hidden lg:w-80 lg:max-h-none"
   >
     <!-- 详情头部 -->
     <div class="flex items-start justify-between gap-2 p-4 border-b border-border dark:border-border">

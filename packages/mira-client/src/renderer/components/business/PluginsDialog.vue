@@ -3,7 +3,7 @@
     :open="isVisible"
     @update:open="isVisible = $event"
   >
-    <DialogContent class="plugins-dialog sm:max-w-[90vw] sm:h-[80vh] overflow-hidden grid-rows-[auto_1fr]">
+    <DialogContent class="plugins-dialog sm:max-w-[90vw] max-h-[88vh] h-[85vh] sm:h-[80vh] overflow-hidden grid-rows-[auto_1fr]">
       <DialogHeader>
         <DialogTitle>{{ $t('business.pluginsDialog.title') }}</DialogTitle>
       </DialogHeader>
@@ -14,12 +14,12 @@
         <!-- 第二行：类别横向滚动按钮栏 -->
         <PluginCategoryBar />
 
-        <!-- 主内容区 + 右侧详情栏 -->
-        <div class="flex-1 flex gap-3 min-h-0">
-          <main class="flex-1 flex flex-col min-w-0 border border-border dark:border-border rounded-lg overflow-hidden">
+        <!-- 主内容区 + 右侧详情栏（移动端堆叠，桌面端左右两列） -->
+        <div class="flex-1 flex flex-col gap-3 min-h-0 lg:flex-row">
+          <main class="flex-1 flex flex-col min-w-0 min-h-0 border border-border dark:border-border rounded-lg overflow-hidden">
             <div class="flex-1 p-4 overflow-y-auto">
               <!-- 本地插件列表 -->
-              <div v-if="activeTab === 'local'" class="grid grid-cols-2 gap-4">
+              <div v-if="activeTab === 'local'" class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <PluginCard
                   v-for="plugin in filteredLocalPlugins"
                   :key="plugin.config.pluginId"
@@ -36,7 +36,7 @@
               </div>
 
               <!-- 服务器插件列表 -->
-              <div v-else-if="activeTab === 'server'" class="grid grid-cols-2 gap-4">
+              <div v-else-if="activeTab === 'server'" class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <PluginCard
                   v-for="plugin in filteredServerPlugins"
                   :key="plugin.config.pluginId"
