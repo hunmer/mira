@@ -202,14 +202,6 @@
           "keyFiles": ["plugins/mira_thumb_imagemagick/index.ts"]
         },
         {
-          "name": "mira_duplicate_scanner",
-          "version": "1.0.0",
-          "description": "重复文件扫描与删除",
-          "routes": ["/duplicate/scan", "/duplicate/delete"],
-          "enabled": true,
-          "keyFiles": ["plugins/mira_duplicate_scanner/index.ts", "plugins/mira_duplicate_scanner/DuplicateScanner.ts"]
-        },
-        {
           "name": "mira_thumb",
           "version": "1.0.19",
           "status": "old_plugins",

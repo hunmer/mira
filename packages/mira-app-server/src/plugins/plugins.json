@@ -21,17 +21,6 @@
     "status": "active"
   },
   {
-    "name": "mira_duplicate_scanner",
-    "enabled": false,
-    "path": "node_modules/mira_duplicate_scanner",
-    "registry": "https://registry.npmmirror.com",
-    "icon": null,
-    "title": "mira_duplicate_scanner",
-    "category": "general",
-    "tags": [],
-    "installedAt": "2026-08-12T12:02:36.842Z"
-  },
-  {
     "name": "mira_epub_format",
     "enabled": false,
     "path": "node_modules/mira_epub_format",

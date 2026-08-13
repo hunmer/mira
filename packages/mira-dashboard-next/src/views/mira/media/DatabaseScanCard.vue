@@ -17,6 +17,32 @@ interface ScannedFile {
   path: string
 }
 
+interface DuplicateFile {
+  id: number
+  title: string
+  path: string
+  size: number
+  hash?: string
+}
+
+interface DuplicateGroup {
+  key: string
+  title: string
+  size: number
+  hash?: string
+  files: DuplicateFile[]
+}
+
+interface DuplicateScanResult {
+  groups: DuplicateGroup[]
+  totalGroups: number
+  totalFiles: number
+  candidateGroups: number
+  candidateFiles: number
+  computedHashes: number
+  hashErrors: Array<{ id: number, path: string, error: string }>
+}
+
 const PAGE_SIZE = 10
 const { t } = useI18n()
 const { selectedId } = useLibrary()
@@ -26,10 +52,14 @@ const clearingMissing = ref(false)
 const findingNew = ref(false)
 const importingNew = ref(false)
 const deletingNew = ref(false)
+const scanningDuplicates = ref(false)
+const removingDuplicates = ref(false)
 const missingFiles = ref<ScannedFile[]>([])
 const newFiles = ref<ScannedFile[]>([])
 const missingPage = ref(1)
 const newPage = ref(1)
+const duplicateResult = ref<DuplicateScanResult | null>(null)
+const selectedDuplicateIds = ref(new Set<number>())
 
 const missingPageCount = computed(() => Math.max(1, Math.ceil(missingFiles.value.length / PAGE_SIZE)))
 const newPageCount = computed(() => Math.max(1, Math.ceil(newFiles.value.length / PAGE_SIZE)))
@@ -41,10 +71,75 @@ watch(selectedId, () => {
   newFiles.value = []
   missingPage.value = 1
   newPage.value = 1
+  duplicateResult.value = null
+  selectedDuplicateIds.value = new Set()
 })
 
 function errorMessage(error: any, fallback: string) {
   return error.response?.data?.error || error.message || fallback
+}
+
+function formatSize(bytes: number) {
+  if (!bytes) return '0 B'
+  const units = ['B', 'KB', 'MB', 'GB', 'TB']
+  const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1)
+  return `${(bytes / 1024 ** index).toFixed(index ? 1 : 0)} ${units[index]}`
+}
+
+function toggleDuplicate(id: number) {
+  const selected = new Set(selectedDuplicateIds.value)
+  selected.has(id) ? selected.delete(id) : selected.add(id)
+  selectedDuplicateIds.value = selected
+}
+
+function selectDuplicateRecords() {
+  const selected = new Set<number>()
+  for (const group of duplicateResult.value?.groups || []) {
+    for (const file of group.files.slice(1)) selected.add(file.id)
+  }
+  selectedDuplicateIds.value = selected
+}
+
+async function scanDuplicates() {
+  if (!selectedId.value) return
+  scanningDuplicates.value = true
+  selectedDuplicateIds.value = new Set()
+  try {
+    const res = await fileManagerApi.scanDuplicates(selectedId.value)
+    duplicateResult.value = res.data.data || null
+    toast.success(t('databaseScan.duplicateResult', {
+      groups: duplicateResult.value?.totalGroups || 0,
+      files: duplicateResult.value?.totalFiles || 0,
+    }))
+  } catch (error: any) {
+    toast.error(errorMessage(error, t('databaseScan.duplicateScanFailed')))
+  } finally {
+    scanningDuplicates.value = false
+  }
+}
+
+async function removeDuplicateRecords() {
+  if (!selectedId.value || selectedDuplicateIds.value.size === 0) return
+  if (!await requireConfirm({
+    title: t('databaseScan.removeDuplicatesTitle'),
+    description: t('databaseScan.removeDuplicatesConfirm', { count: selectedDuplicateIds.value.size }),
+    confirmText: t('databaseScan.removeRecords'),
+  })) return
+  removingDuplicates.value = true
+  try {
+    const selected = selectedDuplicateIds.value
+    const res = await fileManagerApi.removeDuplicateRecords(selectedId.value, [...selected])
+    const result = res.data.data as { deleted?: number, errors?: string[] } | undefined
+    const scan = await fileManagerApi.scanDuplicates(selectedId.value)
+    duplicateResult.value = scan.data.data || null
+    selectedDuplicateIds.value = new Set()
+    toast.success(t('databaseScan.removeDuplicatesResult', { count: result?.deleted || 0 }))
+    if (result?.errors?.length) toast.error(result.errors.join('\n'))
+  } catch (error: any) {
+    toast.error(errorMessage(error, t('databaseScan.removeDuplicatesFailed')))
+  } finally {
+    removingDuplicates.value = false
+  }
 }
 
 async function scanMissing() {
@@ -210,6 +305,74 @@ async function clearNewFiles() {
         <div v-if="newFiles.length" class="flex items-center justify-between text-xs text-muted-foreground">
           <span>{{ t('databaseScan.total', { count: newFiles.length }) }}</span>
           <div class="flex items-center gap-2"><Button size="icon" variant="outline" class="size-7" :disabled="newPage <= 1" :title="t('databaseScan.previous')" @click="newPage--"><ChevronLeftIcon class="size-4" /></Button><span>{{ newPage }} / {{ newPageCount }}</span><Button size="icon" variant="outline" class="size-7" :disabled="newPage >= newPageCount" :title="t('databaseScan.next')" @click="newPage++"><ChevronRightIcon class="size-4" /></Button></div>
+        </div>
+      </section>
+
+      <section class="space-y-3 border-t pt-6">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h3 class="text-sm font-semibold">{{ t('databaseScan.duplicateTitle') }}</h3>
+            <p class="mt-1 text-xs text-muted-foreground">{{ t('databaseScan.duplicateDesc') }}</p>
+          </div>
+          <div class="flex shrink-0 flex-wrap items-center gap-2">
+            <Button size="sm" variant="outline" :disabled="!selectedId || scanningDuplicates || removingDuplicates" @click="scanDuplicates">
+              <SearchIcon class="mr-1 size-4" />
+              {{ scanningDuplicates ? t('databaseScan.scanning') : t('databaseScan.scanDuplicates') }}
+            </Button>
+          </div>
+        </div>
+
+        <div v-if="duplicateResult" class="space-y-1 text-xs text-muted-foreground">
+          <div>{{ t('databaseScan.candidateSummary', { groups: duplicateResult.candidateGroups, files: duplicateResult.candidateFiles }) }}</div>
+          <span>{{ t('databaseScan.duplicateSummary', { groups: duplicateResult.totalGroups, files: duplicateResult.totalFiles }) }}</span>
+          <span class="ml-2">{{ t('databaseScan.hashSummary', { count: duplicateResult.computedHashes }) }}</span>
+          <div v-if="duplicateResult.hashErrors.length" class="text-destructive">
+            {{ t('databaseScan.hashErrors', { count: duplicateResult.hashErrors.length }) }}
+          </div>
+        </div>
+
+        <div v-if="duplicateResult?.groups.length" class="max-h-[32rem] space-y-4 overflow-y-auto pr-1">
+          <div v-for="(group, groupIndex) in duplicateResult.groups" :key="group.key" class="overflow-hidden rounded-md border">
+            <div class="flex items-center justify-between gap-3 border-b bg-muted/40 px-3 py-2">
+              <span class="min-w-0 truncate text-sm font-medium" :title="group.title">{{ t('databaseScan.groupTitle', { index: groupIndex + 1, title: group.title }) }}</span>
+              <span class="shrink-0 text-xs text-muted-foreground">{{ formatSize(group.size) }} × {{ group.files.length }}</span>
+            </div>
+            <Table>
+              <TableHeader><TableRow><TableHead class="w-12"></TableHead><TableHead class="w-20">ID</TableHead><TableHead>{{ t('databaseScan.path') }}</TableHead></TableRow></TableHeader>
+              <TableBody>
+                <TableRow v-for="file in group.files" :key="file.id">
+                  <TableCell>
+                    <input
+                      type="checkbox"
+                      class="size-4 rounded border-input align-middle"
+                      :checked="selectedDuplicateIds.has(file.id)"
+                      :aria-label="t('databaseScan.selectRecord', { id: file.id })"
+                      @change="toggleDuplicate(file.id)"
+                    />
+                  </TableCell>
+                  <TableCell>{{ file.id }}</TableCell>
+                  <TableCell class="max-w-0 truncate font-mono" :title="file.path">{{ file.path }}</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+
+        <div v-else-if="duplicateResult" class="rounded-md border py-8 text-center text-sm text-muted-foreground">
+          {{ t('databaseScan.noDuplicates') }}
+        </div>
+        <div v-else class="rounded-md border py-8 text-center text-sm text-muted-foreground">
+          {{ t('databaseScan.noDuplicateScan') }}
+        </div>
+
+        <div v-if="duplicateResult?.groups.length" class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <Button size="sm" variant="ghost" :disabled="removingDuplicates" @click="selectDuplicateRecords">
+            {{ t('databaseScan.selectDuplicates') }}
+          </Button>
+          <Button size="sm" variant="destructive" :disabled="!selectedDuplicateIds.size || removingDuplicates" @click="removeDuplicateRecords">
+            <Trash2Icon class="mr-1 size-4" />
+            {{ removingDuplicates ? t('databaseScan.removing') : t('databaseScan.removeSelected', { count: selectedDuplicateIds.size }) }}
+          </Button>
         </div>
       </section>
     </CardContent>

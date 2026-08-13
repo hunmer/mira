@@ -69,7 +69,7 @@
 
 - `src/plugins/plugins.json` — 插件注册清单（`name` / `enabled` / `path` / 可选 `status`）。
 - `src/plugins/package.json` — 插件依赖声明（独立 npm 依赖树）。
-- 当前启用：`mira_duplicate_scanner`、`mira_eagle_extension`（node_modules 安装）。
+- 重复文件扫描已内置，不再通过 `plugins.json` 或插件依赖安装。
 
 ## 构建产物
 

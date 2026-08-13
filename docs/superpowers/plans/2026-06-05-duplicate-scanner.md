@@ -1,5 +1,7 @@
 # 重复文件扫描插件 Implementation Plan
 
+> 状态: 历史实施计划。2026-08-13 起功能已内置到 mira-app-server 和 Dashboard 数据库扫描卡片，原插件已移除。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 创建服务端插件 `mira_duplicate_scanner`，在 Dashboard 中注入前端页面，支持单库内重复文件扫描（名称+大小 / 名称+大小+hash）、对比查看、批量删除。

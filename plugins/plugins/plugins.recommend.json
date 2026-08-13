@@ -10,16 +10,6 @@
     "registry": ""
   },
   {
-    "name": "mira_duplicate_scanner",
-    "version": "1.0.0",
-    "title": "重复文件扫描",
-    "description": "扫描素材库中的重复文件，支持快速（哈希）与深度（内容比对）两种模式，并可在结果中批量删除冗余文件。",
-    "icon": "🔍",
-    "category": "utility",
-    "deps": "--",
-    "registry": ""
-  },
-  {
     "name": "mira_eagle_extension",
     "version": "1.0.0",
     "title": "Eagle 浏览器扩展支持",

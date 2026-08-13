@@ -4,16 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  mira_duplicate_scanner: link:C:/Users/Administrator/AppData/Local/pnpm/global/5/node_modules/mira_duplicate_scanner
-
 importers:
 
-  .:
-    dependencies:
-      mira_duplicate_scanner:
-        specifier: link:C:/Users/Administrator/AppData/Local/pnpm/global/5/node_modules/mira_duplicate_scanner
-        version: link:packages/mira-app-core/C:/Users/Administrator/AppData/Local/pnpm/global/5/node_modules/mira_duplicate_scanner
+  .: {}
 
   online_client_plugins/plugins/mira-whiteboard:
     dependencies:

@@ -91,7 +91,6 @@
 | 插件 | 版本 | 路径 | 协议 | 职责 |
 |------|------|------|------|------|
 | mira_n8n | v1.0.7 | `mira_n8n` | 旧 | n8n Webhook/WS 集成,独立 WS 转发文件事件(默认禁用) |
-| mira_duplicate_scanner | v1.0.0 | `mira_duplicate_scanner` | 旧 | 重复文件扫描/删除,`POST /duplicate/scan`、`/duplicate/delete`(默认禁用) |
 | mira_eagle_extension | v1.0.0 | `mira_eagle_extension` | 旧 | 复刻 Eagle 本地 HTTP 协议,让 Eagle 浏览器扩展无改接入(默认禁用) |
 | mira_3d_format | v1.0.1 | `mira_3d_format` [+web] | 格式 | GLB/GLTF 解析 + GLB 缩略图(render-glb + @gltf-transform) |
 | mira_spine_format | v1.1.0 | `mira_spine_format` [+web] | 格式 | Spine `.skel/.spine` 解析,idle-first 预览 |

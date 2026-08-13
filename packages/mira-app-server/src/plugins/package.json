@@ -138,7 +138,6 @@
     "minipass-sized": "^1.0.3",
     "minizlib": "^2.1.2",
     "mira_3d_format": "^1.0.2",
-    "mira_duplicate_scanner": "file:../../../../plugins/plugins/mira_duplicate_scanner",
     "mira_epub_format": "^1.0.0",
     "mira_lottie_format": "^1.0.0",
     "mira_swf_format": "^1.0.0",

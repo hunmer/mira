@@ -8,6 +8,7 @@ import { LibraryServerDataSQLite } from 'mira-app-core/storage/sqlite';
 import { createSyncFilter, getIgnoreGlobs, ShouldSyncFn } from '../sync/SyncFilter';
 import { canonicalFilePath, createFilePathSet } from '../sync/FilePathSet';
 import { publishImportedFile } from '../sync/ImportedFileEvents';
+import { DuplicateScanner } from '../services/DuplicateScanner';
 
 interface FileEntry {
     name: string;
@@ -378,6 +379,39 @@ export class FsRouter {
                 res.json({ success: true, data: { removed, skipped: paths.length - removed } });
             } catch (error: any) {
                 res.status(500).json({ error: error.message || 'Failed to delete new files' });
+            }
+        });
+
+        this.router.post('/database/duplicates', async (req: Request, res: Response) => {
+            try {
+                const context = this.getActiveLibraryContext(req.body.libraryId);
+                if (!context) {
+                    res.status(400).json({ error: 'Invalid libraryId or library not active' });
+                    return;
+                }
+                const result = await new DuplicateScanner(context.dbService).scan();
+                res.json({ success: true, data: result });
+            } catch (error: any) {
+                res.status(500).json({ error: error.message || 'Failed to scan duplicate files' });
+            }
+        });
+
+        this.router.delete('/database/duplicates', async (req: Request, res: Response) => {
+            try {
+                const context = this.getActiveLibraryContext(req.body.libraryId);
+                const fileIds = req.body.fileIds as unknown;
+                if (!context) {
+                    res.status(400).json({ error: 'Invalid libraryId or library not active' });
+                    return;
+                }
+                if (!Array.isArray(fileIds) || fileIds.length === 0 || fileIds.some(id => !Number.isInteger(id))) {
+                    res.status(400).json({ error: 'fileIds must be a non-empty array of integers' });
+                    return;
+                }
+                const result = await new DuplicateScanner(context.dbService).deleteFiles(fileIds);
+                res.json({ success: true, data: result });
+            } catch (error: any) {
+                res.status(500).json({ error: error.message || 'Failed to remove duplicate records' });
             }
         });
 

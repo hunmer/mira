@@ -31,18 +31,6 @@ WebSocket 端口: 7457
 
 实现 ThumbnailGenerator 接口，支持格式: psd, ai, eps, svg, tiff, dng, heic 等
 
-### mira_duplicate_scanner (v1.0.0)
-
-| 文件 | 说明 |
-|------|------|
-| `plugins/mira_duplicate_scanner/index.ts` | 插件入口 |
-| `plugins/mira_duplicate_scanner/DuplicateScanner.ts` | 扫描器实现 |
-| `plugins/mira_duplicate_scanner/package.json` | 包配置 |
-| `plugins/mira_duplicate_scanner/tsconfig.json` | TypeScript 配置 |
-
-HTTP 路由: POST `/duplicate/scan`, POST `/duplicate/delete`
-前端路由: `/tools/duplicate-scanner`
-
 ## 旧版插件
 
 ### mira_thumb (v1.0.19) -- old_plugins/

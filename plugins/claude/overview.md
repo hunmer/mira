@@ -16,7 +16,7 @@
   - HTTP Hook 拦截(`pluginManager.registerHttpHook`)
   - 前端 UI 路由(`registerRoute`)
   - 持久化配置(`writeConfig/readConfig/writeJson/readJson`)
-- 当前使用方:`mira_n8n`、`mira_duplicate_scanner`、`mira_eagle_extension`
+- 当前使用方:`mira_n8n`、`mira_eagle_extension`
 
 ### 协议 B — 新版 `registerFileFormat`(格式扩展,推荐)
 
@@ -42,7 +42,6 @@
 | 插件 | 版本 | 协议 | enabled | +web | 职责 |
 |------|------|------|---------|------|------|
 | mira_n8n | 1.0.7 | A(旧) | false | -- | n8n Webhook/WS 集成,独立 WS 转发文件事件 |
-| mira_duplicate_scanner | 1.0.0 | A(旧) | false | -- | 重复文件扫描/删除 |
 | mira_eagle_extension | 1.0.0 | A(旧) | false | -- | 复刻 Eagle 本地 HTTP 协议 |
 | mira_3d_format | 1.0.1 | B(格式) | true | ✓ | GLB/GLTF 解析 + GLB 缩略图 |
 | mira_spine_format | 1.1.0 | B(格式) | true | ✓ | Spine `.skel/.spine` 解析与预览 |

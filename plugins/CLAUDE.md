@@ -26,7 +26,6 @@ Mira 服务端插件集合(当前 **13 个**)。插件由 `ServerPluginManager`(
 | 插件 | 版本 | 职责 |
 |------|------|------|
 | mira_n8n | 1.0.7 | n8n Webhook/WS 集成,独立 WS 服务器转发文件事件 |
-| mira_duplicate_scanner | 1.0.0 | 重复文件扫描与删除;`POST /duplicate/scan`、`/duplicate/delete` |
 | mira_eagle_extension | 1.0.0 | 复刻 Eagle 本地 HTTP 协议,让 Eagle 浏览器扩展无改接入 |
 
 ### 协议 B — `registerFileFormat`(10 个格式插件,默认 enabled)

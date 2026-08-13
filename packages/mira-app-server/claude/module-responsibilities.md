@@ -70,6 +70,6 @@
 - `plugins.json` — 插件注册清单。
 - `package.json` / `package-lock.json` / `node_modules/` — 插件依赖（npm 安装）。
 - `mira_thumb/`、`mira_user/` — 内置示例插件目录（含 `data/`）。
-- 当前 `plugins.json` 启用项：`mira_duplicate_scanner`、`mira_eagle_extension`（path 指向 `node_modules/...`）；`mira_demo`、`mira_n8n`、`mira_thumb_imagemagick` 为 disabled。
+- 重复文件扫描已内置到 `FsRouter` 与 `DuplicateScanner` 服务，不再依赖插件。
 
 > 注：`src/plugins/node_modules` 体量巨大，未纳入扫描。

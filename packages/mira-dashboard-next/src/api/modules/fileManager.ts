@@ -28,6 +28,12 @@ export const fileManagerApi = {
   deleteNewFiles(libraryId: string, paths: string[]) {
     return client.delete('/fs/database/new', { data: { libraryId, paths } })
   },
+  scanDuplicates(libraryId: string) {
+    return client.post('/fs/database/duplicates', { libraryId })
+  },
+  removeDuplicateRecords(libraryId: string, fileIds: number[]) {
+    return client.delete('/fs/database/duplicates', { data: { libraryId, fileIds } })
+  },
   download(data: { libraryId: string; paths: string[] }) {
     return client.post('/fs/download', data, { responseType: 'blob' })
   },

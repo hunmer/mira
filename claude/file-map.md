@@ -39,10 +39,9 @@ d:\mira_typescript\
 ├── plugins/
 │   ├── CLAUDE.md                  # 插件集合文档
 │   ├── plugins/
-│   │   ├── plugins.json           # 插件注册配置(13 个)
+│   │   ├── plugins.json           # 插件注册配置
 │   │   ├── librarys.json          # 库配置
 │   │   ├── mira_n8n/              # n8n 集成 (v1.0.7,旧协议)
-│   │   ├── mira_duplicate_scanner/# 重复扫描 (v1.0.0,旧协议)
 │   │   ├── mira_eagle_extension/  # Eagle 协议 (v1.0.0,旧协议)
 │   │   ├── mira_3d_format/        # GLB/GLTF (v1.0.1,格式协议,+web)
 │   │   ├── mira_spine_format/     # Spine (v1.1.0,格式协议,+web)

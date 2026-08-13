@@ -807,10 +807,13 @@ const handleActiveTabRefresh = (e: Event) => {
   })
   if (tabId === props.tabId) {
     const eventType = (e as CustomEvent).detail?.eventType
-    // 当前详情文件的属性已由详情组件同步，跳过整页重拉避免列表和详情闪烁。
-    const updatedId = data?.fileId != null ? String(data.fileId) : ''
-    if (eventType === 'updated') return
-    handleRefresh()
+    // 文件属性更新可能影响当前排序（例如按名称、星标或更新时间排序）。
+    // 重新按当前排序查询，避免局部更新把文件留在列表首位；保留用户选中状态。
+    if (eventType === 'updated') {
+      void handleRefresh(true)
+      return
+    }
+    void handleRefresh()
   }
 }
 
