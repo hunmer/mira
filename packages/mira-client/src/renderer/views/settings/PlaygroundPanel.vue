@@ -8,7 +8,7 @@
     </div>
 
     <Tabs v-model="activeTab" class="w-full">
-      <TabsList class="grid w-full grid-cols-4">
+      <TabsList class="grid w-full grid-cols-5">
         <TabsTrigger value="notification" class="flex items-center gap-2">
           <span class="material-icons text-base">notifications</span>
           {{ $t('views.playgroundPanel.notification') }}
@@ -25,6 +25,10 @@
           <span class="material-icons text-base">chat_bubble</span>
           {{ $t('views.playgroundPanel.toast') }}
         </TabsTrigger>
+        <TabsTrigger value="pageSlide" class="flex items-center gap-2">
+          <span class="material-icons text-base">swap_horiz</span>
+          {{ $t('views.playgroundPanel.pageSlide') }}
+        </TabsTrigger>
       </TabsList>
 
       <!-- 各功能演示拆分至 playground/ 目录，子组件自带 TabsContent -->
@@ -32,6 +36,7 @@
       <FormPlayground />
       <GlowPlayground />
       <ToastPlayground />
+      <PageSlidePlayground />
     </Tabs>
   </div>
 </template>
@@ -43,6 +48,7 @@ import NotificationPlayground from './playground/NotificationPlayground.vue'
 import FormPlayground from './playground/FormPlayground.vue'
 import GlowPlayground from './playground/GlowPlayground.vue'
 import ToastPlayground from './playground/ToastPlayground.vue'
+import PageSlidePlayground from './playground/PageSlidePlayground.vue'
 
 const activeTab = ref('notification')
 </script>

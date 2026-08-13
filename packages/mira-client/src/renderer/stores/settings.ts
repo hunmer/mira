@@ -16,7 +16,7 @@ import i18n from '../i18n'
 /**
  * 媒体项可展示的字段，用于底部状态栏「眼睛」开关控制三个视图的展示信息。
  */
-export type ItemField = 'filename' | 'format' | 'size' | 'folder' | 'tags'
+export type ItemField = 'filename' | 'format' | 'size' | 'folder' | 'tags' | 'videoPlayIcon'
 
 export interface AppSettings {
   // 界面设置
@@ -192,7 +192,7 @@ export const useSettingsStore = defineStore('settings', () => {
     // 媒体预览设置
     videoPreviewMuted: true,
     // 媒体项展示字段：默认全部展示
-    visibleItemFields: ['filename', 'format', 'size', 'folder', 'tags'],
+    visibleItemFields: ['filename', 'format', 'size', 'folder', 'tags', 'videoPlayIcon'],
 
     // 导入设置
     directImportMode: false,
@@ -581,7 +581,7 @@ export const useSettingsStore = defineStore('settings', () => {
       lazyLoading: true,
       maxConcurrentUploads: 3,
       videoPreviewMuted: true,
-      visibleItemFields: ['filename', 'format', 'size', 'folder', 'tags'],
+      visibleItemFields: ['filename', 'format', 'size', 'folder', 'tags', 'videoPlayIcon'],
       directImportMode: false,
       floatingBallEnabled: false,
       floatingBallClickAction: 'openUpload',

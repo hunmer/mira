@@ -95,11 +95,11 @@
 
       <!-- 视频播放图标 -->
       <div
-        v-show="isVideo && !isVideoPlaying"
+        v-show="isVideo && !isVideoPlaying && showVideoPlayIcon"
         class="absolute inset-0 flex items-center justify-center"
       >
-        <div class="bg-black/50 rounded-full p-3">
-          <span class="material-icons text-white text-2xl">play_arrow</span>
+        <div class="bg-black/50 rounded-full w-12 h-12 flex items-center justify-center">
+          <span class="material-icons text-white text-2xl leading-none">play_arrow</span>
         </div>
       </div>
 
@@ -258,6 +258,7 @@ const showFormat = computed(() => visibleFields.value.includes('format'))
 const showSize = computed(() => visibleFields.value.includes('size'))
 const showFolder = computed(() => visibleFields.value.includes('folder'))
 const showTags = computed(() => visibleFields.value.includes('tags'))
+const showVideoPlayIcon = computed(() => visibleFields.value.includes('videoPlayIcon'))
 
 const folderName = computed(() => {
   const id = props.item.folderId

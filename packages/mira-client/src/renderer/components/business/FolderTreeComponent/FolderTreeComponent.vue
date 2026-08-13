@@ -122,7 +122,11 @@
                 <span class="material-icons mr-2 text-lg" :style="{ color: getNodeColor(node) }">{{ node.icon ||
                   defaultIcon }}</span>
                 <span class="flex-1 truncate text-sm">{{ node.label }}</span>
-                <span v-if="node.count" class="text-xs text-muted-foreground ml-2">{{ node.count }}</span>
+                <span v-if="node.count" v-digit-pop="node.count"
+                  class="t-digit-group text-xs text-muted-foreground ml-2">
+                  <span v-for="(d, i) in String(node.count)" :key="i" class="t-digit"
+                    :data-stagger="i > 0 ? String(i) : undefined">{{ d }}</span>
+                </span>
               </div>
             </template>
           </Draggable>
@@ -151,7 +155,11 @@
                 <span class="material-icons mr-2 text-lg" :style="{ color: getNodeColor(node) }">{{ node.icon ||
                   defaultIcon }}</span>
                 <span class="flex-1 truncate text-sm">{{ node.label }}</span>
-                <span v-if="node.count" class="text-xs text-muted-foreground ml-2">{{ node.count }}</span>
+                <span v-if="node.count" v-digit-pop="node.count"
+                  class="t-digit-group text-xs text-muted-foreground ml-2">
+                  <span v-for="(d, i) in String(node.count)" :key="i" class="t-digit"
+                    :data-stagger="i > 0 ? String(i) : undefined">{{ d }}</span>
+                </span>
               </div>
             </template>
           </BaseTree>
@@ -254,7 +262,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import { computed, ref, watch, nextTick, onMounted, onUnmounted, type DirectiveBinding } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Draggable, BaseTree, dragContext } from '@he-tree/vue'
 import '@he-tree/vue/style/default.css'
@@ -904,6 +912,26 @@ function handleBaseCategoryClick(category: any) {
   })
 }
 
+/*
+  v-digit-pop：count 数字逐位弹出动画。
+  - 挂载时添加 .is-animating 触发首次播放。
+  - count 变化时移除 .is-animating → 强制 reflow → 重新添加，实现重播。
+*/
+const vDigitPop = {
+  mounted(el: HTMLElement, binding: DirectiveBinding<number>) {
+    ;(el as any)._lastDigitVal = binding.value
+    el.classList.add('is-animating')
+  },
+  updated(el: HTMLElement, binding: DirectiveBinding<number>) {
+    if (binding.value !== (el as any)._lastDigitVal) {
+      ;(el as any)._lastDigitVal = binding.value
+      el.classList.remove('is-animating')
+      void el.offsetWidth // 强制 reflow，重启动画
+      el.classList.add('is-animating')
+    }
+  },
+}
+
 const CHILDREN_SLIDE_MS = 240
 const animatingStats = new WeakSet<object>()
 
@@ -1259,6 +1287,56 @@ onUnmounted(() => {
   transform: rotate(90deg) scale(0.9);
 }
 
+/*
+  Number pop-in —— 节点 count 逐位弹出。
+  原始效果来自 Transitions.dev；此处把 :root 变量收拢到 .t-digit-group 上，
+  既兼容 scoped（scoped 下 :root 不生效），又不污染全局。
+  触发：v-digit-pop 指令在挂载及 count 变化时切换 .is-animating。
+*/
+.t-digit-group {
+  --digit-dur: 500ms;
+  --digit-distance: 8px;
+  --digit-stagger: 70ms;
+  --digit-blur: 2px;
+  --digit-ease: cubic-bezier(0.34, 1.45, 0.64, 1);
+  --digit-dir-x: 0;
+  --digit-dir-y: 1;
+  display: inline-flex;
+  align-items: baseline;
+}
+
+.t-digit {
+  display: inline-block;
+  will-change: transform, opacity, filter;
+}
+
+.t-digit-group.is-animating .t-digit {
+  animation: t-digit-pop-in var(--digit-dur) var(--digit-ease) both;
+}
+
+.t-digit-group.is-animating .t-digit[data-stagger="1"] {
+  animation-delay: var(--digit-stagger);
+}
+
+.t-digit-group.is-animating .t-digit[data-stagger="2"] {
+  animation-delay: calc(var(--digit-stagger) * 2);
+}
+
+@keyframes t-digit-pop-in {
+  0% {
+    transform: translate(calc(var(--digit-distance) * var(--digit-dir-x)),
+      calc(var(--digit-distance) * var(--digit-dir-y)));
+    opacity: 0;
+    filter: blur(var(--digit-blur));
+  }
+
+  100% {
+    transform: translate(0, 0);
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
 
   .search-slide-enter-active,
@@ -1279,6 +1357,10 @@ onUnmounted(() => {
   /* Folder tree animation is an explicit interaction requirement. */
   .folder-chevron {
     transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1) !important;
+  }
+
+  .t-digit-group .t-digit {
+    animation: none !important;
   }
 
 }

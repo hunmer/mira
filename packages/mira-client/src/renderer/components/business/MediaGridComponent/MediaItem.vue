@@ -61,7 +61,7 @@
 
       <!-- 视频播放图标 -->
       <div
-        v-show="isVideo && !isVideoPlaying"
+        v-show="isVideo && !isVideoPlaying && showVideoPlayIcon"
         class="absolute inset-0 flex items-center justify-center"
       >
         <div class="bg-black/50 rounded-full p-3">
@@ -108,6 +108,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { FileInfo } from '../../../../shared/types'
+import { useSettingsStore } from '@renderer/stores/settings'
 
 interface Props {
   item: FileInfo
@@ -175,6 +176,9 @@ const fileExtension = computed((): string => {
 const isVideo = computed((): boolean => {
   return props.item.mimeType.startsWith('video/')
 })
+
+const settingsStore = useSettingsStore()
+const showVideoPlayIcon = computed(() => settingsStore.settings.visibleItemFields.includes('videoPlayIcon'))
 
 const handleClick = (event: MouseEvent) => {
   emit('click', props.item, event)

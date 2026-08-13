@@ -33,6 +33,7 @@
     "fieldSize": "Size",
     "fieldFolder": "Folder",
     "fieldTags": "Tags",
+    "fieldVideoPlayIcon": "Video play icon",
     "filterFolders": "Folder filter",
     "filterTagsLabel": "Tag filter",
     "filterUrls": "URL filter",

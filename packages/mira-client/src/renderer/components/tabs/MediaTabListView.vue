@@ -1191,7 +1191,8 @@ const itemFieldOptions = computed<{ key: ItemField; label: string }[]>(() => [
   { key: 'format', label: t('tabs.mediaTabListView.fieldFormat') },
   { key: 'size', label: t('tabs.mediaTabListView.fieldSize') },
   { key: 'folder', label: t('tabs.mediaTabListView.fieldFolder') },
-  { key: 'tags', label: t('tabs.mediaTabListView.fieldTags') }
+  { key: 'tags', label: t('tabs.mediaTabListView.fieldTags') },
+  { key: 'videoPlayIcon', label: t('tabs.mediaTabListView.fieldVideoPlayIcon') }
 ])
 
 const isItemFieldVisible = (field: ItemField) => {
