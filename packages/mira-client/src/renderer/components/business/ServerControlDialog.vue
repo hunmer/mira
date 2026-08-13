@@ -284,7 +284,7 @@ onUnmounted(() => {
 
 <template>
   <Dialog :open="open" @update:open="emit('update:open', $event)">
-    <DialogContent class="sm:max-w-[760px] flex flex-col max-h-[85vh]">
+    <DialogContent class="sm:max-w-[85vw] flex flex-col max-h-[85vh]">
       <DialogHeader>
         <DialogTitle class="flex items-center gap-2">
           <span class="material-icons text-primary">dns</span>

@@ -30,6 +30,7 @@ interface SelectionBoxProps {
   scrollAutoSpeed?: number
   scrollThreshold?: number
   minSelectionSize?: number
+  enableSelectAllShortcut?: boolean
 }
 
 interface SelectionBoxEmits {
@@ -58,7 +59,8 @@ const props = withDefaults(defineProps<SelectionBoxProps>(), {
   longPressDelay: 150,
   scrollAutoSpeed: 10,
   scrollThreshold: 50,
-  minSelectionSize: 5
+  minSelectionSize: 5,
+  enableSelectAllShortcut: false
 })
 
 const emit = defineEmits<SelectionBoxEmits>()
@@ -548,6 +550,17 @@ const handleWindowBlur = () => {
 // 键盘快捷键
 const handleKeyDown = (e: KeyboardEvent) => {
   if (props.disabled) return
+
+  if (
+    props.enableSelectAllShortcut &&
+    (e.ctrlKey || e.metaKey) &&
+    e.key.toLowerCase() === 'a' &&
+    containerRef.value?.contains(document.activeElement)
+  ) {
+    e.preventDefault()
+    selectAll()
+    return
+  }
 
   if (e.key === 'Escape') {
     clearSelection()

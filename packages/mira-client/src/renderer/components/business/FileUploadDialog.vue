@@ -18,8 +18,8 @@
 
         <!-- 主体内容区域 -->
         <div class="flex-1 flex gap-4 min-h-0 overflow-hidden">
-          <!-- 最左侧：本地文件夹树（导入的目录结构，仅浏览/筛选） -->
-          <div class="w-60 flex flex-col flex-shrink-0">
+          <!-- 最左侧：本地文件夹树（导入的目录结构，仅浏览/筛选）。未导入文件夹时不展示 -->
+          <div v-if="localTreeData.length > 0" class="w-60 flex flex-col flex-shrink-0">
             <div class="flex-1 min-h-0">
               <div class="p-2 h-full overflow-y-auto">
                 <FolderTreeComponent
@@ -218,7 +218,9 @@
                   :double-click-to-clear="true"
                   :realtime-selection="true"
                   :min-selection-size="8"
+                  :enable-select-all-shortcut="true"
                   class="h-full overflow-auto p-4"
+                  tabindex="0"
                   @selection-update="handleSelectionUpdate"
                   @clear-selection="clearSelection"
                 >

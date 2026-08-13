@@ -663,14 +663,6 @@ export const defaultBindings: ShortcutBinding[] = [
     description: '关闭当前标签页快捷键'
   },
 
-
-	{
-		shortcut: 'Ctrl+A',
-		priority: 90,
-		actionId: 'edit.select-all',
-		enabled: true,
-		description: '全选快捷键'
-	},
 	{
 		shortcut: 'Delete',
 		priority: 80,

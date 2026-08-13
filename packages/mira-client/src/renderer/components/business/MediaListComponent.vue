@@ -6,6 +6,7 @@
     :double-click-to-clear="true"
     :realtime-selection="true"
     :min-selection-size="8"
+    :enable-select-all-shortcut="true"
     class="media-list w-full overflow-auto"
     tabindex="0"
     @selection-update="handleSelectionUpdate"

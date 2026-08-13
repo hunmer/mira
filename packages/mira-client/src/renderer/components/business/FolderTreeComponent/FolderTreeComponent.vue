@@ -981,9 +981,9 @@ function getNodeColor(node: HeTreeNode): string {
   return convertColorToHex(node.color)
 }
 
-// 拖拽：标签不支持拖拽排序
+// 拖拽：文件夹与标签均支持拖拽排序（标签为扁平结构，仅同层排序）
 function eachDroppable() {
-  return isFolder.value
+  return true
 }
 
 // 拖拽确认状态
@@ -1000,7 +1000,6 @@ const dragConfirmInfo = ref({
 let beforeDragParentId: string | null = null
 
 function onBeforeDragStart() {
-  if (!isFolder.value) return
   const dragNode = dragContext.dragNode
   if (!dragNode?.data) return
   beforeDragParentId = dragNode.parent?.data?.id ?? null
@@ -1008,14 +1007,12 @@ function onBeforeDragStart() {
 
 // 拖拽完成后：同层级排序 or 跨层级移动
 function onAfterDrop() {
-  if (!isFolder.value || !libraryStore.currentLibrary) return
+  if (!libraryStore.currentLibrary) return
 
   const dragNode = dragContext.dragNode
   if (!dragNode?.data) return
 
   const draggedId = dragNode.data.id as string
-  const draggedNodeType = dragNode.data.nodeType as string
-  if (draggedNodeType === 'tag') return
 
   const newParentId = dragNode.parent?.data?.id ?? null
   const isSameLevel = newParentId === beforeDragParentId
@@ -1043,7 +1040,7 @@ function collectSiblingSortItems(dragNode: any): { id: number; sort_index: numbe
   const siblings: any[] = parent ? parent.children : (treeRef.value as any)?.stats ?? []
   if (!siblings || siblings.length === 0) return []
   return siblings.map((s: any, i: number) => ({
-    id: parseInt(s.data.id),
+    id: resolveNodeId(s.data),
     sort_index: i,
   }))
 }
@@ -1052,9 +1049,13 @@ async function doUpdateSortIndex(items: { id: number; sort_index: number }[]) {
   if (items.length === 0) { beforeDragParentId = null; emit('refresh'); return }
   const libraryId = libraryStore.currentLibrary!.id
   try {
-    await miraSDKService.updateFolderSortIndex(libraryId, items)
+    if (isFolder.value) {
+      await miraSDKService.updateFolderSortIndex(libraryId, items)
+    } else {
+      await miraSDKService.updateTagSortIndex(libraryId, items)
+    }
   } catch (error) {
-    console.error('Failed to update folder sort index:', error)
+    console.error(`Failed to update ${isFolder.value ? 'folder' : 'tag'} sort index:`, error)
   }
   beforeDragParentId = null
   emit('refresh')

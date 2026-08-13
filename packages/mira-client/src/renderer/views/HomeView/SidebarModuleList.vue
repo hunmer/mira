@@ -292,6 +292,7 @@ defineExpose({ locateItem })
         <FolderTreeComponent
           :ref="setTagTreeRef"
           item-type="tag"
+          :draggable="true"
           hide-header
           :tags="tags"
           @select="emit('tagSelect', $event)"
