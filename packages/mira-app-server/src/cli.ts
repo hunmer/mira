@@ -101,6 +101,20 @@ program
     .option('--autostart', '注册为系统开机自启项并由系统托管启动（macOS=LaunchAgent / Linux=systemd / Windows=任务计划）')
     .action(async (options) => {
         try {
+            // 无额外参数时复用已注册的系统托管配置，与 `restart` 行为一致。
+            // 自启任务本身会带上完整参数，因此不会进入此分支。
+            const startCommandIndex = process.argv.indexOf('start');
+            const hasStartOptions = startCommandIndex >= 0 && process.argv.slice(startCommandIndex + 1).length > 0;
+            if (!hasStartOptions) {
+                const status = statusAutoStart();
+                if (status.registered) {
+                    console.log('🔄 使用已注册配置重启 Mira Server...');
+                    restartAutoStart();
+                    console.log('✅ Mira Server 已按已注册配置启动。');
+                    return;
+                }
+            }
+
             // 如果指定了env文件，加载它
             if (options.env) {
                 dotenv.config({ path: path.resolve(options.env) });

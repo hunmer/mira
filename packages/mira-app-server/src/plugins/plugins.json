@@ -50,5 +50,67 @@
       "reader"
     ],
     "installedAt": "2026-08-12T12:02:44.057Z"
+  },
+  {
+    "name": "mira_swf_format",
+    "enabled": false,
+    "path": "node_modules/mira_swf_format",
+    "registry": "https://registry.npmmirror.com",
+    "version": "1.0.0",
+    "description": "SWF metadata, FFmpeg thumbnails, and Ruffle-based preview support for Mira",
+    "author": "Mira Team",
+    "main": "dist/index.js",
+    "icon": "movie",
+    "title": "SWF Format",
+    "category": "storage",
+    "tags": [
+      "SWF",
+      "Flash",
+      "Ruffle",
+      "thumbnail",
+      "preview"
+    ],
+    "installedAt": "2026-08-13T10:19:17.005Z"
+  },
+  {
+    "name": "mira_zipper_format",
+    "enabled": false,
+    "path": "node_modules/mira_zipper_format",
+    "registry": "https://registry.npmmirror.com",
+    "version": "1.0.0",
+    "description": "ZIP archive read-only browse/preview support for Mira",
+    "author": "Mira Team",
+    "main": "dist/index.js",
+    "icon": "folder_zip",
+    "title": "归档浏览",
+    "category": "storage",
+    "tags": [
+      "zip",
+      "archive",
+      "归档",
+      "压缩"
+    ],
+    "installedAt": "2026-08-13T10:19:35.274Z"
+  },
+  {
+    "name": "mira_lottie_format",
+    "enabled": false,
+    "path": "node_modules/mira_lottie_format",
+    "registry": "https://registry.npmmirror.com",
+    "version": "1.0.0",
+    "description": "dotLottie thumbnail and preview support for Mira",
+    "author": "Mira Team",
+    "main": "dist/index.js",
+    "icon": "animation",
+    "title": "dotLottie 格式支持",
+    "category": "storage",
+    "tags": [
+      "Lottie",
+      "dotLottie",
+      "缩略图",
+      "预览"
+    ],
+    "installedAt": "2026-08-13T10:32:01.851Z",
+    "status": "inactive"
   }
 ]

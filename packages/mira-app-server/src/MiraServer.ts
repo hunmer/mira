@@ -90,6 +90,9 @@ export class MiraServer {
 
         this.databaseBackupService?.stop();
         this.metadataService?.clear();
+        if (this.libraries) {
+            await this.libraries.clear();
+        }
 
         if (this.httpServer) {
             await this.httpServer.stop();

@@ -38,6 +38,11 @@ export const DEFAULT_IGNORE_PATTERNS: readonly string[] = [
   '**/*.temp',
 ];
 
+/** 固定排除规则：用户白名单也不能覆盖 */
+export const FIXED_IGNORE_PATTERNS: readonly string[] = [
+  '**/library_data.previous.db',
+];
+
 /** 库配置里 customFields 可能放同步过滤相关字段 */
 export interface SyncFilterConfig {
   /** 用户黑名单（多行文本，每行一个 glob） */
@@ -145,6 +150,7 @@ export function createSyncFilter(
   const blacklistPatterns = [...DEFAULT_IGNORE_PATTERNS, ...extraIgnore, ...userBlack];
   const whitelistPatterns = [...userWhite, ...blackReinclude];
 
+  const fixedIgnoreRe = FIXED_IGNORE_PATTERNS.map(globToRegExp);
   const blacklistRe = blacklistPatterns.map(globToRegExp);
   const whitelistRe = whitelistPatterns.map(globToRegExp);
 
@@ -154,6 +160,7 @@ export function createSyncFilter(
   return function shouldSync(relPath: string): boolean {
     if (!relPath) return true; // 库根目录本身
     const rel = norm(relPath);
+    if (fixedIgnoreRe.some((re) => re.test(rel))) return false;
 
     const excluded = blacklistRe.some((re) => re.test(rel));
     if (!excluded) return true;
@@ -176,5 +183,5 @@ export function matchGlob(relPath: string, pattern: string): boolean {
  */
 export function getIgnoreGlobs(customFields: SyncFilterConfig | undefined | null = {}): string[] {
   const { include: userBlack } = parsePatternLines(customFields?.syncBlacklist);
-  return [...DEFAULT_IGNORE_PATTERNS, ...userBlack];
+  return [...FIXED_IGNORE_PATTERNS, ...DEFAULT_IGNORE_PATTERNS, ...userBlack];
 }

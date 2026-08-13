@@ -26,6 +26,9 @@ describe('file metadata import', () => {
 
     const file = await db.createFileFromPath(filePath, {}, { importType: 'link' });
     expect(imported?.id).toBe(file.id);
+    expect(file.name).toBe('sample.jpg');
+    expect(file.path).toBe(filePath);
+    expect(fs.existsSync(filePath)).toBe(true);
 
     await db.updateFile(file.id, { metadata: { width: 1920, gps: { latitude: 35.6 } } });
     const stored = await db.getFile(file.id);

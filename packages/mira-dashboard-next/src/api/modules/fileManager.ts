@@ -22,6 +22,12 @@ export const fileManagerApi = {
   findNewFiles(libraryId: string) {
     return client.post('/fs/database/new', { libraryId })
   },
+  importNewFiles(libraryId: string, paths: string[]) {
+    return client.post('/fs/database/new/import', { libraryId, paths })
+  },
+  deleteNewFiles(libraryId: string, paths: string[]) {
+    return client.delete('/fs/database/new', { data: { libraryId, paths } })
+  },
   download(data: { libraryId: string; paths: string[] }) {
     return client.post('/fs/download', data, { responseType: 'blob' })
   },

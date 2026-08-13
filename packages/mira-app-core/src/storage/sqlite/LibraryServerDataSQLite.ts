@@ -12,11 +12,25 @@ export class LibraryServerDataSQLite {
   private db: Database | null = null;
   private inTransaction = false;
   private readonly fileImported?: (file: Record<string, any>) => void | Promise<void>;
+  private readonly dbMirrorRoot?: string;
+  private readonly dbMirrorThrottleMs: number;
+  private remoteDbPath?: string;
+  private localDbPath?: string;
+  private mirrorSyncTimer?: ReturnType<typeof setTimeout>;
+  private mirrorSyncRunning?: Promise<void>;
+  private mirrorDirty = false;
+  private closing = false;
   readonly config: Record<string, any>;
 
-  constructor(config: Record<string, any>, opts: { onFileImported?: (file: Record<string, any>) => void | Promise<void> } = {}) {
+  constructor(config: Record<string, any>, opts: {
+    onFileImported?: (file: Record<string, any>) => void | Promise<void>;
+    dbMirrorRoot?: string;
+    dbMirrorThrottleMs?: number;
+  } = {}) {
     this.config = config;
     this.fileImported = opts.onFileImported;
+    this.dbMirrorRoot = opts.dbMirrorRoot;
+    this.dbMirrorThrottleMs = opts.dbMirrorThrottleMs ?? 3000;
   }
 
   // 实时从 config 读取，确保 PUT /:id 更新 customFields 后立即生效，
@@ -34,7 +48,8 @@ export class LibraryServerDataSQLite {
     if (!fs.existsSync(basePath)) {
       fs.mkdirSync(basePath, { recursive: true });
     }
-    const dbPath = path.join(basePath, 'library_data.db');
+    this.remoteDbPath = path.join(basePath, 'library_data.db');
+    const dbPath = await this.prepareDatabasePath(this.remoteDbPath);
     this.db = new Database(dbPath);
 
     await this.executeSql(`
@@ -109,6 +124,7 @@ export class LibraryServerDataSQLite {
     await this.executeSql(
       'CREATE INDEX IF NOT EXISTS idx_files_folder_recycled ON files(folder_id, recycled)'
     );
+    this.scheduleMirrorSync();
   }
 
   // --- 事务管理 ---
@@ -123,6 +139,7 @@ export class LibraryServerDataSQLite {
     if (this.inTransaction) {
       await this.executeSql('COMMIT');
       this.inTransaction = false;
+      this.scheduleMirrorSync();
     }
   }
 
@@ -134,9 +151,108 @@ export class LibraryServerDataSQLite {
   }
 
   async close(): Promise<void> {
+    this.closing = true;
+    if (this.mirrorSyncTimer) clearTimeout(this.mirrorSyncTimer);
+    this.mirrorSyncTimer = undefined;
+    let syncError: unknown;
+    try {
+      if (this.localDbPath) {
+        do {
+          await this.flushMirrorSync();
+        } while (this.mirrorSyncRunning || this.mirrorDirty);
+      }
+    } catch (error) {
+      syncError = error;
+    }
     if (this.db) {
-      this.db.close();
+      const db = this.db;
+      await new Promise<void>((resolve, reject) => {
+        db.close(error => error ? reject(error) : resolve());
+      });
       this.db = null;
+    }
+    if (syncError) throw syncError;
+  }
+
+  private async prepareDatabasePath(remoteDbPath: string): Promise<string> {
+    if (!this.config.customFields?.enableDbMirror) return remoteDbPath;
+    if (!this.dbMirrorRoot) throw new Error('dbMirrorRoot is required when enableDbMirror is enabled');
+
+    const mirrorDir = path.join(this.dbMirrorRoot, String(this.config.id));
+    await fs.promises.mkdir(mirrorDir, { recursive: true });
+    const timestamp = this.createTimestamp();
+    const localDbPath = path.join(mirrorDir, `${timestamp}.db`);
+    if (fs.existsSync(remoteDbPath)) {
+      await fs.promises.copyFile(remoteDbPath, localDbPath);
+    }
+    this.localDbPath = localDbPath;
+    console.log(`[DB mirror] Library ${this.config.id} using local database ${localDbPath}`);
+    return localDbPath;
+  }
+
+  private createTimestamp(): string {
+    return new Date().toISOString().replace(/[-:TZ.]/g, '').slice(0, 17);
+  }
+
+  private scheduleMirrorSync(): void {
+    if (!this.localDbPath || this.inTransaction) return;
+    this.mirrorDirty = true;
+    if (this.mirrorSyncTimer) clearTimeout(this.mirrorSyncTimer);
+    this.mirrorSyncTimer = setTimeout(() => {
+      this.mirrorSyncTimer = undefined;
+      void this.flushMirrorSync().catch(error => {
+        console.error(`[DB mirror] Failed to sync library ${this.config.id}:`, error);
+      });
+    }, this.dbMirrorThrottleMs);
+  }
+
+  private async flushMirrorSync(): Promise<void> {
+    if (this.mirrorSyncRunning) return this.mirrorSyncRunning;
+    if (!this.localDbPath || !this.remoteDbPath || !this.db || !this.mirrorDirty) return;
+
+    this.mirrorSyncRunning = this.syncMirrorToRemote();
+    try {
+      await this.mirrorSyncRunning;
+    } finally {
+      this.mirrorSyncRunning = undefined;
+      if (!this.closing && this.mirrorDirty && !this.mirrorSyncTimer) this.scheduleMirrorSync();
+    }
+  }
+
+  private async syncMirrorToRemote(): Promise<void> {
+    if (!this.localDbPath || !this.remoteDbPath || !this.db) return;
+    this.mirrorDirty = false;
+    const snapshotPath = `${this.localDbPath}.syncing`;
+    await fs.promises.rm(snapshotPath, { force: true });
+    await new Promise<void>((resolve, reject) => {
+      const backup = (this.db as any).backup(snapshotPath);
+      backup.step(-1, (stepError: Error | null) => {
+        backup.finish((finishError: Error | null) => {
+          const error = stepError || finishError;
+          if (error) reject(error);
+          else resolve();
+        });
+      });
+    });
+
+    const remoteBackupPath = path.join(path.dirname(this.remoteDbPath), 'library_data.previous.db');
+    let renamed = false;
+    try {
+      if (fs.existsSync(this.remoteDbPath)) {
+        await fs.promises.rm(remoteBackupPath, { force: true });
+        await fs.promises.rename(this.remoteDbPath, remoteBackupPath);
+        renamed = true;
+      }
+      await fs.promises.copyFile(snapshotPath, this.remoteDbPath);
+      console.log(`[DB mirror] Synced library ${this.config.id} database to ${this.remoteDbPath}`);
+    } catch (error) {
+      this.mirrorDirty = true;
+      if (renamed && !fs.existsSync(this.remoteDbPath)) {
+        try { await fs.promises.rename(remoteBackupPath, this.remoteDbPath); } catch {}
+      }
+      throw error;
+    } finally {
+      await fs.promises.rm(snapshotPath, { force: true });
     }
   }
 
@@ -302,12 +418,16 @@ export class LibraryServerDataSQLite {
       }
       this.db.run(sql, params, (err) => {
         if (err) reject(err);
-        else resolve();
+        else {
+          if (!this.inTransaction && !/^\s*(BEGIN|ROLLBACK)/i.test(sql)) this.scheduleMirrorSync();
+          resolve();
+        }
       });
     });
   }
 
   runSql(sql: string, params?: any[]): Promise<{ lastID: number; changes: number }> {
+    const self = this;
     return new Promise((resolve, reject) => {
       if (!this.db) {
         reject(new Error('Database not initialized'));
@@ -318,7 +438,10 @@ export class LibraryServerDataSQLite {
           console.error('Error executing SQL:', err);
           reject(err);
         }
-        else resolve({ lastID: this.lastID, changes: this.changes });
+        else {
+          if (!self.inTransaction) self.scheduleMirrorSync();
+          resolve({ lastID: this.lastID, changes: this.changes });
+        }
       });
     });
   }

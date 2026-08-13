@@ -26,7 +26,7 @@ const bg = useBackground();
 let healthTimer: ReturnType<typeof setInterval> | null = null;
 
 export function useConnection() {
-  const { settings, update } = useSettings();
+  const { settings, update, saveServers, activateServer } = useSettings();
 
   const servers = computed(() => settings.value.servers);
   const activeServer = computed<ServerConfig | null>(
@@ -51,7 +51,7 @@ export function useConnection() {
           );
         }
       }
-      await bg.setSettings(patch);
+      await update(patch);
       await bg.login(username, password);
       status.value = 'connected';
       await refreshLibraries();
@@ -72,12 +72,12 @@ export function useConnection() {
     if (existing) {
       server = { ...existing, ...input };
       const servers = settings.value.servers.map(s => (s.id === server.id ? server : s));
-      await bg.saveServers(servers);
+      await saveServers(servers);
     } else {
       server = { id: newServerId(), ...input };
-      await bg.saveServers([...settings.value.servers, server]);
+      await saveServers([...settings.value.servers, server]);
     }
-    await bg.activateServer(server.id);
+    await activateServer(server.id);
     return server;
   }
 
@@ -99,8 +99,8 @@ export function useConnection() {
     dbg.info('conn', 'switchServer', { id, serverURL: target.serverURL });
     status.value = 'connecting';
     try {
-      // activateServer 返回含新 activeServerId 的 settings,写回以同步 activeServer computed
-      settings.value = await bg.activateServer(id);
+      // activateServer 已写回 settings(含新 activeServerId),同步 activeServer computed
+      await activateServer(id);
       await bg.login(target.username, target.password);
       status.value = 'connected';
       await refreshLibraries();

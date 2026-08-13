@@ -240,7 +240,14 @@ const installingName = ref<string | null>(null)
 
 // 终端式安装对话框: 点击安装后弹出, 通过 SSE 实时展示 --verbose 输出
 const terminalOpen = ref(false)
-const terminalTarget = ref<{ name: string; libraryId: string; registry?: string } | null>(null)
+const terminalTarget = ref<{
+  name: string
+  libraryId: string
+  version?: string
+  registry?: string
+  npmSource?: string
+  proxy?: string
+} | null>(null)
 
 async function installFromStore(name: string, registry?: string) {
   if (!activeTab.value || installingName.value) return
@@ -275,48 +282,44 @@ const installController = ref<AbortController | null>(null)
 
 async function submitInstall() {
   if (!activeTab.value) return
-  // 先做表单校验, 不进入 loading 态
+
+  // 从仓库安装: 走终端 SSE 实时日志, 弹出 InstallTerminalDialog
   if (installTab.value === 'repository') {
     if (!installForm.value.name) {
       toast.error('请输入插件名称')
       return
     }
-  } else {
-    if (!installFile.value) {
-      toast.error('请选择插件包文件')
-      return
+    terminalTarget.value = {
+      name: installForm.value.name,
+      libraryId: activeTab.value,
+      version: installForm.value.version || undefined,
+      npmSource: installForm.value.npmSource,
+      proxy: installForm.value.proxy || undefined,
     }
+    // 关闭安装表单对话框, 改由终端对话框接管
+    installOpen.value = false
+    terminalOpen.value = true
+    return
   }
 
+  // 本地上传: 保持原逻辑
+  if (!installFile.value) {
+    toast.error('请选择插件包文件')
+    return
+  }
   installLoading.value = true
   const controller = new AbortController()
   installController.value = controller
   try {
-    if (installTab.value === 'repository') {
-      await pluginApi.install({
-        name: installForm.value.name,
-        version: installForm.value.version || undefined,
-        libraryId: activeTab.value,
-        npmSource: installForm.value.npmSource,
-        proxy: installForm.value.proxy || undefined,
-      }, controller.signal)
-    } else {
-      const formData = new FormData()
-      formData.append('file', installFile.value!)
-      formData.append('libraryId', activeTab.value)
-      await client.post('/plugins/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        signal: controller.signal,
-      })
-    }
+    const formData = new FormData()
+    formData.append('file', installFile.value!)
+    formData.append('libraryId', activeTab.value)
+    await client.post('/plugins/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      signal: controller.signal,
+    })
     toast.success(t('common.success'))
-    // 安装成功后不关闭对话框, 仅清空当前输入, 允许继续安装下一个
-    if (installTab.value === 'repository') {
-      installForm.value.name = ''
-      installForm.value.version = 'latest'
-    } else {
-      installFile.value = null
-    }
+    installFile.value = null
     setTimeout(loadPlugins, 2000)
   } catch {
     // 用户主动取消不算错误

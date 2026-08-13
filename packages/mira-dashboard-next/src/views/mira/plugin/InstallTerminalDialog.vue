@@ -128,6 +128,7 @@ function onInteractOutside(e: Event) {
   if (running.value) e.preventDefault()
 }
 
+// immediate: 组件由 v-if 挂载时 open 已是 true, 需立即触发 start()
 watch(() => props.open, (v) => {
   if (v && props.name && props.libraryId) {
     start()
@@ -136,7 +137,7 @@ watch(() => props.open, (v) => {
     status.value = 'idle'
     lines.value = []
   }
-})
+}, { immediate: true })
 
 watch(lines, async () => {
   await nextTick()

@@ -15,6 +15,7 @@ export interface Library {
     enableHash: boolean
     enableAutoSync?: boolean
     enableAutoBackup?: boolean
+    enableDbMirror?: boolean
     [key: string]: any
   }
 }

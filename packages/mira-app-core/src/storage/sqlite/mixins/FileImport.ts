@@ -141,6 +141,9 @@ export const FileImport = {
     fileData: Record<string, any>,
     importType: string
   ): Promise<void> {
+    // link 只记录现有文件，不能用目标路径的自身存在性触发重命名。
+    if (importType === 'link') return;
+
     let destPath = this.getUniquePath(path.join(await this.getItemPath(fileData), fileData.name));
     const destDir = path.dirname(destPath);
     const actualName = path.basename(destPath);
@@ -148,8 +151,6 @@ export const FileImport = {
       fileData.name = actualName;
     }
     switch (importType) {
-      case 'link':
-        break;
       case 'copy':
         if (!fs.existsSync(destDir)) {
           fs.mkdirSync(destDir, { recursive: true });

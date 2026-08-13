@@ -249,19 +249,30 @@ export class LibraryRoutes {
 
                 // 更新内存中的配置（如果库是活跃的）
                 if (libraryObj.libraryService) {
-                    libraryObj.libraryService.config = updatedConfig;
+                    const shouldReconnect = currentPath !== (updatedConfig.path || updatedConfig.customFields?.path)
+                        || (currentConfig.customFields?.enableDbMirror ?? false)
+                          !== (updatedConfig.customFields?.enableDbMirror ?? false);
 
-                    // watcher 在构造时会编译同步过滤规则；配置更新后必须重建，
-                    // 否则已有 watcher 会继续使用旧规则（路径变更时也需要重建）。
-                    const shouldWatch = updatedConfig.customFields?.enableAutoSync ?? true;
-                    if (libraryObj.watcher) {
-                        await libraryObj.watcher.stop();
-                        libraryObj.watcher = undefined;
-                    }
-                    if (shouldWatch) {
-                        const watcher = new LibraryWatcher(libraryObj.libraryService, this.backend.getWebSocketServer());
-                        libraryObj.watcher = watcher;
-                        await watcher.start();
+                    if (shouldReconnect) {
+                        await this.backend.libraries!.disableLibrary(id);
+                        libraryObj.savedConfig = { ...updatedConfig, status: 'active' };
+                        const enabled = await this.backend.libraries!.enableLibrary(id);
+                        if (!enabled) throw new Error('Failed to reconnect library database');
+                    } else {
+                        libraryObj.libraryService.config = updatedConfig;
+
+                        // watcher 在构造时会编译同步过滤规则；配置更新后必须重建，
+                        // 否则已有 watcher 会继续使用旧规则。
+                        const shouldWatch = updatedConfig.customFields?.enableAutoSync ?? true;
+                        if (libraryObj.watcher) {
+                            await libraryObj.watcher.stop();
+                            libraryObj.watcher = undefined;
+                        }
+                        if (shouldWatch) {
+                            const watcher = new LibraryWatcher(libraryObj.libraryService, this.backend.getWebSocketServer());
+                            libraryObj.watcher = watcher;
+                            await watcher.start();
+                        }
                     }
                 } else if (libraryObj.savedConfig) {
                     // 更新保存的配置

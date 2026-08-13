@@ -4,6 +4,9 @@
  * servers / activeServerId 持久在 ExtensionSettings(经 useSettings 响应式),
  * 这里只封装「增删改 + 激活 + 测试连接」的便捷方法,底层走 background。
  *
+ * 所有写操作统一经 useSettings 的 saveServers/activateServer/update,
+ * 自动写回响应式 settings,避免列表不刷新。
+ *
  * 激活服务器会清 session/token 并同步顶层兼容字段 → 触发重新登录;
  * 因此 activate 后调用方需重新 verify(见 useConnection.switchServer)。
  */
@@ -14,7 +17,7 @@ import { newServerId } from '@/shared/storage';
 import type { ServerConfig } from '@/shared/types';
 
 export function useServers() {
-  const { settings, update } = useSettings();
+  const { settings, update, saveServers, activateServer } = useSettings();
   const bg = useBackground();
 
   const servers = computed(() => settings.value.servers);
@@ -24,15 +27,13 @@ export function useServers() {
 
   async function add(input: Omit<ServerConfig, 'id'>): Promise<ServerConfig> {
     const server: ServerConfig = { id: newServerId(), ...input };
-    const next = [...settings.value.servers, server];
-    // saveServers 返回最新 settings,写回以触发 servers computed 更新(否则列表不刷新)
-    settings.value = await bg.saveServers(next);
+    await saveServers([...settings.value.servers, server]);
     return server;
   }
 
   async function edit(id: string, patch: Partial<Omit<ServerConfig, 'id'>>): Promise<void> {
     const next = settings.value.servers.map(s => (s.id === id ? { ...s, ...patch } : s));
-    settings.value = await bg.saveServers(next);
+    await saveServers(next);
     // 若改的是激活服务器,同步顶层兼容字段,保证 ensureClient 用新地址
     if (id === settings.value.activeServerId && (patch.serverURL || patch.username || patch.password)) {
       const cur = next.find(s => s.id === id);
@@ -42,11 +43,11 @@ export function useServers() {
 
   async function remove(id: string): Promise<void> {
     const next = settings.value.servers.filter(s => s.id !== id);
-    settings.value = await bg.saveServers(next);
+    await saveServers(next);
     // 删的是激活服务器:自动切到第一个;无服务器则清空激活
     if (id === settings.value.activeServerId) {
       if (next.length) {
-        settings.value = await bg.activateServer(next[0].id);
+        await activateServer(next[0].id);
       } else {
         await update({ activeServerId: '', serverURL: '', username: '', password: '' });
       }
@@ -54,7 +55,7 @@ export function useServers() {
   }
 
   async function activate(id: string): Promise<void> {
-    await bg.activateServer(id);
+    await activateServer(id);
   }
 
   function test(serverURL: string, username: string, password: string) {

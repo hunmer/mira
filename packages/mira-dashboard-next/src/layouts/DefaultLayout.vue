@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
@@ -41,6 +41,8 @@ const auth = useAuthStore()
 const { mode: themeMode } = useTheme()
 const { libraries, selectedId, loading: libsLoading, ensureLoaded } = useLibrary()
 
+const LIBRARY_QUERY_PARAM = 'library'
+
 const navItems = [
   { path: '/overview', icon: RiHome4Line, key: 'overview', roles: [] },
   { path: '/library', icon: RiFolderLine, key: 'library', roles: ['super', 'admin'] },
@@ -65,12 +67,24 @@ const hideSideParam = route.query.hideSide
 const sidebarDefaultOpen = hideSideParam !== undefined ? false : undefined
 
 onMounted(() => {
+  // 优先从 URL 参数恢复选中的素材库（显式入口/可分享链接优先级最高）
+  const urlLib = route.query[LIBRARY_QUERY_PARAM]
+  if (typeof urlLib === 'string' && urlLib) {
+    selectedId.value = urlLib
+  }
   if (hideSideParam !== undefined) {
     document.cookie = `${SIDEBAR_COOKIE}=false; path=/; max-age=${60 * 60 * 24 * 365}`
     const { hideSide, ...rest } = route.query
     router.replace({ query: rest })
   }
   ensureLoaded()
+})
+
+// 选中素材库变化时同步到 URL 参数
+watch(selectedId, (id) => {
+  if (!id) return
+  if (route.query[LIBRARY_QUERY_PARAM] === id) return
+  router.replace({ query: { ...route.query, [LIBRARY_QUERY_PARAM]: id } })
 })
 
 function handleLogout() {

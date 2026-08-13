@@ -21,6 +21,7 @@ export interface LibraryFormData {
   enableAutoSync: boolean
   enableThumbScan: boolean
   enableAutoBackup: boolean
+  enableDbMirror: boolean
   pluginsDir: string
   allowedRoles: string[]
   /** 自动同步过滤模式：黑名单（排除） / 白名单（强制包含） */
@@ -119,6 +120,13 @@ const toggleRole = (role: string) => {
         <div class="flex items-center gap-2">
           <input id="enableAutoBackup" v-model="form.enableAutoBackup" type="checkbox" class="size-4 rounded border-input" />
           <Label for="enableAutoBackup">{{ t('library.enableAutoBackup') }}</Label>
+        </div>
+        <div class="space-y-1">
+          <div class="flex items-center gap-2">
+            <input id="enableDbMirror" v-model="form.enableDbMirror" type="checkbox" class="size-4 rounded border-input" />
+            <Label for="enableDbMirror">{{ t('library.enableDbMirror') }}</Label>
+          </div>
+          <p class="pl-6 text-xs text-muted-foreground">{{ t('library.enableDbMirrorHint') }}</p>
         </div>
         <div class="space-y-2">
           <Label>{{ t('library.pluginsDir') }}</Label>

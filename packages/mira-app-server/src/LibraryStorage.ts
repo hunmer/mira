@@ -4,6 +4,7 @@ import { EventManager, getLibraries } from "mira-app-core";
 import { MiraServer } from "./MiraServer";
 import { MiraWebsocketServer } from "./WebSocketServer";
 import { LibraryWatcher } from "./LibraryWatcher";
+import * as path from "path";
 
 export class LibraryStorage {
     libraries: Record<string, {
@@ -40,6 +41,7 @@ export class LibraryStorage {
         let dbServer!: LibraryServerDataSQLite;
         dbServer = new LibraryServerDataSQLite(dbConfig, {
             onFileImported: (file) => { this.server.metadataService.enqueue(file, dbServer); },
+            dbMirrorRoot: path.join(this.server.getDataPath(), 'db-mirrors'),
         });
         this.libraries[libraryId] = {
             libraryService: dbServer,
@@ -106,15 +108,15 @@ export class LibraryStorage {
         return success;
     }
 
-    clear() {
-        Object.values(this.libraries).forEach(lib => {
+    async clear(): Promise<void> {
+        await Promise.all(Object.values(this.libraries).map(async lib => {
             if (lib.watcher) {
-                lib.watcher.stop();
+                await lib.watcher.stop();
             }
             if (lib.libraryService) {
-                lib.libraryService.close();
+                await lib.libraryService.close();
             }
-        });
+        }));
         this.libraries = {};
     }
 
@@ -159,6 +161,7 @@ export class LibraryStorage {
                 let dbServer!: LibraryServerDataSQLite;
                 dbServer = new LibraryServerDataSQLite(config, {
                     onFileImported: (file) => { this.server.metadataService.enqueue(file, dbServer); },
+                    dbMirrorRoot: path.join(this.server.getDataPath(), 'db-mirrors'),
                 });
                 this.libraries[libraryId].libraryService = dbServer;
                 await dbServer.initialize();

@@ -6,6 +6,8 @@ import { ZipArchive } from 'archiver';
 import { MiraServer } from '..';
 import { LibraryServerDataSQLite } from 'mira-app-core/storage/sqlite';
 import { createSyncFilter, getIgnoreGlobs, ShouldSyncFn } from '../sync/SyncFilter';
+import { canonicalFilePath, createFilePathSet } from '../sync/FilePathSet';
+import { publishImportedFile } from '../sync/ImportedFileEvents';
 
 interface FileEntry {
     name: string;
@@ -294,7 +296,7 @@ export class FsRouter {
             }
         });
 
-        // 自动同步关闭时，手动查找并导入磁盘中的新文件
+        // 手动查找磁盘中尚未入库的新文件
         this.router.post('/database/new', async (req: Request, res: Response) => {
             try {
                 const context = this.getActiveLibraryContext(req.body.libraryId);
@@ -302,12 +304,7 @@ export class FsRouter {
                     res.status(400).json({ error: 'Invalid libraryId or library not active' });
                     return;
                 }
-                if (context.customFields?.enableAutoSync ?? true) {
-                    res.status(409).json({ error: 'Disable auto sync before finding new files' });
-                    return;
-                }
-
-                const files = await this.importNewDiskFiles(
+                const files = await this.findNewDiskFiles(
                     context.libraryPath,
                     context.dbService,
                     context.customFields,
@@ -315,6 +312,72 @@ export class FsRouter {
                 res.json({ success: true, data: files });
             } catch (error: any) {
                 res.status(500).json({ error: error.message || 'Failed to find new files' });
+            }
+        });
+
+        // 导入已扫描出的新文件；服务端重新校验，避免自动同步并发导致重复导入
+        this.router.post('/database/new/import', async (req: Request, res: Response) => {
+            try {
+                const context = this.getActiveLibraryContext(req.body.libraryId);
+                const paths = req.body.paths as unknown;
+                if (!context) {
+                    res.status(400).json({ error: 'Invalid libraryId or library not active' });
+                    return;
+                }
+                if (!Array.isArray(paths) || paths.some(filePath => typeof filePath !== 'string')) {
+                    res.status(400).json({ error: 'paths must be an array of strings' });
+                    return;
+                }
+
+                const files = await this.importNewDiskFiles(
+                    context.libraryPath,
+                    context.dbService,
+                    context.customFields,
+                    paths,
+                );
+                for (const file of files) {
+                    await publishImportedFile(this.backend?.webSocketServer, req.body.libraryId, file);
+                }
+                res.json({ success: true, data: files });
+            } catch (error: any) {
+                res.status(500).json({ error: error.message || 'Failed to import new files' });
+            }
+        });
+
+        // 删除已扫描出的新文件；只允许删除仍未入库且符合扫描规则的素材库内文件
+        this.router.delete('/database/new', async (req: Request, res: Response) => {
+            try {
+                const context = this.getActiveLibraryContext(req.body.libraryId);
+                const paths = req.body.paths as unknown;
+                if (!context) {
+                    res.status(400).json({ error: 'Invalid libraryId or library not active' });
+                    return;
+                }
+                if (!Array.isArray(paths) || paths.some(filePath => typeof filePath !== 'string')) {
+                    res.status(400).json({ error: 'paths must be an array of strings' });
+                    return;
+                }
+
+                const available = await this.findNewDiskFiles(
+                    context.libraryPath,
+                    context.dbService,
+                    context.customFields,
+                );
+                const availableSet = createFilePathSet(available.map(file => file.path));
+                let removed = 0;
+                for (const requestedPath of new Set(paths)) {
+                    const filePath = path.resolve(requestedPath);
+                    if (!availableSet.has(canonicalFilePath(filePath))) continue;
+                    try {
+                        await fs.promises.unlink(filePath);
+                        removed++;
+                    } catch (error: any) {
+                        if (error?.code !== 'ENOENT') throw error;
+                    }
+                }
+                res.json({ success: true, data: { removed, skipped: paths.length - removed } });
+            } catch (error: any) {
+                res.status(500).json({ error: error.message || 'Failed to delete new files' });
             }
         });
 
@@ -446,18 +509,38 @@ export class FsRouter {
         return missing;
     }
 
+    private async findNewDiskFiles(
+        libraryPath: string,
+        dbService: LibraryServerDataSQLite,
+        customFields: Record<string, any> | undefined,
+    ): Promise<Array<{ name: string; path: string }>> {
+        const diskFiles = await this.scanDiskFiles(libraryPath, customFields);
+        const rows: Array<{ path: string }> = await dbService.getSql('SELECT path FROM files', []);
+        const dbPathSet = createFilePathSet(rows.map(row => row.path));
+        return diskFiles
+            .filter(filePath => !dbPathSet.has(canonicalFilePath(filePath)))
+            .map(filePath => ({ name: path.basename(filePath), path: filePath }));
+    }
+
     private async importNewDiskFiles(
         libraryPath: string,
         dbService: LibraryServerDataSQLite,
         customFields: Record<string, any> | undefined,
+        requestedPaths?: string[],
     ): Promise<DatabaseFileEntry[]> {
-        const diskFiles = await this.scanDiskFiles(libraryPath, customFields);
+        const availableFiles = await this.scanDiskFiles(libraryPath, customFields);
+        const availableByKey = new Map(availableFiles.map(filePath => [canonicalFilePath(filePath), filePath]));
+        const diskFiles = requestedPaths
+            ? [...new Set(requestedPaths.map(canonicalFilePath))]
+                .map(filePath => availableByKey.get(filePath))
+                .filter((filePath): filePath is string => Boolean(filePath))
+            : availableFiles;
         const rows: Array<{ path: string }> = await dbService.getSql('SELECT path FROM files', []);
-        const dbPathSet = new Set(rows.map(row => row.path));
+        const dbPathSet = createFilePathSet(rows.map(row => row.path));
         const added: DatabaseFileEntry[] = [];
 
         for (const filePath of diskFiles) {
-            if (dbPathSet.has(filePath)) continue;
+            if (dbPathSet.has(canonicalFilePath(filePath))) continue;
             const fileData: Record<string, any> = {};
             const folderId = await this.resolveFolder(filePath, libraryPath, dbService);
             if (folderId) fileData.folder_id = folderId;
@@ -474,18 +557,18 @@ export class FsRouter {
         customFields: Record<string, any> | undefined,
     ): Promise<{ scanned: number; added: number; removed: number }> {
         const diskFiles = await this.scanDiskFiles(libraryPath, customFields);
-        const diskSet = new Set(diskFiles);
+        const diskSet = createFilePathSet(diskFiles);
 
         // 直接用 SQL 查询，避免 getFiles 的 processingFiles 处理
         const rows: any[] = await dbService.getSql('SELECT id, path FROM files', []);
-        const dbPathSet = new Set(rows.map(r => r.path));
+        const dbPathSet = createFilePathSet(rows.map(r => r.path));
 
         let added = 0;
         let removed = 0;
 
         // 移除数据库中不存在于磁盘的记录
         for (const row of rows) {
-            if (!diskSet.has(row.path)) {
+            if (!diskSet.has(canonicalFilePath(row.path))) {
                 await dbService.deleteFile(row.id);
                 removed++;
             }
@@ -493,7 +576,7 @@ export class FsRouter {
 
         // 添加磁盘中存在但数据库中没有的文件
         for (const filePath of diskFiles) {
-            if (!dbPathSet.has(filePath)) {
+            if (!dbPathSet.has(canonicalFilePath(filePath))) {
                 const fileData: Record<string, any> = {};
                 const folderId = await this.resolveFolder(filePath, libraryPath, dbService);
                 if (folderId) fileData.folder_id = folderId;
