@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from 'vitest';
-import { folderEmptyMessage, resolveDragSource } from './dragdrop';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { calculateOverlayPosition, createDragDrop, folderEmptyMessage, resolveDragSource } from './dragdrop';
 import type { DragDropHandlers } from './dragdrop';
 
 describe('resolveDragSource', () => {
@@ -56,5 +56,108 @@ describe('DragDropHandlers.createFolder', () => {
   it('createFolder 省略时仍合法(向后兼容)', () => {
     const handlers: DragDropHandlers = { onUpload: () => {} };
     expect(handlers.createFolder).toBeUndefined();
+  });
+});
+
+describe('calculateOverlayPosition', () => {
+  it('向右拖动但右侧空间不足时翻转到左侧', () => {
+    expect(calculateOverlayPosition(900, 400, 100, 10, 300, 200, 1000, 800)).toEqual({
+      left: 588,
+      top: 300,
+    });
+  });
+
+  it('向下拖动但下方空间不足时翻转到上方', () => {
+    expect(calculateOverlayPosition(500, 700, 10, 100, 300, 240, 1000, 800)).toEqual({
+      left: 350,
+      top: 448,
+    });
+  });
+
+  it('两侧都放不下时仍将浮层钳制在视口内', () => {
+    expect(calculateOverlayPosition(100, 100, -100, 0, 300, 200, 320, 240)).toEqual({
+      left: 8,
+      top: 8,
+    });
+  });
+});
+
+describe('createDragDrop lifecycle', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    (window as any).__miraDragDropController__?.destroy();
+    document.querySelectorAll('.mira-overlay, #mira-overlay-base-style, #mira-dragdrop-style').forEach(el => el.remove());
+  });
+
+  it('重复初始化时销毁旧 controller，只保留最新实例', () => {
+    const first = createDragDrop({ onUpload: vi.fn() });
+    const destroy = vi.spyOn(first, 'destroy');
+
+    const second = createDragDrop({ onUpload: vi.fn() });
+
+    expect(destroy).toHaveBeenCalledOnce();
+    expect((window as any).__miraDragDropController__).toBe(second);
+    expect(first.health().listenersAttached).toBe(false);
+    expect(second.health().listenersAttached).toBe(true);
+  });
+
+  it('pageshow 后恢复被移除的样式并保持监听可用', () => {
+    const controller = createDragDrop({ onUpload: vi.fn() });
+    document.getElementById('mira-overlay-base-style')?.remove();
+    document.getElementById('mira-dragdrop-style')?.remove();
+
+    window.dispatchEvent(new Event('pageshow'));
+
+    expect(controller.health()).toMatchObject({
+      enabled: true,
+      listenersAttached: true,
+      baseStylePresent: true,
+      dragStylePresent: true,
+    });
+  });
+
+  it('拖到自定义上传后由侧边栏完整表单接管', () => {
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation(callback => {
+      callback(0);
+      return 1;
+    });
+    const openCustomUpload = vi.fn();
+    createDragDrop({
+      onUpload: vi.fn(),
+      getFolders: async () => [],
+      createFolder: async () => 42,
+      openCustomUpload,
+    });
+    const img = document.createElement('img');
+    img.src = 'https://example.com/image.jpg';
+    document.body.appendChild(img);
+
+    img.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0, clientX: 10, clientY: 10 }));
+    img.dispatchEvent(new MouseEvent('dragstart', { bubbles: true, clientX: 10, clientY: 10 }));
+    document.dispatchEvent(new MouseEvent('dragover', { bubbles: true, clientX: 100, clientY: 10 }));
+    const customUpload = document.querySelector<HTMLElement>('.mira-custom-upload');
+    expect(customUpload?.textContent).toContain('自定义上传');
+    customUpload?.dispatchEvent(new MouseEvent('drop', { bubbles: true }));
+    expect(openCustomUpload).toHaveBeenCalledOnce();
+    expect(openCustomUpload).toHaveBeenCalledWith({ url: img.src, kind: 'image' });
+    expect(document.querySelector('.mira-overlay input')).toBeNull();
+    img.remove();
+  });
+
+  it('普通拖拽仍显示网页目标浮层', () => {
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation(callback => {
+      callback(0);
+      return 1;
+    });
+    createDragDrop({ onUpload: vi.fn() });
+    const img = document.createElement('img');
+    img.src = 'https://example.com/image.jpg';
+    document.body.appendChild(img);
+
+    img.dispatchEvent(new MouseEvent('dragstart', { bubbles: true, clientX: 10, clientY: 10 }));
+    document.dispatchEvent(new MouseEvent('dragover', { bubbles: true, clientX: 100, clientY: 10 }));
+
+    expect(document.querySelector('.mira-dragdrop')).not.toBeNull();
+    img.remove();
   });
 });

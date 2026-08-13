@@ -8,10 +8,19 @@ import type {
   ImageUrlRule,
 } from './types';
 
+export interface CustomUploadSession {
+  sourceUrl: string;
+  kind: ResourceKind;
+  referrer: string;
+}
+
 /**
  * UI/content script → service worker
  */
 export type Request =
+  | { type: 'CUSTOM_UPLOAD_SIDEPANEL_OPEN'; payload: CustomUploadSession }
+  | { type: 'CUSTOM_UPLOAD_SESSION_GET' }
+  | { type: 'CUSTOM_UPLOAD_SESSION_CLOSE' }
   // 认证 / 配置
   | { type: 'AUTH_LOGIN'; payload: { username: string; password: string } }
   | { type: 'AUTH_VERIFY' }
@@ -81,6 +90,7 @@ export type Request =
  * service worker → 推送(content script / UI 监听)
  */
 export type Event =
+  | { type: 'CUSTOM_UPLOAD_SESSION_OPEN'; payload: CustomUploadSession }
   | { type: 'UPLOAD_PROGRESS'; payload: { id: string; percent: number; status: UploadStatus } }
   | { type: 'SNIFFER_FOUND'; payload: { tabId: number; resources: SniffedResource[] } }
   | { type: 'AUTH_EXPIRED' }
@@ -103,6 +113,7 @@ export type ContentCommand =
   | { type: 'OPEN_IMPORT_DIALOG'; payload?: { urls?: string[]; referrer?: string } };
 
 const REQUEST_TYPES = new Set<Request['type']>([
+  'CUSTOM_UPLOAD_SIDEPANEL_OPEN', 'CUSTOM_UPLOAD_SESSION_GET', 'CUSTOM_UPLOAD_SESSION_CLOSE',
   'AUTH_LOGIN', 'AUTH_VERIFY', 'CONFIG_GET', 'CONFIG_SET',
   'SERVERS_LIST', 'SERVERS_SAVE', 'SERVER_ACTIVATE', 'SERVER_TEST',
   'LIB_LIST', 'FOLDER_LIST', 'TAG_LIST', 'NODE_CREATE', 'NODE_DELETE',
@@ -120,6 +131,7 @@ const COMMAND_TYPES = new Set<ContentCommand['type']>([
 ]);
 
 const EVENT_TYPES = new Set<Event['type']>([
+  'CUSTOM_UPLOAD_SESSION_OPEN',
   'UPLOAD_PROGRESS', 'SNIFFER_FOUND', 'AUTH_EXPIRED', 'BATCH_PROGRESS',
 ]);
 

@@ -122,28 +122,29 @@ const sniffer = createSniffer(resources => {
 
 // 拖拽上传:发给 service worker
 const dragdrop = createDragDrop({
-  // 取当前素材库的文件夹列表(用于拖放浮层左侧目录)
   getFolders: fetchFolders,
-  // 取当前素材库的标签列表(用于拖放浮层右侧标签 drop zones)
   getTags: fetchTags,
-  // 「➕ 新建文件夹」drop zone 调用
   createFolder,
+  openCustomUpload(source) {
+    return chrome.runtime.sendMessage({
+      type: 'CUSTOM_UPLOAD_SIDEPANEL_OPEN',
+      payload: { sourceUrl: source.url, kind: source.kind, referrer: location.href },
+    }).then(result => {
+      dbg.info('dragdrop', 'custom upload side panel requested', result);
+    }).catch(error => dbg.error('dragdrop', 'custom upload side panel request failed', error));
+  },
   onUpload(payload: DragDropPayload) {
     if (payload.file) {
       if (payload.sourceUrl) {
-        dbg.info('content', 'dragged file has source URL, upgrade via maxurl', { url: payload.sourceUrl });
         uploadUrl(payload.sourceUrl, payload.kind, payload.folderId, payload.tags);
         return;
       }
-      // File 跨上下文序列化 —— 必须用 fileToStaged(转 number[]),
-      // 裸 ArrayBuffer / Uint8Array 经 sendMessage 结构化克隆会丢失/退化,见 staged-file.ts
       fileToStaged(payload.file).then(staged => {
-        dbg.log('content', 'UPLOAD_FILES staged', { name: staged.name, bytesLen: staged.buffer.length });
         chrome.runtime.sendMessage({
           type: 'UPLOAD_FILES',
           payload: {
             files: [staged],
-            libraryId: '', // service worker 用默认 libraryId
+            libraryId: '',
             folderId: payload.folderId != null ? String(payload.folderId) : undefined,
             tags: payload.tags,
           },

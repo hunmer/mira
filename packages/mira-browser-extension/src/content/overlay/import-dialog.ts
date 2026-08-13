@@ -400,13 +400,15 @@ function mountImportDialog(opts: ImportDialogOptions): void {
       return;
     }
     for (const t of tags) {
+      // selectedTags 存 tag id(服务器按 id 存 FileData.tags),显示用 title
+      const id = String(t.id);
       const chip = document.createElement('button');
       chip.type = 'button';
-      chip.className = 'mira-import-tag-chip' + (selectedTags.has(t.title) ? ' selected' : '');
+      chip.className = 'mira-import-tag-chip' + (selectedTags.has(id) ? ' selected' : '');
       chip.textContent = t.title;
       chip.addEventListener('click', () => {
-        if (selectedTags.has(t.title)) selectedTags.delete(t.title);
-        else selectedTags.add(t.title);
+        if (selectedTags.has(id)) selectedTags.delete(id);
+        else selectedTags.add(id);
         rerenderTags();
       });
       tagWrap.appendChild(chip);

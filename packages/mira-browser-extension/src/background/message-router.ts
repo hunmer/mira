@@ -12,7 +12,7 @@ import type { SniffedResource } from '@/shared/types';
 import { dbg } from '@/shared/debug';
 import { sendToContent } from './inject';
 import { resourceFilename } from '@/shared/resource-filename';
-import { fetchResource } from './resource-fetch';
+import { fetchResource, fetchResourceWithFallback } from './resource-fetch';
 import { runConcurrent } from '@/shared/concurrency';
 
 export interface RouterDeps {
@@ -124,13 +124,13 @@ export function createRouter(deps: RouterDeps): RequestHandler {
       case 'UPLOAD_FROM_URL': {
         const settings = await getSettings();
         // 读取来源站点 Cookie/Referer 后 fetch → Blob → File(规避 content script CORS)
-        const res = await fetchResource(req.payload.url, req.payload.referrer);
+        const { response: res, url } = await fetchResourceWithFallback(req.payload.url, req.payload.referrer);
         if (!res.ok) {
           dbg.error('upload', 'UPLOAD_FROM_URL fetch failed', { url: req.payload.url, status: res.status });
           throw new Error(`resource fetch failed: ${res.status}`);
         }
         const blob = await res.blob();
-        const filename = resourceFilename(req.payload.url, blob.type) || `resource-${Date.now()}`;
+        const filename = resourceFilename(url, blob.type) || `resource-${Date.now()}`;
         const file = new File([blob], filename, { type: blob.type || 'image/*' });
         deps.uploader.enqueue({
           file,

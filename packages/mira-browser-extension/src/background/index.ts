@@ -5,7 +5,7 @@ import { createCapturer } from './capturer';
 import { createRouter, broadcast } from './message-router';
 import { sendToContent } from './inject';
 import { setupContextMenus } from './context-menus';
-import { isRequest, type Request as MiraRequest } from '@/shared/messages';
+import { isRequest, type CustomUploadSession, type Request as MiraRequest } from '@/shared/messages';
 import type { SniffedResource, ExtensionSettings } from '@/shared/types';
 import { dbg } from '@/shared/debug';
 
@@ -13,6 +13,7 @@ dbg.info('bg', 'service worker loaded');
 
 // 嗅探快照:每 tab 最近一次资源
 const sniffSnapshots = new Map<number, SniffedResource[]>();
+let customUploadSession: CustomUploadSession | null = null;
 
 async function createNotificationImage(file: File): Promise<string | null> {
   if (!file.type.startsWith('image/')) return null;
@@ -115,6 +116,27 @@ uploader.onQueueChange(tasks => {
 
 // 消息路由:Request 由 router 处理,Event/content 的 SNIFFER_REPORT 由这里处理
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (msg?.type === 'CUSTOM_UPLOAD_SIDEPANEL_OPEN' && sender.tab?.windowId != null) {
+    const session = msg.payload as CustomUploadSession;
+    customUploadSession = session;
+    chrome.sidePanel.open({ windowId: sender.tab.windowId }).then(() => {
+      broadcast({ type: 'CUSTOM_UPLOAD_SESSION_OPEN', payload: session });
+      sendResponse({ opened: true });
+    }).catch(error => {
+      dbg.warn('dragdrop', 'open side panel failed', error);
+      sendResponse({ opened: false, error: error?.message ?? String(error) });
+    });
+    return true;
+  }
+  if (msg?.type === 'CUSTOM_UPLOAD_SESSION_GET') {
+    sendResponse(customUploadSession);
+    return true;
+  }
+  if (msg?.type === 'CUSTOM_UPLOAD_SESSION_CLOSE') {
+    customUploadSession = null;
+    sendResponse({ closed: true });
+    return true;
+  }
   // content script 上报嗅探结果(内部消息,非 Request)
   if (msg?.type === 'SNIFFER_REPORT' && sender.tab?.id) {
     dbg.log('bg', 'SNIFFER_REPORT', { tabId: sender.tab.id, count: (msg.resources as any[])?.length });

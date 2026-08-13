@@ -14,12 +14,14 @@ export interface DragDropPayload {
   kind: ResourceKind;
   /** 目标文件夹 id(根区/不设文件夹时为 undefined) */
   folderId?: number;
-  /** 拖到标签 chip 上释放时携带的标签 */
+  /** 拖到标签 chip 上释放时携带的标签(tag id) */
   tags?: string[];
 }
 
 export interface DragDropHandlers {
   onUpload: (payload: DragDropPayload) => void;
+  /** “自定义上传”落点由侧边栏内部完整表单接管。 */
+  openCustomUpload?: (source: DragSource) => void | Promise<void>;
   /** 取当前素材库的文件夹列表;未连接素材库时返回 null */
   getFolders?: () => Promise<Folder[] | null>;
   /** 取当前素材库的标签列表(用于浮层右侧标签 drop zones);未连接素材库时返回 null */
@@ -50,6 +52,7 @@ const SCROLL_EDGE = 48; // 距视口顶/底多少像素触发自动滚动
 const SCROLL_STEP = 12; // 每帧滚动像素
 const SHOW_THRESHOLD = 8; // 拖拽超过此距离(px)才显示浮层,过滤点击误触
 const HEALTH_CHECK_INTERVAL = 5000;
+const CONTROLLER_KEY = '__miraDragDropController__';
 
 export interface DragSource {
   url: string;
@@ -58,6 +61,50 @@ export interface DragSource {
 
 export function folderEmptyMessage(folders: Folder[] | null): string {
   return folders === null ? '未连接素材库' : '暂无文件夹';
+}
+
+export function calculateOverlayPosition(
+  x: number,
+  y: number,
+  dx: number,
+  dy: number,
+  overlayWidth: number,
+  overlayHeight: number,
+  viewportWidth: number,
+  viewportHeight: number,
+): { left: number; top: number } {
+  const GAP = 12;
+  const EDGE = 8;
+  const horiz = Math.abs(dx) >= Math.abs(dy);
+  let left: number;
+  let top: number;
+
+  if (horiz) {
+    const preferredLeft = dx >= 0 ? x + GAP : x - GAP - overlayWidth;
+    const oppositeLeft = dx >= 0 ? x - GAP - overlayWidth : x + GAP;
+    left = preferredLeft;
+    if (preferredLeft < EDGE || preferredLeft + overlayWidth > viewportWidth - EDGE) {
+      if (oppositeLeft >= EDGE && oppositeLeft + overlayWidth <= viewportWidth - EDGE) {
+        left = oppositeLeft;
+      }
+    }
+    top = y - overlayHeight / 2;
+  } else {
+    left = x - overlayWidth / 2;
+    const preferredTop = dy >= 0 ? y + GAP : y - GAP - overlayHeight;
+    const oppositeTop = dy >= 0 ? y - GAP - overlayHeight : y + GAP;
+    top = preferredTop;
+    if (preferredTop < EDGE || preferredTop + overlayHeight > viewportHeight - EDGE) {
+      if (oppositeTop >= EDGE && oppositeTop + overlayHeight <= viewportHeight - EDGE) {
+        top = oppositeTop;
+      }
+    }
+  }
+
+  return {
+    left: Math.max(EDGE, Math.min(left, viewportWidth - overlayWidth - EDGE)),
+    top: Math.max(EDGE, Math.min(top, viewportHeight - overlayHeight - EDGE)),
+  };
 }
 
 /** 解析页面内可拖拽的媒体或链接；链接包裹媒体时优先媒体本身。 */
@@ -101,7 +148,11 @@ function resolveMediaSource(element: Element): DragSource | null {
 }
 
 export function createDragDrop(handlers: DragDropHandlers): DragDropController {
+  const controllerHost = window as unknown as Record<string, DragDropController | undefined>;
+  controllerHost[CONTROLLER_KEY]?.destroy();
+
   let enabled = true;
+  let destroyed = false;
   let overlay: HTMLDivElement | null = null;
   let scrollTimer: ReturnType<typeof setInterval> | null = null;
   let pendingFolders: Promise<Folder[] | null> | null = null;
@@ -258,7 +309,7 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
    * 用户输入文件夹名称 → 调 handlers.createFolder → 用返回的新 id 调 onUpload。
    * 任意环节取消(ESC / 点取消) → 关闭浮层。
    */
-  function makeCreateFolderZone(source: DragSource): HTMLDivElement {
+  function makeCustomUploadZone(source: DragSource): HTMLDivElement {
     const zone = document.createElement('div');
     zone.className = 'mira-dropzone';
     zone.textContent = '➕ 新建文件夹';
@@ -268,7 +319,11 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
       ev.preventDefault();
       zone.classList.remove('mira-hover');
       hideOverlay();
-      showCreateFolderPrompt(source, ev.dataTransfer?.files?.[0]);
+      if (handlers.openCustomUpload) {
+        void handlers.openCustomUpload(source);
+      } else {
+        showCreateFolderPrompt(source, ev.dataTransfer?.files?.[0]);
+      }
     });
     return zone;
   }
@@ -366,30 +421,13 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
    */
   function positionByDirection(x: number, y: number, dx: number, dy: number) {
     if (!overlay) return;
-    const MARGIN = 12;
     requestAnimationFrame(() => {
       if (!overlay) return;
       const ow = overlay.offsetWidth;
       const oh = overlay.offsetHeight;
       const vw = window.innerWidth;
       const vh = window.innerHeight;
-      // 主方向:|dx|>=|dy| 按水平,否则按垂直
-      const horiz = Math.abs(dx) >= Math.abs(dy);
-      let left: number, top: number;
-      if (horiz) {
-        // 水平为主:沿 x 方向延伸(右拖→右侧,左拖→左侧),垂直居中于鼠标
-        left = dx >= 0 ? x + MARGIN : x - MARGIN - ow;
-        top = y - oh / 2;
-      } else {
-        // 垂直为主:沿 y 方向延伸(下拖→下方,上拖→上方),水平居中于鼠标
-        left = x - ow / 2;
-        top = dy >= 0 ? y + MARGIN : y - MARGIN - oh;
-      }
-      // 越界翻转/钳制
-      if (left + ow > vw - 8) left = Math.max(8, vw - ow - 8);
-      if (left < 8) left = 8;
-      if (top + oh > vh - 8) top = Math.max(8, vh - oh - 8);
-      if (top < 8) top = 8;
+      const { left, top } = calculateOverlayPosition(x, y, dx, dy, ow, oh, vw, vh);
       overlay.style.left = left + 'px';
       overlay.style.top = top + 'px';
       overlay.classList.add('mira-ready');
@@ -446,8 +484,9 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
 
     // 「➕ 新建文件夹」:拖到此 zone → 不立即上传,改为弹内联输入框收集名称 → 创建 → 上传
     if (handlers.createFolder) {
-      const newZone = makeCreateFolderZone(source);
-      newZone.classList.add('mira-root', 'mira-create-folder');
+      const newZone = makeCustomUploadZone(source);
+      newZone.textContent = '⚙ 自定义上传';
+      newZone.classList.add('mira-root', 'mira-custom-upload');
       topRow.appendChild(newZone);
     }
     body.appendChild(topRow);
@@ -518,7 +557,8 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
           return;
         }
         for (const t of tags) {
-          const zone = makeDropZone('#' + t.title, undefined, source, [t.title]);
+          // tags 传 tag id(与客户端直传一致,服务器按 id 存 FileData.tags)
+          const zone = makeDropZone('#' + t.title, undefined, source, [String(t.id)]);
           zone.classList.add('mira-tag-chip');
           zone.title = '释放即上传并打上该标签';
           tagScroll.appendChild(zone);
@@ -568,8 +608,19 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
     }
   }
 
-  function attachListeners() {
-    if (listenersAttached) return;
+  function detachListeners() {
+    window.removeEventListener('pointerdown', onPointerDown, true);
+    window.removeEventListener('pointerup', onPointerUp, true);
+    document.removeEventListener('dragstart', onDragStart, true);
+    document.removeEventListener('dragover', onDragOverDoc, true);
+    document.removeEventListener('dragend', onDragEnd, true);
+    document.removeEventListener('drop', onDragEnd, true);
+    listenersAttached = false;
+  }
+
+  function attachListeners(force = false) {
+    if (listenersAttached && !force) return;
+    if (force) detachListeners();
     // pointerdown 放在 window 捕获阶段，尽量早于页面自己的拖拽拦截器。
     window.addEventListener('pointerdown', onPointerDown, true);
     window.addEventListener('pointerup', onPointerUp, true);
@@ -591,12 +642,26 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
   }
 
   function ensureReady() {
+    if (destroyed) return;
     ensureOverlayStyles();
     ensureStyles();
-    attachListeners();
+    // pageshow / visibilitychange 后重新绑定，覆盖页面冻结恢复和站点替换事件环境的情况。
+    attachListeners(true);
+  }
+
+  function onPageResume() {
+    if (!enabled || destroyed) return;
+    dbg.info('dragdrop', 'page resumed, ensuring listeners', { type: 'pageshow' });
+    ensureReady();
+  }
+
+  function onVisibilityChange() {
+    if (document.visibilityState === 'visible') onPageResume();
   }
 
   ensureReady();
+  window.addEventListener('pageshow', onPageResume);
+  document.addEventListener('visibilitychange', onVisibilityChange);
   dbg.info('dragdrop', 'ready', health());
   const healthTimer = setInterval(() => {
     if (!enabled) return;
@@ -608,8 +673,9 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
     }
   }, HEALTH_CHECK_INTERVAL);
 
-  return {
+  const controller: DragDropController = {
     setEnabled(v) {
+      if (destroyed) return;
       enabled = v;
       if (v) ensureReady();
       else { dragOrigin = null; pointerOrigin = null; hideOverlay(); }
@@ -617,19 +683,20 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
     },
     health,
     destroy() {
+      if (destroyed) return;
+      destroyed = true;
       clearInterval(healthTimer);
       hideOverlay();
       dragOrigin = null;
       pointerOrigin = null;
-      window.removeEventListener('pointerdown', onPointerDown, true);
-      window.removeEventListener('pointerup', onPointerUp, true);
-      document.removeEventListener('dragstart', onDragStart, true);
-      document.removeEventListener('dragover', onDragOverDoc, true);
-      document.removeEventListener('dragend', onDragEnd, true);
-      document.removeEventListener('drop', onDragEnd, true);
-      listenersAttached = false;
+      window.removeEventListener('pageshow', onPageResume);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      detachListeners();
+      if (controllerHost[CONTROLLER_KEY] === controller) delete controllerHost[CONTROLLER_KEY];
     },
   };
+  controllerHost[CONTROLLER_KEY] = controller;
+  return controller;
 }
 
 let stylesInjected = false;
@@ -646,8 +713,8 @@ function ensureStyles() {
 .mira-dragdrop .mira-overlay-body { flex-direction: column; }
 .mira-top-zones { display: flex; gap: 8px; }
 .mira-top-zones .mira-dropzone { flex: 1; width: auto; }
-.mira-create-folder { border-style: dotted; color: #71717a; }
-.mira-create-folder.mira-hover { color: #fafafa; }
+.mira-custom-upload { border-style: dotted; color: #71717a; }
+.mira-custom-upload.mira-hover { color: #fafafa; }
 .mira-cols { display: flex; gap: 8px; min-height: 0; flex: 1; }
 .mira-tag-list { flex: 1; display: flex; flex-direction: column; min-width: 0; border-left: 1px solid #3f3f46; padding-left: 8px; }
 .mira-tag-scroll { flex: 1; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 6px; align-content: flex-start; max-height: 50vh; }

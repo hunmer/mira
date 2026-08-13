@@ -1,4 +1,5 @@
 import { dbg } from '@/shared/debug';
+import { fallbackImageCandidates } from '@/shared/imu';
 
 let nextRuleId = Date.now() % 1_000_000_000;
 
@@ -94,4 +95,32 @@ export async function fetchResource(url: string, referrer?: string): Promise<Res
   } finally {
     await chrome.declarativeNetRequest.updateSessionRules({ removeRuleIds: [ruleId] });
   }
+}
+
+/** 按图片 URL 候选顺序抓取；Pinterest originals 不可用时继续尝试其他尺寸。 */
+export async function fetchResourceWithFallback(
+  url: string,
+  referrer?: string,
+): Promise<{ response: Response; url: string }> {
+  const candidates = fallbackImageCandidates(url);
+  let lastResponse: Response | undefined;
+
+  for (const [index, candidate] of candidates.entries()) {
+    try {
+      const response = await fetchResource(candidate, referrer);
+      if (response.ok) return { response, url: candidate };
+      lastResponse = response;
+      if (index < candidates.length - 1) {
+        dbg.warn('download', 'candidate fetch failed, try next size', {
+          url: candidate,
+          status: response.status,
+        });
+      }
+    } catch (error) {
+      if (index === candidates.length - 1) throw error;
+      dbg.warn('download', 'candidate fetch failed, try next size', { url: candidate, error });
+    }
+  }
+
+  return { response: lastResponse!, url: candidates[candidates.length - 1] };
 }

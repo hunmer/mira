@@ -1,4 +1,4 @@
-import type { Request, Event } from '@/shared/messages';
+import type { CustomUploadSession, Request, Event } from '@/shared/messages';
 import type { ExtensionSettings, ServerConfig, UploadTask, SniffedResource, ResourceKind, ImageUrlRule } from '@/shared/types';
 import type { StagedFile } from '@/shared/types';
 import type { Folder, Tag } from 'mira-app-core/shared/sdk';
@@ -9,6 +9,19 @@ function send<T = any>(req: Request): Promise<T> {
 
 export function useBackground() {
   return {
+    async getCustomUploadSession() {
+      return send<CustomUploadSession | null>({ type: 'CUSTOM_UPLOAD_SESSION_GET' });
+    },
+    async closeCustomUploadSession() {
+      return send({ type: 'CUSTOM_UPLOAD_SESSION_CLOSE' });
+    },
+    onCustomUploadSessionOpen(cb: (session: CustomUploadSession) => void) {
+      const listener = (msg: Event) => {
+        if (msg?.type === 'CUSTOM_UPLOAD_SESSION_OPEN') cb(msg.payload);
+      };
+      chrome.runtime.onMessage.addListener(listener);
+      return () => chrome.runtime.onMessage.removeListener(listener);
+    },
     async login(username: string, password: string) {
       return send({ type: 'AUTH_LOGIN', payload: { username, password } });
     },

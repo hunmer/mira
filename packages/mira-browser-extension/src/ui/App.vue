@@ -20,6 +20,8 @@ import ServerManagerView from '@/ui/components/server/ServerManagerView.vue';
 import DialogHost from '@/ui/components/ui/DialogHost.vue';
 import ImageHovercard from '@/ui/components/ui/ImageHovercard.vue';
 import ImageViewer from '@/ui/components/ui/ImageViewer.vue';
+import CustomUploadView from '@/ui/components/dragdrop/CustomUploadView.vue';
+import type { CustomUploadSession } from '@/shared/messages';
 
 const { t } = useI18n();
 const props = defineProps<{ containerMode: 'popup' | 'sidePanel' }>();
@@ -30,6 +32,8 @@ const activeTab = ref('folders');
 const screenshotOpen = ref(false);
 const showServerManager = ref(false);
 const showSettings = ref(false);
+const customUploadSession = ref<CustomUploadSession | null>(null);
+let offCustomUploadSession: (() => void) | null = null;
 
 // 启动时先处于 connecting(自动登录中),避免登录界面一闪而过
 const booting = ref(true);
@@ -50,6 +54,10 @@ const unwatchSystem = watchSystemTheme(resolved => {
 });
 
 onMounted(async () => {
+  if (props.containerMode === 'sidePanel') {
+    offCustomUploadSession = bg.onCustomUploadSessionOpen(session => { customUploadSession.value = session; });
+    customUploadSession.value = await bg.getCustomUploadSession();
+  }
   await load();
   // 多服务器迁移:旧版只有顶层 serverURL → 首条服务器(幂等)
   settings.value = await migrateServersIfNeeded(settings.value);
@@ -75,6 +83,7 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
+  offCustomUploadSession?.();
   unwatchSystem();
   // popup/side panel 关闭时清掉定时器,避免残留探活请求
   stopHealthCheck();
@@ -87,8 +96,13 @@ function onConnected() {
 
 <template>
   <div class="app" :class="containerMode">
+    <CustomUploadView
+      v-if="containerMode === 'sidePanel' && customUploadSession && !booting && authenticated && !needsLibrary"
+      :session="customUploadSession"
+      @close="customUploadSession = null"
+    />
     <!-- 启动自动登录中:显示 loading,避免登录界面一闪而过 -->
-    <div v-if="booting" class="booting">{{ t('app.connecting') }}</div>
+    <div v-else-if="booting" class="booting">{{ t('app.connecting') }}</div>
     <ConnectionForm v-else-if="!authenticated" @connected="onConnected" />
 
     <!-- 未选素材库:整页卡片选择网格(无 header / tabs / 底部栏) -->

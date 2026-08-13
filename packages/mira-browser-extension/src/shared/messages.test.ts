@@ -10,6 +10,11 @@ describe('messages 类型守卫', () => {
       type: 'UPLOAD_FILES',
       payload: { files: [], libraryId: 'lib1' },
     })).toBe(true);
+    expect(isRequest({
+      type: 'CUSTOM_UPLOAD_SIDEPANEL_OPEN',
+      payload: { sourceUrl: 'https://example.com/a.jpg', kind: 'image', referrer: 'https://example.com' },
+    })).toBe(true);
+    expect(isRequest({ type: 'CUSTOM_UPLOAD_SESSION_GET' })).toBe(true);
   });
 
   it('isRequest 识别多服务器 Request', () => {
@@ -52,6 +57,10 @@ describe('messages 类型守卫', () => {
     expect(isEvent({
       type: 'UPLOAD_PROGRESS',
       payload: { id: 't1', percent: 50, status: 'uploading' },
+    })).toBe(true);
+    expect(isEvent({
+      type: 'CUSTOM_UPLOAD_SESSION_OPEN',
+      payload: { sourceUrl: 'https://example.com/a.jpg', kind: 'image', referrer: 'https://example.com' },
     })).toBe(true);
   });
 });
