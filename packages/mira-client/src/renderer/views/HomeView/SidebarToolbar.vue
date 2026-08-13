@@ -19,12 +19,21 @@ import {
 import SidebarLayoutDialog from './SidebarLayoutDialog.vue'
 import { useToast } from '@/renderer/composables/useToast'
 import { useUrlImportStore } from '@/renderer/stores/urlImport'
+import { useMediaStore } from '@/renderer/stores/media'
+import { useMediaQuery } from '@vueuse/core'
 import type { LocalFsNode } from '../../../shared/types'
 
 defineOptions({ name: 'SidebarToolbar' })
 
 const { t } = useI18n()
 const urlImportStore = useUrlImportStore()
+const mediaStore = useMediaStore()
+const isMobile = useMediaQuery('(max-width: 767px)')
+
+/** 移动端抽屉内打开对话框前，先关闭左侧抽屉 */
+function closeDrawerIfMobile() {
+  if (isMobile.value) mediaStore.showLeftSidebar = false
+}
 
 const emit = defineEmits<{
   /** 打开文件上传对话框 */
@@ -47,6 +56,7 @@ const layoutDialogOpen = ref(false)
  */
 async function handleImportFolder() {
   if (isImporting.value) return
+  closeDrawerIfMobile()
   isImporting.value = true
   try {
     const dirRes = await window.electronAPI.fs.selectDirectory(t('views.sidebarToolbar.selectImportFolder'))
@@ -71,6 +81,30 @@ async function handleImportFolder() {
     isImporting.value = false
   }
 }
+
+/** 上传文件：关闭抽屉后抛事件给父级打开对话框 */
+function handleUpload() {
+  closeDrawerIfMobile()
+  emit('upload')
+}
+
+/** 从 URL 导入：关闭抽屉后打开 URL 导入对话框 */
+function handleUrlImport() {
+  closeDrawerIfMobile()
+  urlImportStore.open()
+}
+
+/** 文件夹管理：关闭抽屉后抛事件给父级 */
+function handleManageFolders() {
+  closeDrawerIfMobile()
+  emit('manageFolders')
+}
+
+/** 标签管理：关闭抽屉后抛事件给父级 */
+function handleManageTags() {
+  closeDrawerIfMobile()
+  emit('manageTags')
+}
 </script>
 
 <template>
@@ -89,7 +123,7 @@ async function handleImportFolder() {
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" class="w-40">
-        <DropdownMenuItem @click="emit('upload')">
+        <DropdownMenuItem @click="handleUpload">
           <span class="material-icons text-base mr-2">upload_file</span>
           <span>{{ $t('views.sidebarToolbar.uploadFile') }}</span>
         </DropdownMenuItem>
@@ -97,7 +131,7 @@ async function handleImportFolder() {
           <span class="material-icons text-base mr-2">folder_open</span>
           <span>{{ $t('views.sidebarToolbar.importFolder') }}</span>
         </DropdownMenuItem>
-        <DropdownMenuItem @click="urlImportStore.open()">
+        <DropdownMenuItem @click="handleUrlImport">
           <span class="material-icons text-base mr-2">cloud_download</span>
           <span>{{ $t('business.homeHeader.importFromUrl') }}</span>
         </DropdownMenuItem>
@@ -108,7 +142,7 @@ async function handleImportFolder() {
     <button
       class="flex h-8 w-8 items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       :title="$t('views.sidebarToolbar.manageFolders')"
-      @click="emit('manageFolders')"
+      @click="handleManageFolders"
     >
       <span class="material-icons leading-none" style="font-size: 18px">drive_file_move</span>
     </button>
@@ -117,7 +151,7 @@ async function handleImportFolder() {
     <button
       class="flex h-8 w-8 items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       :title="$t('views.sidebarToolbar.manageTags')"
-      @click="emit('manageTags')"
+      @click="handleManageTags"
     >
       <span class="material-icons leading-none" style="font-size: 18px">sell</span>
     </button>
