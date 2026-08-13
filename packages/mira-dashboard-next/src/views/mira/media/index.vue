@@ -2,6 +2,7 @@
 import { useI18n } from 'vue-i18n'
 import ThumbnailCard from './ThumbnailCard.vue'
 import MetadataCard from './MetadataCard.vue'
+import DatabaseScanCard from './DatabaseScanCard.vue'
 
 const { t } = useI18n()
 </script>
@@ -14,5 +15,6 @@ const { t } = useI18n()
     </div>
     <ThumbnailCard />
     <MetadataCard />
+    <DatabaseScanCard />
   </div>
 </template>

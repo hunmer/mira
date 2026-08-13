@@ -146,6 +146,9 @@ export function createRouter(deps: RouterDeps): RequestHandler {
           const settings = await getSettings();
           const items: (File | string)[] = new Array(req.payload.items.length);
           const indexedItems = req.payload.items.map((item, index) => ({ item, index }));
+          const total = indexedItems.length;
+          let fetched = 0;
+          broadcast({ type: 'BATCH_PROGRESS', payload: { phase: 'upload', done: 0, total, stage: 'fetch' } });
           await runConcurrent(indexedItems, settings.batchImportConcurrency, async ({ item, index }) => {
             let importedFile: File | undefined;
             for (const url of item.urls) {
@@ -160,7 +163,11 @@ export function createRouter(deps: RouterDeps): RequestHandler {
               }
             }
             items[index] = importedFile ?? item.fallbackUrl;
+            fetched++;
+            broadcast({ type: 'BATCH_PROGRESS', payload: { phase: 'upload', done: fetched, total, stage: 'fetch' } });
           });
+          // 所有文件抓取完毕,进入服务端上传阶段(整批一次请求,无逐项进度)
+          broadcast({ type: 'BATCH_PROGRESS', payload: { phase: 'upload', done: total, total, stage: 'finish' } });
           return client.files().batchImport(items, req.payload.libraryId, { folderId: req.payload.folderId });
         });
       case 'UPLOAD_STATUS':
@@ -185,7 +192,10 @@ export function createRouter(deps: RouterDeps): RequestHandler {
         // 多文件:逐个 fetch(host_permissions 覆盖跨域)→ zip 打包 → 下载
         const { zipSync } = await import('fflate');
         const files: Record<string, Uint8Array> = {};
+        const total = items.length;
         let ok = 0;
+        let processed = 0;
+        broadcast({ type: 'BATCH_PROGRESS', payload: { phase: 'download', done: 0, total, stage: 'fetch' } });
         for (const item of items) {
           try {
             const res = await fetchResource(item.url, item.referrer);
@@ -208,11 +218,15 @@ export function createRouter(deps: RouterDeps): RequestHandler {
             dbg.warn('download', 'resource skipped', { url: item.url, filename: item.filename, error });
             // 单个失败不阻断整体打包
           }
+          processed++;
+          broadcast({ type: 'BATCH_PROGRESS', payload: { phase: 'download', done: processed, total, stage: 'fetch' } });
         }
         if (ok === 0) {
           dbg.error('download', 'all resources failed', { count: items.length });
           return { success: false, error: 'no resource fetched' };
         }
+        // 所有文件抓取完毕,进入 zip 打包阶段(同步,无逐项进度)
+        broadcast({ type: 'BATCH_PROGRESS', payload: { phase: 'download', done: total, total, stage: 'finish' } });
         const zipped = zipSync(files);
         // service worker 里 createObjectURL 可用;blob 传给 downloads API
         const blob = new Blob([zipped], { type: 'application/zip' });

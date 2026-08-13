@@ -281,7 +281,7 @@ export class PluginRoutes {
                     stdio: 'pipe',
                     env,
                     shell: true,
-                    timeout: 60000
+                  timeout: 300000
                 });
 
                 let output = '';
@@ -291,8 +291,8 @@ export class PluginRoutes {
                 const timeoutId = setTimeout(() => {
                     isTimedOut = true;
                     npmProcess.kill('SIGTERM');
-                    console.error('npm install timeout after 60 seconds');
-                }, 60000);
+                  console.error('npm install timeout after 300 seconds');
+                }, 1000 * 60 * 5);
 
                 npmProcess.stdout.on('data', (data: Buffer) => {
                     output += data.toString();
@@ -362,6 +362,141 @@ export class PluginRoutes {
             } catch (error) {
                 console.error('Error installing plugin:', error);
                 res.status(500).json({ error: 'Failed to install plugin' });
+            }
+        });
+
+        // 安装插件（SSE 流式, --verbose 实时推送 stdout/stderr, 供前端终端组件展示）
+        this.router.get('/install/stream', async (req: Request, res: Response) => {
+            const name = (req.query.name as string) || '';
+            const version = (req.query.version as string) || 'latest';
+            const libraryId = (req.query.libraryId as string) || '';
+            const proxy = req.query.proxy as string | undefined;
+            const npmSource = req.query.npmSource as string | undefined;
+            const registry = req.query.registry as string | undefined;
+
+            // SSE 响应头
+            res.writeHead(200, {
+                'Content-Type': 'text/event-stream',
+                'Cache-Control': 'no-cache, no-transform',
+                'Connection': 'keep-alive',
+                'X-Accel-Buffering': 'no',
+            });
+            const send = (data: any) => res.write(`data: ${JSON.stringify(data)}\n\n`);
+
+            // 周期性心跳, 避免代理空闲断连
+            const heartbeat = setInterval(() => res.write(': ping\n\n'), 15000);
+
+            // 客户端断开: 停止心跳, 后续通过 killed 标志避免再写入已关闭的 res
+            let clientGone = false;
+            req.on('close', () => {
+                clientGone = true;
+                clearInterval(heartbeat);
+            });
+
+            if (!name || !libraryId) {
+                send({ type: 'error', message: 'Plugin name and libraryId are required' });
+                clearInterval(heartbeat);
+                return res.end();
+            }
+
+            const validation = this.validateLibrary(libraryId);
+            if (!validation.valid) {
+                send({ type: 'error', message: validation.error });
+                clearInterval(heartbeat);
+                return res.end();
+            }
+
+            try {
+                const library = validation.library!;
+                const pluginsDir = library.pluginManager!.pluginsDir;
+                if (!fs.existsSync(pluginsDir)) {
+                    fs.mkdirSync(pluginsDir, { recursive: true });
+                }
+
+                const packageName = version === 'latest' ? name : `${name}@${version}`;
+
+                const env = { ...process.env };
+                if (proxy) {
+                    env.HTTP_PROXY = proxy;
+                    env.HTTPS_PROXY = proxy;
+                } else if (!env.HTTP_PROXY && !env.HTTPS_PROXY) {
+                    env.HTTP_PROXY = 'http://127.0.0.1:7890';
+                    env.HTTPS_PROXY = 'http://127.0.0.1:7890';
+                }
+
+                const registryMap: Record<string, string> = {
+                    npmmirror: 'https://registry.npmmirror.com',
+                    npm: 'https://registry.npmjs.org',
+                };
+                const useRegistry = registry || registryMap[npmSource || 'npmmirror'] || registryMap.npmmirror;
+
+                send({ type: 'info', message: `$ npm init -y` });
+                spawnSync('npm', ['init', '-y'], { cwd: pluginsDir, stdio: 'pipe', shell: true });
+
+                send({ type: 'info', message: `$ npm install ${packageName} --save --verbose --registry ${useRegistry}` });
+
+                const npmProcess = spawn('npm', ['install', packageName, '--save', '--verbose', '--registry', useRegistry], {
+                    cwd: pluginsDir,
+                    stdio: 'pipe',
+                    env,
+                    shell: true,
+                });
+
+                // 客户端中途断开则杀掉 npm, 避免后台僵尸进程
+                req.on('close', () => {
+                    try { npmProcess.kill('SIGTERM'); } catch { /* already exited */ }
+                });
+
+                npmProcess.stdout.on('data', (data: Buffer) => {
+                    if (!clientGone) send({ type: 'stdout', text: data.toString() });
+                });
+                npmProcess.stderr.on('data', (data: Buffer) => {
+                    if (!clientGone) send({ type: 'stderr', text: data.toString() });
+                });
+
+                npmProcess.on('error', (err: Error) => {
+                    if (clientGone) return;
+                    send({ type: 'error', message: err.message });
+                });
+
+                npmProcess.on('close', async (code: number) => {
+                    clearInterval(heartbeat);
+                    if (clientGone) return; // 客户端已断开, 无需响应
+
+                    if (code === 0) {
+                        try {
+                            const pluginDir = path.join(pluginsDir, 'node_modules', name);
+                            let packageInfo: any = {};
+                            const packageJsonPath = path.join(pluginDir, 'package.json');
+                            if (fs.existsSync(packageJsonPath)) {
+                                packageInfo = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+                            }
+                            await library.pluginManager!.addPlugin({
+                                name,
+                                enabled: false,
+                                path: `node_modules/${name}`,
+                                registry: useRegistry,
+                            });
+                            send({
+                                type: 'done',
+                                success: true,
+                                message: `✓ ${name}@${packageInfo.version || version} 安装成功`,
+                                plugin: { name, version: packageInfo.version || version, ...packageInfo },
+                            });
+                        } catch (e) {
+                            send({ type: 'done', success: false, message: 'Plugin installed but configuration failed' });
+                        }
+                    } else {
+                        send({ type: 'done', success: false, message: `npm install 失败 (exit code ${code})` });
+                    }
+                    res.end();
+                });
+            } catch (error) {
+                clearInterval(heartbeat);
+                if (!clientGone) {
+                    send({ type: 'error', message: (error as Error).message || 'Failed to install plugin' });
+                    res.end();
+                }
             }
         });
 

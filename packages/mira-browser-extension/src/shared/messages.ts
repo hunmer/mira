@@ -83,7 +83,9 @@ export type Request =
 export type Event =
   | { type: 'UPLOAD_PROGRESS'; payload: { id: string; percent: number; status: UploadStatus } }
   | { type: 'SNIFFER_FOUND'; payload: { tabId: number; resources: SniffedResource[] } }
-  | { type: 'AUTH_EXPIRED' };
+  | { type: 'AUTH_EXPIRED' }
+  // 批量上传/下载进度(phase 区分方向,stage 区分「抓取」与「收尾上传/打包」)
+  | { type: 'BATCH_PROGRESS'; payload: { phase: 'upload' | 'download'; done: number; total: number; stage: 'fetch' | 'finish' } };
 
 /**
  * service worker → content script(经 chrome.tabs.sendMessage,带 tabId)
@@ -118,7 +120,7 @@ const COMMAND_TYPES = new Set<ContentCommand['type']>([
 ]);
 
 const EVENT_TYPES = new Set<Event['type']>([
-  'UPLOAD_PROGRESS', 'SNIFFER_FOUND', 'AUTH_EXPIRED',
+  'UPLOAD_PROGRESS', 'SNIFFER_FOUND', 'AUTH_EXPIRED', 'BATCH_PROGRESS',
 ]);
 
 export function isRequest(m: unknown): m is Request {

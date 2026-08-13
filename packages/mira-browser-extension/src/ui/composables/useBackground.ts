@@ -107,6 +107,14 @@ export function useBackground() {
       chrome.runtime.onMessage.addListener(listener);
       return () => chrome.runtime.onMessage.removeListener(listener);
     },
+    /** 批量上传/下载进度(phase=方向,stage=阶段,done/total=进度) */
+    onBatchProgress(cb: (p: { phase: 'upload' | 'download'; done: number; total: number; stage: 'fetch' | 'finish' }) => void) {
+      const listener = (msg: Event) => {
+        if (msg?.type === 'BATCH_PROGRESS') cb(msg.payload);
+      };
+      chrome.runtime.onMessage.addListener(listener);
+      return () => chrome.runtime.onMessage.removeListener(listener);
+    },
     onSnifferFound(cb: (tabId: number, resources: SniffedResource[]) => void) {
       const listener = (msg: Event) => {
         if (msg?.type === 'SNIFFER_FOUND') cb(msg.payload.tabId, msg.payload.resources);

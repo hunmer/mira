@@ -13,6 +13,15 @@ export const fileManagerApi = {
   sync(libraryId: string) {
     return client.post('/fs/sync', { libraryId })
   },
+  scanMissing(libraryId: string) {
+    return client.get('/fs/database/missing', { params: { libraryId } })
+  },
+  clearMissing(libraryId: string) {
+    return client.delete('/fs/database/missing', { data: { libraryId } })
+  },
+  findNewFiles(libraryId: string) {
+    return client.post('/fs/database/new', { libraryId })
+  },
   download(data: { libraryId: string; paths: string[] }) {
     return client.post('/fs/download', data, { responseType: 'blob' })
   },

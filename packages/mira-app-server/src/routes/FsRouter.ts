@@ -16,6 +16,12 @@ interface FileEntry {
     extension?: string;
 }
 
+interface DatabaseFileEntry {
+    id: number;
+    name: string;
+    path: string;
+}
+
 export class FsRouter {
     private router: Router;
     private backend?: MiraServer;
@@ -252,6 +258,66 @@ export class FsRouter {
             }
         });
 
+        // 扫描数据库中已不存在于磁盘的文件记录
+        this.router.get('/database/missing', async (req: Request, res: Response) => {
+            try {
+                const context = this.getActiveLibraryContext(req.query.libraryId as string);
+                if (!context) {
+                    res.status(400).json({ error: 'Invalid libraryId or library not active' });
+                    return;
+                }
+
+                const files = await this.findMissingDatabaseFiles(context.dbService);
+                res.json({ success: true, data: files });
+            } catch (error: any) {
+                res.status(500).json({ error: error.message || 'Failed to scan missing files' });
+            }
+        });
+
+        // 清空数据库中已不存在于磁盘的文件记录
+        this.router.delete('/database/missing', async (req: Request, res: Response) => {
+            try {
+                const context = this.getActiveLibraryContext(req.body.libraryId);
+                if (!context) {
+                    res.status(400).json({ error: 'Invalid libraryId or library not active' });
+                    return;
+                }
+
+                const files = await this.findMissingDatabaseFiles(context.dbService);
+                let removed = 0;
+                for (const file of files) {
+                    if (await context.dbService.deleteFile(file.id)) removed++;
+                }
+                res.json({ success: true, data: { removed } });
+            } catch (error: any) {
+                res.status(500).json({ error: error.message || 'Failed to clear missing files' });
+            }
+        });
+
+        // 自动同步关闭时，手动查找并导入磁盘中的新文件
+        this.router.post('/database/new', async (req: Request, res: Response) => {
+            try {
+                const context = this.getActiveLibraryContext(req.body.libraryId);
+                if (!context) {
+                    res.status(400).json({ error: 'Invalid libraryId or library not active' });
+                    return;
+                }
+                if (context.customFields?.enableAutoSync ?? true) {
+                    res.status(409).json({ error: 'Disable auto sync before finding new files' });
+                    return;
+                }
+
+                const files = await this.importNewDiskFiles(
+                    context.libraryPath,
+                    context.dbService,
+                    context.customFields,
+                );
+                res.json({ success: true, data: files });
+            } catch (error: any) {
+                res.status(500).json({ error: error.message || 'Failed to find new files' });
+            }
+        });
+
         // 批量下载：单文件直接下原文件，多文件/含目录打包成 zip
         this.router.post('/download', async (req: Request, res: Response) => {
             try {
@@ -356,6 +422,50 @@ export class FsRouter {
             const rel = path.relative(libraryPath, p).replace(/\\/g, '/');
             return shouldSync(rel);
         });
+    }
+
+    private getActiveLibraryContext(libraryId: string | undefined): {
+        dbService: LibraryServerDataSQLite;
+        libraryPath: string;
+        customFields: Record<string, any> | undefined;
+    } | null {
+        if (!libraryId) return null;
+        const lib = this.backend?.libraries?.getLibrary(libraryId);
+        const dbService = lib?.libraryService as LibraryServerDataSQLite | undefined;
+        const libraryPath = this.getLibraryPath(libraryId);
+        if (!dbService || !libraryPath) return null;
+        return { dbService, libraryPath, customFields: dbService.config.customFields };
+    }
+
+    private async findMissingDatabaseFiles(dbService: LibraryServerDataSQLite): Promise<DatabaseFileEntry[]> {
+        const rows = await dbService.getSql('SELECT id, name, path FROM files WHERE recycled = 0 ORDER BY id DESC', []);
+        const missing: DatabaseFileEntry[] = [];
+        for (const row of rows as DatabaseFileEntry[]) {
+            if (!await fileExists(row.path)) missing.push(row);
+        }
+        return missing;
+    }
+
+    private async importNewDiskFiles(
+        libraryPath: string,
+        dbService: LibraryServerDataSQLite,
+        customFields: Record<string, any> | undefined,
+    ): Promise<DatabaseFileEntry[]> {
+        const diskFiles = await this.scanDiskFiles(libraryPath, customFields);
+        const rows: Array<{ path: string }> = await dbService.getSql('SELECT path FROM files', []);
+        const dbPathSet = new Set(rows.map(row => row.path));
+        const added: DatabaseFileEntry[] = [];
+
+        for (const filePath of diskFiles) {
+            if (dbPathSet.has(filePath)) continue;
+            const fileData: Record<string, any> = {};
+            const folderId = await this.resolveFolder(filePath, libraryPath, dbService);
+            if (folderId) fileData.folder_id = folderId;
+            const file = await dbService.createFileFromPath(filePath, fileData, { importType: 'link' });
+            if (file.duplicate) continue;
+            added.push({ id: Number(file.id), name: file.name, path: file.path });
+        }
+        return added;
     }
 
     private async syncLibrary(

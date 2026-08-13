@@ -24,6 +24,23 @@ const activeTabId = ref(0);
 const tabReady = ref(false);
 const { resources, load, start, stop } = useSniffer(() => tabIdRef.value);
 
+// ---- 批量操作进度(由后台 BATCH_PROGRESS 事件驱动) ----
+type BatchProgress = { phase: 'upload' | 'download'; done: number; total: number; stage: 'fetch' | 'finish' };
+const progress = ref<BatchProgress | null>(null);
+let offBatchProgress: (() => void) | undefined;
+const progressPct = computed(() => {
+  if (!progress.value || !progress.value.total) return 0;
+  return Math.min(100, Math.round((progress.value.done / progress.value.total) * 100));
+});
+const progressText = computed(() => {
+  const p = progress.value;
+  if (!p) return '';
+  if (p.stage === 'finish') {
+    return p.phase === 'upload' ? t('sniffer.progressUploading') : t('sniffer.progressZipping');
+  }
+  return t(p.phase === 'upload' ? 'sniffer.progressFetching' : 'sniffer.progressDownloading', { done: p.done, total: p.total });
+});
+
 // ---- 自动滚动 popover ----
 // 嗅探滚动加载场景:在当前页面按设定间隔自动向下滚动,触发懒加载后嗅探到更多资源。
 const autoScrollOpen = ref(false);
@@ -104,6 +121,7 @@ onMounted(async () => {
   if (settings.value.snifferEnabled) {
     await refreshTarget();
   }
+  offBatchProgress = bg.onBatchProgress(p => { progress.value = p; });
 });
 
 const onActivated = (activeInfo: chrome.tabs.TabActiveInfo) => {
@@ -116,6 +134,7 @@ const onActivated = (activeInfo: chrome.tabs.TabActiveInfo) => {
 chrome.tabs.onActivated.addListener(onActivated);
 onUnmounted(() => {
   chrome.tabs.onActivated.removeListener(onActivated);
+  offBatchProgress?.();
   // 离开嗅探视图时若还在滚动,停掉(popup 关闭后 content script 的滚动也会因 tab 切换自停,
   // 但显式停止让状态一致)
   if (autoScrollRunning.value) void stopAutoScroll();
@@ -257,13 +276,17 @@ async function uploadSelected() {
       dbg.log('sniffer', 'upload selected maxurl skipped', { url: r.url, imuEnabled: settings.value.imuEnabled, tabId: r.tabId });
     }
   });
-  await bg.batchImport(targets.map(r => ({
-    urls: importCandidates.get(r.id)!,
-    fallbackUrl: r.url,
-    filename: filenameOf(r),
-    referrer: r.referrer || r.pageUrl,
-  })), settings.value.libraryId);
-  selected.value.clear();
+  try {
+    await bg.batchImport(targets.map(r => ({
+      urls: importCandidates.get(r.id)!,
+      fallbackUrl: r.url,
+      filename: filenameOf(r),
+      referrer: r.referrer || r.pageUrl,
+    })), settings.value.libraryId);
+    selected.value.clear();
+  } finally {
+    progress.value = null;
+  }
 }
 
 /** url 末段当文件名;解码失败回退 resource */
@@ -281,8 +304,12 @@ async function downloadSelected() {
     filename: filenameOf(r),
     referrer: r.referrer || r.pageUrl,
   }));
-  await bg.downloadResources(items);
-  selected.value.clear();
+  try {
+    await bg.downloadResources(items);
+    selected.value.clear();
+  } finally {
+    progress.value = null;
+  }
 }
 </script>
 
@@ -475,9 +502,19 @@ async function downloadSelected() {
       <span>{{ settings.snifferEnabled ? t('sniffer.empty') : t('sniffer.emptyOff') }}</span>
       <span class="hint">{{ settings.snifferEnabled ? t('sniffer.emptyHint') : t('sniffer.emptyOffHint') }}</span>
     </div>
-    <div v-if="selected.size" class="actions">
-      <Button @click="uploadSelected">{{ t('sniffer.uploadSelected', { n: selected.size }) }}</Button>
-      <Button variant="ghost" @click="downloadSelected">{{ t('sniffer.downloadSelected', { n: selected.size }) }}</Button>
+    <div v-if="selected.size || progress" class="actions">
+      <template v-if="progress">
+        <div class="batch-progress">
+          <span class="bp-text">{{ progressText }}</span>
+          <div class="bp-bar" :class="{ indeterminate: progress.stage === 'finish' }">
+            <div class="bp-fill" :style="{ width: progressPct + '%' }" />
+          </div>
+        </div>
+      </template>
+      <template v-else>
+        <Button @click="uploadSelected">{{ t('sniffer.uploadSelected', { n: selected.size }) }}</Button>
+        <Button variant="ghost" @click="downloadSelected">{{ t('sniffer.downloadSelected', { n: selected.size }) }}</Button>
+      </template>
     </div>
   </div>
 </template>
@@ -514,6 +551,19 @@ async function downloadSelected() {
 
 /* 底部选中操作栏 */
 .actions { display: flex; gap: 8px; padding: 8px 12px; border-top: 1px solid var(--border); }
+
+/* 批量操作进度条 */
+.batch-progress { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.bp-text { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.bp-bar { height: 4px; background: var(--border); border-radius: 9999px; overflow: hidden; }
+.bp-fill { height: 100%; background: var(--primary); border-radius: 9999px; transition: width 0.2s ease; }
+/* finish 阶段无逐项进度,显示 indeterminate 滑动条 */
+.bp-bar.indeterminate { position: relative; }
+.bp-bar.indeterminate .bp-fill { width: 40% !important; animation: bp-slide 1s ease-in-out infinite; }
+@keyframes bp-slide {
+  0% { margin-left: -40%; }
+  100% { margin-left: 100%; }
+}
 
 /* 视图切换 segmented 控件 */
 .view-toggle { display: inline-flex; gap: 0; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }

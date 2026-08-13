@@ -99,10 +99,16 @@ export function useConnection() {
     dbg.info('conn', 'switchServer', { id, serverURL: target.serverURL });
     status.value = 'connecting';
     try {
-      await bg.activateServer(id);
+      // activateServer 返回含新 activeServerId 的 settings,写回以同步 activeServer computed
+      settings.value = await bg.activateServer(id);
       await bg.login(target.username, target.password);
       status.value = 'connected';
       await refreshLibraries();
+      // 切到新服务器后,旧 libraryId 在新服务器多半不存在 → 清空以触发素材库重选
+      const lid = settings.value.libraryId;
+      if (lid && !libraries.value.some(l => l.id === lid)) {
+        await update({ libraryId: '' });
+      }
       return true;
     } catch (e: any) {
       dbg.warn('conn', 'switchServer failed', e?.message);

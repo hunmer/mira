@@ -25,13 +25,14 @@ export function useServers() {
   async function add(input: Omit<ServerConfig, 'id'>): Promise<ServerConfig> {
     const server: ServerConfig = { id: newServerId(), ...input };
     const next = [...settings.value.servers, server];
-    await bg.saveServers(next);
+    // saveServers 返回最新 settings,写回以触发 servers computed 更新(否则列表不刷新)
+    settings.value = await bg.saveServers(next);
     return server;
   }
 
   async function edit(id: string, patch: Partial<Omit<ServerConfig, 'id'>>): Promise<void> {
     const next = settings.value.servers.map(s => (s.id === id ? { ...s, ...patch } : s));
-    await bg.saveServers(next);
+    settings.value = await bg.saveServers(next);
     // 若改的是激活服务器,同步顶层兼容字段,保证 ensureClient 用新地址
     if (id === settings.value.activeServerId && (patch.serverURL || patch.username || patch.password)) {
       const cur = next.find(s => s.id === id);
@@ -41,11 +42,11 @@ export function useServers() {
 
   async function remove(id: string): Promise<void> {
     const next = settings.value.servers.filter(s => s.id !== id);
-    await bg.saveServers(next);
+    settings.value = await bg.saveServers(next);
     // 删的是激活服务器:自动切到第一个;无服务器则清空激活
     if (id === settings.value.activeServerId) {
       if (next.length) {
-        await bg.activateServer(next[0].id);
+        settings.value = await bg.activateServer(next[0].id);
       } else {
         await update({ activeServerId: '', serverURL: '', username: '', password: '' });
       }

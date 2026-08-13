@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import InstallTerminalDialog from './InstallTerminalDialog.vue'
 import { useConfirmDialog } from '@/composables/useConfirmDialog'
 import { toast } from 'vue-sonner'
 import {
@@ -236,19 +237,26 @@ async function uninstallPlugin(plugin: Plugin) {
 }
 
 const installingName = ref<string | null>(null)
+
+// 终端式安装对话框: 点击安装后弹出, 通过 SSE 实时展示 --verbose 输出
+const terminalOpen = ref(false)
+const terminalTarget = ref<{ name: string; libraryId: string; registry?: string } | null>(null)
+
 async function installFromStore(name: string, registry?: string) {
   if (!activeTab.value || installingName.value) return
   installingName.value = name
-  try {
-    await pluginApi.install({ name, libraryId: activeTab.value, registry })
-    toast.success(t('common.success'))
-    // 不关闭商店, 允许继续安装其他插件; 延后刷新本地列表
-    setTimeout(loadPlugins, 2000)
-  } catch {
-    toast.error(t('common.failed'))
-  } finally {
-    installingName.value = null
+  terminalTarget.value = { name, libraryId: activeTab.value, registry }
+  terminalOpen.value = true
+}
+
+function onTerminalFinish({ success, name }: { success: boolean; name: string }) {
+  if (success) {
+    toast.success(`${name} 安装成功`)
+    setTimeout(loadPlugins, 1000)
+  } else {
+    toast.error(`${name} 安装失败`)
   }
+  installingName.value = null
 }
 
 function openInstallDialog() {
@@ -643,6 +651,17 @@ await loadPlugins()
       @update:open="confirmDialog.open = $event"
       @confirm="confirmDialog.resolve(true)"
       @cancel="confirmDialog.resolve(false)"
+    />
+
+    <!-- Terminal install dialog: SSE 实时展示 npm install --verbose 输出 -->
+    <InstallTerminalDialog
+      v-if="terminalTarget"
+      :open="terminalOpen"
+      :name="terminalTarget.name"
+      :libraryId="terminalTarget.libraryId"
+      :registry="terminalTarget.registry"
+      @update:open="terminalOpen = $event"
+      @finish="onTerminalFinish"
     />
   </div>
 </template>
