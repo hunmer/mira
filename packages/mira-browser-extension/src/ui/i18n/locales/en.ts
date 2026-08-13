@@ -82,7 +82,15 @@ export default {
     imuRulesEditorHint: 'Each rule has name, host, path, and replacement; host/path use regex and replacement supports $1 capture groups.',
     imuRulesReset: 'Restore default rules',
     debugLog: 'Debug log',
-    debugHint: 'When enabled, console outputs [mira-ext][*] detailed logs (screenshot/sniffer/maxurl/download/upload)',
+    debugHint: 'Output [mira-ext][*] logs for the selected categories; warnings and errors are always shown',
+    debugCategory: {
+      drag: 'Drag and injection',
+      sniffer: 'Resource sniffer',
+      transfer: 'Upload and download',
+      capture: 'Screenshot',
+      image: 'HD image resolver',
+      app: 'Interface and connection',
+    },
   },
   sniffer: {
     title: 'Resource sniffer',

@@ -21,6 +21,17 @@ describe('resolveDragSource', () => {
     expect(resolveDragSource(a)).toEqual({ url: img.src, kind: 'image' });
   });
 
+  it('识别可拖拽容器内的图片', () => {
+    const container = document.createElement('div');
+    container.draggable = true;
+    const overlay = document.createElement('span');
+    const img = document.createElement('img');
+    img.src = 'https://i.pinimg.com/originals/photo.jpg';
+    container.append(img, overlay);
+
+    expect(resolveDragSource(overlay)).toEqual({ url: img.src, kind: 'image' });
+  });
+
   it('非媒体元素不显示 Popover', () => {
     expect(resolveDragSource(document.createElement('div'))).toBeNull();
   });

@@ -89,6 +89,10 @@ function ensureDialogStyles() {
 .mira-import-url-row .remove-btn { background: transparent; border: none; color: #a1a1aa; cursor: pointer; padding: 0 6px; font-size: 16px; line-height: 1; }
 .mira-import-url-row .remove-btn:hover { color: #f87171; }
 .mira-import-empty { color: #71717a; font-size: 12px; padding: 8px; text-align: center; }
+.mira-import-two-col { display: flex; gap: 12px; align-items: stretch; }
+.mira-import-two-col > .mira-import-section { flex: 1; min-width: 0; }
+.mira-import-folder-actions { display: flex; gap: 6px; }
+.mira-import-folder-actions > * { flex: 1; justify-content: center; }
 .mira-import-folder-list { display: flex; flex-direction: column; gap: 4px; max-height: 160px; overflow-y: auto; }
 .mira-import-folder-row, .mira-import-folder-new {
   display: flex; align-items: center; gap: 6px; padding: 5px 8px;
@@ -101,7 +105,7 @@ function ensureDialogStyles() {
 .mira-import-folder-new:hover { color: #fafafa; }
 .mira-import-folder-new-form { display: flex; gap: 6px; }
 .mira-import-folder-new-form input { flex: 1; }
-.mira-import-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.mira-import-tags { display: flex; flex-wrap: wrap; gap: 6px; align-content: flex-start; max-height: 200px; overflow-y: auto; }
 .mira-import-tag-chip {
   padding: 3px 10px; border-radius: 9999px; font-size: 12px; cursor: pointer;
   background: #27272a; color: #a1a1aa; border: 1px solid #3f3f46; transition: background .12s, color .12s, border-color .12s;
@@ -120,6 +124,23 @@ function ensureDialogStyles() {
 }
 
 export function openImportDialog(opts: ImportDialogOptions): void {
+  const context = {
+    urlCount: opts.urls.length,
+    documentReadyState: document.readyState,
+    hasDocumentElement: !!document.documentElement,
+    pageUrl: location.href,
+  };
+  dbg.info('import-dialog', 'inject start', context);
+
+  try {
+    mountImportDialog(opts);
+  } catch (error) {
+    dbg.error('import-dialog', 'inject failed', { ...context, error });
+    throw error;
+  }
+}
+
+function mountImportDialog(opts: ImportDialogOptions): void {
   ensureOverlayStyles();
   ensureDialogStyles();
 
@@ -166,19 +187,52 @@ export function openImportDialog(opts: ImportDialogOptions): void {
   urlSection.appendChild(urlList);
   content.appendChild(urlSection);
 
-  // 文件夹区
+  // 文件夹 + 标签 两栏区
+  const twoCol = document.createElement('div');
+  twoCol.className = 'mira-import-two-col';
+
+  // 文件夹栏
   const folderSection = document.createElement('div');
   folderSection.className = 'mira-import-section';
   const folderLabel = document.createElement('div');
   folderLabel.className = 'mira-import-section-label';
   folderLabel.textContent = '文件夹(可选)';
   folderSection.appendChild(folderLabel);
+  // 顶部操作行:「不使用文件夹」+「新建文件夹」各占一半
+  const folderActions = document.createElement('div');
+  folderActions.className = 'mira-import-folder-actions';
+  const noneBtn = document.createElement('div');
+  noneBtn.className = 'mira-import-folder-row';
+  noneBtn.innerHTML = '<span class="icon">📂</span><span>不使用文件夹</span>';
+  const newBtn = document.createElement('div');
+  newBtn.className = 'mira-import-folder-new';
+  newBtn.innerHTML = '<span class="icon">➕</span><span>新建文件夹</span>';
+  folderActions.appendChild(noneBtn);
+  folderActions.appendChild(newBtn);
+  folderSection.appendChild(folderActions);
+  // 新建文件夹内联表单(默认隐藏)
+  const newFolderForm = document.createElement('div');
+  newFolderForm.className = 'mira-import-folder-new-form';
+  newFolderForm.style.display = 'none';
+  const newFolderInput = document.createElement('input');
+  newFolderInput.type = 'text';
+  newFolderInput.placeholder = '文件夹名称';
+  newFolderInput.value = '新建文件夹';
+  const newFolderOk = document.createElement('button');
+  newFolderOk.textContent = '创建';
+  const newFolderCancel = document.createElement('button');
+  newFolderCancel.className = 'mira-ghost';
+  newFolderCancel.textContent = '取消';
+  newFolderForm.appendChild(newFolderInput);
+  newFolderForm.appendChild(newFolderOk);
+  newFolderForm.appendChild(newFolderCancel);
+  folderSection.appendChild(newFolderForm);
   const folderList = document.createElement('div');
   folderList.className = 'mira-import-folder-list';
   folderSection.appendChild(folderList);
-  content.appendChild(folderSection);
+  twoCol.appendChild(folderSection);
 
-  // 标签区
+  // 标签栏
   const tagSection = document.createElement('div');
   tagSection.className = 'mira-import-section';
   const tagLabel = document.createElement('div');
@@ -188,7 +242,8 @@ export function openImportDialog(opts: ImportDialogOptions): void {
   const tagWrap = document.createElement('div');
   tagWrap.className = 'mira-import-tags';
   tagSection.appendChild(tagWrap);
-  content.appendChild(tagSection);
+  twoCol.appendChild(tagSection);
+  content.appendChild(twoCol);
 
   // 错误信息
   const errLine = document.createElement('div');
@@ -216,6 +271,10 @@ export function openImportDialog(opts: ImportDialogOptions): void {
 
   mask.appendChild(dlg);
   document.documentElement.appendChild(mask);
+  dbg.info('import-dialog', 'DOM mounted', {
+    maskConnected: mask.isConnected,
+    dialogConnected: dlg.isConnected,
+  });
 
   // ---- 渲染逻辑 ----
   function rerenderUrls() {
@@ -265,14 +324,9 @@ export function openImportDialog(opts: ImportDialogOptions): void {
   }
 
   function rerenderFolders() {
+    // 顶部「不使用文件夹」按钮选中态
+    noneBtn.classList.toggle('selected', folderId === undefined);
     folderList.innerHTML = '';
-    // 「不使用文件夹」
-    const none = document.createElement('div');
-    none.className = 'mira-import-folder-row' + (folderId === undefined ? ' selected' : '');
-    none.innerHTML = '<span class="icon">📂</span><span>不使用文件夹</span>';
-    none.addEventListener('click', () => { folderId = undefined; rerenderFolders(); });
-    folderList.appendChild(none);
-
     for (const f of folders) {
       const row = document.createElement('div');
       row.className = 'mira-import-folder-row' + (folderId === f.id ? ' selected' : '');
@@ -286,59 +340,55 @@ export function openImportDialog(opts: ImportDialogOptions): void {
       row.addEventListener('click', () => { folderId = f.id; rerenderFolders(); });
       folderList.appendChild(row);
     }
-
-    // 「➕ 新建文件夹」(展开内联表单)
-    const newWrap = document.createElement('div');
-    newWrap.className = 'mira-import-folder-new';
-    newWrap.innerHTML = '<span class="icon">➕</span><span>新建文件夹</span>';
-    newWrap.addEventListener('click', () => {
-      // 切换为输入表单
-      newWrap.innerHTML = '';
-      newWrap.classList.remove('mira-import-folder-new');
-      newWrap.classList.add('mira-import-folder-new-form');
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.placeholder = '文件夹名称';
-      input.value = '新建文件夹';
-      const ok = document.createElement('button');
-      ok.textContent = '创建';
-      const cancel = document.createElement('button');
-      cancel.className = 'mira-ghost';
-      cancel.textContent = '取消';
-      newWrap.appendChild(input);
-      newWrap.appendChild(ok);
-      newWrap.appendChild(cancel);
-      input.focus();
-      input.select();
-
-      async function doCreate() {
-        const name = input.value.trim();
-        if (!name) return;
-        ok.disabled = true;
-        ok.textContent = '…';
-        try {
-          const id = await opts.createFolder(name);
-          if (id == null) throw new Error('创建失败');
-          // 刷新文件夹列表并选中新建项
-          const fresh = await opts.getFolders();
-          folders = fresh ?? [];
-          folderId = id;
-          rerenderFolders();
-        } catch (e: any) {
-          errLine.textContent = e?.message ?? '创建失败';
-          ok.disabled = false;
-          ok.textContent = '创建';
-        }
-      }
-      ok.addEventListener('click', doCreate);
-      cancel.addEventListener('click', () => rerenderFolders());
-      input.addEventListener('keydown', e => {
-        if (e.key === 'Enter') { e.preventDefault(); doCreate(); }
-        if (e.key === 'Escape') { e.preventDefault(); rerenderFolders(); }
-      });
-    });
-    folderList.appendChild(newWrap);
+    if (!folders.length) {
+      const empty = document.createElement('div');
+      empty.className = 'mira-import-empty';
+      empty.textContent = '暂无文件夹,可点上方「新建文件夹」';
+      folderList.appendChild(empty);
+    }
   }
+
+  // ---- 「不使用文件夹」 / 「新建文件夹」 ----
+  noneBtn.addEventListener('click', () => { folderId = undefined; rerenderFolders(); });
+
+  function showNewFolderForm() {
+    newFolderForm.style.display = 'flex';
+    newFolderOk.disabled = false;
+    newFolderOk.textContent = '创建';
+    newFolderInput.focus();
+    newFolderInput.select();
+  }
+  function hideNewFolderForm() {
+    newFolderForm.style.display = 'none';
+  }
+  newBtn.addEventListener('click', showNewFolderForm);
+  newFolderCancel.addEventListener('click', hideNewFolderForm);
+
+  async function doCreateFolder() {
+    const name = newFolderInput.value.trim();
+    if (!name) return;
+    newFolderOk.disabled = true;
+    newFolderOk.textContent = '…';
+    try {
+      const id = await opts.createFolder(name);
+      if (id == null) throw new Error('创建失败');
+      // 刷新文件夹列表并选中新建项
+      const fresh = await opts.getFolders();
+      folders = fresh ?? [];
+      folderId = id;
+      hideNewFolderForm();
+      rerenderFolders();
+    } catch (e: any) {
+      errLine.textContent = e?.message ?? '创建失败';
+      newFolderOk.disabled = false;
+      newFolderOk.textContent = '创建';
+    }
+  }
+  newFolderOk.addEventListener('click', doCreateFolder);
+  newFolderInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); doCreateFolder(); }
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); hideNewFolderForm(); }
+  });
 
   function rerenderTags() {
     tagWrap.innerHTML = '';
@@ -421,4 +471,31 @@ export function openImportDialog(opts: ImportDialogOptions): void {
   rerenderFolders();
   rerenderTags();
   updateCount();
+
+  requestAnimationFrame(() => {
+    const style = getComputedStyle(dlg);
+    const rect = dlg.getBoundingClientRect();
+    const diagnostics = {
+      maskConnected: mask.isConnected,
+      dialogConnected: dlg.isConnected,
+      display: style.display,
+      visibility: style.visibility,
+      opacity: style.opacity,
+      width: rect.width,
+      height: rect.height,
+    };
+    if (
+      !mask.isConnected
+      || !dlg.isConnected
+      || style.display === 'none'
+      || style.visibility === 'hidden'
+      || style.opacity === '0'
+      || rect.width === 0
+      || rect.height === 0
+    ) {
+      dbg.error('import-dialog', 'inject completed but dialog is not visible', diagnostics);
+      return;
+    }
+    dbg.info('import-dialog', 'inject success', diagnostics);
+  });
 }

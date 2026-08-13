@@ -17,6 +17,21 @@ function appendToken(url: string | undefined): string | undefined {
   const sep = url.includes('?') ? '&' : '?'
   return `${url}${sep}token=${encodeURIComponent(token)}`
 }
+
+function notifyDuplicateUpload(fileName: string): void {
+  const settings = useSettingsStore().settings
+  if (!settings.enableNotifications || !settings.enableImportNotifications) return
+
+  window.electronAPI?.notificationWindow?.show({
+    title: i18n.global.t('services.sdkService.duplicateUploadTitle'),
+    body: i18n.global.t('services.sdkService.duplicateUploadBody', { name: fileName }),
+    type: 'warning',
+    icon: 'content_copy',
+    duration: 6000,
+  }).catch((err: Error) => {
+    console.warn('Failed to show duplicate upload notification:', err.message)
+  })
+}
 import type {
   MiraConnectionConfig,
   LoginCredentials,
@@ -684,7 +699,12 @@ export class MiraSDKService {
     
     try {
       const result = await this.client.files().uploadFile(file, libraryId, metadata)
-      const uploaded = result.results?.[0]
+      const uploaded = result.results?.[0] as (NonNullable<typeof result.results>[number] & {
+        operation?: string
+      }) | undefined
+      if (uploaded?.operation === 'duplicate') {
+        notifyDuplicateUpload(uploaded.result?.name || file.name)
+      }
       if (!uploaded?.success || !uploaded.result) {
         throw new Error(uploaded?.error || 'File upload failed')
       }

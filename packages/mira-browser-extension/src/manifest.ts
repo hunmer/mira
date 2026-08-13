@@ -8,7 +8,7 @@ export default defineManifest({
   description: '截图、拖拽上传、资源嗅探到 Mira 素材库',
   permissions: [
     'activeTab', 'tabs', 'storage', 'scripting',
-    'contextMenus', 'sidePanel', 'offscreen', 'commands', 'downloads',
+    'contextMenus', 'sidePanel', 'offscreen', 'commands', 'downloads', 'notifications',
     'cookies', 'declarativeNetRequestWithHostAccess',
   ],
   host_permissions: ['<all_urls>'],
@@ -39,6 +39,7 @@ export default defineManifest({
   content_scripts: [{
     matches: ['<all_urls>'],
     js: ['src/content/index.ts'],
+    run_at: 'document_idle',
   }],
   commands: {
     'capture-visible': { description: '截图可视区域' },

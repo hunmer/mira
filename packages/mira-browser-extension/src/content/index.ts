@@ -25,27 +25,72 @@ async function getLibraryId(): Promise<string | null> {
   }
 }
 
+// 拖拽浮层不依赖 popup 生命周期:首次请求列表时主动触发后台认证。
+// AUTH_VERIFY 由 background.withAuth 处理,无有效 token 时会按保存凭据自动重登。
+let pendingConnection: Promise<boolean> | null = null;
+async function ensureConnected(): Promise<boolean> {
+  if (!pendingConnection) {
+    pendingConnection = (async () => {
+      const verified = await chrome.runtime.sendMessage({ type: 'AUTH_VERIFY' }).catch(() => null) as any;
+      if (verified?.authenticated === true) {
+        dbg.info('content', 'dragdrop connection check', { ok: true, phase: 'verify' });
+        return true;
+      }
+
+      // popup 的启动流程在 verify 失败后会用保存凭据(无则默认账号)自动登录。
+      // 拖拽浮层没有 popup 生命周期,这里补齐同样的回退。
+      const settings: any = await chrome.runtime.sendMessage({ type: 'CONFIG_GET' }).catch(() => null);
+      const username = settings?.username || 'admin';
+      const password = settings?.password || 'admin123';
+      const login = await chrome.runtime.sendMessage({
+        type: 'AUTH_LOGIN',
+        payload: { username, password },
+      }).catch(() => null) as any;
+      if (!login?.success) {
+        dbg.warn('content', 'dragdrop auto login failed', { error: login?.error });
+        return false;
+      }
+      const retry = await chrome.runtime.sendMessage({ type: 'AUTH_VERIFY' }).catch(() => null) as any;
+      const ok = retry?.authenticated === true;
+      dbg.info('content', 'dragdrop connection check', { ok, phase: 'login' });
+      return ok;
+    })()
+      .catch(e => {
+        dbg.warn('content', 'dragdrop connection check failed', e);
+        return false;
+      })
+      .finally(() => { pendingConnection = null; });
+  }
+  return pendingConnection ?? Promise.resolve(false);
+}
+
 /** 取当前素材库文件夹列表;未连接素材库时返回 null */
 async function fetchFolders(): Promise<Folder[] | null> {
+  if (!await ensureConnected()) return null;
   const libraryId = await getLibraryId();
   if (!libraryId) return null;
   try {
     const res = await chrome.runtime.sendMessage({ type: 'FOLDER_LIST', payload: { libraryId } });
-    return (res as Folder[]) ?? [];
-  } catch {
-    return [];
+    return Array.isArray(res) ? res as Folder[] : null;
+  } catch (e) {
+    // 后台会在未连接/认证失效时尝试自动登录;仍失败时保留 null,
+    // 让拖拽浮层显示未连接状态,而不是误显示为空文件夹列表。
+    dbg.warn('content', 'fetchFolders failed', e);
+    return null;
   }
 }
 
 /** 取当前素材库标签列表;未连接素材库时返回 null */
 async function fetchTags(): Promise<Tag[] | null> {
+  if (!await ensureConnected()) return null;
   const libraryId = await getLibraryId();
   if (!libraryId) return null;
   try {
     const res = await chrome.runtime.sendMessage({ type: 'TAG_LIST', payload: { libraryId } });
-    return (res as Tag[]) ?? [];
-  } catch {
-    return [];
+    return Array.isArray(res) ? res as Tag[] : null;
+  } catch (e) {
+    dbg.warn('content', 'fetchTags failed', e);
+    return null;
   }
 }
 
@@ -77,15 +122,17 @@ const sniffer = createSniffer(resources => {
 
 // 拖拽上传:发给 service worker
 const dragdrop = createDragDrop({
-  // 取当前素材库的文件夹列表(用于拖放浮层右侧目录)
+  // 取当前素材库的文件夹列表(用于拖放浮层左侧目录)
   getFolders: fetchFolders,
+  // 取当前素材库的标签列表(用于拖放浮层右侧标签 drop zones)
+  getTags: fetchTags,
   // 「➕ 新建文件夹」drop zone 调用
   createFolder,
   onUpload(payload: DragDropPayload) {
     if (payload.file) {
       if (payload.sourceUrl) {
         dbg.info('content', 'dragged file has source URL, upgrade via maxurl', { url: payload.sourceUrl });
-        uploadUrl(payload.sourceUrl, payload.kind, payload.folderId);
+        uploadUrl(payload.sourceUrl, payload.kind, payload.folderId, payload.tags);
         return;
       }
       // File 跨上下文序列化 —— 必须用 fileToStaged(转 number[]),
@@ -98,11 +145,12 @@ const dragdrop = createDragDrop({
             files: [staged],
             libraryId: '', // service worker 用默认 libraryId
             folderId: payload.folderId != null ? String(payload.folderId) : undefined,
+            tags: payload.tags,
           },
         }).catch(e => dbg.error('content', 'UPLOAD_FILES send failed', e));
       });
     } else if (payload.url) {
-      uploadUrl(payload.url, payload.kind, payload.folderId);
+      uploadUrl(payload.url, payload.kind, payload.folderId, payload.tags);
     }
   },
 });
@@ -153,7 +201,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         return true;
       case 'DISPATCH_DRAGDROP':
         dragdrop.setEnabled(msg.payload.enabled);
-        sendResponse({ ok: true });
+        sendResponse({ ok: true, dragdrop: dragdrop.health() });
         return true;
       case 'AUTOSCROLL_START':
         // 立即响应「已开始」,滚动循环在后台跑(可能持续很久);否则调用方
@@ -241,4 +289,5 @@ chrome.runtime.sendMessage({ type: 'CONFIG_GET' }).then((settings: any) => {
   });
   if (settings?.dragPopoverEnabled === false) dragdrop.setEnabled(false);
   if (settings?.snifferEnabled) sniffer.start(settings.snifferKinds);
+  dbg.info('content', 'initialization complete', { dragdrop: dragdrop.health() });
 }).catch(e => dbg.error('content', 'init CONFIG_GET failed', e));

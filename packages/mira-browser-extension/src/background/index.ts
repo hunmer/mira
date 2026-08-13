@@ -14,6 +14,30 @@ dbg.info('bg', 'service worker loaded');
 // 嗅探快照:每 tab 最近一次资源
 const sniffSnapshots = new Map<number, SniffedResource[]>();
 
+async function createNotificationImage(file: File): Promise<string | null> {
+  if (!file.type.startsWith('image/')) return null;
+
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, 512 / Math.max(bitmap.width, bitmap.height));
+    const width = Math.max(1, Math.round(bitmap.width * scale));
+    const height = Math.max(1, Math.round(bitmap.height * scale));
+    const canvas = new OffscreenCanvas(width, height);
+    const context = canvas.getContext('2d');
+    if (!context) return null;
+    context.drawImage(bitmap, 0, 0, width, height);
+    bitmap.close();
+    const thumbnail = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.82 });
+    const bytes = new Uint8Array(await thumbnail.arrayBuffer());
+    let binary = '';
+    for (const byte of bytes) binary += String.fromCharCode(byte);
+    return `data:${thumbnail.type};base64,${btoa(binary)}`;
+  } catch (error) {
+    dbg.warn('upload', 'notification thumbnail failed', error);
+    return null;
+  }
+}
+
 // 上传函数:连接 SDK
 async function uploadToServer(input: {
   file: File;
@@ -30,7 +54,21 @@ async function uploadToServer(input: {
     tags: input.tags,
     folderId: input.folderId,
   });
-  return res.results?.[0] ?? { success: true, file: input.file.name };
+  const result = res.results?.[0] as (NonNullable<typeof res.results>[number] & {
+    operation?: string;
+  }) | undefined;
+  if (result?.operation === 'duplicate') {
+    const imageUrl = await createNotificationImage(input.file);
+    const iconUrl = imageUrl || chrome.runtime.getURL('icons/icon128.png');
+    void chrome.notifications.create({
+      type: imageUrl ? 'image' : 'basic',
+      iconUrl,
+      ...(imageUrl ? { imageUrl } : {}),
+      title: '文件已存在',
+      message: `${result.result?.name || input.file.name} 与素材库中的文件重复，已跳过上传`,
+    });
+  }
+  return result ?? { success: true, file: input.file.name };
 }
 
 const uploader = createUploader({ upload: uploadToServer });
@@ -139,10 +177,11 @@ onSettingsChange(async settings => {
 async function applyFeatureSettings(tabId: number, settings: ExtensionSettings): Promise<void> {
   // 扩展在已有页面加载/更新时不会重新注入 content script,用统一注入兜底确保拖拽入口存在。
   try {
-    await sendToContent(tabId, {
+    const dragdropResult = await sendToContent<{ ok: boolean; dragdrop?: unknown }>(tabId, {
       type: 'DISPATCH_DRAGDROP',
       payload: { enabled: settings.dragPopoverEnabled },
     });
+    dbg.info('inject', 'content dragdrop ready', { tabId, result: dragdropResult });
     await sendToContent(tabId, {
       type: settings.snifferEnabled ? 'SNIFFER_START' : 'SNIFFER_STOP',
       payload: settings.snifferEnabled ? { kinds: settings.snifferKinds } : undefined,

@@ -681,11 +681,6 @@ const handleBreadcrumbClick = (item: BreadcrumbItem) => {
 
 // 选中项变化时同步 FileInfo 到全局 store
 watch([selectedItems, () => paginatedMediaItems.value], ([ids, items]) => {
-  console.debug('[DEBUG-detail-refresh] selection watcher', {
-    tabId: props.tabId,
-    ids: [...ids],
-    itemIds: items.map((item: FileInfo) => item.id),
-  })
   console.log('[DEBUG-space-preview] selection changed', {
     tabId: props.tabId,
     selectedIds: ids,
@@ -784,11 +779,6 @@ const fetchPageData = async (page: number) => {
 }
 
 const handleRefresh = async (preserveSelection = false) => {
-  console.debug('[DEBUG-detail-refresh] handleRefresh', {
-    tabId: props.tabId,
-    preserveSelection,
-    selectedIds: [...selectedItems.value],
-  })
   if (!preserveSelection) homeController.selectedItems.value = []
   await fetchPageData(1)
   emit('refresh')
@@ -798,13 +788,7 @@ const handleManualRefresh = () => handleRefresh()
 
 // WebSocket 活跃 tab 刷新回调
 const handleActiveTabRefresh = (e: Event) => {
-  const { tabId, data } = (e as CustomEvent).detail
-  console.debug('[DEBUG-detail-refresh] active-tab-refresh', {
-    tabId,
-    eventType: (e as CustomEvent).detail?.eventType,
-    fileId: data?.fileId,
-    selectedIds: [...selectedItems.value],
-  })
+  const { tabId } = (e as CustomEvent).detail
   if (tabId === props.tabId) {
     const eventType = (e as CustomEvent).detail?.eventType
     // 文件属性更新可能影响当前排序（例如按名称、星标或更新时间排序）。

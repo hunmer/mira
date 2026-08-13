@@ -10,7 +10,10 @@ let baseInjected = false;
 
 /** 注入浮层基础样式(.mira-overlay / .mira-dropzone / .mira-folder-* 等)。 */
 export function ensureOverlayStyles(): void {
-  if (baseInjected) return;
+  if (document.getElementById('mira-overlay-base-style')) {
+    baseInjected = true;
+    return;
+  }
   baseInjected = true;
   const style = document.createElement('style');
   style.id = 'mira-overlay-base-style';

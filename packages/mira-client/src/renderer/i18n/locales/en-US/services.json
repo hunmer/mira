@@ -128,6 +128,8 @@
     "searchSimilarFailed": "Failed to search similar images"
   },
   "sdkService": {
+    "duplicateUploadTitle": "File already exists",
+    "duplicateUploadBody": "{name} duplicates a file in the library and was not uploaded",
     "folderCopySuffix": "{name} (Copy)"
   },
   "searchServices": {

@@ -840,11 +840,6 @@ function scheduleTreeRefresh(libraryStore: any, libraryId?: string): void {
 }
 
 function handleFileEvent(data: any, eventType: 'created' | 'updated' | 'deleted' | 'recovered'): void {
-  console.debug('[DEBUG-detail-refresh] websocket file event', {
-    eventType,
-    fileId: data?.fileId,
-    libraryId: data?.libraryId,
-  })
   scheduleTreeRefresh(useLibraryStore(), data?.libraryId)
 
   const { markTabsForEvent, tabs } = useTabs()

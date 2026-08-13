@@ -5,7 +5,14 @@ import type { Locale } from '@/shared/types';
 import Input from '@/ui/components/ui/Input.vue';
 import Switch from '@/ui/components/ui/Switch.vue';
 import Button from '@/ui/components/ui/Button.vue';
-import { setDebug, refreshDebugFlag } from '@/shared/debug';
+import {
+  DEFAULT_DEBUG_CATEGORIES,
+  refreshDebugSettings,
+  setDebug,
+  setDebugCategory,
+  type DebugCategories,
+  type DebugCategory,
+} from '@/shared/debug';
 import { DEFAULT_IMAGE_URL_RULES } from '@/shared/types';
 import { useDialog } from '@/ui/composables/useDialog';
 import { ref, onMounted } from 'vue';
@@ -16,10 +23,20 @@ const dialog = useDialog();
 
 // 调试日志开关(独立于 ExtensionSettings,存 chrome.storage.local 的 mira_debug)
 const debugOn = ref(false);
-onMounted(async () => { debugOn.value = await refreshDebugFlag(); });
+const debugCategories = ref<DebugCategories>({ ...DEFAULT_DEBUG_CATEGORIES });
+const debugCategoryKeys = Object.keys(DEFAULT_DEBUG_CATEGORIES) as DebugCategory[];
+onMounted(async () => {
+  const debug = await refreshDebugSettings();
+  debugOn.value = debug.enabled;
+  debugCategories.value = debug.categories;
+});
 async function onToggleDebug(v: boolean) {
   debugOn.value = v;
   setDebug(v);
+}
+function onToggleDebugCategory(category: DebugCategory, enabled: boolean) {
+  debugCategories.value = { ...debugCategories.value, [category]: enabled };
+  setDebugCategory(category, enabled);
 }
 
 async function editImuRules() {
@@ -115,6 +132,16 @@ async function resetImuRules() {
       <div class="row" :title="t('settings.debugHint')">
         <span>{{ t('settings.debugLog') }}</span><Switch :model-value="debugOn" @update:model-value="onToggleDebug" />
       </div>
+      <div class="debug-categories" :class="{ disabled: !debugOn }">
+        <div v-for="category in debugCategoryKeys" :key="category" class="row debug-category-row">
+          <span>{{ t(`settings.debugCategory.${category}`) }}</span>
+          <Switch
+            :model-value="debugCategories[category]"
+            :disabled="!debugOn"
+            @update:model-value="v => onToggleDebugCategory(category, v)"
+          />
+        </div>
+      </div>
     </section>
   </div>
 </template>
@@ -129,4 +156,7 @@ h3 { margin: 0 0 8px; font-size: 13px; color: var(--muted); text-transform: uppe
 label { font-size: 12px; color: var(--muted); display: block; margin: 6px 0 2px; }
 select { background: var(--bg); color: var(--fg); border: 1px solid var(--border); border-radius: 4px; padding: 2px 6px; }
 .number-input { width: 72px; }
+.debug-categories { padding-left: 10px; border-left: 2px solid var(--border); }
+.debug-categories.disabled { opacity: .5; }
+.debug-category-row { font-size: 12px; }
 </style>

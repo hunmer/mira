@@ -128,6 +128,8 @@
     "searchSimilarFailed": "搜索相似图片失败"
   },
   "sdkService": {
+    "duplicateUploadTitle": "文件已存在",
+    "duplicateUploadBody": "{name} 与素材库中的文件重复，已跳过上传",
     "folderCopySuffix": "{name} (副本)"
   },
   "searchServices": {

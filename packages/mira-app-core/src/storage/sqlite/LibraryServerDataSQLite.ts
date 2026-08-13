@@ -2,6 +2,7 @@ import { Database } from 'sqlite3';
 import { ILibraryServerData } from './ILibraryServerData';
 import * as path from 'path';
 import * as fs from 'fs';
+import { createHash } from 'crypto';
 import { FileOperations } from './mixins/FileOperations';
 import { FolderOperations } from './mixins/FolderOperations';
 import { TagOperations } from './mixins/TagOperations';
@@ -375,7 +376,7 @@ export class LibraryServerDataSQLite {
 
   calculateFileHashSync(filePath: string): string {
     const buffer = fs.readFileSync(filePath);
-    return buffer.toString('hex').substring(0, 32);
+    return createHash('md5').update(buffer).digest('hex');
   }
 
   getUniquePath(destPath: string): string {

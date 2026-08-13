@@ -82,7 +82,15 @@ export default {
     imuRulesEditorHint: '每条规则包含 name、host、path、replacement；host/path 使用正则，replacement 使用 $1 等捕获组。',
     imuRulesReset: '恢复默认规则',
     debugLog: '调试日志',
-    debugHint: '开启后 console 输出 [mira-ext][*] 详细日志(截图/嗅探/maxurl/下载/上传)',
+    debugHint: '开启后按下方分类输出 [mira-ext][*] 详细日志；警告和错误始终输出',
+    debugCategory: {
+      drag: '拖拽与注入',
+      sniffer: '资源嗅探',
+      transfer: '上传与下载',
+      capture: '截图',
+      image: '高清图片解析',
+      app: '界面与连接',
+    },
   },
   sniffer: {
     title: '资源嗅探',

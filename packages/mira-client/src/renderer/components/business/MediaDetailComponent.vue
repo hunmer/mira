@@ -496,8 +496,8 @@ watch(() => displayItems.value[0]?.id, async (fileId) => {
     const override = localFieldOverrides.value.get(String(fileId))
     updates.set(String(fileId), override ? { ...fresh, ...override } : fresh)
     realtimeUpdates.value = updates
-  } catch (error) {
-    console.debug('[DEBUG-detail-refresh] detail fields fetch failed', { fileId, error })
+  } catch {
+    // 详情字段拉取失败时忽略，等待下次刷新重试
   }
 }, { immediate: true })
 
@@ -548,7 +548,6 @@ const handleWebsiteBlur = async () => {
   try {
     const libId = file.libraryId || libraryId?.value || 'default'
     await miraSDKService.updateFile(libId, file.id, { website: newWebsite })
-    console.debug('[DEBUG-detail-refresh] save website', { fileId: file.id })
     setLocalFieldOverride(file.id, { website: newWebsite })
   } catch {
     editWebsite.value = oldWebsite
@@ -569,7 +568,6 @@ const handleStarsChange = async (value: number) => {
   try {
     const libId = file.libraryId || libraryId?.value || 'default'
     await miraSDKService.updateFile(libId, file.id, { stars: newStars })
-    console.debug('[DEBUG-detail-refresh] save stars', { fileId: file.id, value: newStars })
     setLocalFieldOverride(file.id, { stars: newStars })
   } catch {
     editStars.value = oldStars
@@ -589,7 +587,6 @@ const handleNotesBlur = async () => {
   try {
     const libId = file.libraryId || libraryId?.value || 'default'
     await miraSDKService.updateFile(libId, file.id, { notes: newNotes })
-    console.debug('[DEBUG-detail-refresh] save notes', { fileId: file.id })
     setLocalFieldOverride(file.id, { notes: newNotes })
   } catch {
     editNotes.value = oldNotes
