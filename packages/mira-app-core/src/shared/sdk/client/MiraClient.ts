@@ -11,6 +11,7 @@ import { SystemModule } from '../modules/SystemModule';
 import { TagModule } from '../modules/TagModule';
 import { FolderModule } from '../modules/FolderModule';
 import { CookieSiteModule } from '../modules/CookieSiteModule';
+import { SettingsModule } from '../modules/SettingsModule';
 import { ClientConfig, WebSocketOptions } from '../types';
 
 /**
@@ -47,6 +48,7 @@ export class MiraClient {
     private _tags: TagModule;
     private _folders: FolderModule;
     private _cookieSites: CookieSiteModule;
+    private _settings: SettingsModule;
 
     constructor(baseURL: string, config?: Partial<ClientConfig>) {
         const clientConfig: ClientConfig = {
@@ -69,6 +71,7 @@ export class MiraClient {
         this._tags = new TagModule(this.httpClient);
         this._folders = new FolderModule(this.httpClient);
         this._cookieSites = new CookieSiteModule(this.httpClient);
+        this._settings = new SettingsModule(this.httpClient);
     }
 
     /**
@@ -157,6 +160,14 @@ export class MiraClient {
      */
     cookieSites(): CookieSiteModule {
         return this._cookieSites;
+    }
+
+    /**
+     * 获取服务器设置模块
+     * @returns SettingsModule
+     */
+    settings(): SettingsModule {
+        return this._settings;
     }
 
     /**
@@ -258,7 +269,10 @@ export class MiraClient {
             this._database = new DatabaseModule(this.httpClient);
             this._devices = new DeviceModule(this.httpClient);
             this._system = new SystemModule(this.httpClient);
+            this._tags = new TagModule(this.httpClient);
+            this._folders = new FolderModule(this.httpClient);
             this._cookieSites = new CookieSiteModule(this.httpClient);
+            this._settings = new SettingsModule(this.httpClient);
         }
 
         return this;

@@ -261,8 +261,7 @@ const serverSettings = ref<ServerSettings>({ authRequired: true, allowRegistrati
 
 async function loadServerSettings() {
   try {
-    const res = await settingsApi.get()
-    serverSettings.value = res.data.data ?? res.data
+    serverSettings.value = await settingsApi.get()
   } catch {
     toast.error(t('common.failed'))
   }

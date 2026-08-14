@@ -4,7 +4,7 @@
 建立可重复执行的 Mira Server HTTP API 覆盖审计流程，按实际使用频率决定 SDK 纳入范围，并按 SDK 模块拆分契约测试。
 
 ## Current Phase
-Ready for Phase 1
+Phase 5 Batch B (P0 已全部实现并迁移; 下批: User 账户组 P1×4)
 
 ## Deliverables
 - `server-api-manifest.json`：method、完整路径、路由域、权限、响应类型、来源文件。
@@ -16,20 +16,20 @@ Ready for Phase 1
 ## Phases
 
 ### Phase 1: 建立接口与 SDK 清单
-- [ ] 解析 `HttpServer.setupRoutes()` 的 mount prefix 和直接注册路由
-- [ ] 解析 `src/routes` 中 method、相对 path、权限中间件和来源文件
-- [ ] 解析 SDK 模块的 HttpClient 调用，保留 query/body 形态
-- [ ] 将动态参数统一为 `:param`，以 method + 完整路径匹配
-- [ ] 分类为 covered、partial、missing、excluded、dynamic
-- **Status:** pending
+- [x] 解析 `HttpServer.setupRoutes()` 的 mount prefix 和直接注册路由
+- [x] 解析 `src/routes` 中 method、相对 path、权限中间件和来源文件
+- [x] 解析 SDK 模块的 HttpClient 调用，保留 query/body 形态
+- [x] 将动态参数统一为 `:param`，以 method + 完整路径匹配
+- [x] 分类为 covered、partial、missing、excluded、dynamic
+- **Status:** complete — 146 路由 (covered 58 / partial 1 / missing 67 / excluded 13 / dynamic 7)，固定 JSON API 126 条 100% 分类
 
 ### Phase 2: 统计使用频率
-- [ ] 扫描 monorepo 中的 SDK 调用与直接 HTTP 调用
-- [ ] 统计每个接口的静态调用点和消费者包数
-- [ ] 标记登录、库管理、文件读写等关键业务链路
-- [ ] 若有日志，按归一化路径统计最近 7/30 天匿名请求量
-- [ ] 为每个接口记录 F0-F3 频率级别和证据来源
-- **Status:** pending
+- [x] 扫描 monorepo 中的 SDK 调用与直接 HTTP 调用
+- [x] 统计每个接口的静态调用点和消费者包数
+- [x] 标记登录、库管理、文件读写等关键业务链路
+- [ ] 若有日志，按归一化路径统计最近 7/30 天匿名请求量（无日志可依，跳过）
+- [x] 为每个接口记录 F0-F3 频率级别和证据来源
+- **Status:** complete — F3×2 / F2×6 / F1×49 / F0×11 (missing+partial 口径)；排除 mira-app-server 自身包内路由定义误报
 
 #### 频率分级
 | 级别 | 静态证据 | 可选运行时证据 |
@@ -42,10 +42,10 @@ Ready for Phase 1
 运行时日志只记录 method、归一化 path、计数；不得保存 token、query 值、body、Cookie 或用户标识。
 
 ### Phase 3: 决定 SDK 纳入范围
-- [ ] 按以下决策矩阵分为 P0/P1/P2/P3
-- [ ] 标记公共业务 API、内部运维 API、流式/资源 URL、废弃 API
-- [ ] 为拟纳入接口确定现有模块或新增模块归属
-- **Status:** pending
+- [x] 按以下决策矩阵分为 P0/P1/P2/P3
+- [x] 标记公共业务 API、内部运维 API、流式/资源 URL、废弃 API
+- [x] 为拟纳入接口确定现有模块或新增模块归属
+- **Status:** complete — P0×7 (Batch A) / P1×4 (Batch B) / P2×46 (Batch C) / P3×11 排除；待用户审阅 P0/P1
 
 #### 纳入决策
 | 优先级 | 规则 | 动作 |
@@ -58,12 +58,12 @@ Ready for Phase 1
 无论频率如何，静态文件、头像/缩略图/预览资源 URL、SSE 日志流、插件动态路由默认不生成普通 CRUD 方法；需要时提供 URL builder、stream client 或通用 plugin request API。
 
 ### Phase 4: 按模块补契约测试
-- [ ] 现有模块拆分：Auth、User、Library、Plugin、Database、File、Device、Tag、Folder、CookieSite、System
-- [ ] 按纳入结果新增：Admin、Settings、Download、Statistics、Thumbnail、FileSystem
-- [ ] 新增 `HttpClient.contract.test.ts` 验证 token、解包和错误对象
-- [ ] 覆盖 HTTP method、path、query/body、响应解包与错误透传
-- [ ] 将真实服务测试改名为 `*.integration.test.ts` 并从默认 test 排除
-- **Status:** pending
+- [x] 新增 `HttpClient.contract.test.ts` 验证 token、解包和错误对象 (7 tests)
+- [x] 新增 `SettingsModule.contract.test.ts`、`PluginModule.contract.test.ts` (6 tests)
+- [x] 将真实服务测试改名为 `*.integration.test.ts` 并从默认 test 排除（7 个文件）
+- [x] 新增 `pnpm test:integration` 脚本 opt-in 运行集成测试
+- [ ] Batch B/C 时按模块继续补: User/Admin/FileSystem/Thumbnail/Statistics 等
+- **Status:** in progress — 默认套件 10 文件 26 tests 全部无外部依赖, 1.2s 完成
 
 #### 建议测试文件
 ```text
@@ -90,12 +90,17 @@ src/shared/sdk/modules/FileSystemModule.contract.test.ts
 每个 SDK 方法至少断言一次调用 method、完整 path、query/body/config 和 mock 返回值；模块接入还要断言 `MiraClient` 暴露实例、`index.ts` 导出类型。
 
 ### Phase 5: 分批实现与迁移
-- [ ] Batch A：P0 缺口与现有重复 HTTP 封装
-- [ ] Batch B：P1 公共查询与管理接口
+- [x] Batch A：P0 缺口与现有重复 HTTP 封装 — manifest 修正后 P0 实为 3 条（plugins/:param GET、settings GET/PUT），已全部实现：
+  - 新增 `SettingsModule`（get/update）+ `MiraClient.settings()` + index 导出 + `ServerSettings` 类型
+  - `PluginModule.getById`/`uninstall` 改为服务端真实单查/删除，支持可选 `libraryId` query
+  - 顺带修复 `MiraClient.updateConfig` 重建时遗漏 `_tags`/`_folders` 的既有 bug
+  - Dashboard 迁移：`api/modules/settings.ts`、`api/modules/plugin.ts`(get/uninstall)、`views/mira/settings/index.vue` 解包适配
+  - 审计修正: 原判 P0 的 files/upload、files/cover、tags/delete、folders/delete 实为 SDK 已覆盖（manifest 漏扫 `httpClient.upload()` 与 `getAxiosInstance()` 两种调用形态，已修复）
+- [ ] Batch B：P1 公共查询与管理接口（User 账户组 4 条）
 - [ ] Batch C：经复审确认需要的 P2
-- [ ] Dashboard/Client/Extension 等消费者迁移到 SDK
-- [ ] 每批执行 Core 测试、Core 构建、消费者构建、Server 依赖刷新
-- **Status:** pending
+- [ ] Dashboard/Client/Extension 等消费者迁移到 SDK（本批: settings + plugin get/uninstall）
+- [x] 每批执行 Core 测试、Core 构建、消费者构建、Server 依赖刷新（本批完成: test 26 通过, build 通过, vue-tsc 通过, server install + procm 重启验证 8081）
+- **Status:** in progress
 
 ### Phase 6: 验收与持续审计
 - [ ] 输出覆盖率报告和明确排除清单

@@ -1,7 +1,7 @@
-import client from '../client'
-import type { ServerSettings } from '@/types/mira'
+import { getMiraClient } from '@/lib/miraClient'
+import type { ServerSettings } from 'mira-app-core/shared/sdk'
 
 export const settingsApi = {
-  get: () => client.get<{ code: number; data: ServerSettings }>('/settings'),
-  update: (data: Partial<ServerSettings>) => client.put<{ code: number; data: ServerSettings }>('/settings', data),
+  get: (): Promise<ServerSettings> => getMiraClient().settings().get(),
+  update: (data: Partial<ServerSettings>) => getMiraClient().settings().update(data),
 }

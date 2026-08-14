@@ -202,6 +202,21 @@ async function toggleStatus(plugin: Plugin, checked: boolean) {
   }
 }
 
+async function disableAll(plugin: Plugin) {
+  if (!(await requireConfirm({
+    title: '一键禁用插件',
+    description: `确定要禁用所有素材库中的插件“${plugin.title || plugin.name}”吗？`,
+    confirmText: '禁用',
+  }))) return
+  try {
+    await pluginApi.disableAll(plugin.name)
+    toast.success('已禁用所有素材库中的该插件')
+    await loadPlugins()
+  } catch {
+    toast.error(t('common.failed'))
+  }
+}
+
 async function openConfig(plugin: Plugin) {
   try {
     const res = await client.get(`/plugins/${plugin.name}/config`, { params: { libraryId: plugin.libraryId } })
@@ -425,6 +440,9 @@ await loadPlugins()
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem v-if="plugin.configurable" @click="openConfig(plugin)">
                       <RiSettings3Line class="mr-2 size-4" /> {{ t('plugin.configure') }}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem @click="disableAll(plugin)">
+                      <RiStopCircleLine class="mr-2 size-4" /> 一键禁用
                     </DropdownMenuItem>
                     <DropdownMenuItem class="text-destructive" @click="uninstallPlugin(plugin)">
                       <RiStopCircleLine class="mr-2 size-4" /> {{ t('plugin.uninstall') }}

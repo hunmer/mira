@@ -1,0 +1,2930 @@
+{
+  "generatedAt": "2026-08-14T08:25:53.919Z",
+  "scannedFiles": 2326,
+  "results": [
+    {
+      "method": "GET",
+      "path": "/api/admins",
+      "domain": "admins",
+      "category": "missing",
+      "totalSites": 3,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-app-server/src/HttpServer.ts:343",
+        "packages/mira-dashboard-next/src/api/modules/admin.ts:5",
+        "packages/mira-dashboard-next/src/api/modules/admin.ts:6"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/admins",
+      "domain": "admins",
+      "category": "missing",
+      "totalSites": 3,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-app-server/src/HttpServer.ts:343",
+        "packages/mira-dashboard-next/src/api/modules/admin.ts:5",
+        "packages/mira-dashboard-next/src/api/modules/admin.ts:6"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admins/:param",
+      "domain": "admins",
+      "category": "missing",
+      "totalSites": 2,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/admin.ts:7",
+        "packages/mira-dashboard-next/src/api/modules/admin.ts:8"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/admins/:param",
+      "domain": "admins",
+      "category": "missing",
+      "totalSites": 2,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/admin.ts:7",
+        "packages/mira-dashboard-next/src/api/modules/admin.ts:8"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admins/:param/tokens",
+      "domain": "admins",
+      "category": "missing",
+      "totalSites": 2,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/admin.ts:10",
+        "packages/mira-dashboard-next/src/api/modules/admin.ts:12"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/admins/:param/tokens",
+      "domain": "admins",
+      "category": "missing",
+      "totalSites": 2,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/admin.ts:10",
+        "packages/mira-dashboard-next/src/api/modules/admin.ts:12"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admins/:param/tokens/:param",
+      "domain": "admins",
+      "category": "missing",
+      "totalSites": 2,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/admin.ts:14",
+        "packages/mira-dashboard-next/src/api/modules/admin.ts:16"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/admins/:param/tokens/:param",
+      "domain": "admins",
+      "category": "missing",
+      "totalSites": 2,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/admin.ts:14",
+        "packages/mira-dashboard-next/src/api/modules/admin.ts:16"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/codes",
+      "domain": "auth",
+      "category": "covered",
+      "totalSites": 3,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/AuthModule.ts:75",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/register",
+      "domain": "auth",
+      "category": "covered",
+      "totalSites": 5,
+      "prodSites": 4,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 3,
+      "packages": [
+        "mira-app-core",
+        "mira-client",
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/AuthModule.ts:45",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/src/renderer/services/MiraService.ts:82",
+        "packages/mira-dashboard-next/src/api/modules/auth.ts:9"
+      ],
+      "frequency": "F3"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "domain": "auth",
+      "category": "covered",
+      "totalSites": 8,
+      "prodSites": 7,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 3,
+      "packages": [
+        "mira-app-core",
+        "mira-client",
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/AuthModule.ts:27",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-main/main.js:21689",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/src/main/ipc/ServerDeployHandlers.ts:191",
+        "packages/mira-client/src/renderer/services/MiraService.ts:71",
+        "packages/mira-dashboard-next/src/api/client.ts:56",
+        "packages/mira-dashboard-next/src/api/modules/auth.ts:5"
+      ],
+      "frequency": "F3"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/logout",
+      "domain": "auth",
+      "category": "covered",
+      "totalSites": 5,
+      "prodSites": 4,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 3,
+      "packages": [
+        "mira-app-core",
+        "mira-client",
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/AuthModule.ts:54",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/src/renderer/services/MiraService.ts:93",
+        "packages/mira-dashboard-next/src/api/modules/auth.ts:6"
+      ],
+      "frequency": "F3"
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/verify",
+      "domain": "auth",
+      "category": "covered",
+      "totalSites": 3,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/AuthModule.ts:67",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "GET",
+      "path": "/api/cookie-sites",
+      "domain": "cookie-sites",
+      "category": "covered",
+      "totalSites": 7,
+      "prodSites": 3,
+      "testSites": 2,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/CookieSiteModule.test.ts:38 [test]",
+        "packages/mira-app-core/src/shared/sdk/CookieSiteModule.test.ts:47 [test]",
+        "packages/mira-app-core/src/shared/sdk/modules/CookieSiteModule.ts:40",
+        "packages/mira-app-core/src/shared/sdk/modules/CookieSiteModule.ts:44",
+        "packages/mira-app-server/src/HttpServer.ts:358",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "POST",
+      "path": "/api/cookie-sites",
+      "domain": "cookie-sites",
+      "category": "covered",
+      "totalSites": 7,
+      "prodSites": 3,
+      "testSites": 2,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/CookieSiteModule.test.ts:38 [test]",
+        "packages/mira-app-core/src/shared/sdk/CookieSiteModule.test.ts:47 [test]",
+        "packages/mira-app-core/src/shared/sdk/modules/CookieSiteModule.ts:40",
+        "packages/mira-app-core/src/shared/sdk/modules/CookieSiteModule.ts:44",
+        "packages/mira-app-server/src/HttpServer.ts:358",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/cookie-sites/:param",
+      "domain": "cookie-sites",
+      "category": "covered",
+      "totalSites": 6,
+      "prodSites": 3,
+      "testSites": 2,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/CookieSiteModule.test.ts:56 [test]",
+        "packages/mira-app-core/src/shared/sdk/CookieSiteModule.test.ts:72 [test]",
+        "packages/mira-app-core/src/shared/sdk/modules/CookieSiteModule.ts:48",
+        "packages/mira-app-core/src/shared/sdk/modules/CookieSiteModule.ts:56",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/cookie-sites/:param/default",
+      "domain": "cookie-sites",
+      "category": "covered",
+      "totalSites": 4,
+      "prodSites": 2,
+      "testSites": 1,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/CookieSiteModule.test.ts:64 [test]",
+        "packages/mira-app-core/src/shared/sdk/modules/CookieSiteModule.ts:52",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/cookie-sites/:param",
+      "domain": "cookie-sites",
+      "category": "covered",
+      "totalSites": 6,
+      "prodSites": 3,
+      "testSites": 2,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/CookieSiteModule.test.ts:56 [test]",
+        "packages/mira-app-core/src/shared/sdk/CookieSiteModule.test.ts:72 [test]",
+        "packages/mira-app-core/src/shared/sdk/modules/CookieSiteModule.ts:48",
+        "packages/mira-app-core/src/shared/sdk/modules/CookieSiteModule.ts:56",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "GET",
+      "path": "/api/database/tables",
+      "domain": "database",
+      "category": "covered",
+      "totalSites": 8,
+      "prodSites": 3,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 3,
+      "packages": [
+        "mira-app-core",
+        "mira-client",
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/DatabaseModule.ts:23",
+        "packages/mira-app-server/src/cli/commands/database.ts:23",
+        "packages/mira-app-server/src/cli/commands/database.ts:78",
+        "packages/mira-app-server/src/mcp/tools/database.ts:25",
+        "packages/mira-app-server/src/mcp/tools/database.ts:85",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-dashboard-next/src/views/mira/database/index.vue:41"
+      ],
+      "frequency": "F3"
+    },
+    {
+      "method": "GET",
+      "path": "/api/database/tables/:param/data",
+      "domain": "database",
+      "category": "covered",
+      "totalSites": 6,
+      "prodSites": 3,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 3,
+      "packages": [
+        "mira-app-core",
+        "mira-client",
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/DatabaseModule.ts:33",
+        "packages/mira-app-server/src/cli/commands/database.ts:63",
+        "packages/mira-app-server/src/mcp/tools/database.ts:67",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-dashboard-next/src/views/mira/database/index.vue:56"
+      ],
+      "frequency": "F3"
+    },
+    {
+      "method": "GET",
+      "path": "/api/database/tables/:param/schema",
+      "domain": "database",
+      "category": "covered",
+      "totalSites": 5,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/DatabaseModule.ts:43",
+        "packages/mira-app-server/src/cli/commands/database.ts:41",
+        "packages/mira-app-server/src/mcp/tools/database.ts:45",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "POST",
+      "path": "/api/database/query",
+      "domain": "database",
+      "category": "missing",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/views/mira/database/index.vue:72"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/devices",
+      "domain": "devices",
+      "category": "covered",
+      "totalSites": 5,
+      "prodSites": 3,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 3,
+      "packages": [
+        "mira-app-core",
+        "mira-client",
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/DeviceModule.ts:23",
+        "packages/mira-app-server/src/HttpServer.ts:353",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-dashboard-next/src/api/modules/device.ts:4"
+      ],
+      "frequency": "F3"
+    },
+    {
+      "method": "GET",
+      "path": "/api/devices/library/:param",
+      "domain": "devices",
+      "category": "covered",
+      "totalSites": 3,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/DeviceModule.ts:32",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "POST",
+      "path": "/api/devices/broadcast",
+      "domain": "devices",
+      "category": "missing",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/device.ts:7"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/devices/disconnect",
+      "domain": "devices",
+      "category": "covered",
+      "totalSites": 3,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/DeviceModule.ts:43",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "POST",
+      "path": "/api/devices/:param/disconnect",
+      "domain": "devices",
+      "category": "missing",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/device.ts:5"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/devices/send-message",
+      "domain": "devices",
+      "category": "covered",
+      "totalSites": 3,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/DeviceModule.ts:55",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "POST",
+      "path": "/api/devices/:param/message",
+      "domain": "devices",
+      "category": "missing",
+      "totalSites": 0,
+      "prodSites": 0,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 0,
+      "packages": [],
+      "sites": [],
+      "frequency": "F0"
+    },
+    {
+      "method": "POST",
+      "path": "/api/devices/:param/test",
+      "domain": "devices",
+      "category": "missing",
+      "totalSites": 0,
+      "prodSites": 0,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 0,
+      "packages": [],
+      "sites": [],
+      "frequency": "F0"
+    },
+    {
+      "method": "GET",
+      "path": "/api/devices/:param/messages",
+      "domain": "devices",
+      "category": "missing",
+      "totalSites": 0,
+      "prodSites": 0,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 0,
+      "packages": [],
+      "sites": [],
+      "frequency": "F0"
+    },
+    {
+      "method": "GET",
+      "path": "/api/devices/stats",
+      "domain": "devices",
+      "category": "covered",
+      "totalSites": 3,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/DeviceModule.ts:63",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "POST",
+      "path": "/api/download/start",
+      "domain": "download",
+      "category": "covered",
+      "totalSites": 4,
+      "prodSites": 3,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 3,
+      "packages": [
+        "mira-app-core",
+        "mira-client",
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:317",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-dashboard-next/src/api/modules/download.ts:14"
+      ],
+      "frequency": "F3"
+    },
+    {
+      "method": "GET",
+      "path": "/api/download/progress/:param",
+      "domain": "download",
+      "category": "missing",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/download.ts:16"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/upload",
+      "domain": "files",
+      "category": "covered",
+      "totalSites": 12,
+      "prodSites": 8,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 3,
+      "packages": [
+        "mira-app-core",
+        "mira-client",
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:136",
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:180",
+        "packages/mira-app-server/src/cli/commands/files.ts:54",
+        "packages/mira-app-server/src/mcp/tools/files.ts:94",
+        "packages/mira-app-server/web/assets/js/FilePreviewView-BZMT0R5d.js:308",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/FilePreviewView-BZMT0R5d.js:308",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/src/renderer/components/preview/DocumentPreview.vue:129",
+        "packages/mira-client/src/renderer/services/MiraService.ts:126",
+        "packages/mira-dashboard-next/src/api/modules/file.ts:5",
+        "packages/mira-dashboard-next/src/api/modules/file.ts:9"
+      ],
+      "frequency": "F3"
+    },
+    {
+      "method": "GET",
+      "path": "/api/files/thumb/:param/:param",
+      "domain": "files",
+      "category": "excluded",
+      "totalSites": 2,
+      "prodSites": 1,
+      "testSites": 1,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-app-core"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/storage/sqlite/LibraryServerDataSQLite.test.ts:14 [test]",
+        "packages/mira-app-core/src/storage/sqlite/LibraryServerDataSQLite.ts:357"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/files/extra/:param/:param",
+      "domain": "files",
+      "category": "excluded",
+      "totalSites": 3,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:631",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "GET",
+      "path": "/api/files/extra/:param/:param/*",
+      "domain": "files",
+      "category": "excluded",
+      "totalSites": 3,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:645",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/cover/:param/:param",
+      "domain": "files",
+      "category": "covered",
+      "totalSites": 3,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:154",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "GET",
+      "path": "/api/files/preview/:param/:param/index.m3u8",
+      "domain": "files",
+      "category": "excluded",
+      "totalSites": 0,
+      "prodSites": 0,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 0,
+      "packages": [],
+      "sites": [],
+      "frequency": "F0"
+    },
+    {
+      "method": "GET",
+      "path": "/api/files/preview/:param/:param/segment/:param.ts",
+      "domain": "files",
+      "category": "excluded",
+      "totalSites": 0,
+      "prodSites": 0,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 0,
+      "packages": [],
+      "sites": [],
+      "frequency": "F0"
+    },
+    {
+      "method": "GET",
+      "path": "/api/files/preview/:param/:param",
+      "domain": "files",
+      "category": "excluded",
+      "totalSites": 0,
+      "prodSites": 0,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 0,
+      "packages": [],
+      "sites": [],
+      "frequency": "F0"
+    },
+    {
+      "method": "GET",
+      "path": "/api/files/file/:param/:param",
+      "domain": "files",
+      "category": "excluded",
+      "totalSites": 2,
+      "prodSites": 1,
+      "testSites": 1,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-app-core"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/storage/sqlite/LibraryServerDataSQLite.test.ts:13 [test]",
+        "packages/mira-app-core/src/storage/sqlite/LibraryServerDataSQLite.ts:360"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/files/:param/trash",
+      "domain": "files",
+      "category": "covered",
+      "totalSites": 3,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:400",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/batch-delete",
+      "domain": "files",
+      "category": "covered",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-app-core"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:211"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/batch-recover",
+      "domain": "files",
+      "category": "covered",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-app-core"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:426"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/recover",
+      "domain": "files",
+      "category": "covered",
+      "totalSites": 3,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:410",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/files/:param/:param",
+      "domain": "files",
+      "category": "covered",
+      "totalSites": 5,
+      "prodSites": 4,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:196",
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:400",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/src/renderer/services/MiraService.ts:144"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/metadata",
+      "domain": "files",
+      "category": "covered",
+      "totalSites": 4,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:461",
+        "packages/mira-app-server/src/routes/FileRoutes.ts:1071",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/getFiles",
+      "domain": "files",
+      "category": "covered",
+      "totalSites": 4,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:438",
+        "packages/mira-app-server/src/routes/FileRoutes.ts:1124",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/getFile",
+      "domain": "files",
+      "category": "covered",
+      "totalSites": 4,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:448",
+        "packages/mira-app-server/src/routes/FileRoutes.ts:1186",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/getPreviewViewers",
+      "domain": "files",
+      "category": "covered",
+      "totalSites": 4,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:474",
+        "packages/mira-app-server/src/routes/FileRoutes.ts:1239",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/rename",
+      "domain": "files",
+      "category": "covered",
+      "totalSites": 3,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:607",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/update",
+      "domain": "files",
+      "category": "covered",
+      "totalSites": 3,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:622",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "GET",
+      "path": "/api/folders/all",
+      "domain": "folders",
+      "category": "covered",
+      "totalSites": 3,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/FolderModule.ts:128",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "POST",
+      "path": "/api/folders/query",
+      "domain": "folders",
+      "category": "covered",
+      "totalSites": 3,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/FolderModule.ts:137",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "POST",
+      "path": "/api/folders/create",
+      "domain": "folders",
+      "category": "covered",
+      "totalSites": 3,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/FolderModule.ts:146",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/folders/update",
+      "domain": "folders",
+      "category": "covered",
+      "totalSites": 3,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/FolderModule.ts:155",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/folders/sort-index",
+      "domain": "folders",
+      "category": "covered",
+      "totalSites": 3,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/FolderModule.ts:229",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/folders/delete",
+      "domain": "folders",
+      "category": "covered",
+      "totalSites": 3,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/FolderModule.ts:165",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "POST",
+      "path": "/api/folders/file/set",
+      "domain": "folders",
+      "category": "covered",
+      "totalSites": 3,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/FolderModule.ts:177",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "GET",
+      "path": "/api/folders/file/:param",
+      "domain": "folders",
+      "category": "covered",
+      "totalSites": 4,
+      "prodSites": 3,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/FolderModule.ts:177",
+        "packages/mira-app-core/src/shared/sdk/modules/FolderModule.ts:186",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "POST",
+      "path": "/api/fs/mkdir",
+      "domain": "fs",
+      "category": "missing",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/components/PathTreeSelect.vue:70"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/fs/dirs",
+      "domain": "fs",
+      "category": "missing",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/components/PathTreeSelect.vue:42"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/fs/list",
+      "domain": "fs",
+      "category": "missing",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/fileManager.ts:5"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/fs/move",
+      "domain": "fs",
+      "category": "missing",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/fileManager.ts:8"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/fs/remove",
+      "domain": "fs",
+      "category": "missing",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/fileManager.ts:11"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/fs/sync",
+      "domain": "fs",
+      "category": "missing",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/fileManager.ts:14"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/fs/database/missing",
+      "domain": "fs",
+      "category": "missing",
+      "totalSites": 2,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/fileManager.ts:17",
+        "packages/mira-dashboard-next/src/api/modules/fileManager.ts:20"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/fs/database/missing",
+      "domain": "fs",
+      "category": "missing",
+      "totalSites": 2,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/fileManager.ts:17",
+        "packages/mira-dashboard-next/src/api/modules/fileManager.ts:20"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/fs/database/new",
+      "domain": "fs",
+      "category": "missing",
+      "totalSites": 2,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/fileManager.ts:23",
+        "packages/mira-dashboard-next/src/api/modules/fileManager.ts:29"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/fs/database/new/import",
+      "domain": "fs",
+      "category": "missing",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/fileManager.ts:26"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/fs/database/new",
+      "domain": "fs",
+      "category": "missing",
+      "totalSites": 2,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/fileManager.ts:23",
+        "packages/mira-dashboard-next/src/api/modules/fileManager.ts:29"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/fs/database/duplicates",
+      "domain": "fs",
+      "category": "missing",
+      "totalSites": 2,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/fileManager.ts:32",
+        "packages/mira-dashboard-next/src/api/modules/fileManager.ts:35"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/fs/database/duplicates",
+      "domain": "fs",
+      "category": "missing",
+      "totalSites": 2,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/fileManager.ts:32",
+        "packages/mira-dashboard-next/src/api/modules/fileManager.ts:35"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/fs/download",
+      "domain": "fs",
+      "category": "missing",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/fileManager.ts:38"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/__DYNAMIC__",
+      "domain": "api-root",
+      "category": "dynamic",
+      "totalSites": 0,
+      "prodSites": 0,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 0,
+      "packages": [],
+      "sites": [],
+      "frequency": "F0"
+    },
+    {
+      "method": "GET",
+      "path": "/api/__DYNAMIC__",
+      "domain": "api-root",
+      "category": "dynamic",
+      "totalSites": 0,
+      "prodSites": 0,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 0,
+      "packages": [],
+      "sites": [],
+      "frequency": "F0"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/__DYNAMIC__",
+      "domain": "api-root",
+      "category": "dynamic",
+      "totalSites": 0,
+      "prodSites": 0,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 0,
+      "packages": [],
+      "sites": [],
+      "frequency": "F0"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/__DYNAMIC__",
+      "domain": "api-root",
+      "category": "dynamic",
+      "totalSites": 0,
+      "prodSites": 0,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 0,
+      "packages": [],
+      "sites": [],
+      "frequency": "F0"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/__DYNAMIC__",
+      "domain": "api-root",
+      "category": "dynamic",
+      "totalSites": 0,
+      "prodSites": 0,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 0,
+      "packages": [],
+      "sites": [],
+      "frequency": "F0"
+    },
+    {
+      "method": "GET",
+      "path": "/api/plugins/:param/:param/*",
+      "domain": "api-root",
+      "category": "excluded",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/router/pluginRoutes.ts:69"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/libraries",
+      "domain": "libraries",
+      "category": "covered",
+      "totalSites": 9,
+      "prodSites": 7,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:21",
+        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:44",
+        "packages/mira-app-server/src/HttpServer.ts:349",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-main/main.js:21703",
+        "packages/mira-client/dist-main/main.js:21713",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/src/main/ipc/ServerDeployHandlers.ts:206",
+        "packages/mira-client/src/main/ipc/ServerDeployHandlers.ts:217"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "POST",
+      "path": "/api/libraries",
+      "domain": "libraries",
+      "category": "covered",
+      "totalSites": 9,
+      "prodSites": 7,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:21",
+        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:44",
+        "packages/mira-app-server/src/HttpServer.ts:349",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-main/main.js:21703",
+        "packages/mira-client/dist-main/main.js:21713",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/src/main/ipc/ServerDeployHandlers.ts:206",
+        "packages/mira-client/src/main/ipc/ServerDeployHandlers.ts:217"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/libraries/:param",
+      "domain": "libraries",
+      "category": "covered",
+      "totalSites": 4,
+      "prodSites": 3,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:54",
+        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:63",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/libraries/:param/status",
+      "domain": "libraries",
+      "category": "covered",
+      "totalSites": 2,
+      "prodSites": 1,
+      "testSites": 1,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-app-core"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/LibraryModule.contract.test.ts:12 [test]",
+        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:69"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/libraries/:param/stats",
+      "domain": "libraries",
+      "category": "missing",
+      "totalSites": 0,
+      "prodSites": 0,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 0,
+      "packages": [],
+      "sites": [],
+      "frequency": "F0"
+    },
+    {
+      "method": "POST",
+      "path": "/api/libraries/:param/query",
+      "domain": "libraries",
+      "category": "missing",
+      "totalSites": 0,
+      "prodSites": 0,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 0,
+      "packages": [],
+      "sites": [],
+      "frequency": "F0"
+    },
+    {
+      "method": "POST",
+      "path": "/api/libraries/:param/execute",
+      "domain": "libraries",
+      "category": "missing",
+      "totalSites": 0,
+      "prodSites": 0,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 0,
+      "packages": [],
+      "sites": [],
+      "frequency": "F0"
+    },
+    {
+      "method": "GET",
+      "path": "/api/libraries/:param/schema/:param",
+      "domain": "libraries",
+      "category": "missing",
+      "totalSites": 0,
+      "prodSites": 0,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 0,
+      "packages": [],
+      "sites": [],
+      "frequency": "F0"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/libraries/:param/record/:param/:param",
+      "domain": "libraries",
+      "category": "missing",
+      "totalSites": 0,
+      "prodSites": 0,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 0,
+      "packages": [],
+      "sites": [],
+      "frequency": "F0"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/libraries/:param",
+      "domain": "libraries",
+      "category": "covered",
+      "totalSites": 4,
+      "prodSites": 3,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:54",
+        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:63",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "GET",
+      "path": "/api/plugins/web",
+      "domain": "plugins",
+      "category": "covered",
+      "totalSites": 3,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts:35",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "GET",
+      "path": "/api/plugins",
+      "domain": "plugins",
+      "category": "covered",
+      "totalSites": 10,
+      "prodSites": 7,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 3,
+      "packages": [
+        "mira-app-core",
+        "mira-client",
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts:22",
+        "packages/mira-app-server/src/HttpServer.ts:350",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:489",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:489",
+        "packages/mira-client/src/renderer/App.vue:277",
+        "packages/mira-client/src/renderer/composables/useShortcuts.ts:148",
+        "packages/mira-client/src/renderer/services/MiraService.ts:180",
+        "packages/mira-dashboard-next/src/api/modules/plugin.ts:12"
+      ],
+      "frequency": "F3"
+    },
+    {
+      "method": "GET",
+      "path": "/api/plugins/by-library",
+      "domain": "plugins",
+      "category": "covered",
+      "totalSites": 5,
+      "prodSites": 4,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 3,
+      "packages": [
+        "mira-app-core",
+        "mira-client",
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts:30",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-dashboard-next/src/api/modules/plugin.ts:13",
+        "packages/mira-dashboard-next/src/router/pluginRoutes.ts:23"
+      ],
+      "frequency": "F3"
+    },
+    {
+      "method": "POST",
+      "path": "/api/plugins/install",
+      "domain": "plugins",
+      "category": "covered",
+      "totalSites": 4,
+      "prodSites": 3,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 3,
+      "packages": [
+        "mira-app-core",
+        "mira-client",
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts:64",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-dashboard-next/src/api/modules/plugin.ts:25"
+      ],
+      "frequency": "F3"
+    },
+    {
+      "method": "GET",
+      "path": "/api/plugins/install/stream",
+      "domain": "plugins",
+      "category": "excluded",
+      "totalSites": 0,
+      "prodSites": 0,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 0,
+      "packages": [],
+      "sites": [],
+      "frequency": "F0"
+    },
+    {
+      "method": "POST",
+      "path": "/api/plugins/sync-meta",
+      "domain": "plugins",
+      "category": "missing",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/plugin.ts:27"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/plugins/upload",
+      "domain": "plugins",
+      "category": "missing",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/views/mira/plugin/index.vue:332"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/plugins/toggle-status",
+      "domain": "plugins",
+      "category": "missing",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/plugin.ts:17"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/plugins/disable-all",
+      "domain": "plugins",
+      "category": "missing",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/plugin.ts:19"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/plugins/:param/start",
+      "domain": "plugins",
+      "category": "missing",
+      "totalSites": 0,
+      "prodSites": 0,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 0,
+      "packages": [],
+      "sites": [],
+      "frequency": "F0"
+    },
+    {
+      "method": "POST",
+      "path": "/api/plugins/:param/stop",
+      "domain": "plugins",
+      "category": "missing",
+      "totalSites": 0,
+      "prodSites": 0,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 0,
+      "packages": [],
+      "sites": [],
+      "frequency": "F0"
+    },
+    {
+      "method": "GET",
+      "path": "/api/plugins/:param/config",
+      "domain": "plugins",
+      "category": "missing",
+      "totalSites": 2,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/plugin.ts:21",
+        "packages/mira-dashboard-next/src/views/mira/plugin/index.vue:222"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/plugins/:param/config",
+      "domain": "plugins",
+      "category": "missing",
+      "totalSites": 2,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/plugin.ts:21",
+        "packages/mira-dashboard-next/src/views/mira/plugin/index.vue:222"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/plugins/:param",
+      "domain": "plugins",
+      "category": "covered",
+      "totalSites": 15,
+      "prodSites": 14,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 3,
+      "packages": [
+        "mira-app-core",
+        "mira-client",
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts:30",
+        "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts:35",
+        "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts:64",
+        "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts:91",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-dashboard-next/src/api/modules/plugin.ts:13",
+        "packages/mira-dashboard-next/src/api/modules/plugin.ts:15",
+        "packages/mira-dashboard-next/src/api/modules/plugin.ts:17",
+        "packages/mira-dashboard-next/src/api/modules/plugin.ts:19",
+        "packages/mira-dashboard-next/src/api/modules/plugin.ts:25",
+        "packages/mira-dashboard-next/src/api/modules/plugin.ts:27",
+        "packages/mira-dashboard-next/src/api/modules/plugin.ts:29",
+        "packages/mira-dashboard-next/src/router/pluginRoutes.ts:23",
+        "packages/mira-dashboard-next/src/views/mira/plugin/index.vue:332"
+      ],
+      "frequency": "F3"
+    },
+    {
+      "method": "GET",
+      "path": "/api/plugins/:param/icon/:param",
+      "domain": "plugins",
+      "category": "excluded",
+      "totalSites": 0,
+      "prodSites": 0,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 0,
+      "packages": [],
+      "sites": [],
+      "frequency": "F0"
+    },
+    {
+      "method": "GET",
+      "path": "/api/plugins/:param",
+      "domain": "plugins",
+      "category": "partial",
+      "totalSites": 15,
+      "prodSites": 14,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 3,
+      "packages": [
+        "mira-app-core",
+        "mira-client",
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts:30",
+        "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts:35",
+        "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts:64",
+        "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts:91",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-dashboard-next/src/api/modules/plugin.ts:13",
+        "packages/mira-dashboard-next/src/api/modules/plugin.ts:15",
+        "packages/mira-dashboard-next/src/api/modules/plugin.ts:17",
+        "packages/mira-dashboard-next/src/api/modules/plugin.ts:19",
+        "packages/mira-dashboard-next/src/api/modules/plugin.ts:25",
+        "packages/mira-dashboard-next/src/api/modules/plugin.ts:27",
+        "packages/mira-dashboard-next/src/api/modules/plugin.ts:29",
+        "packages/mira-dashboard-next/src/router/pluginRoutes.ts:23",
+        "packages/mira-dashboard-next/src/views/mira/plugin/index.vue:332"
+      ],
+      "frequency": "F3"
+    },
+    {
+      "method": "GET",
+      "path": "/api/settings",
+      "domain": "settings",
+      "category": "missing",
+      "totalSites": 9,
+      "prodSites": 7,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-client",
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-app-server/src/HttpServer.ts:357",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:489",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:489",
+        "packages/mira-client/src/renderer/App.vue:281",
+        "packages/mira-client/src/renderer/composables/useShortcuts.ts:118",
+        "packages/mira-client/src/renderer/router/index.ts:75",
+        "packages/mira-dashboard-next/src/api/modules/settings.ts:5",
+        "packages/mira-dashboard-next/src/api/modules/settings.ts:6",
+        "packages/mira-dashboard-next/src/layouts/DefaultLayout.vue:56"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/settings",
+      "domain": "settings",
+      "category": "missing",
+      "totalSites": 9,
+      "prodSites": 7,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-client",
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-app-server/src/HttpServer.ts:357",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:489",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:489",
+        "packages/mira-client/src/renderer/App.vue:281",
+        "packages/mira-client/src/renderer/composables/useShortcuts.ts:118",
+        "packages/mira-client/src/renderer/router/index.ts:75",
+        "packages/mira-dashboard-next/src/api/modules/settings.ts:5",
+        "packages/mira-dashboard-next/src/api/modules/settings.ts:6",
+        "packages/mira-dashboard-next/src/layouts/DefaultLayout.vue:56"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "GET",
+      "path": "/api/statistics/:param/upload",
+      "domain": "statistics",
+      "category": "missing",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/statistics.ts:4"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/statistics/:param/upload/daily",
+      "domain": "statistics",
+      "category": "missing",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/statistics.ts:5"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/statistics/:param/file-types",
+      "domain": "statistics",
+      "category": "missing",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/statistics.ts:6"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/statistics/:param/recent-uploads",
+      "domain": "statistics",
+      "category": "missing",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/statistics.ts:7"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/tags/all",
+      "domain": "tags",
+      "category": "covered",
+      "totalSites": 3,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/TagModule.ts:126",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "POST",
+      "path": "/api/tags/query",
+      "domain": "tags",
+      "category": "covered",
+      "totalSites": 3,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/TagModule.ts:135",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "POST",
+      "path": "/api/tags/create",
+      "domain": "tags",
+      "category": "covered",
+      "totalSites": 3,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/TagModule.ts:144",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/tags/update",
+      "domain": "tags",
+      "category": "covered",
+      "totalSites": 3,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/TagModule.ts:153",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/tags/sort-index",
+      "domain": "tags",
+      "category": "covered",
+      "totalSites": 3,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/TagModule.ts:227",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/tags/delete",
+      "domain": "tags",
+      "category": "covered",
+      "totalSites": 3,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/TagModule.ts:163",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "POST",
+      "path": "/api/tags/file/set",
+      "domain": "tags",
+      "category": "covered",
+      "totalSites": 3,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/TagModule.ts:175",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "GET",
+      "path": "/api/tags/file/:param",
+      "domain": "tags",
+      "category": "covered",
+      "totalSites": 4,
+      "prodSites": 3,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/TagModule.ts:175",
+        "packages/mira-app-core/src/shared/sdk/modules/TagModule.ts:184",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "GET",
+      "path": "/api/thumb/scan",
+      "domain": "thumb",
+      "category": "missing",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/thumbnail.ts:4"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/thumb/progress",
+      "domain": "thumb",
+      "category": "missing",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/thumbnail.ts:5"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/thumb/cancel",
+      "domain": "thumb",
+      "category": "missing",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/thumbnail.ts:6"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/thumb/stats",
+      "domain": "thumb",
+      "category": "missing",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/thumbnail.ts:7"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/thumb/generators",
+      "domain": "thumb",
+      "category": "missing",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/thumbnail.ts:8"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/thumb/sync",
+      "domain": "thumb",
+      "category": "missing",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/thumbnail.ts:9"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/thumb/metadata/stats",
+      "domain": "thumb",
+      "category": "missing",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/thumbnail.ts:10"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/thumb/metadata/scan",
+      "domain": "thumb",
+      "category": "missing",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/thumbnail.ts:11"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/thumb/metadata/progress",
+      "domain": "thumb",
+      "category": "missing",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/thumbnail.ts:12"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/user/info",
+      "domain": "user",
+      "category": "covered",
+      "totalSites": 5,
+      "prodSites": 4,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 3,
+      "packages": [
+        "mira-app-core",
+        "mira-client",
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/UserModule.ts:20",
+        "packages/mira-app-core/src/shared/sdk/modules/UserModule.ts:29",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-dashboard-next/src/api/modules/auth.ts:7"
+      ],
+      "frequency": "F3"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/user/change-password",
+      "domain": "user",
+      "category": "missing",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/auth.ts:11"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/user/info",
+      "domain": "user",
+      "category": "covered",
+      "totalSites": 5,
+      "prodSites": 4,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 3,
+      "packages": [
+        "mira-app-core",
+        "mira-client",
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/UserModule.ts:20",
+        "packages/mira-app-core/src/shared/sdk/modules/UserModule.ts:29",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-dashboard-next/src/api/modules/auth.ts:7"
+      ],
+      "frequency": "F3"
+    },
+    {
+      "method": "POST",
+      "path": "/api/user/avatar",
+      "domain": "user",
+      "category": "missing",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/auth.ts:13"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/user/tokens",
+      "domain": "user",
+      "category": "missing",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/api/modules/auth.ts:15"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/user/avatar/:param",
+      "domain": "user",
+      "category": "missing",
+      "totalSites": 5,
+      "prodSites": 3,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-app-server/src/routes/UserRouter.ts:71",
+        "packages/mira-app-server/src/routes/UserRouter.ts:202",
+        "packages/mira-dashboard-next/src/layouts/DefaultLayout.vue:133",
+        "packages/mira-dashboard-next/src/views/mira/statistics/index.vue:368",
+        "packages/mira-dashboard-next/src/views/mira/statistics/index.vue:416"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "GET",
+      "path": "/",
+      "domain": "http-server-direct",
+      "category": "excluded",
+      "totalSites": 51626,
+      "prodSites": 51032,
+      "testSites": 15,
+      "sdkModuleSites": 0,
+      "pkgCount": 9,
+      "packages": [
+        "landing-page",
+        "mira-app-core",
+        "mira-browser-extension",
+        "mira-client",
+        "mira-dashboard-next",
+        "mira-doc",
+        "mira-scripts-core",
+        "mira_mobile",
+        "vue-masonry"
+      ],
+      "sites": [
+        "packages/landing-page/.next/dev/server/app/(app)/blocks/page_client-reference-manifest.js:2",
+        "packages/landing-page/.next/dev/server/app/(app)/page_client-reference-manifest.js:2",
+        "packages/landing-page/.next/dev/server/app/(app)/[cat]/page_client-reference-manifest.js:2",
+        "packages/landing-page/.next/dev/server/app/home/page_client-reference-manifest.js:2",
+        "packages/landing-page/.next/dev/server/app/home-layout-demo/page_client-reference-manifest.js:2",
+        "packages/landing-page/.next/dev/server/app/media-waterfall-demo/page_client-reference-manifest.js:2",
+        "packages/landing-page/.next/dev/server/app/page_client-reference-manifest.js:2",
+        "packages/landing-page/.next/dev/server/app/view/[block_name]/page_client-reference-manifest.js:2",
+        "packages/landing-page/.next/dev/server/app/_not-found/page_client-reference-manifest.js:2",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_01ff6d11._.js:37",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_01ff6d11._.js:141",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_01ff6d11._.js:395",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_01ff6d11._.js:451",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_01ff6d11._.js:465",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_01ff6d11._.js:553",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_01ff6d11._.js:709",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_01ff6d11._.js:712",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_01ff6d11._.js:716",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_01ff6d11._.js:719",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_01ff6d11._.js:724",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_01ff6d11._.js:730",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_01ff6d11._.js:736",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_01ff6d11._.js:741",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_01ff6d11._.js:745",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_01ff6d11._.js:907",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_01ff6d11._.js:917",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_01ff6d11._.js:949",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_01ff6d11._.js:1017",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_01ff6d11._.js:1278",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_01ff6d11._.js:2017",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_01ff6d11._.js:2111",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_01ff6d11._.js:2396",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_01ff6d11._.js:2399",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_01ff6d11._.js:2400",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_01ff6d11._.js:2411",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_01ff6d11._.js:2450",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_01ff6d11._.js:2451",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_01ff6d11._.js:2462",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_01ff6d11._.js:2766",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_01ff6d11._.js:2911",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_09fac355._.js:37",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_09fac355._.js:141",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_09fac355._.js:395",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_09fac355._.js:451",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_09fac355._.js:465",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_09fac355._.js:553",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_09fac355._.js:709",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_09fac355._.js:712",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_09fac355._.js:716",
+        "packages/landing-page/.next/dev/server/chunks/ssr/00040_framer-motion_dist_es_09fac355._.js:719"
+      ],
+      "frequency": "F3"
+    },
+    {
+      "method": "GET",
+      "path": "/server-plugins/:param/:param/*",
+      "domain": "http-server-direct",
+      "category": "excluded",
+      "totalSites": 1,
+      "prodSites": 0,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 0,
+      "packages": [],
+      "sites": [
+        "packages/mira-app-server/src/ServerPluginManager.ts:359"
+      ],
+      "frequency": "F0"
+    },
+    {
+      "method": "GET",
+      "path": "/api/plugin-routes",
+      "domain": "http-server-direct",
+      "category": "missing",
+      "totalSites": 1,
+      "prodSites": 0,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 0,
+      "packages": [],
+      "sites": [
+        "packages/mira-app-server/src/HttpServer.ts:364"
+      ],
+      "frequency": "F0"
+    },
+    {
+      "method": "GET",
+      "path": "/api/plugin-routes/:param",
+      "domain": "http-server-direct",
+      "category": "missing",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-dashboard-next/src/router/pluginRoutes.ts:36"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/health",
+      "domain": "http-server-direct",
+      "category": "covered",
+      "totalSites": 8,
+      "prodSites": 4,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 3,
+      "packages": [
+        "mira-app-core",
+        "mira-client",
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/SystemModule.ts:16",
+        "packages/mira-app-core/src/shared/sdk/modules/SystemModule.ts:24",
+        "packages/mira-app-server/src/HttpServer.ts:52",
+        "packages/mira-app-server/src/HttpServer.ts:437",
+        "packages/mira-app-server/src/HttpServer.ts:455",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-dashboard-next/vite.config.ts:34"
+      ],
+      "frequency": "F3"
+    },
+    {
+      "method": "GET",
+      "path": "/health",
+      "domain": "http-server-direct",
+      "category": "covered",
+      "totalSites": 5,
+      "prodSites": 3,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 3,
+      "packages": [
+        "mira-app-core",
+        "mira-client",
+        "mira-dashboard-next"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/SystemModule.ts:24",
+        "packages/mira-app-server/src/HttpServer.ts:455",
+        "packages/mira-app-server/web/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-client/dist-renderer/assets/js/index-BI0ajPPZ.js:198",
+        "packages/mira-dashboard-next/vite.config.ts:34"
+      ],
+      "frequency": "F3"
+    },
+    {
+      "method": "GET",
+      "path": "/api/logs/stream",
+      "domain": "http-server-direct",
+      "category": "excluded",
+      "totalSites": 3,
+      "prodSites": 0,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 0,
+      "packages": [],
+      "sites": [
+        "packages/mira-app-server/src/HttpServer.ts:53",
+        "packages/mira-app-server/src/HttpServer.ts:467",
+        "packages/mira-app-server/src/middleware/permission.ts:20"
+      ],
+      "frequency": "F0"
+    }
+  ]
+}

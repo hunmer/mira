@@ -763,6 +763,42 @@ export class PluginRoutes {
             }
         });
 
+        // 禁用所有素材库中的指定插件
+        this.router.post('/disable-all', async (req: Request, res: Response) => {
+            try {
+                const { pluginName } = req.body;
+                if (!pluginName) {
+                    return res.status(400).json({ error: 'Plugin name is required' });
+                }
+
+                let disabledCount = 0;
+                for (const libraryObj of Object.values(this.backend.libraries!.getLibraries())) {
+                    if (!libraryObj.pluginManager) continue;
+                    const config = this.readPluginsConfig(libraryObj.pluginManager.pluginsDir);
+                    const pluginIndex = config.findIndex((p: any) => p.name === pluginName);
+                    if (pluginIndex === -1) continue;
+
+                    config[pluginIndex].enabled = false;
+                    config[pluginIndex].status = 'inactive';
+                    if (!this.writePluginsConfig(libraryObj.pluginManager.pluginsDir, config)) {
+                        return res.status(500).json({ error: 'Failed to update plugin config' });
+                    }
+
+                    try {
+                        libraryObj.pluginManager.unloadPlugin(pluginName);
+                    } catch (error) {
+                        console.error(`Error disabling plugin ${pluginName}:`, error);
+                    }
+                    disabledCount++;
+                }
+
+                res.json({ success: true, pluginName, disabledCount });
+            } catch (error) {
+                console.error('Error disabling plugin in all libraries:', error);
+                res.status(500).json({ error: 'Failed to disable plugin in all libraries' });
+            }
+        });
+
         // 启动插件
         this.router.post('/:id/start', async (req: Request, res: Response) => {
             try {

@@ -1,69 +1,70 @@
 {
-  "name": "mira-app-core",
-  "version": "2.0.8",
-  "description": "Core library for Mira TypeScript project - provides base functionality without auto-execution",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "typesVersions": {
-    "*": {
-      "storage/sqlite": [
-        "dist/storage/sqlite/index.d.ts"
-      ],
-      "shared/sdk": [
-        "dist/shared/sdk/index.d.ts"
-      ]
-    }
-  },
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.js"
+    "name": "mira-app-core",
+    "version": "2.0.8",
+    "description": "Core library for Mira TypeScript project - provides base functionality without auto-execution",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "typesVersions": {
+        "*": {
+            "storage/sqlite": [
+                "dist/storage/sqlite/index.d.ts"
+            ],
+            "shared/sdk": [
+                "dist/shared/sdk/index.d.ts"
+            ]
+        }
     },
-    "./storage/sqlite": {
-      "types": "./dist/storage/sqlite/index.d.ts",
-      "import": "./dist/storage/sqlite/index.js",
-      "require": "./dist/storage/sqlite/index.js"
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "require": "./dist/index.js"
+        },
+        "./storage/sqlite": {
+            "types": "./dist/storage/sqlite/index.d.ts",
+            "import": "./dist/storage/sqlite/index.js",
+            "require": "./dist/storage/sqlite/index.js"
+        },
+        "./shared/sdk": {
+            "types": "./dist/shared/sdk/index.d.ts",
+            "import": "./dist/shared/sdk/mira-sdk.esm.mjs",
+            "require": "./dist/shared/sdk/index.js",
+            "default": "./dist/shared/sdk/mira-sdk.esm.mjs"
+        }
     },
-    "./shared/sdk": {
-      "types": "./dist/shared/sdk/index.d.ts",
-      "import": "./dist/shared/sdk/mira-sdk.esm.mjs",
-      "require": "./dist/shared/sdk/index.js",
-      "default": "./dist/shared/sdk/mira-sdk.esm.mjs"
+    "scripts": {
+        "build": "tsc && pnpm run build:sdk:esm",
+        "build:ts": "tsc",
+        "build:sdk:esm": "vite build --config vite.sdk.config.ts",
+        "start": "node dist/index.js",
+        "rebuild": "pnpm run build",
+        "dev": "ts-node src/index.ts",
+        "start:ts": "ts-node src/index.ts",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "test:integration": "vitest run --exclude \"**/node_modules/**\" \"src/**/*.integration.test.ts\""
+    },
+    "keywords": [
+        "mira",
+        "core",
+        "library"
+    ],
+    "author": "hunmer",
+    "license": "ISC",
+    "publishConfig": {
+        "access": "public"
+    },
+    "devDependencies": {
+        "@types/node": "^20.10.0",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.3.3",
+        "vite": "^6.2.0",
+        "vitest": "^1.6.1"
+    },
+    "dependencies": {
+        "axios": "^1.11.0",
+        "queue": "^7.0.0",
+        "sqlite3": "^5.1.7",
+        "ws": "^8.18.3"
     }
-  },
-  "scripts": {
-    "build": "tsc && pnpm run build:sdk:esm",
-    "build:ts": "tsc",
-    "build:sdk:esm": "vite build --config vite.sdk.config.ts",
-    "start": "node dist/index.js",
-    "rebuild": "pnpm run build",
-    "dev": "ts-node src/index.ts",
-    "start:ts": "ts-node src/index.ts",
-    "test": "vitest run",
-    "test:watch": "vitest"
-  },
-  "keywords": [
-    "mira",
-    "core",
-    "library"
-  ],
-  "author": "hunmer",
-  "license": "ISC",
-  "publishConfig": {
-    "access": "public"
-  },
-  "devDependencies": {
-    "@types/node": "^20.10.0",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.3.3",
-    "vite": "^6.2.0",
-    "vitest": "^1.6.1"
-  },
-  "dependencies": {
-    "axios": "^1.11.0",
-    "queue": "^7.0.0",
-    "sqlite3": "^5.1.7",
-    "ws": "^8.18.3"
-  }
 }

@@ -28,6 +28,14 @@ export interface ClientConfig {
     getToken?: () => string | undefined;
 }
 
+// 服务器设置
+export interface ServerSettings {
+    /** API 访问是否要求登录 */
+    authRequired: boolean;
+    /** 是否允许自注册 */
+    allowRegistration: boolean;
+}
+
 // 认证相关类型
 export interface LoginRequest {
     username: string;

@@ -38,6 +38,7 @@ export {
     type CreateCookieSiteRequest,
     type UpdateCookieSiteRequest,
 } from './modules/CookieSiteModule';
+export { SettingsModule } from './modules/SettingsModule';
 
 // 导出类型定义
 export * from './types';

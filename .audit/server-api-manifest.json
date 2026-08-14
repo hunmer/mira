@@ -1,0 +1,1542 @@
+{
+  "generatedAt": "2026-08-14T08:35:21.003Z",
+  "mounts": {
+    "express.static(publicDir)": "/static",
+    "express.static(dashboardDir,{//SPA回退：未命中的静态资源回落到index.html，保证前端路由可刷新setHeaders:(res,filePath)=>{if(path.extname(filePath)==='.html'){res.setHeader('Cache-Control','no-cache');}},})": "/dashboard",
+    "express.static(webDir,{setHeaders:(res,filePath)=>{if(path.extname(filePath)==='.html'){res.setHeader('Cache-Control','no-cache');}},})": "/web",
+    "createHttpPermissionMiddleware(this.authRouter.getAuthService(),this.backend.settingsManager,()=>this.backend.libraries)": "/api",
+    "this.httpRouter.getRouter()": "/api",
+    "this.authRouter.getRouter()": "/api/auth",
+    "this.adminsRouter.getRouter()": "/api/admins",
+    "this.userRouter.getRouter()": "/api/user",
+    "this.libraryRoutes.getRouter()": "/api/libraries",
+    "this.pluginRoutes.getRouter()": "/api/plugins",
+    "this.databaseRoutes.getRouter()": "/api/database",
+    "this.fileRoutes.getRouter()": "/api/files",
+    "this.deviceRoutes.getRouter()": "/api/devices",
+    "this.tagRouter.getRouter()": "/api/tags",
+    "this.folderRouter.getRouter()": "/api/folders",
+    "this.fsRouter.getRouter()": "/api/fs",
+    "this.settingsRouter.getRouter()": "/api/settings",
+    "this.cookieSitesRouter.getRouter()": "/api/cookie-sites",
+    "this.downloadRoutes.getRouter()": "/api/download",
+    "this.statisticsRouter.getRouter()": "/api/statistics",
+    "this.thumbRouter.getRouter()": "/api/thumb"
+  },
+  "unmatchedRouteFiles": [
+    "BaseRouter.ts",
+    "WebSocketRouter.ts"
+  ],
+  "routes": [
+    {
+      "method": "GET",
+      "path": "/api/admins",
+      "rawPath": "/",
+      "dynamic": false,
+      "domain": "admins",
+      "file": "packages/mira-app-server/src/routes/AdminsRouter.ts",
+      "line": 17,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/admins",
+      "rawPath": "/",
+      "dynamic": false,
+      "domain": "admins",
+      "file": "packages/mira-app-server/src/routes/AdminsRouter.ts",
+      "line": 40,
+      "middlewares": []
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admins/:param",
+      "rawPath": "/:id",
+      "dynamic": false,
+      "domain": "admins",
+      "file": "packages/mira-app-server/src/routes/AdminsRouter.ts",
+      "line": 112,
+      "middlewares": []
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/admins/:param",
+      "rawPath": "/:id",
+      "dynamic": false,
+      "domain": "admins",
+      "file": "packages/mira-app-server/src/routes/AdminsRouter.ts",
+      "line": 158,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/admins/:param/tokens",
+      "rawPath": "/:id/tokens",
+      "dynamic": false,
+      "domain": "admins",
+      "file": "packages/mira-app-server/src/routes/AdminsRouter.ts",
+      "line": 203,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/admins/:param/tokens",
+      "rawPath": "/:id/tokens",
+      "dynamic": false,
+      "domain": "admins",
+      "file": "packages/mira-app-server/src/routes/AdminsRouter.ts",
+      "line": 214,
+      "middlewares": []
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admins/:param/tokens/:param",
+      "rawPath": "/:id/tokens/:tokenId",
+      "dynamic": false,
+      "domain": "admins",
+      "file": "packages/mira-app-server/src/routes/AdminsRouter.ts",
+      "line": 235,
+      "middlewares": []
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/admins/:param/tokens/:param",
+      "rawPath": "/:id/tokens/:tokenId",
+      "dynamic": false,
+      "domain": "admins",
+      "file": "packages/mira-app-server/src/routes/AdminsRouter.ts",
+      "line": 256,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/codes",
+      "rawPath": "/codes",
+      "dynamic": false,
+      "domain": "auth",
+      "file": "packages/mira-app-server/src/routes/AuthRouter.ts",
+      "line": 83,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/register",
+      "rawPath": "/register",
+      "dynamic": false,
+      "domain": "auth",
+      "file": "packages/mira-app-server/src/routes/AuthRouter.ts",
+      "line": 152,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "rawPath": "/login",
+      "dynamic": false,
+      "domain": "auth",
+      "file": "packages/mira-app-server/src/routes/AuthRouter.ts",
+      "line": 226,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/logout",
+      "rawPath": "/logout",
+      "dynamic": false,
+      "domain": "auth",
+      "file": "packages/mira-app-server/src/routes/AuthRouter.ts",
+      "line": 276,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/verify",
+      "rawPath": "/verify",
+      "dynamic": false,
+      "domain": "auth",
+      "file": "packages/mira-app-server/src/routes/AuthRouter.ts",
+      "line": 299,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/cookie-sites",
+      "rawPath": "/",
+      "dynamic": false,
+      "domain": "cookie-sites",
+      "file": "packages/mira-app-server/src/routes/CookieSitesRouter.ts",
+      "line": 26,
+      "middlewares": [
+        "this.authRouter.authMiddleware"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/cookie-sites",
+      "rawPath": "/",
+      "dynamic": false,
+      "domain": "cookie-sites",
+      "file": "packages/mira-app-server/src/routes/CookieSitesRouter.ts",
+      "line": 38,
+      "middlewares": [
+        "this.authRouter.authMiddleware"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/cookie-sites/:param",
+      "rawPath": "/:id",
+      "dynamic": false,
+      "domain": "cookie-sites",
+      "file": "packages/mira-app-server/src/routes/CookieSitesRouter.ts",
+      "line": 54,
+      "middlewares": [
+        "this.authRouter.authMiddleware"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/cookie-sites/:param/default",
+      "rawPath": "/:id/default",
+      "dynamic": false,
+      "domain": "cookie-sites",
+      "file": "packages/mira-app-server/src/routes/CookieSitesRouter.ts",
+      "line": 70,
+      "middlewares": [
+        "this.authRouter.authMiddleware"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/cookie-sites/:param",
+      "rawPath": "/:id",
+      "dynamic": false,
+      "domain": "cookie-sites",
+      "file": "packages/mira-app-server/src/routes/CookieSitesRouter.ts",
+      "line": 85,
+      "middlewares": [
+        "this.authRouter.authMiddleware"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/database/tables",
+      "rawPath": "/tables",
+      "dynamic": false,
+      "domain": "database",
+      "file": "packages/mira-app-server/src/routes/DatabaseRoutes.ts",
+      "line": 23,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/database/tables/:param/data",
+      "rawPath": "/tables/:tableName/data",
+      "dynamic": false,
+      "domain": "database",
+      "file": "packages/mira-app-server/src/routes/DatabaseRoutes.ts",
+      "line": 59,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/database/tables/:param/schema",
+      "rawPath": "/tables/:tableName/schema",
+      "dynamic": false,
+      "domain": "database",
+      "file": "packages/mira-app-server/src/routes/DatabaseRoutes.ts",
+      "line": 84,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/database/query",
+      "rawPath": "/query",
+      "dynamic": false,
+      "domain": "database",
+      "file": "packages/mira-app-server/src/routes/DatabaseRoutes.ts",
+      "line": 107,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/devices",
+      "rawPath": "/",
+      "dynamic": false,
+      "domain": "devices",
+      "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
+      "line": 32,
+      "middlewares": [
+        "this.getAllDevices.bind(this)"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/devices/library/:param",
+      "rawPath": "/library/:libraryId",
+      "dynamic": false,
+      "domain": "devices",
+      "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
+      "line": 35,
+      "middlewares": [
+        "this.getLibraryDevices.bind(th"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/devices/broadcast",
+      "rawPath": "/broadcast",
+      "dynamic": false,
+      "domain": "devices",
+      "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
+      "line": 38,
+      "middlewares": [
+        "this.broadcastMessage.bind(thi"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/devices/disconnect",
+      "rawPath": "/disconnect",
+      "dynamic": false,
+      "domain": "devices",
+      "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
+      "line": 41,
+      "middlewares": [
+        "this.disconnectDevice.bind(thi"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/devices/:param/disconnect",
+      "rawPath": "/:clientId/disconnect",
+      "dynamic": false,
+      "domain": "devices",
+      "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
+      "line": 42,
+      "middlewares": [
+        "this.disconnectDeviceByClientI"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/devices/send-message",
+      "rawPath": "/send-message",
+      "dynamic": false,
+      "domain": "devices",
+      "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
+      "line": 45,
+      "middlewares": [
+        "this.sendMessageToDevice.bind("
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/devices/:param/message",
+      "rawPath": "/:clientId/message",
+      "dynamic": false,
+      "domain": "devices",
+      "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
+      "line": 46,
+      "middlewares": [
+        "this.sendMessageToDeviceByClie"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/devices/:param/test",
+      "rawPath": "/:clientId/test",
+      "dynamic": false,
+      "domain": "devices",
+      "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
+      "line": 47,
+      "middlewares": [
+        "this.sendTestMessageToDevice.b"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/devices/:param/messages",
+      "rawPath": "/:clientId/messages",
+      "dynamic": false,
+      "domain": "devices",
+      "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
+      "line": 48,
+      "middlewares": [
+        "this.getDeviceMessages.bind(th"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/devices/stats",
+      "rawPath": "/stats",
+      "dynamic": false,
+      "domain": "devices",
+      "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
+      "line": 51,
+      "middlewares": [
+        "this.getDeviceStats.bind(this)"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/download/start",
+      "rawPath": "/start",
+      "dynamic": false,
+      "domain": "download",
+      "file": "packages/mira-app-server/src/routes/DownloadRoutes.ts",
+      "line": 26,
+      "middlewares": [
+        "this.authRouter.authMiddleware"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/download/progress/:param",
+      "rawPath": "/progress/:batchId",
+      "dynamic": false,
+      "domain": "download",
+      "file": "packages/mira-app-server/src/routes/DownloadRoutes.ts",
+      "line": 57,
+      "middlewares": [
+        "this.authRouter.authMiddleware"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/upload",
+      "rawPath": "/upload",
+      "dynamic": false,
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 52,
+      "middlewares": [
+        "this.upload.array('files')"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/files/thumb/:param/:param",
+      "rawPath": "/thumb/:libraryId/:id",
+      "dynamic": false,
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 358,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/files/extra/:param/:param",
+      "rawPath": "/extra/:libraryId/:fileId",
+      "dynamic": false,
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 375,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/files/extra/:param/:param/*",
+      "rawPath": "/extra/:libraryId/:fileId/*",
+      "dynamic": false,
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 393,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/cover/:param/:param",
+      "rawPath": "/cover/:libraryId/:id",
+      "dynamic": false,
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 418,
+      "middlewares": [
+        "this.coverUpload.single('cover"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/files/preview/:param/:param/index.m3u8",
+      "rawPath": "/preview/:libraryId/:fileId/index.m3u8",
+      "dynamic": false,
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 451,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/files/preview/:param/:param/segment/:param.ts",
+      "rawPath": "/preview/:libraryId/:fileId/segment/:segment.ts",
+      "dynamic": false,
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 480,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/files/preview/:param/:param",
+      "rawPath": "/preview/:libraryId/:fileId",
+      "dynamic": false,
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 509,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/files/file/:param/:param",
+      "rawPath": "/file/:libraryId/:id",
+      "dynamic": false,
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 540,
+      "middlewares": []
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/files/:param/trash",
+      "rawPath": "/:libraryId/trash",
+      "dynamic": false,
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 633,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/batch-delete",
+      "rawPath": "/batch-delete",
+      "dynamic": false,
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 681,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/batch-recover",
+      "rawPath": "/batch-recover",
+      "dynamic": false,
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 802,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/recover",
+      "rawPath": "/recover",
+      "dynamic": false,
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 882,
+      "middlewares": []
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/files/:param/:param",
+      "rawPath": "/:libraryId/:id",
+      "dynamic": false,
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 947,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/metadata",
+      "rawPath": "/metadata",
+      "dynamic": false,
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 1054,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/getFiles",
+      "rawPath": "/getFiles",
+      "dynamic": false,
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 1100,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/getFile",
+      "rawPath": "/getFile",
+      "dynamic": false,
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 1153,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/getPreviewViewers",
+      "rawPath": "/getPreviewViewers",
+      "dynamic": false,
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 1219,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/rename",
+      "rawPath": "/rename",
+      "dynamic": false,
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 1283,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/update",
+      "rawPath": "/update",
+      "dynamic": false,
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 1341,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/folders/all",
+      "rawPath": "/all",
+      "dynamic": false,
+      "domain": "folders",
+      "file": "packages/mira-app-server/src/routes/FolderRouter.ts",
+      "line": 16,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/folders/query",
+      "rawPath": "/query",
+      "dynamic": false,
+      "domain": "folders",
+      "file": "packages/mira-app-server/src/routes/FolderRouter.ts",
+      "line": 21,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/folders/create",
+      "rawPath": "/create",
+      "dynamic": false,
+      "domain": "folders",
+      "file": "packages/mira-app-server/src/routes/FolderRouter.ts",
+      "line": 26,
+      "middlewares": []
+    },
+    {
+      "method": "PUT",
+      "path": "/api/folders/update",
+      "rawPath": "/update",
+      "dynamic": false,
+      "domain": "folders",
+      "file": "packages/mira-app-server/src/routes/FolderRouter.ts",
+      "line": 36,
+      "middlewares": []
+    },
+    {
+      "method": "PUT",
+      "path": "/api/folders/sort-index",
+      "rawPath": "/sort-index",
+      "dynamic": false,
+      "domain": "folders",
+      "file": "packages/mira-app-server/src/routes/FolderRouter.ts",
+      "line": 47,
+      "middlewares": []
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/folders/delete",
+      "rawPath": "/delete",
+      "dynamic": false,
+      "domain": "folders",
+      "file": "packages/mira-app-server/src/routes/FolderRouter.ts",
+      "line": 69,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/folders/file/set",
+      "rawPath": "/file/set",
+      "dynamic": false,
+      "domain": "folders",
+      "file": "packages/mira-app-server/src/routes/FolderRouter.ts",
+      "line": 82,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/folders/file/:param",
+      "rawPath": "/file/:fileId",
+      "dynamic": false,
+      "domain": "folders",
+      "file": "packages/mira-app-server/src/routes/FolderRouter.ts",
+      "line": 130,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/fs/mkdir",
+      "rawPath": "/mkdir",
+      "dynamic": false,
+      "domain": "fs",
+      "file": "packages/mira-app-server/src/routes/FsRouter.ts",
+      "line": 47,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/fs/dirs",
+      "rawPath": "/dirs",
+      "dynamic": false,
+      "domain": "fs",
+      "file": "packages/mira-app-server/src/routes/FsRouter.ts",
+      "line": 63,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/fs/list",
+      "rawPath": "/list",
+      "dynamic": false,
+      "domain": "fs",
+      "file": "packages/mira-app-server/src/routes/FsRouter.ts",
+      "line": 101,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/fs/move",
+      "rawPath": "/move",
+      "dynamic": false,
+      "domain": "fs",
+      "file": "packages/mira-app-server/src/routes/FsRouter.ts",
+      "line": 170,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/fs/remove",
+      "rawPath": "/remove",
+      "dynamic": false,
+      "domain": "fs",
+      "file": "packages/mira-app-server/src/routes/FsRouter.ts",
+      "line": 205,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/fs/sync",
+      "rawPath": "/sync",
+      "dynamic": false,
+      "domain": "fs",
+      "file": "packages/mira-app-server/src/routes/FsRouter.ts",
+      "line": 239,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/fs/database/missing",
+      "rawPath": "/database/missing",
+      "dynamic": false,
+      "domain": "fs",
+      "file": "packages/mira-app-server/src/routes/FsRouter.ts",
+      "line": 265,
+      "middlewares": []
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/fs/database/missing",
+      "rawPath": "/database/missing",
+      "dynamic": false,
+      "domain": "fs",
+      "file": "packages/mira-app-server/src/routes/FsRouter.ts",
+      "line": 281,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/fs/database/new",
+      "rawPath": "/database/new",
+      "dynamic": false,
+      "domain": "fs",
+      "file": "packages/mira-app-server/src/routes/FsRouter.ts",
+      "line": 301,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/fs/database/new/import",
+      "rawPath": "/database/new/import",
+      "dynamic": false,
+      "domain": "fs",
+      "file": "packages/mira-app-server/src/routes/FsRouter.ts",
+      "line": 320,
+      "middlewares": []
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/fs/database/new",
+      "rawPath": "/database/new",
+      "dynamic": false,
+      "domain": "fs",
+      "file": "packages/mira-app-server/src/routes/FsRouter.ts",
+      "line": 349,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/fs/database/duplicates",
+      "rawPath": "/database/duplicates",
+      "dynamic": false,
+      "domain": "fs",
+      "file": "packages/mira-app-server/src/routes/FsRouter.ts",
+      "line": 385,
+      "middlewares": []
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/fs/database/duplicates",
+      "rawPath": "/database/duplicates",
+      "dynamic": false,
+      "domain": "fs",
+      "file": "packages/mira-app-server/src/routes/FsRouter.ts",
+      "line": 399,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/fs/download",
+      "rawPath": "/download",
+      "dynamic": false,
+      "domain": "fs",
+      "file": "packages/mira-app-server/src/routes/FsRouter.ts",
+      "line": 419,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/__DYNAMIC__",
+      "rawPath": null,
+      "dynamic": true,
+      "domain": "api-root",
+      "file": "packages/mira-app-server/src/routes/HttpRouter.ts",
+      "line": 52,
+      "middlewares": [
+        "combinedHandler"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/__DYNAMIC__",
+      "rawPath": null,
+      "dynamic": true,
+      "domain": "api-root",
+      "file": "packages/mira-app-server/src/routes/HttpRouter.ts",
+      "line": 55,
+      "middlewares": [
+        "combinedHandler"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/__DYNAMIC__",
+      "rawPath": null,
+      "dynamic": true,
+      "domain": "api-root",
+      "file": "packages/mira-app-server/src/routes/HttpRouter.ts",
+      "line": 58,
+      "middlewares": [
+        "combinedHandler"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/__DYNAMIC__",
+      "rawPath": null,
+      "dynamic": true,
+      "domain": "api-root",
+      "file": "packages/mira-app-server/src/routes/HttpRouter.ts",
+      "line": 61,
+      "middlewares": [
+        "combinedHandler"
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/__DYNAMIC__",
+      "rawPath": null,
+      "dynamic": true,
+      "domain": "api-root",
+      "file": "packages/mira-app-server/src/routes/HttpRouter.ts",
+      "line": 64,
+      "middlewares": [
+        "combinedHandler"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/plugins/:param/:param/*",
+      "rawPath": "/plugins/:libraryId/:pluginName/*",
+      "dynamic": false,
+      "domain": "api-root",
+      "file": "packages/mira-app-server/src/routes/HttpRouter.ts",
+      "line": 148,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/libraries",
+      "rawPath": "/",
+      "dynamic": false,
+      "domain": "libraries",
+      "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
+      "line": 19,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/libraries",
+      "rawPath": "/",
+      "dynamic": false,
+      "domain": "libraries",
+      "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
+      "line": 80,
+      "middlewares": []
+    },
+    {
+      "method": "PUT",
+      "path": "/api/libraries/:param",
+      "rawPath": "/:id",
+      "dynamic": false,
+      "domain": "libraries",
+      "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
+      "line": 184,
+      "middlewares": []
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/libraries/:param/status",
+      "rawPath": "/:id/status",
+      "dynamic": false,
+      "domain": "libraries",
+      "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
+      "line": 334,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/libraries/:param/stats",
+      "rawPath": "/:id/stats",
+      "dynamic": false,
+      "domain": "libraries",
+      "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
+      "line": 397,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/libraries/:param/query",
+      "rawPath": "/:id/query",
+      "dynamic": false,
+      "domain": "libraries",
+      "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
+      "line": 467,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/libraries/:param/execute",
+      "rawPath": "/:id/execute",
+      "dynamic": false,
+      "domain": "libraries",
+      "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
+      "line": 507,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/libraries/:param/schema/:param",
+      "rawPath": "/:id/schema/:table",
+      "dynamic": false,
+      "domain": "libraries",
+      "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
+      "line": 551,
+      "middlewares": []
+    },
+    {
+      "method": "PUT",
+      "path": "/api/libraries/:param/record/:param/:param",
+      "rawPath": "/:id/record/:table/:recordId",
+      "dynamic": false,
+      "domain": "libraries",
+      "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
+      "line": 588,
+      "middlewares": []
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/libraries/:param",
+      "rawPath": "/:id",
+      "dynamic": false,
+      "domain": "libraries",
+      "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
+      "line": 634,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/plugins/web",
+      "rawPath": "/web",
+      "dynamic": false,
+      "domain": "plugins",
+      "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
+      "line": 165,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/plugins",
+      "rawPath": "/",
+      "dynamic": false,
+      "domain": "plugins",
+      "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
+      "line": 190,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/plugins/by-library",
+      "rawPath": "/by-library",
+      "dynamic": false,
+      "domain": "plugins",
+      "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
+      "line": 201,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/plugins/install",
+      "rawPath": "/install",
+      "dynamic": false,
+      "domain": "plugins",
+      "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
+      "line": 227,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/plugins/install/stream",
+      "rawPath": "/install/stream",
+      "dynamic": false,
+      "domain": "plugins",
+      "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
+      "line": 369,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/plugins/sync-meta",
+      "rawPath": "/sync-meta",
+      "dynamic": false,
+      "domain": "plugins",
+      "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
+      "line": 504,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/plugins/upload",
+      "rawPath": "/upload",
+      "dynamic": false,
+      "domain": "plugins",
+      "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
+      "line": 523,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/plugins/toggle-status",
+      "rawPath": "/toggle-status",
+      "dynamic": false,
+      "domain": "plugins",
+      "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
+      "line": 714,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/plugins/disable-all",
+      "rawPath": "/disable-all",
+      "dynamic": false,
+      "domain": "plugins",
+      "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
+      "line": 767,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/plugins/:param/start",
+      "rawPath": "/:id/start",
+      "dynamic": false,
+      "domain": "plugins",
+      "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
+      "line": 803,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/plugins/:param/stop",
+      "rawPath": "/:id/stop",
+      "dynamic": false,
+      "domain": "plugins",
+      "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
+      "line": 851,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/plugins/:param/config",
+      "rawPath": "/:id/config",
+      "dynamic": false,
+      "domain": "plugins",
+      "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
+      "line": 898,
+      "middlewares": []
+    },
+    {
+      "method": "PUT",
+      "path": "/api/plugins/:param/config",
+      "rawPath": "/:id/config",
+      "dynamic": false,
+      "domain": "plugins",
+      "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
+      "line": 931,
+      "middlewares": []
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/plugins/:param",
+      "rawPath": "/:id",
+      "dynamic": false,
+      "domain": "plugins",
+      "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
+      "line": 967,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/plugins/:param/icon/:param",
+      "rawPath": "/:pluginName/icon/:filename",
+      "dynamic": false,
+      "domain": "plugins",
+      "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
+      "line": 1017,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/plugins/:param",
+      "rawPath": "/:id",
+      "dynamic": false,
+      "domain": "plugins",
+      "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
+      "line": 1067,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/settings",
+      "rawPath": "/",
+      "dynamic": false,
+      "domain": "settings",
+      "file": "packages/mira-app-server/src/routes/SettingsRouter.ts",
+      "line": 19,
+      "middlewares": []
+    },
+    {
+      "method": "PUT",
+      "path": "/api/settings",
+      "rawPath": "/",
+      "dynamic": false,
+      "domain": "settings",
+      "file": "packages/mira-app-server/src/routes/SettingsRouter.ts",
+      "line": 25,
+      "middlewares": [
+        "this.authRouter.authMiddleware"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/statistics/:param/upload",
+      "rawPath": "/:libraryId/upload",
+      "dynamic": false,
+      "domain": "statistics",
+      "file": "packages/mira-app-server/src/routes/StatisticsRouter.ts",
+      "line": 22,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/statistics/:param/upload/daily",
+      "rawPath": "/:libraryId/upload/daily",
+      "dynamic": false,
+      "domain": "statistics",
+      "file": "packages/mira-app-server/src/routes/StatisticsRouter.ts",
+      "line": 53,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/statistics/:param/file-types",
+      "rawPath": "/:libraryId/file-types",
+      "dynamic": false,
+      "domain": "statistics",
+      "file": "packages/mira-app-server/src/routes/StatisticsRouter.ts",
+      "line": 71,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/statistics/:param/recent-uploads",
+      "rawPath": "/:libraryId/recent-uploads",
+      "dynamic": false,
+      "domain": "statistics",
+      "file": "packages/mira-app-server/src/routes/StatisticsRouter.ts",
+      "line": 89,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/tags/all",
+      "rawPath": "/all",
+      "dynamic": false,
+      "domain": "tags",
+      "file": "packages/mira-app-server/src/routes/TagRouter.ts",
+      "line": 16,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/tags/query",
+      "rawPath": "/query",
+      "dynamic": false,
+      "domain": "tags",
+      "file": "packages/mira-app-server/src/routes/TagRouter.ts",
+      "line": 21,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/tags/create",
+      "rawPath": "/create",
+      "dynamic": false,
+      "domain": "tags",
+      "file": "packages/mira-app-server/src/routes/TagRouter.ts",
+      "line": 26,
+      "middlewares": []
+    },
+    {
+      "method": "PUT",
+      "path": "/api/tags/update",
+      "rawPath": "/update",
+      "dynamic": false,
+      "domain": "tags",
+      "file": "packages/mira-app-server/src/routes/TagRouter.ts",
+      "line": 36,
+      "middlewares": []
+    },
+    {
+      "method": "PUT",
+      "path": "/api/tags/sort-index",
+      "rawPath": "/sort-index",
+      "dynamic": false,
+      "domain": "tags",
+      "file": "packages/mira-app-server/src/routes/TagRouter.ts",
+      "line": 47,
+      "middlewares": []
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/tags/delete",
+      "rawPath": "/delete",
+      "dynamic": false,
+      "domain": "tags",
+      "file": "packages/mira-app-server/src/routes/TagRouter.ts",
+      "line": 69,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/tags/file/set",
+      "rawPath": "/file/set",
+      "dynamic": false,
+      "domain": "tags",
+      "file": "packages/mira-app-server/src/routes/TagRouter.ts",
+      "line": 81,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/tags/file/:param",
+      "rawPath": "/file/:fileId",
+      "dynamic": false,
+      "domain": "tags",
+      "file": "packages/mira-app-server/src/routes/TagRouter.ts",
+      "line": 133,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/thumb/scan",
+      "rawPath": "/scan",
+      "dynamic": false,
+      "domain": "thumb",
+      "file": "packages/mira-app-server/src/routes/ThumbRouter.ts",
+      "line": 20,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/thumb/progress",
+      "rawPath": "/progress",
+      "dynamic": false,
+      "domain": "thumb",
+      "file": "packages/mira-app-server/src/routes/ThumbRouter.ts",
+      "line": 29,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/thumb/cancel",
+      "rawPath": "/cancel",
+      "dynamic": false,
+      "domain": "thumb",
+      "file": "packages/mira-app-server/src/routes/ThumbRouter.ts",
+      "line": 38,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/thumb/stats",
+      "rawPath": "/stats",
+      "dynamic": false,
+      "domain": "thumb",
+      "file": "packages/mira-app-server/src/routes/ThumbRouter.ts",
+      "line": 43,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/thumb/generators",
+      "rawPath": "/generators",
+      "dynamic": false,
+      "domain": "thumb",
+      "file": "packages/mira-app-server/src/routes/ThumbRouter.ts",
+      "line": 52,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/thumb/sync",
+      "rawPath": "/sync",
+      "dynamic": false,
+      "domain": "thumb",
+      "file": "packages/mira-app-server/src/routes/ThumbRouter.ts",
+      "line": 60,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/thumb/metadata/stats",
+      "rawPath": "/metadata/stats",
+      "dynamic": false,
+      "domain": "thumb",
+      "file": "packages/mira-app-server/src/routes/ThumbRouter.ts",
+      "line": 69,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/thumb/metadata/scan",
+      "rawPath": "/metadata/scan",
+      "dynamic": false,
+      "domain": "thumb",
+      "file": "packages/mira-app-server/src/routes/ThumbRouter.ts",
+      "line": 75,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/thumb/metadata/progress",
+      "rawPath": "/metadata/progress",
+      "dynamic": false,
+      "domain": "thumb",
+      "file": "packages/mira-app-server/src/routes/ThumbRouter.ts",
+      "line": 87,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/user/info",
+      "rawPath": "/info",
+      "dynamic": false,
+      "domain": "user",
+      "file": "packages/mira-app-server/src/routes/UserRouter.ts",
+      "line": 20,
+      "middlewares": []
+    },
+    {
+      "method": "PUT",
+      "path": "/api/user/change-password",
+      "rawPath": "/change-password",
+      "dynamic": false,
+      "domain": "user",
+      "file": "packages/mira-app-server/src/routes/UserRouter.ts",
+      "line": 100,
+      "middlewares": []
+    },
+    {
+      "method": "PUT",
+      "path": "/api/user/info",
+      "rawPath": "/info",
+      "dynamic": false,
+      "domain": "user",
+      "file": "packages/mira-app-server/src/routes/UserRouter.ts",
+      "line": 133,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/user/avatar",
+      "rawPath": "/avatar",
+      "dynamic": false,
+      "domain": "user",
+      "file": "packages/mira-app-server/src/routes/UserRouter.ts",
+      "line": 174,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/user/tokens",
+      "rawPath": "/tokens",
+      "dynamic": false,
+      "domain": "user",
+      "file": "packages/mira-app-server/src/routes/UserRouter.ts",
+      "line": 211,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/user/avatar/:param",
+      "rawPath": "/avatar/:userId",
+      "dynamic": false,
+      "domain": "user",
+      "file": "packages/mira-app-server/src/routes/UserRouter.ts",
+      "line": 233,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "__REGEXP__/^\\/dashboard(?:\\/.*)?$/",
+      "rawPath": "__REGEXP__/^\\/dashboard(?:\\/.*)?$/",
+      "dynamic": true,
+      "domain": "http-server-direct",
+      "file": "packages/mira-app-server/src/HttpServer.ts",
+      "line": 278,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/",
+      "rawPath": "/",
+      "dynamic": false,
+      "domain": "http-server-direct",
+      "file": "packages/mira-app-server/src/HttpServer.ts",
+      "line": 285,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "__REGEXP__/^\\/web(?:\\/.*)?$/",
+      "rawPath": "__REGEXP__/^\\/web(?:\\/.*)?$/",
+      "dynamic": true,
+      "domain": "http-server-direct",
+      "file": "packages/mira-app-server/src/HttpServer.ts",
+      "line": 302,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/server-plugins/:param/:param/*",
+      "rawPath": "/server-plugins/:libraryId/:pluginName/*",
+      "dynamic": false,
+      "domain": "http-server-direct",
+      "file": "packages/mira-app-server/src/HttpServer.ts",
+      "line": 311,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/plugin-routes",
+      "rawPath": "/api/plugin-routes",
+      "dynamic": false,
+      "domain": "http-server-direct",
+      "file": "packages/mira-app-server/src/HttpServer.ts",
+      "line": 364,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/plugin-routes/:param",
+      "rawPath": "/api/plugin-routes/:libraryId",
+      "dynamic": false,
+      "domain": "http-server-direct",
+      "file": "packages/mira-app-server/src/HttpServer.ts",
+      "line": 403,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/health",
+      "rawPath": "/api/health",
+      "dynamic": false,
+      "domain": "http-server-direct",
+      "file": "packages/mira-app-server/src/HttpServer.ts",
+      "line": 437,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/health",
+      "rawPath": "/health",
+      "dynamic": false,
+      "domain": "http-server-direct",
+      "file": "packages/mira-app-server/src/HttpServer.ts",
+      "line": 455,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/logs/stream",
+      "rawPath": "/api/logs/stream",
+      "dynamic": false,
+      "domain": "http-server-direct",
+      "file": "packages/mira-app-server/src/HttpServer.ts",
+      "line": 467,
+      "middlewares": []
+    }
+  ]
+}

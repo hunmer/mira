@@ -42,17 +42,15 @@ export class PluginModule {
     }
 
     /**
-     * 根据ID获取单个插件
-     * @param id 插件ID
+     * 根据ID获取单个插件（服务端单查）
+     * @param id 插件名称或ID
+     * @param libraryId 可选，插件所在素材库ID（同名插件多库安装时用于定位）
      * @returns Promise<Plugin>
      */
-    async getById(id: string): Promise<Plugin> {
-        const plugins = await this.getAll();
-        const plugin = plugins.find(p => p.id === id);
-        if (!plugin) {
-            throw new Error(`Plugin with id ${id} not found`);
-        }
-        return plugin;
+    async getById(id: string, libraryId?: string): Promise<Plugin> {
+        return await this.httpClient.get<Plugin>(`/api/plugins/${encodeURIComponent(id)}`, {
+            params: libraryId ? { libraryId } : undefined,
+        });
     }
 
     /**
@@ -84,11 +82,14 @@ export class PluginModule {
 
     /**
      * 卸载插件
-     * @param id 插件ID
+     * @param id 插件名称或ID
+     * @param libraryId 可选，插件所在素材库ID（同名插件多库安装时用于定位）
      * @returns Promise<BaseResponse>
      */
-    async uninstall(id: string): Promise<BaseResponse> {
-        return await this.httpClient.delete<BaseResponse>(`/api/plugins/${id}`);
+    async uninstall(id: string, libraryId?: string): Promise<BaseResponse> {
+        return await this.httpClient.delete<BaseResponse>(`/api/plugins/${encodeURIComponent(id)}`, {
+            params: libraryId ? { libraryId } : undefined,
+        });
     }
 
     /**

@@ -1,0 +1,1476 @@
+{
+  "generatedAt": "2026-08-14T08:35:21.358Z",
+  "summary": {
+    "missing": 61,
+    "covered": 65,
+    "excluded": 13,
+    "dynamic": 7
+  },
+  "routes": [
+    {
+      "method": "GET",
+      "path": "/api/admins",
+      "domain": "admins",
+      "file": "packages/mira-app-server/src/routes/AdminsRouter.ts",
+      "line": 17,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/admins",
+      "domain": "admins",
+      "file": "packages/mira-app-server/src/routes/AdminsRouter.ts",
+      "line": 40,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admins/:param",
+      "domain": "admins",
+      "file": "packages/mira-app-server/src/routes/AdminsRouter.ts",
+      "line": 112,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/admins/:param",
+      "domain": "admins",
+      "file": "packages/mira-app-server/src/routes/AdminsRouter.ts",
+      "line": 158,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/admins/:param/tokens",
+      "domain": "admins",
+      "file": "packages/mira-app-server/src/routes/AdminsRouter.ts",
+      "line": 203,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/admins/:param/tokens",
+      "domain": "admins",
+      "file": "packages/mira-app-server/src/routes/AdminsRouter.ts",
+      "line": 214,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admins/:param/tokens/:param",
+      "domain": "admins",
+      "file": "packages/mira-app-server/src/routes/AdminsRouter.ts",
+      "line": 235,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/admins/:param/tokens/:param",
+      "domain": "admins",
+      "file": "packages/mira-app-server/src/routes/AdminsRouter.ts",
+      "line": 256,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/codes",
+      "domain": "auth",
+      "file": "packages/mira-app-server/src/routes/AuthRouter.ts",
+      "line": 83,
+      "category": "covered",
+      "sdkMethods": [
+        "Auth.getCodes"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/register",
+      "domain": "auth",
+      "file": "packages/mira-app-server/src/routes/AuthRouter.ts",
+      "line": 152,
+      "category": "covered",
+      "sdkMethods": [
+        "Auth.register"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "domain": "auth",
+      "file": "packages/mira-app-server/src/routes/AuthRouter.ts",
+      "line": 226,
+      "category": "covered",
+      "sdkMethods": [
+        "Auth.login"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/logout",
+      "domain": "auth",
+      "file": "packages/mira-app-server/src/routes/AuthRouter.ts",
+      "line": 276,
+      "category": "covered",
+      "sdkMethods": [
+        "Auth.logout"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/verify",
+      "domain": "auth",
+      "file": "packages/mira-app-server/src/routes/AuthRouter.ts",
+      "line": 299,
+      "category": "covered",
+      "sdkMethods": [
+        "Auth.verify"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/cookie-sites",
+      "domain": "cookie-sites",
+      "file": "packages/mira-app-server/src/routes/CookieSitesRouter.ts",
+      "line": 26,
+      "category": "covered",
+      "sdkMethods": [
+        "CookieSite.getAll"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/cookie-sites",
+      "domain": "cookie-sites",
+      "file": "packages/mira-app-server/src/routes/CookieSitesRouter.ts",
+      "line": 38,
+      "category": "covered",
+      "sdkMethods": [
+        "CookieSite.create"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/cookie-sites/:param",
+      "domain": "cookie-sites",
+      "file": "packages/mira-app-server/src/routes/CookieSitesRouter.ts",
+      "line": 54,
+      "category": "covered",
+      "sdkMethods": [
+        "CookieSite.update"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/cookie-sites/:param/default",
+      "domain": "cookie-sites",
+      "file": "packages/mira-app-server/src/routes/CookieSitesRouter.ts",
+      "line": 70,
+      "category": "covered",
+      "sdkMethods": [
+        "CookieSite.setDefault"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/cookie-sites/:param",
+      "domain": "cookie-sites",
+      "file": "packages/mira-app-server/src/routes/CookieSitesRouter.ts",
+      "line": 85,
+      "category": "covered",
+      "sdkMethods": [
+        "CookieSite.delete"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/database/tables",
+      "domain": "database",
+      "file": "packages/mira-app-server/src/routes/DatabaseRoutes.ts",
+      "line": 23,
+      "category": "covered",
+      "sdkMethods": [
+        "Database.getTables"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/database/tables/:param/data",
+      "domain": "database",
+      "file": "packages/mira-app-server/src/routes/DatabaseRoutes.ts",
+      "line": 59,
+      "category": "covered",
+      "sdkMethods": [
+        "Database.getTableData"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/database/tables/:param/schema",
+      "domain": "database",
+      "file": "packages/mira-app-server/src/routes/DatabaseRoutes.ts",
+      "line": 84,
+      "category": "covered",
+      "sdkMethods": [
+        "Database.getTableSchema"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/database/query",
+      "domain": "database",
+      "file": "packages/mira-app-server/src/routes/DatabaseRoutes.ts",
+      "line": 107,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/devices",
+      "domain": "devices",
+      "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
+      "line": 32,
+      "category": "covered",
+      "sdkMethods": [
+        "Device.getAll"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/devices/library/:param",
+      "domain": "devices",
+      "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
+      "line": 35,
+      "category": "covered",
+      "sdkMethods": [
+        "Device.getByLibrary"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/devices/broadcast",
+      "domain": "devices",
+      "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
+      "line": 38,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/devices/disconnect",
+      "domain": "devices",
+      "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
+      "line": 41,
+      "category": "covered",
+      "sdkMethods": [
+        "Device.disconnect"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/devices/:param/disconnect",
+      "domain": "devices",
+      "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
+      "line": 42,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/devices/send-message",
+      "domain": "devices",
+      "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
+      "line": 45,
+      "category": "covered",
+      "sdkMethods": [
+        "Device.sendMessage"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/devices/:param/message",
+      "domain": "devices",
+      "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
+      "line": 46,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/devices/:param/test",
+      "domain": "devices",
+      "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
+      "line": 47,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/devices/:param/messages",
+      "domain": "devices",
+      "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
+      "line": 48,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/devices/stats",
+      "domain": "devices",
+      "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
+      "line": 51,
+      "category": "covered",
+      "sdkMethods": [
+        "Device.getStats"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/download/start",
+      "domain": "download",
+      "file": "packages/mira-app-server/src/routes/DownloadRoutes.ts",
+      "line": 26,
+      "category": "covered",
+      "sdkMethods": [
+        "File.batchImportFromUrls"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/download/progress/:param",
+      "domain": "download",
+      "file": "packages/mira-app-server/src/routes/DownloadRoutes.ts",
+      "line": 57,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/upload",
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 52,
+      "category": "covered",
+      "sdkMethods": [
+        "File.upload",
+        "File.writeFile"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/files/thumb/:param/:param",
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 358,
+      "category": "excluded",
+      "sdkMethods": [],
+      "note": "thumbnail image stream"
+    },
+    {
+      "method": "GET",
+      "path": "/api/files/extra/:param/:param",
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 375,
+      "category": "excluded",
+      "sdkMethods": [],
+      "note": "extra file resource stream"
+    },
+    {
+      "method": "GET",
+      "path": "/api/files/extra/:param/:param/*",
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 393,
+      "category": "excluded",
+      "sdkMethods": [],
+      "note": "extra file resource wildcard"
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/cover/:param/:param",
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 418,
+      "category": "covered",
+      "sdkMethods": [
+        "File.setCover"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/files/preview/:param/:param/index.m3u8",
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 451,
+      "category": "excluded",
+      "sdkMethods": [],
+      "note": "HLS manifest resource"
+    },
+    {
+      "method": "GET",
+      "path": "/api/files/preview/:param/:param/segment/:param.ts",
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 480,
+      "category": "excluded",
+      "sdkMethods": [],
+      "note": "HLS segment resource"
+    },
+    {
+      "method": "GET",
+      "path": "/api/files/preview/:param/:param",
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 509,
+      "category": "excluded",
+      "sdkMethods": [],
+      "note": "preview file stream"
+    },
+    {
+      "method": "GET",
+      "path": "/api/files/file/:param/:param",
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 540,
+      "category": "excluded",
+      "sdkMethods": [],
+      "note": "raw file stream (Range support)"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/files/:param/trash",
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 633,
+      "category": "covered",
+      "sdkMethods": [
+        "File.emptyTrash"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/batch-delete",
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 681,
+      "category": "covered",
+      "sdkMethods": [
+        "File.batchDelete"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/batch-recover",
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 802,
+      "category": "covered",
+      "sdkMethods": [
+        "File.batchRestoreFiles"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/recover",
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 882,
+      "category": "covered",
+      "sdkMethods": [
+        "File.restoreFile"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/files/:param/:param",
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 947,
+      "category": "covered",
+      "sdkMethods": [
+        "File.delete"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/metadata",
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 1054,
+      "category": "covered",
+      "sdkMethods": [
+        "File.getMetadataByIds"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/getFiles",
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 1100,
+      "category": "covered",
+      "sdkMethods": [
+        "File.getFiles"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/getFile",
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 1153,
+      "category": "covered",
+      "sdkMethods": [
+        "File.getFile"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/getPreviewViewers",
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 1219,
+      "category": "covered",
+      "sdkMethods": [
+        "File.getPreviewViewers"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/rename",
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 1283,
+      "category": "covered",
+      "sdkMethods": [
+        "File.renameFile"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/update",
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 1341,
+      "category": "covered",
+      "sdkMethods": [
+        "File.updateFile"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/folders/all",
+      "domain": "folders",
+      "file": "packages/mira-app-server/src/routes/FolderRouter.ts",
+      "line": 16,
+      "category": "covered",
+      "sdkMethods": [
+        "Folder.getAll"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/folders/query",
+      "domain": "folders",
+      "file": "packages/mira-app-server/src/routes/FolderRouter.ts",
+      "line": 21,
+      "category": "covered",
+      "sdkMethods": [
+        "Folder.query"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/folders/create",
+      "domain": "folders",
+      "file": "packages/mira-app-server/src/routes/FolderRouter.ts",
+      "line": 26,
+      "category": "covered",
+      "sdkMethods": [
+        "Folder.create"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/folders/update",
+      "domain": "folders",
+      "file": "packages/mira-app-server/src/routes/FolderRouter.ts",
+      "line": 36,
+      "category": "covered",
+      "sdkMethods": [
+        "Folder.update"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/folders/sort-index",
+      "domain": "folders",
+      "file": "packages/mira-app-server/src/routes/FolderRouter.ts",
+      "line": 47,
+      "category": "covered",
+      "sdkMethods": [
+        "Folder.updateSortIndex"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/folders/delete",
+      "domain": "folders",
+      "file": "packages/mira-app-server/src/routes/FolderRouter.ts",
+      "line": 69,
+      "category": "covered",
+      "sdkMethods": [
+        "Folder.delete"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/folders/file/set",
+      "domain": "folders",
+      "file": "packages/mira-app-server/src/routes/FolderRouter.ts",
+      "line": 82,
+      "category": "covered",
+      "sdkMethods": [
+        "Folder.setFileFolder"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/folders/file/:param",
+      "domain": "folders",
+      "file": "packages/mira-app-server/src/routes/FolderRouter.ts",
+      "line": 130,
+      "category": "covered",
+      "sdkMethods": [
+        "Folder.getFileFolder"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/fs/mkdir",
+      "domain": "fs",
+      "file": "packages/mira-app-server/src/routes/FsRouter.ts",
+      "line": 47,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/fs/dirs",
+      "domain": "fs",
+      "file": "packages/mira-app-server/src/routes/FsRouter.ts",
+      "line": 63,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/fs/list",
+      "domain": "fs",
+      "file": "packages/mira-app-server/src/routes/FsRouter.ts",
+      "line": 101,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/fs/move",
+      "domain": "fs",
+      "file": "packages/mira-app-server/src/routes/FsRouter.ts",
+      "line": 170,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/fs/remove",
+      "domain": "fs",
+      "file": "packages/mira-app-server/src/routes/FsRouter.ts",
+      "line": 205,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/fs/sync",
+      "domain": "fs",
+      "file": "packages/mira-app-server/src/routes/FsRouter.ts",
+      "line": 239,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/fs/database/missing",
+      "domain": "fs",
+      "file": "packages/mira-app-server/src/routes/FsRouter.ts",
+      "line": 265,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/fs/database/missing",
+      "domain": "fs",
+      "file": "packages/mira-app-server/src/routes/FsRouter.ts",
+      "line": 281,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/fs/database/new",
+      "domain": "fs",
+      "file": "packages/mira-app-server/src/routes/FsRouter.ts",
+      "line": 301,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/fs/database/new/import",
+      "domain": "fs",
+      "file": "packages/mira-app-server/src/routes/FsRouter.ts",
+      "line": 320,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/fs/database/new",
+      "domain": "fs",
+      "file": "packages/mira-app-server/src/routes/FsRouter.ts",
+      "line": 349,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/fs/database/duplicates",
+      "domain": "fs",
+      "file": "packages/mira-app-server/src/routes/FsRouter.ts",
+      "line": 385,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/fs/database/duplicates",
+      "domain": "fs",
+      "file": "packages/mira-app-server/src/routes/FsRouter.ts",
+      "line": 399,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/fs/download",
+      "domain": "fs",
+      "file": "packages/mira-app-server/src/routes/FsRouter.ts",
+      "line": 419,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/__DYNAMIC__",
+      "domain": "api-root",
+      "file": "packages/mira-app-server/src/routes/HttpRouter.ts",
+      "line": 52,
+      "category": "dynamic",
+      "sdkMethods": [],
+      "note": "HttpRouter plugin runtime registration"
+    },
+    {
+      "method": "GET",
+      "path": "/api/__DYNAMIC__",
+      "domain": "api-root",
+      "file": "packages/mira-app-server/src/routes/HttpRouter.ts",
+      "line": 55,
+      "category": "dynamic",
+      "sdkMethods": [],
+      "note": "HttpRouter plugin runtime registration"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/__DYNAMIC__",
+      "domain": "api-root",
+      "file": "packages/mira-app-server/src/routes/HttpRouter.ts",
+      "line": 58,
+      "category": "dynamic",
+      "sdkMethods": [],
+      "note": "HttpRouter plugin runtime registration"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/__DYNAMIC__",
+      "domain": "api-root",
+      "file": "packages/mira-app-server/src/routes/HttpRouter.ts",
+      "line": 61,
+      "category": "dynamic",
+      "sdkMethods": [],
+      "note": "HttpRouter plugin runtime registration"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/__DYNAMIC__",
+      "domain": "api-root",
+      "file": "packages/mira-app-server/src/routes/HttpRouter.ts",
+      "line": 64,
+      "category": "dynamic",
+      "sdkMethods": [],
+      "note": "HttpRouter plugin runtime registration"
+    },
+    {
+      "method": "GET",
+      "path": "/api/plugins/:param/:param/*",
+      "domain": "api-root",
+      "file": "packages/mira-app-server/src/routes/HttpRouter.ts",
+      "line": 148,
+      "category": "excluded",
+      "sdkMethods": [],
+      "note": "plugin static/resource wildcard"
+    },
+    {
+      "method": "GET",
+      "path": "/api/libraries",
+      "domain": "libraries",
+      "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
+      "line": 19,
+      "category": "covered",
+      "sdkMethods": [
+        "Library.getAll"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/libraries",
+      "domain": "libraries",
+      "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
+      "line": 80,
+      "category": "covered",
+      "sdkMethods": [
+        "Library.create"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/libraries/:param",
+      "domain": "libraries",
+      "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
+      "line": 184,
+      "category": "covered",
+      "sdkMethods": [
+        "Library.update"
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/libraries/:param/status",
+      "domain": "libraries",
+      "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
+      "line": 334,
+      "category": "covered",
+      "sdkMethods": [
+        "Library.setStatus"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/libraries/:param/stats",
+      "domain": "libraries",
+      "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
+      "line": 397,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/libraries/:param/query",
+      "domain": "libraries",
+      "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
+      "line": 467,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/libraries/:param/execute",
+      "domain": "libraries",
+      "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
+      "line": 507,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/libraries/:param/schema/:param",
+      "domain": "libraries",
+      "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
+      "line": 551,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "PUT",
+      "path": "/api/libraries/:param/record/:param/:param",
+      "domain": "libraries",
+      "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
+      "line": 588,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/libraries/:param",
+      "domain": "libraries",
+      "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
+      "line": 634,
+      "category": "covered",
+      "sdkMethods": [
+        "Library.delete"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/plugins/web",
+      "domain": "plugins",
+      "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
+      "line": 165,
+      "category": "covered",
+      "sdkMethods": [
+        "Plugin.getWeb"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/plugins",
+      "domain": "plugins",
+      "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
+      "line": 190,
+      "category": "covered",
+      "sdkMethods": [
+        "Plugin.getAll"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/plugins/by-library",
+      "domain": "plugins",
+      "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
+      "line": 201,
+      "category": "covered",
+      "sdkMethods": [
+        "Plugin.getByLibrary"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/plugins/install",
+      "domain": "plugins",
+      "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
+      "line": 227,
+      "category": "covered",
+      "sdkMethods": [
+        "Plugin.install"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/plugins/install/stream",
+      "domain": "plugins",
+      "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
+      "line": 369,
+      "category": "excluded",
+      "sdkMethods": [],
+      "note": "SSE install progress stream"
+    },
+    {
+      "method": "POST",
+      "path": "/api/plugins/sync-meta",
+      "domain": "plugins",
+      "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
+      "line": 504,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/plugins/upload",
+      "domain": "plugins",
+      "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
+      "line": 523,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/plugins/toggle-status",
+      "domain": "plugins",
+      "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
+      "line": 714,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/plugins/disable-all",
+      "domain": "plugins",
+      "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
+      "line": 767,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/plugins/:param/start",
+      "domain": "plugins",
+      "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
+      "line": 803,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/plugins/:param/stop",
+      "domain": "plugins",
+      "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
+      "line": 851,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/plugins/:param/config",
+      "domain": "plugins",
+      "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
+      "line": 898,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "PUT",
+      "path": "/api/plugins/:param/config",
+      "domain": "plugins",
+      "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
+      "line": 931,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/plugins/:param",
+      "domain": "plugins",
+      "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
+      "line": 967,
+      "category": "covered",
+      "sdkMethods": [
+        "Plugin.uninstall"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/plugins/:param/icon/:param",
+      "domain": "plugins",
+      "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
+      "line": 1017,
+      "category": "excluded",
+      "sdkMethods": [],
+      "note": "plugin icon image resource"
+    },
+    {
+      "method": "GET",
+      "path": "/api/plugins/:param",
+      "domain": "plugins",
+      "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
+      "line": 1067,
+      "category": "covered",
+      "sdkMethods": [
+        "Plugin.getById"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/settings",
+      "domain": "settings",
+      "file": "packages/mira-app-server/src/routes/SettingsRouter.ts",
+      "line": 19,
+      "category": "covered",
+      "sdkMethods": [
+        "Settings.get"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/settings",
+      "domain": "settings",
+      "file": "packages/mira-app-server/src/routes/SettingsRouter.ts",
+      "line": 25,
+      "category": "covered",
+      "sdkMethods": [
+        "Settings.update"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/statistics/:param/upload",
+      "domain": "statistics",
+      "file": "packages/mira-app-server/src/routes/StatisticsRouter.ts",
+      "line": 22,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/statistics/:param/upload/daily",
+      "domain": "statistics",
+      "file": "packages/mira-app-server/src/routes/StatisticsRouter.ts",
+      "line": 53,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/statistics/:param/file-types",
+      "domain": "statistics",
+      "file": "packages/mira-app-server/src/routes/StatisticsRouter.ts",
+      "line": 71,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/statistics/:param/recent-uploads",
+      "domain": "statistics",
+      "file": "packages/mira-app-server/src/routes/StatisticsRouter.ts",
+      "line": 89,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/tags/all",
+      "domain": "tags",
+      "file": "packages/mira-app-server/src/routes/TagRouter.ts",
+      "line": 16,
+      "category": "covered",
+      "sdkMethods": [
+        "Tag.getAll"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tags/query",
+      "domain": "tags",
+      "file": "packages/mira-app-server/src/routes/TagRouter.ts",
+      "line": 21,
+      "category": "covered",
+      "sdkMethods": [
+        "Tag.query"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tags/create",
+      "domain": "tags",
+      "file": "packages/mira-app-server/src/routes/TagRouter.ts",
+      "line": 26,
+      "category": "covered",
+      "sdkMethods": [
+        "Tag.create"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/tags/update",
+      "domain": "tags",
+      "file": "packages/mira-app-server/src/routes/TagRouter.ts",
+      "line": 36,
+      "category": "covered",
+      "sdkMethods": [
+        "Tag.update"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/tags/sort-index",
+      "domain": "tags",
+      "file": "packages/mira-app-server/src/routes/TagRouter.ts",
+      "line": 47,
+      "category": "covered",
+      "sdkMethods": [
+        "Tag.updateSortIndex"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/tags/delete",
+      "domain": "tags",
+      "file": "packages/mira-app-server/src/routes/TagRouter.ts",
+      "line": 69,
+      "category": "covered",
+      "sdkMethods": [
+        "Tag.delete"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/tags/file/set",
+      "domain": "tags",
+      "file": "packages/mira-app-server/src/routes/TagRouter.ts",
+      "line": 81,
+      "category": "covered",
+      "sdkMethods": [
+        "Tag.setFileTags"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/tags/file/:param",
+      "domain": "tags",
+      "file": "packages/mira-app-server/src/routes/TagRouter.ts",
+      "line": 133,
+      "category": "covered",
+      "sdkMethods": [
+        "Tag.getFileTags"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/thumb/scan",
+      "domain": "thumb",
+      "file": "packages/mira-app-server/src/routes/ThumbRouter.ts",
+      "line": 20,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/thumb/progress",
+      "domain": "thumb",
+      "file": "packages/mira-app-server/src/routes/ThumbRouter.ts",
+      "line": 29,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/thumb/cancel",
+      "domain": "thumb",
+      "file": "packages/mira-app-server/src/routes/ThumbRouter.ts",
+      "line": 38,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/thumb/stats",
+      "domain": "thumb",
+      "file": "packages/mira-app-server/src/routes/ThumbRouter.ts",
+      "line": 43,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/thumb/generators",
+      "domain": "thumb",
+      "file": "packages/mira-app-server/src/routes/ThumbRouter.ts",
+      "line": 52,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/thumb/sync",
+      "domain": "thumb",
+      "file": "packages/mira-app-server/src/routes/ThumbRouter.ts",
+      "line": 60,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/thumb/metadata/stats",
+      "domain": "thumb",
+      "file": "packages/mira-app-server/src/routes/ThumbRouter.ts",
+      "line": 69,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/thumb/metadata/scan",
+      "domain": "thumb",
+      "file": "packages/mira-app-server/src/routes/ThumbRouter.ts",
+      "line": 75,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/thumb/metadata/progress",
+      "domain": "thumb",
+      "file": "packages/mira-app-server/src/routes/ThumbRouter.ts",
+      "line": 87,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/user/info",
+      "domain": "user",
+      "file": "packages/mira-app-server/src/routes/UserRouter.ts",
+      "line": 20,
+      "category": "covered",
+      "sdkMethods": [
+        "User.getInfo"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/user/change-password",
+      "domain": "user",
+      "file": "packages/mira-app-server/src/routes/UserRouter.ts",
+      "line": 100,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "PUT",
+      "path": "/api/user/info",
+      "domain": "user",
+      "file": "packages/mira-app-server/src/routes/UserRouter.ts",
+      "line": 133,
+      "category": "covered",
+      "sdkMethods": [
+        "User.updateInfo"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/user/avatar",
+      "domain": "user",
+      "file": "packages/mira-app-server/src/routes/UserRouter.ts",
+      "line": 174,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/user/tokens",
+      "domain": "user",
+      "file": "packages/mira-app-server/src/routes/UserRouter.ts",
+      "line": 211,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/user/avatar/:param",
+      "domain": "user",
+      "file": "packages/mira-app-server/src/routes/UserRouter.ts",
+      "line": 233,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "GET",
+      "path": "__REGEXP__/^\\/dashboard(?:\\/.*)?$/",
+      "domain": "http-server-direct",
+      "file": "packages/mira-app-server/src/HttpServer.ts",
+      "line": 278,
+      "category": "dynamic",
+      "sdkMethods": [],
+      "note": "regex/dynamic"
+    },
+    {
+      "method": "GET",
+      "path": "/",
+      "domain": "http-server-direct",
+      "file": "packages/mira-app-server/src/HttpServer.ts",
+      "line": 285,
+      "category": "excluded",
+      "sdkMethods": [],
+      "note": "root redirect to /web/"
+    },
+    {
+      "method": "GET",
+      "path": "__REGEXP__/^\\/web(?:\\/.*)?$/",
+      "domain": "http-server-direct",
+      "file": "packages/mira-app-server/src/HttpServer.ts",
+      "line": 302,
+      "category": "dynamic",
+      "sdkMethods": [],
+      "note": "regex/dynamic"
+    },
+    {
+      "method": "GET",
+      "path": "/server-plugins/:param/:param/*",
+      "domain": "http-server-direct",
+      "file": "packages/mira-app-server/src/HttpServer.ts",
+      "line": 311,
+      "category": "excluded",
+      "sdkMethods": [],
+      "note": "plugin static resource wildcard"
+    },
+    {
+      "method": "GET",
+      "path": "/api/plugin-routes",
+      "domain": "http-server-direct",
+      "file": "packages/mira-app-server/src/HttpServer.ts",
+      "line": 364,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/plugin-routes/:param",
+      "domain": "http-server-direct",
+      "file": "packages/mira-app-server/src/HttpServer.ts",
+      "line": 403,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/health",
+      "domain": "http-server-direct",
+      "file": "packages/mira-app-server/src/HttpServer.ts",
+      "line": 437,
+      "category": "covered",
+      "sdkMethods": [
+        "System.getHealth"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/health",
+      "domain": "http-server-direct",
+      "file": "packages/mira-app-server/src/HttpServer.ts",
+      "line": 455,
+      "category": "covered",
+      "sdkMethods": [
+        "System.getSimpleHealth"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/logs/stream",
+      "domain": "http-server-direct",
+      "file": "packages/mira-app-server/src/HttpServer.ts",
+      "line": 467,
+      "category": "excluded",
+      "sdkMethods": [],
+      "note": "SSE log stream, not JSON API"
+    }
+  ]
+}
