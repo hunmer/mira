@@ -68,16 +68,11 @@ export interface FloatingWindowOptions {
   acceptFirstMouse?: boolean
   /** 创建/显示时是否触发全屏 loading 遮罩，默认 true（通知窗口应设为 false） */
   showLoading?: boolean
-  /** 渲染层 HTML 文件名，如 'search-window.html'（与 htmlDirName 配套，走 dist-float 独立页面） */
-  htmlFileName?: string
-  /** 渲染层 HTML 所在源目录名（如 'search-window'），开发态从 src/<htmlDirName>/ 加载 */
-  htmlDirName?: string
   /**
    * 渲染器应用的 Vite 多页入口页面名（如 'notification-window.html'）：
    * 开发态加载 dev server 页面，生产加载 dist-renderer 内页面。
-   * 设置后忽略 htmlFileName / htmlDirName。
    */
-  rendererEntry?: string
+  rendererEntry: string
   /** preload 文件名，如 'search-preload.js' */
   preloadFileName: string
   /** IPC 通道前缀，如 'search-window'（最终注册 `<prefix>:show|hide|toggle`） */
@@ -127,16 +122,10 @@ export class FloatingWindowHandler {
       | 'minHeight'
       | 'maxWidth'
       | 'maxHeight'
-      | 'htmlFileName'
-      | 'htmlDirName'
-      | 'rendererEntry'
     >
   > & {
     messageHandlers?: Record<string, (data: any, ctx: FloatingWindowMessageContext) => void>
     position: FloatingWindowPosition
-    htmlFileName?: string
-    htmlDirName?: string
-    rendererEntry?: string
     minWidth?: number
     minHeight?: number
     maxWidth?: number
@@ -368,27 +357,14 @@ export class FloatingWindowHandler {
 
     this.window = new BrowserWindow(browserOptions)
 
-    // 加载渲染层页面：
-    //   - rendererEntry：渲染器应用的 Vite 多页入口（dev server / dist-renderer）
-    //   - 其余：dist-float 独立 HTML（搜索窗口等纯静态页面）
-    if (opts.rendererEntry) {
-      if (app.isPackaged) {
-        this.window.loadFile(
-          require('path').join(__dirname, `../dist-renderer/${opts.rendererEntry}`)
-        )
-      } else {
-        const devServerUrl = process.env.VITE_DEV_SERVER_URL || 'http://localhost:3000'
-        this.window.loadURL(`${devServerUrl}/${opts.rendererEntry}`)
-      }
-    } else if (app.isPackaged) {
-      const pagePath = require('path').join(__dirname, `../dist-float/${opts.htmlFileName}`)
-      this.window.loadFile(pagePath)
-    } else {
-      const pagePath = require('path').join(
-        __dirname,
-        `../src/${opts.htmlDirName}/${opts.htmlFileName}`
+    // 加载渲染器应用的 Vite 多页入口：dev 走 dev server，生产走 dist-renderer
+    if (app.isPackaged) {
+      this.window.loadFile(
+        require('path').join(__dirname, `../dist-renderer/${opts.rendererEntry}`)
       )
-      this.window.loadFile(pagePath)
+    } else {
+      const devServerUrl = process.env.VITE_DEV_SERVER_URL || 'http://localhost:3000'
+      this.window.loadURL(`${devServerUrl}/${opts.rendererEntry}`)
     }
 
     this.setupWindowEvents()

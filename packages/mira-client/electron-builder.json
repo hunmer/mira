@@ -10,7 +10,6 @@
     "dist-renderer/**/*",
     "dist-main/**/*",
     "dist-preload/**/*",
-    "dist-float/**/*",
     "package.json",
     "node_modules/**/*",
     "!node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",

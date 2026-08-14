@@ -382,6 +382,8 @@ export interface NotificationPayload {
   icon?: string
   /** 多文件通知的缩略图 URL（最多展示 4 张） */
   icons?: string[]
+  /** 附带图片通知：图片 URL 列表（卡片左侧展示，优先于 icons） */
+  images?: string[]
   /** 通知类型，决定左侧色条颜色：info | success | warning | error */
   type?: 'info' | 'success' | 'warning' | 'error'
   /** 操作按钮 [{ id, label }]，点击后通过 action 事件回传 id */

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import { Toaster } from '@/components/ui/sonner'
 import NotificationCard from './NotificationCard.vue'
-import { createNotificationBridge, type NotificationBridge } from './bridge'
+import { createFloatingWindowBridge, type FloatingWindowBridge } from '../floating-window/bridge'
 import type {
   FloatingWindowPosition,
   NotificationAction,
@@ -27,9 +27,7 @@ const toasterPosition = ref<ToasterPosition>('bottom-right')
 
 /** 活跃 toast id 集合，与主进程下发的 items 保持对齐 */
 const activeIds = new Set<string | number>()
-let bridge: NotificationBridge | null = null
-let lastReportedHeight = 0
-let pollTimer: number | null = null
+let bridge: FloatingWindowBridge | null = null
 /** 指针是否位于通知卡片上（驱动鼠标穿透切换与悬停暂停） */
 let pointerOverToast = false
 
@@ -84,7 +82,6 @@ function syncToasts(payload: NotificationPayload): void {
   }
   activeIds.clear()
   ids.forEach((id) => activeIds.add(id))
-  scheduleMeasure()
 }
 
 function sendClick(item: NotificationItem): void {
@@ -113,42 +110,6 @@ function sendDismissItem(item: NotificationItem, index: number): void {
     index,
     timestamp: Date.now(),
   })
-}
-
-// ============ 高度测量 ============
-
-/**
- * 测量 toast 列表实际占用高度。
- * vue-sonner 的 li 为 absolute 定位（ol 高度恒为 0），必须遍历 li 取包围盒。
- */
-function measureToasterHeight(): number {
-  const items = document.querySelectorAll('[data-sonner-toaster] li[data-sonner-toast]')
-  if (items.length === 0) return 0
-  let top = Infinity
-  let bottom = -Infinity
-  items.forEach((li) => {
-    const rect = li.getBoundingClientRect()
-    if (rect.height === 0) return
-    top = Math.min(top, rect.top)
-    bottom = Math.max(bottom, rect.bottom)
-  })
-  if (top === Infinity) return 0
-  return Math.ceil(bottom - top) + 4
-}
-
-/** 高度变化时上报，主进程据此调整窗口尺寸并重定位 */
-function reportMeasure(): void {
-  const height = measureToasterHeight()
-  if (height > 0 && height !== lastReportedHeight) {
-    lastReportedHeight = height
-    bridge?.send({ type: 'measure-ready', height, timestamp: Date.now() })
-  }
-}
-
-/** 内容变化后立即测一次，并在 toast 进出动画结束后（~400ms）再修正一次 */
-function scheduleMeasure(): void {
-  nextTick(reportMeasure)
-  window.setTimeout(reportMeasure, 450)
 }
 
 // ============ 鼠标穿透 ============
@@ -183,7 +144,7 @@ onMounted(() => {
   document.addEventListener('mousemove', handlePointerMove)
   document.addEventListener('mouseout', handleWindowMouseOut)
 
-  bridge = createNotificationBridge({
+  bridge = createFloatingWindowBridge({
     role: 'notification',
     onMessage: (data) => {
       if (data.type === 'notification-content' && data.payload) {
@@ -202,8 +163,6 @@ onMounted(() => {
   })
   bridge.start()
 
-  // 兜底轮询：覆盖动画期间的高度渐变与任何漏测时机
-  pollTimer = window.setInterval(reportMeasure, 250)
 })
 
 onUnmounted(() => {
@@ -212,10 +171,6 @@ onUnmounted(() => {
   document.removeEventListener('drop', preventDefault)
   document.removeEventListener('mousemove', handlePointerMove)
   document.removeEventListener('mouseout', handleWindowMouseOut)
-  if (pollTimer !== null) {
-    window.clearInterval(pollTimer)
-    pollTimer = null
-  }
 })
 
 function preventDefault(e: Event): void {

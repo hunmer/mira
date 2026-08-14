@@ -21,6 +21,8 @@ export interface NotificationPayload {
   icon?: string
   /** 多文件通知的缩略图 URL（最多展示 4 张） */
   icons?: string[]
+  /** 附带图片通知：图片 URL 列表（卡片左侧展示，优先于 icons） */
+  images?: string[]
   /** 通知类型，决定左侧色条颜色：info | success | warning | error */
   type?: 'info' | 'success' | 'warning' | 'error'
   /** 操作按钮 [{ id, label }]，点击后通过 action 事件回传 id */
@@ -73,8 +75,7 @@ interface NotificationSlot {
  * 修复要点：
  *   - 不触发全屏 loading（showLoading: false）
  *   - 不在任务栏显示（skipTaskbar: true）
- *   - 内容渲染完成后才定位 + 显示（onReadyToShow → measure-ready）
- *   - 内容渲染完成后才定位 + 显示（onReadyToShow → measure-ready）
+ *   - 窗口固定占满屏幕可用高度，通知增删不调整原生窗口尺寸
  *   - 每条通知独立实例，可并存
  *
  * IPC 通道（对外，供主渲染进程调用）：
@@ -91,8 +92,6 @@ export class NotificationWindowHandlers {
   private nextItemKey = 1
   /** 单条通知最大宽度 */
   private readonly WIDTH = 340
-  /** 堆叠间距（含间隙） */
-  private readonly STACK_GAP = 12
   /** 距屏幕边缘 */
   private readonly MARGIN = 20
   /** 最大并存数量 */
@@ -144,11 +143,9 @@ export class NotificationWindowHandlers {
     }
 
     const id = this.nextId++
-    const stackIndex = this.slots.length
-
     // 为该通知构建专属 handler。注意 IPC 通道前缀与 role 必须每条唯一，
     // 否则多个窗口会复用同一个 MessagePort / handle。
-    const handler = this.createSlotHandler(id, position, stackIndex, payload)
+    const handler = this.createSlotHandler(id, position, payload)
 
     const duration = payload.duration ?? 5000
     const slot: NotificationSlot = {
@@ -168,8 +165,7 @@ export class NotificationWindowHandlers {
     // 创建窗口（ready-to-show 后由 onReadyToShow 控制显示时机）
     handler.createWindow()
 
-    // 页面加载完成后下发通知内容，渲染层测量高度后回传 measure-ready，
-    // 此时 onReadyToShow 负责定位 + 显示。附带动画方向供渲染层选择 slide 方向。
+    // 页面加载完成后下发通知内容。附带动画方向供渲染层选择 slide 方向。
     handler.getWindow()?.webContents.once('did-finish-load', () => {
       handler.sendMessage({
         type: 'notification-content',
@@ -258,7 +254,6 @@ export class NotificationWindowHandlers {
   private createSlotHandler(
     id: number,
     position: FloatingWindowPosition,
-    stackIndex: number,
     _payload: NotificationPayload
   ): FloatingWindowHandler {
     const self = this
@@ -270,16 +265,15 @@ export class NotificationWindowHandlers {
 
     // 创建子类实例：通过方法覆盖承载业务逻辑，避免 messageHandlers 闭包循环引用
     const handler = new (class NotificationSlotHandler extends FloatingWindowHandler {
-      /** 是否已显示（首个 measure-ready 到达后才显示，避免初始高度不足裁剪内容） */
+      /** 是否已显示 */
       private shown = false
-      private showFallbackTimer: NodeJS.Timeout | null = null
 
       constructor() {
         super({
           name: `notification-${id}`,
           title: 'Mira 通知',
           width: self.WIDTH,
-          height: 80, // 初始估计值，渲染后由 measure-ready 校正
+          height: 80, // ready-to-show 时扩展为屏幕工作区高度
           position,
           margin: self.MARGIN,
           resizable: false,
@@ -295,13 +289,6 @@ export class NotificationWindowHandlers {
           role,
           messageHandlers: {
             'notification-ready': () => {},
-            'measure-ready': (data) => {
-              const h = Number(data.height)
-              if (h > 0) this.resizeHeight(h)
-              // 每次内容变化都重定位，确保追加/删除通知后窗口尺寸与堆叠同步
-              self.positionSlot(this, position, stackIndex)
-              this.doShowOnce()
-            },
             // 渲染层按指针是否位于卡片上动态切换：卡片可交互，空白区域点击穿透到底层应用
             'set-mouse-events': (data) => {
               this.setMousePassthrough(!!data.ignore)
@@ -356,33 +343,23 @@ export class NotificationWindowHandlers {
         }
       }
 
-      /** 只显示一次；measure-ready 与兜底定时器竞争到达 */
+      /** 只显示一次 */
       private doShowOnce(): void {
         if (this.shown) return
         this.shown = true
-        if (this.showFallbackTimer) {
-          clearTimeout(this.showFallbackTimer)
-          this.showFallbackTimer = null
-        }
         this.doShow()
       }
 
       protected onReadyToShow(): void {
-        // ready-to-show 时内容尚未渲染（高度未知），先按堆叠初步定位；
+        // ready-to-show 时固定覆盖屏幕工作区高度；
         // 默认整体鼠标穿透（forward 模式），渲染层按指针位置动态切回可交互。
-        self.positionSlot(this, position, stackIndex)
+        self.positionSlot(this, position)
         this.setMousePassthrough(true)
         const win = this.getWindow()
         if (win && !win.isDestroyed()) {
           win.setSkipTaskbar(true)
         }
-        // 等 Vue 入口渲染并上报首个 measure-ready（高度已校正）后再显示；
-        // 超时兜底：渲染/通信异常时也要把窗口显示出来。
-        this.showFallbackTimer = setTimeout(() => {
-          this.showFallbackTimer = null
-          this.doShowOnce()
-        }, 2000)
-        this.showFallbackTimer.unref()
+        this.doShowOnce()
       }
     })()
 
@@ -390,16 +367,12 @@ export class NotificationWindowHandlers {
   }
 
   /**
-   * 计算某个槽位在堆叠中的位置并直接定位窗口。
-   * 从默认位置（如右下角）向上堆叠：offset 越大越靠上。
-   *
-   * 直接基于窗口实际 bounds 与屏幕 workArea 计算，避免基类 computePosition
-   * 使用配置尺寸（measure-ready 后会过时）导致的偏差。
+   * 固定通知窗口为贯穿屏幕工作区的纵向透明条。
+   * 通知列表在条内按 position 锚定，空白区域由鼠标穿透逻辑处理。
    */
   private positionSlot(
     handler: FloatingWindowHandler,
     position: FloatingWindowPosition,
-    stackIndex: number
   ): void {
     const win = handler.getWindow()
     if (!win || win.isDestroyed()) return
@@ -408,42 +381,25 @@ export class NotificationWindowHandlers {
     const wa = screenMod.getDisplayMatching(bounds).workArea
     const margin = this.MARGIN
     const w = bounds.width
-    const h = bounds.height
+    const h = wa.height
 
-    // 堆叠偏移：累加所有"下方"通知的高度（本通知之下）+ 间隙。
-    // 简化处理：以 slot 在数组中的相对顺序决定层级，靠后的通知在底部。
-    const myIdx = this.slots.findIndex((s) => s.handler === handler)
-    let offsetUp = 0
-    for (let i = myIdx + 1; i < this.slots.length; i++) {
-      const b = this.slots[i].handler.getWindow()?.getBounds()
-      offsetUp += (b ? b.height : h) + this.STACK_GAP
-    }
-    if (offsetUp === 0) offsetUp = stackIndex * (h + this.STACK_GAP) // fallback
-
-    // 计算基础 x/y（按 position 预设），再应用向上偏移
+    // 每个 position 只有一个聚合窗口，窗口内通知由 vue-sonner 自己堆叠。
+    // 这里不能再按 slots 索引累计高度，否则不同 position 会互相污染坐标。
     let x: number
     let y: number
     const pos = position
     if (typeof pos === 'object') {
       x = pos.x
-      y = pos.y - offsetUp
+      y = wa.y
     } else {
       // 水平
       if (pos === 'top-left' || pos === 'bottom-left') x = wa.x + margin
       else if (pos === 'top-right' || pos === 'bottom-right') x = wa.x + wa.width - w - margin
       else x = wa.x + Math.round((wa.width - w) / 2) // top/bottom/center
-      // 垂直（含堆叠偏移）
-      if (pos === 'center') {
-        // 屏幕居中：垂直也居中，堆叠时整体向上偏移
-        y = wa.y + Math.round((wa.height - h) / 2) - offsetUp
-      } else if (pos === 'top-left' || pos === 'top-right' || pos === 'top') {
-        y = wa.y + margin + offsetUp // 顶部预设时向下堆叠
-      } else {
-        y = wa.y + wa.height - h - margin - offsetUp // 底部预设时向上堆叠
-      }
+      y = wa.y
     }
 
-    win.setPosition(Math.round(x), Math.round(y), false)
+    win.setBounds({ x: Math.round(x), y: Math.round(y), width: w, height: h }, false)
   }
 
   /**
@@ -499,7 +455,7 @@ export class NotificationWindowHandlers {
    */
   private relayout(): void {
     for (const slot of this.slots) {
-      this.positionSlot(slot.handler, slot.position, this.slots.indexOf(slot))
+      this.positionSlot(slot.handler, slot.position)
     }
   }
 

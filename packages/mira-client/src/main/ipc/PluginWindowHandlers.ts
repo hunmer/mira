@@ -42,7 +42,7 @@ interface PluginWindowImagePayload {
  *
  * 与 FloatingWindowHandler 的区别：
  *   - FloatingWindowHandler 面向应用内置的透明无边框浮动窗口（搜索/通知/悬浮球），
- *     HTML 走 dist-float，需要专门的 preload。
+ *     页面走渲染器应用的 Vite 多页入口（dist-renderer），需要专门的 preload。
  *   - 本处理器面向「插件提供的内容」（标准带 frame 窗口），HTML 直接来自插件
  *     pluginsDirectory/<pluginId>/<entry>，不需要专门的 preload（contextIsolation:true）。
  *

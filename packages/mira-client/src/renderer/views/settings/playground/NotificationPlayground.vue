@@ -49,6 +49,10 @@
             <span class="material-icons text-base">code</span>
             {{ $t('views.playgroundPanel.customHtml') }}
           </Button>
+          <Button variant="secondary" size="sm" @click="showImages">
+            <span class="material-icons text-base">image</span>
+            {{ $t('views.playgroundPanel.imagesNotification') }}
+          </Button>
         </div>
       </div>
 
@@ -264,6 +268,24 @@ function showStructured() {
       { id: 'dismiss', label: t('views.playgroundPanel.dismissAction') },
     ],
     duration: 0, // 常驻，等待用户操作
+  })
+}
+
+/**
+ * 图片通知演示：images 字段在卡片左侧展示（多图 2x2 网格）。
+ * 图片 URL 需绝对地址（相对路径在通知窗口的 file:// 页面下无法解析）。
+ */
+function showImages() {
+  const images = ['AI.png', 'BMP.png', 'CSV.png', 'JPG.png'].map(
+    (name) => new URL(`ext_icons/${name}`, window.location.href).href
+  )
+  notify({
+    title: t('views.playgroundPanel.imagesNotificationTitle'),
+    body: t('views.playgroundPanel.imagesNotificationBody'),
+    type: 'success',
+    images,
+    actions: [{ id: 'view', label: t('views.playgroundPanel.viewAction') }],
+    duration: 8000,
   })
 }
 

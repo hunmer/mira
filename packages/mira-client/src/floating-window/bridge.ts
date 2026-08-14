@@ -1,13 +1,12 @@
 /**
- * 通知窗口与主进程的 MessagePort 通信包装器。
+ * 浮动窗口与主进程的 MessagePort 通信包装器（搜索 / 通知 / 悬浮球窗口共用）。
  *
- * 主进程 FloatingWindowHandler 在 did-finish-load 时经 notification-preload 转发
- * 'connect' DOM 消息（携带 MessagePort）。本模块接收端口后建立双向通信：
- *   - 主进程 → 渲染层：notification-content / notification-auto-hide / theme-update
- *   - 渲染层 → 主进程：click / action / dismiss-item / measure-ready / hover-pause / hover-resume
+ * 主进程 FloatingWindowHandler 在 did-finish-load 时经各窗口 preload 转发
+ * 'connect' DOM 消息（携带 MessagePort）。本模块接收端口后建立双向通信，
+ * 并统一处理主题同步（dark / light class 应用到 <html>）。
  */
 
-export interface NotificationBridgeOptions {
+export interface FloatingWindowBridgeOptions {
   /** MessagePort 角色标识，用于过滤 connect 消息 */
   role: string
   /** 收到主进程业务消息 */
@@ -18,13 +17,21 @@ export interface NotificationBridgeOptions {
   onTheme?: (isDark: boolean) => void
 }
 
-export interface NotificationBridge {
+export interface FloatingWindowBridge {
   start: () => void
   send: (message: any) => void
   isReady: () => boolean
+  /** 请求原生拖拽（drag-handle 区域使用） */
+  requestDrag: () => void
+  /** 请求关闭/隐藏窗口 */
+  requestClose: () => void
+  /** 切换开发者工具 */
+  toggleDevtools: () => void
 }
 
-export function createNotificationBridge(options: NotificationBridgeOptions): NotificationBridge {
+export function createFloatingWindowBridge(
+  options: FloatingWindowBridgeOptions
+): FloatingWindowBridge {
   let port: MessagePort | null = null
 
   function applyTheme(isDark: boolean): void {
@@ -59,7 +66,7 @@ export function createNotificationBridge(options: NotificationBridgeOptions): No
     if (port) {
       port.postMessage(message)
     } else {
-      console.warn('[notification] MessagePort 未初始化，消息未发送:', message)
+      console.warn(`[${options.role}] MessagePort 未初始化，消息未发送:`, message)
     }
   }
 
@@ -67,5 +74,17 @@ export function createNotificationBridge(options: NotificationBridgeOptions): No
     return !!port
   }
 
-  return { start, send, isReady }
+  function requestDrag(): void {
+    send({ type: 'drag-start', timestamp: Date.now() })
+  }
+
+  function requestClose(): void {
+    send({ type: 'close-window', timestamp: Date.now() })
+  }
+
+  function toggleDevtools(): void {
+    send({ type: 'toggle-devtools', timestamp: Date.now() })
+  }
+
+  return { start, send, isReady, requestDrag, requestClose, toggleDevtools }
 }

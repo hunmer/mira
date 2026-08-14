@@ -57,8 +57,8 @@ export class FloatingBallWindowHandlers {
           alwaysOnTop: true,
           skipTaskbar: true,
           showLoading: false,
-          htmlFileName: 'floating-ball-window.html',
-          htmlDirName: 'floating-ball-window',
+          // 渲染器应用多页入口（悬浮球页面），dev 走 dev server，生产走 dist-renderer
+          rendererEntry: 'floating-ball-window.html',
           preloadFileName: 'floating-ball-preload.js',
           ipcChannelPrefix: 'floating-ball',
           role: 'floating-ball',

@@ -48,6 +48,8 @@ export default defineConfig(({ mode }) => {
     }),
     // 只在开发环境启用 Vue DevTools
     ...(process.env.NODE_ENV !== 'production' ? [vueDevTools({
+      // 仅注入主应用入口：通知窗口等独立多页入口不携带 devtools 悬浮工具栏
+      appendTo: 'src/renderer/main.ts',
       launchEditor: getEditor(),
       componentInspector: {
         // Ctrl+Shift+D 触发审查元素模式，点击页面元素跳转到 IDE 对应代码
@@ -137,10 +139,12 @@ export default defineConfig(({ mode }) => {
       reportCompressedSize: true,
       chunkSizeWarningLimit: 1000,
       rollupOptions: {
-        // 多页入口：主应用 + 通知窗口（独立轻量页面，主进程按需加载）
+        // 多页入口：主应用 + 各浮动窗口（独立轻量页面，主进程按需加载）
         input: {
           main: resolve(__dirname, 'index.html'),
           'notification-window': resolve(__dirname, 'notification-window.html'),
+          'search-window': resolve(__dirname, 'search-window.html'),
+          'floating-ball-window': resolve(__dirname, 'floating-ball-window.html'),
         },
         output: {
           // 优化 chunk 文件名

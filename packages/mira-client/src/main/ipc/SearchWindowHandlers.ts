@@ -36,8 +36,8 @@ export class SearchWindowHandlers {
       resizable: true,
       movable: true,
       alwaysOnTop: true,
-      htmlFileName: 'search-window.html',
-      htmlDirName: 'search-window',
+      // 渲染器应用多页入口（搜索页面），dev 走 dev server，生产走 dist-renderer
+      rendererEntry: 'search-window.html',
       preloadFileName: 'search-preload.js',
       ipcChannelPrefix: 'search-window',
       role: 'search',

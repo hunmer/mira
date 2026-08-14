@@ -35,7 +35,7 @@
         </TabsTrigger>
       </TabsList>
 
-      <!-- 各功能演示拆分至 playground/ 目录，子组件自带 TabsContent -->
+      <!-- 各功能演示拆分至 playground/ 目录，子组件自带 TabsContent（import 均在此注册） -->
       <NotificationPlayground />
       <FormPlayground />
       <GlowPlayground />

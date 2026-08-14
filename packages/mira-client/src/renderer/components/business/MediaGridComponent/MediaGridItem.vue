@@ -3,7 +3,7 @@
     :data-selectable-id="item.id"
     :data-file="getLocalFile(item)"
     :class="[
-      'media-item group relative cursor-pointer transition-all',
+      'media-item group relative cursor-pointer transition-all rounded-xl',
       { 'selected': isSelected }
     ]"
     @click="handleClick"
@@ -248,6 +248,16 @@ const hasVisibleInfo = computed(() =>
 <style scoped>
 .material-icons {
   font-size: 18px;
+}
+
+.media-item.selected::after {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  border: 2px solid var(--primary);
+  border-radius: inherit;
+  pointer-events: none;
+  content: '';
 }
 
 /* 选择框：放大/缩小进入退出（参考 MediaTabListView 的 toolbar-zoom） */
