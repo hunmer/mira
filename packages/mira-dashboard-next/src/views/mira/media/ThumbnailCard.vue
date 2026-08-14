@@ -30,8 +30,7 @@ async function checkProgress() {
   if (!selectedLibraryId.value) return
   try {
     const res: any = await thumbnailApi.progress(selectedLibraryId.value)
-    if (!res.data?.success) return
-    progress.value = res.data.data
+    progress.value = res
     if (progress.value.processing || progress.value.queueLength > 0) {
       isScanning.value = true
       startProgressMonitoring()
@@ -44,8 +43,8 @@ async function refreshStats() {
   loading.value = true
   try {
     const res: any = await thumbnailApi.stats(selectedLibraryId.value)
-    if (res.data?.success) {
-      stats.value = res.data.data
+    if (res) {
+      stats.value = res
       addLog(`${t('thumbnail.statsUpdated')}：${t('thumbnail.totalFiles')} ${stats.value.totalFiles}，${t('thumbnail.rate')} ${stats.value.thumbnailRate}%`)
     }
   } catch (error: any) {
@@ -59,9 +58,9 @@ async function startScan() {
   if (!selectedLibraryId.value) return
   try {
     const res: any = await thumbnailApi.scan(selectedLibraryId.value)
-    if (res.data?.success) {
+    if (res?.success) {
       isScanning.value = true
-      addLog(res.data.message || t('thumbnail.scanStarted'))
+      addLog(res?.message || t('thumbnail.scanStarted'))
       startProgressMonitoring()
     }
   } catch (error: any) {
@@ -72,10 +71,10 @@ async function startScan() {
 async function cancelScan() {
   try {
     const res: any = await thumbnailApi.cancel()
-    if (res.data?.success) {
+    if (res?.success) {
       isScanning.value = false
       stopProgressMonitoring()
-      addLog(res.data.message || t('thumbnail.scanCancelled'))
+      addLog(res?.message || t('thumbnail.scanCancelled'))
     }
   } catch (error: any) {
     addLog(`${t('thumbnail.cancelFailed')}：${error.message}`)
@@ -86,8 +85,8 @@ async function syncThumbs() {
   if (!selectedLibraryId.value) return
   syncing.value = true
   try {
-    const res: any = await thumbnailApi.sync(selectedLibraryId.value)
-    if (res.data?.success) {
+    await thumbnailApi.sync(selectedLibraryId.value)
+    {
       addLog(t('thumbnail.syncStarted'))
       startSyncProgressMonitoring()
     }
@@ -106,8 +105,7 @@ function startSyncProgressMonitoring() {
   progressTimer = setInterval(async () => {
     try {
       const res: any = await thumbnailApi.progress(selectedLibraryId.value)
-      if (!res.data?.success) return
-      progress.value = res.data.data
+      progress.value = res
       const pct = progress.value.progress
       // log at 25% intervals
       if (pct < 100 && pct - lastSyncLoggedPercent >= 25) {
@@ -130,8 +128,7 @@ function startProgressMonitoring() {
   progressTimer = setInterval(async () => {
     try {
       const res: any = await thumbnailApi.progress(selectedLibraryId.value)
-      if (!res.data?.success) return
-      progress.value = res.data.data
+      progress.value = res
       if (!progress.value.processing && progress.value.queueLength === 0) {
         isScanning.value = false
         stopProgressMonitoring()

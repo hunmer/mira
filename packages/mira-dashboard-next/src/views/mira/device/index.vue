@@ -48,7 +48,7 @@ async function loadDevices() {
   loading.value = true
   try {
     const res = await deviceApi.list()
-    const raw = res.data?.data ?? res.data
+    const raw = res?.data ?? res
     if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
       devices.value = Object.entries(raw).flatMap(([libraryId, list]) =>
         (list as any[]).map((d) => ({

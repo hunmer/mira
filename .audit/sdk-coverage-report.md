@@ -1,6 +1,6 @@
 # Mira Server API 与 SDK 覆盖报告
 
-生成时间: 2026-08-14T08:35:21.360Z
+生成时间: 2026-08-14T08:50:57.903Z
 
 匹配键: HTTP method + 归一化路径（动态参数统一为 `:param`，query string 不参与匹配）。
 
@@ -8,79 +8,30 @@
 
 | 分类 | 数量 | 说明 |
 |------|------|------|
-| covered | 65 | SDK 有等价 method+path |
+| covered | 114 | SDK 有等价 method+path |
 | partial | undefined | path 匹配但 method 不匹配 |
-| missing | 61 | SDK 无对应方法 |
+| missing | 12 | SDK 无对应方法 |
 | excluded | 13 | 资源/流式/SPA/通配, 不生成普通 CRUD |
 | dynamic | 7 | 插件运行时注册/正则路由 |
 
-固定 JSON API 共 126 条, 已 100% 分类（covered 65 / partial undefined / missing 61）。
+固定 JSON API 共 126 条, 已 100% 分类（covered 114 / partial undefined / missing 12）。
 
 ## Missing (SDK 无对应方法)
 
 | method | path | 域 | 来源 | SDK | 备注 |
 |--------|------|----|------|-----|------|
-| GET | `/api/admins` | admins | packages/mira-app-server/src/routes/AdminsRouter.ts:17 | - |  |
-| POST | `/api/admins` | admins | packages/mira-app-server/src/routes/AdminsRouter.ts:40 | - |  |
-| PUT | `/api/admins/:param` | admins | packages/mira-app-server/src/routes/AdminsRouter.ts:112 | - |  |
-| DELETE | `/api/admins/:param` | admins | packages/mira-app-server/src/routes/AdminsRouter.ts:158 | - |  |
-| GET | `/api/admins/:param/tokens` | admins | packages/mira-app-server/src/routes/AdminsRouter.ts:203 | - |  |
-| POST | `/api/admins/:param/tokens` | admins | packages/mira-app-server/src/routes/AdminsRouter.ts:214 | - |  |
-| PUT | `/api/admins/:param/tokens/:param` | admins | packages/mira-app-server/src/routes/AdminsRouter.ts:235 | - |  |
-| DELETE | `/api/admins/:param/tokens/:param` | admins | packages/mira-app-server/src/routes/AdminsRouter.ts:256 | - |  |
-| POST | `/api/database/query` | database | packages/mira-app-server/src/routes/DatabaseRoutes.ts:107 | - |  |
-| POST | `/api/devices/broadcast` | devices | packages/mira-app-server/src/routes/DeviceRoutes.ts:38 | - |  |
-| POST | `/api/devices/:param/disconnect` | devices | packages/mira-app-server/src/routes/DeviceRoutes.ts:42 | - |  |
 | POST | `/api/devices/:param/message` | devices | packages/mira-app-server/src/routes/DeviceRoutes.ts:46 | - |  |
 | POST | `/api/devices/:param/test` | devices | packages/mira-app-server/src/routes/DeviceRoutes.ts:47 | - |  |
 | GET | `/api/devices/:param/messages` | devices | packages/mira-app-server/src/routes/DeviceRoutes.ts:48 | - |  |
-| GET | `/api/download/progress/:param` | download | packages/mira-app-server/src/routes/DownloadRoutes.ts:57 | - |  |
-| POST | `/api/fs/mkdir` | fs | packages/mira-app-server/src/routes/FsRouter.ts:47 | - |  |
-| GET | `/api/fs/dirs` | fs | packages/mira-app-server/src/routes/FsRouter.ts:63 | - |  |
-| GET | `/api/fs/list` | fs | packages/mira-app-server/src/routes/FsRouter.ts:101 | - |  |
-| POST | `/api/fs/move` | fs | packages/mira-app-server/src/routes/FsRouter.ts:170 | - |  |
-| POST | `/api/fs/remove` | fs | packages/mira-app-server/src/routes/FsRouter.ts:205 | - |  |
-| POST | `/api/fs/sync` | fs | packages/mira-app-server/src/routes/FsRouter.ts:239 | - |  |
-| GET | `/api/fs/database/missing` | fs | packages/mira-app-server/src/routes/FsRouter.ts:265 | - |  |
-| DELETE | `/api/fs/database/missing` | fs | packages/mira-app-server/src/routes/FsRouter.ts:281 | - |  |
-| POST | `/api/fs/database/new` | fs | packages/mira-app-server/src/routes/FsRouter.ts:301 | - |  |
-| POST | `/api/fs/database/new/import` | fs | packages/mira-app-server/src/routes/FsRouter.ts:320 | - |  |
-| DELETE | `/api/fs/database/new` | fs | packages/mira-app-server/src/routes/FsRouter.ts:349 | - |  |
-| POST | `/api/fs/database/duplicates` | fs | packages/mira-app-server/src/routes/FsRouter.ts:385 | - |  |
-| DELETE | `/api/fs/database/duplicates` | fs | packages/mira-app-server/src/routes/FsRouter.ts:399 | - |  |
-| POST | `/api/fs/download` | fs | packages/mira-app-server/src/routes/FsRouter.ts:419 | - |  |
 | GET | `/api/libraries/:param/stats` | libraries | packages/mira-app-server/src/routes/LibraryRoutes.ts:397 | - |  |
 | POST | `/api/libraries/:param/query` | libraries | packages/mira-app-server/src/routes/LibraryRoutes.ts:467 | - |  |
 | POST | `/api/libraries/:param/execute` | libraries | packages/mira-app-server/src/routes/LibraryRoutes.ts:507 | - |  |
 | GET | `/api/libraries/:param/schema/:param` | libraries | packages/mira-app-server/src/routes/LibraryRoutes.ts:551 | - |  |
 | PUT | `/api/libraries/:param/record/:param/:param` | libraries | packages/mira-app-server/src/routes/LibraryRoutes.ts:588 | - |  |
-| POST | `/api/plugins/sync-meta` | plugins | packages/mira-app-server/src/routes/PluginRoutes.ts:504 | - |  |
-| POST | `/api/plugins/upload` | plugins | packages/mira-app-server/src/routes/PluginRoutes.ts:523 | - |  |
-| POST | `/api/plugins/toggle-status` | plugins | packages/mira-app-server/src/routes/PluginRoutes.ts:714 | - |  |
-| POST | `/api/plugins/disable-all` | plugins | packages/mira-app-server/src/routes/PluginRoutes.ts:767 | - |  |
 | POST | `/api/plugins/:param/start` | plugins | packages/mira-app-server/src/routes/PluginRoutes.ts:803 | - |  |
 | POST | `/api/plugins/:param/stop` | plugins | packages/mira-app-server/src/routes/PluginRoutes.ts:851 | - |  |
-| GET | `/api/plugins/:param/config` | plugins | packages/mira-app-server/src/routes/PluginRoutes.ts:898 | - |  |
-| PUT | `/api/plugins/:param/config` | plugins | packages/mira-app-server/src/routes/PluginRoutes.ts:931 | - |  |
-| GET | `/api/statistics/:param/upload` | statistics | packages/mira-app-server/src/routes/StatisticsRouter.ts:22 | - |  |
-| GET | `/api/statistics/:param/upload/daily` | statistics | packages/mira-app-server/src/routes/StatisticsRouter.ts:53 | - |  |
-| GET | `/api/statistics/:param/file-types` | statistics | packages/mira-app-server/src/routes/StatisticsRouter.ts:71 | - |  |
-| GET | `/api/statistics/:param/recent-uploads` | statistics | packages/mira-app-server/src/routes/StatisticsRouter.ts:89 | - |  |
-| GET | `/api/thumb/scan` | thumb | packages/mira-app-server/src/routes/ThumbRouter.ts:20 | - |  |
-| GET | `/api/thumb/progress` | thumb | packages/mira-app-server/src/routes/ThumbRouter.ts:29 | - |  |
-| GET | `/api/thumb/cancel` | thumb | packages/mira-app-server/src/routes/ThumbRouter.ts:38 | - |  |
-| GET | `/api/thumb/stats` | thumb | packages/mira-app-server/src/routes/ThumbRouter.ts:43 | - |  |
-| GET | `/api/thumb/generators` | thumb | packages/mira-app-server/src/routes/ThumbRouter.ts:52 | - |  |
-| GET | `/api/thumb/sync` | thumb | packages/mira-app-server/src/routes/ThumbRouter.ts:60 | - |  |
-| GET | `/api/thumb/metadata/stats` | thumb | packages/mira-app-server/src/routes/ThumbRouter.ts:69 | - |  |
-| GET | `/api/thumb/metadata/scan` | thumb | packages/mira-app-server/src/routes/ThumbRouter.ts:75 | - |  |
-| GET | `/api/thumb/metadata/progress` | thumb | packages/mira-app-server/src/routes/ThumbRouter.ts:87 | - |  |
-| PUT | `/api/user/change-password` | user | packages/mira-app-server/src/routes/UserRouter.ts:100 | - |  |
-| POST | `/api/user/avatar` | user | packages/mira-app-server/src/routes/UserRouter.ts:174 | - |  |
-| GET | `/api/user/tokens` | user | packages/mira-app-server/src/routes/UserRouter.ts:211 | - |  |
 | GET | `/api/user/avatar/:param` | user | packages/mira-app-server/src/routes/UserRouter.ts:233 | - |  |
 | GET | `/api/plugin-routes` | http-server-direct | packages/mira-app-server/src/HttpServer.ts:364 | - |  |
-| GET | `/api/plugin-routes/:param` | http-server-direct | packages/mira-app-server/src/HttpServer.ts:403 | - |  |
 
 ## Partial (path 匹配, method 不匹配)
 
@@ -116,6 +67,14 @@
 
 | method | path | 域 | SDK 方法 |
 |--------|------|----|---------|
+| GET | `/api/admins` | admins | Admin.getAll |
+| POST | `/api/admins` | admins | Admin.create |
+| PUT | `/api/admins/:param` | admins | Admin.update |
+| DELETE | `/api/admins/:param` | admins | Admin.delete |
+| GET | `/api/admins/:param/tokens` | admins | Admin.getTokens |
+| POST | `/api/admins/:param/tokens` | admins | Admin.createToken |
+| PUT | `/api/admins/:param/tokens/:param` | admins | Admin.updateToken |
+| DELETE | `/api/admins/:param/tokens/:param` | admins | Admin.deleteToken |
 | GET | `/api/auth/codes` | auth | Auth.getCodes |
 | POST | `/api/auth/register` | auth | Auth.register |
 | POST | `/api/auth/login` | auth | Auth.login |
@@ -129,12 +88,16 @@
 | GET | `/api/database/tables` | database | Database.getTables |
 | GET | `/api/database/tables/:param/data` | database | Database.getTableData |
 | GET | `/api/database/tables/:param/schema` | database | Database.getTableSchema |
+| POST | `/api/database/query` | database | Database.query |
 | GET | `/api/devices` | devices | Device.getAll |
 | GET | `/api/devices/library/:param` | devices | Device.getByLibrary |
+| POST | `/api/devices/broadcast` | devices | Device.broadcast |
 | POST | `/api/devices/disconnect` | devices | Device.disconnect |
+| POST | `/api/devices/:param/disconnect` | devices | Device.disconnectById |
 | POST | `/api/devices/send-message` | devices | Device.sendMessage |
 | GET | `/api/devices/stats` | devices | Device.getStats |
 | POST | `/api/download/start` | download | File.batchImportFromUrls |
+| GET | `/api/download/progress/:param` | download | Download.getProgress |
 | POST | `/api/files/upload` | files | File.upload, File.writeFile |
 | POST | `/api/files/cover/:param/:param` | files | File.setCover |
 | DELETE | `/api/files/:param/trash` | files | File.emptyTrash |
@@ -156,6 +119,20 @@
 | DELETE | `/api/folders/delete` | folders | Folder.delete |
 | POST | `/api/folders/file/set` | folders | Folder.setFileFolder |
 | GET | `/api/folders/file/:param` | folders | Folder.getFileFolder |
+| POST | `/api/fs/mkdir` | fs | FileSystem.mkdir |
+| GET | `/api/fs/dirs` | fs | FileSystem.getDirs |
+| GET | `/api/fs/list` | fs | FileSystem.list |
+| POST | `/api/fs/move` | fs | FileSystem.move |
+| POST | `/api/fs/remove` | fs | FileSystem.remove |
+| POST | `/api/fs/sync` | fs | FileSystem.sync |
+| GET | `/api/fs/database/missing` | fs | FileSystem.scanMissing |
+| DELETE | `/api/fs/database/missing` | fs | FileSystem.clearMissing |
+| POST | `/api/fs/database/new` | fs | FileSystem.findNewFiles |
+| POST | `/api/fs/database/new/import` | fs | FileSystem.importNewFiles |
+| DELETE | `/api/fs/database/new` | fs | FileSystem.deleteNewFiles |
+| POST | `/api/fs/database/duplicates` | fs | FileSystem.scanDuplicates |
+| DELETE | `/api/fs/database/duplicates` | fs | FileSystem.removeDuplicateRecords |
+| POST | `/api/fs/download` | fs | FileSystem.download |
 | GET | `/api/libraries` | libraries | Library.getAll |
 | POST | `/api/libraries` | libraries | Library.create |
 | PUT | `/api/libraries/:param` | libraries | Library.update |
@@ -165,10 +142,20 @@
 | GET | `/api/plugins` | plugins | Plugin.getAll |
 | GET | `/api/plugins/by-library` | plugins | Plugin.getByLibrary |
 | POST | `/api/plugins/install` | plugins | Plugin.install |
+| POST | `/api/plugins/sync-meta` | plugins | Plugin.syncMeta |
+| POST | `/api/plugins/upload` | plugins | Plugin.upload |
+| POST | `/api/plugins/toggle-status` | plugins | Plugin.toggleStatus |
+| POST | `/api/plugins/disable-all` | plugins | Plugin.disableAll |
+| GET | `/api/plugins/:param/config` | plugins | Plugin.getConfig |
+| PUT | `/api/plugins/:param/config` | plugins | Plugin.updateConfig |
 | DELETE | `/api/plugins/:param` | plugins | Plugin.uninstall |
 | GET | `/api/plugins/:param` | plugins | Plugin.getById |
 | GET | `/api/settings` | settings | Settings.get |
 | PUT | `/api/settings` | settings | Settings.update |
+| GET | `/api/statistics/:param/upload` | statistics | Statistics.upload |
+| GET | `/api/statistics/:param/upload/daily` | statistics | Statistics.uploadDaily |
+| GET | `/api/statistics/:param/file-types` | statistics | Statistics.fileTypes |
+| GET | `/api/statistics/:param/recent-uploads` | statistics | Statistics.recentUploads |
 | GET | `/api/tags/all` | tags | Tag.getAll |
 | POST | `/api/tags/query` | tags | Tag.query |
 | POST | `/api/tags/create` | tags | Tag.create |
@@ -177,7 +164,20 @@
 | DELETE | `/api/tags/delete` | tags | Tag.delete |
 | POST | `/api/tags/file/set` | tags | Tag.setFileTags |
 | GET | `/api/tags/file/:param` | tags | Tag.getFileTags |
+| GET | `/api/thumb/scan` | thumb | Thumbnail.scan |
+| GET | `/api/thumb/progress` | thumb | Thumbnail.progress |
+| GET | `/api/thumb/cancel` | thumb | Thumbnail.cancel |
+| GET | `/api/thumb/stats` | thumb | Thumbnail.stats |
+| GET | `/api/thumb/generators` | thumb | Thumbnail.generators |
+| GET | `/api/thumb/sync` | thumb | Thumbnail.sync |
+| GET | `/api/thumb/metadata/stats` | thumb | Thumbnail.metadataStats |
+| GET | `/api/thumb/metadata/scan` | thumb | Thumbnail.metadataScan |
+| GET | `/api/thumb/metadata/progress` | thumb | Thumbnail.metadataProgress |
 | GET | `/api/user/info` | user | User.getInfo |
+| PUT | `/api/user/change-password` | user | User.changePassword |
 | PUT | `/api/user/info` | user | User.updateInfo |
+| POST | `/api/user/avatar` | user | User.uploadAvatar |
+| GET | `/api/user/tokens` | user | User.getTokens |
+| GET | `/api/plugin-routes/:param` | http-server-direct | Plugin.getRoutes |
 | GET | `/api/health` | http-server-direct | System.getHealth |
 | GET | `/health` | http-server-direct | System.getSimpleHealth |

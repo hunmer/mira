@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { authApi } from '@/api'
-import { getApiBaseURL } from '@/api/client'
+import { getMiraClient } from '@/lib/miraClient'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -22,7 +22,7 @@ const uploadingAvatar = ref(false)
 const avatarUrl = computed(() => {
   const userId = (auth.user as any)?.id
   if (!userId) return ''
-  return `${getApiBaseURL()}/user/avatar/${userId}?t=${Date.now()}`
+  return `${getMiraClient().user().getAvatarUrl(userId)}&t=${Date.now()}`
 })
 
 const avatarInitial = computed(() => {

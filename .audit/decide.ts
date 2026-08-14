@@ -25,7 +25,7 @@ const DECISIONS: Record<string, { priority: 'P0' | 'P1' | 'P2' | 'P3'; module: s
     'DELETE /api/tags/delete': { priority: 'P0', module: 'Tag', reason: 'F2 2pkg; 库数据删除关键路径, SDK Tag 缺删除能力' },
 
     // --- P1: F2 锚点 + 同组账户功能整批 ---
-    'GET /api/user/avatar/:param': { priority: 'P1', module: 'User', reason: 'F2 3pt; 账户功能组, UserModule 扩展' },
+    'GET /api/user/avatar/:param': { priority: 'P3', module: 'User', reason: '头像为图片资源响应(sendFile); SDK 已提供 getAvatarUrl() URL builder, 按资源接口决策不建普通 GET 方法' },
     'POST /api/user/avatar': { priority: 'P1', module: 'User', reason: '同组账户功能(头像上传), 与 avatar GET 同批成本最低' },
     'PUT /api/user/change-password': { priority: 'P1', module: 'User', reason: '同组账户功能(安全), UserModule 扩展' },
     'GET /api/user/tokens': { priority: 'P1', module: 'User', reason: '同组账户功能(token 管理), UserModule 扩展' },

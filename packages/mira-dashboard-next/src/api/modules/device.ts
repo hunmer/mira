@@ -1,8 +1,8 @@
-import client from '../client'
+import { getMiraClient } from '@/lib/miraClient'
 
 export const deviceApi = {
-  list: () => client.get('/devices'),
-  disconnect: (id: string) => client.post(`/devices/${id}/disconnect`),
+  list: () => getMiraClient().devices().getAll(),
+  disconnect: (id: string) => getMiraClient().devices().disconnectById(id),
   broadcast: (data: { message: string; title?: string; clientIds?: string[] }) =>
-    client.post('/devices/broadcast', data),
+    getMiraClient().devices().broadcast(data.message, data.title, data.clientIds),
 }

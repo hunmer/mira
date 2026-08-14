@@ -1,13 +1,13 @@
-import client from '../client'
+import { getMiraClient } from '@/lib/miraClient'
 
 export const thumbnailApi = {
-  scan: (libraryId: string) => client.get(`/thumb/scan`, { params: { libraryId } }),
-  progress: (libraryId: string) => client.get(`/thumb/progress`, { params: { libraryId } }),
-  cancel: () => client.get(`/thumb/cancel`),
-  stats: (libraryId: string) => client.get(`/thumb/stats`, { params: { libraryId } }),
-  generators: () => client.get(`/thumb/generators`),
-  sync: (libraryId: string) => client.get(`/thumb/sync`, { params: { libraryId } }),
-  metadataStats: (libraryId: string) => client.get(`/thumb/metadata/stats`, { params: { libraryId } }),
-  metadataScan: (libraryId: string) => client.get(`/thumb/metadata/scan`, { params: { libraryId } }),
-  metadataProgress: (libraryId: string) => client.get(`/thumb/metadata/progress`, { params: { libraryId } }),
+  scan: (libraryId: string) => getMiraClient().thumbnails().scan(libraryId),
+  progress: (libraryId: string) => getMiraClient().thumbnails().progress(libraryId),
+  cancel: () => getMiraClient().thumbnails().cancel(),
+  stats: (libraryId: string) => getMiraClient().thumbnails().stats(libraryId),
+  generators: () => getMiraClient().thumbnails().generators(),
+  sync: (libraryId: string) => getMiraClient().thumbnails().sync(libraryId),
+  metadataStats: (libraryId: string) => getMiraClient().thumbnails().metadataStats(libraryId),
+  metadataScan: (libraryId: string) => getMiraClient().thumbnails().metadataScan(libraryId),
+  metadataProgress: (libraryId: string) => getMiraClient().thumbnails().metadataProgress(libraryId),
 }

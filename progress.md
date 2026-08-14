@@ -76,3 +76,26 @@
 | What's the goal? | 建立可重复的 Server API 与 SDK 覆盖审计和测试体系 |
 | What have I learned? | 见 `findings.md` |
 | What have I done? | 已创建计划文件并记录当前背景 |
+
+## Session: 2026-08-14 (第四次: Batch B + Batch C)
+
+### P1+P2 全量实现与迁移
+- **Status:** complete (P0/P1/P2 全部清零)
+- Actions taken:
+  - SDK 新模块 5 个: AdminModule(8法)、DownloadModule(1)、FileSystemModule(14, 含 DELETE+body 与 POST+blob 形态)、StatisticsModule(4)、ThumbnailModule(9)。
+  - SDK 扩展: UserModule(+changePassword/uploadAvatar/getTokens/getAvatarUrl)、DeviceModule(+broadcast/disconnectById)、DatabaseModule(+query)、PluginModule(+syncMeta/upload/toggleStatus/disableAll/getConfig/updateConfig/getRoutes)；BatchImportOptions 补 tagIds(对齐 Server)。
+  - Dashboard 迁移 9 个 api 模块 + 12 个 view: admin/TokenManageDialog/device/ShareDialog(库)/DatabaseScanCard/ThumbnailCard/MetadataCard/file-manager/statistics/plugin/database/overview/profile; 调用方按三类模式适配 axios 解包(res.data->res, res.data?.success->res.success 或直接赋值, res.data.data->res)。
+  - file-manager 批量下载适配 Blob 直返(content-disposition 文件名改为本地兜底); profile 头像 URL 迁移 getAvatarUrl()。
+  - avatar/:userId 归类调整: P1 -> P3(资源 sendFile, SDK 提供 URL builder 而非普通 GET)。
+  - 验收: core 68 tests 通过 / build 173.84KB / vue-tsc 通过 / server install + 重启(8081) / curl 抽查 settings=200、fs|thumb|statistics=401(路由存在)。
+- 最终覆盖: covered 114 / partial 0 / missing 12(全部 P3 显式排除) / excluded 13 / dynamic 7; P0 P1 P2 全部清零。
+
+## Test Results (Batch B/C)
+| Test | Input | Expected | Actual | Status |
+|------|-------|----------|--------|--------|
+| core 全量测试 | pnpm test | 全过 | 17 files 68 tests | 通过 |
+| core 构建 | pnpm build | 成功 | esm 173.84KB | 通过 |
+| dashboard 类型检查 | vue-tsc -b | 无错误 | 无错误(修 2 处 Blob 适配后) | 通过 |
+| server 重启 | procm + logs | 8081 正常 | started successfully | 通过 |
+| 端点抽查 | curl 4 个新接口 | 路由存在 | 200/401 均非 404 | 通过 |
+| 审计复查 | 全流水线重跑 | P0-P2 清零 | covered 114, P3 12 | 通过 |

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-14T08:35:21.003Z",
+  "generatedAt": "2026-08-14T08:50:57.539Z",
   "mounts": {
     "express.static(publicDir)": "/static",
     "express.static(dashboardDir,{//SPA回退：未命中的静态资源回落到index.html，保证前端路由可刷新setHeaders:(res,filePath)=>{if(path.extname(filePath)==='.html'){res.setHeader('Cache-Control','no-cache');}},})": "/dashboard",

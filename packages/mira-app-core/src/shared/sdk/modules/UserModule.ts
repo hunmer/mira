@@ -3,6 +3,7 @@ import {
     UserInfo,
     UpdateUserRequest,
     BaseResponse,
+    ApiToken,
 } from '../types';
 
 /**
@@ -27,6 +28,37 @@ export class UserModule {
      */
     async updateInfo(userData: UpdateUserRequest): Promise<BaseResponse> {
         return await this.httpClient.put<BaseResponse>('/api/user/info', userData);
+    }
+
+    /**
+     * 修改当前登录用户的密码
+     * @param oldPassword 旧密码
+     * @param newPassword 新密码
+     */
+    async changePassword(oldPassword: string, newPassword: string): Promise<void> {
+        await this.httpClient.put('/api/user/change-password', { oldPassword, newPassword });
+    }
+
+    /**
+     * 上传当前登录用户的头像（base64 data URL 写入服务器文件）
+     * @param image base64 图片数据（data:image/...;base64,...）
+     */
+    async uploadAvatar(image: string): Promise<void> {
+        await this.httpClient.post('/api/user/avatar', { image });
+    }
+
+    /**
+     * 获取当前登录用户的 API Token 列表
+     */
+    async getTokens(): Promise<ApiToken[]> {
+        return await this.httpClient.get<ApiToken[]>('/api/user/tokens');
+    }
+
+    /**
+     * 构造用户头像的资源 URL（供 img src 直接访问，自动附加鉴权）
+     */
+    getAvatarUrl(userId: string): string {
+        return this.httpClient.getUrl(`/api/user/avatar/${encodeURIComponent(userId)}`);
     }
 
     /**

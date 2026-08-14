@@ -172,7 +172,7 @@ async function loadPlugins() {
   loading.value = true
   try {
     const res = await pluginApi.listByLibrary()
-    groups.value = Array.isArray(res.data) ? res.data : []
+    groups.value = Array.isArray(res) ? res : []
     for (const g of groups.value) {
       loadPluginRoutes(g.id)
     }
@@ -219,8 +219,8 @@ async function disableAll(plugin: Plugin) {
 
 async function openConfig(plugin: Plugin) {
   try {
-    const res = await client.get(`/plugins/${plugin.name}/config`, { params: { libraryId: plugin.libraryId } })
-    configJson.value = JSON.stringify(res.data, null, 2)
+    const res = await pluginApi.get(plugin.name, plugin.libraryId)
+    configJson.value = JSON.stringify(res, null, 2)
     configPlugin.value = plugin
     configDialog.value = true
   } catch {

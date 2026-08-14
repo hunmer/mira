@@ -106,7 +106,7 @@ async function scanDuplicates() {
   selectedDuplicateIds.value = new Set()
   try {
     const res = await fileManagerApi.scanDuplicates(selectedId.value)
-    duplicateResult.value = res.data.data || null
+    duplicateResult.value = res?.data || null
     toast.success(t('databaseScan.duplicateResult', {
       groups: duplicateResult.value?.totalGroups || 0,
       files: duplicateResult.value?.totalFiles || 0,
@@ -129,7 +129,7 @@ async function removeDuplicateRecords() {
   try {
     const selected = selectedDuplicateIds.value
     const res = await fileManagerApi.removeDuplicateRecords(selectedId.value, [...selected])
-    const result = res.data.data as { deleted?: number, errors?: string[] } | undefined
+    const result = res?.data as { deleted?: number, errors?: string[] } | undefined
     const scan = await fileManagerApi.scanDuplicates(selectedId.value)
     duplicateResult.value = scan.data.data || null
     selectedDuplicateIds.value = new Set()
@@ -147,7 +147,7 @@ async function scanMissing() {
   scanningMissing.value = true
   try {
     const res = await fileManagerApi.scanMissing(selectedId.value)
-    missingFiles.value = res.data.data || []
+    missingFiles.value = res?.data || []
     missingPage.value = 1
     toast.success(t('databaseScan.missingResult', { count: missingFiles.value.length }))
   } catch (error: any) {
@@ -167,7 +167,7 @@ async function clearMissing() {
   clearingMissing.value = true
   try {
     const res = await fileManagerApi.clearMissing(selectedId.value)
-    toast.success(t('databaseScan.clearResult', { count: res.data.data?.removed || 0 }))
+    toast.success(t('databaseScan.clearResult', { count: res?.data?.removed || 0 }))
     missingFiles.value = []
     missingPage.value = 1
   } catch (error: any) {
@@ -182,7 +182,7 @@ async function findNewFiles() {
   findingNew.value = true
   try {
     const res = await fileManagerApi.findNewFiles(selectedId.value)
-    newFiles.value = res.data.data || []
+    newFiles.value = res?.data || []
     newPage.value = 1
     toast.success(t('databaseScan.newResult', { count: newFiles.value.length }))
   } catch (error: any) {
@@ -197,7 +197,7 @@ async function importNewFiles() {
   importingNew.value = true
   try {
     const res = await fileManagerApi.importNewFiles(selectedId.value, newFiles.value.map(file => file.path))
-    const imported = res.data.data || []
+    const imported = res?.data || []
     toast.success(t('databaseScan.importResult', { count: imported.length }))
     newFiles.value = []
     newPage.value = 1
@@ -218,7 +218,7 @@ async function clearNewFiles() {
   deletingNew.value = true
   try {
     const res = await fileManagerApi.deleteNewFiles(selectedId.value, newFiles.value.map(file => file.path))
-    toast.success(t('databaseScan.deleteNewResult', { count: res.data.data?.removed || 0 }))
+    toast.success(t('databaseScan.deleteNewResult', { count: res?.data?.removed || 0 }))
     newFiles.value = []
     newPage.value = 1
   } catch (error: any) {

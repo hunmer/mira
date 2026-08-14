@@ -39,6 +39,11 @@ export {
     type UpdateCookieSiteRequest,
 } from './modules/CookieSiteModule';
 export { SettingsModule } from './modules/SettingsModule';
+export { AdminModule } from './modules/AdminModule';
+export { DownloadModule } from './modules/DownloadModule';
+export { FileSystemModule } from './modules/FileSystemModule';
+export { StatisticsModule } from './modules/StatisticsModule';
+export { ThumbnailModule } from './modules/ThumbnailModule';
 
 // 导出类型定义
 export * from './types';

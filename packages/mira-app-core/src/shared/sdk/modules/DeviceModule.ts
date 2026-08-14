@@ -44,6 +44,28 @@ export class DeviceModule {
     }
 
     /**
+     * 按客户端 ID 断开设备连接（路径参数版，dashboard 使用）
+     * @param clientId 客户端ID
+     */
+    async disconnectById(clientId: string): Promise<BaseResponse> {
+        return await this.httpClient.post<BaseResponse>(`/api/devices/${encodeURIComponent(clientId)}/disconnect`);
+    }
+
+    /**
+     * 向设备广播消息
+     * @param message 消息内容
+     * @param title 可选标题
+     * @param clientIds 可选，限定接收的客户端；不传则广播全部
+     */
+    async broadcast(message: string, title?: string, clientIds?: string[]): Promise<BaseResponse> {
+        return await this.httpClient.post<BaseResponse>('/api/devices/broadcast', {
+            message,
+            ...(title !== undefined && { title }),
+            ...(clientIds !== undefined && { clientIds }),
+        });
+    }
+
+    /**
      * 向设备发送消息
      * @param clientId 客户端ID
      * @param libraryId 素材库ID

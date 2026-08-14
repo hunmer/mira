@@ -1,40 +1,40 @@
-import client from '../client'
+import { getMiraClient } from '@/lib/miraClient'
 
 export const fileManagerApi = {
   list(params: { libraryId: string; path?: string; offset?: number; limit?: number }) {
-    return client.get('/fs/list', { params })
+    return getMiraClient().fs().list(params)
   },
   move(data: { libraryId: string; source: string; destination: string }) {
-    return client.post('/fs/move', data)
+    return getMiraClient().fs().move(data)
   },
   remove(data: { libraryId: string; paths: string[] }) {
-    return client.post('/fs/remove', data)
+    return getMiraClient().fs().remove(data)
   },
   sync(libraryId: string) {
-    return client.post('/fs/sync', { libraryId })
+    return getMiraClient().fs().sync(libraryId)
   },
   scanMissing(libraryId: string) {
-    return client.get('/fs/database/missing', { params: { libraryId } })
+    return getMiraClient().fs().scanMissing(libraryId)
   },
   clearMissing(libraryId: string) {
-    return client.delete('/fs/database/missing', { data: { libraryId } })
+    return getMiraClient().fs().clearMissing(libraryId)
   },
   findNewFiles(libraryId: string) {
-    return client.post('/fs/database/new', { libraryId })
+    return getMiraClient().fs().findNewFiles(libraryId)
   },
   importNewFiles(libraryId: string, paths: string[]) {
-    return client.post('/fs/database/new/import', { libraryId, paths })
+    return getMiraClient().fs().importNewFiles(libraryId, paths)
   },
   deleteNewFiles(libraryId: string, paths: string[]) {
-    return client.delete('/fs/database/new', { data: { libraryId, paths } })
+    return getMiraClient().fs().deleteNewFiles(libraryId, paths)
   },
   scanDuplicates(libraryId: string) {
-    return client.post('/fs/database/duplicates', { libraryId })
+    return getMiraClient().fs().scanDuplicates(libraryId)
   },
   removeDuplicateRecords(libraryId: string, fileIds: number[]) {
-    return client.delete('/fs/database/duplicates', { data: { libraryId, fileIds } })
+    return getMiraClient().fs().removeDuplicateRecords(libraryId, fileIds)
   },
   download(data: { libraryId: string; paths: string[] }) {
-    return client.post('/fs/download', data, { responseType: 'blob' })
+    return getMiraClient().fs().download(data)
   },
 }

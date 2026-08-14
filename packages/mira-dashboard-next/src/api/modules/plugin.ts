@@ -10,22 +10,22 @@ export interface LibraryPlugins {
 }
 
 export const pluginApi = {
-  list: () => client.get<Plugin[]>('/plugins'),
-  listByLibrary: () => client.get<LibraryPlugins[]>('/plugins/by-library'),
+  list: (): Promise<Plugin[]> => getMiraClient().plugins().getAll(),
+  listByLibrary: () => getMiraClient().plugins().getByLibrary(),
   get: (name: string, libraryId?: string): Promise<Plugin> =>
     getMiraClient().plugins().getById(name, libraryId),
   updateStatus: (libraryId: string, pluginName: string, status: 'active' | 'inactive') =>
-    client.post('/plugins/toggle-status', { libraryId, pluginName, status }),
+    getMiraClient().plugins().toggleStatus(libraryId, pluginName, status),
   disableAll: (pluginName: string) =>
-    client.post('/plugins/disable-all', { pluginName }),
+    getMiraClient().plugins().disableAll(pluginName),
   configure: (name: string, config: Record<string, any>, libraryId?: string) =>
-    client.put(`/plugins/${name}/config`, config, { params: { libraryId } }),
+    getMiraClient().plugins().updateConfig(name, config, libraryId),
   install: (
     data: { name: string; version?: string; libraryId: string; registry?: string; npmSource?: string; proxy?: string },
     signal?: AbortSignal,
   ) => client.post('/plugins/install', data, signal ? { signal } : undefined),
   syncMeta: (libraryId: string) =>
-    client.post('/plugins/sync-meta', { libraryId }),
+    getMiraClient().plugins().syncMeta(libraryId),
   uninstall: (name: string, libraryId?: string) =>
     getMiraClient().plugins().uninstall(name, libraryId),
 }

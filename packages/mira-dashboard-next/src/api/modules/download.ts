@@ -1,17 +1,15 @@
-import client from '../client'
+import { getMiraClient } from '@/lib/miraClient'
+import type { DownloadProgress } from 'mira-app-core/shared/sdk'
 
-export interface DownloadProgress {
-  batchId: string
-  total: number
-  completed: number
-  failed: number
-  skipped: number
-  done: boolean
-}
+export type { DownloadProgress }
 
 export const downloadApi = {
   start: (data: { libraryId: string; urls: string[]; folderId?: number | null; tagIds?: string[]; clientId?: string | null }) =>
-    client.post<{ code: number; data: { batchId: string; total: number } }>('/download/start', data),
-  progress: (batchId: string) =>
-    client.get<{ code: number; data: DownloadProgress }>(`/download/progress/${batchId}`),
+    getMiraClient().files().batchImportFromUrls(data.libraryId, data.urls, {
+      folderId: data.folderId ?? undefined,
+      tagIds: data.tagIds,
+      clientId: data.clientId ?? undefined,
+    }),
+  progress: (batchId: string): Promise<DownloadProgress> =>
+    getMiraClient().downloads().getProgress(batchId),
 }

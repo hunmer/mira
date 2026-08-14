@@ -4,7 +4,7 @@
 建立可重复执行的 Mira Server HTTP API 覆盖审计流程，按实际使用频率决定 SDK 纳入范围，并按 SDK 模块拆分契约测试。
 
 ## Current Phase
-Phase 5 Batch B (P0 已全部实现并迁移; 下批: User 账户组 P1×4)
+Phase 6 (Batch B/C 已完成; P0/P1/P2 全部清零, 待 CI 持续审计)
 
 ## Deliverables
 - `server-api-manifest.json`：method、完整路径、路由域、权限、响应类型、来源文件。
@@ -96,17 +96,17 @@ src/shared/sdk/modules/FileSystemModule.contract.test.ts
   - 顺带修复 `MiraClient.updateConfig` 重建时遗漏 `_tags`/`_folders` 的既有 bug
   - Dashboard 迁移：`api/modules/settings.ts`、`api/modules/plugin.ts`(get/uninstall)、`views/mira/settings/index.vue` 解包适配
   - 审计修正: 原判 P0 的 files/upload、files/cover、tags/delete、folders/delete 实为 SDK 已覆盖（manifest 漏扫 `httpClient.upload()` 与 `getAxiosInstance()` 两种调用形态，已修复）
-- [ ] Batch B：P1 公共查询与管理接口（User 账户组 4 条）
-- [ ] Batch C：经复审确认需要的 P2
-- [ ] Dashboard/Client/Extension 等消费者迁移到 SDK（本批: settings + plugin get/uninstall）
-- [x] 每批执行 Core 测试、Core 构建、消费者构建、Server 依赖刷新（本批完成: test 26 通过, build 通过, vue-tsc 通过, server install + procm 重启验证 8081）
+- [x] Batch B：P1 User 账户组 — changePassword/uploadAvatar(base64 JSON)/getTokens/getAvatarUrl(URL builder)
+- [x] Batch C：P2 全部 46 条 — 新模块 Admin(8)/Download(1)/FileSystem(14)/Statistics(4)/Thumbnail(9)；扩展 Database(+query)/Device(+broadcast,+disconnectById)/Plugin(+syncMeta,+upload,+toggleStatus,+disableAll,+getConfig,+updateConfig,+getRoutes)；BatchImportOptions 补 tagIds
+- [x] Dashboard/Client/Extension 等消费者迁移到 SDK — admin/device/download/fileManager/statistics/thumbnail/auth(账户3法)/plugin/database/overview/profile 共 12 个 view + 9 个 api 模块
+- [x] 每批执行 Core 测试、Core 构建、消费者构建、Server 依赖刷新（68 tests 通过, build 173KB, vue-tsc 通过, server install + 重启验证）
 - **Status:** in progress
 
 ### Phase 6: 验收与持续审计
-- [ ] 输出覆盖率报告和明确排除清单
-- [ ] CI 检查新增稳定 Server API 是否已 covered 或显式 excluded
-- [ ] 完成全量测试和构建验收
-- **Status:** pending
+- [x] 输出覆盖率报告和明确排除清单（covered 114 / partial 0 / missing 12 全部为 P3 显式排除; excluded 13 资源流式; dynamic 7）
+- [ ] CI 检查新增稳定 Server API 是否已 covered 或显式 excluded（复用 .audit/ 四脚本）
+- [x] 完成全量测试和构建验收（core 68 tests + build; dashboard vue-tsc; server 刷新重启 + curl 抽查）
+- **Status:** in progress — 仅剩 CI 接入
 
 ## Acceptance Criteria
 - 固定 JSON API 路由 100% 被分类，不允许 unknown。

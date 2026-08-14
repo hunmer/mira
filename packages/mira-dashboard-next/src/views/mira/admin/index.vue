@@ -36,7 +36,7 @@ async function loadAdmins() {
   loading.value = true
   try {
     const res = await adminApi.list()
-    admins.value = Array.isArray(res.data) ? res.data : []
+    admins.value = Array.isArray(res) ? res : []
   } catch {
     toast.error(t('common.failed'))
   } finally {

@@ -51,7 +51,7 @@ async function loadTokens() {
   loading.value = true
   try {
     const res = await adminApi.listTokens(props.user.id)
-    tokens.value = Array.isArray(res.data) ? res.data : []
+    tokens.value = Array.isArray(res) ? res : []
   } catch {
     toast.error(t('common.failed'))
   } finally {

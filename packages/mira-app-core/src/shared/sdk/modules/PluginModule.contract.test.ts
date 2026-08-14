@@ -46,4 +46,65 @@ describe('PluginModule contract', () => {
         await module.uninstall('demo', 'library-1');
         expect(http.delete).toHaveBeenCalledWith('/api/plugins/demo', { params: { libraryId: 'library-1' } });
     });
+
+    it('syncMeta posts libraryId', async () => {
+        const http = { post: vi.fn().mockResolvedValue({ code: 0, message: 'ok', data: true }) };
+        const module = new PluginModule(http as unknown as HttpClient);
+
+        await module.syncMeta('lib-1');
+        expect(http.post).toHaveBeenCalledWith('/api/plugins/sync-meta', { libraryId: 'lib-1' });
+    });
+
+    it('toggleStatus posts libraryId, pluginName and status', async () => {
+        const http = { post: vi.fn().mockResolvedValue({ code: 0, message: 'ok', data: true }) };
+        const module = new PluginModule(http as unknown as HttpClient);
+
+        await module.toggleStatus('lib-1', 'demo', 'inactive');
+        expect(http.post).toHaveBeenCalledWith('/api/plugins/toggle-status', {
+            libraryId: 'lib-1',
+            pluginName: 'demo',
+            status: 'inactive',
+        });
+    });
+
+    it('disableAll posts pluginName', async () => {
+        const http = { post: vi.fn().mockResolvedValue({ code: 0, message: 'ok', data: true }) };
+        const module = new PluginModule(http as unknown as HttpClient);
+
+        await module.disableAll('demo');
+        expect(http.post).toHaveBeenCalledWith('/api/plugins/disable-all', { pluginName: 'demo' });
+    });
+
+    it('config read/write targets /api/plugins/:name/config with libraryId query', async () => {
+        const http = {
+            get: vi.fn().mockResolvedValue({ key: 'v' }),
+            put: vi.fn().mockResolvedValue({ code: 0, message: 'ok', data: true }),
+        };
+        const module = new PluginModule(http as unknown as HttpClient);
+
+        await expect(module.getConfig('demo', 'lib-1')).resolves.toEqual({ key: 'v' });
+        expect(http.get).toHaveBeenCalledWith('/api/plugins/demo/config', { params: { libraryId: 'lib-1' } });
+
+        await module.updateConfig('demo', { key: 'v2' }, 'lib-1');
+        expect(http.put).toHaveBeenCalledWith('/api/plugins/demo/config', { key: 'v2' }, { params: { libraryId: 'lib-1' } });
+    });
+
+    it('upload sends multipart form with file and libraryId', async () => {
+        const res = { code: 0, message: 'ok', data: true };
+        const http = { upload: vi.fn().mockResolvedValue(res) };
+        const module = new PluginModule(http as unknown as HttpClient);
+        const file = new File(['x'], 'plugin.tgz');
+
+        await expect(module.upload(file, 'lib-1')).resolves.toEqual(res);
+        expect(http.upload).toHaveBeenCalledWith('/api/plugins/upload', expect.any(FormData));
+    });
+
+    it('getRoutes queries the plugin route discovery endpoint', async () => {
+        const routes = [{ path: '/p', component: 'c' }];
+        const http = { get: vi.fn().mockResolvedValue(routes) };
+        const module = new PluginModule(http as unknown as HttpClient);
+
+        await expect(module.getRoutes('lib-1')).resolves.toEqual(routes);
+        expect(http.get).toHaveBeenCalledWith('/api/plugin-routes/lib-1');
+    });
 });

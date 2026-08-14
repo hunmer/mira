@@ -1,6 +1,94 @@
 {
-  "generatedAt": "2026-08-14T08:35:21.032Z",
+  "generatedAt": "2026-08-14T08:50:57.580Z",
   "entries": [
+    {
+      "module": "Admin",
+      "method": "getAll",
+      "httpMethod": "GET",
+      "path": "/api/admins",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/AdminModule.ts",
+      "line": 22,
+      "hasQuery": true,
+      "hasBody": false,
+      "returnType": "AdminUser[]"
+    },
+    {
+      "module": "Admin",
+      "method": "create",
+      "httpMethod": "POST",
+      "path": "/api/admins",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/AdminModule.ts",
+      "line": 30,
+      "hasQuery": false,
+      "hasBody": true,
+      "returnType": "{ id: string }"
+    },
+    {
+      "module": "Admin",
+      "method": "update",
+      "httpMethod": "PUT",
+      "path": "/api/admins/:param",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/AdminModule.ts",
+      "line": 37,
+      "hasQuery": false,
+      "hasBody": true,
+      "returnType": "BaseResponse"
+    },
+    {
+      "module": "Admin",
+      "method": "delete",
+      "httpMethod": "DELETE",
+      "path": "/api/admins/:param",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/AdminModule.ts",
+      "line": 44,
+      "hasQuery": true,
+      "hasBody": false,
+      "returnType": "BaseResponse"
+    },
+    {
+      "module": "Admin",
+      "method": "getTokens",
+      "httpMethod": "GET",
+      "path": "/api/admins/:param/tokens",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/AdminModule.ts",
+      "line": 51,
+      "hasQuery": true,
+      "hasBody": false,
+      "returnType": "ApiToken[]"
+    },
+    {
+      "module": "Admin",
+      "method": "createToken",
+      "httpMethod": "POST",
+      "path": "/api/admins/:param/tokens",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/AdminModule.ts",
+      "line": 58,
+      "hasQuery": false,
+      "hasBody": true,
+      "returnType": "ApiToken"
+    },
+    {
+      "module": "Admin",
+      "method": "updateToken",
+      "httpMethod": "PUT",
+      "path": "/api/admins/:param/tokens/:param",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/AdminModule.ts",
+      "line": 65,
+      "hasQuery": false,
+      "hasBody": true,
+      "returnType": "ApiToken"
+    },
+    {
+      "module": "Admin",
+      "method": "deleteToken",
+      "httpMethod": "DELETE",
+      "path": "/api/admins/:param/tokens/:param",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/AdminModule.ts",
+      "line": 75,
+      "hasQuery": true,
+      "hasBody": false,
+      "returnType": "BaseResponse"
+    },
     {
       "module": "Auth",
       "method": "login",
@@ -124,11 +212,22 @@
     },
     {
       "module": "Database",
+      "method": "query",
+      "httpMethod": "POST",
+      "path": "/api/database/query",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/DatabaseModule.ts",
+      "line": 33,
+      "hasQuery": false,
+      "hasBody": true,
+      "returnType": "any[]"
+    },
+    {
+      "module": "Database",
       "method": "getTableData",
       "httpMethod": "GET",
       "path": "/api/database/tables/:param/data",
       "file": "packages/mira-app-core/src/shared/sdk/modules/DatabaseModule.ts",
-      "line": 33,
+      "line": 43,
       "hasQuery": true,
       "hasBody": false,
       "returnType": "any[]"
@@ -139,7 +238,7 @@
       "httpMethod": "GET",
       "path": "/api/database/tables/:param/schema",
       "file": "packages/mira-app-core/src/shared/sdk/modules/DatabaseModule.ts",
-      "line": 43,
+      "line": 53,
       "hasQuery": true,
       "hasBody": false,
       "returnType": "TableColumn[]"
@@ -179,11 +278,33 @@
     },
     {
       "module": "Device",
+      "method": "disconnectById",
+      "httpMethod": "POST",
+      "path": "/api/devices/:param/disconnect",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/DeviceModule.ts",
+      "line": 51,
+      "hasQuery": false,
+      "hasBody": true,
+      "returnType": "BaseResponse"
+    },
+    {
+      "module": "Device",
+      "method": "broadcast",
+      "httpMethod": "POST",
+      "path": "/api/devices/broadcast",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/DeviceModule.ts",
+      "line": 61,
+      "hasQuery": false,
+      "hasBody": true,
+      "returnType": "BaseResponse"
+    },
+    {
+      "module": "Device",
       "method": "sendMessage",
       "httpMethod": "POST",
       "path": "/api/devices/send-message",
       "file": "packages/mira-app-core/src/shared/sdk/modules/DeviceModule.ts",
-      "line": 55,
+      "line": 77,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "BaseResponse"
@@ -194,10 +315,21 @@
       "httpMethod": "GET",
       "path": "/api/devices/stats",
       "file": "packages/mira-app-core/src/shared/sdk/modules/DeviceModule.ts",
-      "line": 63,
+      "line": 85,
       "hasQuery": true,
       "hasBody": false,
       "returnType": "DeviceStatsResponse"
+    },
+    {
+      "module": "Download",
+      "method": "getProgress",
+      "httpMethod": "GET",
+      "path": "/api/download/progress/:param",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/DownloadModule.ts",
+      "line": 16,
+      "hasQuery": true,
+      "hasBody": false,
+      "returnType": "DownloadProgress"
     },
     {
       "module": "File",
@@ -271,7 +403,7 @@
       "httpMethod": "DELETE",
       "path": "/api/files/:param/trash",
       "file": "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts",
-      "line": 400,
+      "line": 401,
       "hasQuery": true,
       "hasBody": false,
       "returnType": null
@@ -282,7 +414,7 @@
       "httpMethod": "POST",
       "path": "/api/files/recover",
       "file": "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts",
-      "line": 410,
+      "line": 411,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "BaseResponse"
@@ -293,7 +425,7 @@
       "httpMethod": "POST",
       "path": "/api/files/batch-recover",
       "file": "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts",
-      "line": 426,
+      "line": 427,
       "hasQuery": false,
       "hasBody": true,
       "returnType": null
@@ -304,7 +436,7 @@
       "httpMethod": "POST",
       "path": "/api/files/getFiles",
       "file": "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts",
-      "line": 438,
+      "line": 439,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "FileData[]"
@@ -315,7 +447,7 @@
       "httpMethod": "POST",
       "path": "/api/files/getFile",
       "file": "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts",
-      "line": 448,
+      "line": 449,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "FileData"
@@ -326,7 +458,7 @@
       "httpMethod": "POST",
       "path": "/api/files/metadata",
       "file": "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts",
-      "line": 461,
+      "line": 462,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "FileMetadataDimensions[]"
@@ -337,7 +469,7 @@
       "httpMethod": "POST",
       "path": "/api/files/getPreviewViewers",
       "file": "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts",
-      "line": 474,
+      "line": 475,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "PreviewViewersResponse"
@@ -348,7 +480,7 @@
       "httpMethod": "POST",
       "path": "/api/files/rename",
       "file": "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts",
-      "line": 607,
+      "line": 608,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "FileData"
@@ -359,7 +491,7 @@
       "httpMethod": "POST",
       "path": "/api/files/update",
       "file": "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts",
-      "line": 622,
+      "line": 623,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "FileData"
@@ -370,10 +502,164 @@
       "httpMethod": "GET",
       "path": "/api/files/extra/:param/:param",
       "file": "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts",
-      "line": 630,
+      "line": 631,
       "hasQuery": true,
       "hasBody": false,
       "returnType": "string[]"
+    },
+    {
+      "module": "FileSystem",
+      "method": "mkdir",
+      "httpMethod": "POST",
+      "path": "/api/fs/mkdir",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.ts",
+      "line": 15,
+      "hasQuery": false,
+      "hasBody": true,
+      "returnType": null
+    },
+    {
+      "module": "FileSystem",
+      "method": "getDirs",
+      "httpMethod": "GET",
+      "path": "/api/fs/dirs",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.ts",
+      "line": 23,
+      "hasQuery": true,
+      "hasBody": false,
+      "returnType": "FsDirNode[]"
+    },
+    {
+      "module": "FileSystem",
+      "method": "list",
+      "httpMethod": "GET",
+      "path": "/api/fs/list",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.ts",
+      "line": 32,
+      "hasQuery": true,
+      "hasBody": false,
+      "returnType": null
+    },
+    {
+      "module": "FileSystem",
+      "method": "move",
+      "httpMethod": "POST",
+      "path": "/api/fs/move",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.ts",
+      "line": 39,
+      "hasQuery": false,
+      "hasBody": true,
+      "returnType": null
+    },
+    {
+      "module": "FileSystem",
+      "method": "remove",
+      "httpMethod": "POST",
+      "path": "/api/fs/remove",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.ts",
+      "line": 46,
+      "hasQuery": false,
+      "hasBody": true,
+      "returnType": null
+    },
+    {
+      "module": "FileSystem",
+      "method": "sync",
+      "httpMethod": "POST",
+      "path": "/api/fs/sync",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.ts",
+      "line": 53,
+      "hasQuery": false,
+      "hasBody": true,
+      "returnType": null
+    },
+    {
+      "module": "FileSystem",
+      "method": "scanMissing",
+      "httpMethod": "GET",
+      "path": "/api/fs/database/missing",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.ts",
+      "line": 60,
+      "hasQuery": true,
+      "hasBody": false,
+      "returnType": null
+    },
+    {
+      "module": "FileSystem",
+      "method": "clearMissing",
+      "httpMethod": "DELETE",
+      "path": "/api/fs/database/missing",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.ts",
+      "line": 67,
+      "hasQuery": true,
+      "hasBody": false,
+      "returnType": null
+    },
+    {
+      "module": "FileSystem",
+      "method": "findNewFiles",
+      "httpMethod": "POST",
+      "path": "/api/fs/database/new",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.ts",
+      "line": 74,
+      "hasQuery": false,
+      "hasBody": true,
+      "returnType": null
+    },
+    {
+      "module": "FileSystem",
+      "method": "importNewFiles",
+      "httpMethod": "POST",
+      "path": "/api/fs/database/new/import",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.ts",
+      "line": 81,
+      "hasQuery": false,
+      "hasBody": true,
+      "returnType": null
+    },
+    {
+      "module": "FileSystem",
+      "method": "deleteNewFiles",
+      "httpMethod": "DELETE",
+      "path": "/api/fs/database/new",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.ts",
+      "line": 88,
+      "hasQuery": true,
+      "hasBody": false,
+      "returnType": null
+    },
+    {
+      "module": "FileSystem",
+      "method": "scanDuplicates",
+      "httpMethod": "POST",
+      "path": "/api/fs/database/duplicates",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.ts",
+      "line": 95,
+      "hasQuery": false,
+      "hasBody": true,
+      "returnType": null
+    },
+    {
+      "module": "FileSystem",
+      "method": "removeDuplicateRecords",
+      "httpMethod": "DELETE",
+      "path": "/api/fs/database/duplicates",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.ts",
+      "line": 102,
+      "hasQuery": true,
+      "hasBody": false,
+      "returnType": null
+    },
+    {
+      "module": "FileSystem",
+      "method": "download",
+      "httpMethod": "POST",
+      "path": "/api/fs/download",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.ts",
+      "line": 109,
+      "hasQuery": false,
+      "hasBody": true,
+      "returnType": null
     },
     {
       "module": "Folder",
@@ -629,6 +915,83 @@
       "returnType": "BaseResponse"
     },
     {
+      "module": "Plugin",
+      "method": "syncMeta",
+      "httpMethod": "POST",
+      "path": "/api/plugins/sync-meta",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts",
+      "line": 128,
+      "hasQuery": false,
+      "hasBody": true,
+      "returnType": "BaseResponse"
+    },
+    {
+      "module": "Plugin",
+      "method": "upload",
+      "httpMethod": "POST",
+      "path": "/api/plugins/upload",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts",
+      "line": 139,
+      "hasQuery": false,
+      "hasBody": true,
+      "returnType": "BaseResponse"
+    },
+    {
+      "module": "Plugin",
+      "method": "toggleStatus",
+      "httpMethod": "POST",
+      "path": "/api/plugins/toggle-status",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts",
+      "line": 146,
+      "hasQuery": false,
+      "hasBody": true,
+      "returnType": "BaseResponse"
+    },
+    {
+      "module": "Plugin",
+      "method": "disableAll",
+      "httpMethod": "POST",
+      "path": "/api/plugins/disable-all",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts",
+      "line": 157,
+      "hasQuery": false,
+      "hasBody": true,
+      "returnType": "BaseResponse"
+    },
+    {
+      "module": "Plugin",
+      "method": "getConfig",
+      "httpMethod": "GET",
+      "path": "/api/plugins/:param/config",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts",
+      "line": 164,
+      "hasQuery": true,
+      "hasBody": false,
+      "returnType": null
+    },
+    {
+      "module": "Plugin",
+      "method": "updateConfig",
+      "httpMethod": "PUT",
+      "path": "/api/plugins/:param/config",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts",
+      "line": 173,
+      "hasQuery": false,
+      "hasBody": true,
+      "returnType": "BaseResponse"
+    },
+    {
+      "module": "Plugin",
+      "method": "getRoutes",
+      "httpMethod": "GET",
+      "path": "/api/plugin-routes/:param",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts",
+      "line": 184,
+      "hasQuery": true,
+      "hasBody": false,
+      "returnType": "any[]"
+    },
+    {
       "module": "Settings",
       "method": "get",
       "httpMethod": "GET",
@@ -649,6 +1012,50 @@
       "hasQuery": false,
       "hasBody": true,
       "returnType": "ServerSettings"
+    },
+    {
+      "module": "Statistics",
+      "method": "upload",
+      "httpMethod": "GET",
+      "path": "/api/statistics/:param/upload",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/StatisticsModule.ts",
+      "line": 14,
+      "hasQuery": true,
+      "hasBody": false,
+      "returnType": null
+    },
+    {
+      "module": "Statistics",
+      "method": "uploadDaily",
+      "httpMethod": "GET",
+      "path": "/api/statistics/:param/upload/daily",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/StatisticsModule.ts",
+      "line": 23,
+      "hasQuery": true,
+      "hasBody": false,
+      "returnType": null
+    },
+    {
+      "module": "Statistics",
+      "method": "fileTypes",
+      "httpMethod": "GET",
+      "path": "/api/statistics/:param/file-types",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/StatisticsModule.ts",
+      "line": 32,
+      "hasQuery": true,
+      "hasBody": false,
+      "returnType": null
+    },
+    {
+      "module": "Statistics",
+      "method": "recentUploads",
+      "httpMethod": "GET",
+      "path": "/api/statistics/:param/recent-uploads",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/StatisticsModule.ts",
+      "line": 41,
+      "hasQuery": true,
+      "hasBody": false,
+      "returnType": null
     },
     {
       "module": "System",
@@ -761,12 +1168,111 @@
       "returnType": null
     },
     {
+      "module": "Thumbnail",
+      "method": "scan",
+      "httpMethod": "GET",
+      "path": "/api/thumb/scan",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/ThumbnailModule.ts",
+      "line": 14,
+      "hasQuery": true,
+      "hasBody": false,
+      "returnType": null
+    },
+    {
+      "module": "Thumbnail",
+      "method": "progress",
+      "httpMethod": "GET",
+      "path": "/api/thumb/progress",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/ThumbnailModule.ts",
+      "line": 21,
+      "hasQuery": true,
+      "hasBody": false,
+      "returnType": null
+    },
+    {
+      "module": "Thumbnail",
+      "method": "cancel",
+      "httpMethod": "GET",
+      "path": "/api/thumb/cancel",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/ThumbnailModule.ts",
+      "line": 28,
+      "hasQuery": true,
+      "hasBody": false,
+      "returnType": null
+    },
+    {
+      "module": "Thumbnail",
+      "method": "stats",
+      "httpMethod": "GET",
+      "path": "/api/thumb/stats",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/ThumbnailModule.ts",
+      "line": 35,
+      "hasQuery": true,
+      "hasBody": false,
+      "returnType": null
+    },
+    {
+      "module": "Thumbnail",
+      "method": "generators",
+      "httpMethod": "GET",
+      "path": "/api/thumb/generators",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/ThumbnailModule.ts",
+      "line": 42,
+      "hasQuery": true,
+      "hasBody": false,
+      "returnType": null
+    },
+    {
+      "module": "Thumbnail",
+      "method": "sync",
+      "httpMethod": "GET",
+      "path": "/api/thumb/sync",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/ThumbnailModule.ts",
+      "line": 49,
+      "hasQuery": true,
+      "hasBody": false,
+      "returnType": null
+    },
+    {
+      "module": "Thumbnail",
+      "method": "metadataStats",
+      "httpMethod": "GET",
+      "path": "/api/thumb/metadata/stats",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/ThumbnailModule.ts",
+      "line": 56,
+      "hasQuery": true,
+      "hasBody": false,
+      "returnType": null
+    },
+    {
+      "module": "Thumbnail",
+      "method": "metadataScan",
+      "httpMethod": "GET",
+      "path": "/api/thumb/metadata/scan",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/ThumbnailModule.ts",
+      "line": 63,
+      "hasQuery": true,
+      "hasBody": false,
+      "returnType": null
+    },
+    {
+      "module": "Thumbnail",
+      "method": "metadataProgress",
+      "httpMethod": "GET",
+      "path": "/api/thumb/metadata/progress",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/ThumbnailModule.ts",
+      "line": 70,
+      "hasQuery": true,
+      "hasBody": false,
+      "returnType": null
+    },
+    {
       "module": "User",
       "method": "getInfo",
       "httpMethod": "GET",
       "path": "/api/user/info",
       "file": "packages/mira-app-core/src/shared/sdk/modules/UserModule.ts",
-      "line": 20,
+      "line": 21,
       "hasQuery": true,
       "hasBody": false,
       "returnType": "UserInfo"
@@ -777,10 +1283,43 @@
       "httpMethod": "PUT",
       "path": "/api/user/info",
       "file": "packages/mira-app-core/src/shared/sdk/modules/UserModule.ts",
-      "line": 29,
+      "line": 30,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "BaseResponse"
+    },
+    {
+      "module": "User",
+      "method": "changePassword",
+      "httpMethod": "PUT",
+      "path": "/api/user/change-password",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/UserModule.ts",
+      "line": 39,
+      "hasQuery": false,
+      "hasBody": true,
+      "returnType": null
+    },
+    {
+      "module": "User",
+      "method": "uploadAvatar",
+      "httpMethod": "POST",
+      "path": "/api/user/avatar",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/UserModule.ts",
+      "line": 47,
+      "hasQuery": false,
+      "hasBody": true,
+      "returnType": null
+    },
+    {
+      "module": "User",
+      "method": "getTokens",
+      "httpMethod": "GET",
+      "path": "/api/user/tokens",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/UserModule.ts",
+      "line": 54,
+      "hasQuery": true,
+      "hasBody": false,
+      "returnType": "ApiToken[]"
     }
   ]
 }

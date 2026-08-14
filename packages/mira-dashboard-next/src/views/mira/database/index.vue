@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { DatabaseTable, DatabaseRow } from '@/types/mira'
 import { useLibrary } from '@/composables/useLibrary'
-import client from '@/api/client'
+import { getMiraClient } from '@/lib/miraClient'
 import { Button } from '@/components/ui/button'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -38,8 +38,8 @@ async function loadTables() {
   if (!selectedLib.value) return
   loading.value = true
   try {
-    const res = await client.get('/database/tables', { params: { libraryId: selectedLib.value } })
-    tables.value = Array.isArray(res.data) ? res.data : []
+    const res = await getMiraClient().database().getTables(selectedLib.value)
+    tables.value = Array.isArray(res) ? res : []
   } catch {
     toast.error(t('common.failed'))
   } finally {
@@ -53,8 +53,8 @@ async function loadTableData(table: DatabaseTable) {
   dataLoading.value = true
   showDataDialog.value = true
   try {
-    const res = await client.get(`/database/tables/${table.name}/data`, { params: { libraryId: selectedLib.value } })
-    dataRows.value = Array.isArray(res.data) ? res.data : []
+    const res = await getMiraClient().database().getTableData(selectedLib.value, table.name)
+    dataRows.value = Array.isArray(res) ? res : []
   } catch {
     toast.error(t('common.failed'))
     dataRows.value = []
@@ -69,8 +69,8 @@ async function executeSql() {
     return
   }
   try {
-    const res = await client.post('/database/query', { sql: sqlQuery.value, libraryId: selectedLib.value })
-    sqlResult.value = Array.isArray(res.data) ? res.data : []
+    const res = await getMiraClient().database().query(selectedLib.value, sqlQuery.value)
+    sqlResult.value = Array.isArray(res) ? res : []
     toast.success(`查询成功，返回 ${sqlResult.value.length} 条记录`)
   } catch (e: any) {
     toast.error(e.response?.data?.error || 'SQL执行失败')

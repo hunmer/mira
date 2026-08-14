@@ -122,6 +122,69 @@ export class PluginModule {
     }
 
     /**
+     * 同步插件元数据（从已安装插件刷新 package 信息）
+     */
+    async syncMeta(libraryId: string): Promise<BaseResponse> {
+        return await this.httpClient.post<BaseResponse>('/api/plugins/sync-meta', { libraryId });
+    }
+
+    /**
+     * 上传本地插件包安装（multipart）
+     * @param file 插件包文件（.tgz/.zip）
+     */
+    async upload(file: File, libraryId: string): Promise<BaseResponse> {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('libraryId', libraryId);
+        return await this.httpClient.upload<BaseResponse>('/api/plugins/upload', formData);
+    }
+
+    /**
+     * 切换插件启用状态
+     */
+    async toggleStatus(libraryId: string, pluginName: string, status: 'active' | 'inactive'): Promise<BaseResponse> {
+        return await this.httpClient.post<BaseResponse>('/api/plugins/toggle-status', {
+            libraryId,
+            pluginName,
+            status,
+        });
+    }
+
+    /**
+     * 禁用所有库中同名插件
+     */
+    async disableAll(pluginName: string): Promise<BaseResponse> {
+        return await this.httpClient.post<BaseResponse>('/api/plugins/disable-all', { pluginName });
+    }
+
+    /**
+     * 读取插件配置
+     */
+    async getConfig(name: string, libraryId?: string): Promise<any> {
+        return await this.httpClient.get(`/api/plugins/${encodeURIComponent(name)}/config`, {
+            params: libraryId ? { libraryId } : undefined,
+        });
+    }
+
+    /**
+     * 更新插件配置
+     */
+    async updateConfig(name: string, config: Record<string, any>, libraryId?: string): Promise<BaseResponse> {
+        return await this.httpClient.put<BaseResponse>(
+            `/api/plugins/${encodeURIComponent(name)}/config`,
+            config,
+            { params: libraryId ? { libraryId } : undefined }
+        );
+    }
+
+    /**
+     * 获取指定素材库的插件路由定义（动态路由发现端点）
+     */
+    async getRoutes(libraryId: string): Promise<any[]> {
+        return await this.httpClient.get<any[]>(`/api/plugin-routes/${encodeURIComponent(libraryId)}`);
+    }
+
+    /**
      * 获取活跃的插件列表
      * @returns Promise<Plugin[]>
      */

@@ -24,6 +24,16 @@ export class DatabaseModule {
     }
 
     /**
+     * 执行只读 SQL 查询
+     * @param libraryId 素材库ID
+     * @param sql SQL 查询语句
+     * @returns Promise<any[]> 查询结果行
+     */
+    async query(libraryId: string, sql: string): Promise<any[]> {
+        return await this.httpClient.post<any[]>('/api/database/query', { libraryId, sql });
+    }
+
+    /**
      * 获取指定表的数据
      * @param libraryId 素材库ID
      * @param tableName 表名

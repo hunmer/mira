@@ -36,6 +36,58 @@ export interface ServerSettings {
     allowRegistration: boolean;
 }
 
+// API Token
+export interface ApiToken {
+    id: number;
+    name: string;
+    token: string;
+    createdAt: number;
+    expiresAt: number;
+}
+
+// 管理员账号
+export interface AdminUser {
+    id: string;
+    username: string;
+    email: string;
+    role: 'super' | 'admin' | 'user';
+    createdAt: string;
+    updatedAt: string;
+    is_active?: boolean;
+    /** 该账号的 API Token 数量 */
+    tokenCount?: number;
+}
+
+export interface CreateAdminRequest {
+    username: string;
+    email: string;
+    password: string;
+}
+
+export interface UpdateAdminRequest {
+    username?: string;
+    email?: string;
+    password?: string;
+    role?: string;
+}
+
+// 批量下载进度
+export interface DownloadProgress {
+    batchId: string;
+    total: number;
+    completed: number;
+    failed: number;
+    skipped: number;
+    done: boolean;
+}
+
+// 文件系统目录树节点（PathTreeSelect 用）
+export interface FsDirNode {
+    label: string;
+    value: string;
+    isLeaf: boolean;
+}
+
 // 认证相关类型
 export interface LoginRequest {
     username: string;
@@ -246,6 +298,8 @@ export interface UploadResponse {
 export interface BatchImportOptions {
     folderId?: number | null;
     clientId?: string;
+    /** 下载导入后自动附加的标签 ID */
+    tagIds?: string[];
 }
 
 export interface BatchImportResponse {

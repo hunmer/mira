@@ -1,17 +1,16 @@
-import client from '../client'
-import type { User, CreateAdminRequest, UpdateAdminRequest, AdminResponse, ApiToken } from '@/types/auth'
+import { getMiraClient } from '@/lib/miraClient'
+import type { User, CreateAdminRequest, UpdateAdminRequest, ApiToken } from '@/types/auth'
 
 export const adminApi = {
-  list: () => client.get<User[]>('/admins'),
-  create: (data: CreateAdminRequest) => client.post<AdminResponse>('/admins', data),
-  update: (id: string, data: UpdateAdminRequest) => client.put<AdminResponse>(`/admins/${id}`, data),
-  delete: (id: string) => client.delete<AdminResponse>(`/admins/${id}`),
+  list: (): Promise<User[]> => getMiraClient().admins().getAll(),
+  create: (data: CreateAdminRequest) => getMiraClient().admins().create(data),
+  update: (id: string, data: UpdateAdminRequest) => getMiraClient().admins().update(id, data),
+  delete: (id: string) => getMiraClient().admins().delete(id),
   // API Token 管理
-  listTokens: (id: string) => client.get<ApiToken[]>(`/admins/${id}/tokens`),
-  createToken: (id: string, data: { name?: string; expiresInDays?: number | null }) =>
-    client.post<AdminResponse & { data?: ApiToken }>(`/admins/${id}/tokens`, data),
-  updateToken: (id: string, tokenId: number, data: { name?: string; expiresInDays?: number | null }) =>
-    client.put<AdminResponse & { data?: ApiToken }>(`/admins/${id}/tokens/${tokenId}`, data),
-  deleteToken: (id: string, tokenId: number) =>
-    client.delete<AdminResponse>(`/admins/${id}/tokens/${tokenId}`),
+  listTokens: (id: string): Promise<ApiToken[]> => getMiraClient().admins().getTokens(id),
+  createToken: (id: string, data: { name?: string; expiresInDays?: number | null }): Promise<ApiToken> =>
+    getMiraClient().admins().createToken(id, data),
+  updateToken: (id: string, tokenId: number, data: { name?: string; expiresInDays?: number | null }): Promise<ApiToken> =>
+    getMiraClient().admins().updateToken(id, tokenId, data),
+  deleteToken: (id: string, tokenId: number) => getMiraClient().admins().deleteToken(id, tokenId),
 }

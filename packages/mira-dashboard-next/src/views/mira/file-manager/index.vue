@@ -110,7 +110,7 @@ async function startUrlDownload() {
   urlProgress.value = null
   try {
     const res = await downloadApi.start({ libraryId: selectedLibraryId.value, urls })
-    const batchId = res.data?.data?.batchId
+    const batchId = res?.batchId
     if (!batchId) throw new Error('no batchId')
     pollUrlProgress(batchId)
   } catch (e: any) {
@@ -124,7 +124,7 @@ function pollUrlProgress(batchId: string) {
   urlPollTimer = setInterval(async () => {
     try {
       const res = await downloadApi.progress(batchId)
-      const p = res.data?.data
+      const p = res
       if (!p) return
       urlProgress.value = p
       if (p.done) {
@@ -237,7 +237,7 @@ async function loadItems(append = false) {
       offset: append ? offset.value : 0,
       limit,
     })
-    const data = res.data
+    const data = res
     if (append) {
       items.value.push(...data.items)
     } else {
@@ -374,18 +374,10 @@ async function batchDownload() {
       libraryId: selectedLibraryId.value,
       paths: [...selected.value],
     })
-    // 从 content-disposition 解析文件名（filename*=UTF-8''xxx 优先）
-    const cd = resp.headers?.['content-disposition'] || ''
-    let fileName = ''
-    const star = cd.match(/filename\*=UTF-8''([^;]+)/i)
-    if (star) fileName = decodeURIComponent(star[1])
-    if (!fileName) {
-      const plain = cd.match(/filename="?([^";]+)"?/i)
-      if (plain) fileName = plain[1]
-    }
-    if (!fileName) fileName = selected.value.size === 1 ? [...selected.value][0].split(/[/\\]/).pop() || 'download' : 'download.zip'
+    // SDK 返回纯 Blob；单选取文件名，多选打包为 download.zip
+    const fileName = selected.value.size === 1 ? [...selected.value][0].split(/[/\\]/).pop() || 'download' : 'download.zip'
 
-    const blob = new Blob([resp.data as BlobPart])
+    const blob = new Blob([resp as BlobPart])
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -406,7 +398,7 @@ async function syncFiles() {
   syncing.value = true
   try {
     const res = await fileManagerApi.sync(selectedLibraryId.value)
-    const { added, removed, scanned } = res.data.data
+    const { added, removed, scanned } = res?.data ?? {}
     toast.success(t('fileManager.syncResult', { scanned, added, removed }))
     loadItems()
   } catch (e: any) {

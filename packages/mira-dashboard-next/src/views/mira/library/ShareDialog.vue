@@ -119,11 +119,11 @@ function buildShareUrl(lib: Library): string {
 async function loadTokens() {
   try {
     const res = await adminApi.list()
-    const users = Array.isArray(res.data) ? res.data : []
+    const users = Array.isArray(res) ? res : []
     const groups = await Promise.all(users.map(async (user) => {
       try {
         const r = await adminApi.listTokens(user.id)
-        return { username: user.username, tokens: Array.isArray(r.data) ? r.data : [] }
+        return { username: user.username, tokens: Array.isArray(r) ? r : [] }
       } catch {
         return { username: user.username, tokens: [] }
       }

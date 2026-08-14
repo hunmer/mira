@@ -318,6 +318,7 @@ export class FileModule {
             libraryId,
             urls,
             folderId: options?.folderId ?? null,
+            tagIds: options?.tagIds,
             clientId: options?.clientId,
         });
     }

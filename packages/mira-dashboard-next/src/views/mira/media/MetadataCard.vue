@@ -21,7 +21,7 @@ async function refreshStats() {
   loading.value = true
   try {
     const res: any = await thumbnailApi.metadataStats(selectedLibraryId.value)
-    if (res.data?.success) stats.value = res.data.data
+    stats.value = res
   } finally {
     loading.value = false
   }
@@ -31,8 +31,7 @@ async function refreshProgress() {
   if (!selectedLibraryId.value) return
   try {
     const res: any = await thumbnailApi.metadataProgress(selectedLibraryId.value)
-    if (!res.data?.success) return
-    progress.value = res.data.data
+    progress.value = res
     scanning.value = progress.value.processing || progress.value.queueLength > 0
     if (!scanning.value) {
       stopProgressMonitoring()
@@ -54,7 +53,7 @@ function stopProgressMonitoring() {
 async function startScan() {
   if (!selectedLibraryId.value) return
   const res: any = await thumbnailApi.metadataScan(selectedLibraryId.value)
-  if (res.data?.success) {
+  if (res?.available) {
     scanning.value = true
     startProgressMonitoring()
     await refreshProgress()

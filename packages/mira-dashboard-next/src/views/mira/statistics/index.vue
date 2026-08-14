@@ -238,7 +238,7 @@ async function showUserDialog(uploaderId: number | null) {
   userDialogLoading.value = true
   try {
     const res: any = await adminApi.list()
-    const users: User[] = Array.isArray(res.data) ? res.data : (res.data?.data || [])
+    const users: User[] = Array.isArray(res) ? res : []
     userDialogUser.value = users.find(u => String(u.id) === String(uploaderId)) || null
   } catch {
     userDialogUser.value = null

@@ -12,6 +12,11 @@ import { TagModule } from '../modules/TagModule';
 import { FolderModule } from '../modules/FolderModule';
 import { CookieSiteModule } from '../modules/CookieSiteModule';
 import { SettingsModule } from '../modules/SettingsModule';
+import { AdminModule } from '../modules/AdminModule';
+import { DownloadModule } from '../modules/DownloadModule';
+import { FileSystemModule } from '../modules/FileSystemModule';
+import { StatisticsModule } from '../modules/StatisticsModule';
+import { ThumbnailModule } from '../modules/ThumbnailModule';
 import { ClientConfig, WebSocketOptions } from '../types';
 
 /**
@@ -49,6 +54,11 @@ export class MiraClient {
     private _folders: FolderModule;
     private _cookieSites: CookieSiteModule;
     private _settings: SettingsModule;
+    private _admins: AdminModule;
+    private _downloads: DownloadModule;
+    private _fs: FileSystemModule;
+    private _statistics: StatisticsModule;
+    private _thumbnails: ThumbnailModule;
 
     constructor(baseURL: string, config?: Partial<ClientConfig>) {
         const clientConfig: ClientConfig = {
@@ -72,6 +82,11 @@ export class MiraClient {
         this._folders = new FolderModule(this.httpClient);
         this._cookieSites = new CookieSiteModule(this.httpClient);
         this._settings = new SettingsModule(this.httpClient);
+        this._admins = new AdminModule(this.httpClient);
+        this._downloads = new DownloadModule(this.httpClient);
+        this._fs = new FileSystemModule(this.httpClient);
+        this._statistics = new StatisticsModule(this.httpClient);
+        this._thumbnails = new ThumbnailModule(this.httpClient);
     }
 
     /**
@@ -168,6 +183,46 @@ export class MiraClient {
      */
     settings(): SettingsModule {
         return this._settings;
+    }
+
+    /**
+     * 获取管理员模块
+     * @returns AdminModule
+     */
+    admins(): AdminModule {
+        return this._admins;
+    }
+
+    /**
+     * 获取批量下载模块
+     * @returns DownloadModule
+     */
+    downloads(): DownloadModule {
+        return this._downloads;
+    }
+
+    /**
+     * 获取服务器文件系统模块
+     * @returns FileSystemModule
+     */
+    fs(): FileSystemModule {
+        return this._fs;
+    }
+
+    /**
+     * 获取统计模块
+     * @returns StatisticsModule
+     */
+    statistics(): StatisticsModule {
+        return this._statistics;
+    }
+
+    /**
+     * 获取缩略图模块
+     * @returns ThumbnailModule
+     */
+    thumbnails(): ThumbnailModule {
+        return this._thumbnails;
     }
 
     /**
@@ -273,6 +328,11 @@ export class MiraClient {
             this._folders = new FolderModule(this.httpClient);
             this._cookieSites = new CookieSiteModule(this.httpClient);
             this._settings = new SettingsModule(this.httpClient);
+            this._admins = new AdminModule(this.httpClient);
+            this._downloads = new DownloadModule(this.httpClient);
+            this._fs = new FileSystemModule(this.httpClient);
+            this._statistics = new StatisticsModule(this.httpClient);
+            this._thumbnails = new ThumbnailModule(this.httpClient);
         }
 
         return this;
