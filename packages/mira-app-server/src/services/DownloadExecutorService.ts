@@ -26,6 +26,7 @@ export interface DownloadTaskInput {
     libraryId: string;
     userId: number;
     folderId?: number | null;
+    tagIds?: string[];
     clientId?: string | null;
 }
 
@@ -78,7 +79,7 @@ export class DownloadExecutorService {
     }
 
     private async runOne(batchId: string, task: DownloadTaskInput, progress: BatchProgress): Promise<void> {
-        const { url, libraryId, userId, folderId, clientId } = task;
+        const { url, libraryId, userId, folderId, tagIds, clientId } = task;
         const ws = this.backend.webSocketServer;
         const t0 = Date.now();
         try {
@@ -110,7 +111,11 @@ export class DownloadExecutorService {
             // 3. 入库（move 自动清理 temp + hash 去重）
             const result = await libObj.libraryService.createFileFromPath(
                 tmpPath,
-                { uploader: userId, folder_id: folderId ?? null },
+                {
+                    uploader: userId,
+                    folder_id: folderId ?? null,
+                    tags: tagIds?.length ? JSON.stringify(tagIds) : null,
+                },
                 { importType: 'move' },
             );
             const isDup = result?.duplicate === true;

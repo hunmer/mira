@@ -143,3 +143,27 @@
     box-shadow: none !important;
   }
 }
+
+@layer components {
+  .gallery-dl-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 22rem;
+    align-items: start;
+    gap: 1rem;
+  }
+
+  .gallery-dl-rail {
+    position: sticky;
+    top: 1rem;
+  }
+
+  @media (width < 64rem) {
+    .gallery-dl-layout {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .gallery-dl-rail {
+      position: static;
+    }
+  }
+}

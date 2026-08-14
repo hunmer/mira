@@ -5,7 +5,7 @@ import { MiraServer } from '..';
 /**
  * 下载执行器路由
  *
- *   POST /api/download/start     body: { libraryId, urls: string[], folderId?, clientId? }  → { batchId }
+ *   POST /api/download/start     body: { libraryId, urls: string[], folderId?, tagIds?, clientId? }  → { batchId }
  *   GET  /api/download/progress/:batchId                                                      → BatchProgress
  *
  * 全挂 authMiddleware，按 req.user.id。库权限校验沿用全局 permission 中间件。
@@ -30,13 +30,23 @@ export class DownloadRoutes {
                 }
                 const userId = (req as any).user?.id;
                 if (!userId) return res.status(401).json({ code: 401, message: '未登录' });
-                const { libraryId, urls, folderId, clientId } = req.body || {};
+                const { libraryId, urls, folderId, tagIds, clientId } = req.body || {};
                 if (!libraryId) return res.status(400).json({ code: 400, message: 'libraryId 必填' });
                 const urlList: string[] = Array.isArray(urls) ? urls.filter((u) => typeof u === 'string' && u.trim()) : [];
                 if (urlList.length === 0) return res.status(400).json({ code: 400, message: 'urls 为空' });
+                const normalizedTagIds = Array.isArray(tagIds)
+                    ? Array.from(new Set(tagIds.map((id: unknown) => String(id))))
+                    : [];
 
                 const batchId = await this.backend.downloadExecutor.enqueueBatch(
-                    urlList.map((u) => ({ url: u.trim(), libraryId, userId, folderId: folderId ?? null, clientId: clientId ?? null })),
+                    urlList.map((u) => ({
+                        url: u.trim(),
+                        libraryId,
+                        userId,
+                        folderId: folderId ?? null,
+                        tagIds: normalizedTagIds,
+                        clientId: clientId ?? null,
+                    })),
                 );
                 res.json({ code: 0, data: { batchId, total: urlList.length } });
             } catch (error) {

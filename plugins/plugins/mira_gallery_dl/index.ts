@@ -1,17 +1,12 @@
 import { spawn } from 'child_process';
-import { createHash, randomBytes } from 'crypto';
+import { createHash } from 'crypto';
 import { promises as dns } from 'dns';
 import * as fs from 'fs';
 import { isIP } from 'net';
-import * as os from 'os';
 import * as path from 'path';
-import { Readable } from 'stream';
-import { pipeline } from 'stream/promises';
 
 const MAX_URLS = 20;
 const MAX_PARSED_ITEMS = 500;
-const MAX_IMPORT_ITEMS = 100;
-const MAX_FILE_BYTES = 100 * 1024 * 1024;
 const IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'bmp']);
 
 interface CommandSpec {
@@ -29,14 +24,6 @@ export interface ParsedGalleryItem {
   height?: number;
   site: string;
   sourceUrl: string;
-}
-
-interface ImportItem {
-  url: string;
-  name?: string;
-  extension?: string;
-  sourceUrl?: string;
-  site?: string;
 }
 
 function normalizeExtension(value: unknown, url = ''): string {
@@ -142,28 +129,81 @@ async function assertPublicUrl(value: unknown): Promise<URL> {
   return parsed;
 }
 
-async function fetchWithSafeRedirects(value: unknown, options: Record<string, any>): Promise<any> {
-  let current = await assertPublicUrl(value);
-  for (let redirectCount = 0; redirectCount <= 5; redirectCount++) {
-    const response = await (globalThis as any).fetch(current.toString(), {
-      ...options,
-      redirect: 'manual',
-    });
-    if (![301, 302, 303, 307, 308].includes(response.status)) return response;
-    const location = response.headers.get('location');
-    if (!location) throw new Error('图片重定向缺少 Location');
-    if (redirectCount === 5) throw new Error('图片重定向次数过多');
-    current = await assertPublicUrl(new URL(location, current).toString());
-  }
-  throw new Error('图片重定向次数过多');
-}
-
 function normalizeInputUrls(value: unknown): string[] {
   if (!Array.isArray(value)) throw new Error('urls 必须是数组');
   const urls = Array.from(new Set(value.map(item => parseHttpUrl(item).toString())));
   if (!urls.length) throw new Error('至少输入一条链接');
   if (urls.length > MAX_URLS) throw new Error(`一次最多解析 ${MAX_URLS} 条链接`);
   return urls;
+}
+
+function tokenizeCommandLine(value: string): string[] {
+  const tokens: string[] = [];
+  let current = '';
+  let quote = '';
+  let escaping = false;
+  for (const char of value) {
+    if (escaping) {
+      current += char;
+      escaping = false;
+    } else if (char === '\\') {
+      escaping = true;
+    } else if (quote) {
+      if (char === quote) quote = '';
+      else current += char;
+    } else if (char === '"' || char === "'") {
+      quote = char;
+    } else if (/\s/.test(char)) {
+      if (current) {
+        tokens.push(current);
+        current = '';
+      }
+    } else {
+      current += char;
+    }
+  }
+  if (escaping) current += '\\';
+  if (quote) throw new Error('命令行存在未闭合的引号');
+  if (current) tokens.push(current);
+  return tokens;
+}
+
+function validateProxyUrl(value: string): string {
+  if (!value || value.length > 500) throw new Error('--proxy 需要有效的代理地址');
+  let proxy: URL;
+  try {
+    proxy = new URL(value);
+  } catch {
+    throw new Error('--proxy 需要有效的代理地址');
+  }
+  if (!['http:', 'https:', 'socks5:', 'socks5h:'].includes(proxy.protocol) || !proxy.hostname) {
+    throw new Error('--proxy 仅支持 HTTP、HTTPS 或 SOCKS5 地址');
+  }
+  return proxy.toString();
+}
+
+export function parseGalleryCommandLine(value: unknown): string[] {
+  const commandLine = String(value || '').trim();
+  if (!commandLine) return [];
+  if (commandLine.length > 2000) throw new Error('命令行长度超过限制');
+  const tokens = tokenizeCommandLine(commandLine);
+  if (tokens.length && /^gallery-dl(?:\.exe)?$/i.test(path.basename(tokens[0]))) tokens.shift();
+
+  const args: string[] = [];
+  for (let index = 0; index < tokens.length; index++) {
+    const token = tokens[index];
+    if (token === '--proxy') {
+      const proxy = validateProxyUrl(tokens[++index] || '');
+      args.push('--proxy', proxy);
+      continue;
+    }
+    if (token.startsWith('--proxy=')) {
+      args.push('--proxy', validateProxyUrl(token.slice('--proxy='.length)));
+      continue;
+    }
+    throw new Error('命令行仅允许配置 --proxy 参数');
+  }
+  return args;
 }
 
 function windowsUserExecutable(): string | null {
@@ -248,62 +288,16 @@ async function resolveGalleryCommand(): Promise<{ spec: CommandSpec; version: st
   return commandPromise;
 }
 
-async function downloadImage(item: ImportItem, tempRoot: string): Promise<{ filePath: string; itemDir: string }> {
-  const parsed = await assertPublicUrl(item.url);
-  const extension = normalizeExtension(item.extension, parsed.toString());
-  const itemDir = await fs.promises.mkdtemp(path.join(tempRoot, 'item-'));
-  const filePath = path.join(itemDir, safeFileName(item.name, extension));
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 120000);
-
-  try {
-    const response = await fetchWithSafeRedirects(parsed.toString(), {
-      signal: controller.signal,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 MiraGalleryImporter/1.0',
-        ...(item.sourceUrl ? { Referer: item.sourceUrl } : {}),
-      },
-    });
-    if (!response.ok || !response.body) throw new Error(`图片下载返回 HTTP ${response.status}`);
-    const contentLength = Number(response.headers.get('content-length') || 0);
-    if (contentLength > MAX_FILE_BYTES) throw new Error('图片超过 100MB 限制');
-    const contentType = String(response.headers.get('content-type') || '').toLowerCase();
-    if (contentType && !contentType.startsWith('image/') && contentType !== 'application/octet-stream') {
-      throw new Error(`响应不是图片: ${contentType}`);
-    }
-
-    let received = 0;
-    const source = Readable.fromWeb(response.body as any);
-    source.on('data', (chunk: Buffer) => {
-      received += chunk.length;
-      if (received > MAX_FILE_BYTES) source.destroy(new Error('图片超过 100MB 限制'));
-    });
-    await pipeline(source, fs.createWriteStream(filePath, { flags: 'wx' }));
-    if (!received) throw new Error('图片内容为空');
-    return { filePath, itemDir };
-  } catch (error) {
-    await fs.promises.rm(itemDir, { recursive: true, force: true });
-    throw error;
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
 class MiraGalleryDlPlugin {
   private readonly pluginName = 'mira_gallery_dl';
   private readonly routes: any[] = [];
-  private readonly dbService: any;
   private readonly backend: any;
   private readonly libraryId: string;
-  private readonly tempRoot: string;
 
   constructor(inst: any) {
     const pluginManager = inst.pluginManager;
-    this.dbService = inst.dbService;
     this.backend = pluginManager.server.backend;
-    this.libraryId = this.dbService.getLibraryId();
-    this.tempRoot = path.join(this.backend.dataPath || os.tmpdir(), 'temp', this.pluginName, this.libraryId);
-    fs.mkdirSync(this.tempRoot, { recursive: true });
+    this.libraryId = inst.dbService.getLibraryId();
     this.registerApiRoutes();
     this.routes.push({
       name: 'GalleryDlImporter',
@@ -333,6 +327,7 @@ class MiraGalleryDlPlugin {
     router.registerRounter(this.libraryId, '/gallery-dl/parse', 'post', async (req: any, res: any) => {
       try {
         const urls = normalizeInputUrls(req.body?.urls);
+        const commandArgs = parseGalleryCommandLine(req.body?.commandLine);
         const command = await resolveGalleryCommand();
         const items: ParsedGalleryItem[] = [];
         const errors: Array<{ url: string; error: string }> = [];
@@ -343,7 +338,7 @@ class MiraGalleryDlPlugin {
             await assertPublicUrl(url);
             const stdout = await spawnCapture(
               command.spec,
-              ['--no-input', '--no-colors', '--range', '1-200', '--dump-json', url],
+              [...commandArgs, '--no-input', '--no-colors', '--range', '1-200', '--dump-json', url],
               120000,
               20 * 1024 * 1024,
             );
@@ -363,78 +358,6 @@ class MiraGalleryDlPlugin {
       }
     });
 
-    router.registerRounter(this.libraryId, '/gallery-dl/import', 'post', async (req: any, res: any) => {
-      try {
-        const rawItems = req.body?.items;
-        if (!Array.isArray(rawItems) || !rawItems.length) throw new Error('至少选择一张图片');
-        if (rawItems.length > MAX_IMPORT_ITEMS) throw new Error(`一次最多导入 ${MAX_IMPORT_ITEMS} 张图片`);
-
-        const folderId = req.body?.folderId == null ? null : Number(req.body.folderId);
-        const tagIds: string[] = Array.isArray(req.body?.tagIds)
-          ? Array.from(new Set(req.body.tagIds.map((id: unknown) => String(id))))
-          : [];
-        await this.validateTargets(folderId, tagIds);
-
-        const imported: Array<{ url: string; fileId: number; duplicate: boolean }> = [];
-        const errors: Array<{ url: string; error: string }> = [];
-        for (const raw of rawItems) {
-          const item: ImportItem = {
-            url: String(raw?.url || ''),
-            name: raw?.name == null ? undefined : String(raw.name),
-            extension: raw?.extension == null ? undefined : String(raw.extension),
-            sourceUrl: raw?.sourceUrl == null ? undefined : String(raw.sourceUrl),
-            site: raw?.site == null ? undefined : String(raw.site),
-          };
-          let itemDir = '';
-          try {
-            const downloaded = await downloadImage(item, this.tempRoot);
-            itemDir = downloaded.itemDir;
-            const file = await this.dbService.createFileFromPath(downloaded.filePath, {
-              folder_id: folderId,
-              tags: tagIds.length ? JSON.stringify(tagIds) : null,
-              custom_fields: {
-                sourceUrl: item.sourceUrl || item.url,
-                directUrl: item.url,
-                galleryDlSite: item.site || '',
-              },
-            }, { importType: 'move' });
-            imported.push({ url: item.url, fileId: Number(file.id), duplicate: !!file.duplicate });
-            if (!file.duplicate) this.broadcastCreated(file);
-          } catch (error) {
-            errors.push({ url: item.url, error: this.errorMessage(error) });
-          } finally {
-            if (itemDir) await fs.promises.rm(itemDir, { recursive: true, force: true });
-          }
-        }
-        res.json({ success: true, imported, errors });
-      } catch (error) {
-        res.status(400).json({ success: false, error: this.errorMessage(error) });
-      }
-    });
-  }
-
-  private async validateTargets(folderId: number | null, tagIds: string[]) {
-    if (folderId != null) {
-      if (!Number.isInteger(folderId)) throw new Error('目标文件夹无效');
-      const folders = await this.dbService.getAllFolders();
-      if (!folders.some((folder: any) => Number(folder.id) === folderId)) throw new Error('目标文件夹不存在');
-    }
-    if (tagIds.length) {
-      const tags = await this.dbService.getAllTags();
-      const existing = new Set(tags.map((tag: any) => String(tag.id)));
-      if (tagIds.some(id => !existing.has(id))) throw new Error('目标标签不存在');
-    }
-  }
-
-  private broadcastCreated(file: Record<string, any>) {
-    const socket = this.backend.getWebSocketServer?.();
-    const eventData = { ...file, libraryId: this.libraryId };
-    socket?.broadcastLibraryEvent?.(this.libraryId, 'file::created', eventData);
-    socket?.broadcastPluginEvent?.('file::created', {
-      message: { type: 'file', action: 'create' },
-      result: eventData,
-      libraryId: this.libraryId,
-    });
   }
 
   private errorMessage(error: unknown): string {

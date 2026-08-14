@@ -6,7 +6,13 @@ import {
   RiLoader4Line,
   RiPriceTag3Line,
 } from '@remixicon/vue'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  Popover, PopoverContent, PopoverHeader, PopoverTitle, PopoverTrigger,
+} from '@/components/ui/popover'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Separator } from '@/components/ui/separator'
 import { getMiraClient } from '@/lib/miraClient'
 import LibraryTreeNode from './LibraryTreeNode.vue'
 
@@ -38,6 +44,7 @@ const emit = defineEmits<{
 }>()
 
 const loading = ref(false)
+const open = ref(false)
 const error = ref('')
 const nodes = ref<LibraryTreeNode[]>([])
 const byId = ref(new Map<number, LibraryTreeNode>())
@@ -110,6 +117,7 @@ async function load() {
 function select(id: number) {
   if (!multiple.value) {
     emit('update:modelValue', id)
+    open.value = false
     return
   }
   const next = new Set(selectedIds.value)
@@ -122,11 +130,13 @@ watch(() => [props.libraryId, props.entity], load, { immediate: true })
 </script>
 
 <template>
-  <Popover>
+  <Popover v-model:open="open">
     <PopoverTrigger as-child>
-      <button
+      <Button
         type="button"
-        class="border-input bg-background flex h-9 w-full items-center gap-2 rounded-md border px-3 text-left text-sm shadow-xs disabled:cursor-not-allowed disabled:opacity-50"
+        variant="outline"
+        size="lg"
+        class="w-full justify-start px-2.5 font-normal"
         :disabled="disabled"
       >
         <RiFolderLine v-if="entity === 'folder'" class="size-4 shrink-0 text-amber-600" />
@@ -136,38 +146,46 @@ watch(() => [props.libraryId, props.entity], load, { immediate: true })
           {{ placeholder || (entity === 'folder' ? '选择文件夹' : '选择标签') }}
         </span>
         <RiArrowDownSLine class="size-4 shrink-0 text-muted-foreground" />
-      </button>
+      </Button>
     </PopoverTrigger>
     <PopoverContent
       align="start"
-      class="max-h-80 min-w-72 w-[--reka-popper-anchor-width] overflow-auto p-1"
+      class="min-w-72 w-[--reka-popper-anchor-width] p-0"
     >
-      <div v-if="loading" class="flex h-24 items-center justify-center text-muted-foreground">
-        <RiLoader4Line class="size-5 animate-spin" />
-      </div>
-      <p v-else-if="error" class="p-3 text-sm text-destructive">{{ error }}</p>
-      <p v-else-if="!nodes.length" class="p-3 text-sm text-muted-foreground">暂无数据</p>
-      <template v-else>
-        <button
-          v-if="entity === 'folder'"
-          type="button"
-          class="flex min-h-8 w-full items-center gap-2 rounded-md px-3 text-left text-sm hover:bg-accent"
-          :class="{ 'bg-accent': modelValue == null }"
-          @click="emit('update:modelValue', null)"
-        >
-          <RiFolderLine class="size-4 text-muted-foreground" />
-          <span>根目录</span>
-        </button>
-        <LibraryTreeNode
-          v-for="node in nodes"
-          :key="node.id"
-          :node="node"
-          :entity="entity"
-          :multiple="multiple"
-          :selected-ids="selectedIds"
-          @select="select"
-        />
-      </template>
+      <PopoverHeader class="flex-row items-center justify-between px-3 py-2.5">
+        <PopoverTitle>{{ entity === 'folder' ? '选择文件夹' : '选择标签' }}</PopoverTitle>
+        <Badge variant="secondary">{{ selectedIds.length }} 已选</Badge>
+      </PopoverHeader>
+      <Separator />
+      <ScrollArea class="h-72 p-1.5 pr-2">
+        <div v-if="loading" class="flex h-24 items-center justify-center text-muted-foreground">
+          <RiLoader4Line class="size-5 animate-spin" />
+        </div>
+        <p v-else-if="error" class="p-3 text-xs text-destructive">{{ error }}</p>
+        <p v-else-if="!nodes.length" class="p-3 text-xs text-muted-foreground">暂无数据</p>
+        <template v-else>
+          <Button
+            v-if="entity === 'folder'"
+            type="button"
+            :variant="modelValue == null ? 'secondary' : 'ghost'"
+            size="lg"
+            class="mb-1 w-full justify-start px-2 font-normal"
+            @click="emit('update:modelValue', null); open = false"
+          >
+            <RiFolderLine class="size-4 text-muted-foreground" />
+            <span>根目录</span>
+          </Button>
+          <LibraryTreeNode
+            v-for="node in nodes"
+            :key="node.id"
+            :node="node"
+            :entity="entity"
+            :multiple="multiple"
+            :selected-ids="selectedIds"
+            @select="select"
+          />
+        </template>
+      </ScrollArea>
     </PopoverContent>
   </Popover>
 </template>

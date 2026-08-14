@@ -10,7 +10,7 @@ export interface DownloadProgress {
 }
 
 export const downloadApi = {
-  start: (data: { libraryId: string; urls: string[]; folderId?: number | null; clientId?: string | null }) =>
+  start: (data: { libraryId: string; urls: string[]; folderId?: number | null; tagIds?: string[]; clientId?: string | null }) =>
     client.post<{ code: number; data: { batchId: string; total: number } }>('/download/start', data),
   progress: (batchId: string) =>
     client.get<{ code: number; data: DownloadProgress }>(`/download/progress/${batchId}`),

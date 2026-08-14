@@ -104,7 +104,7 @@
   },
   {
     "name": "mira_eagle_extension",
-    "enabled": true,
+    "enabled": false,
     "path": "node_modules/mira_eagle_extension",
     "registry": "https://registry.npmmirror.com",
     "version": "1.0.0",
@@ -120,7 +120,7 @@
       "采集"
     ],
     "installedAt": "2026-08-14T02:25:38.766Z",
-    "status": "active"
+    "status": "inactive"
   },
   {
     "name": "mira_gallery_dl",

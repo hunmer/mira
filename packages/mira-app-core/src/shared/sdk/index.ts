@@ -31,6 +31,13 @@ export { DeviceModule } from './modules/DeviceModule';
 export { SystemModule } from './modules/SystemModule';
 export { TagModule } from './modules/TagModule';
 export { FolderModule } from './modules/FolderModule';
+export {
+    CookieSiteModule,
+    type CookieItem,
+    type CookieSite,
+    type CreateCookieSiteRequest,
+    type UpdateCookieSiteRequest,
+} from './modules/CookieSiteModule';
 
 // 导出类型定义
 export * from './types';

@@ -10,6 +10,7 @@ import { DeviceModule } from '../modules/DeviceModule';
 import { SystemModule } from '../modules/SystemModule';
 import { TagModule } from '../modules/TagModule';
 import { FolderModule } from '../modules/FolderModule';
+import { CookieSiteModule } from '../modules/CookieSiteModule';
 import { ClientConfig, WebSocketOptions } from '../types';
 
 /**
@@ -45,6 +46,7 @@ export class MiraClient {
     private _system: SystemModule;
     private _tags: TagModule;
     private _folders: FolderModule;
+    private _cookieSites: CookieSiteModule;
 
     constructor(baseURL: string, config?: Partial<ClientConfig>) {
         const clientConfig: ClientConfig = {
@@ -66,6 +68,7 @@ export class MiraClient {
         this._system = new SystemModule(this.httpClient);
         this._tags = new TagModule(this.httpClient);
         this._folders = new FolderModule(this.httpClient);
+        this._cookieSites = new CookieSiteModule(this.httpClient);
     }
 
     /**
@@ -146,6 +149,14 @@ export class MiraClient {
      */
     folders(): FolderModule {
         return this._folders;
+    }
+
+    /**
+     * 获取当前用户的下载站点 Cookie 模块
+     * @returns CookieSiteModule
+     */
+    cookieSites(): CookieSiteModule {
+        return this._cookieSites;
     }
 
     /**
@@ -247,6 +258,7 @@ export class MiraClient {
             this._database = new DatabaseModule(this.httpClient);
             this._devices = new DeviceModule(this.httpClient);
             this._system = new SystemModule(this.httpClient);
+            this._cookieSites = new CookieSiteModule(this.httpClient);
         }
 
         return this;

@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { parseGalleryOutput } = require('./dist/index.js');
+const { parseGalleryCommandLine, parseGalleryOutput } = require('./dist/index.js');
 
 const output = JSON.stringify([
   [2, { category: 'example', filename: 'ignored', extension: 'jpg' }],
@@ -20,4 +20,14 @@ assert.strictEqual(items[0].name, 'one.jpg');
 assert.strictEqual(items[0].site, 'example / post');
 assert.strictEqual(items[0].width, 1200);
 assert.strictEqual(items[0].sourceUrl, 'https://example.com/post/1');
+
+assert.deepStrictEqual(
+  parseGalleryCommandLine('gallery-dl --proxy "http://127.0.0.1:7890"'),
+  ['--proxy', 'http://127.0.0.1:7890/'],
+);
+assert.deepStrictEqual(
+  parseGalleryCommandLine('--proxy=socks5://127.0.0.1:1080'),
+  ['--proxy', 'socks5://127.0.0.1:1080'],
+);
+assert.throws(() => parseGalleryCommandLine('gallery-dl --exec calc.exe'), /仅允许/);
 console.log('mira_gallery_dl parser test passed');
