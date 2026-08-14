@@ -1,0 +1,8 @@
+ M findings.md
+ M packages/mira-dashboard-next/src/i18n/locales/en.ts
+ M packages/mira-dashboard-next/src/i18n/locales/zh-CN.ts
+ M packages/mira-dashboard-next/src/views/mira/overview/index.vue
+ M packages/mira-dashboard-next/src/views/mira/settings/index.vue
+ M progress.md
+ M task_plan.md
+?? .audit-dirty-worktree.txt

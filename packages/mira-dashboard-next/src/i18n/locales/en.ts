@@ -85,10 +85,6 @@ export default {
     nodeVersion: 'Node.js Version',
     noActivity: 'No recent activity',
     refreshData: 'Refresh',
-    settings: 'Settings',
-    serverSettings: 'Server Settings',
-    authRequired: 'Require Authentication',
-    allowRegistration: 'Allow Registration',
   },
   library: {
     title: 'Library Management',
@@ -413,6 +409,12 @@ export default {
     title: 'Settings',
     tabs: {
       download: 'Download',
+      server: 'Server',
+    },
+    server: {
+      title: 'Server Settings',
+      authRequired: 'Require Authentication',
+      allowRegistration: 'Allow Registration',
     },
     download: {
       subtitle: 'Manage download sites that require login and their cookies',

@@ -2,8 +2,8 @@
 
 ## Session: 2026-08-14
 
-### Phase 1: 建立接口与 SDK 清单
-- **Status:** in_progress
+### Plan Preparation
+- **Status:** complete
 - **Started:** 2026-08-14
 - Actions taken:
   - 读取用户指定的 handoff 技能与 planning-with-files 技能。
@@ -12,10 +12,13 @@
   - 使用 CodeGraph 确认 HttpServer、HttpClient、MiraServer 主入口。
   - 扫描 Server 路由注册、HttpServer 挂载前缀、SDK HTTP 调用和 monorepo 消费者。
   - 盘点现有 SDK 测试并识别 mock contract 与真实服务测试混用问题。
+  - 定义 F0-F3 使用频率、P0-P3 纳入优先级、模块化测试文件和验收标准。
+  - 按 handoff 技能生成临时交接文档：`C:/Users/Administrator/AppData/Local/Temp/mira-server-sdk-coverage-plan-handoff.md`。
 - Files created/modified:
   - `task_plan.md`
   - `findings.md`
   - `progress.md`
+  - `C:/Users/Administrator/AppData/Local/Temp/mira-server-sdk-coverage-plan-handoff.md`
 
 ## Test Results
 | Test | Input | Expected | Actual | Status |

@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { cookieSiteApi } from '@/api'
+import { cookieSiteApi, settingsApi } from '@/api'
 import { usePluginSources } from '@/composables/usePluginSources'
-import type { CookieSite, CookieItem } from '@/types/mira'
+import { useAuthStore } from '@/stores/auth'
+import type { CookieSite, CookieItem, ServerSettings } from '@/types/mira'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -11,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
+import { Switch } from '@/components/ui/switch'
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter,
   DialogHeader, DialogTitle,
@@ -23,7 +25,7 @@ import { toast } from 'vue-sonner'
 import {
   RiAddLine, RiDownloadCloud2Line, RiLoginBoxLine, RiEdit2Line,
   RiDeleteBin7Line, RiClipboardLine, RiExternalLinkLine, RiStarLine, RiStarFill,
-  RiStore2Line,
+  RiStore2Line, RiSettingsLine,
 } from '@remixicon/vue'
 
 const { t } = useI18n()
@@ -253,6 +255,30 @@ function cookieCount(site: CookieSite) {
   return site.cookies?.length || 0
 }
 
+// ===== 服务器设置 (从 overview 迁移) =====
+const authStore = useAuthStore()
+const serverSettings = ref<ServerSettings>({ authRequired: true, allowRegistration: true })
+
+async function loadServerSettings() {
+  try {
+    const res = await settingsApi.get()
+    serverSettings.value = res.data.data ?? res.data
+  } catch {
+    toast.error(t('common.failed'))
+  }
+}
+
+async function saveServerSettings() {
+  try {
+    await settingsApi.update(serverSettings.value)
+    toast.success(t('common.success'))
+  } catch {
+    toast.error(t('common.failed'))
+  }
+}
+
+if (authStore.userRole !== 'user') await loadServerSettings()
+
 // ===== 插件源管理 (插件商店的 JSON 源, 持久化在 localStorage, 与插件页共享) =====
 const {
   sources: pluginSources, activeId: pluginActiveId,
@@ -290,6 +316,10 @@ function removePluginSrc(id: string) {
         <TabsTrigger value="plugin">
           <RiStore2Line class="size-4 mr-1.5" />
           插件
+        </TabsTrigger>
+        <TabsTrigger v-if="authStore.userRole !== 'user'" value="server">
+          <RiSettingsLine class="size-4 mr-1.5" />
+          {{ t('settings.tabs.server') }}
         </TabsTrigger>
       </TabsList>
 
@@ -430,6 +460,27 @@ function removePluginSrc(id: string) {
             <p class="text-xs text-muted-foreground">
               星标选中的源将用于「插件」页的插件商店，插件商店中无需再填写地址。
             </p>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="server" class="space-y-6 mt-4">
+        <Card>
+          <CardHeader>
+            <CardTitle class="text-base">{{ t('settings.server.title') }}</CardTitle>
+          </CardHeader>
+          <CardContent class="space-y-4">
+            <div class="flex items-center justify-between">
+              <Label>{{ t('settings.server.authRequired') }}</Label>
+              <Switch v-model="serverSettings.authRequired" />
+            </div>
+            <div class="flex items-center justify-between">
+              <Label>{{ t('settings.server.allowRegistration') }}</Label>
+              <Switch v-model="serverSettings.allowRegistration" />
+            </div>
+            <div class="flex justify-end">
+              <Button @click="saveServerSettings">{{ t('common.save') }}</Button>
+            </div>
           </CardContent>
         </Card>
       </TabsContent>

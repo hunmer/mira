@@ -12,7 +12,7 @@
 - SDK 入口位于 `packages/mira-app-core/src/shared/sdk/index.ts`，模块位于 `src/shared/sdk/modules`。
 - Dashboard 已开始迁移 CookieSite、Library 和 System health；工作区存在其他并行未提交修改，审计不得覆盖。
 - 现有部分 SDK 测试访问真实 Server 和固定 Library ID，不适合作为稳定默认单元测试。
-- `HttpServer.setupRoutes()` 固定挂载 14 个 `/api` 路由域：auth、admins、user、libraries、plugins、database、files、devices、tags、folders、fs、settings、cookie-sites、download、statistics、thumb（其中 auth/admins 等合计 16 个前缀）。
+- `HttpServer.setupRoutes()` 固定挂载 16 个 `/api` 路由域：auth、admins、user、libraries、plugins、database、files、devices、tags、folders、fs、settings、cookie-sites、download、statistics、thumb。
 - `HttpServer.ts` 还直接注册 `/api/plugin-routes*`、`/api/health`、`/api/logs/stream`、`/health` 和静态资源路由；静态资源与流式端点不应默认计入普通 JSON SDK 覆盖率。
 - `HttpRouter` 暴露插件运行时动态路由，无法只靠静态路径一对一纳入 SDK；应以通用插件请求能力或明确排除记录处理。
 - 当前 SDK 固定模块为 Auth、CookieSite、Database、Device、File、Folder、Library、Plugin、System、Tag、User；Server 的 Admin、Settings、Statistics、Thumbnail、Fs、Download 尚无独立对应模块。

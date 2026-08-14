@@ -85,10 +85,6 @@ export default {
     nodeVersion: 'Node.js 版本',
     noActivity: '暂无最近活动',
     refreshData: '刷新数据',
-    settings: '设置',
-    serverSettings: '服务器设置',
-    authRequired: '需要认证',
-    allowRegistration: '允许注册',
   },
   library: {
     title: '资源库管理',
@@ -413,6 +409,12 @@ export default {
     title: '设置',
     tabs: {
       download: '下载',
+      server: '服务器',
+    },
+    server: {
+      title: '服务器设置',
+      authRequired: '需要认证',
+      allowRegistration: '允许注册',
     },
     download: {
       subtitle: '管理需要登录的下载站点及其 Cookie',
