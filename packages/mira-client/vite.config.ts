@@ -137,6 +137,11 @@ export default defineConfig(({ mode }) => {
       reportCompressedSize: true,
       chunkSizeWarningLimit: 1000,
       rollupOptions: {
+        // 多页入口：主应用 + 通知窗口（独立轻量页面，主进程按需加载）
+        input: {
+          main: resolve(__dirname, 'index.html'),
+          'notification-window': resolve(__dirname, 'notification-window.html'),
+        },
         output: {
           // 优化 chunk 文件名
           chunkFileNames: 'assets/js/[name]-[hash].js',

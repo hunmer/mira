@@ -2,16 +2,15 @@
 /**
  * 浮动窗口构建脚本
  *
- * 搜索窗口、通知窗口等独立 HTML 页面使用全局 <script>（非 ES module）加载
+ * 搜索窗口等独立 HTML 页面使用全局 <script>（非 ES module）加载
  * vue.global.prod.js 与 floating-window-core.js，通过 loadFile 直接打开。
  * 这类页面不经过 Vite 打包，构建时只需将源目录"扁平化"拷贝到 dist-float/。
+ * （通知窗口已迁移为渲染器应用 Vite 多页入口 notification-window.html，走 dist-renderer。）
  *
  * 产物结构：
  *   dist-float/
  *     search-window.html          (来自 src/search-window/)
  *     search-window.js
- *     notification-window.html    (来自 src/notification-window/)
- *     notification-window.js
  *     floating-window-core.js     (来自 src/floating-window/)
  *     vendor/vue.global.prod.js   (来自 src/floating-window/vendor/)
  *
@@ -25,13 +24,11 @@ const projectRoot = path.join(__dirname, '..')
 const outDir = path.join(projectRoot, 'dist-float')
 
 // 需要扁平化拷贝的源文件 → 目标文件名
+// （notification-window 已迁移为渲染器应用 Vite 多页入口，不再走 dist-float）
 const filesToCopy = [
   // search-window
   ['src/search-window/search-window.html', 'search-window.html'],
   ['src/search-window/search-window.js', 'search-window.js'],
-  // notification-window
-  ['src/notification-window/notification-window.html', 'notification-window.html'],
-  ['src/notification-window/notification-window.js', 'notification-window.js'],
   // floating-ball-window
   ['src/floating-ball-window/floating-ball-window.html', 'floating-ball-window.html'],
   ['src/floating-ball-window/floating-ball-window.js', 'floating-ball-window.js'],
@@ -45,7 +42,7 @@ const filesToCopy = [
  * 将 HTML 中的目录相对引用重写为扁平化后的同级引用。
  * - ../floating-window/vendor/vue.global.prod.js → vendor/vue.global.prod.js
  * - ../floating-window/floating-window-core.js  → floating-window-core.js
- * - ./search-window.js / ./notification-window.js 保持不变（已同级）
+ * - ./search-window.js 保持不变（已同级）
  */
 function rewriteHtmlReferences(content) {
   return content

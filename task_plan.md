@@ -4,7 +4,7 @@
 建立可重复执行的 Mira Server HTTP API 覆盖审计流程，按实际使用频率决定 SDK 纳入范围，并按 SDK 模块拆分契约测试。
 
 ## Current Phase
-Phase 6 (Batch B/C 已完成; P0/P1/P2 全部清零, 待 CI 持续审计)
+Complete (全部 Phase 完成; 增量审计走 .agents/skills/mira-sdk-coverage-audit 技能)
 
 ## Deliverables
 - `server-api-manifest.json`：method、完整路径、路由域、权限、响应类型、来源文件。
@@ -104,9 +104,9 @@ src/shared/sdk/modules/FileSystemModule.contract.test.ts
 
 ### Phase 6: 验收与持续审计
 - [x] 输出覆盖率报告和明确排除清单（covered 114 / partial 0 / missing 12 全部为 P3 显式排除; excluded 13 资源流式; dynamic 7）
-- [ ] CI 检查新增稳定 Server API 是否已 covered 或显式 excluded（复用 .audit/ 四脚本）
+- [x] 持续审计改为技能沉淀（用户决策: 不接 CI）: `.agents/skills/mira-sdk-coverage-audit/SKILL.md`，含四脚本流水线、决策矩阵、SDK 实现规范、迁移适配模式、验收链与已知坑，后续 agent 按技能增量更新
 - [x] 完成全量测试和构建验收（core 68 tests + build; dashboard vue-tsc; server 刷新重启 + curl 抽查）
-- **Status:** in progress — 仅剩 CI 接入
+- **Status:** complete
 
 ## Acceptance Criteria
 - 固定 JSON API 路由 100% 被分类，不允许 unknown。

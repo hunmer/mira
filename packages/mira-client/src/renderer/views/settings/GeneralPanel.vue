@@ -326,6 +326,7 @@ const styleOptions = [
   { label: 'Lyra', value: 'lyra' },
   { label: 'Luma', value: 'luma' },
   { label: 'Rhea', value: 'rhea' },
+  { label: 'Twitter', value: 'twitter' },
   { label: 'Custom', value: 'custom' },
 ]
 

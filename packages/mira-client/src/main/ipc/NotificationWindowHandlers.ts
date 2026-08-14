@@ -74,7 +74,7 @@ interface NotificationSlot {
  *   - 不触发全屏 loading（showLoading: false）
  *   - 不在任务栏显示（skipTaskbar: true）
  *   - 内容渲染完成后才定位 + 显示（onReadyToShow → measure-ready）
- *   - 支持拖拽，拖拽后 clamp 到屏幕内
+ *   - 内容渲染完成后才定位 + 显示（onReadyToShow → measure-ready）
  *   - 每条通知独立实例，可并存
  *
  * IPC 通道（对外，供主渲染进程调用）：
@@ -97,8 +97,6 @@ export class NotificationWindowHandlers {
   private readonly MARGIN = 20
   /** 最大并存数量 */
   private readonly MAX_SLOTS = 5
-  /** 拖拽后判定关闭的阈值：窗口在屏幕内的可见面积低于此比例则关闭（拖动约 25% 即隐藏） */
-  private readonly DISMISS_VISIBLE_RATIO = 0.75
 
   constructor() {
     ipcMain.handle('notification:window-show', this.handleShowNotification.bind(this))
@@ -134,7 +132,6 @@ export class NotificationWindowHandlers {
           ...payload,
           __items: existing.items,
           __animDir: this.animDirOf(existing.position),
-          __draggable: this.isDraggable(existing.position),
         },
       })
       this.startAutoHide(existing)
@@ -172,8 +169,7 @@ export class NotificationWindowHandlers {
     handler.createWindow()
 
     // 页面加载完成后下发通知内容，渲染层测量高度后回传 measure-ready，
-    // 此时 onReadyToShow 负责定位 + 显示。
-    // 附带动画方向与可拖拽提示，供渲染层选择 slide 方向、决定是否启用拖拽。
+    // 此时 onReadyToShow 负责定位 + 显示。附带动画方向供渲染层选择 slide 方向。
     handler.getWindow()?.webContents.once('did-finish-load', () => {
       handler.sendMessage({
         type: 'notification-content',
@@ -181,7 +177,6 @@ export class NotificationWindowHandlers {
           ...slot.payload,
           __items: slot.items,
           __animDir: this.animDirOf(position),
-          __draggable: this.isDraggable(position),
         },
       })
     })
@@ -275,9 +270,9 @@ export class NotificationWindowHandlers {
 
     // 创建子类实例：通过方法覆盖承载业务逻辑，避免 messageHandlers 闭包循环引用
     const handler = new (class NotificationSlotHandler extends FloatingWindowHandler {
-      private measured = false
-      /** 拖拽期间记录的窗口起始位置（nt-drag-start 时写入） */
-      private dragStartPos: { x: number; y: number } | null = null
+      /** 是否已显示（首个 measure-ready 到达后才显示，避免初始高度不足裁剪内容） */
+      private shown = false
+      private showFallbackTimer: NodeJS.Timeout | null = null
 
       constructor() {
         super({
@@ -293,8 +288,8 @@ export class NotificationWindowHandlers {
           skipTaskbar: true,
           acceptFirstMouse: true,
           showLoading: false,
-          htmlFileName: 'notification-window.html',
-          htmlDirName: 'notification-window',
+          // 渲染器应用多页入口（vue-sonner 通知页面），dev 走 dev server，生产走 dist-renderer
+          rendererEntry: 'notification-window.html',
           preloadFileName: 'notification-preload.js',
           ipcChannelPrefix,
           role,
@@ -304,8 +299,12 @@ export class NotificationWindowHandlers {
               const h = Number(data.height)
               if (h > 0) this.resizeHeight(h)
               // 每次内容变化都重定位，确保追加/删除通知后窗口尺寸与堆叠同步
-              this.measured = true
               self.positionSlot(this, position, stackIndex)
+              this.doShowOnce()
+            },
+            // 渲染层按指针是否位于卡片上动态切换：卡片可交互，空白区域点击穿透到底层应用
+            'set-mouse-events': (data) => {
+              this.setMousePassthrough(!!data.ignore)
             },
             dismiss: () => {
               const slot = self.slots.find((s) => s.handler === this)
@@ -342,23 +341,48 @@ export class NotificationWindowHandlers {
         })
       }
 
-      protected onReadyToShow(): void {
-        // ready-to-show 时内容尚未应用（高度未知），先按堆叠初步定位并显示，
-        // 待 measure-ready 回调再校正高度并重定位。
-        self.positionSlot(this, position, stackIndex)
+      /**
+       * 切换鼠标穿透。Windows/Linux 用 forward 模式：穿透时仍把 mousemove
+       * 转发给页面，渲染层据此在卡片上切回可交互。macOS 不支持 forward，
+       * 穿透后无法切回，因此保持不穿透。
+       */
+      private setMousePassthrough(ignore: boolean): void {
         const win = this.getWindow()
-        if (win && !win.isDestroyed()) {
-          // 通知使用自定义 JS 拖拽，必须确保原生窗口不会吞掉鼠标按键事件。
-          win.setIgnoreMouseEvents(false)
-          win.setFocusable(true)
-          // Electron 在 Windows 上会随 setFocusable(true) 重新加入任务栏。
-          win.setSkipTaskbar(true)
+        if (!win || win.isDestroyed()) return
+        if (process.platform === 'darwin') {
+          if (!ignore) win.setIgnoreMouseEvents(false)
+        } else {
+          win.setIgnoreMouseEvents(ignore, { forward: true })
+        }
+      }
+
+      /** 只显示一次；measure-ready 与兜底定时器竞争到达 */
+      private doShowOnce(): void {
+        if (this.shown) return
+        this.shown = true
+        if (this.showFallbackTimer) {
+          clearTimeout(this.showFallbackTimer)
+          this.showFallbackTimer = null
         }
         this.doShow()
-        // if (!app.isPackaged) {
-        //   console.info('[NotificationDebug][main] opening notification DevTools', { id })
-        //   win?.webContents.openDevTools({ mode: 'detach', activate: true })
-        // }
+      }
+
+      protected onReadyToShow(): void {
+        // ready-to-show 时内容尚未渲染（高度未知），先按堆叠初步定位；
+        // 默认整体鼠标穿透（forward 模式），渲染层按指针位置动态切回可交互。
+        self.positionSlot(this, position, stackIndex)
+        this.setMousePassthrough(true)
+        const win = this.getWindow()
+        if (win && !win.isDestroyed()) {
+          win.setSkipTaskbar(true)
+        }
+        // 等 Vue 入口渲染并上报首个 measure-ready（高度已校正）后再显示；
+        // 超时兜底：渲染/通信异常时也要把窗口显示出来。
+        this.showFallbackTimer = setTimeout(() => {
+          this.showFallbackTimer = null
+          this.doShowOnce()
+        }, 2000)
+        this.showFallbackTimer.unref()
       }
     })()
 
@@ -457,7 +481,6 @@ export class NotificationWindowHandlers {
         ...slot.payload,
         __items: slot.items,
         __animDir: this.animDirOf(slot.position),
-        __draggable: this.isDraggable(slot.position),
       },
     })
   }
@@ -481,61 +504,7 @@ export class NotificationWindowHandlers {
   }
 
   /**
-   * 拖拽结束后处理：若窗口在屏幕内的可见面积低于阈值则关闭该通知，
-   * 否则 clamp 回屏幕可视区域。
-   */
-  private handleDropAfterDrag(handler: FloatingWindowHandler, id: number): void {
-    const win = handler.getWindow()
-    if (!win || win.isDestroyed()) return
-
-    if (this.computeVisibleRatio(win) < this.DISMISS_VISIBLE_RATIO) {
-      // 拖出过半，关闭该通知
-      const slot = this.slots.find((s) => s.id === id)
-      if (slot) this.dismissSlot(slot)
-    } else {
-      // 仍在屏幕内，clamp 回可视区域
-      handler.clampToScreen()
-    }
-  }
-
-  /**
-   * 根据通知位置返回拖拽轴与方向符号。
-   * - 四角 / 左右边缘 → 水平轴，朝所在水平边缘外侧滑（左边缘 sign=-1，右边缘 sign=+1）
-   * - top → 垂直轴，向上滑（sign=-1）；bottom → 垂直轴，向下滑（sign=+1）
-   * - center → 垂直轴，上下均可（sign=0）
-   * sign 约定：+1 表示沿正方向（右/下），-1 表示负方向（左/上），0 表示双向。
-   */
-  private dragAxis(
-    position: FloatingWindowPosition
-  ): { axis: 'horizontal' | 'vertical'; sign: number } {
-    if (typeof position === 'object') return { axis: 'horizontal', sign: 0 }
-    switch (position) {
-      case 'top-left':
-      case 'bottom-left':
-        return { axis: 'horizontal', sign: -1 } // 向左
-      case 'top-right':
-      case 'bottom-right':
-        return { axis: 'horizontal', sign: 1 } // 向右
-      case 'top':
-        return { axis: 'vertical', sign: -1 } // 向上
-      case 'bottom':
-        return { axis: 'vertical', sign: 1 } // 向下
-      case 'center':
-      default:
-        return { axis: 'vertical', sign: 0 } // 上下均可
-    }
-  }
-
-  /**
-   * 是否允许拖拽。屏幕居中（center）禁止拖拽，其余位置允许（按各自轴向滑出关闭）。
-   */
-  private isDraggable(position: FloatingWindowPosition): boolean {
-    return !(typeof position === 'string' && position === 'center')
-  }
-
-  /**
    * 根据通知位置返回 slide 出现动画的方向。
-   * 与拖拽轴一致：水平边缘位置从对应侧水平滑入，top/bottom/center 从上/下滑入。
    */
   private animDirOf(position: FloatingWindowPosition): 'left' | 'right' | 'up' | 'down' {
     if (typeof position === 'object') return 'right'
@@ -554,29 +523,6 @@ export class NotificationWindowHandlers {
       default:
         return 'right'
     }
-  }
-
-  /**
-   * 计算窗口在所在屏幕 workArea 内的可见面积占比（0~1）
-   */
-  private computeVisibleRatio(win: BrowserWindow): number {
-    const { screen: screenMod } = require('electron') as typeof import('electron')
-    const bounds = win.getBounds()
-    const wa = screenMod.getDisplayMatching(bounds).workArea
-
-    // 重叠矩形
-    const overlapX = Math.max(
-      0,
-      Math.min(bounds.x + bounds.width, wa.x + wa.width) - Math.max(bounds.x, wa.x)
-    )
-    const overlapY = Math.max(
-      0,
-      Math.min(bounds.y + bounds.height, wa.y + wa.height) - Math.max(bounds.y, wa.y)
-    )
-    const overlapArea = overlapX * overlapY
-    const windowArea = bounds.width * bounds.height
-    if (windowArea <= 0) return 0
-    return overlapArea / windowArea
   }
 
   private forwardToMainRenderer(data: any): void {

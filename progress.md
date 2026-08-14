@@ -99,3 +99,12 @@
 | server 重启 | procm + logs | 8081 正常 | started successfully | 通过 |
 | 端点抽查 | curl 4 个新接口 | 路由存在 | 200/401 均非 404 | 通过 |
 | 审计复查 | 全流水线重跑 | P0-P2 清零 | covered 114, P3 12 | 通过 |
+
+## Session: 2026-08-14 (第五次: Phase 6 收尾 — 审计技能沉淀)
+
+- **Status:** complete
+- 用户决策: Phase 6 不接 CI, 改为技能沉淀供后续 agent 增量更新。
+- 创建 `.agents/skills/mira-sdk-coverage-audit/SKILL.md`(经 skill-creator 规范):
+  - 触发描述覆盖: 覆盖审计/新增路由/迁移 SDK/manifest 生成/未编码决策报错。
+  - 正文: 四脚本流水线(含完整命令)、五分类解读、F0-F3/P0-P3 矩阵、SDK 实现规范(upload/DELETE+body/blob/URL builder/解包语义/接入三处)、契约测试模板、消费者三类适配模式、七步验收链、五条已知坑、现状基线。
+- task_plan.md Phase 6 标记 complete, Current Phase 标记 Complete。
