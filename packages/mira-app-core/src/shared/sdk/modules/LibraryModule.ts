@@ -63,6 +63,14 @@ export class LibraryModule {
         return await this.httpClient.delete<BaseResponse>(`/api/libraries/${id}`);
     }
 
+    /** 设置素材库启用状态。 */
+    async setStatus(id: string, status: 'active' | 'inactive'): Promise<{ message: string; status: 'active' | 'inactive' }> {
+        return await this.httpClient.patch<{ message: string; status: 'active' | 'inactive' }>(
+            `/api/libraries/${id}/status`,
+            { status }
+        );
+    }
+
     /**
      * 启动素材库服务
      * @param id 素材库ID

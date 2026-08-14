@@ -1,10 +1,14 @@
-import client from '../client'
-import type { CookieSite } from '@/types/mira'
+import { getMiraClient } from '@/lib/miraClient'
+import type {
+  CookieSite,
+  CreateCookieSiteRequest,
+  UpdateCookieSiteRequest,
+} from 'mira-app-core/shared/sdk'
 
 export const cookieSiteApi = {
-  list: () => client.get<{ code: number; data: CookieSite[] }>('/cookie-sites'),
-  create: (data: Partial<CookieSite>) => client.post<{ code: number; data: CookieSite }>('/cookie-sites', data),
-  update: (id: number, data: Partial<CookieSite>) => client.put<{ code: number; data: CookieSite }>(`/cookie-sites/${id}`, data),
-  remove: (id: number) => client.delete<{ code: number }>(`/cookie-sites/${id}`),
-  setDefault: (id: number) => client.put<{ code: number; data: CookieSite }>(`/cookie-sites/${id}/default`),
+  list: (): Promise<CookieSite[]> => getMiraClient().cookieSites().getAll(),
+  create: (data: CreateCookieSiteRequest): Promise<CookieSite> => getMiraClient().cookieSites().create(data),
+  update: (id: number, data: UpdateCookieSiteRequest): Promise<CookieSite> => getMiraClient().cookieSites().update(id, data),
+  remove: (id: number): Promise<{ id: number }> => getMiraClient().cookieSites().delete(id),
+  setDefault: (id: number): Promise<CookieSite> => getMiraClient().cookieSites().setDefault(id),
 }

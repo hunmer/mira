@@ -785,6 +785,21 @@ export class MiraSDKService {
     }
   }
 
+  async batchDeleteFiles(
+    libraryId: string,
+    fileIds: (string | number)[],
+    moveToRecycleBin: boolean = true
+  ): Promise<{ success: boolean; message: string; deletedCount: number; deletedIds: number[]; failedIds: number[] }> {
+    if (!this.client) throw new Error('Not connected to Mira server')
+
+    try {
+      return await this.client.files().batchDelete(libraryId, fileIds, { moveToRecycleBin })
+    } catch (error) {
+      console.error('MiraSDKService: Batch file deletion failed', error)
+      throw error
+    }
+  }
+
   async emptyTrash(libraryId: string): Promise<{ success: boolean; deletedCount: number; errors?: string[] }> {
     if (!this.client) throw new Error('Not connected to Mira server')
 
@@ -805,6 +820,20 @@ export class MiraSDKService {
       return TypeAdapter.normalizeBaseResponse(result)
     } catch (error) {
       console.error('MiraSDKService: File restore failed', error)
+      throw error
+    }
+  }
+
+  async batchRestoreFiles(
+    libraryId: string,
+    fileIds: (string | number)[]
+  ): Promise<{ success: boolean; message: string; recoveredCount: number; recoveredIds: number[]; failedIds: number[] }> {
+    if (!this.client) throw new Error('Not connected to Mira server')
+
+    try {
+      return await this.client.files().batchRestoreFiles(libraryId, fileIds)
+    } catch (error) {
+      console.error('MiraSDKService: Batch file restore failed', error)
       throw error
     }
   }

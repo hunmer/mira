@@ -1,6 +1,7 @@
 import client from '../client'
+import { getMiraClient } from '@/lib/miraClient'
 
 export const systemApi = {
-  health: () => client.get('/health'),
+  health: () => getMiraClient().system().getHealth(),
   stats: () => client.get('/stats'),
 }

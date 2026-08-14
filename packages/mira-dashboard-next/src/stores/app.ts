@@ -37,9 +37,7 @@ export interface MiraDashboardContext {
 export function getDashboardContext(): MiraDashboardContext {
   return {
     getLibraries: async () => {
-      const res = await libraryApi.list()
-      const data = res.data as any
-      return Array.isArray(data) ? data : data?.data || []
+      return await libraryApi.list()
     },
     getUser: () => useAuthStore().user as any,
     getApiBase: () => getApiBaseURL(),

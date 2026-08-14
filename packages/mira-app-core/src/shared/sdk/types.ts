@@ -84,6 +84,18 @@ export interface CreateAdminRequest {
 }
 
 // 素材库类型
+export interface LibraryCustomFields {
+    enableHash?: boolean;
+    enableAutoSync?: boolean;
+    enableThumbScan?: boolean;
+    enableAutoBackup?: boolean;
+    enableDbMirror?: boolean;
+    syncFilterMode?: 'blacklist' | 'whitelist';
+    syncBlacklist?: string;
+    syncWhitelist?: string;
+    [key: string]: any;
+}
+
 export interface Library {
     id: string;
     name: string;
@@ -95,9 +107,7 @@ export interface Library {
     createdAt: string;
     updatedAt: string;
     icon?: string;
-    customFields?: {
-        enableHash?: boolean;
-    };
+    customFields?: LibraryCustomFields;
     pluginsDir?: string;
     allowedRoles?: string[];
 }
@@ -107,19 +117,18 @@ export interface CreateLibraryRequest {
     path: string;
     description: string;
     icon?: string;
-    customFields?: {
-        enableHash?: boolean;
-    };
+    customFields?: LibraryCustomFields;
     pluginsDir?: string;
     allowedRoles?: string[];
 }
 
 export interface UpdateLibraryRequest {
     name?: string;
+    path?: string;
     description?: string;
-    customFields?: {
-        enableHash?: boolean;
-    };
+    icon?: string;
+    customFields?: LibraryCustomFields;
+    pluginsDir?: string;
     allowedRoles?: string[];
 }
 

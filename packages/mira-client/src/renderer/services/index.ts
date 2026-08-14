@@ -110,8 +110,23 @@ export class AppService {
     return await miraSDKService.deleteFile(libraryId, fileId, moveToRecycleBin)
   }
 
+  async batchDeleteFiles(
+    libraryId: string,
+    fileIds: (string | number)[],
+    moveToRecycleBin: boolean = true
+  ): Promise<{ success: boolean; message: string; deletedCount: number; deletedIds: number[]; failedIds: number[] }> {
+    return await miraSDKService.batchDeleteFiles(libraryId, fileIds, moveToRecycleBin)
+  }
+
   async restoreFile(libraryId: string, fileId: string): Promise<BaseResponse> {
     return await miraSDKService.restoreFile(libraryId, fileId)
+  }
+
+  async batchRestoreFiles(
+    libraryId: string,
+    fileIds: (string | number)[]
+  ): Promise<{ success: boolean; message: string; recoveredCount: number; recoveredIds: number[]; failedIds: number[] }> {
+    return await miraSDKService.batchRestoreFiles(libraryId, fileIds)
   }
 
   /**

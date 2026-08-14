@@ -1,50 +1,11 @@
-export interface Library {
-  id: string
-  name: string
-  path: string
-  description?: string
-  status: 'active' | 'inactive'
-  fileCount: number
-  size: number
-  createdAt: string
-  updatedAt: string
-  icon?: string
-  pluginsDir?: string
-  allowedRoles?: string[]
-  customFields?: {
-    enableHash: boolean
-    enableAutoSync?: boolean
-    enableAutoBackup?: boolean
-    enableDbMirror?: boolean
-    [key: string]: any
-  }
-}
+export type { Library } from 'mira-app-core/shared/sdk'
 
 export interface ServerSettings {
   authRequired: boolean
   allowRegistration: boolean
 }
 
-export interface CookieItem {
-  name: string
-  value: string
-  domain?: string
-  path?: string
-  expires?: string | number
-}
-
-export interface CookieSite {
-  id: number
-  userId: number
-  name: string
-  url: string
-  cookies: CookieItem[]
-  remark?: string
-  label?: string
-  isDefault?: boolean
-  createdAt: number
-  updatedAt: number
-}
+export type { CookieItem, CookieSite } from 'mira-app-core/shared/sdk'
 
 export interface Plugin {
   name: string

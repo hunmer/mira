@@ -43,11 +43,19 @@ const PRESET_SITES = [
   { name: 'Danbooru', url: 'https://danbooru.donmai.us' },
 ]
 
+function requestErrorMessage(error: unknown, fallback: string) {
+  if (typeof error === 'object' && error !== null) {
+    const value = error as { message?: unknown; response?: { data?: { message?: unknown } } }
+    if (typeof value.message === 'string' && value.message) return value.message
+    if (typeof value.response?.data?.message === 'string' && value.response.data.message) return value.response.data.message
+  }
+  return fallback
+}
+
 async function load() {
   loading.value = true
   try {
-    const res = await cookieSiteApi.list()
-    sites.value = res.data?.data || []
+    sites.value = await cookieSiteApi.list()
   } catch {
     toast.error(t('settings.download.loadFailed'))
   } finally {
@@ -85,8 +93,8 @@ async function addPreset(preset: { name: string; url: string }) {
     await cookieSiteApi.create({ name: preset.name, url: preset.url })
     toast.success(t('settings.download.added'))
     await load()
-  } catch (e: any) {
-    toast.error(e.response?.data?.message || t('common.failed'))
+  } catch (e: unknown) {
+    toast.error(requestErrorMessage(e, t('common.failed')))
   }
 }
 
@@ -130,8 +138,8 @@ async function saveSite() {
     toast.success(t('settings.download.saveOk'))
     showAdd.value = false
     await load()
-  } catch (e: any) {
-    toast.error(e.response?.data?.message || t('common.failed'))
+  } catch (e: unknown) {
+    toast.error(requestErrorMessage(e, t('common.failed')))
   }
 }
 
@@ -140,8 +148,8 @@ async function removeSite(site: CookieSite) {
   try {
     await cookieSiteApi.remove(site.id)
     await load()
-  } catch (e: any) {
-    toast.error(e.response?.data?.message || t('common.failed'))
+  } catch (e: unknown) {
+    toast.error(requestErrorMessage(e, t('common.failed')))
   }
 }
 
@@ -149,8 +157,8 @@ async function setDefault(site: CookieSite) {
   try {
     await cookieSiteApi.setDefault(site.id)
     await load()
-  } catch (e: any) {
-    toast.error(e.response?.data?.message || t('common.failed'))
+  } catch (e: unknown) {
+    toast.error(requestErrorMessage(e, t('common.failed')))
   }
 }
 
@@ -181,8 +189,8 @@ onMounted(() => {
         await cookieSiteApi.update(siteId, { cookies })
         toast.success(t('settings.download.saveOk'))
         await load()
-      } catch (e: any) {
-        toast.error(e.response?.data?.message || t('common.failed'))
+      } catch (e: unknown) {
+        toast.error(requestErrorMessage(e, t('common.failed')))
       }
     })
   }
@@ -232,8 +240,8 @@ async function saveManual() {
     toast.success(t('settings.download.saveOk'))
     showManual.value = false
     await load()
-  } catch (e: any) {
-    toast.error(e.response?.data?.message || t('common.failed'))
+  } catch (e: unknown) {
+    toast.error(requestErrorMessage(e, t('common.failed')))
   }
 }
 

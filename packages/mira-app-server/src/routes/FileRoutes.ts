@@ -677,6 +677,207 @@ export class FileRoutes {
             }
         });
 
+        // 批量删除文件（默认移入回收站，moveToRecycleBin=false 时彻底删除）
+        this.router.post('/batch-delete', async (req: Request, res: Response) => {
+            try {
+                const { libraryId, fileIds, moveToRecycleBin } = req.body;
+
+                if (!libraryId || !Array.isArray(fileIds) || fileIds.length === 0) {
+                    return res.status(400).json({
+                        code: 400,
+                        message: 'libraryId and non-empty fileIds array are required',
+                        data: null
+                    });
+                }
+                if (fileIds.length > 1000) {
+                    return res.status(400).json({
+                        code: 400,
+                        message: 'fileIds cannot contain more than 1000 items',
+                        data: null
+                    });
+                }
+
+                const obj = this.backend.libraries!.getLibrary(libraryId);
+                if (!obj) {
+                    return res.status(404).json({
+                        code: 404,
+                        message: 'Library not found',
+                        data: null
+                    });
+                }
+
+                const toRecycleBin = moveToRecycleBin !== false;
+                const deletedAt = new Date().toISOString();
+                const deletedIds: number[] = [];
+                const failedIds: number[] = [];
+
+                for (const rawId of fileIds) {
+                    const id = Number(rawId);
+                    if (!Number.isSafeInteger(id)) {
+                        failedIds.push(rawId);
+                        continue;
+                    }
+                    try {
+                        const item = await obj.libraryService.getFile(id);
+                        if (!item) {
+                            failedIds.push(id);
+                            continue;
+                        }
+
+                        const deleteSuccess = await obj.libraryService.deleteFile(id, { moveToRecycleBin: toRecycleBin });
+                        if (!deleteSuccess) {
+                            failedIds.push(id);
+                            continue;
+                        }
+
+                        // 仅在彻底删除时才删除物理文件和缩略图（与单个删除路由保持一致）
+                        if (!toRecycleBin) {
+                            const filePath = await obj.libraryService.getItemFilePath(item);
+                            if (filePath && fs.existsSync(filePath)) {
+                                try {
+                                    fs.unlinkSync(filePath);
+                                } catch (fileError) {
+                                    console.error(`Error deleting physical file ${filePath}:`, fileError);
+                                }
+                            }
+
+                            try {
+                                const thumbPath = await obj.libraryService.getItemThumbPath(item, { isNetworkImage: false });
+                                if (thumbPath && fs.existsSync(thumbPath)) {
+                                    fs.unlinkSync(thumbPath);
+                                }
+                            } catch (thumbError) {
+                                console.error(`Error deleting thumbnail:`, thumbError);
+                            }
+                        }
+
+                        deletedIds.push(id);
+
+                        // 与单个删除路由保持一致的事件结构，逐个广播 file::deleted
+                        if (this.backend.webSocketServer) {
+                            const deletedFile = {
+                                id,
+                                name: item.name,
+                                libraryId,
+                                deletedAt
+                            };
+                            this.backend.webSocketServer.broadcastPluginEvent('file::deleted', {
+                                message: { type: 'file', action: 'delete' },
+                                result: deletedFile,
+                                libraryId,
+                                fileId: id
+                            });
+                            this.backend.webSocketServer.broadcastLibraryEvent(libraryId, 'file::deleted', {
+                                ...deletedFile,
+                                libraryId,
+                                fileId: id
+                            });
+                        }
+                    } catch (itemError) {
+                        console.error(`Error deleting file ${id} in batch:`, itemError);
+                        failedIds.push(id);
+                    }
+                }
+
+                res.json({
+                    success: failedIds.length === 0,
+                    message: failedIds.length === 0
+                        ? `Deleted ${deletedIds.length} files successfully`
+                        : `Deleted ${deletedIds.length} files, ${failedIds.length} failed`,
+                    deletedCount: deletedIds.length,
+                    deletedIds,
+                    failedIds
+                });
+            } catch (error) {
+                console.error('Error batch deleting files:', error);
+                res.status(500).json({
+                    code: 500,
+                    message: 'Internal server error while batch deleting files',
+                    details: error instanceof Error ? error.message : String(error)
+                });
+            }
+        });
+
+        // 批量恢复文件（从回收站还原）
+        this.router.post('/batch-recover', async (req: Request, res: Response) => {
+            try {
+                const { libraryId, fileIds } = req.body;
+
+                if (!libraryId || !Array.isArray(fileIds) || fileIds.length === 0) {
+                    return res.status(400).json({
+                        code: 400,
+                        message: 'libraryId and non-empty fileIds array are required',
+                        data: null
+                    });
+                }
+                if (fileIds.length > 1000) {
+                    return res.status(400).json({
+                        code: 400,
+                        message: 'fileIds cannot contain more than 1000 items',
+                        data: null
+                    });
+                }
+
+                const obj = this.backend.libraries!.getLibrary(libraryId);
+                if (!obj) {
+                    return res.status(404).json({
+                        code: 404,
+                        message: 'Library not found',
+                        data: null
+                    });
+                }
+
+                const recoveredIds: number[] = [];
+                const failedIds: number[] = [];
+
+                for (const rawId of fileIds) {
+                    const id = Number(rawId);
+                    if (!Number.isSafeInteger(id)) {
+                        failedIds.push(rawId);
+                        continue;
+                    }
+                    try {
+                        // 获取恢复前的文件信息（用于事件携带 folder_id）
+                        const before = await obj.libraryService.getFile(id);
+                        const success = await obj.libraryService.recoverFile(id);
+                        if (!success) {
+                            failedIds.push(id);
+                            continue;
+                        }
+
+                        recoveredIds.push(id);
+
+                        // 与单个恢复路由保持一致的事件结构，逐个广播 file::recovered
+                        const result = await obj.libraryService.getFile(id);
+                        this.broadcastFileEvent('file::recovered', libraryId, result, id, before ? { folder_id: before.folder_id, recycled: 1 } : undefined);
+                        if (this.backend.webSocketServer) {
+                            this.backend.webSocketServer.broadcastLibraryEvent(libraryId, 'file::recovered', { recovered: 1, libraryId, fileId: id });
+                        }
+                    } catch (itemError) {
+                        console.error(`Error recovering file ${id} in batch:`, itemError);
+                        failedIds.push(id);
+                    }
+                }
+
+                res.json({
+                    success: failedIds.length === 0,
+                    message: failedIds.length === 0
+                        ? `Recovered ${recoveredIds.length} files successfully`
+                        : `Recovered ${recoveredIds.length} files, ${failedIds.length} failed`,
+                    recoveredCount: recoveredIds.length,
+                    recoveredIds,
+                    failedIds
+                });
+            } catch (error) {
+                console.error('Error batch recovering files:', error);
+                res.status(500).json({
+                    code: 500,
+                    message: 'Internal server error while batch recovering files',
+                    details: error instanceof Error ? error.message : String(error)
+                });
+            }
+        });
+
         // 恢复文件（从回收站还原）
         this.router.post('/recover', async (req: Request, res: Response) => {
             try {

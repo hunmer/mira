@@ -26,6 +26,7 @@
     "tagBreadcrumb": "Tag: {name}",
     "restoreBatchLabel": "Restore files",
     "purgeBatchLabel": "Delete permanently",
+    "deleteBatchLabel": "Delete files",
     "missingLibraryId": "Missing library ID",
     "emptyMessage": "No files",
     "fieldFilename": "Filename",

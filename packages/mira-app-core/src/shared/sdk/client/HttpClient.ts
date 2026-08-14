@@ -117,6 +117,18 @@ export class HttpClient {
     }
 
     /**
+     * PATCH 请求
+     */
+    async patch<T = any>(
+        url: string,
+        data?: any,
+        config?: AxiosRequestConfig
+    ): Promise<T> {
+        const response = await this.axiosInstance.patch<BaseResponse<T>>(url, data, config);
+        return this.extractData(response);
+    }
+
+    /**
      * DELETE 请求
      */
     async delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<T> {

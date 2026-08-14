@@ -77,7 +77,7 @@ async function refreshData() {
       systemApi.health(),
     ])
 
-    const unwrap = (r: PromiseFulfilledResult<any>) => r.value.data?.data ?? r.value.data
+    const unwrap = (r: PromiseFulfilledResult<any>) => r.value?.data?.data ?? r.value?.data ?? r.value
     const libs = libsRes.status === 'fulfilled' ? (Array.isArray(unwrap(libsRes)) ? unwrap(libsRes) : []) : []
     const plugins = pluginsRes.status === 'fulfilled' ? (Array.isArray(unwrap(pluginsRes)) ? unwrap(pluginsRes) : []) : []
     const admins = adminsRes.status === 'fulfilled' ? (Array.isArray(unwrap(adminsRes)) ? unwrap(adminsRes) : []) : []

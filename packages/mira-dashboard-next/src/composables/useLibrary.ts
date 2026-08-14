@@ -11,9 +11,7 @@ let loaded = false
 async function loadLibraries() {
   loading.value = true
   try {
-    const res = await libraryApi.list()
-    const d = res.data as any
-    libraries.value = Array.isArray(d) ? d : d?.data || []
+    libraries.value = await libraryApi.list()
     if (!selectedId.value && libraries.value.length) {
       // 恢复顺序：localStorage 中上次选中的库 > active 库 > 第一个库
       const saved = localStorage.getItem(STORAGE_KEY)

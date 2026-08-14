@@ -1,12 +1,17 @@
-import client from '../client'
-import type { Library } from '@/types/mira'
+import { getMiraClient } from '@/lib/miraClient'
+import type {
+  BaseResponse,
+  CreateLibraryRequest,
+  Library,
+  UpdateLibraryRequest,
+} from 'mira-app-core/shared/sdk'
 
 export const libraryApi = {
-  list: () => client.get<Library[]>('/libraries'),
-  get: (id: string) => client.get<Library>(`/libraries/${id}`),
-  create: (data: Partial<Library>) => client.post<Library>('/libraries', data),
-  update: (id: string, data: Partial<Library>) => client.put<Library>(`/libraries/${id}`, data),
-  delete: (id: string) => client.delete(`/libraries/${id}`),
+  list: (): Promise<Library[]> => getMiraClient().libraries().getAll(),
+  get: (id: string): Promise<Library> => getMiraClient().libraries().getById(id),
+  create: (data: CreateLibraryRequest): Promise<BaseResponse> => getMiraClient().libraries().create(data),
+  update: (id: string, data: UpdateLibraryRequest): Promise<BaseResponse> => getMiraClient().libraries().update(id, data),
+  delete: (id: string): Promise<BaseResponse> => getMiraClient().libraries().delete(id),
   toggleStatus: (id: string, status: 'active' | 'inactive') =>
-    client.patch(`/libraries/${id}/status`, { status }),
+    getMiraClient().libraries().setStatus(id, status),
 }

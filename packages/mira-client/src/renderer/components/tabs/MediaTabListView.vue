@@ -279,7 +279,6 @@ import { useFolderStore } from '@renderer/stores/folder'
 import { useSettingsStore } from '@renderer/stores/settings'
 import { useUrlImportStore } from '@renderer/stores/urlImport'
 import { useToast } from '@renderer/composables/useToast'
-import { runBatchOperation } from '@renderer/composables/useBatchOperation'
 import { appService } from '@renderer/services'
 import { useTagStore } from '@renderer/stores/tag'
 import { useHomeController } from '@renderer/controllers/HomeController'
@@ -1013,22 +1012,60 @@ const handleSortChange = async (field: string, order: string) => {
   await fetchPageData(1)
 }
 
+// 将选中文件按 libraryId 分组，缺少 libraryId 的进入 ungrouped
+const groupSelectedByLibrary = () => {
+  const cachedFiles = mediaTabData.getCachedData().data
+  const groups = new Map<string, string[]>()
+  const ungrouped: string[] = []
+  for (const id of selectedItems.value) {
+    const file = cachedFiles.find((f: FileInfo) => f.id === id)
+    const libraryId = file?.libraryId || libraryStore.currentLibrary?.id
+    if (!libraryId) { ungrouped.push(id); continue }
+    const list = groups.get(libraryId) ?? []
+    list.push(id)
+    groups.set(libraryId, list)
+  }
+  return { groups, ungrouped }
+}
+
+// 分组执行批量操作（每组只发一次请求），完成后弹 toast，返回失败数
+const runGroupedBatchOperation = async (
+  label: string,
+  operation: (libraryId: string, fileIds: string[]) => Promise<{ failedIds?: unknown[] }>
+) => {
+  const total = selectedItems.value.length
+  const { groups, ungrouped } = groupSelectedByLibrary()
+  let failed = ungrouped.length
+  let completed = 0
+  for (const [libraryId, fileIds] of groups) {
+    try {
+      const result = await operation(libraryId, fileIds)
+      const groupFailed = result?.failedIds?.length ?? 0
+      failed += groupFailed
+      completed += fileIds.length - groupFailed
+    } catch {
+      failed += fileIds.length
+    }
+  }
+  toast.add({
+    severity: failed === 0 ? 'success' : (completed > 0 ? 'warn' : 'error'),
+    summary: label,
+    detail: failed === 0
+      ? t('composables.useBatchOperation.completedAll', { label, completed, total })
+      : t('composables.useBatchOperation.completedWithFailures', { label, completed, failed }),
+    life: failed > 0 ? 5000 : 3000
+  })
+  return failed
+}
+
 const handleToolbarAction = async (action: string) => {
   // 回收站：恢复 / 彻底删除
   if (action === 'restore') {
-    const ids = selectedItems.value
-    if (ids.length === 0) return
-    const cachedFiles = mediaTabData.getCachedData().data
-    const files: FileInfo[] = ids
-      .map(id => cachedFiles.find((f: FileInfo) => f.id === id))
-      .filter((f): f is FileInfo => Boolean(f))
-    if (files.length === 0) return
-
-    await runBatchOperation(files, async (file) => {
-      const libraryId = file.libraryId || libraryStore.currentLibrary?.id
-      if (!libraryId) throw new Error(t('tabs.mediaTabListView.missingLibraryId'))
-      await appService.restoreFile(libraryId, file.id)
-    }, { label: t('tabs.mediaTabListView.restoreBatchLabel') })
+    if (selectedItems.value.length === 0) return
+    await runGroupedBatchOperation(
+      t('tabs.mediaTabListView.restoreBatchLabel'),
+      (libraryId, fileIds) => appService.batchRestoreFiles(libraryId, fileIds)
+    )
 
     homeController.selectedItems.value = []
     await handleRefresh()
@@ -1036,20 +1073,11 @@ const handleToolbarAction = async (action: string) => {
   }
 
   if (action === 'purge') {
-    const ids = selectedItems.value
-    if (ids.length === 0) return
-    const cachedFiles = mediaTabData.getCachedData().data
-    const files: FileInfo[] = ids
-      .map(id => cachedFiles.find((f: FileInfo) => f.id === id))
-      .filter((f): f is FileInfo => Boolean(f))
-    if (files.length === 0) return
-
-    await runBatchOperation(files, async (file) => {
-      const libraryId = file.libraryId || libraryStore.currentLibrary?.id
-      if (!libraryId) throw new Error(t('tabs.mediaTabListView.missingLibraryId'))
-      // 彻底删除：跳过回收站
-      await appService.deleteFile(libraryId, file.id, false)
-    }, { label: t('tabs.mediaTabListView.purgeBatchLabel') })
+    if (selectedItems.value.length === 0) return
+    await runGroupedBatchOperation(
+      t('tabs.mediaTabListView.purgeBatchLabel'),
+      (libraryId, fileIds) => appService.batchDeleteFiles(libraryId, fileIds, false)
+    )
 
     homeController.selectedItems.value = []
     await handleRefresh()
@@ -1086,20 +1114,11 @@ const deleteDialogOpen = ref(false)
 
 const confirmDelete = async () => {
   deleteDialogOpen.value = false
-  const ids = selectedItems.value
-  if (ids.length === 0) return
-  const cachedFiles = mediaTabData.getCachedData().data
-  let failed = 0
-  for (const id of ids) {
-    const file = cachedFiles.find((f: FileInfo) => f.id === id)
-    const libraryId = file?.libraryId || libraryStore.currentLibrary?.id
-    if (!libraryId) { failed++; continue }
-    try {
-      await appService.deleteFile(libraryId, id)
-    } catch {
-      failed++
-    }
-  }
+  if (selectedItems.value.length === 0) return
+  const failed = await runGroupedBatchOperation(
+    t('tabs.mediaTabListView.deleteBatchLabel'),
+    (libraryId, fileIds) => appService.batchDeleteFiles(libraryId, fileIds)
+  )
   if (failed > 0) console.error(`删除失败: ${failed} 个文件`)
   homeController.selectedItems.value = []
   await handleRefresh()

@@ -39,8 +39,7 @@ const filtered = computed(() => {
 async function loadLibraries() {
   loading.value = true
   try {
-    const res = await libraryApi.list()
-    libraries.value = Array.isArray(res.data) ? res.data : []
+    libraries.value = await libraryApi.list()
     refreshGlobalLibs()
   } catch {
     toast.error(t('common.failed'))

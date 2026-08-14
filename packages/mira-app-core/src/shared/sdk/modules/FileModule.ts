@@ -197,6 +197,25 @@ export class FileModule {
     }
 
     /**
+     * 批量删除文件（一次请求，默认移入回收站）
+     * @param libraryId 素材库ID
+     * @param fileIds 文件ID数组
+     * @param options.moveToRecycleBin 是否移动到回收站（默认 true）
+     * @returns Promise<{ success: boolean; message: string; deletedCount: number; deletedIds: number[]; failedIds: number[] }>
+     */
+    async batchDelete(
+        libraryId: string,
+        fileIds: (string | number)[],
+        options?: { moveToRecycleBin?: boolean }
+    ): Promise<{ success: boolean; message: string; deletedCount: number; deletedIds: number[]; failedIds: number[] }> {
+        return await this.httpClient.post('/api/files/batch-delete', {
+            libraryId,
+            fileIds: fileIds.map(String),
+            moveToRecycleBin: options?.moveToRecycleBin !== false
+        });
+    }
+
+    /**
      * 上传单个文件
      * @param file 文件对象
      * @param libraryId 素材库ID
@@ -391,6 +410,22 @@ export class FileModule {
         return await this.httpClient.post<BaseResponse>('/api/files/recover', {
             libraryId,
             fileId: fileId.toString(),
+        });
+    }
+
+    /**
+     * 批量恢复文件（从回收站还原，一次请求）
+     * @param libraryId 素材库ID
+     * @param fileIds 文件ID数组
+     * @returns Promise<{ success: boolean; message: string; recoveredCount: number; recoveredIds: number[]; failedIds: number[] }>
+     */
+    async batchRestoreFiles(
+        libraryId: string,
+        fileIds: (string | number)[]
+    ): Promise<{ success: boolean; message: string; recoveredCount: number; recoveredIds: number[]; failedIds: number[] }> {
+        return await this.httpClient.post('/api/files/batch-recover', {
+            libraryId,
+            fileIds: fileIds.map(String)
         });
     }
 
