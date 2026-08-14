@@ -24,6 +24,7 @@ import {
 import {
   Tabs, TabsContent, TabsList, TabsTrigger,
 } from '@/components/ui/tabs'
+import LibraryTreeSelect from '@/components/LibraryTreeSelect.vue'
 
 export function ensurePluginRuntime() {
   ;(window as any).MiraDashboard = getDashboardContext()
@@ -60,5 +61,6 @@ export function ensurePluginRuntime() {
     TabsContent,
     TabsList,
     TabsTrigger,
+    LibraryTreeSelect,
   }
 }

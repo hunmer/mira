@@ -1,7 +1,7 @@
 [
   {
     "name": "mira_3d_format",
-    "enabled": true,
+    "enabled": false,
     "path": "node_modules/mira_3d_format",
     "registry": "https://registry.npmmirror.com",
     "version": "1.0.2",
@@ -18,7 +18,7 @@
       "缩略图"
     ],
     "installedAt": "2026-08-12T10:17:17.223Z",
-    "status": "active"
+    "status": "inactive"
   },
   {
     "name": "mira_epub_format",
@@ -101,5 +101,44 @@
     ],
     "installedAt": "2026-08-13T10:32:01.851Z",
     "status": "inactive"
+  },
+  {
+    "name": "mira_eagle_extension",
+    "enabled": true,
+    "path": "node_modules/mira_eagle_extension",
+    "registry": "https://registry.npmmirror.com",
+    "version": "1.0.0",
+    "description": "在服务端复刻 Eagle 本地 HTTP 协议，让 Eagle 浏览器扩展无需改动即可把网页图片、截图、链接保存到 Mira 素材库。",
+    "author": "hunmer",
+    "main": "index.ts",
+    "icon": "🦅",
+    "title": "Eagle 浏览器扩展支持",
+    "category": "integration",
+    "tags": [
+      "Eagle",
+      "浏览器扩展",
+      "采集"
+    ],
+    "installedAt": "2026-08-14T02:25:38.766Z",
+    "status": "active"
+  },
+  {
+    "name": "mira_gallery_dl",
+    "enabled": true,
+    "path": "node_modules/mira_gallery_dl",
+    "version": "1.0.0",
+    "description": "使用 gallery-dl 批量解析图片并导入目标素材库、文件夹和标签。",
+    "author": "Mira Team",
+    "main": "dist/index.js",
+    "icon": "image_add",
+    "title": "图库批量导入",
+    "category": "integration",
+    "tags": [
+      "gallery-dl",
+      "图片",
+      "批量导入"
+    ],
+    "installedAt": "2026-08-14T00:00:00.000Z",
+    "status": "active"
   }
 ]

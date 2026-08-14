@@ -713,11 +713,17 @@ const handleRemoveTag = async (tag: string) => {
   const files = displayItems.value
   await runBatchOperation(files, async (file) => {
     const libId = file.libraryId || 'default'
-    await client.tags().removeTagsFromFile(libId, parseInt(file.id), [tag])
-    if (file.tags) {
-      const idx = file.tags.indexOf(tag)
-      if (idx !== -1) file.tags.splice(idx, 1)
-    }
+    const currentTags = file.tags || []
+    // 标签值可能是 ID 或标题，按两种形式匹配后通过 setFileTags 覆盖保存。
+    const remainingTags = currentTags.filter(currentTag =>
+      String(currentTag) !== String(tag) && getTagName(currentTag) !== getTagName(tag)
+    )
+    await client.tags().setFileTags({
+      libraryId: libId,
+      fileId: parseInt(file.id),
+      tags: remainingTags,
+    })
+    setLocalFieldOverride(file.id, { tags: remainingTags })
   }, { label: t('business.mediaDetailComponent.removeTagAction') })
   await tagStore.refreshTags(libraryId.value || 'default')
 }

@@ -342,8 +342,12 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
     title.textContent = '新建文件夹并上传';
     dlg.appendChild(title);
 
+    // [新建文件夹弹窗 body]
+    // 这里只承载文件夹名称输入、错误提示和确认/取消按钮；
+    // 不要在这里加入拖拽浮层的根区、文件夹/标签列表或连接空态逻辑。
     const body = document.createElement('div');
     body.className = 'mira-overlay-body';
+
     body.style.flexDirection = 'column';
 
     const input = document.createElement('input');
@@ -472,8 +476,40 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
     header.textContent = '拖到下方上传到 Mira';
     overlay.appendChild(header);
 
+    // [当前目标拖拽浮层 body]
+    // 这里承载根目录、文件夹/标签 drop zone；连接错误时由 showUnavailableState
+    // 将本 body 替换为“拖拽到此处侧边栏打开窗口”的中心空态。
+    // 与上方 showCreateFolderPrompt() 内的“新建文件夹弹窗 body”完全不同。
     const body = document.createElement('div');
     body.className = 'mira-overlay-body';
+
+    let connectionError = false;
+    function showUnavailableState() {
+      if (body.parentNode !== overlay) return;
+      header.textContent = folderEmptyMessage(null);
+      body.className = 'mira-overlay-body mira-empty-state';
+      body.replaceChildren();
+      const empty = document.createElement('div');
+      // 未连接到素材库时仍保留拖拽入口：释放文件后打开侧边栏完成自定义上传。
+      empty.className = 'mira-empty-state-dropzone';
+      empty.textContent = '未连接到素材库，将文件拖拽到此处打开侧边栏';
+      empty.addEventListener('dragover', event => {
+        event.preventDefault();
+        empty.classList.add('mira-hover');
+      });
+      empty.addEventListener('dragleave', () => empty.classList.remove('mira-hover'));
+      empty.addEventListener('drop', event => {
+        event.preventDefault();
+        empty.classList.remove('mira-hover');
+        hideOverlay();
+        if (handlers.openCustomUpload) {
+          void handlers.openCustomUpload(source);
+        } else {
+          showCreateFolderPrompt(source, event.dataTransfer?.files?.[0]);
+        }
+      });
+      body.appendChild(empty);
+    }
 
     // 顶部 drop zones:「不设文件夹(根区)」+「新建文件夹」各占一半
     const topRow = document.createElement('div');
@@ -514,6 +550,8 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
 
     // 异步填充文件夹
     fetchFolders().then(folders => {
+      connectionError = folders === null;
+      if (connectionError) showUnavailableState();
       if (loading.parentNode === listScroll) listScroll.removeChild(loading);
       if (!Array.isArray(folders) || folders.length === 0) {
         const empty = document.createElement('div');
@@ -548,6 +586,8 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
       tagScroll.appendChild(tagLoading);
 
       fetchTags().then(tags => {
+        connectionError = connectionError || tags === null;
+        if (connectionError) showUnavailableState();
         if (tagLoading.parentNode === tagScroll) tagScroll.removeChild(tagLoading);
         if (!Array.isArray(tags) || tags.length === 0) {
           const empty = document.createElement('div');
@@ -711,6 +751,9 @@ function ensureStyles() {
   style.id = 'mira-dragdrop-style';
   style.textContent = `
 .mira-dragdrop .mira-overlay-body { flex-direction: column; }
+.mira-dragdrop .mira-overlay-body.mira-empty-state { min-height: 120px; align-items: center; justify-content: center; color: #71717a; text-align: center; }
+.mira-empty-state-dropzone { width: 100%; box-sizing: border-box; padding: 28px 16px; border: 2px dashed #52525b; border-radius: 8px; cursor: copy; transition: border-color .12s, background .12s, color .12s; }
+.mira-empty-state-dropzone.mira-hover { border-color: #4ade80; background: rgba(74,222,128,.12); color: #fafafa; }
 .mira-top-zones { display: flex; gap: 8px; }
 .mira-top-zones .mira-dropzone { flex: 1; width: auto; }
 .mira-custom-upload { border-style: dotted; color: #71717a; }

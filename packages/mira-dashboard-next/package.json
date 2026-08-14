@@ -19,6 +19,7 @@
     "axios": "^1.16.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "mira-app-core": "workspace:*",
     "pinia": "^3.0.4",
     "qrcode": "^1.5.4",
     "react-selectable-fast": "^3.4.0",

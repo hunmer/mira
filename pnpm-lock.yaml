@@ -486,6 +486,9 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      mira-app-core:
+        specifier: workspace:*
+        version: link:../mira-app-core
       pinia:
         specifier: ^3.0.4
         version: 3.0.4(typescript@5.7.3)(vue@3.5.13(typescript@5.7.3))

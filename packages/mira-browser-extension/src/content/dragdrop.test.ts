@@ -160,4 +160,28 @@ describe('createDragDrop lifecycle', () => {
     expect(document.querySelector('.mira-dragdrop')).not.toBeNull();
     img.remove();
   });
+
+  it('未连接服务器或素材库时标题显示空状态', async () => {
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation(callback => {
+      callback(0);
+      return 1;
+    });
+    const openCustomUpload = vi.fn();
+    createDragDrop({ onUpload: vi.fn(), getFolders: async () => null, openCustomUpload });
+    const img = document.createElement('img');
+    img.src = 'https://example.com/image.jpg';
+    document.body.appendChild(img);
+
+    img.dispatchEvent(new MouseEvent('dragstart', { bubbles: true, clientX: 10, clientY: 10 }));
+    document.dispatchEvent(new MouseEvent('dragover', { bubbles: true, clientX: 100, clientY: 10 }));
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(document.querySelector('.mira-overlay-title')?.textContent).toBe('未连接素材库');
+    const empty = document.querySelector<HTMLElement>('.mira-empty-state-dropzone');
+    expect(empty?.textContent).toBe('未连接到素材库，将文件拖拽到此处打开侧边栏');
+    empty?.dispatchEvent(new Event('drop', { bubbles: true, cancelable: true }));
+    expect(openCustomUpload).toHaveBeenCalledWith({ url: img.src, kind: 'image' });
+    img.remove();
+  });
 });

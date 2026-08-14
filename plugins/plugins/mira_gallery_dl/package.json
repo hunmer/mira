@@ -1,0 +1,33 @@
+{
+  "name": "mira_gallery_dl",
+  "version": "1.0.0",
+  "description": "Batch gallery-dl image parser and Mira library importer",
+  "author": "Mira Team",
+  "license": "ISC",
+  "main": "dist/index.js",
+  "files": [
+    "dist/**/*",
+    "components/**/*",
+    "package.json",
+    "README.md"
+  ],
+  "mira": {
+    "id": "mira_gallery_dl",
+    "title": "图库批量导入",
+    "icon": "image_add",
+    "category": "integration",
+    "tags": [
+      "gallery-dl",
+      "图片",
+      "批量导入"
+    ]
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "npm run build && node test.js"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.7.0"
+  }
+}

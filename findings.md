@@ -1,0 +1,21 @@
+# Findings
+
+- CodeGraph MCP is not exposed in this environment; repository inspection falls back to rg as instructed.
+- Existing uncommitted changes affect server plugin package.json, package-lock.json, and plugins.json; preserve and merge carefully.
+- mira-dashboard-next already contains PathTreeNode.vue and PathTreeSelect.vue, so inspect before adding another abstraction.
+- Existing PathTreeSelect is specifically a local filesystem picker backed by `/fs/dirs`; it is single-select and includes mkdir behavior, so it should not be repurposed for library folder/tag entities.
+- mira-app-core exposes MiraClient plus FolderModule and TagModule from `mira-app-core/shared/sdk`; MiraClient supports injecting the current bearer token with `setToken`.
+- Dashboard package currently does not depend on mira-app-core and uses a separate axios client with the token from localStorage.
+- Server plugins register per-library routes via `httpRouter.registerRounter(libraryId, path, method, handler)` and custom dashboard components via `getRoutes()` plus `window.MiraPluginComponents`.
+- Existing mira_eagle_extension demonstrates direct `dbService` import and runtime route contribution, but its large output needs targeted reads around import helpers and route registration.
+- Dynamic plugin HTTP routes are mounted below `/api` after `createHttpPermissionMiddleware`, so Authorization bearer authentication is enforced by the host.
+- Plugin route handlers dispatch by `libraryId` from body/query/params; new requests must include it.
+- Dashboard plugin routes carry `libraryId` in route meta and load plain browser component scripts through `window.MiraPluginComponents`.
+- Official gallery-dl docs (current README references 1.32.9) confirm Python 3.8+, `-j/--dump-json`, `-D/--directory`, `--no-input`, and direct executable/Python installation. The tool is not currently installed on this machine.
+- A two-stage design fits the requested UX: parse with dump-json without download, then download only selected direct URLs into a controlled temp directory and import via dbService.
+- Real gallery-dl 1.32.9 output is a JSON event array. Event type `3` contains `[3, directUrl, metadata]`; type `2` is metadata-only. Normalization should use type 3, with `filename`, `extension`, dimensions, preview URLs and category from metadata.
+- `createFileFromPath` accepts `folder_id` and a JSON-serialized `tags` array, moves the temp file into library storage, and returns `duplicate: true` while cleaning duplicate move sources.
+- Runtime server logs confirm mira_gallery_dl loads for both configured libraries after procm-mcp restart.
+- The current CLI profile identifies username `admin`, but its token is expired. Unauthenticated plugin API requests correctly return HTTP 401.
+- Existing mira_eagle_extension fails to load with an unrelated strict-mode syntax error after restart; its files and pre-existing manifest changes were not modified by this task.
+- Server plugin source registry described in the migration skill does not exist in this checkout; runtime registration lives in `packages/mira-app-server/src/plugins/plugins.json` and package dependencies.
