@@ -7,12 +7,16 @@ import { TrayService } from './services/TrayService'
 import { MainWindowService } from './services/MainWindowService'
 import { DownloadService } from './services/DownloadService'
 import { logger } from './utils/Logger'
+import { closeProcm, initProcm } from './services/ProcmService'
 import { getAutoUpdater } from './services/useAutoUpdater'
 import { ensureLocalServerStarted, runLocalServerScriptSync } from './services/LocalServerService'
 
 if (!process.env.NODE_ENV) {
   process.env.NODE_ENV = 'production'
 }
+
+// procm 托管时启用 room 客户端与结构化日志，否则退化为 no-op
+initProcm()
 
 // Electron 主进程
 class MiraApplication {
@@ -336,6 +340,9 @@ class MiraApplication {
 
     // 强制销毁所有窗口，避免残留句柄阻止退出
     this.windows.destroyAll()
+
+    // 关闭 procm room 客户端
+    closeProcm()
 
     logger.info('MiraApplication', 'Application cleanup completed')
   }

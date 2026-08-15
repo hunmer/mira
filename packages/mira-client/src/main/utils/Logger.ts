@@ -1,6 +1,8 @@
 import log from 'electron-log'
 import { join } from 'node:path'
 import { inspect } from 'node:util'
+import { getProcmLogger } from '../services/ProcmService'
+import type { JsonValue } from '@procm-mcp/sdk'
 
 // Electron 由 Vite 启动时，父进程退出会先关闭 stdout/stderr 管道。
 // 忽略此时的终端写入错误，文件日志仍可正常完成退出记录。
@@ -41,6 +43,32 @@ log.warn = (...args: any[]) => origWarn(formatArgs(args))
 log.error = (...args: any[]) => origError(formatArgs(args))
 log.debug = (...args: any[]) => origDebug(formatArgs(args))
 
+// procm 托管时把日志同步为结构化帧（写入原始流，由 procm 解析）；
+// 未初始化时为 no-op。序列化失败（循环引用等）只丢帧，不影响 electron-log。
+const toProcmData = (data?: any): JsonValue | undefined => {
+  if (data === undefined) return undefined
+  if (data instanceof Error) {
+    return { name: data.name, message: data.message, stack: data.stack ?? null }
+  }
+  if (typeof data === 'object' && data !== null) {
+    try {
+      JSON.stringify(data)
+      return data as JsonValue
+    } catch {
+      return inspect(data, { depth: 2 })
+    }
+  }
+  return data
+}
+
+const bridgeProcm = (level: 'debug' | 'info' | 'warn' | 'error', category: string, message: string, data?: any) => {
+  try {
+    getProcmLogger()[level](`[${category}] ${message}`, toProcmData(data))
+  } catch {
+    // procm 日志失败不影响主流程
+  }
+}
+
 export const logger = {
   setLogLevel: (level: 'DEBUG' | 'INFO' | 'WARN' | 'ERROR') => {
     const m = { DEBUG: 'debug', INFO: 'info', WARN: 'warn', ERROR: 'error' } as const
@@ -49,16 +77,20 @@ export const logger = {
   },
   debug: (category: string, message: string, data?: any) => {
     log.debug(`[${category}] ${message}`, data ?? '')
+    bridgeProcm('debug', category, message, data)
   },
   info: (category: string, message: string, data?: any) => {
     log.info(`[${category}] ${message}`, data ?? '')
+    bridgeProcm('info', category, message, data)
   },
   warn: (category: string, message: string, data?: any) => {
     log.warn(`[${category}] ${message}`, data ?? '')
+    bridgeProcm('warn', category, message, data)
   },
   error: (category: string, message: string, errorOrData?: any, data?: any) => {
     const isError = errorOrData instanceof Error
     log.error(`[${category}] ${message}`, isError ? errorOrData : errorOrData ?? '', data ?? '')
+    bridgeProcm('error', category, message, errorOrData !== undefined ? errorOrData : data)
   },
   getLogFilePath: () => log.transports.file.getFile().path,
   getLogDirectory: () => join(log.transports.file.getFile().path, '..')

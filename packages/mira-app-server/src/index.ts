@@ -9,6 +9,7 @@ import { MiraHttpServer } from './server';
 import { ThumbnailService } from './services/ThumbnailService';
 import { MetadataService } from './services/MetadataService';
 import { installLogCapture } from './services/logCapture';
+import { closeProcm, getProcmLogger, initProcm, publishBackendReady } from './services/procm';
 import express from 'express';
 
 // 加载环境变量 - 先加载根目录的 .env，再加载本地的 .env
@@ -18,6 +19,10 @@ dotenv.config();
 // 尽早安装 console 拦截，让 SSE 日志端点能回放启动阶段的历史日志。
 // 幂等：重复调用安全。
 installLogCapture();
+
+// procm 托管时启用 room 客户端与结构化日志，否则退化为 no-op
+initProcm();
+const procmLogger = getProcmLogger();
 
 async function startServer() {
   try {
@@ -33,6 +38,8 @@ async function startServer() {
     console.log(`🔌 WebSocket Server will start on port: ${wsPort}`);
     console.log(`📁 Data path: ${dataPath}`);
 
+    procmLogger.info('Starting Mira Server', { httpPort, wsPort, dataPath });
+
     const server = await MiraServer.createAndStart({
       httpPort: parseInt(httpPort),
       wsPort: parseInt(wsPort),
@@ -40,17 +47,21 @@ async function startServer() {
     });
 
     console.log('✅ Mira Server started successfully');
+    procmLogger.info('Mira Server started successfully');
+    publishBackendReady({ initializedAt: Date.now(), httpPort: parseInt(httpPort), wsPort: parseInt(wsPort) });
 
     // 优雅关闭处理
     process.on('SIGINT', async () => {
       console.log('\n📴 Received SIGINT, gracefully shutting down...');
       await server.stop();
+      closeProcm();
       process.exit(0);
     });
 
     process.on('SIGTERM', async () => {
       console.log('\n📴 Received SIGTERM, gracefully shutting down...');
       await server.stop();
+      closeProcm();
       process.exit(0);
     });
 
@@ -58,6 +69,8 @@ async function startServer() {
 
   } catch (error) {
     console.error('❌ Failed to start server:', error);
+    procmLogger.error('Failed to start server', { message: error instanceof Error ? error.message : String(error) });
+    closeProcm();
     process.exit(1);
   }
 }

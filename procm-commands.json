@@ -7,7 +7,8 @@
         "mira-app-server",
         "run",
         "dev"
-      ]
+      ],
+      "roomId": "mira-dev"
     },
     "mira-client-dev": {
       "script": "pnpm",
@@ -16,7 +17,8 @@
         "packages/mira-client",
         "run",
         "dev"
-      ]
+      ],
+      "roomId": "mira-dev"
     },
     "mira-client-dev-win": {
       "script": "pnpm",
@@ -25,7 +27,8 @@
         "packages/mira-client",
         "run",
         "dev"
-      ]
+      ],
+      "roomId": "mira-dev"
     },
     "mira-dashboard-next-dev": {
       "script": "pnpm",
@@ -53,6 +56,14 @@
         "run",
         "docs:dev"
       ]
+    },
+    "env-probe": {
+      "script": "node",
+      "args": [
+        "-e",
+        "console.log(\"ROOM_ID=\", process.env.PROCM_ROOM_ID); console.log(\"WS_URL=\", process.env.PROCM_WS_URL)"
+      ],
+      "roomId": "mira-dev"
     }
   }
 }
