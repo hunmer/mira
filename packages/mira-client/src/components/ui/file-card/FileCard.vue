@@ -89,7 +89,7 @@ const bannerClass = computed(() => colorBannerMap[props.formatFile])
     </div>
     <div
       :class="cn(
-        'dark:bg-secondary ring-border relative z-1 space-y-3 rounded-md bg-white p-2 ring-1',
+        'bg-card ring-border relative z-1 space-y-3 rounded-md p-2 ring-1',
         'w-14 h-18',
       )"
     >

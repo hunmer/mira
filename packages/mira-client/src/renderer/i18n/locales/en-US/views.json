@@ -342,6 +342,8 @@
     "galleryDesc": "Click the stacked photos to expand into a grid; click outside or Go back to collapse (demo images are external links).",
     "fileIconTitle": "File icons FileIcon / FolderIcon",
     "fileIconDesc": "Matches vscode-style icons by filename/extension/folder name, falling back to defaults for unknown types.",
+    "fileCardTitle": "File format card FileCard",
+    "fileCardDesc": "Renders skeleton placeholders per format (document/table/archive weave/code tags) with a colored format badge.",
     "typeTitle": "Notification type",
     "typeDesc": "Different types correspond to different left color bars and icons. Click to trigger a notification in the bottom-right corner.",
     "positionTitle": "Screen position",

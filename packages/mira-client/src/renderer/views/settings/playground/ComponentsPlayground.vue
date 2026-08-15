@@ -70,6 +70,17 @@
       </div>
     </div>
 
+    <!-- FileCard：文件格式占位卡片 -->
+    <div class="space-y-3 rounded-lg border p-4">
+      <div class="space-y-1">
+        <p class="text-sm font-medium text-foreground">{{ $t('views.playgroundPanel.fileCardTitle') }}</p>
+        <p class="text-xs text-muted-foreground">{{ $t('views.playgroundPanel.fileCardDesc') }}</p>
+      </div>
+      <div class="flex flex-wrap gap-6 pt-3">
+        <FileCard v-for="format in fileCardDemo" :key="format" :format-file="format" />
+      </div>
+    </div>
+
     <!-- ExpandableGallery：堆叠 ⇄ 网格 -->
     <div class="space-y-3">
       <div class="space-y-1">
@@ -89,6 +100,22 @@ import { ChapterScrubber, type Chapter } from '@/components/ui/chapter-scrubber'
 import { Folder } from '@/components/ui/folder'
 import { ExpandableGallery, type GalleryItem } from '@/components/ui/expandable-gallery'
 import { FileIcon, FolderIcon } from '@/components/ui/file-icon'
+import { FileCard, type FormatFile } from '@/components/ui/file-card'
+
+const fileCardDemo: FormatFile[] = [
+  'doc',
+  'pdf',
+  'md',
+  'csv',
+  'xlsx',
+  'zip',
+  'pptx',
+  'png',
+  'video',
+  'html',
+  'css',
+  'json',
+]
 
 const folderDemo = [
   { name: 'src', open: true },

@@ -5,7 +5,7 @@
         <DialogTitle>{{ props.dialogTitle || (isEdit ? $t('business.folderEditDialog.editTitle') : $t('business.folderEditDialog.createTitle')) }}</DialogTitle>
       </DialogHeader>
 
-      <div class="overflow-y-auto pr-1 -mr-1">
+      <div class="overflow-y-auto px-1 -mx-1">
         <form @submit.prevent="handleSubmit" class="space-y-4">
           <!-- 图标 + 标题 + 描述：图标在左，右侧第一行标题，第二行描述 -->
           <div class="flex gap-3 items-start">

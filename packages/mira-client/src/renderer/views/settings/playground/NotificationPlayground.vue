@@ -280,8 +280,8 @@ function showStructured() {
  * 图片 URL 需绝对地址（相对路径在通知窗口的 file:// 页面下无法解析）。
  */
 function showImages() {
-  const images = ['AI.png', 'BMP.png', 'CSV.png', 'JPG.png'].map(
-    (name) => new URL(`ext_icons/${name}`, window.location.href).href
+  const images = ['file_type_photoshop.svg', 'file_type_excel.svg', 'file_type_image.svg', 'file_type_json.svg'].map(
+    (name) => new URL(`icons/${name}`, window.location.href).href
   )
   notify({
     title: t('views.playgroundPanel.imagesNotificationTitle'),

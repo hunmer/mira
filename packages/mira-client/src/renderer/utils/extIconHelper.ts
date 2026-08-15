@@ -1,25 +1,10 @@
-// 图标文件在 public/ext_icons/ 下，Vite 直接作为静态资源提供
+// 图标资源统一在 public/icons/ 下（vscode-file-icons 风格 SVG），
+// 映射逻辑复用 @/components/ui/file-icon 的 iconPaths。
+// 新代码建议直接用 FileIcon 组件或 getFileIconPath。
 
-const EXT_ICON_MAP: Record<string, string> = {
-  '.jpg': 'JPG', '.jpeg': 'JPG', '.png': 'PNG', '.gif': 'GIFF',
-  '.bmp': 'BMP', '.tiff': 'TIFF', '.tif': 'TIFF', '.svg': 'SVG',
-  '.raw': 'RAW', '.webp': 'PNG',
-  '.mp4': 'MP4', '.avi': 'AVI', '.mov': 'MOV', '.mpeg': 'MPEG',
-  '.mpg': 'MPEG', '.flv': 'FLV', '.wmv': 'MP4', '.mkv': 'MP4',
-  '.mp3': 'MP3', '.wav': 'WAV', '.wma': 'WMA', '.mid': 'MID',
-  '.midi': 'MID', '.flac': 'WAV', '.aac': 'MP3',
-  '.pdf': 'PDF', '.doc': 'DOC', '.docx': 'DOCX', '.txt': 'TXT',
-  '.rtf': 'TXT', '.ppt': 'PPT', '.pptx': 'PPT', '.xls': 'CSV',
-  '.xlsx': 'CSV', '.csv': 'CSV',
-  '.html': 'HTML', '.htm': 'HTML', '.xml': 'XML', '.xsl': 'XSL',
-  '.psd': 'PSD', '.ai': 'AI', '.eps': 'EPS', '.dwg': 'DWG',
-  '.zip': 'ZIP', '.rar': 'RAR', '.7z': 'ZIP', '.tar': 'ZIP', '.gz': 'ZIP',
-  '.exe': 'EXE', '.dll': 'DLL', '.iso': 'ISO',
-}
+import { getFileIconPath } from '@/components/ui/file-icon/iconPaths'
 
+/** @deprecated 请改用 @/components/ui/file-icon 的 FileIcon 组件或 getFileIconPath */
 export function getExtIconUrl(filename: string): string {
-  const dotIndex = filename.lastIndexOf('.')
-  const ext = dotIndex > 0 ? filename.slice(dotIndex).toLowerCase() : ''
-  const iconName = EXT_ICON_MAP[ext] || 'FILE'
-  return `./ext_icons/${iconName}.png`
+  return getFileIconPath(filename)
 }
