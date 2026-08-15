@@ -54,7 +54,7 @@
                   <div
                     :class="[
                       'flex items-center px-2 py-1 rounded-md cursor-pointer hover:bg-muted',
-                      selectedParentId === node.id ? 'bg-primary text-primary' : ''
+                      selectedParentId === node.id ? 'bg-primary text-primary-foreground' : ''
                     ]"
                     @click="selectParent(node)"
                   >
