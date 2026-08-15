@@ -297,6 +297,7 @@ export class MiraWebsocketServer {
         }
 
         this.libraryClients[libraryId].push(ws);
+        console.log(
             `[WebSocketServer] Registered client ${clientId} for library ${libraryId}. ` +
             `libraryConnections=${this.libraryClients[libraryId].length}, totalConnections=${this.getTotalConnectionCount()}`
         );
@@ -314,6 +315,7 @@ export class MiraWebsocketServer {
                 delete this.libraryClients[libraryId];
             }
 
+            console.log(
                 `[WebSocketServer] Unregistered client ${clientId} from library ${libraryId}. ` +
                 `totalConnections=${this.getTotalConnectionCount()}`
             );

@@ -217,11 +217,6 @@ const mediaContainerStyle = computed(() => ({
 // 调试：监控视频播放状态变化
 watch(() => props.isVideoPlaying, (isPlaying) => {
   if (isPlaying) {
-      id: props.item.id,
-      name: props.item.name,
-      path: props.item.path,
-      hasPath: !!props.item.path
-    })
   }
 })
 

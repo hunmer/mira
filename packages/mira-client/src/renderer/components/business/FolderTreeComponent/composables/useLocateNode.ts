@@ -15,14 +15,6 @@ export function useLocateNode(options: {
   const locatingNodeId = ref<string | null>(null)
 
   async function locateNode(id: string): Promise<boolean> {
-      id,
-      itemType: options.itemType.value,
-      treeDataCount: options.treeData.value.length,
-      rawNodeCount: options.rawNodes.value.length,
-      searchQuery: options.searchQuery.value,
-      hasTreeRef: Boolean(options.treeRef.value),
-      hasTreeContainerRef: Boolean(options.treeContainerRef.value),
-    })
     options.searchQuery.value = ''
     options.showSearch.value = false
     await nextTick()
@@ -30,13 +22,6 @@ export function useLocateNode(options: {
     const node = options.nodeMap.value.get(id)
     const stat = options.treeRef.value?.statsFlat?.find((item: any) => item.data?.id === id)
       || (node ? options.treeRef.value?.getStat?.(node) : null)
-
-      id,
-      foundNode: Boolean(node),
-      foundStat: Boolean(stat),
-      statsFlatCount: options.treeRef.value?.statsFlat?.length,
-      visibleStatsCount: options.treeRef.value?.visibleStats?.length,
-    })
 
     if (stat) {
       let current = stat
@@ -46,18 +31,10 @@ export function useLocateNode(options: {
         if (current.data?.id) openedIds.push(current.data.id)
         current = current.parent
       }
-        id,
-        openedIds,
-      })
       await nextTick()
     }
 
     const target = options.treeContainerRef.value?.querySelector<HTMLElement>(`[data-folder-tree-node-id="${id}"]`)
-      id,
-      foundTarget: Boolean(target),
-      targetText: target?.textContent?.trim(),
-      containerScrollTop: options.treeContainerRef.value?.scrollTop,
-    })
     if (!target) return false
 
     target.scrollIntoView({ behavior: 'smooth', block: 'center' })

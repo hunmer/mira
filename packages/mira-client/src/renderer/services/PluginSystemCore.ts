@@ -165,12 +165,6 @@ export function initializePluginSystem() {
   // 将插件系统暴露到全局
   if (typeof window !== 'undefined') {
     const existing = (window as any).pluginSystem
-      readyState: document.readyState,
-      hadExisting: !!existing,
-      existingMethods: existing ? Object.keys(existing).sort() : [],
-      existingRegisterPlugin: typeof existing?.registerPlugin,
-      existingRegisterPluginInstance: typeof existing?.registerPluginInstance
-    })
     // instanceManager 会先建立包含插件注册、贡献和文件格式 API 的完整对象；
     // DOMContentLoaded 触发时不能再用精简核心对象覆盖它。
     if (!existing) {

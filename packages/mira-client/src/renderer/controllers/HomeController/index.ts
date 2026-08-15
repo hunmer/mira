@@ -57,12 +57,6 @@ export class HomeController {
   public totalPages = computed(() => {
     const filteredItemsLength = (this.dataManager.filteredMediaItems?.value || []).length
     const totalPages = this.interactionHandler.getTotalPages(filteredItemsLength)
-      filteredItemsLength,
-      serverTotalRecords: this.interactionHandler.serverTotalRecords?.value,
-      itemsPerPage: this.interactionHandler.itemsPerPage?.value,
-      isServerPagination: this.interactionHandler.isServerPagination?.value,
-      计算结果: totalPages
-    })
     return totalPages
   })
 
@@ -115,11 +109,6 @@ export class HomeController {
     const currentPageValue = this.interactionHandler.currentPage.value
     const itemsPerPageValue = this.interactionHandler.itemsPerPage.value
     const offset = (currentPageValue - 1) * itemsPerPageValue
-
-      currentPage: currentPageValue,
-      itemsPerPage: itemsPerPageValue,
-      calculatedOffset: offset
-    })
 
     const pagination = {
       limit: itemsPerPageValue,

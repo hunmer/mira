@@ -107,9 +107,6 @@ export class PluginService {
 
       // 发现并加载所有插件（本地+在线）
       await this.discoverAndLoadPlugins()
-        online: Array.from(this.onlinePlugins.keys()),
-        plugins: Array.from(this.plugins.keys())
-      })
 
       this.isInitialized = true
       return { success: true, message: 'Plugin service initialized successfully' }
@@ -252,9 +249,6 @@ export class PluginService {
   private async loadOnlinePluginsFromStorage(): Promise<void> {
     try {
       const stored = await ConfigStorage.getItem('mira-online-plugins')
-        hasStored: !!stored,
-        length: stored?.length ?? 0
-      })
       if (stored) {
         const configs: OnlinePluginConfig[] = JSON.parse(stored)
         this.onlinePlugins.clear()
@@ -276,9 +270,6 @@ export class PluginService {
       const configs = Array.from(this.onlinePlugins.values())
       const serialized = JSON.stringify(configs)
       await ConfigStorage.setItem('mira-online-plugins', serialized)
-        plugins: configs.map(config => config.pluginId),
-        length: serialized.length
-      })
     } catch (error) {
       console.error('[PLUGIN-DEBUG][storage:save] failed', error)
     }

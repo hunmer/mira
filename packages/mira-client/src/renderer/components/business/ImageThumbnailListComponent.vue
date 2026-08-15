@@ -69,25 +69,6 @@ watch(
   () => [props.currentImageIndex, props.cacheKey, props.images.length] as const,
   ([currentImageIndex, cacheKey, imageCount]) => {
     const currentImage = props.images[currentImageIndex]
-
-      currentImageIndex,
-      currentImageId: currentImage?.id,
-      cacheKey,
-      imageCount,
-      currentImage: currentImage
-        ? {
-            id: currentImage.id,
-            name: currentImage.name,
-            localFile: currentImage.localFile,
-            path: currentImage.path,
-            url: currentImage.url,
-            thumbnailPath: currentImage.thumbnailPath,
-            previewSource: getPreviewImageSource(currentImage),
-            updatedAt: currentImage.updatedAt
-          }
-        : null,
-      currentThumbnailSrc: currentImage ? getImageSrc(currentImage) : undefined
-    })
   },
   { immediate: true }
 )
@@ -97,24 +78,6 @@ watch(() => props.cacheKey, () => {
 })
 
 const handleImageSelect = (imageIndex: number, image: FileInfo): void => {
-    clickedImageIndex: imageIndex,
-    clickedImageId: image.id,
-    currentImageIndex: props.currentImageIndex,
-    currentImageId: props.images[props.currentImageIndex]?.id,
-    cacheKey: props.cacheKey,
-    image: {
-      id: image.id,
-      name: image.name,
-      localFile: image.localFile,
-      path: image.path,
-      url: image.url,
-      thumbnailPath: image.thumbnailPath,
-      previewSource: getPreviewImageSource(image),
-      updatedAt: image.updatedAt
-    },
-    thumbnailSrc: getImageSrc(image)
-  })
-
   emit('image-select', imageIndex)
 }
 </script>

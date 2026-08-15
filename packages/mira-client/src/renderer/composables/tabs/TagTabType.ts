@@ -53,12 +53,6 @@ export class TagTabType extends MediaViewTabType {
     const numericIdentifier = Number(normalizedIdentifier)
     const tagIdentifier = Number.isFinite(numericIdentifier) ? numericIdentifier : normalizedIdentifier
 
-      tagId,
-      tagName,
-      tagIdentifier,
-      context
-    })
-
     // 返回 MediaTabData 格式的筛选器
     return tagIdentifier ? {
       tags: {

@@ -132,9 +132,6 @@ watch(
 const handleVideoLoaded = () => {
   const video = getVideoElement()
   if (video) {
-      duration: video.duration,
-      videoUrl: props.videoUrl
-    })
     emit('video-loaded', video.duration)
   }
 }

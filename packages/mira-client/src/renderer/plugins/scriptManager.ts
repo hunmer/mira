@@ -94,12 +94,6 @@ export const injectPluginScript = async (plugin: PluginRuntime): Promise<boolean
       script.onload = () => {
         // 初始化插件上下文（如果需要）
         try {
-            pluginId: plugin.config.pluginId,
-            pluginSystemExists: !!(window as any).pluginSystem,
-            pluginSystemMethods: Object.keys((window as any).pluginSystem || {}).sort(),
-            registerPlugin: typeof (window as any).pluginSystem?.registerPlugin,
-            registerPluginInstance: typeof (window as any).pluginSystem?.registerPluginInstance
-          })
           if (typeof window !== 'undefined' && (window as any).pluginSystem) {
             ;(window as any).pluginSystem.registerPlugin(plugin.config.pluginId, {
               config: plugin.config,

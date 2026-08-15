@@ -86,11 +86,6 @@ export function useTabPagination(tabId?: string) {
   const totalPages = computed(() => {
     if (isServerPagination.value) {
       const pages = Math.ceil(totalRecords.value / itemsPerPage.value)
-        totalRecords: totalRecords.value,
-        itemsPerPage: itemsPerPage.value,
-        isServerPagination: isServerPagination.value,
-        计算结果: pages
-      })
       return pages
     } else {
       // 客户端分页时，需要从外部传入过滤后的数据长度
@@ -100,11 +95,6 @@ export function useTabPagination(tabId?: string) {
 
   // 分页操作方法
   const setServerPaginationData = (total: number, page: number = 1) => {
-      total,
-      page,
-      itemsPerPage: itemsPerPage.value
-    })
-
     updateTabPaginationState(currentTabId, {
       totalRecords: total,
       currentPage: page,
@@ -122,10 +112,6 @@ export function useTabPagination(tabId?: string) {
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages.value) {
-        从: currentPage.value,
-        到: page,
-        totalPages: totalPages.value
-      })
       currentPage.value = page
     }
   }
@@ -144,11 +130,6 @@ export function useTabPagination(tabId?: string) {
   watch(
     [currentPage, totalRecords, isServerPagination],
     ([newPage, newTotal, newServerPag], [oldPage, oldTotal, oldServerPag]) => {
-        currentPage: `${oldPage} -> ${newPage}`,
-        totalRecords: `${oldTotal} -> ${newTotal}`,
-        isServerPagination: `${oldServerPag} -> ${newServerPag}`,
-        totalPages: totalPages.value
-      })
     }
   )
 

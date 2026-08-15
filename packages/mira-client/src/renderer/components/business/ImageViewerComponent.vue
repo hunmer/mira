@@ -197,48 +197,20 @@ const handleImageLoad = async () => {
   loading.value = false
   error.value = false
 
-    image: describeImage(props.image),
-    cacheKey: props.cacheKey,
-    imageUrl: imageUrl.value,
-    viewerKey: viewerKey.value
-  })
-
   await nextTick()
   viewerInstance.value?.update?.()
   viewerInstance.value?.view?.(0)
-
-    imageId: props.image?.id,
-    cacheKey: props.cacheKey,
-    imageUrl: imageUrl.value,
-    viewerKey: viewerKey.value,
-    viewerIndex: viewerInstance.value?.index,
-    viewerLength: viewerInstance.value?.length
-  })
 }
 
 const handleImageError = () => {
   loading.value = false
   error.value = true
-
-    image: describeImage(props.image),
-    cacheKey: props.cacheKey,
-    imageUrl: imageUrl.value,
-    viewerKey: viewerKey.value
-  })
 }
 
 // viewer 初始化回调
 const onViewerInited = (viewer: any) => {
   viewerInstance.value = viewer
   viewerInstance.value?.view?.(0)
-
-    image: describeImage(props.image),
-    cacheKey: props.cacheKey,
-    imageUrl: imageUrl.value,
-    viewerKey: viewerKey.value,
-    viewerIndex: viewerInstance.value?.index,
-    viewerLength: viewerInstance.value?.length
-  })
 }
 
 // v-viewer 操作方法
@@ -324,13 +296,6 @@ onUnmounted(() => {
 
 // 监听图片变化，重置状态
 watch(() => props.image, (newImage, oldImage) => {
-    oldImage: describeImage(oldImage),
-    newImage: describeImage(newImage),
-    cacheKey: props.cacheKey,
-    imageUrl: imageUrl.value,
-    viewerKey: viewerKey.value
-  })
-
   if (newImage && newImage !== oldImage) {
     // 只在真正切换图片时显示加载状态
     if (!oldImage || newImage.id !== oldImage.id) {
@@ -347,12 +312,6 @@ watch(() => props.image, (newImage, oldImage) => {
 watch(
   () => props.cacheKey,
   (newCacheKey, oldCacheKey) => {
-      oldCacheKey,
-      newCacheKey,
-      image: describeImage(props.image),
-      imageUrl: imageUrl.value,
-      viewerKey: viewerKey.value
-    })
   }
 )
 </script>

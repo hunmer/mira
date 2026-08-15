@@ -184,10 +184,6 @@ watch(
   [() => props.image, () => props.cacheKey, imageSrc],
   ([image, cacheKey, src]) => {
     imageLoadError.value = false
-      image: describeImage(image),
-      cacheKey,
-      imageSrc: src
-    })
   },
   { immediate: true }
 )

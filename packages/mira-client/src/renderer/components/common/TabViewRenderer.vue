@@ -105,10 +105,6 @@ const selectionHistory = ref<FileInfo[]>([])
 const selectedIds = ref<Set<string>>(new Set())
 
 const handleItemSelect = (item: FileInfo, selected: boolean) => {
-    tabId: props.tabId,
-    itemId: item.id,
-    selected,
-  })
   selectionHistory.value = selectionHistory.value.filter(entry => entry.id !== item.id)
   const nextIds = new Set(selectedIds.value)
   if (selected) {
@@ -124,9 +120,6 @@ const handleItemSelect = (item: FileInfo, selected: boolean) => {
 }
 
 const handleSelectionChange = (items: FileInfo[]) => {
-    tabId: props.tabId,
-    itemIds: items.map(item => item.id),
-  })
   const nextIds = new Set(items.map(item => item.id))
   for (const item of items) {
     if (!selectedIds.value.has(item.id)) selectionHistory.value.push(item)
@@ -157,15 +150,6 @@ const handleKeydown = (event: KeyboardEvent) => {
   if (event.code !== 'Space' && event.key !== ' ' && event.code !== 'Escape') return
   const visible = !!rootRef.value?.getClientRects().length
   const editable = isEditableTarget(event.target)
-    tabId: props.tabId,
-    code: event.code,
-    key: event.key,
-    visible,
-    editable,
-    selectedIds: [...selectedIds.value],
-    historyIds: selectionHistory.value.map(item => item.id),
-    previewItemId: previewItem.value?.id,
-  })
   if (!visible || editable) return
   if (event.code === 'Escape' && previewItem.value) {
     consumePreviewShortcut(event)
@@ -179,9 +163,6 @@ const handleKeydown = (event: KeyboardEvent) => {
     return
   }
   const target = getPreviewTarget()
-    tabId: props.tabId,
-    targetId: target?.id,
-  })
   if (!target) return
   consumePreviewShortcut(event)
   previewItem.value = target
@@ -213,9 +194,6 @@ const loadComponent = async () => {
 
   loading.value = true
   error.value = ''
-    tabId: props.tabId,
-    cacheKey: cacheKey.value
-  })
 
   try {
     const { component } = props.viewConfig
@@ -288,9 +266,6 @@ watch(
 // 组件生命周期
 onMounted(() => {
   window.addEventListener('keydown', handleKeydown, true)
-    tabId: props.tabId,
-    viewConfig: props.viewConfig
-  })
 })
 
 onUnmounted(() => {
