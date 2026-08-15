@@ -72,7 +72,7 @@
             v-else-if="updateState === 'checking'"
             class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-muted text-muted-foreground text-sm font-medium px-4 py-2.5"
           >
-            <span class="material-icons text-[18px] animate-spin">progress_activity</span>
+            <span class="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
             {{ $t('business.aboutDialog.checking') }}
           </div>
 
@@ -108,7 +108,7 @@
               v-else
               class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-muted text-muted-foreground text-sm font-medium px-4 py-2.5"
             >
-              <span class="material-icons text-[18px] animate-spin">progress_activity</span>
+              <span class="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
               {{ $t('business.aboutDialog.downloading', { percent: Math.round(downloadProgress ?? 0) }) }}
             </div>
           </div>

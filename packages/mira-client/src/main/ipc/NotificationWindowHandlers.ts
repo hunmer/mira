@@ -23,8 +23,8 @@ export interface NotificationPayload {
   icons?: string[]
   /** 附带图片通知：图片 URL 列表（卡片左侧展示，优先于 icons） */
   images?: string[]
-  /** 通知类型，决定左侧色条颜色：info | success | warning | error */
-  type?: 'info' | 'success' | 'warning' | 'error'
+  /** 通知类型，决定左侧色条颜色：info | success | warning | error | loading（loader 旋转图标） */
+  type?: 'info' | 'success' | 'warning' | 'error' | 'loading'
   /** 操作按钮 [{ id, label }]，点击后通过 action 事件回传 id */
   actions?: { id: string; label: string }[]
   /** 任意自定义 HTML（存在时以 v-html 渲染，覆盖 body） */

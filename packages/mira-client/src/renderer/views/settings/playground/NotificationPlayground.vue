@@ -6,7 +6,7 @@
       <div class="space-y-3">
         <p class="text-sm font-semibold text-foreground dark:text-muted-foreground">{{ $t('views.playgroundPanel.typeTitle') }}</p>
         <p class="text-xs text-muted-foreground">{{ $t('views.playgroundPanel.typeDesc') }}</p>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div class="flex flex-wrap gap-2">
           <Button
             v-for="t in typeDemos"
             :key="t.type"
@@ -110,6 +110,7 @@
                 <option value="success">success</option>
                 <option value="warning">warning</option>
                 <option value="error">error</option>
+                <option value="loading">loading</option>
               </select>
             </label>
           </div>
@@ -184,6 +185,7 @@ const typeDemos = [
   { type: 'success', label: 'Success', icon: 'check_circle', color: '#10b981' },
   { type: 'warning', label: 'Warning', icon: 'warning', color: '#f59e0b' },
   { type: 'error', label: 'Error', icon: 'error', color: '#ef4444' },
+  { type: 'loading', label: 'Loading', icon: 'autorenew', color: '#6366f1' },
 ] as const
 
 // 屏幕位置演示数据
@@ -234,6 +236,8 @@ function showByType(type: NotificationPayload['type']) {
     success: { title: t('views.playgroundPanel.successTitle'), body: t('views.playgroundPanel.successBody'), type: 'success' },
     warning: { title: t('views.playgroundPanel.warningTitle'), body: t('views.playgroundPanel.warningBody'), type: 'warning' },
     error: { title: t('views.playgroundPanel.errorTitle'), body: t('views.playgroundPanel.errorBody'), type: 'error' },
+    // loader 旋转图标常驻展示，时长放宽便于观察
+    loading: { title: t('views.playgroundPanel.loadingTitle'), body: t('views.playgroundPanel.loadingBody'), type: 'loading', duration: 6000 },
   }
   notify(map[type || 'info'])
 }

@@ -59,6 +59,8 @@ function syncToasts(payload: NotificationPayload): void {
     ? (payload as any).__items
     : [payload]
   toasterPosition.value = mapPosition(payload.position)
+  // slide 入场方向（主进程按屏幕位置下发）
+  const animDir = (payload as any).__animDir
 
   const ids = new Set<string | number>()
   items.forEach((item, index) => {
@@ -71,6 +73,7 @@ function syncToasts(payload: NotificationPayload): void {
       unstyled: true,
       componentProps: {
         item,
+        animDir,
         onClick: () => sendClick(item),
         onAction: (action: NotificationAction) => sendAction(item, action),
         onClose: () => sendDismissItem(item, index),
