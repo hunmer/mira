@@ -81,6 +81,67 @@
       </div>
     </div>
 
+    <!-- ColorPicker / ColorSwatch：颜色选择器与色块 -->
+    <div class="space-y-3 rounded-lg border p-4">
+      <div class="space-y-1">
+        <p class="text-sm font-medium text-foreground">{{ $t('views.playgroundPanel.colorPickerTitle') }}</p>
+        <p class="text-xs text-muted-foreground">{{ $t('views.playgroundPanel.colorPickerDesc') }}</p>
+      </div>
+
+      <!-- ColorSwatch：尺寸 × 形状 × 透明度棋盘格 -->
+      <div class="flex flex-col gap-2 pt-2">
+        <div class="flex items-center gap-4">
+          <ColorSwatch v-for="size in swatchSizes" :key="size" color="#3B82F6" :size="size" />
+        </div>
+        <div class="flex items-center gap-4">
+          <ColorSwatch v-for="size in swatchSizes" :key="size" color="#10B981" :size="size" shape="square" />
+          <ColorSwatch color="rgba(239, 68, 68, 0.35)" label="半透明红" />
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-8 pt-2">
+        <!-- 默认触发器：色块 + 色值文本 -->
+        <div class="space-y-1.5">
+          <p class="text-xs text-muted-foreground">默认触发器</p>
+          <ColorPicker v-model="pickerColor">
+            <ColorPickerTrigger />
+            <ColorPickerContent>
+              <ColorAreaRoot v-model="pickerColor" class="mx-1 h-36 overflow-hidden rounded-lg">
+                <ColorAreaThumb class="size-5 rounded-full border-2 border-white shadow-md" />
+              </ColorAreaRoot>
+              <ColorSliderRoot v-model="pickerColor" channel="hue" class="mx-2 h-5">
+                <ColorSliderTrack class="h-full overflow-hidden rounded-full" />
+                <ColorSliderThumb class="size-5 rounded-full border-2 border-white shadow-md" />
+              </ColorSliderRoot>
+            </ColorPickerContent>
+          </ColorPicker>
+        </div>
+
+        <!-- 自定义插槽：覆盖 ColorPickerTrigger 默认内容 -->
+        <div class="space-y-1.5">
+          <p class="text-xs text-muted-foreground">自定义触发器插槽</p>
+          <ColorPicker v-model="pickerColorCustom">
+            <ColorPickerTrigger
+              class="rounded-lg border bg-background px-3 py-1.5 shadow-xs transition-colors hover:bg-accent dark:bg-input/30 dark:hover:bg-input/50"
+            >
+              <ColorSwatch :color="pickerColorCustom" shape="square" size="sm" />
+              <span class="text-sm">主题色</span>
+              <ChevronDown :size="16" class="text-muted-foreground" />
+            </ColorPickerTrigger>
+            <ColorPickerContent>
+              <ColorAreaRoot v-model="pickerColorCustom" class="mx-1 h-36 overflow-hidden rounded-lg">
+                <ColorAreaThumb class="size-5 rounded-full border-2 border-white shadow-md" />
+              </ColorAreaRoot>
+              <ColorSliderRoot v-model="pickerColorCustom" channel="hue" class="mx-2 h-5">
+                <ColorSliderTrack class="h-full overflow-hidden rounded-full" />
+                <ColorSliderThumb class="size-5 rounded-full border-2 border-white shadow-md" />
+              </ColorSliderRoot>
+            </ColorPickerContent>
+          </ColorPicker>
+        </div>
+      </div>
+    </div>
+
     <!-- ExpandableGallery：堆叠 ⇄ 网格 -->
     <div class="space-y-3">
       <div class="space-y-1">
@@ -101,6 +162,14 @@ import { Folder } from '@/components/ui/folder'
 import { ExpandableGallery, type GalleryItem } from '@/components/ui/expandable-gallery'
 import { FileIcon, FolderIcon } from '@/components/ui/file-icon'
 import { FileCard, type FormatFile } from '@/components/ui/file-card'
+import { ColorPicker, ColorPickerContent, ColorPickerTrigger } from '@/components/ui/color-picker'
+import { ColorSwatch, type ColorSwatchSize } from '@/components/ui/color-swatch'
+import { ColorAreaRoot, ColorAreaThumb, ColorSliderRoot, ColorSliderTrack, ColorSliderThumb } from 'reka-ui'
+import { ChevronDown } from '@lucide/vue'
+
+const swatchSizes: ColorSwatchSize[] = ['xs', 'sm', 'md', 'lg', 'xl']
+const pickerColor = ref('#3B82F6')
+const pickerColorCustom = ref('#F97316')
 
 const fileCardDemo: FormatFile[] = [
   'doc',

@@ -2,7 +2,7 @@
 defineOptions({ name: 'Home' })
 import { ref, computed, onMounted, onUnmounted, onActivated, onDeactivated, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { useMediaQuery } from '@vueuse/core'
+import { useMediaQuery, useEventListener } from '@vueuse/core'
 
 // 布局组件
 import TabViewRenderer from '@renderer/components/common/TabViewRenderer.vue'
@@ -142,10 +142,19 @@ watch(isMobile, (mobile) => {
 // ============================================
 // 分割描边点击切换：区分「拖拽」与「点击」——按下后位移超过阈值视为拖拽，忽略 click
 // ============================================
+// 拖拽分割线期间禁用 panel 的 flex-grow 过渡（保证跟手），
+// 按钮/描边点击切换（api.resize）时过渡生效，形成两侧栏伸缩动画。
+const isHandleDragging = ref(false)
+useEventListener(window, 'pointerup', () => { isHandleDragging.value = false })
+useEventListener(window, 'pointercancel', () => { isHandleDragging.value = false })
+const panelGrowTransition = computed(() =>
+  isHandleDragging.value ? '' : 'transition-[flex-grow] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]'
+)
+
 function makeHandleToggle(toggle: () => void) {
   let downX = 0, downY = 0, moved = false
   return {
-    pointerdown: (e: PointerEvent) => { downX = e.clientX; downY = e.clientY; moved = false },
+    pointerdown: (e: PointerEvent) => { downX = e.clientX; downY = e.clientY; moved = false; isHandleDragging.value = true },
     pointermove: (e: PointerEvent) => {
       if (Math.hypot(e.clientX - downX, e.clientY - downY) > 5) moved = true
     },
@@ -530,6 +539,7 @@ onUnmounted(() => {
           collapsible
           @collapse="isLeftCollapsed = true"
           @expand="isLeftCollapsed = false"
+          :class="panelGrowTransition"
           class="rounded-2xl border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur-xl shadow-[0_12px_40px_var(--shadow-primary-md)] flex flex-col overflow-hidden">
           <HomeSidebar ref="sidebarRef" v-bind="sidebarBindings" />
         </ResizablePanel>
@@ -597,7 +607,8 @@ onUnmounted(() => {
           collapsible
           @collapse="isDetailCollapsed = true"
           @expand="isDetailCollapsed = false"
-          class="flex flex-col min-w-0 gap-3 pt-14"
+          :class="panelGrowTransition"
+          class="flex flex-col min-w-0 gap-3 pt-14 overflow-hidden"
         >
           <!-- 插件贡献栏：横向展示在第三列（Header 下方） -->
           <PluginContributionBar />

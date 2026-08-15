@@ -1,0 +1,25 @@
+/*
+  节点定位高亮（FolderTreeNode / FolderTreeBaseCategories 共用）。
+  原为两处 scoped 重复定义，提取为全局单份；类名足够特异，不污染全局。
+*/
+.sidebar-locate-active {
+  background-color: rgba(191, 219, 254, 0.95) !important;
+  color: rgb(29, 78, 216) !important;
+  outline: 2px solid rgba(37, 99, 235, 0.95) !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.22) !important;
+  animation: sidebar-locate-active 0.45s ease-in-out 4;
+}
+
+@keyframes sidebar-locate-active {
+  0% {
+    filter: brightness(1);
+  }
+
+  50% {
+    filter: brightness(1.18);
+  }
+
+  100% {
+    filter: brightness(1);
+  }
+}

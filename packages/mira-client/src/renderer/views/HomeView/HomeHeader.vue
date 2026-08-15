@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { Motion } from 'motion-v'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -159,7 +160,11 @@ const openDashboard = async () => {
       :class="mediaStore.showDetailSidebar
         ? 'text-primary hover:bg-primary/10'
         : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'" @click="mediaStore.toggleDetailSidebar()">
-      <span class="material-icons" style="font-size: 18px;">view_sidebar</span>
+      <!-- 折叠状态切换时以 key 重挂载，播放 spring 弹入旋转动画 -->
+      <Motion :key="String(mediaStore.showDetailSidebar)" as="span" class="material-icons"
+        style="font-size: 18px;" :initial="{ scale: 0.4, rotate: -90, opacity: 0 }"
+        :animate="{ scale: 1, rotate: 0, opacity: 1 }"
+        :transition="{ type: 'spring', stiffness: 500, damping: 26 }">view_sidebar</Motion>
     </button>
 
     <!-- 切换亮色/暗色主题 -->

@@ -344,6 +344,8 @@
     "fileIconDesc": "Matches vscode-style icons by filename/extension/folder name, falling back to defaults for unknown types.",
     "fileCardTitle": "File format card FileCard",
     "fileCardDesc": "Renders skeleton placeholders per format (document/table/archive weave/code tags) with a colored format badge.",
+    "colorPickerTitle": "Color picker ColorPicker / ColorSwatch",
+    "colorPickerDesc": "Swatches support size/shape variants and a transparency checkerboard; the last demo customizes the trigger via slot.",
     "typeTitle": "Notification type",
     "typeDesc": "Different types correspond to different left color bars and icons. Click to trigger a notification in the bottom-right corner.",
     "positionTitle": "Screen position",

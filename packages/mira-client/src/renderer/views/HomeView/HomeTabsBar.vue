@@ -82,7 +82,11 @@ function handleTabContextMenu(tab: TabItem, event: MouseEvent) {
             : 'text-muted-foreground hover:text-primary hover:bg-white/50 hover:backdrop-blur-xl'
         ]"
         @click="props.onToggleLeftSidebar?.()">
-        <span class="material-icons text-xl">menu</span>
+        <!-- 折叠状态切换时以 key 重挂载，播放 spring 弹入旋转动画 -->
+        <Motion :key="String(props.leftSidebarOpen)" as="span" class="material-icons text-xl"
+          :initial="{ scale: 0.4, rotate: -90, opacity: 0 }"
+          :animate="{ scale: 1, rotate: 0, opacity: 1 }"
+          :transition="{ type: 'spring', stiffness: 500, damping: 26 }">menu</Motion>
       </button>
     </div>
 
