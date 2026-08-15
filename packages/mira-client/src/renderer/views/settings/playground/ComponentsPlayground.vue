@@ -106,13 +106,25 @@
           <ColorPicker v-model="pickerColor">
             <ColorPickerTrigger />
             <ColorPickerContent>
-              <ColorAreaRoot v-model="pickerColor" class="mx-1 h-36 overflow-hidden rounded-lg">
-                <ColorAreaThumb class="size-5 rounded-full border-2 border-white shadow-md" />
+              <ColorAreaRoot v-model="pickerColor" v-slot="{ style: areaStyle }">
+                <ColorAreaArea class="relative mx-1 h-36 overflow-hidden rounded-lg" :style="areaStyle">
+                  <ColorAreaThumb class="size-5 rounded-full border-2 border-white shadow-md" />
+                </ColorAreaArea>
               </ColorAreaRoot>
-              <ColorSliderRoot v-model="pickerColor" channel="hue" class="mx-2 h-5">
-                <ColorSliderTrack class="h-full overflow-hidden rounded-full" />
-                <ColorSliderThumb class="size-5 rounded-full border-2 border-white shadow-md" />
-              </ColorSliderRoot>
+              <ColorSlider v-model="pickerColor" channel="hue">
+                <template #label>色相</template>
+                <template #output><ColorSliderOutput /></template>
+                <ColorSliderTrack>
+                  <ColorSliderThumb />
+                </ColorSliderTrack>
+              </ColorSlider>
+              <ColorSlider v-model="pickerColor" channel="alpha">
+                <template #label>透明度</template>
+                <template #output><ColorSliderOutput /></template>
+                <ColorSliderTrack>
+                  <ColorSliderThumb />
+                </ColorSliderTrack>
+              </ColorSlider>
             </ColorPickerContent>
           </ColorPicker>
         </div>
@@ -129,13 +141,21 @@
               <ChevronDown :size="16" class="text-muted-foreground" />
             </ColorPickerTrigger>
             <ColorPickerContent>
-              <ColorAreaRoot v-model="pickerColorCustom" class="mx-1 h-36 overflow-hidden rounded-lg">
-                <ColorAreaThumb class="size-5 rounded-full border-2 border-white shadow-md" />
+              <ColorAreaRoot v-model="pickerColorCustom" v-slot="{ style: areaStyle }">
+                <ColorAreaArea class="relative mx-1 h-36 overflow-hidden rounded-lg" :style="areaStyle">
+                  <ColorAreaThumb class="size-5 rounded-full border-2 border-white shadow-md" />
+                </ColorAreaArea>
               </ColorAreaRoot>
-              <ColorSliderRoot v-model="pickerColorCustom" channel="hue" class="mx-2 h-5">
-                <ColorSliderTrack class="h-full overflow-hidden rounded-full" />
-                <ColorSliderThumb class="size-5 rounded-full border-2 border-white shadow-md" />
-              </ColorSliderRoot>
+              <ColorSlider v-model="pickerColorCustom" channel="hue">
+                <ColorSliderTrack>
+                  <ColorSliderThumb />
+                </ColorSliderTrack>
+              </ColorSlider>
+              <ColorSlider v-model="pickerColorCustom" channel="alpha">
+                <ColorSliderTrack>
+                  <ColorSliderThumb />
+                </ColorSliderTrack>
+              </ColorSlider>
             </ColorPickerContent>
           </ColorPicker>
         </div>
@@ -164,7 +184,8 @@ import { FileIcon, FolderIcon } from '@/components/ui/file-icon'
 import { FileCard, type FormatFile } from '@/components/ui/file-card'
 import { ColorPicker, ColorPickerContent, ColorPickerTrigger } from '@/components/ui/color-picker'
 import { ColorSwatch, type ColorSwatchSize } from '@/components/ui/color-swatch'
-import { ColorAreaRoot, ColorAreaThumb, ColorSliderRoot, ColorSliderTrack, ColorSliderThumb } from 'reka-ui'
+import { ColorAreaRoot, ColorAreaArea, ColorAreaThumb } from 'reka-ui'
+import { ColorSlider, ColorSliderOutput, ColorSliderThumb, ColorSliderTrack } from '@/components/ui/color-slider'
 import { ChevronDown } from '@lucide/vue'
 
 const swatchSizes: ColorSwatchSize[] = ['xs', 'sm', 'md', 'lg', 'xl']
