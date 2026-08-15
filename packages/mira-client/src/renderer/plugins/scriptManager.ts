@@ -16,11 +16,8 @@ export const injectPluginsToDocument = async (plugins: PluginRuntime[]) => {
     const existingScripts = document.querySelectorAll('script[data-plugin-id]')
     existingScripts.forEach(script => script.remove())
 
-    console.log(`🔄 Injecting ${plugins.length} plugins to document...`)
-
     // 检查是否已经在注入过程中
     if ((window as any).isInjectingPlugins) {
-      console.log('⏭️ Plugin injection already in progress, skipping...')
       return
     }
 
@@ -30,12 +27,9 @@ export const injectPluginsToDocument = async (plugins: PluginRuntime[]) => {
       // 注入已加载的插件
       for (const plugin of plugins) {
         if (plugin.status === 'loaded' && plugin.directory && plugin.config.index) {
-          console.log(`📦 Processing plugin: ${plugin.config.pluginName}`)
-
           // 检查脚本是否已经存在
           const existingScript = document.querySelector(`script[data-plugin-id="${plugin.config.pluginId}"]`)
           if (existingScript) {
-            console.log(`⏭️ Script already exists for plugin: ${plugin.config.pluginName}`)
             continue
           }
 
@@ -53,16 +47,13 @@ export const injectPluginsToDocument = async (plugins: PluginRuntime[]) => {
 
           const success = await injectPluginScript(plugin)
           if (success) {
-            console.log(`✅ Successfully injected: ${plugin.config.pluginName}`)
           } else {
             console.error(`❌ Failed to inject: ${plugin.config.pluginName}`)
           }
         } else {
-          console.log(`⏭️ Skipping plugin: ${plugin.config.pluginName} (status: ${plugin.status}, directory: ${!!plugin.directory}, index: ${!!plugin.config.index})`)
         }
       }
 
-      console.log(`🎉 Plugin injection process completed`)
     } finally {
       ;(window as any).isInjectingPlugins = false
     }
@@ -81,7 +72,6 @@ export const injectPluginScript = async (plugin: PluginRuntime): Promise<boolean
       // 检查脚本是否已经存在
       const existingScript = document.querySelector(`script[data-plugin-id="${plugin.config.pluginId}"]`)
       if (existingScript) {
-        console.log(`⏭️ Script already injected for plugin: ${plugin.config.pluginName}`)
         resolve(true)
         return
       }
@@ -101,13 +91,9 @@ export const injectPluginScript = async (plugin: PluginRuntime): Promise<boolean
       script.setAttribute('data-plugin-name', plugin.config.pluginName)
       script.setAttribute('data-plugin-version', plugin.config.version)
 
-      console.log(`🔌 Loading plugin script: ${plugin.config.pluginName}`)
       script.onload = () => {
-        console.log(`✅ Plugin script loaded successfully: ${plugin.config.pluginName} v${plugin.config.version}`)
-
         // 初始化插件上下文（如果需要）
         try {
-          console.debug('[PLUGIN-DEBUG][script:onload]', {
             pluginId: plugin.config.pluginId,
             pluginSystemExists: !!(window as any).pluginSystem,
             pluginSystemMethods: Object.keys((window as any).pluginSystem || {}).sort(),
@@ -119,7 +105,6 @@ export const injectPluginScript = async (plugin: PluginRuntime): Promise<boolean
               config: plugin.config,
               context: plugin.context
             })
-            console.log(`📝 Plugin registered with ID: ${plugin.config.pluginId} for ${plugin.config.pluginName}`)
           }
         } catch (contextError) {
           console.warn(`⚠️ Failed to initialize plugin context for ${plugin.config.pluginName}:`, contextError)

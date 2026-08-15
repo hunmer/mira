@@ -52,8 +52,6 @@ export function useHomeModules() {
    * 初始化所有模块
    */
   const initializeAll = async () => {
-    console.log('🚀 初始化首页所有模块...')
-    
     // 启动事件监听
     const cleanupFunctions = [
       tagHandler.listenToRouteEvents(),
@@ -66,11 +64,8 @@ export function useHomeModules() {
       cleanupFunctions.push(routeCleanup)
     }
     
-    console.log('✅ 首页模块初始化完成')
-    
     // 返回清理函数
     return () => {
-      console.log('🧹 清理首页模块...')
       cleanupFunctions.forEach(cleanup => cleanup())
     }
   }

@@ -56,8 +56,6 @@ export function useHomeFolderHandler() {
       isProcessing.value = true
       error.value = ''
       
-      console.log('📁 打开文件夹:', { folderId, options })
-      
       // 更新当前文件夹状态
       // 优先级：title > label > null
       // （快捷分类 全部/未分类/回收站 等只提供 label，缺失时不能回落到 id）
@@ -90,7 +88,6 @@ export function useHomeFolderHandler() {
         detail: currentFolder.value
       }))
       
-      console.log('✅ 文件夹打开成功:', currentFolder.value)
       return true
     } catch (err) {
       console.error('❌ 打开文件夹失败:', err)
@@ -114,7 +111,6 @@ export function useHomeFolderHandler() {
     // 通知其他组件文件夹已清除
     window.dispatchEvent(new CustomEvent('home-folder-cleared'))
     
-    console.log('📁 文件夹选择已清除')
   }
 
   /**

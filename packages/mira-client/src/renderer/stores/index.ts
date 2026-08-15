@@ -65,8 +65,6 @@ export async function initializeStores() {
     // 7. 文件夹和标签状态在需要时动态加载，不需要在此初始化
     // folderStore 和 tagStore 将在 InitializationService 中按需加载
     
-    console.log('All stores initialized successfully')
-    
     return { success: true }
   } catch (error) {
     console.error('Failed to initialize stores:', error)
@@ -123,8 +121,6 @@ export async function clearAllStores() {
     
     // 7. 断开服务器连接功能已移至serverList store
     // 在需要时可以通过serverList store管理连接状态
-    
-    console.log('All stores cleared successfully')
     
     return { success: true }
   } catch (error) {

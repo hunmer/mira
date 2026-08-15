@@ -25,7 +25,6 @@ export const pluginSystem = {
       const snapshot = Array.from(contributions.values())
       this.list = snapshot
       contributionListeners.forEach(listener => listener(snapshot))
-      console.log(`🧩 Contribution registered: ${contribution.id} (${contribution.title})`)
     },
     unregister(id: string) {
       contributions.delete(id)
@@ -166,7 +165,6 @@ export function initializePluginSystem() {
   // 将插件系统暴露到全局
   if (typeof window !== 'undefined') {
     const existing = (window as any).pluginSystem
-    console.debug('[PLUGIN-DEBUG][core:init]', {
       readyState: document.readyState,
       hadExisting: !!existing,
       existingMethods: existing ? Object.keys(existing).sort() : [],
@@ -177,9 +175,7 @@ export function initializePluginSystem() {
     // DOMContentLoaded 触发时不能再用精简核心对象覆盖它。
     if (!existing) {
       (window as any).pluginSystem = pluginSystem
-      console.debug('[PLUGIN-DEBUG][core:init] installed core pluginSystem')
     } else {
-      console.debug('[PLUGIN-DEBUG][core:init] preserved existing pluginSystem')
     }
   }
   

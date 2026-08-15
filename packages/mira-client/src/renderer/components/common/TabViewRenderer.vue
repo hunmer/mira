@@ -105,7 +105,6 @@ const selectionHistory = ref<FileInfo[]>([])
 const selectedIds = ref<Set<string>>(new Set())
 
 const handleItemSelect = (item: FileInfo, selected: boolean) => {
-  console.log('[DEBUG-space-preview] renderer received item select', {
     tabId: props.tabId,
     itemId: item.id,
     selected,
@@ -125,7 +124,6 @@ const handleItemSelect = (item: FileInfo, selected: boolean) => {
 }
 
 const handleSelectionChange = (items: FileInfo[]) => {
-  console.log('[DEBUG-space-preview] renderer received selection change', {
     tabId: props.tabId,
     itemIds: items.map(item => item.id),
   })
@@ -159,7 +157,6 @@ const handleKeydown = (event: KeyboardEvent) => {
   if (event.code !== 'Space' && event.key !== ' ' && event.code !== 'Escape') return
   const visible = !!rootRef.value?.getClientRects().length
   const editable = isEditableTarget(event.target)
-  console.log('[DEBUG-space-preview] keydown', {
     tabId: props.tabId,
     code: event.code,
     key: event.key,
@@ -182,7 +179,6 @@ const handleKeydown = (event: KeyboardEvent) => {
     return
   }
   const target = getPreviewTarget()
-  console.log('[DEBUG-space-preview] resolved target', {
     tabId: props.tabId,
     targetId: target?.id,
   })
@@ -217,7 +213,6 @@ const loadComponent = async () => {
 
   loading.value = true
   error.value = ''
-  console.debug('[DEBUG-wf-tab] renderer-load-start', {
     tabId: props.tabId,
     cacheKey: cacheKey.value
   })
@@ -229,7 +224,6 @@ const loadComponent = async () => {
     if (props.cacheable && cacheKey.value && componentCache.has(cacheKey.value)) {
       componentInstance.value = componentCache.get(cacheKey.value)
       loading.value = false
-      console.debug('[DEBUG-wf-tab] renderer-cache-hit', { tabId: props.tabId })
       return
     }
 
@@ -258,7 +252,6 @@ const loadComponent = async () => {
     }
 
     loading.value = false
-    console.debug('[DEBUG-wf-tab] renderer-load-complete', { tabId: props.tabId })
   } catch (err: any) {
     console.error('🚨 TabViewRenderer: 组件加载失败', err)
     error.value = err.message || t('commonUi.tabViewRenderer.unknownError')
@@ -295,8 +288,6 @@ watch(
 // 组件生命周期
 onMounted(() => {
   window.addEventListener('keydown', handleKeydown, true)
-  console.log('[DEBUG-space-preview] keydown listener registered', { tabId: props.tabId })
-  console.log('🔧 TabViewRenderer: 组件挂载', {
     tabId: props.tabId,
     viewConfig: props.viewConfig
   })
@@ -304,10 +295,6 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown, true)
-  console.log('[DEBUG-space-preview] keydown listener removed', { tabId: props.tabId })
-  console.debug('[DEBUG-wf-tab] renderer-unmounted', { tabId: props.tabId })
-  console.log('🔧 TabViewRenderer: 组件卸载', { tabId: props.tabId })
-
   // 清理缓存（如果不需要缓存）
   if (!props.cacheable && cacheKey.value && componentCache.has(cacheKey.value)) {
     componentCache.delete(cacheKey.value)

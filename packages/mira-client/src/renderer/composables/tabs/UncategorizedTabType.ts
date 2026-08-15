@@ -30,22 +30,18 @@ export class UncategorizedTabType extends MediaViewTabType {
   }
 
   async onInit(_context: TabContext) {
-    console.log('📁 UncategorizedTabType 初始化:', _context)
     return { success: true }
   }
 
   async onActive(_context: TabContext) {
-    console.log('▶️ UncategorizedTabType 激活:', _context)
     return { success: true }
   }
 
   async onInactive(_context: TabContext) {
-    console.log('⏸️ UncategorizedTabType 失活:', _context)
     return { success: true }
   }
 
   async onClose(_context: TabContext) {
-    console.log('🔚 UncategorizedTabType 关闭:', _context)
     return { success: true }
   }
 

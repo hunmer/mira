@@ -36,12 +36,10 @@ class ConfigStorage {
     if (this.initialized || !environment.isElectron) {
       return;
     }
-    console.log('Initializing ConfigStorage file cache...');
     try {
       for (const key of this.FILE_STORAGE_KEYS) {
         if (this.shouldUseFileStorage(key)) {
           const filePath = this.getConfigFilePath(key);
-          console.log({filePath})
           const result = await window.electronAPI.fs.readFile(filePath);
 
           if (result.success && result.data !== undefined) {

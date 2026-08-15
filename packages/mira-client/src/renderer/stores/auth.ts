@@ -125,9 +125,6 @@ export const useAuthStore = defineStore('auth', () => {
       // 设置token过期时间（假设1天后过期）
       tokenExpiration.value = new Date(Date.now() + 24 * 60 * 60 * 1000)
       
-      console.log('Login successful, isLoggedIn computed to:', isLoggedIn.value)
-      console.log('Token set:', !!token.value)
-      
       // 如果提供了服务器配置，更新settings store的连接状态
       if (serverConfig) {
         // 连接状态同步功能已移至serverList store
@@ -136,8 +133,6 @@ export const useAuthStore = defineStore('auth', () => {
       
       // 持久化认证状态
       await persistAuthState()
-      console.log('Auth state persisted to localStorage')
-
       // 保存登录凭据到当前活跃的素材库（如果用户选择记住登录）
       if (saveCredentials) {
         try {
@@ -364,7 +359,6 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       // 如果当前已经有有效的登录状态，不要覆盖
       if (isLoggedIn.value && user.value) {
-        console.log('Current auth state is valid, skipping restore')
         return
       }
 
@@ -372,8 +366,6 @@ export const useAuthStore = defineStore('auth', () => {
       if (!stored) return
 
       const authData = JSON.parse(stored)
-      console.log('Restoring auth state from localStorage:', authData)
-      
       user.value = authData.user
       token.value = authData.token
       refreshToken.value = authData.refreshToken
@@ -453,8 +445,6 @@ export const useAuthStore = defineStore('auth', () => {
       }
       
       await serverListStore.updateServer(library.id, updatedLibrary)
-      console.log('Credentials saved to library:', library.name)
-      
     } catch (error) {
       console.error('Failed to save credentials to library:', error)
     }
@@ -495,8 +485,6 @@ export const useAuthStore = defineStore('auth', () => {
    * @returns 登录结果
    */
   const autoLogin = async (libraryId: string): Promise<{ success: boolean; data?: UserInfo; error?: string }> => {
-    console.log('🔄 Attempting auto-login for library:', libraryId)
-    
     try {
       // 获取保存的凭据
       const credentials = await getCredentialsFromLibrary(libraryId)
@@ -504,17 +492,13 @@ export const useAuthStore = defineStore('auth', () => {
         return { success: false, error: 'No saved credentials found' }
       }
       
-      console.log('🔑 Found saved credentials for user:', credentials.username)
-      
       // 使用保存的凭据登录
       const result = await login(credentials)
       
       if (result.success) {
-        console.log('✅ Auto-login successful')
         // 更新最后登录时间
         await saveCredentialsToLibrary(credentials, libraryId)
       } else {
-        console.log('❌ Auto-login failed:', result.error)
       }
       
       return result
@@ -547,8 +531,6 @@ export const useAuthStore = defineStore('auth', () => {
       }
       
       await serverListStore.updateServer(library.id, updatedLibrary)
-      console.log('Cleared saved credentials for library:', library.name)
-      
     } catch (error) {
       console.error('Failed to clear saved credentials:', error)
     }
@@ -559,17 +541,13 @@ export const useAuthStore = defineStore('auth', () => {
    * 专门用于在服务器连接后进行认证状态恢复和自动登录
    */
   const initializeAuthAfterConnection = async () => {
-    console.log('🔐 Initializing auth after server connection...')
-    
     // 如果当前已经登录且token有效，直接返回
     if (isLoggedIn.value && user.value && !isTokenExpired.value) {
       try {
         await getCurrentUser()
-        console.log('✅ Existing auth state is valid')
         return
       } catch {
         // 验证失败，继续下面的流程
-        console.log('❌ Existing auth state validation failed')
         await clearAuthState()
       }
     }
@@ -580,10 +558,8 @@ export const useAuthStore = defineStore('auth', () => {
     if (isLoggedIn.value && !isTokenExpired.value) {
       try {
         await getCurrentUser()
-        console.log('✅ Auth restored from localStorage successfully')
         return
       } catch {
-        console.log('❌ Token validation failed, will try auto-login')
         await clearAuthState()
       }
     }
@@ -596,14 +572,11 @@ export const useAuthStore = defineStore('auth', () => {
       
       const activeLibrary = serverListStore.activeServer
       if (activeLibrary) {
-        console.log('🔄 Attempting auto-login for library:', activeLibrary.name)
         const autoLoginResult = await autoLogin(activeLibrary.id)
         
         if (autoLoginResult.success) {
-          console.log('✅ Auto-login successful after connection')
           return
         } else {
-          console.log('❌ Auto-login failed:', autoLoginResult.error)
         }
       }
     } catch (autoLoginError) {
@@ -623,7 +596,6 @@ export const useAuthStore = defineStore('auth', () => {
   const initializeAuth = async () => {
     // 如果当前已经登录，不需要从localStorage恢复状态
     if (isLoggedIn.value && user.value) {
-      console.log('Auth already initialized, skipping restore')
       return
     }
     
@@ -637,16 +609,13 @@ export const useAuthStore = defineStore('auth', () => {
         const settingsStore = useSettingsStore()
         
         if (!settingsStore.isConnected) {
-          console.log('⚠️ Not connected to server, cannot validate auth state')
           // 不清除状态，等待连接后再验证
           return
         }
         
         await getCurrentUser()
-        console.log('✅ Auth restored from localStorage successfully')
         return
       } catch (error) {
-        console.log('❌ Token validation failed, will try auto-login')
         // 清除无效状态，继续尝试自动登录
         await clearAuthState()
       }
@@ -658,7 +627,6 @@ export const useAuthStore = defineStore('auth', () => {
       const settingsStore = useSettingsStore()
       
       if (!settingsStore.isConnected) {
-        console.log('⚠️ Not connected to server, skipping auto-login')
         return
       }
       
@@ -668,14 +636,11 @@ export const useAuthStore = defineStore('auth', () => {
       
       const activeLibrary = serverListStore.activeServer
       if (activeLibrary) {
-        console.log('🔄 Attempting auto-login for library:', activeLibrary.name)
         const autoLoginResult = await autoLogin(activeLibrary.id)
         
         if (autoLoginResult.success) {
-          console.log('✅ Auto-login successful')
           return
         } else {
-          console.log('❌ Auto-login failed:', autoLoginResult.error)
         }
       }
     } catch (autoLoginError) {

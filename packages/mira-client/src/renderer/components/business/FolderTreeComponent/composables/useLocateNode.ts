@@ -15,7 +15,6 @@ export function useLocateNode(options: {
   const locatingNodeId = ref<string | null>(null)
 
   async function locateNode(id: string): Promise<boolean> {
-    console.log('[DEBUG-locate-sidebar] tree locateNode start', {
       id,
       itemType: options.itemType.value,
       treeDataCount: options.treeData.value.length,
@@ -32,7 +31,6 @@ export function useLocateNode(options: {
     const stat = options.treeRef.value?.statsFlat?.find((item: any) => item.data?.id === id)
       || (node ? options.treeRef.value?.getStat?.(node) : null)
 
-    console.log('[DEBUG-locate-sidebar] tree resolve target', {
       id,
       foundNode: Boolean(node),
       foundStat: Boolean(stat),
@@ -48,7 +46,6 @@ export function useLocateNode(options: {
         if (current.data?.id) openedIds.push(current.data.id)
         current = current.parent
       }
-      console.log('[DEBUG-locate-sidebar] tree opened path', {
         id,
         openedIds,
       })
@@ -56,7 +53,6 @@ export function useLocateNode(options: {
     }
 
     const target = options.treeContainerRef.value?.querySelector<HTMLElement>(`[data-folder-tree-node-id="${id}"]`)
-    console.log('[DEBUG-locate-sidebar] tree query target element', {
       id,
       foundTarget: Boolean(target),
       targetText: target?.textContent?.trim(),

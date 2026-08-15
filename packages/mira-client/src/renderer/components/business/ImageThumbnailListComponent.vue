@@ -70,7 +70,6 @@ watch(
   ([currentImageIndex, cacheKey, imageCount]) => {
     const currentImage = props.images[currentImageIndex]
 
-    console.debug('[ImagePreviewDebug][ThumbnailList] props-change', {
       currentImageIndex,
       currentImageId: currentImage?.id,
       cacheKey,
@@ -98,7 +97,6 @@ watch(() => props.cacheKey, () => {
 })
 
 const handleImageSelect = (imageIndex: number, image: FileInfo): void => {
-  console.debug('[ImagePreviewDebug][ThumbnailList] click', {
     clickedImageIndex: imageIndex,
     clickedImageId: image.id,
     currentImageIndex: props.currentImageIndex,

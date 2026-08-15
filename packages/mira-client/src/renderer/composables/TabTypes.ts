@@ -22,22 +22,18 @@ export abstract class BaseTabType implements TabTypeDefinition {
   }
 
   async onInit(_context: TabContext): Promise<TabResult> {
-    console.log(`🎯 BaseTabType.onInit: ${this.name}`)
     return { success: true }
   }
 
   async onActive(_context: TabContext): Promise<TabResult> {
-    console.log(`▶️ BaseTabType.onActive: ${this.name}`)
     return { success: true }
   }
 
   async onInactive(_context: TabContext): Promise<TabResult> {
-    console.log(`⏸️ BaseTabType.onInactive: ${this.name}`)
     return { success: true }
   }
 
   async onClose(_context: TabContext): Promise<TabResult> {
-    console.log(`🔚 BaseTabType.onClose: ${this.name}`)
     return { success: true }
   }
 
@@ -79,8 +75,6 @@ export abstract class MediaViewTabType extends BaseTabType {
   // 保留数据加载钩子，但现在主要用于缓存和预加载
   async onDataLoad(context: TabContext, pagination?: { limit?: number; offset?: number }): Promise<TabResult> {
     try {
-      console.log(`📁 MediaViewTabType.onDataLoad: ${this.name}`, { context, pagination })
-
       const { mediaStore, libraryId } = context
 
       if (!mediaStore || !libraryId) {

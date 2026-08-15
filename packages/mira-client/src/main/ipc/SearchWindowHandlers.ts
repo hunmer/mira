@@ -97,7 +97,6 @@ export class SearchWindowHandlers {
    * 从主渲染进程接收搜索结果并转发给搜索窗口
    */
   public forwardResultToSearchWindow(result: any): void {
-    console.log('📡 [SearchWindowHandlers] 转发搜索结果到搜索窗口:', result)
     this.handler.sendMessage(result)
   }
 
@@ -121,7 +120,6 @@ export class SearchWindowHandlers {
   private forwardToMainRenderer(data: any): void {
     const mainWindow = this.getMainWindow()
     if (mainWindow && !mainWindow.isDestroyed()) {
-      console.log('📤 [SearchWindowHandlers] 转发消息到主渲染进程:', data)
       mainWindow.webContents.send('search-request-from-search-window', data)
     } else {
       console.error('❌ [SearchWindowHandlers] 主渲染窗口不可用，消息未转发:', data)
@@ -142,8 +140,6 @@ export class SearchWindowHandlers {
    * 处理拖拽文件请求
    */
   private async handleDragFile(filePath: string, _fileName?: string): Promise<void> {
-    console.log('🖱️ [SearchWindowHandlers] 处理拖拽文件请求:', filePath)
-
     if (!filePath) {
       console.error('❌ [SearchWindowHandlers] 文件路径为空')
       return
@@ -160,7 +156,6 @@ export class SearchWindowHandlers {
         )
 
         if (result && result.success) {
-          console.log('✅ [SearchWindowHandlers] 通过DragDropHandler启动拖拽成功')
         } else {
           console.warn('⚠️ [SearchWindowHandlers] DragDropHandler处理结果:', result)
         }

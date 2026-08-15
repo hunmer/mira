@@ -184,7 +184,6 @@ watch(
   [() => props.image, () => props.cacheKey, imageSrc],
   ([image, cacheKey, src]) => {
     imageLoadError.value = false
-    console.debug('[ImagePreviewDebug][Info] props-change', {
       image: describeImage(image),
       cacheKey,
       imageSrc: src

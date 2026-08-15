@@ -172,7 +172,6 @@ export class VideoPreviewController {
    */
   public initializeVideoData = (): void => {
     // 初始化逻辑，如果需要的话
-    console.log('Video data initialized')
   }
 
   /**

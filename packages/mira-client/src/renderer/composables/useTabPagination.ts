@@ -86,7 +86,6 @@ export function useTabPagination(tabId?: string) {
   const totalPages = computed(() => {
     if (isServerPagination.value) {
       const pages = Math.ceil(totalRecords.value / itemsPerPage.value)
-      console.log(`📄 Tab ${currentTabId} 计算总页数:`, {
         totalRecords: totalRecords.value,
         itemsPerPage: itemsPerPage.value,
         isServerPagination: isServerPagination.value,
@@ -101,7 +100,6 @@ export function useTabPagination(tabId?: string) {
 
   // 分页操作方法
   const setServerPaginationData = (total: number, page: number = 1) => {
-    console.log(`📄 Tab ${currentTabId} 设置服务端分页数据:`, {
       total,
       page,
       itemsPerPage: itemsPerPage.value
@@ -115,8 +113,6 @@ export function useTabPagination(tabId?: string) {
   }
 
   const resetPagination = () => {
-    console.log(`📄 Tab ${currentTabId} 重置分页状态`)
-
     updateTabPaginationState(currentTabId, {
       currentPage: 1,
       totalRecords: 0,
@@ -126,7 +122,6 @@ export function useTabPagination(tabId?: string) {
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages.value) {
-      console.log(`📄 Tab ${currentTabId} 页码变化:`, {
         从: currentPage.value,
         到: page,
         totalPages: totalPages.value
@@ -149,7 +144,6 @@ export function useTabPagination(tabId?: string) {
   watch(
     [currentPage, totalRecords, isServerPagination],
     ([newPage, newTotal, newServerPag], [oldPage, oldTotal, oldServerPag]) => {
-      console.log(`📄 Tab ${currentTabId} 分页状态变化:`, {
         currentPage: `${oldPage} -> ${newPage}`,
         totalRecords: `${oldTotal} -> ${newTotal}`,
         isServerPagination: `${oldServerPag} -> ${newServerPag}`,

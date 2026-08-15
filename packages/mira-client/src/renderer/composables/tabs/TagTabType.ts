@@ -53,7 +53,6 @@ export class TagTabType extends MediaViewTabType {
     const numericIdentifier = Number(normalizedIdentifier)
     const tagIdentifier = Number.isFinite(numericIdentifier) ? numericIdentifier : normalizedIdentifier
 
-    console.log('🏷️ TagTabType.getTabFilters:', {
       tagId,
       tagName,
       tagIdentifier,
@@ -81,22 +80,18 @@ export class TagTabType extends MediaViewTabType {
   }
 
   async onInit(_context: TabContext) {
-    console.log('🏷️ TagTabType 初始化:', _context)
     return { success: true }
   }
 
   async onActive(_context: TabContext) {
-    console.log('▶️ TagTabType 激活:', _context)
     return { success: true }
   }
 
   async onInactive(_context: TabContext) {
-    console.log('⏸️ TagTabType 失活:', _context)
     return { success: true }
   }
 
   async onClose(_context: TabContext) {
-    console.log('🔚 TagTabType 关闭:', _context)
     return { success: true }
   }
 

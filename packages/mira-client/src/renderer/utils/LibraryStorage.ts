@@ -135,7 +135,6 @@ export class LibraryStorage {
         await this.setItem(prefix, value, currentLibraryId)
         // Remove old key
         await ConfigStorage.removeItem(oldKey)
-        console.log(`Migrated ${oldKey} to ${await this.generateKey(prefix, currentLibraryId)}`)
       }
     }
   }

@@ -162,7 +162,6 @@ const copyFileInfo = (): void => {
   ].join('\n')
   
   navigator.clipboard.writeText(info).then(() => {
-    console.log('文件信息已复制到剪贴板')
   }).catch(() => {
     console.error('复制失败')
   })

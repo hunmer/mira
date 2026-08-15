@@ -142,7 +142,6 @@ const scanIntervalOptions = computed(() => [
 const showToast = (severity: 'success' | 'error' | 'warn' | 'info', summary: string, detail: string) => {
   // 使用全局事件总线或其他方式显示通知
   // 这里简化处理，可以根据实际项目结构调整
-  console.log(`[${severity.toUpperCase()}] ${summary}: ${detail}`)
 }
 
 // 方法
@@ -150,8 +149,6 @@ const selectPluginDirectory = async () => {
   try {
     // 使用插件 store 的目录选择方法
     const result = await pluginStore.selectPluginDirectory(t('views.pluginsPanel.selectDirectory'))
-    console.log('selectPluginDirectory result:', result)
-
     if (result.success && result.data) {
       // 确保我们获取的是路径字符串
       let selectedPath: string | undefined

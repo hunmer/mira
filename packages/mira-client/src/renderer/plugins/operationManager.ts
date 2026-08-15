@@ -85,7 +85,6 @@ export const enableLocalPluginNew = async (
       // 6. 更新插件状态
       plugin.status = 'loaded'
 
-      console.log(`✅ Plugin enabled successfully: ${plugin.config.pluginName}`)
       return { success: true, message: `Plugin ${plugin.config.pluginName} enabled successfully` }
     },
     'Failed to enable plugin',
@@ -115,7 +114,6 @@ export const disableLocalPluginNew = async (
         plugin.status = 'disabled'
       }
 
-      console.log(`✅ Plugin disabled successfully: ${pluginId}`)
       return { success: true, message: `Plugin disabled successfully` }
     },
     'Failed to disable plugin',
@@ -176,8 +174,6 @@ export const executeLocalPluginOperation = async (
   ...args: any[]
 ): Promise<OperationResult> => {
   const operationId = `${operation}-${pluginId}`
-  console.log(`🔧 Executing plugin operation: ${operation} for ${pluginId}`)
-
   return withOperation(
     operationId,
     async () => {

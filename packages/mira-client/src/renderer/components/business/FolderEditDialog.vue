@@ -297,7 +297,6 @@ const handleSubmit = async () => {
     if (formData.value.icon && formData.value.icon.trim()) {
       saveData.icon = formData.value.icon.trim()
     }
-    console.log('[FolderEditDialog] handleSubmit:', { autoOpenTab: autoOpenTab.value, isEdit: isEdit.value, saveDataAutoOpen: saveData.autoOpenTab })
     emit('save', saveData)
   } catch (err) {
     error.value = err instanceof Error ? err.message : t('business.folderEditDialog.saveFailed')

@@ -77,7 +77,6 @@ export const useFolderStore = defineStore('folder', () => {
     // 检查缓存
     if (!forceRefresh && folderCache.value[libraryId]) {
       folders.value = folderCache.value[libraryId]
-      console.log(`✅ Loaded ${folders.value.length} folders from cache for library ${libraryId}`)
       return { success: true, data: folders.value }
     }
 
@@ -105,7 +104,6 @@ export const useFolderStore = defineStore('folder', () => {
 
       lastUpdated.value = new Date()
 
-      console.log(`✅ Loaded ${folders.value.length} folders for library ${libraryId}`)
       return { success: true, data: folders.value }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch folders'
@@ -144,7 +142,6 @@ export const useFolderStore = defineStore('folder', () => {
       folders.value = folders.value.filter(f => f.parent_id && f.parent_id !== 0)
       folders.value.push(...rootFolderData)
       
-      console.log(`✅ Loaded ${rootFolderData.length} root folders`)
       return { success: true, data: rootFolderData }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch root folders'
@@ -203,7 +200,6 @@ export const useFolderStore = defineStore('folder', () => {
       folders.value.push(newFolder)
       lastUpdated.value = new Date()
 
-      console.log(`✅ Created folder: ${title}`)
       return { success: true, data: newFolder }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create folder'

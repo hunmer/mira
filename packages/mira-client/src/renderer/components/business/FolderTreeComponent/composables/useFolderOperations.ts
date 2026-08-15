@@ -336,14 +336,12 @@ export function useFolderOperations(emit: FolderOperationsEmits) {
           const result = await miraSDKService.createFolder(
             libraryId, data.title, data.parentId, data.color, data.description, data.icon,
           )
-          console.log('[useFolderOperations] createFolder result:', result, 'autoOpenTab:', data.autoOpenTab)
           const folderId = typeof result === 'object' ? result.id : result
           if (editingParentItem.value) emit['folder-add'](editingParentItem.value)
           else emit['folder-add']()
           await new Promise(resolve => setTimeout(resolve, 100))
           emit['refresh-folders']()
           if (data.autoOpenTab && result) {
-            console.log('[useFolderOperations] dispatching home-folder-selected:', { id: folderId, title: data.title, libraryId })
             window.dispatchEvent(new CustomEvent('home-folder-selected', {
               detail: { id: String(folderId), title: data.title, libraryId, color: data.color }
             }))
@@ -352,14 +350,12 @@ export function useFolderOperations(emit: FolderOperationsEmits) {
           const result = await miraSDKService.createTag(
             libraryId, data.title, data.color, data.description, data.icon,
           )
-          console.log('[useFolderOperations] createTag result:', result, 'autoOpenTab:', data.autoOpenTab)
           const tagId = typeof result === 'object' ? result.id : result
           if (editingParentItem.value) emit['tag-add'](editingParentItem.value)
           else emit['tag-add']()
           await new Promise(resolve => setTimeout(resolve, 100))
           emit['refresh-tags']()
           if (data.autoOpenTab && result) {
-            console.log('[useFolderOperations] dispatching home-tag-selected:', { id: tagId, title: data.title, libraryId })
             window.dispatchEvent(new CustomEvent('home-tag-selected', {
               detail: { id: String(tagId), title: data.title, libraryId, color: data.color }
             }))

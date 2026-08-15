@@ -26,22 +26,18 @@ export class HomeTabType extends BaseTabType {
   }
 
   async onInit(_context: TabContext): Promise<TabResult> {
-    console.log('🏠 HomeTabType 初始化')
     return { success: true }
   }
 
   async onActive(_context: TabContext): Promise<TabResult> {
-    console.log('▶️ HomeTabType 激活')
     return { success: true }
   }
 
   async onInactive(_context: TabContext): Promise<TabResult> {
-    console.log('⏸️ HomeTabType 失活')
     return { success: true }
   }
 
   async onClose(_context: TabContext): Promise<TabResult> {
-    console.log('🔚 HomeTabType 关闭')
     return { success: true }
   }
 

@@ -40,7 +40,6 @@ export function useTabSystemInit(options: TabSystemInitOptions = {}) {
 
   const log = (message: string) => {
     if (enableLogging) {
-      console.log(`[TabSystemInit] ${message}`)
     }
   }
 

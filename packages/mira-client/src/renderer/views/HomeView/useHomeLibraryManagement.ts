@@ -30,8 +30,6 @@ export function useHomeLibraryManagement(
   } = useLibraryManagement(serverListStore)
 
   const handleSelectCollection = async (collection: LibraryInfo) => {
-    console.log('Selecting library', collection.name, collection.id)
-
     try {
       await libraryStore.setCurrentLibrary(collection)
       await resetTabsForLibrary(createTabScopeId(

@@ -113,8 +113,6 @@ export function useFilters() {
     updateTabFilters: ((tabId: string, filters: Record<string, FilterRule>) => void) | null,
     homeController: any
   ) => {
-    console.log('筛选器变化:', filter)
-
     // 如果提供了updateTabFilters方法，则更新当前Tab的筛选器状态
     if (updateTabFilters) {
       const currentTab = getCurrentTab()
@@ -138,8 +136,6 @@ export function useFilters() {
     clearTabFilters: ((tabId: string, filterId?: string) => void) | null,
     homeController: any
   ) => {
-    console.log('清除筛选器:', filter)
-
     // 如果提供了clearTabFilters方法，则清除当前Tab的筛选器状态
     if (clearTabFilters) {
       const currentTab = getCurrentTab()

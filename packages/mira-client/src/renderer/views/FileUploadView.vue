@@ -143,7 +143,6 @@ uploadQueue.addEventListener('error', () => {
 
 uploadQueue.addEventListener('end', () => {
   updateQueueStats()
-  console.log('Upload queue finished')
 })
 
 // 更新队列统计
@@ -181,8 +180,6 @@ const files = computed(() => {
 
 // 多标签页上传组件事件处理
 const handleFilesSelected = (files: File[]) => {
-  console.log('Files selected via multi-tab upload:', files.length)
-
   // 文件数量限制检查
   if (files.length > FILE_LIMITS.MAX_FILES_PER_BATCH) {
     toast.add({
@@ -208,8 +205,6 @@ const handleFilesSelected = (files: File[]) => {
 }
 
 const handleUploadStart = async (files: File[]) => {
-  console.log('Upload start via multi-tab:', files.length)
-
   if (!currentLibrary.value) {
     toast.add({
       severity: 'error',
@@ -248,8 +243,6 @@ const handleUploadProgress = (_item: any) => {
 }
 
 const handleUploadComplete = (item: any) => {
-  console.log('Upload complete via multi-tab:', item.file.name)
-
   // 添加到上传历史记录
   if (currentLibrary.value) {
     uploadHistoryStore.addUploadRecord({

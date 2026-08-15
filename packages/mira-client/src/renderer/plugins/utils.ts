@@ -105,13 +105,11 @@ export const cleanupPluginScript = (pluginId: string) => {
     const scriptElement = document.querySelector(`script[data-plugin-id="${pluginId}"]`)
     if (scriptElement) {
       scriptElement.remove()
-      console.log(`🧹 Removed script for plugin: ${pluginId}`)
     }
 
     // 从全局插件系统中注销
     if (typeof window !== 'undefined' && (window as any).pluginSystem) {
       (window as any).pluginSystem.plugins.delete(pluginId)
-      console.log(`🗑️ Unregistered plugin: ${pluginId}`)
     }
   } catch (err) {
     console.warn(`⚠️ Failed to cleanup plugin script for ${pluginId}:`, err)

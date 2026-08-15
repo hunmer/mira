@@ -12,7 +12,6 @@ const delegatedProps = reactiveOmit(props, "class")
 const rootContext = injectDialogRootContext()
 
 function handleExitComplete() {
-  console.debug("[AlertDialogMotion] overlay exit complete")
 }
 </script>
 

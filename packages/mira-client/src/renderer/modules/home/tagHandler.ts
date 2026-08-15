@@ -55,8 +55,6 @@ export function useHomeTagHandler() {
       isProcessing.value = true
       error.value = ''
       
-      console.log('🏷️ 打开标签:', { tagId, options })
-      
       // 更新当前标签状态
       // 优先级：title > label > null（树节点只提供 label 时不能回落到 id）
       currentTag.value = {
@@ -87,7 +85,6 @@ export function useHomeTagHandler() {
         detail: currentTag.value
       }))
       
-      console.log('✅ 标签打开成功:', currentTag.value)
       return true
     } catch (err) {
       console.error('❌ 打开标签失败:', err)
@@ -111,7 +108,6 @@ export function useHomeTagHandler() {
     // 通知其他组件标签已清除
     window.dispatchEvent(new CustomEvent('home-tag-cleared'))
     
-    console.log('🏷️ 标签选择已清除')
   }
 
   /**

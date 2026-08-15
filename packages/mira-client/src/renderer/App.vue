@@ -205,7 +205,6 @@ useAutoShortcuts()
 const handleGlobalLoadingCancel = () => {
   globalLoading.isVisible = false
   globalLoading.showCancel = false
-  console.log('🚫 Global loading cancelled by user')
 }
 
 // ==================== 全局确认对话框处理 ====================
@@ -313,7 +312,6 @@ const setupElectronListeners = () => {
   // 监听文件导入事件
   window.electronAPI.on('files:import', (filePaths: string[]) => {
     // 处理文件导入
-    console.log('Import files:', filePaths)
     // 这里可以调用文件上传逻辑
   })
 
@@ -360,7 +358,6 @@ const setupElectronListeners = () => {
 
   // 监听 openTab 协议事件（来自 dashboard 等外部来源）
   window.electronAPI.on('protocol:open-tab', (data: any) => {
-    console.log('Received openTab protocol:', data)
     if (!data || !data.tabType) return
     const tabs = useTabs()
 
@@ -373,7 +370,6 @@ const setupElectronListeners = () => {
 
   // 监听 server_import 协议事件（来自 dashboard 分享链接），导入服务器配置
   window.electronAPI.on('protocol:server-import', async (data: any) => {
-    console.log('Received server_import protocol:', data)
     const serverUrl = typeof data?.serverUrl === 'string' ? data.serverUrl.trim() : ''
     if (!serverUrl) return
     try {
@@ -415,13 +411,11 @@ const setupElectronListeners = () => {
     globalLoading.progress = options?.progress
     globalLoading.showProgress = options?.showProgress || false
     globalLoading.showCancel = options?.showCancel || false
-    console.log('📋 Global loading shown:', message)
   })
   
   // 监听隐藏全局Loading事件
   window.electronAPI.on('hide-global-loading', () => {
     globalLoading.isVisible = false
-    console.log('✅ Global loading hidden')
   })
 
   // 自动更新事件

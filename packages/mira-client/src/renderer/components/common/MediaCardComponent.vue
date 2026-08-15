@@ -229,12 +229,10 @@ const handlePreview = () => {
 
 const handleDownload = () => {
   // 下载逻辑
-  console.log('Download item:', props.item)
 }
 
 const handleMore = () => {
   // 更多操作逻辑
-  console.log('More actions for item:', props.item)
 }
 
 const getFileType = (item: any): string => {

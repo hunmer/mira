@@ -107,7 +107,6 @@ export class PluginService {
 
       // 发现并加载所有插件（本地+在线）
       await this.discoverAndLoadPlugins()
-      console.debug('[PLUGIN-DEBUG][initialize:done]', {
         online: Array.from(this.onlinePlugins.keys()),
         plugins: Array.from(this.plugins.keys())
       })
@@ -154,7 +153,6 @@ export class PluginService {
       }
 
       // 2. 加载在线插件
-      console.debug('[PLUGIN-DEBUG][discover:online]', Array.from(this.onlinePlugins.keys()))
       for (const [pluginId, config] of this.onlinePlugins) {
         const runtime: PluginRuntime = {
           config,
@@ -254,7 +252,6 @@ export class PluginService {
   private async loadOnlinePluginsFromStorage(): Promise<void> {
     try {
       const stored = await ConfigStorage.getItem('mira-online-plugins')
-      console.debug('[PLUGIN-DEBUG][storage:load]', {
         hasStored: !!stored,
         length: stored?.length ?? 0
       })
@@ -265,7 +262,6 @@ export class PluginService {
         for (const config of configs) {
           this.onlinePlugins.set(config.pluginId, config)
         }
-        console.debug('[PLUGIN-DEBUG][storage:load] restored', Array.from(this.onlinePlugins.keys()))
       }
     } catch (error) {
       console.error('[PLUGIN-DEBUG][storage:load] failed', error)
@@ -280,7 +276,6 @@ export class PluginService {
       const configs = Array.from(this.onlinePlugins.values())
       const serialized = JSON.stringify(configs)
       await ConfigStorage.setItem('mira-online-plugins', serialized)
-      console.debug('[PLUGIN-DEBUG][storage:save]', {
         plugins: configs.map(config => config.pluginId),
         length: serialized.length
       })

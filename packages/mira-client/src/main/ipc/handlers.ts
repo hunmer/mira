@@ -103,13 +103,8 @@ export class IPCHandlers {
    * 处理来自主渲染进程的搜索结果
    */
   private async handleSearchResultFromMainRenderer(_event: any, result: any): Promise<void> {
-    console.log('🔄 [IPCHandlers] 收到主渲染进程搜索结果:', result)
-    console.log('🔄 [IPCHandlers] 结果类型:', result?.type)
-    console.log('🔄 [IPCHandlers] 结果数据数量:', result?.results?.length || 0)
-
     // 将搜索结果转发给搜索窗口
     this.searchWindowHandlers.forwardResultToSearchWindow(result)
-    console.log('✅ [IPCHandlers] 已转发搜索结果到搜索窗口')
   }
 
   /**

@@ -205,7 +205,6 @@ export const useLibraryStore = defineStore('libraries', () => {
         detail: { colletionId: targetLibraryId }
       }))
 
-      console.log('Folder refresh event dispatched for colletion:', targetLibraryId)
     } catch (error) {
       console.error('Failed to refresh folders:', error)
     }
@@ -227,7 +226,6 @@ export const useLibraryStore = defineStore('libraries', () => {
         detail: { colletionId: targetLibraryId }
       }))
 
-      console.log('Tag refresh event dispatched for colletion:', targetLibraryId)
     } catch (error) {
       console.error('Failed to refresh tags:', error)
     }

@@ -132,7 +132,6 @@ watch(
 const handleVideoLoaded = () => {
   const video = getVideoElement()
   if (video) {
-    console.log('视频元数据加载完成:', {
       duration: video.duration,
       videoUrl: props.videoUrl
     })
@@ -144,7 +143,6 @@ const handleVideoLoaded = () => {
 const handleVideoLoadedData = async () => {
   const video = getVideoElement()
   if (video) {
-    console.log('视频数据加载完成')
     isLoading.value = false
     hasError.value = false
     // 设置视频为第一帧
@@ -161,7 +159,6 @@ const handleVideoLoadedData = async () => {
         }
       }, 1000)
     } catch (error) {
-      console.log('自动播放失败（可能被浏览器阻止）:', error)
       // 如果自动播放失败，保持显示播放按钮
       showPlayButton.value = true
     }

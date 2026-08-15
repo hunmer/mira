@@ -414,7 +414,6 @@ export class FloatingWindowHandler {
     this.messagePort = port1
 
     this.messagePort.on('message', (event) => {
-      console.log(`📥 [${this.options.name}] 收到 MessagePort 消息:`, event.data)
       this.handleMessage(event.data)
     })
     this.messagePort.start()
@@ -521,7 +520,6 @@ export class FloatingWindowHandler {
       }
 
       // 3. 默认：转发给主渲染进程
-      console.log(`🔄 [${this.options.name}] 转发消息给主渲染进程:`, data.type)
       this.forwardToMainRenderer(data)
     } catch (error) {
       console.error(`❌ [${this.options.name}] 处理消息失败:`, error)
@@ -534,7 +532,6 @@ export class FloatingWindowHandler {
   protected handleBuiltinMessage(data: any, ctx: FloatingWindowMessageContext): void {
     switch (data.type) {
       case 'floating-window-ready':
-        console.log(`✅ [${this.options.name}] 窗口已就绪`)
         break
 
       case 'drag-start':

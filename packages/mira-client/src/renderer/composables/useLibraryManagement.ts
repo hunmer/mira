@@ -33,7 +33,6 @@ export function useLibraryManagement(libraryStore: any) {
    * 添加新素材库
    */
   const addNewLibrary = () => {
-    console.log('添加新素材库')
   }
 
   /**
@@ -67,9 +66,7 @@ export function useLibraryManagement(libraryStore: any) {
       // 如果有活跃的素材库，使用它；否则使用第一个
       const activeLibrary = libraryStore.activeLibrary || libraryStore.libraries[0]
       currentLibrary.value = activeLibrary
-      console.log('📚 已设置默认素材库:', currentLibrary.value)
     } else {
-      console.log('📚 没有可用的素材库')
       currentLibrary.value = null
     }
   }

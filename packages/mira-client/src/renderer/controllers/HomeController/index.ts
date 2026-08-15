@@ -57,7 +57,6 @@ export class HomeController {
   public totalPages = computed(() => {
     const filteredItemsLength = (this.dataManager.filteredMediaItems?.value || []).length
     const totalPages = this.interactionHandler.getTotalPages(filteredItemsLength)
-    console.log(`🧮 HomeController.totalPages 计算:`, {
       filteredItemsLength,
       serverTotalRecords: this.interactionHandler.serverTotalRecords?.value,
       itemsPerPage: this.interactionHandler.itemsPerPage?.value,
@@ -117,7 +116,6 @@ export class HomeController {
     const itemsPerPageValue = this.interactionHandler.itemsPerPage.value
     const offset = (currentPageValue - 1) * itemsPerPageValue
 
-    console.log('🔄 Loading current page data...', {
       currentPage: currentPageValue,
       itemsPerPage: itemsPerPageValue,
       calculatedOffset: offset
@@ -145,7 +143,6 @@ export class HomeController {
       )
 
       if (result.success) {
-        console.log(`✅ 重新加载了第${this.interactionHandler.currentPage.value}页数据: ${result.data?.length} 个文件`)
       } else {
         console.error('❌ 加载当前页数据失败:', (result as any).error)
       }

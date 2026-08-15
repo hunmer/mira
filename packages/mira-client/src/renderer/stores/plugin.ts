@@ -497,15 +497,11 @@ export const usePluginStore = defineStore('plugin', () => {
    */
   const initializeLocalPlugins = async (config: PluginManagerConfig) => {
     return wrappedWithOperation('initialize', async () => {
-      console.log('🚀 Initializing plugin service with config:', config)
-
       // 初始化全局插件系统API
       initializeGlobalPluginSystem()
 
       // 使用renderer进程PluginService
       const result = await pluginService.initialize(config)
-      console.log('📡 Received result from PluginService.initialize:', result)
-
       if (result.success) {
         await loadLocalPlugins()
       }
@@ -537,8 +533,6 @@ export const usePluginStore = defineStore('plugin', () => {
           // 根据保存的enabled状态设置插件的status
           const oldStatus = plugin.status
           plugin.status = savedEnabled ? 'loaded' : 'disabled'
-          console.log(`🔄 Restored plugin state: ${plugin.config.pluginName} → ${plugin.status}`)
-
           // 如果插件从enabled变为disabled，需要清理实例和脚本
           if (oldStatus === 'loaded' && plugin.status === 'disabled') {
             try {
@@ -546,7 +540,6 @@ export const usePluginStore = defineStore('plugin', () => {
               await unloadPluginInstance(plugin.config.pluginId)
               // 清理插件脚本
               cleanupPluginScript(plugin.config.pluginId)
-              console.log(`🧹 Cleaned up disabled plugin: ${plugin.config.pluginName}`)
             } catch (err) {
               console.warn(`Failed to cleanup plugin ${plugin.config.pluginName}:`, err)
             }
@@ -563,7 +556,6 @@ export const usePluginStore = defineStore('plugin', () => {
    */
   const loadLocalPlugins = async () => {
     try {
-      console.log('🔄 Store.loadLocalPlugins - 开始加载插件')
       // 使用renderer进程PluginService
       const plugins = pluginService.getAllPlugins()
       const local = plugins.filter(plugin => plugin.config.source !== 'server')

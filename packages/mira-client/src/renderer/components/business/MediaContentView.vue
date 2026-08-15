@@ -103,7 +103,6 @@
             @media-select="handleMediaSelect"
             @media-delete="handleMediaDelete"
             @media-restore="handleMediaRestore"
-            @after-render="() => console.log('✅ 内容 Waterfall 组件已渲染，数据项数量:', items.length)"
           />
         </div>
 

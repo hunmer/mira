@@ -30,22 +30,18 @@ export class UntaggedTabType extends MediaViewTabType {
   }
 
   async onInit(_context: TabContext) {
-    console.log('🏷️ UntaggedTabType 初始化:', _context)
     return { success: true }
   }
 
   async onActive(_context: TabContext) {
-    console.log('▶️ UntaggedTabType 激活:', _context)
     return { success: true }
   }
 
   async onInactive(_context: TabContext) {
-    console.log('⏸️ UntaggedTabType 失活:', _context)
     return { success: true }
   }
 
   async onClose(_context: TabContext) {
-    console.log('🔚 UntaggedTabType 关闭:', _context)
     return { success: true }
   }
 

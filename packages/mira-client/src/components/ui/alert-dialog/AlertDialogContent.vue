@@ -25,7 +25,6 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
 const rootContext = injectDialogRootContext()
 
 function handleExitComplete() {
-  console.debug("[AlertDialogMotion] content exit complete")
 }
 </script>
 

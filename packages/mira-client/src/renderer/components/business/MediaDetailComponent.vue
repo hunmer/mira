@@ -740,7 +740,6 @@ const getTagName = (tagId: string): string => {
 
 const copyToClipboard = (text: string) => {
   navigator.clipboard.writeText(text).then(() => {
-    console.log('URL copied to clipboard')
   })
 }
 

@@ -517,7 +517,6 @@ watch(() => formData.value.serverUrl, () => {
 const smbEnabled = computed({
   get: () => formData.value.smbEnabled,
   set: (value: boolean) => {
-    console.log('SMB status changing to:', value)
     formData.value.smbEnabled = value
   }
 })

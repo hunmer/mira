@@ -28,22 +28,18 @@ export class AllTabType extends MediaViewTabType {
   }
 
   async onInit(_context: TabContext) {
-    console.log('🗂️ AllTabType 初始化')
     return { success: true }
   }
 
   async onActive(_context: TabContext) {
-    console.log('▶️ AllTabType 激活')
     return { success: true }
   }
 
   async onInactive(_context: TabContext) {
-    console.log('⏸️ AllTabType 失活')
     return { success: true }
   }
 
   async onClose(_context: TabContext) {
-    console.log('🔚 AllTabType 关闭')
     return { success: true }
   }
 

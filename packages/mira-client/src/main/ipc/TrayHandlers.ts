@@ -81,7 +81,6 @@ export class TrayHandlers {
   ): Promise<BaseResponse> {
     try {
       // 注意：TrayService 可能没有 flash 方法，这里添加一个简单的实现
-      console.log('Tray flash requested for duration:', duration)
       return { success: true, message: 'Tray flash completed' }
     } catch (error) {
       return {

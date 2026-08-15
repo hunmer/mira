@@ -37,7 +37,6 @@ export function useMediaOperations() {
    * 处理媒体信息显示
    */
   const handleMediaInfo = (item: FileInfo) => {
-    console.log('显示文件信息:', item)
     selectedMediaItem.value = item
     showDetailSidebar.value = true
   }
@@ -46,7 +45,6 @@ export function useMediaOperations() {
    * 处理设置文件夹
    */
   const handleMediaSetFolder = (item: FileInfo) => {
-    console.log('设置文件夹:', item)
     selectedMediaItem.value = item
     showDetailSidebar.value = true
   }
@@ -55,7 +53,6 @@ export function useMediaOperations() {
    * 处理设置标签
    */
   const handleMediaSetTags = (item: FileInfo) => {
-    console.log('设置标签:', item)
     selectedMediaItem.value = item
     showDetailSidebar.value = true
   }
@@ -64,7 +61,6 @@ export function useMediaOperations() {
    * 处理删除媒体
    */
   const handleMediaDelete = (item: FileInfo) => {
-    console.log('删除文件:', item)
   }
 
   /**

@@ -23,7 +23,6 @@ export class ImagePreviewController {
   public imageCacheKey = ref<number>(Date.now())
 
   private debug = (event: string, payload: Record<string, unknown> = {}): void => {
-    console.debug('[ImagePreviewDebug][Controller]', event, payload)
   }
 
   private describeImage = (image?: FileInfo): Record<string, unknown> | null => {
@@ -306,8 +305,6 @@ export class ImagePreviewController {
     this.loading.value = true
     try {
       // 这里将来会集成 mira-server-sdk 的以图搜图功能
-      console.log('Search similar images for:', this.currentImage.value?.name)
-      
       // 模拟API调用延迟
       await new Promise(resolve => setTimeout(resolve, 1000))
       
@@ -330,7 +327,6 @@ export class ImagePreviewController {
         this.currentImage.value.tags = []
       }
       this.currentImage.value.tags.push(tag)
-      console.log('Tag added:', tag)
     }
   }
 
@@ -340,7 +336,6 @@ export class ImagePreviewController {
   public handleTagRemove = (tag: string): void => {
     if (this.currentImage.value?.tags) {
       this.currentImage.value.tags = this.currentImage.value.tags.filter((t: string) => t !== tag)
-      console.log('Tag removed:', tag)
     }
   }
 
@@ -395,7 +390,6 @@ export class ImagePreviewController {
         },
         hide: () => {
           // 当关闭查看器时的回调
-          console.log('Viewer closed')
         }
       },
       images

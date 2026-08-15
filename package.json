@@ -8,7 +8,10 @@
     "build:plugins": "node scripts/install-build.mjs --npm \"plugins/plugins/*\"",
     "build:client-plugins-index": "node scripts/build-client-plugins-index.mjs",
     "dev:client-plugins": "node scripts/build-client-plugins-index.mjs --watch --serve",
-    "start:server": "pnpm run install:deps && pnpm run build:plugins"
+    "start:server": "pnpm run install:deps && pnpm run build:plugins",
+    "start:client:win": "pnpm -C packages/mira-client run electron:dev",
+    "start:client:mac": "pnpm -C packages/mira-client run electron:dev:mac",
+    "start:landing": "pnpm -C packages/landing-page run dev"
   },
   "keywords": [
     "mira",

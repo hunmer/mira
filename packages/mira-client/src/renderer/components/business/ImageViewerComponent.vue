@@ -197,7 +197,6 @@ const handleImageLoad = async () => {
   loading.value = false
   error.value = false
 
-  console.debug('[ImagePreviewDebug][Viewer] source-image-load', {
     image: describeImage(props.image),
     cacheKey: props.cacheKey,
     imageUrl: imageUrl.value,
@@ -208,7 +207,6 @@ const handleImageLoad = async () => {
   viewerInstance.value?.update?.()
   viewerInstance.value?.view?.(0)
 
-  console.debug('[ImagePreviewDebug][Viewer] viewer-updated-after-load', {
     imageId: props.image?.id,
     cacheKey: props.cacheKey,
     imageUrl: imageUrl.value,
@@ -222,7 +220,6 @@ const handleImageError = () => {
   loading.value = false
   error.value = true
 
-  console.debug('[ImagePreviewDebug][Viewer] source-image-error', {
     image: describeImage(props.image),
     cacheKey: props.cacheKey,
     imageUrl: imageUrl.value,
@@ -235,7 +232,6 @@ const onViewerInited = (viewer: any) => {
   viewerInstance.value = viewer
   viewerInstance.value?.view?.(0)
 
-  console.debug('[ImagePreviewDebug][Viewer] inited', {
     image: describeImage(props.image),
     cacheKey: props.cacheKey,
     imageUrl: imageUrl.value,
@@ -328,7 +324,6 @@ onUnmounted(() => {
 
 // 监听图片变化，重置状态
 watch(() => props.image, (newImage, oldImage) => {
-  console.debug('[ImagePreviewDebug][Viewer] props-image-change', {
     oldImage: describeImage(oldImage),
     newImage: describeImage(newImage),
     cacheKey: props.cacheKey,
@@ -352,7 +347,6 @@ watch(() => props.image, (newImage, oldImage) => {
 watch(
   () => props.cacheKey,
   (newCacheKey, oldCacheKey) => {
-    console.debug('[ImagePreviewDebug][Viewer] cache-key-change', {
       oldCacheKey,
       newCacheKey,
       image: describeImage(props.image),

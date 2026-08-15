@@ -22,7 +22,6 @@ export class AppHandlers {
    * 注册应用相关的 IPC 处理器
    */
   private registerHandlers(): void {
-    console.log('Registering AppHandlers IPC handlers')
     // 窗口控制
     ipcMain.handle('window:close', this.handleWindowClose.bind(this))
     ipcMain.handle('window:minimize', this.handleWindowMinimize.bind(this))

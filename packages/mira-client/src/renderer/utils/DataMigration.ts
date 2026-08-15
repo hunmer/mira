@@ -56,8 +56,6 @@ export class DataMigration {
   static async performMigration(targetLibraryId?: string): Promise<void> {
     const libraryId = targetLibraryId || await this.getMigrationLibraryId()
 
-    console.log(`🔄 Migrating localStorage data to library-specific format for library: ${libraryId}`)
-
     try {
       // Use LibraryStorage's migration method
       await LibraryStorage.migrateExistingData(libraryId)
@@ -65,7 +63,6 @@ export class DataMigration {
       // Mark migration as completed
       await ConfigStorage.setItem('mira-migration-completed', Date.now().toString())
 
-      console.log('✅ Data migration completed successfully')
     } catch (error) {
       console.error('❌ Migration failed:', error)
       throw error
@@ -86,15 +83,12 @@ export class DataMigration {
    */
   static async autoMigrate(): Promise<void> {
     if (await this.isMigrationCompleted()) {
-      console.log('📋 Migration already completed, skipping')
       return
     }
 
     if (await this.needsMigration()) {
-      console.log('🔄 Starting automatic data migration...')
       await this.performMigration()
     } else {
-      console.log('📋 No migration needed')
       // Mark as completed even if no migration was needed
       await ConfigStorage.setItem('mira-migration-completed', Date.now().toString())
     }

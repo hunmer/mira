@@ -194,7 +194,6 @@ const loadFileInfo = async (): Promise<void> => {
       console.warn('记录浏览历史失败:', e)
     }
 
-    console.log('✅ 文件信息加载成功:', fileInfo.value)
   } catch (err) {
     console.error('❌ 文件信息加载失败:', err)
     error.value = err instanceof Error ? err.message : t('views.filePreviewView.loadInfoFailed')

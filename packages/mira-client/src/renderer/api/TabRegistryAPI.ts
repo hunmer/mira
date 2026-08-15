@@ -40,7 +40,6 @@ export class TabRegistryAPI {
    */
   private ensureInitialized(): void {
     if (!isTabTypesInitialized()) {
-      console.log('🔄 TabRegistryAPI: 初始化内置Tab类型')
       initializeBuiltInTabTypes()
     }
   }

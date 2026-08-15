@@ -22,7 +22,6 @@ const matchesFileFormat = (format: PluginFileFormat, file: FileInfo): boolean =>
 export const initializeGlobalPluginSystem = () => {
   if (typeof window !== 'undefined') {
     const previous = (window as any).pluginSystem
-    console.debug('[PLUGIN-DEBUG][instance:init] replacing pluginSystem', {
       hadExisting: !!previous,
       previousMethods: previous ? Object.keys(previous).sort() : [],
       previousRegisterPlugin: typeof previous?.registerPlugin
@@ -40,14 +39,11 @@ export const initializeGlobalPluginSystem = () => {
       // 注册插件
       registerPlugin: (pluginId: string, pluginInfo: any) => {
         ;(window as any).pluginSystem.plugins.set(pluginId, pluginInfo)
-        console.log(`🔌 Plugin registered: ${pluginId}`)
       },
 
       // 注册插件实例工厂
       registerPluginInstance: (pluginId: string, factory: () => any) => {
         ;(window as any).pluginSystem.instancesFactory.set(pluginId, factory)
-        console.log(`🏭 Plugin factory registered: ${pluginId}`)
-
         // 检查是否有匹配的插件配置
         const registeredPlugins = (window as any).pluginSystem.plugins
         if (registeredPlugins?.size > 0) {
@@ -55,13 +51,11 @@ export const initializeGlobalPluginSystem = () => {
           for (const [registeredId] of registeredPlugins) {
             if (registeredId === pluginId) {
               found = true
-              console.log(`✅ Factory ID matches registered plugin: ${pluginId}`)
               break
             }
           }
           if (!found) {
             console.warn(`⚠️ Factory ID ${pluginId} doesn't match any registered plugin`)
-            console.log(`📋 Registered plugin IDs:`, Array.from(registeredPlugins.keys()))
           }
         }
       },
@@ -81,7 +75,6 @@ export const initializeGlobalPluginSystem = () => {
 
           const instance: any = await factory(context)
           ;(window as any).pluginSystem.instances.set(pluginId, instance)
-          console.log(`🚀 Plugin instance loaded: ${pluginId}`)
           return instance
         } catch (error) {
           console.error(`❌ Failed to load plugin instance ${pluginId}:`, error)
@@ -102,7 +95,6 @@ export const initializeGlobalPluginSystem = () => {
             await instance.cleanup()
           }
           ;(window as any).pluginSystem.instances.delete(pluginId)
-          console.log(`🗑️ Plugin instance unloaded: ${pluginId}`)
         } catch (error) {
           console.error(`❌ Failed to unload plugin instance ${pluginId}:`, error)
           throw error
@@ -169,7 +161,6 @@ export const initializeGlobalPluginSystem = () => {
           } else {
             list.push(contribution)
           }
-          console.log(`🧩 Contribution registered: ${contribution.id} (${contribution.title})`)
           ;(window as any).pluginSystem.contributions.emit()
         },
 
@@ -178,7 +169,6 @@ export const initializeGlobalPluginSystem = () => {
           const idx = list.findIndex((c: any) => c.id === id)
           if (idx >= 0) {
             list.splice(idx, 1)
-            console.log(`🧩 Contribution unregistered: ${id}`)
             ;(window as any).pluginSystem.contributions.emit()
           }
         },
@@ -253,13 +243,11 @@ export const initializeGlobalPluginSystem = () => {
       }
     } as PluginSystemAPI
 
-    console.debug('[PLUGIN-DEBUG][instance:init] installed pluginSystem', {
       methods: Object.keys((window as any).pluginSystem).sort(),
       registerPlugin: typeof (window as any).pluginSystem.registerPlugin,
       registerPluginInstance: typeof (window as any).pluginSystem.registerPluginInstance
     })
 
-    console.log('🌐 Global plugin system initialized')
   }
 }
 
@@ -349,7 +337,6 @@ export const syncPluginStates = (
     }
 
     if (hasChanges) {
-      console.log('🔄 Plugin states changed, updating...')
       localPlugins.value = currentPlugins
 
       // 重新注入所有插件脚本
@@ -375,7 +362,6 @@ export const startPluginStateMonitoring = (
       ;(window as any).pluginStateMonitorInterval = interval
     }
 
-    console.log(`🔍 Plugin state monitoring started (interval: ${intervalMs}ms)`)
     return interval
   }
 }
@@ -387,6 +373,5 @@ export const stopPluginStateMonitoring = () => {
   if (typeof window !== 'undefined' && (window as any).pluginStateMonitorInterval) {
     clearInterval((window as any).pluginStateMonitorInterval)
     delete (window as any).pluginStateMonitorInterval
-    console.log('🛑 Plugin state monitoring stopped')
   }
 }

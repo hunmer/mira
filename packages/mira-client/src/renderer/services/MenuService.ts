@@ -392,7 +392,6 @@ export class MenuService {
 
     try {
       await this.updateApplicationMenu()
-      console.log('Menu service initialized')
     } catch (error) {
       console.error('Failed to initialize menu service:', error)
     }

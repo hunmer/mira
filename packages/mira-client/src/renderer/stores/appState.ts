@@ -55,7 +55,6 @@ class AppStateManager {
    */
   public setRouteHandlersRegistered(): void {
     this.routeHandlersRegistered.value = true
-    console.log('📻 Route handlers: REGISTERED')
   }
   
   /**

@@ -40,7 +40,6 @@ export class HomeFileOperations {
 
           await this.tagStore.refreshTags(libraryId)
 
-          console.log(`✅ Tags added to file: ${tagArray.join(', ')}`)
         }
       } catch (error) {
         console.error('❌ Failed to add tags to file:', error)
@@ -70,7 +69,6 @@ export class HomeFileOperations {
 
           if (result.success) {
             await this.tagStore.refreshTags(libraryId)
-            console.log(`✅ Tag created: ${tagName}`)
           }
         }
       } catch (error) {
@@ -92,7 +90,6 @@ export class HomeFileOperations {
         if (client) {
           await client.tags().delete(libraryId, tagId)
           await this.tagStore.refreshTags(libraryId)
-          console.log(`✅ Tag deleted: ${tagId}`)
         }
       } catch (error) {
         console.error('❌ Failed to delete tag:', error)
@@ -124,7 +121,6 @@ export class HomeFileOperations {
 
           if (result.success) {
             await this.folderStore.refreshFolders(libraryId)
-            console.log(`✅ Folder created: ${folderName}`)
           }
         }
       } catch (error) {
@@ -146,7 +142,6 @@ export class HomeFileOperations {
         if (client) {
           await client.folders().delete(libraryId, folderId)
           await this.folderStore.refreshFolders(libraryId)
-          console.log(`✅ Folder deleted: ${folderId}`)
         }
       } catch (error) {
         console.error('❌ Failed to delete folder:', error)
@@ -179,7 +174,6 @@ export class HomeFileOperations {
             }
           })
 
-          console.log(`✅ Files moved to folder: ${folderId}`)
         }
       } catch (error) {
         console.error('❌ Failed to move files to folder:', error)
@@ -210,7 +204,6 @@ export class HomeFileOperations {
             onFilesDeleted(fileIds)
           }
 
-          console.log(`✅ Files deleted: ${fileIds.length} files`)
         }
       } catch (error) {
         console.error('❌ Failed to delete files:', error)
@@ -236,7 +229,6 @@ export class HomeFileOperations {
           await client.tags().addTagsToFile(libraryId, fileId, updatedTags)
           item.tags = updatedTags
           await this.tagStore.refreshTags(libraryId)
-          console.log(`✅ Tag removed from file: ${tag}`)
         }
       } catch (error) {
         console.error('❌ Failed to remove tag from file:', error)
@@ -261,7 +253,6 @@ export class HomeFileOperations {
         if (client) {
           await client.folders().moveFileToFolder(libraryId, fileId, folderIdNum)
           item.folderId = folderId
-          console.log(`✅ File moved to folder: ${folderId}`)
         }
       } catch (error) {
         console.error('❌ Failed to move file to folder:', error)

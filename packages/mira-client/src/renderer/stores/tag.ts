@@ -76,7 +76,6 @@ export const useTagStore = defineStore('tag', () => {
     // 检查缓存
     if (!forceRefresh && tagCache.value[libraryId]) {
       tags.value = tagCache.value[libraryId]
-      console.log(`✅ Loaded ${tags.value.length} tags from cache for library ${libraryId}`)
       return { success: true, data: tags.value }
     }
 
@@ -106,7 +105,6 @@ export const useTagStore = defineStore('tag', () => {
 
       lastUpdated.value = new Date()
 
-      console.log(`✅ Loaded ${tags.value.length} tags for library ${libraryId}`)
       return { success: true, data: tags.value }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch tags'
@@ -163,7 +161,6 @@ export const useTagStore = defineStore('tag', () => {
       tags.value.push(newTag)
       lastUpdated.value = new Date()
 
-      console.log(`✅ Created tag: ${title}`)
       return { success: true, data: newTag }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create tag'
@@ -193,7 +190,6 @@ export const useTagStore = defineStore('tag', () => {
 
       const result = await client.tags().findByTitle(libraryId, title)
       
-      console.log(`✅ Found ${result.length} tags matching "${title}"`)
       return { success: true, data: result }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to search tags'
@@ -249,7 +245,6 @@ export const useTagStore = defineStore('tag', () => {
 
       const result = await client.tags().addTagsToFile(libraryId, fileId, tagTitles)
       
-      console.log(`✅ Added tags to file ${fileId}:`, tagTitles)
       return { success: true, data: result }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to add tags to file'

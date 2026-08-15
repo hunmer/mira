@@ -82,7 +82,6 @@ export class PluginHandler {
     config: PluginManagerConfig
   ): Promise<BaseResponse> {
     try {
-      console.log('🔧 PluginHandler.handleInitialize called with config:', config)
       logger.info('PluginHandler', 'Initializing plugin system', config)
 
       this.config = config
@@ -95,7 +94,6 @@ export class PluginHandler {
         this.startPeriodicScan()
       }
 
-      console.log('✅ Plugin system initialized successfully')
       return { success: true, message: 'Plugin system initialized successfully' }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
