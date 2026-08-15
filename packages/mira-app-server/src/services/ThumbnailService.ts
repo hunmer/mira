@@ -139,7 +139,6 @@ export class ThumbnailService {
     try {
       this.ffmpegPath = process.env.FFMPEG_PATH || which.sync('ffmpeg');
       ffmpeg.setFfmpegPath(this.ffmpegPath);
-      console.log('ThumbnailService: ffmpeg found at', this.ffmpegPath);
     } catch {
       this.ffmpegPath = null;
       console.warn('ThumbnailService: ffmpeg not found. Set FFMPEG_PATH or install ffmpeg.');
@@ -148,7 +147,6 @@ export class ThumbnailService {
     try {
       this.ffprobePath = process.env.FFPROBE_PATH || which.sync('ffprobe');
       ffmpeg.setFfprobePath(this.ffprobePath);
-      console.log('ThumbnailService: ffprobe found at', this.ffprobePath);
     } catch {
       this.ffprobePath = null;
       console.warn('ThumbnailService: ffprobe not found. Set FFPROBE_PATH or install ffprobe.');
@@ -156,7 +154,6 @@ export class ThumbnailService {
 
     try {
       this.imageMagickPath = process.env.IMAGEMAGICK_PATH || which.sync('magick');
-      console.log('ThumbnailService: ImageMagick found at', this.imageMagickPath);
     } catch {
       this.imageMagickPath = null;
       console.warn('ThumbnailService: ImageMagick not found. Install ImageMagick to preview RAW/PSD/TIFF files.');
@@ -191,7 +188,6 @@ export class ThumbnailService {
     for (const ext of generator.supportedExtensions) {
       this.extMap.set(ext, generator);
     }
-    console.log(`ThumbnailService: registered generator '${generator.name}' for [${generator.supportedExtensions.join(', ')}]`);
   }
 
   unregisterGenerator(name: string): void {
@@ -332,7 +328,6 @@ export class ThumbnailService {
           // WebSocket 事件与文件列表接口统一广播可直接加载的缩略图 URL。
           result.thumb = await dbService.getItemThumbPath(result, { isUrlFile: true });
           await dbService.updateFile(result.id, { thumb: 1 }); // return value unused
-          console.log('Thumbnail generated:', thumbPath);
           this.wsServer?.broadcastLibraryEvent(libraryId, 'thumbnail::generated', result);
         } else {
           console.warn('Thumbnail generation failed:', thumbPath);
@@ -364,8 +359,6 @@ export class ThumbnailService {
     const pendingFiles = await this.getPendingFiles(libraryId, dbService);
     const total = pendingFiles.length;
     this.progress.set(libraryId, { total, completed: 0 });
-    console.log(`ThumbnailService: scanning ${total} pending files for library ${libraryId} (reason: ${reason})`);
-
     for (const file of pendingFiles) {
       this.taskQueue.push(async () => {
         try {
@@ -450,8 +443,6 @@ export class ThumbnailService {
 
     const total = files.length;
     this.progress.set(libraryId, { total, completed: 0 });
-    console.log(`ThumbnailService: syncing ${total} files for library ${libraryId} (reason: ${reason})`);
-
     // fast-glob 一次扫描 thumbs 目录
     const thumbsDir = path.join(libraryPath, 'thumbs');
     const existingThumbs = new Set<string>();
@@ -461,8 +452,6 @@ export class ThumbnailService {
         existingThumbs.add(path.basename(entry, '.png'));
       }
     }
-    console.log(`ThumbnailService: found ${existingThumbs.size} thumbnail files on disk`);
-
     // 对比收集需要更新的记录
     const toUpdate0to1: number[] = [];
     const toUpdate1to0: number[] = [];
@@ -474,8 +463,6 @@ export class ThumbnailService {
     }
 
     const mismatchCount = toUpdate0to1.length + toUpdate1to0.length;
-    console.log(`ThumbnailService: ${mismatchCount} mismatches (${toUpdate0to1.length} missing in DB, ${toUpdate1to0.length} missing on disk)`);
-
     // 批量 SQL 更新
     let synced = 0;
     const query = (dbService as any).query.bind(dbService);
@@ -488,7 +475,6 @@ export class ThumbnailService {
         synced += batch.length;
         const p = this.progress.get(libraryId)!;
         p.completed = synced;
-        console.log(`ThumbnailService: sync progress ${synced}/${mismatchCount} (${Math.round(synced / mismatchCount * 100)}%)`);
       }
     };
 

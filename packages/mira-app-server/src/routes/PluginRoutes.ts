@@ -995,7 +995,6 @@ export class PluginRoutes {
 
                 npmProcess.on('close', (code: number) => {
                     if (code === 0) {
-                        console.log(`Plugin ${plugin.pluginName} uninstalled successfully`);
                     } else {
                         console.warn(`Failed to uninstall plugin ${plugin.pluginName} via npm`);
                     }

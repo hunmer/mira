@@ -88,7 +88,6 @@ export class AdminsRouter {
                     data: { id: adminId.toString() }
                 });
 
-                console.log(`✅ Created new admin: ${username}`);
             } catch (error: any) {
                 console.error('Error creating admin:', error);
 
@@ -137,7 +136,6 @@ export class AdminsRouter {
                         success: true,
                         message: '管理员信息更新成功'
                     });
-                    console.log(`✅ Updated admin: ${id}`);
                 } else {
                     res.status(404).json({
                         success: false,
@@ -176,7 +174,6 @@ export class AdminsRouter {
                         success: true,
                         message: '管理员删除成功'
                     });
-                    console.log(`✅ Deleted admin: ${id}`);
                 } else {
                     res.status(404).json({
                         success: false,

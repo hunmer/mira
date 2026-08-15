@@ -41,7 +41,6 @@ export class HttpRouter {
           return res.status(404).send(`No handler found for libraryId: ${requestLibraryId}`);
         }
 
-        console.log(`Processing request for path: ${path}, libraryId: ${requestLibraryId}`);
         // 调用对应的 handler
         handler(req, res, next);
       };
@@ -180,8 +179,6 @@ export class HttpRouter {
           return res.status(403).json({ error: 'Access denied: path outside plugin directory' });
         }
 
-        console.log({ resolvedPath, filePath });
-
         // 检查文件是否存在
         if (!fs.existsSync(resolvedPath)) {
           return res.status(404).json({ error: 'File not found' });
@@ -225,8 +222,6 @@ export class HttpRouter {
         const fileContent = fs.readFileSync(resolvedPath, 'utf-8');
         res.setHeader('Content-Type', contentType);
         res.send(fileContent);
-
-        console.log(`Plugin file served: ${libraryId}/${pluginName}/${filePath}`);
 
       } catch (error) {
         console.error('Error serving plugin file:', error);

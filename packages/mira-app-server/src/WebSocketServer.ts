@@ -89,8 +89,6 @@ export class MiraWebsocketServer {
                 }
             }
 
-            console.log(`WebSocket connection established: clientId=${clientId}, libraryId=${libraryId}${user ? `, user=${user.username}(${user.role})` : ''}`);
-
             this.registerClient(ws, clientId, libraryId, {
                 url: request.url,
                 headers: request.headers,
@@ -185,7 +183,6 @@ export class MiraWebsocketServer {
     async stop(): Promise<void> {
         this.backend.libraries!.clear();
         this.wss?.close();
-        console.log('WebSocket server stopped');
     }
 
     private handleConnection(ws: WebSocket): void {
@@ -300,7 +297,6 @@ export class MiraWebsocketServer {
         }
 
         this.libraryClients[libraryId].push(ws);
-        console.log(
             `[WebSocketServer] Registered client ${clientId} for library ${libraryId}. ` +
             `libraryConnections=${this.libraryClients[libraryId].length}, totalConnections=${this.getTotalConnectionCount()}`
         );
@@ -318,7 +314,6 @@ export class MiraWebsocketServer {
                 delete this.libraryClients[libraryId];
             }
 
-            console.log(
                 `[WebSocketServer] Unregistered client ${clientId} from library ${libraryId}. ` +
                 `totalConnections=${this.getTotalConnectionCount()}`
             );

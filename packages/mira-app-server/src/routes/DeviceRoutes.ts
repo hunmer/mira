@@ -127,8 +127,6 @@ export class DeviceRoutes {
 
             const devices: Record<string, DeviceInfo[]> = {};
             const libraryClients = webSocketServer.libraryClients;
-            console.log('[DeviceRoutes] libraryClients keys:', Object.keys(libraryClients), 'total connections:', Object.values(libraryClients).reduce((sum, c) => sum + c.length, 0));
-
             for (const [libraryId, clients] of Object.entries(libraryClients)) {
                 devices[libraryId] = clients.map(client => this.extractDeviceInfo(client, libraryId));
             }

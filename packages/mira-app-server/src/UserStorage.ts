@@ -43,7 +43,6 @@ export class UserStorage {
                 try {
                     await this.createTables();
                     await this.createDefaultAdmin();
-                    console.log('✅ 用户数据库初始化完成');
                     resolve();
                 } catch (error) {
                     reject(error);
@@ -128,7 +127,6 @@ export class UserStorage {
         // 检查是否已存在管理员用户
         const existingAdmin = await this.findUserByUsername(adminUsername);
         if (existingAdmin) {
-            console.log(`📝 管理员用户 '${adminUsername}' 已存在`);
             return;
         }
 
@@ -147,8 +145,6 @@ export class UserStorage {
         };
 
         const adminId = await this.createUser(admin);
-        console.log(`✅ 默认管理员用户创建成功: ${adminUsername} (ID: ${adminId})`);
-        console.log(`🔑 初始密码: ${adminPassword}`);
     }
 
     // 密码哈希

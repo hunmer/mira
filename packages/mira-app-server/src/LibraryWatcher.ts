@@ -44,7 +44,6 @@ export class LibraryWatcher {
     // 启动时扫描已有文件，同步未入库的
     this.initialSync();
 
-    console.log(`[Watcher] Started watching: ${this.libraryPath}${this.usePolling ? ' (polling)' : ''}`);
   }
 
   private startWatcher(polling: boolean): void {
@@ -83,7 +82,6 @@ export class LibraryWatcher {
       console.error(`[Watcher] Error for library ${this.libraryId}:`, error);
     });
 
-    console.log(`[Watcher] Started watching: ${this.libraryPath}${this.usePolling ? ' (polling)' : ''}`);
   }
 
   // 启动时扫描文件夹，把未入库的文件导入
@@ -123,7 +121,6 @@ export class LibraryWatcher {
         }
       }
       if (imported > 0) {
-        console.log(`[Watcher] Initial sync: imported ${imported} files`);
         this.webSocketServer.broadcastLibraryEvent(this.libraryId, 'file::synced', {
           libraryId: this.libraryId,
           imported,
@@ -176,7 +173,6 @@ export class LibraryWatcher {
       clearTimeout(entry.timer);
     }
     this.pendingUnlinks.clear();
-    console.log(`[Watcher] Stopped for library ${this.libraryId}`);
   }
 
   // 文件删除/移走：暂存记录，若短时间内没有对应 add 则从 DB 删除
@@ -235,8 +231,6 @@ export class LibraryWatcher {
           name: path.basename(filePath),
           folder_id: folderId,
         });
-        console.log(`[Watcher] Moved: ${path.basename(filePath)}`);
-
         this.webSocketServer.broadcastLibraryEvent(this.libraryId, 'file::updated', {
           libraryId: this.libraryId,
           fileId: moved.id,
@@ -252,8 +246,6 @@ export class LibraryWatcher {
         if (folderId) fileData.folder_id = folderId;
 
         const result = await this.libraryService.createFileFromPath(filePath, fileData, { importType: 'link' });
-        console.log(`[Watcher] Imported: ${path.basename(filePath)}`);
-
         this.webSocketServer.broadcastPluginEvent('file::created', {
           message: { type: 'file', action: 'create' },
           result,

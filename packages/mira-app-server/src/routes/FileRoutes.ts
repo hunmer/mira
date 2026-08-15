@@ -62,7 +62,6 @@ export class FileRoutes {
             const fields = req.body.fields ? JSON.parse(req.body.fields) : null;
             const payload = req.body.payload ? JSON.parse(req.body.payload) : null;
             const uploader = (req as any).user?.id || null;
-          console.log('[Upload] req.user:', (req as any).user, '| uploader:', uploader);
             const obj = this.backend.libraries!.getLibrary(libraryId);
             if (!obj) return res.status(404).send('Library not found');
 
@@ -204,7 +203,6 @@ export class FileRoutes {
 
                                 const isCrossDevice = path.parse(file.path).root.toLowerCase() !== path.parse(targetPath).root.toLowerCase();
                                 if (isCrossDevice) {
-                                    console.info('[Upload] Cross-device update, using copy/unlink:', file.path, '->', targetPath);
                                     fs.copyFileSync(file.path, targetPath);
                                     fs.unlinkSync(file.path);
                                 } else {
@@ -215,7 +213,6 @@ export class FileRoutes {
                                         fs.renameSync(file.path, targetPath);
                                     } catch (error: any) {
                                         if (error?.code !== 'EXDEV') throw error;
-                                        console.info('[Upload] Cross-device update, using copy/unlink:', file.path, '->', targetPath);
                                         fs.copyFileSync(file.path, targetPath);
                                         fs.unlinkSync(file.path);
                                     }
@@ -991,7 +988,6 @@ export class FileRoutes {
                     if (filePath && fs.existsSync(filePath)) {
                         try {
                             fs.unlinkSync(filePath);
-                            console.log(`Physical file deleted: ${filePath}`);
                         } catch (fileError) {
                             console.error(`Error deleting physical file ${filePath}:`, fileError);
                         }
@@ -1001,7 +997,6 @@ export class FileRoutes {
                         const thumbPath = await obj.libraryService.getItemThumbPath(item, { isNetworkImage: false });
                         if (thumbPath && fs.existsSync(thumbPath)) {
                             fs.unlinkSync(thumbPath);
-                            console.log(`Thumbnail deleted: ${thumbPath}`);
                         }
                     } catch (thumbError) {
                         console.error(`Error deleting thumbnail:`, thumbError);

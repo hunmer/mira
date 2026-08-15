@@ -65,7 +65,6 @@ export class AuthRouter {
             try {
                 const cleaned = await this.authService.cleanupExpiredTokens();
                 if (cleaned > 0) {
-                    console.log(`🧹 清理了 ${cleaned} 个过期会话`);
                 }
             } catch (error) {
                 console.error('清理过期会话时出错:', error);
@@ -153,8 +152,6 @@ export class AuthRouter {
             try {
                 const { username, password, email } = req.body;
 
-                console.log('📝 Register attempt:', { username, email, passwordLength: password?.length });
-
                 // 验证输入
                 if (!username || !password) {
                     return res.status(400).json({
@@ -211,7 +208,6 @@ export class AuthRouter {
                     }
                 });
 
-                console.log(`✅ User ${username} registered successfully with ID: ${userId}`);
             } catch (error) {
                 console.error('Register error:', error);
                 res.status(500).json({
@@ -226,8 +222,6 @@ export class AuthRouter {
         this.router.post('/login', async (req: Request, res: Response) => {
             try {
                 const { username, password } = req.body;
-
-                console.log('📝 Login attempt:', { username, passwordLength: password?.length });
 
                 if (!username || !password) {
                     return res.status(400).json({
@@ -252,7 +246,6 @@ export class AuthRouter {
                         }
                     });
 
-                    console.log(`✅ User ${username} logged in successfully`);
                 } else {
                     res.status(401).json({
                         code: 401,
@@ -260,7 +253,6 @@ export class AuthRouter {
                         data: null
                     });
 
-                    console.log(`❌ Failed login attempt for username: ${username}`);
                 }
             } catch (error) {
                 console.error('Login error:', error);
@@ -279,7 +271,6 @@ export class AuthRouter {
 
                 if (token) {
                     const revoked = await this.authService.revokeToken(token);
-                    console.log(`🔓 Token ${revoked ? 'successfully' : 'failed to'} revoked`);
                 }
 
                 res.json({

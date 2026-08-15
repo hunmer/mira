@@ -85,7 +85,6 @@ export abstract class ServerPlugin {
         } else {
             this.routes.push(route);
         }
-        console.log(`Plugin ${this.pluginName}: Registered route ${route.path}`);
     }
 
     /**
@@ -111,7 +110,6 @@ export abstract class ServerPlugin {
         const index = this.routes.findIndex(r => r.path === path);
         if (index !== -1) {
             this.routes.splice(index, 1);
-            console.log(`Plugin ${this.pluginName}: Unregistered route ${path}`);
             return true;
         }
         return false;
@@ -122,6 +120,5 @@ export abstract class ServerPlugin {
      */
     protected clearRoutes(): void {
         this.routes = [];
-        console.log(`Plugin ${this.pluginName}: Cleared all routes`);
     }
 }

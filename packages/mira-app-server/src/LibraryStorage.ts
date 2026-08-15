@@ -90,11 +90,9 @@ export class LibraryStorage {
                 const shouldLoad = library.status === 'active' || !library.status;
 
                 if (shouldLoad) {
-                    console.log('loading library ', library.name);
                     await this.load(library);
                     success++;
                 } else {
-                    console.log('skipping inactive library ', library.name);
                     // 为禁用的库创建库对象，保留配置信息和事件管理器
                     this.libraries[library.id] = {
                         eventManager: new EventManager(),
@@ -102,7 +100,6 @@ export class LibraryStorage {
                     };
                 }
             } catch (err) {
-                console.log(err)
             }
         }
         return success;
@@ -146,7 +143,6 @@ export class LibraryStorage {
                 // 优先使用保存的配置，如果没有则从文件读取
                 if (libraryObj.savedConfig) {
                     config = libraryObj.savedConfig;
-                    console.log(`Using saved config for library ${libraryId}`);
                 } else {
                     // 从配置文件加载
                     const librarysJson = await getLibraries(this.server.getDataPath());
@@ -189,7 +185,6 @@ export class LibraryStorage {
             // 清除保存的配置（已重新启用）
             delete libraryObj.savedConfig;
 
-            console.log(`Library ${libraryId} enabled successfully`);
             return true;
         } catch (error) {
             console.error(`Failed to enable library ${libraryId}:`, error);
@@ -240,7 +235,6 @@ export class LibraryStorage {
             // 保存配置信息以便后续重新启用时使用
             libraryObj.savedConfig = savedConfig;
 
-            console.log(`Library ${libraryId} disabled successfully`);
             return true;
         } catch (error) {
             console.error(`Failed to disable library ${libraryId}:`, error);

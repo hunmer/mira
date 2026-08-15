@@ -109,7 +109,6 @@ export class ServerPluginManager {
 
     constructor({ server, dbService, pluginsDir }: { server: MiraWebsocketServer, dbService: ILibraryServerData, pluginsDir?: string }) {
         this.pluginsDir = path.join(pluginsDir ?? __dirname, 'plugins');
-        console.log({ pluginsDir: this.pluginsDir });
         this.server = server;
         this.dbService = dbService;
         this.pluginsConfigPath = path.join(this.pluginsDir, 'plugins.json');
@@ -118,8 +117,6 @@ export class ServerPluginManager {
         const httpPort = this.server.backend.config.httpPort || 8081;
         const baseURL = `http://localhost:${httpPort}`;
         this.miraClient = new MiraClient(baseURL);
-        console.log(`🔗 Created MiraClient for plugins with baseURL: ${baseURL}`);
-
         // Ensure plugins directory exists
         if (!fs.existsSync(this.pluginsDir)) {
             fs.mkdirSync(this.pluginsDir, { recursive: true });
@@ -219,7 +216,6 @@ export class ServerPluginManager {
         try {
             // 检查插件是否已经加载过
             if (!reload && this.loadedPlugins.has(pluginConfig.name)) {
-                console.log(`Plugin ${pluginConfig.name} already loaded, skipping...`);
                 return;
             }
 
@@ -240,7 +236,6 @@ export class ServerPluginManager {
                     miraClient: this.miraClient,
                 });
                 this.loadedPlugins.set(pluginConfig.name, obj);
-                console.log(`${reload ? 'Reloaded' : 'Loaded'} plugin: ${pluginConfig.name}`);
             } else {
                 console.warn(`Plugin ${pluginConfig.name} does not have an init function, skipping...`);
             }
@@ -445,7 +440,6 @@ export class ServerPluginManager {
             }
 
             this.loadedPlugins.delete(name);
-            console.log(`Unloaded plugin: ${name}`);
             return true;
         }
         return false;
@@ -463,7 +457,6 @@ export class ServerPluginManager {
         }
 
         if (!pluginConfig.enabled) {
-            console.log(`Plugin ${name} is disabled, skipping reload`);
             return false;
         }
 
@@ -663,6 +656,5 @@ export class ServerPluginManager {
      */
     registerPluginInstance(pluginName: string, pluginInstance: any): void {
         this.loadedPlugins.set(pluginName, pluginInstance);
-        console.log(`�?Manually registered plugin: ${pluginName}`);
     }
 }

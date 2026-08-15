@@ -36,11 +36,7 @@ export class MiraServer {
             ...config
         };
 
-        console.log('🚀 Initializing Mira Server...');
-        console.log('📋 Configuration:', this.config);
-
         this.dataPath = config.dataPath || process.env.DATA_PATH || path.join(process.cwd(), 'data');
-        console.log('📂 Data path resolved to:', this.dataPath);
     }
 
     public async start(): Promise<void> {
@@ -63,14 +59,11 @@ export class MiraServer {
                 this
             );
             await this.webSocketServer.start(this.config.wsPort!);
-            console.log(`🔌 WebSocket Server initialized on port ${this.config.wsPort}`);
-
             // 缩略图服务接入 WebSocket 广播
             this.thumbnailService.setWebSocketServer(this.webSocketServer);
 
-            console.log('📚 Auto-loading libraries...');
             this.libraries = new LibraryStorage(this);
-            this.libraries.loadAll().then((loaded: number) => console.log(`✅ ${loaded} Libraries loaded`));
+            this.libraries.loadAll();
 
             this.databaseBackupService = new DatabaseBackupService(this.dataPath);
             await this.databaseBackupService.start();
@@ -78,7 +71,6 @@ export class MiraServer {
             // 下载执行器（消费 cookie 站点下载图片并入库）
             this.downloadExecutor = new DownloadExecutorService(this);
 
-            console.log('✅ Mira Server started successfully!');
         } catch (error) {
             console.error('❌ Failed to start Mira Server:', error);
             throw error;
@@ -86,8 +78,6 @@ export class MiraServer {
     }
 
     public async stop(): Promise<void> {
-        console.log('🔄 Stopping Mira Server...');
-
         this.databaseBackupService?.stop();
         this.metadataService?.clear();
         if (this.libraries) {
@@ -98,7 +88,6 @@ export class MiraServer {
             await this.httpServer.stop();
         }
 
-        console.log('✅ Mira Server stopped successfully');
     }
 
     public getHttpServer(): MiraHttpServer {

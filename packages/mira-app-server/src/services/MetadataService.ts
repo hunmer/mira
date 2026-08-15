@@ -108,8 +108,7 @@ export class MetadataService {
 
     for (const rule of BUILTIN_METADATA_RULES) this.registerRule(rule);
 
-    if (this.exiftoolPath) console.log('MetadataService: exiftool found at', this.exiftoolPath);
-    else console.warn('MetadataService: exiftool not found. Set EXIFTOOL_PATH or install ExifTool.');
+    if (!this.exiftoolPath) console.warn('MetadataService: exiftool not found. Set EXIFTOOL_PATH or install ExifTool.');
   }
 
   registerRule(rule: MetadataRule): void {

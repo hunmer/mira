@@ -21,7 +21,6 @@ export abstract class MessageHandler {
             "status": "success",
             data,
         })
-        console.log({ response });
         this.ws.send(response);
     }
 
@@ -31,7 +30,6 @@ export abstract class MessageHandler {
             status: 'error',
             error
         });
-        console.log({ response })
         this.ws.send(response);
     }
 }

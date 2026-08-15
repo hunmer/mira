@@ -27,16 +27,10 @@ const procmLogger = getProcmLogger();
 async function startServer() {
   try {
     // 服务端启动文件
-    console.log('🚀 Starting Mira Server...');
-
     // 获取端口配置，优先使用环境变量
     const httpPort = process.env.MIRA_SERVER_HTTP_PORT || process.env.HTTP_PORT || '8081';
     const wsPort = process.env.MIRA_SERVER_WS_PORT || process.env.WS_PORT || '8018';
     const dataPath = process.env.DATA_PATH || './data';
-
-    console.log(`📡 HTTP Server will start on port: ${httpPort}`);
-    console.log(`🔌 WebSocket Server will start on port: ${wsPort}`);
-    console.log(`📁 Data path: ${dataPath}`);
 
     procmLogger.info('Starting Mira Server', { httpPort, wsPort, dataPath });
 
@@ -46,20 +40,17 @@ async function startServer() {
       dataPath: dataPath,
     });
 
-    console.log('✅ Mira Server started successfully');
     procmLogger.info('Mira Server started successfully');
     publishBackendReady({ initializedAt: Date.now(), httpPort: parseInt(httpPort), wsPort: parseInt(wsPort) });
 
     // 优雅关闭处理
     process.on('SIGINT', async () => {
-      console.log('\n📴 Received SIGINT, gracefully shutting down...');
       await server.stop();
       closeProcm();
       process.exit(0);
     });
 
     process.on('SIGTERM', async () => {
-      console.log('\n📴 Received SIGTERM, gracefully shutting down...');
       await server.stop();
       closeProcm();
       process.exit(0);
