@@ -41,7 +41,12 @@ function writeLine(stream: NodeJS.WriteStream, text: string): void {
 
 export function initProcm(): void {
   if (procmClient) return
-  if (!process.env.PROCM_ROOM_ID || !process.env.PROCM_WS_URL) return
+  // 即使没有 room 环境变量，也保留结构化 stdout 日志；这样由 procm
+  // 启动但未注入 room 的子进程仍可按 level 过滤历史日志。
+  if (!process.env.PROCM_ROOM_ID || !process.env.PROCM_WS_URL) {
+    procmLogger = createLogger({ console: rawConsole, clientName: 'mira-client' })
+    return
+  }
   try {
     procmClient = createProcmClient({ clientName: 'mira-client' })
   } catch (error) {

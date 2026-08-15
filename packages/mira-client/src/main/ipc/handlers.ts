@@ -19,6 +19,18 @@ import { ServerControlHandlers } from './ServerControlHandlers'
 import { PluginWindowHandlers } from './PluginWindowHandlers'
 import { LoginWindowHandlers } from './LoginWindowHandlers'
 import { getAutoUpdater } from '../services/useAutoUpdater'
+import { logger } from '../utils/Logger'
+import { inspect } from 'node:util'
+
+type RendererLogLevel = 'log' | 'info' | 'warn' | 'error' | 'debug'
+
+function formatRendererLogArgs(args: any[]): string {
+  return args.map(value =>
+    typeof value === 'object' && value !== null
+      ? inspect(value, { depth: 4, colors: false })
+      : String(value)
+  ).join(' ')
+}
 
 /**
  * IPC 通信处理器
@@ -80,6 +92,18 @@ export class IPCHandlers {
 
     // 注册搜索结果处理
     this.registerSearchResultHandlers()
+
+    // console hook/preload 将 renderer 日志通过受限 IPC 转发到 main，
+    // 由 main Logger 统一写入 electron-log 和 procm 结构化日志。
+    ipcMain.on('renderer-log', (_event, level: RendererLogLevel, ...args: any[]) => {
+      if (!['log', 'info', 'warn', 'error', 'debug'].includes(level)) return
+      const message = formatRendererLogArgs(args)
+      const data = args.length > 1 ? args.slice(1) : undefined
+      if (level === 'warn') logger.warn('Renderer', message, data)
+      else if (level === 'error') logger.error('Renderer', message, data)
+      else if (level === 'debug') logger.debug('Renderer', message, data)
+      else logger.info('Renderer', message, data)
+    })
   }
 
   /**
@@ -209,6 +233,7 @@ export class IPCHandlers {
     ipcMain.removeAllListeners('server-autostart:get')
     ipcMain.removeAllListeners('server-autostart:set')
     ipcMain.removeAllListeners('server-autostart:wait-ready')
+    ipcMain.removeAllListeners('renderer-log')
 
     // 文件系统操作
     ipcMain.removeAllListeners('fs:readDir')
