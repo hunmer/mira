@@ -5,7 +5,7 @@
   "description": "Mira TypeScript project - monorepo with core, server, and plugins",
   "scripts": {
     "install:deps": "node scripts/install-build.mjs packages/mira-app-core packages/mira-app-server packages/mira-client",
-    "build:plugins": "node scripts/install-build.mjs --npm \"plugins/plugins/*\"",
+    "build:plugins": "node scripts/install-build.mjs \"plugins/plugins/*\"",
     "build:client-plugins-index": "node scripts/build-client-plugins-index.mjs",
     "dev:client-plugins": "node scripts/build-client-plugins-index.mjs --watch --serve",
     "start:server": "pnpm run install:deps && pnpm run build:plugins",

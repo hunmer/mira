@@ -9,7 +9,7 @@
  *   node scripts/install-build.mjs [--npm] [--no-install] [--no-build] <glob|dir> [...]
  *
  * 选项:
- *   --npm        使用 npm（插件目录）；默认 pnpm（workspace 包）
+ *   --npm        使用 npm；默认 pnpm
  *   --no-install 跳过 install
  *   --no-build   跳过 build
  *
@@ -79,13 +79,12 @@ for (const dir of dirs) {
       console.log('  (无 build 脚本，跳过)')
     }
 
-    // 进入插件的 web 子目录执行 build（若存在）
+    // 进入插件的 web 子目录执行 build（若存在），与主目录使用同一包管理器
     const webDir = join(dir, 'web')
     if (existsSync(join(webDir, 'package.json'))) {
       const webPkg = JSON.parse(readFileSync(join(webDir, 'package.json'), 'utf8'))
       if (webPkg.scripts && webPkg.scripts.build) {
-        // web 目录用 npm（独立子项目）
-        run('npm run build', webDir)
+        run(`${pm} run build`, webDir)
       }
     }
   }
