@@ -22,6 +22,8 @@ const props = defineProps<{
   item: BrowserItem
   /** 当前素材库 id（用于拉取缩略图） */
   libraryId?: string
+  /** 卡片初始宽度（数字按 px 处理） */
+  size?: number
 }>()
 
 const emit = defineEmits<{
@@ -64,6 +66,16 @@ const folderId = computed(() => folder.value.id)
 const title = computed(() => props.item.label)
 const totalCount = computed(() => props.item.count ?? folder.value.fileCount ?? 0)
 const effectiveLibraryId = computed(() => props.libraryId || libraryStore.currentLibrary?.id || '')
+const cardSizeStyle = computed(() => {
+  const width = props.size ?? 320
+  const height = Math.round(width * 1.14)
+  const scale = Math.max(0.65, Math.min(1, width / 320))
+  return {
+    '--folder-card-width': `${width}px`,
+    '--folder-card-height': `${height}px`,
+    '--folder-card-scale': String(scale),
+  }
+})
 
 // 预览项目（不足 PREVIEW_COUNT 时复用已有缩略图）
 const previewThumbs = computed(() => {
@@ -252,7 +264,7 @@ const folderCssVars = computed(() => {
 </script>
 
 <template>
-  <div ref="folderCardWrapRef" class="folder-card-wrap" @mouseenter="onEnter" @mouseleave="onLeave">
+  <div ref="folderCardWrapRef" class="folder-card-wrap" :style="cardSizeStyle" @mouseenter="onEnter" @mouseleave="onLeave">
     <div
       class="folder-card"
       :class="{ 'is-hovered': isHovered }"
@@ -333,7 +345,7 @@ const folderCssVars = computed(() => {
 <style scoped>
 .folder-card-wrap {
   width: 100%;
-  max-width: 320px;
+  max-width: var(--folder-card-width, 320px);
 }
 
 .folder-card {
@@ -342,14 +354,15 @@ const folderCssVars = computed(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
+  width: var(--folder-card-width, 320px);
+  min-width: 0;
+  min-height: var(--folder-card-height, 365px);
+  padding: 1rem;
   border-radius: 1rem;
   cursor: pointer;
   border: 1px solid var(--border);
   background: var(--card);
   transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-  min-width: 280px;
-  min-height: 320px;
   perspective: 1200px;
 }
 
@@ -381,6 +394,8 @@ const folderCssVars = computed(() => {
   margin-bottom: 1rem;
   height: 160px;
   width: 200px;
+  transform: scale(var(--folder-card-scale, 1));
+  transform-origin: center center;
 }
 
 .folder-panel {

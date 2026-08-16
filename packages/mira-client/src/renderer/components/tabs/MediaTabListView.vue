@@ -67,6 +67,27 @@
       <div class="flex-1 flex flex-col min-w-0">
         <!-- 媒体内容 - files 和 trash 都使用统一的视图 -->
         <div class="flex-1 overflow-y-auto w-full min-w-0" @wheel="handleCtrlWheel">
+          <!-- 网格视图顶部的子文件夹 -->
+          <div v-if="viewMode === 'grid' && childFolderItems.length > 0" class="px-5 pt-5">
+            <div class="folder-card-grid" :style="{ '--folder-grid-min-size': `${folderCardSize}px` }">
+              <div
+                v-for="item in childFolderItems"
+                :key="String(item.raw.id)"
+                class="folder-card-button"
+                role="button"
+                tabindex="0"
+                :title="item.label"
+                @click="handleChildFolderSelect(item.raw, $event)"
+                @keydown.enter.prevent="handleChildFolderSelect(item.raw, $event)"
+                @keydown.space.prevent="handleChildFolderSelect(item.raw, $event)"
+              >
+                <Folder :size="folderCardUiSize" :label="item.label"
+                  :thumbnail="folderCoverUrls[String(item.raw.id)]" />
+                <span class="folder-card-count">{{ item.count ?? 0 }}</span>
+              </div>
+            </div>
+          </div>
+
           <!-- 网格视图 -->
           <MediaGridComponent v-if="viewMode === 'grid'" :key="`grid-${viewMode}`" class="p-5"
             :items="paginatedMediaItems" :selected-items="selectedItems" :card-size="cardSize"
@@ -270,6 +291,40 @@
   </div>
 </template>
 
+<style scoped>
+.folder-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--folder-grid-min-size, 180px)), 1fr));
+  gap: 1rem;
+  align-items: start;
+  box-shadow: none;
+}
+
+.folder-card-button {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+}
+
+.folder-card-button:focus,
+.folder-card-button:focus-visible,
+.folder-card-button:active {
+  outline: none;
+  box-shadow: none;
+}
+
+.folder-card-count {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+}
+
+</style>
+
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -289,6 +344,8 @@ import { useMediaTabData } from '@renderer/composables/useMediaTabData'
 import MediaGridComponent from '@renderer/components/business/MediaGridComponent.vue'
 import MediaListComponent from '@renderer/components/business/MediaListComponent.vue'
 import WaterfallComponent from '@renderer/components/business/WaterfallComponent.vue'
+import type { BrowserItem } from '@renderer/components/business/GroupedCardBrowserDialog.vue'
+import Folder from '@/components/ui/folder/Folder.vue'
 import FileUploadDialog from '@renderer/components/business/FileUploadDialog.vue'
 import FilterBar from '@/renderer/components/business/FilterBar/FilterBar.vue'
 import Breadcrumb from '@/renderer/components/common/Breadcrumb.vue'
@@ -695,6 +752,88 @@ watch([selectedItems, () => paginatedMediaItems.value], ([ids, items]) => {
 
 const folderTreeItems = computed(() => homeController.folderTree.value || [])
 const tagTreeItems = computed(() => tagStore.tags || [])
+
+const childFolderItems = computed<BrowserItem[]>(() => {
+  if (props.viewType === 'trash') return []
+  const rawFolder = props.filters?.folder
+  const currentId = rawFolder === undefined || rawFolder === null || rawFolder === '=null'
+    ? null
+    : Number(rawFolder)
+  if (rawFolder !== undefined && rawFolder !== null && rawFolder !== '=null' && !Number.isFinite(currentId)) return []
+
+  return (folderStore.folders || [])
+    .filter((folder: any) => {
+      const parentId = folder.parent_id == null || folder.parent_id === 0 ? null : Number(folder.parent_id)
+      return parentId === currentId
+    })
+    .map((folder: any) => ({
+      raw: folder,
+      label: folder.title || folder.name || `Folder ${folder.id}`,
+      count: folder.fileCount ?? folder.file_count ?? 0,
+      icon: folder.icon || 'folder',
+      color: folder.color,
+      description: folder.description,
+    }))
+})
+
+// 与媒体网格列数/卡片模式保持一致，避免文件夹卡片固定尺寸导致布局脱节。
+const folderCardSize = computed(() => {
+  const modeScale = cardSize.value === 'small' ? 0.82 : cardSize.value === 'large' ? 1.12 : 1
+  return Math.round(Math.max(140, Math.min(260, dynamicColumnWidth.value * modeScale)))
+})
+
+const folderCardUiSize = computed<'sm' | 'md' | 'lg'>(() => {
+  if (folderCardSize.value <= 160) return 'sm'
+  if (folderCardSize.value <= 215) return 'md'
+  return 'lg'
+})
+
+const folderCoverUrls = ref<Record<string, string>>({})
+let folderCoverLoadToken = 0
+const loadFolderCovers = async () => {
+  const libraryId = props.libraryId || libraryStore.currentLibrary?.id
+  if (!libraryId || childFolderItems.value.length === 0) {
+    folderCoverUrls.value = {}
+    return
+  }
+  const token = ++folderCoverLoadToken
+  const entries = await Promise.all(childFolderItems.value.map(async item => {
+    try {
+      const result = await mediaStore.fetchFiles({
+        libraryId,
+        filters: { folder: Number(item.raw.id), limit: 1, recycled: 0 },
+      })
+      const file = result.success && Array.isArray(result.data) ? result.data[0] : undefined
+      return [String(item.raw.id), file?.thumbnailPath || file?.url || ''] as const
+    } catch {
+      return [String(item.raw.id), ''] as const
+    }
+  }))
+  if (token === folderCoverLoadToken) folderCoverUrls.value = Object.fromEntries(entries)
+}
+
+watch([childFolderItems, () => props.libraryId || libraryStore.currentLibrary?.id], loadFolderCovers, { immediate: true })
+
+function handleChildFolderSelect(folder: any, event?: MouseEvent | KeyboardEvent) {
+  const title = folder.title || folder.name
+  if (event && (event.ctrlKey || event.metaKey)) {
+    window.dispatchEvent(new CustomEvent('home-route-folder', {
+      detail: {
+        folderId: folder.id,
+        libraryId: props.libraryId || libraryStore.currentLibrary?.id,
+        title,
+      },
+    }))
+    return
+  }
+
+  window.dispatchEvent(new CustomEvent('home-tab-replace', {
+    detail: {
+      kind: 'folder',
+      payload: { id: String(folder.id), title },
+    },
+  }))
+}
 
 // 方法
 // 获取指定页面的数据

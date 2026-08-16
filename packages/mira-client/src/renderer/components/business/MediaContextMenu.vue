@@ -65,6 +65,7 @@
         :folders="folderTreeNodes"
         :show-base-categories="false"
         :default-show-search="true"
+        indent-mode="icon"
         @select="handleFolderSelect"
       />
     </PopoverContent>

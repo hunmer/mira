@@ -18,6 +18,7 @@
       <ContextMenuTrigger as-child>
         <div v-if="treeData.length > 0" class="tree-scroll max-h-64 overflow-y-auto">
           <component :is="draggable ? Draggable : BaseTree" ref="treeRef" v-model="treeData"
+            :indent="indentMode === 'icon' ? 0 : undefined"
             :each-droppable="draggable ? eachDroppable : undefined" @before-drag-start="onBeforeDragStart"
             @after-drop="onAfterDrop">
             <template #default="{ node, stat }">
@@ -25,6 +26,7 @@
                 :multi-selected="selectionActive && isNodeSelected(node)" :drag-over="dragOverNodeId === node.id"
                 :locating="locatingNodeId === node.id" :show-checkbox="showNodeCheckbox"
                 :check-state="showNodeCheckbox ? getNodeCheckState(node) : false" :default-icon="defaultIcon"
+                :icon-indent="indentMode === 'icon'"
                 @node-click="handleNodeClick" @node-context-menu="handleNodeContextMenu"
                 @node-drag-over="handleNodeDragOver" @node-drag-leave="handleNodeDragLeave"
                 @node-drop="handleNodeDrop" @toggle="toggleNode"
@@ -114,6 +116,12 @@ interface Props {
    * 用于只需浏览、不需要这些操作的场景（如本地目录浏览树）。
    */
   hideHeaderActions?: boolean
+  /**
+   * 层级缩进样式：
+   * - 'tree'（默认）：@he-tree wrapper padding 缩进，chevron 在行首
+   * - 'icon'：chevron 移到行尾，层级缩进由文件夹图标左 margin 表达
+   */
+  indentMode?: 'tree' | 'icon'
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -124,6 +132,7 @@ const props = withDefaults(defineProps<Props>(), {
   title: '',
   hideHeader: false,
   hideHeaderActions: false,
+  indentMode: 'tree',
   folders: () => [],
   baseCategoriesConfig: () => [],
 })
@@ -316,7 +325,7 @@ function handleBaseCategoryClick(category: BaseCategory) {
   })
 }
 
-function handleNodeClick(node: HeTreeNode, stat: any, event: MouseEvent) {
+function handleNodeClick(node: HeTreeNode, _stat: any, _event: MouseEvent) {
   // 选择模式激活：点击节点执行选中/取消选中，不触发常规 select
   if (selectionActive.value) {
     if (isMultiMode.value) {
@@ -327,12 +336,6 @@ function handleNodeClick(node: HeTreeNode, stat: any, event: MouseEvent) {
       selectSingle(node)
       emit('select', buildSelectPayload(node, defaultIcon.value))
     }
-    return
-  }
-
-  // 有子节点的父节点：仅展开/折叠，不触发 select（避免打开新标签页）
-  if (stat.children?.length) {
-    void toggleNode(stat, event)
     return
   }
 

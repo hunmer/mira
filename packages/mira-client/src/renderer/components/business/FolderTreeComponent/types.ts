@@ -8,6 +8,8 @@ export interface HeTreeNode {
   nodeType: string
   originalData?: any
   children?: HeTreeNode[]
+  /** 初始展开状态（@he-tree/vue 直接读写节点上的 open） */
+  open?: boolean
 }
 
 /** 基础分类（全部/未分类/未打标/回收站） */

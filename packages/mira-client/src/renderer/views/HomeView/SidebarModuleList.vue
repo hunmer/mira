@@ -280,6 +280,7 @@ defineExpose({ locateItem })
           :folders="homeController.folderTree.value"
           :selected-key="homeController.selectedFolder.value"
           :show-base-categories="false"
+          indent-mode="icon"
           @select="emit('folderSelect', $event)"
           @expand="homeController.handleFolderExpand"
           @refresh="emit('refreshFolders')"

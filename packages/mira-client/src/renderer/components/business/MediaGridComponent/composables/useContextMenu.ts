@@ -48,21 +48,26 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
     if (tagOpen) tagStore.fetchTags(libId)
   })
 
-  const folderTreeNodes = computed(() =>
-    folderStore.folders.map((f: any) => ({
-      id: String(f.id),
-      label: f.title,
-      icon: 'folder',
-      count: f.fileCount,
-      children: f.children?.map((c: any) => ({
-        id: String(c.id),
-        label: c.title,
-        icon: 'folder',
-        count: c.fileCount,
-      })),
-      originalData: f,
-    }))
-  )
+  // getAllFolders 返回扁平列表（parent_id 关联），需按 parent_id 递归建树；
+  // open: true 使弹窗内树默认全部展开
+  const folderTreeNodes = computed(() => {
+    const folders = folderStore.folders as any[]
+    const build = (parentId?: number): any[] =>
+      folders
+        .filter(f => parentId === undefined
+          ? (f.parent_id == null || f.parent_id === 0)
+          : f.parent_id === parentId)
+        .map(f => ({
+          id: String(f.id),
+          label: f.title || f.label,
+          icon: 'folder',
+          count: f.fileCount ?? f.file_count ?? 0,
+          open: true,
+          originalData: f,
+          children: build(f.id),
+        }))
+    return build()
+  })
 
   const getTargetFiles = (): FileInfo[] => {
     if (props.selectedItems.length <= 1 || !currentContextItem.value) {

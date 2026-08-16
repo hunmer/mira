@@ -27,12 +27,15 @@ const props = withDefaults(
     size?: FolderSize
     /** 左下角标签文本 */
     label?: string
+    /** 可选封面缩略图；未提供时显示默认纸张样式 */
+    thumbnail?: string
     class?: string
   }>(),
   {
     color: "blue",
     size: "lg",
     label: undefined,
+    thumbnail: undefined,
     class: undefined,
   },
 )
@@ -59,7 +62,7 @@ const sizeMap: Record<
     tabLeft: "w-9 h-3 rounded-tl-lg",
     tabRight: "w-2 h-3 rounded-tr-[24px]",
     tabBridge: "w-2 h-2",
-    flapBody: "h-9",
+    flapBody: "h-9 rounded-tr-xl rounded-b-[24px]",
     papers: "inset-x-5 top-2",
     paperOffset: "top-1",
     paperH: "h-16",
@@ -73,7 +76,7 @@ const sizeMap: Record<
     tabLeft: "w-12 h-4 rounded-tl-lg",
     tabRight: "w-2.5 h-4 rounded-tr-[32px]",
     tabBridge: "w-2.5 h-2.5",
-    flapBody: "h-12",
+    flapBody: "h-12 rounded-tr-xl rounded-b-[32px]",
     papers: "inset-x-6 top-3",
     paperOffset: "top-1.5",
     paperH: "h-24",
@@ -87,7 +90,7 @@ const sizeMap: Record<
     tabLeft: "w-16 h-5.5 rounded-tl-xl",
     tabRight: "w-3.25 h-5.5 rounded-tr-[40px]",
     tabBridge: "w-3.25 h-3.25",
-    flapBody: "h-16",
+    flapBody: "h-16 rounded-tr-xl rounded-b-[40px]",
     papers: "inset-x-8 top-4",
     paperOffset: "top-2",
     paperH: "h-30",
@@ -218,7 +221,7 @@ const bridgeStyle = {
         <div :class="cn(s.tabRight, 'backdrop-blur-sm', c.flap)" />
         <div :class="cn(s.tabBridge, c.flap)" :style="bridgeStyle" />
       </div>
-      <div :class="cn(s.flapBody, 'rounded-tr-xl backdrop-blur-sm', c.flap)" />
+      <div :class="cn(s.flapBody, 'backdrop-blur-sm', c.flap)" />
     </div>
 
     <!-- 纸张 -->
@@ -244,7 +247,9 @@ const bridgeStyle = {
         class="absolute inset-x-0 top-0 rounded-xl border-t"
         :class="cn(s.paperH, c.paperFront, c.paperBorder)"
       >
-        <div :class="s.paperContent">
+        <img v-if="props.thumbnail" :src="props.thumbnail" alt=""
+          class="absolute inset-0 size-full rounded-xl object-cover" />
+        <div v-else :class="s.paperContent">
           <div :class="cn('h-1 w-3/4 rounded-full', c.paperLine)" />
           <div :class="cn('h-1 w-1/2 rounded-full', c.paperLine)" />
           <div :class="cn('h-1 w-2/3 rounded-full', c.paperLine)" />

@@ -24,6 +24,7 @@ export function convertFoldersToNodes(items: FolderItem[]): HeTreeNode[] {
     color: (f as any).originalData?.color ?? (f as any).color,
     nodeType: 'folder',
     originalData: (f as any).originalData || f,
+    open: (f as any).open,
     children: f.children ? convertFoldersToNodes(f.children) : undefined,
   }))
 }
