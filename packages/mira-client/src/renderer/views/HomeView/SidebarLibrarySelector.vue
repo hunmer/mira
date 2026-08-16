@@ -13,6 +13,7 @@ import { useSettingsStore } from '@/renderer/stores/settings'
 import { useServerListStore } from '@/renderer/stores/serverList'
 import { useAuthStore } from '@/renderer/stores/auth'
 import { Dropdown } from '@/renderer/components/common/Dropdown'
+import { Badge } from '@/components/ui/badge'
 import miraLogo from '@/renderer/assets/mira-logo.png'
 
 defineOptions({ name: 'SidebarLibrarySelector' })
@@ -122,7 +123,15 @@ const onSelectCollection = (collection: any, close: () => void) => {
                 <div class="flex items-center space-x-2">
                   <span class="material-icons text-primary">library_books</span>
                   <div>
-                    <div class="font-medium text-sm">{{ collection.name }}</div>
+                    <div class="flex items-center gap-1.5 font-medium text-sm">
+                      {{ collection.name }}
+                      <Badge
+                        v-if="libraryStore.currentLibrary?.id === collection.id"
+                        class="h-auto px-1.5 py-0 text-[10px]"
+                      >
+                        {{ $t('views.sidebarLibrarySelector.active') }}
+                      </Badge>
+                    </div>
                     <div class="text-xs text-muted-foreground">
                       {{ $t('views.sidebarLibrarySelector.fileCount', { count: collection.fileCount, type: collection.type }) }}
                       <span v-if="!canAccessLibrary(collection)" class="text-destructive"> · {{ $t('views.sidebarLibrarySelector.accessDenied') }}</span>
@@ -138,12 +147,6 @@ const onSelectCollection = (collection: any, close: () => void) => {
                   >
                     <span class="material-icons text-sm">folder_open</span>
                   </button>
-                  <span
-                    v-if="libraryStore.currentLibrary?.id === collection.id"
-                    class="material-icons text-primary text-sm"
-                  >
-                    check
-                  </span>
                 </div>
               </div>
             </div>

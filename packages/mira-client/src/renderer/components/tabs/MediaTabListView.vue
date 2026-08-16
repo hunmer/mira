@@ -19,7 +19,8 @@
       <div class="flex-1 min-w-0">
         <FilterBar :filters="filterRules" :is-all-selected="isAllSelected" :folder-tree-items="folderTreeItems"
           :tag-tree-items="tagTreeItems" :sort="sortField" :order="sortOrder" @select-all="handleSelectAll"
-          @filter-change="handleFilterChange" @filter-clear="handleFilterClear" @sort-change="handleSortChange" />
+          @filter-change="handleFilterChange" @filter-clear="handleFilterClear" @sort-change="handleSortChange"
+          @apply-saved-filter="handleApplySavedFilter" />
       </div>
       <div class="flex-shrink-0 flex items-center space-x-2">
         <!-- 视图切换下拉菜单 -->
@@ -359,6 +360,7 @@ import type { BreadcrumbItem } from '@renderer/controllers/HomeController'
 import { useMediaOperations, useFilters, useViewModeConfig } from '@renderer/composables'
 // import { useTabPagination } from '@renderer/composables/useTabPagination' // 已替换为MediaTabData
 import { useMediaTabData } from '@renderer/composables/useMediaTabData'
+import { getLibraryPrefs, getSavedFilters } from '@renderer/composables/LibraryPrefs'
 import MediaGridComponent from '@renderer/components/business/MediaGridComponent.vue'
 import MediaListComponent from '@renderer/components/business/MediaListComponent.vue'
 import WaterfallComponent from '@renderer/components/business/WaterfallComponent.vue'
@@ -1019,20 +1021,8 @@ const handleSelectAll = () => {
   }
 }
 
-const handleFilterChange = async (filter: FilterRule) => {
-  // 获取当前的筛选器状态作为基础
-  const mergedFilters: Record<string, any> = { ...mediaTabData.filters.value }
-
-  // 保留 props.filters 中的简单键值对格式筛选器（如 folder, recycled 等）
-  // 这些筛选器不是 FilterRule 格式，需要单独保留
-  Object.entries(props.filters).forEach(([key, value]) => {
-    // 跳过 FilterRule 格式的筛选器，只保留简单键值对
-    if (value === null || typeof value !== 'object') {
-      mergedFilters[key] = value
-    }
-  })
-
-  // 更新变化的筛选器
+// 把单个 FilterRule 的当前值写入查询用的 mergedFilters（供 handleFilterChange / 应用已保存过滤器共用）
+const mergeFilterInto = (mergedFilters: Record<string, any>, filter: FilterRule) => {
   switch (filter.id) {
     case 'folders':
       if (filter.selectedValues && filter.selectedValues.length > 0) {
@@ -1119,6 +1109,23 @@ const handleFilterChange = async (filter: FilterRule) => {
       break
     }
   }
+}
+
+const handleFilterChange = async (filter: FilterRule) => {
+  // 获取当前的筛选器状态作为基础
+  const mergedFilters: Record<string, any> = { ...mediaTabData.filters.value }
+
+  // 保留 props.filters 中的简单键值对格式筛选器（如 folder, recycled 等）
+  // 这些筛选器不是 FilterRule 格式，需要单独保留
+  Object.entries(props.filters).forEach(([key, value]) => {
+    // 跳过 FilterRule 格式的筛选器，只保留简单键值对
+    if (value === null || typeof value !== 'object') {
+      mergedFilters[key] = value
+    }
+  })
+
+  // 更新变化的筛选器
+  mergeFilterInto(mergedFilters, filter)
 
   // 更新MediaTabData中的筛选器
   mediaTabData.updateFilters(mergedFilters)
@@ -1182,6 +1189,53 @@ const handleFilterClear = async (filter: FilterRule) => {
 
   // 同时调用原有逻辑以保持兼容性
   baseHandleFilterClear(filter, () => undefined, null, homeController)
+}
+
+// 应用已保存的过滤器（整套替换当前筛选条件并重新查询）
+const handleApplySavedFilter = async (rules: FilterRule[]) => {
+  const savedById = new Map(rules.map(rule => [rule.id, rule]))
+
+  // 先重置 FilterBar 显示状态，再同步保存值，避免残留旧条件
+  filterRules.value.forEach(rule => {
+    const saved = savedById.get(rule.id)
+    const snapshot: any = saved ? JSON.parse(JSON.stringify(saved)) : null
+    rule.selectedValues = snapshot?.selectedValues || []
+    rule.value = snapshot?.value || ''
+    rule.selectedPreset = snapshot?.selectedPreset || ''
+    rule.customMin = snapshot?.customMin
+    rule.customMax = snapshot?.customMax
+    rule.sizeMin = snapshot?.sizeMin
+    rule.sizeMax = snapshot?.sizeMax
+    rule.selectedCategory = snapshot?.selectedCategory || ''
+    rule.metaField = snapshot?.metaField || 'dimension'
+    rule.selectedMetaPreset = snapshot?.selectedMetaPreset || ''
+    rule.metaDimMin = snapshot?.metaDimMin
+    rule.metaDimMax = snapshot?.metaDimMax
+    rule.metaDurMin = snapshot?.metaDurMin
+    rule.metaDurMax = snapshot?.metaDurMax
+    rule.customDimMin = snapshot?.customDimMin
+    rule.customDimMax = snapshot?.customDimMax
+    rule.customDurMin = snapshot?.customDurMin
+    rule.customDurMax = snapshot?.customDurMax
+    rule.active = snapshot?.active || false
+  })
+
+  // 空基础重建查询条件，保留 props.filters 中 tab 固有的简单键值筛选（如 folder / recycled）
+  const mergedFilters: Record<string, any> = {}
+  Object.entries(props.filters).forEach(([key, value]) => {
+    if (value === null || typeof value !== 'object') {
+      mergedFilters[key] = value
+    }
+  })
+  filterRules.value.forEach(rule => mergeFilterInto(mergedFilters, rule))
+
+  mediaTabData.updateFilters(mergedFilters)
+  await fetchPageData(1)
+
+  // 同步 homeController 的筛选状态
+  filterRules.value.forEach(rule => {
+    baseHandleFilterChange(rule, () => undefined, null, homeController)
+  })
 }
 
 const handleSortChange = async (field: string, order: string) => {
@@ -1453,6 +1507,19 @@ watch(() => props.tabId, async (newTabId, _oldTabId) => {
   if (newTabId && props.libraryId) {
     // 初始化 filterRules
     initializeFilterRules()
+
+    // 应用素材库默认过滤器（仅当该 tab 尚无用户筛选条件时）
+    const current = mediaTabData.filters.value || {}
+    const hasRuleFilters = Object.values(current).some((v: any) => v && typeof v === 'object' && v.id)
+    if (!hasRuleFilters) {
+      const prefs = getLibraryPrefs()
+      const defaultFilter = prefs.defaultFilterId
+        ? getSavedFilters().find(f => f.id === prefs.defaultFilterId)
+        : null
+      if (defaultFilter) {
+        await handleApplySavedFilter(defaultFilter.rules)
+      }
+    }
 
     // 检查是否有缓存数据
     const cachedData = mediaTabData.getCachedData()

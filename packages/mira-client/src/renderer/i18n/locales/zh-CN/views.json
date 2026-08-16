@@ -62,6 +62,7 @@
     "about": "关于 Mira",
     "noLibrary": "未选择素材库",
     "selectLibrary": "选择素材库",
+    "active": "激活",
     "fileCount": "{count} 个文件 · {type}",
     "accessDenied": "权限不足",
     "locate": "定位到目录",

@@ -224,6 +224,57 @@
       </template>
     </div>
 
+    <!-- 已保存的过滤器 -->
+    <Dropdown :offset="{ x: 0, y: 8 }" placement="bottom-start" :close-on-content-click="false">
+      <template #trigger="{ isOpen }">
+        <Button variant="ghost" size="xs"
+          :class="isOpen ? 'text-primary bg-primary/10 rounded-lg' : 'text-muted-foreground hover:text-foreground hover:bg-primary/5 rounded-lg'"
+          :title="$t('business.filterBar.savedFilters')">
+          <span class="material-icons text-sm">bookmark</span>
+        </Button>
+      </template>
+
+      <template #content="{ close }">
+        <div class="min-w-[240px] p-2">
+          <h3 class="font-medium text-foreground mb-2 px-1">{{ $t('business.filterBar.savedFilters') }}</h3>
+
+          <div v-if="savedFilters.length === 0" class="px-1 py-4 text-sm text-muted-foreground text-center">
+            {{ $t('business.filterBar.noSavedFilters') }}
+          </div>
+
+          <div v-else class="max-h-[280px] overflow-y-auto space-y-0.5">
+            <div v-for="saved in savedFilters" :key="saved.id"
+              class="group flex items-center gap-2 rounded-lg px-2 py-1.5 cursor-pointer hover:bg-primary/5"
+              :title="$t('business.filterBar.applyFilter')"
+              @click="handleApplySaved(saved); close()">
+              <span class="material-icons text-sm text-muted-foreground">filter_alt</span>
+              <span class="flex-1 min-w-0 truncate text-sm text-foreground">{{ saved.name }}</span>
+              <!-- hover 时展示的编辑/删除操作 -->
+              <span class="hidden group-hover:flex items-center gap-0.5" @click.stop>
+                <button
+                  class="p-1 rounded text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                  :title="$t('business.filterBar.editFilter')" @click="handleEditSaved(saved)">
+                  <span class="material-icons text-sm">edit</span>
+                </button>
+                <button
+                  class="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                  :title="$t('business.filterBar.deleteFilter')" @click="handleDeleteSaved(saved)">
+                  <span class="material-icons text-sm">delete</span>
+                </button>
+              </span>
+            </div>
+          </div>
+
+          <div class="pt-2 mt-1 border-t border-border">
+            <Button variant="ghost" size="sm" class="w-full justify-start" @click="handleCreateSaved(close)">
+              <span class="material-icons text-sm">add</span>
+              {{ $t('business.filterBar.addFilter') }}
+            </Button>
+          </div>
+        </div>
+      </template>
+    </Dropdown>
+
     <div class="h-5 border-l border-border shrink-0"></div>
 
     <!-- 排序器 -->
@@ -278,6 +329,10 @@
         </template>
       </Dropdown>
     </div>
+
+    <!-- 新建/编辑已保存过滤器的对话框 -->
+    <SavedFilterDialog v-model:open="savedDialogOpen" :editing="editingSavedFilter" :current-rules="savedDialogRules"
+      @save="handleSavedDialogSave" />
   </div>
 </template>
 
@@ -286,6 +341,7 @@ import { ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Dropdown } from '@/renderer/components/common/Dropdown'
 import FolderTreeComponent from '@renderer/components/business/FolderTreeComponent/FolderTreeComponent.vue'
+import SavedFilterDialog from './SavedFilterDialog.vue'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -293,6 +349,14 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Label } from '@/components/ui/label'
 import type { FilterRule } from '@/renderer/types/filter'
+import { useToast } from '@/renderer/composables/useToast'
+import {
+  getLibraryPrefs,
+  addSavedFilter,
+  updateSavedFilter,
+  removeSavedFilter,
+  type SavedFilter
+} from '@renderer/composables/LibraryPrefs'
 
 // 保留 re-export 以兼容历史 import 路径（消费方应优先从 @/renderer/types/filter 引入）
 export type { FilterRule }
@@ -330,11 +394,55 @@ interface Emits {
   (e: 'filter-change', filter: FilterRule): void
   (e: 'filter-clear', filter: FilterRule): void
   (e: 'sort-change', sort: string, order: string): void
+  (e: 'apply-saved-filter', rules: FilterRule[]): void
 }
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 const { t } = useI18n()
+const toast = useToast()
+
+// ============================================
+// 已保存的过滤器（按当前素材库隔离）
+// ============================================
+const savedFilters = computed(() => getLibraryPrefs().savedFilters)
+const savedDialogOpen = ref(false)
+const editingSavedFilter = ref<SavedFilter | null>(null)
+// 打开对话框时快照的当前筛选条件（保存/更新以此为准）
+const savedDialogRules = ref<FilterRule[]>([])
+
+const snapshotCurrentRules = (): FilterRule[] => JSON.parse(JSON.stringify(props.filters))
+
+const handleApplySaved = (saved: SavedFilter) => {
+  emit('apply-saved-filter', saved.rules)
+}
+
+const handleCreateSaved = (close: () => void) => {
+  editingSavedFilter.value = null
+  savedDialogRules.value = snapshotCurrentRules()
+  close()
+  savedDialogOpen.value = true
+}
+
+const handleEditSaved = (saved: SavedFilter) => {
+  editingSavedFilter.value = saved
+  savedDialogRules.value = snapshotCurrentRules()
+  savedDialogOpen.value = true
+}
+
+const handleDeleteSaved = async (saved: SavedFilter) => {
+  await removeSavedFilter(saved.id)
+  toast.add({ severity: 'success', summary: t('business.filterBar.filterDeleted'), life: 2000 })
+}
+
+const handleSavedDialogSave = async (name: string, editingId: string | null) => {
+  if (editingId) {
+    await updateSavedFilter(editingId, name, savedDialogRules.value)
+  } else {
+    await addSavedFilter(name, savedDialogRules.value)
+  }
+  toast.add({ severity: 'success', summary: t('business.filterBar.filterSaved'), life: 2000 })
+}
 
 const handleSelectAllChange = () => {
   emit('select-all')

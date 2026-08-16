@@ -2,24 +2,62 @@
  * 素材库本地偏好
  *
  * 按素材库隔离存储（与 TabPersistence 相同的 scope：serverUrl::libraryId），
- * 目前存放「默认视图选项」：网格 / 列表 / 瀑布流 / 使用上次。
+ * 目前存放「默认视图选项」（网格 / 列表 / 瀑布流 / 使用上次）、
+ * 已保存的过滤器列表与默认过滤器。
  */
 
+import { reactive } from 'vue'
 import ConfigStorage from '@renderer/utils/ConfigStorage'
 import { tabPersistence } from './TabPersistence'
+import type { FilterRule } from '@/renderer/types/filter'
 
 export type LibraryDefaultViewMode = 'grid' | 'list' | 'waterfall' | 'last'
 type ResolvedViewMode = 'grid' | 'list' | 'waterfall'
 
+/** 已保存的过滤器（FilterBar 当前条件快照） */
+export interface SavedFilter {
+  id: string
+  name: string
+  rules: FilterRule[]
+  createdAt: number
+}
+
+interface LibraryPrefsData {
+  defaultViewMode: LibraryDefaultViewMode
+  /** 默认过滤器 id，空串表示不使用 */
+  defaultFilterId: string
+  savedFilters: SavedFilter[]
+}
+
 const STORAGE_KEY_PREFIX = 'mira-library-prefs'
 const VALID_MODES: LibraryDefaultViewMode[] = ['grid', 'list', 'waterfall', 'last']
 
-// 内存缓存（库切换时随 loadLibraryPrefs 重新加载）
-const state = {
-  defaultViewMode: 'grid' as LibraryDefaultViewMode
-}
+// 内存缓存（响应式，供设置面板 / FilterBar 直接读取；库切换时随 loadLibraryPrefs 重新加载）
+const state = reactive<LibraryPrefsData>({
+  defaultViewMode: 'grid',
+  defaultFilterId: '',
+  savedFilters: []
+})
 
 const getStorageKey = () => `${STORAGE_KEY_PREFIX}-${tabPersistence.getScopeId() || 'default'}`
+
+const persist = async () => {
+  await ConfigStorage.setItem(getStorageKey(), JSON.stringify({
+    defaultViewMode: state.defaultViewMode,
+    defaultFilterId: state.defaultFilterId,
+    savedFilters: state.savedFilters
+  }))
+}
+
+const parsePrefs = (raw: string): Partial<LibraryPrefsData> | null => {
+  try {
+    const parsed = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object') return null
+    return parsed
+  } catch {
+    return null
+  }
+}
 
 /**
  * 从当前素材库本地配置加载偏好（切换库 / 初始化时调用）
@@ -27,17 +65,28 @@ const getStorageKey = () => `${STORAGE_KEY_PREFIX}-${tabPersistence.getScopeId()
 export async function loadLibraryPrefs(): Promise<void> {
   try {
     const stored = await ConfigStorage.getItem(getStorageKey())
-    if (stored) {
-      const parsed = JSON.parse(stored)
-      if (VALID_MODES.includes(parsed?.defaultViewMode)) {
-        state.defaultViewMode = parsed.defaultViewMode
-        return
-      }
-    }
-    state.defaultViewMode = 'grid'
+    const parsed = stored ? parsePrefs(stored) : null
+    const rawMode = parsed?.defaultViewMode
+    state.defaultViewMode = rawMode && VALID_MODES.includes(rawMode as LibraryDefaultViewMode)
+      ? rawMode as LibraryDefaultViewMode
+      : 'grid'
+    state.defaultFilterId = typeof parsed?.defaultFilterId === 'string' ? parsed.defaultFilterId : ''
+    state.savedFilters = Array.isArray(parsed?.savedFilters)
+      ? parsed.savedFilters.filter((f: any) => f && f.id && f.name && Array.isArray(f.rules))
+      : []
   } catch (error) {
     console.error('Failed to load library prefs:', error)
   }
+}
+
+/** 当前素材库偏好（响应式缓存，仅供读取/展示，修改请用下方方法） */
+export function getLibraryPrefs(): LibraryPrefsData {
+  return state
+}
+
+/** 同步读取已保存的过滤器列表 */
+export function getSavedFilters(): SavedFilter[] {
+  return state.savedFilters
 }
 
 /**
@@ -45,10 +94,49 @@ export async function loadLibraryPrefs(): Promise<void> {
  */
 export async function saveLibraryDefaultViewMode(mode: LibraryDefaultViewMode): Promise<void> {
   state.defaultViewMode = mode
-  await ConfigStorage.setItem(getStorageKey(), JSON.stringify({ defaultViewMode: mode }))
+  await persist()
 }
 
-/** 当前素材库的默认视图选项（同步读缓存） */
+/** 设置默认过滤器（传空串清除） */
+export async function setDefaultFilterId(id: string): Promise<void> {
+  state.defaultFilterId = id
+  await persist()
+}
+
+/** 新增过滤器（快照当前 FilterBar 规则） */
+export async function addSavedFilter(name: string, rules: FilterRule[]): Promise<SavedFilter> {
+  const saved: SavedFilter = {
+    id: `filter-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    name,
+    rules: JSON.parse(JSON.stringify(rules)),
+    createdAt: Date.now()
+  }
+  state.savedFilters.push(saved)
+  await persist()
+  return saved
+}
+
+/** 更新过滤器（名称与规则均以当前 FilterBar 状态为准） */
+export async function updateSavedFilter(id: string, name: string, rules: FilterRule[]): Promise<void> {
+  const target = state.savedFilters.find(f => f.id === id)
+  if (!target) return
+  target.name = name
+  target.rules = JSON.parse(JSON.stringify(rules))
+  await persist()
+}
+
+/** 删除过滤器（若是默认过滤器则同时清除默认引用） */
+export async function removeSavedFilter(id: string): Promise<void> {
+  const index = state.savedFilters.findIndex(f => f.id === id)
+  if (index === -1) return
+  state.savedFilters.splice(index, 1)
+  if (state.defaultFilterId === id) {
+    state.defaultFilterId = ''
+  }
+  await persist()
+}
+
+/** 当前库的默认视图选项（同步读缓存） */
 export function getLibraryDefaultViewMode(): LibraryDefaultViewMode {
   return state.defaultViewMode
 }
