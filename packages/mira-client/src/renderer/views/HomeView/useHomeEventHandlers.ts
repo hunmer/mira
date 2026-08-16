@@ -36,7 +36,8 @@ export function useHomeEventHandlers(
       libraryId: libraryStore.currentLibrary?.id,
       title: folder.title || folder.name,
       label: folder.label,
-      path: folder.path
+      path: folder.path,
+      color: folder.color
     })
 
     if (success) {

@@ -31,10 +31,14 @@ const props = defineProps<{
   onSwitchTab: (tabId: string) => void
   onCloseTab: (tabId: string) => void
   onContextMenu: (tab: TabItem, event: MouseEvent) => void
+  onReorderTabs?: (fromTabId: string, toTabId: string) => void
   onActiveTabIdChange?: (activeTabId: string | undefined) => void
   onToggleLeftSidebar?: () => void
   leftSidebarOpen?: boolean
 }>()
+
+const draggingTabId = ref<string>()
+const dragOverTabId = ref<string>()
 
 // Tab 条滚动容器：切换 tab 时自动滚动到可见位置
 const tabScrollContainer = ref<HTMLElement>()
@@ -66,6 +70,38 @@ function handleTabContextMenu(tab: TabItem, event: MouseEvent) {
     return
   }
   props.onContextMenu(tab, event)
+}
+
+function handleDragStart(tab: TabItem, event: DragEvent) {
+  if (tab.type === 'home' || !props.onReorderTabs || !event.dataTransfer) {
+    event.preventDefault()
+    return
+  }
+  draggingTabId.value = tab.id
+  event.dataTransfer.effectAllowed = 'move'
+  event.dataTransfer.setData('text/plain', tab.id)
+}
+
+function handleDragOver(tab: TabItem, event: DragEvent) {
+  if (!draggingTabId.value || tab.type === 'home' || tab.id === draggingTabId.value) return
+  event.preventDefault()
+  if (event.dataTransfer) event.dataTransfer.dropEffect = 'move'
+  dragOverTabId.value = tab.id
+}
+
+function handleDrop(tab: TabItem, event: DragEvent) {
+  event.preventDefault()
+  const fromTabId = draggingTabId.value
+  if (fromTabId && tab.type !== 'home' && fromTabId !== tab.id) {
+    props.onReorderTabs?.(fromTabId, tab.id)
+  }
+  draggingTabId.value = undefined
+  dragOverTabId.value = undefined
+}
+
+function handleDragEnd() {
+  draggingTabId.value = undefined
+  dragOverTabId.value = undefined
 }
 </script>
 
@@ -110,7 +146,7 @@ function handleTabContextMenu(tab: TabItem, event: MouseEvent) {
       <ContextMenuTrigger as-child>
         <div ref="tabScrollContainer" class="flex items-end gap-1 h-full">
           <LayoutGroup id="home-tabs">
-            <button v-for="tab in props.activeTabs" :key="tab.id" :data-active-tab="tab.active" :class="[
+            <button v-for="tab in props.activeTabs" :key="tab.id" :data-active-tab="tab.active" :draggable="tab.type !== 'home' && !!props.onReorderTabs" :class="[
               'group relative flex items-center space-x-1 shrink-0 text-xs font-medium transition-colors duration-150',
               // 激活/非激活统一基础高度，差异化的背景交给下方共享 layoutId 指示器滑动
               tab.active
@@ -119,14 +155,20 @@ function handleTabContextMenu(tab: TabItem, event: MouseEvent) {
               // 无关闭按钮的 tab（如 home）右侧补足间距，使内容与可关闭 tab 视觉对齐
               (props.activeTabs.length > 1 && props.isTabClosable(tab.id))
                 ? (tab.active ? 'px-2' : 'px-1.5')
-                : (tab.active ? 'pl-2 pr-5' : 'pl-1.5 pr-5')
-            ]" @click="handleSwitchTab(tab)" @contextmenu="handleTabContextMenu(tab, $event)">
+                : (tab.active ? 'pl-2 pr-5' : 'pl-1.5 pr-5'),
+              draggingTabId === tab.id ? 'opacity-50' : '',
+              dragOverTabId === tab.id ? 'border-l-2 border-primary' : '',
+              tab.type !== 'home' && props.onReorderTabs ? 'cursor-grab active:cursor-grabbing' : ''
+            ]" @click="handleSwitchTab(tab)" @contextmenu="handleTabContextMenu(tab, $event)"
+              @dragstart="handleDragStart(tab, $event)" @dragover="handleDragOver(tab, $event)"
+              @drop="handleDrop(tab, $event)" @dragend="handleDragEnd">
               <!-- 激活态背景：共享 layoutId，切换 tab 时由 motion-v 在按钮间平滑滑动 -->
               <Motion v-if="tab.active" layoutId="home-active-tab"
                 :transition="{ type: 'spring', stiffness: 400, damping: 32 }"
-                class="absolute inset-0 z-0 rounded-t-lg border border-b-0 border-primary/60 bg-primary shadow-[0_-4px_16px_var(--shadow-primary-sm)]" />
+                class="absolute inset-0 z-0 rounded-t-lg border border-b-0 border-white/30 shadow-[0_-4px_16px_var(--shadow-primary-sm)]"
+                :style="{ backgroundColor: tab.iconColor || 'var(--primary)' }" />
               <span class="relative z-[1] material-icons text-[12px] leading-none"
-                :style="{ color: tab.active ? undefined : tab.iconColor }">
+                :style="{ color: tab.active ? '#fff' : tab.iconColor }">
                 {{ tab.icon }}
               </span>
               <span class="relative z-[1] truncate max-w-[120px]">{{ tab.label }}</span>

@@ -271,6 +271,16 @@ const {
   replaceCurrentTab
 } = tabManagement
 
+// 保持首页位置不变，仅调整其余标签顺序；useTabs 的深度监听会自动持久化结果。
+const handleReorderTabs = (fromTabId: string, toTabId: string) => {
+  const tabs = tabsComposable.tabs.value
+  const fromIndex = tabs.findIndex(tab => tab.id === fromTabId)
+  const toIndex = tabs.findIndex(tab => tab.id === toTabId)
+  if (fromIndex < 0 || toIndex < 0 || tabs[fromIndex].type === 'home' || tabs[toIndex].type === 'home') return
+  const [tab] = tabs.splice(fromIndex, 1)
+  tabs.splice(tabs.findIndex(item => item.id === toTabId), 0, tab)
+}
+
 // Tab 条的滚动逻辑已迁移到 HomeTabsBar 组件内
 
 // 上传对话框的 tab 上下文
@@ -561,6 +571,7 @@ onUnmounted(() => {
               :on-switch-tab="switchToTabWithCallback"
               :on-close-tab="closeTabWithCallback"
               :on-context-menu="handleTabContextMenu"
+              :on-reorder-tabs="handleReorderTabs"
               :on-toggle-left-sidebar="handleToggleLeftSidebar"
               :left-sidebar-open="mediaStore.showLeftSidebar"
             />
@@ -653,6 +664,7 @@ onUnmounted(() => {
             :on-switch-tab="switchToTabWithCallback"
             :on-close-tab="closeTabWithCallback"
             :on-context-menu="handleTabContextMenu"
+            :on-reorder-tabs="handleReorderTabs"
             :on-toggle-left-sidebar="handleToggleLeftSidebar"
             :left-sidebar-open="mediaStore.showLeftSidebar"
           />

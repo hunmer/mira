@@ -447,8 +447,30 @@ export class LibraryRoutes {
                     console.warn('Failed to get file types:', error);
                 }
 
+                let shortcutCounts = { all: 0, uncategorized: 0, untagged: 0, trash: 0 };
+                try {
+                    const result = await libraryObj.libraryService.getSql(`
+                        SELECT
+                          SUM(CASE WHEN recycled = 0 THEN 1 ELSE 0 END) AS all_count,
+                          SUM(CASE WHEN recycled = 0 AND (folder_id IS NULL OR folder_id = 0) THEN 1 ELSE 0 END) AS uncategorized_count,
+                          SUM(CASE WHEN recycled = 0 AND (tags IS NULL OR tags = '[]' OR json_array_length(tags) = 0) THEN 1 ELSE 0 END) AS untagged_count,
+                          SUM(CASE WHEN recycled = 1 THEN 1 ELSE 0 END) AS trash_count
+                        FROM files
+                    `);
+                    const row = result[0] || {};
+                    shortcutCounts = {
+                        all: Number(row.all_count || 0),
+                        uncategorized: Number(row.uncategorized_count || 0),
+                        untagged: Number(row.untagged_count || 0),
+                        trash: Number(row.trash_count || 0),
+                    };
+                } catch (error) {
+                    console.warn('Failed to get shortcut category counts:', error);
+                }
+
                 const detailedStats = {
                     totalFiles: stats.totalFiles || 0,
+                    shortcutCounts,
                     totalFolders: totalFolders,
                     totalSize: stats.totalSize || 0,
                     totalTags: totalTags,

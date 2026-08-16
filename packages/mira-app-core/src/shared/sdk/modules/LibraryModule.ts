@@ -71,6 +71,11 @@ export class LibraryModule {
         );
     }
 
+    /** 获取素材库统计信息（包含快捷分类数量）。 */
+    async stats(id: string): Promise<any> {
+        return await this.httpClient.get(`/api/libraries/${encodeURIComponent(id)}/stats`);
+    }
+
     /**
      * 启动素材库服务
      * @param id 素材库ID

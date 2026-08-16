@@ -29,6 +29,8 @@ const props = withDefaults(
     size?: FolderSize
     /** 左下角标签文本 */
     label?: string
+    /** 前纸右上角的徽标内容（如文件计数） */
+    badge?: string | number
     /** 可选封面缩略图；未提供时显示默认纸张样式 */
     thumbnail?: string
     class?: string
@@ -38,6 +40,7 @@ const props = withDefaults(
     customColor: undefined,
     size: "lg",
     label: undefined,
+    badge: undefined,
     thumbnail: undefined,
     class: undefined,
   },
@@ -56,6 +59,7 @@ const sizeMap: Record<
     paperH: string
     paperContent: string
     label: string
+    badge: string
     hoverY: number
     hoverBackY: number
   }
@@ -71,6 +75,7 @@ const sizeMap: Record<
     paperH: "h-16",
     paperContent: "pt-2.5 px-2.5 space-y-1",
     label: "bottom-2 left-2 text-[9px] py-0.5 px-1.5",
+    badge: "top-2 right-2 text-[9px] py-0.5 px-1.5",
     hoverY: -3,
     hoverBackY: -4,
   },
@@ -85,6 +90,7 @@ const sizeMap: Record<
     paperH: "h-24",
     paperContent: "pt-3 px-3 space-y-1",
     label: "bottom-3 left-3 text-[10px] py-0.5 px-1.5",
+    badge: "top-2.5 right-2.5 text-[10px] py-0.5 px-1.5",
     hoverY: -3,
     hoverBackY: -5,
   },
@@ -99,6 +105,7 @@ const sizeMap: Record<
     paperH: "h-30",
     paperContent: "pt-4 px-4 space-y-1.5",
     label: "bottom-4 left-4 text-xs py-1 px-2",
+    badge: "top-3 right-3 text-xs py-0.5 px-2",
     hoverY: -4,
     hoverBackY: -6,
   },
@@ -262,6 +269,11 @@ const bridgeStyle = {
           <div :class="cn('h-1 w-3/4 rounded-full', c.paperLine)" />
           <div :class="cn('h-1 w-1/2 rounded-full', c.paperLine)" />
           <div :class="cn('h-1 w-2/3 rounded-full', c.paperLine)" />
+        </div>
+        <!-- 前纸右上角徽标（随前纸悬停动画联动） -->
+        <div v-if="props.badge !== undefined"
+          :class="cn('absolute z-10 rounded-full bg-black/55 font-medium text-white tabular-nums backdrop-blur-sm', s.badge)">
+          {{ props.badge }}
         </div>
       </Motion>
     </div>

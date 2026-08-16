@@ -944,6 +944,9 @@ function scheduleTreeRefresh(libraryStore: any, libraryId?: string): void {
 }
 
 function handleFileEvent(data: any, eventType: 'created' | 'updated' | 'deleted' | 'recovered'): void {
+  window.dispatchEvent(new CustomEvent('library-file-changed', {
+    detail: { libraryId: data?.libraryId, eventType },
+  }))
   scheduleTreeRefresh(useLibraryStore(), data?.libraryId)
 
   const { markTabsForEvent, tabs } = useTabs()

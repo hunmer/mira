@@ -33,6 +33,7 @@ export function useHomeFolderHandler() {
     path?: string
     fileCount?: number
     description?: string
+    color?: number | string | null
   }>({
     id: null,
     title: null,
@@ -51,6 +52,7 @@ export function useHomeFolderHandler() {
     title?: string
     label?: string
     path?: string
+    color?: number | string | null
   }) => {
     try {
       isProcessing.value = true
@@ -63,7 +65,8 @@ export function useHomeFolderHandler() {
         id: folderId,
         title: options?.title || options?.label || null,
         libraryId: options?.libraryId || null,
-        path: options?.path
+        path: options?.path,
+        color: options?.color
       }
       
       // 如果有libraryId，确保文件夹数据已加载
@@ -78,7 +81,8 @@ export function useHomeFolderHandler() {
             title: folderInfo.title || (folderInfo as any).name,
             path: folderInfo.path,
             fileCount: folderInfo.fileCount,
-            description: folderInfo.description
+            description: folderInfo.description,
+            color: folderInfo.color
           }
         }
       }

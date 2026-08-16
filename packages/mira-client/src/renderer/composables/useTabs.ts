@@ -49,6 +49,17 @@ const globalIsRestoringState = ref(true) // 初始为 true，阻止自动创建 
 const globalHasInitialized = ref(false) // 标记是否已经初始化过
 let globalHasSetupEffects = false // 标记是否已设置副作用（watch和初始化）
 
+/** 将文件夹/标签的数字颜色转换为可直接用于 CSS 的十六进制颜色。 */
+const normalizeTabColor = (color: unknown): string | undefined => {
+  if (typeof color === 'number' && color > 0) return `#${color.toString(16).padStart(6, '0')}`
+  if (typeof color === 'string') {
+    if (color.startsWith('#') || color.startsWith('rgb') || color.startsWith('hsl')) return color
+    const numericColor = Number(color)
+    if (Number.isFinite(numericColor) && numericColor > 0) return `#${numericColor.toString(16).padStart(6, '0')}`
+  }
+  return undefined
+}
+
 const createHomeTab = (): TabItem => ({
   id: 'home',
   label: i18n.global.t('composables.useTabs.homeLabel'),
@@ -422,7 +433,7 @@ export function useTabs() {
       id: tabId, // 使用唯一的 tab ID
       label: tabLabel,
       icon: folder.icon || 'folder',
-      iconColor: folder.iconColor,
+      iconColor: normalizeTabColor(folder.iconColor ?? folder.color),
       type: tabType, // 使用识别后的类型
       data: { ...folder, libraryId }, // libraryId 存储在 data 中
       active: true,
@@ -466,7 +477,8 @@ export function useTabs() {
         color: tag.color,
         fileCount: tag.fileCount,
         tabData: tag
-      }
+      },
+      iconColor: normalizeTabColor(tag.color)
     })
   }
 

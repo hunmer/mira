@@ -11,7 +11,7 @@
  * 对外暴露 locateItem(type, id)：定位文件夹/标签节点并滚动入视，供 Tab 右键「在侧边栏定位」调用。
  * 由原 HomeSidebar 拆出，逻辑零改动。
  */
-import { ref, computed, onActivated, onDeactivated, nextTick, reactive } from 'vue'
+import { ref, computed, onActivated, onDeactivated, onBeforeUnmount, nextTick, reactive, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import FolderTreeComponent from '@renderer/components/business/FolderTreeComponent/FolderTreeComponent.vue'
 import SidebarHistoryModule from './SidebarHistoryModule.vue'
@@ -23,13 +23,14 @@ import {
   ContextMenuItem,
 } from '@/components/ui/context-menu'
 import { useHomeSidebarLayoutStore } from '@/renderer/stores/homeSidebarLayout'
+import { miraSDKService } from '@/renderer/services/MiraSDKService'
 import { getModuleDef, type SidebarModuleId } from './sidebarModules'
 
 defineOptions({ name: 'SidebarModuleList' })
 
 const { t } = useI18n()
 
-defineProps<{
+const props = defineProps<{
   homeController: {
     folderTree: { value: any[] }
     selectedFolder: { value: any }
@@ -80,11 +81,53 @@ const ensureModuleOpen = (id: SidebarModuleId) => {
 // ============================================
 // 快捷分类模块（原 FolderTreeComponent 的 baseCategories）
 // ============================================
+const shortcutCountState = ref({ all: 0, uncategorized: 0, untagged: 0, trash: 0 })
+const shortcutCounts = computed(() => shortcutCountState.value)
+let shortcutCountRequestId = 0
+
+/** 从服务端按当前素材库统计快捷分类，避免受当前激活 tab 和本地分页数据影响。 */
+async function loadShortcutCounts(libraryId: string) {
+  const requestId = ++shortcutCountRequestId
+  try {
+    const stats = await miraSDKService.getLibraryStats(libraryId)
+    const counts = stats.shortcutCounts || {}
+
+    if (requestId !== shortcutCountRequestId) return
+    shortcutCountState.value = {
+      all: Number(counts.all || 0),
+      uncategorized: Number(counts.uncategorized || 0),
+      untagged: Number(counts.untagged || 0),
+      trash: Number(counts.trash || 0),
+    }
+  } catch (error) {
+    if (requestId === shortcutCountRequestId) {
+      console.warn('加载快捷分类数量失败:', error)
+      shortcutCountState.value = { all: 0, uncategorized: 0, untagged: 0, trash: 0 }
+    }
+  }
+}
+
+watch([
+  () => props.libraryId,
+  () => props.homeController.folderTree.value,
+  () => props.tags,
+], ([libraryId]) => {
+  if (libraryId) loadShortcutCounts(libraryId)
+  else shortcutCountState.value = { all: 0, uncategorized: 0, untagged: 0, trash: 0 }
+}, { immediate: true, deep: true })
+
+const onLibraryFileChanged = (event: Event) => {
+  const libraryId = (event as CustomEvent<{ libraryId?: string }>).detail?.libraryId
+  if (libraryId && libraryId === props.libraryId) loadShortcutCounts(libraryId)
+}
+window.addEventListener('library-file-changed', onLibraryFileChanged)
+onBeforeUnmount(() => window.removeEventListener('library-file-changed', onLibraryFileChanged))
+
 const baseCategories = computed(() => [
-  { id: 'all', label: t('views.sidebarModuleList.all'), icon: 'folder_open', iconColor: 'text-muted-foreground' },
-  { id: 'uncategorized', label: t('views.sidebarModuleList.uncategorized'), icon: 'folder_special', iconColor: 'text-muted-foreground' },
-  { id: 'untagged', label: t('views.sidebarModuleList.untagged'), icon: 'label_off', iconColor: 'text-muted-foreground' },
-  { id: 'trash', label: t('views.sidebarModuleList.trash'), icon: 'delete', iconColor: 'text-destructive' },
+  { id: 'all', label: t('views.sidebarModuleList.all'), icon: 'folder_open', iconColor: 'text-muted-foreground', count: shortcutCounts.value.all },
+  { id: 'uncategorized', label: t('views.sidebarModuleList.uncategorized'), icon: 'folder_special', iconColor: 'text-muted-foreground', count: shortcutCounts.value.uncategorized },
+  { id: 'untagged', label: t('views.sidebarModuleList.untagged'), icon: 'label_off', iconColor: 'text-muted-foreground', count: shortcutCounts.value.untagged },
+  { id: 'trash', label: t('views.sidebarModuleList.trash'), icon: 'delete', iconColor: 'text-destructive', count: shortcutCounts.value.trash },
 ])
 
 const handleBaseCategoryClick = (category: any) => {
@@ -242,6 +285,9 @@ defineExpose({ locateItem })
                     </span>
                     {{ folder.label }}
                   </span>
+                  <span v-if="folder.count !== undefined" class="text-muted-foreground text-xs">
+                    {{ folder.count }}
+                  </span>
                 </a>
               </ContextMenuTrigger>
               <ContextMenuContent class="w-48">
@@ -264,6 +310,9 @@ defineExpose({ locateItem })
                   {{ folder.icon }}
                 </span>
                 {{ folder.label }}
+              </span>
+              <span v-if="folder.count !== undefined" class="text-muted-foreground text-xs">
+                {{ folder.count }}
               </span>
             </a>
           </li>

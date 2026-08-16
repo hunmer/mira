@@ -82,9 +82,9 @@
                 @keydown.enter.prevent="handleChildFolderSelect(item.raw, $event)"
                 @keydown.space.prevent="handleChildFolderSelect(item.raw, $event)">
                 <Folder :size="folderCardUiSize" :label="item.label"
+                  :badge="item.count ?? 0"
                   :thumbnail="folderCoverUrls[String(item.raw.id)]"
                   :custom-color="getFolderColor(item.raw.color)" />
-                <span class="folder-card-count">{{ item.count ?? 0 }}</span>
               </div>
               </FolderContextMenu>
             </div>
@@ -340,11 +340,6 @@
 .folder-card-button:active {
   outline: none;
   box-shadow: none;
-}
-
-.folder-card-count {
-  color: var(--muted-foreground);
-  font-size: 0.75rem;
 }
 </style>
 

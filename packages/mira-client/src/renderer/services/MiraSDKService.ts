@@ -468,6 +468,11 @@ export class MiraSDKService {
     }
   }
 
+  async getLibraryStats(libraryId: string): Promise<any> {
+    if (!this.client) throw new Error('Not connected to Mira server')
+    return await this.client.libraries().stats(libraryId)
+  }
+
   /**
    * 文件操作
    */
