@@ -16,6 +16,7 @@ export interface MediaTabData {
     isServerPagination: boolean
   }
   viewMode: 'grid' | 'list' | 'waterfall' // Tab独立的视图模式
+  appliedFilterId?: string | null // 已应用的保存过滤器 id（书签图标旁精准展示名称）
   lastUpdated: number
 }
 
@@ -24,6 +25,9 @@ const tabDataStore = reactive<Record<string, MediaTabData>>({})
 
 // 恢复时暂存每个tab的viewMode
 const _restoredViewModes: Record<string, 'grid' | 'list' | 'waterfall'> = {}
+
+// 恢复时暂存每个tab的appliedFilterId
+const _restoredAppliedFilterIds: Record<string, string | null> = {}
 
 // viewMode变化时的回调（由useTabs注册，触发tab状态保存）
 let _viewModeChangeCallback: (() => void) | null = null
@@ -40,7 +44,9 @@ export function useMediaTabData(tabId: string) {
   // 确保该Tab的数据存在
   if (!tabDataStore[tabId]) {
     const defaultMode = _restoredViewModes[tabId] || resolveDefaultViewMode()
+    const restoredAppliedFilterId = _restoredAppliedFilterIds[tabId] ?? null
     delete _restoredViewModes[tabId]
+    delete _restoredAppliedFilterIds[tabId]
 
     tabDataStore[tabId] = {
       tabId,
@@ -54,6 +60,7 @@ export function useMediaTabData(tabId: string) {
         isServerPagination: false
       },
       viewMode: defaultMode,
+      appliedFilterId: restoredAppliedFilterId,
       lastUpdated: 0
     }
   }
@@ -165,6 +172,16 @@ export function useMediaTabData(tabId: string) {
     }
   }
 
+  // 已应用过滤器 id 管理
+  const appliedFilterId = computed(() => tabDataStore[tabId]?.appliedFilterId || null)
+
+  const setAppliedFilterId = (id: string | null) => {
+    if (tabDataStore[tabId]) {
+      tabDataStore[tabId].appliedFilterId = id || null
+      _viewModeChangeCallback?.() // 触发 tab 状态保存（与 viewMode 共用回调）
+    }
+  }
+
   // 清理Tab数据（Tab关闭时调用）
   const cleanup = () => {
     delete tabDataStore[tabId]
@@ -214,6 +231,10 @@ export function useMediaTabData(tabId: string) {
     viewMode,
     setViewMode,
 
+    // 已应用过滤器
+    appliedFilterId,
+    setAppliedFilterId,
+
     // 工具方法
     cleanup,
     debugInfo
@@ -226,7 +247,9 @@ export function useMediaTabData(tabId: string) {
 export function cacheTabData(tabId: string, data: any[], total?: number) {
   if (!tabDataStore[tabId]) {
     const defaultMode = _restoredViewModes[tabId] || resolveDefaultViewMode()
+    const restoredAppliedFilterId = _restoredAppliedFilterIds[tabId] ?? null
     delete _restoredViewModes[tabId]
+    delete _restoredAppliedFilterIds[tabId]
 
     tabDataStore[tabId] = {
       tabId,
@@ -240,6 +263,7 @@ export function cacheTabData(tabId: string, data: any[], total?: number) {
         isServerPagination: false
       },
       viewMode: defaultMode,
+      appliedFilterId: restoredAppliedFilterId,
       lastUpdated: 0
     }
   }
@@ -309,4 +333,19 @@ export function getTabViewMode(tabId: string): 'grid' | 'list' | 'waterfall' | u
  */
 export function restoreTabViewMode(tabId: string, mode: 'grid' | 'list' | 'waterfall') {
   _restoredViewModes[tabId] = mode
+}
+
+/**
+ * 获取指定tab的appliedFilterId（用于Tab持久化保存）
+ */
+export function getTabAppliedFilterId(tabId: string): string | null | undefined {
+  return tabDataStore[tabId]?.appliedFilterId
+}
+
+/**
+ * 恢复指定tab的appliedFilterId（Tab状态恢复时调用）
+ * 存入 pending map，等 useMediaTabData 初始化时读取
+ */
+export function restoreTabAppliedFilterId(tabId: string, id: string | null) {
+  _restoredAppliedFilterIds[tabId] = id || null
 }

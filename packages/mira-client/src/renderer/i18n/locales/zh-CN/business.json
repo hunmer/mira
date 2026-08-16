@@ -134,6 +134,7 @@
     "cancel": "取消",
     "filterSaved": "过滤器已保存",
     "filterDeleted": "过滤器已删除",
+    "clearAllFilters": "清除过滤器",
     "urlFilterTitle": "网址筛选",
     "urlPlaceholder": "输入网址或域名...",
     "titleFilterTitle": "标题筛选",

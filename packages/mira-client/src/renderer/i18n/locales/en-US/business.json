@@ -134,6 +134,7 @@
     "cancel": "Cancel",
     "filterSaved": "Filter saved",
     "filterDeleted": "Filter deleted",
+    "clearAllFilters": "Clear Filters",
     "urlFilterTitle": "URL Filter",
     "urlPlaceholder": "Enter URL or domain...",
     "titleFilterTitle": "Title Filter",

@@ -6,7 +6,7 @@
  */
 
 import type { TabItem } from './useTabs'
-import { getTabViewMode } from './useMediaTabData'
+import { getTabViewMode, getTabAppliedFilterId } from './useMediaTabData'
 import ConfigStorage from '@renderer/utils/ConfigStorage'
 
 const STORAGE_KEY_PREFIX = 'mira-tabs-state'
@@ -35,6 +35,8 @@ export interface TabState {
   active: boolean
   filters?: Record<string, any>
   viewMode?: 'grid' | 'list' | 'waterfall'
+  /** 已应用的保存过滤器 id（恢复后书签图标旁精准展示名称） */
+  appliedFilterId?: string | null
 }
 
 export interface TabsStateSnapshot {
@@ -112,7 +114,8 @@ export class TabPersistence {
         data: tab.data,
         active: tab.active,
         filters: tab.filters,
-        viewMode: getTabViewMode(tab.id)
+        viewMode: getTabViewMode(tab.id),
+        appliedFilterId: getTabAppliedFilterId(tab.id) ?? null
       }))
 
       const snapshot: TabsStateSnapshot = {

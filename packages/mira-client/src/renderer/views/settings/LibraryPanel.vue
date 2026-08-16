@@ -19,6 +19,26 @@
           <p class="text-muted-foreground dark:text-muted-foreground text-sm mt-2">{{ t('settings.defaultViewModeDesc') }}</p>
         </div>
       </div>
+    </div>
+
+    <!-- 默认分组 -->
+    <div>
+      <div class="flex flex-wrap items-end gap-4 py-3">
+        <div class="flex flex-col min-w-40 flex-1">
+          <label class="text-foreground dark:text-muted-foreground text-base font-medium leading-normal pb-2">{{ t('settings.defaultGrouping') }}</label>
+          <Select :model-value="defaultGroupingMode" @update:model-value="handleGroupingChange">
+            <SelectTrigger class="w-full">
+              <SelectValue :placeholder="t('settings.defaultGrouping')" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem v-for="opt in groupingOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</SelectItem>
+            </SelectContent>
+          </Select>
+          <p class="text-muted-foreground dark:text-muted-foreground text-sm mt-2">{{ t('settings.defaultGroupingDesc') }}</p>
+        </div>
+      </div>
+    </div>
+
     <!-- 默认过滤器 -->
     <div>
       <div class="flex flex-wrap items-end gap-4 py-3">
@@ -53,13 +73,16 @@ import {
   saveLibraryDefaultViewMode,
   getLibraryPrefs,
   setDefaultFilterId,
-  type LibraryDefaultViewMode
+  saveLibraryDefaultGroupingMode,
+  type LibraryDefaultViewMode,
+  type LibraryDefaultGroupingMode
 } from '@renderer/composables/LibraryPrefs'
 
 const { t } = useI18n()
 const toast = useToast()
 
 const defaultViewMode = ref<LibraryDefaultViewMode>('grid')
+const defaultGroupingMode = ref<LibraryDefaultGroupingMode>('none')
 
 // 已保存过滤器列表（响应式，删除过滤器等操作会自动同步）
 const savedFilters = computed(() => getLibraryPrefs().savedFilters)
@@ -68,6 +91,7 @@ const defaultFilterId = ref('')
 onMounted(async () => {
   await loadLibraryPrefs()
   defaultViewMode.value = getLibraryPrefs().defaultViewMode
+  defaultGroupingMode.value = getLibraryPrefs().defaultGroupingMode
   defaultFilterId.value = getLibraryPrefs().defaultFilterId
 })
 
@@ -77,6 +101,26 @@ const viewModeOptions = [
   { label: t('composables.useViewModeConfig.waterfallView'), value: 'waterfall' },
   { label: t('settings.useLastView'), value: 'last' }
 ] as { label: string; value: LibraryDefaultViewMode }[]
+
+const groupingOptions = [
+  { label: '无', value: 'none' },
+  { label: '按标签', value: 'tags' },
+  { label: '按文件夹', value: 'folders' },
+  { label: '按文件类型', value: 'types' },
+  { label: t('settings.useLastGrouping'), value: 'last' }
+] as { label: string; value: LibraryDefaultGroupingMode }[]
+
+const handleGroupingChange = async (value: any) => {
+  const mode = value as LibraryDefaultGroupingMode
+  await saveLibraryDefaultGroupingMode(mode)
+  defaultGroupingMode.value = mode
+  toast.add({
+    severity: 'success',
+    summary: t('settings.settingSaved'),
+    detail: t('settings.defaultGroupingUpdated', { mode: groupingOptions.find(opt => opt.value === mode)?.label }),
+    life: 2000
+  })
+}
 
 const handleViewModeChange = async (value: any) => {
   const mode = value as LibraryDefaultViewMode

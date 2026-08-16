@@ -2,7 +2,7 @@ import { ref, computed, watch, nextTick, markRaw, type Component } from 'vue'
 import { tabRegistry, type TabContext, type TabViewConfig } from './TabRegistry'
 import { quickInitTabSystem } from './initTabSystem'
 import { tabPersistence, type TabState } from './TabPersistence'
-import { restoreTabViewMode, registerViewModeChangeCallback, clearTabCache } from './useMediaTabData'
+import { restoreTabViewMode, restoreTabAppliedFilterId, registerViewModeChangeCallback, clearTabCache } from './useMediaTabData'
 import { loadLibraryPrefs } from './LibraryPrefs'
 import { tabHistory } from './TabHistory'
 import i18n from '../i18n'
@@ -83,6 +83,9 @@ const restoreTabsFromSnapshot = (savedState: { tabs: TabState[], activeTabId: st
 
     if (tabState.viewMode) {
       restoreTabViewMode(tabState.id, tabState.viewMode)
+    }
+    if (tabState.appliedFilterId !== undefined) {
+      restoreTabAppliedFilterId(tabState.id, tabState.appliedFilterId)
     }
 
     restoredTabs.push({
@@ -807,6 +810,10 @@ export function useTabs() {
           // 恢复per-tab viewMode
           if (tabState.viewMode) {
             restoreTabViewMode(tabState.id, tabState.viewMode)
+          }
+          // 恢复per-tab 已应用过滤器 id
+          if (tabState.appliedFilterId !== undefined) {
+            restoreTabAppliedFilterId(tabState.id, tabState.appliedFilterId)
           }
 
           restoredTabs.push(restoredTab)

@@ -228,9 +228,19 @@
     <Dropdown :offset="{ x: 0, y: 8 }" placement="bottom-start" :close-on-content-click="false">
       <template #trigger="{ isOpen }">
         <Button variant="ghost" size="xs"
-          :class="isOpen ? 'text-primary bg-primary/10 rounded-lg' : 'text-muted-foreground hover:text-foreground hover:bg-primary/5 rounded-lg'"
-          :title="$t('business.filterBar.savedFilters')">
-          <span class="material-icons text-sm">bookmark</span>
+          :class="isOpen || activeSavedFilter ? 'text-primary bg-primary/10 rounded-lg' : 'text-muted-foreground hover:text-foreground hover:bg-primary/5 rounded-lg'"
+          :title="activeSavedFilter ? activeSavedFilter.name : $t('business.filterBar.savedFilters')">
+          <span class="relative">
+            <span class="material-icons text-sm">bookmark</span>
+            <!-- 右上角清除过滤器小图标 -->
+            <span v-if="hasActiveConditions"
+              class="absolute -top-1.5 -right-1.5 bg-destructive text-white rounded-full w-4 h-4 flex items-center justify-center cursor-pointer hover:scale-110 transition-transform"
+              :title="$t('business.filterBar.clearAllFilters')"
+              @click.stop="emit('clear-filters')">
+              <span class="material-icons text-[10px] leading-none">close</span>
+            </span>
+          </span>
+          <span v-if="activeSavedFilter" class="text-sm max-w-32 truncate">{{ activeSavedFilter.name }}</span>
         </Button>
       </template>
 
@@ -265,10 +275,15 @@
             </div>
           </div>
 
-          <div class="pt-2 mt-1 border-t border-border">
-            <Button variant="ghost" size="sm" class="w-full justify-start" @click="handleCreateSaved(close)">
+          <div class="pt-2 mt-1 border-t border-border flex gap-2">
+            <Button variant="ghost" size="sm" class="flex-1 justify-start" @click="handleCreateSaved(close)">
               <span class="material-icons text-sm">add</span>
               {{ $t('business.filterBar.addFilter') }}
+            </Button>
+            <Button variant="ghost" size="sm" class="justify-start" :disabled="!hasActiveConditions"
+              :title="$t('business.filterBar.clearAllFilters')" @click="emit('clear-filters'); close()">
+              <span class="material-icons text-sm">filter_alt_off</span>
+              {{ $t('business.filterBar.clearAllFilters') }}
             </Button>
           </div>
         </div>
@@ -387,6 +402,8 @@ interface Props {
   tagTreeItems?: any[]
   sort?: 'imported_at' | 'id' | 'size' | 'stars' | 'folder_id' | 'tags' | 'name' | 'custom_fields'
   order?: 'asc' | 'desc'
+  /** 当前 tab 已应用的过滤器 id（精准匹配，用于图标右侧展示名称） */
+  appliedFilterId?: string | null
 }
 
 interface Emits {
@@ -394,7 +411,8 @@ interface Emits {
   (e: 'filter-change', filter: FilterRule): void
   (e: 'filter-clear', filter: FilterRule): void
   (e: 'sort-change', sort: string, order: string): void
-  (e: 'apply-saved-filter', rules: FilterRule[]): void
+  (e: 'apply-saved-filter', filterId: string, rules: FilterRule[]): void
+  (e: 'clear-filters'): void
 }
 
 const props = defineProps<Props>()
@@ -414,7 +432,7 @@ const savedDialogRules = ref<FilterRule[]>([])
 const snapshotCurrentRules = (): FilterRule[] => JSON.parse(JSON.stringify(props.filters))
 
 const handleApplySaved = (saved: SavedFilter) => {
-  emit('apply-saved-filter', saved.rules)
+  emit('apply-saved-filter', saved.id, saved.rules)
 }
 
 const handleCreateSaved = (close: () => void) => {
@@ -443,6 +461,15 @@ const handleSavedDialogSave = async (name: string, editingId: string | null) => 
   }
   toast.add({ severity: 'success', summary: t('business.filterBar.filterSaved'), life: 2000 })
 }
+
+// 当前是否有生效的筛选条件（无则禁用清除按钮）
+const hasActiveConditions = computed(() => props.filters.some(filter => hasActiveFilters(filter)))
+
+// 当前 tab 已应用的过滤器（按 id 精准匹配，图标右侧展示其名称）
+const activeSavedFilter = computed<SavedFilter | null>(() => {
+  if (!props.appliedFilterId) return null
+  return getLibraryPrefs().savedFilters.find(f => f.id === props.appliedFilterId) || null
+})
 
 const handleSelectAllChange = () => {
   emit('select-all')

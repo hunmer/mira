@@ -66,9 +66,9 @@ class WebSocketService {
       const token = useAuthStore().token
       const wsUrl = `${config.url}?clientId=${config.clientId}&libraryId=${config.libraryId}${token ? `&token=${token}` : ''}`
       console.log('Connecting to WebSocket:', wsUrl)
-      
+
       this.ws = new WebSocket(wsUrl)
-      
+
       this.ws.onopen = this.handleOpen.bind(this)
       this.ws.onmessage = this.handleMessage.bind(this)
       this.ws.onclose = this.handleClose.bind(this)
@@ -180,7 +180,7 @@ class WebSocketService {
   private handleMessage(event: MessageEvent): void {
     try {
       const data = JSON.parse(event.data)
-      console.log('WebSocket message received:', data)
+      // console.log('WebSocket message received:', data)
       this.handleInternalEvent(data)
 
       // 触发相应的事件监听器
@@ -354,9 +354,9 @@ class WebSocketService {
 
     this.reconnectAttempts++
     const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1)
-    
+
     console.log(`Attempting to reconnect WebSocket (${this.reconnectAttempts}/${this.maxReconnectAttempts}) in ${delay}ms`)
-    
+
     setTimeout(() => {
       if (this.config) {
         this.connect(this.config)
@@ -376,7 +376,7 @@ export async function initializeWebSocket(config: WebSocketConfig): Promise<bool
 
   // 连接WebSocket
   const connected = await webSocketService.connect(config)
-  
+
   if (!connected) {
     console.error('Failed to connect to WebSocket')
     return false
@@ -384,7 +384,7 @@ export async function initializeWebSocket(config: WebSocketConfig): Promise<bool
 
   // 设置事件监听器
   setupEventListeners(libraryStore)
-  
+
   return true
 }
 
@@ -453,10 +453,10 @@ function doShowImportNotification(): void {
   const title = showBatchCount ? t('services.webSocket.importedNFiles', { count }) : t('services.webSocket.fileImportComplete')
   const body = importNotifyBatchCompleted
     ? t('services.webSocket.uploadBatchSummary', {
-        imported: count,
-        skipped: importNotifySkipped,
-        failed: importNotifyFailed,
-      })
+      imported: count,
+      skipped: importNotifySkipped,
+      failed: importNotifyFailed,
+    })
     : showBatchCount
       ? (name ? t('services.webSocket.lastImported', { name }) : t('services.webSocket.batchImportComplete'))
       : (name || t('services.webSocket.newFileAdded'))

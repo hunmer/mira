@@ -20,7 +20,8 @@
         <FilterBar :filters="filterRules" :is-all-selected="isAllSelected" :folder-tree-items="folderTreeItems"
           :tag-tree-items="tagTreeItems" :sort="sortField" :order="sortOrder" @select-all="handleSelectAll"
           @filter-change="handleFilterChange" @filter-clear="handleFilterClear" @sort-change="handleSortChange"
-          @apply-saved-filter="handleApplySavedFilter" />
+          @apply-saved-filter="handleApplySavedFilter" @clear-filters="handleClearAllFilters"
+          :applied-filter-id="appliedFilterId" />
       </div>
       <div class="flex-shrink-0 flex items-center space-x-2">
         <!-- 视图切换下拉菜单 -->
@@ -71,68 +72,107 @@
             <header class="flex items-center justify-between px-5 pt-3 pb-1">
               <h3 class="text-sm font-medium text-foreground">{{ $t('views.sidebarModuleList.folders') }}</h3>
               <div class="flex items-center gap-2">
-                <span class="inline-flex min-w-5 h-5 items-center justify-center rounded-full bg-muted px-1.5 text-xs font-medium text-muted-foreground">{{ childFolderItems.length }}</span>
-                <button class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full p-0 text-muted-foreground hover:bg-primary/10 hover:text-primary" :title="$t('views.sidebarModuleList.addFolder')" @click="showFolderDialog = true"><span class="material-icons text-base leading-none">add</span></button>
+                <span
+                  class="inline-flex min-w-5 h-5 items-center justify-center rounded-full bg-muted px-1.5 text-xs font-medium text-muted-foreground">{{
+                  childFolderItems.length }}</span>
+                <button
+                  class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full p-0 text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                  :title="$t('views.sidebarModuleList.addFolder')" @click="showFolderDialog = true"><span
+                    class="material-icons text-base leading-none">add</span></button>
               </div>
             </header>
-          <div v-if="childFolderItems.length > 0">
-            <div class="folder-card-grid" :style="{ '--folder-grid-item-size': `${folderGridItemSize}px` }">
-              <FolderContextMenu v-for="item in childFolderItems" :key="String(item.raw.id)" :folder="item.raw as any" :folders="availableFolders as any" @refresh="handleRefresh(true)">
-              <div class="folder-card-button" role="button"
-                tabindex="0" :title="item.label" @click="handleChildFolderSelect(item.raw, $event)"
-                @keydown.enter.prevent="handleChildFolderSelect(item.raw, $event)"
-                @keydown.space.prevent="handleChildFolderSelect(item.raw, $event)">
-                <Folder :size="folderCardUiSize" :label="item.label"
-                  :badge="item.count ?? 0"
-                  :thumbnail="folderCoverUrls[String(item.raw.id)]"
-                  :custom-color="getFolderColor(item.raw.color)" />
+            <div v-if="childFolderItems.length > 0">
+              <div class="folder-card-grid" :style="{ '--folder-grid-item-size': `${folderGridItemSize}px` }">
+                <FolderContextMenu v-for="item in childFolderItems" :key="String(item.raw.id)" :folder="item.raw as any"
+                  :folders="availableFolders as any" @refresh="handleRefresh(true)">
+                  <div class="folder-card-button" role="button" tabindex="0" :title="item.label"
+                    @click="handleChildFolderSelect(item.raw, $event)"
+                    @keydown.enter.prevent="handleChildFolderSelect(item.raw, $event)"
+                    @keydown.space.prevent="handleChildFolderSelect(item.raw, $event)">
+                    <Folder :size="folderCardUiSize" :label="item.label" :badge="item.count ?? 0"
+                      :thumbnail="folderCoverUrls[String(item.raw.id)]"
+                      :custom-color="getFolderColor(item.raw.color)" />
+                  </div>
+                </FolderContextMenu>
               </div>
-              </FolderContextMenu>
             </div>
-          </div>
 
           </section>
           <div>
-          <header class="flex items-center justify-between px-5 pt-3 pb-1">
-            <h3 class="text-sm font-medium text-foreground">{{ $t('views.sidebarModuleList.media') }}</h3>
-            <div class="flex items-center gap-2">
-              <span class="inline-flex min-w-5 h-5 items-center justify-center rounded-full bg-muted px-1.5 text-xs font-medium text-muted-foreground">{{ filteredMediaItems.length }}</span>
-              <ImportDropdown @upload="handleListUpload" />
+            <header class="flex items-center justify-between px-5 pt-3 pb-1">
+              <h3 class="text-sm font-medium text-foreground">{{ $t('views.sidebarModuleList.media') }}</h3>
+              <div class="flex items-center gap-2">
+                <span
+                  class="inline-flex min-w-5 h-5 items-center justify-center rounded-full bg-muted px-1.5 text-xs font-medium text-muted-foreground">{{
+                  filteredMediaItems.length }}</span>
+                <!-- 素材分组下拉菜单 -->
+                <Dropdown :offset="{ x: 0, y: 4 }" placement="bottom-start">
+                  <template #trigger>
+                    <button
+                      class="flex h-7 w-7 items-center justify-center rounded-lg border border-white/60 bg-white/40 p-0 text-muted-foreground shadow-sm backdrop-blur transition-colors hover:bg-white/60 hover:text-primary dark:border-border dark:bg-muted/60 dark:hover:bg-muted"
+                      :title="groupingOptions.find(option => option.value === groupingMode)?.label">
+                      <span class="material-icons text-sm">view_agenda</span>
+                    </button>
+                  </template>
+                  <template #content="{ close }">
+                    <div class="min-w-[150px] py-1">
+                      <button v-for="option in groupingOptions" :key="option.value"
+                        :class="['w-full flex items-center space-x-2 px-3 py-2 text-sm rounded-lg hover:bg-primary/5 transition-colors', groupingMode === option.value ? 'bg-primary/10 text-primary' : 'text-foreground dark:text-muted-foreground']"
+                        @click="handleGroupingChange(option.value); close()">
+                        <span>{{ option.label }}</span>
+                        <span v-if="groupingMode === option.value" class="material-icons ml-auto text-sm text-primary">check</span>
+                      </button>
+                    </div>
+                  </template>
+                </Dropdown>
+                <ImportDropdown @upload="handleListUpload" />
+              </div>
+            </header>
+
+            <section v-for="group in mediaGroups" :key="group.key" class="mb-3">
+              <header v-if="groupingMode !== 'none'" class="flex items-center gap-2 px-5 pt-3 pb-1">
+                <h4 class="text-sm font-medium text-foreground">{{ group.label }}</h4>
+                <span
+                  class="inline-flex min-w-5 h-5 items-center justify-center rounded-full bg-muted px-1.5 text-xs font-medium text-muted-foreground">{{
+                    group.items.length }}</span>
+              </header>
+
+              <!-- 网格视图 -->
+              <MediaGridComponent v-if="viewMode === 'grid'" :key="`grid-${viewMode}-${group.key}`" class="p-5"
+                :items="group.items" :selected-items="selectedItems" :card-size="cardSize"
+                :columns-per-row="columnsPerRow" :is-trash="viewType === 'trash'" @media-click="handleMediaClick"
+                @media-double-click="handleMediaDoubleClick" @media-select="handleMediaSelect"
+                @media-context-menu="handleMediaContextMenu" @media-info="handleMediaInfo"
+                @media-set-folder="handleMediaSetFolder" @media-set-tags="handleMediaSetTags"
+                @media-delete="handleMediaDelete" @media-restore="handleMediaRestore" />
+
+              <!-- 列表视图 -->
+              <MediaListComponent v-if="viewMode === 'list'" :key="`list-${viewMode}-${group.key}`" class="p-5"
+                :items="group.items" :selected-items="selectedItems" :is-trash="viewType === 'trash'"
+                @click="handleMediaClick" @dblclick="handleMediaDoubleClick"
+                @media-context-menu="handleMediaContextMenu" @media-info="handleMediaInfo"
+                @media-set-folder="handleMediaSetFolder" @media-set-tags="handleMediaSetTags"
+                @media-select="handleMediaSelect" @media-delete="handleMediaDelete"
+                @media-restore="handleMediaRestore" />
+
+              <!-- 瀑布流视图 -->
+              <div v-if="viewMode === 'waterfall'" class="w-full">
+                <WaterfallComponent ref="waterfallRef" :key="`waterfall-${viewMode}-${group.key}`" class="p-5"
+                  :items="group.items" :selected-items="selectedItems" :is-trash="viewType === 'trash'"
+                  :column-width="dynamicColumnWidth" :columns-per-row="columnsPerRow" :gap="16"
+                  @click="handleMediaClick" @dblclick="handleMediaDoubleClick"
+                  @media-context-menu="handleMediaContextMenu" @media-info="handleMediaInfo"
+                  @media-set-folder="handleMediaSetFolder" @media-set-tags="handleMediaSetTags"
+                  @media-select="handleMediaSelect" @media-delete="handleMediaDelete"
+                  @media-restore="handleMediaRestore" />
+              </div>
+            </section>
+
+            <!-- 如果没有匹配的视图模式 -->
+            <div v-if="!['grid', 'list', 'waterfall'].includes(viewMode)"
+              class="flex items-center justify-center h-40 text-muted-foreground dark:text-muted-foreground">
+              {{ $t('tabs.mediaTabListView.unknownViewMode', { mode: viewMode }) }}
             </div>
-          </header>
-
-          <!-- 网格视图 -->
-          <MediaGridComponent v-if="viewMode === 'grid'" :key="`grid-${viewMode}`" class="p-5"
-            :items="paginatedMediaItems" :selected-items="selectedItems" :card-size="cardSize"
-            :columns-per-row="columnsPerRow" :is-trash="viewType === 'trash'" @media-click="handleMediaClick"
-            @media-double-click="handleMediaDoubleClick" @media-select="handleMediaSelect"
-            @media-context-menu="handleMediaContextMenu" @media-info="handleMediaInfo"
-            @media-set-folder="handleMediaSetFolder" @media-set-tags="handleMediaSetTags"
-            @media-delete="handleMediaDelete" @media-restore="handleMediaRestore" />
-
-          <!-- 列表视图 -->
-          <MediaListComponent v-if="viewMode === 'list'" :key="`list-${viewMode}`" class="p-5"
-            :items="paginatedMediaItems" :selected-items="selectedItems" :is-trash="viewType === 'trash'"
-            @click="handleMediaClick" @dblclick="handleMediaDoubleClick" @media-context-menu="handleMediaContextMenu"
-            @media-info="handleMediaInfo" @media-set-folder="handleMediaSetFolder" @media-set-tags="handleMediaSetTags"
-            @media-select="handleMediaSelect" @media-delete="handleMediaDelete" @media-restore="handleMediaRestore" />
-
-          <!-- 瀑布流视图 -->
-          <div v-if="viewMode === 'waterfall'" class="w-full h-full min-h-96">
-            <WaterfallComponent ref="waterfallRef" :key="`waterfall-${viewMode}`" class="p-5"
-              :items="paginatedMediaItems" :selected-items="selectedItems" :is-trash="viewType === 'trash'"
-              :column-width="dynamicColumnWidth" :columns-per-row="columnsPerRow" :gap="16" @click="handleMediaClick"
-              @dblclick="handleMediaDoubleClick" @media-context-menu="handleMediaContextMenu"
-              @media-info="handleMediaInfo" @media-set-folder="handleMediaSetFolder"
-              @media-set-tags="handleMediaSetTags" @media-select="handleMediaSelect" @media-delete="handleMediaDelete"
-              @media-restore="handleMediaRestore" />
-          </div>
-
-          <!-- 如果没有匹配的视图模式 -->
-          <div v-if="!['grid', 'list', 'waterfall'].includes(viewMode)"
-            class="flex items-center justify-center h-40 text-muted-foreground dark:text-muted-foreground">
-            {{ $t('tabs.mediaTabListView.unknownViewMode', { mode: viewMode }) }}
-          </div>
           </div>
         </div>
 
@@ -361,6 +401,12 @@ import { useMediaOperations, useFilters, useViewModeConfig } from '@renderer/com
 // import { useTabPagination } from '@renderer/composables/useTabPagination' // 已替换为MediaTabData
 import { useMediaTabData } from '@renderer/composables/useMediaTabData'
 import { getLibraryPrefs, getSavedFilters } from '@renderer/composables/LibraryPrefs'
+import {
+  getTabGroupingMode,
+  resolveDefaultGroupingMode,
+  saveTabGroupingMode,
+  type MediaGroupingMode
+} from '@renderer/composables/LibraryPrefs'
 import MediaGridComponent from '@renderer/components/business/MediaGridComponent.vue'
 import MediaListComponent from '@renderer/components/business/MediaListComponent.vue'
 import WaterfallComponent from '@renderer/components/business/WaterfallComponent.vue'
@@ -475,6 +521,19 @@ const isLoading = ref(false)
 const sortField = ref<'imported_at' | 'id' | 'name' | 'size' | 'stars' | 'folder_id' | 'tags' | 'custom_fields'>('imported_at')
 const sortOrder = ref<'asc' | 'desc'>('desc')
 
+const groupingMode = ref<MediaGroupingMode>(getTabGroupingMode(props.tabId) || resolveDefaultGroupingMode())
+const groupingOptions: Array<{ value: MediaGroupingMode; label: string }> = [
+  { value: 'none', label: '无' },
+  { value: 'tags', label: '按标签' },
+  { value: 'folders', label: '按文件夹' },
+  { value: 'types', label: '按文件类型' },
+]
+
+const handleGroupingChange = (mode: MediaGroupingMode) => {
+  groupingMode.value = mode
+  void saveTabGroupingMode(props.tabId, mode)
+}
+
 // 拖拽上传
 const canUpload = computed(() =>
   props.viewType !== 'trash'
@@ -583,7 +642,7 @@ watch(() => homeController.selectedItems?.value, (ids) => {
 const cardSize = computed(() => homeController.cardSize?.value || 'medium')
 const columnsPerRow = computed(() => homeController.columnsPerRow?.value || 6)
 const dynamicColumnWidth = computed(() => homeController.dynamicColumnWidth?.value || 200)
-const waterfallRef = ref<InstanceType<typeof WaterfallComponent> | null>(null)
+const waterfallRef = ref<InstanceType<typeof WaterfallComponent> | InstanceType<typeof WaterfallComponent>[] | null>(null)
 
 // 使用MediaTabData的分页状态
 const currentPage = computed(() => mediaTabData.currentPage.value)
@@ -675,6 +734,37 @@ const paginatedMediaItems = computed(() => {
   const cachedData = mediaTabData.getCachedData()
   if (cachedData.data.length > 0) return cachedData.data
   return homeController.paginatedMediaItems?.value || []
+})
+
+const mediaGroups = computed(() => {
+  const items = paginatedMediaItems.value as FileInfo[]
+  if (groupingMode.value === 'none') return [{ key: 'all', label: '', items }]
+
+  const groups = new Map<string, FileInfo[]>()
+  const labels = new Map<string, string>()
+  const add = (key: string, label: string, item: FileInfo) => {
+    groups.set(key, [...(groups.get(key) || []), item])
+    labels.set(key, label)
+  }
+
+  for (const item of items) {
+    if (groupingMode.value === 'tags') {
+      const tags = item.tags?.length ? item.tags : ['__untagged__']
+      tags.forEach(tagId => {
+        const tag = (tagStore.tags || []).find((candidate: any) => String(candidate.id) === String(tagId))
+        add(`tag-${tagId}`, tag?.title || (tagId === '__untagged__' ? '无标签' : String(tagId)), item)
+      })
+    } else if (groupingMode.value === 'folders') {
+      const folderId = item.folderId || '__unfiled__'
+      const folder = (folderStore.folders || []).find((candidate: any) => String(candidate.id) === String(folderId))
+      add(`folder-${folderId}`, folder?.title || (folderId === '__unfiled__' ? '无文件夹' : String(folderId)), item)
+    } else {
+      const type = item.mimeType?.split('/')[0] || item.extension?.replace('.', '') || '未知类型'
+      add(`type-${type}`, type, item)
+    }
+  }
+
+  return [...groups].map(([key, groupItems]) => ({ key, label: labels.get(key) || key, items: groupItems }))
 })
 
 const filteredMediaItems = computed(() => {
@@ -1127,6 +1217,9 @@ const handleFilterChange = async (filter: FilterRule) => {
   // 更新变化的筛选器
   mergeFilterInto(mergedFilters, filter)
 
+  // 用户手动改动筛选条件，取消与已保存过滤器的关联
+  mediaTabData.setAppliedFilterId(null)
+
   // 更新MediaTabData中的筛选器
   mediaTabData.updateFilters(mergedFilters)
 
@@ -1187,37 +1280,47 @@ const handleFilterClear = async (filter: FilterRule) => {
   // 筛选器清除时重新加载第一页数据
   await fetchPageData(1)
 
+  // 用户手动改动筛选条件，取消与已保存过滤器的关联
+  mediaTabData.setAppliedFilterId(null)
+
   // 同时调用原有逻辑以保持兼容性
   baseHandleFilterClear(filter, () => undefined, null, homeController)
 }
 
+// 用快照（保存的过滤器规则）同步单条 FilterRule 的显示状态；snapshot 为 null 时即重置
+const applySnapshotToRule = (rule: FilterRule, snapshot: any) => {
+  rule.selectedValues = snapshot?.selectedValues || []
+  rule.value = snapshot?.value || ''
+  rule.selectedPreset = snapshot?.selectedPreset || ''
+  rule.customMin = snapshot?.customMin
+  rule.customMax = snapshot?.customMax
+  rule.sizeMin = snapshot?.sizeMin
+  rule.sizeMax = snapshot?.sizeMax
+  rule.selectedCategory = snapshot?.selectedCategory || ''
+  rule.metaField = snapshot?.metaField || 'dimension'
+  rule.selectedMetaPreset = snapshot?.selectedMetaPreset || ''
+  rule.metaDimMin = snapshot?.metaDimMin
+  rule.metaDimMax = snapshot?.metaDimMax
+  rule.metaDurMin = snapshot?.metaDurMin
+  rule.metaDurMax = snapshot?.metaDurMax
+  rule.customDimMin = snapshot?.customDimMin
+  rule.customDimMax = snapshot?.customDimMax
+  rule.customDurMin = snapshot?.customDurMin
+  rule.customDurMax = snapshot?.customDurMax
+  rule.active = snapshot?.active || false
+}
+
+// 当前 tab 已应用的过滤器 id（精准匹配，供 FilterBar 展示名称；随 tab 状态持久化）
+const appliedFilterId = computed(() => mediaTabData.appliedFilterId.value)
+
 // 应用已保存的过滤器（整套替换当前筛选条件并重新查询）
-const handleApplySavedFilter = async (rules: FilterRule[]) => {
+const handleApplySavedFilter = async (filterId: string | null, rules: FilterRule[]) => {
   const savedById = new Map(rules.map(rule => [rule.id, rule]))
 
   // 先重置 FilterBar 显示状态，再同步保存值，避免残留旧条件
   filterRules.value.forEach(rule => {
     const saved = savedById.get(rule.id)
-    const snapshot: any = saved ? JSON.parse(JSON.stringify(saved)) : null
-    rule.selectedValues = snapshot?.selectedValues || []
-    rule.value = snapshot?.value || ''
-    rule.selectedPreset = snapshot?.selectedPreset || ''
-    rule.customMin = snapshot?.customMin
-    rule.customMax = snapshot?.customMax
-    rule.sizeMin = snapshot?.sizeMin
-    rule.sizeMax = snapshot?.sizeMax
-    rule.selectedCategory = snapshot?.selectedCategory || ''
-    rule.metaField = snapshot?.metaField || 'dimension'
-    rule.selectedMetaPreset = snapshot?.selectedMetaPreset || ''
-    rule.metaDimMin = snapshot?.metaDimMin
-    rule.metaDimMax = snapshot?.metaDimMax
-    rule.metaDurMin = snapshot?.metaDurMin
-    rule.metaDurMax = snapshot?.metaDurMax
-    rule.customDimMin = snapshot?.customDimMin
-    rule.customDimMax = snapshot?.customDimMax
-    rule.customDurMin = snapshot?.customDurMin
-    rule.customDurMax = snapshot?.customDurMax
-    rule.active = snapshot?.active || false
+    applySnapshotToRule(rule, saved ? JSON.parse(JSON.stringify(saved)) : null)
   })
 
   // 空基础重建查询条件，保留 props.filters 中 tab 固有的简单键值筛选（如 folder / recycled）
@@ -1232,9 +1335,33 @@ const handleApplySavedFilter = async (rules: FilterRule[]) => {
   mediaTabData.updateFilters(mergedFilters)
   await fetchPageData(1)
 
+  mediaTabData.setAppliedFilterId(filterId || null)
+
   // 同步 homeController 的筛选状态
   filterRules.value.forEach(rule => {
     baseHandleFilterChange(rule, () => undefined, null, homeController)
+  })
+}
+
+// 清除当前 tab 的全部筛选条件（保留 tab 固有的简单键值筛选，如 folder / recycled）
+const handleClearAllFilters = async () => {
+  filterRules.value.forEach(rule => applySnapshotToRule(rule, null))
+
+  const mergedFilters: Record<string, any> = {}
+  Object.entries(props.filters).forEach(([key, value]) => {
+    if (value === null || typeof value !== 'object') {
+      mergedFilters[key] = value
+    }
+  })
+
+  mediaTabData.updateFilters(mergedFilters)
+  await fetchPageData(1)
+
+  mediaTabData.setAppliedFilterId(null)
+
+  // 同步 homeController 的筛选状态（清除语义）
+  filterRules.value.forEach(rule => {
+    baseHandleFilterClear(rule, () => undefined, null, homeController)
   })
 }
 
@@ -1464,7 +1591,8 @@ const handleViewModeChange = async (mode: 'grid' | 'list' | 'waterfall') => {
 
   if (mode === 'waterfall') {
     await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
-    waterfallRef.value?.refresh()
+    const waterfalls = Array.isArray(waterfallRef.value) ? waterfallRef.value : [waterfallRef.value]
+    waterfalls.forEach(instance => instance?.refresh())
   }
 }
 
@@ -1508,16 +1636,17 @@ watch(() => props.tabId, async (newTabId, _oldTabId) => {
     // 初始化 filterRules
     initializeFilterRules()
 
-    // 应用素材库默认过滤器（仅当该 tab 尚无用户筛选条件时）
+    // 应用素材库默认过滤器（仅当该 tab 尚无用户筛选、且未从持久化恢复过滤器关联时）
     const current = mediaTabData.filters.value || {}
     const hasRuleFilters = Object.values(current).some((v: any) => v && typeof v === 'object' && v.id)
-    if (!hasRuleFilters) {
+    const hasRestoredApplied = !!appliedFilterId.value
+    if (!hasRestoredApplied && !hasRuleFilters) {
       const prefs = getLibraryPrefs()
       const defaultFilter = prefs.defaultFilterId
         ? getSavedFilters().find(f => f.id === prefs.defaultFilterId)
         : null
       if (defaultFilter) {
-        await handleApplySavedFilter(defaultFilter.rules)
+        await handleApplySavedFilter(defaultFilter.id, defaultFilter.rules)
       }
     }
 

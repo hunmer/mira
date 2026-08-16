@@ -20,16 +20,17 @@ import { PluginWindowHandlers } from './PluginWindowHandlers'
 import { LoginWindowHandlers } from './LoginWindowHandlers'
 import { getAutoUpdater } from '../services/useAutoUpdater'
 import { logger } from '../utils/Logger'
-import { inspect } from 'node:util'
 
 type RendererLogLevel = 'log' | 'info' | 'warn' | 'error' | 'debug'
 
-function formatRendererLogArgs(args: any[]): string {
-  return args.map(value =>
-    typeof value === 'object' && value !== null
-      ? inspect(value, { depth: 4, colors: false })
-      : String(value)
-  ).join(' ')
+function emitRendererLog(level: RendererLogLevel, args: any[]): void {
+  // Keep the complete console argument list in one structured payload. The
+  // dashboard renders this array with a single JSON Viewer.
+  const message = ''
+  if (level === 'warn') logger.warn('Renderer', message, args)
+  else if (level === 'error') logger.error('Renderer', message, args)
+  else if (level === 'debug') logger.debug('Renderer', message, args)
+  else logger.info('Renderer', message, args)
 }
 
 /**
@@ -97,12 +98,9 @@ export class IPCHandlers {
     // 由 main Logger 统一写入 electron-log 和 procm 结构化日志。
     ipcMain.on('renderer-log', (_event, level: RendererLogLevel, ...args: any[]) => {
       if (!['log', 'info', 'warn', 'error', 'debug'].includes(level)) return
-      const message = formatRendererLogArgs(args)
-      const data = args.length > 1 ? args.slice(1) : undefined
-      if (level === 'warn') logger.warn('Renderer', message, data)
-      else if (level === 'error') logger.error('Renderer', message, data)
-      else if (level === 'debug') logger.debug('Renderer', message, data)
-      else logger.info('Renderer', message, data)
+      // Preserve the complete console argument list in one structured entry;
+      // LogPanel renders the array through a single JSON Viewer.
+      emitRendererLog(level, args)
     })
   }
 
