@@ -11,7 +11,7 @@
  * - `push` 超容量时丢弃最旧条目（FIFO）
  * - `subscribe` 返回反订阅函数，便于 SSE 连接关闭时清理
  */
-export type LogLevel = 'log' | 'error' | 'warn';
+export type LogLevel = 'debug' | 'info' | 'error' | 'warn';
 
 export interface LogEntry {
     /** ISO 时间戳 */

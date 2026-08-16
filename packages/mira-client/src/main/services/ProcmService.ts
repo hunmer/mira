@@ -5,7 +5,7 @@
  * 供 Logger 桥接输出结构化日志帧；直接运行（无环境变量）时全部 API 退化为
  * no-op，行为不变。渲染层不直接持有客户端，遵循 contextIsolation。
  */
-import { createLogger, createProcmClient } from '@hunmer/procm-mcp-sdk'
+import { createProcmClient, setLogger } from '@hunmer/procm-mcp-sdk'
 import type { JsonValue, Logger, ProcmClient } from '@hunmer/procm-mcp-sdk'
 
 export type ProcmLoggerLike = Pick<Logger, 'debug' | 'info' | 'warn' | 'error'>
@@ -44,7 +44,7 @@ export function initProcm(): void {
   // 即使没有 room 环境变量，也保留结构化 stdout 日志；这样由 procm
   // 启动但未注入 room 的子进程仍可按 level 过滤历史日志。
   if (!process.env.PROCM_ROOM_ID || !process.env.PROCM_WS_URL) {
-    procmLogger = createLogger({ console: rawConsole, clientName: 'mira-client' })
+    procmLogger = setLogger({ console: rawConsole, clientName: 'mira-client' })
     return
   }
   try {
@@ -53,7 +53,7 @@ export function initProcm(): void {
     console.warn('procm client init failed:', error)
     return
   }
-  procmLogger = createLogger({ client: procmClient, console: rawConsole })
+  procmLogger = setLogger({ client: procmClient, console: rawConsole })
   procmLogger.info('procm room enabled', { roomId: procmClient.roomId })
 }
 

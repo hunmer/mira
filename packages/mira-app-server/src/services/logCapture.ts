@@ -31,7 +31,9 @@ export function installLogCapture(): void {
         };
     };
 
-    console.log = wrap('log', console.log.bind(console));
+    // procm-mcp uses debug/info/warn/error levels. Treat the native console
+    // log method as info so dashboard level filters can recognize it.
+    console.log = wrap('info', console.log.bind(console));
     console.error = wrap('error', console.error.bind(console));
     console.warn = wrap('warn', console.warn.bind(console));
 }

@@ -45,7 +45,7 @@
   "license": "ISC",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "@hunmer/procm-mcp-sdk": "^0.1.0",
+    "@hunmer/procm-mcp-sdk": "link:../../../procm-mcp/packages/procm-sdk",
     "@types/archiver": "^8.0.0",
     "@types/multer": "^2.0.0",
     "@types/yauzl": "^2.10.3",
