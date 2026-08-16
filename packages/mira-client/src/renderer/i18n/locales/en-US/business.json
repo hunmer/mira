@@ -21,7 +21,6 @@
   },
   "animatedFolderCard": {
     "fileCount": "{count} files",
-    "hoverHint": "Hover to preview",
     "untitled": "Untitled"
   },
   "coverCropDialog": {

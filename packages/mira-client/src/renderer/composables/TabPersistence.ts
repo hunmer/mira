@@ -11,6 +11,9 @@ import ConfigStorage from '@renderer/utils/ConfigStorage'
 
 const STORAGE_KEY_PREFIX = 'mira-tabs-state'
 const ACTIVE_TAB_KEY_PREFIX = 'mira-active-tab-id'
+const LAST_VIEW_KEY_PREFIX = 'mira-last-view-mode'
+
+type ViewMode = 'grid' | 'list' | 'waterfall'
 
 export const createTabScopeId = (
   serverUrl: string | null | undefined,
@@ -46,6 +49,8 @@ export interface TabsStateSnapshot {
 export class TabPersistence {
   private static instance: TabPersistence
   private currentLibraryId: string | null = null
+  // 当前素材库上次使用的视图模式（内存缓存，随保存/恢复快照更新）
+  private lastViewMode: ViewMode | null = null
 
   private constructor() {}
 
@@ -68,8 +73,29 @@ export class TabPersistence {
       : ACTIVE_TAB_KEY_PREFIX
   }
 
+  private getLastViewKey(): string {
+    return this.currentLibraryId
+      ? `${LAST_VIEW_KEY_PREFIX}-${this.currentLibraryId}`
+      : LAST_VIEW_KEY_PREFIX
+  }
+
+  /** 当前库 scope id（serverUrl::libraryId），供库级偏好等模块复用同一隔离维度 */
+  getScopeId(): string | null {
+    return this.currentLibraryId
+  }
+
+  /** 当前素材库上次使用的视图模式（无记录时返回 null） */
+  getLastViewMode(): ViewMode | null {
+    return this.lastViewMode
+  }
+
+  private setLastViewMode(mode: ViewMode | null | undefined) {
+    this.lastViewMode = mode || null
+  }
+
   setCurrentLibraryId(libraryId: string | null) {
     this.currentLibraryId = libraryId
+    this.lastViewMode = null
   }
 
   /**
@@ -97,6 +123,14 @@ export class TabPersistence {
 
       await ConfigStorage.setItem(this.getStorageKey(), JSON.stringify(snapshot))
       await ConfigStorage.setItem(this.getActiveTabKey(), activeTabId)
+
+      // 记录当前库上次使用的视图模式（活跃 tab 优先，其次最后一个媒体 tab）
+      const lastMode = getTabViewMode(activeTabId)
+        || tabs.map(tab => getTabViewMode(tab.id)).filter((mode): mode is ViewMode => !!mode).pop()
+      this.setLastViewMode(lastMode)
+      if (lastMode) {
+        await ConfigStorage.setItem(this.getLastViewKey(), lastMode)
+      }
 
       return true
     } catch (error) {
@@ -128,6 +162,13 @@ export class TabPersistence {
         return null
       }
 
+      // 从快照恢复当前库的上次视图模式（活跃 tab 优先）
+      const activeTabState = snapshot.tabs.find(tab => tab.id === snapshot.activeTabId)
+      this.setLastViewMode(
+        activeTabState?.viewMode
+        || snapshot.tabs.map(tab => tab.viewMode).filter((mode): mode is ViewMode => !!mode).pop()
+      )
+
       return snapshot
     } catch (error) {
       console.error('Failed to load tabs state:', error)
@@ -142,6 +183,8 @@ export class TabPersistence {
     try {
       await ConfigStorage.removeItem(this.getStorageKey())
       await ConfigStorage.removeItem(this.getActiveTabKey())
+      await ConfigStorage.removeItem(this.getLastViewKey())
+      this.setLastViewMode(null)
     } catch (error) {
       console.error('Failed to clear tabs state:', error)
     }

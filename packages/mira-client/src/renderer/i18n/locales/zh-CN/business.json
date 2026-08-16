@@ -21,7 +21,6 @@
   },
   "animatedFolderCard": {
     "fileCount": "{count} 个文件",
-    "hoverHint": "悬停预览",
     "untitled": "未命名"
   },
   "coverCropDialog": {

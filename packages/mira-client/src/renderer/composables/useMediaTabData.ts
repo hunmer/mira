@@ -1,5 +1,6 @@
 import { reactive, computed } from 'vue'
 import type { FilterRule } from '@/renderer/types/filter'
+import { resolveDefaultViewMode } from './LibraryPrefs'
 
 
 // 媒体Tab的数据管理接口
@@ -38,7 +39,7 @@ export function registerViewModeChangeCallback(cb: () => void) {
 export function useMediaTabData(tabId: string) {
   // 确保该Tab的数据存在
   if (!tabDataStore[tabId]) {
-    const defaultMode = _restoredViewModes[tabId] || 'grid'
+    const defaultMode = _restoredViewModes[tabId] || resolveDefaultViewMode()
     delete _restoredViewModes[tabId]
 
     tabDataStore[tabId] = {
@@ -224,7 +225,7 @@ export function useMediaTabData(tabId: string) {
  */
 export function cacheTabData(tabId: string, data: any[], total?: number) {
   if (!tabDataStore[tabId]) {
-    const defaultMode = _restoredViewModes[tabId] || 'grid'
+    const defaultMode = _restoredViewModes[tabId] || resolveDefaultViewMode()
     delete _restoredViewModes[tabId]
 
     tabDataStore[tabId] = {

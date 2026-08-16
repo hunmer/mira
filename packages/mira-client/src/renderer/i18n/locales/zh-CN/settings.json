@@ -23,6 +23,10 @@
   "autoStartDisabledToast": "已关闭服务自启动",
   "settingSaved": "设置已保存",
   "saveFailed": "保存失败",
+  "defaultViewMode": "默认视图选项",
+  "defaultViewModeDesc": "新建标签页时使用的默认视图；「使用上次」沿用当前素材库上次使用的视图（保存在当前素材库本地配置中）",
+  "defaultViewModeUpdated": "默认视图已切换为「{mode}」",
+  "useLastView": "使用上次",
   "autoStartFailed": "系统登录项设置失败",
   "settingUpdated": "{key} 设置已成功更新",
   "saveError": "保存设置时发生错误",
@@ -31,6 +35,7 @@
   "themeAuto": "自动",
   "sections": {
     "general": "通用",
+    "library": "素材库",
     "notifications": "通知",
     "import": "导入选项",
     "floatingBall": "悬浮球",

@@ -3,6 +3,7 @@ import { tabRegistry, type TabContext, type TabViewConfig } from './TabRegistry'
 import { quickInitTabSystem } from './initTabSystem'
 import { tabPersistence, type TabState } from './TabPersistence'
 import { restoreTabViewMode, registerViewModeChangeCallback, clearTabCache } from './useMediaTabData'
+import { loadLibraryPrefs } from './LibraryPrefs'
 import { tabHistory } from './TabHistory'
 import i18n from '../i18n'
 
@@ -126,6 +127,9 @@ async function initializeTabsSystem() {
   // 初始化Tab历史记录
   await tabHistory.initialize()
 
+  // 加载当前素材库本地偏好（默认视图选项等）
+  await loadLibraryPrefs()
+
   // 尝试从 localStorage 恢复状态
   const savedState = await tabPersistence.loadTabsState()
 
@@ -194,6 +198,7 @@ export async function resetTabsForLibrary(libraryId: string | null): Promise<voi
   quickInitTabSystem()
   tabPersistence.setCurrentLibraryId(libraryId)
   clearTabCache()
+  await loadLibraryPrefs()
 
   globalIsRestoringState.value = true
 
@@ -768,6 +773,7 @@ export function useTabs() {
     try {
       isRestoringState.value = true
 
+      await loadLibraryPrefs()
       const savedState = await tabPersistence.loadTabsState()
       if (!savedState || savedState.tabs.length === 0) {
         return false

@@ -45,6 +45,7 @@ const items = computed<BrowserItem[]>(() =>
     empty-icon="folder_off"
     :items="items"
     :card-component="AnimatedFolderCard"
+    :card-props="{ size: 160 }"
     :library-id="libraryStore.currentLibrary?.id"
     @update:visible="emit('update:visible', $event)"
     @select="emit('select', $event)"

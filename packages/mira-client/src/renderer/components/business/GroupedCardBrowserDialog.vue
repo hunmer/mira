@@ -50,12 +50,15 @@ const props = withDefaults(
     cardComponent?: any
     /** 当前素材库 id（传给自定义卡片用于拉取缩略图） */
     libraryId?: string
+    /** 透传给自定义卡片组件的额外 props（如 AnimatedFolderCard 的 size） */
+    cardProps?: Record<string, any>
   }>(),
   {
     emptyIcon: 'folder_off',
     itemTypeLabel: '',
     cardComponent: undefined,
     libraryId: undefined,
+    cardProps: undefined,
   }
 )
 
@@ -274,7 +277,7 @@ const isSearching = computed(() => trimmedQuery.value.length > 0)
               :item="item"
               :library-id="libraryId"
               :class="!cardComponent ? 'group/card card-item default-card' : ''"
-              v-bind="cardComponent ? { onSelect: onSelectItem, onPreview: onPreviewItem } : {}"
+              v-bind="cardComponent ? { onSelect: onSelectItem, onPreview: onPreviewItem, ...cardProps } : {}"
               @click="!cardComponent ? onCardClick(item) : null"
             >
               <template v-if="!cardComponent">

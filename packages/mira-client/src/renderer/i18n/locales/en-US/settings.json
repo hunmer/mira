@@ -23,6 +23,10 @@
   "autoStartDisabledToast": "Service auto-start has been disabled",
   "settingSaved": "Settings saved",
   "saveFailed": "Save failed",
+  "defaultViewMode": "Default view",
+  "defaultViewModeDesc": "Default view for new tabs; \"Use Last\" follows the last view used in this library (stored in the library's local config)",
+  "defaultViewModeUpdated": "Default view changed to \"{mode}\"",
+  "useLastView": "Use Last",
   "autoStartFailed": "Failed to set system login item",
   "settingUpdated": "{key} setting updated successfully",
   "saveError": "An error occurred while saving settings",
@@ -31,6 +35,7 @@
   "themeAuto": "Auto",
   "sections": {
     "general": "General",
+    "library": "Library",
     "notifications": "Notifications",
     "import": "Import",
     "floatingBall": "Floating Ball",

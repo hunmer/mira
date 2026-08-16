@@ -67,6 +67,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 
 // 导入组件
 import GeneralPanel from '../../views/settings/GeneralPanel.vue'
+import LibraryPanel from '../../views/settings/LibraryPanel.vue'
 import NotificationsPanel from '../../views/settings/NotificationsPanel.vue'
 import ImportPanel from '../../views/settings/ImportPanel.vue'
 import FloatingBallPanel from '../../views/settings/FloatingBallPanel.vue'
@@ -113,6 +114,7 @@ const isHovered = (id: string) => hoveredSection.value === id
 const currentComponent = computed(() => {
   const componentMap: Record<string, any> = {
     general: GeneralPanel,
+    library: LibraryPanel,
     notifications: NotificationsPanel,
     import: ImportPanel,
     'floating-ball': FloatingBallPanel,

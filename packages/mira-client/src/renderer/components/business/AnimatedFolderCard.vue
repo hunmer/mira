@@ -291,12 +291,6 @@ const folderCssVars = computed(() => {
         <h3 class="folder-title">{{ title }}</h3>
         <p class="folder-count">{{ $t('business.animatedFolderCard.fileCount', { count: totalCount }) }}</p>
       </div>
-
-      <!-- 悬停提示 -->
-      <div class="folder-hint">
-        <span class="material-icons" style="font-size: 13px">touch_app</span>
-        <span>{{ $t('business.animatedFolderCard.hoverHint') }}</span>
-      </div>
     </div>
 
     <!-- 脱离滚动容器，避免位于容器边缘时被裁剪 -->
@@ -558,25 +552,5 @@ const folderCssVars = computed(() => {
 }
 .folder-card:is(:hover, .is-hovered) .folder-count {
   opacity: 0.8;
-}
-
-.folder-hint {
-  position: absolute;
-  bottom: 1rem;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: color-mix(in oklch, var(--muted-foreground) 50%, transparent);
-  transition: all 0.5s ease;
-}
-.folder-card:is(:hover, .is-hovered) .folder-hint {
-  opacity: 0;
-  transform: translateX(-50%) translateY(10px);
 }
 </style>
