@@ -45,7 +45,7 @@
     "@hunmer/vue-masonry": "workspace:*",
     "@internationalized/date": "^3.12.3",
     "@lucide/vue": "^1.17.0",
-    "@procm-mcp/sdk": "link:G:/procm-mcp/packages/procm-sdk",
+    "@hunmer/procm-mcp-sdk": "^0.1.0",
     "@radix-icons/vue": "^1.0.0",
     "@tailwindcss/vite": "4.0.17",
     "@tanstack/vue-table": "^8.21.3",

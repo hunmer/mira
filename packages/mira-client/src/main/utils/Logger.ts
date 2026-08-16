@@ -2,7 +2,7 @@ import log from 'electron-log'
 import { join } from 'node:path'
 import { inspect } from 'node:util'
 import { getProcmLogger } from '../services/ProcmService'
-import type { JsonValue } from '@procm-mcp/sdk'
+import type { JsonValue } from '@hunmer/procm-mcp-sdk'
 
 // Electron 由 Vite 启动时，父进程退出会先关闭 stdout/stderr 管道。
 // 忽略此时的终端写入错误，文件日志仍可正常完成退出记录。

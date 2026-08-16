@@ -5,8 +5,8 @@
  * 供 Logger 桥接输出结构化日志帧；直接运行（无环境变量）时全部 API 退化为
  * no-op，行为不变。渲染层不直接持有客户端，遵循 contextIsolation。
  */
-import { createLogger, createProcmClient } from '@procm-mcp/sdk'
-import type { JsonValue, Logger, ProcmClient } from '@procm-mcp/sdk'
+import { createLogger, createProcmClient } from '@hunmer/procm-mcp-sdk'
+import type { JsonValue, Logger, ProcmClient } from '@hunmer/procm-mcp-sdk'
 
 export type ProcmLoggerLike = Pick<Logger, 'debug' | 'info' | 'warn' | 'error'>
 

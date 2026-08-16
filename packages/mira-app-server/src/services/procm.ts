@@ -4,8 +4,8 @@
  * 由 procm 托管启动（注入 PROCM_ROOM_ID / PROCM_WS_URL）时创建房间客户端并
  * 输出结构化日志帧；直接运行（无环境变量）时全部 API 退化为 no-op，行为不变。
  */
-import { createLogger, createProcmClient } from '@procm-mcp/sdk';
-import type { JsonValue, Logger, ProcmClient } from '@procm-mcp/sdk';
+import { createLogger, createProcmClient } from '@hunmer/procm-mcp-sdk';
+import type { JsonValue, Logger, ProcmClient } from '@hunmer/procm-mcp-sdk';
 
 export type ProcmLoggerLike = Pick<Logger, 'debug' | 'info' | 'warn' | 'error'>;
 
