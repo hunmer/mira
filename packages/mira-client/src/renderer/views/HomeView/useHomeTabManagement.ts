@@ -34,7 +34,7 @@ export function useHomeTabManagement(
     getCurrentTab,
     setTabNeedUpdate,
     activateLastTab,
-    canActivateLastTab,
+    canActivateLastTab: canActivateLastActivatedTab,
     reopenLastClosedTab
   } = tabsComposable
 
@@ -47,6 +47,8 @@ export function useHomeTabManagement(
   })
 
   const currentTabViewConfig = ref<TabViewConfig | null>(null)
+  // 原地替换 Tab 时保留旧内容，供顶部返回按钮恢复。
+  const replacedTabHistory = ref<TabItem[]>([])
   const visitedTabIds = ref<string[]>([])
   const tabViewConfigMap = ref<Record<string, TabViewConfig | null>>({})
 
@@ -389,6 +391,10 @@ export function useHomeTabManagement(
     if (!current) return
 
     const libraryId = current.data?.libraryId
+    replacedTabHistory.value.push({
+      ...current,
+      data: current.data ? { ...current.data } : current.data,
+    })
 
     // 1. 计算新的 tab 元数据（与 createTabFromFolder/Tag 保持一致）
     let newId = current.id
@@ -456,9 +462,27 @@ export function useHomeTabManagement(
   }
 
   // 激活上一次的tab
-  const handleActivateLastTab = () => {
+  const handleActivateLastTab = async () => {
+    const replaced = replacedTabHistory.value.pop()
+    const current = getCurrentTab()
+    if (replaced && current) {
+      const currentId = current.id
+      Object.assign(current, replaced, { active: true, needUpdate: true })
+      clearTabCache(currentId)
+      clearTabCache(replaced.id)
+      await loadTabViewConfig(current)
+      currentTabViewConfig.value = tabViewConfigMap.value[current.id] ?? null
+      await handleTabSwitch(current)
+      switchToTabWithCallback(current.id)
+      return true
+    }
     activateLastTab()
+    return true
   }
+
+  const canActivateLastTab = computed(() =>
+    replacedTabHistory.value.length > 0 || canActivateLastActivatedTab.value
+  )
 
   // 重新打开最后关闭的tab
   const handleReopenClosedTab = async () => {

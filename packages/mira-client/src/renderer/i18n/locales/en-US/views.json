@@ -71,6 +71,8 @@
     "connectServer": "Connect to server"
   },
   "sidebarModuleList": {
+    "folders": "Folders",
+    "media": "Media",
     "all": "All",
     "uncategorized": "Uncategorized",
     "untagged": "Untagged",

@@ -1,10 +1,8 @@
 <template>
-  <div
-    ref="mediaTabListViewRef"
+  <div ref="mediaTabListViewRef"
     class="p-2 media-list-view flex-1 flex flex-col w-full bg-transparent overflow-hidden relative h-full text-[13px]"
-    @keydown.capture="handleDeleteKeyDown"
-    @dragover.prevent="canUpload && handleDragOver($event)" @dragleave.prevent="canUpload && handleDragLeave($event)"
-    @drop.prevent="canUpload && handleDrop($event)">
+    @keydown.capture="handleDeleteKeyDown" @dragover.prevent="canUpload && handleDragOver($event)"
+    @dragleave.prevent="canUpload && handleDragLeave($event)" @drop.prevent="canUpload && handleDrop($event)">
     <!-- 拖拽上传覆盖层 -->
     <Transition name="fade">
       <div v-if="isDragOver && canUpload"
@@ -67,26 +65,40 @@
       <div class="flex-1 flex flex-col min-w-0">
         <!-- 媒体内容 - files 和 trash 都使用统一的视图 -->
         <div class="flex-1 overflow-y-auto w-full min-w-0" @wheel="handleCtrlWheel">
-          <!-- 网格视图顶部的子文件夹 -->
-          <div v-if="viewMode === 'grid' && childFolderItems.length > 0" class="px-5 pt-5">
-            <div class="folder-card-grid" :style="{ '--folder-grid-min-size': `${folderCardSize}px` }">
-              <div
-                v-for="item in childFolderItems"
-                :key="String(item.raw.id)"
-                class="folder-card-button"
-                role="button"
-                tabindex="0"
-                :title="item.label"
-                @click="handleChildFolderSelect(item.raw, $event)"
+          <!-- 顶部的子文件夹 -->
+          <section v-if="props.viewType !== 'trash'">
+            <header class="flex items-center justify-between px-5 pt-3 pb-1">
+              <h3 class="text-sm font-medium text-foreground">{{ $t('views.sidebarModuleList.folders') }}</h3>
+              <div class="flex items-center gap-2">
+                <span class="inline-flex min-w-5 h-5 items-center justify-center rounded-full bg-muted px-1.5 text-xs font-medium text-muted-foreground">{{ childFolderItems.length }}</span>
+                <button class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full p-0 text-muted-foreground hover:bg-primary/10 hover:text-primary" :title="$t('views.sidebarModuleList.addFolder')" @click="showFolderDialog = true"><span class="material-icons text-base leading-none">add</span></button>
+              </div>
+            </header>
+          <div v-if="childFolderItems.length > 0">
+            <div class="folder-card-grid" :style="{ '--folder-grid-item-size': `${folderGridItemSize}px` }">
+              <FolderContextMenu v-for="item in childFolderItems" :key="String(item.raw.id)" :folder="item.raw as any" :folders="availableFolders as any" @refresh="handleRefresh(true)">
+              <div class="folder-card-button" role="button"
+                tabindex="0" :title="item.label" @click="handleChildFolderSelect(item.raw, $event)"
                 @keydown.enter.prevent="handleChildFolderSelect(item.raw, $event)"
-                @keydown.space.prevent="handleChildFolderSelect(item.raw, $event)"
-              >
+                @keydown.space.prevent="handleChildFolderSelect(item.raw, $event)">
                 <Folder :size="folderCardUiSize" :label="item.label"
-                  :thumbnail="folderCoverUrls[String(item.raw.id)]" />
+                  :thumbnail="folderCoverUrls[String(item.raw.id)]"
+                  :custom-color="getFolderColor(item.raw.color)" />
                 <span class="folder-card-count">{{ item.count ?? 0 }}</span>
               </div>
+              </FolderContextMenu>
             </div>
           </div>
+
+          </section>
+          <div>
+          <header class="flex items-center justify-between px-5 pt-3 pb-1">
+            <h3 class="text-sm font-medium text-foreground">{{ $t('views.sidebarModuleList.media') }}</h3>
+            <div class="flex items-center gap-2">
+              <span class="inline-flex min-w-5 h-5 items-center justify-center rounded-full bg-muted px-1.5 text-xs font-medium text-muted-foreground">{{ filteredMediaItems.length }}</span>
+              <ImportDropdown @upload="handleListUpload" />
+            </div>
+          </header>
 
           <!-- 网格视图 -->
           <MediaGridComponent v-if="viewMode === 'grid'" :key="`grid-${viewMode}`" class="p-5"
@@ -120,6 +132,7 @@
             class="flex items-center justify-center h-40 text-muted-foreground dark:text-muted-foreground">
             {{ $t('tabs.mediaTabListView.unknownViewMode', { mode: viewMode }) }}
           </div>
+          </div>
         </div>
 
         <!-- 浮动操作栏 -->
@@ -132,26 +145,29 @@
               <div v-if="selectedItems.length > 0" class="flex items-center space-x-2">
                 <!-- 反选 -->
                 <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
-                  :title="$t('tabs.mediaTabListView.invertSelection')"
-                  @click="handleInvertSelection">
-                  <span class="material-symbols-outlined text-muted-foreground dark:text-muted-foreground">swap_horiz</span>
+                  :title="$t('tabs.mediaTabListView.invertSelection')" @click="handleInvertSelection">
+                  <span
+                    class="material-symbols-outlined text-muted-foreground dark:text-muted-foreground">swap_horiz</span>
                 </button>
                 <!-- 取消选择 -->
                 <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
-                  :title="$t('tabs.mediaTabListView.clearSelection')"
-                  @click="handleClearSelection">
-                  <span class="material-symbols-outlined text-muted-foreground dark:text-muted-foreground">deselect</span>
+                  :title="$t('tabs.mediaTabListView.clearSelection')" @click="handleClearSelection">
+                  <span
+                    class="material-symbols-outlined text-muted-foreground dark:text-muted-foreground">deselect</span>
                 </button>
                 <div class="h-6 border-l border-border dark:border-border"></div>
 
                 <!-- 回收站：恢复文件 / 彻底删除 -->
                 <template v-if="isTrash">
                   <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
-                    :title="$t('tabs.mediaTabListView.restoreFiles', { count: selectedItems.length })" @click="handleToolbarAction('restore')">
-                    <span class="material-symbols-outlined text-muted-foreground dark:text-muted-foreground">restore</span>
+                    :title="$t('tabs.mediaTabListView.restoreFiles', { count: selectedItems.length })"
+                    @click="handleToolbarAction('restore')">
+                    <span
+                      class="material-symbols-outlined text-muted-foreground dark:text-muted-foreground">restore</span>
                   </button>
                   <button class="p-2 rounded-full hover:bg-destructive/10 group transition-colors"
-                    :title="$t('tabs.mediaTabListView.purgeFiles', { count: selectedItems.length })" @click="handleToolbarAction('purge')">
+                    :title="$t('tabs.mediaTabListView.purgeFiles', { count: selectedItems.length })"
+                    @click="handleToolbarAction('purge')">
                     <span
                       class="material-symbols-outlined text-muted-foreground dark:text-muted-foreground group-hover:text-destructive dark:group-hover:text-destructive">delete_forever</span>
                   </button>
@@ -159,16 +175,17 @@
 
                 <!-- 普通视图：复制 / 打开 / 删除 -->
                 <template v-else>
-                  <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors" :title="$t('common.copy')"
-                    @click="handleToolbarAction('copy')">
+                  <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
+                    :title="$t('common.copy')" @click="handleToolbarAction('copy')">
                     <span class="material-icons text-muted-foreground dark:text-muted-foreground">content_copy</span>
                   </button>
-                  <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors" :title="$t('tabs.mediaTabListView.open')"
-                    @click="handleToolbarAction('open')">
+                  <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
+                    :title="$t('tabs.mediaTabListView.open')" @click="handleToolbarAction('open')">
                     <span class="material-icons text-muted-foreground dark:text-muted-foreground">open_in_new</span>
                   </button>
                   <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
-                    :title="$t('tabs.mediaTabListView.deleteFiles', { count: selectedItems.length })" @click="handleToolbarAction('delete')">
+                    :title="$t('tabs.mediaTabListView.deleteFiles', { count: selectedItems.length })"
+                    @click="handleToolbarAction('delete')">
                     <span class="material-icons text-muted-foreground dark:text-muted-foreground">delete</span>
                   </button>
                 </template>
@@ -239,7 +256,8 @@
         <!-- 列数调整滑块 -->
         <div v-if="viewMode === 'grid' || viewMode === 'waterfall'" class="flex items-center space-x-2">
           <input class="w-24 h-1 bg-accent dark:bg-muted rounded-lg appearance-none cursor-pointer" type="range" min="2"
-            max="8" :value="columnsPerRow" @input="handleColumnsChange" :title="$t('tabs.mediaTabListView.adjustColumns')" />
+            max="8" :value="columnsPerRow" @input="handleColumnsChange"
+            :title="$t('tabs.mediaTabListView.adjustColumns')" />
         </div>
 
         <!-- 展示字段开关：控制三个视图下媒体项展示哪些信息 -->
@@ -254,7 +272,8 @@
 
           <template #content>
             <div class="min-w-[160px] rounded-2xl bg-popover p-2">
-              <h3 class="font-medium text-foreground text-sm mb-2 px-1">{{ $t('tabs.mediaTabListView.displayFields') }}</h3>
+              <h3 class="font-medium text-foreground text-sm mb-2 px-1">{{ $t('tabs.mediaTabListView.displayFields') }}
+              </h3>
               <label v-for="col in itemFieldOptions" :key="col.key"
                 class="flex items-center space-x-2 px-2 py-1.5 rounded-lg hover:bg-primary/5 cursor-pointer">
                 <Checkbox :model-value="isItemFieldVisible(col.key)"
@@ -288,21 +307,26 @@
     <!-- 文件上传对话框 -->
     <FileUploadDialog v-model:visible="showUploadDialog" :initial-files="droppedFiles"
       :initial-folder-id="uploadFolderId" :initial-tag-ids="uploadTagIds" />
+    <FolderEditDialog :visible="showFolderDialog" :available-folders="availableFolders" item-type="folder"
+      @close="showFolderDialog = false" @save="handleFolderSave" />
   </div>
 </template>
 
 <style scoped>
 .folder-card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--folder-grid-min-size, 180px)), 1fr));
+  grid-template-columns: repeat(auto-fill, var(--folder-grid-item-size, 128px));
   gap: 1rem;
   align-items: start;
+  justify-items: start;
+  justify-content: start;
+  padding: 1.25rem 1.25rem 0;
   box-shadow: none;
 }
 
 .folder-card-button {
   display: flex;
-  width: 100%;
+  width: auto;
   min-width: 0;
   padding: 0;
   flex-direction: column;
@@ -322,7 +346,6 @@
   color: var(--muted-foreground);
   font-size: 0.75rem;
 }
-
 </style>
 
 <script setup lang="ts">
@@ -347,6 +370,9 @@ import WaterfallComponent from '@renderer/components/business/WaterfallComponent
 import type { BrowserItem } from '@renderer/components/business/GroupedCardBrowserDialog.vue'
 import Folder from '@/components/ui/folder/Folder.vue'
 import FileUploadDialog from '@renderer/components/business/FileUploadDialog.vue'
+import FolderEditDialog from '@renderer/components/business/FolderEditDialog.vue'
+import FolderContextMenu from '@renderer/components/business/FolderContextMenu.vue'
+import ImportDropdown from '@renderer/views/HomeView/ImportDropdown.vue'
 import FilterBar from '@/renderer/components/business/FilterBar/FilterBar.vue'
 import Breadcrumb from '@/renderer/components/common/Breadcrumb.vue'
 import { Dropdown } from '@/renderer/components/common/Dropdown'
@@ -463,6 +489,27 @@ const showUploadDialog = ref(false)
 const droppedFiles = ref<File[]>([])
 const uploadFolderId = ref<string>()
 const uploadTagIds = ref<string[]>([])
+const showFolderDialog = ref(false)
+const availableFolders = computed(() => folderStore.folders as any[])
+
+function handleListUpload() {
+  const folder = props.filters?.folder
+  uploadFolderId.value = folder != null && folder !== '=null' ? String(folder) : undefined
+  const tags = props.filters?.tags
+  uploadTagIds.value = Array.isArray(tags) ? tags.map(String) : []
+  droppedFiles.value = []
+  showUploadDialog.value = true
+}
+
+async function handleFolderSave(data: { title: string; parentId?: number; color?: number; description?: string }) {
+  const libraryId = props.libraryId || libraryStore.currentLibrary?.id
+  if (!libraryId) return
+  const result = await folderStore.createFolder(libraryId, data.title, data.parentId, data.color, data.description)
+  if (result.success) {
+    showFolderDialog.value = false
+    await handleRefresh(true)
+  }
+}
 
 const settingsStore = useSettingsStore()
 const urlImportStore = useUrlImportStore()
@@ -788,6 +835,8 @@ const folderCardUiSize = computed<'sm' | 'md' | 'lg'>(() => {
   return 'lg'
 })
 
+const folderGridItemSize = computed(() => ({ sm: 96, md: 128, lg: 160 }[folderCardUiSize.value]))
+
 const folderCoverUrls = ref<Record<string, string>>({})
 let folderCoverLoadToken = 0
 const loadFolderCovers = async () => {
@@ -833,6 +882,11 @@ function handleChildFolderSelect(folder: any, event?: MouseEvent | KeyboardEvent
       payload: { id: String(folder.id), title },
     },
   }))
+}
+
+function getFolderColor(color: unknown): string | undefined {
+  if (typeof color !== 'number' || !Number.isFinite(color)) return undefined
+  return `#${(color >>> 0).toString(16).padStart(6, '0').slice(-6)}`
 }
 
 // 方法

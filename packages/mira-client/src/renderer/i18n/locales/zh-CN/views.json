@@ -71,6 +71,8 @@
     "connectServer": "连接服务器"
   },
   "sidebarModuleList": {
+    "folders": "文件夹",
+    "media": "素材",
     "all": "全部",
     "uncategorized": "未分类",
     "untagged": "未标签",

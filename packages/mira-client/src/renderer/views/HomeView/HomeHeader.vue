@@ -161,9 +161,8 @@ const openDashboard = async () => {
         ? 'text-primary hover:bg-primary/10'
         : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'" @click="mediaStore.toggleDetailSidebar()">
       <!-- 折叠状态切换时以 key 重挂载，播放 spring 弹入旋转动画 -->
-      <Motion :key="String(mediaStore.showDetailSidebar)" as="span" class="material-icons"
-        style="font-size: 18px;" :initial="{ scale: 0.4, rotate: -90, opacity: 0 }"
-        :animate="{ scale: 1, rotate: 0, opacity: 1 }"
+      <Motion :key="String(mediaStore.showDetailSidebar)" as="span" class="material-icons" style="font-size: 18px;"
+        :initial="{ scale: 0.4, rotate: -90, opacity: 0 }" :animate="{ scale: 1, rotate: 0, opacity: 1 }"
         :transition="{ type: 'spring', stiffness: 500, damping: 26 }">view_sidebar</Motion>
     </button>
 
@@ -173,7 +172,7 @@ const openDashboard = async () => {
       :title="settingsStore.isDarkMode ? $t('commonUi.themeSwitcher.switchToLight') : $t('commonUi.themeSwitcher.switchToDark')"
       @click="toggleTheme">
       <span class="material-icons" style="font-size: 18px;">{{ settingsStore.isDarkMode ? 'light_mode' : 'dark_mode'
-        }}</span>
+      }}</span>
     </button>
 
     <!-- 用户头像 + 功能菜单（原 HomeToolbar 功能并入） -->
@@ -198,18 +197,10 @@ const openDashboard = async () => {
           <div class="flex flex-col space-y-1">
             <div class="text-sm font-medium leading-none truncate">{{ authStore.userDisplayName }}</div>
             <div v-if="authStore.user?.role" class="text-xs leading-none text-muted-foreground">{{ authStore.user.role
-              }}</div>
+            }}</div>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem @select="emit('plugins')">
-          <span class="material-icons text-base">extension</span>
-          <span>{{ $t('views.homeHeader.plugins') }}</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem @select="emit('shortcuts')">
-          <span class="material-icons text-base">keyboard</span>
-          <span>{{ $t('views.homeHeader.shortcuts') }}</span>
-        </DropdownMenuItem>
         <DropdownMenuItem @select="emit('settings')">
           <span class="material-icons text-base">settings</span>
           <span>{{ $t('views.homeHeader.settings') }}</span>
@@ -217,6 +208,14 @@ const openDashboard = async () => {
         <DropdownMenuItem @select="openDashboard">
           <span class="material-icons text-base">dashboard</span>
           <span>{{ $t('views.homeHeader.openDashboard') }}</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem @select="emit('plugins')">
+          <span class="material-icons text-base">extension</span>
+          <span>{{ $t('views.homeHeader.plugins') }}</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem @select="emit('shortcuts')">
+          <span class="material-icons text-base">keyboard</span>
+          <span>{{ $t('views.homeHeader.shortcuts') }}</span>
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />

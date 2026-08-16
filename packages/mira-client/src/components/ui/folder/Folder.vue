@@ -23,6 +23,8 @@ const props = withDefaults(
   defineProps<{
     /** 文件夹配色 */
     color?: FolderColor
+    /** 自定义文件夹颜色（优先于预设配色） */
+    customColor?: string
     /** 整体尺寸 */
     size?: FolderSize
     /** 左下角标签文本 */
@@ -33,6 +35,7 @@ const props = withDefaults(
   }>(),
   {
     color: "blue",
+    customColor: undefined,
     size: "lg",
     label: undefined,
     thumbnail: undefined,
@@ -179,6 +182,11 @@ const colorMap: Record<
 const spring = { type: "spring", stiffness: 300, damping: 22 } as const
 
 const c = computed(() => colorMap[props.color])
+const customColorStyle = computed(() => props.customColor ? {
+  '--folder-custom-color': props.customColor,
+  '--folder-custom-flap': `color-mix(in srgb, ${props.customColor} 48%, transparent)`,
+  background: `linear-gradient(to bottom, color-mix(in srgb, ${props.customColor} 82%, white), ${props.customColor})`,
+} : undefined)
 const s = computed(() => sizeMap[props.size])
 
 const hovered = ref(false)
@@ -204,6 +212,7 @@ const bridgeStyle = {
 <template>
   <div
     :aria-label="props.label ?? 'Folder'"
+    :style="customColorStyle"
     :class="cn(
       'relative cursor-pointer overflow-hidden border-t-2 bg-linear-to-b',
       s.container,
@@ -219,9 +228,9 @@ const bridgeStyle = {
       <div class="flex items-end">
         <div :class="cn(s.tabLeft, 'backdrop-blur-sm', c.flap)" />
         <div :class="cn(s.tabRight, 'backdrop-blur-sm', c.flap)" />
-        <div :class="cn(s.tabBridge, c.flap)" :style="bridgeStyle" />
+        <div :class="cn(s.tabBridge, c.flap)" :style="{ ...bridgeStyle, ...(props.customColor ? { background: 'var(--folder-custom-flap)' } : {}) }" />
       </div>
-      <div :class="cn(s.flapBody, 'backdrop-blur-sm', c.flap)" />
+      <div :class="cn(s.flapBody, 'backdrop-blur-sm', c.flap)" :style="props.customColor ? { background: 'var(--folder-custom-flap)' } : undefined" />
     </div>
 
     <!-- 纸张 -->
