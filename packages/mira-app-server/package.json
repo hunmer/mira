@@ -45,7 +45,6 @@
   "license": "ISC",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "@hunmer/procm-mcp-sdk": "link:../../../procm-mcp/packages/procm-sdk",
     "@types/archiver": "^8.0.0",
     "@types/multer": "^2.0.0",
     "@types/yauzl": "^2.10.3",
@@ -70,6 +69,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@hunmer/procm-mcp-sdk": "link:../../../procm-mcp/packages/procm-sdk",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/fluent-ffmpeg": "^2.1.28",

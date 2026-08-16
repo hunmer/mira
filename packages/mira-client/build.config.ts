@@ -118,7 +118,7 @@ export function getRendererConfig(): BuildConfig {
 
 // Rollup 外部依赖配置
 export const externalDependencies = {
-  main: ['electron', 'mira-app-core/shared/sdk', 'fs', 'path', 'os', 'crypto'],
+  main: ['electron', 'mira-app-core/shared/sdk', '@hunmer/procm-mcp-sdk', 'fs', 'path', 'os', 'crypto'],
   preload: ['electron'],
   renderer: [] // 渲染进程通常不需要外部依赖
 }

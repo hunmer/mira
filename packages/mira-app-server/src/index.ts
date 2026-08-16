@@ -8,7 +8,6 @@ import { MiraWebsocketServer } from './WebSocketServer';
 import { MiraHttpServer } from './server';
 import { ThumbnailService } from './services/ThumbnailService';
 import { MetadataService } from './services/MetadataService';
-import { installLogCapture } from './services/logCapture';
 import { closeProcm, getProcmLogger, initProcm, publishBackendReady } from './services/procm';
 import express from 'express';
 
@@ -16,16 +15,11 @@ import express from 'express';
 dotenv.config({ path: path.join(__dirname, '../../../.env') });
 dotenv.config();
 
-// 尽早安装 console 拦截，让 SSE 日志端点能回放启动阶段的历史日志。
-// 幂等：重复调用安全。
-installLogCapture();
-
-// procm 托管时启用 room 客户端与结构化日志，否则退化为 no-op
-initProcm();
-const procmLogger = getProcmLogger();
-
 async function startServer() {
   try {
+    // SDK 仅在开发环境动态加载，生产环境无需安装 devDependency。
+    await initProcm();
+    const procmLogger = getProcmLogger();
     // 服务端启动文件
     // 获取端口配置，优先使用环境变量
     const httpPort = process.env.MIRA_SERVER_HTTP_PORT || process.env.HTTP_PORT || '8081';
@@ -60,7 +54,7 @@ async function startServer() {
 
   } catch (error) {
     console.error('❌ Failed to start server:', error);
-    procmLogger.error('Failed to start server', { message: error instanceof Error ? error.message : String(error) });
+    getProcmLogger().error('Failed to start server', { message: error instanceof Error ? error.message : String(error) });
     closeProcm();
     process.exit(1);
   }

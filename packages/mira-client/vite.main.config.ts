@@ -42,7 +42,8 @@ export default defineConfig({
     noExternal: [
       'electron-log',
       'electron-updater',
-      'electron-window-state',
+        'electron-window-state',
+        '@hunmer/procm-mcp-sdk',
       'mira-app-core/shared/sdk'
     ]
   }

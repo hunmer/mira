@@ -45,7 +45,6 @@
     "@hunmer/vue-masonry": "workspace:*",
     "@internationalized/date": "^3.12.3",
     "@lucide/vue": "^1.17.0",
-    "@hunmer/procm-mcp-sdk": "link:../../../procm-mcp/packages/procm-sdk",
     "@radix-icons/vue": "^1.0.0",
     "@tailwindcss/vite": "4.0.17",
     "@tanstack/vue-table": "^8.21.3",
@@ -100,6 +99,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@hunmer/procm-mcp-sdk": "link:../../../procm-mcp/packages/procm-sdk",
     "@tailwindcss/postcss": "^4.0.17",
     "@types/electron-window-state": "^2.0.34",
     "@types/lodash-es": "^4.17.12",

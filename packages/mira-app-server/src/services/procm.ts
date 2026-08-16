@@ -4,8 +4,8 @@
  * 由 procm 托管启动（注入 PROCM_ROOM_ID / PROCM_WS_URL）时创建房间客户端并
  * 输出结构化日志帧；直接运行（无环境变量）时全部 API 退化为 no-op，行为不变。
  */
-import { createProcmClient, setLogger } from '@hunmer/procm-mcp-sdk';
 import type { JsonValue, Logger, ProcmClient } from '@hunmer/procm-mcp-sdk';
+import { logRingBuffer } from './LogRingBuffer';
 
 export type ProcmLoggerLike = Pick<Logger, 'debug' | 'info' | 'warn' | 'error'>;
 
@@ -40,16 +40,33 @@ function writeLine(stream: NodeJS.WriteStream, text: string): void {
     }
 }
 
-export function initProcm(): void {
+export async function initProcm(): Promise<void> {
     if (procmClient) return;
-    if (!process.env.PROCM_ROOM_ID || !process.env.PROCM_WS_URL) return;
+    if (process.env.NODE_ENV !== 'development') return;
+    const { createProcmClient, setupLogger } = await import('@hunmer/procm-mcp-sdk');
+    const loggerOptions = {
+        clientName: 'mira-app-server',
+        captureConsole: true,
+    };
+    if (!process.env.PROCM_ROOM_ID || !process.env.PROCM_WS_URL) {
+        procmLogger = setupLogger({
+            ...loggerOptions,
+            onLog: (entry) => logRingBuffer.push(entry.level, [entry.message, entry.data]),
+        });
+        return;
+    }
     try {
         procmClient = createProcmClient({ clientName: 'mira-app-server' });
     } catch (error) {
         console.warn('procm client init failed:', error);
         return;
     }
-    procmLogger = setLogger({ client: procmClient, console: rawConsole });
+    procmLogger = setupLogger({
+        client: procmClient,
+        console: rawConsole,
+        ...loggerOptions,
+        onLog: (entry) => logRingBuffer.push(entry.level, [entry.message, entry.data]),
+    });
     procmLogger.info('procm room enabled', { roomId: procmClient.roomId });
 }
 

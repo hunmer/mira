@@ -1,7 +1,7 @@
 import log from 'electron-log'
 import { join } from 'node:path'
 import { inspect } from 'node:util'
-import { getLogger } from '@hunmer/procm-mcp-sdk'
+import { getProcmLogger } from '../services/ProcmService'
 
 // Electron 由 Vite 启动时，父进程退出会先关闭 stdout/stderr 管道。
 // 忽略此时的终端写入错误，文件日志仍可正常完成退出记录。
@@ -67,20 +67,20 @@ export const logger = {
   },
   debug: (category: string, message: string, data?: any) => {
     log.debug(`[${category}] ${message}`, data ?? '')
-    getLogger().debug(`[${category}] ${message}`, toProcmData(data))
+    getProcmLogger().debug(`[${category}] ${message}`, toProcmData(data))
   },
   info: (category: string, message: string, data?: any) => {
     log.info(`[${category}] ${message}`, data ?? '')
-    getLogger().info(`[${category}] ${message}`, toProcmData(data))
+    getProcmLogger().info(`[${category}] ${message}`, toProcmData(data))
   },
   warn: (category: string, message: string, data?: any) => {
     log.warn(`[${category}] ${message}`, data ?? '')
-    getLogger().warn(`[${category}] ${message}`, toProcmData(data))
+    getProcmLogger().warn(`[${category}] ${message}`, toProcmData(data))
   },
   error: (category: string, message: string, errorOrData?: any, data?: any) => {
     const isError = errorOrData instanceof Error
     log.error(`[${category}] ${message}`, isError ? errorOrData : errorOrData ?? '', data ?? '')
-    getLogger().error(
+    getProcmLogger().error(
       `[${category}] ${message}`,
       toProcmData(errorOrData !== undefined ? errorOrData : data)
     )
