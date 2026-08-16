@@ -1,5 +1,6 @@
 {
   "mediaTabListView": {
+    "groupNavigation": "素材分组导航",
     "releaseToUpload": "释放文件以上传",
     "refreshData": "刷新数据",
     "unknownViewMode": "未知的视图模式: {mode}",

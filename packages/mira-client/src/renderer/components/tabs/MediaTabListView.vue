@@ -129,7 +129,17 @@
               </div>
             </header>
 
-            <section v-for="group in mediaGroups" :key="group.key" class="mb-3">
+            <!-- 分组章节导航：滚动时固定在视图右上角 -->
+            <div v-if="groupingMode !== 'none' && groupChapters.length > 0"
+              class="sticky top-2 z-20 flex justify-end px-5 pointer-events-none">
+              <div class="pointer-events-auto px-1 py-2">
+                <ChapterScrubber :chapters="groupChapters" side="left" :row-height="12" :peak-length="42"
+                  :label="$t('tabs.mediaTabListView.groupNavigation')" @select="handleGroupChapterSelect" />
+              </div>
+            </div>
+
+            <section v-for="(group, groupIndex) in mediaGroups" :key="group.key" class="mb-3"
+              :data-media-group-index="groupIndex">
               <header v-if="groupingMode !== 'none'" class="flex items-center gap-2 px-5 pt-3 pb-1">
                 <h4 class="text-sm font-medium text-foreground">{{ group.label }}</h4>
                 <span
@@ -160,6 +170,9 @@
                 <WaterfallComponent ref="waterfallRef" :key="`waterfall-${viewMode}-${group.key}`" class="p-5"
                   :items="group.items" :selected-items="selectedItems" :is-trash="viewType === 'trash'"
                   :column-width="dynamicColumnWidth" :columns-per-row="columnsPerRow" :gap="16"
+                  :debug-label="`${groupIndex}:${group.label}`"
+                  :lazyload="groupingMode === 'none'"
+                  :enter-animation="groupingMode === 'none'" :layout-transition="groupingMode === 'none'"
                   @click="handleMediaClick" @dblclick="handleMediaDoubleClick"
                   @media-context-menu="handleMediaContextMenu" @media-info="handleMediaInfo"
                   @media-set-folder="handleMediaSetFolder" @media-set-tags="handleMediaSetTags"
@@ -420,6 +433,7 @@ import FilterBar from '@/renderer/components/business/FilterBar/FilterBar.vue'
 import Breadcrumb from '@/renderer/components/common/Breadcrumb.vue'
 import { Dropdown } from '@/renderer/components/common/Dropdown'
 import { Checkbox } from '@/components/ui/checkbox'
+import { ChapterScrubber, type Chapter } from '@/components/ui/chapter-scrubber'
 import {
   AlertDialog,
   AlertDialogContent,
@@ -766,6 +780,18 @@ const mediaGroups = computed(() => {
 
   return [...groups].map(([key, groupItems]) => ({ key, label: labels.get(key) || key, items: groupItems }))
 })
+
+const groupChapters = computed<Chapter[]>(() => mediaGroups.value.map((group, index) => ({
+  id: group.key,
+  title: group.label || t('views.sidebarModuleList.media'),
+  meta: `${index + 1} / ${mediaGroups.value.length}`,
+  description: t('tabs.mediaTabListView.fileCount', { count: group.items.length })
+})))
+
+const handleGroupChapterSelect = (_chapter: Chapter, index: number) => {
+  const target = mediaTabListViewRef.value?.querySelector(`[data-media-group-index="${index}"]`)
+  target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
 
 const filteredMediaItems = computed(() => {
   // 对于MediaTabListView，filteredMediaItems应该等于缓存的总数据
@@ -1635,6 +1661,16 @@ watch(() => props.tabId, async (newTabId, _oldTabId) => {
   if (newTabId && props.libraryId) {
     // 初始化 filterRules
     initializeFilterRules()
+
+    // 从 mediaTabData 恢复筛选显示状态（组件随 tab 切换重建时 filterRules 是空实例，
+    // 需同步回来，否则筛选徽标 / 清除图标不显示）
+    const storedFilters = mediaTabData.filters.value || {}
+    filterRules.value.forEach(rule => {
+      const stored = storedFilters[rule.id]
+      if (stored && typeof stored === 'object' && stored.id) {
+        applySnapshotToRule(rule, JSON.parse(JSON.stringify(stored)))
+      }
+    })
 
     // 应用素材库默认过滤器（仅当该 tab 尚无用户筛选、且未从持久化恢复过滤器关联时）
     const current = mediaTabData.filters.value || {}

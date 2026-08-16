@@ -230,17 +230,15 @@
         <Button variant="ghost" size="xs"
           :class="isOpen || activeSavedFilter ? 'text-primary bg-primary/10 rounded-lg' : 'text-muted-foreground hover:text-foreground hover:bg-primary/5 rounded-lg'"
           :title="activeSavedFilter ? activeSavedFilter.name : $t('business.filterBar.savedFilters')">
-          <span class="relative">
-            <span class="material-icons text-sm">bookmark</span>
-            <!-- 右上角清除过滤器小图标 -->
-            <span v-if="hasActiveConditions"
-              class="absolute -top-1.5 -right-1.5 bg-destructive text-white rounded-full w-4 h-4 flex items-center justify-center cursor-pointer hover:scale-110 transition-transform"
-              :title="$t('business.filterBar.clearAllFilters')"
-              @click.stop="emit('clear-filters')">
-              <span class="material-icons text-[10px] leading-none">close</span>
-            </span>
-          </span>
+          <span class="material-icons text-sm">bookmark</span>
           <span v-if="activeSavedFilter" class="text-sm max-w-32 truncate">{{ activeSavedFilter.name }}</span>
+          <!-- 名称右侧的清除过滤器图标 -->
+          <span v-if="hasActiveConditions || activeSavedFilter"
+            class="shrink-0 p-0.5 rounded-full text-muted-foreground/70 hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+            :title="$t('business.filterBar.clearAllFilters')"
+            @click.stop="emit('clear-filters')">
+            <span class="material-icons text-sm leading-none">close</span>
+          </span>
         </Button>
       </template>
 

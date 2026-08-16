@@ -95,7 +95,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import SelectionBox from '../common/SelectionBox.vue'
 import MediaContextMenu from './MediaContextMenu.vue'
 import MediaWaterfallItem from './WaterfallComponent/MediaWaterfallItem.vue'
@@ -117,6 +117,8 @@ import { miraSDKService } from '../../services/MiraSDKService'
 
 interface Props {
   items: FileInfo[]
+  /** 仅用于定位多分组布局问题的调试标识 */
+  debugLabel?: string
   selectedItems?: string[]
   isTrash?: boolean
   columnWidth?: number
@@ -165,6 +167,7 @@ interface Emits {
 
 const props = withDefaults(defineProps<Props>(), {
   selectedItems: () => [],
+  debugLabel: '',
   isTrash: false,
   columnWidth: 220,
   columnsPerRow: 4,
@@ -338,6 +341,11 @@ const loadRemainingRatios = async (items: FileInfo[], currentVersion: number) =>
 watch(
   () => props.items.map(item => `${item.id}:${getItemUrl(item)}`),
   () => {
+    console.debug('[WaterfallLayout] items-change', {
+      label: props.debugLabel,
+      items: props.items.length,
+      urls: props.items.slice(0, 3).map(item => getItemUrl(item))
+    })
     void preloadThumbnailRatios(props.items)
   },
   { immediate: true }
@@ -370,6 +378,26 @@ const waterfallItems = computed(() => {
     ratio: getItemRatio(item)
   }))
 })
+
+watch(
+  () => waterfallItems.value.length,
+  () => {
+    console.debug('[WaterfallLayout] items-ready', {
+      label: props.debugLabel,
+      items: props.items.length,
+      renderedItems: waterfallItems.value.length,
+      ratiosReady: thumbnailRatiosReady.value
+    })
+    scheduleLayoutRefresh()
+  },
+  { flush: 'post' }
+)
+
+watch(
+  () => waterfallItems.value.map(item => `${item.id}:${item.ratio}`),
+  () => scheduleLayoutRefresh(),
+  { flush: 'post' }
+)
 
 // 与网格视图保持一致：相同的列数设置应得到接近的卡片宽度。
 const columns = computed<MasonryColumns>(() => {
@@ -508,12 +536,40 @@ const handleAfterRender = () => {
   if (initialEnterAnimation.value && waterfallItems.value.length > 0) {
     initialEnterAnimation.value = false
   }
+  console.debug('[WaterfallLayout] after-render', {
+    label: props.debugLabel,
+    items: props.items.length,
+    renderedItems: waterfallItems.value.length
+  })
   emit('after-render')
 }
 
 // 视图切换后重新读取容器宽度并重算布局，不重复加载缩略图比例。
 const refresh = () => {
+  const selectionRoot = (selectionBoxRef.value as any)?.$el as HTMLElement | null
+  const root = selectionRoot?.querySelector('.masonry-container') as HTMLElement | null
+  console.debug('[WaterfallLayout] refresh', {
+    label: props.debugLabel,
+    items: props.items.length,
+    renderedItems: waterfallItems.value.length,
+    width: root?.clientWidth ?? 0,
+    height: root?.clientHeight ?? 0,
+    selectionWidth: selectionRoot?.clientWidth ?? 0,
+    selectionHeight: selectionRoot?.clientHeight ?? 0,
+    rootTop: root?.getBoundingClientRect().top ?? null
+  })
   masonryRef.value?.refresh()
+}
+
+// 多个瀑布流实例同时挂载时，后续实例可能在首次测量时尚未完成尺寸/比例更新。
+// 在 DOM 更新后的连续帧再次测量，避免必须滚动到该分组后才触发布局。
+let refreshFrame = 0
+const scheduleLayoutRefresh = () => {
+  cancelAnimationFrame(refreshFrame)
+  void nextTick(() => {
+    refresh()
+    refreshFrame = requestAnimationFrame(() => refresh())
+  })
 }
 
 const handleImageError = (url: string) => {
@@ -597,9 +653,19 @@ onMounted(() => {
   window.addEventListener('keydown', handleDeleteKeyDown)
   window.addEventListener('thumbnail-updated', handleThumbnailUpdated)
   document.addEventListener('edit-action', handleEditAction)
+  const selectionRoot = (selectionBoxRef.value as any)?.$el as HTMLElement | null
+  const masonryRoot = selectionRoot?.querySelector('.masonry-container') as HTMLElement | null
+  console.debug('[WaterfallLayout] mounted', {
+    label: props.debugLabel,
+    items: props.items.length,
+    selection: selectionRoot?.getBoundingClientRect?.().toJSON?.() ?? null,
+    masonry: masonryRoot?.getBoundingClientRect?.().toJSON?.() ?? null
+  })
+  scheduleLayoutRefresh()
 })
 
 onUnmounted(() => {
+  cancelAnimationFrame(refreshFrame)
   window.removeEventListener('keydown', handleDeleteKeyDown)
   window.removeEventListener('thumbnail-updated', handleThumbnailUpdated)
   document.removeEventListener('edit-action', handleEditAction)
@@ -608,6 +674,11 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+:deep(.selection-container.waterfall-wrapper) {
+  /* 多分组时必须随 Masonry 实际高度增长，不能继承 SelectionBox 的 h-full(40px)。 */
+  height: auto !important;
+}
+
 :deep(.animate__animated) {
   animation-fill-mode: both;
   animation-duration: 1s;

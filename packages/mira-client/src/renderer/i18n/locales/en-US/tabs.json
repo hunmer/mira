@@ -1,5 +1,6 @@
 {
   "mediaTabListView": {
+    "groupNavigation": "Media group navigation",
     "releaseToUpload": "Release to upload",
     "refreshData": "Refresh data",
     "unknownViewMode": "Unknown view mode: {mode}",
