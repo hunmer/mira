@@ -282,7 +282,14 @@
     "empty": "暂无{type}可展示",
     "tryOther": "尝试其他关键词",
     "fileCount": "{count} 个文件",
-    "defaultItemLabel": "项"
+    "defaultItemLabel": "项",
+    "selectedCount": "已选 {count} 项",
+    "openSelected": "打开",
+    "delete": "删除",
+    "cancel": "取消",
+    "batchDeleteTitle": "确认批量删除",
+    "batchDeleteDesc": "确定要删除已选中的 {count} 个{type}吗？此操作不可撤销。",
+    "deleteWithFilesLabel": "同时删除其中的文件"
   },
   "iconPicker": {
     "selectIcon": "选择图标",

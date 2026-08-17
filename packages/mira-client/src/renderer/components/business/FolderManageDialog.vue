@@ -12,6 +12,7 @@ import GroupedCardBrowserDialog, { type BrowserItem } from './GroupedCardBrowser
 import AnimatedFolderCard from './AnimatedFolderCard.vue'
 import { useFolderStore } from '@renderer/stores/folder'
 import { useLibraryStore } from '@renderer/stores/library'
+import { miraSDKService } from '@renderer/services/MiraSDKService'
 
 defineOptions({ name: 'FolderManageDialog' })
 
@@ -35,6 +36,20 @@ const items = computed<BrowserItem[]>(() =>
     description: f.description,
   }))
 )
+
+// 批量删除：逐个调用 SDK，完成后强制刷新文件夹列表
+const handleBatchDelete = async (raws: any[], deleteWithFiles: boolean) => {
+  const libraryId = libraryStore.currentLibrary?.id
+  if (!libraryId || !raws.length) return
+  for (const folder of raws) {
+    try {
+      await miraSDKService.deleteFolder(libraryId, parseInt(String(folder.id), 10), deleteWithFiles)
+    } catch (error) {
+      console.error(`Failed to delete folder ${folder?.id}:`, error)
+    }
+  }
+  await folderStore.fetchFolders(libraryId, true)
+}
 </script>
 
 <template>
@@ -47,7 +62,9 @@ const items = computed<BrowserItem[]>(() =>
     :card-component="AnimatedFolderCard"
     :card-props="{ size: 160 }"
     :library-id="libraryStore.currentLibrary?.id"
+    :delete-with-files="true"
     @update:visible="emit('update:visible', $event)"
     @select="emit('select', $event)"
+    @batch-delete="handleBatchDelete"
   />
 </template>

@@ -282,7 +282,14 @@
     "empty": "No {type} to display",
     "tryOther": "Try other keywords",
     "fileCount": "{count} files",
-    "defaultItemLabel": "items"
+    "defaultItemLabel": "items",
+    "selectedCount": "{count} selected",
+    "openSelected": "Open",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "batchDeleteTitle": "Confirm batch delete",
+    "batchDeleteDesc": "Are you sure you want to delete the selected {count} {type}? This action cannot be undone.",
+    "deleteWithFilesLabel": "Also delete files inside"
   },
   "iconPicker": {
     "selectIcon": "Select icon",

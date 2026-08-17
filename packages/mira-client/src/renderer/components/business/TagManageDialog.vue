@@ -7,6 +7,8 @@
 import { computed } from 'vue'
 import GroupedCardBrowserDialog, { type BrowserItem } from './GroupedCardBrowserDialog.vue'
 import { useTagStore } from '@renderer/stores/tag'
+import { useLibraryStore } from '@renderer/stores/library'
+import { miraSDKService } from '@renderer/services/MiraSDKService'
 
 defineOptions({ name: 'TagManageDialog' })
 
@@ -17,6 +19,7 @@ const emit = defineEmits<{
 }>()
 
 const tagStore = useTagStore()
+const libraryStore = useLibraryStore()
 
 const items = computed<BrowserItem[]>(() =>
   tagStore.tags.map(t => ({
@@ -28,6 +31,20 @@ const items = computed<BrowserItem[]>(() =>
     description: t.description,
   }))
 )
+
+// 批量删除：逐个调用 SDK，完成后强制刷新标签列表
+const handleBatchDelete = async (raws: any[]) => {
+  const libraryId = libraryStore.currentLibrary?.id
+  if (!libraryId || !raws.length) return
+  for (const tag of raws) {
+    try {
+      await miraSDKService.deleteTag(libraryId, parseInt(String(tag.id), 10))
+    } catch (error) {
+      console.error(`Failed to delete tag ${tag?.id}:`, error)
+    }
+  }
+  await tagStore.fetchTags(libraryId, true)
+}
 </script>
 
 <template>
@@ -39,5 +56,6 @@ const items = computed<BrowserItem[]>(() =>
     :items="items"
     @update:visible="emit('update:visible', $event)"
     @select="emit('select', $event)"
+    @batch-delete="handleBatchDelete"
   />
 </template>
