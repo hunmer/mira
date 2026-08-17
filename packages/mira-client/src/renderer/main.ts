@@ -16,6 +16,11 @@ import { miraAPI } from './api/MiraAPI'
 // 初始化插件系统
 import './services/PluginSystemCore'
 
+// 仅开发构建注册真实页面 UI 测试入口；生产构建不暴露测试函数。
+if (import.meta.env.DEV) {
+  void import('./procm-ui-tests')
+}
+
 // v-viewer setup
 import 'viewerjs/dist/viewer.css'
 import VueViewer from 'v-viewer'

@@ -7,7 +7,7 @@ import { TrayService } from './services/TrayService'
 import { MainWindowService } from './services/MainWindowService'
 import { DownloadService } from './services/DownloadService'
 import { logger } from './utils/Logger'
-import { closeProcm, initProcm } from './services/ProcmService'
+import { closeProcm, initProcm, setProcmMainWindow } from './services/ProcmService'
 import { getAutoUpdater } from './services/useAutoUpdater'
 import { ensureLocalServerStarted, runLocalServerScriptSync } from './services/LocalServerService'
 
@@ -238,6 +238,7 @@ class MiraApplication {
 
   private createMainWindow(): BrowserWindow {
     const win = this.windows.create()
+    setProcmMainWindow(win)
     this.ipcHandlers?.setMainWindow(win)
     this.trayService?.setMainWindow(win)
     return win

@@ -25,6 +25,7 @@
     "build:production": "node scripts/build-production.js",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix",
     "type-check": "vue-tsc --noEmit -p tsconfig.json --composite false",
+    "test:ui:remote": "node scripts/test-ui-create-folder.mjs",
     "docs": "typedoc",
     "analyze:deps": "depcruise src --output-type html --output-to docs/dependencies.html",
     "analyze:bundle": "pnpm run build:prod && vite-bundle-analyzer dist-renderer",
@@ -101,6 +102,9 @@
   "devDependencies": {
     "@hunmer/procm-mcp-sdk": "link:../../../procm-mcp/packages/procm-sdk",
     "@tailwindcss/postcss": "^4.0.17",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/vue": "^8.1.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/electron-window-state": "^2.0.34",
     "@types/lodash-es": "^4.17.12",
     "@types/node": "^22.13.13",
