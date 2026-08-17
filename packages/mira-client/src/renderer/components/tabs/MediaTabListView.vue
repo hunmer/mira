@@ -140,7 +140,8 @@
 
             <section v-for="(group, groupIndex) in mediaGroups" :key="group.key" class="mb-3"
               :data-media-group-index="groupIndex">
-              <header v-if="groupingMode !== 'none'" class="flex items-center gap-2 px-5 pt-3 pb-1">
+              <header v-if="groupingMode !== 'none'"
+                class="sticky top-0 z-10 flex items-center gap-2 bg-background/95 px-5 pt-3 pb-1 backdrop-blur-sm">
                 <h4 class="text-sm font-medium text-foreground">{{ group.label }}</h4>
                 <span
                   class="inline-flex min-w-5 h-5 items-center justify-center rounded-full bg-muted px-1.5 text-xs font-medium text-muted-foreground">{{
