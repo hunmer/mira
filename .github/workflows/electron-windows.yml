@@ -1,0 +1,75 @@
+name: Electron Windows Build
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'packages/mira-client/**'
+      - 'packages/vue-masonry/**'
+      - 'packages/mira-app-core/**'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'package.json'
+      - '.github/workflows/electron-windows.yml'
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: 'pnpm'
+        cache-dependency-path: 'pnpm-lock.yaml'
+
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+
+    - name: Build workspace dependencies
+      run: pnpm --filter "@hunmer/vue-masonry" --filter "mira-app-core" build
+
+    - name: Build and package Windows
+      working-directory: packages/mira-client
+      env:
+        CSC_LINK: ${{ secrets.CSC_LINK }}
+        CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: pnpm run electron:build:win
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: mira-windows-${{ github.sha }}
+        path: |
+          packages/mira-client/build/*.exe
+          packages/mira-client/build/*.msi
+          packages/mira-client/build/*.zip
+        if-no-files-found: error
+        retention-days: 14
+
+    - name: Upload artifacts to GitHub Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          packages/mira-client/build/*.exe
+          packages/mira-client/build/*.msi
+          packages/mira-client/build/*.zip
+        fail_on_unmatched_files: false
+        generate_release_notes: true
