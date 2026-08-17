@@ -1,12 +1,6 @@
 import { screen, waitFor } from '@testing-library/vue'
 import userEvent from '@testing-library/user-event'
 
-declare global {
-  interface Window {
-    __procmUiTests?: Record<string, (...args: any[]) => Promise<unknown>>
-  }
-}
-
 function findFolderAddButton(): HTMLButtonElement {
   const button = screen.getAllByTitle(/创建文件夹|添加文件夹|addFolder/i)
     .find((element) => element.classList.contains('header-action-btn'))
@@ -15,7 +9,7 @@ function findFolderAddButton(): HTMLButtonElement {
 }
 
 /** Operates on the already-mounted Mira page, not a detached test container. */
-async function createFolder(title = `procm-ui-${Date.now()}`): Promise<{ title: string; visible: boolean }> {
+export async function createFolder(title = `procm-ui-${Date.now()}`): Promise<{ title: string; visible: boolean }> {
   console.info('[procm-ui-test] create-folder started', title)
   const user = userEvent.setup()
   await user.click(findFolderAddButton())
@@ -37,8 +31,4 @@ async function createFolder(title = `procm-ui-${Date.now()}`): Promise<{ title: 
 
   console.info('[procm-ui-test] create-folder completed', title)
   return { title, visible: true }
-}
-
-if (import.meta.env.DEV) {
-  window.__procmUiTests = { createFolder }
 }

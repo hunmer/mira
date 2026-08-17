@@ -1,4 +1,20 @@
+// 通用真实页面 UI 测试驱动：
+//   pnpm run test:ui:remote <testName> ['["arg1", ...]']
+//   node scripts/test-ui.mjs <testName> [jsonArgsArray]
+// 测试名对应 renderer/procm-ui-tests/index.ts 注册的 window.__procmUiTests 键。
+import { readFileSync } from 'node:fs'
 import { createProcmClient, collectLogs, executeCustom } from '@hunmer/procm-mcp-sdk'
+
+const testName = process.argv[2]
+if (!testName) {
+  const indexSource = readFileSync(new URL('../src/renderer/procm-ui-tests/index.ts', import.meta.url), 'utf8')
+  const registry = indexSource.match(/const uiTests[^{]*\{([\s\S]*?)\}/)?.[1] ?? ''
+  const names = registry.split(',').map((line) => line.trim()).filter((line) => /^[A-Za-z]/.test(line))
+  console.log('usage: pnpm run test:ui:remote <testName> [jsonArgsArray]')
+  console.log(`\navailable tests (${names.length}):\n${names.map((name) => `  - ${name}`).join('\n')}`)
+  process.exit(0)
+}
+const testArgs = process.argv[3] ? JSON.parse(process.argv[3]) : []
 
 const roomId = process.env.PROCM_ROOM_ID || 'mira-dev'
 const wsUrl = process.env.PROCM_WS_URL || 'ws://127.0.0.1:7331/room'
@@ -21,9 +37,9 @@ try {
   const result = await executeCustom(
     client,
     process.env.PROCM_UI_TARGET || 'mira-client',
-    (context, title) => context.runUiTest('createFolder', title),
-    [`procm-ui-${startTime}`],
-    { timeout: 30_000 },
+    (context, ...args) => context.runUiTest(testName, ...args),
+    testArgs,
+    { timeout: 60_000 },
   )
   const endTime = Date.now()
   // Allow the managed process logger to flush Renderer console frames before querying.

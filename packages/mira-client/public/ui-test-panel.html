@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mira UI Tests</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: #0f1117; color: #e5e7eb;
+      display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+    }
+    header {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 14px; background: #171a23; border-bottom: 1px solid #2a2e3a;
+    }
+    header h1 { font-size: 14px; font-weight: 600; flex: 1; }
+    #status { font-size: 12px; color: #9ca3af; display: flex; align-items: center; gap: 5px; }
+    #status .dot { width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; }
+    #status.ok .dot { background: #10b981; }
+    #clear {
+      font-size: 12px; padding: 3px 10px; border-radius: 6px; cursor: pointer;
+      border: 1px solid #2a2e3a; background: transparent; color: #9ca3af;
+    }
+    #clear:hover { color: #e5e7eb; border-color: #4b5563; }
+    #tests {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 6px; padding: 10px 14px; overflow-y: auto; border-bottom: 1px solid #2a2e3a;
+      max-height: 45%;
+    }
+    .test-btn {
+      display: flex; align-items: center; justify-content: space-between; gap: 6px;
+      padding: 7px 10px; font-size: 12px; text-align: left; cursor: pointer;
+      border-radius: 8px; border: 1px solid #2a2e3a; background: #1b1f2a; color: #d1d5db;
+      transition: border-color .15s, background .15s;
+    }
+    .test-btn:hover:not(:disabled) { border-color: #6366f1; background: #232838; }
+    .test-btn:disabled { opacity: .6; cursor: default; }
+    .test-btn .mark { font-size: 11px; min-width: 14px; text-align: center; }
+    .test-btn.running { border-color: #6366f1; }
+    .test-btn.ok { border-color: #10b981; }
+    .test-btn.fail { border-color: #ef4444; }
+    #logs {
+      flex: 1; overflow-y: auto; padding: 10px 14px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;
+      line-height: 1.6; white-space: pre-wrap; word-break: break-all;
+    }
+    .log-line { display: flex; gap: 8px; }
+    .log-time { color: #6b7280; flex-shrink: 0; }
+    .log-name { color: #818cf8; flex-shrink: 0; }
+    .log-text { color: #d1d5db; }
+    .log-warn .log-text { color: #f59e0b; }
+    .log-error .log-text { color: #f87171; }
+    .log-result-ok .log-text { color: #34d399; }
+    .log-result-fail .log-text { color: #f87171; }
+    .placeholder { color: #6b7280; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Mira UI 测试面板</h1>
+    <span id="status"><span class="dot"></span><span id="status-text">连接主窗口…</span></span>
+    <button id="clear" title="清空日志">清空</button>
+  </header>
+  <div id="tests"><div class="placeholder">等待主窗口返回测试列表…</div></div>
+  <div id="logs"><div class="placeholder">点击上方测试按钮运行，日志将显示在这里。</div></div>
+
+  <script>
+    const CHANNEL = 'mira-ui-test-panel'
+    const channel = new BroadcastChannel(CHANNEL)
+    const testsEl = document.getElementById('tests')
+    const logsEl = document.getElementById('logs')
+    const statusEl = document.getElementById('status')
+    const statusTextEl = document.getElementById('status-text')
+    let connected = false
+    let seq = 0
+
+    channel.onmessage = (event) => {
+      const data = event.data || {}
+      if (data.source !== 'bridge') return
+      if (data.type === 'tests') return onTests(data.names || [])
+      if (data.type === 'log') return addLog(data.level, `[${pending.get(data.id)?.name || ''}] ${data.text || ''}`)
+      if (data.type === 'result') return onResult(data)
+    }
+
+    function onTests(names) {
+      connected = true
+      statusEl.classList.add('ok')
+      statusTextEl.textContent = `已连接（${names.length} 个测试）`
+      testsEl.innerHTML = ''
+      names.forEach((name) => {
+        const btn = document.createElement('button')
+        btn.className = 'test-btn'
+        btn.dataset.name = name
+        btn.innerHTML = `<span>${name}</span><span class="mark"></span>`
+        btn.onclick = () => runTest(name, btn)
+        testsEl.appendChild(btn)
+      })
+    }
+
+    function runTest(name, btn) {
+      btn.disabled = true
+      btn.classList.remove('ok', 'fail')
+      btn.classList.add('running')
+      btn.querySelector('.mark').textContent = '…'
+      const id = `${Date.now()}-${seq++}`
+      pending.set(id, { name, btn })
+      addLog('log', `▶ ${name} started`)
+      channel.postMessage({ type: 'run', id, name, args: [] })
+    }
+
+    const pending = new Map()
+
+    function onResult(data) {
+      const entry = pending.get(data.id)
+      pending.delete(data.id)
+      if (entry) {
+        entry.btn.disabled = false
+        entry.btn.classList.remove('running')
+        entry.btn.classList.add(data.ok ? 'ok' : 'fail')
+        entry.btn.querySelector('.mark').textContent = data.ok ? '✔' : '✘'
+      }
+      if (data.ok) {
+        let detail = ''
+        try { detail = JSON.stringify(data.result) } catch (e) { detail = String(data.result) }
+        addLog('result-ok', `✔ ${entry ? entry.name + ' ' : ''}${detail}`)
+      } else {
+        addLog('result-fail', `✘ ${entry ? entry.name + ' ' : ''}${data.error || 'unknown error'}`)
+      }
+    }
+
+    function addLog(level, text) {
+      if (logsEl.querySelector('.placeholder')) logsEl.innerHTML = ''
+      const line = document.createElement('div')
+      const time = new Date().toLocaleTimeString('zh-CN', { hour12: false })
+      const cls = level === 'warn' || level === 'error' ? `log-${level}`
+        : level.startsWith('result') ? `log-${level}` : ''
+      line.className = `log-line ${cls}`
+      line.innerHTML = `<span class="log-time">${time}</span><span class="log-text"></span>`
+      line.querySelector('.log-text').textContent = text
+      logsEl.appendChild(line)
+      logsEl.scrollTop = logsEl.scrollHeight
+    }
+
+    document.getElementById('clear').onclick = () => {
+      logsEl.innerHTML = '<div class="placeholder">日志已清空。</div>'
+    }
+
+    // 主窗口可能尚未加载完成，重试握手直到连接成功
+    const helloTimer = setInterval(() => {
+      if (connected) return clearInterval(helloTimer)
+      channel.postMessage({ type: 'hello' })
+    }, 1500)
+    channel.postMessage({ type: 'hello' })
+  </script>
+</body>
+</html>

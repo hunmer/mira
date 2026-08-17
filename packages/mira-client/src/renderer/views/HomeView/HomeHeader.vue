@@ -148,6 +148,26 @@ const openDashboard = async () => {
     window.open(url, '_blank', 'noopener')
   }
 }
+
+/** DEV 构建标识：控制 UI 测试面板入口等开发专用功能 */
+const isDev = import.meta.env.DEV
+
+/**
+ * DEV 专用：打开 UI 测试面板窗口（public/ui-test-panel.html）。
+ * 面板经 BroadcastChannel 调用主窗口 window.__procmUiTests 执行测试。
+ */
+const openUiTestPanel = async () => {
+  const url = `${window.location.origin}/ui-test-panel.html`
+  if (environment.isElectron) {
+    await window.electronAPI.invoke('window:open-url', url, {
+      width: 520,
+      height: 760,
+      title: 'Mira UI Tests',
+    })
+  } else {
+    window.open(url, '_blank', 'noopener')
+  }
+}
 </script>
 
 <template>
@@ -216,6 +236,10 @@ const openDashboard = async () => {
         <DropdownMenuItem @select="emit('shortcuts')">
           <span class="material-icons text-base">keyboard</span>
           <span>{{ $t('views.homeHeader.shortcuts') }}</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem v-if="isDev" @select="openUiTestPanel">
+          <span class="material-icons text-base">bug_report</span>
+          <span>UI 测试面板</span>
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />
