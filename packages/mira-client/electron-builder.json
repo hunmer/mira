@@ -28,12 +28,16 @@
     {
       "from": "assets/",
       "to": "assets/",
-      "filter": ["**/*"]
+      "filter": [
+        "**/*"
+      ]
     },
     {
       "from": "configs/",
       "to": "configs/",
-      "filter": ["**/*"]
+      "filter": [
+        "**/*"
+      ]
     },
     {
       "from": "scripts/mira-server-service.mjs",
@@ -45,16 +49,23 @@
     "owner": "hunmer",
     "repo": "mira"
   },
-  "buildVersion": "1.0.1",
+  "buildVersion": "2.0.9",
   "compression": "maximum",
-  "electronLanguages": ["zh-CN", "zh-TW", "en-US", "en-GB"],
+  "electronLanguages": [
+    "zh-CN",
+    "zh-TW",
+    "en-US",
+    "en-GB"
+  ],
   "artifactName": "${productName}-${version}-${arch}.${ext}",
   "generateUpdatesFilesForAllChannels": false,
   "win": {
     "target": [
       {
         "target": "nsis",
-        "arch": ["x64"]
+        "arch": [
+          "x64"
+        ]
       }
     ],
     "icon": "assets/icon.ico",
@@ -63,7 +74,7 @@
     "verifyUpdateCodeSignature": false,
     "artifactName": "${productName}-${version}-win-${arch}.${ext}"
   },
-   "nsis": {
+  "nsis": {
     "oneClick": false,
     "perMachine": false,
     "allowToChangeInstallationDirectory": true,
@@ -84,11 +95,17 @@
     "target": [
       {
         "target": "dmg",
-        "arch": ["x64", "arm64"]
+        "arch": [
+          "x64",
+          "arm64"
+        ]
       },
       {
         "target": "zip",
-        "arch": ["x64", "arm64"]
+        "arch": [
+          "x64",
+          "arm64"
+        ]
       }
     ],
     "icon": "assets/icon.icns",
@@ -125,19 +142,27 @@
     "target": [
       {
         "target": "AppImage",
-        "arch": ["x64"]
+        "arch": [
+          "x64"
+        ]
       },
       {
         "target": "deb",
-        "arch": ["x64"]
+        "arch": [
+          "x64"
+        ]
       },
       {
         "target": "rpm",
-        "arch": ["x64"]
+        "arch": [
+          "x64"
+        ]
       },
       {
         "target": "tar.gz",
-        "arch": ["x64"]
+        "arch": [
+          "x64"
+        ]
       }
     ],
     "icon": "build/icons/",
@@ -168,7 +193,11 @@
   "snap": {
     "grade": "stable",
     "summary": "Modern media library management",
-    "plugs": ["default", "home", "removable-media"],
+    "plugs": [
+      "default",
+      "home",
+      "removable-media"
+    ],
     "artifactName": "${productName}-${version}-linux.${ext}"
   },
   "beforeBuild": "scripts/before-build.js",

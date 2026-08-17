@@ -22,6 +22,7 @@ const REGISTRY_LATEST_URL = `https://registry.npmjs.org/${PACKAGE_NAME}/latest`
 // 不带 shell:true 直接 spawn .cmd/.bat 文件会抛 EINVAL，因此统一用 'npm' + shell:true
 // 让系统解析；非 Windows 直接执行无需 shell。
 const NPM_BIN = 'npm'
+const NODE_BIN = 'node'
 const SERVER_BIN = 'mira-app-server'
 const IS_WIN = process.platform === 'win32'
 const HTTP_PORT = 8081
@@ -107,13 +108,21 @@ export class ServerDeployHandlers {
       child.once('error', error => {
         if (settled) return
         settled = true
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT' && (command === NODE_BIN || command === NPM_BIN)) {
+          reject(new Error(`未找到 ${command} 命令，请先安装 Node.js 18 或更高版本，并确保 node/npm 已加入 PATH`))
+          return
+        }
         reject(error)
       })
       child.once('close', exitCode => {
         if (settled) return
         settled = true
         if (exitCode === 0) resolve()
-        else reject(new Error(`${command} 退出码 ${exitCode ?? -1}`))
+        else if (command === NODE_BIN) {
+          reject(new Error('未检测到可用的系统 Node.js，请先安装 Node.js 18 或更高版本，并确保 node 已加入 PATH'))
+        } else {
+          reject(new Error(`${command} 退出码 ${exitCode ?? -1}`))
+        }
       })
     })
   }
@@ -264,8 +273,12 @@ export class ServerDeployHandlers {
 
     try {
       await runStep(1, async output => {
-        const major = Number(process.versions.node.split('.')[0])
-        output(`Node.js ${process.version}`)
+        let nodeVersion = ''
+        await this.runCommand(NODE_BIN, ['--version'], line => {
+          nodeVersion = line.replace(/^v/, '')
+          output(`Node.js v${nodeVersion}`)
+        })
+        const major = Number(nodeVersion.split('.')[0])
         if (major < 18) throw new Error('需要 Node.js 18 或更高版本')
         await this.runCommand(NPM_BIN, ['--version'], line => output(`npm ${line}`))
       })
