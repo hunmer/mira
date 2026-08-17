@@ -75,7 +75,10 @@
     "startDeploy": "启动部署",
     "deploying": "正在部署...",
     "deployComplete": "部署完成，立即连接",
-    "deployFailed": "部署失败（重试）"
+    "deployFailed": "部署失败（重试）",
+    "deploymentErrorTitle": "部署失败",
+    "deploymentErrorConfirm": "知道了",
+    "deploymentErrorFallback": "部署失败，请查看部署步骤输出。"
   },
   "fileUploadDialog": {
     "title": "文件上传",

@@ -8,6 +8,14 @@ export interface LocalServerScriptOptions {
 
 let serverStartPromise: Promise<void> | null = null
 
+/**
+ * 本地服务的数据目录必须与 mira-app-server CLI 的 --autostart 默认值一致。
+ * 状态文件仍保存在 Electron userData 下，避免服务运行状态和业务数据混用。
+ */
+export function getLocalServerDataPath(): string {
+  return path.join(app.getPath('home'), '.mira-data')
+}
+
 function getScriptPath(): string {
   return app.isPackaged
     ? path.join(process.resourcesPath, 'scripts', 'mira-server-service.mjs')
@@ -20,7 +28,7 @@ function getScriptArgs(command: 'start' | 'stop' | 'status'): string[] {
     getScriptPath(),
     command,
     '--state-dir', stateDir,
-    '--data-path', stateDir,
+    '--data-path', getLocalServerDataPath(),
     '--http-port', '8081',
     '--ws-port', '8018',
   ]

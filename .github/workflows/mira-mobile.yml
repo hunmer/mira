@@ -84,25 +84,32 @@ jobs:
         fi
         echo "name=${build_name}" >> "${GITHUB_OUTPUT}"
 
-    - name: Generate temporary Android signing key
+    - name: Configure Android signing key
       shell: bash
       working-directory: ${{ env.MOBILE_DIR }}
+      env:
+        ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
       run: |
-        signing_password="$(openssl rand -hex 24)"
-        keytool -genkeypair -v \
-          -noprompt \
-          -keystore android/app/release.jks \
-          -alias mira-ci \
-          -keyalg RSA \
-          -keysize 2048 \
-          -validity 10000 \
-          -storepass "${signing_password}" \
-          -keypass "${signing_password}" \
-          -dname "CN=Mira Mobile CI, O=Mira, C=CN"
+        for required_secret in \
+          ANDROID_KEYSTORE_BASE64 \
+          ANDROID_KEYSTORE_PASSWORD \
+          ANDROID_KEY_ALIAS \
+          ANDROID_KEY_PASSWORD; do
+          if [[ -z "${!required_secret:-}" ]]; then
+            echo "::error::Missing GitHub Actions secret: ${required_secret}"
+            exit 1
+          fi
+        done
+
+        printf '%s' "${ANDROID_KEYSTORE_BASE64}" | base64 --decode > android/app/release.jks
+        chmod 600 android/app/release.jks
         {
-          echo "storePassword=${signing_password}"
-          echo "keyPassword=${signing_password}"
-          echo "keyAlias=mira-ci"
+          echo "storePassword=${ANDROID_KEYSTORE_PASSWORD}"
+          echo "keyPassword=${ANDROID_KEY_PASSWORD}"
+          echo "keyAlias=${ANDROID_KEY_ALIAS}"
           echo "storeFile=release.jks"
         } > android/app/key.properties
 

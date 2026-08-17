@@ -69,7 +69,7 @@ const TOOLS: ToolDef[] = [
             return m ? m[1] : null;
         },
         install: {
-            win32: 'winget install --id=Gyan.FFmpeg -e --accept-source-agreements --accept-package-agreements',
+            win32: 'winget install --id=Gyan.FFmpeg -e --source winget --accept-source-agreements --accept-package-agreements',
             darwin: 'brew install ffmpeg',
             linux: { apt: 'ffmpeg', dnf: 'ffmpeg', pacman: 'ffmpeg' },
         },
@@ -85,7 +85,7 @@ const TOOLS: ToolDef[] = [
             return m ? m[1] : null;
         },
         install: {
-            win32: 'winget install --id=ImageMagick.ImageMagick -e --accept-source-agreements --accept-package-agreements',
+            win32: 'winget install --id=ImageMagick.ImageMagick -e --source winget --accept-source-agreements --accept-package-agreements',
             darwin: 'brew install imagemagick',
             linux: { apt: 'imagemagick', dnf: 'ImageMagick', pacman: 'imagemagick' },
         },
@@ -102,7 +102,7 @@ const TOOLS: ToolDef[] = [
             return m ? m[1] : null;
         },
         install: {
-            win32: 'winget install --id=OliverBetz.Exiftool -e --accept-source-agreements --accept-package-agreements',
+            win32: 'winget install --id=OliverBetz.ExifTool -e --source winget --accept-source-agreements --accept-package-agreements',
             darwin: 'brew install exiftool',
             linux: { apt: 'libimage-exiftool-perl', dnf: 'perl-Image-ExifTool', pacman: 'perl-image-exiftool' },
         },
@@ -309,6 +309,16 @@ async function checkTool(def: ToolDef): Promise<ToolResult> {
         // 忽略版本获取失败
     }
 
+    // Windows 自带的 C:\Windows\System32\convert.exe 不是 ImageMagick。
+    // 只有版本输出明确包含 ImageMagick 标识时才判定为可用。
+    if (def.key === 'imagemagick' && !version) {
+        return {
+            key: def.key, name: def.name, available: false, path: null, version: null,
+            envVar: def.envVar, candidates: def.candidates,
+            installTried: false, installOk: false, installError: null,
+        };
+    }
+
     return {
         key: def.key, name: def.name, available: true, path: resolved, version,
         envVar: def.envVar, candidates: def.candidates,
@@ -351,6 +361,9 @@ function formatReport(results: ToolResult[]): string {
         lines.push(`${tag} ${r.name.padEnd(14)} ${detail}`);
         if (r.installTried) {
             lines.push(`   ↳ 安装${r.installOk ? '成功' : '失败'}${r.installError ? ': ' + r.installError : ''}`);
+            if (platform() === 'win32' && r.installOk && !r.available) {
+                lines.push('   ↳ 当前进程 PATH 可能尚未刷新，请新开终端后再次运行 doctor');
+            }
         }
     }
     const total = results.length;

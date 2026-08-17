@@ -17,7 +17,9 @@ RUN corepack enable && corepack prepare pnpm@10.24.0 --activate
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json ./
 COPY packages/mira-app-core/package.json ./packages/mira-app-core/
 COPY packages/mira-app-server/package.json ./packages/mira-app-server/
+COPY packages/mira-client/package.json ./packages/mira-client/
 COPY packages/mira-dashboard-next/package.json ./packages/mira-dashboard-next/
+COPY packages/vue-masonry/package.json ./packages/vue-masonry/
 
 ENV SETUPTOOLS_USE_DISTUTILS=stdlib
 ENV FFMPEG_PATH=/usr/bin/ffmpeg
@@ -35,8 +37,12 @@ COPY packages/mira-app-server/src ./packages/mira-app-server/src
 COPY packages/mira-app-server/scripts ./packages/mira-app-server/scripts
 # dashboard-next 源码（copy-dashboard.mjs 会构建它并把产物拷给 app-server）
 COPY packages/mira-dashboard-next ./packages/mira-dashboard-next
+# mira-client 源码及其 workspace 依赖（copy-web.mjs 会构建并复制 Web 产物）
+COPY packages/mira-client ./packages/mira-client
+COPY packages/vue-masonry ./packages/vue-masonry
 
 RUN pnpm -C packages/mira-app-core run build
+RUN pnpm -C packages/vue-masonry run build
 RUN pnpm -C packages/mira-app-server run build
 
 RUN ffmpeg -version && ffprobe -version

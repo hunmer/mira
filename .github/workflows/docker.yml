@@ -12,7 +12,9 @@ on:
     paths:
       - 'packages/mira-app-server/**'
       - 'packages/mira-app-core/**'
+      - 'packages/mira-client/**'
       - 'packages/mira-dashboard-next/**'
+      - 'packages/vue-masonry/**'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
       - 'package.json'
@@ -25,7 +27,9 @@ on:
     paths:
       - 'packages/mira-app-server/**'
       - 'packages/mira-app-core/**'
+      - 'packages/mira-client/**'
       - 'packages/mira-dashboard-next/**'
+      - 'packages/vue-masonry/**'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
       - 'package.json'

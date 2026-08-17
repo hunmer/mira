@@ -75,7 +75,10 @@
     "startDeploy": "Start Deployment",
     "deploying": "Deploying...",
     "deployComplete": "Deployment complete, connect now",
-    "deployFailed": "Deployment failed (retry)"
+    "deployFailed": "Deployment failed (retry)",
+    "deploymentErrorTitle": "Deployment failed",
+    "deploymentErrorConfirm": "OK",
+    "deploymentErrorFallback": "Deployment failed. Check the deployment step output."
   },
   "fileUploadDialog": {
     "title": "File Upload",

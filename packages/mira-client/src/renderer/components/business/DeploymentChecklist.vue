@@ -13,6 +13,15 @@ import { Motion, AnimatePresence, motion } from 'motion-v'
 import { useSettingsStore } from '@renderer/stores/settings'
 import { useServerDeploy } from '@renderer/composables/useServerDeploy'
 import { cn } from '@/lib/utils'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
 type TaskStatus = 'pending' | 'running' | 'success' | 'skipped' | 'failed'
 type PipelineStatus = 'idle' | 'running' | 'failed' | 'success'
@@ -108,6 +117,8 @@ const tasks = ref<Task[]>(defaultTasks.value.map(t => ({ ...t })))
 const pipelineStatus = ref<PipelineStatus>('idle')
 const expandedTaskIds = ref<Set<number>>(new Set())
 const defaultLibraryId = ref('')
+const deploymentError = ref('')
+const showDeploymentError = ref(false)
 
 let running = false
 
@@ -131,6 +142,18 @@ function appendTaskOutput(taskId: number, line: string) {
   if (!task) return
   const lines = task.info ? task.info.split('\n') : []
   updateTask(taskId, { info: [...lines, line].slice(-100).join('\n') })
+}
+
+function handleDeploymentFailure(message: string) {
+  const error = message || t('business.deploymentChecklist.deploymentErrorFallback')
+  const current = tasks.value.find(task => task.status === 'running')
+  if (current) {
+    updateTask(current.id, { status: 'failed' })
+    appendTaskOutput(current.id, error)
+  }
+  deploymentError.value = error
+  showDeploymentError.value = true
+  pipelineStatus.value = 'failed'
 }
 
 async function runPipeline() {
@@ -159,12 +182,7 @@ async function runPipeline() {
   try {
     const result = await api.deploy({ registry: registry.value, proxy: proxy.value || undefined })
     if (!result.success) {
-      const current = tasks.value.find(task => task.status === 'running')
-      if (current) {
-        updateTask(current.id, { status: 'failed' })
-        if (result.message) appendTaskOutput(current.id, result.message)
-      }
-      pipelineStatus.value = 'failed'
+      handleDeploymentFailure(result.message || '')
       return
     }
     if (!result.data?.defaultLibraryId) {
@@ -174,12 +192,7 @@ async function runPipeline() {
     pipelineStatus.value = 'success'
     await checkVersion()
   } catch (error) {
-    const current = tasks.value.find(task => task.status === 'running')
-    if (current) {
-      updateTask(current.id, { status: 'failed' })
-      appendTaskOutput(current.id, error instanceof Error ? error.message : String(error))
-    }
-    pipelineStatus.value = 'failed'
+    handleDeploymentFailure(error instanceof Error ? error.message : String(error))
   } finally {
     api.removeDeployProgressListener()
     running = false
@@ -434,4 +447,18 @@ onBeforeUnmount(() => {
       </Motion>
     </div>
   </div>
+
+  <AlertDialog v-model:open="showDeploymentError">
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>{{ $t('business.deploymentChecklist.deploymentErrorTitle') }}</AlertDialogTitle>
+        <AlertDialogDescription class="whitespace-pre-wrap break-words text-left">
+          {{ deploymentError }}
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogAction>{{ $t('business.deploymentChecklist.deploymentErrorConfirm') }}</AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
 </template>

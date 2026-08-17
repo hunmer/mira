@@ -1,8 +1,8 @@
-import { ipcMain, IpcMainInvokeEvent, BrowserWindow, app } from 'electron'
+import { ipcMain, IpcMainInvokeEvent, BrowserWindow } from 'electron'
 import { execFile, spawn } from 'child_process'
 import { mkdir } from 'fs/promises'
 import path from 'path'
-import { runLocalServerScript } from '../services/LocalServerService'
+import { getLocalServerDataPath, runLocalServerScript } from '../services/LocalServerService'
 
 /**
  * 后端部署 (mira-app-server) IPC 处理器
@@ -294,7 +294,7 @@ export class ServerDeployHandlers {
         await this.runDoctor(output)
       })
 
-      const dataPath = path.join(app.getPath('userData'), PACKAGE_NAME)
+      const dataPath = getLocalServerDataPath()
       await mkdir(dataPath, { recursive: true })
 
       await runStep(4, async output => {

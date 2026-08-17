@@ -15,6 +15,7 @@ import { program } from 'commander';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 
 // 命令模块
 import { registerDoctor } from './cli/doctor';
@@ -79,6 +80,7 @@ function getPackageVersion(): string {
 }
 
 const VERSION = getPackageVersion();
+const DEFAULT_DATA_PATH = path.join(os.homedir(), '.mira-data');
 
 program
     .name('mira-app-server')
@@ -96,7 +98,7 @@ program
     .description('Start the Mira server')
     .option('-p, --http-port <number>', 'HTTP port number', '8081')
     .option('-w, --ws-port <number>', 'WebSocket port number', '8018')
-    .option('-d, --data-path <path>', 'Data directory path')
+    .option('-d, --data-path <path>', `Data directory path (default: ${DEFAULT_DATA_PATH})`)
     .option('--env <path>', 'Environment file path')
     .option('--autostart', '注册为系统开机自启项并由系统托管启动（macOS=LaunchAgent / Linux=systemd / Windows=任务计划）')
     .action(async (options) => {
@@ -120,12 +122,15 @@ program
                 dotenv.config({ path: path.resolve(options.env) });
             }
 
+            // 普通启动与 --autostart 必须使用相同的数据目录；环境变量仍可覆盖默认值。
+            const dataPath = options.dataPath || process.env.DATA_PATH || DEFAULT_DATA_PATH;
+
             if (options.autostart) {
                 console.log('🚀 注册系统开机自启并启动 Mira Server...');
                 const target = enableAutoStart({
                     httpPort: parseInt(options.httpPort),
                     wsPort: parseInt(options.wsPort),
-                    dataPath: options.dataPath,
+                    dataPath,
                 });
                 console.log(`✅ 已注册开机自启并由系统托管：${target}`);
                 console.log('   服务现已运行；下次开机/登录将自动启动。');
@@ -136,7 +141,7 @@ program
             const server = await MiraServer.createAndStart({
                 httpPort: parseInt(options.httpPort),
                 wsPort: parseInt(options.wsPort),
-                dataPath: options.dataPath,
+                dataPath,
             });
 
             console.log('✅ Mira Server started via CLI');
