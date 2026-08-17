@@ -554,6 +554,8 @@ const refresh = () => {
     renderedItems: waterfallItems.value.length,
     width: root?.clientWidth ?? 0,
     height: root?.clientHeight ?? 0,
+    styleHeight: root?.style.height ?? '',
+    computedHeight: root ? getComputedStyle(root).height : '',
     selectionWidth: selectionRoot?.clientWidth ?? 0,
     selectionHeight: selectionRoot?.clientHeight ?? 0,
     rootTop: root?.getBoundingClientRect().top ?? null

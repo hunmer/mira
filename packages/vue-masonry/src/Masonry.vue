@@ -437,6 +437,22 @@ function itemExit(): any {
 watch(
   () => placed.value,
   (val) => {
+    console.debug("[Masonry] layout", {
+      data: props.data.length,
+      width: width.value,
+      columns: colCount.value,
+      colWidth: colWidth.value,
+      placed: val.items.length,
+      totalHeight: val.totalHeight
+    })
+    requestAnimationFrame(() => {
+      console.debug("[Masonry] dom", {
+        styleHeight: containerRef.value?.style.height ?? "",
+        computedHeight: containerRef.value ? getComputedStyle(containerRef.value).height : "",
+        clientHeight: containerRef.value?.clientHeight ?? 0,
+        totalHeight: val.totalHeight
+      })
+    })
     emit("after-render")
     // fill 模式下 placed.items 顺序 ≠ 数据源顺序；按实际渲染顺序抛出 item 数组，
     // 供父组件修正"视觉顺序 ≠ 数据源顺序"相关逻辑（如 Shift 范围选择）
@@ -452,7 +468,7 @@ watch(
   <div
     ref="containerRef"
     :class="cn('masonry-container', props.class)"
-    :style="{ height: placed.totalHeight, ...props.style }"
+    :style="{ height: `${placed.totalHeight}px`, ...props.style }"
   >
     <AnimatePresence>
       <Motion
