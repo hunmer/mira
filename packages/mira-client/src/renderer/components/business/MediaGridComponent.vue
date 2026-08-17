@@ -29,7 +29,7 @@ interface Props {
 interface Emits {
   (e: 'media-click', item: FileInfo): void
   (e: 'media-double-click', item: FileInfo): void
-  (e: 'media-select', item: FileInfo, selected: boolean): void
+  (e: 'media-select', item: FileInfo, selected: boolean, event?: MouseEvent): void
   (e: 'media-context-menu', item: FileInfo, event: MouseEvent): void
   (e: 'media-info', item: FileInfo): void
   (e: 'media-set-folder', item: FileInfo): void
@@ -42,8 +42,8 @@ withDefaults(defineProps<Props>(), {
 })
 const emit = defineEmits<Emits>()
 
-const handleMediaSelect = (item: FileInfo, selected: boolean) => {
-  emit('media-select', item, selected)
+const handleMediaSelect = (item: FileInfo, selected: boolean, event?: MouseEvent) => {
+  emit('media-select', item, selected, event)
 }
 
 const handleContextMenu = (item: FileInfo, event: MouseEvent) => {

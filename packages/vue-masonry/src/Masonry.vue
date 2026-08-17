@@ -437,22 +437,6 @@ function itemExit(): any {
 watch(
   () => placed.value,
   (val) => {
-    console.debug("[Masonry] layout", {
-      data: props.data.length,
-      width: width.value,
-      columns: colCount.value,
-      colWidth: colWidth.value,
-      placed: val.items.length,
-      totalHeight: val.totalHeight
-    })
-    requestAnimationFrame(() => {
-      console.debug("[Masonry] dom", {
-        styleHeight: containerRef.value?.style.height ?? "",
-        computedHeight: containerRef.value ? getComputedStyle(containerRef.value).height : "",
-        clientHeight: containerRef.value?.clientHeight ?? 0,
-        totalHeight: val.totalHeight
-      })
-    })
     emit("after-render")
     // fill 模式下 placed.items 顺序 ≠ 数据源顺序；按实际渲染顺序抛出 item 数组，
     // 供父组件修正"视觉顺序 ≠ 数据源顺序"相关逻辑（如 Shift 范围选择）
@@ -465,21 +449,12 @@ watch(
 </script>
 
 <template>
-  <div
-    ref="containerRef"
-    :class="cn('masonry-container', props.class)"
-    :style="{ height: `${placed.totalHeight}px`, ...props.style }"
-  >
+  <div ref="containerRef" :class="cn('masonry-container', props.class)"
+    :style="{ height: `${placed.totalHeight}px`, ...props.style }">
     <AnimatePresence>
-      <Motion
-        v-for="(p, i) in placed.items"
-        :key="p.key"
-        :layout="props.layoutTransition"
-        :initial="enterEnabled ? enterFrom : false"
-        :animate="{ opacity: 1, y: 0, scale: 1 }"
-        :exit="itemExit()"
-        :transition="itemTransition(i)"
-        :style="{
+      <Motion v-for="(p, i) in placed.items" :key="p.key" :layout="props.layoutTransition"
+        :initial="enterEnabled ? enterFrom : false" :animate="{ opacity: 1, y: 0, scale: 1 }" :exit="itemExit()"
+        :transition="itemTransition(i)" :style="{
           position: 'absolute',
           left: p.left,
           top: p.top,
@@ -487,15 +462,9 @@ watch(
           height: p.height,
           overflow: 'hidden',
           contain: 'layout paint'
-        }"
-      >
-        <LazyCell
-          :lazy="p.lazy"
-          :root-margin="props.lazyRootMargin"
-          :placeholder-color="placeholderColor(p.key)"
-          :revealed="revealedKeys.has(p.key)"
-          @ready="handleCellReady(p.key)"
-        >
+        }">
+        <LazyCell :lazy="p.lazy" :root-margin="props.lazyRootMargin" :placeholder-color="placeholderColor(p.key)"
+          :revealed="revealedKeys.has(p.key)" @ready="handleCellReady(p.key)">
           <template #default="{ preload }">
             <slot :item="p.item" :index="p.index" :preload="preload" />
           </template>

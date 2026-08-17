@@ -113,7 +113,7 @@ interface Props {
 interface Emits {
   (e: 'media-click', item: FileInfo): void
   (e: 'media-double-click', item: FileInfo): void
-  (e: 'media-select', item: FileInfo, selected: boolean): void
+  (e: 'media-select', item: FileInfo, selected: boolean, event?: MouseEvent): void
   (e: 'media-context-menu', item: FileInfo, event: MouseEvent): void
   (e: 'media-info', item: FileInfo): void
   (e: 'media-set-folder', item: FileInfo): void

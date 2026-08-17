@@ -232,7 +232,7 @@ interface Emits {
   (e: 'media-context-menu', item: FileInfo, event: MouseEvent): void
   (e: 'preview', item: FileInfo): void
   (e: 'download', item: FileInfo): void
-  (e: 'media-select', item: FileInfo, selected: boolean): void
+  (e: 'media-select', item: FileInfo, selected: boolean, event?: MouseEvent): void
   (e: 'media-delete', item: FileInfo): void
   (e: 'media-info', item: FileInfo): void
   (e: 'media-set-folder', item: FileInfo): void
@@ -324,7 +324,7 @@ const selectFromClick = (item: FileInfo, event: MouseEvent) => {
   const selected = props.selectedItems.includes(item.id)
 
   if (event.altKey) {
-    if (selected) emit('media-select', item, false)
+    if (selected) emit('media-select', item, false, event)
     return
   }
 
@@ -344,26 +344,26 @@ const selectFromClick = (item: FileInfo, event: MouseEvent) => {
       props.items.forEach(currentItem => {
         const inRange = rangeIds.has(currentItem.id)
         const wasSelected = props.selectedItems.includes(currentItem.id)
-        if (inRange && !wasSelected) emit('media-select', currentItem, true)
-        else if (!inRange && wasSelected) emit('media-select', currentItem, false)
+        if (inRange && !wasSelected) emit('media-select', currentItem, true, event)
+        else if (!inRange && wasSelected) emit('media-select', currentItem, false, event)
       })
       return
     }
   }
 
   if (event.ctrlKey || event.metaKey) {
-    emit('media-select', item, !selected)
+    emit('media-select', item, !selected, event)
     return
   }
 
   props.items.forEach(currentItem => {
     if (currentItem.id !== item.id && props.selectedItems.includes(currentItem.id)) {
-      emit('media-select', currentItem, false)
+      emit('media-select', currentItem, false, event)
     }
   })
 
   if (!selected) {
-    emit('media-select', item, true)
+    emit('media-select', item, true, event)
   }
 }
 

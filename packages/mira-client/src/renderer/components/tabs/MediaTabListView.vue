@@ -131,7 +131,7 @@
 
             <!-- 分组章节导航：滚动时固定在视图右上角 -->
             <div v-if="groupingMode !== 'none' && groupChapters.length > 0"
-              class="sticky top-2 z-20 flex justify-end px-5 pointer-events-none">
+              class="sticky top-2 z-20 flex h-0 justify-end px-5 pointer-events-none">
               <div class="pointer-events-auto px-1 py-2">
                 <ChapterScrubber :chapters="groupChapters" side="left" :row-height="12" :peak-length="42"
                   :label="$t('tabs.mediaTabListView.groupNavigation')" @select="handleGroupChapterSelect" />
@@ -1115,7 +1115,11 @@ const handleMediaDoubleClick = (item: FileInfo) => {
   emit('itemDoubleClick', item)
 }
 
-const handleMediaSelect = (item: FileInfo, selected: boolean) => {
+const handleMediaSelect = (item: FileInfo, selected: boolean, event?: MouseEvent) => {
+  // 子组件按分组清理旧选择；普通点击需要在父级清理其他分组。
+  if (selected && event && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) {
+    homeController.selectedItems.value = homeController.selectedItems.value.filter(id => id === item.id)
+  }
   homeController.handleMediaSelect(item, selected)
   emit('itemSelect', item, selected)
 }

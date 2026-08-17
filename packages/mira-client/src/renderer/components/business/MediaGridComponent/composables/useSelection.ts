@@ -8,7 +8,7 @@ interface UseSelectionProps {
 }
 
 interface UseSelectionEmits {
-  (e: 'media-select', item: FileInfo, selected: boolean): void
+  (e: 'media-select', item: FileInfo, selected: boolean, event?: MouseEvent): void
   (e: 'media-click', item: FileInfo): void
 }
 
@@ -20,15 +20,15 @@ export function useSelection(
 
   const throttledEmit = throttle(50, (eventName: 'media-select' | 'media-click', ...args: any[]) => {
     if (eventName === 'media-select') {
-      const [item, selected] = args as [FileInfo, boolean]
-      emit(eventName, item, selected)
+      const [item, selected, event] = args as [FileInfo, boolean, MouseEvent?]
+      emit(eventName, item, selected, event)
     } else if (eventName === 'media-click') {
       const [item] = args as [FileInfo]
       emit(eventName, item)
     }
   })
 
-  const batchEmitSelectionChanges = (added: string[], removed: string[]) => {
+  const batchEmitSelectionChanges = (added: string[], removed: string[], event?: MouseEvent) => {
     const allChanges: Array<{item: FileInfo, selected: boolean}> = []
 
     added.forEach(id => {
@@ -42,7 +42,7 @@ export function useSelection(
     })
 
     allChanges.forEach(({item, selected}) => {
-      emit('media-select', item, selected)
+      emit('media-select', item, selected, event)
     })
   }
 
@@ -128,7 +128,7 @@ export function useSelection(
 
     if (mode === 'deselect') {
       if (wasSelected) {
-        throttledEmit('media-select', item, false)
+        throttledEmit('media-select', item, false, event)
       }
     } else if (mode === 'range') {
       const lastSelectedId = props.selectedItems[props.selectedItems.length - 1]
@@ -150,13 +150,13 @@ export function useSelection(
         const rangeSelectSet = new Set(rangeSelectIds)
         const rangeClearIds = props.selectedItems.filter(id => !rangeSelectSet.has(id))
 
-        batchEmitSelectionChanges(rangeSelectIds, rangeClearIds)
+        batchEmitSelectionChanges(rangeSelectIds, rangeClearIds, event)
       }
     } else if (mode === 'toggle') {
       if (wasSelected) {
-        throttledEmit('media-select', item, false)
+        throttledEmit('media-select', item, false, event)
       } else {
-        throttledEmit('media-select', item, true)
+        throttledEmit('media-select', item, true, event)
       }
     } else {
       if (wasSelected && currentSelected.size === 1) {
@@ -177,7 +177,7 @@ export function useSelection(
       }
 
       if (clearIds.length > 0 || selectIds.length > 0) {
-        batchEmitSelectionChanges(selectIds, clearIds)
+        batchEmitSelectionChanges(selectIds, clearIds, event)
       }
     }
   }
