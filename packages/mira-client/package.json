@@ -21,7 +21,7 @@
     "server:status": "node scripts/mira-server-service.mjs status",
     "server:stop": "node scripts/mira-server-service.mjs stop",
     "electron:build:win": "pnpm run build:prod && electron-builder --win",
-    "electron:build:mac": "pnpm run build:prod && cross-env ELECTRON_MIRROR=https://cdn.npmmirror.com/binaries/electron/ ELECTRON_BUILDER_BINARIES_MIRROR=https://cdn.npmmirror.com/binaries/electron-builder-binaries/ electron-builder --mac",
+    "electron:build:mac": "pnpm run build:prod && cross-env ELECTRON_MIRROR=https://cdn.npmmirror.com/binaries/electron/ electron-builder --mac",
     "build:production": "node scripts/build-production.js",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix",
     "type-check": "vue-tsc --noEmit -p tsconfig.json --composite false",
