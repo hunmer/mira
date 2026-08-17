@@ -301,11 +301,7 @@
     "dimensions": "图片尺寸",
     "createdAt": "创建时间",
     "updatedAt": "修改时间",
-    "fileFormat": "文件格式",
-    "download": "下载",
-    "share": "分享",
-    "edit": "编辑",
-    "delete": "删除"
+    "fileFormat": "文件格式"
   },
   "integrationCard": {
     "details": "详情",
@@ -416,6 +412,7 @@
     "fileCount": "{count} 个文件",
     "fileName": "文件名",
     "website": "网址",
+    "openWebsite": "打开网页",
     "rating": "评分",
     "notes": "备注",
     "notesPlaceholder": "添加备注...",

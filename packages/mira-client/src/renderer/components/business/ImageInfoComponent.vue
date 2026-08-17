@@ -36,7 +36,7 @@
               :key="tag"
               class="bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full flex items-center"
             >
-              {{ tag }}
+              {{ getTagTitle(tag) }}
               <button
                 class="ml-1 text-primary-foreground/80 text-xs hover:text-primary-foreground"
                 @click="$emit('tag-remove', tag)"
@@ -103,28 +103,6 @@
             </div>
           </div>
         </div>
-
-        <!-- 操作按钮 -->
-        <div class="pt-4 border-t border-border">
-          <div class="grid grid-cols-2 gap-2">
-            <button class="px-3 py-2 text-sm bg-primary/10 text-primary rounded-md hover:bg-primary/20 flex items-center justify-center space-x-1">
-              <span class="material-symbols-outlined text-sm">download</span>
-              <span>{{ $t('business.imageInfoComponent.download') }}</span>
-            </button>
-            <button class="px-3 py-2 text-sm bg-green-100 text-green-700 rounded-md hover:bg-green-200 dark:bg-green-900/30 dark:text-green-300 dark:hover:bg-green-900/50 flex items-center justify-center space-x-1">
-              <span class="material-symbols-outlined text-sm">share</span>
-              <span>{{ $t('business.imageInfoComponent.share') }}</span>
-            </button>
-            <button class="px-3 py-2 text-sm bg-orange-100 text-orange-700 rounded-md hover:bg-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:hover:bg-orange-900/50 flex items-center justify-center space-x-1">
-              <span class="material-symbols-outlined text-sm">edit</span>
-              <span>{{ $t('business.imageInfoComponent.edit') }}</span>
-            </button>
-            <button class="px-3 py-2 text-sm bg-destructive/10 text-destructive rounded-md hover:bg-destructive/20 flex items-center justify-center space-x-1">
-              <span class="material-symbols-outlined text-sm">delete</span>
-              <span>{{ $t('business.imageInfoComponent.delete') }}</span>
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   </div>
@@ -135,6 +113,7 @@ import { computed, ref, watch } from 'vue'
 import type { FileInfo } from '../../../shared/types'
 import { getCacheBustedPreviewImageSource, getPreviewImageSource } from '../../utils/fileUtils'
 import { useFolderStore } from '../../stores/folder'
+import { useTagStore } from '../../stores/tag'
 import StatusImage from '@renderer/components/common/StatusImage.vue'
 
 interface Props {
@@ -157,6 +136,11 @@ const imageLoadError = ref(false)
 const imageSrc = computed(() => getCacheBustedPreviewImageSource(props.image, props.cacheKey))
 
 const folderStore = useFolderStore()
+const tagStore = useTagStore()
+
+const getTagTitle = (tagId: string) =>
+  tagStore.tags.find(t => String(t.id) === String(tagId))?.title || String(tagId)
+
 const folderName = computed(() => {
   const folderId = props.image?.folderId
   if (!folderId) return 'Unknown'

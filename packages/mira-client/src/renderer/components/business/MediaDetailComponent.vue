@@ -89,8 +89,14 @@
       <div v-if="!isMultiSelect && displayItems[0]">
         <label class="block text-xs font-medium text-muted-foreground mb-1">{{
           $t('business.mediaDetailComponent.website') }}</label>
-        <Input v-model="editWebsite" type="text" placeholder="https://" :disabled="websiteSaving"
-          @blur="handleWebsiteBlur" @keydown.enter="handleWebsiteBlur" />
+        <div class="flex items-center gap-1">
+          <Input v-model="editWebsite" type="text" placeholder="https://" :disabled="websiteSaving"
+            @blur="handleWebsiteBlur" @keydown.enter="handleWebsiteBlur" />
+          <button v-if="editWebsite.trim()" type="button" class="p-1.5 rounded-md hover:bg-muted shrink-0"
+            :title="$t('business.mediaDetailComponent.openWebsite')" @click="handleOpenWebsite" @mousedown.prevent>
+            <span class="material-icons text-muted-foreground text-base">open_in_new</span>
+          </button>
+        </div>
       </div>
 
       <!-- 备注 - 仅单选模式 -->
@@ -271,6 +277,8 @@ import FolderTreeComponent from './FolderTreeComponent/FolderTreeComponent.vue'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useTagStore } from '@renderer/stores/tag'
 import { useFolderStore } from '@renderer/stores/folder'
+import { useSettingsStore } from '@renderer/stores/settings'
+import { useTabs } from '@renderer/composables/useTabs'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { webSocketService } from '@renderer/services/WebSocketService'
 import { Empty, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
@@ -294,6 +302,8 @@ const props = defineProps<Props>()
 const { item, items, libraryId } = toRefs(props)
 const tagStore = useTagStore()
 const folderStore = useFolderStore()
+const settingsStore = useSettingsStore()
+const { createWebviewTab } = useTabs()
 const { t } = useI18n()
 
 // Popover 控制状态
@@ -489,6 +499,29 @@ const handleWebsiteBlur = async () => {
     editWebsite.value = oldWebsite
   } finally {
     websiteSaving.value = false
+  }
+}
+
+// 打开网页：按设置的「打开网页方式」（系统默认 / 应用内tab / 新窗口）打开
+const handleOpenWebsite = async () => {
+  const raw = editWebsite.value.trim()
+  if (!raw) return
+  const url = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`
+  let host = url
+  try { host = new URL(url).hostname } catch { /* 非法 URL 时用原文做标题 */ }
+  const action = settingsStore.settings.openWebAction
+  if (action === 'tab') {
+    await createWebviewTab(url, { label: host })
+  } else if (action === 'window') {
+    if (window.electronAPI) {
+      const result = await window.electronAPI.invoke('window:open-url', url, { title: host })
+      if (result && !result.success) console.warn('[mediaDetail] 新窗口打开失败:', result.message)
+    } else {
+      window.open(url, '_blank', 'noopener')
+    }
+  } else {
+    // Electron 主进程会把 window.open 拦截为系统默认浏览器打开；Web 下即新标签页
+    window.open(url, '_blank', 'noopener')
   }
 }
 

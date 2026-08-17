@@ -24,6 +24,8 @@ export interface AppSettings {
   language: string
   autoStartServer: boolean
   closeToTray: boolean
+  /** 打开网页方式：system=系统默认浏览器 / tab=应用内 webview 标签页 / window=新窗口 */
+  openWebAction: 'system' | 'tab' | 'window'
 
   // 主题风格覆盖（'' | 'mira' | 'lyra' | 'luma' | 'rhea' | 'custom'）
   themeStyle: string
@@ -162,6 +164,7 @@ export const useSettingsStore = defineStore('settings', () => {
     language: 'zh-CN',
     autoStartServer: false,
     closeToTray: false,
+    openWebAction: 'system',
 
     // 主题风格 / 主色覆盖
     themeStyle: '',
@@ -559,6 +562,7 @@ export const useSettingsStore = defineStore('settings', () => {
       language: 'zh-CN',
       autoStartServer: false,
       closeToTray: false,
+      openWebAction: 'system',
 
       themeStyle: '',
       themeStyleCustomCss: '',

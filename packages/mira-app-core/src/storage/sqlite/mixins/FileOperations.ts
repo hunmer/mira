@@ -8,8 +8,8 @@ export const FileOperations = {
       `INSERT INTO files(
         name, created_at, imported_at, size, hash,
         custom_fields, notes, stars, folder_id,
-        reference, path, thumb, recycled, tags, uploader, metadata
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        reference, path, thumb, recycled, tags, uploader, website, metadata
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         fileData.name,
         fileData.created_at,
@@ -26,6 +26,7 @@ export const FileOperations = {
         fileData.recycled ?? 0,
         fileData.tags,
         fileData.uploader ?? null,
+        fileData.website,
         fileData.metadata === undefined || typeof fileData.metadata === 'string'
           ? fileData.metadata
           : JSON.stringify(fileData.metadata),
@@ -63,6 +64,7 @@ export const FileOperations = {
     addField('thumb', fileData.thumb);
     addField('recycled', fileData.recycled);
     addField('uploader', fileData.uploader);
+    addField('website', fileData.website);
     addField('metadata', fileData.metadata === undefined || typeof fileData.metadata === 'string'
       ? fileData.metadata
       : JSON.stringify(fileData.metadata));

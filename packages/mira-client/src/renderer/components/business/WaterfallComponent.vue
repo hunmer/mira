@@ -341,11 +341,6 @@ const loadRemainingRatios = async (items: FileInfo[], currentVersion: number) =>
 watch(
   () => props.items.map(item => `${item.id}:${getItemUrl(item)}`),
   () => {
-    console.debug('[WaterfallLayout] items-change', {
-      label: props.debugLabel,
-      items: props.items.length,
-      urls: props.items.slice(0, 3).map(item => getItemUrl(item))
-    })
     void preloadThumbnailRatios(props.items)
   },
   { immediate: true }
@@ -382,12 +377,6 @@ const waterfallItems = computed(() => {
 watch(
   () => waterfallItems.value.length,
   () => {
-    console.debug('[WaterfallLayout] items-ready', {
-      label: props.debugLabel,
-      items: props.items.length,
-      renderedItems: waterfallItems.value.length,
-      ratiosReady: thumbnailRatiosReady.value
-    })
     scheduleLayoutRefresh()
   },
   { flush: 'post' }
@@ -536,11 +525,6 @@ const handleAfterRender = () => {
   if (initialEnterAnimation.value && waterfallItems.value.length > 0) {
     initialEnterAnimation.value = false
   }
-  console.debug('[WaterfallLayout] after-render', {
-    label: props.debugLabel,
-    items: props.items.length,
-    renderedItems: waterfallItems.value.length
-  })
   emit('after-render')
 }
 
@@ -548,18 +532,6 @@ const handleAfterRender = () => {
 const refresh = () => {
   const selectionRoot = (selectionBoxRef.value as any)?.$el as HTMLElement | null
   const root = selectionRoot?.querySelector('.masonry-container') as HTMLElement | null
-  console.debug('[WaterfallLayout] refresh', {
-    label: props.debugLabel,
-    items: props.items.length,
-    renderedItems: waterfallItems.value.length,
-    width: root?.clientWidth ?? 0,
-    height: root?.clientHeight ?? 0,
-    styleHeight: root?.style.height ?? '',
-    computedHeight: root ? getComputedStyle(root).height : '',
-    selectionWidth: selectionRoot?.clientWidth ?? 0,
-    selectionHeight: selectionRoot?.clientHeight ?? 0,
-    rootTop: root?.getBoundingClientRect().top ?? null
-  })
   masonryRef.value?.refresh()
 }
 
@@ -656,13 +628,6 @@ onMounted(() => {
   window.addEventListener('thumbnail-updated', handleThumbnailUpdated)
   document.addEventListener('edit-action', handleEditAction)
   const selectionRoot = (selectionBoxRef.value as any)?.$el as HTMLElement | null
-  const masonryRoot = selectionRoot?.querySelector('.masonry-container') as HTMLElement | null
-  console.debug('[WaterfallLayout] mounted', {
-    label: props.debugLabel,
-    items: props.items.length,
-    selection: selectionRoot?.getBoundingClientRect?.().toJSON?.() ?? null,
-    masonry: masonryRoot?.getBoundingClientRect?.().toJSON?.() ?? null
-  })
   scheduleLayoutRefresh()
 })
 

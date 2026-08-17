@@ -301,11 +301,7 @@
     "dimensions": "Dimensions",
     "createdAt": "Created",
     "updatedAt": "Modified",
-    "fileFormat": "Format",
-    "download": "Download",
-    "share": "Share",
-    "edit": "Edit",
-    "delete": "Delete"
+    "fileFormat": "Format"
   },
   "integrationCard": {
     "details": "Details",
@@ -416,6 +412,7 @@
     "fileCount": "{count} files",
     "fileName": "File name",
     "website": "Website",
+    "openWebsite": "Open website",
     "rating": "Rating",
     "notes": "Notes",
     "notesPlaceholder": "Add notes...",
