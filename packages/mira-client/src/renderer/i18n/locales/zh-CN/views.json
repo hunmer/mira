@@ -343,6 +343,8 @@
     "folderDesc": "悬停时内部纸张扇开上浮，三种尺寸与六种配色。",
     "galleryTitle": "可展开画廊 ExpandableGallery",
     "galleryDesc": "堆叠照片点击展开为网格，再点击空白处或 Go back 收起（示例图为外链）。",
+    "fileSystemTitle": "文件浏览器 FileSystem",
+    "fileSystemDesc": "Finder 风格：图标/列表/分栏/画廊四视图，搜索、排序、类型与日期过滤、懒加载子项与键盘导航（示例图为外链）。",
     "fileIconTitle": "文件类型图标 FileIcon / FolderIcon",
     "fileIconDesc": "按文件名/扩展名/文件夹名自动匹配 vscode 风格图标，未识别时回退默认图标。",
     "fileCardTitle": "文件格式卡片 FileCard",

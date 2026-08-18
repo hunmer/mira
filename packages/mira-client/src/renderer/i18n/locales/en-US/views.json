@@ -343,6 +343,8 @@
     "folderDesc": "Papers fan out and lift on hover. Three sizes and six colors.",
     "galleryTitle": "Expandable gallery",
     "galleryDesc": "Click the stacked photos to expand into a grid; click outside or Go back to collapse (demo images are external links).",
+    "fileSystemTitle": "File system browser FileSystem",
+    "fileSystemDesc": "Finder-style icon/list/columns/gallery views with search, sorting, file-type and date filters, lazy folder loading and full keyboard navigation (demo images are external links).",
     "fileIconTitle": "File icons FileIcon / FolderIcon",
     "fileIconDesc": "Matches vscode-style icons by filename/extension/folder name, falling back to defaults for unknown types.",
     "fileCardTitle": "File format card FileCard",

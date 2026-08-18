@@ -170,6 +170,28 @@
       </div>
       <ExpandableGallery :items="galleryItems" class="min-h-[640px] rounded-lg border" />
     </div>
+
+    <!-- FileSystem：Finder 风格文件浏览器 -->
+    <div class="space-y-3">
+      <div class="space-y-1">
+        <p class="text-sm font-medium text-foreground">{{ $t('views.playgroundPanel.fileSystemTitle') }}</p>
+        <p class="text-xs text-muted-foreground">{{ $t('views.playgroundPanel.fileSystemDesc') }}</p>
+      </div>
+      <FileSystem
+        :items="fileSystemItems"
+        title="Demo Library"
+        class="h-[560px]"
+        :load-children="loadFolderChildren"
+        :get-file-url="resolveFileUrl"
+        :load-preview-image-url="loadPreviewPage"
+        @selection-change="onFsSelectionChange"
+        @file-open="onFsFileOpen"
+      />
+      <div v-if="fsSelection || fsOpened" class="space-y-0.5 text-xs text-muted-foreground">
+        <p v-if="fsSelection">selected: {{ fsSelection }}</p>
+        <p v-if="fsOpened">opened: {{ fsOpened }}</p>
+      </div>
+    </div>
   </TabsContent>
 </template>
 
@@ -182,6 +204,7 @@ import { Folder } from '@/components/ui/folder'
 import { ExpandableGallery, type GalleryItem } from '@/components/ui/expandable-gallery'
 import { FileIcon, FolderIcon } from '@/components/ui/file-icon'
 import { FileCard, type FormatFile } from '@/components/ui/file-card'
+import { FileSystem, type FileSystemItem, type FileSystemLoadChildrenResult } from '@/components/ui/file-system'
 import { ColorPicker, ColorPickerContent, ColorPickerTrigger } from '@/components/ui/color-picker'
 import { ColorSwatch, type ColorSwatchSize } from '@/components/ui/color-swatch'
 import { ColorAreaRoot, ColorAreaArea, ColorAreaThumb } from 'reka-ui'
@@ -279,5 +302,81 @@ const galleryItems: GalleryItem[] = [
   { id: 'photo-4', src: 'https://images.unsplash.com/photo-1756993399574-2fa126269ce7?w=800', alt: 'Dashboard interface' },
   { id: 'photo-5', src: 'https://images.unsplash.com/photo-1756990637536-714b76296a30?w=800', alt: 'Product design' },
   { id: 'photo-6', src: 'https://images.unsplash.com/photo-1756838197413-07f174def66c?w=800', alt: 'Developer workspace' },
+]
+
+// ---- FileSystem demo ----
+const DAY_MS = 24 * 60 * 60 * 1000
+const isoDaysAgo = (days: number) => new Date(Date.now() - days * DAY_MS).toISOString()
+const unsplash = (id: string) => `https://images.unsplash.com/${id}?w=480`
+
+const fsSelection = ref('')
+const fsOpened = ref('')
+
+function onFsSelectionChange(item: FileSystemItem | null) {
+  fsSelection.value = item?.name ?? ''
+}
+
+function onFsFileOpen(file: { name?: string }, url: string | null) {
+  fsOpened.value = `${file.name ?? ''}${url ? '' : '（无 URL）'}`
+}
+
+// 演示懒加载：archive/ 文件夹带 hasChildren，首次展开时注入子项
+function loadFolderChildren({ path }: { path: string, cursor: string | null }): Promise<FileSystemLoadChildrenResult> {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({
+        items:
+          path === 'archive/'
+            ? [
+                { kind: 'file', path: 'archive/backup-2025.zip', size: 52_428_800, contentType: 'application/zip', createdAt: isoDaysAgo(40), updatedAt: isoDaysAgo(40) },
+                { kind: 'file', path: 'archive/migrations.sql', size: 204_800, createdAt: isoDaysAgo(45), updatedAt: isoDaysAgo(41) },
+                { kind: 'file', path: 'archive/旧版手册.docx', size: 1_868_000, contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', createdAt: isoDaysAgo(90), updatedAt: isoDaysAgo(60) },
+              ]
+            : [],
+      })
+    }, 600)
+  })
+}
+
+// 演示预签名：没有 url 的文件在打开时经此函数解析（延迟 400ms）
+function resolveFileUrl(_file: { name?: string }) {
+  return new Promise<string>((resolve) => {
+    setTimeout(() => resolve(unsplash('photo-1757372429884-92e02350c5d9')), 400)
+  })
+}
+
+// 演示分页缩略图：多页文档按需取页封面
+function loadPreviewPage(file: { path: string }, pageIndex: number) {
+  return Promise.resolve(
+    `https://picsum.photos/seed/${encodeURIComponent(file.path)}-${pageIndex}/480/620`
+  )
+}
+
+// 示例缩略图为 unsplash / picsum 外链，仅作演示
+const fileSystemItems: FileSystemItem[] = [
+  { kind: 'folder', path: 'photos/', createdAt: isoDaysAgo(2), updatedAt: isoDaysAgo(1) },
+  { kind: 'folder', path: 'documents/', createdAt: isoDaysAgo(20), updatedAt: isoDaysAgo(3) },
+  { kind: 'folder', path: 'documents/invoices/', createdAt: isoDaysAgo(18), updatedAt: isoDaysAgo(5) },
+  { kind: 'folder', path: 'src/', createdAt: isoDaysAgo(60), updatedAt: isoDaysAgo(0.2) },
+  { kind: 'folder', path: 'src/components/', createdAt: isoDaysAgo(50), updatedAt: isoDaysAgo(1) },
+  { kind: 'folder', path: 'archive/', hasChildren: true, createdAt: isoDaysAgo(40) },
+  { kind: 'file', path: 'photos/cover-portrait.jpg', size: 2_400_000, contentType: 'image/jpeg', previewImageUrl: unsplash('photo-1755398104393-746e52af4a9f'), url: unsplash('photo-1755398104393-746e52af4a9f'), previewAspectRatio: 0.75, createdAt: isoDaysAgo(2), updatedAt: isoDaysAgo(2) },
+  { kind: 'file', path: 'photos/workspace.jpg', size: 3_100_000, contentType: 'image/jpeg', previewImageUrl: unsplash('photo-1756838197413-07f174def66c'), url: unsplash('photo-1756838197413-07f174def66c'), previewAspectRatio: 1.5, createdAt: isoDaysAgo(3), updatedAt: isoDaysAgo(3) },
+  { kind: 'file', path: 'photos/design-research.jpg', size: 1_800_000, contentType: 'image/jpeg', previewImageUrl: unsplash('photo-1756764099214-b09a5666914b'), url: unsplash('photo-1756764099214-b09a5666914b'), previewAspectRatio: 1.5, createdAt: isoDaysAgo(6), updatedAt: isoDaysAgo(6) },
+  { kind: 'file', path: 'photos/dashboard.png', size: 900_000, contentType: 'image/png', previewImageUrl: unsplash('photo-1756993399574-2fa126269ce7'), url: unsplash('photo-1756993399574-2fa126269ce7'), createdAt: isoDaysAgo(9), updatedAt: isoDaysAgo(9) },
+  { kind: 'file', path: 'photos/product.jpg', size: 2_050_000, contentType: 'image/jpeg', previewImageUrl: unsplash('photo-1756990637536-714b76296a30'), url: unsplash('photo-1756990637536-714b76296a30'), createdAt: isoDaysAgo(12), updatedAt: isoDaysAgo(12) },
+  { kind: 'file', path: 'photos/待签名-合同封面.jpg', size: 1_200_000, contentType: 'image/jpeg', previewAspectRatio: 0.75, createdAt: isoDaysAgo(0.5), updatedAt: isoDaysAgo(0.5) },
+  { kind: 'file', path: 'documents/annual-report.pdf', size: 8_400_000, contentType: 'application/pdf', previewImageUrl: 'https://picsum.photos/seed/report-cover/480/620', previewPageCount: 6, url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', createdAt: isoDaysAgo(15), updatedAt: isoDaysAgo(4) },
+  { kind: 'file', path: 'documents/方案说明.docx', size: 1_600_000, contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', createdAt: isoDaysAgo(22), updatedAt: isoDaysAgo(10) },
+  { kind: 'file', path: 'documents/budget-2026.xlsx', size: 320_000, contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', createdAt: isoDaysAgo(30), updatedAt: isoDaysAgo(8) },
+  { kind: 'file', path: 'documents/notes.md', size: 12_800, createdAt: isoDaysAgo(1), updatedAt: isoDaysAgo(0.1) },
+  { kind: 'file', path: 'documents/readme.txt', size: 2_048, createdAt: isoDaysAgo(70), updatedAt: isoDaysAgo(70) },
+  { kind: 'file', path: 'documents/invoices/2026-01.pdf', size: 240_000, contentType: 'application/pdf', previewImageUrl: 'https://picsum.photos/seed/invoice-01/480/620', url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', createdAt: isoDaysAgo(200), updatedAt: isoDaysAgo(200) },
+  { kind: 'file', path: 'documents/invoices/2026-02.pdf', size: 255_000, contentType: 'application/pdf', previewImageUrl: 'https://picsum.photos/seed/invoice-02/480/620', url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', createdAt: isoDaysAgo(170), updatedAt: isoDaysAgo(170) },
+  { kind: 'file', path: 'src/main.ts', size: 4_096, createdAt: isoDaysAgo(60), updatedAt: isoDaysAgo(2) },
+  { kind: 'file', path: 'src/app.vue', size: 18_432, createdAt: isoDaysAgo(55), updatedAt: isoDaysAgo(1) },
+  { kind: 'file', path: 'src/utils.ts', size: 6_144, createdAt: isoDaysAgo(40), updatedAt: isoDaysAgo(20) },
+  { kind: 'file', path: 'src/components/DataTable.vue', size: 24_576, createdAt: isoDaysAgo(50), updatedAt: isoDaysAgo(0.5) },
+  { kind: 'file', path: 'src/components/StyleGuide.css', size: 8_192, createdAt: isoDaysAgo(48), updatedAt: isoDaysAgo(6) },
 ]
 </script>
