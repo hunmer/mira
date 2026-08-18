@@ -1,20 +1,11 @@
 name: Deploy Landing Page
 
-# 触发条件：
-#   - push main（paths 过滤）→ 增量 CI，构建验证但不部署
-#   - push tag v*           → 正式发布，部署到 Vercel（全量，tag 不受 paths 限制）
+# 仅版本标签或手动触发，避免普通文件变更自动运行。
 on:
   push:
-    branches:
-      - main
-    paths:
-      - 'packages/landing-page/**'
-      - 'pnpm-lock.yaml'
-      - 'pnpm-workspace.yaml'
-      - 'package.json'
-      - '.github/workflows/landing-page.yml'
     tags:
       - 'v*'
+  workflow_dispatch:
 
 jobs:
   deploy:

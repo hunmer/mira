@@ -2,18 +2,9 @@ name: Electron Windows Build
 
 on:
   push:
-    branches:
-      - main
-    paths:
-      - 'packages/mira-client/**'
-      - 'packages/vue-masonry/**'
-      - 'packages/mira-app-core/**'
-      - 'pnpm-lock.yaml'
-      - 'pnpm-workspace.yaml'
-      - 'package.json'
-      - '.github/workflows/electron-windows.yml'
     tags:
       - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -44,6 +35,15 @@ jobs:
     - name: Build workspace dependencies
       run: pnpm --filter "@hunmer/vue-masonry" --filter "mira-app-core" build
 
+    - name: Install runtime dependencies
+      shell: powershell
+      run: choco install ffmpeg imagemagick exiftool -y --no-progress
+
+    - name: Build standalone server
+      run: |
+        pnpm --filter mira-app-server build
+        pnpm --filter mira-app-server deploy --prod "${{ runner.temp }}\mira-server"
+
     - name: Build and package Windows
       working-directory: packages/mira-client
       env:
@@ -63,6 +63,23 @@ jobs:
         if-no-files-found: error
         retention-days: 14
 
+    - name: Assemble Windows release bundle
+      env:
+        BUNDLE_PLATFORM: windows
+        SERVER_DIR: ${{ runner.temp }}\mira-server
+        INSTALLER_DIR: packages/mira-client/build
+        RELEASE_ARCHIVE: ${{ runner.temp }}\mira-windows-${{ github.ref_name || github.sha }}.zip
+      run: |
+        node scripts/assemble-release-bundle.mjs
+
+    - name: Upload release bundle artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: mira-windows-bundle-${{ github.sha }}
+        path: ${{ runner.temp }}/mira-windows-*.zip
+        if-no-files-found: error
+        retention-days: 14
+
     - name: Upload artifacts to GitHub Release
       if: startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v2
@@ -71,5 +88,6 @@ jobs:
           packages/mira-client/build/*.exe
           packages/mira-client/build/*.msi
           packages/mira-client/build/*.zip
+          ${{ runner.temp }}/mira-windows-*.zip
         fail_on_unmatched_files: false
         generate_release_notes: true

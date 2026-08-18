@@ -2,13 +2,9 @@ name: Mira Mobile Build
 
 on:
   push:
-    branches:
-      - main
-    paths:
-      - 'packages/mira_mobile/**'
-      - '.github/workflows/mira-mobile.yml'
     tags:
       - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: write

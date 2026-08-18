@@ -1,20 +1,11 @@
 name: Deploy Mira Doc
 
-# 触发条件：
-#   - push main（paths 过滤）→ 增量 CI，构建验证但不部署
-#   - push tag v*           → 正式发布，构建并部署到 Vercel（全量，tag 不受 paths 限制）
+# 仅版本标签或手动触发，避免普通文件变更自动运行。
 on:
   push:
-    branches:
-      - main
-    paths:
-      - 'packages/mira-doc/**'
-      - 'pnpm-lock.yaml'
-      - 'pnpm-workspace.yaml'
-      - 'package.json'
-      - '.github/workflows/mira-doc.yml'
     tags:
       - 'v*'
+  workflow_dispatch:
 
 env:
   # 部署到独立域名根路径，需把 VitePress 的 base 由 /mira-doc/ 改为 /
