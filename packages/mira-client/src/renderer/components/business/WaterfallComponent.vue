@@ -522,11 +522,6 @@ const handleItemDoubleClick = (item: FileInfo) => {
 }
 
 const handleAfterRender = () => {
-  console.warn('[WaterfallLayout] after-render', {
-    label: props.debugLabel,
-    items: waterfallItems.value.length,
-    hasMasonryRef: !!masonryRef.value
-  })
   if (initialEnterAnimation.value && waterfallItems.value.length > 0) {
     initialEnterAnimation.value = false
   }
@@ -537,18 +532,6 @@ const handleAfterRender = () => {
 const refresh = () => {
   const selectionRoot = (selectionBoxRef.value as any)?.$el as HTMLElement | null
   const root = selectionRoot?.querySelector('.masonry-container') as HTMLElement | null
-  console.warn('[WaterfallLayout] refresh', {
-    label: props.debugLabel,
-    items: waterfallItems.value.length,
-    hasMasonryRef: !!masonryRef.value,
-    hasSelectionRoot: !!selectionRoot,
-    hasMasonryRoot: !!root,
-    masonryWidth: root?.clientWidth ?? 0,
-    parentWidth: root?.parentElement?.clientWidth ?? 0,
-    selectionWidth: selectionRoot?.clientWidth ?? 0,
-    selectionHeight: selectionRoot?.clientHeight ?? 0,
-    styleHeight: root?.style.height ?? ''
-  })
   masonryRef.value?.refresh()
 }
 
@@ -642,13 +625,6 @@ defineExpose({
 })
 
 onMounted(() => {
-  console.warn('[WaterfallLayout] mounted', {
-    label: props.debugLabel,
-    items: props.items.length,
-    renderedItems: waterfallItems.value.length,
-    hasSelectionRef: !!selectionBoxRef.value,
-    hasMasonryRef: !!masonryRef.value
-  })
   window.addEventListener('keydown', handleDeleteKeyDown)
   window.addEventListener('thumbnail-updated', handleThumbnailUpdated)
   document.addEventListener('edit-action', handleEditAction)

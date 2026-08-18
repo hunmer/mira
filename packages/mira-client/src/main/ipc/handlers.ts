@@ -27,10 +27,10 @@ function emitRendererLog(level: RendererLogLevel, args: any[]): void {
   // Keep the complete console argument list in one structured payload. The
   // dashboard renders this array with a single JSON Viewer.
   const message = ''
-  if (level === 'warn') logger.warn('Renderer', message, args)
-  else if (level === 'error') logger.error('Renderer', message, args)
-  else if (level === 'debug') logger.debug('Renderer', message, args)
-  else logger.info('Renderer', message, args)
+  if (level === 'warn') logger.warn('', message, args)
+  else if (level === 'error') logger.error('', message, args)
+  else if (level === 'debug') logger.debug('', message, args)
+  else logger.info('', message, args)
 }
 
 /**

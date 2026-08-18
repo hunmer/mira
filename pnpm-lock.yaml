@@ -397,7 +397,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@hunmer/procm-mcp-sdk':
-        specifier: link:G:\procm-mcp\packages\procm-sdk
+        specifier: link:G:/procm-mcp/packages/procm-sdk
         version: link:G:/procm-mcp/packages/procm-sdk
       '@tailwindcss/postcss':
         specifier: ^4.0.17

@@ -53,6 +53,9 @@ const emitNativeConsole = (level: 'log' | 'info' | 'warn' | 'error' | 'debug', a
   }
 }
 
+const formatMessage = (category: string, message: string) =>
+  category ? `[${category}] ${message}` : message
+
 // 将业务数据转换为 SDK 可编码的 JSON 值；序列化失败时保留简短诊断文本。
 const toProcmData = (data?: any): any => {
   if (data === undefined) return undefined
@@ -77,30 +80,30 @@ export const logger = {
     log.transports.console.level = m[level]
   },
   debug: (category: string, message: string, data?: any) => {
-    const args = [`[${category}] ${message}`, data ?? '']
+    const args = [formatMessage(category, message), data ?? '']
     log.debug(...args)
     emitNativeConsole('debug', args)
-    getProcmLogger().debug(`[${category}] ${message}`, toProcmData(data))
+    getProcmLogger().debug(formatMessage(category, message), toProcmData(data))
   },
   info: (category: string, message: string, data?: any) => {
-    const args = [`[${category}] ${message}`, data ?? '']
+    const args = [formatMessage(category, message), data ?? '']
     log.info(...args)
     emitNativeConsole('info', args)
-    getProcmLogger().info(`[${category}] ${message}`, toProcmData(data))
+    getProcmLogger().info(formatMessage(category, message), toProcmData(data))
   },
   warn: (category: string, message: string, data?: any) => {
-    const args = [`[${category}] ${message}`, data ?? '']
+    const args = [formatMessage(category, message), data ?? '']
     log.warn(...args)
     emitNativeConsole('warn', args)
-    getProcmLogger().warn(`[${category}] ${message}`, toProcmData(data))
+    getProcmLogger().warn(formatMessage(category, message), toProcmData(data))
   },
   error: (category: string, message: string, errorOrData?: any, data?: any) => {
     const isError = errorOrData instanceof Error
-    const args = [`[${category}] ${message}`, isError ? errorOrData : errorOrData ?? '', data ?? '']
+    const args = [formatMessage(category, message), isError ? errorOrData : errorOrData ?? '', data ?? '']
     log.error(...args)
     emitNativeConsole('error', args)
     getProcmLogger().error(
-      `[${category}] ${message}`,
+      formatMessage(category, message),
       toProcmData(errorOrData !== undefined ? errorOrData : data)
     )
   },

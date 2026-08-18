@@ -62,7 +62,8 @@ export class MainWindowService {
       ),
     })
 
-    // 页面完成加载后立即注入，确保渲染进程日志同时进入 DevTools 和主进程。
+    // 页面完成加载后注入结构化 Console Hook：原生 console 仍输出到 DevTools，
+    // IPC 转发则保留对象、数组和 Error 等参数结构，避免退化为 [object Object]。
     this.mainWindow.webContents.once('did-finish-load', () => {
       if (this.mainWindow) injectConsoleHook(this.mainWindow)
     })
