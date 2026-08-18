@@ -76,7 +76,6 @@ jobs:
         name: mira-macos-${{ github.sha }}
         path: |
           packages/mira-client/build/*.dmg
-          packages/mira-client/build/*.zip
         if-no-files-found: error
         retention-days: 14
 
@@ -103,7 +102,6 @@ jobs:
       with:
         files: |
           packages/mira-client/build/*.dmg
-          packages/mira-client/build/*.zip
           ${{ runner.temp }}/mira-macos-*.zip
         fail_on_unmatched_files: false
         generate_release_notes: true
