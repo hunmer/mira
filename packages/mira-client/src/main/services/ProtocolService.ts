@@ -1,5 +1,15 @@
-import { app } from 'electron'
+import { app, protocol, net } from 'electron'
+import * as fs from 'fs/promises'
+import * as path from 'path'
+import { createHash } from 'crypto'
+import { fileURLToPath } from 'url'
 import { logger } from '../utils/Logger'
+
+// 让自定义素材协议可被 img/video/fetch 当作标准安全资源加载。
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'library_thumb', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } },
+  { scheme: 'library_file', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } },
+])
 
 /**
  * 协议处理器类型
@@ -24,6 +34,7 @@ export class ProtocolService {
   private static instance: ProtocolService | null = null
   private handlers: Map<string, ProtocolHandler['handler']> = new Map()
   private isRegistered = false
+  private cacheDir = ''
 
   private constructor() {}
 
@@ -115,11 +126,60 @@ export class ProtocolService {
    */
   private registerProtocolHandler(): void {
     // 注册自定义协议 scheme，使渲染进程可通过 <a href="mira://..."> 触发
-    const { protocol } = require('electron') as typeof import('electron')
+    this.cacheDir = path.join(app.getPath('sessionData'), 'mira-library-thumbnails')
+    void fs.mkdir(this.cacheDir, { recursive: true })
+    protocol.handle('library_thumb', request => this.handleLibraryResource(request, true))
+    protocol.handle('library_file', request => this.handleLibraryResource(request, false))
     protocol.registerStringProtocol('mira', (request: any, callback: (response: string) => void) => {
       this.parseAndHandleUrl(request.url)
       callback('')
     })
+  }
+
+  private async handleLibraryResource(request: Request, cache: boolean): Promise<Response> {
+    try {
+      const url = new URL(request.url)
+      const source = url.searchParams.get('url')
+      const libraryId = (url.searchParams.get('libraryId') || 'default').replace(/[^a-zA-Z0-9._-]/g, '_')
+      if (!source) return new Response('Missing source URL', { status: 400 })
+      const key = createHash('sha256').update(source).digest('hex')
+      const libraryCacheDir = path.join(this.cacheDir, libraryId)
+      const cachedPath = path.join(libraryCacheDir, `${key}.bin`)
+      let data: Buffer
+      let contentType = 'application/octet-stream'
+      try {
+        data = await fs.readFile(cachedPath)
+        contentType = (await fs.readFile(`${cachedPath}.mime`, 'utf8').catch(() => '')) || contentType
+      } catch {
+        if (source.startsWith('file://')) {
+          data = await fs.readFile(fileURLToPath(source))
+        } else {
+          const response = await net.fetch(source)
+          if (!response.ok) return new Response(`Upstream request failed: ${response.status}`, { status: response.status })
+          contentType = response.headers.get('content-type') || contentType
+          data = Buffer.from(await response.arrayBuffer())
+          logger.debug('ProtocolService', 'Library resource cached', { libraryId, source })
+        }
+        if (cache) {
+          await fs.mkdir(libraryCacheDir, { recursive: true })
+          await fs.writeFile(cachedPath, data)
+          await fs.writeFile(`${cachedPath}.mime`, contentType)
+        }
+      }
+      return new Response(data, { status: 200, headers: { 'Content-Type': contentType, 'Cache-Control': 'public, max-age=31536000' } })
+    } catch (error) {
+      logger.warn('ProtocolService', 'Library resource failed', { error: error instanceof Error ? error.message : String(error) })
+      return new Response('Resource unavailable', { status: 404 })
+    }
+  }
+
+  public async clearLibraryCache(libraryId?: string): Promise<void> {
+    if (!this.cacheDir) this.cacheDir = path.join(app.getPath('sessionData'), 'mira-library-thumbnails')
+    const target = libraryId
+      ? path.join(this.cacheDir, libraryId.replace(/[^a-zA-Z0-9._-]/g, '_'))
+      : this.cacheDir
+    await fs.rm(target, { recursive: true, force: true })
+    await fs.mkdir(this.cacheDir, { recursive: true })
   }
 
 

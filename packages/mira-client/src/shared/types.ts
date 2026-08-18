@@ -470,6 +470,11 @@ export interface ElectronAPI {
   // 系统信息
   platform: string
 
+  // 素材库缓存协议
+  libraryCache?: {
+    clear: (libraryId?: string) => Promise<{ success: boolean }>
+  }
+
   // 协议处理 API
   protocol: {
     registerHandler: (type: string, handler: string) => Promise<BaseResponse>

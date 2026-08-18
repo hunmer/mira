@@ -8,6 +8,7 @@
  *
  * 由原 HomeSidebar 拆出，逻辑零改动，仅上抛事件给父级（HomeSidebar 编排壳）。
  */
+import { ref, computed, watch } from 'vue'
 import { useLibraryStore } from '@/renderer/stores/library'
 import { useSettingsStore } from '@/renderer/stores/settings'
 import { useServerListStore } from '@/renderer/stores/serverList'
@@ -31,6 +32,30 @@ const libraryStore = useLibraryStore()
 const settingsStore = useSettingsStore()
 const serverListStore = useServerListStore()
 const authStore = useAuthStore()
+const showCacheSettings = ref(false)
+const isElectron = computed(() => Boolean(window.electronAPI))
+const cacheLibrary = ref<any | null>(null)
+watch(() => libraryStore.currentLibrary?.id, id => {
+  if (id) localStorage.setItem('mira-active-library-id', String(id))
+}, { immediate: true })
+
+async function toggleThumbnailCache(enabled: boolean) {
+  const libraries = { ...settingsStore.settings.thumbnailCacheLibraries, [cacheLibrary.value.id]: enabled }
+  await settingsStore.updateSetting('thumbnailCacheLibraries', libraries)
+  // 已生成的素材对象仍持有旧直链，刷新后重新通过 toFileUrl() 生成缓存协议地址。
+  window.location.reload()
+}
+
+async function clearThumbnailCache() {
+  await window.electronAPI?.libraryCache?.clear(String(cacheLibrary.value.id))
+}
+
+function openCacheSettings(collection: any, event: Event) {
+  event.stopPropagation()
+  cacheLibrary.value = collection
+  localStorage.setItem('mira-active-library-id', String(collection.id))
+  showCacheSettings.value = true
+}
 
 const canAccessLibrary = (lib: { allowedRoles?: string[] }) => {
   const userRole = authStore.user?.role
@@ -69,6 +94,7 @@ const onSelectCollection = (collection: any, close: () => void) => {
     return
   }
   emit('selectCollection', collection)
+  localStorage.setItem('mira-active-library-id', String(collection.id))
   close()
 }
 </script>
@@ -140,6 +166,14 @@ const onSelectCollection = (collection: any, close: () => void) => {
                 </div>
                 <div class="flex items-center space-x-1">
                   <button
+                    v-if="isElectron"
+                    class="p-1 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                    :title="$t('views.sidebarLibrarySelector.thumbnailCacheSettings')"
+                    @click="openCacheSettings(collection, $event)"
+                  >
+                    <span class="material-icons text-sm">settings</span>
+                  </button>
+                  <button
                     v-if="getLibraryLocalPath(collection)"
                     class="p-1 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
                     :title="$t('views.sidebarLibrarySelector.locate')"
@@ -181,4 +215,28 @@ const onSelectCollection = (collection: any, close: () => void) => {
       </template>
     </Dropdown>
   </div>
+  <Teleport to="body">
+    <div v-if="showCacheSettings && cacheLibrary" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/40" @click.self="showCacheSettings = false">
+      <div class="w-80 rounded-xl bg-popover p-4 shadow-xl">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-medium">{{ cacheLibrary.name }} · {{ $t('views.sidebarLibrarySelector.thumbnailCacheSettings') }}</h3>
+        <button class="text-muted-foreground hover:text-foreground" @click="showCacheSettings = false">
+          <span class="material-icons text-base">close</span>
+        </button>
+      </div>
+      <label class="flex items-center justify-between gap-3 text-sm">
+        <span>{{ $t('views.sidebarLibrarySelector.thumbnailCache') }}</span>
+        <input
+          type="checkbox"
+          :checked="Boolean(settingsStore.settings.thumbnailCacheLibraries[cacheLibrary.id])"
+          @change="toggleThumbnailCache(($event.target as HTMLInputElement).checked)"
+        />
+      </label>
+      <p class="mt-2 text-xs text-muted-foreground">{{ $t('views.sidebarLibrarySelector.thumbnailCacheDesc') }}</p>
+      <button class="mt-4 w-full rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted" @click="clearThumbnailCache">
+        {{ $t('views.sidebarLibrarySelector.clearThumbnailCache') }}
+      </button>
+      </div>
+    </div>
+  </Teleport>
 </template>

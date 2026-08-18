@@ -50,12 +50,24 @@ const props = withDefaults(defineProps<{
   preload: false
 })
 
+function resolveThumbnailSource(src: string): string {
+  const libraryId = props.file?.libraryId || localStorage.getItem('mira-active-library-id') || ''
+  try {
+    const settings = JSON.parse(localStorage.getItem('mira-settings') || '{}')
+    if (window.electronAPI && libraryId && settings.thumbnailCacheLibraries?.[libraryId]) {
+      if (src.startsWith('file://')) return `library_file://load?libraryId=${encodeURIComponent(String(libraryId))}&url=${encodeURIComponent(src)}`
+      if (src.startsWith('http://') || src.startsWith('https://')) return `library_thumb://load?libraryId=${encodeURIComponent(String(libraryId))}&url=${encodeURIComponent(src)}`
+    }
+  } catch { /* fallback */ }
+  return toFileUrl(src) || src
+}
+
 const emit = defineEmits<{
   (e: 'load'): void
   (e: 'error'): void
 }>()
 
-const currentSrc = ref(props.src)
+const currentSrc = ref(resolveThumbnailSource(props.src))
 const hasError = ref(false)
 
 const fallbackIcon = computed(() => getFileTypeIcon(props.filename || ''))
@@ -66,7 +78,7 @@ const customFormat = computed(() => props.file ? getPluginFileFormat(props.file)
 const shouldRenderCustom = computed(() => Boolean(customFormat.value?.renderThumbnail))
 
 watch(() => props.src, (src) => {
-  currentSrc.value = src
+  currentSrc.value = resolveThumbnailSource(src)
   hasError.value = false
 })
 

@@ -37,6 +37,10 @@ const electronAPI: ElectronAPI = {
 
   // 系统信息
   platform: process.platform,
+
+  libraryCache: {
+    clear: (libraryId?: string) => ipcRenderer.invoke('library-cache:clear', libraryId)
+  },
   
   // 协议处理 API
   protocol: {

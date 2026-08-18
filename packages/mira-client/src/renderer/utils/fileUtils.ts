@@ -20,7 +20,26 @@ export function toFileUrl(path: unknown): string | undefined {
     path = value.url ?? value.path ?? value.filePath ?? value.localFile ?? value.href
   }
   if (typeof path !== 'string' || !path) return undefined
-  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('file://')) return path
+  const getLibraryCacheContext = () => {
+    if (typeof window === 'undefined' || !window.electronAPI) return false
+    try {
+      const raw = localStorage.getItem('mira-settings')
+      const libraryId = localStorage.getItem('mira-active-library-id') || ''
+      const enabled = raw ? Boolean(JSON.parse(raw)?.thumbnailCacheLibraries?.[libraryId]) : false
+      return enabled && libraryId ? libraryId : false
+    } catch { return false }
+  }
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    // Electron 缓存协议：设置由 ConfigStorage 同步镜像到 localStorage。
+    const libraryId = getLibraryCacheContext()
+    if (libraryId) return `library_thumb://load?libraryId=${encodeURIComponent(String(libraryId))}&url=${encodeURIComponent(path)}`
+    return path
+  }
+  if (path.startsWith('file://')) {
+    const libraryId = getLibraryCacheContext()
+    if (libraryId) return `library_file://load?libraryId=${encodeURIComponent(String(libraryId))}&url=${encodeURIComponent(path)}`
+    return path
+  }
   let normalized = path.replace(/\\/g, '/')
   if (normalized.match(/^[a-zA-Z]:/)) {
     return `file:///${encodeURI(normalized)}`

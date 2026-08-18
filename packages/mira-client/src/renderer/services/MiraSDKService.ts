@@ -586,7 +586,7 @@ export class MiraSDKService {
         return {
           id: file.id.toString(),
           name: file.name,
-          path: appendToken(toFileUrl(resolveServerUrl(file.path, this.connectionConfig?.serverUrl))),
+          path: toFileUrl(appendToken(resolveServerUrl(file.path, this.connectionConfig?.serverUrl))),
           size: file.size,
           extension: file.extension || this.getFileExtension(file.name),
           mimeType: file.mime_type || this.getMimeTypeFromExtension(file.name),
@@ -598,7 +598,7 @@ export class MiraSDKService {
           stars: Number(file.stars ?? file.rating ?? 0),
           notes: file.notes || '',
           hash: file.hash || '',
-          thumbnailPath: appendToken(toFileUrl(thumbnailPath || resolveServerUrl(file.thumb, this.connectionConfig?.serverUrl))),
+          thumbnailPath: toFileUrl(appendToken(thumbnailPath || resolveServerUrl(file.thumb, this.connectionConfig?.serverUrl))),
           libraryId: libraryId,
           localFile: localFile || file.localFile || (() => {
             try {
@@ -656,7 +656,7 @@ export class MiraSDKService {
       const fileInfo: FileInfo = {
         id: file.id.toString(),
         name: file.title || file.name, // 优先使用 title，如果没有则使用 name
-        path: appendToken(toFileUrl(file.path)),
+        path: toFileUrl(appendToken(file.path)),
         size: file.size,
         extension: file.extension || this.getFileExtension(file.title || file.name),
         mimeType: file.mime_type || this.getMimeTypeFromExtension(file.title || file.name),
@@ -668,7 +668,7 @@ export class MiraSDKService {
         stars: Number(file.stars ?? file.rating ?? 0),
         notes: file.notes || '',
         hash: file.hash || '',
-        thumbnailPath: appendToken(toFileUrl(useLocalThumb ? file.thumbnail_path : (file.thumb || undefined))),
+        thumbnailPath: toFileUrl(appendToken(useLocalThumb ? file.thumbnail_path : (file.thumb || undefined))),
         libraryId: libraryId
       }
       

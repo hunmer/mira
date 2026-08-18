@@ -54,6 +54,7 @@ export interface AppSettings {
   cacheSize: number
   preloadImages: boolean
   lazyLoading: boolean
+  thumbnailCacheLibraries: Record<string, boolean>
   maxConcurrentUploads: number
 
   // 媒体预览设置
@@ -190,6 +191,7 @@ export const useSettingsStore = defineStore('settings', () => {
     cacheSize: 500, // MB
     preloadImages: true,
     lazyLoading: true,
+    thumbnailCacheLibraries: {},
     maxConcurrentUploads: 3,
 
     // 媒体预览设置
@@ -583,6 +585,7 @@ export const useSettingsStore = defineStore('settings', () => {
       cacheSize: 500,
       preloadImages: true,
       lazyLoading: true,
+      thumbnailCacheLibraries: {},
       maxConcurrentUploads: 3,
       videoPreviewMuted: true,
       visibleItemFields: ['filename', 'format', 'size', 'folder', 'tags', 'videoPlayIcon'],

@@ -70,6 +70,10 @@
     "emptyDesc": "Please connect to a server or add a library first",
     "serverSettings": "Server settings",
     "connectServer": "Connect to server"
+    ,"thumbnailCacheSettings": "Thumbnail cache settings"
+    ,"thumbnailCache": "Enable thumbnail cache"
+    ,"thumbnailCacheDesc": "Store loaded thumbnails in the system cache to reduce repeated cloud requests."
+    ,"clearThumbnailCache": "Clear thumbnail cache"
   },
   "sidebarModuleList": {
     "folders": "Folders",

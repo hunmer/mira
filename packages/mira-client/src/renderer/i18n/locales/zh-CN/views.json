@@ -70,6 +70,10 @@
     "emptyDesc": "请先连接到服务器或添加素材库",
     "serverSettings": "服务器设置",
     "connectServer": "连接服务器"
+    ,"thumbnailCacheSettings": "缩略图缓存设置"
+    ,"thumbnailCache": "启用缩略图缓存"
+    ,"thumbnailCacheDesc": "缓存加载完成的缩略图到系统缓存目录，减少云盘重复请求。"
+    ,"clearThumbnailCache": "清空缩略图缓存"
   },
   "sidebarModuleList": {
     "folders": "文件夹",

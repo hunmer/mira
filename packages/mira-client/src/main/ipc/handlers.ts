@@ -20,6 +20,7 @@ import { PluginWindowHandlers } from './PluginWindowHandlers'
 import { LoginWindowHandlers } from './LoginWindowHandlers'
 import { getAutoUpdater } from '../services/useAutoUpdater'
 import { getProcmLogger } from '../services/ProcmService'
+import { ProtocolService } from '../services/ProtocolService'
 
 type RendererLogLevel = 'log' | 'info' | 'warn' | 'error' | 'debug'
 
@@ -58,6 +59,10 @@ export class IPCHandlers {
     // 这些 handler 在构造时即注册各自的 IPC 监听，实例只需保持存活即可
     new DragDropHandler()
     new ProtocolHandlers()
+    ipcMain.handle('library-cache:clear', async (_event, libraryId?: string) => {
+      await ProtocolService.getInstance().clearLibraryCache(libraryId)
+      return { success: true }
+    })
     new TrayHandlers()
     this.appHandlers = new AppHandlers()
     new FileSystemHandlers()
