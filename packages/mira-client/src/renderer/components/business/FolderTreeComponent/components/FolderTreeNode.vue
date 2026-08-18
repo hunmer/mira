@@ -6,20 +6,12 @@
     multiSelected ? 'bg-primary/10' : '',
     dragOver ? 'ring-2 ring-primary/50 bg-primary/10' : '',
     locating ? 'sidebar-locate-active' : ''
-  ]" @click="emit('node-click', node, stat, $event)" @contextmenu="emit('node-context-menu', node, $event)"
+  ]" @click="onRowClick" @contextmenu="emit('node-context-menu', node, $event)"
     @dragover="emit('node-drag-over', $event, node)" @dragleave="emit('node-drag-leave', $event, node)"
     @drop.stop="emit('node-drop', $event, node)">
     <Checkbox v-if="showCheckbox" :model-value="checkState === true"
       :indeterminate="checkState === 'indeterminate'" class="mr-1.5"
       @update:model-value="emit('check-change', $event)" @click.stop />
-    <!-- 默认模式：chevron 在行首 -->
-    <span v-if="!iconIndent && stat.children.length"
-      class="folder-chevron material-icons text-base mr-1 text-muted-foreground hover:text-muted-foreground select-none"
-      :class="{ 'folder-chevron--open': stat.open }" @click.stop="emit('toggle', stat, $event)">
-      chevron_right
-    </span>
-    <!-- 叶子节点占位：仅在展示 checkbox 时保留，用于与父节点图标对齐；无 checkbox 时隐藏，让图标贴最左侧 -->
-    <span v-else-if="!iconIndent && showCheckbox" class="inline-block w-5"></span>
     <!-- icon 模式：层级缩进由图标左 margin 表达 -->
     <span class="material-icons mr-2 text-lg" :style="{ color: nodeColor, marginLeft: iconIndent ? iconIndentPx : undefined }">{{ node.icon ||
       defaultIcon }}</span>
@@ -29,10 +21,10 @@
       <span v-for="(d, i) in String(node.count)" :key="i" class="t-digit"
         :data-stagger="i > 0 ? String(i) : undefined">{{ d }}</span>
     </span>
-    <!-- icon 模式：chevron 移到行尾，避免占用行首削弱父子图标缩进对比 -->
-    <span v-if="iconIndent && stat.children.length"
+    <!-- chevron 始终在行尾，点击冒泡到行级统一触发折叠/展开 -->
+    <span v-if="stat.children.length"
       class="folder-chevron material-icons text-base ml-2 text-muted-foreground hover:text-muted-foreground select-none"
-      :class="{ 'folder-chevron--open': stat.open }" @click.stop="emit('toggle', stat, $event)">
+      :class="{ 'folder-chevron--open': stat.open }">
       chevron_right
     </span>
   </div>
@@ -61,7 +53,7 @@ const props = withDefaults(defineProps<{
   showCheckbox?: boolean
   checkState?: boolean | 'indeterminate'
   defaultIcon?: string
-  /** icon 模式：chevron 靠右，层级缩进由图标左 margin 表达 */
+  /** icon 模式：层级缩进由图标左 margin 表达 */
   iconIndent?: boolean
 }>(), {
   selected: false,
@@ -85,6 +77,12 @@ const emit = defineEmits<{
 }>()
 
 const nodeColor = computed(() => convertColorToHex(props.node.color))
+
+/** 单击整行触发折叠/展开（叶子节点仅转发点击），事件同步 emit 保证 currentTarget 有效 */
+function onRowClick(event: MouseEvent) {
+  emit('node-click', props.node, props.stat, event)
+  if (props.stat?.children?.length) emit('toggle', props.stat, event)
+}
 
 // 与 @he-tree 默认 indent(20px) 一致；stat.level 从 1 开始
 const iconIndentPx = computed(() => `${((props.stat?.level || 1) - 1) * 20}px`)

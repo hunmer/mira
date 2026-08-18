@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { toast } from 'vue-sonner'
 import {
@@ -7,29 +7,23 @@ import {
   ArrowDown,
   ArrowUp,
   ChevronRight,
-  Columns3,
   Copy,
-  File,
-  FileArchive,
-  FileAudio,
-  FileImage,
-  FileText,
-  FileVideo,
   Folder,
   FolderInput,
   FolderOpen,
   Import,
-  Images,
-  LayoutGrid,
-  List,
   LoaderCircle,
   Move,
+  Pencil,
   RefreshCw,
-  Search,
   Trash2,
   X,
 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { FileIcon, FolderIcon } from '@/components/ui/file-icon'
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@/components/ui/input-group'
+import { ExpandableButton } from '@renderer/components/common'
 import {
   Select,
   SelectContent,
@@ -63,6 +57,9 @@ const entries = ref<LocalFileEntry[]>([])
 const selectedPaths = ref<string[]>([])
 const loading = ref(false)
 const error = ref('')
+const editingPath = ref(false)
+const pathInput = ref('')
+const pathInputRef = ref<InstanceType<typeof Input> | null>(null)
 const selectionBoxRef = ref<InstanceType<typeof SelectionBox> | null>(null)
 const pickerOpen = ref(false)
 const pickerOperation = ref<'copy' | 'move'>('copy')
@@ -190,11 +187,12 @@ const breadcrumbs = computed(() => {
 async function loadDirectory(targetPath = currentPath.value) {
   if (!api.value?.listDirectory) {
     error.value = t('views.localFolder.electronOnly')
-    return
+    return false
   }
   loading.value = true
   error.value = ''
   const result = await api.value.listDirectory(targetPath)
+  let loaded = false
   if (result.success) {
     currentPath.value = targetPath
     syncTabTitle(targetPath)
@@ -202,10 +200,36 @@ async function loadDirectory(targetPath = currentPath.value) {
     selectedPaths.value = []
     columnLevels.value = []
     galleryEntry.value = null
+    loaded = true
   } else {
     error.value = result.message || t('views.localFolder.loadFailed')
   }
   loading.value = false
+  return loaded
+}
+
+function pathFromInput(value: string) {
+  let targetPath = value.trim()
+  if ((targetPath.startsWith('"') && targetPath.endsWith('"')) || (targetPath.startsWith("'") && targetPath.endsWith("'"))) {
+    targetPath = targetPath.slice(1, -1).trim()
+  }
+  if (/^[A-Za-z]:$/.test(targetPath)) return `${targetPath}\\`
+  return targetPath.replace(/[\\/]+$/, '') || '/'
+}
+
+async function startPathEditing() {
+  pathInput.value = currentPath.value
+  editingPath.value = true
+  await nextTick()
+  const input = pathInputRef.value?.$el as HTMLInputElement | undefined
+  input?.focus()
+  input?.select()
+}
+
+async function submitPathEdit() {
+  const targetPath = pathFromInput(pathInput.value)
+  if (!targetPath) return
+  if (await loadDirectory(targetPath)) editingPath.value = false
 }
 
 function handleItemClick(entry: LocalFileEntry, event: MouseEvent) {
@@ -355,17 +379,6 @@ function formatSize(bytes: number) {
   return `${(bytes / 1024 ** index).toFixed(index ? 1 : 0)} ${units[index]}`
 }
 
-function fileIcon(entry: LocalFileEntry) {
-  const type = entryType(entry)
-  if (type === 'folder') return Folder
-  if (type === 'image') return FileImage
-  if (type === 'video') return FileVideo
-  if (type === 'audio') return FileAudio
-  if (type === 'archive') return FileArchive
-  if (type === 'document') return FileText
-  return File
-}
-
 function mimeTypeForEntry(entry: LocalFileEntry) {
   const extension = entry.extension.replace(/^\./, '')
   const types: Record<string, string> = {
@@ -416,7 +429,16 @@ watch(() => props.rootPath, (value) => {
       <Button variant="ghost" size="icon-sm" :disabled="isAtRoot" :title="$t('views.localFolder.up')" @click="goUp">
         <ArrowLeft />
       </Button>
-      <nav class="flex min-w-0 flex-1 items-center overflow-hidden text-sm" aria-label="Breadcrumb">
+      <Input
+        v-if="editingPath"
+        ref="pathInputRef"
+        v-model="pathInput"
+        class="h-8 min-w-0 flex-1"
+        :aria-label="$t('views.localFolder.pathInput')"
+        @keydown.enter.prevent="submitPathEdit"
+        @keydown.escape.prevent="editingPath = false"
+      />
+      <nav v-else class="flex min-w-0 flex-1 items-center overflow-hidden text-sm" aria-label="Breadcrumb">
         <template v-for="(crumb, index) in breadcrumbs" :key="crumb.path">
           <span v-if="index" class="px-1 text-muted-foreground">/</span>
           <button class="min-w-0 truncate rounded px-1.5 py-1 hover:bg-accent" @click="loadDirectory(crumb.path)">
@@ -424,30 +446,44 @@ watch(() => props.rootPath, (value) => {
           </button>
         </template>
       </nav>
+      <Button
+        v-if="!editingPath"
+        variant="ghost"
+        size="icon-sm"
+        :title="$t('views.localFolder.editPath')"
+        @click="startPathEditing"
+      >
+        <Pencil />
+      </Button>
       <Button variant="ghost" size="icon-sm" :title="$t('views.localFolder.refresh')" @click="loadDirectory()">
         <RefreshCw />
       </Button>
     </header>
 
     <div class="flex shrink-0 flex-wrap items-center gap-2 border-b bg-muted/20 px-3 py-2">
-      <div class="relative min-w-44 flex-1 sm:max-w-64">
-        <Search class="pointer-events-none absolute left-2 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <input
-          v-model="searchQuery"
-          type="search"
-          :placeholder="$t('views.localFolder.searchPlaceholder')"
-          class="h-8 w-full rounded-md border bg-background pl-8 pr-8 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        />
-        <button
-          v-if="searchQuery"
-          type="button"
-          class="absolute right-1 top-1/2 flex size-6 -translate-y-1/2 items-center justify-center rounded hover:bg-accent"
-          :title="$t('views.localFolder.clearSearch')"
-          @click="searchQuery = ''"
-        >
-          <X class="size-3.5" />
-        </button>
-      </div>
+      <ExpandableButton
+        icon="search"
+        :expand-tooltip="$t('views.localFolder.searchPlaceholder')"
+        :collapse-tooltip="$t('common.close')"
+        class="shrink-0"
+      >
+        <InputGroup class="w-64">
+          <InputGroupAddon>
+            <span class="material-icons text-sm">search</span>
+          </InputGroupAddon>
+          <InputGroupInput
+            v-model="searchQuery"
+            :placeholder="$t('views.localFolder.searchPlaceholder')"
+          />
+          <InputGroupButton
+            v-if="searchQuery"
+            :title="$t('views.localFolder.clearSearch')"
+            @click="searchQuery = ''"
+          >
+            <X class="size-3.5" />
+          </InputGroupButton>
+        </InputGroup>
+      </ExpandableButton>
 
       <Select v-model="typeFilter">
         <SelectTrigger size="sm" class="h-8 w-32" :title="$t('views.localFolder.typeFilter')">
@@ -489,6 +525,19 @@ watch(() => props.rootPath, (value) => {
         </SelectContent>
       </Select>
 
+      <Select v-model="viewMode">
+        <SelectTrigger size="sm" class="h-8 w-32" :title="$t('views.localFolder.viewMode')">
+          <SelectValue :placeholder="$t('views.localFolder.viewMode')" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="list">{{ $t('views.localFolder.listView') }}</SelectItem>
+          <SelectItem value="grid">{{ $t('views.localFolder.gridView') }}</SelectItem>
+          <SelectItem value="columns">{{ $t('views.localFolder.columnsView') }}</SelectItem>
+          <SelectItem value="gallery">{{ $t('views.localFolder.galleryView') }}</SelectItem>
+        </SelectContent>
+      </Select>
+
+      
       <Button
         variant="outline"
         size="icon-sm"
@@ -498,41 +547,6 @@ watch(() => props.rootPath, (value) => {
         <ArrowUp v-if="sortDirection === 'asc'" />
         <ArrowDown v-else />
       </Button>
-
-      <div class="flex h-8 items-center rounded-md border bg-background p-0.5">
-        <Button
-          size="icon-xs"
-          :variant="viewMode === 'list' ? 'secondary' : 'ghost'"
-          :title="$t('views.localFolder.listView')"
-          @click="viewMode = 'list'"
-        >
-          <List />
-        </Button>
-        <Button
-          size="icon-xs"
-          :variant="viewMode === 'grid' ? 'secondary' : 'ghost'"
-          :title="$t('views.localFolder.gridView')"
-          @click="viewMode = 'grid'"
-        >
-          <LayoutGrid />
-        </Button>
-        <Button
-          size="icon-xs"
-          :variant="viewMode === 'columns' ? 'secondary' : 'ghost'"
-          :title="$t('views.localFolder.columnsView')"
-          @click="viewMode = 'columns'"
-        >
-          <Columns3 />
-        </Button>
-        <Button
-          size="icon-xs"
-          :variant="viewMode === 'gallery' ? 'secondary' : 'ghost'"
-          :title="$t('views.localFolder.galleryView')"
-          @click="viewMode = 'gallery'"
-        >
-          <Images />
-        </Button>
-      </div>
 
       <span class="ml-auto text-xs text-muted-foreground">{{ $t('views.localFolder.itemCount', { count: visibleEntries.length }) }}</span>
     </div>
@@ -585,14 +599,8 @@ watch(() => props.rootPath, (value) => {
                 @drop.stop.prevent="handleFolderDrop(entry, $event)"
               >
                 <span :class="viewMode === 'list' ? 'flex min-w-0 items-center gap-2' : 'flex min-w-0 max-w-full flex-col items-center gap-2'">
-                  <component
-                    :is="fileIcon(entry)"
-                    :class="[
-                      viewMode === 'list' ? 'size-4' : 'size-10',
-                      'shrink-0',
-                      entry.isDirectory ? 'text-amber-500' : 'text-muted-foreground',
-                    ]"
-                  />
+                  <FolderIcon v-if="entry.isDirectory" :name="entry.name" :class="viewMode === 'list' ? '' : 'size-10'" />
+                  <FileIcon v-else :name="entry.name" :class="viewMode === 'list' ? '' : 'size-10'" />
                   <span :class="viewMode === 'list' ? 'truncate' : 'line-clamp-2 max-w-full break-all'">{{ entry.name }}</span>
                 </span>
                 <span v-if="viewMode === 'list'" class="text-xs text-muted-foreground">{{ entry.isDirectory ? '—' : formatSize(entry.size) }}</span>
@@ -639,7 +647,8 @@ watch(() => props.rootPath, (value) => {
                   @dragover="entry.isDirectory && $event.preventDefault()"
                   @drop.stop.prevent="handleFolderDrop(entry, $event)"
                 >
-                  <component :is="fileIcon(entry)" class="size-4 shrink-0" :class="entry.isDirectory ? 'text-amber-500' : 'text-muted-foreground'" />
+                  <FolderIcon v-if="entry.isDirectory" :name="entry.name" />
+                  <FileIcon v-else :name="entry.name" />
                   <span class="min-w-0 flex-1 truncate">{{ entry.name }}</span>
                   <ChevronRight v-if="entry.isDirectory" class="size-4 shrink-0 text-muted-foreground" />
                 </button>
@@ -674,12 +683,8 @@ watch(() => props.rootPath, (value) => {
                 class="min-h-0 max-h-[calc(100%-4.5rem)] max-w-full rounded-md object-contain shadow-sm"
                 @dblclick="openEntry(galleryEntry)"
               />
-              <component
-                :is="fileIcon(galleryEntry)"
-                v-else
-                class="size-24 text-muted-foreground"
-                :class="galleryEntry.isDirectory ? 'text-amber-500' : ''"
-              />
+              <FolderIcon v-else-if="galleryEntry.isDirectory" :name="galleryEntry.name" class="size-24" />
+              <FileIcon v-else :name="galleryEntry.name" class="size-24" />
               <div class="max-w-xl">
                 <h3 class="break-all text-sm font-medium">{{ galleryEntry.name }}</h3>
                 <p class="mt-1 text-xs text-muted-foreground">
@@ -707,7 +712,8 @@ watch(() => props.rootPath, (value) => {
                   @dragover="entry.isDirectory && $event.preventDefault()"
                   @drop.stop.prevent="handleFolderDrop(entry, $event)"
                 >
-                  <component :is="fileIcon(entry)" class="size-8 shrink-0" :class="entry.isDirectory ? 'text-amber-500' : 'text-muted-foreground'" />
+                  <FolderIcon v-if="entry.isDirectory" :name="entry.name" class="size-8" />
+                  <FileIcon v-else :name="entry.name" class="size-8" />
                   <span class="line-clamp-2 max-w-full break-all">{{ entry.name }}</span>
                 </button>
               </ContextMenuTrigger>

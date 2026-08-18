@@ -11,7 +11,7 @@
  * 对外暴露 locateItem(type, id)：定位文件夹/标签节点并滚动入视，供 Tab 右键「在侧边栏定位」调用。
  * 由原 HomeSidebar 拆出，逻辑零改动。
  */
-import { ref, computed, onActivated, onDeactivated, onBeforeUnmount, onMounted, nextTick, reactive, watch } from 'vue'
+import { ref, computed, onActivated, onDeactivated, onBeforeUnmount, onMounted, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import FolderTreeComponent from '@renderer/components/business/FolderTreeComponent/FolderTreeComponent.vue'
 import SidebarHistoryModule from './SidebarHistoryModule.vue'
@@ -26,6 +26,7 @@ import { useHomeSidebarLayoutStore } from '@/renderer/stores/homeSidebarLayout'
 import { miraSDKService } from '@/renderer/services/MiraSDKService'
 import { getModuleDef, type SidebarModuleId } from './sidebarModules'
 import { useTabs } from '@/renderer/composables/useTabs'
+import { getSidebarModuleOpenStates, saveSidebarModuleOpenState } from '@/renderer/composables/LibraryPrefs'
 import type { LocalFsRoot } from '@/shared/types'
 
 defineOptions({ name: 'SidebarModuleList' })
@@ -68,17 +69,15 @@ const enabledModules = computed(() =>
     .filter((d): d is NonNullable<typeof d> => !!d),
 )
 
-// 各模块的展开状态（id -> open），默认全部展开
-// 用 reactive map 存，Collapsible 通过 :open + @update:open 双向绑定
-const openStates = reactive<Record<string, boolean>>({})
-const isModuleOpen = (id: SidebarModuleId) => openStates[id] !== false
+// 各模块的展开状态按当前素材库持久化；未记录的模块默认展开。
+const isModuleOpen = (id: SidebarModuleId) => getSidebarModuleOpenStates()[id] !== false
 /** Collapsible 状态回写 */
 function onModuleOpenChange(id: SidebarModuleId, open: boolean) {
-  openStates[id] = open
+  void saveSidebarModuleOpenState(id, open)
 }
 /** 定位时强制展开某模块 */
 const ensureModuleOpen = (id: SidebarModuleId) => {
-  openStates[id] = true
+  void saveSidebarModuleOpenState(id, true)
 }
 
 // ============================================
@@ -135,6 +134,33 @@ const baseCategories = computed(() => [
 
 const localRoots = ref<LocalFsRoot[]>([])
 const localRootsError = ref('')
+const customLocalFolders = ref<LocalFsRoot[]>([])
+const CUSTOM_LOCAL_FOLDERS_KEY = 'mira-custom-local-folders'
+
+function localPathKey(value: string) {
+  return value.replace(/[\\/]+$/, '').toLowerCase()
+}
+
+function localFolderName(targetPath: string) {
+  const trimmed = targetPath.replace(/[\\/]+$/, '')
+  return trimmed.split(/[\\/]/).filter(Boolean).pop() || targetPath
+}
+
+function loadCustomLocalFolders() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(CUSTOM_LOCAL_FOLDERS_KEY) || '[]')
+    if (!Array.isArray(stored)) return
+    customLocalFolders.value = stored.filter((item): item is LocalFsRoot => (
+      typeof item?.path === 'string' && typeof item?.name === 'string'
+    ))
+  } catch (error) {
+    console.warn('加载自定义本地文件夹失败:', error)
+  }
+}
+
+function saveCustomLocalFolders() {
+  localStorage.setItem(CUSTOM_LOCAL_FOLDERS_KEY, JSON.stringify(customLocalFolders.value))
+}
 
 async function loadLocalRoots() {
   const api = window.electronAPI?.fs
@@ -157,7 +183,25 @@ function openLocalRoot(root: LocalFsRoot) {
   })
 }
 
-onMounted(loadLocalRoots)
+async function addCustomLocalFolder() {
+  const result = await window.electronAPI?.fs?.selectDirectory(t('views.localFolder.addCustomFolder'))
+  if (!result?.success || !result.path) return
+  const key = localPathKey(result.path)
+  if (customLocalFolders.value.some((folder) => localPathKey(folder.path) === key)) return
+  customLocalFolders.value.push({ path: result.path, name: localFolderName(result.path) })
+  saveCustomLocalFolders()
+}
+
+function removeCustomLocalFolder(targetPath: string) {
+  const key = localPathKey(targetPath)
+  customLocalFolders.value = customLocalFolders.value.filter((folder) => localPathKey(folder.path) !== key)
+  saveCustomLocalFolders()
+}
+
+onMounted(() => {
+  loadCustomLocalFolders()
+  loadLocalRoots()
+})
 
 const handleBaseCategoryClick = (category: any) => {
   emit('folderSelect', {
@@ -291,6 +335,19 @@ defineExpose({ locateItem })
               </button>
             </div>
           </template>
+
+          <!-- 本地文件操作按钮 -->
+          <template v-else-if="mod.id === 'local_files'">
+            <div class="header-actions" @click.stop>
+              <button
+                class="header-action-btn"
+                :title="$t('views.localFolder.addCustomFolder')"
+                @click="addCustomLocalFolder"
+              >
+                <span class="material-icons leading-none" style="font-size: 18px">add</span>
+              </button>
+            </div>
+          </template>
         </header>
       </CollapsibleTrigger>
 
@@ -389,8 +446,11 @@ defineExpose({ locateItem })
         <SidebarHistoryModule :library-id="libraryId" mode="recent_viewed" @open="emit('historyOpen', $event)" />
       </CollapsibleContent>
 
-      <!-- 本地磁盘 -->
+      <!-- 本地文件 -->
       <CollapsibleContent v-else-if="mod.id === 'local_files'" class="section-body text-foreground">
+        <h3 class="px-2 pb-1 pt-2 text-[11px] font-medium text-muted-foreground">
+          {{ $t('views.localFolder.systemDrives') }}
+        </h3>
         <ul v-if="localRoots.length" class="space-y-0.5">
           <li v-for="root in localRoots" :key="root.path">
             <button class="cat-item w-full text-foreground" type="button" @click="openLocalRoot(root)">
@@ -402,6 +462,29 @@ defineExpose({ locateItem })
           </li>
         </ul>
         <p v-else class="px-2 py-3 text-xs text-foreground/70">{{ localRootsError || $t('views.localFolder.loading') }}</p>
+
+        <h3 class="px-2 pb-1 pt-3 text-[11px] font-medium text-muted-foreground">
+          {{ $t('views.localFolder.customFolders') }}
+        </h3>
+        <ul v-if="customLocalFolders.length" class="space-y-0.5">
+          <li v-for="folder in customLocalFolders" :key="folder.path" class="group/local-folder relative">
+            <button class="cat-item w-full pr-8 text-foreground" type="button" @click="openLocalRoot(folder)">
+              <span class="flex min-w-0 items-center">
+                <span class="material-icons mr-2 text-lg text-foreground/70">folder</span>
+                <span class="truncate text-foreground">{{ folder.name }}</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              class="absolute right-1 top-1/2 flex size-6 -translate-y-1/2 items-center justify-center rounded text-muted-foreground opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive focus:opacity-100 group-hover/local-folder:opacity-100"
+              :title="$t('views.localFolder.removeCustomFolder')"
+              @click.stop="removeCustomLocalFolder(folder.path)"
+            >
+              <span class="material-icons leading-none" style="font-size: 16px">delete</span>
+            </button>
+          </li>
+        </ul>
+        <p v-else class="px-2 pb-2 pt-1 text-xs text-muted-foreground">{{ $t('views.localFolder.noCustomFolders') }}</p>
       </CollapsibleContent>
     </Collapsible>
   </div>

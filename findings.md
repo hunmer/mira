@@ -22,3 +22,9 @@
 - 当前 Material Icons 字体不包含 `hard_drive`，本地文件模块改用已存在的 `storage`。
 - 现有 `ui/file-system/FileSystem.vue` 只有单选且缺少右键/框选/拖拽扩展点，不能直接替换本地文件 Tab；完整工具栏在本地视图内实现以保留文件操作能力。
 - 更多视图采用同一条目/选择/操作状态：分栏视图按文件夹懒加载后续列；画廊视图使用本地字节生成图片预览，非图片展示类型图标。
+- Electron 已暴露 `window.electronAPI.fs.selectDirectory(title)`，可直接用于侧栏“添加自定义文件夹”，无需扩展 IPC。
+- 自定义文件夹删除仅应删除快捷入口；目录选择 API 返回绝对路径，可作为稳定去重键和 Tab 的 `rootPath`。
+- `SidebarModuleList.vue` 当前将 `localRoots` 平铺在 `local_files` 模块中；可在组件内增加持久化的自定义路径数组，并复用 `openLocalRoot` 创建 Tab。
+- `LocalFolderTabView.vue` 的 `loadDirectory(targetPath)` 已负责验证路径、更新面包屑和 Tab 标题；路径编辑提交应调用它，失败时保留编辑态供用户修正。
+- `LibraryPrefs` 使用 `TabPersistence.getScopeId()` 作为 `serverUrl::libraryId` 存储作用域，适合保存按素材库隔离的侧栏折叠状态。
+- 库切换流程在更新 TabPersistence scope 后调用 `loadLibraryPrefs()`；侧栏读取其响应式 state 可自动恢复，无需自行监听和拼接存储键。

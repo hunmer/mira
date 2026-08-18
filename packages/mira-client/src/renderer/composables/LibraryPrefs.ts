@@ -32,6 +32,8 @@ interface LibraryPrefsData {
   /** 默认过滤器 id，空串表示不使用 */
   defaultFilterId: string
   savedFilters: SavedFilter[]
+  /** Home 侧栏各模块的展开状态；缺失项默认展开 */
+  sidebarModuleOpenStates: Record<string, boolean>
 }
 
 const STORAGE_KEY_PREFIX = 'mira-library-prefs'
@@ -45,7 +47,8 @@ const state = reactive<LibraryPrefsData>({
   lastGroupingMode: null,
   tabGroupingModes: {},
   defaultFilterId: '',
-  savedFilters: []
+  savedFilters: [],
+  sidebarModuleOpenStates: {}
 })
 
 const getStorageKey = () => `${STORAGE_KEY_PREFIX}-${tabPersistence.getScopeId() || 'default'}`
@@ -63,7 +66,8 @@ const persist = async () => {
     lastGroupingMode: state.lastGroupingMode,
     tabGroupingModes: state.tabGroupingModes,
     defaultFilterId: state.defaultFilterId,
-    savedFilters: state.savedFilters
+    savedFilters: state.savedFilters,
+    sidebarModuleOpenStates: state.sidebarModuleOpenStates
   }))
 }
 
@@ -102,6 +106,9 @@ export async function loadLibraryPrefs(): Promise<void> {
     state.savedFilters = Array.isArray(parsed?.savedFilters)
       ? parsed.savedFilters.filter((f: any) => f && f.id && f.name && Array.isArray(f.rules))
       : []
+    state.sidebarModuleOpenStates = parsed?.sidebarModuleOpenStates && typeof parsed.sidebarModuleOpenStates === 'object'
+      ? Object.fromEntries(Object.entries(parsed.sidebarModuleOpenStates).filter(([, value]) => typeof value === 'boolean'))
+      : {}
   } catch (error) {
     console.error('Failed to load library prefs:', error)
   }
@@ -137,6 +144,15 @@ export function getTabGroupingMode(tabId: string): MediaGroupingMode | null {
 export async function saveTabGroupingMode(tabId: string, mode: MediaGroupingMode): Promise<void> {
   state.tabGroupingModes[tabId] = mode
   state.lastGroupingMode = mode
+  await persist()
+}
+
+export function getSidebarModuleOpenStates(): Record<string, boolean> {
+  return state.sidebarModuleOpenStates
+}
+
+export async function saveSidebarModuleOpenState(moduleId: string, open: boolean): Promise<void> {
+  state.sidebarModuleOpenStates[moduleId] = open
   await persist()
 }
 
