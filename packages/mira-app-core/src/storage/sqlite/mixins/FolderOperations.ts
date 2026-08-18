@@ -4,18 +4,23 @@ import { CoreAccessible } from './types';
 
 export const FolderOperations = {
   async createFolder(this: CoreAccessible, folderData: Record<string, any>): Promise<number> {
+    const parentId = folderData.parent_id ?? null;
     const result = await this.runSql(
       'INSERT INTO folders(id, title, parent_id, color, icon, sort_index) VALUES (?, ?, ?, ?, ?, ?)',
       [
         folderData.id,
         folderData.title,
-        folderData.parent_id,
+        parentId,
         folderData.color,
         folderData.icon,
         folderData.sort_index ?? 0,
       ]
     );
-    return result.lastID;
+    const folderId = result.lastID;
+    const libraryPath = await this.getLibraryPath();
+    const folderPath = await (this as any).getFolderPath(folderId);
+    fs.mkdirSync(path.join(libraryPath, folderPath), { recursive: true });
+    return folderId;
   },
 
   async updateFolder(this: CoreAccessible, id: number, folderData: Record<string, any>): Promise<boolean> {
@@ -52,8 +57,8 @@ export const FolderOperations = {
       if (deleteFiles) {
         // 勾选「同时删除文件」：把整个文件夹目录（含子文件夹结构）一次性移动进 .trash/，
         // 子树所有文件标记 recycled=1（可从回收站还原或清空），文件夹行直接删除。
-        const folderName = await this.getFolderName(id);
-        const folderDir = path.join(libraryPath, folderName);
+        const folderPath = await (this as any).getFolderPath(id);
+        const folderDir = path.join(libraryPath, folderPath);
 
         // 收集整个子树的文件夹 id（含自身）
         const subtreeIds: number[] = [id];
@@ -122,15 +127,15 @@ export const FolderOperations = {
         await this.deleteFolder(child.id, deleteFiles);
       }
 
-      const folderName = await this.getFolderName(id);
       const files = await this.getSql('SELECT * FROM files WHERE folder_id = ?', [id]);
       for (const row of files) {
         await (this as any)._moveFileToFolder(this.rowToMap(row).id, null);
       }
 
+      const folderPath = await (this as any).getFolderPath(id);
       const result = await this.runSql('DELETE FROM folders WHERE id = ?', [id]);
 
-      const folderDir = path.join(libraryPath, folderName);
+      const folderDir = path.join(libraryPath, folderPath);
       try {
         if (fs.existsSync(folderDir) && fs.readdirSync(folderDir).length === 0) {
           fs.rmdirSync(folderDir);

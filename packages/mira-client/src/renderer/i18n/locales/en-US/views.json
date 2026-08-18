@@ -83,7 +83,8 @@
     "searchTags": "Search tags...",
     "addTag": "Add tag",
     "emptyTrash": "Empty trash",
-    "search": "Search"
+    "search": "Search",
+    "locateFolder": "Reveal in file explorer"
   },
   "sidebarToolbar": {
     "import": "Import",

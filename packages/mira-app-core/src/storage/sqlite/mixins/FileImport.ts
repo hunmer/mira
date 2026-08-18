@@ -82,8 +82,8 @@ export const FileImport = {
     const file = this.rowToMap(rows[0]);
     const libraryPath = await this.getLibraryPath();
 
-    const srcFolderName = await this.getFolderName(file.folder_id);
-    const destFolderName = await this.getFolderName(folderId ?? undefined);
+    const srcFolderName = await (this as any).getFolderPath(file.folder_id);
+    const destFolderName = await (this as any).getFolderPath(folderId ?? undefined);
 
     if (srcFolderName !== destFolderName) {
       const srcPath = path.join(libraryPath, srcFolderName, file.name);

@@ -1,5 +1,5 @@
 <template>
-  <div class="w-80 flex-shrink-0 bg-background flex flex-col border-l border-border">
+  <div class="flex-shrink-0 bg-background flex flex-col border-l border-border">
     <!-- 内容区域 -->
     <div class="flex-grow overflow-y-auto p-4">
       <!-- 详细信息内容 -->

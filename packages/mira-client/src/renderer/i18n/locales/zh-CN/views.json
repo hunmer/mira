@@ -83,7 +83,8 @@
     "searchTags": "搜索标签...",
     "addTag": "添加标签",
     "emptyTrash": "清空回收站",
-    "search": "搜索"
+    "search": "搜索",
+    "locateFolder": "定位到文件夹"
   },
   "sidebarToolbar": {
     "import": "导入",

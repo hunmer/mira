@@ -268,8 +268,8 @@ export class LibraryServerDataSQLite {
 
   async getItemPath(item: Record<string, any>): Promise<string> {
     const libraryPath = await this.getLibraryPath();
-    const folderName = await this.getFolderName(item.folder_id);
-    return path.join(libraryPath, folderName);
+    const folderPath = await this.getFolderPath(item.folder_id);
+    return path.join(libraryPath, folderPath);
   }
 
   getPublicURL(url: string): string {
@@ -288,8 +288,8 @@ export class LibraryServerDataSQLite {
     // 回收站文件：物理位置已被移到 .trash/，软删时 path 列已写入 .trash 绝对路径，直接读它
     if (item.recycled) return item.path || '';
     const libraryPath = await this.getLibraryPath();
-    const folderName = await this.getFolderName(item.folder_id);
-    return path.join(libraryPath, folderName, item.name);
+    const folderPath = await this.getFolderPath(item.folder_id);
+    return path.join(libraryPath, folderPath, item.name);
   }
 
   async getItemThumbPath(item: Record<string, any>, options?: { isUrlFile: boolean }): Promise<string> {
@@ -408,6 +408,21 @@ export class LibraryServerDataSQLite {
     // 未分类文件（folder_id 为空）存放在素材库根目录，返回空串让 path.join 自然落到根目录。
     // 不再返回字面量 '未分类'，避免每次上传未分类文件都在素材库下创建物理「未分类」子文件夹。
     return '';
+  }
+
+  async getFolderPath(folderId?: number): Promise<string> {
+    if (!folderId) return '';
+    const parts: string[] = [];
+    const visited = new Set<number>();
+    let currentId: number | null = folderId;
+    while (currentId && !visited.has(currentId)) {
+      visited.add(currentId);
+      const folder = await this.getFolder(currentId);
+      if (!folder) break;
+      parts.unshift(folder.title);
+      currentId = folder.parent_id ?? null;
+    }
+    return path.join(...parts);
   }
 
   // --- SQL 基础操作 ---

@@ -13,6 +13,7 @@ export interface CoreAccessible {
   getSql(sql: string, params?: any[]): Promise<any[]>;
   rowToMap(row: any): Record<string, any>;
   getFolderName(folderId?: number): Promise<string>;
+  getFolderPath(folderId?: number): Promise<string>;
   getLibraryPath(): Promise<string>;
   getItemPath(item: Record<string, any>): Promise<string>;
   getItemFilePath(item: Record<string, any>, options?: { isUrlFile: boolean }): Promise<string>;

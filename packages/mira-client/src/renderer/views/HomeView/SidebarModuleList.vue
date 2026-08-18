@@ -23,6 +23,9 @@ import {
   ContextMenuItem,
 } from '@/components/ui/context-menu'
 import { useHomeSidebarLayoutStore } from '@/renderer/stores/homeSidebarLayout'
+import { useLibraryStore } from '@/renderer/stores/library'
+import { useSettingsStore } from '@/renderer/stores/settings'
+import { useServerListStore } from '@/renderer/stores/serverList'
 import { miraSDKService } from '@/renderer/services/MiraSDKService'
 import { getModuleDef, type SidebarModuleId } from './sidebarModules'
 import { useTabs } from '@/renderer/composables/useTabs'
@@ -35,6 +38,9 @@ defineOptions({ name: 'SidebarModuleList' })
 
 const { t } = useI18n()
 const { createTabFromRegisteredType } = useTabs()
+const libraryStore = useLibraryStore()
+const settingsStore = useSettingsStore()
+const serverListStore = useServerListStore()
 
 const props = defineProps<{
   homeController: {
@@ -87,7 +93,57 @@ function importMenuItems(type: 'folder' | 'tag', item: any | null): MenuItem[] {
         { label: t('business.homeHeader.importFromUrl'), icon: 'cloud_download', command: () => { importTarget.value = target; importHandler.handleUrlImport() } },
       ],
     },
+    // 定位到文件夹（仅文件夹树）：在系统资源管理器中显示该文件夹的物理目录
+    ...(type === 'folder' && item && libraryLocalPath() ? [{
+      label: t('views.sidebarModuleList.locateFolder'),
+      icon: 'my_location',
+      command: () => {
+        const root = libraryLocalPath()
+        const rel = folderTreePath(String(item.id))
+        if (!root || !rel) return
+        const sep = root.includes('\\') ? '\\' : '/'
+        ;(window as any).electronAPI?.fs?.showItemInFolder(root.replace(/[\\/]+$/, '') + sep + rel.replace(/\//g, sep))
+      },
+    }] : []),
   ]
+}
+
+/**
+ * 从侧边栏文件夹树回溯目标文件夹的嵌套相对路径（与服务端 getFolderPath 同规则：
+ * 沿 parent 链拼各级 title），找不到返回 null。
+ */
+function folderTreePath(targetId: string): string | null {
+  const walk = (nodes: any[], trail: string[]): string | null => {
+    for (const node of nodes || []) {
+      const title = node.originalData?.title ?? node.label
+      if (String(node.id) === String(targetId)) return [...trail, title].join('/')
+      const found = walk(node.children, [...trail, title])
+      if (found) return found
+    }
+    return null
+  }
+  return walk(props.homeController.folderTree.value, [])
+}
+
+/**
+ * 当前素材库根目录映射为本机可访问路径（与 SidebarLibrarySelector.getLibraryLocalPath 同规则：
+ * Docker 环境经 SMB 配置换算），无法映射（如 Docker 未配 SMB）时返回 null。
+ */
+function libraryLocalPath(): string | null {
+  const collection = libraryStore.currentLibrary
+  if (!collection?.path) return null
+  const isDocker = settingsStore.systemHealth?.isDocker ?? false
+  const smb = serverListStore.activeServer?.smb
+  if (!isDocker) return collection.path
+  if (!smb?.enabled || !smb.smbPath) return null
+  const smbPath = smb.smbPath
+  const sep = smbPath.includes('/') ? '/' : '\\'
+  const normalizedSmbPath = smbPath.endsWith(sep) ? smbPath : smbPath + sep
+  if (smb.mountPath) {
+    const mountPrefix = smb.mountPath.endsWith('/') ? smb.mountPath + '/' : smb.mountPath
+    return collection.path.replace(mountPrefix, normalizedSmbPath).replace(/\//g, sep)
+  }
+  return normalizedSmbPath + collection.path.replace(/^\//, '').replace(/\//g, sep)
 }
 
 // ============================================

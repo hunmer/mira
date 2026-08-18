@@ -88,7 +88,10 @@
                   <div class="folder-card-button" role="button" tabindex="0" :title="item.label"
                     @click="handleChildFolderSelect(item.raw, $event)"
                     @keydown.enter.prevent="handleChildFolderSelect(item.raw, $event)"
-                    @keydown.space.prevent="handleChildFolderSelect(item.raw, $event)">
+                    @keydown.space.prevent="handleChildFolderSelect(item.raw, $event)"
+                    @dragover.prevent.stop="canUpload && handleDragOver($event)"
+                    @dragleave.prevent.stop="canUpload && handleDragLeave($event)"
+                    @drop.prevent.stop="canUpload && handleDrop($event, String(item.raw.id))">
                     <Folder :size="folderCardUiSize" :label="item.label" :badge="item.count ?? 0"
                       :thumbnail="folderCoverUrls[String(item.raw.id)]"
                       :custom-color="getFolderColor(item.raw.color)" />
@@ -661,7 +664,7 @@ const handleDragLeave = (e: DragEvent) => {
   }
 }
 
-const handleDrop = async (e: DragEvent) => {
+const handleDrop = async (e: DragEvent, targetFolderId?: string) => {
   isDragOver.value = false
   if ((window as any).__miraInternalDrag) return
 
@@ -671,7 +674,9 @@ const handleDrop = async (e: DragEvent) => {
     const urls = uriList.split(/\r?\n/).map((s) => s.trim()).filter((s) => /^https?:\/\//i.test(s))
     if (urls.length > 0) {
       const folder = props.filters?.folder
-      const folderIdNum = folder != null && Number.isFinite(Number(folder)) ? Number(folder) : null
+      const folderIdNum = targetFolderId != null
+        ? Number(targetFolderId)
+        : (folder != null && Number.isFinite(Number(folder)) ? Number(folder) : null)
       const tags = props.filters?.tags
       urlImportStore.open({ urls, folderId: folderIdNum, tagIds: Array.isArray(tags) ? tags.map(String) : [] })
       return
@@ -681,7 +686,8 @@ const handleDrop = async (e: DragEvent) => {
 
   const files = Array.from(e.dataTransfer.files)
   const folder = props.filters?.folder
-  const folderId = folder != null && Number.isFinite(Number(folder)) ? String(folder) : undefined
+  const folderId = targetFolderId
+    || (folder != null && Number.isFinite(Number(folder)) ? String(folder) : undefined)
   const tags = props.filters?.tags
   const tagIds = Array.isArray(tags) ? tags.map(String) : []
 
