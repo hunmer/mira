@@ -44,6 +44,10 @@ jobs:
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
 
+    - name: Materialize procm-mcp SDK links
+      run: |
+        node -e "const fs=require('fs'); for (const p of ['packages/mira-client','packages/mira-app-server']) { const t=p+'/node_modules/@hunmer/procm-mcp-sdk'; fs.rmSync(t,{recursive:true,force:true}); fs.cpSync('../procm-mcp/packages/procm-sdk',t,{recursive:true}); }"
+
     - name: Build workspace dependencies
       run: pnpm --filter "@hunmer/vue-masonry" --filter "mira-app-core" build
 
