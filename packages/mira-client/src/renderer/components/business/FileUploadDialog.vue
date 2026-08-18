@@ -256,9 +256,9 @@
                     :gap="12"
                     :get-meta="getFileMeta"
                     :layout-mode="'fill'"
-                    :enter-animation="true"
+                    :enter-animation="false"
                     :exit-animation="true"
-                    :layout-transition="true"
+                    :layout-transition="false"
                     :lazy-root-margin="'300px'"
                   >
                     <template #default="{ item: file }">
@@ -276,7 +276,7 @@
                           <img
                             v-if="file.preview && isImageFile(file.file.type)"
                             :src="file.preview"
-                            class="w-full h-full object-cover"
+                            class="w-full h-full object-contain"
                             alt=""
                           />
                           <!-- 视频预览 -->
@@ -284,7 +284,7 @@
                             <img
                               v-if="file.preview"
                               :src="file.preview"
-                              class="w-full h-full object-cover"
+                              class="w-full h-full object-contain"
                               alt=""
                             />
                             <span v-else class="material-icons text-4xl text-purple-400">videocam</span>
@@ -610,12 +610,18 @@ function getFileMeta(file: PendingFile, _index: number): MasonryItemMeta {
   return { height: 220, lazy: false }
 }
 
-// Masonry 实例引用。getMeta 是 prop getter 非响应式，需在数据/比例变化时手动刷新布局：
-//  - pendingFiles 变化（增删文件）
-//  - ratios 变化（preview 异步加载完成后拿到真实比例，getRatio 返回值随之改变）
+// Masonry 会响应 data 数组的增删；这里只在图片比例批量发布时手动刷新 getMeta 布局。
 const masonryRef = ref<InstanceType<typeof Masonry>>()
-const refreshLayout = () => nextTick(() => masonryRef.value?.refresh())
-watch([pendingFiles, ratios], refreshLayout, { flush: 'post', deep: true })
+const refreshLayout = () => nextTick(() => {
+  masonryRef.value?.refresh()
+  if (import.meta.env.DEV) {
+    console.debug('[FileUploadPerf] masonry layout refreshed', {
+      files: displayFiles.value.length,
+      ratios: Object.keys(ratios.value).length
+    })
+  }
+})
+watch(ratios, refreshLayout, { flush: 'post' })
 
 function handleFileClick(file: any, event: MouseEvent) {
   selectionBoxRef.value?.handleItemClick(file.id, event)

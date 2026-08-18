@@ -74,6 +74,11 @@ export function useUploadQueue() {
             type: pendingFile.file.type || 'application/octet-stream',
             lastModified: Date.now()
           })
+        } else if (pendingFile.sourceBytes) {
+          uploadFile = new File([Uint8Array.from(pendingFile.sourceBytes)], pendingFile.file.name, {
+            type: pendingFile.file.type || 'application/octet-stream',
+            lastModified: Date.now()
+          })
         }
 
         const result = await mediaStore.uploadFile(

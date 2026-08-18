@@ -22,6 +22,8 @@ export interface Tag {
 export interface PendingFile {
   id: string
   file: File
+  /** 本地节点携带的原始字节，延迟到预览/上传时再构造 File，避免入列阶段复制大文件。 */
+  sourceBytes?: number[]
   folderId?: string
   tags?: string[]
   preview?: string

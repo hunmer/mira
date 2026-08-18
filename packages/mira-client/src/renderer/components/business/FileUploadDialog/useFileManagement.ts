@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { markRaw, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useToast } from '@/renderer/composables/useToast'
 import type { PendingFile, LocalFsNode } from './types'
@@ -36,6 +36,31 @@ export function useFileManagement() {
   const pendingFiles = ref<PendingFile[]>([])
   const selectedPendingIds = ref<string[]>([])
   const isDragOver = ref(false)
+  const pendingPreviewUpdates = new Map<PendingFile, string>()
+  let previewUpdateFrame: number | null = null
+
+  function schedulePreviewUpdate(file: PendingFile, preview: string) {
+    pendingPreviewUpdates.set(file, preview)
+    if (previewUpdateFrame !== null) return
+
+    previewUpdateFrame = window.requestAnimationFrame(() => {
+      previewUpdateFrame = null
+      let updated = 0
+      for (const [pendingFile, previewUrl] of pendingPreviewUpdates) {
+        if (pendingFiles.value.includes(pendingFile)) {
+          pendingFile.preview = previewUrl
+          updated++
+        } else {
+          URL.revokeObjectURL(previewUrl)
+        }
+      }
+      pendingPreviewUpdates.clear()
+      if (updated > 0) pendingFiles.value = [...pendingFiles.value]
+      if (import.meta.env.DEV) {
+        console.debug('[FileUploadPerf] preview batch committed', { updated })
+      }
+    })
+  }
 
   function addFiles(files: File[], defaultFolderId?: string, defaultTagIds?: string[]) {
     if (files.length + pendingFiles.value.length > FILE_LIMITS.MAX_FILES_PER_BATCH) {
@@ -118,12 +143,12 @@ export function useFileManagement() {
 
     const newFiles: PendingFile[] = collected.map(({ node, dir }) => {
       const type = node.mimeType || guessMimeFromExt(node.ext)
-      const file = node.bytes
-        ? new File([Uint8Array.from(node.bytes)], node.name, { type, lastModified: Date.now() })
-        : new File([], node.name, { type, lastModified: Date.now() })
+      // 仅创建元数据占位 File；原始字节延迟到预览/上传阶段处理，避免拖入时同步复制大文件。
+      const file = new File([], node.name, { type, lastModified: Date.now() })
       const pending: PendingFile = {
         id: `pending-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         file,
+        sourceBytes: node.bytes ? markRaw(node.bytes) : undefined,
         localPath: node.path || undefined,
         localDirPath: dir,
         localSize: node.size,
@@ -158,11 +183,13 @@ export function useFileManagement() {
             const bytesRes = await window.electronAPI.fs.readFileBytes(pf.localPath)
             if (!bytesRes.success || !bytesRes.data) continue
             realFile = new File([bytesRes.data], pf.file.name, { type: pf.file.type })
+          } else if (pf.sourceBytes) {
+            realFile = new File([Uint8Array.from(pf.sourceBytes)], pf.file.name, { type: pf.file.type })
           } else if (realFile.size === 0) {
             continue
           }
-          pf.preview = await createPreviewUrl(realFile)
-          pendingFiles.value = [...pendingFiles.value]
+          const preview = await createPreviewUrl(realFile)
+          if (preview) schedulePreviewUpdate(pf, preview)
         } catch (error) {
           console.warn(`生成本地文件 ${pf.file.name} 预览失败:`, error)
         }
@@ -172,14 +199,20 @@ export function useFileManagement() {
   }
 
   async function generatePreviews(files: File[], newFiles: PendingFile[]) {
-    for (let i = 0; i < files.length; i++) {
-      try {
-        newFiles[i].preview = await createPreviewUrl(files[i])
-        pendingFiles.value = [...pendingFiles.value]
-      } catch (error) {
-        console.warn(`生成文件 ${files[i].name} 预览失败:`, error)
+    const PREVIEW_CONCURRENCY = 4
+    let cursor = 0
+    const run = async () => {
+      while (cursor < files.length) {
+        const i = cursor++
+        try {
+          const preview = await createPreviewUrl(files[i])
+          if (preview) schedulePreviewUpdate(newFiles[i], preview)
+        } catch (error) {
+          console.warn(`生成文件 ${files[i].name} 预览失败:`, error)
+        }
       }
     }
+    await Promise.all(Array.from({ length: Math.min(PREVIEW_CONCURRENCY, files.length) }, run))
   }
 
   async function createPreviewUrl(file: File): Promise<string | undefined> {

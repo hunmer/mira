@@ -3,6 +3,7 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import { Toaster } from '@/components/ui/sonner'
 import NotificationCard from './NotificationCard.vue'
+import MoreNotifications from './MoreNotifications.vue'
 import { createFloatingWindowBridge, type FloatingWindowBridge } from '../floating-window/bridge'
 import type {
   FloatingWindowPosition,
@@ -24,6 +25,10 @@ type ToasterPosition =
 
 const isDark = ref(false)
 const toasterPosition = ref<ToasterPosition>('bottom-right')
+const MAX_VISIBLE_NOTIFICATIONS = 3
+const MORE_TOAST_ID = '__notification-more__'
+let allItems: NotificationItem[] = []
+let pageStart = 0
 
 /** 活跃 toast id 集合，与主进程下发的 items 保持对齐 */
 const activeIds = new Set<string | number>()
@@ -54,21 +59,15 @@ function mapPosition(position?: FloatingWindowPosition): ToasterPosition {
 }
 
 /** 以主进程 items 为唯一数据源，创建 / 更新 / 移除对应 toast */
-function syncToasts(payload: NotificationPayload): void {
-  const items: NotificationItem[] = Array.isArray((payload as any).__items)
-    ? (payload as any).__items
-    : [payload]
-  toasterPosition.value = mapPosition(payload.position)
-  // slide 入场方向（主进程按屏幕位置下发）
-  const animDir = (payload as any).__animDir
-
+function renderToasts(items: NotificationItem[], animDir?: 'left' | 'right' | 'up' | 'down'): void {
+  const visibleItems = items.slice(pageStart, pageStart + MAX_VISIBLE_NOTIFICATIONS)
   const ids = new Set<string | number>()
-  items.forEach((item, index) => {
+  visibleItems.forEach((item, visibleIndex) => {
+    const index = pageStart + visibleIndex
     const id = toastIdOf(item, index)
     ids.add(id)
     toast.custom(NotificationCard, {
       id,
-      // 自动消失由主进程计时（notification-auto-hide），渲染层常驻
       duration: Infinity,
       unstyled: true,
       componentProps: {
@@ -80,11 +79,41 @@ function syncToasts(payload: NotificationPayload): void {
       },
     })
   })
+  const remaining = Math.max(items.length - pageStart - visibleItems.length, 0)
+  if (remaining > 0) {
+    ids.add(MORE_TOAST_ID)
+    toast.custom(MoreNotifications, {
+      id: MORE_TOAST_ID,
+      duration: Infinity,
+      unstyled: true,
+      componentProps: {
+        count: remaining,
+        onClick: showNextPage,
+      },
+    })
+  }
   for (const id of activeIds) {
     if (!ids.has(id)) toast.dismiss(id)
   }
+  if (!ids.has(MORE_TOAST_ID)) toast.dismiss(MORE_TOAST_ID)
   activeIds.clear()
   ids.forEach((id) => activeIds.add(id))
+}
+
+function syncToasts(payload: NotificationPayload): void {
+  const items: NotificationItem[] = Array.isArray((payload as any).__items)
+    ? (payload as any).__items
+    : [payload]
+  allItems = items
+  pageStart = 0
+  toasterPosition.value = mapPosition(payload.position)
+  renderToasts(items, (payload as any).__animDir)
+}
+
+function showNextPage(): void {
+  if (pageStart + MAX_VISIBLE_NOTIFICATIONS >= allItems.length) return
+  pageStart += MAX_VISIBLE_NOTIFICATIONS
+  renderToasts(allItems)
 }
 
 function sendClick(item: NotificationItem): void {
@@ -154,6 +183,7 @@ onMounted(() => {
         syncToasts(data.payload)
       } else if (data.type === 'notification-auto-hide') {
         for (const id of activeIds) toast.dismiss(id)
+        toast.dismiss(MORE_TOAST_ID)
         activeIds.clear()
       }
     },
@@ -187,7 +217,7 @@ function preventDefault(e: Event): void {
       :theme="isDark ? 'dark' : 'light'"
       :position="toasterPosition"
       :expand="true"
-      :visible-toasts="10"
+      :visible-toasts="4"
       :gap="8"
       offset="0px"
       :duration="Infinity"
