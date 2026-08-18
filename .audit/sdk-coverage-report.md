@@ -1,6 +1,6 @@
 # Mira Server API 与 SDK 覆盖报告
 
-生成时间: 2026-08-14T08:50:57.903Z
+生成时间: 2026-08-18T11:34:56.810Z
 
 匹配键: HTTP method + 归一化路径（动态参数统一为 `:param`，query string 不参与匹配）。
 
@@ -8,13 +8,13 @@
 
 | 分类 | 数量 | 说明 |
 |------|------|------|
-| covered | 114 | SDK 有等价 method+path |
+| covered | 116 | SDK 有等价 method+path |
 | partial | undefined | path 匹配但 method 不匹配 |
-| missing | 12 | SDK 无对应方法 |
+| missing | 11 | SDK 无对应方法 |
 | excluded | 13 | 资源/流式/SPA/通配, 不生成普通 CRUD |
 | dynamic | 7 | 插件运行时注册/正则路由 |
 
-固定 JSON API 共 126 条, 已 100% 分类（covered 114 / partial undefined / missing 12）。
+固定 JSON API 共 127 条, 已 100% 分类（covered 116 / partial undefined / missing 11）。
 
 ## Missing (SDK 无对应方法)
 
@@ -23,11 +23,10 @@
 | POST | `/api/devices/:param/message` | devices | packages/mira-app-server/src/routes/DeviceRoutes.ts:46 | - |  |
 | POST | `/api/devices/:param/test` | devices | packages/mira-app-server/src/routes/DeviceRoutes.ts:47 | - |  |
 | GET | `/api/devices/:param/messages` | devices | packages/mira-app-server/src/routes/DeviceRoutes.ts:48 | - |  |
-| GET | `/api/libraries/:param/stats` | libraries | packages/mira-app-server/src/routes/LibraryRoutes.ts:397 | - |  |
-| POST | `/api/libraries/:param/query` | libraries | packages/mira-app-server/src/routes/LibraryRoutes.ts:467 | - |  |
-| POST | `/api/libraries/:param/execute` | libraries | packages/mira-app-server/src/routes/LibraryRoutes.ts:507 | - |  |
-| GET | `/api/libraries/:param/schema/:param` | libraries | packages/mira-app-server/src/routes/LibraryRoutes.ts:551 | - |  |
-| PUT | `/api/libraries/:param/record/:param/:param` | libraries | packages/mira-app-server/src/routes/LibraryRoutes.ts:588 | - |  |
+| POST | `/api/libraries/:param/query` | libraries | packages/mira-app-server/src/routes/LibraryRoutes.ts:489 | - |  |
+| POST | `/api/libraries/:param/execute` | libraries | packages/mira-app-server/src/routes/LibraryRoutes.ts:529 | - |  |
+| GET | `/api/libraries/:param/schema/:param` | libraries | packages/mira-app-server/src/routes/LibraryRoutes.ts:573 | - |  |
+| PUT | `/api/libraries/:param/record/:param/:param` | libraries | packages/mira-app-server/src/routes/LibraryRoutes.ts:610 | - |  |
 | POST | `/api/plugins/:param/start` | plugins | packages/mira-app-server/src/routes/PluginRoutes.ts:803 | - |  |
 | POST | `/api/plugins/:param/stop` | plugins | packages/mira-app-server/src/routes/PluginRoutes.ts:851 | - |  |
 | GET | `/api/user/avatar/:param` | user | packages/mira-app-server/src/routes/UserRouter.ts:233 | - |  |
@@ -42,16 +41,16 @@
 
 | method | path | 域 | 来源 | SDK | 备注 |
 |--------|------|----|------|-----|------|
-| GET | `/api/files/thumb/:param/:param` | files | packages/mira-app-server/src/routes/FileRoutes.ts:358 | - | thumbnail image stream |
-| GET | `/api/files/extra/:param/:param` | files | packages/mira-app-server/src/routes/FileRoutes.ts:375 | - | extra file resource stream |
-| GET | `/api/files/extra/:param/:param/*` | files | packages/mira-app-server/src/routes/FileRoutes.ts:393 | - | extra file resource wildcard |
-| GET | `/api/files/preview/:param/:param/index.m3u8` | files | packages/mira-app-server/src/routes/FileRoutes.ts:451 | - | HLS manifest resource |
-| GET | `/api/files/preview/:param/:param/segment/:param.ts` | files | packages/mira-app-server/src/routes/FileRoutes.ts:480 | - | HLS segment resource |
-| GET | `/api/files/preview/:param/:param` | files | packages/mira-app-server/src/routes/FileRoutes.ts:509 | - | preview file stream |
-| GET | `/api/files/file/:param/:param` | files | packages/mira-app-server/src/routes/FileRoutes.ts:540 | - | raw file stream (Range support) |
-| GET | `/api/plugins/:param/:param/*` | api-root | packages/mira-app-server/src/routes/HttpRouter.ts:148 | - | plugin static/resource wildcard |
+| GET | `/api/files/thumb/:param/:param` | files | packages/mira-app-server/src/routes/FileRoutes.ts:355 | - | thumbnail image stream |
+| GET | `/api/files/extra/:param/:param` | files | packages/mira-app-server/src/routes/FileRoutes.ts:372 | - | extra file resource stream |
+| GET | `/api/files/extra/:param/:param/*` | files | packages/mira-app-server/src/routes/FileRoutes.ts:390 | - | extra file resource wildcard |
+| GET | `/api/files/preview/:param/:param/index.m3u8` | files | packages/mira-app-server/src/routes/FileRoutes.ts:448 | - | HLS manifest resource |
+| GET | `/api/files/preview/:param/:param/segment/:param.ts` | files | packages/mira-app-server/src/routes/FileRoutes.ts:477 | - | HLS segment resource |
+| GET | `/api/files/preview/:param/:param` | files | packages/mira-app-server/src/routes/FileRoutes.ts:506 | - | preview file stream |
+| GET | `/api/files/file/:param/:param` | files | packages/mira-app-server/src/routes/FileRoutes.ts:537 | - | raw file stream (Range support) |
+| GET | `/api/plugins/:param/:param/*` | api-root | packages/mira-app-server/src/routes/HttpRouter.ts:147 | - | plugin static/resource wildcard |
 | GET | `/api/plugins/install/stream` | plugins | packages/mira-app-server/src/routes/PluginRoutes.ts:369 | - | SSE install progress stream |
-| GET | `/api/plugins/:param/icon/:param` | plugins | packages/mira-app-server/src/routes/PluginRoutes.ts:1017 | - | plugin icon image resource |
+| GET | `/api/plugins/:param/icon/:param` | plugins | packages/mira-app-server/src/routes/PluginRoutes.ts:1016 | - | plugin icon image resource |
 | GET | `/` | http-server-direct | packages/mira-app-server/src/HttpServer.ts:285 | - | root redirect to /web/ |
 | GET | `/server-plugins/:param/:param/*` | http-server-direct | packages/mira-app-server/src/HttpServer.ts:311 | - | plugin static resource wildcard |
 | GET | `/api/logs/stream` | http-server-direct | packages/mira-app-server/src/HttpServer.ts:467 | - | SSE log stream, not JSON API |
@@ -112,6 +111,7 @@
 | POST | `/api/files/rename` | files | File.renameFile |
 | POST | `/api/files/update` | files | File.updateFile |
 | GET | `/api/folders/all` | folders | Folder.getAll |
+| POST | `/api/folders/covers` | folders | Folder.getCovers |
 | POST | `/api/folders/query` | folders | Folder.query |
 | POST | `/api/folders/create` | folders | Folder.create |
 | PUT | `/api/folders/update` | folders | Folder.update |
@@ -137,6 +137,7 @@
 | POST | `/api/libraries` | libraries | Library.create |
 | PUT | `/api/libraries/:param` | libraries | Library.update |
 | PATCH | `/api/libraries/:param/status` | libraries | Library.setStatus |
+| GET | `/api/libraries/:param/stats` | libraries | Library.stats |
 | DELETE | `/api/libraries/:param` | libraries | Library.delete |
 | GET | `/api/plugins/web` | plugins | Plugin.getWeb |
 | GET | `/api/plugins` | plugins | Plugin.getAll |

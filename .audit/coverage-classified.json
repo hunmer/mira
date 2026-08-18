@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-08-14T08:50:57.901Z",
+  "generatedAt": "2026-08-18T11:34:56.809Z",
   "summary": {
-    "covered": 114,
-    "missing": 12,
+    "covered": 116,
+    "missing": 11,
     "excluded": 13,
     "dynamic": 7
   },
@@ -34,7 +34,7 @@
       "path": "/api/admins/:param",
       "domain": "admins",
       "file": "packages/mira-app-server/src/routes/AdminsRouter.ts",
-      "line": 112,
+      "line": 111,
       "category": "covered",
       "sdkMethods": [
         "Admin.update"
@@ -45,7 +45,7 @@
       "path": "/api/admins/:param",
       "domain": "admins",
       "file": "packages/mira-app-server/src/routes/AdminsRouter.ts",
-      "line": 158,
+      "line": 156,
       "category": "covered",
       "sdkMethods": [
         "Admin.delete"
@@ -56,7 +56,7 @@
       "path": "/api/admins/:param/tokens",
       "domain": "admins",
       "file": "packages/mira-app-server/src/routes/AdminsRouter.ts",
-      "line": 203,
+      "line": 200,
       "category": "covered",
       "sdkMethods": [
         "Admin.getTokens"
@@ -67,7 +67,7 @@
       "path": "/api/admins/:param/tokens",
       "domain": "admins",
       "file": "packages/mira-app-server/src/routes/AdminsRouter.ts",
-      "line": 214,
+      "line": 211,
       "category": "covered",
       "sdkMethods": [
         "Admin.createToken"
@@ -78,7 +78,7 @@
       "path": "/api/admins/:param/tokens/:param",
       "domain": "admins",
       "file": "packages/mira-app-server/src/routes/AdminsRouter.ts",
-      "line": 235,
+      "line": 232,
       "category": "covered",
       "sdkMethods": [
         "Admin.updateToken"
@@ -89,7 +89,7 @@
       "path": "/api/admins/:param/tokens/:param",
       "domain": "admins",
       "file": "packages/mira-app-server/src/routes/AdminsRouter.ts",
-      "line": 256,
+      "line": 253,
       "category": "covered",
       "sdkMethods": [
         "Admin.deleteToken"
@@ -100,7 +100,7 @@
       "path": "/api/auth/codes",
       "domain": "auth",
       "file": "packages/mira-app-server/src/routes/AuthRouter.ts",
-      "line": 83,
+      "line": 82,
       "category": "covered",
       "sdkMethods": [
         "Auth.getCodes"
@@ -111,7 +111,7 @@
       "path": "/api/auth/register",
       "domain": "auth",
       "file": "packages/mira-app-server/src/routes/AuthRouter.ts",
-      "line": 152,
+      "line": 151,
       "category": "covered",
       "sdkMethods": [
         "Auth.register"
@@ -122,7 +122,7 @@
       "path": "/api/auth/login",
       "domain": "auth",
       "file": "packages/mira-app-server/src/routes/AuthRouter.ts",
-      "line": 226,
+      "line": 222,
       "category": "covered",
       "sdkMethods": [
         "Auth.login"
@@ -133,7 +133,7 @@
       "path": "/api/auth/logout",
       "domain": "auth",
       "file": "packages/mira-app-server/src/routes/AuthRouter.ts",
-      "line": 276,
+      "line": 268,
       "category": "covered",
       "sdkMethods": [
         "Auth.logout"
@@ -144,7 +144,7 @@
       "path": "/api/auth/verify",
       "domain": "auth",
       "file": "packages/mira-app-server/src/routes/AuthRouter.ts",
-      "line": 299,
+      "line": 290,
       "category": "covered",
       "sdkMethods": [
         "Auth.verify"
@@ -392,7 +392,7 @@
       "path": "/api/files/thumb/:param/:param",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 358,
+      "line": 355,
       "category": "excluded",
       "sdkMethods": [],
       "note": "thumbnail image stream"
@@ -402,7 +402,7 @@
       "path": "/api/files/extra/:param/:param",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 375,
+      "line": 372,
       "category": "excluded",
       "sdkMethods": [],
       "note": "extra file resource stream"
@@ -412,7 +412,7 @@
       "path": "/api/files/extra/:param/:param/*",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 393,
+      "line": 390,
       "category": "excluded",
       "sdkMethods": [],
       "note": "extra file resource wildcard"
@@ -422,7 +422,7 @@
       "path": "/api/files/cover/:param/:param",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 418,
+      "line": 415,
       "category": "covered",
       "sdkMethods": [
         "File.setCover"
@@ -433,7 +433,7 @@
       "path": "/api/files/preview/:param/:param/index.m3u8",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 451,
+      "line": 448,
       "category": "excluded",
       "sdkMethods": [],
       "note": "HLS manifest resource"
@@ -443,7 +443,7 @@
       "path": "/api/files/preview/:param/:param/segment/:param.ts",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 480,
+      "line": 477,
       "category": "excluded",
       "sdkMethods": [],
       "note": "HLS segment resource"
@@ -453,7 +453,7 @@
       "path": "/api/files/preview/:param/:param",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 509,
+      "line": 506,
       "category": "excluded",
       "sdkMethods": [],
       "note": "preview file stream"
@@ -463,7 +463,7 @@
       "path": "/api/files/file/:param/:param",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 540,
+      "line": 537,
       "category": "excluded",
       "sdkMethods": [],
       "note": "raw file stream (Range support)"
@@ -473,7 +473,7 @@
       "path": "/api/files/:param/trash",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 633,
+      "line": 630,
       "category": "covered",
       "sdkMethods": [
         "File.emptyTrash"
@@ -484,7 +484,7 @@
       "path": "/api/files/batch-delete",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 681,
+      "line": 678,
       "category": "covered",
       "sdkMethods": [
         "File.batchDelete"
@@ -495,7 +495,7 @@
       "path": "/api/files/batch-recover",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 802,
+      "line": 799,
       "category": "covered",
       "sdkMethods": [
         "File.batchRestoreFiles"
@@ -506,7 +506,7 @@
       "path": "/api/files/recover",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 882,
+      "line": 879,
       "category": "covered",
       "sdkMethods": [
         "File.restoreFile"
@@ -517,7 +517,7 @@
       "path": "/api/files/:param/:param",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 947,
+      "line": 944,
       "category": "covered",
       "sdkMethods": [
         "File.delete"
@@ -528,7 +528,7 @@
       "path": "/api/files/metadata",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 1054,
+      "line": 1049,
       "category": "covered",
       "sdkMethods": [
         "File.getMetadataByIds"
@@ -539,7 +539,7 @@
       "path": "/api/files/getFiles",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 1100,
+      "line": 1095,
       "category": "covered",
       "sdkMethods": [
         "File.getFiles"
@@ -550,7 +550,7 @@
       "path": "/api/files/getFile",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 1153,
+      "line": 1148,
       "category": "covered",
       "sdkMethods": [
         "File.getFile"
@@ -561,7 +561,7 @@
       "path": "/api/files/getPreviewViewers",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 1219,
+      "line": 1214,
       "category": "covered",
       "sdkMethods": [
         "File.getPreviewViewers"
@@ -572,7 +572,7 @@
       "path": "/api/files/rename",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 1283,
+      "line": 1278,
       "category": "covered",
       "sdkMethods": [
         "File.renameFile"
@@ -583,7 +583,7 @@
       "path": "/api/files/update",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 1341,
+      "line": 1336,
       "category": "covered",
       "sdkMethods": [
         "File.updateFile"
@@ -602,10 +602,21 @@
     },
     {
       "method": "POST",
-      "path": "/api/folders/query",
+      "path": "/api/folders/covers",
       "domain": "folders",
       "file": "packages/mira-app-server/src/routes/FolderRouter.ts",
       "line": 21,
+      "category": "covered",
+      "sdkMethods": [
+        "Folder.getCovers"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/folders/query",
+      "domain": "folders",
+      "file": "packages/mira-app-server/src/routes/FolderRouter.ts",
+      "line": 58,
       "category": "covered",
       "sdkMethods": [
         "Folder.query"
@@ -616,7 +627,7 @@
       "path": "/api/folders/create",
       "domain": "folders",
       "file": "packages/mira-app-server/src/routes/FolderRouter.ts",
-      "line": 26,
+      "line": 63,
       "category": "covered",
       "sdkMethods": [
         "Folder.create"
@@ -627,7 +638,7 @@
       "path": "/api/folders/update",
       "domain": "folders",
       "file": "packages/mira-app-server/src/routes/FolderRouter.ts",
-      "line": 36,
+      "line": 73,
       "category": "covered",
       "sdkMethods": [
         "Folder.update"
@@ -638,7 +649,7 @@
       "path": "/api/folders/sort-index",
       "domain": "folders",
       "file": "packages/mira-app-server/src/routes/FolderRouter.ts",
-      "line": 47,
+      "line": 84,
       "category": "covered",
       "sdkMethods": [
         "Folder.updateSortIndex"
@@ -649,7 +660,7 @@
       "path": "/api/folders/delete",
       "domain": "folders",
       "file": "packages/mira-app-server/src/routes/FolderRouter.ts",
-      "line": 69,
+      "line": 106,
       "category": "covered",
       "sdkMethods": [
         "Folder.delete"
@@ -660,7 +671,7 @@
       "path": "/api/folders/file/set",
       "domain": "folders",
       "file": "packages/mira-app-server/src/routes/FolderRouter.ts",
-      "line": 82,
+      "line": 119,
       "category": "covered",
       "sdkMethods": [
         "Folder.setFileFolder"
@@ -671,7 +682,7 @@
       "path": "/api/folders/file/:param",
       "domain": "folders",
       "file": "packages/mira-app-server/src/routes/FolderRouter.ts",
-      "line": 130,
+      "line": 167,
       "category": "covered",
       "sdkMethods": [
         "Folder.getFileFolder"
@@ -836,7 +847,7 @@
       "path": "/api/__DYNAMIC__",
       "domain": "api-root",
       "file": "packages/mira-app-server/src/routes/HttpRouter.ts",
-      "line": 52,
+      "line": 51,
       "category": "dynamic",
       "sdkMethods": [],
       "note": "HttpRouter plugin runtime registration"
@@ -846,7 +857,7 @@
       "path": "/api/__DYNAMIC__",
       "domain": "api-root",
       "file": "packages/mira-app-server/src/routes/HttpRouter.ts",
-      "line": 55,
+      "line": 54,
       "category": "dynamic",
       "sdkMethods": [],
       "note": "HttpRouter plugin runtime registration"
@@ -856,7 +867,7 @@
       "path": "/api/__DYNAMIC__",
       "domain": "api-root",
       "file": "packages/mira-app-server/src/routes/HttpRouter.ts",
-      "line": 58,
+      "line": 57,
       "category": "dynamic",
       "sdkMethods": [],
       "note": "HttpRouter plugin runtime registration"
@@ -866,7 +877,7 @@
       "path": "/api/__DYNAMIC__",
       "domain": "api-root",
       "file": "packages/mira-app-server/src/routes/HttpRouter.ts",
-      "line": 61,
+      "line": 60,
       "category": "dynamic",
       "sdkMethods": [],
       "note": "HttpRouter plugin runtime registration"
@@ -876,7 +887,7 @@
       "path": "/api/__DYNAMIC__",
       "domain": "api-root",
       "file": "packages/mira-app-server/src/routes/HttpRouter.ts",
-      "line": 64,
+      "line": 63,
       "category": "dynamic",
       "sdkMethods": [],
       "note": "HttpRouter plugin runtime registration"
@@ -886,7 +897,7 @@
       "path": "/api/plugins/:param/:param/*",
       "domain": "api-root",
       "file": "packages/mira-app-server/src/routes/HttpRouter.ts",
-      "line": 148,
+      "line": 147,
       "category": "excluded",
       "sdkMethods": [],
       "note": "plugin static/resource wildcard"
@@ -941,15 +952,17 @@
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
       "line": 397,
-      "category": "missing",
-      "sdkMethods": []
+      "category": "covered",
+      "sdkMethods": [
+        "Library.stats"
+      ]
     },
     {
       "method": "POST",
       "path": "/api/libraries/:param/query",
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 467,
+      "line": 489,
       "category": "missing",
       "sdkMethods": []
     },
@@ -958,7 +971,7 @@
       "path": "/api/libraries/:param/execute",
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 507,
+      "line": 529,
       "category": "missing",
       "sdkMethods": []
     },
@@ -967,7 +980,7 @@
       "path": "/api/libraries/:param/schema/:param",
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 551,
+      "line": 573,
       "category": "missing",
       "sdkMethods": []
     },
@@ -976,7 +989,7 @@
       "path": "/api/libraries/:param/record/:param/:param",
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 588,
+      "line": 610,
       "category": "missing",
       "sdkMethods": []
     },
@@ -985,7 +998,7 @@
       "path": "/api/libraries/:param",
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 634,
+      "line": 656,
       "category": "covered",
       "sdkMethods": [
         "Library.delete"
@@ -1145,7 +1158,7 @@
       "path": "/api/plugins/:param/icon/:param",
       "domain": "plugins",
       "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
-      "line": 1017,
+      "line": 1016,
       "category": "excluded",
       "sdkMethods": [],
       "note": "plugin icon image resource"
@@ -1155,7 +1168,7 @@
       "path": "/api/plugins/:param",
       "domain": "plugins",
       "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
-      "line": 1067,
+      "line": 1066,
       "category": "covered",
       "sdkMethods": [
         "Plugin.getById"

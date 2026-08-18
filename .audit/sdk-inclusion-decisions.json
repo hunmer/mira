@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-08-14T08:51:56.255Z",
+  "generatedAt": "2026-08-18T11:35:17.070Z",
   "summary": {
-    "P3": 12,
+    "P3": 11,
     "excluded": 13,
     "dynamic": 7
   },
@@ -153,20 +153,6 @@
       "reason": "plugin static/resource wildcard"
     },
     {
-      "method": "GET",
-      "path": "/api/libraries/:param/stats",
-      "category": "missing",
-      "frequency": "F0",
-      "prodSites": 0,
-      "pkgCount": 0,
-      "packages": [],
-      "priority": "P3",
-      "module": "-",
-      "batch": null,
-      "reason": "F0; 内部诊断, 与 statistics 域重复",
-      "evidence": []
-    },
-    {
       "method": "POST",
       "path": "/api/libraries/:param/query",
       "category": "missing",
@@ -270,10 +256,12 @@
       "method": "GET",
       "path": "/api/user/avatar/:param",
       "category": "missing",
-      "frequency": "F2",
-      "prodSites": 3,
-      "pkgCount": 1,
+      "frequency": "F3",
+      "prodSites": 5,
+      "pkgCount": 3,
       "packages": [
+        "mira-app-core",
+        "mira-client",
         "mira-dashboard-next"
       ],
       "priority": "P3",
@@ -281,6 +269,9 @@
       "batch": null,
       "reason": "头像为图片资源响应(sendFile); SDK 已提供 getAvatarUrl() URL builder, 按资源接口决策不建普通 GET 方法",
       "evidence": [
+        "packages/mira-app-core/src/shared/sdk/modules/UserModule.contract.test.ts:37 [test]",
+        "packages/mira-app-core/src/shared/sdk/modules/UserModule.ts:61",
+        "packages/mira-client/dist-renderer/assets/js/main-B3DmTR83.js:95",
         "packages/mira-dashboard-next/src/layouts/DefaultLayout.vue:133",
         "packages/mira-dashboard-next/src/views/mira/statistics/index.vue:368",
         "packages/mira-dashboard-next/src/views/mira/statistics/index.vue:416"

@@ -1029,6 +1029,11 @@ export class MiraSDKService {
     }
   }
 
+  async getFolderCovers(libraryId: string, folderIds: number[]) {
+    if (!this.client) throw new Error('Not connected to Mira server')
+    return await this.client.folders().getCovers(libraryId, folderIds)
+  }
+
   /**
    * 移动文件夹
    */

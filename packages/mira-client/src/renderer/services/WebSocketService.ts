@@ -367,6 +367,7 @@ class WebSocketService {
 
 // 创建单例实例
 export const webSocketService = new WebSocketService()
+let eventListenersInitialized = false
 
 /**
  * 初始化WebSocket连接并设置事件监听
@@ -752,6 +753,9 @@ function completeEagleImportNotification(data: any): boolean {
  * 设置WebSocket事件监听器
  */
 function setupEventListeners(libraryStore: any): void {
+  if (eventListenersInitialized) return
+  eventListenersInitialized = true
+
   // 监听标签事件
   webSocketService.addEventListener('tag::created', (data) => {
     console.log('Tag created:', data)

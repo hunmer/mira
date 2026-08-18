@@ -30,7 +30,7 @@ export { DatabaseModule } from './modules/DatabaseModule';
 export { DeviceModule } from './modules/DeviceModule';
 export { SystemModule } from './modules/SystemModule';
 export { TagModule } from './modules/TagModule';
-export { FolderModule } from './modules/FolderModule';
+export { FolderModule, type FolderCover } from './modules/FolderModule';
 export {
     CookieSiteModule,
     type CookieItem,

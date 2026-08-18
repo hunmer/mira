@@ -29,6 +29,11 @@ export interface FolderQuery {
     offset?: number;
 }
 
+export interface FolderCover {
+    folderId: number;
+    coverUrl: string | null;
+}
+
 /**
  * 创建文件夹请求
  */
@@ -126,6 +131,18 @@ export class FolderModule {
      */
     async getAll(libraryId: string): Promise<Folder[]> {
         return await this.httpClient.get<Folder[]>(`/api/folders/all?libraryId=${libraryId}`);
+    }
+
+    /** 批量获取可直接用于 img src 的文件夹封面 URL。 */
+    async getCovers(libraryId: string, folderIds: number[]): Promise<FolderCover[]> {
+        const covers = await this.httpClient.post<FolderCover[]>('/api/folders/covers', {
+            libraryId,
+            folderIds,
+        });
+        return covers.map(cover => ({
+            ...cover,
+            coverUrl: cover.coverUrl ? this.httpClient.getUrl(cover.coverUrl) : null,
+        }));
     }
 
     /**

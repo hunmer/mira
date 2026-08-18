@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-14T08:50:57.580Z",
+  "generatedAt": "2026-08-18T11:34:56.235Z",
   "entries": [
     {
       "module": "Admin",
@@ -667,10 +667,21 @@
       "httpMethod": "GET",
       "path": "/api/folders/all",
       "file": "packages/mira-app-core/src/shared/sdk/modules/FolderModule.ts",
-      "line": 128,
+      "line": 133,
       "hasQuery": true,
       "hasBody": false,
       "returnType": "Folder[]"
+    },
+    {
+      "module": "Folder",
+      "method": "getCovers",
+      "httpMethod": "POST",
+      "path": "/api/folders/covers",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/FolderModule.ts",
+      "line": 138,
+      "hasQuery": false,
+      "hasBody": true,
+      "returnType": "FolderCover[]"
     },
     {
       "module": "Folder",
@@ -678,7 +689,7 @@
       "httpMethod": "POST",
       "path": "/api/folders/query",
       "file": "packages/mira-app-core/src/shared/sdk/modules/FolderModule.ts",
-      "line": 137,
+      "line": 154,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "Folder[]"
@@ -689,7 +700,7 @@
       "httpMethod": "POST",
       "path": "/api/folders/create",
       "file": "packages/mira-app-core/src/shared/sdk/modules/FolderModule.ts",
-      "line": 146,
+      "line": 163,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "number"
@@ -700,7 +711,7 @@
       "httpMethod": "PUT",
       "path": "/api/folders/update",
       "file": "packages/mira-app-core/src/shared/sdk/modules/FolderModule.ts",
-      "line": 155,
+      "line": 172,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "boolean"
@@ -711,7 +722,7 @@
       "httpMethod": "DELETE",
       "path": "/api/folders/delete",
       "file": "packages/mira-app-core/src/shared/sdk/modules/FolderModule.ts",
-      "line": 165,
+      "line": 182,
       "hasQuery": true,
       "hasBody": false,
       "returnType": "BaseResponse"
@@ -722,7 +733,7 @@
       "httpMethod": "POST",
       "path": "/api/folders/file/set",
       "file": "packages/mira-app-core/src/shared/sdk/modules/FolderModule.ts",
-      "line": 177,
+      "line": 194,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "SetFileFolderResponse"
@@ -733,7 +744,7 @@
       "httpMethod": "GET",
       "path": "/api/folders/file/:param",
       "file": "packages/mira-app-core/src/shared/sdk/modules/FolderModule.ts",
-      "line": 186,
+      "line": 203,
       "hasQuery": true,
       "hasBody": false,
       "returnType": "FileFolderResponse"
@@ -744,7 +755,7 @@
       "httpMethod": "PUT",
       "path": "/api/folders/sort-index",
       "file": "packages/mira-app-core/src/shared/sdk/modules/FolderModule.ts",
-      "line": 229,
+      "line": 246,
       "hasQuery": false,
       "hasBody": true,
       "returnType": null
@@ -806,11 +817,22 @@
     },
     {
       "module": "Library",
+      "method": "stats",
+      "httpMethod": "GET",
+      "path": "/api/libraries/:param/stats",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts",
+      "line": 76,
+      "hasQuery": true,
+      "hasBody": false,
+      "returnType": null
+    },
+    {
+      "module": "Library",
       "method": "start",
       "httpMethod": "POST",
       "path": "/api/libraries/:param/start",
       "file": "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts",
-      "line": 80,
+      "line": 85,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "BaseResponse"
@@ -821,7 +843,7 @@
       "httpMethod": "POST",
       "path": "/api/libraries/:param/stop",
       "file": "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts",
-      "line": 89,
+      "line": 94,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "BaseResponse"

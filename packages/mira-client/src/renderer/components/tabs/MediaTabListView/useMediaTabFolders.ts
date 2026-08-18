@@ -1,7 +1,8 @@
 import { computed, ref, watch } from 'vue'
 import { useFolderStore } from '@renderer/stores/folder'
 import { useLibraryStore } from '@renderer/stores/library'
-import { useMediaStore } from '@renderer/stores/media'
+import { useTabs } from '@renderer/composables/useTabs'
+import { miraSDKService } from '@renderer/services/MiraSDKService'
 import type { useHomeController } from '@renderer/controllers/HomeController'
 import type { BrowserItem } from '@renderer/components/business/GroupedCardBrowserDialog.vue'
 import type { FolderItem } from '@renderer/types/components'
@@ -12,6 +13,7 @@ import type { FolderItem } from '@renderer/types/components'
  */
 export function useMediaTabFolders(deps: {
   props: {
+    tabId: string
     viewType?: 'files' | 'trash'
     libraryId?: string
     filters?: Record<string, any>
@@ -22,7 +24,7 @@ export function useMediaTabFolders(deps: {
   const { props, homeController, handleRefresh } = deps
   const folderStore = useFolderStore()
   const libraryStore = useLibraryStore()
-  const mediaStore = useMediaStore()
+  const { activeTabId } = useTabs()
 
   const showFolderDialog = ref(false)
   const availableFolders = computed(() => folderStore.folders as any[])
@@ -116,28 +118,34 @@ export function useMediaTabFolders(deps: {
   const folderCoverUrls = ref<Record<string, string>>({})
   let folderCoverLoadToken = 0
   const loadFolderCovers = async () => {
+    const token = ++folderCoverLoadToken
+    if (activeTabId.value !== props.tabId) return
+
     const libraryId = props.libraryId || libraryStore.currentLibrary?.id
     if (!libraryId || childFolderItems.value.length === 0) {
       folderCoverUrls.value = {}
       return
     }
-    const token = ++folderCoverLoadToken
-    const entries = await Promise.all(childFolderItems.value.map(async item => {
-      try {
-        const result = await mediaStore.fetchFiles({
-          libraryId,
-          filters: { folder: Number(item.raw.id), limit: 1, recycled: 0 },
-        })
-        const file = result.success && Array.isArray(result.data) ? result.data[0] : undefined
-        return [String(item.raw.id), file?.thumbnailPath || file?.url || ''] as const
-      } catch {
-        return [String(item.raw.id), ''] as const
+    try {
+      const covers = await miraSDKService.getFolderCovers(
+        libraryId,
+        childFolderItems.value.map(item => Number(item.raw.id)),
+      )
+      if (token === folderCoverLoadToken && activeTabId.value === props.tabId) {
+        folderCoverUrls.value = Object.fromEntries(
+          covers.map(cover => [String(cover.folderId), cover.coverUrl || '']),
+        )
       }
-    }))
-    if (token === folderCoverLoadToken) folderCoverUrls.value = Object.fromEntries(entries)
+    } catch {
+      if (token === folderCoverLoadToken) folderCoverUrls.value = {}
+    }
   }
 
-  watch([childFolderItems, () => props.libraryId || libraryStore.currentLibrary?.id], loadFolderCovers, { immediate: true })
+  watch(
+    [childFolderItems, () => props.libraryId || libraryStore.currentLibrary?.id, activeTabId],
+    loadFolderCovers,
+    { immediate: true },
+  )
 
   function handleChildFolderSelect(folder: any, event?: MouseEvent | KeyboardEvent) {
     const title = folder.title || folder.name

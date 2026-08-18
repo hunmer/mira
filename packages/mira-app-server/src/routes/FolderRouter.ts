@@ -17,6 +17,43 @@ export class FolderRouter extends BaseRouter {
             await this.handleCrudOperation(req, res, 'getAll', 'getAllFolders');
         });
 
+        // 批量获取文件夹封面，避免客户端逐文件夹请求文件列表
+        this.router.post('/covers', async (req: Request, res: Response) => {
+            try {
+                const libraryId = req.body.libraryId as string;
+                const folderIds = req.body.folderIds;
+                if (!Array.isArray(folderIds) || folderIds.some(id => !Number.isInteger(id) || id <= 0)) {
+                    this.sendError(res, 400, 'folderIds must be an array of positive integers');
+                    return;
+                }
+
+                const validation = await this.validateLibrary(libraryId);
+                if (!validation.success) {
+                    res.status(validation.error!.code).json(validation.error);
+                    return;
+                }
+
+                const uniqueFolderIds = [...new Set<number>(folderIds)];
+                const db = validation.library!.libraryService;
+                const covers = await Promise.all(uniqueFolderIds.map(async folderId => {
+                    const { result } = await db.getFiles({
+                        filters: { folder: folderId, limit: 1, recycled: 0 },
+                        isUrlFile: true,
+                    });
+                    const file = result[0];
+                    return {
+                        folderId,
+                        coverUrl: file?.thumb || file?.path || null,
+                    };
+                }));
+
+                this.sendSuccess(res, covers);
+            } catch (error) {
+                console.error('Get folder covers error:', error);
+                this.sendError(res, 500, 'Internal server error');
+            }
+        });
+
         // 查询文件夹
         this.router.post('/query', async (req: Request, res: Response) => {
             await this.handleCrudOperation(req, res, 'query', 'queryFolder');
