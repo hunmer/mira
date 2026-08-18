@@ -87,6 +87,7 @@
   },
   "sidebarToolbar": {
     "import": "导入",
+    "importTo": "导入到",
     "uploadFile": "上传文件",
     "importFolder": "导入文件夹",
     "manageFolders": "文件夹管理",
@@ -640,6 +641,7 @@
     "move": "移动",
     "delete": "删除",
     "batchImport": "批量导入",
+    "batchImportTo": "批量导入到",
     "batchCopy": "批量复制",
     "batchMove": "批量移动",
     "batchDelete": "批量删除",

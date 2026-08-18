@@ -28,3 +28,15 @@
 - `LocalFolderTabView.vue` 的 `loadDirectory(targetPath)` 已负责验证路径、更新面包屑和 Tab 标题；路径编辑提交应调用它，失败时保留编辑态供用户修正。
 - `LibraryPrefs` 使用 `TabPersistence.getScopeId()` 作为 `serverUrl::libraryId` 存储作用域，适合保存按素材库隔离的侧栏折叠状态。
 - 库切换流程在更新 TabPersistence scope 后调用 `loadLibraryPrefs()`；侧栏读取其响应式 state 可自动恢复，无需自行监听和拼接存储键。
+- 本地文件画廊与分栏选择状态正常，但模板未挂载参考视图使用的 `FileSystemInformation`，因此选中后只有高亮/预览，没有信息面板。
+- `LocalFileEntry` 可最小适配为 `FileSystemEntry`：`modifiedAt -> updatedAt`、补充 `kind/key/parentPath/contentType`；信息组件对文件只读取时间和大小。
+- `FileUploadDialog` 支持 `initialFiles` 和 `initialLocalTree`；本地绝对路径应使用 `initialLocalTree`，由上传队列按需读取字节，避免批量弹窗前加载全部文件。
+- `initialLocalTree` 传入平铺文件节点时不会显示左侧本地目录树，但仍会将文件加入待上传队列，适合“导入到”。
+- 新需求要求本地文件列表每页仅加载 500 条并随滚动追加；为保持搜索、过滤和排序完整，应保留目录完整数据，仅对筛选排序后的结果做渲染分页。
+- `visibleEntries` 是根目录完整筛选排序结果；`visibleColumnLevels` 是各分栏完整结果，均适合在其后追加 `slice(0, limit)`。
+- 列表/图标滚动发生在视图外层 `overflow-auto` 容器；分栏每个 `section` 独立纵向滚动；画廊底部缩略条独立横向滚动。
+- `allVisibleEntries` 当前用于清理失效选择，应继续使用完整筛选结果，不能替换为分页结果。
+- `SelectionBox` 通过当前 DOM 元素执行框选、Shift 范围和 Ctrl+A；分页后这些交互自然限定在已加载条目，已有选中路径仍由完整结果集维护。
+- 分页状态按目录路径保存已加载上限；根目录和分栏子目录互不影响，每次追加 500 条，最后一页取剩余数量。
+- `pnpm build` 已成功；全量 `type-check` 的 28 条诊断均不涉及本次文件。
+- procm HTTP 回退重启后客户端为 running，主窗口 ready、WebSocket 已连接；日志仍有既有 `procm-ui-tests/index.ts` 动态导入失败。

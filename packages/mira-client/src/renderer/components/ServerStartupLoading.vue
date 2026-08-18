@@ -1,5 +1,5 @@
 <template>
-  <div v-if="visible" class="fixed inset-0 z-[9999] flex items-center justify-center bg-background">
+  <div v-if="visible" class="fixed inset-0 z-[9999] flex items-center justify-center">
     <div class="w-full max-w-sm px-6 text-center">
       <div class="loader mx-auto mb-8" aria-hidden="true">
         <div v-for="index in 8" :key="index" class="box" :class="`box${index - 1}`">

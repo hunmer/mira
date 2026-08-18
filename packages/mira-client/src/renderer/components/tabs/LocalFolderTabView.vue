@@ -22,6 +22,13 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { FileIcon, FolderIcon } from '@/components/ui/file-icon'
+import FileSystemInformation from '@/components/ui/file-system/FileSystemInformation.vue'
+import {
+  fileKindLabel,
+  type FileEntry,
+  type FileSystemEntry,
+  type FileSystemIndex,
+} from '@/components/ui/file-system/fileSystemUtils'
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@/components/ui/input-group'
 import { ExpandableButton } from '@renderer/components/common'
 import {
@@ -39,10 +46,11 @@ import {
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
 import SelectionBox from '@renderer/components/common/SelectionBox.vue'
+import FileUploadDialog from '@renderer/components/business/FileUploadDialog.vue'
 import LocalPathPickerDialog from '@renderer/components/business/LocalPathPickerDialog.vue'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { useTabs } from '@renderer/composables/useTabs'
-import type { LocalFileEntry } from '@/shared/types'
+import type { LocalFileEntry, LocalFsNode } from '@/shared/types'
 
 const props = defineProps<{
   tabId: string
@@ -61,9 +69,13 @@ const editingPath = ref(false)
 const pathInput = ref('')
 const pathInputRef = ref<InstanceType<typeof Input> | null>(null)
 const selectionBoxRef = ref<InstanceType<typeof SelectionBox> | null>(null)
+const contentScrollRef = ref<HTMLElement | null>(null)
+const galleryScrollRef = ref<HTMLElement | null>(null)
 const pickerOpen = ref(false)
 const pickerOperation = ref<'copy' | 'move'>('copy')
 const pickerSources = ref<string[]>([])
+const uploadDialogOpen = ref(false)
+const uploadInitialTree = ref<{ rootPath: string, tree: LocalFsNode[] }>()
 const viewMode = ref<'list' | 'grid' | 'columns' | 'gallery'>('list')
 const searchQuery = ref('')
 const sortKey = ref<'name' | 'modifiedAt' | 'size' | 'type'>('name')
@@ -74,7 +86,10 @@ const columnLevels = ref<Array<{ path: string, entries: LocalFileEntry[] }>>([])
 const loadingColumnPath = ref('')
 const galleryEntry = ref<LocalFileEntry | null>(null)
 const galleryPreviewUrl = ref('')
+const pageLimits = ref<Record<string, number>>({})
 let galleryPreviewRequestId = 0
+const PAGE_SIZE = 500
+const LOAD_MORE_THRESHOLD = 160
 const api = computed(() => window.electronAPI?.fs)
 
 const entryMap = computed(() => {
@@ -91,7 +106,62 @@ const selectedEntries = computed(() => {
     .filter((entry): entry is LocalFileEntry => !!entry)
 })
 const selectedFiles = computed(() => selectedEntries.value.filter((entry) => !entry.isDirectory))
+const selectedDetailEntry = computed(() => selectedEntries.value.length === 1 ? selectedEntries.value[0] : null)
 const isAtRoot = computed(() => normalizePath(currentPath.value) === normalizePath(props.rootPath))
+
+function toFileSystemEntry(entry: LocalFileEntry): FileSystemEntry {
+  const parentPath = getParentPath(entry.path)
+  const updatedAt = new Date(entry.modifiedAt).toISOString()
+  if (entry.isDirectory) {
+    return {
+      kind: 'folder',
+      name: entry.name,
+      path: entry.path,
+      parentPath,
+      updatedAt,
+    }
+  }
+  return {
+    kind: 'file',
+    key: entry.path,
+    name: entry.name,
+    path: entry.path,
+    parentPath,
+    contentType: mimeTypeForEntry(entry),
+    size: entry.size,
+    updatedAt,
+  }
+}
+
+const fileSystemInfoIndex = computed<FileSystemIndex>(() => {
+  const children = new Map<string, FileSystemEntry[]>()
+  const files = new Map<string, FileEntry>()
+  const folders = new Map<string, Extract<FileSystemEntry, { kind: 'folder' }>>()
+  const levels = [{ path: currentPath.value, entries: entries.value }, ...columnLevels.value]
+  for (const level of levels) {
+    const levelEntries = level.entries.map(toFileSystemEntry)
+    children.set(level.path, levelEntries)
+    for (const entry of levelEntries) {
+      if (entry.kind === 'file') files.set(entry.path, entry)
+      else folders.set(entry.path, entry)
+    }
+  }
+  return { children, files, folders }
+})
+
+const selectedFileInfoEntry = computed<FileEntry | null>(() => {
+  const entry = selectedDetailEntry.value
+  if (!entry || entry.isDirectory) return null
+  return toFileSystemEntry(entry) as FileEntry
+})
+
+const galleryInfoEntry = computed<FileSystemEntry | null>(() => (
+  galleryEntry.value ? toFileSystemEntry(galleryEntry.value) : null
+))
+
+function informationKindLabel(entry: FileSystemEntry) {
+  return entry.kind === 'folder' ? t('views.localFolder.filterFolders') : fileKindLabel(entry)
+}
 
 function entryType(entry: LocalFileEntry) {
   if (entry.isDirectory) return 'folder' as const
@@ -136,14 +206,62 @@ const visibleColumnLevels = computed(() => columnLevels.value.map((level) => ({
   ...level,
   entries: filterAndSortEntries(level.entries),
 })))
+const paginatedVisibleEntries = computed(() => paginateEntries(currentPath.value, visibleEntries.value))
 const columnViewLevels = computed(() => [
   { path: currentPath.value, entries: visibleEntries.value },
   ...visibleColumnLevels.value,
 ])
+const paginatedColumnViewLevels = computed(() => columnViewLevels.value.map((level) => ({
+  ...level,
+  entries: paginateEntries(level.path, level.entries),
+})))
 const allVisibleEntries = computed(() => [
   ...visibleEntries.value,
   ...visibleColumnLevels.value.flatMap((level) => level.entries),
 ])
+
+function pageLimit(path: string) {
+  return pageLimits.value[path] ?? PAGE_SIZE
+}
+
+function paginateEntries(path: string, source: LocalFileEntry[]) {
+  return source.slice(0, pageLimit(path))
+}
+
+function loadNextPage(path: string, total: number) {
+  const currentLimit = pageLimit(path)
+  if (currentLimit >= total) return
+  pageLimits.value = {
+    ...pageLimits.value,
+    [path]: Math.min(currentLimit + PAGE_SIZE, total),
+  }
+}
+
+function handleVerticalScroll(event: Event, path: string, total: number) {
+  const element = event.currentTarget as HTMLElement
+  const remaining = element.scrollHeight - element.scrollTop - element.clientHeight
+  if (remaining <= LOAD_MORE_THRESHOLD) loadNextPage(path, total)
+}
+
+function handleContentScroll(event: Event) {
+  if (viewMode.value === 'list' || viewMode.value === 'grid') {
+    handleVerticalScroll(event, currentPath.value, visibleEntries.value.length)
+  }
+}
+
+function handleGalleryScroll(event: Event) {
+  const element = event.currentTarget as HTMLElement
+  const remaining = element.scrollWidth - element.scrollLeft - element.clientWidth
+  if (remaining <= LOAD_MORE_THRESHOLD) loadNextPage(currentPath.value, visibleEntries.value.length)
+}
+
+function resetPagination() {
+  pageLimits.value = {}
+  void nextTick(() => {
+    contentScrollRef.value?.scrollTo({ top: 0, left: 0 })
+    galleryScrollRef.value?.scrollTo({ left: 0 })
+  })
+}
 
 function normalizePath(value: string) {
   return value.replace(/[\\/]+$/, '').toLowerCase()
@@ -197,6 +315,7 @@ async function loadDirectory(targetPath = currentPath.value) {
     currentPath.value = targetPath
     syncTabTitle(targetPath)
     entries.value = result.data || []
+    resetPagination()
     selectedPaths.value = []
     columnLevels.value = []
     galleryEntry.value = null
@@ -253,6 +372,9 @@ async function handleColumnItemClick(entry: LocalFileEntry, levelIndex: number, 
     toast.error(result?.message || t('views.localFolder.loadFailed'))
     return
   }
+  const nextPageLimits = { ...pageLimits.value }
+  delete nextPageLimits[entry.path]
+  pageLimits.value = nextPageLimits
   columnLevels.value = [
     ...columnLevels.value.slice(0, levelIndex),
     { path: entry.path, entries: result.data || [] },
@@ -301,6 +423,22 @@ async function importFiles(files: LocalFileEntry[]) {
   } catch (reason) {
     toast.error(reason instanceof Error ? reason.message : t('views.localFolder.importFailed'), { id })
   }
+}
+
+function openImportTo(entries: LocalFileEntry[]) {
+  const files = entries.filter((entry) => !entry.isDirectory)
+  if (!files.length) return
+  uploadInitialTree.value = {
+    rootPath: currentPath.value,
+    tree: files.map((entry) => ({
+      name: entry.name,
+      path: entry.path,
+      isDir: false,
+      size: entry.size,
+      ext: entry.extension,
+    })),
+  }
+  uploadDialogOpen.value = true
 }
 
 function showPicker(operation: 'copy' | 'move', paths: string[]) {
@@ -414,6 +552,8 @@ watch(allVisibleEntries, (visible) => {
     galleryEntry.value = visibleEntries.value[0] || null
   }
 })
+
+watch([searchQuery, typeFilter, dateFilter, sortKey, sortDirection, viewMode], resetPagination)
 
 onBeforeUnmount(revokeGalleryPreview)
 
@@ -557,7 +697,11 @@ watch(() => props.rootPath, (value) => {
       <span>{{ $t('views.localFolder.modifiedAt') }}</span>
     </div>
 
-    <div :class="['min-h-0 flex-1 p-2', viewMode === 'gallery' ? 'overflow-hidden' : 'overflow-auto']">
+    <div
+      ref="contentScrollRef"
+      :class="['min-h-0 flex-1 p-2', viewMode === 'gallery' ? 'overflow-hidden' : 'overflow-auto']"
+      @scroll="handleContentScroll"
+    >
       <div v-if="loading" class="flex h-full items-center justify-center gap-2 text-sm text-muted-foreground">
         <LoaderCircle class="animate-spin" />
         {{ $t('views.localFolder.loadingDirectory') }}
@@ -577,7 +721,7 @@ watch(() => props.rootPath, (value) => {
         @delete-selection="removeEntries"
       >
         <div v-if="viewMode === 'list' || viewMode === 'grid'" :class="viewMode === 'grid' ? 'grid min-h-full grid-cols-[repeat(auto-fill,minmax(112px,1fr))] content-start gap-2 p-1' : 'min-h-full space-y-0.5'">
-          <ContextMenu v-for="entry in visibleEntries" :key="entry.path">
+          <ContextMenu v-for="entry in paginatedVisibleEntries" :key="entry.path">
             <ContextMenuTrigger as-child>
               <button
                 type="button"
@@ -610,6 +754,7 @@ watch(() => props.rootPath, (value) => {
             <ContextMenuContent class="w-48">
               <ContextMenuItem @click="openEntry(entry)"><FolderOpen />{{ $t('views.localFolder.open') }}</ContextMenuItem>
               <ContextMenuItem :disabled="entry.isDirectory" @click="importFiles([entry])"><Import />{{ $t('views.localFolder.import') }}</ContextMenuItem>
+              <ContextMenuItem :disabled="entry.isDirectory" @click="openImportTo([entry])"><FolderInput />{{ $t('views.localFolder.importTo') }}</ContextMenuItem>
               <ContextMenuItem @click="locate(entry)"><FolderInput />{{ $t('views.localFolder.locate') }}</ContextMenuItem>
               <ContextMenuSeparator />
               <ContextMenuItem @click="showPicker('copy', dragPathsFor(entry))"><Copy />{{ $t('views.localFolder.copy') }}</ContextMenuItem>
@@ -627,9 +772,10 @@ watch(() => props.rootPath, (value) => {
 
         <div v-else-if="viewMode === 'columns'" class="flex h-full min-h-0 overflow-x-auto rounded-md border bg-background">
           <section
-            v-for="(level, levelIndex) in columnViewLevels"
+            v-for="(level, levelIndex) in paginatedColumnViewLevels"
             :key="level.path"
             class="w-64 shrink-0 overflow-y-auto border-r p-1 last:border-r-0"
+            @scroll="handleVerticalScroll($event, level.path, columnViewLevels[levelIndex].entries.length)"
           >
             <ContextMenu v-for="entry in level.entries" :key="entry.path">
               <ContextMenuTrigger as-child>
@@ -656,6 +802,7 @@ watch(() => props.rootPath, (value) => {
               <ContextMenuContent class="w-48">
                 <ContextMenuItem @click="openEntry(entry)"><FolderOpen />{{ $t('views.localFolder.open') }}</ContextMenuItem>
                 <ContextMenuItem :disabled="entry.isDirectory" @click="importFiles([entry])"><Import />{{ $t('views.localFolder.import') }}</ContextMenuItem>
+                <ContextMenuItem :disabled="entry.isDirectory" @click="openImportTo([entry])"><FolderInput />{{ $t('views.localFolder.importTo') }}</ContextMenuItem>
                 <ContextMenuItem @click="locate(entry)"><FolderInput />{{ $t('views.localFolder.locate') }}</ContextMenuItem>
                 <ContextMenuSeparator />
                 <ContextMenuItem @click="showPicker('copy', dragPathsFor(entry))"><Copy />{{ $t('views.localFolder.copy') }}</ContextMenuItem>
@@ -671,32 +818,67 @@ watch(() => props.rootPath, (value) => {
               {{ $t('views.localFolder.empty') }}
             </div>
           </section>
+          <div
+            v-if="selectedFileInfoEntry"
+            class="flex min-w-60 flex-1 flex-col items-center justify-center overflow-y-auto p-4"
+          >
+            <div class="flex w-full max-w-lg flex-col items-stretch gap-3">
+              <FileIcon :name="selectedFileInfoEntry.name" class="mx-auto size-24" />
+              <div class="text-center">
+                <div class="break-words text-sm font-semibold">{{ selectedFileInfoEntry.name }}</div>
+                <div class="text-xs text-muted-foreground">
+                  {{ informationKindLabel(selectedFileInfoEntry) }}
+                  <template v-if="selectedFileInfoEntry.size"> · {{ formatSize(selectedFileInfoEntry.size) }}</template>
+                </div>
+              </div>
+              <FileSystemInformation :entry="selectedFileInfoEntry" :index="fileSystemInfoIndex" />
+            </div>
+          </div>
         </div>
 
         <div v-else class="flex h-full min-h-0 flex-col overflow-hidden rounded-md border bg-background">
-          <div class="flex min-h-0 flex-1 items-center justify-center bg-muted/20 p-6">
-            <div v-if="galleryEntry" class="flex h-full min-h-0 max-w-full flex-col items-center gap-4 text-center">
-              <img
-                v-if="galleryPreviewUrl"
-                :src="galleryPreviewUrl"
-                :alt="galleryEntry.name"
-                class="min-h-0 max-h-[calc(100%-4.5rem)] max-w-full rounded-md object-contain shadow-sm"
-                @dblclick="openEntry(galleryEntry)"
-              />
-              <FolderIcon v-else-if="galleryEntry.isDirectory" :name="galleryEntry.name" class="size-24" />
-              <FileIcon v-else :name="galleryEntry.name" class="size-24" />
-              <div class="max-w-xl">
-                <h3 class="break-all text-sm font-medium">{{ galleryEntry.name }}</h3>
-                <p class="mt-1 text-xs text-muted-foreground">
-                  {{ galleryEntry.isDirectory ? $t('views.localFolder.filterFolders') : formatSize(galleryEntry.size) }}
-                  · {{ new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(galleryEntry.modifiedAt) }}
-                </p>
+          <div class="flex min-h-0 flex-1 bg-muted/20">
+            <div class="flex min-h-0 min-w-0 flex-1 items-center justify-center p-6">
+              <div v-if="galleryEntry" class="flex h-full min-h-0 max-w-full flex-col items-center gap-4 text-center">
+                <img
+                  v-if="galleryPreviewUrl"
+                  :src="galleryPreviewUrl"
+                  :alt="galleryEntry.name"
+                  class="min-h-0 max-h-[calc(100%-4.5rem)] max-w-full rounded-md object-contain shadow-sm"
+                  @dblclick="openEntry(galleryEntry)"
+                />
+                <FolderIcon v-else-if="galleryEntry.isDirectory" :name="galleryEntry.name" class="size-24" />
+                <FileIcon v-else :name="galleryEntry.name" class="size-24" />
+                <div class="max-w-xl">
+                  <h3 class="break-all text-sm font-medium">{{ galleryEntry.name }}</h3>
+                </div>
               </div>
+              <div v-else class="text-sm text-muted-foreground">{{ $t('views.localFolder.empty') }}</div>
             </div>
-            <div v-else class="text-sm text-muted-foreground">{{ $t('views.localFolder.empty') }}</div>
+            <aside
+              v-if="galleryInfoEntry"
+              class="hidden w-64 shrink-0 flex-col gap-3 overflow-y-auto border-l bg-background p-4 sm:flex"
+            >
+              <div class="flex items-center gap-3">
+                <FolderIcon v-if="galleryInfoEntry.kind === 'folder'" :name="galleryInfoEntry.name" class="size-8" />
+                <FileIcon v-else :name="galleryInfoEntry.name" class="size-8" />
+                <div class="min-w-0 flex-1">
+                  <div class="break-words text-sm font-semibold">{{ galleryInfoEntry.name }}</div>
+                  <div class="text-xs text-muted-foreground">
+                    {{ informationKindLabel(galleryInfoEntry) }}
+                    <template v-if="galleryInfoEntry.kind === 'file' && galleryInfoEntry.size"> · {{ formatSize(galleryInfoEntry.size) }}</template>
+                  </div>
+                </div>
+              </div>
+              <FileSystemInformation :entry="galleryInfoEntry" :index="fileSystemInfoIndex" />
+            </aside>
           </div>
-          <div class="flex h-28 shrink-0 gap-2 overflow-x-auto overflow-y-hidden border-t bg-background p-2">
-            <ContextMenu v-for="entry in visibleEntries" :key="entry.path">
+          <div
+            ref="galleryScrollRef"
+            class="flex h-28 shrink-0 gap-2 overflow-x-auto overflow-y-hidden border-t bg-background p-2"
+            @scroll="handleGalleryScroll"
+          >
+            <ContextMenu v-for="entry in paginatedVisibleEntries" :key="entry.path">
               <ContextMenuTrigger as-child>
                 <button
                   type="button"
@@ -720,6 +902,7 @@ watch(() => props.rootPath, (value) => {
               <ContextMenuContent class="w-48">
                 <ContextMenuItem @click="openEntry(entry)"><FolderOpen />{{ $t('views.localFolder.open') }}</ContextMenuItem>
                 <ContextMenuItem :disabled="entry.isDirectory" @click="importFiles([entry])"><Import />{{ $t('views.localFolder.import') }}</ContextMenuItem>
+                <ContextMenuItem :disabled="entry.isDirectory" @click="openImportTo([entry])"><FolderInput />{{ $t('views.localFolder.importTo') }}</ContextMenuItem>
                 <ContextMenuItem @click="locate(entry)"><FolderInput />{{ $t('views.localFolder.locate') }}</ContextMenuItem>
                 <ContextMenuSeparator />
                 <ContextMenuItem @click="showPicker('copy', dragPathsFor(entry))"><Copy />{{ $t('views.localFolder.copy') }}</ContextMenuItem>
@@ -733,10 +916,11 @@ watch(() => props.rootPath, (value) => {
       </SelectionBox>
     </div>
 
-    <div v-if="selectedPaths.length" class="pointer-events-none absolute inset-x-0 bottom-5 z-20 flex justify-center px-3">
-      <div class="pointer-events-auto flex max-w-full items-center gap-1 rounded-md border bg-background p-1.5 shadow-lg">
+    <div v-if="selectedPaths.length" class="flex shrink-0 justify-center overflow-x-auto border-t bg-background px-3 py-2">
+      <div class="flex max-w-full items-center gap-1">
         <span class="px-2 text-xs text-muted-foreground">{{ $t('views.localFolder.selectedCount', { count: selectedPaths.length }) }}</span>
         <Button size="sm" variant="ghost" :disabled="selectedFiles.length === 0" @click="importFiles(selectedFiles)"><Import />{{ $t('views.localFolder.batchImport') }}</Button>
+        <Button size="sm" variant="ghost" :disabled="selectedFiles.length === 0" @click="openImportTo(selectedFiles)"><FolderInput />{{ $t('views.localFolder.batchImportTo') }}</Button>
         <Button size="sm" variant="ghost" @click="showPicker('copy', selectedPaths)"><Copy />{{ $t('views.localFolder.batchCopy') }}</Button>
         <Button size="sm" variant="ghost" @click="showPicker('move', selectedPaths)"><Move />{{ $t('views.localFolder.batchMove') }}</Button>
         <Button size="sm" variant="ghost" class="text-destructive" @click="removeEntries(selectedPaths)"><Trash2 />{{ $t('views.localFolder.batchDelete') }}</Button>
@@ -748,6 +932,10 @@ watch(() => props.rootPath, (value) => {
       :initial-path="currentPath"
       selection-mode="directory"
       @confirm="handlePickerConfirm"
+    />
+    <FileUploadDialog
+      v-model:visible="uploadDialogOpen"
+      :initial-local-tree="uploadInitialTree"
     />
   </section>
 </template>

@@ -87,6 +87,7 @@
   },
   "sidebarToolbar": {
     "import": "Import",
+    "importTo": "Import to...",
     "uploadFile": "Upload files",
     "importFolder": "Import folder",
     "manageFolders": "Manage folders",
@@ -640,6 +641,7 @@
     "move": "Move",
     "delete": "Delete",
     "batchImport": "Import selected",
+    "batchImportTo": "Import selected to...",
     "batchCopy": "Copy selected",
     "batchMove": "Move selected",
     "batchDelete": "Delete selected",
