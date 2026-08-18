@@ -17,7 +17,27 @@ Tab 视图组件目录包含 Tab 系统的视图层实现。
 | 组件 | 行数 | 描述 |
 |------|------|------|
 | `HomeTabView.vue` | - | 首页 Tab 视图（基于 grid-layout-plus 的可自定义卡片仪表盘） |
-| `MediaTabListView.vue` | 1178 | 媒体列表 Tab 视图（核心，最大的视图组件） |
+| `MediaTabListView.vue` | ~900 | 媒体列表 Tab 视图（核心，最大的视图组件；脚本为装配层，功能拆分到 `MediaTabListView/` 子目录） |
+
+## MediaTabListView 功能拆分
+
+`MediaTabListView/` 目录按功能存放从 `MediaTabListView.vue` 拆出的组合式函数（纯重构，逻辑不变）：
+
+| 文件 | 职责 |
+|------|------|
+| `useMediaTabFetch.ts` | 数据加载：分页取数、排序、刷新、WebSocket 活跃 tab 刷新回调 |
+| `useMediaTabSelection.ts` | 选中逻辑：全选/反选/取消、选中项与详情侧栏同步 |
+| `useMediaTabFilters.ts` | 筛选逻辑：FilterRule 合并/清除、已保存过滤器应用、初始规则同步 |
+| `useMediaTabGrouping.ts` | 素材分组：按标签/文件夹/文件类型 + 分组章节导航 |
+| `useMediaTabBreadcrumb.ts` | 面包屑导航：文件夹/标签层级路径与点击替换 Tab |
+| `useMediaTabFolders.ts` | 子文件夹区：卡片数据、封面加载、尺寸计算、新建文件夹对话框 |
+| `useMediaTabUpload.ts` | 拖拽上传/导入：拖放处理、URL 拖入、直接导入模式、上传对话框 |
+| `useMediaTabBatchOps.ts` | 批量操作：按库分组恢复/彻底删除/删除 + 确认弹窗 + Delete 键 |
+| `useMediaTabPagination.ts` | 分页：页码列表计算、翻页与滚动回顶部 |
+| `useFloatingToolbar.ts` | 浮动操作栏：FLIP 宽度过渡动画 |
+| `useMediaTabItemFields.ts` | 展示字段开关：控制视图项展示哪些信息 |
+
+依赖注入约定：`homeController` / `mediaTabData` / `emit` / `fetchPageData` / `handleRefresh` / `selectedItems` 等跨功能状态由主组件创建后作为 deps 传入；Pinia store 在各组合式函数内部自建（单例）。
 
 ## Tab 视图架构
 

@@ -42,8 +42,6 @@ export class ProtocolService {
     this.registerHandler('importPlugin', this.handleImportPlugin.bind(this))
     if (this.isRegistered) return
 
-    logger.info('ProtocolService', 'Initializing mira:// protocol')
-
     // 在开发环境中需要指定可执行文件路径
     if (process.env.NODE_ENV === 'development') {
       // 开发环境下需要指定 electron 可执行文件和主脚本
@@ -51,14 +49,12 @@ export class ProtocolService {
       const mainScript = process.argv[1] || 'main.js'
       
       if (!app.isDefaultProtocolClient('mira', electronPath, [mainScript])) {
-        const isRegistered = app.setAsDefaultProtocolClient('mira', electronPath, [mainScript])
-        logger.info('ProtocolService', 'Development protocol registration result', { isRegistered, electronPath, mainScript })
+        app.setAsDefaultProtocolClient('mira', electronPath, [mainScript])
       }
     } else {
       // 生产环境下直接注册
       if (!app.isDefaultProtocolClient('mira')) {
-        const isRegistered = app.setAsDefaultProtocolClient('mira')
-        logger.info('ProtocolService', 'Production protocol registration result', { isRegistered })
+        app.setAsDefaultProtocolClient('mira')
       }
     }
 
@@ -91,7 +87,6 @@ export class ProtocolService {
     })
 
     this.isRegistered = true
-    logger.info('ProtocolService', 'Protocol service initialized successfully')
   }
 
   /**
@@ -99,7 +94,6 @@ export class ProtocolService {
    */
   public registerHandler(type: string, handler: ProtocolHandler['handler']): void {
     this.handlers.set(type, handler)
-    logger.debug('ProtocolService', 'Registered protocol handler', { type })
   }
 
   /**
@@ -107,7 +101,6 @@ export class ProtocolService {
    */
   public unregisterHandler(type: string): void {
     this.handlers.delete(type)
-    logger.debug('ProtocolService', 'Unregistered protocol handler', { type })
   }
 
   /**
@@ -121,18 +114,12 @@ export class ProtocolService {
    * 注册协议处理器到 Electron
    */
   private registerProtocolHandler(): void {
-    try {
-      // 注册自定义协议 scheme，使渲染进程可通过 <a href="mira://..."> 触发
-      const { protocol } = require('electron') as typeof import('electron')
-      protocol.registerStringProtocol('mira', (request: any, callback: (response: string) => void) => {
-        this.parseAndHandleUrl(request.url)
-        callback('')
-      })
-      logger.debug('ProtocolService', 'Protocol handler registration completed')
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      logger.error('ProtocolService', `Error registering protocol handler: ${errorMessage}`)
-    }
+    // 注册自定义协议 scheme，使渲染进程可通过 <a href="mira://..."> 触发
+    const { protocol } = require('electron') as typeof import('electron')
+    protocol.registerStringProtocol('mira', (request: any, callback: (response: string) => void) => {
+      this.parseAndHandleUrl(request.url)
+      callback('')
+    })
   }
 
 
@@ -207,11 +194,6 @@ export class ProtocolService {
    * 处理应用启动时的协议参数
    */
   private handleAppProtocolArguments(): void {
-    logger.debug('ProtocolService', 'Checking startup arguments for protocol URLs', { 
-      argv: process.argv,
-      platform: process.platform 
-    })
-
     // Windows 和 Linux 平台处理
     if (process.platform === 'win32' || process.platform === 'linux') {
       const protocolUrl = process.argv.find(arg => arg.startsWith('mira://'))
@@ -221,11 +203,7 @@ export class ProtocolService {
         setTimeout(() => {
           this.parseAndHandleUrl(protocolUrl)
         }, 1500) // 增加延迟时间确保应用完全初始化
-      } else {
-        logger.debug('ProtocolService', 'No protocol URL found in startup arguments')
       }
-    } else {
-      logger.debug('ProtocolService', 'Protocol argument handling not needed for this platform')
     }
   }
 
@@ -268,7 +246,6 @@ export class ProtocolService {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
       logger.error('ProtocolService', `Error handling importPlugin protocol: ${errorMessage}`)
-      logger.debug('ProtocolService', 'Protocol data:', { url: data.url })
     }
   }
 
@@ -278,6 +255,5 @@ export class ProtocolService {
   public cleanup(): void {
     this.handlers.clear()
     this.isRegistered = false
-    logger.info('ProtocolService', 'Protocol service cleaned up')
   }
 }

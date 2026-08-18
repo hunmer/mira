@@ -43,9 +43,6 @@ class MiraApplication {
 
     logger.info('MiraApplication', 'Starting Mira Media Library Application - Single Instance Confirmed')
 
-    // 记录启动参数，用于调试协议处理
-    logger.debug('MiraApplication', 'Startup arguments', { argv: process.argv })
-
     // 系统登录项只负责唤起脚本管理的后台服务，不创建 Mira UI。
     if (process.argv.includes('--mira-server-startup')) {
       this.setupServerStartupApp()
@@ -91,12 +88,7 @@ class MiraApplication {
     }
 
     // 当尝试运行第二个实例时，聚焦到第一个实例的窗口
-    app.on('second-instance', (_event, commandLine, workingDirectory) => {
-      logger.info('MiraApplication', 'Second instance detected, focusing main window', {
-        commandLine,
-        workingDirectory,
-      })
-
+    app.on('second-instance', (_event, commandLine, _workingDirectory) => {
       // 检查是否有协议参数
       const protocolUrl = commandLine.find(arg => arg.startsWith('mira://'))
       if (protocolUrl) {
@@ -133,12 +125,8 @@ class MiraApplication {
   }
 
   private setupApp() {
-    logger.info('MiraApplication', 'Setting up application')
-
     // 当应用就绪时创建窗口
     app.whenReady().then(async () => {
-      logger.info('MiraApplication', 'App is ready')
-
       // 应用持久化的网络代理配置（主进程 fetch + Electron session）
       await this.applyPersistedProxy()
 
@@ -159,13 +147,11 @@ class MiraApplication {
       // 延迟检查自动更新（避免影响启动速度）
       if (app.isPackaged) {
         setTimeout(() => {
-          logger.info('MiraApplication', '开始检查更新...')
           getAutoUpdater().checkForUpdates()
         }, 3000)
       }
 
       app.on('activate', () => {
-        logger.debug('MiraApplication', 'App activated')
         this.showMainWindow()
       })
     })
@@ -176,7 +162,6 @@ class MiraApplication {
 
     // 当所有窗口关闭时退出应用（除了 macOS）
     app.on('window-all-closed', () => {
-      logger.info('MiraApplication', 'All windows closed')
       if (process.platform !== 'darwin' && (this.isQuitting || !this.trayService?.isActive())) {
         app.quit()
       }
@@ -186,10 +171,8 @@ class MiraApplication {
     app.on('before-quit', () => {
       this.isQuitting = true
       this.windows.prepareToQuit()
-      logger.info('MiraApplication', 'App is about to quit')
       try {
-        const output = runLocalServerScriptSync('stop')
-        if (output) logger.info('LocalServerService', output)
+        runLocalServerScriptSync('stop')
       } catch (error) {
         logger.warn('LocalServerService', 'Local backend stop failed', {
           error: error instanceof Error ? error.message : String(error),
@@ -200,8 +183,7 @@ class MiraApplication {
 
     // 捕获退出信号，确保 macOS / 开发模式下也能干净退出
     // （vite-plugin-electron 在 macOS 下 Ctrl+C 经常不会触发 before-quit）
-    const quitGracefully = (signal: NodeJS.Signals) => {
-      logger.info('MiraApplication', `Received ${signal}, quitting...`)
+    const quitGracefully = () => {
       // before-quit 钩子会负责 cleanup
       app.quit()
     }
@@ -229,10 +211,8 @@ class MiraApplication {
 
       DownloadService.getInstance().setProxy({ enabled, url })
       await session.defaultSession.setProxy({ proxyRules })
-      logger.info('MiraApplication', `Persisted proxy applied (enabled=${enabled}, url=${url || '-'})`)
-    } catch (err) {
+    } catch {
       // 首次启动或文件不存在时静默使用直连
-      logger.debug('MiraApplication', `No persisted proxy config, using direct connection (${err instanceof Error ? err.message : String(err)})`)
     }
   }
 
@@ -260,8 +240,6 @@ class MiraApplication {
     if (win) {
       this.ipcHandlers.setMainWindow(win)
     }
-
-    logger.info('MiraApplication', 'IPC handlers initialized')
   }
 
   private setupProtocol() {
@@ -296,8 +274,6 @@ class MiraApplication {
         logger.error('MiraApplication', `Error handling openTab: ${errorMessage}`)
       }
     })
-
-    logger.info('MiraApplication', 'Protocol service initialized with server_import handler')
   }
 
   private setupTray() {
@@ -311,7 +287,6 @@ class MiraApplication {
     const win = this.windows.getWindow()
     if (win) {
       this.trayService?.init(win, () => this.showMainWindow())
-      logger.info('MiraApplication', 'Tray service initialized')
     }
   }
 
@@ -319,8 +294,6 @@ class MiraApplication {
    * 清理资源
    */
   private cleanup(): void {
-    logger.info('MiraApplication', 'Starting application cleanup')
-
     // 保存窗口状态
     this.windows.saveState()
 
@@ -328,7 +301,6 @@ class MiraApplication {
     if (this.ipcHandlers) {
       this.ipcHandlers.removeAllHandlers()
       this.ipcHandlers = null
-      logger.debug('MiraApplication', 'IPC handlers removed')
     }
 
     // 清理协议服务
@@ -344,8 +316,6 @@ class MiraApplication {
 
     // 关闭 procm room 客户端
     closeProcm()
-
-    logger.info('MiraApplication', 'Application cleanup completed')
   }
 }
 

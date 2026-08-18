@@ -35,8 +35,6 @@ export class ShortcutHandlers {
 
     // 获取已注册的快捷键
     ipcMain.handle('shortcut:get-registered', this.handleGetRegisteredShortcuts.bind(this))
-
-    logger.info('ShortcutHandlers', 'IPC handlers registered')
   }
 
   /**
@@ -66,7 +64,6 @@ export class ShortcutHandlers {
 
       if (success) {
         this.registeredShortcuts.set(shortcut, actionId)
-        logger.info('ShortcutHandlers', 'Global shortcut registered successfully', { shortcut, actionId })
         return true
       } else {
         logger.error('ShortcutHandlers', 'Failed to register global shortcut', { shortcut, actionId })
@@ -100,8 +97,6 @@ export class ShortcutHandlers {
     _event: Electron.IpcMainInvokeEvent
   ): Promise<boolean> {
     try {
-      logger.info('ShortcutHandlers', 'Unregistering all global shortcuts')
-
       // 注销所有已注册的快捷键
       for (const shortcut of this.registeredShortcuts.keys()) {
         await this.unregisterShortcut(shortcut)
@@ -111,7 +106,6 @@ export class ShortcutHandlers {
       globalShortcut.unregisterAll()
       this.registeredShortcuts.clear()
 
-      logger.info('ShortcutHandlers', 'All global shortcuts unregistered')
       return true
     } catch (error) {
       logger.error('ShortcutHandlers', 'Error unregistering all shortcuts', { error })
@@ -147,15 +141,12 @@ export class ShortcutHandlers {
         return true
       }
 
-      const actionId = this.registeredShortcuts.get(shortcut)
-
       // 从Electron全局快捷键中注销
       globalShortcut.unregister(shortcut)
 
       // 从本地记录中移除
       this.registeredShortcuts.delete(shortcut)
 
-      logger.info('ShortcutHandlers', 'Global shortcut unregistered successfully', { shortcut, actionId })
       return true
     } catch (error) {
       logger.error('ShortcutHandlers', 'Error unregistering shortcut', { shortcut, error })
@@ -168,10 +159,8 @@ export class ShortcutHandlers {
    */
   public cleanup(): void {
     try {
-      logger.info('ShortcutHandlers', 'Cleaning up shortcuts on app exit')
       globalShortcut.unregisterAll()
       this.registeredShortcuts.clear()
-      logger.info('ShortcutHandlers', 'Shortcuts cleanup completed')
     } catch (error) {
       logger.error('ShortcutHandlers', 'Error during shortcuts cleanup', { error })
     }
@@ -203,8 +192,6 @@ export class ShortcutHandlers {
    */
   public async reregisterAll(): Promise<void> {
     try {
-      logger.info('ShortcutHandlers', 'Re-registering all shortcuts')
-
       const shortcuts = Array.from(this.registeredShortcuts.entries())
 
       // 先清理所有现有快捷键
@@ -215,8 +202,6 @@ export class ShortcutHandlers {
       for (const [shortcut, actionId] of shortcuts) {
         await this.handleRegisterShortcut({} as any, shortcut, actionId)
       }
-
-      logger.info('ShortcutHandlers', 'All shortcuts re-registered', { count: shortcuts.length })
     } catch (error) {
       logger.error('ShortcutHandlers', 'Error re-registering shortcuts', { error })
     }

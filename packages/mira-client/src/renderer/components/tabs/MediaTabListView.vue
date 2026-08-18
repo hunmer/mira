@@ -64,9 +64,9 @@
 
     <!-- 主内容区域 -->
     <div class="flex-1 flex overflow-hidden relative">
-      <div class="flex-1 flex flex-col min-w-0">
+      <div class="flex-1 flex flex-col min-w-0 min-h-0">
         <!-- 媒体内容 - files 和 trash 都使用统一的视图 -->
-        <div class="flex-1 overflow-y-auto w-full min-w-0" @wheel="handleCtrlWheel">
+        <div class="flex-1 min-h-0 overflow-y-auto w-full min-w-0" @wheel="handleCtrlWheel">
           <!-- 顶部的子文件夹 -->
           <section v-if="props.viewType !== 'trash'">
             <header class="flex items-center justify-between px-5 pt-3 pb-1">
@@ -89,8 +89,8 @@
                     @click="handleChildFolderSelect(item.raw, $event)"
                     @keydown.enter.prevent="handleChildFolderSelect(item.raw, $event)"
                     @keydown.space.prevent="handleChildFolderSelect(item.raw, $event)"
-                    @dragover.prevent.stop="canUpload && handleDragOver($event)"
-                    @dragleave.prevent.stop="canUpload && handleDragLeave($event)"
+                    @dragover.prevent.stop="canUpload && handleFolderCardDragOver($event)"
+                    @dragleave.prevent.stop="canUpload && handleFolderCardDragLeave($event)"
                     @drop.prevent.stop="canUpload && handleDrop($event, String(item.raw.id))">
                     <Folder :size="folderCardUiSize" :label="item.label" :badge="item.count ?? 0"
                       :thumbnail="folderCoverUrls[String(item.raw.id)]"
@@ -406,31 +406,15 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import { useI18n } from 'vue-i18n'
 import { useMediaStore } from '@renderer/stores/media'
-import { useLibraryStore } from '@renderer/stores/library'
-import { useFolderStore } from '@renderer/stores/folder'
-import { useSettingsStore } from '@renderer/stores/settings'
-import { useUrlImportStore } from '@renderer/stores/urlImport'
-import { useToast } from '@renderer/composables/useToast'
-import { appService } from '@renderer/services'
 import { useTagStore } from '@renderer/stores/tag'
 import { useHomeController } from '@renderer/controllers/HomeController'
-import type { BreadcrumbItem } from '@renderer/controllers/HomeController'
 import { useMediaOperations, useFilters, useViewModeConfig } from '@renderer/composables'
-// import { useTabPagination } from '@renderer/composables/useTabPagination' // 已替换为MediaTabData
 import { useMediaTabData } from '@renderer/composables/useMediaTabData'
 import { getLibraryPrefs, getSavedFilters } from '@renderer/composables/LibraryPrefs'
-import {
-  getTabGroupingMode,
-  resolveDefaultGroupingMode,
-  saveTabGroupingMode,
-  type MediaGroupingMode
-} from '@renderer/composables/LibraryPrefs'
 import MediaGridComponent from '@renderer/components/business/MediaGridComponent.vue'
 import MediaListComponent from '@renderer/components/business/MediaListComponent.vue'
 import WaterfallComponent from '@renderer/components/business/WaterfallComponent.vue'
-import type { BrowserItem } from '@renderer/components/business/GroupedCardBrowserDialog.vue'
 import Folder from '@/components/ui/folder/Folder.vue'
 import FileUploadDialog from '@renderer/components/business/FileUploadDialog.vue'
 import FolderEditDialog from '@renderer/components/business/FolderEditDialog.vue'
@@ -438,10 +422,10 @@ import FolderContextMenu from '@renderer/components/business/FolderContextMenu.v
 import ImportDropdown from '@renderer/views/HomeView/ImportDropdown.vue'
 import FilterBar from '@/renderer/components/business/FilterBar/FilterBar.vue'
 import Breadcrumb from '@/renderer/components/common/Breadcrumb.vue'
-import StatusImage from '@renderer/components/common/StatusImage.vue'
+import StatusImage from '@/renderer/components/common/StatusImage.vue'
 import { Dropdown } from '@/renderer/components/common/Dropdown'
 import { Checkbox } from '@/components/ui/checkbox'
-import { ChapterScrubber, type Chapter } from '@/components/ui/chapter-scrubber'
+import { ChapterScrubber } from '@/components/ui/chapter-scrubber'
 import {
   AlertDialog,
   AlertDialogContent,
@@ -452,13 +436,18 @@ import {
   AlertDialogCancel,
   AlertDialogAction
 } from '@/components/ui/alert-dialog'
-import type { FileInfo } from '../../../shared/types'
-import type { FolderItem } from '@renderer/types/components'
-import type { FilterRule } from '@/renderer/types/filter'
-import type { ItemField } from '@renderer/stores/settings'
-import type { ImportFolderPayload, ImportTarget } from '@renderer/composables/useImportHandler'
-
-const { t } = useI18n()
+import type { FileInfo } from '@/shared/types'
+import { useMediaTabFetch } from './MediaTabListView/useMediaTabFetch'
+import { useMediaTabSelection } from './MediaTabListView/useMediaTabSelection'
+import { useMediaTabFilters } from './MediaTabListView/useMediaTabFilters'
+import { useMediaTabGrouping } from './MediaTabListView/useMediaTabGrouping'
+import { useMediaTabBreadcrumb } from './MediaTabListView/useMediaTabBreadcrumb'
+import { useMediaTabFolders } from './MediaTabListView/useMediaTabFolders'
+import { useMediaTabUpload } from './MediaTabListView/useMediaTabUpload'
+import { useMediaTabBatchOps } from './MediaTabListView/useMediaTabBatchOps'
+import { useMediaTabPagination } from './MediaTabListView/useMediaTabPagination'
+import { useFloatingToolbar } from './MediaTabListView/useFloatingToolbar'
+import { useMediaTabItemFields } from './MediaTabListView/useMediaTabItemFields'
 
 // Props
 interface Props {
@@ -494,8 +483,6 @@ const emit = defineEmits<{
 // 获取共享状态和控制器
 const tagStore = useTagStore()
 const mediaStore = useMediaStore()
-const folderStore = useFolderStore()
-const libraryStore = useLibraryStore()
 const homeController = useHomeController()
 
 // 使用独立的Tab分页状态管理 (已由MediaTabData替代)
@@ -540,279 +527,20 @@ const {
   getViewModeTitle
 } = viewModeConfig
 
-// 响应式状态
-const isLoading = ref(false)
-const sortField = ref<'imported_at' | 'id' | 'name' | 'size' | 'stars' | 'folder_id' | 'tags' | 'custom_fields'>('imported_at')
-const sortOrder = ref<'asc' | 'desc'>('desc')
-
-const groupingMode = ref<MediaGroupingMode>(getTabGroupingMode(props.tabId) || resolveDefaultGroupingMode())
-const groupingOptions: Array<{ value: MediaGroupingMode; label: string }> = [
-  { value: 'none', label: '无' },
-  { value: 'tags', label: '按标签' },
-  { value: 'folders', label: '按文件夹' },
-  { value: 'types', label: '按文件类型' },
-]
-
-const handleGroupingChange = (mode: MediaGroupingMode) => {
-  groupingMode.value = mode
-  void saveTabGroupingMode(props.tabId, mode)
-}
-
-// 拖拽上传
-const canUpload = computed(() =>
-  props.viewType !== 'trash'
-  && props.tabId !== 'folder-uncategorized'
-  && props.tabId !== 'folder-untagged'
-)
-const isDragOver = ref(false)
-const showUploadDialog = ref(false)
-const droppedFiles = ref<File[]>([])
-const uploadInitialTree = ref<ImportFolderPayload | undefined>()
-const uploadFolderId = ref<string>()
-const uploadTagIds = ref<string[]>([])
-const showFolderDialog = ref(false)
-const availableFolders = computed(() => folderStore.folders as any[])
-const folderEditAvailableFolders = computed<FolderItem[]>(() => {
-  const source = folderStore.folders || []
-  const nodes = new Map<number, FolderItem & { parent_id?: number }>()
-
-  source.forEach(folder => {
-    nodes.set(folder.id, {
-      id: String(folder.id),
-      label: folder.title || String(folder.id),
-      icon: folder.icon || 'folder',
-      path: folder.path,
-      originalData: folder,
-      children: [],
-      parent_id: folder.parent_id,
-    })
-  })
-
-  const roots: FolderItem[] = []
-  nodes.forEach(node => {
-    const parent = node.parent_id ? nodes.get(node.parent_id) : undefined
-    if (parent) parent.children!.push(node)
-    else roots.push(node)
-  })
-  return roots
-})
-const currentFolder = computed<FolderItem | null>(() => {
-  const rawFolder = props.filters?.folder
-  if (rawFolder === undefined || rawFolder === null || rawFolder === '=null') return null
-  const folderId = Number(rawFolder)
-  const folder = Number.isFinite(folderId) ? folderStore.getFolderById(folderId) : undefined
-  return folder
-    ? {
-      id: String(folder.id),
-      label: folder.title,
-      icon: folder.icon || 'folder',
-      path: folder.path,
-      originalData: folder,
-    }
-    : null
-})
-
-function handleListUpload() {
-  const target = importTarget.value
-  uploadFolderId.value = target.folderId == null ? undefined : String(target.folderId)
-  uploadTagIds.value = (target.tagIds || []).map(String)
-  droppedFiles.value = []
-  uploadInitialTree.value = undefined
-  showUploadDialog.value = true
-}
-
-const importTarget = computed<ImportTarget>(() => {
-  const folder = props.filters?.folder
-  const tags = props.filters?.tags
-  return {
-    folderId: folder != null && folder !== '=null' ? String(folder) : undefined,
-    tagIds: Array.isArray(tags) ? tags.map(String) : [],
-  }
-})
-
-function handleImportFolder(payload: ImportFolderPayload) {
-  uploadFolderId.value = payload.folderId == null ? undefined : String(payload.folderId)
-  uploadTagIds.value = (payload.tagIds || []).map(String)
-  droppedFiles.value = []
-  uploadInitialTree.value = payload
-  showUploadDialog.value = true
-}
-
-async function handleFolderSave(data: { title: string; parentId?: number; color?: number; description?: string }) {
-  const libraryId = props.libraryId || libraryStore.currentLibrary?.id
-  if (!libraryId) return
-  const result = await folderStore.createFolder(libraryId, data.title, data.parentId, data.color, data.description)
-  if (result.success) {
-    showFolderDialog.value = false
-    await handleRefresh(true)
-  }
-}
-
-const settingsStore = useSettingsStore()
-const urlImportStore = useUrlImportStore()
-const toast = useToast()
-
-const handleDragOver = (_e: DragEvent) => {
-  if ((window as any).__miraInternalDrag) return
-  isDragOver.value = true
-}
-
-const handleDragLeave = (e: DragEvent) => {
-  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-  if (e.clientX <= rect.left || e.clientX >= rect.right || e.clientY <= rect.top || e.clientY >= rect.bottom) {
-    isDragOver.value = false
-  }
-}
-
-const handleDrop = async (e: DragEvent, targetFolderId?: string) => {
-  isDragOver.value = false
-  if ((window as any).__miraInternalDrag) return
-
-  // 优先识别 http(s) 链接拖入（来自浏览器地址栏/链接的 text/uri-list 或 text/plain）
-  if (!e.dataTransfer?.files?.length) {
-    const uriList = e.dataTransfer?.getData('text/uri-list') || e.dataTransfer?.getData('text/plain') || ''
-    const urls = uriList.split(/\r?\n/).map((s) => s.trim()).filter((s) => /^https?:\/\//i.test(s))
-    if (urls.length > 0) {
-      const folder = props.filters?.folder
-      const folderIdNum = targetFolderId != null
-        ? Number(targetFolderId)
-        : (folder != null && Number.isFinite(Number(folder)) ? Number(folder) : null)
-      const tags = props.filters?.tags
-      urlImportStore.open({ urls, folderId: folderIdNum, tagIds: Array.isArray(tags) ? tags.map(String) : [] })
-      return
-    }
-    return
-  }
-
-  const files = Array.from(e.dataTransfer.files)
-  const folder = props.filters?.folder
-  const folderId = targetFolderId
-    || (folder != null && Number.isFinite(Number(folder)) ? String(folder) : undefined)
-  const tags = props.filters?.tags
-  const tagIds = Array.isArray(tags) ? tags.map(String) : []
-
-  if (settingsStore.settings.directImportMode) {
-    const libraryId = libraryStore.currentLibrary?.id
-    if (!libraryId) {
-      toast.add({ severity: 'error', summary: t('tabs.mediaTabListView.errorSummary'), detail: t('tabs.mediaTabListView.noLibraryDetail'), life: 3000 })
-      return
-    }
-    const metadata: Record<string, any> = {}
-    if (folderId) metadata.folderId = folderId
-    if (tagIds.length > 0) metadata.tags = tagIds
-    for (const file of files) {
-      mediaStore.uploadFile(file, libraryId, Object.keys(metadata).length > 0 ? metadata : undefined)
-    }
-    toast.add({ severity: 'success', summary: t('tabs.mediaTabListView.directImportSummary'), detail: t('tabs.mediaTabListView.uploadingFilesDetail', { count: files.length }), life: 2000 })
-    return
-  }
-
-  droppedFiles.value = files
-  uploadFolderId.value = folderId
-  uploadTagIds.value = tagIds
-  showUploadDialog.value = true
-}
+// 根元素与瀑布流引用（供分组导航 / 删除键处理 / 视图切换刷新使用）
+const mediaTabListViewRef = ref<HTMLElement | null>(null)
+const waterfallRef = ref<InstanceType<typeof WaterfallComponent> | InstanceType<typeof WaterfallComponent>[] | null>(null)
 
 // 使用 tab 独立的 viewMode（从 MediaTabData 获取）
 const viewMode = computed(() => mediaTabData.viewMode.value)
 const isTrash = computed(() => props.viewType === 'trash')
-const selectedItems = computed(() => [...new Set(homeController.selectedItems?.value || [])])
-
-// 文件更新刷新链路中可能重复写入同一 ID，统一在状态入口去重
-watch(() => homeController.selectedItems?.value, (ids) => {
-  if (!ids) return
-  const unique = [...new Set(ids)]
-  if (unique.length !== ids.length) homeController.selectedItems.value = unique
-}, { deep: true })
 const cardSize = computed(() => homeController.cardSize?.value || 'medium')
 const columnsPerRow = computed(() => homeController.columnsPerRow?.value || 6)
 const dynamicColumnWidth = computed(() => homeController.dynamicColumnWidth?.value || 200)
-const waterfallRef = ref<InstanceType<typeof WaterfallComponent> | InstanceType<typeof WaterfallComponent>[] | null>(null)
 
 // 使用MediaTabData的分页状态
 const currentPage = computed(() => mediaTabData.currentPage.value)
-
 const totalPages = computed(() => mediaTabData.totalPages.value)
-
-// 浮动操作栏：FLIP 宽度过渡 + 显示/隐藏缩放
-const toolbarRef = ref<HTMLElement | null>(null)
-// 浮动栏可见条件：有选中项 或 存在分页
-const showFloatingToolbar = computed(() => selectedItems.value.length > 0 || totalPages.value > 1)
-// 记录宽度变化前的值，用于 FLIP 反转
-let prevToolbarWidth = 0
-
-watch(showFloatingToolbar, (visible) => {
-  // 浮动栏即将显示：清除历史宽度，避免首次进入时出现错误的 scaleX
-  if (visible) prevToolbarWidth = 0
-})
-
-// 监听内部内容变化（选中态 / 分页），在 DOM 更新前后用 FLIP 实现丝滑宽度过渡
-watch([() => selectedItems.value.length, totalPages], () => {
-  const el = toolbarRef.value
-  // First：记录变化前的宽度
-  if (el && el.offsetWidth > 0) {
-    prevToolbarWidth = el.offsetWidth
-  }
-  // Last：DOM 更新后，对比新旧宽度做反转过渡
-  nextTick(() => {
-    const el = toolbarRef.value
-    if (!el || !prevToolbarWidth || prevToolbarWidth === el.offsetWidth) return
-    const ratio = prevToolbarWidth / el.offsetWidth
-    // Invert：瞬间应用反转 scale（无过渡）
-    el.style.transition = 'none'
-    el.style.transform = `scaleX(${ratio})`
-    // 强制浏览器刷新，使上面的"无过渡"状态生效
-    void el.offsetWidth
-    // Play：过渡回 1
-    el.style.transition = 'transform 240ms cubic-bezier(0.4, 0, 0.2, 1)'
-    el.style.transform = 'scaleX(1)'
-    prevToolbarWidth = el.offsetWidth
-  })
-})
-
-const paginationPages = computed(() => {
-  // 简单的分页页码计算
-  const pages: Array<{ number: number; active: boolean }> = []
-  const totalPagesValue = totalPages.value
-  const currentPageValue = currentPage.value
-
-  if (totalPagesValue <= 0) return pages
-
-  // 如果总页数小于等于10，显示所有页码
-  if (totalPagesValue <= 10) {
-    for (let i = 1; i <= totalPagesValue; i++) {
-      pages.push({
-        number: i,
-        active: i === currentPageValue
-      })
-    }
-  } else {
-    // 复杂分页逻辑
-    let startPage = Math.max(1, currentPageValue - 4)
-    let endPage = Math.min(totalPagesValue, startPage + 9)
-
-    if (endPage - startPage < 9) {
-      startPage = Math.max(1, endPage - 9)
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push({
-        number: i,
-        active: i === currentPageValue
-      })
-    }
-  }
-
-  return pages
-})
-// 使用本地的 paginatedMediaItems 计算全选状态
-const isAllSelected = computed(() => {
-  const items = paginatedMediaItems.value
-  const selected = selectedItems.value
-  return items.length > 0 &&
-    selected.length === items.length &&
-    items.every(item => selected.includes(item.id))
-})
 
 // 从 MediaTabData 获取数据（优先使用缓存数据）
 const paginatedMediaItems = computed(() => {
@@ -821,48 +549,125 @@ const paginatedMediaItems = computed(() => {
   return homeController.paginatedMediaItems?.value || []
 })
 
-const mediaGroups = computed(() => {
-  const items = paginatedMediaItems.value as FileInfo[]
-  if (groupingMode.value === 'none') return [{ key: 'all', label: '', items }]
+// ============================================
+// 按功能拆分的组合式函数（实现见 ./MediaTabListView/ 目录）
+// ============================================
 
-  const groups = new Map<string, FileInfo[]>()
-  const labels = new Map<string, string>()
-  const add = (key: string, label: string, item: FileInfo) => {
-    groups.set(key, [...(groups.get(key) || []), item])
-    labels.set(key, label)
-  }
+// 数据加载：分页取数、排序、刷新
+const {
+  isLoading,
+  sortField,
+  sortOrder,
+  fetchPageData,
+  handleRefresh,
+  handleManualRefresh,
+  handleActiveTabRefresh,
+  handleSortChange
+} = useMediaTabFetch({ props, mediaTabData, homeController, emit })
 
-  for (const item of items) {
-    if (groupingMode.value === 'tags') {
-      const tags = item.tags?.length ? item.tags : ['__untagged__']
-      tags.forEach(tagId => {
-        const tag = (tagStore.tags || []).find((candidate: any) => String(candidate.id) === String(tagId))
-        add(`tag-${tagId}`, tag?.title || (tagId === '__untagged__' ? '无标签' : String(tagId)), item)
-      })
-    } else if (groupingMode.value === 'folders') {
-      const folderId = item.folderId || '__unfiled__'
-      const folder = (folderStore.folders || []).find((candidate: any) => String(candidate.id) === String(folderId))
-      add(`folder-${folderId}`, folder?.title || (folderId === '__unfiled__' ? '无文件夹' : String(folderId)), item)
-    } else {
-      const type = item.mimeType?.split('/')[0] || item.extension?.replace('.', '') || '未知类型'
-      add(`type-${type}`, type, item)
-    }
-  }
+// 选中逻辑：全选/反选/取消、选中项与详情侧栏同步
+const {
+  selectedItems,
+  isAllSelected,
+  handleSelectAll,
+  handleMediaSelect,
+  handleInvertSelection,
+  handleClearSelection
+} = useMediaTabSelection({ homeController, paginatedMediaItems, emit })
 
-  return [...groups].map(([key, groupItems]) => ({ key, label: labels.get(key) || key, items: groupItems }))
+// 筛选逻辑：合并/清除/应用已保存过滤器
+const {
+  initializeFilterRules,
+  applySnapshotToRule,
+  handleFilterChange,
+  handleFilterClear,
+  handleApplySavedFilter,
+  handleClearAllFilters,
+  appliedFilterId
+} = useMediaTabFilters({
+  props,
+  mediaTabData,
+  homeController,
+  filterRules,
+  baseHandleFilterChange,
+  baseHandleFilterClear,
+  fetchPageData
 })
 
-const groupChapters = computed<Chapter[]>(() => mediaGroups.value.map((group, index) => ({
-  id: group.key,
-  title: group.label || t('views.sidebarModuleList.media'),
-  meta: `${index + 1} / ${mediaGroups.value.length}`,
-  description: t('tabs.mediaTabListView.fileCount', { count: group.items.length })
-})))
+// 素材分组：按标签/文件夹/文件类型分组 + 章节导航
+const {
+  groupingMode,
+  groupingOptions,
+  handleGroupingChange,
+  mediaGroups,
+  groupChapters,
+  handleGroupChapterSelect
+} = useMediaTabGrouping({ tabId: props.tabId, paginatedMediaItems, rootEl: () => mediaTabListViewRef.value })
 
-const handleGroupChapterSelect = (_chapter: Chapter, index: number) => {
-  const target = mediaTabListViewRef.value?.querySelector(`[data-media-group-index="${index}"]`)
-  target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-}
+// 面包屑导航
+const { breadcrumbItems, handleBreadcrumbClick } = useMediaTabBreadcrumb({ props })
+
+// 子文件夹区：卡片数据、封面加载、新建文件夹对话框
+const {
+  showFolderDialog,
+  availableFolders,
+  folderEditAvailableFolders,
+  currentFolder,
+  handleFolderSave,
+  childFolderItems,
+  folderCardUiSize,
+  folderGridItemSize,
+  folderCoverUrls,
+  handleChildFolderSelect,
+  getFolderColor
+} = useMediaTabFolders({ props, homeController, handleRefresh })
+
+// 拖拽上传 / 导入
+const {
+  canUpload,
+  isDragOver,
+  showUploadDialog,
+  droppedFiles,
+  uploadInitialTree,
+  uploadFolderId,
+  uploadTagIds,
+  importTarget,
+  handleListUpload,
+  handleImportFolder,
+  handleDragOver,
+  handleFolderCardDragOver,
+  handleFolderCardDragLeave,
+  handleDragLeave,
+  handleDrop
+} = useMediaTabUpload({ props })
+
+// 批量操作：恢复/彻底删除/删除 + 确认弹窗
+const {
+  handleToolbarAction,
+  handleDeleteKeyDown,
+  deleteDialogOpen,
+  confirmDelete
+} = useMediaTabBatchOps({
+  selectedItems,
+  mediaTabData,
+  homeController,
+  handleRefresh,
+  rootEl: () => mediaTabListViewRef.value
+})
+
+// 分页：页码列表与翻页
+const {
+  paginationPages,
+  handlePreviousPage,
+  handleNextPage,
+  handlePageChange
+} = useMediaTabPagination({ currentPage, totalPages, fetchPageData })
+
+// 浮动操作栏动画
+const { toolbarRef, showFloatingToolbar } = useFloatingToolbar({ selectedItems, totalPages })
+
+// 展示字段开关
+const { itemFieldOptions, isItemFieldVisible, toggleItemField } = useMediaTabItemFields()
 
 const filteredMediaItems = computed(() => {
   // 对于MediaTabListView，filteredMediaItems应该等于缓存的总数据
@@ -875,302 +680,8 @@ const filteredMediaItems = computed(() => {
   return homeController.filteredMediaItems?.value || []
 })
 
-/**
- * 面包屑导航：显示当前 文件夹/标签 的层级路径。
- * - 文件夹：通过 parent_id 向上回溯，得到 全部文件 / 父文件夹 / 子文件夹
- * - 标签：标签为扁平结构，得到 全部文件 / 标签：xxx
- * - 回收站：单条 回收站
- * 最后一项标记为 active（当前位置，不可点击）。
- */
-const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
-  const items: BreadcrumbItem[] = []
-
-  // 回收站：仅一条
-  if (props.viewType === 'trash') {
-    items.push({ id: 'trash', label: t('tabs.mediaTabListView.trashBreadcrumb'), icon: 'delete', active: true })
-    return items
-  }
-
-  // 根节点：全部文件（点击会打开 all 文件夹 Tab）
-  items.push({ id: 'all', label: t('tabs.mediaTabListView.allFilesBreadcrumb'), icon: 'folder' })
-
-  // 文件夹：沿 parent_id 向上回溯父级链
-  const folderRaw = props.filters?.folder
-  if (folderRaw !== undefined && folderRaw !== null && folderRaw !== '=null') {
-    const folderId = Number(folderRaw)
-    if (Number.isFinite(folderId)) {
-      const chain: BreadcrumbItem[] = []
-      const seen = new Set<number>() // 防止循环引用
-      let current = folderStore.getFolderById(folderId)
-      while (current && !seen.has(current.id)) {
-        seen.add(current.id)
-        chain.unshift({
-          id: `folder-${current.id}`,
-          label: current.title || String(current.id),
-          icon: 'folder'
-        })
-        const parentId = current.parent_id
-        if (parentId == null || parentId === 0) break
-        current = folderStore.getFolderById(parentId)
-      }
-      items.push(...chain)
-    }
-  }
-
-  // 标签：扁平结构，selectedValues 可能有多个
-  const tagsValue = props.filters?.tags
-  if (tagsValue && typeof tagsValue === 'object' && 'selectedValues' in tagsValue) {
-    const selectedValues = (tagsValue as any).selectedValues as (string | number)[] | undefined
-    if (Array.isArray(selectedValues)) {
-      selectedValues.forEach(tagId => {
-        const numericId = Number(tagId)
-        const tag = Number.isFinite(numericId)
-          ? tagStore.tags.find(t => t.id === numericId)
-          : undefined
-        const label = tag?.title || t('tabs.mediaTabListView.tagBreadcrumb', { name: tagId })
-        items.push({
-          id: `tag-${tagId}`,
-          label,
-          icon: 'label'
-        })
-      })
-    }
-  }
-
-  // 最后一项为当前位置
-  if (items.length > 0) {
-    items[items.length - 1].active = true
-  }
-  return items
-})
-
-/**
- * 面包屑点击：原地替换当前 Tab 的内容（不新开/切换 Tab）。
- */
-const handleBreadcrumbClick = (item: BreadcrumbItem) => {
-  let kind: 'folder' | 'tag' | 'all'
-  let payload: { id?: string; title?: string } = {}
-  if (item.id === 'all') {
-    kind = 'all'
-  } else if (item.id.startsWith('folder-')) {
-    kind = 'folder'
-    payload.id = item.id.slice('folder-'.length)
-    payload.title = item.label
-  } else if (item.id.startsWith('tag-')) {
-    kind = 'tag'
-    payload.id = item.id.slice('tag-'.length)
-    payload.title = item.label
-  } else {
-    return
-  }
-  window.dispatchEvent(new CustomEvent('home-tab-replace', { detail: { kind, payload } }))
-}
-
-// 选中项变化时同步 FileInfo 到全局 store
-watch([selectedItems, () => paginatedMediaItems.value], ([ids, items]) => {
-  if (!ids || ids.length === 0) {
-    mediaStore.clearDetailSidebar()
-    emit('selectionChange', [])
-    return
-  }
-  // 刷新分页数据时可能短暂为空；保留当前选中项和右侧详情，避免面板闪退为 empty
-  if (!items || items.length === 0) return
-  const matched = items.filter((item: FileInfo) => ids.includes(item.id))
-  if (matched.length === 0) return
-  mediaStore.setDetailSidebarFiles(matched)
-  emit('selectionChange', matched)
-}, { deep: true })
-
 const folderTreeItems = computed(() => homeController.folderTree.value || [])
 const tagTreeItems = computed(() => tagStore.tags || [])
-
-const childFolderItems = computed<BrowserItem[]>(() => {
-  if (props.viewType === 'trash') return []
-  const rawFolder = props.filters?.folder
-  const currentId = rawFolder === undefined || rawFolder === null || rawFolder === '=null'
-    ? null
-    : Number(rawFolder)
-  if (rawFolder !== undefined && rawFolder !== null && rawFolder !== '=null' && !Number.isFinite(currentId)) return []
-
-  return (folderStore.folders || [])
-    .filter((folder: any) => {
-      const parentId = folder.parent_id == null || folder.parent_id === 0 ? null : Number(folder.parent_id)
-      return parentId === currentId
-    })
-    .map((folder: any) => ({
-      raw: folder,
-      label: folder.title || folder.name || `Folder ${folder.id}`,
-      count: folder.fileCount ?? folder.file_count ?? 0,
-      icon: folder.icon || 'folder',
-      color: folder.color,
-      description: folder.description,
-    }))
-})
-
-// 与媒体网格列数/卡片模式保持一致，避免文件夹卡片固定尺寸导致布局脱节。
-const folderCardSize = computed(() => {
-  const modeScale = cardSize.value === 'small' ? 0.82 : cardSize.value === 'large' ? 1.12 : 1
-  return Math.round(Math.max(140, Math.min(260, dynamicColumnWidth.value * modeScale)))
-})
-
-const folderCardUiSize = computed<'sm' | 'md' | 'lg'>(() => {
-  if (folderCardSize.value <= 160) return 'sm'
-  if (folderCardSize.value <= 215) return 'md'
-  return 'lg'
-})
-
-const folderGridItemSize = computed(() => ({ sm: 96, md: 128, lg: 160 }[folderCardUiSize.value]))
-
-const folderCoverUrls = ref<Record<string, string>>({})
-let folderCoverLoadToken = 0
-const loadFolderCovers = async () => {
-  const libraryId = props.libraryId || libraryStore.currentLibrary?.id
-  if (!libraryId || childFolderItems.value.length === 0) {
-    folderCoverUrls.value = {}
-    return
-  }
-  const token = ++folderCoverLoadToken
-  const entries = await Promise.all(childFolderItems.value.map(async item => {
-    try {
-      const result = await mediaStore.fetchFiles({
-        libraryId,
-        filters: { folder: Number(item.raw.id), limit: 1, recycled: 0 },
-      })
-      const file = result.success && Array.isArray(result.data) ? result.data[0] : undefined
-      return [String(item.raw.id), file?.thumbnailPath || file?.url || ''] as const
-    } catch {
-      return [String(item.raw.id), ''] as const
-    }
-  }))
-  if (token === folderCoverLoadToken) folderCoverUrls.value = Object.fromEntries(entries)
-}
-
-watch([childFolderItems, () => props.libraryId || libraryStore.currentLibrary?.id], loadFolderCovers, { immediate: true })
-
-function handleChildFolderSelect(folder: any, event?: MouseEvent | KeyboardEvent) {
-  const title = folder.title || folder.name
-  if (event && (event.ctrlKey || event.metaKey)) {
-    window.dispatchEvent(new CustomEvent('home-route-folder', {
-      detail: {
-        folderId: folder.id,
-        libraryId: props.libraryId || libraryStore.currentLibrary?.id,
-        title,
-      },
-    }))
-    return
-  }
-
-  window.dispatchEvent(new CustomEvent('home-tab-replace', {
-    detail: {
-      kind: 'folder',
-      payload: { id: String(folder.id), title },
-    },
-  }))
-}
-
-function getFolderColor(color: unknown): string | undefined {
-  if (typeof color !== 'number' || !Number.isFinite(color)) return undefined
-  return `#${(color >>> 0).toString(16).padStart(6, '0').slice(-6)}`
-}
-
-// 方法
-// 获取指定页面的数据
-const fetchPageData = async (page: number) => {
-  // 检查并获取 libraryId
-  let libraryId = props.libraryId
-  if (!libraryId) {
-    // 尝试从当前素材库获取 libraryId
-    try {
-      if (libraryStore.currentLibrary?.id) {
-        libraryId = libraryStore.currentLibrary.id
-      } else {
-        console.warn('缺少 libraryId，无法获取分页数据')
-        return
-      }
-    } catch (error) {
-      console.error('❌ 获取当前素材库失败:', error)
-      return
-    }
-  }
-
-  isLoading.value = true
-
-  try {
-    // 更新分页状态
-    mediaTabData.setCurrentPage(page)
-
-    // 计算offset
-    const itemsPerPage = mediaTabData.itemsPerPage.value
-    const offset = (page - 1) * itemsPerPage
-
-    // 清理 null/undefined 值
-    const rawFilters = mediaTabData.filters.value
-    const currentFilters: Record<string, any> = {}
-    Object.entries(rawFilters).forEach(([key, value]) => {
-      if (value !== undefined && !(typeof value === 'number' && Number.isNaN(value))) {
-        currentFilters[key] = value
-      }
-    })
-
-    const tabInfo = {
-      id: props.tabId,
-      type: props.viewType || 'all',
-      libraryId: libraryId, // 将 libraryId 放在顶层，确保 fetchFilesForTab 能正确获取
-      data: {},
-      filters: currentFilters, // 将筛选器放在正确的位置
-      sort: sortField.value as 'imported_at' | 'id' | 'size' | 'stars' | 'folder_id' | 'tags' | 'name' | 'custom_fields',
-      order: sortOrder.value
-    }
-
-    // 调用mediaStore的fetchFilesForTab获取数据
-    const result = await mediaStore.fetchFilesForTab(tabInfo, {
-      limit: itemsPerPage,
-      offset: offset
-    })
-
-    if (result.success && result.data) {
-      // 缓存数据到MediaTabData
-      mediaTabData.cacheData(result.data, result.total || 0)
-
-      // 更新分页信息
-      if (result.total !== undefined) {
-        mediaTabData.updatePagination({
-          totalRecords: result.total,
-          isServerPagination: true
-        })
-      }
-    } else {
-      console.error('❌ 分页数据加载失败:', (result as any).error || '未知错误')
-    }
-  } catch (error) {
-    console.error('❌ 分页数据获取异常:', error)
-  } finally {
-    isLoading.value = false
-  }
-}
-
-const handleRefresh = async (preserveSelection = false) => {
-  if (!preserveSelection) homeController.selectedItems.value = []
-  await fetchPageData(1)
-  emit('refresh')
-}
-
-const handleManualRefresh = () => handleRefresh()
-
-// WebSocket 活跃 tab 刷新回调
-const handleActiveTabRefresh = (e: Event) => {
-  const { tabId } = (e as CustomEvent).detail
-  if (tabId === props.tabId) {
-    const eventType = (e as CustomEvent).detail?.eventType
-    // 文件属性更新可能影响当前排序（例如按名称、星标或更新时间排序）。
-    // 重新按当前排序查询，避免局部更新把文件留在列表首位；保留用户选中状态。
-    if (eventType === 'updated') {
-      void handleRefresh(true)
-      return
-    }
-    void handleRefresh()
-  }
-}
 
 const handleMediaDelete = async (_item: FileInfo) => {
   await handleRefresh()
@@ -1186,491 +697,12 @@ const handleMediaDoubleClick = (item: FileInfo) => {
   emit('itemDoubleClick', item)
 }
 
-const handleMediaSelect = (item: FileInfo, selected: boolean, event?: MouseEvent) => {
-  // 子组件按分组清理旧选择；普通点击需要在父级清理其他分组。
-  if (selected && event && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) {
-    homeController.selectedItems.value = homeController.selectedItems.value.filter(id => id === item.id)
-  }
-  homeController.handleMediaSelect(item, selected)
-  emit('itemSelect', item, selected)
-}
-
 const handleMediaContextMenu = (item: FileInfo, event: MouseEvent) => {
   homeController.handleMediaContextMenu(item, event)
 }
 
-const handleSelectAll = () => {
-  // 使用本地的 paginatedMediaItems 而不是 homeController 的
-  const items = paginatedMediaItems.value
-
-  if (isAllSelected.value) {
-    // 取消全选
-    homeController.selectedItems.value = []
-  } else {
-    // 全选当前页
-    homeController.selectedItems.value = items.map(item => item.id)
-  }
-}
-
-// 把单个 FilterRule 的当前值写入查询用的 mergedFilters（供 handleFilterChange / 应用已保存过滤器共用）
-const mergeFilterInto = (mergedFilters: Record<string, any>, filter: FilterRule) => {
-  switch (filter.id) {
-    case 'folders':
-      if (filter.selectedValues && filter.selectedValues.length > 0) {
-        mergedFilters.folders = {
-          id: 'folders',
-          selectedValues: filter.selectedValues,
-          label: t('tabs.mediaTabListView.filterFolders')
-        }
-      } else {
-        delete mergedFilters.folders
-      }
-      break
-    case 'tags':
-      if (filter.selectedValues && filter.selectedValues.length > 0) {
-        mergedFilters.tags = {
-          id: 'tags',
-          selectedValues: filter.selectedValues,
-          label: t('tabs.mediaTabListView.filterTagsLabel')
-        }
-      } else {
-        delete mergedFilters.tags
-      }
-      break
-    case 'urls':
-      // urls 筛选器：检查是否有有效值（非空字符串）
-      if (filter.value !== undefined && filter.value !== null && filter.value.trim() !== '') {
-        mergedFilters.urls = {
-          id: 'urls',
-          value: filter.value.trim(),
-          label: t('tabs.mediaTabListView.filterUrls')
-        }
-      } else {
-        delete mergedFilters.urls
-      }
-      break
-    case 'title':
-      if (filter.value !== undefined && filter.value !== null && filter.value.trim() !== '') {
-        mergedFilters.title = {
-          id: 'title',
-          value: filter.value.trim(),
-          label: t('tabs.mediaTabListView.filterTitle')
-        }
-      } else {
-        delete mergedFilters.title
-      }
-      break
-    case 'size':
-      mergedFilters.size = {
-        id: 'size',
-        selectedPreset: filter.selectedPreset,
-        sizeMin: filter.sizeMin,
-        sizeMax: filter.sizeMax,
-        customMin: filter.customMin,
-        customMax: filter.customMax,
-        label: t('tabs.mediaTabListView.filterSize')
-      }
-      break
-    case 'category':
-      if (filter.selectedCategory && filter.selectedCategory !== '') {
-        mergedFilters.category = {
-          id: 'category',
-          selectedCategory: filter.selectedCategory,
-          label: t('tabs.mediaTabListView.filterCategory')
-        }
-      } else {
-        delete mergedFilters.category
-      }
-      break
-    case 'metadata': {
-      const hasMetaRange = filter.metaDimMin !== undefined || filter.metaDimMax !== undefined
-        || filter.metaDurMin !== undefined || filter.metaDurMax !== undefined
-      if (hasMetaRange) {
-        mergedFilters.metadata = {
-          id: 'metadata',
-          metaDimMin: filter.metaDimMin,
-          metaDimMax: filter.metaDimMax,
-          metaDurMin: filter.metaDurMin,
-          metaDurMax: filter.metaDurMax,
-          label: t('business.filterBar.metadataTitle')
-        }
-      } else {
-        delete mergedFilters.metadata
-      }
-      break
-    }
-  }
-}
-
-const handleFilterChange = async (filter: FilterRule) => {
-  // 获取当前的筛选器状态作为基础
-  const mergedFilters: Record<string, any> = { ...mediaTabData.filters.value }
-
-  // 保留 props.filters 中的简单键值对格式筛选器（如 folder, recycled 等）
-  // 这些筛选器不是 FilterRule 格式，需要单独保留
-  Object.entries(props.filters).forEach(([key, value]) => {
-    // 跳过 FilterRule 格式的筛选器，只保留简单键值对
-    if (value === null || typeof value !== 'object') {
-      mergedFilters[key] = value
-    }
-  })
-
-  // 更新变化的筛选器
-  mergeFilterInto(mergedFilters, filter)
-
-  // 用户手动改动筛选条件，取消与已保存过滤器的关联
-  mediaTabData.setAppliedFilterId(null)
-
-  // 更新MediaTabData中的筛选器
-  mediaTabData.updateFilters(mergedFilters)
-
-  // 筛选器变化时重新加载第一页数据
-  await fetchPageData(1)
-
-  // 同时调用原有逻辑以保持兼容性
-  baseHandleFilterChange(filter, () => undefined, null, homeController)
-}
-
-const handleFilterClear = async (filter: FilterRule) => {
-  // 获取当前的筛选器状态作为基础
-  const mergedFilters: Record<string, any> = { ...mediaTabData.filters.value }
-
-  // 检查是否是初始筛选器（来自 props.filters 的简单键值对格式）
-  const isInitialFilter = (filterId: string) => {
-    if (filterId === 'folders' && props.filters?.folder !== undefined) {
-      return true
-    }
-    if (filterId === 'tags' && props.filters?.tags !== undefined) {
-      return true
-    }
-    return false
-  }
-
-  // 如果是初始筛选器，恢复为初始值而不是完全清除
-  if (isInitialFilter(filter.id)) {
-    // 重新初始化 filterRules 显示
-    initializeFilterRules()
-  } else {
-    // 清除非初始筛选器
-    if (filter.id === 'folders') {
-      delete mergedFilters.folders
-    } else if (filter.id === 'tags') {
-      delete mergedFilters.tags
-    } else if (filter.id === 'category') {
-      delete mergedFilters.category
-    } else if (filter.id === 'urls') {
-      delete mergedFilters.urls
-    } else if (filter.id === 'size') {
-      delete mergedFilters.size
-    } else if (filter.id === 'metadata') {
-      delete mergedFilters.metadata
-    }
-  }
-
-  // 确保 props.filters 中的简单键值对格式筛选器被保留
-  Object.entries(props.filters).forEach(([_key, value]) => {
-    // 跳过 FilterRule 格式的筛选器，只保留简单键值对
-    if (value === null || typeof value !== 'object') {
-      // 保留简单格式的初始筛选器
-    }
-  })
-
-  // 更新MediaTabData中的筛选器
-  mediaTabData.updateFilters(mergedFilters)
-
-  // 筛选器清除时重新加载第一页数据
-  await fetchPageData(1)
-
-  // 用户手动改动筛选条件，取消与已保存过滤器的关联
-  mediaTabData.setAppliedFilterId(null)
-
-  // 同时调用原有逻辑以保持兼容性
-  baseHandleFilterClear(filter, () => undefined, null, homeController)
-}
-
-// 用快照（保存的过滤器规则）同步单条 FilterRule 的显示状态；snapshot 为 null 时即重置
-const applySnapshotToRule = (rule: FilterRule, snapshot: any) => {
-  rule.selectedValues = snapshot?.selectedValues || []
-  rule.value = snapshot?.value || ''
-  rule.selectedPreset = snapshot?.selectedPreset || ''
-  rule.customMin = snapshot?.customMin
-  rule.customMax = snapshot?.customMax
-  rule.sizeMin = snapshot?.sizeMin
-  rule.sizeMax = snapshot?.sizeMax
-  rule.selectedCategory = snapshot?.selectedCategory || ''
-  rule.metaField = snapshot?.metaField || 'dimension'
-  rule.selectedMetaPreset = snapshot?.selectedMetaPreset || ''
-  rule.metaDimMin = snapshot?.metaDimMin
-  rule.metaDimMax = snapshot?.metaDimMax
-  rule.metaDurMin = snapshot?.metaDurMin
-  rule.metaDurMax = snapshot?.metaDurMax
-  rule.customDimMin = snapshot?.customDimMin
-  rule.customDimMax = snapshot?.customDimMax
-  rule.customDurMin = snapshot?.customDurMin
-  rule.customDurMax = snapshot?.customDurMax
-  rule.active = snapshot?.active || false
-}
-
-// 当前 tab 已应用的过滤器 id（精准匹配，供 FilterBar 展示名称；随 tab 状态持久化）
-const appliedFilterId = computed(() => mediaTabData.appliedFilterId.value)
-
-// 应用已保存的过滤器（整套替换当前筛选条件并重新查询）
-const handleApplySavedFilter = async (filterId: string | null, rules: FilterRule[]) => {
-  const savedById = new Map(rules.map(rule => [rule.id, rule]))
-
-  // 先重置 FilterBar 显示状态，再同步保存值，避免残留旧条件
-  filterRules.value.forEach(rule => {
-    const saved = savedById.get(rule.id)
-    applySnapshotToRule(rule, saved ? JSON.parse(JSON.stringify(saved)) : null)
-  })
-
-  // 空基础重建查询条件，保留 props.filters 中 tab 固有的简单键值筛选（如 folder / recycled）
-  const mergedFilters: Record<string, any> = {}
-  Object.entries(props.filters).forEach(([key, value]) => {
-    if (value === null || typeof value !== 'object') {
-      mergedFilters[key] = value
-    }
-  })
-  filterRules.value.forEach(rule => mergeFilterInto(mergedFilters, rule))
-
-  mediaTabData.updateFilters(mergedFilters)
-  await fetchPageData(1)
-
-  mediaTabData.setAppliedFilterId(filterId || null)
-
-  // 同步 homeController 的筛选状态
-  filterRules.value.forEach(rule => {
-    baseHandleFilterChange(rule, () => undefined, null, homeController)
-  })
-}
-
-// 清除当前 tab 的全部筛选条件（保留 tab 固有的简单键值筛选，如 folder / recycled）
-const handleClearAllFilters = async () => {
-  filterRules.value.forEach(rule => applySnapshotToRule(rule, null))
-
-  const mergedFilters: Record<string, any> = {}
-  Object.entries(props.filters).forEach(([key, value]) => {
-    if (value === null || typeof value !== 'object') {
-      mergedFilters[key] = value
-    }
-  })
-
-  mediaTabData.updateFilters(mergedFilters)
-  await fetchPageData(1)
-
-  mediaTabData.setAppliedFilterId(null)
-
-  // 同步 homeController 的筛选状态（清除语义）
-  filterRules.value.forEach(rule => {
-    baseHandleFilterClear(rule, () => undefined, null, homeController)
-  })
-}
-
-const handleSortChange = async (field: string, order: string) => {
-  sortField.value = field as 'imported_at' | 'id' | 'name' | 'size' | 'stars' | 'folder_id' | 'tags' | 'custom_fields'
-  sortOrder.value = order as 'asc' | 'desc'
-  await fetchPageData(1)
-}
-
-// 将选中文件按 libraryId 分组，缺少 libraryId 的进入 ungrouped
-const groupSelectedByLibrary = () => {
-  const cachedFiles = mediaTabData.getCachedData().data
-  const groups = new Map<string, string[]>()
-  const ungrouped: string[] = []
-  for (const id of selectedItems.value) {
-    const file = cachedFiles.find((f: FileInfo) => f.id === id)
-    const libraryId = file?.libraryId || libraryStore.currentLibrary?.id
-    if (!libraryId) { ungrouped.push(id); continue }
-    const list = groups.get(libraryId) ?? []
-    list.push(id)
-    groups.set(libraryId, list)
-  }
-  return { groups, ungrouped }
-}
-
-// 分组执行批量操作（每组只发一次请求），完成后弹 toast，返回失败数
-const runGroupedBatchOperation = async (
-  label: string,
-  operation: (libraryId: string, fileIds: string[]) => Promise<{ failedIds?: unknown[] }>
-) => {
-  const total = selectedItems.value.length
-  const { groups, ungrouped } = groupSelectedByLibrary()
-  let failed = ungrouped.length
-  let completed = 0
-  for (const [libraryId, fileIds] of groups) {
-    try {
-      const result = await operation(libraryId, fileIds)
-      const groupFailed = result?.failedIds?.length ?? 0
-      failed += groupFailed
-      completed += fileIds.length - groupFailed
-    } catch {
-      failed += fileIds.length
-    }
-  }
-  toast.add({
-    severity: failed === 0 ? 'success' : (completed > 0 ? 'warn' : 'error'),
-    summary: label,
-    detail: failed === 0
-      ? t('composables.useBatchOperation.completedAll', { label, completed, total })
-      : t('composables.useBatchOperation.completedWithFailures', { label, completed, failed }),
-    life: failed > 0 ? 5000 : 3000
-  })
-  return failed
-}
-
-const handleToolbarAction = async (action: string) => {
-  // 回收站：恢复 / 彻底删除
-  if (action === 'restore') {
-    if (selectedItems.value.length === 0) return
-    await runGroupedBatchOperation(
-      t('tabs.mediaTabListView.restoreBatchLabel'),
-      (libraryId, fileIds) => appService.batchRestoreFiles(libraryId, fileIds)
-    )
-
-    homeController.selectedItems.value = []
-    await handleRefresh()
-    return
-  }
-
-  if (action === 'purge') {
-    if (selectedItems.value.length === 0) return
-    await runGroupedBatchOperation(
-      t('tabs.mediaTabListView.purgeBatchLabel'),
-      (libraryId, fileIds) => appService.batchDeleteFiles(libraryId, fileIds, false)
-    )
-
-    homeController.selectedItems.value = []
-    await handleRefresh()
-    return
-  }
-
-  if (action === 'delete') {
-    // 批量删除前需用户确认
-    if (selectedItems.value.length === 0) return
-    deleteDialogOpen.value = true
-    return
-  }
-  homeController.handleToolbarAction(action)
-}
-
-const mediaTabListViewRef = ref<HTMLElement | null>(null)
-
-const handleDeleteKeyDown = (event: KeyboardEvent) => {
-  if (event.key !== 'Delete' || selectedItems.value.length === 0) return
-
-  const activeElement = document.activeElement
-  const selectionBox = activeElement instanceof HTMLElement
-    ? activeElement.closest('.selection-container')
-    : null
-  if (!selectionBox || !mediaTabListViewRef.value?.contains(selectionBox)) return
-
-  event.preventDefault()
-  event.stopImmediatePropagation()
-  void handleToolbarAction('delete')
-}
-
-// 批量删除确认弹窗
-const deleteDialogOpen = ref(false)
-
-const confirmDelete = async () => {
-  deleteDialogOpen.value = false
-  if (selectedItems.value.length === 0) return
-  const failed = await runGroupedBatchOperation(
-    t('tabs.mediaTabListView.deleteBatchLabel'),
-    (libraryId, fileIds) => appService.batchDeleteFiles(libraryId, fileIds)
-  )
-  if (failed > 0) console.error(`删除失败: ${failed} 个文件`)
-  homeController.selectedItems.value = []
-  await handleRefresh()
-}
-
-// 反选当前页
-const handleInvertSelection = () => {
-  const items = paginatedMediaItems.value
-  const selected = new Set(selectedItems.value)
-  const inverted = items
-    .map(item => item.id)
-    .filter(id => !selected.has(id))
-  homeController.selectedItems.value = inverted
-}
-
-// 取消选择（全部清空）
-const handleClearSelection = () => {
-  homeController.selectedItems.value = []
-}
-
-const handlePreviousPage = async () => {
-  if (currentPage.value > 1) {
-    await fetchPageData(currentPage.value - 1)
-    scrollToSelectionTop()
-  }
-}
-
-const handleNextPage = async () => {
-  if (currentPage.value < totalPages.value) {
-    await fetchPageData(currentPage.value + 1)
-    scrollToSelectionTop()
-  }
-}
-
-const handlePageChange = async (page: number) => {
-  if (page !== currentPage.value && page >= 1 && page <= totalPages.value) {
-    await fetchPageData(page)
-    scrollToSelectionTop()
-  }
-}
-
-// 滚动 .selection-container 到顶部
-const scrollToSelectionTop = () => {
-  nextTick(() => {
-    const container = document.querySelector('.selection-container') as HTMLElement
-    if (container) {
-      container.scrollTop = 0
-    }
-
-    // 多次滚动以等待懒加载图片渲染完成
-    setTimeout(() => {
-      const container = document.querySelector('.selection-container') as HTMLElement
-      if (container) {
-        container.scrollTop = 0
-      }
-    }, 100)
-
-    setTimeout(() => {
-      const container = document.querySelector('.selection-container') as HTMLElement
-      if (container) {
-        container.scrollTop = 0
-      }
-    }, 300)
-  })
-}
-
 const handleColumnsChange = (event: Event) => {
   homeController.handleColumnsChange(event)
-}
-
-// ============================================
-// 展示字段开关（控制三个视图下媒体项展示哪些信息）
-// ============================================
-const itemFieldOptions = computed<{ key: ItemField; label: string }[]>(() => [
-  { key: 'filename', label: t('tabs.mediaTabListView.fieldFilename') },
-  { key: 'format', label: t('tabs.mediaTabListView.fieldFormat') },
-  { key: 'size', label: t('tabs.mediaTabListView.fieldSize') },
-  { key: 'folder', label: t('tabs.mediaTabListView.fieldFolder') },
-  { key: 'tags', label: t('tabs.mediaTabListView.fieldTags') },
-  { key: 'videoPlayIcon', label: t('tabs.mediaTabListView.fieldVideoPlayIcon') }
-])
-
-const isItemFieldVisible = (field: ItemField) => {
-  return settingsStore.settings.visibleItemFields.includes(field)
-}
-
-const toggleItemField = async (field: ItemField, checked: boolean) => {
-  const current = settingsStore.settings.visibleItemFields
-  const next = checked
-    ? [...current, field]
-    : current.filter(f => f !== field)
-  await settingsStore.updateSetting('visibleItemFields', next)
 }
 
 const handleCtrlWheel = (event: WheelEvent) => {
@@ -1697,39 +729,6 @@ const handleViewModeChange = async (mode: 'grid' | 'list' | 'waterfall') => {
   }
 }
 
-
-// 初始化 filterRules，同步 props.filters 中的初始筛选器
-const initializeFilterRules = () => {
-  // 如果 props.filters 中有 folder，同步到 folders filterRule
-  if (props.filters?.folder !== undefined) {
-    const foldersFilter = filterRules.value.find(f => f.id === 'folders')
-    if (foldersFilter) {
-      // folder 可能是数字或 null
-      const folderValue = props.filters.folder
-      if (folderValue !== null) {
-        foldersFilter.selectedValues = [folderValue]
-        foldersFilter.active = true
-      }
-    }
-  }
-
-  // 如果 props.filters 中有 tags，同步到 tags filterRule
-  if (props.filters?.tags !== undefined) {
-    const tagsFilter = filterRules.value.find(f => f.id === 'tags')
-    if (tagsFilter) {
-      const tagsValue = props.filters.tags
-      if (tagsValue && typeof tagsValue === 'object' && 'selectedValues' in tagsValue) {
-        // 如果是 FilterRule 格式
-        tagsFilter.selectedValues = tagsValue.selectedValues || []
-        tagsFilter.active = (tagsFilter.selectedValues || []).length > 0
-      } else if (Array.isArray(tagsValue)) {
-        // 如果是数组格式
-        tagsFilter.selectedValues = tagsValue
-        tagsFilter.active = tagsValue.length > 0
-      }
-    }
-  }
-}
 
 // 监听Tab ID变化，初始化MediaTabData
 watch(() => props.tabId, async (newTabId, _oldTabId) => {

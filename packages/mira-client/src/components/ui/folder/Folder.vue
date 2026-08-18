@@ -208,6 +208,11 @@ const backPaperLeft = computed(() =>
 // 前侧纸张：整体上浮
 const frontPaper = computed(() => (hovered.value ? { y: s.value.hoverY } : { y: 0 }))
 
+// 自定义颜色时前挡板各部分的背景覆盖（tabLeft/tabRight/tabBridge/flapBody 共用）
+const flapStyle = computed(() =>
+  props.customColor ? { background: "var(--folder-custom-flap)" } : undefined,
+)
+
 // 桥接块圆角遮罩（tailwind 4.0 无 mask-* 工具类，内联实现）
 const bridgeMask = "radial-gradient(200% 200% at 100% 0%, transparent 50%, black 50%)"
 const bridgeStyle = {
@@ -233,11 +238,11 @@ const bridgeStyle = {
     <!-- 前挡板 -->
     <div class="absolute right-0 bottom-0 left-0 z-20">
       <div class="flex items-end">
-        <div :class="cn(s.tabLeft, 'backdrop-blur-sm', c.flap)" />
-        <div :class="cn(s.tabRight, 'backdrop-blur-sm', c.flap)" />
-        <div :class="cn(s.tabBridge, c.flap)" :style="{ ...bridgeStyle, ...(props.customColor ? { background: 'var(--folder-custom-flap)' } : {}) }" />
+        <div :class="cn(s.tabLeft, 'backdrop-blur-sm', c.flap)" :style="flapStyle" />
+        <div :class="cn(s.tabRight, 'backdrop-blur-sm', c.flap)" :style="flapStyle" />
+        <div :class="cn(s.tabBridge, c.flap)" :style="{ ...bridgeStyle, ...flapStyle }" />
       </div>
-      <div :class="cn(s.flapBody, 'backdrop-blur-sm', c.flap)" :style="props.customColor ? { background: 'var(--folder-custom-flap)' } : undefined" />
+      <div :class="cn(s.flapBody, 'backdrop-blur-sm', c.flap)" :style="flapStyle" />
     </div>
 
     <!-- 纸张 -->

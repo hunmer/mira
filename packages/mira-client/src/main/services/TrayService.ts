@@ -46,8 +46,6 @@ export class TrayService {
     if (this.settings.enabled) {
       this.createTray()
     }
-
-    logger.info('TrayService', 'Tray service initialized', { enabled: this.settings.enabled })
   }
 
   /** 主窗口重建后刷新引用 */
@@ -72,8 +70,6 @@ export class TrayService {
       // 如果托盘已存在且仍启用，更新上下文菜单
       this.updateContextMenu()
     }
-
-    logger.info('TrayService', 'Tray settings updated', this.settings)
   }
 
   /**
@@ -92,17 +88,13 @@ export class TrayService {
       this.tray.setToolTip(t('tray.tooltip'))
       this.updateContextMenu()
     }
-    logger.debug('TrayService', 'Tray locale updated', { locale })
   }
 
   /**
    * 创建托盘
    */
   private createTray(): void {
-    if (this.tray) {
-      logger.debug('TrayService', 'Tray already exists, skipping creation')
-      return
-    }
+    if (this.tray) return
 
     try {
       // 创建托盘图标
@@ -127,8 +119,6 @@ export class TrayService {
       
       // 设置双击事件
       this.tray.on('double-click', this.handleTrayDoubleClick.bind(this))
-
-      logger.info('TrayService', 'Tray created successfully')
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
       logger.error('TrayService', `Failed to create tray: ${errorMessage}`)
@@ -142,7 +132,6 @@ export class TrayService {
     if (this.tray) {
       this.tray.destroy()
       this.tray = null
-      logger.info('TrayService', 'Tray destroyed')
     }
   }
 
@@ -225,8 +214,6 @@ export class TrayService {
     if (process.platform === 'darwin') {
       app.dock?.show()
     }
-
-    logger.debug('TrayService', 'Main window shown via tray')
   }
 
   /**
@@ -241,8 +228,6 @@ export class TrayService {
     if (process.platform === 'darwin') {
       app.dock?.hide()
     }
-
-    logger.debug('TrayService', 'Main window hidden via tray')
   }
 
   /**
@@ -266,8 +251,6 @@ export class TrayService {
     if (process.platform === 'darwin') {
       app.dock?.show()
     }
-
-    logger.debug('TrayService', 'Window position reset to center')
   }
 
   /**
@@ -296,7 +279,6 @@ export class TrayService {
       ? join(process.resourcesPath, 'assets')
       : join(__dirname, '../assets')
     const iconPath = join(assetsDir, iconName)
-    logger.debug('TrayService', 'Tray icon path', { iconPath, isPackaged: app.isPackaged })
 
     return iconPath
   }
@@ -364,6 +346,5 @@ export class TrayService {
     this.destroyTray()
     this.mainWindow = null
     this.showMainWindowCallback = null
-    logger.info('TrayService', 'Tray service cleaned up')
   }
 }

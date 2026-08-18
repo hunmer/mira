@@ -1,6 +1,5 @@
 import { app, BrowserWindow } from 'electron'
 import { join } from 'node:path'
-import { logger } from '../utils/Logger'
 import {
   createWindowStateKeeper,
   saveWindowState,
@@ -25,8 +24,6 @@ export class MainWindowService {
       return this.mainWindow
     }
 
-    logger.info('MainWindowService', 'Creating main window')
-
     // 创建窗口状态管理器
     const mainWindowState = createWindowStateKeeper({
       defaultWidth: 1200,
@@ -36,22 +33,7 @@ export class MainWindowService {
       fullScreen: false,
     })
 
-    // 记录窗口状态文件位置
-    logger.info('MainWindowService', 'Window state file location', {
-      userDataPath: app.getPath('userData'),
-      stateFile: 'mira-window-state.json',
-    })
-
     this.windowState = mainWindowState
-
-    logger.debug('MainWindowService', 'Window state loaded', {
-      x: mainWindowState.x,
-      y: mainWindowState.y,
-      width: mainWindowState.width,
-      height: mainWindowState.height,
-      isMaximized: mainWindowState.isMaximized,
-      isFullScreen: mainWindowState.isFullScreen,
-    })
 
     // 创建主窗口
     this.mainWindow = new BrowserWindow({
@@ -80,28 +62,24 @@ export class MainWindowService {
       ),
     })
 
+    // 页面完成加载后立即注入，确保渲染进程日志同时进入 DevTools 和主进程。
+    this.mainWindow.webContents.once('did-finish-load', () => {
+      if (this.mainWindow) injectConsoleHook(this.mainWindow)
+    })
+
     // 页面长时间未就绪时也显示窗口，避免开发服务器阻塞导致应用完全不可见。
     const showFallbackTimer = setTimeout(() => {
       if (this.mainWindow && !this.mainWindow.isDestroyed() && !this.mainWindow.isVisible()) {
-        logger.warn('MainWindowService', 'Main window load timed out, showing window for diagnostics')
         this.mainWindow.show()
       }
     }, 10000)
     showFallbackTimer.unref()
 
-    this.mainWindow.webContents.on(
-      'did-fail-load',
-      (_event, errorCode, errorDescription, validatedURL, isMainFrame) => {
-        if (!isMainFrame) return
-        clearTimeout(showFallbackTimer)
-        logger.error('MainWindowService', 'Main window failed to load', {
-          errorCode,
-          errorDescription,
-          validatedURL,
-        })
-        this.mainWindow?.show()
-      },
-    )
+    this.mainWindow.webContents.on('did-fail-load', (_event, _code, _desc, _url, isMainFrame) => {
+      if (!isMainFrame) return
+      clearTimeout(showFallbackTimer)
+      this.mainWindow?.show()
+    })
 
     // 让 windowStateKeeper 管理这个窗口
     mainWindowState.manage(this.mainWindow)
@@ -109,19 +87,16 @@ export class MainWindowService {
     // 如果上次是最大化状态，恢复最大化
     if (mainWindowState.isMaximized) {
       this.mainWindow.maximize()
-      logger.debug('MainWindowService', 'Window restored to maximized state')
     }
 
     // 如果上次是全屏状态，恢复全屏
     if (mainWindowState.isFullScreen) {
       this.mainWindow.setFullScreen(true)
-      logger.debug('MainWindowService', 'Window restored to fullscreen state')
     }
 
     // 窗口加载完成后显示
     this.mainWindow.once('ready-to-show', () => {
       clearTimeout(showFallbackTimer)
-      logger.info('MainWindowService', 'Main window ready to show')
       this.mainWindow?.show()
       this.mainWindow?.webContents.setZoomFactor(1)
       // 在开发环境或未打包时打开开发者工具
@@ -130,20 +105,14 @@ export class MainWindowService {
         this.mainWindow?.webContents.openDevTools()
       }
 
-      // 注入 console hook 到渲染进程
-      if (this.mainWindow) {
-        injectConsoleHook(this.mainWindow)
-      }
     })
 
     // 加载应用
     if (app.isPackaged) {
       // 生产环境 - 加载打包后的文件
-      logger.info('MainWindowService', 'Loading production app')
       this.mainWindow.loadFile(join(__dirname, '../dist-renderer/index.html'))
     } else {
       // 开发环境 - vite-plugin-electron 会自动处理
-      logger.info('MainWindowService', 'Loading development app')
       const devServerUrl = process.env.VITE_DEV_SERVER_URL || 'http://localhost:3000'
       this.mainWindow.loadURL(devServerUrl)
     }
@@ -155,13 +124,11 @@ export class MainWindowService {
 
       event.preventDefault()
       this.mainWindow?.hide()
-      logger.info('MainWindowService', 'Main window hidden on close')
     })
 
     // 窗口关闭时清理引用
     this.mainWindow.on('closed', () => {
       clearTimeout(showFallbackTimer)
-      logger.info('MainWindowService', 'Main window closed')
       this.mainWindow = null
     })
 
@@ -194,7 +161,6 @@ export class MainWindowService {
 
     // 处理外部链接
     this.mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-      logger.debug('MainWindowService', 'Opening external URL', { url })
       // 在默认浏览器中打开外部链接
       require('electron').shell.openExternal(url)
       return { action: 'deny' }
@@ -221,7 +187,6 @@ export class MainWindowService {
   /** 设置关闭按钮是否改为隐藏窗口 */
   setCloseToTray(enabled: boolean): void {
     this.closeToTray = enabled
-    logger.info('MainWindowService', 'Close-to-tray setting updated', { enabled })
   }
 
   /** 应用退出时允许窗口真正关闭 */
@@ -247,8 +212,6 @@ export class MainWindowService {
     if (process.platform === 'darwin') {
       app.dock?.show()
     }
-
-    logger.debug('MainWindowService', 'Main window shown')
   }
 
   /** 向渲染进程发送消息；窗口不可用时安全跳过 */
@@ -296,7 +259,6 @@ export class MainWindowService {
       if (input.key === 'F11' && input.type === 'keyDown') {
         const isFullScreen = this.mainWindow?.isFullScreen()
         this.mainWindow?.setFullScreen(!isFullScreen)
-        logger.debug('MainWindowService', `Fullscreen toggled via F11: ${!isFullScreen}`)
       }
 
       // 禁用 Ctrl++ / Ctrl+- / Ctrl+Scroll 缩放

@@ -70,8 +70,6 @@ export class PluginHandler {
 
     // 更新检查：计算本地插件文件 sha256 清单，供渲染进程与市场条目比对
     ipcMain.handle('plugin:compute-file-checksums', this.handleComputeFileChecksums.bind(this))
-
-    logger.info('PluginHandler', 'Plugin IPC handlers registered')
   }
 
   /**
@@ -82,8 +80,6 @@ export class PluginHandler {
     config: PluginManagerConfig
   ): Promise<BaseResponse> {
     try {
-      logger.info('PluginHandler', 'Initializing plugin system', config)
-
       this.config = config
       
       // 确保插件目录存在
@@ -97,7 +93,6 @@ export class PluginHandler {
       return { success: true, message: 'Plugin system initialized successfully' }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
-      console.error('❌ Plugin system initialization failed:', errorMessage)
       logger.error('PluginHandler', `Failed to initialize plugin system: ${errorMessage}`)
       return { success: false, message: errorMessage }
     }
@@ -114,7 +109,6 @@ export class PluginHandler {
     } catch {
       // 目录不存在，创建它
       await fs.mkdir(this.config.pluginsDirectory, { recursive: true })
-      logger.info('PluginHandler', `Created plugins directory: ${this.config.pluginsDirectory}`)
     }
   }
 
@@ -131,8 +125,6 @@ export class PluginHandler {
         logger.warn('PluginHandler', 'Periodic plugin scan failed:', error)
       }
     }, 30000) // 30秒扫描一次
-
-    logger.info('PluginHandler', 'Started periodic plugin scanning')
   }
 
   /**
@@ -142,7 +134,6 @@ export class PluginHandler {
     if (this.scanInterval) {
       clearInterval(this.scanInterval)
       this.scanInterval = null
-      logger.info('PluginHandler', 'Stopped periodic plugin scanning')
     }
   }
 
@@ -176,10 +167,7 @@ export class PluginHandler {
       logger.error('PluginHandler', `Failed to discover plugins: ${error instanceof Error ? error.message : String(error)}`)
     }
 
-    const sortedConfigs = this.sortPluginsByPriority(pluginConfigs)
-    logger.info('PluginHandler', `Discovered ${sortedConfigs.length} plugins`)
-
-    return sortedConfigs
+    return this.sortPluginsByPriority(pluginConfigs)
   }
 
   /**
@@ -387,9 +375,8 @@ export class PluginHandler {
    */
   private async handleEnablePlugin(
     _event: Electron.IpcMainInvokeEvent,
-    pluginId: string
+    _pluginId: string
   ): Promise<BaseResponse> {
-    logger.info('PluginHandler', `Enable plugin request: ${pluginId} (handled by renderer)`)
     return { success: true, message: 'Plugin enable handled by renderer process' }
   }
 
@@ -398,9 +385,8 @@ export class PluginHandler {
    */
   private async handleDisablePlugin(
     _event: Electron.IpcMainInvokeEvent,
-    pluginId: string
+    _pluginId: string
   ): Promise<BaseResponse> {
-    logger.info('PluginHandler', `Disable plugin request: ${pluginId} (handled by renderer)`)
     return { success: true, message: 'Plugin disable handled by renderer process' }
   }
 
@@ -409,9 +395,8 @@ export class PluginHandler {
    */
   private async handleReloadPlugin(
     _event: Electron.IpcMainInvokeEvent,
-    pluginId: string
+    _pluginId: string
   ): Promise<BaseResponse> {
-    logger.info('PluginHandler', `Reload plugin request: ${pluginId} (handled by renderer)`)
     return { success: true, message: 'Plugin reload handled by renderer process' }
   }
 
@@ -420,11 +405,10 @@ export class PluginHandler {
    */
   private async handleExecutePlugin(
     _event: Electron.IpcMainInvokeEvent,
-    pluginId: string,
-    method: string,
+    _pluginId: string,
+    _method: string,
     ..._args: any[]
   ): Promise<{ success: boolean; data?: any; message?: string }> {
-    logger.info('PluginHandler', `Execute plugin method: ${pluginId}.${method} (handled by renderer)`)
     return { success: true, message: 'Plugin execution handled by renderer process' }
   }
 
@@ -435,7 +419,7 @@ export class PluginHandler {
    */
   private async handleImportFromFile(
     _event: Electron.IpcMainInvokeEvent,
-    targetDirectory: string
+    _targetDirectory: string
   ): Promise<{ success: boolean; data?: LocalPluginConfig; message?: string }> {
     try {
       // 显示文件选择对话框
@@ -452,13 +436,10 @@ export class PluginHandler {
         return { success: false, message: '用户取消了文件选择' }
       }
 
-      const zipPath = result.filePaths[0]
       // 简化：暂时返回成功，实际导入功能将在后续版本实现
-      logger.info('PluginHandler', `Plugin import from file: ${zipPath} to ${targetDirectory}`)
-      
-      return { 
-        success: false, 
-        message: '插件导入功能暂未实现，请手动解压插件到目标目录' 
+      return {
+        success: false,
+        message: '插件导入功能暂未实现，请手动解压插件到目标目录'
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
@@ -472,16 +453,14 @@ export class PluginHandler {
    */
   private async handleImportFromUrl(
     _event: Electron.IpcMainInvokeEvent,
-    url: string,
-    targetDirectory: string
+    _url: string,
+    _targetDirectory: string
   ): Promise<{ success: boolean; data?: LocalPluginConfig; message?: string }> {
     try {
       // 简化：暂时返回成功，实际导入功能将在后续版本实现
-      logger.info('PluginHandler', `Plugin import from URL: ${url} to ${targetDirectory}`)
-      
-      return { 
-        success: false, 
-        message: '在线插件导入功能暂未实现' 
+      return {
+        success: false,
+        message: '在线插件导入功能暂未实现'
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
@@ -621,7 +600,6 @@ export class PluginHandler {
     const controller = this.activeInstalls.get(pluginId)
     if (controller) {
       controller.abort()
-      logger.info('PluginHandler', `Cancelled marketplace install: ${pluginId}`)
       return { success: true, message: '已取消' }
     }
     return { success: false, message: '该插件未在安装中' }
@@ -896,7 +874,6 @@ export class PluginHandler {
    */
   private async handleUpdateConfig(_event: Electron.IpcMainInvokeEvent, _config: any) {
     try {
-      logger.info('PluginHandler', 'Updating plugin config')
       return { success: true, message: 'Plugin config updated successfully' }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
@@ -923,7 +900,6 @@ export class PluginHandler {
    */
   private async handleClearCache(_event: Electron.IpcMainInvokeEvent) {
     try {
-      logger.info('PluginHandler', 'Clearing plugin cache')
       return { success: true, message: 'Plugin cache cleared successfully' }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
@@ -962,7 +938,5 @@ export class PluginHandler {
     ipcMain.removeHandler('plugin:clear-cache')
     ipcMain.removeHandler('plugin:install-from-marketplace')
     ipcMain.removeHandler('plugin:cancel-install')
-
-    logger.info('PluginHandler', 'Plugin IPC handlers cleaned up')
   }
 }

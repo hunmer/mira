@@ -522,6 +522,11 @@ const handleItemDoubleClick = (item: FileInfo) => {
 }
 
 const handleAfterRender = () => {
+  console.warn('[WaterfallLayout] after-render', {
+    label: props.debugLabel,
+    items: waterfallItems.value.length,
+    hasMasonryRef: !!masonryRef.value
+  })
   if (initialEnterAnimation.value && waterfallItems.value.length > 0) {
     initialEnterAnimation.value = false
   }
@@ -532,12 +537,25 @@ const handleAfterRender = () => {
 const refresh = () => {
   const selectionRoot = (selectionBoxRef.value as any)?.$el as HTMLElement | null
   const root = selectionRoot?.querySelector('.masonry-container') as HTMLElement | null
+  console.warn('[WaterfallLayout] refresh', {
+    label: props.debugLabel,
+    items: waterfallItems.value.length,
+    hasMasonryRef: !!masonryRef.value,
+    hasSelectionRoot: !!selectionRoot,
+    hasMasonryRoot: !!root,
+    masonryWidth: root?.clientWidth ?? 0,
+    parentWidth: root?.parentElement?.clientWidth ?? 0,
+    selectionWidth: selectionRoot?.clientWidth ?? 0,
+    selectionHeight: selectionRoot?.clientHeight ?? 0,
+    styleHeight: root?.style.height ?? ''
+  })
   masonryRef.value?.refresh()
 }
 
 // 多个瀑布流实例同时挂载时，后续实例可能在首次测量时尚未完成尺寸/比例更新。
 // 在 DOM 更新后的连续帧再次测量，避免必须滚动到该分组后才触发布局。
 let refreshFrame = 0
+let layoutResizeObserver: ResizeObserver | null = null
 const scheduleLayoutRefresh = () => {
   cancelAnimationFrame(refreshFrame)
   void nextTick(() => {
@@ -624,15 +642,28 @@ defineExpose({
 })
 
 onMounted(() => {
+  console.warn('[WaterfallLayout] mounted', {
+    label: props.debugLabel,
+    items: props.items.length,
+    renderedItems: waterfallItems.value.length,
+    hasSelectionRef: !!selectionBoxRef.value,
+    hasMasonryRef: !!masonryRef.value
+  })
   window.addEventListener('keydown', handleDeleteKeyDown)
   window.addEventListener('thumbnail-updated', handleThumbnailUpdated)
   document.addEventListener('edit-action', handleEditAction)
   const selectionRoot = (selectionBoxRef.value as any)?.$el as HTMLElement | null
+  if (selectionRoot) {
+    layoutResizeObserver = new ResizeObserver(() => scheduleLayoutRefresh())
+    layoutResizeObserver.observe(selectionRoot)
+  }
   scheduleLayoutRefresh()
 })
 
 onUnmounted(() => {
   cancelAnimationFrame(refreshFrame)
+  layoutResizeObserver?.disconnect()
+  layoutResizeObserver = null
   window.removeEventListener('keydown', handleDeleteKeyDown)
   window.removeEventListener('thumbnail-updated', handleThumbnailUpdated)
   document.removeEventListener('edit-action', handleEditAction)

@@ -10,6 +10,8 @@ import { logger } from './Logger'
  */
 const CONSOLE_HOOK_SCRIPT = `
 (function() {
+  if (window.__miraConsoleHookInstalled) return;
+  window.__miraConsoleHookInstalled = true;
   // 序列化函数：将不可克隆的对象转换为可序列化的格式
   function serializeForIPC(obj) {
     // 基本类型直接返回
