@@ -16,7 +16,6 @@
 import { createHash } from 'crypto'
 import { net } from 'electron'
 import { Readable } from 'stream'
-import { logger } from '../utils/Logger'
 
 export interface ProxyConfig {
   /** 是否启用代理 */
@@ -143,13 +142,11 @@ export class DownloadService {
       process.env.HTTPS_PROXY = url
       process.env.http_proxy = url
       process.env.https_proxy = url
-      logger.info('DownloadService', `Proxy env set: ${url}`)
     } else {
       delete process.env.HTTP_PROXY
       delete process.env.HTTPS_PROXY
       delete process.env.http_proxy
       delete process.env.https_proxy
-      logger.info('DownloadService', 'Proxy env cleared (session-level proxy still applies)')
     }
   }
 

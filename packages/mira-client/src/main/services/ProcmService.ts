@@ -7,7 +7,6 @@
  */
 import type { JsonValue, Logger, ProcmClient } from '@hunmer/procm-mcp-sdk'
 import type { BrowserWindow } from 'electron'
-import log from 'electron-log'
 
 export type ProcmLoggerLike = Pick<Logger, 'debug' | 'info' | 'warn' | 'error'>
 
@@ -29,8 +28,7 @@ function createNoopLogger(): ProcmLoggerLike {
   }
 }
 
-// 帧写入原始流（procm 从进程 stdout/stderr 文件解析），
-// 可读输出仍由 electron-log 的 console transport 负责。
+// 帧写入原始流（procm 从进程 stdout/stderr 文件解析）。
 const rawConsole = {
   debug: (text: string) => writeLine(process.stdout, text),
   info: (text: string) => writeLine(process.stdout, text),
@@ -50,9 +48,6 @@ export async function initProcm(): Promise<void> {
   if (procmClient) return
   if (process.env.NODE_ENV !== 'development') return
   const { createProcmClient, setupLogger, exposeCustomExecution } = await import('@hunmer/procm-mcp-sdk')
-  // procm SDK 会写入带结构化 marker 的唯一日志帧；关闭 electron-log 的
-  // 普通 console transport，避免同一条日志以纯文本副本污染 dashboard。
-  log.transports.console.level = false
   // 即使没有 room 环境变量，也保留结构化 stdout 日志；这样由 procm
   // 启动但未注入 room 的子进程仍可按 level 过滤历史日志。
   if (!process.env.PROCM_ROOM_ID || !process.env.PROCM_WS_URL) {

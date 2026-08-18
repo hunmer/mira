@@ -94,19 +94,37 @@ export function formatErrorMessage(error: AppError | any): string {
 }
 
 /**
+ * 将渲染进程错误上报到主进程 logger。
+ * logger 通过 preload 注入，在非 Electron 环境下不可用时静默跳过。
+ */
+function reportErrorToLogger(message: string, error: any): void {
+  try {
+    const appError = parseError(error)
+    window.electronAPI?.logger?.error('ErrorHandler', message, {
+      code: appError.code,
+      message: appError.message,
+      details: appError.details,
+      timestamp: appError.timestamp
+    })
+  } catch {
+    // 日志上报失败不应影响全局错误处理流程。
+  }
+}
+
+/**
  * 全局错误处理器
  */
 export function setupGlobalErrorHandler() {
   // 处理未捕获的 Promise 错误
   window.addEventListener('unhandledrejection', (event) => {
     console.error('Unhandled promise rejection:', event.reason)
-    // 可以在这里发送错误到监控服务
+    reportErrorToLogger('Unhandled promise rejection', event.reason)
   })
 
   // 处理全局 JavaScript 错误
   window.addEventListener('error', (event) => {
     console.error('Global error:', event.error)
-    // 可以在这里发送错误到监控服务
+    reportErrorToLogger('Global error', event.error || event.message)
   })
 
   // Vue 错误处理在 main.ts 中设置

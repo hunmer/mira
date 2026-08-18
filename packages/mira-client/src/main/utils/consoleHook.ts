@@ -96,13 +96,13 @@ const CONSOLE_HOOK_SCRIPT = `
         }
       } catch (e) {
         // 序列化失败时静默失败，避免影响原始 console 功能
-        originalConsole.warn('[electron-log] Failed to serialize console args:', e);
+        originalConsole.warn('[procm] Failed to serialize console args:', e);
       }
     };
   });
 
   // 标记 hook 已安装（使用原始 console）
-  originalConsole.log('[electron-log] Console hooks installed successfully');
+  originalConsole.log('[procm] Console hooks installed successfully');
 })();
 `
 

@@ -1,57 +1,6 @@
-import log from 'electron-log'
 import { join } from 'node:path'
 import { inspect } from 'node:util'
 import { getProcmLogger } from '../services/ProcmService'
-
-// Electron 由 Vite 启动时，父进程退出会先关闭 stdout/stderr 管道。
-// 忽略此时的终端写入错误，文件日志仍可正常完成退出记录。
-const handleTerminalError = (error: NodeJS.ErrnoException) => {
-  if (error.code === 'EIO' || error.code === 'EPIPE') {
-    log.transports.console.level = false
-  }
-}
-process.stdout.on('error', handleTerminalError)
-process.stderr.on('error', handleTerminalError)
-
-if (process.platform === 'win32') {
-  process.stdout.setDefaultEncoding('utf8')
-  process.stderr.setDefaultEncoding('utf8')
-}
-
-log.transports.file.level = 'silly'
-log.transports.file.maxSize = 10 * 1024 * 1024
-log.transports.file.fileName = 'mira.log'
-log.transports.console.level = 'debug'
-
-function formatArgs(args: any[]): string {
-  return args.map(a =>
-    typeof a === 'object' && a !== null
-      ? inspect(a, { showHidden: true, depth: null, colors: false })
-      : String(a)
-  ).join(' ')
-}
-
-const origLog = log.log.bind(log)
-const origInfo = log.info.bind(log)
-const origWarn = log.warn.bind(log)
-const origError = log.error.bind(log)
-const origDebug = log.debug.bind(log)
-log.log = (...args: any[]) => origLog(formatArgs(args))
-log.info = (...args: any[]) => origInfo(formatArgs(args))
-log.warn = (...args: any[]) => origWarn(formatArgs(args))
-log.error = (...args: any[]) => origError(formatArgs(args))
-log.debug = (...args: any[]) => origDebug(formatArgs(args))
-
-// electron-log 的 console transport 输出到 Electron 主进程 stdout，
-// 不会出现在渲染进程的 Chrome DevTools。同步调用原生 console，保留调试时的可见性。
-const emitNativeConsole = (level: 'log' | 'info' | 'warn' | 'error' | 'debug', args: any[]) => {
-  try {
-    const output = globalThis.console[level] ?? globalThis.console.log
-    output.call(globalThis.console, ...args)
-  } catch {
-    // 控制台不可用时不影响文件日志和 procm 日志。
-  }
-}
 
 const formatMessage = (category: string, message: string) =>
   category ? `[${category}] ${message}` : message
@@ -75,38 +24,24 @@ const toProcmData = (data?: any): any => {
 
 export const logger = {
   setLogLevel: (level: 'DEBUG' | 'INFO' | 'WARN' | 'ERROR') => {
-    const m = { DEBUG: 'debug', INFO: 'info', WARN: 'warn', ERROR: 'error' } as const
-    log.transports.file.level = m[level]
-    log.transports.console.level = m[level]
+    void level
   },
   debug: (category: string, message: string, data?: any) => {
-    const args = [formatMessage(category, message), data ?? '']
-    log.debug(...args)
-    emitNativeConsole('debug', args)
     getProcmLogger().debug(formatMessage(category, message), toProcmData(data))
   },
   info: (category: string, message: string, data?: any) => {
-    const args = [formatMessage(category, message), data ?? '']
-    log.info(...args)
-    emitNativeConsole('info', args)
     getProcmLogger().info(formatMessage(category, message), toProcmData(data))
   },
   warn: (category: string, message: string, data?: any) => {
-    const args = [formatMessage(category, message), data ?? '']
-    log.warn(...args)
-    emitNativeConsole('warn', args)
     getProcmLogger().warn(formatMessage(category, message), toProcmData(data))
   },
   error: (category: string, message: string, errorOrData?: any, data?: any) => {
     const isError = errorOrData instanceof Error
-    const args = [formatMessage(category, message), isError ? errorOrData : errorOrData ?? '', data ?? '']
-    log.error(...args)
-    emitNativeConsole('error', args)
     getProcmLogger().error(
       formatMessage(category, message),
       toProcmData(errorOrData !== undefined ? errorOrData : data)
     )
   },
-  getLogFilePath: () => log.transports.file.getFile().path,
-  getLogDirectory: () => join(log.transports.file.getFile().path, '..')
+  getLogFilePath: () => join(process.cwd(), 'mira.log'),
+  getLogDirectory: () => process.cwd()
 }
