@@ -100,6 +100,11 @@ export function useConnectionFlow(state: LoginFlowState) {
           state.credentials.username = saved.username
           state.credentials.password = saved.password
         })
+        // 无保存凭据时回填后端默认管理员账号
+        if (!state.credentials.username.trim()) {
+          state.credentials.username = 'admin'
+          state.credentials.password = 'admin123'
+        }
         state.currentStep.value = 2
       }
     } catch (err: any) {

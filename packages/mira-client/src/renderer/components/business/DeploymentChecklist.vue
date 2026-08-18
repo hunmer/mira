@@ -69,9 +69,16 @@ const {
   checkVersion,
 } = useServerDeploy()
 
-// 打开组件即检测已安装版本
-onMounted(() => {
+// 打开组件即检测已安装版本；同时自动检测当前生效的代理地址回填
+onMounted(async () => {
   checkVersion()
+  try {
+    const res = await window.electronAPI?.network?.detectProxy()
+    const url = res?.data?.url?.trim()
+    if (res?.success && url && !proxy.value.trim()) proxy.value = url
+  } catch {
+    /* 代理检测失败不影响手动部署 */
+  }
 })
 
 // 默认部署步骤（贴合 mira-app-server README 真实流程）

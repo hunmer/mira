@@ -127,7 +127,9 @@ const electronAPI: ElectronAPI = {
     getProxy: () =>
       ipcRenderer.invoke('network:get-proxy'),
     testProxy: (config: { enabled: boolean; url: string }) =>
-      ipcRenderer.invoke('network:test-proxy', config)
+      ipcRenderer.invoke('network:test-proxy', config),
+    detectProxy: () =>
+      ipcRenderer.invoke('network:detect-proxy')
   },
 
   // 插件窗口管理 API（打开插件 dist 的独立 BrowserWindow）

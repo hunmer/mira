@@ -517,6 +517,8 @@ export interface ElectronAPI {
     setProxy: (config: ProxyConfig) => Promise<BaseResponse>
     getProxy: () => Promise<BaseResponse & { data?: ProxyConfig }>
     testProxy: (config: ProxyConfig) => Promise<ProxyTestResult>
+    /** 检测当前生效的代理地址（应用配置 → 环境变量 → 系统代理） */
+    detectProxy: () => Promise<BaseResponse & { data?: { url: string; source?: 'app' | 'env' | 'system' | 'none' } }>
   }
 
   // 插件窗口管理 API（打开插件 dist 的独立 BrowserWindow）
