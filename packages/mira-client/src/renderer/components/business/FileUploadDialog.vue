@@ -229,7 +229,7 @@
                   :enable-select-all-shortcut="true"
                   :enable-clear-selection-shortcut="true"
                   :enable-delete-selection-shortcut="true"
-                  class="h-full overflow-auto p-4"
+                  class="h-full overflow-auto p-4 [scrollbar-gutter:stable]"
                   tabindex="0"
                   @selection-update="handleSelectionUpdate"
                   @clear-selection="clearSelection"

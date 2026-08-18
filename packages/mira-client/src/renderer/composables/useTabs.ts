@@ -559,7 +559,10 @@ export function useTabs() {
   const markTabsForEvent = (eventData: any, _eventType: string): string[] => {
     const markedIds: string[] = []
     // 文件属性更新由详情组件/WebSocket 局部同步，禁止标记 tab 重载，避免列表闪烁
-    if (_eventType === 'updated') return markedIds
+    // 例外：folder 归属变化影响列表成员构成（FolderTabType 等已按 old_data.folder_id 匹配）
+    const folderChanged = !!eventData?.old_data
+      && String(eventData.old_data.folder_id ?? '') !== String(eventData.folder_id ?? '')
+    if (_eventType === 'updated' && !folderChanged) return markedIds
     for (const tab of tabs.value) {
       const tabType = tabRegistry.getType(tab.type)
       if (!tabType?.shouldUpdateForEvent) continue

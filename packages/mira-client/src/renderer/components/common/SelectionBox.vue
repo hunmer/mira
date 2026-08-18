@@ -2,7 +2,6 @@
   <div
     ref="containerRef"
     class="selection-container relative w-full h-full select-none pointer-events-auto [&>*]:pointer-events-auto"
-    :style="{ minHeight: contentHeight ? `${contentHeight}px` : undefined }"
   >
     <!-- 选择框 -->
     <div
@@ -85,7 +84,8 @@ const contentHeight = ref(0)
 
 const syncContentHeight = () => {
   if (containerRef.value && !selecting.value) {
-    contentHeight.value = Math.max(contentHeight.value, containerRef.value.scrollHeight)
+    // 仅记录内容高度用于框选计算，不将 scrollHeight 写回容器尺寸，避免滚动容器被撑开。
+    contentHeight.value = containerRef.value.scrollHeight
   }
 }
 let animationFrameId: number | null = null
