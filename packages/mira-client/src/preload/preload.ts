@@ -3,6 +3,19 @@ import type { ElectronAPI } from '../shared/types'
 
 const isDevelopment = process.env.NODE_ENV === 'development'
 
+const nativeConsole = {
+  debug: console.debug.bind(console),
+  info: console.info.bind(console),
+  warn: console.warn.bind(console),
+  error: console.error.bind(console),
+}
+
+ipcRenderer.on('main-log', (_event, level: keyof typeof nativeConsole, message: string, data?: unknown) => {
+  const output = nativeConsole[level] ?? nativeConsole.info
+  if (data === undefined) output(message)
+  else output(message, data)
+})
+
 // 在渲染进程中暴露安全的 API
 const electronAPI: ElectronAPI = {
   process,

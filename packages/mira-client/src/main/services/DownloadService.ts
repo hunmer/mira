@@ -42,6 +42,49 @@ export interface ProxyTestResult {
   message: string
 }
 
+export function electronResponseToReadable(
+  response: Electron.IncomingMessage,
+  abortRequest?: () => void
+): Readable {
+  let completed = false
+  let stream: Readable
+
+  const cleanup = () => {
+    response.removeListener('data', onData)
+    response.removeListener('end', onEnd)
+    response.removeListener('error', onError)
+    response.removeListener('aborted', onAborted)
+  }
+  const onData = (chunk: Buffer) => stream.push(chunk)
+  const onEnd = () => {
+    completed = true
+    cleanup()
+    stream.push(null)
+  }
+  const onError = (error: Error) => {
+    completed = true
+    stream.destroy(error)
+  }
+  const onAborted = () => {
+    completed = true
+    stream.destroy(new Error('下载响应已中止'))
+  }
+
+  stream = new Readable({
+    read() {},
+    destroy(error, callback) {
+      cleanup()
+      if (!completed) abortRequest?.()
+      callback(error)
+    },
+  })
+  response.on('data', onData)
+  response.on('end', onEnd)
+  response.on('error', onError)
+  response.on('aborted', onAborted)
+  return stream
+}
+
 /**
  * 用 Electron net.request 发起一次请求，返回 { statusCode, headers, body }。
  * - 自动跟随当前 session 代理规则（session.defaultSession.setProxy 设置）。
@@ -93,7 +136,11 @@ function requestWithElectron(
       for (const [k, v] of Object.entries(rawHeaders)) {
         headers[k] = Array.isArray(v) ? (v as string[]) : [String(v)]
       }
-      resolve({ statusCode: response.statusCode, headers, stream: Readable.fromWeb(response as any) })
+      resolve({
+        statusCode: response.statusCode,
+        headers,
+        stream: electronResponseToReadable(response, () => req.abort()),
+      })
     })
     req.on('error', (err) => {
       if (settled) return

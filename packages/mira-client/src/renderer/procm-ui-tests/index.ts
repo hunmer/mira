@@ -1,68 +1,50 @@
 // 真实页面 UI 测试注册表：仅开发构建加载（见 main.ts），生产构建不暴露测试函数。
-// 新增测试：在同目录新建独立文件并导出 async 函数，再在此导入注册。
+// 新增测试：在同目录新建独立文件并导出 async 函数，再在此惰性注册。
 declare global {
   interface Window {
     __procmUiTests?: Record<string, (...args: any[]) => Promise<unknown>>
   }
 }
 
-export { createFolder } from './createFolder'
-export { createTag } from './createTag'
-export { deleteFolderDialog } from './deleteFolderDialog'
-export { switchCategory } from './switchCategory'
-export { tabOperations } from './tabOperations'
-export { tabContextMenu } from './tabContextMenu'
-export { toggleSidebarSection } from './toggleSidebarSection'
-export { folderTreeSearch } from './folderTreeSearch'
-export { toggleDetailPanel } from './toggleDetailPanel'
-export { switchTheme } from './switchTheme'
-export { aboutDialog } from './aboutDialog'
-export { settingsNavigation } from './settingsNavigation'
-export { switchViewMode } from './switchViewMode'
-export { switchSort } from './switchSort'
-export { sidebarLayoutDialog } from './sidebarLayoutDialog'
-export { manageDialogs } from './manageDialogs'
-export { dashboardLayout } from './dashboardLayout'
-export { urlImportValidation } from './urlImportValidation'
-export { openFolderTabBreadcrumb } from './openFolderTabBreadcrumb'
-export { renameFolder } from './renameFolder'
-export { mediaSelection } from './mediaSelection'
-export { mediaSetFolderTag } from './mediaSetFolderTag'
-export { trashRestore } from './trashRestore'
-export { imagePreviewNavigation } from './imagePreviewNavigation'
-export { titleFilterCount } from './titleFilterCount'
-export { savedFilter } from './savedFilter'
-export { sidebarRecentPreview } from './sidebarRecentPreview'
-export { detailPanelStarTag } from './detailPanelStarTag'
+type UiTest = (...args: any[]) => Promise<unknown>
 
-import { createFolder } from './createFolder'
-import { createTag } from './createTag'
-import { deleteFolderDialog } from './deleteFolderDialog'
-import { switchCategory } from './switchCategory'
-import { tabOperations } from './tabOperations'
-import { tabContextMenu } from './tabContextMenu'
-import { toggleSidebarSection } from './toggleSidebarSection'
-import { folderTreeSearch } from './folderTreeSearch'
-import { toggleDetailPanel } from './toggleDetailPanel'
-import { switchTheme } from './switchTheme'
-import { aboutDialog } from './aboutDialog'
-import { settingsNavigation } from './settingsNavigation'
-import { switchViewMode } from './switchViewMode'
-import { switchSort } from './switchSort'
-import { sidebarLayoutDialog } from './sidebarLayoutDialog'
-import { manageDialogs } from './manageDialogs'
-import { dashboardLayout } from './dashboardLayout'
-import { urlImportValidation } from './urlImportValidation'
-import { openFolderTabBreadcrumb } from './openFolderTabBreadcrumb'
-import { renameFolder } from './renameFolder'
-import { mediaSelection } from './mediaSelection'
-import { mediaSetFolderTag } from './mediaSetFolderTag'
-import { trashRestore } from './trashRestore'
-import { imagePreviewNavigation } from './imagePreviewNavigation'
-import { titleFilterCount } from './titleFilterCount'
-import { savedFilter } from './savedFilter'
-import { sidebarRecentPreview } from './sidebarRecentPreview'
-import { detailPanelStarTag } from './detailPanelStarTag'
+function lazyUiTest(load: () => Promise<unknown>, exportName: string): UiTest {
+  return async (...args) => {
+    const module = await load() as Record<string, UiTest>
+    const test = module[exportName]
+    if (!test) throw new Error(`UI test export "${exportName}" was not found`)
+    return test(...args)
+  }
+}
+
+export const createFolder = lazyUiTest(() => import('./createFolder'), 'createFolder')
+export const createTag = lazyUiTest(() => import('./createTag'), 'createTag')
+export const deleteFolderDialog = lazyUiTest(() => import('./deleteFolderDialog'), 'deleteFolderDialog')
+export const switchCategory = lazyUiTest(() => import('./switchCategory'), 'switchCategory')
+export const tabOperations = lazyUiTest(() => import('./tabOperations'), 'tabOperations')
+export const tabContextMenu = lazyUiTest(() => import('./tabContextMenu'), 'tabContextMenu')
+export const toggleSidebarSection = lazyUiTest(() => import('./toggleSidebarSection'), 'toggleSidebarSection')
+export const folderTreeSearch = lazyUiTest(() => import('./folderTreeSearch'), 'folderTreeSearch')
+export const toggleDetailPanel = lazyUiTest(() => import('./toggleDetailPanel'), 'toggleDetailPanel')
+export const switchTheme = lazyUiTest(() => import('./switchTheme'), 'switchTheme')
+export const aboutDialog = lazyUiTest(() => import('./aboutDialog'), 'aboutDialog')
+export const settingsNavigation = lazyUiTest(() => import('./settingsNavigation'), 'settingsNavigation')
+export const switchViewMode = lazyUiTest(() => import('./switchViewMode'), 'switchViewMode')
+export const switchSort = lazyUiTest(() => import('./switchSort'), 'switchSort')
+export const sidebarLayoutDialog = lazyUiTest(() => import('./sidebarLayoutDialog'), 'sidebarLayoutDialog')
+export const manageDialogs = lazyUiTest(() => import('./manageDialogs'), 'manageDialogs')
+export const dashboardLayout = lazyUiTest(() => import('./dashboardLayout'), 'dashboardLayout')
+export const urlImportValidation = lazyUiTest(() => import('./urlImportValidation'), 'urlImportValidation')
+export const openFolderTabBreadcrumb = lazyUiTest(() => import('./openFolderTabBreadcrumb'), 'openFolderTabBreadcrumb')
+export const renameFolder = lazyUiTest(() => import('./renameFolder'), 'renameFolder')
+export const mediaSelection = lazyUiTest(() => import('./mediaSelection'), 'mediaSelection')
+export const mediaSetFolderTag = lazyUiTest(() => import('./mediaSetFolderTag'), 'mediaSetFolderTag')
+export const trashRestore = lazyUiTest(() => import('./trashRestore'), 'trashRestore')
+export const imagePreviewNavigation = lazyUiTest(() => import('./imagePreviewNavigation'), 'imagePreviewNavigation')
+export const titleFilterCount = lazyUiTest(() => import('./titleFilterCount'), 'titleFilterCount')
+export const savedFilter = lazyUiTest(() => import('./savedFilter'), 'savedFilter')
+export const sidebarRecentPreview = lazyUiTest(() => import('./sidebarRecentPreview'), 'sidebarRecentPreview')
+export const detailPanelStarTag = lazyUiTest(() => import('./detailPanelStarTag'), 'detailPanelStarTag')
 
 const uiTests: Record<string, (...args: any[]) => Promise<unknown>> = {
   createFolder,
@@ -98,5 +80,7 @@ const uiTests: Record<string, (...args: any[]) => Promise<unknown>> = {
 if (import.meta.env.DEV) {
   window.__procmUiTests = uiTests
   // UI 测试面板窗口经 BroadcastChannel 调用上述测试，见 public/ui-test-panel.html
-  import('./panel-bridge').then(({ setupUiTestPanelBridge }) => setupUiTestPanelBridge())
+  void import('./panel-bridge')
+    .then(({ setupUiTestPanelBridge }) => setupUiTestPanelBridge())
+    .catch((error) => console.warn('[procm-ui-tests] Failed to register panel bridge:', error))
 }

@@ -1,6 +1,6 @@
 import { join } from 'node:path'
 import { inspect } from 'node:util'
-import { getProcmLogger } from '../services/ProcmService'
+import { emitMainLogToRenderer, getProcmLogger } from '../services/ProcmService'
 
 const formatMessage = (category: string, message: string) =>
   category ? `[${category}] ${message}` : message
@@ -27,20 +27,31 @@ export const logger = {
     void level
   },
   debug: (category: string, message: string, data?: any) => {
-    getProcmLogger().debug(formatMessage(category, message), toProcmData(data))
+    const formattedMessage = formatMessage(category, message)
+    const formattedData = toProcmData(data)
+    getProcmLogger().debug(formattedMessage, formattedData)
+    emitMainLogToRenderer('debug', formattedMessage, formattedData)
   },
   info: (category: string, message: string, data?: any) => {
-    getProcmLogger().info(formatMessage(category, message), toProcmData(data))
+    const formattedMessage = formatMessage(category, message)
+    const formattedData = toProcmData(data)
+    getProcmLogger().info(formattedMessage, formattedData)
+    emitMainLogToRenderer('info', formattedMessage, formattedData)
   },
   warn: (category: string, message: string, data?: any) => {
-    getProcmLogger().warn(formatMessage(category, message), toProcmData(data))
+    const formattedMessage = formatMessage(category, message)
+    const formattedData = toProcmData(data)
+    getProcmLogger().warn(formattedMessage, formattedData)
+    emitMainLogToRenderer('warn', formattedMessage, formattedData)
   },
   error: (category: string, message: string, errorOrData?: any, data?: any) => {
-    const isError = errorOrData instanceof Error
+    const formattedMessage = formatMessage(category, message)
+    const formattedData = toProcmData(errorOrData !== undefined ? errorOrData : data)
     getProcmLogger().error(
-      formatMessage(category, message),
-      toProcmData(errorOrData !== undefined ? errorOrData : data)
+      formattedMessage,
+      formattedData
     )
+    emitMainLogToRenderer('error', formattedMessage, formattedData)
   },
   getLogFilePath: () => join(process.cwd(), 'mira.log'),
   getLogDirectory: () => process.cwd()

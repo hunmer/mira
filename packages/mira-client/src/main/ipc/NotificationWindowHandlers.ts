@@ -124,8 +124,9 @@ export class NotificationWindowHandlers {
         existing.items.push({ ...payload, __itemKey: this.nextItemKey++ })
       }
       existing.payload = payload
-      // 溢出队列收到新通知时，整组通知重新开始倒计时；更新已有通知不重置。
-      if (itemIndex < 0 && existing.items.length > this.MAX_VISIBLE_ITEMS) {
+      // 新增通知从最新通知重新计时，避免被更早通知的旧计时提前整组关闭。
+      // 溢出队列同样使用该槽位级统一计时。
+      if (itemIndex < 0) {
         existing.duration = payload.duration ?? existing.duration
         existing.remaining = existing.duration
         this.startAutoHide(existing)

@@ -19,6 +19,16 @@ export function setProcmMainWindow(window: BrowserWindow | null): void {
   mainWindow = window
 }
 
+export function emitMainLogToRenderer(
+  level: 'debug' | 'info' | 'warn' | 'error',
+  message: string,
+  data?: JsonValue,
+): void {
+  const window = mainWindow
+  if (!window || window.isDestroyed()) return
+  window.webContents.send('main-log', level, message, data)
+}
+
 function createNoopLogger(): ProcmLoggerLike {
   return {
     debug: () => undefined,

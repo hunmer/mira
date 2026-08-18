@@ -18,7 +18,9 @@ import './services/PluginSystemCore'
 
 // 仅开发构建注册真实页面 UI 测试入口；生产构建不暴露测试函数。
 if (import.meta.env.DEV) {
-  void import('./procm-ui-tests')
+  void import('./procm-ui-tests').catch((error) => {
+    console.warn('[procm-ui-tests] Failed to register development UI tests:', error)
+  })
 }
 
 // v-viewer setup

@@ -19,7 +19,7 @@ import { ServerControlHandlers } from './ServerControlHandlers'
 import { PluginWindowHandlers } from './PluginWindowHandlers'
 import { LoginWindowHandlers } from './LoginWindowHandlers'
 import { getAutoUpdater } from '../services/useAutoUpdater'
-import { logger } from '../utils/Logger'
+import { getProcmLogger } from '../services/ProcmService'
 
 type RendererLogLevel = 'log' | 'info' | 'warn' | 'error' | 'debug'
 
@@ -27,10 +27,11 @@ function emitRendererLog(level: RendererLogLevel, args: any[]): void {
   // Keep the complete console argument list in one structured payload. The
   // dashboard renders this array with a single JSON Viewer.
   const message = ''
-  if (level === 'warn') logger.warn('', message, args)
-  else if (level === 'error') logger.error('', message, args)
-  else if (level === 'debug') logger.debug('', message, args)
-  else logger.info('', message, args)
+  const procmLogger = getProcmLogger()
+  if (level === 'warn') procmLogger.warn(message, args)
+  else if (level === 'error') procmLogger.error(message, args)
+  else if (level === 'debug') procmLogger.debug(message, args)
+  else procmLogger.info(message, args)
 }
 
 /**
