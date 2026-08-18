@@ -21,7 +21,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         repository: hunmer/procm-mcp
-        path: ../procm-mcp
+        path: procm-mcp
 
     - name: Setup pnpm
       uses: pnpm/action-setup@v4
@@ -37,6 +37,7 @@ jobs:
 
     - name: Build procm-mcp SDK
       run: |
+        node -e "const fs=require('fs'); fs.mkdirSync('../procm-mcp/packages',{recursive:true}); fs.cpSync('procm-mcp/packages/procm-sdk','../procm-mcp/packages/procm-sdk',{recursive:true})"
         npm --prefix ../procm-mcp/packages/procm-sdk install --no-audit --no-fund
         npm --prefix ../procm-mcp/packages/procm-sdk run build
 
