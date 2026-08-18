@@ -40,3 +40,9 @@
 - 分页状态按目录路径保存已加载上限；根目录和分栏子目录互不影响，每次追加 500 条，最后一页取剩余数量。
 - `pnpm build` 已成功；全量 `type-check` 的 28 条诊断均不涉及本次文件。
 - procm HTTP 回退重启后客户端为 running，主窗口 ready、WebSocket 已连接；日志仍有既有 `procm-ui-tests/index.ts` 动态导入失败。
+- Electron 38.8.6 类型包含 `nativeImage.createThumbnailFromPath(path, size)`；实现限制主进程平台为 Windows/macOS，renderer 失败时保留 `FileIcon` 回退。
+- 原生缩略图通过 data URL 跨 IPC 返回；renderer 仅观察图标视图当前分页结果，并以 `path + modifiedAt + size` 去重请求。
+- `pnpm build:all` 已通过，main/preload/renderer 均成功编译；全量类型检查仍为 28 条仓库其他文件诊断。
+- `useTabs` 对 `tabs` 做 deep watch 并调用 `TabPersistence.saveTabsState`；直接更新对应 `tab.data` 即可持久化。
+- `LocalFolderTabType` 可把 `context.tabData` 传给 `LocalFolderTabView`，恢复搜索、过滤、排序、视图模式和图标尺寸。
+- 现有 `Slider` 组件接受单元素数组模型值；图标网格当前使用固定 112px 列宽和 h-28 卡片，需要改为动态 gridTemplateColumns/卡片高度。

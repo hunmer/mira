@@ -162,6 +162,8 @@ const electronAPI: ElectronAPI = {
       ipcRenderer.invoke('fs:listRoots'),
     listDirectory: (dirPath: string) =>
       ipcRenderer.invoke('fs:listDirectory', dirPath),
+    getThumbnail: (filePath: string, size?: { width?: number; height?: number }) =>
+      ipcRenderer.invoke('fs:getThumbnail', filePath, size),
     exists: (filePath: string) =>
       ipcRenderer.invoke('fs:exists', filePath),
     selectDirectory: (title?: string) =>

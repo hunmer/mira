@@ -687,6 +687,7 @@
     "gridView": "图标视图",
     "columnsView": "分栏视图",
     "galleryView": "画廊视图",
+    "gridSize": "图标大小（Ctrl/Command + 滚轮调整）",
     "itemCount": "{count} 项",
     "noMatches": "没有符合条件的文件"
   },

@@ -1,4 +1,4 @@
-import { ipcMain, IpcMainInvokeEvent, dialog, shell } from 'electron'
+import { ipcMain, IpcMainInvokeEvent, dialog, nativeImage, shell } from 'electron'
 import * as fs from 'fs'
 import * as path from 'path'
 
@@ -18,6 +18,7 @@ export class FileSystemHandlers {
     ipcMain.handle('fs:readDir', this.handleFsReadDir.bind(this))
     ipcMain.handle('fs:listRoots', this.handleFsListRoots.bind(this))
     ipcMain.handle('fs:listDirectory', this.handleFsListDirectory.bind(this))
+    ipcMain.handle('fs:getThumbnail', this.handleFsGetThumbnail.bind(this))
     ipcMain.handle('fs:readFile', this.handleFsReadFile.bind(this))
     ipcMain.handle('fs:writeFile', this.handleFsWriteFile.bind(this))
     ipcMain.handle('fs:exists', this.handleFsExists.bind(this))
@@ -32,6 +33,26 @@ export class FileSystemHandlers {
     ipcMain.handle('fs:removeEntries', this.handleRemoveEntries.bind(this))
     ipcMain.handle('fs:readDirTree', this.handleFsReadDirTree.bind(this))
     ipcMain.handle('fs:readFileBytes', this.handleFsReadFileBytes.bind(this))
+  }
+
+  private async handleFsGetThumbnail(
+    _event: IpcMainInvokeEvent,
+    filePath: string,
+    requestedSize: { width?: number; height?: number } = {}
+  ): Promise<{ success: boolean; data?: string; message?: string }> {
+    if (process.platform !== 'win32' && process.platform !== 'darwin') {
+      return { success: false, message: 'Native thumbnails are unavailable on this platform' }
+    }
+
+    try {
+      const width = Math.min(512, Math.max(16, Math.floor(Number(requestedSize.width) || 96)))
+      const height = Math.min(512, Math.max(16, Math.floor(Number(requestedSize.height) || 96)))
+      const thumbnail = await nativeImage.createThumbnailFromPath(filePath, { width, height })
+      if (thumbnail.isEmpty()) return { success: false, message: 'Thumbnail is unavailable' }
+      return { success: true, data: thumbnail.toDataURL() }
+    } catch (error) {
+      return { success: false, message: error instanceof Error ? error.message : 'Failed to create thumbnail' }
+    }
   }
 
   private async handleFsListRoots(): Promise<{ success: boolean; data?: LocalFsRoot[]; message?: string }> {

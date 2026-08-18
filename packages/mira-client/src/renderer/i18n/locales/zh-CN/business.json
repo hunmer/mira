@@ -451,6 +451,7 @@
     "nameConflict": "同文件夹下已存在同名文件",
     "renameFailed": "重命名失败",
     "setFolderAction": "设置文件夹",
+    "removeFolderAction": "移除文件夹",
     "setTagAction": "设置标签",
     "removeTagAction": "移除标签"
   },

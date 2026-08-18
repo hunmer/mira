@@ -451,6 +451,7 @@
     "nameConflict": "A file with the same name already exists in this folder",
     "renameFailed": "Rename failed",
     "setFolderAction": "Set folder",
+    "removeFolderAction": "Remove folder",
     "setTagAction": "Set tag",
     "removeTagAction": "Remove tag"
   },

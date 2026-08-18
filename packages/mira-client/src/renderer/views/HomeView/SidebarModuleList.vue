@@ -448,7 +448,7 @@ defineExpose({ locateItem })
 
       <!-- 本地文件 -->
       <CollapsibleContent v-else-if="mod.id === 'local_files'" class="section-body text-foreground">
-        <h3 class="px-2 pb-1 pt-2 text-[11px] font-medium text-muted-foreground">
+        <h3 class="px-2 pb-1 pt-2 text-[11px] font-medium text-muted-foreground text-center">
           {{ $t('views.localFolder.systemDrives') }}
         </h3>
         <ul v-if="localRoots.length" class="space-y-0.5">
@@ -463,7 +463,7 @@ defineExpose({ locateItem })
         </ul>
         <p v-else class="px-2 py-3 text-xs text-foreground/70">{{ localRootsError || $t('views.localFolder.loading') }}</p>
 
-        <h3 class="px-2 pb-1 pt-3 text-[11px] font-medium text-muted-foreground">
+        <h3 class="px-2 pb-1 pt-3 text-[11px] font-medium text-muted-foreground text-center">
           {{ $t('views.localFolder.customFolders') }}
         </h3>
         <ul v-if="customLocalFolders.length" class="space-y-0.5">

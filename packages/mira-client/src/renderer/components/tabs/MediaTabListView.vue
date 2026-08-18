@@ -68,7 +68,7 @@
         <!-- 媒体内容 - files 和 trash 都使用统一的视图 -->
         <div class="flex-1 overflow-y-auto w-full min-w-0" @wheel="handleCtrlWheel">
           <!-- 顶部的子文件夹 -->
-          <section v-if="props.viewType !== 'trash'">
+          <section v-if="props.viewType !== 'trash' && childFolderItems.length > 0">
             <header class="flex items-center justify-between px-5 pt-3 pb-1">
               <h3 class="text-sm font-medium text-foreground">{{ $t('views.sidebarModuleList.folders') }}</h3>
               <div class="flex items-center gap-2">
@@ -81,7 +81,7 @@
                     class="material-icons text-base leading-none">add</span></button>
               </div>
             </header>
-            <div v-if="childFolderItems.length > 0">
+            <div>
               <div class="folder-card-grid" :style="{ '--folder-grid-item-size': `${folderGridItemSize}px` }">
                 <FolderContextMenu v-for="item in childFolderItems" :key="String(item.raw.id)" :folder="item.raw as any"
                   :folders="availableFolders as any" @refresh="handleRefresh(true)">

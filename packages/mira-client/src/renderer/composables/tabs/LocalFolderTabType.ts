@@ -15,6 +15,7 @@ export class LocalFolderTabType extends BaseTabType {
         tabId: context.tabId,
         rootPath: context.tabData?.rootPath || '',
         libraryId: context.tabData?.libraryId,
+        tabData: context.tabData,
       },
       key: `${this.name}-${context.tabId}`,
     }

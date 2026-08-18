@@ -687,6 +687,7 @@
     "gridView": "Icon view",
     "columnsView": "Column view",
     "galleryView": "Gallery view",
+    "gridSize": "Icon size (Ctrl/Command + scroll to adjust)",
     "itemCount": "{count} items",
     "noMatches": "No files match the current filters"
   },

@@ -21,6 +21,7 @@ import {
 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Slider } from '@/components/ui/slider'
 import { FileIcon, FolderIcon } from '@/components/ui/file-icon'
 import FileSystemInformation from '@/components/ui/file-system/FileSystemInformation.vue'
 import {
@@ -56,10 +57,18 @@ const props = defineProps<{
   tabId: string
   rootPath: string
   libraryId?: string
+  tabData?: Record<string, unknown>
 }>()
 
 const { t, locale } = useI18n()
 const { tabs } = useTabs()
+type ViewMode = 'list' | 'grid' | 'columns' | 'gallery'
+type TypeFilter = 'all' | 'folder' | 'image' | 'video' | 'audio' | 'document' | 'archive' | 'other'
+type DateFilter = 'all' | 'today' | 'week' | 'month'
+const savedTabData = props.tabData || {}
+const savedViewMode = savedTabData.viewMode
+const savedTypeFilter = savedTabData.typeFilter
+const savedDateFilter = savedTabData.dateFilter
 const currentPath = ref(props.rootPath)
 const entries = ref<LocalFileEntry[]>([])
 const selectedPaths = ref<string[]>([])
@@ -76,21 +85,28 @@ const pickerOperation = ref<'copy' | 'move'>('copy')
 const pickerSources = ref<string[]>([])
 const uploadDialogOpen = ref(false)
 const uploadInitialTree = ref<{ rootPath: string, tree: LocalFsNode[] }>()
-const viewMode = ref<'list' | 'grid' | 'columns' | 'gallery'>('list')
-const searchQuery = ref('')
-const sortKey = ref<'name' | 'modifiedAt' | 'size' | 'type'>('name')
-const sortDirection = ref<'asc' | 'desc'>('asc')
-const typeFilter = ref<'all' | 'folder' | 'image' | 'video' | 'audio' | 'document' | 'archive' | 'other'>('all')
-const dateFilter = ref<'all' | 'today' | 'week' | 'month'>('all')
+const viewMode = ref<ViewMode>(savedViewMode === 'list' || savedViewMode === 'grid' || savedViewMode === 'columns' || savedViewMode === 'gallery' ? savedViewMode : 'list')
+const searchQuery = ref(typeof savedTabData.searchQuery === 'string' ? savedTabData.searchQuery : '')
+const sortKey = ref<'name' | 'modifiedAt' | 'size' | 'type'>(['name', 'modifiedAt', 'size', 'type'].includes(String(savedTabData.sortKey)) ? savedTabData.sortKey as 'name' | 'modifiedAt' | 'size' | 'type' : 'name')
+const sortDirection = ref<'asc' | 'desc'>(savedTabData.sortDirection === 'desc' ? 'desc' : 'asc')
+const typeFilter = ref<TypeFilter>(['all', 'folder', 'image', 'video', 'audio', 'document', 'archive', 'other'].includes(String(savedTypeFilter)) ? savedTypeFilter as TypeFilter : 'all')
+const dateFilter = ref<DateFilter>(['all', 'today', 'week', 'month'].includes(String(savedDateFilter)) ? savedDateFilter as DateFilter : 'all')
+const gridItemSize = ref(typeof savedTabData.gridItemSize === 'number' && Number.isFinite(savedTabData.gridItemSize)
+  ? Math.min(240, Math.max(96, Math.round(savedTabData.gridItemSize / 8) * 8))
+  : 112)
 const columnLevels = ref<Array<{ path: string, entries: LocalFileEntry[] }>>([])
 const loadingColumnPath = ref('')
 const galleryEntry = ref<LocalFileEntry | null>(null)
 const galleryPreviewUrl = ref('')
 const pageLimits = ref<Record<string, number>>({})
+const thumbnailUrls = ref<Record<string, string>>({})
+const thumbnailCacheKeys = ref<Record<string, string>>({})
+const thumbnailRequests = new Map<string, string>()
 let galleryPreviewRequestId = 0
 const PAGE_SIZE = 500
 const LOAD_MORE_THRESHOLD = 160
 const api = computed(() => window.electronAPI?.fs)
+const gridIconSize = computed(() => Math.min(96, Math.max(40, Math.round(gridItemSize.value * 0.45))))
 
 const entryMap = computed(() => {
   const map = new Map<string, LocalFileEntry>()
@@ -171,6 +187,23 @@ function entryType(entry: LocalFileEntry) {
   if (/\.(zip|rar|7z|tar|gz)$/.test(entry.extension)) return 'archive' as const
   if (/\.(txt|md|pdf|docx?|xlsx?|pptx?|json|ya?ml|csv)$/.test(entry.extension)) return 'document' as const
   return 'other' as const
+}
+
+function supportsNativeThumbnail(entry: LocalFileEntry) {
+  return !entry.isDirectory && (entryType(entry) === 'image' || entryType(entry) === 'video')
+}
+
+async function loadNativeThumbnail(entry: LocalFileEntry) {
+  if (!supportsNativeThumbnail(entry) || !api.value?.getThumbnail) return
+  const cacheKey = `${entry.modifiedAt}:${entry.size}`
+  if (thumbnailCacheKeys.value[entry.path] === cacheKey || thumbnailRequests.get(entry.path) === cacheKey) return
+  thumbnailRequests.set(entry.path, cacheKey)
+  const result = await api.value.getThumbnail(entry.path, { width: 96, height: 96 })
+  if (thumbnailRequests.get(entry.path) !== cacheKey) return
+  thumbnailRequests.delete(entry.path)
+  if (!result.success || !result.data) return
+  thumbnailCacheKeys.value = { ...thumbnailCacheKeys.value, [entry.path]: cacheKey }
+  thumbnailUrls.value = { ...thumbnailUrls.value, [entry.path]: result.data }
 }
 
 function filterAndSortEntries(source: LocalFileEntry[]) {
@@ -277,6 +310,28 @@ function syncTabTitle(targetPath: string) {
   if (tab) tab.label = getFolderName(targetPath)
 }
 
+function persistTabViewState() {
+  const tab = tabs.value.find((item) => item.id === props.tabId)
+  if (!tab) return
+  tab.data = {
+    ...(tab.data || {}),
+    searchQuery: searchQuery.value,
+    typeFilter: typeFilter.value,
+    dateFilter: dateFilter.value,
+    sortKey: sortKey.value,
+    sortDirection: sortDirection.value,
+    viewMode: viewMode.value,
+    gridItemSize: gridItemSize.value,
+  }
+}
+
+function handleGridWheel(event: WheelEvent) {
+  if (!event.ctrlKey && !event.metaKey) return
+  event.preventDefault()
+  const delta = event.deltaY > 0 ? -8 : 8
+  gridItemSize.value = Math.min(240, Math.max(96, gridItemSize.value + delta))
+}
+
 function getParentPath(value: string) {
   const normalized = value.replace(/[\\/]+$/, '')
   const parent = normalized.replace(/[\\/][^\\/]+$/, '')
@@ -316,6 +371,9 @@ async function loadDirectory(targetPath = currentPath.value) {
     syncTabTitle(targetPath)
     entries.value = result.data || []
     resetPagination()
+    thumbnailUrls.value = {}
+    thumbnailCacheKeys.value = {}
+    thumbnailRequests.clear()
     selectedPaths.value = []
     columnLevels.value = []
     galleryEntry.value = null
@@ -555,6 +613,13 @@ watch(allVisibleEntries, (visible) => {
 
 watch([searchQuery, typeFilter, dateFilter, sortKey, sortDirection, viewMode], resetPagination)
 
+watch([searchQuery, typeFilter, dateFilter, sortKey, sortDirection, viewMode, gridItemSize], persistTabViewState)
+
+watch([paginatedVisibleEntries, viewMode], ([visible, mode]) => {
+  if (mode !== 'grid') return
+  visible.filter(supportsNativeThumbnail).forEach((entry) => { void loadNativeThumbnail(entry) })
+}, { immediate: true })
+
 onBeforeUnmount(revokeGalleryPreview)
 
 watch(() => props.rootPath, (value) => {
@@ -677,6 +742,19 @@ watch(() => props.rootPath, (value) => {
         </SelectContent>
       </Select>
 
+      <div v-if="viewMode === 'grid'" class="flex min-w-36 items-center gap-2" :title="$t('views.localFolder.gridSize')">
+        <Slider
+          :model-value="[gridItemSize]"
+          :min="96"
+          :max="240"
+          :step="8"
+          class="w-28"
+          :aria-label="$t('views.localFolder.gridSize')"
+          @update:model-value="value => { gridItemSize = value?.[0] ?? gridItemSize }"
+        />
+        <span class="w-10 text-right text-xs text-muted-foreground">{{ gridItemSize }}px</span>
+      </div>
+
       
       <Button
         variant="outline"
@@ -720,7 +798,12 @@ watch(() => props.rootPath, (value) => {
         enable-delete-selection-shortcut
         @delete-selection="removeEntries"
       >
-        <div v-if="viewMode === 'list' || viewMode === 'grid'" :class="viewMode === 'grid' ? 'grid min-h-full grid-cols-[repeat(auto-fill,minmax(112px,1fr))] content-start gap-2 p-1' : 'min-h-full space-y-0.5'">
+        <div
+          v-if="viewMode === 'list' || viewMode === 'grid'"
+          :class="viewMode === 'grid' ? 'grid min-h-full content-start gap-2 p-1' : 'min-h-full space-y-0.5'"
+          :style="viewMode === 'grid' ? { gridTemplateColumns: `repeat(auto-fill, minmax(${gridItemSize}px, 1fr))` } : undefined"
+          @wheel="viewMode === 'grid' ? handleGridWheel($event) : undefined"
+        >
           <ContextMenu v-for="entry in paginatedVisibleEntries" :key="entry.path">
             <ContextMenuTrigger as-child>
               <button
@@ -730,10 +813,11 @@ watch(() => props.rootPath, (value) => {
                 :class="[
                   viewMode === 'list'
                     ? 'grid h-10 w-full grid-cols-[minmax(0,1fr)_110px_170px] items-center gap-3 px-2 text-left text-sm'
-                    : 'flex h-28 min-w-0 flex-col items-center justify-center gap-2 px-2 text-center text-xs',
+                    : 'flex min-w-0 flex-col items-center justify-center gap-2 px-2 text-center text-xs',
                   'rounded hover:bg-accent/60',
                   selectedPaths.includes(entry.path) ? 'bg-primary/10 text-primary' : '',
                 ]"
+                :style="viewMode === 'grid' ? { height: `${gridItemSize}px` } : undefined"
                 @click="handleItemClick(entry, $event)"
                 @dblclick.stop="openEntry(entry)"
                 @contextmenu="handleContextMenu(entry)"
@@ -743,8 +827,21 @@ watch(() => props.rootPath, (value) => {
                 @drop.stop.prevent="handleFolderDrop(entry, $event)"
               >
                 <span :class="viewMode === 'list' ? 'flex min-w-0 items-center gap-2' : 'flex min-w-0 max-w-full flex-col items-center gap-2'">
-                  <FolderIcon v-if="entry.isDirectory" :name="entry.name" :class="viewMode === 'list' ? '' : 'size-10'" />
-                  <FileIcon v-else :name="entry.name" :class="viewMode === 'list' ? '' : 'size-10'" />
+                  <template v-if="viewMode === 'grid'">
+                    <img
+                      v-if="thumbnailUrls[entry.path]"
+                      :src="thumbnailUrls[entry.path]"
+                      :alt="entry.name"
+                      class="shrink-0 rounded object-contain"
+                      :style="{ width: `${gridIconSize}px`, height: `${gridIconSize}px` }"
+                    />
+                    <FolderIcon v-else-if="entry.isDirectory" :name="entry.name" :style="{ width: `${gridIconSize}px`, height: `${gridIconSize}px` }" />
+                    <FileIcon v-else :name="entry.name" :style="{ width: `${gridIconSize}px`, height: `${gridIconSize}px` }" />
+                  </template>
+                  <template v-else>
+                    <FolderIcon v-if="entry.isDirectory" :name="entry.name" />
+                    <FileIcon v-else :name="entry.name" />
+                  </template>
                   <span :class="viewMode === 'list' ? 'truncate' : 'line-clamp-2 max-w-full break-all'">{{ entry.name }}</span>
                 </span>
                 <span v-if="viewMode === 'list'" class="text-xs text-muted-foreground">{{ entry.isDirectory ? '—' : formatSize(entry.size) }}</span>

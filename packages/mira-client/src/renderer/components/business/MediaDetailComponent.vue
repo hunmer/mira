@@ -214,6 +214,7 @@
               class="bg-primary/10 text-primary text-xs px-3 py-2 rounded-lg flex items-center">
               <span class="material-icons mr-2 text-primary">folder</span>
               {{ getFolderName(folderId) }}
+              <button class="ml-auto pl-2 text-primary hover:opacity-70" @click="handleRemoveFolder(folderId)">×</button>
             </div>
           </div>
           <div v-else class="bg-muted text-muted-foreground text-xs px-3 py-2 rounded-lg flex items-center">
@@ -719,6 +720,17 @@ const handleFolderSelect = async (folderItem: any) => {
     await client.folders().setFileFolder({ libraryId: libId, fileId: parseInt(file.id), folder: parseInt(folderItem.id) })
     file.folderId = String(folderItem.id)
   }, { label: t('business.mediaDetailComponent.setFolderAction') })
+}
+
+const handleRemoveFolder = async (folderId: string) => {
+  const client = (miraSDKService as any).client
+  if (!client) return
+  const files = displayItems.value.filter(file => String(file.folderId) === String(folderId))
+  await runBatchOperation(files, async (file) => {
+    const libId = file.libraryId || 'default'
+    await client.folders().removeFileFromFolder(libId, parseInt(file.id))
+    file.folderId = undefined
+  }, { label: t('business.mediaDetailComponent.removeFolderAction') })
 }
 
 const handleTagSelect = async (tagData: any) => {

@@ -562,6 +562,7 @@ export interface ElectronAPI {
     readDir: (dirPath: string) => Promise<{ success: boolean; data?: string[]; message?: string }>
     listRoots: () => Promise<{ success: boolean; data?: LocalFsRoot[]; message?: string }>
     listDirectory: (dirPath: string) => Promise<{ success: boolean; data?: LocalFileEntry[]; message?: string }>
+    getThumbnail: (filePath: string, size?: { width?: number; height?: number }) => Promise<{ success: boolean; data?: string; message?: string }>
     exists: (filePath: string) => Promise<boolean>
     selectDirectory: (title?: string) => Promise<{ success: boolean; path?: string; message?: string }>
     selectFile: (title?: string, filters?: { name: string; extensions: string[] }[]) => Promise<{ success: boolean; path?: string; message?: string }>

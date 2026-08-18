@@ -1,6 +1,6 @@
 <template>
   <Dialog :open="props.visible" @update:open="handleOpenChange">
-    <DialogContent class="sm:max-w-md max-h-[90vh]">
+    <DialogContent class="sm:max-w-md max-h-[90vh]" @open-auto-focus="handleOpenAutoFocus">
       <DialogHeader>
         <DialogTitle>{{ props.dialogTitle || (isEdit ? $t('business.folderEditDialog.editTitle') : $t('business.folderEditDialog.createTitle')) }}</DialogTitle>
       </DialogHeader>
@@ -23,6 +23,7 @@
               <div>
                 <Input
                   id="folderTitle"
+                  ref="titleInputRef"
                   v-model="formData.title"
                   :placeholder="$t('business.folderEditDialog.namePlaceholder', { type: itemTypeText })"
                   class="w-full"
@@ -125,7 +126,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { BaseTree } from '@he-tree/vue'
 import '@he-tree/vue/style/default.css'
@@ -177,6 +178,15 @@ const isLoading = ref(false)
 const error = ref<string | null>(null)
 const selectedParentId = ref<string | null>(null)
 const autoOpenTab = ref(loadAutoOpenTab())
+const titleInputRef = ref<InstanceType<typeof Input> | null>(null)
+
+// Dialog 打开时阻止默认焦点行为，自动聚焦标题输入框
+const handleOpenAutoFocus = (event: Event) => {
+  event.preventDefault()
+  nextTick(() => {
+    ;(titleInputRef.value?.$el as HTMLInputElement)?.focus()
+  })
+}
 
 // “创建后自动打开”偏好持久化到本地
 watch(autoOpenTab, (value) => {

@@ -34,3 +34,7 @@
 - 2026-08-18：完成列表、图标、分栏和画廊的 500 条滚动追加实现；目录及筛选排序变化会重置分页。
 - 2026-08-18：全量类型检查报告 28 条其他文件既有诊断，本次 `LocalFolderTabView.vue` 无新增类型错误；等待单独确认生产构建。
 - 2026-08-18：`pnpm build` 与 `git diff --check` 通过；通过 procm HTTP 回退重启客户端，状态 running（PID 16756），主窗口与 WebSocket 正常就绪。
+- 2026-08-18：新增 `fs:getThumbnail` IPC，接入 `nativeImage.createThumbnailFromPath`；图标视图对当前分页的图片/视频按文件签名懒加载并缓存，等待全量构建。
+- 2026-08-18：`pnpm build:all` 通过；全量 type-check 仍为 28 条既有诊断，无本次文件诊断；准备重启客户端。
+- 2026-08-18：通过 procm HTTP 回退重启客户端，状态 running（PID 10792）；主窗口 ready 且 WebSocket 已连接。
+- 2026-08-18：开始实现本地文件 Tab 筛选/视图状态写入 tabData，并增加图标尺寸 Slider 与 Ctrl/Command + 滚轮调整。
