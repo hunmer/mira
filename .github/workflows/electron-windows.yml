@@ -17,6 +17,12 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
+    - name: Checkout procm-mcp SDK dependency
+      uses: actions/checkout@v4
+      with:
+        repository: hunmer/procm-mcp
+        path: ../procm-mcp
+
     - name: Setup pnpm
       uses: pnpm/action-setup@v4
       with:
@@ -28,6 +34,12 @@ jobs:
         node-version: '22'
         cache: 'pnpm'
         cache-dependency-path: 'pnpm-lock.yaml'
+
+    - name: Build procm-mcp SDK
+      shell: bash
+      run: |
+        npm --prefix ../procm-mcp/packages/procm-sdk install --no-audit --no-fund
+        npm --prefix ../procm-mcp/packages/procm-sdk run build
 
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
