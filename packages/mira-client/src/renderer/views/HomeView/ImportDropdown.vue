@@ -1,23 +1,21 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
-import { useToast } from '@/renderer/composables/useToast'
-import { useUrlImportStore } from '@/renderer/stores/urlImport'
 import { useMediaStore } from '@/renderer/stores/media'
 import { useMediaQuery } from '@vueuse/core'
-import type { LocalFsNode } from '../../../shared/types'
+import { useImportHandler, type ImportTarget, type ImportFolderPayload } from '@/renderer/composables/useImportHandler'
 
 const { t } = useI18n()
-const toast = useToast()
-const urlImportStore = useUrlImportStore()
 const mediaStore = useMediaStore()
 const isMobile = useMediaQuery('(max-width: 767px)')
 const isImporting = ref(false)
 
+const props = defineProps<{ target?: ImportTarget }>()
+
 const emit = defineEmits<{
   upload: []
-  importFolder: [payload: { rootPath: string; tree: LocalFsNode[] }]
+  importFolder: [payload: ImportFolderPayload]
 }>()
 
 function closeDrawerIfMobile() {
@@ -29,21 +27,20 @@ function handleUpload() {
   emit('upload')
 }
 
+const target = computed(() => props.target)
+const importHandler = useImportHandler({
+  t,
+  target,
+  onUpload: handleUpload,
+  onImportFolder: (payload) => emit('importFolder', payload),
+})
+
 async function handleImportFolder() {
   if (isImporting.value) return
   closeDrawerIfMobile()
   isImporting.value = true
   try {
-    const dirRes = await window.electronAPI.fs.selectDirectory(t('views.sidebarToolbar.selectImportFolder'))
-    if (!dirRes.success || !dirRes.path) return
-    const treeRes = await window.electronAPI.fs.readDirTree(dirRes.path)
-    if (!treeRes.success || !treeRes.data) {
-      toast.add({ severity: 'error', summary: t('views.sidebarToolbar.importFailed'), detail: treeRes.message || t('views.sidebarToolbar.readTreeFailed'), life: 3000 })
-      return
-    }
-    emit('importFolder', { rootPath: dirRes.path, tree: treeRes.data })
-  } catch (error) {
-    toast.add({ severity: 'error', summary: t('views.sidebarToolbar.importFailed'), detail: error instanceof Error ? error.message : t('views.common.unknownError'), life: 3000 })
+    await importHandler.handleImportFolder()
   } finally {
     isImporting.value = false
   }
@@ -51,7 +48,7 @@ async function handleImportFolder() {
 
 function handleUrlImport() {
   closeDrawerIfMobile()
-  urlImportStore.open()
+  importHandler.handleUrlImport()
 }
 </script>
 

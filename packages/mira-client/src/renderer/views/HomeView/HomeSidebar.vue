@@ -15,7 +15,7 @@ import { ref } from 'vue'
 import SidebarLibrarySelector from './SidebarLibrarySelector.vue'
 import SidebarToolbar from './SidebarToolbar.vue'
 import SidebarModuleList from './SidebarModuleList.vue'
-import type { LocalFsNode } from '../../../shared/types'
+import type { ImportFolderPayload, ImportTarget } from '@/renderer/composables/useImportHandler'
 
 defineOptions({ name: 'HomeSidebar' })
 
@@ -42,7 +42,7 @@ const emit = defineEmits<{
   showLibraryManagement: []
   addServer: []
   /** 打开文件上传对话框 */
-  upload: []
+  upload: [target?: ImportTarget]
   /** 打开文件夹管理对话框 */
   manageFolders: []
   /** 打开标签管理对话框 */
@@ -50,7 +50,7 @@ const emit = defineEmits<{
   /** 打开关于对话框 */
   showAbout: []
   /** 导入本地文件夹：抛出根路径 + 递归目录树给父级 */
-  importFolder: [payload: { rootPath: string; tree: LocalFsNode[] }]
+  importFolder: [payload: ImportFolderPayload]
   /** history 模块点击文件 → 路由跳转预览（与原 HistoryPanel 一致） */
   historyOpen: [file: any]
 }>()
@@ -93,6 +93,8 @@ defineExpose({
     @refresh-folders="emit('refreshFolders')"
     @refresh-tags="emit('refreshTags')"
     @empty-trash="emit('emptyTrash')"
+    @upload="emit('upload', $event)"
+    @import-folder="emit('importFolder', $event)"
     @history-open="emit('historyOpen', $event)"
   />
 </template>

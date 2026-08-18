@@ -87,7 +87,7 @@ async function start() {
   items.value = urls.map((u) => ({ url: u, status: 'pending' }))
   progress.value = { total: urls.length, completed: 0, failed: 0, skipped: 0, done: false }
   try {
-    const res = await miraSDKService.startDownloadFromUrl(libraryId, urls, store.folderId)
+    const res = await miraSDKService.startDownloadFromUrl(libraryId, urls, store.folderId, store.tagIds)
     batchId.value = res.batchId
   } catch (e: any) {
     toast.error(e?.message || t('business.urlImportDialog.startFailed'))

@@ -26,9 +26,12 @@ type ToasterPosition =
 const isDark = ref(false)
 const toasterPosition = ref<ToasterPosition>('bottom-right')
 const MAX_VISIBLE_NOTIFICATIONS = 3
-const MORE_TOAST_ID = '__notification-more__'
+const MORE_TOAST_ID_PREFIX = '__notification-more__'
+let moreToastId = MORE_TOAST_ID_PREFIX
+let moreToastVersion = 0
 let allItems: NotificationItem[] = []
 let pageStart = 0
+let displayedItems: NotificationItem[] = []
 
 /** 活跃 toast id 集合，与主进程下发的 items 保持对齐 */
 const activeIds = new Set<string | number>()
@@ -59,13 +62,36 @@ function mapPosition(position?: FloatingWindowPosition): ToasterPosition {
 }
 
 /** 以主进程 items 为唯一数据源，创建 / 更新 / 移除对应 toast */
-function renderToasts(items: NotificationItem[], animDir?: 'left' | 'right' | 'up' | 'down'): void {
-  const visibleItems = items.slice(pageStart, pageStart + MAX_VISIBLE_NOTIFICATIONS)
+function updateMoreToast(remaining: number): void {
+  if (remaining <= 0) {
+    toast.dismiss(moreToastId)
+    activeIds.delete(moreToastId)
+    return
+  }
+  // vue-sonner 新 toast 位于列表最前端；换新 ID 重新插入，保证按钮始终在底部。
+  const previousId = moreToastId
+  moreToastId = `${MORE_TOAST_ID_PREFIX}-${++moreToastVersion}`
+  if (previousId !== moreToastId) toast.dismiss(previousId)
+  toast.custom(MoreNotifications, {
+    id: moreToastId,
+    duration: Infinity,
+    unstyled: true,
+    componentProps: { count: remaining, onClick: showNextPage },
+  })
+  activeIds.delete(previousId)
+  activeIds.add(moreToastId)
+}
+
+function renderToasts(items: NotificationItem[], remaining: number, animDir?: 'left' | 'right' | 'up' | 'down'): void {
+  const previousIds = new Set(activeIds)
+  const visibleItems = items
   const ids = new Set<string | number>()
   visibleItems.forEach((item, visibleIndex) => {
     const index = pageStart + visibleIndex
     const id = toastIdOf(item, index)
     ids.add(id)
+    // 已存在的卡片保持原 toast，避免 dismiss 动画与同 ID 重建产生竞态。
+    if (activeIds.has(id)) return
     toast.custom(NotificationCard, {
       id,
       duration: Infinity,
@@ -79,23 +105,13 @@ function renderToasts(items: NotificationItem[], animDir?: 'left' | 'right' | 'u
       },
     })
   })
-  const remaining = Math.max(items.length - pageStart - visibleItems.length, 0)
   if (remaining > 0) {
-    ids.add(MORE_TOAST_ID)
-    toast.custom(MoreNotifications, {
-      id: MORE_TOAST_ID,
-      duration: Infinity,
-      unstyled: true,
-      componentProps: {
-        count: remaining,
-        onClick: showNextPage,
-      },
-    })
+    updateMoreToast(remaining)
+    ids.add(moreToastId)
   }
-  for (const id of activeIds) {
+  for (const id of previousIds) {
     if (!ids.has(id)) toast.dismiss(id)
   }
-  if (!ids.has(MORE_TOAST_ID)) toast.dismiss(MORE_TOAST_ID)
   activeIds.clear()
   ids.forEach((id) => activeIds.add(id))
 }
@@ -105,15 +121,24 @@ function syncToasts(payload: NotificationPayload): void {
     ? (payload as any).__items
     : [payload]
   allItems = items
-  pageStart = 0
   toasterPosition.value = mapPosition(payload.position)
-  renderToasts(items, (payload as any).__animDir)
+  const nextVisible = items.slice(pageStart, pageStart + MAX_VISIBLE_NOTIFICATIONS)
+  const visibleChanged =
+    nextVisible.length !== displayedItems.length ||
+    nextVisible.some((item, index) => item.__itemKey !== displayedItems[index]?.__itemKey)
+  if (visibleChanged) {
+    displayedItems = nextVisible
+    renderToasts(displayedItems, Math.max(items.length - pageStart - displayedItems.length, 0), (payload as any).__animDir)
+  } else {
+    updateMoreToast(Math.max(items.length - pageStart - displayedItems.length, 0))
+  }
 }
 
 function showNextPage(): void {
   if (pageStart + MAX_VISIBLE_NOTIFICATIONS >= allItems.length) return
   pageStart += MAX_VISIBLE_NOTIFICATIONS
-  renderToasts(allItems)
+  displayedItems = allItems.slice(pageStart, pageStart + MAX_VISIBLE_NOTIFICATIONS)
+  renderToasts(displayedItems, Math.max(allItems.length - pageStart - displayedItems.length, 0))
 }
 
 function sendClick(item: NotificationItem): void {
@@ -183,7 +208,7 @@ onMounted(() => {
         syncToasts(data.payload)
       } else if (data.type === 'notification-auto-hide') {
         for (const id of activeIds) toast.dismiss(id)
-        toast.dismiss(MORE_TOAST_ID)
+        toast.dismiss(moreToastId)
         activeIds.clear()
       }
     },

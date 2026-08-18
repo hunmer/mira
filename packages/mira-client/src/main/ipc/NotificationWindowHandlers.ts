@@ -96,6 +96,8 @@ export class NotificationWindowHandlers {
   private readonly MARGIN = 20
   /** 最大并存数量 */
   private readonly MAX_SLOTS = 5
+  /** 通知窗口最多直接展示的数量；超过后进入更多队列 */
+  private readonly MAX_VISIBLE_ITEMS = 3
 
   constructor() {
     ipcMain.handle('notification:window-show', this.handleShowNotification.bind(this))
@@ -122,9 +124,12 @@ export class NotificationWindowHandlers {
         existing.items.push({ ...payload, __itemKey: this.nextItemKey++ })
       }
       existing.payload = payload
-      const duration = payload.duration ?? 5000
-      existing.duration = duration
-      existing.remaining = duration
+      // 溢出队列收到新通知时，整组通知重新开始倒计时；更新已有通知不重置。
+      if (itemIndex < 0 && existing.items.length > this.MAX_VISIBLE_ITEMS) {
+        existing.duration = payload.duration ?? existing.duration
+        existing.remaining = existing.duration
+        this.startAutoHide(existing)
+      }
       existing.handler.sendMessage({
         type: 'notification-content',
         payload: {
@@ -133,7 +138,6 @@ export class NotificationWindowHandlers {
           __animDir: this.animDirOf(existing.position),
         },
       })
-      this.startAutoHide(existing)
       return
     }
 

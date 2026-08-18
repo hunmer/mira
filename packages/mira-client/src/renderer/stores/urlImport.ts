@@ -13,10 +13,12 @@ export const useUrlImportStore = defineStore('urlImport', () => {
   const urls = ref<string[]>([])
   /** 预填的目标文件夹 id */
   const folderId = ref<number | null>(null)
+  const tagIds = ref<string[]>([])
 
-  function open(payload?: { urls?: string[]; folderId?: number | null }) {
+  function open(payload?: { urls?: string[]; folderId?: number | null; tagIds?: Array<string | number> }) {
     urls.value = payload?.urls ? [...payload.urls] : []
     folderId.value = payload?.folderId ?? null
+    tagIds.value = (payload?.tagIds || []).map(String)
     visible.value = true
   }
 
@@ -24,5 +26,5 @@ export const useUrlImportStore = defineStore('urlImport', () => {
     visible.value = false
   }
 
-  return { visible, urls, folderId, open, close }
+  return { visible, urls, folderId, tagIds, open, close }
 })

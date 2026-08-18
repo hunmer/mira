@@ -68,7 +68,7 @@
         <!-- 媒体内容 - files 和 trash 都使用统一的视图 -->
         <div class="flex-1 overflow-y-auto w-full min-w-0" @wheel="handleCtrlWheel">
           <!-- 顶部的子文件夹 -->
-          <section v-if="props.viewType !== 'trash' && childFolderItems.length > 0">
+          <section v-if="props.viewType !== 'trash'">
             <header class="flex items-center justify-between px-5 pt-3 pb-1">
               <h3 class="text-sm font-medium text-foreground">{{ $t('views.sidebarModuleList.folders') }}</h3>
               <div class="flex items-center gap-2">
@@ -81,7 +81,7 @@
                     class="material-icons text-base leading-none">add</span></button>
               </div>
             </header>
-            <div>
+            <div v-if="childFolderItems.length > 0">
               <div class="folder-card-grid" :style="{ '--folder-grid-item-size': `${folderGridItemSize}px` }">
                 <FolderContextMenu v-for="item in childFolderItems" :key="String(item.raw.id)" :folder="item.raw as any"
                   :folders="availableFolders as any" @refresh="handleRefresh(true)">
@@ -95,6 +95,9 @@
                   </div>
                 </FolderContextMenu>
               </div>
+            </div>
+            <div v-else class="py-4">
+              <StatusImage name="empty" size="large" :text="$t('tabs.mediaTabListView.emptyFolderTitle')" />
             </div>
 
           </section>
@@ -125,7 +128,7 @@
                     </div>
                   </template>
                 </Dropdown>
-                <ImportDropdown @upload="handleListUpload" />
+                <ImportDropdown :target="importTarget" @upload="handleListUpload" @import-folder="handleImportFolder" />
               </div>
             </header>
 
@@ -361,8 +364,8 @@
 
     <!-- 文件上传对话框 -->
     <FileUploadDialog v-model:visible="showUploadDialog" :initial-files="droppedFiles"
-      :initial-folder-id="uploadFolderId" :initial-tag-ids="uploadTagIds" />
-    <FolderEditDialog :visible="showFolderDialog" :available-folders="availableFolders" item-type="folder"
+      :initial-folder-id="uploadFolderId" :initial-tag-ids="uploadTagIds" :initial-local-tree="uploadInitialTree" />
+    <FolderEditDialog :visible="showFolderDialog" :parent-folder="currentFolder" :available-folders="folderEditAvailableFolders" item-type="folder"
       @close="showFolderDialog = false" @save="handleFolderSave" />
   </div>
 </template>
@@ -432,6 +435,7 @@ import FolderContextMenu from '@renderer/components/business/FolderContextMenu.v
 import ImportDropdown from '@renderer/views/HomeView/ImportDropdown.vue'
 import FilterBar from '@/renderer/components/business/FilterBar/FilterBar.vue'
 import Breadcrumb from '@/renderer/components/common/Breadcrumb.vue'
+import StatusImage from '@renderer/components/common/StatusImage.vue'
 import { Dropdown } from '@/renderer/components/common/Dropdown'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ChapterScrubber, type Chapter } from '@/components/ui/chapter-scrubber'
@@ -446,8 +450,10 @@ import {
   AlertDialogAction
 } from '@/components/ui/alert-dialog'
 import type { FileInfo } from '../../../shared/types'
+import type { FolderItem } from '@renderer/types/components'
 import type { FilterRule } from '@/renderer/types/filter'
 import type { ItemField } from '@renderer/stores/settings'
+import type { ImportFolderPayload, ImportTarget } from '@renderer/composables/useImportHandler'
 
 const { t } = useI18n()
 
@@ -558,17 +564,74 @@ const canUpload = computed(() =>
 const isDragOver = ref(false)
 const showUploadDialog = ref(false)
 const droppedFiles = ref<File[]>([])
+const uploadInitialTree = ref<ImportFolderPayload | undefined>()
 const uploadFolderId = ref<string>()
 const uploadTagIds = ref<string[]>([])
 const showFolderDialog = ref(false)
 const availableFolders = computed(() => folderStore.folders as any[])
+const folderEditAvailableFolders = computed<FolderItem[]>(() => {
+  const source = folderStore.folders || []
+  const nodes = new Map<number, FolderItem & { parent_id?: number }>()
+
+  source.forEach(folder => {
+    nodes.set(folder.id, {
+      id: String(folder.id),
+      label: folder.title || String(folder.id),
+      icon: folder.icon || 'folder',
+      path: folder.path,
+      originalData: folder,
+      children: [],
+      parent_id: folder.parent_id,
+    })
+  })
+
+  const roots: FolderItem[] = []
+  nodes.forEach(node => {
+    const parent = node.parent_id ? nodes.get(node.parent_id) : undefined
+    if (parent) parent.children!.push(node)
+    else roots.push(node)
+  })
+  return roots
+})
+const currentFolder = computed<FolderItem | null>(() => {
+  const rawFolder = props.filters?.folder
+  if (rawFolder === undefined || rawFolder === null || rawFolder === '=null') return null
+  const folderId = Number(rawFolder)
+  const folder = Number.isFinite(folderId) ? folderStore.getFolderById(folderId) : undefined
+  return folder
+    ? {
+      id: String(folder.id),
+      label: folder.title,
+      icon: folder.icon || 'folder',
+      path: folder.path,
+      originalData: folder,
+    }
+    : null
+})
 
 function handleListUpload() {
-  const folder = props.filters?.folder
-  uploadFolderId.value = folder != null && folder !== '=null' ? String(folder) : undefined
-  const tags = props.filters?.tags
-  uploadTagIds.value = Array.isArray(tags) ? tags.map(String) : []
+  const target = importTarget.value
+  uploadFolderId.value = target.folderId == null ? undefined : String(target.folderId)
+  uploadTagIds.value = (target.tagIds || []).map(String)
   droppedFiles.value = []
+  uploadInitialTree.value = undefined
+  showUploadDialog.value = true
+}
+
+const importTarget = computed<ImportTarget>(() => {
+  const folder = props.filters?.folder
+  const tags = props.filters?.tags
+  return {
+    folderId: folder != null && folder !== '=null' ? String(folder) : undefined,
+    tagIds: Array.isArray(tags) ? tags.map(String) : [],
+  }
+})
+
+function handleImportFolder(payload: ImportFolderPayload) {
+  uploadFolderId.value = payload.folderId == null ? undefined : String(payload.folderId)
+  uploadTagIds.value = (payload.tagIds || []).map(String)
+  droppedFiles.value = []
+  uploadInitialTree.value = payload
   showUploadDialog.value = true
 }
 
@@ -609,7 +672,8 @@ const handleDrop = async (e: DragEvent) => {
     if (urls.length > 0) {
       const folder = props.filters?.folder
       const folderIdNum = folder != null && Number.isFinite(Number(folder)) ? Number(folder) : null
-      urlImportStore.open({ urls, folderId: folderIdNum })
+      const tags = props.filters?.tags
+      urlImportStore.open({ urls, folderId: folderIdNum, tagIds: Array.isArray(tags) ? tags.map(String) : [] })
       return
     }
     return

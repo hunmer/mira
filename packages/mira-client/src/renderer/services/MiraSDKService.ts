@@ -740,10 +740,12 @@ export class MiraSDKService {
     libraryId: string,
     urls: string[],
     folderId?: number | null,
+    tagIds?: string[],
   ): Promise<{ batchId: string; total: number }> {
     if (!this.client) throw new Error('Not connected to Mira server')
     return this.client.files().batchImportFromUrls(libraryId, urls, {
       folderId,
+      tagIds,
       clientId: webSocketService.getClientId(),
     })
   }

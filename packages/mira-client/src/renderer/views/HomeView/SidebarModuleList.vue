@@ -28,6 +28,8 @@ import { getModuleDef, type SidebarModuleId } from './sidebarModules'
 import { useTabs } from '@/renderer/composables/useTabs'
 import { getSidebarModuleOpenStates, saveSidebarModuleOpenState } from '@/renderer/composables/LibraryPrefs'
 import type { LocalFsRoot } from '@/shared/types'
+import { useImportHandler, type ImportFolderPayload, type ImportTarget } from '@/renderer/composables/useImportHandler'
+import type { MenuItem } from '@/renderer/types/menu'
 
 defineOptions({ name: 'SidebarModuleList' })
 
@@ -54,7 +56,39 @@ const emit = defineEmits<{
   emptyTrash: []
   /** history 模块点击文件 → 路由跳转预览（与原 HistoryPanel 一致） */
   historyOpen: [file: any]
+  upload: [target?: ImportTarget]
+  importFolder: [payload: ImportFolderPayload]
 }>()
+
+const importTarget = ref<ImportTarget>()
+const importHandler = useImportHandler({
+  t,
+  target: importTarget,
+  onUpload: () => emit('upload', importTarget.value),
+  onImportFolder: (payload) => emit('importFolder', payload),
+})
+
+function targetForNode(type: 'folder' | 'tag', item: any): ImportTarget {
+  if (!item) return {}
+  if (type === 'tag') {
+    const id = String(item.id).replace(/^tag-/, '')
+    return { tagIds: [id] }
+  }
+  return { folderId: String(item.id).replace(/^folder-/, '') }
+}
+
+function importMenuItems(type: 'folder' | 'tag', item: any | null): MenuItem[] {
+  const target = targetForNode(type, item)
+  return [
+    {
+      label: t('views.sidebarToolbar.import'), icon: 'drive_folder_upload', items: [
+        { label: t('views.sidebarToolbar.import'), icon: 'upload_file', command: () => { importTarget.value = target; importHandler.handleUpload() } },
+        { label: t('views.sidebarToolbar.importFolder'), icon: 'folder_open', command: () => { importTarget.value = target; void importHandler.handleImportFolder() } },
+        { label: t('business.homeHeader.importFromUrl'), icon: 'cloud_download', command: () => { importTarget.value = target; importHandler.handleUrlImport() } },
+      ],
+    },
+  ]
+}
 
 // ============================================
 // 自定义布局：模块顺序与启用状态
@@ -420,6 +454,7 @@ defineExpose({ locateItem })
           @expand="homeController.handleFolderExpand"
           @refresh="emit('refreshFolders')"
           @empty-trash="emit('emptyTrash')"
+          :extra-context-menu-items="importMenuItems"
         />
       </CollapsibleContent>
 
@@ -433,6 +468,7 @@ defineExpose({ locateItem })
           :tags="tags"
           @select="emit('tagSelect', $event)"
           @refresh="emit('refreshTags')"
+          :extra-context-menu-items="importMenuItems"
         />
       </CollapsibleContent>
 

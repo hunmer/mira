@@ -180,7 +180,11 @@ const sidebarBindings = computed(() => ({
   onRefreshTags: handleRefreshTags,
   onEmptyTrash: handleEmptyTrash,
   onImportFolder: handleImportFolder,
-  onUpload: () => { showFileUploadDialog.value = true },
+  onUpload: (target?: { folderId?: string | number | null; tagIds?: Array<string | number> }) => {
+    sidebarUploadTarget.value = target
+    uploadInitialTree.value = undefined
+    showFileUploadDialog.value = true
+  },
   onSelectCollection: handleSelectCollectionAndRefresh,
   onAccessDenied: () => { showAccessDeniedDialog.value = true },
   onShowLibraryManagement: showLibraryManagement,
@@ -236,6 +240,7 @@ const {
 
 // 额外的对话框状态
 const showFileUploadDialog = ref(false)
+const sidebarUploadTarget = ref<{ folderId?: string | number | null; tagIds?: Array<string | number> }>()
 // 导入本地文件夹：传入上传对话框的本地目录树（rootPath + tree）
 const uploadInitialTree = ref<{ rootPath: string; tree: any[] }>()
 const showPluginsDialog = ref(false)
@@ -287,12 +292,14 @@ const handleReorderTabs = (fromTabId: string, toTabId: string) => {
 // 仅普通文件夹/标签 tab 提供真实 ID；未分类/未标签/all/trash/home 等特殊 tab 不提供，
 // 避免把字面量 'uncategorized'/'untagged' 等误当作文件夹 ID 传给上传逻辑而在素材库里错误创建同名文件夹
 const uploadInitialFolderId = computed<string | undefined>(() => {
+  if (sidebarUploadTarget.value?.folderId != null) return String(sidebarUploadTarget.value.folderId)
   const tab = currentTab.value
   if (!tab || tab.type !== 'folder') return undefined
   const num = Number(tab.data?.id)
   return Number.isFinite(num) ? String(num) : undefined
 })
 const uploadInitialTagIds = computed<string[]>(() => {
+  if (sidebarUploadTarget.value?.tagIds?.length) return sidebarUploadTarget.value.tagIds.map(String)
   const tab = currentTab.value
   if (!tab || tab.type !== 'tag') return []
   const num = Number(tab.data?.id)
@@ -302,6 +309,7 @@ const uploadInitialTagIds = computed<string[]>(() => {
 // 从侧边栏导入本地文件夹：记录本地树并打开上传对话框
 function handleImportFolder(payload: { rootPath: string; tree: any[] }) {
   uploadInitialTree.value = payload
+  sidebarUploadTarget.value = payload as any
   showFileUploadDialog.value = true
 }
 

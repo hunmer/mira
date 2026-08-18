@@ -38,6 +38,18 @@
       <ContextMenuContent v-if="!readOnly" class="w-52">
         <template v-for="(item, i) in contextMenuItems" :key="i">
           <ContextMenuSeparator v-if="item.separator" />
+          <ContextMenuSub v-else-if="item.items?.length">
+            <ContextMenuSubTrigger :disabled="item.disabled">
+              <span v-if="item.icon" class="material-icons text-base mr-2">{{ item.icon }}</span>
+              <span>{{ item.label }}</span>
+            </ContextMenuSubTrigger>
+            <ContextMenuSubContent class="w-48">
+              <ContextMenuItem v-for="(sub, j) in item.items" :key="j" :disabled="sub.disabled" @click="sub.command?.()">
+                <span v-if="sub.icon" class="material-icons text-base mr-2">{{ sub.icon }}</span>
+                <span>{{ sub.label }}</span>
+              </ContextMenuItem>
+            </ContextMenuSubContent>
+          </ContextMenuSub>
           <ContextMenuItem v-else :disabled="item.disabled" @click="item.command?.()">
             <span v-if="item.icon" class="material-icons text-base mr-2">{{ item.icon }}</span>
             <span class="flex-1">{{ item.label }}</span>
@@ -71,8 +83,12 @@ import {
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
+  ContextMenuSub,
+  ContextMenuSubTrigger,
+  ContextMenuSubContent,
 } from '@/components/ui/context-menu'
 import type { FolderItem } from '@renderer/types/components'
+import type { MenuItem } from '@renderer/types/menu'
 import { useFolderOperations } from './composables/useFolderOperations'
 import { useFileDrop } from './composables/useFileDrop'
 import { useDragSort } from './composables/useDragSort'
@@ -126,6 +142,8 @@ interface Props {
   readOnly?: boolean
   /** 选择模式下判断节点是否可选；不可选节点仍可点击以加载/展开。 */
   selectable?: (item: any) => boolean
+  /** 按当前节点注入额外右键菜单项。 */
+  extraContextMenuItems?: (type: 'folder' | 'tag', item: any | null) => MenuItem[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -335,7 +353,10 @@ const contextMenuItems = computed(() => {
       },
     ]
   }
-  return isFolder.value ? ops.folderContextMenuItems.value : ops.tagContextMenuItems.value
+  const baseItems = isFolder.value ? ops.folderContextMenuItems.value : ops.tagContextMenuItems.value
+  const currentItem = isFolder.value ? ops.currentContextFolder.value : ops.currentContextTag.value
+  const extraItems = props.extraContextMenuItems?.(isFolder.value ? 'folder' : 'tag', currentItem) || []
+  return [...baseItems, ...(extraItems.length ? [{ separator: true }, ...extraItems] : [])]
 })
 
 // 选择模式下的批量删除（单选/多选均走这里）
