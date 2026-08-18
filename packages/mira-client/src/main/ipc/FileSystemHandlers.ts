@@ -16,6 +16,8 @@ export class FileSystemHandlers {
   private registerHandlers(): void {
     // 文件系统操作
     ipcMain.handle('fs:readDir', this.handleFsReadDir.bind(this))
+    ipcMain.handle('fs:listRoots', this.handleFsListRoots.bind(this))
+    ipcMain.handle('fs:listDirectory', this.handleFsListDirectory.bind(this))
     ipcMain.handle('fs:readFile', this.handleFsReadFile.bind(this))
     ipcMain.handle('fs:writeFile', this.handleFsWriteFile.bind(this))
     ipcMain.handle('fs:exists', this.handleFsExists.bind(this))
@@ -24,8 +26,65 @@ export class FileSystemHandlers {
     ipcMain.handle('fs:mkdir', this.handleFsMkdir.bind(this))
     ipcMain.handle('fs:copyFile', this.handleFsCopyFile.bind(this))
     ipcMain.handle('fs:showItemInFolder', this.handleShowItemInFolder.bind(this))
+    ipcMain.handle('fs:openPath', this.handleOpenPath.bind(this))
+    ipcMain.handle('fs:copyEntries', this.handleCopyEntries.bind(this))
+    ipcMain.handle('fs:moveEntries', this.handleMoveEntries.bind(this))
+    ipcMain.handle('fs:removeEntries', this.handleRemoveEntries.bind(this))
     ipcMain.handle('fs:readDirTree', this.handleFsReadDirTree.bind(this))
     ipcMain.handle('fs:readFileBytes', this.handleFsReadFileBytes.bind(this))
+  }
+
+  private async handleFsListRoots(): Promise<{ success: boolean; data?: LocalFsRoot[]; message?: string }> {
+    try {
+      if (process.platform !== 'win32') {
+        return { success: true, data: [{ name: '/', path: '/' }] }
+      }
+
+      const roots = await Promise.all(
+        Array.from({ length: 26 }, (_, index) => `${String.fromCharCode(65 + index)}:\\`).map(async (root) => {
+          try {
+            await fs.promises.access(root, fs.constants.R_OK)
+            return { name: root.slice(0, 2), path: root }
+          } catch {
+            return null
+          }
+        })
+      )
+      return { success: true, data: roots.filter((root): root is LocalFsRoot => root !== null) }
+    } catch (error) {
+      return { success: false, message: error instanceof Error ? error.message : 'Failed to list roots' }
+    }
+  }
+
+  private async handleFsListDirectory(
+    _event: IpcMainInvokeEvent,
+    dirPath: string
+  ): Promise<{ success: boolean; data?: LocalFileEntry[]; message?: string }> {
+    try {
+      const entries = await fs.promises.readdir(dirPath, { withFileTypes: true })
+      const resolved = await Promise.all(entries.map(async (entry): Promise<LocalFileEntry | null> => {
+        const fullPath = path.join(dirPath, entry.name)
+        try {
+          const stat = await fs.promises.stat(fullPath)
+          return {
+            name: entry.name,
+            path: fullPath,
+            isDirectory: entry.isDirectory(),
+            size: stat.size,
+            modifiedAt: stat.mtimeMs,
+            extension: entry.isDirectory() ? '' : path.extname(entry.name).toLowerCase(),
+          }
+        } catch {
+          return null
+        }
+      }))
+      const data = resolved
+        .filter((entry): entry is LocalFileEntry => entry !== null)
+        .sort((a, b) => Number(b.isDirectory) - Number(a.isDirectory) || a.name.localeCompare(b.name))
+      return { success: true, data }
+    } catch (error) {
+      return { success: false, message: error instanceof Error ? error.message : 'Failed to list directory' }
+    }
   }
 
   /**
@@ -209,6 +268,82 @@ export class FileSystemHandlers {
     shell.showItemInFolder(filePath)
   }
 
+  private async handleOpenPath(
+    _event: IpcMainInvokeEvent,
+    targetPath: string
+  ): Promise<{ success: boolean; message?: string }> {
+    const message = await shell.openPath(targetPath)
+    return message ? { success: false, message } : { success: true }
+  }
+
+  private async handleCopyEntries(
+    _event: IpcMainInvokeEvent,
+    sources: string[],
+    destinationDir: string
+  ): Promise<{ success: boolean; message?: string }> {
+    try {
+      await fs.promises.mkdir(destinationDir, { recursive: true })
+      for (const source of sources) {
+        const destination = path.join(destinationDir, path.basename(source))
+        await this.assertValidDestination(source, destination)
+        await fs.promises.cp(source, destination, { recursive: true, errorOnExist: true, force: false })
+      }
+      return { success: true }
+    } catch (error) {
+      return { success: false, message: error instanceof Error ? error.message : 'Failed to copy entries' }
+    }
+  }
+
+  private async handleMoveEntries(
+    _event: IpcMainInvokeEvent,
+    sources: string[],
+    destinationDir: string
+  ): Promise<{ success: boolean; message?: string }> {
+    try {
+      await fs.promises.mkdir(destinationDir, { recursive: true })
+      for (const source of sources) {
+        const destination = path.join(destinationDir, path.basename(source))
+        await this.assertValidDestination(source, destination)
+        try {
+          await fs.promises.rename(source, destination)
+        } catch (error: any) {
+          if (error?.code !== 'EXDEV') throw error
+          await fs.promises.cp(source, destination, { recursive: true, errorOnExist: true, force: false })
+          await fs.promises.rm(source, { recursive: true, force: false })
+        }
+      }
+      return { success: true }
+    } catch (error) {
+      return { success: false, message: error instanceof Error ? error.message : 'Failed to move entries' }
+    }
+  }
+
+  private async handleRemoveEntries(
+    _event: IpcMainInvokeEvent,
+    targets: string[]
+  ): Promise<{ success: boolean; message?: string }> {
+    try {
+      for (const target of targets) await shell.trashItem(target)
+      return { success: true }
+    } catch (error) {
+      return { success: false, message: error instanceof Error ? error.message : 'Failed to remove entries' }
+    }
+  }
+
+  private async assertValidDestination(source: string, destination: string): Promise<void> {
+    const sourcePath = path.resolve(source)
+    const destinationPath = path.resolve(destination)
+    if (sourcePath === destinationPath || destinationPath.startsWith(`${sourcePath}${path.sep}`)) {
+      throw new Error('Invalid destination')
+    }
+    try {
+      await fs.promises.access(destinationPath)
+      throw new Error(`Destination already exists: ${destinationPath}`)
+    } catch (error: any) {
+      if (error?.code !== 'ENOENT') throw error
+    }
+  }
+
   /**
    * 处理递归读取目录树（保留层级关系）
    * 用于导入本地文件夹时展示其结构
@@ -304,6 +439,20 @@ export interface LocalFsNode {
   size?: number
   ext?: string
   children?: LocalFsNode[]
+}
+
+export interface LocalFsRoot {
+  name: string
+  path: string
+}
+
+export interface LocalFileEntry {
+  name: string
+  path: string
+  isDirectory: boolean
+  size: number
+  modifiedAt: number
+  extension: string
 }
 
 /** 导入时跳过的目录名 */

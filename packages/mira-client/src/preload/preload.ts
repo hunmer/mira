@@ -158,6 +158,10 @@ const electronAPI: ElectronAPI = {
       ipcRenderer.invoke('fs:writeFile', filePath, data, encoding),
     readDir: (dirPath: string) =>
       ipcRenderer.invoke('fs:readDir', dirPath),
+    listRoots: () =>
+      ipcRenderer.invoke('fs:listRoots'),
+    listDirectory: (dirPath: string) =>
+      ipcRenderer.invoke('fs:listDirectory', dirPath),
     exists: (filePath: string) =>
       ipcRenderer.invoke('fs:exists', filePath),
     selectDirectory: (title?: string) =>
@@ -170,6 +174,14 @@ const electronAPI: ElectronAPI = {
       ipcRenderer.invoke('fs:copyFile', src, dest),
     showItemInFolder: (filePath: string) =>
       ipcRenderer.invoke('fs:showItemInFolder', filePath),
+    openPath: (targetPath: string) =>
+      ipcRenderer.invoke('fs:openPath', targetPath),
+    copyEntries: (sources: string[], destinationDir: string) =>
+      ipcRenderer.invoke('fs:copyEntries', sources, destinationDir),
+    moveEntries: (sources: string[], destinationDir: string) =>
+      ipcRenderer.invoke('fs:moveEntries', sources, destinationDir),
+    removeEntries: (targets: string[]) =>
+      ipcRenderer.invoke('fs:removeEntries', targets),
     readDirTree: (dirPath: string) =>
       ipcRenderer.invoke('fs:readDirTree', dirPath),
     readFileBytes: (filePath: string) =>

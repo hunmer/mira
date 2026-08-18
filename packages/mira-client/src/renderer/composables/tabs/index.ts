@@ -8,6 +8,7 @@ import { untaggedTabType } from './UntaggedTabType'
 import { trashTabType } from './TrashTabType'
 import { webviewTabType } from './WebviewTabType'
 import { customTabType } from './CustomTabType'
+import { localFolderTabType } from './LocalFolderTabType'
 
 // 自动初始化标志
 let isInitialized = false
@@ -30,7 +31,8 @@ export function initializeBuiltInTabTypes(): boolean {
       { type: untaggedTabType, name: 'Untagged' },
       { type: trashTabType, name: 'Trash' },
       { type: webviewTabType, name: 'Webview' },
-      { type: customTabType, name: 'Custom' }
+      { type: customTabType, name: 'Custom' },
+      { type: localFolderTabType, name: 'LocalFolder' }
     ]
 
     let successCount = 0
@@ -77,7 +79,8 @@ export {
   untaggedTabType,
   trashTabType,
   webviewTabType,
-  customTabType
+  customTabType,
+  localFolderTabType
 }
 
 // 导出注册系统

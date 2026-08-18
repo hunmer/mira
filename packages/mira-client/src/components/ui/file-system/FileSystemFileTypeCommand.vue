@@ -42,7 +42,7 @@ function onKeydown(event: KeyboardEvent) {
 
 <template>
   <div @keydown.capture="onKeydown">
-    <Command class="-m-1 w-[calc(100%+0.5rem)] bg-transparent">
+    <Command class="-m-1 w-[calc(100%_+_0.5rem)] bg-transparent">
       <CommandInput placeholder="Search file types…" class="h-9" />
       <CommandList class="max-h-none">
         <CommandEmpty>No file types found.</CommandEmpty>

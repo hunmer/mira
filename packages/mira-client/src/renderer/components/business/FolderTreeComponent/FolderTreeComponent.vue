@@ -1,6 +1,6 @@
 <template>
-  <div ref="treeContainerRef" class="folder-tree-container w-full" @dragover.capture="handleTreeDragOver"
-    @dragleave.capture="handleTreeDragLeave" @drop.capture="handleTreeDrop">
+  <div ref="treeContainerRef" class="folder-tree-container w-full" @dragover.capture="handleContainerDragOver"
+    @dragleave.capture="handleContainerDragLeave" @drop.capture="handleContainerDrop">
     <!-- 基础分类 (仅文件夹模式) -->
     <FolderTreeBaseCategories v-if="showBaseCategories && itemType === 'folder'" :categories="resolvedBaseCategories"
       :selected-key="selectedKey" :locating-node-id="locatingNodeId" @select="handleBaseCategoryClick"
@@ -8,10 +8,10 @@
 
     <!-- 标题栏 + 搜索 + 多选 + 添加（外层提供统一标题时隐藏） -->
     <FolderTreeHeader v-if="!hideHeader" v-model:search-query="searchQuery" :title="sectionTitle"
-      :hide-actions="hideHeaderActions" :selection-enabled="selectionEnabled" :selection-active="selectionActive"
+      :hide-actions="hideHeaderActions || readOnly" :selection-enabled="selectionEnabled" :selection-active="selectionActive"
       :is-multi-mode="isMultiMode" :selection-mode-label="selectionModeLabel" :selection-count="selectionCount"
       :show-search="showSearch" @toggle-search="toggleSearch" @toggle-selection="toggleSelectionMode"
-      @add="ops.handleAdd(itemType)" @select-all="selectAll" @clear-selection="clearSelection" />
+      @add="handleAdd" @select-all="selectAll" @clear-selection="clearSelection" />
 
     <!-- 树 -->
     <ContextMenu>
@@ -24,18 +24,18 @@
             <template #default="{ node, stat }">
               <FolderTreeNode :node="node" :stat="stat" :selected="selectedKey === node.id"
                 :multi-selected="selectionActive && isNodeSelected(node)" :drag-over="dragOverNodeId === node.id"
-                :locating="locatingNodeId === node.id" :show-checkbox="showNodeCheckbox"
+                :locating="locatingNodeId === node.id" :show-checkbox="showNodeCheckbox && isNodeSelectable(node)"
                 :check-state="showNodeCheckbox ? getNodeCheckState(node) : false" :default-icon="defaultIcon"
                 :icon-indent="indentMode === 'icon'"
                 @node-click="handleNodeClick" @node-context-menu="handleNodeContextMenu"
-                @node-drag-over="handleNodeDragOver" @node-drag-leave="handleNodeDragLeave"
-                @node-drop="handleNodeDrop" @toggle="toggleNode"
-                @check-change="(checked: boolean | 'indeterminate') => onNodeCheckChange(node, checked)" />
+                @node-drag-over="handleReadOnlyNodeDragOver" @node-drag-leave="handleReadOnlyNodeDragLeave"
+                @node-drop="handleReadOnlyNodeDrop" @toggle="(stat: any, event: MouseEvent) => handleNodeToggle(node, stat, event)"
+                @check-change="(checked: boolean | 'indeterminate') => handleNodeCheckChange(node, checked)" />
             </template>
           </component>
         </div>
       </ContextMenuTrigger>
-      <ContextMenuContent class="w-52">
+      <ContextMenuContent v-if="!readOnly" class="w-52">
         <template v-for="(item, i) in contextMenuItems" :key="i">
           <ContextMenuSeparator v-if="item.separator" />
           <ContextMenuItem v-else :disabled="item.disabled" @click="item.command?.()">
@@ -55,7 +55,7 @@
     </div>
 
     <!-- 编辑/移动/删除/批量删除/拖拽确认对话框 -->
-    <FolderTreeDialogs v-model:show-drag-confirm="showDragConfirm" :ops="ops" :folders="folders"
+    <FolderTreeDialogs v-if="!readOnly" v-model:show-drag-confirm="showDragConfirm" :ops="ops" :folders="folders"
       :drag-confirm-info="dragConfirmInfo" @confirm-drag-move="confirmDragMove" @cancel-drag-move="cancelDragMove" />
   </div>
 </template>
@@ -122,6 +122,10 @@ interface Props {
    * - 'icon'：chevron 移到行尾，层级缩进由文件夹图标左 margin 表达
    */
   indentMode?: 'tree' | 'icon'
+  /** 只读外部树：禁用素材库右键菜单、拖放和增删改操作。 */
+  readOnly?: boolean
+  /** 选择模式下判断节点是否可选；不可选节点仍可点击以加载/展开。 */
+  selectable?: (item: any) => boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -133,6 +137,7 @@ const props = withDefaults(defineProps<Props>(), {
   hideHeader: false,
   hideHeaderActions: false,
   indentMode: 'tree',
+  readOnly: false,
   folders: () => [],
   baseCategoriesConfig: () => [],
 })
@@ -247,6 +252,40 @@ const { locatingNodeId, locateNode } = useLocateNode({
 // 展开/折叠动画
 const { toggleNode } = useNodeToggleAnimation()
 
+async function handleNodeToggle(node: HeTreeNode, stat: any, event: MouseEvent) {
+  const expanded = !stat.open
+  emit('expand', buildSelectPayload(node, defaultIcon.value), expanded)
+  await toggleNode(stat, event)
+}
+
+function handleAdd() {
+  if (!props.readOnly) ops.handleAdd(props.itemType)
+}
+
+function handleContainerDragOver(event: DragEvent) {
+  if (!props.readOnly) handleTreeDragOver(event)
+}
+
+function handleContainerDragLeave(event: DragEvent) {
+  if (!props.readOnly) handleTreeDragLeave(event)
+}
+
+function handleContainerDrop(event: DragEvent) {
+  if (!props.readOnly) handleTreeDrop(event)
+}
+
+function handleReadOnlyNodeDragOver(event: DragEvent, node: HeTreeNode) {
+  if (!props.readOnly) handleNodeDragOver(event, node)
+}
+
+function handleReadOnlyNodeDragLeave(event: DragEvent, node: HeTreeNode) {
+  if (!props.readOnly) handleNodeDragLeave(event, node)
+}
+
+function handleReadOnlyNodeDrop(event: DragEvent, node: HeTreeNode) {
+  if (!props.readOnly) handleNodeDrop(event, node)
+}
+
 // 树内拖拽排序
 const {
   showDragConfirm,
@@ -326,25 +365,39 @@ function handleBaseCategoryClick(category: BaseCategory) {
 }
 
 function handleNodeClick(node: HeTreeNode, _stat: any, _event: MouseEvent) {
+  const payload = buildSelectPayload(node, defaultIcon.value)
   // 选择模式激活：点击节点执行选中/取消选中，不触发常规 select
   if (selectionActive.value) {
+    if (!isNodeSelectable(node)) {
+      emit('select', { ...payload, selectable: false })
+      return
+    }
     if (isMultiMode.value) {
       // 多选：切换该节点及其所有后代
       onNodeCheckChange(node, !(getNodeCheckState(node) === true))
     } else {
       // 单选：仅选中当前节点
       selectSingle(node)
-      emit('select', buildSelectPayload(node, defaultIcon.value))
+      emit('select', payload)
     }
     return
   }
 
   searchQuery.value = ''
   showSearch.value = false
-  emit('select', buildSelectPayload(node, defaultIcon.value))
+  emit('select', payload)
+}
+
+function isNodeSelectable(node: HeTreeNode) {
+  return props.selectable ? props.selectable(buildSelectPayload(node, defaultIcon.value)) : true
+}
+
+function handleNodeCheckChange(node: HeTreeNode, checked: boolean | 'indeterminate') {
+  if (isNodeSelectable(node)) onNodeCheckChange(node, checked)
 }
 
 function handleNodeContextMenu(node: HeTreeNode, _event: MouseEvent) {
+  if (props.readOnly) return
   if (isFolder.value) {
     ops.currentContextFolder.value = { ...node.originalData, id: node.id, label: node.label, icon: node.icon, count: node.count } as FolderItem
   } else {
@@ -358,7 +411,7 @@ defineExpose({
   showSearch,
   toggleSearch,
   toggleSelectionMode,
-  handleAdd: () => ops.handleAdd(props.itemType),
+  handleAdd,
 })
 
 // 生命周期

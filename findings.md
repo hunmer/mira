@@ -1,0 +1,24 @@
+# 调查记录
+
+- `useTabs.ts` 的 `TabItem.type` 已是动态字符串，Tab 类型由注册表管理。
+- `TabPersistence` 会过滤 `transient` Tab；本地盘符 Tab 可持久化纯路径数据。
+- `FolderTreeComponent` 当前是素材库文件夹/标签树，尚未证明可直接展示任意本地路径。
+- `mira-app-core/FileSystemModule` 的目录 API 访问服务端，文件操作限定素材库，不能用于客户端本地盘。
+- 尚需确认 renderer/preload/main 的原生文件 API、SelectionBox 使用方式与侧栏模块定义。
+- Electron 已有 `fs.readDir/readDirTree/copyFile/showItemInFolder`，拖出已有 `dragDrop.startDragMultiple`。
+- 现有公开类型暂未看到本地 `stat/open/move/delete/listDrives`，预计需最小扩展 `FileSystemHandler` + preload 类型。
+- `SelectionBox` 已在网格、列表、上传对话框中复用，以 `v-model` 和 `data-selectable-id` 工作。
+- `TabViewRenderer` 使用字符串到异步 Vue 组件的映射，本地文件 Tab 需要在那里登记。
+- 实际主进程处理器是 `src/main/ipc/FileSystemHandlers.ts`；现有 `readDir` 仅返回名称，`readDirTree` 会递归整棵树且带忽略规则，不适合磁盘浏览。
+- 本地浏览需要新增单层 `listDirectory`（含 stat）、`listRoots`、`openPath`、批量 copy/move/remove；可继续复用现有 `startDragMultiple`。
+- 侧栏模块由 `sidebarModules.ts` 集中定义，新增 `local_files` 后会自动进入布局配置的新增模块序列。
+- 内置 Tab 注册集中在 `composables/tabs/index.ts`，渲染组件映射集中在 `TabViewRenderer.vue`。
+- `FolderTreeComponent` 已有 `selectionMode: none|single|multi` 和 `folders` 外部数据输入，但仍默认挂载素材库右键菜单/拖放；本地路径选择需增加只读能力。
+- `useTabs.createTabFromRegisteredType` 已公开，支持指定稳定 id、label、icon 和 `data`，侧栏可直接调用。
+- 导入链路可通过 `fs.readFileBytes` 构造浏览器 `File`，再调用 `miraSDKService.uploadFile`；当前素材库 id 可由侧栏传入 Tab 数据。
+- 交互决策：右键与批量“导入”仅作用于文件；目录负责导航、复制/移动/删除及拖放目标。
+- 原生 Electron `startDragMultiple` 与 renderer 内部投放共用时，自定义 DataTransfer 可能丢失；使用 `window.__miraLocalDragPaths` 作为同窗口移动回退。
+- 路径对话框通过 `FolderTreeComponent.selectable` 区分文件/目录选择，目录仍可展开但不会在文件模式中误选。
+- 当前 Material Icons 字体不包含 `hard_drive`，本地文件模块改用已存在的 `storage`。
+- 现有 `ui/file-system/FileSystem.vue` 只有单选且缺少右键/框选/拖拽扩展点，不能直接替换本地文件 Tab；完整工具栏在本地视图内实现以保留文件操作能力。
+- 更多视图采用同一条目/选择/操作状态：分栏视图按文件夹懒加载后续列；画廊视图使用本地字节生成图片预览，非图片展示类型图标。

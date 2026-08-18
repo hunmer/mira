@@ -11,7 +11,7 @@
  * 对外暴露 locateItem(type, id)：定位文件夹/标签节点并滚动入视，供 Tab 右键「在侧边栏定位」调用。
  * 由原 HomeSidebar 拆出，逻辑零改动。
  */
-import { ref, computed, onActivated, onDeactivated, onBeforeUnmount, nextTick, reactive, watch } from 'vue'
+import { ref, computed, onActivated, onDeactivated, onBeforeUnmount, onMounted, nextTick, reactive, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import FolderTreeComponent from '@renderer/components/business/FolderTreeComponent/FolderTreeComponent.vue'
 import SidebarHistoryModule from './SidebarHistoryModule.vue'
@@ -25,10 +25,13 @@ import {
 import { useHomeSidebarLayoutStore } from '@/renderer/stores/homeSidebarLayout'
 import { miraSDKService } from '@/renderer/services/MiraSDKService'
 import { getModuleDef, type SidebarModuleId } from './sidebarModules'
+import { useTabs } from '@/renderer/composables/useTabs'
+import type { LocalFsRoot } from '@/shared/types'
 
 defineOptions({ name: 'SidebarModuleList' })
 
 const { t } = useI18n()
+const { createTabFromRegisteredType } = useTabs()
 
 const props = defineProps<{
   homeController: {
@@ -129,6 +132,32 @@ const baseCategories = computed(() => [
   { id: 'untagged', label: t('views.sidebarModuleList.untagged'), icon: 'label_off', iconColor: 'text-muted-foreground', count: shortcutCounts.value.untagged },
   { id: 'trash', label: t('views.sidebarModuleList.trash'), icon: 'delete', iconColor: 'text-destructive', count: shortcutCounts.value.trash },
 ])
+
+const localRoots = ref<LocalFsRoot[]>([])
+const localRootsError = ref('')
+
+async function loadLocalRoots() {
+  const api = window.electronAPI?.fs
+  if (!api?.listRoots) {
+    localRootsError.value = t('views.localFolder.electronOnly')
+    return
+  }
+  const result = await api.listRoots()
+  localRoots.value = result.data || []
+  localRootsError.value = result.success ? '' : (result.message || t('views.localFolder.loadFailed'))
+}
+
+function openLocalRoot(root: LocalFsRoot) {
+  createTabFromRegisteredType('local-folder', {
+    id: `local-folder:${encodeURIComponent(root.path)}`,
+    label: root.name,
+    icon: 'storage',
+    data: { rootPath: root.path },
+    libraryId: props.libraryId,
+  })
+}
+
+onMounted(loadLocalRoots)
 
 const handleBaseCategoryClick = (category: any) => {
   emit('folderSelect', {
@@ -358,6 +387,21 @@ defineExpose({ locateItem })
       <!-- 历史查看 -->
       <CollapsibleContent v-else-if="mod.id === 'recent_viewed'" class="section-body">
         <SidebarHistoryModule :library-id="libraryId" mode="recent_viewed" @open="emit('historyOpen', $event)" />
+      </CollapsibleContent>
+
+      <!-- 本地磁盘 -->
+      <CollapsibleContent v-else-if="mod.id === 'local_files'" class="section-body text-foreground">
+        <ul v-if="localRoots.length" class="space-y-0.5">
+          <li v-for="root in localRoots" :key="root.path">
+            <button class="cat-item w-full text-foreground" type="button" @click="openLocalRoot(root)">
+              <span class="flex min-w-0 items-center">
+                <span class="material-icons mr-2 text-lg text-foreground/70">storage</span>
+                <span class="truncate text-foreground">{{ root.name }}</span>
+              </span>
+            </button>
+          </li>
+        </ul>
+        <p v-else class="px-2 py-3 text-xs text-foreground/70">{{ localRootsError || $t('views.localFolder.loading') }}</p>
       </CollapsibleContent>
     </Collapsible>
   </div>

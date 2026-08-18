@@ -177,6 +177,7 @@ const componentMap: Record<string, () => Promise<any>> = {
   'HomeTabView': () => import('@renderer/components/tabs/HomeTabView.vue'),
   'WebviewTabView': () => import('@renderer/components/tabs/WebviewTabView.vue'),
   'PluginCustomTabView': () => import('@renderer/components/tabs/PluginCustomTabView.vue'),
+  'LocalFolderTabView': () => import('@renderer/components/tabs/LocalFolderTabView.vue'),
 }
 
 // 计算属性：缓存键

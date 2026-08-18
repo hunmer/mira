@@ -34,8 +34,9 @@ const LAYOUT_KEY = 'mira-home-sidebar-layout'
  * 版本历史：
  * - v1：shortcuts / folders / tags / history（history 是合并的「最新添加·历史查看」）
  * - v2：把 history 拆成 recent_added + recent_viewed 两个独立模块
+ * - v3：新增 local_files 本地文件模块
  */
-const SCHEMA_VERSION = 2
+const SCHEMA_VERSION = 3
 
 /**
  * 旧版本里存在、但当前版本已废弃的模块 id → 替换为的 id 列表（按顺序插入到原位置）。
@@ -45,6 +46,11 @@ const SCHEMA_VERSION = 2
 const STALE_ID_REPLACEMENTS: Record<string, SidebarModuleId[]> = {
   // v1 的 history 在 v2 拆成两个模块，原位展开（保持其在侧栏中的相对位置）
   history: ['recent_added', 'recent_viewed'],
+}
+
+const MODULES_INTRODUCED_IN_VERSION: Record<number, SidebarModuleId[]> = {
+  2: ['recent_added', 'recent_viewed'],
+  3: ['local_files'],
 }
 
 interface PersistedLayout {
@@ -119,11 +125,13 @@ export const useHomeSidebarLayoutStore = defineStore('homeSidebarLayout', () => 
       if (cleaned.length === 0) {
         return [...ALL_MODULE_IDS]
       }
-      const knownAtOldVersion = new Set<SidebarModuleId>(cleaned)
-      for (const id of ALL_MODULE_IDS) {
-        if (!knownAtOldVersion.has(id)) {
-          knownAtOldVersion.add(id)
-          cleaned.push(id)
+      const enabled = new Set<SidebarModuleId>(cleaned)
+      for (let version = Math.max(1, storedVersion + 1); version <= SCHEMA_VERSION; version++) {
+        for (const id of MODULES_INTRODUCED_IN_VERSION[version] || []) {
+          if (!enabled.has(id)) {
+            enabled.add(id)
+            cleaned.push(id)
+          }
         }
       }
     }

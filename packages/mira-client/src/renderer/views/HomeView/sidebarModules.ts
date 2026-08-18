@@ -13,6 +13,7 @@ export type SidebarModuleId =
   | 'tags'
   | 'recent_added'
   | 'recent_viewed'
+  | 'local_files'
 
 export interface SidebarModuleDef {
   /** 模块唯一 id，同时作为持久化 key */
@@ -56,6 +57,12 @@ export const SIDEBAR_MODULES: SidebarModuleDef[] = [
     title: i18n.global.t('views.sidebarModule.recentViewedTitle'),
     icon: 'history',
     description: i18n.global.t('views.sidebarModule.recentViewedDesc'),
+  },
+  {
+    id: 'local_files',
+    title: i18n.global.t('views.sidebarModule.localFilesTitle'),
+    icon: 'storage',
+    description: i18n.global.t('views.sidebarModule.localFilesDesc'),
   },
 ]
 

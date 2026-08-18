@@ -27,6 +27,20 @@ export interface LocalFsNode {
   children?: LocalFsNode[]
 }
 
+export interface LocalFsRoot {
+  name: string
+  path: string
+}
+
+export interface LocalFileEntry {
+  name: string
+  path: string
+  isDirectory: boolean
+  size: number
+  modifiedAt: number
+  extension: string
+}
+
 // 用户信息
 export interface UserInfo {
   id: string
@@ -546,12 +560,18 @@ export interface ElectronAPI {
     readFile: (filePath: string, encoding?: BufferEncoding) => Promise<{ success: boolean; data?: string; message?: string }>
     writeFile: (filePath: string, data: string, encoding?: BufferEncoding) => Promise<{ success: boolean; message?: string }>
     readDir: (dirPath: string) => Promise<{ success: boolean; data?: string[]; message?: string }>
+    listRoots: () => Promise<{ success: boolean; data?: LocalFsRoot[]; message?: string }>
+    listDirectory: (dirPath: string) => Promise<{ success: boolean; data?: LocalFileEntry[]; message?: string }>
     exists: (filePath: string) => Promise<boolean>
     selectDirectory: (title?: string) => Promise<{ success: boolean; path?: string; message?: string }>
     selectFile: (title?: string, filters?: { name: string; extensions: string[] }[]) => Promise<{ success: boolean; path?: string; message?: string }>
     mkdir: (dirPath: string, recursive?: boolean) => Promise<{ success: boolean; message?: string }>
     copyFile: (src: string, dest: string) => Promise<{ success: boolean; message?: string }>
     showItemInFolder: (filePath: string) => Promise<void>
+    openPath: (targetPath: string) => Promise<{ success: boolean; message?: string }>
+    copyEntries: (sources: string[], destinationDir: string) => Promise<{ success: boolean; message?: string }>
+    moveEntries: (sources: string[], destinationDir: string) => Promise<{ success: boolean; message?: string }>
+    removeEntries: (targets: string[]) => Promise<{ success: boolean; message?: string }>
     readDirTree: (dirPath: string) => Promise<{ success: boolean; data?: LocalFsNode[]; message?: string }>
     readFileBytes: (filePath: string) => Promise<{ success: boolean; data?: ArrayBuffer; message?: string }>
   }
