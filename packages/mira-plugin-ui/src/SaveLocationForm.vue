@@ -130,22 +130,25 @@ function toggle (id: number) {
   expanded.value = next
 }
 
-// ---- 树搜索(纯 TagsInput):关键词成标签,仅过滤树展示,无下拉弹层 ----
-// 工具栏搜索按钮切换显隐(参考 FolderTreeComponent),收起时清空标签
-const showSearch = ref(false)
-const searchTags = ref<string[]>([])
+// ---- 树搜索:简单输入框实时过滤(输入即过滤),两个 tab 各自独立的搜索栏与关键词 ----
+// 工具栏搜索按钮切换当前 tab 的搜索栏显隐,收起时清空该 tab 关键词
+const showSearch = ref({ folder: false, tag: false })
+const searchTerm = ref({ folder: '', tag: '' })
 
 function toggleSearch () {
-  showSearch.value = !showSearch.value
-  if (!showSearch.value) searchTags.value = []
+  const kind = tab.value
+  showSearch.value = { ...showSearch.value, [kind]: !showSearch.value[kind] }
+  if (!showSearch.value[kind]) searchTerm.value = { ...searchTerm.value, [kind]: '' }
 }
 
 /** 搜索态:命中分支连同祖先保留,整棵展开 */
-const filteredFolder = computed(() => filterTree(folderTree.value, searchTags.value))
-const filteredTag = computed(() => filterTree(tagTree.value, searchTags.value))
+const filteredFolder = computed(() => filterTree(folderTree.value, searchTerm.value.folder.trim()))
+const filteredTag = computed(() => filterTree(tagTree.value, searchTerm.value.tag.trim()))
 
 const effectiveExpanded = computed(() =>
-  searchTags.value.length ? collectIds(tab.value === 'folder' ? filteredFolder.value.tree : filteredTag.value.tree) : expanded.value,
+  searchTerm.value[tab.value].trim()
+    ? collectIds(tab.value === 'folder' ? filteredFolder.value.tree : filteredTag.value.tree)
+    : expanded.value,
 )
 
 // ---- 文件夹单选(再点取消回根目录) / 标签多选 ----
@@ -154,17 +157,17 @@ const selectedFolderIds = computed(() => new Set([folderId.value ? Number(folder
 const checkedTagIds = computed(() => selectedTagIds.value)
 
 function onSelectFolder (node: LibraryTreeNode) {
-  if (node.id === ROOT_ID) {
-    folderId.value = ''
-    return
-  }
-  folderId.value = folderId.value === String(node.id) ? '' : String(node.id)
+  folderId.value = node.id === ROOT_ID || folderId.value === String(node.id) ? '' : String(node.id)
+  // 点击搜索定位到的目标后清空搜索,树恢复全量
+  if (searchTerm.value.folder) searchTerm.value = { ...searchTerm.value, folder: '' }
 }
 
 function onSelectTag (node: LibraryTreeNode) {
   const next = new Set(selectedTagIds.value)
   next.has(node.id) ? next.delete(node.id) : next.add(node.id)
   selectedTagIds.value = next
+  // 点击搜索定位到的目标后清空搜索,树恢复全量
+  if (searchTerm.value.tag) searchTerm.value = { ...searchTerm.value, tag: '' }
 }
 
 const selectedTagTitles = computed(() => tagItems.value.filter(item => selectedTagIds.value.has(item.id)).map(item => item.title))
@@ -191,16 +194,13 @@ watch(selectedTagTitles, () => {
   tagSearchTerm.value = ''
 })
 
-/** Tags with Listbox 的 v-model:title 数组 ↔ selectedTagIds(同名标签全部映射) */
+/** Tags with Listbox 的 v-model:title 数组 ↔ selectedTagIds(同名标签全部映射)。
+ *  selectedTagIds 是唯一选中源:树勾选与下拉增删都经此 computed 读写同一份数据 */
 const selectedTagTitlesModel = computed({
   get: () => selectedTagTitles.value,
   set (titles: string[]) {
     const keep = new Set(titles)
-    const next = new Set<number>()
-    for (const item of tagItems.value) {
-      if (selectedTagIds.value.has(item.id) && keep.has(item.title)) next.add(item.id)
-    }
-    selectedTagIds.value = next
+    selectedTagIds.value = new Set(tagItems.value.filter(item => keep.has(item.title)).map(item => item.id))
   },
 })
 
@@ -331,50 +331,56 @@ function confirm () {
           </div>
         </div>
 
-        <!-- 搜索栏(展开/收起过渡):TagsInput 关键词成标签,仅过滤树展示(无弹层) -->
-        <Transition name="search-slide">
-          <div v-if="showSearch" class="search-shell">
-            <div class="search-shell-inner">
-              <TagsInput v-slot="{ modelValue: tags }" v-model="searchTags" class="w-full">
-                <TagsInputItem v-for="item in tags" :key="item.toString()" :value="item.toString()">
-                  <TagsInputItemText />
-                  <TagsInputItemDelete />
-                </TagsInputItem>
-
-                <TagsInputInput :placeholder="`搜索${tab === 'folder' ? '文件夹' : '标签'}…`" />
-              </TagsInput>
+        <TabsContent value="folder" class="flex max-h-56 flex-col gap-2">
+          <!-- 搜索栏(folder tab 独有):输入即实时过滤树 -->
+          <Transition name="search-slide">
+            <div v-if="showSearch.folder" class="search-shell">
+              <div class="search-shell-inner">
+                <Input v-model="searchTerm.folder" class="h-7" placeholder="搜索文件夹…" />
+              </div>
             </div>
-          </div>
-        </Transition>
+          </Transition>
 
-        <TabsContent value="folder" class="max-h-56 overflow-y-auto">
-          <div v-if="filteredFolder.tree.length" class="text-sm">
-            <LibraryTree
-              :nodes="filteredFolder.tree"
-              kind="folder"
-              :expanded="effectiveExpanded"
-              :matched="filteredFolder.matched"
-              :selected-ids="selectedFolderIds"
-              @toggle="toggle"
-              @select="onSelectFolder"
-            />
+          <div class="min-h-0 flex-1 overflow-y-auto">
+            <div v-if="filteredFolder.tree.length" class="text-sm">
+              <LibraryTree
+                :nodes="filteredFolder.tree"
+                kind="folder"
+                :expanded="effectiveExpanded"
+                :matched="filteredFolder.matched"
+                :selected-ids="selectedFolderIds"
+                @toggle="toggle"
+                @select="onSelectFolder"
+              />
+            </div>
+            <div v-else class="py-6 text-center text-xs text-muted-foreground">{{ searchTerm.folder.trim() ? '无匹配' : '暂无文件夹' }}</div>
           </div>
-          <div v-else class="py-6 text-center text-xs text-muted-foreground">{{ searchTags.length ? '无匹配' : '暂无文件夹' }}</div>
         </TabsContent>
-        <TabsContent value="tag" class="max-h-56 overflow-y-auto">
-          <div v-if="filteredTag.tree.length" class="text-sm">
-            <LibraryTree
-              :nodes="filteredTag.tree"
-              kind="tag"
-              :expanded="effectiveExpanded"
-              :matched="filteredTag.matched"
-              checkable
-              :checked="checkedTagIds"
-              @toggle="toggle"
-              @select="onSelectTag"
-            />
+        <TabsContent value="tag" class="flex max-h-56 flex-col gap-2">
+          <!-- 搜索栏(tag tab 独有):输入即实时过滤树 -->
+          <Transition name="search-slide">
+            <div v-if="showSearch.tag" class="search-shell">
+              <div class="search-shell-inner">
+                <Input v-model="searchTerm.tag" class="h-7" placeholder="搜索标签…" />
+              </div>
+            </div>
+          </Transition>
+
+          <div class="min-h-0 flex-1 overflow-y-auto">
+            <div v-if="filteredTag.tree.length" class="text-sm">
+              <LibraryTree
+                :nodes="filteredTag.tree"
+                kind="tag"
+                :expanded="effectiveExpanded"
+                :matched="filteredTag.matched"
+                checkable
+                :checked="checkedTagIds"
+                @toggle="toggle"
+                @select="onSelectTag"
+              />
+            </div>
+            <div v-else class="py-6 text-center text-xs text-muted-foreground">{{ searchTerm.tag.trim() ? '无匹配' : '暂无标签' }}</div>
           </div>
-          <div v-else class="py-6 text-center text-xs text-muted-foreground">{{ searchTags.length ? '无匹配' : '暂无标签' }}</div>
         </TabsContent>
       </Tabs>
 
