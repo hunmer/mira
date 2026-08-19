@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { EditorContent, useEditor } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
@@ -11,13 +11,16 @@ import Highlight from '@tiptap/extension-highlight'
 import TextAlign from '@tiptap/extension-text-align'
 import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
+import Typography from '@tiptap/extension-typography'
 import { MiraClient } from 'mira-app-core/shared/sdk'
 import { SaveLocationDialog, type SaveLocation } from 'mira-plugin-ui'
 import EditorToolbar from '@/components/editor/EditorToolbar.vue'
 import LinkEditorMenu from '@/components/editor/LinkEditorMenu.vue'
 import TextBubbleMenu from '@/components/editor/TextBubbleMenu.vue'
 import DragHandle from '@/components/editor/DragHandle.vue'
-import { SlashCommand } from '@/components/editor/slash-command'
+import SlashCommandMenu from '@/components/editor/SlashCommandMenu.vue'
+import DocumentIconPicker from '@/components/editor/DocumentIconPicker.vue'
+import OutlinePanel from '@/components/editor/OutlinePanel.vue'
 import { NotionKeyboard, TrailingNode } from '@/components/editor/extensions/notion-behaviors'
 
 const params = new URLSearchParams(location.search)
@@ -36,7 +39,18 @@ const folders = ref<any[]>([])
 const currentLibraryId = ref(initialLibraryId)
 const currentFileId = ref(initialFileId)
 const currentFileName = ref(initialFileName)
+const title = ref('')
+const icon = ref('')
 let saveTimer: ReturnType<typeof setTimeout> | undefined
+
+// 大标题同步为默认文件名
+watch(title, (value) => {
+  const name = value.trim()
+  if (name) currentFileName.value = `${name.replace(/\.tiptap$/i, '')}.tiptap`
+  scheduleSave()
+})
+
+watch(icon, () => scheduleSave())
 
 const editor = useEditor({
   extensions: [
@@ -49,7 +63,7 @@ const editor = useEditor({
     TextAlign.configure({ types: ['heading', 'paragraph'] }),
     TaskList,
     TaskItem.configure({ nested: true }),
-    SlashCommand,
+    Typography,
     TrailingNode,
     NotionKeyboard,
     Placeholder.configure({
@@ -72,19 +86,27 @@ const editor = useEditor({
     },
   },
   content: { type: 'doc', content: [{ type: 'paragraph' }] },
-  onUpdate: () => {
-    if (!currentFileId.value) return
-    status.value = '有未保存修改'
-    if (saveTimer) clearTimeout(saveTimer)
-    saveTimer = setTimeout(() => void saveExisting(), 700)
-  },
+  onUpdate: () => scheduleSave(),
 })
+
+function scheduleSave () {
+  if (!currentFileId.value) return
+  status.value = '有未保存修改'
+  if (saveTimer) clearTimeout(saveTimer)
+  saveTimer = setTimeout(() => void saveExisting(), 700)
+}
+
+/** 文档 JSON 附加大标题与图标一起持久化 */
+function docJson () {
+  if (!editor.value) return { type: 'doc' }
+  return { ...editor.value.getJSON(), title: title.value.trim(), icon: icon.value }
+}
 
 async function saveExisting () {
   if (!editor.value || !currentLibraryId.value || !currentFileId.value) return
   status.value = '保存中...'
   try {
-    await client.files().writeFile(currentLibraryId.value, currentFileId.value, JSON.stringify(editor.value.getJSON(), null, 2), { name: currentFileName.value, contentType: 'application/vnd.mira.tiptap+json' })
+    await client.files().writeFile(currentLibraryId.value, currentFileId.value, JSON.stringify(docJson(), null, 2), { name: currentFileName.value, contentType: 'application/vnd.mira.tiptap+json' })
     status.value = '已保存'
   } catch (error) { console.error('[mira-tiptap] save failed', error); status.value = '保存失败' }
 }
@@ -100,7 +122,7 @@ async function saveToLocation (location: SaveLocation) {
   if (!editor.value) return
   status.value = '保存中...'
   try {
-    const content = JSON.stringify(editor.value.getJSON(), null, 2)
+    const content = JSON.stringify(docJson(), null, 2)
     if (currentFileId.value && currentLibraryId.value === location.libraryId && !isNewDocument.value) {
       await client.files().writeFile(location.libraryId, currentFileId.value, content, { name: location.fileName, contentType: 'application/vnd.mira.tiptap+json' })
     } else {
@@ -124,13 +146,21 @@ function focusEnd () {
   editor.value?.chain().focus('end').run()
 }
 
+// 大标题按 Enter / 下箭头进入正文编辑
+function focusEditorStart () {
+  editor.value?.chain().focus('start').run()
+}
+
 onMounted(async () => {
   window.addEventListener('keydown', handleKeydown)
   if (isNewDocument.value) return
   try {
     const response = await fetch(fileUrl)
     if (!response.ok) throw new Error(`加载失败 (${response.status})`)
-    editor.value?.commands.setContent(await response.json())
+    const json = await response.json()
+    title.value = typeof json?.title === 'string' ? json.title : ''
+    icon.value = typeof json?.icon === 'string' ? json.icon : ''
+    editor.value?.commands.setContent(json)
     status.value = '已加载'
   } catch (error) { console.error('[mira-tiptap] load failed', error); status.value = '加载失败' }
 })
@@ -141,10 +171,27 @@ onBeforeUnmount(() => { window.removeEventListener('keydown', handleKeydown); if
   <main class="flex h-full flex-col">
     <template v-if="editor">
       <EditorToolbar :editor="editor" :status="status" @save="openSaveDialog" />
-      <div class="scroll-thin flex-1 overflow-y-auto" @mousedown.self="focusEnd">
-        <div class="relative mx-auto w-full max-w-3xl px-6 py-10 md:py-14" @mousedown.self="focusEnd">
-          <DragHandle :editor="editor" />
-          <EditorContent :editor="editor" />
+      <div class="scroll-thin flex-1 overflow-y-auto bg-muted/40" @mousedown.self="focusEnd">
+        <div class="mx-auto my-8 flex w-[calc(100%-4rem)] max-w-[1080px] items-start justify-center gap-6">
+          <div
+            class="relative w-full max-w-3xl rounded-xl border bg-card px-10 py-9 shadow-sm"
+            @mousedown.self="focusEnd"
+          >
+            <DragHandle :editor="editor" />
+            <SlashCommandMenu :editor="editor" />
+            <div class="mb-2 flex items-center gap-2">
+              <DocumentIconPicker v-model="icon" />
+              <input
+                v-model="title"
+                placeholder="无标题"
+                class="min-w-0 flex-1 border-none bg-transparent text-3xl font-bold tracking-tight outline-none placeholder:text-muted-foreground/40"
+                @keydown.enter.prevent="focusEditorStart"
+                @keydown.down.prevent="focusEditorStart"
+              >
+            </div>
+            <EditorContent :editor="editor" />
+          </div>
+          <OutlinePanel :editor="editor" />
         </div>
       </div>
       <TextBubbleMenu :editor="editor" />

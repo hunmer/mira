@@ -7,6 +7,7 @@ import { onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 const props = defineProps<{ editor: Editor }>()
 
 const root = ref<HTMLElement | null>(null)
+const handleEl = ref<HTMLElement | null>(null)
 const handle = reactive({ visible: false, top: 0, left: 0 })
 const dropLine = reactive({ visible: false, top: 0, left: 0, width: 0 })
 
@@ -38,19 +39,20 @@ function positionHandle (rect: DOMRect) {
   const wrap = wrapperRect()
   if (!wrap) return
   const leftOffset = rect.left - wrap.left
-  // 列左侧空间充足时挂在列外（Notion 风格），窄屏退回列内
-  handle.left = leftOffset >= 64 ? leftOffset - 56 : 4
+  // 整体挂在块文字左侧外（卡片 padding 之外），避免与文字重叠
+  handle.left = leftOffset - 64
   handle.top = rect.top - wrap.top + rect.height / 2 - 12
 }
 
-function onMouseMove (event: MouseEvent) {
+/** 监听绑在 document 上：把手在编辑器 DOM 之外，绑编辑器会导致鼠标移向把手时触发隐藏 */
+function onDocMouseMove (event: MouseEvent) {
   if (dragging) return
+  if (handleEl.value?.contains(event.target as Node)) return
   const now = performance.now()
   if (now - lastMove < 30) return
   lastMove = now
   const coords = props.editor.view.posAtCoords({ left: event.clientX, top: event.clientY })
-  if (!coords) { handle.visible = false; blockRange = null; return }
-  const block = topLevelBlockAt(coords.pos)
+  const block = coords ? topLevelBlockAt(coords.pos) : null
   if (!block) { handle.visible = false; blockRange = null; return }
   blockRange = { from: block.from, to: block.to }
   positionHandle(block.rect)
@@ -137,8 +139,7 @@ function insertBlockBelow () {
 
 onMounted (() => {
   const dom = props.editor.view.dom
-  dom.addEventListener('mousemove', onMouseMove)
-  dom.addEventListener('mouseleave', hideHandle)
+  document.addEventListener('mousemove', onDocMouseMove)
   // capture 阶段拦截，避免 ProseMirror 自己的拖放处理
   dom.addEventListener('dragover', onDragOver, true)
   dom.addEventListener('drop', onDrop, true)
@@ -148,8 +149,7 @@ onMounted (() => {
 
 onBeforeUnmount (() => {
   const dom = props.editor.view.dom
-  dom.removeEventListener('mousemove', onMouseMove)
-  dom.removeEventListener('mouseleave', hideHandle)
+  document.removeEventListener('mousemove', onDocMouseMove)
   dom.removeEventListener('dragover', onDragOver, true)
   dom.removeEventListener('drop', onDrop, true)
   document.removeEventListener('dragend', clearDrag)
@@ -161,6 +161,7 @@ onBeforeUnmount (() => {
   <div ref="root" class="pointer-events-none absolute inset-0 z-10">
     <div
       v-show="handle.visible"
+      ref="handleEl"
       class="pointer-events-auto absolute flex items-center gap-0.5"
       :style="{ top: `${handle.top}px`, left: `${handle.left}px` }"
       @mousedown.prevent
