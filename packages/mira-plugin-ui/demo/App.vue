@@ -102,6 +102,13 @@ function handleSave (location: SaveLocation) {
   saved.value = JSON.stringify(location)
 }
 
+/** 保存对话框内切换素材库:同步当前库并重拉文件夹/标签树数据 */
+async function handleLibraryChange (libraryId: string) {
+  if (!connected.value || libraryId === currentLibraryId.value) return
+  currentLibraryId.value = libraryId
+  await loadLibraryData()
+}
+
 /** 保存对话框工具栏「新增」:连接时走 SDK,未连接改内存 mock */
 async function handleCreateNode ({ kind, parentId }: { kind: 'folder' | 'tag'; parentId: number }) {
   const name = window.prompt(kind === 'folder' ? '新建文件夹名称' : '新建标签名称')?.trim()
@@ -358,6 +365,7 @@ async function startUpload () {
           :initial-library-id="currentLibraryId"
           initial-file-name="我的文档"
           @save="handleSave"
+          @library-change="handleLibraryChange"
           @create-node="handleCreateNode"
           @remove-file="file => saveFiles = saveFiles.filter(f => f !== file)"
         />

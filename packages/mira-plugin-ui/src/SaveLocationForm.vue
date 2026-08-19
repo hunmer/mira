@@ -253,11 +253,13 @@ function onCreateNode () {
   emit('create-node', { kind: tab.value, parentId })
 }
 
-// 切库:清掉已选位置并通知宿主刷新树数据
+// 切库:清掉已选位置与搜索状态并通知宿主刷新树数据
 function onLibraryChange (value: string) {
   libraryId.value = value
   folderId.value = ''
   selectedTagIds.value = new Set()
+  showSearch.value = { folder: false, tag: false }
+  searchTerm.value = { folder: '', tag: '' }
   emit('library-change', value)
 }
 
