@@ -28,7 +28,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Checkbox } from '@/components/ui/checkbox'
-import SelectionBox from '@renderer/components/common/SelectionBox.vue'
+import { SelectionBox } from '@hunmer/vue-selection-box'
 import { getPinyinFirstLetter, pinyinMatch } from '@renderer/utils/helpers'
 
 defineOptions({ name: 'GroupedCardBrowserDialog' })

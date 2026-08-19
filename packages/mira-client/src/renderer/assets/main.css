@@ -262,3 +262,9 @@
 ::view-transition-new(root) {
   z-index: 9999;
 }
+
+/* 框选组件(@hunmer/vue-selection-box)颜色对齐 shadcn token */
+.selection-container {
+  --selection-box-color: var(--primary);
+  --selection-box-destructive-color: var(--destructive);
+}

@@ -19,7 +19,7 @@
 | 组件 | 行数 | 描述 |
 |------|------|------|
 | `TabViewRenderer.vue` | 180 | Tab 视图动态渲染器（核心） |
-| `SelectionBox.vue` | 590 | 框选组件 |
+| `SelectionBox.vue` | — | 已封装为独立包 `@hunmer/vue-selection-box`(packages/vue-selection-box) |
 | `MediaCardComponent.vue` | 532 | 媒体卡片 |
 | `ResponsiveLayoutComponent.vue` | 562 | 响应式布局 |
 | `AnimationComponent.vue` | 512 | 动画组件 |

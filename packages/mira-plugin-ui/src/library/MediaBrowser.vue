@@ -6,6 +6,7 @@
  * - 工具栏:标题搜索 + 分类筛选(全部/图片/视频/音频) + 排序(字段×方向) + 视图切换 + 刷新
  * - 网格:CSS grid 等比方形卡片;瀑布流:@hunmer/vue-masonry(高度按 item.aspect)
  * - 缩略图地址由 services.getThumbUrl 提供(img 标签无法带 header,宿主自行拼 token)
+ * - 选择:传 v-model:selected 启用(点选 / Ctrl 加选 / Shift 连选 / 空白拖拽框选,Alt 减选)
  *
  * 样式为 tailwind/shadcn 原子类;筛选/排序不在组件内做,条件变化即透传给 services 重新拉取。
  */
@@ -13,9 +14,12 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { Masonry } from '@hunmer/vue-masonry';
 import type { MasonryItemMeta } from '@hunmer/vue-masonry';
 import '@hunmer/vue-masonry/style.css';
+import { SelectionBox } from '@hunmer/vue-selection-box';
+import '@hunmer/vue-selection-box/style.css';
 import {
   ArrowDownAZ,
   ArrowUpAZ,
+  Check,
   FileAudio,
   FileImage,
   FileText,
@@ -23,6 +27,7 @@ import {
   LayoutGrid,
   RefreshCw,
   Rows3,
+  X,
 } from '@lucide/vue';
 // 注意:library 子入口以源码供宿主直接消费,这里必须用相对路径(宿主的 @ 别名指向其自身 src)
 import { Input } from '../components/ui/input';
@@ -42,14 +47,21 @@ const props = defineProps<{
   services: MediaBrowserServices;
   /** 文案函数,缺省用内置中文 */
   t?: LibraryTreeT;
+  /** 瀑布流布局模式:fill=自动回填空隙(默认) / stream=纯流式保序 */
+  waterfallMode?: 'stream' | 'fill';
 }>();
 
 /** 视图模式受控切换:grid=网格 / waterfall=瀑布流 */
 const view = defineModel<'grid' | 'waterfall'>('view', { default: 'grid' });
 
+/** 受控选择:传 v-model:selected 启用(点选/框选);不传则纯浏览,无选择交互 */
+const selected = defineModel<MediaBrowserItem[]>('selected');
+
 const emit = defineEmits<{
   /** 点击文件卡片 */
   itemClick: [item: MediaBrowserItem];
+  /** Delete 快捷键:启用选择且容器聚焦时触发,删除动作由宿主实现 */
+  deleteSelection: [items: MediaBrowserItem[]];
 }>();
 
 const fallbackT = createLibraryTreeT();
@@ -125,6 +137,58 @@ const hasCondition = computed(() => !!debouncedKeyword.value.trim() || !!categor
 const noMatch = computed(() => !loading.value && !error.value && items.value.length === 0 && hasCondition.value);
 const noData = computed(() => !loading.value && !error.value && items.value.length === 0 && !hasCondition.value);
 
+// ---- 选择(SelectionBox 框选 + 点选;selectedIds 为 id 字符串集,与 selected 双向同步) ----
+const selectionEnabled = computed(() => selected.value !== undefined);
+const selectionBoxRef = ref<InstanceType<typeof SelectionBox> | null>(null);
+const selectedIds = ref<string[]>([]);
+
+// 内部选择集 -> 宿主 selected(按当前 items 解析回对象,列表刷新后自动剔除失效项)。
+// 两个方向的 watch 都做内容比较:赋值必然产生新数组引用,若不比较会互相触发无限循环
+// (Maximum recursive updates exceeded)。
+watch(selectedIds, (ids) => {
+  if (!selectionEnabled.value) return;
+  const byId = new Map(items.value.map(i => [String(i.id), i]));
+  const next = ids.map(id => byId.get(id)).filter((i): i is MediaBrowserItem => !!i);
+  if (next.map(i => String(i.id)).join() === (selected.value ?? []).map(i => String(i.id)).join()) return;
+  selected.value = next;
+});
+
+// 宿主 selected -> 内部选择集
+watch(selected, (sel) => {
+  if (sel === undefined) return;
+  const next = sel.map(i => String(i.id));
+  if (next.join() === selectedIds.value.join()) return;
+  selectedIds.value = next;
+}, { deep: true, immediate: true });
+
+function isSelected(item: MediaBrowserItem): boolean {
+  return selectionEnabled.value && selectedIds.value.includes(String(item.id));
+}
+
+/** 卡片点击:启用选择时走 SelectionBox 的修饰键逻辑(Ctrl/Shift/Alt),并抛 itemClick */
+function onClickItem(item: MediaBrowserItem, event: MouseEvent) {
+  if (selectionEnabled.value) {
+    selectionBoxRef.value?.handleItemClick(String(item.id), event);
+  }
+  emit('itemClick', item);
+}
+
+function clearSelection() {
+  selectedIds.value = [];
+}
+
+/** SelectionBox 的 Delete 快捷键:按 id 映射回 items 抛给宿主 */
+function onDeleteSelection(ids: string[]) {
+  const byId = new Map(items.value.map(i => [String(i.id), i]));
+  const selected = ids.map(id => byId.get(id)).filter((i): i is MediaBrowserItem => !!i);
+  if (selected.length) emit('deleteSelection', selected);
+}
+
+defineExpose({
+  /** 重新拉取文件列表(宿主批量删除等操作后调用) */
+  refresh: load,
+});
+
 // ---- 卡片辅助 ----
 function iconOf(item: MediaBrowserItem) {
   const mime = item.mime_type || '';
@@ -157,10 +221,6 @@ function formatSize(size?: number): string {
 /** 瀑布流布局元信息:按 item.aspect 定高度,进入视窗才渲染内容 */
 function getMeta(item: MediaBrowserItem): MasonryItemMeta {
   return { aspect: item.aspect || '1:1', lazy: true };
-}
-
-function onClickItem(item: MediaBrowserItem) {
-  emit('itemClick', item);
 }
 </script>
 
@@ -221,6 +281,19 @@ function onClickItem(item: MediaBrowserItem) {
       <div class="ms-auto flex items-center gap-2">
         <span class="text-muted-foreground shrink-0 text-xs tabular-nums">{{ tt('media.fileCount', { n: items.length }) }}</span>
 
+        <!-- 已选计数 + 取消选择 -->
+        <template v-if="selectionEnabled && selectedIds.length">
+          <span class="text-primary shrink-0 text-xs font-medium tabular-nums">{{ tt('media.selectedCount', { n: selectedIds.length }) }}</span>
+          <button
+            type="button"
+            class="text-muted-foreground inline-flex size-6 cursor-pointer items-center justify-center rounded-md border-none bg-transparent transition-colors duration-150 hover:bg-accent hover:text-foreground"
+            :title="tt('media.clearSelection')"
+            @click="clearSelection"
+          >
+            <X class="size-3.5" />
+          </button>
+        </template>
+
         <!-- 视图切换:网格 / 瀑布流 -->
         <div class="bg-muted flex gap-0.5 rounded-lg p-0.5" role="group">
           <button
@@ -250,8 +323,16 @@ function onClickItem(item: MediaBrowserItem) {
       </div>
     </div>
 
-    <!-- 内容区 -->
-    <div class="min-h-0 flex-1 overflow-y-auto p-3">
+    <!-- 内容区:SelectionBox 提供空白处拖拽框选(Alt 拖拽减选) -->
+    <SelectionBox
+      ref="selectionBoxRef"
+      v-model="selectedIds"
+      class="min-h-0 flex-1 overflow-y-auto p-3"
+      :tabindex="selectionEnabled ? 0 : undefined"
+      :enable-select-all-shortcut="selectionEnabled"
+      :enable-delete-selection-shortcut="selectionEnabled"
+      @delete-selection="onDeleteSelection"
+    >
       <!-- 加载中 -->
       <div v-if="loading && !items.length" class="text-muted-foreground flex h-full items-center justify-center text-sm">
         {{ tt('common.loading') }}
@@ -283,10 +364,19 @@ function onClickItem(item: MediaBrowserItem) {
           v-for="item in items"
           :key="item.id"
           type="button"
-          class="group bg-card text-card-foreground hover:border-primary/50 cursor-pointer overflow-hidden rounded-lg border text-left transition-colors duration-150"
+          :data-selectable-id="selectionEnabled ? String(item.id) : undefined"
+          class="group bg-card text-card-foreground hover:border-primary/50 relative cursor-pointer overflow-hidden rounded-lg border text-left transition-colors duration-150"
+          :class="isSelected(item) && 'border-primary ring-2 ring-primary'"
           :title="item.title"
-          @click="onClickItem(item)"
+          @click="onClickItem(item, $event)"
         >
+          <!-- 选中角标 -->
+          <span
+            v-if="isSelected(item)"
+            class="bg-primary absolute top-1.5 left-1.5 z-10 flex size-5 items-center justify-center rounded-full text-white shadow"
+          >
+            <Check class="size-3.5" />
+          </span>
           <div class="bg-muted relative aspect-square overflow-hidden">
             <img
               v-if="thumbOf(item)"
@@ -307,12 +397,13 @@ function onClickItem(item: MediaBrowserItem) {
         </button>
       </div>
 
-      <!-- 瀑布流视图:高度按 item.aspect -->
+      <!-- 瀑布流视图:高度按 item.aspect;fill 模式自动回填空隙 -->
       <Masonry
         v-else
         :data="items"
         :columns="{ base: 2, sm: 3, md: 4, lg: 5 }"
         :gap="12"
+        :layout-mode="waterfallMode ?? 'fill'"
         :get-key="(item: MediaBrowserItem) => item.id"
         :get-meta="getMeta"
       >
@@ -320,15 +411,24 @@ function onClickItem(item: MediaBrowserItem) {
           <button
             :key="item.id"
             type="button"
-            class="group bg-card text-card-foreground hover:border-primary/50 relative w-full cursor-pointer overflow-hidden rounded-lg border text-left transition-colors duration-150"
-            :title="item.title"
-            @click="onClickItem(item as MediaBrowserItem)"
+            :data-selectable-id="selectionEnabled ? String((item as MediaBrowserItem).id) : undefined"
+            class="group bg-card text-card-foreground hover:border-primary/50 relative h-full w-full cursor-pointer overflow-hidden rounded-lg border transition-colors duration-150"
+            :class="isSelected(item as MediaBrowserItem) && 'border-primary ring-2 ring-primary'"
+            :title="(item as MediaBrowserItem).title"
+            @click="onClickItem(item as MediaBrowserItem, $event)"
           >
+            <!-- 选中角标 -->
+            <span
+              v-if="isSelected(item as MediaBrowserItem)"
+              class="bg-primary absolute top-1.5 left-1.5 z-10 flex size-5 items-center justify-center rounded-full text-white shadow"
+            >
+              <Check class="size-3.5" />
+            </span>
             <img
               v-if="thumbOf(item as MediaBrowserItem)"
               :src="thumbOf(item as MediaBrowserItem)"
               :alt="(item as MediaBrowserItem).title"
-              class="w-full object-cover"
+              class="h-full w-full object-cover"
               @error="onThumbError(item as MediaBrowserItem)"
             />
             <component :is="iconOf(item as MediaBrowserItem)" v-else class="text-muted-foreground/50 absolute inset-0 m-auto size-10" />
@@ -341,6 +441,6 @@ function onClickItem(item: MediaBrowserItem) {
           </button>
         </template>
       </Masonry>
-    </div>
+    </SelectionBox>
   </div>
 </template>

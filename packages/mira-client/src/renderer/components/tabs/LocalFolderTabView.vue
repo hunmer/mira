@@ -46,7 +46,7 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
-import SelectionBox from '@renderer/components/common/SelectionBox.vue'
+import { SelectionBox } from '@hunmer/vue-selection-box'
 import FileUploadDialog from '@renderer/components/business/FileUploadDialog.vue'
 import LocalPathPickerDialog from '@renderer/components/business/LocalPathPickerDialog.vue'
 import { miraSDKService } from '@renderer/services/MiraSDKService'

@@ -97,7 +97,8 @@
     "vue-router": "^4.5.1",
     "vue-sonner": "^2.0.9",
     "vue3-lazyload": "^0.3.8",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "@hunmer/vue-selection-box": "workspace:*"
   },
   "devDependencies": {
     "@hunmer/procm-mcp-sdk": "link:../../../procm-mcp/packages/procm-sdk",

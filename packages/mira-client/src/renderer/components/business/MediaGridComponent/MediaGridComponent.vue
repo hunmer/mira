@@ -88,7 +88,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { throttle } from 'throttle-debounce'
-import SelectionBox from '../../common/SelectionBox.vue'
+import { SelectionBox } from '@hunmer/vue-selection-box'
 import MediaContextMenu from '../MediaContextMenu.vue'
 import MediaItem from './MediaGridItem.vue'
 import VideoPreviewContainer from './VideoPreviewContainer.vue'

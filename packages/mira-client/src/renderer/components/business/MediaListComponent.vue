@@ -206,7 +206,7 @@ import { Table, TableHeader, TableBody, TableRow, TableCell, TableHead } from '@
 import { Checkbox } from '@/components/ui/checkbox'
 import { PopoverRoot, PopoverTrigger, PopoverPortal, PopoverContent } from 'radix-vue'
 import VideoPreviewPopover from '@renderer/components/common/VideoPreviewPopover.vue'
-import SelectionBox from '@renderer/components/common/SelectionBox.vue'
+import { SelectionBox } from '@hunmer/vue-selection-box'
 import MediaContextMenu from './MediaContextMenu.vue'
 import MediaThumbnail from '@renderer/components/common/MediaThumbnail.vue'
 import MediaPreviewHoverCard from '@renderer/components/common/MediaPreviewHoverCard.vue'

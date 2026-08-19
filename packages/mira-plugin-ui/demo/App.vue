@@ -247,8 +247,10 @@ const treeDialog: LibraryTreeDialog = {
   },
 }
 
-/* ---------- MediaBrowser 文件浏览器演示(网格/瀑布流) ---------- */
+/* ---------- MediaBrowser 文件浏览器演示(网格/瀑布流 + 选择) ---------- */
 const mediaView = ref<'grid' | 'waterfall'>('grid')
+// 受控选择:传 v-model:selected 启用(点选/Ctrl 加选/Shift 连选/空白拖拽框选/Alt 减选)
+const selectedMedia = ref<MediaBrowserItem[]>([])
 
 // mock 数据(未连接时):渐变 SVG 缩略图 + 多种宽高比,瀑布流布局效果可见
 function gradientThumb (i: number, w: number, h: number) {
@@ -330,6 +332,24 @@ const mediaServices: MediaBrowserServices = {
 
 function handleMediaClick (item: MediaBrowserItem) {
   console.log('[MediaBrowser demo] click:', item.title)
+}
+
+// Delete 快捷键:mock 删内存;连接走 SDK batchDelete(默认移入回收站),完成后刷新列表
+const mediaBrowserRef = ref<InstanceType<typeof MediaBrowser>>()
+async function handleMediaDelete (items: MediaBrowserItem[]) {
+  if (!connected.value || !client) {
+    const ids = new Set(items.map(i => i.id))
+    mockFiles.value = mockFiles.value.filter(f => !ids.has(f.id))
+    selectedMedia.value = []
+    return
+  }
+  try {
+    await client.files().batchDelete(currentLibraryId.value, items.map(i => i.id))
+    selectedMedia.value = []
+    await mediaBrowserRef.value?.refresh()
+  } catch (error: any) {
+    console.error('[MediaBrowser demo] batchDelete failed:', error?.message || error)
+  }
 }
 
 /* ---------- Dropzone 暂存 + 真实上传 ---------- */
@@ -539,20 +559,27 @@ async function startUpload () {
         </div>
       </section>
 
-      <!-- MediaBrowser 文件浏览器演示:网格/瀑布流切换 -->
+      <!-- MediaBrowser 文件浏览器演示:网格/瀑布流切换 + 框选 -->
       <section class="bg-card text-card-foreground flex flex-col gap-4 rounded-xl border p-6 shadow-sm">
         <div class="flex flex-col gap-1">
           <h2 class="text-base font-semibold">MediaBrowser 文件浏览器</h2>
           <p class="text-muted-foreground text-sm">
             {{ connected ? '数据来自当前素材库（SDK getFiles 过滤/排序，缩略图走 /api/files/thumb）' : '未连接 server，演示 mock 数据（渐变缩略图 + 多种宽高比，切换瀑布流可见高度差异）' }}
           </p>
+          <p class="text-muted-foreground text-xs">点击选择 · Ctrl 加选 · Shift 连选 · 空白处拖拽框选 · Alt 拖拽减选 · Delete 删除选中（回收站）</p>
+          <p v-if="selectedMedia.length" class="text-primary text-xs">
+            已选 {{ selectedMedia.length }} 项：{{ selectedMedia.map(i => i.title).join('、') }}
+          </p>
         </div>
         <div class="h-[32rem] overflow-hidden rounded-lg border">
           <MediaBrowser
+            ref="mediaBrowserRef"
             v-model:view="mediaView"
+            v-model:selected="selectedMedia"
             :library-id="currentLibraryId || 'mock'"
             :services="mediaServices"
             @item-click="handleMediaClick"
+            @delete-selection="handleMediaDelete"
           />
         </div>
       </section>

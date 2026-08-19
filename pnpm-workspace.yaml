@@ -7,5 +7,6 @@ packages:
   - 'packages/mira-browser-extension'
   - 'packages/mira-plugin-ui'
   - 'packages/vue-masonry'
+  - 'packages/vue-selection-box'
   - 'online_client_plugins/plugins/*'
   - 'plugins/plugins/*/web'

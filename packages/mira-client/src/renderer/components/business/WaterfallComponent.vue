@@ -96,7 +96,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import SelectionBox from '../common/SelectionBox.vue'
+import { SelectionBox } from '@hunmer/vue-selection-box'
 import MediaContextMenu from './MediaContextMenu.vue'
 import MediaWaterfallItem from './WaterfallComponent/MediaWaterfallItem.vue'
 import VideoPreviewContainer from './MediaGridComponent/VideoPreviewContainer.vue'

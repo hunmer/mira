@@ -1,0 +1,60 @@
+{
+  "name": "@hunmer/vue-selection-box",
+  "version": "0.1.0",
+  "description": "Vue 3 框选组件:拖拽矩形框选 / Alt 减选 / Shift 范围选 / Ctrl 加选 / 边缘自动滚动 / 快捷键,data-selectable-id 协议零侵入",
+  "type": "module",
+  "license": "ISC",
+  "author": "hunmer",
+  "homepage": "https://github.com/hunmer/mira/tree/main/packages/vue-selection-box",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hunmer/mira.git",
+    "directory": "packages/vue-selection-box"
+  },
+  "bugs": {
+    "url": "https://github.com/hunmer/mira/issues"
+  },
+  "keywords": [
+    "vue",
+    "vue3",
+    "selection",
+    "rubber-band",
+    "marquee",
+    "框选"
+  ],
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/vue-selection-box.cjs",
+  "module": "./dist/vue-selection-box.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/vue-selection-box.js",
+      "require": "./dist/vue-selection-box.cjs"
+    },
+    "./style.css": "./dist/style.css"
+  },
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "scripts": {
+    "build": "vite build",
+    "type-check": "vue-tsc --noEmit"
+  },
+  "peerDependencies": {
+    "vue": "^3.3.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.4",
+    "typescript": "~5.7.3",
+    "vite": "^6.4.2",
+    "vite-plugin-dts": "^4.5.0",
+    "vue": "^3.5.13",
+    "vue-tsc": "^2.2.12"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
