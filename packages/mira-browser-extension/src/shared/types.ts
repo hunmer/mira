@@ -145,6 +145,8 @@ export interface ExtensionSettings {
   locale: Locale;
   dragPopoverEnabled: boolean;
   dropZoneEnabled: boolean;
+  /** 页面图片 hover 时右上角显示 dots 操作按钮(点击弹出「导入图片」菜单) */
+  imageHoverButtonEnabled: boolean;
   snifferEnabled: boolean;
   /** 嗅探资源展示视图:list 列表 / masonry 瀑布流 */
   snifferView: SnifferViewMode;
@@ -184,6 +186,7 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   locale: 'zh-CN',
   dragPopoverEnabled: true,
   dropZoneEnabled: true,
+  imageHoverButtonEnabled: false,
   snifferEnabled: false,
   snifferView: 'list',
   snifferSortOrder: 'desc',

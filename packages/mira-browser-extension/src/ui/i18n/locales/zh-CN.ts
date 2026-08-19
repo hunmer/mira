@@ -67,6 +67,8 @@ export default {
     uiModeSidePanel: '侧边栏',
     language: '语言',
     dragPopover: '拖拽快传按钮',
+    imageHoverButton: '图片悬停操作菜单',
+    imageHoverButtonHint: '鼠标悬停页面图片时右上角显示 dots 按钮,点击菜单可导入图片到素材库',
     dropZone: '面板拖放区',
     sniffer: '资源嗅探',
     autoScroll: '自动滚动',

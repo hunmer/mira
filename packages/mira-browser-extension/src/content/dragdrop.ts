@@ -51,6 +51,7 @@ const POPOVER_Z = OVERLAY_Z; // 仅次于选区覆盖层
 const SCROLL_EDGE = 48; // 距视口顶/底多少像素触发自动滚动
 const SCROLL_STEP = 12; // 每帧滚动像素
 const SHOW_THRESHOLD = 8; // 拖拽超过此距离(px)才显示浮层,过滤点击误触
+const VIEWPORT_EDGE = 8; // 浮层与视口边缘保留的最小间距
 const HEALTH_CHECK_INTERVAL = 5000;
 const CONTROLLER_KEY = '__miraDragDropController__';
 
@@ -61,6 +62,11 @@ export interface DragSource {
 
 export function folderEmptyMessage(folders: Folder[] | null): string {
   return folders === null ? '未连接素材库' : '暂无文件夹';
+}
+
+/** 钳制浮层 top:不超过 视口高度-浮层高度-EDGE,保证内容完整可见(高度变化后可重复调用)。 */
+export function clampOverlayTop(top: number, overlayHeight: number, viewportHeight: number): number {
+  return Math.max(VIEWPORT_EDGE, Math.min(top, viewportHeight - overlayHeight - VIEWPORT_EDGE));
 }
 
 export function calculateOverlayPosition(
@@ -74,7 +80,6 @@ export function calculateOverlayPosition(
   viewportHeight: number,
 ): { left: number; top: number } {
   const GAP = 12;
-  const EDGE = 8;
   const horiz = Math.abs(dx) >= Math.abs(dy);
   let left: number;
   let top: number;
@@ -83,8 +88,8 @@ export function calculateOverlayPosition(
     const preferredLeft = dx >= 0 ? x + GAP : x - GAP - overlayWidth;
     const oppositeLeft = dx >= 0 ? x - GAP - overlayWidth : x + GAP;
     left = preferredLeft;
-    if (preferredLeft < EDGE || preferredLeft + overlayWidth > viewportWidth - EDGE) {
-      if (oppositeLeft >= EDGE && oppositeLeft + overlayWidth <= viewportWidth - EDGE) {
+    if (preferredLeft < VIEWPORT_EDGE || preferredLeft + overlayWidth > viewportWidth - VIEWPORT_EDGE) {
+      if (oppositeLeft >= VIEWPORT_EDGE && oppositeLeft + overlayWidth <= viewportWidth - VIEWPORT_EDGE) {
         left = oppositeLeft;
       }
     }
@@ -94,16 +99,16 @@ export function calculateOverlayPosition(
     const preferredTop = dy >= 0 ? y + GAP : y - GAP - overlayHeight;
     const oppositeTop = dy >= 0 ? y - GAP - overlayHeight : y + GAP;
     top = preferredTop;
-    if (preferredTop < EDGE || preferredTop + overlayHeight > viewportHeight - EDGE) {
-      if (oppositeTop >= EDGE && oppositeTop + overlayHeight <= viewportHeight - EDGE) {
+    if (preferredTop < VIEWPORT_EDGE || preferredTop + overlayHeight > viewportHeight - VIEWPORT_EDGE) {
+      if (oppositeTop >= VIEWPORT_EDGE && oppositeTop + overlayHeight <= viewportHeight - VIEWPORT_EDGE) {
         top = oppositeTop;
       }
     }
   }
 
   return {
-    left: Math.max(EDGE, Math.min(left, viewportWidth - overlayWidth - EDGE)),
-    top: Math.max(EDGE, Math.min(top, viewportHeight - overlayHeight - EDGE)),
+    left: Math.max(VIEWPORT_EDGE, Math.min(left, viewportWidth - overlayWidth - VIEWPORT_EDGE)),
+    top: clampOverlayTop(top, overlayHeight, viewportHeight),
   };
 }
 
@@ -418,6 +423,15 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
     });
   }
 
+  /** 异步列表填充后浮层高度增长,用最新高度重新钳制 top,防止内容超出视口底部 */
+  function clampOverlayToViewport() {
+    if (!overlay) return;
+    const top = parseFloat(overlay.style.top);
+    // 首次定位尚未完成时跳过(positionByDirection 会按最终尺寸计算)
+    if (Number.isNaN(top)) return;
+    overlay.style.top = clampOverlayTop(top, overlay.offsetHeight, window.innerHeight) + 'px';
+  }
+
   /**
    * 把 overlay 定位到鼠标附近,方向沿拖拽方向延伸。
    * dx/dy 为自 dragstart 起的位移(用于判断主方向);越界时翻转到对侧。
@@ -565,6 +579,7 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
         zone.classList.add('mira-folder-item');
         listScroll.appendChild(zone);
       }
+      clampOverlayToViewport();
     });
     cols.appendChild(listWrap);
 
@@ -603,6 +618,7 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
           zone.title = '释放即上传并打上该标签';
           tagScroll.appendChild(zone);
         }
+        clampOverlayToViewport();
       });
       cols.appendChild(tagWrap);
     }

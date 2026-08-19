@@ -8,7 +8,7 @@ const props = defineProps<{ editor: Editor }>()
 
 const root = ref<HTMLElement | null>(null)
 const handleEl = ref<HTMLElement | null>(null)
-const handle = reactive({ visible: false, top: 0, left: 0 })
+const handle = reactive({ top: 0, left: 0 })
 const dropLine = reactive({ visible: false, top: 0, left: 0, width: 0 })
 
 let blockRange: { from: number; to: number } | null = null
@@ -38,13 +38,12 @@ function topLevelBlockAt (pos: number) {
 function positionHandle (rect: DOMRect) {
   const wrap = wrapperRect()
   if (!wrap) return
-  const leftOffset = rect.left - wrap.left
   // 整体挂在块文字左侧外（卡片 padding 之外），避免与文字重叠
-  handle.left = leftOffset - 64
+  handle.left = rect.left - wrap.left - 64
   handle.top = rect.top - wrap.top + rect.height / 2 - 12
 }
 
-/** 监听绑在 document 上：把手在编辑器 DOM 之外，绑编辑器会导致鼠标移向把手时触发隐藏 */
+/** 把手常显：鼠标不在编辑器上时保持最后位置，所在块变化时跟随移动 */
 function onDocMouseMove (event: MouseEvent) {
   if (dragging) return
   if (handleEl.value?.contains(event.target as Node)) return
@@ -52,17 +51,28 @@ function onDocMouseMove (event: MouseEvent) {
   if (now - lastMove < 30) return
   lastMove = now
   const coords = props.editor.view.posAtCoords({ left: event.clientX, top: event.clientY })
-  const block = coords ? topLevelBlockAt(coords.pos) : null
-  if (!block) { handle.visible = false; blockRange = null; return }
+  if (!coords) return
+  const block = topLevelBlockAt(coords.pos)
+  if (!block || (blockRange && block.from === blockRange.from)) return
   blockRange = { from: block.from, to: block.to }
   positionHandle(block.rect)
-  handle.visible = true
 }
 
-function hideHandle () {
+/** 文档变化（增删块、回车等）后贴齐当前块，失效则回到首个块 */
+function refreshPosition () {
   if (dragging) return
-  handle.visible = false
-  blockRange = null
+  const dom = blockRange
+    ? props.editor.view.nodeDOM(blockRange.from) as HTMLElement | null
+    : null
+  if (dom) {
+    positionHandle(dom.getBoundingClientRect())
+    return
+  }
+  const first = topLevelBlockAt(1)
+  if (first) {
+    blockRange = { from: first.from, to: first.to }
+    positionHandle(first.rect)
+  }
 }
 
 /* ---------- 块拖拽重排 ---------- */
@@ -71,7 +81,6 @@ function onDragStart (event: DragEvent) {
   dragRange = { ...blockRange }
   insertPos = null
   dragging = true
-  handle.visible = false
   event.dataTransfer.setData('text/plain', '')
   event.dataTransfer.effectAllowed = 'move'
 }
@@ -144,7 +153,9 @@ onMounted (() => {
   dom.addEventListener('dragover', onDragOver, true)
   dom.addEventListener('drop', onDrop, true)
   document.addEventListener('dragend', clearDrag)
-  document.addEventListener('scroll', hideHandle, true)
+  props.editor.on('transaction', refreshPosition)
+  // 等 EditorContent 挂载完成后再做初始定位
+  requestAnimationFrame(refreshPosition)
 })
 
 onBeforeUnmount (() => {
@@ -153,32 +164,32 @@ onBeforeUnmount (() => {
   dom.removeEventListener('dragover', onDragOver, true)
   dom.removeEventListener('drop', onDrop, true)
   document.removeEventListener('dragend', clearDrag)
-  document.removeEventListener('scroll', hideHandle, true)
+  props.editor.off('transaction', refreshPosition)
 })
 </script>
 
 <template>
-  <div ref="root" class="pointer-events-none absolute inset-0 z-10">
+  <div ref="root" class="pointer-events-none absolute inset-0 z-20">
     <div
-      v-show="handle.visible"
       ref="handleEl"
       class="pointer-events-auto absolute flex items-center gap-0.5"
       :style="{ top: `${handle.top}px`, left: `${handle.left}px` }"
-      @mousedown.prevent
     >
       <button
         type="button"
         title="在下方插入块"
-        class="flex size-6 cursor-pointer items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+        class="flex size-6 cursor-pointer items-center justify-center rounded text-muted-foreground/60 transition-colors hover:bg-accent hover:text-accent-foreground"
+        @mousedown.prevent
         @click="insertBlockBelow"
       >
         <Plus class="size-4" />
       </button>
+      <!-- 注意：不能在此按钮上 mousedown.prevent，否则原生 dragstart 不会触发 -->
       <button
         type="button"
         draggable="true"
         title="拖拽移动块"
-        class="flex size-6 cursor-grab items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground active:cursor-grabbing"
+        class="flex size-6 cursor-grab items-center justify-center rounded text-muted-foreground/60 transition-colors hover:bg-accent hover:text-accent-foreground active:cursor-grabbing"
         @dragstart="onDragStart"
       >
         <GripVertical class="size-4" />

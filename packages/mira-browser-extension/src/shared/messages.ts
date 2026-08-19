@@ -108,6 +108,7 @@ export type ContentCommand =
   | { type: 'START_SCROLL_CAPTURE'; payload: { delay: number } }
   | { type: 'DRAW_SELECTION' }
   | { type: 'DISPATCH_DRAGDROP'; payload: { enabled: boolean } }
+  | { type: 'DISPATCH_HOVER_BUTTON'; payload: { enabled: boolean } }
   | { type: 'UPGRADE_IMAGE_URL'; payload: { url: string; timeout?: number; rules?: ImageUrlRule[] } }
   // 在当前页面打开「批量导入」对话框(urls 由页面选区提取)
   | { type: 'OPEN_IMPORT_DIALOG'; payload?: { urls?: string[]; referrer?: string } };
@@ -126,7 +127,7 @@ const REQUEST_TYPES = new Set<Request['type']>([
 const COMMAND_TYPES = new Set<ContentCommand['type']>([
   'SNIFFER_START', 'SNIFFER_STOP',
   'AUTOSCROLL_START', 'AUTOSCROLL_STOP',
-  'START_SCROLL_CAPTURE', 'DRAW_SELECTION', 'DISPATCH_DRAGDROP', 'UPGRADE_IMAGE_URL',
+  'START_SCROLL_CAPTURE', 'DRAW_SELECTION', 'DISPATCH_DRAGDROP', 'DISPATCH_HOVER_BUTTON', 'UPGRADE_IMAGE_URL',
   'OPEN_IMPORT_DIALOG',
 ]);
 

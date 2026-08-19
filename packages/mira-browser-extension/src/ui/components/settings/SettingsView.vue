@@ -99,6 +99,9 @@ async function resetImuRules() {
         </select>
       </div>
       <div class="row"><span>{{ t('settings.dragPopover') }}</span><Switch :model-value="settings.dragPopoverEnabled" @update:model-value="v => update({ dragPopoverEnabled: v })" /></div>
+      <div class="row" :title="t('settings.imageHoverButtonHint')">
+        <span>{{ t('settings.imageHoverButton') }}</span><Switch :model-value="settings.imageHoverButtonEnabled" @update:model-value="v => update({ imageHoverButtonEnabled: v })" />
+      </div>
       <div class="row"><span>{{ t('settings.dropZone') }}</span><Switch :model-value="settings.dropZoneEnabled" @update:model-value="v => update({ dropZoneEnabled: v })" /></div>
     </section>
     <section>

@@ -21,7 +21,7 @@ import { computed } from 'vue'
 import { Button } from '@/components/ui/button'
 import { useEditorVersion } from '@/composables/useEditorVersion'
 
-const props = defineProps<{ editor: Editor; status: string }>()
+const props = defineProps<{ editor: Editor }>()
 const emit = defineEmits<{ (event: 'save'): void }>()
 
 const version = useEditorVersion(() => props.editor)
@@ -96,7 +96,6 @@ function openSlashMenu () {
       </button>
     </div>
     <div class="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-2">
-      <span class="text-xs text-muted-foreground">{{ status }}</span>
       <Button size="sm" class="gap-1.5" @click="emit('save')">
         <Save class="size-3.5" />
         保存

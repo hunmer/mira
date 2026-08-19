@@ -119,8 +119,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg?.type === 'CUSTOM_UPLOAD_SIDEPANEL_OPEN' && sender.tab?.windowId != null) {
     const session = msg.payload as CustomUploadSession;
     customUploadSession = session;
+    // 先广播再 open:侧边栏已打开时立即切到自定义上传视图;
+    // open 新开的面板则通过 CUSTOM_UPLOAD_SESSION_GET 取 session。
+    // open 失败(如无用户手势)不阻断广播,已打开的面板仍能拿到 session。
+    broadcast({ type: 'CUSTOM_UPLOAD_SESSION_OPEN', payload: session });
     chrome.sidePanel.open({ windowId: sender.tab.windowId }).then(() => {
-      broadcast({ type: 'CUSTOM_UPLOAD_SESSION_OPEN', payload: session });
       sendResponse({ opened: true });
     }).catch(error => {
       dbg.warn('dragdrop', 'open side panel failed', error);
@@ -204,6 +207,10 @@ async function applyFeatureSettings(tabId: number, settings: ExtensionSettings):
       payload: { enabled: settings.dragPopoverEnabled },
     });
     dbg.info('inject', 'content dragdrop ready', { tabId, result: dragdropResult });
+    await sendToContent(tabId, {
+      type: 'DISPATCH_HOVER_BUTTON',
+      payload: { enabled: settings.imageHoverButtonEnabled },
+    });
     await sendToContent(tabId, {
       type: settings.snifferEnabled ? 'SNIFFER_START' : 'SNIFFER_STOP',
       payload: settings.snifferEnabled ? { kinds: settings.snifferKinds } : undefined,

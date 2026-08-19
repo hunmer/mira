@@ -67,6 +67,8 @@ export default {
     uiModeSidePanel: 'Side panel',
     language: 'Language',
     dragPopover: 'Drag quick-upload button',
+    imageHoverButton: 'Image hover menu',
+    imageHoverButtonHint: 'Show a dots button on image hover; click the menu item to import the image into your library',
     dropZone: 'Panel drop zone',
     sniffer: 'Resource sniffer',
     autoScroll: 'Auto scroll',

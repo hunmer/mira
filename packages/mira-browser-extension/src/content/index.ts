@@ -1,6 +1,7 @@
 import { isContentCommand } from '@/shared/messages';
 import { createSniffer } from './sniffer';
 import { createDragDrop, type DragDropPayload } from './dragdrop';
+import { createHoverButton } from './hover-button';
 import { createAutoScroller } from './autoscroll';
 import { drawSelection } from './overlay/selection';
 import { openImportDialog, extractUrls } from './overlay/import-dialog';
@@ -156,8 +157,12 @@ const dragdrop = createDragDrop({
   },
 });
 
-/** 网页图片上传:开启高清升级时,先用 maxurl 取原图候选,取最优一个发 service worker 下载 */
-async function uploadUrl(url: string, kind: ResourceKind, folderId?: number, tags?: string[]) {
+// 图片 hover 操作按钮:菜单「导入图片」复用 uploadUrl(含高清升级)
+const hoverButton = createHoverButton({
+  onImport: url => { void uploadUrl(url, 'image'); },
+});
+
+/** 网页图片上传:开启高清升级时,先用 maxurl 取原图候选,取最优一个发 service worker 下载 */async function uploadUrl(url: string, kind: ResourceKind, folderId?: number, tags?: string[]) {
   let best = url;
   try {
     const settings: any = await chrome.runtime.sendMessage({ type: 'CONFIG_GET' });
@@ -203,6 +208,10 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       case 'DISPATCH_DRAGDROP':
         dragdrop.setEnabled(msg.payload.enabled);
         sendResponse({ ok: true, dragdrop: dragdrop.health() });
+        return true;
+      case 'DISPATCH_HOVER_BUTTON':
+        hoverButton.setEnabled(msg.payload.enabled);
+        sendResponse({ ok: true });
         return true;
       case 'AUTOSCROLL_START':
         // 立即响应「已开始」,滚动循环在后台跑(可能持续很久);否则调用方
@@ -284,11 +293,13 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 chrome.runtime.sendMessage({ type: 'CONFIG_GET' }).then((settings: any) => {
   dbg.info('content', 'init CONFIG_GET', {
     dragPopoverEnabled: settings?.dragPopoverEnabled,
+    imageHoverButtonEnabled: settings?.imageHoverButtonEnabled,
     snifferEnabled: settings?.snifferEnabled,
     snifferKinds: settings?.snifferKinds,
     libraryId: settings?.libraryId,
   });
   if (settings?.dragPopoverEnabled === false) dragdrop.setEnabled(false);
+  if (settings?.imageHoverButtonEnabled !== true) hoverButton.setEnabled(false);
   if (settings?.snifferEnabled) sniffer.start(settings.snifferKinds);
   dbg.info('content', 'initialization complete', { dragdrop: dragdrop.health() });
 }).catch(e => dbg.error('content', 'init CONFIG_GET failed', e));

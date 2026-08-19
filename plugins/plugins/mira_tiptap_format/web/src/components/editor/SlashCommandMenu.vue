@@ -24,22 +24,40 @@ interface CommandItem {
 
 const props = defineProps<{ editor: Editor }>()
 
-const commands: CommandItem[] = [
-  { title: '文本', icon: Type, keywords: ['text', 'p', 'wenben'], action: () => props.editor.chain().focus().setParagraph().run() },
-  { title: '一级标题', icon: Heading1, keywords: ['h1', 'heading1', 'biaoti1'], action: () => props.editor.chain().focus().toggleHeading({ level: 1 }).run() },
-  { title: '二级标题', icon: Heading2, keywords: ['h2', 'heading2', 'biaoti2'], action: () => props.editor.chain().focus().toggleHeading({ level: 2 }).run() },
-  { title: '三级标题', icon: Heading3, keywords: ['h3', 'heading3', 'biaoti3'], action: () => props.editor.chain().focus().toggleHeading({ level: 3 }).run() },
-  { title: '无序列表', icon: List, keywords: ['list', 'bullet', 'liebiao'], action: () => props.editor.chain().focus().toggleBulletList().run() },
-  { title: '有序列表', icon: ListOrdered, keywords: ['ol', 'ordered', 'youxu'], action: () => props.editor.chain().focus().toggleOrderedList().run() },
-  { title: '待办清单', icon: CheckSquare, keywords: ['todo', 'task', 'daiban'], action: () => props.editor.chain().focus().toggleTaskList().run() },
-  { title: '代码块', icon: Code2, keywords: ['code', 'daima'], action: () => props.editor.chain().focus().toggleCodeBlock().run() },
-  { title: '引用', icon: Quote, keywords: ['quote', 'blockquote', 'yinyong'], action: () => props.editor.chain().focus().toggleBlockquote().run() },
-  { title: '分割线', icon: Minus, keywords: ['hr', 'divider', 'fengexian'], action: () => props.editor.chain().focus().setHorizontalRule().run() },
+const commandGroups: Array<{ label: string; items: CommandItem[] }> = [
+  {
+    label: '基本块',
+    items: [
+      { title: '文本', icon: Type, keywords: ['text', 'p', 'wenben'], action: () => props.editor.chain().focus().setParagraph().run() },
+      { title: '一级标题', icon: Heading1, keywords: ['h1', 'heading1', 'biaoti1'], action: () => props.editor.chain().focus().toggleHeading({ level: 1 }).run() },
+      { title: '二级标题', icon: Heading2, keywords: ['h2', 'heading2', 'biaoti2'], action: () => props.editor.chain().focus().toggleHeading({ level: 2 }).run() },
+      { title: '三级标题', icon: Heading3, keywords: ['h3', 'heading3', 'biaoti3'], action: () => props.editor.chain().focus().toggleHeading({ level: 3 }).run() },
+    ],
+  },
+  {
+    label: '列表',
+    items: [
+      { title: '无序列表', icon: List, keywords: ['list', 'bullet', 'liebiao'], action: () => props.editor.chain().focus().toggleBulletList().run() },
+      { title: '有序列表', icon: ListOrdered, keywords: ['ol', 'ordered', 'youxu'], action: () => props.editor.chain().focus().toggleOrderedList().run() },
+      { title: '待办清单', icon: CheckSquare, keywords: ['todo', 'task', 'daiban'], action: () => props.editor.chain().focus().toggleTaskList().run() },
+    ],
+  },
+  {
+    label: '高级',
+    items: [
+      { title: '代码块', icon: Code2, keywords: ['code', 'daima'], action: () => props.editor.chain().focus().toggleCodeBlock().run() },
+      { title: '引用', icon: Quote, keywords: ['quote', 'blockquote', 'yinyong'], action: () => props.editor.chain().focus().toggleBlockquote().run() },
+      { title: '分割线', icon: Minus, keywords: ['hr', 'divider', 'fengexian'], action: () => props.editor.chain().focus().setHorizontalRule().run() },
+    ],
+  },
 ]
+
+/** 展平的命令列表（定义顺序与分组渲染顺序一致，供键盘导航索引） */
+const commands: CommandItem[] = commandGroups.flatMap(group => group.items)
 
 const open = ref(false)
 const query = ref('')
-const index = ref(0)
+const indexOfSelected = ref(0)
 const menu = ref<HTMLElement | null>(null)
 const position = ref({ top: 0, left: 0 })
 
@@ -48,6 +66,16 @@ const filtered = computed(() => {
   if (!q) return commands
   return commands.filter(item =>
     item.title.toLowerCase().includes(q) || item.keywords.some(k => k.includes(q)))
+})
+
+/** 按分组渲染（顺序与 filtered 展平一致） */
+const filteredGroups = computed(() => {
+  const q = query.value.toLowerCase()
+  const match = (item: CommandItem) =>
+    !q || item.title.toLowerCase().includes(q) || item.keywords.some(k => k.includes(q))
+  return commandGroups
+    .map(group => ({ label: group.label, items: group.items.filter(match) }))
+    .filter(group => group.items.length)
 })
 
 /** 编辑器内容变化时检测光标前是否处于 "/" 命令上下文 */
@@ -61,7 +89,7 @@ function handleUpdate () {
   if (q.includes(' ') || q.includes('\n')) { close(); return }
   open.value = true
   query.value = q.toLowerCase()
-  if (index.value >= filtered.value.length) index.value = 0
+  if (indexOfSelected.value >= filtered.value.length) indexOfSelected.value = 0
   updatePosition()
 }
 
@@ -78,7 +106,7 @@ function updatePosition () {
 function close () {
   open.value = false
   query.value = ''
-  index.value = 0
+  indexOfSelected.value = 0
 }
 
 function run (item: CommandItem) {
@@ -103,15 +131,15 @@ function onKeydown (event: KeyboardEvent) {
   if (event.key === 'ArrowDown') {
     event.preventDefault()
     event.stopPropagation()
-    index.value = (index.value + 1) % filtered.value.length
+    indexOfSelected.value = (indexOfSelected.value + 1) % filtered.value.length
   } else if (event.key === 'ArrowUp') {
     event.preventDefault()
     event.stopPropagation()
-    index.value = (index.value - 1 + filtered.value.length) % filtered.value.length
+    indexOfSelected.value = (indexOfSelected.value - 1 + filtered.value.length) % filtered.value.length
   } else if (event.key === 'Enter') {
     event.preventDefault()
     event.stopPropagation()
-    run(filtered.value[index.value])
+    run(filtered.value[indexOfSelected.value])
   }
 }
 
@@ -153,21 +181,26 @@ onBeforeUnmount (() => {
     </div>
     <div class="scroll-thin max-h-60 overflow-y-auto p-1.5">
       <template v-if="filtered.length">
-        <button
-          v-for="(item, i) in filtered"
-          :key="item.title"
-          type="button"
-          class="flex w-full cursor-pointer items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors"
-          :class="i === index ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent/50'"
-          @mousedown.prevent
-          @click="run(item)"
-          @mouseenter="index = i"
-        >
-          <span class="flex size-7 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-            <component :is="item.icon" class="size-4" />
-          </span>
-          <span class="text-sm font-medium">{{ item.title }}</span>
-        </button>
+        <template v-for="group in filteredGroups" :key="group.label">
+          <div class="px-2 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70">
+            {{ group.label }}
+          </div>
+          <button
+            v-for="item in group.items"
+            :key="item.title"
+            type="button"
+            class="flex w-full cursor-pointer items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors"
+            :class="commands.indexOf(item) === indexOfSelected ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent/50'"
+            @mousedown.prevent
+            @click="run(item)"
+            @mouseenter="indexOfSelected = commands.indexOf(item)"
+          >
+            <span class="flex size-7 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+              <component :is="item.icon" class="size-4" />
+            </span>
+            <span class="text-sm font-medium">{{ item.title }}</span>
+          </button>
+        </template>
       </template>
       <div v-else class="px-4 py-3 text-center text-sm italic text-muted-foreground">未找到对应块选项</div>
     </div>

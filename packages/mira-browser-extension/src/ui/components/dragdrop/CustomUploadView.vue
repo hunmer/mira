@@ -1,16 +1,20 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import type { CustomUploadSession } from '@/shared/messages';
 import { useBackground } from '@/ui/composables/useBackground';
 import { useSettings } from '@/ui/composables/useSettings';
 import { flattenTree, useLibraryTree } from '@/ui/composables/useLibraryTree';
+import { useLibraryTreeActions } from '@/ui/composables/useLibraryTreeActions';
 import Button from '@/ui/components/ui/Button.vue';
 import Input from '@/ui/components/ui/Input.vue';
+import ContextMenu from '@/ui/components/ui/ContextMenu.vue';
 import LibraryTree from '@/ui/components/library/LibraryTree.vue';
 import type { LibraryTreeNode } from '@/shared/types';
 
 const props = defineProps<{ session: CustomUploadSession }>();
 const emit = defineEmits<{ close: [] }>();
+const { t } = useI18n();
 const bg = useBackground();
 const { settings } = useSettings();
 
@@ -43,6 +47,11 @@ function toggleIn(set: typeof folderExpanded, id: number) {
 const toggleFolderNode = (id: number) => toggleIn(folderExpanded, id);
 const toggleTagNode = (id: number) => toggleIn(tagExpanded, id);
 
+/** 全部含子节点的 id 集合(加载后默认展开全部层级,与树视图一致) */
+function expandAllIds(nodes: LibraryTreeNode[]): Set<number> {
+  return new Set(flattenTree(nodes).filter(n => n.children.length).map(n => n.id));
+}
+
 // ---- 选中:文件夹单选(可取消),标签 checkbox 多选 ----
 const selectedFolderId = ref<number | undefined>();
 const selectedFolderIds = computed(() =>
@@ -62,10 +71,58 @@ function toggleTag(node: LibraryTreeNode) {
   selectedTags.value = next;
 }
 
-// ---- 新建文件夹(根级) ----
-const showCreateFolder = ref(false);
-const folderName = ref('新建文件夹');
-const creating = ref(false);
+// ---- 重载(创建/删除后):拉数据并保持全部展开 ----
+async function reloadFolders() {
+  await loadFolders(settings.value.libraryId);
+  folderExpanded.value = expandAllIds(folderTree.value);
+}
+
+async function reloadTags() {
+  await loadTags(settings.value.libraryId);
+  tagExpanded.value = expandAllIds(tagTree.value);
+}
+
+// ---- 右键菜单:新建同级 / 新建子级 / 删除(逻辑在 composable) ----
+const {
+  menu: folderMenu,
+  openMenu: openFolderMenu,
+  closeMenu: closeFolderMenu,
+  createNode: createFolderNode,
+  deleteNode: deleteFolderNode,
+} = useLibraryTreeActions({
+  mode: 'folder',
+  libraryId: () => settings.value.libraryId,
+  count: () => flattenTree(folderTree.value).length,
+  reload: reloadFolders,
+  expand: id => {
+    const next = new Set(folderExpanded.value);
+    next.add(id);
+    folderExpanded.value = next;
+  },
+});
+const {
+  menu: tagMenu,
+  openMenu: openTagMenu,
+  closeMenu: closeTagMenu,
+  createNode: createTagNode,
+  deleteNode: deleteTagNode,
+} = useLibraryTreeActions({
+  mode: 'tag',
+  libraryId: () => settings.value.libraryId,
+  count: () => flattenTree(tagTree.value).length,
+  reload: reloadTags,
+  expand: id => {
+    const next = new Set(tagExpanded.value);
+    next.add(id);
+    tagExpanded.value = next;
+  },
+});
+
+// ---- 快速新建(输入框常驻,创建在根级) ----
+const folderName = ref('');
+const tagName = ref('');
+const creatingFolder = ref(false);
+const creatingTag = ref(false);
 const submitting = ref(false);
 const previewFailed = ref(false);
 const actionError = ref('');
@@ -80,37 +137,52 @@ const sourceName = computed(() => {
   }
 });
 
-onMounted(loadAll);
-
-async function loadAll() {
+onMounted(async () => {
   const libId = settings.value.libraryId;
   if (!libId) return;
   await Promise.all([loadFolders(libId), loadTags(libId)]);
-  // 默认展开全部层级(与树视图一致)
-  folderExpanded.value = new Set(
-    flattenTree(folderTree.value).filter(n => n.children.length).map(n => n.id),
-  );
-  tagExpanded.value = new Set(
-    flattenTree(tagTree.value).filter(n => n.children.length).map(n => n.id),
-  );
-}
+  folderExpanded.value = expandAllIds(folderTree.value);
+  tagExpanded.value = expandAllIds(tagTree.value);
+});
 
 async function createFolder() {
   const title = folderName.value.trim();
-  if (!title || creating.value) return;
-  creating.value = true;
+  if (!title || creatingFolder.value) return;
+  creatingFolder.value = true;
   actionError.value = '';
   try {
     const created: any = await bg.createNode('folder', settings.value.libraryId, title);
     const folderId = typeof created === 'number' ? created : created?.id;
     if (typeof folderId !== 'number') throw new Error('创建文件夹失败');
-    await loadFolders(settings.value.libraryId);
+    await reloadFolders();
     selectedFolderId.value = folderId;
-    showCreateFolder.value = false;
+    folderName.value = '';
   } catch (e: any) {
     actionError.value = e?.message ?? String(e);
   } finally {
-    creating.value = false;
+    creatingFolder.value = false;
+  }
+}
+
+async function createTag() {
+  const title = tagName.value.trim();
+  if (!title || creatingTag.value) return;
+  creatingTag.value = true;
+  actionError.value = '';
+  try {
+    const created: any = await bg.createNode('tag', settings.value.libraryId, title);
+    const tagId = typeof created === 'number' ? created : created?.id;
+    if (typeof tagId !== 'number') throw new Error('创建标签失败');
+    await reloadTags();
+    // 新建标签默认勾上
+    const next = new Map(selectedTags.value);
+    next.set(tagId, title);
+    selectedTags.value = next;
+    tagName.value = '';
+  } catch (e: any) {
+    actionError.value = e?.message ?? String(e);
+  } finally {
+    creatingTag.value = false;
   }
 }
 
@@ -163,13 +235,11 @@ async function close() {
       <template v-else>
         <section class="field">
           <div class="field-title"><span>文件夹</span><span>可选</span></div>
-          <div class="folder-actions">
-            <button type="button" class="option create" @click="showCreateFolder = true">新建文件夹</button>
-          </div>
-          <div v-if="showCreateFolder" class="create-form">
-            <Input v-model="folderName" placeholder="文件夹名称" @keyup.enter="createFolder" />
-            <Button size="sm" :disabled="creating || !folderName.trim()" @click="createFolder">{{ creating ? '…' : '创建' }}</Button>
-            <Button size="sm" variant="ghost" @click="showCreateFolder = false">取消</Button>
+          <div class="create-form">
+            <Input v-model="folderName" placeholder="新建文件夹名称，回车创建" @keyup.enter="createFolder" />
+            <Button size="sm" :disabled="creatingFolder || !folderName.trim()" @click="createFolder">
+              {{ creatingFolder ? '…' : '创建' }}
+            </Button>
           </div>
           <div class="tree-wrap">
             <LibraryTree
@@ -179,6 +249,7 @@ async function close() {
               :selected-ids="selectedFolderIds"
               @toggle="toggleFolderNode"
               @select="selectFolder"
+              @contextmenu="openFolderMenu"
             />
             <p v-if="!folderTree.length" class="status">暂无文件夹</p>
           </div>
@@ -186,6 +257,12 @@ async function close() {
 
         <section class="field">
           <div class="field-title"><span>标签</span><span>可多选</span></div>
+          <div class="create-form">
+            <Input v-model="tagName" placeholder="新建标签名称，回车创建" @keyup.enter="createTag" />
+            <Button size="sm" :disabled="creatingTag || !tagName.trim()" @click="createTag">
+              {{ creatingTag ? '…' : '创建' }}
+            </Button>
+          </div>
           <div class="tree-wrap">
             <LibraryTree
               :nodes="tagTree"
@@ -195,6 +272,7 @@ async function close() {
               :checked="checkedTagIds"
               @toggle="toggleTagNode"
               @select="toggleTag"
+              @contextmenu="openTagMenu"
             />
             <p v-if="!tagTree.length" class="status">暂无标签</p>
           </div>
@@ -211,6 +289,20 @@ async function close() {
         <Button :disabled="loading || submitting" @click="submit">{{ submitting ? '上传中…' : '上传' }}</Button>
       </div>
     </footer>
+
+    <!-- 右键菜单:新建同级 / 新建子级 / 删除 -->
+    <ContextMenu v-if="folderMenu" :x="folderMenu.x" :y="folderMenu.y" @close="closeFolderMenu">
+      <button @click="createFolderNode('sibling')">{{ t('tree.createSibling') }}</button>
+      <button @click="createFolderNode('child')">{{ t('tree.createChild', { type: t('common.folder') }) }}</button>
+      <div class="sep" />
+      <button class="danger" @click="deleteFolderNode">{{ t('tree.delete') }}</button>
+    </ContextMenu>
+    <ContextMenu v-if="tagMenu" :x="tagMenu.x" :y="tagMenu.y" @close="closeTagMenu">
+      <button @click="createTagNode('sibling')">{{ t('tree.createSibling') }}</button>
+      <button @click="createTagNode('child')">{{ t('tree.createChild', { type: t('common.tag') }) }}</button>
+      <div class="sep" />
+      <button class="danger" @click="deleteTagNode">{{ t('tree.delete') }}</button>
+    </ContextMenu>
   </section>
 </template>
 
@@ -224,10 +316,7 @@ async function close() {
 .preview img { width: 100%; height: 100%; object-fit: contain; }
 .field { display: flex; flex-direction: column; gap: 8px; }
 .field-title { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; }
-.folder-actions { display: grid; grid-template-columns: 1fr; gap: 6px; }
-.option { min-height: 34px; padding: 6px 9px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-elev); color: var(--fg); cursor: pointer; text-align: left; }
-.option.create { color: var(--primary); }
-.create-form { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px; }
+.create-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; }
 .tree-wrap { display: flex; flex-direction: column; gap: 4px; max-height: 200px; padding: 4px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; }
 .status { margin: 6px 0; color: var(--muted); font-size: 12px; }
 .error { margin: 0; color: var(--danger); font-size: 12px; }

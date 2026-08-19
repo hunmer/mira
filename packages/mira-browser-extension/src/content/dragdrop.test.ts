@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { calculateOverlayPosition, createDragDrop, folderEmptyMessage, resolveDragSource } from './dragdrop';
+import { calculateOverlayPosition, clampOverlayTop, createDragDrop, folderEmptyMessage, resolveDragSource } from './dragdrop';
 import type { DragDropHandlers } from './dragdrop';
 
 describe('resolveDragSource', () => {
@@ -79,6 +79,21 @@ describe('calculateOverlayPosition', () => {
       left: 8,
       top: 8,
     });
+  });
+});
+
+describe('clampOverlayTop', () => {
+  it('浮层高度增长后按 视口高度-浮层高度 重算 top', () => {
+    // 首次定位时浮层 240px、top=552;列表填充后长高到 400px → 需上移到 800-400-8
+    expect(clampOverlayTop(552, 400, 800)).toBe(392);
+  });
+
+  it('未超出底部时保持原 top 不变', () => {
+    expect(clampOverlayTop(100, 240, 800)).toBe(100);
+  });
+
+  it('浮层高度超过视口时退到顶部边缘', () => {
+    expect(clampOverlayTop(500, 900, 800)).toBe(8);
   });
 });
 

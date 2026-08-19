@@ -12,6 +12,7 @@ import TextAlign from '@tiptap/extension-text-align'
 import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
 import Typography from '@tiptap/extension-typography'
+import { Maximize2, Minimize2 } from 'lucide-vue-next'
 import { MiraClient } from 'mira-app-core/shared/sdk'
 import { SaveLocationDialog, type SaveLocation } from 'mira-plugin-ui'
 import EditorToolbar from '@/components/editor/EditorToolbar.vue'
@@ -21,6 +22,7 @@ import DragHandle from '@/components/editor/DragHandle.vue'
 import SlashCommandMenu from '@/components/editor/SlashCommandMenu.vue'
 import DocumentIconPicker from '@/components/editor/DocumentIconPicker.vue'
 import OutlinePanel from '@/components/editor/OutlinePanel.vue'
+import CoverBanner from '@/components/editor/CoverBanner.vue'
 import { NotionKeyboard, TrailingNode } from '@/components/editor/extensions/notion-behaviors'
 
 const params = new URLSearchParams(location.search)
@@ -32,7 +34,6 @@ const isNewDocument = ref(params.get('new') === '1' || !fileUrl)
 const apiBaseUrl = params.get('apiBaseUrl') || location.origin
 const token = params.get('token') || new URL(fileUrl || location.href).searchParams.get('token') || ''
 const client = new MiraClient(apiBaseUrl).setToken(token)
-const status = ref(isNewDocument.value ? '新建文档' : '正在加载...')
 const showSaveDialog = ref(false)
 const libraries = ref<any[]>([])
 const folders = ref<any[]>([])
@@ -41,7 +42,14 @@ const currentFileId = ref(initialFileId)
 const currentFileName = ref(initialFileName)
 const title = ref('')
 const icon = ref('')
+const cover = ref<{ type: 'gradient' | 'url'; value: string } | null>(null)
+const wide = ref(localStorage.getItem('mira-tiptap-wide') === '1')
 let saveTimer: ReturnType<typeof setTimeout> | undefined
+
+function toggleWide () {
+  wide.value = !wide.value
+  localStorage.setItem('mira-tiptap-wide', wide.value ? '1' : '0')
+}
 
 // 大标题同步为默认文件名
 watch(title, (value) => {
@@ -51,6 +59,7 @@ watch(title, (value) => {
 })
 
 watch(icon, () => scheduleSave())
+watch(cover, () => scheduleSave())
 
 const editor = useEditor({
   extensions: [
@@ -91,24 +100,21 @@ const editor = useEditor({
 
 function scheduleSave () {
   if (!currentFileId.value) return
-  status.value = '有未保存修改'
   if (saveTimer) clearTimeout(saveTimer)
   saveTimer = setTimeout(() => void saveExisting(), 700)
 }
 
-/** 文档 JSON 附加大标题与图标一起持久化 */
+/** 文档 JSON 附加大标题、图标与封面一起持久化 */
 function docJson () {
   if (!editor.value) return { type: 'doc' }
-  return { ...editor.value.getJSON(), title: title.value.trim(), icon: icon.value }
+  return { ...editor.value.getJSON(), title: title.value.trim(), icon: icon.value, cover: cover.value }
 }
 
 async function saveExisting () {
   if (!editor.value || !currentLibraryId.value || !currentFileId.value) return
-  status.value = '保存中...'
   try {
     await client.files().writeFile(currentLibraryId.value, currentFileId.value, JSON.stringify(docJson(), null, 2), { name: currentFileName.value, contentType: 'application/vnd.mira.tiptap+json' })
-    status.value = '已保存'
-  } catch (error) { console.error('[mira-tiptap] save failed', error); status.value = '保存失败' }
+  } catch (error) { console.error('[mira-tiptap] save failed', error) }
 }
 
 async function openSaveDialog () {
@@ -120,7 +126,6 @@ async function openSaveDialog () {
 
 async function saveToLocation (location: SaveLocation) {
   if (!editor.value) return
-  status.value = '保存中...'
   try {
     const content = JSON.stringify(docJson(), null, 2)
     if (currentFileId.value && currentLibraryId.value === location.libraryId && !isNewDocument.value) {
@@ -133,8 +138,7 @@ async function saveToLocation (location: SaveLocation) {
       currentFileName.value = location.fileName
       isNewDocument.value = false
     }
-    status.value = '已保存'
-  } catch (error) { console.error('[mira-tiptap] save failed', error); status.value = '保存失败' }
+  } catch (error) { console.error('[mira-tiptap] save failed', error) }
 }
 
 function handleKeydown (event: KeyboardEvent) {
@@ -160,9 +164,9 @@ onMounted(async () => {
     const json = await response.json()
     title.value = typeof json?.title === 'string' ? json.title : ''
     icon.value = typeof json?.icon === 'string' ? json.icon : ''
+    cover.value = json?.cover && typeof json.cover.value === 'string' ? json.cover : null
     editor.value?.commands.setContent(json)
-    status.value = '已加载'
-  } catch (error) { console.error('[mira-tiptap] load failed', error); status.value = '加载失败' }
+  } catch (error) { console.error('[mira-tiptap] load failed', error) }
 })
 onBeforeUnmount(() => { window.removeEventListener('keydown', handleKeydown); if (saveTimer) clearTimeout(saveTimer); editor.value?.destroy() })
 </script>
@@ -170,32 +174,47 @@ onBeforeUnmount(() => { window.removeEventListener('keydown', handleKeydown); if
 <template>
   <main class="flex h-full flex-col">
     <template v-if="editor">
-      <EditorToolbar :editor="editor" :status="status" @save="openSaveDialog" />
+      <EditorToolbar :editor="editor" @save="openSaveDialog" />
       <div class="scroll-thin flex-1 overflow-y-auto bg-muted/40" @mousedown.self="focusEnd">
-        <div class="mx-auto my-8 flex w-[calc(100%-4rem)] max-w-[1080px] items-start justify-center gap-6">
-          <div
-            class="relative w-full max-w-3xl rounded-xl border bg-card px-10 py-9 shadow-sm"
-            @mousedown.self="focusEnd"
-          >
+        <!-- 宽屏模式右缘不超过固定大纲（大纲 208px + 边距），居中模式保持窄栏 -->
+        <div :class="wide ? 'my-6 ml-4 w-[calc(100%-16rem)]' : 'my-8 mx-auto w-[calc(100%-4rem)] max-w-3xl'">
+          <div class="relative w-full overflow-hidden rounded-xl border bg-card shadow-sm">
+            <button
+              type="button"
+              :title="wide ? '切换为居中版式' : '切换为宽屏版式'"
+              class="absolute right-3 top-3 z-20 flex size-7 cursor-pointer items-center justify-center rounded-lg bg-background/40 text-muted-foreground opacity-60 backdrop-blur transition-all hover:bg-muted hover:text-foreground hover:opacity-100"
+              @mousedown.prevent
+              @click="toggleWide"
+            >
+              <Minimize2 v-if="wide" class="size-4" />
+              <Maximize2 v-else class="size-4" />
+            </button>
             <DragHandle :editor="editor" />
             <SlashCommandMenu :editor="editor" />
-            <div class="mb-2 flex items-center gap-2">
-              <DocumentIconPicker v-model="icon" />
-              <input
-                v-model="title"
-                placeholder="无标题"
-                class="min-w-0 flex-1 border-none bg-transparent text-3xl font-bold tracking-tight outline-none placeholder:text-muted-foreground/40"
-                @keydown.enter.prevent="focusEditorStart"
-                @keydown.down.prevent="focusEditorStart"
-              >
+            <CoverBanner v-model="cover" />
+            <div
+              class="relative z-10 pb-8 pl-24 pr-10"
+              :class="cover ? 'pt-44' : 'pt-8'"
+              @mousedown.self="focusEnd"
+            >
+              <div class="mb-2 flex items-center gap-2">
+                <DocumentIconPicker v-model="icon" />
+                <input
+                  v-model="title"
+                  placeholder="无标题"
+                  class="min-w-0 flex-1 border-none bg-transparent text-3xl font-bold tracking-tight outline-none placeholder:text-muted-foreground/40"
+                  @keydown.enter.prevent="focusEditorStart"
+                  @keydown.down.prevent="focusEditorStart"
+                >
+              </div>
+              <EditorContent :editor="editor" />
             </div>
-            <EditorContent :editor="editor" />
           </div>
-          <OutlinePanel :editor="editor" />
         </div>
       </div>
       <TextBubbleMenu :editor="editor" />
       <LinkEditorMenu :editor="editor" />
+      <OutlinePanel :editor="editor" />
     </template>
     <SaveLocationDialog v-model:open="showSaveDialog" :libraries="libraries" :folders="folders" :initial-library-id="currentLibraryId" :initial-file-name="currentFileName" @save="saveToLocation" />
   </main>

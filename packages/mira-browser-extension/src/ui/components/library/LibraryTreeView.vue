@@ -11,10 +11,10 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useLibraryTree, filterTree, collectIds, flattenTree } from '@/ui/composables/useLibraryTree';
+import { useLibraryTreeActions } from '@/ui/composables/useLibraryTreeActions';
 import { useSettings } from '@/ui/composables/useSettings';
 import { useUploadQueue } from '@/ui/composables/useUploadQueue';
 import { useBackground } from '@/ui/composables/useBackground';
-import { useDialog } from '@/ui/composables/useDialog';
 import LibraryTree from './LibraryTree.vue';
 import Dropzone from '@/ui/components/upload/Dropzone.vue';
 import ContextMenu from '@/ui/components/ui/ContextMenu.vue';
@@ -29,7 +29,6 @@ const { t } = useI18n();
 const { settings } = useSettings();
 const { addFiles } = useUploadQueue();
 const bg = useBackground();
-const dialog = useDialog();
 const { tree, count, loading, error, load } = useLibraryTree(props.mode);
 
 // ---- 展开/折叠状态 ----
@@ -151,99 +150,24 @@ const unitText = computed(() => props.mode === 'folder' ? t('library.folderUnit'
 
 const noData = computed(() => !loading.value && !error.value && count.value === 0);
 
-// ---- 右键菜单:新建同级 / 新建子级 / 删除 ----
-// menu:右键的节点 + 坐标;为 null 时菜单关闭
-const menu = ref<{ node: LibraryTreeNode; x: number; y: number } | null>(null);
-
-function onContextMenu(node: LibraryTreeNode, x: number, y: number) {
-  menu.value = { node, x, y };
-}
-function closeMenu() {
-  menu.value = null;
-}
-
-/**
- * 新建节点(sibling/child 由 level 决定 parentId):
- *  - sibling:与目标节点同级 → parentId = node.parentId
- *  - child:作为目标节点的子级 → parentId = node.id
- *
- * 用弹窗收集名称(默认「新建文件夹/标签 N」),空名/取消则放弃。
- */
-async function createNode(level: 'sibling' | 'child') {
-  const target = menu.value?.node;
-  if (!target) return;
-  const parentId = level === 'sibling' ? target.parentId : target.id;
-  closeMenu();
-
-  const libId = settings.value.libraryId;
-  if (!libId) return;
-  const defaultName = t('tree.newName', { type: titleText.value, n: count.value + 1 });
-  const title = await dialog.prompt({
-    title: t('tree.createPrompt', { type: titleText.value }),
-    defaultValue: defaultName,
-  });
-  if (!title?.trim()) return;
-
-  try {
-    await bg.createNode(props.mode, libId, title.trim(), parentId || undefined);
-    await load(libId);
-    // 新建子级:展开其父,使新节点可见
-    if (level === 'child') {
-      const next = new Set(expanded.value);
-      next.add(target.id);
-      expanded.value = next;
-    }
-  } catch (e: any) {
-    dbg.warn('lib-tree', 'createNode failed', { error: e?.message });
-    await dialog.alert({
-      title: t('common.failed'),
-      message: t('tree.createFailed', { error: e?.message ?? String(e) }),
-      danger: true,
-    });
-  }
-}
-
-/**
- * 删除节点。folder 用单弹窗 + 复选框(是否同时删除其中的文件);
- * tag 用普通确认弹窗。
- */
-async function deleteNode() {
-  const target = menu.value?.node;
-  if (!target) return;
-  closeMenu();
-
-  const libId = settings.value.libraryId;
-  if (!libId) return;
-
-  let deleteFiles = false;
-  if (props.mode === 'folder') {
-    // 单弹窗:确认删除 + 复选框「同时删除其中的文件」
-    const r = await dialog.confirmCheck({
-      message: t('tree.deleteFolderConfirm', { name: target.title }),
-      checkboxLabel: t('tree.deleteFilesCheck'),
-      danger: true,
-    });
-    if (!r.ok) return;
-    deleteFiles = r.checked;
-  } else {
-    if (!(await dialog.confirm({
-      message: t('tree.deleteTagConfirm', { name: target.title }),
-      danger: true,
-    }))) return;
-  }
-
-  try {
-    await bg.deleteNode(props.mode, libId, target.id, deleteFiles);
-    await load(libId);
-  } catch (e: any) {
-    dbg.warn('lib-tree', 'deleteNode failed', { error: e?.message });
-    await dialog.alert({
-      title: t('common.failed'),
-      message: t('tree.deleteFailed', { error: e?.message ?? String(e) }),
-      danger: true,
-    });
-  }
-}
+// ---- 右键菜单:新建同级 / 新建子级 / 删除(逻辑在 composable,渲染在下方模板) ----
+const {
+  menu,
+  openMenu: onContextMenu,
+  closeMenu,
+  createNode,
+  deleteNode,
+} = useLibraryTreeActions({
+  mode: props.mode,
+  libraryId: () => settings.value.libraryId,
+  count: () => count.value,
+  reload: () => load(settings.value.libraryId),
+  expand: id => {
+    const next = new Set(expanded.value);
+    next.add(id);
+    expanded.value = next;
+  },
+});
 </script>
 
 <template>
