@@ -11,7 +11,12 @@
     "title": "n8n 集成",
     "icon": "🔗",
     "category": "integration",
-    "tags": ["n8n", "Webhook", "自动化", "工作流"]
+    "tags": [
+      "n8n",
+      "Webhook",
+      "自动化",
+      "工作流"
+    ]
   },
   "scripts": {
     "build": "tsc",
@@ -24,8 +29,8 @@
     "access": "public"
   },
   "dependencies": {
-    "mira-app-server": "file:../../../packages/mira-app-server",
-    "mira-app-core": "file:../../../packages/mira-app-core"
+    "mira-app-server": "link:../../../packages/mira-app-server",
+    "mira-app-core": "link:../../../packages/mira-app-core"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
