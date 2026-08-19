@@ -40,21 +40,24 @@ export function buildTree(items: LibraryFlatItem[]): LibraryTreeNode[] {
 
 /**
  * 搜索过滤:命中节点的所有祖先也会保留(否则整条分支被裁掉,看不到匹配项)。
+ * query 传数组时为多关键词 AND 语义(标题需同时包含全部关键词)。
  * 返回过滤后的树 + 匹配的 id 集合(供树组件高亮命中项)。
  */
 export function filterTree(
   nodes: LibraryTreeNode[],
-  query: string,
+  query: string | string[],
 ): { tree: LibraryTreeNode[]; matched: Set<number> } {
-  const q = query.trim().toLowerCase();
+  const words = (Array.isArray(query) ? query : [query])
+    .map(q => q.trim().toLowerCase())
+    .filter(Boolean);
   const matched = new Set<number>();
-  if (!q) return { tree: nodes, matched };
+  if (!words.length) return { tree: nodes, matched };
 
   const walk = (list: LibraryTreeNode[]): LibraryTreeNode[] => {
     const out: LibraryTreeNode[] = [];
     for (const n of list) {
       const kids = walk(n.children);
-      const hit = n.title.toLowerCase().includes(q);
+      const hit = words.every(w => n.title.toLowerCase().includes(w));
       if (hit || kids.length) {
         if (hit) matched.add(n.id);
         out.push({ ...n, children: kids });

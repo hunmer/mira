@@ -3,12 +3,11 @@ import { computed, onMounted, ref } from 'vue'
 import { FileText, Folder, Loader2, LogOut, Moon, Server, Sun } from '@lucide/vue'
 import { MiraClient } from 'mira-app-core/shared/sdk'
 import { SaveLocationDialog, Progress, type SaveLocation } from '@/index'
-import { Dropzone, LibraryTreeView } from '@/library'
-import type { LibraryFlatItem, LibraryTreeDialog, LibraryTreeNode, LibraryTreeServices } from '@/library'
+import { Dropzone, LibrarySelect, LibraryTreeView } from '@/library'
+import type { LibraryFlatItem, LibrarySelectServer, LibraryTreeDialog, LibraryTreeServices, LibraryTreeNode } from '@/library'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 const dark = ref(false)
 function toggleDark () {
@@ -118,6 +117,10 @@ async function handleCreateNode ({ kind, parentId }: { kind: 'folder' | 'tag'; p
     }
   } catch (error) { console.error(error) }
 }
+
+/* ---------- LibrarySelect 服务器分组选择(Mira Server 卡片内) ---------- */
+const selectServers = computed<LibrarySelectServer[]>(() =>
+  [{ id: 'current', name: apiBaseUrl.value, libraries: libraries.value }])
 
 /* ---------- LibraryTreeView 树演示 ---------- */
 const treeMode = ref<'folder' | 'tag'>('folder')
@@ -293,16 +296,7 @@ async function startUpload () {
             </p>
             <div class="grid gap-2 sm:max-w-72">
               <Label>当前素材库</Label>
-              <Select v-model="currentLibraryId" @update:model-value="loadLibraryData">
-                <SelectTrigger>
-                  <SelectValue placeholder="选择素材库" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem v-for="library in libraries" :key="library.id" :value="String(library.id)">
-                    {{ library.name || library.title || library.id }}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+              <LibrarySelect v-model="currentLibraryId" :servers="selectServers" @change="loadLibraryData" />
             </div>
             <div>
               <Button variant="outline" class="w-fit" @click="logout">

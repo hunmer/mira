@@ -11,22 +11,28 @@
  * 重新挂载本组件即可完成重置。
  */
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import { Check, FileImage, FileText, Film, Music, Plus, Search, X } from '@lucide/vue'
-import { Button } from '@/components/ui/button'
+import { Check, ChevronDown, FileImage, FileText, Film, Music, Plus, Search, X } from '@lucide/vue'
 import {
-  Combobox,
-  ComboboxAnchor,
-  ComboboxEmpty,
-  ComboboxGroup,
-  ComboboxInput,
-  ComboboxItem,
-  ComboboxItemIndicator,
-  ComboboxList,
-} from '@/components/ui/combobox'
+  ListboxContent,
+  ListboxFilter,
+  ListboxItem,
+  ListboxItemIndicator,
+  ListboxRoot,
+  useFilter,
+} from 'reka-ui'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  TagsInput,
+  TagsInputInput,
+  TagsInputItem,
+  TagsInputItemDelete,
+  TagsInputItemText,
+} from '@/components/ui/tags-input'
 import {
   Attachment,
   AttachmentAction,
@@ -121,48 +127,23 @@ function toggle (id: number) {
   expanded.value = next
 }
 
-// ---- 搜索(combobox):过滤树 + 下拉快速定位 ----
-// 工具栏搜索按钮切换显隐(参考 FolderTreeComponent),收起时清空查询
+// ---- 树搜索(纯 TagsInput):关键词成标签,仅过滤树展示,无下拉弹层 ----
+// 工具栏搜索按钮切换显隐(参考 FolderTreeComponent),收起时清空标签
 const showSearch = ref(false)
-const query = ref('')
+const searchTags = ref<string[]>([])
 
 function toggleSearch () {
   showSearch.value = !showSearch.value
-  if (!showSearch.value) query.value = ''
+  if (!showSearch.value) searchTags.value = []
 }
 
 /** 搜索态:命中分支连同祖先保留,整棵展开 */
-const filteredFolder = computed(() => filterTree(folderTree.value, query.value))
-const filteredTag = computed(() => filterTree(tagTree.value, query.value))
+const filteredFolder = computed(() => filterTree(folderTree.value, searchTags.value))
+const filteredTag = computed(() => filterTree(tagTree.value, searchTags.value))
 
 const effectiveExpanded = computed(() =>
-  query.value.trim() ? collectIds(tab.value === 'folder' ? filteredFolder.value.tree : filteredTag.value.tree) : expanded.value,
+  searchTags.value.length ? collectIds(tab.value === 'folder' ? filteredFolder.value.tree : filteredTag.value.tree) : expanded.value,
 )
-
-/** 搜索下拉候选:当前 tab 的树打平后按标题匹配(带完整路径),上限 20 条 */
-const searchMatches = computed(() => {
-  const q = query.value.trim().toLowerCase()
-  if (!q) return []
-  const out: { node: LibraryTreeNode; path: string }[] = []
-  const walk = (nodes: LibraryTreeNode[], trail: string[]) => {
-    for (const node of nodes) {
-      const path = [...trail, node.title].join(' / ')
-      if (node.title.toLowerCase().includes(q)) out.push({ node, path })
-      if (out.length < 20) walk(node.children, [...trail, node.title])
-    }
-  }
-  walk(tab.value === 'folder' ? folderTree.value : tagTree.value, [])
-  return out.slice(0, 20)
-})
-
-/** 下拉选中节点:文件夹直接定位,标签切换勾选;随后清空搜索恢复整棵树 */
-function onPickSearch (value: unknown) {
-  const node = value as LibraryTreeNode | null
-  if (!node) return
-  if (tab.value === 'folder') folderId.value = folderId.value === String(node.id) ? '' : String(node.id)
-  else onSelectTag(node)
-  query.value = ''
-}
 
 // ---- 文件夹单选(再点取消回根目录) / 标签多选 ----
 const selectedFolderIds = computed(() => folderId.value ? new Set([Number(folderId.value)]) : undefined)
@@ -179,6 +160,41 @@ function onSelectTag (node: LibraryTreeNode) {
 }
 
 const selectedTagTitles = computed(() => tagItems.value.filter(item => selectedTagIds.value.has(item.id)).map(item => item.title))
+
+// ---- 右侧「标签」选择:Tags with Listbox(候选=全部标签,多选/可删) ----
+const tagSearchTerm = ref('')
+const tagSelectOpen = ref(false)
+const { contains } = useFilter({ sensitivity: 'base' })
+
+/** 标签候选:全部标签标题去重排序 */
+const tagOptions = computed(() => {
+  const titles = new Set(tagItems.value.map(item => item.title))
+  return [...titles].sort((a, b) => a.localeCompare(b, 'zh'))
+})
+const filteredTagOptions = computed(() =>
+  tagSearchTerm.value
+    ? tagOptions.value.filter(option => contains(option, tagSearchTerm.value))
+    : tagOptions.value,
+)
+watch(tagSearchTerm, (v) => {
+  if (v) tagSelectOpen.value = true
+})
+watch(selectedTagTitles, () => {
+  tagSearchTerm.value = ''
+})
+
+/** Tags with Listbox 的 v-model:title 数组 ↔ selectedTagIds(同名标签全部映射) */
+const selectedTagTitlesModel = computed({
+  get: () => selectedTagTitles.value,
+  set (titles: string[]) {
+    const keep = new Set(titles)
+    const next = new Set<number>()
+    for (const item of tagItems.value) {
+      if (selectedTagIds.value.has(item.id) && keep.has(item.title)) next.add(item.id)
+    }
+    selectedTagIds.value = next
+  },
+})
 
 const canSave = computed(() => Boolean(libraryId.value && fileName.value.trim()))
 
@@ -307,42 +323,25 @@ function confirm () {
           </div>
         </div>
 
-        <!-- 搜索栏(展开/收起过渡):输入过滤树,下拉点选快速定位 -->
+        <!-- 搜索栏(展开/收起过渡):TagsInput 关键词成标签,仅过滤树展示(无弹层) -->
         <Transition name="search-slide">
           <div v-if="showSearch" class="search-shell">
             <div class="search-shell-inner">
-              <Combobox
-                :model-value="null"
-                ignore-filter
-                @update:model-value="onPickSearch"
-              >
-                <ComboboxAnchor class="w-full">
-                  <ComboboxInput
-                    v-model="query"
-                    :placeholder="`搜索${tab === 'folder' ? '文件夹' : '标签'}…`"
-                    :display-value="() => ''"
-                  />
-                </ComboboxAnchor>
-                <ComboboxList class="w-[var(--reka-combobox-trigger-width)]">
-                  <ComboboxEmpty>无匹配</ComboboxEmpty>
-                  <ComboboxGroup>
-                    <ComboboxItem v-for="{ node, path } in searchMatches" :key="node.id" :value="node">
-                      <span class="min-w-0 flex-1 truncate">
-                        {{ node.title }}
-                        <span v-if="path !== node.title" class="text-muted-foreground text-xs">（{{ path }}）</span>
-                      </span>
-                      <ComboboxItemIndicator><Check class="size-4" /></ComboboxItemIndicator>
-                    </ComboboxItem>
-                  </ComboboxGroup>
-                </ComboboxList>
-              </Combobox>
+              <TagsInput v-slot="{ modelValue: tags }" v-model="searchTags" class="w-full">
+                <TagsInputItem v-for="item in tags" :key="item.toString()" :value="item.toString()">
+                  <TagsInputItemText />
+                  <TagsInputItemDelete />
+                </TagsInputItem>
+
+                <TagsInputInput :placeholder="`搜索${tab === 'folder' ? '文件夹' : '标签'}…`" />
+              </TagsInput>
             </div>
           </div>
         </Transition>
 
         <TabsContent value="folder" class="max-h-56 overflow-y-auto">
           <button
-            v-if="!query.trim()"
+            v-if="!searchTags.length"
             type="button"
             class="flex h-7 w-full cursor-pointer items-center gap-1.5 rounded-md py-0 pr-2 pl-[26px] text-inherit select-none"
             :class="folderId
@@ -366,7 +365,7 @@ function confirm () {
               @select="onSelectFolder"
             />
           </div>
-          <div v-else class="py-6 text-center text-xs text-muted-foreground">{{ query.trim() ? '无匹配' : '暂无文件夹' }}</div>
+          <div v-else class="py-6 text-center text-xs text-muted-foreground">{{ searchTags.length ? '无匹配' : '暂无文件夹' }}</div>
         </TabsContent>
         <TabsContent value="tag" class="max-h-56 overflow-y-auto">
           <div v-if="filteredTag.tree.length" class="text-sm">
@@ -381,7 +380,7 @@ function confirm () {
               @select="onSelectTag"
             />
           </div>
-          <div v-else class="py-6 text-center text-xs text-muted-foreground">{{ query.trim() ? '无匹配' : '暂无标签' }}</div>
+          <div v-else class="py-6 text-center text-xs text-muted-foreground">{{ searchTags.length ? '无匹配' : '暂无标签' }}</div>
         </TabsContent>
       </Tabs>
 
@@ -403,13 +402,46 @@ function confirm () {
             class="bg-muted ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-16 w-full rounded-md px-3 py-2 text-sm transition-[color,box-shadow] outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           />
         </div>
-        <div v-if="selectedTagTitles.length" class="grid gap-2">
+        <!-- 已选标签:Tags with Listbox(候选=全部标签,多选/× 删除),与树上勾选双向同步 -->
+        <div v-if="tagItems.length" class="grid gap-2">
           <Label>标签</Label>
-          <div class="flex flex-wrap gap-1.5">
-            <span v-for="name in selectedTagTitles" :key="name" class="bg-muted text-muted-foreground rounded-md px-2 py-0.5 text-xs">
-              {{ name }}
-            </span>
-          </div>
+          <Popover v-model:open="tagSelectOpen">
+            <ListboxRoot v-model="selectedTagTitlesModel" highlight-on-hover multiple>
+              <PopoverAnchor class="inline-flex w-full">
+                <TagsInput v-slot="{ modelValue: tags }" v-model="selectedTagTitlesModel" class="w-full">
+                  <TagsInputItem v-for="item in tags" :key="item.toString()" :value="item.toString()">
+                    <TagsInputItemText />
+                    <TagsInputItemDelete />
+                  </TagsInputItem>
+
+                  <ListboxFilter v-model="tagSearchTerm" as-child>
+                    <TagsInputInput placeholder="选择标签…" @keydown.enter.prevent @keydown.down="tagSelectOpen = true" />
+                  </ListboxFilter>
+
+                  <PopoverTrigger as-child>
+                    <Button size="icon-sm" variant="ghost" class="order-last self-start ml-auto">
+                      <ChevronDown class="size-3.5" />
+                    </Button>
+                  </PopoverTrigger>
+                </TagsInput>
+              </PopoverAnchor>
+
+              <PopoverContent class="p-1" @open-auto-focus.prevent>
+                <ListboxContent class="max-h-[300px] scroll-py-1 overflow-x-hidden overflow-y-auto empty:after:content-['No_options'] empty:p-1 empty:after:block" tabindex="0">
+                  <ListboxItem
+                    v-for="item in filteredTagOptions" :key="item" class="data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4" :value="item" @select="() => {
+                      tagSearchTerm = ''
+                    }"
+                  >
+                    <span class="min-w-0 flex-1 truncate">{{ item }}</span>
+                    <ListboxItemIndicator class="ml-auto inline-flex items-center justify-center">
+                      <Check />
+                    </ListboxItemIndicator>
+                  </ListboxItem>
+                </ListboxContent>
+              </PopoverContent>
+            </ListboxRoot>
+          </Popover>
         </div>
       </div>
     </div>

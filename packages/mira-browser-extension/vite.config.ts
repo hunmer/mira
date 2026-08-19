@@ -7,9 +7,20 @@ import manifest from './src/manifest';
 export default defineConfig({
   plugins: [vue(), crx({ manifest })],
   resolve: {
-    alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url)),
-    },
+    // 'vue' 必须显式指向单一路径:mira-plugin-ui 的 node_modules 是 npm 实体目录(内含自己的 vue 拷贝),
+    // 其依赖链(reka-ui/@lucide/vue/@vueuse)按 importer 解析会得到第二份 vue → 双实例 → 跨组件 slot/inject 崩溃
+    alias: [
+      {
+        find: /^vue$/,
+        replacement: fileURLToPath(
+          new URL('./node_modules/vue/dist/vue.runtime.esm-bundler.js', import.meta.url),
+        ),
+      },
+      {
+        find: '@',
+        replacement: fileURLToPath(new URL('./src', import.meta.url)),
+      },
+    ],
   },
   build: {
     target: 'es2022',

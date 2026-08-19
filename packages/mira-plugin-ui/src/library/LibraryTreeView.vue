@@ -4,13 +4,22 @@
  * 自 mira-browser-extension 迁移:数据(CRUD)/弹窗/上传/文案全部由宿主注入。
  *
  * - 顶部:拖放/点击选择上传到素材库根目录(需传 upload)
- * - 工具栏:搜索 + 刷新 + 计数
+ * - 工具栏:搜索(Tags Input + Listbox,关键词成标签、候选下拉可选) + 刷新 + 计数
  * - 中部:树(支持拖拽文件 → 上传到目标文件夹/标签)
  * - 右键菜单:新建同级/子级、删除(需传 dialog,编辑动作依赖 services)
  *
  * 样式为 tailwind/shadcn 原子类,无 scoped CSS(见仓库 ui_rule.md)。
  */
 import { computed, ref, watch } from 'vue';
+import { Check, ChevronDown, X } from '@lucide/vue';
+import {
+  ListboxContent,
+  ListboxFilter,
+  ListboxItem,
+  ListboxItemIndicator,
+  ListboxRoot,
+  useFilter,
+} from 'reka-ui';
 import { useLibraryTreeData } from './useLibraryTreeData';
 import { useLibraryTreeActions } from './useLibraryTreeActions';
 import { createLibraryTreeT } from './i18n';
@@ -19,6 +28,15 @@ import LibraryTree from './LibraryTree.vue';
 import ContextMenu from './ContextMenu.vue';
 import Dropzone from './Dropzone.vue';
 import { parseDrop, canAcceptDrop } from './drag-data';
+// 注意:library 子入口以源码供宿主直接消费,这里必须用相对路径(宿主的 @ 别名指向其自身 src)
+import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '../components/ui/popover';
+import {
+  TagsInput,
+  TagsInputInput,
+  TagsInputItem,
+  TagsInputItemDelete,
+  TagsInputItemText,
+} from '../components/ui/tags-input';
 import type {
   LibraryTreeDialog,
   LibraryTreeNode,
@@ -77,16 +95,39 @@ function toggle(id: number) {
   expanded.value = next;
 }
 
-// ---- 搜索 ----
-const query = ref('');
-const filtered = computed(() => filterTree(tree.value, query.value));
+// ---- 搜索(Tags Input + Listbox):关键词以标签呈现,可从候选下拉选择或手输回车 ----
+const searchTags = ref<string[]>([]);
+const searchTerm = ref('');
+const searchOpen = ref(false);
+const { contains } = useFilter({ sensitivity: 'base' });
+
+/** 候选:当前树的全部节点标题去重排序 */
+const searchOptions = computed(() => {
+  const titles = new Set(flattenTree(tree.value).map(n => n.title));
+  return [...titles].sort((a, b) => a.localeCompare(b, 'zh'));
+});
+const filteredOptions = computed(() =>
+  searchTerm.value
+    ? searchOptions.value.filter(o => contains(o, searchTerm.value))
+    : searchOptions.value,
+);
+// 输入时自动展开候选下拉;标签增删后清空输入(ListboxItem 选中/手输成标签都走这里)
+watch(searchTerm, v => { if (v) searchOpen.value = true; });
+watch(searchTags, () => { searchTerm.value = ''; });
+
+/** 回车:有候选时交给 Listbox 键盘选择(阻止 TagsInput 加标签),无候选时输入词直接成标签 */
+function onSearchEnter(e: KeyboardEvent) {
+  if (filteredOptions.value.length) e.preventDefault();
+}
+
+const filtered = computed(() => filterTree(tree.value, searchTags.value));
 const filteredTree = computed(() => filtered.value.tree);
 const matched = computed(() => filtered.value.matched);
 // 搜索态:自动展开全部(命中项连同其祖先/后代都可见)
 const effectiveExpanded = computed(() =>
-  query.value.trim() ? collectIds(filteredTree.value) : expanded.value,
+  searchTags.value.length ? collectIds(filteredTree.value) : expanded.value,
 );
-const isSearching = computed(() => query.value.trim().length > 0);
+const isSearching = computed(() => searchTags.value.length > 0);
 
 // ---- 拖到空白区域 → 上传到素材库根目录 ----
 const rootHover = ref(false);
@@ -196,30 +237,65 @@ const ctxItem = 'flex w-full cursor-pointer items-center gap-1.5 rounded-[4px] b
     <!-- 顶部:拖放/点击选择上传到素材库根目录 -->
     <Dropzone v-if="upload" :hint="tt('upload.dropHint')" @drop="onRootDropFiles" />
 
-    <!-- 工具栏:搜索 + 刷新 + 计数 -->
+    <!-- 工具栏:搜索(Tags + Listbox) + 刷新 + 计数 -->
     <div class="flex items-center gap-2 border-b border-border px-3 py-2">
-      <span
-        class="relative flex min-w-0 flex-1 items-center rounded-md border border-border bg-accent px-2 text-muted-foreground transition-colors focus-within:border-primary"
-      >
-        <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
-          <path
-            d="M7 2a5 5 0 1 1-3.06 8.96l-2.49 2.49a.75.75 0 1 1-1.06-1.06l2.49-2.49A5 5 0 0 1 7 2zm0 1.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z"
-            fill="currentColor"
-          />
-        </svg>
-        <input
-          v-model="query"
-          type="text"
-          class="min-w-0 flex-1 border-none bg-transparent px-1 py-[5px] font-inherit text-foreground outline-none"
-          :placeholder="tt('library.searchPlaceholder', { type: titleText })"
-        />
-        <button
-          v-if="query"
-          class="cursor-pointer border-none bg-transparent px-0.5 py-0 text-base leading-none text-muted-foreground hover:text-foreground"
-          :title="tt('common.clear')"
-          @click="query = ''"
-        >×</button>
-      </span>
+      <Popover v-model:open="searchOpen">
+        <ListboxRoot v-model="searchTags" highlight-on-hover multiple class="relative flex min-w-0 flex-1">
+          <PopoverAnchor class="inline-flex min-w-0 w-full">
+            <TagsInput
+              v-slot="{ modelValue: tags }"
+              v-model="searchTags"
+              delimiter=""
+              class="min-w-0 flex-1 gap-1 rounded-md border-border bg-accent px-2 py-[3px] shadow-none focus-within:border-primary focus-within:ring-0"
+            >
+              <TagsInputItem v-for="item in tags" :key="String(item)" :value="item" class="gap-0.5 py-0">
+                <TagsInputItemText class="px-1 text-xs" />
+                <TagsInputItemDelete class="mr-0.5">
+                  <X class="size-3" />
+                </TagsInputItemDelete>
+              </TagsInputItem>
+
+              <ListboxFilter v-model="searchTerm" as-child>
+                <TagsInputInput
+                  class="min-h-0 py-[5px] text-xs"
+                  :placeholder="tt('library.searchPlaceholder', { type: titleText })"
+                  @keydown.enter="onSearchEnter"
+                  @keydown.down="searchOpen = true"
+                />
+              </ListboxFilter>
+
+              <PopoverTrigger as-child>
+                <button
+                  type="button"
+                  class="order-last flex size-4 shrink-0 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent p-0 text-muted-foreground transition-colors hover:text-foreground"
+                  :title="tt('library.searchPlaceholder', { type: titleText })"
+                >
+                  <ChevronDown class="size-3.5" />
+                </button>
+              </PopoverTrigger>
+            </TagsInput>
+          </PopoverAnchor>
+
+          <PopoverContent align="start" class="w-(--reka-popover-anchor-width) p-1" @open-auto-focus.prevent>
+            <ListboxContent class="max-h-64 overflow-y-auto outline-none" tabindex="0">
+              <ListboxItem
+                v-for="opt in filteredOptions"
+                :key="opt"
+                :value="opt"
+                class="flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-xs outline-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground"
+              >
+                <span class="truncate">{{ opt }}</span>
+                <ListboxItemIndicator class="ml-auto inline-flex items-center">
+                  <Check class="size-3.5" />
+                </ListboxItemIndicator>
+              </ListboxItem>
+              <div v-if="!filteredOptions.length" class="px-2 py-4 text-center text-xs text-muted-foreground">
+                {{ tt('library.noMatch', { type: titleText }) }}
+              </div>
+            </ListboxContent>
+          </PopoverContent>
+        </ListboxRoot>
+      </Popover>
       <button
         class="cursor-pointer rounded-md border border-border bg-transparent px-2 py-1 text-sm leading-none text-muted-foreground transition-colors duration-100 hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
         :title="tt('common.refresh')"
@@ -280,7 +356,7 @@ const ctxItem = 'flex w-full cursor-pointer items-center gap-1.5 rounded-[4px] b
     <!-- 右键菜单:新建同级 / 新建子级 / 删除 -->
     <ContextMenu v-if="menu" :x="menu.x" :y="menu.y" @close="closeMenu">
       <button :class="ctxItem" @click="createNode('sibling')">{{ tt('tree.createSibling') }}</button>
-      <button :class="ctxItem" @click="createNode('child', { type: titleText })">{{ tt('tree.createChild', { type: titleText }) }}</button>
+      <button :class="ctxItem" @click="createNode('child')">{{ tt('tree.createChild', { type: titleText }) }}</button>
       <div class="my-[3px] h-px bg-border" />
       <button :class="[ctxItem, 'text-destructive']" @click="deleteNode">{{ tt('tree.delete') }}</button>
     </ContextMenu>

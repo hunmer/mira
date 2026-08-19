@@ -29,6 +29,21 @@ export interface LibraryFlatItem {
 
 export type LibraryTreeKind = 'folder' | 'tag'
 
+/** 素材库候选项(LibrarySelect 的选项形态) */
+export interface LibrarySelectOption {
+  id: string | number
+  name?: string
+  title?: string
+}
+
+/** 服务器分组:名称作组标签,libraries 为组内候选项(跨服务器需保证库 id 唯一) */
+export interface LibrarySelectServer {
+  id?: string | number
+  name?: string
+  title?: string
+  libraries: LibrarySelectOption[]
+}
+
 /** 数据服务:宿主实现(扩展走 background 桥,其他宿主可走 SDK) */
 export interface LibraryTreeServices {
   listFolders(libraryId: string): Promise<LibraryFlatItem[] | null>
