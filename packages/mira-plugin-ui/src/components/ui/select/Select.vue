@@ -1,14 +1,19 @@
 <script setup lang="ts">
-import type { SelectRootProps } from 'reka-ui'
-import { SelectRoot } from 'reka-ui'
+import type { SelectRootEmits, SelectRootProps } from "reka-ui"
+import { SelectRoot, useForwardPropsEmits } from "reka-ui"
 
 const props = defineProps<SelectRootProps>()
+const emits = defineEmits<SelectRootEmits>()
 
-const modelValue = defineModel<SelectRootProps['modelValue']>()
+const forwarded = useForwardPropsEmits(props, emits)
 </script>
 
 <template>
-  <SelectRoot v-bind="props" v-model="modelValue">
-    <slot />
+  <SelectRoot
+    v-slot="slotProps"
+    data-slot="select"
+    v-bind="forwarded"
+  >
+    <slot v-bind="slotProps" />
   </SelectRoot>
 </template>

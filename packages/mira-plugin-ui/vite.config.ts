@@ -7,7 +7,23 @@ import tailwindcss from '@tailwindcss/vite'
 // 产物 dist/mira-plugin-ui.{es,umd}.js + dist/mira-plugin-ui.css 自包含可独立引用。
 export default defineConfig({
   plugins: [vue(), tailwindcss()],
-  resolve: { alias: { '@': path.resolve(__dirname, './src') } },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+      // demo 直接消费 mira-app-core 已构建的 SDK dist，不引入其 node 依赖
+      'mira-app-core/shared/sdk': path.resolve(__dirname, '../mira-app-core/dist/shared/sdk/mira-sdk.esm.mjs'),
+    },
+  },
+  // server 无 CORS，demo dev 经 vite 代理访问，前端 apiBaseUrl 填 /mira-api
+  server: {
+    proxy: {
+      '/mira-api': {
+        target: 'http://127.0.0.1:8081',
+        changeOrigin: true,
+        rewrite: p => p.replace(/^\/mira-api/, ''),
+      },
+    },
+  },
   build: {
     lib: {
       entry: path.resolve(__dirname, 'src/index.ts'),

@@ -9,13 +9,12 @@
     "cssVariables": true,
     "prefix": ""
   },
-  "framework": "vite",
+  "iconLibrary": "lucide",
   "aliases": {
     "components": "@/components",
     "composables": "@/composables",
     "utils": "@/lib/utils",
     "ui": "@/components/ui",
     "lib": "@/lib"
-  },
-  "iconLibrary": "lucide"
+  }
 }
