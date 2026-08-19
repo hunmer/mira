@@ -1,9 +1,10 @@
 /* ============================================================
  * MusicPlayer 样式（来源：21st.dev/smammar100/music-player-widget）
- * 已去除 Tailwind @property 噪声；字体回退到系统等宽/无衬线
+ * 所有规则限定在 .music-player-widget 作用域内，不污染全局
+ * （变量定义在组件根元素上；keyframes 加 mp- 前缀防碰撞）
  * ============================================================ */
 
-:root {
+.music-player-widget {
   --font-space-grotesk: "Space Grotesk", system-ui, sans-serif;
   --font-space-mono: "Space Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
   --black: #f5f5f5;
@@ -17,9 +18,8 @@
   --text-display: #000;
   --accent: #d71921;
 }
-[data-theme="dark"],
-.dark .card,
-html.dark .card {
+html.dark .music-player-widget,
+html[data-theme="dark"] .music-player-widget {
   --black: #000;
   --surface: #111;
   --surface-raised: #1a1a1a;
@@ -32,9 +32,12 @@ html.dark .card {
   --accent: #d71921;
 }
 
-* { box-sizing: border-box; }
+.music-player-widget,
+.music-player-widget *,
+.music-player-widget *::before,
+.music-player-widget *::after { box-sizing: border-box; }
 
-.card {
+.music-player-widget.card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 16px;
@@ -45,7 +48,7 @@ html.dark .card {
   overflow: hidden;
 }
 
-.mask {
+.music-player-widget .mask {
   z-index: 10;
   cursor: pointer;
   border-radius: 50%;
@@ -58,8 +61,8 @@ html.dark .card {
   overflow: hidden;
   transform: translate(-50%);
 }
-.mask:hover { transform: translate(-50%) scale(1.1); }
-.is-zoomed .mask {
+.music-player-widget .mask:hover { transform: translate(-50%) scale(1.1); }
+.music-player-widget.is-zoomed .mask {
   z-index: 35;
   border-radius: 0;
   width: 320px;
@@ -67,9 +70,9 @@ html.dark .card {
   transition: top 0.6s 1s, width 0.6s 1s, height 0.6s 1s, border-radius 0.6s 1s, transform 0.3s;
   top: 0;
 }
-.is-zoomed .mask:hover { transform: translate(-50%); }
+.music-player-widget.is-zoomed .mask:hover { transform: translate(-50%); }
 
-.spin {
+.music-player-widget .spin {
   transform-origin: 50%;
   will-change: transform;
   width: 100%;
@@ -77,7 +80,7 @@ html.dark .card {
   position: relative;
 }
 
-.cover {
+.music-player-widget .cover {
   object-fit: cover;
   width: 100%;
   height: 100%;
@@ -88,29 +91,29 @@ html.dark .card {
   bottom: 0;
   left: 0;
 }
-.cover-enter { animation: 0.38s cubic-bezier(0.22, 1, 0.36, 1) 0.31s both cover-in; }
-.cover-exit { animation: 0.32s cubic-bezier(0.22, 1, 0.36, 1) both cover-out; }
-@keyframes cover-in {
+.music-player-widget .cover-enter { animation: 0.38s cubic-bezier(0.22, 1, 0.36, 1) 0.31s both mp-cover-in; }
+.music-player-widget .cover-exit { animation: 0.32s cubic-bezier(0.22, 1, 0.36, 1) both mp-cover-out; }
+@keyframes mp-cover-in {
   0% { opacity: 0; transform: scale(1.08); }
   to { opacity: 1; transform: scale(1); }
 }
-@keyframes cover-out {
+@keyframes mp-cover-out {
   0% { opacity: 1; transform: scale(1); }
   to { opacity: 0; transform: scale(0.9); }
 }
 
 /* 封面缺失时的占位（官方无此态，本地补充） */
-.cover-fallback {
+.music-player-widget .cover-fallback {
   display: grid;
   place-items: center;
   background: linear-gradient(135deg, var(--surface-raised), var(--border));
 }
-.cover-fallback .material-symbols-outlined {
+.music-player-widget .cover-fallback .material-symbols-outlined {
   font-size: 72px;
   color: var(--text-disabled);
 }
 
-.hole {
+.music-player-widget .hole {
   -webkit-backdrop-filter: blur(10px);
   z-index: 20;
   pointer-events: none;
@@ -127,8 +130,8 @@ html.dark .card {
   left: 50%;
   box-shadow: inset 0 0 24px #00000040;
 }
-.is-zoomed .hole { opacity: 0; transition: opacity 0.5s 1s; }
-.hole-inner {
+.music-player-widget.is-zoomed .hole { opacity: 0; transition: opacity 0.5s 1s; }
+.music-player-widget .hole-inner {
   -webkit-backdrop-filter: blur(6px);
   background: #fff6;
   border-radius: 50%;
@@ -137,7 +140,7 @@ html.dark .card {
   box-shadow: inset 0 2px 4px #00000059, 0 1px 2px #0003;
 }
 
-.info {
+.music-player-widget .info {
   z-index: 30;
   pointer-events: none;
   flex-direction: column;
@@ -150,10 +153,10 @@ html.dark .card {
   display: flex;
   position: relative;
 }
-.info > * { pointer-events: auto; }
-.is-zoomed .info { filter: blur(6px); pointer-events: none; }
+.music-player-widget .info > * { pointer-events: auto; }
+.music-player-widget.is-zoomed .info { filter: blur(6px); pointer-events: none; }
 
-.track-info {
+.music-player-widget .track-info {
   flex-direction: column;
   align-items: center;
   width: 100%;
@@ -161,25 +164,25 @@ html.dark .card {
   position: relative;
   overflow: hidden;
 }
-.ti-layer {
+.music-player-widget .ti-layer {
   flex-direction: column;
   align-items: center;
   width: 100%;
   display: flex;
 }
-.ti-abs { position: absolute; top: 0; right: 0; bottom: 0; left: 0; }
-.ti-enter { animation: 0.32s cubic-bezier(0.22, 1, 0.36, 1) 0.31s both ti-in; }
-.ti-exit { animation: 0.28s cubic-bezier(0.22, 1, 0.36, 1) both ti-out; }
-@keyframes ti-in {
+.music-player-widget .ti-abs { position: absolute; top: 0; right: 0; bottom: 0; left: 0; }
+.music-player-widget .ti-enter { animation: 0.32s cubic-bezier(0.22, 1, 0.36, 1) 0.31s both mp-ti-in; }
+.music-player-widget .ti-exit { animation: 0.28s cubic-bezier(0.22, 1, 0.36, 1) both mp-ti-out; }
+@keyframes mp-ti-in {
   0% { opacity: 0; transform: translate(var(--dx)); }
   to { opacity: 1; transform: translate(0); }
 }
-@keyframes ti-out {
+@keyframes mp-ti-out {
   0% { opacity: 1; transform: translate(0); }
   to { opacity: 0; transform: translate(var(--dx)); }
 }
 
-.scales {
+.music-player-widget .scales {
   width: 24px;
   height: 26px;
   fill: var(--text-secondary);
@@ -188,7 +191,7 @@ html.dark .card {
   overflow: hidden;
 }
 
-.artist {
+.music-player-widget .artist {
   color: var(--text-secondary);
   font-family: var(--font-space-mono);
   letter-spacing: 0.12em;
@@ -198,7 +201,7 @@ html.dark .card {
   font-size: 11px;
   font-weight: 400;
 }
-.track {
+.music-player-widget .track {
   color: var(--text-display);
   font-family: var(--font-space-grotesk);
   letter-spacing: -0.02em;
@@ -212,7 +215,7 @@ html.dark .card {
   overflow: hidden;
 }
 
-.bar {
+.music-player-widget .bar {
   background: var(--border);
   cursor: pointer;
   width: 100%;
@@ -221,14 +224,14 @@ html.dark .card {
   position: relative;
   overflow: hidden;
 }
-.bar-fill {
+.music-player-widget .bar-fill {
   background: var(--text-display);
   width: 0%;
   transition: width 80ms linear;
   position: absolute;
   inset: 0 auto 0 0;
 }
-.time {
+.music-player-widget .time {
   font-family: var(--font-space-mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -238,17 +241,17 @@ html.dark .card {
   font-size: 11px;
   display: flex;
 }
-.time .current { color: var(--text-primary); }
-.time .sep { color: var(--text-disabled); margin: 0 8px; }
-.time .total { color: var(--text-secondary); }
+.music-player-widget .time .current { color: var(--text-primary); }
+.music-player-widget .time .sep { color: var(--text-disabled); margin: 0 8px; }
+.music-player-widget .time .total { color: var(--text-secondary); }
 
-.controls {
+.music-player-widget .controls {
   justify-content: center;
   align-items: center;
   gap: 12px;
   display: flex;
 }
-.ctrl {
+.music-player-widget .ctrl {
   color: var(--text-secondary);
   cursor: pointer;
   background: 0 0;
@@ -261,10 +264,10 @@ html.dark .card {
   display: grid;
   position: relative;
 }
-.ctrl:hover { color: var(--text-display); }
-.ctrl:active { opacity: 0.6; }
-.ctrl svg { display: block; }
-.ctrl-play {
+.music-player-widget .ctrl:hover { color: var(--text-display); }
+.music-player-widget .ctrl:active { opacity: 0.6; }
+.music-player-widget .ctrl svg { display: block; }
+.music-player-widget .ctrl-play {
   background: var(--text-display);
   width: 44px;
   height: 44px;
@@ -272,11 +275,11 @@ html.dark .card {
   border-radius: 999px;
   transition: opacity 0.2s, background 0.2s, color 0.2s;
 }
-.ctrl-play:hover { opacity: 0.85; }
-.ctrl-play:active { opacity: 0.6; }
-.ctrl-toggle.is-active,
-.ctrl-toggle.is-active:hover { color: var(--accent); }
-.ctrl-loop .loop-one {
+.music-player-widget .ctrl-play:hover { opacity: 0.85; }
+.music-player-widget .ctrl-play:active { opacity: 0.6; }
+.music-player-widget .ctrl-toggle.is-active,
+.music-player-widget .ctrl-toggle.is-active:hover { color: var(--accent); }
+.music-player-widget .ctrl-loop .loop-one {
   font-family: var(--font-space-mono);
   color: var(--accent);
   font-size: 8px;
@@ -287,4 +290,4 @@ html.dark .card {
   bottom: 3px;
   right: 5px;
 }
-.ctrl-loop.mode-one .loop-one { display: block; }
+.music-player-widget .ctrl-loop.mode-one .loop-one { display: block; }

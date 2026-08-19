@@ -1,6 +1,6 @@
 <template>
   <div
-    class="card"
+    class="card music-player-widget"
     :class="{ 'is-playing': player.state.isPlaying, 'is-zoomed': isZoomed }"
     @click="onCardClick"
   >

@@ -3,8 +3,20 @@ import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { EditorContent, useEditor } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
+import Underline from '@tiptap/extension-underline'
+import Link from '@tiptap/extension-link'
+import TextStyle from '@tiptap/extension-text-style'
+import Color from '@tiptap/extension-color'
+import Highlight from '@tiptap/extension-highlight'
+import TextAlign from '@tiptap/extension-text-align'
+import TaskList from '@tiptap/extension-task-list'
+import TaskItem from '@tiptap/extension-task-item'
 import { MiraClient } from 'mira-app-core/shared/sdk'
 import { SaveLocationDialog, type SaveLocation } from 'mira-plugin-ui'
+import EditorToolbar from '@/components/editor/EditorToolbar.vue'
+import LinkEditorMenu from '@/components/editor/LinkEditorMenu.vue'
+import TextBubbleMenu from '@/components/editor/TextBubbleMenu.vue'
+import { SlashCommand } from '@/components/editor/slash-command'
 
 const params = new URLSearchParams(location.search)
 const initialLibraryId = params.get('libraryId') || ''
@@ -25,7 +37,25 @@ const currentFileName = ref(initialFileName)
 let saveTimer: ReturnType<typeof setTimeout> | undefined
 
 const editor = useEditor({
-  extensions: [StarterKit, Placeholder.configure({ placeholder: '开始写作...' })],
+  extensions: [
+    StarterKit,
+    Underline,
+    Link.configure({ openOnClick: false, autolink: true }),
+    TextStyle,
+    Color,
+    Highlight.configure({ multicolor: true }),
+    TextAlign.configure({ types: ['heading', 'paragraph'] }),
+    TaskList,
+    TaskItem.configure({ nested: true }),
+    SlashCommand,
+    Placeholder.configure({
+      placeholder: ({ node, editor: instance, pos }) => {
+        if (node.type.name === 'heading') return `标题 ${node.attrs.level}`
+        if (node.type.name === 'paragraph' && pos === 1 && instance.isEmpty) return "输入 '/' 打开命令菜单，或直接开始书写…"
+        return ''
+      },
+    }),
+  ],
   content: { type: 'doc', content: [{ type: 'paragraph' }] },
   onUpdate: () => {
     if (!currentFileId.value) return
@@ -88,16 +118,17 @@ onBeforeUnmount(() => { window.removeEventListener('keydown', handleKeydown); if
 </script>
 
 <template>
-  <main class="editor-shell">
-    <header class="toolbar">
-      <button title="粗体" :class="{ active: editor?.isActive('bold') }" @click="editor?.chain().focus().toggleBold().run()"><strong>B</strong></button>
-      <button title="斜体" :class="{ active: editor?.isActive('italic') }" @click="editor?.chain().focus().toggleItalic().run()"><em>I</em></button>
-      <button title="标题" :class="{ active: editor?.isActive('heading', { level: 2 }) }" @click="editor?.chain().focus().toggleHeading({ level: 2 }).run()">H2</button>
-      <button title="项目列表" :class="{ active: editor?.isActive('bulletList') }" @click="editor?.chain().focus().toggleBulletList().run()">• List</button>
-      <button title="撤销" @click="editor?.chain().focus().undo().run()">↶</button><button title="重做" @click="editor?.chain().focus().redo().run()">↷</button>
-      <button class="save-button" title="保存" @click="openSaveDialog">保存</button><span class="status">{{ status }}</span>
-    </header>
-    <EditorContent v-if="editor" :editor="editor" class="editor" />
-    <SaveLocationDialog v-model:open="showSaveDialog" :libraries="libraries" :folders="folders" :initial-library-id="currentLibraryId" :initial-file-name="initialFileName" @save="saveToLocation" />
+  <main class="flex h-full flex-col">
+    <template v-if="editor">
+      <EditorToolbar :editor="editor" :status="status" @save="openSaveDialog" />
+      <div class="scroll-thin flex-1 overflow-y-auto">
+        <div class="mx-auto w-full max-w-3xl px-6 py-10 md:py-14">
+          <EditorContent :editor="editor" />
+        </div>
+      </div>
+      <TextBubbleMenu :editor="editor" />
+      <LinkEditorMenu :editor="editor" />
+    </template>
+    <SaveLocationDialog v-model:open="showSaveDialog" :libraries="libraries" :folders="folders" :initial-library-id="currentLibraryId" :initial-file-name="currentFileName" @save="saveToLocation" />
   </main>
 </template>

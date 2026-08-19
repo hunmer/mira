@@ -1,14 +1,314 @@
-:root { font-family: Inter, ui-sans-serif, system-ui, sans-serif; color: #172033; background: #f7f8fb; }
-* { box-sizing: border-box; }
-body { margin: 0; min-width: 320px; }
-.editor-shell { min-height: 100vh; display: flex; flex-direction: column; }
-.toolbar { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 6px; padding: 10px 14px; background: #fff; border-bottom: 1px solid #e5e7eb; }
-.toolbar button { min-width: 34px; height: 32px; border: 1px solid #d9dee8; border-radius: 6px; background: #fff; color: #344054; cursor: pointer; }
-.toolbar button:hover, .toolbar button.active { background: #e8eefc; border-color: #8aa4e8; color: #1d4ed8; }
-.status { margin-left: auto; font-size: 12px; color: #667085; }
-.editor { flex: 1; padding: 32px max(18px, calc((100vw - 820px) / 2)); }
-.editor :deep(.ProseMirror) { min-height: calc(100vh - 100px); padding: 28px 34px; outline: none; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 2px 10px #1018280d; line-height: 1.75; }
-.editor :deep(.ProseMirror p.is-editor-empty:first-child::before) { content: attr(data-placeholder); color: #98a2b3; float: left; height: 0; pointer-events: none; }
-.editor :deep(h1), .editor :deep(h2), .editor :deep(h3) { line-height: 1.25; }
-.editor :deep(ul) { padding-left: 1.5rem; }
-@media (max-width: 640px) { .editor { padding: 14px 10px; } .editor :deep(.ProseMirror) { padding: 20px; } }
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+  编辑器默认浅色（文档场景），token 复用 shadcn oklch 取值，
+  与 mira-client / 其他插件视觉保持一致。
+*/
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.55 0.2 260);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.65 0.2 260);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+}
+
+* {
+  border-color: var(--border);
+}
+
+html,
+body,
+#app {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================================
+   Tiptap 编辑区：Notion 风格排版
+   ============================================================ */
+.tiptap {
+  caret-color: var(--primary);
+  font-size: 16px;
+  line-height: 1.75;
+  outline: none;
+}
+
+.tiptap p {
+  margin: 0.25em 0;
+}
+
+.tiptap h1,
+.tiptap h2,
+.tiptap h3 {
+  margin: 1em 0 0.35em;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.tiptap h1 {
+  font-size: 1.875em;
+  font-weight: 700;
+  margin-top: 0.6em;
+}
+
+.tiptap h2 {
+  font-size: 1.5em;
+  font-weight: 700;
+}
+
+.tiptap h3 {
+  font-size: 1.25em;
+  font-weight: 600;
+}
+
+.tiptap ul,
+.tiptap ol {
+  padding-left: 1.5em;
+  margin: 0.25em 0;
+}
+
+.tiptap ul {
+  list-style: disc;
+}
+
+.tiptap ol {
+  list-style: decimal;
+}
+
+.tiptap li {
+  margin: 0.15em 0;
+}
+
+.tiptap li > p {
+  margin: 0;
+}
+
+.tiptap blockquote {
+  margin: 0.6em 0;
+  padding-left: 0.9em;
+  border-left: 3px solid var(--foreground);
+}
+
+.tiptap blockquote p {
+  margin: 0.15em 0;
+}
+
+.tiptap hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1.4em 0;
+}
+
+.tiptap code {
+  padding: 0.15em 0.35em;
+  border-radius: 4px;
+  background: var(--muted);
+  color: var(--destructive);
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.86em;
+}
+
+.tiptap pre {
+  margin: 0.6em 0;
+  padding: 0.85em 1em;
+  border-radius: calc(var(--radius) * 0.8);
+  background: var(--muted);
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.86em;
+  line-height: 1.6;
+  overflow-x: auto;
+}
+
+.tiptap pre code {
+  padding: 0;
+  background: none;
+  color: inherit;
+  font-size: inherit;
+}
+
+.tiptap a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.tiptap mark {
+  border-radius: 3px;
+  padding: 0.05em 0.2em;
+}
+
+.tiptap img {
+  max-width: 100%;
+  border-radius: calc(var(--radius) * 0.6);
+}
+
+/* 任务列表勾选框 */
+.tiptap ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0.15em;
+}
+
+.tiptap ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5em;
+}
+
+.tiptap ul[data-type="taskList"] li > label {
+  flex-shrink: 0;
+  margin-top: 0.32em;
+  user-select: none;
+}
+
+.tiptap ul[data-type="taskList"] li > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.tiptap ul[data-type="taskList"] input[type="checkbox"] {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--muted-foreground);
+  border-radius: 3px;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+  display: grid;
+  place-content: center;
+}
+
+.tiptap ul[data-type="taskList"] input[type="checkbox"]::after {
+  content: "";
+  width: 9px;
+  height: 5px;
+  border: 2px solid var(--primary-foreground);
+  border-top: 0;
+  border-right: 0;
+  transform: rotate(-45deg) scale(0);
+  transition: transform 0.12s;
+}
+
+.tiptap ul[data-type="taskList"] input[type="checkbox"]:checked {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.tiptap ul[data-type="taskList"] input[type="checkbox"]:checked::after {
+  transform: rotate(-45deg) scale(1);
+}
+
+.tiptap ul[data-type="taskList"] li[data-checked="true"] > div {
+  color: var(--muted-foreground);
+  text-decoration: line-through;
+}
+
+/* 占位符（Placeholder 扩展） */
+.tiptap p.is-editor-empty:first-child::before,
+.tiptap h1.is-empty::before,
+.tiptap h2.is-empty::before,
+.tiptap h3.is-empty::before,
+.tiptap ul[data-type="taskList"] li.is-empty div::before {
+  content: attr(data-placeholder);
+  color: var(--muted-foreground);
+  opacity: 0.6;
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* 选区与拖放光标 */
+.tiptap ::selection {
+  background: color-mix(in oklch, var(--primary) 25%, transparent);
+}
+
+.ProseMirror-selectednode {
+  outline: 2px solid var(--primary);
+  border-radius: 4px;
+}
+
+/* tiptap 气泡菜单：内容自带卡片样式，去掉 tippy 默认深色皮肤 */
+.tippy-box {
+  background: transparent;
+  color: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+/* 细滚动条 */
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
