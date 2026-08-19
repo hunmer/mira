@@ -16,7 +16,9 @@ import { SaveLocationDialog, type SaveLocation } from 'mira-plugin-ui'
 import EditorToolbar from '@/components/editor/EditorToolbar.vue'
 import LinkEditorMenu from '@/components/editor/LinkEditorMenu.vue'
 import TextBubbleMenu from '@/components/editor/TextBubbleMenu.vue'
+import DragHandle from '@/components/editor/DragHandle.vue'
 import { SlashCommand } from '@/components/editor/slash-command'
+import { NotionKeyboard, TrailingNode } from '@/components/editor/extensions/notion-behaviors'
 
 const params = new URLSearchParams(location.search)
 const initialLibraryId = params.get('libraryId') || ''
@@ -48,6 +50,8 @@ const editor = useEditor({
     TaskList,
     TaskItem.configure({ nested: true }),
     SlashCommand,
+    TrailingNode,
+    NotionKeyboard,
     Placeholder.configure({
       placeholder: ({ node, editor: instance, pos }) => {
         if (node.type.name === 'heading') return `标题 ${node.attrs.level}`
@@ -56,6 +60,17 @@ const editor = useEditor({
       },
     }),
   ],
+  editorProps: {
+    // Notion 行为：选中文字后粘贴纯 URL，直接把选区变成链接
+    handlePaste: (view, event) => {
+      const text = event.clipboardData?.getData('text/plain')?.trim() || ''
+      const { from, to, empty } = view.state.selection
+      if (empty || !/^https?:\/\/\S+$/i.test(text)) return false
+      const mark = view.state.schema.marks.link.create({ href: text })
+      view.dispatch(view.state.tr.addMark(from, to, mark))
+      return true
+    },
+  },
   content: { type: 'doc', content: [{ type: 'paragraph' }] },
   onUpdate: () => {
     if (!currentFileId.value) return
@@ -104,6 +119,11 @@ function handleKeydown (event: KeyboardEvent) {
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') { event.preventDefault(); void openSaveDialog() }
 }
 
+// Notion 行为：点击内容列的空白区域时聚焦到文末
+function focusEnd () {
+  editor.value?.chain().focus('end').run()
+}
+
 onMounted(async () => {
   window.addEventListener('keydown', handleKeydown)
   if (isNewDocument.value) return
@@ -121,8 +141,9 @@ onBeforeUnmount(() => { window.removeEventListener('keydown', handleKeydown); if
   <main class="flex h-full flex-col">
     <template v-if="editor">
       <EditorToolbar :editor="editor" :status="status" @save="openSaveDialog" />
-      <div class="scroll-thin flex-1 overflow-y-auto">
-        <div class="mx-auto w-full max-w-3xl px-6 py-10 md:py-14">
+      <div class="scroll-thin flex-1 overflow-y-auto" @mousedown.self="focusEnd">
+        <div class="relative mx-auto w-full max-w-3xl px-6 py-10 md:py-14" @mousedown.self="focusEnd">
+          <DragHandle :editor="editor" />
           <EditorContent :editor="editor" />
         </div>
       </div>
