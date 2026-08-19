@@ -31,6 +31,18 @@ export interface LibraryFlatItem {
 
 export type LibraryTreeKind = 'folder' | 'tag'
 
+/** 新建节点载荷(CreateNodeDialog / services.createNode extra) */
+export interface LibraryTreeCreatePayload {
+  kind: LibraryTreeKind
+  /** 0 表示根 */
+  parentId: number
+  title: string
+  description?: string
+  color?: number
+  /** Material Icons 图标名 */
+  icon?: string
+}
+
 /** 素材库候选项(LibrarySelect 的选项形态) */
 export interface LibrarySelectOption {
   id: string | number
@@ -50,8 +62,14 @@ export interface LibrarySelectServer {
 export interface LibraryTreeServices {
   listFolders(libraryId: string): Promise<LibraryFlatItem[] | null>
   listTags(libraryId: string): Promise<LibraryFlatItem[] | null>
-  /** 创建节点,返回值不限定(部分后端返回新 id) */
-  createNode(kind: LibraryTreeKind, libraryId: string, title: string, parentId?: number): Promise<unknown>
+  /** 创建节点,返回值不限定(部分后端返回新 id 或含 id 的对象);extra 为可选的描述/颜色/图标 */
+  createNode(
+    kind: LibraryTreeKind,
+    libraryId: string,
+    title: string,
+    parentId?: number,
+    extra?: Pick<LibraryTreeCreatePayload, 'description' | 'color' | 'icon'>,
+  ): Promise<unknown>
   /** 删除节点;folder 场景 deleteFiles 表示同时删除其中文件 */
   deleteNode(kind: LibraryTreeKind, libraryId: string, id: number, deleteFiles?: boolean): Promise<unknown>
   /** 同层排序(提供后启用树内拖拽排序),items 为该层全部兄弟的新顺序 */

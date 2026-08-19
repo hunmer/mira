@@ -4,14 +4,15 @@
  *
  * 布局:
  * - 顶部:传入文件以 Attachment 卡片展示(可移除,emit('remove-file'))
- * - 中部:左侧 Tabs 切换文件夹树(单选,含根目录)/标签树(多选);右侧 文件名/URL/注释 输入
+ * - 中部:左侧 Tabs 切换 LibraryTreeView(文件夹树单选/标签树多选,树内搜索与「新增」
+ *   对话框均由 LibraryTreeView 自带);右侧 文件名/URL/注释 输入
  * - 底部:左下角素材库 Select,右下角 取消/提交
  *
  * 状态内部自持,initialXxx 仅作挂载初值——宿主(如对话框)在每次打开时
  * 重新挂载本组件即可完成重置。
  */
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import { Check, ChevronDown, FileImage, FileText, Film, Loader2, Music, Plus, Search, X } from '@lucide/vue'
+import { Check, ChevronDown, FileImage, FileText, Film, Music, X } from '@lucide/vue'
 import {
   ListboxContent,
   ListboxFilter,
@@ -21,8 +22,6 @@ import {
   useFilter,
 } from 'reka-ui'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { IconPicker } from '@/components/ui/icon-picker'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -45,8 +44,8 @@ import {
   AttachmentMedia,
   AttachmentTitle,
 } from '@/components/ui/attachment'
-import { LibraryTree, ROOT_ID, buildTree, collectIds, filterTree, flattenTree } from '@/library'
-import type { LibraryFlatItem, LibraryTreeNode } from '@/library'
+import { LibraryTreeView } from '@/library'
+import type { LibraryFlatItem, LibraryTreeNode, LibraryTreeServices } from '@/library'
 import type { SaveLocation } from './types'
 
 interface Library { id: string | number; name?: string; title?: string }
@@ -88,7 +87,7 @@ const emit = defineEmits<{
   /** 切换素材库:宿主据此重新拉取 folders/tags */
   (event: 'library-change', libraryId: string): void
   (event: 'remove-file', file: File): void
-  /** 工具栏「新增」:未传 createNode prop 时的兜底事件(无法回传新节点 id,不自动选中) */
+  /** 树视图「新增」:未传 createNode prop 时的兜底事件(无法回传新节点 id,不自动选中) */
   (event: 'create-node', value: { kind: 'folder' | 'tag'; parentId: number; title: string; description?: string; color?: number; icon?: string }): void
   (event: 'cancel'): void
 }>()
@@ -101,7 +100,7 @@ const note = ref(props.initialNote || '')
 const selectedTagIds = ref(new Set<number>())
 const tab = ref<'folder' | 'tag'>('folder')
 
-// ---- 树数据:扁平项归一化成 LibraryFlatItem 再组装 ----
+// ---- 树数据:扁平项归一化成 LibraryFlatItem(组装/搜索/展开由 LibraryTreeView 自理) ----
 function normalize (items: TreeItem[]): LibraryFlatItem[] {
   return items.map(item => ({
     id: Number(item.id),
@@ -111,71 +110,40 @@ function normalize (items: TreeItem[]): LibraryFlatItem[] {
   }))
 }
 
-// 根目录合成节点(id=0 与树构建约定一致):并入树首行,与文件夹行共用选中交互
-const ROOT_NODE: LibraryTreeNode = { id: ROOT_ID, title: '根目录', parentId: ROOT_ID, level: 0, children: [] }
-// 标签树根节点:仅用于新建对话框的父级选择(标签也可有父级标签)
-const TAG_ROOT_NODE: LibraryTreeNode = { id: ROOT_ID, title: '根标签', parentId: ROOT_ID, level: 0, children: [] }
-
 const folderItems = computed(() => normalize(props.folders))
-const folderTree = computed(() => [ROOT_NODE, ...buildTree(folderItems.value)])
-const tagTree = computed(() => buildTree(normalize(props.tags)))
 const tagItems = computed(() => normalize(props.tags))
 
-// 默认展开全部(与 LibraryTreeView 行为一致);文件夹/标签共用一份展开状态
-const expanded = ref(new Set<number>())
-watch([folderTree, tagTree], ([folder, tag]) => {
-  expanded.value = new Set(
-    [...flattenTree(folder), ...flattenTree(tag)]
-      .filter(node => node.children.length)
-      .map(node => node.id),
-  )
-}, { immediate: true })
-
-function toggle (id: number) {
-  const next = new Set(expanded.value)
-  next.has(id) ? next.delete(id) : next.add(id)
-  expanded.value = next
+// ---- 左侧树视图的内存 services:list 直接回宿主数据,create 走注入服务/兜底事件 ----
+const treeServices: LibraryTreeServices = {
+  listFolders: async () => folderItems.value,
+  listTags: async () => tagItems.value,
+  createNode: async (kind, _libraryId, title, parentId, extra) => {
+    const payload = { kind, parentId: parentId ?? 0, title, ...extra }
+    if (props.createNode) return props.createNode(payload)
+    emit('create-node', payload)
+    return undefined
+  },
+  deleteNode: async () => {},
 }
 
-// ---- 树搜索:简单输入框实时过滤(输入即过滤),两个 tab 各自独立的搜索栏与关键词 ----
-// 工具栏搜索按钮切换当前 tab 的搜索栏显隐,收起时清空该 tab 关键词
-const showSearch = ref({ folder: false, tag: false })
-const searchTerm = ref({ folder: '', tag: '' })
-
-function toggleSearch () {
-  const kind = tab.value
-  showSearch.value = { ...showSearch.value, [kind]: !showSearch.value[kind] }
-  if (!showSearch.value[kind]) searchTerm.value = { ...searchTerm.value, [kind]: '' }
+/** 受控选择适配:文件夹单选(空选=根目录) ↔ folderId;标签多选勾选 ↔ selectedTagIds */
+function toNode (item: LibraryFlatItem): LibraryTreeNode {
+  return { id: item.id, title: item.title, color: item.color, parentId: item.parent_id ?? 0, level: 0, children: [] }
 }
 
-/** 搜索态:命中分支连同祖先保留,整棵展开 */
-const filteredFolder = computed(() => filterTree(folderTree.value, searchTerm.value.folder.trim()))
-const filteredTag = computed(() => filterTree(tagTree.value, searchTerm.value.tag.trim()))
+const selectedFolderNodes = computed({
+  get: () => folderItems.value.filter(item => String(item.id) === folderId.value).map(toNode),
+  set (nodes: LibraryTreeNode[]) {
+    folderId.value = nodes[0] ? String(nodes[0].id) : ''
+  },
+})
 
-const effectiveExpanded = computed(() =>
-  searchTerm.value[tab.value].trim()
-    ? collectIds(tab.value === 'folder' ? filteredFolder.value.tree : filteredTag.value.tree)
-    : expanded.value,
-)
-
-// ---- 文件夹单选(再点取消回根目录) / 标签多选 ----
-// 始终返回 Set(空选映射为根目录 id):LibraryTree 以 selectedIds !== undefined 启用点行选中
-const selectedFolderIds = computed(() => new Set([folderId.value ? Number(folderId.value) : ROOT_ID]))
-const checkedTagIds = computed(() => selectedTagIds.value)
-
-function onSelectFolder (node: LibraryTreeNode) {
-  folderId.value = node.id === ROOT_ID || folderId.value === String(node.id) ? '' : String(node.id)
-  // 点击搜索定位到的目标后清空搜索,树恢复全量
-  if (searchTerm.value.folder) searchTerm.value = { ...searchTerm.value, folder: '' }
-}
-
-function onSelectTag (node: LibraryTreeNode) {
-  const next = new Set(selectedTagIds.value)
-  next.has(node.id) ? next.delete(node.id) : next.add(node.id)
-  selectedTagIds.value = next
-  // 点击搜索定位到的目标后清空搜索,树恢复全量
-  if (searchTerm.value.tag) searchTerm.value = { ...searchTerm.value, tag: '' }
-}
+const selectedTagNodes = computed({
+  get: () => tagItems.value.filter(item => selectedTagIds.value.has(item.id)).map(toNode),
+  set (nodes: LibraryTreeNode[]) {
+    selectedTagIds.value = new Set(nodes.map(n => n.id))
+  },
+})
 
 const selectedTagTitles = computed(() => tagItems.value.filter(item => selectedTagIds.value.has(item.id)).map(item => item.title))
 
@@ -253,123 +221,11 @@ function extOf (file: File): string {
   return (file.name.split('.').pop() || 'FILE').toUpperCase()
 }
 
-// ---- 提交 ----
-// ---- 工具栏「新增」对话框(参考 mira-client FolderEditDialog,不含"创建后自动打开") ----
-// 打开时默认选中当前文件夹(未选为根),对话框内可经树改选父级
-const createDialog = ref(false)
-const createForm = ref({ title: '', description: '', color: null as number | null, icon: '' })
-const createTarget = ref<'folder' | 'tag'>('folder')
-const createParentId = ref(0)
-const createError = ref('')
-
-/** 与 FolderEditDialog colorOptions 一致的固定色板(无色 + 8 色) */
-const CREATE_COLORS: { value: number | null; class: string; label: string }[] = [
-  { value: null, class: 'bg-accent border-2 border-dashed border-border', label: '无色' },
-  { value: 0x3B82F6, class: 'bg-blue-500', label: '蓝色' },
-  { value: 0x10B981, class: 'bg-green-500', label: '绿色' },
-  { value: 0xF59E0B, class: 'bg-yellow-500', label: '黄色' },
-  { value: 0xEF4444, class: 'bg-destructive', label: '红色' },
-  { value: 0x8B5CF6, class: 'bg-purple-500', label: '紫色' },
-  { value: 0xEC4899, class: 'bg-pink-500', label: '粉色' },
-  { value: 0x6366F1, class: 'bg-indigo-500', label: '靛蓝' },
-  { value: 0x6B7280, class: 'bg-muted', label: '灰色' },
-]
-
-/** 对话框父级选择树:文件夹树含根目录行,标签树补根标签行(展开状态与主表单共享) */
-const createTree = computed(() =>
-  createTarget.value === 'folder' ? folderTree.value : [TAG_ROOT_NODE, ...tagTree.value])
-
-/** 选中态:根目录/根标签共用 ROOT_ID 占位(id=0 映射为 ROOT_ID 行) */
-const createSelectedIds = computed(() => new Set([createParentId.value || ROOT_ID]))
-
-// ---- 对话框父级树搜索:输入即过滤(命中分支连同祖先保留),搜索态整树展开 ----
-const createSearchTerm = ref('')
-const createFiltered = computed(() => filterTree(createTree.value, createSearchTerm.value.trim()))
-const createExpanded = computed(() =>
-  createSearchTerm.value.trim() ? collectIds(createFiltered.value.tree) : expanded.value)
-
-function onSelectCreateParent (node: LibraryTreeNode) {
-  createParentId.value = node.id === ROOT_ID ? 0 : node.id
-  // 点选定位后清空搜索,树恢复全量(与主表单选中行为一致)
-  if (createSearchTerm.value) createSearchTerm.value = ''
-}
-
-/** 当前所选父级名称(描述文字实时反馈) */
-const createParentTitle = computed(() =>
-  flattenTree(createTree.value).find(node => node.id === (createParentId.value || ROOT_ID))?.title || '根目录')
-
-function onCreateNode () {
-  createTarget.value = tab.value
-  createParentId.value = tab.value === 'folder' && folderId.value ? Number(folderId.value) : 0
-  createForm.value = { title: '', description: '', color: null, icon: '' }
-  createSearchTerm.value = ''
-  createError.value = ''
-  createDialog.value = true
-}
-
-/** 图标默认值:文件夹 folder / 标签 label(与 mira-client FolderEditDialog 一致) */
-const createDefaultIcon = computed(() => (createTarget.value === 'folder' ? 'folder' : 'label'))
-
-/** 所选颜色转 #RRGGBB,用于图标预览着色 */
-const createSelectedColorHex = computed(() => {
-  const color = createForm.value.color
-  return color && color > 0 ? `#${color.toString(16).padStart(6, '0')}` : ''
-})
-
-const createSubmitting = ref(false)
-
-/** 新建成功后自动选中:文件夹设为保存位置,标签加入已勾选集合 */
-function selectCreatedNode (kind: 'folder' | 'tag', id: number) {
-  if (kind === 'folder') folderId.value = String(id)
-  else selectedTagIds.value = new Set([...selectedTagIds.value, id])
-}
-
-async function submitCreate () {
-  if (createSubmitting.value) return
-  const title = createForm.value.title.trim()
-  if (!title) {
-    createError.value = `请输入${createTarget.value === 'folder' ? '文件夹' : '标签'}名称`
-    return
-  }
-  if (title.length > 100) {
-    createError.value = '名称不能超过 100 个字符'
-    return
-  }
-  const payload = {
-    kind: createTarget.value,
-    parentId: createParentId.value,
-    title,
-    description: createForm.value.description.trim() || undefined,
-    color: createForm.value.color ?? undefined,
-    // 空字符串表示使用默认图标,不提交
-    icon: createForm.value.icon.trim() || undefined,
-  }
-  // 传入 createNode 服务:await 拿新节点 id 自动选中,失败留在对话框展示错误
-  if (props.createNode) {
-    createSubmitting.value = true
-    createError.value = ''
-    try {
-      const id = await props.createNode(payload)
-      createDialog.value = false
-      if (id != null) selectCreatedNode(payload.kind, id)
-    } catch (error: any) {
-      createError.value = error?.response?.data?.message || error?.message || String(error)
-    } finally {
-      createSubmitting.value = false
-    }
-    return
-  }
-  emit('create-node', payload)
-  createDialog.value = false
-}
-
-// 切库:清掉已选位置与搜索状态并通知宿主刷新树数据
+// 切库:清掉已选位置并通知宿主刷新树数据
 function onLibraryChange (value: string) {
   libraryId.value = value
   folderId.value = ''
   selectedTagIds.value = new Set()
-  showSearch.value = { folder: false, tag: false }
-  searchTerm.value = { folder: '', tag: '' }
   emit('library-change', value)
 }
 
@@ -413,85 +269,32 @@ function confirm () {
       </Attachment>
     </AttachmentGroup>
 
-    <!-- 中部:左 tabs 树(工具栏:搜索/新增) / 右输入区 -->
+    <!-- 中部:左 tabs 树视图(搜索/新增/展开内聚在 LibraryTreeView) / 右输入区 -->
     <div class="grid items-start gap-4 sm:grid-cols-[minmax(200px,240px)_1fr]">
       <Tabs v-model="tab" class="flex max-h-80 flex-col gap-2">
-        <!-- 工具栏:tabs + 搜索切换/新增(参考 FolderTreeComponent 的 Header) -->
-        <div class="flex items-center justify-between gap-2">
-          <TabsList>
-            <TabsTrigger value="folder">文件夹</TabsTrigger>
-            <TabsTrigger value="tag">标签</TabsTrigger>
-          </TabsList>
-          <div class="flex items-center gap-0.5">
-            <button
-              type="button"
-              class="inline-flex size-6 cursor-pointer items-center justify-center rounded-md border-none bg-transparent text-muted-foreground transition-[color,background-color,transform] duration-150 hover:bg-accent hover:text-foreground active:scale-90"
-              :class="showSearch && 'text-primary'"
-              :title="`搜索${tab === 'folder' ? '文件夹' : '标签'}`"
-              @click="toggleSearch"
-            >
-              <Search class="size-4" />
-            </button>
-            <button
-              type="button"
-              class="inline-flex size-6 cursor-pointer items-center justify-center rounded-md border-none bg-transparent text-muted-foreground transition-[color,background-color,transform] duration-150 hover:bg-accent hover:text-foreground active:scale-90"
-              :title="`新建${tab === 'folder' ? '文件夹' : '标签'}`"
-              @click="onCreateNode"
-            >
-              <Plus class="size-4" />
-            </button>
-          </div>
-        </div>
+        <TabsList>
+          <TabsTrigger value="folder">文件夹</TabsTrigger>
+          <TabsTrigger value="tag">标签</TabsTrigger>
+        </TabsList>
 
-        <TabsContent value="folder" class="flex max-h-56 flex-col gap-2">
-          <!-- 搜索栏(folder tab 独有):输入即实时过滤树 -->
-          <Transition name="search-slide">
-            <div v-if="showSearch.folder" class="search-shell">
-              <div class="search-shell-inner">
-                <Input v-model="searchTerm.folder" class="h-7" placeholder="搜索文件夹…" />
-              </div>
-            </div>
-          </Transition>
-
-          <div class="min-h-0 flex-1 overflow-y-auto">
-            <div v-if="filteredFolder.tree.length" class="text-sm">
-              <LibraryTree
-                :nodes="filteredFolder.tree"
-                kind="folder"
-                :expanded="effectiveExpanded"
-                :matched="filteredFolder.matched"
-                :selected-ids="selectedFolderIds"
-                @toggle="toggle"
-                @select="onSelectFolder"
-              />
-            </div>
-            <div v-else class="py-6 text-center text-xs text-muted-foreground">{{ searchTerm.folder.trim() ? '无匹配' : '暂无文件夹' }}</div>
+        <TabsContent value="folder">
+          <div class="h-56 overflow-hidden rounded-md border">
+            <LibraryTreeView
+              mode="folder"
+              :library-id="libraryId"
+              :services="treeServices"
+              v-model:selected="selectedFolderNodes"
+            />
           </div>
         </TabsContent>
-        <TabsContent value="tag" class="flex max-h-56 flex-col gap-2">
-          <!-- 搜索栏(tag tab 独有):输入即实时过滤树 -->
-          <Transition name="search-slide">
-            <div v-if="showSearch.tag" class="search-shell">
-              <div class="search-shell-inner">
-                <Input v-model="searchTerm.tag" class="h-7" placeholder="搜索标签…" />
-              </div>
-            </div>
-          </Transition>
-
-          <div class="min-h-0 flex-1 overflow-y-auto">
-            <div v-if="filteredTag.tree.length" class="text-sm">
-              <LibraryTree
-                :nodes="filteredTag.tree"
-                kind="tag"
-                :expanded="effectiveExpanded"
-                :matched="filteredTag.matched"
-                checkable
-                :checked="checkedTagIds"
-                @toggle="toggle"
-                @select="onSelectTag"
-              />
-            </div>
-            <div v-else class="py-6 text-center text-xs text-muted-foreground">{{ searchTerm.tag.trim() ? '无匹配' : '暂无标签' }}</div>
+        <TabsContent value="tag">
+          <div class="h-56 overflow-hidden rounded-md border">
+            <LibraryTreeView
+              mode="tag"
+              :library-id="libraryId"
+              :services="treeServices"
+              v-model:selected="selectedTagNodes"
+            />
           </div>
         </TabsContent>
       </Tabs>
@@ -579,124 +382,5 @@ function confirm () {
         <Button :disabled="!canSave" @click="confirm">{{ submitText }}</Button>
       </div>
     </div>
-
-    <!-- 工具栏「新增」对话框:名称/描述/颜色,确认后经 create-node 交宿主创建 -->
-    <Dialog :open="createDialog" @update:open="(value: boolean) => createDialog = value">
-      <DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>新建{{ createTarget === 'folder' ? '文件夹' : '标签' }}</DialogTitle>
-          <DialogDescription>将创建到「{{ createParentTitle }}」下</DialogDescription>
-        </DialogHeader>
-
-        <form class="grid gap-4" @submit.prevent="submitCreate">
-          <!-- 图标:圆形选择按钮居最上方,颜色选择紧随其下 -->
-          <div class="flex flex-col items-center gap-3">
-            <IconPicker
-              v-model="createForm.icon"
-              :default-icon="createDefaultIcon"
-              :color="createSelectedColorHex"
-            />
-            <div class="flex flex-wrap justify-center gap-2">
-              <button
-                v-for="color in CREATE_COLORS"
-                :key="String(color.value)"
-                type="button"
-                :title="color.label"
-                class="flex size-7 items-center justify-center rounded-full transition-transform hover:scale-110"
-                :class="[color.class, createForm.color === color.value ? 'ring-primary ring-2 ring-offset-2' : '']"
-                @click="createForm.color = color.value"
-              >
-                <Check v-if="createForm.color === color.value" class="size-3.5 text-white" />
-              </button>
-            </div>
-          </div>
-
-          <div class="grid gap-2">
-            <Label for="create-node-title">名称</Label>
-            <Input
-              id="create-node-title"
-              v-model="createForm.title"
-              autocomplete="off"
-              :placeholder="createTarget === 'folder' ? '文件夹名称' : '标签名称'"
-              :class="createError && 'border-destructive focus-visible:ring-destructive/20'"
-            />
-            <p v-if="createError" class="text-destructive text-xs">{{ createError }}</p>
-          </div>
-
-          <div class="grid gap-2">
-            <Label for="create-node-description">描述</Label>
-            <textarea
-              id="create-node-description"
-              v-model="createForm.description"
-              rows="2"
-              placeholder="可选备注"
-              class="bg-muted ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-16 w-full rounded-md px-3 py-2 text-sm transition-[color,box-shadow] outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-            />
-          </div>
-
-          <!-- 父级选择:搜索过滤 + 树单选(点根行=建到根),展开状态与主表单树共享 -->
-          <div class="grid gap-2">
-            <Label>父级（{{ createParentTitle }}）</Label>
-            <Input
-              v-model="createSearchTerm"
-              class="h-7"
-              autocomplete="off"
-              :placeholder="`搜索${createTarget === 'folder' ? '文件夹' : '标签'}…`"
-            />
-            <div class="max-h-48 overflow-y-auto rounded-md border p-1">
-              <div v-if="createFiltered.tree.length" class="text-sm">
-                <LibraryTree
-                  :nodes="createFiltered.tree"
-                  :kind="createTarget"
-                  :expanded="createExpanded"
-                  :matched="createFiltered.matched"
-                  :selected-ids="createSelectedIds"
-                  @toggle="toggle"
-                  @select="onSelectCreateParent"
-                />
-              </div>
-              <div v-else class="py-6 text-center text-xs text-muted-foreground">无匹配</div>
-            </div>
-          </div>
-        </form>
-
-        <DialogFooter>
-          <Button variant="outline" :disabled="createSubmitting" @click="createDialog = false">取消</Button>
-          <Button :disabled="createSubmitting || !createForm.title.trim()" @click="submitCreate">
-            <Loader2 v-if="createSubmitting" class="size-4 animate-spin" />
-            {{ createSubmitting ? '创建中…' : '创建' }}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   </div>
 </template>
-
-<style scoped>
-/* 搜索栏展开/收起:grid 0fr→1fr 高度过渡 + 位移/透明度(参考 FolderTreeHeader)。
-   tailwind 无法表达的过渡,属 ui_rule.md 允许的例外;不含颜色 token。 */
-.search-shell {
-  display: grid;
-  grid-template-rows: 1fr;
-  overflow: hidden;
-}
-.search-slide-enter-active {
-  transition: grid-template-rows 200ms cubic-bezier(0.23, 1, 0.32, 1), opacity 200ms cubic-bezier(0.23, 1, 0.32, 1), transform 200ms cubic-bezier(0.23, 1, 0.32, 1);
-}
-.search-slide-leave-active {
-  transition: grid-template-rows 150ms cubic-bezier(0.4, 0, 1, 1), opacity 150ms cubic-bezier(0.4, 0, 1, 1), transform 150ms cubic-bezier(0.4, 0, 1, 1);
-}
-.search-slide-enter-from,
-.search-slide-leave-to {
-  grid-template-rows: 0fr;
-  opacity: 0;
-  transform: translateY(-4px);
-}
-.search-shell-inner { overflow: hidden; min-height: 0; }
-@media (prefers-reduced-motion: reduce) {
-  .search-slide-enter-active,
-  .search-slide-leave-active { transition: opacity 150ms ease; }
-  .search-slide-enter-from,
-  .search-slide-leave-to { transform: none; }
-}
-</style>

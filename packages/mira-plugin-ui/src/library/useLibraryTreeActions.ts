@@ -53,10 +53,10 @@ export function useLibraryTreeActions(options: UseLibraryTreeActionsOptions, dep
    *  - sibling:与目标节点同级 → parentId = node.parentId
    *  - child:作为目标节点的子级 → parentId = node.id
    *
+   * target 缺省取右键菜单节点;顶部「新增」按钮可显式传目标(如根节点)。
    * 用弹窗收集名称(默认「新建文件夹/标签 N」),空名/取消则放弃。
    */
-  async function createNode(level: 'sibling' | 'child') {
-    const target = menu.value?.node;
+  async function createNode(level: 'sibling' | 'child', target = menu.value?.node) {
     if (!target) return;
     const parentId = level === 'sibling' ? target.parentId : target.id;
     closeMenu();

@@ -4,40 +4,27 @@
  * 自 mira-browser-extension 迁移:数据(CRUD)/弹窗/上传/文案全部由宿主注入。
  *
  * - 顶部:拖放/点击选择上传到素材库根目录(需传 upload)
- * - 工具栏:搜索(Tags Input + Listbox,关键词成标签、候选下拉可选) + 刷新 + 计数
- * - 中部:树(支持拖拽文件 → 上传到目标文件夹/标签)
+ * - 工具栏:搜索切换(输入即过滤,自 SaveLocationForm 移入) + 新增(CreateNodeDialog)
+ * - 中部:树(支持拖拽文件 → 上传到目标文件夹/标签;传 v-model:selected 受控启用选择)
  * - 右键菜单:新建同级/子级、删除(需传 dialog,编辑动作依赖 services)
  *
- * 样式为 tailwind/shadcn 原子类,无 scoped CSS(见仓库 ui_rule.md)。
+ * 样式为 tailwind/shadcn 原子类,scoped CSS 仅搜索栏展开过渡(ui_rule.md 允许的例外)。
  */
 import { computed, ref, watch } from 'vue';
-import { Check, ChevronDown, X } from '@lucide/vue';
-import {
-  ListboxContent,
-  ListboxFilter,
-  ListboxItem,
-  ListboxItemIndicator,
-  ListboxRoot,
-  useFilter,
-} from 'reka-ui';
+import { Plus, Search } from '@lucide/vue';
 import { useLibraryTreeData } from './useLibraryTreeData';
 import { useLibraryTreeActions } from './useLibraryTreeActions';
 import { createLibraryTreeT } from './i18n';
 import { filterTree, collectIds, flattenTree, ROOT_ID } from './tree';
 import LibraryTree from './LibraryTree.vue';
+import CreateNodeDialog from './CreateNodeDialog.vue';
 import ContextMenu from './ContextMenu.vue';
 import Dropzone from './Dropzone.vue';
 import { parseDrop, canAcceptDrop, isNodeDrag } from './drag-data';
 // 注意:library 子入口以源码供宿主直接消费,这里必须用相对路径(宿主的 @ 别名指向其自身 src)
-import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '../components/ui/popover';
-import {
-  TagsInput,
-  TagsInputInput,
-  TagsInputItem,
-  TagsInputItemDelete,
-  TagsInputItemText,
-} from '../components/ui/tags-input';
+import { Input } from '../components/ui/input';
 import type {
+  LibraryTreeCreatePayload,
   LibraryTreeDialog,
   LibraryTreeDropPosition,
   LibraryTreeNode,
@@ -53,33 +40,35 @@ const props = defineProps<{
   libraryId: string;
   /** 数据服务:树数据加载 + 节点 CRUD */
   services: LibraryTreeServices;
-  /** 弹窗服务:提供后启用右键编辑菜单(新建/删除) */
+  /** 弹窗服务:提供后启用右键编辑菜单与工具栏「新增」 */
   dialog?: LibraryTreeDialog;
   /** 上传服务:提供后启用拖放/选择文件上传 */
   upload?: LibraryTreeUpload;
   /** 文案函数,缺省用内置中文 */
   t?: LibraryTreeT;
-  /** 显示右上角选择模式切换按钮(选择结果经 v-model:selected 抛出) */
-  selection?: boolean;
 }>();
 
-/** 选择模式开关(selection 启用时右上角按钮切换) */
-const selectMode = defineModel<boolean>('selectMode', { default: false });
-/** 选中的节点:folder 视图单选(可取消),tag 视图多选 */
-const selected = defineModel<LibraryTreeNode[]>('selected', { default: () => [] });
+/** 受控选择:folder 视图单选(再点取消),tag 视图多选勾选;不传则纯浏览,无选择交互 */
+const selected = defineModel<LibraryTreeNode[]>('selected');
 
-const selectedIds = computed(() => new Set(selected.value.map(n => n.id)));
+const selectedIds = computed(() => {
+  const nodes = selected.value;
+  return nodes ? new Set(nodes.map(n => n.id)) : undefined;
+});
 
 function onSelect(node: LibraryTreeNode) {
+  const checked = selectedIds.value;
   if (props.mode === 'folder') {
     // 文件夹单选,再点取消
-    selected.value = selectedIds.value.has(node.id) ? [] : [node];
+    selected.value = checked?.has(node.id) ? [] : [node];
   } else {
     // 标签多选(checkbox 语义)
-    selected.value = selectedIds.value.has(node.id)
-      ? selected.value.filter(n => n.id !== node.id)
-      : [...selected.value, node];
+    selected.value = checked?.has(node.id)
+      ? (selected.value ?? []).filter(n => n.id !== node.id)
+      : [...(selected.value ?? []), node];
   }
+  // 点选搜索定位到的目标后清空搜索,树恢复全量
+  if (searchTerm.value) searchTerm.value = '';
 }
 
 const fallbackT = createLibraryTreeT();
@@ -96,39 +85,24 @@ function toggle(id: number) {
   expanded.value = next;
 }
 
-// ---- 搜索(Tags Input + Listbox):关键词以标签呈现,可从候选下拉选择或手输回车 ----
-const searchTags = ref<string[]>([]);
+// ---- 搜索(自 SaveLocationForm 移入):按钮切换搜索栏显隐,输入即实时过滤 ----
+const showSearch = ref(false);
 const searchTerm = ref('');
-const searchOpen = ref(false);
-const { contains } = useFilter({ sensitivity: 'base' });
 
-/** 候选:当前树的全部节点标题去重排序 */
-const searchOptions = computed(() => {
-  const titles = new Set(flattenTree(tree.value).map(n => n.title));
-  return [...titles].sort((a, b) => a.localeCompare(b, 'zh'));
-});
-const filteredOptions = computed(() =>
-  searchTerm.value
-    ? searchOptions.value.filter(o => contains(o, searchTerm.value))
-    : searchOptions.value,
-);
-// 输入时自动展开候选下拉;标签增删后清空输入(ListboxItem 选中/手输成标签都走这里)
-watch(searchTerm, v => { if (v) searchOpen.value = true; });
-watch(searchTags, () => { searchTerm.value = ''; });
-
-/** 回车:有候选时交给 Listbox 键盘选择(阻止 TagsInput 加标签),无候选时输入词直接成标签 */
-function onSearchEnter(e: KeyboardEvent) {
-  if (filteredOptions.value.length) e.preventDefault();
+function toggleSearch() {
+  showSearch.value = !showSearch.value;
+  // 收起时清空关键词,树恢复全量
+  if (!showSearch.value) searchTerm.value = '';
 }
 
-const filtered = computed(() => filterTree(tree.value, searchTags.value));
+const filtered = computed(() => filterTree(tree.value, searchTerm.value));
 const filteredTree = computed(() => filtered.value.tree);
 const matched = computed(() => filtered.value.matched);
 // 搜索态:自动展开全部(命中项连同其祖先/后代都可见)
 const effectiveExpanded = computed(() =>
-  searchTags.value.length ? collectIds(filteredTree.value) : expanded.value,
+  searchTerm.value.trim() ? collectIds(filteredTree.value) : expanded.value,
 );
-const isSearching = computed(() => searchTags.value.length > 0);
+const isSearching = computed(() => searchTerm.value.trim().length > 0);
 
 // ---- 拖到空白区域:文件/链接 → 上传到根目录;树内节点 → 排序到根层末尾 ----
 const rootHover = ref(false);
@@ -336,7 +310,6 @@ watch(
 );
 
 const titleText = computed(() => props.mode === 'folder' ? tt('common.folder') : tt('common.tag'));
-const unitText = computed(() => props.mode === 'folder' ? tt('library.folderUnit') : tt('library.tagUnit'));
 
 const noData = computed(() => !loading.value && !error.value && count.value === 0);
 
@@ -371,6 +344,53 @@ const {
   t: (key, params) => tt(key, params),
 });
 const menuEnabled = computed(() => !!props.dialog);
+
+// ---- 工具栏「新增」对话框(CreateNodeDialog,自 SaveLocationForm 抽离) ----
+const createOpen = ref(false);
+const createDefaultParent = ref(ROOT_ID);
+
+/** 父级选择树:folder=根目录行+文件夹树;tag=根标签行+标签树 */
+const createTree = computed<LibraryTreeNode[]>(() => {
+  const root: LibraryTreeNode = {
+    id: ROOT_ID,
+    title: props.mode === 'folder' ? tt('tree.root') : tt('tree.tagRoot'),
+    parentId: ROOT_ID,
+    level: 0,
+    children: [],
+  };
+  return [root, ...tree.value];
+});
+
+/** 打开对话框:默认父级为当前选中节点(folder 模式),未选为根 */
+function onCreateNode() {
+  createDefaultParent.value = props.mode === 'folder' ? (selected.value?.[0]?.id ?? ROOT_ID) : ROOT_ID;
+  createOpen.value = true;
+}
+
+/** 对话框创建服务:调 services.createNode,尽力取新节点 id(实现可返回 number 或含 id 的对象) */
+async function createViaDialog(payload: LibraryTreeCreatePayload): Promise<number | undefined> {
+  const r = await props.services.createNode(
+    payload.kind,
+    props.libraryId,
+    payload.title,
+    payload.parentId || undefined,
+    { description: payload.description, color: payload.color, icon: payload.icon },
+  );
+  return typeof r === 'number'
+    ? r
+    : typeof (r as { id?: unknown })?.id === 'number' ? (r as { id: number }).id : undefined;
+}
+
+/** 创建成功:展开父级 + 刷新树 + 受控选中新节点(宿主未传 selected 时跳过选中) */
+async function onCreated(e: { id?: number; parentId: number }) {
+  if (e.parentId !== ROOT_ID) expandNode(e.parentId);
+  await load(props.libraryId);
+  if (e.id == null || selected.value === undefined) return;
+  const node = flattenTree(tree.value).find(n => n.id === e.id);
+  if (!node) return;
+  selected.value = props.mode === 'folder' ? [node] : [...selected.value, node];
+}
+
 function onTreeContextMenu(node: LibraryTreeNode, x: number, y: number) {
   if (menuEnabled.value) onContextMenu(node, x, y);
 }
@@ -384,82 +404,35 @@ const ctxItem = 'flex w-full cursor-pointer items-center gap-1.5 rounded-[4px] b
     <!-- 顶部:拖放/点击选择上传到素材库根目录 -->
     <Dropzone v-if="upload" :hint="tt('upload.dropHint')" @drop="onRootDropFiles" />
 
-    <!-- 工具栏:搜索(Tags + Listbox) + 刷新 + 计数 -->
-    <div class="flex items-center gap-2 border-b border-border px-3 py-2">
-      <Popover v-model:open="searchOpen">
-        <ListboxRoot v-model="searchTags" highlight-on-hover multiple class="relative flex min-w-0 flex-1">
-          <PopoverAnchor class="inline-flex min-w-0 w-full">
-            <TagsInput
-              v-slot="{ modelValue: tags }"
-              v-model="searchTags"
-              delimiter=""
-              class="min-w-0 flex-1 gap-1 rounded-md border-border bg-accent px-2 py-[3px] shadow-none focus-within:border-primary focus-within:ring-0"
-            >
-              <TagsInputItem v-for="item in tags" :key="String(item)" :value="item" class="gap-0.5 py-0">
-                <TagsInputItemText class="px-1 text-xs" />
-                <TagsInputItemDelete class="mr-0.5">
-                  <X class="size-3" />
-                </TagsInputItemDelete>
-              </TagsInputItem>
-
-              <ListboxFilter v-model="searchTerm" as-child>
-                <TagsInputInput
-                  class="min-h-0 py-[5px] text-xs"
-                  :placeholder="tt('library.searchPlaceholder', { type: titleText })"
-                  @keydown.enter="onSearchEnter"
-                  @keydown.down="searchOpen = true"
-                />
-              </ListboxFilter>
-
-              <PopoverTrigger as-child>
-                <button
-                  type="button"
-                  class="order-last flex size-4 shrink-0 cursor-pointer items-center justify-center rounded-sm border-none bg-transparent p-0 text-muted-foreground transition-colors hover:text-foreground"
-                  :title="tt('library.searchPlaceholder', { type: titleText })"
-                >
-                  <ChevronDown class="size-3.5" />
-                </button>
-              </PopoverTrigger>
-            </TagsInput>
-          </PopoverAnchor>
-
-          <PopoverContent align="start" class="w-(--reka-popover-anchor-width) p-1" @open-auto-focus.prevent>
-            <ListboxContent class="max-h-64 overflow-y-auto outline-none" tabindex="0">
-              <ListboxItem
-                v-for="opt in filteredOptions"
-                :key="opt"
-                :value="opt"
-                class="flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-xs outline-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground"
-              >
-                <span class="truncate">{{ opt }}</span>
-                <ListboxItemIndicator class="ml-auto inline-flex items-center">
-                  <Check class="size-3.5" />
-                </ListboxItemIndicator>
-              </ListboxItem>
-              <div v-if="!filteredOptions.length" class="px-2 py-4 text-center text-xs text-muted-foreground">
-                {{ tt('library.noMatch', { type: titleText }) }}
-              </div>
-            </ListboxContent>
-          </PopoverContent>
-        </ListboxRoot>
-      </Popover>
+    <!-- 工具栏:搜索切换 + 新增(自 SaveLocationForm 移入) -->
+    <div class="flex items-center justify-end gap-0.5 border-b border-border px-3 py-2">
       <button
-        class="cursor-pointer rounded-md border border-border bg-transparent px-2 py-1 text-sm leading-none text-muted-foreground transition-colors duration-100 hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
-        :title="tt('common.refresh')"
-        :disabled="loading"
-        @click="load(libraryId)"
-      >↻</button>
-      <button
-        v-if="selection"
-        class="cursor-pointer rounded-md border border-border bg-transparent px-2 py-1 text-sm leading-none text-muted-foreground transition-colors duration-100 hover:text-foreground"
-        :class="selectMode && 'border-primary text-primary'"
-        :title="tt('library.selectMode')"
-        @click="selectMode = !selectMode"
+        type="button"
+        class="inline-flex size-6 cursor-pointer items-center justify-center rounded-md border-none bg-transparent text-muted-foreground transition-[color,background-color,transform] duration-150 hover:bg-accent hover:text-foreground active:scale-90"
+        :class="showSearch && 'text-primary'"
+        :title="tt('library.searchPlaceholder', { type: titleText })"
+        @click="toggleSearch"
       >
-        {{ selectMode ? `✓ ${tt('library.selecting')}` : tt('library.selectMode') }}
+        <Search class="size-4" />
       </button>
-      <span class="text-[11px] whitespace-nowrap text-muted-foreground">{{ tt('library.count', { n: count, unit: unitText }) }}</span>
+      <button
+        type="button"
+        class="inline-flex size-6 cursor-pointer items-center justify-center rounded-md border-none bg-transparent text-muted-foreground transition-[color,background-color,transform] duration-150 hover:bg-accent hover:text-foreground active:scale-90"
+        :title="tt('library.create', { type: titleText })"
+        @click="onCreateNode"
+      >
+        <Plus class="size-4" />
+      </button>
     </div>
+
+    <!-- 搜索栏:输入即实时过滤树 -->
+    <Transition name="search-slide">
+      <div v-if="showSearch" class="search-shell border-b border-border px-3 py-2">
+        <div class="search-shell-inner">
+          <Input v-model="searchTerm" class="h-7" :placeholder="tt('library.searchPlaceholder', { type: titleText })" />
+        </div>
+      </div>
+    </Transition>
 
     <!-- 错误 -->
     <div v-if="error" class="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center text-destructive">{{ tt('library.loadFailed', { error }) }}</div>
@@ -493,9 +466,9 @@ const ctxItem = 'flex w-full cursor-pointer items-center gap-1.5 rounded-[4px] b
         :kind="mode"
         :expanded="effectiveExpanded"
         :matched="matched"
-        :selected-ids="selectMode && mode === 'folder' ? selectedIds : undefined"
-        :checkable="selectMode && mode === 'tag'"
-        :checked="selectMode && mode === 'tag' ? selectedIds : undefined"
+        :selected-ids="mode === 'folder' ? selectedIds : undefined"
+        :checkable="mode === 'tag' && selectedIds != null"
+        :checked="mode === 'tag' ? selectedIds : undefined"
         :sortable="sortable && !isSearching"
         :drop-mark="dropMark"
         :dragging-id="dragNode?.id ?? null"
@@ -518,5 +491,44 @@ const ctxItem = 'flex w-full cursor-pointer items-center gap-1.5 rounded-[4px] b
       <div class="my-[3px] h-px bg-border" />
       <button :class="[ctxItem, 'text-destructive']" @click="deleteNode">{{ tt('tree.delete') }}</button>
     </ContextMenu>
+
+    <!-- 工具栏「新增」对话框:图标/颜色/名称/描述/父级树 -->
+    <CreateNodeDialog
+      v-model:open="createOpen"
+      :kind="mode"
+      :nodes="createTree"
+      :default-parent-id="createDefaultParent"
+      :create-node="createViaDialog"
+      @created="onCreated"
+    />
   </div>
 </template>
+
+<style scoped>
+/* 搜索栏展开/收起:grid 0fr→1fr 高度过渡 + 位移/透明度(自 SaveLocationForm 移入)。
+   tailwind 无法表达的过渡,属 ui_rule.md 允许的例外;不含颜色 token。 */
+.search-shell {
+  display: grid;
+  grid-template-rows: 1fr;
+  overflow: hidden;
+}
+.search-slide-enter-active {
+  transition: grid-template-rows 200ms cubic-bezier(0.23, 1, 0.32, 1), opacity 200ms cubic-bezier(0.23, 1, 0.32, 1), transform 200ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.search-slide-leave-active {
+  transition: grid-template-rows 150ms cubic-bezier(0.4, 0, 1, 1), opacity 150ms cubic-bezier(0.4, 0, 1, 1), transform 150ms cubic-bezier(0.4, 0, 1, 1);
+}
+.search-slide-enter-from,
+.search-slide-leave-to {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transform: translateY(-4px);
+}
+.search-shell-inner { overflow: hidden; min-height: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .search-slide-enter-active,
+  .search-slide-leave-active { transition: opacity 150ms ease; }
+  .search-slide-enter-from,
+  .search-slide-leave-to { transform: none; }
+}
+</style>

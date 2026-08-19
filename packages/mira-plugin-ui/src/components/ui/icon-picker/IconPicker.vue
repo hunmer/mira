@@ -5,7 +5,8 @@
  * 字体由 tailwind.css 的 @font-face 提供(.material-icons ligature 渲染)。
  */
 import { computed, nextTick, ref, watch } from 'vue'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+// 相对路径:本组件经 library/ 子入口被宿主以源码消费,宿主的 @ 别名指向其自身 src
+import { Popover, PopoverContent, PopoverTrigger } from '../popover'
 import { iconNames } from './icon-names'
 
 const props = withDefaults(defineProps<{

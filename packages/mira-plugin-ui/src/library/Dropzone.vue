@@ -22,7 +22,16 @@ import {
   AttachmentTitle,
 } from '../components/ui/attachment/index';
 
-withDefaults(defineProps<{ hint?: string }>(), { hint: '拖放文件到此处,或点击选择' });
+const props = withDefaults(
+  defineProps<{
+    hint?: string;
+    /** 附件媒体展示样式:image=图片缩略图,icon=类型图标 */
+    mediaVariant?: 'icon' | 'image';
+    /** 附件排列方向:horizontal=横排,vertical=媒体在上竖排 */
+    orientation?: 'horizontal' | 'vertical';
+  }>(),
+  { hint: '拖放文件到此处,或点击选择', mediaVariant: 'image', orientation: 'horizontal' },
+);
 const emit = defineEmits<{
   drop: [files: File[]];
   /** 移除一个已暂存的文件 */
@@ -91,11 +100,8 @@ function isImage(file: File) {
   return file.type.startsWith('image/');
 }
 
-// 附件媒体展示样式:image=图片缩略图,icon=统一类型图标;排列方向:horizontal=横排,vertical=媒体在上竖排
-const mediaVariant = ref<'icon' | 'image'>('image');
-const orientation = ref<'horizontal' | 'vertical'>('horizontal');
 function mediaVariantOf(file: File): 'icon' | 'image' {
-  return mediaVariant.value === 'image' && isImage(file) ? 'image' : 'icon';
+  return props.mediaVariant === 'image' && isImage(file) ? 'image' : 'icon';
 }
 
 function formatSize(bytes: number): string {
@@ -133,38 +139,6 @@ function onPick(e: Event) {
 
 <template>
   <div class="relative">
-    <!-- 右上角:附件展示样式(缩略图/图标) + 排列方向(横排/竖排) -->
-    <div class="absolute top-5 right-5 z-[1] flex gap-2">
-      <div class="flex gap-1" role="group" aria-label="附件展示样式">
-        <button
-          type="button"
-          class="cursor-pointer rounded-md border border-border bg-accent px-2 py-1 text-[11px] leading-none text-muted-foreground transition-colors duration-100 hover:text-foreground"
-          :class="{ 'border-primary text-primary': mediaVariant === 'image' }"
-          @click="mediaVariant = 'image'"
-        >缩略图</button>
-        <button
-          type="button"
-          class="cursor-pointer rounded-md border border-border bg-accent px-2 py-1 text-[11px] leading-none text-muted-foreground transition-colors duration-100 hover:text-foreground"
-          :class="{ 'border-primary text-primary': mediaVariant === 'icon' }"
-          @click="mediaVariant = 'icon'"
-        >图标</button>
-      </div>
-      <div class="flex gap-1" role="group" aria-label="附件排列方向">
-        <button
-          type="button"
-          class="cursor-pointer rounded-md border border-border bg-accent px-2 py-1 text-[11px] leading-none text-muted-foreground transition-colors duration-100 hover:text-foreground"
-          :class="{ 'border-primary text-primary': orientation === 'horizontal' }"
-          @click="orientation = 'horizontal'"
-        >横排</button>
-        <button
-          type="button"
-          class="cursor-pointer rounded-md border border-border bg-accent px-2 py-1 text-[11px] leading-none text-muted-foreground transition-colors duration-100 hover:text-foreground"
-          :class="{ 'border-primary text-primary': orientation === 'vertical' }"
-          @click="orientation = 'vertical'"
-        >竖排</button>
-      </div>
-    </div>
-
     <div
       class="m-3 cursor-pointer rounded-md border-2 border-dashed p-6 text-center transition-colors duration-150"
       :class="hovering ? 'border-primary text-foreground' : 'border-border text-muted-foreground'"

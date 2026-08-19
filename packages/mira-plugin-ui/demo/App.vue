@@ -131,8 +131,7 @@ const selectServers = computed<LibrarySelectServer[]>(() =>
 
 /* ---------- LibraryTreeView 树演示 ---------- */
 const treeMode = ref<'folder' | 'tag'>('folder')
-// 选择模式:文件夹单选 + 标签多选(tab 切换共用一个开关,选中结果提升到此处)
-const selectMode = ref(false)
+// 受控选择:传 v-model:selected 启用(文件夹单选 + 标签多选勾选)
 const selectedFolder = ref<LibraryTreeNode[]>([])
 const selectedTags = ref<LibraryTreeNode[]>([])
 
@@ -167,16 +166,16 @@ const treeServices: LibraryTreeServices = {
     if (!connected.value || !client) return mockTags.value
     return adaptRows(await client.tags().getAll(currentLibraryId.value))
   },
-  async createNode (kind, libId, title, parentId) {
+  async createNode (kind, libId, title, parentId, extra) {
     if (!connected.value || !client) {
       const list = kind === 'folder' ? mockFolders : mockTags
       const id = Math.max(0, ...list.value.map(i => i.id)) + 1
-      list.value = [...list.value, { id, title, parent_id: parentId ?? 0 }]
+      list.value = [...list.value, { id, title, parent_id: parentId ?? 0, color: extra?.color }]
       return id
     }
     return kind === 'folder'
-      ? client.folders().createFolder(libId, title, parentId)
-      : client.tags().createTag(libId, title, parentId)
+      ? client.folders().createFolder(libId, title, parentId, extra?.color, extra?.description, extra?.icon)
+      : client.tags().createTag(libId, title, parentId, extra?.color, extra?.description, extra?.icon)
   },
   async deleteNode (kind, libId, id, deleteFiles) {
     if (!connected.value || !client) {
@@ -230,6 +229,8 @@ const treeDialog: LibraryTreeDialog = {
 
 /* ---------- Dropzone 暂存 + 真实上传 ---------- */
 const stagedFiles = ref<File[]>([])
+const dzMediaVariant = ref<'icon' | 'image'>('image')
+const dzOrientation = ref<'horizontal' | 'vertical'>('horizontal')
 const uploading = ref(false)
 const uploadPercent = ref(0)
 const uploadResult = ref('')
@@ -399,13 +400,13 @@ async function startUpload () {
         />
       </section>
 
-      <!-- 树视图演示卡片(选择模式:为上传卡片选目标) -->
+      <!-- 树视图演示卡片(受控选择:为上传卡片选目标) -->
       <section class="bg-card text-card-foreground flex flex-col gap-4 rounded-xl border p-6 shadow-sm">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div class="flex flex-col gap-1">
             <h2 class="text-base font-semibold">LibraryTreeView 树视图</h2>
             <p class="text-muted-foreground text-sm">
-              {{ connected ? '数据来自当前素材库（真实 SDK 读写）' : '未连接 server，操作内存 mock 数据（右键可新建/删除）' }}
+              {{ connected ? '数据来自当前素材库（真实 SDK 读写，v-model:selected 受控选择）' : '未连接 server，操作内存 mock 数据（受控选择，工具栏/右键可新建，右键可删除）' }}
             </p>
           </div>
           <div class="bg-muted flex gap-1 rounded-lg p-1">
@@ -427,8 +428,6 @@ async function startUpload () {
             :library-id="currentLibraryId || 'mock'"
             :services="treeServices"
             :dialog="treeDialog"
-            selection
-            v-model:select-mode="selectMode"
             :selected="treeMode === 'folder' ? selectedFolder : selectedTags"
             @update:selected="treeMode === 'folder' ? (selectedFolder = $event) : (selectedTags = $event)"
           />
@@ -437,12 +436,45 @@ async function startUpload () {
 
       <!-- Dropzone 独立卡片:文件暂存 -->
       <section class="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border p-6 shadow-sm">
-        <div class="flex flex-col gap-1">
-          <h2 class="text-base font-semibold">Dropzone 拖放区</h2>
-          <p class="text-muted-foreground text-sm">选择/拖放文件暂存（v-model:files 受控），附件卡片可单独移除</p>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex flex-col gap-1">
+            <h2 class="text-base font-semibold">Dropzone 拖放区</h2>
+            <p class="text-muted-foreground text-sm">选择/拖放文件暂存（v-model:files 受控），附件卡片可单独移除</p>
+          </div>
+          <!-- 附件展示样式(缩略图/图标) + 排列方向(横排/竖排) -->
+          <div class="flex gap-2">
+            <div class="flex gap-1" role="group" aria-label="附件展示样式">
+              <button
+                type="button"
+                class="cursor-pointer rounded-md border border-border bg-accent px-2 py-1 text-[11px] leading-none text-muted-foreground transition-colors duration-100 hover:text-foreground"
+                :class="{ 'border-primary text-primary': dzMediaVariant === 'image' }"
+                @click="dzMediaVariant = 'image'"
+              >缩略图</button>
+              <button
+                type="button"
+                class="cursor-pointer rounded-md border border-border bg-accent px-2 py-1 text-[11px] leading-none text-muted-foreground transition-colors duration-100 hover:text-foreground"
+                :class="{ 'border-primary text-primary': dzMediaVariant === 'icon' }"
+                @click="dzMediaVariant = 'icon'"
+              >图标</button>
+            </div>
+            <div class="flex gap-1" role="group" aria-label="附件排列方向">
+              <button
+                type="button"
+                class="cursor-pointer rounded-md border border-border bg-accent px-2 py-1 text-[11px] leading-none text-muted-foreground transition-colors duration-100 hover:text-foreground"
+                :class="{ 'border-primary text-primary': dzOrientation === 'horizontal' }"
+                @click="dzOrientation = 'horizontal'"
+              >横排</button>
+              <button
+                type="button"
+                class="cursor-pointer rounded-md border border-border bg-accent px-2 py-1 text-[11px] leading-none text-muted-foreground transition-colors duration-100 hover:text-foreground"
+                :class="{ 'border-primary text-primary': dzOrientation === 'vertical' }"
+                @click="dzOrientation = 'vertical'"
+              >竖排</button>
+            </div>
+          </div>
         </div>
         <div class="overflow-hidden rounded-lg border">
-          <Dropzone v-model:files="stagedFiles" />
+          <Dropzone v-model:files="stagedFiles" :media-variant="dzMediaVariant" :orientation="dzOrientation" />
         </div>
       </section>
 

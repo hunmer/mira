@@ -7,6 +7,7 @@
  */
 export { default as LibraryTree } from './LibraryTree.vue'
 export { default as LibraryTreeView } from './LibraryTreeView.vue'
+export { default as CreateNodeDialog } from './CreateNodeDialog.vue'
 export { default as LibrarySelect } from './LibrarySelect.vue'
 export { default as ContextMenu } from './ContextMenu.vue'
 export { default as Dropzone } from './Dropzone.vue'
@@ -21,6 +22,7 @@ export type {
   LibrarySelectOption,
   LibrarySelectServer,
   LibraryTreeKind,
+  LibraryTreeCreatePayload,
   LibraryTreeServices,
   LibraryTreeDialog,
   LibraryTreeUpload,
