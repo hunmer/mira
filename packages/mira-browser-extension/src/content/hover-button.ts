@@ -3,13 +3,16 @@ import { OVERLAY_Z } from './overlay/styles';
 
 /**
  * 页面图片 hover 操作按钮:
- * 鼠标悬停在图片上时,右上角显示 dots 按钮,点击弹出菜单(当前仅「导入图片」)。
+ * 鼠标悬停在图片(或包含子 img 的卡片容器/遮罩层)上时,其右上角显示 dots 按钮,
+ * 点击弹出菜单:「导入图片」「复制 URL」「在新标签打开大图」。
  * 与 dragdrop 同一套 controller 模式(enabled 开关 / destroy 幂等)。
  */
 
 export interface HoverButtonHandlers {
-  /** 点击菜单「导入图片」时回调,参数为图片当前 URL */
-  onImport: (url: string) => void;
+  /** 菜单「导入图片」:导入图片到素材库(由调用方实现,含高清升级) */
+  importImage: (url: string) => void;
+  /** 菜单「在新标签打开大图」:由调用方负责 maxurl 升级并开新标签 */
+  openLarge: (url: string) => void;
 }
 
 export interface HoverButtonController {
@@ -18,14 +21,62 @@ export interface HoverButtonController {
 }
 
 const BTN_SIZE = 26; // dots 按钮边长(px)
-const BTN_MARGIN = 6; // 与图片可视区域边缘的间距(px)
-const MIN_VISIBLE = 80; // 图片可视宽/高低于此值不显示(过滤小图标/表情)
-const MENU_WIDTH = 132;
+const BTN_MARGIN = 6; // 与定位区域可视边缘的间距(px)
+const MIN_VISIBLE = 80; // 可视宽/高低于此值不显示(过滤小图标/表情)
+const MENU_WIDTH = 168;
 const DONE_FEEDBACK_MS = 1500;
 const CONTROLLER_KEY = '__miraHoverButtonController__';
+/** hover 目标不是 img 时,向上最多找几层祖先中的子 img(卡片/遮罩场景) */
+const MAX_ANCESTOR_DEPTH = 3;
+/** 祖先容器可视面积超过视口该比例视为页面级容器,不显示按钮 */
+const MAX_VIEWPORT_COVER = 0.9;
 
 /**
- * 计算 dots 按钮位置:贴图片可视区域右上角(图片部分滚出视口时取交集)。
+ * hover 命中结果:root 为 dots 的定位元素(通常是 img 本身或包含 img 的容器),
+ * img 为实际图片(取 URL 用)。
+ */
+export interface HoverTarget {
+  root: Element;
+  img: HTMLImageElement;
+}
+
+function hasSrc(img: HTMLImageElement): boolean {
+  return !!(img.currentSrc || img.src);
+}
+
+/**
+ * 解析 hover 命中:
+ * - target 是 img → 直接命中;
+ * - target 不是 img(卡片容器、图片上方的遮罩/caption 等)→ 向上最多
+ *   MAX_ANCESTOR_DEPTH 层找包含子 img 的祖先容器,dots 定位到该容器;
+ * - 命中的祖先覆盖几乎整个视口时视为页面级容器,放弃(避免整页 hover 都弹按钮)。
+ */
+export function resolveHoverTarget(target: Element | null): HoverTarget | null {
+  if (!target) return null;
+  if (target instanceof HTMLImageElement) {
+    return hasSrc(target) ? { root: target, img: target } : null;
+  }
+  let el: Element | null = target;
+  let depth = 0;
+  while (el && depth <= MAX_ANCESTOR_DEPTH) {
+    const img = el.querySelector('img');
+    if (img && hasSrc(img)) {
+      const rect = el.getBoundingClientRect();
+      const vw = window.innerWidth || 1;
+      const vh = window.innerHeight || 1;
+      const visibleW = Math.max(0, Math.min(rect.right, vw) - Math.max(rect.left, 0));
+      const visibleH = Math.max(0, Math.min(rect.bottom, vh) - Math.max(rect.top, 0));
+      if ((visibleW * visibleH) / (vw * vh) > MAX_VIEWPORT_COVER) return null;
+      return { root: el, img };
+    }
+    el = el.parentElement;
+    depth++;
+  }
+  return null;
+}
+
+/**
+ * 计算 dots 按钮位置:贴定位元素可视区域右上角(部分滚出视口时取交集)。
  * 可视区域过小或完全出视口时返回 null(不显示)。
  */
 export function calculateButtonPosition(
@@ -44,6 +95,26 @@ export function calculateButtonPosition(
   };
 }
 
+/** 复制文本到剪贴板;clipboard API 不可用(http 页面等)时回退 execCommand */
+export async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch { ok = false; }
+    ta.remove();
+    return ok;
+  }
+}
+
 const DOTS_SVG = `<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><circle cx="8" cy="3" r="1.6"/><circle cx="8" cy="8" r="1.6"/><circle cx="8" cy="13" r="1.6"/></svg>`;
 const CHECK_SVG = `<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5 6.5 12 13 4.5"/></svg>`;
 
@@ -55,11 +126,12 @@ export function createHoverButton(handlers: HoverButtonHandlers): HoverButtonCon
   let destroyed = false;
   let btn: HTMLButtonElement | null = null;
   let menu: HTMLDivElement | null = null;
-  let currentImg: HTMLImageElement | null = null;
+  let currentTarget: HoverTarget | null = null;
   let confirmTimer: ReturnType<typeof setTimeout> | null = null;
 
-  function imageUrl(img: HTMLImageElement): string | null {
-    return img.currentSrc || img.src || null;
+  function imageUrl(): string | null {
+    const img = currentTarget?.img;
+    return img ? (img.currentSrc || img.src || null) : null;
   }
 
   function hideMenu() {
@@ -72,7 +144,7 @@ export function createHoverButton(handlers: HoverButtonHandlers): HoverButtonCon
     if (confirmTimer) { clearTimeout(confirmTimer); confirmTimer = null; }
     btn?.remove();
     btn = null;
-    currentImg = null;
+    currentTarget = null;
   }
 
   function positionMenu() {
@@ -82,24 +154,19 @@ export function createHoverButton(handlers: HoverButtonHandlers): HoverButtonCon
     menu.style.left = Math.max(8, Math.min(r.right - menu.offsetWidth, window.innerWidth - menu.offsetWidth - 8)) + 'px';
   }
 
-  /** 滚动/resize 后按图片最新 rect 重算;可视区域不足时隐藏 */
+  /** 滚动/resize 后按定位元素最新 rect 重算;可视区域不足时隐藏 */
   function updatePosition() {
-    if (!btn || !currentImg) return;
-    const pos = calculateButtonPosition(currentImg.getBoundingClientRect(), window.innerWidth, window.innerHeight);
+    if (!btn || !currentTarget) return;
+    const pos = calculateButtonPosition(currentTarget.root.getBoundingClientRect(), window.innerWidth, window.innerHeight);
     if (!pos) { hide(); return; }
     btn.style.left = pos.left + 'px';
     btn.style.top = pos.top + 'px';
     if (menu) positionMenu();
   }
 
-  function importCurrent() {
-    if (!currentImg || !btn) return;
-    const url = imageUrl(currentImg);
-    hideMenu();
-    if (!url) return;
-    dbg.info('hoverbtn', 'import requested', { url });
-    handlers.onImport(url);
-    // 按钮短暂打勾反馈导入已发起
+  /** 菜单关闭后按钮短暂打勾,反馈动作已发起 */
+  function showDoneFeedback() {
+    if (!btn) return;
     btn.classList.add('mira-done');
     btn.innerHTML = CHECK_SVG;
     if (confirmTimer) clearTimeout(confirmTimer);
@@ -109,28 +176,67 @@ export function createHoverButton(handlers: HoverButtonHandlers): HoverButtonCon
     }, DONE_FEEDBACK_MS);
   }
 
-  function toggleMenu() {
-    if (menu) { hideMenu(); return; }
-    if (!currentImg) return;
-    menu = document.createElement('div');
-    menu.className = 'mira-hovermenu';
+  function currentUrlOrFeedback(): string | null {
+    const url = imageUrl();
+    hideMenu();
+    if (!url) return null;
+    return url;
+  }
+
+  async function onImportClick() {
+    const url = currentUrlOrFeedback();
+    if (!url) return;
+    dbg.info('hoverbtn', 'import requested', { url });
+    handlers.importImage(url);
+    showDoneFeedback();
+  }
+
+  async function onCopyClick() {
+    const url = currentUrlOrFeedback();
+    if (!url) return;
+    const ok = await copyText(url);
+    dbg.info('hoverbtn', 'copy url', { url, ok });
+    showDoneFeedback();
+  }
+
+  function onOpenLargeClick() {
+    const url = currentUrlOrFeedback();
+    if (!url) return;
+    dbg.info('hoverbtn', 'open large requested', { url });
+    handlers.openLarge(url);
+    showDoneFeedback();
+  }
+
+  function makeMenuItem(label: string, onClick: () => void): HTMLButtonElement {
     const item = document.createElement('button');
     item.className = 'mira-hovermenu-item';
     item.type = 'button';
-    item.textContent = '📥 导入图片';
+    item.textContent = label;
     item.addEventListener('click', ev => {
       ev.preventDefault();
       ev.stopPropagation();
-      importCurrent();
+      onClick();
     });
-    menu.appendChild(item);
+    return item;
+  }
+
+  function toggleMenu() {
+    if (menu) { hideMenu(); return; }
+    if (!currentTarget) return;
+    menu = document.createElement('div');
+    menu.className = 'mira-hovermenu';
+    menu.append(
+      makeMenuItem('📥 导入图片', () => void onImportClick()),
+      makeMenuItem('🔗 复制 URL', () => void onCopyClick()),
+      makeMenuItem('🖼️ 在新标签打开大图', onOpenLargeClick),
+    );
     document.documentElement.appendChild(menu);
     positionMenu();
   }
 
-  function show(img: HTMLImageElement) {
+  function show(target: HoverTarget) {
     hide();
-    currentImg = img;
+    currentTarget = target;
     btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'mira-hoverbtn';
@@ -152,13 +258,16 @@ export function createHoverButton(handlers: HoverButtonHandlers): HoverButtonCon
     const target = e.target;
     if (btn && target === btn) return;
     if (menu && target instanceof Node && menu.contains(target)) return;
-    if (target instanceof HTMLImageElement) {
-      if (target === currentImg) return;
-      if (imageUrl(target)) show(target);
+    const hit = target instanceof Element ? resolveHoverTarget(target) : null;
+    if (hit) {
+      // 命中区域与当前区域相同或互为祖先/后代(img ↔ 其卡片容器)时保持不动,避免按钮跳动
+      const cur = currentTarget?.root;
+      if (cur && (hit.root === cur || cur.contains(hit.root) || hit.root.contains(cur))) return;
+      show(hit);
       return;
     }
-    // 移到图片以外的元素上 → 收起(悬停在按钮/菜单上时已提前 return)
-    if (currentImg) hide();
+    // 移到命中区域以外的元素上 → 收起(悬停在按钮/菜单上时已提前 return)
+    if (currentTarget) hide();
   }
 
   function onScrollOrResize() {

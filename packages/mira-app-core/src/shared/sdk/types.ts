@@ -277,6 +277,8 @@ export interface UploadFileRequest {
     clientId?: string;
     batchImport?: boolean;
     urlItems?: string[];
+    /** 抑制客户端导入通知（编辑器覆盖保存等场景） */
+    silent?: boolean;
     fields?: any;
     payload?: {
         data: {

@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import {
   MenubarContent,
-  type MenubarContentEmits,
   type MenubarContentProps,
   MenubarPortal,
-  useForwardPropsEmits,
+  useForwardProps,
 } from 'reka-ui'
 import { computed, type HTMLAttributes } from 'vue'
 import { cn } from '@/lib/utils'
@@ -13,12 +12,11 @@ const props = withDefaults(defineProps<MenubarContentProps & { class?: HTMLAttri
   align: 'start',
   sideOffset: 6,
 })
-const emits = defineEmits<MenubarContentEmits>()
 const delegated = computed(() => {
   const { class: _omit, ...rest } = props
   return rest
 })
-const forwarded = useForwardPropsEmits(delegated, emits)
+const forwarded = useForwardProps(delegated)
 </script>
 
 <template>

@@ -241,6 +241,11 @@ export function createRouter(deps: RouterDeps): RequestHandler {
         setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
         return { success: true, count: ok };
       }
+      case 'OPEN_URL_IN_TAB': {
+        const tab = await chrome.tabs.create({ url: req.payload.url, active: true });
+        dbg.info('router', 'url opened in new tab', { url: req.payload.url, tabId: tab.id });
+        return { success: true };
+      }
       case 'CAPTURE_VISIBLE':
         await deps.captureVisible(req.payload.tabId);
         return { success: true };

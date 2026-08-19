@@ -53,6 +53,8 @@ export class FileRoutes {
             const { libraryId, sourcePath, fileId } = req.body; // sourcePath是用户的本地文件位置，用来验证是否上传成功
             const clientId = req.body.clientId || null;
             const isBatchImport = req.body.batchImport === 'true' || req.body.batchImport === true;
+            // 静默上传：编辑器覆盖保存等场景，广播事件带 silent 标记让客户端跳过导入通知
+            const silent = req.body.silent === 'true' || req.body.silent === true;
             const batchId = isBatchImport ? randomUUID() : undefined;
             // 为每次 HTTP 上传请求生成独立标识，避免客户端通知聚合跨请求累计。
             const uploadBatchId = randomUUID();
@@ -296,6 +298,7 @@ export class FileRoutes {
                                     ...result,
                                     libraryId,
                                     uploadBatchId,
+                                    ...(silent ? { silent: true } : {}),
                                     ...(isBatchImport ? { batchImport: true, batchId } : {})
                                 };
                                 this.backend.webSocketServer.broadcastPluginEvent('file::created', {
@@ -337,6 +340,7 @@ export class FileRoutes {
                         imported,
                         skipped,
                         failed,
+                        ...(silent ? { silent: true } : {}),
                     });
                 }
                 res.send(isBatchImport ? {

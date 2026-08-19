@@ -23,6 +23,7 @@ import SlashCommandMenu from '@/components/editor/SlashCommandMenu.vue'
 import DocumentIconPicker from '@/components/editor/DocumentIconPicker.vue'
 import OutlinePanel from '@/components/editor/OutlinePanel.vue'
 import CoverBanner from '@/components/editor/CoverBanner.vue'
+import OpenFileDialog from '@/components/editor/OpenFileDialog.vue'
 import { NotionKeyboard, TrailingNode } from '@/components/editor/extensions/notion-behaviors'
 
 const params = new URLSearchParams(location.search)
@@ -35,6 +36,9 @@ const apiBaseUrl = params.get('apiBaseUrl') || location.origin
 const token = params.get('token') || new URL(fileUrl || location.href).searchParams.get('token') || ''
 const client = new MiraClient(apiBaseUrl).setToken(token)
 const showSaveDialog = ref(false)
+const showOpenDialog = ref(false)
+const openDocs = ref<any[]>([])
+const openDocsLoading = ref(false)
 const libraries = ref<any[]>([])
 const folders = ref<any[]>([])
 const currentLibraryId = ref(initialLibraryId)
@@ -113,8 +117,18 @@ function docJson () {
 async function saveExisting () {
   if (!editor.value || !currentLibraryId.value || !currentFileId.value) return
   try {
-    await client.files().writeFile(currentLibraryId.value, currentFileId.value, JSON.stringify(docJson(), null, 2), { name: currentFileName.value, contentType: 'application/vnd.mira.tiptap+json' })
+    await client.files().writeFile(currentLibraryId.value, currentFileId.value, JSON.stringify(docJson(), null, 2), { name: currentFileName.value, contentType: 'application/vnd.mira.tiptap+json', silent: true })
   } catch (error) { console.error('[mira-tiptap] save failed', error) }
+}
+
+/** 保存请求：素材库已有文档直接覆盖保存，新文档才弹位置选择 */
+function handleSaveRequest () {
+  if (currentFileId.value && currentLibraryId.value && !isNewDocument.value) {
+    if (saveTimer) clearTimeout(saveTimer)
+    void saveExisting()
+    return
+  }
+  void openSaveDialog()
 }
 
 async function openSaveDialog () {
@@ -129,9 +143,9 @@ async function saveToLocation (location: SaveLocation) {
   try {
     const content = JSON.stringify(docJson(), null, 2)
     if (currentFileId.value && currentLibraryId.value === location.libraryId && !isNewDocument.value) {
-      await client.files().writeFile(location.libraryId, currentFileId.value, content, { name: location.fileName, contentType: 'application/vnd.mira.tiptap+json' })
+      await client.files().writeFile(location.libraryId, currentFileId.value, content, { name: location.fileName, contentType: 'application/vnd.mira.tiptap+json', silent: true })
     } else {
-      const response: any = await client.files().uploadFile(new File([content], location.fileName, { type: 'application/vnd.mira.tiptap+json' }), location.libraryId, { folderId: location.folderId })
+      const response: any = await client.files().uploadFile(new File([content], location.fileName, { type: 'application/vnd.mira.tiptap+json' }), location.libraryId, { folderId: location.folderId, silent: true })
       const created = response?.results?.[0]?.result || response?.data || response?.result
       currentFileId.value = created?.id ? String(created.id) : currentFileId.value
       currentLibraryId.value = location.libraryId
@@ -142,7 +156,49 @@ async function saveToLocation (location: SaveLocation) {
 }
 
 function handleKeydown (event: KeyboardEvent) {
-  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') { event.preventDefault(); void openSaveDialog() }
+  if (!(event.ctrlKey || event.metaKey)) return
+  const key = event.key.toLowerCase()
+  if (key === 's') { event.preventDefault(); handleSaveRequest() }
+  if (key === 'o') { event.preventDefault(); void openFileList() }
+}
+
+/** 列出当前素材库中的 .tiptap 文档 */
+async function openFileList () {
+  showOpenDialog.value = true
+  openDocsLoading.value = true
+  try {
+    if (!libraries.value.length) {
+      libraries.value = await client.libraries().getAll() as any[]
+      currentLibraryId.value ||= String(libraries.value[0]?.id || '')
+    }
+    if (!currentLibraryId.value) { openDocs.value = []; return }
+    const list = await client.files().getFilesByExtension(currentLibraryId.value, 'tiptap') as any[]
+    openDocs.value = (list || [])
+      .filter(file => String(file.extension || '').toLowerCase().replace(/^\./, '') === 'tiptap')
+      .sort((a, b) => String(b.updated_at || '').localeCompare(String(a.updated_at || '')))
+  } catch (error) {
+    console.error('[mira-tiptap] list docs failed', error)
+    openDocs.value = []
+  } finally {
+    openDocsLoading.value = false
+  }
+}
+
+/** 从素材库加载文档到编辑器 */
+async function loadDocument (file: any) {
+  showOpenDialog.value = false
+  if (!editor.value) return
+  try {
+    const blob = await client.files().download(currentLibraryId.value, String(file.id))
+    const json = JSON.parse(await blob.text())
+    title.value = typeof json?.title === 'string' ? json.title : ''
+    icon.value = typeof json?.icon === 'string' ? json.icon : ''
+    cover.value = json?.cover && typeof json.cover.value === 'string' ? json.cover : null
+    editor.value.commands.setContent(json)
+    currentFileId.value = String(file.id)
+    currentFileName.value = String(file.title || file.name || 'document.tiptap')
+    isNewDocument.value = false
+  } catch (error) { console.error('[mira-tiptap] open failed', error) }
 }
 
 // Notion 行为：点击内容列的空白区域时聚焦到文末
@@ -174,7 +230,7 @@ onBeforeUnmount(() => { window.removeEventListener('keydown', handleKeydown); if
 <template>
   <main class="flex h-full flex-col">
     <template v-if="editor">
-      <EditorToolbar :editor="editor" @save="openSaveDialog" />
+      <EditorToolbar :editor="editor" @save="handleSaveRequest" @open-file="openFileList" @save-as="openSaveDialog" />
       <div class="scroll-thin flex-1 overflow-y-auto bg-muted/40" @mousedown.self="focusEnd">
         <!-- 宽屏模式右缘不超过固定大纲（大纲 208px + 边距），居中模式保持窄栏 -->
         <div :class="wide ? 'my-6 ml-4 w-[calc(100%-16rem)]' : 'my-8 mx-auto w-[calc(100%-4rem)] max-w-3xl'">
@@ -217,5 +273,6 @@ onBeforeUnmount(() => { window.removeEventListener('keydown', handleKeydown); if
       <OutlinePanel :editor="editor" />
     </template>
     <SaveLocationDialog v-model:open="showSaveDialog" :libraries="libraries" :folders="folders" :initial-library-id="currentLibraryId" :initial-file-name="currentFileName" @save="saveToLocation" />
+    <OpenFileDialog v-model:open="showOpenDialog" :files="openDocs" :loading="openDocsLoading" @select="loadDocument" />
   </main>
 </template>

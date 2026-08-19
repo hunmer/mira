@@ -814,7 +814,8 @@ function setupEventListeners(libraryStore: any): void {
     handleFileEvent(data, 'created')
     // 导入文件通知（受 enableImportNotifications 控制，批量聚合）。
     // 缩略图可能在 thumb / thumb_path / thumbnail_path 字段（后端广播时已解析为路径/URL）。
-    if (!completeEagleImportNotification(data)) {
+    // silent：编辑器覆盖保存等静默上传，不弹导入通知。
+    if (!completeEagleImportNotification(data) && data?.silent !== true) {
       notifyFileImported(
         data?.name || data?.title || data?.fileName,
         data?.thumb_path || data?.thumbnail_path || (typeof data?.thumb === 'string' ? data.thumb : undefined),
@@ -827,7 +828,7 @@ function setupEventListeners(libraryStore: any): void {
   })
 
   webSocketService.addEventListener('file::upload-completed', (data) => {
-    completeUploadNotification(data)
+    if (data?.silent !== true) completeUploadNotification(data)
     flushUploadBatchRefresh(data?.uploadBatchId)
   })
 

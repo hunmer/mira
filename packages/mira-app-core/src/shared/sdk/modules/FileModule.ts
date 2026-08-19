@@ -121,6 +121,9 @@ export class FileModule {
         if (uploadRequest.batchImport) {
             formData.append('batchImport', 'true');
         }
+        if (uploadRequest.silent) {
+            formData.append('silent', 'true');
+        }
         if (uploadRequest.urlItems?.length) {
             formData.append('urlItems', JSON.stringify(uploadRequest.urlItems));
         }
@@ -164,7 +167,7 @@ export class FileModule {
         libraryId: string,
         fileId: string | number,
         content: Blob | string | ArrayBuffer,
-        options: { name?: string; contentType?: string } = {}
+        options: { name?: string; contentType?: string; silent?: boolean } = {}
     ): Promise<UploadResponse> {
         const blob = content instanceof Blob
             ? content
@@ -177,6 +180,9 @@ export class FileModule {
         formData.append('libraryId', libraryId);
         formData.append('fileId', String(fileId));
         formData.append('name', options.name || file.name);
+        if (options.silent) {
+            formData.append('silent', 'true');
+        }
         return await this.httpClient.upload<UploadResponse>('/api/files/upload', formData);
     }
 
@@ -230,6 +236,7 @@ export class FileModule {
             clientId?: string;
             tags?: string[];
             folderId?: string;
+            silent?: boolean;
         }
     ): Promise<UploadResponse> {
         const uploadRequest: UploadFileRequest = {
@@ -237,6 +244,7 @@ export class FileModule {
             libraryId,
             sourcePath: options?.sourcePath,
             clientId: options?.clientId,
+            silent: options?.silent,
         };
 
         if (options?.tags || options?.folderId) {
@@ -266,6 +274,7 @@ export class FileModule {
             clientId?: string;
             tags?: string[];
             folderId?: string;
+            silent?: boolean;
         }
     ): Promise<UploadResponse> {
         const uploadRequest: UploadFileRequest = {
@@ -273,6 +282,7 @@ export class FileModule {
             libraryId,
             sourcePath: options?.sourcePath,
             clientId: options?.clientId,
+            silent: options?.silent,
         };
 
         if (options?.tags || options?.folderId) {

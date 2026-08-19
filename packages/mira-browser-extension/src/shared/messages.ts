@@ -74,6 +74,8 @@ export type Request =
   | { type: 'UPGRADE_IMAGE_URL'; payload: { tabId: number; url: string; timeout?: number; rules?: ImageUrlRule[] } }
   // 下载选中(单文件直接下载,多文件 zip 打包)
   | { type: 'DOWNLOAD_RESOURCES'; payload: { items: { url: string; filename: string; referrer?: string }[] } }
+  // 在新标签页打开 URL(如高清大图;content script 异步 window.open 会被弹窗拦截,交由 SW)
+  | { type: 'OPEN_URL_IN_TAB'; payload: { url: string } }
   // 截图
   | { type: 'CAPTURE_VISIBLE'; payload: { tabId: number } }
   | { type: 'CAPTURE_FULLPAGE'; payload: { tabId: number } }
@@ -118,7 +120,7 @@ const REQUEST_TYPES = new Set<Request['type']>([
   'AUTH_LOGIN', 'AUTH_VERIFY', 'CONFIG_GET', 'CONFIG_SET',
   'SERVERS_LIST', 'SERVERS_SAVE', 'SERVER_ACTIVATE', 'SERVER_TEST',
   'LIB_LIST', 'FOLDER_LIST', 'TAG_LIST', 'NODE_CREATE', 'NODE_DELETE',
-  'UPLOAD_FILES', 'UPLOAD_FROM_URL', 'BATCH_IMPORT', 'UPLOAD_STATUS', 'UPLOAD_CANCEL', 'UPGRADE_IMAGE_URL', 'DOWNLOAD_RESOURCES',
+  'UPLOAD_FILES', 'UPLOAD_FROM_URL', 'BATCH_IMPORT', 'UPLOAD_STATUS', 'UPLOAD_CANCEL', 'UPGRADE_IMAGE_URL', 'DOWNLOAD_RESOURCES', 'OPEN_URL_IN_TAB',
   'CAPTURE_VISIBLE', 'CAPTURE_FULLPAGE', 'CAPTURE_SELECTION',
   'SNIFFER_START', 'SNIFFER_STOP', 'SNIFFER_QUERY',
   'AUTOSCROLL_START', 'AUTOSCROLL_STOP',

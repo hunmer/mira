@@ -19,10 +19,23 @@ import {
 } from 'lucide-vue-next'
 import { computed } from 'vue'
 import { Button } from '@/components/ui/button'
+import {
+  Menubar,
+  MenubarContent,
+  MenubarItem,
+  MenubarMenu,
+  MenubarSeparator,
+  MenubarShortcut,
+  MenubarTrigger,
+} from '@/components/ui/menubar'
 import { useEditorVersion } from '@/composables/useEditorVersion'
 
 const props = defineProps<{ editor: Editor }>()
-const emit = defineEmits<{ (event: 'save'): void }>()
+const emit = defineEmits<{
+  (event: 'save'): void
+  (event: 'open-file'): void
+  (event: 'save-as'): void
+}>()
 
 const version = useEditorVersion(() => props.editor)
 const editor = computed(() => { void version.value; return props.editor })
@@ -69,6 +82,24 @@ function openSlashMenu () {
 
 <template>
   <header class="sticky top-0 z-20 flex items-center justify-center border-b bg-background/85 px-3 py-1.5 backdrop-blur">
+    <div class="absolute left-3 top-1/2 -translate-y-1/2">
+      <Menubar>
+        <MenubarMenu>
+          <MenubarTrigger>文件</MenubarTrigger>
+          <MenubarContent class="min-w-44">
+            <MenubarItem @click="emit('open-file')">
+              打开文件
+              <MenubarShortcut>Ctrl+O</MenubarShortcut>
+            </MenubarItem>
+            <MenubarSeparator />
+            <MenubarItem @click="emit('save-as')">
+              另存为
+              <MenubarShortcut>Ctrl+S</MenubarShortcut>
+            </MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+      </Menubar>
+    </div>
     <div class="flex flex-wrap items-center justify-center gap-0.5">
       <template v-for="tool in tools" :key="tool.label">
         <span v-if="tool.separatorBefore" class="mx-1 h-4 w-px bg-border" />

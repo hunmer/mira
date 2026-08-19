@@ -157,22 +157,35 @@ const dragdrop = createDragDrop({
   },
 });
 
-// 图片 hover 操作按钮:菜单「导入图片」复用 uploadUrl(含高清升级)
+// 图片 hover 操作按钮:「导入图片」复用 uploadUrl;「在新标签打开大图」升级后交 background 开标签
 const hoverButton = createHoverButton({
-  onImport: url => { void uploadUrl(url, 'image'); },
+  importImage: url => { void uploadUrl(url, 'image'); },
+  openLarge: url => {
+    upgradeBest(url).then(best => {
+      chrome.runtime.sendMessage({ type: 'OPEN_URL_IN_TAB', payload: { url: best } })
+        .catch(e => dbg.error('content', 'OPEN_URL_IN_TAB send failed', e));
+    });
+  },
 });
 
-/** 网页图片上传:开启高清升级时,先用 maxurl 取原图候选,取最优一个发 service worker 下载 */async function uploadUrl(url: string, kind: ResourceKind, folderId?: number, tags?: string[]) {
-  let best = url;
+/** imu 开启时用 maxurl 取高清升级候选中最优 url;关闭或失败时回退原 url */
+async function upgradeBest(url: string): Promise<string> {
   try {
     const settings: any = await chrome.runtime.sendMessage({ type: 'CONFIG_GET' });
     if (settings?.imuEnabled) {
       const candidates = await upgradeImageUrl(url, { rules: settings?.imuRules });
       // upgradeImageUrl 返回 [...升级候选, 原 url];取第一个非原 url(若有),否则原 url
-      best = candidates[0] ?? url;
+      const best = candidates[0] ?? url;
       dbg.log('content', 'upgraded', { original: url, best, count: candidates.length });
+      return best;
     }
-  } catch (e) { dbg.warn('content', 'uploadUrl upgrade failed, use original', e); /* 升级失败沿用原 url */ }
+  } catch (e) { dbg.warn('content', 'image url upgrade failed, use original', e); }
+  return url;
+}
+
+/** 网页图片上传:先升级到高清原图,再发 service worker 下载入库 */
+async function uploadUrl(url: string, kind: ResourceKind, folderId?: number, tags?: string[]) {
+  const best = await upgradeBest(url);
   chrome.runtime.sendMessage({
     type: 'UPLOAD_FROM_URL',
     payload: { url: best, kind, libraryId: '', folderId, tags, referrer: location.href },
