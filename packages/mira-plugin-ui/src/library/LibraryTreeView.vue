@@ -6,12 +6,13 @@
  * - 顶部:拖放/点击选择上传到素材库根目录(需传 upload)
  * - 工具栏:搜索切换(输入即过滤,自 SaveLocationForm 移入) + 新增(CreateNodeDialog)
  * - 中部:树(支持拖拽文件 → 上传到目标文件夹/标签;传 v-model:selected 受控启用选择)
- * - 右键菜单:新建同级/子级(CreateNodeDialog)、删除(需传 dialog 做确认)
+ * - 右键菜单:新建同级/子级(CreateNodeDialog)、编辑(services.updateNode)、
+ *   删除(内置 AlertDialog 确认;folder 带「同时删除其中的文件」勾选)
  *
  * 样式为 tailwind/shadcn 原子类,scoped CSS 仅搜索栏展开过渡(ui_rule.md 允许的例外)。
  */
 import { computed, ref, watch } from 'vue';
-import { Plus, Search } from '@lucide/vue';
+import { Loader2, Plus, Search } from '@lucide/vue';
 import { useLibraryTreeData } from './useLibraryTreeData';
 import { useLibraryTreeActions } from './useLibraryTreeActions';
 import { createLibraryTreeT } from './i18n';
@@ -22,9 +23,12 @@ import ContextMenu from './ContextMenu.vue';
 import Dropzone from './Dropzone.vue';
 import { parseDrop, canAcceptDrop, isNodeDrag } from './drag-data';
 // 注意:library 子入口以源码供宿主直接消费,这里必须用相对路径(宿主的 @ 别名指向其自身 src)
+import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../components/ui/alert-dialog';
+import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import type {
   LibraryTreeCreatePayload,
+  LibraryTreeUpdatePayload,
   LibraryTreeDialog,
   LibraryTreeDropPosition,
   LibraryTreeNode,
@@ -40,7 +44,7 @@ const props = defineProps<{
   libraryId: string;
   /** 数据服务:树数据加载 + 节点 CRUD */
   services: LibraryTreeServices;
-  /** 弹窗服务:提供后启用右键编辑菜单与工具栏「新增」 */
+  /** 弹窗服务:提供后启用拖拽跨层移动的确认 */
   dialog?: LibraryTreeDialog;
   /** 上传服务:提供后启用拖放/选择文件上传 */
   upload?: LibraryTreeUpload;
@@ -72,8 +76,12 @@ function onSelect(node: LibraryTreeNode) {
 }
 
 const fallbackT = createLibraryTreeT();
-const tt = (key: string, params?: Record<string, unknown>) =>
-  props.t ? props.t(key, params) : fallbackT(key, params);
+/** 宿主未传 t 或宿主缺 key(vue-i18n 返回 key 本身)时回退内置中文(与 CreateNodeDialog 一致) */
+const tt = (key: string, params?: Record<string, unknown>) => {
+  if (!props.t) return fallbackT(key, params);
+  const r = props.t(key, params);
+  return r === key ? fallbackT(key, params) : r;
+};
 
 const { tree, count, loading, error, load } = useLibraryTreeData(props.mode, props.services);
 
@@ -313,7 +321,7 @@ const titleText = computed(() => props.mode === 'folder' ? tt('common.folder') :
 
 const noData = computed(() => !loading.value && !error.value && count.value === 0);
 
-/** dialog 未注入时的占位:动作静默取消 */
+/** dialog 未注入时的占位:跨层拖拽移动确认静默取消 */
 const silentDialog: LibraryTreeDialog = {
   alert: async () => {},
   confirm: async () => false,
@@ -321,22 +329,26 @@ const silentDialog: LibraryTreeDialog = {
   confirmCheck: async () => ({ ok: false, checked: false }),
 };
 
-// ---- 右键菜单:新建同级 / 新建子级 / 删除(dialog 未提供则不弹菜单) ----
+// ---- 右键菜单:新建同级 / 新建子级 / 编辑 / 删除(删除确认走内置 AlertDialog,不再依赖宿主 dialog) ----
 const {
   menu,
   openMenu: onContextMenu,
   closeMenu,
-  deleteNode,
+  requestDelete,
+  closeDelete,
+  confirmDelete,
+  deleteTarget,
+  deleteFiles,
+  deleteError,
+  deleting,
 } = useLibraryTreeActions({
   mode: props.mode,
   libraryId: () => props.libraryId,
   reload: () => load(props.libraryId),
 }, {
   services: props.services,
-  dialog: props.dialog ?? silentDialog,
   t: (key, params) => tt(key, params),
 });
-const menuEnabled = computed(() => !!props.dialog);
 
 // ---- 工具栏「新增」对话框(CreateNodeDialog,自 SaveLocationForm 抽离) ----
 const createOpen = ref(false);
@@ -376,6 +388,35 @@ function onCreateChild() {
   createOpen.value = true;
 }
 
+// ---- 右键「编辑」(CreateNodeDialog 编辑模式;services.updateNode 提供后启用) ----
+const editable = computed(() => !!props.services.updateNode);
+const editOpen = ref(false);
+const editNode = ref<LibraryTreeNode | null>(null);
+
+function onEditNode() {
+  if (!menu.value) return;
+  editNode.value = menu.value.node;
+  closeMenu();
+  editOpen.value = true;
+}
+
+/** 对话框更新服务:调 services.updateNode */
+async function updateViaDialog(payload: LibraryTreeUpdatePayload): Promise<unknown> {
+  return props.services.updateNode?.(payload.kind, props.libraryId, payload.id, payload.title, {
+    description: payload.description,
+    color: payload.color,
+    icon: payload.icon,
+  });
+}
+
+/** 编辑保存成功:刷新树 + 同步受控选中里的同 id 节点引用 */
+async function onUpdated(e: { id: number; parentId: number }) {
+  await load(props.libraryId);
+  if (selected.value === undefined) return;
+  const node = flattenTree(tree.value).find(n => n.id === e.id);
+  if (node) selected.value = selected.value.map(s => (s.id === e.id ? node : s));
+}
+
 /** 对话框创建服务:调 services.createNode,尽力取新节点 id(实现可返回 number 或含 id 的对象) */
 async function createViaDialog(payload: LibraryTreeCreatePayload): Promise<number | undefined> {
   const r = await props.services.createNode(
@@ -400,7 +441,7 @@ async function onCreated(e: { id?: number; parentId: number }) {
   selected.value = props.mode === 'folder' ? [node] : [...selected.value, node];
 }
 
-/** 右键菜单常开(新建走内置 CreateNodeDialog);「删除」需注入 dialog 做确认,未注入时隐藏 */
+/** 右键菜单常开(新建/编辑走内置 CreateNodeDialog,删除走内置 AlertDialog) */
 function onTreeContextMenu(node: LibraryTreeNode, x: number, y: number) {
   onContextMenu(node, x, y);
 }
@@ -494,15 +535,66 @@ const ctxItem = 'flex w-full cursor-pointer items-center gap-1.5 rounded-[4px] b
       />
     </div>
 
-    <!-- 右键菜单:新建同级 / 新建子级(内置 CreateNodeDialog) + 删除(需传 dialog) -->
+    <!-- 右键菜单:新建同级 / 新建子级(内置 CreateNodeDialog) + 编辑(需 services.updateNode) + 删除(内置 AlertDialog 确认) -->
     <ContextMenu v-if="menu" :x="menu.x" :y="menu.y" @close="closeMenu">
       <button :class="ctxItem" @click="onCreateSibling">{{ tt('tree.createSibling') }}</button>
       <button :class="ctxItem" @click="onCreateChild">{{ tt('tree.createChild', { type: titleText }) }}</button>
-      <template v-if="menuEnabled">
-        <div class="my-[3px] h-px bg-border" />
-        <button :class="[ctxItem, 'text-destructive']" @click="deleteNode">{{ tt('tree.delete') }}</button>
-      </template>
+      <button v-if="editable" :class="ctxItem" @click="onEditNode">{{ tt('tree.edit') }}</button>
+      <div class="my-[3px] h-px bg-border" />
+      <button :class="[ctxItem, 'text-destructive']" @click="requestDelete">{{ tt('tree.delete') }}</button>
     </ContextMenu>
+
+    <!-- 删除确认:内置 AlertDialog(folder 带「同时删除其中的文件」勾选;失败错误留在框内可重试) -->
+    <AlertDialog :open="!!deleteTarget" @update:open="(value: boolean) => !value && closeDelete()">
+      <AlertDialogContent class="sm:max-w-sm">
+        <AlertDialogHeader>
+          <AlertDialogTitle>{{ tt('tree.deleteTitle', { type: titleText }) }}</AlertDialogTitle>
+          <AlertDialogDescription>
+            {{ mode === 'folder'
+              ? tt('tree.deleteFolderConfirm', { name: deleteTarget?.title })
+              : tt('tree.deleteTagConfirm', { name: deleteTarget?.title }) }}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+
+        <!-- folder:勾选后连同其中的文件一起删除 -->
+        <label
+          v-if="mode === 'folder'"
+          class="flex cursor-pointer items-center gap-2 text-sm select-none"
+          @click.prevent="deleteFiles = !deleteFiles"
+        >
+          <span
+            role="checkbox"
+            :aria-checked="deleteFiles"
+            tabindex="0"
+            class="inline-flex size-3.5 shrink-0 items-center justify-center rounded-[4px] border-[1.5px] border-border bg-accent text-white transition-colors duration-100 hover:border-primary"
+            :class="deleteFiles && 'border-primary bg-primary'"
+            @keydown.enter.prevent="deleteFiles = !deleteFiles"
+          >
+            <svg v-if="deleteFiles" viewBox="0 0 16 16" width="10" height="10" aria-hidden="true">
+              <path
+                d="M3 8.5l3 3 7-7"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </span>
+          {{ tt('tree.deleteFilesCheck') }}
+        </label>
+
+        <p v-if="deleteError" class="text-xs text-destructive">{{ deleteError }}</p>
+
+        <AlertDialogFooter>
+          <Button variant="outline" :disabled="deleting" @click="closeDelete">{{ tt('common.cancel') }}</Button>
+          <Button variant="destructive" :disabled="deleting" @click="confirmDelete">
+            <Loader2 v-if="deleting" class="size-4 animate-spin" />
+            {{ tt('tree.delete') }}
+          </Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
 
     <!-- 新建节点对话框:工具栏「新增」与右键「新建同级/子级」共用(图标/颜色/名称/描述/父级树) -->
     <CreateNodeDialog
@@ -513,6 +605,18 @@ const ctxItem = 'flex w-full cursor-pointer items-center gap-1.5 rounded-[4px] b
       :create-node="createViaDialog"
       :t="t"
       @created="onCreated"
+    />
+
+    <!-- 编辑节点对话框:右键「编辑」,回填目标节点字段,保存走 services.updateNode -->
+    <CreateNodeDialog
+      v-model:open="editOpen"
+      :kind="mode"
+      :nodes="createTree"
+      :node="editNode ?? undefined"
+      :create-node="createViaDialog"
+      :update-node="updateViaDialog"
+      :t="t"
+      @updated="onUpdated"
     />
   </div>
 </template>

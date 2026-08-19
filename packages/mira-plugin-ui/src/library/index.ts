@@ -11,6 +11,7 @@ export { default as CreateNodeDialog } from './CreateNodeDialog.vue'
 export { default as LibrarySelect } from './LibrarySelect.vue'
 export { default as ContextMenu } from './ContextMenu.vue'
 export { default as Dropzone } from './Dropzone.vue'
+export { default as MediaBrowser } from './MediaBrowser.vue'
 export { useLibraryTreeData } from './useLibraryTreeData'
 export { useLibraryTreeActions, type LibraryTreeMenuState, type UseLibraryTreeActionsOptions, type UseLibraryTreeActionsDeps } from './useLibraryTreeActions'
 export { buildTree, filterTree, flattenTree, collectIds, ROOT_ID } from './tree'
@@ -23,9 +24,13 @@ export type {
   LibrarySelectServer,
   LibraryTreeKind,
   LibraryTreeCreatePayload,
+  LibraryTreeUpdatePayload,
   LibraryTreeServices,
   LibraryTreeDialog,
   LibraryTreeUpload,
   LibraryTreeUploadTarget,
   LibraryTreeT,
+  MediaBrowserItem,
+  MediaBrowserFilters,
+  MediaBrowserServices,
 } from './types'

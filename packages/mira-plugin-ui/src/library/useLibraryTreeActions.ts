@@ -1,12 +1,13 @@
 /**
  * 文件夹/标签树的右键菜单动作(删除)。
- * 自 mira-browser-extension useLibraryTreeActions 迁移,数据/弹窗/文案改为注入。
+ * 自 mira-browser-extension useLibraryTreeActions 迁移,数据/文案改为注入。
  *
- * 这里只负责菜单状态与删除流程;「新建」经 CreateNodeDialog 由各视图模板自理
- * (useLibraryTreeActions 不再包办 prompt 收集名称)。
+ * 这里只负责菜单状态与删除流程;「新建/编辑」经 CreateNodeDialog 由各视图模板自理。
+ * 删除确认不再走宿主注入的 dialog,由 LibraryTreeView 内置 AlertDialog 呈现:
+ * requestDelete 打开确认框,confirmDelete 执行(失败错误写入 deleteError 展示在框内)。
  */
 import { ref } from 'vue';
-import type { LibraryTreeDialog, LibraryTreeNode, LibraryTreeKind, LibraryTreeServices, LibraryTreeT } from './types';
+import type { LibraryTreeNode, LibraryTreeKind, LibraryTreeServices, LibraryTreeT } from './types';
 import { createLibraryTreeT } from './i18n';
 
 export interface LibraryTreeMenuState {
@@ -23,16 +24,15 @@ export interface UseLibraryTreeActionsOptions {
   reload: () => Promise<void> | void;
 }
 
-/** 宿主注入:数据服务 / 弹窗 / 文案 */
+/** 宿主注入:数据服务 / 文案 */
 export interface UseLibraryTreeActionsDeps {
   services: LibraryTreeServices;
-  dialog: LibraryTreeDialog;
   t?: LibraryTreeT;
 }
 
 export function useLibraryTreeActions(options: UseLibraryTreeActionsOptions, deps: UseLibraryTreeActionsDeps) {
   const t = deps.t ?? createLibraryTreeT();
-  const { services, dialog } = deps;
+  const { services } = deps;
 
   const menu = ref<LibraryTreeMenuState | null>(null);
 
@@ -44,46 +44,47 @@ export function useLibraryTreeActions(options: UseLibraryTreeActionsOptions, dep
     menu.value = null;
   }
 
-  /**
-   * 删除节点。folder 用单弹窗 + 复选框(是否同时删除其中的文件);
-   * tag 用普通确认弹窗。
-   */
-  async function deleteNode() {
-    const target = menu.value?.node;
-    if (!target) return;
+  // ---- 删除:AlertDialog 确认(状态由本 composable 持有,模板在 LibraryTreeView) ----
+  /** 待删除节点(非空即确认框打开) */
+  const deleteTarget = ref<LibraryTreeNode | null>(null);
+  /** folder 场景:同时删除其中的文件 */
+  const deleteFiles = ref(false);
+  const deleteError = ref('');
+  const deleting = ref(false);
+
+  /** 右键「删除」:关闭菜单并打开 AlertDialog 确认 */
+  function requestDelete() {
+    if (!menu.value) return;
+    deleteTarget.value = menu.value.node;
+    deleteFiles.value = false;
+    deleteError.value = '';
     closeMenu();
+  }
 
+  /** 关闭确认框(取消 / 遮罩 / Esc) */
+  function closeDelete() {
+    deleteTarget.value = null;
+    deleteError.value = '';
+  }
+
+  /** 确认删除:成功关框并重载;失败错误留在框内可重试 */
+  async function confirmDelete() {
+    const target = deleteTarget.value;
     const libId = options.libraryId();
-    if (!libId) return;
-
-    let deleteFiles = false;
-    if (options.mode === 'folder') {
-      // 单弹窗:确认删除 + 复选框「同时删除其中的文件」
-      const r = await dialog.confirmCheck({
-        message: t('tree.deleteFolderConfirm', { name: target.title }),
-        checkboxLabel: t('tree.deleteFilesCheck'),
-        danger: true,
-      });
-      if (!r.ok) return;
-      deleteFiles = r.checked;
-    } else {
-      if (!(await dialog.confirm({
-        message: t('tree.deleteTagConfirm', { name: target.title }),
-        danger: true,
-      }))) return;
-    }
-
+    if (!target || !libId || deleting.value) return;
+    deleting.value = true;
+    deleteError.value = '';
     try {
-      await services.deleteNode(options.mode, libId, target.id, deleteFiles);
+      await services.deleteNode(options.mode, libId, target.id, options.mode === 'folder' && deleteFiles.value);
+      closeDelete();
       await options.reload();
     } catch (e: any) {
       console.warn('[mira-plugin-ui] deleteNode failed', { error: e?.message });
-      await dialog.alert({
-        title: t('common.failed'),
-        message: t('tree.deleteFailed', { error: e?.message ?? String(e) }),
-      });
+      deleteError.value = t('tree.deleteFailed', { error: e?.message ?? String(e) });
+    } finally {
+      deleting.value = false;
     }
   }
 
-  return { menu, openMenu, closeMenu, deleteNode };
+  return { menu, openMenu, closeMenu, requestDelete, closeDelete, confirmDelete, deleteTarget, deleteFiles, deleteError, deleting };
 }

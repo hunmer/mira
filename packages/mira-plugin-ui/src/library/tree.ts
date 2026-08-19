@@ -32,6 +32,8 @@ export function buildTree(items: LibraryFlatItem[]): LibraryTreeNode[] {
         id: it.id,
         title: it.title,
         color: it.color,
+        description: it.description,
+        icon: it.icon,
         parentId,
         level,
         children: build(it.id, level + 1),

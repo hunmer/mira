@@ -3,8 +3,8 @@ import { computed, onMounted, ref } from 'vue'
 import { FileText, Folder, Loader2, LogOut, Moon, Server, Sun } from '@lucide/vue'
 import { MiraClient } from 'mira-app-core/shared/sdk'
 import { SaveLocationDialog, Progress, type SaveLocation } from '@/index'
-import { Dropzone, LibrarySelect, LibraryTreeView } from '@/library'
-import type { LibraryFlatItem, LibrarySelectServer, LibraryTreeDialog, LibraryTreeServices, LibraryTreeNode } from '@/library'
+import { Dropzone, LibrarySelect, LibraryTreeView, MediaBrowser } from '@/library'
+import type { LibraryFlatItem, LibrarySelectServer, LibraryTreeDialog, LibraryTreeServices, LibraryTreeNode, MediaBrowserFilters, MediaBrowserItem, MediaBrowserServices } from '@/library'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -152,6 +152,8 @@ function adaptRows (rows: any[]): LibraryFlatItem[] {
     title: r.title ?? r.name,
     parent_id: typeof r.parent_id === 'number' ? r.parent_id : undefined,
     color: r.color,
+    description: r.description,
+    icon: r.icon,
     sort_index: r.sort_index,
   }))
 }
@@ -186,6 +188,24 @@ const treeServices: LibraryTreeServices = {
     return kind === 'folder'
       ? client.folders().deleteFolder(libId, id, deleteFiles)
       : client.tags().deleteTag(libId, id)
+  },
+  // 右键「编辑」:改名称/颜色/图标/描述(未连接时写内存 mock)
+  async updateNode (kind, libId, id, title, extra) {
+    if (!connected.value || !client) {
+      const list = kind === 'folder' ? mockFolders : mockTags
+      const row = list.value.find(i => i.id === id)
+      if (row) {
+        row.title = title
+        row.color = extra?.color
+        row.description = extra?.description
+        row.icon = extra?.icon
+      }
+      return
+    }
+    const updates = { title, color: extra?.color, description: extra?.description, icon: extra?.icon }
+    return kind === 'folder'
+      ? client.folders().updateFolder(libId, id, updates)
+      : client.tags().updateTag(libId, id, updates)
   },
   // 拖拽排序:同层 sort_index(未连接时写内存 mock)
   async updateSortIndex (kind, libId, items) {
@@ -225,6 +245,91 @@ const treeDialog: LibraryTreeDialog = {
     const ok = window.confirm(o.message ?? '')
     return { ok, checked: ok && window.confirm(o.checkboxLabel ?? '') }
   },
+}
+
+/* ---------- MediaBrowser 文件浏览器演示(网格/瀑布流) ---------- */
+const mediaView = ref<'grid' | 'waterfall'>('grid')
+
+// mock 数据(未连接时):渐变 SVG 缩略图 + 多种宽高比,瀑布流布局效果可见
+function gradientThumb (i: number, w: number, h: number) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">` +
+    `<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">` +
+    `<stop offset="0" stop-color="hsl(${(i * 47) % 360} 70% 65%)"/>` +
+    `<stop offset="1" stop-color="hsl(${(i * 47 + 60) % 360} 70% 45%)"/>` +
+    `</linearGradient></defs><rect width="100%" height="100%" fill="url(#g)"/></svg>`
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`
+}
+
+const mockAspects = ['1:1', '4:3', '3:4', '16:9', '9:16', '3:2', '2:3']
+const mockFiles = ref<MediaBrowserItem[]>(Array.from({ length: 24 }, (_, i) => {
+  const aspect = mockAspects[i % mockAspects.length]
+  const ext = ['png', 'jpg', 'mp4', 'mp3', 'pdf'][i % 5]
+  return {
+    id: i + 1,
+    title: `演示素材 ${String(i + 1).padStart(2, '0')}.${ext}`,
+    size: 1024 * (i + 1) * 137,
+    extension: ext,
+    mime_type: ext === 'png' || ext === 'jpg' ? `image/${ext}` : ext === 'mp4' ? 'video/mp4' : ext === 'mp3' ? 'audio/mpeg' : 'application/pdf',
+    imported_at: Date.now() - i * 86400_000,
+    aspect,
+  }
+}))
+
+// 连接后走 SDK getFiles(服务端过滤/排序);未连接在内存 mock 上过滤/排序
+const mediaServices: MediaBrowserServices = {
+  async listFiles (filters) {
+    if (connected.value && client) {
+      const ret: any = await client.files().getFiles({
+        libraryId: currentLibraryId.value,
+        filters: {
+          title: filters?.title,
+          category: filters?.category,
+          sort: filters?.sort,
+          order: filters?.order,
+          limit: 200,
+        } as any,
+      })
+      // 服务端实际返回分页对象 { result, limit, offset, total }(SDK 类型声明为数组,与实际不符)
+      const rows: any[] = Array.isArray(ret) ? ret : (ret?.result ?? [])
+      // 数据库行为原始列:name 含扩展名,thumb 是 0/1 的"已生成缩略图"标志
+      return rows.map(r => {
+        const name = r.title ?? r.name ?? ''
+        const extension = name.includes('.') ? name.split('.').pop()!.toLowerCase() : ''
+        return {
+          id: r.id,
+          title: name,
+          size: r.size,
+          extension,
+          imported_at: r.imported_at,
+          thumbnail_path: r.thumb ? 'generated' : undefined,
+        }
+      })
+    }
+    let list = [...mockFiles.value]
+    if (filters?.title) list = list.filter(f => f.title.toLowerCase().includes(filters.title!.toLowerCase()))
+    if (filters?.category) list = list.filter(f => f.mime_type?.startsWith(filters.category!))
+    const key = filters?.sort || 'imported_at'
+    const dir = filters?.order === 'asc' ? 1 : -1
+    list.sort((a, b) => {
+      const va = key === 'name' ? a.title : (a[key as 'size' | 'imported_at'] ?? 0)
+      const vb = key === 'name' ? b.title : (b[key as 'size' | 'imported_at'] ?? 0)
+      return (va > vb ? 1 : -1) * dir
+    })
+    return list
+  },
+  // 真实缩略图走 /api/files/thumb(img 无法带 header,token 拼 query);未生成缩略图的文件不给 URL,组件回退类型图标
+  getThumbUrl (item) {
+    if (connected.value) {
+      if (!item.thumbnail_path) return undefined
+      return `${apiBaseUrl.value}/api/files/thumb/${currentLibraryId.value}/${item.id}?token=${token.value}`
+    }
+    const [w, h] = (item.aspect || '1:1').split(':').map(Number)
+    return gradientThumb(Number(item.id) - 1, w * 120, h * 120)
+  },
+}
+
+function handleMediaClick (item: MediaBrowserItem) {
+  console.log('[MediaBrowser demo] click:', item.title)
 }
 
 /* ---------- Dropzone 暂存 + 真实上传 ---------- */
@@ -430,6 +535,24 @@ async function startUpload () {
             :dialog="treeDialog"
             :selected="treeMode === 'folder' ? selectedFolder : selectedTags"
             @update:selected="treeMode === 'folder' ? (selectedFolder = $event) : (selectedTags = $event)"
+          />
+        </div>
+      </section>
+
+      <!-- MediaBrowser 文件浏览器演示:网格/瀑布流切换 -->
+      <section class="bg-card text-card-foreground flex flex-col gap-4 rounded-xl border p-6 shadow-sm">
+        <div class="flex flex-col gap-1">
+          <h2 class="text-base font-semibold">MediaBrowser 文件浏览器</h2>
+          <p class="text-muted-foreground text-sm">
+            {{ connected ? '数据来自当前素材库（SDK getFiles 过滤/排序，缩略图走 /api/files/thumb）' : '未连接 server，演示 mock 数据（渐变缩略图 + 多种宽高比，切换瀑布流可见高度差异）' }}
+          </p>
+        </div>
+        <div class="h-[32rem] overflow-hidden rounded-lg border">
+          <MediaBrowser
+            v-model:view="mediaView"
+            :library-id="currentLibraryId || 'mock'"
+            :services="mediaServices"
+            @item-click="handleMediaClick"
           />
         </div>
       </section>

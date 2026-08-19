@@ -583,6 +583,9 @@ importers:
 
   packages/mira-plugin-ui:
     dependencies:
+      '@hunmer/vue-masonry':
+        specifier: workspace:*
+        version: link:../vue-masonry
       '@lucide/vue':
         specifier: ^1.32.0
         version: 1.32.0(vue@3.5.13(typescript@5.8.3))
@@ -595,6 +598,9 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      motion-v:
+        specifier: ^2.2.1
+        version: 2.2.1(@vueuse/core@14.4.0(vue@3.5.13(typescript@5.8.3)))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vue@3.5.13(typescript@5.8.3))
       reka-ui:
         specifier: ^2.9.7
         version: 2.10.3(vue@3.5.13(typescript@5.8.3))
@@ -16385,15 +16391,20 @@ snapshots:
 
   mira-plugin-ui@file:packages/mira-plugin-ui(vue@3.5.41(typescript@5.8.3)):
     dependencies:
+      '@hunmer/vue-masonry': link:packages/vue-masonry
       '@lucide/vue': 1.32.0(vue@3.5.41(typescript@5.8.3))
       '@vueuse/core': 14.4.0(vue@3.5.41(typescript@5.8.3))
       class-variance-authority: 0.7.1
       clsx: 2.1.1
+      motion-v: 2.2.1(@vueuse/core@14.4.0(vue@3.5.41(typescript@5.8.3)))(vue@3.5.41(typescript@5.8.3))
       reka-ui: 2.10.3(vue@3.5.41(typescript@5.8.3))
       tailwind-merge: 3.6.0
       vue: 3.5.41(typescript@5.8.3)
     transitivePeerDependencies:
+      - '@emotion/is-prop-valid'
       - '@vue/composition-api'
+      - react
+      - react-dom
 
   mitt@3.0.1: {}
 
@@ -16452,6 +16463,19 @@ snapshots:
       motion-dom: 12.40.0
       motion-utils: 12.39.0
       vue: 3.5.13(typescript@5.8.3)
+    transitivePeerDependencies:
+      - '@emotion/is-prop-valid'
+      - react
+      - react-dom
+
+  motion-v@2.2.1(@vueuse/core@14.4.0(vue@3.5.41(typescript@5.8.3)))(vue@3.5.41(typescript@5.8.3)):
+    dependencies:
+      '@vueuse/core': 14.4.0(vue@3.5.41(typescript@5.8.3))
+      framer-motion: 12.40.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      hey-listen: 1.0.8
+      motion-dom: 12.40.0
+      motion-utils: 12.39.0
+      vue: 3.5.41(typescript@5.8.3)
     transitivePeerDependencies:
       - '@emotion/is-prop-valid'
       - react

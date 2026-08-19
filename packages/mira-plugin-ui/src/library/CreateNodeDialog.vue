@@ -1,9 +1,10 @@
 <script setup lang="ts">
 /**
- * 新建节点(文件夹/标签)对话框:图标/颜色/名称/描述 + 父级树选择(自 SaveLocationForm 抽离)。
+ * 新建/编辑节点(文件夹/标签)对话框:图标/颜色/名称/描述 + 父级树选择(自 SaveLocationForm 抽离)。
  *
- * 确认后 await createNode 服务创建(失败错误展示在对话框内),成功关闭并
- * emit('created', { id, parentId }) 由宿主决定刷新/展开/选中。
+ * 确认后 await createNode/updateNode 服务创建或更新(失败错误展示在对话框内),成功关闭并
+ * emit('created'/'updated') 由宿主决定刷新/展开/选中。
+ * 传入 node 即编辑模式:回填该节点字段,隐藏父级树(移动走拖拽),确认走 updateNode。
  * 父级树的展开与搜索状态内部自持:每次打开重置并默认展开全部。
  * 文案经 t prop 注入(宿主缺 key 时回退内置中文)。
  *
@@ -20,7 +21,7 @@ import { Label } from '../components/ui/label'
 import LibraryTree from './LibraryTree.vue'
 import { createLibraryTreeT } from './i18n'
 import { ROOT_ID, collectIds, filterTree, flattenTree } from './tree'
-import type { LibraryTreeNode, LibraryTreeCreatePayload, LibraryTreeT } from './types'
+import type { LibraryTreeNode, LibraryTreeCreatePayload, LibraryTreeT, LibraryTreeUpdatePayload } from './types'
 
 const props = withDefaults(defineProps<{
   kind: LibraryTreeCreatePayload['kind']
@@ -30,6 +31,9 @@ const props = withDefaults(defineProps<{
   defaultParentId?: number
   /** 创建服务:返回新节点 id 供宿主选中(失败抛错展示在对话框内) */
   createNode: (payload: LibraryTreeCreatePayload) => Promise<number | undefined>
+  /** 编辑目标(传入即编辑模式)与更新服务:确认时走 updateNode 而非 createNode */
+  node?: LibraryTreeNode
+  updateNode?: (payload: LibraryTreeUpdatePayload) => Promise<unknown>
   /** 文案函数,缺省用内置中文 */
   t?: LibraryTreeT
 }>(), { defaultParentId: 0 })
@@ -38,7 +42,12 @@ const open = defineModel<boolean>('open', { default: false })
 const emit = defineEmits<{
   /** 创建成功:id 为服务返回的新节点 id(部分实现拿不到时缺省) */
   (event: 'created', value: { id?: number; parentId: number }): void
+  /** 编辑保存成功 */
+  (event: 'updated', value: { id: number; parentId: number }): void
 }>()
+
+/** 编辑模式:传入 node 即编辑(回填字段,隐藏父级树,确认走 updateNode) */
+const editing = computed(() => !!props.node)
 
 const fallbackT = createLibraryTreeT()
 /** 宿主未传 t 或宿主缺 key(vue-i18n 返回 key 本身)时回退内置中文 */
@@ -61,8 +70,12 @@ const searchTerm = ref('')
 
 watch(open, value => {
   if (!value) return
-  form.value = { title: '', description: '', color: null, icon: '' }
-  parentId.value = props.defaultParentId || ROOT_ID
+  // 编辑模式回填目标节点;新建模式重置为空表单
+  const node = props.node
+  form.value = node
+    ? { title: node.title, description: node.description ?? '', color: node.color ?? null, icon: node.icon ?? '' }
+    : { title: '', description: '', color: null, icon: '' }
+  parentId.value = node ? node.parentId : (props.defaultParentId || ROOT_ID)
   searchTerm.value = ''
   error.value = ''
   expanded.value = new Set(flattenTree(props.nodes).filter(n => n.children.length).map(n => n.id))
@@ -127,7 +140,7 @@ async function submit() {
   submitting.value = true
   error.value = ''
   try {
-    const id = await props.createNode({
+    const payload = {
       kind: props.kind,
       parentId: parentId.value,
       title,
@@ -135,7 +148,14 @@ async function submit() {
       color: form.value.color ?? undefined,
       // 空字符串表示使用默认图标,不提交
       icon: form.value.icon.trim() || undefined,
-    })
+    }
+    if (editing.value && props.node) {
+      await props.updateNode?.({ ...payload, id: props.node.id })
+      open.value = false
+      emit('updated', { id: props.node.id, parentId: parentId.value })
+      return
+    }
+    const id = await props.createNode(payload)
     open.value = false
     emit('created', { id: id ?? undefined, parentId: parentId.value })
   } catch (e: any) {
@@ -150,8 +170,8 @@ async function submit() {
   <Dialog :open="open" @update:open="(value: boolean) => open = value">
     <DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-md">
       <DialogHeader>
-        <DialogTitle>{{ tt('library.create', { type: kindText }) }}</DialogTitle>
-        <DialogDescription>{{ tt('tree.createUnder', { parent: parentTitle }) }}</DialogDescription>
+        <DialogTitle>{{ editing ? tt('tree.editTitle', { type: kindText }) : tt('library.create', { type: kindText }) }}</DialogTitle>
+        <DialogDescription>{{ editing ? tt('tree.editingNode', { name: props.node?.title }) : tt('tree.createUnder', { parent: parentTitle }) }}</DialogDescription>
       </DialogHeader>
 
       <form class="grid gap-4" @submit.prevent="submit">
@@ -200,8 +220,8 @@ async function submit() {
           />
         </div>
 
-        <!-- 父级选择:搜索过滤 + 树单选(点根行=建到根) -->
-        <div class="grid gap-2">
+        <!-- 父级选择:搜索过滤 + 树单选(点根行=建到根);编辑模式不改父级(移动走拖拽),隐藏 -->
+        <div v-if="!editing" class="grid gap-2">
           <Label>{{ tt('tree.parentNode', { parent: parentTitle }) }}</Label>
           <Input
             v-model="searchTerm"
@@ -230,7 +250,9 @@ async function submit() {
         <Button variant="outline" :disabled="submitting" @click="open = false">{{ tt('common.cancel') }}</Button>
         <Button :disabled="submitting || !form.title.trim()" @click="submit">
           <Loader2 v-if="submitting" class="size-4 animate-spin" />
-          {{ submitting ? tt('tree.creating') : tt('common.create') }}
+          <!-- 编辑保存 / 新建创建 按模式切换文案 -->
+          <template v-if="editing">{{ submitting ? tt('tree.saving') : tt('common.save') }}</template>
+          <template v-else>{{ submitting ? tt('tree.creating') : tt('common.create') }}</template>
         </Button>
       </DialogFooter>
     </DialogContent>

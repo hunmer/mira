@@ -4,6 +4,7 @@ import LibrarySelect from './library/LibrarySelect.vue'
 import SaveLocationDialog from './SaveLocationDialog.vue'
 import SaveLocationForm from './SaveLocationForm.vue'
 import * as attachment from './components/ui/attachment'
+import * as alertDialog from './components/ui/alert-dialog'
 import * as button from './components/ui/button'
 import * as combobox from './components/ui/combobox'
 import * as dialog from './components/ui/dialog'
@@ -21,6 +22,7 @@ export { default as LibrarySelect } from './library/LibrarySelect.vue'
 export type { SaveLocation } from './types'
 export type { LibrarySelectOption, LibrarySelectServer } from './library/types'
 export * from './components/ui/attachment'
+export * from './components/ui/alert-dialog'
 export * from './components/ui/button'
 export * from './components/ui/combobox'
 export * from './components/ui/dialog'
@@ -37,6 +39,7 @@ const components = {
   SaveLocationForm,
   LibrarySelect,
   ...attachment,
+  ...alertDialog,
   ...button,
   ...combobox,
   ...dialog,

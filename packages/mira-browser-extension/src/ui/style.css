@@ -1,28 +1,31 @@
-/* 暗色(默认) */
+/*
+ * 统一主题令牌:结构色(bg/fg/border/muted/card 等)不再自定义,
+ * 直接使用 mira-plugin-ui tailwind.css 的 shadcn 令牌(:root/.dark,oklch,与桌面端一致),
+ * 亮暗切换由 html 上的 .dark 类驱动(theme.ts 与 data-theme 同步维护)。
+ * 本文件只负责:
+ *   1. 扩展历史短名变量派生映射(--bg/--fg/… → shadcn 令牌),自绘组件无需改动;
+ *   2. 品牌主色(绿)覆盖 shadcn 的 --primary/--primary-foreground(默认蓝),
+ *      mira-plugin-ui 组件的 bg-primary/text-primary 随之同色。
+ * 注意:--muted 两体系语义不同(扩展=弱化前景 / shadcn=弱化背景),
+ * 映射为 --muted-foreground 后 shadcn 的 --muted 恢复本义,不再被覆盖。
+ * 加载顺序:main.ts 先 import tailwind.css 再 import 本文件,保证品牌色覆盖生效。
+ */
 :root,
 :root[data-theme="dark"] {
-  --bg: #0f0f10;
-  --bg-elev: #1a1a1c;
-  --fg: #fafafa;
-  --muted: #a1a1aa;
-  --border: #27272a;
+  --bg: var(--background);
+  --bg-elev: var(--card);
+  --fg: var(--foreground);
+  --muted: var(--muted-foreground);
+  --danger: var(--destructive);
+  --primary-fg: var(--primary-foreground);
+  /* 品牌主色(绿) */
   --primary: #4ade80;
-  --primary-fg: #052e16;
-  --danger: #ef4444;
-  --radius: 8px;
+  --primary-foreground: #052e16;
   color-scheme: dark;
 }
-/* 亮色 */
 :root[data-theme="light"] {
-  --bg: #ffffff;
-  --bg-elev: #f4f4f5;
-  --fg: #18181b;
-  --muted: #71717a;
-  --border: #e4e4e7;
   --primary: #16a34a;
-  --primary-fg: #ffffff;
-  --danger: #dc2626;
-  --radius: 8px;
+  --primary-foreground: #ffffff;
   color-scheme: light;
 }
 * { box-sizing: border-box; }

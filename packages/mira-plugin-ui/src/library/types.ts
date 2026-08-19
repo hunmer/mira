@@ -13,6 +13,9 @@ export interface LibraryTreeNode {
   id: number
   title: string
   color?: number
+  /** 描述/图标(宿主数据带出则透传,供编辑对话框回填) */
+  description?: string
+  icon?: string
   /** 0 表示根节点(无父级) */
   parentId: number
   level: number
@@ -25,6 +28,9 @@ export interface LibraryFlatItem {
   title: string
   parent_id?: number
   color?: number
+  description?: string
+  /** Material Icons 图标名 */
+  icon?: string
   /** 同层排序号(后端 sort_index,拖拽排序保存;缺省按 title 排) */
   sort_index?: number
 }
@@ -42,6 +48,9 @@ export interface LibraryTreeCreatePayload {
   /** Material Icons 图标名 */
   icon?: string
 }
+
+/** 编辑节点载荷(CreateNodeDialog 编辑模式确认时抛给宿主) */
+export type LibraryTreeUpdatePayload = LibraryTreeCreatePayload & { id: number }
 
 /** 素材库候选项(LibrarySelect 的选项形态) */
 export interface LibrarySelectOption {
@@ -72,6 +81,14 @@ export interface LibraryTreeServices {
   ): Promise<unknown>
   /** 删除节点;folder 场景 deleteFiles 表示同时删除其中文件 */
   deleteNode(kind: LibraryTreeKind, libraryId: string, id: number, deleteFiles?: boolean): Promise<unknown>
+  /** 更新节点(右键「编辑」);提供后启用菜单项,extra 为可选的描述/颜色/图标 */
+  updateNode?(
+    kind: LibraryTreeKind,
+    libraryId: string,
+    id: number,
+    title: string,
+    extra?: Pick<LibraryTreeCreatePayload, 'description' | 'color' | 'icon'>,
+  ): Promise<unknown>
   /** 同层排序(提供后启用树内拖拽排序),items 为该层全部兄弟的新顺序 */
   updateSortIndex?(kind: LibraryTreeKind, libraryId: string, items: { id: number; sort_index: number }[]): Promise<unknown>
   /** 跨层移动节点到新父级(parentId=null 移到根;提供后才允许跨层拖拽) */
@@ -109,3 +126,37 @@ export interface LibraryTreeUpload {
 
 /** 文案函数:vue-i18n 风格(key + {n} 命名插值),缺省用内置中文 */
 export type LibraryTreeT = (key: string, params?: Record<string, unknown>) => string
+
+/* ============ 素材库文件浏览器(MediaBrowser) ============ */
+
+/**
+ * 文件条目:后端 FileData 的兼容子集(SDK getFiles 返回值可直接传入),
+ * 瀑布流布局可用 aspect 指定宽高比(如 "16:9"),缺省按 1:1。
+ */
+export interface MediaBrowserItem {
+  id: number | string
+  title: string
+  size?: number
+  extension?: string
+  mime_type?: string
+  thumbnail_path?: string
+  imported_at?: number
+  /** 宽高比("W:H"),瀑布流卡片高度依据 */
+  aspect?: string
+}
+
+/** 文件浏览器的筛选/排序条件(透传给 services.listFiles) */
+export interface MediaBrowserFilters {
+  /** 标题关键词 */
+  title?: string
+  category?: 'image' | 'video' | 'audio'
+  sort?: 'imported_at' | 'name' | 'size'
+  order?: 'asc' | 'desc'
+}
+
+/** 数据服务:宿主实现(扩展走 background 桥,其他宿主可走 SDK) */
+export interface MediaBrowserServices {
+  listFiles(filters?: MediaBrowserFilters): Promise<MediaBrowserItem[]>
+  /** 缩略图地址(如 /api/files/thumb/:libraryId/:id?token=…);不提供则卡片显示类型图标 */
+  getThumbUrl?(item: MediaBrowserItem): string
+}

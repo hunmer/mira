@@ -118,8 +118,9 @@ describe('LibraryTreeView 搜索(按钮切换 + 输入过滤)', () => {
     dialog.remove();
   });
 
-  it('右键「新建子级」打开 CreateNodeDialog(未注入 dialog 也可用,菜单无删除项)', async () => {
+  it('右键「新建子级」打开 CreateNodeDialog;「删除」走内置 AlertDialog 确认(未注入 dialog 也可用)', async () => {
     const created: { kind: string; title: string; parentId?: number }[] = [];
+    const deleted: { kind: string; id: number }[] = [];
     const services = {
       listFolders: async () => items,
       listTags: async () => items,
@@ -127,17 +128,19 @@ describe('LibraryTreeView 搜索(按钮切换 + 输入过滤)', () => {
         created.push({ kind, title, parentId });
         return 99;
       },
-      deleteNode: async () => {},
+      deleteNode: async (kind: string, _libId: string, id: number) => {
+        deleted.push({ kind, id });
+      },
     };
     const host = document.createElement('div');
     document.body.appendChild(host);
-    // 不传 dialog:右键菜单仍可新建(内置 CreateNodeDialog),仅无「删除」项
+    // 不传 dialog:右键菜单新建走内置 CreateNodeDialog,删除走内置 AlertDialog 确认
     const app = createApp(LibraryTreeView as any, { mode: 'tag', libraryId: 'lib1', services });
     app.mount(host);
     await new Promise(r => setTimeout(r, 20));
     await nextTick();
 
-    // 右键第一个节点(行 div 绑定 @contextmenu,li[role=treeitem] 为外层) → 菜单出现,无「删除」
+    // 右键第一个节点(行 div 绑定 @contextmenu,li[role=treeitem] 为外层) → 菜单出现,含「删除」
     const row = host.querySelector('[role="treeitem"] > div') as HTMLElement;
     expect(row).toBeTruthy();
     row.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 10, clientY: 10 }));
@@ -145,7 +148,7 @@ describe('LibraryTreeView 搜索(按钮切换 + 输入过滤)', () => {
     await new Promise(r => setTimeout(r, 20));
     const menuEl = [...document.body.querySelectorAll('button')].find(b => b.textContent?.trim() === '新建同级');
     expect(menuEl).toBeTruthy();
-    expect([...document.body.querySelectorAll('button')].some(b => b.textContent?.trim() === '删除')).toBe(false);
+    expect([...document.body.querySelectorAll('button')].some(b => b.textContent?.trim() === '删除')).toBe(true);
 
     // 点「新建子级」→ CreateNodeDialog 打开,父级预填右键节点
     ([...document.body.querySelectorAll('button')].find(b => b.textContent?.includes('新建子')) as HTMLElement).click();
@@ -166,6 +169,23 @@ describe('LibraryTreeView 搜索(按钮切换 + 输入过滤)', () => {
     await new Promise(r => setTimeout(r, 50));
 
     expect(created).toEqual([{ kind: 'tag', title: '新标签', parentId: 1 }]);
+
+    // 右键「删除」→ 内置 AlertDialog 确认 → 确认后调 deleteNode(reload 后行重新渲染,重新取)
+    const row2 = host.querySelector('[role="treeitem"] > div') as HTMLElement;
+    row2.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 10, clientY: 10 }));
+    await nextTick();
+    await new Promise(r => setTimeout(r, 20));
+    ([...document.body.querySelectorAll('button')].find(b => b.textContent?.trim() === '删除') as HTMLElement).click();
+    await nextTick();
+    await new Promise(r => setTimeout(r, 50));
+    const alertEl = document.body.querySelector('[role="alertdialog"]') as HTMLElement;
+    expect(alertEl).toBeTruthy();
+    expect(alertEl.textContent).toContain('确定删除标签「设计」?');
+    ([...alertEl.querySelectorAll('button')].find(b => b.textContent?.trim() === '删除') as HTMLElement).click();
+    await nextTick();
+    await new Promise(r => setTimeout(r, 50));
+
+    expect(deleted).toEqual([{ kind: 'tag', id: 1 }]);
 
     app.unmount();
     host.remove();
