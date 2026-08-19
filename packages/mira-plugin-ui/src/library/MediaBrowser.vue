@@ -218,9 +218,39 @@ function formatSize(size?: number): string {
   return `${(size / 1024 / 1024).toFixed(1)} MB`;
 }
 
+// ---- 瀑布流宽高预取(services.getMetadataByIds 提供后启用,参考桌面端 WaterfallComponent) ----
+// id -> "W:H" 宽高比;优先级 item.aspect > 预取缓存 > 1:1
+const ratios = ref<Record<string, string>>({});
+let ratioVersion = 0;
+
+async function preloadRatios() {
+  const fetcher = props.services.getMetadataByIds;
+  if (!fetcher || view.value !== 'waterfall') return;
+  const pending = items.value.filter(i => !i.aspect && !ratios.value[String(i.id)]);
+  if (!pending.length) return;
+  const version = ++ratioVersion;
+  try {
+    const entries = await fetcher(pending.map(i => i.id));
+    if (version !== ratioVersion) return;
+    const next = { ...ratios.value };
+    for (const entry of entries ?? []) {
+      const w = Number(entry.width);
+      const h = Number(entry.height);
+      if (Number.isFinite(w) && w > 0 && Number.isFinite(h) && h > 0) {
+        next[String(entry.id)] = `${w}:${h}`;
+      }
+    }
+    ratios.value = next;
+  } catch {
+    // metadata 不可用:保持 1:1 兜底
+  }
+}
+
+watch([items, view], () => void preloadRatios());
+
 /** 瀑布流布局元信息:按 item.aspect 定高度,进入视窗才渲染内容 */
 function getMeta(item: MediaBrowserItem): MasonryItemMeta {
-  return { aspect: item.aspect || '1:1', lazy: true };
+  return { aspect: item.aspect || ratios.value[String(item.id)] || '1:1', lazy: true };
 }
 </script>
 

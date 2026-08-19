@@ -159,4 +159,9 @@ export interface MediaBrowserServices {
   listFiles(filters?: MediaBrowserFilters): Promise<MediaBrowserItem[]>
   /** 缩略图地址(如 /api/files/thumb/:libraryId/:id?token=…);不提供则卡片显示类型图标 */
   getThumbUrl?(item: MediaBrowserItem): string
+  /**
+   * 批量获取文件宽高(对应 SDK files().getMetadataByIds)。
+   * 提供后瀑布流按真实宽高布局(item.aspect 优先,无宽高的项退 1:1)。
+   */
+  getMetadataByIds?(ids: (string | number)[]): Promise<Array<{ id: string | number; width?: number; height?: number }>>
 }

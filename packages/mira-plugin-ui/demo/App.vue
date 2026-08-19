@@ -328,6 +328,11 @@ const mediaServices: MediaBrowserServices = {
     const [w, h] = (item.aspect || '1:1').split(':').map(Number)
     return gradientThumb(Number(item.id) - 1, w * 120, h * 120)
   },
+  // 瀑布流真实宽高(SDK getMetadataByIds);mock 数据自带 aspect 无需拉取
+  async getMetadataByIds (ids) {
+    if (!connected.value || !client) return []
+    return client.files().getMetadataByIds(currentLibraryId.value, ids)
+  },
 }
 
 function handleMediaClick (item: MediaBrowserItem) {
