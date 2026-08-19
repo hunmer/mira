@@ -16,6 +16,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
+import { spawn } from 'child_process';
 
 // 命令模块
 import { registerDoctor } from './cli/doctor';
@@ -31,6 +32,7 @@ import { registerDatabase } from './cli/commands/database';
 import { registerSystem } from './cli/commands/system';
 import { registerAutoStart } from './cli/commands/autostart';
 import { enableAutoStart, statusAutoStart, stopAutoStart, restartAutoStart } from './cli/autostart';
+import { getAnonymousClient } from './cli/client';
 
 // MCP 服务（懒加载，避免在非 MCP 模式下加载 SDK）
 import { startMcpServer } from './mcp/server';
@@ -81,6 +83,34 @@ function getPackageVersion(): string {
 
 const VERSION = getPackageVersion();
 const DEFAULT_DATA_PATH = path.join(os.homedir(), '.mira-data');
+
+/** 等待目标服务器停止响应（用于优雅退出后的确认），超时返回 false */
+async function waitForServerDown(stopClient: { system: () => { getSimpleHealth: () => Promise<any> } }, timeoutMs: number): Promise<boolean> {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+        try {
+            await stopClient.system().getSimpleHealth();
+        } catch (e: any) {
+            if (e?.error === 'NETWORK_ERROR') return true; // 已无法连接 = 已退出
+            throw e;
+        }
+        await new Promise(r => setTimeout(r, 300));
+    }
+    return false;
+}
+
+/** 等待本地端口上的服务器就绪（轮询 /health），超时返回 false */
+async function waitForServerUp(httpPort: number, timeoutMs: number): Promise<boolean> {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+        try {
+            const res = await fetch(`http://localhost:${httpPort}/health`);
+            if (res.ok) return true;
+        } catch { /* 尚未就绪 */ }
+        await new Promise(r => setTimeout(r, 500));
+    }
+    return false;
+}
 
 program
     .name('mira-app-server')
@@ -167,18 +197,44 @@ program
 // ============ stop ============
 program
     .command('stop')
-    .description('停止系统托管的 Mira 服务（保留开机自启注册；前台实例请用 Ctrl+C）')
-    .action(() => {
+    .description('停止运行中的 Mira 服务（优先通过 HTTP 优雅停止；系统托管实例一并停止）')
+    .action(async () => {
         try {
+            let stopped = false;
+
+            // 1) 通过 stop HTTP API 优雅停止运行中的实例（无需登录，仅本机回环生效）
+            try {
+                const { client } = getAnonymousClient();
+                await client.system().stopServer();
+                console.log('✅ 已通知运行中的 Mira Server 优雅退出。');
+                stopped = true;
+            } catch (e: any) {
+                if (e?.error === 'NETWORK_ERROR') {
+                    // 目标地址没有实例在监听，继续检查系统托管实例
+                } else if (e?.status === 404) {
+                    console.warn('⚠️  目标服务器版本过旧，不支持远程停止（POST /api/system/stop 返回 404）。');
+                } else if (e?.status === 403) {
+                    console.error('❌ 服务端拒绝：仅允许本机停止服务（--server 指向了远程地址）。');
+                    process.exitCode = 1;
+                    return;
+                } else {
+                    throw e;
+                }
+            }
+
+            // 2) 停止系统托管的实例（保留开机自启注册；幂等）
             const status = statusAutoStart();
-            if (!status.registered) {
-                console.error('❌ 未注册开机自启，无系统托管实例可停止。');
+            if (status.registered) {
+                stopAutoStart();
+                console.log('✅ 已停止系统托管的 Mira 服务（开机自启注册已保留）。');
+                stopped = true;
+            }
+
+            if (!stopped) {
+                console.error('❌ 未发现运行中的 Mira 服务实例。');
                 console.error('   前台启动的实例请用 Ctrl+C 退出；如需系统托管请用 `mira-app-server start --autostart`。');
                 process.exitCode = 1;
-                return;
             }
-            stopAutoStart();
-            console.log('✅ 已停止 Mira 服务（开机自启注册已保留）。');
         } catch (e: any) {
             console.error(`❌ 停止失败：${e?.message || e}`);
             process.exitCode = 1;
@@ -188,18 +244,69 @@ program
 // ============ restart ============
 program
     .command('restart')
-    .description('重启系统托管的 Mira 服务')
-    .action(() => {
+    .description('重启 Mira 服务（系统托管实例复用注册配置；否则停止运行实例并后台拉起新实例）')
+    .option('-p, --http-port <number>', 'HTTP port number', '8081')
+    .option('-w, --ws-port <number>', 'WebSocket port number', '8018')
+    .option('-d, --data-path <path>', `Data directory path (default: ${DEFAULT_DATA_PATH})`)
+    .action(async (options) => {
         try {
+            // 1) 系统托管实例：复用已注册配置重启
             const status = statusAutoStart();
-            if (!status.registered) {
-                console.error('❌ 未注册开机自启，无系统托管实例可重启。');
-                console.error('   如需系统托管请用 `mira-app-server start --autostart`。');
-                process.exitCode = 1;
+            if (status.registered) {
+                restartAutoStart();
+                console.log('✅ 已按注册配置重启系统托管的 Mira 服务。');
                 return;
             }
-            restartAutoStart();
-            console.log('✅ 已重启 Mira 服务。');
+
+            // 2) 非托管实例：先经 stop API 优雅停止（无实例在跑则跳过）
+            try {
+                const { client } = getAnonymousClient();
+                await client.system().stopServer();
+                console.log('📴 已通知运行中的 Mira Server 优雅退出...');
+                const down = await waitForServerDown(client, 10000);
+                if (!down) {
+                    console.error('❌ 旧实例未能及时退出，请稍后重试或检查 ~/.mira/mira-server.err.log。');
+                    process.exitCode = 1;
+                    return;
+                }
+            } catch (e: any) {
+                if (e?.error === 'NETWORK_ERROR') {
+                    // 没有实例在跑，直接启动
+                } else if (e?.status === 404) {
+                    console.error('❌ 目标服务器版本过旧，不支持远程停止（POST /api/system/stop 返回 404），无法自动重启。');
+                    process.exitCode = 1;
+                    return;
+                } else {
+                    throw e;
+                }
+            }
+
+            // 3) 以分离进程后台拉起新实例，日志追加到 ~/.mira/
+            const dataPath = options.dataPath || process.env.DATA_PATH || DEFAULT_DATA_PATH;
+            const logsDir = path.join(os.homedir(), '.mira');
+            fs.mkdirSync(logsDir, { recursive: true });
+            const out = fs.openSync(path.join(logsDir, 'mira-server.out.log'), 'a');
+            const err = fs.openSync(path.join(logsDir, 'mira-server.err.log'), 'a');
+            const child = spawn(
+                process.execPath,
+                [
+                    path.join(__dirname, 'cli.js'), 'start',
+                    '--http-port', options.httpPort,
+                    '--ws-port', options.wsPort,
+                    '--data-path', dataPath,
+                ],
+                { detached: true, stdio: ['ignore', out, err], windowsHide: true }
+            );
+            child.unref();
+            console.log('🚀 已在后台启动 Mira Server...');
+
+            const up = await waitForServerUp(parseInt(options.httpPort), 30000);
+            if (up) {
+                console.log('✅ Mira Server 已重启。');
+            } else {
+                console.error('⚠️  后台实例 30s 内未就绪，请检查日志 ~/.mira/mira-server.err.log。');
+                process.exitCode = 1;
+            }
         } catch (e: any) {
             console.error(`❌ 重启失败：${e?.message || e}`);
             process.exitCode = 1;

@@ -461,6 +461,28 @@ export class MiraHttpServer {
             });
         });
 
+        // 停止服务（供本机 `mira-app-server stop` 调用）
+        // 不要求登录，但仅允许回环地址调用，避免局域网任意主机关闭服务
+        this.app.post('/api/system/stop', (req, res) => {
+            const ip = req.ip || req.socket.remoteAddress || '';
+            const isLoopback = ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
+            if (!isLoopback) {
+                return res.status(403).json({ code: 403, message: '仅允许本机停止服务', data: null });
+            }
+            res.json({ code: 0, data: { stopping: true }, timestamp: new Date().toISOString() });
+            // 先让响应发出，再优雅关闭并退出进程
+            setTimeout(async () => {
+                try {
+                    console.log('📴 Received stop request, gracefully shutting down...');
+                    await this.backend.stop();
+                } catch (e) {
+                    console.error('❌ Error during shutdown:', e);
+                } finally {
+                    process.exit(0);
+                }
+            }, 200);
+        });
+
         // 服务端日志流（SSE）—— 供本地控制台订阅后端运行日志。
         // 与 /health 同级、不挂权限中间件：仅本地 127.0.0.1 控制台使用。
         // 连接建立后先回放环形缓冲中「最近 100 条」历史，再实时推送新日志。

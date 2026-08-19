@@ -25,6 +25,15 @@ export class SystemModule {
     }
 
     /**
+     * 停止服务器（服务端优雅关闭后退出进程）
+     * 仅限本机回环调用，远程调用会被服务端拒绝（403）
+     * @returns Promise<{stopping: boolean}>
+     */
+    async stopServer(): Promise<{ stopping: boolean }> {
+        return await this.httpClient.post<{ stopping: boolean }>('/api/system/stop');
+    }
+
+    /**
      * 检查服务器是否可用
      * @returns Promise<boolean>
      */

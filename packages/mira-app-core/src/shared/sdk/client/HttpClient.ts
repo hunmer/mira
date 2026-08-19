@@ -47,6 +47,7 @@ export class HttpClient {
                         message: error.response.data?.message || error.message,
                         timestamp: new Date().toISOString(),
                         stack: error.response.data?.stack,
+                        status: error.response.status,
                     };
                     return Promise.reject(errorResponse);
                 } else if (error.request) {

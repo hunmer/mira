@@ -15,6 +15,7 @@ import { pluginSystem } from './PluginSystemCore'
 import { useConfirm } from '@renderer/composables/useConfirm'
 import { useToast } from '@renderer/composables/useToast'
 import { miraSDKService } from './MiraSDKService'
+import { useAuthStore } from '@renderer/stores/auth'
 
 /**
  * 递归剥离对象的响应式 Proxy，返回可被 Electron IPC（structured clone）克隆的纯对象。
@@ -941,15 +942,27 @@ export class PluginService {
         openPluginWindow: async (opts: {
           pluginId?: string
           entry?: string
+          url?: string
           title?: string
           width?: number
           height?: number
           query?: Record<string, string>
         }) => {
+          const entry = String(opts.entry || 'dist/index.html').replace(/^\/+/, '')
+          const serverUrl = config.source === 'server'
+            ? new URL(entry, `${String((config as ServerPluginConfig).url).replace(/\/+$/, '')}/`).toString()
+            : undefined
+          const token = config.source === 'server' ? useAuthStore().token : undefined
           const finalOpts = {
             pluginId: config.pluginId,
             entry: 'dist/index.html',
             ...opts,
+            ...(serverUrl ? { url: serverUrl } : {}),
+            query: {
+              ...opts.query,
+              ...(token ? { token } : {}),
+              ...(config.source === 'server' ? { libraryId: (config as ServerPluginConfig).libraryId } : {}),
+            },
           }
           const w: any = typeof window !== 'undefined' ? (window as any).electronAPI : undefined
           if (!w?.pluginWindow?.open) {

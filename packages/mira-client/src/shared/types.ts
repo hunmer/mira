@@ -260,6 +260,8 @@ export interface PluginWindowOpenOptions {
   pluginId: string
   /** 入口文件相对插件目录的路径，默认 'dist/index.html' */
   entry?: string
+  /** 服务端 Web 插件入口 URL */
+  url?: string
   /** 窗口标题，默认取插件名 */
   title?: string
   /** 窗口宽度，默认 1200 */

@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-08-18T11:34:56.809Z",
+  "generatedAt": "2026-08-19T02:58:08.086Z",
   "summary": {
-    "covered": 116,
+    "covered": 117,
     "missing": 11,
     "excluded": 13,
     "dynamic": 7
@@ -1574,11 +1574,22 @@
       ]
     },
     {
+      "method": "POST",
+      "path": "/api/system/stop",
+      "domain": "http-server-direct",
+      "file": "packages/mira-app-server/src/HttpServer.ts",
+      "line": 466,
+      "category": "covered",
+      "sdkMethods": [
+        "System.stopServer"
+      ]
+    },
+    {
       "method": "GET",
       "path": "/api/logs/stream",
       "domain": "http-server-direct",
       "file": "packages/mira-app-server/src/HttpServer.ts",
-      "line": 467,
+      "line": 489,
       "category": "excluded",
       "sdkMethods": [],
       "note": "SSE log stream, not JSON API"

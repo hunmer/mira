@@ -1,0 +1,29 @@
+{
+  "name": "mira-tiptap-editor",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": { "build": "vue-tsc -b && vite build", "dev": "vite" },
+  "dependencies": {
+    "@tiptap/core": "^2.27.2",
+    "@tiptap/extension-placeholder": "^2.11.5",
+    "@tiptap/pm": "^2.27.2",
+    "@tiptap/starter-kit": "^2.11.5",
+    "@tiptap/vue-3": "^2.11.5",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-vue-next": "^0.511.0",
+    "mira-app-core": "file:../../../../packages/mira-app-core",
+    "mira-plugin-ui": "file:../../../../packages/mira-plugin-ui",
+    "reka-ui": "^2.9.7",
+    "tailwind-merge": "^3.3.0",
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.3",
+    "@types/node": "^22.14.0",
+    "typescript": "~5.8.3",
+    "vite": "^6.3.2",
+    "vue-tsc": "^2.2.8"
+  }
+}

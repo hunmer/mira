@@ -16,6 +16,8 @@ export interface PluginWindowOpenOptions {
   pluginId: string
   /** 入口文件相对插件目录的路径，默认 'dist/index.html' */
   entry?: string
+  /** 服务端 Web 插件入口 URL，仅允许 /server-plugins/ 路径 */
+  url?: string
   /** 窗口标题 */
   title?: string
   /** 窗口宽度，默认 1200 */
@@ -162,24 +164,27 @@ export class PluginWindowHandlers {
 
       const entry = opts.entry || 'dist/index.html'
       const windowId = this.getWindowId(opts.pluginId, entry, opts.query)
-      const entryPath = await this.resolveEntryPath(opts.pluginId, entry)
+      const remoteUrl = opts.url ? this.resolveServerPluginUrl(opts.url, opts.query) : undefined
+      const entryPath = remoteUrl ? undefined : await this.resolveEntryPath(opts.pluginId, entry)
 
       // 复用已存在的窗口：聚焦并重新加载（切换 query）
       const existing = this.windows.get(windowId)
       if (existing && !existing.isDestroyed()) {
         existing.show()
         existing.focus()
-        await this.loadEntry(existing, entryPath, opts.query)
+        await this.loadEntry(existing, entryPath, opts.query, remoteUrl)
         return { success: true, windowId }
       }
 
       // 校验入口文件存在，给出清晰错误
-      try {
-        await fs.access(entryPath)
-      } catch {
-        const msg = `插件入口文件不存在: ${entryPath}（请先在插件目录执行构建，例如 pnpm install && pnpm build 生成 dist）`
-        logger.error('PluginWindowHandlers', msg)
-        return { success: false, message: msg }
+      if (entryPath) {
+        try {
+          await fs.access(entryPath)
+        } catch {
+          const msg = `插件入口文件不存在: ${entryPath}（请先在插件目录执行构建，例如 pnpm install && pnpm build 生成 dist）`
+          logger.error('PluginWindowHandlers', msg)
+          return { success: false, message: msg }
+        }
       }
 
       // 解析插件图标（若有）：从插件根目录读 plugin.json 的 icon 字段
@@ -243,9 +248,9 @@ export class PluginWindowHandlers {
         win.focus()
       })
 
-      await this.loadEntry(win, entryPath, opts.query)
+      await this.loadEntry(win, entryPath, opts.query, remoteUrl)
 
-      logger.info('PluginWindowHandlers', `Opened plugin window: ${windowId} -> ${entryPath}`)
+      logger.info('PluginWindowHandlers', `Opened plugin window: ${windowId} -> ${remoteUrl || entryPath}`)
       return { success: true, windowId }
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error)
@@ -260,15 +265,30 @@ export class PluginWindowHandlers {
    */
   private async loadEntry(
     win: BrowserWindow,
-    entryPath: string,
-    query?: Record<string, string>
+    entryPath: string | undefined,
+    query?: Record<string, string>,
+    remoteUrl?: string
   ): Promise<void> {
     if (win.isDestroyed()) return
+    if (remoteUrl) {
+      await win.loadURL(remoteUrl)
+      return
+    }
+    if (!entryPath) throw new Error('插件入口不能为空')
     const loadOpts: Electron.LoadFileOptions = {}
     if (query && Object.keys(query).length > 0) {
       loadOpts.query = query
     }
     await win.loadFile(entryPath, loadOpts)
+  }
+
+  private resolveServerPluginUrl(value: string, query?: Record<string, string>): string {
+    const url = new URL(value)
+    if (!['http:', 'https:'].includes(url.protocol) || !url.pathname.includes('/server-plugins/')) {
+      throw new Error('仅允许打开服务端插件 URL')
+    }
+    Object.entries(query || {}).forEach(([key, item]) => url.searchParams.set(key, String(item)))
+    return url.toString()
   }
 
   /**

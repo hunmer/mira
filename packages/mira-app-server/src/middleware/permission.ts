@@ -11,6 +11,8 @@ const PUBLIC_ROUTES: Set<string> = new Set([
     'POST /auth/login',
     'POST /auth/register',
     'GET /settings',
+    // 停止服务：handler 内部限定仅本机回环可调用
+    'POST /system/stop',
 ]);
 
 // 不需要鉴权的路由前缀（支持动态路径参数）

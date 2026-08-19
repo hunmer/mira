@@ -1,5 +1,5 @@
 /**
- * system 模块工具：健康检查、系统信息（无需鉴权）
+ * system 模块工具：健康检查、系统信息、停止服务（无需鉴权）
  */
 
 import { z } from 'zod';
@@ -32,6 +32,20 @@ export function registerSystemTools(mcp: McpServer, ctx: ToolContext): void {
             return run(async () => {
                 const client = ctx.getClient(false);
                 return await client.system().getSystemInfo();
+            });
+        }
+    );
+
+    mcp.registerTool(
+        'system_stop',
+        {
+            description: '停止运行中的 Mira 服务器（优雅关闭）。服务端仅允许本机回环调用；远程地址会被拒绝。',
+            inputSchema: {},
+        },
+        async () => {
+            return run(async () => {
+                const client = ctx.getClient(false);
+                return await client.system().stopServer();
             });
         }
     );

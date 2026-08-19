@@ -10,7 +10,7 @@
  *
  * 组件自递归:LibraryTree 渲染一层 children 时复用自身。
  */
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import type { LibraryTreeNode } from '@/shared/types';
 import { canAcceptDrop } from '@/shared/drag-data';
 
@@ -25,8 +25,14 @@ const props = withDefaults(
     expanded: Set<number>;
     /** 命中搜索的 id 集合(高亮) */
     matched?: Set<number>;
+    /** 选中态 id 集合(高亮行)。传入即启用选中模式:点行触发 select,展开只走箭头 */
+    selectedIds?: Set<number>;
+    /** 每行前显示 checkbox(多选场景);点击行/checkbox 均触发 select */
+    checkable?: boolean;
+    /** checkbox 勾选的 id 集合 */
+    checked?: Set<number>;
   }>(),
-  { kind: 'folder', indent: 20 },
+  { kind: 'folder', indent: 20, checkable: false },
 );
 
 const emit = defineEmits<{
@@ -35,7 +41,12 @@ const emit = defineEmits<{
   drop: [node: LibraryTreeNode, e: DragEvent];
   /** 右键菜单:带节点 + 鼠标坐标,父级弹 ContextMenu */
   contextmenu: [node: LibraryTreeNode, x: number, y: number];
+  /** 选中模式下单选/勾选某节点(父级维护 selectedIds / checked) */
+  select: [node: LibraryTreeNode];
 }>();
+
+// 选中模式:点行 = select;非选中模式保持原行为(点行折叠/展开)
+const selectable = computed(() => props.checkable || props.selectedIds !== undefined);
 
 // 当前被拖拽悬停的节点 id(用于高亮落点)
 const dragOverId = ref<number | null>(null);
@@ -43,6 +54,11 @@ const dragOverId = ref<number | null>(null);
 function onToggle(node: LibraryTreeNode) {
   // 仅有子节点的项可折叠/展开
   if (node.children.length) emit('toggle', node.id);
+}
+
+function onRowClick(node: LibraryTreeNode) {
+  if (selectable.value) emit('select', node);
+  else onToggle(node);
 }
 
 // 右键:阻止浏览器默认菜单,把节点 + 鼠标坐标抛给父级
@@ -105,6 +121,8 @@ function iconStyle(node: LibraryTreeNode): Record<string, string> {
         class="row"
         :class="{
           folder: kind === 'folder',
+          selectable,
+          selected: selectedIds?.has(node.id),
           dragover: dragOverId === node.id,
           matched: matched?.has(node.id),
         }"
@@ -112,11 +130,34 @@ function iconStyle(node: LibraryTreeNode): Record<string, string> {
         :title="node.title"
         @dragover="onDragOver($event, node)"
         @drop="onDrop($event, node)"
-        @click="onToggle(node)"
+        @click="onRowClick(node)"
         @contextmenu="onContextMenu($event, node)"
       >
+        <!-- 多选 checkbox:点击勾选/取消,阻止冒泡到行 -->
+        <span
+          v-if="checkable"
+          class="checkbox"
+          :class="{ on: checked?.has(node.id) }"
+          role="checkbox"
+          :aria-checked="checked?.has(node.id) ?? false"
+          tabindex="0"
+          @click.stop="emit('select', node)"
+          @keydown.enter.prevent="emit('select', node)"
+        >
+          <svg v-if="checked?.has(node.id)" viewBox="0 0 16 16" width="10" height="10" aria-hidden="true">
+            <path
+              d="M3 8.5l3 3 7-7"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </span>
+
         <!-- 展开/折叠:有子节点显示切换图标;无子节点占位对齐 -->
-        <span class="toggle" :class="{ invisible: !node.children.length }">
+        <span class="toggle" :class="{ invisible: !node.children.length }" @click.stop="onToggle(node)">
           <svg
             v-if="node.children.length"
             class="chev"
@@ -189,7 +230,11 @@ function iconStyle(node: LibraryTreeNode): Record<string, string> {
         :indent="indent"
         :expanded="expanded"
         :matched="matched"
+        :selected-ids="selectedIds"
+        :checkable="checkable"
+        :checked="checked"
         @toggle="emit('toggle', $event)"
+        @select="emit('select', $event)"
         @drop="(n, f) => emit('drop', n, f)"
         @contextmenu="(n, x, y) => emit('contextmenu', n, x, y)"
       />
@@ -212,6 +257,14 @@ function iconStyle(node: LibraryTreeNode): Record<string, string> {
   transition: background .12s, box-shadow .12s;
 }
 .row:hover { background: var(--bg-elev); }
+/* 选中模式:行可点选 */
+.row.selectable { cursor: pointer; }
+/* 选中行:主色描边 + 淡背景 */
+.row.selected {
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  box-shadow: inset 0 0 0 1.5px var(--primary);
+}
+.row.selected .label { color: var(--primary); }
 /* 拖到该节点上:高亮 + 主色边框 */
 .row.dragover {
   background: color-mix(in srgb, var(--primary) 18%, transparent);
@@ -219,6 +272,24 @@ function iconStyle(node: LibraryTreeNode): Record<string, string> {
 }
 /* 搜索命中:文字主色加粗 */
 .row.matched .label { color: var(--primary); font-weight: 600; }
+
+/* 多选 checkbox */
+.checkbox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  border: 1.5px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg-elev);
+  color: #fff;
+  cursor: pointer;
+  transition: border-color .12s, background .12s;
+}
+.checkbox:hover { border-color: var(--primary); }
+.checkbox.on { border-color: var(--primary); background: var(--primary); }
 
 .toggle { display: inline-flex; width: 14px; justify-content: center; flex-shrink: 0; }
 .toggle.invisible { visibility: hidden; }

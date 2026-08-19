@@ -143,6 +143,7 @@
     "mira_lottie_format": "link:../../../../plugins/plugins/mira_lottie_format",
     "mira_gallery_dl": "link:../../../../plugins/plugins/mira_gallery_dl",
     "mira_swf_format": "link:../../../../plugins/plugins/mira_swf_format",
+    "mira_tiptap_format": "link:../../../../plugins/plugins/mira_tiptap_format",
     "mira_zipper_format": "link:../../../../plugins/plugins/mira_zipper_format",
     "mira-app-core": "link:../../../mira-app-core",
     "mira-app-server": "link:../..",

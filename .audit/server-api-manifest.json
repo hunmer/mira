@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-18T11:34:56.200Z",
+  "generatedAt": "2026-08-19T02:58:07.770Z",
   "mounts": {
     "express.static(publicDir)": "/static",
     "express.static(dashboardDir,{//SPA回退：未命中的静态资源回落到index.html，保证前端路由可刷新setHeaders:(res,filePath)=>{if(path.extname(filePath)==='.html'){res.setHeader('Cache-Control','no-cache');}},})": "/dashboard",
@@ -1539,13 +1539,23 @@
       "middlewares": []
     },
     {
+      "method": "POST",
+      "path": "/api/system/stop",
+      "rawPath": "/api/system/stop",
+      "dynamic": false,
+      "domain": "http-server-direct",
+      "file": "packages/mira-app-server/src/HttpServer.ts",
+      "line": 466,
+      "middlewares": []
+    },
+    {
       "method": "GET",
       "path": "/api/logs/stream",
       "rawPath": "/api/logs/stream",
       "dynamic": false,
       "domain": "http-server-direct",
       "file": "packages/mira-app-server/src/HttpServer.ts",
-      "line": 467,
+      "line": 489,
       "middlewares": []
     }
   ]

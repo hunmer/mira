@@ -1,0 +1,16 @@
+{
+  "pluginName": "Tiptap 文档编辑器",
+  "pluginId": "f4a8c6d2-7b91-4e2f-9c35-1d6a8b0e3f72",
+  "serverPluginName": "mira_tiptap_format",
+  "version": "1.0.0",
+  "index": "index.js",
+  "priority": 20,
+  "category": "productivity",
+  "tags": ["tiptap", "editor", "markdown", "json"],
+  "description": "编辑并自动保存 .tiptap JSON 文档。",
+  "author": "Mira Team",
+  "enable": true,
+  "config": {},
+  "permissions": ["ui", "dom", "storage"],
+  "platform": ["win32", "darwin", "linux"]
+}

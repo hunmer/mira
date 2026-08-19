@@ -1,0 +1,14 @@
+:root { font-family: Inter, ui-sans-serif, system-ui, sans-serif; color: #172033; background: #f7f8fb; }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; }
+.editor-shell { min-height: 100vh; display: flex; flex-direction: column; }
+.toolbar { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 6px; padding: 10px 14px; background: #fff; border-bottom: 1px solid #e5e7eb; }
+.toolbar button { min-width: 34px; height: 32px; border: 1px solid #d9dee8; border-radius: 6px; background: #fff; color: #344054; cursor: pointer; }
+.toolbar button:hover, .toolbar button.active { background: #e8eefc; border-color: #8aa4e8; color: #1d4ed8; }
+.status { margin-left: auto; font-size: 12px; color: #667085; }
+.editor { flex: 1; padding: 32px max(18px, calc((100vw - 820px) / 2)); }
+.editor :deep(.ProseMirror) { min-height: calc(100vh - 100px); padding: 28px 34px; outline: none; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 2px 10px #1018280d; line-height: 1.75; }
+.editor :deep(.ProseMirror p.is-editor-empty:first-child::before) { content: attr(data-placeholder); color: #98a2b3; float: left; height: 0; pointer-events: none; }
+.editor :deep(h1), .editor :deep(h2), .editor :deep(h3) { line-height: 1.25; }
+.editor :deep(ul) { padding-left: 1.5rem; }
+@media (max-width: 640px) { .editor { padding: 14px 10px; } .editor :deep(.ProseMirror) { padding: 20px; } }

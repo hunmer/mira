@@ -103,6 +103,20 @@
     "status": "inactive"
   },
   {
+    "name": "mira_tiptap_format",
+    "enabled": true,
+    "path": "node_modules/mira_tiptap_format",
+    "version": "1.0.0",
+    "description": "Tiptap JSON document format and editor preview",
+    "author": "Mira Team",
+    "main": "index.ts",
+    "icon": "edit_note",
+    "title": "Tiptap 文档编辑器",
+    "category": "productivity",
+    "tags": ["tiptap", "editor", "document"],
+    "status": "active"
+  },
+  {
     "name": "mira_eagle_extension",
     "enabled": false,
     "path": "node_modules/mira_eagle_extension",

@@ -17,6 +17,8 @@ export interface ErrorResponse {
     message: string;
     timestamp: string;
     stack?: string;
+    /** HTTP 状态码（网络层错误时不存在） */
+    status?: number;
 }
 
 // HTTP 客户端配置

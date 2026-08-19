@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-18T11:34:56.235Z",
+  "generatedAt": "2026-08-19T02:58:07.799Z",
   "entries": [
     {
       "module": "Admin",
@@ -1100,6 +1100,17 @@
       "hasQuery": true,
       "hasBody": false,
       "returnType": "HealthResponse"
+    },
+    {
+      "module": "System",
+      "method": "stopServer",
+      "httpMethod": "POST",
+      "path": "/api/system/stop",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/SystemModule.ts",
+      "line": 33,
+      "hasQuery": false,
+      "hasBody": true,
+      "returnType": "{ stopping: boolean }"
     },
     {
       "module": "Tag",

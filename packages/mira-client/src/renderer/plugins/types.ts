@@ -67,6 +67,7 @@ export interface PluginContributionRenderContext {
   openPluginWindow: (opts: {
     pluginId: string
     entry?: string
+    url?: string
     title?: string
     width?: number
     height?: number
