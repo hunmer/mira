@@ -6,7 +6,7 @@
  * - 顶部:拖放/点击选择上传到素材库根目录(需传 upload)
  * - 工具栏:搜索切换(输入即过滤,自 SaveLocationForm 移入) + 新增(CreateNodeDialog)
  * - 中部:树(支持拖拽文件 → 上传到目标文件夹/标签;传 v-model:selected 受控启用选择)
- * - 右键菜单:新建同级/子级、删除(需传 dialog,编辑动作依赖 services)
+ * - 右键菜单:新建同级/子级(CreateNodeDialog)、删除(需传 dialog 做确认)
  *
  * 样式为 tailwind/shadcn 原子类,scoped CSS 仅搜索栏展开过渡(ui_rule.md 允许的例外)。
  */
@@ -326,18 +326,11 @@ const {
   menu,
   openMenu: onContextMenu,
   closeMenu,
-  createNode,
   deleteNode,
 } = useLibraryTreeActions({
   mode: props.mode,
   libraryId: () => props.libraryId,
-  count: () => count.value,
   reload: () => load(props.libraryId),
-  expand: id => {
-    const next = new Set(expanded.value);
-    next.add(id);
-    expanded.value = next;
-  },
 }, {
   services: props.services,
   dialog: props.dialog ?? silentDialog,
@@ -367,6 +360,22 @@ function onCreateNode() {
   createOpen.value = true;
 }
 
+/** 右键「新建同级」:父级 = 右键节点的父级 */
+function onCreateSibling() {
+  if (!menu.value) return;
+  createDefaultParent.value = menu.value.node.parentId;
+  closeMenu();
+  createOpen.value = true;
+}
+
+/** 右键「新建子级」:父级 = 右键节点自身 */
+function onCreateChild() {
+  if (!menu.value) return;
+  createDefaultParent.value = menu.value.node.id;
+  closeMenu();
+  createOpen.value = true;
+}
+
 /** 对话框创建服务:调 services.createNode,尽力取新节点 id(实现可返回 number 或含 id 的对象) */
 async function createViaDialog(payload: LibraryTreeCreatePayload): Promise<number | undefined> {
   const r = await props.services.createNode(
@@ -391,8 +400,9 @@ async function onCreated(e: { id?: number; parentId: number }) {
   selected.value = props.mode === 'folder' ? [node] : [...selected.value, node];
 }
 
+/** 右键菜单常开(新建走内置 CreateNodeDialog);「删除」需注入 dialog 做确认,未注入时隐藏 */
 function onTreeContextMenu(node: LibraryTreeNode, x: number, y: number) {
-  if (menuEnabled.value) onContextMenu(node, x, y);
+  onContextMenu(node, x, y);
 }
 
 /** 右键菜单项(ContextMenu 的 :deep 样式已移除,类由这里提供) */
@@ -484,21 +494,24 @@ const ctxItem = 'flex w-full cursor-pointer items-center gap-1.5 rounded-[4px] b
       />
     </div>
 
-    <!-- 右键菜单:新建同级 / 新建子级 / 删除 -->
+    <!-- 右键菜单:新建同级 / 新建子级(内置 CreateNodeDialog) + 删除(需传 dialog) -->
     <ContextMenu v-if="menu" :x="menu.x" :y="menu.y" @close="closeMenu">
-      <button :class="ctxItem" @click="createNode('sibling')">{{ tt('tree.createSibling') }}</button>
-      <button :class="ctxItem" @click="createNode('child')">{{ tt('tree.createChild', { type: titleText }) }}</button>
-      <div class="my-[3px] h-px bg-border" />
-      <button :class="[ctxItem, 'text-destructive']" @click="deleteNode">{{ tt('tree.delete') }}</button>
+      <button :class="ctxItem" @click="onCreateSibling">{{ tt('tree.createSibling') }}</button>
+      <button :class="ctxItem" @click="onCreateChild">{{ tt('tree.createChild', { type: titleText }) }}</button>
+      <template v-if="menuEnabled">
+        <div class="my-[3px] h-px bg-border" />
+        <button :class="[ctxItem, 'text-destructive']" @click="deleteNode">{{ tt('tree.delete') }}</button>
+      </template>
     </ContextMenu>
 
-    <!-- 工具栏「新增」对话框:图标/颜色/名称/描述/父级树 -->
+    <!-- 新建节点对话框:工具栏「新增」与右键「新建同级/子级」共用(图标/颜色/名称/描述/父级树) -->
     <CreateNodeDialog
       v-model:open="createOpen"
       :kind="mode"
       :nodes="createTree"
       :default-parent-id="createDefaultParent"
       :create-node="createViaDialog"
+      :t="t"
       @created="onCreated"
     />
   </div>

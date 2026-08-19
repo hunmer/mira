@@ -5,6 +5,7 @@
  * 确认后 await createNode 服务创建(失败错误展示在对话框内),成功关闭并
  * emit('created', { id, parentId }) 由宿主决定刷新/展开/选中。
  * 父级树的展开与搜索状态内部自持:每次打开重置并默认展开全部。
+ * 文案经 t prop 注入(宿主缺 key 时回退内置中文)。
  *
  * 样式为 tailwind/shadcn 原子类,无 scoped CSS(见仓库 ui_rule.md)。
  */
@@ -17,8 +18,9 @@ import { IconPicker } from '../components/ui/icon-picker'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import LibraryTree from './LibraryTree.vue'
+import { createLibraryTreeT } from './i18n'
 import { ROOT_ID, collectIds, filterTree, flattenTree } from './tree'
-import type { LibraryTreeNode, LibraryTreeCreatePayload } from './types'
+import type { LibraryTreeNode, LibraryTreeCreatePayload, LibraryTreeT } from './types'
 
 const props = withDefaults(defineProps<{
   kind: LibraryTreeCreatePayload['kind']
@@ -28,6 +30,8 @@ const props = withDefaults(defineProps<{
   defaultParentId?: number
   /** 创建服务:返回新节点 id 供宿主选中(失败抛错展示在对话框内) */
   createNode: (payload: LibraryTreeCreatePayload) => Promise<number | undefined>
+  /** 文案函数,缺省用内置中文 */
+  t?: LibraryTreeT
 }>(), { defaultParentId: 0 })
 
 const open = defineModel<boolean>('open', { default: false })
@@ -36,7 +40,15 @@ const emit = defineEmits<{
   (event: 'created', value: { id?: number; parentId: number }): void
 }>()
 
-const kindText = computed(() => (props.kind === 'folder' ? '文件夹' : '标签'))
+const fallbackT = createLibraryTreeT()
+/** 宿主未传 t 或宿主缺 key(vue-i18n 返回 key 本身)时回退内置中文 */
+function tt (key: string, params?: Record<string, unknown>): string {
+  if (!props.t) return fallbackT(key, params)
+  const r = props.t(key, params)
+  return r === key ? fallbackT(key, params) : r
+}
+
+const kindText = computed(() => tt(props.kind === 'folder' ? 'common.folder' : 'common.tag'))
 
 const form = ref({ title: '', description: '', color: null as number | null, icon: '' })
 const parentId = ref(0)
@@ -77,7 +89,7 @@ function onSelectParent(node: LibraryTreeNode) {
 
 /** 当前所选父级名称(描述文字实时反馈) */
 const parentTitle = computed(() =>
-  flattenTree(props.nodes).find(node => node.id === (parentId.value || ROOT_ID))?.title || '根目录')
+  flattenTree(props.nodes).find(node => node.id === (parentId.value || ROOT_ID))?.title || tt('tree.root'))
 
 /** 图标默认值:文件夹 folder / 标签 label(与 mira-client FolderEditDialog 一致) */
 const defaultIcon = computed(() => (props.kind === 'folder' ? 'folder' : 'label'))
@@ -105,11 +117,11 @@ async function submit() {
   if (submitting.value) return
   const title = form.value.title.trim()
   if (!title) {
-    error.value = `请输入${kindText.value}名称`
+    error.value = tt('tree.nameRequired', { type: kindText.value })
     return
   }
   if (title.length > 100) {
-    error.value = '名称不能超过 100 个字符'
+    error.value = tt('tree.nameTooLong')
     return
   }
   submitting.value = true
@@ -138,8 +150,8 @@ async function submit() {
   <Dialog :open="open" @update:open="(value: boolean) => open = value">
     <DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-md">
       <DialogHeader>
-        <DialogTitle>新建{{ kindText }}</DialogTitle>
-        <DialogDescription>将创建到「{{ parentTitle }}」下</DialogDescription>
+        <DialogTitle>{{ tt('library.create', { type: kindText }) }}</DialogTitle>
+        <DialogDescription>{{ tt('tree.createUnder', { parent: parentTitle }) }}</DialogDescription>
       </DialogHeader>
 
       <form class="grid gap-4" @submit.prevent="submit">
@@ -166,36 +178,36 @@ async function submit() {
         </div>
 
         <div class="grid gap-2">
-          <Label for="create-node-title">名称</Label>
+          <Label for="create-node-title">{{ tt('tree.nodeName') }}</Label>
           <Input
             id="create-node-title"
             v-model="form.title"
             autocomplete="off"
-            :placeholder="`${kindText}名称`"
+            :placeholder="tt('tree.nodeNamePlaceholder', { type: kindText })"
             :class="error && 'border-destructive focus-visible:ring-destructive/20'"
           />
           <p v-if="error" class="text-destructive text-xs">{{ error }}</p>
         </div>
 
         <div class="grid gap-2">
-          <Label for="create-node-description">描述</Label>
+          <Label for="create-node-description">{{ tt('tree.nodeDescription') }}</Label>
           <textarea
             id="create-node-description"
             v-model="form.description"
             rows="2"
-            placeholder="可选备注"
+            :placeholder="tt('tree.nodeDescriptionPlaceholder')"
             class="bg-muted ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-16 w-full rounded-md px-3 py-2 text-sm transition-[color,box-shadow] outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
           />
         </div>
 
         <!-- 父级选择:搜索过滤 + 树单选(点根行=建到根) -->
         <div class="grid gap-2">
-          <Label>父级（{{ parentTitle }}）</Label>
+          <Label>{{ tt('tree.parentNode', { parent: parentTitle }) }}</Label>
           <Input
             v-model="searchTerm"
             class="h-7"
             autocomplete="off"
-            :placeholder="`搜索${kindText}…`"
+            :placeholder="tt('library.searchPlaceholder', { type: kindText })"
           />
           <div class="max-h-48 overflow-y-auto rounded-md border p-1">
             <div v-if="filtered.tree.length" class="text-sm">
@@ -209,16 +221,16 @@ async function submit() {
                 @select="onSelectParent"
               />
             </div>
-            <div v-else class="py-6 text-center text-xs text-muted-foreground">无匹配</div>
+            <div v-else class="py-6 text-center text-xs text-muted-foreground">{{ tt('library.noMatch', { type: kindText }) }}</div>
           </div>
         </div>
       </form>
 
       <DialogFooter>
-        <Button variant="outline" :disabled="submitting" @click="open = false">取消</Button>
+        <Button variant="outline" :disabled="submitting" @click="open = false">{{ tt('common.cancel') }}</Button>
         <Button :disabled="submitting || !form.title.trim()" @click="submit">
           <Loader2 v-if="submitting" class="size-4 animate-spin" />
-          {{ submitting ? '创建中…' : '创建' }}
+          {{ submitting ? tt('tree.creating') : tt('common.create') }}
         </Button>
       </DialogFooter>
     </DialogContent>

@@ -1,10 +1,11 @@
 /**
- * 文件夹/标签树的右键菜单动作(新建同级/新建子级/删除)。
+ * 文件夹/标签树的右键菜单动作(删除)。
  * 自 mira-browser-extension useLibraryTreeActions 迁移,数据/弹窗/文案改为注入。
  *
- * 这里只负责菜单状态与 CRUD 流程,菜单本身的渲染(<ContextMenu>)由各视图模板完成。
+ * 这里只负责菜单状态与删除流程;「新建」经 CreateNodeDialog 由各视图模板自理
+ * (useLibraryTreeActions 不再包办 prompt 收集名称)。
  */
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 import type { LibraryTreeDialog, LibraryTreeNode, LibraryTreeKind, LibraryTreeServices, LibraryTreeT } from './types';
 import { createLibraryTreeT } from './i18n';
 
@@ -18,12 +19,8 @@ export interface UseLibraryTreeActionsOptions {
   mode: LibraryTreeKind;
   /** 当前素材库 id(无库时操作直接放弃) */
   libraryId: () => string;
-  /** 当前节点总数(新建默认名「新建文件夹/标签 N」用) */
-  count: () => number;
-  /** 创建/删除成功后重载树数据 */
+  /** 删除成功后重载树数据 */
   reload: () => Promise<void> | void;
-  /** 新建子级后展开其父节点,使新节点可见 */
-  expand: (id: number) => void;
 }
 
 /** 宿主注入:数据服务 / 弹窗 / 文案 */
@@ -38,7 +35,6 @@ export function useLibraryTreeActions(options: UseLibraryTreeActionsOptions, dep
   const { services, dialog } = deps;
 
   const menu = ref<LibraryTreeMenuState | null>(null);
-  const titleText = computed(() => (options.mode === 'folder' ? t('common.folder') : t('common.tag')));
 
   function openMenu(node: LibraryTreeNode, x: number, y: number) {
     menu.value = { node, x, y };
@@ -46,42 +42,6 @@ export function useLibraryTreeActions(options: UseLibraryTreeActionsOptions, dep
 
   function closeMenu() {
     menu.value = null;
-  }
-
-  /**
-   * 新建节点(sibling/child 由 level 决定 parentId):
-   *  - sibling:与目标节点同级 → parentId = node.parentId
-   *  - child:作为目标节点的子级 → parentId = node.id
-   *
-   * target 缺省取右键菜单节点;顶部「新增」按钮可显式传目标(如根节点)。
-   * 用弹窗收集名称(默认「新建文件夹/标签 N」),空名/取消则放弃。
-   */
-  async function createNode(level: 'sibling' | 'child', target = menu.value?.node) {
-    if (!target) return;
-    const parentId = level === 'sibling' ? target.parentId : target.id;
-    closeMenu();
-
-    const libId = options.libraryId();
-    if (!libId) return;
-    const defaultName = t('tree.newName', { type: titleText.value, n: options.count() + 1 });
-    const title = await dialog.prompt({
-      title: t('tree.createPrompt', { type: titleText.value }),
-      defaultValue: defaultName,
-    });
-    if (!title?.trim()) return;
-
-    try {
-      await services.createNode(options.mode, libId, title.trim(), parentId || undefined);
-      await options.reload();
-      if (level === 'child') options.expand(target.id);
-    } catch (e: any) {
-      console.warn('[mira-plugin-ui] createNode failed', { error: e?.message });
-      await dialog.alert({
-        title: t('common.failed'),
-        message: t('tree.createFailed', { error: e?.message ?? String(e) }),
-        danger: true,
-      });
-    }
   }
 
   /**
@@ -121,10 +81,9 @@ export function useLibraryTreeActions(options: UseLibraryTreeActionsOptions, dep
       await dialog.alert({
         title: t('common.failed'),
         message: t('tree.deleteFailed', { error: e?.message ?? String(e) }),
-        danger: true,
       });
     }
   }
 
-  return { menu, titleText, openMenu, closeMenu, createNode, deleteNode };
+  return { menu, openMenu, closeMenu, deleteNode };
 }

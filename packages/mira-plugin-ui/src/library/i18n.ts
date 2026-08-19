@@ -2,7 +2,9 @@
  * 树组件内置文案(与 mira-browser-extension locales/zh-CN 的同名 key 保持一致)。
  *
  * 宿主传 t(vue-i18n 的 t 等)即接管文案;key 命名沿用扩展 locales
- * (library.* / tree.* / common.* / upload.*),扩展接入时无需新增翻译。
+ * (library.* / tree.* / common.* / upload.*)。
+ * CreateNodeDialog 的新增 key 扩展 locales 暂缺,组件侧对宿主缺失的 key
+ * (t 返回 key 本身)回退此处内置中文,宿主可按需补译。
  */
 import type { LibraryTreeT } from './types'
 
@@ -13,6 +15,8 @@ const zh = {
   'common.folder': '文件夹',
   'common.tag': '标签',
   'common.failed': '失败',
+  'common.cancel': '取消',
+  'common.create': '创建',
   'upload.dropHint': '拖放文件到此处,或点击选择',
   'library.searchPlaceholder': '搜索{type}…',
   'library.create': '新建{type}',
@@ -22,10 +26,16 @@ const zh = {
   'library.noMatch': '未找到匹配的{type}',
   'tree.createSibling': '新建同级',
   'tree.createChild': '新建子{type}',
+  'tree.createUnder': '将创建到「{parent}」下',
+  'tree.nodeName': '名称',
+  'tree.nodeNamePlaceholder': '{type}名称',
+  'tree.nodeDescription': '描述',
+  'tree.nodeDescriptionPlaceholder': '可选备注',
+  'tree.parentNode': '父级（{parent}）',
+  'tree.nameRequired': '请输入{type}名称',
+  'tree.nameTooLong': '名称不能超过 100 个字符',
+  'tree.creating': '创建中…',
   'tree.delete': '删除',
-  'tree.createPrompt': '请输入{type}名称',
-  'tree.newName': '新建{type}{n}',
-  'tree.createFailed': '创建失败:{error}',
   'tree.deleteFolderConfirm': '确定删除文件夹「{name}」?',
   'tree.deleteFilesCheck': '同时删除其中的文件',
   'tree.deleteTagConfirm': '确定删除标签「{name}」?',

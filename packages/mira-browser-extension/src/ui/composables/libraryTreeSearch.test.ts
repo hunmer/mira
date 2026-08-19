@@ -117,4 +117,58 @@ describe('LibraryTreeView 搜索(按钮切换 + 输入过滤)', () => {
     host.remove();
     dialog.remove();
   });
+
+  it('右键「新建子级」打开 CreateNodeDialog(未注入 dialog 也可用,菜单无删除项)', async () => {
+    const created: { kind: string; title: string; parentId?: number }[] = [];
+    const services = {
+      listFolders: async () => items,
+      listTags: async () => items,
+      createNode: async (kind: string, _libId: string, title: string, parentId?: number) => {
+        created.push({ kind, title, parentId });
+        return 99;
+      },
+      deleteNode: async () => {},
+    };
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    // 不传 dialog:右键菜单仍可新建(内置 CreateNodeDialog),仅无「删除」项
+    const app = createApp(LibraryTreeView as any, { mode: 'tag', libraryId: 'lib1', services });
+    app.mount(host);
+    await new Promise(r => setTimeout(r, 20));
+    await nextTick();
+
+    // 右键第一个节点(行 div 绑定 @contextmenu,li[role=treeitem] 为外层) → 菜单出现,无「删除」
+    const row = host.querySelector('[role="treeitem"] > div') as HTMLElement;
+    expect(row).toBeTruthy();
+    row.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 10, clientY: 10 }));
+    await nextTick();
+    await new Promise(r => setTimeout(r, 20));
+    const menuEl = [...document.body.querySelectorAll('button')].find(b => b.textContent?.trim() === '新建同级');
+    expect(menuEl).toBeTruthy();
+    expect([...document.body.querySelectorAll('button')].some(b => b.textContent?.trim() === '删除')).toBe(false);
+
+    // 点「新建子级」→ CreateNodeDialog 打开,父级预填右键节点
+    ([...document.body.querySelectorAll('button')].find(b => b.textContent?.includes('新建子')) as HTMLElement).click();
+    await nextTick();
+    await new Promise(r => setTimeout(r, 50));
+    const dialog = document.body.querySelector('[role="dialog"]') as HTMLElement;
+    expect(dialog).toBeTruthy();
+    expect(dialog.textContent).toContain('新建标签');
+    expect(dialog.textContent).toContain('将创建到「设计」下');
+
+    // 填名称提交 → parentId 为右键节点 id
+    const nameInput = dialog.querySelector('input[placeholder="标签名称"]') as HTMLInputElement;
+    nameInput.value = '新标签';
+    nameInput.dispatchEvent(new Event('input', { bubbles: true }));
+    await nextTick();
+    ([...dialog.querySelectorAll('button')].find(b => b.textContent?.trim() === '创建') as HTMLElement).click();
+    await nextTick();
+    await new Promise(r => setTimeout(r, 50));
+
+    expect(created).toEqual([{ kind: 'tag', title: '新标签', parentId: 1 }]);
+
+    app.unmount();
+    host.remove();
+    dialog.remove();
+  });
 });
