@@ -41,6 +41,7 @@ const openDocs = ref<any[]>([])
 const openDocsLoading = ref(false)
 const libraries = ref<any[]>([])
 const folders = ref<any[]>([])
+const tags = ref<any[]>([])
 const currentLibraryId = ref(initialLibraryId)
 const currentFileId = ref(initialFileId)
 const currentFileName = ref(initialFileName)
@@ -134,8 +135,32 @@ function handleSaveRequest () {
 async function openSaveDialog () {
   libraries.value = await client.libraries().getAll() as any[]
   currentLibraryId.value ||= String(libraries.value[0]?.id || '')
-  folders.value = currentLibraryId.value ? await client.folders().getAll(currentLibraryId.value) as any[] : []
+  await loadSaveDialogData()
   showSaveDialog.value = true
+}
+
+/** 拉取保存对话框所需的文件夹/标签树数据 */
+async function loadSaveDialogData () {
+  if (!currentLibraryId.value) { folders.value = []; tags.value = []; return }
+  folders.value = await client.folders().getAll(currentLibraryId.value) as any[]
+  tags.value = await client.tags().getAll(currentLibraryId.value).catch(() => []) as any[]
+}
+
+/** 对话框内切换素材库:刷新树数据 */
+async function onSaveLibraryChange (libraryId: string) {
+  currentLibraryId.value = libraryId
+  await loadSaveDialogData()
+}
+
+/** 保存对话框工具栏「新增」:弹名称输入并创建文件夹/标签,完成后刷新树数据 */
+async function onSaveCreateNode ({ kind, parentId }: { kind: 'folder' | 'tag'; parentId: number }) {
+  const name = window.prompt(kind === 'folder' ? '新建文件夹名称' : '新建标签名称')?.trim()
+  if (!name || !currentLibraryId.value) return
+  try {
+    if (kind === 'folder') await client.folders().createFolder(currentLibraryId.value, name, parentId)
+    else await client.tags().createTag(currentLibraryId.value, name, parentId)
+    await loadSaveDialogData()
+  } catch (error) { console.error('[mira-tiptap] create node failed', error) }
 }
 
 async function saveToLocation (location: SaveLocation) {
@@ -144,15 +169,28 @@ async function saveToLocation (location: SaveLocation) {
     const content = JSON.stringify(docJson(), null, 2)
     if (currentFileId.value && currentLibraryId.value === location.libraryId && !isNewDocument.value) {
       await client.files().writeFile(location.libraryId, currentFileId.value, content, { name: location.fileName, contentType: 'application/vnd.mira.tiptap+json', silent: true })
+      await applyLocationMeta(location, currentFileId.value)
     } else {
-      const response: any = await client.files().uploadFile(new File([content], location.fileName, { type: 'application/vnd.mira.tiptap+json' }), location.libraryId, { folderId: location.folderId, silent: true })
+      const response: any = await client.files().uploadFile(new File([content], location.fileName, { type: 'application/vnd.mira.tiptap+json' }), location.libraryId, { folderId: location.folderId, tags: location.tags, silent: true })
       const created = response?.results?.[0]?.result || response?.data || response?.result
       currentFileId.value = created?.id ? String(created.id) : currentFileId.value
       currentLibraryId.value = location.libraryId
       currentFileName.value = location.fileName
       isNewDocument.value = false
+      if (currentFileId.value) await applyLocationMeta(location, currentFileId.value)
     }
   } catch (error) { console.error('[mira-tiptap] save failed', error) }
+}
+
+/** 保存对话框里的 URL/注释 → 文件元数据 website/notes;失败不影响已完成的保存 */
+async function applyLocationMeta (location: SaveLocation, fileId: string) {
+  const data: Record<string, string> = {}
+  if (location.url) data.website = location.url
+  if (location.note) data.notes = location.note
+  if (!Object.keys(data).length) return
+  try {
+    await client.files().updateFile(location.libraryId, fileId, data)
+  } catch (error) { console.error('[mira-tiptap] update meta failed', error) }
 }
 
 function handleKeydown (event: KeyboardEvent) {
@@ -272,7 +310,7 @@ onBeforeUnmount(() => { window.removeEventListener('keydown', handleKeydown); if
       <LinkEditorMenu :editor="editor" />
       <OutlinePanel :editor="editor" />
     </template>
-    <SaveLocationDialog v-model:open="showSaveDialog" :libraries="libraries" :folders="folders" :initial-library-id="currentLibraryId" :initial-file-name="currentFileName" @save="saveToLocation" />
+    <SaveLocationDialog v-model:open="showSaveDialog" :libraries="libraries" :folders="folders" :tags="tags" :initial-library-id="currentLibraryId" :initial-file-name="currentFileName" @library-change="onSaveLibraryChange" @create-node="onSaveCreateNode" @save="saveToLocation" />
     <OpenFileDialog v-model:open="showOpenDialog" :files="openDocs" :loading="openDocsLoading" @select="loadDocument" />
   </main>
 </template>

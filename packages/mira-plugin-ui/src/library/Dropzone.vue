@@ -186,7 +186,7 @@ function onPick(e: Event) {
       >
         <AttachmentMedia
           :variant="mediaVariantOf(file)"
-          :class="orientation === 'vertical' && 'w-full rounded-none'"
+          :class="orientation === 'vertical' && 'w-full! rounded-none'"
         >
           <img v-if="mediaVariantOf(file) === 'image'" :src="previewUrl(file)" :alt="file.name" />
           <component :is="iconOf(file)" v-else />

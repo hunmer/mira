@@ -29,6 +29,7 @@ const loadError = ref('')
 
 const libraries = ref<any[]>([])
 const folders = ref<any[]>([])
+const tags = ref<any[]>([])
 const tiptapCount = ref(0)
 const currentLibraryId = ref('')
 let client: MiraClient | null = null
@@ -78,6 +79,7 @@ async function loadLibraries () {
 async function loadLibraryData () {
   if (!client || !currentLibraryId.value) return
   folders.value = (await client.folders().getAll(currentLibraryId.value)) as any[]
+  tags.value = (await client.tags().getAll(currentLibraryId.value).catch(() => [])) as any[]
   const docs = await client.files().getFilesByExtension(currentLibraryId.value, 'tiptap').catch(() => [])
   tiptapCount.value = (docs as any[] | undefined)?.length || 0
 }
@@ -87,15 +89,34 @@ function logout () {
   token.value = ''
   libraries.value = []
   folders.value = []
+  tags.value = []
   localStorage.removeItem(STORE_KEY)
 }
 
 /* ---------- SaveLocationDialog 演示 ---------- */
 const showSave = ref(false)
 const saved = ref('')
+// 演示顶部 Attachment 文件卡片(待保存文件)
+const saveFiles = ref([new File(['demo'], '我的文档.tiptap', { type: 'application/vnd.mira.tiptap+json' })])
 
 function handleSave (location: SaveLocation) {
   saved.value = JSON.stringify(location)
+}
+
+/** 保存对话框工具栏「新增」:连接时走 SDK,未连接改内存 mock */
+async function handleCreateNode ({ kind, parentId }: { kind: 'folder' | 'tag'; parentId: number }) {
+  const name = window.prompt(kind === 'folder' ? '新建文件夹名称' : '新建标签名称')?.trim()
+  if (!name || !currentLibraryId.value) return
+  try {
+    if (connected.value && client) {
+      if (kind === 'folder') await client.folders().createFolder(currentLibraryId.value, name, parentId)
+      else await client.tags().createTag(currentLibraryId.value, name, parentId)
+      await loadLibraryData()
+    } else {
+      const pool = kind === 'folder' ? mockFolders : mockTags
+      pool.value = [...pool.value, { id: Date.now(), title: name, parent_id: parentId }]
+    }
+  } catch (error) { console.error(error) }
 }
 
 /* ---------- LibraryTreeView 树演示 ---------- */
@@ -338,9 +359,13 @@ async function startUpload () {
           v-model:open="showSave"
           :libraries="connected ? libraries : [{ id: 1, name: 'Mock 素材库' }]"
           :folders="connected ? folders : [{ id: 101, title: 'Mock 文件夹' }]"
+          :tags="connected ? tags : [{ id: 1, title: 'Mock 标签' }]"
+          :files="saveFiles"
           :initial-library-id="currentLibraryId"
           initial-file-name="我的文档"
           @save="handleSave"
+          @create-node="handleCreateNode"
+          @remove-file="file => saveFiles = saveFiles.filter(f => f !== file)"
         />
       </section>
 
