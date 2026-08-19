@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { Loader2, LogOut, Moon, Sun } from '@lucide/vue'
+import { FileText, Folder, Loader2, LogOut, Moon, Server, Sun } from '@lucide/vue'
 import { MiraClient } from 'mira-app-core/shared/sdk'
 import { SaveLocationDialog, type SaveLocation } from '@/index'
 import { Button } from '@/components/ui/button'
@@ -98,79 +98,131 @@ function handleSave (location: SaveLocation) {
 </script>
 
 <template>
-  <main class="bg-background text-foreground min-h-screen p-8">
-    <div class="mx-auto flex max-w-3xl flex-col gap-10">
-      <header class="flex items-center justify-between">
-        <div>
-          <h1 class="text-2xl font-bold tracking-tight">mira-plugin-ui Demo</h1>
-          <p class="text-muted-foreground mt-1 text-sm">SaveLocationDialog · 接入 Mira SDK 真实数据</p>
+  <main class="bg-background text-foreground min-h-[100dvh]">
+    <div class="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-10">
+      <header class="flex items-start justify-between gap-4">
+        <div class="flex flex-col gap-1">
+          <h1 class="text-2xl font-semibold tracking-tight">mira-plugin-ui Demo</h1>
+          <p class="text-muted-foreground text-sm">SaveLocationDialog 组件演示，数据来自 Mira SDK</p>
         </div>
-        <Button variant="outline" size="icon" @click="toggleDark">
+        <Button variant="outline" size="icon" aria-label="切换主题" @click="toggleDark">
           <Sun v-if="dark" class="size-4" />
           <Moon v-else class="size-4" />
         </Button>
       </header>
 
-      <!-- Mira server 连接 -->
-      <section class="flex flex-col gap-3 rounded-lg border p-5">
-        <h2 class="text-lg font-semibold">Mira Server</h2>
-        <template v-if="!connected">
-          <div class="grid gap-4 sm:grid-cols-3">
-            <div class="grid gap-2">
-              <Label for="api-base">API 地址</Label>
-              <Input id="api-base" v-model="apiBaseUrl" placeholder="/mira-api（代理到 127.0.0.1:8081）" />
-            </div>
-            <div class="grid gap-2">
-              <Label for="username">用户名</Label>
-              <Input id="username" v-model="username" autocomplete="username" />
-            </div>
-            <div class="grid gap-2">
-              <Label for="password">密码</Label>
-              <Input id="password" v-model="password" type="password" autocomplete="current-password" @keyup.enter="connect()" />
-            </div>
+      <div class="grid items-start gap-6 lg:grid-cols-3">
+        <!-- 连接卡片：登录 / 会话 -->
+        <section class="bg-card text-card-foreground flex flex-col gap-5 rounded-xl border p-6 shadow-sm lg:col-span-2">
+          <div class="flex items-center gap-2">
+            <Server class="text-muted-foreground size-4" />
+            <h2 class="text-base font-semibold">Mira Server</h2>
+            <span
+              class="bg-muted text-muted-foreground ms-auto rounded-full px-2.5 py-0.5 text-xs font-medium"
+              :class="connected && 'bg-primary/10 text-primary'"
+            >
+              {{ connected ? '已连接' : '未连接' }}
+            </span>
           </div>
-          <div class="flex items-center gap-3">
-            <Button class="w-fit" :disabled="connecting || !username || !password" @click="connect()">
-              <Loader2 v-if="connecting" class="size-4 animate-spin" />
-              连接并登录
-            </Button>
-            <p v-if="loadError" class="text-destructive text-sm">{{ loadError }}</p>
-          </div>
-        </template>
-        <template v-else>
-          <div class="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-            <span>已连接 <code class="bg-muted rounded px-1.5 py-0.5 font-mono text-xs">{{ apiBaseUrl }}</code></span>
-            <span>素材库 <b class="text-foreground">{{ libraries.length }}</b> 个</span>
-            <span>当前库 <b class="text-foreground">{{ currentLibrary?.name || currentLibrary?.title || currentLibraryId }}</b></span>
-            <span>文件夹 <b class="text-foreground">{{ folders.length }}</b> 个</span>
-            <span>.tiptap 文档 <b class="text-foreground">{{ tiptapCount }}</b> 篇</span>
-          </div>
-          <div class="grid gap-2 sm:w-72">
-            <Label>切换素材库</Label>
-            <Select v-model="currentLibraryId" @update:model-value="loadLibraryData">
-              <SelectTrigger>
-                <SelectValue placeholder="选择素材库" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem v-for="library in libraries" :key="library.id" :value="String(library.id)">
-                  {{ library.name || library.title || library.id }}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <Button variant="outline" class="w-fit" @click="logout">
-            <LogOut class="size-4" /> 断开
-          </Button>
-        </template>
-      </section>
 
-      <section class="flex flex-col gap-3">
-        <h2 class="text-lg font-semibold">SaveLocationDialog</h2>
-        <p class="text-muted-foreground text-sm">
-          {{ connected ? '数据来自当前素材库（真实 SDK 拉取）' : '未连接 server，仅展示 mock 数据' }}
-        </p>
-        <Button class="w-fit" :disabled="!connected" @click="showSave = true">保存文档到…</Button>
-        <p v-if="saved" class="bg-muted text-muted-foreground rounded-md p-3 font-mono text-sm">{{ saved }}</p>
+          <template v-if="!connected">
+            <div class="grid gap-4 sm:grid-cols-3">
+              <div class="grid gap-2">
+                <Label for="api-base">API 地址</Label>
+                <Input id="api-base" v-model="apiBaseUrl" placeholder="/mira-api（代理到 127.0.0.1:8081）" />
+              </div>
+              <div class="grid gap-2">
+                <Label for="username">用户名</Label>
+                <Input id="username" v-model="username" autocomplete="username" />
+              </div>
+              <div class="grid gap-2">
+                <Label for="password">密码</Label>
+                <Input
+                  id="password"
+                  v-model="password"
+                  type="password"
+                  autocomplete="current-password"
+                  @keyup.enter="connect()"
+                />
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <Button class="w-fit" :disabled="connecting || !username || !password" @click="connect()">
+                <Loader2 v-if="connecting" class="size-4 animate-spin" />
+                连接并登录
+              </Button>
+              <p v-if="loadError" class="text-destructive text-sm">{{ loadError }}</p>
+            </div>
+          </template>
+
+          <template v-else>
+            <p class="text-muted-foreground text-sm">
+              接入 <code class="bg-muted rounded px-1.5 py-0.5 font-mono text-xs">{{ apiBaseUrl }}</code>
+            </p>
+            <div class="grid gap-2 sm:max-w-72">
+              <Label>当前素材库</Label>
+              <Select v-model="currentLibraryId" @update:model-value="loadLibraryData">
+                <SelectTrigger>
+                  <SelectValue placeholder="选择素材库" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem v-for="library in libraries" :key="library.id" :value="String(library.id)">
+                    {{ library.name || library.title || library.id }}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Button variant="outline" class="w-fit" @click="logout">
+                <LogOut class="size-4" /> 断开连接
+              </Button>
+            </div>
+          </template>
+        </section>
+
+        <!-- 概览卡片：库统计 -->
+        <aside class="bg-card text-card-foreground flex flex-col gap-5 rounded-xl border p-6 shadow-sm">
+          <h2 class="text-base font-semibold">数据概览</h2>
+          <div class="flex flex-col gap-4">
+            <div class="flex items-center justify-between gap-3">
+              <span class="text-muted-foreground flex items-center gap-1.5 text-sm">
+                <Server class="size-3.5" /> 素材库
+              </span>
+              <span class="text-lg font-semibold tabular-nums">{{ libraries.length }}</span>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+              <span class="text-muted-foreground flex items-center gap-1.5 text-sm">
+                <Folder class="size-3.5" /> 文件夹
+              </span>
+              <span class="text-lg font-semibold tabular-nums">{{ folders.length }}</span>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+              <span class="text-muted-foreground flex items-center gap-1.5 text-sm">
+                <FileText class="size-3.5" /> .tiptap 文档
+              </span>
+              <span class="text-lg font-semibold tabular-nums">{{ tiptapCount }}</span>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+              <span class="text-muted-foreground text-sm">当前库</span>
+              <span class="truncate text-sm font-medium">{{ currentLibrary?.name || currentLibrary?.title || currentLibraryId || '未选择' }}</span>
+            </div>
+          </div>
+          <p v-if="!connected" class="text-muted-foreground mt-auto text-xs">连接 server 后显示实时统计，未连接时对话框使用 mock 数据</p>
+        </aside>
+      </div>
+
+      <!-- 组件演示卡片 -->
+      <section class="bg-card text-card-foreground flex flex-col gap-4 rounded-xl border p-6 shadow-sm">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex flex-col gap-1">
+            <h2 class="text-base font-semibold">SaveLocationDialog</h2>
+            <p class="text-muted-foreground text-sm">
+              {{ connected ? '数据来自当前素材库（真实 SDK 拉取）' : '未连接 server，仅展示 mock 数据' }}
+            </p>
+          </div>
+          <Button class="w-fit shrink-0" :disabled="!connected" @click="showSave = true">保存文档到…</Button>
+        </div>
+        <p v-if="saved" class="bg-muted text-muted-foreground rounded-lg p-3 font-mono text-sm break-all">{{ saved }}</p>
         <SaveLocationDialog
           v-model:open="showSave"
           :libraries="connected ? libraries : [{ id: 1, name: 'Mock 素材库' }]"
