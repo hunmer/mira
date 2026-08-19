@@ -85,6 +85,32 @@
   border-color: var(--border);
 }
 
+/* ---- Material Icons 字体(lib 构建经 assetsInlineLimit 内联为 data URI,保持 dist 自包含) ---- */
+@font-face {
+  font-family: "Material Icons";
+  font-style: normal;
+  font-weight: 400;
+  src: url("./fonts/material-icons.woff2") format("woff2");
+  font-display: block;
+}
+
+.material-icons {
+  font-family: "Material Icons";
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  font-feature-settings: "liga";
+  -webkit-font-feature-settings: "liga";
+  -webkit-font-smoothing: antialiased;
+}
+
 /* ---- attachment 组件用到的自定义工具类 ---- */
 @utility scrollbar-none {
   scrollbar-width: none;

@@ -25,6 +25,8 @@ withDefaults(defineProps<{
   initialNote?: string
   title?: string
   description?: string
+  /** 新建节点服务:透传给表单,创建成功返回新节点 id 供自动选中 */
+  createNode?: (payload: { kind: 'folder' | 'tag'; parentId: number; title: string; description?: string; color?: number; icon?: string }) => Promise<number | undefined>
 }>(), {
   tags: () => [],
   files: () => [],
@@ -42,7 +44,7 @@ const emit = defineEmits<{
   (event: 'save', value: SaveLocation): void
   (event: 'library-change', libraryId: string): void
   (event: 'remove-file', file: File): void
-  (event: 'create-node', value: { kind: 'folder' | 'tag'; parentId: number }): void
+  (event: 'create-node', value: { kind: 'folder' | 'tag'; parentId: number; title: string; description?: string; color?: number }): void
 }>()
 
 function close () { emit('update:open', false) }
@@ -65,6 +67,7 @@ function close () { emit('update:open', false) }
         :initial-file-name="initialFileName"
         :initial-url="initialUrl"
         :initial-note="initialNote"
+        :create-node="createNode"
         @save="emit('save', $event)"
         @library-change="emit('library-change', $event)"
         @remove-file="emit('remove-file', $event)"

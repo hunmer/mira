@@ -152,15 +152,14 @@ async function onSaveLibraryChange (libraryId: string) {
   await loadSaveDialogData()
 }
 
-/** 保存对话框工具栏「新增」:弹名称输入并创建文件夹/标签,完成后刷新树数据 */
-async function onSaveCreateNode ({ kind, parentId }: { kind: 'folder' | 'tag'; parentId: number }) {
-  const name = window.prompt(kind === 'folder' ? '新建文件夹名称' : '新建标签名称')?.trim()
-  if (!name || !currentLibraryId.value) return
-  try {
-    if (kind === 'folder') await client.folders().createFolder(currentLibraryId.value, name, parentId)
-    else await client.tags().createTag(currentLibraryId.value, name, parentId)
-    await loadSaveDialogData()
-  } catch (error) { console.error('[mira-tiptap] create node failed', error) }
+/** 保存对话框工具栏「新增」:名称/描述/颜色/图标由组件内对话框收集,创建成功返回新节点 id 供组件自动选中 */
+async function onSaveCreateNode ({ kind, parentId, title, color, description, icon }: { kind: 'folder' | 'tag'; parentId: number; title: string; color?: number; description?: string; icon?: string }): Promise<number | undefined> {
+  if (!currentLibraryId.value) throw new Error('未选择素材库')
+  const id = kind === 'folder'
+    ? await client.folders().createFolder(currentLibraryId.value, title, parentId, color, description, icon)
+    : await client.tags().createTag(currentLibraryId.value, title, parentId, color, description, icon)
+  await loadSaveDialogData()
+  return id
 }
 
 async function saveToLocation (location: SaveLocation) {
@@ -310,7 +309,7 @@ onBeforeUnmount(() => { window.removeEventListener('keydown', handleKeydown); if
       <LinkEditorMenu :editor="editor" />
       <OutlinePanel :editor="editor" />
     </template>
-    <SaveLocationDialog v-model:open="showSaveDialog" :libraries="libraries" :folders="folders" :tags="tags" :initial-library-id="currentLibraryId" :initial-file-name="currentFileName" @library-change="onSaveLibraryChange" @create-node="onSaveCreateNode" @save="saveToLocation" />
+    <SaveLocationDialog v-model:open="showSaveDialog" :libraries="libraries" :folders="folders" :tags="tags" :initial-library-id="currentLibraryId" :initial-file-name="currentFileName" :create-node="onSaveCreateNode" @library-change="onSaveLibraryChange" @save="saveToLocation" />
     <OpenFileDialog v-model:open="showOpenDialog" :files="openDocs" :loading="openDocsLoading" @select="loadDocument" />
   </main>
 </template>

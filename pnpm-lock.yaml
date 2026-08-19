@@ -143,8 +143,8 @@ importers:
         version: 3.25.76
     devDependencies:
       '@hunmer/procm-mcp-sdk':
-        specifier: link:G:/procm-mcp/packages/procm-sdk
-        version: link:G:/procm-mcp/packages/procm-sdk
+        specifier: link:../../../procm-mcp/packages/procm-sdk
+        version: link:../../../procm-mcp/packages/procm-sdk
       '@types/cors':
         specifier: ^2.8.17
         version: 2.8.19
@@ -403,8 +403,8 @@ importers:
         version: 3.25.76
     devDependencies:
       '@hunmer/procm-mcp-sdk':
-        specifier: link:G:/procm-mcp/packages/procm-sdk
-        version: link:G:/procm-mcp/packages/procm-sdk
+        specifier: link:../../../procm-mcp/packages/procm-sdk
+        version: link:../../../procm-mcp/packages/procm-sdk
       '@tailwindcss/postcss':
         specifier: ^4.0.17
         version: 4.3.0
@@ -614,6 +614,9 @@ importers:
       vite:
         specifier: ^6.3.2
         version: 6.4.2(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.32.0)(stylus@0.57.0)(tsx@4.23.12)(yaml@2.9.0)
+      vite-plugin-vue-devtools:
+        specifier: ^8.2.1
+        version: 8.2.1(vite@6.4.2(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.32.0)(stylus@0.57.0)(tsx@4.23.12)(yaml@2.9.0))(vue@3.5.13(typescript@5.8.3))
       vue:
         specifier: 3.5.13
         version: 3.5.13(typescript@5.8.3)
@@ -3800,6 +3803,11 @@ packages:
 
   '@vue/devtools-core@8.1.2':
     resolution: {integrity: sha512-ZGGyaSBP4/+bN2Nd9ZHNYAVDRIzMw1rv2RyXWtyZlo6mQal+IDmTvKY4V+DjAEBhaXt30mHmsgYp1yXJ/2tIWg==}
+    peerDependencies:
+      vue: ^3.0.0
+
+  '@vue/devtools-core@8.2.1':
+    resolution: {integrity: sha512-s/VfAY9oDTb/kFEWmy461jaFde2MIV1RO/gi1vwM+PAZBZ/Pc2Ndu3BNBdZUze8QDUuyYvElbEEGA83syjJfzA==}
     peerDependencies:
       vue: ^3.0.0
 
@@ -8656,6 +8664,12 @@ packages:
     peerDependencies:
       vite: ^6.0.0 || ^7.0.0 || ^8.0.0
 
+  vite-plugin-vue-devtools@8.2.1:
+    resolution: {integrity: sha512-5JLxXWWCo5lJMw16/xVeNvJ8k2zLwZPf1vITLzya/2IePrCBeGe/p/iAokgXHZpEi39fcYtPXmO8SaKeXmqCAA==}
+    engines: {node: '>=v14.21.3'}
+    peerDependencies:
+      vite: ^6.0.0 || ^7.0.0 || ^8.0.0
+
   vite-plugin-vue-inspector@6.0.0:
     resolution: {integrity: sha512-OpyITJLgZNibxlrik1EmRtvXHDjLRxNPsWkGFTERZs2LgMEdG4W0WoFt5GIgp3a3jRou+eJR8U1zOBk/XQgEbw==}
     peerDependencies:
@@ -12618,6 +12632,12 @@ snapshots:
       '@vue/devtools-kit': 8.1.2
       '@vue/devtools-shared': 8.1.2
       vue: 3.5.13(typescript@5.7.3)
+
+  '@vue/devtools-core@8.2.1(vue@3.5.13(typescript@5.8.3))':
+    dependencies:
+      '@vue/devtools-kit': 8.2.1
+      '@vue/devtools-shared': 8.2.1
+      vue: 3.5.13(typescript@5.8.3)
 
   '@vue/devtools-kit@7.7.9':
     dependencies:
@@ -18473,6 +18493,20 @@ snapshots:
       '@vue/devtools-core': 8.1.2(vue@3.5.13(typescript@5.7.3))
       '@vue/devtools-kit': 8.1.2
       '@vue/devtools-shared': 8.1.2
+      sirv: 3.0.2
+      vite: 6.4.2(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.32.0)(stylus@0.57.0)(tsx@4.23.12)(yaml@2.9.0)
+      vite-plugin-inspect: 11.3.3(vite@6.4.2(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.32.0)(stylus@0.57.0)(tsx@4.23.12)(yaml@2.9.0))
+      vite-plugin-vue-inspector: 6.0.0(vite@6.4.2(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.32.0)(stylus@0.57.0)(tsx@4.23.12)(yaml@2.9.0))
+    transitivePeerDependencies:
+      - '@nuxt/kit'
+      - supports-color
+      - vue
+
+  vite-plugin-vue-devtools@8.2.1(vite@6.4.2(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.32.0)(stylus@0.57.0)(tsx@4.23.12)(yaml@2.9.0))(vue@3.5.13(typescript@5.8.3)):
+    dependencies:
+      '@vue/devtools-core': 8.2.1(vue@3.5.13(typescript@5.8.3))
+      '@vue/devtools-kit': 8.2.1
+      '@vue/devtools-shared': 8.2.1
       sirv: 3.0.2
       vite: 6.4.2(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.32.0)(stylus@0.57.0)(tsx@4.23.12)(yaml@2.9.0)
       vite-plugin-inspect: 11.3.3(vite@6.4.2(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.32.0)(stylus@0.57.0)(tsx@4.23.12)(yaml@2.9.0))

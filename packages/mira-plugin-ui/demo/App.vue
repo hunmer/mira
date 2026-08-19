@@ -109,20 +109,20 @@ async function handleLibraryChange (libraryId: string) {
   await loadLibraryData()
 }
 
-/** 保存对话框工具栏「新增」:连接时走 SDK,未连接改内存 mock */
-async function handleCreateNode ({ kind, parentId }: { kind: 'folder' | 'tag'; parentId: number }) {
-  const name = window.prompt(kind === 'folder' ? '新建文件夹名称' : '新建标签名称')?.trim()
-  if (!name || !currentLibraryId.value) return
-  try {
-    if (connected.value && client) {
-      if (kind === 'folder') await client.folders().createFolder(currentLibraryId.value, name, parentId)
-      else await client.tags().createTag(currentLibraryId.value, name, parentId)
-      await loadLibraryData()
-    } else {
-      const pool = kind === 'folder' ? mockFolders : mockTags
-      pool.value = [...pool.value, { id: Date.now(), title: name, parent_id: parentId }]
-    }
-  } catch (error) { console.error(error) }
+/** 保存对话框「新增」:名称/描述/颜色/图标由组件内对话框收集,创建成功返回新节点 id 供组件自动选中 */
+async function handleCreateNode ({ kind, parentId, title, color, description, icon }: { kind: 'folder' | 'tag'; parentId: number; title: string; color?: number; description?: string; icon?: string }): Promise<number | undefined> {
+  if (!currentLibraryId.value) throw new Error('未选择素材库')
+  if (connected.value && client) {
+    const id = kind === 'folder'
+      ? await client.folders().createFolder(currentLibraryId.value, title, parentId, color, description, icon)
+      : await client.tags().createTag(currentLibraryId.value, title, parentId, color, description, icon)
+    await loadLibraryData()
+    return id
+  }
+  const pool = kind === 'folder' ? mockFolders : mockTags
+  const id = Date.now()
+  pool.value = [...pool.value, { id, title, parent_id: parentId }]
+  return id
 }
 
 /* ---------- LibrarySelect 服务器分组选择(Mira Server 卡片内) ---------- */
@@ -366,7 +366,7 @@ async function startUpload () {
           initial-file-name="我的文档"
           @save="handleSave"
           @library-change="handleLibraryChange"
-          @create-node="handleCreateNode"
+          :create-node="handleCreateNode"
           @remove-file="file => saveFiles = saveFiles.filter(f => f !== file)"
         />
       </section>

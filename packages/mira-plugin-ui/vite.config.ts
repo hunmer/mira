@@ -5,7 +5,7 @@ import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
 import vueDevTools from 'vite-plugin-vue-devtools'
 
-// 获取编辑器配置（Windows 上 code 不一定在 PATH，查找 code.cmd 完整路径）
+// 获取编辑器配置（Windows/macOS 上 code 不一定在 PATH，查找完整路径）
 function getEditor() {
   const editor = process.env.VUE_EDITOR || 'code'
   if (process.platform === 'win32' && (editor === 'code' || editor === 'vscode')) {
@@ -17,6 +17,10 @@ function getEditor() {
     for (const p of possiblePaths) {
       if (existsSync(p)) return p
     }
+  }
+  if (process.platform === 'darwin' && (editor === 'code' || editor === 'vscode')) {
+    const p = '/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code'
+    if (existsSync(p)) return p
   }
   return editor
 }
@@ -31,8 +35,10 @@ export default defineConfig({
     vueDevTools({
       launchEditor: getEditor(),
       componentInspector: {
-        // Ctrl+Alt+D 触发审查元素模式，点击页面元素跳转到 IDE 对应代码
-        toggleComboKey: 'control-alt-d',
+        // Ctrl+Alt+字母 触发审查元素模式，点击页面元素跳转到 IDE 对应代码。
+        // macOS 上 Option 会把 event.key 变成特殊字符（⌥E = ´），alt+字母组合永远匹配不上，
+        // 改用不含 Option 的 Ctrl+Shift+E
+        toggleComboKey: process.platform === 'darwin' ? 'control-shift-d' : 'control-alt-d',
       },
     }),
   ],
@@ -61,6 +67,8 @@ export default defineConfig({
       fileName: format => `mira-plugin-ui.${format}.js`,
     },
     cssCodeSplit: false,
+    // lib 模式不输出 css 引用的资产文件,超限内联(把 material-icons 字体打进 css,保持 dist 自包含)
+    assetsInlineLimit: 100000000,
     rollupOptions: {
       external: ['vue'],
       output: {
