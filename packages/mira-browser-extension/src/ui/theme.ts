@@ -14,9 +14,11 @@ export function resolveTheme(theme: Theme): 'light' | 'dark' {
 
 /**
  * 把解析后的主题写到 <html data-theme>。可在 Vue 挂载前调用以避免闪烁。
+ * 同时同步 .dark 类:mira-plugin-ui 的 Tailwind(shadcn token)按 .dark 区分亮暗。
  */
 export function applyTheme(resolved: 'light' | 'dark'): void {
   document.documentElement.setAttribute('data-theme', resolved);
+  document.documentElement.classList.toggle('dark', resolved === 'dark');
 }
 
 /**

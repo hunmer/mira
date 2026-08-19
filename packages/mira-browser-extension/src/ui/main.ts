@@ -1,5 +1,9 @@
 import { createApp } from 'vue';
 import App from './App.vue';
+// mira-plugin-ui 组件(folders/tags tab 等)是 Tailwind class 写的,样式由其 tailwind.css
+// 在本扩展构建内编译生成(@source 已声明组件扫描范围)。先于 style.css 引入:
+// 扩展自己的 token(--border/--primary 等)后加载,覆盖 shadcn 同名变量,保持扩展视觉。
+import 'mira-plugin-ui/src/assets/tailwind.css';
 import './style.css';
 import i18n from './i18n';
 import { resolveTheme, applyTheme, watchSystemTheme } from './theme';
