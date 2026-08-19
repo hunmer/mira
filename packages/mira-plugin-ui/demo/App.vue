@@ -3,6 +3,8 @@ import { computed, onMounted, ref } from 'vue'
 import { FileText, Folder, Loader2, LogOut, Moon, Server, Sun } from '@lucide/vue'
 import { MiraClient } from 'mira-app-core/shared/sdk'
 import { SaveLocationDialog, type SaveLocation } from '@/index'
+import { LibraryTreeView } from '@/library'
+import type { LibraryFlatItem, LibraryTreeDialog, LibraryTreeServices, LibraryTreeUpload } from '@/library'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -94,6 +96,89 @@ const saved = ref('')
 
 function handleSave (location: SaveLocation) {
   saved.value = JSON.stringify(location)
+}
+
+/* ---------- LibraryTreeView 树演示 ---------- */
+const treeMode = ref<'folder' | 'tag'>('folder')
+const lastAction = ref('')
+
+// mock 数据(未连接时使用;可变,右键新建/删除直接改内存,完整演示编辑流程)
+const mockFolders = ref<LibraryFlatItem[]>([
+  { id: 1, title: '设计素材', parent_id: 0 },
+  { id: 2, title: '参考图', parent_id: 1 },
+  { id: 3, title: '未整理', parent_id: 0 },
+])
+const mockTags = ref<LibraryFlatItem[]>([
+  { id: 1, title: '灵感', parent_id: 0 },
+  { id: 2, title: '插画', parent_id: 1 },
+])
+
+function adaptRows (rows: any[]): LibraryFlatItem[] {
+  return rows.map(r => ({
+    id: r.id,
+    title: r.title ?? r.name,
+    parent_id: typeof r.parent_id === 'number' ? r.parent_id : undefined,
+    color: r.color,
+  }))
+}
+
+// 连接后走 SDK 真实 CRUD;未连接操作内存 mock
+const treeServices: LibraryTreeServices = {
+  async listFolders () {
+    if (!connected.value || !client) return mockFolders.value
+    return adaptRows(await client.folders().getAll(currentLibraryId.value))
+  },
+  async listTags () {
+    if (!connected.value || !client) return mockTags.value
+    return adaptRows(await client.tags().getAll(currentLibraryId.value))
+  },
+  async createNode (kind, libId, title, parentId) {
+    if (!connected.value || !client) {
+      const list = kind === 'folder' ? mockFolders : mockTags
+      const id = Math.max(0, ...list.value.map(i => i.id)) + 1
+      list.value = [...list.value, { id, title, parent_id: parentId ?? 0 }]
+      return id
+    }
+    return kind === 'folder'
+      ? client.folders().createFolder(libId, title, parentId)
+      : client.tags().createTag(libId, title, parentId)
+  },
+  async deleteNode (kind, libId, id, deleteFiles) {
+    if (!connected.value || !client) {
+      const list = kind === 'folder' ? mockFolders : mockTags
+      list.value = list.value.filter(i => i.id !== id)
+      return
+    }
+    return kind === 'folder'
+      ? client.folders().deleteFolder(libId, id, deleteFiles)
+      : client.tags().deleteTag(libId, id)
+  },
+}
+
+// 弹窗适配:demo 用原生弹窗(prompt/confirm),宿主可换成自己的 Dialog 系统
+const treeDialog: LibraryTreeDialog = {
+  alert: async o => { window.alert(`${o.title ?? ''}\n${o.message ?? ''}`.trim()) },
+  confirm: async o => window.confirm(o.message ?? ''),
+  prompt: async o => window.prompt(o.title ?? '', o.defaultValue ?? ''),
+  confirmCheck: async o => {
+    const ok = window.confirm(o.message ?? '')
+    return { ok, checked: ok && window.confirm(o.checkboxLabel ?? '') }
+  },
+}
+
+// 上传适配:demo 不真传,仅提示落点(宿主路由到自己的上传队列)
+function describeTarget (target?: { folderId?: number; tags?: string[] }) {
+  if (target?.folderId != null) return `文件夹 #${target.folderId}`
+  if (target?.tags?.length) return `标签「${target.tags.join('、')}」`
+  return '素材库根目录'
+}
+const treeUpload: LibraryTreeUpload = {
+  files: (files, target) => {
+    lastAction.value = `模拟上传 ${files.length} 个文件 → ${describeTarget(target)}`
+  },
+  urls: (urls, target) => {
+    lastAction.value = `模拟上传 ${urls.length} 个链接 → ${describeTarget(target)}`
+  },
 }
 </script>
 
@@ -232,6 +317,53 @@ function handleSave (location: SaveLocation) {
           @save="handleSave"
         />
       </section>
+
+      <!-- 树视图演示卡片 -->
+      <section class="bg-card text-card-foreground flex flex-col gap-4 rounded-xl border p-6 shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex flex-col gap-1">
+            <h2 class="text-base font-semibold">LibraryTreeView 树视图</h2>
+            <p class="text-muted-foreground text-sm">
+              {{ connected ? '数据来自当前素材库（真实 SDK 读写）' : '未连接 server，操作内存 mock 数据（右键可新建/删除）' }}
+            </p>
+          </div>
+          <div class="bg-muted flex gap-1 rounded-lg p-1">
+            <button
+              v-for="m in (['folder', 'tag'] as const)"
+              :key="m"
+              class="rounded-md px-3 py-1 text-xs font-medium transition-colors"
+              :class="treeMode === m ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'"
+              @click="treeMode = m"
+            >
+              {{ m === 'folder' ? '文件夹树' : '标签树' }}
+            </button>
+          </div>
+        </div>
+        <div class="h-96 overflow-hidden rounded-lg border">
+          <LibraryTreeView
+            :key="treeMode"
+            :mode="treeMode"
+            :library-id="currentLibraryId || 'mock'"
+            :services="treeServices"
+            :dialog="treeDialog"
+            :upload="treeUpload"
+          />
+        </div>
+        <p v-if="lastAction" class="text-muted-foreground text-sm">{{ lastAction }}</p>
+      </section>
     </div>
   </main>
 </template>
+
+<style>
+/* LibraryTree 系列组件依赖宿主语义变量(扩展侧由其样式系统提供);
+   demo 映射到库自身的 shadcn token,亮暗模式自动跟随 */
+:root {
+  --fg: var(--foreground);
+  --bg: var(--background);
+  --bg-elev: var(--card);
+  --danger: var(--destructive);
+  /* 树组件的次要文字色;shadcn 的 --muted 是浅背景色,不能直接用 */
+  --muted-fg: var(--muted-foreground);
+}
+</style>

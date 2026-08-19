@@ -65,7 +65,7 @@ onUnmounted(() => {
   padding: 4px;
   background: var(--bg-elev);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius, 6px);
   box-shadow: 0 8px 24px #0006;
   display: flex;
   flex-direction: column;

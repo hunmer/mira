@@ -5,6 +5,7 @@ packages:
   - 'packages/mira-dashboard-next'
   - 'packages/mira-scripts-core'
   - 'packages/mira-browser-extension'
+  - 'packages/mira-plugin-ui'
   - 'packages/vue-masonry'
   - 'online_client_plugins/plugins/*'
   - 'plugins/plugins/*/web'

@@ -8,8 +8,7 @@ import { flattenTree, useLibraryTree } from '@/ui/composables/useLibraryTree';
 import { useLibraryTreeActions } from '@/ui/composables/useLibraryTreeActions';
 import Button from '@/ui/components/ui/Button.vue';
 import Input from '@/ui/components/ui/Input.vue';
-import ContextMenu from '@/ui/components/ui/ContextMenu.vue';
-import LibraryTree from '@/ui/components/library/LibraryTree.vue';
+import { ContextMenu, LibraryTree } from 'mira-plugin-ui/library';
 import type { LibraryTreeNode } from '@/shared/types';
 
 const props = defineProps<{ session: CustomUploadSession }>();

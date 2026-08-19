@@ -9,10 +9,12 @@
  * - 拖拽落点高亮 + drop 抛回目标节点
  *
  * 组件自递归:LibraryTree 渲染一层 children 时复用自身。
+ *
+ * 样式依赖宿主提供 CSS 变量(--fg/--bg-elev/--border/--primary/--muted/--radius)。
  */
 import { computed, ref } from 'vue';
-import type { LibraryTreeNode } from '@/shared/types';
-import { canAcceptDrop } from '@/shared/drag-data';
+import type { LibraryTreeNode } from './types';
+import { canAcceptDrop } from './drag-data';
 
 const props = withDefaults(
   defineProps<{
@@ -293,11 +295,11 @@ function iconStyle(node: LibraryTreeNode): Record<string, string> {
 
 .toggle { display: inline-flex; width: 14px; justify-content: center; flex-shrink: 0; }
 .toggle.invisible { visibility: hidden; }
-.chev { color: var(--muted); transition: transform .12s; transform: rotate(0deg); }
+.chev { color: var(--muted-fg, var(--muted)); transition: transform .12s; transform: rotate(0deg); }
 .chev.open { transform: rotate(90deg); }
 
 .icon { display: inline-flex; flex-shrink: 0; color: var(--primary); }
-.row:not(.folder) .icon { color: var(--muted); }
+.row:not(.folder) .icon { color: var(--muted-fg, var(--muted)); }
 
 .label {
   flex: 1;
@@ -314,7 +316,7 @@ function iconStyle(node: LibraryTreeNode): Record<string, string> {
   padding: 2px 5px;
   border-radius: 999px;
   background: var(--bg-elev);
-  color: var(--muted);
+  color: var(--muted-fg, var(--muted));
   border: 1px solid var(--border);
 }
 </style>
