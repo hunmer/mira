@@ -451,16 +451,3 @@ async function startUpload () {
     </div>
   </main>
 </template>
-
-<style>
-/* LibraryTree 系列组件依赖宿主语义变量(扩展侧由其样式系统提供);
-   demo 映射到库自身的 shadcn token,亮暗模式自动跟随 */
-:root {
-  --fg: var(--foreground);
-  --bg: var(--background);
-  --bg-elev: var(--card);
-  --danger: var(--destructive);
-  /* 树组件的次要文字色;shadcn 的 --muted 是浅背景色,不能直接用 */
-  --muted-fg: var(--muted-foreground);
-}
-</style>

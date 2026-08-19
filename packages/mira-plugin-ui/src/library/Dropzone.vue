@@ -6,8 +6,7 @@
  * 已选文件在区内以 Attachment 卡片展示(可移除,emit('remove', file));
  * 图片文件显示缩略图(objectURL,移除/卸载时回收)。
  *
- * 注意:Attachment 列表基于库的 tailwind 组件体系,宿主需引入
- * mira-plugin-ui.css(library 子路径本身不携带样式)。
+ * 样式为 tailwind/shadcn 原子类,无 scoped CSS(见仓库 ui_rule.md)。
  */
 import { computed, onBeforeUnmount, ref } from 'vue';
 import { FileImage, FileText, Film, Music, X } from '@lucide/vue';
@@ -133,49 +132,53 @@ function onPick(e: Event) {
 </script>
 
 <template>
-  <div class="dropzone">
+  <div class="relative">
     <!-- 右上角:附件展示样式(缩略图/图标) + 排列方向(横排/竖排) -->
-    <div class="style-toggles">
-      <div class="variant-toggle" role="group" aria-label="附件展示样式">
+    <div class="absolute top-5 right-5 z-[1] flex gap-2">
+      <div class="flex gap-1" role="group" aria-label="附件展示样式">
         <button
           type="button"
-          :class="{ on: mediaVariant === 'image' }"
+          class="cursor-pointer rounded-md border border-border bg-accent px-2 py-1 text-[11px] leading-none text-muted-foreground transition-colors duration-100 hover:text-foreground"
+          :class="{ 'border-primary text-primary': mediaVariant === 'image' }"
           @click="mediaVariant = 'image'"
         >缩略图</button>
         <button
           type="button"
-          :class="{ on: mediaVariant === 'icon' }"
+          class="cursor-pointer rounded-md border border-border bg-accent px-2 py-1 text-[11px] leading-none text-muted-foreground transition-colors duration-100 hover:text-foreground"
+          :class="{ 'border-primary text-primary': mediaVariant === 'icon' }"
           @click="mediaVariant = 'icon'"
         >图标</button>
       </div>
-      <div class="variant-toggle" role="group" aria-label="附件排列方向">
+      <div class="flex gap-1" role="group" aria-label="附件排列方向">
         <button
           type="button"
-          :class="{ on: orientation === 'horizontal' }"
+          class="cursor-pointer rounded-md border border-border bg-accent px-2 py-1 text-[11px] leading-none text-muted-foreground transition-colors duration-100 hover:text-foreground"
+          :class="{ 'border-primary text-primary': orientation === 'horizontal' }"
           @click="orientation = 'horizontal'"
         >横排</button>
         <button
           type="button"
-          :class="{ on: orientation === 'vertical' }"
+          class="cursor-pointer rounded-md border border-border bg-accent px-2 py-1 text-[11px] leading-none text-muted-foreground transition-colors duration-100 hover:text-foreground"
+          :class="{ 'border-primary text-primary': orientation === 'vertical' }"
           @click="orientation = 'vertical'"
         >竖排</button>
       </div>
     </div>
 
     <div
-      class="zone"
-      :class="{ hover: hovering }"
+      class="m-3 cursor-pointer rounded-md border-2 border-dashed p-6 text-center transition-colors duration-150"
+      :class="hovering ? 'border-primary text-foreground' : 'border-border text-muted-foreground'"
       @click="fileInput?.click()"
       @dragover="onDragOver"
       @dragleave="hovering = false"
       @drop.prevent="onDrop"
     >
-      <input ref="fileInput" type="file" multiple class="file-input" @change="onPick" />
+      <input ref="fileInput" type="file" multiple class="hidden" @change="onPick">
       <span>{{ hint }}</span>
     </div>
 
     <!-- 已暂存文件:Attachment 卡片,可移除(idle 虚线边框 = 待上传) -->
-    <AttachmentGroup v-if="staged.length" class="files">
+    <AttachmentGroup v-if="staged.length" class="px-3 pb-2">
       <Attachment
         v-for="file in staged"
         :key="file.name + file.size + file.lastModified"
@@ -215,51 +218,3 @@ function onPick(e: Event) {
     </AttachmentGroup>
   </div>
 </template>
-
-<style scoped>
-.dropzone { position: relative; }
-
-/* 右上角展示样式/排列方向切换 */
-.style-toggles {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  z-index: 1;
-  display: flex;
-  gap: 8px;
-}
-.variant-toggle {
-  display: flex;
-  gap: 4px;
-}
-.variant-toggle button {
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--bg-elev, inherit);
-  color: var(--muted-fg, var(--muted));
-  font-size: 11px;
-  line-height: 1;
-  padding: 4px 8px;
-  cursor: pointer;
-  transition: color .12s, border-color .12s;
-}
-.variant-toggle button:hover { color: var(--fg); }
-.variant-toggle button.on {
-  border-color: var(--primary);
-  color: var(--primary);
-}
-
-.zone {
-  padding: 24px;
-  margin: 12px;
-  border: 2px dashed var(--border);
-  border-radius: var(--radius, 6px);
-  text-align: center;
-  color: var(--muted-fg, var(--muted));
-  transition: border-color .15s;
-  cursor: pointer;
-}
-.zone.hover { border-color: var(--primary); color: var(--fg); }
-.file-input { display: none; }
-.files { padding: 0 12px 8px; }
-</style>

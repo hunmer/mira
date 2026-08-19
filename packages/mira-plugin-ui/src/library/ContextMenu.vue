@@ -4,10 +4,11 @@
  *
  * 用法:
  *   <ContextMenu v-if="menu" :x="menu.x" :y="menu.y" @close="menu = null">
- *     <button @click="...">选项</button>
+ *     <button class="ctx-item" @click="...">选项</button>
  *   </ContextMenu>
  *
  * 定位策略:优先在 (x,y) 右下方展开;若会溢出视口右/下边界,则翻到左/上方。
+ * 样式为 tailwind 原子类;菜单项/分隔线的类由调用方使用 .ctx-item / .ctx-sep。
  */
 import { computed, onMounted, onUnmounted } from 'vue';
 
@@ -51,44 +52,13 @@ onUnmounted(() => {
 <template>
   <!-- stop:点击菜单内部不触发关闭 -->
   <Teleport to="body">
-    <div class="ctx-menu" :style="posStyle" @click.stop @contextmenu.prevent.stop>
+    <div
+      class="fixed z-[1000] flex min-w-[140px] flex-col gap-px rounded-md border border-border bg-accent p-1 text-xs shadow-[0_8px_24px_rgba(0,0,0,0.4)]"
+      :style="posStyle"
+      @click.stop
+      @contextmenu.prevent.stop
+    >
       <slot />
     </div>
   </Teleport>
 </template>
-
-<style scoped>
-.ctx-menu {
-  position: fixed;
-  z-index: 1000;
-  min-width: 140px;
-  padding: 4px;
-  background: var(--bg-elev);
-  border: 1px solid var(--border);
-  border-radius: var(--radius, 6px);
-  box-shadow: 0 8px 24px #0006;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  font-size: 12px;
-}
-
-/* 菜单项:由调用方放 button,这里只统一 ::v-deep 样式 */
-.ctx-menu :deep(button) {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  background: transparent;
-  border: none;
-  border-radius: 4px;
-  color: var(--fg);
-  cursor: pointer;
-  font: inherit;
-  text-align: left;
-  width: 100%;
-}
-.ctx-menu :deep(button:hover) { background: var(--bg); }
-.ctx-menu :deep(button.danger) { color: var(--danger); }
-.ctx-menu :deep(.sep) { height: 1px; background: var(--border); margin: 3px 0; }
-</style>

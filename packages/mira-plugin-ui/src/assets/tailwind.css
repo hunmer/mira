@@ -3,7 +3,9 @@
 
 /* 库构建入口：dist CSS 必须自包含，显式声明组件源码扫描范围 */
 @source "../components";
+@source "../library";
 @source "../SaveLocationDialog.vue";
+@source "../SaveLocationForm.vue";
 
 @custom-variant dark (&:is(.dark *));
 

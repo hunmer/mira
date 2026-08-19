@@ -279,7 +279,7 @@ function confirm () {
 
     <!-- 中部:左 tabs 树(工具栏:搜索/新增) / 右输入区 -->
     <div class="grid items-start gap-4 sm:grid-cols-[minmax(200px,240px)_1fr]">
-      <Tabs v-model="tab" class="tree-scope flex max-h-80 flex-col gap-2">
+      <Tabs v-model="tab" class="flex max-h-80 flex-col gap-2">
         <!-- 工具栏:tabs + 搜索切换/新增(参考 FolderTreeComponent 的 Header) -->
         <div class="flex items-center justify-between gap-2">
           <TabsList>
@@ -289,8 +289,8 @@ function confirm () {
           <div class="flex items-center gap-0.5">
             <button
               type="button"
-              class="tool-btn"
-              :class="{ active: showSearch }"
+              class="inline-flex size-6 cursor-pointer items-center justify-center rounded-md border-none bg-transparent text-muted-foreground transition-[color,background-color,transform] duration-150 hover:bg-accent hover:text-foreground active:scale-90"
+              :class="showSearch && 'text-primary'"
               :title="`搜索${tab === 'folder' ? '文件夹' : '标签'}`"
               @click="toggleSearch"
             >
@@ -298,7 +298,7 @@ function confirm () {
             </button>
             <button
               type="button"
-              class="tool-btn"
+              class="inline-flex size-6 cursor-pointer items-center justify-center rounded-md border-none bg-transparent text-muted-foreground transition-[color,background-color,transform] duration-150 hover:bg-accent hover:text-foreground active:scale-90"
               :title="`新建${tab === 'folder' ? '文件夹' : '标签'}`"
               @click="onCreateNode"
             >
@@ -341,11 +341,19 @@ function confirm () {
         </Transition>
 
         <TabsContent value="folder" class="max-h-56 overflow-y-auto">
-          <button v-if="!query.trim()" type="button" class="root-row" :class="{ selected: !folderId }" @click="folderId = ''">
-            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" class="icon">
+          <button
+            v-if="!query.trim()"
+            type="button"
+            class="flex h-7 w-full cursor-pointer items-center gap-1.5 rounded-md py-0 pr-2 pl-[26px] text-inherit select-none"
+            :class="folderId
+              ? 'text-foreground hover:bg-accent'
+              : 'bg-primary/12 text-primary shadow-[inset_0_0_0_1.5px_var(--primary)]'"
+            @click="folderId = ''"
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" class="shrink-0">
               <path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" fill="currentColor" />
             </svg>
-            <span class="label">根目录</span>
+            <span class="min-w-0 flex-1 truncate">根目录</span>
           </button>
           <div v-if="filteredFolder.tree.length" class="text-sm">
             <LibraryTree
@@ -358,7 +366,7 @@ function confirm () {
               @select="onSelectFolder"
             />
           </div>
-          <div v-else class="empty">{{ query.trim() ? '无匹配' : '暂无文件夹' }}</div>
+          <div v-else class="py-6 text-center text-xs text-muted-foreground">{{ query.trim() ? '无匹配' : '暂无文件夹' }}</div>
         </TabsContent>
         <TabsContent value="tag" class="max-h-56 overflow-y-auto">
           <div v-if="filteredTag.tree.length" class="text-sm">
@@ -373,7 +381,7 @@ function confirm () {
               @select="onSelectTag"
             />
           </div>
-          <div v-else class="empty">{{ query.trim() ? '无匹配' : '暂无标签' }}</div>
+          <div v-else class="py-6 text-center text-xs text-muted-foreground">{{ query.trim() ? '无匹配' : '暂无标签' }}</div>
         </TabsContent>
       </Tabs>
 
@@ -431,75 +439,8 @@ function confirm () {
 </template>
 
 <style scoped>
-/*
- * LibraryTree 的 scoped 样式消费扩展宿主的语义变量(--fg/--bg-elev/…),
- * 这里桥接到 shadcn 主题变量,使树在本组件库的 tailwind 宿主里正常着色。
- */
-.tree-scope {
-  --fg: var(--foreground);
-  --bg-elev: var(--accent);
-  --border: var(--border);
-  --primary: var(--primary);
-  --muted: var(--muted-foreground);
-  --muted-fg: var(--muted-foreground);
-  --radius: var(--radius);
-}
-
-.root-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  width: 100%;
-  height: 28px;
-  padding: 0 8px 0 26px;
-  border: none;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--foreground);
-  font-size: inherit;
-  cursor: pointer;
-  user-select: none;
-}
-.root-row:hover { background: var(--accent); }
-.root-row.selected {
-  background: color-mix(in srgb, var(--primary) 12%, transparent);
-  box-shadow: inset 0 0 0 1.5px var(--primary);
-}
-.root-row.selected .label { color: var(--primary); }
-.root-row .icon { color: var(--primary); flex-shrink: 0; }
-.root-row .label {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.empty {
-  padding: 24px 8px;
-  font-size: 12px;
-  color: var(--muted-foreground);
-  text-align: center;
-}
-
-/* 工具栏图标按钮(搜索/新增):muted 色,hover 前景,激活主色,按压回弹 */
-.tool-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border: none;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--muted-foreground);
-  cursor: pointer;
-  transition: color .12s, background .12s, transform .16s ease-out;
-}
-.tool-btn:hover { color: var(--foreground); background: var(--accent); }
-.tool-btn:active { transform: scale(.9); }
-.tool-btn.active { color: var(--primary); }
-
-/* 搜索栏展开/收起:grid 0fr→1fr 高度过渡 + 位移/透明度(参考 FolderTreeHeader) */
+/* 搜索栏展开/收起:grid 0fr→1fr 高度过渡 + 位移/透明度(参考 FolderTreeHeader)。
+   tailwind 无法表达的过渡,属 ui_rule.md 允许的例外;不含颜色 token。 */
 .search-shell {
   display: grid;
   grid-template-rows: 1fr;

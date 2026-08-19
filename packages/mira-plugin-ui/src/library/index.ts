@@ -1,10 +1,9 @@
 /**
  * 素材库树(文件夹/标签)组件子入口。
  *
- * 独立于主入口(不引入 tailwind.css):宿主(mira-browser-extension 等)
- * 经 'mira-plugin-ui/library' 直接消费源码,不带入库的样式 token。
- * 组件样式为 scoped CSS,依赖宿主提供 --fg/--bg/--bg-elev/--border/--primary/
- * --muted/--danger/--radius 语义变量。
+ * 独立于主入口(不引入 tailwind.css),但组件样式已全部 tailwind 化
+ * (shadcn 原子类,见仓库 ui_rule.md):宿主需自行提供 tailwind 环境
+ * 与 shadcn 设计 token,再经 'mira-plugin-ui/library' 消费源码。
  */
 export { default as LibraryTree } from './LibraryTree.vue'
 export { default as LibraryTreeView } from './LibraryTreeView.vue'

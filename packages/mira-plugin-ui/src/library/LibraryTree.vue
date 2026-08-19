@@ -9,8 +9,7 @@
  * - 拖拽落点高亮 + drop 抛回目标节点
  *
  * 组件自递归:LibraryTree 渲染一层 children 时复用自身。
- *
- * 样式依赖宿主提供 CSS 变量(--fg/--bg-elev/--border/--primary/--muted/--radius)。
+ * 样式为 tailwind/shadcn 原子类,无 scoped CSS、不依赖语义变量。
  */
 import { computed, ref } from 'vue';
 import type { LibraryTreeNode } from './types';
@@ -109,10 +108,22 @@ function iconStyle(node: LibraryTreeNode): Record<string, string> {
   const hex = colorHex(node.color);
   return hex ? { color: hex } : {};
 }
+
+// ---- 行样式:选中/拖拽悬停时主色底 + 内描边,并压制 hover 反馈(对齐原行为) ----
+function rowClass(node: LibraryTreeNode): string[] {
+  const selected = props.selectedIds?.has(node.id);
+  const dragOver = dragOverId.value === node.id;
+  return [
+    selected || dragOver
+      ? 'bg-primary/12 shadow-[inset_0_0_0_1.5px_var(--primary)]'
+      : 'hover:bg-accent',
+    selectable.value ? 'cursor-pointer' : 'cursor-default',
+  ];
+}
 </script>
 
 <template>
-  <ul class="tree" role="tree">
+  <ul class="m-0 list-none p-0" role="tree">
     <li
       v-for="node in nodes"
       :key="node.id"
@@ -120,14 +131,8 @@ function iconStyle(node: LibraryTreeNode): Record<string, string> {
       :aria-expanded="node.children.length ? expanded.has(node.id) : undefined"
     >
       <div
-        class="row"
-        :class="{
-          folder: kind === 'folder',
-          selectable,
-          selected: selectedIds?.has(node.id),
-          dragover: dragOverId === node.id,
-          matched: matched?.has(node.id),
-        }"
+        class="flex h-7 items-center gap-1.5 rounded-md pr-2 text-foreground transition-[background-color,box-shadow] duration-100 select-none"
+        :class="rowClass(node)"
         :style="{ paddingLeft: 6 + node.level * indent + 'px' }"
         :title="node.title"
         @dragover="onDragOver($event, node)"
@@ -138,11 +143,11 @@ function iconStyle(node: LibraryTreeNode): Record<string, string> {
         <!-- 多选 checkbox:点击勾选/取消,阻止冒泡到行 -->
         <span
           v-if="checkable"
-          class="checkbox"
-          :class="{ on: checked?.has(node.id) }"
           role="checkbox"
           :aria-checked="checked?.has(node.id) ?? false"
           tabindex="0"
+          class="inline-flex size-3.5 shrink-0 cursor-pointer items-center justify-center rounded-[4px] border-[1.5px] border-border bg-accent text-white transition-colors duration-100 hover:border-primary"
+          :class="checked?.has(node.id) && 'border-primary bg-primary'"
           @click.stop="emit('select', node)"
           @keydown.enter.prevent="emit('select', node)"
         >
@@ -159,11 +164,15 @@ function iconStyle(node: LibraryTreeNode): Record<string, string> {
         </span>
 
         <!-- 展开/折叠:有子节点显示切换图标;无子节点占位对齐 -->
-        <span class="toggle" :class="{ invisible: !node.children.length }" @click.stop="onToggle(node)">
+        <span
+          class="inline-flex w-3.5 shrink-0 justify-center"
+          :class="!node.children.length && 'invisible'"
+          @click.stop="onToggle(node)"
+        >
           <svg
             v-if="node.children.length"
-            class="chev"
-            :class="{ open: expanded.has(node.id) }"
+            class="size-3 text-muted-foreground transition-transform duration-100"
+            :class="expanded.has(node.id) && 'rotate-90'"
             viewBox="0 0 16 16"
             width="12"
             height="12"
@@ -181,7 +190,11 @@ function iconStyle(node: LibraryTreeNode): Record<string, string> {
         </span>
 
         <!-- 图标 -->
-        <span v-if="kind === 'folder'" class="icon" :style="iconStyle(node)">
+        <span
+          v-if="kind === 'folder'"
+          class="inline-flex shrink-0 text-primary"
+          :style="iconStyle(node)"
+        >
           <!-- 展开态:打开的文件夹;否则闭合文件夹 -->
           <svg
             v-if="node.children.length && expanded.has(node.id)"
@@ -207,7 +220,11 @@ function iconStyle(node: LibraryTreeNode): Record<string, string> {
             />
           </svg>
         </span>
-        <span v-else class="icon" :style="iconStyle(node)">
+        <span
+          v-else
+          class="inline-flex shrink-0 text-muted-foreground"
+          :style="iconStyle(node)"
+        >
           <!-- 标签:hash 形态 -->
           <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
             <path
@@ -218,10 +235,19 @@ function iconStyle(node: LibraryTreeNode): Record<string, string> {
         </span>
 
         <!-- 标题 -->
-        <span class="label">{{ node.title }}</span>
+        <span
+          class="min-w-0 flex-1 truncate"
+          :class="[
+            selectedIds?.has(node.id) && 'text-primary',
+            matched?.has(node.id) && 'font-semibold text-primary',
+          ]"
+        >{{ node.title }}</span>
 
         <!-- 子节点计数(提示里面有东西) -->
-        <span v-if="node.children.length" class="badge">{{ node.children.length }}</span>
+        <span
+          v-if="node.children.length"
+          class="shrink-0 rounded-full border border-border bg-accent px-[5px] py-0.5 text-[10px] leading-none text-muted-foreground"
+        >{{ node.children.length }}</span>
       </div>
 
       <!-- 子树:展开时渲染 -->
@@ -243,80 +269,3 @@ function iconStyle(node: LibraryTreeNode): Record<string, string> {
     </li>
   </ul>
 </template>
-
-<style scoped>
-.tree { list-style: none; margin: 0; padding: 0; }
-.row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  height: 28px;
-  padding-right: 8px;
-  border-radius: 6px;
-  color: var(--fg);
-  cursor: default;
-  user-select: none;
-  transition: background .12s, box-shadow .12s;
-}
-.row:hover { background: var(--bg-elev); }
-/* 选中模式:行可点选 */
-.row.selectable { cursor: pointer; }
-/* 选中行:主色描边 + 淡背景 */
-.row.selected {
-  background: color-mix(in srgb, var(--primary) 12%, transparent);
-  box-shadow: inset 0 0 0 1.5px var(--primary);
-}
-.row.selected .label { color: var(--primary); }
-/* 拖到该节点上:高亮 + 主色边框 */
-.row.dragover {
-  background: color-mix(in srgb, var(--primary) 18%, transparent);
-  box-shadow: inset 0 0 0 1.5px var(--primary);
-}
-/* 搜索命中:文字主色加粗 */
-.row.matched .label { color: var(--primary); font-weight: 600; }
-
-/* 多选 checkbox */
-.checkbox {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 14px;
-  height: 14px;
-  flex-shrink: 0;
-  border: 1.5px solid var(--border);
-  border-radius: 4px;
-  background: var(--bg-elev);
-  color: #fff;
-  cursor: pointer;
-  transition: border-color .12s, background .12s;
-}
-.checkbox:hover { border-color: var(--primary); }
-.checkbox.on { border-color: var(--primary); background: var(--primary); }
-
-.toggle { display: inline-flex; width: 14px; justify-content: center; flex-shrink: 0; }
-.toggle.invisible { visibility: hidden; }
-.chev { color: var(--muted-fg, var(--muted)); transition: transform .12s; transform: rotate(0deg); }
-.chev.open { transform: rotate(90deg); }
-
-.icon { display: inline-flex; flex-shrink: 0; color: var(--primary); }
-.row:not(.folder) .icon { color: var(--muted-fg, var(--muted)); }
-
-.label {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.badge {
-  flex-shrink: 0;
-  font-size: 10px;
-  line-height: 1;
-  padding: 2px 5px;
-  border-radius: 999px;
-  background: var(--bg-elev);
-  color: var(--muted-fg, var(--muted));
-  border: 1px solid var(--border);
-}
-</style>

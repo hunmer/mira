@@ -8,7 +8,7 @@
  * - 中部:树(支持拖拽文件 → 上传到目标文件夹/标签)
  * - 右键菜单:新建同级/子级、删除(需传 dialog,编辑动作依赖 services)
  *
- * 样式依赖宿主提供 CSS 变量(--fg/--bg/--bg-elev/--border/--primary/--muted/--danger/--radius)。
+ * 样式为 tailwind/shadcn 原子类,无 scoped CSS(见仓库 ui_rule.md)。
  */
 import { computed, ref, watch } from 'vue';
 import { useLibraryTreeData } from './useLibraryTreeData';
@@ -181,20 +181,26 @@ const {
   services: props.services,
   dialog: props.dialog ?? silentDialog,
   t: (key, params) => tt(key, params),
-});const menuEnabled = computed(() => !!props.dialog);
+});
+const menuEnabled = computed(() => !!props.dialog);
 function onTreeContextMenu(node: LibraryTreeNode, x: number, y: number) {
   if (menuEnabled.value) onContextMenu(node, x, y);
 }
+
+/** 右键菜单项(ContextMenu 的 :deep 样式已移除,类由这里提供) */
+const ctxItem = 'flex w-full cursor-pointer items-center gap-1.5 rounded-[4px] border-none bg-transparent px-2.5 py-1.5 text-left font-inherit text-xs text-foreground hover:bg-background';
 </script>
 
 <template>
-  <div class="view" @dragover="onRootDragOver" @dragleave="onRootDragLeave" @drop="onRootDrop">
+  <div class="relative flex h-full flex-col" @dragover="onRootDragOver" @dragleave="onRootDragLeave" @drop="onRootDrop">
     <!-- 顶部:拖放/点击选择上传到素材库根目录 -->
     <Dropzone v-if="upload" :hint="tt('upload.dropHint')" @drop="onRootDropFiles" />
 
     <!-- 工具栏:搜索 + 刷新 + 计数 -->
-    <div class="bar">
-      <span class="search">
+    <div class="flex items-center gap-2 border-b border-border px-3 py-2">
+      <span
+        class="relative flex min-w-0 flex-1 items-center rounded-md border border-border bg-accent px-2 text-muted-foreground transition-colors focus-within:border-primary"
+      >
         <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
           <path
             d="M7 2a5 5 0 1 1-3.06 8.96l-2.49 2.49a.75.75 0 1 1-1.06-1.06l2.49-2.49A5 5 0 0 1 7 2zm0 1.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z"
@@ -204,48 +210,58 @@ function onTreeContextMenu(node: LibraryTreeNode, x: number, y: number) {
         <input
           v-model="query"
           type="text"
+          class="min-w-0 flex-1 border-none bg-transparent px-1 py-[5px] font-inherit text-foreground outline-none"
           :placeholder="tt('library.searchPlaceholder', { type: titleText })"
         />
         <button
           v-if="query"
-          class="clear"
+          class="cursor-pointer border-none bg-transparent px-0.5 py-0 text-base leading-none text-muted-foreground hover:text-foreground"
           :title="tt('common.clear')"
           @click="query = ''"
         >×</button>
       </span>
-      <button class="refresh" :title="tt('common.refresh')" :disabled="loading" @click="load(libraryId)">↻</button>
+      <button
+        class="cursor-pointer rounded-md border border-border bg-transparent px-2 py-1 text-sm leading-none text-muted-foreground transition-colors duration-100 hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
+        :title="tt('common.refresh')"
+        :disabled="loading"
+        @click="load(libraryId)"
+      >↻</button>
       <button
         v-if="selection"
-        class="refresh select-toggle"
-        :class="{ on: selectMode }"
+        class="cursor-pointer rounded-md border border-border bg-transparent px-2 py-1 text-sm leading-none text-muted-foreground transition-colors duration-100 hover:text-foreground"
+        :class="selectMode && 'border-primary text-primary'"
         :title="tt('library.selectMode')"
         @click="selectMode = !selectMode"
       >
         {{ selectMode ? `✓ ${tt('library.selecting')}` : tt('library.selectMode') }}
       </button>
-      <span class="count">{{ tt('library.count', { n: count, unit: unitText }) }}</span>
+      <span class="text-[11px] whitespace-nowrap text-muted-foreground">{{ tt('library.count', { n: count, unit: unitText }) }}</span>
     </div>
 
     <!-- 错误 -->
-    <div v-if="error" class="msg err">{{ tt('library.loadFailed', { error }) }}</div>
+    <div v-if="error" class="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center text-destructive">{{ tt('library.loadFailed', { error }) }}</div>
 
     <!-- 加载中 -->
-    <div v-else-if="loading" class="msg">{{ tt('common.loading') }}</div>
+    <div v-else-if="loading" class="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center text-muted-foreground">{{ tt('common.loading') }}</div>
 
     <!-- 空态 -->
-    <div v-else-if="noData" class="msg empty">
-      <span class="big">📁</span>
+    <div v-else-if="noData" class="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center text-muted-foreground">
+      <span class="text-4xl">📁</span>
       <span>{{ tt('library.emptyTitle', { type: titleText }) }}</span>
-      <span class="hint">{{ tt('library.emptyHint') }}</span>
+      <span class="text-[11px] text-muted-foreground opacity-70">{{ tt('library.emptyHint') }}</span>
     </div>
 
     <!-- 搜索无结果 -->
-    <div v-else-if="isSearching && filteredTree.length === 0" class="msg">
+    <div v-else-if="isSearching && filteredTree.length === 0" class="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center text-muted-foreground">
       {{ tt('library.noMatch', { type: titleText }) }}
     </div>
 
     <!-- 树 -->
-    <div v-else class="tree-wrap" :class="{ roothover: rootHover }">
+    <div
+      v-else
+      class="flex-1 overflow-y-auto px-2 pt-1.5 transition-colors duration-100"
+      :class="rootHover && 'bg-primary/[6%]'"
+    >
       <LibraryTree
         :nodes="filteredTree"
         :kind="mode"
@@ -263,104 +279,10 @@ function onTreeContextMenu(node: LibraryTreeNode, x: number, y: number) {
 
     <!-- 右键菜单:新建同级 / 新建子级 / 删除 -->
     <ContextMenu v-if="menu" :x="menu.x" :y="menu.y" @close="closeMenu">
-      <button @click="createNode('sibling')">{{ tt('tree.createSibling') }}</button>
-      <button @click="createNode('child')">{{ tt('tree.createChild', { type: titleText }) }}</button>
-      <div class="sep" />
-      <button class="danger" @click="deleteNode">{{ tt('tree.delete') }}</button>
+      <button :class="ctxItem" @click="createNode('sibling')">{{ tt('tree.createSibling') }}</button>
+      <button :class="ctxItem" @click="createNode('child', { type: titleText })">{{ tt('tree.createChild', { type: titleText }) }}</button>
+      <div class="my-[3px] h-px bg-border" />
+      <button :class="[ctxItem, 'text-destructive']" @click="deleteNode">{{ tt('tree.delete') }}</button>
     </ContextMenu>
   </div>
 </template>
-
-<style scoped>
-.view {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  position: relative;
-}
-
-/* 工具栏 */
-.bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--border);
-}
-.search {
-  position: relative;
-  display: flex;
-  align-items: center;
-  flex: 1;
-  min-width: 0;
-  background: var(--bg-elev);
-  border: 1px solid var(--border);
-  border-radius: var(--radius, 6px);
-  padding: 0 8px;
-  color: var(--muted-fg, var(--muted));
-}
-.search:focus-within { border-color: var(--primary); }
-.search input {
-  flex: 1;
-  min-width: 0;
-  background: transparent;
-  border: none;
-  outline: none;
-  color: var(--fg);
-  font: inherit;
-  padding: 5px 4px;
-}
-.clear {
-  background: transparent;
-  border: none;
-  color: var(--muted-fg, var(--muted));
-  cursor: pointer;
-  font-size: 16px;
-  line-height: 1;
-  padding: 0 2px;
-}
-.clear:hover { color: var(--fg); }
-.refresh {
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: var(--radius, 6px);
-  color: var(--muted-fg, var(--muted));
-  cursor: pointer;
-  padding: 4px 8px;
-  font-size: 14px;
-  line-height: 1;
-}
-.refresh:hover:not(:disabled) { color: var(--fg); }
-.refresh:disabled { opacity: .5; cursor: default; }
-/* 选择模式切换:激活态主色 */
-.select-toggle.on { border-color: var(--primary); color: var(--primary); }
-.count { font-size: 11px; color: var(--muted-fg, var(--muted)); white-space: nowrap; }
-
-/* 消息态 */
-.msg {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  color: var(--muted-fg, var(--muted));
-  padding: 24px;
-  text-align: center;
-}
-.msg.empty .big { font-size: 40px; }
-.msg.empty .hint { font-size: 11px; color: var(--muted-fg, var(--muted)); opacity: .7; }
-.msg.err { color: var(--danger); }
-
-/* 树容器 */
-.tree-wrap {
-  flex: 1;
-  overflow-y: auto;
-  padding: 6px 8px 0;
-  transition: background .12s;
-}
-.tree-wrap.roothover {
-  /* 整片区域作为根落点时高亮 */
-  background: color-mix(in srgb, var(--primary) 6%, transparent);
-}
-</style>
