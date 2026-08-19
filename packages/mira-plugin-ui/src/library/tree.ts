@@ -8,7 +8,7 @@ export const ROOT_ID = 0 // parent_id 为 0 或 undefined 均视为根
 /**
  * 把扁平列表按 parent_id 组装成树。
  * - 容错:孤儿节点(parent 指向不存在的 id)挂到根,避免被吞掉。
- * - 排序:同层按 title 排序。
+ * - 排序:同层按 sort_index(拖拽排序保存值)升序,缺省/同值按 title。
  */
 export function buildTree(items: LibraryFlatItem[]): LibraryTreeNode[] {
   const byParent = new Map<number, LibraryFlatItem[]>();
@@ -25,7 +25,9 @@ export function buildTree(items: LibraryFlatItem[]): LibraryTreeNode[] {
   const build = (parentId: number, level: number): LibraryTreeNode[] =>
     (byParent.get(parentId) ?? [])
       .slice()
-      .sort((a, b) => (a.title || '').localeCompare(b.title || '', 'zh'))
+      .sort((a, b) =>
+        ((a.sort_index ?? 0) - (b.sort_index ?? 0)) ||
+        (a.title || '').localeCompare(b.title || '', 'zh'))
       .map(it => ({
         id: it.id,
         title: it.title,

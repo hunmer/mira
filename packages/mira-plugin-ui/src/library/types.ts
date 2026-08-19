@@ -25,6 +25,8 @@ export interface LibraryFlatItem {
   title: string
   parent_id?: number
   color?: number
+  /** 同层排序号(后端 sort_index,拖拽排序保存;缺省按 title 排) */
+  sort_index?: number
 }
 
 export type LibraryTreeKind = 'folder' | 'tag'
@@ -52,7 +54,14 @@ export interface LibraryTreeServices {
   createNode(kind: LibraryTreeKind, libraryId: string, title: string, parentId?: number): Promise<unknown>
   /** 删除节点;folder 场景 deleteFiles 表示同时删除其中文件 */
   deleteNode(kind: LibraryTreeKind, libraryId: string, id: number, deleteFiles?: boolean): Promise<unknown>
+  /** 同层排序(提供后启用树内拖拽排序),items 为该层全部兄弟的新顺序 */
+  updateSortIndex?(kind: LibraryTreeKind, libraryId: string, items: { id: number; sort_index: number }[]): Promise<unknown>
+  /** 跨层移动节点到新父级(parentId=null 移到根;提供后才允许跨层拖拽) */
+  moveNode?(kind: LibraryTreeKind, libraryId: string, id: number, parentId: number | null): Promise<unknown>
 }
+
+/** 树内拖拽落点:目标行上缘(before)/下缘(after)/内部(成为其子级) */
+export type LibraryTreeDropPosition = 'before' | 'after' | 'inside'
 
 /** 弹窗服务:与扩展 useDialog 的 Promise 风格子集对齐 */
 export interface LibraryTreeDialog {

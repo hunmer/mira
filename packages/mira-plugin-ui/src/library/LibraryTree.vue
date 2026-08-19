@@ -13,7 +13,8 @@
  */
 import { computed, ref } from 'vue';
 import type { LibraryTreeNode } from './types';
-import { canAcceptDrop } from './drag-data';
+import { canAcceptDrop, isNodeDrag, NODE_DND_TYPE } from './drag-data';
+import type { LibraryTreeDropPosition } from './types';
 
 const props = withDefaults(
   defineProps<{
@@ -32,8 +33,14 @@ const props = withDefaults(
     checkable?: boolean;
     /** checkbox 勾选的 id 集合 */
     checked?: Set<number>;
+    /** 树内拖拽排序:行可拖起(dragstart 经 node-drag-start 抛回父级) */
+    sortable?: boolean;
+    /** 拖拽落点指示(父级持有):目标行 + 落点位置 */
+    dropMark?: { id: number; position: LibraryTreeDropPosition } | null;
+    /** 拖拽中的节点 id(半透明反馈) */
+    draggingId?: number | null;
   }>(),
-  { kind: 'folder', indent: 20, checkable: false },
+  { kind: 'folder', indent: 20, checkable: false, sortable: false, dropMark: null, draggingId: null },
 );
 
 const emit = defineEmits<{
@@ -44,6 +51,12 @@ const emit = defineEmits<{
   contextmenu: [node: LibraryTreeNode, x: number, y: number];
   /** 选中模式下单选/勾选某节点(父级维护 selectedIds / checked) */
   select: [node: LibraryTreeNode];
+  /** 树内排序:行拖起(position 落点判定在父级) */
+  'node-drag-start': [node: LibraryTreeNode, e: DragEvent];
+  'node-drag-over': [node: LibraryTreeNode, position: LibraryTreeDropPosition, e: DragEvent];
+  'node-drag-leave': [node: LibraryTreeNode, e: DragEvent];
+  'node-drop': [node: LibraryTreeNode, position: LibraryTreeDropPosition, e: DragEvent];
+  'node-drag-end': [node: LibraryTreeNode, e: DragEvent];
 }>();
 
 // 选中模式:点行 = select;非选中模式保持原行为(点行折叠/展开)
@@ -94,6 +107,43 @@ function onDrop(e: DragEvent, node: LibraryTreeNode) {
   emit('drop', node, e);
 }
 
+// ---- 树内拖拽排序(与文件/链接上传拖拽分流) ----
+/** 鼠标 Y 相对行位置 → 落点:上 30% 插目标前 / 下 30% 插目标后 / 中间进目标内 */
+function hitPosition(e: DragEvent): LibraryTreeDropPosition {
+  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+  const ratio = (e.clientY - rect.top) / rect.height;
+  if (ratio < 0.3) return 'before';
+  if (ratio > 0.7) return 'after';
+  return 'inside';
+}
+
+function onNodeDragStart(node: LibraryTreeNode, e: DragEvent) {
+  if (!e.dataTransfer) return;
+  e.dataTransfer.setData(NODE_DND_TYPE, String(node.id));
+  e.dataTransfer.effectAllowed = 'move';
+  emit('node-drag-start', node, e);
+}
+
+function onNodeDragOver(node: LibraryTreeNode, e: DragEvent) {
+  if (!isNodeDrag(e.dataTransfer)) return;
+  e.preventDefault();
+  e.stopPropagation();
+  e.dataTransfer!.dropEffect = 'move';
+  emit('node-drag-over', node, hitPosition(e), e);
+}
+
+function onNodeDragLeave(node: LibraryTreeNode, e: DragEvent) {
+  if (!isNodeDrag(e.dataTransfer)) return;
+  emit('node-drag-leave', node, e);
+}
+
+function onNodeDrop(node: LibraryTreeNode, e: DragEvent) {
+  if (!isNodeDrag(e.dataTransfer)) return;
+  e.preventDefault();
+  e.stopPropagation();
+  emit('node-drop', node, hitPosition(e), e);
+}
+
 /**
  * 后端 folder/tag 的 color 是数值(与桌面端一致,按 ABGR/ARGB 打包)。
  * 转成 #RRGGBB,取低 24 位。无 color 返回空字符串(走默认主题色)。
@@ -110,13 +160,19 @@ function iconStyle(node: LibraryTreeNode): Record<string, string> {
 }
 
 // ---- 行样式:选中/拖拽悬停时主色底 + 内描边,并压制 hover 反馈(对齐原行为) ----
+// 排序落点:before/after 上下缘 2px 主色插入线,inside 整行主色底描边
 function rowClass(node: LibraryTreeNode): string[] {
   const selected = props.selectedIds?.has(node.id);
   const dragOver = dragOverId.value === node.id;
+  const marked = props.dropMark?.id === node.id ? props.dropMark.position : null;
   return [
     selected || dragOver
       ? 'bg-primary/12 shadow-[inset_0_0_0_1.5px_var(--primary)]'
       : 'hover:bg-accent',
+    marked === 'before' ? 'shadow-[inset_0_2px_0_0_var(--primary)]' : '',
+    marked === 'after' ? 'shadow-[inset_0_-2px_0_0_var(--primary)]' : '',
+    marked === 'inside' ? 'bg-primary/12 shadow-[inset_0_0_0_1.5px_var(--primary)]' : '',
+    props.draggingId === node.id ? 'opacity-40' : '',
     selectable.value ? 'cursor-pointer' : 'cursor-default',
   ];
 }
@@ -131,12 +187,16 @@ function rowClass(node: LibraryTreeNode): string[] {
       :aria-expanded="node.children.length ? expanded.has(node.id) : undefined"
     >
       <div
-        class="flex h-7 items-center gap-1.5 rounded-md pr-2 text-foreground transition-[background-color,box-shadow] duration-100 select-none"
+        class="flex h-7 items-center gap-1.5 rounded-md pr-2 text-foreground transition-[background-color,box-shadow,opacity] duration-100 select-none"
         :class="rowClass(node)"
         :style="{ paddingLeft: 6 + node.level * indent + 'px' }"
         :title="node.title"
-        @dragover="onDragOver($event, node)"
-        @drop="onDrop($event, node)"
+        :draggable="sortable"
+        @dragstart="onNodeDragStart(node, $event)"
+        @dragover="onDragOver($event, node); onNodeDragOver(node, $event)"
+        @dragleave="onNodeDragLeave(node, $event)"
+        @drop="onNodeDrop(node, $event); onDrop($event, node)"
+        @dragend="emit('node-drag-end', node, $event)"
         @click="onRowClick(node)"
         @contextmenu="onContextMenu($event, node)"
       >
@@ -261,10 +321,18 @@ function rowClass(node: LibraryTreeNode): string[] {
         :selected-ids="selectedIds"
         :checkable="checkable"
         :checked="checked"
+        :sortable="sortable"
+        :drop-mark="dropMark"
+        :dragging-id="draggingId"
         @toggle="emit('toggle', $event)"
         @select="emit('select', $event)"
         @drop="(n, f) => emit('drop', n, f)"
         @contextmenu="(n, x, y) => emit('contextmenu', n, x, y)"
+        @node-drag-start="(n, e) => emit('node-drag-start', n, e)"
+        @node-drag-over="(n, p, e) => emit('node-drag-over', n, p, e)"
+        @node-drag-leave="(n, e) => emit('node-drag-leave', n, e)"
+        @node-drop="(n, p, e) => emit('node-drop', n, p, e)"
+        @node-drag-end="(n, e) => emit('node-drag-end', n, e)"
       />
     </li>
   </ul>

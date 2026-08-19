@@ -153,6 +153,7 @@ function adaptRows (rows: any[]): LibraryFlatItem[] {
     title: r.title ?? r.name,
     parent_id: typeof r.parent_id === 'number' ? r.parent_id : undefined,
     color: r.color,
+    sort_index: r.sort_index,
   }))
 }
 
@@ -186,6 +187,33 @@ const treeServices: LibraryTreeServices = {
     return kind === 'folder'
       ? client.folders().deleteFolder(libId, id, deleteFiles)
       : client.tags().deleteTag(libId, id)
+  },
+  // 拖拽排序:同层 sort_index(未连接时写内存 mock)
+  async updateSortIndex (kind, libId, items) {
+    if (!connected.value || !client) {
+      const list = kind === 'folder' ? mockFolders : mockTags
+      for (const item of items) {
+        const row = list.value.find(i => i.id === item.id)
+        if (row) row.sort_index = item.sort_index
+      }
+      return
+    }
+    return kind === 'folder'
+      ? client.folders().updateSortIndex(libId, items)
+      : client.tags().updateSortIndex(libId, items)
+  },
+  // 拖拽跨层移动:改 parent_id(null=移到根,需绕过 SDK 的 number? 类型与桌面端一致)
+  async moveNode (kind, libId, id, parentId) {
+    if (!connected.value || !client) {
+      const list = kind === 'folder' ? mockFolders : mockTags
+      const row = list.value.find(i => i.id === id)
+      if (row) row.parent_id = parentId ?? 0
+      return
+    }
+    const update = { parent_id: parentId } as any
+    return kind === 'folder'
+      ? client.folders().updateFolder(libId, id, update)
+      : client.tags().updateTag(libId, id, update)
   },
 }
 

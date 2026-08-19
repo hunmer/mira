@@ -114,6 +114,17 @@ export function canAcceptDrop(dt: DataTransfer | null): boolean {
 }
 
 /**
+ * 树内节点拖拽排序的自定义 MIME。
+ * 与文件/链接拖拽区分:dragover 期间凭 types 识别,drop 时可读 id。
+ */
+export const NODE_DND_TYPE = 'application/x-mira-library-node';
+
+/** 判断当前拖拽是否为树内节点排序(与文件/链接上传拖拽互斥分流) */
+export function isNodeDrag(dt: DataTransfer | null): boolean {
+  return !!dt && Array.from(dt.types).includes(NODE_DND_TYPE);
+}
+
+/**
  * 推断链接资源类型(用于按链接上传时的 kind)。
  * 仅看扩展名 / data: 前缀,不准也无妨 —— 后端按实际 blob.type 处理。
  */

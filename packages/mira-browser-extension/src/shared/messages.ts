@@ -62,6 +62,26 @@ export type Request =
         deleteFiles?: boolean;
       };
     }
+  // 拖拽排序:跨层移动(改 parent_id)
+  | {
+      type: 'NODE_MOVE';
+      payload: {
+        kind: 'folder' | 'tag';
+        libraryId: string;
+        id: number;
+        /** 新父节点 id;null 为根 */
+        parentId: number | null;
+      };
+    }
+  // 拖拽排序:同层顺序写入(items 为该层全部兄弟的新顺序)
+  | {
+      type: 'NODE_SORT_INDEX';
+      payload: {
+        kind: 'folder' | 'tag';
+        libraryId: string;
+        items: { id: number; sort_index: number }[];
+      };
+    }
   // 上传
   | {
       type: 'UPLOAD_FILES';
@@ -119,7 +139,7 @@ const REQUEST_TYPES = new Set<Request['type']>([
   'CUSTOM_UPLOAD_SIDEPANEL_OPEN', 'CUSTOM_UPLOAD_SESSION_GET', 'CUSTOM_UPLOAD_SESSION_CLOSE',
   'AUTH_LOGIN', 'AUTH_VERIFY', 'CONFIG_GET', 'CONFIG_SET',
   'SERVERS_LIST', 'SERVERS_SAVE', 'SERVER_ACTIVATE', 'SERVER_TEST',
-  'LIB_LIST', 'FOLDER_LIST', 'TAG_LIST', 'NODE_CREATE', 'NODE_DELETE',
+  'LIB_LIST', 'FOLDER_LIST', 'TAG_LIST', 'NODE_CREATE', 'NODE_DELETE', 'NODE_MOVE', 'NODE_SORT_INDEX',
   'UPLOAD_FILES', 'UPLOAD_FROM_URL', 'BATCH_IMPORT', 'UPLOAD_STATUS', 'UPLOAD_CANCEL', 'UPGRADE_IMAGE_URL', 'DOWNLOAD_RESOURCES', 'OPEN_URL_IN_TAB',
   'CAPTURE_VISIBLE', 'CAPTURE_FULLPAGE', 'CAPTURE_SELECTION',
   'SNIFFER_START', 'SNIFFER_STOP', 'SNIFFER_QUERY',

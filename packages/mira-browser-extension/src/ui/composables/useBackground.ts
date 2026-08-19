@@ -66,6 +66,12 @@ export function useBackground() {
     async deleteNode(kind: 'folder' | 'tag', libraryId: string, id: number, deleteFiles?: boolean) {
       return send({ type: 'NODE_DELETE', payload: { kind, libraryId, id, deleteFiles } });
     },
+    async moveNode(kind: 'folder' | 'tag', libraryId: string, id: number, parentId: number | null) {
+      return send({ type: 'NODE_MOVE', payload: { kind, libraryId, id, parentId } });
+    },
+    async updateSortIndex(kind: 'folder' | 'tag', libraryId: string, items: { id: number; sort_index: number }[]) {
+      return send({ type: 'NODE_SORT_INDEX', payload: { kind, libraryId, items } });
+    },
     async uploadFiles(files: StagedFile[], libraryId: string, tags?: string[], folderId?: string) {
       return send({ type: 'UPLOAD_FILES', payload: { files, libraryId, tags, folderId } });
     },

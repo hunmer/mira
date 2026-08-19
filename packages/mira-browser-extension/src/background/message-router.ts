@@ -99,6 +99,23 @@ export function createRouter(deps: RouterDeps): RequestHandler {
           }
           return client.tags().delete({ libraryId, id });
         });
+      case 'NODE_MOVE':
+        // 拖拽排序跨层移动:改 parent_id(null 表示移到根,undefined 不会序列化导致不更新)
+        return withAuth(async (client: MiraClient) => {
+          const { kind, libraryId, id, parentId } = req.payload;
+          const update: any = { libraryId, id, parent_id: parentId };
+          if (kind === 'folder') {
+            return client.folders().update(update);
+          }
+          return client.tags().update(update);
+        });
+      case 'NODE_SORT_INDEX':
+        return withAuth((client: MiraClient) => {
+          const { kind, libraryId, items } = req.payload;
+          return kind === 'folder'
+            ? client.folders().updateSortIndex(libraryId, items)
+            : client.tags().updateSortIndex(libraryId, items);
+        });
       case 'FOLDER_LIST':
         return withAuth((client: MiraClient) =>
           client.folders().getAll(req.payload.libraryId),

@@ -34,6 +34,10 @@ const zh = {
   'tree.deleteFilesCheck': '同时删除其中的文件',
   'tree.deleteTagConfirm': '确定删除标签「{name}」?',
   'tree.deleteFailed': '删除失败:{error}',
+  'tree.root': '根目录',
+  'tree.dragMoveConfirm': '确定移动「{name}」到「{parent}」下?',
+  'tree.sortFailed': '排序保存失败:{error}',
+  'tree.moveFailed': '移动失败:{error}',
 } as const
 
 /** {n} 命名插值(vue-i18n 风格) */

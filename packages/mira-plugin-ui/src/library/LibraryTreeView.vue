@@ -23,11 +23,11 @@ import {
 import { useLibraryTreeData } from './useLibraryTreeData';
 import { useLibraryTreeActions } from './useLibraryTreeActions';
 import { createLibraryTreeT } from './i18n';
-import { filterTree, collectIds, flattenTree } from './tree';
+import { filterTree, collectIds, flattenTree, ROOT_ID } from './tree';
 import LibraryTree from './LibraryTree.vue';
 import ContextMenu from './ContextMenu.vue';
 import Dropzone from './Dropzone.vue';
-import { parseDrop, canAcceptDrop } from './drag-data';
+import { parseDrop, canAcceptDrop, isNodeDrag } from './drag-data';
 // 注意:library 子入口以源码供宿主直接消费,这里必须用相对路径(宿主的 @ 别名指向其自身 src)
 import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '../components/ui/popover';
 import {
@@ -39,6 +39,7 @@ import {
 } from '../components/ui/tags-input';
 import type {
   LibraryTreeDialog,
+  LibraryTreeDropPosition,
   LibraryTreeNode,
   LibraryTreeKind,
   LibraryTreeServices,
@@ -129,9 +130,18 @@ const effectiveExpanded = computed(() =>
 );
 const isSearching = computed(() => searchTags.value.length > 0);
 
-// ---- 拖到空白区域 → 上传到素材库根目录 ----
+// ---- 拖到空白区域:文件/链接 → 上传到根目录;树内节点 → 排序到根层末尾 ----
 const rootHover = ref(false);
+/** 树内拖拽悬停空白区:容器底部插入线指示"排到根末尾" */
+const rootDropMark = ref(false);
 function onRootDragOver(e: DragEvent) {
+  if (isNodeDrag(e.dataTransfer)) {
+    if (!dragNode.value) return;
+    e.preventDefault();
+    e.dataTransfer!.dropEffect = 'move';
+    rootDropMark.value = true;
+    return;
+  }
   if (!canAcceptDrop(e.dataTransfer)) return;
   e.preventDefault();
   e.dataTransfer!.dropEffect = 'copy';
@@ -142,8 +152,15 @@ function onRootDragLeave(e: DragEvent) {
   const next = e.relatedTarget;
   if (container && next instanceof Node && container.contains(next)) return;
   rootHover.value = false;
+  rootDropMark.value = false;
 }
 function onRootDrop(e: DragEvent) {
+  if (isNodeDrag(e.dataTransfer)) {
+    e.preventDefault();
+    rootDropMark.value = false;
+    void onRootNodeDrop();
+    return;
+  }
   e.preventDefault();
   rootHover.value = false;
   const { files, urls } = parseDrop(e);
@@ -162,6 +179,136 @@ function onDrop(node: LibraryTreeNode, e: DragEvent) {
   const target = props.mode === 'folder' ? { folderId: node.id } : { tags: [node.title] };
   if (files.length) props.upload?.files(files, target);
   if (urls.length) props.upload?.urls(urls, target);
+}
+
+// ---- 树内拖拽排序(参考 mira-client FolderTreeComponent/useDragSort 语义) ----
+// services.updateSortIndex 提供后启用;跨层移动需 services.moveNode + dialog 确认。
+const sortable = computed(() => !!props.services.updateSortIndex);
+const movable = computed(() => !!props.services.moveNode);
+const dragNode = ref<LibraryTreeNode | null>(null);
+const dropMark = ref<{ id: number; position: LibraryTreeDropPosition } | null>(null);
+
+/** 某父级(0=根)下的直接子节点列表(基于全量树,搜索过滤态不参与排序计算) */
+function siblingsOf(parentId: number): LibraryTreeNode[] {
+  if (parentId === ROOT_ID) return tree.value;
+  return flattenTree(tree.value).find(n => n.id === parentId)?.children ?? [];
+}
+
+function expandNode(id: number) {
+  const next = new Set(expanded.value);
+  next.add(id);
+  expanded.value = next;
+}
+
+function clearDragState() {
+  dragNode.value = null;
+  dropMark.value = null;
+  rootDropMark.value = false;
+}
+
+function onNodeDragStart(node: LibraryTreeNode, e: DragEvent) {
+  // 搜索过滤态顺序不完整,排序会错乱,禁止拖起
+  if (isSearching.value) {
+    e.preventDefault();
+    return;
+  }
+  dragNode.value = node;
+}
+
+function onNodeDragOver(node: LibraryTreeNode, position: LibraryTreeDropPosition) {
+  // 行上悬停时收回根末尾指示(行级 dragover 已阻断冒泡,根容器 handler 收不到)
+  rootDropMark.value = false;
+  if (!dragNode.value || node.id === dragNode.value.id) {
+    dropMark.value = null;
+    return;
+  }
+  // 不支持跨层移动时,inside 落点折叠为 after(仅同层重排)
+  dropMark.value = {
+    id: node.id,
+    position: position === 'inside' && !movable.value ? 'after' : position,
+  };
+}
+
+function onNodeDragLeave(node: LibraryTreeNode, e: DragEvent) {
+  // 行内子元素间移动会触发 dragleave,离开行本体才清指示
+  const row = e.currentTarget as HTMLElement | null;
+  if (row && e.relatedTarget instanceof Node && row.contains(e.relatedTarget)) return;
+  if (dropMark.value?.id === node.id) dropMark.value = null;
+}
+
+async function onNodeDrop(target: LibraryTreeNode, position: LibraryTreeDropPosition) {
+  const drag = dragNode.value;
+  clearDragState();
+  if (!drag || !props.services.updateSortIndex) return;
+  if (target.id === drag.id) return;
+
+  // 禁止拖进自己子树(循环引用)
+  if (collectIds([drag]).has(position === 'inside' ? target.id : target.parentId)) return;
+
+  // 落点 → 新父级 + 新兄弟顺序
+  let newParentId: number;
+  let siblings: LibraryTreeNode[];
+  if (position === 'inside') {
+    newParentId = target.id;
+    siblings = [...target.children.filter(n => n.id !== drag.id), drag];
+  } else {
+    newParentId = target.parentId;
+    const list = siblingsOf(newParentId).filter(n => n.id !== drag.id);
+    const index = list.findIndex(n => n.id === target.id);
+    if (index < 0) return;
+    list.splice(position === 'before' ? index : index + 1, 0, drag);
+    siblings = list;
+  }
+
+  const parentTitle = position === 'inside'
+    ? target.title
+    : (flattenTree(tree.value).find(n => n.id === target.parentId)?.title ?? tt('tree.root'));
+  await applyDragSort(drag, newParentId, siblings, parentTitle);
+}
+
+/** 拖到视图空白区域 → 移动/排序到根层末尾 */
+async function onRootNodeDrop() {
+  const drag = dragNode.value;
+  clearDragState();
+  if (!drag || !props.services.updateSortIndex) return;
+  const siblings = [...tree.value.filter(n => n.id !== drag.id), drag];
+  await applyDragSort(drag, ROOT_ID, siblings, tt('tree.root'));
+}
+
+/** 保存拖拽结果:同层直接写排序;跨层先确认 + moveNode,再写新层排序 */
+async function applyDragSort(
+  drag: LibraryTreeNode,
+  newParentId: number,
+  siblings: LibraryTreeNode[],
+  parentTitle: string,
+) {
+  const updateSortIndex = props.services.updateSortIndex;
+  if (!updateSortIndex) return;
+  const sameLevel = newParentId === drag.parentId;
+  // 同层且顺序未变 → 无需保存
+  const oldOrder = siblingsOf(drag.parentId).map(n => n.id).join();
+  if (sameLevel && siblings.map(n => n.id).join() === oldOrder) return;
+
+  const items = siblings.map((n, i) => ({ id: n.id, sort_index: i }));
+  const confirmDialog = props.dialog ?? silentDialog;
+  try {
+    if (!sameLevel) {
+      if (!props.services.moveNode) return;
+      // 跨层移动弹确认(对齐桌面端拖拽移动语义),取消则不动
+      const ok = await confirmDialog.confirm({
+        message: tt('tree.dragMoveConfirm', { name: drag.title, parent: parentTitle }),
+      });
+      if (!ok) return;
+      await props.services.moveNode(props.mode, props.libraryId, drag.id, newParentId || null);
+    }
+    await updateSortIndex.call(props.services, props.mode, props.libraryId, items);
+  } catch (error) {
+    console.error('[LibraryTreeView] drag sort failed:', error);
+    confirmDialog.alert({ message: tt(sameLevel ? 'tree.sortFailed' : 'tree.moveFailed', { error: String(error) }) });
+    return;
+  }
+  if (newParentId !== ROOT_ID) expandNode(newParentId);
+  await load(props.libraryId);
 }
 
 // ---- 初始加载 + libraryId 变化重载 ----
@@ -335,8 +482,11 @@ const ctxItem = 'flex w-full cursor-pointer items-center gap-1.5 rounded-[4px] b
     <!-- 树 -->
     <div
       v-else
-      class="flex-1 overflow-y-auto px-2 pt-1.5 transition-colors duration-100"
-      :class="rootHover && 'bg-primary/[6%]'"
+      class="flex-1 overflow-y-auto px-2 pt-1.5 transition-[background-color,box-shadow] duration-100"
+      :class="[
+        rootHover && 'bg-primary/[6%]',
+        rootDropMark && 'shadow-[inset_0_-2px_0_0_var(--primary)]',
+      ]"
     >
       <LibraryTree
         :nodes="filteredTree"
@@ -346,10 +496,18 @@ const ctxItem = 'flex w-full cursor-pointer items-center gap-1.5 rounded-[4px] b
         :selected-ids="selectMode && mode === 'folder' ? selectedIds : undefined"
         :checkable="selectMode && mode === 'tag'"
         :checked="selectMode && mode === 'tag' ? selectedIds : undefined"
+        :sortable="sortable && !isSearching"
+        :drop-mark="dropMark"
+        :dragging-id="dragNode?.id ?? null"
         @toggle="toggle"
         @select="onSelect"
         @drop="onDrop"
         @contextmenu="onTreeContextMenu"
+        @node-drag-start="onNodeDragStart"
+        @node-drag-over="onNodeDragOver"
+        @node-drag-leave="onNodeDragLeave"
+        @node-drop="onNodeDrop"
+        @node-drag-end="clearDragState"
       />
     </div>
 
