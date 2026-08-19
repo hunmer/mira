@@ -1,11 +1,27 @@
+﻿Write-Host '[1/5] Stopping Mira service ...'
 $ErrorActionPreference = 'SilentlyContinue'
 $InstallDir = Join-Path $env:LOCALAPPDATA 'Mira\mira-release'
-schtasks /End /TN MiraAppServer | Out-Null
-schtasks /Delete /TN MiraAppServer /F | Out-Null
+schtasks /End /TN MiraAppServer 2>$null | Out-Null
+schtasks /Delete /TN MiraAppServer /F 2>$null | Out-Null
+Remove-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name 'MiraAppServer'
+Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -and $_.CommandLine.Contains($InstallDir) } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }
+Start-Sleep 2
+
+Write-Host '[2/5] Running application uninstaller ...'
 $uninstaller = Get-ChildItem (Join-Path $env:LOCALAPPDATA 'Programs') -Filter 'Uninstall*.exe' -Recurse | Where-Object { $_.FullName -match 'Mira' } | Select-Object -First 1
 if ($uninstaller) { Start-Process $uninstaller.FullName -ArgumentList '/S' -Wait }
+
+Write-Host '[3/5] Cleaning environment variables ...'
 foreach ($name in 'FFMPEG_PATH','FFPROBE_PATH','IMAGEMAGICK_PATH','EXIFTOOL_PATH') { [Environment]::SetEnvironmentVariable($name,$null,'User') }
 $userPath = [Environment]::GetEnvironmentVariable('Path','User')
 if ($userPath) { [Environment]::SetEnvironmentVariable('Path', (($userPath -split ';' | Where-Object { $_ -notmatch 'Mira\\mira-release' }) -join ';'), 'User') }
-Remove-Item $InstallDir -Recurse -Force
-Write-Host 'Mira 服务和发布包已卸载，用户数据 %USERPROFILE%\.mira-data 已保留。'
+
+Write-Host '[4/5] Removing install directory (this may take a while) ...'
+$miraRoot = Join-Path $env:LOCALAPPDATA 'Mira'
+$empty = Join-Path $env:TEMP "mira-uninstall-$([guid]::NewGuid())"
+New-Item -ItemType Directory -Force -Path $empty | Out-Null
+robocopy $empty $miraRoot /MIR /R:1 /W:1 /NFL /NDL /NJH /NJS /NP | Out-Null
+Remove-Item $miraRoot, $empty -Recurse -Force
+
+Write-Host '[5/5] Done.'
+if (Test-Path $miraRoot) { Write-Warning 'Some files could not be removed (in use by a process). Reboot and run this script again.' } else { Write-Host 'Mira uninstalled. User data preserved.' }

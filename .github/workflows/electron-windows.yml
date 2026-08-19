@@ -58,7 +58,9 @@ jobs:
     - name: Build standalone server
       run: |
         pnpm --filter mira-app-server build
-        pnpm --filter mira-app-server deploy --prod "${{ runner.temp }}\mira-server"
+        pnpm --filter mira-app-server deploy --prod --node-linker=hoisted "${{ runner.temp }}\mira-server"
+        Copy-Item -Recurse -Force packages/mira-app-server/dist "${{ runner.temp }}\mira-server/dist"
+        Copy-Item -Recurse -Force packages/mira-app-server/web "${{ runner.temp }}\mira-server/web"
 
     - name: Build and package Windows
       working-directory: packages/mira-client

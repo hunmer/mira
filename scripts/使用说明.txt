@@ -1,0 +1,33 @@
+﻿Mira 使用说明
+==============
+
+【安装】
+1. 右键 install-mira-windows.ps1，点击【使用 PowerShell 运行】
+2. 等待几分钟，看到"Mira installation complete."即可
+3. 打开浏览器，访问 http://127.0.0.1:8081
+4. 账号：admin  密码：admin123（登录后请尽快修改密码）
+
+安装后：
+- 每次开机会自动运行，无需手动启动
+- 已自动创建好一个素材库"MyLibrary"，
+  位置在 C:\Users\你的用户名\mira-libraries\my-library
+
+【更新】
+右键 update-mira-windows.ps1，点击【使用 PowerShell 运行】
+有新版本会自动下载安装，已是最新会提示，无需其他操作。
+
+【卸载】
+右键 uninstall-mira-windows.ps1，点击【使用 PowerShell 运行】
+你的素材和照片会全部保留，不会丢失。
+
+【遇到问题】
+1. 网页打不开？
+   重启电脑再试（程序会随开机自动启动）。
+2. 右键菜单没有【使用 PowerShell 运行】，或提示"禁止运行脚本"？
+   换一种方式运行：点击开始菜单，输入 PowerShell 并打开，
+   然后输入下面这行（注意替换文件名）回车：
+   powershell -ExecutionPolicy Bypass -File .\install-mira-windows.ps1
+3. 更新时提示"未包含 Windows server 更新包"？
+   属正常提示，无需处理。
+4. 其他问题？
+   程序日志在 C:\Users\你的用户名\.mira 目录下。

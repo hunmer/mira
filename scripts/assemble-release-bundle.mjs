@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { execFileSync } from 'node:child_process'
-import { chmodSync, cpSync, existsSync, mkdirSync, readdirSync, realpathSync, rmSync } from 'node:fs'
+import { chmodSync, cpSync, existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 const platform = process.env.BUNDLE_PLATFORM
@@ -20,6 +20,13 @@ mkdirSync(path.join(bundleDir, 'installer'), { recursive: true })
 mkdirSync(path.join(bundleDir, 'server'), { recursive: true })
 mkdirSync(path.join(bundleDir, 'runtime-deps'), { recursive: true })
 
+const serverVersion = JSON.parse(readFileSync(path.resolve('packages/mira-app-server/package.json'), 'utf8')).version
+writeFileSync(path.join(bundleDir, 'VERSION.json'), JSON.stringify({
+  release: process.env.GITHUB_REF_NAME || 'dev',
+  server: serverVersion,
+  repo: 'hunmer/mira'
+}, null, 2))
+
 const extensions = platform === 'macos' ? ['.dmg'] : ['.exe', '.msi', '.zip']
 for (const file of readdirSync(installerDir)) {
   if (extensions.some(extension => file.toLowerCase().endsWith(extension))) {
@@ -29,11 +36,20 @@ for (const file of readdirSync(installerDir)) {
 
 cpSync(serverDir, path.join(bundleDir, 'server', 'mira-app-server'), { recursive: true })
 
+const removeFileEverywhere = (dir, name) => {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const target = path.join(dir, entry.name)
+    if (entry.isDirectory()) removeFileEverywhere(target, name)
+    else if (entry.name.toLowerCase() === name.toLowerCase()) rmSync(target, { force: true })
+  }
+}
+
 if (platform === 'macos') {
   for (const packageName of ['ffmpeg', 'imagemagick', 'exiftool']) {
     const prefix = execFileSync('brew', ['--prefix', packageName], { encoding: 'utf8' }).trim()
     cpSync(realpathSync(prefix), path.join(bundleDir, 'runtime-deps', packageName), { recursive: true, dereference: true })
   }
+  removeFileEverywhere(path.join(bundleDir, 'runtime-deps', 'ffmpeg'), 'ffplay')
   for (const file of ['install-mira-macos.sh', 'uninstall-mira-macos.sh']) {
     const target = path.join(bundleDir, file)
     cpSync(path.resolve('scripts', file), target)
@@ -61,8 +77,14 @@ if (platform === 'macos') {
       throw new Error(`Chocolatey tools directory not found: ${toolsDir}`)
     }
   }
-  for (const file of ['install-mira-windows.ps1', 'uninstall-mira-windows.ps1']) {
-    cpSync(path.resolve('scripts', file), path.join(bundleDir, file))
+  removeFileEverywhere(path.join(bundleDir, 'runtime-deps', 'ffmpeg'), 'ffplay.exe')
+  for (const file of ['install-mira-windows.ps1', 'uninstall-mira-windows.ps1', 'update-mira-windows.ps1', '使用说明.txt']) {
+    const source = path.resolve('scripts', file)
+    const head = readFileSync(source).subarray(0, 3)
+    if (!(head[0] === 0xef && head[1] === 0xbb && head[2] === 0xbf)) {
+      throw new Error(`${file} must start with a UTF-8 BOM (Windows PowerShell 5.1 compatibility)`)
+    }
+    cpSync(source, path.join(bundleDir, file))
   }
   const command = `Compress-Archive -Path '${bundleDir.replaceAll("'", "''") }\\*' -DestinationPath '${output.replaceAll("'", "''")}' -CompressionLevel Optimal -Force`
   execFileSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', command], { stdio: 'inherit' })

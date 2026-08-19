@@ -27,6 +27,9 @@
       "esbuild",
       "sqlite3",
       "sharp"
-    ]
+    ],
+    "overrides": {
+      "express": "4.22.2"
+    }
   }
 }
