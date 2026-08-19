@@ -40,7 +40,28 @@ const props = defineProps<{
   upload?: LibraryTreeUpload;
   /** 文案函数,缺省用内置中文 */
   t?: LibraryTreeT;
+  /** 显示右上角选择模式切换按钮(选择结果经 v-model:selected 抛出) */
+  selection?: boolean;
 }>();
+
+/** 选择模式开关(selection 启用时右上角按钮切换) */
+const selectMode = defineModel<boolean>('selectMode', { default: false });
+/** 选中的节点:folder 视图单选(可取消),tag 视图多选 */
+const selected = defineModel<LibraryTreeNode[]>('selected', { default: () => [] });
+
+const selectedIds = computed(() => new Set(selected.value.map(n => n.id)));
+
+function onSelect(node: LibraryTreeNode) {
+  if (props.mode === 'folder') {
+    // 文件夹单选,再点取消
+    selected.value = selectedIds.value.has(node.id) ? [] : [node];
+  } else {
+    // 标签多选(checkbox 语义)
+    selected.value = selectedIds.value.has(node.id)
+      ? selected.value.filter(n => n.id !== node.id)
+      : [...selected.value, node];
+  }
+}
 
 const fallbackT = createLibraryTreeT();
 const tt = (key: string, params?: Record<string, unknown>) =>
@@ -193,6 +214,15 @@ function onTreeContextMenu(node: LibraryTreeNode, x: number, y: number) {
         >×</button>
       </span>
       <button class="refresh" :title="tt('common.refresh')" :disabled="loading" @click="load(libraryId)">↻</button>
+      <button
+        v-if="selection"
+        class="refresh select-toggle"
+        :class="{ on: selectMode }"
+        :title="tt('library.selectMode')"
+        @click="selectMode = !selectMode"
+      >
+        {{ selectMode ? `✓ ${tt('library.selecting')}` : tt('library.selectMode') }}
+      </button>
       <span class="count">{{ tt('library.count', { n: count, unit: unitText }) }}</span>
     </div>
 
@@ -221,7 +251,11 @@ function onTreeContextMenu(node: LibraryTreeNode, x: number, y: number) {
         :kind="mode"
         :expanded="effectiveExpanded"
         :matched="matched"
+        :selected-ids="selectMode && mode === 'folder' ? selectedIds : undefined"
+        :checkable="selectMode && mode === 'tag'"
+        :checked="selectMode && mode === 'tag' ? selectedIds : undefined"
         @toggle="toggle"
+        @select="onSelect"
         @drop="onDrop"
         @contextmenu="onTreeContextMenu"
       />
@@ -298,6 +332,8 @@ function onTreeContextMenu(node: LibraryTreeNode, x: number, y: number) {
 }
 .refresh:hover:not(:disabled) { color: var(--fg); }
 .refresh:disabled { opacity: .5; cursor: default; }
+/* 选择模式切换:激活态主色 */
+.select-toggle.on { border-color: var(--primary); color: var(--primary); }
 .count { font-size: 11px; color: var(--muted-fg, var(--muted)); white-space: nowrap; }
 
 /* 消息态 */

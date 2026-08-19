@@ -270,6 +270,17 @@ export interface InstallPluginRequest {
 }
 
 // 文件类型
+
+/** 上传进度事件(由 axios onUploadProgress 转换而来) */
+export interface UploadProgressEvent {
+    /** 已上传字节 */
+    loaded: number;
+    /** 总字节(服务器未提供 content-length 时为 undefined) */
+    total?: number;
+    /** 0-100 整数百分比(total 未知时为 undefined) */
+    percent?: number;
+}
+
 export interface UploadFileRequest {
     files: File[] | FileList;
     libraryId: string;
@@ -280,6 +291,8 @@ export interface UploadFileRequest {
     /** 抑制客户端导入通知（编辑器覆盖保存等场景） */
     silent?: boolean;
     fields?: any;
+    /** 上传实时进度回调(字节级) */
+    onUploadProgress?: (event: UploadProgressEvent) => void;
     payload?: {
         data: {
             tags?: string[];

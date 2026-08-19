@@ -9,7 +9,7 @@
  * 注意:Attachment 列表基于库的 tailwind 组件体系,宿主需引入
  * mira-plugin-ui.css(library 子路径本身不携带样式)。
  */
-import { onBeforeUnmount, ref } from 'vue';
+import { computed, onBeforeUnmount, ref } from 'vue';
 import { FileImage, FileText, Film, Music, X } from '@lucide/vue';
 import { canAcceptDrop } from './drag-data';
 import {
@@ -33,8 +33,17 @@ const emit = defineEmits<{
 const fileInput = ref<HTMLInputElement | null>(null);
 const hovering = ref(false);
 
-// ---- 已暂存文件 + 图片预览 ----
-const staged = ref<File[]>([]);
+// ---- 已暂存文件:传 v-model:files 走受控,否则内部自持 ----
+const filesModel = defineModel<File[]>('files');
+const internal = ref<File[]>([]);
+const staged = computed(() => filesModel.value ?? internal.value);
+
+function setStaged(next: File[]) {
+  if (filesModel.value !== undefined) filesModel.value = next;
+  else internal.value = next;
+}
+
+// ---- 图片预览(objectURL,移除/卸载时回收) ----
 const previews = new Map<File, string>();
 
 function previewUrl(file: File): string {
@@ -61,12 +70,12 @@ onBeforeUnmount(() => {
 
 function addFiles(files: File[]) {
   if (!files.length) return;
-  staged.value = [...staged.value, ...files];
+  setStaged([...staged.value, ...files]);
   emit('drop', files);
 }
 
 function removeFile(file: File) {
-  staged.value = staged.value.filter(f => f !== file);
+  setStaged(staged.value.filter(f => f !== file));
   releasePreview(file);
   emit('remove', file);
 }
@@ -83,10 +92,22 @@ function isImage(file: File) {
   return file.type.startsWith('image/');
 }
 
+// 附件媒体展示样式:image=图片缩略图,icon=统一类型图标;排列方向:horizontal=横排,vertical=媒体在上竖排
+const mediaVariant = ref<'icon' | 'image'>('image');
+const orientation = ref<'horizontal' | 'vertical'>('horizontal');
+function mediaVariantOf(file: File): 'icon' | 'image' {
+  return mediaVariant.value === 'image' && isImage(file) ? 'image' : 'icon';
+}
+
 function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+/** 扩展名大写(无扩展名显示 FILE) */
+function extOf(file: File): string {
+  return (file.name.split('.').pop() || 'FILE').toUpperCase();
 }
 
 // ---- 拖放 / 选择 ----
@@ -113,6 +134,34 @@ function onPick(e: Event) {
 
 <template>
   <div class="dropzone">
+    <!-- 右上角:附件展示样式(缩略图/图标) + 排列方向(横排/竖排) -->
+    <div class="style-toggles">
+      <div class="variant-toggle" role="group" aria-label="附件展示样式">
+        <button
+          type="button"
+          :class="{ on: mediaVariant === 'image' }"
+          @click="mediaVariant = 'image'"
+        >缩略图</button>
+        <button
+          type="button"
+          :class="{ on: mediaVariant === 'icon' }"
+          @click="mediaVariant = 'icon'"
+        >图标</button>
+      </div>
+      <div class="variant-toggle" role="group" aria-label="附件排列方向">
+        <button
+          type="button"
+          :class="{ on: orientation === 'horizontal' }"
+          @click="orientation = 'horizontal'"
+        >横排</button>
+        <button
+          type="button"
+          :class="{ on: orientation === 'vertical' }"
+          @click="orientation = 'vertical'"
+        >竖排</button>
+      </div>
+    </div>
+
     <div
       class="zone"
       :class="{ hover: hovering }"
@@ -132,16 +181,32 @@ function onPick(e: Event) {
         :key="file.name + file.size + file.lastModified"
         size="sm"
         state="idle"
+        :orientation="orientation"
+        :class="orientation === 'vertical' && 'w-40 gap-0 overflow-hidden has-data-[slot=attachment-content]:p-0 has-data-[slot=attachment-media]:p-0'"
       >
-        <AttachmentMedia :variant="isImage(file) ? 'image' : 'icon'">
-          <img v-if="isImage(file)" :src="previewUrl(file)" :alt="file.name" />
+        <AttachmentMedia
+          :variant="mediaVariantOf(file)"
+          :class="orientation === 'vertical' && 'w-full rounded-none'"
+        >
+          <img v-if="mediaVariantOf(file) === 'image'" :src="previewUrl(file)" :alt="file.name" />
           <component :is="iconOf(file)" v-else />
         </AttachmentMedia>
-        <AttachmentContent>
+
+        <AttachmentContent :class="orientation === 'vertical' ? 'px-2 py-1.5' : undefined">
           <AttachmentTitle>{{ file.name }}</AttachmentTitle>
-          <AttachmentDescription>{{ formatSize(file.size) }}</AttachmentDescription>
+          <AttachmentDescription>{{ extOf(file) }} · {{ formatSize(file.size) }}</AttachmentDescription>
         </AttachmentContent>
-        <AttachmentActions>
+
+        <!-- 竖排:删除按钮悬浮在媒体右上角;横排:常规尾部动作区 -->
+        <AttachmentAction
+          v-if="orientation === 'vertical'"
+          class="absolute top-1 right-1 z-20 rounded-full bg-black/50 text-white hover:bg-black/70 hover:text-white"
+          :aria-label="`移除 ${file.name}`"
+          @click="removeFile(file)"
+        >
+          <X />
+        </AttachmentAction>
+        <AttachmentActions v-else>
           <AttachmentAction :aria-label="`移除 ${file.name}`" @click="removeFile(file)">
             <X />
           </AttachmentAction>
@@ -152,6 +217,38 @@ function onPick(e: Event) {
 </template>
 
 <style scoped>
+.dropzone { position: relative; }
+
+/* 右上角展示样式/排列方向切换 */
+.style-toggles {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 1;
+  display: flex;
+  gap: 8px;
+}
+.variant-toggle {
+  display: flex;
+  gap: 4px;
+}
+.variant-toggle button {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-elev, inherit);
+  color: var(--muted-fg, var(--muted));
+  font-size: 11px;
+  line-height: 1;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: color .12s, border-color .12s;
+}
+.variant-toggle button:hover { color: var(--fg); }
+.variant-toggle button.on {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
 .zone {
   padding: 24px;
   margin: 12px;

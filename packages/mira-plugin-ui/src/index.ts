@@ -6,6 +6,7 @@ import * as button from './components/ui/button'
 import * as dialog from './components/ui/dialog'
 import * as input from './components/ui/input'
 import * as label from './components/ui/label'
+import * as progress from './components/ui/progress'
 import * as select from './components/ui/select'
 
 export { default as SaveLocationDialog } from './SaveLocationDialog.vue'
@@ -15,6 +16,7 @@ export * from './components/ui/button'
 export * from './components/ui/dialog'
 export * from './components/ui/input'
 export * from './components/ui/label'
+export * from './components/ui/progress'
 export * from './components/ui/select'
 
 const components = {
@@ -24,6 +26,7 @@ const components = {
   ...dialog,
   ...input,
   ...label,
+  ...progress,
   ...select,
 }
 

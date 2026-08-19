@@ -1,6 +1,7 @@
 import { HttpClient } from '../client/HttpClient';
 import {
     UploadFileRequest,
+    UploadProgressEvent,
     UploadResponse,
     BaseResponse,
     PreviewViewersResponse,
@@ -136,7 +137,15 @@ export class FileModule {
             formData.append('payload', JSON.stringify(uploadRequest.payload));
         }
 
-        return await this.httpClient.upload<UploadResponse>('/api/files/upload', formData);
+        return await this.httpClient.upload<UploadResponse>('/api/files/upload', formData, uploadRequest.onUploadProgress
+            ? {
+                onUploadProgress: e => uploadRequest.onUploadProgress!({
+                    loaded: e.loaded,
+                    total: e.total,
+                    percent: e.total ? Math.round((e.loaded / e.total) * 100) : undefined,
+                }),
+            }
+            : undefined);
     }
 
     /**
@@ -237,6 +246,8 @@ export class FileModule {
             tags?: string[];
             folderId?: string;
             silent?: boolean;
+            /** 上传实时进度回调(字节级) */
+            onUploadProgress?: (event: UploadProgressEvent) => void;
         }
     ): Promise<UploadResponse> {
         const uploadRequest: UploadFileRequest = {
@@ -245,6 +256,7 @@ export class FileModule {
             sourcePath: options?.sourcePath,
             clientId: options?.clientId,
             silent: options?.silent,
+            onUploadProgress: options?.onUploadProgress,
         };
 
         if (options?.tags || options?.folderId) {
@@ -275,6 +287,8 @@ export class FileModule {
             tags?: string[];
             folderId?: string;
             silent?: boolean;
+            /** 上传实时进度回调(字节级) */
+            onUploadProgress?: (event: UploadProgressEvent) => void;
         }
     ): Promise<UploadResponse> {
         const uploadRequest: UploadFileRequest = {
@@ -283,6 +297,7 @@ export class FileModule {
             sourcePath: options?.sourcePath,
             clientId: options?.clientId,
             silent: options?.silent,
+            onUploadProgress: options?.onUploadProgress,
         };
 
         if (options?.tags || options?.folderId) {

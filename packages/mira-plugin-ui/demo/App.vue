@@ -2,9 +2,9 @@
 import { computed, onMounted, ref } from 'vue'
 import { FileText, Folder, Loader2, LogOut, Moon, Server, Sun } from '@lucide/vue'
 import { MiraClient } from 'mira-app-core/shared/sdk'
-import { SaveLocationDialog, type SaveLocation } from '@/index'
-import { LibraryTreeView } from '@/library'
-import type { LibraryFlatItem, LibraryTreeDialog, LibraryTreeServices, LibraryTreeUpload } from '@/library'
+import { SaveLocationDialog, Progress, type SaveLocation } from '@/index'
+import { Dropzone, LibraryTreeView } from '@/library'
+import type { LibraryFlatItem, LibraryTreeDialog, LibraryTreeNode, LibraryTreeServices } from '@/library'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -100,7 +100,10 @@ function handleSave (location: SaveLocation) {
 
 /* ---------- LibraryTreeView 树演示 ---------- */
 const treeMode = ref<'folder' | 'tag'>('folder')
-const lastAction = ref('')
+// 选择模式:文件夹单选 + 标签多选(tab 切换共用一个开关,选中结果提升到此处)
+const selectMode = ref(false)
+const selectedFolder = ref<LibraryTreeNode[]>([])
+const selectedTags = ref<LibraryTreeNode[]>([])
 
 // mock 数据(未连接时使用;可变,右键新建/删除直接改内存,完整演示编辑流程)
 const mockFolders = ref<LibraryFlatItem[]>([
@@ -166,19 +169,42 @@ const treeDialog: LibraryTreeDialog = {
   },
 }
 
-// 上传适配:demo 不真传,仅提示落点(宿主路由到自己的上传队列)
-function describeTarget (target?: { folderId?: number; tags?: string[] }) {
-  if (target?.folderId != null) return `文件夹 #${target.folderId}`
-  if (target?.tags?.length) return `标签「${target.tags.join('、')}」`
-  return '素材库根目录'
+/* ---------- Dropzone 暂存 + 真实上传 ---------- */
+const stagedFiles = ref<File[]>([])
+const uploading = ref(false)
+const uploadPercent = ref(0)
+const uploadResult = ref('')
+
+const totalSize = computed(() => stagedFiles.value.reduce((sum, f) => sum + f.size, 0))
+
+function formatSize (bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`
 }
-const treeUpload: LibraryTreeUpload = {
-  files: (files, target) => {
-    lastAction.value = `模拟上传 ${files.length} 个文件 → ${describeTarget(target)}`
-  },
-  urls: (urls, target) => {
-    lastAction.value = `模拟上传 ${urls.length} 个链接 → ${describeTarget(target)}`
-  },
+
+async function startUpload () {
+  if (!client || !connected.value || !stagedFiles.value.length || uploading.value) return
+  uploading.value = true
+  uploadPercent.value = 0
+  uploadResult.value = ''
+  try {
+    const folder = selectedFolder.value[0]
+    const tags = selectedTags.value.map(t => t.title)
+    await client.files().uploadFiles(stagedFiles.value, currentLibraryId.value, {
+      folderId: folder ? String(folder.id) : undefined,
+      tags: tags.length ? tags : undefined,
+      onUploadProgress: e => { uploadPercent.value = e.percent ?? 0 },
+    })
+    uploadPercent.value = 100
+    uploadResult.value = `已上传 ${stagedFiles.value.length} 个文件`
+    stagedFiles.value = []
+    await loadLibraryData()
+  } catch (error: any) {
+    uploadResult.value = `上传失败: ${error?.response?.data?.message || error?.message || String(error)}`
+  } finally {
+    uploading.value = false
+  }
 }
 </script>
 
@@ -318,7 +344,7 @@ const treeUpload: LibraryTreeUpload = {
         />
       </section>
 
-      <!-- 树视图演示卡片 -->
+      <!-- 树视图演示卡片(选择模式:为上传卡片选目标) -->
       <section class="bg-card text-card-foreground flex flex-col gap-4 rounded-xl border p-6 shadow-sm">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div class="flex flex-col gap-1">
@@ -346,10 +372,56 @@ const treeUpload: LibraryTreeUpload = {
             :library-id="currentLibraryId || 'mock'"
             :services="treeServices"
             :dialog="treeDialog"
-            :upload="treeUpload"
+            selection
+            v-model:select-mode="selectMode"
+            :selected="treeMode === 'folder' ? selectedFolder : selectedTags"
+            @update:selected="treeMode === 'folder' ? (selectedFolder = $event) : (selectedTags = $event)"
           />
         </div>
-        <p v-if="lastAction" class="text-muted-foreground text-sm">{{ lastAction }}</p>
+      </section>
+
+      <!-- Dropzone 独立卡片:文件暂存 -->
+      <section class="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border p-6 shadow-sm">
+        <div class="flex flex-col gap-1">
+          <h2 class="text-base font-semibold">Dropzone 拖放区</h2>
+          <p class="text-muted-foreground text-sm">选择/拖放文件暂存（v-model:files 受控），附件卡片可单独移除</p>
+        </div>
+        <div class="overflow-hidden rounded-lg border">
+          <Dropzone v-model:files="stagedFiles" />
+        </div>
+      </section>
+
+      <!-- 真实上传卡片:目标预览 + SDK 进度 -->
+      <section class="bg-card text-card-foreground flex flex-col gap-4 rounded-xl border p-6 shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex flex-col gap-1">
+            <h2 class="text-base font-semibold">真实上传</h2>
+            <p class="text-muted-foreground text-sm">走 Mira SDK uploadFiles，进度来自 onUploadProgress 字节级回调</p>
+          </div>
+          <Button
+            class="w-fit shrink-0"
+            :disabled="!connected || !stagedFiles.length || uploading"
+            @click="startUpload()"
+          >
+            <Loader2 v-if="uploading" class="size-4 animate-spin" />
+            {{ uploading ? `上传中 ${uploadPercent}%` : `上传 ${stagedFiles.length} 个文件` }}
+          </Button>
+        </div>
+        <div class="text-foreground flex flex-wrap gap-x-8 gap-y-1 text-sm">
+          <span>目标文件夹：<b>{{ selectedFolder[0]?.title || '根目录' }}</b></span>
+          <span>标签：<b>{{ selectedTags.map(t => t.title).join('、') || '无' }}</b></span>
+          <span>文件：<b>{{ stagedFiles.length }}</b> 个（{{ formatSize(totalSize) }}）</span>
+        </div>
+        <div v-if="uploading || uploadPercent > 0" class="flex items-center gap-3">
+          <Progress :model-value="uploadPercent" class="flex-1" />
+          <span class="text-muted-foreground w-12 text-right text-sm tabular-nums">{{ uploadPercent }}%</span>
+        </div>
+        <p
+          v-if="uploadResult"
+          class="text-sm"
+          :class="uploadResult.startsWith('上传失败') ? 'text-destructive' : 'text-muted-foreground'"
+        >{{ uploadResult }}</p>
+        <p v-if="!connected" class="text-muted-foreground text-sm">连接 server 后可上传（未连接时仅暂存文件）</p>
       </section>
     </div>
   </main>
