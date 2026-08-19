@@ -43,7 +43,7 @@ import {
   AttachmentMedia,
   AttachmentTitle,
 } from '@/components/ui/attachment'
-import { LibraryTree, buildTree, collectIds, filterTree, flattenTree } from '@/library'
+import { LibraryTree, ROOT_ID, buildTree, collectIds, filterTree, flattenTree } from '@/library'
 import type { LibraryFlatItem, LibraryTreeNode } from '@/library'
 import type { SaveLocation } from './types'
 
@@ -107,7 +107,10 @@ function normalize (items: TreeItem[]): LibraryFlatItem[] {
   }))
 }
 
-const folderTree = computed(() => buildTree(normalize(props.folders)))
+// 根目录合成节点(id=0 与树构建约定一致):并入树首行,与文件夹行共用选中交互
+const ROOT_NODE: LibraryTreeNode = { id: ROOT_ID, title: '根目录', parentId: ROOT_ID, level: 0, children: [] }
+
+const folderTree = computed(() => [ROOT_NODE, ...buildTree(normalize(props.folders))])
 const tagTree = computed(() => buildTree(normalize(props.tags)))
 const tagItems = computed(() => normalize(props.tags))
 
@@ -146,10 +149,15 @@ const effectiveExpanded = computed(() =>
 )
 
 // ---- 文件夹单选(再点取消回根目录) / 标签多选 ----
-const selectedFolderIds = computed(() => folderId.value ? new Set([Number(folderId.value)]) : undefined)
+// 始终返回 Set(空选映射为根目录 id):LibraryTree 以 selectedIds !== undefined 启用点行选中
+const selectedFolderIds = computed(() => new Set([folderId.value ? Number(folderId.value) : ROOT_ID]))
 const checkedTagIds = computed(() => selectedTagIds.value)
 
 function onSelectFolder (node: LibraryTreeNode) {
+  if (node.id === ROOT_ID) {
+    folderId.value = ''
+    return
+  }
   folderId.value = folderId.value === String(node.id) ? '' : String(node.id)
 }
 
@@ -340,20 +348,6 @@ function confirm () {
         </Transition>
 
         <TabsContent value="folder" class="max-h-56 overflow-y-auto">
-          <button
-            v-if="!searchTags.length"
-            type="button"
-            class="flex h-7 w-full cursor-pointer items-center gap-1.5 rounded-md py-0 pr-2 pl-[26px] text-inherit select-none"
-            :class="folderId
-              ? 'text-foreground hover:bg-accent'
-              : 'bg-primary/12 text-primary shadow-[inset_0_0_0_1.5px_var(--primary)]'"
-            @click="folderId = ''"
-          >
-            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" class="shrink-0">
-              <path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" fill="currentColor" />
-            </svg>
-            <span class="min-w-0 flex-1 truncate">根目录</span>
-          </button>
           <div v-if="filteredFolder.tree.length" class="text-sm">
             <LibraryTree
               :nodes="filteredFolder.tree"
