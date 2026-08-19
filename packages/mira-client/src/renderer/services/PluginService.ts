@@ -949,9 +949,16 @@ export class PluginService {
           query?: Record<string, string>
         }) => {
           const entry = String(opts.entry || 'dist/index.html').replace(/^\/+/, '')
-          const serverUrl = config.source === 'server'
-            ? new URL(entry, `${String((config as ServerPluginConfig).url).replace(/\/+$/, '')}/`).toString()
-            : undefined
+          let serverUrl: string | undefined
+          if (config.source === 'server') {
+            const serverConfig = config as ServerPluginConfig
+            const base = String(serverConfig.url || '').replace(/\/+$/, '')
+            const pluginName = encodeURIComponent(serverConfig.serverPluginName)
+            const normalizedBase = base.endsWith(`/${pluginName}`) || base.endsWith(`/${serverConfig.serverPluginName}`)
+              ? base
+              : `${base}/${pluginName}`
+            serverUrl = new URL(`${normalizedBase}/${entry}`, window.location.origin).toString()
+          }
           const token = config.source === 'server' ? useAuthStore().token : undefined
           const finalOpts = {
             pluginId: config.pluginId,

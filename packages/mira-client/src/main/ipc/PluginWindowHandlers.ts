@@ -287,7 +287,15 @@ export class PluginWindowHandlers {
     if (!['http:', 'https:'].includes(url.protocol) || !url.pathname.includes('/server-plugins/')) {
       throw new Error('仅允许打开服务端插件 URL')
     }
+    // 兼容服务端插件清单只返回插件根 URL 的情况。
+    // Web 插件窗口必须加载构建产物，而不是目录路径。
+    const marker = '/server-plugins/'
+    const relative = url.pathname.slice(url.pathname.indexOf(marker) + marker.length)
+    if (relative && !relative.endsWith('/') && !/\.[^/]+$/.test(relative)) {
+      url.pathname = `${url.pathname.replace(/\/+$/, '')}/dist/index.html`
+    }
     Object.entries(query || {}).forEach(([key, item]) => url.searchParams.set(key, String(item)))
+    logger.info('PluginWindowHandlers', `Resolved server plugin URL: ${url.toString().replace(/([?&]token=)[^&]+/, '$1<redacted>')}`)
     return url.toString()
   }
 
