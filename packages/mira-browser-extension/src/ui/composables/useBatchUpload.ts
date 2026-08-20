@@ -24,6 +24,8 @@ export interface BatchUploadOpenOptions {
   files?: File[];
   folderId?: number;
   tags?: string[];
+  /** 指定初始素材库(如新窗口经 URL params 传入);缺省用 settings 当前库 */
+  libraryId?: string;
 }
 
 const show = ref(false);
@@ -53,7 +55,7 @@ export function useBatchUpload() {
     files.value = options?.files ?? [];
     initialFolderId.value = options?.folderId != null ? String(options.folderId) : '';
     initialTagTitles.value = options?.tags ?? [];
-    libraryId.value = settings.value.libraryId;
+    libraryId.value = options?.libraryId || settings.value.libraryId;
     await loadTree();
     show.value = true;
   }

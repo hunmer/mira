@@ -3,15 +3,19 @@
  * 批量上传窗口页(非 dialog):直接渲染 BatchUploadForm 全屏表单。
  * 文件选择/拖放由表单自己触发;「取消」按钮关窗。
  */
-import { onMounted } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import BatchUploadForm from 'mira-plugin-ui/src/BatchUploadForm.vue';
 import { useBatchUpload } from '@/ui/composables/useBatchUpload';
 import { useConnection } from '@/ui/composables/useConnection';
 import { useSettings } from '@/ui/composables/useSettings';
+import { dbg } from '@/shared/debug';
 
 const { t } = useI18n();
 const batchUpload = useBatchUpload();
+// 表单的 initialLibraryId 只在挂载时取一次:必须等 settings/库列表就绪后再渲染,
+// 否则以空值挂载会回落到第一个库而非当前选中库
+const ready = ref(false);
 
 function closeWindow() {
   window.close();
@@ -27,8 +31,11 @@ onMounted(async () => {
     username: settings.value.username,
     password: settings.value.password,
   }).catch(() => {});
-  // open 初始化当前库 + 拉取 folders/tags(窗口页不消费 show,仅取数据)
-  await batchUpload.open();
+  // 初始库:URL params 传入(打开方为 popup 当前选中库),缺省回落 settings
+  const libraryId = new URLSearchParams(location.search).get('libraryId') || undefined;
+  dbg.info('upload-page', 'init', { href: location.href, libraryId });
+  await batchUpload.open({ libraryId });
+  ready.value = true;
 });
 </script>
 
@@ -39,6 +46,7 @@ onMounted(async () => {
       <p class="text-muted-foreground text-sm">{{ t('upload.dropHint') }}</p>
     </header>
     <BatchUploadForm
+      v-if="ready"
       class="min-h-0 flex-1"
       :libraries="batchUpload.libraries.value"
       :folders="batchUpload.folders.value"

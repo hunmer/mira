@@ -49,8 +49,13 @@ const { settings } = useSettings();
 const { addFiles } = useUploadQueue();
 
 function openUploadWindow() {
+  // 当前素材库经 URL params 传给新窗口(storage 读取存在时序/旧值问题,显式传参最可靠)
+  // getURL 对含 query 的路径处理不可靠(实测 query 被丢弃),用 URL 对象显式附加
+  const url = new URL(chrome.runtime.getURL('src/ui/upload.html'));
+  url.searchParams.set('libraryId', settings.value.libraryId);
+  dbg.log('upload', 'openUploadWindow', { libraryId: settings.value.libraryId, url: url.href });
   chrome.windows.create({
-    url: chrome.runtime.getURL('src/ui/upload.html'),
+    url: url.href,
     type: 'popup',
     width: 1100,
     height: 840,
