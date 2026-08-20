@@ -120,7 +120,7 @@ const batchUploadTagTitles = ref<string[]>([])
 const batchUploadFiles = ref<File[]>([])
 const psMenu: MediaBrowserMenu[] = [{
   key: 'photoshop',
-  label: 'Photoshop',
+  label: 'Photoshop1',
   items: [{ key: 'import-active-layer', label: '导入当前图层' }],
 }]
 

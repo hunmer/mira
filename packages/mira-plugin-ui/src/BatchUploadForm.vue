@@ -8,7 +8,7 @@
  * - 右侧上方:文件信息表单(FileInfoForm)——绑定当前选中文件,编辑文件名/URL/注释写回该文件
  * - 右侧下方:Tabs 切换 LibraryTreeView(文件夹树单选/标签树多选,树内搜索与「新增」
  *   对话框均由 LibraryTreeView 自带),应用到本批全部文件
- * - 底部:左下角素材库 Select,右下角 取消/上传
+ * - 底部:素材库 Select 与「上传」按钮同一行(取消/关闭由宿主窗口自行处理)
  *
  * 上传执行两种模式:
  * - 传入 uploadFile 服务:组件内按 concurrency 并发上传,逐文件进度/成功/失败展示,
@@ -462,11 +462,12 @@ async function startUpload () {
 
 <template>
   <div class="flex h-full min-h-0 flex-col gap-4">
-    <!-- 主体:左 dropzone 文件区(填满高度) / 右(文件信息/文件夹/标签 tabs) -->
-    <div class="grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(260px,320px)]">
+    <!-- 主体:左 dropzone 文件区(填满高度) / 右(文件信息/文件夹/标签 tabs);
+         小屏单列时两行内容高度可能超出可用空间,允许纵向滚动避免溢出遮挡 footer -->
+    <div class="grid min-h-0 flex-1 gap-4 overflow-y-auto lg:grid-cols-[minmax(0,1fr)_minmax(260px,320px)]">
       <!-- 左:待上传文件区(dropzone) -->
       <div
-        class="flex h-full min-h-[22rem] flex-col rounded-lg border-2 border-dashed transition-colors"
+        class="flex h-full min-h-[14rem] flex-col rounded-lg border-2 border-dashed transition-colors lg:min-h-[22rem]"
         :class="isDragOver ? 'border-primary bg-primary/10' : 'border-border'"
         @drop.prevent="handleDrop"
         @dragover.prevent="isDragOver = true"
@@ -653,9 +654,9 @@ async function startUpload () {
       </Tabs>
     </div>
 
-    <!-- 底部:左下角素材库 / 右下角操作 -->
-    <div class="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div class="w-full sm:w-56">
+    <!-- 底部:素材库选择 + 开始上传同一行 -->
+    <div class="flex items-center gap-3">
+      <div class="min-w-0 flex-1 sm:max-w-56">
         <Label class="sr-only" for="batch-upload-library">素材库</Label>
         <!-- v-model 与显式 update 监听同用会覆盖绑定,改单向 + 手动赋值 -->
         <Select :model-value="libraryId" :disabled="isUploading" @update:model-value="onLibraryChange">
@@ -669,13 +670,10 @@ async function startUpload () {
           </SelectContent>
         </Select>
       </div>
-      <div class="flex gap-2 sm:justify-end">
-        <Button variant="outline" :disabled="isUploading" @click="emit('cancel')">{{ cancelText }}</Button>
-        <Button :disabled="!canUpload" @click="startUpload">
-          <Upload class="size-4" />
-          {{ submitText }}{{ toUploadCount > 0 ? ` (${toUploadCount})` : '' }}
-        </Button>
-      </div>
+      <Button class="ml-auto shrink-0" :disabled="!canUpload" @click="startUpload">
+        <Upload class="size-4" />
+        {{ submitText }}{{ toUploadCount > 0 ? ` (${toUploadCount})` : '' }}
+      </Button>
     </div>
   </div>
 </template>

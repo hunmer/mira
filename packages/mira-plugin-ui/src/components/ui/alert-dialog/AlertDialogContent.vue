@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { nextTick, onBeforeUnmount, onMounted } from "vue"
 import type { AlertDialogContentEmits, AlertDialogContentProps } from "reka-ui"
 import type { HTMLAttributes } from "vue"
 import { reactiveOmit } from "@vueuse/core"
@@ -20,6 +21,26 @@ const emits = defineEmits<AlertDialogContentEmits>()
 const delegatedProps = reactiveOmit(props, "class")
 
 const forwarded = useForwardPropsEmits(delegatedProps, emits)
+
+function centerCepAlertDialogs() {
+  const cepWindow = window as typeof window & { cep?: unknown; CSInterface?: unknown }
+  if (!cepWindow.cep && !cepWindow.CSInterface) return
+  let matched = 0
+  document.querySelectorAll<HTMLElement>('[data-slot="alert-dialog-content"]').forEach(el => {
+    const className = typeof el.className === 'string' ? el.className : ''
+    if (className.indexOf('left-0') >= 0 || className.indexOf('right-0') >= 0) return
+    el.style.setProperty('transform', 'translate(-50%, -50%)', 'important')
+    matched += 1
+  })
+  if (matched) console.log('[mira-cep-dialog] alert-centered', matched)
+}
+
+onMounted(() => {
+  void nextTick(centerCepAlertDialogs)
+  const observer = new MutationObserver(centerCepAlertDialogs)
+  observer.observe(document.body, { childList: true, subtree: true })
+  onBeforeUnmount(() => observer.disconnect())
+})
 </script>
 
 <template>

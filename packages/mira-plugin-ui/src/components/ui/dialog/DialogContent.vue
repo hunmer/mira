@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { nextTick, onBeforeUnmount, onMounted } from "vue"
 import type { DialogContentEmits, DialogContentProps } from "reka-ui"
 import type { HTMLAttributes } from "vue"
 import { X } from "@lucide/vue"
@@ -24,6 +25,27 @@ const emits = defineEmits<DialogContentEmits>()
 const delegatedProps = reactiveOmit(props, "class")
 
 const forwarded = useForwardPropsEmits(delegatedProps, emits)
+
+function centerCepDialogs() {
+  const cepWindow = window as typeof window & { cep?: unknown; CSInterface?: unknown }
+  if (!cepWindow.cep && !cepWindow.CSInterface) return
+  let matched = 0
+  document.querySelectorAll<HTMLElement>('[data-slot="dialog-content"]').forEach(el => {
+    // Sheet/侧滑面板明确使用 left/right-0,普通 Dialog 统一补传统 transform。
+    const className = typeof el.className === 'string' ? el.className : ''
+    if (className.indexOf('left-0') >= 0 || className.indexOf('right-0') >= 0) return
+    el.style.setProperty('transform', 'translate(-50%, -50%)', 'important')
+    matched += 1
+  })
+  if (matched) console.log('[mira-cep-dialog] centered', matched)
+}
+
+onMounted(() => {
+  void nextTick(centerCepDialogs)
+  const observer = new MutationObserver(centerCepDialogs)
+  observer.observe(document.body, { childList: true, subtree: true })
+  onBeforeUnmount(() => observer.disconnect())
+})
 </script>
 
 <template>
