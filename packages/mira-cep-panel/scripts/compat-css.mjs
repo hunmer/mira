@@ -12,9 +12,10 @@ import postcssPresetEnv from 'postcss-preset-env'
 import cascadeLayers from '@csstools/postcss-cascade-layers'
 
 /**
- * gap → grid-gap 降级:Chromium 61(CEP 9)不认识统一 gap 属性(Chrome 66 才有,flex 场景更是 84),
- * 但支持老的 grid-gap/grid-row-gap/grid-column-gap(Chrome 57+)。
- * 网格布局(缩略图列表等)经此恢复间距;flex 行间距无纯 CSS 补法,保持紧凑。
+ * CSS 兼容降级(Chromium 61 / CEP 9):
+ * - gap → grid-gap(统一 gap 属性 Chrome 66 才有;grid-gap Chrome 57+ 认识)
+ * - inset → top/right/bottom/left(简写 Chrome 87+)
+ * flex 行间距无纯 CSS 补法,保持紧凑。
  */
 const gapCompat = {
   postcssPlugin: 'gap-compat',
@@ -22,6 +23,22 @@ const gapCompat = {
     if (decl.prop === 'gap') decl.cloneBefore({ prop: 'grid-gap', value: decl.value })
     else if (decl.prop === 'column-gap') decl.cloneBefore({ prop: 'grid-column-gap', value: decl.value })
     else if (decl.prop === 'row-gap') decl.cloneBefore({ prop: 'grid-row-gap', value: decl.value })
+    else if (decl.prop === 'inset') {
+      // inset 简写展开(top right bottom left),四值/两值/单值语义与 margin 一致
+      const parts = decl.value.trim().split(/\s+/)
+      const pick = i => parts[Math.min(i, parts.length - 1)]
+      const [top, right, bottom, left] = parts.length === 1
+        ? [parts[0], parts[0], parts[0], parts[0]]
+        : parts.length === 2
+          ? [parts[0], parts[1], parts[0], parts[1]]
+          : parts.length === 3
+            ? [parts[0], parts[1], parts[2], parts[1]]
+            : [pick(0), pick(1), pick(2), pick(3)]
+      decl.cloneBefore({ prop: 'top', value: top })
+      decl.cloneBefore({ prop: 'right', value: right })
+      decl.cloneBefore({ prop: 'bottom', value: bottom })
+      decl.cloneBefore({ prop: 'left', value: left })
+    }
   },
 }
 

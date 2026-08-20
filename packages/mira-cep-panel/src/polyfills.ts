@@ -1,6 +1,6 @@
 // CEP 9(Chromium 61)缺少的浏览器 API 补丁。
 // esbuild 的 target 只降级语法不降级方法,依赖(vueuse/vue-masonry/SDK)用到的新方法在此补齐。
-import 'resize-observer-polyfill'
+import ResizeObserverImpl from 'resize-observer-polyfill'
 
 interface Window {
   globalThis: unknown
@@ -8,6 +8,12 @@ interface Window {
 }
 
 const w = window as unknown as Window
+
+// 打包器上下文里 resize-observer-polyfill 只提供模块导出,不会挂到 window;
+// 不显式装全局的话,vue-masonry 等在 onMounted 里 new ResizeObserver 即抛错(瀑布流空白)
+if (typeof window !== 'undefined' && !(window as unknown as Record<string, unknown>).ResizeObserver) {
+  ;(window as unknown as Record<string, unknown>).ResizeObserver = ResizeObserverImpl
+}
 
 // window 即全局对象(Chromium 61 无 globalThis,Chrome 71 才有)
 if (typeof w.globalThis === 'undefined') w.globalThis = window

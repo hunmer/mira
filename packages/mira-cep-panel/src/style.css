@@ -43,3 +43,19 @@ body {
   font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
   overflow: hidden;
 }
+
+/*
+ * Chromium 61 兼容:瀑布流修复。
+ * - motion-v 动画引擎依赖的新 Web Animations API 缺失,条目会停在初始态
+ *   (opacity:0 + 位移),强制可见并禁用其位移变换;
+ * - LazyCell 未就绪内容为 visibility:hidden,同样强制可见(最多短暂露出未加载图)。
+ */
+.masonry-container > * {
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+.lazy-cell__content--hidden {
+  visibility: visible !important;
+  opacity: 1 !important;
+}

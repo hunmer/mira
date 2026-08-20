@@ -14,7 +14,7 @@
  */
 import { computed, ref, watch } from 'vue';
 import { useMediaQuery } from '@vueuse/core';
-import { Download, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Trash2 } from '@lucide/vue';
+import { PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from '@lucide/vue';
 // 注意:library 子入口以源码供宿主直接消费,这里必须用相对路径(宿主的 @ 别名指向其自身 src)
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../components/ui/resizable';
 import { Sheet, SheetContent, SheetTitle } from '../components/ui/sheet';
@@ -28,7 +28,6 @@ import type {
   LibraryTreeNode,
   MediaBrowserFilters,
   MediaBrowserItem,
-  MediaBrowserMenu,
   MediaBrowserServerManager,
   MediaDetailServices,
   MediaLibraryServices,
@@ -59,23 +58,6 @@ const emit = defineEmits<{
   /** 中间列表菜单「导入文件」:文件多选选完后抛出(宿主打开上传表单,如 BatchUploadForm) */
   importFiles: [files: File[]];
 }>();
-
-// TODO: 自定义菜单临时验证代码,验证完移除
-const testMenus: MediaBrowserMenu[] = [
-  {
-    key: 'test',
-    label: '测试',
-    items: [
-      { key: 'hello', label: 'Hello', icon: Download },
-      { key: 'world', label: 'World (禁用)', disabled: true },
-      { key: 'sep', label: '', separator: true },
-      { key: 'danger', label: '危险操作', icon: Trash2, danger: true },
-    ],
-  },
-];
-function onTestMenu(menuKey: string, itemKey: string) {
-  alert(`menu: ${menuKey}, item: ${itemKey}`);
-}
 
 // ---- 左侧树受控选择(文件夹单选 / 标签多选) ----
 const selectedFolder = ref<LibraryTreeNode[]>([]);
@@ -218,10 +200,8 @@ watch(isCompact, (compact) => {
             :extra-filters="extraFilters"
             :library-servers="libraryServers"
             :server-manager="serverManager"
-            :menus="testMenus"
             :t="t"
             @import-files="files => emit('importFiles', files)"
-            @menu-select="onTestMenu"
           />
         </main>
         <button
