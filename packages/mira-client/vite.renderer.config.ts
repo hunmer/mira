@@ -31,15 +31,7 @@ export default defineConfig({
   },
   // CSS 优化
   css: {
-    devSourcemap: true,
-    preprocessorOptions: {
-      scss: {
-        additionalData: `
-          @import "@/renderer/assets/scss/variables.scss";
-          @import "@/renderer/assets/scss/mixins.scss";
-        `
-      }
-    }
+    devSourcemap: true
   },
   // 优化依赖预构建
   optimizeDeps: {

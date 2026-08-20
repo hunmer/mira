@@ -52,9 +52,20 @@ Mira 服务端插件集合(当前 **14 个**)。插件由 `ServerPluginManager`(
 | mira_n8n | [plugins/mira_n8n/CLAUDE.md](plugins/mira_n8n/CLAUDE.md) |
 | psd-viewer | [plugins/psd-viewer/CLAUDE.md](plugins/psd-viewer/CLAUDE.md) |
 | mira_tiptap_format | [plugins/mira_tiptap_format/CLAUDE.md](plugins/mira_tiptap_format/CLAUDE.md) |
+| mira_3d_format | [plugins/mira_3d_format/CLAUDE.md](plugins/mira_3d_format/CLAUDE.md) |
+| mira_eagle_extension | [plugins/mira_eagle_extension/CLAUDE.md](plugins/mira_eagle_extension/CLAUDE.md) |
+| mira_epub_format | [plugins/mira_epub_format/CLAUDE.md](plugins/mira_epub_format/CLAUDE.md) |
+| mira_gallery_dl | [plugins/mira_gallery_dl/CLAUDE.md](plugins/mira_gallery_dl/CLAUDE.md) |
+| mira_livp_format | [plugins/mira_livp_format/CLAUDE.md](plugins/mira_livp_format/CLAUDE.md) |
+| mira_lottie_format | [plugins/mira_lottie_format/CLAUDE.md](plugins/mira_lottie_format/CLAUDE.md) |
+| mira_pag_format | [plugins/mira_pag_format/CLAUDE.md](plugins/mira_pag_format/CLAUDE.md) |
+| mira_spine_format | [plugins/mira_spine_format/CLAUDE.md](plugins/mira_spine_format/CLAUDE.md) |
+| mira_swf_format | [plugins/mira_swf_format/CLAUDE.md](plugins/mira_swf_format/CLAUDE.md) |
+| mira_zipper_format | [plugins/mira_zipper_format/CLAUDE.md](plugins/mira_zipper_format/CLAUDE.md) |
+| pdf-viewer | [plugins/pdf-viewer/CLAUDE.md](plugins/pdf-viewer/CLAUDE.md) |
 | old mira_thumb | [old_plugins/mira_thumb/CLAUDE.md](old_plugins/mira_thumb/CLAUDE.md) |
 
-> 其余 11 个插件暂无独立 `CLAUDE.md`,可参考各自 `index.ts` 顶部声明与 `README.md`。
+> 14 个活跃插件现均有独立 `CLAUDE.md`。
 
 ## 已移除
 
@@ -65,5 +76,6 @@ Mira 服务端插件集合(当前 **14 个**)。插件由 `ServerPluginManager`(
 
 - **更新时间**: 2026-08-20
 - **已扫描**: `plugins/plugins/` 全部 14 个目录(基于 `index.ts` + `package.json` 核对);`plugins.recommend.json`(12 条目);深读 mira_tiptap_format 入口与 web 前端结构、mira_gallery_dl 协议归属
-- **本次更新要点**: 插件清单 13 → 14(新增 mira_tiptap_format;补记 mira_gallery_dl 为协议 A 类);版本修正 mira_3d_format 1.0.2、mira_spine_format 1.1.1、psd-viewer 1.0.1;注册表更正为 `plugins.recommend.json`(源码侧推荐清单) + server 运行时 `src/plugins/plugins.json`(安装状态);新增 mira_tiptap_format 独立 CLAUDE.md
-- **下一步建议**: 为其余 10 个格式插件补独立 `CLAUDE.md`;核对 `web/` 子目录与 `online_client_plugins/` 的发布关系
+- **本次更新要点**: 补建 11 个插件的轻量 `CLAUDE.md`(mira_3d_format、mira_eagle_extension、mira_epub_format、mira_gallery_dl、mira_livp_format、mira_lottie_format、mira_pag_format、mira_spine_format、mira_swf_format、mira_zipper_format、pdf-viewer,各含协议/扩展名/web 结构/扫描状态);14 个活跃插件文档齐全
+- **下一步建议**: 按需深扫各插件 CLAUDE.md 标注的"未扫描"项(如 livpBundle.ts、spine renderIdle.ts/spineBundle.ts、eagle 各 handler、web/src 组件实现)
+- **web/ 与 online_client_plugins/ 关系**(2026-08-20 核对): 11 个 `web/` 查看器均无在线分发版本;`online_client_plugins/plugins/` 下 `mira-3d-format-preview`、`mira-spine-format-preview`、`psd-viewer` 仅剩 node_modules(无 plugin.json,索引跳过),与对应 `web/package.json` name 一致,疑似在线分发残留,详见根 `claude/module-index.md`

@@ -42,9 +42,9 @@ packages:
 | `MAGICK_PATH` | -- | ImageMagick 路径(专业格式缩略图) |
 | `PAG_BROWSER_PATH` | -- | PAG 插件缩略图渲染所需的 Chrome/Chromium 路径 |
 
-## 平台依赖切换
+## 平台依赖切换(已移除)
 
-根目录存在 `dependency-switch-config-macos.json` 与 `dependency-switch-config-windows.json`,用于跨平台原生依赖(esbuild/electron/sqlite3)切换。
+原根目录的 `dependency-switch-config-macos.json`、`dependency-switch-config-windows.json` 及消费它们的 `tool.js` 已从仓库移除(2026-08-20 核实),不再存在悬空引用。
 
 ## 共享依赖版本(各包对齐)
 

@@ -2,7 +2,7 @@
 
 ## Q: 为什么 `pnpm install` 报 workspace 包找不到?
 
-2026-08-11 已从 `pnpm-workspace.yaml` 清理两条陈旧条目(`mira-server-sdk-examples`、`n8n-nodes-mira-ws-trigger`),磁盘上本就不存在。若仍报警告,检查 `dependency-switch-config-{macos,windows}.json` 中是否还残留 `n8n-nodes-mira-ws-trigger` 的悬空 `file:` 引用(仅被 `tool.js` 消费,可一并删除)。
+2026-08-11 已从 `pnpm-workspace.yaml` 清理两条陈旧条目(`mira-server-sdk-examples`、`n8n-nodes-mira-ws-trigger`),磁盘上本就不存在。`dependency-switch-config-{macos,windows}.json` 与 `tool.js` 也已于 2026-08-20 前从仓库移除,不再存在悬空引用。
 
 ## Q: 客户端的真实 Tailwind 配置在哪?
 

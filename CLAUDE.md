@@ -82,4 +82,4 @@ graph TD
   - dashboard:API 层迁移到 mira-app-core SDK;extension:src 54→101 文件
   - landing-page:shadcn registry 链整体移除,改为静态导出单页营销站
 - **跳过/陈旧**: 各包 `node_modules/`、`dist/`、`build/`;mira-plugin-ui 的 80 个 shadcn 组件实现体仅结构清点
-- **下一步建议**: 补 plugins/ 下其余 12 个插件的独立 `CLAUDE.md`(当前仅 mira_n8n/psd-viewer/mira_tiptap_format 有);`vite.renderer.config.ts` 残留已删 SCSS 的 additionalData 注入待清理;dashboard 的 `react-selectable-fast` 疑似遗留依赖;`.claude/index.json` 版本数据需同步
+- **下一步建议**: ~~补 plugins/ 插件 CLAUDE.md~~(14 个均已补齐);已清理 client vite SCSS 残留注入、dashboard `react-selectable-fast` 遗留依赖(dependency-switch 配置文件已随仓库移除);mira-client 存在 33 个预存 TS6133 类型错误待修;`.claude/index.json` 已同步

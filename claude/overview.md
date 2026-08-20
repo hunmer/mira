@@ -88,5 +88,5 @@ graph TD
 `pnpm-workspace.yaml` 当前显式声明 9 个包 + 2 个 glob(`online_client_plugins/plugins/*`、`plugins/plugins/*/web`)。其中:
 
 - 2026-08-11 已清理陈旧条目 `mira-server-sdk-examples`、`n8n-nodes-mira-ws-trigger`;2026-08-20 前已补入 `mira-plugin-ui`、`vue-selection-box`
-- `packages/landing-page`(efferd-ui)未在 workspace.yaml 显式声明,使用独立 `pnpm-lock.yaml` 管理
-- `dependency-switch-config-{macos,windows}.json` 中**仍残留** `n8n-nodes-mira-ws-trigger` 的悬空 `file:` 引用(磁盘不存在),仅被 `tool.js` 辅助脚本消费,不影响 pnpm install;建议后续一并清理
+- `packages/landing-page`(efferd-ui)与 `packages/mira_mobile`(Flutter)未在 workspace.yaml 声明,独立管理
+- `dependency-switch-config-{macos,windows}.json` 与 `tool.js` 已从仓库移除(2026-08-20 核实,无残留引用)

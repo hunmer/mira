@@ -9,6 +9,8 @@
 
 ## 活跃插件(14 个,每个含 index.ts/package.json/tsconfig.json)
 
+> 2026-08-20 起 14 个活跃插件均已有独立 `CLAUDE.md`(见各自目录)。
+
 | 插件 | 版本 | main | 说明 |
 |------|------|------|------|
 | mira_3d_format | 1.0.2 | dist/index.js | GLB/GLTF 格式插件(+web) |

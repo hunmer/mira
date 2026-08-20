@@ -37,8 +37,11 @@
 
 ## 质量风险
 
-- client 的 `vite.renderer.config.ts` 残留指向已删 `assets/scss/*` 的 additionalData 注入(SCSS 体系已整体移除)
-- dashboard 的 `react-selectable-fast`(React 包)仍在 dependencies 且无消费点,疑似遗留
 - mira-doc 的 config head 仍指向 `/mira-doc/icon.ico` 而 public 实为 `icon.webp`
-- 服务端原生依赖(sqlite3 / sharp / ffmpeg)跨平台安装易出错,有 `dependency-switch-config-{macos,windows}.json` 缓解
-- `dependency-switch-config-*.json` 中仍残留 `n8n-nodes-mira-ws-trigger` 悬空 `file:` 引用(不影响 pnpm install)
+- 服务端原生依赖(sqlite3 / sharp / ffmpeg)跨平台安装易出错(原 `dependency-switch-config-{macos,windows}.json` 切换工具已随 `tool.js` 一并移除)
+- mira-client 存在 33 个预存 TS6133(未使用变量)类型错误(非门禁阻断项,`type-check` 当前失败)
+
+## 2026-08-20 已清理的技术债
+
+- client `vite.renderer.config.ts`:删除指向已删 `assets/scss/*` 的 additionalData 注入(改动前后 type-check 错误数一致,均为 33 个预存错误)
+- dashboard:删除无引用依赖 `react-selectable-fast` 并更新 lockfile(vue-tsc --noEmit 通过)

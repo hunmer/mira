@@ -138,9 +138,21 @@
 
 ## 客户端在线插件(online_client_plugins/)
 
-通过 `scripts/build-client-plugins-index.mjs` 生成索引,Electron 渲染进程动态加载。当前包含(部分):
+**插件市场源仓库**:`scripts/build-client-plugins-index.mjs` 扫描含 `plugin.json` 的子目录生成 `plugins.json` 索引,客户端从市场源 HTTP 地址拉取索引、下载插件到本地加载。与 `plugins/plugins/*/web`(服务端插件的查看器,由服务端经 `/server-plugins/:libraryId/:pluginName/*` 静态托管,客户端 iframe 加载)是两套独立机制。
 
-- `mira-3d-format-preview`、`mira-spine-format-preview`、`mira-pinterest-search`、`mira-whiteboard`、`mira-custom-tab-demo`、`mira-welcome-demo`、`psd-viewer`
+当前索引共 **4 个**(2026-08-20 核对,pluginId 均为 UUID,与任何 web 查看器不重合):
+
+| 在线插件 | 来源/类型 | 对应服务端插件 | 说明 |
+|----------|-----------|----------------|------|
+| mira-custom-tab-demo | 演示 | 无 | 自定义 Tab Demo v1.0.0,注册 Tab + DOM 回调渲染 |
+| mira-welcome-demo | 演示 | 无 | 欢迎示例 v1.0.0,配置/事件/UI/日志能力演示 |
+| mira-pinterest-search | Eagle 迁移 | 无 | Pinterest 视觉搜索 v1.1.9-mira.1,对选中图片发起视觉搜索 |
+| mira-whiteboard | 独立 SPA(vite) | 无 | 自由白板 v1.0.0,@woven-canvas/vue 无限画板,dist/ 随包分发 |
+
+与 `plugins/plugins/*/web` 的对应关系(基于 pluginId / package.json name 证据):
+
+- 11 个 web 查看器均**无**在线分发版本(pluginId 无一匹配);
+- 目录下另有 `mira-3d-format-preview`、`mira-spine-format-preview`、`psd-viewer` 三个目录仅含 node_modules(无 plugin.json,被索引脚本跳过),名称与 `mira_3d_format` / `mira_spine_format` / `psd-viewer` 各自 `web/package.json` 的 name 完全一致,**疑似**曾准备将这三个 vite 型查看器发布为在线插件的本地残留。
 
 ## 已移除/合并模块
 
@@ -149,7 +161,7 @@
 | mira-storage-sqlite | `packages/mira-storage-sqlite` | 已合并到 mira-app-core |
 | mira-server-sdk | `packages/mira-server-sdk` | 已合并到 mira-app-core |
 | mira-server-sdk-examples | `packages/mira-server-sdk-examples` | 已移除(2026-08-11 已从 workspace.yaml 清理) |
-| n8n-nodes-mira-ws-trigger | `packages/n8n-nodes-mira-ws-trigger` | 已移除(2026-08-11 已从 workspace.yaml 清理;`dependency-switch-config-*.json` 仍残留悬空引用) |
+| n8n-nodes-mira-ws-trigger | `packages/n8n-nodes-mira-ws-trigger` | 已移除(2026-08-11 已从 workspace.yaml 清理;原 `dependency-switch-config-*.json` 悬空引用已随文件删除消除) |
 | mira-dashboard | `packages/mira-dashboard` | 已替换为 mira-dashboard-next |
 | mira_user | `plugins/plugins/mira_user` | 源码移除,功能内置于服务端 |
 | upload_statistics | `plugins/plugins/upload_statistics` | 源码移除,功能内置于服务端 |

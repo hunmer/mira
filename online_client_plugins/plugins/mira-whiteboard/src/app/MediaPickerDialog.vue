@@ -49,9 +49,21 @@ const currentLibraryId = ref('')
 const selected = ref<MediaBrowserItem[]>([])
 const libError = ref('')
 
-// SDK client：server/token 由宿主注入，窗口生命周期内 token 视为有效
-const client = new MiraClient(props.server)
-client.setToken(props.token)
+// SDK client：server/token 由宿主注入 query、App 在 onMounted 才解析完成，
+// 因此这里必须响应式重建（组件随 App 无条件挂载，setup 时 props 可能还是空）。
+let client: MiraClient | null = null
+watch(
+  () => [props.server, props.token],
+  () => {
+    if (!props.server || !props.token) {
+      client = null
+      return
+    }
+    client = new MiraClient(props.server)
+    client.setToken(props.token)
+  },
+  { immediate: true },
+)
 
 const libraryLabel = (lib: { name?: string; title?: string }) => lib.title || lib.name || String(lib.id)
 
@@ -60,6 +72,10 @@ watch(
   () => props.open,
   async (open) => {
     if (!open || libraries.value.length) return
+    if (!client) {
+      libError.value = '服务器连接信息缺失（server/token）'
+      return
+    }
     libError.value = ''
     try {
       const rows = (await client.libraries().getAll()) as any[]
@@ -84,6 +100,7 @@ function onLibraryChange(id: string) {
 // MediaBrowser 数据服务：列表走 SDK（服务端过滤/排序），缩略图/宽高走 REST 直链
 const services: MediaBrowserServices = {
   async listFiles(filters) {
+    if (!client) throw new Error('服务器连接信息缺失（server/token）')
     const ret: any = await client.files().getFiles({
       libraryId: currentLibraryId.value,
       filters: {
@@ -115,6 +132,7 @@ const services: MediaBrowserServices = {
   },
   // 瀑布流真实宽高
   async getMetadataByIds(ids) {
+    if (!client) return []
     return client.files().getMetadataByIds(currentLibraryId.value, ids)
   },
 }

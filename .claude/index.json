@@ -286,15 +286,19 @@
       "packages/mira_mobile 平台脚手架目录"
     ],
     "gaps": [
-      "plugins/ 下 11 个插件尚无独立 CLAUDE.md(仅 mira_n8n/psd-viewer/mira_tiptap_format 有)",
+      "plugins/ 下 11 个插件 CLAUDE.md 已于 2026-08-20 补建(待复核)",
       "mira-client 30+ src 子目录文档仅抽核变更最多的 5 个",
-      "mira-plugin-ui 80 个 shadcn 组件实现体未深读",
-      "online_client_plugins/ 仅概览,未逐插件核对"
+      "mira-plugin-ui 80 个 shadcn 组件实现体未深读"
     ],
     "nextSteps": [
-      "补 plugins/ 其余 11 个插件的独立 CLAUDE.md",
-      "核对 online_client_plugins/plugins/* 与 plugins/plugins/*/web 的对应关系",
-      "清理 dependency-switch-config-*.json 中 n8n-nodes-mira-ws-trigger 悬空引用"
+      "复核 2026-08-20 补建的 11 个插件 CLAUDE.md",
+      "清理 mira-client vite.renderer.config.ts 残留 SCSS 注入与 dashboard react-selectable-fast 遗留依赖(已于 2026-08-20 处理,待提交)"
+    ],
+    "resolvedOn20260820": [
+      "online_client_plugins 与 plugins/*/web 对应关系已核对:4 个在线插件全部独立,11 个 web 查看器均无在线分发",
+      "dependency-switch-config-*.json 与 tool.js 已从仓库移除,悬空引用消除",
+      "mira-client vite.renderer.config.ts SCSS additionalData 残留注入已删除",
+      "mira-dashboard-next react-selectable-fast 无引用依赖已删除并更新 lockfile"
     ]
   }
 }
