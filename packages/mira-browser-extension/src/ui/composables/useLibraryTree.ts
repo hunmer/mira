@@ -17,12 +17,14 @@ export type { LibraryFlatItem };
  * (types.ts 重导出的 Tag 与 TagModule 里的同名接口字段不一致),而运行时
  * 服务器返回的 folder/tag 都带 parent_id(扁平层级)。故这里用宽松的原始形态。
  */
-function adapt(raw: { id: number; title: string; parent_id?: number; color?: number; sort_index?: number }): LibraryFlatItem {
+function adapt(raw: { id: number; title: string; parent_id?: number; color?: number; sort_index?: number; description?: string; icon?: string }): LibraryFlatItem {
   return {
     id: raw.id,
     title: raw.title,
     parent_id: typeof raw.parent_id === 'number' ? raw.parent_id : undefined,
     color: raw.color,
+    description: raw.description,
+    icon: raw.icon,
     sort_index: raw.sort_index,
   };
 }
@@ -41,6 +43,8 @@ export function extLibraryServices(): LibraryTreeServices {
     },
     createNode: (kind, libraryId, title, parentId) => bg.createNode(kind, libraryId, title, parentId),
     deleteNode: (kind, libraryId, id, deleteFiles) => bg.deleteNode(kind, libraryId, id, deleteFiles),
+    // 右键「编辑」:改 title/description/color/icon
+    updateNode: (kind, libraryId, id, title, extra) => bg.updateNode(kind, libraryId, id, title, extra),
     // 拖拽排序:同层顺序 / 跨层移动
     moveNode: (kind, libraryId, id, parentId) => bg.moveNode(kind, libraryId, id, parentId),
     updateSortIndex: (kind, libraryId, items) => bg.updateSortIndex(kind, libraryId, items),

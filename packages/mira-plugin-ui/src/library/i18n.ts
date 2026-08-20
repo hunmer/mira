@@ -17,6 +17,7 @@ const zh = {
   'common.failed': '失败',
   'common.cancel': '取消',
   'common.create': '创建',
+  'common.upload': '上传文件',
   'upload.dropHint': '拖放文件到此处,或点击选择',
   'library.searchPlaceholder': '搜索{type}…',
   'library.create': '新建{type}',

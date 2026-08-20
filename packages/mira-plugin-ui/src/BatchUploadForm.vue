@@ -21,12 +21,14 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { File as FileIcon, FileImage, FileText, Film, Music, Upload, X } from '@lucide/vue'
 import { SelectionBox } from '@hunmer/vue-selection-box'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Progress } from '@/components/ui/progress'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import type { AcceptableValue } from 'reka-ui'
+// 注意:本组件可经 'mira-plugin-ui/src/...' 源码供宿主直接消费,必须用相对路径(宿主的 @ 别名指向其自身 src)
+import { Button } from './components/ui/button'
+import { Input } from './components/ui/input'
+import { Label } from './components/ui/label'
+import { Progress } from './components/ui/progress'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs'
 import {
   Attachment,
   AttachmentAction,
@@ -35,9 +37,9 @@ import {
   AttachmentGroup,
   AttachmentMedia,
   AttachmentTitle,
-} from '@/components/ui/attachment'
-import { LibraryTreeView } from '@/library'
-import type { LibraryFlatItem, LibraryTreeNode, LibraryTreeServices } from '@/library'
+} from './components/ui/attachment'
+import { LibraryTreeView } from './library'
+import type { LibraryFlatItem, LibraryTreeNode, LibraryTreeServices } from './library'
 import FileInfoForm from './FileInfoForm.vue'
 import type { BatchUploadFileService, BatchUploadPayload } from './types'
 
@@ -77,6 +79,8 @@ const props = withDefaults(defineProps<{
   concurrency?: number
   /** 单批文件数上限,超出部分忽略 */
   maxFiles?: number
+  /** 初始预填文件(如宿主自己的文件选择器选好后传入);打开时进入队列,同名同大小去重 */
+  initialFiles?: File[]
   /** 文件选择 input 的 accept 属性 */
   accept?: string
   submitText?: string
@@ -90,6 +94,7 @@ const props = withDefaults(defineProps<{
   initialTagTitles: () => [],
   concurrency: 3,
   maxFiles: 200,
+  initialFiles: () => [],
   accept: '*',
   submitText: '开始上传',
   cancelText: '取消',
@@ -130,7 +135,11 @@ const selectedItem = computed(() => items.value.find(item => item.id === selecte
 const isUploading = computed(() => items.value.some(item => item.status === 'uploading'))
 const stats = computed(() => {
   const result = { total: items.value.length, pending: 0, uploading: 0, done: 0, failed: 0 }
-  for (const item of items.value) result[item.status]++
+  for (const item of items.value) {
+    // UploadItem 的失败态是 error,统计口径计入 failed
+    if (item.status === 'error') result.failed++
+    else result[item.status]++
+  }
   return result
 })
 /** 本批将上传的数量:待上传 + 失败重试 */
@@ -162,6 +171,9 @@ function addFiles (files: File[]) {
     })
   }
 }
+
+// 宿主预填文件(对话框每次打开重新挂载,此处执行一次即可)
+addFiles(props.initialFiles)
 
 function handleFileSelect (event: Event) {
   const target = event.target as HTMLInputElement
@@ -388,11 +400,11 @@ function attachmentStateOf (item: UploadItem): 'idle' | 'uploading' | 'done' | '
 }
 
 // 切库:清掉已选位置并通知宿主刷新树数据
-function onLibraryChange (value: string) {
-  libraryId.value = value
+function onLibraryChange (value: AcceptableValue) {
+  libraryId.value = String(value)
   folderId.value = ''
   selectedTagIds.value = new Set()
-  emit('library-change', value)
+  emit('library-change', String(value))
 }
 
 // ---- 上传执行 ----

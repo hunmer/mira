@@ -62,6 +62,20 @@ export type Request =
         deleteFiles?: boolean;
       };
     }
+  // 右键「编辑」:改 title/description/color/icon(与 CreateNodeDialog 编辑模式对齐)
+  | {
+      type: 'NODE_UPDATE';
+      payload: {
+        kind: 'folder' | 'tag';
+        libraryId: string;
+        id: number;
+        title: string;
+        /** 可选:描述 / 颜色 / Material Icons 图标名 */
+        description?: string;
+        color?: number;
+        icon?: string;
+      };
+    }
   // 拖拽排序:跨层移动(改 parent_id)
   | {
       type: 'NODE_MOVE';
@@ -139,7 +153,7 @@ const REQUEST_TYPES = new Set<Request['type']>([
   'CUSTOM_UPLOAD_SIDEPANEL_OPEN', 'CUSTOM_UPLOAD_SESSION_GET', 'CUSTOM_UPLOAD_SESSION_CLOSE',
   'AUTH_LOGIN', 'AUTH_VERIFY', 'CONFIG_GET', 'CONFIG_SET',
   'SERVERS_LIST', 'SERVERS_SAVE', 'SERVER_ACTIVATE', 'SERVER_TEST',
-  'LIB_LIST', 'FOLDER_LIST', 'TAG_LIST', 'NODE_CREATE', 'NODE_DELETE', 'NODE_MOVE', 'NODE_SORT_INDEX',
+  'LIB_LIST', 'FOLDER_LIST', 'TAG_LIST', 'NODE_CREATE', 'NODE_DELETE', 'NODE_UPDATE', 'NODE_MOVE', 'NODE_SORT_INDEX',
   'UPLOAD_FILES', 'UPLOAD_FROM_URL', 'BATCH_IMPORT', 'UPLOAD_STATUS', 'UPLOAD_CANCEL', 'UPGRADE_IMAGE_URL', 'DOWNLOAD_RESOURCES', 'OPEN_URL_IN_TAB',
   'CAPTURE_VISIBLE', 'CAPTURE_FULLPAGE', 'CAPTURE_SELECTION',
   'SNIFFER_START', 'SNIFFER_STOP', 'SNIFFER_QUERY',

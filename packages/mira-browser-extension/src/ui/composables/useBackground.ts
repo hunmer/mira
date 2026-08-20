@@ -66,6 +66,16 @@ export function useBackground() {
     async deleteNode(kind: 'folder' | 'tag', libraryId: string, id: number, deleteFiles?: boolean) {
       return send({ type: 'NODE_DELETE', payload: { kind, libraryId, id, deleteFiles } });
     },
+    // 右键「编辑」:改 title/description/color/icon
+    async updateNode(
+      kind: 'folder' | 'tag',
+      libraryId: string,
+      id: number,
+      title: string,
+      extra?: { description?: string; color?: number; icon?: string },
+    ) {
+      return send({ type: 'NODE_UPDATE', payload: { kind, libraryId, id, title, ...extra } });
+    },
     async moveNode(kind: 'folder' | 'tag', libraryId: string, id: number, parentId: number | null) {
       return send({ type: 'NODE_MOVE', payload: { kind, libraryId, id, parentId } });
     },

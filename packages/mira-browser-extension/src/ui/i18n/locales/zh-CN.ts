@@ -51,6 +51,8 @@ export default {
   header: {
     selectLibrary: '选择素材库',
     screenshot: '截图',
+    upload: '上传',
+    selectFiles: '选择文件上传',
     themeAuto: '🌗 自动',
     themeLight: '☀️ 亮色',
     themeDark: '🌙 暗色',

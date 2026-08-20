@@ -2,11 +2,13 @@
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useBackground } from '@/ui/composables/useBackground';
+import { useBatchUpload } from '@/ui/composables/useBatchUpload';
 import Button from '@/ui/components/ui/Button.vue';
 import { dbg } from '@/shared/debug';
 
 const { t } = useI18n();
 const bg = useBackground();
+const batchUpload = useBatchUpload();
 const msg = ref('');
 
 async function run(fn: (tabId: number) => Promise<any>, label: string) {
@@ -38,10 +40,27 @@ async function run(fn: (tabId: number) => Promise<any>, label: string) {
     dbg.error('shot-ui', 'error', label, e);
   }
 }
+
+// ---- 选择文件上传:多选后打开批量上传对话框(对话框本体在 App.vue 的 BatchUploadHost) ----
+const fileInput = ref<HTMLInputElement>();
+
+function pickFiles() {
+  fileInput.value?.click();
+}
+
+function onFilesChosen(e: Event) {
+  const input = e.target as HTMLInputElement;
+  const files = Array.from(input.files ?? []);
+  input.value = '';
+  if (!files.length) return;
+  void batchUpload.open({ files });
+}
 </script>
 
 <template>
   <div class="view">
+    <input ref="fileInput" type="file" multiple hidden @change="onFilesChosen" />
+    <Button @click="pickFiles">{{ t('header.selectFiles') }}</Button>
     <Button @click="run(bg.captureVisible, t('screenshot.visible'))">{{ t('screenshot.visible') }}</Button>
     <Button @click="run(bg.captureFullPage, t('screenshot.fullPage'))">{{ t('screenshot.fullPage') }}</Button>
     <Button @click="run(bg.captureSelection, t('screenshot.selection'))">{{ t('screenshot.selection') }}</Button>

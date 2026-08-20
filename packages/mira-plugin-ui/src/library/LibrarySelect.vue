@@ -7,6 +7,7 @@
  * 所属服务器。跨服务器库 id 需唯一,否则分组内会出现重复 value。
  */
 import { computed } from 'vue'
+import type { AcceptableValue } from 'reka-ui'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '../components/ui/select'
 import type { LibrarySelectOption, LibrarySelectServer } from './types'
 
@@ -34,8 +35,9 @@ function labelOf (item: { name?: string; title?: string; id?: string | number })
 const groups = computed(() => props.servers.filter(server => server.libraries?.length))
 const total = computed(() => groups.value.reduce((count, server) => count + server.libraries.length, 0))
 
-function onChange (value: string) {
-  emit('update:model-value', value)
+function onChange (value: AcceptableValue) {
+  const libraryId = String(value)
+  emit('update:model-value', libraryId)
   for (const server of groups.value) {
     const library = server.libraries.find(item => String(item.id) === value)
     if (library) {

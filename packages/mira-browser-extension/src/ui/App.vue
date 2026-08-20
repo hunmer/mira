@@ -17,6 +17,7 @@ import UploadQueueButton from '@/ui/components/upload/UploadQueueButton.vue';
 import LibraryTreeView from '@/ui/components/library/LibraryTreeView.vue';
 import LibraryPicker from '@/ui/components/library/LibraryPicker.vue';
 import DialogHost from '@/ui/components/ui/DialogHost.vue';
+import BatchUploadHost from '@/ui/components/upload/BatchUploadHost.vue';
 import ImageHovercard from '@/ui/components/ui/ImageHovercard.vue';
 import ImageViewer from '@/ui/components/ui/ImageViewer.vue';
 import CustomUploadView from '@/ui/components/dragdrop/CustomUploadView.vue';
@@ -142,6 +143,8 @@ function onConnected() {
 
     <!-- 全局弹窗宿主(始终挂载,不受 booting/authenticated 状态影响) -->
     <DialogHost />
+    <!-- 批量上传对话框宿主(header 菜单/树右键「上传」共用,Teleport 到 body) -->
+    <BatchUploadHost />
     <!-- 嗅探缩略图悬浮预览卡 + 全屏大图查看器(始终挂载,Teleport 到 body) -->
     <ImageHovercard />
     <ImageViewer />

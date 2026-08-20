@@ -51,6 +51,8 @@ export default {
   header: {
     selectLibrary: 'Select library',
     screenshot: 'Screenshot',
+    upload: 'Upload',
+    selectFiles: 'Upload files…',
     themeAuto: '🌗 Auto',
     themeLight: '☀️ Light',
     themeDark: '🌙 Dark',

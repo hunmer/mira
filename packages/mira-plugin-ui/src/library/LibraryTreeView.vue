@@ -4,7 +4,7 @@
  * 自 mira-browser-extension 迁移:数据(CRUD)/弹窗/上传/文案全部由宿主注入。
  *
  * - 顶部:拖放/点击选择上传到素材库根目录(需传 upload)
- * - 工具栏:搜索切换(输入即过滤,自 SaveLocationForm 移入) + 新增(CreateNodeDialog)
+ * - 工具栏:搜索切换(输入即过滤,自 SaveLocationForm 移入) + 上传(upload.pick) + 新增(CreateNodeDialog)
  * - 中部:树(支持拖拽文件 → 上传到目标文件夹/标签;传 v-model:selected 受控启用选择)
  * - 右键菜单:上传到此处(upload.pick,由宿主弹上传对话框)、新建同级/子级(CreateNodeDialog)、
  *   编辑(services.updateNode)、删除(内置 AlertDialog 确认;folder 带「同时删除其中的文件」勾选)
@@ -12,7 +12,7 @@
  * 样式为 tailwind/shadcn 原子类,scoped CSS 仅搜索栏展开过渡(ui_rule.md 允许的例外)。
  */
 import { computed, ref, watch } from 'vue';
-import { Loader2, Plus, Search } from '@lucide/vue';
+import { Loader2, Plus, Search, Upload } from '@lucide/vue';
 import { useLibraryTreeData } from './useLibraryTreeData';
 import { useLibraryTreeActions } from './useLibraryTreeActions';
 import { createLibraryTreeT } from './i18n';
@@ -48,6 +48,8 @@ const props = defineProps<{
   dialog?: LibraryTreeDialog;
   /** 上传服务:提供后启用拖放/选择文件上传 */
   upload?: LibraryTreeUpload;
+  /** 顶部根目录上传 Dropzone;传 false 隐藏(树节点拖放/右键/工具栏上传不受影响),缺省显示 */
+  showDropzone?: boolean;
   /** 文案函数,缺省用内置中文 */
   t?: LibraryTreeT;
 }>();
@@ -456,6 +458,17 @@ function onUploadToNode() {
   props.upload?.pick?.(target);
 }
 
+/** 工具栏「上传」:同样交宿主 upload.pick;落点取当前选中节点(文件夹单选/标签勾选,未选=无预选) */
+function onToolbarUpload() {
+  if (props.mode === 'folder') {
+    const folder = selected.value?.[0];
+    props.upload?.pick?.(folder ? { folderId: folder.id } : undefined);
+    return;
+  }
+  const tags = (selected.value ?? []).map(n => n.title);
+  props.upload?.pick?.(tags.length ? { tags } : undefined);
+}
+
 /** 右键菜单项(ContextMenu 的 :deep 样式已移除,类由这里提供) */
 const ctxItem = 'flex w-full cursor-pointer items-center gap-1.5 rounded-[4px] border-none bg-transparent px-2.5 py-1.5 text-left font-inherit text-xs text-foreground hover:bg-background';
 </script>
@@ -463,7 +476,7 @@ const ctxItem = 'flex w-full cursor-pointer items-center gap-1.5 rounded-[4px] b
 <template>
   <div class="relative flex h-full flex-col" @dragover="onRootDragOver" @dragleave="onRootDragLeave" @drop="onRootDrop">
     <!-- 顶部:拖放/点击选择上传到素材库根目录 -->
-    <Dropzone v-if="upload" :hint="tt('upload.dropHint')" @drop="onRootDropFiles" />
+    <Dropzone v-if="upload && showDropzone !== false" :hint="tt('upload.dropHint')" @drop="onRootDropFiles" />
 
     <!-- 工具栏:搜索切换 + 新增(自 SaveLocationForm 移入) -->
     <div class="flex items-center justify-end gap-0.5 border-b border-border px-3 py-2">
@@ -475,6 +488,15 @@ const ctxItem = 'flex w-full cursor-pointer items-center gap-1.5 rounded-[4px] b
         @click="toggleSearch"
       >
         <Search class="size-4" />
+      </button>
+      <button
+        v-if="upload?.pick"
+        type="button"
+        class="inline-flex size-6 cursor-pointer items-center justify-center rounded-md border-none bg-transparent text-muted-foreground transition-[color,background-color,transform] duration-150 hover:bg-accent hover:text-foreground active:scale-90"
+        :title="tt('common.upload')"
+        @click="onToolbarUpload"
+      >
+        <Upload class="size-4" />
       </button>
       <button
         type="button"

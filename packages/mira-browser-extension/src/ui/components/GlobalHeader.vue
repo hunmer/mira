@@ -65,18 +65,19 @@ async function onLibChange(libraryId: string) {
         <path d="M6 18h.01" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
       </svg>
     </button>
-    <!-- 截图:图标按钮,点击展开截图菜单 -->
+    <!-- 上传/截图:图标按钮,点击展开菜单(选择文件上传 + 截图) -->
     <button
       class="icon-btn"
       :class="{ active: props.screenshotOpen }"
-      :title="t('header.screenshot')"
-      :aria-label="t('header.screenshot')"
+      :title="t('header.upload')"
+      :aria-label="t('header.upload')"
       @click="emit('toggle-screenshot')"
     >
-      <!-- 相机图标 -->
+      <!-- 上传图标 -->
       <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-        <path d="M9 4l-1.2 1.6a2 2 0 0 1-1.6.8H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1.2a2 2 0 0 1-1.6-.8L15 4H9z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
-        <circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="1.6"/>
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M17 8l-5-5-5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M12 3v12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </button>
     <div v-if="props.screenshotOpen" class="screenshot-menu"><slot name="screenshot-menu" /></div>

@@ -4,8 +4,9 @@
  * defineModel 受控,可独立使用也可嵌入对话框;文件名输入框 enter 触发 submit 事件
  * (宿主可借此直接确认保存/上传)。
  */
-import { Label } from '@/components/ui/label'
-import { Input } from '@/components/ui/input'
+// 注意:本组件可经 'mira-plugin-ui/src/...' 源码供宿主直接消费,必须用相对路径(宿主的 @ 别名指向其自身 src)
+import { Label } from './components/ui/label'
+import { Input } from './components/ui/input'
 
 const fileName = defineModel<string>('fileName', { default: '' })
 const url = defineModel<string>('url', { default: '' })

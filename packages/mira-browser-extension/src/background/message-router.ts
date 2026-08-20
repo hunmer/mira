@@ -99,6 +99,16 @@ export function createRouter(deps: RouterDeps): RequestHandler {
           }
           return client.tags().delete({ libraryId, id });
         });
+      case 'NODE_UPDATE':
+        // 右键「编辑」:改 title/description/color/icon(undefined 字段不序列化,不覆盖)
+        return withAuth(async (client: MiraClient) => {
+          const { kind, libraryId, id, title, description, color, icon } = req.payload;
+          const update = { libraryId, id, title, description, color, icon };
+          if (kind === 'folder') {
+            return client.folders().update(update);
+          }
+          return client.tags().update(update);
+        });
       case 'NODE_MOVE':
         // 拖拽排序跨层移动:改 parent_id(null 表示移到根,undefined 不会序列化导致不更新)
         return withAuth(async (client: MiraClient) => {

@@ -12,6 +12,7 @@ import { useSettings } from '@/ui/composables/useSettings';
 import { useUploadQueue } from '@/ui/composables/useUploadQueue';
 import { useBackground } from '@/ui/composables/useBackground';
 import { useDialog } from '@/ui/composables/useDialog';
+import { useBatchUpload } from '@/ui/composables/useBatchUpload';
 import { extLibraryServices } from '@/ui/composables/useLibraryTree';
 import { urlKind } from '@/shared/drag-data';
 import { runConcurrent } from '@/shared/concurrency';
@@ -60,6 +61,8 @@ async function uploadUrls(urls: string[], target?: { folderId?: number; tags?: s
 }
 
 // ---- 本地文件上传:folder 落点 → folderId;tag 落点 → tags(按标题) ----
+// pick:右键/工具栏「上传」打开批量上传对话框(BatchUploadHost 在 App.vue),带节点落点
+const batchUpload = useBatchUpload();
 const upload = {
   files(files: File[], target?: { folderId?: number; tags?: string[] }) {
     const libId = settings.value.libraryId;
@@ -69,6 +72,9 @@ const upload = {
   },
   urls(urls: string[], target?: { folderId?: number; tags?: string[] }) {
     void uploadUrls(urls, target);
+  },
+  pick(target?: { folderId?: number; tags?: string[] }) {
+    void batchUpload.open({ folderId: target?.folderId, tags: target?.tags });
   },
 };
 </script>
@@ -80,6 +86,7 @@ const upload = {
     :services="services"
     :dialog="dialog"
     :upload="upload"
+    :show-dropzone="false"
     :t="(key, params) => (t as any)(key, params)"
   />
 </template>
