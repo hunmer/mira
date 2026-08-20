@@ -255,11 +255,26 @@ export interface MediaBrowserFilters {
   metaDurMax?: number
   sort?: MediaBrowserSortField
   order?: 'asc' | 'desc'
+  /** 分页:每页条数(MediaBrowser 固定传 500) */
+  limit?: number
+  /** 分页:偏移量 */
+  offset?: number
+}
+
+/** 分页返回形态(提供 total 后 MediaBrowser 底部显示翻页条) */
+export interface MediaBrowserListResult {
+  items: MediaBrowserItem[]
+  /** 满足当前筛选条件的总条数 */
+  total: number
 }
 
 /** 数据服务:宿主实现(扩展走 background 桥,其他宿主可走 SDK) */
 export interface MediaBrowserServices {
-  listFiles(filters?: MediaBrowserFilters): Promise<MediaBrowserItem[]>
+  /**
+   * 文件列表:filters 含 limit/offset 分页参数;返回数组(不分页,隐藏翻页条)
+   * 或 { items, total } 分页对象(服务端 getFiles 的 { result, total })。
+   */
+  listFiles(filters?: MediaBrowserFilters): Promise<MediaBrowserItem[] | MediaBrowserListResult>
   /**
    * 文件夹扁平列表(提供后过滤栏启用文件夹筛选器);宿主闭包捕获 libraryId,
    * 返回值经 buildTree 组装为选择树。

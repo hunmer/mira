@@ -130,9 +130,9 @@ const services: MediaBrowserServices = {
         limit: 200,
       } as any,
     })
-    // 服务端返回分页对象 { result, limit, offset, total }；行为原始列（name/thumb 标志）
+    // 服务端返回分页对象 { result, limit, offset, total };行为原始列(name/thumb 标志)
     const rows: any[] = Array.isArray(ret) ? ret : (ret?.result ?? [])
-    return rows.map((r) => {
+    const items = rows.map((r) => {
       const name = r.title ?? r.name ?? ''
       return {
         id: r.id,
@@ -143,6 +143,8 @@ const services: MediaBrowserServices = {
         thumbnail_path: r.thumb ? 'generated' : undefined,
       }
     })
+    // 返回 { items, total } 分页对象,MediaBrowser 底部显示翻页条
+    return { items, total: Array.isArray(ret) ? items.length : (ret?.total ?? items.length) }
   },
   // img 无法带 header，token 拼 query；未生成缩略图的文件不给 URL，组件回退类型图标
   getThumbUrl(item) {

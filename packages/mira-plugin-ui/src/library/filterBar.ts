@@ -161,5 +161,7 @@ export function toApiFilters(filters: MediaBrowserFilters): Record<string, unkno
   if (filters.metaDurMax !== undefined) out.metadata_duration_max = filters.metaDurMax
   if (filters.sort) out.sort = filters.sort
   if (filters.order) out.order = filters.order
+  if (filters.limit !== undefined) out.limit = filters.limit
+  if (filters.offset !== undefined) out.offset = filters.offset
   return out
 }

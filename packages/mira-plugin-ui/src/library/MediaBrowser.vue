@@ -29,6 +29,14 @@ import {
 } from '@lucide/vue';
 // 注意:library 子入口以源码供宿主直接消费,这里必须用相对路径(宿主的 @ 别名指向其自身 src)
 import FilterBar from './FilterBar.vue';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '../components/ui/pagination';
 import { buildTree } from './tree';
 import {
   applySnapshotToRule,
@@ -99,30 +107,70 @@ const appliedFilterId = ref<string | null>(null);
 const folderTree = ref<LibraryTreeNode[]>([]);
 const tagTree = ref<LibraryTreeNode[]>([]);
 
-// ---- 数据加载 ----
+// ---- 数据加载(分页:一页最多 500;宿主返回 total 才显示底部翻页条) ----
+const PAGE_SIZE = 500;
+const page = ref(1);
+const total = ref<number | undefined>(undefined);
+const pageCount = computed(() =>
+  total.value !== undefined ? Math.max(1, Math.ceil(total.value / PAGE_SIZE)) : 1,
+);
+
+// 已见条目缓存(id -> 对象):跨页选择的 id 解析回对象,列表刷新不丢已选项
+const itemCache = new Map<string, MediaBrowserItem>();
+
 const items = ref<MediaBrowserItem[]>([]);
 const loading = ref(false);
 const error = ref('');
 
+// 请求版本号:筛选变化回第 1 页时丢弃仍在途的旧页请求,防止过期响应覆盖新结果
+let loadVersion = 0;
+
 async function load() {
   if (!props.libraryId) {
     items.value = [];
+    total.value = undefined;
     return;
   }
+  const version = ++loadVersion;
   loading.value = true;
   error.value = '';
   try {
     const filters = rulesToFilters(filterRules.value, {
       sort: sortField.value,
       order: sortOrder.value,
+      limit: PAGE_SIZE,
+      offset: (page.value - 1) * PAGE_SIZE,
     });
-    items.value = await props.services.listFiles(filters);
+    const ret = await props.services.listFiles(filters);
+    if (version !== loadVersion) return;
+    if (Array.isArray(ret)) {
+      items.value = ret;
+      total.value = undefined;
+    } else {
+      items.value = ret.items;
+      total.value = ret.total;
+    }
+    items.value.forEach(i => itemCache.set(String(i.id), i));
   } catch (e) {
+    if (version !== loadVersion) return;
     error.value = String((e as Error)?.message || e);
     items.value = [];
   } finally {
-    loading.value = false;
+    if (version === loadVersion) loading.value = false;
   }
+}
+
+/** 筛选/排序变化:回到第 1 页拉取(load 带版本守卫,重复调用安全) */
+function resetPage() {
+  page.value = 1;
+  void load();
+}
+
+/** 翻页:更新页码后按新 offset 拉取 */
+function turnPage(p: number) {
+  if (p === page.value) return;
+  page.value = p;
+  void load();
 }
 
 async function loadTrees() {
@@ -150,21 +198,21 @@ function onFilterChange(filter: FilterRule) {
   appliedFilterId.value = null;
   if (filter.id === 'title') {
     clearTimeout(titleTimer);
-    titleTimer = setTimeout(() => void load(), 300);
+    titleTimer = setTimeout(() => resetPage(), 300);
   } else {
-    void load();
+    resetPage();
   }
 }
 
 function onFilterClear() {
   appliedFilterId.value = null;
-  void load();
+  resetPage();
 }
 
 function onSortChange(field: string, order: string) {
   sortField.value = field as typeof sortField.value;
   sortOrder.value = order as typeof sortOrder.value;
-  void load();
+  resetPage();
 }
 
 /** 应用已保存的过滤器:整套回填规则显示后按新条件重载 */
@@ -172,20 +220,21 @@ function onApplySavedFilter(filterId: string, rules: FilterRule[]) {
   const byId = new Map(rules.map(rule => [rule.id, rule]));
   filterRules.value.forEach(rule => applySnapshotToRule(rule, byId.get(rule.id)));
   appliedFilterId.value = filterId;
-  void load();
+  resetPage();
 }
 
 /** 清除全部筛选条件(重置规则显示后重载) */
 function onClearAllFilters() {
   filterRules.value.forEach(rule => resetFilterRule(rule));
   appliedFilterId.value = null;
-  void load();
+  resetPage();
 }
 
 watch(
   () => props.libraryId,
   () => {
-    void load();
+    itemCache.clear();
+    resetPage();
     void loadTrees();
   },
 );
@@ -204,13 +253,12 @@ const selectionEnabled = computed(() => selected.value !== undefined);
 const selectionBoxRef = ref<InstanceType<typeof SelectionBox> | null>(null);
 const selectedIds = ref<string[]>([]);
 
-// 内部选择集 -> 宿主 selected(按当前 items 解析回对象,列表刷新后自动剔除失效项)。
+// 内部选择集 -> 宿主 selected(按 itemCache 解析回对象,支持跨页保持已选项)。
 // 两个方向的 watch 都做内容比较:赋值必然产生新数组引用,若不比较会互相触发无限循环
 // (Maximum recursive updates exceeded)。
 watch(selectedIds, (ids) => {
   if (!selectionEnabled.value) return;
-  const byId = new Map(items.value.map(i => [String(i.id), i]));
-  const next = ids.map(id => byId.get(id)).filter((i): i is MediaBrowserItem => !!i);
+  const next = ids.map(id => itemCache.get(id)).filter((i): i is MediaBrowserItem => !!i);
   if (next.map(i => String(i.id)).join() === (selected.value ?? []).map(i => String(i.id)).join()) return;
   selected.value = next;
 });
@@ -239,20 +287,25 @@ function clearSelection() {
   selectedIds.value = [];
 }
 
-// ---- 全选(FilterBar 的全选开关;启用选择且列表非空时显示) ----
+// ---- 全选(FilterBar 的全选开关;按"当前页全部选中"判定,翻页选择互不覆盖) ----
 const isAllSelected = computed(
-  () => selectionEnabled.value && items.value.length > 0 && selectedIds.value.length === items.value.length,
+  () => selectionEnabled.value && items.value.length > 0
+    && items.value.every(i => selectedIds.value.includes(String(i.id))),
 );
 
+/** 当前页全选/取消(增删当前页 id,保留其他页的已选) */
 function toggleSelectAll() {
   if (!selectionEnabled.value) return;
-  selectedIds.value = isAllSelected.value ? [] : items.value.map(i => String(i.id));
+  const ids = items.value.map(i => String(i.id));
+  const set = new Set(selectedIds.value);
+  if (ids.every(id => set.has(id))) ids.forEach(id => set.delete(id));
+  else ids.forEach(id => set.add(id));
+  selectedIds.value = [...set];
 }
 
-/** SelectionBox 的 Delete 快捷键:按 id 映射回 items 抛给宿主 */
+/** SelectionBox 的 Delete 快捷键:按 id 从缓存解析回对象抛给宿主 */
 function onDeleteSelection(ids: string[]) {
-  const byId = new Map(items.value.map(i => [String(i.id), i]));
-  const selected = ids.map(id => byId.get(id)).filter((i): i is MediaBrowserItem => !!i);
+  const selected = ids.map(id => itemCache.get(id)).filter((i): i is MediaBrowserItem => !!i);
   if (selected.length) emit('deleteSelection', selected);
 }
 
@@ -519,5 +572,33 @@ function getMeta(item: MediaBrowserItem): MasonryItemMeta {
         </template>
       </Masonry>
     </SelectionBox>
+
+    <!-- 底部翻页(宿主返回 total 且不止一页时显示;一页最多 500 条) -->
+    <div
+      v-if="total !== undefined && pageCount > 1"
+      class="flex shrink-0 items-center justify-center border-t border-border px-3 py-2"
+    >
+      <Pagination
+        :page="page"
+        :total="total"
+        :items-per-page="PAGE_SIZE"
+        :sibling-count="1"
+        @update:page="turnPage"
+      >
+        <PaginationContent v-slot="{ items: pages }">
+          <PaginationItem>
+            <PaginationPrevious>{{ tt('media.prevPage') }}</PaginationPrevious>
+          </PaginationItem>
+          <PaginationItem v-for="(item, index) in pages" :key="index">
+            <PaginationLink v-if="item.type === 'page'" :value="item.value" :is-active="item.value === page">
+              {{ item.value }}
+            </PaginationLink>
+          </PaginationItem>
+          <PaginationItem>
+            <PaginationNext>{{ tt('media.nextPage') }}</PaginationNext>
+          </PaginationItem>
+        </PaginationContent>
+      </Pagination>
+    </div>
   </div>
 </template>

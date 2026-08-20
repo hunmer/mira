@@ -355,7 +355,7 @@ function gradientThumb (i: number, w: number, h: number) {
 }
 
 const mockAspects = ['1:1', '4:3', '3:4', '16:9', '9:16', '3:2', '2:3']
-const mockFiles = ref<MediaBrowserItem[]>(Array.from({ length: 24 }, (_, i) => {
+const mockFiles = ref<MediaBrowserItem[]>(Array.from({ length: 1200 }, (_, i) => {
   const aspect = mockAspects[i % mockAspects.length]
   const ext = ['png', 'jpg', 'mp4', 'mp3', 'pdf'][i % 5]
   return {
@@ -378,16 +378,13 @@ const mediaServices: MediaBrowserServices = {
     if (connected.value && client) {
       const ret: any = await client.files().getFiles({
         libraryId: currentLibraryId.value,
-        // 全量筛选字段转后端 snake_case(folder/tags/url/size_min/metadata_* 等)
-        filters: {
-          ...toApiFilters(filters ?? {}),
-          limit: 200,
-        } as any,
+        // 全量筛选字段转后端 snake_case(folder/tags/url/size_min/metadata_* 等,含 limit/offset 分页)
+        filters: toApiFilters(filters ?? {}) as any,
       })
       // 服务端实际返回分页对象 { result, limit, offset, total }(SDK 类型声明为数组,与实际不符)
       const rows: any[] = Array.isArray(ret) ? ret : (ret?.result ?? [])
       // 数据库行为原始列:name 含扩展名,thumb 是 0/1 的"已生成缩略图"标志
-      return rows.map(r => {
+      const items = rows.map(r => {
         const name = r.title ?? r.name ?? ''
         const extension = name.includes('.') ? name.split('.').pop()!.toLowerCase() : ''
         return {
@@ -399,6 +396,8 @@ const mediaServices: MediaBrowserServices = {
           thumbnail_path: r.thumb ? 'generated' : undefined,
         }
       })
+      // 返回 { items, total } 分页对象,MediaBrowser 底部显示翻页条
+      return { items, total: Array.isArray(ret) ? items.length : (ret?.total ?? items.length) }
     }
     let list = [...mockFiles.value]
     if (filters?.title) list = list.filter(f => f.title.toLowerCase().includes(filters.title!.toLowerCase()))
@@ -410,7 +409,10 @@ const mediaServices: MediaBrowserServices = {
       const vb = key === 'name' ? b.title : (b[key as 'size' | 'imported_at'] ?? 0)
       return (va > vb ? 1 : -1) * dir
     })
-    return list
+    // mock 也走分页对象形态(本地切片),便于演示翻页条
+    const offset = filters?.offset ?? 0
+    const limit = filters?.limit ?? list.length
+    return { items: list.slice(offset, offset + limit), total: list.length }
   },
   // 真实缩略图走 /api/files/thumb(img 无法带 header,token 拼 query);未生成缩略图的文件不给 URL,组件回退类型图标
   getThumbUrl (item) {

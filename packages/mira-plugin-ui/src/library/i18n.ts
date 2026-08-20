@@ -73,6 +73,8 @@ const zh = {
   'media.emptyTitle': '暂无文件',
   'media.emptyHint': '调整筛选条件或先上传文件',
   'media.noMatch': '未找到匹配的文件',
+  'media.prevPage': '上一页',
+  'media.nextPage': '下一页',
   /* FilterBar(过滤栏,文案对齐桌面端 business.filterBar / composables.useFilters) */
   'filterBar.folders': '文件夹',
   'filterBar.tags': '标签',

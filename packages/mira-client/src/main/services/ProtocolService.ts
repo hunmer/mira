@@ -132,7 +132,8 @@ export class ProtocolService {
     this.cacheDir = path.join(app.getPath('sessionData'), 'mira-library-thumbnails')
     void fs.mkdir(this.cacheDir, { recursive: true })
     protocol.handle(LIBRARY_THUMB_SCHEME, request => this.handleLibraryResource(request, true))
-    protocol.handle(LIBRARY_FILE_SCHEME, request => this.handleLibraryResource(request, false))
+    // 本地缩略图同样需要按素材库缓存，避免每次从原始磁盘路径读取。
+    protocol.handle(LIBRARY_FILE_SCHEME, request => this.handleLibraryResource(request, true))
     protocol.registerStringProtocol('mira', (request: any, callback: (response: string) => void) => {
       this.parseAndHandleUrl(request.url)
       callback('')
@@ -147,12 +148,12 @@ export class ProtocolService {
       if (!source) return new Response('Missing source URL', { status: 400 })
       const key = createHash('sha256').update(source).digest('hex')
       const libraryCacheDir = path.join(this.cacheDir, libraryId)
-      const cachedPath = path.join(libraryCacheDir, `${key}.bin`)
+      const fileName = this.getCacheFileName(source, key)
+      const cachedPath = path.join(libraryCacheDir, fileName)
       let data: Buffer
-      let contentType = 'application/octet-stream'
+      let contentType = this.getContentType(fileName)
       try {
         data = await fs.readFile(cachedPath)
-        contentType = (await fs.readFile(`${cachedPath}.mime`, 'utf8').catch(() => '')) || contentType
       } catch {
         if (source.startsWith('file://')) {
           data = await fs.readFile(fileURLToPath(source))
@@ -161,12 +162,10 @@ export class ProtocolService {
           if (!response.ok) return new Response(`Upstream request failed: ${response.status}`, { status: response.status })
           contentType = response.headers.get('content-type') || contentType
           data = Buffer.from(await response.arrayBuffer())
-          logger.debug('ProtocolService', 'Library resource cached', { libraryId, source })
         }
         if (cache) {
           await fs.mkdir(libraryCacheDir, { recursive: true })
           await fs.writeFile(cachedPath, data)
-          await fs.writeFile(`${cachedPath}.mime`, contentType)
         }
       }
       return new Response(data, { status: 200, headers: { 'Content-Type': contentType, 'Cache-Control': 'public, max-age=31536000' } })
@@ -174,6 +173,36 @@ export class ProtocolService {
       logger.warn('ProtocolService', 'Library resource failed', { error: error instanceof Error ? error.message : String(error) })
       return new Response('Resource unavailable', { status: 404 })
     }
+  }
+
+  private getCacheFileName(source: string, fallback: string): string {
+    try {
+      const rawName = source.startsWith('file://')
+        ? path.basename(fileURLToPath(source))
+        : path.posix.basename(new URL(source).pathname)
+      const name = decodeURIComponent(rawName)
+        .replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_')
+        .trim()
+        .replace(/[. ]+$/g, '')
+      return name || fallback
+    } catch {
+      return fallback
+    }
+  }
+
+  private getContentType(fileName: string): string {
+    const extension = path.extname(fileName).toLowerCase()
+    const types: Record<string, string> = {
+      '.avif': 'image/avif',
+      '.bmp': 'image/bmp',
+      '.gif': 'image/gif',
+      '.jpeg': 'image/jpeg',
+      '.jpg': 'image/jpeg',
+      '.png': 'image/png',
+      '.svg': 'image/svg+xml',
+      '.webp': 'image/webp',
+    }
+    return types[extension] || 'application/octet-stream'
   }
 
   public async clearLibraryCache(libraryId?: string): Promise<void> {

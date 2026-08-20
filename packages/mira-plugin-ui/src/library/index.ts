@@ -46,6 +46,7 @@ export type {
   MediaBrowserItem,
   MediaBrowserFilters,
   MediaBrowserServices,
+  MediaBrowserListResult,
   MediaBrowserSortField,
   FilterRule,
   SavedFilter,
