@@ -184,6 +184,8 @@ export default {
     add: 'Add server',
     edit: 'Edit',
     delete: 'Delete',
+    deleteTitle: 'Delete server',
+    deleteFailed: 'Delete failed: {error}',
     name: 'Name',
     namePlaceholder: 'Server name (e.g. Local dev)',
     serverURL: 'Server URL',

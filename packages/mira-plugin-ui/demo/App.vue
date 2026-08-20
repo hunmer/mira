@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { FileText, Folder, Loader2, LogOut, Moon, Server, Sun } from '@lucide/vue'
+import { Loader2, LogOut, Moon, Server, Sun } from '@lucide/vue'
 import { MiraClient } from 'mira-app-core/shared/sdk'
 import { BatchUploadDialog, Progress, SaveLocationDialog, type BatchUploadFileService, type SaveLocation } from '@/index'
-import { Dropzone, LibrarySelect, LibraryTreeView, MediaBrowser } from '@/library'
-import type { LibraryFlatItem, LibrarySelectServer, LibraryTreeDialog, LibraryTreeServices, LibraryTreeNode, MediaBrowserFilters, MediaBrowserItem, MediaBrowserServices } from '@/library'
+import { Dropzone, LibrarySelect, LibraryTreeView, MediaBrowser, ServerManagerView } from '@/library'
+import type { LibraryFlatItem, LibrarySelectServer, LibraryTreeDialog, LibraryTreeServices, LibraryTreeNode, ManagedServer, MediaBrowserFilters, MediaBrowserItem, MediaBrowserServices, ServerManagerServices } from '@/library'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -29,11 +29,8 @@ const loadError = ref('')
 const libraries = ref<any[]>([])
 const folders = ref<any[]>([])
 const tags = ref<any[]>([])
-const tiptapCount = ref(0)
 const currentLibraryId = ref('')
 let client: MiraClient | null = null
-
-const currentLibrary = computed(() => libraries.value.find(item => String(item.id) === currentLibraryId.value))
 
 onMounted(() => {
   const saved = JSON.parse(localStorage.getItem(STORE_KEY) || '{}')
@@ -79,8 +76,6 @@ async function loadLibraryData () {
   if (!client || !currentLibraryId.value) return
   folders.value = (await client.folders().getAll(currentLibraryId.value)) as any[]
   tags.value = (await client.tags().getAll(currentLibraryId.value).catch(() => [])) as any[]
-  const docs = await client.files().getFilesByExtension(currentLibraryId.value, 'tiptap').catch(() => [])
-  tiptapCount.value = (docs as any[] | undefined)?.length || 0
 }
 
 function logout () {
@@ -147,6 +142,36 @@ const handleBatchUploadFile: BatchUploadFileService = async (item, onProgress) =
 
 function handleBatchUploaded ({ total, failed }: { total: number; failed: number }) {
   batchUploadResult.value = `队列结束:共 ${total} 个${failed ? `,失败 ${failed} 个` : ',全部成功'}`
+}
+
+/* ---------- ServerManagerView 服务器管理演示(内存 mock CRUD) ---------- */
+const showServerManager = ref(false)
+const demoServers = ref<ManagedServer[]>([
+  { id: 's1', name: '本机开发', serverURL: 'http://localhost:8081', username: 'admin', password: '' },
+  { id: 's2', name: '办公服务器', serverURL: 'http://192.168.1.10:8081', username: 'admin', password: '' },
+])
+const demoActiveId = ref('s1')
+
+// mock 服务:列表存内存;test 模拟 600ms 延迟(localhost 视为可达);activate 直接成功
+const serverServices: ServerManagerServices = {
+  async add (input) {
+    demoServers.value = [...demoServers.value, { id: `s${Date.now()}`, ...input }]
+  },
+  async edit (id, patch) {
+    demoServers.value = demoServers.value.map(s => (s.id === id ? { ...s, ...patch } : s))
+  },
+  async remove (id) {
+    demoServers.value = demoServers.value.filter(s => s.id !== id)
+    if (demoActiveId.value === id) demoActiveId.value = demoServers.value[0]?.id ?? ''
+  },
+  async test (serverURL) {
+    await new Promise(resolve => setTimeout(resolve, 600))
+    return { ok: /localhost|127\.0\.0\.1/.test(serverURL) }
+  },
+  async activate (id) {
+    demoActiveId.value = id
+    return true
+  },
 }
 
 /* ---------- LibrarySelect 服务器分组选择(Mira Server 卡片内) ---------- */
@@ -526,6 +551,27 @@ async function startUpload () {
           <p v-if="!connected" class="text-muted-foreground mt-auto text-xs">连接 server 后显示实时统计，未连接时对话框使用 mock 数据</p>
         </aside>
       </div>
+
+      <!-- ServerManagerView 演示卡片:服务器配置 CRUD(mock 数据,覆盖层演示) -->
+      <section class="bg-card text-card-foreground relative flex min-h-[26rem] flex-col gap-4 rounded-xl border p-6 shadow-sm">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex flex-col gap-1">
+            <h2 class="text-base font-semibold">ServerManagerView 服务器管理</h2>
+            <p class="text-muted-foreground text-sm">内存 mock 数据：列表 / 新增 / 编辑 / 删除 / 测试连接 / 切换激活</p>
+          </div>
+          <Button class="w-fit shrink-0" :disabled="showServerManager" @click="showServerManager = true">管理服务器…</Button>
+        </div>
+        <p class="text-muted-foreground text-xs">
+          当前激活：{{ demoServers.find(s => s.id === demoActiveId)?.name || '无' }}（共 {{ demoServers.length }} 条）
+        </p>
+        <ServerManagerView
+          v-if="showServerManager"
+          :servers="demoServers"
+          :active-server-id="demoActiveId"
+          :services="serverServices"
+          @close="showServerManager = false"
+        />
+      </section>
 
       <!-- 组件演示卡片 -->
       <section class="bg-card text-card-foreground flex flex-col gap-4 rounded-xl border p-6 shadow-sm">

@@ -11,9 +11,11 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { Theme } from '@/shared/types';
 import UploadQueueButton from '@/ui/components/upload/UploadQueueButton.vue';
+import { LibrarySelect } from 'mira-plugin-ui/library';
+import type { LibrarySelectServer } from 'mira-plugin-ui/library';
 
 const { t } = useI18n();
-const { status, libraries } = useConnection();
+const { status, libraries, activeServer } = useConnection();
 const { settings, update } = useSettings();
 const props = defineProps<{ screenshotOpen?: boolean }>();
 const emit = defineEmits<{ 'toggle-screenshot': [] }>();
@@ -22,8 +24,14 @@ const statusColor = computed(() => ({
   idle: '#71717a', connecting: '#eab308', connected: '#4ade80', failed: '#ef4444',
 }[status.value]));
 
-async function onLibChange(e: Event) {
-  const libraryId = (e.target as HTMLSelectElement).value;
+/** LibrarySelect 按服务器分组:header 仅展示当前激活服务器的库列表 */
+const libServers = computed<LibrarySelectServer[]>(() => [{
+  id: activeServer.value?.id ?? '',
+  name: activeServer.value?.name || activeServer.value?.serverURL || '',
+  libraries: libraries.value,
+}]);
+
+async function onLibChange(libraryId: string) {
   await update({ libraryId });
 }
 
@@ -37,10 +45,14 @@ async function cycleTheme() {
 <template>
   <div class="header">
     <span class="dot" :style="{ background: statusColor }" :title="status" />
-    <select class="lib" :value="settings.libraryId" @change="onLibChange">
-      <option value="" disabled>{{ t('header.selectLibrary') }}</option>
-      <option v-for="lib in libraries" :key="lib.id" :value="lib.id">{{ lib.name }}</option>
-    </select>
+    <div class="lib-wrap">
+      <LibrarySelect
+        :servers="libServers"
+        :model-value="settings.libraryId"
+        :placeholder="t('header.selectLibrary')"
+        @update:model-value="onLibChange"
+      />
+    </div>
     <!-- 截图:图标按钮,点击展开截图菜单 -->
     <button
       class="icon-btn"
@@ -86,8 +98,9 @@ async function cycleTheme() {
 <style scoped>
 .header { position: relative; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); }
 .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.lib { flex: 1; min-width: 0; background: transparent; color: var(--fg); border: none; font: inherit; }
-.lib option { background: var(--bg-elev); }
+.lib-wrap { flex: 1; min-width: 0; }
+/* 压低 trigger 高度以贴合 header 紧凑布局 */
+.lib-wrap :deep([data-slot='select-trigger']) { height: 28px; }
 /* 图标按钮(截图 / 主题)统一样式 */
 .icon-btn {
   flex-shrink: 0;

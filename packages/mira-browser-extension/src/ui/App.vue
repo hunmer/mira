@@ -15,7 +15,6 @@ import SnifferView from '@/ui/components/sniffer/SnifferView.vue';
 import SettingsOverlay from '@/ui/components/settings/SettingsOverlay.vue';
 import LibraryTreeView from '@/ui/components/library/LibraryTreeView.vue';
 import LibraryPicker from '@/ui/components/library/LibraryPicker.vue';
-import ServerBar from '@/ui/components/server/ServerBar.vue';
 import ServerManagerView from '@/ui/components/server/ServerManagerView.vue';
 import DialogHost from '@/ui/components/ui/DialogHost.vue';
 import ImageHovercard from '@/ui/components/ui/ImageHovercard.vue';
@@ -25,7 +24,7 @@ import type { CustomUploadSession } from '@/shared/messages';
 
 const { t } = useI18n();
 const props = defineProps<{ containerMode: 'popup' | 'sidePanel' }>();
-const { status, verify, libraries, switchServer, startHealthCheck, stopHealthCheck } = useConnection();
+const { status, verify, libraries, startHealthCheck, stopHealthCheck } = useConnection();
 const { settings, load, update } = useSettings();
 const bg = useBackground();
 const activeTab = ref('folders');
@@ -41,7 +40,7 @@ const booting = ref(true);
 // 避免切换服务器(status→connecting)或心跳失败(status→failed)时登录界面一闪而过。
 const authenticated = computed(() => status.value !== 'idle');
 
-// 未选素材库时:整页展示卡片选择网格(不显示 header / tabs / 底部服务器栏)
+// 未选素材库时:整页展示卡片选择网格(不显示 header / tabs / 底部栏)
 const needsLibrary = computed(() => !settings.value.libraryId);
 
 // 主题:settings.theme 变化或系统主题(auto 时)变化 → 应用
@@ -122,12 +121,8 @@ function onConnected() {
         <SnifferView v-else-if="activeTab === 'sniffer'" />
       </div>
 
-      <!-- 底部栏:服务器列表 + 设置按钮 -->
+      <!-- 底部栏:设置按钮 -->
       <div class="bottom-bar">
-        <ServerBar
-          @manage="showServerManager = true"
-          @switch="switchServer"
-        />
         <button
           class="settings-btn"
           :title="t('tab.settings')"
@@ -161,16 +156,11 @@ function onConnected() {
 .content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
 .booting { display: flex; align-items: center; justify-content: center; height: 100vh; color: var(--muted); }
 
-/* 底部栏:服务器栏 + 设置按钮 */
+/* 底部栏:设置按钮 */
 .bottom-bar {
   display: flex;
   align-items: stretch;
   border-top: 1px solid var(--border);
-}
-.bottom-bar :deep(.bar) {
-  /* ServerBar 自带 border-bottom,作为底部栏时换成无边框融入 */
-  border-bottom: none;
-  flex: 1;
 }
 .settings-btn {
   flex-shrink: 0;

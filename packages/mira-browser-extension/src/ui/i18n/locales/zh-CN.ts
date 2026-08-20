@@ -184,6 +184,8 @@ export default {
     add: '新增服务器',
     edit: '编辑',
     delete: '删除',
+    deleteTitle: '删除服务器',
+    deleteFailed: '删除失败:{error}',
     name: '名称',
     namePlaceholder: '服务器名称(如:本机开发)',
     serverURL: '服务器地址',

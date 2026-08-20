@@ -67,6 +67,28 @@ export interface LibrarySelectServer {
   libraries: LibrarySelectOption[]
 }
 
+/* ============ 服务器管理(ServerManagerView) ============ */
+
+/** 受管服务器配置(扩展 ServerConfig 的结构兼容形态) */
+export interface ManagedServer {
+  id: string
+  name: string
+  serverURL: string
+  username: string
+  password: string
+}
+
+/** 服务器管理服务:宿主实现(扩展走 background 桥,其他宿主可走本地存储) */
+export interface ServerManagerServices {
+  add(input: Omit<ManagedServer, 'id'>): Promise<unknown>
+  edit(id: string, patch: Partial<Omit<ManagedServer, 'id'>>): Promise<unknown>
+  remove(id: string): Promise<unknown>
+  /** 测试连接;ok=false 时 error 带原因 */
+  test(serverURL: string, username: string, password: string): Promise<{ ok: boolean; error?: string }>
+  /** 激活(切换)服务器;返回是否成功,成功后组件自动 close */
+  activate(id: string): Promise<boolean>
+}
+
 /** 数据服务:宿主实现(扩展走 background 桥,其他宿主可走 SDK) */
 export interface LibraryTreeServices {
   listFolders(libraryId: string): Promise<LibraryFlatItem[] | null>
