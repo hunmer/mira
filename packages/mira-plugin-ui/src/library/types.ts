@@ -144,6 +144,8 @@ export interface LibraryTreeUpload {
   files(files: File[], target?: LibraryTreeUploadTarget): void
   /** 链接落点;target 缺省表示素材库根目录 */
   urls(urls: string[], target?: LibraryTreeUploadTarget): void
+  /** 打开宿主的上传对话框(如 BatchUploadDialog);提供后右键菜单显示「上传」入口,target 为右键节点落点 */
+  pick?(target?: LibraryTreeUploadTarget): void
 }
 
 /** 文案函数:vue-i18n 风格(key + {n} 命名插值),缺省用内置中文 */

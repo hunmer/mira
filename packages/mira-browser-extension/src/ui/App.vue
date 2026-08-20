@@ -13,9 +13,9 @@ import TabBar from '@/ui/components/TabBar.vue';
 import ScreenshotView from '@/ui/components/screenshot/ScreenshotView.vue';
 import SnifferView from '@/ui/components/sniffer/SnifferView.vue';
 import SettingsOverlay from '@/ui/components/settings/SettingsOverlay.vue';
+import UploadQueueButton from '@/ui/components/upload/UploadQueueButton.vue';
 import LibraryTreeView from '@/ui/components/library/LibraryTreeView.vue';
 import LibraryPicker from '@/ui/components/library/LibraryPicker.vue';
-import ServerManagerView from '@/ui/components/server/ServerManagerView.vue';
 import DialogHost from '@/ui/components/ui/DialogHost.vue';
 import ImageHovercard from '@/ui/components/ui/ImageHovercard.vue';
 import ImageViewer from '@/ui/components/ui/ImageViewer.vue';
@@ -29,7 +29,6 @@ const { settings, load, update } = useSettings();
 const bg = useBackground();
 const activeTab = ref('folders');
 const screenshotOpen = ref(false);
-const showServerManager = ref(false);
 const showSettings = ref(false);
 const customUploadSession = ref<CustomUploadSession | null>(null);
 let offCustomUploadSession: (() => void) | null = null;
@@ -121,8 +120,9 @@ function onConnected() {
         <SnifferView v-else-if="activeTab === 'sniffer'" />
       </div>
 
-      <!-- 底部栏:设置按钮 -->
+      <!-- 底部栏:右下角上传队列 + 设置 -->
       <div class="bottom-bar">
+        <UploadQueueButton />
         <button
           class="settings-btn"
           :title="t('tab.settings')"
@@ -136,8 +136,6 @@ function onConnected() {
         </button>
       </div>
 
-      <!-- 服务器管理全屏覆盖 -->
-      <ServerManagerView v-if="showServerManager" @close="showServerManager = false" />
       <!-- 设置全屏覆盖 -->
       <SettingsOverlay v-if="showSettings" @close="showSettings = false" />
     </template>
@@ -156,10 +154,13 @@ function onConnected() {
 .content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
 .booting { display: flex; align-items: center; justify-content: center; height: 100vh; color: var(--muted); }
 
-/* 底部栏:设置按钮 */
+/* 底部栏:右下角按钮组(上传队列 + 设置) */
 .bottom-bar {
   display: flex;
-  align-items: stretch;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 6px 12px;
   border-top: 1px solid var(--border);
 }
 .settings-btn {
@@ -167,13 +168,14 @@ function onConnected() {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
+  width: 26px;
+  height: 22px;
   background: transparent;
-  border: none;
-  border-left: 1px solid var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   color: var(--muted);
   cursor: pointer;
-  transition: color .12s, background .12s;
+  transition: color .12s, border-color .12s;
 }
-.settings-btn:hover { color: var(--fg); background: var(--bg-elev); }
+.settings-btn:hover { color: var(--fg); border-color: var(--muted); }
 </style>

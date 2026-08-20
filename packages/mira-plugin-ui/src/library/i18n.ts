@@ -26,6 +26,7 @@ const zh = {
   'library.noMatch': '未找到匹配的{type}',
   'tree.createSibling': '新建同级',
   'tree.createChild': '新建子{type}',
+  'tree.upload': '上传到此处',
   'tree.edit': '编辑',
   'tree.editTitle': '编辑{type}',
   'tree.editingNode': '正在编辑「{name}」',

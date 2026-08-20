@@ -19,6 +19,8 @@ withDefaults(defineProps<{
   tags?: TreeItem[]
   initialLibraryId?: string
   initialFolderId?: string
+  /** 初始预选标签(按标题匹配);透传给表单 */
+  initialTagTitles?: string[]
   /** 上传服务:透传给表单,传入则组件内并发执行并展示进度 */
   uploadFile?: BatchUploadFileService
   concurrency?: number
@@ -34,6 +36,7 @@ withDefaults(defineProps<{
   tags: () => [],
   initialLibraryId: '',
   initialFolderId: '',
+  initialTagTitles: () => [],
   concurrency: 3,
   maxFiles: 200,
   accept: '*',
@@ -68,6 +71,7 @@ function close () { emit('update:open', false) }
         :tags="tags"
         :initial-library-id="initialLibraryId"
         :initial-folder-id="initialFolderId"
+        :initial-tag-titles="initialTagTitles"
         :upload-file="uploadFile"
         :concurrency="concurrency"
         :max-files="maxFiles"

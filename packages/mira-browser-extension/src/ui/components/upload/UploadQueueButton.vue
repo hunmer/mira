@@ -1,9 +1,9 @@
 <script setup lang="ts">
 /**
- * Header 右上角的上传队列入口。
+ * 底部右下角的上传队列入口。
  *
  * - 图标 + badge(进行中任务数);有失败任务时图标变红
- * - 点击 → 弹出 popover 展示队列(进度/状态/取消/重试)
+ * - 点击 → 向上弹出 popover 展示队列(进度/状态/取消/重试)
  * - 队列来自 useUploadQueue(模块级单例,文件夹/标签页的上传共享同一队列)
  */
 import { computed, onMounted, ref } from 'vue';
@@ -98,7 +98,7 @@ function toggle() {
 
 .popover {
   position: absolute;
-  top: calc(100% + 6px);
+  bottom: calc(100% + 6px);
   right: 0;
   z-index: 20;
   width: 300px;

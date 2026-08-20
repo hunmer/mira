@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { Loader2, LogOut, Moon, Server, Sun } from '@lucide/vue'
-import { MiraClient } from 'mira-app-core/shared/sdk'
+import { MiraClient, type HealthResponse } from 'mira-app-core/shared/sdk'
 import { BatchUploadDialog, Progress, SaveLocationDialog, type BatchUploadFileService, type SaveLocation } from '@/index'
-import { Dropzone, LibrarySelect, LibraryTreeView, MediaBrowser, ServerManagerView } from '@/library'
-import type { LibraryFlatItem, LibrarySelectServer, LibraryTreeDialog, LibraryTreeServices, LibraryTreeNode, ManagedServer, MediaBrowserFilters, MediaBrowserItem, MediaBrowserServices, ServerManagerServices } from '@/library'
+import { Dropzone, LibrarySelect, LibraryTreeView, MediaBrowser, ServerManagerDialog } from '@/library'
+import type { LibraryFlatItem, LibrarySelectServer, LibraryTreeDialog, LibraryTreeServices, LibraryTreeNode, LibraryTreeUpload, ManagedServer, MediaBrowserFilters, MediaBrowserItem, MediaBrowserServices, ServerManagerServices } from '@/library'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -25,6 +25,7 @@ const token = ref('')
 const connected = ref(false)
 const connecting = ref(false)
 const loadError = ref('')
+const health = ref<HealthResponse | null>(null)
 
 const libraries = ref<any[]>([])
 const folders = ref<any[]>([])
@@ -57,6 +58,7 @@ async function connect (existingToken?: string) {
     await loadLibraries()
     connected.value = true
     persist()
+    void loadHealth()
   } catch (error) {
     loadError.value = error?.response?.data?.message || error?.message || String(error)
     connected.value = false
@@ -78,9 +80,34 @@ async function loadLibraryData () {
   tags.value = (await client.tags().getAll(currentLibraryId.value).catch(() => [])) as any[]
 }
 
+/** 连接成功后拉取 /health 展示服务器信息 */
+async function loadHealth () {
+  if (!client) return
+  try {
+    health.value = await client.system().getHealth()
+  } catch {
+    health.value = null
+  }
+}
+
+/** 运行时长格式化:秒 → x 天 x 小时 x 分 x 秒 */
+function formatUptime (seconds: number): string {
+  const days = Math.floor(seconds / 86400)
+  const hours = Math.floor((seconds % 86400) / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const secs = Math.floor(seconds % 60)
+  const parts: string[] = []
+  if (days) parts.push(`${days} 天`)
+  if (hours) parts.push(`${hours} 小时`)
+  if (minutes) parts.push(`${minutes} 分`)
+  if (secs || !parts.length) parts.push(`${secs} 秒`)
+  return parts.join(' ')
+}
+
 function logout () {
   connected.value = false
   token.value = ''
+  health.value = null
   libraries.value = []
   folders.value = []
   tags.value = []
@@ -123,6 +150,15 @@ async function handleCreateNode ({ kind, parentId, title, color, description, ic
 /* ---------- BatchUploadDialog 演示 ---------- */
 const showBatchUpload = ref(false)
 const batchUploadResult = ref('')
+// 打开时预选的文件夹/标签(树视图右键「上传到此处」设置;对话框关闭卸载内容,重开取最新值)
+const batchUploadFolderId = ref('')
+const batchUploadTagTitles = ref<string[]>([])
+
+function openBatchUpload (folderId = '', tagTitles: string[] = []) {
+  batchUploadFolderId.value = folderId
+  batchUploadTagTitles.value = tagTitles
+  showBatchUpload.value = true
+}
 
 /** 逐文件上传服务:连接走 SDK uploadFiles(单文件),未连接模拟进度(1s 0→100) */
 const handleBatchUploadFile: BatchUploadFileService = async (item, onProgress) => {
@@ -296,6 +332,14 @@ const treeDialog: LibraryTreeDialog = {
   },
 }
 
+// 树视图上传服务:右键「上传到此处」→ pick 打开批量上传对话框(预选文件夹);
+// 拖放/点击选择的文件先入 Dropzone 暂存区,由「真实上传」卡片统一上传
+const treeUpload: LibraryTreeUpload = {
+  files (files) { stagedFiles.value = [...stagedFiles.value, ...files] },
+  urls () {},
+  pick (target) { openBatchUpload(target?.folderId ? String(target.folderId) : '', target?.tags ?? []) },
+}
+
 /* ---------- MediaBrowser 文件浏览器演示(网格/瀑布流 + 选择) ---------- */
 const mediaView = ref<'grid' | 'waterfall'>('grid')
 // 受控选择:传 v-model:selected 启用(点选/Ctrl 加选/Shift 连选/空白拖拽框选/Alt 减选)
@@ -451,28 +495,33 @@ async function startUpload () {
   <main class="bg-background text-foreground min-h-[100dvh]">
     <div class="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-10">
       <header class="flex items-start justify-between gap-4">
-        <div class="flex flex-col gap-1">
-          <h1 class="text-2xl font-semibold tracking-tight">mira-plugin-ui Demo</h1>
-          <p class="text-muted-foreground text-sm">SaveLocationDialog 组件演示，数据来自 Mira SDK</p>
-        </div>
+        <h1 class="text-2xl font-semibold tracking-tight">mira-plugin-ui Demo</h1>
         <Button variant="outline" size="icon" aria-label="切换主题" @click="toggleDark">
           <Sun v-if="dark" class="size-4" />
           <Moon v-else class="size-4" />
         </Button>
       </header>
 
-      <div class="grid items-start gap-6 lg:grid-cols-3">
-        <!-- 连接卡片：登录 / 会话 -->
-        <section class="bg-card text-card-foreground flex flex-col gap-5 rounded-xl border p-6 shadow-sm lg:col-span-2">
-          <div class="flex items-center gap-2">
+      <!-- 连接卡片：登录 / 会话 -->
+      <section class="bg-card text-card-foreground flex flex-col gap-5 rounded-xl border p-6 shadow-sm">
+          <div class="flex flex-wrap items-center gap-2">
             <Server class="text-muted-foreground size-4" />
             <h2 class="text-base font-semibold">Mira Server</h2>
             <span
-              class="bg-muted text-muted-foreground ms-auto rounded-full px-2.5 py-0.5 text-xs font-medium"
-              :class="connected && 'bg-primary/10 text-primary'"
+              class="bg-muted text-muted-foreground rounded-full px-2.5 py-0.5 text-xs font-medium"
+              :class="connected ? 'bg-primary/10 text-primary' : 'ms-auto'"
             >
               {{ connected ? '已连接' : '未连接' }}
             </span>
+            <!-- 卡片右上角:素材库选择器 + 断开连接 -->
+            <div v-if="connected" class="ms-auto flex items-center gap-2">
+              <div class="w-44">
+                <LibrarySelect v-model="currentLibraryId" :servers="selectServers" @change="loadLibraryData" />
+              </div>
+              <Button variant="outline" size="sm" @click="logout">
+                <LogOut class="size-4" /> 断开连接
+              </Button>
+            </div>
           </div>
 
           <template v-if="!connected">
@@ -506,85 +555,51 @@ async function startUpload () {
           </template>
 
           <template v-else>
-            <p class="text-muted-foreground text-sm">
-              接入 <code class="bg-muted rounded px-1.5 py-0.5 font-mono text-xs">{{ apiBaseUrl }}</code>
-            </p>
-            <div class="grid gap-2 sm:max-w-72">
-              <Label>当前素材库</Label>
-              <LibrarySelect v-model="currentLibraryId" :servers="selectServers" @change="loadLibraryData" />
-            </div>
-            <div>
-              <Button variant="outline" class="w-fit" @click="logout">
-                <LogOut class="size-4" /> 断开连接
-              </Button>
+            <!-- 服务器信息(/health):状态/版本/运行时长等 -->
+            <div class="bg-muted/40 grid gap-x-8 gap-y-3 rounded-lg border p-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div class="flex flex-col gap-1">
+                <span class="text-muted-foreground text-xs">服务器地址</span>
+                <code class="font-mono text-xs break-all">{{ apiBaseUrl }}</code>
+              </div>
+              <div class="flex flex-col gap-1">
+                <span class="text-muted-foreground text-xs">状态</span>
+                <span class="text-sm">{{ health?.status ?? '—' }}</span>
+              </div>
+              <div class="flex flex-col gap-1">
+                <span class="text-muted-foreground text-xs">版本</span>
+                <span class="font-mono text-sm">{{ health?.version ?? '—' }}</span>
+              </div>
+              <div class="flex flex-col gap-1">
+                <span class="text-muted-foreground text-xs">运行时长</span>
+                <span class="text-sm">{{ health ? formatUptime(health.uptime) : '—' }}</span>
+              </div>
+              <div class="flex flex-col gap-1">
+                <span class="text-muted-foreground text-xs">Node 版本</span>
+                <span class="font-mono text-sm">{{ health?.nodeVersion ?? '—' }}</span>
+              </div>
+              <div class="flex flex-col gap-1">
+                <span class="text-muted-foreground text-xs">运行环境</span>
+                <span class="text-sm">{{ health?.environment ?? '—' }}</span>
+              </div>
             </div>
           </template>
         </section>
 
-        <!-- 概览卡片：库统计 -->
-        <aside class="bg-card text-card-foreground flex flex-col gap-5 rounded-xl border p-6 shadow-sm">
-          <h2 class="text-base font-semibold">数据概览</h2>
-          <div class="flex flex-col gap-4">
-            <div class="flex items-center justify-between gap-3">
-              <span class="text-muted-foreground flex items-center gap-1.5 text-sm">
-                <Server class="size-3.5" /> 素材库
-              </span>
-              <span class="text-lg font-semibold tabular-nums">{{ libraries.length }}</span>
-            </div>
-            <div class="flex items-center justify-between gap-3">
-              <span class="text-muted-foreground flex items-center gap-1.5 text-sm">
-                <Folder class="size-3.5" /> 文件夹
-              </span>
-              <span class="text-lg font-semibold tabular-nums">{{ folders.length }}</span>
-            </div>
-            <div class="flex items-center justify-between gap-3">
-              <span class="text-muted-foreground flex items-center gap-1.5 text-sm">
-                <FileText class="size-3.5" /> .tiptap 文档
-              </span>
-              <span class="text-lg font-semibold tabular-nums">{{ tiptapCount }}</span>
-            </div>
-            <div class="flex items-center justify-between gap-3">
-              <span class="text-muted-foreground text-sm">当前库</span>
-              <span class="truncate text-sm font-medium">{{ currentLibrary?.name || currentLibrary?.title || currentLibraryId || '未选择' }}</span>
-            </div>
-          </div>
-          <p v-if="!connected" class="text-muted-foreground mt-auto text-xs">连接 server 后显示实时统计，未连接时对话框使用 mock 数据</p>
-        </aside>
-      </div>
-
-      <!-- ServerManagerView 演示卡片:服务器配置 CRUD(mock 数据,覆盖层演示) -->
-      <section class="bg-card text-card-foreground relative flex min-h-[26rem] flex-col gap-4 rounded-xl border p-6 shadow-sm">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div class="flex flex-col gap-1">
-            <h2 class="text-base font-semibold">ServerManagerView 服务器管理</h2>
-            <p class="text-muted-foreground text-sm">内存 mock 数据：列表 / 新增 / 编辑 / 删除 / 测试连接 / 切换激活</p>
-          </div>
-          <Button class="w-fit shrink-0" :disabled="showServerManager" @click="showServerManager = true">管理服务器…</Button>
+      <!-- 对话框组件:并行按钮入口 -->
+      <section class="bg-card text-card-foreground flex flex-col gap-4 rounded-xl border p-6 shadow-sm">
+        <div class="flex flex-col gap-1">
+          <h2 class="text-base font-semibold">对话框组件</h2>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <Button variant="outline" @click="showServerManager = true">管理服务器…</Button>
+          <Button variant="outline" :disabled="!connected" @click="showSave = true">保存文档到…</Button>
+          <Button variant="outline" @click="openBatchUpload()">批量上传…</Button>
         </div>
         <p class="text-muted-foreground text-xs">
           当前激活：{{ demoServers.find(s => s.id === demoActiveId)?.name || '无' }}（共 {{ demoServers.length }} 条）
         </p>
-        <ServerManagerView
-          v-if="showServerManager"
-          :servers="demoServers"
-          :active-server-id="demoActiveId"
-          :services="serverServices"
-          @close="showServerManager = false"
-        />
-      </section>
-
-      <!-- 组件演示卡片 -->
-      <section class="bg-card text-card-foreground flex flex-col gap-4 rounded-xl border p-6 shadow-sm">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div class="flex flex-col gap-1">
-            <h2 class="text-base font-semibold">SaveLocationDialog</h2>
-            <p class="text-muted-foreground text-sm">
-              {{ connected ? '数据来自当前素材库（真实 SDK 拉取）' : '未连接 server，仅展示 mock 数据' }}
-            </p>
-          </div>
-          <Button class="w-fit shrink-0" :disabled="!connected" @click="showSave = true">保存文档到…</Button>
-        </div>
         <p v-if="saved" class="bg-muted text-muted-foreground rounded-lg p-3 font-mono text-sm break-all">{{ saved }}</p>
+        <p v-if="batchUploadResult" class="bg-muted text-muted-foreground rounded-lg p-3 font-mono text-sm">{{ batchUploadResult }}</p>
         <SaveLocationDialog
           v-model:open="showSave"
           :libraries="connected ? libraries : [{ id: 1, name: 'Mock 素材库' }]"
@@ -598,42 +613,31 @@ async function startUpload () {
           :create-node="handleCreateNode"
           @remove-file="file => saveFiles = saveFiles.filter(f => f !== file)"
         />
-      </section>
-
-      <!-- BatchUploadDialog 演示卡片:批量上传(文件队列/进度/位置选择) -->
-      <section class="bg-card text-card-foreground flex flex-col gap-4 rounded-xl border p-6 shadow-sm">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div class="flex flex-col gap-1">
-            <h2 class="text-base font-semibold">BatchUploadDialog</h2>
-            <p class="text-muted-foreground text-sm">
-              {{ connected ? '逐文件走 SDK uploadFiles，组件内并发 3 上传' : '未连接 server，模拟上传进度（可验证队列/进度/状态）' }}
-            </p>
-          </div>
-          <Button class="w-fit shrink-0" @click="showBatchUpload = true">批量上传…</Button>
-        </div>
-        <p v-if="batchUploadResult" class="bg-muted text-muted-foreground rounded-lg p-3 font-mono text-sm">{{ batchUploadResult }}</p>
         <BatchUploadDialog
           v-model:open="showBatchUpload"
           :libraries="connected ? libraries : [{ id: 1, name: 'Mock 素材库' }]"
           :folders="connected ? folders : [{ id: 101, title: 'Mock 文件夹' }]"
           :tags="connected ? tags : [{ id: 1, title: 'Mock 标签' }]"
           :initial-library-id="currentLibraryId"
+          :initial-folder-id="batchUploadFolderId"
+          :initial-tag-titles="batchUploadTagTitles"
           :upload-file="handleBatchUploadFile"
           :create-node="handleCreateNode"
           @uploaded="handleBatchUploaded"
           @library-change="handleLibraryChange"
+        />
+        <ServerManagerDialog
+          v-model:open="showServerManager"
+          :servers="demoServers"
+          :active-server-id="demoActiveId"
+          :services="serverServices"
         />
       </section>
 
       <!-- 树视图演示卡片(受控选择:为上传卡片选目标) -->
       <section class="bg-card text-card-foreground flex flex-col gap-4 rounded-xl border p-6 shadow-sm">
         <div class="flex flex-wrap items-center justify-between gap-3">
-          <div class="flex flex-col gap-1">
-            <h2 class="text-base font-semibold">LibraryTreeView 树视图</h2>
-            <p class="text-muted-foreground text-sm">
-              {{ connected ? '数据来自当前素材库（真实 SDK 读写，v-model:selected 受控选择）' : '未连接 server，操作内存 mock 数据（受控选择，工具栏/右键可新建，右键可删除）' }}
-            </p>
-          </div>
+          <h2 class="text-base font-semibold">LibraryTreeView 树视图</h2>
           <div class="bg-muted flex gap-1 rounded-lg p-1">
             <button
               v-for="m in (['folder', 'tag'] as const)"
@@ -653,6 +657,7 @@ async function startUpload () {
             :library-id="currentLibraryId || 'mock'"
             :services="treeServices"
             :dialog="treeDialog"
+            :upload="treeUpload"
             :selected="treeMode === 'folder' ? selectedFolder : selectedTags"
             @update:selected="treeMode === 'folder' ? (selectedFolder = $event) : (selectedTags = $event)"
           />
@@ -663,10 +668,6 @@ async function startUpload () {
       <section class="bg-card text-card-foreground flex flex-col gap-4 rounded-xl border p-6 shadow-sm">
         <div class="flex flex-col gap-1">
           <h2 class="text-base font-semibold">MediaBrowser 文件浏览器</h2>
-          <p class="text-muted-foreground text-sm">
-            {{ connected ? '数据来自当前素材库（SDK getFiles 过滤/排序，缩略图走 /api/files/thumb）' : '未连接 server，演示 mock 数据（渐变缩略图 + 多种宽高比，切换瀑布流可见高度差异）' }}
-          </p>
-          <p class="text-muted-foreground text-xs">点击选择 · Ctrl 加选 · Shift 连选 · 空白处拖拽框选 · Alt 拖拽减选 · Delete 删除选中（回收站）</p>
           <p v-if="selectedMedia.length" class="text-primary text-xs">
             已选 {{ selectedMedia.length }} 项：{{ selectedMedia.map(i => i.title).join('、') }}
           </p>
@@ -687,10 +688,7 @@ async function startUpload () {
       <!-- Dropzone 独立卡片:文件暂存 -->
       <section class="bg-card text-card-foreground flex flex-col gap-2 rounded-xl border p-6 shadow-sm">
         <div class="flex flex-wrap items-center justify-between gap-3">
-          <div class="flex flex-col gap-1">
-            <h2 class="text-base font-semibold">Dropzone 拖放区</h2>
-            <p class="text-muted-foreground text-sm">选择/拖放文件暂存（v-model:files 受控），附件卡片可单独移除</p>
-          </div>
+          <h2 class="text-base font-semibold">Dropzone 拖放区</h2>
           <!-- 附件展示样式(缩略图/图标) + 排列方向(横排/竖排) -->
           <div class="flex gap-2">
             <div class="flex gap-1" role="group" aria-label="附件展示样式">
@@ -731,10 +729,7 @@ async function startUpload () {
       <!-- 真实上传卡片:目标预览 + SDK 进度 -->
       <section class="bg-card text-card-foreground flex flex-col gap-4 rounded-xl border p-6 shadow-sm">
         <div class="flex flex-wrap items-center justify-between gap-3">
-          <div class="flex flex-col gap-1">
-            <h2 class="text-base font-semibold">真实上传</h2>
-            <p class="text-muted-foreground text-sm">走 Mira SDK uploadFiles，进度来自 onUploadProgress 字节级回调</p>
-          </div>
+          <h2 class="text-base font-semibold">真实上传</h2>
           <Button
             class="w-fit shrink-0"
             :disabled="!connected || !stagedFiles.length || uploading"
@@ -758,7 +753,6 @@ async function startUpload () {
           class="text-sm"
           :class="uploadResult.startsWith('上传失败') ? 'text-destructive' : 'text-muted-foreground'"
         >{{ uploadResult }}</p>
-        <p v-if="!connected" class="text-muted-foreground text-sm">连接 server 后可上传（未连接时仅暂存文件）</p>
       </section>
     </div>
   </main>

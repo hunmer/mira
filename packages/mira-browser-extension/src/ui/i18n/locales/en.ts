@@ -51,7 +51,6 @@ export default {
   header: {
     selectLibrary: 'Select library',
     screenshot: 'Screenshot',
-    themeTitle: 'Theme: {theme}',
     themeAuto: '🌗 Auto',
     themeLight: '☀️ Light',
     themeDark: '🌙 Dark',
@@ -62,6 +61,7 @@ export default {
     groupCapture: 'Capture',
     groupDebug: 'Debug',
     defaultTags: 'Default tags (comma-separated)',
+    theme: 'Theme',
     uiMode: 'UI mode',
     uiModePopup: 'Popup',
     uiModeSidePanel: 'Side panel',

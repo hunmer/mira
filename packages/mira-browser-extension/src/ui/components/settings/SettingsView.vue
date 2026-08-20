@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useSettings } from '@/ui/composables/useSettings';
 import { useI18n } from 'vue-i18n';
-import type { Locale } from '@/shared/types';
+import type { Locale, Theme } from '@/shared/types';
 import Input from '@/ui/components/ui/Input.vue';
 import Switch from '@/ui/components/ui/Switch.vue';
 import Button from '@/ui/components/ui/Button.vue';
@@ -84,6 +84,14 @@ async function resetImuRules() {
     </section>
     <section>
       <h3>{{ t('settings.groupUI') }}</h3>
+      <div class="row">
+        <span>{{ t('settings.theme') }}</span>
+        <select :value="settings.theme" @change="e => update({ theme: (e.target as HTMLSelectElement).value as Theme })">
+          <option value="auto">{{ t('header.themeAuto') }}</option>
+          <option value="light">{{ t('header.themeLight') }}</option>
+          <option value="dark">{{ t('header.themeDark') }}</option>
+        </select>
+      </div>
       <div class="row">
         <span>{{ t('settings.uiMode') }}</span>
         <select :value="settings.uiMode" @change="e => update({ uiMode: (e.target as HTMLSelectElement).value as any })">

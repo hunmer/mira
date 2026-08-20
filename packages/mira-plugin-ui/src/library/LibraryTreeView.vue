@@ -6,8 +6,8 @@
  * - 顶部:拖放/点击选择上传到素材库根目录(需传 upload)
  * - 工具栏:搜索切换(输入即过滤,自 SaveLocationForm 移入) + 新增(CreateNodeDialog)
  * - 中部:树(支持拖拽文件 → 上传到目标文件夹/标签;传 v-model:selected 受控启用选择)
- * - 右键菜单:新建同级/子级(CreateNodeDialog)、编辑(services.updateNode)、
- *   删除(内置 AlertDialog 确认;folder 带「同时删除其中的文件」勾选)
+ * - 右键菜单:上传到此处(upload.pick,由宿主弹上传对话框)、新建同级/子级(CreateNodeDialog)、
+ *   编辑(services.updateNode)、删除(内置 AlertDialog 确认;folder 带「同时删除其中的文件」勾选)
  *
  * 样式为 tailwind/shadcn 原子类,scoped CSS 仅搜索栏展开过渡(ui_rule.md 允许的例外)。
  */
@@ -446,6 +446,16 @@ function onTreeContextMenu(node: LibraryTreeNode, x: number, y: number) {
   onContextMenu(node, x, y);
 }
 
+/** 右键「上传到此处」:交宿主 upload.pick 弹上传对话框(如 BatchUploadDialog),落点语义与拖拽上传一致 */
+function onUploadToNode() {
+  if (!menu.value) return;
+  const target = props.mode === 'folder'
+    ? { folderId: menu.value.node.id }
+    : { tags: [menu.value.node.title] };
+  closeMenu();
+  props.upload?.pick?.(target);
+}
+
 /** 右键菜单项(ContextMenu 的 :deep 样式已移除,类由这里提供) */
 const ctxItem = 'flex w-full cursor-pointer items-center gap-1.5 rounded-[4px] border-none bg-transparent px-2.5 py-1.5 text-left font-inherit text-xs text-foreground hover:bg-background';
 </script>
@@ -535,11 +545,12 @@ const ctxItem = 'flex w-full cursor-pointer items-center gap-1.5 rounded-[4px] b
       />
     </div>
 
-    <!-- 右键菜单:新建同级 / 新建子级(内置 CreateNodeDialog) + 编辑(需 services.updateNode) + 删除(内置 AlertDialog 确认) -->
+    <!-- 右键菜单:上传到此处(需 upload.pick,宿主弹 BatchUploadDialog 等) / 新建同级 / 新建子级(内置 CreateNodeDialog) + 编辑(需 services.updateNode) + 删除(内置 AlertDialog 确认) -->
     <ContextMenu v-if="menu" :x="menu.x" :y="menu.y" @close="closeMenu">
+      <button v-if="upload?.pick" :class="ctxItem" @click="onUploadToNode">{{ tt('tree.upload') }}</button>
+      <button v-if="editable" :class="ctxItem" @click="onEditNode">{{ tt('tree.edit') }}</button>
       <button :class="ctxItem" @click="onCreateSibling">{{ tt('tree.createSibling') }}</button>
       <button :class="ctxItem" @click="onCreateChild">{{ tt('tree.createChild', { type: titleText }) }}</button>
-      <button v-if="editable" :class="ctxItem" @click="onEditNode">{{ tt('tree.edit') }}</button>
       <div class="my-[3px] h-px bg-border" />
       <button :class="[ctxItem, 'text-destructive']" @click="requestDelete">{{ tt('tree.delete') }}</button>
     </ContextMenu>

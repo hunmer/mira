@@ -1,24 +1,28 @@
 <script setup lang="ts">
 /**
- * 顶部栏:素材库下拉 + 截图 + 上传队列 + 主题。
+ * 顶部栏:素材库下拉 + 截图 + 服务器管理。
  *
- * 服务器栏已移至页面底部(与设置按钮同行的 BottomBar)。
- * 截图 / 主题均为图标按钮(无文字);主题三态循环:auto → light → dark → auto。
+ * 主题切换已移至设置面板(select);上传队列已移至底部右下角(见 App.vue bottom-bar)。
+ * 截图为图标按钮(无文字)。
  */
 import { useConnection } from '@/ui/composables/useConnection';
+import { useServers } from '@/ui/composables/useServers';
 import { useSettings } from '@/ui/composables/useSettings';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import type { Theme } from '@/shared/types';
-import UploadQueueButton from '@/ui/components/upload/UploadQueueButton.vue';
-import { LibrarySelect } from 'mira-plugin-ui/library';
+import { LibrarySelect, ServerManagerDialog } from 'mira-plugin-ui/library';
 import type { LibrarySelectServer } from 'mira-plugin-ui/library';
 
 const { t } = useI18n();
-const { status, libraries, activeServer } = useConnection();
+const { status, libraries, activeServer, switchServer } = useConnection();
+const { servers, add, edit, remove, test } = useServers();
 const { settings, update } = useSettings();
 const props = defineProps<{ screenshotOpen?: boolean }>();
 const emit = defineEmits<{ 'toggle-screenshot': [] }>();
+
+// 服务器管理对话框:settings 持久化 + background 测试;激活走 switchServer(清 session 重登)
+const showServerManager = ref(false);
+const serverServices = { add, edit, remove, test, activate: switchServer };
 
 const statusColor = computed(() => ({
   idle: '#71717a', connecting: '#eab308', connected: '#4ade80', failed: '#ef4444',
@@ -34,12 +38,6 @@ const libServers = computed<LibrarySelectServer[]>(() => [{
 async function onLibChange(libraryId: string) {
   await update({ libraryId });
 }
-
-// 主题三态循环:auto → light → dark → auto
-async function cycleTheme() {
-  const next: Record<Theme, Theme> = { auto: 'light', light: 'dark', dark: 'auto' };
-  await update({ theme: next[settings.value.theme] });
-}
 </script>
 
 <template>
@@ -53,6 +51,20 @@ async function cycleTheme() {
         @update:model-value="onLibChange"
       />
     </div>
+    <!-- 服务器列表:图标按钮,Dialog 弹出 ServerManagerDialog -->
+    <button
+      class="icon-btn"
+      :title="t('server.manager')"
+      :aria-label="t('server.manager')"
+      @click="showServerManager = true"
+    >
+      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+        <rect x="2" y="2" width="20" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/>
+        <path d="M16 6h.01" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+        <rect x="2" y="14" width="20" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/>
+        <path d="M6 18h.01" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+      </svg>
+    </button>
     <!-- 截图:图标按钮,点击展开截图菜单 -->
     <button
       class="icon-btn"
@@ -67,31 +79,16 @@ async function cycleTheme() {
         <circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="1.6"/>
       </svg>
     </button>
-    <UploadQueueButton />
-    <!-- 主题:auto/light/dark 三态图标按钮 -->
-    <button
-      class="icon-btn"
-      :title="t('header.themeTitle', { theme: settings.theme })"
-      :aria-label="t('header.themeTitle', { theme: settings.theme })"
-      @click="cycleTheme"
-    >
-      <!-- auto:半阳/半月 -->
-      <svg v-if="settings.theme === 'auto'" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-        <path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z" fill="currentColor"/>
-      </svg>
-      <!-- light:太阳 -->
-      <svg v-else-if="settings.theme === 'light'" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-        <circle cx="12" cy="12" r="4" fill="currentColor"/>
-        <g stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-          <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/>
-        </g>
-      </svg>
-      <!-- dark:月亮 -->
-      <svg v-else viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-        <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" fill="currentColor"/>
-      </svg>
-    </button>
     <div v-if="props.screenshotOpen" class="screenshot-menu"><slot name="screenshot-menu" /></div>
+
+    <!-- 服务器管理对话框(Teleport 到 body) -->
+    <ServerManagerDialog
+      v-model:open="showServerManager"
+      :servers="servers"
+      :active-server-id="activeServer?.id ?? ''"
+      :services="serverServices"
+      :t="(key, params) => (t as any)(key, params)"
+    />
   </div>
 </template>
 

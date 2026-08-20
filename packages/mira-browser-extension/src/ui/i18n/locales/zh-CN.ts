@@ -51,7 +51,6 @@ export default {
   header: {
     selectLibrary: '选择素材库',
     screenshot: '截图',
-    themeTitle: '主题: {theme}',
     themeAuto: '🌗 自动',
     themeLight: '☀️ 亮色',
     themeDark: '🌙 暗色',
@@ -62,6 +61,7 @@ export default {
     groupCapture: '采集',
     groupDebug: '调试',
     defaultTags: '默认标签(逗号分隔)',
+    theme: '主题',
     uiMode: 'UI 模式',
     uiModePopup: 'Popup',
     uiModeSidePanel: '侧边栏',

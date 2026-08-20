@@ -69,6 +69,8 @@ const props = withDefaults(defineProps<{
   tags?: TreeItem[]
   initialLibraryId?: string
   initialFolderId?: string
+  /** 初始预选标签(按标题匹配,与 LibraryTreeUploadTarget.tags 同语义);缺省不预选 */
+  initialTagTitles?: string[]
   /** 上传服务:传入则组件内并发执行并展示进度;未传则 emit('upload') 交宿主 */
   uploadFile?: BatchUploadFileService
   /** 组件内上传并发数(仅 uploadFile 模式生效) */
@@ -85,6 +87,7 @@ const props = withDefaults(defineProps<{
   tags: () => [],
   initialLibraryId: '',
   initialFolderId: '',
+  initialTagTitles: () => [],
   concurrency: 3,
   maxFiles: 200,
   accept: '*',
@@ -105,7 +108,13 @@ const emit = defineEmits<{
 
 const libraryId = ref(props.initialLibraryId || String(props.libraries[0]?.id || ''))
 const folderId = ref(props.initialFolderId || '')
-const selectedTagIds = ref(new Set<number>())
+// 预选标签:按标题在 props.tags 里找 id(selectedTagIds 存 id,上传时经 tagTitlesOfIds 还原标题)
+const selectedTagIds = ref(new Set<number>(
+  (props.initialTagTitles ?? [])
+    .map(title => props.tags.find(t => (t.title ?? t.name) === title))
+    .filter((t): t is TreeItem => t != null)
+    .map(t => Number(t.id)),
+))
 const tab = ref<'info' | 'folder' | 'tag'>('info')
 
 // ---- 文件队列 ----
@@ -140,11 +149,16 @@ function addFiles (files: File[]) {
     const key = keyOf(file)
     if (existing.has(key)) continue
     existing.add(key)
+    const tagIds = [...selectedTagIds.value].map(String)
     items.value.push({
       id: `upload-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
       file,
       progress: 0,
       status: 'pending',
+      // 继承面板当前文件夹/标签(含 initialFolderId/initialTagTitles 初值),
+      // 与「先在树上选好目标再加文件」行为一致;后续树上选择仍可覆盖
+      folderId: folderId.value || undefined,
+      tags: tagIds.length ? tagIds : undefined,
     })
   }
 }
