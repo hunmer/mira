@@ -195,7 +195,9 @@ const masonryRef = ref<InstanceType<typeof Masonry> | null>(null)
 const thumbnailRatios = ref<Record<string, number>>({})
 const metadataRatios = ref<Record<string, number>>({})
 const thumbnailRatiosReady = ref(false)
-const initialEnterAnimation = ref(true)
+// 瀑布流首屏图片尚未加载时，Masonry 的入场动画会把占位块位置插值多次，造成明显抖动。
+// 首屏直接落位，后续数据变化仍由 layout-transition 配置控制。
+const initialEnterAnimation = ref(false)
 const initialRatioPreloadCount = computed(() => Math.max(props.columnsPerRow * 4, 16))
 const settingsStore = useSettingsStore()
 const { focusSelectionBox, isSelectionBoxFocused } = useFocusedSelectAll(selectionBoxRef, props, emit)
@@ -248,37 +250,51 @@ const getMetadataRatio = (item: FileInfo): number | null => {
     : metadataRatios.value[item.id] || null
 }
 
-const preloadMetadataRatios = async (items: FileInfo[]) => {
+const preloadMetadataRatios = async (items: FileInfo[]): Promise<Record<string, number>> => {
   const groups = new Map<string, FileInfo[]>()
   for (const item of items) {
     if (!item.libraryId) continue
+    // 只请求尚未有 metadata 或本地比例缓存的项，避免每次分页更新都重算已稳定区域。
+    if (getMetadataRatio(item) || getCachedThumbnailRatio(String(item.id), getItemUrl(item))) continue
     const group = groups.get(item.libraryId) || []
     group.push(item)
     groups.set(item.libraryId, group)
   }
 
+  // 各素材库请求可能分批完成，但比例结果必须一次性发布。
+  // 否则每个批次都会触发 waterfallItems 变化，让 Masonry 从首项重新布局。
+  const loadedRatios: Record<string, number> = {}
   await Promise.all([...groups].map(async ([libraryId, group]) => {
     try {
       const entries = await miraSDKService.getFileMetadataByIds(libraryId, group.map(item => item.id))
-      const next = { ...metadataRatios.value }
       for (const entry of entries) {
         const width = Number(entry.width)
         const height = Number(entry.height)
         if (Number.isFinite(width) && width > 0 && Number.isFinite(height) && height > 0) {
-          next[entry.id] = width / height
+          loadedRatios[entry.id] = width / height
         }
       }
-      metadataRatios.value = next
     } catch {
       // metadata unavailable: the existing thumbnail ratio loader remains the fallback.
     }
   }))
+  return loadedRatios
 }
 
 const preloadThumbnailRatios = async (items: FileInfo[]) => {
   const currentVersion = ++preloadVersion
-  await preloadMetadataRatios(items)
+  beginDebugLoad(items.length)
+  const loadedMetadataRatios = await preloadMetadataRatios(items)
   if (currentVersion !== preloadVersion) return
+  if (Object.keys(loadedMetadataRatios).length > 0) {
+    const changedRatios: Record<string, number> = {}
+    for (const [itemId, ratio] of Object.entries(loadedMetadataRatios)) {
+      if (metadataRatios.value[itemId] !== ratio) changedRatios[itemId] = ratio
+    }
+    if (Object.keys(changedRatios).length > 0) {
+      metadataRatios.value = { ...metadataRatios.value, ...changedRatios }
+    }
+  }
   // 首屏前 N 个：同步预加载，等真实比例再渲染（避免首屏布局抖动）。
   const headEntries = await Promise.all(items.slice(0, initialRatioPreloadCount.value).filter(item => !getMetadataRatio(item)).map(async (item) => {
     const itemId = String(item.id)
@@ -310,7 +326,7 @@ const preloadThumbnailRatios = async (items: FileInfo[]) => {
   thumbnailRatios.value = publishedRatios
   thumbnailRatiosReady.value = true
   // 首屏外比例加载完成后一次性发布，触发新增项重新布局，避免逐张图片抖动。
-  void loadRemainingRatios(items, currentVersion)
+  void loadRemainingRatios(items, currentVersion).finally(finishDebugLoad)
 }
 
 // 异步加载其余比例（限并发），整批完成后统一更新当前布局。
@@ -342,8 +358,7 @@ watch(
   () => props.items.map(item => `${item.id}:${getItemUrl(item)}`),
   () => {
     void preloadThumbnailRatios(props.items)
-  },
-  { immediate: true }
+  }
 )
 
 // hash fallback：真实比例就绪前给一个稳定占位比例，避免新增项全部显示成同一高度。
@@ -530,8 +545,6 @@ const handleAfterRender = () => {
 
 // 视图切换后重新读取容器宽度并重算布局，不重复加载缩略图比例。
 const refresh = () => {
-  const selectionRoot = (selectionBoxRef.value as any)?.$el as HTMLElement | null
-  const root = selectionRoot?.querySelector('.masonry-container') as HTMLElement | null
   masonryRef.value?.refresh()
 }
 
@@ -539,16 +552,72 @@ const refresh = () => {
 // 在 DOM 更新后的连续帧再次测量，避免必须滚动到该分组后才触发布局。
 let refreshFrame = 0
 let layoutResizeObserver: ResizeObserver | null = null
+let observedLayoutWidth = 0
+let debugLongTaskObserver: PerformanceObserver | null = null
+let debugRefreshCount = 0
+let debugResizeCount = 0
+let debugLoadCount = 0
+let debugLongTaskCount = 0
+let debugLongTaskDuration = 0
+let debugLoadSession = 0
+let debugLoadStartedAt = 0
+const isWaterfallDebugEnabled = () => {
+  if (!props.debugLabel) return false
+  if (import.meta.env.DEV) return true
+  try {
+    return window.localStorage.getItem('mira-waterfall-debug') === '1'
+  } catch {
+    return false
+  }
+}
+const debugLog = (message: string, detail?: Record<string, unknown>) => {
+  if (!isWaterfallDebugEnabled()) return
+  console.debug(`[WaterfallDebug:${props.debugLabel}] ${message}`, detail || '')
+}
+
+const beginDebugLoad = (itemCount: number) => {
+  if (!isWaterfallDebugEnabled()) return
+  debugLoadSession += 1
+  debugLoadStartedAt = performance.now()
+  debugRefreshCount = 0
+  debugResizeCount = 0
+  debugLoadCount = 0
+  debugLongTaskCount = 0
+  debugLongTaskDuration = 0
+  debugLog('load-start', { session: debugLoadSession, itemCount })
+}
+
+const finishDebugLoad = () => {
+  if (!isWaterfallDebugEnabled() || !debugLoadStartedAt) return
+  debugLog('load-end', {
+    session: debugLoadSession,
+    durationMs: performance.now() - debugLoadStartedAt,
+    imageLoads: debugLoadCount,
+    refreshes: debugRefreshCount,
+    resizes: debugResizeCount,
+    longTasks: debugLongTaskCount,
+    longTaskDurationMs: debugLongTaskDuration
+  })
+  debugLoadStartedAt = 0
+}
+
 const scheduleLayoutRefresh = () => {
+  debugRefreshCount += 1
   cancelAnimationFrame(refreshFrame)
   void nextTick(() => {
-    refresh()
     refreshFrame = requestAnimationFrame(() => refresh())
   })
 }
 
 const handleImageError = (url: string) => {
   console.error('Image load error:', url)
+}
+
+const handleDebugImageLoad = (event: Event) => {
+  if (!isWaterfallDebugEnabled()) return
+  const image = event.target as HTMLImageElement
+  if (!image?.tagName || image.tagName !== 'IMG') return
+  debugLoadCount += 1
 }
 
 const handleThumbnailUpdated = async (event: Event) => {
@@ -625,13 +694,35 @@ defineExpose({
 })
 
 onMounted(() => {
+  void preloadThumbnailRatios(props.items)
   window.addEventListener('keydown', handleDeleteKeyDown)
   window.addEventListener('thumbnail-updated', handleThumbnailUpdated)
   document.addEventListener('edit-action', handleEditAction)
   const selectionRoot = (selectionBoxRef.value as any)?.$el as HTMLElement | null
   if (selectionRoot) {
-    layoutResizeObserver = new ResizeObserver(() => scheduleLayoutRefresh())
+    layoutResizeObserver = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width || selectionRoot.clientWidth
+      // Masonry 高度会随图片加载变化，高度变化不应再次触发布局刷新。
+      if (width === observedLayoutWidth) return
+      observedLayoutWidth = width
+      debugResizeCount += 1
+      scheduleLayoutRefresh()
+    })
     layoutResizeObserver.observe(selectionRoot)
+    selectionRoot.addEventListener('load', handleDebugImageLoad, true)
+  }
+  if (isWaterfallDebugEnabled() && typeof PerformanceObserver !== 'undefined') {
+    try {
+      debugLongTaskObserver = new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          debugLongTaskCount += 1
+          debugLongTaskDuration += entry.duration
+        }
+      })
+      debugLongTaskObserver.observe({ type: 'longtask', buffered: true })
+    } catch {
+      debugLog('long task observer unavailable')
+    }
   }
   scheduleLayoutRefresh()
 })
@@ -639,6 +730,10 @@ onMounted(() => {
 onUnmounted(() => {
   cancelAnimationFrame(refreshFrame)
   layoutResizeObserver?.disconnect()
+  const selectionRoot = (selectionBoxRef.value as any)?.$el as HTMLElement | null
+  selectionRoot?.removeEventListener('load', handleDebugImageLoad, true)
+  debugLongTaskObserver?.disconnect()
+  debugLongTaskObserver = null
   layoutResizeObserver = null
   window.removeEventListener('keydown', handleDeleteKeyDown)
   window.removeEventListener('thumbnail-updated', handleThumbnailUpdated)

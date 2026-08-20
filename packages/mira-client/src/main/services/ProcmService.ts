@@ -57,7 +57,7 @@ function writeLine(stream: NodeJS.WriteStream, text: string): void {
 export async function initProcm(): Promise<void> {
   if (procmClient) return
   if (process.env.NODE_ENV !== 'development') return
-  const { createProcmClient, setupLogger, exposeCustomExecution } = await import('@hunmer/procm-mcp-sdk')
+  const { clearLogs, createProcmClient, setupLogger, exposeCustomExecution } = await import('@hunmer/procm-mcp-sdk')
   // 即使没有 room 环境变量，也保留结构化 stdout 日志；这样由 procm
   // 启动但未注入 room 的子进程仍可按 level 过滤历史日志。
   if (!process.env.PROCM_ROOM_ID || !process.env.PROCM_WS_URL) {
@@ -69,6 +69,12 @@ export async function initProcm(): Promise<void> {
   } catch (error) {
     console.warn('procm client init failed:', error)
     return
+  }
+  console.log({ procmClient })
+  if (procmClient.processId) {
+    void clearLogs(procmClient).catch(error => {
+      console.warn('procm log clear failed:', error)
+    })
   }
   procmLogger = setupLogger({ client: procmClient, console: rawConsole })
   procmLogger.info('procm room enabled', { roomId: procmClient.roomId })
