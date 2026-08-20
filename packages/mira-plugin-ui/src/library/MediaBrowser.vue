@@ -37,6 +37,7 @@ import {
   MenubarContent,
   MenubarItem,
   MenubarMenu,
+  MenubarSeparator,
   MenubarTrigger,
 } from '../components/ui/menubar';
 import {
@@ -458,14 +459,18 @@ function getMeta(item: MediaBrowserItem): MasonryItemMeta {
         <MenubarMenu v-for="menu in props.menus" :key="menu.key">
           <MenubarTrigger class="px-2 py-0.5 text-xs">{{ menu.label }}</MenubarTrigger>
           <MenubarContent :side-offset="4">
-            <MenubarItem
-              v-for="item in menu.items"
-              :key="item.key"
-              :disabled="item.disabled"
-              @select="emit('menuSelect', menu.key, item.key)"
-            >
-              {{ item.label }}
-            </MenubarItem>
+            <template v-for="item in menu.items" :key="item.key">
+              <MenubarSeparator v-if="item.separator" />
+              <MenubarItem
+                v-else
+                :disabled="item.disabled"
+                :class="item.danger && 'text-destructive focus:text-destructive'"
+                @select="emit('menuSelect', menu.key, item.key)"
+              >
+                <component :is="item.icon" v-if="item.icon" class="size-4" />
+                {{ item.label }}
+              </MenubarItem>
+            </template>
           </MenubarContent>
         </MenubarMenu>
       </Menubar>

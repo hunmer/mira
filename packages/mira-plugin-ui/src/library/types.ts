@@ -7,6 +7,7 @@
  * - dialog:   prompt/alert/confirm 弹窗(编辑动作的名称输入与删除确认)
  * - upload:   拖放/选择文件后的上传动作(宿主自行路由到上传队列)
  */
+import type { Component } from 'vue'
 
 /** 素材库树节点:文件夹 / 标签通用形态(扁平 + parent_id 组装) */
 export interface LibraryTreeNode {
@@ -206,11 +207,17 @@ export interface FilterBarSortOption {
 
 /** MediaBrowser 自定义菜单项(传入 menus 后在菜单栏渲染,select 抛 menuSelect 由宿主处理) */
 export interface MediaBrowserMenuItem {
-  /** 唯一标识,menuSelect 事件回传 */
+  /** 唯一标识,menuSelect 事件回传(separator 项可省略) */
   key: string
   /** 显示文案(宿主自行本地化) */
   label: string
   disabled?: boolean
+  /** 图标组件(如 @lucide/vue 图标),渲染在文案左侧 */
+  icon?: Component
+  /** 渲染为分隔线(为 true 时忽略 label/icon/disabled) */
+  separator?: boolean
+  /** 危险项:红色警示样式(如删除类操作) */
+  danger?: boolean
 }
 
 /** MediaBrowser 自定义顶层菜单(渲染在内置「文件」菜单之后) */
