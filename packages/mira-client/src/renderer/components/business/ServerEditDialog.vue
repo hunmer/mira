@@ -265,8 +265,8 @@
         <div class="flex items-center space-x-2">
           <Checkbox
             id="saveCredentials"
-            :checked="formData.saveCredentials"
-            @update:checked="formData.saveCredentials = $event"
+            :model-value="formData.saveCredentials"
+            @update:model-value="formData.saveCredentials = Boolean($event)"
           />
           <label for="saveCredentials" class="text-sm text-foreground">
             {{ $t('business.serverEditDialog.saveCredentialsLabel') }}

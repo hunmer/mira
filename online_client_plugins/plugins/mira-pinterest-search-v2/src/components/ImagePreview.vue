@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { Crop, RotateCcw, ScanSearch } from '@lucide/vue'
 import { Button } from 'mira-plugin-ui'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from 'mira-plugin-ui/src/components/ui/dialog'
@@ -18,15 +18,10 @@ const open = defineModel<boolean>('open', { default: false })
 
 const container = ref<HTMLElement>()
 const imageEl = ref<HTMLImageElement>()
-const natural = reactive({ width: 0, height: 0 })
 /** 选区（显示坐标 px）；null 表示无选区 */
 const selection = ref<{ x: number; y: number; width: number; height: number } | null>(null)
 const dragging = ref(false)
 const error = ref('')
-
-const displayScale = computed(() =>
-  imageEl.value && natural.width ? imageEl.value.clientWidth / natural.width : 1,
-)
 
 // 切换任务/关闭弹窗清除选区
 watch(() => task.value?.id, () => {
@@ -80,14 +75,12 @@ async function searchCrop() {
     width: imageEl.value.clientWidth,
     height: imageEl.value.clientHeight,
   }
-  const scale = displayScale.value
   try {
-    // 选区是显示坐标，换算回原图坐标后裁剪
-    const dataUrl = await cropToDataUrl(task.value.imageUrl, {
-      x: rect.x / scale,
-      y: rect.y / scale,
-      width: rect.width / scale,
-      height: rect.height / scale,
+    // 选区与裁剪同为显示坐标:cropToDataUrl 经 <img> 解码整图快照后裁剪,
+    // 所见即所得(不做 naturalWidth 换算,规避 EXIF 方向照片横竖互换错位)
+    const dataUrl = await cropToDataUrl(task.value.imageUrl, rect, {
+      width: imageEl.value.clientWidth,
+      height: imageEl.value.clientHeight,
     })
     cropperSearch(task.value, dataUrl)
     selection.value = null
@@ -126,7 +119,6 @@ async function searchCrop() {
           :alt="task.name || t('main.image.noTitle')"
           class="max-h-full max-w-full rounded-md bg-muted object-contain"
           draggable="false"
-          @load="natural.width = $event.naturalWidth; natural.height = $event.naturalHeight"
         >
         <div
           v-if="selection"

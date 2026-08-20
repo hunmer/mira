@@ -87,6 +87,8 @@ export interface AppSettings {
   pluginsDirectory: string
   enablePluginDevMode: boolean
   autoLoadPlugins: boolean
+  /** 启动时自动检查并静默更新本地插件（无需确认） */
+  autoUpdatePlugins: boolean
   maxPluginLoadTime: number
   enablePluginSandbox: boolean
   trustedPlugins: string[]
@@ -217,6 +219,7 @@ export const useSettingsStore = defineStore('settings', () => {
     pluginsDirectory: '', // 将在初始化时设置默认值
     enablePluginDevMode: false,
     autoLoadPlugins: true,
+    autoUpdatePlugins: false,
     maxPluginLoadTime: 30000, // 30秒
     enablePluginSandbox: false,
     trustedPlugins: [],
@@ -600,6 +603,7 @@ export const useSettingsStore = defineStore('settings', () => {
       pluginsDirectory: '',
       enablePluginDevMode: false,
       autoLoadPlugins: true,
+      autoUpdatePlugins: false,
       maxPluginLoadTime: 30000,
       enablePluginSandbox: false,
       trustedPlugins: [],

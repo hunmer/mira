@@ -1,51 +1,15 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Motion, LayoutGroup } from 'motion-v'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { ExpandableButton } from '@renderer/components/common'
 import { usePluginStore } from '@renderer/stores/plugin'
-import { useLibraryStore } from '@renderer/stores/library'
-import { useToast } from '@/renderer/composables/useToast'
 import { usePluginsDialog } from './context'
 
 const { t } = useI18n()
-const toast = useToast()
 const ctx = usePluginsDialog()
 const pluginStore = usePluginStore()
-const libraryStore = useLibraryStore()
-
-// 刷新状态：仅工具栏本地使用
-const isRefreshing = ref(false)
-
-const refreshPlugins = async () => {
-  isRefreshing.value = true
-  try {
-    const result = ctx.activeTab.value === 'online'
-      ? await pluginStore.fetchMarketplaceCatalog()
-      : ctx.activeTab.value === 'server'
-        ? await pluginStore.syncServerPlugins(libraryStore.currentLibrary?.id || '')
-        : await pluginStore.discoverLocalPlugins()
-    if (!result.success) {
-      toast.add({
-        severity: 'error',
-        summary: t('business.pluginsDialog.refreshFailed'),
-        detail: result.message || t('business.pluginsDialog.unknownError'),
-        life: 5000
-      })
-    }
-  } catch (error) {
-    toast.add({
-      severity: 'error',
-      summary: t('business.pluginsDialog.refreshFailed'),
-      detail: error instanceof Error ? error.message : t('business.pluginsDialog.unknownError'),
-      life: 5000
-    })
-  } finally {
-    isRefreshing.value = false
-  }
-}
 </script>
 
 <template>
@@ -98,22 +62,6 @@ const refreshPlugins = async () => {
           />
         </InputGroup>
       </ExpandableButton>
-
-      <!-- 刷新按钮 -->
-      <TooltipProvider :ignore-non-keyboard-focus="true">
-        <Tooltip>
-          <TooltipTrigger as-child>
-            <button
-              @click="refreshPlugins"
-              :disabled="isRefreshing"
-              class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-muted dark:hover:bg-muted transition-colors text-muted-foreground dark:text-muted-foreground disabled:opacity-50"
-            >
-              <span class="material-icons text-base" :class="{ 'animate-spin': isRefreshing }">refresh</span>
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="top">{{ t('business.pluginsDialog.refreshList') }}</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
 
       <!-- 检查更新按钮（仅本地插件 tab 且配置了市场源时显示） -->
       <TooltipProvider v-if="ctx.activeTab.value === 'local' && ctx.marketplaceUrl.value" :ignore-non-keyboard-focus="true">

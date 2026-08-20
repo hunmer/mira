@@ -18,7 +18,7 @@
             <p class="text-foreground dark:text-muted-foreground text-base font-normal leading-normal">{{ $t('views.pluginsPanel.autoScanTitle') }}</p>
             <p class="text-muted-foreground dark:text-muted-foreground text-sm">{{ $t('views.pluginsPanel.autoScanDesc') }}</p>
           </div>
-          <Switch :checked="autoScanEnabled" @update:checked="autoScanEnabled = $event" />
+          <Switch :model-value="autoScanEnabled" @update:model-value="toggleAutoScan" />
         </div>
 
         <div v-if="autoScanEnabled">
@@ -32,6 +32,14 @@
             </SelectContent>
           </Select>
           <p class="text-muted-foreground dark:text-muted-foreground text-sm">{{ $t('views.pluginsPanel.scanIntervalDesc') }}</p>
+        </div>
+
+        <div class="flex items-center justify-between py-2">
+          <div>
+            <p class="text-foreground dark:text-muted-foreground text-base font-normal leading-normal">{{ $t('views.pluginsPanel.autoUpdateTitle') }}</p>
+            <p class="text-muted-foreground dark:text-muted-foreground text-sm">{{ $t('views.pluginsPanel.autoUpdateDesc') }}</p>
+          </div>
+          <Switch :model-value="autoUpdateEnabled" @update:model-value="toggleAutoUpdate" />
         </div>
       </div>
     </div>
@@ -120,6 +128,7 @@ const { t } = useI18n()
 // 响应式数据
 const pluginDirectory = ref('')
 const autoScanEnabled = ref(true)
+const autoUpdateEnabled = ref(false)
 const scanInterval = ref(30000) // 30秒
 const clientPluginMarketUrls = ref<string[]>([])
 const newMarketUrl = ref('')
@@ -142,6 +151,36 @@ const scanIntervalOptions = computed(() => [
 const showToast = (severity: 'success' | 'error' | 'warn' | 'info', summary: string, detail: string) => {
   // 使用全局事件总线或其他方式显示通知
   // 这里简化处理，可以根据实际项目结构调整
+}
+
+// 切换「自动扫描插件」开关并持久化（映射 autoLoadPlugins 设置）
+const toggleAutoScan = async (enabled: boolean) => {
+  autoScanEnabled.value = enabled
+  try {
+    await settingsStore.updateSettings({ autoLoadPlugins: enabled })
+  } catch (error) {
+    console.error('[autoScan] save failed:', error)
+    autoScanEnabled.value = !enabled
+  }
+}
+
+// 切换「自动更新插件」开关并持久化
+const toggleAutoUpdate = async (enabled: boolean) => {
+  console.info('[autoUpdate] switch toggled:', enabled)
+  autoUpdateEnabled.value = enabled
+  try {
+    await settingsStore.updateSettings({ autoUpdatePlugins: enabled })
+    const persisted = await ConfigStorage.getItem('mira-settings')
+    console.info(
+      '[autoUpdate] after save: store =', settingsStore.settings.autoUpdatePlugins,
+      '| persisted JSON has field =', persisted ? persisted.includes('"autoUpdatePlugins":' + String(enabled)) : null,
+      '| persisted =', persisted
+    )
+  } catch (error) {
+    console.error('[autoUpdate] save failed:', error)
+    autoUpdateEnabled.value = !enabled
+    showToast('error', t('views.common.saveFailed'), t('views.pluginsPanel.loadFailed'))
+  }
 }
 
 // 方法
@@ -185,6 +224,7 @@ const confirmReset = async () => {
   try {
     pluginDirectory.value = ''
     autoScanEnabled.value = true
+    autoUpdateEnabled.value = false
     scanInterval.value = 30000
     clientPluginMarketUrls.value = []
     newMarketUrl.value = ''
@@ -192,6 +232,7 @@ const confirmReset = async () => {
     await settingsStore.updateSettings({
       pluginsDirectory: '',
       autoLoadPlugins: true,
+      autoUpdatePlugins: false,
       trustedPlugins: [],
       clientPluginMarketUrl: '',
       clientPluginMarketUrls: []
@@ -270,6 +311,8 @@ const loadCurrentSettings = async () => {
 
     pluginDirectory.value = currentSettings.pluginsDirectory || ''
     autoScanEnabled.value = currentSettings.autoLoadPlugins ?? true
+    autoUpdateEnabled.value = currentSettings.autoUpdatePlugins ?? false
+    console.info('[autoUpdate] settings page loaded, autoUpdatePlugins =', currentSettings.autoUpdatePlugins)
 
     // 插件市场源列表（含旧单值迁移兜底）
     const urlsList = Array.isArray(currentSettings.clientPluginMarketUrls)
@@ -303,6 +346,7 @@ const loadCurrentSettings = async () => {
     showToast('error', t('views.common.saveFailed'), t('views.pluginsPanel.loadFailed'))
     pluginDirectory.value = ''
     autoScanEnabled.value = true
+    autoUpdateEnabled.value = false
     scanInterval.value = 30000
     clientPluginMarketUrls.value = []
     newMarketUrl.value = ''

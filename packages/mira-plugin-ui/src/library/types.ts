@@ -406,6 +406,8 @@ export interface MediaPickerFile {
   url: string
   /** 缩略图直链(带 token,列表展示用) */
   thumbUrl: string
+  /** 源文件是否图片(按扩展名判断,无扩展名视为图片);非图片的源文件 url 不是图,如需图片内容应改用 thumbUrl */
+  isImage: boolean
 }
 
 /** resolveUrls 自定义直链解析的返回结构 */

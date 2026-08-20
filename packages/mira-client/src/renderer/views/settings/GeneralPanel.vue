@@ -9,8 +9,8 @@
           <p class="text-muted-foreground dark:text-muted-foreground text-sm">{{ t('settings.autoStartServerDesc') }}
           </p>
         </div>
-        <Switch :checked="autoStartServer" :disabled="autoStartServerLoading || !hasServerAutoStart"
-          @update:checked="handleAutoStartChange" />
+        <Switch :model-value="autoStartServer" :disabled="autoStartServerLoading || !hasServerAutoStart"
+          @update:model-value="handleAutoStartChange" />
       </div>
       <div class="flex items-center justify-between gap-4 py-3">
         <div>
@@ -18,8 +18,8 @@
             t('settings.closeToTray') }}</p>
           <p class="text-muted-foreground dark:text-muted-foreground text-sm">{{ t('settings.closeToTrayDesc') }}</p>
         </div>
-        <Switch :checked="settingsStore.settings.closeToTray"
-          @update:checked="(enabled: boolean) => handleSettingChange('closeToTray', enabled)" />
+        <Switch :model-value="settingsStore.settings.closeToTray"
+          @update:model-value="(enabled: boolean) => handleSettingChange('closeToTray', enabled)" />
       </div>
     </div>
 

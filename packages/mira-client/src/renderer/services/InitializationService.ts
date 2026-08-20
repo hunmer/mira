@@ -70,6 +70,14 @@ export class InitializationService {
       }
       initState.completeStep(t('services.initialization.stepInitPlugins'))
 
+      // 自动更新插件（设置开启时）：静默检查并安装更新，失败不阻断启动
+      try {
+        const { usePluginStore } = await import('../stores/plugin')
+        await usePluginStore().runAutoPluginUpdates()
+      } catch (error) {
+        console.warn('Auto plugin update failed:', error)
+      }
+
       // 启用所有插件
       initState.updateStep(t('services.initialization.stepEnablePlugins'), 40)
       try {

@@ -883,7 +883,7 @@ export const usePluginStore = defineStore('plugin', () => {
    * 检查本地已安装插件是否有更新。
    * 判定条件（满足任一即标记可更新）：
    *   1. 市场条目版本 > 本地版本；
-   *   2. 市场条目提供 files 清单，且与本地文件 sha256 列表对不上。
+   *   2. 市场条目提供 files 清单，且同一路径文件的内容 sha256 不一致。
    * 无市场源 / 无市场目录时静默返回空。
    * 结果写入 pluginUpdates。
    */
@@ -919,21 +919,17 @@ export const usePluginStore = defineStore('plugin', () => {
           versionOutdated = true
         }
 
-        // 2. 文件 sha256 对比：仅当市场条目提供 files 清单时
+        // 2. 文件内容 sha256 对比：仅比较市场和本地都存在的同一路径文件
         if (!versionOutdated && entry.files && entry.files.length > 0) {
           const localFiles = await pluginService.getLocalFileChecksums(local.config.pluginId)
-          // 数量不同 → 视为不一致
-          if (localFiles.length !== entry.files.length) {
-            fileMismatch = true
-          } else {
-            // 按 path 建立 checksum 映射比对
-            const marketMap = new Map(entry.files.map((f) => [f.path, f.checksum]))
-            for (const lf of localFiles) {
-              const expected = marketMap.get(lf.path)
-              if (expected === undefined || expected !== lf.checksum) {
-                fileMismatch = true
-                break
-              }
+          // 数量差异、文件新增/删除、校验失败都不等同于已有文件内容发生变化。
+          // 只有同一路径文件的 checksum 明确不一致时，才标记为文件已改动。
+          const marketMap = new Map(entry.files.map((f) => [f.path, f.checksum]))
+          for (const lf of localFiles) {
+            const expected = marketMap.get(lf.path)
+            if (expected !== undefined && expected !== lf.checksum) {
+              fileMismatch = true
+              break
             }
           }
         }
@@ -951,6 +947,38 @@ export const usePluginStore = defineStore('plugin', () => {
     } finally {
       isCheckingUpdates.value = false
     }
+  }
+
+  /**
+   * 启动时自动更新：检查本地插件更新并逐个静默安装（无需用户确认）。
+   * 仅当设置开启「自动更新插件」时执行；未配置市场源 / 无更新 / 失败均静默返回，
+   * 不打断应用启动流程。
+   */
+  const runAutoPluginUpdates = async () => {
+    const settingsStore = useSettingsStore()
+    console.info('[autoUpdate] startup check, autoUpdatePlugins =', settingsStore.settings.autoUpdatePlugins)
+    if (!settingsStore.settings.autoUpdatePlugins) {
+      return { success: true, data: { updated: 0 } }
+    }
+
+    const checkResult = await checkPluginUpdates()
+    if (!checkResult.success) return checkResult
+
+    const entries = [...pluginUpdates.value.entries()]
+    let updated = 0
+    for (const [pluginId, { entry }] of entries) {
+      const installResult = await installMarketplacePlugin(entry)
+      if (installResult.success) {
+        updated++
+        pluginUpdates.value.delete(pluginId)
+      } else {
+        console.warn(`[autoUpdate] Failed to update plugin ${entry.pluginName}:`, (installResult as any).message || (installResult as any).error)
+      }
+    }
+    if (updated > 0) {
+      console.info(`[autoUpdate] ${updated} plugin(s) updated automatically`)
+    }
+    return { success: true, data: { updated } }
   }
 
   // ==================== 状态管理操作 ====================
@@ -1126,6 +1154,7 @@ export const usePluginStore = defineStore('plugin', () => {
     installMarketplacePlugin,
     cancelMarketInstall,
     checkPluginUpdates,
+    runAutoPluginUpdates,
 
     // 脚本管理（从模块导入）
     injectPluginsToDocument,

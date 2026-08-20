@@ -167,7 +167,7 @@
         <!-- 设置选项 -->
         <div class="space-y-3">
           <label class="flex items-center">
-            <Checkbox :checked="newBinding.isGlobal" @update:checked="newBinding.isGlobal = $event" />
+            <Checkbox :model-value="newBinding.isGlobal" @update:model-value="newBinding.isGlobal = Boolean($event)" />
             <span class="ml-2 text-sm text-foreground ">{{ $t('business.shortcutManagerDialog.globalShortcut') }}</span>
           </label>
 

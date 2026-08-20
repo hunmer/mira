@@ -545,6 +545,8 @@
     "directoryDesc": "插件将从此目录加载，建议使用独立的文件夹",
     "autoScanTitle": "自动扫描插件",
     "autoScanDesc": "启动时自动扫描并加载插件目录中的插件",
+    "autoUpdateTitle": "自动更新插件",
+    "autoUpdateDesc": "启动应用时自动检查并静默安装插件更新，无需确认",
     "scanIntervalTitle": "扫描间隔",
     "selectScanInterval": "选择扫描间隔",
     "scanIntervalDesc": "定期检查插件目录变化",

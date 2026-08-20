@@ -27,9 +27,16 @@ function onPicked(files: MediaPickerFile[]) {
     ext: file.name.includes('.') ? file.name.split('.').pop()! : '',
     width: file.width,
     height: file.height,
-    url: file.url,
+    // 源文件非图片(视频/文档等)时种子改用缩略图直链(缩略图恒为图片帧)
+    url: file.isImage ? file.url : file.thumbUrl,
     thumbnailURL: file.thumbUrl,
   })))
+}
+
+/** 打开裁剪弹窗:先切到所点任务(弹窗作用于当前任务,否则会显示别的任务) */
+function openCrop(taskId: string) {
+  setCurrent(taskId)
+  cropOpen.value = true
 }
 </script>
 
@@ -59,11 +66,11 @@ function onPicked(files: MediaPickerFile[]) {
         <CheckCircle2 v-else-if="task.state === 'success'" class="size-3.5 shrink-0 text-primary" />
         <CircleAlert v-else class="size-3.5 shrink-0 text-destructive" />
       </div>
-      <!-- 左上角：裁剪搜索入口（hover 显示） -->
+      <!-- 左上角：裁剪搜索入口（hover 显示）；先切到该任务再开弹窗 -->
       <span
         class="absolute top-1.5 left-1.5 flex size-5 items-center justify-center rounded-md bg-background/80 opacity-0 transition-opacity group-hover:opacity-100"
         :title="t('main.image.cropSearch')"
-        @click.stop="cropOpen = true"
+        @click.stop="openCrop(task.id)"
       >
         <Crop class="size-3.5" />
       </span>

@@ -545,6 +545,8 @@
     "directoryDesc": "Plugins will be loaded from this directory. A dedicated folder is recommended.",
     "autoScanTitle": "Auto-scan plugins",
     "autoScanDesc": "Automatically scan and load plugins from the plugin directory on startup",
+    "autoUpdateTitle": "Auto-update plugins",
+    "autoUpdateDesc": "Automatically check for and silently install plugin updates on startup, no confirmation needed",
     "scanIntervalTitle": "Scan interval",
     "selectScanInterval": "Select scan interval",
     "scanIntervalDesc": "Periodically check the plugin directory for changes",

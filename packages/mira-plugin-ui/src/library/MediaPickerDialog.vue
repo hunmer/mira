@@ -191,6 +191,13 @@ const services: MediaBrowserServices = {
   },
 }
 
+/** 图片扩展名(无扩展名视为图片:素材库以图片为主) */
+const IMAGE_EXTS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'avif', 'heic', 'heif', 'ico', 'tiff']
+
+function isImageItem(item: MediaBrowserItem): boolean {
+  return !item.extension || IMAGE_EXTS.includes(item.extension.toLowerCase())
+}
+
 function close() {
   open.value = false
 }
@@ -217,6 +224,7 @@ async function confirmAdd() {
     selected.value.map((item) => ({
       id: item.id,
       name: item.title,
+      isImage: isImageItem(item),
       ...sizeOf(item.id),
       ...resolve(currentLibraryId.value, item),
     })),

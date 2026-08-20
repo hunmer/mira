@@ -55,7 +55,7 @@
         <!-- 启用退出动效 -->
         <div class="flex items-center justify-between gap-3 rounded-lg border p-3">
           <Label class="text-xs">{{ $t('views.playgroundPanel.pageSlideExitEnabled') }}</Label>
-          <Switch v-model:checked="exitEnabled" />
+          <Switch v-model="exitEnabled" />
         </div>
 
         <!-- 位移距离 -->

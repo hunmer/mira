@@ -204,8 +204,8 @@
                       <div class="space-y-2">
                         <label v-for="type in fileTypes" :key="type.value" class="flex items-center cursor-pointer">
                           <Checkbox
-                            :checked="selectedFileTypes.includes(type.value)"
-                            @update:checked="($event: boolean) => { if ($event) selectedFileTypes.push(type.value); else selectedFileTypes = selectedFileTypes.filter(v => v !== type.value) }"
+                            :model-value="selectedFileTypes.includes(type.value)"
+                            @update:model-value="($event) => { if ($event) selectedFileTypes.push(type.value); else selectedFileTypes = selectedFileTypes.filter(v => v !== type.value) }"
                             class="mr-2"
                           />
                           <span class="text-sm text-foreground">{{ type.label }}</span>
@@ -229,8 +229,8 @@
                       <div class="space-y-2">
                         <label v-for="time in uploadTimes" :key="time.value" class="flex items-center cursor-pointer">
                           <Checkbox
-                            :checked="selectedUploadTime.includes(time.value)"
-                            @update:checked="($event: boolean) => { if ($event) selectedUploadTime.push(time.value); else selectedUploadTime = selectedUploadTime.filter(v => v !== time.value) }"
+                            :model-value="selectedUploadTime.includes(time.value)"
+                            @update:model-value="($event) => { if ($event) selectedUploadTime.push(time.value); else selectedUploadTime = selectedUploadTime.filter(v => v !== time.value) }"
                             class="mr-2"
                           />
                           <span class="text-sm text-foreground">{{ time.label }}</span>

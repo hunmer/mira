@@ -27,8 +27,8 @@
 
       <!-- 开关 -->
       <Switch
-        :checked="plugin.status === 'loaded'"
-        @update:checked="handleToggle"
+        :model-value="plugin.status === 'loaded'"
+        @update:model-value="handleToggle"
       />
     </div>
 

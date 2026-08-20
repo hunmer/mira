@@ -8,8 +8,8 @@
             <p class="text-muted-foreground dark:text-muted-foreground text-sm">{{ $t('views.notificationsPanel.enableDesc') }}</p>
           </div>
           <Switch
-            :checked="settingsStore.settings.enableNotifications"
-            @update:checked="handleSettingChange('enableNotifications', $event)"
+            :model-value="settingsStore.settings.enableNotifications"
+            @update:model-value="handleSettingChange('enableNotifications', $event)"
           />
         </div>
 
@@ -19,8 +19,8 @@
             <p class="text-muted-foreground dark:text-muted-foreground text-sm">{{ $t('views.notificationsPanel.importDesc') }}</p>
           </div>
           <Switch
-            :checked="settingsStore.settings.enableImportNotifications"
-            @update:checked="handleSettingChange('enableImportNotifications', $event)"
+            :model-value="settingsStore.settings.enableImportNotifications"
+            @update:model-value="handleSettingChange('enableImportNotifications', $event)"
           />
         </div>
       </div>
