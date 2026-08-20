@@ -18,13 +18,16 @@
 
 | 文件 | 职责 |
 |------|------|
-| `index.ts` | 子入口：导出 9 个组件 + 2 个 hooks + tree/drag-data/i18n 工具 + 全部类型 |
+| `index.ts` | 子入口：导出组件 + hooks + tree/drag-data/i18n/serverAuth 工具 + 全部类型 |
 | `LibraryTree.vue` / `LibraryTreeView.vue` | 文件夹/标签树视图（搜索、拖拽排序/跨层移动、右键菜单） |
 | `CreateNodeDialog.vue` | 新建/编辑节点对话框（标题/描述/颜色/图标） |
 | `LibrarySelect.vue` | 素材库选择下拉（支持跨服务器分组 `LibrarySelectServer`） |
 | `ContextMenu.vue` | 右键菜单 |
 | `Dropzone.vue` | 拖放区（文件/链接） |
-| `MediaBrowser.vue` | 文件浏览器（瀑布流 vue-masonry + 框选 vue-selection-box，筛选/排序/缩略图） |
+| `MediaBrowser.vue` | 文件浏览器（瀑布流 vue-masonry + 框选 vue-selection-box，筛选/排序/缩略图；`enableSelection` 内置开启选择；`selectMode` single/multiple） |
+| `MediaPickerDialog.vue` | 「从素材库选择媒体」通用对话框：Dialog + MediaBrowser 多选 + SDK 直连，确认抛 `MediaPickerFile[]`（原图/缩略图直链 + 宽高）；`selectMode` 可切单选 |
+| `MediaWaterfall.vue` | 通用瀑布流（封装 vue-masonry，columnWidth/触底加载） |
+| `serverAuth.ts` | `resolveMiraServerConfig`：server/token 通用解析（props → 窗口 query → 主窗口共享 localStorage） |
 | `ServerManagerView.vue` / `ServerManagerDialog.vue` | 受管服务器增删改/测连/切换 |
 | `useLibraryTreeData.ts` | 树数据加载与状态（基于 services） |
 | `useLibraryTreeActions.ts` | 树节点动作（新建/删除/编辑/移动/排序，依赖 services + dialog） |

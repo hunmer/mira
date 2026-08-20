@@ -12,6 +12,8 @@ export { default as LibrarySelect } from './LibrarySelect.vue'
 export { default as ContextMenu } from './ContextMenu.vue'
 export { default as Dropzone } from './Dropzone.vue'
 export { default as MediaBrowser } from './MediaBrowser.vue'
+export { default as MediaPickerDialog } from './MediaPickerDialog.vue'
+export { resolveMiraServerConfig, type MiraServerConfig } from './serverAuth'
 export { default as MediaWaterfall } from './MediaWaterfall.vue'
 export { default as MediaDetail } from './MediaDetail.vue'
 export { default as MediaLibraryView } from './MediaLibraryView.vue'
@@ -53,6 +55,8 @@ export type {
   MediaBrowserServices,
   MediaBrowserListResult,
   MediaBrowserSortField,
+  MediaPickerFile,
+  MediaPickerUrls,
   MediaDetailItem,
   MediaDetailServices,
   MediaLibraryServices,

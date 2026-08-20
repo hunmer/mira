@@ -29,6 +29,14 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
     target: 'chrome100',
+    rollupOptions: {
+      output: {
+        // 插件窗口经 file:// loadFile 加载,运行时动态 import 分包 chunk 会被拦截
+        // (点击异步组件入口无反应的根因);保留 defineAsyncComponent 写法,
+        // 打包时内联回单文件产物
+        inlineDynamicImports: true,
+      },
+    },
   },
   // 避开 mira-plugin-ui demo 的 5173
   server: { port: 5174 },

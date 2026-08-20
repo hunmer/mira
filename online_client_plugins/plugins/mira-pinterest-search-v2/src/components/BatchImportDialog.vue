@@ -3,7 +3,7 @@ import { ref, watch } from 'vue'
 import { MiraClient } from 'mira-app-core/shared/sdk'
 import BatchUploadDialog from 'mira-plugin-ui/src/BatchUploadDialog.vue'
 import type { BatchUploadFileService } from 'mira-plugin-ui/src/types'
-import { createClient } from '@/lib/server'
+import { resolveMiraServerConfig } from 'mira-plugin-ui/library'
 import { logError } from '@/lib/mira'
 import { t } from '@/lib/i18n'
 
@@ -38,6 +38,15 @@ async function loadTree(libraryId: string) {
   if (!client || !libraryId) return
   folders.value = ((await client.folders().getAll(libraryId)) as any[]) || []
   tags.value = ((await client.tags().getAll(libraryId)) as any[]) || []
+}
+
+/** 鉴权直连 client（query → localStorage 自动解析，见 mira-plugin-ui serverAuth） */
+function createClient(): MiraClient | null {
+  const { server, token } = resolveMiraServerConfig()
+  if (!server || !token) return null
+  const client = new MiraClient(server)
+  client.setToken(token)
+  return client
 }
 
 watch(

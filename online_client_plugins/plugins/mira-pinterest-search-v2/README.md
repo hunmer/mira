@@ -7,8 +7,10 @@ UI 全部改用 `packages/mira-plugin-ui`（shadcn-vue / reka-ui + tailwind toke
 ## 功能
 
 - 从 Mira 选中图片右键「Pinterest 视觉搜索 v2」打开窗口（`query.media` 传入选中项）
-- 多任务队列（并发 3），左栏任务列表 / 中栏种子图裁剪 / 右栏瀑布流结果
-- 局部裁剪搜索：中栏拖动框选画面区域，仅搜索该区域
+- 多任务队列（并发 3），左栏任务列表 / 右栏瀑布流结果（两栏布局）
+- 左栏底部「+」占位：弹 `mira-plugin-ui` 通用 `MediaPickerDialog`（MediaBrowser 多选 + server/token 自动解析）从素材库选图，确认后直接作为搜索任务入列
+- 产物为单文件 bundle（`inlineDynamicImports`）：插件窗口经 file:// loadFile 加载，运行时动态 import 分包 chunk 会被拦截（点击入口无反应），异步组件写法仅在代码层解耦
+- 局部裁剪搜索：左栏任务卡左上角「裁剪」按钮弹窗，拖动框选画面区域，仅搜索该区域
 - 瀑布流复用 `mira-plugin-ui/library` 通用 `MediaWaterfall` 组件（自 MediaBrowser 抽离，
   新增列宽模式与触底加载）：列宽即缩放值，触底以结果图作为新种子 + bookmark 分页持续加载
 - 保存图片：探测原图（originals PNG/JPG）后经宿主 `item.addFromURL` 写入素材库（旧版只打开 URL）

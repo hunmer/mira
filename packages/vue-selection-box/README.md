@@ -63,7 +63,8 @@ const items = [{ id: '1', title: 'A' }, { id: '2', title: 'B' }]
 | Prop | 类型 | 默认 | 说明 |
 | --- | --- | --- | --- |
 | `v-model` | `string[]` | `[]` | 已选中的 item id 集合 |
-| `multiple` | `boolean` | `true` | 是否允许多选 |
+| `multiple` | `boolean` | `true` | 是否允许多选（旧布尔写法，兼容保留；与 `selectMode` 组合取"更严格"一方） |
+| `selectMode` | `'single' \| 'multiple'` | `'multiple'` | 选择模式（与 MediaBrowser/MediaPickerDialog 同名同义）：`single` 强制单选（禁框选与修饰键加选）；缺省时沿用 `multiple` |
 | `disabled` | `boolean` | `false` | 禁用全部选择交互 |
 | `realtimeSelection` | `boolean` | `true` | 拖拽过程中实时更新选中项 |
 | `doubleClickToClear` | `boolean` | `true` | 双击空白清空选择 |

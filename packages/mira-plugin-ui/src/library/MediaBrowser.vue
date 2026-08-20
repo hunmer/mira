@@ -93,6 +93,8 @@ const props = defineProps<{
   menus?: MediaBrowserMenu[];
   /** 显式开启选择(内置选项):true 时无需绑定 v-model:selected 即可点选/框选,选择状态组件内部自持 */
   enableSelection?: boolean;
+  /** 选择模式:multiple=多选(框选/Ctrl/Shift/全选);single=单选(点击替换,再点取消,禁框选与全选)。缺省 multiple */
+  selectMode?: 'single' | 'multiple';
 }>();
 
 /** 当前素材库 id;变化时自动重载(传 v-model:library-id 后可经选择器切换) */
@@ -295,6 +297,7 @@ const noData = computed(() => !loading.value && !error.value && items.value.leng
 // ---- 选择(SelectionBox 框选 + 点选;selectedIds 为 id 字符串集,与 selected 双向同步) ----
 // 启用条件:enableSelection 显式开启(内置选项,选择状态内部自持)或宿主绑定了 v-model:selected(受控)
 const selectionEnabled = computed(() => props.enableSelection ?? selected.value !== undefined);
+const isMultiple = computed(() => (props.selectMode ?? 'multiple') === 'multiple');
 const selectionBoxRef = ref<InstanceType<typeof SelectionBox> | null>(null);
 const selectedIds = ref<string[]>([]);
 
@@ -320,10 +323,31 @@ function isSelected(item: MediaBrowserItem): boolean {
   return selectionEnabled.value && selectedIds.value.includes(String(item.id));
 }
 
-/** 卡片点击:启用选择时走 SelectionBox 的修饰键逻辑(Ctrl/Shift/Alt),并抛 itemClick */
+/** 卡片点击:常规文件管理器选择语义(Shift 交 SelectionBox 连选,锚点由其维护)
+ *  无修饰键=单选替换,再点唯一选中项=取消;Ctrl/Cmd=切换;Alt=减选;
+ *  selectMode=single 时一律单选替换(再点取消) */
 function onClickItem(item: MediaBrowserItem, event: MouseEvent) {
   if (selectionEnabled.value) {
-    selectionBoxRef.value?.handleItemClick(String(item.id), event);
+    const id = String(item.id);
+    if (isMultiple.value && event.shiftKey) {
+      selectionBoxRef.value?.handleItemClick(id, event);
+    } else if (!isMultiple.value) {
+      selectedIds.value = selectedIds.value[0] === id ? [] : [id];
+    } else {
+      const set = new Set(selectedIds.value);
+      if (event.altKey) {
+        set.delete(id);
+      } else if (event.ctrlKey || event.metaKey) {
+        if (set.has(id)) set.delete(id);
+        else set.add(id);
+      } else if (set.size === 1 && set.has(id)) {
+        set.clear();
+      } else {
+        set.clear();
+        set.add(id);
+      }
+      selectedIds.value = [...set];
+    }
   }
   emit('itemClick', item);
 }
@@ -332,15 +356,15 @@ function clearSelection() {
   selectedIds.value = [];
 }
 
-// ---- 全选(FilterBar 的全选开关;按"当前页全部选中"判定,翻页选择互不覆盖) ----
+// ---- 全选(FilterBar 的全选开关;按"当前页全部选中"判定,翻页选择互不覆盖;单选模式不提供) ----
 const isAllSelected = computed(
-  () => selectionEnabled.value && items.value.length > 0
+  () => isMultiple.value && selectionEnabled.value && items.value.length > 0
     && items.value.every(i => selectedIds.value.includes(String(i.id))),
 );
 
-/** 当前页全选/取消(增删当前页 id,保留其他页的已选) */
+/** 当前页全选/取消(增删当前页 id,保留其他页的已选);单选模式禁用 */
 function toggleSelectAll() {
-  if (!selectionEnabled.value) return;
+  if (!selectionEnabled.value || !isMultiple.value) return;
   const ids = items.value.map(i => String(i.id));
   const set = new Set(selectedIds.value);
   if (ids.every(id => set.has(id))) ids.forEach(id => set.delete(id));
@@ -500,7 +524,7 @@ function getAspectOf(item: MediaBrowserItem): string | undefined {
       <FilterBar
         class="min-w-0 flex-1"
         :filters="filterRules"
-        :is-all-selected="selectionEnabled ? isAllSelected : undefined"
+        :is-all-selected="selectionEnabled && isMultiple ? isAllSelected : undefined"
         :folder-tree-items="folderTree"
         :tag-tree-items="tagTree"
         :sort="sortField"
@@ -554,8 +578,9 @@ function getAspectOf(item: MediaBrowserItem): string | undefined {
       ref="selectionBoxRef"
       v-model="selectedIds"
       class="min-h-0 flex-1 overflow-y-auto p-3"
+      :select-mode="props.selectMode ?? 'multiple'"
       :tabindex="selectionEnabled ? 0 : undefined"
-      :enable-select-all-shortcut="selectionEnabled"
+      :enable-select-all-shortcut="selectionEnabled && isMultiple"
       :enable-delete-selection-shortcut="selectionEnabled"
       @delete-selection="onDeleteSelection"
     >

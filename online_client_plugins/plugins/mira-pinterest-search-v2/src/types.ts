@@ -34,6 +34,8 @@ export interface SearchTask {
   height: number
   /** 种子图地址（http(s) 或 data:） */
   imageUrl: string
+  /** 缩略图地址（左栏列表展示；素材库任务用缩略图直链，省流量） */
+  thumbUrl?: string
   state: TaskState
   /** failed 时的错误信息（'Failed to fetch' 视为网络错误） */
   error?: string

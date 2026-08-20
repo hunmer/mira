@@ -39,6 +39,7 @@
     "@vueuse/core": "^14.4.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "mira-app-core": "workspace:*",
     "motion-v": "^2.2.1",
     "reka-ui": "^2.9.7",
     "tailwind-merge": "^3.3.0"

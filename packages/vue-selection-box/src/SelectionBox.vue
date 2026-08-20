@@ -33,6 +33,7 @@ import type { SelectionBoxProps, SelectionBoxEmits, SelectableRect } from './typ
 const props = withDefaults(defineProps<SelectionBoxProps>(), {
   modelValue: () => [],
   multiple: true,
+  selectMode: 'multiple',
   disabled: false,
   realtimeSelection: true,
   doubleClickToClear: true,
@@ -46,6 +47,9 @@ const props = withDefaults(defineProps<SelectionBoxProps>(), {
 })
 
 const emit = defineEmits<SelectionBoxEmits>()
+
+/** 有效多选开关:selectMode='single' 强制单选(无视 multiple);缺省沿用 multiple(兼容旧布尔写法) */
+const isMultiple = computed(() => props.selectMode !== 'single' && props.multiple)
 
 // 响应式数据
 const containerRef = ref<HTMLElement | null>(null)
@@ -123,6 +127,8 @@ const getRelativePosition = (e: MouseEvent) => {
 // 开始选择
 const startSelection = (e: MouseEvent) => {
   if (props.disabled) return
+  // 单选模式无框选意义,禁用拖拽框选(点击选择不受影响,由宿主处理)
+  if (!isMultiple.value) return
 
   // 检查是否点击在容器或允许选择的区域
   const target = e.target as HTMLElement
@@ -439,7 +445,7 @@ const handleItemClick = (itemId: string, event: MouseEvent) => {
     if (selectedItems.value.has(itemId)) {
       selectedItems.value.delete(itemId)
     }
-  } else if (event.shiftKey && props.multiple) {
+  } else if (event.shiftKey && isMultiple.value) {
     const selectableElements = getSelectableElements()
     const currentIndex = selectableElements.findIndex(el => getElementItemId(el) === itemId)
 
@@ -468,14 +474,14 @@ const handleItemClick = (itemId: string, event: MouseEvent) => {
     } else {
       selectedItems.value.add(itemId)
     }
-  } else if (event.ctrlKey && props.multiple) {
+  } else if (event.ctrlKey && isMultiple.value) {
     if (selectedItems.value.has(itemId)) {
       selectedItems.value.delete(itemId)
     } else {
       selectedItems.value.add(itemId)
     }
   } else {
-    if (!props.multiple) {
+    if (!isMultiple.value) {
       selectedItems.value.clear()
     }
     selectedItems.value.add(itemId)
@@ -589,7 +595,7 @@ const toggleItem = (itemId: string) => {
 }
 
 const selectAll = () => {
-  if (!props.multiple) return
+  if (!isMultiple.value) return
 
   const selectableElements = getSelectableElements()
   selectableElements.forEach(element => {

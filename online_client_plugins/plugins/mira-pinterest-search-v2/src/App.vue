@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { ImageDown } from '@lucide/vue'
 import HeaderBar from '@/components/HeaderBar.vue'
-import ImagePreview from '@/components/ImagePreview.vue'
-import InputWarningDialog from '@/components/InputWarningDialog.vue'
-import ExitConfirmDialog from '@/components/ExitConfirmDialog.vue'
-import PreviewDialog from '@/components/PreviewDialog.vue'
 import ResultPanel from '@/components/ResultPanel.vue'
 import TaskList from '@/components/TaskList.vue'
+
+// 弹窗类组件异步加载:reka-ui Dialog 等依赖拆出主 chunk(本地文件加载,延迟可忽略)
+const InputWarningDialog = defineAsyncComponent(() => import('@/components/InputWarningDialog.vue'))
+const ExitConfirmDialog = defineAsyncComponent(() => import('@/components/ExitConfirmDialog.vue'))
+const PreviewDialog = defineAsyncComponent(() => import('@/components/PreviewDialog.vue'))
 import { t } from '@/lib/i18n'
 import { getSelectedItems, isDark, logInfo, onThemeChanged, openExternal } from '@/lib/mira'
 import { pinUrl } from '@/lib/pinterest'
@@ -200,8 +201,9 @@ onBeforeUnmount(() => {
     <HeaderBar :scale="scale" @zoom="zoom" @scale="setScale" @close="exitOpen = true" />
 
     <div class="flex min-h-0 flex-1">
-      <TaskList v-if="state.tasks.length" />
-      <ImagePreview />
+      <!-- 常显：空任务时也可经底部「+」从素材库添加图片建任务；
+           种子图裁剪已移入 TaskList 左上角弹窗（原中栏常驻区移除） -->
+      <TaskList />
       <ResultPanel :scale="scale" />
     </div>
 

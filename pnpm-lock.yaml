@@ -693,6 +693,9 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      mira-app-core:
+        specifier: workspace:*
+        version: link:../mira-app-core
       motion-v:
         specifier: ^2.2.1
         version: 2.2.1(@vueuse/core@14.4.0(vue@3.5.13(typescript@5.8.3)))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vue@3.5.13(typescript@5.8.3))
@@ -17302,6 +17305,7 @@ snapshots:
       '@vueuse/core': 14.4.0(vue@3.5.41(typescript@5.8.3))
       class-variance-authority: 0.7.1
       clsx: 2.1.1
+      mira-app-core: link:packages/mira-app-core
       motion-v: 2.2.1(@vueuse/core@14.4.0(vue@3.5.41(typescript@5.8.3)))(vue@3.5.41(typescript@5.8.3))
       reka-ui: 2.10.3(vue@3.5.41(typescript@5.8.3))
       tailwind-merge: 3.6.0

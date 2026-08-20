@@ -23,7 +23,7 @@ import CanvasContextMenu from './CanvasContextMenu.vue'
 import CanvasImagePreview from './CanvasImagePreview.vue'
 import CanvasObjectManager from './CanvasObjectManager.vue'
 import CanvasSelectionToolbar from './CanvasSelectionToolbar.vue'
-import MediaPickerDialog from './MediaPickerDialog.vue'
+import { MediaPickerDialog } from 'mira-plugin-ui/library'
 
 interface Project {
   id: string
@@ -501,11 +501,12 @@ onBeforeUnmount(() => {
       </div>
     </main>
 
-    <!-- 素材库浏览器（添加图片） -->
+    <!-- 素材库浏览器（添加图片）：mira-plugin-ui 通用组件，storage-key 沿用本地版记忆 -->
     <MediaPickerDialog
       v-model:open="mediaPickerOpen"
       :server="serverConfig.server"
       :token="serverConfig.token"
+      storage-key="mira-whiteboard:picker-library"
       @confirm="handlePickerConfirm"
     />
 

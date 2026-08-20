@@ -2,8 +2,10 @@
 export interface SelectionBoxProps {
   /** 已选中的 item id 集合(v-model) */
   modelValue?: string[]
-  /** 是否允许多选 */
+  /** 是否允许多选(旧布尔写法,兼容保留;与 selectMode 组合取"更严格"一方) */
   multiple?: boolean
+  /** 选择模式,与 MediaBrowser 等宿主同形:'single'=单选(禁框选/修饰键加选),'multiple'=多选。缺省 multiple;设为 single 时无视 multiple 强制单选 */
+  selectMode?: 'single' | 'multiple'
   /** 禁用全部选择交互 */
   disabled?: boolean
   /** 拖拽过程中实时更新选中项 */

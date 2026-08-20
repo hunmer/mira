@@ -393,3 +393,23 @@ export interface MediaBrowserServerManager {
   /** 服务器管理服务(add/edit/remove/test/activate,由宿主实现) */
   services: ServerManagerServices
 }
+
+/* ============ 素材库选图对话框(MediaPickerDialog) ============ */
+
+/** MediaPickerDialog 确认抛出的选中文件(直链 + 宽高) */
+export interface MediaPickerFile {
+  id: string | number
+  name: string
+  width: number
+  height: number
+  /** 原图直链(带 token,可直接 img/fetch 访问) */
+  url: string
+  /** 缩略图直链(带 token,列表展示用) */
+  thumbUrl: string
+}
+
+/** resolveUrls 自定义直链解析的返回结构 */
+export interface MediaPickerUrls {
+  url: string
+  thumbUrl: string
+}

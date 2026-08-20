@@ -45,6 +45,7 @@ function makeTask(input: MediaInput): SearchTask {
     width: input.width || 0,
     height: input.height || 0,
     imageUrl: url,
+    thumbUrl: input.thumbnailURL || undefined,
     state: 'waiting',
     results: [],
     seedIndex: 0,

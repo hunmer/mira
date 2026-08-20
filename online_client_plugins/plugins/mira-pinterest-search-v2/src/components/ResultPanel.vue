@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import { CircleAlert, ImageDown, ImageOff, ImagePlus, Loader2, WifiOff, X } from '@lucide/vue'
 import { SelectionBox } from '@hunmer/vue-selection-box'
 import '@hunmer/vue-selection-box/style.css'
-import { MediaWaterfall } from 'mira-plugin-ui/library'
+// 细路径导入:经 library/index 入口会把 MediaBrowser 等未用大组件拖进 chunk
+import MediaWaterfall from 'mira-plugin-ui/src/library/MediaWaterfall.vue'
+import { resolveMiraServerConfig } from 'mira-plugin-ui/src/library/serverAuth'
 import { Button } from 'mira-plugin-ui/src/components/ui/button'
 import {
   Empty,
@@ -16,11 +18,12 @@ import {
 import { t } from '@/lib/i18n'
 import { DEMO_MEDIA, logError } from '@/lib/mira'
 import { getLargeUrl } from '@/lib/pinterest'
-import { readServerConfig } from '@/lib/server'
 import { addTasks, currentTask, loadMore, retryTask } from '@/stores/tasks'
-import BatchImportDialog from './BatchImportDialog.vue'
 import ResultCard from './ResultCard.vue'
 import type { ResultItem } from '@/types'
+
+// 批量导入对话框异步加载：BatchUploadForm/LibraryTreeView/SDK 等大依赖拆出主 chunk
+const BatchImportDialog = defineAsyncComponent(() => import('./BatchImportDialog.vue'))
 
 /**
  * 右栏结果区：按当前任务状态切换空态/瀑布流；瀑布流布局复用
@@ -65,9 +68,27 @@ const selectedItems = computed(() =>
   (task.value?.results || []).filter((item) => selectedKeys.value.includes(item.key)),
 )
 
-/** 卡片点击：经 SelectionBox 处理（无修饰键单选 / Ctrl 加选 / Shift 连选 / Alt 减选） */
+/** 卡片点击:与 MediaBrowser 同一选择语义——无修饰键=单选替换(再点唯一选中项=取消),
+ *  Ctrl/Cmd=切换,Alt=减选;Shift 连选交 SelectionBox(锚点由其维护) */
 function onCardClick(item: ResultItem, event: MouseEvent) {
-  selectionBoxRef.value?.handleItemClick(item.key, event)
+  const id = item.key
+  if (event.shiftKey) {
+    selectionBoxRef.value?.handleItemClick(id, event)
+    return
+  }
+  const set = new Set(selectedKeys.value)
+  if (event.altKey) {
+    set.delete(id)
+  } else if (event.ctrlKey || event.metaKey) {
+    if (set.has(id)) set.delete(id)
+    else set.add(id)
+  } else if (set.size === 1 && set.has(id)) {
+    set.clear()
+  } else {
+    set.clear()
+    set.add(id)
+  }
+  selectedKeys.value = [...set]
 }
 
 // ── 批量导入素材库 ───────────────────────────────────────────────
@@ -87,7 +108,7 @@ function toFile(item: ResultItem, url: string, blob: Blob): File {
 async function startImport() {
   const items = selectedItems.value
   if (!items.length || fetching.active) return
-  if (!readServerConfig().token) {
+  if (!resolveMiraServerConfig().token) {
     window.alert(t('main.selection.noServer'))
     return
   }

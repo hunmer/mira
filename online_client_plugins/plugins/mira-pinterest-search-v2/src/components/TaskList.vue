@@ -1,11 +1,36 @@
 <script setup lang="ts">
-import { CheckCircle2, CircleAlert, Loader2, X } from '@lucide/vue'
+import { defineAsyncComponent, ref } from 'vue'
+import { CheckCircle2, CircleAlert, Crop, Loader2, Plus, X } from '@lucide/vue'
+import type { MediaPickerFile } from 'mira-plugin-ui/library'
 import { t } from '@/lib/i18n'
-import { closeTask, setCurrent, state } from '@/stores/tasks'
+import { addTasks, closeTask, setCurrent, state } from '@/stores/tasks'
 
 /**
  * 左栏任务列表：缩略图 + 状态徽标；点击切换当前任务，悬停关闭，中键关闭。
+ * 卡片左上角「裁剪」按钮 → 种子图裁剪搜索弹窗（ImagePreview）；
+ * 列表底部「+」占位 → 素材库选图弹窗（MediaPickerDialog，自动鉴权）。
  */
+const pickerOpen = ref(false)
+const cropOpen = ref(false)
+
+// 弹窗异步加载声明（实际产物经 inlineDynamicImports 内联为单文件,见 vite.config）
+const MediaPickerDialog = defineAsyncComponent(() =>
+  import('mira-plugin-ui/src/library/MediaPickerDialog.vue'),
+)
+const ImagePreview = defineAsyncComponent(() => import('./ImagePreview.vue'))
+
+function onPicked(files: MediaPickerFile[]) {
+  if (!files.length) return
+  void addTasks(files.map((file) => ({
+    id: `lib-${file.id}`,
+    name: file.name,
+    ext: file.name.includes('.') ? file.name.split('.').pop()! : '',
+    width: file.width,
+    height: file.height,
+    url: file.url,
+    thumbnailURL: file.thumbUrl,
+  })))
+}
 </script>
 
 <template>
@@ -23,7 +48,7 @@ import { closeTask, setCurrent, state } from '@/stores/tasks'
       @auxclick.middle.prevent="closeTask(task.id)"
     >
       <img
-        :src="task.imageUrl"
+        :src="task.thumbUrl || task.imageUrl"
         :alt="task.name || t('main.image.noTitle')"
         class="h-24 w-full bg-muted object-cover"
         loading="lazy"
@@ -34,13 +59,44 @@ import { closeTask, setCurrent, state } from '@/stores/tasks'
         <CheckCircle2 v-else-if="task.state === 'success'" class="size-3.5 shrink-0 text-primary" />
         <CircleAlert v-else class="size-3.5 shrink-0 text-destructive" />
       </div>
+      <!-- 左上角：裁剪搜索入口（hover 显示） -->
       <span
-        class="absolute right-1.5 top-1.5 flex size-5 items-center justify-center rounded-md bg-background/80 opacity-0 transition-opacity group-hover:opacity-100"
+        class="absolute top-1.5 left-1.5 flex size-5 items-center justify-center rounded-md bg-background/80 opacity-0 transition-opacity group-hover:opacity-100"
+        :title="t('main.image.cropSearch')"
+        @click.stop="cropOpen = true"
+      >
+        <Crop class="size-3.5" />
+      </span>
+      <span
+        class="absolute top-1.5 right-1.5 flex size-5 items-center justify-center rounded-md bg-background/80 opacity-0 transition-opacity group-hover:opacity-100"
         :title="t('main.preview.close')"
         @click.stop="closeTask(task.id)"
       >
         <X class="size-3.5" />
       </span>
     </button>
+
+    <!-- 底部「+」占位：从素材库添加图片作为搜索任务 -->
+    <button
+      type="button"
+      class="flex h-24 w-full flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground"
+      :title="t('main.picker.add')"
+      @click="pickerOpen = true"
+    >
+      <Plus class="size-5" />
+      <span class="text-[11px]">{{ t('main.picker.add') }}</span>
+    </button>
+
+    <MediaPickerDialog
+      v-model:open="pickerOpen"
+      storage-key="mira-pinterest-search-v2:picker-library"
+      :title="t('main.picker.title')"
+      :confirm-text="t('main.picker.add')"
+      :selected-count-text="t('main.picker.selectedCount')"
+      @confirm="onPicked"
+    />
+
+    <!-- 种子图裁剪搜索弹窗（作用于当前任务） -->
+    <ImagePreview v-model:open="cropOpen" />
   </aside>
 </template>
