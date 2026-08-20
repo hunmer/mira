@@ -11,6 +11,37 @@ importers:
 
   .: {}
 
+  online_client_plugins/plugins/mira-pinterest-search-v2:
+    dependencies:
+      '@lucide/vue':
+        specifier: ^1.32.0
+        version: 1.32.0(vue@3.5.41(typescript@5.8.3))
+      mira-plugin-ui:
+        specifier: workspace:*
+        version: link:../../../packages/mira-plugin-ui
+      vue:
+        specifier: ^3.5.13
+        version: 3.5.41(typescript@5.8.3)
+    devDependencies:
+      '@tailwindcss/vite':
+        specifier: ^4.3.3
+        version: 4.3.3(vite@6.4.2(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.32.0)(stylus@0.57.0)(tsx@4.23.12)(yaml@2.9.0))
+      '@vitejs/plugin-vue':
+        specifier: ^5.2.3
+        version: 5.2.4(vite@6.4.2(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.32.0)(stylus@0.57.0)(tsx@4.23.12)(yaml@2.9.0))(vue@3.5.41(typescript@5.8.3))
+      tailwindcss:
+        specifier: ^4.3.3
+        version: 4.3.3
+      tw-animate-css:
+        specifier: ^1.0.0
+        version: 1.4.0
+      typescript:
+        specifier: ~5.8.3
+        version: 5.8.3
+      vite:
+        specifier: ^6.3.2
+        version: 6.4.2(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.32.0)(stylus@0.57.0)(tsx@4.23.12)(yaml@2.9.0)
+
   online_client_plugins/plugins/mira-whiteboard:
     dependencies:
       '@woven-canvas/core':
@@ -13288,6 +13319,11 @@ snapshots:
       vite: 6.4.2(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.32.0)(stylus@0.57.0)(tsx@4.23.12)(yaml@2.9.0)
       vue: 3.5.41(typescript@5.7.3)
 
+  '@vitejs/plugin-vue@5.2.4(vite@6.4.2(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.32.0)(stylus@0.57.0)(tsx@4.23.12)(yaml@2.9.0))(vue@3.5.41(typescript@5.8.3))':
+    dependencies:
+      vite: 6.4.2(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.32.0)(stylus@0.57.0)(tsx@4.23.12)(yaml@2.9.0)
+      vue: 3.5.41(typescript@5.8.3)
+
   '@vitest/coverage-v8@1.6.1(vitest@1.6.1(@types/node@24.13.3)(jsdom@24.1.3)(lightningcss@1.32.0)(stylus@0.57.0))':
     dependencies:
       '@ampproject/remapping': 2.3.0
@@ -19699,9 +19735,9 @@ snapshots:
       esbuild: 0.25.12
       fdir: 6.5.0(picomatch@4.0.4)
       picomatch: 4.0.4
-      postcss: 8.5.14
+      postcss: 8.5.26
       rollup: 4.60.4
-      tinyglobby: 0.2.16
+      tinyglobby: 0.2.17
     optionalDependencies:
       '@types/node': 20.19.41
       fsevents: 2.3.3
@@ -19716,9 +19752,9 @@ snapshots:
       esbuild: 0.25.12
       fdir: 6.5.0(picomatch@4.0.4)
       picomatch: 4.0.4
-      postcss: 8.5.14
+      postcss: 8.5.26
       rollup: 4.60.4
-      tinyglobby: 0.2.16
+      tinyglobby: 0.2.17
     optionalDependencies:
       '@types/node': 22.19.19
       fsevents: 2.3.3
@@ -19733,9 +19769,9 @@ snapshots:
       esbuild: 0.25.12
       fdir: 6.5.0(picomatch@4.0.4)
       picomatch: 4.0.4
-      postcss: 8.5.14
+      postcss: 8.5.26
       rollup: 4.60.4
-      tinyglobby: 0.2.16
+      tinyglobby: 0.2.17
     optionalDependencies:
       '@types/node': 24.13.3
       fsevents: 2.3.3

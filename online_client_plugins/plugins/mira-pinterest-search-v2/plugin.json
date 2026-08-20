@@ -1,0 +1,19 @@
+{
+  "pluginName": "Pinterest 视觉搜索 v2",
+  "pluginId": "7c1f9e2a-4b3d-4c8e-9f6a-2d5b8e7c1a04",
+  "priority": 1,
+  "version": "2.0.0",
+  "index": "index.js",
+  "icon": "icon.png",
+  "tags": ["Pinterest", "视觉搜索", "图片搜索", "shadcn-vue"],
+  "category": "media",
+  "description": "对 Mira 中选中的图片执行 Pinterest 视觉搜索（shadcn-vue 重写版：任务队列、裁剪搜索、瀑布流结果、一键保存到素材库）。",
+  "author": "Mira Team",
+  "enable": true,
+  "config": {},
+  "hotkey": {},
+  "events": [],
+  "dependencies": [],
+  "permissions": ["ui", "window"],
+  "platform": ["win32", "darwin", "linux"]
+}

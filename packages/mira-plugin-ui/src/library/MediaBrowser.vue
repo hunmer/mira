@@ -11,9 +11,6 @@
  * 样式为 tailwind/shadcn 原子类;筛选/排序不在组件内做,条件变化即透传给 services 重新拉取。
  */
 import { computed, onMounted, ref, watch } from 'vue';
-import { Masonry } from '@hunmer/vue-masonry';
-import type { MasonryItemMeta } from '@hunmer/vue-masonry';
-import '@hunmer/vue-masonry/style.css';
 import { SelectionBox } from '@hunmer/vue-selection-box';
 import '@hunmer/vue-selection-box/style.css';
 import {
@@ -31,6 +28,7 @@ import {
 // 注意:library 子入口以源码供宿主直接消费,这里必须用相对路径(宿主的 @ 别名指向其自身 src)
 import FilterBar from './FilterBar.vue';
 import LibrarySelect from './LibrarySelect.vue';
+import MediaWaterfall from './MediaWaterfall.vue';
 import ServerManagerDialog from './ServerManagerDialog.vue';
 import {
   Menubar,
@@ -438,9 +436,9 @@ async function preloadRatios() {
 
 watch([items, view], () => void preloadRatios());
 
-/** 瀑布流布局元信息:按 item.aspect 定高度,进入视窗才渲染内容 */
-function getMeta(item: MediaBrowserItem): MasonryItemMeta {
-  return { aspect: item.aspect || ratios.value[String(item.id)] || '1:1', lazy: true };
+/** 瀑布流宽高比(MediaWaterfall 布局依据;缺省由组件兜底 1:1) */
+function getAspectOf(item: MediaBrowserItem): string | undefined {
+  return item.aspect || ratios.value[String(item.id)];
 }
 </script>
 
@@ -622,19 +620,21 @@ function getMeta(item: MediaBrowserItem): MasonryItemMeta {
         </button>
       </div>
 
-      <!-- 瀑布流视图:高度按 item.aspect;fill 模式自动回填空隙 -->
-      <Masonry
+      <!-- 瀑布流视图:高度按 item.aspect;fill 模式自动回填空隙(布局能力来自通用 MediaWaterfall) -->
+      <MediaWaterfall
         v-else
-        :data="items"
+        :items="items"
         :columns="{ base: 2, sm: 3, md: 4, lg: 5 }"
         :gap="12"
-        :layout-mode="waterfallMode ?? 'fill'"
+        :waterfall-mode="waterfallMode ?? 'fill'"
         :get-key="(item: MediaBrowserItem) => item.id"
-        :get-meta="getMeta"
+        :get-aspect="getAspectOf"
+        lazy
+        animated
       >
         <template #default="{ item }">
           <button
-            :key="item.id"
+            :key="(item as MediaBrowserItem).id"
             type="button"
             :data-selectable-id="selectionEnabled ? String((item as MediaBrowserItem).id) : undefined"
             class="group bg-card text-card-foreground hover:border-primary/50 relative h-full w-full cursor-pointer overflow-hidden rounded-lg border transition-colors duration-150"
@@ -665,7 +665,7 @@ function getMeta(item: MediaBrowserItem): MasonryItemMeta {
             </div>
           </button>
         </template>
-      </Masonry>
+      </MediaWaterfall>
     </SelectionBox>
 
     <!-- 底部状态栏:文件总数 + 已选计数/取消选择 + 翻页(宿主返回 total 且不止一页;一页最多 500 条) -->

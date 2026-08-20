@@ -1,0 +1,25 @@
+{
+  "name": "mira-pinterest-search-v2",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Pinterest 视觉搜索 v2：shadcn-vue（mira-plugin-ui）重写版，Vite 源码工程，dev 启动开发服务器",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:watch": "vite build --watch"
+  },
+  "dependencies": {
+    "@lucide/vue": "^1.32.0",
+    "mira-plugin-ui": "workspace:*",
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@vitejs/plugin-vue": "^5.2.3",
+    "tailwindcss": "^4.3.3",
+    "tw-animate-css": "^1.0.0",
+    "typescript": "~5.8.3",
+    "vite": "^6.3.2"
+  }
+}
