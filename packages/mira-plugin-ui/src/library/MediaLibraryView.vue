@@ -41,6 +41,11 @@ const tt = (key: string, params?: Record<string, unknown>) => {
   return r === key ? fallbackT(key, params) : r;
 };
 
+const emit = defineEmits<{
+  /** 中间列表菜单「导入文件」:文件多选选完后抛出(宿主打开上传表单,如 BatchUploadForm) */
+  importFiles: [files: File[]];
+}>();
+
 // ---- 左侧树受控选择(文件夹单选 / 标签多选) ----
 const selectedFolder = ref<LibraryTreeNode[]>([]);
 const selectedTags = ref<LibraryTreeNode[]>([]);
@@ -130,6 +135,7 @@ function onDetailUpdated() {
         :services="services.media"
         :extra-filters="extraFilters"
         :t="t"
+        @import-files="files => emit('importFiles', files)"
       />
     </main>
 

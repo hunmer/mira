@@ -30,6 +30,13 @@ import {
 // 注意:library 子入口以源码供宿主直接消费,这里必须用相对路径(宿主的 @ 别名指向其自身 src)
 import FilterBar from './FilterBar.vue';
 import {
+  Menubar,
+  MenubarContent,
+  MenubarItem,
+  MenubarMenu,
+  MenubarTrigger,
+} from '../components/ui/menubar';
+import {
   Pagination,
   PaginationContent,
   PaginationItem,
@@ -92,6 +99,8 @@ const emit = defineEmits<{
   saveSavedFilter: [name: string, rules: FilterRule[], editingId: string | null];
   /** FilterBar 删除已保存的过滤器(宿主持久化) */
   deleteSavedFilter: [filterId: string];
+  /** 菜单「导入文件」:宿主文件多选选完后抛出(宿主可打开 BatchUploadForm 上传表单) */
+  importFiles: [files: File[]];
 }>();
 
 const fallbackT = createLibraryTreeT();
@@ -328,6 +337,21 @@ function onDeleteSelection(ids: string[]) {
   if (selected.length) emit('deleteSelection', selected);
 }
 
+// ---- 菜单「导入文件」:触发隐藏的文件多选 input,选完抛给宿主(打开上传表单) ----
+const importInputRef = ref<HTMLInputElement | null>(null);
+
+function pickImportFiles() {
+  importInputRef.value?.click();
+}
+
+function onImportChange(e: Event) {
+  const input = e.target as HTMLInputElement;
+  const files = Array.from(input.files ?? []);
+  // 重置 value,允许下次再选同一批文件
+  input.value = '';
+  if (files.length) emit('importFiles', files);
+}
+
 defineExpose({
   /** 重新拉取文件列表与文件夹/标签树(宿主批量删除等操作后调用) */
   refresh() {
@@ -403,7 +427,21 @@ function getMeta(item: MediaBrowserItem): MasonryItemMeta {
 
 <template>
   <div class="flex h-full min-h-0 flex-col">
-    <!-- 工具栏:FilterBar(筛选/排序/已保存过滤器) + 计数/已选/视图切换/刷新 -->
+    <!-- 菜单栏:文件操作(导入文件等) -->
+    <div class="flex items-center border-b border-border px-2 py-1">
+      <Menubar class="h-7 gap-0.5 rounded-md border-none p-0.5 shadow-none">
+        <MenubarMenu>
+          <MenubarTrigger class="px-2 py-0.5 text-xs">{{ tt('menu.file') }}</MenubarTrigger>
+          <MenubarContent :side-offset="4">
+            <MenubarItem @select="pickImportFiles">{{ tt('menu.importFiles') }}</MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+      </Menubar>
+      <!-- 导入文件多选 input:选完抛 importFiles,由宿主打开上传表单 -->
+      <input ref="importInputRef" type="file" multiple class="hidden" @change="onImportChange" />
+    </div>
+
+    <!-- 工具栏:FilterBar(筛选/排序/已保存过滤器) + 视图切换/刷新 -->
     <div class="flex flex-wrap items-center gap-2 border-b border-border px-3 py-2">
       <FilterBar
         class="min-w-0 flex-1"
@@ -428,20 +466,22 @@ function getMeta(item: MediaBrowserItem): MasonryItemMeta {
       />
 
       <div class="ms-auto flex items-center gap-2">
-        <span class="text-muted-foreground shrink-0 text-xs tabular-nums">{{ tt('media.fileCount', { n: items.length }) }}</span>
-
-        <!-- 已选计数 + 取消选择 -->
-        <template v-if="selectionEnabled && selectedIds.length">
-          <span class="text-primary shrink-0 text-xs font-medium tabular-nums">{{ tt('media.selectedCount', { n: selectedIds.length }) }}</span>
+        <!-- 视图切换:网格 / 瀑布流 -->
+        <div class="bg-muted flex gap-0.5 rounded-lg p-0.5" role="group">
           <button
+            v-for="v in (['grid', 'waterfall'] as const)"
+            :key="v"
             type="button"
-            class="text-muted-foreground inline-flex size-6 cursor-pointer items-center justify-center rounded-md border-none bg-transparent transition-colors duration-150 hover:bg-accent hover:text-foreground"
-            :title="tt('media.clearSelection')"
-            @click="clearSelection"
+            class="inline-flex cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-[11px] leading-none font-medium transition-colors duration-100"
+            :class="view === v ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'"
+            :title="v === 'grid' ? tt('media.viewGrid') : tt('media.viewWaterfall')"
+            @click="view = v"
           >
-            <X class="size-3.5" />
+            <LayoutGrid v-if="v === 'grid'" class="size-3.5" />
+            <Rows3 v-else class="size-3.5" />
+            <span class="hidden sm:inline">{{ v === 'grid' ? tt('media.viewGrid') : tt('media.viewWaterfall') }}</span>
           </button>
-        </template>
+        </div>
 
         <!-- 刷新 -->
         <button
@@ -575,10 +615,27 @@ function getMeta(item: MediaBrowserItem): MasonryItemMeta {
       </Masonry>
     </SelectionBox>
 
-    <!-- 底部固定栏:视图切换(网格/瀑布流) + 翻页(宿主返回 total 且不止一页时;一页最多 500 条) -->
-    <div class="flex shrink-0 flex-wrap items-center justify-center gap-4 border-t border-border px-3 py-2">
+    <!-- 底部状态栏:文件总数 + 已选计数/取消选择 + 翻页(宿主返回 total 且不止一页;一页最多 500 条) -->
+    <div class="flex shrink-0 flex-wrap items-center gap-4 border-t border-border px-3 py-2">
+      <div class="flex shrink-0 items-center gap-1.5">
+        <span class="text-muted-foreground text-xs tabular-nums">{{ tt('media.fileCount', { n: items.length }) }}</span>
+        <template v-if="selectionEnabled && selectedIds.length">
+          <span class="text-muted-foreground text-xs">·</span>
+          <span class="text-primary text-xs font-medium tabular-nums">{{ tt('media.selectedCount', { n: selectedIds.length }) }}</span>
+          <button
+            type="button"
+            class="text-muted-foreground inline-flex size-6 cursor-pointer items-center justify-center rounded-md border-none bg-transparent transition-colors duration-150 hover:bg-accent hover:text-foreground"
+            :title="tt('media.clearSelection')"
+            @click="clearSelection"
+          >
+            <X class="size-3.5" />
+          </button>
+        </template>
+      </div>
+
       <Pagination
         v-if="total !== undefined && pageCount > 1"
+        class="mx-auto"
         :page="page"
         :total="total"
         :items-per-page="PAGE_SIZE"
@@ -599,23 +656,6 @@ function getMeta(item: MediaBrowserItem): MasonryItemMeta {
           </PaginationItem>
         </PaginationContent>
       </Pagination>
-
-      <!-- 视图切换:网格 / 瀑布流 -->
-      <div class="bg-muted flex gap-0.5 rounded-lg p-0.5" role="group">
-        <button
-          v-for="v in (['grid', 'waterfall'] as const)"
-          :key="v"
-          type="button"
-          class="inline-flex cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-[11px] leading-none font-medium transition-colors duration-100"
-          :class="view === v ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'"
-          :title="v === 'grid' ? tt('media.viewGrid') : tt('media.viewWaterfall')"
-          @click="view = v"
-        >
-          <LayoutGrid v-if="v === 'grid'" class="size-3.5" />
-          <Rows3 v-else class="size-3.5" />
-          <span class="hidden sm:inline">{{ v === 'grid' ? tt('media.viewGrid') : tt('media.viewWaterfall') }}</span>
-        </button>
-      </div>
     </div>
   </div>
 </template>

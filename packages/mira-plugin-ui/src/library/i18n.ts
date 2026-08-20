@@ -75,6 +75,9 @@ const zh = {
   'media.noMatch': '未找到匹配的文件',
   'media.prevPage': '上一页',
   'media.nextPage': '下一页',
+  /* Menubar(顶部菜单栏) */
+  'menu.file': '文件',
+  'menu.importFiles': '导入文件',
   /* MediaDetail(文件详情面板,文案对齐桌面端 business.mediaDetailComponent) */
   'detail.emptyTitle': '未选择文件',
   'detail.emptyHint': '在文件列表中点击选择后查看详情',

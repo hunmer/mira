@@ -153,10 +153,13 @@ const batchUploadResult = ref('')
 // 打开时预选的文件夹/标签(树视图右键「上传到此处」设置;对话框关闭卸载内容,重开取最新值)
 const batchUploadFolderId = ref('')
 const batchUploadTagTitles = ref<string[]>([])
+// 打开时预填的文件(MediaBrowser 菜单「导入文件」多选结果)
+const batchUploadFiles = ref<File[]>([])
 
-function openBatchUpload (folderId = '', tagTitles: string[] = []) {
+function openBatchUpload (folderId = '', tagTitles: string[] = [], files: File[] = []) {
   batchUploadFolderId.value = folderId
   batchUploadTagTitles.value = tagTitles
+  batchUploadFiles.value = files
   showBatchUpload.value = true
 }
 
@@ -178,6 +181,8 @@ const handleBatchUploadFile: BatchUploadFileService = async (item, onProgress) =
 
 function handleBatchUploaded ({ total, failed }: { total: number; failed: number }) {
   batchUploadResult.value = `队列结束:共 ${total} 个${failed ? `,失败 ${failed} 个` : ',全部成功'}`
+  // 上传完成后刷新文件列表(新文件立即可见)
+  void mediaBrowserRef.value?.refresh()
 }
 
 /* ---------- ServerManagerView 服务器管理演示(内存 mock CRUD) ---------- */
@@ -715,6 +720,7 @@ async function startUpload () {
           :initial-library-id="currentLibraryId"
           :initial-folder-id="batchUploadFolderId"
           :initial-tag-titles="batchUploadTagTitles"
+          :initial-files="batchUploadFiles"
           :upload-file="handleBatchUploadFile"
           :create-node="handleCreateNode"
           @uploaded="handleBatchUploaded"
@@ -780,6 +786,7 @@ async function startUpload () {
             :services="mediaServices"
             @item-click="handleMediaClick"
             @delete-selection="handleMediaDelete"
+            @import-files="files => openBatchUpload('', [], files)"
           />
         </div>
       </section>
@@ -796,6 +803,7 @@ async function startUpload () {
           <MediaLibraryView
             :library-id="currentLibraryId || 'mock'"
             :services="libraryViewServices"
+            @import-files="files => openBatchUpload('', [], files)"
           />
         </div>
       </section>

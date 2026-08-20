@@ -530,7 +530,7 @@ function notifyFileImported(
     || /\.(mp4|webm|avi|mov|wmv|flv|mkv|3gp)$/i.test(fileName || '')
   importNotifyLastPreviewType = isVideo ? 'video' : 'image'
   // 解析缩略图：本地路径转 file://，http 加 token
-  const resolved = appendThumbToken(toFileUrl(thumbRaw))
+  const resolved = appendThumbToken(toFileUrl(thumbRaw, false))
   if (resolved) {
     importNotifyLastThumb = resolved
     if (!importNotifyThumbs.includes(resolved)) importNotifyThumbs.push(resolved)
@@ -586,7 +586,7 @@ function completeUploadNotification(data: any): void {
 function updateImportThumbIfPending(fileId: string | number, thumbRaw?: string): void {
   if (importNotifyShown) return
   if (!importNotifyLastFileId || String(fileId) !== importNotifyLastFileId) return
-  const thumb = appendThumbToken(toFileUrl(thumbRaw))
+  const thumb = appendThumbToken(toFileUrl(thumbRaw, false))
   if (!thumb) return
   importNotifyLastThumb = thumb
   if (!importNotifyThumbs.includes(thumb)) importNotifyThumbs.push(thumb)
@@ -633,7 +633,7 @@ function resolvePreviewType(fileName?: string, mimeType?: string): 'image' | 'vi
 }
 
 function addEagleImportThumb(group: EagleImportGroup, thumbRaw?: string): void {
-  const thumb = appendThumbToken(toFileUrl(thumbRaw))
+  const thumb = appendThumbToken(toFileUrl(thumbRaw, false))
   if (thumb && !group.thumbs.includes(thumb)) group.thumbs.push(thumb)
 }
 

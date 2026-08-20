@@ -14,7 +14,7 @@ export const HLS_PREVIEW_EXTENSIONS = ['mov', 'avi', 'mkv', 'flv', 'wmv', 'm4v',
  * 本地路径转 file:// URL，用于 <img src> 等
  * 已是 http/https/file 协议的路径直接返回
  */
-export function toFileUrl(path: unknown): string | undefined {
+export function toFileUrl(path: unknown, useLibraryCache = true): string | undefined {
   if (path && typeof path === 'object') {
     const value = path as Record<string, unknown>
     path = value.url ?? value.path ?? value.filePath ?? value.localFile ?? value.href
@@ -31,12 +31,12 @@ export function toFileUrl(path: unknown): string | undefined {
   }
   if (path.startsWith('http://') || path.startsWith('https://')) {
     // Electron 缓存协议：设置由 ConfigStorage 同步镜像到 localStorage。
-    const libraryId = getLibraryCacheContext()
+    const libraryId = useLibraryCache ? getLibraryCacheContext() : false
     if (libraryId) return `library-thumb://load?libraryId=${encodeURIComponent(String(libraryId))}&url=${encodeURIComponent(path)}`
     return path
   }
   if (path.startsWith('file://')) {
-    const libraryId = getLibraryCacheContext()
+    const libraryId = useLibraryCache ? getLibraryCacheContext() : false
     if (libraryId) return `library-file://load?libraryId=${encodeURIComponent(String(libraryId))}&url=${encodeURIComponent(path)}`
     return path
   }
