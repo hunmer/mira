@@ -2,13 +2,13 @@
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useBackground } from '@/ui/composables/useBackground';
-import { useBatchUpload } from '@/ui/composables/useBatchUpload';
+import { useSettings } from '@/ui/composables/useSettings';
+import { useUploadQueue } from '@/ui/composables/useUploadQueue';
 import Button from '@/ui/components/ui/Button.vue';
 import { dbg } from '@/shared/debug';
 
 const { t } = useI18n();
 const bg = useBackground();
-const batchUpload = useBatchUpload();
 const msg = ref('');
 
 async function run(fn: (tabId: number) => Promise<any>, label: string) {
@@ -41,26 +41,40 @@ async function run(fn: (tabId: number) => Promise<any>, label: string) {
   }
 }
 
-// ---- 选择文件上传:多选后打开批量上传对话框(对话框本体在 App.vue 的 BatchUploadHost) ----
+// ---- 上传双入口 ----
+// window:新窗口打开批量上传页,文件选择由窗口内 BatchUploadForm 自己触发(无需跨窗口传 File)
+// root:本页选文件,直接进扩展上传队列,上传到当前素材库根目录
 const fileInput = ref<HTMLInputElement>();
+const { settings } = useSettings();
+const { addFiles } = useUploadQueue();
 
-function pickFiles() {
+function openUploadWindow() {
+  chrome.windows.create({
+    url: chrome.runtime.getURL('src/ui/upload.html'),
+    type: 'popup',
+    width: 1100,
+    height: 840,
+  });
+}
+
+function pickRootFiles() {
   fileInput.value?.click();
 }
 
-function onFilesChosen(e: Event) {
+async function onFilesChosen(e: Event) {
   const input = e.target as HTMLInputElement;
   const files = Array.from(input.files ?? []);
   input.value = '';
   if (!files.length) return;
-  void batchUpload.open({ files });
+  await addFiles(files, settings.value.libraryId);
 }
 </script>
 
 <template>
   <div class="view">
     <input ref="fileInput" type="file" multiple hidden @change="onFilesChosen" />
-    <Button @click="pickFiles">{{ t('header.selectFiles') }}</Button>
+    <Button @click="openUploadWindow">{{ t('header.uploadInWindow') }}</Button>
+    <Button @click="pickRootFiles">{{ t('header.uploadToRoot') }}</Button>
     <Button @click="run(bg.captureVisible, t('screenshot.visible'))">{{ t('screenshot.visible') }}</Button>
     <Button @click="run(bg.captureFullPage, t('screenshot.fullPage'))">{{ t('screenshot.fullPage') }}</Button>
     <Button @click="run(bg.captureSelection, t('screenshot.selection'))">{{ t('screenshot.selection') }}</Button>

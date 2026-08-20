@@ -1,11 +1,10 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-/* 库构建入口：dist CSS 必须自包含，显式声明组件源码扫描范围 */
-@source "../components";
-@source "../library";
-@source "../SaveLocationDialog.vue";
-@source "../SaveLocationForm.vue";
+/* 库构建入口：dist CSS 必须自包含，显式声明组件源码扫描范围。
+   直接扫整个 src(顶层 BatchUploadForm/FileInfoForm 等与 components/library 子目录),
+   避免新增顶层组件时漏扫导致宿主构建缺类(如文件列表 grid 列定义失效塌成单列) */
+@source "../";
 
 @custom-variant dark (&:is(.dark *));
 

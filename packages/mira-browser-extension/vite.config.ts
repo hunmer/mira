@@ -31,7 +31,7 @@ export default defineConfig({
     // 需显式声明为 Rollup 入口,否则 chrome.offscreen.createDocument 找不到文件
     // (整页截图拼接 / 选区截图裁剪依赖它)。按 @crxjs 约定源在 src/offscreen/ → 产物在 dist/src/offscreen/。
     rollupOptions: {
-      input: { offscreen: 'src/offscreen/index.html' },
+      input: { offscreen: 'src/offscreen/index.html', upload: 'src/ui/upload.html' },
     },
   },
   server: {
