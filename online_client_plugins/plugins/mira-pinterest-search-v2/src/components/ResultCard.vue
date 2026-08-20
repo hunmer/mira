@@ -9,9 +9,11 @@ import type { ResultItem } from '@/types'
 /**
  * 瀑布流单卡片（高度由 MediaWaterfall/Masonry 布局分配，卡片填满单元格）：
  * 懒加载缩略图 + 悬停操作（预览 Space / 保存 S / 反向搜索 F）。
- * 右键 = 保存，中键 = 反向搜索（与原版一致）。
+ * 结果区已开启 SelectionBox 多选：点击卡片上抛 cardClick 由父级走选择逻辑
+ * （data-selectable-id 供框选/连选定位），右键 = 保存，中键 = 反向搜索（与原版一致）。
  */
-const props = defineProps<{ item: ResultItem; big: boolean }>()
+const props = defineProps<{ item: ResultItem; big: boolean; selected?: boolean }>()
+const emit = defineEmits<{ (e: 'cardClick', event: MouseEvent): void }>()
 
 const failed = ref(false)
 const src = computed(() => {
@@ -29,11 +31,13 @@ function onMouseLeave() {
 
 <template>
   <div
-    class="group relative h-full w-full cursor-zoom-in overflow-hidden rounded-lg bg-muted"
+    :data-selectable-id="item.key"
+    class="group relative h-full w-full cursor-pointer overflow-hidden rounded-lg bg-muted ring-offset-2 ring-offset-background transition-shadow"
+    :class="selected && 'ring-2 ring-primary'"
     :title="item.title"
     @mouseenter="onMouseEnter"
     @mouseleave="onMouseLeave"
-    @click="openPreview(item)"
+    @click="emit('cardClick', $event)"
     @contextmenu.prevent="saveItem(item)"
     @auxclick.middle.prevent="reSearch(item)"
   >
@@ -46,7 +50,15 @@ function onMouseLeave() {
       @error="failed = true"
     >
 
-    <div class="absolute right-1.5 top-1.5 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+    <!-- 多选角标 -->
+    <span
+      class="absolute top-1.5 left-1.5 z-10 flex size-5 items-center justify-center rounded-full shadow"
+      :class="selected ? 'bg-primary text-primary-foreground' : 'bg-background/70 text-transparent'"
+    >
+      <Check class="size-3.5" />
+    </span>
+
+    <div class="absolute top-1.5 right-1.5 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
       <Button
         variant="secondary"
         size="icon"
@@ -70,7 +82,7 @@ function onMouseLeave() {
         variant="secondary"
         size="icon"
         class="size-7 rounded-md"
-        :title="`${t('main.image.research')} (F)`"
+        :title="t('main.image.research')"
         @click.stop="reSearch(item)"
       >
         <Search class="size-3.5" />

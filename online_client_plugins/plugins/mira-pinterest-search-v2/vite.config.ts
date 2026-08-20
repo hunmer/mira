@@ -14,6 +14,10 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      // 直接消费 mira-app-core 已构建的 SDK esm 产物，避免引入其 node 依赖（同 mira-whiteboard）
+      'mira-app-core/shared/sdk': fileURLToPath(
+        new URL('../../../packages/mira-app-core/dist/shared/sdk/mira-sdk.esm.mjs', import.meta.url),
+      ),
       'mira-plugin-ui/src': fileURLToPath(
         new URL('../../../packages/mira-plugin-ui/src', import.meta.url),
       ),

@@ -91,6 +91,8 @@ const props = defineProps<{
   serverManager?: MediaBrowserServerManager;
   /** 自定义菜单;传入后在菜单栏内置「文件」菜单之后渲染,点击项抛 menuSelect */
   menus?: MediaBrowserMenu[];
+  /** 显式开启选择(内置选项):true 时无需绑定 v-model:selected 即可点选/框选,选择状态组件内部自持 */
+  enableSelection?: boolean;
 }>();
 
 /** 当前素材库 id;变化时自动重载(传 v-model:library-id 后可经选择器切换) */
@@ -291,7 +293,8 @@ const noMatch = computed(() => !loading.value && !error.value && items.value.len
 const noData = computed(() => !loading.value && !error.value && items.value.length === 0 && !hasCondition.value);
 
 // ---- 选择(SelectionBox 框选 + 点选;selectedIds 为 id 字符串集,与 selected 双向同步) ----
-const selectionEnabled = computed(() => selected.value !== undefined);
+// 启用条件:enableSelection 显式开启(内置选项,选择状态内部自持)或宿主绑定了 v-model:selected(受控)
+const selectionEnabled = computed(() => props.enableSelection ?? selected.value !== undefined);
 const selectionBoxRef = ref<InstanceType<typeof SelectionBox> | null>(null);
 const selectedIds = ref<string[]>([]);
 

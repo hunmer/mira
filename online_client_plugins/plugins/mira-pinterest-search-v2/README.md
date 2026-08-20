@@ -12,6 +12,10 @@ UI 全部改用 `packages/mira-plugin-ui`（shadcn-vue / reka-ui + tailwind toke
 - 瀑布流复用 `mira-plugin-ui/library` 通用 `MediaWaterfall` 组件（自 MediaBrowser 抽离，
   新增列宽模式与触底加载）：列宽即缩放值，触底以结果图作为新种子 + bookmark 分页持续加载
 - 保存图片：探测原图（originals PNG/JPG）后经宿主 `item.addFromURL` 写入素材库（旧版只打开 URL）
+- 结果多选：`@hunmer/vue-selection-box`（点选 / Ctrl 加选 / Shift 连选 / 空白拖拽框选），
+  选中后底部浮动条「导入素材库」→ 并发抓取原图转 File → 弹 `BatchUploadDialog`
+  （mira-plugin-ui）选素材库/文件夹/标签 → SDK 直连 server 批量上传（server/token 取
+  宿主注入 query，缺失时回退主窗口共享 localStorage）
 - 反向搜索（F）：把任意结果作为新任务继续搜图
 - 大图预览（Space）、在 Pinterest 打开（O）、窗口置顶（Shift+T）
 - 缩放：+/-、Ctrl/Alt/⌘+滚轮、顶栏滑杆（160~720px 列宽，localStorage 记忆）

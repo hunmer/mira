@@ -1,4 +1,4 @@
-import type { MediaInput, MiraHostApi } from './types'
+import type { MediaInput, MiraHostApi } from '@/types'
 
 /**
  * 宿主桥接层：统一封装 window.mira（plugin-window-preload 注入的 Eagle 兼容 API）。
