@@ -1,0 +1,45 @@
+/* 组件库引擎 + shadcn token + 库源码类名扫描(该 css 内含 @import tailwindcss 与 @source "../") */
+@import "mira-plugin-ui/src/assets/tailwind.css";
+/* 面板自身源码类名扫描 */
+@source "./";
+
+/*
+ * CEP 9 = Chromium 61:不支持 oklch(),且 .dark 的 :is() 变体选择器会整条失效。
+ * 这里把 .dark 调色板按 oklch→sRGB 换算(与 shadcn neutral 灰阶一致)直接写进 :root,
+ * 面板在 PS 中恒为暗色,不依赖 .dark 类与 dark: 变体。
+ */
+:root {
+  --radius: 0.625rem;
+  --background: #0a0a0a;
+  --foreground: #fafafa;
+  --card: #171717;
+  --card-foreground: #fafafa;
+  --popover: #171717;
+  --popover-foreground: #fafafa;
+  --primary: #478df7;
+  --primary-foreground: #fafafa;
+  --secondary: #262626;
+  --secondary-foreground: #fafafa;
+  --muted: #262626;
+  --muted-foreground: #a1a1a1;
+  --accent: #262626;
+  --accent-foreground: #fafafa;
+  --destructive: #f87171;
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.15);
+  --ring: #717171;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+  overflow: hidden;
+}

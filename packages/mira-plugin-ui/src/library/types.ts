@@ -356,3 +356,15 @@ export interface MediaLibraryServices {
   /** 上传服务(树拖放/右键上传) */
   upload?: LibraryTreeUpload
 }
+
+/* ============ MediaBrowser 顶部服务器管理入口 ============ */
+
+/** MediaBrowser 菜单栏服务器图标的弹层数据(传入后显示图标,点击弹 ServerManagerView) */
+export interface MediaBrowserServerManager {
+  /** 受管服务器列表 */
+  servers: ManagedServer[]
+  /** 当前激活服务器 id */
+  activeServerId?: string
+  /** 服务器管理服务(add/edit/remove/test/activate,由宿主实现) */
+  services: ServerManagerServices
+}

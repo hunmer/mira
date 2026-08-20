@@ -25,10 +25,13 @@ import {
   LayoutGrid,
   RefreshCw,
   Rows3,
+  Server,
   X,
 } from '@lucide/vue';
 // 注意:library 子入口以源码供宿主直接消费,这里必须用相对路径(宿主的 @ 别名指向其自身 src)
 import FilterBar from './FilterBar.vue';
+import LibrarySelect from './LibrarySelect.vue';
+import ServerManagerDialog from './ServerManagerDialog.vue';
 import {
   Menubar,
   MenubarContent,
@@ -57,16 +60,16 @@ import type {
   FilterBarSortOption,
   FilterRule,
   LibraryTreeNode,
+  LibrarySelectServer,
   LibraryTreeT,
   MediaBrowserFilters,
   MediaBrowserItem,
+  MediaBrowserServerManager,
   MediaBrowserServices,
   SavedFilter,
 } from './types';
 
 const props = defineProps<{
-  /** 当前素材库 id;变化时自动重载 */
-  libraryId: string;
   /** 数据服务:文件列表加载 + 缩略图地址 */
   services: MediaBrowserServices;
   /** 文案函数,缺省用内置中文 */
@@ -82,7 +85,14 @@ const props = defineProps<{
    * 数组字段(folders/tags)与 FilterBar 内置筛选合并去重,其余字段覆盖;变化时自动回第 1 页重载。
    */
   extraFilters?: Partial<MediaBrowserFilters>;
+  /** 素材库选择器数据(LibrarySelect 的服务器分组);传入后菜单栏右侧显示选择器 */
+  libraryServers?: LibrarySelectServer[];
+  /** 服务器管理数据;传入后显示服务器图标,点击弹 ServerManagerView(Dialog) */
+  serverManager?: MediaBrowserServerManager;
 }>();
+
+/** 当前素材库 id;变化时自动重载(传 v-model:library-id 后可经选择器切换) */
+const libraryId = defineModel<string>('libraryId', { required: true });
 
 /** 视图模式受控切换:grid=网格 / waterfall=瀑布流 */
 const view = defineModel<'grid' | 'waterfall'>('view', { default: 'grid' });
@@ -140,7 +150,7 @@ const error = ref('');
 let loadVersion = 0;
 
 async function load() {
-  if (!props.libraryId) {
+  if (!libraryId.value) {
     items.value = [];
     total.value = undefined;
     return;
@@ -256,7 +266,7 @@ function onClearAllFilters() {
 }
 
 watch(
-  () => props.libraryId,
+  libraryId,
   () => {
     itemCache.clear();
     resetPage();
@@ -339,6 +349,9 @@ function onDeleteSelection(ids: string[]) {
 
 // ---- 菜单「导入文件」:触发隐藏的文件多选 input,选完抛给宿主(打开上传表单) ----
 const importInputRef = ref<HTMLInputElement | null>(null);
+
+// ---- 服务器管理弹层(ServerManagerView 的 Dialog 包装) ----
+const serverManagerOpen = ref(false);
 
 function pickImportFiles() {
   importInputRef.value?.click();
@@ -427,8 +440,8 @@ function getMeta(item: MediaBrowserItem): MasonryItemMeta {
 
 <template>
   <div class="flex h-full min-h-0 flex-col">
-    <!-- 菜单栏:文件操作(导入文件等) -->
-    <div class="flex items-center border-b border-border px-2 py-1">
+    <!-- 菜单栏:文件操作(导入文件等) + 素材库选择器 + 服务器管理 -->
+    <div class="flex items-center gap-2 border-b border-border px-2 py-1">
       <Menubar class="h-7 gap-0.5 rounded-md border-none p-0.5 shadow-none">
         <MenubarMenu>
           <MenubarTrigger class="px-2 py-0.5 text-xs">{{ tt('menu.file') }}</MenubarTrigger>
@@ -439,6 +452,22 @@ function getMeta(item: MediaBrowserItem): MasonryItemMeta {
       </Menubar>
       <!-- 导入文件多选 input:选完抛 importFiles,由宿主打开上传表单 -->
       <input ref="importInputRef" type="file" multiple class="hidden" @change="onImportChange" />
+
+      <!-- 素材库选择器(传入 libraryServers 后显示);切换即 v-model:libraryId -->
+      <div v-if="libraryServers?.length" class="ms-auto w-44">
+        <LibrarySelect v-model="libraryId" :servers="libraryServers" />
+      </div>
+
+      <!-- 服务器管理(传入 serverManager 后显示):点击弹 ServerManagerView -->
+      <button
+        v-if="serverManager"
+        type="button"
+        class="text-muted-foreground inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md border-none bg-transparent transition-colors duration-150 hover:bg-accent hover:text-foreground"
+        :title="tt('server.manager')"
+        @click="serverManagerOpen = true"
+      >
+        <Server class="size-4" />
+      </button>
     </div>
 
     <!-- 工具栏:FilterBar(筛选/排序/已保存过滤器) + 视图切换/刷新 -->
@@ -657,5 +686,14 @@ function getMeta(item: MediaBrowserItem): MasonryItemMeta {
         </PaginationContent>
       </Pagination>
     </div>
+
+    <!-- 服务器管理弹层(ServerManagerView):激活成功后由宿主 services.activate 切换服务器 -->
+    <ServerManagerDialog
+      v-if="serverManager"
+      v-model:open="serverManagerOpen"
+      :servers="serverManager.servers"
+      :active-server-id="serverManager.activeServerId"
+      :services="serverManager.services"
+    />
   </div>
 </template>

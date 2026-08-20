@@ -11,6 +11,7 @@ import * as alertDialog from './components/ui/alert-dialog'
 import * as button from './components/ui/button'
 import * as combobox from './components/ui/combobox'
 import * as dialog from './components/ui/dialog'
+import * as empty from './components/ui/empty'
 import * as input from './components/ui/input'
 import * as label from './components/ui/label'
 import * as menubar from './components/ui/menubar'
@@ -33,6 +34,7 @@ export * from './components/ui/alert-dialog'
 export * from './components/ui/button'
 export * from './components/ui/combobox'
 export * from './components/ui/dialog'
+export * from './components/ui/empty'
 export * from './components/ui/input'
 export * from './components/ui/label'
 export * from './components/ui/menubar'
@@ -54,6 +56,7 @@ const components = {
   ...button,
   ...combobox,
   ...dialog,
+  ...empty,
   ...input,
   ...label,
   ...menubar,

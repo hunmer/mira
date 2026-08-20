@@ -17,6 +17,7 @@ import { Copy, ExternalLink, Folder, FolderOpen, Pencil, Plus, Star, X } from '@
 // 注意:library 子入口以源码供宿主直接消费,这里必须用相对路径(宿主的 @ 别名指向其自身 src)
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
 import { Input } from '../components/ui/input';
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '../components/ui/empty';
 import { buildTree, collectIds, flattenTree } from './tree';
 import { createLibraryTreeT } from './i18n';
 import LibraryTree from './LibraryTree.vue';
@@ -490,13 +491,17 @@ function formatDuration(seconds?: number): string {
 </script>
 
 <template>
-  <div class="flex flex-col gap-4 text-foreground">
+  <div class="flex h-full flex-col gap-4 text-foreground">
     <!-- 空态 -->
-    <div v-if="displayItems.length === 0" class="text-muted-foreground flex flex-1 flex-col items-center justify-center gap-1 py-10 text-sm">
-      <span class="text-3xl">🗂️</span>
-      <span>{{ tt('detail.emptyTitle') }}</span>
-      <span class="text-[11px] opacity-70">{{ tt('detail.emptyHint') }}</span>
-    </div>
+    <Empty v-if="displayItems.length === 0" class="min-h-56">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <FolderOpen />
+        </EmptyMedia>
+        <EmptyTitle>{{ tt('detail.emptyTitle') }}</EmptyTitle>
+        <EmptyDescription>{{ tt('detail.emptyHint') }}</EmptyDescription>
+      </EmptyHeader>
+    </Empty>
 
     <template v-else>
       <!-- 预览区 -->

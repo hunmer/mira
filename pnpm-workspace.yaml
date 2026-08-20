@@ -6,6 +6,7 @@ packages:
   - 'packages/mira-scripts-core'
   - 'packages/mira-browser-extension'
   - 'packages/mira-plugin-ui'
+  - 'packages/mira-cep-panel'
   - 'packages/vue-masonry'
   - 'packages/vue-selection-box'
   - 'online_client_plugins/plugins/*'

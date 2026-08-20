@@ -1,0 +1,30 @@
+{
+  "name": "mira-cep-panel",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Mira 素材库 Adobe CEP 面板（Photoshop 2020 / CEP 9，Chromium 61 兼容构建）",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "vite build && node scripts/compat-css.mjs",
+    "sync": "node scripts/sync.mjs",
+    "deploy": "node scripts/compat-css.mjs && node scripts/sync.mjs --once",
+    "enable-debug": "reg add \"HKCU\\Software\\Adobe\\CSXS.9\" /v PlayerDebugMode /t REG_SZ /d 1 /f"
+  },
+  "dependencies": {
+    "mira-plugin-ui": "workspace:*",
+    "resize-observer-polyfill": "^1.5.1"
+  },
+  "devDependencies": {
+    "@csstools/postcss-cascade-layers": "^4.0.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "@vitejs/plugin-vue": "^5.2.3",
+    "postcss": "^8.4.49",
+    "postcss-preset-env": "^10.1.0",
+    "tailwindcss": "^4.3.3",
+    "tw-animate-css": "^1.4.0",
+    "typescript": "~5.8.3",
+    "vite": "^6.3.2",
+    "vue": "3.5.13"
+  }
+}

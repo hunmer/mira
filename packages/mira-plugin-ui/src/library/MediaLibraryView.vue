@@ -17,22 +17,29 @@ import MediaBrowser from './MediaBrowser.vue';
 import MediaDetail from './MediaDetail.vue';
 import { createLibraryTreeT } from './i18n';
 import type {
+  LibrarySelectServer,
   LibraryTreeT,
   LibraryTreeNode,
   MediaBrowserFilters,
   MediaBrowserItem,
+  MediaBrowserServerManager,
   MediaDetailServices,
   MediaLibraryServices,
 } from './types';
 
 const props = defineProps<{
-  /** 当前素材库 id;变化时三栏自动重载 */
-  libraryId: string;
   /** 聚合数据服务:tree(左)/ media(中)/ detail(右) + dialog/upload */
   services: MediaLibraryServices;
   /** 文案函数,缺省用内置中文 */
   t?: LibraryTreeT;
+  /** 素材库选择器数据(透传给 MediaBrowser 菜单栏);传入后菜单栏右侧显示选择器 */
+  libraryServers?: LibrarySelectServer[];
+  /** 服务器管理数据(透传给 MediaBrowser 菜单栏);传入后显示服务器图标 */
+  serverManager?: MediaBrowserServerManager;
 }>();
+
+/** 当前素材库 id;变化时三栏自动重载(传 v-model:library-id 后可经选择器切换) */
+const libraryId = defineModel<string>('libraryId', { required: true });
 
 const fallbackT = createLibraryTreeT();
 const tt = (key: string, params?: Record<string, unknown>) => {
@@ -69,12 +76,12 @@ const selectedMedia = ref<MediaBrowserItem[]>([]);
 const mediaBrowserRef = ref<InstanceType<typeof MediaBrowser> | null>(null);
 
 // 切库时清空三栏选择(树选中过滤新库列表会失真,列表选中项也可能不属于新库)
-watch(() => props.libraryId, resetSelection);
+watch(libraryId, resetSelection);
 
 // ---- 右侧详情服务:listFolders/listTags 缺省回退树视图服务 ----
 const detailServices = computed<MediaDetailServices>(() => ({
-  listFolders: () => props.services.tree.listFolders(props.libraryId),
-  listTags: () => props.services.tree.listTags(props.libraryId),
+  listFolders: () => props.services.tree.listFolders(libraryId.value),
+  listTags: () => props.services.tree.listTags(libraryId.value),
   ...props.services.detail,
 }));
 
@@ -130,10 +137,12 @@ function onDetailUpdated() {
     <main class="min-w-0 flex-1">
       <MediaBrowser
         ref="mediaBrowserRef"
+        v-model:library-id="libraryId"
         v-model:selected="selectedMedia"
-        :library-id="libraryId"
         :services="services.media"
         :extra-filters="extraFilters"
+        :library-servers="libraryServers"
+        :server-manager="serverManager"
         :t="t"
         @import-files="files => emit('importFiles', files)"
       />

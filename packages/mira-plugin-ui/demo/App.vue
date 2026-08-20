@@ -4,7 +4,7 @@ import { Loader2, LogOut, Moon, Server, Sun } from '@lucide/vue'
 import { MiraClient, type HealthResponse } from 'mira-app-core/shared/sdk'
 import { BatchUploadDialog, Progress, SaveLocationDialog, type BatchUploadFileService, type SaveLocation } from '@/index'
 import { Dropzone, LibrarySelect, LibraryTreeView, MediaBrowser, MediaLibraryView, ServerManagerDialog, toApiFilters } from '@/library'
-import type { LibraryFlatItem, LibrarySelectServer, LibraryTreeDialog, LibraryTreeServices, LibraryTreeNode, LibraryTreeUpload, ManagedServer, MediaBrowserFilters, MediaBrowserItem, MediaBrowserServices, MediaDetailItem, MediaDetailServices, MediaLibraryServices, ServerManagerServices } from '@/library'
+import type { LibraryFlatItem, LibrarySelectServer, LibraryTreeDialog, LibraryTreeServices, LibraryTreeNode, LibraryTreeUpload, ManagedServer, MediaBrowserFilters, MediaBrowserItem, MediaBrowserServerManager, MediaBrowserServices, MediaDetailItem, MediaDetailServices, MediaLibraryServices, ServerManagerServices } from '@/library'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -218,6 +218,24 @@ const serverServices: ServerManagerServices = {
 /* ---------- LibrarySelect 服务器分组选择(Mira Server 卡片内) ---------- */
 const selectServers = computed<LibrarySelectServer[]>(() =>
   [{ id: 'current', name: apiBaseUrl.value, libraries: libraries.value }])
+
+/* ---------- MediaBrowser 顶部素材库选择器/服务器管理 ---------- */
+// v-model 代理:未连接时回退 'mock'(走内存 mock 数据);切换后重拉文件夹/标签树
+const demoLibraryId = computed({
+  get: () => currentLibraryId.value || 'mock',
+  set: (v: string) => {
+    if (!v || v === currentLibraryId.value) return
+    currentLibraryId.value = v
+    void loadLibraryData()
+  },
+})
+
+// 服务器管理入口(内存 mock CRUD,与「管理服务器…」演示共用)
+const browserServerManager = computed<MediaBrowserServerManager>(() => ({
+  servers: demoServers.value,
+  activeServerId: demoActiveId.value,
+  services: serverServices,
+}))
 
 /* ---------- LibraryTreeView 树演示 ---------- */
 // 受控选择:传 v-model:selected 启用(文件夹单选 + 标签多选勾选)
@@ -780,10 +798,12 @@ async function startUpload () {
         <div class="h-[32rem] overflow-hidden rounded-lg border">
           <MediaBrowser
             ref="mediaBrowserRef"
+            v-model:library-id="demoLibraryId"
             v-model:view="mediaView"
             v-model:selected="selectedMedia"
-            :library-id="currentLibraryId || 'mock'"
             :services="mediaServices"
+            :library-servers="connected ? selectServers : undefined"
+            :server-manager="browserServerManager"
             @item-click="handleMediaClick"
             @delete-selection="handleMediaDelete"
             @import-files="files => openBatchUpload('', [], files)"
@@ -801,8 +821,10 @@ async function startUpload () {
         </div>
         <div class="h-[50rem] overflow-hidden rounded-lg border">
           <MediaLibraryView
-            :library-id="currentLibraryId || 'mock'"
+            v-model:library-id="demoLibraryId"
             :services="libraryViewServices"
+            :library-servers="connected ? selectServers : undefined"
+            :server-manager="browserServerManager"
             @import-files="files => openBatchUpload('', [], files)"
           />
         </div>
