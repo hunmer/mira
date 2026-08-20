@@ -158,8 +158,8 @@ importers:
         version: 3.25.76
     devDependencies:
       '@hunmer/procm-mcp-sdk':
-        specifier: link:G:/procm-mcp/packages/procm-sdk
-        version: link:G:/procm-mcp/packages/procm-sdk
+        specifier: link:../../../procm-mcp/packages/procm-sdk
+        version: link:../../../procm-mcp/packages/procm-sdk
       '@types/cors':
         specifier: ^2.8.17
         version: 2.8.19
@@ -467,8 +467,8 @@ importers:
         version: 3.25.76
     devDependencies:
       '@hunmer/procm-mcp-sdk':
-        specifier: link:G:/procm-mcp/packages/procm-sdk
-        version: link:G:/procm-mcp/packages/procm-sdk
+        specifier: link:../../../procm-mcp/packages/procm-sdk
+        version: link:../../../procm-mcp/packages/procm-sdk
       '@tailwindcss/postcss':
         specifier: ^4.0.17
         version: 4.3.0

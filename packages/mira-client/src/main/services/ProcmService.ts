@@ -13,10 +13,19 @@ export type ProcmLoggerLike = Pick<Logger, 'debug' | 'info' | 'warn' | 'error'>
 let procmClient: ProcmClient | null = null
 let procmLogger: ProcmLoggerLike = createNoopLogger()
 let mainWindow: BrowserWindow | null = null
+let clearOnLoadWindow: BrowserWindow | null = null
 let stopUiExecution: (() => void) | null = null
 
 export function setProcmMainWindow(window: BrowserWindow | null): void {
   mainWindow = window
+  if (!window || window.isDestroyed() || clearOnLoadWindow === window) return
+  clearOnLoadWindow = window
+  // Renderer refreshes reload the page without recreating the Electron main
+  // process, so initProcm() is not called again. Clear this process's logs on
+  // every completed main-frame load, including refresh and force-reload.
+  window.webContents.on('did-finish-load', () => {
+    void clearProcmLogs('page-load')
+  })
 }
 
 export function emitMainLogToRenderer(
@@ -54,14 +63,59 @@ function writeLine(stream: NodeJS.WriteStream, text: string): void {
   }
 }
 
+async function clearProcmLogs(trigger: 'init' | 'page-load'): Promise<void> {
+  const client = procmClient
+  const processId = client?.processId ?? process.env.PROCM_PROCESS_ID
+  if (!processId) {
+    console.warn('procm log clear skipped: process id is unavailable')
+    return
+  }
+  try {
+    let result: { id: string; cleared: true }
+    if (client) {
+      const { clearLogs } = await import('@hunmer/procm-mcp-sdk')
+      result = await clearLogs(client)
+    } else {
+      const wsUrl = process.env.PROCM_WS_URL
+      if (!wsUrl) {
+        console.warn('procm log clear skipped: WebSocket URL is unavailable')
+        return
+      }
+      const url = new URL(wsUrl)
+      url.protocol = url.protocol === 'wss:' ? 'https:' : 'http:'
+      url.pathname = `/api/processes/${encodeURIComponent(processId)}/logs`
+      url.search = ''
+      const token = process.env.PROCM_HTTP_TOKEN
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      })
+      const payload = await response.json() as { id?: string; cleared?: boolean; error?: string }
+      if (!response.ok || payload.cleared !== true) {
+        throw new Error(payload.error || `HTTP ${response.status}`)
+      }
+      result = { id: payload.id ?? processId, cleared: true }
+    }
+    console.info('procm logs cleared', { processId: result.id, trigger })
+  } catch (error) {
+    console.warn('procm log clear failed:', error)
+  }
+}
+
 export async function initProcm(): Promise<void> {
   if (procmClient) return
-  if (process.env.NODE_ENV !== 'development') return
-  const { clearLogs, createProcmClient, setupLogger, exposeCustomExecution } = await import('@hunmer/procm-mcp-sdk')
+  console.info('procm init', {
+    nodeEnv: process.env.NODE_ENV,
+    hasRoomId: Boolean(process.env.PROCM_ROOM_ID),
+    hasWsUrl: Boolean(process.env.PROCM_WS_URL),
+    processId: process.env.PROCM_PROCESS_ID,
+  })
+  const { createProcmClient, setupLogger, exposeCustomExecution } = await import('@hunmer/procm-mcp-sdk')
   // 即使没有 room 环境变量，也保留结构化 stdout 日志；这样由 procm
   // 启动但未注入 room 的子进程仍可按 level 过滤历史日志。
   if (!process.env.PROCM_ROOM_ID || !process.env.PROCM_WS_URL) {
     procmLogger = setupLogger({ console: rawConsole, clientName: 'mira-client' })
+    await clearProcmLogs('init')
     return
   }
   try {
@@ -70,12 +124,7 @@ export async function initProcm(): Promise<void> {
     console.warn('procm client init failed:', error)
     return
   }
-  console.log({ procmClient })
-  if (procmClient.processId) {
-    void clearLogs(procmClient).catch(error => {
-      console.warn('procm log clear failed:', error)
-    })
-  }
+  await clearProcmLogs('init')
   procmLogger = setupLogger({ client: procmClient, console: rawConsole })
   procmLogger.info('procm room enabled', { roomId: procmClient.roomId })
   procmClient.onState((state) => {
@@ -126,5 +175,6 @@ export function closeProcm(): void {
   procmClient?.close()
   procmClient = null
   mainWindow = null
+  clearOnLoadWindow = null
   procmLogger = createNoopLogger()
 }
