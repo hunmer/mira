@@ -44,6 +44,13 @@ body {
   overflow: hidden;
 }
 
+/* CEP 9 的旧 Chromium 不播放 Dialog 进入/退出动画。 */
+[data-slot="dialog-overlay"],
+[data-slot="dialog-content"] {
+  animation: none !important;
+  transition: none !important;
+}
+
 /*
  * Chromium 61 兼容:瀑布流修复。
  * - motion-v 动画引擎依赖的新 Web Animations API 缺失,条目会停在初始态

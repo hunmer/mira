@@ -620,7 +620,7 @@ async function startUpload () {
           <TabsTrigger value="tag">标签</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="info" class="flex min-h-0 flex-1 flex-col">
+        <TabsContent value="info" class="flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden">
           <div class="min-h-40 flex-1 overflow-y-auto rounded-lg border p-3">
             <FileInfoForm
               v-model:file-name="selectedFileName"
@@ -631,7 +631,7 @@ async function startUpload () {
             />
           </div>
         </TabsContent>
-        <TabsContent value="folder" class="flex min-h-0 flex-1 flex-col">
+        <TabsContent value="folder" class="flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden">
           <div class="min-h-40 flex-1 overflow-hidden rounded-md border">
             <LibraryTreeView
               mode="folder"
@@ -641,7 +641,7 @@ async function startUpload () {
             />
           </div>
         </TabsContent>
-        <TabsContent value="tag" class="flex min-h-0 flex-1 flex-col">
+        <TabsContent value="tag" class="flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden">
           <div class="min-h-40 flex-1 overflow-hidden rounded-md border">
             <LibraryTreeView
               mode="tag"
