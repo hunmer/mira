@@ -10,7 +10,7 @@ import type { LibraryTreeUpload, MediaLibraryServices } from 'mira-plugin-ui/lib
 // 不经库根入口(其会再引入一份 tailwind.css),直接引源码路径
 import BatchUploadDialog from 'mira-plugin-ui/src/BatchUploadDialog.vue'
 import { useMira } from './services'
-import { mimeOf, placeFromUrl } from './cep'
+import { placeLocalFile, prefetchToTemp, tempPathFor } from './cep'
 
 const mira = useMira()
 onMounted(() => mira.restore())
@@ -56,30 +56,42 @@ function resolveItem(target: EventTarget | null): { el: Element; lib: string; id
   return sid ? { el: card, lib: mira.currentLibraryId.value, id: sid } : null
 }
 
-interface DragItem { url: string; name: string }
+interface DragItem { url: string; localPath: string; name: string }
 let dragItem: DragItem | null = null
+
+/** 解析素材项并提前预下载,保证拖到 PS 松手时本地文件已就绪(同目标下载自动去重) */
+function beginDragItem(target: EventTarget | null): { item: DragItem; el: Element } | null {
+  const hit = resolveItem(target)
+  if (!hit) return null
+  const url = `${mira.serverURL.value}/api/files/file/${hit.lib}/${hit.id}?token=${mira.token.value}`
+  const name = hit.el.querySelector('.truncate')?.textContent?.trim() || `mira-${hit.id}`
+  const temp = tempPathFor(hit.lib, String(hit.id), name)
+  if (!temp) return null
+  void prefetchToTemp(url, temp.path).catch(() => { /* 下载失败留给兜底路径报错 */ })
+  return { item: { url, localPath: temp.path, name }, el: hit.el }
+}
 
 // 缩略图卡片默认不可拖,mousedown 时打上 draggable 让原生拖拽能启动
 function onItemMouseDown(event: MouseEvent) {
   if (event.button !== 0) return
-  const hit = resolveItem(event.target)
-  if (hit) hit.el.setAttribute('draggable', 'true')
+  beginDragItem(event.target)?.el.setAttribute('draggable', 'true')
 }
 
 function onItemDragStart(event: DragEvent) {
-  const hit = resolveItem(event.target)
-  if (!hit || !event.dataTransfer) return
-  const url = `${mira.serverURL.value}/api/files/download/${hit.lib}/${hit.id}?token=${mira.token.value}`
-  const name = hit.el.querySelector('.truncate')?.textContent?.trim() || `mira-${hit.id}`
-  dragItem = { url, name }
+  const ctx = beginDragItem(event.target)
+  if (!ctx || !event.dataTransfer) return
+  dragItem = ctx.item
   try {
-    event.dataTransfer.setData('text/uri-list', url)
-    event.dataTransfer.setData('text/plain', url)
-    // Chromium 文件拖拽格式:PS 若支持则直接以文件置入
-    event.dataTransfer.setData('DownloadURL', `${mimeOf(name)}:${name}:${url}`)
+    // CEP 原生拖出:Adobe 专用类型 + 本地文件路径(Windows 用真实单反斜杠路径;PS 2020 若不支持
+    // 该类型,drag-over 会显示禁止光标,松手后由 dragend 兜底置入)
+    const path = ctx.item.localPath
+    const dndPath = /win/i.test(String(navigator.platform || ''))
+      ? path.replace(/\//g, '\\')
+      : path
+    event.dataTransfer.setData('com.adobe.cep.dnd.file.0', dndPath)
     event.dataTransfer.effectAllowed = 'copy'
   } catch {
-    /* 拖拽元数据失败不阻断,仍有 dragend 兜底 */
+    /* 拖拽元数据失败仍有 dragend 兜底 */
   }
 }
 
@@ -87,12 +99,12 @@ function onItemDragEnd(event: DragEvent) {
   const item = dragItem
   dragItem = null
   if (!item) return
-  // 已被(面板或宿主)接收,或指针仍在面板内:不兜底
+  // 已被宿主接收(dropEffect 非 none),或指针仍在面板内:不兜底
   const dropEffect = event.dataTransfer?.dropEffect
   if (dropEffect && dropEffect !== 'none') return
   const inside = event.clientX > 0 && event.clientY > 0 && event.clientX < window.innerWidth && event.clientY < window.innerHeight
   if (inside) return
-  void placeFromUrl(item.url, item.name, notify)
+  void placeLocalFile(item.url, item.localPath, item.name, notify)
 }
 
 onMounted(() => {

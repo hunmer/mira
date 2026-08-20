@@ -1,7 +1,11 @@
 /**
- * CEP 宿主桥接:CSInterface evalScript + 素材下载置入。
- * 拖出面板的兜底路径:XHR 下载 → 临时目录(--mixed-context 下用 node,缺省走 cep.fs+base64)
- * → evalScript 调 host.jsx 的 miraPlaceFile 置入 PS。
+ * CEP 宿主桥接:素材预下载到本地临时目录 + 拖拽置入。
+ *
+ * 拖出面板走 CEP 原生机制:dragstart 设置 Adobe 专用拖拽类型
+ * `com.adobe.cep.dnd.file.0` = 本地文件路径(Windows 反斜杠按文档需双写),
+ * PS 端原生处理(拖到画布=置入图层,拖到空白区=新文档)。
+ * mousedown 即开始预下载,保证 drop 时文件已就绪;拖拽未被接收时经
+ * evalScript 调 host.jsx 的 miraPlaceFile 兜底置入。
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -20,6 +24,33 @@ export function evalHost(script: string): Promise<string> {
   })
 }
 
+/** 宿主脚本(ExtendScript):置入/打开本地文件;内联避免依赖 ScriptPath 的加载时机 */
+const HOST_JSX = `
+function miraPlaceFile(path) {
+  try {
+    var f = new File(path);
+    if (!f.exists) return 'ERR:文件不存在 ' + path;
+    if (app.documents.length === 0) {
+      try { open(f); } catch (e1) { /* 同名文档可能已打开 */ }
+      return app.documents.length ? 'opened|' + app.activeDocument.name : 'ERR:open 后无文档';
+    }
+    var before = app.activeDocument.layers.length;
+    var desc = new ActionDescriptor();
+    desc.putPath(charIDToTypeID('null'), f);
+    executeAction(stringIDToTypeID('placeEvent'), desc, DialogModes.NO);
+    var after = app.activeDocument.layers.length;
+    return 'placed|' + app.activeDocument.name + '|图层 ' + before + '->' + after;
+  } catch (e) {
+    return 'ERR:' + e.toString();
+  }
+}`
+
+/** 置入本地文件:每次连同函数定义一起 evalScript,返回带诊断信息(文档名/图层变化) */
+export function placeFileViaHost(localPath: string): Promise<string> {
+  const escaped = localPath.replace(/\\/g, '/').replace(/"/g, '\\"')
+  return evalHost(`(function(){${HOST_JSX} return miraPlaceFile("${escaped}");})()`)
+}
+
 function xhrArrayBuffer(url: string): Promise<ArrayBuffer> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest()
@@ -33,63 +64,96 @@ function xhrArrayBuffer(url: string): Promise<ArrayBuffer> {
   })
 }
 
-function arrayBufferToBase64(buf: ArrayBuffer): string {
-  const bytes = new Uint8Array(buf)
+function sanitize(name: string) {
+  return name.replace(/[\\/:*?"<>|]/g, '_')
+}
+
+const isWindows = /win/i.test(String(w.navigator?.platform || ''))
+
+function nodeRequire(): any | null {
+  const req: any = w.require
+  return typeof req === 'function' ? req : null
+}
+
+/** 素材的本地缓存路径 + Adobe 拖拽类型用的路径(确定性命名,重复拖拽覆盖刷新) */
+export function tempPathFor(lib: string, id: string, name: string): { path: string; dndPath: string } | null {
+  const file = `${lib}-${id}-${sanitize(name)}`
+  const req = nodeRequire()
+  let path: string
+  if (req) {
+    path = req('path').join(req('os').tmpdir(), 'mira-cep', file)
+  } else {
+    const cs = getCSInterface()
+    if (!cs) return null
+    path = cs.getSystemPath(w.SystemPath.EXTENSION) + '/tmp/' + file
+  }
+  // 文档要求:Windows 路径分隔符用双反斜杠 PS 才认
+  const dndPath = isWindows
+    ? path.replace(/\//g, '\\').replace(/\\/g, '\\\\')
+    : path
+  return { path, dndPath }
+}
+
+function writeTo(filePath: string, buffer: ArrayBuffer): Promise<void> | void {
+  const req = nodeRequire()
+  if (req) {
+    const path = req('path'), fs = req('fs')
+    const dir = path.dirname(filePath)
+    // CEP 内嵌 Node 版本老,不支持 mkdirSync 的 recursive 选项:手动建目录并容忍 EEXIST
+    if (!fs.existsSync(dir)) {
+      try { fs.mkdirSync(dir) } catch (e: any) { if (e?.code !== 'EEXIST') throw e }
+    }
+    fs.writeFileSync(filePath, req('buffer').Buffer.from(buffer))
+    return
+  }
+  const cep = w.cep
+  if (!cep) return Promise.reject(new Error('无可用文件写入方式(缺少 node / cep.fs)'))
+  const bytes = new Uint8Array(buffer)
   let binary = ''
   const chunk = 0x8000
   for (let i = 0; i < bytes.length; i += chunk) {
     binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunk)) as unknown as number[])
   }
-  return btoa(binary)
+  const result = cep.fs.writeFile(filePath, btoa(binary), w.cep.encoding.Base64)
+  if (result.err !== 0) return Promise.reject(new Error(`cep.fs 写入失败(${result.err})`))
 }
 
-function sanitize(name: string) {
-  return name.replace(/[\\/:*?"<>|]/g, '_')
-}
+/** 下载素材到本地缓存(同目标并发去重,完成后保留 60s 供兜底复用) */
+const pending = new Map<string, Promise<string>>()
 
-async function downloadToTemp(url: string, name: string): Promise<string> {
-  const buffer = await xhrArrayBuffer(url)
-  const file = `${Date.now()}-${sanitize(name)}`
-  const req: any = w.require
-  if (typeof req === 'function') {
-    const path = req('path'), fs = req('fs'), os = req('os')
-    const dir = path.join(os.tmpdir(), 'mira-cep')
-    fs.mkdirSync(dir, { recursive: true })
-    const full = path.join(dir, file)
-    fs.writeFileSync(full, req('buffer').Buffer.from(buffer))
-    return full
+export function prefetchToTemp(url: string, dest: string): Promise<string> {
+  let task = pending.get(dest)
+  if (!task) {
+    task = (async () => {
+      const buffer = await xhrArrayBuffer(url)
+      await writeTo(dest, buffer)
+      return dest
+    })()
+    pending.set(dest, task)
+    const cleanup = () => setTimeout(() => pending.delete(dest), 60_000)
+    task.then(cleanup, cleanup)
   }
-  const cs = getCSInterface()
-  const cep = w.cep
-  if (!cs || !cep) throw new Error('无可用文件写入方式(缺少 node / cep.fs)')
-  const dir = cs.getSystemPath(w.SystemPath.EXTENSION) + '/tmp'
-  cep.fs.makedir(dir)
-  const full = `${dir}/${file}`
-  const result = cep.fs.writeFile(full, arrayBufferToBase64(buffer), w.cep.encoding.Base64)
-  if (result.err !== 0) throw new Error(`cep.fs 写入失败(${result.err})`)
-  return full
+  return task
 }
 
-/** 下载素材并置入/打开到 PS,进度经 notify 回显到面板 */
-export async function placeFromUrl(url: string, name: string, notify: (msg: string) => void) {
+/** 兜底:确保本地文件就绪后经 ExtendScript 置入/打开,进度与诊断经 notify 回显 */
+export async function placeLocalFile(url: string, localPath: string, name: string, notify: (msg: string) => void) {
   try {
     notify(`下载 ${name} …`)
-    const local = await downloadToTemp(url, name)
+    await prefetchToTemp(url, localPath)
     notify(`置入 ${name} …`)
-    const escaped = local.replace(/\\/g, '/').replace(/"/g, '\\"')
-    const result = await evalHost(`miraPlaceFile("${escaped}")`)
-    notify(result.startsWith('ERR') ? `${name} ${result}` : `${result === 'opened' ? '已打开' : '已置入'} ${name}`)
+    const result = await placeFileViaHost(localPath)
+    if (result.startsWith('ERR')) {
+      notify(`${name} 置入失败: ${result}`)
+    } else if (result.startsWith('placed|')) {
+      notify(`已置入 ${name} (${result.slice(7)})`)
+    } else if (result.startsWith('opened|')) {
+      notify(`已打开 ${name} (${result.slice(7)})`)
+    } else {
+      // 'EvalScript error.' 等异常返回:如实展示,避免假成功
+      notify(`${name} 置入失败: ${result}`)
+    }
   } catch (error: any) {
     notify(`置入失败: ${error?.message || error}`)
   }
-}
-
-export function mimeOf(name: string): string {
-  const ext = (name.split('.').pop() || '').toLowerCase()
-  const map: Record<string, string> = {
-    png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp',
-    svg: 'image/svg+xml', bmp: 'image/bmp', tif: 'image/tiff', tiff: 'image/tiff', psd: 'image/vnd.adobe.photoshop',
-    mp4: 'video/mp4', mov: 'video/quicktime', mp3: 'audio/mpeg', wav: 'audio/wav', pdf: 'application/pdf',
-  }
-  return map[ext] || 'application/octet-stream'
 }
