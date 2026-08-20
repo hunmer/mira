@@ -5,10 +5,13 @@ import { createHash } from 'crypto'
 import { fileURLToPath } from 'url'
 import { logger } from '../utils/Logger'
 
+export const LIBRARY_THUMB_SCHEME = 'library-thumb'
+export const LIBRARY_FILE_SCHEME = 'library-file'
+
 // 让自定义素材协议可被 img/video/fetch 当作标准安全资源加载。
 protocol.registerSchemesAsPrivileged([
-  { scheme: 'library_thumb', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } },
-  { scheme: 'library_file', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } },
+  { scheme: LIBRARY_THUMB_SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } },
+  { scheme: LIBRARY_FILE_SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } },
 ])
 
 /**
@@ -128,8 +131,8 @@ export class ProtocolService {
     // 注册自定义协议 scheme，使渲染进程可通过 <a href="mira://..."> 触发
     this.cacheDir = path.join(app.getPath('sessionData'), 'mira-library-thumbnails')
     void fs.mkdir(this.cacheDir, { recursive: true })
-    protocol.handle('library_thumb', request => this.handleLibraryResource(request, true))
-    protocol.handle('library_file', request => this.handleLibraryResource(request, false))
+    protocol.handle(LIBRARY_THUMB_SCHEME, request => this.handleLibraryResource(request, true))
+    protocol.handle(LIBRARY_FILE_SCHEME, request => this.handleLibraryResource(request, false))
     protocol.registerStringProtocol('mira', (request: any, callback: (response: string) => void) => {
       this.parseAndHandleUrl(request.url)
       callback('')

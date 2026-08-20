@@ -9,7 +9,7 @@
  */
 import { ref, watch } from 'vue'
 import { MiraClient } from 'mira-app-core/shared/sdk'
-import { MediaBrowser } from 'mira-plugin-ui/library'
+import { MediaBrowser, toApiFilters } from 'mira-plugin-ui/library'
 import type { MediaBrowserItem, MediaBrowserServices } from 'mira-plugin-ui/library'
 import { Button } from 'mira-plugin-ui/src/components/ui/button'
 import {
@@ -99,15 +99,34 @@ function onLibraryChange(id: string) {
 
 // MediaBrowser 数据服务：列表走 SDK（服务端过滤/排序），缩略图/宽高走 REST 直链
 const services: MediaBrowserServices = {
+  // 过滤栏的文件夹/标签选择树（行为原始列：title/name 兼容,parent_id null 视为根）
+  async listFolders() {
+    if (!client) return []
+    const rows = (await client.folders().getAll(currentLibraryId.value)) as any[]
+    return rows.map((r) => ({
+      id: r.id,
+      title: r.title ?? r.name,
+      parent_id: typeof r.parent_id === 'number' ? r.parent_id : undefined,
+      color: r.color,
+    }))
+  },
+  async listTags() {
+    if (!client) return []
+    const rows = (await client.tags().getAll(currentLibraryId.value)) as any[]
+    return rows.map((r) => ({
+      id: r.id,
+      title: r.title ?? r.name,
+      parent_id: typeof r.parent_id === 'number' ? r.parent_id : undefined,
+      color: r.color,
+    }))
+  },
   async listFiles(filters) {
     if (!client) throw new Error('服务器连接信息缺失（server/token）')
     const ret: any = await client.files().getFiles({
       libraryId: currentLibraryId.value,
+      // 全量筛选字段转后端 snake_case(folder/tags/url/size_min/metadata_* 等)
       filters: {
-        title: filters?.title,
-        category: filters?.category,
-        sort: filters?.sort,
-        order: filters?.order,
+        ...toApiFilters(filters ?? {}),
         limit: 200,
       } as any,
     })

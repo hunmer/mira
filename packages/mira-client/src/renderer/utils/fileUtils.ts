@@ -32,12 +32,12 @@ export function toFileUrl(path: unknown): string | undefined {
   if (path.startsWith('http://') || path.startsWith('https://')) {
     // Electron 缓存协议：设置由 ConfigStorage 同步镜像到 localStorage。
     const libraryId = getLibraryCacheContext()
-    if (libraryId) return `library_thumb://load?libraryId=${encodeURIComponent(String(libraryId))}&url=${encodeURIComponent(path)}`
+    if (libraryId) return `library-thumb://load?libraryId=${encodeURIComponent(String(libraryId))}&url=${encodeURIComponent(path)}`
     return path
   }
   if (path.startsWith('file://')) {
     const libraryId = getLibraryCacheContext()
-    if (libraryId) return `library_file://load?libraryId=${encodeURIComponent(String(libraryId))}&url=${encodeURIComponent(path)}`
+    if (libraryId) return `library-file://load?libraryId=${encodeURIComponent(String(libraryId))}&url=${encodeURIComponent(path)}`
     return path
   }
   let normalized = path.replace(/\\/g, '/')

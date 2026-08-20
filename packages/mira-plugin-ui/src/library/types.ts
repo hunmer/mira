@@ -151,6 +151,59 @@ export interface LibraryTreeUpload {
 /** 文案函数:vue-i18n 风格(key + {n} 命名插值),缺省用内置中文 */
 export type LibraryTreeT = (key: string, params?: Record<string, unknown>) => string
 
+/* ============ 过滤栏(FilterBar) ============ */
+
+/**
+ * 过滤规则:与桌面端 mira-client FilterBar 的 FilterRule 同构(字段语义一致,规则可互拷),
+ * 供 FilterBar / MediaBrowser 与宿主共用。
+ */
+export interface FilterRule {
+  id: string
+  type: 'folders' | 'tags' | 'urls' | 'title' | 'size' | 'category' | 'metadata'
+  label: string
+  /** 预留桌面端 material icons 图标名;组件库按 type 内置 lucide 图标,不消费该字段 */
+  icon?: string
+  active?: boolean
+  selectedValues?: (string | number)[]
+  value?: string
+  selectedPreset?: string
+  customMin?: number
+  customMax?: number
+  selectedCategory?: string
+  // metadata 过滤(type === 'metadata')
+  /** 当前子模式:dimension=尺寸(分辨率),duration=时长 */
+  metaField?: 'dimension' | 'duration'
+  /** 预设 id 或 'custom' */
+  selectedMetaPreset?: string
+  /** 最长边范围(px),提交后端 */
+  metaDimMin?: number
+  metaDimMax?: number
+  /** 时长范围(秒),提交后端 */
+  metaDurMin?: number
+  metaDurMax?: number
+  /** 自定义输入框值(px) */
+  customDimMin?: number
+  customDimMax?: number
+  /** 自定义输入框值(秒) */
+  customDurMin?: number
+  customDurMax?: number
+  [key: string]: any
+}
+
+/** 已保存的过滤器(持久化归宿主,组件库只负责展示与编辑交互) */
+export interface SavedFilter {
+  id: string
+  name: string
+  rules: FilterRule[]
+  createdAt: number
+}
+
+/** FilterBar 排序器下拉选项(缺省用组件内置 8 项) */
+export interface FilterBarSortOption {
+  value: string
+  label: string
+}
+
 /* ============ 素材库文件浏览器(MediaBrowser) ============ */
 
 /**
@@ -169,18 +222,51 @@ export interface MediaBrowserItem {
   aspect?: string
 }
 
+/** 文件列表排序字段(与桌面端 FilterBar 的排序选项对齐;宿主 listFiles 可只支持其中子集) */
+export type MediaBrowserSortField =
+  | 'imported_at'
+  | 'id'
+  | 'name'
+  | 'size'
+  | 'stars'
+  | 'folder_id'
+  | 'tags'
+  | 'custom_fields'
+
 /** 文件浏览器的筛选/排序条件(透传给 services.listFiles) */
 export interface MediaBrowserFilters {
   /** 标题关键词 */
   title?: string
+  /** 网址/域名关键词 */
+  url?: string
   category?: 'image' | 'video' | 'audio'
-  sort?: 'imported_at' | 'name' | 'size'
+  /** 文件夹 id 列表 */
+  folders?: (string | number)[]
+  /** 标签 id 列表 */
+  tags?: (string | number)[]
+  /** 文件大小范围(字节) */
+  sizeMin?: number
+  sizeMax?: number
+  /** 最长边范围(px) */
+  metaDimMin?: number
+  metaDimMax?: number
+  /** 时长范围(秒) */
+  metaDurMin?: number
+  metaDurMax?: number
+  sort?: MediaBrowserSortField
   order?: 'asc' | 'desc'
 }
 
 /** 数据服务:宿主实现(扩展走 background 桥,其他宿主可走 SDK) */
 export interface MediaBrowserServices {
   listFiles(filters?: MediaBrowserFilters): Promise<MediaBrowserItem[]>
+  /**
+   * 文件夹扁平列表(提供后过滤栏启用文件夹筛选器);宿主闭包捕获 libraryId,
+   * 返回值经 buildTree 组装为选择树。
+   */
+  listFolders?(): Promise<LibraryFlatItem[] | null>
+  /** 标签扁平列表(提供后过滤栏启用标签筛选器) */
+  listTags?(): Promise<LibraryFlatItem[] | null>
   /** 缩略图地址(如 /api/files/thumb/:libraryId/:id?token=…);不提供则卡片显示类型图标 */
   getThumbUrl?(item: MediaBrowserItem): string
   /**

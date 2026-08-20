@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { Loader2, LogOut, Moon, Server, Sun } from '@lucide/vue'
 import { MiraClient, type HealthResponse } from 'mira-app-core/shared/sdk'
 import { BatchUploadDialog, Progress, SaveLocationDialog, type BatchUploadFileService, type SaveLocation } from '@/index'
-import { Dropzone, LibrarySelect, LibraryTreeView, MediaBrowser, ServerManagerDialog } from '@/library'
+import { Dropzone, LibrarySelect, LibraryTreeView, MediaBrowser, ServerManagerDialog, toApiFilters } from '@/library'
 import type { LibraryFlatItem, LibrarySelectServer, LibraryTreeDialog, LibraryTreeServices, LibraryTreeNode, LibraryTreeUpload, ManagedServer, MediaBrowserFilters, MediaBrowserItem, MediaBrowserServices, ServerManagerServices } from '@/library'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -215,7 +215,6 @@ const selectServers = computed<LibrarySelectServer[]>(() =>
   [{ id: 'current', name: apiBaseUrl.value, libraries: libraries.value }])
 
 /* ---------- LibraryTreeView 树演示 ---------- */
-const treeMode = ref<'folder' | 'tag'>('folder')
 // 受控选择:传 v-model:selected 启用(文件夹单选 + 标签多选勾选)
 const selectedFolder = ref<LibraryTreeNode[]>([])
 const selectedTags = ref<LibraryTreeNode[]>([])
@@ -372,15 +371,16 @@ const mockFiles = ref<MediaBrowserItem[]>(Array.from({ length: 24 }, (_, i) => {
 
 // 连接后走 SDK getFiles(服务端过滤/排序);未连接在内存 mock 上过滤/排序
 const mediaServices: MediaBrowserServices = {
+  // 过滤栏的文件夹/标签选择树:复用树演示的数据源(mock / SDK)
+  listFolders: () => treeServices.listFolders(),
+  listTags: () => treeServices.listTags(),
   async listFiles (filters) {
     if (connected.value && client) {
       const ret: any = await client.files().getFiles({
         libraryId: currentLibraryId.value,
+        // 全量筛选字段转后端 snake_case(folder/tags/url/size_min/metadata_* 等)
         filters: {
-          title: filters?.title,
-          category: filters?.category,
-          sort: filters?.sort,
-          order: filters?.order,
+          ...toApiFilters(filters ?? {}),
           limit: 200,
         } as any,
       })
@@ -636,31 +636,36 @@ async function startUpload () {
 
       <!-- 树视图演示卡片(受控选择:为上传卡片选目标) -->
       <section class="bg-card text-card-foreground flex flex-col gap-4 rounded-xl border p-6 shadow-sm">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <h2 class="text-base font-semibold">LibraryTreeView 树视图</h2>
-          <div class="bg-muted flex gap-1 rounded-lg p-1">
-            <button
-              v-for="m in (['folder', 'tag'] as const)"
-              :key="m"
-              class="rounded-md px-3 py-1 text-xs font-medium transition-colors"
-              :class="treeMode === m ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'"
-              @click="treeMode = m"
-            >
-              {{ m === 'folder' ? '文件夹树' : '标签树' }}
-            </button>
+        <h2 class="text-base font-semibold">LibraryTreeView 树视图</h2>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="flex min-w-0 flex-col gap-2">
+            <span class="text-muted-foreground text-xs font-medium">文件夹树</span>
+            <div class="h-96 overflow-hidden rounded-lg border">
+              <LibraryTreeView
+                mode="folder"
+                :library-id="currentLibraryId || 'mock'"
+                :services="treeServices"
+                :dialog="treeDialog"
+                :upload="treeUpload"
+                :selected="selectedFolder"
+                @update:selected="selectedFolder = $event"
+              />
+            </div>
           </div>
-        </div>
-        <div class="h-96 overflow-hidden rounded-lg border">
-          <LibraryTreeView
-            :key="treeMode"
-            :mode="treeMode"
-            :library-id="currentLibraryId || 'mock'"
-            :services="treeServices"
-            :dialog="treeDialog"
-            :upload="treeUpload"
-            :selected="treeMode === 'folder' ? selectedFolder : selectedTags"
-            @update:selected="treeMode === 'folder' ? (selectedFolder = $event) : (selectedTags = $event)"
-          />
+          <div class="flex min-w-0 flex-col gap-2">
+            <span class="text-muted-foreground text-xs font-medium">标签树</span>
+            <div class="h-96 overflow-hidden rounded-lg border">
+              <LibraryTreeView
+                mode="tag"
+                :library-id="currentLibraryId || 'mock'"
+                :services="treeServices"
+                :dialog="treeDialog"
+                :upload="treeUpload"
+                :selected="selectedTags"
+                @update:selected="selectedTags = $event"
+              />
+            </div>
+          </div>
         </div>
       </section>
 

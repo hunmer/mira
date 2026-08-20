@@ -3,7 +3,7 @@
  * 简易素材库文件浏览器(网格 / 瀑布流两种布局)。
  * 参考自 mira-client MediaTabListView / FilterBar,数据全部由宿主注入(services)。
  *
- * - 工具栏:标题搜索 + 分类筛选(全部/图片/视频/音频) + 排序(字段×方向) + 视图切换 + 刷新
+ * - 工具栏:FilterBar(7 类筛选器 + 排序 + 已保存过滤器,宿主注入数据) + 计数/视图切换/刷新
  * - 网格:CSS grid 等比方形卡片;瀑布流:@hunmer/vue-masonry(高度按 item.aspect)
  * - 缩略图地址由 services.getThumbUrl 提供(img 标签无法带 header,宿主自行拼 token)
  * - 选择:传 v-model:selected 启用(点选 / Ctrl 加选 / Shift 连选 / 空白拖拽框选,Alt 减选)
@@ -17,8 +17,6 @@ import '@hunmer/vue-masonry/style.css';
 import { SelectionBox } from '@hunmer/vue-selection-box';
 import '@hunmer/vue-selection-box/style.css';
 import {
-  ArrowDownAZ,
-  ArrowUpAZ,
   Check,
   FileAudio,
   FileImage,
@@ -30,14 +28,25 @@ import {
   X,
 } from '@lucide/vue';
 // 注意:library 子入口以源码供宿主直接消费,这里必须用相对路径(宿主的 @ 别名指向其自身 src)
-import { Input } from '../components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import FilterBar from './FilterBar.vue';
+import { buildTree } from './tree';
+import {
+  applySnapshotToRule,
+  createDefaultFilterRules,
+  hasActiveFilterConditions,
+  resetFilterRule,
+  rulesToFilters,
+} from './filterBar';
 import { createLibraryTreeT } from './i18n';
 import type {
+  FilterBarSortOption,
+  FilterRule,
+  LibraryTreeNode,
   LibraryTreeT,
   MediaBrowserFilters,
   MediaBrowserItem,
   MediaBrowserServices,
+  SavedFilter,
 } from './types';
 
 const props = defineProps<{
@@ -49,6 +58,10 @@ const props = defineProps<{
   t?: LibraryTreeT;
   /** 瀑布流布局模式:fill=自动回填空隙(默认) / stream=纯流式保序 */
   waterfallMode?: 'stream' | 'fill';
+  /** 已保存的过滤器(透传给 FilterBar;传宿主持久化数据后启用已保存过滤器入口) */
+  savedFilters?: SavedFilter[];
+  /** FilterBar 排序选项(缺省用内置 8 项,与桌面端一致) */
+  sortOptions?: FilterBarSortOption[];
 }>();
 
 /** 视图模式受控切换:grid=网格 / waterfall=瀑布流 */
@@ -62,6 +75,10 @@ const emit = defineEmits<{
   itemClick: [item: MediaBrowserItem];
   /** Delete 快捷键:启用选择且容器聚焦时触发,删除动作由宿主实现 */
   deleteSelection: [items: MediaBrowserItem[]];
+  /** FilterBar 新建/编辑已保存的过滤器(宿主持久化) */
+  saveSavedFilter: [name: string, rules: FilterRule[], editingId: string | null];
+  /** FilterBar 删除已保存的过滤器(宿主持久化) */
+  deleteSavedFilter: [filterId: string];
 }>();
 
 const fallbackT = createLibraryTreeT();
@@ -71,25 +88,16 @@ const tt = (key: string, params?: Record<string, unknown>) => {
   return r === key ? fallbackT(key, params) : r;
 };
 
-// ---- 工具栏状态(变化即重新拉取) ----
-const keyword = ref('');
-const debouncedKeyword = ref('');
-const category = ref<'image' | 'video' | 'audio' | undefined>();
+// ---- 过滤/排序状态(变化即重新拉取) ----
+const filterRules = ref<FilterRule[]>(createDefaultFilterRules(tt));
 const sortField = ref<NonNullable<MediaBrowserFilters['sort']>>('imported_at');
 const sortOrder = ref<NonNullable<MediaBrowserFilters['order']>>('desc');
+/** 当前已应用的已保存过滤器 id(手动改筛选时自动取消关联) */
+const appliedFilterId = ref<string | null>(null);
 
-const categories = computed(() => [
-  { value: undefined, label: tt('media.categoryAll') },
-  { value: 'image' as const, label: tt('media.categoryImage') },
-  { value: 'video' as const, label: tt('media.categoryVideo') },
-  { value: 'audio' as const, label: tt('media.categoryAudio') },
-]);
-
-const sortFields = computed(() => [
-  { value: 'imported_at' as const, label: tt('media.sortImportedAt') },
-  { value: 'name' as const, label: tt('media.sortName') },
-  { value: 'size' as const, label: tt('media.sortSize') },
-]);
+// 文件夹/标签选择树(services 提供列表接口时启用对应筛选器)
+const folderTree = ref<LibraryTreeNode[]>([]);
+const tagTree = ref<LibraryTreeNode[]>([]);
 
 // ---- 数据加载 ----
 const items = ref<MediaBrowserItem[]>([]);
@@ -104,12 +112,10 @@ async function load() {
   loading.value = true;
   error.value = '';
   try {
-    const filters: MediaBrowserFilters = {
-      title: debouncedKeyword.value.trim() || undefined,
-      category: category.value,
+    const filters = rulesToFilters(filterRules.value, {
       sort: sortField.value,
       order: sortOrder.value,
-    };
+    });
     items.value = await props.services.listFiles(filters);
   } catch (e) {
     error.value = String((e as Error)?.message || e);
@@ -119,21 +125,77 @@ async function load() {
   }
 }
 
-// 搜索关键词防抖,其余条件变化立即重载
-let debounceTimer: ReturnType<typeof setTimeout> | undefined;
-watch(keyword, (value) => {
-  clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(() => (debouncedKeyword.value = value), 300);
-});
+async function loadTrees() {
+  if (props.services.listFolders) {
+    try {
+      folderTree.value = buildTree((await props.services.listFolders()) || []);
+    } catch {
+      folderTree.value = [];
+    }
+  }
+  if (props.services.listTags) {
+    try {
+      tagTree.value = buildTree((await props.services.listTags()) || []);
+    } catch {
+      tagTree.value = [];
+    }
+  }
+}
+
+// ---- FilterBar 事件编排(语义对齐桌面端 useMediaTabFilters) ----
+// 标题输入防抖,其余筛选变化立即重载
+let titleTimer: ReturnType<typeof setTimeout> | undefined;
+
+function onFilterChange(filter: FilterRule) {
+  appliedFilterId.value = null;
+  if (filter.id === 'title') {
+    clearTimeout(titleTimer);
+    titleTimer = setTimeout(() => void load(), 300);
+  } else {
+    void load();
+  }
+}
+
+function onFilterClear() {
+  appliedFilterId.value = null;
+  void load();
+}
+
+function onSortChange(field: string, order: string) {
+  sortField.value = field as typeof sortField.value;
+  sortOrder.value = order as typeof sortOrder.value;
+  void load();
+}
+
+/** 应用已保存的过滤器:整套回填规则显示后按新条件重载 */
+function onApplySavedFilter(filterId: string, rules: FilterRule[]) {
+  const byId = new Map(rules.map(rule => [rule.id, rule]));
+  filterRules.value.forEach(rule => applySnapshotToRule(rule, byId.get(rule.id)));
+  appliedFilterId.value = filterId;
+  void load();
+}
+
+/** 清除全部筛选条件(重置规则显示后重载) */
+function onClearAllFilters() {
+  filterRules.value.forEach(rule => resetFilterRule(rule));
+  appliedFilterId.value = null;
+  void load();
+}
+
 watch(
-  [debouncedKeyword, category, () => props.libraryId],
-  () => void load(),
+  () => props.libraryId,
+  () => {
+    void load();
+    void loadTrees();
+  },
 );
-watch([sortField, sortOrder], () => void load(), { immediate: false });
 
-onMounted(() => void load());
+onMounted(() => {
+  void load();
+  void loadTrees();
+});
 
-const hasCondition = computed(() => !!debouncedKeyword.value.trim() || !!category.value);
+const hasCondition = computed(() => hasActiveFilterConditions(filterRules.value));
 const noMatch = computed(() => !loading.value && !error.value && items.value.length === 0 && hasCondition.value);
 const noData = computed(() => !loading.value && !error.value && items.value.length === 0 && !hasCondition.value);
 
@@ -177,6 +239,16 @@ function clearSelection() {
   selectedIds.value = [];
 }
 
+// ---- 全选(FilterBar 的全选开关;启用选择且列表非空时显示) ----
+const isAllSelected = computed(
+  () => selectionEnabled.value && items.value.length > 0 && selectedIds.value.length === items.value.length,
+);
+
+function toggleSelectAll() {
+  if (!selectionEnabled.value) return;
+  selectedIds.value = isAllSelected.value ? [] : items.value.map(i => String(i.id));
+}
+
 /** SelectionBox 的 Delete 快捷键:按 id 映射回 items 抛给宿主 */
 function onDeleteSelection(ids: string[]) {
   const byId = new Map(items.value.map(i => [String(i.id), i]));
@@ -185,8 +257,11 @@ function onDeleteSelection(ids: string[]) {
 }
 
 defineExpose({
-  /** 重新拉取文件列表(宿主批量删除等操作后调用) */
-  refresh: load,
+  /** 重新拉取文件列表与文件夹/标签树(宿主批量删除等操作后调用) */
+  refresh() {
+    void load()
+    void loadTrees()
+  },
 });
 
 // ---- 卡片辅助 ----
@@ -256,57 +331,29 @@ function getMeta(item: MediaBrowserItem): MasonryItemMeta {
 
 <template>
   <div class="flex h-full min-h-0 flex-col">
-    <!-- 工具栏:搜索 + 分类 + 排序 + 视图切换 + 刷新 -->
+    <!-- 工具栏:FilterBar(筛选/排序/已保存过滤器) + 计数/已选/视图切换/刷新 -->
     <div class="flex flex-wrap items-center gap-2 border-b border-border px-3 py-2">
-      <div class="relative w-48 shrink-0">
-        <Input
-          v-model="keyword"
-          class="h-8 pl-7 text-xs"
-          :placeholder="tt('media.searchPlaceholder')"
-        />
-        <svg
-          class="text-muted-foreground pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2"
-          viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-        >
-          <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
-        </svg>
-      </div>
-
-      <!-- 分类筛选 -->
-      <div class="bg-muted flex gap-0.5 rounded-lg p-0.5" role="group">
-        <button
-          v-for="c in categories"
-          :key="c.label"
-          type="button"
-          class="cursor-pointer rounded-md px-2 py-1 text-[11px] leading-none font-medium transition-colors duration-100"
-          :class="category === c.value ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'"
-          @click="category = c.value"
-        >
-          {{ c.label }}
-        </button>
-      </div>
-
-      <!-- 排序:字段 + 方向 -->
-      <Select
-        :model-value="sortField"
-        @update:model-value="v => (sortField = v as typeof sortField)"
-      >
-        <SelectTrigger size="sm" class="h-8 gap-1 text-xs">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem v-for="f in sortFields" :key="f.value" :value="f.value">{{ f.label }}</SelectItem>
-        </SelectContent>
-      </Select>
-      <button
-        type="button"
-        class="text-muted-foreground inline-flex size-8 cursor-pointer items-center justify-center rounded-md border-none bg-transparent transition-colors duration-150 hover:bg-accent hover:text-foreground"
-        :title="sortOrder === 'desc' ? tt('media.orderDesc') : tt('media.orderAsc')"
-        @click="sortOrder = sortOrder === 'desc' ? 'asc' : 'desc'"
-      >
-        <ArrowDownAZ v-if="sortOrder === 'desc'" class="size-4" />
-        <ArrowUpAZ v-else class="size-4" />
-      </button>
+      <FilterBar
+        class="min-w-0 flex-1"
+        :filters="filterRules"
+        :is-all-selected="selectionEnabled ? isAllSelected : undefined"
+        :folder-tree-items="folderTree"
+        :tag-tree-items="tagTree"
+        :sort="sortField"
+        :order="sortOrder"
+        :sort-options="props.sortOptions"
+        :saved-filters="props.savedFilters"
+        :applied-filter-id="appliedFilterId"
+        :t="tt"
+        @select-all="toggleSelectAll"
+        @filter-change="onFilterChange"
+        @filter-clear="onFilterClear"
+        @sort-change="onSortChange"
+        @apply-saved-filter="onApplySavedFilter"
+        @clear-filters="onClearAllFilters"
+        @save-saved-filter="(name, rules, editingId) => emit('saveSavedFilter', name, rules, editingId)"
+        @delete-saved-filter="filterId => emit('deleteSavedFilter', filterId)"
+      />
 
       <div class="ms-auto flex items-center gap-2">
         <span class="text-muted-foreground shrink-0 text-xs tabular-nums">{{ tt('media.fileCount', { n: items.length }) }}</span>

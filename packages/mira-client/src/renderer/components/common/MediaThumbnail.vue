@@ -51,14 +51,6 @@ const props = withDefaults(defineProps<{
 })
 
 function resolveThumbnailSource(src: string): string {
-  const libraryId = props.file?.libraryId || localStorage.getItem('mira-active-library-id') || ''
-  try {
-    const settings = JSON.parse(localStorage.getItem('mira-settings') || '{}')
-    if (window.electronAPI && libraryId && settings.thumbnailCacheLibraries?.[libraryId]) {
-      if (src.startsWith('file://')) return `library_file://load?libraryId=${encodeURIComponent(String(libraryId))}&url=${encodeURIComponent(src)}`
-      if (src.startsWith('http://') || src.startsWith('https://')) return `library_thumb://load?libraryId=${encodeURIComponent(String(libraryId))}&url=${encodeURIComponent(src)}`
-    }
-  } catch { /* fallback */ }
   return toFileUrl(src) || src
 }
 

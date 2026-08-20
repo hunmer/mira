@@ -12,6 +12,8 @@ export { default as LibrarySelect } from './LibrarySelect.vue'
 export { default as ContextMenu } from './ContextMenu.vue'
 export { default as Dropzone } from './Dropzone.vue'
 export { default as MediaBrowser } from './MediaBrowser.vue'
+export { default as FilterBar } from './FilterBar.vue'
+export { default as SavedFilterDialog } from './SavedFilterDialog.vue'
 export { default as ServerManagerView } from './ServerManagerView.vue'
 export { default as ServerManagerDialog } from './ServerManagerDialog.vue'
 export { useLibraryTreeData } from './useLibraryTreeData'
@@ -19,6 +21,15 @@ export { useLibraryTreeActions, type LibraryTreeMenuState, type UseLibraryTreeAc
 export { buildTree, filterTree, flattenTree, collectIds, ROOT_ID } from './tree'
 export { parseDrop, canAcceptDrop, urlKind, type ParsedDrop } from './drag-data'
 export { createLibraryTreeT } from './i18n'
+export {
+  createDefaultFilterRules,
+  resetFilterRule,
+  applySnapshotToRule,
+  rulesToFilters,
+  hasActiveFilterConditions,
+  toApiFilters,
+  filterIconOf,
+} from './filterBar'
 export type {
   LibraryTreeNode,
   LibraryFlatItem,
@@ -35,6 +46,10 @@ export type {
   MediaBrowserItem,
   MediaBrowserFilters,
   MediaBrowserServices,
+  MediaBrowserSortField,
+  FilterRule,
+  SavedFilter,
+  FilterBarSortOption,
   ManagedServer,
   ServerManagerServices,
 } from './types'
