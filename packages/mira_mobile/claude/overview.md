@@ -1,6 +1,6 @@
 # 架构总览
 
-> 更新：2026-08-09
+> 更新：2026-08-20
 
 ## 这是什么
 
@@ -8,7 +8,8 @@
 作为 **Mira App Server**（一个自托管的媒体/素材库后端，TypeScript）的移动客户端。
 
 核心使用闭环：**编辑/连接服务器 → 登录认证 → 选择素材库 → 多选文件夹/标签过滤 →
-瀑布流浏览图片/视频 → 大图/视频预览 → 上传文件**，全部接真实后端数据，UI 面向手机设计。
+瀑布流浏览图片/视频 → 大图/视频预览 → 上传/下载文件**，全部接真实后端数据，UI 面向手机设计。
+另含相册自动备份（photo_manager）、本地通知（flutter_local_notifications）与 zh/en 国际化（easy_localization）。
 
 ## 技术栈
 
@@ -17,38 +18,46 @@
 - **状态管理**：`flutter_riverpod ^2.5.1`（`ProviderScope` 在 `main()`，无 overrides）。
 - **HTTP**：`http ^1.6.0`（活跃 SDK `lib/mira_sdk/` 基于此）；`web_socket_channel ^2.4.0` 做实时。
 - **媒体**：`cached_network_image`（缩略图缓存）、`photo_view`（大图缩放手势）、
-  `video_player` + `chewie`（视频/HLS 播放）、`file_picker`（上传选择）。
+  `video_player` + `chewie`（视频/HLS 播放）、`file_picker`（上传选择）、
+  `photo_manager`（相册资产，自动备份用）、`share_plus`（分享）。
 - **布局**：`flexbox_layout ^3.1.0`（画廊瀑布流，`SliverDynamicFlexbox`，运行时惰性测量图片宽高）。
-- **本地存储**：`shared_preferences ^2.3.3`（仅存服务器列表，JSON 数组，键 `mira_servers`）。
-- **样式**：`liquid_glass_widgets ^0.29.2`（iOS26 玻璃态，`CupertinoApp` 包裹，需在 `main()` 预热 shader）。
+- **本地存储**：`shared_preferences ^2.3.3`。服务器列表存 `ServerStorageService`（键 `mira_servers`）；
+  主题/语言/背景/过滤/下载等偏好由各 Provider/Service 自存键值。
+- **样式**：`liquid_glass_widgets ^0.29.2`（iOS26 玻璃态，`CupertinoApp` 包裹，需在 `main()` 预热 shader）
+  + 自建玻璃态组件库 `lib/src/widgets/glass/`（13 个文件：buttons/chips/inputs/sliders/surfaces/tiles/overlays 等）。
+- **国际化**：`easy_localization ^3.0.7` + `flutter_localizations`（zh/en，JSON 翻译在 `assets/translations/`）。
 - **序列化**：**手写** `toJson`/`fromJson`，未用 `freezed`；`json_annotation`/`json_serializable`
-  仅 `dev_dependencies`（保留给打包 SDK，活跃 SDK 未启用 codegen）。
+  仅在依赖中保留（活跃 SDK 未启用 codegen，lib 下无 `.g.dart`）。
 
 ## 运行时形态（分层）
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│ main.dart  →  ProviderScope  →  CupertinoApp            │  ← 入口/主题/玻璃态壳
-│  预热 LiquidGlass shaders；注入 Material inherited        │
+│ main.dart  →  EasyLocalization → ProviderScope →        │  ← 入口/主题/玻璃态壳/i18n
+│ CupertinoApp（预热 LiquidGlass shaders；Material scope）  │
 ├─────────────────────────────────────────────────────────┤
-│ router/  AppRouter (命名路由 onGenerateRoute, 12 路由)    │  ← 导航层
+│ router/  AppRouter (命名路由 onGenerateRoute, 17 路由)    │  ← 导航层
 │          RouterController (单例, push/replace/清栈)       │
 ├─────────────────────────────────────────────────────────┤
-│ src/screens/  (UI 层, 13 个页面, ConsumerWidget)          │
+│ src/screens/  (UI 层, 24 个 dart 文件, ConsumerWidget)    │
 │   home/main_shell   3-Tab 壳 + 自动恢复会话               │
-│   gallery / preview / upload / tree_view / settings      │
+│   gallery / preview×3 / upload / download / tree_view     │
+│   settings 族×7 / dashboard / 服务器管理                   │
 ├─────────────────────────────────────────────────────────┤
-│ src/providers/  (Riverpod 状态层)                         │
+│ src/providers/  (Riverpod 状态层, 14 个)                  │
 │   sessionProvider   ← 唯一持有 MiraClient + 当前库 + 用户 │
 │   filesViewProvider ← 分页 + 过滤 + 多 folder 并发合并     │
-│   fileFilter / folders / tags / libraries / serverList   │
+│   filter/sort/selection/download/upload/photo_backup      │
+│   theme/color_theme/locale/background/server/library...  │
 ├─────────────────────────────────────────────────────────┤
 │ mira_sdk/  (活跃 SDK: client + models + modules)          │  ← 后端契约层
 │   MiraClient  →  MiraHttpClient(自动剥壳/鉴权)            │
 │              →  10 个 *Module (auth/user/library/file/...)│
 │              →  MiraWebSocketClient(房间事件分发)          │
 ├─────────────────────────────────────────────────────────┤
-│ src/services/  ServerStorageService (单例, SharedPreferences)│ ← 持久化
+│ src/services/  ×6：server_storage(SharedPreferences 单例) │ ← 持久化/系统能力
+│   download / upload / photo_backup(+collector) /          │
+│   notification(flutter_local_notifications)               │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -74,4 +83,4 @@
 
 - 后端服务（Mira App Server）—— App 只消费其 REST + WS API。
 - 服务器端鉴权/存储/转码逻辑。
-- 桌面/Web 的生产化（虽有 `web`/`macos`/`windows`/`linux` 平台目录，但未针对优化）。
+- 桌面/Web 的生产化（`web/` 目录已删除；`macos/`/`windows/`/`linux/` 平台目录存在但未针对优化）。

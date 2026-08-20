@@ -1,51 +1,41 @@
 # landing-page (mira-landing-page)
 
-Mira 官方落地页 / 营销站(`mira-landing-page`,v0.1.0,private)。**独立技术栈:Next.js 16 + React 19 + shadcn + Tailwind v4**,与 Mira 主链路(TypeScript/Vue/Electron)**无运行时依赖**,使用独立的 `pnpm-lock.yaml`。
+Mira 官方落地页 / 营销站(`mira-landing-page`,v0.1.0,private),站点域 `efferd.com`(`config/site.ts`)。**独立技术栈:Next.js 16(App Router)+ React 19 + shadcn + Tailwind v4**,与 Mira 主链路(TypeScript/Vue/Electron)无运行时依赖;不在 `pnpm-workspace.yaml` 内,使用独立 `pnpm-lock.yaml`。
 
-## 约定
+单页站点,静态导出部署:`next build`(`output: "export"`)产物由 `scripts/postbuild.mjs` 从 `out/` 改名为 `introduction/`,部署于服务器 `/introduction/` 子路径。
 
-- 框架:Next.js 16(App Router,`app/`),Turbopack 构建
-- UI:React 19 + Radix UI + shadcn + Tailwind v4(`@tailwindcss/postcss`)
-- 动画:`motion` v12
-- 校验:`zod`
-- 代码风格:Biome(`lint` / `format`),配合 ultracite
-- 含 shadcn registry(`registry/`、`registry.json`、`scripts/build-registry.mts`)
+## 约定(速览)
 
-## 命令
+- UI:React 19.2 + Radix + shadcn(new-york)+ Tailwind v4;主题 next-themes,默认 dark
+- 动画 `motion` v12;WebGL `three`;代码风格 Biome + ultracite
+- 部署在子路径:绕过 `next/image` 的硬编码资源路径必须用 `lib/asset.ts` 的 `withBasePath()`
+- 区块模式:`components/sections/*.tsx` 一区块一文件,由 `app/page.tsx` 组装
+
+## 常用命令(在 `packages/landing-page` 目录内执行)
 
 | 命令 | 作用 |
 |------|------|
-| `pnpm --filter mira-landing-page dev` | `next dev --turbopack` |
-| `pnpm --filter mira-landing-page build` | `next build --turbopack` |
-| `pnpm --filter mira-landing-page start` | `next start` |
-| `pnpm --filter mira-landing-page lint` | `biome check` |
-| `pnpm --filter mira-landing-page format` | `biome format --write` |
-| `pnpm --filter mira-landing-page b:r` | 构建 shadcn registry(`tsx scripts/build-registry.mts && shadcn build`) |
+| `pnpm dev` | `next dev --turbopack` |
+| `pnpm build` | 安装(忽略 workspace)+ 静态导出 + `postbuild.mjs` 落位 `introduction/` |
+| `pnpm preview` | `serve .` 预览产物 |
+| `pnpm lint` / `pnpm format` | `biome check` / `biome format --write` |
 
-## 文件结构(顶层)
+> monorepo 根的 `pnpm --filter mira-landing-page ...` 不生效(不在 workspace 内),需 cd 到包目录执行。
 
-```
-packages/landing-page/
-├── app/              # Next.js App Router 路由与页面
-├── components/       # UI 组件(含 shadcn)
-├── config/           # 站点配置
-├── hooks/            # React hooks
-├── lib/              # 工具(shadcn 的 cn 等)
-├── registry/         # shadcn registry 源
-├── registry.json     # registry 清单
-├── scripts/          # build-registry.mts
-├── public/
-├── types/
-├── next.config.ts
-├── biome.json
-├── postcss.config.mjs
-├── components.json   # shadcn 配置
-└── tsconfig.json
-```
+## 文件索引
+
+| 文件 | 内容 |
+|------|------|
+| [claude/overview.md](claude/overview.md) | 定位、独立栈、静态导出、站点身份、首页叙事 |
+| [claude/conventions.md](claude/conventions.md) | 框架/UI/主题/动画/lint 约定、basePath 规则、区块模式、i18n |
+| [claude/entrypoints.md](claude/entrypoints.md) | layout/page 入口、metadata、robots/sitemap、配置入口 |
+| [claude/dependencies-and-config.md](claude/dependencies-and-config.md) | 依赖清单、scripts、next.config、shadcn/Biome/PostCSS 配置 |
+| [claude/file-map.md](claude/file-map.md) | 目录地图与近期变更热点 |
+| [claude/changelog.md](claude/changelog.md) | 文档变更记录 |
 
 ## 扫描状态
 
-- **更新时间**: 2026-08-11
-- **已扫描**:`package.json`(依赖/脚本全量)、顶层目录结构
-- **定位**:独立营销站,**不参与** Mira core/server/client 的构建链路;`pnpm-workspace.yaml` 未显式声明此包,使用独立 lockfile
-- **缺口**:`app/`、`components/`、`registry/` 内容未抽样;若需深度维护落地页再补 `claude/` 详情
+- **更新时间**: 2026-08-20
+- **已扫描**: `package.json`、`next.config.ts`、`config/site.ts`、`scripts/postbuild.mjs`、`app/layout.tsx`、`app/page.tsx`、`components.json`、`tsconfig.json` 路径别名、全部目录结构(app/components/hooks/lib/public/scripts)、git 历史(8-11 以来约 23 提交)
+- **定位**: 独立营销站,不参与 Mira core/server/client 构建链路
+- **缺口**: sections/ui 内各组件实现未逐个细读;`lib/i18n` 语言切换能力疑似建设中(layout 为 `lang="en"`);`public/r` 目录用途未核实

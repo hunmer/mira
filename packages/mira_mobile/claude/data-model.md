@@ -1,6 +1,6 @@
 # 数据模型 / 状态管理
 
-> 更新：2026-08-09
+> 更新：2026-08-20
 
 > SDK 后端 DTO 在 `lib/mira_sdk/models/`；应用本地态在 `lib/src/providers/` 与 `lib/src/models/`。
 > 序列化全部**手写** `toJson`/`fromJson`，无 `freezed`，无 codegen。
@@ -61,6 +61,9 @@ password?, token?, smbEnabled, mountPath?, smbPath?, createdAt, isCurrent, lastL
 | `fileFilterProvider` | `StateNotifierProvider<FileFilterNotifier, FileFilterState>` | `{selectedFolderIds: Set<int>, selectedTags: Set<String>, special: SpecialFilter}`；`enum SpecialFilter{all,uncategorized,untagged}` | `toggleFolder/toggleTag`(清 special)、`setSpecial`(清 folder/tag)、`clear` |
 | `foldersProvider` | `FutureProvider<List<Folder>>` | 异步全量文件夹 | `client.folders().getAll(libId)`（不用 query，因 parent_id 过滤不可靠） |
 | `tagsProvider` | `FutureProvider<List<Tag>>` | 异步全量标签 | `client.tags().getAll(libId)` |
+| `fileSortProvider` | `StateNotifierProvider<FileSortNotifier, FileSortState>` | 文件排序 | 画廊排序控制 |
+| `selectionProvider` | `StateNotifierProvider<SelectionNotifier, Set<int>>` | 多选文件 id 集合 | 画廊多选/批量操作 |
+| 其余（2026-08-11 后新增，各文件同名） | 见 `lib/src/providers/` | — | `download_provider`（下载队列/进度）、`upload_provider`（上传状态）、`photo_backup_provider`（相册自动备份）、`theme_provider`（深色模式）、`color_theme_provider`（配色）、`locale_provider`（语言）、`background_effect_provider`（背景特效）——多为"状态 + SharedPreferences 持久化偏好"模式 |
 
 ### 状态流转要点
 - 切库 → `sessionProvider.select(library?.id)` 变 → `filesViewProvider`/`folders`/`tags` 自动重载。
@@ -69,8 +72,11 @@ password?, token?, smbEnabled, mountPath?, smbPath?, createdAt, isCurrent, lastL
 
 ## 持久化
 
-仅 `ServerStorageService`（SharedPreferences，键 `mira_servers`，JSON 数组）。无 DB / 无缓存层
-（图片缓存由 `cached_network_image` 自管）。
+统一 SharedPreferences（无 DB / 无缓存层；图片缓存由 `cached_network_image` 自管）：
+- 服务器列表：`ServerStorageService` 单例（键 `mira_servers`，JSON 数组）。
+- 偏好项（2026-08-11 后扩展）：语言/深色模式/配色/背景特效/过滤与排序/下载设置/备份设置等，
+  由 `locale/theme/color_theme/background_effect/file_filter/download/photo_backup` 各 Provider/Service
+  自存键值。
 
 ## 消息结构（WebSocket）
 

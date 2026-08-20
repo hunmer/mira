@@ -2,6 +2,17 @@
 
 > 只保留最近 5 条（倒序）。此文件记录**索引本身的生成/更新**，不记产品 Changelog。
 
+### 2026-08-20 — 增量更新（大版本功能扩张后核对）
+
+- 核对范围：`git log --since=2026-08-11`（4 commits，92 个 lib dart 文件整体入库）+ `pubspec.yaml` + `test/` 全量。
+- 事实修正：lib 92 个 dart 文件（原记约 32）；路由 12→17 条（删 `/profile`；增 settings 族/`/dashboard`/`/file_preview`；
+  `/library_select` 并入 `ServerListScreen(initialTab:1)`，`LibrarySelectScreen` 已删）；providers 7→14；
+  services 1→6；screens 13→24 文件；`web/` 目录已删除；测试 4→9 文件（新增模型单测与 providers/services/utils 单测）。
+- 更新 CLAUDE.md 与 claude/{overview,module-responsibilities,file-map,entrypoints,public-interfaces,
+  dependencies-and-config,data-model,testing-and-quality,conventions,faq}.md：新增下载/相册自动备份/
+  国际化(easy_localization)/主题背景个性化等能力描述、新依赖表、`widgets/glass/` 组件库、持久化约定调整。
+- `ItemDetailScreen` 仍为静态展示页（TODO 未实现），screens 层仍无 widget 测试。
+
 ### 2026-08-09 — 删除旧 SDK 并同步文档
 
 - 删除废弃的旧打包 SDK 及其测试与失配 CI：
@@ -29,6 +40,5 @@
 
 ### 建议下一步深挖
 
-- `lib/src/packages/mira_sdk/src/`：若计划清理旧 SDK，需先核对其导出符号与是否有外部引用。
+- 为 screens 层补 widget 测试（当前零覆盖）；实现 `ItemDetailScreen` 的编辑 TODO。
 - `android/`、`ios/`：如需发布/签名配置再深扫。
-- 为活跃 SDK 的 UI/Provider 层补 widget/unit 测试（当前零覆盖）。

@@ -1,11 +1,12 @@
 # mira-doc
 
-Mira 项目文档站,基于 VitePress 2.0-alpha。当前聚焦 Mira 的安装、CLI、MCP、Skill 四类使用指南。部署 base 为 `/mira-doc/`(GitHub Pages 子路径)。
+Mira 项目文档站(v1.0.0),基于 VitePress `2.0.0-alpha.12`。当前聚焦 Mira 的安装、CLI、MCP、Skill 四类使用指南。部署 base 为 `/docs/`(2026-08-13 前为 `/mira-doc/`,已调整)。
 
 ## 约定
 
 - 内容语言 `zh-CN`
-- 入口配置:`.vitepress/config.mts`(导航/侧边栏/socialLinks/editLink/lastUpdated)
+- 入口配置:`.vitepress/config.mts`(导航/侧边栏/socialLinks/footer/editLink/lastUpdated/head)
+- head 已配置 OG/Twitter 分享卡与 `site.webmanifest`、apple-touch-icon
 - 编辑链接指向 `github.com/hunmer/mira/edit/main/packages/mira-doc/:path`
 - `ignoreDeadLinks: true`(允许未完成链接)
 
@@ -24,18 +25,18 @@ Mira 项目文档站,基于 VitePress 2.0-alpha。当前聚焦 Mira 的安装、
 packages/mira-doc/
 ├── .vitepress/
 │   └── config.mts       # 站点配置
-├── index.md             # 首页
-├── install.md           # 安装指南
-├── cli.md               # CLI 文档(导航声明,内容待补)
-├── mcp.md               # MCP 文档(导航声明,内容待补)
-├── skill.md             # Skill 文档(导航声明,内容待补)
-├── public/
-│   └── icon.ico
+├── index.md             # 首页(layout: home)
+├── install.md           # 安装指南(约 170 行)
+├── cli.md               # CLI 文档(约 70 行,mira-app-server CLI 全能力)
+├── mcp.md               # MCP 文档(约 72 行,stdio + 约 50 个工具)
+├── skill.md             # Skill 文档(约 47 行,SKILL.md 约定)
+├── public/              # 站点图标与分享图:icon.webp、og.png、android-chrome-192/512、apple-touch-icon.png、site.webmanifest
 └── package.json
 ```
 
 ## 扫描状态
 
-- **更新时间**: 2026-08-11
-- **已扫描**: `package.json`、`.vitepress/config.mts`、`index.md`、`install.md`(新增)
-- **缺口**: `cli.md`、`mcp.md`、`skill.md` 内容存在性未逐字核对(导航声明但可能未完成),建议下一步逐页校对
+- **更新时间**: 2026-08-20
+- **已扫描**: `package.json`(v1.0.0)、`.vitepress/config.mts`(base 改为 `/docs/`,head 增 OG/Twitter 卡)、5 个 md 页面的标题与行数、`public/` 清单(新增 og.png / webp 图标 / manifest,原 icon.ico、logo.png 已不在)
+- **缺口**: `install.md` / `cli.md` / `mcp.md` / `skill.md` 正文未逐字校对(均已成文,非占位);注意:config head 中 icon 链接仍指向 `/mira-doc/icon.ico`,而 public/ 现为 `icon.webp`,二者不一致(疑似遗留,可核实)
+- 保持轻量,暂不建 `claude/` 详情目录

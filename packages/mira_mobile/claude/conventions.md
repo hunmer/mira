@@ -1,6 +1,6 @@
 # 开发约定
 
-> 更新：2026-08-09
+> 更新：2026-08-20
 
 ## 命令
 
@@ -14,14 +14,17 @@ flutter run
 # 静态分析（根项目用 flutter_lints）
 flutter analyze
 
-# 跑 SDK 的测试（test/mira_sdk_api/ 对应 lib/mira_sdk/）
+# 跑全部测试（test/mira_sdk_api/ + test/mira_sdk/ + test/src/）
+flutter test
+
+# 只跑 SDK 集成测试
 flutter test test/mira_sdk_api/
 
-# 代码生成（当前 SDK 无 codegen，仅依赖里保留 build_runner）
+# 代码生成（当前无 codegen，仅依赖里保留 build_runner）
 flutter pub run build_runner build --delete-conflicting-outputs
 ```
 
-> 当前仅 `test/mira_sdk_api/` 有 SDK 测试；UI/Provider 层无测试。详见 [testing-and-quality.md](testing-and-quality.md)。
+> 测试含 SDK 集成、模型单测与应用层单测（providers/services/utils 各 1）；screens 层无 widget 测试。详见 [testing-and-quality.md](testing-and-quality.md)。
 
 ## 代码风格
 
@@ -49,8 +52,13 @@ flutter pub run build_runner build --delete-conflicting-outputs
 - 后端响应会被 `MiraHttpClient` 自动剥壳（取 `data` 字段），模块里不要再手动剥。
 
 ### 持久化
-- 仅服务器列表持久化，用 `ServerStorageService.instance`（单例 + SharedPreferences）。
-- 不要新增长久态存储（如 DB）；当前需求未到。
+- 统一用 SharedPreferences，不引入 DB。
+- 服务器列表走 `ServerStorageService.instance`（单例）；主题/语言/背景/下载/备份等偏好
+  由各 Provider/Service 自存键值（参照 `locale_provider`/`theme_provider` 等既有写法）。
+
+### 国际化
+- UI 文案走 `easy_localization`（`'key'.tr()`），翻译 JSON 在 `assets/translations/`（zh/en）；
+  不要在 Widget 里硬编码中文文案。
 
 ## 设计规范
 

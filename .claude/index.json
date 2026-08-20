@@ -1,9 +1,9 @@
 {
   "version": "1.0.0",
-  "timestamp": "2026-06-09T11:59:31+08:00",
+  "timestamp": "2026-08-20T14:10:00+08:00",
   "project": {
     "name": "mira_typescript",
-    "description": "Mira 媒体库管理系统 - TypeScript 多包项目",
+    "description": "Mira 素材管理软件 - TypeScript pnpm monorepo(含 Flutter 移动端)",
     "packageManager": "pnpm",
     "language": "TypeScript"
   },
@@ -11,140 +11,195 @@
     {
       "path": "packages/mira-app-core",
       "name": "mira-app-core",
-      "version": "1.0.24",
-      "description": "核心库 - 事件管理、SQLite 存储、TypeScript SDK、共享类型",
+      "version": "2.0.8",
+      "description": "核心库 - 事件管理、SQLite 存储、TypeScript SDK(17 模块)、共享类型",
       "language": "TypeScript",
       "entry": "src/index.ts",
       "dist": "dist/index.js",
       "dependencies": ["axios", "queue", "sqlite3", "ws"],
       "workspaceDependencies": [],
-      "tests": { "exists": false, "path": null },
+      "tests": { "exists": true, "path": "src/**/__tests__ 或 *.test.ts", "framework": "vitest", "files": 27 },
       "subModules": {
         "storage/sqlite": {
           "entry": "src/storage/sqlite/index.ts",
-          "exports": ["ILibraryServerData", "LibraryServerDataSQLite"],
-          "files": 7
+          "exports": ["ILibraryServerData", "LibraryServerDataSQLite"]
         },
         "shared/sdk": {
           "entry": "src/shared/sdk/index.ts",
-          "exports": ["MiraClient", "WebSocketClient", "HttpClient", "AuthModule", "UserModule", "LibraryModule", "PluginModule", "FileModule", "DatabaseModule", "DeviceModule", "SystemModule", "TagModule", "FolderModule"],
-          "files": 16
+          "exports": ["MiraClient", "WebSocketClient", "HttpClient"],
+          "apiModules": 17,
+          "coverage": { "totalFixedJsonApis": 128, "covered": 117, "missing": 11, "excluded": 13, "dynamic": 7, "reportAt": "2026-08-19" }
         }
       },
       "keyFiles": [
         "src/index.ts",
         "src/event-manager.ts",
         "src/LibraryList.ts",
-        "src/storage/sqlite/index.ts",
-        "src/storage/sqlite/ILibraryServerData.ts",
         "src/storage/sqlite/LibraryServerDataSQLite.ts",
         "src/shared/sdk/index.ts",
         "src/shared/sdk/client/MiraClient.ts"
       ],
-      "sourceStats": { "files": 28, "lines": 2000 },
-      "coverage": {
-        "scanned": true,
-        "depth": "deep",
-        "gaps": ["缺少测试目录"]
-      }
+      "coverage": { "scanned": true, "depth": "deep", "gaps": [] }
     },
     {
       "path": "packages/mira-app-server",
       "name": "mira-app-server",
-      "version": "1.0.25",
-      "description": "独立服务器应用 - HTTP + WebSocket 双协议服务，内置 ThumbnailService",
+      "version": "2.0.9",
+      "description": "独立服务器应用 - Express HTTP(19 路由) + WebSocket + MCP 服务 + 多命令 CLI,双协议插件管理器",
       "language": "TypeScript",
       "entry": "src/index.ts",
       "bin": "dist/cli.js",
       "dist": "dist/index.js",
-      "dependencies": ["express", "ws", "socket.io", "sqlite3", "commander", "cors", "multer", "axios", "chokidar", "yauzl", "dotenv", "fluent-ffmpeg", "fast-glob", "which", "queue"],
+      "dependencies": ["express", "ws", "socket.io", "sqlite3", "commander", "cors", "multer", "axios", "chokidar", "yauzl", "dotenv", "fluent-ffmpeg", "fast-glob", "which", "queue", "@modelcontextprotocol/sdk"],
       "workspaceDependencies": ["mira-app-core"],
-      "tests": { "exists": true, "path": "sdk/" },
+      "tests": { "exists": true, "path": "sdk/", "framework": "jest" },
       "routes": [
         "/api/auth", "/api/admins", "/api/user", "/api/libraries",
         "/api/plugins", "/api/database", "/api/files", "/api/devices",
         "/api/tags", "/api/folders", "/api/fs", "/api/thumb",
-        "/api/statistics", "/api/settings"
+        "/api/statistics", "/api/settings", "/api/cookie-sites", "/api/download",
+        "/api/http", "/api/ws"
       ],
-      "handlers": ["MessageHandler", "FileHandler", "FolderHandler", "TagHandler", "LibraryHandler", "PluginMessageHandler"],
+      "routeModules": 19,
+      "subModules": {
+        "cli": { "entry": "src/cli.ts", "commandsDir": "src/cli/commands/", "topLevelCommands": 5, "domainSubcommands": 11, "extra": ["doctor"] },
+        "mcp": { "entry": "src/mcp/", "transport": "stdio", "flag": "--mcp" },
+        "sync": { "entry": "src/sync/" }
+      },
       "keyFiles": [
-        "src/index.ts", "src/server.ts", "src/cli.ts",
-        "src/MiraServer.ts", "src/WebSocketServer.ts",
-        "src/LibraryStorage.ts", "src/LibraryWatcher.ts",
+        "src/index.ts", "src/cli.ts",
         "src/ServerPluginManager.ts", "src/ServerPlugin.ts",
-        "src/UserStorage.ts", "src/SettingsManager.ts",
-        "src/services/ThumbnailService.ts"
+        "src/SettingsManager.ts", "src/services/ThumbnailService.ts"
       ],
-      "sourceStats": { "files": 35, "lines": 7400 },
-      "coverage": {
-        "scanned": true,
-        "depth": "deep",
-        "gaps": []
-      }
+      "coverage": { "scanned": true, "depth": "deep", "gaps": [] }
     },
     {
       "path": "packages/mira-client",
       "name": "mira-web",
-      "version": "1.0.5",
-      "description": "Electron + Vue 3 桌面客户端",
+      "version": "2.0.9",
+      "description": "Electron + Vue 3 桌面客户端 - shadcn-vue 52 组件、i18n、悬浮球窗口、18 个 IPC Handler",
       "language": "TypeScript/Vue",
       "entry": "src/main/main.ts",
       "dependencies": [
-        "vue", "vue-router", "pinia", "radix-vue", "reka-ui",
+        "vue", "vue-router", "pinia", "reka-ui", "vue-i18n",
         "tailwindcss", "filepond", "plyr", "viewerjs", "lodash-es",
-        "electron", "mira-app-core"
+        "electron", "mira-app-core", "@hunmer/vue-selection-box"
       ],
-      "workspaceDependencies": ["mira-app-core"],
-      "tests": { "exists": false, "path": null },
+      "workspaceDependencies": ["mira-app-core", "@hunmer/vue-selection-box"],
+      "tests": { "exists": true, "path": "src/renderer/procm-ui-tests/", "framework": "procm-ui-tests + vitest", "uiCases": 30, "unitTests": ["src/main/services/DownloadService.test.ts"] },
       "stores": [
         "auth", "library", "media", "settings", "plugin",
         "folder", "tag", "serverList", "uploadHistory",
-        "appState", "dashboard"
+        "appState", "dashboard", "dashboardLayout",
+        "homeSidebarLayout", "urlImport", "viewHistory"
       ],
+      "ipcHandlers": 18,
+      "uiComponents": 52,
+      "windows": ["main", "renderer", "preload", "floating-ball-window", "notification-window", "search-window"],
       "keyFiles": [
         "src/main/main.ts",
         "src/renderer/App.vue",
-        "src/renderer/stores/media.ts",
-        "src/renderer/stores/auth.ts",
-        "src/renderer/stores/dashboard.ts",
+        "src/renderer/router/index.ts",
         "src/preload/preload.ts",
         "src/main/ipc/handlers.ts"
       ],
-      "coverage": {
-        "scanned": true,
-        "depth": "deep",
-        "gaps": ["Vue 组件数量多（200+），仅扫描了关键业务组件"]
-      }
+      "coverage": { "scanned": true, "depth": "deep", "gaps": ["业务组件按目录分组核对,未逐文件深读"] }
     },
     {
       "path": "packages/mira-dashboard-next",
       "name": "mira-dashboard-next",
       "version": "0.0.0",
-      "description": "Web 管理面板 - 基于 shadcn-vue + Tailwind CSS 4",
+      "description": "Web 管理面板 - shadcn-vue + Tailwind 4,API 层已迁移到 mira-app-core SDK",
       "language": "TypeScript/Vue",
       "entry": "src/main.ts",
       "dependencies": [
-        "vue", "vue-router", "pinia", "shadcn-vue", "reka-ui",
-        "tailwindcss", "axios", "vue-i18n", "@unovis/vue",
-        "@tanstack/vue-table", "vee-validate", "zod"
+        "vue", "vue-router", "pinia", "reka-ui",
+        "tailwindcss", "vue-i18n", "qrcode", "mira-app-core"
       ],
-      "workspaceDependencies": [],
+      "workspaceDependencies": ["mira-app-core"],
       "tests": { "exists": false, "path": null },
-      "views": { "mira": 11, "auth": 3 },
-      "apiModules": 11,
-      "stores": ["auth", "app"],
-      "keyFiles": [
-        "src/main.ts", "src/App.vue", "src/router/index.ts",
-        "src/router/pluginRoutes.ts", "src/stores/auth.ts",
-        "src/stores/app.ts", "src/api/client.ts", "src/api/index.ts",
-        "src/layouts/DefaultLayout.vue", "src/i18n/index.ts",
-        "src/pluginRuntime.ts"
-      ],
-      "coverage": {
-        "scanned": true,
-        "depth": "medium",
-        "gaps": ["shadcn-vue UI 组件为自动生成，未逐一扫描"]
-      }
+      "routes": 11,
+      "apiModules": 13,
+      "sdkMigration": { "entry": "src/lib/miraClient.ts", "migratedModules": "12/13" },
+      "uiComponents": 30,
+      "coverage": { "scanned": true, "depth": "medium", "gaps": ["存量文件未逐个重扫"] }
+    },
+    {
+      "path": "packages/mira-browser-extension",
+      "name": "mira-browser-extension",
+      "version": "0.1.0",
+      "description": "Chrome MV3 扩展 - 网页素材采集(截图/拖拽/嗅探/悬停按钮/批量导入/cookie 抓取),多服务器管理",
+      "language": "TypeScript/Vue",
+      "entry": "src/background/index.ts",
+      "manifest": "src/manifest.ts",
+      "dependencies": ["vue", "@crxjs/vite-plugin", "mira-plugin-ui", "@hunmer/vue-masonry", "motion-v", "vue-i18n", "tailwindcss"],
+      "workspaceDependencies": ["mira-plugin-ui", "@hunmer/vue-masonry"],
+      "tests": { "exists": true, "path": "src/**/*.test.ts", "framework": "vitest", "files": 19, "cases": 137 },
+      "contexts": ["service-worker", "content-script", "offscreen", "ui(popup/sidepanel/upload)"],
+      "sourceFiles": 101,
+      "coverage": { "scanned": true, "depth": "deep", "gaps": ["maxurl.user.js(7.2MB)仅记用途"] }
+    },
+    {
+      "path": "packages/mira_mobile",
+      "name": "mira_mobile",
+      "version": "1.0.0+1",
+      "description": "Flutter 移动端 - 浏览/下载(通知)/相册自动备份/双语/主题个性化;不在 pnpm-workspace.yaml",
+      "language": "Dart/Flutter",
+      "entry": "lib/main.dart",
+      "routes": 17,
+      "stats": { "libFiles": 92, "screens": 24, "providers": 14, "services": 6 },
+      "tests": { "exists": true, "path": "test/", "files": 9, "framework": "flutter_test", "gaps": "screens 零覆盖" },
+      "coverage": { "scanned": true, "depth": "full" }
+    },
+    {
+      "path": "packages/mira-plugin-ui",
+      "name": "mira-plugin-ui",
+      "version": "1.1.0",
+      "description": "插件共享 UI 组件库 - 自包含 dist(es+umd+单CSS),可 CDN 引入;BatchUpload/SaveLocation 表单 + library 子入口 + shadcn 13 族",
+      "language": "TypeScript/Vue",
+      "entry": "src/index.ts",
+      "build": "vite 库模式(仅 vue external)",
+      "consumers": ["packages/mira-browser-extension", "plugins/plugins/mira_tiptap_format/web"],
+      "workspaceDependencies": ["@hunmer/vue-selection-box"],
+      "tests": { "exists": false, "path": null },
+      "sourceFiles": 106,
+      "coverage": { "scanned": true, "depth": "medium", "gaps": ["80 个 shadcn 组件实现体仅结构清点"] }
+    },
+    {
+      "path": "packages/vue-masonry",
+      "name": "@hunmer/vue-masonry",
+      "version": "0.1.0",
+      "description": "Vue 3 瀑布流组件 - 响应式列数/跨列跨行/懒加载/动画",
+      "language": "TypeScript/Vue",
+      "entry": "src/index.ts",
+      "consumers": ["packages/mira-client", "packages/mira-browser-extension"],
+      "tests": { "exists": false, "path": null },
+      "coverage": { "scanned": true, "depth": "light" }
+    },
+    {
+      "path": "packages/vue-selection-box",
+      "name": "@hunmer/vue-selection-box",
+      "version": "0.1.0",
+      "description": "Vue 3 框选组件 - 拖拽框选/Alt减选/Shift范围选/Ctrl加选/边缘滚动,data-selectable-id 零侵入",
+      "language": "TypeScript/Vue",
+      "entry": "src/index.ts",
+      "consumers": ["packages/mira-client", "packages/mira-plugin-ui"],
+      "tests": { "exists": false, "path": null, "gate": "vue-tsc type-check" },
+      "sourceFiles": 3,
+      "coverage": { "scanned": true, "depth": "full" }
+    },
+    {
+      "path": "packages/landing-page",
+      "name": "efferd-ui",
+      "version": "0.1.0",
+      "description": "官方落地页 efferd.com - Next.js 16 + React 19 单页营销站,静态导出(basePath /introduction),独立 lockfile",
+      "language": "TypeScript/React",
+      "entry": "app/",
+      "dependencies": ["next", "react", "three", "next-themes", "@next/third-parties", "react-resizable-panels"],
+      "workspaceDependencies": [],
+      "tests": { "exists": false, "path": null, "lint": true },
+      "sections": 9,
+      "coverage": { "scanned": true, "depth": "medium", "gaps": ["section 组件按目录核对,未逐文件深读"] }
     },
     {
       "path": "packages/mira-scripts-core",
@@ -155,122 +210,91 @@
       "entry": "index.ts",
       "workspaceDependencies": ["mira-app-core"],
       "tests": { "exists": false, "path": null },
-      "keyFiles": [
-        "index.ts",
-        "scripts/convertLibraryData.ts",
-        "scripts/pathFilesToLibrary.ts"
-      ],
-      "coverage": { "scanned": true, "depth": "deep", "gaps": [] }
+      "keyFiles": ["index.ts", "scripts/convertLibraryData.ts", "scripts/pathFilesToLibrary.ts"],
+      "coverage": { "scanned": true, "depth": "light", "gaps": [] }
     },
     {
       "path": "packages/mira-doc",
       "name": "mira-doc",
       "version": "1.0.0",
-      "description": "VitePress 文档站",
+      "description": "VitePress 文档站 - 部署 base /docs/",
       "language": "Markdown/VitePress",
       "entry": ".vitepress/",
       "dependencies": ["vitepress"],
       "tests": { "exists": false, "path": null },
-      "keyFiles": [
-        "index.md", "quick-start.md",
-        "guide/introduction.md", "guide/installation.md", "guide/architecture.md",
-        "api/overview.md",
-        "dashboard/index.md", "dashboard/api.md", "dashboard/deployment.md",
-        "n8n/overview.md", "n8n/installation.md"
-      ],
-      "coverage": { "scanned": true, "depth": "medium", "gaps": [] }
+      "coverage": { "scanned": true, "depth": "medium", "gaps": ["config head 指向 /mira-doc/icon.ico 而 public 为 icon.webp(遗留)"] }
     },
     {
       "path": "plugins/plugins",
       "name": "mira-server-plugins",
-      "description": "服务端插件集合 (4 个活跃插件)",
+      "description": "服务端插件集合 - 14 个(旧协议 3 + 格式协议 11);推荐注册表 plugins.recommend.json",
       "language": "TypeScript",
+      "pluginProtocols": {
+        "legacy-ServerPlugin": ["mira_n8n", "mira_eagle_extension", "mira_gallery_dl"],
+        "format-registerFileFormat": [
+          "mira_3d_format", "mira_spine_format", "mira_epub_format",
+          "mira_livp_format", "mira_lottie_format", "mira_pag_format",
+          "mira_swf_format", "mira_tiptap_format", "mira_zipper_format",
+          "pdf-viewer", "psd-viewer"
+        ]
+      },
       "plugins": [
-        {
-          "name": "mira_n8n",
-          "version": "1.0.7",
-          "description": "n8n 集成 - 独立 WebSocket 服务器，Token 验证",
-          "routes": ["/n8n/list", "/n8n/list/:id"],
-          "wssPort": 7457,
-          "keyFiles": ["plugins/mira_n8n/index.ts"]
-        },
-        {
-          "name": "mira_thumb_imagemagick",
-          "version": "1.0.0",
-          "description": "ImageMagick 缩略图 - PSD/AI/EPS/SVG/TIFF/DNG/HEIC",
-          "generatorInterface": "ThumbnailGenerator",
-          "keyFiles": ["plugins/mira_thumb_imagemagick/index.ts"]
-        },
-        {
-          "name": "mira_thumb",
-          "version": "1.0.19",
-          "status": "old_plugins",
-          "description": "ffmpeg 缩略图生成 (已移至 old_plugins/)",
-          "keyFiles": ["old_plugins/mira_thumb/index.ts"]
-        },
-        {
-          "name": "mira_user",
-          "status": "removed",
-          "description": "用户认证插件 - 源码已移除"
-        },
-        {
-          "name": "upload_statistics",
-          "status": "removed",
-          "description": "上传统计插件 - 源码已移除，功能内置于服务端"
-        }
+        { "name": "mira_n8n", "version": "1.0.7", "protocol": "legacy", "description": "n8n 集成 - 独立 WebSocket 服务器(默认禁用)" },
+        { "name": "mira_eagle_extension", "version": "1.0.0", "protocol": "legacy", "description": "复刻 Eagle 本地 HTTP 协议(默认禁用)" },
+        { "name": "mira_gallery_dl", "protocol": "legacy", "description": "gallery-dl 站点下载集成(getRoutes/registerRounter)" },
+        { "name": "mira_3d_format", "version": "1.0.2", "protocol": "format", "hasWeb": true, "description": "GLB/GLTF 解析 + 缩略图" },
+        { "name": "mira_spine_format", "version": "1.1.1", "protocol": "format", "hasWeb": true, "description": "Spine .skel/.spine 预览" },
+        { "name": "mira_epub_format", "version": "1.0.0", "protocol": "format", "hasWeb": true, "description": "EPUB 阅读" },
+        { "name": "mira_livp_format", "version": "1.0.0", "protocol": "format", "hasWeb": true, "description": "LIVP Live Photo" },
+        { "name": "mira_lottie_format", "version": "1.0.0", "protocol": "format", "hasWeb": true, "description": "dotLottie" },
+        { "name": "mira_pag_format", "version": "1.0.0", "protocol": "format", "hasWeb": true, "description": "PAG(需 PAG_BROWSER_PATH)" },
+        { "name": "mira_swf_format", "version": "1.0.0", "protocol": "format", "hasWeb": true, "description": "SWF + Ruffle 预览" },
+        { "name": "mira_tiptap_format", "protocol": "format", "hasWeb": true, "description": ".tiptap 富文本(Tiptap Notion 风格编辑器,web 85 文件)" },
+        { "name": "mira_zipper_format", "version": "1.0.0", "protocol": "format", "hasWeb": true, "description": "ZIP 归档浏览" },
+        { "name": "pdf-viewer", "version": "1.0.0", "protocol": "format", "hasWeb": true, "description": "PDF 预览" },
+        { "name": "psd-viewer", "version": "1.0.1", "protocol": "format", "hasWeb": true, "description": "PSD/PSB 分层查看器" }
       ],
       "tests": { "exists": false, "path": null },
-      "coverage": { "scanned": true, "depth": "deep", "gaps": [] }
+      "coverage": { "scanned": true, "depth": "deep", "gaps": ["仅 mira_n8n/psd-viewer/mira_tiptap_format 有独立 CLAUDE.md"] }
     }
   ],
   "removedModules": [
-    {
-      "path": "packages/mira-storage-sqlite",
-      "name": "mira-storage-sqlite",
-      "note": "已合并到 packages/mira-app-core/src/storage/sqlite/"
-    },
-    {
-      "path": "packages/mira-server-sdk",
-      "name": "mira-server-sdk",
-      "note": "已合并到 packages/mira-app-core/src/shared/sdk/"
-    },
-    {
-      "path": "packages/mira-server-sdk-examples",
-      "name": "mira-server-sdk-examples",
-      "note": "已从 pnpm-workspace.yaml 移除"
-    },
-    {
-      "path": "packages/n8n-nodes-mira-ws-trigger",
-      "name": "n8n-nodes-mira-ws-trigger",
-      "note": "已从 pnpm-workspace.yaml 移除"
-    }
+    { "path": "packages/mira-storage-sqlite", "name": "mira-storage-sqlite", "note": "已合并到 packages/mira-app-core/src/storage/sqlite/" },
+    { "path": "packages/mira-server-sdk", "name": "mira-server-sdk", "note": "已合并到 packages/mira-app-core/src/shared/sdk/" },
+    { "path": "packages/mira-server-sdk-examples", "name": "mira-server-sdk-examples", "note": "已从 pnpm-workspace.yaml 移除" },
+    { "path": "packages/n8n-nodes-mira-ws-trigger", "name": "n8n-nodes-mira-ws-trigger", "note": "已从 pnpm-workspace.yaml 移除" },
+    { "path": "packages/mira-dashboard", "name": "mira-dashboard", "note": "已替换为 mira-dashboard-next" },
+    { "path": "plugins/plugins/mira_user", "name": "mira_user", "note": "功能内置于服务端" },
+    { "path": "plugins/plugins/upload_statistics", "name": "upload_statistics", "note": "功能内置于服务端" },
+    { "path": "plugins/plugins/mira_thumb_imagemagick", "name": "mira_thumb_imagemagick", "note": "被格式插件体系与内置 ThumbnailService 取代" },
+    { "path": "plugins/plugins/mira_duplicate_scanner", "name": "mira_duplicate_scanner", "note": "2026-08-13 移除" },
+    { "path": "plugins/old_plugins/mira_thumb", "name": "mira_thumb", "note": "旧版 ffmpeg 缩略图,位于 old_plugins/" }
   ],
   "scanSummary": {
-    "totalModules": 12,
-    "scannedModules": 12,
-    "coveragePercent": 100,
-    "estimatedTotalSourceFiles": 130,
-    "scannedFiles": 120,
-    "fileCoveragePercent": 92,
-    "truncated": false,
+    "scanDate": "2026-08-20",
+    "baseline": "2026-08-11",
+    "totalModules": 18,
+    "scannedModules": 18,
+    "moduleCoveragePercent": 100,
+    "estimatedTrackedSourceFiles": 2600,
+    "deepVerifiedFiles": 260,
     "ignoredDirectories": [
-      "node_modules",
-      "dist",
-      ".git",
-      "packages/mira-app-server/data",
-      "packages/mira-app-server/src/plugins/node_modules",
-      "packages/mira-dashboard-next/src/components/ui",
-      "packages/mira-client/src/components/ui",
-      "plugins/plugins/*/node_modules",
-      "plugins/old_plugins/*/node_modules"
+      "node_modules", "dist", "build", ".git",
+      "packages/*/node_modules",
+      "packages/mira-client/public/icons(仅清点)",
+      "packages/mira-plugin-ui/src/components/ui(仅结构清点)",
+      "packages/mira_mobile 平台脚手架目录"
     ],
     "gaps": [
-      "mira-client 的 200+ Vue 组件仅扫描了关键文件",
-      "mira-dashboard-next 的 shadcn-vue UI 组件为自动生成，未逐一扫描"
+      "plugins/ 下 11 个插件尚无独立 CLAUDE.md(仅 mira_n8n/psd-viewer/mira_tiptap_format 有)",
+      "mira-client 30+ src 子目录文档仅抽核变更最多的 5 个",
+      "mira-plugin-ui 80 个 shadcn 组件实现体未深读",
+      "online_client_plugins/ 仅概览,未逐插件核对"
     ],
     "nextSteps": [
-      "如需细节可补扫 packages/mira-client/src/renderer/components/ 业务组件",
-      "如需细节可补扫 packages/mira-dashboard-next/src/views/mira/ 各页面"
+      "补 plugins/ 其余 11 个插件的独立 CLAUDE.md",
+      "核对 online_client_plugins/plugins/* 与 plugins/plugins/*/web 的对应关系",
+      "清理 dependency-switch-config-*.json 中 n8n-nodes-mira-ws-trigger 悬空引用"
     ]
   }
 }

@@ -16,11 +16,11 @@
 
 ## 插件系统(双协议)
 
-通过 `plugins/plugins.json` 注册,导出 `init(inst)` 工厂。**两套并行协议**:
+共 14 个插件,导出 `init(inst)` 工厂。推荐注册表 `plugins/plugins/plugins.recommend.json`,服务端运行时注册表 `packages/mira-app-server/src/plugins/plugins.json`。**两套并行协议**:
 
-- **旧协议(`extends ServerPlugin`)**:mira_n8n、mira_eagle_extension 等需深度介入服务端的插件。可注册 HTTP Hook、WebSocket 监听、缩略图生成器、前端路由
-- **新协议(格式插件)**:`init(inst)` 内调用 `inst.pluginManager.registerFileFormat(pluginName, handler)`,声明 `extensions`/`mimeTypes`/`thumbnailExtensions`/`thumbnail(src,dest)`/`viewers[]`。用于 mira_3d_format、mira_spine_format、mira_epub_format、mira_livp_format、mira_lottie_format、mira_pag_format、mira_swf_format、mira_zipper_format、pdf-viewer、psd-viewer 等
-- **客户端 web 插件**:格式插件 `web/` 子目录经 `plugins/plugins/*/web` 进入 workspace,内置 `plugin.json`(`pluginId`/`permissions`/`index`),由客户端动态加载
+- **旧协议(`extends ServerPlugin`)**:mira_n8n、mira_eagle_extension、mira_gallery_dl 等需深度介入服务端的插件。可注册 HTTP Hook、WebSocket 监听、缩略图生成器、前端路由
+- **新协议(格式插件)**:`init(inst)` 内调用 `inst.pluginManager.registerFileFormat(pluginName, handler)`,声明 `extensions`/`mimeTypes`/`thumbnailExtensions`/`thumbnail(src,dest)`/`viewers[]`。用于 mira_3d_format、mira_spine_format、mira_epub_format、mira_livp_format、mira_lottie_format、mira_pag_format、mira_swf_format、mira_tiptap_format、mira_zipper_format、pdf-viewer、psd-viewer 等
+- **客户端 web 插件**:格式插件 `web/` 子目录经 `plugins/plugins/*/web` 进入 workspace,内置 `plugin.json`(`pluginId`/`permissions`/`index`),由客户端动态加载;共享 UI 组件用 `mira-plugin-ui`
 - 插件配置持久化在 `{pluginDir}/data/`
 
 ## 通信协议

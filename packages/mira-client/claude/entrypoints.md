@@ -4,13 +4,18 @@
 
 | 入口 | 路径 | 作用 |
 |------|------|------|
-| 主进程 | `src/main/main.ts` | MiraApplication 类:窗口管理、IPC 注册、协议、托盘、自动更新(~595 行) |
+| 主进程 | `src/main/main.ts` | MiraApplication 类:应用生命周期、协议、托盘(323 行;窗口管理已拆入 `services/MainWindowService.ts`) |
 | 渲染进程 | `src/renderer/main.ts` | Vue App 挂载入口 |
 | 渲染根组件 | `src/renderer/App.vue` | SPA 根 |
 | 预加载 | `src/preload/preload.ts` | contextBridge 暴露安全 API |
+| 悬浮球窗口 | `src/floating-ball-window/main.ts` + `floating-ball-window.html` | 悬浮球(v2.x 新增) |
+| 通知窗口 | `src/notification-window/` + `notification-window.html` | |
+| 搜索窗口 | `src/search-window/` + `search-window.html` | |
 | package.json main | `dist-main/main.js` | Electron 启动指向的构建产物 |
 
-## 构建流程(三段 + float)
+> 注:浮动窗口(floating-window)的独立入口与 `build:float` 构建段已移除,目录仅剩 `bridge.ts`。
+
+## 构建流程(三段)
 
 vite-plugin-electron 多段构建:
 
@@ -19,8 +24,7 @@ vite-plugin-electron 多段构建:
 | `pnpm run build` | 默认 vite config | `dist-renderer/` |
 | `pnpm run build:main` | `vite.main.config.ts` | `dist-main/main.js` |
 | `pnpm run build:preload` | `vite.preload.config.ts` | `dist-preload/` |
-| `pnpm run build:float` | `scripts/build-float.js` | `dist-float/`(浮动窗口) |
-| `pnpm run build:all` | 顺序执行以上四段 | 全部 |
+| `pnpm run build:all` | 顺序执行以上三段 | 全部 |
 | `pnpm run build:prod` | `cross-env NODE_ENV=production build:all` | 生产产物 |
 
 ## 运行时启动

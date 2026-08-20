@@ -17,9 +17,14 @@
 | dotenv | ^16.3.1 | 环境变量 |
 | axios | ^1.6.2 | HTTP 客户端（CLI health / 内部请求） |
 | fast-glob | ^3.3.3 | 文件匹配 |
-| which | ^7.0.0 | 可执行文件查找 |
+| which | ^5.0.0 | 可执行文件查找 |
 | queue | ^7.0.0 | 任务队列 |
+| p-queue | 6.6.2 | 并发队列（下载等） |
+| @modelcontextprotocol/sdk | ^1.29.0 | MCP 服务（`--mcp` 模式，2026-08 新增） |
+| archiver | ^8.0.0 | 打包/压缩（数据库备份导出，2026-08 新增） |
+| zod | ^3.25.76 | MCP tools 参数校验（2026-08 新增） |
 | mira-app-core | workspace:* | 核心类型与存储（同仓依赖） |
+| @types/archiver | ^8.0.0 | 类型（放在 dependencies） |
 | @types/multer | ^2.0.0 | 类型（放在 dependencies） |
 | @types/yauzl | ^2.10.3 | 类型（放在 dependencies） |
 
@@ -39,7 +44,7 @@
 | @types/which | ^3.0.4 |
 | @types/ws | ^8.18.1 |
 
-> 注：`@types/multer`、`@types/yauzl` 错放在 `dependencies`（按惯例应在 devDependencies），未修正。
+> 注：`@types/archiver`、`@types/multer`、`@types/yauzl` 错放在 `dependencies`（按惯例应在 devDependencies），未修正。
 
 ## 环境变量 (`.env.example`)
 
@@ -74,6 +79,8 @@
 ## 构建产物
 
 - `dist/` — `tsc` 输出（`main`、`types`、`bin` 均指向 `dist/`）。
+- `scripts/copy-dashboard.mjs` / `scripts/copy-web.mjs` — 构建前拷贝 dashboard / web 前端静态资源进产物（`pnpm run build` 的前两步）。
+- CI 会把 server 依赖打进 Electron 发行版（bundle electron releases with server dependencies）。
 - `files`：发布仅含 `dist/**/*` 与 `README.md`。
 
 ## 其他配置文件

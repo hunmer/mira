@@ -14,11 +14,11 @@
 
 ## Q: 怎么跑起来开发?
 
-`pnpm run electron:dev`(Windows 含 chcp 65001)。类型检查用 `pnpm run type-check`(无单测,这是主门禁)。
+`pnpm run electron:dev`(Windows 含 chcp 65001)。类型检查用 `pnpm run type-check`(主门禁)。UI 回归可用 `pnpm run test:ui:remote <testName>`(需 dev 构建运行中且 procm server 可连,默认 ws://127.0.0.1:7331/room)。
 
 ## Q: 哪些旧的东西已经删了?
 
-自研 `volt/` 组件库整体删除;`--mira-*` / `--surface-*` 自定义变量全部迁到 shadcn 语义 token;未引用的 ui 目录(accordion/collapsible/command/drawer/navigation-menu/pagination/scroll-area)已删;element-plus/naive 等旧库 0 引用。仅剩 2 处 radix-vue 直引待清理。
+自研 `volt/` 组件库整体删除;`--mira-*` / `--surface-*` 自定义变量全部迁到 shadcn 语义 token;element-plus/naive 等旧库 0 引用;**SCSS 体系整体删除**(`assets/scss/` 不存在,0 个 `lang="scss"`);浮动窗口独立构建(vendor/core.js/floating-window.html/`build:float`)移除;`public/ext_icons/` 被 `public/icons/`(188 个)替代。注意:`collapsible/`、`command/` 在 2026-08-05 曾被删,v2.x 又按需加回,现为 52 个组件。仅剩 2 处 radix-vue 直引待清理。
 
 ## Q: 多窗口怎么加 IPC?
 
@@ -26,4 +26,4 @@
 
 ## Q: 迁移整体进度?
 
-仓库根 `task_plan.md`(Phase 1–8)+ `progress.md`(已全部 complete)。剩:动画 dev bug、2 处 radix-vue 清理、人工视觉 QA。
+shadcn-vue 迁移分支 `chore/shadcn-vue-migration` 已完成并合回 `main`(task_plan.md Phase 1–8 全部 complete)。剩:动画 dev bug、2 处 radix-vue 清理、`vite.renderer.config.ts` 残留 scss 注入清理。

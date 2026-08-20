@@ -17,6 +17,7 @@
 | ts-node | ^10.9.2 | dev / start:ts 直接跑 TS |
 | typescript | ^5.3.3 | 编译 |
 | vite | ^6.2.0 | 打包 SDK ESM bundle |
+| vitest | ^1.6.1 | 单元 / contract / integration 测试 |
 
 ## 配置文件
 
@@ -56,7 +57,7 @@
 ## 包元信息
 
 - name: mira-app-core
-- version: 2.0.1
+- version: 2.0.8
 - main: dist/index.js
 - types: dist/index.d.ts
 - author: hunmer，license: ISC

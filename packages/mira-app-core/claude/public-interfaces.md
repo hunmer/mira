@@ -100,16 +100,26 @@ export class MiraClient {
   system(): SystemModule;
   tags(): TagModule;
   folders(): FolderModule;
+  cookieSites(): CookieSiteModule;
+  settings(): SettingsModule;
+  admins(): AdminModule;
+  downloads(): DownloadModule;
+  fs(): FileSystemModule;
+  statistics(): StatisticsModule;
+  thumbnails(): ThumbnailModule;
 }
 
 export class WebSocketClient { /* ws 封装 */ }
 export class HttpClient { /* axios 封装 */ }
 
-// 10 个 Module：AuthModule、UserModule、LibraryModule、PluginModule、
-// FileModule、DatabaseModule、DeviceModule、SystemModule、TagModule、FolderModule
+// 17 个 Module：AuthModule、UserModule、LibraryModule、PluginModule、
+// FileModule、DatabaseModule、DeviceModule、SystemModule、TagModule、FolderModule、
+// CookieSiteModule、SettingsModule、AdminModule、DownloadModule、
+// FileSystemModule、StatisticsModule、ThumbnailModule
 ```
 
 > 各 Module 的方法签名本次未逐一扫描，需查阅 src/shared/sdk/modules/*.ts。
+> SDK 覆盖审计（`.audit/sdk-coverage-report.md`，2026-08-19）：server 固定 JSON API 128 条中 covered 117 / missing 11 / excluded 13 / dynamic 7。
 
 ## package.json exports 映射
 

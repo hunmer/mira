@@ -1,6 +1,6 @@
 # 数据模型
 
-类型定义在 `shared/types.ts`。核心是设置 + 上传任务 + 跨上下文文件 + 嗅探资源 + 消息协议。
+> 更新:2026-08-20。类型定义在 `shared/types.ts`。核心是设置 + 上传任务 + 跨上下文文件 + 嗅探资源 + 消息协议。
 
 ## 设置(`ExtensionSettings`,`DEFAULT_SETTINGS`)
 
@@ -8,6 +8,7 @@
 
 | 字段 | 类型 | 默认 | 说明 |
 |------|------|------|------|
+| servers / activeServerId | `ServerConfig[]` / string | `[]` / `''` | **多服务器管理**(2026-08-11 后新增) |
 | serverURL | string | `''` | 后端地址(UI 默认填 `http://localhost:8081`) |
 | username/password | string | `''` | 凭据(登录后存) |
 | libraryId | string | `''` | 当前素材库(记住上次选择) |
@@ -15,13 +16,21 @@
 | tags | string[] | `[]` | 默认标签 |
 | uiMode | `'popup'\|'sidePanel'` | `popup` | UI 形态 |
 | theme | `'auto'\|'light'\|'dark'` | `auto` | 主题(auto 跟随系统) |
+| locale | `'zh-CN'\|'en'` | `zh-CN` | 界面语言(vue-i18n) |
 | dragPopoverEnabled | boolean | true | 拖拽浮层开关 |
 | dropZoneEnabled | boolean | true | 面板拖放区开关 |
+| imageHoverButtonEnabled | boolean | false | 图片悬停按钮开关(新增) |
 | snifferEnabled | boolean | false | 嗅探开关(持久化,自动启用) |
+| snifferView | `'list'\|...` | `list` | 嗅探视图(列表/瀑布流) |
+| snifferSortOrder | string | `desc` | 嗅探排序 |
+| snifferMinWidth / snifferMinHeight | number | 0 | 嗅探尺寸过滤 |
+| snifferAspectRatios | string[] | `[]` | 嗅探比例过滤 |
 | snifferKinds | ResourceKind[] | `[image,audio,video]` | 嗅探类型 |
 | autoScrollEnabled | boolean | false | 自动滚动 |
 | autoScrollDelay | number | 800 | 滚动间隔(ms) |
+| batchImportConcurrency | number | 3 | 批量导入并发(新增) |
 | imuEnabled | boolean | true | 高清大图升级(maxurl) |
+| imuRules | ImageUrlRule[] | DEFAULT_IMAGE_URL_RULES | maxurl 规则(新增) |
 
 session 存 `chrome.storage.session` 的 `mira_session`:`{token?, username?, password?}`。
 

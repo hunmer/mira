@@ -21,16 +21,23 @@
 4. 导出：`MiraServer`、`startServer`、`ServerPluginManager`、`ServerPlugin`、`MiraWebsocketServer`、`MiraHttpServer`、`ThumbnailService`、`express`、`ws`；类型导出 `ThumbnailGenerator`、`PluginRouteDefinition`、`ILibraryServerData`。
 5. `if (require.main === module) startServer()` — 直接运行才启动。
 
-## src/cli.ts（CLI 入口）
+## src/cli.ts（CLI 入口，383 行）
 
-`commander` 程序 `mira-app-server`，子命令：
+`commander` 程序 `mira-app-server`，版本号从 `package.json` 动态读取（`getPackageVersion()`，旧的内嵌版本号问题已解决）。
 
-- `start` — 选项 `-p/--http-port`(8081)、`-w/--ws-port`(8018)、`-d/--data-path`、`--env <path>`（指定则 `dotenv.config({ path })`）；调用 `MiraServer.createAndStart(...)`；同样注册 `SIGINT` / `SIGTERM`。
+**MCP 模式短路**：命令行含 `--mcp` 时跳过 commander，直接 `startMcpServer()`（stdio JSON-RPC，见 `src/mcp/server.ts`），保证 stdout 仅承载协议数据。
+
+**顶层命令**：
+
+- `start` — 选项 `-p/--http-port`(8081)、`-w/--ws-port`(8018)、`-d/--data-path`、`--env <path>`；调用 `MiraServer.createAndStart(...)`；注册 `SIGINT` / `SIGTERM`。
+- `stop` / `restart` — 服务进程管理（配合 `src/cli/autostart.ts`）。
 - `version` — 打印版本与运行环境。
 - `health` — 选项 `-p/--http-port`(8081)，`axios.get('http://localhost:${port}/health')`。
-- 无参数时输出 help。
+- `doctor` — 诊断命令（`src/cli/doctor.ts`）。
 
-> 注意：`cli.ts` 内嵌的版本字符串仍为旧的 `1.0.17` / `Mira Server v1.0.0`，与 `package.json` 的 `2.0.1` 不一致，未同步。
+**域子命令**（`src/cli/commands/`，共 11 个，通过 `mira-app-core/shared/sdk` 操作远端服务）：`auth`、`user`、`libraries`、`files`、`tags`、`folders`、`plugins`、`devices`、`database`、`system`、`autostart`。登录凭证多 profile 持久化到 `~/.mira/credentials.json`（`src/cli/credentials.ts`）。
+
+- 无参数时输出 help。
 
 ## MiraServer 启动序列 (`src/MiraServer.ts`)
 

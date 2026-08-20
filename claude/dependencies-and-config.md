@@ -2,7 +2,7 @@
 
 ## 包管理
 
-- pnpm workspace,`pnpm-workspace.yaml` 当前列出 9 个包 glob + 2 个 web/client plugin glob(见下)
+- pnpm workspace,`pnpm-workspace.yaml` 当前显式声明 9 个包 + 2 个 glob(`online_client_plugins/plugins/*`、`plugins/plugins/*/web`)
 - 根 `package.json` 名 `@hunmer/mira-monorepo`,private
 - `pnpm.onlyBuiltDependencies`:electron、esbuild、sqlite3、sharp(允许原生构建)
 
@@ -15,7 +15,9 @@ packages:
   - 'packages/mira-dashboard-next'
   - 'packages/mira-scripts-core'
   - 'packages/mira-browser-extension'
+  - 'packages/mira-plugin-ui'
   - 'packages/vue-masonry'
+  - 'packages/vue-selection-box'
   - 'online_client_plugins/plugins/*'
   - 'plugins/plugins/*/web'
 ```

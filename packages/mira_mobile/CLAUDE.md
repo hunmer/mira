@@ -8,18 +8,23 @@
 
 技术栈：Flutter/Dart `^3.10.0`，状态管理 **Riverpod**，HTTP **`http`**，媒体用
 `photo_view`/`video_player`+`chewie`/`cached_network_image`，画廊瀑布流用 **`flexbox_layout`**
-（`SliverDynamicFlexbox`，运行时惰性测量），UI 走 iOS26 玻璃态（`liquid_glass_widgets`）。
-导航为 `CupertinoApp` 单 Navigator + 命名路由。序列化全手写（无 freezed）。
+（`SliverDynamicFlexbox`，运行时惰性测量），UI 走 iOS26 玻璃态（`liquid_glass_widgets` +
+自建 `src/widgets/glass/` 组件库）。导航为 `CupertinoApp` 单 Navigator + 命名路由（17 条）。
+国际化 `easy_localization`（zh/en）。序列化全手写（无 freezed）。
 
-唯一的 SDK 是 `lib/mira_sdk/`（基于 `http`，全 App 引用）。SDK 测试在 `test/mira_sdk_api/`。
+除浏览/上传外已具备：文件下载（`download_service` + 通知）、相册自动备份
+（`photo_manager` + `photo_backup_service`）、主题/背景/语言个性化（多 Provider + SharedPreferences）。
+
+唯一的 SDK 是 `lib/mira_sdk/`（基于 `http`，全 App 引用）。测试：`test/mira_sdk_api/`（SDK 集成）、
+`test/mira_sdk/models/`（模型）、`test/src/{providers,services,utils}/`（应用层单测）。
 
 ## 约定（高优先级）
 
 - **状态管理用 Riverpod**；`MiraClient` 不做成 Provider，统一经 `ref.read(sessionProvider).client` 取。
 - **导航**：路由集中 `lib/router/app_router.dart`（命名路由，Navigator 1.0）；不要嵌 `MaterialApp` 或引入 go_router。
 - **后端调用**走 `lib/mira_sdk/` 模块；图片/视频直链经 `client.getHttpClient().getUrl(path)` 拼 `?token=`。
-- **本地存储**只用 `ServerStorageService`（SharedPreferences）；不要引入 DB。
-- 改代码后自检：`flutter analyze` + `flutter test test/mira_sdk_api/`（UI/Provider 层暂无测试）。
+- **本地存储**统一用 SharedPreferences（服务器列表走 `ServerStorageService`；主题/语言/背景/备份等偏好由各 Provider/Service 自存）；不要引入 DB。
+- 改代码后自检：`flutter analyze` + `flutter test`（SDK 集成 + 模型 + 应用层单测均有）。
 - 代码注释中英混用（以中文为主），与现有风格一致。
 
 > 完整约定、命令、禁止事项见 [claude/conventions.md](claude/conventions.md)。
@@ -44,21 +49,25 @@
 
 ```
 lib/
-├── main.dart                 # 入口（CupertinoApp + 玻璃态 + Material scope）
-├── router/                   # AppRouter 命名路由 + RouterController 单例
+├── main.dart                 # 入口（EasyLocalization + 玻璃态 + CupertinoApp + Material scope）
+├── router/                   # AppRouter 命名路由（17 条）+ RouterController 单例
 ├── mira_sdk/                 # ⭐ 活跃 SDK（http）：client + models + modules
 └── src/
-    ├── providers/            # Riverpod（session 持有 MiraClient；files/folders/tags...）
-    ├── screens/              # 13 个页面（home 壳 / 画廊 / 预览 / 上传 / tree_view / 设置 / 服务器）
-    ├── services/             # ServerStorageService（SharedPreferences 单例）
+    ├── providers/            # Riverpod ×14（session 持有 MiraClient；files/filter/sort/selection/
+    │                         #   download/upload/photo_backup/theme/color_theme/locale/background_effect）
+    ├── screens/              # 24 个 dart 文件（home 壳/画廊/预览×3/上传/tree_view/下载队列/
+    │                         #   服务器/设置族×7/dashboard）
+    ├── services/             # ×6：server_storage / download / upload / photo_backup(+collector) / notification
     ├── models/               # 本地 ServerConfig
+    ├── widgets/              # 共享组件 + glass/（13 个玻璃态基础组件）
     └── utils/                # media_utils（媒体分类 + token URL）
 ```
 
 ## 扫描状态
 
-- **更新时间**：2026-08-09
-- **已扫描**：`lib/main.dart`、`lib/router/*`、`lib/mira_sdk/*`（全部）、`lib/src/{providers,screens,services,models,utils,widgets}`（全部）、`pubspec.yaml`、`analysis_options.yaml`、`docs/*`、`test/mira_sdk_api/`。
-- **跳过**：平台目录（`android/` `ios/` `macos/` `windows/` `linux/` `web/`，均为脚手架默认）、`build/` `.dart_tool/` 等生成物。
-- **覆盖率**：源码（lib/ 约 32 个 dart 文件）全覆盖；测试仅 `test/mira_sdk_api/`（4 文件）。
-- **下一步建议**：(1) `android/`/`ios/` 发布签名配置；(2) 为 UI/Provider 层补测试（当前零覆盖）。
+- **更新时间**：2026-08-20（上次 2026-08-11 核对时本包尚未入库当前形态，2026-08-11 后经 4 次提交整体新增 92 个 lib dart 文件）
+- **已扫描**：`lib/main.dart`、`lib/router/*`、`lib/mira_sdk/*`（全部）、`lib/src/{providers,screens,services,models,utils,widgets}`（全部）、`pubspec.yaml`、`analysis_options.yaml`、`docs/*`、`test/`（全部 9 个 dart 文件）。
+- **跳过**：平台目录（`android/` `ios/` `macos/` `windows/` `linux/`；`web/` 已删除）、`build/` `.dart_tool/` 等生成物。
+- **覆盖率**：源码（lib/ 92 个 dart 文件）全覆盖；测试 9 文件（SDK 集成 5 + 模型 1 + 应用层 3）。
+- **本次要点**：新增下载/相册自动备份/国际化/主题背景个性化能力；路由 12→17 条（删 `/profile`，增 settings 族/`/dashboard`/`/file_preview`）；`/library_select` 并入 `ServerListScreen(initialTab:1)`；`ItemDetailScreen` 仍为静态展示页。
+- **下一步建议**：(1) screens 层仍无 widget 测试；(2) `ItemDetailScreen` 的 TODO（标签/文件夹编辑）待实现；(3) `android/`/`ios/` 发布签名配置。

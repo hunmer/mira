@@ -16,7 +16,7 @@
 
 ## 状态管理
 
-- Pinia 3,11 个 Store(见 public-interfaces.md)
+- Pinia 3,15 个 Store(见 public-interfaces.md)
 - 持久化由各 Store 自行决定
 
 ## Electron 安全
@@ -41,11 +41,12 @@
 pnpm run dev                 # Vite 开发服务器(渲染)
 pnpm run electron:dev        # Electron 开发模式(Win 下含 chcp 65001)
 pnpm run build               # 构建渲染进程
-pnpm run build:all           # 构建所有进程(renderer + main + preload + float)
+pnpm run build:all           # 三段构建(renderer + main + preload;float 段已移除)
 pnpm run build:prod          # 生产构建(cross-env NODE_ENV=production)
 pnpm run electron:build:win  # Windows 打包(electron-builder)
 pnpm run electron:build:mac  # macOS 打包
-pnpm run type-check          # vue-tsc 类型检查(无独立测试,这是主门禁)
+pnpm run type-check          # vue-tsc 类型检查(主门禁)
+pnpm run test:ui:remote      # procm 远程 UI 测试,如 `pnpm run test:ui:remote createFolder`(需 dev 构建运行中 + procm server)
 pnpm run lint                # ESLint 9 --fix
 pnpm run clean               # 清理 dist*/build/docs 产物
 ```

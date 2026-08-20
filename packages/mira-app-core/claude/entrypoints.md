@@ -27,7 +27,7 @@ export { LibraryServerDataSQLite } from './LibraryServerDataSQLite';
 
 ### SDK 入口 `mira-app-core/shared/sdk` → `src/shared/sdk/index.ts`
 
-导出 MiraClient、WebSocketClient、10 个 Module、SDK 全部类型。
+导出 MiraClient、WebSocketClient、17 个 Module、SDK 全部类型。
 构建时通过 `vite.sdk.config.ts` 打包为 ESM bundle `dist/shared/sdk/mira-sdk.esm.mjs`（library name `MiraSDK`）。
 
 ## 启动流程

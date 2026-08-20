@@ -24,7 +24,7 @@
 
 - 仅 shadcn-vue（基于 reka-ui），不引入其他 UI 框架。
 - `components.json`：style=`reka-mira`，baseColor=`zinc`，css=`src/assets/index.css`，iconLibrary=`remixicon`，`cssVariables: true`，启用 typescript。
-- shadcn-vue 组件生成到 `src/components/ui/<component>/`（当前约 27 个），别名：components=`@/components`，utils=`@/lib/utils`，ui=`@/components/ui`。
+- shadcn-vue 组件生成到 `src/components/ui/<component>/`（当前 30 个），别名：components=`@/components`，utils=`@/lib/utils`，ui=`@/components/ui`。
 - 样式：Tailwind CSS 4（`@tailwindcss/vite` 插件 + `src/assets/index.css`，含 CSS 变量）；动画用 `tw-animate-css`。
 - 类名合并：`cn()` = `clsx + tailwind-merge`（`src/lib/utils.ts`）。
 - 图标：`@remixicon/vue`（首选，配合 components.json）+ `@lucide/vue`。
@@ -42,9 +42,9 @@
 
 ## API 与鉴权
 
-- 统一经由 `src/api/client.ts` 的 axios 实例。
-- 请求拦截器注入 `Authorization: Bearer <token>`（token 存 `localStorage`）。
-- `baseURL` 规范化：去掉末尾 `/` 与 `/api` 后追加 `/api`；可在运行时通过 `App.vue` 右下角弹窗或 `setApiBaseURL()` 修改（持久化到 `localStorage.api_base_url`），默认取 `VITE_API_BASE_URL` 或 `//<host>:8081/api`。
+- 业务请求统一经 `src/api/modules/*` -> `src/lib/miraClient.ts` 的 `getMiraClient()`（mira-app-core SDK；12/13 模块已迁移，新代码优先 SDK）。
+- token 存 `localStorage`，经 SDK `getToken` 回调注入（`Authorization: Bearer <token>`）。
+- `baseURL` 规范化（`api/client.ts`）：去掉末尾 `/` 与 `/api` 后追加 `/api`；可在运行时通过 `App.vue` 右下角弹窗或 `setApiBaseURL()` 修改（持久化到 `localStorage.api_base_url`），默认取 `VITE_API_BASE_URL` 或 `//<host>:8081/api`；`miraClient` 感知 baseURL 变化自动重建实例。
 - dev 下 Vite 代理 `/api`、`/health` -> `http://127.0.0.1:8081`（mira-app-server）。
 
 ## 状态

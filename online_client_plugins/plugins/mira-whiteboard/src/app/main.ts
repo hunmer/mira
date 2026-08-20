@@ -1,6 +1,8 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 import { loadMaterialIcons } from '../shared/loadMaterialIcons'
+// mira-plugin-ui（源码入口）组件的 tailwind 样式环境与 shadcn token
+import './tailwind.css'
 
 // 自由画板组合窗口入口
 // 由插件窗口（PluginWindowHandlers）通过 loadFile('dist/index.html') 加载。

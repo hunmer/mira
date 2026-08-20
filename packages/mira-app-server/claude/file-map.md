@@ -1,6 +1,6 @@
 # file-map
 
-`src/` 全部源文件清单（基于目录扫描；行数/大小为近似）。
+`src/` 全部源文件清单（基于目录扫描；行数/大小为近似）。2026-08 新增 `src/cli/`、`src/mcp/`、`src/sync/` 目录。
 
 ## 顶层 (`src/`)
 
@@ -8,39 +8,68 @@
 |------|------|------|
 | `src/index.ts` | 2.4K | 模块入口，`startServer()` + 导出 |
 | `src/server.ts` | 280B | re-export 桥 |
-| `src/cli.ts` | 2.8K | commander CLI |
+| `src/cli.ts` | 383 行 | commander CLI 总入口（顶层命令 + MCP 模式短路） |
 | `src/MiraServer.ts` | 3.5K | 顶层编排类 |
 | `src/HttpServer.ts` | 15K | Express HTTP 服务器 |
 | `src/WebSocketServer.ts` | 11K | WebSocket 服务器 |
 | `src/LibraryStorage.ts` | 11K | 多素材库管理 |
 | `src/LibraryWatcher.ts` | 11K | chokidar 文件监视 |
-| `src/ServerPluginManager.ts` | 12K | 插件管理 + HTTP Hook |
-| `src/ServerPlugin.ts` | 4.1K | 插件基类 |
+| `src/ServerPluginManager.ts` | 660 行 | 插件管理 + HTTP Hook + 格式注册 |
+| `src/ServerPlugin.ts` | 124 行 | 插件基类 |
 | `src/UserStorage.ts` | 15K | 用户/会话存储 |
 | `src/SettingsManager.ts` | 1.5K | 全局设置 |
 | `src/types.ts` | 657B | 共享类型 |
 
-## 路由 (`src/routes/`)
+## 路由 (`src/routes/`，19 个 .ts)
 
 | 文件 | 大小 | 说明 |
 |------|------|------|
 | `BaseRouter.ts` | 7.2K | 路由基类 + `ApiResponse` |
 | `AuthRouter.ts` | 13K | `/api/auth` |
-| `AdminsRouter.ts` | 7.7K | `/api/admins` |
-| `UserRouter.ts` | 10K | `/api/user` |
-| `LibraryRoutes.ts` | 29K | `/api/libraries` |
-| `PluginRoutes.ts` | 43K | `/api/plugins` |
+| `AdminsRouter.ts` | 11K | `/api/admins` |
+| `UserRouter.ts` | 12K | `/api/user` |
+| `LibraryRoutes.ts` | 32K | `/api/libraries` |
+| `PluginRoutes.ts` | 49K | `/api/plugins` |
 | `DatabaseRoutes.ts` | 5.2K | `/api/database` |
-| `FileRoutes.ts` | 38K | `/api/files` |
+| `FileRoutes.ts` | 71K | `/api/files` |
 | `DeviceRoutes.ts` | 17K | `/api/devices` |
-| `TagRouter.ts` | 5.9K | `/api/tags` |
-| `FolderRouter.ts` | 6.3K | `/api/folders` |
-| `FsRouter.ts` | 13K | `/api/fs` |
-| `ThumbRouter.ts` | 2.9K | `/api/thumb` |
-| `StatisticsRouter.ts` | 8.4K | `/api/statistics` |
-| `SettingsRouter.ts` | 1.9K | `/api/settings` |
+| `TagRouter.ts` | 6.2K | `/api/tags` |
+| `FolderRouter.ts` | 8K | `/api/folders` |
+| `FsRouter.ts` | 29K | `/api/fs` |
+| `ThumbRouter.ts` | 4.4K | `/api/thumb` |
+| `StatisticsRouter.ts` | 8.6K | `/api/statistics` |
+| `SettingsRouter.ts` | 1.8K | `/api/settings` |
+| `CookieSitesRouter.ts` | 4.9K | `/api/cookie-sites`（2026-08 新增） |
+| `DownloadRoutes.ts` | 3.5K | `/api/download`（2026-08 新增） |
 | `HttpRouter.ts` | 8.4K | `/plugins/:libraryId/:pluginName/*` |
 | `WebSocketRouter.ts` | 1.5K | WebSocket 消息分发 |
+
+## CLI (`src/cli/`，2026-08 新增)
+
+| 文件 | 说明 |
+|------|------|
+| `client.ts` | CLI 用 SDK 客户端 / 连接解析 |
+| `credentials.ts` | 凭证多 profile（`~/.mira/credentials.json`） |
+| `autostart.ts` | 开机自启实现 |
+| `doctor.ts` | 诊断命令 |
+| `format.ts` | 输出格式化 |
+| `commands/*.ts`（11 个） | auth / user / libraries / files / tags / folders / plugins / devices / database / system / autostart 域命令 |
+
+## MCP (`src/mcp/`，2026-08 新增)
+
+| 文件 | 说明 |
+|------|------|
+| `server.ts` | stdio JSON-RPC MCP 服务入口（`--mcp`） |
+| `helpers.ts` | 工具注册辅助 |
+| `tools/*.ts`（9 个） | auth / system / libraries / files / tags / folders / plugins / devices / database 的 MCP tools |
+
+## 同步 (`src/sync/`，2026-08 新增)
+
+| 文件 | 说明 |
+|------|------|
+| `FilePathSet.ts` + `.test.ts` | 文件路径集合 |
+| `ImportedFileEvents.ts` + `.test.ts` | 已导入文件事件 |
+| `SyncFilter.ts` | 同步过滤规则 |
 
 ## 处理器 (`src/handlers/`)
 
@@ -64,6 +93,12 @@
 | 文件 | 大小 | 说明 |
 |------|------|------|
 | `ThumbnailService.ts` | 11K | 缩略图服务 + Generator 注册 |
+| `MetadataService.ts` | — | 元数据解析规则 |
+| `DownloadExecutorService.ts` | — | 下载任务执行 |
+| `DuplicateScanner.ts` + `.test.ts` | — | 重复文件扫描（内置，原插件功能） |
+| `DatabaseBackupService.ts` | — | 数据库备份 |
+| `LogRingBuffer.ts` | — | 环形日志缓冲 |
+| `procm.ts` | — | 进程管理服务 |
 
 ## 插件 (`src/plugins/`)
 

@@ -1,6 +1,6 @@
 # FAQ / 常见问题
 
-> 更新：2026-08-09。每条给出定位路径。
+> 更新：2026-08-20。每条给出定位路径。
 
 ### Q1：SDK 在哪？怎么调后端？
 
@@ -51,9 +51,22 @@
 
 ### Q9：怎么跑测试？
 
-`flutter test test/mira_sdk_api/`（SDK 测试）。UI/Provider 层目前无测试。详见 [testing-and-quality.md](testing-and-quality.md)。
+`flutter test`（全部：SDK 集成 + 模型 + 应用层单测）；或 `flutter test test/mira_sdk_api/` 只跑 SDK。
+screens 层目前无 widget 测试。详见 [testing-and-quality.md](testing-and-quality.md)。
 
 ### Q10：哪些功能还没完成？
 
-`ItemDetailScreen`（`/item_detail`）仍是**静态占位**（硬编码假数据 + TODO）。
-`/profile` 路由是 `PlaceholderWidget`。定位：`lib/src/screens/item_detail_screen.dart`、`lib/router/app_router.dart`。
+`ItemDetailScreen`（`/item_detail`）仍是**静态展示页**（标签/文件夹编辑等处留有 TODO，未接真实编辑逻辑）。
+原 `/profile` 占位路由已删除。定位：`lib/src/screens/item_detail_screen.dart`、`lib/router/app_router.dart`。
+
+### Q11：多语言文案在哪改？
+
+`easy_localization`，JSON 翻译在 `assets/translations/`（zh/en），代码里 `'key'.tr()`。
+语言切换由 `locale_provider` 持久化并同步到 `EasyLocalization`。定位：`lib/src/providers/locale_provider.dart`、`lib/main.dart`。
+
+### Q12：下载/相册自动备份在哪实现？
+
+下载：`lib/src/services/download_service.dart` + `providers/download_provider.dart` + 队列面板
+`screens/download/download_queue_sheet.dart`（通知走 `notification_service.dart`）。
+相册自动备份：`lib/src/services/photo_backup_service.dart`（+ `photo_backup_collector.dart`，
+基于 `photo_manager`）+ `providers/photo_backup_provider.dart`，设置页 `screens/settings/backup_settings_screen.dart`、`album_picker_screen.dart`。

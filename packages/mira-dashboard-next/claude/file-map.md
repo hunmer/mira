@@ -1,6 +1,6 @@
 # 文件清单
 
-> 基于实际目录扫描（2026-08-05）。相对 `mira-dashboard-next/` 包根。
+> 基于实际目录扫描，更新于 2026-08-20。相对 `mira-dashboard-next/` 包根。
 
 ## 根目录
 
@@ -50,8 +50,9 @@
 
 | 路径 | 说明 |
 |------|------|
-| `src/api/client.ts` | axios 实例（拦截器、token、动态 baseURL） |
+| `src/api/client.ts` | axios 实例（拦截器、token、动态 baseURL；现为 baseURL/token 配置源） |
 | `src/api/index.ts` | 模块聚合导出 |
+| `src/lib/miraClient.ts` | **mira-app-core SDK 单例** `getMiraClient()`（token/baseURL 运行时注入）（新增） |
 | `src/api/modules/auth.ts` | 认证 API |
 | `src/api/modules/admin.ts` | 管理员 API |
 | `src/api/modules/library.ts` | 素材库 API |
@@ -62,7 +63,9 @@
 | `src/api/modules/statistics.ts` | 统计 API |
 | `src/api/modules/system.ts` | 系统 API |
 | `src/api/modules/settings.ts` | 服务端设置 API |
-| `src/api/modules/thumbnail.ts` | 缩略图 API |
+| `src/api/modules/thumbnail.ts` | 缩略图 API（由 /media 页消费） |
+| `src/api/modules/cookieSites.ts` | cookie 站点 API（新增） |
+| `src/api/modules/download.ts` | 批量 URL 导入 API（新增） |
 
 ## src/components
 
@@ -70,18 +73,23 @@
 |------|------|
 | `src/components/PathTreeSelect.vue` | 路径树选择器 |
 | `src/components/PathTreeNode.vue` | 路径树节点 |
+| `src/components/LibraryTreeSelect.vue` / `LibraryTreeNode.vue` | 素材库文件夹/标签树选择（新增） |
 | `src/components/common/StatCard.vue` | 统计卡片 |
+| `src/components/common/PageLoading.vue` | 页面加载态（新增） |
 | `src/components/ui/accordion/` | shadcn-vue accordion |
+| `src/components/ui/alert-dialog/` | alert-dialog（新增） |
 | `src/components/ui/avatar/` | avatar |
 | `src/components/ui/badge/` | badge |
 | `src/components/ui/breadcrumb/` | breadcrumb |
 | `src/components/ui/button/` | button |
 | `src/components/ui/card/` | card |
 | `src/components/ui/chart/` | chart（@unovis） |
+| `src/components/ui/combobox/` | combobox（新增，12 个子组件） |
 | `src/components/ui/dialog/` | dialog |
 | `src/components/ui/dropdown-menu/` | dropdown-menu |
 | `src/components/ui/form/` | form（vee-validate 集成） |
 | `src/components/ui/input/` | input |
+| `src/components/ui/input-group/` | input-group（新增，7 个子组件） |
 | `src/components/ui/label/` | label |
 | `src/components/ui/popover/` | popover |
 | `src/components/ui/progress/` | progress |
@@ -109,16 +117,20 @@
 | `src/views/mira/overview/index.vue` | 概览（统计/系统信息/最近活动/设置） |
 | `src/views/mira/library/index.vue` | 素材库管理 |
 | `src/views/mira/library/LibraryFormDialog.vue` | 素材库表单对话框 |
+| `src/views/mira/library/ShareDialog.vue` | 素材库分享对话框（qrcode）（新增） |
 | `src/views/mira/plugin/index.vue` | 插件管理 |
+| `src/views/mira/plugin/InstallTerminalDialog.vue` | 插件安装终端对话框（新增） |
 | `src/views/mira/admin/index.vue` | 管理员面板（super） |
+| `src/views/mira/admin/TokenManageDialog.vue` | Token 管理对话框（新增） |
 | `src/views/mira/database/index.vue` | 数据库预览 |
 | `src/views/mira/device/index.vue` | 设备管理 |
 | `src/views/mira/file-manager/index.vue` | 文件管理 |
 | `src/views/mira/statistics/index.vue` | 统计数据 |
-| `src/views/mira/thumbnail/index.vue` | 缩略图管理 |
+| `src/views/mira/media/index.vue` | 媒体维护页（新增；ThumbnailCard/MetadataCard/DatabaseScanCard） |
+| `src/views/mira/settings/index.vue` | 服务端设置 + cookie 站点管理（新增） |
 | `src/views/mira/profile/index.vue` | 个人资料 |
 
-> 注：旧文档提到的 `src/views/mira/file-upload/` 目录在本次扫描中**未发现**（已移除；`/file-upload` 路由也不存在）。
+> 注：原 `src/views/mira/thumbnail/` 目录与 `/thumbnail` 路由已移除（缩略图管理并入 `/media`）。
 
 ## 其他 src/ 目录
 
@@ -128,6 +140,8 @@
 | `src/composables/useTheme.ts` | 主题（浅色/深色/跟随系统） |
 | `src/composables/useLibrary.ts` | 素材库组合式函数 |
 | `src/composables/useBroadcast.ts` | 广播通信 |
+| `src/composables/useConfirmDialog.ts` | 确认对话框（新增） |
+| `src/composables/usePluginSources.ts` | 插件源（新增） |
 | `src/i18n/index.ts` | vue-i18n 配置（legacy:false，默认 zh-CN） |
 | `src/i18n/locales/zh-CN.ts` | 中文翻译 |
 | `src/i18n/locales/en.ts` | 英文翻译 |

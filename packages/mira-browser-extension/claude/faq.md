@@ -67,6 +67,13 @@
 - **修复**:MAIN world 注入(`<script src=maxurl.user.js>`)+ postMessage 桥。CSP 严的站点会拦脚本,`upgradeImageUrl` 超时回退原 URL。
 - **定位**:网页 console 看 `[mira-ext][imu]` 日志。
 
+## UI / 依赖
+
+### 引入/升级组件后 UI 崩(slot/inject 失效、provide 报错)
+- **根因**:`mira-plugin-ui` 是 npm 实体目录(内含自己的 vue 拷贝),依赖链按 importer 解析出第二份 vue → 双实例。
+- **修复**:`vite.config.ts` 已把 `vue` alias 钉到本包 `node_modules/vue/dist/vue.runtime.esm-bundler.js`,不要删;新增依赖时注意同理。
+- **定位**:报错栈里出现两个不同路径的 vue runtime。
+
 ## 调试
 
 ### 怎么开调试日志

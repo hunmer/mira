@@ -10,9 +10,10 @@
 
 ## 命令约定
 
-- 构建 = `tsc`；测试 = `jest --config sdk/jest.config.js`（必须带 `sdk/` 前缀）。
+- 构建 = `copy-dashboard + copy-web + tsc`（`pnpm run build`，前端静态资源先拷贝再编译）；测试 = `jest --config sdk/jest.config.js`（必须带 `sdk/` 前缀）；`test:paths` 用 `node --test` 跑 `src/sync/` 测试。
 - `pnpm run dev` 与 `start:ts` 都用 `node --inspect -r ts-node/register src/index.ts`。
-- CLI 子命令：`start`（`-p/--http-port`、`-w/--ws-port`、`-d/--data-path`、`--env`）、`version`、`health`（`-p/--http-port`）。
+- CLI：顶层子命令 `start`（`-p/--http-port`、`-w/--ws-port`、`-d/--data-path`、`--env`）、`stop`、`restart`、`version`、`health`、`doctor`；域子命令 auth/user/libraries/files/tags/folders/plugins/devices/database/system/autostart（`src/cli/commands/`）；`--mcp` 进入 MCP 服务模式。
+- CLI 凭证：多 profile，存 `~/.mira/credentials.json`。
 
 ## 路由约定
 

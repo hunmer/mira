@@ -1,6 +1,6 @@
 # 插件系统与双协议调度
 
-> 基于 `src/ServerPluginManager.ts`(全量 576 行)与 `src/ServerPlugin.ts` 深扫。本文聚焦**调度机制**,插件清单见仓库根 `claude/module-index.md` 与 `plugins/CLAUDE.md`。
+> 基于 `src/ServerPluginManager.ts`(2026-08-20 确认 660 行;2026-08-11 全量深扫时为 576 行)与 `src/ServerPlugin.ts`(124 行)深扫。本文聚焦**调度机制**,插件清单见仓库根 `claude/module-index.md` 与 `plugins/CLAUDE.md`。双协议(ServerPlugin / registerFileFormat)调度机制在 2026-08-20 增量核对中未发现变化,协议记载仍然准确。
 
 ## 总览
 

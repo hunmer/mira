@@ -2,7 +2,7 @@
 
 ## package.json 概要
 
-- name:`mira-web`,version `1.0.5`,license MIT,engines node >=18
+- name:`mira-web`,version `2.0.9`,license MIT,engines node >=18
 - main:`dist-main/main.js`,homepage `./`
 
 ## 关键 dependencies(UI / 框架相关)
@@ -13,6 +13,7 @@
 | electron(注入) | ^38.8.6 | 桌面平台(devDep) |
 | pinia | ^3.0.3 | 状态管理 |
 | vue-router | ^4.5.1 | 路由 |
+| vue-i18n | ^11.4.4 | 渲染进程 i18n(v2.x 新增) |
 | tailwindcss | 4.0.17 | 样式(v4) |
 | @tailwindcss/vite | 4.0.17 | Vite 集成 |
 | @tailwindcss/postcss | ^4.0.17 | PostCSS 集成(devDep) |
@@ -27,13 +28,14 @@
 | @internationalized/date | ^3.12.3 | calendar 日期 |
 | @tanstack/vue-table | ^8.21.3 | table 高级用法 |
 | vaul-vue | ^0.4.1 | Drawer(shadcn 用) |
+| @hunmer/vue-selection-box | workspace:* | 框选组件(v2.x 新增) |
 | plyr / v-viewer / viewerjs | -- | 媒体预览 |
 | filepond + vue-filepond + 插件 | -- | 上传 |
 | mira-app-core | workspace:* | 后端 SDK |
 
 ## 关键 devDependencies
 
-electron ^38.8.6、electron-builder ^26、vite ^6.2、vite-plugin-electron ^0.29、vue-tsc ^2.2.4、typescript ~5.7.2、eslint ^9.35、typedoc、dependency-cruiser、vite-bundle-analyzer。
+electron ^38.8.6、electron-builder ^26、vite ^6.2、vite-plugin-electron ^0.29、vue-tsc ^2.2.4、typescript ~5.7.2、eslint ^9.35、typedoc、dependency-cruiser、vite-bundle-analyzer;v2.x 新增 UI 测试三件套:`@testing-library/dom` ^10.4.0、`@testing-library/vue` ^8.1.0、`@testing-library/user-event` ^14.6.1,以及 `@hunmer/procm-mcp-sdk`(link,驱动远程 UI 测试)。
 
 ## 配置文件
 
@@ -42,7 +44,7 @@ electron ^38.8.6、electron-builder ^26、vite ^6.2、vite-plugin-electron ^0.29
 | `components.json` | shadcn-vue 配置 | style=new-york, baseColor=neutral, cssVariables=true, iconLibrary=lucide, tailwind.css=src/renderer/assets/main.css, aliases 见下 |
 | `src/renderer/assets/main.css` | **真实主题源** | Tailwind v4 `@theme inline` + shadcn 语义 token(oklch),含 `--animate-in/out` 覆盖 |
 | `tailwind.config.js` | **死文件** | v3 遗留,未被引用,勿在此改样式 |
-| `vite.renderer.config.ts` | 渲染构建 | 全局注入 scss variables/mixins |
+| `vite.renderer.config.ts` | 渲染构建 | 内含残留 scss additionalData 注入(指向已删除的 `assets/scss/*`,死配置) |
 | `vite.main.config.ts` | 主进程构建 | |
 | `vite.preload.config.ts` | 预加载构建 | |
 | `electron-builder.*` | 打包配置 | win/mac |
@@ -57,6 +59,6 @@ lib         → @/lib
 composables → @/renderer/composables
 ```
 
-## SCSS 与 Tailwind 并存
+## SCSS 已移除(2026-08-20 核实)
 
-`vite.renderer.config.ts` 的 `css.preprocessorOptions.scss` 全局注入 `assets/scss/variables.scss` 与 `mixins.scss`,与 Tailwind v4 体系并存,非迁移阻塞项。
+SCSS 体系已整体删除:`assets/scss/` 目录不存在,0 个 `.vue` 使用 `lang="scss"`。但 `vite.renderer.config.ts` 的 `css.preprocessorOptions.scss.additionalData` 仍注入 `assets/scss/variables.scss` 与 `mixins.scss`——这是指向已删文件的**残留死配置**,待清理。

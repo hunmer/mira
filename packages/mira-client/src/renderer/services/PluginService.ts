@@ -4,6 +4,7 @@ import type {
   PluginManagerConfig,
   BaseResponse,
   PluginContext,
+  PluginWindowOpenOptions,
   MarketplaceCatalog,
   MarketplacePluginEntry,
   MarketplacePluginFile,
@@ -15,7 +16,7 @@ import { pluginSystem } from './PluginSystemCore'
 import { useConfirm } from '@renderer/composables/useConfirm'
 import { useToast } from '@renderer/composables/useToast'
 import { miraSDKService } from './MiraSDKService'
-import { useAuthStore } from '@renderer/stores/auth'
+import { openPluginWindow } from '../plugins/openPluginWindow'
 
 /**
  * 递归剥离对象的响应式 Proxy，返回可被 Electron IPC（structured clone）克隆的纯对象。
@@ -938,18 +939,12 @@ export class PluginService {
 
       // 插件窗口管理API：打开插件 dist 的独立 BrowserWindow
       // 默认 pluginId 为当前插件，避免插件误开他人窗口。
+      // server/token 注入与 Electron/Web 双路径打开由 plugins/openPluginWindow 公共实现。
       window: {
-        openPluginWindow: async (opts: {
-          pluginId?: string
-          entry?: string
-          url?: string
-          title?: string
-          width?: number
-          height?: number
-          query?: Record<string, string>
-        }) => {
-          const entry = String(opts.entry || 'dist/index.html').replace(/^\/+/, '')
-          let serverUrl: string | undefined
+        openPluginWindow: async (opts: Omit<PluginWindowOpenOptions, 'pluginId'> & { pluginId?: string }) => {
+          // 服务端 Web 插件：入口 URL 指向 server 托管的插件页，并注入其所属素材库 id
+          let remoteUrl: string | undefined
+          let libraryId: string | undefined
           if (config.source === 'server') {
             const serverConfig = config as ServerPluginConfig
             const base = String(serverConfig.url || '').replace(/\/+$/, '')
@@ -957,52 +952,19 @@ export class PluginService {
             const normalizedBase = base.endsWith(`/${pluginName}`) || base.endsWith(`/${serverConfig.serverPluginName}`)
               ? base
               : `${base}/${pluginName}`
-            serverUrl = new URL(`${normalizedBase}/${entry}`, window.location.origin).toString()
+            const entry = String(opts.entry || 'dist/index.html').replace(/^\/+/, '')
+            remoteUrl = new URL(`${normalizedBase}/${entry}`, window.location.origin).toString()
+            libraryId = serverConfig.libraryId
           }
-          const token = config.source === 'server' ? useAuthStore().token : undefined
-          const finalOpts = {
-            pluginId: config.pluginId,
-            entry: 'dist/index.html',
-            ...opts,
-            ...(serverUrl ? { url: serverUrl } : {}),
-            query: {
-              ...opts.query,
-              ...(token ? { token } : {}),
-              ...(config.source === 'server' ? { libraryId: (config as ServerPluginConfig).libraryId } : {}),
+          return openPluginWindow(
+            {
+              ...opts,
+              pluginId: opts.pluginId || config.pluginId,
+              ...(remoteUrl ? { url: remoteUrl } : {}),
+              query: { ...opts.query, ...(libraryId ? { libraryId } : {}) },
             },
-          }
-          const w: any = typeof window !== 'undefined' ? (window as any).electronAPI : undefined
-          if (!w?.pluginWindow?.open) {
-            const pluginBase = (config as OnlinePluginConfig).url || config.actualDirectory
-            if (!pluginBase || typeof window === 'undefined') {
-              return { success: false, message: t('services.plugin.pluginUrlUnavailable') }
-            }
-            try {
-              const entry = String(finalOpts.entry || 'dist/index.html').replace(/^\/+/, '')
-              const url = new URL(`${pluginBase.replace(/\/+$/, '')}/${entry}`)
-              Object.entries(finalOpts.query || {}).forEach(([key, value]) => {
-                url.searchParams.set(key, String(value))
-              })
-              const features = [
-                finalOpts.width && `width=${finalOpts.width}`,
-                finalOpts.height && `height=${finalOpts.height}`
-              ].filter(Boolean).join(',')
-              const opened = window.open(url.href, '_blank', features || undefined)
-              return opened
-                ? { success: true, data: { url: url.href } }
-                : { success: false, message: t('services.plugin.popupBlocked') }
-            } catch (error) {
-              const msg = error instanceof Error ? error.message : String(error)
-              return { success: false, message: msg }
-            }
-          }
-          try {
-            return await w.pluginWindow.open(finalOpts)
-          } catch (error) {
-            const msg = error instanceof Error ? error.message : String(error)
-            console.error(`[${config.pluginName}] openPluginWindow failed:`, error)
-            return { success: false, message: msg }
-          }
+            { webBaseUrl: (config as OnlinePluginConfig).url || config.actualDirectory },
+          )
         }
       },
 

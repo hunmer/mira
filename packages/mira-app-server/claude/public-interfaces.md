@@ -2,7 +2,7 @@
 
 公开接口（HTTP REST + WebSocket）。详细端点签名未逐条扫描，以下为模块级路径前缀与职责；具体请求/响应字段需查阅各 Router 文件。
 
-## HTTP API 路由（17 个文件，含 `BaseRouter` / `WebSocketRouter`）
+## HTTP API 路由（19 个文件，含 `BaseRouter` / `WebSocketRouter`）
 
 | 路径前缀 | 路由文件 | 说明 |
 |----------|----------|------|
@@ -18,11 +18,15 @@
 | `/api/tags` | `routes/TagRouter.ts` | 标签 CRUD（库级校验） |
 | `/api/folders` | `routes/FolderRouter.ts` | 文件夹 CRUD（库级校验） |
 | `/api/fs` | `routes/FsRouter.ts` | 文件系统操作（库级校验） |
+| `/api/cookie-sites` | `routes/CookieSitesRouter.ts` | Cookie 站点管理（2026-08 新增，SDK `CookieSiteModule`） |
+| `/api/download` | `routes/DownloadRoutes.ts` | 下载任务（2026-08 新增，SDK `DownloadModule`） |
 | `/api/thumb` | `routes/ThumbRouter.ts` | 缩略图管理 |
 | `/api/statistics` | `routes/StatisticsRouter.ts` | 统计数据（库级校验） |
 | `/api/settings` | `routes/SettingsRouter.ts` | 服务端设置（`GET` 公开） |
 | `/plugins/:libraryId/:pluginName/*` | `routes/HttpRouter.ts` | 插件静态资源 + 动态路由 |
 | — | `routes/WebSocketRouter.ts` | WebSocket 消息分发（非 HTTP） |
+
+> 完整端点级清单见仓库根 `.audit/server-api-manifest.json`（128 条固定 JSON API）与 `.audit/sdk-coverage-report.md`（SDK 覆盖：117 covered / 11 missing / 13 excluded / 7 dynamic）。
 
 > 响应统一为 `ApiResponse<T> = { code: number; message: string; data: T | null }`（`BaseRouter.ts`）。
 

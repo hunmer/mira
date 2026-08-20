@@ -11,12 +11,17 @@
   "dependencies": {
     "@woven-canvas/core": "^1.1.0",
     "@woven-canvas/vue": "^1.4.0",
+    "mira-app-core": "workspace:*",
+    "mira-plugin-ui": "workspace:*",
     "v-viewer": "^3.0.23",
     "viewerjs": "^1.11.8",
     "vue": "^3.4.0"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
     "@vitejs/plugin-vue": "^5.0.0",
+    "tailwindcss": "^4.3.3",
+    "tw-animate-css": "^1.0.0",
     "typescript": "^5.4.0",
     "vite": "^5.2.0"
   }

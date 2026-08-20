@@ -23,6 +23,7 @@ import CanvasContextMenu from './CanvasContextMenu.vue'
 import CanvasImagePreview from './CanvasImagePreview.vue'
 import CanvasObjectManager from './CanvasObjectManager.vue'
 import CanvasSelectionToolbar from './CanvasSelectionToolbar.vue'
+import MediaPickerDialog from './MediaPickerDialog.vue'
 
 interface Project {
   id: string
@@ -46,6 +47,9 @@ const searchKeyword = ref('')
 // 顶部栏行内重命名态
 const editingName = ref(false)
 const editingNameValue = ref('')
+// 素材库浏览器（添加图片）对话框：server/token 由宿主 openPluginWindow 注入到 query
+const mediaPickerOpen = ref(false)
+const serverConfig = ref({ server: '', token: '' })
 
 const currentProject = computed<Project | null>(
   () => projects.value.find((p) => p.id === currentId.value) || null
@@ -167,6 +171,59 @@ function deleteProject(p: Project) {
 function selectProject(p: Project) {
   currentId.value = p.id
   dialogOpen.value = false
+}
+
+/** 素材库浏览器确认：投给 pendingMedia，由 CanvasMediaBridge 插入当前画布 */
+function handlePickerConfirm(files: { id: string | number; url: string; name: string }[]) {
+  if (!files.length) return
+  pendingMedia.value = files
+}
+
+/**
+ * 从主窗口共享的 localStorage 读 server/token（file:// 同源可读）。
+ * query 已带的一侧优先保留；server 取激活服务器的 serverUrl，
+ * token 优先精确键 {activeServerId}_mira_auth，退回扫描任意 *_mira_auth
+ * 中未过期的一条；server 仍缺时按默认端口 8081 兜底。
+ */
+function readAuthFromStorage(partial: { server: string; token: string }) {
+  const result = { ...partial }
+  try {
+    let activeId: string | null = null
+    const serversRaw = localStorage.getItem('mira-servers')
+    if (serversRaw) {
+      const data = JSON.parse(serversRaw)
+      activeId = data.activeServerId || null
+      const services = Array.isArray(data.services) ? data.services : []
+      const active = services.find((s: any) => s.id === activeId) || services[0]
+      result.server ||= String(active?.serverUrl || '').replace(/\/+$/, '')
+    }
+    const isUsable = (raw: string | null): string => {
+      try {
+        const auth = raw ? JSON.parse(raw) : null
+        if (!auth?.token) return ''
+        if (auth.tokenExpiration && new Date(auth.tokenExpiration) <= new Date()) return ''
+        return auth.token
+      } catch {
+        return ''
+      }
+    }
+    result.token ||= isUsable(activeId ? localStorage.getItem(`${activeId}_mira_auth`) : null)
+    if (!result.token) {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        if (!key || !/_mira_auth$/.test(key)) continue
+        const token = isUsable(localStorage.getItem(key))
+        if (token) {
+          result.token = token
+          break
+        }
+      }
+    }
+    if (result.token && !result.server) result.server = 'http://127.0.0.1:8081'
+  } catch (e) {
+    console.warn('[whiteboard] readAuthFromStorage failed', e)
+  }
+  return result
 }
 
 // ── 画布配置（随 currentId 切换） ─────────────────────────────────
@@ -333,6 +390,19 @@ onMounted(() => {
     pendingMedia.value = []
   }
 
+  // 宿主 openPluginWindow 注入的 server/token（素材库浏览器直连 server 用）；
+  // query 缺失（旧客户端/旧入口打开）时兜底读主窗口写入的 localStorage：
+  //   mira-servers → { services: [{id, serverUrl}], activeServerId }
+  //   {activeServerId}_mira_auth → { token, tokenExpiration }
+  const params = new URLSearchParams(window.location.search)
+  const fromQuery = {
+    server: (params.get('server') || '').replace(/\/+$/, ''),
+    token: params.get('token') || '',
+  }
+  serverConfig.value = fromQuery.server && fromQuery.token
+    ? fromQuery
+    : readAuthFromStorage(fromQuery)
+
   const w = (window as any).electronAPI
   if (w?.pluginWindow?.onMenuAction) {
     unsubMenu = w.pluginWindow.onMenuAction(handleMenuAction)
@@ -398,9 +468,19 @@ onBeforeUnmount(() => {
         </template>
       </WovenCanvas>
 
-      <!-- 顶部工程切换条（最左侧：可编辑工程名；右侧：dots 打开管理对话框） -->
+      <!-- 顶部工程切换条（最左侧：添加图片 + 可编辑工程名；右侧：dots 打开管理对话框） -->
       <div v-if="currentProject" class="wb-topbar">
-        <!-- 左：工程名（点击进入 input 编辑） -->
+        <!-- 左：从素材库添加图片（需宿主注入 server/token，否则禁用） -->
+        <button
+          class="wb-add-media-btn"
+          :title="serverConfig.server ? '从素材库添加图片' : '未检测到 Mira 服务器连接'"
+          :disabled="!serverConfig.server"
+          @click="mediaPickerOpen = true"
+        >
+          <span class="material-icons">add_photo_alternate</span>
+        </button>
+
+        <!-- 工程名（点击进入 input 编辑） -->
         <input
           v-if="editingName"
           v-model="editingNameValue"
@@ -420,6 +500,14 @@ onBeforeUnmount(() => {
         </button>
       </div>
     </main>
+
+    <!-- 素材库浏览器（添加图片） -->
+    <MediaPickerDialog
+      v-model:open="mediaPickerOpen"
+      :server="serverConfig.server"
+      :token="serverConfig.token"
+      @confirm="handlePickerConfirm"
+    />
 
     <!-- 工程管理对话框 -->
     <div v-if="dialogOpen" class="wb-dialog-mask" @click.self="dialogOpen = false">
@@ -827,6 +915,30 @@ body,
   color: #6366f1;
 }
 .wb-dots-btn .material-icons {
+  font-size: 20px;
+}
+.wb-add-media-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.wb-add-media-btn:hover:not(:disabled) {
+  background: rgba(99, 102, 241, 0.12);
+  color: #6366f1;
+}
+.wb-add-media-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.wb-add-media-btn .material-icons {
   font-size: 20px;
 }
 

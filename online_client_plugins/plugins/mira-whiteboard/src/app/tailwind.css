@@ -1,0 +1,61 @@
+/*
+ * 白板窗口的 tailwind 入口：仅服务于经源码入口消费的 mira-plugin-ui 组件
+ * （素材库浏览器 MediaBrowser + Dialog/Button 等 shadcn 组件，样式为
+ * tailwind 原子类，需宿主提供编译环境与 shadcn 设计 token）。
+ * 白板自身的界面仍用 App.vue 里的 wb- 手写样式，不使用 tailwind。
+ */
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* 扫描 monorepo 内 mira-plugin-ui 的组件源码（相对本文件定位源码目录） */
+@source "../../../../../packages/mira-plugin-ui/src";
+
+@custom-variant dark (&:is(.dark *));
+
+/* token 取值与 mira-client / mira-plugin-ui 保持一致（shadcn oklch） */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.55 0.2 260);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+}

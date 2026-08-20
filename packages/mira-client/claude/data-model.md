@@ -4,7 +4,7 @@
 
 ## 运行时状态(Pinia)
 
-11 个 Store,存在于渲染进程内存,持久化策略各 Store 自定:
+15 个 Store,存在于渲染进程内存,持久化策略各 Store 自定:
 
 | Store | 核心状态 |
 |-------|----------|
@@ -19,6 +19,10 @@
 | UploadHistoryStore | 上传记录 |
 | AppStateStore | 全局 UI 状态(加载、对话框等) |
 | DashboardStore | Dashboard Web URL |
+| DashboardLayoutStore | Dashboard 布局(多 layout 版本)持久化 |
+| HomeSidebarLayoutStore | Home 侧边栏已启用模块的有序列表 |
+| UrlImportStore | 「从 URL 导入」全局对话框显隐与参数 |
+| ViewHistoryStore | 预览路由浏览历史(详情面板「最近查看」) |
 
 ## Tab 系统状态
 

@@ -2,6 +2,14 @@
 
 > 本文件记录「AI 上下文索引」的生成/更新,与产品功能 Changelog 分开。仅保留最近 5 条。
 
+## 2026-08-20 — 增量更新(采集能力大扩张后核对)
+
+- 核对范围:`git log --since=2026-08-11`(33 commits,src 21 增 4 删 38 改)+ package.json + vite/manifest + 全目录 ls。
+- 事实修正:src 54→101 文件;测试 8→19 文件/约 137 用例;typescript `~5.8.3`(原记 ^5.3.3);permissions 增 downloads/notifications/cookies/declarativeNetRequestWithHostAccess。
+- 新能力补录:悬停按钮采集、网页内批量导入对话框、cookie/DNR 资源抓取、批量上传独立窗口(upload.html + IndexedDB 暂存)、多服务器管理(SERVERS_*)、节点 CRUD(NODE_*)、嗅探瀑布流(MasonryView + @hunmer/vue-masonry)、vue-i18n 双语、Tailwind 4 + mira-plugin-ui(含 vue 双实例 alias 坑)。
+- 删除组件记录:LibraryTree/ServerBar/ServerManagerView/ContextMenu.vue。
+- 更新 CLAUDE.md 与 claude/ 全部 10 个详情文件。
+
 ## 2026-08-06 11:41 — 初始化索引(首次)
 
 - **范围**:全量扫描 `packages/mira-browser-extension/`(单模块),src 54 个文件 + 根配置 + public。

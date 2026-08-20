@@ -1,6 +1,6 @@
 # 文件清单
 
-src/ 下共 28 个 .ts 文件（基于 find 扫描）。
+src/ 下共 63 个 .ts 文件（36 个源文件 + 27 个测试文件，基于 find 扫描；另有 `src/shared/sdk/test-helpers.ts` 计入源文件）。测试文件（`*.test.ts` / `*.integration.test.ts`）与源码同目录放置，下表未逐一列出。
 
 ## 核心层（src/）
 
@@ -30,7 +30,8 @@ src/ 下共 28 个 .ts 文件（基于 find 扫描）。
 |------|------|
 | src/shared/sdk/index.ts | SDK 入口，导出 client/modules/types |
 | src/shared/sdk/types.ts | SDK 类型（WebSocketOptions 等） |
-| src/shared/sdk/client/MiraClient.ts | 主客户端（链式 API） |
+| src/shared/sdk/test-helpers.ts | SDK 测试共享工具 |
+| src/shared/sdk/client/MiraClient.ts | 主客户端（链式 API，17 个访问器） |
 | src/shared/sdk/client/HttpClient.ts | HTTP 通道（axios） |
 | src/shared/sdk/client/WebSocketClient.ts | WebSocket 通道（ws） |
 | src/shared/sdk/utils/EventEmitter.ts | SDK 内部事件发射器 |
@@ -44,6 +45,13 @@ src/ 下共 28 个 .ts 文件（基于 find 扫描）。
 | src/shared/sdk/modules/SystemModule.ts | 系统模块 |
 | src/shared/sdk/modules/TagModule.ts | 标签模块 |
 | src/shared/sdk/modules/FolderModule.ts | 文件夹模块 |
+| src/shared/sdk/modules/CookieSiteModule.ts | Cookie 站点模块（2026-08 新增） |
+| src/shared/sdk/modules/SettingsModule.ts | 设置模块（2026-08 新增） |
+| src/shared/sdk/modules/AdminModule.ts | 管理员模块（2026-08 新增） |
+| src/shared/sdk/modules/DownloadModule.ts | 下载任务模块（2026-08 新增） |
+| src/shared/sdk/modules/FileSystemModule.ts | 文件系统模块（2026-08 新增） |
+| src/shared/sdk/modules/StatisticsModule.ts | 统计模块（2026-08 新增） |
+| src/shared/sdk/modules/ThumbnailModule.ts | 缩略图模块（2026-08 新增） |
 
 ## 配置文件（包根）
 
@@ -52,4 +60,5 @@ src/ 下共 28 个 .ts 文件（基于 find 扫描）。
 | package.json | 依赖、脚本、exports |
 | tsconfig.json | TS 编译配置 |
 | vite.sdk.config.ts | SDK ESM 打包配置 |
+| vitest.config.ts | vitest 测试配置（2026-08 新增） |
 | README.md | 包说明（注意：其中"无 ws/数据库依赖"描述已过时） |

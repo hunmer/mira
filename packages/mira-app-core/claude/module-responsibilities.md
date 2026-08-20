@@ -29,10 +29,11 @@ SQLite 持久化层。
 
 面向 Mira App Server 的 TypeScript SDK 客户端。
 
-- **index.ts** — SDK 入口，导出 MiraClient、WebSocketClient、10 个 Module 类，以及 types.ts 全部类型。
+- **index.ts** — SDK 入口，导出 MiraClient、WebSocketClient、17 个 Module 类，以及 types.ts 全部类型。
 - **types.ts** — SDK 类型定义（WebSocketOptions / WebSocketMessage / WebSocketEventCallback 等）。
-- **client/MiraClient.ts** — 主客户端，链式 API（auth/user/libraries/plugins/files/database/devices/system/tags/folders）。
+- **client/MiraClient.ts** — 主客户端，链式 API（auth/user/libraries/plugins/files/database/devices/system/tags/folders/cookieSites/settings/admins/downloads/fs/statistics/thumbnails，共 17 个访问器）。
 - **client/HttpClient.ts** — HTTP 通道（axios）。
 - **client/WebSocketClient.ts** — WebSocket 通道（ws）。
 - **utils/EventEmitter.ts** — SDK 内部事件发射器。
-- **modules/** — 10 个领域模块：AuthModule、UserModule、LibraryModule、PluginModule、FileModule、DatabaseModule、DeviceModule、SystemModule、TagModule、FolderModule。
+- **test-helpers.ts** — SDK 测试共享工具（供 vitest 测试使用）。
+- **modules/** — 17 个领域模块：AuthModule、UserModule、LibraryModule、PluginModule、FileModule、DatabaseModule、DeviceModule、SystemModule、TagModule、FolderModule、CookieSiteModule、SettingsModule、AdminModule、DownloadModule、FileSystemModule、StatisticsModule、ThumbnailModule（后 7 个为 2026-08 新增，与 server 新路由对应）。

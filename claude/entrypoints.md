@@ -24,9 +24,12 @@
 | 包 | 入口 | 启动命令 |
 |----|------|----------|
 | mira-app-core | `src/index.ts` | `pnpm run dev`(ts-node)/ `start`(dist) |
-| mira-app-server | `src/index.ts` | `pnpm run dev`(--inspect)/ `start` |
+| mira-app-server | `src/index.ts` | `pnpm run dev`(--inspect)/ `start`;CLI `src/cli.ts`;MCP `--mcp` |
 | mira-client | `src/main/main.ts`(主进程)+ `src/renderer/main.ts`(渲染) | `pnpm run electron:dev` |
 | mira-dashboard-next | `src/main.ts` | `pnpm run dev`(vite) |
+| mira-browser-extension | `src/background/index.ts` + `src/manifest.ts` | `pnpm run dev`(crx)/ `chrome` 加载 |
+| mira_mobile | `lib/main.dart` | `flutter run` |
+| mira-plugin-ui | `src/index.ts` | `pnpm --filter mira-plugin-ui build`(vite 库模式) |
 | mira-scripts-core | `index.ts` | `pnpm run dev`(ts-node) |
 | mira-doc | `.vitepress/` | `pnpm run docs:dev` |
 

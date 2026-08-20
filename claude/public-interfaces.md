@@ -32,8 +32,9 @@ SettingsRouter StatisticsRouter TagRouter ThumbRouter UserRouter WebSocketRouter
 - `MiraClient`:统一客户端门面
 - `HttpClient`:REST 调用
 - `WebSocketClient`:WS 订阅
-- 10 个 API 模块(库/文件/标签/文件夹/缩略图/统计/设置/用户/管理等)
-- 被 mira-client、mira-scripts-core、mira-dashboard-next、mira-browser-extension 复用
+- **17 个 API 模块**(库/文件/标签/文件夹/缩略图/统计/设置/用户/管理/CookieSite/Admin/Download/FileSystem 等)
+- SDK 覆盖(`.audit/sdk-coverage-report.md`,2026-08-19):固定 JSON API 128 条,covered 117 / missing 11 / excluded 13 / dynamic 7
+- 被 mira-client、mira-scripts-core、mira-dashboard-next(12/13 api 模块已迁移)、mira-browser-extension 复用
 
 ## 浏览器扩展消息(mira-browser-extension)
 
@@ -51,8 +52,12 @@ SettingsRouter StatisticsRouter TagRouter ThumbRouter UserRouter WebSocketRouter
 
 - `mira://`(mira-client 主进程注册),用于本地资源/缩略图安全加载
 
+## MCP 服务(mira-app-server)
+
+- `src/mcp/`,启动参数 `--mcp`(stdio 传输),基于 `@modelcontextprotocol/sdk`
+
 ## CLI
 
-- mira-app-server:`src/cli.ts`(commander)
+- mira-app-server:`src/cli.ts` + `src/cli/commands/`(commander;顶层 5 命令 + 11 个域子命令 + doctor;凭证多 profile `~/.mira/credentials.json`)
 - mira-scripts-core:`index.ts`(子命令 script/help/convert/import)
 - mira-browser-extension:`chrome` 加载已构建扩展

@@ -8,18 +8,28 @@
 
 ## 覆盖情况
 
-**8 个测试文件,42 个用例,全绿**。覆盖纯逻辑层(shared + 部分 background/content/offscreen),**不覆盖** Chrome API / Vue UI / 跨上下文(无法自动化)。
+**19 个测试文件,约 137 个用例**(grep it/test 统计)。覆盖纯逻辑层(shared + 部分 background/content/offscreen/ui composables),**不覆盖** Chrome API / Vue 组件渲染 / 跨上下文(无法自动化)。
 
-| 测试文件 | 用例数 | 覆盖 |
-|----------|--------|------|
-| `shared/staged-file.test.ts` | 8 | fileToStaged/stagedToFile/normalizeBytes(**含类数组对象回归**)、bufferToDataUrl、dataUrlToBlob |
-| `shared/messages.test.ts` | 5 | isRequest/isContentCommand/isEvent 类型守卫 |
-| `shared/storage.test.ts` | 5 | loadSettings/saveSettings 合并默认值、session |
-| `background/uploader.test.ts` | 6 | enqueue/并发/重试/取消/idle |
-| `background/mira-client.test.ts` | 4 | ensureClient/login/withAuth/autoRelogin |
-| `content/sniffer.test.ts` | 9 | urlToId/extractFromDOM/dedupe/merge/createSniffer |
-| `content/autoscroll.test.ts` | 3 | 滚动到位/到底停止/帧上限 |
-| `offscreen/image-ops.test.ts` | 2 | computeStitchSize/scaleRect(纯函数) |
+| 测试文件 | 覆盖 |
+|----------|------|
+| `shared/staged-file.test.ts` | fileToStaged/stagedToFile/normalizeBytes(**含类数组对象回归**)、bufferToDataUrl、dataUrlToBlob |
+| `shared/messages.test.ts` | isRequest/isContentCommand/isEvent 类型守卫 |
+| `shared/storage.test.ts` | loadSettings/saveSettings 合并默认值、session |
+| `shared/concurrency.test.ts` | 并发控制工具 |
+| `shared/drag-data.test.ts` | 拖拽数据解析 |
+| `shared/resource-filename.test.ts` | 资源文件名生成 |
+| `shared/imu.test.ts` | maxurl 封装/候选排序 |
+| `shared/debug.test.ts` | 日志开关 |
+| `background/uploader.test.ts` | enqueue/并发/重试/取消/idle |
+| `background/mira-client.test.ts` | ensureClient/login/withAuth/autoRelogin |
+| `background/resource-fetch.test.ts` | 资源抓取 |
+| `content/sniffer.test.ts` | urlToId/extractFromDOM/dedupe/merge/createSniffer |
+| `content/autoscroll.test.ts` | 滚动到位/到底停止/帧上限 |
+| `content/dragdrop.test.ts` | 拖拽浮层 |
+| `content/hover-button.test.ts` | 悬停按钮 |
+| `content/overlay/import-dialog.test.ts` | 批量导入对话框 |
+| `offscreen/image-ops.test.ts` | computeStitchSize/scaleRect(纯函数) |
+| `ui/composables/useLibraryTree.test.ts`、`libraryTreeSearch.test.ts` | 文件夹树/搜索 |
 
 ## 类型检查 / Lint
 
@@ -34,6 +44,7 @@
 3. **maxurl 体积**:`public/maxurl.user.js` 7.2MB,增大扩展体积(离线优先,可接受)。
 4. **SW 回收**:模块级状态不持久,测试不覆盖「SW 重启后恢复」场景。
 5. **无 E2E**:Chrome 扩展 E2E(puppeteer + 扩展加载)未配置。
+6. **双 vue 实例**:mira-plugin-ui(npm 实体目录)依赖链可能解析出第二份 vue → slot/inject 崩溃;已靠 vite alias 钉死,若调整依赖/别名需手动验证。
 
 ## 测试约定
 

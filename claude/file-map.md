@@ -27,32 +27,37 @@ d:\mira_typescript\
 ├── dependency-switch-config-macos.json
 ├── dependency-switch-config-windows.json
 ├── packages/
-│   ├── mira-app-core/             # 核心库 (v2.0.3)
-│   ├── mira-app-server/           # 服务端 (v2.0.3)
-│   ├── mira-client/               # Electron 客户端 mira-web (v1.0.5)
+│   ├── mira-app-core/             # 核心库 (v2.0.8)
+│   ├── mira-app-server/           # 服务端 (v2.0.9)
+│   ├── mira-client/               # Electron 客户端 mira-web (v2.0.9)
 │   ├── mira-dashboard-next/       # Web 管理面板 (v0.0.0)
 │   ├── mira-browser-extension/    # Chrome MV3 扩展 (v0.1.0)
+│   ├── mira-plugin-ui/            # 插件共享 UI 组件库 (v1.1.0,自包含 dist)
 │   ├── vue-masonry/               # 瀑布流组件 @hunmer/vue-masonry (v0.1.0)
+│   ├── vue-selection-box/         # 框选组件 @hunmer/vue-selection-box (v0.1.0)
 │   ├── mira-scripts-core/         # 脚本工具集 (v1.0.5)
 │   ├── mira-doc/                  # 文档站 (v1.0.0)
+│   ├── mira_mobile/               # Flutter 移动端 (v1.0.0+1,不在 workspace.yaml)
 │   └── landing-page/              # 官方落地页 efferd-ui (v0.1.0,独立 lockfile)
 ├── plugins/
 │   ├── CLAUDE.md                  # 插件集合文档
 │   ├── plugins/
-│   │   ├── plugins.json           # 插件注册配置
+│   │   ├── plugins.recommend.json # 推荐注册表(12 条)
 │   │   ├── librarys.json          # 库配置
 │   │   ├── mira_n8n/              # n8n 集成 (v1.0.7,旧协议)
 │   │   ├── mira_eagle_extension/  # Eagle 协议 (v1.0.0,旧协议)
-│   │   ├── mira_3d_format/        # GLB/GLTF (v1.0.1,格式协议,+web)
-│   │   ├── mira_spine_format/     # Spine (v1.1.0,格式协议,+web)
+│   │   ├── mira_gallery_dl/       # gallery-dl 站点下载 (旧协议)
+│   │   ├── mira_3d_format/        # GLB/GLTF (v1.0.2,格式协议,+web)
+│   │   ├── mira_spine_format/     # Spine (v1.1.1,格式协议,+web)
 │   │   ├── mira_epub_format/      # EPUB (v1.0.0,格式协议,+web)
 │   │   ├── mira_livp_format/      # LIVP (v1.0.0,格式协议,+web)
 │   │   ├── mira_lottie_format/    # dotLottie (v1.0.0,格式协议,+web)
 │   │   ├── mira_pag_format/       # PAG (v1.0.0,格式协议,+web)
 │   │   ├── mira_swf_format/       # SWF (v1.0.0,格式协议,+web)
+│   │   ├── mira_tiptap_format/    # .tiptap 富文本编辑 (格式协议,+web 85 文件)
 │   │   ├── mira_zipper_format/    # ZIP (v1.0.0,格式协议,+web)
 │   │   ├── pdf-viewer/            # PDF 预览 (v1.0.0,格式协议,+web)
-│   │   └── psd-viewer/            # PSD 预览 (v1.0.0,格式协议,+web)
+│   │   └── psd-viewer/            # PSD 预览 (v1.0.1,格式协议,+web)
 │   └── old_plugins/
 │       └── mira_thumb/            # 旧版缩略图插件 (已弃用)
 ├── online_client_plugins/         # 客户端在线插件(动态加载)

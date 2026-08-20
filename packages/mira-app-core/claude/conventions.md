@@ -11,10 +11,13 @@
 | `pnpm run dev` | ts-node 跑 src/index.ts |
 | `pnpm run start:ts` | 同 dev，ts-node 跑 src/index.ts |
 | `pnpm run start` | `node dist/index.js`（需先 build） |
+| `pnpm test` | `vitest run`（单元 + contract 测试） |
+| `pnpm run test:watch` | `vitest` 监视模式 |
+| `pnpm run test:integration` | 仅跑 `src/**/*.integration.test.ts` |
 
 ## 测试
 
-未发现 test 脚本，无独立测试目录。
+vitest（配置 `vitest.config.ts`，devDependency）。测试与源码同目录放置：`*.test.ts`（单元/contract）、`*.integration.test.ts`（需本地服务）、`src/shared/sdk/test-helpers.ts` 为共享测试工具。当前共 27 个测试文件。
 
 ## TypeScript 约定
 

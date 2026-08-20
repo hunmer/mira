@@ -1,5 +1,7 @@
 # 依赖与配置
 
+> 更新于 2026-08-20。
+
 ## package.json 概要
 
 - name: `mira-dashboard-next`
@@ -16,10 +18,11 @@
 | vue-router | ^4.6.4 | 路由（hash 模式） |
 | pinia | ^3.0.4 | 状态管理 |
 | vue-i18n | ^11.4.4 | 国际化 |
-| axios | ^1.16.1 | HTTP |
+| axios | ^1.16.1 | HTTP（client.ts 配置层） |
+| mira-app-core | `workspace:*` | 后端 SDK（MiraClient，API 主通道，2026-08-11 后引入使用） |
 | shadcn-vue | ^2.7.3 | UI 组件生成工具/CLI |
-| reka-ui | ^2.9.7 | UI 无样式原语（shadcn-vue 底层） |
-| @vueuse/core | ^14.3.0 | 组合式工具 |
+| reka-ui | ^2.10.3 | UI 无样式原语（shadcn-vue 底层） |
+| @vueuse/core | ^14.4.0 | 组合式工具 |
 | vee-validate | ^4.15.1 | 表单验证 |
 | @vee-validate/zod | ^4.15.1 | vee-validate 的 zod 适配 |
 | zod | 3.25.76 | Schema 校验 |
@@ -32,6 +35,7 @@
 | vue-sonner | ^2.0.9 | Toast |
 | @remixicon/vue | ^4.9.0 | 图标（components.json 首选） |
 | @lucide/vue | ^1.16.0 | 图标 |
+| qrcode | ^1.5.4 | 分享二维码（library ShareDialog） |
 | react-selectable-fast | ^3.4.0 | 可选（未在本仓 src 内发现明显使用，未扫描到消费点） |
 
 > `react-selectable-fast` 为 React 包，与本 Vue 包语义不符，疑似遗留/误装（未在 src 中扫描到使用点）。
@@ -47,6 +51,7 @@
 | @tailwindcss/vite | ^4.0.0 | Tailwind v4 Vite 插件 |
 | typescript | ^5.7.2 | TS |
 | vue-tsc | ^2.2.0 | Vue 类型检查（build 前置） |
+| @types/qrcode | ^1.5.6 | qrcode 类型（新增） |
 
 ## Vite 配置（`vite.config.ts`）
 

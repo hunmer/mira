@@ -87,7 +87,9 @@
       )
       if (delivered?.delivered) return delivered
       const media = encodeURIComponent(JSON.stringify(serializableFiles))
-      return w.pluginWindow.open({
+      // 走插件 api 的 openPluginWindow：query 会自动注入 server + token，
+      // 白板窗口内的素材库浏览器（MediaBrowser）需要它们直连 server API。
+      return this.api.window.openPluginWindow({
         pluginId: PLUGIN_ID,
         entry: 'dist/index.html',
         title: '自由画板',

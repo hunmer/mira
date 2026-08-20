@@ -16,6 +16,7 @@ import { useI18n } from 'vue-i18n'
 import { Dropdown } from '@/renderer/components/common/Dropdown'
 import PluginIcon from '@/renderer/components/common/PluginIcon.vue'
 import { useToast } from '@renderer/composables/useToast'
+import { openPluginWindow } from '@renderer/plugins/openPluginWindow'
 import type { PluginContribution, PluginContributionRenderContext } from '@renderer/plugins/types'
 
 defineOptions({ name: 'PluginContributionBar' })
@@ -85,29 +86,17 @@ function buildCtx(contribution: PluginContribution): PluginContributionRenderCon
 
   return {
     api,
+    // server/token 注入与 Electron/Web 双路径打开由 plugins/openPluginWindow 公共实现
     openPluginWindow: (opts) => {
-      const w = (window as any).electronAPI
-      if (w?.pluginWindow?.open) {
-        return w.pluginWindow.open({
-          entry: 'dist/index.html',
-          ...opts,
-          pluginId: opts.pluginId || contribution.pluginId,
-        })
-      }
-      const info = getPluginSystem()?.getPlugin?.(contribution.pluginId)
-      const base = info?.config?.url || info?.config?.actualDirectory
-      if (!base) return Promise.resolve({ success: false, message: t('views.pluginContributionBar.pluginUrlUnavailable') })
+      let webBaseUrl: string | undefined
       try {
-        const entry = String(opts.entry || 'dist/index.html').replace(/^\/+/, '')
-        const url = new URL(`${String(base).replace(/\/+$/, '')}/${entry}`)
-        Object.entries(opts.query || {}).forEach(([key, value]) => url.searchParams.set(key, String(value)))
-        const opened = window.open(url.href, '_blank')
-        return Promise.resolve(opened
-          ? { success: true, data: { url: url.href } }
-          : { success: false, message: t('views.pluginContributionBar.browserBlocked') })
-      } catch (error) {
-        return Promise.resolve({ success: false, message: error instanceof Error ? error.message : String(error) })
-      }
+        const info = getPluginSystem()?.getPlugin?.(contribution.pluginId)
+        webBaseUrl = info?.config?.url || info?.config?.actualDirectory
+      } catch { /* ignore */ }
+      return openPluginWindow(
+        { ...opts, pluginId: opts.pluginId || contribution.pluginId },
+        { webBaseUrl },
+      )
     },
   }
 }

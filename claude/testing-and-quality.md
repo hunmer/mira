@@ -4,14 +4,20 @@
 
 | 包 | 测试方案 | 命令 |
 |----|----------|------|
-| mira-app-core | 无 | -- |
+| mira-app-core | vitest(27 个测试文件 + test-helpers) | 见包内 `package.json` |
 | mira-app-server | Jest(`sdk/` 目录) | `pnpm run test`(= `jest --config sdk/jest.config.js`) |
-| mira-client | 无独立测试;以类型检查 + 三段构建为门禁 | `pnpm run type-check`、`pnpm run build:all` |
+| mira-client | `procm-ui-tests/`(约 30 个真实页面 UI 用例,经 procm-mcp ws://127.0.0.1:7331 驱动,仅开发构建暴露 `window.__procmUiTests`)+ 主进程 `DownloadService.test.ts` | `pnpm run test:ui:remote <name>`、`pnpm run type-check` |
+| mira-browser-extension | Vitest(19 个测试文件,约 137 用例) | `pnpm run test` |
+| mira_mobile | Flutter test(9 文件:providers/services/utils;screens 零覆盖) | `flutter test` |
 | mira-dashboard-next | 无 | -- |
 | mira-scripts-core | 无 | -- |
-| mira-doc | 无 | -- |
+| mira-doc / landing-page / 组件库 | 无(landing-page 有 lint/format) | -- |
 
-> 全仓整体测试覆盖率偏低,仅 server 的 SDK 层有 Jest。多数包以"能构建通过"作为回归门禁。
+> 测试能力相比 2026-08-11 显著改善:core 从无到 vitest、client 从无到 UI 用例 + 单测、extension 42→137 用例、mobile 4→9 文件。dashboard/scripts 仍无测试。
+
+## SDK 覆盖审计
+
+- `.audit/server-api-manifest.json` + `.audit/sdk-coverage-report.md`:固定 JSON API 128 条,covered 117 / missing 11 / excluded 13 / dynamic 7(2026-08-19)
 
 ## 类型检查
 
@@ -31,6 +37,8 @@
 
 ## 质量风险
 
-- 客户端无单测,shadcn-vue 迁移期依赖人工视觉回归 QA
+- client 的 `vite.renderer.config.ts` 残留指向已删 `assets/scss/*` 的 additionalData 注入(SCSS 体系已整体移除)
+- dashboard 的 `react-selectable-fast`(React 包)仍在 dependencies 且无消费点,疑似遗留
+- mira-doc 的 config head 仍指向 `/mira-doc/icon.ico` 而 public 实为 `icon.webp`
 - 服务端原生依赖(sqlite3 / sharp / ffmpeg)跨平台安装易出错,有 `dependency-switch-config-{macos,windows}.json` 缓解
-- `pnpm-workspace.yaml` 含 2 个磁盘不存在的陈旧包条目,可能引发 install 警告
+- `dependency-switch-config-*.json` 中仍残留 `n8n-nodes-mira-ws-trigger` 悬空 `file:` 引用(不影响 pnpm install)

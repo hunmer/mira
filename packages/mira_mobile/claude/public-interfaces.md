@@ -4,27 +4,32 @@
 
 ## 1. App 内部路由（`lib/router/app_router.dart`）
 
-`CupertinoApp` 命名路由 + `onGenerateRoute`（Navigator 1.0）。初始路由 `/`。
+`CupertinoApp` 命名路由 + `onGenerateRoute`（Navigator 1.0），共 **17 条**。初始路由 `/`。
 跳转 API：`AppRouter.navigateTo` / `replaceWith` / `navigateAndClearStack` / `goBack`，
 或单例 `RouterController`。
 
 | 路由 | 中文名 | 目标 Widget | arguments |
 |------|--------|-------------|-----------|
 | `/` | 首页 | `MainShellScreen`（3-Tab 壳） | — |
-| `/profile` | 个人资料 | `PlaceholderWidget`（占位） | — |
 | `/settings` | 设置 | `SettingsScreen` | — |
 | `/server_list` | 服务器列表 | `ServerListScreen` | — |
 | `/server_edit` | 编辑服务器 | `ServerEditScreen` | `ServerConfig?` |
-| `/library_select` | 选择素材库 | `LibrarySelectScreen` | — |
-| `/library_item_list` | 画廊 | `Scaffold(GalleryGrid)`（也嵌入 MainShell） | — |
-| `/item_detail` | 文件信息 | `ItemDetailScreen`（**静态占位**） | — |
+| `/library_select` | 选择素材库 | `ServerListScreen(initialTab: 1)`（选库已并入服务器列表页 Tab） | — |
+| `/library_item_list` | 画廊 | 画廊页（也嵌入 MainShell） | — |
+| `/item_detail` | 文件信息 | `ItemDetailScreen`（**静态展示页**，编辑功能 TODO） | — |
 | `/tree_view` | 文件夹 | `TreeViewScreen`（也嵌入 MainShell Tab2） | — |
 | `/upload` | 上传文件 | `UploadScreen` | — |
+| `/backup_settings` | 备份设置 | `BackupSettingsScreen` | — |
+| `/download_settings` | 下载设置 | `DownloadSettingsScreen` | — |
+| `/background_settings` | 背景设置 | `BackgroundSettingsScreen` | — |
+| `/about_settings` | 关于 | `AboutSettingsScreen` | — |
 | `/image_preview` | 图片预览 | `ImagePreviewScreen` | `PreviewArgs{files, initialIndex}` |
 | `/video_preview` | 视频预览 | `VideoPreviewScreen` | `PreviewArgs{files, initialIndex}` |
+| `/file_preview` | 通用文件预览 | `FilePreviewScreen` | — |
+| `/dashboard` | 仪表盘 | `DashboardScreen` | — |
 
 `PreviewArgs` 定义在 `app_router.dart`：`{List<FileData> files, int initialIndex}`。
-default 分支 → `PlaceholderWidget('404 - 页面未找到')`。
+default 分支 → `PlaceholderWidget(titleKey: 'route.notFound')`（404；原 `/profile` 占位路由已删除）。
 
 ## 2. Mira SDK 公共接口（`lib/mira_sdk/`）
 

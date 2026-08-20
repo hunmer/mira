@@ -7,7 +7,7 @@
 | `pnpm --filter mira-browser-extension dev` | vite + @crxjs HMR 开发 |
 | `pnpm --filter mira-browser-extension build` | 类型检查 + 生产构建(`vue-tsc --noEmit && vite build`),产物在 `dist/` |
 | `pnpm --filter mira-browser-extension type-check` | 仅类型检查(`vue-tsc --noEmit`) |
-| `pnpm --filter mira-browser-extension test` | vitest 单测(目前 42 通过) |
+| `pnpm --filter mira-browser-extension test` | vitest 单测(目前 19 个测试文件,约 137 用例) |
 | `pnpm --filter mira-browser-extension test:watch` | vitest watch |
 
 **加载到 Chrome**:`chrome://extensions` → 开发者模式 → 加载已解压 → 选 `dist/`。改代码后必须 build + 重新加载扩展 + 刷新目标页。
@@ -24,11 +24,12 @@
 
 1. **不要用裸 ArrayBuffer 或 Uint8Array 跨 sendMessage 传文件** → 用 `fileToStaged`(转 `number[]`)。详见 [data-model.md](data-model.md)。
 2. **offscreen reason 必须用 `chrome.offscreen.Reason.BLOBS`**(枚举成员,非字符串字面量;非 `IMAGE_PROCESSING`)。
-3. **offscreen HTML 必须在 `vite.config.ts` 的 `rollupOptions.input` 声明**,否则不进 dist。
+3. **offscreen HTML 与 upload HTML 都必须在 `vite.config.ts` 的 `rollupOptions.input` 声明**,否则不进 dist。
 4. **向 content script 发消息用 `sendToContent`**(`background/inject.ts`),它会程序化注入兜底;不要直接 `chrome.tabs.sendMessage` 后不处理 reject。
 5. **扩展环境禁止 eval/Function**:动态代码(maxurl)只能注入页面 MAIN world。
 6. **`chrome` 在测试环境不存在**:任何顶层(模块加载时)访问 `chrome.*` 必须 `typeof chrome !== 'undefined'` 守卫(见 `shared/debug.ts`)。
 7. **新加 offscreen/content/UI 之间的消息**:在 `shared/messages.ts` 的 Request/Event/ContentCommand 联合类型 + `REQUEST_TYPES`/`COMMAND_TYPES`/`EVENT_TYPES` 集合里都登记,`isRequest`/`isContentCommand` 才能识别。
+8. **不要动 `vite.config.ts` 的 `vue` 单路径 alias**:`mira-plugin-ui` 是 npm 实体目录,不钉死会出现双 vue 实例(slot/inject 崩溃)。
 
 ## 设计规范
 

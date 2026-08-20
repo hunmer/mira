@@ -13,12 +13,19 @@
 | `AUTH_VERIFY` | — | `{authenticated}` | SDK verify |
 | `CONFIG_GET` | — | `ExtensionSettings` | 读 storage |
 | `CONFIG_SET` | `Partial<ExtensionSettings>` | `ExtensionSettings` | 合并写 storage |
+| `SERVERS_LIST` / `SERVERS_SAVE` / `SERVER_ACTIVATE` / `SERVER_TEST` | 多服务器 payloads | 服务器列表/激活结果 | 多服务器管理(2026-08-11 后新增) |
 | `LIB_LIST` | — | `Library[]` | `client.libraries().getAll()` |
-| `FOLDER_LIST` | `{libraryId}` | `Folder[]` | `client.folders().getAll(libraryId)` |
+| `FOLDER_LIST` / `TAG_LIST` | `{libraryId}` | `Folder[]`/`Tag[]` | 全量文件夹/标签 |
+| `NODE_CREATE` / `NODE_DELETE` / `NODE_UPDATE` / `NODE_MOVE` / `NODE_SORT_INDEX` | 节点 payloads | 节点/结果 | 文件夹/标签节点 CRUD + 排序(新增) |
 | `UPLOAD_FILES` | `{files: StagedFile[], libraryId, tags?, folderId?}` | `{enqueued}` | stagedToFile → uploader |
 | `UPLOAD_FROM_URL` | `{url, kind, libraryId, folderId?}` | `{enqueued}` | fetch → Blob → File → uploader |
+| `BATCH_IMPORT` | URL 列表 + 目标(文件夹/标签) | 进度 Event | 批量导入(新增,配 `batchImportConcurrency`) |
+| `DOWNLOAD_RESOURCES` | 资源列表 | — | 下载资源(新增,resource-fetch) |
+| `OPEN_URL_IN_TAB` | `{url}` | — | 新标签打开(新增) |
+| `CUSTOM_UPLOAD_SIDEPANEL_OPEN` / `CUSTOM_UPLOAD_SESSION_GET` / `CUSTOM_UPLOAD_SESSION_CLOSE` | 批量上传会话 | 会话状态 | popup ↔ upload 独立窗口协同(新增) |
 | `UPLOAD_STATUS` | — | `UploadTask[]` | uploader.getQueue |
 | `UPLOAD_CANCEL` | `{id}` | `{success}` | uploader.cancelTask |
+| `UPGRADE_IMAGE_URL` | `{url, timeout?, rules?}` | 候选数组 | maxurl 高清升级 |
 | `CAPTURE_VISIBLE` / `CAPTURE_FULLPAGE` / `CAPTURE_SELECTION` | `{tabId}` | `{success}` | capturer |
 | `SNIFFER_START` / `SNIFFER_STOP` | `{tabId, kinds?}` | `{success}` | sendToContent |
 | `SNIFFER_QUERY` | `{tabId}` | `{resources}` | 读内存快照 |
@@ -32,19 +39,24 @@
 | `UPLOAD_PROGRESS` | `{id, percent, status}` | uploader.onQueueChange |
 | `SNIFFER_FOUND` | `{tabId, resources}` | 收到 SNIFFER_REPORT |
 | `AUTH_EXPIRED` | — | router 遇 401 |
+| `BATCH_PROGRESS` | 批量导入进度 | BATCH_IMPORT 执行中(新增) |
+| `CUSTOM_UPLOAD_SESSION_OPEN` | 批量上传窗口会话 | popup 打开 upload 窗口(新增) |
 
 ### ContentCommand(Service Worker → content,经 chrome.tabs.sendMessage)
 `isContentCommand(m)` 守卫。
 
 | type | payload | content 处理 |
-|------|---------|------|
+|------|---------|--------------|
 | `SNIFFER_START` | `{kinds}` | sniffer.start |
 | `SNIFFER_STOP` | — | sniffer.stop |
 | `DISPATCH_DRAGDROP` | `{enabled}` | dragdrop.setEnabled |
+| `DISPATCH_HOVER_BUTTON` | `{enabled}` | hover-button.setEnabled(新增) |
 | `AUTOSCROLL_START` | `{delay}` | scroller.start |
 | `AUTOSCROLL_STOP` | — | scroller.stop |
 | `START_SCROLL_CAPTURE` | `{delay}` | 截图滚动初始化(返回 scrollHeight/viewportHeight) |
 | `DRAW_SELECTION` | — | drawSelection(返回 rect 或 null) |
+| `UPGRADE_IMAGE_URL` | `{url, timeout?, rules?}` | maxurl 升级(新增) |
+| `OPEN_IMPORT_DIALOG` | `{urls?, referrer?}` | 打开网页内批量导入对话框(新增) |
 
 ### 内部命令(非协议,直发)
 - `SNIFFER_REPORT`(content→SW):`{type, resources}` → 存快照 + 广播

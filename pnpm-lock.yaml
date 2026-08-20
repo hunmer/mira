@@ -19,6 +19,12 @@ importers:
       '@woven-canvas/vue':
         specifier: ^1.4.0
         version: 1.4.0(7d00f62b7f581ea6aa193779326fe45e)
+      mira-app-core:
+        specifier: workspace:*
+        version: link:../../../packages/mira-app-core
+      mira-plugin-ui:
+        specifier: workspace:*
+        version: link:../../../packages/mira-plugin-ui
       v-viewer:
         specifier: ^3.0.23
         version: 3.0.23(viewerjs@1.11.8)(vue@3.5.13(typescript@5.7.3))
@@ -29,9 +35,18 @@ importers:
         specifier: ^3.4.0
         version: 3.5.13(typescript@5.7.3)
     devDependencies:
+      '@tailwindcss/vite':
+        specifier: ^4.3.3
+        version: 4.3.3(vite@5.4.21(@types/node@24.13.3)(lightningcss@1.32.0)(stylus@0.57.0))
       '@vitejs/plugin-vue':
         specifier: ^5.0.0
         version: 5.2.4(vite@5.4.21(@types/node@24.13.3)(lightningcss@1.32.0)(stylus@0.57.0))(vue@3.5.13(typescript@5.7.3))
+      tailwindcss:
+        specifier: ^4.3.3
+        version: 4.3.3
+      tw-animate-css:
+        specifier: ^1.0.0
+        version: 1.4.0
       typescript:
         specifier: ^5.4.0
         version: 5.7.3
