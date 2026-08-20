@@ -26,6 +26,7 @@
       <DispatchInfo>
         <Resources>
           <MainPath>./index.html</MainPath>
+          <ScriptPath>./jsx/host.jsx</ScriptPath>
           <CEFCommandLine>
             <Parameter>--enable-nodejs</Parameter>
             <Parameter>--mixed-context</Parameter>
@@ -49,6 +50,11 @@
               <Height>420</Height>
               <Width>720</Width>
             </MinSize>
+            <!-- 不写 MaxSize 时 PS 会把最大尺寸钉在初始值,面板无法拖大 -->
+            <MaxSize>
+              <Height>4096</Height>
+              <Width>4096</Width>
+            </MaxSize>
           </Geometry>
         </UI>
       </DispatchInfo>

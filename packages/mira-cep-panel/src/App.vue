@@ -10,9 +10,96 @@ import type { LibraryTreeUpload, MediaLibraryServices } from 'mira-plugin-ui/lib
 // 不经库根入口(其会再引入一份 tailwind.css),直接引源码路径
 import BatchUploadDialog from 'mira-plugin-ui/src/BatchUploadDialog.vue'
 import { useMira } from './services'
+import { mimeOf, placeFromUrl } from './cep'
 
 const mira = useMira()
 onMounted(() => mira.restore())
+
+/* ---------- 拖拽素材到 PS:dragstart 带原始 URL;拖出面板松手时兜底下载+置入 ---------- */
+const dragStatus = ref('')
+let statusTimer: ReturnType<typeof setTimeout> | undefined
+
+function notify(msg: string) {
+  dragStatus.value = msg
+  clearTimeout(statusTimer)
+  statusTimer = setTimeout(() => { dragStatus.value = '' }, 4000)
+}
+
+/** 从事件目标解析素材项:向上找到「恰好包含一个缩略图」的卡片,经缩略图 URL(/api/files/thumb/:lib/:id)反查文件 id */
+function resolveItem(target: EventTarget | null): { el: Element; lib: string; id: string } | null {
+  let el = target as Element | null
+  if (!el || el.nodeType !== 1) return null
+  const scope = el.tagName === 'IMG' ? el.parentElement : el
+  let card: Element | null = null
+  let thumbSrc = ''
+  let sid = ''
+  for (let p: Element | null = scope; p && p !== document.body; p = p.parentElement) {
+    const imgs = p.querySelectorAll('img[src*="/api/files/thumb/"]')
+    if (imgs.length > 1) return null // 已到列表容器层级(含多张缩略图),不是卡片
+    if (imgs.length === 1) {
+      card = p
+      thumbSrc = imgs[0].getAttribute('src') || ''
+      break
+    }
+    const s = p.getAttribute('data-selectable-id')
+    if (s && p.classList?.contains('group')) {
+      card = p
+      sid = s
+      break
+    }
+  }
+  if (!card) return null
+  if (thumbSrc) {
+    const match = /\/api\/files\/thumb\/([^/?]+)\/([^/?]+)/.exec(thumbSrc)
+    if (match) return { el: card, lib: match[1], id: match[2] }
+  }
+  return sid ? { el: card, lib: mira.currentLibraryId.value, id: sid } : null
+}
+
+interface DragItem { url: string; name: string }
+let dragItem: DragItem | null = null
+
+// 缩略图卡片默认不可拖,mousedown 时打上 draggable 让原生拖拽能启动
+function onItemMouseDown(event: MouseEvent) {
+  if (event.button !== 0) return
+  const hit = resolveItem(event.target)
+  if (hit) hit.el.setAttribute('draggable', 'true')
+}
+
+function onItemDragStart(event: DragEvent) {
+  const hit = resolveItem(event.target)
+  if (!hit || !event.dataTransfer) return
+  const url = `${mira.serverURL.value}/api/files/download/${hit.lib}/${hit.id}?token=${mira.token.value}`
+  const name = hit.el.querySelector('.truncate')?.textContent?.trim() || `mira-${hit.id}`
+  dragItem = { url, name }
+  try {
+    event.dataTransfer.setData('text/uri-list', url)
+    event.dataTransfer.setData('text/plain', url)
+    // Chromium 文件拖拽格式:PS 若支持则直接以文件置入
+    event.dataTransfer.setData('DownloadURL', `${mimeOf(name)}:${name}:${url}`)
+    event.dataTransfer.effectAllowed = 'copy'
+  } catch {
+    /* 拖拽元数据失败不阻断,仍有 dragend 兜底 */
+  }
+}
+
+function onItemDragEnd(event: DragEvent) {
+  const item = dragItem
+  dragItem = null
+  if (!item) return
+  // 已被(面板或宿主)接收,或指针仍在面板内:不兜底
+  const dropEffect = event.dataTransfer?.dropEffect
+  if (dropEffect && dropEffect !== 'none') return
+  const inside = event.clientX > 0 && event.clientY > 0 && event.clientX < window.innerWidth && event.clientY < window.innerHeight
+  if (inside) return
+  void placeFromUrl(item.url, item.name, notify)
+}
+
+onMounted(() => {
+  document.addEventListener('mousedown', onItemMouseDown, true)
+  document.addEventListener('dragstart', onItemDragStart, true)
+  document.addEventListener('dragend', onItemDragEnd, true)
+})
 
 /* ---------- 批量上传(树右键「上传到此处」/ 列表「导入文件」共用) ---------- */
 const showBatchUpload = ref(false)
@@ -94,10 +181,11 @@ async function handleBatchUploaded() {
 
     <!-- 已连接:标题栏 + 三栏视图 -->
     <template v-else>
-      <header class="border-border bg-card flex h-9 shrink-0 items-center justify-between border-b px-3">
+      <header class="border-border bg-card flex h-9 shrink-0 items-center justify-between gap-2 border-b px-3">
         <span class="text-xs font-semibold">Mira 素材库</span>
         <span class="text-muted-foreground flex min-w-0 items-center gap-2 text-[11px]">
-          <span class="truncate">{{ mira.serverURL.value }}</span>
+          <span v-if="dragStatus" class="text-primary max-w-40 truncate" :title="dragStatus">{{ dragStatus }}</span>
+          <span class="truncate" :title="mira.serverURL.value">{{ mira.serverURL.value }}</span>
           <button
             type="button"
             class="border-border hover:bg-accent cursor-pointer rounded border px-2 py-0.5"

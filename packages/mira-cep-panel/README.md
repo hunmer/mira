@@ -27,6 +27,13 @@ packages/mira-cep-panel/
   且 `:is()` 选择器失效导致 `dark:` 变体不可用,面板恒为暗色)
 - manifest `CEFCommandLine` 含 `--disable-web-security`:mira server 无 CORS,CEP 内无代理可走
 
+## 功能
+
+- 连接 Mira Server:三栏素材库浏览/编辑/上传(复用 `mira-plugin-ui/library`)
+- **拖拽素材到 PS**:按住缩略图拖出面板松手 → 自动下载到临时目录并经 ExtendScript 置入/打开
+  (dragstart 同时带 `text/uri-list`/`DownloadURL`,若 PS 原生接受文件拖拽则直接置入)
+- manifest 显式声明 `MinSize`/`MaxSize`(缺省 `MaxSize` 时 PS 会把面板最大尺寸钉在初始值)
+
 ## 使用
 
 ```powershell

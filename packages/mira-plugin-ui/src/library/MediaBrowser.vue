@@ -439,7 +439,7 @@ function getMeta(item: MediaBrowserItem): MasonryItemMeta {
 </script>
 
 <template>
-  <div class="flex h-full min-h-0 flex-col">
+  <div class="flex h-full w-full min-h-0 flex-col">
     <!-- 菜单栏:文件操作(导入文件等) + 素材库选择器 + 服务器管理 -->
     <div class="flex items-center gap-2 border-b border-border px-2 py-1">
       <Menubar class="h-7 gap-0.5 rounded-md border-none p-0.5 shadow-none">

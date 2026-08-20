@@ -25,6 +25,8 @@ const zh = {
   'library.emptyTitle': '当前素材库下暂无{type}',
   'library.emptyHint': '拖放文件到此可上传到素材库根目录',
   'library.noMatch': '未找到匹配的{type}',
+  'library.toggleFolderTagPanel': '文件夹/标签面板',
+  'library.toggleDetailPanel': '文件详情面板',
   'tree.createSibling': '新建同级',
   'tree.createChild': '新建子{type}',
   'tree.upload': '上传到此处',
