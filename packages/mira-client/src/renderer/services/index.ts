@@ -221,6 +221,10 @@ export class AppService {
     return await electronService.maximizeWindow()
   }
 
+  async toggleWindowSize(): Promise<void> {
+    return await electronService.toggleWindowSize()
+  }
+
   async closeWindow(): Promise<void> {
     return await electronService.closeWindow()
   }

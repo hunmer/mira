@@ -34,6 +34,8 @@ function centerCepDialogs() {
     // Sheet/侧滑面板明确使用 left/right-0,普通 Dialog 统一补传统 transform。
     const className = typeof el.className === 'string' ? el.className : ''
     if (className.indexOf('left-0') >= 0 || className.indexOf('right-0') >= 0) return
+    // BatchUploadDialog 在 CEP 中使用 inset + margin 居中,不能再覆盖为 translate 居中。
+    if (className.indexOf('cep-batch-upload-dialog') >= 0) return
     el.style.setProperty('transform', 'translate(-50%, -50%)', 'important')
     matched += 1
   })

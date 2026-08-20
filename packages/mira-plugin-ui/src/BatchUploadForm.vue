@@ -613,7 +613,7 @@ async function startUpload () {
       </div>
 
       <!-- 右侧:文件信息(绑定选中文件) / 文件夹 / 标签 tabs -->
-      <Tabs v-model="tab" class="flex h-full min-h-0 flex-col gap-2">
+      <Tabs v-model="tab" :unmount-on-hide="false" class="flex h-full min-h-0 flex-col gap-2">
         <TabsList class="w-full">
           <TabsTrigger value="info">文件信息</TabsTrigger>
           <TabsTrigger value="folder">文件夹</TabsTrigger>

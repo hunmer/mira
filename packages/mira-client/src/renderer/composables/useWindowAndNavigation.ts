@@ -45,6 +45,15 @@ export function useWindowAndNavigation() {
     }
   }
 
+  /**
+   * 智能切换窗口大小：已最大化或接近占满屏幕时恢复默认大小，否则最大化
+   */
+  const handleWindowToggleSize = async () => {
+    if (isDesktop.value) {
+      await electronService.toggleWindowSize()
+    }
+  }
+
   // ============================================
   // 导航方法
   // ============================================
@@ -88,6 +97,7 @@ export function useWindowAndNavigation() {
     handleWindowClose,
     handleWindowMinimize,
     handleWindowMaximize,
+    handleWindowToggleSize,
     
     // 导航方法
     navigateToFileUpload,

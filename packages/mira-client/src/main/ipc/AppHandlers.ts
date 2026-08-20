@@ -1,4 +1,4 @@
-import { ipcMain, IpcMainInvokeEvent, app, BrowserWindow } from 'electron'
+import { ipcMain, IpcMainInvokeEvent, app, BrowserWindow, screen } from 'electron'
 import * as path from 'path'
 import { ensureLocalServerStarted } from '../services/LocalServerService'
 
@@ -26,6 +26,7 @@ export class AppHandlers {
     ipcMain.handle('window:close', this.handleWindowClose.bind(this))
     ipcMain.handle('window:minimize', this.handleWindowMinimize.bind(this))
     ipcMain.handle('window:maximize', this.handleWindowMaximize.bind(this))
+    ipcMain.handle('window:toggleSize', this.handleWindowToggleSize.bind(this))
     ipcMain.handle('window:setFullScreen', this.handleWindowSetFullScreen.bind(this))
 
     // 应用控制
@@ -168,6 +169,30 @@ export class AppHandlers {
       } else {
         window.maximize()
       }
+    }
+  }
+
+  /**
+   * 处理窗口大小智能切换：已最大化/全屏，或宽高接近占满屏幕（≥95% 工作区）时
+   * 恢复默认大小（1200x800，与 MainWindowService 默认值一致）并居中，否则最大化
+   */
+  private async handleWindowToggleSize(event: IpcMainInvokeEvent): Promise<void> {
+    const webContents = event.sender
+    const window = BrowserWindow.fromWebContents(webContents)
+    if (!window) return
+
+    const workArea = screen.getDisplayMatching(window.getBounds()).workArea
+    const bounds = window.getBounds()
+    const nearlyFullscreen =
+      bounds.width >= workArea.width * 0.95 && bounds.height >= workArea.height * 0.95
+
+    if (window.isMaximized() || window.isFullScreen() || nearlyFullscreen) {
+      if (window.isMaximized()) window.unmaximize()
+      if (window.isFullScreen()) window.setFullScreen(false)
+      window.setSize(1200, 800)
+      window.center()
+    } else {
+      window.maximize()
     }
   }
 

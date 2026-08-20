@@ -140,6 +140,12 @@ export class ElectronService {
     }
   }
 
+  async toggleWindowSize(): Promise<void> {
+    if (this.isElectron()) {
+      await this.api.invoke('window:toggleSize')
+    }
+  }
+
   async closeWindow(): Promise<void> {
     if (this.isElectron()) {
       await this.api.invoke('window:close')

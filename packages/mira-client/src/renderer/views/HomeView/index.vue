@@ -393,8 +393,16 @@ const {
   isDesktop,
   handleWindowClose,
   handleWindowMinimize,
-  handleWindowMaximize
+  handleWindowMaximize,
+  handleWindowToggleSize
 } = windowNavigation
+
+// 双击 homebar（Tabs 条）切换窗口大小：已最大化/接近占满屏幕时恢复默认大小，否则最大化
+const handleHomebarDblClick = (event: MouseEvent) => {
+  // 双击 tab 或按钮不触发
+  if (event.target instanceof Element && event.target.closest('button')) return
+  handleWindowToggleSize()
+}
 
 // ============================================
 // 事件处理
@@ -569,7 +577,7 @@ onUnmounted(() => {
         <ResizablePanel :default-size="54" :min-size="30" class="flex flex-col min-w-0 !overflow-visible">
           <!-- Tabs 条（固定高度与右侧悬浮 HomeHeader 对齐，隐藏滚动条）。
                HomeHeader 始终悬浮于右上角，右侧固定留出 header 宽度避免遮挡 tabs -->
-          <div class="shrink-0 h-[56px] px-2 pr-[220px] flex items-end overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div class="shrink-0 h-[56px] px-2 pr-[220px] flex items-end overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" @dblclick="handleHomebarDblClick">
             <HomeTabsBar
               :active-tabs="activeTabs"
               :tab-context-menu-items="tabContextMenuItems"
