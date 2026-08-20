@@ -3,8 +3,8 @@ import { computed, onMounted, ref } from 'vue'
 import { Loader2, LogOut, Moon, Server, Sun } from '@lucide/vue'
 import { MiraClient, type HealthResponse } from 'mira-app-core/shared/sdk'
 import { BatchUploadDialog, Progress, SaveLocationDialog, type BatchUploadFileService, type SaveLocation } from '@/index'
-import { Dropzone, LibrarySelect, LibraryTreeView, MediaBrowser, ServerManagerDialog, toApiFilters } from '@/library'
-import type { LibraryFlatItem, LibrarySelectServer, LibraryTreeDialog, LibraryTreeServices, LibraryTreeNode, LibraryTreeUpload, ManagedServer, MediaBrowserFilters, MediaBrowserItem, MediaBrowserServices, ServerManagerServices } from '@/library'
+import { Dropzone, LibrarySelect, LibraryTreeView, MediaBrowser, MediaLibraryView, ServerManagerDialog, toApiFilters } from '@/library'
+import type { LibraryFlatItem, LibrarySelectServer, LibraryTreeDialog, LibraryTreeServices, LibraryTreeNode, LibraryTreeUpload, ManagedServer, MediaBrowserFilters, MediaBrowserItem, MediaBrowserServices, MediaDetailItem, MediaDetailServices, MediaLibraryServices, ServerManagerServices } from '@/library'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -355,7 +355,8 @@ function gradientThumb (i: number, w: number, h: number) {
 }
 
 const mockAspects = ['1:1', '4:3', '3:4', '16:9', '9:16', '3:2', '2:3']
-const mockFiles = ref<MediaBrowserItem[]>(Array.from({ length: 1200 }, (_, i) => {
+// mock 文件带详情字段(folder_id/tags/stars/website…),供三栏视图右侧 MediaDetail 演示编辑
+const mockFiles = ref<(MediaBrowserItem & Partial<MediaDetailItem>)[]>(Array.from({ length: 1200 }, (_, i) => {
   const aspect = mockAspects[i % mockAspects.length]
   const ext = ['png', 'jpg', 'mp4', 'mp3', 'pdf'][i % 5]
   return {
@@ -366,6 +367,11 @@ const mockFiles = ref<MediaBrowserItem[]>(Array.from({ length: 1200 }, (_, i) =>
     mime_type: ext === 'png' || ext === 'jpg' ? `image/${ext}` : ext === 'mp4' ? 'video/mp4' : ext === 'mp3' ? 'audio/mpeg' : 'application/pdf',
     imported_at: Date.now() - i * 86400_000,
     aspect,
+    folder_id: [undefined, 1, 2, 3][i % 4],
+    tags: [[], ['灵感'], ['插画', '灵感'], []][i % 4],
+    stars: i % 6,
+    website: i % 3 === 0 ? `https://example.com/${i + 1}` : '',
+    notes: i % 5 === 0 ? `演示备注 ${i + 1}` : '',
   }
 }))
 
@@ -402,6 +408,12 @@ const mediaServices: MediaBrowserServices = {
     let list = [...mockFiles.value]
     if (filters?.title) list = list.filter(f => f.title.toLowerCase().includes(filters.title!.toLowerCase()))
     if (filters?.category) list = list.filter(f => f.mime_type?.startsWith(filters.category!))
+    // 三栏视图左侧树选中的过滤:文件夹按 folder_id,标签把选中 id 映射回标题匹配
+    if (filters?.folders?.length) list = list.filter(f => f.folder_id != null && filters.folders!.some(id => String(f.folder_id) === String(id)))
+    if (filters?.tags?.length) {
+      const titles = filters.tags!.map(id => mockTags.value.find(t => t.id === Number(id))?.title ?? String(id))
+      list = list.filter(f => (f.tags ?? []).some(tag => titles.includes(tag)))
+    }
     const key = filters?.sort || 'imported_at'
     const dir = filters?.order === 'asc' ? 1 : -1
     list.sort((a, b) => {
@@ -432,6 +444,86 @@ const mediaServices: MediaBrowserServices = {
 
 function handleMediaClick (item: MediaBrowserItem) {
   console.log('[MediaBrowser demo] click:', item.title)
+}
+
+/* ---------- MediaDetail 详情服务(三栏视图右侧编辑) ---------- */
+// mock 行定位:未连接时按 id 找内存文件
+function mockRow (id: string | number) {
+  return mockFiles.value.find(f => String(f.id) === String(id))
+}
+
+// 连接走 SDK 真实接口;未连接改内存 mock(编辑即时生效,列表刷新可见)
+const detailServices: MediaDetailServices = {
+  async getFileDetail (item) {
+    if (connected.value && client) {
+      const r: any = await client.files().getFile(currentLibraryId.value, item.id)
+      return {
+        ...item,
+        folder_id: r.folder_id ?? null,
+        tags: r.tags ?? [],
+        stars: Number(r.stars) || 0,
+        notes: r.notes || '',
+        website: r.website || '',
+        created_at: r.created_at,
+        updated_at: r.updated_at,
+      }
+    }
+    return mockRow(item.id) ?? null
+  },
+  async renameFile (item, name) {
+    if (connected.value && client) return client.files().renameFile(currentLibraryId.value, item.id, name)
+    const row = mockRow(item.id)
+    if (row) row.title = name
+  },
+  async updateFile (item, patch) {
+    if (connected.value && client) return client.files().updateFile(currentLibraryId.value, item.id, patch as any)
+    const row = mockRow(item.id)
+    if (row) Object.assign(row, patch)
+  },
+  async setFileFolder (items, folderId) {
+    if (connected.value && client) {
+      for (const item of items) {
+        if (folderId == null) await client.folders().removeFileFromFolder(currentLibraryId.value, Number(item.id))
+        else await client.folders().moveFileToFolder(currentLibraryId.value, Number(item.id), folderId)
+      }
+      return
+    }
+    const ids = new Set(items.map(i => String(i.id)))
+    mockFiles.value.forEach(f => { if (ids.has(String(f.id))) f.folder_id = folderId ?? undefined })
+  },
+  async addTagsToFile (items, tagTitles) {
+    if (connected.value && client) {
+      for (const item of items) await client.tags().addTagsToFile(currentLibraryId.value, Number(item.id), tagTitles)
+      return
+    }
+    const ids = new Set(items.map(i => String(i.id)))
+    mockFiles.value.forEach(f => {
+      if (ids.has(String(f.id))) f.tags = [...new Set([...(f.tags ?? []), ...tagTitles])]
+    })
+  },
+  async setFileTags (item, tags) {
+    if (connected.value && client) return client.tags().setFileTags({ libraryId: currentLibraryId.value, fileId: Number(item.id), tags })
+    const row = mockRow(item.id)
+    if (row) row.tags = tags
+  },
+  // 大图预览:连接走缩略图接口;未连接用渐变 SVG(放大版)
+  getPreviewUrl (item) {
+    if (connected.value) {
+      if (!item.thumbnail_path) return undefined
+      return `${apiBaseUrl.value}/api/files/thumb/${currentLibraryId.value}/${item.id}?token=${token.value}`
+    }
+    const [w, h] = (item.aspect || '1:1').split(':').map(Number)
+    return gradientThumb(Number(item.id) - 1, w * 240, h * 240)
+  },
+}
+
+/* ---------- MediaLibraryView 三栏视图演示(树/列表/详情聚合服务) ---------- */
+const libraryViewServices: MediaLibraryServices = {
+  tree: treeServices,
+  media: mediaServices,
+  detail: detailServices,
+  dialog: treeDialog,
+  upload: treeUpload,
 }
 
 // Delete 快捷键:mock 删内存;连接走 SDK batchDelete(默认移入回收站),完成后刷新列表
@@ -495,7 +587,7 @@ async function startUpload () {
 
 <template>
   <main class="bg-background text-foreground min-h-[100dvh]">
-    <div class="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-10">
+    <div class="mx-auto flex w-full flex-col gap-8 px-6 py-10">
       <header class="flex items-start justify-between gap-4">
         <h1 class="text-2xl font-semibold tracking-tight">mira-plugin-ui Demo</h1>
         <Button variant="outline" size="icon" aria-label="切换主题" @click="toggleDark">
@@ -688,6 +780,22 @@ async function startUpload () {
             :services="mediaServices"
             @item-click="handleMediaClick"
             @delete-selection="handleMediaDelete"
+          />
+        </div>
+      </section>
+
+      <!-- MediaLibraryView 三栏视图演示:左(文件夹树+标签树) / 中(MediaBrowser) / 右(MediaDetail) -->
+      <section class="bg-card text-card-foreground flex flex-col gap-4 rounded-xl border p-6 shadow-sm">
+        <div class="flex flex-col gap-1">
+          <h2 class="text-base font-semibold">MediaLibraryView 三栏素材库视图</h2>
+          <p class="text-muted-foreground text-xs">
+            左侧选择文件夹/标签自动过滤中间列表；中间选择文件（支持多选）在右侧查看/编辑详情（名称/网址/备注/评分/标签/文件夹，保存后即时生效并刷新列表）
+          </p>
+        </div>
+        <div class="h-[50rem] overflow-hidden rounded-lg border">
+          <MediaLibraryView
+            :library-id="currentLibraryId || 'mock'"
+            :services="libraryViewServices"
           />
         </div>
       </section>

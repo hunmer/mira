@@ -70,6 +70,11 @@ const props = defineProps<{
   savedFilters?: SavedFilter[];
   /** FilterBar 排序选项(缺省用内置 8 项,与桌面端一致) */
   sortOptions?: FilterBarSortOption[];
+  /**
+   * 外部附加筛选(如三栏视图左侧树选中的文件夹/标签)。
+   * 数组字段(folders/tags)与 FilterBar 内置筛选合并去重,其余字段覆盖;变化时自动回第 1 页重载。
+   */
+  extraFilters?: Partial<MediaBrowserFilters>;
 }>();
 
 /** 视图模式受控切换:grid=网格 / waterfall=瀑布流 */
@@ -135,12 +140,23 @@ async function load() {
   loading.value = true;
   error.value = '';
   try {
-    const filters = rulesToFilters(filterRules.value, {
+    const paged = {
       sort: sortField.value,
       order: sortOrder.value,
       limit: PAGE_SIZE,
       offset: (page.value - 1) * PAGE_SIZE,
-    });
+    };
+    const filters = { ...rulesToFilters(filterRules.value, paged) };
+    // 外部附加筛选:数组字段与规则结果合并去重,其余字段覆盖;分页参数始终以内部状态为准
+    for (const [key, value] of Object.entries(props.extraFilters ?? {})) {
+      if (value === undefined || value === '' || (Array.isArray(value) && !value.length)) continue;
+      if (Array.isArray(value) && Array.isArray(filters[key as 'folders'])) {
+        filters[key as 'folders'] = [...new Set([...filters[key as 'folders'] as (string | number)[], ...value])] as (string | number)[];
+      } else {
+        (filters as Record<string, unknown>)[key] = value;
+      }
+    }
+    Object.assign(filters, paged);
     const ret = await props.services.listFiles(filters);
     if (version !== loadVersion) return;
     if (Array.isArray(ret)) {
@@ -238,6 +254,9 @@ watch(
     void loadTrees();
   },
 );
+
+// 外部附加筛选变化(如左侧树选中):回到第 1 页重新拉取
+watch(() => props.extraFilters, () => resetPage(), { deep: true });
 
 onMounted(() => {
   void load();
@@ -424,23 +443,6 @@ function getMeta(item: MediaBrowserItem): MasonryItemMeta {
           </button>
         </template>
 
-        <!-- 视图切换:网格 / 瀑布流 -->
-        <div class="bg-muted flex gap-0.5 rounded-lg p-0.5" role="group">
-          <button
-            v-for="v in (['grid', 'waterfall'] as const)"
-            :key="v"
-            type="button"
-            class="inline-flex cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-[11px] leading-none font-medium transition-colors duration-100"
-            :class="view === v ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'"
-            :title="v === 'grid' ? tt('media.viewGrid') : tt('media.viewWaterfall')"
-            @click="view = v"
-          >
-            <LayoutGrid v-if="v === 'grid'" class="size-3.5" />
-            <Rows3 v-else class="size-3.5" />
-            <span class="hidden sm:inline">{{ v === 'grid' ? tt('media.viewGrid') : tt('media.viewWaterfall') }}</span>
-          </button>
-        </div>
-
         <!-- 刷新 -->
         <button
           type="button"
@@ -573,12 +575,10 @@ function getMeta(item: MediaBrowserItem): MasonryItemMeta {
       </Masonry>
     </SelectionBox>
 
-    <!-- 底部翻页(宿主返回 total 且不止一页时显示;一页最多 500 条) -->
-    <div
-      v-if="total !== undefined && pageCount > 1"
-      class="flex shrink-0 items-center justify-center border-t border-border px-3 py-2"
-    >
+    <!-- 底部固定栏:视图切换(网格/瀑布流) + 翻页(宿主返回 total 且不止一页时;一页最多 500 条) -->
+    <div class="flex shrink-0 flex-wrap items-center justify-center gap-4 border-t border-border px-3 py-2">
       <Pagination
+        v-if="total !== undefined && pageCount > 1"
         :page="page"
         :total="total"
         :items-per-page="PAGE_SIZE"
@@ -599,6 +599,23 @@ function getMeta(item: MediaBrowserItem): MasonryItemMeta {
           </PaginationItem>
         </PaginationContent>
       </Pagination>
+
+      <!-- 视图切换:网格 / 瀑布流 -->
+      <div class="bg-muted flex gap-0.5 rounded-lg p-0.5" role="group">
+        <button
+          v-for="v in (['grid', 'waterfall'] as const)"
+          :key="v"
+          type="button"
+          class="inline-flex cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-[11px] leading-none font-medium transition-colors duration-100"
+          :class="view === v ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'"
+          :title="v === 'grid' ? tt('media.viewGrid') : tt('media.viewWaterfall')"
+          @click="view = v"
+        >
+          <LayoutGrid v-if="v === 'grid'" class="size-3.5" />
+          <Rows3 v-else class="size-3.5" />
+          <span class="hidden sm:inline">{{ v === 'grid' ? tt('media.viewGrid') : tt('media.viewWaterfall') }}</span>
+        </button>
+      </div>
     </div>
   </div>
 </template>

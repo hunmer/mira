@@ -12,6 +12,8 @@ export { default as LibrarySelect } from './LibrarySelect.vue'
 export { default as ContextMenu } from './ContextMenu.vue'
 export { default as Dropzone } from './Dropzone.vue'
 export { default as MediaBrowser } from './MediaBrowser.vue'
+export { default as MediaDetail } from './MediaDetail.vue'
+export { default as MediaLibraryView } from './MediaLibraryView.vue'
 export { default as FilterBar } from './FilterBar.vue'
 export { default as SavedFilterDialog } from './SavedFilterDialog.vue'
 export { default as ServerManagerView } from './ServerManagerView.vue'
@@ -48,6 +50,9 @@ export type {
   MediaBrowserServices,
   MediaBrowserListResult,
   MediaBrowserSortField,
+  MediaDetailItem,
+  MediaDetailServices,
+  MediaLibraryServices,
   FilterRule,
   SavedFilter,
   FilterBarSortOption,

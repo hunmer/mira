@@ -290,3 +290,69 @@ export interface MediaBrowserServices {
    */
   getMetadataByIds?(ids: (string | number)[]): Promise<Array<{ id: string | number; width?: number; height?: number }>>
 }
+
+/* ============ 文件详情面板(MediaDetail) ============ */
+
+/**
+ * 文件详情条目:MediaBrowserItem 扩展,补齐详情面板的编辑/归属字段
+ * (新增字段全部可选,MediaBrowser 的 selected 可直接传入,缺省字段经 services.getFileDetail 补读)。
+ */
+export interface MediaDetailItem extends MediaBrowserItem {
+  /** 所属文件夹 id(null/undefined 表示未分类) */
+  folder_id?: number | string | null
+  /** 标签数组(后端按标题关联) */
+  tags?: string[]
+  /** 评分 0-5 */
+  stars?: number
+  /** 备注 */
+  notes?: string
+  /** 来源网址 */
+  website?: string
+  /** 文件可访问地址(展示 + 复制用,宿主按需提供) */
+  url?: string
+  created_at?: string | number
+  updated_at?: string | number
+  /** 图片宽(px) */
+  width?: number
+  /** 图片高(px) */
+  height?: number
+  /** 时长(秒) */
+  duration?: number
+}
+
+/** 详情面板数据服务:宿主实现(SDK / background 桥);仅展示时可不传,编辑能力按需提供 */
+export interface MediaDetailServices {
+  /** 单文件详情补读(stars/notes/tags 等列表缓存缺失的字段);不提供则直接用传入条目 */
+  getFileDetail?(item: MediaDetailItem): Promise<MediaDetailItem | null>
+  /** 重命名;名称冲突时抛含 409 的错误(组件展示冲突提示) */
+  renameFile?(item: MediaDetailItem, name: string): Promise<unknown>
+  /** 更新编辑字段(website/stars/notes) */
+  updateFile?(item: MediaDetailItem, patch: Partial<Pick<MediaDetailItem, 'website' | 'stars' | 'notes'>>): Promise<unknown>
+  /** 设置所属文件夹(folderId=null 移出文件夹);批量应用于多选 */
+  setFileFolder?(items: MediaDetailItem[], folderId: number | null): Promise<unknown>
+  /** 批量追加标签(按标题) */
+  addTagsToFile?(items: MediaDetailItem[], tagTitles: string[]): Promise<unknown>
+  /** 覆盖保存单文件标签(按标题;移除标签用) */
+  setFileTags?(item: MediaDetailItem, tags: string[]): Promise<unknown>
+  /** 文件夹/标签树数据(编辑弹层的选树);缺省回退树视图的 services */
+  listFolders?(): Promise<LibraryFlatItem[] | null>
+  listTags?(): Promise<LibraryFlatItem[] | null>
+  /** 大图预览地址;缺省回退 thumbnail_path */
+  getPreviewUrl?(item: MediaDetailItem): string | undefined
+}
+
+/* ============ 素材库三栏视图(MediaLibraryView) ============ */
+
+/** 三栏素材库视图(左树/中列表/右详情)的聚合服务 */
+export interface MediaLibraryServices {
+  /** 左侧文件夹/标签树(CRUD + 拖拽排序) */
+  tree: LibraryTreeServices
+  /** 中部文件列表(筛选/排序/分页/缩略图) */
+  media: MediaBrowserServices
+  /** 右侧详情面板(编辑能力;listFolders/listTags 缺省回退 tree) */
+  detail?: MediaDetailServices
+  /** 弹窗服务(树拖拽跨层移动确认等) */
+  dialog?: LibraryTreeDialog
+  /** 上传服务(树拖放/右键上传) */
+  upload?: LibraryTreeUpload
+}
