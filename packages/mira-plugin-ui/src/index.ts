@@ -1,5 +1,8 @@
 import type { App } from 'vue'
 import './assets/tailwind.css'
+import BatchUploadDialog from './BatchUploadDialog.vue'
+import BatchUploadForm from './BatchUploadForm.vue'
+import FileInfoForm from './FileInfoForm.vue'
 import LibrarySelect from './library/LibrarySelect.vue'
 import SaveLocationDialog from './SaveLocationDialog.vue'
 import SaveLocationForm from './SaveLocationForm.vue'
@@ -16,10 +19,13 @@ import * as select from './components/ui/select'
 import * as tabs from './components/ui/tabs'
 import * as tagsInput from './components/ui/tags-input'
 
+export { default as BatchUploadDialog } from './BatchUploadDialog.vue'
+export { default as BatchUploadForm } from './BatchUploadForm.vue'
+export { default as FileInfoForm } from './FileInfoForm.vue'
 export { default as SaveLocationDialog } from './SaveLocationDialog.vue'
 export { default as SaveLocationForm } from './SaveLocationForm.vue'
 export { default as LibrarySelect } from './library/LibrarySelect.vue'
-export type { SaveLocation } from './types'
+export type { BatchUploadFileService, BatchUploadFileMeta, BatchUploadPayload, SaveLocation } from './types'
 export type { LibrarySelectOption, LibrarySelectServer } from './library/types'
 export * from './components/ui/attachment'
 export * from './components/ui/alert-dialog'
@@ -35,6 +41,9 @@ export * from './components/ui/tabs'
 export * from './components/ui/tags-input'
 
 const components = {
+  BatchUploadDialog,
+  BatchUploadForm,
+  FileInfoForm,
   SaveLocationDialog,
   SaveLocationForm,
   LibrarySelect,

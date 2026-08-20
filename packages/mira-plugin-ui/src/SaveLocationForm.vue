@@ -4,9 +4,10 @@
  *
  * 布局:
  * - 顶部:传入文件以 Attachment 卡片展示(可移除,emit('remove-file'))
+ * - 其下:素材库 Select(占满宽度,切库清空已选位置并 emit('library-change'))
  * - 中部:左侧 Tabs 切换 LibraryTreeView(文件夹树单选/标签树多选,树内搜索与「新增」
- *   对话框均由 LibraryTreeView 自带);右侧 文件名/URL/注释 输入
- * - 底部:左下角素材库 Select,右下角 取消/提交
+ *   对话框均由 LibraryTreeView 自带,树区随可用高度拉伸);右侧 文件名/URL/注释 输入
+ * - 底部:右下角 取消/提交
  *
  * 状态内部自持,initialXxx 仅作挂载初值——宿主(如对话框)在每次打开时
  * 重新挂载本组件即可完成重置。
@@ -22,7 +23,6 @@ import {
   useFilter,
 } from 'reka-ui'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -46,6 +46,7 @@ import {
 } from '@/components/ui/attachment'
 import { LibraryTreeView } from '@/library'
 import type { LibraryFlatItem, LibraryTreeNode, LibraryTreeServices } from '@/library'
+import FileInfoForm from './FileInfoForm.vue'
 import type { SaveLocation } from './types'
 
 interface Library { id: string | number; name?: string; title?: string }
@@ -244,7 +245,7 @@ function confirm () {
 </script>
 
 <template>
-  <div class="flex flex-col gap-4">
+  <div class="flex h-full min-h-0 flex-col gap-4">
     <!-- 顶部:传入文件 Attachment 卡片(可移除) -->
     <AttachmentGroup v-if="files.length">
       <Attachment
@@ -269,16 +270,32 @@ function confirm () {
       </Attachment>
     </AttachmentGroup>
 
+    <!-- 素材库:占满宽度,位于 tabs 上方 -->
+    <div>
+      <Label class="sr-only" for="save-library">素材库</Label>
+      <!-- v-model 与显式 update 监听同用会覆盖绑定,改单向 + 手动赋值 -->
+      <Select :model-value="libraryId" @update:model-value="onLibraryChange">
+        <SelectTrigger id="save-library" class="w-full">
+          <SelectValue placeholder="选择素材库" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem v-for="library in libraries" :key="library.id" :value="String(library.id)">
+            {{ library.name || library.title || library.id }}
+          </SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+
     <!-- 中部:左 tabs 树视图(搜索/新增/展开内聚在 LibraryTreeView) / 右输入区 -->
-    <div class="grid items-start gap-4 sm:grid-cols-[minmax(200px,240px)_1fr]">
-      <Tabs v-model="tab" class="flex max-h-80 flex-col gap-2">
-        <TabsList>
+    <div class="grid min-h-0 flex-1 gap-4 sm:grid-cols-[minmax(200px,240px)_1fr]">
+      <Tabs v-model="tab" class="flex h-full min-h-0 flex-col gap-2">
+        <TabsList class="w-full">
           <TabsTrigger value="folder">文件夹</TabsTrigger>
           <TabsTrigger value="tag">标签</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="folder">
-          <div class="h-56 overflow-hidden rounded-md border">
+        <TabsContent value="folder" class="flex min-h-0 flex-col">
+          <div class="min-h-40 flex-1 overflow-hidden rounded-md border">
             <LibraryTreeView
               mode="folder"
               :library-id="libraryId"
@@ -287,8 +304,8 @@ function confirm () {
             />
           </div>
         </TabsContent>
-        <TabsContent value="tag">
-          <div class="h-56 overflow-hidden rounded-md border">
+        <TabsContent value="tag" class="flex min-h-0 flex-col">
+          <div class="min-h-40 flex-1 overflow-hidden rounded-md border">
             <LibraryTreeView
               mode="tag"
               :library-id="libraryId"
@@ -300,23 +317,13 @@ function confirm () {
       </Tabs>
 
       <div class="grid content-start gap-4">
-        <div class="grid gap-2">
-          <Label for="save-file-name">文件名</Label>
-          <Input id="save-file-name" v-model="fileName" autocomplete="off" @keyup.enter="confirm" />
-        </div>
-        <div class="grid gap-2">
-          <Label for="save-url">URL</Label>
-          <Input id="save-url" v-model="url" type="url" inputmode="url" autocomplete="off" placeholder="https://" />
-        </div>
-        <div class="grid gap-2">
-          <Label for="save-note">注释</Label>
-          <textarea
-            id="save-note"
-            v-model="note"
-            rows="3"
-            class="bg-muted ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-16 w-full rounded-md px-3 py-2 text-sm transition-[color,box-shadow] outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-          />
-        </div>
+        <!-- 文件信息:文件名/URL/注释(自 FileInfoForm 抽离,enter 触发确认) -->
+        <FileInfoForm
+          v-model:file-name="fileName"
+          v-model:url="url"
+          v-model:note="note"
+          @submit="confirm"
+        />
         <!-- 已选标签:Tags with Listbox(候选=全部标签,多选/× 删除),与树上勾选双向同步 -->
         <div v-if="tagItems.length" class="grid gap-2">
           <Label>标签</Label>
@@ -361,26 +368,10 @@ function confirm () {
       </div>
     </div>
 
-    <!-- 底部:左下角素材库 / 右下角操作 -->
-    <div class="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div class="w-full sm:w-56">
-        <Label class="sr-only" for="save-library">素材库</Label>
-        <!-- v-model 与显式 update 监听同用会覆盖绑定,改单向 + 手动赋值 -->
-        <Select :model-value="libraryId" @update:model-value="onLibraryChange">
-          <SelectTrigger id="save-library">
-            <SelectValue placeholder="选择素材库" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem v-for="library in libraries" :key="library.id" :value="String(library.id)">
-              {{ library.name || library.title || library.id }}
-            </SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      <div class="flex gap-2 sm:justify-end">
-        <Button variant="outline" @click="emit('cancel')">{{ cancelText }}</Button>
-        <Button :disabled="!canSave" @click="confirm">{{ submitText }}</Button>
-      </div>
+    <!-- 底部:右下角操作 -->
+    <div class="flex justify-end gap-2">
+      <Button variant="outline" @click="emit('cancel')">{{ cancelText }}</Button>
+      <Button :disabled="!canSave" @click="confirm">{{ submitText }}</Button>
     </div>
   </div>
 </template>

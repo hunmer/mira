@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { FileText, Folder, Loader2, LogOut, Moon, Server, Sun } from '@lucide/vue'
 import { MiraClient } from 'mira-app-core/shared/sdk'
-import { SaveLocationDialog, Progress, type SaveLocation } from '@/index'
+import { BatchUploadDialog, Progress, SaveLocationDialog, type BatchUploadFileService, type SaveLocation } from '@/index'
 import { Dropzone, LibrarySelect, LibraryTreeView, MediaBrowser } from '@/library'
 import type { LibraryFlatItem, LibrarySelectServer, LibraryTreeDialog, LibraryTreeServices, LibraryTreeNode, MediaBrowserFilters, MediaBrowserItem, MediaBrowserServices } from '@/library'
 import { Button } from '@/components/ui/button'
@@ -123,6 +123,30 @@ async function handleCreateNode ({ kind, parentId, title, color, description, ic
   const id = Date.now()
   pool.value = [...pool.value, { id, title, parent_id: parentId }]
   return id
+}
+
+/* ---------- BatchUploadDialog 演示 ---------- */
+const showBatchUpload = ref(false)
+const batchUploadResult = ref('')
+
+/** 逐文件上传服务:连接走 SDK uploadFiles(单文件),未连接模拟进度(1s 0→100) */
+const handleBatchUploadFile: BatchUploadFileService = async (item, onProgress) => {
+  if (connected.value && client) {
+    await client.files().uploadFiles([item.file], item.libraryId, {
+      folderId: item.folderId,
+      tags: item.tags,
+      onUploadProgress: e => onProgress(e.percent ?? 0),
+    })
+    return
+  }
+  for (let percent = 10; percent <= 100; percent += 10) {
+    await new Promise(resolve => setTimeout(resolve, 100))
+    onProgress(percent)
+  }
+}
+
+function handleBatchUploaded ({ total, failed }: { total: number; failed: number }) {
+  batchUploadResult.value = `队列结束:共 ${total} 个${failed ? `,失败 ${failed} 个` : ',全部成功'}`
 }
 
 /* ---------- LibrarySelect 服务器分组选择(Mira Server 卡片内) ---------- */
@@ -527,6 +551,31 @@ async function startUpload () {
           @library-change="handleLibraryChange"
           :create-node="handleCreateNode"
           @remove-file="file => saveFiles = saveFiles.filter(f => f !== file)"
+        />
+      </section>
+
+      <!-- BatchUploadDialog 演示卡片:批量上传(文件队列/进度/位置选择) -->
+      <section class="bg-card text-card-foreground flex flex-col gap-4 rounded-xl border p-6 shadow-sm">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex flex-col gap-1">
+            <h2 class="text-base font-semibold">BatchUploadDialog</h2>
+            <p class="text-muted-foreground text-sm">
+              {{ connected ? '逐文件走 SDK uploadFiles，组件内并发 3 上传' : '未连接 server，模拟上传进度（可验证队列/进度/状态）' }}
+            </p>
+          </div>
+          <Button class="w-fit shrink-0" @click="showBatchUpload = true">批量上传…</Button>
+        </div>
+        <p v-if="batchUploadResult" class="bg-muted text-muted-foreground rounded-lg p-3 font-mono text-sm">{{ batchUploadResult }}</p>
+        <BatchUploadDialog
+          v-model:open="showBatchUpload"
+          :libraries="connected ? libraries : [{ id: 1, name: 'Mock 素材库' }]"
+          :folders="connected ? folders : [{ id: 101, title: 'Mock 文件夹' }]"
+          :tags="connected ? tags : [{ id: 1, title: 'Mock 标签' }]"
+          :initial-library-id="currentLibraryId"
+          :upload-file="handleBatchUploadFile"
+          :create-node="handleCreateNode"
+          @uploaded="handleBatchUploaded"
+          @library-change="handleLibraryChange"
         />
       </section>
 
