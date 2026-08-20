@@ -8,7 +8,7 @@
     "dev": "node scripts/dev.mjs",
     "build": "vite build && node scripts/compat-css.mjs",
     "sync": "node scripts/sync.mjs",
-    "deploy": "node scripts/compat-css.mjs && node scripts/sync.mjs --once",
+    "deploy": "vite build && node scripts/compat-css.mjs && node scripts/sync.mjs --once",
     "enable-debug": "reg add \"HKCU\\Software\\Adobe\\CSXS.9\" /v PlayerDebugMode /t REG_SZ /d 1 /f"
   },
   "dependencies": {

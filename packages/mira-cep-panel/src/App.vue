@@ -4,13 +4,13 @@
  * (左 文件夹/标签树 · 中 MediaBrowser · 右 MediaDetail)浏览/管理素材,
  * 对应 mira-plugin-ui demo App.vue 的三栏视图演示接线。
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { MediaLibraryView } from 'mira-plugin-ui/library'
-import type { LibraryTreeUpload, MediaLibraryServices } from 'mira-plugin-ui/library'
+import type { LibraryTreeUpload, MediaBrowserMenu, MediaLibraryServices } from 'mira-plugin-ui/library'
 // 不经库根入口(其会再引入一份 tailwind.css),直接引源码路径
 import BatchUploadDialog from 'mira-plugin-ui/src/BatchUploadDialog.vue'
 import { useMira } from './services'
-import { placeLocalFile, prefetchToTemp, tempPathFor } from './cep'
+import { exportActiveLayerFile, placeLocalFile, prefetchToTemp, tempPathFor } from './cep'
 
 const mira = useMira()
 onMounted(() => mira.restore())
@@ -118,13 +118,38 @@ const showBatchUpload = ref(false)
 const batchUploadFolderId = ref('')
 const batchUploadTagTitles = ref<string[]>([])
 const batchUploadFiles = ref<File[]>([])
+const psMenu: MediaBrowserMenu[] = [{
+  key: 'photoshop',
+  label: 'Photoshop',
+  items: [{ key: 'import-active-layer', label: '导入当前图层' }],
+}]
+
+async function onLibraryMenuSelect(menuKey: string, itemKey: string) {
+  if (menuKey !== 'photoshop' || itemKey !== 'import-active-layer') return
+  try {
+    notify('正在从 Photoshop 导出当前图层…')
+    const file = await exportActiveLayerFile()
+    openBatchUpload('', [], [file])
+  } catch (error: any) {
+    notify(`导入失败: ${error?.message || error}`)
+  }
+}
 
 function openBatchUpload(folderId = '', tagTitles: string[] = [], files: File[] = []) {
+  console.log('[mira-batch-upload] open-request', {
+    folderId,
+    tagCount: tagTitles.length,
+    fileCount: files.length,
+    cep: Boolean((window as typeof window & { cep?: unknown }).cep),
+    csInterface: Boolean((window as typeof window & { CSInterface?: unknown }).CSInterface),
+  })
   batchUploadFolderId.value = folderId
   batchUploadTagTitles.value = tagTitles
   batchUploadFiles.value = files
   showBatchUpload.value = true
 }
+
+watch(showBatchUpload, open => console.log('[mira-batch-upload] open-state', open))
 
 const upload: LibraryTreeUpload = {
   files() {},
@@ -210,6 +235,8 @@ async function handleBatchUploaded() {
           v-model:library-id="mira.currentLibraryId.value"
           :services="libraryViewServices"
           :library-servers="mira.libraryServers.value"
+          :menus="psMenu"
+          @menu-select="onLibraryMenuSelect"
           @import-files="files => openBatchUpload('', [], files)"
         />
       </main>

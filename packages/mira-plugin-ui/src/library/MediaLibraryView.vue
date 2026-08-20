@@ -28,6 +28,7 @@ import type {
   LibraryTreeNode,
   MediaBrowserFilters,
   MediaBrowserItem,
+  MediaBrowserMenu,
   MediaBrowserServerManager,
   MediaDetailServices,
   MediaLibraryServices,
@@ -42,6 +43,8 @@ const props = defineProps<{
   libraryServers?: LibrarySelectServer[];
   /** 服务器管理数据(透传给 MediaBrowser 菜单栏);传入后显示服务器图标 */
   serverManager?: MediaBrowserServerManager;
+  /** 中间列表自定义菜单(透传给 MediaBrowser) */
+  menus?: MediaBrowserMenu[];
 }>();
 
 /** 当前素材库 id;变化时三栏自动重载(传 v-model:library-id 后可经选择器切换) */
@@ -57,6 +60,8 @@ const tt = (key: string, params?: Record<string, unknown>) => {
 const emit = defineEmits<{
   /** 中间列表菜单「导入文件」:文件多选选完后抛出(宿主打开上传表单,如 BatchUploadForm) */
   importFiles: [files: File[]];
+  /** 自定义菜单项被点击 */
+  menuSelect: [menuKey: string, itemKey: string];
 }>();
 
 // ---- 左侧树受控选择(文件夹单选 / 标签多选) ----
@@ -200,8 +205,10 @@ watch(isCompact, (compact) => {
             :extra-filters="extraFilters"
             :library-servers="libraryServers"
             :server-manager="serverManager"
+            :menus="menus"
             :t="t"
             @import-files="files => emit('importFiles', files)"
+            @menu-select="(menu, item) => emit('menuSelect', menu, item)"
           />
         </main>
         <button
@@ -261,8 +268,10 @@ watch(isCompact, (compact) => {
           :extra-filters="extraFilters"
           :library-servers="libraryServers"
           :server-manager="serverManager"
+          :menus="menus"
           :t="t"
           @import-files="files => emit('importFiles', files)"
+          @menu-select="(menu, item) => emit('menuSelect', menu, item)"
         />
       </div>
       <button

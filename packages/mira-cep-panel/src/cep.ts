@@ -20,8 +20,64 @@ export function evalHost(script: string): Promise<string> {
   return new Promise(resolve => {
     const cs = getCSInterface()
     if (!cs) return resolve('ERR:CSInterface 不可用')
-    cs.evalScript(script, r => resolve(String(r)))
+    cs.evalScript(script, (r: unknown) => resolve(String(r)))
   })
+}
+
+/** ExtendScript:复制当前活动图层到临时文档,裁切透明边缘并导出 PNG。 */
+const EXPORT_LAYER_JSX = `
+function miraExportActiveLayer(path) {
+  try {
+    if (!app.documents.length) return 'ERR:没有打开的 Photoshop 文档';
+    var source = app.activeDocument;
+    var desc = new ActionDescriptor();
+    var ref = new ActionReference();
+    ref.putClass(stringIDToTypeID('document'));
+    desc.putReference(stringIDToTypeID('null'), ref);
+    var layerRef = new ActionReference();
+    layerRef.putEnumerated(stringIDToTypeID('layer'), stringIDToTypeID('ordinal'), stringIDToTypeID('targetEnum'));
+    desc.putReference(stringIDToTypeID('using'), layerRef);
+    executeAction(stringIDToTypeID('make'), desc, DialogModes.NO);
+    var temp = app.activeDocument;
+    try {
+      var trim = new ActionDescriptor();
+      trim.putEnumerated(stringIDToTypeID('trimBasedOn'), stringIDToTypeID('trimBasedOn'), stringIDToTypeID('transparency'));
+      trim.putBoolean(stringIDToTypeID('top'), true);
+      trim.putBoolean(stringIDToTypeID('bottom'), true);
+      trim.putBoolean(stringIDToTypeID('left'), true);
+      trim.putBoolean(stringIDToTypeID('right'), true);
+      executeAction(stringIDToTypeID('trim'), trim, DialogModes.NO);
+      var options = new ExportOptionsSaveForWeb();
+      options.format = SaveDocumentType.PNG;
+      options.PNG8 = false;
+      options.transparency = true;
+      options.quality = 100;
+      temp.exportDocument(new File(path), ExportType.SAVEFORWEB, options);
+    } finally {
+      temp.close(SaveOptions.DONOTSAVECHANGES);
+    }
+    return 'OK|' + source.activeLayer.name;
+  } catch (e) { return 'ERR:' + e.toString(); }
+}`
+
+/** 导出 Photoshop 当前活动图层为 File,供现有 BatchUploadDialog 上传。 */
+export async function exportActiveLayerFile(): Promise<File> {
+  const req = nodeRequire()
+  if (!req) throw new Error('CEP Node 不可用,无法读取临时图片')
+  const path = req('path'), fs = req('fs'), os = req('os')
+  const tempPath = path.join(os.tmpdir(), `mira-ps-layer-${Date.now()}.png`)
+  const jsxPath = tempPath.replace(/\\/g, '/').replace(/"/g, '\\"')
+  const result = await evalHost(`(function(){${EXPORT_LAYER_JSX} return miraExportActiveLayer("${jsxPath}");})()`)
+  if (!result.startsWith('OK|') || !fs.existsSync(tempPath)) {
+    throw new Error(result || 'Photoshop 图层导出失败')
+  }
+  const bytes = fs.readFileSync(tempPath)
+  const name = `photoshop-${Date.now()}.png`
+  try {
+    return new File([bytes], name, { type: 'image/png' })
+  } finally {
+    try { fs.unlinkSync(tempPath) } catch { /* 临时文件清理失败不影响上传 */ }
+  }
 }
 
 /** 宿主脚本(ExtendScript):置入/打开本地文件;内联避免依赖 ScriptPath 的加载时机 */

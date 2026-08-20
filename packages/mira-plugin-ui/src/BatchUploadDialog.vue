@@ -5,6 +5,7 @@
  * 这里只做 props/emits 透传;reka-ui 关闭时卸载内容,表单每次打开自动重置。
  */
 // 注意:本组件可经 'mira-plugin-ui/src/...' 源码供宿主直接消费,必须用相对路径(宿主的 @ 别名指向其自身 src)
+import { nextTick, onBeforeUnmount, watch } from 'vue'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './components/ui/dialog'
 import BatchUploadForm from './BatchUploadForm.vue'
 import type { BatchUploadFileService, BatchUploadPayload } from './types'
@@ -13,7 +14,7 @@ interface Library { id: string | number; name?: string; title?: string }
 /** 文件夹/标签扁平项(id/title/parent_id 与后端一致,color 用于图标着色) */
 interface TreeItem { id: string | number; title?: string; name?: string; parent_id?: string | number | null; color?: number }
 
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
   open: boolean
   libraries: Library[]
   folders: TreeItem[]
@@ -50,6 +51,11 @@ withDefaults(defineProps<{
   cancelText: '取消',
 })
 
+console.log('[mira-batch-upload] setup', {
+  cep: Boolean((window as typeof window & { cep?: unknown }).cep),
+  csInterface: Boolean((window as typeof window & { CSInterface?: unknown }).CSInterface),
+})
+
 const emit = defineEmits<{
   (event: 'update:open', value: boolean): void
   (event: 'upload', value: BatchUploadPayload): void
@@ -58,12 +64,79 @@ const emit = defineEmits<{
   (event: 'create-node', value: { kind: 'folder' | 'tag'; parentId: number; title: string; description?: string; color?: number; icon?: string }): void
 }>()
 
+let cepCenterTimer: ReturnType<typeof setInterval> | undefined
+let cepCenterTick = 0
+
+function centerCepDialog() {
+  const cepWindow = window as typeof window & { cep?: unknown; CSInterface?: unknown }
+  if (!cepWindow.cep && !cepWindow.CSInterface) return
+  void nextTick(() => {
+    cepCenterTick += 1
+    const el = document.querySelector('.cep-batch-upload-dialog') as HTMLElement | null
+    if (!el) {
+      if (cepCenterTick <= 3) console.log('[mira-cep-dialog] node-missing', { tick: cepCenterTick })
+      return
+    }
+    const before = el.getBoundingClientRect()
+    if (cepCenterTick <= 3 || cepCenterTick % 10 === 0) {
+      console.log('[mira-cep-dialog] before', {
+        tick: cepCenterTick,
+        viewport: { width: window.innerWidth, height: window.innerHeight, dpr: window.devicePixelRatio },
+        rect: { left: before.left, top: before.top, width: before.width, height: before.height },
+        className: el.className,
+        computed: {
+          position: getComputedStyle(el).position,
+          left: getComputedStyle(el).left,
+          right: getComputedStyle(el).right,
+          top: getComputedStyle(el).top,
+          transform: getComputedStyle(el).transform,
+          margin: getComputedStyle(el).margin,
+        },
+      })
+    }
+    const styles: Record<string, string> = {
+      top: '0', right: '0', bottom: '0', left: '0',
+      width: 'calc(100% - 2rem)', maxWidth: '896px', height: '85vh',
+      margin: 'auto', transform: 'none',
+    }
+    Object.keys(styles).forEach(key => el.style.setProperty(key, styles[key], 'important'))
+    const after = el.getBoundingClientRect()
+    if (cepCenterTick <= 3 || cepCenterTick % 10 === 0) {
+      console.log('[mira-cep-dialog] after', {
+        tick: cepCenterTick,
+        rect: { left: after.left, top: after.top, width: after.width, height: after.height },
+        inline: el.getAttribute('style'),
+      })
+    }
+  })
+}
+
+watch(() => props.open, open => {
+  if (cepCenterTimer) clearInterval(cepCenterTimer)
+  cepCenterTimer = undefined
+  if (open) {
+    cepCenterTick = 0
+    console.log('[mira-cep-dialog] open', {
+      hasCep: Boolean((window as typeof window & { cep?: unknown }).cep),
+      hasCSInterface: Boolean((window as typeof window & { CSInterface?: unknown }).CSInterface),
+    })
+    centerCepDialog()
+    // Reka Dialog 使用 Portal,CEP 中节点可能在后续 tick 才出现,持续校正直到关闭。
+    cepCenterTimer = setInterval(centerCepDialog, 100)
+  }
+})
+onBeforeUnmount(() => {
+  if (cepCenterTimer) clearInterval(cepCenterTimer)
+})
+
 function close () { emit('update:open', false) }
 </script>
 
 <template>
   <Dialog :open="open" @update:open="value => value || close()">
-    <DialogContent class="flex h-[85vh] max-h-[85vh] flex-col overflow-hidden sm:max-w-4xl">
+    <DialogContent
+      class="cep-batch-upload-dialog flex h-[85vh] max-h-[85vh] flex-col overflow-hidden sm:max-w-4xl"
+    >
       <DialogHeader>
         <DialogTitle>{{ title }}</DialogTitle>
         <DialogDescription>{{ description }}</DialogDescription>

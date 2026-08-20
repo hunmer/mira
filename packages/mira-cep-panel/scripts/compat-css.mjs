@@ -16,6 +16,7 @@ import cascadeLayers from '@csstools/postcss-cascade-layers'
  * - gap → grid-gap(统一 gap 属性 Chrome 66 才有;grid-gap Chrome 57+ 认识)
  * - inset → top/right/bottom/left(简写 Chrome 87+)
  * flex 行间距无纯 CSS 补法,保持紧凑。
+ * Tailwind v4 的 translate 独立属性在 Chromium 61 不支持,为其补回传统 transform。
  */
 const gapCompat = {
   postcssPlugin: 'gap-compat',
@@ -23,6 +24,10 @@ const gapCompat = {
     if (decl.prop === 'gap') decl.cloneBefore({ prop: 'grid-gap', value: decl.value })
     else if (decl.prop === 'column-gap') decl.cloneBefore({ prop: 'grid-column-gap', value: decl.value })
     else if (decl.prop === 'row-gap') decl.cloneBefore({ prop: 'grid-row-gap', value: decl.value })
+    else if (decl.prop === 'translate') {
+      // CEP 9 不支持 translate 属性,Dialog 居中依赖传统 transform。
+      decl.cloneBefore({ prop: 'transform', value: `translate(${decl.value})` })
+    }
     else if (decl.prop === 'inset') {
       // inset 简写展开(top right bottom left),四值/两值/单值语义与 margin 一致
       const parts = decl.value.trim().split(/\s+/)
