@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from 'vitest';
-import { calculateButtonPosition, resolveHoverTarget } from './hover-button';
+import { describe, expect, it, vi } from 'vitest';
+import { calculateButtonPosition, createHoverButton, resolveHoverTarget } from './hover-button';
 
 describe('calculateButtonPosition', () => {
   it('完整可见的图片:按钮贴右上角', () => {
@@ -71,5 +71,84 @@ describe('resolveHoverTarget', () => {
   it('不含 img 的普通元素不命中', () => {
     expect(resolveHoverTarget(document.createElement('div'))).toBeNull();
     expect(resolveHoverTarget(null)).toBeNull();
+  });
+});
+
+describe('createHoverButton', () => {
+  function setupHoverButton() {
+    const img = document.createElement('img');
+    img.src = 'https://cdn.example.com/photo.jpg';
+    img.getBoundingClientRect = () => ({
+      top: 100, left: 100, right: 300, bottom: 300,
+      width: 200, height: 200, x: 100, y: 100, toJSON: () => ({}),
+    });
+    const outside = document.createElement('div');
+    const outsideParent1 = document.createElement('div');
+    const outsideParent2 = document.createElement('div');
+    const outsideParent3 = document.createElement('div');
+    outsideParent1.append(outside);
+    outsideParent2.append(outsideParent1);
+    outsideParent3.append(outsideParent2);
+    document.body.append(img, outsideParent3);
+    const controller = createHoverButton({ importImage: vi.fn(), openLarge: vi.fn() });
+    return { img, outside, controller };
+  }
+
+  it('离开命中区域后延迟 3 秒隐藏', () => {
+    vi.useFakeTimers();
+    const { img, outside, controller } = setupHoverButton();
+
+    img.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+    outside.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+    vi.advanceTimersByTime(2999);
+    expect(document.querySelector('.mira-hoverbtn')).not.toBeNull();
+    vi.advanceTimersByTime(1);
+    expect(document.querySelector('.mira-hoverbtn')).toBeNull();
+
+    controller.destroy();
+    document.body.replaceChildren();
+    vi.useRealTimers();
+  });
+
+  it('隐藏前重新进入命中区域会取消计时', () => {
+    vi.useFakeTimers();
+    const { img, outside, controller } = setupHoverButton();
+
+    img.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+    outside.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+    vi.advanceTimersByTime(2000);
+    img.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+    vi.advanceTimersByTime(2000);
+    expect(document.querySelector('.mira-hoverbtn')).not.toBeNull();
+
+    controller.destroy();
+    document.body.replaceChildren();
+    vi.useRealTimers();
+  });
+
+  it('即使页面阻断按钮的 mouseover,指针停在按钮上也不会隐藏', () => {
+    vi.useFakeTimers();
+    const blockButtonMouseOver = (event: MouseEvent) => {
+      if (event.target instanceof Element && event.target.closest('.mira-hoverbtn')) {
+        event.stopImmediatePropagation();
+      }
+    };
+    document.addEventListener('mouseover', blockButtonMouseOver, true);
+    const { img, outside, controller } = setupHoverButton();
+
+    img.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+    outside.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+    document.querySelector('.mira-hoverbtn')?.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+    vi.advanceTimersByTime(3000);
+    expect(document.querySelector('.mira-hoverbtn')).not.toBeNull();
+
+    outside.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+    vi.advanceTimersByTime(3000);
+    expect(document.querySelector('.mira-hoverbtn')).toBeNull();
+
+    controller.destroy();
+    document.removeEventListener('mouseover', blockButtonMouseOver, true);
+    document.body.replaceChildren();
+    vi.useRealTimers();
   });
 });

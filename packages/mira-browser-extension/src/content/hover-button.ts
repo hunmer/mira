@@ -25,6 +25,7 @@ const BTN_MARGIN = 6; // 与定位区域可视边缘的间距(px)
 const MIN_VISIBLE = 80; // 可视宽/高低于此值不显示(过滤小图标/表情)
 const MENU_WIDTH = 168;
 const DONE_FEEDBACK_MS = 1500;
+const HIDE_DELAY_MS = 3000;
 const CONTROLLER_KEY = '__miraHoverButtonController__';
 /** hover 目标不是 img 时,向上最多找几层祖先中的子 img(卡片/遮罩场景) */
 const MAX_ANCESTOR_DEPTH = 3;
@@ -128,6 +129,7 @@ export function createHoverButton(handlers: HoverButtonHandlers): HoverButtonCon
   let menu: HTMLDivElement | null = null;
   let currentTarget: HoverTarget | null = null;
   let confirmTimer: ReturnType<typeof setTimeout> | null = null;
+  let hideTimer: ReturnType<typeof setTimeout> | null = null;
 
   function imageUrl(): string | null {
     const img = currentTarget?.img;
@@ -142,9 +144,38 @@ export function createHoverButton(handlers: HoverButtonHandlers): HoverButtonCon
   function hide() {
     hideMenu();
     if (confirmTimer) { clearTimeout(confirmTimer); confirmTimer = null; }
+    if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
     btn?.remove();
     btn = null;
     currentTarget = null;
+  }
+
+  function cancelHide() {
+    if (!hideTimer) return;
+    clearTimeout(hideTimer);
+    hideTimer = null;
+    dbg.log('hoverbtn', 'hide canceled');
+  }
+
+  function hoverAreaState() {
+    return {
+      target: !!currentTarget?.root.matches(':hover'),
+      button: !!btn?.matches(':hover'),
+      menu: !!menu?.matches(':hover'),
+    };
+  }
+
+  function scheduleHide() {
+    if (hideTimer) return;
+    dbg.log('hoverbtn', 'hide scheduled', { delayMs: HIDE_DELAY_MS });
+    hideTimer = setTimeout(() => {
+      hideTimer = null;
+      // 页面可能在捕获阶段阻断 mouseover;最终以浏览器实际 hover 状态为准
+      const hover = hoverAreaState();
+      dbg.log('hoverbtn', 'hide timer elapsed', { hover });
+      if (hover.target || hover.button || hover.menu) return;
+      hide();
+    }, HIDE_DELAY_MS);
   }
 
   function positionMenu() {
@@ -256,18 +287,21 @@ export function createHoverButton(handlers: HoverButtonHandlers): HoverButtonCon
   function onMouseOver(e: MouseEvent) {
     if (!enabled || destroyed) return;
     const target = e.target;
-    if (btn && target === btn) return;
-    if (menu && target instanceof Node && menu.contains(target)) return;
+    if (target instanceof Node && ((btn && btn.contains(target)) || (menu && menu.contains(target)))) {
+      cancelHide();
+      return;
+    }
     const hit = target instanceof Element ? resolveHoverTarget(target) : null;
     if (hit) {
+      cancelHide();
       // 命中区域与当前区域相同或互为祖先/后代(img ↔ 其卡片容器)时保持不动,避免按钮跳动
       const cur = currentTarget?.root;
       if (cur && (hit.root === cur || cur.contains(hit.root) || hit.root.contains(cur))) return;
       show(hit);
       return;
     }
-    // 移到命中区域以外的元素上 → 收起(悬停在按钮/菜单上时已提前 return)
-    if (currentTarget) hide();
+    // 短暂经过其他元素时保留按钮;回到图片/按钮/菜单会取消隐藏
+    if (currentTarget) scheduleHide();
   }
 
   function onScrollOrResize() {
