@@ -1,7 +1,6 @@
 import { app, protocol, net } from 'electron'
 import * as fs from 'fs/promises'
 import * as path from 'path'
-import { createHash } from 'crypto'
 import { fileURLToPath } from 'url'
 import { logger } from '../utils/Logger'
 
@@ -38,6 +37,8 @@ export class ProtocolService {
   private handlers: Map<string, ProtocolHandler['handler']> = new Map()
   private isRegistered = false
   private cacheDir = ''
+  private pendingCacheWrites = new Map<string, Buffer>()
+  private cacheWriteWorkerRunning = false
 
   private constructor() {}
 
@@ -146,9 +147,8 @@ export class ProtocolService {
       const source = url.searchParams.get('url')
       const libraryId = (url.searchParams.get('libraryId') || 'default').replace(/[^a-zA-Z0-9._-]/g, '_')
       if (!source) return new Response('Missing source URL', { status: 400 })
-      const key = createHash('sha256').update(source).digest('hex')
       const libraryCacheDir = path.join(this.cacheDir, libraryId)
-      const fileName = this.getCacheFileName(source, key)
+      const fileName = this.getCacheFileName(source, 'resource.bin')
       const cachedPath = path.join(libraryCacheDir, fileName)
       let data: Buffer
       let contentType = this.getContentType(fileName)
@@ -164,14 +164,42 @@ export class ProtocolService {
           data = Buffer.from(await response.arrayBuffer())
         }
         if (cache) {
-          await fs.mkdir(libraryCacheDir, { recursive: true })
-          await fs.writeFile(cachedPath, data)
+          this.enqueueCacheWrite(cachedPath, data)
         }
       }
       return new Response(data, { status: 200, headers: { 'Content-Type': contentType, 'Cache-Control': 'public, max-age=31536000' } })
     } catch (error) {
       logger.warn('ProtocolService', 'Library resource failed', { error: error instanceof Error ? error.message : String(error) })
       return new Response('Resource unavailable', { status: 404 })
+    }
+  }
+
+  private enqueueCacheWrite(filePath: string, data: Buffer): void {
+    this.pendingCacheWrites.set(filePath, data)
+    if (!this.cacheWriteWorkerRunning) void this.processCacheWriteQueue()
+  }
+
+  private async processCacheWriteQueue(): Promise<void> {
+    this.cacheWriteWorkerRunning = true
+    try {
+      while (this.pendingCacheWrites.size > 0) {
+        const entry = this.pendingCacheWrites.entries().next().value as [string, Buffer] | undefined
+        if (!entry) break
+        const [filePath, data] = entry
+        this.pendingCacheWrites.delete(filePath)
+        try {
+          await fs.mkdir(path.dirname(filePath), { recursive: true })
+          await fs.writeFile(filePath, data)
+        } catch (error) {
+          logger.warn('ProtocolService', 'Library resource cache write failed', {
+            filePath,
+            error: error instanceof Error ? error.message : String(error),
+          })
+        }
+      }
+    } finally {
+      this.cacheWriteWorkerRunning = false
+      if (this.pendingCacheWrites.size > 0) void this.processCacheWriteQueue()
     }
   }
 
@@ -210,6 +238,9 @@ export class ProtocolService {
     const target = libraryId
       ? path.join(this.cacheDir, libraryId.replace(/[^a-zA-Z0-9._-]/g, '_'))
       : this.cacheDir
+    for (const filePath of this.pendingCacheWrites.keys()) {
+      if (!libraryId || filePath.startsWith(`${target}${path.sep}`)) this.pendingCacheWrites.delete(filePath)
+    }
     await fs.rm(target, { recursive: true, force: true })
     await fs.mkdir(this.cacheDir, { recursive: true })
   }
