@@ -11,6 +11,20 @@ import postcss from 'postcss'
 import postcssPresetEnv from 'postcss-preset-env'
 import cascadeLayers from '@csstools/postcss-cascade-layers'
 
+/**
+ * gap → grid-gap 降级:Chromium 61(CEP 9)不认识统一 gap 属性(Chrome 66 才有,flex 场景更是 84),
+ * 但支持老的 grid-gap/grid-row-gap/grid-column-gap(Chrome 57+)。
+ * 网格布局(缩略图列表等)经此恢复间距;flex 行间距无纯 CSS 补法,保持紧凑。
+ */
+const gapCompat = {
+  postcssPlugin: 'gap-compat',
+  Declaration(decl) {
+    if (decl.prop === 'gap') decl.cloneBefore({ prop: 'grid-gap', value: decl.value })
+    else if (decl.prop === 'column-gap') decl.cloneBefore({ prop: 'grid-column-gap', value: decl.value })
+    else if (decl.prop === 'row-gap') decl.cloneBefore({ prop: 'grid-row-gap', value: decl.value })
+  },
+}
+
 const distDir = path.resolve(import.meta.dirname, '../dist')
 const distAssets = path.join(distDir, 'assets')
 
@@ -34,8 +48,9 @@ export async function runCompatCss() {
   if (!files.length) return []
 
   const processor = postcss([
-    // 先展开 @layer(层级语义转为选择器叠加),再让 preset-env 按目标浏览器转译内部规则
+    // 先展开 @layer(层级语义转为选择器叠加),再补 grid-gap 兼容,最后按目标浏览器转译其余规则
     cascadeLayers(),
+    gapCompat,
     postcssPresetEnv({ browsers: 'chrome >= 61' }),
   ])
 

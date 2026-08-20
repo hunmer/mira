@@ -47,6 +47,8 @@ export type {
   LibraryTreeT,
   MediaBrowserItem,
   MediaBrowserFilters,
+  MediaBrowserMenu,
+  MediaBrowserMenuItem,
   MediaBrowserServices,
   MediaBrowserListResult,
   MediaBrowserSortField,

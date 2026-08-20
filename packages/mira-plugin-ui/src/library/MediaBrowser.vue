@@ -64,6 +64,7 @@ import type {
   LibraryTreeT,
   MediaBrowserFilters,
   MediaBrowserItem,
+  MediaBrowserMenu,
   MediaBrowserServerManager,
   MediaBrowserServices,
   SavedFilter,
@@ -89,6 +90,8 @@ const props = defineProps<{
   libraryServers?: LibrarySelectServer[];
   /** 服务器管理数据;传入后显示服务器图标,点击弹 ServerManagerView(Dialog) */
   serverManager?: MediaBrowserServerManager;
+  /** 自定义菜单;传入后在菜单栏内置「文件」菜单之后渲染,点击项抛 menuSelect */
+  menus?: MediaBrowserMenu[];
 }>();
 
 /** 当前素材库 id;变化时自动重载(传 v-model:library-id 后可经选择器切换) */
@@ -111,6 +114,8 @@ const emit = defineEmits<{
   deleteSavedFilter: [filterId: string];
   /** 菜单「导入文件」:宿主文件多选选完后抛出(宿主可打开 BatchUploadForm 上传表单) */
   importFiles: [files: File[]];
+  /** 自定义菜单项被点击(menus prop 传入的项;动作由宿主实现) */
+  menuSelect: [menuKey: string, itemKey: string];
 }>();
 
 const fallbackT = createLibraryTreeT();
@@ -447,6 +452,20 @@ function getMeta(item: MediaBrowserItem): MasonryItemMeta {
           <MenubarTrigger class="px-2 py-0.5 text-xs">{{ tt('menu.file') }}</MenubarTrigger>
           <MenubarContent :side-offset="4">
             <MenubarItem @select="pickImportFiles">{{ tt('menu.importFiles') }}</MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+        <!-- 自定义菜单(menus prop):渲染在内置「文件」之后,点击项抛 menuSelect -->
+        <MenubarMenu v-for="menu in props.menus" :key="menu.key">
+          <MenubarTrigger class="px-2 py-0.5 text-xs">{{ menu.label }}</MenubarTrigger>
+          <MenubarContent :side-offset="4">
+            <MenubarItem
+              v-for="item in menu.items"
+              :key="item.key"
+              :disabled="item.disabled"
+              @select="emit('menuSelect', menu.key, item.key)"
+            >
+              {{ item.label }}
+            </MenubarItem>
           </MenubarContent>
         </MenubarMenu>
       </Menubar>

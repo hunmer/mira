@@ -204,6 +204,24 @@ export interface FilterBarSortOption {
   label: string
 }
 
+/** MediaBrowser 自定义菜单项(传入 menus 后在菜单栏渲染,select 抛 menuSelect 由宿主处理) */
+export interface MediaBrowserMenuItem {
+  /** 唯一标识,menuSelect 事件回传 */
+  key: string
+  /** 显示文案(宿主自行本地化) */
+  label: string
+  disabled?: boolean
+}
+
+/** MediaBrowser 自定义顶层菜单(渲染在内置「文件」菜单之后) */
+export interface MediaBrowserMenu {
+  /** 唯一标识,menuSelect 事件回传 */
+  key: string
+  /** 顶层触发器文案(宿主自行本地化) */
+  label: string
+  items: MediaBrowserMenuItem[]
+}
+
 /* ============ 素材库文件浏览器(MediaBrowser) ============ */
 
 /**
