@@ -2,14 +2,14 @@
  * 内置中文文案（原迁移版 i18n 被剥离导致界面显示裸 key，这里直接内置字典）。
  */
 const dict: Record<string, string> = {
-  'app.title': 'Pinterest 视觉搜索',
+  'app.title': '图片搜索',
   'main.empty.title': '还没有搜索任务',
-  'main.empty.content': '在 Mira 中选中图片后右键「Pinterest 视觉搜索 v2」，或直接拖入 / 粘贴图片',
-  'main.empty.demo': '试一试示例图片',
+  'main.empty.content': '选中图片后右键「Pinterest 视觉搜索」，或直接拖入 / 粘贴图片',
+  'main.empty.demo': '试一试示例图片...',
   'main.waiting.title': '正在搜索相似内容…',
   'main.noResult.title': '没有找到相似结果',
   'main.noResult.content': '换个区域重新裁剪，或换一张种子图试试',
-  'main.connectError.title': '无法连接 Pinterest',
+  'main.connectError.title': '无法连接',
   'main.connectError.content': '网络不可用或被拦截，可点击重试',
   'main.connectError.retry': '重试',
   'main.authError.title': '未登录 Pinterest',

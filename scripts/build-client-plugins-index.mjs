@@ -29,6 +29,8 @@
  */
 
 import { createHash } from 'node:crypto'
+import { execFile } from 'node:child_process'
+import { promisify } from 'node:util'
 import { readFile, readdir, stat, writeFile, rename, access, rm, mkdir, copyFile } from 'node:fs/promises'
 import { existsSync, watch } from 'node:fs'
 import { createServer } from 'node:http'
@@ -44,6 +46,7 @@ const INDEX_PATH = join(ROOT, 'plugins.json')
 
 const INDEX_VERSION = 1
 const REQUIRED_FIELDS = ['pluginName', 'pluginId', 'version']
+const execFileAsync = promisify(execFile)
 
 // 默认忽略的文件 / 目录名（不进入索引与 checksum 计算）
 // 注意：dist / build 不在忽略列表内 —— 预构建产物（如白板插件的 dist/）属于可分发内容，
@@ -592,11 +595,43 @@ async function writeIndex(catalog) {
 }
 
 let running = false
-async function run(reason, syncDir) {
+async function buildChangedPlugin(filename) {
+  if (!filename) return
+  const normalized = String(filename).split(sep).join('/')
+  const parts = normalized.split('/').filter(Boolean)
+  const pluginDirName = parts[0]
+  if (!pluginDirName || parts[1] !== 'src') return
+
+  const pluginDir = join(PLUGINS_DIR, pluginDirName)
+  let packageConfig
+  try {
+    packageConfig = JSON.parse(await readFile(join(pluginDir, 'package.json'), 'utf-8'))
+  } catch {
+    return
+  }
+  if (!packageConfig.scripts?.build) {
+    log(`插件 ${pluginDirName} 未配置 build，跳过构建`)
+    return
+  }
+
+  log(`检测到源码变化，开始构建插件: ${pluginDirName}`)
+  try {
+    const result = await execFileAsync('pnpm', ['run', 'build'], { cwd: pluginDir })
+    if (result.stdout?.trim()) process.stdout.write(result.stdout)
+    if (result.stderr?.trim()) process.stderr.write(result.stderr)
+    log(`✅ 插件构建完成: ${pluginDirName}`)
+  } catch (e) {
+    const detail = e?.stderr || e?.message || String(e)
+    throw new Error(`插件 ${pluginDirName} 构建失败: ${detail}`)
+  }
+}
+
+async function run(reason, syncDir, changedFile) {
   if (running) return
   running = true
   try {
     if (reason) log(`重新生成索引 (${reason})`)
+    await buildChangedPlugin(changedFile)
     const { catalog, errors } = await build()
     await writeIndex(catalog)
     log(`✅ 已生成 ${INDEX_PATH}: ${catalog.plugins.length} 个插件`)
@@ -633,14 +668,14 @@ async function main() {
     }
     // 递归监听较复杂，这里监听 plugins/ 一层，配合 collectFiles 已够用
     let debounce
-    const trigger = (label) => {
+    const trigger = (label, changedFile) => {
       clearTimeout(debounce)
-      debounce = setTimeout(() => run(label, syncDir), 300)
+      debounce = setTimeout(() => run(label, syncDir, changedFile), 300)
     }
     try {
       watch(PLUGINS_DIR, { recursive: true }, (eventType, filename) => {
         if (filename && IGNORED_NAMES.has(filename.split(sep)[0])) return
-        trigger(`文件变化: ${eventType} ${filename ?? ''}`)
+        trigger(`文件变化: ${eventType} ${filename ?? ''}`, filename)
       })
       log('👀 watch 模式已启动，监听', PLUGINS_DIR)
     } catch (e) {

@@ -800,9 +800,10 @@ export class PluginHandler {
    * 计算指定插件目录下所有文件的 sha256 清单。
    * 用于更新检查：渲染进程将本清单与市场条目的 entry.files 逐文件比对。
    * 过滤规则与索引构建脚本（scripts/build-client-plugins-index.mjs）的 IGNORED_NAMES 一致。
+   * dist / build 是市场发布产物，必须参与内容校验。
    */
   private async computeFileChecksums(pluginDir: string): Promise<MarketplacePluginFile[]> {
-    const IGNORED_NAMES = new Set(['node_modules', '.git', 'dist', 'build', '.DS_Store', 'Thumbs.db'])
+    const IGNORED_NAMES = new Set(['node_modules', '.git', '.DS_Store', 'Thumbs.db'])
     const out: MarketplacePluginFile[] = []
     const stack: string[] = ['.']
 

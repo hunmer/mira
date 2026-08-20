@@ -250,7 +250,7 @@ export class PluginWindowHandlers {
 
       // 调试:插件窗口自动打开 DevTools(分离窗口)。排查完成后删除此行。
       win.webContents.once('did-finish-load', () => {
-        win.webContents.openDevTools({ mode: 'detach' })
+        // win.webContents.openDevTools({ mode: 'detach' })
       })
 
       await this.loadEntry(win, entryPath, opts.query, remoteUrl)

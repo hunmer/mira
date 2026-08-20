@@ -895,10 +895,9 @@ export const usePluginStore = defineStore('plugin', () => {
     const marketUrl = (settingsStore.settings.clientPluginMarketUrl || '').trim()
     if (!marketUrl) return { success: false, message: i18n.global.t('stores.plugin.marketUrlNotConfigured') }
 
-    // 确保市场目录已加载
-    if (!marketplacePlugins.value || marketplacePlugins.value.length === 0) {
-      await fetchMarketplaceCatalog()
-    }
+    // 每次检查都刷新市场目录，避免复用打开插件窗口时缓存的旧索引。
+    const catalogResult = await fetchMarketplaceCatalog()
+    if (!catalogResult.success) return catalogResult
     const catalog = marketplacePlugins.value || []
     if (catalog.length === 0) return { success: false, message: i18n.global.t('stores.plugin.catalogEmpty') }
 
