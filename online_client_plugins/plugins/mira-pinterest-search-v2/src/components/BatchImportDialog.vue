@@ -20,7 +20,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:open', value: boolean): void
-  (e: 'uploaded', value: { total: number; failed: number }): void
+  (e: 'uploaded', value: { total: number; failed: number; libraryId?: string; folderId?: string; tags?: string[] }): void
 }>()
 
 interface Library { id: string | number; name?: string; title?: string }

@@ -45,6 +45,7 @@ function makeTask(input: MediaInput): SearchTask {
     width: input.width || 0,
     height: input.height || 0,
     imageUrl: url,
+    originalUrl: url,
     thumbUrl: input.thumbnailURL || undefined,
     state: 'waiting',
     results: [],
@@ -164,6 +165,13 @@ export function loadMore(task: SearchTask): void {
 /** 裁剪搜索：用局部区域 dataURL 重跑当前任务 */
 export function cropperSearch(task: SearchTask, dataUrl: string): void {
   task.imageUrl = dataUrl
+  enqueue(task)
+}
+
+/** 恢复默认尺寸：种子图还原为创建任务时的原始图并重新搜索 */
+export function restoreSeed(task: SearchTask): void {
+  if (task.imageUrl === task.originalUrl) return
+  task.imageUrl = task.originalUrl
   enqueue(task)
 }
 

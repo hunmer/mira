@@ -59,7 +59,8 @@ console.log('[mira-batch-upload] setup', {
 const emit = defineEmits<{
   (event: 'update:open', value: boolean): void
   (event: 'upload', value: BatchUploadPayload): void
-  (event: 'uploaded', value: { total: number; failed: number }): void
+  /** 队列全部结束;附带本批导入位置(首个文件目标,可作「直接导入」记忆) */
+  (event: 'uploaded', value: { total: number; failed: number; libraryId?: string; folderId?: string; tags?: string[] }): void
   (event: 'library-change', libraryId: string): void
   (event: 'create-node', value: { kind: 'folder' | 'tag'; parentId: number; title: string; description?: string; color?: number; icon?: string }): void
 }>()

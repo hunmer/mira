@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { Crop, RotateCcw, ScanSearch } from '@lucide/vue'
+import { Expand, Crop, RotateCcw, ScanSearch } from '@lucide/vue'
 import { Button } from 'mira-plugin-ui'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from 'mira-plugin-ui/src/components/ui/dialog'
 import { t } from '@/lib/i18n'
 import { cropToDataUrl, formatNumber } from '@/lib/image'
 import { logError } from '@/lib/mira'
-import { cropperSearch, currentTask } from '@/stores/tasks'
+import { cropperSearch, currentTask, restoreSeed } from '@/stores/tasks'
 
 /**
  * 种子图局部裁剪搜索对话框（原中栏常驻区改弹窗，入口在左栏任务卡左上角）。
@@ -139,6 +139,17 @@ async function searchCrop() {
           <Button size="sm" class="h-7 flex-1" :disabled="task.state === 'processing'" @click="searchCrop">
             <Crop class="size-3.5" />
             {{ t('main.image.cropSearch') }}
+          </Button>
+          <Button
+            v-if="task.imageUrl !== task.originalUrl"
+            size="sm"
+            variant="outline"
+            class="h-7"
+            :title="t('main.image.restoreOriginHint')"
+            @click="restoreSeed(task); open = false"
+          >
+            <Expand class="size-3.5" />
+            {{ t('main.image.restoreOrigin') }}
           </Button>
           <Button size="sm" variant="outline" class="h-7" :disabled="!selection" @click="selection = null">
             <RotateCcw class="size-3.5" />

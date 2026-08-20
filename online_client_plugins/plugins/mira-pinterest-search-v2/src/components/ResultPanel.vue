@@ -6,6 +6,7 @@ import '@hunmer/vue-selection-box/style.css'
 // 细路径导入:经 library/index 入口会把 MediaBrowser 等未用大组件拖进 chunk
 import MediaWaterfall from 'mira-plugin-ui/src/library/MediaWaterfall.vue'
 import { resolveMiraServerConfig } from 'mira-plugin-ui/src/library/serverAuth'
+import { MiraClient } from 'mira-app-core/shared/sdk'
 import { Button } from 'mira-plugin-ui/src/components/ui/button'
 import {
   Empty,
@@ -68,8 +69,8 @@ const selectedItems = computed(() =>
   (task.value?.results || []).filter((item) => selectedKeys.value.includes(item.key)),
 )
 
-/** 卡片点击:与 MediaBrowser 同一选择语义——无修饰键=单选替换(再点唯一选中项=取消),
- *  Ctrl/Cmd=切换,Alt=减选;Shift 连选交 SelectionBox(锚点由其维护) */
+/** 卡片点击:批量收集语义(默认多选)——无修饰键/Ctrl=toggle(点未选加入/已选移除,
+ *  不清空其他),Alt=减选;Shift 连选交 SelectionBox(锚点由其维护) */
 function onCardClick(item: ResultItem, event: MouseEvent) {
   const id = item.key
   if (event.shiftKey) {
@@ -77,24 +78,34 @@ function onCardClick(item: ResultItem, event: MouseEvent) {
     return
   }
   const set = new Set(selectedKeys.value)
-  if (event.altKey) {
-    set.delete(id)
-  } else if (event.ctrlKey || event.metaKey) {
-    if (set.has(id)) set.delete(id)
-    else set.add(id)
-  } else if (set.size === 1 && set.has(id)) {
-    set.clear()
-  } else {
-    set.clear()
-    set.add(id)
-  }
+  if (event.altKey || set.has(id)) set.delete(id)
+  else set.add(id)
   selectedKeys.value = [...set]
 }
 
-// ── 批量导入素材库 ───────────────────────────────────────────────
+// ── 批量导入素材库（直接导入 = 记忆位置快速入库；导入到 = 弹对话框选位置） ──
 const importOpen = ref(false)
 const importFiles = ref<File[]>([])
-const fetching = reactive({ active: false, done: 0, total: 0 })
+/** 抓取/上传进度（两按钮共用） */
+const busy = reactive({ active: false, phase: 'fetch' as 'fetch' | 'upload', done: 0, total: 0 })
+
+/** 直接导入的目标位置记忆（来自上次「导入到」或直接导入时的首库兜底） */
+const TARGET_KEY = 'mira-pinterest-search-v2:import-target'
+interface ImportTarget { libraryId: string; folderId?: string; tags?: string[] }
+
+function loadTarget(): ImportTarget | null {
+  try {
+    const raw = localStorage.getItem(TARGET_KEY)
+    const target = raw ? JSON.parse(raw) : null
+    return target?.libraryId ? target : null
+  } catch {
+    return null
+  }
+}
+
+function saveTarget(target: ImportTarget) {
+  localStorage.setItem(TARGET_KEY, JSON.stringify(target))
+}
 
 /** 原图 URL / blob → File（文件名取 Pin 标题，非法字符清理，缺省 pin-{id}） */
 function toFile(item: ResultItem, url: string, blob: Blob): File {
@@ -104,17 +115,9 @@ function toFile(item: ResultItem, url: string, blob: Blob): File {
   return new File([blob], name, { type: blob.type || 'image/jpeg' })
 }
 
-/** 并发抓取选中项原图（探测 originals 优先），完成后弹 BatchImportDialog */
-async function startImport() {
+/** 并发(3)抓取选中项原图（探测 originals 优先）；失败项跳过计数，进度写 busy */
+async function fetchSelectedImages(): Promise<{ files: File[]; failed: number }> {
   const items = selectedItems.value
-  if (!items.length || fetching.active) return
-  if (!resolveMiraServerConfig().token) {
-    window.alert(t('main.selection.noServer'))
-    return
-  }
-  fetching.active = true
-  fetching.done = 0
-  fetching.total = items.length
   const files: File[] = []
   let failed = 0
   let cursor = 0
@@ -130,29 +133,126 @@ async function startImport() {
         failed++
         logError('[mira-pinterest-search-v2] fetch image failed:', item.id, error)
       }
-      fetching.done++
+      busy.done++
     }
   }
   await Promise.all([worker(), worker(), worker()])
-  fetching.active = false
-  if (!files.length) {
-    window.alert(t('main.selection.fetchAllFailed'))
-    return
-  }
-  if (failed) window.alert(t('main.selection.fetchFailed', { n: failed }))
-  importFiles.value = files
-  importOpen.value = true
+  return { files, failed }
 }
 
-/** 上传队列结束：全部成功时回写 saved 徽标并清空选择（个别失败留给对话框内重试） */
-function onImported({ failed }: { total: number; failed: number }) {
-  if (!failed) {
-    const keys = new Set(selectedKeys.value)
-    task.value?.results.forEach((item) => {
-      if (keys.has(item.key)) item.saved = true
-    })
-    selectedKeys.value = []
+/** 校验连接并置忙;返回 server 配置(不可用返回 null) */
+function beginBusy(): { server: string; token: string } | null {
+  if (busy.active) return null
+  const { server, token } = resolveMiraServerConfig()
+  if (!server || !token) {
+    window.alert(t('main.selection.noServer'))
+    return null
   }
+  busy.active = true
+  busy.phase = 'fetch'
+  busy.done = 0
+  busy.total = selectedItems.value.length
+  return { server, token }
+}
+
+/** 导入到…：抓取完成后弹 BatchImportDialog 选库/文件夹/标签 */
+async function importTo() {
+  if (!selectedItems.value.length) return
+  const config = beginBusy()
+  if (!config) return
+  try {
+    const { files, failed } = await fetchSelectedImages()
+    if (!files.length) {
+      window.alert(t('main.selection.fetchAllFailed'))
+      return
+    }
+    if (failed) window.alert(t('main.selection.fetchFailed', { n: failed }))
+    importFiles.value = files
+    importOpen.value = true
+  } finally {
+    busy.active = false
+  }
+}
+
+/** 直接导入：抓取后按记忆位置（缺省首库根目录）并发上传，不弹对话框 */
+async function quickImport() {
+  if (!selectedItems.value.length) return
+  const config = beginBusy()
+  if (!config) return
+  try {
+    const { files, failed } = await fetchSelectedImages()
+    if (!files.length) {
+      window.alert(t('main.selection.fetchAllFailed'))
+      return
+    }
+    const client = new MiraClient(config.server)
+    client.setToken(config.token)
+    let target = loadTarget()
+    if (!target) {
+      const libraries = ((await client.libraries().getAll()) as any[]) || []
+      if (!libraries.length) {
+        window.alert(t('main.picker.noLibrary'))
+        return
+      }
+      target = { libraryId: String(libraries[0].id) }
+      saveTarget(target)
+    }
+    busy.phase = 'upload'
+    busy.done = 0
+    busy.total = files.length
+    let cursor = 0
+    let uploadFailed = 0
+    const worker = async () => {
+      while (cursor < files.length) {
+        const file = files[cursor++]
+        try {
+          await client.files().uploadFiles([file], target.libraryId, {
+            folderId: target.folderId,
+            tags: target.tags,
+          })
+        } catch (error) {
+          uploadFailed++
+          logError('[mira-pinterest-search-v2] upload failed:', file.name, error)
+        }
+        busy.done++
+      }
+    }
+    await Promise.all([worker(), worker(), worker()])
+    if (!failed && !uploadFailed) markSelectedSaved()
+    showToast(t('main.selection.importedToast', {
+      ok: files.length - uploadFailed,
+      failedSuffix: uploadFailed ? t('main.selection.importedFailedSuffix', { n: uploadFailed }) : '',
+    }))
+  } finally {
+    busy.active = false
+  }
+}
+
+/** 全部成功时回写 saved 徽标并清空选择 */
+function markSelectedSaved() {
+  const keys = new Set(selectedKeys.value)
+  task.value?.results.forEach((item) => {
+    if (keys.has(item.key)) item.saved = true
+  })
+  selectedKeys.value = []
+}
+
+/** 对话框上传队列结束：记忆导入位置;全部成功回写 saved 并清空选择（个别失败留给对话框内重试） */
+function onImported({ failed, libraryId, folderId, tags }: { total: number; failed: number; libraryId?: string; folderId?: string; tags?: string[] }) {
+  if (libraryId) saveTarget({ libraryId, folderId, tags })
+  if (!failed) markSelectedSaved()
+}
+
+// ── 轻量结果提示（直接导入完成） ─────────────────────────────────
+const toast = ref('')
+let toastTimer: ReturnType<typeof setTimeout> | undefined
+
+function showToast(message: string) {
+  toast.value = message
+  clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => {
+    toast.value = ''
+  }, 3500)
 }
 </script>
 
@@ -256,21 +356,26 @@ function onImported({ failed }: { total: number; failed: number }) {
         {{ t('main.loadingMore') }}
       </div>
 
-      <!-- 底部浮动操作条：已选计数 + 批量导入 / 清空 -->
+      <!-- 底部浮动操作条：已选计数 + 直接导入(记忆位置)/导入到(选位置) / 清空；busy 时显示进度 -->
       <div
-        v-if="selectedKeys.length || fetching.active"
+        v-if="selectedKeys.length || busy.active"
         class="sticky bottom-4 z-30 mx-auto flex w-fit items-center gap-2 rounded-full border bg-background/95 px-3 py-1.5 shadow-lg backdrop-blur"
       >
-        <Loader2 v-if="fetching.active" class="size-4 animate-spin text-muted-foreground" />
+        <Loader2 v-if="busy.active" class="size-4 animate-spin text-muted-foreground" />
         <span class="px-1 text-xs tabular-nums">
-          {{ fetching.active
-            ? t('main.selection.fetching', { done: fetching.done, total: fetching.total })
+          {{ busy.active
+            ? (busy.phase === 'fetch'
+                ? t('main.selection.fetching', { done: busy.done, total: busy.total })
+                : t('main.selection.uploading', { done: busy.done, total: busy.total }))
             : t('main.selection.count', { n: selectedKeys.length }) }}
         </span>
-        <template v-if="!fetching.active">
-          <Button size="sm" class="h-7 rounded-full px-3" :disabled="!selectedKeys.length" @click="startImport">
+        <template v-if="!busy.active">
+          <Button size="sm" class="h-7 rounded-full px-3" :disabled="!selectedKeys.length" @click="quickImport">
             <ImageDown class="size-3.5" />
-            {{ t('main.selection.import') }}
+            {{ t('main.selection.quickImport') }}
+          </Button>
+          <Button size="sm" variant="outline" class="h-7 rounded-full px-3" :disabled="!selectedKeys.length" @click="importTo">
+            {{ t('main.selection.importTo') }}
           </Button>
           <Button
             variant="ghost"
@@ -282,6 +387,14 @@ function onImported({ failed }: { total: number; failed: number }) {
             <X class="size-3.5" />
           </Button>
         </template>
+      </div>
+
+      <!-- 直接导入结果提示 -->
+      <div
+        v-else-if="toast"
+        class="sticky bottom-4 z-30 mx-auto w-fit rounded-full border bg-background/95 px-4 py-1.5 text-xs shadow-lg backdrop-blur"
+      >
+        {{ toast }}
       </div>
     </template>
 

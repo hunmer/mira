@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-20T18:44:44.115Z",
+  "generatedAt": "2026-08-20T18:53:09.733Z",
   "plugins": [
     {
       "pluginId": "7e2d31a4-8a3f-4bd8-a44c-f5a7b2d0c901",
@@ -64,8 +64,8 @@
       "directory": "plugins/mira-pinterest-search-v2",
       "icon": "icon.png",
       "readme": "README.md",
-      "size": 1129747,
-      "checksum": "sha256:e5fe5678c7b690dca8fb098a95e4c604f690b5ba5ca4b73ce4215e29dd3ea224",
+      "size": 1132977,
+      "checksum": "sha256:0990bef712578cc6a54d0fb82165077353796fbdcc39b93be110e0165306e18d",
       "files": [
         {
           "path": "plugin.json",
@@ -90,7 +90,7 @@
         {
           "path": "dist/index.html",
           "size": 411,
-          "checksum": "sha256:11aee533ba771d8d7321bf4408cfcb7284180238ad0aeab1b8521ecfdf6e16bf"
+          "checksum": "sha256:abe7984d4625884e45f32abab92ca50d3dca8ad3137628ddaa55cda71566053c"
         },
         {
           "path": "dist/assets/index-CWhEo0-D.css",
@@ -98,9 +98,9 @@
           "checksum": "sha256:99a64aabf499ce1e2e3486ef7e56951b1826169e9fb985d4da99027cf69db377"
         },
         {
-          "path": "dist/assets/index-53LL0WPx.js",
-          "size": 988569,
-          "checksum": "sha256:1742246541f9d8db5b7af2d4a659a62472773ad30d12c1a28e7d8a3fe51160f5"
+          "path": "dist/assets/index-B9-r0jM1.js",
+          "size": 991799,
+          "checksum": "sha256:96500296e37096e2d1d24e35a9db2dae123f7c9fa33a72aacf3142cd1ccb11be"
         },
         {
           "path": "README.md",

@@ -102,8 +102,8 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   (event: 'upload', value: BatchUploadPayload): void
-  /** 组件内队列全部结束(仅 uploadFile 模式) */
-  (event: 'uploaded', value: { total: number; failed: number }): void
+  /** 组件内队列全部结束(仅 uploadFile 模式);附带本批导入位置(首个文件目标,可作记忆) */
+  (event: 'uploaded', value: { total: number; failed: number; libraryId?: string; folderId?: string; tags?: string[] }): void
   /** 切换素材库:宿主据此重新拉取 folders/tags */
   (event: 'library-change', libraryId: string): void
   /** 树视图「新增」:未传 createNode prop 时的兜底事件(无法回传新节点 id,不自动选中) */
@@ -456,7 +456,15 @@ async function startUpload () {
     }
   }
   await Promise.all(Array.from({ length: Math.min(props.concurrency, queue.length) }, worker))
-  emit('uploaded', { total: queue.length, failed })
+  // 附带本批导入位置(首个文件的目标):宿主可记忆为「直接导入」的默认位置
+  const first = queue[0]
+  emit('uploaded', {
+    total: queue.length,
+    failed,
+    libraryId: libraryId.value,
+    folderId: first?.folderId,
+    tags: tagTitlesOfIds(first?.tags),
+  })
 }
 </script>
 
