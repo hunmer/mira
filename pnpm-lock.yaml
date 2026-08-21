@@ -151,6 +151,9 @@ importers:
       '@lucide/vue':
         specifier: ^1.32.0
         version: 1.32.0(vue@3.5.41(typescript@5.8.3))
+      '@radix-icons/vue':
+        specifier: ^1.0.0
+        version: 1.0.0(vue@3.5.41(typescript@5.8.3))
       '@vueuse/core':
         specifier: ^14.4.0
         version: 14.4.0(vue@3.5.41(typescript@5.8.3))
@@ -12088,6 +12091,10 @@ snapshots:
   '@radix-icons/vue@1.0.0(vue@3.5.13(typescript@5.7.3))':
     dependencies:
       vue: 3.5.13(typescript@5.7.3)
+
+  '@radix-icons/vue@1.0.0(vue@3.5.41(typescript@5.8.3))':
+    dependencies:
+      vue: 3.5.41(typescript@5.8.3)
 
   '@remirror/core-constants@3.0.0': {}
 

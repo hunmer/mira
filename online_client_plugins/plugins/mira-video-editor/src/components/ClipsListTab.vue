@@ -25,8 +25,8 @@
             @error="handleClipThumbnailError(clipId)"
           />
           <div v-else class="thumbnail-placeholder" @click="generateClipThumbnail(clip, clipId)">
-            <span v-if="thumbnailLoading[clipId]" class="loading-spinner">⏳</span>
-            <span v-else class="generate-hint">📷 点击生成封面</span>
+            <span v-if="thumbnailLoading[clipId]" class="loading-spinner"><UpdateIcon style="width: 20px; height: 20px" /></span>
+            <span v-else class="generate-hint"><CameraIcon style="width: 16px; height: 16px; vertical-align: -3px" /> 点击生成封面</span>
           </div>
         </div>
         <div class="clip-content">
@@ -41,10 +41,10 @@
         </div>
         <div class="clip-actions">
           <Button @click="$emit('previewClip', clip)" variant="outline" size="sm" title="预览片段">
-            ▶️
+            <PlayIcon style="width: 14px; height: 14px" />
           </Button>
           <Button @click="$emit('editClip', clip)" variant="outline" size="sm" title="编辑">
-            ✏️
+            <Pencil1Icon style="width: 14px; height: 14px" />
           </Button>
           <Button
             @click="$emit('exportClip', clip)"
@@ -53,10 +53,11 @@
             :title="isExporting && exportProgress ? exportProgress.message : '导出'"
             :disabled="isExporting && !!exportProgress"
           >
-            {{ isExporting && exportProgress ? '⏳' : '💾' }}
+            <UpdateIcon v-if="isExporting && exportProgress" class="loading-spinner" style="width: 14px; height: 14px" />
+            <DownloadIcon v-else style="width: 14px; height: 14px" />
           </Button>
           <Button @click="$emit('deleteClip', clipId)" variant="destructive" size="sm" title="删除">
-            🗑️
+            <TrashIcon style="width: 14px; height: 14px" />
           </Button>
         </div>
       </div>
@@ -64,7 +65,7 @@
 
     <div v-if="Object.keys(selectedVideo.clips).length > 0" class="bulk-actions">
       <Button @click="$emit('exportAllClips')" variant="default" class="w-full">
-        📦 导出所有片段 ({{ Object.keys(selectedVideo.clips).length }} 个)
+        <ArchiveIcon style="width: 14px; height: 14px" /> 导出所有片段 ({{ Object.keys(selectedVideo.clips).length }} 个)
       </Button>
     </div>
   </div>
@@ -75,6 +76,7 @@
 
 <script setup lang="ts">
 import { Button } from 'mira-plugin-ui/src/components/ui/button'
+import { UpdateIcon, CameraIcon, PlayIcon, Pencil1Icon, DownloadIcon, TrashIcon, ArchiveIcon } from '@radix-icons/vue'
 import type { VideoData, VideoClip } from '@/types/video-editor'
 import { formatTime, formatDuration } from '../utils/formatters'
 

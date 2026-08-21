@@ -16,7 +16,7 @@
             @click.stop="deleteLocalList(list.id)"
             title="删除分组"
           >
-            ✕
+            <Cross1Icon style="width: 10px; height: 10px" />
           </button>
         </div>
         <button class="group-btn group-btn-add" @click="showCreateListDialog" title="新建分组">
@@ -35,10 +35,10 @@
           style="display: none"
         />
         <Button @click="triggerFileSelect" variant="default" class="flex-1">
-          📁 添加本地文件（支持多选）
+          <UploadIcon style="width: 14px; height: 14px" /> 添加本地文件（支持多选）
         </Button>
         <Button @click="clearCurrentList" variant="destructive" :disabled="currentLocalVideos.length === 0" title="清空当前列表">
-          🗑️
+          <TrashIcon style="width: 14px; height: 14px" />
         </Button>
       </div>
 
@@ -52,8 +52,8 @@
         >
           <div class="thumbnail-wrapper">
             <img v-if="video.thumbnail" :src="video.thumbnail" class="thumbnail" />
-            <div v-else class="thumbnail-placeholder">🎬</div>
-            <div class="play-indicator">▶️</div>
+            <div v-else class="thumbnail-placeholder"><VideoIcon style="width: 24px; height: 24px" /></div>
+            <div class="play-indicator"><PlayIcon style="width: 28px; height: 28px" /></div>
           </div>
           <div class="video-info">
             <div class="title">{{ video.title }}</div>
@@ -62,7 +62,7 @@
             </div>
           </div>
           <button @click.stop="removeVideo(video)" class="btn-remove" title="删除">
-            ✕
+            <Cross1Icon style="width: 10px; height: 10px" />
           </button>
         </div>
       </div>
@@ -102,6 +102,7 @@ import {
   DialogTitle
 } from 'mira-plugin-ui/src/components/ui/dialog'
 import { Button } from 'mira-plugin-ui/src/components/ui/button'
+import { Cross1Icon, UploadIcon, TrashIcon, VideoIcon, PlayIcon } from '@radix-icons/vue'
 import type { VideoData } from '@/types/video-editor'
 import { localVideoStorage } from '@/lib/localVideoStorage'
 import { getHost, isHostAvailable } from '@/lib/host'

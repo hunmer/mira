@@ -61,7 +61,9 @@
         class="split-btn"
         :class="{ 'canceling': isSplitting }"
       >
-        {{ isSplitting ? '❌ 取消分割' : '🎬 开始分割' }}
+        <Cross1Icon v-if="isSplitting" style="width: 14px; height: 14px" />
+        <VideoIcon v-else style="width: 14px; height: 14px" />
+        {{ isSplitting ? '取消分割' : '开始分割' }}
       </Button>
     </div>
 
@@ -108,7 +110,7 @@
             variant="default"
             :disabled="selectedScenes.length === 0"
           >
-            ➕ 添加到列表 ({{ selectedScenes.length }})
+            <PlusIcon style="width: 14px; height: 14px" /> 添加到列表 ({{ selectedScenes.length }})
           </Button>
         </div>
       </div>
@@ -130,7 +132,7 @@
               @error="$emit('handleThumbnailError', scene)"
             />
             <div v-else class="thumbnail-placeholder">
-              🎬
+              <VideoIcon style="width: 24px; height: 24px" />
             </div>
             <div class="scene-checkbox">
               <input
@@ -142,7 +144,10 @@
           </div>
           <div class="scene-info">
             <div class="scene-title">
-              {{ scene.isMerged ? `🔗 已合并 ${scene.mergedIds?.length || 0} 个场景` : `${pageOffset + index + 1}` }}
+              <template v-if="scene.isMerged">
+                <Link2Icon style="width: 11px; height: 11px; vertical-align: -1px" /> 已合并 {{ scene.mergedIds?.length || 0 }} 个场景
+              </template>
+              <template v-else>{{ pageOffset + index + 1 }}</template>
             </div>
             <div class="scene-duration">
               {{ formatTime(scene.startTime) }} - {{ formatTime(scene.endTime) }}
@@ -174,6 +179,7 @@ import { computed, ref, watch } from 'vue'
 import { Button } from 'mira-plugin-ui/src/components/ui/button'
 import { Input } from 'mira-plugin-ui/src/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Cross1Icon, VideoIcon, PlusIcon, Link2Icon } from '@radix-icons/vue'
 import { Dialog, DialogContent } from 'mira-plugin-ui/src/components/ui/dialog'
 import type { VideoData } from '@/types/video-editor'
 import type { SceneSegment, SplitProgress } from '../types'

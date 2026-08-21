@@ -12,9 +12,9 @@
       @mouseleave="handleMenuWrapperLeave"
     >
       <div class="context-menu-item">
-        <span class="menu-icon">🔗</span>
+        <span class="menu-icon"><Link2Icon style="width: 15px; height: 15px" /></span>
         <span>合并片段</span>
-        <span class="submenu-arrow">▶</span>
+        <span class="submenu-arrow"><CaretRightIcon style="width: 12px; height: 12px" /></span>
       </div>
       <div
         v-show="showMergeSubMenu"
@@ -27,7 +27,7 @@
           class="context-menu-item"
           @click="handleMergeScenes(mergeScene)"
         >
-          <span class="menu-icon">🎬</span>
+          <span class="menu-icon"><VideoIcon style="width: 15px; height: 15px" /></span>
           <span>{{ mergeScene.title }}</span>
           <span class="menu-time">{{ mergeScene.timeRange }}</span>
         </div>
@@ -39,7 +39,7 @@
       class="context-menu-item"
       @click="handleUnmergeScene"
     >
-      <span class="menu-icon">✂️</span>
+      <span class="menu-icon"><ScissorsIcon style="width: 15px; height: 15px" /></span>
       <span>取消合并</span>
     </div>
 
@@ -50,7 +50,7 @@
       class="context-menu-item"
       @click="handleExportMergedScene"
     >
-      <span class="menu-icon">🔗</span>
+      <span class="menu-icon"><Link2Icon style="width: 15px; height: 15px" /></span>
       <span>导出合并片段</span>
     </div>
 
@@ -59,13 +59,14 @@
       class="context-menu-item"
       @click="handleExportSingleScene"
     >
-      <span class="menu-icon">📦</span>
+      <span class="menu-icon"><ArchiveIcon style="width: 15px; height: 15px" /></span>
       <span>导出此片段</span>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Link2Icon, VideoIcon, ScissorsIcon, ArchiveIcon, CaretRightIcon } from '@radix-icons/vue'
 import type { ContextMenuState } from '../types'
 
 defineProps<{

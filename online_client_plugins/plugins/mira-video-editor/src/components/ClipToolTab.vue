@@ -15,10 +15,10 @@
               @input="$emit('validateClipTime')"
             />
             <Button @click="$emit('setClipStartToZero')" variant="outline" size="sm">
-              ⏮️ 开始
+              <TrackPreviousIcon style="width: 12px; height: 12px" /> 开始
             </Button>
             <Button @click="$emit('setClipStartToCurrent')" variant="outline" size="sm" :title="`设置为当前播放时间 ${formatTime(currentPlayTime)}`">
-              ⏰ 当前
+              <ClockIcon style="width: 12px; height: 12px" /> 当前
             </Button>
           </div>
         </div>
@@ -36,10 +36,10 @@
               @input="$emit('validateClipTime')"
             />
             <Button @click="$emit('setClipEndToMax')" variant="outline" size="sm">
-              ⏭️ 结束
+              <TrackNextIcon style="width: 12px; height: 12px" /> 结束
             </Button>
             <Button @click="$emit('setClipEndToCurrent')" variant="outline" size="sm" :title="`设置为当前播放时间 ${formatTime(currentPlayTime)}`">
-              ⏰ 当前
+              <ClockIcon style="width: 12px; height: 12px" /> 当前
             </Button>
           </div>
         </div>
@@ -73,7 +73,7 @@
           variant="default"
           class="w-full"
         >
-          ➕ 创建片段
+          <PlusIcon style="width: 14px; height: 14px" /> 创建片段
         </Button>
       </div>
     </div>
@@ -87,6 +87,7 @@
 import { ref } from 'vue'
 import { Button } from 'mira-plugin-ui/src/components/ui/button'
 import { Input } from 'mira-plugin-ui/src/components/ui/input'
+import { TrackPreviousIcon, ClockIcon, TrackNextIcon, PlusIcon } from '@radix-icons/vue'
 import { formatTime } from '../utils/formatters'
 
 defineProps<{

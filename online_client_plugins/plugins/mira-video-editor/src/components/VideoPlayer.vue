@@ -1,7 +1,7 @@
 <template>
   <div class="video-player">
     <div v-if="!video" class="empty-state">
-      <div class="empty-icon">🎬</div>
+      <div class="empty-icon"><VideoIcon style="width: 56px; height: 56px" /></div>
       <div class="empty-text">请从左侧选择一个视频</div>
     </div>
 
@@ -24,14 +24,14 @@
       <!-- 预览模式指示器 -->
       <div v-if="isPreviewMode && previewClip" class="preview-indicator">
         <div class="preview-info">
-          <span class="preview-icon">👁️</span>
+          <span class="preview-icon"><EyeOpenIcon style="width: 16px; height: 16px" /></span>
           <span class="preview-text">预览模式: {{ previewClip.desc || '片段' }}</span>
           <span class="preview-time">
             {{ formatTime(previewClip.start) }} - {{ formatTime(previewClip.end) }}
           </span>
         </div>
         <button @click="stopPreview" class="preview-exit-btn">
-          ❌ 退出预览
+          <ExitIcon style="width: 12px; height: 12px; vertical-align: -2px" /> 退出预览
         </button>
       </div>
 
@@ -40,10 +40,10 @@
       <!-- 快捷标记工具 -->
       <div class="quick-markers">
         <button @click="markIn" class="marker-btn" title="标记入点 (I)">
-          ⬅️{{ formatTime(clipStartTime) }}
+          <ArrowLeftIcon style="width: 12px; height: 12px; vertical-align: -2px" />{{ formatTime(clipStartTime) }}
         </button>
         <button @click="markOut" class="marker-btn" title="标记出点 (O)">
-          {{ formatTime(clipEndTime) }} ➡️
+          {{ formatTime(clipEndTime) }} <ArrowRightIcon style="width: 12px; height: 12px; vertical-align: -2px" />
         </button>
         <button
           @click="createClipFromMarkers"
@@ -51,10 +51,10 @@
           class="marker-btn primary"
           title="创建片段 (C)"
         >
-          ➕
+          <PlusIcon style="width: 14px; height: 14px" />
         </button>
         <button @click="clearMarkers" class="marker-btn" title="清除标记">
-          ❌
+          <Cross1Icon style="width: 14px; height: 14px" />
         </button>
       </div>
     </div>
@@ -65,6 +65,7 @@
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import Plyr from 'plyr'
 import 'plyr/dist/plyr.css'
+import { VideoIcon, EyeOpenIcon, ExitIcon, ArrowLeftIcon, ArrowRightIcon, PlusIcon, Cross1Icon } from '@radix-icons/vue'
 import type { VideoData } from '@/types/video-editor'
 import { resolveVideoSrc } from '@/lib/host'
 

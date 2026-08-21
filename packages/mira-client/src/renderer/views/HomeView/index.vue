@@ -247,6 +247,9 @@ const handleScreenshotComplete = (payload: { data: ArrayBuffer | Uint8Array; nam
   screenshotFile.value = new File([bytes as any], payload.name || 'screenshot.png', { type: payload.mime || 'image/png' })
   if (settingsStore.settings.screenshotOpenUploadDialog || payload.importToLibrary) showFileUploadDialog.value = true
 }
+const handleScreenshotDebug = (payload: { message: string; data?: unknown; at?: string }) => {
+  console.info(`[screenshot-debug] ${payload?.message || ''}`, payload?.data || '')
+}
 const sidebarUploadTarget = ref<{ folderId?: string | number | null; tagIds?: Array<string | number> }>()
 // 导入本地文件夹：传入上传对话框的本地目录树（rootPath + tree）
 const uploadInitialTree = ref<{ rootPath: string; tree: any[] }>()
@@ -448,6 +451,7 @@ let cleanupModules: (() => void) | null = null
 
 onMounted(async () => {
   window.electronAPI?.on('screenshot:complete', handleScreenshotComplete)
+  window.electronAPI?.on('screenshot:debug', handleScreenshotDebug)
   try {
     cleanupModules = await performInitialization(
       homeController,
@@ -534,6 +538,7 @@ const handleLogout = async () => {
 // ============================================
 onUnmounted(() => {
   window.electronAPI?.removeAllListeners('screenshot:complete')
+  window.electronAPI?.removeAllListeners('screenshot:debug')
   if (cleanupModules) {
     cleanupModules()
   }

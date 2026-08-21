@@ -230,7 +230,7 @@ export class IPCHandlers {
 
     // 清理剩余的监听器
     ipcMain.removeAllListeners('protocol:register-handler')
-    for (const channel of ['screenshot:start', 'screenshot:get-source', 'screenshot:get-settings', 'screenshot:capture', 'screenshot:complete', 'screenshot:cancel']) {
+    for (const channel of ['screenshot:start', 'screenshot:get-source', 'screenshot:get-settings', 'screenshot:capture', 'screenshot:debug', 'screenshot:complete', 'screenshot:cancel']) {
       ipcMain.removeHandler(channel)
     }
     ipcMain.removeAllListeners('protocol:unregister-handler')

@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@lucide/vue": "^1.32.0",
+    "@radix-icons/vue": "^1.0.0",
     "@vueuse/core": "^14.4.0",
     "mira-plugin-ui": "workspace:*",
     "plyr": "^3.8.3",

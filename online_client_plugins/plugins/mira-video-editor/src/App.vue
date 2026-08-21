@@ -2,7 +2,9 @@
   <div class="app-root">
     <VideoEditor />
     <!-- 设置入口（悬浮右上角，避免侵入编辑器布局） -->
-    <button class="settings-fab" title="设置" @click="settingsOpen = true">⚙</button>
+    <button class="settings-fab" title="设置" @click="settingsOpen = true">
+      <GearIcon style="width: 15px; height: 15px" />
+    </button>
     <SettingsDialog v-model:open="settingsOpen" />
     <Toaster :theme="isDark ? 'dark' : 'light'" position="bottom-right" close-button />
   </div>
@@ -11,6 +13,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { Toaster } from 'vue-sonner'
+import { GearIcon } from '@radix-icons/vue'
 import VideoEditor from '@/components/index.vue'
 import SettingsDialog from '@/components/SettingsDialog.vue'
 import { getHost } from '@/lib/host'
@@ -132,6 +135,9 @@ onUnmounted(() => {
   z-index: 100;
   width: 32px;
   height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 50%;
   border: 1px solid var(--border);
   background: var(--card);

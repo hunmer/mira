@@ -15,7 +15,7 @@
               <h4>视频截图</h4>
               <div class="screenshot-actions">
                 <Button @click="openEditDialog" :disabled="!video" size="sm" variant="default">
-                  ✏️ 编辑水印
+                  <Pencil1Icon style="width: 12px; height: 12px" /> 编辑水印
                 </Button>
               </div>
             </div>
@@ -23,7 +23,7 @@
             <!-- 截图显示区域 -->
             <div class="screenshot-display">
               <div v-if="isCapturing && !screenshotUrl" class="capturing-state">
-                <div class="loading-spinner">⏳</div>
+                <div class="loading-spinner"><UpdateIcon style="width: 28px; height: 28px" /></div>
                 <span>正在截取视频帧...</span>
               </div>
               <div v-else-if="screenshotUrl" class="screenshot-wrapper-container">
@@ -76,7 +76,7 @@
               </div>
               <div v-else class="no-screenshot-state">
                 <div class="no-screenshot-content">
-                  <span class="no-screenshot-icon">📷</span>
+                  <span class="no-screenshot-icon"><CameraIcon style="width: 40px; height: 40px" /></span>
                   <span class="no-screenshot-text">点击上方按钮截取视频帧</span>
                 </div>
               </div>
@@ -117,7 +117,7 @@
                 variant="default"
                 class="flex-1"
               >
-                ✓ 添加到列表 ({{ tempRegions.length }})
+                <CheckIcon style="width: 14px; height: 14px" /> 添加到列表 ({{ tempRegions.length }})
               </Button>
               <Button
                 @click="clearTempRegions"
@@ -191,7 +191,7 @@
                   </span>
                 </div>
                 <Button variant="ghost" size="icon" @click="handleDeleteRegion(region.id)" title="删除此区域" class="btn-delete">
-                  🗑️
+                  <TrashIcon style="width: 14px; height: 14px" />
                 </Button>
               </div>
               <div v-if="regions.length === 0" class="empty-regions">
@@ -264,6 +264,7 @@ import { toast } from '@/lib/toast'
 import { localVideoStorage } from '@/lib/localVideoStorage'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from 'mira-plugin-ui/src/components/ui/select'
 import { Button } from 'mira-plugin-ui/src/components/ui/button'
+import { Pencil1Icon, UpdateIcon, CameraIcon, CheckIcon, TrashIcon } from '@radix-icons/vue'
 import { Input } from 'mira-plugin-ui/src/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogFooter } from 'mira-plugin-ui/src/components/ui/dialog'
 import {

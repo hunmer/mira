@@ -23,3 +23,4 @@
 - Added Windows visible-window detection via `user32.EnumWindows/GetWindowRect`; hover outlines and click-to-select overlays are rendered in the standalone HTML.
 - Changed the screenshot stage to fill the entire display window, removing the previous 16px inset/aspect letterboxing; renderer and main builds passed.
 - Corrected export scaling to independent X/Y ratios using the source image's natural dimensions, preventing transparent/blank output edges when display DIP and source pixels differ.
+- Added `[screenshot-debug]` diagnostics to the main window console and returned detected windows/source dimensions directly from `screenshot:get-source` to eliminate event timing loss.

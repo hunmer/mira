@@ -9,7 +9,7 @@
     <Transition name="fade">
       <div v-if="isDragging" class="drop-overlay">
         <div class="drop-content">
-          <div class="drop-icon">📹</div>
+          <div class="drop-icon"><VideoIcon style="width: 64px; height: 64px" /></div>
           <div class="drop-text">释放鼠标添加视频</div>
           <div class="drop-hint">支持 MP4, AVI, MOV, MKV 等格式</div>
         </div>
@@ -61,22 +61,22 @@
         <Tabs v-model="activeToolTab" class="right-tabs">
           <TabsList class="right-tabs-list">
             <TabsTrigger value="files" class="right-tab-trigger" title="文件列表">
-              <span class="tab-icon">📁</span>
+              <span class="tab-icon"><FileIcon style="width: 18px; height: 18px" /></span>
             </TabsTrigger>
             <TabsTrigger value="clip" class="right-tab-trigger" title="剪辑工具">
-              <span class="tab-icon">✂️</span>
+              <span class="tab-icon"><ScissorsIcon style="width: 18px; height: 18px" /></span>
             </TabsTrigger>
             <TabsTrigger value="clips" class="right-tab-trigger" title="片段列表">
-              <span class="tab-icon">📋</span>
+              <span class="tab-icon"><ClipboardIcon style="width: 18px; height: 18px" /></span>
             </TabsTrigger>
             <TabsTrigger value="split" class="right-tab-trigger" title="智能分割">
-              <span class="tab-icon">🎬</span>
+              <span class="tab-icon"><VideoIcon style="width: 18px; height: 18px" /></span>
             </TabsTrigger>
             <TabsTrigger value="watermark" class="right-tab-trigger" title="水印">
-              <span class="tab-icon">💧</span>
+              <span class="tab-icon"><TransparencyGridIcon style="width: 18px; height: 18px" /></span>
             </TabsTrigger>
             <TabsTrigger value="thumbnails" class="right-tab-trigger" title="缩略图预览">
-              <span class="tab-icon">🖼️</span>
+              <span class="tab-icon"><ImageIcon style="width: 18px; height: 18px" /></span>
             </TabsTrigger>
           </TabsList>
 
@@ -203,6 +203,7 @@
 
 <script setup lang="ts">
 import { Tabs, TabsList, TabsTrigger, TabsContent } from 'mira-plugin-ui/src/components/ui/tabs'
+import { VideoIcon, FileIcon, ScissorsIcon, ClipboardIcon, TransparencyGridIcon, ImageIcon } from '@radix-icons/vue'
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from 'mira-plugin-ui/src/components/ui/resizable'
 import VideoListSidebar from './VideoListSidebar.vue'
 import VideoPlayer from './VideoPlayer.vue'

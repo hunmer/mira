@@ -14,6 +14,8 @@ export class ScreenshotHandlers {
   private screenshotWindow: BrowserWindow | null = null
   private sourceData = ''
   private sourceDisplayId = ''
+  private sourceWindows: DetectedWindow[] = []
+  private sourceSize = { width: 0, height: 0 }
   private sessionSettings: Required<ScreenshotSettings> = { format: 'png', copyToClipboard: true }
 
   constructor() {
@@ -21,12 +23,22 @@ export class ScreenshotHandlers {
     ipcMain.handle('screenshot:get-source', this.getSource.bind(this))
     ipcMain.handle('screenshot:get-settings', () => ({ success: true, settings: this.sessionSettings }))
     ipcMain.handle('screenshot:capture', this.getSource.bind(this))
+    ipcMain.handle('screenshot:debug', (_event, payload: unknown) => {
+      this.debug('renderer metrics', payload)
+      return { success: true }
+    })
     ipcMain.handle('screenshot:complete', this.complete.bind(this))
     ipcMain.handle('screenshot:cancel', this.cancel.bind(this))
   }
 
   setMainWindow(window: BrowserWindow): void {
     this.mainWindow = window
+  }
+
+  private debug(message: string, data?: unknown): void {
+    const payload = { message, data, at: new Date().toISOString() }
+    console.info('[screenshot-debug]', message, data)
+    if (this.mainWindow && !this.mainWindow.isDestroyed()) this.mainWindow.webContents.send('screenshot:debug', payload)
   }
 
   private async detectVisibleWindows(bounds: Electron.Rectangle): Promise<DetectedWindow[]> {
@@ -41,10 +53,11 @@ public static class MiraWindows {
   [DllImport("user32.dll", CharSet=CharSet.Unicode)] static extern int GetWindowText(IntPtr h, StringBuilder s, int n);
   [StructLayout(LayoutKind.Sequential)] public struct RECT { public int L; public int T; public int R; public int B; }
   public static void Run() { EnumWindows((h,p) => { if (!IsWindowVisible(h)) return true; RECT r; if (!GetWindowRect(h,out r)) return true; var s=new StringBuilder(512); GetWindowText(h,s,s.Capacity); if (s.Length>0 && r.R-r.L>80 && r.B-r.T>60) Console.WriteLine($"{r.L}\t{r.T}\t{r.R}\t{r.B}\t{Convert.ToBase64String(Encoding.UTF8.GetBytes(s.ToString()))}"); return true; }, IntPtr.Zero); }
-}`
+}
+'@`
     try {
-      const result = await execFileAsync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', `${script}; [MiraWindows]::Run()`], { windowsHide: true, maxBuffer: 1024 * 1024 })
-      return result.stdout.split(/\r?\n/).flatMap(line => {
+      const result = await execFileAsync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', `${script}\n[MiraWindows]::Run()`], { windowsHide: true, maxBuffer: 1024 * 1024 })
+      const windows = result.stdout.split(/\r?\n/).flatMap(line => {
         const [left, top, right, bottom, encodedTitle] = line.split('\t')
         const x = Number(left); const y = Number(top); const width = Number(right) - x; const height = Number(bottom) - y
         if (![x, y, width, height].every(Number.isFinite)) return []
@@ -53,10 +66,15 @@ public static class MiraWindows {
         try { title = Buffer.from(encodedTitle || '', 'base64').toString('utf8') } catch { title = '' }
         return [{ x: x - bounds.x, y: y - bounds.y, width, height, title }]
       })
-    } catch { return [] }
+      this.debug('visible windows detected', { platform: process.platform, count: windows.length, bounds })
+      return windows
+    } catch (error) {
+      this.debug('visible window detection failed', { message: error instanceof Error ? error.message : String(error) })
+      return []
+    }
   }
 
-  private async captureDisplay(): Promise<{ data: string; displayId: string; bounds: Electron.Rectangle; windows: DetectedWindow[] }> {
+  private async captureDisplay(): Promise<{ data: string; displayId: string; bounds: Electron.Rectangle; windows: DetectedWindow[]; sourceSize: { width: number; height: number } }> {
     const point = screen.getCursorScreenPoint()
     const display = screen.getDisplayNearestPoint(point)
     const scaleFactor = display.scaleFactor || 1
@@ -75,7 +93,10 @@ public static class MiraWindows {
     const screenSources = sources.filter(source => source.id.startsWith('screen:'))
     const source = screenSources.find(item => item.display_id === String(display.id)) || screenSources[0]
     if (!source || source.thumbnail.isEmpty()) throw new Error('No capturable display source found')
-    return { data: source.thumbnail.toDataURL(), displayId: String(display.id), bounds: display.bounds, windows: await this.detectVisibleWindows(display.bounds) }
+    const size = source.thumbnail.getSize()
+    const windows = await this.detectVisibleWindows(display.bounds)
+    this.debug('display source selected', { displayId: display.id, bounds: display.bounds, scaleFactor, sourceId: source.id, sourceDisplayId: source.display_id, sourceSize: size, sourceCount: sources.length, screenSourceCount: screenSources.length, windowCount: windows.length })
+    return { data: source.thumbnail.toDataURL(), displayId: String(display.id), bounds: display.bounds, windows, sourceSize: size }
   }
 
   private async start(_event: Electron.IpcMainInvokeEvent, settings?: ScreenshotSettings): Promise<{ success: boolean; message?: string }> {
@@ -93,6 +114,9 @@ public static class MiraWindows {
       }
       this.sourceData = capture.data
       this.sourceDisplayId = capture.displayId
+      this.sourceWindows = capture.windows
+      this.sourceSize = capture.sourceSize
+      this.debug('screenshot session started', { displayId: capture.displayId, sourceSize: capture.sourceSize, windowCount: capture.windows.length })
       const { x, y, width, height } = capture.bounds
       this.screenshotWindow = new BrowserWindow({
         x, y, width, height,
@@ -139,14 +163,16 @@ public static class MiraWindows {
     }
   }
 
-  private async getSource(): Promise<{ success: boolean; data?: string; displayId?: string; message?: string }> {
+  private async getSource(): Promise<{ success: boolean; data?: string; displayId?: string; windows?: DetectedWindow[]; sourceSize?: { width: number; height: number }; message?: string }> {
     if (!this.sourceData) return { success: false, message: 'Screenshot session is not active' }
-    return { success: true, data: this.sourceData, displayId: this.sourceDisplayId }
+    return { success: true, data: this.sourceData, displayId: this.sourceDisplayId, windows: this.sourceWindows, sourceSize: this.sourceSize }
   }
 
   private async complete(_event: Electron.IpcMainInvokeEvent, payload: ScreenshotPayload): Promise<{ success: boolean }> {
     if (this.mainWindow && !this.mainWindow.isDestroyed()) this.mainWindow.webContents.send('screenshot:complete', payload)
+    this.debug('screenshot completed', { name: payload?.name, importToLibrary: payload?.importToLibrary })
     this.closeWindow()
+    this.debug('screenshot cancelled')
     return { success: true }
   }
 
@@ -158,14 +184,16 @@ public static class MiraWindows {
   private closeWindow(): void {
     if (this.screenshotWindow && !this.screenshotWindow.isDestroyed()) this.screenshotWindow.close()
     else {
-      this.sourceData = ''
-      this.sourceDisplayId = ''
+        this.sourceData = ''
+        this.sourceDisplayId = ''
+        this.sourceWindows = []
+        this.sourceSize = { width: 0, height: 0 }
     }
   }
 
   cleanup(): void {
     this.closeWindow()
-    for (const channel of ['screenshot:start', 'screenshot:get-source', 'screenshot:get-settings', 'screenshot:capture', 'screenshot:complete', 'screenshot:cancel']) {
+    for (const channel of ['screenshot:start', 'screenshot:get-source', 'screenshot:get-settings', 'screenshot:capture', 'screenshot:debug', 'screenshot:complete', 'screenshot:cancel']) {
       ipcMain.removeHandler(channel)
     }
   }

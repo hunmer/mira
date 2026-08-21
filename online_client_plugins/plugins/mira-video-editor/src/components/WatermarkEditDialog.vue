@@ -17,18 +17,19 @@
               :class="['tab-button', { active: activeTab === 'edit' }]"
               @click="activeTab = 'edit'"
             >
-              ✏️ 水印编辑
+              <Pencil1Icon style="width: 12px; height: 12px; vertical-align: -2px" /> 水印编辑
             </button>
             <button
               :class="['tab-button', { active: activeTab === 'preview', loading: isPreviewGenerating }]"
               @click="handlePreviewTabClick"
             >
-              {{ isPreviewGenerating ? '生成中...' : '👁️ 水印预览' }}
+              <template v-if="isPreviewGenerating">生成中...</template>
+              <template v-else><EyeOpenIcon style="width: 12px; height: 12px; vertical-align: -2px" /> 水印预览</template>
             </button>
           </div>
 
           <div v-if="isLoading" class="loading-state">
-            <div class="loading-spinner">⏳</div>
+            <div class="loading-spinner"><UpdateIcon style="width: 28px; height: 28px" /></div>
             <span>正在截取视频帧...</span>
           </div>
           <div v-else-if="screenshotUrl" class="screenshot-container">
@@ -86,13 +87,13 @@
                 draggable="false"
               />
               <div v-else class="no-preview-state">
-                <span class="no-preview-icon">📷</span>
+                <span class="no-preview-icon"><CameraIcon style="width: 40px; height: 40px" /></span>
                 <span class="no-preview-text">点击右上角"生成预览"按钮查看水印去除效果</span>
               </div>
             </div>
           </div>
           <div v-else class="error-state">
-            <span class="error-icon">⚠️</span>
+            <span class="error-icon"><ExclamationTriangleIcon style="width: 40px; height: 40px" /></span>
             <span class="error-text">无法生成截图，请重试</span>
           </div>
 
@@ -156,7 +157,7 @@
                   class="btn-delete"
                   title="删除"
                 >
-                  🗑️
+                  <TrashIcon style="width: 14px; height: 14px" />
                 </Button>
               </div>
             </div>
@@ -184,6 +185,7 @@ import type { VideoData } from '@/types/video-editor'
 import type { WatermarkRegion } from '@/types/watermark'
 import { Dialog, DialogContent, DialogHeader, DialogFooter } from 'mira-plugin-ui/src/components/ui/dialog'
 import { Button } from 'mira-plugin-ui/src/components/ui/button'
+import { Pencil1Icon, EyeOpenIcon, UpdateIcon, CameraIcon, ExclamationTriangleIcon, TrashIcon } from '@radix-icons/vue'
 import { toast } from '@/lib/toast'
 import { getTempDir } from '@/lib/exec'
 import { generateThumbnail as ffmpegGenerateThumbnail, generateWatermarkPreview as ffmpegWatermarkPreview } from '@/lib/ffmpeg'
