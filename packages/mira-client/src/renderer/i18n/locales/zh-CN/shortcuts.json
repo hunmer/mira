@@ -32,6 +32,18 @@
       "title": "媒体库",
       "description": "打开媒体库页面"
     },
+    "navPreviousLibrary": {
+      "title": "上一个已打开素材库",
+      "description": "切换到上一个已打开的素材库"
+    },
+    "navNextLibrary": {
+      "title": "下一个已打开素材库",
+      "description": "切换到下一个已打开的素材库"
+    },
+    "navCloseLibrary": {
+      "title": "关闭当前素材库",
+      "description": "关闭当前素材库并返回上一个已打开的素材库"
+    },
     "navPlugins": {
       "title": "插件管理",
       "description": "打开插件管理页面"

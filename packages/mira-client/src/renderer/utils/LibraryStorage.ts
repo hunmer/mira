@@ -15,6 +15,10 @@ export interface StorageKeyConfig {
  */
 export class LibraryStorage {
   private static async getLibraryId(): Promise<string | null> {
+    // BrowserView 使用独立 partition，优先使用主进程注入的当前素材库 ID。
+    const browserViewLibraryId = localStorage.getItem('mira-browser-view-library-id')
+    if (browserViewLibraryId) return browserViewLibraryId
+
     // Get current active library ID from server list store
     const stored = await ConfigStorage.getItem('mira-servers')
     if (stored) {

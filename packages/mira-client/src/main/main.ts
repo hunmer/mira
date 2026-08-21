@@ -242,6 +242,28 @@ class BrowserViewManager {
     return this.getState()
   }
 
+  async switchAdjacent(direction: -1 | 1): Promise<BrowserViewState> {
+    const runningLibraryIds = this.getRunningLibraryIds()
+    if (!this.enabled || runningLibraryIds.length <= 1) return this.getState()
+
+    const activeLibraryId = this.getLibraryId(this.activeId)
+    const currentIndex = activeLibraryId ? runningLibraryIds.indexOf(activeLibraryId) : -1
+    const nextIndex = (currentIndex + direction + runningLibraryIds.length) % runningLibraryIds.length
+    const nextLibraryId = runningLibraryIds[nextIndex]
+    logger.info('BrowserViewManager', 'switch adjacent', {
+      direction,
+      activeLibraryId,
+      nextLibraryId,
+      runningLibraryIds,
+    })
+
+    if (nextLibraryId === this.defaultLibraryId) {
+      this.show('default')
+      return this.getState()
+    }
+    return this.switchToLibrary(nextLibraryId)
+  }
+
   closeCurrent(): BrowserViewState {
     if (this.getRunningLibraryIds().length <= 1) return this.getState()
 
@@ -546,6 +568,8 @@ class MiraApplication {
     ipcMain.handle('browser-view:get-state', () => this.browserViews.state())
     ipcMain.handle('browser-view:close-current', () => this.browserViews.closeCurrent())
     ipcMain.handle('browser-view:close-others', () => this.browserViews.closeOthers())
+    ipcMain.handle('browser-view:previous', () => this.browserViews.switchAdjacent(-1))
+    ipcMain.handle('browser-view:next', () => this.browserViews.switchAdjacent(1))
   }
 
   private setupProtocol() {
@@ -610,6 +634,8 @@ class MiraApplication {
       'browser-view:get-state',
       'browser-view:close-current',
       'browser-view:close-others',
+      'browser-view:previous',
+      'browser-view:next',
     ]) {
       ipcMain.removeHandler(channel)
     }

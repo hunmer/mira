@@ -32,6 +32,18 @@
       "title": "Media Library",
       "description": "Open the media library page"
     },
+    "navPreviousLibrary": {
+      "title": "Previous Open Library",
+      "description": "Switch to the previous open library"
+    },
+    "navNextLibrary": {
+      "title": "Next Open Library",
+      "description": "Switch to the next open library"
+    },
+    "navCloseLibrary": {
+      "title": "Close Current Library",
+      "description": "Close the current library and return to the previous open library"
+    },
     "navPlugins": {
       "title": "Plugin Manager",
       "description": "Open the plugin manager page"

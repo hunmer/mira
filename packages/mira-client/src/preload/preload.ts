@@ -7,10 +7,14 @@ const isDevelopment = process.env.NODE_ENV === 'development'
 // 仅写入临时 bootstrap key，认证 store 恢复后会迁移到正式的素材库存储 key。
 const authBootstrapArgument = process.argv.find(argument => argument.startsWith('--mira-auth-bootstrap='))
 const libraryArgument = process.argv.find(argument => argument.startsWith('--mira-library-id='))
+const browserViewLibraryId = libraryArgument?.slice('--mira-library-id='.length) || null
 console.info('[BrowserView][preload] initialized', {
-  libraryId: libraryArgument?.slice('--mira-library-id='.length) || null,
+  libraryId: browserViewLibraryId,
   hasAuthBootstrap: Boolean(authBootstrapArgument),
 })
+if (browserViewLibraryId) {
+  localStorage.setItem('mira-browser-view-library-id', browserViewLibraryId)
+}
 if (authBootstrapArgument) {
   try {
     const encoded = authBootstrapArgument.slice('--mira-auth-bootstrap='.length)

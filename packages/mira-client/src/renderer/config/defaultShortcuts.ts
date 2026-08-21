@@ -102,6 +102,36 @@ export const defaultActions: ShortcutAction[] = [
     }
   },
   {
+    id: 'nav.previous-library',
+    title: 'shortcuts.actions.navPreviousLibrary.title',
+    description: 'shortcuts.actions.navPreviousLibrary.description',
+    category: 'navigation',
+    icon: 'chevron_left',
+    callback: () => {
+      void window.electronAPI?.invoke('browser-view:previous')
+    }
+  },
+  {
+    id: 'nav.next-library',
+    title: 'shortcuts.actions.navNextLibrary.title',
+    description: 'shortcuts.actions.navNextLibrary.description',
+    category: 'navigation',
+    icon: 'chevron_right',
+    callback: () => {
+      void window.electronAPI?.invoke('browser-view:next')
+    }
+  },
+  {
+    id: 'nav.close-library',
+    title: 'shortcuts.actions.navCloseLibrary.title',
+    description: 'shortcuts.actions.navCloseLibrary.description',
+    category: 'navigation',
+    icon: 'close',
+    callback: () => {
+      void window.electronAPI?.invoke('browser-view:close-current')
+    }
+  },
+  {
     id: 'nav.plugins',
     title: 'shortcuts.actions.navPlugins.title',
     description: 'shortcuts.actions.navPlugins.description',
@@ -721,6 +751,27 @@ export const defaultBindings: ShortcutBinding[] = [
     actionId: 'dev.reload',
     enabled: true,
     description: '强制刷新快捷键'
+  },
+  {
+    shortcut: 'Ctrl+Alt+Left',
+    priority: 80,
+    actionId: 'nav.previous-library',
+    enabled: true,
+    description: '切换到上一个已打开素材库'
+  },
+  {
+    shortcut: 'Ctrl+Alt+Right',
+    priority: 80,
+    actionId: 'nav.next-library',
+    enabled: true,
+    description: '切换到下一个已打开素材库'
+  },
+  {
+    shortcut: 'Ctrl+Alt+W',
+    priority: 80,
+    actionId: 'nav.close-library',
+    enabled: true,
+    description: '关闭当前素材库'
   }
 ]
 
