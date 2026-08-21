@@ -4,7 +4,7 @@ import { CircleAlert, ExternalLink, Globe, Loader2, RotateCcw } from '@lucide/vu
 import { Button } from 'mira-plugin-ui/src/components/ui/button'
 import { t } from '@/lib/i18n'
 import { openExternal } from '@/lib/mira'
-import { SITES } from '@/lib/sites'
+import { getSite, SITES } from '@/lib/sites'
 import { currentTab, engineState, retryWebSearch } from '@/stores/engine'
 import { currentTask } from '@/stores/tasks'
 
@@ -20,6 +20,7 @@ const tab = currentTab
 const webviewSupported = navigator.userAgent.includes('Electron')
 
 const noTask = computed(() => !currentTask.value)
+const siteName = computed(() => getSite(engineState.engine)?.name || '')
 
 /** 已创建的站点 webview（visited 后渲染，:key 稳定只挂载一次） */
 const createdSites = computed(() => SITES.filter((site) => engineState.visited.has(site.id)))
@@ -61,7 +62,9 @@ function attachWebview(siteId: string, el: HTMLElement) {
   anyEl.addEventListener('did-navigate', trackUrl)
   anyEl.addEventListener('did-navigate-in-page', trackUrl)
   anyEl.addEventListener('did-stop-loading', () => {
-    engineState.pages[siteId] = safeUrl()
+    trackUrl()
+    // 未发起搜索导航前的停止事件（空 webview 等）不算加载完成，浮层继续占位
+    if (!anyEl.__loadedUrl) return
     const state = engineState.tabs[siteId]
     if (state && state.status !== 'failed') state.status = 'ready'
   })
@@ -110,13 +113,13 @@ onBeforeUnmount(() => window.removeEventListener('image-search:web-refresh', onR
 
 <template>
   <section class="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-muted/30">
-    <!-- 站点 webview：v-show 常驻保活，visited 后才创建；初始 about:blank 确保 guest 建立 -->
+    <!-- 站点 webview：懒加载——visited（首次点击该站点）后才创建元素并导航，
+         切走 v-hide 保活；加载期间由状态浮层 loader 占位 -->
     <webview
       v-for="site in createdSites"
       :key="site.id"
       :ref="setRef(site.id)"
       v-show="engineState.engine === site.id"
-      src="about:blank"
       class="h-full w-full flex-1"
     />
 
@@ -139,8 +142,8 @@ onBeforeUnmount(() => window.removeEventListener('image-search:web-refresh', onR
           <p class="text-sm text-muted-foreground">{{ t('web.noTask') }}</p>
         </template>
         <template v-else-if="tab.status === 'uploading'">
-          <Loader2 class="size-8 animate-spin text-primary" />
-          <p class="text-sm text-muted-foreground">{{ t('web.uploading') }}</p>
+          <Loader2 class="size-10 animate-spin text-primary" />
+          <p class="text-sm text-muted-foreground">{{ t('web.uploading', { site: siteName }) }}</p>
         </template>
         <template v-else-if="tab.status === 'failed'">
           <CircleAlert class="size-8 text-destructive" />
@@ -151,8 +154,8 @@ onBeforeUnmount(() => window.removeEventListener('image-search:web-refresh', onR
           </Button>
         </template>
         <template v-else-if="tab.status === 'loading'">
-          <Loader2 class="size-8 animate-spin text-primary" />
-          <p class="text-sm text-muted-foreground">{{ t('web.loading') }}</p>
+          <Loader2 class="size-10 animate-spin text-primary" />
+          <p class="text-sm text-muted-foreground">{{ t('web.loading', { site: siteName }) }}</p>
         </template>
       </div>
     </div>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
 import { zipSync } from 'fflate'
-import { Download, FolderOutput, Plus, SquarePen, Trash2 } from '@lucide/vue'
+import { Download, Plus, SquarePen, Trash2 } from '@lucide/vue'
 import { Button } from 'mira-plugin-ui/src/components/ui/button'
 import { Input } from 'mira-plugin-ui/src/components/ui/input'
 import { Label } from 'mira-plugin-ui/src/components/ui/label'
@@ -171,10 +171,13 @@ const progressText = computed(() => (progress.active ? `${progress.done}/${progr
 <template>
   <aside class="w-80 shrink-0 border-l bg-background flex flex-col min-h-0">
     <!-- 裁切列表 -->
-    <div class="flex items-center gap-2 px-3 h-10 border-b shrink-0">
+    <div class="flex items-center gap-1 px-3 h-10 border-b shrink-0">
       <span class="text-sm font-medium flex-1">裁切列表（{{ store.regions.length }}）</span>
       <Button variant="ghost" size="icon-xs" title="添加选区" :disabled="!store.image" @click="store.addDefaultRegion()">
         <Plus />
+      </Button>
+      <Button variant="ghost" size="icon-xs" title="清空所有选区" :disabled="!store.regions.length" @click="store.clearRegions()">
+        <Trash2 />
       </Button>
     </div>
 
@@ -224,7 +227,7 @@ const progressText = computed(() => (progress.active ? `${progress.done}/${progr
       <div class="flex items-center gap-2">
         <Label class="text-xs shrink-0">格式</Label>
         <Select v-model="store.format">
-          <SelectTrigger class="h-8 text-xs flex-1">
+          <SelectTrigger class="h-8 text-xs flex-1 bg-background">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -253,20 +256,20 @@ const progressText = computed(() => (progress.active ? `${progress.done}/${progr
 
       <div class="flex gap-2">
         <Button
-          variant="outline" size="icon" class="flex-1"
+          variant="outline" size="sm" class="flex-1"
           title="批量下载（多个选区自动 zip 打包）"
           :disabled="!store.regions.length || progress.active"
           @click="runBatchDownload"
         >
-          <Download />
+          下载
         </Button>
         <Button
-          size="icon" class="flex-1"
+          size="sm" class="flex-1"
           title="导出到素材库 / 文件夹"
           :disabled="!store.regions.length || preparing"
           @click="openExportDialog"
         >
-          <FolderOutput />
+          导出到
         </Button>
       </div>
       <div v-if="progress.active || preparing" class="text-xs text-muted-foreground flex items-center gap-1">

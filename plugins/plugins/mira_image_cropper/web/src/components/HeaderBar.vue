@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { Crop, Maximize, Redo2, Trash2, Undo2, Upload, ZoomIn, ZoomOut } from '@lucide/vue'
-import { Button } from 'mira-plugin-ui/src/components/ui/button'
+import { Crop, Maximize, Redo2, Undo2, Upload, ZoomIn, ZoomOut } from '@lucide/vue'
 import { useCropperStore } from '@/stores/cropper'
 
-/** 顶栏：上传 / 缩放控制 / 撤销重做 / 清空（图片实例切换在左侧 MediaRail） */
+/** 顶栏：上传 / 缩放控制 / 撤销重做（均为裸图标，无按钮边框；清空在裁切列表头部） */
 const props = defineProps<{
   stage: { fit: () => void; zoomIn: () => void; zoomOut: () => void } | null
 }>()
@@ -39,30 +38,27 @@ function onPickFile(e: Event) {
     <div class="flex-1" />
 
     <!-- 缩放控制 -->
-    <div v-if="store.image" class="flex items-center gap-1">
-      <Button variant="outline" size="icon-sm" title="缩小" @click="props.stage?.zoomOut()">
-        <ZoomOut />
-      </Button>
+    <div v-if="store.image" class="flex items-center gap-1.5">
+      <button type="button" class="icon-bare" title="缩小" @click="props.stage?.zoomOut()">
+        <ZoomOut class="size-4" />
+      </button>
       <span class="text-xs text-muted-foreground w-11 text-center font-mono">{{ Math.round(store.scale * 100) }}%</span>
-      <Button variant="outline" size="icon-sm" title="放大" @click="props.stage?.zoomIn()">
-        <ZoomIn />
-      </Button>
-      <Button variant="outline" size="icon-sm" title="适应窗口" @click="props.stage?.fit()">
-        <Maximize />
-      </Button>
+      <button type="button" class="icon-bare" title="放大" @click="props.stage?.zoomIn()">
+        <ZoomIn class="size-4" />
+      </button>
+      <button type="button" class="icon-bare" title="适应窗口" @click="props.stage?.fit()">
+        <Maximize class="size-4" />
+      </button>
     </div>
 
     <span class="w-px h-5 bg-border mx-1" />
 
-    <Button variant="ghost" size="icon-sm" title="撤销 (Ctrl+Z)" :disabled="!store.canUndo" @click="store.undo()">
-      <Undo2 />
-    </Button>
-    <Button variant="ghost" size="icon-sm" title="重做 (Ctrl+Shift+Z)" :disabled="!store.canRedo" @click="store.redo()">
-      <Redo2 />
-    </Button>
-    <Button variant="ghost" size="icon-sm" title="清空所有选区" :disabled="!store.regions.length" @click="store.clearRegions()">
-      <Trash2 />
-    </Button>
+    <button type="button" class="icon-bare" title="撤销 (Ctrl+Z)" :disabled="!store.canUndo" @click="store.undo()">
+      <Undo2 class="size-4" />
+    </button>
+    <button type="button" class="icon-bare" title="重做 (Ctrl+Shift+Z)" :disabled="!store.canRedo" @click="store.redo()">
+      <Redo2 class="size-4" />
+    </button>
 
     <input
       ref="fileInput"
@@ -72,8 +68,31 @@ function onPickFile(e: Event) {
       class="hidden"
       @change="onPickFile"
     />
-    <Button variant="outline" size="icon-sm" title="上传图片" @click="fileInput?.click()">
-      <Upload />
-    </Button>
+    <button type="button" class="icon-bare" title="上传图片" @click="fileInput?.click()">
+      <Upload class="size-4" />
+    </button>
   </header>
 </template>
+
+<style scoped>
+/* 裸图标按钮：无边框、无底色，仅 hover 提亮 */
+.icon-bare {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  color: var(--muted-foreground);
+  background: none;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+.icon-bare:hover:not(:disabled) {
+  color: var(--foreground);
+}
+.icon-bare:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+</style>

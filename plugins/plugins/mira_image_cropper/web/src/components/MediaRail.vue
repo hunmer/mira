@@ -32,11 +32,8 @@ function thumbTitle(inst: { name: string; loadError: string }): string {
 
 <template>
   <aside class="w-24 shrink-0 border-r bg-background flex flex-col min-h-0">
-    <div class="flex items-center justify-between px-2 h-8 border-b shrink-0">
+    <div class="flex items-center px-2 h-8 border-b shrink-0">
       <span class="text-xs text-muted-foreground">图片</span>
-      <Button variant="ghost" size="icon-xs" title="添加图片" @click="fileInput?.click()">
-        <ImagePlus />
-      </Button>
     </div>
 
     <div class="flex-1 overflow-y-auto p-2 space-y-2 min-h-0">

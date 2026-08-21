@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-21T03:21:08.158Z",
+  "generatedAt": "2026-08-21T03:34:59.443Z",
   "plugins": [
     {
       "pluginId": "7c1f9e2a-4b3d-4c8e-9f6a-2d5b8e7c1a04",
@@ -24,8 +24,8 @@
       "directory": "plugins/image-search",
       "icon": "icon.png",
       "readme": "README.md",
-      "size": 1170846,
-      "checksum": "sha256:ca068dd2678f7115f3d3f271e7372c1fb43bcde72652eaeacb06a8722e4813c5",
+      "size": 1170926,
+      "checksum": "sha256:0fb64378a82592252bfd077adf375cc3a3a5e7fdbae2cf8f664110dcaf810792",
       "files": [
         {
           "path": "README.md",
@@ -55,7 +55,7 @@
         {
           "path": "dist/index.html",
           "size": 411,
-          "checksum": "sha256:6d70a028dc07103afa8d6d79ec41b1a632671ca7578115cccf64e3f5a688b7a7"
+          "checksum": "sha256:b154b59a6820455cfb852f0aecd86e948e70a21d36f9a5cc4a0a453e0bfd8657"
         },
         {
           "path": "dist/assets/index-CV44G367.css",
@@ -63,9 +63,9 @@
           "checksum": "sha256:07f55488719a45571c5d3f359a42c531fbeef128d311f46a76db8fe80d484fac"
         },
         {
-          "path": "dist/assets/index-CTjMXXlp.js",
-          "size": 1028637,
-          "checksum": "sha256:771fa9ccf9b06c9ae4d175c0dcd27503d46232497b8f3d32385fbda668cd8713"
+          "path": "dist/assets/index-BIH3gVn_.js",
+          "size": 1028717,
+          "checksum": "sha256:d4b664865d58ccd0824195f8e747c8fe95e5c54a2c0425bafb1f79809d558344"
         }
       ]
     },
