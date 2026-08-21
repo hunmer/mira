@@ -594,6 +594,11 @@ async function writeIndex(catalog) {
   await rename(tmp, INDEX_PATH)
 }
 
+// watch 模式下只关心代码/配置文件；其余变动（日志、二进制产物等）不触发重建
+const WATCH_EXTENSIONS = new Set([
+  '.ts', '.tsx', '.vue', '.js', '.jsx', '.json', '.css', '.scss', '.less', '.html',
+])
+
 let running = false
 async function buildChangedPlugin(filename) {
   if (!filename) return
@@ -674,7 +679,12 @@ async function main() {
     }
     try {
       watch(PLUGINS_DIR, { recursive: true }, (eventType, filename) => {
-        if (filename && IGNORED_NAMES.has(filename.split(sep)[0])) return
+        if (filename) {
+          // 路径中任意一段命中忽略名（如 <plugin>/node_modules/...）都不触发
+          if (filename.split(sep).some((s) => IGNORED_NAMES.has(s))) return
+          // 只监听代码/配置文件扩展名
+          if (!WATCH_EXTENSIONS.has(extname(filename).toLowerCase())) return
+        }
         trigger(`文件变化: ${eventType} ${filename ?? ''}`, filename)
       })
       log('👀 watch 模式已启动，监听', PLUGINS_DIR)

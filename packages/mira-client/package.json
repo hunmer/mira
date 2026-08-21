@@ -101,7 +101,7 @@
     "@hunmer/vue-selection-box": "workspace:*"
   },
   "devDependencies": {
-    "@hunmer/procm-mcp-sdk": "link:../../../procm-mcp/packages/procm-sdk",
+    "@hunmer/procm-mcp-sdk": "link:G:/procm-mcp/packages/procm-sdk",
     "@tailwindcss/postcss": "^4.0.17",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/vue": "^8.1.0",

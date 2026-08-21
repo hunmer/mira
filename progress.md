@@ -9,3 +9,7 @@
 - Renderer build passed. Full type-check reported only pre-existing unrelated errors and no new ScreenshotDialog/ScreenshotPanel errors.
 - Restarted the persistent Mira server process after implementation.
 - Diagnosed the two reported bugs: in-process Dialog ownership and main-window-only `capturePage`.
+- Added `screenshot-window.html` as a dedicated transparent multi-page renderer.
+- Added cursor/display detection with `desktopCapturer` screen/window source enumeration.
+- Added independent window lifecycle and completion/cancel IPC routing back to HomeView.
+- Renderer build passed and produced the screenshot window entry. Server restart was attempted but blocked by the pre-existing missing SDK dependency.

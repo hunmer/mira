@@ -8,9 +8,9 @@ Use an independent screenshot window and capture the full display selected by cu
 - [complete] Implement selection, annotation tools and toolbar UI.
 - [complete] Composite annotations into exported image and preserve post-capture actions.
 - [complete] Run focused type/build checks and restart the persistent process.
-- [in_progress] Add a dedicated screenshot window and desktop source detection.
-- [pending] Route screenshot completion/cancel back to the main window.
-- [pending] Run focused type/build checks and restart the persistent process.
+- [complete] Add a dedicated screenshot window and desktop source detection.
+- [complete] Route screenshot completion/cancel back to the main window.
+- [complete] Run focused type/build checks and restart the persistent process.
 
 ## Constraints
 - Reuse Vue 3 and existing shadcn-vue styling.
@@ -19,3 +19,4 @@ Use an independent screenshot window and capture the full display selected by cu
 
 ## Errors Encountered
 - Full project type-check remains red on pre-existing errors in unrelated files and missing `@hunmer/procm-mcp-sdk`; no errors reference the new screenshot files.
+- Persistent `mira-app-server-dev` restart could not stay running because its existing `@hunmer/procm-mcp-sdk` import fails under ts-node.
