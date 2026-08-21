@@ -472,6 +472,9 @@ onMounted(async () => {
   // 悬浮球：监听主进程转发的消息（文件拖放 / 单击）
   window.electronAPI?.on('floating-ball-from-window', handleFloatingBallMessage)
 
+  // 菜单「本地插件」：打开插件管理对话框
+  window.electronAPI?.on('menu:show-plugins-dialog', () => { showPluginsDialog.value = true })
+
   // 悬浮球：应用当前启用设置（设置已由 settingsStore.initialize() 加载完成）
   try {
     if (settingsStore.settings.floatingBallEnabled) {
@@ -539,6 +542,7 @@ onUnmounted(() => {
   window.removeEventListener('home-tab-replace', handleTabReplace)
   // 悬浮球：移除监听
   window.electronAPI?.removeAllListeners('floating-ball-from-window')
+  window.electronAPI?.removeAllListeners('menu:show-plugins-dialog')
 })
 </script>
 
@@ -644,7 +648,7 @@ onUnmounted(() => {
           class="flex flex-col min-w-0 gap-3 pt-14 overflow-hidden"
         >
           <!-- 插件贡献栏：横向展示在第三列（Header 下方） -->
-          <PluginContributionBar />
+          <PluginContributionBar @manage="showPluginsDialog = true" />
 
           <!-- 图片详情面板 -->
           <aside
@@ -731,7 +735,7 @@ onUnmounted(() => {
       <Sheet v-if="isMobile" v-model:open="rightDrawerOpen">
         <SheetContent side="right" class="w-[90%] max-w-[380px] p-0 gap-0">
           <SheetTitle class="sr-only">{{ $t('views.homeView.detail') }}</SheetTitle>
-          <PluginContributionBar />
+          <PluginContributionBar @manage="showPluginsDialog = true" />
           <div class="flex-1 min-h-0 overflow-y-auto p-4">
             <MediaDetailComponent v-bind="detailBindings" />
           </div>

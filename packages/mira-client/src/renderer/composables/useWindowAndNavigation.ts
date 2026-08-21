@@ -66,13 +66,6 @@ export function useWindowAndNavigation() {
   }
 
   /**
-   * 导航到本地插件
-   */
-  const navigateToLocalPlugins = () => {
-    router.push({ name: 'LocalPlugins' })
-  }
-
-  /**
    * 导航到插件市场
    */
   const navigateToPluginMarketplace = () => {
@@ -101,7 +94,6 @@ export function useWindowAndNavigation() {
     
     // 导航方法
     navigateToFileUpload,
-    navigateToLocalPlugins,
     navigateToPluginMarketplace,
     navigateToSettings
   }

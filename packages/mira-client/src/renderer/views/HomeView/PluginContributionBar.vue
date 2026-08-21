@@ -23,6 +23,8 @@ defineOptions({ name: 'PluginContributionBar' })
 
 const { t } = useI18n()
 
+const emit = defineEmits<{ manage: [] }>()
+
 const contributions = ref<PluginContribution[]>([])
 let unsubscribe: (() => void) | null = null
 const toast = useToast()
@@ -225,5 +227,16 @@ const ContributionHost = defineComponent({
         </template>
       </Dropdown>
     </template>
+
+    <!-- 最右侧：管理插件入口（左侧分割线区隔） -->
+    <div class="w-px h-5 bg-border/60 mx-0.5 shrink-0" />
+    <button
+      class="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+      :title="t('views.pluginContributionBar.managePlugins')"
+      :aria-label="t('views.pluginContributionBar.managePlugins')"
+      @click="emit('manage')"
+    >
+      <span class="material-icons" style="font-size: 18px;">settings</span>
+    </button>
   </div>
 </template>

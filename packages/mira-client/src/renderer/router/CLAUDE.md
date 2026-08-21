@@ -26,7 +26,6 @@
 | `/file-preview` | FilePreview | FilePreviewView.vue | 否 | 否 |
 | `/image-preview/:id?` | ImagePreview | ImagePreview.vue | 否 | 否 |
 | `/video-preview/:id?` | VideoPreview | VideoPreview.vue | 否 | 否 |
-| `/local-plugins` | LocalPlugins | IntegrationsList.vue | 否 | 否 |
 | `/upload` | FileUpload | FileUploadView.vue | 是 | 是 |
 | `/settings` | Settings | SettingsView.vue | 否 | 否 |
 | `/login` | Login | LoginView.vue | 否 | 否 |

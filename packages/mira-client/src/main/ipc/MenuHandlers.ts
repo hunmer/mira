@@ -152,7 +152,11 @@ export class MenuHandlers {
         case 'refresh':
           this.sendToRenderer('menu:refresh')
           break
-        
+
+        case 'showPluginsDialog':
+          this.sendToRenderer('menu:show-plugins-dialog')
+          break
+
         case 'showAbout':
           await this.showAboutDialog()
           break

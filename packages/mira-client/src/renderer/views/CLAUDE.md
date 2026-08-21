@@ -23,7 +23,6 @@
 | `FileUploadView.vue` | 492 | 文件上传 |
 | `FilePreviewView.vue` | 243 | 文件预览 |
 | `PlaygroundView.vue` | 41 | UI Playground 入口（/playground，v2.x 替代原 UITestView） |
-| `MenuTestView.vue` | 307 | 菜单测试页面 |
 | `NotFoundView.vue` | 41 | 404 页面 |
 
 ## 子目录

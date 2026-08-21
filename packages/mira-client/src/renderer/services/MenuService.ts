@@ -151,7 +151,7 @@ export class MenuService {
           id: 'nav-local-plugins',
           label: this.t('services.menu.navLocalPlugins'),
           accelerator: 'CmdOrCtrl+4',
-          route: 'LocalPlugins'
+          action: 'showPluginsDialog'
         },
         {
           id: 'nav-upload',

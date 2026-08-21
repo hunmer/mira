@@ -8,7 +8,7 @@
 
 | 日期 | 操作 | 说明 |
 |------|------|------|
-| 2026-08-20 | 增量更新 | 新增 i18n/(vue-i18n) 与 procm-ui-tests/(远程 UI 测试);Store 10→15;UI 框架更正为 shadcn-vue(原文误记 PrimeVue);路由新增 image/video-preview、playground、menu-test |
+| 2026-08-20 | 增量更新 | 新增 i18n/(vue-i18n) 与 procm-ui-tests/(远程 UI 测试);Store 10→15;UI 框架更正为 shadcn-vue(原文误记 PrimeVue);路由新增 image/video-preview、playground |
 | 2026-05-12 | 架构扫描更新 | 补充入口分析、路由清单、子模块索引 |
 
 ## 模块职责
@@ -46,9 +46,7 @@ Vue 3 前端应用模块，负责用户界面和全部业务逻辑。包含 Tab 
 | `/upload` | FileUploadView | 需要认证 + 连接 |
 | `/file-preview` | FilePreviewView | 无 |
 | `/image-preview/:id` / `/video-preview/:id` | 图片/视频预览 | 无 |
-| `/local-plugins` | IntegrationsList | 无 |
 | `/playground` | PlaygroundView | 无 |
-| `/menu-test` | MenuTestView | 无 |
 
 ## 目录结构
 
@@ -107,7 +105,6 @@ src/renderer/
     ├── FileUploadView.vue
     ├── FilePreviewView.vue
     ├── PlaygroundView.vue    # UI Playground
-    ├── MenuTestView.vue
     ├── NotFoundView.vue
     └── settings/             # 设置子面板(含 playground/ 演练场)
 ```

@@ -38,7 +38,8 @@
     "pluginUrlUnavailable": "插件地址不可用",
     "browserBlocked": "浏览器阻止了插件窗口，请允许弹出窗口",
     "renderFailed": "插件内容渲染失败",
-    "buildHint": "（请在插件目录执行 pnpm install && pnpm build 生成 dist）"
+    "buildHint": "（请在插件目录执行 pnpm install && pnpm build 生成 dist）",
+    "managePlugins": "管理插件"
   },
   "sidebarHistoryModule": {
     "loading": "加载中...",

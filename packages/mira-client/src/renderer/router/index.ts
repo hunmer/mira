@@ -51,16 +51,6 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
-    path: '/local-plugins',
-    name: 'LocalPlugins',
-    component: () => import('../components/business/IntegrationsList.vue'),
-    meta: {
-      title: '本地插件',
-      requiresAuth: false,
-      icon: 'extension'
-    }
-  },
-  {
     path: '/upload',
     name: 'FileUpload',
     component: () => import('../views/FileUploadView.vue'),
@@ -90,16 +80,6 @@ const routes: Array<RouteRecordRaw> = [
       requiresAuth: true,
       requiresConnection: true,
       icon: 'science'
-    }
-  },
-  {
-    path: '/menu-test',
-    name: 'MenuTest',
-    component: () => import('../views/MenuTestView.vue'),
-    meta: {
-      title: '菜单测试',
-      requiresAuth: false,
-      icon: 'menu'
     }
   },
   {
@@ -247,7 +227,6 @@ export const navigateToHome = () => router.push({ name: 'Home' })
 export const navigateToSettings = () => router.push({ name: 'Settings' })
 export const navigateToPlayground = () => router.push({ name: 'Playground' })
 export const navigateToPlugins = () => router.push({ name: 'PluginMarketplace' })
-export const navigateToLocalPlugins = () => router.push({ name: 'LocalPlugins' })
 export const navigateToFileUpload = () => router.push({ name: 'FileUpload' })
 export const navigateToImagePreview = (id?: string) =>
   router.push({ name: 'ImagePreview', params: { id } })

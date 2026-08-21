@@ -38,7 +38,8 @@
     "pluginUrlUnavailable": "Plugin URL unavailable",
     "browserBlocked": "Browser blocked the plugin window. Please allow pop-ups.",
     "renderFailed": "Plugin content failed to render",
-    "buildHint": "(Run pnpm install && pnpm build in the plugin directory to generate dist)"
+    "buildHint": "(Run pnpm install && pnpm build in the plugin directory to generate dist)",
+    "managePlugins": "Manage plugins"
   },
   "sidebarHistoryModule": {
     "loading": "Loading...",
