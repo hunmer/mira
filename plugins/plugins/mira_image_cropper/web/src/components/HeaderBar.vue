@@ -1,15 +1,21 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { Crop, Maximize, Redo2, Undo2, Upload, ZoomIn, ZoomOut } from '@lucide/vue'
+import { Crop, Images, Maximize, Redo2, Undo2, ZoomIn, ZoomOut } from '@lucide/vue'
+import MediaPickerDialog from 'mira-plugin-ui/src/library/MediaPickerDialog.vue'
+import type { MediaPickerFile } from 'mira-plugin-ui/src/library/types'
+import type { MediaInput } from '@/types'
 import { useCropperStore } from '@/stores/cropper'
+import { getServerConfig } from '@/lib/server'
 
-/** 顶栏：上传 / 缩放控制 / 撤销重做（均为裸图标，无按钮边框；清空在裁切列表头部） */
+/** 顶栏：缩放控制 / 撤销重做 / 从素材库添加（均为裸图标；本地添加走左侧栏） */
 const props = defineProps<{
   stage: { fit: () => void; zoomIn: () => void; zoomOut: () => void } | null
 }>()
 
 const store = useCropperStore()
-const fileInput = ref<HTMLInputElement | null>(null)
+
+const pickerOpen = ref(false)
+const pickerLibraryId = ref(getServerConfig().libraryId)
 
 const imageInfo = computed(() => {
   if (!store.image) return ''
@@ -17,12 +23,24 @@ const imageInfo = computed(() => {
   return `${store.image.name}　${width} × ${height}`
 })
 
-function onPickFile(e: Event) {
-  const files = Array.from((e.target as HTMLInputElement).files || [])
+/** 素材库选图确认 → 每张图一个独立实例，激活最后一张 */
+function onPickerConfirm(files: MediaPickerFile[]) {
+  const libraryId = pickerLibraryId.value
+  let lastKey = ''
   for (const file of files) {
-    if (file.type.startsWith('image/')) void store.addLocalFile(file)
+    if (!file.isImage) continue
+    const media: MediaInput = {
+      id: String(file.id),
+      libraryId,
+      name: file.name,
+      width: file.width,
+      height: file.height,
+      url: file.url,
+      thumbnailURL: file.thumbUrl,
+    }
+    lastKey = store.addMediaInstance(media)
   }
-  ;(e.target as HTMLInputElement).value = ''
+  if (lastKey) store.setActive(lastKey)
 }
 </script>
 
@@ -59,18 +77,18 @@ function onPickFile(e: Event) {
     <button type="button" class="icon-bare" title="重做 (Ctrl+Shift+Z)" :disabled="!store.canRedo" @click="store.redo()">
       <Redo2 class="size-4" />
     </button>
-
-    <input
-      ref="fileInput"
-      type="file"
-      accept="image/png,image/jpeg,image/webp,image/gif,image/bmp"
-      multiple
-      class="hidden"
-      @change="onPickFile"
-    />
-    <button type="button" class="icon-bare" title="上传图片" @click="fileInput?.click()">
-      <Upload class="size-4" />
+    <button type="button" class="icon-bare" title="从素材库添加图片" @click="pickerOpen = true">
+      <Images class="size-4" />
     </button>
+
+    <!-- 从素材库选图（多选） -->
+    <MediaPickerDialog
+      v-model:open="pickerOpen"
+      v-model:library-id="pickerLibraryId"
+      select-mode="multiple"
+      title="从素材库添加图片"
+      @confirm="onPickerConfirm"
+    />
   </header>
 </template>
 

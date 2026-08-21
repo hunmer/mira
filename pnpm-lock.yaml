@@ -1039,6 +1039,9 @@ importers:
       fflate:
         specifier: ^0.8.3
         version: 0.8.3
+      mira-app-core:
+        specifier: workspace:*
+        version: link:../../../../packages/mira-app-core
       mira-plugin-ui:
         specifier: workspace:*
         version: link:../../../../packages/mira-plugin-ui

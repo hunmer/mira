@@ -522,6 +522,7 @@ ctx.openPluginWindow({ pluginId, entry?, title?, width?, height?, query? })
 ```
 
 - `entry` 默认 `dist/index.html`——**插件需自行构建 dist**（如 `pnpm build`），否则打开失败。
+  SPA 中消费 `mira-plugin-ui` 组件（shadcn-vue）须按[源码消费指南](./plugin-ui-source-consumption.md)配置 Tailwind `@source` 等，否则弹窗类组件样式会静默缺失。
 - 插件窗口的 preload（`plugin-window-preload.js`）只暴露最小白名单 `electronAPI.pluginWindow.{open,close,send,onMessage}`，不暴露 fs/插件管理 API（最小权限）。
 - `query` 通过 `document.location.search` 传递，插件 SPA 可据此区分不同实例（如 whiteboard 按 `projectId`）。
 

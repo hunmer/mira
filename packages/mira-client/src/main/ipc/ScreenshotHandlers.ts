@@ -66,7 +66,6 @@ export class ScreenshotHandlers {
         maximizable: false,
         closable: true,
         skipTaskbar: true,
-        alwaysOnTop: true,
         hasShadow: false,
         show: false,
         webPreferences: {
@@ -76,20 +75,22 @@ export class ScreenshotHandlers {
           preload: join(__dirname, '../dist-preload/preload.js'),
         },
       })
-      this.screenshotWindow.setAlwaysOnTop(true, 'screen-saver')
       this.screenshotWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
       this.screenshotWindow.once('ready-to-show', () => {
         this.screenshotWindow?.show()
         this.screenshotWindow?.focus()
+        if (!app.isPackaged) this.screenshotWindow?.webContents.openDevTools({ mode: 'detach' })
       })
       this.screenshotWindow.on('closed', () => {
         this.screenshotWindow = null
         this.sourceData = ''
         this.sourceDisplayId = ''
       })
+      // Screenshot UI is always a standalone file page. Loading it from the
+      // renderer output keeps the capture window independent from the Vite dev
+      // server and avoids a localhost URL (and accidental double slashes).
       if (this.screenshotWindow) {
-        if (app.isPackaged) await this.screenshotWindow.loadFile(join(__dirname, '../dist-renderer/screenshot-window.html'))
-        else await this.screenshotWindow.loadURL(`${process.env.VITE_DEV_SERVER_URL || 'http://localhost:3000'}/screenshot-window.html`)
+        await this.screenshotWindow.loadFile(join(__dirname, '../dist-renderer/screenshot-window.html'))
       }
       return { success: true }
     } catch (error) {

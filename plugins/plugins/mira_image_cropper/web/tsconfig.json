@@ -15,7 +15,7 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "mira-plugin-ui/src/*": ["../../../../packages/mira-plugin-ui/src/*"]
+      "mira-plugin-ui/src/*": ["node_modules/mira-plugin-ui/src/*"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.vue", "vite.config.ts"]

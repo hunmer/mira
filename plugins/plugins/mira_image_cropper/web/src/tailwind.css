@@ -1,13 +1,16 @@
 /*
- * 本插件自身的 tailwind 入口（源码消费 mira-plugin-ui 组件，同 image-search 模式）：
- *   - @source 扫描 monorepo 内 mira-plugin-ui 的组件源码，使其 shadcn 原子类进入本插件构建；
+ * 本插件自身的 tailwind 入口（源码消费 mira-plugin-ui 组件）：
+ *   - @source 指向 node_modules 里的 mira-plugin-ui 源码（workspace symlink），
+ *     使其 shadcn 原子类进入本插件构建。显式 @source 不受「node_modules 默认排除」限制；
+ *     路径只与 CSS 位置（web/src/）相对固定，插件目录整体迁移后依然可用；
+ *     若路径错误 Tailwind 会静默忽略，弹窗（Portal 定位类）等组件将缺样式。
  *   - shadcn token（--background/--foreground/…）在此定义（取值与 mira-plugin-ui 一致），
  *     暗色跟随 html.dark。
  */
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@source "../../../../packages/mira-plugin-ui/src";
+@source "../node_modules/mira-plugin-ui/src";
 
 @custom-variant dark (&:is(.dark *));
 

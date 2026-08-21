@@ -139,9 +139,7 @@ async function openExportDialog() {
   preparing.value = true
   exportError.value = ''
   try {
-    console.log('[image-cropper] export-to: begin', { regions: store.regions.length })
     const items = await renderAll()
-    console.log('[image-cropper] export-to: rendered', items.length)
     exportFiles.value = items.map(({ name, blob }) =>
       new File([blob], name, { type: blob.type || 'image/png' }),
     )
@@ -150,13 +148,10 @@ async function openExportDialog() {
       fetchLibraries(),
       fetchFolders(getServerConfig().libraryId),
     ])
-    console.log('[image-cropper] export-to: libraries/folders', { libs: libs.length, folders: currentFolders.length })
     libraries.value = libs
     folders.value = currentFolders
     exportDialogOpen.value = true
-    console.log('[image-cropper] export-to: dialog open =', exportDialogOpen.value)
   } catch (error) {
-    console.error('[image-cropper] export-to failed:', error)
     exportError.value = error instanceof Error ? error.message : String(error)
     logError('[image-cropper] prepare export failed:', error)
   } finally {

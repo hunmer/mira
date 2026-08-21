@@ -13,3 +13,7 @@
 - Added cursor/display detection with `desktopCapturer` screen/window source enumeration.
 - Added independent window lifecycle and completion/cancel IPC routing back to HomeView.
 - Renderer build passed and produced the screenshot window entry. Server restart was attempted but blocked by the pre-existing missing SDK dependency.
+- Fixed independent-window first-render initialization by making the screenshot source watcher immediate; enabled detached DevTools for the screenshot window in development builds.
+- Clarified that “border” means Electron frameless mode: removed the visual CSS border and retained `frame: false` on the screenshot BrowserWindow.
+- Changed screenshot window loading to always use `loadFile(.../dist-renderer/screenshot-window.html)`; removed the localhost URL path.
+- Ran `pnpm --filter mira-web build` and `build:main`; both passed. `ScreenshotDialog.vue` is required by `src/screenshot-window/main.ts`; its HomeView reference is a legacy fallback and is not the Electron shortcut path.

@@ -123,6 +123,8 @@ unregister();
 
 前端组件是独立的 JS 文件，通过 `window.MiraPluginComponents` 注册，可使用 `window.MiraDashboardUI` 中的 shadcn-vue 组件。
 
+> 若插件前端是独立的 Vite SPA（放在插件 `web/` 目录、经 `/server-plugins/...` 托管），并希望复用 `mira-plugin-ui` 的 shadcn-vue 组件（Button/Dialog/批量上传/素材选择器等），须按[源码消费 mira-plugin-ui 组件指南](./plugin-ui-source-consumption.md)配置依赖、alias、Tailwind `@source` 与 shadcn token——否则组件样式（尤其 Portal 弹窗）会静默缺失。参考实现：`plugins/plugins/mira_image_cropper/web/`。
+
 ### 关键：fetch 请求必须携带 token
 
 所有 API 请求必须带 `Authorization` header，否则返回 401。

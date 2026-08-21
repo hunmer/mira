@@ -89,7 +89,7 @@ watch(() => props.visible, async visible => {
   resetEditor()
   const result = await window.electronAPI?.invoke('screenshot:get-source')
   if (result?.success) { sourceData.value = result.data; imageUrl.value = result.data; await nextTick() }
-})
+}, { immediate: true })
 
 function resetEditor() { imageUrl.value = ''; selection.value = undefined; commands.value = []; redoCommands.value = []; draft.value = undefined; tool.value = 'select'; discardText() }
 function syncCanvas() {
