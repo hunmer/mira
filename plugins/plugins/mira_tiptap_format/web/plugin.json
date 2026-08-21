@@ -3,6 +3,7 @@
   "pluginId": "f4a8c6d2-7b91-4e2f-9c35-1d6a8b0e3f72",
   "serverPluginName": "mira_tiptap_format",
   "version": "1.0.0",
+  "icon": "icon.png",
   "index": "index.js",
   "priority": 20,
   "category": "productivity",

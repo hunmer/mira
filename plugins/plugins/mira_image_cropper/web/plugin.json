@@ -3,6 +3,7 @@
   "pluginId": "a4d2b8c6-1e3f-4a7b-9c5d-8e6f2a0b1c9d",
   "priority": 5,
   "version": "1.0.0",
+  "icon": "crop",
   "index": "index.js",
   "tags": ["裁切", "crop", "多选区", "图片", "导出"],
   "category": "productivity",
