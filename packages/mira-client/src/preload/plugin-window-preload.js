@@ -8,9 +8,11 @@
  *     并接收菜单点击事件（plugin-window:menu-action）。
  *
  * 与主 preload 的区别：这里只暴露 pluginWindow 的窗口通信与图片传输能力，
- * 不暴露文件系统 / 拖拽 / 插件管理等其它能力，遵循最小权限原则。
+ * 加上工具型插件（如视频剪辑器）所需的受控能力：exec（白名单外部命令）
+ * 与 fs（File 转路径 / 插件临时目录 / 只读文件原语），不暴露任意的
+ * 文件系统写入或插件管理等能力。
  */
-const { ipcRenderer, contextBridge } = require('electron')
+const { ipcRenderer, contextBridge, webUtils } = require('electron')
 
 console.log('🪟 [plugin-window-preload] 已加载')
 
@@ -161,6 +163,45 @@ const mira = {
     getSelected: async () => parseSelectedItems(),
     get: async (options = {}) => options.isSelected ? parseSelectedItems() : [],
     addFromURL: (url, options = {}) => ipcRenderer.invoke('plugin-window:mira-item-add-from-url', url, options),
+  },
+  // 受控外部命令执行（白名单 ffmpeg/ffprobe/scenedetect，见 PluginExecHandlers）
+  exec: {
+    run: (name, args, options = {}) =>
+      ipcRenderer.invoke('plugin-exec:run', { name, args, jobId: options.jobId, cwd: options.cwd, timeoutMs: options.timeoutMs }),
+    abort: (jobId) => ipcRenderer.invoke('plugin-exec:abort', jobId),
+    check: (name) => ipcRenderer.invoke('plugin-exec:check', name),
+    setBinaryPath: (name, filePath) => ipcRenderer.invoke('plugin-exec:set-binary-path', name, filePath),
+    getBinaryPaths: () => ipcRenderer.invoke('plugin-exec:get-binary-paths'),
+    // 流式输出/退出事件；回调返回 true 表示不再继续接收（内部自动解绑）
+    onOutput: (callback) => {
+      const listener = (_event, payload) => {
+        if (callback(payload) === true) ipcRenderer.removeListener('plugin-exec:output', listener)
+      }
+      ipcRenderer.on('plugin-exec:output', listener)
+      return () => ipcRenderer.removeListener('plugin-exec:output', listener)
+    },
+    onExit: (callback) => {
+      const listener = (_event, payload) => {
+        if (callback(payload) === true) ipcRenderer.removeListener('plugin-exec:exit', listener)
+      }
+      ipcRenderer.on('plugin-exec:exit', listener)
+      return () => ipcRenderer.removeListener('plugin-exec:exit', listener)
+    },
+  },
+  // 最小文件原语：拖入 File 转真实路径、插件临时目录、列目录/读文件/stat
+  fs: {
+    getPathForFile: (file) => {
+      try {
+        return webUtils.getPathForFile(file) || ''
+      } catch {
+        return ''
+      }
+    },
+    getTempDir: (sub) => ipcRenderer.invoke('plugin-fs:get-temp-dir', plugin.manifest.id, sub),
+    readDir: (dirPath) => ipcRenderer.invoke('plugin-fs:read-dir', dirPath),
+    readFile: (filePath) => ipcRenderer.invoke('plugin-fs:read-file', filePath),
+    stat: (filePath) => ipcRenderer.invoke('plugin-fs:stat', filePath),
+    remove: (filePath) => ipcRenderer.invoke('plugin-fs:remove', filePath),
   },
   onPluginCreate: (callback) => on('create', callback),
   onPluginRun: (callback) => on('run', callback),

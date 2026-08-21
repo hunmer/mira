@@ -22,7 +22,9 @@
   }
   const IMAGE_EXTS = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'svg']
 
-  // 仅保留裁切所需的图片字段（普通对象，可结构化克隆）
+  // 仅保留裁切所需的图片字段（普通对象，可结构化克隆）。
+  // libraryId + id 是关键：SPA 据此构造 /api/files/download 原图直链
+  // （url 字段常为本地路径或外链引用，不可靠）。
   function serializableFiles(files) {
     return JSON.parse(JSON.stringify((files || [])
       .filter((file) => {
@@ -30,14 +32,15 @@
         return IMAGE_EXTS.includes(ext)
       })
       .map((file) => ({
-        id: file.id,
+        id: file.id != null ? String(file.id) : undefined,
+        libraryId: file.libraryId != null ? String(file.libraryId) : undefined,
         name: file.name,
         width: file.metadata?.width || 0,
         height: file.metadata?.height || 0,
         url: file.url || '',
         thumbnailURL: file.thumbnailPath || file.url || '',
       }))
-      .filter((file) => file.url || file.thumbnailURL)))
+      .filter((file) => (file.id && file.libraryId) || file.url || file.thumbnailURL)))
   }
 
   class ImageCropperPlugin {

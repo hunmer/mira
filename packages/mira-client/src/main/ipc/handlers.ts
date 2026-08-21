@@ -17,6 +17,7 @@ import { NotificationHandlers } from './NotificationHandlers'
 import { ServerDeployHandlers } from './ServerDeployHandlers'
 import { ServerControlHandlers } from './ServerControlHandlers'
 import { PluginWindowHandlers } from './PluginWindowHandlers'
+import { PluginExecHandlers } from './PluginExecHandlers'
 import { LoginWindowHandlers } from './LoginWindowHandlers'
 import { getAutoUpdater } from '../services/useAutoUpdater'
 import { getProcmLogger } from '../services/ProcmService'
@@ -52,6 +53,7 @@ export class IPCHandlers {
   private serverDeployHandlers: ServerDeployHandlers
   private serverControlHandlers: ServerControlHandlers
   private pluginWindowHandlers: PluginWindowHandlers
+  private pluginExecHandlers: PluginExecHandlers
   private appHandlers: AppHandlers
   private loginWindowHandlers: LoginWindowHandlers
   private screenshotHandlers: ScreenshotHandlers
@@ -90,6 +92,10 @@ export class IPCHandlers {
 
     // 注册插件窗口管理（打开插件 dist 的独立 BrowserWindow）
     this.pluginWindowHandlers.registerHandlers()
+
+    // 注册插件窗口受控执行（白名单 spawn + 最小文件原语）
+    this.pluginExecHandlers = new PluginExecHandlers()
+    this.pluginExecHandlers.registerHandlers()
 
     // 注册登录子窗口管理（dashboard 设置页 → 弹窗提取 cookie）
     this.loginWindowHandlers.registerHandlers()
@@ -289,6 +295,9 @@ export class IPCHandlers {
 
     // 清理插件窗口处理器
     this.pluginWindowHandlers.cleanup()
+
+    // 清理插件受控执行任务
+    this.pluginExecHandlers.cleanup()
 
     // 清理登录子窗口处理器
     this.loginWindowHandlers.cleanup()

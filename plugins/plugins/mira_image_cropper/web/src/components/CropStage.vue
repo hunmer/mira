@@ -387,7 +387,7 @@ onBeforeUnmount(() => {
     <div v-else-if="!store.loading" class="absolute inset-0 grid place-items-center pointer-events-none">
       <div class="text-center text-muted-foreground space-y-2">
         <div class="text-4xl">🖼️</div>
-        <div class="text-sm">拖入图片、点击上方「上传」或右键素材「多选区裁切」开始</div>
+        <div class="text-sm">拖入图片、点击上方「上传」或从左侧栏添加图片</div>
       </div>
     </div>
 

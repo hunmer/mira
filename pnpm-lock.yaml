@@ -146,6 +146,55 @@ importers:
         specifier: ^2.2.0
         version: 2.2.12(typescript@5.7.3)
 
+  online_client_plugins/plugins/mira-video-editor:
+    dependencies:
+      '@lucide/vue':
+        specifier: ^1.32.0
+        version: 1.32.0(vue@3.5.41(typescript@5.8.3))
+      '@vueuse/core':
+        specifier: ^14.4.0
+        version: 14.4.0(vue@3.5.41(typescript@5.8.3))
+      mira-plugin-ui:
+        specifier: workspace:*
+        version: link:../../../packages/mira-plugin-ui
+      plyr:
+        specifier: ^3.8.3
+        version: 3.8.4
+      reka-ui:
+        specifier: ^2.9.7
+        version: 2.10.3(vue@3.5.41(typescript@5.8.3))
+      uuid:
+        specifier: ^11.1.0
+        version: 11.1.1
+      vue:
+        specifier: ^3.5.13
+        version: 3.5.41(typescript@5.8.3)
+      vue-sonner:
+        specifier: ^2.0.8
+        version: 2.0.9
+      yocto-queue:
+        specifier: ^1.2.2
+        version: 1.2.2
+    devDependencies:
+      '@tailwindcss/vite':
+        specifier: ^4.3.3
+        version: 4.3.3(vite@6.4.2(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.32.0)(stylus@0.57.0)(tsx@4.23.12)(yaml@2.9.0))
+      '@vitejs/plugin-vue':
+        specifier: ^5.2.2
+        version: 5.2.4(vite@6.4.2(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.32.0)(stylus@0.57.0)(tsx@4.23.12)(yaml@2.9.0))(vue@3.5.41(typescript@5.8.3))
+      tailwindcss:
+        specifier: ^4.3.3
+        version: 4.3.3
+      tw-animate-css:
+        specifier: ^1.0.0
+        version: 1.4.0
+      typescript:
+        specifier: ~5.8.3
+        version: 5.8.3
+      vite:
+        specifier: ^6.3.2
+        version: 6.4.2(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.32.0)(stylus@0.57.0)(tsx@4.23.12)(yaml@2.9.0)
+
   online_client_plugins/plugins/mira-whiteboard:
     dependencies:
       '@woven-canvas/core':
@@ -987,6 +1036,9 @@ importers:
       '@lucide/vue':
         specifier: ^1.32.0
         version: 1.32.0(vue@3.5.41(typescript@5.8.3))
+      fflate:
+        specifier: ^0.8.3
+        version: 0.8.3
       mira-plugin-ui:
         specifier: workspace:*
         version: link:../../../../packages/mira-plugin-ui
@@ -6001,6 +6053,7 @@ packages:
   eslint@9.39.4:
     resolution: {integrity: sha512-XoMjdBOwe/esVgEvLmNsD3IRHkm7fbKIUGvrleloJXUZgDHig2IPWNniv+GwjyJXzuNqVjlr5+4yVUZjycJwfQ==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
     peerDependencies:
       jiti: '*'
@@ -9339,6 +9392,10 @@ packages:
   utils-merge@1.0.1:
     resolution: {integrity: sha512-pMZTvIkT1d+TFGvDOqodOclx0QWkkgi6Tdoa8gC8ffGAAqz9pzPTZWAybbsHHoED/ztMtkv/VoYTYyShUn81hA==}
     engines: {node: '>= 0.4.0'}
+
+  uuid@11.1.1:
+    resolution: {integrity: sha512-vIYxrBCC/N/K+Js3qSN88go7kIfNPssr/hHCesKCQNAjmgvYS2oqr69kIufEG+O4+PfezOH4EbIeHCfFov8ZgQ==}
+    hasBin: true
 
   v-viewer@3.0.23:
     resolution: {integrity: sha512-u/Zd/FXTdtdE2k2YeYMf6mU4oL0ILEZ9STHnZT7myyfRwQot68GO3O+6DwxNnHTaATiiAJTrz2MXjaqYKoB7iA==}
@@ -14038,7 +14095,7 @@ snapshots:
       '@tiptap/extension-underline': 3.29.2(@tiptap/core@3.29.2(@tiptap/pm@3.29.2))
       '@tiptap/extensions': 3.29.2(@tiptap/core@3.29.2(@tiptap/pm@3.29.2))(@tiptap/pm@3.29.2)
       '@tiptap/vue-3': 3.29.2(@floating-ui/dom@1.8.0)(@tiptap/core@3.29.2(@tiptap/pm@3.29.2))(@tiptap/pm@3.29.2)(vue@3.5.13(typescript@5.7.3))
-      '@vueuse/core': 14.3.0(vue@3.5.13(typescript@5.7.3))
+      '@vueuse/core': 14.4.0(vue@3.5.13(typescript@5.7.3))
       '@woven-canvas/asset-sync': 1.0.8(typescript@5.7.3)
       '@woven-canvas/core': 1.1.0(typescript@5.7.3)
       '@woven-canvas/math': 1.0.4(typescript@5.7.3)
@@ -19703,6 +19760,8 @@ snapshots:
   util-deprecate@1.0.2: {}
 
   utils-merge@1.0.1: {}
+
+  uuid@11.1.1: {}
 
   v-viewer@3.0.23(viewerjs@1.11.7)(vue@3.5.13(typescript@5.7.3)):
     dependencies:

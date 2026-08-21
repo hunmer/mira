@@ -1,0 +1,19 @@
+{
+  "pluginName": "视频剪辑器",
+  "pluginId": "8de28d11-49d2-455e-ae21-bb77edab23a6",
+  "priority": 1,
+  "version": "1.0.0",
+  "index": "index.js",
+  "icon": "icon.png",
+  "tags": ["视频剪辑", "ffmpeg", "场景分割", "水印去除", "片段导出"],
+  "category": "media",
+  "description": "视频剪辑器：片段剪辑、PySceneDetect 智能场景分割、逐秒缩略图、水印去除（delogo）、批量导出（下载/保存到素材库）。能力基于宿主受控 ffmpeg/scenedetect 执行。",
+  "author": "Mira Team",
+  "enable": true,
+  "config": {},
+  "hotkey": {},
+  "events": [],
+  "dependencies": [],
+  "permissions": ["ui", "window"],
+  "platform": ["win32", "darwin", "linux"]
+}

@@ -25,8 +25,8 @@ export const engineState = reactive({
   /** 已访问过的站点（懒创建 webview，切回不重载） */
   visited: new Set<string>(),
   tabs: {} as Record<string, WebTabState>,
-  /** webview 实际导航状态（跟随站内跳转，供工具栏外链） */
-  pages: {} as Record<string, { loading: boolean; url: string }>,
+  /** webview 实际导航地址（跟随站内跳转，供工具栏外链） */
+  pages: {} as Record<string, string>,
 })
 
 export const isWebMode = computed(() => engineState.engine !== 'pinterest')
@@ -45,7 +45,7 @@ export function currentTab(): WebTabState | null {
 /** 当前 webview 实际页面地址（导航跟踪优先，回退搜索发起 URL） */
 export function currentPageUrl(): string {
   if (!isWebMode.value) return ''
-  return engineState.pages[engineState.engine]?.url || tab(engineState.engine).url
+  return engineState.pages[engineState.engine] || tab(engineState.engine).url
 }
 
 /** 切换站点：web 模式立即对当前任务发起搜索 */

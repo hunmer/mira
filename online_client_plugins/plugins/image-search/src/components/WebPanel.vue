@@ -42,19 +42,26 @@ function attachWebview(siteId: string, el: HTMLElement) {
   const anyEl = el as any
   if (anyEl.__bound) return
   anyEl.__bound = true
-  // 搜索引擎普遍拦截 Electron 默认 UA，伪装成常规 Chrome
-  anyEl.useragent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
+  // 搜索引擎普遍拦截 Electron 默认 UA，伪装成常规 Chrome（attribute 形式，首航前生效）
+  anyEl.setAttribute('useragent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36')
 
-  // loadURL 在 attach（dom-ready）前不可用：就绪后消费 pending 或直接加载
   anyEl.addEventListener('dom-ready', () => {
     anyEl.__ready = true
     syncUrl(siteId, anyEl)
   })
-  anyEl.addEventListener('did-start-loading', () => {
-    engineState.pages[siteId] = { loading: true, url: anyEl.getURL?.() || '' }
-  })
+  // did-start-loading 等事件可能在 dom-ready 前派发，此时尚未 attach 的
+  // getURL/isLoading 会抛 "WebView must be attached" —— 统一安全读取
+  const safeUrl = () => {
+    try { return anyEl.getURL?.() || '' } catch { return '' }
+  }
+  const trackUrl = () => {
+    engineState.pages[siteId] = safeUrl()
+  }
+  anyEl.addEventListener('did-start-loading', trackUrl)
+  anyEl.addEventListener('did-navigate', trackUrl)
+  anyEl.addEventListener('did-navigate-in-page', trackUrl)
   anyEl.addEventListener('did-stop-loading', () => {
-    engineState.pages[siteId] = { loading: false, url: anyEl.getURL?.() || '' }
+    engineState.pages[siteId] = safeUrl()
     const state = engineState.tabs[siteId]
     if (state && state.status !== 'failed') state.status = 'ready'
   })
@@ -66,16 +73,25 @@ function attachWebview(siteId: string, el: HTMLElement) {
       state.error = e.errorDescription || `HTTP ${e.errorCode}`
     }
   })
+  // 新窗口（target=_blank / window.open）默认用系统浏览器打开，不在插件内弹子窗口
+  anyEl.addEventListener('new-window', (e: any) => {
+    try { e.preventDefault?.() } catch { /* allowpopups 关闭时本就不弹 */ }
+    if (e.url) void openExternal(e.url)
+  })
   syncUrl(siteId, anyEl)
 }
 
-/** 目标搜索 URL 变化 → 导航（未就绪则挂起，dom-ready 后重试） */
+/**
+ * 目标搜索 URL 变化 → 导航。guest 就绪前用 src attribute（Electron 依此创建
+ * guest 页面并导航——没有初始 src 时 dom-ready 永不触发、loadURL 无效），
+ * 就绪后用 loadURL（可覆盖站内跳转回到搜索结果页）。
+ */
 function syncUrl(siteId: string, anyEl: any) {
   const url = engineState.tabs[siteId]?.url
   if (!url || anyEl.__loadedUrl === url) return
-  if (!anyEl.__ready) return
   anyEl.__loadedUrl = url
-  anyEl.loadURL(url)
+  if (anyEl.__ready) anyEl.loadURL(url)
+  else anyEl.setAttribute('src', url)
 }
 
 // store 写入新搜索 URL（切换任务/站点/重试）时驱动所有已挂载 webview
@@ -94,12 +110,13 @@ onBeforeUnmount(() => window.removeEventListener('image-search:web-refresh', onR
 
 <template>
   <section class="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-muted/30">
-    <!-- 站点 webview：v-show 常驻保活，visited 后才创建 -->
+    <!-- 站点 webview：v-show 常驻保活，visited 后才创建；初始 about:blank 确保 guest 建立 -->
     <webview
       v-for="site in createdSites"
       :key="site.id"
       :ref="setRef(site.id)"
       v-show="engineState.engine === site.id"
+      src="about:blank"
       class="h-full w-full flex-1"
     />
 

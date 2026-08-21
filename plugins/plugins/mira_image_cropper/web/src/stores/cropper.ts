@@ -1,135 +1,295 @@
-import { computed, ref, shallowRef } from 'vue'
+import { computed, markRaw, ref, shallowRef, watch } from 'vue'
 import { defineStore } from 'pinia'
 import type { CropRegion, ExportFormat, MediaInput } from '@/types'
-import { fetchAuthorizedImage } from '@/lib/server'
+import { fetchAuthorizedImage, mediaSourceUrl, tokenizedUrl } from '@/lib/server'
 
 let uid = 0
 const nextId = () => `r${Date.now().toString(36)}_${++uid}`
 
 const HISTORY_LIMIT = 50
 
-export interface LoadedImage {
+/**
+ * 单个图片实例：独立的裁切选区、撤销历史与导出设置。
+ * 图片本体懒加载（切换到该实例才拉取），加载结果缓存在实例上。
+ */
+export interface MediaInstance {
+  key: string
   name: string
+  /** 左侧栏缩略图地址（已鉴权处理） */
+  thumbUrl: string
+  /** 原图来源：素材库文件（走 download API）或本地文件 blob */
+  media?: MediaInput
+  localUrl?: string
+  loaded: boolean
+  loading: boolean
+  loadError: string
   width: number
   height: number
-  sourceUrl: string
   objectUrl: string
+  imageEl: HTMLImageElement | null
+  // ── 独立裁切数据 ──
+  regions: CropRegion[]
+  selectedId: string | null
+  undoStack: CropRegion[][]
+  redoStack: CropRegion[][]
+  format: ExportFormat
+  quality: number
+  prefix: string
+}
+
+function createInstance(init: {
+  name: string
+  thumbUrl: string
+  media?: MediaInput
+  localUrl?: string
+}): MediaInstance {
+  return {
+    key: `m${Date.now().toString(36)}_${++uid}`,
+    name: init.name,
+    thumbUrl: init.thumbUrl,
+    media: init.media,
+    localUrl: init.localUrl,
+    loaded: false,
+    loading: false,
+    loadError: '',
+    width: 0,
+    height: 0,
+    objectUrl: '',
+    imageEl: null,
+    regions: [],
+    selectedId: null,
+    undoStack: [],
+    redoStack: [],
+    format: 'png',
+    quality: 0.92,
+    prefix: '',
+  }
 }
 
 /**
- * 裁切状态中心：
- *   - 图片（element 非响应式持有）+ 多图任务列表切换
- *   - 选区数组（原图像素坐标）与选中态
- *   - 视图变换（scale / offset）供画布与 Header 缩放控件共享
- *   - 撤销/重做（选区快照栈，拖拽交互在 gesture 开始时统一 commit）
+ * 裁切状态中心（多实例）：
+ *   - instances：所有图片实例（左侧栏缩略图列表），每个实例独立持有选区/历史/导出设置
+ *   - activeKey：当前编辑实例，image/regions/selectedId 等均代理到它
+ *   - 视图变换（scale/offset）为窗口级共享状态，切图时由 CropStage 重新 fit
  */
 export const useCropperStore = defineStore('cropper', () => {
+  const order = ref<string[]>([])
+  const instances = ref<Record<string, MediaInstance>>({})
+  const activeKey = ref('')
+
+  const active = computed<MediaInstance | null>(() => instances.value[activeKey.value] || null)
   const imageEl = shallowRef<HTMLImageElement | null>(null)
-  const image = shallowRef<LoadedImage | null>(null)
-  const loading = ref(false)
-  const loadError = ref('')
 
-  const mediaList = ref<MediaInput[]>([])
-  const mediaIndex = ref(0)
-
-  const regions = ref<CropRegion[]>([])
-  const selectedId = ref<string | null>(null)
-
-  // 视图变换：wrapper translate(offset) + 原图尺寸 × scale
+  // 视图变换（窗口级共享；切图时 CropStage watch image 后重新 fit）
   const scale = ref(1)
   const offset = ref({ x: 0, y: 0 })
   const fitScale = ref(1)
 
-  const undoStack = ref<CropRegion[][]>([])
-  const redoStack = ref<CropRegion[][]>([])
+  const image = computed(() => {
+    const inst = active.value
+    if (!inst?.loaded || !inst.imageEl) return null
+    return { name: inst.name, width: inst.width, height: inst.height, objectUrl: inst.objectUrl }
+  })
 
-  const format = ref<ExportFormat>('png')
-  const quality = ref(0.92)
-  const prefix = ref('')
-
-  const selectedRegion = computed(() => regions.value.find((r) => r.id === selectedId.value) || null)
-
-  // ── 历史 ─────────────────────────────────────────────
-  function snapshot(): CropRegion[] {
-    return regions.value.map((r) => ({ ...r }))
+  // ── 实例管理 ─────────────────────────────────────────
+  function addMediaInstance(media: MediaInput): string {
+    const inst = createInstance({
+      name: media.name,
+      thumbUrl: mediaThumbUrl(media),
+      media,
+    })
+    instances.value[inst.key] = inst
+    order.value.push(inst.key)
+    return inst.key
   }
 
-  /** gesture（新建/移动/缩放/删除/清空）开始前调用一次 */
+  function addLocalInstance(file: File): string {
+    const objectUrl = URL.createObjectURL(file)
+    const inst = createInstance({
+      name: file.name,
+      thumbUrl: objectUrl,
+      localUrl: objectUrl,
+    })
+    instances.value[inst.key] = inst
+    order.value.push(inst.key)
+    return inst.key
+  }
+
+  function removeInstance(key: string) {
+    const inst = instances.value[key]
+    if (!inst) return
+    if (inst.localUrl) {
+      try { URL.revokeObjectURL(inst.localUrl) } catch { /* noop */ }
+    }
+    if (inst.objectUrl && inst.objectUrl !== inst.localUrl && inst.objectUrl.startsWith('blob:')) {
+      try { URL.revokeObjectURL(inst.objectUrl) } catch { /* noop */ }
+    }
+    delete instances.value[key]
+    order.value = order.value.filter((k) => k !== key)
+    if (activeKey.value === key) {
+      activeKey.value = order.value[order.value.length - 1] || ''
+      if (activeKey.value) void ensureLoaded(activeKey.value)
+    }
+  }
+
+  function setActive(key: string) {
+    if (!key || !instances.value[key] || key === activeKey.value) return
+    activeKey.value = key
+    void ensureLoaded(key)
+  }
+
+  /** 宿主选中项 → 多实例列表，默认激活第一个 */
+  function initFromMediaList(list: MediaInput[]) {
+    for (const media of list) addMediaInstance(media)
+    if (!activeKey.value && order.value.length) setActive(order.value[0])
+  }
+
+  async function addLocalFile(file: File): Promise<string> {
+    const key = addLocalInstance(file)
+    setActive(key)
+    return key
+  }
+
+  // ── 图片懒加载 ───────────────────────────────────────
+  async function ensureLoaded(key: string) {
+    const inst = instances.value[key]
+    if (!inst || inst.loaded || inst.loading) return
+    inst.loading = true
+    inst.loadError = ''
+    try {
+      let objectUrl: string
+      if (inst.localUrl) {
+        objectUrl = inst.localUrl
+      } else if (inst.media) {
+        const source = mediaSourceUrl(inst.media) || inst.media.thumbnailURL
+        objectUrl = await fetchAuthorizedImage(source)
+      } else {
+        throw new Error('图片来源缺失')
+      }
+      const el = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const el = new Image()
+        el.onload = () => resolve(el)
+        el.onerror = () => reject(new Error('图片解码失败'))
+        el.src = objectUrl
+      })
+      inst.imageEl = markRaw(el)
+      inst.width = el.naturalWidth
+      inst.height = el.naturalHeight
+      inst.objectUrl = objectUrl
+      inst.prefix = inst.name.replace(/\.[^.]+$/, '') || 'crop'
+      inst.loaded = true
+    } catch (error) {
+      inst.loadError = error instanceof Error ? error.message : String(error)
+    } finally {
+      inst.loading = false
+    }
+  }
+
+  // active 实例切换/加载完成 → 同步 imageEl（CropThumb/CropPanel 渲染用）
+  watch(active, (inst) => { imageEl.value = inst?.imageEl || null }, { immediate: true })
+  // 加载完成不触发 active 引用变化（同一实例对象），单独监听 loaded 标记
+  watch(
+    () => active.value?.loaded,
+    () => { imageEl.value = active.value?.imageEl || null },
+  )
+
+  // ── 历史与选区（操作当前实例） ──────────────────────
+  const regions = computed(() => active.value?.regions || [])
+  const selectedId = computed(() => active.value?.selectedId || null)
+  const selectedRegion = computed(() => regions.value.find((r) => r.id === selectedId.value) || null)
+  const canUndo = computed(() => (active.value?.undoStack.length || 0) > 0)
+  const canRedo = computed(() => (active.value?.redoStack.length || 0) > 0)
+
+  function withActive(action: (inst: MediaInstance) => void) {
+    const inst = active.value
+    if (inst) action(inst)
+  }
+
+  function snapshot(inst: MediaInstance): CropRegion[] {
+    return inst.regions.map((r) => ({ ...r }))
+  }
+
   function commitHistory() {
-    undoStack.value.push(snapshot())
-    if (undoStack.value.length > HISTORY_LIMIT) undoStack.value.shift()
-    redoStack.value = []
+    withActive((inst) => {
+      inst.undoStack.push(snapshot(inst))
+      if (inst.undoStack.length > HISTORY_LIMIT) inst.undoStack.shift()
+      inst.redoStack = []
+    })
   }
 
   function undo() {
-    const prev = undoStack.value.pop()
-    if (!prev) return
-    redoStack.value.push(snapshot())
-    regions.value = prev
-    if (selectedId.value && !prev.some((r) => r.id === selectedId.value)) selectedId.value = null
+    withActive((inst) => {
+      const prev = inst.undoStack.pop()
+      if (!prev) return
+      inst.redoStack.push(snapshot(inst))
+      inst.regions = prev
+      if (inst.selectedId && !prev.some((r) => r.id === inst.selectedId)) inst.selectedId = null
+    })
   }
 
   function redo() {
-    const next = redoStack.value.pop()
-    if (!next) return
-    undoStack.value.push(snapshot())
-    regions.value = next
-    if (selectedId.value && !next.some((r) => r.id === selectedId.value)) selectedId.value = null
+    withActive((inst) => {
+      const next = inst.redoStack.pop()
+      if (!next) return
+      inst.undoStack.push(snapshot(inst))
+      inst.regions = next
+      if (inst.selectedId && !next.some((r) => r.id === inst.selectedId)) inst.selectedId = null
+    })
   }
 
-  const canUndo = computed(() => undoStack.value.length > 0)
-  const canRedo = computed(() => redoStack.value.length > 0)
-
-  // ── 选区操作 ─────────────────────────────────────────
   function select(id: string | null) {
-    selectedId.value = id
+    withActive((inst) => { inst.selectedId = id })
   }
 
-  /** 居中添加一个默认 1/3 尺寸的选区（右侧「+ 添加选区」） */
   function addDefaultRegion() {
-    const img = image.value
-    if (!img) return
+    const inst = active.value
+    if (!inst?.loaded) return
     commitHistory()
-    const w = Math.max(16, Math.round(img.width / 3))
-    const h = Math.max(16, Math.round(img.height / 3))
+    const w = Math.max(16, Math.round(inst.width / 3))
+    const h = Math.max(16, Math.round(inst.height / 3))
     const region: CropRegion = {
       id: nextId(),
-      x: Math.round((img.width - w) / 2),
-      y: Math.round((img.height - h) / 2),
+      x: Math.round((inst.width - w) / 2),
+      y: Math.round((inst.height - h) / 2),
       w,
       h,
     }
-    regions.value.push(region)
-    selectedId.value = region.id
+    inst.regions.push(region)
+    inst.selectedId = region.id
   }
 
-  /** 拖拽新建：gesture 开始先 push 一个占位选区，move 中原地更新 */
   function beginDrawRegion(x: number, y: number): CropRegion {
-    commitHistory()
     const region: CropRegion = { id: nextId(), x, y, w: 0, h: 0 }
-    regions.value.push(region)
-    selectedId.value = region.id
+    withActive((inst) => {
+      commitHistory()
+      inst.regions.push(region)
+      inst.selectedId = region.id
+    })
     return region
   }
 
-  /** 拖拽中的连续更新（不记历史，历史在 gesture 开始时已 commit） */
   function updateRegion(id: string, patch: Partial<Pick<CropRegion, 'x' | 'y' | 'w' | 'h'>>) {
-    const region = regions.value.find((r) => r.id === id)
-    if (region) Object.assign(region, patch)
+    withActive((inst) => {
+      const region = inst.regions.find((r) => r.id === id)
+      if (region) Object.assign(region, patch)
+    })
   }
 
-  /** 新建拖拽结果太小 → 丢弃（连同占位历史） */
   function discardRegion(id: string) {
-    regions.value = regions.value.filter((r) => r.id !== id)
-    undoStack.value.pop()
-    if (selectedId.value === id) selectedId.value = null
+    withActive((inst) => {
+      inst.regions = inst.regions.filter((r) => r.id !== id)
+      inst.undoStack.pop()
+      if (inst.selectedId === id) inst.selectedId = null
+    })
   }
 
   function removeRegion(id: string) {
-    if (!regions.value.some((r) => r.id === id)) return
-    commitHistory()
-    regions.value = regions.value.filter((r) => r.id !== id)
-    if (selectedId.value === id) selectedId.value = null
+    withActive((inst) => {
+      if (!inst.regions.some((r) => r.id === id)) return
+      commitHistory()
+      inst.regions = inst.regions.filter((r) => r.id !== id)
+      if (inst.selectedId === id) inst.selectedId = null
+    })
   }
 
   function removeSelected() {
@@ -137,86 +297,56 @@ export const useCropperStore = defineStore('cropper', () => {
   }
 
   function clearRegions() {
-    if (!regions.value.length) return
-    commitHistory()
-    regions.value = []
-    selectedId.value = null
+    withActive((inst) => {
+      if (!inst.regions.length) return
+      commitHistory()
+      inst.regions = []
+      inst.selectedId = null
+    })
   }
 
-  // ── 图片加载 ─────────────────────────────────────────
-  async function loadFromMedia(media: MediaInput) {
-    const source = media.url || media.thumbnailURL
-    if (!source) {
-      loadError.value = `素材 ${media.name} 没有可用的原图地址`
-      return
-    }
-    await loadFromUrl(await fetchAuthorizedImage(source), media.name)
-  }
+  // ── 导出设置（每实例独立，v-model 双向） ────────────
+  const format = computed<ExportFormat>({
+    get: () => active.value?.format || 'png',
+    set: (value) => withActive((inst) => { inst.format = value }),
+  })
+  const quality = computed<number>({
+    get: () => active.value?.quality ?? 0.92,
+    set: (value) => withActive((inst) => { inst.quality = value }),
+  })
+  const prefix = computed<string>({
+    get: () => active.value?.prefix || '',
+    set: (value) => withActive((inst) => { inst.prefix = value }),
+  })
 
-  async function loadFromUrl(objectUrl: string, name: string) {
-    loading.value = true
-    loadError.value = ''
-    try {
-      const el = await new Promise<HTMLImageElement>((resolve, reject) => {
-        const el = new Image()
-        el.onload = () => resolve(el)
-        el.onerror = () => reject(new Error('图片解码失败'))
-        el.src = objectUrl
-      })
-      if (image.value?.objectUrl && image.value.objectUrl !== objectUrl) {
-        try { URL.revokeObjectURL(image.value.objectUrl) } catch { /* noop */ }
-      }
-      imageEl.value = el
-      image.value = { name, width: el.naturalWidth, height: el.naturalHeight, sourceUrl: objectUrl, objectUrl }
-      regions.value = []
-      selectedId.value = null
-      undoStack.value = []
-      redoStack.value = []
-      prefix.value = name.replace(/\.[^.]+$/, '') || 'crop'
-    } catch (error) {
-      loadError.value = error instanceof Error ? error.message : String(error)
-    } finally {
-      loading.value = false
-    }
-  }
-
-  async function loadFromFile(file: File) {
-    if (!file.type.startsWith('image/')) {
-      loadError.value = `不支持的文件类型: ${file.type || file.name}`
-      return
-    }
-    await loadFromUrl(URL.createObjectURL(file), file.name)
-  }
-
-  /** 宿主选中项 → 多图任务列表，默认载入第一张 */
-  async function initFromMediaList(list: MediaInput[]) {
-    mediaList.value = list
-    mediaIndex.value = 0
-    if (list.length) await loadFromMedia(list[0])
-  }
-
-  async function switchMedia(index: number) {
-    if (index < 0 || index >= mediaList.value.length || index === mediaIndex.value) return
-    mediaIndex.value = index
-    await loadFromMedia(mediaList.value[index])
-  }
-
-  const fileNamePrefix = computed(() => prefix.value.trim() || 'crop')
+  const fileNamePrefix = computed(() => (active.value?.prefix || '').trim() || 'crop')
 
   function exportFileName(index: number): string {
-    return `${fileNamePrefix.value}_crop_${index + 1}.${format.value === 'jpeg' ? 'jpg' : 'png'}`
+    const inst = active.value
+    const ext = (inst?.format || 'png') === 'jpeg' ? 'jpg' : 'png'
+    const base = (inst?.prefix || '').trim() || 'crop'
+    return `${base}_crop_${index + 1}.${ext}`
   }
 
+  const loading = computed(() => Boolean(active.value?.loading))
+  const loadError = computed(() => active.value?.loadError || '')
+
   return {
-    imageEl, image, loading, loadError,
-    mediaList, mediaIndex,
-    regions, selectedId, selectedRegion,
+    order, instances, activeKey, active,
+    image, imageEl, loading, loadError,
     scale, offset, fitScale,
-    undoStack, redoStack, canUndo, canRedo,
-    format, quality, prefix, fileNamePrefix,
+    regions, selectedId, selectedRegion, canUndo, canRedo,
+    format, quality, prefix, fileNamePrefix, exportFileName,
+    setActive, addMediaInstance, addLocalFile, removeInstance, initFromMediaList,
     commitHistory, undo, redo,
     select, addDefaultRegion, beginDrawRegion, updateRegion, discardRegion, removeRegion, removeSelected, clearRegions,
-    loadFromFile, loadFromUrl, initFromMediaList, switchMedia,
-    exportFileName,
   }
 })
+
+/** 缩略图直链：素材走 /api/files/thumb（附 token），本地文件用 objectUrl */
+function mediaThumbUrl(media: MediaInput): string {
+  if (media.id && media.libraryId) {
+    return tokenizedUrl(`/api/files/thumb/${encodeURIComponent(media.libraryId)}/${encodeURIComponent(media.id)}`)
+  }
+  return media.thumbnailURL ? tokenizedUrl(media.thumbnailURL) : ''
+}

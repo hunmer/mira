@@ -1,25 +1,32 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
-import { Download, LibraryBig, Plus, SquarePen, Trash2 } from '@lucide/vue'
+import { zipSync } from 'fflate'
+import { Download, FolderOutput, Plus, SquarePen, Trash2 } from '@lucide/vue'
 import { Button } from 'mira-plugin-ui/src/components/ui/button'
 import { Input } from 'mira-plugin-ui/src/components/ui/input'
 import { Label } from 'mira-plugin-ui/src/components/ui/label'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from 'mira-plugin-ui/src/components/ui/select'
+import BatchUploadDialog from 'mira-plugin-ui/src/BatchUploadDialog.vue'
 import type { CropRegion } from '@/types'
 import { useCropperStore } from '@/stores/cropper'
-import { canSaveToLibrary, saveCropToLibrary } from '@/lib/server'
+import {
+  createFolder, fetchFolders, fetchLibraries, getServerConfig, uploadFile,
+  type FolderItem, type LibraryItem,
+} from '@/lib/server'
 import { logError } from '@/lib/host'
 import CropThumb from '@/components/CropThumb.vue'
 
 /**
- * 右侧面板：裁切结果列表（实时缩略图）+ 导出设置（格式/质量/前缀）
- * + 批量「下载到本地」/「保存到素材库」（走服务端插件 /image-cropper/save）。
+ * 右侧面板（数据均属于当前实例）：
+ *   - 裁切结果列表（实时缩略图，逐个下载/删除）
+ *   - 导出设置（格式/质量/前缀，每实例独立）
+ *   - 批量下载（多个选区自动 zip 打包）+ 「导出到」（BatchUploadDialog 批量入库）
  */
 const store = useCropperStore()
 
-const progress = reactive({ active: false, done: 0, total: 0, mode: '' as '' | 'download' | 'save' })
+const progress = reactive({ active: false, done: 0, total: 0, mode: '' as '' | 'download' })
 const exportError = ref('')
 
 /** 按原图分辨率渲染选区 → Blob（越界区域：PNG 透明 / JPG 白底） */
@@ -46,6 +53,14 @@ function renderRegion(region: CropRegion): Promise<Blob> {
   })
 }
 
+async function renderAll(): Promise<{ name: string; blob: Blob }[]> {
+  const items: { name: string; blob: Blob }[] = []
+  for (let i = 0; i < store.regions.length; i++) {
+    items.push({ name: store.exportFileName(i), blob: await renderRegion(store.regions[i]) })
+  }
+  return items
+}
+
 function downloadBlob(blob: Blob, fileName: string) {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -53,15 +68,6 @@ function downloadBlob(blob: Blob, fileName: string) {
   a.download = fileName
   a.click()
   setTimeout(() => URL.revokeObjectURL(url), 30_000)
-}
-
-function blobToDataUrl(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(String(reader.result))
-    reader.onerror = () => reject(new Error('读取裁切结果失败'))
-    reader.readAsDataURL(blob)
-  })
 }
 
 /** 单个选区导出（列表行内下载按钮） */
@@ -75,45 +81,91 @@ async function exportOne(index: number, region: CropRegion) {
   }
 }
 
-async function runBatch(mode: 'download' | 'save') {
+/** 批量下载：单个选区直接下载，多个选区 zip 打包 */
+async function runBatchDownload() {
   if (!store.regions.length || progress.active) return
-  if (mode === 'save' && !canSaveToLibrary()) {
-    exportError.value = '缺少服务器连接信息，无法保存到素材库（请从 Mira 主窗口打开本插件）'
-    return
-  }
   progress.active = true
   progress.done = 0
   progress.total = store.regions.length
-  progress.mode = mode
+  progress.mode = 'download'
   exportError.value = ''
-  const failures: string[] = []
-  for (let i = 0; i < store.regions.length; i++) {
-    const region = store.regions[i]
-    const fileName = store.exportFileName(i)
-    try {
-      const blob = await renderRegion(region)
-      if (mode === 'download') {
-        downloadBlob(blob, fileName)
-      } else {
-        const dataUrl = await blobToDataUrl(blob)
-        const result = await saveCropToLibrary(fileName, dataUrl)
-        if (!result.success) failures.push(`${fileName}: ${result.error}`)
+  try {
+    const items = await renderAll()
+    if (items.length === 1) {
+      downloadBlob(items[0].blob, items[0].name)
+    } else {
+      const entries: Record<string, Uint8Array> = {}
+      const used = new Set<string>()
+      for (const item of items) {
+        // zip 内同名防覆盖
+        let name = item.name
+        let n = 2
+        while (used.has(name)) {
+          name = item.name.replace(/(\.[^.]+)$/, `_${n++}$1`)
+        }
+        used.add(name)
+        entries[name] = new Uint8Array(await item.blob.arrayBuffer())
       }
-    } catch (error) {
-      failures.push(`${fileName}: ${error instanceof Error ? error.message : String(error)}`)
+      const zipName = `${store.fileNamePrefix}_crops.zip`
+      downloadBlob(new Blob([zipSync(entries)]), zipName)
     }
-    progress.done = i + 1
-  }
-  progress.active = false
-  if (failures.length) {
-    exportError.value = `${failures.length} 项失败：${failures[0]}`
-    logError('[image-cropper] batch export failures:', failures)
+  } catch (error) {
+    exportError.value = error instanceof Error ? error.message : String(error)
+    logError('[image-cropper] batch download failed:', error)
+  } finally {
+    progress.active = false
   }
 }
 
-const progressText = computed(() =>
-  progress.active ? `${progress.done}/${progress.total}` : '',
-)
+// ── 导出到（BatchUploadDialog 批量入库） ────────────
+const exportDialogOpen = ref(false)
+const exportFiles = ref<File[]>([])
+const libraries = ref<LibraryItem[]>([])
+const folders = ref<FolderItem[]>([])
+const preparing = ref(false)
+
+const canExportTo = computed(() => Boolean(getServerConfig().token))
+
+async function openExportDialog() {
+  if (!store.regions.length || preparing.value) return
+  if (!canExportTo.value) {
+    exportError.value = '缺少服务器连接信息（请从 Mira 主窗口打开本插件）'
+    return
+  }
+  preparing.value = true
+  exportError.value = ''
+  try {
+    const items = await renderAll()
+    exportFiles.value = items.map(({ name, blob }) =>
+      new File([blob], name, { type: blob.type || 'image/png' }),
+    )
+    // 库列表 + 当前库文件夹树（切换库时表单触发 library-change 再拉取）
+    const [libs, currentFolders] = await Promise.all([
+      fetchLibraries(),
+      fetchFolders(getServerConfig().libraryId),
+    ])
+    libraries.value = libs
+    folders.value = currentFolders
+    exportDialogOpen.value = true
+  } catch (error) {
+    exportError.value = error instanceof Error ? error.message : String(error)
+    logError('[image-cropper] prepare export failed:', error)
+  } finally {
+    preparing.value = false
+  }
+}
+
+function onExportLibraryChange(libraryId: string) {
+  void fetchFolders(libraryId).then((data) => { folders.value = data })
+}
+
+function onExportUploaded(payload: { total: number; failed: number }) {
+  if (payload.failed > 0) {
+    exportError.value = `${payload.failed}/${payload.total} 个文件导入失败`
+  }
+}
+
+const progressText = computed(() => (progress.active ? `${progress.done}/${progress.total}` : ''))
 </script>
 
 <template>
@@ -158,12 +210,13 @@ const progressText = computed(() =>
 
       <button
         v-if="store.image"
-        class="w-full flex items-center justify-center gap-1.5 h-10 rounded-lg border border-dashed text-sm text-muted-foreground hover:bg-accent/50 transition-colors"
+        class="w-full flex items-center justify-center gap-1.5 h-10 rounded-lg border border-dashed text-muted-foreground hover:bg-accent/50 transition-colors"
+        title="添加选区"
         @click="store.addDefaultRegion()"
       >
-        <SquarePen class="size-3.5" />添加选区
+        <SquarePen class="size-3.5" />
       </button>
-      <div v-else class="text-center text-xs text-muted-foreground py-6">上传图片后在此查看裁切结果</div>
+      <div v-else class="text-center text-xs text-muted-foreground py-6">选择左侧图片后在此查看裁切结果</div>
     </div>
 
     <!-- 导出设置 -->
@@ -199,17 +252,43 @@ const progressText = computed(() =>
       <div v-if="exportError" class="text-xs text-destructive break-all">{{ exportError }}</div>
 
       <div class="flex gap-2">
-        <Button variant="outline" size="sm" class="flex-1" :disabled="!store.regions.length || progress.active" @click="runBatch('download')">
-          <Download />下载
+        <Button
+          variant="outline" size="icon" class="flex-1"
+          title="批量下载（多个选区自动 zip 打包）"
+          :disabled="!store.regions.length || progress.active"
+          @click="runBatchDownload"
+        >
+          <Download />
         </Button>
-        <Button size="sm" class="flex-1" :disabled="!store.regions.length || progress.active" :title="canSaveToLibrary() ? '' : '需从 Mira 主窗口打开'" @click="runBatch('save')">
-          <LibraryBig />存入库
+        <Button
+          size="icon" class="flex-1"
+          title="导出到素材库 / 文件夹"
+          :disabled="!store.regions.length || preparing"
+          @click="openExportDialog"
+        >
+          <FolderOutput />
         </Button>
       </div>
-      <div v-if="progress.active" class="text-xs text-muted-foreground flex items-center gap-1">
-        <span class="animate-pulse">{{ progress.mode === 'save' ? '保存到素材库' : '下载' }}中…</span>
-        <span class="font-mono">{{ progressText }}</span>
+      <div v-if="progress.active || preparing" class="text-xs text-muted-foreground flex items-center gap-1">
+        <span class="animate-pulse">{{ preparing ? '生成裁切结果' : '下载' }}中…</span>
+        <span v-if="progressText" class="font-mono">{{ progressText }}</span>
       </div>
     </div>
+
+    <!-- 导出到素材库（批量上传对话框） -->
+    <BatchUploadDialog
+      v-model:open="exportDialogOpen"
+      :libraries="libraries"
+      :folders="folders"
+      :initial-library-id="getServerConfig().libraryId"
+      :upload-file="uploadFile"
+      :create-node="(payload: any) => (payload.kind === 'folder' ? createFolder(payload) : Promise.resolve(undefined))"
+      :initial-files="exportFiles"
+      title="导出裁切结果"
+      description="选择素材库与文件夹，将全部裁切结果导入指定位置。"
+      submit-text="开始导入"
+      @library-change="onExportLibraryChange"
+      @uploaded="onExportUploaded"
+    />
   </aside>
 </template>

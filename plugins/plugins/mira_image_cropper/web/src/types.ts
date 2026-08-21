@@ -10,6 +10,7 @@ export interface CropRegion {
 /** 宿主右键菜单传入 / query.media 序列化的素材图片 */
 export interface MediaInput {
   id?: string
+  libraryId?: string
   name: string
   width: number
   height: number

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { Crop, Maximize, Redo2, Trash2, Undo2, Upload, ZoomIn, ZoomOut, ChevronLeft, ChevronRight } from '@lucide/vue'
+import { Crop, Maximize, Redo2, Trash2, Undo2, Upload, ZoomIn, ZoomOut } from '@lucide/vue'
 import { Button } from 'mira-plugin-ui/src/components/ui/button'
 import { useCropperStore } from '@/stores/cropper'
 
-/** 顶栏：上传 / 多图切换 / 缩放控制 / 撤销重做 / 清空 */
+/** 顶栏：上传 / 缩放控制 / 撤销重做 / 清空（图片实例切换在左侧 MediaRail） */
 const props = defineProps<{
   stage: { fit: () => void; zoomIn: () => void; zoomOut: () => void } | null
 }>()
@@ -19,14 +19,12 @@ const imageInfo = computed(() => {
 })
 
 function onPickFile(e: Event) {
-  const file = (e.target as HTMLInputElement).files?.[0]
-  if (file) void store.loadFromFile(file)
+  const files = Array.from((e.target as HTMLInputElement).files || [])
+  for (const file of files) {
+    if (file.type.startsWith('image/')) void store.addLocalFile(file)
+  }
   ;(e.target as HTMLInputElement).value = ''
 }
-
-defineExpose({
-  openFilePicker: () => fileInput.value?.click(),
-})
 </script>
 
 <template>
@@ -34,22 +32,9 @@ defineExpose({
     <Crop class="size-4.5 text-primary shrink-0" />
     <span class="font-semibold text-sm">多选区裁切</span>
 
-    <span v-if="imageInfo" class="text-xs text-muted-foreground truncate max-w-64" :title="imageInfo">
+    <span v-if="imageInfo" class="text-xs text-muted-foreground truncate max-w-72" :title="imageInfo">
       {{ imageInfo }}
     </span>
-
-    <!-- 多图任务切换 -->
-    <template v-if="store.mediaList.length > 1">
-      <span class="ml-1 text-xs text-muted-foreground">
-        {{ store.mediaIndex + 1 }}/{{ store.mediaList.length }}
-      </span>
-      <Button variant="ghost" size="icon-sm" :disabled="store.mediaIndex === 0" @click="store.switchMedia(store.mediaIndex - 1)">
-        <ChevronLeft />
-      </Button>
-      <Button variant="ghost" size="icon-sm" :disabled="store.mediaIndex === store.mediaList.length - 1" @click="store.switchMedia(store.mediaIndex + 1)">
-        <ChevronRight />
-      </Button>
-    </template>
 
     <div class="flex-1" />
 
@@ -79,9 +64,16 @@ defineExpose({
       <Trash2 />
     </Button>
 
-    <input ref="fileInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp" class="hidden" @change="onPickFile" />
-    <Button variant="outline" size="sm" @click="fileInput?.click()">
-      <Upload />上传
+    <input
+      ref="fileInput"
+      type="file"
+      accept="image/png,image/jpeg,image/webp,image/gif,image/bmp"
+      multiple
+      class="hidden"
+      @change="onPickFile"
+    />
+    <Button variant="outline" size="icon-sm" title="上传图片" @click="fileInput?.click()">
+      <Upload />
     </Button>
   </header>
 </template>

@@ -1,0 +1,31 @@
+{
+  "name": "mira-video-editor",
+  "version": "1.0.0",
+  "private": true,
+  "description": "视频剪辑器插件：片段剪辑、场景分割、水印去除、批量导出（迁移自 ai-toolbox VideoEditor，UI 使用 shadcn-vue）",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:watch": "vite build --watch"
+  },
+  "dependencies": {
+    "@lucide/vue": "^1.32.0",
+    "@vueuse/core": "^14.4.0",
+    "mira-plugin-ui": "workspace:*",
+    "plyr": "^3.8.3",
+    "reka-ui": "^2.9.7",
+    "uuid": "^11.1.0",
+    "vue": "^3.5.13",
+    "vue-sonner": "^2.0.8",
+    "yocto-queue": "^1.2.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@vitejs/plugin-vue": "^5.2.2",
+    "tailwindcss": "^4.3.3",
+    "tw-animate-css": "^1.0.0",
+    "typescript": "~5.8.3",
+    "vite": "^6.3.2"
+  }
+}

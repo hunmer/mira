@@ -1,21 +1,21 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import HeaderBar from '@/components/HeaderBar.vue'
+import MediaRail from '@/components/MediaRail.vue'
 import CropStage from '@/components/CropStage.vue'
 import CropPanel from '@/components/CropPanel.vue'
 import { getSelectedItems, isDark, logInfo, onThemeChanged } from '@/lib/host'
 import { useCropperStore } from '@/stores/cropper'
 
 /**
- * 组合根：顶栏 + 左侧交互画布 + 右侧裁切列表/导出。
- *   - 初始从宿主选中项建多图任务（query.media，见宿主 openPluginWindow 注入）
- *   - 整窗拖拽图片 / Ctrl+V 粘贴图片 → 载入
+ * 组合根：顶栏 + 左侧图片实例栏 + 中部交互画布 + 右侧裁切列表/导出。
+ *   - 初始从宿主选中项建多实例任务（query.media，见宿主 openPluginWindow 注入）
+ *   - 整窗拖拽图片 / Ctrl+V 粘贴图片 → 新增实例
  *   - 快捷键：Delete 删除选中选区、Ctrl+Z / Ctrl+Shift+Z 撤销重做、Esc 取消选中
  *   - 主题跟随宿主（html.dark）
  */
 const store = useCropperStore()
 const stageRef = ref<InstanceType<typeof CropStage> | null>(null)
-const headerRef = ref<InstanceType<typeof HeaderBar> | null>(null)
 const dragging = ref(false)
 
 // ── 主题 ─────────────────────────────────────────────
@@ -26,7 +26,7 @@ document.documentElement.classList.toggle('dark', isDark())
 
 // ── 初始任务：宿主选中项 ────────────────────────────
 void getSelectedItems().then((items) => {
-  if (items.length) void store.initFromMediaList(items)
+  if (items.length) store.initFromMediaList(items)
 })
 
 // ── 拖拽 / 粘贴上传 ─────────────────────────────────
@@ -47,13 +47,14 @@ function onDrop(e: DragEvent) {
   e.preventDefault()
   dragDepth = 0
   dragging.value = false
-  const file = Array.from(e.dataTransfer?.files || []).find((f) => f.type.startsWith('image/'))
-  if (file) void store.loadFromFile(file)
+  for (const file of Array.from(e.dataTransfer?.files || [])) {
+    if (file.type.startsWith('image/')) void store.addLocalFile(file)
+  }
 }
 
 function onPaste(e: ClipboardEvent) {
   const file = Array.from(e.clipboardData?.files || []).find((f) => f.type.startsWith('image/'))
-  if (file) void store.loadFromFile(file)
+  if (file) void store.addLocalFile(file)
 }
 
 // ── 快捷键 ───────────────────────────────────────────
@@ -101,12 +102,13 @@ onBeforeUnmount(() => {
     @dragleave="onDragLeave"
     @drop="onDrop"
   >
-    <HeaderBar ref="headerRef" :stage="stageRef" />
+    <HeaderBar :stage="stageRef" />
 
-    <main class="flex-1 flex min-h-0">
+    <div class="flex-1 flex min-h-0">
+      <MediaRail />
       <CropStage ref="stageRef" class="flex-1 flex flex-col min-w-0" />
       <CropPanel />
-    </main>
+    </div>
 
     <!-- 拖拽遮罩 -->
     <div
@@ -115,7 +117,7 @@ onBeforeUnmount(() => {
     >
       <div class="border-2 border-dashed border-primary rounded-2xl px-10 py-8 text-center">
         <div class="text-3xl mb-2">📥</div>
-        <div class="text-sm font-medium">松开以载入图片</div>
+        <div class="text-sm font-medium">松开以添加图片</div>
       </div>
     </div>
   </div>

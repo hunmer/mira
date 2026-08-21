@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-21T02:05:44.670Z",
+  "generatedAt": "2026-08-21T03:21:08.158Z",
   "plugins": [
     {
       "pluginId": "7c1f9e2a-4b3d-4c8e-9f6a-2d5b8e7c1a04",
@@ -24,8 +24,8 @@
       "directory": "plugins/image-search",
       "icon": "icon.png",
       "readme": "README.md",
-      "size": 1170507,
-      "checksum": "sha256:0538623696f044ef1ad651cef03804d46d66ff6ff3268c409fc410fb178170ac",
+      "size": 1170846,
+      "checksum": "sha256:ca068dd2678f7115f3d3f271e7372c1fb43bcde72652eaeacb06a8722e4813c5",
       "files": [
         {
           "path": "README.md",
@@ -55,17 +55,17 @@
         {
           "path": "dist/index.html",
           "size": 411,
-          "checksum": "sha256:c8c0e26ea7fb21ff59bb5a1bfb8138d48cbd0a3d57db7a712074ef5451e7ddaf"
-        },
-        {
-          "path": "dist/assets/index-RrVn7Sli.js",
-          "size": 1028298,
-          "checksum": "sha256:38a7a2d7cb749875f0e7d937d88f23e327371565aa68c2c4010b3829ad7b6224"
+          "checksum": "sha256:6d70a028dc07103afa8d6d79ec41b1a632671ca7578115cccf64e3f5a688b7a7"
         },
         {
           "path": "dist/assets/index-CV44G367.css",
           "size": 76667,
           "checksum": "sha256:07f55488719a45571c5d3f359a42c531fbeef128d311f46a76db8fe80d484fac"
+        },
+        {
+          "path": "dist/assets/index-CTjMXXlp.js",
+          "size": 1028637,
+          "checksum": "sha256:771fa9ccf9b06c9ae4d175c0dcd27503d46232497b8f3d32385fbda668cd8713"
         }
       ]
     },
@@ -252,6 +252,73 @@
       ]
     },
     {
+      "pluginId": "8de28d11-49d2-455e-ae21-bb77edab23a6",
+      "pluginName": "视频剪辑器",
+      "version": "1.0.0",
+      "description": "视频剪辑器：片段剪辑、PySceneDetect 智能场景分割、逐秒缩略图、水印去除（delogo）、批量导出（下载/保存到素材库）。能力基于宿主受控 ffmpeg/scenedetect 执行。",
+      "author": "Mira Team",
+      "category": "media",
+      "tags": [
+        "视频剪辑",
+        "ffmpeg",
+        "场景分割",
+        "水印去除",
+        "片段导出"
+      ],
+      "platform": [
+        "win32",
+        "darwin",
+        "linux"
+      ],
+      "directory": "plugins/mira-video-editor",
+      "icon": "icon.png",
+      "readme": "README.md",
+      "size": 777692,
+      "checksum": "sha256:35987fb8598c3270e63e51c7e252d99933f9be81047b11ff69b2112c8ff46d31",
+      "files": [
+        {
+          "path": "README.md",
+          "size": 2783,
+          "checksum": "sha256:6a88a74ced4cc651b3fa14be64fd85068af97ed0332266eadaa4bf84ba9ebfd8"
+        },
+        {
+          "path": "plugin.json",
+          "size": 710,
+          "checksum": "sha256:bb56f3138f80227685d1518704187ea6589bc13b89aa2df706410ac196a394f6"
+        },
+        {
+          "path": "package.json",
+          "size": 844,
+          "checksum": "sha256:574b329f44cb9a9daf669cbf70efa8cd59288e54307091a6c031bb6ec6b65f22"
+        },
+        {
+          "path": "index.js",
+          "size": 3945,
+          "checksum": "sha256:2840b59ae364c3cbf06a553f246db841a24b86d2f756ff76066f735487a2f7b2"
+        },
+        {
+          "path": "icon.png",
+          "size": 56006,
+          "checksum": "sha256:fc4a89a9be8480bbe37aaabc18992545065036ccff17ff09d790c6cf5527b96b"
+        },
+        {
+          "path": "dist/index.html",
+          "size": 404,
+          "checksum": "sha256:71807892b63ea09f12c824da103fc13faf0035bb3b01ec063efc9a1d233b9d73"
+        },
+        {
+          "path": "dist/assets/index-CLW-paEU.js",
+          "size": 555489,
+          "checksum": "sha256:96561ea6932707e8609206de8f387490338622b0c250c0c5d5c8721fd34a5da6"
+        },
+        {
+          "path": "dist/assets/index-BURqtmeU.css",
+          "size": 157511,
+          "checksum": "sha256:37e7ac0b5a5626673088961cad4f2f3e0ea7e83e656b200d22be6041505afd1b"
+        }
+      ]
+    },
+    {
       "pluginId": "b1c2d3e4-5f60-4a7b-8c9d-0a1b2c3d4e5f",
       "pluginName": "欢迎示例插件",
       "version": "1.0.0",
@@ -395,8 +462,8 @@
       "directory": "plugins/psd-viewer",
       "icon": null,
       "readme": "README.md",
-      "size": 534691,
-      "checksum": "sha256:61eed9c42856ad44a09371f944427b619308bcec031f9c8d28c272acfc9dbf85",
+      "size": 547812,
+      "checksum": "sha256:567ccaf04e9bfb8326661aacfa77d624ffb43aef9a9a48a8545bc2e1243a8b2b",
       "files": [
         {
           "path": "README.md",
@@ -421,7 +488,7 @@
         {
           "path": "dist/index.html",
           "size": 417,
-          "checksum": "sha256:30659a5a2a333acc17ad137c51faaf34732d28eeab7be4a8540e4e5ad8a0c387"
+          "checksum": "sha256:b5f07eace6f2d24201ce85cea898227d9dcd7d78e435432f474dbefa4250226e"
         },
         {
           "path": "dist/assets/psdWorker-oZFAK-O5.js",
@@ -429,19 +496,19 @@
           "checksum": "sha256:655f5750b10134c3baec7b5c7d3498657c8a536c01abb1ce630dc1a2da7ff592"
         },
         {
-          "path": "dist/assets/index-lsyFY7Mo.js",
+          "path": "dist/assets/index-jLWidxh6.js",
           "size": 111369,
           "checksum": "sha256:1efcdadd1f6f0d07981366b2417051ff260ca4c3de9ff799c7026c537dab8be7"
-        },
-        {
-          "path": "dist/assets/index-gouP2GoK.css",
-          "size": 20325,
-          "checksum": "sha256:6ec648bbd82edc78921087826b158ece45468b9c94f43a9bf297eddfa4ed3df6"
         },
         {
           "path": "dist/assets/index-DE_Myy-p.js",
           "size": 195891,
           "checksum": "sha256:2625446e0be819c34372c6ffa18b61e1a3e5dd4564a7fcede7cd391b5307f356"
+        },
+        {
+          "path": "dist/assets/index-B0TL7tWw.css",
+          "size": 33446,
+          "checksum": "sha256:fcf21c53fb1d1ef348aba43415f3fae84ab6263228ca255c86bc9567484e878c"
         }
       ]
     }

@@ -1,0 +1,234 @@
+.video-player {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  color: #999;
+  margin: 8px;
+}
+
+.empty-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.empty-text {
+  font-size: 18px;
+}
+
+.player-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  min-height: 0; /* 允许flex子元素收缩 */
+}
+
+.plyr-video {
+  flex: 1;
+  width: 100%;
+  min-height: 0; /* 允许flex子元素收缩 */
+}
+
+/* Plyr 自定义样式 */
+:deep(.plyr) {
+  height: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+:deep(.plyr__video-wrapper) {
+  height: calc(100% - 60px); /* 为快捷标记工具留出空间 */
+  position: relative;
+  background: #000;
+}
+
+:deep(.plyr__video) {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* 保持宽高比，视频完整显示 */
+  max-height: 100%;
+}
+
+/* 自定义片段标记 */
+.custom-markers {
+  position: absolute;
+  bottom: 60px; /* 快捷标记工具的高度 */
+  left: 0;
+  right: 0;
+  height: 40px; /* 与 Plyr 控制栏高度一致 */
+  pointer-events: none;
+  z-index: 1;
+}
+
+.marker-point {
+  position: absolute;
+  bottom: 8px; /* 距离控制栏底部的距离 */
+  width: 3px;
+  height: 12px;
+  background: rgba(34, 197, 94, 0.9);
+  border-radius: 2px;
+  transform: translateX(-50%);
+  pointer-events: auto;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.marker-point:hover {
+  height: 16px;
+  background: rgba(34, 197, 94, 1);
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+}
+
+/* 预览模式指示器 */
+.preview-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(147, 51, 234, 0.2));
+  border-bottom: 2px solid rgba(59, 130, 246, 0.5);
+  backdrop-filter: blur(10px);
+}
+
+.preview-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: white;
+}
+
+.preview-icon {
+  font-size: 20px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.preview-text {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.preview-time {
+  font-family: monospace;
+  font-size: 13px;
+  color: rgba(255,255,255,0.8);
+}
+
+.preview-exit-btn {
+  padding: 8px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(239, 68, 68, 0.8);
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.preview-exit-btn:hover {
+  background: rgba(239, 68, 68, 1);
+  transform: scale(1.05);
+}
+
+/* 快捷标记工具 */
+.quick-markers {
+  display: flex;
+  gap: 8px;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.9);
+  border-radius: 12px;
+  margin: 8px;
+  min-height: 60px;
+  align-items: center;
+}
+
+.marker-btn {
+  padding: 8px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.marker-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.marker-btn.primary {
+  background: var(--color-primary, #3b82f6);
+  border-color: var(--color-primary, #3b82f6);
+}
+
+.marker-btn.primary:hover {
+  opacity: 0.9;
+}
+
+.marker-btn.quick-create {
+  background: linear-gradient(45deg, #f59e0b, #f97316);
+  border-color: #f59e0b;
+  animation: pulse 2s infinite;
+}
+
+.marker-btn.quick-create:hover {
+  background: linear-gradient(45deg, #d97706, #ea580c);
+  transform: scale(1.05);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+.marker-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.marker-btn:disabled:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Plyr 主题自定义 */
+:deep(.plyr--video) {
+  background: #000;
+}
+
+:deep(.plyr__control--overlaid) {
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+}
+
+:deep(.plyr__control:hover) {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+:deep(.plyr__progress__buffer) {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+:deep(.plyr__volume--display) {
+  color: white;
+}
