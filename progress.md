@@ -8,3 +8,4 @@
 - Reworked export to crop the source and composite every annotation command at source resolution.
 - Renderer build passed. Full type-check reported only pre-existing unrelated errors and no new ScreenshotDialog/ScreenshotPanel errors.
 - Restarted the persistent Mira server process after implementation.
+- Diagnosed the two reported bugs: in-process Dialog ownership and main-window-only `capturePage`.

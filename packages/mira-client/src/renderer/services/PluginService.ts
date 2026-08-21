@@ -16,7 +16,7 @@ import { pluginSystem } from './PluginSystemCore'
 import { useConfirm } from '@renderer/composables/useConfirm'
 import { useToast } from '@renderer/composables/useToast'
 import { miraSDKService } from './MiraSDKService'
-import { openPluginWindow } from '../plugins/openPluginWindow'
+import { openPluginWindow, resolveServerPluginUrl } from '../plugins/openPluginWindow'
 
 /**
  * 递归剥离对象的响应式 Proxy，返回可被 Electron IPC（structured clone）克隆的纯对象。
@@ -947,13 +947,7 @@ export class PluginService {
           let libraryId: string | undefined
           if (config.source === 'server') {
             const serverConfig = config as ServerPluginConfig
-            const base = String(serverConfig.url || '').replace(/\/+$/, '')
-            const pluginName = encodeURIComponent(serverConfig.serverPluginName)
-            const normalizedBase = base.endsWith(`/${pluginName}`) || base.endsWith(`/${serverConfig.serverPluginName}`)
-              ? base
-              : `${base}/${pluginName}`
-            const entry = String(opts.entry || 'dist/index.html').replace(/^\/+/, '')
-            remoteUrl = new URL(`${normalizedBase}/${entry}`, window.location.origin).toString()
+            remoteUrl = resolveServerPluginUrl(serverConfig, opts.entry)
             libraryId = serverConfig.libraryId
           }
           return openPluginWindow(

@@ -145,6 +145,7 @@ export default defineConfig(({ mode }) => {
           'notification-window': resolve(__dirname, 'notification-window.html'),
           'search-window': resolve(__dirname, 'search-window.html'),
           'floating-ball-window': resolve(__dirname, 'floating-ball-window.html'),
+          'screenshot-window': resolve(__dirname, 'screenshot-window.html'),
         },
         output: {
           // 优化 chunk 文件名

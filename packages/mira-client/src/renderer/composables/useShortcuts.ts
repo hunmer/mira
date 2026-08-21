@@ -105,7 +105,10 @@ export function useShortcuts() {
    * 注册默认事件处理器
    */
   const registerDefaultEventHandlers = (): void => {
-    document.addEventListener('shortcut:screenshot', () => document.dispatchEvent(new CustomEvent('show-screenshot-dialog')))
+    document.addEventListener('shortcut:screenshot', () => {
+      if (window.electronAPI?.invoke) void window.electronAPI.invoke('screenshot:start')
+      else document.dispatchEvent(new CustomEvent('show-screenshot-dialog'))
+    })
     // 全局搜索
     document.addEventListener('shortcut:global-search', () => {
       // 触发全局搜索对话框显示

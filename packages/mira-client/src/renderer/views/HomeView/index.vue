@@ -244,6 +244,12 @@ const showFileUploadDialog = ref(false)
 const showScreenshotDialog = ref(false)
 const screenshotFile = ref<File>()
 const openScreenshot = () => { showScreenshotDialog.value = true }
+const handleScreenshotComplete = (payload: { data: ArrayBuffer | Uint8Array; name: string; mime: string }) => {
+  if (!settingsStore.settings.screenshotAutoImport || !payload?.data) return
+  const bytes = payload.data instanceof ArrayBuffer ? new Uint8Array(payload.data) : payload.data
+  screenshotFile.value = new File([bytes as any], payload.name || 'screenshot.png', { type: payload.mime || 'image/png' })
+  if (settingsStore.settings.screenshotOpenUploadDialog) showFileUploadDialog.value = true
+}
 const sidebarUploadTarget = ref<{ folderId?: string | number | null; tagIds?: Array<string | number> }>()
 // 导入本地文件夹：传入上传对话框的本地目录树（rootPath + tree）
 const uploadInitialTree = ref<{ rootPath: string; tree: any[] }>()
@@ -445,6 +451,7 @@ let cleanupModules: (() => void) | null = null
 
 onMounted(async () => {
   document.addEventListener('show-screenshot-dialog', openScreenshot)
+  window.electronAPI?.on('screenshot:complete', handleScreenshotComplete)
   try {
     cleanupModules = await performInitialization(
       homeController,
@@ -531,6 +538,7 @@ const handleLogout = async () => {
 // ============================================
 onUnmounted(() => {
   document.removeEventListener('show-screenshot-dialog', openScreenshot)
+  window.electronAPI?.removeAllListeners('screenshot:complete')
   if (cleanupModules) {
     cleanupModules()
   }

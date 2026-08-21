@@ -87,7 +87,7 @@ const imageScale = computed(() => imageElement.value && frame.value.w ? imageEle
 watch(() => props.visible, async visible => {
   if (!visible) return
   resetEditor()
-  const result = await window.electronAPI?.invoke('screenshot:capture')
+  const result = await window.electronAPI?.invoke('screenshot:get-source')
   if (result?.success) { sourceData.value = result.data; imageUrl.value = result.data; await nextTick() }
 })
 

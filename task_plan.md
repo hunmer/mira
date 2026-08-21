@@ -1,13 +1,15 @@
 # Screenshot Editor Follow-up
 
 ## Goal
-Complete the screenshot editor with mosaic, pen, text, arrow, rectangle, ellipse, undo and redo while preserving save, clipboard and import behavior.
+Use an independent screenshot window and capture the full display selected by cursor/display detection, while preserving the screenshot editor and post-capture behavior.
 
 ## Phases
 - [complete] Inspect current screenshot component and define a minimal canvas command model.
 - [complete] Implement selection, annotation tools and toolbar UI.
 - [complete] Composite annotations into exported image and preserve post-capture actions.
 - [complete] Run focused type/build checks and restart the persistent process.
+- [in_progress] Add a dedicated screenshot window and desktop source detection.
+- [pending] Route screenshot completion/cancel back to the main window.
 - [pending] Run focused type/build checks and restart the persistent process.
 
 ## Constraints

@@ -16,7 +16,7 @@ import { useI18n } from 'vue-i18n'
 import { Dropdown } from '@/renderer/components/common/Dropdown'
 import PluginIcon from '@/renderer/components/common/PluginIcon.vue'
 import { useToast } from '@renderer/composables/useToast'
-import { openPluginWindow } from '@renderer/plugins/openPluginWindow'
+import { openPluginWindow, resolveServerPluginUrl } from '@renderer/plugins/openPluginWindow'
 import type { PluginContribution, PluginContributionRenderContext } from '@renderer/plugins/types'
 
 defineOptions({ name: 'PluginContributionBar' })
@@ -91,12 +91,27 @@ function buildCtx(contribution: PluginContribution): PluginContributionRenderCon
     // server/token 注入与 Electron/Web 双路径打开由 plugins/openPluginWindow 公共实现
     openPluginWindow: (opts) => {
       let webBaseUrl: string | undefined
+      let remoteUrl: string | undefined
+      let libraryId: string | undefined
       try {
         const info = getPluginSystem()?.getPlugin?.(contribution.pluginId)
         webBaseUrl = info?.config?.url || info?.config?.actualDirectory
+
+        // 服务端插件的 config.url 是 server-plugins 基础路径，不能当作本地插件目录。
+        // 传入 url 后，主进程会跳过本地入口文件存在性校验并直接加载远程页面。
+        if (info?.config?.source === 'server') {
+          const config = info.config
+          remoteUrl = resolveServerPluginUrl(config, opts.entry)
+          libraryId = config.libraryId
+        }
       } catch { /* ignore */ }
       return openPluginWindow(
-        { ...opts, pluginId: opts.pluginId || contribution.pluginId },
+        {
+          ...opts,
+          pluginId: opts.pluginId || contribution.pluginId,
+          ...(remoteUrl ? { url: remoteUrl } : {}),
+          query: { ...opts.query, ...(libraryId ? { libraryId } : {}) },
+        },
         { webBaseUrl },
       )
     },

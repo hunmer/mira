@@ -127,7 +127,11 @@ const preparing = ref(false)
 const canExportTo = computed(() => Boolean(getServerConfig().token))
 
 async function openExportDialog() {
-  if (!store.regions.length || preparing.value) return
+  if (preparing.value) return
+  if (!store.regions.length) {
+    exportError.value = '请先在图片上绘制选区'
+    return
+  }
   if (!canExportTo.value) {
     exportError.value = '缺少服务器连接信息（请从 Mira 主窗口打开本插件）'
     return
@@ -135,7 +139,9 @@ async function openExportDialog() {
   preparing.value = true
   exportError.value = ''
   try {
+    console.log('[image-cropper] export-to: begin', { regions: store.regions.length })
     const items = await renderAll()
+    console.log('[image-cropper] export-to: rendered', items.length)
     exportFiles.value = items.map(({ name, blob }) =>
       new File([blob], name, { type: blob.type || 'image/png' }),
     )
@@ -144,10 +150,13 @@ async function openExportDialog() {
       fetchLibraries(),
       fetchFolders(getServerConfig().libraryId),
     ])
+    console.log('[image-cropper] export-to: libraries/folders', { libs: libs.length, folders: currentFolders.length })
     libraries.value = libs
     folders.value = currentFolders
     exportDialogOpen.value = true
+    console.log('[image-cropper] export-to: dialog open =', exportDialogOpen.value)
   } catch (error) {
+    console.error('[image-cropper] export-to failed:', error)
     exportError.value = error instanceof Error ? error.message : String(error)
     logError('[image-cropper] prepare export failed:', error)
   } finally {
@@ -266,7 +275,7 @@ const progressText = computed(() => (progress.active ? `${progress.done}/${progr
         <Button
           size="sm" class="flex-1"
           title="导出到素材库 / 文件夹"
-          :disabled="!store.regions.length || preparing"
+          :disabled="preparing"
           @click="openExportDialog"
         >
           导出到

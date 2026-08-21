@@ -13,6 +13,38 @@ export interface OpenPluginWindowResult {
 }
 
 /**
+ * 解析服务端插件入口地址。
+ * 服务端清单可能返回绝对 URL，也可能返回相对的 /server-plugins 路径。
+ */
+export function resolveServerPluginUrl(
+  config: { url?: string; serverPluginName?: string },
+  entry = 'dist/index.html',
+  serverOrigin?: string,
+): string | undefined {
+  const base = String(config.url || '').replace(/\/+$/, '')
+  const pluginName = encodeURIComponent(config.serverPluginName || '')
+  if (!base || !pluginName) return undefined
+
+  try {
+    const origin = serverOrigin || miraSDKService.getConnectionConfig()?.serverUrl
+      || (typeof window !== 'undefined' ? window.location.origin : undefined)
+    const absoluteBase = /^https?:\/\//i.test(base)
+      ? base
+      : origin
+        ? new URL(base, `${origin.replace(/\/+$/, '')}/`).toString().replace(/\/+$/, '')
+        : base
+    const normalizedBase = absoluteBase.endsWith(`/${pluginName}`) || absoluteBase.endsWith(`/${config.serverPluginName}`)
+      ? absoluteBase
+      : `${absoluteBase}/${pluginName}`
+    const resolved = new URL(`${normalizedBase}/${String(entry).replace(/^\/+/, '')}`,
+      typeof window !== 'undefined' ? window.location.origin : undefined)
+    return ['http:', 'https:'].includes(resolved.protocol) ? resolved.toString() : undefined
+  } catch {
+    return undefined
+  }
+}
+
+/**
  * 打开插件窗口的公共实现（PluginService 与 PluginContributionBar 共用）：
  *   - 自动向 query 注入当前素材库连接信息（server + token），插件网页
  *     （如自由画板的素材库浏览器）需要直连 server API；

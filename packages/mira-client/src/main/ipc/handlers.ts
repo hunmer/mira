@@ -226,10 +226,13 @@ export class IPCHandlers {
     this.floatingBallHandlers.cleanup()
     this.menuHandlers.removeAllHandlers()
     this.shortcutHandlers.cleanup()
+    this.screenshotHandlers.cleanup()
 
     // 清理剩余的监听器
     ipcMain.removeAllListeners('protocol:register-handler')
-    ipcMain.removeHandler('screenshot:capture')
+    for (const channel of ['screenshot:start', 'screenshot:get-source', 'screenshot:capture', 'screenshot:complete', 'screenshot:cancel']) {
+      ipcMain.removeHandler(channel)
+    }
     ipcMain.removeAllListeners('protocol:unregister-handler')
     ipcMain.removeAllListeners('protocol:get-handlers')
     ipcMain.removeAllListeners('protocol:create-url')
