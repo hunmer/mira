@@ -22,6 +22,12 @@ const PUBLIC_PREFIXES = [
     '/logs/stream',
 ];
 
+// 不需要鉴权的路由正则（<img> 等标签无法携带 Authorization 头）
+// 插件图标文件：/plugins/{pluginName}/icon/icon.{图片后缀}，限定文件名避免暴露插件目录其他文件
+const PUBLIC_PATTERNS: RegExp[] = [
+    /^\/plugins\/[^/]+\/icon\/icon\.(png|jpe?g|svg|ico|gif|webp)$/,
+];
+
 // 需要做素材库 allowedRoles 校验的路由前缀
 const LIBRARY_SCOPED_PREFIXES = [
     '/files/',
@@ -50,6 +56,7 @@ function extractLibraryId(req: Request): string | undefined {
 function isPublicRoute(method: string, path: string): boolean {
     if (PUBLIC_ROUTES.has(`${method} ${path}`)) return true;
     if (method === 'GET' && PUBLIC_PREFIXES.some(prefix => path.startsWith(prefix))) return true;
+    if (method === 'GET' && PUBLIC_PATTERNS.some(pattern => pattern.test(path))) return true;
     return false;
 }
 

@@ -491,7 +491,7 @@ export class ServerPluginManager {
         const iconExtensions = ['.png', '.jpg', '.jpeg', '.svg', '.ico', '.gif', '.webp'];
         for (const ext of iconExtensions) {
             if (fs.existsSync(path.join(pluginDir, `icon${ext}`))) {
-                icon = `/api/plugins/${pluginName}/icon${ext}`;
+                icon = `/api/plugins/${pluginName}/icon/icon${ext}`;
                 break;
             }
         }
@@ -537,7 +537,7 @@ export class ServerPluginManager {
                 dependencies: meta.dependencies,
                 status: pluginConfig.enabled ? 'active' : 'inactive',
                 configurable: true,
-                icon: pluginConfig.icon !== undefined ? pluginConfig.icon : meta.icon,
+                icon: meta.icon || pluginConfig.icon || null,
                 title: pluginConfig.title || meta.title || pluginConfig.name,
                 category: pluginConfig.category || meta.category || 'general',
                 tags: pluginConfig.tags || meta.tags || [],
@@ -559,7 +559,7 @@ export class ServerPluginManager {
             description: config.description ?? meta.description,
             author: config.author ?? meta.author,
             main: config.main || meta.main,
-            icon: config.icon !== undefined ? config.icon : meta.icon,
+            icon: meta.icon || config.icon,
             title: config.title || meta.title,
             category: config.category || meta.category,
             tags: config.tags || meta.tags,

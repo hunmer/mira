@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-21T10:27:27.502Z",
+  "generatedAt": "2026-08-21T11:34:27.876Z",
   "plugins": [
     {
       "pluginId": "7c1f9e2a-4b3d-4c8e-9f6a-2d5b8e7c1a04",
@@ -24,8 +24,8 @@
       "directory": "plugins/image-search",
       "icon": "icon.png",
       "readme": "README.md",
-      "size": 1170926,
-      "checksum": "sha256:0fb64378a82592252bfd077adf375cc3a3a5e7fdbae2cf8f664110dcaf810792",
+      "size": 1219911,
+      "checksum": "sha256:1d99e110f2d24fa2e3f98160ae9ce5d5404013fbe04df6779972140193f946e3",
       "files": [
         {
           "path": "README.md",
@@ -49,8 +49,8 @@
         },
         {
           "path": "icon.png",
-          "size": 56006,
-          "checksum": "sha256:fc4a89a9be8480bbe37aaabc18992545065036ccff17ff09d790c6cf5527b96b"
+          "size": 104991,
+          "checksum": "sha256:71c7bb2b7c4fd9358d74234f23bcf8be16b4e04c32b7e3c0886b0d91655906c6"
         },
         {
           "path": "dist/index.html",
@@ -273,8 +273,8 @@
       "directory": "plugins/mira-video-editor",
       "icon": "icon.png",
       "readme": "README.md",
-      "size": 902440,
-      "checksum": "sha256:dfca5d5ba52e8f66e3c85d8c4bb8b0969a15c9cb253d86f0ec2b4a31d6c6525b",
+      "size": 957458,
+      "checksum": "sha256:2a0246ec1463cf6a54bb6717eced5df57e7113b2ef6f979674447cbbe348924f",
       "files": [
         {
           "path": "README.md",
@@ -298,8 +298,8 @@
         },
         {
           "path": "icon.png",
-          "size": 56006,
-          "checksum": "sha256:fc4a89a9be8480bbe37aaabc18992545065036ccff17ff09d790c6cf5527b96b"
+          "size": 111024,
+          "checksum": "sha256:3d588af9e6349acfdf8fd5c9c140115323018a27686f292ed0f890b09912f5a9"
         },
         {
           "path": "HANDOFF.md",

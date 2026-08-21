@@ -196,13 +196,13 @@ async function start() {
         <DialogDescription>{{ t('business.urlImportDialog.subtitle') }}</DialogDescription>
       </DialogHeader>
 
-      <div class="space-y-3 py-1">
-        <div class="relative">
+      <div class="space-y-3 py-1 min-w-0">
+        <div class="relative min-w-0">
           <Textarea
             v-model="text"
             :placeholder="t('business.urlImportDialog.placeholder')"
             rows="8"
-            class="font-mono text-xs pr-10 min-w-0 max-h-[40vh] max-w-full overflow-y-auto"
+            class="font-mono text-xs pr-10 field-sizing-fixed max-h-[40vh]"
             :disabled="!!batchId"
           />
           <button
@@ -235,8 +235,8 @@ async function start() {
             >
               <span class="size-1.5 rounded-full shrink-0"
                 :class="{'bg-muted-foreground': it.status==='pending', 'bg-green-500': it.status==='success', 'bg-yellow-500': it.status==='duplicate', 'bg-destructive': it.status==='failed'}" />
-              <span class="truncate flex-1" :title="it.url">{{ it.url }}</span>
-              <span v-if="it.status === 'failed'" class="shrink-0 max-w-[50%] truncate" :title="it.error">{{ it.error }}</span>
+              <span class="truncate flex-1 min-w-0" :title="it.url">{{ it.url }}</span>
+              <span v-if="it.status === 'failed'" class="shrink-0 min-w-0 max-w-[50%] truncate" :title="it.error">{{ it.error }}</span>
             </div>
           </div>
         </div>

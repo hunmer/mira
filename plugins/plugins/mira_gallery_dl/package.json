@@ -14,7 +14,7 @@
   "mira": {
     "id": "mira_gallery_dl",
     "title": "图库批量导入",
-    "icon": "image_add",
+    "icon": "image",
     "category": "integration",
     "tags": [
       "gallery-dl",

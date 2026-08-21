@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.ts",
   "private": true,
+  "icon": "icon.png",
   "dependencies": {},
   "devDependencies": { "@types/node": "^22.0.0", "typescript": "^5.8.3" }
 }

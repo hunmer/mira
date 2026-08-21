@@ -338,6 +338,8 @@ export class MiraHttpServer {
     }
 
     private setupRoutes() {
+        // plugins 具体路由需先于 httpRouter 的 /plugins/:libraryId/:pluginName/* 通配, 否则图标等接口会被抢占
+        this.app.use('/api/plugins', this.pluginRoutes.getRouter());
         this.app.use('/api', this.httpRouter.getRouter()); // 插件注册服务
         this.app.use('/api/auth', this.authRouter.getRouter());
         this.app.use('/api/admins', this.adminsRouter.getRouter());
@@ -347,7 +349,6 @@ export class MiraHttpServer {
 
         // 注册 RESTful 路由
         this.app.use('/api/libraries', this.libraryRoutes.getRouter());
-        this.app.use('/api/plugins', this.pluginRoutes.getRouter());
         this.app.use('/api/database', this.databaseRoutes.getRouter());
         this.app.use('/api/files', this.fileRoutes.getRouter());
         this.app.use('/api/devices', this.deviceRoutes.getRouter());
