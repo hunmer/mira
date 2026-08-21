@@ -225,11 +225,15 @@ export class PluginWindowHandlers {
       // 插件窗口不应继承主窗口的全局菜单；插件可稍后通过 setMenu(template) 设置自己的菜单。
       win.setMenu(null)
 
-      // 插件窗口无菜单，F12 需手动监听切换 DevTools
+      // 插件窗口无菜单，F12 需手动监听切换 DevTools；Ctrl+R / F5 刷新页面
       win.webContents.on('before-input-event', (_e, input) => {
-        if (input.type === 'keyDown' && input.key === 'F12') {
+        if (input.type !== 'keyDown') return
+        if (input.key === 'F12') {
           if (win.webContents.isDevToolsOpened()) win.webContents.closeDevTools()
           else win.webContents.openDevTools({ mode: 'detach' })
+          _e.preventDefault()
+        } else if (input.key === 'F5' || (input.control && input.key.toLowerCase() === 'r')) {
+          win.webContents.reload()
           _e.preventDefault()
         }
       })

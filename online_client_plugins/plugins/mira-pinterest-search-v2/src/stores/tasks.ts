@@ -162,9 +162,10 @@ export function loadMore(task: SearchTask): void {
   })
 }
 
-/** 裁剪搜索：用局部区域 dataURL 重跑当前任务 */
+/** 裁剪搜索：用局部区域 dataURL 重跑当前任务；左栏缩略图同步换成裁剪结果 */
 export function cropperSearch(task: SearchTask, dataUrl: string): void {
   task.imageUrl = dataUrl
+  task.thumbUrl = dataUrl
   enqueue(task)
 }
 
@@ -172,6 +173,7 @@ export function cropperSearch(task: SearchTask, dataUrl: string): void {
 export function restoreSeed(task: SearchTask): void {
   if (task.imageUrl === task.originalUrl) return
   task.imageUrl = task.originalUrl
+  task.thumbUrl = undefined
   enqueue(task)
 }
 

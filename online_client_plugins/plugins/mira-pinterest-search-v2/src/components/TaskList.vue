@@ -57,7 +57,7 @@ function openCrop(taskId: string) {
       <img
         :src="task.thumbUrl || task.imageUrl"
         :alt="task.name || t('main.image.noTitle')"
-        class="h-24 w-full bg-muted object-cover"
+        class="w-full bg-muted object-contain"
         loading="lazy"
       >
       <div class="flex items-center gap-1 px-2 py-1.5">
