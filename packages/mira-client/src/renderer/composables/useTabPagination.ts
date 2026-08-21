@@ -1,4 +1,5 @@
 import { computed, inject, watch, reactive } from 'vue'
+import { getLibraryPrefs } from './LibraryPrefs'
 
 /**
  * Tab级别的分页状态管理
@@ -15,12 +16,20 @@ interface TabPaginationState {
 
 const paginationStates = new Map<string, TabPaginationState>()
 
+// 单页最多展示配置变化时，同步所有已注册 Tab 的分页大小并重置页码
+watch(() => getLibraryPrefs().pageSize, (pageSize) => {
+  paginationStates.forEach((state) => {
+    state.itemsPerPage = pageSize
+    state.currentPage = 1
+  })
+})
+
 const getTabPaginationState = (id: string): TabPaginationState => {
   if (!paginationStates.has(id)) {
     paginationStates.set(id, reactive<TabPaginationState>({
       currentPage: 1,
       totalRecords: 0,
-      itemsPerPage: 20,
+      itemsPerPage: getLibraryPrefs().pageSize,
       isServerPagination: false
     }))
   }

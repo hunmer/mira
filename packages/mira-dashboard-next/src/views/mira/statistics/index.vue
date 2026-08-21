@@ -66,10 +66,11 @@ async function loadStats() {
       statisticsApi.fileTypes(selectedLibraryId.value, days),
       statisticsApi.recentUploads(selectedLibraryId.value, days),
     ])
-    rawDaily.value = dailyRes.data?.data || []
-    uploaders.value = uploadRes.data?.data || []
-    fileTypes.value = typeRes.data?.data || []
-    recentUploads.value = recentRes.data?.data || []
+    const asArray = (v: any): any[] => (Array.isArray(v) ? v : [])
+    rawDaily.value = asArray(dailyRes)
+    uploaders.value = asArray(uploadRes)
+    fileTypes.value = asArray(typeRes)
+    recentUploads.value = asArray(recentRes)
   } catch {
     rawDaily.value = []
     uploaders.value = []

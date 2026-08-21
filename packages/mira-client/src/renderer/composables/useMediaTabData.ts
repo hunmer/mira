@@ -1,6 +1,6 @@
-import { reactive, computed } from 'vue'
+import { reactive, computed, watch } from 'vue'
 import type { FilterRule } from '@/renderer/types/filter'
-import { resolveDefaultViewMode } from './LibraryPrefs'
+import { resolveDefaultViewMode, getLibraryPrefs } from './LibraryPrefs'
 
 
 // 媒体Tab的数据管理接口
@@ -22,6 +22,14 @@ export interface MediaTabData {
 
 // 全局存储所有Tab的数据
 const tabDataStore = reactive<Record<string, MediaTabData>>({})
+
+// 单页最多展示配置变化时，同步所有已打开媒体 Tab 的分页大小并重置页码
+watch(() => getLibraryPrefs().pageSize, (pageSize) => {
+  Object.values(tabDataStore).forEach((tab) => {
+    tab.pagination.itemsPerPage = pageSize
+    tab.pagination.currentPage = 1
+  })
+})
 
 // 恢复时暂存每个tab的viewMode
 const _restoredViewModes: Record<string, 'grid' | 'list' | 'waterfall'> = {}
@@ -56,7 +64,7 @@ export function useMediaTabData(tabId: string) {
       pagination: {
         currentPage: 1,
         totalRecords: 0,
-        itemsPerPage: 999,
+        itemsPerPage: getLibraryPrefs().pageSize,
         isServerPagination: false
       },
       viewMode: defaultMode,
@@ -131,14 +139,14 @@ export function useMediaTabData(tabId: string) {
     tabDataStore[tabId].pagination = {
       currentPage: 1,
       totalRecords: 0,
-      itemsPerPage: 999,
+      itemsPerPage: getLibraryPrefs().pageSize,
       isServerPagination: false
     }
   }
 
   const currentPage = computed(() => tabDataStore[tabId]?.pagination?.currentPage || 1)
   const totalRecords = computed(() => tabDataStore[tabId]?.pagination?.totalRecords || 0)
-  const itemsPerPage = computed(() => tabDataStore[tabId]?.pagination?.itemsPerPage || 50)
+  const itemsPerPage = computed(() => tabDataStore[tabId]?.pagination?.itemsPerPage || getLibraryPrefs().pageSize)
   const isServerPagination = computed(() => tabDataStore[tabId]?.pagination?.isServerPagination || false)
 
   const totalPages = computed(() => {
@@ -259,7 +267,7 @@ export function cacheTabData(tabId: string, data: any[], total?: number) {
       pagination: {
         currentPage: 1,
         totalRecords: 0,
-        itemsPerPage: 999,
+        itemsPerPage: getLibraryPrefs().pageSize,
         isServerPagination: false
       },
       viewMode: defaultMode,

@@ -110,8 +110,8 @@ const resolveDirAndIcon = (dir: string, iconFile: string): string | null => {
 const imageFailed = ref(false)
 
 const resolvedImageSrc = computed<string | null>(() => {
-  // 1. 显式 src（icon 直接是图片 URL/路径）
-  if (props.icon && isImageLike(props.icon)) return toUrl(props.icon)
+  // 1. 显式 src（icon 直接是完整 URL/绝对路径；裸文件名如 icon.png 交给第 3 步按目录拼接）
+  if (props.icon && isAbsoluteOrUrl(props.icon) && isImageLike(props.icon)) return toUrl(props.icon)
 
   // 2. contribution 提供 image 类型图标：value 即图片路径（绝对/URL 优先，否则按目录解析）
   if (props.contributionIcon?.type === 'image' && props.contributionIcon.value) {

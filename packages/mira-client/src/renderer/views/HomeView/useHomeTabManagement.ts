@@ -8,6 +8,7 @@ import { useMediaStore } from '@renderer/stores/media'
 import { useHomeController } from '@renderer/controllers/HomeController'
 import { tabRegistryAPI, type TabViewConfig } from '@renderer/api/TabRegistryAPI'
 import { cacheTabData, clearTabCache, useMediaTabData } from '@renderer/composables/useMediaTabData'
+import { getLibraryPrefs } from '@renderer/composables/LibraryPrefs'
 import {
   useHomeRouteHandler
 } from '@renderer/modules/home'
@@ -305,7 +306,7 @@ export function useHomeTabManagement(
         updateTabPaginationState(tab.id, {
           currentPage: 1,
           isServerPagination: true,
-          itemsPerPage: pagination?.limit || 50
+          itemsPerPage: pagination?.limit || getLibraryPrefs().pageSize
         })
         tabPaginationState = getTabPaginationState(tab.id)
       }
@@ -361,7 +362,7 @@ export function useHomeTabManagement(
       onSwitchCallback: handleTabSwitch,
       lazyLoadHandler: async (tab) => {
         // 使用默认分页参数
-        await loadTabData(tab, { limit: 999, offset: 0 })
+        await loadTabData(tab, { limit: getLibraryPrefs().pageSize, offset: 0 })
       }
     })
   }
@@ -456,7 +457,7 @@ export function useHomeTabManagement(
     await closeTab(tabId, {
       onSwitchCallback: handleTabSwitch,
       lazyLoadHandler: async (tab) => {
-        await loadTabData(tab, { limit: 999, offset: 0 })
+        await loadTabData(tab, { limit: getLibraryPrefs().pageSize, offset: 0 })
       }
     })
   }

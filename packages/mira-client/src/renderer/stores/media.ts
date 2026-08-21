@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { miraSDKService } from '../services/MiraSDKService'
 import { LibraryStorage } from '../utils/LibraryStorage'
+import { getLibraryPrefs } from '../composables/LibraryPrefs'
 import type { FileInfo } from '../../shared/types'
 import i18n from '../i18n'
 
@@ -280,7 +281,7 @@ export const useMediaStore = defineStore('media', () => {
       offset?: number
     } = {}
   ) => {
-    const { limit = 50, offset = 0 } = pagination
+    const { limit = getLibraryPrefs().pageSize, offset = 0 } = pagination
     // 确保有 libraryId - 如果 tabInfo 中没有，从当前素材库获取
     let libraryId = tabInfo.libraryId
     if (!libraryId) {

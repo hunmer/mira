@@ -565,6 +565,11 @@ const {
   handleSortChange
 } = useMediaTabFetch({ props, mediaTabData, homeController, emit })
 
+// 单页最多展示配置变化时，重新加载第一页使其立即生效
+watch(() => mediaTabData.itemsPerPage.value, () => {
+  void fetchPageData(1)
+})
+
 // 选中逻辑：全选/反选/取消、选中项与详情侧栏同步
 const {
   selectedItems,

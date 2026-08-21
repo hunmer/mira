@@ -2,6 +2,7 @@ import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { getPluginFileFormat } from '@renderer/plugins/instanceManager'
 import { useGlobalSearch } from '../../composables/useGlobalSearch'
+import { getLibraryPrefs } from '../../composables/LibraryPrefs'
 import type { NavigationItem, FolderItem, SearchFilter } from '../../types/components'
 import type { FileInfo } from '../../../shared/types'
 import type { BreadcrumbItem, QuickFilter, PaginationPage } from './types'
@@ -19,13 +20,21 @@ export class HomeInteractionHandler {
   public showSearch = ref(false)
   public selectedItems = ref<string[]>([])
   public currentPage = ref(1)
-  public itemsPerPage = ref(50)
+  public itemsPerPage = ref(getLibraryPrefs().pageSize)
 
   // 服务端分页状态
   public serverTotalRecords = ref(0)
   public isServerPagination = ref(false)
 
   // 回调函数（私有变量，用于服务端分页）
+
+  constructor() {
+    // 单页最多展示配置变化时同步分页大小并回到第一页
+    watch(() => getLibraryPrefs().pageSize, (pageSize) => {
+      this.itemsPerPage.value = pageSize
+      this.currentPage.value = 1
+    })
+  }
 
   /**
    * 分页页码

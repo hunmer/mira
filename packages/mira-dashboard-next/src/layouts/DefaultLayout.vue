@@ -66,18 +66,20 @@ function setLocale(l: string) { locale.value = l; localStorage.setItem('locale',
 const hideSideParam = route.query.hideSide
 const sidebarDefaultOpen = hideSideParam !== undefined ? false : undefined
 
+// Load library options before the layout renders so the selector has a stable value
+// even when the library management page has not been visited first.
+const urlLib = route.query[LIBRARY_QUERY_PARAM]
+if (typeof urlLib === 'string' && urlLib) {
+  selectedId.value = urlLib
+}
+await ensureLoaded()
+
 onMounted(() => {
-  // 优先从 URL 参数恢复选中的素材库（显式入口/可分享链接优先级最高）
-  const urlLib = route.query[LIBRARY_QUERY_PARAM]
-  if (typeof urlLib === 'string' && urlLib) {
-    selectedId.value = urlLib
-  }
   if (hideSideParam !== undefined) {
     document.cookie = `${SIDEBAR_COOKIE}=false; path=/; max-age=${60 * 60 * 24 * 365}`
     const { hideSide, ...rest } = route.query
     router.replace({ query: rest })
   }
-  ensureLoaded()
 })
 
 // 选中素材库变化时同步到 URL 参数
