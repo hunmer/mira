@@ -27,7 +27,9 @@ const electronAPI: ElectronAPI = {
   
   // 监听主进程事件
   on: (channel: string, callback: (...args: any[]) => void) => {
-    ipcRenderer.on(channel, (_event, ...args) => callback(...args))
+    const listener = (_event: Electron.IpcRendererEvent, ...args: any[]) => callback(...args)
+    ipcRenderer.on(channel, listener)
+    return () => ipcRenderer.removeListener(channel, listener)
   },
   
   // 移除事件监听

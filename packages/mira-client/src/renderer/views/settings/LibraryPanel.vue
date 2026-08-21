@@ -1,5 +1,21 @@
 <template>
   <div class="p-4 space-y-6">
+    <div class="flex items-center justify-between gap-4 py-3">
+      <div class="min-w-0">
+        <label class="text-foreground dark:text-muted-foreground text-base font-medium leading-normal">
+          {{ t('settings.multiLibraryViews') }}
+        </label>
+        <p class="text-muted-foreground dark:text-muted-foreground text-sm mt-2">
+          {{ t('settings.multiLibraryViewsDesc') }}
+        </p>
+      </div>
+      <Switch
+        :model-value="settingsStore.settings.multiLibraryViewsEnabled"
+        :disabled="!isElectron"
+        @update:model-value="handleMultiLibraryViewsChange"
+      />
+    </div>
+
     <!-- 默认视图选项 -->
     <div>
       <div class="flex flex-wrap items-end gap-4 py-3">
@@ -86,6 +102,9 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useToast } from '@/renderer/composables/useToast'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
+import { useLibraryStore } from '@/renderer/stores/library'
+import { useSettingsStore } from '@/renderer/stores/settings'
 import {
   loadLibraryPrefs,
   saveLibraryDefaultViewMode,
@@ -99,6 +118,9 @@ import {
 
 const { t } = useI18n()
 const toast = useToast()
+const settingsStore = useSettingsStore()
+const libraryStore = useLibraryStore()
+const isElectron = computed(() => Boolean(window.electronAPI))
 
 const defaultViewMode = ref<LibraryDefaultViewMode>('grid')
 const defaultGroupingMode = ref<LibraryDefaultGroupingMode>('none')
@@ -108,6 +130,15 @@ const savedFilters = computed(() => getLibraryPrefs().savedFilters)
 const defaultFilterId = ref('')
 const pageSize = ref(getLibraryPrefs().pageSize)
 const pageSizeOptions = [100, 200, 500, 1000, 2000, 5000]
+
+const handleMultiLibraryViewsChange = async (enabled: boolean) => {
+  await settingsStore.updateSetting('multiLibraryViewsEnabled', enabled)
+  await window.electronAPI?.invoke(
+    'browser-view:set-enabled',
+    enabled,
+    libraryStore.currentLibrary?.id ? String(libraryStore.currentLibrary.id) : null
+  )
+}
 
 onMounted(async () => {
   await loadLibraryPrefs()

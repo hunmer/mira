@@ -26,6 +26,8 @@ export interface AppSettings {
   closeToTray: boolean
   /** 打开网页方式：system=系统默认浏览器 / tab=应用内 webview 标签页 / window=新窗口 */
   openWebAction: 'system' | 'tab' | 'window'
+  /** 是否为不同素材库保留独立的 Electron BrowserView */
+  multiLibraryViewsEnabled: boolean
 
   // 主题风格覆盖（'' | 'mira' | 'lyra' | 'luma' | 'rhea' | 'custom'）
   themeStyle: string
@@ -174,6 +176,7 @@ export const useSettingsStore = defineStore('settings', () => {
     autoStartServer: false,
     closeToTray: false,
     openWebAction: 'system',
+    multiLibraryViewsEnabled: false,
 
     // 主题风格 / 主色覆盖
     themeStyle: '',
@@ -578,6 +581,7 @@ export const useSettingsStore = defineStore('settings', () => {
       autoStartServer: false,
       closeToTray: false,
       openWebAction: 'system',
+      multiLibraryViewsEnabled: false,
 
       themeStyle: '',
       themeStyleCustomCss: '',

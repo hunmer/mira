@@ -27,6 +27,8 @@
   "autoStartDisabledToast": "已关闭服务自启动",
   "settingSaved": "设置已保存",
   "saveFailed": "保存失败",
+  "multiLibraryViews": "是否开启多开素材库",
+  "multiLibraryViewsDesc": "切换素材库时保留独立的后台页面和本地状态",
   "defaultViewMode": "默认视图选项",
   "defaultViewModeDesc": "新建标签页时使用的默认视图；「使用上次」沿用当前素材库上次使用的视图（保存在当前素材库本地配置中）",
   "defaultViewModeUpdated": "默认视图已切换为「{mode}」",

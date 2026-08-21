@@ -468,7 +468,7 @@ export interface ElectronAPI {
   // IPC 通信
   invoke: (channel: string, ...args: any[]) => Promise<any>
   send: (channel: string, ...args: any[]) => void
-  on: (channel: string, callback: (...args: any[]) => void) => void
+  on: (channel: string, callback: (...args: any[]) => void) => () => void
   removeAllListeners: (channel: string) => void
 
   // 系统信息

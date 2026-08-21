@@ -55,18 +55,25 @@ export function useHomeInit() {
     await initializeDefaultLibrary()
     await libraryStore.restoreLibraryState()
 
-    if (libraryStore.currentLibrary?.id) {
-      tabPersistence.setCurrentLibraryId(createTabScopeId(
-        serverListStore.activeServer?.serverUrl,
-        libraryStore.currentLibrary.id
-      ))
-    }
-
     if (libraryStore.libraries.length === 0) {
       const result = await libraryStore.fetchLibraries()
       if (!result.success) {
         console.warn('Failed to fetch libraries:', result.error)
       }
+    }
+
+    const requestedLibraryId = new URLSearchParams(window.location.search).get('mira-library-id')
+    if (requestedLibraryId) {
+      const requestedLibrary = libraryStore.libraries.find(library => String(library.id) === requestedLibraryId)
+      if (requestedLibrary) await libraryStore.setCurrentLibrary(requestedLibrary)
+    }
+
+    if (libraryStore.currentLibrary?.id) {
+      localStorage.setItem('mira-active-library-id', String(libraryStore.currentLibrary.id))
+      tabPersistence.setCurrentLibraryId(createTabScopeId(
+        serverListStore.activeServer?.serverUrl,
+        libraryStore.currentLibrary.id
+      ))
     }
   }
 

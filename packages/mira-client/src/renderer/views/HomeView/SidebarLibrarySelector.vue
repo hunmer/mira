@@ -8,7 +8,7 @@
  *
  * 由原 HomeSidebar 拆出，逻辑零改动，仅上抛事件给父级（HomeSidebar 编排壳）。
  */
-import { ref, computed, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useLibraryStore } from '@/renderer/stores/library'
 import { useSettingsStore } from '@/renderer/stores/settings'
 import { useServerListStore } from '@/renderer/stores/serverList'
@@ -35,6 +35,65 @@ const authStore = useAuthStore()
 const showCacheSettings = ref(false)
 const isElectron = computed(() => Boolean(window.electronAPI))
 const cacheLibrary = ref<any | null>(null)
+interface BrowserViewState {
+  enabled: boolean
+  activeId: string
+  activeLibraryId: string | null
+  runningLibraryIds: string[]
+  canCloseCurrent: boolean
+}
+const browserViewState = ref<BrowserViewState>({
+  enabled: false,
+  activeId: 'default',
+  activeLibraryId: null,
+  runningLibraryIds: [],
+  canCloseCurrent: false,
+})
+const multiLibraryViewsEnabled = computed(() =>
+  isElectron.value && browserViewState.value.enabled
+)
+const hasOtherBrowserViews = computed(() => browserViewState.value.runningLibraryIds.length > 1)
+
+const updateBrowserViewState = (state?: BrowserViewState) => {
+  if (!state) return
+  browserViewState.value = state
+  settingsStore.settings.multiLibraryViewsEnabled = state.enabled
+}
+
+const activateLibrary = (libraryId: string) => {
+  const library = libraryStore.libraries.find(item => String(item.id) === String(libraryId))
+  if (!library) return
+  localStorage.setItem('mira-active-library-id', String(library.id))
+  emit('selectCollection', library)
+}
+
+let removeStateListener: (() => void) | undefined
+let removeActivateListener: (() => void) | undefined
+
+onMounted(() => {
+  removeStateListener = window.electronAPI?.on('browser-view:state-changed', updateBrowserViewState)
+  removeActivateListener = window.electronAPI?.on('browser-view:activate-library', activateLibrary)
+})
+
+onUnmounted(() => {
+  removeStateListener?.()
+  removeActivateListener?.()
+})
+
+watch(
+  () => libraryStore.currentLibrary?.id,
+  async (libraryId) => {
+    if (!isElectron.value) return
+    const state = await window.electronAPI.invoke(
+      'browser-view:set-enabled',
+      Boolean(settingsStore.settings.multiLibraryViewsEnabled),
+      libraryId ? String(libraryId) : null
+    )
+    updateBrowserViewState(state)
+  },
+  { immediate: true }
+)
+
 watch(() => libraryStore.currentLibrary?.id, id => {
   if (id) localStorage.setItem('mira-active-library-id', String(id))
 }, { immediate: true })
@@ -87,15 +146,38 @@ const openLibraryFolder = (collection: any, event: Event) => {
   api?.fs?.showItemInFolder(localPath)
 }
 
-const onSelectCollection = (collection: any, close: () => void) => {
+const onSelectCollection = async (collection: any, close: () => void) => {
   if (!canAccessLibrary(collection)) {
     emit('accessDenied')
     close()
     return
   }
+  if (multiLibraryViewsEnabled.value) {
+    try {
+      const state = await window.electronAPI.invoke('browser-view:switch', String(collection.id))
+      updateBrowserViewState(state)
+      close()
+      return
+    } catch (error) {
+      console.error('Failed to switch library BrowserView:', error)
+    }
+  }
+
   emit('selectCollection', collection)
   localStorage.setItem('mira-active-library-id', String(collection.id))
   close()
+}
+
+const closeCurrentBrowserView = () => {
+  if (!browserViewState.value.canCloseCurrent) return
+  void window.electronAPI.invoke('browser-view:close-current').catch(error => {
+    console.error('Failed to close current library BrowserView:', error)
+  })
+}
+
+const closeOtherBrowserViews = async () => {
+  if (!hasOtherBrowserViews.value) return
+  updateBrowserViewState(await window.electronAPI.invoke('browser-view:close-others'))
 }
 </script>
 
@@ -115,12 +197,13 @@ const onSelectCollection = (collection: any, close: () => void) => {
         draggable="false"
       />
     </button>
-    <Dropdown
-      :offset="{ x: 0, y: 4 }"
-      placement="bottom-start"
-      min-width="280px"
-      full-width
-    >
+    <div class="min-w-0 flex-1">
+      <Dropdown
+        :offset="{ x: 0, y: 4 }"
+        placement="bottom-start"
+        min-width="280px"
+        full-width
+      >
       <template #trigger>
         <button
           class="w-full flex items-center space-x-2 text-sm font-medium rounded-xl bg-primary/10 text-primary hover:bg-primary/15 transition-colors px-3 py-2"
@@ -156,6 +239,12 @@ const onSelectCollection = (collection: any, close: () => void) => {
                         class="h-auto px-1.5 py-0 text-[10px]"
                       >
                         {{ $t('views.sidebarLibrarySelector.active') }}
+                      </Badge>
+                      <Badge
+                        v-else-if="browserViewState.runningLibraryIds.includes(String(collection.id))"
+                        class="h-auto bg-green-600 px-1.5 py-0 text-[10px] text-white hover:bg-green-600"
+                      >
+                        {{ $t('views.sidebarLibrarySelector.runningInBackground') }}
                       </Badge>
                     </div>
                     <div class="text-xs text-muted-foreground">
@@ -213,7 +302,28 @@ const onSelectCollection = (collection: any, close: () => void) => {
           </div>
         </div>
       </template>
-    </Dropdown>
+      </Dropdown>
+    </div>
+    <template v-if="multiLibraryViewsEnabled">
+      <button
+        type="button"
+        class="size-7 shrink-0 rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
+        :disabled="!browserViewState.canCloseCurrent"
+        :title="$t('views.sidebarLibrarySelector.closeCurrentView')"
+        @click="closeCurrentBrowserView"
+      >
+        <span class="material-symbols-outlined text-base">logout</span>
+      </button>
+      <button
+        type="button"
+        class="size-7 shrink-0 rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
+        :disabled="!hasOtherBrowserViews"
+        :title="$t('views.sidebarLibrarySelector.closeOtherViews')"
+        @click="closeOtherBrowserViews"
+      >
+        <span class="material-symbols-outlined text-base">filter_none</span>
+      </button>
+    </template>
   </div>
   <Teleport to="body">
     <div v-if="showCacheSettings && cacheLibrary" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/40" @click.self="showCacheSettings = false">

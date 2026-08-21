@@ -1,4 +1,5 @@
-import { app, BrowserWindow, ipcMain, session } from 'electron'
+import { app, BrowserView, BrowserWindow, ipcMain, session, shell } from 'electron'
+import type { WebContents } from 'electron'
 import * as fs from 'fs/promises'
 import * as path from 'path'
 import { IPCHandlers } from './ipc/handlers'
@@ -10,6 +11,246 @@ import { logger } from './utils/Logger'
 import { closeProcm, initProcm, setProcmMainWindow } from './services/ProcmService'
 import { getAutoUpdater } from './services/useAutoUpdater'
 import { ensureLocalServerStarted, runLocalServerScriptSync } from './services/LocalServerService'
+
+interface BrowserViewState {
+  enabled: boolean
+  activeId: string
+  activeLibraryId: string | null
+  runningLibraryIds: string[]
+  canCloseCurrent: boolean
+}
+
+interface ManagedLibraryView {
+  id: string
+  libraryId: string
+  view: BrowserView
+}
+
+/**
+ * 素材库多开管理器。主 BrowserWindow 是固定的 default 视图，其他素材库使用
+ * 独立持久化 session，确保相同 localStorage key 在不同素材库间不会互相覆盖。
+ */
+class BrowserViewManager {
+  private readonly views = new Map<string, ManagedLibraryView>()
+  private readonly history: string[] = []
+  private enabled = false
+  private activeId = 'default'
+  private defaultLibraryId: string | null = null
+
+  constructor(private readonly getWindow: () => BrowserWindow | null) {}
+
+  private getViewId(libraryId: string): string {
+    return `library:${Buffer.from(libraryId).toString('base64url')}`
+  }
+
+  private getLibraryId(viewId: string): string | null {
+    return viewId === 'default'
+      ? this.defaultLibraryId
+      : this.views.get(viewId)?.libraryId ?? null
+  }
+
+  private getRunningLibraryIds(): string[] {
+    const ids = [this.defaultLibraryId, ...Array.from(this.views.values(), item => item.libraryId)]
+    return ids.filter((id): id is string => Boolean(id))
+  }
+
+  private getState(): BrowserViewState {
+    const runningLibraryIds = this.getRunningLibraryIds()
+    return {
+      enabled: this.enabled,
+      activeId: this.activeId,
+      activeLibraryId: this.getLibraryId(this.activeId),
+      runningLibraryIds,
+      canCloseCurrent: runningLibraryIds.length > 1,
+    }
+  }
+
+  private broadcastState(): BrowserViewState {
+    const state = this.getState()
+    const targets = [
+      this.getWindow()?.webContents,
+      ...Array.from(this.views.values(), item => item.view.webContents),
+    ]
+    for (const target of targets) {
+      if (target && !target.isDestroyed()) target.send('browser-view:state-changed', state)
+    }
+    return state
+  }
+
+  private resizeActiveView(): void {
+    if (this.activeId === 'default') return
+    const win = this.getWindow()
+    const managed = this.views.get(this.activeId)
+    if (!win || !managed) return
+    const { width, height } = win.getContentBounds()
+    managed.view.setBounds({ x: 0, y: 0, width, height })
+  }
+
+  private show(viewId: string): void {
+    const win = this.getWindow()
+    if (!win) return
+
+    if (this.activeId !== viewId) {
+      this.history.push(this.activeId)
+    }
+    this.activeId = viewId
+
+    if (viewId === 'default') {
+      win.setBrowserView(null)
+    } else {
+      const managed = this.views.get(viewId)
+      if (!managed) return
+      win.setBrowserView(managed.view)
+      this.resizeActiveView()
+    }
+    this.broadcastState()
+  }
+
+  private createView(libraryId: string): ManagedLibraryView {
+    const id = this.getViewId(libraryId)
+    const view = new BrowserView({
+      webPreferences: {
+        nodeIntegration: true,
+        contextIsolation: true,
+        spellcheck: false,
+        webSecurity: false,
+        webviewTag: true,
+        partition: `persist:mira-${Buffer.from(libraryId).toString('base64url')}`,
+        preload: path.join(__dirname, '../dist-preload/preload.js'),
+      },
+    })
+    view.setAutoResize({ width: true, height: true })
+    view.webContents.setWindowOpenHandler(({ url }) => {
+      void shell.openExternal(url)
+      return { action: 'deny' }
+    })
+    view.webContents.on('zoom-changed', () => view.webContents.setZoomFactor(1))
+    const managed = { id, libraryId, view }
+    this.views.set(id, managed)
+    return managed
+  }
+
+  private async loadView(managed: ManagedLibraryView): Promise<void> {
+    const win = this.getWindow()
+    if (!win) return
+    const target = new URL(win.webContents.getURL())
+    target.searchParams.set('mira-library-id', managed.libraryId)
+    await managed.view.webContents.loadURL(target.toString())
+  }
+
+  async setEnabled(enabled: boolean, currentLibraryId: string | null, sender: WebContents): Promise<BrowserViewState> {
+    const win = this.getWindow()
+    this.enabled = enabled
+
+    if (enabled) {
+      if (!this.defaultLibraryId && sender.id === win?.webContents.id) {
+        this.defaultLibraryId = currentLibraryId
+      }
+      return this.broadcastState()
+    }
+
+    this.activeId = 'default'
+    this.defaultLibraryId = currentLibraryId
+    if (win && currentLibraryId && sender.id !== win.webContents.id) {
+      win.setBrowserView(null)
+      win.webContents.send('browser-view:activate-library', currentLibraryId)
+      const state = this.broadcastState()
+      setImmediate(() => {
+        this.destroyViews()
+        this.broadcastState()
+      })
+      return state
+    }
+    this.destroyViews()
+    return this.broadcastState()
+  }
+
+  async switchToLibrary(libraryId: string): Promise<BrowserViewState> {
+    if (!this.enabled || !libraryId) return this.getState()
+
+    if (this.defaultLibraryId === libraryId) {
+      this.show('default')
+      return this.getState()
+    }
+
+    const id = this.getViewId(libraryId)
+    let managed = this.views.get(id)
+    if (!managed) {
+      managed = this.createView(libraryId)
+      try {
+        await this.loadView(managed)
+      } catch (error) {
+        this.views.delete(id)
+        if (!managed.view.webContents.isDestroyed()) managed.view.webContents.close({ waitForBeforeUnload: false })
+        throw error
+      }
+    }
+    this.show(id)
+    return this.getState()
+  }
+
+  closeCurrent(): BrowserViewState {
+    if (this.getRunningLibraryIds().length <= 1) return this.getState()
+
+    const closingId = this.activeId
+    let fallbackId = this.history.pop()
+    while (fallbackId && fallbackId === closingId) fallbackId = this.history.pop()
+    if (!fallbackId || (fallbackId !== 'default' && !this.views.has(fallbackId))) {
+      fallbackId = this.defaultLibraryId ? 'default' : this.views.keys().next().value
+    }
+
+    if (closingId === 'default') {
+      this.defaultLibraryId = null
+    } else {
+      const managed = this.views.get(closingId)
+      this.views.delete(closingId)
+      this.getWindow()?.setBrowserView(null)
+      if (managed && !managed.view.webContents.isDestroyed()) managed.view.webContents.close({ waitForBeforeUnload: false })
+    }
+
+    this.activeId = fallbackId ?? 'default'
+    this.show(this.activeId)
+    return this.getState()
+  }
+
+  closeOthers(): BrowserViewState {
+    if (this.activeId === 'default') {
+      this.destroyViews()
+    } else {
+      const active = this.views.get(this.activeId)
+      for (const [id, managed] of this.views) {
+        if (id !== this.activeId && !managed.view.webContents.isDestroyed()) {
+          managed.view.webContents.close({ waitForBeforeUnload: false })
+        }
+      }
+      this.views.clear()
+      if (active) this.views.set(active.id, active)
+      this.defaultLibraryId = null
+    }
+    this.history.length = 0
+    return this.broadcastState()
+  }
+
+  state(): BrowserViewState {
+    return this.getState()
+  }
+
+  attachWindowListeners(win: BrowserWindow): void {
+    win.on('resize', () => this.resizeActiveView())
+    win.on('maximize', () => this.resizeActiveView())
+    win.on('unmaximize', () => this.resizeActiveView())
+  }
+
+  destroyViews(): void {
+    const win = this.getWindow()
+    win?.setBrowserView(null)
+    for (const managed of this.views.values()) {
+      if (!managed.view.webContents.isDestroyed()) managed.view.webContents.close({ waitForBeforeUnload: false })
+    }
+    this.views.clear()
+    this.history.length = 0
+  }
+}
 
 if (!process.env.NODE_ENV) {
   process.env.NODE_ENV = 'production'
@@ -25,6 +266,7 @@ class MiraApplication {
   private protocolService: ProtocolService | null = null
   private trayService: TrayService | null = null
   private isQuitting = false
+  private browserViews = new BrowserViewManager(() => this.windows.getWindow())
 
   constructor() {
     this.setupEnvironment()
@@ -218,6 +460,7 @@ class MiraApplication {
 
   private createMainWindow(): BrowserWindow {
     const win = this.windows.create()
+    this.browserViews.attachWindowListeners(win)
     setProcmMainWindow(win)
     this.ipcHandlers?.setMainWindow(win)
     this.trayService?.setMainWindow(win)
@@ -240,6 +483,16 @@ class MiraApplication {
     if (win) {
       this.ipcHandlers.setMainWindow(win)
     }
+
+    ipcMain.handle('browser-view:set-enabled', (event, enabled: boolean, currentLibraryId?: string) =>
+      this.browserViews.setEnabled(Boolean(enabled), currentLibraryId ? String(currentLibraryId) : null, event.sender)
+    )
+    ipcMain.handle('browser-view:switch', (_event, libraryId: string) =>
+      this.browserViews.switchToLibrary(String(libraryId))
+    )
+    ipcMain.handle('browser-view:get-state', () => this.browserViews.state())
+    ipcMain.handle('browser-view:close-current', () => this.browserViews.closeCurrent())
+    ipcMain.handle('browser-view:close-others', () => this.browserViews.closeOthers())
   }
 
   private setupProtocol() {
@@ -296,6 +549,17 @@ class MiraApplication {
   private cleanup(): void {
     // 保存窗口状态
     this.windows.saveState()
+    this.browserViews.destroyViews()
+
+    for (const channel of [
+      'browser-view:set-enabled',
+      'browser-view:switch',
+      'browser-view:get-state',
+      'browser-view:close-current',
+      'browser-view:close-others',
+    ]) {
+      ipcMain.removeHandler(channel)
+    }
 
     // 移除 IPC 处理器
     if (this.ipcHandlers) {
