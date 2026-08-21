@@ -78,6 +78,8 @@
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  /* 统一为 Tab 内容（卡片/Empty）留边 */
+  padding: 8px;
 
   > * {
     height: 100%;
@@ -1108,28 +1110,4 @@
   font-weight: 500;
   padding: 6px 4px 4px;
   text-align: center;
-}
-
-.empty-thumbnails {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex: 1;
-  color: var(--color-text-secondary);
-}
-
-/* 空状态提示 */
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  padding: 40px 20px;
-  color: var(--color-text-secondary);
-  font-size: 14px;
-  text-align: center;
-  background: var(--color-surface);
-  border-radius: 8px;
-  margin: 16px;
 }

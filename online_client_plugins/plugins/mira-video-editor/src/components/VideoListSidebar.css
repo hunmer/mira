@@ -3,7 +3,6 @@
   display: flex;
   flex-direction: column;
   background: var(--color-background);
-  padding: 8px;
 }
 
 .tabs-root {
@@ -151,29 +150,7 @@
   gap: 6px;
 }
 
-/* 圆形图标按钮：无背景，hover 时才显示底色 */
-.actions .icon-btn {
-  width: 32px;
-  height: 32px;
-  min-height: 32px;
-  padding: 0;
-  border-radius: 50%;
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--color-text);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.actions .icon-btn:hover:not(:disabled) {
-  background: var(--color-hover);
-}
-
-.actions .icon-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
+/* icon-btn 圆形图标按钮样式由全局 tab-common.css 提供 */
 
 /* 文件名搜索框：边框/焦点态由 shadcn Input 渲染，容器只负责布局 */
 .search-box {

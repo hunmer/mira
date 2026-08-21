@@ -1,10 +1,12 @@
 <template>
   <div class="watermark-tab">
-    <div v-if="!video" class="empty-state">
-      请先选择一个视频
-    </div>
+    <Empty v-if="!video" class="tab-empty">
+      <EmptyMedia><VideoIcon style="width: 24px; height: 24px" /></EmptyMedia>
+      <EmptyTitle>请先选择一个视频</EmptyTitle>
+      <EmptyDescription>在文件列表中选择视频后即可去水印</EmptyDescription>
+    </Empty>
 
-    <div v-else class="panel-content">
+    <div v-else class="panel-content tab-card">
       <!-- 上下分栏布局 -->
       <div class="split-layout">
         <!-- 上方：截图和区域选择 -->
@@ -91,17 +93,7 @@
           <div class="enable-section">
             <div class="flex items-center justify-between">
               <span class="toggle-text">启用水印去除</span>
-              <button
-                @click="handleEnabledChange"
-                :class="enabled ? 'bg-primary' : 'bg-input'"
-                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                type="button"
-              >
-                <span
-                  :class="enabled ? 'translate-x-6' : 'translate-x-1'"
-                  class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
-                />
-              </button>
+              <Switch :model-value="enabled" @update:model-value="handleEnabledChange" />
             </div>
           </div>
 
@@ -264,8 +256,10 @@ import { toast } from '@/lib/toast'
 import { localVideoStorage } from '@/lib/localVideoStorage'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from 'mira-plugin-ui/src/components/ui/select'
 import { Button } from 'mira-plugin-ui/src/components/ui/button'
-import { Pencil1Icon, UpdateIcon, CameraIcon, CheckIcon, TrashIcon } from '@radix-icons/vue'
+import { Empty, EmptyMedia, EmptyTitle, EmptyDescription } from 'mira-plugin-ui/src/components/ui/empty'
+import { Pencil1Icon, UpdateIcon, CameraIcon, CheckIcon, TrashIcon, VideoIcon } from '@radix-icons/vue'
 import { Input } from 'mira-plugin-ui/src/components/ui/input'
+import { Switch } from '@/components/ui/switch'
 import { Dialog, DialogContent, DialogHeader, DialogFooter } from 'mira-plugin-ui/src/components/ui/dialog'
 import {
   AlertDialog,
@@ -404,9 +398,9 @@ function formatPercent(value: number): string {
   return `${Math.round(value * 100)}%`
 }
 
-// 处理启用状态变化
-function handleEnabledChange() {
-  const newValue = !enabled.value
+// 处理启用状态变化（Switch 传入新值；无参调用时自行取反）
+function handleEnabledChange(value?: boolean) {
+  const newValue = value ?? !enabled.value
   enabled.value = newValue
   if (props.video) {
     saveToVideo(props.video)

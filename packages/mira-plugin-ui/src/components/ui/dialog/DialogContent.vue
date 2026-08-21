@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, onMounted } from "vue"
 import type { DialogContentEmits, DialogContentProps } from "reka-ui"
 import type { HTMLAttributes } from "vue"
 import { X } from "@lucide/vue"
@@ -10,7 +9,7 @@ import {
   DialogPortal,
   useForwardPropsEmits,
 } from "reka-ui"
-import { cn } from "../../../lib/utils"
+import { cn } from "@/lib/utils"
 import DialogOverlay from "./DialogOverlay.vue"
 
 defineOptions({
@@ -25,29 +24,6 @@ const emits = defineEmits<DialogContentEmits>()
 const delegatedProps = reactiveOmit(props, "class")
 
 const forwarded = useForwardPropsEmits(delegatedProps, emits)
-
-function centerCepDialogs() {
-  const cepWindow = window as typeof window & { cep?: unknown; CSInterface?: unknown }
-  if (!cepWindow.cep && !cepWindow.CSInterface) return
-  let matched = 0
-  document.querySelectorAll<HTMLElement>('[data-slot="dialog-content"]').forEach(el => {
-    // Sheet/侧滑面板明确使用 left/right-0,普通 Dialog 统一补传统 transform。
-    const className = typeof el.className === 'string' ? el.className : ''
-    if (className.indexOf('left-0') >= 0 || className.indexOf('right-0') >= 0) return
-    // BatchUploadDialog 在 CEP 中使用 inset + margin 居中,不能再覆盖为 translate 居中。
-    if (className.indexOf('cep-batch-upload-dialog') >= 0) return
-    el.style.setProperty('transform', 'translate(-50%, -50%)', 'important')
-    matched += 1
-  })
-  if (matched) console.log('[mira-cep-dialog] centered', matched)
-}
-
-onMounted(() => {
-  void nextTick(centerCepDialogs)
-  const observer = new MutationObserver(centerCepDialogs)
-  observer.observe(document.body, { childList: true, subtree: true })
-  onBeforeUnmount(() => observer.disconnect())
-})
 </script>
 
 <template>
@@ -58,7 +34,7 @@ onMounted(() => {
       v-bind="{ ...$attrs, ...forwarded }"
       :class="
         cn(
-          'bg-background text-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg',
+          'bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg',
           props.class,
         )"
     >

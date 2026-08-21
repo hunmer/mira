@@ -1,5 +1,5 @@
 <template>
-  <div v-if="selectedVideo" class="thumbnails-container">
+  <div v-if="selectedVideo" class="thumbnails-container tab-card">
     <div class="thumbnails-header">
       <h3>缩略图预览</h3>
       <div class="thumbnails-actions">
@@ -59,28 +59,34 @@
     </div>
 
     <div v-if="totalPages > 1" class="pagination">
-      <Button variant="outline" size="sm" :disabled="currentPage <= 1" @click="goToPage(currentPage - 1)">
-        上一页
+      <Button variant="ghost" class="icon-btn" :disabled="currentPage <= 1" @click="goToPage(currentPage - 1)" title="上一页">
+        <ChevronLeftIcon style="width: 16px; height: 16px" />
       </Button>
       <span class="pagination-info">{{ currentPage }} / {{ totalPages }} (共 {{ thumbnails.length }} 帧)</span>
-      <Button variant="outline" size="sm" :disabled="currentPage >= totalPages" @click="goToPage(currentPage + 1)">
-        下一页
+      <Button variant="ghost" class="icon-btn" :disabled="currentPage >= totalPages" @click="goToPage(currentPage + 1)" title="下一页">
+        <ChevronRightIcon style="width: 16px; height: 16px" />
       </Button>
     </div>
 
-    <div v-else-if="!isLoadingThumbnails && thumbnails.length === 0" class="empty-thumbnails">
-      <p>点击"加载预览"生成视频缩略图</p>
-    </div>
+    <Empty v-else-if="!isLoadingThumbnails && thumbnails.length === 0" class="tab-empty">
+      <EmptyMedia><ImageIcon style="width: 24px; height: 24px" /></EmptyMedia>
+      <EmptyTitle>暂无缩略图</EmptyTitle>
+      <EmptyDescription>点击"加载预览"生成视频缩略图</EmptyDescription>
+    </Empty>
   </div>
-  <div v-else class="empty-state">
-    请先选择一个视频
-  </div>
+  <Empty v-else class="tab-empty">
+    <EmptyMedia><VideoIcon style="width: 24px; height: 24px" /></EmptyMedia>
+    <EmptyTitle>请先选择一个视频</EmptyTitle>
+    <EmptyDescription>在文件列表中选择视频后即可预览缩略图</EmptyDescription>
+  </Empty>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, reactive, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { Button } from 'mira-plugin-ui/src/components/ui/button'
+import { Empty, EmptyMedia, EmptyTitle, EmptyDescription } from 'mira-plugin-ui/src/components/ui/empty'
 import { Switch } from '@/components/ui/switch'
+import { ChevronLeftIcon, ChevronRightIcon, ImageIcon, VideoIcon } from '@radix-icons/vue'
 import type { VideoData } from '@/types/video-editor'
 import type { ThumbnailItem } from '../types'
 import { formatTime } from '../utils/formatters'
@@ -170,10 +176,7 @@ function goToPage(page: number) {
 
 <style scoped>
 .thumbnails-container {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  padding: 12px;
+  overflow: hidden;
 }
 
 .thumbnails-header {
@@ -324,33 +327,10 @@ function goToPage(page: number) {
   white-space: nowrap;
 }
 
-.empty-thumbnails {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex: 1;
-  color: var(--color-text-secondary);
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  padding: 40px 20px;
-  color: var(--color-text-secondary);
-  font-size: 14px;
-  text-align: center;
-  background: var(--color-surface);
-  border-radius: 8px;
-  margin: 16px;
-}
-
 .thumb-context-menu {
   position: fixed;
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--color-popover, var(--color-surface));
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   z-index: 10000;
@@ -362,11 +342,11 @@ function goToPage(page: number) {
   padding: 8px 12px;
   font-size: 14px;
   cursor: pointer;
-  color: #ef4444;
+  color: var(--color-danger);
 }
 
 .thumb-context-menu-item:hover {
-  background: #fef2f2;
+  background: var(--color-hover);
 }
 
 .auto-scroll-label {

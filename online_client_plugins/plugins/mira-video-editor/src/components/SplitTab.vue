@@ -1,5 +1,5 @@
 <template>
-  <div v-if="selectedVideo" class="split-container">
+  <div v-if="selectedVideo" class="split-container tab-card">
     <!-- 分割设置对话框 -->
     <Dialog :open="showSplitSettingsDialog" @update:open="$emit('update:showSplitSettingsDialog', $event)">
       <DialogContent class="max-w-md">
@@ -84,7 +84,7 @@
         <div class="results-actions">
           <Button
             @click="$emit('selectAllScenes')"
-            variant="outline"
+            variant="ghost"
             size="sm"
             :disabled="selectedScenes.length === sceneSegments.length"
           >
@@ -92,14 +92,14 @@
           </Button>
           <Button
             @click="$emit('clearAllScenes')"
-            variant="outline"
+            variant="ghost"
             size="sm"
           >
             清空
           </Button>
           <Button
             @click="$emit('clearSceneSelection')"
-            variant="outline"
+            variant="ghost"
             size="sm"
             :disabled="selectedScenes.length === 0"
           >
@@ -108,6 +108,7 @@
           <Button
             @click="$emit('addSelectedScenesToClips')"
             variant="default"
+            size="sm"
             :disabled="selectedScenes.length === 0"
           >
             <PlusIcon style="width: 14px; height: 14px" /> 添加到列表 ({{ selectedScenes.length }})
@@ -159,27 +160,30 @@
 
       <!-- 分页 -->
       <div v-if="totalPages > 1" class="pagination">
-        <Button variant="outline" size="sm" :disabled="currentPage <= 1" @click="goToPage(currentPage - 1)">
-          上一页
+        <Button variant="ghost" class="icon-btn" :disabled="currentPage <= 1" @click="goToPage(currentPage - 1)" title="上一页">
+          <ChevronLeftIcon style="width: 16px; height: 16px" />
         </Button>
         <span class="pagination-info">{{ currentPage }} / {{ totalPages }} (共 {{ sceneSegments.length }} 个场景)</span>
-        <Button variant="outline" size="sm" :disabled="currentPage >= totalPages" @click="goToPage(currentPage + 1)">
-          下一页
+        <Button variant="ghost" class="icon-btn" :disabled="currentPage >= totalPages" @click="goToPage(currentPage + 1)" title="下一页">
+          <ChevronRightIcon style="width: 16px; height: 16px" />
         </Button>
       </div>
     </div>
   </div>
-  <div v-else class="empty-state">
-    请先选择一个视频
-  </div>
+  <Empty v-else class="tab-empty">
+    <EmptyMedia><VideoIcon style="width: 24px; height: 24px" /></EmptyMedia>
+    <EmptyTitle>请先选择一个视频</EmptyTitle>
+    <EmptyDescription>在文件列表中选择视频后即可智能分割场景</EmptyDescription>
+  </Empty>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { Button } from 'mira-plugin-ui/src/components/ui/button'
 import { Input } from 'mira-plugin-ui/src/components/ui/input'
+import { Empty, EmptyMedia, EmptyTitle, EmptyDescription } from 'mira-plugin-ui/src/components/ui/empty'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Cross1Icon, VideoIcon, PlusIcon, Link2Icon } from '@radix-icons/vue'
+import { Cross1Icon, VideoIcon, PlusIcon, Link2Icon, ChevronLeftIcon, ChevronRightIcon } from '@radix-icons/vue'
 import { Dialog, DialogContent } from 'mira-plugin-ui/src/components/ui/dialog'
 import type { VideoData } from '@/types/video-editor'
 import type { SceneSegment, SplitProgress } from '../types'
@@ -248,17 +252,14 @@ function goToPage(page: number) {
 
 <style scoped>
 .split-container {
-  height: 100%;
-  overflow-y: auto;
-  padding: 20px;
+  overflow: hidden;
 }
 
 .split-controls {
-  margin-bottom: 20px;
-  padding: 16px;
-  background: var(--color-surface);
+  flex-shrink: 0;
+  padding: 12px;
+  background: var(--color-background);
   border-radius: 8px;
-  border: 1px solid var(--color-border);
 }
 
 .split-btn {
@@ -319,11 +320,10 @@ function goToPage(page: number) {
 }
 
 .split-progress {
-  margin-bottom: 20px;
-  padding: 16px;
-  background: var(--color-surface);
+  flex-shrink: 0;
+  padding: 12px;
+  background: var(--color-background);
   border-radius: 8px;
-  border: 1px solid var(--color-border);
 }
 
 .progress-info {
@@ -349,18 +349,18 @@ function goToPage(page: number) {
 }
 
 .split-results {
-  margin-top: 20px;
-  display: flex;
-  flex-direction: column;
   flex: 1;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
 }
 
 .results-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  flex-shrink: 0;
 }
 
 .results-header h4 {
@@ -491,20 +491,5 @@ function goToPage(page: number) {
   font-size: 13px;
   color: var(--color-text-secondary);
   white-space: nowrap;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  padding: 40px 20px;
-  color: var(--color-text-secondary);
-  font-size: 14px;
-  text-align: center;
-  background: var(--color-surface);
-  border-radius: 8px;
-  margin: 16px;
 }
 </style>

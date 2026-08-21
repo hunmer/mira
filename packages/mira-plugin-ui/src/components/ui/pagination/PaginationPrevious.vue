@@ -1,25 +1,33 @@
 <script setup lang="ts">
+import type { PaginationPrevProps } from "reka-ui"
 import type { HTMLAttributes } from "vue"
-import { ChevronLeft } from "@lucide/vue"
-import { PaginationPrev } from "reka-ui"
-import { cn } from "../../../lib/utils"
+import type { ButtonVariants } from "@/components/ui/button"
+import { ChevronLeftIcon } from "@lucide/vue"
+import { reactiveOmit } from "@vueuse/core"
+import { PaginationPrev, useForwardProps } from "reka-ui"
+import { cn } from "@/lib/utils"
+import { buttonVariants } from "@/components/ui/button"
 
-const props = defineProps<{ class?: HTMLAttributes["class"] }>()
+const props = withDefaults(defineProps<PaginationPrevProps & {
+  size?: ButtonVariants["size"]
+  class?: HTMLAttributes["class"]
+}>(), {
+  size: "default",
+})
+
+const delegatedProps = reactiveOmit(props, "class", "size")
+const forwarded = useForwardProps(delegatedProps)
 </script>
 
 <template>
   <PaginationPrev
     data-slot="pagination-previous"
-    as-child
-    :class="cn('', props.class)"
+    :class="cn(buttonVariants({ variant: 'ghost', size }), 'gap-1 px-2.5 sm:pr-2.5', props.class)"
+    v-bind="forwarded"
   >
-    <button
-      type="button"
-      class="text-muted-foreground inline-flex h-9 cursor-pointer items-center gap-1 rounded-md border-none bg-transparent px-2.5 text-sm font-medium whitespace-nowrap transition-colors duration-100 outline-none hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50"
-      aria-label="Go to previous page"
-    >
-      <ChevronLeft class="size-4" />
-      <slot />
-    </button>
+    <slot>
+      <ChevronLeftIcon />
+      <span class="hidden sm:block">Previous</span>
+    </slot>
   </PaginationPrev>
 </template>

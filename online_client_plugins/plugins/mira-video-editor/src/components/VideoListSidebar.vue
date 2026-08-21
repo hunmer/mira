@@ -48,6 +48,13 @@
 
       <!-- 视频列表（单行 list） -->
       <div class="video-list">
+        <Empty v-if="filteredVideos.length === 0" class="video-list-empty">
+          <EmptyMedia><VideoIcon style="width: 24px; height: 24px" /></EmptyMedia>
+          <EmptyTitle>{{ searchQuery.trim() ? '未找到匹配的文件' : '列表为空' }}</EmptyTitle>
+          <EmptyDescription>
+            {{ searchQuery.trim() ? '换个关键字试试' : '点击上方按钮添加本地视频文件' }}
+          </EmptyDescription>
+        </Empty>
         <div
           v-for="video in filteredVideos"
           :key="video.id"
@@ -102,6 +109,7 @@ import {
 import { Button } from 'mira-plugin-ui/src/components/ui/button'
 import { Input } from 'mira-plugin-ui/src/components/ui/input'
 import { Textarea } from 'mira-plugin-ui/src/components/ui/textarea'
+import { Empty, EmptyMedia, EmptyTitle, EmptyDescription } from 'mira-plugin-ui/src/components/ui/empty'
 import { Cross1Icon, UploadIcon, TrashIcon, VideoIcon, PlayIcon, MagnifyingGlassIcon } from '@radix-icons/vue'
 import type { VideoData } from '@/types/video-editor'
 import { localVideoStorage } from '@/lib/localVideoStorage'

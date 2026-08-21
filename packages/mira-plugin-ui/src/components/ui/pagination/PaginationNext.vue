@@ -1,25 +1,33 @@
 <script setup lang="ts">
+import type { PaginationNextProps } from "reka-ui"
 import type { HTMLAttributes } from "vue"
-import { ChevronRight } from "@lucide/vue"
-import { PaginationNext } from "reka-ui"
-import { cn } from "../../../lib/utils"
+import type { ButtonVariants } from "@/components/ui/button"
+import { ChevronRightIcon } from "@lucide/vue"
+import { reactiveOmit } from "@vueuse/core"
+import { PaginationNext, useForwardProps } from "reka-ui"
+import { cn } from "@/lib/utils"
+import { buttonVariants } from "@/components/ui/button"
 
-const props = defineProps<{ class?: HTMLAttributes["class"] }>()
+const props = withDefaults(defineProps<PaginationNextProps & {
+  size?: ButtonVariants["size"]
+  class?: HTMLAttributes["class"]
+}>(), {
+  size: "default",
+})
+
+const delegatedProps = reactiveOmit(props, "class", "size")
+const forwarded = useForwardProps(delegatedProps)
 </script>
 
 <template>
   <PaginationNext
     data-slot="pagination-next"
-    as-child
-    :class="cn('', props.class)"
+    :class="cn(buttonVariants({ variant: 'ghost', size }), 'gap-1 px-2.5 sm:pr-2.5', props.class)"
+    v-bind="forwarded"
   >
-    <button
-      type="button"
-      class="text-muted-foreground inline-flex h-9 cursor-pointer items-center gap-1 rounded-md border-none bg-transparent px-2.5 text-sm font-medium whitespace-nowrap transition-colors duration-100 outline-none hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50"
-      aria-label="Go to next page"
-    >
-      <slot />
-      <ChevronRight class="size-4" />
-    </button>
+    <slot>
+      <span class="hidden sm:block">Next</span>
+      <ChevronRightIcon />
+    </slot>
   </PaginationNext>
 </template>

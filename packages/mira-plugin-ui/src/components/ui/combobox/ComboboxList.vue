@@ -3,7 +3,7 @@ import type { ComboboxContentEmits, ComboboxContentProps } from "reka-ui"
 import type { HTMLAttributes } from "vue"
 import { reactiveOmit } from "@vueuse/core"
 import { ComboboxContent, ComboboxPortal, useForwardPropsEmits } from "reka-ui"
-import { cn } from "../../../lib/utils"
+import { cn } from "@/lib/utils"
 
 defineOptions({
   inheritAttrs: false,

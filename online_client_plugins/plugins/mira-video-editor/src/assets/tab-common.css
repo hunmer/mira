@@ -1,0 +1,50 @@
+/*
+ * Tab 页公共风格（与文件列表 Tab 一致，各右侧面板复用）：
+ *   - .tab-card  卡片容器：surface 背景 + 边框 + 圆角
+ *   - .icon-btn  圆形图标按钮：无背景，hover 时才显示底色；.danger hover 红
+ */
+.tab-card {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+}
+
+/* Tab 级空状态：占满内容区并垂直居中（Empty 组件自带水平居中） */
+.tab-empty {
+  height: 100%;
+}
+
+.icon-btn {
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--color-text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.icon-btn:hover:not(:disabled) {
+  background: var(--color-hover);
+}
+
+.icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.icon-btn.danger:hover:not(:disabled) {
+  background: var(--color-danger);
+  color: white;
+}

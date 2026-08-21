@@ -35,14 +35,20 @@
   "dependencies": {
     "@hunmer/vue-masonry": "workspace:*",
     "@hunmer/vue-selection-box": "workspace:*",
+    "@internationalized/date": "^3.12.3",
     "@lucide/vue": "^1.32.0",
+    "@unovis/vue": "^1.6.5",
     "@vueuse/core": "^14.4.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "embla-carousel-vue": "^8.6.0",
     "mira-app-core": "workspace:*",
     "motion-v": "^2.2.1",
     "reka-ui": "^2.9.7",
-    "tailwind-merge": "^3.3.0"
+    "tailwind-merge": "^3.3.0",
+    "vee-validate": "^4.15.1",
+    "vue-input-otp": "^0.4.0",
+    "vue-sonner": "^2.0.9"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",

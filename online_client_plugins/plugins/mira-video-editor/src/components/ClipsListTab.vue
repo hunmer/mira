@@ -1,5 +1,5 @@
 <template>
-  <div v-if="selectedVideo" class="clips-container">
+  <div v-if="selectedVideo" class="clips-container tab-card">
     <div class="clips-header">
       <h3>已创建的片段</h3>
       <div class="clips-count">
@@ -7,9 +7,11 @@
       </div>
     </div>
 
-    <div v-if="Object.keys(selectedVideo.clips).length === 0" class="empty-clips">
-      <p>暂无片段，点击"剪辑工具"选项卡创建片段</p>
-    </div>
+    <Empty v-if="Object.keys(selectedVideo.clips).length === 0" class="tab-empty">
+      <EmptyMedia><ClipboardIcon style="width: 24px; height: 24px" /></EmptyMedia>
+      <EmptyTitle>暂无片段</EmptyTitle>
+      <EmptyDescription>点击"剪辑工具"选项卡创建片段</EmptyDescription>
+    </Empty>
 
     <div v-else class="clips-grid">
       <div
@@ -40,23 +42,23 @@
           </div>
         </div>
         <div class="clip-actions">
-          <Button @click="$emit('previewClip', clip)" variant="outline" size="sm" title="预览片段">
+          <Button @click="$emit('previewClip', clip)" variant="ghost" class="icon-btn" title="预览片段">
             <PlayIcon style="width: 14px; height: 14px" />
           </Button>
-          <Button @click="$emit('editClip', clip)" variant="outline" size="sm" title="编辑">
+          <Button @click="$emit('editClip', clip)" variant="ghost" class="icon-btn" title="编辑">
             <Pencil1Icon style="width: 14px; height: 14px" />
           </Button>
           <Button
             @click="$emit('exportClip', clip)"
-            variant="outline"
-            size="sm"
+            variant="ghost"
+            class="icon-btn"
             :title="isExporting && exportProgress ? exportProgress.message : '导出'"
             :disabled="isExporting && !!exportProgress"
           >
             <UpdateIcon v-if="isExporting && exportProgress" class="loading-spinner" style="width: 14px; height: 14px" />
             <DownloadIcon v-else style="width: 14px; height: 14px" />
           </Button>
-          <Button @click="$emit('deleteClip', clipId)" variant="destructive" size="sm" title="删除">
+          <Button @click="$emit('deleteClip', clipId)" variant="ghost" class="icon-btn danger" title="删除">
             <TrashIcon style="width: 14px; height: 14px" />
           </Button>
         </div>
@@ -69,14 +71,17 @@
       </Button>
     </div>
   </div>
-  <div v-else class="empty-state">
-    请先选择一个视频
-  </div>
+  <Empty v-else class="tab-empty">
+    <EmptyMedia><VideoIcon style="width: 24px; height: 24px" /></EmptyMedia>
+    <EmptyTitle>请先选择一个视频</EmptyTitle>
+    <EmptyDescription>在文件列表中选择视频后即可管理片段</EmptyDescription>
+  </Empty>
 </template>
 
 <script setup lang="ts">
 import { Button } from 'mira-plugin-ui/src/components/ui/button'
-import { UpdateIcon, CameraIcon, PlayIcon, Pencil1Icon, DownloadIcon, TrashIcon, ArchiveIcon } from '@radix-icons/vue'
+import { Empty, EmptyMedia, EmptyTitle, EmptyDescription } from 'mira-plugin-ui/src/components/ui/empty'
+import { UpdateIcon, CameraIcon, PlayIcon, Pencil1Icon, DownloadIcon, TrashIcon, ArchiveIcon, ClipboardIcon, VideoIcon } from '@radix-icons/vue'
 import type { VideoData, VideoClip } from '@/types/video-editor'
 import { formatTime, formatDuration } from '../utils/formatters'
 
@@ -101,48 +106,39 @@ defineEmits<{
 
 <style scoped>
 .clips-container {
-  height: 100%;
   overflow-y: auto;
-  padding: 20px;
 }
 
 .clips-header {
-  margin-bottom: 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .clips-header h3 {
   margin: 0;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--color-text);
 }
 
 .clips-count {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--color-text-secondary);
-  background: var(--color-surface);
+  background: var(--color-background);
   padding: 4px 12px;
   border-radius: 12px;
-}
-
-.empty-clips {
-  text-align: center;
-  padding: 40px 20px;
-  color: var(--color-text-secondary);
 }
 
 .clips-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 16px;
-  margin-bottom: 20px;
 }
 
 .clip-card {
-  background: var(--color-surface);
+  background: var(--color-background);
   border: 1px solid var(--color-border);
   border-radius: 12px;
   overflow: hidden;
@@ -151,7 +147,6 @@ defineEmits<{
 
 .clip-card:hover {
   background: var(--color-hover);
-  border-color: var(--color-primary);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
@@ -247,34 +242,13 @@ defineEmits<{
 
 .clip-actions {
   display: flex;
-  gap: 6px;
+  gap: 4px;
   padding: 0 12px 12px;
 }
 
-.clip-actions :deep(.button) {
-  flex: 1;
-  justify-content: center;
-  padding: 6px 8px;
-}
-
 .bulk-actions {
-  margin-top: 20px;
-  padding-top: 20px;
+  padding-top: 12px;
   border-top: 1px solid var(--color-border);
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  padding: 40px 20px;
-  color: var(--color-text-secondary);
-  font-size: 14px;
-  text-align: center;
-  background: var(--color-surface);
-  border-radius: 8px;
-  margin: 16px;
+  flex-shrink: 0;
 }
 </style>

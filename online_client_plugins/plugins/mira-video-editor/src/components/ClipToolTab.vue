@@ -1,5 +1,5 @@
 <template>
-  <div v-if="selectedVideo" class="clip-form-container">
+  <div v-if="selectedVideo" class="clip-form-container tab-card">
     <div class="form-content">
       <div class="time-inputs-row">
         <div class="time-input-group">
@@ -14,11 +14,11 @@
               placeholder="0.0"
               @input="$emit('validateClipTime')"
             />
-            <Button @click="$emit('setClipStartToZero')" variant="outline" size="sm">
-              <TrackPreviousIcon style="width: 12px; height: 12px" /> 开始
+            <Button @click="$emit('setClipStartToZero')" variant="ghost" class="icon-btn" title="起点设为 0">
+              <TrackPreviousIcon style="width: 14px; height: 14px" />
             </Button>
-            <Button @click="$emit('setClipStartToCurrent')" variant="outline" size="sm" :title="`设置为当前播放时间 ${formatTime(currentPlayTime)}`">
-              <ClockIcon style="width: 12px; height: 12px" /> 当前
+            <Button @click="$emit('setClipStartToCurrent')" variant="ghost" class="icon-btn" :title="`设置为当前播放时间 ${formatTime(currentPlayTime)}`">
+              <ClockIcon style="width: 14px; height: 14px" />
             </Button>
           </div>
         </div>
@@ -35,11 +35,11 @@
               placeholder="0.0"
               @input="$emit('validateClipTime')"
             />
-            <Button @click="$emit('setClipEndToMax')" variant="outline" size="sm">
-              <TrackNextIcon style="width: 12px; height: 12px" /> 结束
+            <Button @click="$emit('setClipEndToMax')" variant="ghost" class="icon-btn" title="终点设为视频末尾">
+              <TrackNextIcon style="width: 14px; height: 14px" />
             </Button>
-            <Button @click="$emit('setClipEndToCurrent')" variant="outline" size="sm" :title="`设置为当前播放时间 ${formatTime(currentPlayTime)}`">
-              <ClockIcon style="width: 12px; height: 12px" /> 当前
+            <Button @click="$emit('setClipEndToCurrent')" variant="ghost" class="icon-btn" :title="`设置为当前播放时间 ${formatTime(currentPlayTime)}`">
+              <ClockIcon style="width: 14px; height: 14px" />
             </Button>
           </div>
         </div>
@@ -78,16 +78,19 @@
       </div>
     </div>
   </div>
-  <div v-else class="empty-state">
-    请先选择一个视频
-  </div>
+  <Empty v-else class="tab-empty">
+    <EmptyMedia><VideoIcon style="width: 24px; height: 24px" /></EmptyMedia>
+    <EmptyTitle>请先选择一个视频</EmptyTitle>
+    <EmptyDescription>在文件列表中选择视频后即可创建片段</EmptyDescription>
+  </Empty>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
 import { Button } from 'mira-plugin-ui/src/components/ui/button'
 import { Input } from 'mira-plugin-ui/src/components/ui/input'
-import { TrackPreviousIcon, ClockIcon, TrackNextIcon, PlusIcon } from '@radix-icons/vue'
+import { Empty, EmptyMedia, EmptyTitle, EmptyDescription } from 'mira-plugin-ui/src/components/ui/empty'
+import { TrackPreviousIcon, ClockIcon, TrackNextIcon, PlusIcon, VideoIcon } from '@radix-icons/vue'
 import { formatTime } from '../utils/formatters'
 
 defineProps<{
@@ -125,9 +128,7 @@ defineExpose({
 
 <style scoped>
 .clip-form-container {
-  height: 100%;
   overflow-y: auto;
-  padding: 20px;
 }
 
 .form-content {
@@ -174,13 +175,5 @@ defineExpose({
 
 .form-actions {
   margin-top: 8px;
-}
-
-.empty-state {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  color: var(--color-text-muted);
 }
 </style>

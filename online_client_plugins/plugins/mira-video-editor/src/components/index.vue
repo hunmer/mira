@@ -171,9 +171,11 @@
               :list-id="currentListId"
               :current-time="currentPlayTime"
             />
-            <div v-else class="empty-state">
-              请先选择一个视频
-            </div>
+            <Empty v-else class="tab-empty">
+              <EmptyMedia><VideoIcon style="width: 24px; height: 24px" /></EmptyMedia>
+              <EmptyTitle>请先选择一个视频</EmptyTitle>
+              <EmptyDescription>在文件列表中选择视频后即可去水印</EmptyDescription>
+            </Empty>
           </TabsContent>
 
           <!-- 缩略图预览 Tab -->
@@ -203,6 +205,7 @@
 
 <script setup lang="ts">
 import { Tabs, TabsList, TabsTrigger, TabsContent } from 'mira-plugin-ui/src/components/ui/tabs'
+import { Empty, EmptyMedia, EmptyTitle, EmptyDescription } from 'mira-plugin-ui/src/components/ui/empty'
 import { VideoIcon, FileIcon, ScissorsIcon, ClipboardIcon, TransparencyGridIcon, ImageIcon } from '@radix-icons/vue'
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from 'mira-plugin-ui/src/components/ui/resizable'
 import VideoListSidebar from './VideoListSidebar.vue'
