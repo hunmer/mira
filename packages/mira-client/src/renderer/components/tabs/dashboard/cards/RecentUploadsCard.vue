@@ -23,32 +23,35 @@
     </div>
 
     <!-- 时间线 -->
-    <div v-else class="min-h-0 flex-1 overflow-y-auto px-3 py-2">
+    <div v-else class="min-h-0 flex-1 overflow-y-auto px-3 py-2.5">
       <div class="relative">
         <template v-for="(day, di) in timeline" :key="day.date">
-          <div v-for="(item, i) in day.items" :key="di + '-' + i" class="relative flex gap-2.5 pb-4 last:pb-0">
+          <div v-for="(item, i) in day.items" :key="di + '-' + i" class="relative flex gap-3 pb-5 last:pb-0">
             <div
               v-if="i < day.items.length - 1 || di < timeline.length - 1"
-              class="absolute bottom-0 left-[11px] top-7 w-px bg-border"
+              class="absolute bottom-0 left-[13.5px] top-8 w-px bg-border"
             />
             <div class="relative z-10 shrink-0">
-              <Avatar class="size-6 ring-2 ring-card">
+              <Avatar class="size-7 ring-2 ring-card">
+                <AvatarImage v-if="item.uploader" :src="userAvatarUrl(item.uploader) || ''" />
                 <AvatarFallback class="text-[10px]">{{ item.userName?.slice(0, 2).toUpperCase() }}</AvatarFallback>
               </Avatar>
             </div>
             <div class="min-w-0 flex-1 pt-0.5">
-              <p class="text-xs leading-relaxed">
-                <span class="font-medium">{{ item.userName }}</span>
-                <span class="text-muted-foreground"> {{ $t('tabs.statisticsCards.uploaded') }} </span>
-                <span class="font-medium">{{ item.fileCount }}</span>
-                <span class="text-muted-foreground"> {{ $t('tabs.statisticsCards.uploadedTo') }} </span>
-                <span class="font-medium" :title="item.target">{{ item.target }}</span>
-              </p>
-              <div class="mt-0.5 flex items-center gap-2">
-                <span class="text-[10px] text-muted-foreground">{{ daysAgo(day.date) }}</span>
-                <Badge v-if="item.targetType" variant="secondary" class="h-4 px-1.5 text-[10px]">
+              <!-- 第一行：用户名 + 时间 -->
+              <div class="flex items-baseline justify-between gap-2">
+                <span class="truncate text-xs font-medium" :title="item.userName">{{ item.userName }}</span>
+                <span class="shrink-0 text-[10px] text-muted-foreground">{{ daysAgo(day.date) }}</span>
+              </div>
+              <!-- 第二行：数量 + 目标 -->
+              <div class="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+                <span class="shrink-0 font-medium tabular-nums text-foreground">{{ item.fileCount }}</span>
+                <span class="shrink-0">{{ $t('tabs.statisticsCards.filesUnit') }}</span>
+                <span class="material-icons shrink-0 text-sm leading-none">chevron_right</span>
+                <Badge v-if="item.targetType" variant="secondary" class="h-[18px] shrink-0 px-1.5 text-[10px]">
                   {{ item.targetType }}
                 </Badge>
+                <span class="truncate font-medium text-foreground" :title="item.target">{{ item.target }}</span>
               </div>
             </div>
           </div>
@@ -62,9 +65,9 @@
 import { computed } from 'vue'
 import type { Ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
-import { useStatsCard, stats } from './useStatsCard'
+import { useStatsCard, stats, userAvatarUrl } from './useStatsCard'
 import type { RecentUploadDay } from './useStatsCard'
 
 /**

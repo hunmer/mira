@@ -153,7 +153,6 @@
         @click="openLayoutDialog('create')"
       >
         <span class="material-icons text-sm">add</span>
-        <span class="hidden sm:inline">{{ $t('tabs.homeTabView.createLayout') }}</span>
       </button>
     </div>
 

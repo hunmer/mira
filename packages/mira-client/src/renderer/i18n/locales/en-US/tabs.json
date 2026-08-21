@@ -129,7 +129,13 @@
     "fileTypeTitle": "File Type Distribution",
     "fileTypeDesc": "File count by type in a donut chart",
     "recentUploadsTitle": "Recent Uploads",
-    "recentUploadsDesc": "Who uploaded what and where recently"
+    "recentUploadsDesc": "Who uploaded what and where recently",
+    "recentAddedTitle": "Recently Added",
+    "recentAddedDesc": "Latest imported files; wide cards show a horizontal gallery",
+    "recentViewedTitle": "View History",
+    "recentViewedDesc": "Recently viewed files; wide cards show a horizontal gallery",
+    "historyConfigLimit": "Item count",
+    "historyConfigLimitDesc": "Max number of files shown in the list (10-100)"
   },
   "cardGroups": {
     "general": "General",
@@ -144,6 +150,7 @@
     "totalSize": "Total size",
     "totalSizeMB": "Size (MB)",
     "lastDays": "Last {days} days",
+    "filesUnit": "files",
     "uploaded": "uploaded",
     "uploadedTo": "to",
     "today": "Today",

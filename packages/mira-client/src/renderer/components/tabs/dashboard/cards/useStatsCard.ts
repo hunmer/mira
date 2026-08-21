@@ -3,6 +3,7 @@ import type { Ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { useLibraryStore } from '@renderer/stores/library'
+import { useAuthStore } from '@renderer/stores/auth'
 
 /**
  * 统计卡片公共逻辑：
@@ -130,4 +131,19 @@ export function formatSize(bytes: number) {
 /** statistics 模块快捷引用（未连接时抛错，由 useStatsCard 捕获展示） */
 export function stats() {
   return miraSDKService.statistics
+}
+
+/**
+ * 用户头像 URL（服务端 /api/user/avatar/:id）。
+ * <img> 无法携带 Authorization header，服务端同时支持 query token，这里拼到 URL 上；
+ * 未连接或无 token 时返回 undefined，调用方直接落到 AvatarFallback 首字母。
+ */
+export function userAvatarUrl(userId: number | string | null | undefined): string | undefined {
+  if (userId == null || userId === '') return undefined
+  const serverUrl = miraSDKService.getConnectionConfig()?.serverUrl
+  if (!serverUrl) return undefined
+  let url = `${serverUrl.replace(/\/+$/, '')}/api/user/avatar/${userId}`
+  const token = useAuthStore().token
+  if (token) url += `?token=${encodeURIComponent(token)}`
+  return url
 }

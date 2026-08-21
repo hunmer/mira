@@ -76,7 +76,7 @@
     }
 
     async cleanup() {
-      window.pluginSystem?.contributions?.unregister(CONTRIBUT_ID)
+      window.pluginSystem?.contributions?.unregister(CONTRIBUTION_ID)
       this.unregisterMenu?.()
     }
   }

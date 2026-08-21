@@ -6,6 +6,7 @@ import UploadTrendCard from './UploadTrendCard.vue'
 import UploaderRankCard from './UploaderRankCard.vue'
 import FileTypeCard from './FileTypeCard.vue'
 import RecentUploadsCard from './RecentUploadsCard.vue'
+import RecentFilesCard from './RecentFilesCard.vue'
 import { cardRegistry } from '../CardRegistry'
 import type { CardConfigField } from '../CardRegistry'
 
@@ -150,6 +151,71 @@ export function registerBuiltinCards() {
       slidesPerView: [1],
       orientation: 'horizontal',
     },
+  })
+
+  // ---- 历史列表卡片（UI 复用 HomeSidebar 的 SidebarHistoryModule） ----
+
+  const historyLimitFields: CardConfigField[] = [
+    {
+      name: 'limit',
+      label: i18n.global.t('tabs.builtinCards.historyConfigLimit'),
+      type: 'slider',
+      min: 10,
+      max: 100,
+      step: 10,
+      description: i18n.global.t('tabs.builtinCards.historyConfigLimitDesc'),
+      colSpan: 2,
+    },
+  ]
+  const historyLimitSchema = z.object({
+    // Slider 控件在 SchemaForm 中以 number[] 形式存值
+    limit: z.array(z.number().min(10).max(100)),
+  })
+
+  cardRegistry.register({
+    type: 'recentAdded',
+    title: i18n.global.t('tabs.builtinCards.recentAddedTitle'),
+    description: i18n.global.t('tabs.builtinCards.recentAddedDesc'),
+    icon: 'new_releases',
+    iconColor: '#F97316',
+    visibleInMenu: true,
+    component: RecentFilesCard,
+    defaultProps: { mode: 'recent_added' },
+    size: {
+      defaultW: 4,
+      defaultH: 4,
+      minW: 3,
+      minH: 3,
+      maxW: 12,
+      maxH: 12,
+    },
+    clickBehavior: 'none',
+    configFields: historyLimitFields,
+    configSchema: historyLimitSchema,
+    defaultConfig: { limit: [50] },
+  })
+
+  cardRegistry.register({
+    type: 'recentViewed',
+    title: i18n.global.t('tabs.builtinCards.recentViewedTitle'),
+    description: i18n.global.t('tabs.builtinCards.recentViewedDesc'),
+    icon: 'history',
+    iconColor: '#06B6D4',
+    visibleInMenu: true,
+    component: RecentFilesCard,
+    defaultProps: { mode: 'recent_viewed' },
+    size: {
+      defaultW: 4,
+      defaultH: 4,
+      minW: 3,
+      minH: 3,
+      maxW: 12,
+      maxH: 12,
+    },
+    clickBehavior: 'none',
+    configFields: historyLimitFields,
+    configSchema: historyLimitSchema,
+    defaultConfig: { limit: [50] },
   })
 
   // ---- 统计卡片（数据来源与 dashboard 统计页一致：/api/statistics/*） ----

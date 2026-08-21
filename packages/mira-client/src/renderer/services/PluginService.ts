@@ -295,6 +295,18 @@ export class PluginService {
     )
   }
 
+  /**
+   * 服务端插件 icon 解析：裸图片文件名（相对插件 web 目录）拼成 server 绝对 URL，
+   * 使 PluginIcon 等展示组件可直接 <img> 加载；emoji / material 名 / 绝对 URL 原样返回。
+   */
+  private resolveServerPluginIcon(entry: { icon?: string; url?: string; serverPluginName?: string }): string | undefined {
+    const icon = entry.icon
+    if (!icon) return undefined
+    if (/^(https?:|file:|data:|[a-zA-Z]:[\\/]|\/)/.test(icon)) return icon
+    if (!/\.(png|jpe?g|svg|ico|gif|webp|bmp)$/i.test(icon)) return icon
+    return resolveServerPluginUrl({ url: entry.url, serverPluginName: entry.serverPluginName }, icon) || icon
+  }
+
   public async syncServerPlugins(libraryId: string): Promise<BaseResponse> {
     try {
       const entries = await miraSDKService.getServerWebPlugins(libraryId)
@@ -310,7 +322,7 @@ export class PluginService {
           priority: entry.priority ?? 0,
           version: entry.version,
           index: entry.index || 'index.js',
-          icon: entry.icon,
+          icon: this.resolveServerPluginIcon(entry),
           tags: entry.tags || [],
           category: entry.category,
           description: entry.description || '',

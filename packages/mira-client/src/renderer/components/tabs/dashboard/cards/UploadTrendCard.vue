@@ -102,8 +102,6 @@ type TrendItem = { date: Date; fileCount: number; totalSizeMB: number }
 const chartData = computed<TrendItem[]>(() => {
   const rows = data.value ?? []
   const total = Math.min(365, Math.max(1, days.value))
-  // 卡片空间有限，按天采样避免 365 天时 x 轴过密
-  const step = total > 90 ? Math.ceil(total / 90) : 1
   const map = new Map<string, DailyRow>()
   for (const r of rows) map.set(r.date, r)
 
@@ -111,18 +109,31 @@ const chartData = computed<TrendItem[]>(() => {
   const startDate = new Date(now)
   startDate.setDate(startDate.getDate() - total)
 
-  const result: TrendItem[] = []
-  for (let i = 0; i <= total; i += step) {
+  // 先按天补零生成连续序列
+  const daily: TrendItem[] = []
+  for (let i = 0; i <= total; i++) {
     const d = new Date(startDate)
     d.setDate(startDate.getDate() + i)
     const row = map.get(d.toISOString().slice(0, 10))
-    result.push({
+    daily.push({
       date: d,
       fileCount: row?.file_count ?? 0,
       totalSizeMB: Math.round(((row?.total_size ?? 0) / 1024 / 1024) * 100) / 100,
     })
   }
-  return result
+
+  // 长周期按天渲染 x 轴过密，聚合成周（求和，不丢量）；date 取每周第一天
+  if (total <= 60) return daily
+  const weekly: TrendItem[] = []
+  for (let i = 0; i < daily.length; i += 7) {
+    const chunk = daily.slice(i, i + 7)
+    weekly.push({
+      date: chunk[0].date,
+      fileCount: chunk.reduce((s, d) => s + d.fileCount, 0),
+      totalSizeMB: Math.round(chunk.reduce((s, d) => s + d.totalSizeMB, 0) * 100) / 100,
+    })
+  }
+  return weekly
 })
 
 const trendConfig = {

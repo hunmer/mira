@@ -129,7 +129,13 @@
     "fileTypeTitle": "文件类型分布",
     "fileTypeDesc": "按类型统计文件数量的甜甜圈图",
     "recentUploadsTitle": "最近上传",
-    "recentUploadsDesc": "谁最近上传了什么，传到了哪里"
+    "recentUploadsDesc": "谁最近上传了什么，传到了哪里",
+    "recentAddedTitle": "最新添加",
+    "recentAddedDesc": "素材库最近导入的文件，宽卡片下横向大图滚动",
+    "recentViewedTitle": "打开历史",
+    "recentViewedDesc": "最近浏览过的文件，宽卡片下横向大图滚动",
+    "historyConfigLimit": "显示数量",
+    "historyConfigLimitDesc": "列表最多展示的文件条数（10-100）"
   },
   "cardGroups": {
     "general": "常规",
@@ -144,6 +150,7 @@
     "totalSize": "总体积",
     "totalSizeMB": "体积 (MB)",
     "lastDays": "近 {days} 天",
+    "filesUnit": "个文件",
     "uploaded": "上传了",
     "uploadedTo": "到",
     "today": "今天",

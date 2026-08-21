@@ -27,6 +27,7 @@
       <div v-for="u in rankData" :key="u.index" class="flex items-center gap-2">
         <div class="flex w-20 shrink-0 items-center gap-1.5">
           <Avatar class="size-5">
+            <AvatarImage v-if="u.uploaderId" :src="userAvatarUrl(u.uploaderId) || ''" />
             <AvatarFallback class="text-[9px]">{{ u.name?.slice(0, 1).toUpperCase() }}</AvatarFallback>
           </Avatar>
           <span class="truncate text-xs" :title="u.name">{{ u.name }}</span>
@@ -50,8 +51,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { Ref } from 'vue'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { useStatsCard, nameToColor, formatSize, stats } from './useStatsCard'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { useStatsCard, nameToColor, formatSize, stats, userAvatarUrl } from './useStatsCard'
 import type { UploaderRow } from './useStatsCard'
 
 /**
@@ -76,6 +77,7 @@ const rankData = computed(() =>
     .map((u, i) => ({
       index: i,
       name: u.uploaderName,
+      uploaderId: u.uploader,
       count: u.fileCount,
       totalSize: u.totalSize,
       fill: nameToColor(u.uploaderName || String(i)),
