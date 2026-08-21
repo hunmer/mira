@@ -45,7 +45,9 @@ export function resolveServerPluginUrl(
   entry = 'dist/index.html',
   serverOrigin?: string,
 ): string | undefined {
-  const base = String(config.url || '').replace(/\/+$/, '')
+  // SDK 的 getUrl 会给 url 注入 ?token=... query；拼路径前必须剥离，
+  // 否则 endsWith 判定失效会重复追加插件名（如 ...?token=x/name/icon.png）
+  const base = String(config.url || '').replace(/\/+$/, '').split(/[?#]/)[0]
   const pluginName = encodeURIComponent(config.serverPluginName || '')
   if (!base || !pluginName) return undefined
 

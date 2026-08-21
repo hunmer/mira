@@ -9,6 +9,10 @@ export class VideoPreviewController {
   private route = useRoute()
   private mediaStore = useMediaStore()
 
+  // 嵌入模式（FilePreviewView 内渲染）下由外部直接提供文件，
+  // 不依赖 mediaStore.files 的列表上下文（侧边栏/搜索入口没有该上下文）
+  private externalFile?: () => FileInfo | undefined
+
   // 响应式状态
   public currentVideoId = ref<string>('')
   public isPlaying = ref<boolean>(false)
@@ -22,10 +26,13 @@ export class VideoPreviewController {
 
   // 视频数据 - 从媒体存储获取
   public videos = computed<FileInfo[]>(() => {
+    const external = this.externalFile?.()
+    if (external) return [external]
     return this.mediaStore.files.filter((file: FileInfo) => getFileType(file.name) === 'video')
   })
 
-  constructor() {
+  constructor(externalFile?: () => FileInfo | undefined) {
+    this.externalFile = externalFile
     // 初始化当前视频ID
     if (this.route.params.id) {
       this.currentVideoId.value = this.route.params.id as string
@@ -70,8 +77,8 @@ export class VideoPreviewController {
     this.isPlaying.value = false
     this.currentTime.value = 0
     this.duration.value = 0
-    // 更新URL
-    this.router.replace(`/video-preview/${videoId}`)
+    // 更新URL；嵌入模式（externalFile）不改写路由，避免把 /file-preview 换成独立预览路由
+    if (!this.externalFile) this.router.replace(`/video-preview/${videoId}`)
   }
 
   /**
@@ -187,6 +194,6 @@ export class VideoPreviewController {
 /**
  * 创建VideoPreviewController实例
  */
-export function useVideoPreviewController(): VideoPreviewController {
-  return new VideoPreviewController()
+export function useVideoPreviewController(externalFile?: () => FileInfo | undefined): VideoPreviewController {
+  return new VideoPreviewController(externalFile)
 }

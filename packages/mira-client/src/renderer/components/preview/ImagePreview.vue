@@ -142,7 +142,10 @@ import { useImagePreviewController } from '../../controllers/ImagePreviewControl
 import { useCollapsibleSidebar } from '../../composables/useCollapsibleSidebar'
 
 // 使用控制器
-const controller = useImagePreviewController()
+// fileInfo 仅在嵌入 FilePreviewView 时传入：侧边栏/搜索等入口没有 mediaStore
+// 列表上下文，靠它提供当前文件，否则标题会显示「未知文件」
+const props = defineProps<{ fileInfo?: any }>()
+const controller = useImagePreviewController(() => props.fileInfo)
 
 // 左侧缩略图栏：桌面端 resizable + collapsible + 描边点击切换，移动端抽屉
 const {

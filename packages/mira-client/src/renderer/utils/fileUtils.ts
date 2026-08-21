@@ -20,6 +20,11 @@ export function toFileUrl(path: unknown, useLibraryCache = true): string | undef
     path = value.url ?? value.path ?? value.filePath ?? value.localFile ?? value.href
   }
   if (typeof path !== 'string' || !path) return undefined
+  // 已是素材协议（Electron 主进程注册的 library-thumb/library-file）的 URL 本身
+  // 就是可用的最终地址，重复包装会被当成相对路径拼成 file:/// 前缀导致加载失败
+  if (path.startsWith('library-thumb://') || path.startsWith('library-file://')) {
+    return path
+  }
   const getLibraryCacheContext = () => {
     if (typeof window === 'undefined' || !window.electronAPI) return false
     try {

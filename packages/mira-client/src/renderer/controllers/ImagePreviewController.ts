@@ -12,6 +12,10 @@ export class ImagePreviewController {
   private route = useRoute()
   private mediaStore = useMediaStore()
 
+  // 嵌入模式（FilePreviewView 内渲染）下由外部直接提供文件，
+  // 不依赖 mediaStore 的列表上下文（侧边栏/搜索入口没有该上下文）
+  private externalFile?: () => FileInfo | undefined
+
   // 响应式状态
   public currentImageIndex = ref<number>(0)
   public zoom = ref<number>(1)
@@ -40,7 +44,8 @@ export class ImagePreviewController {
     }
   }
 
-  constructor() {
+  constructor(externalFile?: () => FileInfo | undefined) {
+    this.externalFile = externalFile
     this.setCurrentImageIndexById(typeof this.route.params.id === 'string' ? this.route.params.id : undefined, false)
 
     this.debug('constructor:init', {
@@ -75,6 +80,9 @@ export class ImagePreviewController {
    * 获取打开预览时当前 Tab 的图片结果集
    */
   public imageItems = computed<FileInfo[]>(() => {
+    const external = this.externalFile?.()
+    if (external) return [external]
+
     const previewItems = this.mediaStore.imagePreviewItems.length > 0
       ? this.mediaStore.imagePreviewItems
       : this.mediaStore.files
@@ -112,7 +120,8 @@ export class ImagePreviewController {
       currentImage: this.describeImage(image)
     })
 
-    if (syncRoute && image?.id) {
+    // 嵌入模式（externalFile）不改写路由，避免把 /file-preview 换成独立预览路由
+    if (syncRoute && !this.externalFile && image?.id) {
       this.router.replace({
         name: 'ImagePreview',
         params: { id: image.id },
@@ -437,6 +446,6 @@ export class ImagePreviewController {
 /**
  * 创建ImagePreviewController实例
  */
-export function useImagePreviewController(): ImagePreviewController {
-  return new ImagePreviewController()
+export function useImagePreviewController(externalFile?: () => FileInfo | undefined): ImagePreviewController {
+  return new ImagePreviewController(externalFile)
 }

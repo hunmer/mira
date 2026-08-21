@@ -174,7 +174,7 @@
     </div>
 
     <!-- 网格布局 -->
-    <div v-else class="dashboard-grid-scroll flex-1 overflow-auto p-3">
+    <div v-else ref="dashboardGridScrollRef" class="dashboard-grid-scroll flex-1 overflow-auto p-3">
       <GridLayout
         :key="store.activeId || 'active'"
         :layout="store.renderableLayout"
@@ -192,6 +192,8 @@
           :key="item.i"
           :i="item.i"
           drag-allow-from=".dashboard-drag-handle"
+          @resize="onGridItemResize"
+          @resized="onGridItemResized"
         >
           <DashboardCardShell
             :edit-mode="editMode"
@@ -300,6 +302,49 @@ const { t } = useI18n()
  */
 const resizeConfig: ResizeConfig = {
   handles: ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw'],
+}
+
+const dashboardGridScrollRef = ref<HTMLElement | null>(null)
+const resizingGridItem = ref(false)
+let resizePointerY = 0
+let hasResizePointer = false
+let resizeScrollTimer: number | undefined
+
+function scrollGridWhileResizing() {
+  const container = dashboardGridScrollRef.value
+  if (!resizingGridItem.value || !container || !hasResizePointer) return
+
+  const rect = container.getBoundingClientRect()
+  const edgeSize = 64
+  if (resizePointerY < rect.top + edgeSize) {
+    container.scrollTop = Math.max(0, container.scrollTop - 12)
+  } else if (resizePointerY > rect.bottom - edgeSize) {
+    container.scrollTop = Math.min(container.scrollHeight - container.clientHeight, container.scrollTop + 12)
+  }
+}
+
+function onResizePointerMove(event: PointerEvent) {
+  resizePointerY = event.clientY
+  hasResizePointer = true
+  scrollGridWhileResizing()
+}
+
+function onGridItemResize() {
+  if (!resizingGridItem.value) {
+    resizingGridItem.value = true
+    document.addEventListener('pointermove', onResizePointerMove)
+    resizeScrollTimer = window.setInterval(scrollGridWhileResizing, 16)
+  }
+}
+
+function onGridItemResized() {
+  resizingGridItem.value = false
+  hasResizePointer = false
+  document.removeEventListener('pointermove', onResizePointerMove)
+  if (resizeScrollTimer !== undefined) {
+    window.clearInterval(resizeScrollTimer)
+    resizeScrollTimer = undefined
+  }
 }
 
 /** 添加卡片下拉菜单 */
@@ -452,6 +497,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   document.removeEventListener('click', onDocClick)
   document.removeEventListener('keydown', onKeydown)
+  onGridItemResized()
 })
 </script>
 

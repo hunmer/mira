@@ -304,7 +304,10 @@ export class PluginService {
     if (!icon) return undefined
     if (/^(https?:|file:|data:|[a-zA-Z]:[\\/]|\/)/.test(icon)) return icon
     if (!/\.(png|jpe?g|svg|ico|gif|webp|bmp)$/i.test(icon)) return icon
-    return resolveServerPluginUrl({ url: entry.url, serverPluginName: entry.serverPluginName }, icon) || icon
+    const resolved = resolveServerPluginUrl({ url: entry.url, serverPluginName: entry.serverPluginName }, icon)
+    // 调试: 图标仍显示文字时, 在客户端 devtools console 检查此处 resolved 是否为完整 http URL
+    console.debug('[PluginService] server plugin icon:', entry.serverPluginName, '->', resolved || icon)
+    return resolved || icon
   }
 
   public async syncServerPlugins(libraryId: string): Promise<BaseResponse> {
