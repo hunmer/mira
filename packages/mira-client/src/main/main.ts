@@ -22,6 +22,7 @@ interface BrowserViewState {
 
 interface ManagedLibraryView {
   id: string
+  type: 'library'
   libraryId: string
   view: BrowserView
 }
@@ -57,7 +58,12 @@ class BrowserViewManager {
   }
 
   private getRunningLibraryIds(): string[] {
-    const ids = [this.defaultLibraryId, ...Array.from(this.views.values(), item => item.libraryId)]
+    const ids = [
+      this.defaultLibraryId,
+      ...Array.from(this.views.values())
+        .filter(item => item.type === 'library')
+        .map(item => item.libraryId),
+    ]
     return ids.filter((id): id is string => Boolean(id))
   }
 
@@ -145,7 +151,7 @@ class BrowserViewManager {
       logger.info('BrowserViewManager', 'BrowserView navigation finished', { id, libraryId })
     })
     view.webContents.on('zoom-changed', () => view.webContents.setZoomFactor(1))
-    const managed = { id, libraryId, view }
+    const managed = { id, type: 'library' as const, libraryId, view }
     this.views.set(id, managed)
     return managed
   }
@@ -290,16 +296,23 @@ class BrowserViewManager {
 
   closeOthers(): BrowserViewState {
     if (this.activeId === 'default') {
-      this.destroyViews()
-    } else {
-      const active = this.views.get(this.activeId)
       for (const [id, managed] of this.views) {
-        if (id !== this.activeId && !managed.view.webContents.isDestroyed()) {
-          managed.view.webContents.close({ waitForBeforeUnload: false })
+        if (managed.type === 'library') {
+          if (!managed.view.webContents.isDestroyed()) {
+            managed.view.webContents.close({ waitForBeforeUnload: false })
+          }
+          this.views.delete(id)
         }
       }
-      this.views.clear()
-      if (active) this.views.set(active.id, active)
+    } else {
+      for (const [id, managed] of this.views) {
+        if (managed.type === 'library' && id !== this.activeId) {
+          if (!managed.view.webContents.isDestroyed()) {
+            managed.view.webContents.close({ waitForBeforeUnload: false })
+          }
+          this.views.delete(id)
+        }
+      }
       this.defaultLibraryId = null
     }
     this.history.length = 0

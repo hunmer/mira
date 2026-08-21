@@ -10,7 +10,7 @@
         </p>
       </div>
       <Switch
-        :model-value="settingsStore.settings.multiLibraryViewsEnabled"
+        :model-value="multiLibraryViewsActive"
         :disabled="!isElectron"
         @update:model-value="handleMultiLibraryViewsChange"
       />
@@ -98,7 +98,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useToast } from '@/renderer/composables/useToast'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
@@ -121,6 +121,12 @@ const toast = useToast()
 const settingsStore = useSettingsStore()
 const libraryStore = useLibraryStore()
 const isElectron = computed(() => Boolean(window.electronAPI))
+interface BrowserViewState {
+  runningLibraryIds: string[]
+}
+const browserViewState = ref<BrowserViewState>({ runningLibraryIds: [] })
+const multiLibraryViewsActive = computed(() => browserViewState.value.runningLibraryIds.length > 1)
+let removeBrowserViewStateListener: (() => void) | undefined
 
 const defaultViewMode = ref<LibraryDefaultViewMode>('grid')
 const defaultGroupingMode = ref<LibraryDefaultGroupingMode>('none')
@@ -141,11 +147,26 @@ const handleMultiLibraryViewsChange = async (enabled: boolean) => {
 }
 
 onMounted(async () => {
+  if (window.electronAPI) {
+    const updateBrowserViewState = (state: BrowserViewState) => {
+      browserViewState.value = state
+    }
+    removeBrowserViewStateListener = window.electronAPI.on('browser-view:state-changed', updateBrowserViewState)
+    try {
+      browserViewState.value = await window.electronAPI.invoke('browser-view:get-state') as BrowserViewState
+    } catch (error) {
+      console.warn('[BrowserView][settings] failed to get state', error)
+    }
+  }
   await loadLibraryPrefs()
   defaultViewMode.value = getLibraryPrefs().defaultViewMode
   defaultGroupingMode.value = getLibraryPrefs().defaultGroupingMode
   defaultFilterId.value = getLibraryPrefs().defaultFilterId
   pageSize.value = getLibraryPrefs().pageSize
+})
+
+onUnmounted(() => {
+  removeBrowserViewStateListener?.()
 })
 
 const viewModeOptions = [
