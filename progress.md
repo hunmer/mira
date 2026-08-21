@@ -20,3 +20,6 @@
 - Replaced the Vue screenshot page with self-contained inline HTML/CSS/Canvas logic; removed `ScreenshotDialog.vue`, `src/screenshot-window/main.ts`, and `style.css` because they are no longer referenced.
 - Renderer and main builds passed after the standalone HTML migration; no old ScreenshotDialog references remain.
 - Removed the selection visual outline and disabled automatic DevTools display for the screenshot window.
+- Added Windows visible-window detection via `user32.EnumWindows/GetWindowRect`; hover outlines and click-to-select overlays are rendered in the standalone HTML.
+- Changed the screenshot stage to fill the entire display window, removing the previous 16px inset/aspect letterboxing; renderer and main builds passed.
+- Corrected export scaling to independent X/Y ratios using the source image's natural dimensions, preventing transparent/blank output edges when display DIP and source pixels differ.

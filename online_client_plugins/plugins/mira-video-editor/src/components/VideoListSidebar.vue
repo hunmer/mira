@@ -138,6 +138,12 @@ const currentLocalVideos = computed(() => currentLocalList.value?.videos || [])
 function loadLists() {
   localLists.value = localVideoStorage.getLocalLists()
 
+  // 首次使用时创建默认列表，避免添加文件流程因没有目标列表而静默返回。
+  if (localLists.value.length === 0) {
+    const defaultList = localVideoStorage.createLocalList('默认列表')
+    localLists.value = [defaultList]
+  }
+
   // 自动选择第一个列表（如果还没有选择的话）
   if (localLists.value.length > 0 && !selectedLocalListId.value) {
     selectedLocalListId.value = localLists.value[0].id
@@ -168,6 +174,11 @@ function showCreateListDialog() {
 
 function triggerFileSelect() {
   // 统一走浏览器文件选择（宿主环境经 mira.fs.getPathForFile 还原真实路径）
+  if (!selectedLocalListId.value) {
+    const defaultList = localVideoStorage.createLocalList('默认列表')
+    localLists.value = localVideoStorage.getLocalLists()
+    selectedLocalListId.value = defaultList.id
+  }
   fileInputRef.value?.click()
 }
 

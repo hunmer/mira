@@ -81,7 +81,7 @@
           </TabsList>
 
           <!-- 文件列表 Tab -->
-          <TabsContent force-mount value="files" class="right-tab-content">
+          <TabsContent value="files" class="right-tab-content">
             <VideoListSidebar
               ref="videoListSidebarRef"
               @video-selected="handleVideoSelected"
@@ -89,7 +89,7 @@
           </TabsContent>
 
           <!-- 剪辑工具 Tab -->
-          <TabsContent force-mount value="clip" class="right-tab-content">
+          <TabsContent value="clip" class="right-tab-content">
             <ClipToolTab
               :selected-video="selectedVideo"
               :clip-start-time="clipStartTime"
@@ -112,7 +112,7 @@
           </TabsContent>
 
           <!-- 视频片段 Tab -->
-          <TabsContent force-mount value="clips" class="right-tab-content">
+          <TabsContent value="clips" class="right-tab-content">
             <ClipsListTab
               :selected-video="selectedVideo"
               :clip-thumbnails="clipState.clipThumbnails.value"
@@ -130,7 +130,7 @@
           </TabsContent>
 
           <!-- 智能分割 Tab -->
-          <TabsContent force-mount value="split" class="right-tab-content">
+          <TabsContent value="split" class="right-tab-content">
             <SplitTab
               :selected-video="selectedVideo"
               :clip-start-time="clipStartTime"
@@ -163,7 +163,7 @@
           </TabsContent>
 
           <!-- 水印 Tab -->
-          <TabsContent force-mount value="watermark" class="right-tab-content">
+          <TabsContent value="watermark" class="right-tab-content">
             <WatermarkTab
               v-if="selectedVideo"
               ref="watermarkTabRef"
@@ -177,7 +177,7 @@
           </TabsContent>
 
           <!-- 缩略图预览 Tab -->
-          <TabsContent force-mount value="thumbnails" class="right-tab-content">
+          <TabsContent value="thumbnails" class="right-tab-content">
             <ThumbnailsTab
               :selected-video="selectedVideo"
               :thumbnails="thumbnailState.thumbnails.value"
@@ -203,7 +203,7 @@
 
 <script setup lang="ts">
 import { Tabs, TabsList, TabsTrigger, TabsContent } from 'mira-plugin-ui/src/components/ui/tabs'
-import { ResizablePanelGroup, ResizableHandle } from 'mira-plugin-ui/src/components/ui/resizable'
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from 'mira-plugin-ui/src/components/ui/resizable'
 import VideoListSidebar from './VideoListSidebar.vue'
 import VideoPlayer from './VideoPlayer.vue'
 import ExportClipsDialog from './ExportClipsDialog.vue'

@@ -1,8 +1,12 @@
 import { BrowserWindow, desktopCapturer, ipcMain, screen } from 'electron'
 import { join } from 'node:path'
+import { execFile } from 'node:child_process'
+import { promisify } from 'node:util'
 
-type ScreenshotPayload = { data: ArrayBuffer; name: string; mime: string }
+type ScreenshotPayload = { data: ArrayBuffer; name: string; mime: string; importToLibrary?: boolean }
 type ScreenshotSettings = { format?: 'png' | 'jpeg' | 'webp'; copyToClipboard?: boolean }
+type DetectedWindow = { x: number; y: number; width: number; height: number; title: string }
+const execFileAsync = promisify(execFile)
 
 /** Owns the independent screenshot overlay and the display source it edits. */
 export class ScreenshotHandlers {
@@ -25,7 +29,34 @@ export class ScreenshotHandlers {
     this.mainWindow = window
   }
 
-  private async captureDisplay(): Promise<{ data: string; displayId: string; bounds: Electron.Rectangle }> {
+  private async detectVisibleWindows(bounds: Electron.Rectangle): Promise<DetectedWindow[]> {
+    if (process.platform !== 'win32') return []
+    const script = `Add-Type @'
+using System; using System.Text; using System.Runtime.InteropServices;
+public static class MiraWindows {
+  [DllImport("user32.dll")] static extern bool EnumWindows(EnumProc cb, IntPtr p);
+  delegate bool EnumProc(IntPtr h, IntPtr p);
+  [DllImport("user32.dll")] static extern bool IsWindowVisible(IntPtr h);
+  [DllImport("user32.dll")] static extern bool GetWindowRect(IntPtr h, out RECT r);
+  [DllImport("user32.dll", CharSet=CharSet.Unicode)] static extern int GetWindowText(IntPtr h, StringBuilder s, int n);
+  [StructLayout(LayoutKind.Sequential)] public struct RECT { public int L; public int T; public int R; public int B; }
+  public static void Run() { EnumWindows((h,p) => { if (!IsWindowVisible(h)) return true; RECT r; if (!GetWindowRect(h,out r)) return true; var s=new StringBuilder(512); GetWindowText(h,s,s.Capacity); if (s.Length>0 && r.R-r.L>80 && r.B-r.T>60) Console.WriteLine($"{r.L}\t{r.T}\t{r.R}\t{r.B}\t{Convert.ToBase64String(Encoding.UTF8.GetBytes(s.ToString()))}"); return true; }, IntPtr.Zero); }
+}`
+    try {
+      const result = await execFileAsync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', `${script}; [MiraWindows]::Run()`], { windowsHide: true, maxBuffer: 1024 * 1024 })
+      return result.stdout.split(/\r?\n/).flatMap(line => {
+        const [left, top, right, bottom, encodedTitle] = line.split('\t')
+        const x = Number(left); const y = Number(top); const width = Number(right) - x; const height = Number(bottom) - y
+        if (![x, y, width, height].every(Number.isFinite)) return []
+        if (x + width < bounds.x || y + height < bounds.y || x > bounds.x + bounds.width || y > bounds.y + bounds.height) return []
+        let title = ''
+        try { title = Buffer.from(encodedTitle || '', 'base64').toString('utf8') } catch { title = '' }
+        return [{ x: x - bounds.x, y: y - bounds.y, width, height, title }]
+      })
+    } catch { return [] }
+  }
+
+  private async captureDisplay(): Promise<{ data: string; displayId: string; bounds: Electron.Rectangle; windows: DetectedWindow[] }> {
     const point = screen.getCursorScreenPoint()
     const display = screen.getDisplayNearestPoint(point)
     const scaleFactor = display.scaleFactor || 1
@@ -44,7 +75,7 @@ export class ScreenshotHandlers {
     const screenSources = sources.filter(source => source.id.startsWith('screen:'))
     const source = screenSources.find(item => item.display_id === String(display.id)) || screenSources[0]
     if (!source || source.thumbnail.isEmpty()) throw new Error('No capturable display source found')
-    return { data: source.thumbnail.toDataURL(), displayId: String(display.id), bounds: display.bounds }
+    return { data: source.thumbnail.toDataURL(), displayId: String(display.id), bounds: display.bounds, windows: await this.detectVisibleWindows(display.bounds) }
   }
 
   private async start(_event: Electron.IpcMainInvokeEvent, settings?: ScreenshotSettings): Promise<{ success: boolean; message?: string }> {
@@ -96,6 +127,9 @@ export class ScreenshotHandlers {
       // renderer output keeps the capture window independent from the Vite dev
       // server and avoids a localhost URL (and accidental double slashes).
       if (this.screenshotWindow) {
+        this.screenshotWindow.webContents.once('did-finish-load', () => {
+          this.screenshotWindow?.webContents.send('screenshot:windows', capture.windows)
+        })
         await this.screenshotWindow.loadFile(join(__dirname, '../dist-renderer/screenshot-window.html'))
       }
       return { success: true }

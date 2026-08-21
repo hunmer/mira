@@ -241,11 +241,11 @@ const {
 // 额外的对话框状态
 const showFileUploadDialog = ref(false)
 const screenshotFile = ref<File>()
-const handleScreenshotComplete = (payload: { data: ArrayBuffer | Uint8Array; name: string; mime: string }) => {
-  if (!settingsStore.settings.screenshotAutoImport || !payload?.data) return
+const handleScreenshotComplete = (payload: { data: ArrayBuffer | Uint8Array; name: string; mime: string; importToLibrary?: boolean }) => {
+  if ((!settingsStore.settings.screenshotAutoImport && !payload.importToLibrary) || !payload?.data) return
   const bytes = payload.data instanceof ArrayBuffer ? new Uint8Array(payload.data) : payload.data
   screenshotFile.value = new File([bytes as any], payload.name || 'screenshot.png', { type: payload.mime || 'image/png' })
-  if (settingsStore.settings.screenshotOpenUploadDialog) showFileUploadDialog.value = true
+  if (settingsStore.settings.screenshotOpenUploadDialog || payload.importToLibrary) showFileUploadDialog.value = true
 }
 const sidebarUploadTarget = ref<{ folderId?: string | number | null; tagIds?: Array<string | number> }>()
 // 导入本地文件夹：传入上传对话框的本地目录树（rootPath + tree）
