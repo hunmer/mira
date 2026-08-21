@@ -106,8 +106,14 @@ export function useShortcuts() {
    */
   const registerDefaultEventHandlers = (): void => {
     document.addEventListener('shortcut:screenshot', () => {
-      if (window.electronAPI?.invoke) void window.electronAPI.invoke('screenshot:start')
-      else document.dispatchEvent(new CustomEvent('show-screenshot-dialog'))
+      if (window.electronAPI?.invoke) {
+        let settings: Record<string, unknown> = {}
+        try { settings = JSON.parse(localStorage.getItem('mira-settings') || '{}') } catch { /* use defaults */ }
+        void window.electronAPI.invoke('screenshot:start', {
+          format: settings.screenshotFormat,
+          copyToClipboard: settings.screenshotCopyToClipboard,
+        })
+      }
     })
     // 全局搜索
     document.addEventListener('shortcut:global-search', () => {

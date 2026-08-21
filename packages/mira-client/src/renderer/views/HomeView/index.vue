@@ -19,7 +19,6 @@ import HomeHeader from './HomeHeader.vue'
 import HomeSidebar from './HomeSidebar.vue'
 import HomeTabsBar from './HomeTabsBar.vue'
 import HomeDialogs from './HomeDialogs.vue'
-import ScreenshotDialog from '@renderer/components/business/ScreenshotDialog.vue'
 import PluginContributionBar from './PluginContributionBar.vue'
 
 // shadcn Tabs（右侧详情面板：保留 tabs 壳结构供未来扩展）
@@ -241,9 +240,7 @@ const {
 
 // 额外的对话框状态
 const showFileUploadDialog = ref(false)
-const showScreenshotDialog = ref(false)
 const screenshotFile = ref<File>()
-const openScreenshot = () => { showScreenshotDialog.value = true }
 const handleScreenshotComplete = (payload: { data: ArrayBuffer | Uint8Array; name: string; mime: string }) => {
   if (!settingsStore.settings.screenshotAutoImport || !payload?.data) return
   const bytes = payload.data instanceof ArrayBuffer ? new Uint8Array(payload.data) : payload.data
@@ -450,7 +447,6 @@ const { performInitialization } = homeInit
 let cleanupModules: (() => void) | null = null
 
 onMounted(async () => {
-  document.addEventListener('show-screenshot-dialog', openScreenshot)
   window.electronAPI?.on('screenshot:complete', handleScreenshotComplete)
   try {
     cleanupModules = await performInitialization(
@@ -537,7 +533,6 @@ const handleLogout = async () => {
 // 组件卸载清理
 // ============================================
 onUnmounted(() => {
-  document.removeEventListener('show-screenshot-dialog', openScreenshot)
   window.electronAPI?.removeAllListeners('screenshot:complete')
   if (cleanupModules) {
     cleanupModules()
@@ -776,7 +771,6 @@ onUnmounted(() => {
       @select-folder="handleFolderSelect"
       @select-tag="handleTagSelect"
     />
-    <ScreenshotDialog v-model:visible="showScreenshotDialog" @captured="file => { screenshotFile = file; if (settingsStore.settings.screenshotAutoImport && settingsStore.settings.screenshotOpenUploadDialog) showFileUploadDialog = true }" />
   </div>
 </template>
 

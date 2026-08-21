@@ -17,3 +17,6 @@
 - Clarified that “border” means Electron frameless mode: removed the visual CSS border and retained `frame: false` on the screenshot BrowserWindow.
 - Changed screenshot window loading to always use `loadFile(.../dist-renderer/screenshot-window.html)`; removed the localhost URL path.
 - Ran `pnpm --filter mira-web build` and `build:main`; both passed. `ScreenshotDialog.vue` is required by `src/screenshot-window/main.ts`; its HomeView reference is a legacy fallback and is not the Electron shortcut path.
+- Replaced the Vue screenshot page with self-contained inline HTML/CSS/Canvas logic; removed `ScreenshotDialog.vue`, `src/screenshot-window/main.ts`, and `style.css` because they are no longer referenced.
+- Renderer and main builds passed after the standalone HTML migration; no old ScreenshotDialog references remain.
+- Removed the selection visual outline and disabled automatic DevTools display for the screenshot window.

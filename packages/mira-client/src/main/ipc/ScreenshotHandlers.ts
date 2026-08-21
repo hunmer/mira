@@ -1,7 +1,8 @@
-import { app, BrowserWindow, desktopCapturer, ipcMain, screen } from 'electron'
+import { BrowserWindow, desktopCapturer, ipcMain, screen } from 'electron'
 import { join } from 'node:path'
 
 type ScreenshotPayload = { data: ArrayBuffer; name: string; mime: string }
+type ScreenshotSettings = { format?: 'png' | 'jpeg' | 'webp'; copyToClipboard?: boolean }
 
 /** Owns the independent screenshot overlay and the display source it edits. */
 export class ScreenshotHandlers {
@@ -9,10 +10,12 @@ export class ScreenshotHandlers {
   private screenshotWindow: BrowserWindow | null = null
   private sourceData = ''
   private sourceDisplayId = ''
+  private sessionSettings: Required<ScreenshotSettings> = { format: 'png', copyToClipboard: true }
 
   constructor() {
     ipcMain.handle('screenshot:start', this.start.bind(this))
     ipcMain.handle('screenshot:get-source', this.getSource.bind(this))
+    ipcMain.handle('screenshot:get-settings', () => ({ success: true, settings: this.sessionSettings }))
     ipcMain.handle('screenshot:capture', this.getSource.bind(this))
     ipcMain.handle('screenshot:complete', this.complete.bind(this))
     ipcMain.handle('screenshot:cancel', this.cancel.bind(this))
@@ -44,7 +47,7 @@ export class ScreenshotHandlers {
     return { data: source.thumbnail.toDataURL(), displayId: String(display.id), bounds: display.bounds }
   }
 
-  private async start(): Promise<{ success: boolean; message?: string }> {
+  private async start(_event: Electron.IpcMainInvokeEvent, settings?: ScreenshotSettings): Promise<{ success: boolean; message?: string }> {
     try {
       if (this.screenshotWindow && !this.screenshotWindow.isDestroyed()) {
         this.screenshotWindow.show()
@@ -53,6 +56,10 @@ export class ScreenshotHandlers {
       }
 
       const capture = await this.captureDisplay()
+      this.sessionSettings = {
+        format: settings?.format === 'jpeg' || settings?.format === 'webp' ? settings.format : 'png',
+        copyToClipboard: settings?.copyToClipboard !== false,
+      }
       this.sourceData = capture.data
       this.sourceDisplayId = capture.displayId
       const { x, y, width, height } = capture.bounds
@@ -79,7 +86,6 @@ export class ScreenshotHandlers {
       this.screenshotWindow.once('ready-to-show', () => {
         this.screenshotWindow?.show()
         this.screenshotWindow?.focus()
-        if (!app.isPackaged) this.screenshotWindow?.webContents.openDevTools({ mode: 'detach' })
       })
       this.screenshotWindow.on('closed', () => {
         this.screenshotWindow = null
@@ -125,7 +131,7 @@ export class ScreenshotHandlers {
 
   cleanup(): void {
     this.closeWindow()
-    for (const channel of ['screenshot:start', 'screenshot:get-source', 'screenshot:capture', 'screenshot:complete', 'screenshot:cancel']) {
+    for (const channel of ['screenshot:start', 'screenshot:get-source', 'screenshot:get-settings', 'screenshot:capture', 'screenshot:complete', 'screenshot:cancel']) {
       ipcMain.removeHandler(channel)
     }
   }

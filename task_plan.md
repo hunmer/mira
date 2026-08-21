@@ -11,6 +11,7 @@ Use an independent screenshot window and capture the full display selected by cu
 - [complete] Add a dedicated screenshot window and desktop source detection.
 - [complete] Route screenshot completion/cancel back to the main window.
 - [complete] Run focused type/build checks and restart the persistent process.
+- [complete] Replace the screenshot Vue page with a standalone self-contained HTML implementation.
 
 ## Constraints
 - Reuse Vue 3 and existing shadcn-vue styling.

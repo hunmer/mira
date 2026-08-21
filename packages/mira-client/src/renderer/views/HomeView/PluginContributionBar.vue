@@ -243,8 +243,8 @@ const ContributionHost = defineComponent({
       </Dropdown>
     </template>
 
-    <!-- 最右侧：管理插件入口（左侧分割线区隔） -->
-    <div class="w-px h-5 bg-border/60 mx-0.5 shrink-0" />
+    <!-- 最右侧：管理插件入口（ml-auto 推到栏右端，左侧分割线区隔） -->
+    <div class="ml-auto w-px h-5 bg-border/60 mx-0.5 shrink-0" />
     <button
       class="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
       :title="t('views.pluginContributionBar.managePlugins')"

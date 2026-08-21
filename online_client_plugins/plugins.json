@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-21T04:25:00.777Z",
+  "generatedAt": "2026-08-21T05:08:23.843Z",
   "plugins": [
     {
       "pluginId": "7c1f9e2a-4b3d-4c8e-9f6a-2d5b8e7c1a04",
@@ -273,8 +273,8 @@
       "directory": "plugins/mira-video-editor",
       "icon": "icon.png",
       "readme": "README.md",
-      "size": 777692,
-      "checksum": "sha256:35987fb8598c3270e63e51c7e252d99933f9be81047b11ff69b2112c8ff46d31",
+      "size": 784204,
+      "checksum": "sha256:3beac816e208fab876e12549c9782af4bf1ef5a0a983dab50534945886a72b8a",
       "files": [
         {
           "path": "README.md",
@@ -300,6 +300,11 @@
           "path": "icon.png",
           "size": 56006,
           "checksum": "sha256:fc4a89a9be8480bbe37aaabc18992545065036ccff17ff09d790c6cf5527b96b"
+        },
+        {
+          "path": "HANDOFF.md",
+          "size": 6512,
+          "checksum": "sha256:ea03269026d940266e7622375699f459ab4d7ebb238c520cde3b5a2168f20013"
         },
         {
           "path": "dist/index.html",
