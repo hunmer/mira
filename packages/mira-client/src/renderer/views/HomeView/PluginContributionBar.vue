@@ -17,6 +17,23 @@ import { Dropdown } from '@/renderer/components/common/Dropdown'
 import PluginIcon from '@/renderer/components/common/PluginIcon.vue'
 import { useToast } from '@renderer/composables/useToast'
 import { openPluginWindow, resolveServerPluginUrl } from '@renderer/plugins/openPluginWindow'
+import { usePluginStore } from '@renderer/stores/plugin'
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Switch } from '@/components/ui/switch'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import type { PluginContribution, PluginContributionRenderContext } from '@renderer/plugins/types'
 
 defineOptions({ name: 'PluginContributionBar' })
@@ -30,6 +47,111 @@ let unsubscribe: (() => void) | null = null
 const toast = useToast()
 
 const getPluginSystem = (): any => (window as any).pluginSystem
+
+const pluginStore = usePluginStore()
+
+// ==================== 插件 dev 模式配置（localStorage 持久化） ====================
+
+interface PluginDevConfig {
+  enabled: boolean
+  url: string
+}
+
+const DEV_CONFIG_KEY = 'mira-plugin-dev-config'
+
+function loadDevConfigs(): Record<string, PluginDevConfig> {
+  try {
+    const raw = localStorage.getItem(DEV_CONFIG_KEY)
+    const parsed = raw ? JSON.parse(raw) : {}
+    return parsed && typeof parsed === 'object' ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+const devConfigs = ref<Record<string, PluginDevConfig>>(loadDevConfigs())
+
+function persistDevConfigs() {
+  try {
+    localStorage.setItem(DEV_CONFIG_KEY, JSON.stringify(devConfigs.value))
+  } catch { /* ignore */ }
+}
+
+/** dev 模式生效：开关开启且配置了有效 url */
+function isDevEnabled(pluginId: string): boolean {
+  const c = devConfigs.value[pluginId]
+  return !!(c?.enabled && c.url?.trim())
+}
+
+// dev 模式弹窗状态
+const devDialogOpen = ref(false)
+const devDialogPlugin = ref<PluginContribution | null>(null)
+const devFormEnabled = ref(false)
+const devFormUrl = ref('')
+
+function openDevDialog(contribution: PluginContribution) {
+  devDialogPlugin.value = contribution
+  const c = devConfigs.value[contribution.pluginId]
+  devFormEnabled.value = !!c?.enabled
+  devFormUrl.value = c?.url?.trim() || 'http://localhost:5173'
+  devDialogOpen.value = true
+}
+
+function saveDevConfig() {
+  const id = devDialogPlugin.value?.pluginId
+  if (!id) return
+  const url = devFormUrl.value.trim()
+  if (devFormEnabled.value && !url) {
+    toast.add({ severity: 'warn', summary: t('views.pluginContributionBar.devUrlRequired'), life: 4000 })
+    return
+  }
+  devConfigs.value = { ...devConfigs.value, [id]: { enabled: devFormEnabled.value, url } }
+  persistDevConfigs()
+  devDialogOpen.value = false
+}
+
+/** dev 模式下打开自定义 url 的插件窗口；返回是否已处理 */
+async function openDevWindow(contribution: PluginContribution): Promise<boolean> {
+  const url = devConfigs.value[contribution.pluginId]?.url?.trim()
+  if (!url) return false
+  const result = await openPluginWindow({
+    pluginId: contribution.pluginId,
+    url,
+    title: `${contribution.title} (dev)`,
+  })
+  if (result?.success === false) {
+    toast.add({ severity: 'error', summary: t('views.pluginContributionBar.windowOpenFailed'), detail: result.message || t('views.common.unknownError'), life: 5000 })
+  }
+  return true
+}
+
+// ==================== 右键菜单操作 ====================
+
+/**
+ * 禁用插件：服务端插件与本地插件走各自的禁用流程。
+ */
+async function onDisablePlugin(contribution: PluginContribution) {
+  const info = getPluginSystem()?.getPlugin?.(contribution.pluginId)
+  const isServer = info?.config?.source === 'server'
+  const result = isServer
+    ? await pluginStore.disableServerPlugin(contribution.pluginId)
+    : await pluginStore.disableLocalPlugin(contribution.pluginId)
+  if (result?.success) {
+    toast.add({ severity: 'success', summary: t('views.pluginContributionBar.disableSuccess'), life: 3000 })
+  } else {
+    toast.add({ severity: 'error', summary: t('views.pluginContributionBar.disableFailed'), detail: result?.message || t('views.common.unknownError'), life: 5000 })
+  }
+}
+
+/**
+ * popover 行为触发按钮点击：dev 模式开启时拦截，直接打开 dev url 窗口。
+ */
+async function onPopoverTriggerClick(e: Event, contribution: PluginContribution) {
+  if (!isDevEnabled(contribution.pluginId)) return
+  e.preventDefault()
+  e.stopPropagation()
+  await openDevWindow(contribution)
+}
 
 onMounted(() => {
   // pluginSystem 可能尚未初始化（插件系统初始化在 useHomeInit 内进行），
@@ -123,6 +245,11 @@ function buildCtx(contribution: PluginContribution): PluginContributionRenderCon
  * 包装 onActivate：捕获同步抛错，并对返回值/异步结果做失败提示。
  */
 async function onWindowActivate(contribution: PluginContribution) {
+  // dev 模式开启时优先打开自定义 url，跳过插件正常激活流程
+  if (isDevEnabled(contribution.pluginId)) {
+    await openDevWindow(contribution)
+    return
+  }
   let result: any
   try {
     result = await contribution.onActivate?.(buildCtx(contribution))
@@ -189,58 +316,75 @@ const ContributionHost = defineComponent({
     class="rounded-2xl border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur-xl shadow-[0_12px_40px_rgba(99,102,241,0.10)] flex items-center gap-1 px-2 py-1.5"
   >
     <template v-for="contribution in contributions" :key="contribution.id">
-      <!-- window 行为：纯按钮，点击直开插件主界面 -->
-      <button
-        v-if="!isPopover(contribution)"
-        class="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
-        :title="contribution.title"
-        :aria-label="contribution.title"
-        @click="onWindowActivate(contribution)"
-      >
-        <PluginIcon
-          :plugin-id="contribution.pluginId"
-          :contribution-icon="contribution.icon"
-          :size="18"
-          rounded="sm"
-        />
-      </button>
-
-      <!-- popover 行为：Dropdown 弹出 render 返回的内容 -->
-      <Dropdown
-        v-else
-        placement="bottom-end"
-        min-width="280px"
-      >
-        <template #trigger>
+      <!-- window 行为：纯按钮，点击直开插件主界面；右键菜单提供 dev 模式 / 禁用 -->
+      <ContextMenu>
+        <ContextMenuTrigger as-child>
           <button
+            v-if="!isPopover(contribution)"
             class="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
             :title="contribution.title"
             :aria-label="contribution.title"
+            @click="onWindowActivate(contribution)"
           >
             <PluginIcon
               :plugin-id="contribution.pluginId"
               :contribution-icon="contribution.icon"
               :size="18"
               rounded="sm"
+              :badge="isDevEnabled(contribution.pluginId) ? '#f97316' : undefined"
             />
           </button>
-        </template>
-        <template #content="{ close }">
-          <div class="p-3">
-            <div class="flex items-center justify-between mb-2 pb-2 border-b border-border/60">
-              <div class="text-sm font-medium truncate">{{ contribution.title }}</div>
+
+          <!-- popover 行为：Dropdown 弹出 render 返回的内容；dev 模式下点击直接打开 dev url -->
+          <Dropdown
+            v-else
+            placement="bottom-end"
+            min-width="280px"
+          >
+            <template #trigger>
               <button
-                class="h-6 w-6 flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted transition-colors"
-                @click="close"
+                class="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                :title="contribution.title"
+                :aria-label="contribution.title"
+                @click="onPopoverTriggerClick($event, contribution)"
               >
-                <span class="material-icons" style="font-size: 16px;">close</span>
+                <PluginIcon
+                  :plugin-id="contribution.pluginId"
+                  :contribution-icon="contribution.icon"
+                  :size="18"
+                  rounded="sm"
+                  :badge="isDevEnabled(contribution.pluginId) ? '#f97316' : undefined"
+                />
               </button>
-            </div>
-            <!-- 插件自定义内容挂载点：ContributionHost 在挂载后调用 render(container, ctx) -->
-            <ContributionHost :contribution="contribution" />
-          </div>
-        </template>
-      </Dropdown>
+            </template>
+            <template #content="{ close }">
+              <div class="p-3">
+                <div class="flex items-center justify-between mb-2 pb-2 border-b border-border/60">
+                  <div class="text-sm font-medium truncate">{{ contribution.title }}</div>
+                  <button
+                    class="h-6 w-6 flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted transition-colors"
+                    @click="close"
+                  >
+                    <span class="material-icons" style="font-size: 16px;">close</span>
+                  </button>
+                </div>
+                <!-- 插件自定义内容挂载点：ContributionHost 在挂载后调用 render(container, ctx) -->
+                <ContributionHost :contribution="contribution" />
+              </div>
+            </template>
+          </Dropdown>
+        </ContextMenuTrigger>
+        <ContextMenuContent class="w-40">
+          <ContextMenuItem @select="openDevDialog(contribution)">
+            <span class="material-icons text-base mr-2">developer_mode</span>
+            <span>{{ t('views.pluginContributionBar.devMode') }}</span>
+          </ContextMenuItem>
+          <ContextMenuItem @select="onDisablePlugin(contribution)">
+            <span class="material-icons text-base mr-2">block</span>
+            <span>{{ t('views.pluginContributionBar.disable') }}</span>
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
     </template>
 
     <!-- 最右侧：管理插件入口（ml-auto 推到栏右端，左侧分割线区隔） -->
@@ -254,4 +398,28 @@ const ContributionHost = defineComponent({
       <span class="material-icons" style="font-size: 18px;">settings</span>
     </button>
   </div>
+
+  <!-- dev 模式配置弹窗 -->
+  <Dialog v-model:open="devDialogOpen">
+    <DialogContent class="sm:max-w-[420px]">
+      <DialogHeader>
+        <DialogTitle>{{ t('views.pluginContributionBar.devDialogTitle') }}<template v-if="devDialogPlugin"> · {{ devDialogPlugin.title }}</template></DialogTitle>
+      </DialogHeader>
+      <div class="space-y-4 py-1">
+        <div class="flex items-center justify-between">
+          <label class="text-sm font-medium">{{ t('views.pluginContributionBar.devEnabledLabel') }}</label>
+          <Switch :model-value="devFormEnabled" @update:model-value="devFormEnabled = !!$event" />
+        </div>
+        <div v-if="devFormEnabled" class="space-y-1.5">
+          <label class="text-sm font-medium">{{ t('views.pluginContributionBar.devUrlLabel') }}</label>
+          <Input v-model="devFormUrl" :placeholder="t('views.pluginContributionBar.devUrlPlaceholder')" />
+          <p class="text-xs text-muted-foreground">{{ t('views.pluginContributionBar.devUrlHint') }}</p>
+        </div>
+      </div>
+      <DialogFooter>
+        <Button variant="outline" @click="devDialogOpen = false">{{ t('views.pluginContributionBar.cancel') }}</Button>
+        <Button @click="saveDevConfig">{{ t('views.pluginContributionBar.save') }}</Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>

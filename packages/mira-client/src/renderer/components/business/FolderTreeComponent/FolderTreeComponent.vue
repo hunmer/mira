@@ -6,8 +6,9 @@
       :selected-key="selectedKey" :locating-node-id="locatingNodeId" @select="handleBaseCategoryClick"
       @empty-trash="emit('empty-trash')" />
 
-    <!-- 标题栏 + 搜索 + 多选 + 添加（外层提供统一标题时隐藏） -->
-    <FolderTreeHeader v-if="!hideHeader" v-model:search-query="searchQuery" :title="sectionTitle"
+    <!-- 标题栏 + 搜索 + 多选 + 添加（外层提供统一标题时隐藏标题行；搜索框仍渲染，由 expose 的 toggleSearch 控制） -->
+    <FolderTreeHeader v-model:search-query="searchQuery" :title="sectionTitle"
+      :hide-title-bar="hideHeader"
       :hide-actions="hideHeaderActions || readOnly" :selection-enabled="selectionEnabled" :selection-active="selectionActive"
       :is-multi-mode="isMultiMode" :selection-mode-label="selectionModeLabel" :selection-count="selectionCount"
       :show-search="showSearch" @toggle-search="toggleSearch" @toggle-selection="toggleSelectionMode"

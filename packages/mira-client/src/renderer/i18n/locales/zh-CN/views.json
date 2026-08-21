@@ -39,7 +39,19 @@
     "browserBlocked": "浏览器阻止了插件窗口，请允许弹出窗口",
     "renderFailed": "插件内容渲染失败",
     "buildHint": "（请在插件目录执行 pnpm install && pnpm build 生成 dist）",
-    "managePlugins": "管理插件"
+    "managePlugins": "管理插件",
+    "devMode": "Dev 模式",
+    "disable": "禁用",
+    "devDialogTitle": "插件 Dev 模式",
+    "devEnabledLabel": "开启 Dev 模式",
+    "devUrlLabel": "自定义 URL",
+    "devUrlPlaceholder": "http://localhost:5173",
+    "devUrlHint": "开启后点击插件图标将打开此地址，图标右下角会显示开发标记",
+    "devUrlRequired": "请填写 Dev 模式的 URL 地址",
+    "save": "保存",
+    "cancel": "取消",
+    "disableSuccess": "插件已禁用",
+    "disableFailed": "插件禁用失败"
   },
   "sidebarHistoryModule": {
     "loading": "加载中...",

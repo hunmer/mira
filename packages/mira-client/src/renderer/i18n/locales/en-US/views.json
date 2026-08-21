@@ -39,7 +39,19 @@
     "browserBlocked": "Browser blocked the plugin window. Please allow pop-ups.",
     "renderFailed": "Plugin content failed to render",
     "buildHint": "(Run pnpm install && pnpm build in the plugin directory to generate dist)",
-    "managePlugins": "Manage plugins"
+    "managePlugins": "Manage plugins",
+    "devMode": "Dev Mode",
+    "disable": "Disable",
+    "devDialogTitle": "Plugin Dev Mode",
+    "devEnabledLabel": "Enable Dev Mode",
+    "devUrlLabel": "Custom URL",
+    "devUrlPlaceholder": "http://localhost:5173",
+    "devUrlHint": "When enabled, clicking the plugin icon opens this URL and a dev badge appears on the icon",
+    "devUrlRequired": "Please enter the dev mode URL",
+    "save": "Save",
+    "cancel": "Cancel",
+    "disableSuccess": "Plugin disabled",
+    "disableFailed": "Failed to disable plugin"
   },
   "sidebarHistoryModule": {
     "loading": "Loading...",

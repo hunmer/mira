@@ -47,6 +47,8 @@ interface Props {
   size?: number
   /** 圆角风格 */
   rounded?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full'
+  /** 右下角状态圆点颜色（CSS 颜色值），不传则不显示 */
+  badge?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -189,6 +191,9 @@ function lookupPluginNameFirstChar(): string {
 
 const showImage = computed(() => !!resolvedImageSrc.value && !imageFailed.value)
 
+/** badge 圆点尺寸：随图标大小缩放，限制最小值保证可见 */
+const badgeSize = computed(() => Math.max(6, Math.round(props.size * 0.4)))
+
 // src 变化时重置失败标记，重新尝试加载图片
 watch(resolvedImageSrc, () => {
   imageFailed.value = false
@@ -196,31 +201,45 @@ watch(resolvedImageSrc, () => {
 </script>
 
 <template>
-  <span
-    class="plugin-icon inline-flex items-center justify-center overflow-hidden flex-shrink-0"
-    :class="roundedClass"
-    :style="{ width: `${size}px`, height: `${size}px` }"
-  >
-    <img
-      v-if="showImage"
-      :src="resolvedImageSrc!"
-      :width="size"
-      :height="size"
-      class="tilt-pop block max-w-full max-h-full object-contain"
-      loading="lazy"
-      @error="imageFailed = true"
+  <!-- 外层 relative 容器：内层 overflow-hidden 会裁剪 badge，badge 需要溢出边界显示 -->
+  <span class="relative inline-flex flex-shrink-0">
+    <span
+      class="plugin-icon inline-flex items-center justify-center overflow-hidden"
+      :class="roundedClass"
+      :style="{ width: `${size}px`, height: `${size}px` }"
+    >
+      <img
+        v-if="showImage"
+        :src="resolvedImageSrc!"
+        :width="size"
+        :height="size"
+        class="tilt-pop block max-w-full max-h-full object-contain"
+        loading="lazy"
+        @error="imageFailed = true"
+      />
+      <template v-else>
+        <span
+          v-if="fallbackType === 'material'"
+          class="material-icons leading-none"
+          :style="{ fontSize: `${Math.round(size * 0.85)}px` }"
+        >{{ fallbackValue || fallbackMaterial }}</span>
+        <span
+          v-else
+          class="leading-none font-medium"
+          :style="{ fontSize: `${Math.round(size * 0.7)}px` }"
+        >{{ fallbackValue }}</span>
+      </template>
+    </span>
+    <span
+      v-if="badge"
+      class="absolute rounded-full ring-2 ring-white dark:ring-background pointer-events-none"
+      :style="{
+        width: `${badgeSize}px`,
+        height: `${badgeSize}px`,
+        backgroundColor: badge,
+        right: '-1px',
+        bottom: '-1px',
+      }"
     />
-    <template v-else>
-      <span
-        v-if="fallbackType === 'material'"
-        class="material-icons leading-none"
-        :style="{ fontSize: `${Math.round(size * 0.85)}px` }"
-      >{{ fallbackValue || fallbackMaterial }}</span>
-      <span
-        v-else
-        class="leading-none font-medium"
-        :style="{ fontSize: `${Math.round(size * 0.7)}px` }"
-      >{{ fallbackValue }}</span>
-    </template>
   </span>
 </template>

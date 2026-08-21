@@ -1,6 +1,6 @@
 <template>
-  <!-- 标题栏 + 搜索 + 多选 + 添加（外层提供统一标题时不渲染） -->
-  <div class="flex items-center justify-between px-2 mb-2">
+  <!-- 标题栏 + 搜索 + 多选 + 添加（外层提供统一标题时仅隐藏标题行，搜索框仍受 showSearch 控制） -->
+  <div v-if="!hideTitleBar" class="flex items-center justify-between px-2 mb-2">
     <h2 class="text-xs font-semibold text-muted-foreground leading-5">{{ title }}</h2>
     <div v-if="!hideActions" class="header-actions flex items-center gap-0.5 -mr-1">
       <button @click="emit('toggle-search')"
@@ -52,6 +52,7 @@ import { useI18n } from 'vue-i18n'
 
 const props = withDefaults(defineProps<{
   title: string
+  hideTitleBar?: boolean
   hideActions?: boolean
   selectionEnabled?: boolean
   selectionActive?: boolean
@@ -61,6 +62,7 @@ const props = withDefaults(defineProps<{
   showSearch?: boolean
   searchQuery?: string
 }>(), {
+  hideTitleBar: false,
   hideActions: false,
   selectionEnabled: false,
   selectionActive: false,
