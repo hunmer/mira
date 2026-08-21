@@ -34,18 +34,22 @@
           @change="handleFileUpload"
           style="display: none"
         />
-        <Button @click="triggerFileSelect" variant="default" class="flex-1">
-          <UploadIcon style="width: 14px; height: 14px" /> 添加本地文件（支持多选）
+        <Button @click="triggerFileSelect" variant="ghost" class="icon-btn" title="添加本地文件（支持多选）">
+          <UploadIcon style="width: 16px; height: 16px" />
         </Button>
-        <Button @click="clearCurrentList" variant="destructive" :disabled="currentLocalVideos.length === 0" title="清空当前列表">
-          <TrashIcon style="width: 14px; height: 14px" />
+        <Button @click="clearCurrentList" variant="ghost" :disabled="currentLocalVideos.length === 0" class="icon-btn" title="清空当前列表">
+          <TrashIcon style="width: 16px; height: 16px" />
         </Button>
+        <div class="search-box">
+          <MagnifyingGlassIcon style="width: 14px; height: 14px" class="search-icon" />
+          <Input v-model="searchQuery" type="text" placeholder="搜索文件名" class="search-input" />
+        </div>
       </div>
 
       <!-- 视频列表（单行 list） -->
       <div class="video-list">
         <div
-          v-for="video in currentLocalVideos"
+          v-for="video in filteredVideos"
           :key="video.id"
           :class="['video-item', { active: selectedVideo?.id === video.id }]"
           @click="selectVideo(video)"
@@ -74,19 +78,13 @@
         <DialogTitle>新建视频列表</DialogTitle>
         <div class="form-group">
           <label>列表名称</label>
-          <input v-model="newListName" type="text" placeholder="输入列表名称" class="input" />
+          <Input v-model="newListName" type="text" placeholder="输入列表名称" />
         </div>
         <div class="form-group">
           <label>描述（可选）</label>
-          <textarea
-            v-model="newListDescription"
-            placeholder="输入列表描述"
-            class="textarea"
-            rows="3"
-          />
+          <Textarea v-model="newListDescription" placeholder="输入列表描述" rows="3" />
         </div>
         <div class="dialog-actions">
-          <Button @click="createListDialogOpen = false" variant="secondary">取消</Button>
           <Button @click="createList" variant="default">创建</Button>
         </div>
       </DialogContent>
@@ -102,7 +100,9 @@ import {
   DialogTitle
 } from 'mira-plugin-ui/src/components/ui/dialog'
 import { Button } from 'mira-plugin-ui/src/components/ui/button'
-import { Cross1Icon, UploadIcon, TrashIcon, VideoIcon, PlayIcon } from '@radix-icons/vue'
+import { Input } from 'mira-plugin-ui/src/components/ui/input'
+import { Textarea } from 'mira-plugin-ui/src/components/ui/textarea'
+import { Cross1Icon, UploadIcon, TrashIcon, VideoIcon, PlayIcon, MagnifyingGlassIcon } from '@radix-icons/vue'
 import type { VideoData } from '@/types/video-editor'
 import { localVideoStorage } from '@/lib/localVideoStorage'
 import { getHost, isHostAvailable } from '@/lib/host'
@@ -133,7 +133,16 @@ const currentLocalList = computed(() =>
   localLists.value.find(l => l.id === selectedLocalListId.value)
 )
 
+// 文件名搜索
+const searchQuery = ref('')
+
 const currentLocalVideos = computed(() => currentLocalList.value?.videos || [])
+
+const filteredVideos = computed(() => {
+  const keyword = searchQuery.value.trim().toLowerCase()
+  if (!keyword) return currentLocalVideos.value
+  return currentLocalVideos.value.filter(v => v.title.toLowerCase().includes(keyword))
+})
 
 // Methods
 function loadLists() {

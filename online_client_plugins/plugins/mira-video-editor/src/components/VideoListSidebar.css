@@ -3,6 +3,7 @@
   display: flex;
   flex-direction: column;
   background: var(--color-background);
+  padding: 8px;
 }
 
 .tabs-root {
@@ -58,6 +59,10 @@
   flex-direction: column;
   gap: 10px;
   padding: 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  min-height: 0;
 }
 
 .list-group-buttons {
@@ -84,12 +89,10 @@
 }
 
 .group-btn:hover {
-  border-color: var(--color-primary);
   background: var(--color-hover);
 }
 
 .group-btn.active {
-  border-color: var(--color-primary);
   background: var(--color-primary-light);
   color: var(--color-primary);
   font-weight: 600;
@@ -108,11 +111,11 @@
   width: 18px;
   height: 18px;
   border: none;
-  background: rgba(220, 38, 38, 0.1);
-  color: #dc2626;
+  background: transparent;
+  color: var(--color-text-secondary);
   cursor: pointer;
   font-size: 11px;
-  border-radius: 3px;
+  border-radius: 50%;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
@@ -128,12 +131,14 @@
 }
 
 .group-btn-add {
-  padding: 6px 10px;
+  padding: 0;
+  width: 30px;
+  height: 30px;
   font-size: 16px;
   font-weight: 600;
   color: var(--color-text-secondary);
-  min-width: 32px;
   justify-content: center;
+  border-radius: 50%;
 }
 
 .group-btn-add:hover {
@@ -146,10 +151,49 @@
   gap: 6px;
 }
 
-.actions button {
-  padding: 8px 12px;
-  font-size: 13px;
+/* 圆形图标按钮：无背景，hover 时才显示底色 */
+.actions .icon-btn {
+  width: 32px;
+  height: 32px;
   min-height: 32px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--color-text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.actions .icon-btn:hover:not(:disabled) {
+  background: var(--color-hover);
+}
+
+.actions .icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* 文件名搜索框：边框/焦点态由 shadcn Input 渲染，容器只负责布局 */
+.search-box {
+  flex: 1;
+  min-width: 0;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.search-icon {
+  flex-shrink: 0;
+  color: var(--color-text-secondary);
+}
+
+.search-input {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
 }
 
 .video-list {
@@ -186,10 +230,10 @@
   align-items: center;
   gap: 8px;
   padding: 4px 6px;
-  border: 1px solid transparent;
+  border: none;
   border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background 0.2s;
   position: relative;
   background: transparent;
 }
@@ -199,7 +243,6 @@
 }
 
 .video-item.active {
-  border-color: var(--color-primary);
   background: var(--color-primary-light);
 }
 
@@ -314,13 +357,12 @@
 }
 
 /* ========== 表单输入 ========== */
-.input,
-.textarea {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  font-family: inherit;
+/* 输入类控件统一使用 mira-plugin-ui 的 Input / Textarea 组件 */
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
 }
 
 .current-path {

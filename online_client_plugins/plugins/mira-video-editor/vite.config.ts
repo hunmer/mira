@@ -48,7 +48,7 @@ export default defineConfig(({ command }) => ({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
       'mira-plugin-ui/src': fileURLToPath(
-        new URL('../../../packages/mira-plugin-ui/src', import.meta.url),
+        new URL('./node_modules/mira-plugin-ui/src', import.meta.url),
       ),
     },
   },
