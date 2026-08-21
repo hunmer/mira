@@ -368,7 +368,18 @@ defineExpose({
   refreshLocalLists: () => {
     localLists.value = localVideoStorage.getLocalLists()
   },
-  loadLists
+  loadLists,
+  /** 切换到指定列表并选中视频（素材库导入激活用），列表不存在则忽略 */
+  activateList: (listId: string, videoId?: string) => {
+    localLists.value = localVideoStorage.getLocalLists()
+    if (!localLists.value.find(l => l.id === listId)) return
+    selectedLocalListId.value = listId
+    if (!videoId) return
+    const video = localLists.value.find(l => l.id === listId)?.videos.find(v => v.id === videoId)
+    if (video) {
+      selectVideo(video)
+    }
+  }
 })
 </script>
 

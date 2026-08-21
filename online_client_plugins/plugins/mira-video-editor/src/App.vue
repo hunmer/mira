@@ -17,6 +17,7 @@ import { GearIcon } from '@radix-icons/vue'
 import VideoEditor from '@/components/index.vue'
 import SettingsDialog from '@/components/SettingsDialog.vue'
 import { getHost } from '@/lib/host'
+import { ACTIVATE_MEDIA_EVENT } from '@/composables/useVideoEditorState'
 import { toFileUrl } from '@/lib/path'
 import { localVideoStorage } from '@/lib/localVideoStorage'
 import { toast } from '@/lib/toast'
@@ -49,15 +50,21 @@ function importMediaItems(items: IncomingMedia[]): number {
   }
 
   let count = 0
+  const activatedVideoIds: string[] = []
   for (const item of items) {
     // 本地部署时 path 为服务器本机绝对路径（可直接交给 ffmpeg）；否则用 HTTP URL（仅可播放）
     const localPath = item.path || ''
     const playable = localPath ? toFileUrl(localPath) : item.url || ''
     if (!playable) continue
 
-    // 跳过同路径的重复导入
-    const exists = (list!.videos || []).some((v) => v.path === playable || v.originalPath === localPath)
-    if (exists) continue
+    // 跳过同路径的重复导入（重复发送时仍纳入激活定位）
+    const existing = localVideoStorage
+      .getLocalList(list.id)
+      ?.videos.find((v) => v.path === playable || v.originalPath === localPath)
+    if (existing) {
+      activatedVideoIds.push(existing.id)
+      continue
+    }
 
     const videoData: VideoData = {
       id: crypto.randomUUID(),
@@ -74,8 +81,18 @@ function importMediaItems(items: IncomingMedia[]): number {
       thumbnail: item.thumbnailURL || undefined,
       create_date: new Date().toISOString(),
     }
-    localVideoStorage.addVideoToLocalList(list!.id, videoData)
+    localVideoStorage.addVideoToLocalList(list.id, videoData)
+    activatedVideoIds.push(videoData.id)
     count++
+  }
+
+  // 导入后激活文件列表面板、选中「素材库导入」列表并播放最后一个视频
+  if (activatedVideoIds.length > 0) {
+    window.dispatchEvent(
+      new CustomEvent(ACTIVATE_MEDIA_EVENT, {
+        detail: { listId: list.id, videoId: activatedVideoIds[activatedVideoIds.length - 1] },
+      })
+    )
   }
   return count
 }

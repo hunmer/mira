@@ -3,7 +3,10 @@
     :open="isVisible"
     @update:open="handleOpenChange"
   >
-    <DialogContent class="file-upload-dialog sm:max-w-[90vw] h-[85vh] grid grid-rows-[auto_1fr_auto] overflow-hidden">
+    <DialogContent
+      class="file-upload-dialog sm:max-w-[90vw] h-[85vh] grid grid-rows-[auto_1fr_auto] overflow-hidden"
+      @paste="handleClipboardPaste"
+    >
       <DialogHeader>
         <DialogTitle>{{ $t('business.fileUploadDialog.title') }}</DialogTitle>
       </DialogHeader>
@@ -73,6 +76,14 @@
                   </span>
                 </div>
                 <div class="flex items-center space-x-2">
+                  <button
+                    class="flex h-7 w-7 items-center justify-center rounded text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
+                    :disabled="isReadingClipboard"
+                    :title="$t('business.fileUploadDialog.importFromClipboard')"
+                    @click="importFromClipboard"
+                  >
+                    <span class="material-icons leading-none" style="font-size: 18px">content_paste</span>
+                  </button>
                   <button
                     class="flex items-center gap-1 text-xs text-primary dark:text-primary font-medium hover:opacity-80"
                     @click="triggerFileSelect(fileInputRef)"
@@ -460,6 +471,9 @@ const {
   triggerFileSelect,
   handleFileSelect,
   handleDrop,
+  handleClipboardPaste,
+  importFromClipboard,
+  isReadingClipboard,
   clearSelection,
   importWithStructure,
   isImportingStructure,

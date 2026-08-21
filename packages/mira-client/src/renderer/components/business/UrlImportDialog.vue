@@ -74,8 +74,39 @@ onBeforeUnmount(() => {
   webSocketService.removeEventListener('download::item', onItem)
 })
 
+function extractUrls(value: string): string[] {
+  const matches = value.match(/https?:\/\/[^\s<>"'`]+/gi) || []
+  const urls = matches
+    .map((url) => url.replace(/[),.;!?\]}]+$/g, ''))
+    .filter((url) => {
+      try {
+        const parsed = new URL(url)
+        return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+      } catch {
+        return false
+      }
+    })
+  return [...new Set(urls)]
+}
+
 function parseUrls(): string[] {
-  return text.value.split(/\r?\n/).map((s) => s.trim()).filter((s) => /^https?:\/\//i.test(s))
+  return extractUrls(text.value)
+}
+
+async function importUrlsFromClipboard() {
+  try {
+    const clipboardText = await navigator.clipboard.readText()
+    const urls = extractUrls(clipboardText)
+    if (urls.length === 0) {
+      toast.error(t('business.urlImportDialog.clipboardEmpty'))
+      return
+    }
+    text.value = urls.join('\n')
+    toast.success(t('business.urlImportDialog.clipboardImported', { n: urls.length }))
+  } catch (error) {
+    console.error('从剪切板提取链接失败:', error)
+    toast.error(t('business.urlImportDialog.clipboardReadFailed'))
+  }
 }
 
 async function start() {
@@ -107,13 +138,24 @@ async function start() {
       </DialogHeader>
 
       <div class="space-y-3 py-1">
-        <Textarea
-          v-model="text"
-          :placeholder="t('business.urlImportDialog.placeholder')"
-          rows="8"
-          class="font-mono text-xs"
-          :disabled="!!batchId"
-        />
+        <div class="relative">
+          <Textarea
+            v-model="text"
+            :placeholder="t('business.urlImportDialog.placeholder')"
+            rows="8"
+            class="font-mono text-xs pr-10"
+            :disabled="!!batchId"
+          />
+          <button
+            v-if="!batchId"
+            type="button"
+            class="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            :title="t('business.urlImportDialog.importFromClipboard')"
+            @click="importUrlsFromClipboard"
+          >
+            <span class="material-icons leading-none" style="font-size: 18px">content_paste_search</span>
+          </button>
+        </div>
 
         <!-- 进度区 -->
         <div v-if="batchId" class="space-y-2">

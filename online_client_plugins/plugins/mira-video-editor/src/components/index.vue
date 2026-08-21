@@ -43,6 +43,7 @@
             ref="videoPlayerRef"
             :key="selectedVideo?.path || 'no-video'"
             :video="selectedVideo"
+            :autoplay="autoplayNextVideo"
             v-model:clip-start-time="clipStartTime"
             v-model:clip-end-time="clipEndTime"
             @create-clip="handleCreateClip"
@@ -225,6 +226,7 @@ const {
   currentListId,
   activeToolTab,
   currentPlayTime,
+  autoplayNextVideo,
   videoPlayerRef,
   videoListSidebarRef,
   watermarkTabRef,

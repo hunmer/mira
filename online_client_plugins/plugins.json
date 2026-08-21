@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-21T07:53:27.271Z",
+  "generatedAt": "2026-08-21T10:27:27.502Z",
   "plugins": [
     {
       "pluginId": "7c1f9e2a-4b3d-4c8e-9f6a-2d5b8e7c1a04",
@@ -273,8 +273,8 @@
       "directory": "plugins/mira-video-editor",
       "icon": "icon.png",
       "readme": "README.md",
-      "size": 813465,
-      "checksum": "sha256:d2a1d16e1d3f5379f5ddf57e49d5144d99710aacbbace0d15f5a4d256014c170",
+      "size": 902440,
+      "checksum": "sha256:dfca5d5ba52e8f66e3c85d8c4bb8b0969a15c9cb253d86f0ec2b4a31d6c6525b",
       "files": [
         {
           "path": "README.md",
@@ -288,8 +288,8 @@
         },
         {
           "path": "package.json",
-          "size": 848,
-          "checksum": "sha256:d6f91717f1dfb045cc769564a1fe184b9ebc66d8bc2b7d5cb331733d12905f7f"
+          "size": 890,
+          "checksum": "sha256:adf36b2ea322d48dc5d0d7c4a35cb9fdf13110c8738fd2a2ed13ca7399552eb8"
         },
         {
           "path": "index.js",
@@ -309,17 +309,17 @@
         {
           "path": "dist/index.html",
           "size": 404,
-          "checksum": "sha256:fab67a8358747625db256a440d163c09335bdd97c2cecc534b9fa5b3ffd64408"
+          "checksum": "sha256:c39be9800e3dd20126cd51e731874280831a558f08bcac0a7c588addced9b5b8"
         },
         {
-          "path": "dist/assets/index-CVLonfwK.css",
-          "size": 157554,
-          "checksum": "sha256:f992bd51ef4993196356c66e3336a5f680f3f387699ff3011756b9b25db0d7a3"
+          "path": "dist/assets/index-BiexjT8u.js",
+          "size": 597134,
+          "checksum": "sha256:78b2719d2d3ac40c7ec74d6fd0e6d671ea713d3a73c65876e5f77efafb5bb4b6"
         },
         {
-          "path": "dist/assets/index--H1zBLsl.js",
-          "size": 584703,
-          "checksum": "sha256:1e417ab188f85dd03808a2faeb24ab105a5371a4eb04ab8ac4688cc303e261eb"
+          "path": "dist/assets/index-BBvi40rM.css",
+          "size": 234056,
+          "checksum": "sha256:5785a847aaf420cebb72f50c7fde99ed640520a6f2267b2674cab2dc91ff35ce"
         }
       ]
     },

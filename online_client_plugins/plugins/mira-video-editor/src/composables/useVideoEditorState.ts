@@ -1,4 +1,4 @@
-import { ref, watch, nextTick } from 'vue'
+import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import type { VideoData, VideoClip } from '@/types/video-editor'
 import { toast } from '@/lib/toast'
 import { localVideoStorage } from '@/lib/localVideoStorage'
@@ -11,6 +11,9 @@ import type VideoListSidebar from '@/components/VideoListSidebar.vue'
 import type WatermarkTab from '@/components/WatermarkTab.vue'
 import type ExportClipsDialog from '@/components/ExportClipsDialog.vue'
 
+/** 素材库导入激活事件：App.vue 导入完成后派发，编辑器切换到文件列表并播放指定视频 */
+export const ACTIVATE_MEDIA_EVENT = 'mira-video-editor:activate-media'
+
 export function useVideoEditorState() {
   // ===== Core State =====
   const isDragging = ref(false)
@@ -18,6 +21,9 @@ export function useVideoEditorState() {
   const currentListId = ref('')
   const activeToolTab = ref('clip')
   const currentPlayTime = ref(0)
+  // 导入激活流程置位：VideoPlayer 挂载后自动播放一次，手动选择视频时复位
+  const autoplayNextVideo = ref(false)
+  let activatingImport = false
 
   // ===== Template Refs =====
   const videoPlayerRef = ref<InstanceType<typeof VideoPlayer>>()
@@ -159,6 +165,10 @@ export function useVideoEditorState() {
 
   // ===== Video Selection =====
   async function handleVideoSelected(video: VideoData, listId?: string) {
+    // 非导入激活触发的选择（用户手动点击/恢复上次选中）取消待自动播放标记
+    if (!activatingImport) {
+      autoplayNextVideo.value = false
+    }
     selectedVideo.value = video
     if (listId) {
       currentListId.value = listId
@@ -173,6 +183,29 @@ export function useVideoEditorState() {
       await sceneState.autoLoadSceneData()
     }
   }
+
+  // ===== 素材库导入激活 =====
+  function handleActivateMediaEvent(event: Event) {
+    const detail = (event as CustomEvent).detail as { listId?: string; videoId?: string }
+    if (!detail?.listId) return
+    // 切换到文件列表 Tab 并驱动侧栏选中列表与视频（经 videoSelected 回到本 composable）
+    activeToolTab.value = 'files'
+    activatingImport = true
+    autoplayNextVideo.value = true
+    try {
+      videoListSidebarRef.value?.activateList(detail.listId, detail.videoId)
+    } finally {
+      activatingImport = false
+    }
+  }
+
+  onMounted(() => {
+    window.addEventListener(ACTIVATE_MEDIA_EVENT, handleActivateMediaEvent as EventListener)
+  })
+
+  onUnmounted(() => {
+    window.removeEventListener(ACTIVATE_MEDIA_EVENT, handleActivateMediaEvent as EventListener)
+  })
 
   // ===== Clip Time Helpers =====
   function handleCreateClip(start: number, end: number) {
@@ -328,6 +361,7 @@ export function useVideoEditorState() {
     currentListId,
     activeToolTab,
     currentPlayTime,
+    autoplayNextVideo,
     // Template refs
     videoPlayerRef,
     videoListSidebarRef,

@@ -25,6 +25,7 @@ export function useFileUploadDialog(props: Props, emit: Emits) {
 
   const selectedLibraryId = ref<string>('')
   const isInitialized = ref(false)
+  const isReadingClipboard = ref(false)
   // “按原有结构导入”进行中（创建服务器文件夹 + 应用到文件）
   const isImportingStructure = ref(false)
 
@@ -130,6 +131,72 @@ export function useFileUploadDialog(props: Props, emit: Emits) {
         folderTagPanel.selectedTargetFolderId.value,
         folderTagPanel.selectedTargetTagIds.value
       )
+    }
+  }
+
+  function addClipboardFiles(files: File[]) {
+    if (files.length === 0) return
+    fileManagement.addFiles(
+      files,
+      folderTagPanel.selectedTargetFolderId.value,
+      folderTagPanel.selectedTargetTagIds.value
+    )
+  }
+
+  function handleClipboardPaste(event: ClipboardEvent) {
+    const files = Array.from(event.clipboardData?.files || [])
+    if (files.length === 0) return
+    event.preventDefault()
+    addClipboardFiles(files)
+  }
+
+  async function importFromClipboard() {
+    if (isReadingClipboard.value) return
+    if (!navigator.clipboard?.read) {
+      toast.add({
+        severity: 'warn',
+        summary: t('business.uploadDialog.hintTitle'),
+        detail: t('business.fileUploadDialog.clipboardUnavailable'),
+        life: 3000
+      })
+      return
+    }
+
+    isReadingClipboard.value = true
+    try {
+      const clipboardItems = await navigator.clipboard.read()
+      const files: File[] = []
+      for (const item of clipboardItems) {
+        const type = item.types.find((value) => !value.startsWith('text/'))
+        if (!type) continue
+        const blob = await item.getType(type)
+        const extension = type.split('/')[1]?.split('+')[0] || 'bin'
+        const name = blob instanceof File && blob.name
+          ? blob.name
+          : `clipboard-${Date.now()}-${files.length + 1}.${extension}`
+        files.push(new File([blob], name, { type: blob.type || type, lastModified: Date.now() }))
+      }
+
+      if (files.length === 0) {
+        toast.add({
+          severity: 'warn',
+          summary: t('business.uploadDialog.hintTitle'),
+          detail: t('business.fileUploadDialog.clipboardEmpty'),
+          life: 3000
+        })
+        return
+      }
+      addClipboardFiles(files)
+    } catch (error) {
+      console.error('从剪切板导入文件失败:', error)
+      toast.add({
+        severity: 'error',
+        summary: t('business.uploadDialog.errorTitle'),
+        detail: t('business.fileUploadDialog.clipboardReadFailed'),
+        life: 3000
+      })
+    } finally {
+      isReadingClipboard.value = false
     }
   }
 
@@ -284,6 +351,9 @@ export function useFileUploadDialog(props: Props, emit: Emits) {
     triggerFileSelect,
     handleFileSelect,
     handleDrop,
+    handleClipboardPaste,
+    importFromClipboard,
+    isReadingClipboard,
     clearSelection,
     importWithStructure,
     isImportingStructure,

@@ -80,6 +80,7 @@ const props = defineProps<{
   video: VideoData | null
   clipStartTime: number
   clipEndTime: number
+  autoplay?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -189,6 +190,11 @@ function initPlyr() {
     console.log('Plyr is ready')
     // 在 Plyr 容器上绑定滚轮事件
     bindWheelEvent()
+
+    // 素材库导入激活时自动播放（Electron 默认免手势；被拦截时静默）
+    if (props.autoplay && plyrInstance.value) {
+      Promise.resolve(plyrInstance.value.play()).catch(() => {})
+    }
 
     // 初始化时也检查一次 duration（有些视频可能已经加载完成）
     if (videoElement.value && isFinite(videoElement.value.duration) && videoElement.value.duration > 0) {
