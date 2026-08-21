@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import type { PrimitiveProps } from "reka-ui"
 import type { HTMLAttributes } from "vue"
-import type { ButtonVariants } from "@/components/ui/button"
+import type { ButtonVariants } from "../button"
 import { Primitive } from "reka-ui"
 import { computed } from "vue"
-import { cn } from "@/lib/utils"
-import { buttonVariants } from "@/components/ui/button"
+import { cn } from "../../../lib/utils"
+import { buttonVariants } from "../button"
 import { injectQuestionnaireRootContext } from "./useQuestionnaire"
 
 const props = withDefaults(defineProps<PrimitiveProps & {

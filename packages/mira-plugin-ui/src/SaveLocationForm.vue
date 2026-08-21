@@ -22,18 +22,18 @@ import {
   ListboxRoot,
   useFilter,
 } from 'reka-ui'
-import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Button } from './components/ui/button'
+import { Label } from './components/ui/label'
+import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from './components/ui/popover'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs'
 import {
   TagsInput,
   TagsInputInput,
   TagsInputItem,
   TagsInputItemDelete,
   TagsInputItemText,
-} from '@/components/ui/tags-input'
+} from './components/ui/tags-input'
 import {
   Attachment,
   AttachmentAction,
@@ -43,9 +43,9 @@ import {
   AttachmentGroup,
   AttachmentMedia,
   AttachmentTitle,
-} from '@/components/ui/attachment'
-import { LibraryTreeView } from '@/library'
-import type { LibraryFlatItem, LibraryTreeNode, LibraryTreeServices } from '@/library'
+} from './components/ui/attachment'
+import { LibraryTreeView } from './library'
+import type { LibraryFlatItem, LibraryTreeNode, LibraryTreeServices } from './library'
 import FileInfoForm from './FileInfoForm.vue'
 import type { SaveLocation } from './types'
 

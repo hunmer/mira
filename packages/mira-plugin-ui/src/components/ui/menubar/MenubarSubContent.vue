@@ -7,7 +7,7 @@ import {
   MenubarSubContent,
   useForwardPropsEmits,
 } from "reka-ui"
-import { cn } from "@/lib/utils"
+import { cn } from "../../../lib/utils"
 
 defineOptions({
   inheritAttrs: false,

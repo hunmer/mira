@@ -4,7 +4,7 @@
  * 表单逻辑(树选择/文件展示/输入项)全部在 SaveLocationForm 中,
  * 这里只做 props/emits 透传;reka-ui 关闭时卸载内容,表单每次打开自动重置。
  */
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './components/ui/dialog'
 import SaveLocationForm from './SaveLocationForm.vue'
 import type { SaveLocation } from './types'
 

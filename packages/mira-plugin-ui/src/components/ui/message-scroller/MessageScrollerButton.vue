@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from "vue"
 import type { MessageScrollerButtonDirection } from "./useMessageScroller"
-import type { ButtonVariants } from "@/components/ui/button"
+import type { ButtonVariants } from "../button"
 import { ArrowDownIcon } from "@lucide/vue"
 import { computed } from "vue"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
+import { cn } from "../../../lib/utils"
+import { Button } from "../button"
 import { useMessageScroller, useMessageScrollerScrollable } from "./useMessageScroller"
 
 const props = withDefaults(defineProps<{

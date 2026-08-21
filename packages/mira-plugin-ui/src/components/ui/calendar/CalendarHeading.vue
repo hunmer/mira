@@ -3,7 +3,7 @@ import type { CalendarHeadingProps } from "reka-ui"
 import type { HTMLAttributes } from "vue"
 import { reactiveOmit } from "@vueuse/core"
 import { CalendarHeading, useForwardProps } from "reka-ui"
-import { cn } from "@/lib/utils"
+import { cn } from "../../../lib/utils"
 
 const props = defineProps<CalendarHeadingProps & { class?: HTMLAttributes["class"] }>()
 
