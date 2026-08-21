@@ -142,9 +142,9 @@ export const reloadLocalPlugin = async (
       const result = await pluginService.reloadPlugin(pluginId)
 
       if (result.success) {
-        // 重新获取本地插件状态
+        // 重新获取本地插件状态（过滤掉服务器插件，避免其混入本地列表）
         const plugins = pluginService.getAllPlugins()
-        localPlugins.value = plugins
+        localPlugins.value = plugins.filter((plugin: PluginRuntime) => plugin.config.source !== 'server')
 
         // 如果重新加载成功，重新注入脚本
         const plugin = localPlugins.value.find(p => p.config.pluginId === pluginId)

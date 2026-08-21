@@ -51,6 +51,7 @@ import FileUploadDialog from '@renderer/components/business/FileUploadDialog.vue
 import LocalPathPickerDialog from '@renderer/components/business/LocalPathPickerDialog.vue'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { useTabs } from '@renderer/composables/useTabs'
+import { getLibraryPrefs } from '@renderer/composables/LibraryPrefs'
 import type { LocalFileEntry, LocalFsNode } from '@/shared/types'
 
 const props = defineProps<{
@@ -103,7 +104,7 @@ const thumbnailUrls = ref<Record<string, string>>({})
 const thumbnailCacheKeys = ref<Record<string, string>>({})
 const thumbnailRequests = new Map<string, string>()
 let galleryPreviewRequestId = 0
-const PAGE_SIZE = 500
+const PAGE_SIZE = computed(() => getLibraryPrefs().pageSize)
 const LOAD_MORE_THRESHOLD = 160
 const api = computed(() => window.electronAPI?.fs)
 const gridIconSize = computed(() => Math.min(96, Math.max(40, Math.round(gridItemSize.value * 0.45))))
@@ -254,7 +255,7 @@ const allVisibleEntries = computed(() => [
 ])
 
 function pageLimit(path: string) {
-  return pageLimits.value[path] ?? PAGE_SIZE
+  return pageLimits.value[path] ?? PAGE_SIZE.value
 }
 
 function paginateEntries(path: string, source: LocalFileEntry[]) {
@@ -266,7 +267,7 @@ function loadNextPage(path: string, total: number) {
   if (currentLimit >= total) return
   pageLimits.value = {
     ...pageLimits.value,
-    [path]: Math.min(currentLimit + PAGE_SIZE, total),
+    [path]: Math.min(currentLimit + PAGE_SIZE.value, total),
   }
 }
 
@@ -612,6 +613,8 @@ watch(allVisibleEntries, (visible) => {
 })
 
 watch([searchQuery, typeFilter, dateFilter, sortKey, sortDirection, viewMode], resetPagination)
+
+watch(PAGE_SIZE, resetPagination)
 
 watch([searchQuery, typeFilter, dateFilter, sortKey, sortDirection, viewMode, gridItemSize], persistTabViewState)
 

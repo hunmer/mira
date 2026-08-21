@@ -24,6 +24,9 @@ export interface SavedFilter {
   createdAt: number
 }
 
+export const DEFAULT_PAGE_SIZE = 500
+const VALID_PAGE_SIZES = [100, 200, 500, 1000, 2000, 5000]
+
 interface LibraryPrefsData {
   defaultViewMode: LibraryDefaultViewMode
   defaultGroupingMode: LibraryDefaultGroupingMode
@@ -32,6 +35,8 @@ interface LibraryPrefsData {
   /** 默认过滤器 id，空串表示不使用 */
   defaultFilterId: string
   savedFilters: SavedFilter[]
+  /** 单页最多展示素材数 */
+  pageSize: number
   /** Home 侧栏各模块的展开状态；缺失项默认展开 */
   sidebarModuleOpenStates: Record<string, boolean>
 }
@@ -48,6 +53,7 @@ const state = reactive<LibraryPrefsData>({
   tabGroupingModes: {},
   defaultFilterId: '',
   savedFilters: [],
+  pageSize: DEFAULT_PAGE_SIZE,
   sidebarModuleOpenStates: {}
 })
 
@@ -67,6 +73,7 @@ const persist = async () => {
     tabGroupingModes: state.tabGroupingModes,
     defaultFilterId: state.defaultFilterId,
     savedFilters: state.savedFilters,
+    pageSize: state.pageSize,
     sidebarModuleOpenStates: state.sidebarModuleOpenStates
   }))
 }
@@ -103,6 +110,7 @@ export async function loadLibraryPrefs(): Promise<void> {
       ? Object.fromEntries(Object.entries(parsed.tabGroupingModes).filter(([, value]) => ['none', 'tags', 'folders', 'types'].includes(value as string))) as Record<string, MediaGroupingMode>
       : {}
     state.defaultFilterId = typeof parsed?.defaultFilterId === 'string' ? parsed.defaultFilterId : ''
+    state.pageSize = VALID_PAGE_SIZES.includes(parsed?.pageSize as number) ? parsed!.pageSize as number : DEFAULT_PAGE_SIZE
     state.savedFilters = Array.isArray(parsed?.savedFilters)
       ? parsed.savedFilters.filter((f: any) => f && f.id && f.name && Array.isArray(f.rules))
       : []
@@ -134,6 +142,12 @@ export async function saveLibraryDefaultViewMode(mode: LibraryDefaultViewMode): 
 
 export async function saveLibraryDefaultGroupingMode(mode: LibraryDefaultGroupingMode): Promise<void> {
   state.defaultGroupingMode = mode
+  await persist()
+}
+
+/** 保存单页最多展示素材数 */
+export async function saveLibraryPageSize(size: number): Promise<void> {
+  state.pageSize = VALID_PAGE_SIZES.includes(size) ? size : DEFAULT_PAGE_SIZE
   await persist()
 }
 
