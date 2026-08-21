@@ -23,26 +23,32 @@
             >
               <div class="border-b px-3 py-2 text-xs text-muted-foreground">{{ $t('tabs.homeTabView.addCard') }}</div>
               <div class="max-h-72 overflow-y-auto py-1">
-                <button
-                  v-for="def in menuCards"
-                  :key="def.type"
-                  class="flex w-full items-start gap-3 px-3 py-2 text-left transition-colors hover:bg-accent"
-                  @click="onAddCard(def.type)"
-                >
-                  <span
-                    class="material-icons mt-0.5 text-lg"
-                    :style="{ color: def.iconColor || 'var(--primary)' }"
+                <template v-for="group in menuGroups" :key="group.group">
+                  <!-- 分组标题 -->
+                  <div class="px-3 pb-0.5 pt-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                    {{ groupLabel(group.group) }}
+                  </div>
+                  <button
+                    v-for="def in group.defs"
+                    :key="def.type"
+                    class="flex w-full items-start gap-3 px-3 py-2 text-left transition-colors hover:bg-accent"
+                    @click="onAddCard(def.type)"
                   >
-                    {{ def.icon || 'extension' }}
-                  </span>
-                  <span class="flex-1 overflow-hidden">
-                    <span class="block truncate text-sm font-medium">{{ def.title }}</span>
-                    <span v-if="def.description" class="block truncate text-xs text-muted-foreground">
-                      {{ def.description }}
+                    <span
+                      class="material-icons mt-0.5 text-lg"
+                      :style="{ color: def.iconColor || 'var(--primary)' }"
+                    >
+                      {{ def.icon || 'extension' }}
                     </span>
-                  </span>
-                </button>
-                <div v-if="menuCards.length === 0" class="px-3 py-4 text-center text-xs text-muted-foreground">
+                    <span class="flex-1 overflow-hidden">
+                      <span class="block truncate text-sm font-medium">{{ def.title }}</span>
+                      <span v-if="def.description" class="block truncate text-xs text-muted-foreground">
+                        {{ def.description }}
+                      </span>
+                    </span>
+                  </button>
+                </template>
+                <div v-if="menuCardCount === 0" class="px-3 py-4 text-center text-xs text-muted-foreground">
                   {{ $t('tabs.homeTabView.noCardsToAdd') }}
                 </div>
               </div>
@@ -159,7 +165,7 @@
       <span class="material-icons text-5xl">dashboard_customize</span>
       <p class="text-sm">{{ $t('tabs.homeTabView.emptyHint') }}</p>
       <button
-        v-if="menuCards.length > 0"
+        v-if="menuCardCount > 0"
         class="mt-2 flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90"
         @click="addMenuOpen = true"
       >
@@ -301,8 +307,15 @@ const resizeConfig: ResizeConfig = {
 const addMenuOpen = ref(false)
 const addMenuRef = ref<HTMLElement | null>(null)
 
-/** 菜单中可见的卡片定义 */
-const menuCards = computed(() => cardRegistry.getMenuVisible())
+/** 菜单中可见的卡片定义，按 group 分桶（保持注册顺序） */
+const menuGroups = computed(() => cardRegistry.getMenuGroups())
+/** 菜单中可见卡片总数（空状态判断用） */
+const menuCardCount = computed(() => menuGroups.value.reduce((s, g) => s + g.defs.length, 0))
+
+/** 分组展示名：优先 i18n `tabs.cardGroups.{group}`，缺省回退 group id 本身 */
+function groupLabel(group: string) {
+  return t(`tabs.cardGroups.${group}`, group)
+}
 
 /** 根据 instanceId 取 CardDefinition */
 function defOf(instanceId: string | number) {

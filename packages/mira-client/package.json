@@ -44,11 +44,14 @@
   "dependencies": {
     "@he-tree/vue": "^2.10.5",
     "@hunmer/vue-masonry": "workspace:*",
+    "@hunmer/vue-selection-box": "workspace:*",
     "@internationalized/date": "^3.12.3",
     "@lucide/vue": "^1.17.0",
     "@radix-icons/vue": "^1.0.0",
     "@tailwindcss/vite": "4.0.17",
     "@tanstack/vue-table": "^8.21.3",
+    "@unovis/ts": "^1.6.5",
+    "@unovis/vue": "^1.6.5",
     "@vee-validate/zod": "^4.13.0",
     "@vitejs/plugin-vue": "^5.2.1",
     "@vueuse/core": "^14.3.0",
@@ -97,15 +100,14 @@
     "vue-router": "^4.5.1",
     "vue-sonner": "^2.0.9",
     "vue3-lazyload": "^0.3.8",
-    "zod": "^3.23.8",
-    "@hunmer/vue-selection-box": "workspace:*"
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@hunmer/procm-mcp-sdk": "link:G:/procm-mcp/packages/procm-sdk",
     "@tailwindcss/postcss": "^4.0.17",
     "@testing-library/dom": "^10.4.0",
-    "@testing-library/vue": "^8.1.0",
     "@testing-library/user-event": "^14.6.1",
+    "@testing-library/vue": "^8.1.0",
     "@types/electron-window-state": "^2.0.34",
     "@types/lodash-es": "^4.17.12",
     "@types/node": "^22.13.13",

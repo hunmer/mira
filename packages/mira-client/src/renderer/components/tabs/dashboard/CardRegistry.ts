@@ -61,6 +61,11 @@ export interface CardDefinition {
   iconColor?: string
   /** 是否在「添加卡片」菜单中展示（隐藏卡片仍可存在于布局中） */
   visibleInMenu?: boolean
+  /**
+   * 分组 id（用于「添加卡片」菜单按组展示）。未声明时归入默认分组。
+   * 分组的展示名通过 i18n key `tabs.cardGroups.{group}` 解析，缺省回退为 group 本身。
+   */
+  group?: string
   /** 默认尺寸约束 */
   size: CardSizeSuggestion
   /** 点击行为 */
@@ -91,6 +96,9 @@ export interface CardRegistryResult<T = any> {
   data?: T
   error?: string
 }
+
+/** 未声明 group 的卡片在菜单中归入的默认分组 id */
+export const DEFAULT_CARD_GROUP = 'general'
 
 /**
  * 卡片注册表单例。
@@ -158,6 +166,20 @@ export class CardRegistry {
   /** 获取所有在菜单中可见的定义 */
   getMenuVisible(): CardDefinition[] {
     return this.getAll().filter((d) => d.visibleInMenu !== false)
+  }
+
+  /**
+   * 获取菜单中可见的定义，按 group 分桶（保持注册顺序）。
+   * 未声明 group 的卡片归入 DEFAULT_CARD_GROUP。
+   */
+  getMenuGroups(): Array<{ group: string; defs: CardDefinition[] }> {
+    const buckets = new Map<string, CardDefinition[]>()
+    for (const def of this.getMenuVisible()) {
+      const group = def.group || DEFAULT_CARD_GROUP
+      if (!buckets.has(group)) buckets.set(group, [])
+      buckets.get(group)!.push(def)
+    }
+    return Array.from(buckets, ([group, defs]) => ({ group, defs }))
   }
 
   /** 某类卡片是否支持配置（声明了 configFields） */

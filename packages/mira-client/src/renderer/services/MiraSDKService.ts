@@ -473,6 +473,12 @@ export class MiraSDKService {
     return await this.client.libraries().stats(libraryId)
   }
 
+  /** 统计相关（Dashboard 统计卡片数据来源，对应服务端 /api/statistics/*） */
+  get statistics() {
+    if (!this.client) throw new Error('Not connected to Mira server')
+    return this.client.statistics()
+  }
+
   /**
    * 文件操作
    */

@@ -1,8 +1,13 @@
 import { z } from 'zod'
+import i18n from '../../../../i18n'
 import HitokotoCard from './HitokotoCard.vue'
 import AlbumCard from './AlbumCard.vue'
+import UploadTrendCard from './UploadTrendCard.vue'
+import UploaderRankCard from './UploaderRankCard.vue'
+import FileTypeCard from './FileTypeCard.vue'
+import RecentUploadsCard from './RecentUploadsCard.vue'
 import { cardRegistry } from '../CardRegistry'
-import i18n from '../../../../i18n'
+import type { CardConfigField } from '../CardRegistry'
 
 /**
  * Dashboard 内置卡片注册入口。
@@ -11,6 +16,35 @@ import i18n from '../../../../i18n'
  * 第三方插件可以 import { cardRegistry } 自行注册额外卡片。
  */
 let registered = false
+
+/** 统计范围 select 的可选项（与 dashboard 统计页一致） */
+const daysOptions = () => [
+  { label: i18n.global.t('tabs.statisticsCards.days1'), value: 1 },
+  { label: i18n.global.t('tabs.statisticsCards.days7'), value: 7 },
+  { label: i18n.global.t('tabs.statisticsCards.days30'), value: 30 },
+  { label: i18n.global.t('tabs.statisticsCards.days180'), value: 180 },
+  { label: i18n.global.t('tabs.statisticsCards.days365'), value: 365 },
+]
+
+/** 统计卡片通用配置：统计范围。4 种统计卡片共用同一份定义 */
+function statsDaysConfig(): { fields: CardConfigField[]; schema: z.ZodTypeAny; defaults: Record<string, any> } {
+  return {
+    fields: [
+      {
+        name: 'days',
+        label: i18n.global.t('tabs.statisticsCards.daysLabel'),
+        type: 'select',
+        options: daysOptions(),
+        description: i18n.global.t('tabs.statisticsCards.daysDesc'),
+        colSpan: 2,
+      },
+    ],
+    schema: z.object({
+      days: z.union([z.number(), z.string()]).transform((v) => Number(v)).pipe(z.number().min(1).max(365)),
+    }),
+    defaults: { days: 30 },
+  }
+}
 
 export function registerBuiltinCards() {
   if (registered) return
@@ -116,5 +150,101 @@ export function registerBuiltinCards() {
       slidesPerView: [1],
       orientation: 'horizontal',
     },
+  })
+
+  // ---- 统计卡片（数据来源与 dashboard 统计页一致：/api/statistics/*） ----
+
+  const daysCfg = statsDaysConfig()
+
+  cardRegistry.register({
+    type: 'uploadTrend',
+    group: 'statistics',
+    title: i18n.global.t('tabs.builtinCards.uploadTrendTitle'),
+    description: i18n.global.t('tabs.builtinCards.uploadTrendDesc'),
+    icon: 'show_chart',
+    iconColor: '#3B82F6',
+    visibleInMenu: true,
+    component: UploadTrendCard,
+    size: {
+      defaultW: 6,
+      defaultH: 5,
+      minW: 4,
+      minH: 3,
+      maxW: 12,
+      maxH: 10,
+    },
+    clickBehavior: 'refresh',
+    configFields: daysCfg.fields,
+    configSchema: daysCfg.schema,
+    defaultConfig: daysCfg.defaults,
+  })
+
+  cardRegistry.register({
+    type: 'uploaderRank',
+    group: 'statistics',
+    title: i18n.global.t('tabs.builtinCards.uploaderRankTitle'),
+    description: i18n.global.t('tabs.builtinCards.uploaderRankDesc'),
+    icon: 'leaderboard',
+    iconColor: '#F59E0B',
+    visibleInMenu: true,
+    component: UploaderRankCard,
+    size: {
+      defaultW: 4,
+      defaultH: 4,
+      minW: 3,
+      minH: 3,
+      maxW: 8,
+      maxH: 10,
+    },
+    clickBehavior: 'refresh',
+    configFields: daysCfg.fields,
+    configSchema: daysCfg.schema,
+    defaultConfig: daysCfg.defaults,
+  })
+
+  cardRegistry.register({
+    type: 'fileType',
+    group: 'statistics',
+    title: i18n.global.t('tabs.builtinCards.fileTypeTitle'),
+    description: i18n.global.t('tabs.builtinCards.fileTypeDesc'),
+    icon: 'donut_large',
+    iconColor: '#10B981',
+    visibleInMenu: true,
+    component: FileTypeCard,
+    size: {
+      defaultW: 4,
+      defaultH: 4,
+      minW: 3,
+      minH: 3,
+      maxW: 8,
+      maxH: 8,
+    },
+    clickBehavior: 'refresh',
+    configFields: daysCfg.fields,
+    configSchema: daysCfg.schema,
+    defaultConfig: daysCfg.defaults,
+  })
+
+  cardRegistry.register({
+    type: 'recentUploads',
+    group: 'statistics',
+    title: i18n.global.t('tabs.builtinCards.recentUploadsTitle'),
+    description: i18n.global.t('tabs.builtinCards.recentUploadsDesc'),
+    icon: 'history',
+    iconColor: '#8B5CF6',
+    visibleInMenu: true,
+    component: RecentUploadsCard,
+    size: {
+      defaultW: 4,
+      defaultH: 5,
+      minW: 3,
+      minH: 3,
+      maxW: 8,
+      maxH: 12,
+    },
+    clickBehavior: 'refresh',
+    configFields: daysCfg.fields,
+    configSchema: daysCfg.schema,
+    defaultConfig: daysCfg.defaults,
   })
 }

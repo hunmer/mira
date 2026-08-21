@@ -121,6 +121,52 @@
     "albumConfigOrientation": "方向",
     "albumConfigOrientationHorizontal": "横向",
     "albumConfigOrientationVertical": "竖向",
-    "albumConfigOrientationDesc": "横向：左右滑动；竖向：上下滑动"
+    "albumConfigOrientationDesc": "横向：左右滑动；竖向：上下滑动",
+    "uploadTrendTitle": "上传趋势",
+    "uploadTrendDesc": "按日展示文件数与体积的双序列趋势图",
+    "uploaderRankTitle": "上传人员排行",
+    "uploaderRankDesc": "按上传文件数排序的人员榜",
+    "fileTypeTitle": "文件类型分布",
+    "fileTypeDesc": "按类型统计文件数量的甜甜圈图",
+    "recentUploadsTitle": "最近上传",
+    "recentUploadsDesc": "谁最近上传了什么，传到了哪里"
+  },
+  "cardGroups": {
+    "general": "常规",
+    "statistics": "统计"
+  },
+  "statisticsCards": {
+    "loadFailed": "加载统计数据失败",
+    "noData": "暂无数据",
+    "noLibrary": "请先选择素材库",
+    "clickRetry": "点击重试",
+    "fileCount": "文件数",
+    "totalSize": "总体积",
+    "totalSizeMB": "体积 (MB)",
+    "lastDays": "近 {days} 天",
+    "uploaded": "上传了",
+    "uploadedTo": "到",
+    "today": "今天",
+    "yesterday": "昨天",
+    "daysAgo": "{days} 天前",
+    "daysLabel": "统计范围",
+    "daysDesc": "统计数据的时间范围",
+    "days1": "近 1 天",
+    "days7": "近 7 天",
+    "days30": "近 30 天",
+    "days180": "近 180 天",
+    "days365": "近 365 天",
+    "type": {
+      "image": "图片",
+      "video": "视频",
+      "audio": "音频",
+      "pdf": "PDF",
+      "doc": "文档",
+      "xls": "表格",
+      "ppt": "演示",
+      "archive": "压缩包",
+      "text": "文本",
+      "other": "其他"
+    }
   }
 }

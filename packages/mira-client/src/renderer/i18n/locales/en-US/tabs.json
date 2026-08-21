@@ -121,6 +121,52 @@
     "albumConfigOrientation": "Orientation",
     "albumConfigOrientationHorizontal": "Horizontal",
     "albumConfigOrientationVertical": "Vertical",
-    "albumConfigOrientationDesc": "Horizontal: swipe left/right; Vertical: swipe up/down"
+    "albumConfigOrientationDesc": "Horizontal: swipe left/right; Vertical: swipe up/down",
+    "uploadTrendTitle": "Upload Trend",
+    "uploadTrendDesc": "Daily file count and size trend (dual series)",
+    "uploaderRankTitle": "Uploader Ranking",
+    "uploaderRankDesc": "Users ranked by files uploaded",
+    "fileTypeTitle": "File Type Distribution",
+    "fileTypeDesc": "File count by type in a donut chart",
+    "recentUploadsTitle": "Recent Uploads",
+    "recentUploadsDesc": "Who uploaded what and where recently"
+  },
+  "cardGroups": {
+    "general": "General",
+    "statistics": "Statistics"
+  },
+  "statisticsCards": {
+    "loadFailed": "Failed to load statistics",
+    "noData": "No data",
+    "noLibrary": "Select a library first",
+    "clickRetry": "Click to retry",
+    "fileCount": "Files",
+    "totalSize": "Total size",
+    "totalSizeMB": "Size (MB)",
+    "lastDays": "Last {days} days",
+    "uploaded": "uploaded",
+    "uploadedTo": "to",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "daysAgo": "{days} days ago",
+    "daysLabel": "Time range",
+    "daysDesc": "Time range of the statistics",
+    "days1": "1 day",
+    "days7": "7 days",
+    "days30": "30 days",
+    "days180": "180 days",
+    "days365": "365 days",
+    "type": {
+      "image": "Image",
+      "video": "Video",
+      "audio": "Audio",
+      "pdf": "PDF",
+      "doc": "Document",
+      "xls": "Spreadsheet",
+      "ppt": "Slides",
+      "archive": "Archive",
+      "text": "Text",
+      "other": "Other"
+    }
   }
 }
