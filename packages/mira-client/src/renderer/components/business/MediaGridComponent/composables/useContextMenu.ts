@@ -11,7 +11,7 @@ import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { runBatchOperation } from '@renderer/composables/useBatchOperation'
 import { copyToClipboard } from '@renderer/utils/helpers'
 import { getPluginFileFormats } from '@renderer/plugins/instanceManager'
-import { openPluginDevWindow } from '@renderer/plugins/devMode'
+import { openPluginDevWindow } from '@renderer/plugins/openPluginWindow'
 
 interface UseContextMenuProps {
   selectedItems: string[]

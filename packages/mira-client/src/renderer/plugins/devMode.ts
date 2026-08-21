@@ -1,15 +1,11 @@
 /**
- * 插件 dev 模式公共逻辑：dev 配置持久化（localStorage）+ dev url 插件窗口打开。
+ * 插件 dev 模式配置（localStorage 持久化，纯配置模块无窗口打开副作用）。
  *
- * 消费方：
- *   - PluginContributionBar（HomeView 插件图标点击）
- *   - 媒体右键菜单（useContextMenu 的插件预览器新窗口打开）
- * 两处必须共用同一份配置与打开流程，避免行为不一致。
+ * dev 拦截在 plugins/openPluginWindow 入口统一执行：
+ * 所有插件打开窗口的路径（图标点击、右键菜单调用插件、PluginService ctx 等）
+ * 只要插件 dev 开启，一律改开 dev url。
  */
 import { ref } from 'vue'
-import i18n from '../i18n'
-import { useToast } from '../composables/useToast'
-import { openPluginWindow } from './openPluginWindow'
 
 export interface PluginDevConfig {
   enabled: boolean
@@ -17,9 +13,6 @@ export interface PluginDevConfig {
 }
 
 const DEV_CONFIG_KEY = 'mira-plugin-dev-config'
-
-const t = i18n.global.t.bind(i18n.global)
-const toast = useToast()
 
 function loadDevConfigs(): Record<string, PluginDevConfig> {
   try {
@@ -52,27 +45,3 @@ export function savePluginDevConfig(pluginId: string, config: PluginDevConfig) {
   } catch { /* ignore */ }
 }
 
-/**
- * dev 模式下打开自定义 url 的插件窗口。
- * 返回是否已处理：true 表示该插件 dev 已开启且窗口已打开（或已报错提示），
- * 调用方应中止后续正常打开流程。
- */
-export async function openPluginDevWindow(target: { pluginId: string; title?: string }): Promise<boolean> {
-  const url = getPluginDevConfig(target.pluginId)?.url?.trim()
-  if (!url || !isPluginDevEnabled(target.pluginId)) return false
-  const result = await openPluginWindow({
-    pluginId: target.pluginId,
-    url,
-    dev: true,
-    title: `${target.title || target.pluginId} (dev)`,
-  })
-  if (result?.success === false) {
-    toast.add({
-      severity: 'error',
-      summary: t('views.pluginContributionBar.windowOpenFailed'),
-      detail: result.message || t('views.common.unknownError'),
-      life: 5000,
-    })
-  }
-  return true
-}

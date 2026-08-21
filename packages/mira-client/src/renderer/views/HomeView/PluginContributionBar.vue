@@ -16,11 +16,10 @@ import { useI18n } from 'vue-i18n'
 import { Dropdown } from '@/renderer/components/common/Dropdown'
 import PluginIcon from '@/renderer/components/common/PluginIcon.vue'
 import { useToast } from '@renderer/composables/useToast'
-import { openPluginWindow, resolveServerPluginUrl } from '@renderer/plugins/openPluginWindow'
+import { openPluginWindow, openPluginDevWindow, resolveServerPluginUrl } from '@renderer/plugins/openPluginWindow'
 import {
   getPluginDevConfig,
   isPluginDevEnabled,
-  openPluginDevWindow,
   savePluginDevConfig,
 } from '@renderer/plugins/devMode'
 import { usePluginStore } from '@renderer/stores/plugin'
