@@ -117,6 +117,7 @@ async function openDevWindow(contribution: PluginContribution): Promise<boolean>
   const result = await openPluginWindow({
     pluginId: contribution.pluginId,
     url,
+    dev: true,
     title: `${contribution.title} (dev)`,
   })
   if (result?.success === false) {

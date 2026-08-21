@@ -155,12 +155,10 @@
 .video-list {
   flex: 1 1 auto;
   overflow-y: auto;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-auto-rows: auto;
-  gap: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   padding: 4px;
-  align-content: start;
 }
 
 /* 自定义滚动条样式 */
@@ -184,26 +182,25 @@
 
 .video-item {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 8px;
-  border: 1px solid var(--color-border);
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border: 1px solid transparent;
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s;
   position: relative;
-  background: var(--color-surface);
+  background: transparent;
 }
 
 .video-item:hover {
-  border-color: var(--color-primary);
   background: var(--color-hover);
 }
 
 .video-item.active {
   border-color: var(--color-primary);
   background: var(--color-primary-light);
-  box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.2);
 }
 
 .video-item.active .title {
@@ -213,8 +210,9 @@
 
 .thumbnail-wrapper {
   position: relative;
-  width: 100%;
-  aspect-ratio: 16/9;
+  flex: 0 0 auto;
+  width: 56px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -237,7 +235,6 @@
   justify-content: center;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  font-size: 28px;
 }
 
 .play-indicator {
@@ -248,7 +245,6 @@
   justify-content: center;
   background: rgba(0, 0, 0, 0.4);
   color: white;
-  font-size: 24px;
   opacity: 0;
   transition: opacity 0.2s;
   pointer-events: none;
@@ -283,14 +279,12 @@
 }
 
 .btn-remove {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 24px;
-  height: 24px;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
   border: none;
-  background: rgba(0, 0, 0, 0.6);
-  color: white;
+  background: transparent;
+  color: var(--color-text-secondary);
   cursor: pointer;
   font-size: 12px;
   border-radius: 4px;

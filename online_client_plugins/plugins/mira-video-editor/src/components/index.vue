@@ -59,7 +59,7 @@
         <!-- 右侧面板 -->
         <ResizablePanel :min-size="25" :default-size="45" class="right-panel">
         <Tabs v-model="activeToolTab" class="right-tabs">
-          <TabsList class="right-tabs-list">
+          <TabsList class="right-tabs-list w-full">
             <TabsTrigger value="files" class="right-tab-trigger" title="文件列表">
               <span class="tab-icon"><FileIcon style="width: 18px; height: 18px" /></span>
             </TabsTrigger>

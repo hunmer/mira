@@ -262,6 +262,8 @@ export interface PluginWindowOpenOptions {
   entry?: string
   /** 服务端 Web 插件入口 URL */
   url?: string
+  /** dev 模式：url 不受服务端插件 URL 校验限制，任意 http/https 地址均可 */
+  dev?: boolean
   /** 窗口标题，默认取插件名 */
   title?: string
   /** 窗口宽度，默认 1200 */

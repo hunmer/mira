@@ -18,6 +18,8 @@ export interface PluginWindowOpenOptions {
   entry?: string
   /** 服务端 Web 插件入口 URL，仅允许 /server-plugins/ 路径 */
   url?: string
+  /** dev 模式：url 不受服务端插件 URL 校验限制，任意 http/https 地址均可 */
+  dev?: boolean
   /** 窗口标题 */
   title?: string
   /** 窗口宽度，默认 1200 */
@@ -144,10 +146,11 @@ export class PluginWindowHandlers {
   /**
    * 计算 windowId
    * 同时纳入 entry，避免「主界面窗口」与「画布窗口」这类同插件不同入口的窗口互相覆盖复用。
+   * dev 模式窗口的 webPreferences 与正常窗口不同（webSecurity 关闭），必须独立成窗避免复用旧配置。
    */
-  private getWindowId(pluginId: string, entry: string, query?: Record<string, string>): string {
+  private getWindowId(pluginId: string, entry: string, query?: Record<string, string>, dev?: boolean): string {
     const projectId = query?.projectId || query?.id || 'default'
-    return `${pluginId}:${entry}:${projectId}`
+    return `${pluginId}:${entry}:${projectId}${dev ? ':dev' : ''}`
   }
 
   /**
@@ -163,8 +166,10 @@ export class PluginWindowHandlers {
       }
 
       const entry = opts.entry || 'dist/index.html'
-      const windowId = this.getWindowId(opts.pluginId, entry, opts.query)
-      const remoteUrl = opts.url ? this.resolveServerPluginUrl(opts.url, opts.query) : undefined
+      const windowId = this.getWindowId(opts.pluginId, entry, opts.query, opts.dev)
+      const remoteUrl = opts.url
+        ? (opts.dev ? this.resolveDevUrl(opts.url, opts.query) : this.resolveServerPluginUrl(opts.url, opts.query))
+        : undefined
       const entryPath = remoteUrl ? undefined : await this.resolveEntryPath(opts.pluginId, entry)
 
       // 复用已存在的窗口：聚焦并重新加载（切换 query）
@@ -221,6 +226,9 @@ export class PluginWindowHandlers {
             `--mira-plugin-name=${encodeURIComponent(title)}`,
             `--mira-plugin-path=${encodeURIComponent(baseDir)}`,
           ],
+          // dev 模式窗口加载开发服务器页面（http origin），需要访问本地 file:// 素材，
+          // 仅对该类窗口关闭同源安全限制（Chromium 默认禁止 http 页面加载本地资源）
+          ...(opts.dev ? { webSecurity: false, allowRunningInsecureContent: true } : {}),
         },
       })
 
@@ -316,6 +324,20 @@ export class PluginWindowHandlers {
     }
     Object.entries(query || {}).forEach(([key, item]) => url.searchParams.set(key, String(item)))
     logger.info('PluginWindowHandlers', `Resolved server plugin URL: ${url.toString().replace(/([?&]token=)[^&]+/, '$1<redacted>')}`)
+    return url.toString()
+  }
+
+  /**
+   * 解析 dev 模式插件 URL：不限制地址，仅要求 http/https，
+   * 供插件 dev 模式加载开发服务器（vite/webpack dev server、局域网联调地址等）产物。
+   */
+  private resolveDevUrl(value: string, query?: Record<string, string>): string {
+    const url = new URL(value)
+    if (!['http:', 'https:'].includes(url.protocol)) {
+      throw new Error('Dev 模式仅支持 http/https URL')
+    }
+    Object.entries(query || {}).forEach(([key, item]) => url.searchParams.set(key, String(item)))
+    logger.info('PluginWindowHandlers', `Resolved dev plugin URL: ${url.toString().replace(/([?&]token=)[^&]+/, '$1<redacted>')}`)
     return url.toString()
   }
 

@@ -42,7 +42,7 @@
         </Button>
       </div>
 
-      <!-- 视频列表 -->
+      <!-- 视频列表（单行 list） -->
       <div class="video-list">
         <div
           v-for="video in currentLocalVideos"
@@ -52,8 +52,8 @@
         >
           <div class="thumbnail-wrapper">
             <img v-if="video.thumbnail" :src="video.thumbnail" class="thumbnail" />
-            <div v-else class="thumbnail-placeholder"><VideoIcon style="width: 24px; height: 24px" /></div>
-            <div class="play-indicator"><PlayIcon style="width: 28px; height: 28px" /></div>
+            <div v-else class="thumbnail-placeholder"><VideoIcon style="width: 14px; height: 14px" /></div>
+            <div class="play-indicator"><PlayIcon style="width: 16px; height: 16px" /></div>
           </div>
           <div class="video-info">
             <div class="title">{{ video.title }}</div>

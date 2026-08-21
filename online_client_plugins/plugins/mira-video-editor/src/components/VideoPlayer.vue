@@ -68,6 +68,10 @@ import 'plyr/dist/plyr.css'
 import { VideoIcon, EyeOpenIcon, ExitIcon, ArrowLeftIcon, ArrowRightIcon, PlusIcon, Cross1Icon } from '@radix-icons/vue'
 import type { VideoData } from '@/types/video-editor'
 import { resolveVideoSrc } from '@/lib/host'
+// plyr 图标 sprite 本地化：内联为 data URI，规避 CDN 的 CORS 限制，
+// 且 file:// 加载产物时 fetch 相对路径文件同样会被拦截，data URI 两种场景都可用
+import plyrSvgRaw from '@/assets/plyr.svg?raw'
+const plyrIconUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(plyrSvgRaw)}`
 
 // Props & Emits
 const props = defineProps<{
@@ -169,6 +173,7 @@ function initPlyr() {
       'fullscreen'
     ],
     settings: ['quality', 'speed'],
+    iconUrl: plyrIconUrl,
     speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
     keyboard: { focused: true, global: false },
     tooltips: { controls: true, seek: true }
