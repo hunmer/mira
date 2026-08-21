@@ -44,15 +44,16 @@ export class ScreenshotHandlers {
   private async detectVisibleWindows(bounds: Electron.Rectangle): Promise<DetectedWindow[]> {
     if (process.platform !== 'win32') return []
     const script = `Add-Type @'
-using System; using System.Text; using System.Runtime.InteropServices;
+using System; using System.Text; using System.Runtime.InteropServices; using System.Diagnostics;
 public static class MiraWindows {
   [DllImport("user32.dll")] static extern bool EnumWindows(EnumProc cb, IntPtr p);
   delegate bool EnumProc(IntPtr h, IntPtr p);
   [DllImport("user32.dll")] static extern bool IsWindowVisible(IntPtr h);
+  [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
   [DllImport("user32.dll")] static extern bool GetWindowRect(IntPtr h, out RECT r);
   [DllImport("user32.dll", CharSet=CharSet.Unicode)] static extern int GetWindowText(IntPtr h, StringBuilder s, int n);
   [StructLayout(LayoutKind.Sequential)] public struct RECT { public int L; public int T; public int R; public int B; }
-  public static void Run() { EnumWindows((h,p) => { if (!IsWindowVisible(h)) return true; RECT r; if (!GetWindowRect(h,out r)) return true; var s=new StringBuilder(512); GetWindowText(h,s,s.Capacity); if (s.Length>0 && r.R-r.L>80 && r.B-r.T>60) Console.WriteLine($"{r.L}\t{r.T}\t{r.R}\t{r.B}\t{Convert.ToBase64String(Encoding.UTF8.GetBytes(s.ToString()))}"); return true; }, IntPtr.Zero); }
+  public static void Run() { var own=(uint)Process.GetCurrentProcess().Id; EnumWindows((h,p) => { if (!IsWindowVisible(h)) return true; uint pid; GetWindowThreadProcessId(h,out pid); if (pid==own) return true; RECT r; if (!GetWindowRect(h,out r)) return true; var s=new StringBuilder(512); GetWindowText(h,s,s.Capacity); if (s.Length>0 && r.R-r.L>80 && r.B-r.T>60) Console.WriteLine(String.Join("\t", r.L.ToString(), r.T.ToString(), r.R.ToString(), r.B.ToString(), Convert.ToBase64String(Encoding.UTF8.GetBytes(s.ToString())))); return true; }, IntPtr.Zero); }
 }
 '@`
     try {
@@ -121,6 +122,7 @@ public static class MiraWindows {
       this.screenshotWindow = new BrowserWindow({
         x, y, width, height,
         frame: false,
+        fullscreen: true,
         transparent: true,
         resizable: false,
         movable: false,

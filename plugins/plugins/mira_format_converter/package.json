@@ -1,0 +1,23 @@
+{
+  "name": "mira_format_converter",
+  "version": "1.0.0",
+  "description": "格式转换：调用服务器本地 ImageMagick / FFmpeg，批量转换图片/视频/音频格式并入库",
+  "author": "Mira Team",
+  "license": "ISC",
+  "main": "dist/index.js",
+  "files": ["dist/**/*", "web/**/*", "package.json", "README.md"],
+  "mira": {
+    "id": "mira_format_converter",
+    "title": "格式转换",
+    "icon": "swap_horiz",
+    "category": "productivity",
+    "tags": ["格式转换", "convert", "ffmpeg", "imagemagick", "图片", "视频", "音频"]
+  },
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "~5.8.3"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "pluginName": "格式转换",
+  "pluginId": "f3a9c2e7-8b4d-4f6a-9e1c-7d5b3a8f2c60",
+  "priority": 5,
+  "version": "1.0.0",
+  "index": "index.js",
+  "tags": ["格式转换", "convert", "ffmpeg", "imagemagick", "图片", "视频", "音频"],
+  "category": "productivity",
+  "description": "调用服务器本地 ImageMagick / FFmpeg 批量转换图片、视频、音频格式，转换结果保存回素材库。",
+  "author": "Mira Team",
+  "enable": true,
+  "config": {},
+  "hotkey": {},
+  "events": [],
+  "dependencies": [],
+  "permissions": ["ui", "window"],
+  "minAppVersion": "1.0.0",
+  "platform": ["win32", "darwin", "linux"]
+}

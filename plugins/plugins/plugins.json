@@ -10,7 +10,32 @@
     "icon": "crop",
     "title": "多选区裁切",
     "category": "productivity",
-    "tags": ["裁切", "crop", "图片", "导出"],
+    "tags": [
+      "裁切",
+      "crop",
+      "图片",
+      "导出"
+    ],
+    "installedAt": "2026-08-21T00:00:00.000Z",
+    "status": "active"
+  },
+  {
+    "name": "mira_format_converter",
+    "enabled": true,
+    "path": "mira_format_converter",
+    "version": "1.0.0",
+    "description": "格式转换：调用服务器 ImageMagick / FFmpeg 批量转换图片/视频/音频格式并入库。",
+    "author": "Mira Team",
+    "main": "dist/index.js",
+    "icon": "swap_horiz",
+    "title": "格式转换",
+    "category": "productivity",
+    "tags": [
+      "格式转换",
+      "convert",
+      "ffmpeg",
+      "imagemagick"
+    ],
     "installedAt": "2026-08-21T00:00:00.000Z",
     "status": "active"
   }
