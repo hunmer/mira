@@ -227,10 +227,10 @@
     {
       "path": "plugins/plugins",
       "name": "mira-server-plugins",
-      "description": "服务端插件集合 - 14 个(旧协议 3 + 格式协议 11);推荐注册表 plugins.recommend.json",
+      "description": "服务端插件集合 - 13 个(旧协议 2 + 格式协议 11);推荐注册表 plugins.recommend.json",
       "language": "TypeScript",
       "pluginProtocols": {
-        "legacy-ServerPlugin": ["mira_n8n", "mira_eagle_extension", "mira_gallery_dl"],
+        "legacy-ServerPlugin": ["mira_eagle_extension", "mira_gallery_dl"],
         "format-registerFileFormat": [
           "mira_3d_format", "mira_spine_format", "mira_epub_format",
           "mira_livp_format", "mira_lottie_format", "mira_pag_format",
@@ -239,7 +239,6 @@
         ]
       },
       "plugins": [
-        { "name": "mira_n8n", "version": "1.0.7", "protocol": "legacy", "description": "n8n 集成 - 独立 WebSocket 服务器(默认禁用)" },
         { "name": "mira_eagle_extension", "version": "1.0.0", "protocol": "legacy", "description": "复刻 Eagle 本地 HTTP 协议(默认禁用)" },
         { "name": "mira_gallery_dl", "protocol": "legacy", "description": "gallery-dl 站点下载集成(getRoutes/registerRounter)" },
         { "name": "mira_3d_format", "version": "1.0.2", "protocol": "format", "hasWeb": true, "description": "GLB/GLTF 解析 + 缩略图" },
@@ -255,7 +254,7 @@
         { "name": "psd-viewer", "version": "1.0.1", "protocol": "format", "hasWeb": true, "description": "PSD/PSB 分层查看器" }
       ],
       "tests": { "exists": false, "path": null },
-      "coverage": { "scanned": true, "depth": "deep", "gaps": ["仅 mira_n8n/psd-viewer/mira_tiptap_format 有独立 CLAUDE.md"] }
+      "coverage": { "scanned": true, "depth": "deep", "gaps": ["仅 psd-viewer/mira_tiptap_format 有独立 CLAUDE.md"] }
     }
   ],
   "removedModules": [
@@ -268,6 +267,7 @@
     { "path": "plugins/plugins/upload_statistics", "name": "upload_statistics", "note": "功能内置于服务端" },
     { "path": "plugins/plugins/mira_thumb_imagemagick", "name": "mira_thumb_imagemagick", "note": "被格式插件体系与内置 ThumbnailService 取代" },
     { "path": "plugins/plugins/mira_duplicate_scanner", "name": "mira_duplicate_scanner", "note": "2026-08-13 移除" },
+    { "path": "plugins/plugins/mira_n8n", "name": "mira_n8n", "note": "2026-08-21 移除,n8n Webhook/WS 集成插件删除" },
     { "path": "plugins/old_plugins/mira_thumb", "name": "mira_thumb", "note": "旧版 ffmpeg 缩略图,位于 old_plugins/" }
   ],
   "scanSummary": {

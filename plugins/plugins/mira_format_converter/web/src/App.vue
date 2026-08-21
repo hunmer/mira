@@ -4,7 +4,7 @@ import HeaderBar from '@/components/HeaderBar.vue'
 import FileList from '@/components/FileList.vue'
 import SettingsPanel from '@/components/SettingsPanel.vue'
 import TaskPanel from '@/components/TaskPanel.vue'
-import { fetchCapabilities, fetchTaskStatus, startConvert } from '@/lib/server'
+import { deleteSourceFiles, fetchCapabilities, fetchTaskStatus, setActiveLibraryId, startConvert } from '@/lib/server'
 import { getSelectedItems, isDark, logError, onThemeChanged } from '@/lib/host'
 import { allowedTargets, classifyFile, type Capabilities, type MediaInput, type ScaleKey, type TaskState } from '@/types'
 
@@ -22,6 +22,9 @@ const inheritMeta = ref(true)
 const task = ref<TaskState | null>(null)
 const running = ref(false)
 const error = ref('')
+const sourceDeleted = ref(false)
+const deleting = ref(false)
+const deletedIds = ref<Set<string>>(new Set())
 
 let pollTimer: number | null = null
 let offTheme: (() => void) | null = null
@@ -37,7 +40,11 @@ watch([files, target], () => {
 
 async function loadFiles() {
   const selected = await getSelectedItems()
-  if (selected.length > 0) files.value = selected
+  if (selected.length > 0) {
+    files.value = selected
+    // 窗口 query 未必带 libraryId（宿主仅注入 token），从素材记录兜底
+    setActiveLibraryId(selected.find((f) => f.libraryId)?.libraryId || '')
+  }
 }
 
 async function loadCapabilities() {
@@ -105,7 +112,30 @@ function resetTask() {
   task.value = null
   running.value = false
   error.value = ''
+  sourceDeleted.value = false
+  deletedIds.value = new Set()
   loadFiles()
+}
+
+/** 删除已完成转换的源素材（移入回收站，服务端广播 file::deleted） */
+async function handleDeleteSources() {
+  if (!task.value || deleting.value) return
+  const fileIds = (task.value.items || []).filter((i) => i.status === 'done').map((i) => i.fileId)
+  if (fileIds.length === 0) return
+  deleting.value = true
+  error.value = ''
+  try {
+    const result = await deleteSourceFiles(fileIds)
+    for (const id of result.deleted) deletedIds.value.add(String(id))
+    sourceDeleted.value = result.failed.length === 0
+    if (result.failed.length > 0) {
+      error.value = `${result.failed.length} 个源文件删除失败：${result.failed.map((f) => f.error).join('；')}`
+    }
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : String(e)
+  } finally {
+    deleting.value = false
+  }
 }
 
 function removeFile(id: string) {
@@ -135,7 +165,7 @@ onUnmounted(() => {
 
     <main class="flex min-h-0 flex-1 gap-3 p-3">
       <div class="h-full w-[46%] min-w-0">
-        <FileList :files="files" :task-items="runningItems" :running="running" @remove="removeFile" />
+        <FileList :files="files" :task-items="runningItems" :running="running" :deleted-ids="deletedIds" @remove="removeFile" />
       </div>
 
       <div class="flex h-full min-w-0 flex-1 flex-col gap-3 overflow-y-auto">
@@ -150,7 +180,7 @@ onUnmounted(() => {
           :error="error"
           @start="start"
         />
-        <TaskPanel :task="task" @reset="resetTask" />
+        <TaskPanel :task="task" :source-deleted="sourceDeleted" :deleting="deleting" @reset="resetTask" @delete-sources="handleDeleteSources" />
       </div>
     </main>
   </div>

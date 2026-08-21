@@ -115,11 +115,10 @@
 
 ## 插件(plugins/)
 
-> **双协议**:旧版 `extends ServerPlugin` 深度介入服务端;新版 `registerFileFormat(ServerFileFormatHandler)` 声明格式扩展与缩略图。共 **14 个**(旧协议 3 + 格式协议 11)。推荐注册表:`plugins/plugins/plugins.recommend.json`;服务端运行时注册表:`packages/mira-app-server/src/plugins/plugins.json`。
+> **双协议**:旧版 `extends ServerPlugin` 深度介入服务端;新版 `registerFileFormat(ServerFileFormatHandler)` 声明格式扩展与缩略图。共 **13 个**(旧协议 2 + 格式协议 11)。推荐注册表:`plugins/plugins/plugins.recommend.json`;服务端运行时注册表:`packages/mira-app-server/src/plugins/plugins.json`。
 
 | 插件 | 版本 | 路径 | 协议 | 职责 |
 |------|------|------|------|------|
-| mira_n8n | v1.0.7 | `mira_n8n` | 旧 | n8n Webhook/WS 集成,独立 WS 转发文件事件(默认禁用) |
 | mira_eagle_extension | v1.0.0 | `mira_eagle_extension` | 旧 | 复刻 Eagle 本地 HTTP 协议,让 Eagle 浏览器扩展无改接入(默认禁用) |
 | mira_gallery_dl | v1.0.x | `mira_gallery_dl` | 旧 | gallery-dl 站点下载集成(自定义类 + `getRoutes()`/`registerRounter`) |
 | mira_3d_format | v1.0.2 | `mira_3d_format` [+web] | 格式 | GLB/GLTF 解析 + GLB 缩略图(render-glb + @gltf-transform) |
@@ -167,6 +166,7 @@
 | upload_statistics | `plugins/plugins/upload_statistics` | 源码移除,功能内置于服务端 |
 | mira_thumb_imagemagick | `plugins/plugins/mira_thumb_imagemagick` | 已移除(功能被格式插件体系与内置 ThumbnailService 取代) |
 | mira_duplicate_scanner | `plugins/plugins/mira_duplicate_scanner` | 已移除(2026-08-13,磁盘无此目录) |
+| mira_n8n | `plugins/plugins/mira_n8n` | 已移除(2026-08-21,n8n Webhook/WS 集成插件删除) |
 | mira_thumb (旧) | `plugins/old_plugins/mira_thumb` | 旧版 ffmpeg 缩略图,位于 old_plugins/ |
 
 ## 模块关系图

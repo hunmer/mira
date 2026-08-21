@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { AlertCircle, ArrowLeftRight, AudioLines, CheckCircle2, Film, Image as ImageIcon, Loader2, X } from '@lucide/vue'
-import { tokenizedUrl } from '@/lib/server'
+import { thumbUrl } from '@/lib/server'
 import { CATEGORY_LABELS, classifyFile, type MediaInput, type TaskItemState } from '@/types'
 
 const props = defineProps<{
   files: MediaInput[]
   taskItems: TaskItemState[]
   running: boolean
+  deletedIds: Set<string>
 }>()
 
 const emit = defineEmits<{
@@ -23,6 +24,10 @@ const statusById = computed(() => {
 
 function itemOf(file: MediaInput): TaskItemState | undefined {
   return statusById.value.get(String(file.id))
+}
+
+function isDeleted(file: MediaInput): boolean {
+  return props.deletedIds.has(String(file.id))
 }
 
 function categoryClass(category: string): string {
@@ -52,8 +57,8 @@ function categoryClass(category: string): string {
         <!-- 缩略图 -->
         <div class="relative size-10 shrink-0 overflow-hidden rounded-md bg-muted">
           <img
-            v-if="file.thumbnailURL"
-            :src="tokenizedUrl(file.thumbnailURL)"
+            v-if="thumbUrl(file)"
+            :src="thumbUrl(file)"
             class="size-full object-cover"
             loading="lazy"
             alt=""
@@ -67,15 +72,17 @@ function categoryClass(category: string): string {
 
         <!-- 名称 + 类别 -->
         <div class="min-w-0 flex-1">
-          <p class="truncate text-xs font-medium" :title="file.name">{{ file.name }}</p>
+          <p class="truncate text-xs font-medium" :class="isDeleted(file) && 'text-muted-foreground line-through'" :title="file.name">{{ file.name }}</p>
           <div class="mt-0.5 flex items-center gap-1.5">
             <span
               class="rounded px-1.5 py-px text-[10px] leading-4"
               :class="categoryClass(classifyFile(file.name))"
             >{{ CATEGORY_LABELS[classifyFile(file.name)] }}</span>
 
+            <span v-if="isDeleted(file)" class="text-[10px] text-muted-foreground">源已删除</span>
+
             <!-- 任务状态 -->
-            <template v-if="itemOf(file)">
+            <template v-else-if="itemOf(file)">
               <span v-if="itemOf(file)!.status === 'pending'" class="text-[10px] text-muted-foreground">等待中</span>
               <span v-else-if="itemOf(file)!.status === 'running'" class="text-[10px] text-primary">
                 {{ itemOf(file)!.progress > 0 && itemOf(file)!.progress < 100 ? itemOf(file)!.progress + '%' : '转换中' }}

@@ -94,7 +94,6 @@ interface ServerSettings {
 ```jsonc
 [
   { "name": "mira_demo",              "enabled": false, "path": "mira_demo" },
-  { "name": "mira_n8n",               "enabled": false, "path": "mira_n8n" },
   { "name": "mira_thumb_imagemagick", "enabled": false, "path": "node_modules/mira_thumb_imagemagick", "status": "active" },
   { "name": "mira_eagle_extension",   "enabled": true,  "path": "node_modules/mira_eagle_extension" }
 ]

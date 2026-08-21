@@ -50,16 +50,6 @@
     "registry": ""
   },
   {
-    "name": "mira_n8n",
-    "version": "1.0.7",
-    "title": "n8n 集成",
-    "description": "通过 Webhook 和 WebSocket 把 Mira 文件事件转发到 n8n 工作流引擎，实现跨应用自动化任务编排。",
-    "icon": "🔗",
-    "category": "integration",
-    "deps": "mira-app-server, mira-app-core",
-    "registry": ""
-  },
-  {
     "name": "mira_pag_format",
     "version": "1.0.0",
     "title": "mira_pag_format",

@@ -96,6 +96,7 @@ class MiraFormatConverterPlugin {
   private dbService: any;
   private router: any;
   private backend: any;
+  private wsServer: any;
   private tempRoot: string;
   private tasks = new Map<string, Task>();
   private queueTail: Promise<void> = Promise.resolve();
@@ -112,16 +113,19 @@ class MiraFormatConverterPlugin {
     this.libraryId = this.dbService.getLibraryId();
     this.router = pluginManager.server.backend.getHttpServer().httpRouter;
     this.backend = pluginManager.server.backend;
+    // MiraWebsocketServer：createFileFromPath 只触发进程内事件，客户端实时刷新需显式广播
+    this.wsServer = pluginManager.server;
     this.tempRoot = path.join(this.backend.dataPath, 'temp', 'format-converter');
     fs.mkdirSync(this.tempRoot, { recursive: true });
 
     this.register('/capabilities', 'get', (req, res) => this.capabilities(req, res));
     this.register('/convert', 'post', (req, res) => this.startConvert(req, res));
     this.register('/status', 'get', (req, res) => this.status(req, res));
+    this.register('/delete', 'post', (req, res) => this.deleteSources(req, res));
 
     this.gcTimer = setInterval(() => this.gcTasks(), TASK_GC_INTERVAL_MS);
     this.gcTimer.unref?.();
-    console.log(`[${PLUGIN_NAME}] registered /api${ROUTE_BASE}/{capabilities,convert,status} (library: ${this.libraryId})`);
+    console.log(`[${PLUGIN_NAME}] registered /api${ROUTE_BASE}/{capabilities,convert,status,delete} (library: ${this.libraryId})`);
   }
 
   private register(subPath: string, method: string, handler: (req: any, res: any) => void): void {
@@ -222,15 +226,15 @@ class MiraFormatConverterPlugin {
         id: `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
         createdAt: Date.now(),
         params: { target, quality: q, scale: parsedScale, inheritMeta: inheritMeta !== false },
+        // name 仅作预填展示；真实文件名/扩展名在执行时以库记录为准（客户端可能只传 fileId）
         items: files.map((f: any) => {
           const fileId = Number(f?.fileId ?? f?.id);
-          const name = String(f?.name || `file_${fileId}`);
           return {
             fileId,
-            name,
-            srcExt: path.extname(name).slice(1).toLowerCase(),
-            category: classifyExt(path.extname(name).slice(1)),
-            status: 'pending',
+            name: String(f?.name || ''),
+            srcExt: '',
+            category: 'unknown' as const,
+            status: 'pending' as const,
             progress: 0,
           } as TaskItem;
         }),
@@ -279,6 +283,47 @@ class MiraFormatConverterPlugin {
     }
   }
 
+  /**
+   * POST delete：删除已完成转换的源素材（移入回收站），逐个广播 file::deleted。
+   * body: { fileIds: number[] }
+   */
+  private async deleteSources(req: any, res: any): Promise<void> {
+    try {
+      const { fileIds } = req.body || {};
+      if (!Array.isArray(fileIds) || fileIds.length === 0) {
+        return res.status(400).json({ success: false, error: 'fileIds 不能为空' });
+      }
+      const deleted: number[] = [];
+      const failed: Array<{ id: number; error: string }> = [];
+      for (const raw of fileIds) {
+        const id = Number(raw);
+        try {
+          const file = await this.dbService.getFile(id);
+          if (!file) throw new Error('素材不存在');
+          const name = String(file.name || file.title || '');
+          const ok = await this.dbService.deleteFile(id, { moveToRecycleBin: true });
+          if (!ok) throw new Error('删除失败');
+          // 与宿主删除路由保持一致的双广播：PluginEvent 触发缩略图清理，LibraryEvent 刷新客户端
+          const deletedAt = Date.now();
+          const deletedFile = { id, name, deletedAt, libraryId: this.libraryId, fileId: id, path: file.path };
+          this.wsServer?.broadcastPluginEvent('file::deleted', {
+            message: { type: 'file', action: 'delete' },
+            result: deletedFile,
+            libraryId: this.libraryId,
+            fileId: id,
+          });
+          this.wsServer?.broadcastLibraryEvent(this.libraryId, 'file::deleted', deletedFile);
+          deleted.push(id);
+        } catch (error) {
+          failed.push({ id, error: error instanceof Error ? error.message : String(error) });
+        }
+      }
+      res.json({ success: failed.length === 0, data: { deleted, failed } });
+    } catch (error) {
+      res.status(500).json({ success: false, error: error instanceof Error ? error.message : String(error) });
+    }
+  }
+
   // ── 任务执行 ──────────────────────────────────────────────
 
   private gcTasks(): void {
@@ -313,6 +358,13 @@ class MiraFormatConverterPlugin {
     try {
       item.status = 'running';
 
+      // 取库内文件记录：以数据库为准补全文件名/扩展名/类别（客户端可能只传 fileId）
+      const file = await this.dbService.getFile(item.fileId);
+      if (!file) throw new Error(`素材不存在 (id=${item.fileId})`);
+      item.name = item.name || String(file.name || file.title || `file_${item.fileId}`);
+      item.srcExt = path.extname(item.name).slice(1).toLowerCase();
+      item.category = classifyExt(item.srcExt);
+
       // 校验源类别与目标格式匹配
       if (item.category === 'unknown') throw new Error(`不支持的源格式 .${item.srcExt || '(无扩展名)'}`);
       const targets = allowedTargets(item.category);
@@ -320,9 +372,6 @@ class MiraFormatConverterPlugin {
         throw new Error(`${item.category === 'image' ? '图片' : item.category === 'video' ? '视频' : '音频'}源不能转换为 .${task.params.target}`);
       }
 
-      // 取库内文件的服务器本地路径
-      const file = await this.dbService.getFile(item.fileId);
-      if (!file) throw new Error(`素材不存在 (id=${item.fileId})`);
       if (String(file.url || '').startsWith('http')) throw new Error('URL 引用素材没有服务器本地文件');
       const srcPath = await this.dbService.getItemFilePath(file);
       if (!srcPath || !fs.existsSync(srcPath)) throw new Error('源文件不在服务器本地磁盘上');
@@ -375,6 +424,22 @@ class MiraFormatConverterPlugin {
       item.newFileName = String(imported.name || path.basename(tempPath));
       if (tagIds.length > 0 && !item.duplicate) {
         await this.dbService.setFileTags(item.newFileId, tagIds).catch(() => undefined);
+      }
+      // 同宿主上传路由双广播：broadcastPluginEvent 触发服务端事件链
+      // （缩略图生成挂 em.on('file::created')），broadcastLibraryEvent 推客户端刷新列表；
+      // 命中 hash 去重时无新文件，不广播
+      if (!item.duplicate) {
+        try {
+          const eventData = { ...imported, libraryId: this.libraryId };
+          this.wsServer?.broadcastPluginEvent('file::created', {
+            message: { type: 'file', action: 'create' },
+            result: eventData,
+            libraryId: this.libraryId,
+          });
+          this.wsServer?.broadcastLibraryEvent(this.libraryId, 'file::created', eventData);
+        } catch (error) {
+          console.warn(`[${PLUGIN_NAME}] broadcast file::created failed:`, error);
+        }
       }
       tempPath = ''; // 已被库接管（copy 模式下库会复制，temp 在任务结束时统一清理）
       item.status = 'done';

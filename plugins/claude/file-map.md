@@ -7,9 +7,9 @@
 | `plugins/plugins/plugins.recommend.json` | 源码侧推荐插件清单(12 个条目;旧 `plugins/plugins.json` 已不存在) |
 | `plugins/plugins/librarys.json` | 库配置 |
 
-## 活跃插件(14 个,每个含 index.ts/package.json/tsconfig.json)
+## 活跃插件(13 个,每个含 index.ts/package.json/tsconfig.json)
 
-> 2026-08-20 起 14 个活跃插件均已有独立 `CLAUDE.md`(见各自目录)。
+> 2026-08-20 起 13 个活跃插件均已有独立 `CLAUDE.md`(见各自目录)。
 
 | 插件 | 版本 | main | 说明 |
 |------|------|------|------|
@@ -19,7 +19,6 @@
 | mira_gallery_dl | 1.0.0 | dist/index.js | gallery-dl 批量导入(协议 A 类,含 README + test.js) |
 | mira_livp_format | 1.0.0 | dist/index.js | LIVP 格式插件(+web) |
 | mira_lottie_format | 1.0.0 | dist/index.js | dotLottie 格式插件(+web) |
-| mira_n8n | 1.0.7 | index.ts | n8n 集成(协议 A,HTTP 路由 `/n8n/list`,WS 端口 7457;见独立 CLAUDE.md) |
 | mira_pag_format | 1.0.0 | dist/index.js | PAG 格式插件(+web) |
 | mira_spine_format | 1.1.1 | dist/index.js | Spine 格式插件(+web) |
 | mira_swf_format | 1.0.0 | dist/index.js | SWF 格式插件(+web) |
@@ -50,6 +49,7 @@ ffmpeg 缩略图生成。可能被服务端内置 ThumbnailService 替代。
 
 ## 已移除插件
 
+- `mira_n8n/` -- 2026-08-21 移除(n8n Webhook/WS 集成)
 - `mira_duplicate_scanner/` -- 2026-08-13 移除(功能内置到 `mira-app-server/src/services/DuplicateScanner.ts`)
 - `mira_user/` -- 源码已移除
 - `upload_statistics/` -- 源码已移除

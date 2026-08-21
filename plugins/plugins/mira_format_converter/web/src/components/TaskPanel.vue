@@ -1,15 +1,25 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import { Loader2, Trash2 } from '@lucide/vue'
 import { Button } from 'mira-plugin-ui/src/components/ui/button'
+import {
+  AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle,
+} from 'mira-plugin-ui/src/components/ui/alert-dialog'
 import type { TaskState } from '@/types'
 
 const props = defineProps<{
   task: TaskState | null
+  sourceDeleted: boolean
+  deleting: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'reset'): void
+  (e: 'delete-sources'): void
 }>()
+
+const confirmOpen = ref(false)
 
 const summary = computed(() => {
   if (!props.task) return null
@@ -76,9 +86,44 @@ const failedItems = computed(() => props.task?.items.filter((i) => i.status === 
         转换产物已保存回素材库{{ task.params.inheritMeta ? '（原文件夹）' : '' }}，可在素材库中查看。
       </p>
 
-      <Button v-if="summary.finished" variant="outline" size="sm" class="w-full" @click="emit('reset')">
-        继续转换其他文件
-      </Button>
+      <template v-if="summary.finished">
+        <!-- 删除已转换的源文件 -->
+        <Button
+          v-if="summary.done > 0 && !sourceDeleted"
+          variant="outline"
+          size="sm"
+          class="w-full text-destructive hover:text-destructive"
+          :disabled="deleting"
+          @click="confirmOpen = true"
+        >
+          <Loader2 v-if="deleting" class="size-4 animate-spin" />
+          <Trash2 v-else class="size-4" />
+          {{ deleting ? '删除中…' : `删除已转换的源文件（${summary.done} 个）` }}
+        </Button>
+        <p v-else-if="sourceDeleted" class="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          <Trash2 class="size-3.5" /> 源文件已移入回收站
+        </p>
+
+        <Button variant="outline" size="sm" class="w-full" @click="emit('reset')">
+          继续转换其他文件
+        </Button>
+      </template>
+
+      <!-- 删除确认 -->
+      <AlertDialog :open="confirmOpen" @update:open="(v: boolean) => (confirmOpen = v)">
+        <AlertDialogContent v-if="confirmOpen">
+          <AlertDialogHeader>
+            <AlertDialogTitle>删除已转换的源文件？</AlertDialogTitle>
+            <AlertDialogDescription>
+              将删除 {{ summary.done }} 个已完成转换的源素材（移入回收站，可从回收站恢复），转换产物保留。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button variant="outline" size="sm" @click="confirmOpen = false">取消</Button>
+            <Button variant="destructive" size="sm" @click="confirmOpen = false; emit('delete-sources')">确认删除</Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   </div>
 </template>

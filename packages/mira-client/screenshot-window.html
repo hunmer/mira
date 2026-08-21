@@ -8,16 +8,17 @@
     * { box-sizing: border-box; }
     html, body, #app { width:100%; height:100%; margin:0; overflow:hidden; background:transparent; }
     body { font-family: system-ui, sans-serif; user-select:none; }
-    #shade { position:fixed; inset:0; background:rgba(0,0,0,.68); }
-    #stage { position:absolute; inset:0; overflow:hidden; }
+    #shade { position:absolute; inset:0; z-index:2; background:rgba(0,0,0,.42); pointer-events:none; }
+    #source { filter:grayscale(.35); }
+    #stage { position:absolute; inset:0; z-index:1; overflow:hidden; }
     #source { position:absolute; pointer-events:none; object-fit:contain; }
-    #canvas { position:absolute; touch-action:none; cursor:crosshair; }
-    #selection { position:absolute; background:rgba(56,189,248,.12); pointer-events:none; display:none; }
+    #canvas { position:absolute; z-index:3; touch-action:none; cursor:crosshair; }
+    #selection { position:absolute; z-index:5; background:rgba(37,99,235,.38); pointer-events:none; display:none; }
     #selection span { position:absolute; left:0; top:-26px; padding:4px 7px; border-radius:4px; background:rgba(0,0,0,.78); color:#fff; font:12px system-ui; white-space:nowrap; }
-    #windows { position:absolute; inset:0; pointer-events:none; }
+    #windows { position:absolute; inset:0; z-index:4; pointer-events:none; }
     .window-box { position:absolute; border:2px solid transparent; pointer-events:none; }
     .window-box.hovered { border-color:#38bdf8; background:rgba(56,189,248,.08); }
-    #toolbar { position:fixed; left:50%; bottom:28px; transform:translateX(-50%); display:flex; align-items:center; gap:4px; padding:8px; border:1px solid rgba(255,255,255,.18); border-radius:9px; background:rgba(20,20,24,.94); box-shadow:0 10px 30px rgba(0,0,0,.4); }
+    #toolbar { position:fixed; z-index:10; left:50%; bottom:28px; transform:translateX(-50%); display:flex; align-items:center; gap:4px; padding:8px; border:1px solid rgba(255,255,255,.18); border-radius:9px; background:rgba(20,20,24,.94); box-shadow:0 10px 30px rgba(0,0,0,.4); }
     button, select, input[type=color] { height:32px; border:0; border-radius:5px; background:transparent; color:#e5e7eb; }
     button { min-width:32px; padding:0 8px; cursor:pointer; font-size:14px; }
     button:hover, button.active { background:#2563eb; color:#fff; }
@@ -31,7 +32,7 @@
 </head>
 <body>
   <div id="app">
-    <div id="shade"></div><div id="stage"><img id="source"><canvas id="canvas"></canvas><div id="windows"></div><div id="selection"><span></span></div></div>
+    <div id="stage"><img id="source"><div id="shade"></div><canvas id="canvas"></canvas><div id="windows"></div><div id="selection"><span></span></div></div>
     <div id="toolbar">
       <button data-tool="select" class="active" title="选择区域">↖</button><button data-tool="pen" title="画笔">✎</button><button data-tool="mosaic" title="马赛克">M</button><button data-tool="text" title="文字">T</button><button data-tool="arrow" title="箭头">→</button><button data-tool="rect" title="矩形">□</button><button data-tool="ellipse" title="椭圆">○</button>
       <span class="divider"></span><input id="color" type="color" value="#ef4444" title="颜色"><select id="width" title="线条粗细"><option value="2">细</option><option value="4" selected>中</option><option value="8">粗</option></select>
@@ -51,11 +52,11 @@
       function draw(){const dpr=devicePixelRatio||1;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,state.frame.w,state.frame.h);state.commands.forEach(c=>drawCommand(ctx,c,1,source));if(state.draft)drawCommand(ctx,state.draft,1,source);updateSelection();document.querySelector('#undo').disabled=!state.commands.length;document.querySelector('#redo').disabled=!state.redo.length}
       function push(c){state.commands.push(c);state.redo=[];draw()}
       function renderWindows(items){state.windows=[];windowsEl.replaceChildren();(items||[]).forEach(item=>{const x=Math.max(0,item.x),y=Math.max(0,item.y),w=Math.min(state.frame.w-x,item.width),h=Math.min(state.frame.h-y,item.height);if(w<8||h<8)return;const el=document.createElement('div');el.className='window-box';el.title=item.title||'窗口';el.style.left=x+'px';el.style.top=y+'px';el.style.width=w+'px';el.style.height=h+'px';state.windows.push({x,y,w,h,el});windowsEl.appendChild(el)})}
-      function updateWindowHover(p){state.windows.forEach(item=>item.el.classList.toggle('hovered',state.tool==='select'&&p.x>=item.x&&p.x<=item.x+item.w&&p.y>=item.y&&p.y<=item.y+item.h))}
+      function updateWindowHover(p){const hit=state.tool==='select'&&!state.start?state.windows.find(item=>p.x>=item.x&&p.x<=item.x+item.w&&p.y>=item.y&&p.y<=item.y+item.h):null;state.windows.forEach(item=>item.el.classList.toggle('hovered',item===hit))}
       function setWindowHitTesting(){windowsEl.style.pointerEvents='none'}
       function finishText(p){const text=window.prompt('输入文字');if(text)push({type:'text',point:p,text,color:state.color,width:state.width})}
-      canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);const p=point(e);updateWindowHover(p);if(state.tool==='text'){finishText(p);return}state.start=p;if(state.tool==='select')state.selection={...p,w:0,h:0};else if(state.tool==='pen'||state.tool==='mosaic')state.draft={type:state.tool,points:[p],color:state.color,width:state.width};else state.draft={type:state.tool,start:p,end:p,color:state.color,width:state.width};draw()})
-      canvas.addEventListener('pointermove',e=>{const p=point(e);updateWindowHover(p);if(!state.start)return;if(state.tool==='select')state.selection=box(state.start,p);else if(state.draft&&state.draft.points)state.draft.points.push(p);else if(state.draft)state.draft.end=p;draw()})
+      canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);const p=point(e);state.start=p;updateWindowHover(p);if(state.tool==='text'){state.start=null;finishText(p);return}if(state.tool==='select')state.selection={...p,w:0,h:0};else if(state.tool==='pen'||state.tool==='mosaic')state.draft={type:state.tool,points:[p],color:state.color,width:state.width};else state.draft={type:state.tool,start:p,end:p,color:state.color,width:state.width};draw()})
+      canvas.addEventListener('pointermove',e=>{const p=point(e);if(!state.start)updateWindowHover(p);if(!state.start)return;if(state.tool==='select')state.selection=box(state.start,p);else if(state.draft&&state.draft.points)state.draft.points.push(p);else if(state.draft)state.draft.end=p;draw()})
       canvas.addEventListener('pointerup',e=>{if(!state.start)return;const p=point(e);canvas.releasePointerCapture(e.pointerId);if(state.tool==='select'){if(!state.selection||state.selection.w<4||state.selection.h<4){const hit=state.windows.find(item=>p.x>=item.x&&p.x<=item.x+item.w&&p.y>=item.y&&p.y<=item.y+item.h);state.selection=hit?{x:hit.x,y:hit.y,w:hit.w,h:hit.h}:null}}else if(state.draft)push(state.draft);state.start=null;state.draft=null;draw()})
       document.querySelectorAll('[data-tool]').forEach(b=>b.addEventListener('click',()=>{state.tool=b.dataset.tool;document.querySelectorAll('[data-tool]').forEach(x=>x.classList.toggle('active',x===b));setWindowHitTesting();canvas.style.cursor=state.tool==='select'?'crosshair':'crosshair'}))
       document.querySelector('#color').addEventListener('input',e=>state.color=e.target.value);document.querySelector('#width').addEventListener('change',e=>state.width=Number(e.target.value))

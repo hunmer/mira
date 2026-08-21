@@ -44,7 +44,6 @@ d:\mira_typescript\
 │   ├── plugins/
 │   │   ├── plugins.recommend.json # 推荐注册表(12 条)
 │   │   ├── librarys.json          # 库配置
-│   │   ├── mira_n8n/              # n8n 集成 (v1.0.7,旧协议)
 │   │   ├── mira_eagle_extension/  # Eagle 协议 (v1.0.0,旧协议)
 │   │   ├── mira_gallery_dl/       # gallery-dl 站点下载 (旧协议)
 │   │   ├── mira_3d_format/        # GLB/GLTF (v1.0.2,格式协议,+web)

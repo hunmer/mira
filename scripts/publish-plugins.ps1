@@ -4,7 +4,7 @@
 # 用法 (PowerShell 交互终端执行):
 #   cd <mira repo root>
 #   ./scripts/publish-plugins.ps1                        # 发布全部插件
-#   ./scripts/publish-plugins.ps1 -Plugins mira_n8n      # 只发指定插件 (可多个, 逗号分隔)
+#   ./scripts/publish-plugins.ps1 -Plugins mira_3d_format # 只发指定插件 (可多个, 逗号分隔)
 #   ./scripts/publish-plugins.ps1 -Install               # 发布前先 npm install
 #   ./scripts/publish-plugins.ps1 -SkipBuild             # 跳过 build, 仅 publish
 #   ./scripts/publish-plugins.ps1 -ContinueOnError       # 单个失败不中断, 末尾汇总

@@ -2,7 +2,7 @@
 
 ## 模块职责
 
-`plugins/plugins/` 目录包含 Mira 服务端的插件集合(当前 **14 个**)。每个插件是独立的 TypeScript 模块,在素材库加载时被 `ServerPluginManager`(`packages/mira-app-server/src/ServerPluginManager.ts`)动态加载。
+`plugins/plugins/` 目录包含 Mira 服务端的插件集合(当前 **13 个**)。每个插件是独立的 TypeScript 模块,在素材库加载时被 `ServerPluginManager`(`packages/mira-app-server/src/ServerPluginManager.ts`)动态加载。
 
 **两套并行协议**:
 
@@ -16,7 +16,7 @@
   - HTTP Hook 拦截(`pluginManager.registerHttpHook`)
   - 前端 UI 路由(`registerRoute`)
   - 持久化配置(`writeConfig/readConfig/writeJson/readJson`)
-- 当前使用方:`mira_n8n`、`mira_eagle_extension`、`mira_gallery_dl`(自定义类,不经 `extends ServerPlugin` 但使用同套注入:`getRoutes()` + `registerRounter` 注册 HTTP 路由)
+- 当前使用方:`mira_eagle_extension`、`mira_gallery_dl`(自定义类,不经 `extends ServerPlugin` 但使用同套注入:`getRoutes()` + `registerRounter` 注册 HTTP 路由)
 
 ### 协议 B — 新版 `registerFileFormat`(格式扩展,推荐)
 
@@ -37,11 +37,10 @@
 3. 调用导出的 `init(inst)` 工厂函数
 4. 旧协议构造函数接收 `{ pluginManager, server, dbService, miraClient? }`;新协议直接用 `inst.pluginManager.registerFileFormat`
 
-## 插件清单(14 个)
+## 插件清单(13 个)
 
 | 插件 | 版本 | 协议 | enabled | +web | 职责 |
 |------|------|------|---------|------|------|
-| mira_n8n | 1.0.7 | A(旧) | false | -- | n8n Webhook/WS 集成,独立 WS 转发文件事件 |
 | mira_eagle_extension | 1.0.0 | A(旧) | false | -- | 复刻 Eagle 本地 HTTP 协议 |
 | mira_gallery_dl | 1.0.0 | A(类) | true | -- | gallery-dl 批量解析图片导入(`/gallery-dl/*` HTTP 路由) |
 | mira_3d_format | 1.0.2 | B(格式) | true | ✓ | GLB/GLTF 解析 + GLB 缩略图 |
@@ -79,6 +78,7 @@ plugins/plugins/<name>/
 
 ## 已移除/弃用
 
+- `mira_n8n`(2026-08-21 删除,n8n Webhook/WS 集成)
 - `mira_duplicate_scanner`(2026-08-13 移除,重复扫描功能内置到 `mira-app-server/src/services/DuplicateScanner.ts`)
 - `mira_thumb_imagemagick`(ImageMagick 缩略图)— 已由格式插件体系与内置 ThumbnailService 取代
 - `old_plugins/mira_thumb`(旧版 ffmpeg 缩略图,v1.0.19)
