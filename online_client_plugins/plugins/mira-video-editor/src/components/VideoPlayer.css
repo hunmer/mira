@@ -4,27 +4,9 @@
   flex-direction: column;
 }
 
-.empty-state {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
-  color: #999;
+/* 播放器空状态（Empty 组件容器） */
+.player-empty {
   margin: 8px;
-}
-
-.empty-icon {
-  font-size: 64px;
-  margin-bottom: 16px;
-}
-
-.empty-text {
-  font-size: 18px;
 }
 
 .player-container {
@@ -91,15 +73,14 @@
   box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
 }
 
-/* 预览模式指示器 */
+/* 预览模式指示器：中性深色半透明，不用彩色渐变 */
 .preview-indicator {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(147, 51, 234, 0.2));
-  border-bottom: 2px solid rgba(59, 130, 246, 0.5);
-  backdrop-filter: blur(10px);
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.75);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .preview-info {
@@ -130,28 +111,20 @@
   color: rgba(255,255,255,0.8);
 }
 
+/* 退出预览：icon-btn 圆形图标按钮，深色区白色前景 */
 .preview-exit-btn {
-  padding: 8px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  background: rgba(239, 68, 68, 0.8);
   color: white;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-  transition: all 0.2s;
 }
 
-.preview-exit-btn:hover {
-  background: rgba(239, 68, 68, 1);
-  transform: scale(1.05);
+.preview-exit-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
 }
 
-/* 快捷标记工具 */
+/* 快捷标记工具：入/出点时间胶囊保持中性，创建片段是唯一强调色按钮 */
 .quick-markers {
   display: flex;
   gap: 8px;
-  padding: 16px;
+  padding: 14px 16px;
   background: rgba(0, 0, 0, 0.9);
   border-radius: 12px;
   margin: 8px;
@@ -160,55 +133,52 @@
 }
 
 .marker-btn {
-  padding: 8px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  background: transparent;
   color: white;
-  border-radius: 4px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   white-space: nowrap;
   transition: all 0.2s;
 }
 
-.marker-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.3);
+/* 入/出点时间胶囊 */
+.marker-time-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
 }
 
+.marker-time-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* 深色区的圆形图标按钮 hover */
+.quick-markers .icon-btn {
+  color: white;
+}
+
+.quick-markers .icon-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* 唯一强调色：创建片段 */
 .marker-btn.primary {
   background: var(--color-primary, #3b82f6);
-  border-color: var(--color-primary, #3b82f6);
+  color: white;
 }
 
-.marker-btn.primary:hover {
+.marker-btn.primary:hover:not(:disabled) {
   opacity: 0.9;
-}
-
-.marker-btn.quick-create {
-  background: linear-gradient(45deg, #f59e0b, #f97316);
-  border-color: #f59e0b;
-  animation: pulse 2s infinite;
-}
-
-.marker-btn.quick-create:hover {
-  background: linear-gradient(45deg, #d97706, #ea580c);
-  transform: scale(1.05);
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.8; }
+  background: var(--color-primary, #3b82f6);
 }
 
 .marker-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-.marker-btn:disabled:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
 }
 
 /* Plyr 主题自定义 */

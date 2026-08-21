@@ -17,6 +17,12 @@ import { Dropdown } from '@/renderer/components/common/Dropdown'
 import PluginIcon from '@/renderer/components/common/PluginIcon.vue'
 import { useToast } from '@renderer/composables/useToast'
 import { openPluginWindow, resolveServerPluginUrl } from '@renderer/plugins/openPluginWindow'
+import {
+  getPluginDevConfig,
+  isPluginDevEnabled,
+  openPluginDevWindow,
+  savePluginDevConfig,
+} from '@renderer/plugins/devMode'
 import { usePluginStore } from '@renderer/stores/plugin'
 import {
   ContextMenu,
@@ -50,38 +56,7 @@ const getPluginSystem = (): any => (window as any).pluginSystem
 
 const pluginStore = usePluginStore()
 
-// ==================== 插件 dev 模式配置（localStorage 持久化） ====================
-
-interface PluginDevConfig {
-  enabled: boolean
-  url: string
-}
-
-const DEV_CONFIG_KEY = 'mira-plugin-dev-config'
-
-function loadDevConfigs(): Record<string, PluginDevConfig> {
-  try {
-    const raw = localStorage.getItem(DEV_CONFIG_KEY)
-    const parsed = raw ? JSON.parse(raw) : {}
-    return parsed && typeof parsed === 'object' ? parsed : {}
-  } catch {
-    return {}
-  }
-}
-
-const devConfigs = ref<Record<string, PluginDevConfig>>(loadDevConfigs())
-
-function persistDevConfigs() {
-  try {
-    localStorage.setItem(DEV_CONFIG_KEY, JSON.stringify(devConfigs.value))
-  } catch { /* ignore */ }
-}
-
-/** dev 模式生效：开关开启且配置了有效 url */
-function isDevEnabled(pluginId: string): boolean {
-  const c = devConfigs.value[pluginId]
-  return !!(c?.enabled && c.url?.trim())
-}
+// ==================== 插件 dev 模式（配置与打开流程见 plugins/devMode.ts） ====================
 
 // dev 模式弹窗状态
 const devDialogOpen = ref(false)
@@ -91,7 +66,7 @@ const devFormUrl = ref('')
 
 function openDevDialog(contribution: PluginContribution) {
   devDialogPlugin.value = contribution
-  const c = devConfigs.value[contribution.pluginId]
+  const c = getPluginDevConfig(contribution.pluginId)
   devFormEnabled.value = !!c?.enabled
   devFormUrl.value = c?.url?.trim() || 'http://localhost:5173'
   devDialogOpen.value = true
@@ -105,25 +80,8 @@ function saveDevConfig() {
     toast.add({ severity: 'warn', summary: t('views.pluginContributionBar.devUrlRequired'), life: 4000 })
     return
   }
-  devConfigs.value = { ...devConfigs.value, [id]: { enabled: devFormEnabled.value, url } }
-  persistDevConfigs()
+  savePluginDevConfig(id, { enabled: devFormEnabled.value, url })
   devDialogOpen.value = false
-}
-
-/** dev 模式下打开自定义 url 的插件窗口；返回是否已处理 */
-async function openDevWindow(contribution: PluginContribution): Promise<boolean> {
-  const url = devConfigs.value[contribution.pluginId]?.url?.trim()
-  if (!url) return false
-  const result = await openPluginWindow({
-    pluginId: contribution.pluginId,
-    url,
-    dev: true,
-    title: `${contribution.title} (dev)`,
-  })
-  if (result?.success === false) {
-    toast.add({ severity: 'error', summary: t('views.pluginContributionBar.windowOpenFailed'), detail: result.message || t('views.common.unknownError'), life: 5000 })
-  }
-  return true
 }
 
 // ==================== 右键菜单操作 ====================
@@ -148,10 +106,10 @@ async function onDisablePlugin(contribution: PluginContribution) {
  * popover 行为触发按钮点击：dev 模式开启时拦截，直接打开 dev url 窗口。
  */
 async function onPopoverTriggerClick(e: Event, contribution: PluginContribution) {
-  if (!isDevEnabled(contribution.pluginId)) return
+  if (!isPluginDevEnabled(contribution.pluginId)) return
   e.preventDefault()
   e.stopPropagation()
-  await openDevWindow(contribution)
+  await openPluginDevWindow(contribution)
 }
 
 onMounted(() => {
@@ -247,8 +205,8 @@ function buildCtx(contribution: PluginContribution): PluginContributionRenderCon
  */
 async function onWindowActivate(contribution: PluginContribution) {
   // dev 模式开启时优先打开自定义 url，跳过插件正常激活流程
-  if (isDevEnabled(contribution.pluginId)) {
-    await openDevWindow(contribution)
+  if (isPluginDevEnabled(contribution.pluginId)) {
+    await openPluginDevWindow(contribution)
     return
   }
   let result: any
@@ -332,7 +290,7 @@ const ContributionHost = defineComponent({
               :contribution-icon="contribution.icon"
               :size="18"
               rounded="sm"
-              :badge="isDevEnabled(contribution.pluginId) ? '#f97316' : undefined"
+              :badge="isPluginDevEnabled(contribution.pluginId) ? '#f97316' : undefined"
             />
           </button>
 
@@ -354,7 +312,7 @@ const ContributionHost = defineComponent({
                   :contribution-icon="contribution.icon"
                   :size="18"
                   rounded="sm"
-                  :badge="isDevEnabled(contribution.pluginId) ? '#f97316' : undefined"
+                  :badge="isPluginDevEnabled(contribution.pluginId) ? '#f97316' : undefined"
                 />
               </button>
             </template>

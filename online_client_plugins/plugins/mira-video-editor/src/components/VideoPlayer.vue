@@ -1,9 +1,10 @@
 <template>
   <div class="video-player">
-    <div v-if="!video" class="empty-state">
-      <div class="empty-icon"><VideoIcon style="width: 56px; height: 56px" /></div>
-      <div class="empty-text">请从左侧选择一个视频</div>
-    </div>
+    <Empty v-if="!video" class="player-empty">
+      <EmptyMedia><VideoIcon style="width: 24px; height: 24px" /></EmptyMedia>
+      <EmptyTitle>请从左侧选择一个视频</EmptyTitle>
+      <EmptyDescription>选择后即可播放、标记片段</EmptyDescription>
+    </Empty>
 
     <div v-else class="player-container">
       <!-- Plyr 视频播放器 -->
@@ -30,8 +31,8 @@
             {{ formatTime(previewClip.start) }} - {{ formatTime(previewClip.end) }}
           </span>
         </div>
-        <button @click="stopPreview" class="preview-exit-btn">
-          <ExitIcon style="width: 12px; height: 12px; vertical-align: -2px" /> 退出预览
+        <button @click="stopPreview" class="icon-btn preview-exit-btn" title="退出预览">
+          <ExitIcon style="width: 14px; height: 14px" />
         </button>
       </div>
 
@@ -39,21 +40,21 @@
 
       <!-- 快捷标记工具 -->
       <div class="quick-markers">
-        <button @click="markIn" class="marker-btn" title="标记入点 (I)">
-          <ArrowLeftIcon style="width: 12px; height: 12px; vertical-align: -2px" />{{ formatTime(clipStartTime) }}
+        <button @click="markIn" class="marker-btn marker-time-btn" title="标记入点 (I)">
+          <ArrowLeftIcon style="width: 12px; height: 12px" />{{ formatTime(clipStartTime) }}
         </button>
-        <button @click="markOut" class="marker-btn" title="标记出点 (O)">
-          {{ formatTime(clipEndTime) }} <ArrowRightIcon style="width: 12px; height: 12px; vertical-align: -2px" />
+        <button @click="markOut" class="marker-btn marker-time-btn" title="标记出点 (O)">
+          {{ formatTime(clipEndTime) }} <ArrowRightIcon style="width: 12px; height: 12px" />
         </button>
         <button
           @click="createClipFromMarkers"
           :disabled="clipStartTime >= clipEndTime"
-          class="marker-btn primary"
+          class="marker-btn icon-btn primary"
           title="创建片段 (C)"
         >
           <PlusIcon style="width: 14px; height: 14px" />
         </button>
-        <button @click="clearMarkers" class="marker-btn" title="清除标记">
+        <button @click="clearMarkers" class="marker-btn icon-btn" title="清除标记">
           <Cross1Icon style="width: 14px; height: 14px" />
         </button>
       </div>
@@ -65,6 +66,7 @@
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import Plyr from 'plyr'
 import 'plyr/dist/plyr.css'
+import { Empty, EmptyMedia, EmptyTitle, EmptyDescription } from 'mira-plugin-ui/src/components/ui/empty'
 import { VideoIcon, EyeOpenIcon, ExitIcon, ArrowLeftIcon, ArrowRightIcon, PlusIcon, Cross1Icon } from '@radix-icons/vue'
 import type { VideoData } from '@/types/video-editor'
 import { resolveVideoSrc } from '@/lib/host'

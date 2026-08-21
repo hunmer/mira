@@ -11,6 +11,7 @@ import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { runBatchOperation } from '@renderer/composables/useBatchOperation'
 import { copyToClipboard } from '@renderer/utils/helpers'
 import { getPluginFileFormats } from '@renderer/plugins/instanceManager'
+import { openPluginDevWindow } from '@renderer/plugins/devMode'
 
 interface UseContextMenuProps {
   selectedItems: string[]
@@ -140,13 +141,22 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
 
   // 新窗口打开：优先使用插件预览器的 iframeUrl（与 MediaPreviewContent.vue 一致），
   // 无可用预览器时回退到 /file-preview 路由。
+  // 预览器插件开启 dev 模式时改开 dev url 窗口（与 PluginContributionBar 共用逻辑）。
   const openFileInNewWindow = async (item: FileInfo) => {
     let targetUrl: string | null = null
     try {
       const libraryId = item.libraryId || libraryStore.currentLibrary?.id
       if (libraryId) {
         const viewers = await miraSDKService.getPreviewViewers(libraryId, item.id)
-        if (viewers.length > 0) targetUrl = viewers[0].iframeUrl
+        if (viewers.length > 0) {
+          const viewer = viewers[0]
+          const handledByDev = await openPluginDevWindow({
+            pluginId: viewer.pluginId,
+            title: viewer.title || viewer.pluginName,
+          })
+          if (handledByDev) return
+          targetUrl = viewer.iframeUrl
+        }
       }
     } catch (error) {
       console.warn('[media-preview] 获取插件预览器失败，回退到 file-preview 路由', error)
