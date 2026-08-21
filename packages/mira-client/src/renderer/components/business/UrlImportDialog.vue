@@ -89,14 +89,73 @@ function extractUrls(value: string): string[] {
   return [...new Set(urls)]
 }
 
+function normalizeWebUrl(value: string, baseUrl?: string): string | null {
+  const candidate = value.trim()
+  if (!candidate || candidate.startsWith('data:') || candidate.startsWith('blob:')) return null
+  try {
+    const parsed = candidate.startsWith('//')
+      ? new URL(`https:${candidate}`)
+      : new URL(candidate, baseUrl)
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? parsed.href : null
+  } catch {
+    return null
+  }
+}
+
+function extractImageUrlsFromHtml(html: string): string[] {
+  if (!html.trim()) return []
+  const sourceUrl = html.match(/^SourceURL:(.+)$/mi)?.[1]?.trim()
+  const document = new DOMParser().parseFromString(html, 'text/html')
+  const candidates: string[] = []
+  const imageAttributes = ['src', 'data-src', 'data-original', 'data-lazy-src']
+
+  document.querySelectorAll('img, source').forEach((element) => {
+    for (const attribute of imageAttributes) {
+      const value = element.getAttribute(attribute)
+      if (value) candidates.push(value)
+    }
+    for (const attribute of ['srcset', 'data-srcset']) {
+      const value = element.getAttribute(attribute)
+      if (!value) continue
+      candidates.push(...value.split(',').map((item) => item.trim().split(/\s+/)[0]))
+    }
+  })
+
+  document.querySelectorAll('[style]').forEach((element) => {
+    const style = element.getAttribute('style') || ''
+    for (const match of style.matchAll(/url\(\s*(['"]?)(.*?)\1\s*\)/gi)) {
+      candidates.push(match[2])
+    }
+  })
+
+  const urls = candidates
+    .map((value) => normalizeWebUrl(value, sourceUrl))
+    .filter((value): value is string => value !== null)
+  return [...new Set(urls)]
+}
+
 function parseUrls(): string[] {
   return extractUrls(text.value)
 }
 
 async function importUrlsFromClipboard() {
   try {
-    const clipboardText = await navigator.clipboard.readText()
-    const urls = extractUrls(clipboardText)
+    const [clipboardText, clipboardHtml] = await Promise.all([
+      window.electronAPI.invoke('clipboard:readText'),
+      window.electronAPI.invoke('clipboard:readHTML'),
+    ])
+    const textUrls = extractUrls(typeof clipboardText === 'string' ? clipboardText : '')
+    const imageUrls = extractImageUrlsFromHtml(typeof clipboardHtml === 'string' ? clipboardHtml : '')
+    const urls = [...new Set([...textUrls, ...imageUrls])]
+    if (import.meta.env.DEV) {
+      console.debug('[UrlImportClipboard] extraction result', {
+        textLength: clipboardText?.length || 0,
+        htmlLength: clipboardHtml?.length || 0,
+        textUrls: textUrls.length,
+        imageUrls: imageUrls.length,
+        total: urls.length,
+      })
+    }
     if (urls.length === 0) {
       toast.error(t('business.urlImportDialog.clipboardEmpty'))
       return
@@ -143,7 +202,7 @@ async function start() {
             v-model="text"
             :placeholder="t('business.urlImportDialog.placeholder')"
             rows="8"
-            class="font-mono text-xs pr-10"
+            class="font-mono text-xs pr-10 min-w-0 max-h-[40vh] max-w-full overflow-y-auto"
             :disabled="!!batchId"
           />
           <button

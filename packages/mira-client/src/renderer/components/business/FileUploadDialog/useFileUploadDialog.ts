@@ -152,18 +152,30 @@ export function useFileUploadDialog(props: Props, emit: Emits) {
 
   async function importFromClipboard() {
     if (isReadingClipboard.value) return
-    if (!navigator.clipboard?.read) {
-      toast.add({
-        severity: 'warn',
-        summary: t('business.uploadDialog.hintTitle'),
-        detail: t('business.fileUploadDialog.clipboardUnavailable'),
-        life: 3000
-      })
-      return
-    }
 
     isReadingClipboard.value = true
     try {
+      const nativeResult = await window.electronAPI.invoke('clipboard:readFiles')
+      if (nativeResult?.success === false) throw new Error(nativeResult.message)
+      if (nativeResult?.data?.length > 0) {
+        fileManagement.addLocalFiles(
+          nativeResult.data,
+          undefined,
+          folderTagPanel.selectedTargetFolderId.value,
+          folderTagPanel.selectedTargetTagIds.value
+        )
+        return
+      }
+
+      if (!navigator.clipboard?.read) {
+        toast.add({
+          severity: 'warn',
+          summary: t('business.uploadDialog.hintTitle'),
+          detail: t('business.fileUploadDialog.clipboardUnavailable'),
+          life: 3000
+        })
+        return
+      }
       const clipboardItems = await navigator.clipboard.read()
       const files: File[] = []
       for (const item of clipboardItems) {

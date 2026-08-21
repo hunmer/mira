@@ -75,7 +75,7 @@ export function useFileManagement() {
 
     const totalSize =
       files.reduce((sum, f) => sum + f.size, 0) +
-      pendingFiles.value.reduce((sum, pf) => sum + pf.file.size, 0)
+      pendingFiles.value.reduce((sum, pf) => sum + (pf.localSize ?? pf.file.size), 0)
     if (totalSize > FILE_LIMITS.MAX_TOTAL_SIZE) {
       toast.add({
         severity: 'warn',
@@ -104,7 +104,12 @@ export function useFileManagement() {
    * - localPath: 文件绝对路径（上传时按需读字节）
    * - localDirPath: 直接归属的目录 path（左栏本地树筛选用）
    */
-  function addLocalFiles(nodes: LocalFsNode[], rootDir?: string) {
+  function addLocalFiles(
+    nodes: LocalFsNode[],
+    rootDir?: string,
+    defaultFolderId?: string,
+    defaultTagIds?: string[]
+  ) {
     // 扁平化收集所有文件节点 + 其直接父目录
     const collected: { node: DroppedFileNode; dir: string | undefined }[] = []
     const walk = (list: LocalFsNode[], dir: string | undefined) => {
@@ -130,7 +135,7 @@ export function useFileManagement() {
 
     const totalSize =
       collected.reduce((sum, c) => sum + (c.node.size || 0), 0) +
-      pendingFiles.value.reduce((sum, pf) => sum + pf.file.size, 0)
+      pendingFiles.value.reduce((sum, pf) => sum + (pf.localSize ?? pf.file.size), 0)
     if (totalSize > FILE_LIMITS.MAX_TOTAL_SIZE) {
       toast.add({
         severity: 'warn',
@@ -148,6 +153,8 @@ export function useFileManagement() {
       const pending: PendingFile = {
         id: `pending-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         file,
+        folderId: defaultFolderId,
+        tags: defaultTagIds ? [...defaultTagIds] : undefined,
         sourceBytes: node.bytes ? markRaw(node.bytes) : undefined,
         localPath: node.path || undefined,
         localDirPath: dir,

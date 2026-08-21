@@ -268,7 +268,10 @@ export class IPCHandlers {
     // 剪贴板操作
     ipcMain.removeAllListeners('clipboard:writeText')
     ipcMain.removeAllListeners('clipboard:readText')
+    ipcMain.removeAllListeners('clipboard:readHTML')
     ipcMain.removeAllListeners('clipboard:writeImage')
+    ipcMain.removeAllListeners('clipboard:readImage')
+    ipcMain.removeAllListeners('clipboard:readFiles')
 
     // 快捷键操作
     ipcMain.removeAllListeners('shortcut:register')
