@@ -46,7 +46,20 @@ export class ImagePreviewController {
 
   constructor(externalFile?: () => FileInfo | undefined) {
     this.externalFile = externalFile
-    this.setCurrentImageIndexById(typeof this.route.params.id === 'string' ? this.route.params.id : undefined, false)
+    // 嵌入模式（无路由参数）时按传入的目标文件定位初始索引
+    const routeId = typeof this.route.params.id === 'string' ? this.route.params.id : undefined
+    const targetId = routeId || (externalFile ? String(externalFile()?.id ?? '') : '') || undefined
+    this.setCurrentImageIndexById(targetId, false)
+
+    // 同路由内连点其他文件（如侧边栏连点）时重新定位到目标文件
+    watch(
+      () => this.externalFile?.()?.id,
+      id => {
+        if (id === undefined || id === null) return
+        if (String(id) === this.currentImageId.value) return
+        this.setCurrentImageIndexById(String(id), false)
+      },
+    )
 
     this.debug('constructor:init', {
       routeId: this.route.params.id,
@@ -81,7 +94,12 @@ export class ImagePreviewController {
    */
   public imageItems = computed<FileInfo[]>(() => {
     const external = this.externalFile?.()
-    if (external) return [external]
+    if (external) {
+      // 嵌入模式：入口（侧边栏等）会把列表写入 imagePreviewItems 作为预览上下文，
+      // 包含目标文件时用整个列表（支持左右切换），否则退化为单条
+      const items = this.mediaStore.imagePreviewItems.filter(file => this.getFileType(file.name) === 'image')
+      return items.some(file => String(file.id) === String(external.id)) ? items : [external]
+    }
 
     const previewItems = this.mediaStore.imagePreviewItems.length > 0
       ? this.mediaStore.imagePreviewItems

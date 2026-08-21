@@ -16,6 +16,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { useViewHistoryStore } from '@renderer/stores/viewHistory'
+import { useMediaStore } from '@renderer/stores/media'
 import { useRelativeTime } from '@renderer/composables/useRelativeTime'
 import { getExtIconUrl } from '@renderer/utils/extIconHelper'
 import { Empty, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
@@ -35,6 +36,7 @@ const props = defineProps<{
 const emit = defineEmits<{ (e: 'open', file: FileInfo | any): void }>()
 
 const viewHistoryStore = useViewHistoryStore()
+const mediaStore = useMediaStore()
 
 // ====== 最近添加：远程拉取 ======
 const recentAdded = ref<FileInfo[]>([])
@@ -79,6 +81,7 @@ interface DisplayRow {
   url?: string
   path?: string
   size?: number
+  localFile?: string
   time?: string // 用于相对时间显示
 }
 
@@ -92,6 +95,7 @@ const displayRows = computed<DisplayRow[]>(() => {
       url: f.url,
       path: f.path,
       size: f.size,
+      localFile: f.localFile,
       time: f.createdAt || (f as any).updatedAt,
     }))
   }
@@ -110,17 +114,28 @@ const displayRows = computed<DisplayRow[]>(() => {
 const isEmpty = computed(() => displayRows.value.length === 0)
 const isLoading = computed(() => props.mode === 'recent_added' && loadingAdded.value)
 
+const toFileInfo = (row: DisplayRow): FileInfo => ({
+  id: row.id,
+  name: row.name,
+  mimeType: row.mimeType || '',
+  thumbnailPath: row.thumbnailPath,
+  url: row.url,
+  path: row.path,
+  size: row.size ?? 0,
+  localFile: row.localFile,
+  libraryId: props.libraryId,
+  createdAt: row.time || '',
+  updatedAt: row.time || '',
+})
+
+// 受控 HoverCard：跳转前显式关闭，避免悬浮大图残留在预览页
+const hoverOpenId = ref('')
+
 const handleRowClick = (row: DisplayRow) => {
-  emit('open', {
-    id: row.id,
-    name: row.name,
-    mimeType: row.mimeType || '',
-    thumbnailPath: row.thumbnailPath,
-    url: row.url,
-    path: row.path,
-    size: row.size,
-    libraryId: props.libraryId,
-  } as FileInfo)
+  hoverOpenId.value = ''
+  // 整个列表写入预览上下文，预览页可左右切换（ImagePreview/VideoPreview 嵌入模式读取）
+  mediaStore.setImagePreviewItems(displayRows.value.map(toFileInfo))
+  emit('open', toFileInfo(row))
 }
 
 // 相对时间格式化（共享实现，见 useRelativeTime.ts）
@@ -190,6 +205,8 @@ onMounted(() => {
           <HoverCard
             :open-delay="300"
             :close-delay="150"
+            :open="hoverOpenId === row.id"
+            @update:open="(open: boolean) => { hoverOpenId = open ? row.id : '' }"
           >
             <HoverCardTrigger as-child>
               <div

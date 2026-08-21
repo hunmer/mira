@@ -27,17 +27,27 @@ export class VideoPreviewController {
   // 视频数据 - 从媒体存储获取
   public videos = computed<FileInfo[]>(() => {
     const external = this.externalFile?.()
-    if (external) return [external]
+    if (external) {
+      // 嵌入模式：入口（侧边栏等）会把列表写入 imagePreviewItems 作为预览上下文，
+      // 包含目标文件时用整个列表（支持列表切换），否则退化为单条
+      const items = this.mediaStore.imagePreviewItems.filter(file => getFileType(file.name) === 'video')
+      return items.some(file => String(file.id) === String(external.id)) ? items : [external]
+    }
     return this.mediaStore.files.filter((file: FileInfo) => getFileType(file.name) === 'video')
   })
 
   constructor(externalFile?: () => FileInfo | undefined) {
     this.externalFile = externalFile
-    // 初始化当前视频ID
+    // 初始化当前视频ID：嵌入模式（无路由参数）时定位到传入的目标文件
     if (this.route.params.id) {
       this.currentVideoId.value = this.route.params.id as string
-    } else if (this.videos.value.length > 0) {
-      this.currentVideoId.value = this.videos.value[0].id
+    } else {
+      const externalId = externalFile?.()?.id
+      if (externalId !== undefined && externalId !== null) {
+        this.currentVideoId.value = String(externalId)
+      } else if (this.videos.value.length > 0) {
+        this.currentVideoId.value = this.videos.value[0].id
+      }
     }
   }
 
