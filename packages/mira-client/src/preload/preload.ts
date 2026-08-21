@@ -3,6 +3,24 @@ import type { ElectronAPI } from '../shared/types'
 
 const isDevelopment = process.env.NODE_ENV === 'development'
 
+// BrowserView 使用独立 session 时，主视图通过 additionalArguments 注入一次认证快照。
+// 仅写入临时 bootstrap key，认证 store 恢复后会迁移到正式的素材库存储 key。
+const authBootstrapArgument = process.argv.find(argument => argument.startsWith('--mira-auth-bootstrap='))
+const libraryArgument = process.argv.find(argument => argument.startsWith('--mira-library-id='))
+console.info('[BrowserView][preload] initialized', {
+  libraryId: libraryArgument?.slice('--mira-library-id='.length) || null,
+  hasAuthBootstrap: Boolean(authBootstrapArgument),
+})
+if (authBootstrapArgument) {
+  try {
+    const encoded = authBootstrapArgument.slice('--mira-auth-bootstrap='.length)
+    const bootstrap = Buffer.from(encoded, 'base64url').toString('utf8')
+    localStorage.setItem('mira-auth-bootstrap', bootstrap)
+  } catch (error) {
+    console.warn('[BrowserView][preload] failed to decode auth bootstrap', error)
+  }
+}
+
 const nativeConsole = {
   debug: console.debug.bind(console),
   info: console.info.bind(console),

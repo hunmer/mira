@@ -184,6 +184,10 @@ router.beforeEach(async (to, _from, next) => {
           setAppReady()
 
         } catch (initError) {
+          console.error('[BrowserView][router] redirecting to Login after initialization failure', {
+            path: to.fullPath,
+            error: initError,
+          })
           next({ name: 'Login', query: { redirect: to.fullPath } })
           return
         }

@@ -8,7 +8,7 @@
  *
  * 由原 HomeSidebar 拆出，逻辑零改动，仅上抛事件给父级（HomeSidebar 编排壳）。
  */
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, toRaw, watch } from 'vue'
 import { useLibraryStore } from '@/renderer/stores/library'
 import { useSettingsStore } from '@/renderer/stores/settings'
 import { useServerListStore } from '@/renderer/stores/serverList'
@@ -56,6 +56,7 @@ const hasOtherBrowserViews = computed(() => browserViewState.value.runningLibrar
 
 const updateBrowserViewState = (state?: BrowserViewState) => {
   if (!state) return
+  console.info('[BrowserView][sidebar] state changed', state)
   browserViewState.value = state
   settingsStore.settings.multiLibraryViewsEnabled = state.enabled
 }
@@ -73,26 +74,35 @@ let removeActivateListener: (() => void) | undefined
 onMounted(() => {
   removeStateListener = window.electronAPI?.on('browser-view:state-changed', updateBrowserViewState)
   removeActivateListener = window.electronAPI?.on('browser-view:activate-library', activateLibrary)
+  if (window.electronAPI) {
+    void (async () => {
+      try {
+        const state = await window.electronAPI.invoke('browser-view:get-state') as BrowserViewState
+        const shouldEnableMultiViews =
+          state.activeId === 'default' &&
+          !state.enabled &&
+          settingsStore.settings.multiLibraryViewsEnabled
+        updateBrowserViewState(state)
+        // 只有 default 主窗口负责首次绑定开关状态；子 BrowserView 不得因本地设置缓存过期而关闭多开。
+        if (shouldEnableMultiViews) {
+          const enabledState = await window.electronAPI.invoke(
+            'browser-view:set-enabled',
+            true,
+            libraryStore.currentLibrary?.id ? String(libraryStore.currentLibrary.id) : null
+          )
+          updateBrowserViewState(enabledState)
+        }
+      } catch (error) {
+        console.warn('[BrowserView][sidebar] failed to get initial state', error)
+      }
+    })()
+  }
 })
 
 onUnmounted(() => {
   removeStateListener?.()
   removeActivateListener?.()
 })
-
-watch(
-  () => libraryStore.currentLibrary?.id,
-  async (libraryId) => {
-    if (!isElectron.value) return
-    const state = await window.electronAPI.invoke(
-      'browser-view:set-enabled',
-      Boolean(settingsStore.settings.multiLibraryViewsEnabled),
-      libraryId ? String(libraryId) : null
-    )
-    updateBrowserViewState(state)
-  },
-  { immediate: true }
-)
 
 watch(() => libraryStore.currentLibrary?.id, id => {
   if (id) localStorage.setItem('mira-active-library-id', String(id))
@@ -154,7 +164,20 @@ const onSelectCollection = async (collection: any, close: () => void) => {
   }
   if (multiLibraryViewsEnabled.value) {
     try {
-      const state = await window.electronAPI.invoke('browser-view:switch', String(collection.id))
+      const authBootstrap = authStore.isLoggedIn
+        ? {
+            // IPC 使用结构化克隆；Pinia 暴露的对象可能仍是 reactive Proxy，必须先转成普通 JSON。
+            user: authStore.user ? JSON.parse(JSON.stringify(toRaw(authStore.user))) : null,
+            token: authStore.token ? String(authStore.token) : null,
+            refreshToken: authStore.refreshToken ? String(authStore.refreshToken) : null,
+            tokenExpiration: authStore.tokenExpiration?.toISOString() || null,
+          }
+        : undefined
+      console.info('[BrowserView][sidebar] switching library', {
+        libraryId: String(collection.id),
+        hasAuthBootstrap: Boolean(authBootstrap?.token),
+      })
+      const state = await window.electronAPI.invoke('browser-view:switch', String(collection.id), authBootstrap)
       updateBrowserViewState(state)
       close()
       return

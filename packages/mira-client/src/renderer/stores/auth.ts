@@ -362,7 +362,12 @@ export const useAuthStore = defineStore('auth', () => {
         return
       }
 
-      const stored = await LibraryStorage.getItem('auth')
+      const bootstrap = localStorage.getItem('mira-auth-bootstrap')
+      const stored = bootstrap || await LibraryStorage.getItem('auth')
+      console.info('[BrowserView][auth] restore auth state', {
+        source: bootstrap ? 'browser-view-bootstrap' : 'library-storage',
+        hasStoredState: Boolean(stored),
+      })
       if (!stored) return
 
       const authData = JSON.parse(stored)
@@ -370,6 +375,10 @@ export const useAuthStore = defineStore('auth', () => {
       token.value = authData.token
       refreshToken.value = authData.refreshToken
       tokenExpiration.value = authData.tokenExpiration ? new Date(authData.tokenExpiration) : null
+      if (bootstrap) {
+        localStorage.removeItem('mira-auth-bootstrap')
+        await persistAuthState()
+      }
       // isLoggedIn 现在是computed属性，会根据token状态自动计算
 
       // 检查令牌是否过期
@@ -379,7 +388,7 @@ export const useAuthStore = defineStore('auth', () => {
         await clearAuthState()
       }
     } catch (err) {
-      console.error('Failed to restore auth state:', err)
+      console.error('[BrowserView][auth] failed to restore auth state:', err)
       await clearAuthState()
     }
   }

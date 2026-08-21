@@ -4,6 +4,7 @@ import { useLibraryStore } from '../stores/library'
 import { useMediaStore } from '../stores/media'
 import { useFolderStore } from '../stores/folder'
 import { useTagStore } from '../stores/tag'
+import { useServerListStore } from '../stores/serverList'
 import { useGlobalInitializationState } from '../composables/useInitializationState'
 import { globalPluginManager } from './GlobalPluginManager'
 import i18n from '../i18n'
@@ -102,6 +103,10 @@ export class InitializationService {
 
       // 认证初始化
       if (!authStore.isLoggedIn) {
+        console.info('[BrowserView][initialization] auth required', {
+          libraryId: useServerListStore().activeServer?.id,
+          hasToken: Boolean(authStore.token),
+        })
         initState.updateStep(t('services.initialization.stepVerifyIdentity'), 90)
         await authStore.initializeAuthAfterConnection()
         if (!authStore.isLoggedIn) {
@@ -115,6 +120,7 @@ export class InitializationService {
       return { success: true }
 
     } catch (error) {
+      console.error('[BrowserView][initialization] app initialization failed', error)
       const errorMessage = error instanceof Error ? error.message : t('services.initialization.appInitFailed')
       await initState.completeInitialization(false, errorMessage)
       return { success: false, error: errorMessage }
@@ -426,6 +432,7 @@ export class InitializationService {
       return { success: true }
 
     } catch (error) {
+      console.error('[BrowserView][initialization] home initialization failed', error)
       const errorMessage = error instanceof Error ? error.message : t('services.initialization.initFailed')
       return { success: false, error: errorMessage }
     }

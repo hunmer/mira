@@ -26,6 +26,13 @@ interface ManagedLibraryView {
   view: BrowserView
 }
 
+interface BrowserViewAuthBootstrap {
+  user: unknown
+  token: string | null
+  refreshToken: string | null
+  tokenExpiration: string | null
+}
+
 /**
  * 素材库多开管理器。主 BrowserWindow 是固定的 default 视图，其他素材库使用
  * 独立持久化 session，确保相同 localStorage key 在不同素材库间不会互相覆盖。
@@ -67,6 +74,7 @@ class BrowserViewManager {
 
   private broadcastState(): BrowserViewState {
     const state = this.getState()
+    logger.info('BrowserViewManager', 'broadcast state', state)
     const targets = [
       this.getWindow()?.webContents,
       ...Array.from(this.views.values(), item => item.view.webContents),
@@ -106,7 +114,7 @@ class BrowserViewManager {
     this.broadcastState()
   }
 
-  private createView(libraryId: string): ManagedLibraryView {
+  private createView(libraryId: string, authBootstrap?: BrowserViewAuthBootstrap): ManagedLibraryView {
     const id = this.getViewId(libraryId)
     const view = new BrowserView({
       webPreferences: {
@@ -117,6 +125,12 @@ class BrowserViewManager {
         webviewTag: true,
         partition: `persist:mira-${Buffer.from(libraryId).toString('base64url')}`,
         preload: path.join(__dirname, '../dist-preload/preload.js'),
+        additionalArguments: [
+          `--mira-library-id=${libraryId}`,
+          ...(authBootstrap?.token
+            ? [`--mira-auth-bootstrap=${Buffer.from(JSON.stringify(authBootstrap)).toString('base64url')}`]
+            : []),
+        ],
       },
     })
     view.setAutoResize({ width: true, height: true })
@@ -124,26 +138,50 @@ class BrowserViewManager {
       void shell.openExternal(url)
       return { action: 'deny' }
     })
+    view.webContents.on('did-start-loading', () => {
+      logger.info('BrowserViewManager', 'BrowserView navigation started', { id, libraryId })
+    })
+    view.webContents.on('did-finish-load', () => {
+      logger.info('BrowserViewManager', 'BrowserView navigation finished', { id, libraryId })
+    })
     view.webContents.on('zoom-changed', () => view.webContents.setZoomFactor(1))
     const managed = { id, libraryId, view }
     this.views.set(id, managed)
     return managed
   }
 
-  private async loadView(managed: ManagedLibraryView): Promise<void> {
+  private async loadView(managed: ManagedLibraryView, authBootstrap?: BrowserViewAuthBootstrap): Promise<void> {
     const win = this.getWindow()
     if (!win) return
     const target = new URL(win.webContents.getURL())
     target.searchParams.set('mira-library-id', managed.libraryId)
+    logger.info('BrowserViewManager', 'load BrowserView once', {
+      id: managed.id,
+      libraryId: managed.libraryId,
+      url: target.toString().replace(/([?&])mira-library-id=[^&]*/g, '$1mira-library-id=<redacted>'),
+      hasAuthBootstrap: Boolean(authBootstrap?.token),
+    })
     await managed.view.webContents.loadURL(target.toString())
   }
 
   async setEnabled(enabled: boolean, currentLibraryId: string | null, sender: WebContents): Promise<BrowserViewState> {
     const win = this.getWindow()
     this.enabled = enabled
+    logger.info('BrowserViewManager', 'set enabled', {
+      enabled,
+      currentLibraryId,
+      senderId: sender.id,
+      defaultLibraryId: this.defaultLibraryId,
+    })
 
     if (enabled) {
-      if (!this.defaultLibraryId && sender.id === win?.webContents.id) {
+      if (sender.id === win?.webContents.id && this.activeId === 'default' && currentLibraryId) {
+        if (this.defaultLibraryId !== currentLibraryId) {
+          logger.info('BrowserViewManager', 'sync default library binding', {
+            previousLibraryId: this.defaultLibraryId,
+            currentLibraryId,
+          })
+        }
         this.defaultLibraryId = currentLibraryId
       }
       return this.broadcastState()
@@ -165,7 +203,13 @@ class BrowserViewManager {
     return this.broadcastState()
   }
 
-  async switchToLibrary(libraryId: string): Promise<BrowserViewState> {
+  async switchToLibrary(libraryId: string, authBootstrap?: BrowserViewAuthBootstrap): Promise<BrowserViewState> {
+    logger.info('BrowserViewManager', 'switch requested', {
+      libraryId,
+      enabled: this.enabled,
+      activeId: this.activeId,
+      hasAuthBootstrap: Boolean(authBootstrap?.token),
+    })
     if (!this.enabled || !libraryId) return this.getState()
 
     if (this.defaultLibraryId === libraryId) {
@@ -175,17 +219,26 @@ class BrowserViewManager {
 
     const id = this.getViewId(libraryId)
     let managed = this.views.get(id)
+    if (managed?.view.webContents.isDestroyed()) {
+      logger.warn('BrowserViewManager', 'found destroyed view, recreating', { id, libraryId })
+      this.views.delete(id)
+      managed = undefined
+    }
     if (!managed) {
-      managed = this.createView(libraryId)
+      logger.info('BrowserViewManager', 'creating BrowserView', { id, libraryId })
+      managed = this.createView(libraryId, authBootstrap)
       try {
-        await this.loadView(managed)
+        await this.loadView(managed, authBootstrap)
       } catch (error) {
         this.views.delete(id)
         if (!managed.view.webContents.isDestroyed()) managed.view.webContents.close({ waitForBeforeUnload: false })
         throw error
       }
+    } else {
+      logger.info('BrowserViewManager', 'reusing BrowserView without reload', { id, libraryId })
     }
     this.show(id)
+    logger.info('BrowserViewManager', 'switched BrowserView', { id, libraryId, state: this.getState() })
     return this.getState()
   }
 
@@ -487,8 +540,8 @@ class MiraApplication {
     ipcMain.handle('browser-view:set-enabled', (event, enabled: boolean, currentLibraryId?: string) =>
       this.browserViews.setEnabled(Boolean(enabled), currentLibraryId ? String(currentLibraryId) : null, event.sender)
     )
-    ipcMain.handle('browser-view:switch', (_event, libraryId: string) =>
-      this.browserViews.switchToLibrary(String(libraryId))
+    ipcMain.handle('browser-view:switch', (_event, libraryId: string, authBootstrap?: BrowserViewAuthBootstrap) =>
+      this.browserViews.switchToLibrary(String(libraryId), authBootstrap)
     )
     ipcMain.handle('browser-view:get-state', () => this.browserViews.state())
     ipcMain.handle('browser-view:close-current', () => this.browserViews.closeCurrent())
