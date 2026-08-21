@@ -6,9 +6,23 @@
 plugins/plugins/my_plugin/
   index.ts              # 入口，导出 init(inst) 工厂函数
   components/           # 前端组件（编译后的 .js 文件）
+  web/                  # 可选：随服务端插件分发的客户端插件
+    plugin.json         # 客户端插件清单
+    index.js            # 客户端插件入口
+    dist/               # 可选：独立页面等前端构建产物
   package.json
   tsconfig.json
 ```
+
+### web 目录：随服务端插件分发客户端插件
+
+服务端插件可以在 `web/` 目录中放置一个完整的前端插件。当前素材库启用该服务端插件后，服务端会读取 `web/plugin.json`；Mira 客户端连接并同步素材库时，会将它作为 `source: 'server'` 的客户端插件发现、加载和管理。
+
+`web/plugin.json` 至少需要提供 `pluginId`、`pluginName`，并通过 `index` 指定入口文件（默认 `index.js`）。入口文件必须存在于 `web/` 内，且遵循客户端本地插件的浏览器脚本契约，例如注册与 `pluginId` 一致的实例工厂。完整的清单字段、生命周期、UI Contribution、独立窗口和脚本模板请阅读 [客户端本地插件系统架构](./client-plugin-architecture.md)。
+
+`web/` 下的入口脚本和其他静态资源由服务端通过 `/server-plugins/:libraryId/:pluginName/*` 提供。前端构建产物应使用相对路径引用资源；这些代码资源可公开访问，但插件调用 `/api` 接口时仍必须携带认证 token。
+
+> `web/` 客户端插件与下文的 `components/` Dashboard 组件是两种不同的前端扩展方式：前者运行在 Mira 客户端插件系统中，后者通过服务端 Dashboard 的 `window.MiraPluginComponents` 注册。
 
 ## 入口文件
 

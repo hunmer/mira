@@ -70,6 +70,7 @@ import GeneralPanel from '../../views/settings/GeneralPanel.vue'
 import LibraryPanel from '../../views/settings/LibraryPanel.vue'
 import NotificationsPanel from '../../views/settings/NotificationsPanel.vue'
 import ImportPanel from '../../views/settings/ImportPanel.vue'
+import ScreenshotPanel from '../../views/settings/ScreenshotPanel.vue'
 import FloatingBallPanel from '../../views/settings/FloatingBallPanel.vue'
 import PluginsPanel from '../../views/settings/pluginPlan.vue'
 import NetworkPanel from '../../views/settings/NetworkPanel.vue'
@@ -117,6 +118,7 @@ const currentComponent = computed(() => {
     library: LibraryPanel,
     notifications: NotificationsPanel,
     import: ImportPanel,
+    screenshot: ScreenshotPanel,
     'floating-ball': FloatingBallPanel,
     plugins: PluginsPanel,
     network: NetworkPanel,

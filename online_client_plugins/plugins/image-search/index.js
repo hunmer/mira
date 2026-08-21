@@ -1,5 +1,5 @@
 /**
- * Pinterest 视觉搜索 v2（mira-pinterest-search-v2）
+ * 图片搜索（image-search，原 mira-pinterest-search-v2）
  *
  * 架构：
  *   1. 本文件 index.js —— 宿主侧脚本，注入到 Mira 主窗口 document。
@@ -8,6 +8,8 @@
  *   2. dist/index.html —— Vue SPA（vite 构建），由插件窗口 loadFile 加载。
  *      窗口内经 plugin-window-preload 注入的 window.mira（Eagle 兼容 API）
  *      读取选中图片 / 保存素材 / 切换置顶 / 跟随主题。
+ *      两种搜索模式：Pinterest 走接口搜图；其他站点经临时图床上传后
+ *      以 URL 反搜，页面由 <webview> 内嵌加载。
  *
  * 契约：window 行为贡献（behavior:'window' + onActivate）见宿主 renderer/plugins/types.ts。
  */
@@ -18,9 +20,9 @@
   const WINDOW_OPTS = {
     pluginId: PLUGIN_ID,
     entry: ENTRY,
-    title: 'Pinterest 视觉搜索',
-    width: 1120,
-    height: 700,
+    title: '图片搜索',
+    width: 1280,
+    height: 760,
   }
 
   function serializableFiles(files) {
@@ -51,8 +53,8 @@
       const contribution = {
         id: CONTRIBUTION_ID,
         pluginId: PLUGIN_ID,
-        title: 'Pinterest 视觉搜索 v2',
-        description: '用选中的图片搜索相似内容',
+        title: '图片搜索',
+        description: '用选中的图片在多个网站搜索相似内容',
         icon: { type: 'material', value: 'image_search' },
         behavior: 'window',
         onActivate: (ctx) => ctx.openPluginWindow(WINDOW_OPTS),
@@ -61,11 +63,11 @@
       this.unregisterMenu = this.api.media?.registerContextMenu?.({
         id: `${PLUGIN_ID}:selected`,
         pluginId: PLUGIN_ID,
-        label: 'Pinterest 视觉搜索 v2',
+        label: '图片搜索',
         icon: 'image_search',
         onSelect: (files) => this.open(files),
       }) || null
-      this.api.log.info('[mira-pinterest-search-v2] 已初始化')
+      this.api.log.info('[image-search] 已初始化')
     }
 
     async cleanup() {

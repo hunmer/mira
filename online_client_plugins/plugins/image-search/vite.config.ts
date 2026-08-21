@@ -10,7 +10,15 @@ import { fileURLToPath, URL } from 'node:url'
 // 原子类由本插件 tailwind 入口 @source 扫描编译（dist 产物不含 alert-dialog
 // Action/Cancel 与 empty 子组件，直接用 dist 会缺导出）。
 export default defineConfig({
-  plugins: [vue(), tailwindcss()],
+  plugins: [
+    vue({
+      template: {
+        // <webview> 为 Electron 自定义元素（网页搜图内嵌站点），勿按组件解析
+        compilerOptions: { isCustomElement: (tag) => tag === 'webview' },
+      },
+    }),
+    tailwindcss(),
+  ],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

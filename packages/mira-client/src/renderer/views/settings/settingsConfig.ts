@@ -11,6 +11,7 @@ export const settingSections: SettingSection[] = [
   { id: 'library', name: 'settings.sections.library', icon: 'perm_media' },
   { id: 'notifications', name: 'settings.sections.notifications', icon: 'notifications' },
   { id: 'import', name: 'settings.sections.import', icon: 'upload_file' },
+  { id: 'screenshot', name: 'settings.sections.screenshot', icon: 'screenshot_monitor' },
   { id: 'floating-ball', name: 'settings.sections.floatingBall', icon: 'bubble_chart' },
   { id: 'plugins', name: 'settings.sections.plugins', icon: 'extension' },
   { id: 'network', name: 'settings.sections.network', icon: 'lan' },
@@ -29,4 +30,3 @@ export const themeOptions = [
   { label: 'settings.themeDark', value: 'dark' },
   { label: 'settings.themeAuto', value: 'auto' }
 ]
-

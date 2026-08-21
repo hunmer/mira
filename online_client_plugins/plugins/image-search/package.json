@@ -1,8 +1,8 @@
 {
-  "name": "mira-pinterest-search-v2",
-  "version": "2.0.0",
+  "name": "image-search",
+  "version": "3.0.0",
   "private": true,
-  "description": "Pinterest 视觉搜索 v2：shadcn-vue（mira-plugin-ui）重写版，Vite 源码工程，dev 启动开发服务器",
+  "description": "以图搜图聚合搜索：Pinterest 接口 + 多搜索引擎 webview 网页搜图",
   "type": "module",
   "scripts": {
     "dev": "vite",

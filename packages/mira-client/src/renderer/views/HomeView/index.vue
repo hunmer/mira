@@ -19,6 +19,7 @@ import HomeHeader from './HomeHeader.vue'
 import HomeSidebar from './HomeSidebar.vue'
 import HomeTabsBar from './HomeTabsBar.vue'
 import HomeDialogs from './HomeDialogs.vue'
+import ScreenshotDialog from '@renderer/components/business/ScreenshotDialog.vue'
 import PluginContributionBar from './PluginContributionBar.vue'
 
 // shadcn Tabs（右侧详情面板：保留 tabs 壳结构供未来扩展）
@@ -240,6 +241,9 @@ const {
 
 // 额外的对话框状态
 const showFileUploadDialog = ref(false)
+const showScreenshotDialog = ref(false)
+const screenshotFile = ref<File>()
+const openScreenshot = () => { showScreenshotDialog.value = true }
 const sidebarUploadTarget = ref<{ folderId?: string | number | null; tagIds?: Array<string | number> }>()
 // 导入本地文件夹：传入上传对话框的本地目录树（rootPath + tree）
 const uploadInitialTree = ref<{ rootPath: string; tree: any[] }>()
@@ -440,6 +444,7 @@ const { performInitialization } = homeInit
 let cleanupModules: (() => void) | null = null
 
 onMounted(async () => {
+  document.addEventListener('show-screenshot-dialog', openScreenshot)
   try {
     cleanupModules = await performInitialization(
       homeController,
@@ -522,6 +527,7 @@ const handleLogout = async () => {
 // 组件卸载清理
 // ============================================
 onUnmounted(() => {
+  document.removeEventListener('show-screenshot-dialog', openScreenshot)
   if (cleanupModules) {
     cleanupModules()
   }
@@ -750,6 +756,7 @@ onUnmounted(() => {
       :upload-initial-folder-id="uploadInitialFolderId"
       :upload-initial-tag-ids="uploadInitialTagIds"
       :upload-initial-tree="uploadInitialTree"
+      :screenshot-file="screenshotFile"
       @create-library="handleCreateLibrary"
       @edit-server="handleEditServer"
       @add-server="handleAddServer"
@@ -757,6 +764,7 @@ onUnmounted(() => {
       @select-folder="handleFolderSelect"
       @select-tag="handleTagSelect"
     />
+    <ScreenshotDialog v-model:visible="showScreenshotDialog" @captured="file => { screenshotFile = file; if (settingsStore.settings.screenshotAutoImport && settingsStore.settings.screenshotOpenUploadDialog) showFileUploadDialog = true }" />
   </div>
 </template>
 

@@ -11,6 +11,14 @@ import type { ShortcutConfig, ShortcutAction, ShortcutBinding } from '../service
 export const defaultActions: ShortcutAction[] = [
   // 常规操作
   {
+    id: 'screenshot.capture',
+    title: '截图',
+    description: '截取屏幕并按截图设置处理',
+    category: 'system',
+    icon: 'screenshot_monitor',
+    callback: () => document.dispatchEvent(new CustomEvent('shortcut:screenshot'))
+  },
+  {
     id: 'app.search',
     title: 'shortcuts.actions.appSearch.title',
     description: 'shortcuts.actions.appSearch.description',
@@ -429,6 +437,7 @@ export const defaultActions: ShortcutAction[] = [
  * 默认快捷键绑定
  */
 export const defaultBindings: ShortcutBinding[] = [
+  { shortcut: 'Ctrl+Shift+S', priority: 100, actionId: 'screenshot.capture', enabled: true, isGlobal: true, description: '截图快捷键' },
   // 常规操作快捷键
   {
     shortcut: 'Ctrl+K',

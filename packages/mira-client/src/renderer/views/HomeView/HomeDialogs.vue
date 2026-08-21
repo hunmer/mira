@@ -34,6 +34,7 @@ defineProps<{
   uploadInitialFolderId?: string
   uploadInitialTagIds?: string[]
   uploadInitialTree?: { rootPath: string; tree: LocalFsNode[] }
+  screenshotFile?: File
 }>()
 
 const emit = defineEmits<{
@@ -102,6 +103,7 @@ const emit = defineEmits<{
     :initial-folder-id="uploadInitialFolderId"
     :initial-tag-ids="uploadInitialTagIds"
     :initial-local-tree="uploadInitialTree"
+    :initial-files="screenshotFile ? [screenshotFile] : undefined"
   />
 
   <!-- 插件管理对话框 -->

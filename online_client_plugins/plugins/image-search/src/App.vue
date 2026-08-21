@@ -3,7 +3,9 @@ import { defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch } from 'vu
 import { ImageDown } from '@lucide/vue'
 import HeaderBar from '@/components/HeaderBar.vue'
 import ResultPanel from '@/components/ResultPanel.vue'
+import SiteRail from '@/components/SiteRail.vue'
 import TaskList from '@/components/TaskList.vue'
+import WebPanel from '@/components/WebPanel.vue'
 
 // 弹窗类组件异步加载:reka-ui Dialog 等依赖拆出主 chunk(本地文件加载,延迟可忽略)
 const InputWarningDialog = defineAsyncComponent(() => import('@/components/InputWarningDialog.vue'))
@@ -23,6 +25,7 @@ import {
   saveItem,
   state,
 } from '@/stores/tasks'
+import { engineState } from '@/stores/engine'
 
 /**
  * 组合根：三栏布局（任务列表 / 种子图裁剪 / 结果瀑布流）+ 全局交互：
@@ -204,7 +207,10 @@ onBeforeUnmount(() => {
       <!-- 常显：空任务时也可经底部「+」从素材库添加图片建任务；
            种子图裁剪已移入 TaskList 左上角弹窗（原中栏常驻区移除） -->
       <TaskList />
-      <ResultPanel :scale="scale" />
+      <!-- 两种搜索模式：Pinterest 走接口渲染瀑布流；其他站点 webview 加载网页 -->
+      <ResultPanel v-show="engineState.engine === 'pinterest'" :scale="scale" />
+      <WebPanel v-show="engineState.engine !== 'pinterest'" />
+      <SiteRail />
     </div>
 
     <!-- 拖拽整窗上传提示层 -->

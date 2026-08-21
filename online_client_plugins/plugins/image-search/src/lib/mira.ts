@@ -57,7 +57,7 @@ export async function getSelectedItems(): Promise<MediaInput[]> {
   try {
     return (await host.item?.getSelected?.()) || []
   } catch (error) {
-    host.log?.error?.('[mira-pinterest-search-v2] getSelected failed:', error)
+    host.log?.error?.('[image-search] getSelected failed:', error)
     return []
   }
 }

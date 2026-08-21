@@ -113,7 +113,11 @@
     "icon": "edit_note",
     "title": "Tiptap 文档编辑器",
     "category": "productivity",
-    "tags": ["tiptap", "editor", "document"],
+    "tags": [
+      "tiptap",
+      "editor",
+      "document"
+    ],
     "status": "active"
   },
   {
@@ -153,6 +157,26 @@
       "批量导入"
     ],
     "installedAt": "2026-08-14T00:00:00.000Z",
+    "status": "active"
+  },
+  {
+    "name": "mira_image_cropper",
+    "enabled": true,
+    "path": "../../../../plugins/plugins/mira_image_cropper",
+    "version": "1.0.0",
+    "description": "多选区图片裁切工具：单图多矩形选区、实时预览、批量导出 PNG/JPG，可一键导出到素材库。",
+    "author": "Mira Team",
+    "main": "dist/index.js",
+    "icon": "crop",
+    "title": "多选区裁切",
+    "category": "productivity",
+    "tags": [
+      "裁切",
+      "crop",
+      "图片",
+      "导出"
+    ],
+    "installedAt": "2026-08-21T02:22:30.322Z",
     "status": "active"
   }
 ]

@@ -69,6 +69,12 @@ export interface AppSettings {
   // 导入设置
   directImportMode: boolean
 
+  // 截图设置
+  screenshotFormat: 'png' | 'jpeg' | 'webp'
+  screenshotCopyToClipboard: boolean
+  screenshotAutoImport: boolean
+  screenshotOpenUploadDialog: boolean
+
   // 悬浮球设置
   /** 是否启用悬浮球（默认关闭，opt-in） */
   floatingBallEnabled: boolean
@@ -203,6 +209,10 @@ export const useSettingsStore = defineStore('settings', () => {
 
     // 导入设置
     directImportMode: false,
+    screenshotFormat: 'png',
+    screenshotCopyToClipboard: true,
+    screenshotAutoImport: false,
+    screenshotOpenUploadDialog: true,
 
     // 悬浮球设置
     floatingBallEnabled: false,
@@ -593,6 +603,10 @@ export const useSettingsStore = defineStore('settings', () => {
       videoPreviewMuted: true,
       visibleItemFields: ['filename', 'format', 'size', 'folder', 'tags', 'videoPlayIcon'],
       directImportMode: false,
+      screenshotFormat: 'png',
+      screenshotCopyToClipboard: true,
+      screenshotAutoImport: false,
+      screenshotOpenUploadDialog: true,
       floatingBallEnabled: false,
       floatingBallClickAction: 'openUpload',
       debugMode: false,

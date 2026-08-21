@@ -36,6 +36,8 @@ export interface SearchTask {
   imageUrl: string
   /** 原始种子图（创建任务时）；裁剪后可一键恢复 */
   originalUrl: string
+  /** 种子图的公网在线地址缓存（网页搜图用；裁剪/恢复后失效重传） */
+  webSeedUrl?: string
   /** 缩略图地址（左栏列表展示；素材库任务用缩略图直链，省流量） */
   thumbUrl?: string
   state: TaskState

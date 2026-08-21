@@ -21,6 +21,7 @@ import { LoginWindowHandlers } from './LoginWindowHandlers'
 import { getAutoUpdater } from '../services/useAutoUpdater'
 import { getProcmLogger } from '../services/ProcmService'
 import { ProtocolService } from '../services/ProtocolService'
+import { ScreenshotHandlers } from './ScreenshotHandlers'
 
 type RendererLogLevel = 'log' | 'info' | 'warn' | 'error' | 'debug'
 
@@ -53,6 +54,7 @@ export class IPCHandlers {
   private pluginWindowHandlers: PluginWindowHandlers
   private appHandlers: AppHandlers
   private loginWindowHandlers: LoginWindowHandlers
+  private screenshotHandlers: ScreenshotHandlers
 
   constructor() {
     this.pluginHandler = new PluginHandler()
@@ -73,6 +75,7 @@ export class IPCHandlers {
     this.floatingBallHandlers = new FloatingBallWindowHandlers()
     this.menuHandlers = new MenuHandlers()
     this.shortcutHandlers = new ShortcutHandlers()
+    this.screenshotHandlers = new ScreenshotHandlers()
     this.autoUpdateHandlers = new AutoUpdateHandlers()
     this.networkHandlers = new NetworkHandlers()
     this.serverDeployHandlers = new ServerDeployHandlers()
@@ -116,6 +119,7 @@ export class IPCHandlers {
   public setMainWindow(window: BrowserWindow): void {
     this.menuHandlers.setMainWindow(window)
     this.shortcutHandlers.setMainWindow(window)
+    this.screenshotHandlers.setMainWindow(window)
     getAutoUpdater().setMainWindow(window)
     this.serverDeployHandlers.setMainWindow(window)
   }
@@ -219,6 +223,7 @@ export class IPCHandlers {
 
     // 清理剩余的监听器
     ipcMain.removeAllListeners('protocol:register-handler')
+    ipcMain.removeHandler('screenshot:capture')
     ipcMain.removeAllListeners('protocol:unregister-handler')
     ipcMain.removeAllListeners('protocol:get-handlers')
     ipcMain.removeAllListeners('protocol:create-url')

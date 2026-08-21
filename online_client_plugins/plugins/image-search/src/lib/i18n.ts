@@ -4,7 +4,7 @@
 const dict: Record<string, string> = {
   'app.title': '图片搜索',
   'main.empty.title': '还没有搜索任务',
-  'main.empty.content': '选中图片后右键「Pinterest 视觉搜索」，或直接拖入 / 粘贴图片',
+  'main.empty.content': '选中图片后右键「图片搜索」，或直接拖入 / 粘贴图片',
   'main.empty.demo': '试一试示例图片...',
   'main.waiting.title': '正在搜索相似内容…',
   'main.noResult.title': '没有找到相似结果',
@@ -64,6 +64,15 @@ const dict: Record<string, string> = {
   'dialog.inputWarning.cancel': '只加载前 5 张',
   'dialog.inputWarning.ok': '全部加载',
   'dropzone.tip': '松开鼠标，添加到搜索任务',
+  'site.apiMode': '接口搜图',
+  'site.webMode': '网页搜图',
+  'web.noWebview': '当前环境不支持内嵌网页，请在 Mira 客户端中使用',
+  'web.noTask': '请先在左侧添加搜索任务',
+  'web.uploading': '正在上传种子图到临时图床…',
+  'web.loading': '正在加载搜索页面…',
+  'web.loadFailed': '页面加载失败',
+  'web.refresh': '刷新页面',
+  'web.openExternal': '用浏览器打开',
 }
 
 export function t(key: string, params?: Record<string, string | number>): string {

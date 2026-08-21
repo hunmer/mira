@@ -139,7 +139,7 @@ async function runSearch(task: SearchTask, seed: string, bookmark: string | unde
     } else {
       task.state = 'failed'
       task.error = error instanceof Error ? error.message : String(error)
-      logError('[mira-pinterest-search-v2] search failed:', task.error)
+      logError('[image-search] search failed:', task.error)
     }
   }
 }
@@ -166,6 +166,7 @@ export function loadMore(task: SearchTask): void {
 export function cropperSearch(task: SearchTask, dataUrl: string): void {
   task.imageUrl = dataUrl
   task.thumbUrl = dataUrl
+  task.webSeedUrl = undefined
   enqueue(task)
 }
 
@@ -174,6 +175,7 @@ export function restoreSeed(task: SearchTask): void {
   if (task.imageUrl === task.originalUrl) return
   task.imageUrl = task.originalUrl
   task.thumbUrl = undefined
+  task.webSeedUrl = undefined
   enqueue(task)
 }
 
@@ -245,9 +247,9 @@ export async function saveItem(item: ResultItem): Promise<void> {
     const large = await getLargeUrl(item.largeUrl || item.url)
     await saveToLibrary(large, { website: pinUrl(item.id), name: item.title || undefined })
     item.saved = true
-    logInfo('[mira-pinterest-search-v2] saved pin', item.id)
+    logInfo('[image-search] saved pin', item.id)
   } catch (error) {
-    logError('[mira-pinterest-search-v2] save failed:', error)
+    logError('[image-search] save failed:', error)
     window.alert(`保存失败：${error instanceof Error ? error.message : String(error)}`)
   }
 }

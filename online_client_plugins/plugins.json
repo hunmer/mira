@@ -1,7 +1,74 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-21T01:37:28.404Z",
+  "generatedAt": "2026-08-21T02:05:44.670Z",
   "plugins": [
+    {
+      "pluginId": "7c1f9e2a-4b3d-4c8e-9f6a-2d5b8e7c1a04",
+      "pluginName": "图片搜索",
+      "version": "3.0.0",
+      "description": "以图搜图聚合搜索：Pinterest 接口搜图 + Google/Bing/Yandex/TinEye/SauceNAO/搜狗网页搜图（种子图自动上传临时图床后按 URL 反搜，webview 内嵌浏览）。",
+      "author": "Mira Team",
+      "category": "media",
+      "tags": [
+        "Pinterest",
+        "Google",
+        "以图搜图",
+        "视觉搜索",
+        "webview"
+      ],
+      "platform": [
+        "win32",
+        "darwin",
+        "linux"
+      ],
+      "directory": "plugins/image-search",
+      "icon": "icon.png",
+      "readme": "README.md",
+      "size": 1170507,
+      "checksum": "sha256:0538623696f044ef1ad651cef03804d46d66ff6ff3268c409fc410fb178170ac",
+      "files": [
+        {
+          "path": "README.md",
+          "size": 4583,
+          "checksum": "sha256:a53d2201a1ed438475d893936758c4b6c6611cd1369a38e426daf584e27054b4"
+        },
+        {
+          "path": "plugin.json",
+          "size": 674,
+          "checksum": "sha256:6c80acb477a2ac80be526556753121ed50cfedb27a14c3199d59ff2715998491"
+        },
+        {
+          "path": "package.json",
+          "size": 705,
+          "checksum": "sha256:fee771a1502f1af73d26b94becfa9afd05293627f01f58f881cece6846518991"
+        },
+        {
+          "path": "index.js",
+          "size": 3163,
+          "checksum": "sha256:948df9129bfb427c7fcf65b5ccae8fe9b01ccae270377507ea6e487f02a0c95a"
+        },
+        {
+          "path": "icon.png",
+          "size": 56006,
+          "checksum": "sha256:fc4a89a9be8480bbe37aaabc18992545065036ccff17ff09d790c6cf5527b96b"
+        },
+        {
+          "path": "dist/index.html",
+          "size": 411,
+          "checksum": "sha256:c8c0e26ea7fb21ff59bb5a1bfb8138d48cbd0a3d57db7a712074ef5451e7ddaf"
+        },
+        {
+          "path": "dist/assets/index-RrVn7Sli.js",
+          "size": 1028298,
+          "checksum": "sha256:38a7a2d7cb749875f0e7d937d88f23e327371565aa68c2c4010b3829ad7b6224"
+        },
+        {
+          "path": "dist/assets/index-CV44G367.css",
+          "size": 76667,
+          "checksum": "sha256:07f55488719a45571c5d3f359a42c531fbeef128d311f46a76db8fe80d484fac"
+        }
+      ]
+    },
     {
       "pluginId": "d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70",
       "pluginName": "3D 格式预览",
@@ -103,72 +170,6 @@
           "path": "index.js",
           "size": 3078,
           "checksum": "sha256:1772f031fb2d9dda7907fa34a7d0d3a38312ea0ae8b233f269b417469f850b33"
-        }
-      ]
-    },
-    {
-      "pluginId": "7c1f9e2a-4b3d-4c8e-9f6a-2d5b8e7c1a04",
-      "pluginName": "Pinterest 视觉搜索 v2",
-      "version": "2.0.0",
-      "description": "对 Mira 中选中的图片执行 Pinterest 视觉搜索（shadcn-vue 重写版：任务队列、裁剪搜索、瀑布流结果、一键保存到素材库）。",
-      "author": "Mira Team",
-      "category": "media",
-      "tags": [
-        "Pinterest",
-        "视觉搜索",
-        "图片搜索",
-        "shadcn-vue"
-      ],
-      "platform": [
-        "win32",
-        "darwin",
-        "linux"
-      ],
-      "directory": "plugins/mira-pinterest-search-v2",
-      "icon": "icon.png",
-      "readme": "README.md",
-      "size": 1160813,
-      "checksum": "sha256:af1734c6e552acea6dc750cfe3135150bf5b8ac8e977fba8613459204bdf1d22",
-      "files": [
-        {
-          "path": "README.md",
-          "size": 3964,
-          "checksum": "sha256:140427864af19ba9f4ad5b9c012b39ceecc4b3bdd5e47588c43f2ec12dc4fbcc"
-        },
-        {
-          "path": "plugin.json",
-          "size": 653,
-          "checksum": "sha256:3248160f35f23581cd0571724d02824e3baab50d579d61c6f0f38caa44197925"
-        },
-        {
-          "path": "package.json",
-          "size": 750,
-          "checksum": "sha256:4ce7c8c0df979517dd18b0e43c8c0d8390e89f96d376372558c4b55d37ac7dc7"
-        },
-        {
-          "path": "index.js",
-          "size": 3035,
-          "checksum": "sha256:2dea27f00bc603c7c419db604b1ba7d7f5f415c3221123bb0d84875f212bd150"
-        },
-        {
-          "path": "icon.png",
-          "size": 56006,
-          "checksum": "sha256:fc4a89a9be8480bbe37aaabc18992545065036ccff17ff09d790c6cf5527b96b"
-        },
-        {
-          "path": "dist/index.html",
-          "size": 411,
-          "checksum": "sha256:445b37642a119872eb525157f7902165cf4cac9da3c79d18fb744e8ac0ee4d6c"
-        },
-        {
-          "path": "dist/assets/index-LNrX1XbL.js",
-          "size": 1019635,
-          "checksum": "sha256:33810b1cd8524ef34db0c66a7183bb1431ce5b63f4d2ab24be4d2c0317166c56"
-        },
-        {
-          "path": "dist/assets/index-BdzHkHWC.css",
-          "size": 76359,
-          "checksum": "sha256:73e12ed5abca4381906fc2c5e618021f2a32c8b4ed76b6748e2346b778795474"
         }
       ]
     },

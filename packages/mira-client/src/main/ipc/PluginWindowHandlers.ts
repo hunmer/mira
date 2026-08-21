@@ -208,6 +208,8 @@ export class PluginWindowHandlers {
           nodeIntegration: false,
           contextIsolation: true,
           sandbox: false,
+          // 允许插件页面使用 <webview> 标签内嵌第三方网站（如以图搜图加载搜索引擎）
+          webviewTag: true,
           // 注入专用 preload：暴露最小化的 electronAPI.pluginWindow，
           // 让插件主界面能够再次打开子窗口（例如画板管理 → 画布窗口）。
           // sandbox 须为 false，否则 preload 无法 require('electron')。

@@ -1,8 +1,17 @@
-# Pinterest 视觉搜索 v2
+# 图片搜索（image-search）
 
-原 `mira-pinterest-search`（Eagle 插件迁移的编译产物）的 **shadcn-vue 重写版**。
+原 `mira-pinterest-search`（Eagle 插件迁移的编译产物）的 **shadcn-vue 重写版**，
+参考 Eagle `search-by-image` 插件扩展为多站点聚合以图搜图。
 UI 全部改用 `packages/mira-plugin-ui`（shadcn-vue / reka-ui + tailwind token），
 源码工程化（Vite + TS），`pnpm dev` 即可启动开发服务器。
+
+## 两种搜索模式
+
+- **Pinterest（接口搜图）**：走 Pinterest visual_search 接口，任务队列 + 瀑布流结果（原有能力）
+- **网页搜图（webview）**：右侧站点栏点击 Google / Bing / Yandex / TinEye / SauceNAO / 搜狗，
+  种子图自动上传临时图床（temp-image.foxdesk.app，同 Eagle）换取在线地址后按 URL 反搜，
+  页面以 `<webview>` 内嵌加载（站点页常驻保活，切换不丢状态）；
+  工具栏显示当前页面地址，支持刷新与「用浏览器打开」
 
 ## 功能
 
