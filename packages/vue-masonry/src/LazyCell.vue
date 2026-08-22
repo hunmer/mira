@@ -9,7 +9,6 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue"
 const props = defineProps<{
   lazy?: boolean
   rootMargin?: string
-  placeholderColor?: string
   revealed?: boolean
 }>()
 
@@ -140,9 +139,13 @@ onBeforeUnmount(() => {
     <div
       v-if="active && !props.revealed"
       class="lazy-cell__placeholder"
-      :style="{ backgroundColor: props.placeholderColor }"
       aria-hidden="true"
-    />
+    >
+      <!-- 自定义占位 UI;未提供时回退到默认发光呼吸 Skeleton -->
+      <slot name="placeholder">
+        <div class="lazy-cell__skeleton" />
+      </slot>
+    </div>
     <!-- 内容提前挂载并加载,当前 cell 完成后独立显示。 -->
     <div
       v-if="active"
@@ -165,15 +168,116 @@ onBeforeUnmount(() => {
   overflow: hidden;
 }
 
-/* 等价于 `absolute inset-0 animate-pulse` */
+/* 占位容器:absolute inset-0,自定义占位 UI 直接填满 cell */
 .lazy-cell__placeholder {
   position: absolute;
   inset: 0;
+}
+
+/* 默认占位:Skeleton 发光呼吸效果(颜色走 CSS 变量,便于暗色模式覆盖) */
+.lazy-cell__skeleton {
+  --sk-base: rgb(226 232 240 / 60%);
+  --sk-dim: rgb(226 232 240 / 45%);
+  --sk-shimmer: rgb(241 245 249 / 95%);
+  --sk-edge: rgb(0 0 0 / 8%);
+  --sk-glow-a: rgb(148 197 253 / 45%);
+  --sk-glow-b: rgb(196 181 253 / 20%);
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
   /* 圆角描边:外层 Masonry 定位框为 overflow:hidden 矩形,会裁掉普通 border 的圆角;
      改用内描边实现圆角描边,既贴合圆角又不受外层裁切影响。 */
   border-radius: 12px;
-  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 8%);
-  animation: lazy-cell-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  box-shadow: inset 0 0 0 1px var(--sk-edge);
+  background:
+    linear-gradient(
+      110deg,
+      var(--sk-dim) 30%,
+      var(--sk-shimmer) 50%,
+      var(--sk-dim) 70%
+    ),
+    var(--sk-base);
+  background-size: 220% 100%, auto;
+  animation:
+    lazy-cell-shimmer 1.8s linear infinite,
+    lazy-cell-breathe 2.4s ease-in-out infinite;
+}
+
+/* 呼吸光晕:中心柔和扩散光 */
+.lazy-cell__skeleton::after {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  background: radial-gradient(
+    ellipse at center,
+    var(--sk-glow-a) 0%,
+    var(--sk-glow-b) 35%,
+    transparent 70%
+  );
+  animation: lazy-cell-glow 2.4s ease-in-out infinite;
+}
+
+/* 暗色适配:跟随系统偏好 */
+@media (prefers-color-scheme: dark) {
+  .lazy-cell__skeleton {
+    --sk-base: rgb(30 41 59 / 60%);
+    --sk-dim: rgb(30 41 59 / 45%);
+    --sk-shimmer: rgb(51 65 85 / 95%);
+    --sk-edge: rgb(255 255 255 / 6%);
+    --sk-glow-a: rgb(96 165 250 / 35%);
+    --sk-glow-b: rgb(167 139 250 / 18%);
+  }
+}
+
+/* 暗色适配:宿主在祖先元素上显式切换 .dark(如 Tailwind dark:class),优先于系统偏好。
+   用 .light 显式恢复亮色的场景同样支持。 */
+.dark .lazy-cell__skeleton {
+  --sk-base: rgb(30 41 59 / 60%);
+  --sk-dim: rgb(30 41 59 / 45%);
+  --sk-shimmer: rgb(51 65 85 / 95%);
+  --sk-edge: rgb(255 255 255 / 6%);
+  --sk-glow-a: rgb(96 165 250 / 35%);
+  --sk-glow-b: rgb(167 139 250 / 18%);
+}
+
+.light .lazy-cell__skeleton {
+  --sk-base: rgb(226 232 240 / 60%);
+  --sk-dim: rgb(226 232 240 / 45%);
+  --sk-shimmer: rgb(241 245 249 / 95%);
+  --sk-edge: rgb(0 0 0 / 8%);
+  --sk-glow-a: rgb(148 197 253 / 45%);
+  --sk-glow-b: rgb(196 181 253 / 20%);
+}
+
+@keyframes lazy-cell-shimmer {
+  0% {
+    background-position: 120% 0, 0 0;
+  }
+  100% {
+    background-position: -120% 0, 0 0;
+  }
+}
+
+@keyframes lazy-cell-breathe {
+  0%,
+  100% {
+    filter: brightness(0.92);
+  }
+  50% {
+    filter: brightness(1.06);
+  }
+}
+
+@keyframes lazy-cell-glow {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* 等价于 `transition-opacity duration-150` */
@@ -192,15 +296,5 @@ onBeforeUnmount(() => {
 .lazy-cell__content--visible {
   visibility: visible;
   opacity: 1;
-}
-
-@keyframes lazy-cell-pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
 }
 </style>

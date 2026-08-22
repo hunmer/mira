@@ -68,27 +68,6 @@ function resolveColumns(width: number, cols: MasonryColumns): number {
   return cols.base ?? 1
 }
 
-const PLACEHOLDER_COLORS = [
-  "#dbeafe",
-  "#dcfce7",
-  "#fef3c7",
-  "#fee2e2",
-  "#ede9fe",
-  "#cffafe",
-  "#fce7f3",
-  "#e2e8f0"
-] as const
-
-/** 根据稳定 key 生成稳定的随机感占位色,避免响应式重渲染时闪色。 */
-function placeholderColor(key: string | number): string {
-  const value = String(key)
-  let hash = 0
-  for (let i = 0; i < value.length; i++) {
-    hash = (hash * 31 + value.charCodeAt(i)) | 0
-  }
-  return PLACEHOLDER_COLORS[Math.abs(hash) % PLACEHOLDER_COLORS.length]
-}
-
 /** 排序(不修改原数组) */
 function sortData<T>(
   data: T[],
@@ -245,8 +224,11 @@ watch(
           overflow: 'hidden',
           contain: 'layout paint'
         }">
-        <LazyCell :lazy="p.lazy" :root-margin="props.lazyRootMargin" :placeholder-color="placeholderColor(p.key)"
-          :revealed="revealedKeys.has(p.key)" @ready="handleCellReady(p.key)">
+        <LazyCell :lazy="p.lazy" :root-margin="props.lazyRootMargin" :revealed="revealedKeys.has(p.key)"
+          @ready="handleCellReady(p.key)">
+          <template #placeholder>
+            <slot name="placeholder" :item="p.item" :index="p.index" :width="p.width" :height="p.height" />
+          </template>
           <template #default="{ preload }">
             <slot :item="p.item" :index="p.index" :preload="preload" />
           </template>
