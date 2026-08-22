@@ -510,6 +510,7 @@ export function useHomeTabManagement(
     currentTabViewConfig,
     visitedTabs,
     getTabViewConfigForTab,
+    loadTabViewConfig,
     getCurrentTab,
     setTabNeedUpdate,
     createTabFromFolder,

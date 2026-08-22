@@ -268,6 +268,7 @@ const {
   currentTab,
   visitedTabs,
   getTabViewConfigForTab,
+  loadTabViewConfig,
   getCurrentTab,
   setTabNeedUpdate,
   createTabFromFolder,
@@ -317,6 +318,19 @@ watch(splitLayout, (layout) => {
 
 const splitPaneTabs = computed(() =>
   splitPaneTabIds.value.map(tabId => activeTabs.value.find(tab => tab.id === tabId))
+)
+
+// 分屏槽位中的 Tab 即使未激活也要先加载视图配置，避免必须点击后才出现内容。
+watch(
+  () => splitPaneTabs.value.map(tab => tab?.id),
+  (tabIds) => {
+    const tabsToLoad = tabIds
+      .map(tabId => tabId ? activeTabs.value.find(tab => tab.id === tabId) : undefined)
+      .filter((tab): tab is NonNullable<typeof tab> => Boolean(tab))
+      .filter(tab => !visitedTabs.value.some(visited => visited.id === tab.id))
+    void Promise.all(tabsToLoad.map(tab => loadTabViewConfig(tab)))
+  },
+  { immediate: true }
 )
 
 function syncSplitPanes() {
