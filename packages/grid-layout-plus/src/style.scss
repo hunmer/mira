@@ -1,0 +1,344 @@
+.vgl-layout {
+  --vgl-placeholder-bg: red;
+  --vgl-placeholder-opacity: 20%;
+  --vgl-placeholder-z-index: 2;
+
+  --vgl-item-resizing-z-index: 3;
+  --vgl-item-resizing-opacity: 60%;
+  --vgl-item-dragging-z-index: 3;
+  --vgl-item-dragging-opacity: 100%;
+
+  --vgl-resizer-size: 10px;
+  --vgl-resizer-border-color: #444;
+  --vgl-resizer-border-width: 2px;
+
+  position: relative;
+  box-sizing: border-box;
+  transition: height 200ms ease;
+
+  &--suppress-transition,
+  &--suppress-transition > .vgl-item {
+    transition: none;
+  }
+}
+
+.vgl-item {
+  position: absolute;
+  z-index: var(--vgl-item-z-index, auto);
+  box-sizing: border-box;
+  transition: 200ms ease;
+  transition-property: left, top, right;
+
+  &--placeholder {
+    z-index: max(
+      var(--vgl-item-z-index, 0),
+      var(--vgl-placeholder-z-index, 2),
+      var(--vgl-layout-interaction-z-index, 0)
+    );
+    pointer-events: none;
+    user-select: none;
+    background-color: var(--vgl-placeholder-bg, red);
+    opacity: var(--vgl-placeholder-opacity, 20%);
+    transition-duration: 100ms;
+  }
+
+  &--no-touch {
+    touch-action: none;
+  }
+
+  &--transform {
+    right: auto;
+    left: 0;
+    transition-property: transform;
+  }
+
+  &--transform#{&}--rtl {
+    right: 0;
+    left: auto;
+  }
+
+  &--resizing {
+    z-index: max(
+      calc(var(--vgl-item-z-index, 0) + 1),
+      var(--vgl-item-resizing-z-index, 3),
+      calc(var(--vgl-layout-interaction-z-index, 0) + 1)
+    );
+    user-select: none;
+    opacity: var(--vgl-item-resizing-opacity, 60%);
+    transition: none;
+  }
+
+  &--dragging {
+    z-index: max(
+      calc(var(--vgl-item-z-index, 0) + 1),
+      var(--vgl-item-dragging-z-index, 3),
+      calc(var(--vgl-layout-interaction-z-index, 0) + 1)
+    );
+    user-select: none;
+    opacity: var(--vgl-item-dragging-opacity, 100%);
+    transition: none;
+  }
+
+  &__resizer {
+    position: absolute;
+    box-sizing: border-box;
+    width: var(--vgl-resizer-size);
+    height: var(--vgl-resizer-size);
+
+    $border-width: var(--vgl-resizer-border-width);
+
+    &::before {
+      position: absolute;
+      content: '';
+      border: 0 solid var(--vgl-resizer-border-color);
+    }
+
+    &--custom {
+      &::before {
+        display: none;
+      }
+
+      > * {
+        pointer-events: none;
+      }
+    }
+
+    // 四条边的缩放手柄
+    &--n,
+    &--s {
+      left: 50%;
+      transform: translateX(-50%);
+
+      &::before {
+        right: 0;
+        left: 0;
+      }
+    }
+
+    &--n {
+      top: 0;
+      cursor: n-resize;
+
+      &::before {
+        top: 2px;
+        border-top-width: $border-width;
+      }
+    }
+
+    &--s {
+      bottom: 0;
+      cursor: s-resize;
+
+      &::before {
+        bottom: 2px;
+        border-bottom-width: $border-width;
+      }
+    }
+
+    &--e,
+    &--w {
+      top: 50%;
+      transform: translateY(-50%);
+
+      &::before {
+        top: 0;
+        bottom: 0;
+      }
+    }
+
+    &--e {
+      right: 0;
+      cursor: e-resize;
+
+      &::before {
+        right: 2px;
+        border-right-width: $border-width;
+      }
+    }
+
+    &--w {
+      left: 0;
+      cursor: w-resize;
+
+      &::before {
+        left: 2px;
+        border-left-width: $border-width;
+      }
+    }
+
+    // 四个角的缩放手柄
+    &--ne {
+      top: 0;
+      right: 0;
+      cursor: ne-resize;
+
+      &::before {
+        inset: 3px 3px 0 0;
+        border-top-width: $border-width;
+        border-right-width: $border-width;
+      }
+    }
+
+    &--se {
+      right: 0;
+      bottom: 0;
+      cursor: se-resize;
+
+      &::before {
+        inset: 0 3px 3px 0;
+        border-right-width: $border-width;
+        border-bottom-width: $border-width;
+      }
+    }
+
+    &--sw {
+      bottom: 0;
+      left: 0;
+      cursor: sw-resize;
+
+      &::before {
+        inset: 0 0 3px 3px;
+        border-bottom-width: $border-width;
+        border-left-width: $border-width;
+      }
+    }
+
+    &--nw {
+      top: 0;
+      left: 0;
+      cursor: nw-resize;
+
+      &::before {
+        inset: 3px 0 0 3px;
+        border-top-width: $border-width;
+        border-left-width: $border-width;
+      }
+    }
+
+    // RTL / mirrored 模式下交换水平手柄的视觉位置和光标。
+    &--rtl#{&}--e,
+    &--rtl#{&}--ne,
+    &--rtl#{&}--se {
+      right: auto;
+      left: 0;
+    }
+
+    &--rtl#{&}--w,
+    &--rtl#{&}--nw,
+    &--rtl#{&}--sw {
+      right: 0;
+      left: auto;
+    }
+
+    &--rtl#{&}--e {
+      cursor: w-resize;
+
+      &::before {
+        right: auto;
+        left: 2px;
+        border-right-width: 0;
+        border-left-width: $border-width;
+      }
+    }
+
+    &--rtl#{&}--w {
+      cursor: e-resize;
+
+      &::before {
+        right: 2px;
+        left: auto;
+        border-right-width: $border-width;
+        border-left-width: 0;
+      }
+    }
+
+    &--rtl#{&}--ne {
+      cursor: nw-resize;
+
+      &::before {
+        inset: 3px 0 0 3px;
+        border-right-width: 0;
+        border-left-width: $border-width;
+      }
+    }
+
+    &--rtl#{&}--nw {
+      cursor: ne-resize;
+
+      &::before {
+        inset: 3px 3px 0 0;
+        border-right-width: $border-width;
+        border-left-width: 0;
+      }
+    }
+
+    &--rtl#{&}--se {
+      cursor: sw-resize;
+
+      &::before {
+        inset: 0 0 3px 3px;
+        border-right-width: 0;
+        border-left-width: $border-width;
+      }
+    }
+
+    &--rtl#{&}--sw {
+      cursor: se-resize;
+
+      &::before {
+        inset: 0 3px 3px 0;
+        border-right-width: $border-width;
+        border-left-width: 0;
+      }
+    }
+  }
+
+  &--auto-height &__resizer--ne,
+  &--auto-height &__resizer--e,
+  &--auto-height &__resizer--se {
+    cursor: e-resize;
+  }
+
+  &--auto-height &__resizer--nw,
+  &--auto-height &__resizer--w,
+  &--auto-height &__resizer--sw {
+    cursor: w-resize;
+  }
+
+  &--auto-height &__resizer--ne,
+  &--auto-height &__resizer--nw,
+  &--auto-height &__resizer--se,
+  &--auto-height &__resizer--sw {
+    &::before {
+      border-top-width: 0;
+      border-bottom-width: 0;
+    }
+  }
+
+  &--auto-height &__resizer--rtl#{&}__resizer--ne,
+  &--auto-height &__resizer--rtl#{&}__resizer--e,
+  &--auto-height &__resizer--rtl#{&}__resizer--se {
+    cursor: w-resize;
+  }
+
+  &--auto-height &__resizer--rtl#{&}__resizer--nw,
+  &--auto-height &__resizer--rtl#{&}__resizer--w,
+  &--auto-height &__resizer--rtl#{&}__resizer--sw {
+    cursor: e-resize;
+  }
+}
+
+.vgl-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vgl-layout,
+  .vgl-item {
+    transition-duration: 0s !important;
+    animation-duration: 0s !important;
+  }
+}

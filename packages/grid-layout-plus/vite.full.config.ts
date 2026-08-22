@@ -1,0 +1,55 @@
+import { resolve } from 'node:path'
+
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+import dts from 'vite-plugin-dts'
+import autoprefixer from 'autoprefixer'
+import { DiagnosticCategory } from 'typescript'
+
+export default defineConfig({
+  publicDir: false,
+  esbuild: {
+    drop: ['debugger'],
+    pure: ['console.log'],
+  },
+  css: {
+    postcss: {
+      plugins: [autoprefixer],
+    },
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: true,
+    lib: {
+      entry: resolve(import.meta.dirname, 'src/index.ts'),
+      formats: ['es', 'cjs', 'iife'],
+      name: 'GridLayoutPlus',
+      cssFileName: 'style',
+      fileName: format =>
+        `grid-layout-plus.${format === 'es' ? 'mjs' : format === 'cjs' ? 'cjs' : 'js'}`,
+    },
+    rollupOptions: {
+      external: ['vue'],
+      output: {
+        globals: {
+          vue: 'Vue',
+        },
+      },
+    },
+    commonjsOptions: {
+      sourceMap: false,
+    },
+    chunkSizeWarningLimit: 10000,
+  },
+  plugins: [
+    vue(),
+    dts({
+      exclude: ['node_modules', 'dev-server', 'scripts'],
+      afterDiagnostic(diagnostics) {
+        if (diagnostics.some(diagnostic => diagnostic.category === DiagnosticCategory.Error)) {
+          throw new Error('Declaration generation failed due to TypeScript errors')
+        }
+      },
+    }),
+  ],
+})

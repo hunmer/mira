@@ -72,7 +72,7 @@
     "daysAgo": "{n} 天前"
   },
   "sidebarLayoutDialog": {
-    "title": "自定义侧边栏布局",
+    "title": "侧边栏",
     "description": "拖拽调整左侧栏模块顺序；把模块拖到「未启用」可隐藏，拖回「已启用」即可恢复。",
     "enabled": "已启用",
     "disabled": "未启用",

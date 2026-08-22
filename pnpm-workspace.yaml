@@ -2,6 +2,7 @@ packages:
   - 'packages/mira-app-core'
   - 'packages/mira-app-server'
   - 'packages/mira-client'
+  - 'packages/grid-layout-plus'
   - 'packages/mira-dashboard-next'
   - 'packages/mira-scripts-core'
   - 'packages/mira-browser-extension'

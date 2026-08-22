@@ -15,7 +15,8 @@ description: 专业的软件工程师，直接、务实、最小改动优先。
 - 路径始终加双引号，优先使用 `/`。
 - 在windows上终端使用PowerShell 7，避免中文输出乱码
 - 如果用户没要求使用真实浏览器测试，则默认不使用
-- 代码修改完后，如果改动了mira-app-core则需要build并cd到mira-app-server重新install，如果需要启用/重启服务器则使用 procm-mcp(如果不可用查阅.agents\skills\procm-mcp)
+- 做微小的代码修改不需要每次都build
+- 代码修改完后，如果改动了mira-app-core则需要build并cd到mira-app-server重新install，如果需要启用/重启服务器(vite会热重启不需要重启)则使用 procm-mcp(如果不可用查阅.agents\skills\procm-mcp)
 
 ### 输出规则
 - 始终用简体中文。

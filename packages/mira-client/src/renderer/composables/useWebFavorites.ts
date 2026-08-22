@@ -83,16 +83,28 @@ export function useWebFavorites() {
 
   /** 删除节点及其整个子树 */
   function remove(id: string): boolean {
-    const removeFrom = (nodes: WebFavoriteItem[]): boolean => {
-      const index = nodes.findIndex((n) => n.id === id)
-      if (index >= 0) {
-        nodes.splice(index, 1)
-        return true
+    const targetId = String(id)
+    let removed = false
+    const removeFrom = (nodes: WebFavoriteItem[]): WebFavoriteItem[] => {
+      const next: WebFavoriteItem[] = []
+      for (const node of nodes) {
+        if (String(node.id) === targetId) {
+          removed = true
+          continue
+        }
+        const children = node.children?.length ? removeFrom(node.children) : node.children
+        next.push(children === node.children ? node : { ...node, children })
       }
-      return nodes.some((n) => n.children && removeFrom(n.children))
+      return next
     }
-    const removed = removeFrom(items.value)
-    if (removed) persist()
+    if (items.value.some(node => String(node.id) === targetId) || findNode(items.value, targetId)) {
+      items.value = removeFrom(items.value)
+    }
+    if (removed) {
+      persist()
+    } else {
+      console.warn('[webFavorites] 删除目标不存在:', id)
+    }
     return removed
   }
 

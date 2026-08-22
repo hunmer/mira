@@ -1,5 +1,5 @@
 <template>
-  <div class="home-dashboard flex h-full flex-col bg-transparent">
+  <div class="home-dashboard flex h-full flex-col bg-transparent" :class="{ invisible: !dashboardVisible }">
     <!-- 顶部工具栏 -->
     <div class="dashboard-toolbar flex items-center justify-between border-b px-4 py-2">
       <div class="flex items-center gap-2 text-sm font-medium">
@@ -174,13 +174,21 @@
     </div>
 
     <!-- 网格布局 -->
-    <div v-else ref="dashboardGridScrollRef" class="dashboard-grid-scroll flex-1 overflow-auto p-3">
+    <div
+      v-else
+      ref="dashboardGridScrollRef"
+      class="dashboard-grid-scroll flex-1 overflow-auto p-3"
+      :style="frozenGridSize"
+    >
       <GridLayout
         :key="store.activeId || 'active'"
         :layout="store.renderableLayout"
         :col-num="12"
         :row-height="60"
         :gap="[12, 12]"
+        :compactor="noCompactor"
+        :position-strategy="absoluteStrategy"
+        :width="gridWidth || undefined"
         :is-draggable="editMode"
         :is-resizable="editMode"
         :collision-mode="'push'"
@@ -259,11 +267,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { GridLayout, GridItem } from 'grid-layout-plus'
+import { GridLayout, GridItem, absoluteStrategy, noCompactor } from 'grid-layout-plus'
 import type { ReadonlyLayout, ResizeConfig } from 'grid-layout-plus'
 import { useDashboardLayoutStore } from '@renderer/stores/dashboardLayout'
+import { useTabs } from '@renderer/composables/useTabs'
 import { cardRegistry } from './dashboard/CardRegistry'
 import { registerBuiltinCards } from './dashboard/cards'
 import DashboardCardShell from './dashboard/DashboardCardShell.vue'
@@ -285,7 +294,7 @@ interface Props {
   libraryId?: string
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   tabId: 'home',
 })
 
@@ -293,6 +302,8 @@ withDefaults(defineProps<Props>(), {
 registerBuiltinCards()
 
 const store = useDashboardLayoutStore()
+const { activeTabId } = useTabs()
+const dashboardVisible = ref(false)
 const editMode = ref(false)
 const { t } = useI18n()
 
@@ -305,7 +316,59 @@ const resizeConfig: ResizeConfig = {
 }
 
 const dashboardGridScrollRef = ref<HTMLElement | null>(null)
+let savedGridScrollTop = 0
+const frozenGridSize = ref<{ width: string; height: string } | undefined>(undefined)
+const gridWidth = ref<number | null>(null)
 const resizingGridItem = ref(false)
+
+watch(
+  activeTabId,
+  (nextTabId) => {
+    if (nextTabId !== props.tabId) {
+      const container = dashboardGridScrollRef.value
+      if (container) {
+        const rect = container.getBoundingClientRect()
+        frozenGridSize.value = {
+          width: `${rect.width}px`,
+          height: `${rect.height}px`,
+        }
+        savedGridScrollTop = container.scrollTop
+      }
+      dashboardVisible.value = false
+      return
+    }
+    if (gridWidth.value === null) {
+      nextTick(() => {
+        const width = dashboardGridScrollRef.value?.clientWidth
+        if (width) gridWidth.value = width
+      })
+    }
+    dashboardVisible.value = false
+    nextTick(() => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const width = dashboardGridScrollRef.value?.clientWidth
+          if (width && gridWidth.value === null) gridWidth.value = width
+          dashboardVisible.value = true
+          frozenGridSize.value = undefined
+        })
+      })
+    })
+  },
+  { immediate: true },
+)
+
+watch(activeTabId, (nextTabId, previousTabId) => {
+  const container = dashboardGridScrollRef.value
+  if (previousTabId === props.tabId && container) {
+    savedGridScrollTop = container.scrollTop
+  }
+  if (nextTabId === props.tabId) {
+    nextTick(() => {
+      if (dashboardGridScrollRef.value) dashboardGridScrollRef.value.scrollTop = savedGridScrollTop
+    })
+  }
+})
 let resizePointerY = 0
 let hasResizePointer = false
 let resizeScrollTimer: number | undefined
@@ -464,8 +527,12 @@ async function confirmDeleteLayout() {
   deleteTargetId.value = undefined
 }
 
-/** 布局更新（拖拽/缩放）：v2 的 update:layout 携带 (layout, meta)，这里只需 layout */
-function onLayoutUpdate(next: ReadonlyLayout) {
+/**
+ * 布局更新：仅持久化用户拖拽/缩放。
+ * 响应式断点或外部同步造成的重算不能写回 store，否则切换 Tab 会改变小组件顺序。
+ */
+function onLayoutUpdate(next: ReadonlyLayout, meta?: { source?: string }) {
+  if (meta?.source !== 'interaction') return
   store.applyLayout(next)
 }
 
@@ -487,6 +554,9 @@ onMounted(async () => {
   await store.load()
   // 默认无卡片时，自动放一张「一言」卡片，方便首次体验
   await nextTick()
+  if (gridWidth.value === null && dashboardGridScrollRef.value) {
+    gridWidth.value = dashboardGridScrollRef.value.clientWidth
+  }
   if (store.renderableLayout.length === 0 && cardRegistry.has('hitokoto')) {
     await store.addCard('hitokoto', { x: 0, y: 0 })
   }
@@ -510,6 +580,12 @@ onBeforeUnmount(() => {
 /* 拖拽中的卡片加深阴影，增强反馈 */
 .home-dashboard .vgl-item.vgl-item--dragging {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+/* Tab 容器尺寸恢复时禁止 grid-layout 的位置/高度补间动画。 */
+.home-dashboard .vgl-layout,
+.home-dashboard .vgl-item {
+  transition: none !important;
 }
 
 /* 下拉菜单过渡 */

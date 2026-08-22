@@ -321,6 +321,12 @@ export function useTabs() {
     }
   ) => {
     const { onSwitchCallback, lazyLoadHandler } = options || {}
+    // 初始化阶段可能重复切换到已激活的首页，直接短路避免触发响应式重算。
+    const currentActiveTab = tabs.value.find(tab => tab.active)
+    if (currentActiveTab?.id === tabId && currentActiveTab.type === 'home') {
+      currentActiveTab.needUpdate = false
+      return
+    }
 
     tabs.value.forEach(tab => {
       tab.active = tab.id === tabId
@@ -329,16 +335,19 @@ export function useTabs() {
 
     const activeTab = tabs.value.find(tab => tab.id === tabId)
     if (activeTab) {
+      const isHomeTab = activeTab.type === 'home'
       // 记录Tab激活历史
       tabHistory.recordTabAction(activeTab, 'activate')
 
-      // 执行切换回调
-      if (onSwitchCallback) {
+      // 首页由自身视图初始化，不执行媒体 Tab 的切换回调。
+      if (onSwitchCallback && !isHomeTab) {
         onSwitchCallback(activeTab)
       }
 
-      // 只有在needUpdate为true时才执行懒加载处理器
-      if (lazyLoadHandler && activeTab.needUpdate) {
+      // 首页由 HomeTabView 自己初始化，不参与媒体 Tab 的懒加载。
+      if (isHomeTab) {
+        activeTab.needUpdate = false
+      } else if (lazyLoadHandler && activeTab.needUpdate) {
         lazyLoadHandler(activeTab).then(() => {
           // 数据加载完成后，标记为不需要更新
           activeTab.needUpdate = false

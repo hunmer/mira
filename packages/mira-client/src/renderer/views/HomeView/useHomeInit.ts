@@ -103,7 +103,7 @@ export function useHomeInit() {
     const cleanupModules = await initializeHomeModules()
 
     const currentTab = getCurrentTab()
-    if (currentTab) {
+    if (currentTab && currentTab.type !== 'home') {
       setTabNeedUpdate(currentTab.id, true)
 
       if (libraryStore.currentLibrary?.id) {

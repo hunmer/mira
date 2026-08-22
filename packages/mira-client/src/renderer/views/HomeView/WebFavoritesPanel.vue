@@ -1,6 +1,7 @@
 <template>
   <!-- 收藏夹树：readOnly 禁用素材库内置增删改，本地拖拽排序走 local-sort 持久化 -->
   <FolderTreeComponent
+    :key="treeRenderKey"
     :ref="setTreeRef"
     item-type="folder"
     :draggable="true"
@@ -22,33 +23,35 @@
         <DialogHeader>
           <DialogTitle>{{ dialogTitle }}</DialogTitle>
         </DialogHeader>
-        <div class="space-y-3 py-1">
-          <div class="space-y-1">
-            <label class="text-xs text-muted-foreground">{{ t('views.webFavorites.name') }}</label>
-            <Input v-model="form.label" @keydown.enter="save" />
+        <form class="space-y-3" @submit.prevent="save">
+          <div class="space-y-3 py-1">
+            <div class="space-y-1">
+              <label class="text-xs text-muted-foreground">{{ t('views.webFavorites.name') }}</label>
+              <Input v-model="form.label" />
+            </div>
+            <template v-if="isPage">
+              <div class="space-y-1">
+                <label class="text-xs text-muted-foreground">{{ t('views.webFavorites.url') }}</label>
+                <Input v-model="form.url" placeholder="https://" />
+              </div>
+              <div class="space-y-1">
+                <label class="text-xs text-muted-foreground">{{ t('views.webFavorites.partition') }}</label>
+                <Input v-model="form.partition" :placeholder="t('views.webFavorites.partitionPlaceholder')" />
+              </div>
+              <div class="flex items-center space-x-2 px-1 pt-0.5">
+                <Checkbox id="webFavMuted" :model-value="form.muted"
+                  @update:model-value="form.muted = $event === true" />
+                <label for="webFavMuted" class="cursor-pointer select-none text-sm text-muted-foreground">
+                  {{ t('views.webFavorites.muted') }}
+                </label>
+              </div>
+            </template>
           </div>
-          <template v-if="isPage">
-            <div class="space-y-1">
-              <label class="text-xs text-muted-foreground">{{ t('views.webFavorites.url') }}</label>
-              <Input v-model="form.url" placeholder="https://" @keydown.enter="save" />
-            </div>
-            <div class="space-y-1">
-              <label class="text-xs text-muted-foreground">{{ t('views.webFavorites.partition') }}</label>
-              <Input v-model="form.partition" :placeholder="t('views.webFavorites.partitionPlaceholder')" />
-            </div>
-            <div class="flex items-center space-x-2 px-1 pt-0.5">
-              <Checkbox id="webFavMuted" :model-value="form.muted"
-                @update:model-value="form.muted = $event === true" />
-              <label for="webFavMuted" class="cursor-pointer select-none text-sm text-muted-foreground">
-                {{ t('views.webFavorites.muted') }}
-              </label>
-            </div>
-          </template>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" @click="dialogOpen = false">{{ t('views.webFavorites.cancel') }}</Button>
-          <Button :disabled="!canSave" @click="save">{{ t('views.webFavorites.save') }}</Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button type="button" variant="outline" @click="dialogOpen = false">{{ t('views.webFavorites.cancel') }}</Button>
+            <Button type="submit" :disabled="!canSave">{{ t('views.webFavorites.save') }}</Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   </Teleport>
@@ -65,9 +68,10 @@
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>{{ t('views.webFavorites.cancel') }}</AlertDialogCancel>
-          <AlertDialogAction class="bg-destructive text-white hover:bg-destructive" @click="confirmDelete">
+          <!-- 使用普通 Button，避免 AlertDialogAction 内部 DialogClose 与删除回调时序冲突。 -->
+          <Button class="bg-destructive text-white hover:bg-destructive" @click="confirmDelete">
             {{ t('views.webFavorites.delete') }}
-          </AlertDialogAction>
+          </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
@@ -88,7 +92,6 @@ import FolderTreeComponent from '@renderer/components/business/FolderTreeCompone
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -139,6 +142,8 @@ const folders = computed<FolderItem[]>(() => {
 
 // hideHeader 模式下供外层标题栏调用的树能力
 const treeRef = ref<any>(null)
+// @he-tree/vue 的 Draggable 会缓存内部节点；删除后重建实例以同步最新树数据。
+const treeRenderKey = ref(0)
 const setTreeRef = (el: any) => { treeRef.value = el }
 
 onMounted(() => { void load() })
@@ -268,7 +273,12 @@ function save() {
 }
 
 function confirmDelete() {
-  if (deleteTarget.value) remove(deleteTarget.value.id)
+  if (deleteTarget.value) {
+    const id = String(deleteTarget.value.id)
+    const removed = remove(id)
+    console.debug('[webFavorites] 删除收藏:', { id, removed })
+    if (removed) treeRenderKey.value++
+  }
   deleteTarget.value = null
 }
 
