@@ -16,6 +16,21 @@
       />
     </div>
 
+    <div class="flex items-center justify-between gap-4 py-3">
+      <div class="min-w-0">
+        <label class="text-foreground dark:text-muted-foreground text-base font-medium leading-normal">
+          {{ t('settings.openFilePreviewInTab') }}
+        </label>
+        <p class="text-muted-foreground dark:text-muted-foreground text-sm mt-2">
+          {{ t('settings.openFilePreviewInTabDesc') }}
+        </p>
+      </div>
+      <Switch
+        :model-value="settingsStore.settings.openFilePreviewInTab"
+        @update:model-value="handleOpenFilePreviewInTabChange"
+      />
+    </div>
+
     <!-- 默认视图选项 -->
     <div>
       <div class="flex flex-wrap items-end gap-4 py-3">
@@ -144,6 +159,10 @@ const handleMultiLibraryViewsChange = async (enabled: boolean) => {
     enabled,
     libraryStore.currentLibrary?.id ? String(libraryStore.currentLibrary.id) : null
   )
+}
+
+const handleOpenFilePreviewInTabChange = async (enabled: boolean) => {
+  await settingsStore.updateSetting('openFilePreviewInTab', enabled)
 }
 
 onMounted(async () => {

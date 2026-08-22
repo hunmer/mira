@@ -1,5 +1,5 @@
 <template>
-  <div class="relative flex flex-grow flex-col items-center justify-center w-full">
+  <div ref="viewerContainerRef" class="relative flex flex-grow flex-col items-center justify-center w-full">
     <!-- 图片容器 - 使用 VViewer 组件的内嵌模式 -->
     <div class="flex flex-grow items-center justify-center w-full h-full min-h-[400px]">
       <VViewer
@@ -169,8 +169,11 @@ const loading = ref(false)
 const error = ref(false)
 const viewerRef = ref<any>(null)
 const viewerInstance = ref<any>(null)
+const viewerContainerRef = ref<HTMLElement | null>(null)
 const flipHorizontalState = ref(1) // 1 或 -1
 const flipVerticalState = ref(1)   // 1 或 -1
+let resizeObserver: ResizeObserver | null = null
+let resizeFrame = 0
 
 // v-viewer 配置选项
 const viewerOptions = ref({
@@ -288,10 +291,20 @@ const handleDocumentFullscreenChange = () => {
 
 onMounted(() => {
   document.addEventListener('fullscreenchange', handleDocumentFullscreenChange)
+
+  resizeObserver = new ResizeObserver(() => {
+    cancelAnimationFrame(resizeFrame)
+    resizeFrame = requestAnimationFrame(() => viewerInstance.value?.resize?.())
+  })
+  if (viewerContainerRef.value) {
+    resizeObserver.observe(viewerContainerRef.value)
+  }
 })
 
 onUnmounted(() => {
   document.removeEventListener('fullscreenchange', handleDocumentFullscreenChange)
+  resizeObserver?.disconnect()
+  cancelAnimationFrame(resizeFrame)
 })
 
 // 监听图片变化，重置状态

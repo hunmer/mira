@@ -24,3 +24,16 @@
 - Changed the screenshot stage to fill the entire display window, removing the previous 16px inset/aspect letterboxing; renderer and main builds passed.
 - Corrected export scaling to independent X/Y ratios using the source image's natural dimensions, preventing transparent/blank output edges when display DIP and source pixels differ.
 - Added `[screenshot-debug]` diagnostics to the main window console and returned detected windows/source dimensions directly from `screenshot:get-source` to eliminate event timing loss.
+- Started the file-preview embedded-tab navigation task and appended its plan without replacing prior task history.
+- Located preview navigation call sites and confirmed `LibraryPanel.vue` already uses the global settings store.
+- Inspected router and settings architecture; selected global settings persistence and a centralized router adapter as the minimal direction.
+- Logged the stale TabViewRenderer documentation path and switched to file-index lookup.
+- Located the actual renderer and confirmed custom Vue component tabs are supported; defined the required FilePreview query-prop compatibility.
+- Completed architecture inspection and moved into implementation.
+- Added the persisted preview-tab setting, LibraryPanel switch, bilingual labels, centralized router `openInTab` handling, and embedded-query support in FilePreviewView.
+- Ran the full client type-check; it reported only the repository's existing unrelated errors and no errors in this task's files.
+- Renderer production build passed.
+- Restarted `start:client:win` through the procm-mcp HTTP fallback; the process returned to `running`.
+- `git diff --check` passed; no real-browser test was run per project default.
+- Fixed image/video string-route bypass in `router.push`; production build passed again and `start:client:win` was restarted successfully.
+- Existing unrelated worktree changes remain in `DefaultPreview.vue` and `HomeView/PluginContributionBar.vue`; they were not modified or reverted.

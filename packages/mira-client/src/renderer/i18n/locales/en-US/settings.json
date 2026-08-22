@@ -30,6 +30,8 @@
   "saveFailed": "Save failed",
   "multiLibraryViews": "Open multiple libraries",
   "multiLibraryViewsDesc": "Keep a separate background page and local state for each library",
+  "openFilePreviewInTab": "Open previews in a new tab",
+  "openFilePreviewInTabDesc": "Open file previews in an app tab within the current window",
   "defaultViewMode": "Default view",
   "defaultViewModeDesc": "Default view for new tabs; \"Use Last\" follows the last view used in this library (stored in the library's local config)",
   "defaultViewModeUpdated": "Default view changed to \"{mode}\"",

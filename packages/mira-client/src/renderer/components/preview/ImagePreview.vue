@@ -11,51 +11,44 @@
 
     <!-- 主内容区域 -->
     <div class="flex flex-grow overflow-hidden">
-      <!-- 桌面端：三列可拖拽布局 -->
-      <ResizablePanelGroup v-if="!isMobile" direction="horizontal" auto-save-id="image-preview-layout"
+      <!-- 桌面端：缩略图与查看器为一个整体，仅右侧信息栏可拖拽 -->
+      <ResizablePanelGroup v-if="!isMobile" direction="horizontal" auto-save-id="image-preview-layout-v2"
         class="flex-1 min-w-0">
-        <!-- 左侧缩略图列表（可折叠） -->
-        <ResizablePanel ref="leftPanelRef" :default-size="leftPanelDefaultSize" :min-size="6" :max-size="30"
-          :collapsed-size="0" collapsible @collapse="isLeftCollapsed = true" @expand="isLeftCollapsed = false">
-          <ImageThumbnailListComponent v-bind="thumbnailBindings" class="h-full" />
-        </ResizablePanel>
+        <ResizablePanel :default-size="76" :min-size="65" class="relative flex min-w-0">
+          <ImageThumbnailListComponent v-bind="thumbnailBindings" class="h-full border-r border-border" />
 
-        <!-- 分隔描边：点击（非拖拽）切换左侧栏 -->
-        <ResizableHandle v-on="leftHandleToggle"
-          class="group/handle relative w-3 cursor-pointer bg-transparent transition-colors hover:bg-primary/5 after:absolute after:inset-y-0 after:left-1/2 after:w-0.5 after:-translate-x-1/2 after:bg-transparent hover:after:bg-primary/40" />
+          <div class="relative flex min-w-0 flex-1 flex-col">
+            <ImageViewerComponent v-bind="viewerBindings" />
 
-        <!-- 中间图片查看器 -->
-        <ResizablePanel :default-size="56" :min-size="30" class="relative flex flex-col">
-          <ImageViewerComponent v-bind="viewerBindings" />
-
-          <!-- 底部状态栏 -->
-          <footer
-            class="flex h-10 flex-shrink-0 items-center justify-between border-t border-border bg-background px-6 text-xs text-muted-foreground">
-            <div class="flex items-center space-x-4">
-              <span>{{ $t('preview.imagePreview.dimensions') }}: {{ controller.currentImage.value?.metadata?.width || 0
-                }}x{{ controller.currentImage.value?.metadata?.height || 0 }}</span>
-              <span>{{ $t('preview.imagePreview.size') }}: {{ formatFileSize(controller.currentImage.value?.size)
-                }}</span>
-            </div>
-            <div class="flex items-center space-x-4">
-              <span>{{ $t('preview.imagePreview.format') }}: {{ getFileFormat(controller.currentImage.value?.name)
-                }}</span>
-              <span>{{ $t('preview.imagePreview.createdAt') }}: {{ formatDate(controller.currentImage.value?.createdAt)
-                }}</span>
-            </div>
-            <div class="flex items-center space-x-4">
-              <span>{{ controller.currentImageIndex.value + 1 }} / {{ controller.imageItems.value.length }}</span>
-              <button class="flex h-7 w-7 items-center justify-center rounded-full hover:bg-muted"
-                :disabled="controller.currentImageIndex.value === 0" @click="controller.previousImage">
-                <span class="material-symbols-outlined text-muted-foreground">navigate_before</span>
-              </button>
-              <button class="flex h-7 w-7 items-center justify-center rounded-full hover:bg-muted"
-                :disabled="controller.currentImageIndex.value === controller.imageItems.value.length - 1"
-                @click="controller.nextImage">
-                <span class="material-symbols-outlined text-muted-foreground">navigate_next</span>
-              </button>
-            </div>
-          </footer>
+            <!-- 底部状态栏 -->
+            <footer
+              class="flex h-10 flex-shrink-0 items-center justify-between border-t border-border bg-background px-6 text-xs text-muted-foreground">
+              <div class="flex items-center space-x-4">
+                <span>{{ $t('preview.imagePreview.dimensions') }}: {{ controller.currentImage.value?.metadata?.width || 0
+                  }}x{{ controller.currentImage.value?.metadata?.height || 0 }}</span>
+                <span>{{ $t('preview.imagePreview.size') }}: {{ formatFileSize(controller.currentImage.value?.size)
+                  }}</span>
+              </div>
+              <div class="flex items-center space-x-4">
+                <span>{{ $t('preview.imagePreview.format') }}: {{ getFileFormat(controller.currentImage.value?.name)
+                  }}</span>
+                <span>{{ $t('preview.imagePreview.createdAt') }}: {{ formatDate(controller.currentImage.value?.createdAt)
+                  }}</span>
+              </div>
+              <div class="flex items-center space-x-4">
+                <span>{{ controller.currentImageIndex.value + 1 }} / {{ controller.imageItems.value.length }}</span>
+                <button class="flex h-7 w-7 items-center justify-center rounded-full hover:bg-muted"
+                  :disabled="controller.currentImageIndex.value === 0" @click="controller.previousImage">
+                  <span class="material-symbols-outlined text-muted-foreground">navigate_before</span>
+                </button>
+                <button class="flex h-7 w-7 items-center justify-center rounded-full hover:bg-muted"
+                  :disabled="controller.currentImageIndex.value === controller.imageItems.value.length - 1"
+                  @click="controller.nextImage">
+                  <span class="material-symbols-outlined text-muted-foreground">navigate_next</span>
+                </button>
+              </div>
+            </footer>
+          </div>
         </ResizablePanel>
 
         <!-- 分隔描边：点击（非拖拽）切换右侧栏 -->
@@ -147,17 +140,13 @@ import { useCollapsibleSidebar } from '../../composables/useCollapsibleSidebar'
 const props = defineProps<{ fileInfo?: any }>()
 const controller = useImagePreviewController(() => props.fileInfo)
 
-// 左侧缩略图栏：桌面端 resizable + collapsible + 描边点击切换，移动端抽屉
+// 左侧缩略图栏：桌面端与查看器组成一个面板，移动端使用抽屉
 const {
   isMobile,
   showSidebar: showLeftSidebar,
   toggleSidebar: toggleLeftSidebar,
-  panelRef: leftPanelRef,
-  isCollapsed: isLeftCollapsed,
   drawerOpen: leftDrawerOpen,
-  handleToggle: leftHandleToggle,
-  defaultSize: leftPanelDefaultSize,
-} = useCollapsibleSidebar(20, 128)
+} = useCollapsibleSidebar()
 
 // 右侧信息面板：同样可折叠 + 移动抽屉
 const {

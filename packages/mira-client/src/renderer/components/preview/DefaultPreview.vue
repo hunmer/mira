@@ -1,6 +1,6 @@
 <template>
   <div class="w-full h-full flex justify-center items-center bg-muted">
-    <div class="relative flex flex-col items-center gap-8 p-12 bg-white rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.1)] max-w-[500px] w-[90%]">
+    <div class="relative flex flex-col items-center gap-8 p-12 bg-card rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.1)] max-w-[500px] w-[90%]">
       <button @click="goBack" class="absolute top-3 left-3 flex justify-center items-center w-9 h-9 border-none rounded-full cursor-pointer bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground transition-colors" :title="$t('preview.defaultPreview.back')">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M19 12H5" />
@@ -38,11 +38,11 @@
         </div>
 
         <div class="flex gap-4 justify-center flex-wrap">
-          <button v-if="downloadUrl" @click="downloadFile" class="px-6 py-3 border-none rounded-md cursor-pointer text-[0.95rem] transition-all duration-200 bg-primary text-white hover:bg-primary">
+          <button v-if="downloadUrl" @click="downloadFile" class="px-6 py-3 border-none rounded-md cursor-pointer text-[0.95rem] transition-all duration-200 bg-primary text-primary-foreground hover:bg-primary/90">
             {{ $t('preview.defaultPreview.download') }}
           </button>
 
-          <button @click="copyFileInfo" class="px-6 py-3 border-none rounded-md cursor-pointer text-[0.95rem] transition-all duration-200 bg-muted text-white hover:bg-muted">
+          <button @click="copyFileInfo" class="px-6 py-3 border-none rounded-md cursor-pointer text-[0.95rem] transition-all duration-200 bg-secondary text-secondary-foreground hover:bg-secondary/80">
             {{ $t('preview.defaultPreview.copyInfo') }}
           </button>
         </div>

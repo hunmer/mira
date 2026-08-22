@@ -353,7 +353,7 @@ const ContributionHost = defineComponent({
       :aria-label="t('views.pluginContributionBar.managePlugins')"
       @click="emit('manage')"
     >
-      <span class="material-icons" style="font-size: 18px;">settings</span>
+      <span class="material-icons" style="font-size: 18px;">extension</span>
     </button>
   </div>
 

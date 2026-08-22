@@ -1,9 +1,28 @@
-import { createRouter, createWebHashHistory, type RouteRecordRaw } from 'vue-router'
+import {
+  createRouter,
+  createWebHashHistory,
+  type LocationQuery,
+  type NavigationFailure,
+  type RouteLocationRaw,
+  type RouteRecordRaw
+} from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useSettingsStore } from '../stores/settings'
 import { useServerListStore } from '../stores/serverList'
 import { useAppState } from '../stores/appState'
+import { useMediaStore } from '../stores/media'
 import { initializationService } from '../services/InitializationService'
+
+export interface TabNavigationOptions {
+  /** 使用应用内标签页打开；未传入时默认关闭。 */
+  openInTab?: boolean
+}
+
+declare module 'vue-router' {
+  interface Router {
+    push(to: RouteLocationRaw & TabNavigationOptions): Promise<void | NavigationFailure | undefined>
+  }
+}
 
 // 路由定义
 const routes: Array<RouteRecordRaw> = [
@@ -109,6 +128,81 @@ const router = createRouter({
   history: createWebHashHistory(),
   routes
 })
+
+const originalPush = router.push.bind(router)
+
+const openFilePreviewTab = async (query: LocationQuery): Promise<void> => {
+  const [{ useTabs }, { default: FilePreviewView }] = await Promise.all([
+    import('../composables/useTabs'),
+    import('../views/FilePreviewView.vue')
+  ])
+  const fileId = String(query.id || '')
+  const libraryId = String(query.libraryId || '')
+
+  await useTabs().createCustomTab(FilePreviewView, {
+    id: `file-preview-${libraryId}-${fileId}`,
+    label: String(query.title || '文件预览'),
+    icon: 'visibility',
+    props: {
+      routeQuery: query,
+      embedded: true
+    }
+  })
+}
+
+const getFilePreviewQuery = (fileId: string): LocationQuery | null => {
+  const mediaStore = useMediaStore()
+  const file = [...mediaStore.imagePreviewItems, ...mediaStore.files]
+    .find(item => String(item.id) === fileId)
+  if (!file) return null
+
+  return {
+    id: fileId,
+    libraryId: String(file.libraryId || ''),
+    title: String(file.name || file.title || ''),
+    path: String(file.path || file.url || ''),
+    mimeType: String(file.mimeType || '')
+  }
+}
+
+router.push = (async (to: RouteLocationRaw & TabNavigationOptions) => {
+  if (typeof to === 'string') {
+    const resolved = router.resolve(to)
+    const settingsStore = useSettingsStore()
+    const shouldOpenInTab = (resolved.path.startsWith('/image-preview/') || resolved.path.startsWith('/video-preview/'))
+      && settingsStore.settings.openFilePreviewInTab
+    if (shouldOpenInTab) {
+      const fileId = String(resolved.params.id || '')
+      const query = getFilePreviewQuery(fileId)
+      if (query) {
+        await openFilePreviewTab(query)
+        return
+      }
+    }
+    return originalPush(to)
+  }
+
+  const { openInTab, ...rawLocation } = to
+  const location = rawLocation as RouteLocationRaw
+  const resolved = router.resolve(location)
+  const settingsStore = useSettingsStore()
+  const isPreviewRoute = resolved.path === '/file-preview'
+    || resolved.name === 'ImagePreview'
+    || resolved.name === 'VideoPreview'
+  const previewQuery = resolved.path === '/file-preview'
+    ? resolved.query
+    : getFilePreviewQuery(String(resolved.params.id || ''))
+  const shouldOpenInTab = isPreviewRoute
+    && (openInTab ?? settingsStore.settings.openFilePreviewInTab ?? false)
+    && Boolean(previewQuery)
+
+  if (shouldOpenInTab) {
+    if (previewQuery) await openFilePreviewTab(previewQuery)
+    return
+  }
+
+  return originalPush(location)
+}) as typeof router.push
 
 // 全局前置守卫
 router.beforeEach(async (to, _from, next) => {

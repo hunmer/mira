@@ -12,7 +12,7 @@
         <h3 class="text-destructive mb-4">{{ $t('views.filePreviewView.loadFailed') }}</h3>
         <p>{{ error }}</p>
         <div class="flex justify-center gap-3 mt-4">
-          <button @click="router.back()" class="bg-muted text-foreground border-none px-4 py-2 rounded cursor-pointer hover:bg-accent">{{ $t('views.filePreviewView.back') }}</button>
+          <button @click="handleBack" class="bg-muted text-foreground border-none px-4 py-2 rounded cursor-pointer hover:bg-accent">{{ $t('views.filePreviewView.back') }}</button>
           <button @click="loadFileInfo" class="bg-primary text-white border-none px-4 py-2 rounded cursor-pointer hover:bg-primary">{{ $t('views.filePreviewView.retry') }}</button>
         </div>
       </div>
@@ -44,7 +44,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter, type LocationQuery } from 'vue-router'
 import { miraSDKService } from '../services/MiraSDKService'
 import { useViewHistoryStore } from '../stores/viewHistory'
 import { AUDIO_EXTENSIONS, CONVERTED_IMAGE_EXTENSIONS, VIDEO_EXTENSIONS } from '../utils/fileUtils'
@@ -59,8 +59,15 @@ import DefaultPreview from '../components/preview/DefaultPreview.vue'
 import IframePreview from '../components/preview/IframePreview.vue'
 
 // 响应式数据
+const props = withDefaults(defineProps<{
+  routeQuery?: LocationQuery
+  embedded?: boolean
+}>(), {
+  embedded: false
+})
 const route = useRoute()
 const router = useRouter()
+const previewQuery = computed(() => props.routeQuery ?? route.query)
 const { t } = useI18n()
 const isLoading = ref(false)
 const error = ref('')
@@ -71,7 +78,7 @@ const pluginPreviewUrl = ref('')
 
 const refreshPluginPreviewUrl = async (file: any): Promise<void> => {
   pluginPreviewUrl.value = ''
-  const viewerId = route.query.viewer as string | undefined
+  const viewerId = previewQuery.value.viewer as string | undefined
   if (file?.libraryId && file?.id) {
     try {
       const viewers = await miraSDKService.getPreviewViewers(file.libraryId, file.id)
@@ -138,8 +145,8 @@ const getFileExtension = (filename: string): string => {
 
 // 加载文件信息
 const loadFileInfo = async (): Promise<void> => {
-  const fileId = route.query.id as string
-  const libraryId = route.query.libraryId as string
+  const fileId = previewQuery.value.id as string
+  const libraryId = previewQuery.value.libraryId as string
 
   if (!fileId || !libraryId) {
     error.value = t('views.filePreviewView.missingParams')
@@ -153,11 +160,11 @@ const loadFileInfo = async (): Promise<void> => {
     // 先使用query参数创建基础文件信息
     const baseFileInfo = {
       id: fileId,
-      title: route.query.title as string || t('views.filePreviewView.unknownFile'),
-      name: route.query.title as string || t('views.filePreviewView.unknownFile'),
-      mimeType: route.query.mimeType as string || '',
-      path: route.query.path as string || '',
-      url: route.query.path as string || '',
+      title: previewQuery.value.title as string || t('views.filePreviewView.unknownFile'),
+      name: previewQuery.value.title as string || t('views.filePreviewView.unknownFile'),
+      mimeType: previewQuery.value.mimeType as string || '',
+      path: previewQuery.value.path as string || '',
+      url: previewQuery.value.path as string || '',
       libraryId: libraryId,
       size: 0,
       updatedAt: new Date().toISOString()
@@ -212,11 +219,24 @@ const handleFileRenamed = (name: string): void => {
   if (!fileInfo.value) return
   fileInfo.value.name = name
   fileInfo.value.title = name
-  router.replace({ query: { ...route.query, title: name } })
+  if (!props.embedded) {
+    router.replace({ query: { ...route.query, title: name } })
+  }
+}
+
+const handleBack = async (): Promise<void> => {
+  if (!props.embedded) {
+    router.back()
+    return
+  }
+
+  const { useTabs } = await import('../composables/useTabs')
+  const tabs = useTabs()
+  await tabs.closeTab(tabs.activeTabId.value)
 }
 
 // 监听路由变化
-watch(() => route.query, () => {
+watch(() => props.routeQuery ?? route.query, () => {
   loadFileInfo()
 }, { immediate: false })
 
