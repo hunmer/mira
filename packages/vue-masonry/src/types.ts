@@ -68,7 +68,7 @@ export interface MasonryProps<T = any> {
   /**
    * 布局模式:
    *  - "stream"(默认):纯贪心流式,每个 item 放到当前最矮的起始列
-   *  - "fill":智能填充。按输入顺序逐项定位,普通图(colSpan=1)优先回填此前宽图产生的洞区。
+   *  - "fill":智能填充。按输入顺序逐项定位,普通图或匹配连续洞区的宽图优先回填。
    *            后续 item 不会改变已有 item 的位置。
    */
   layoutMode?: "stream" | "fill"

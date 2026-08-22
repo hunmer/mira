@@ -312,6 +312,13 @@ export interface UploadResponse {
     results: UploadResult[];
 }
 
+export interface MoveFileResponse {
+    sourceLibraryId: string;
+    targetLibraryId: string;
+    sourceFileId: number;
+    targetFile: Record<string, any>;
+}
+
 export interface BatchImportOptions {
     folderId?: number | null;
     clientId?: string;

@@ -1,4 +1,4 @@
-import { MiraClient, type PreviewViewer, type ServerWebPlugin } from 'mira-app-core/shared/sdk'
+import { MiraClient, type MoveFileResponse, type PreviewViewer, type ServerWebPlugin } from 'mira-app-core/shared/sdk'
 import { initializeWebSocket, webSocketService } from './WebSocketService'
 import { useMediaStore } from '../stores/media'
 import { useAuthStore } from '../stores/auth'
@@ -739,6 +739,17 @@ export class MiraSDKService {
       return result
     } catch (error) {
       console.error('MiraSDKService: File download failed', error)
+      throw error
+    }
+  }
+
+  async moveFile(sourceLibraryId: string, targetLibraryId: string, fileId: string | number): Promise<MoveFileResponse> {
+    if (!this.client) throw new Error('Not connected to Mira server')
+
+    try {
+      return await this.client.files().moveFile(sourceLibraryId, targetLibraryId, fileId)
+    } catch (error) {
+      console.error('MiraSDKService: File move failed', error)
       throw error
     }
   }

@@ -818,6 +818,7 @@
     "setFolderCount": "设置文件夹 ({count})",
     "setTags": "设置标签",
     "setTagsCount": "设置标签 ({count})",
+    "moveToLibrary": "移动到其他素材库",
     "setCover": "设置封面",
     "locateFolder": "定位到文件夹",
     "delete": "删除",

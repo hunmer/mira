@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-08-19T02:58:08.086Z",
+  "generatedAt": "2026-08-22T05:23:41.303Z",
   "summary": {
-    "covered": 117,
+    "covered": 119,
     "missing": 11,
     "excluded": 13,
     "dynamic": 7
@@ -388,11 +388,22 @@
       ]
     },
     {
+      "method": "POST",
+      "path": "/api/files/move",
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 359,
+      "category": "covered",
+      "sdkMethods": [
+        "File.moveFile"
+      ]
+    },
+    {
       "method": "GET",
       "path": "/api/files/thumb/:param/:param",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 355,
+      "line": 467,
       "category": "excluded",
       "sdkMethods": [],
       "note": "thumbnail image stream"
@@ -402,7 +413,7 @@
       "path": "/api/files/extra/:param/:param",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 372,
+      "line": 484,
       "category": "excluded",
       "sdkMethods": [],
       "note": "extra file resource stream"
@@ -412,7 +423,7 @@
       "path": "/api/files/extra/:param/:param/*",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 390,
+      "line": 502,
       "category": "excluded",
       "sdkMethods": [],
       "note": "extra file resource wildcard"
@@ -422,7 +433,7 @@
       "path": "/api/files/cover/:param/:param",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 415,
+      "line": 527,
       "category": "covered",
       "sdkMethods": [
         "File.setCover"
@@ -433,7 +444,7 @@
       "path": "/api/files/preview/:param/:param/index.m3u8",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 448,
+      "line": 560,
       "category": "excluded",
       "sdkMethods": [],
       "note": "HLS manifest resource"
@@ -443,7 +454,7 @@
       "path": "/api/files/preview/:param/:param/segment/:param.ts",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 477,
+      "line": 589,
       "category": "excluded",
       "sdkMethods": [],
       "note": "HLS segment resource"
@@ -453,7 +464,7 @@
       "path": "/api/files/preview/:param/:param",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 506,
+      "line": 618,
       "category": "excluded",
       "sdkMethods": [],
       "note": "preview file stream"
@@ -463,7 +474,7 @@
       "path": "/api/files/file/:param/:param",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 537,
+      "line": 649,
       "category": "excluded",
       "sdkMethods": [],
       "note": "raw file stream (Range support)"
@@ -473,7 +484,7 @@
       "path": "/api/files/:param/trash",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 630,
+      "line": 742,
       "category": "covered",
       "sdkMethods": [
         "File.emptyTrash"
@@ -484,7 +495,7 @@
       "path": "/api/files/batch-delete",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 678,
+      "line": 790,
       "category": "covered",
       "sdkMethods": [
         "File.batchDelete"
@@ -495,7 +506,7 @@
       "path": "/api/files/batch-recover",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 799,
+      "line": 911,
       "category": "covered",
       "sdkMethods": [
         "File.batchRestoreFiles"
@@ -506,7 +517,7 @@
       "path": "/api/files/recover",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 879,
+      "line": 991,
       "category": "covered",
       "sdkMethods": [
         "File.restoreFile"
@@ -517,7 +528,7 @@
       "path": "/api/files/:param/:param",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 944,
+      "line": 1056,
       "category": "covered",
       "sdkMethods": [
         "File.delete"
@@ -528,7 +539,7 @@
       "path": "/api/files/metadata",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 1049,
+      "line": 1161,
       "category": "covered",
       "sdkMethods": [
         "File.getMetadataByIds"
@@ -536,10 +547,21 @@
     },
     {
       "method": "POST",
+      "path": "/api/files/exif",
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 1207,
+      "category": "covered",
+      "sdkMethods": [
+        "File.getExifByIds"
+      ]
+    },
+    {
+      "method": "POST",
       "path": "/api/files/getFiles",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 1095,
+      "line": 1238,
       "category": "covered",
       "sdkMethods": [
         "File.getFiles"
@@ -550,7 +572,7 @@
       "path": "/api/files/getFile",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 1148,
+      "line": 1291,
       "category": "covered",
       "sdkMethods": [
         "File.getFile"
@@ -561,7 +583,7 @@
       "path": "/api/files/getPreviewViewers",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 1214,
+      "line": 1357,
       "category": "covered",
       "sdkMethods": [
         "File.getPreviewViewers"
@@ -572,7 +594,7 @@
       "path": "/api/files/rename",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 1278,
+      "line": 1421,
       "category": "covered",
       "sdkMethods": [
         "File.renameFile"
@@ -583,7 +605,7 @@
       "path": "/api/files/update",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 1336,
+      "line": 1479,
       "category": "covered",
       "sdkMethods": [
         "File.updateFile"
@@ -1536,7 +1558,7 @@
       "path": "/api/plugin-routes",
       "domain": "http-server-direct",
       "file": "packages/mira-app-server/src/HttpServer.ts",
-      "line": 364,
+      "line": 365,
       "category": "missing",
       "sdkMethods": []
     },
@@ -1545,7 +1567,7 @@
       "path": "/api/plugin-routes/:param",
       "domain": "http-server-direct",
       "file": "packages/mira-app-server/src/HttpServer.ts",
-      "line": 403,
+      "line": 404,
       "category": "covered",
       "sdkMethods": [
         "Plugin.getRoutes"
@@ -1556,7 +1578,7 @@
       "path": "/api/health",
       "domain": "http-server-direct",
       "file": "packages/mira-app-server/src/HttpServer.ts",
-      "line": 437,
+      "line": 438,
       "category": "covered",
       "sdkMethods": [
         "System.getHealth"
@@ -1567,7 +1589,7 @@
       "path": "/health",
       "domain": "http-server-direct",
       "file": "packages/mira-app-server/src/HttpServer.ts",
-      "line": 455,
+      "line": 456,
       "category": "covered",
       "sdkMethods": [
         "System.getSimpleHealth"
@@ -1578,7 +1600,7 @@
       "path": "/api/system/stop",
       "domain": "http-server-direct",
       "file": "packages/mira-app-server/src/HttpServer.ts",
-      "line": 466,
+      "line": 467,
       "category": "covered",
       "sdkMethods": [
         "System.stopServer"
@@ -1589,7 +1611,7 @@
       "path": "/api/logs/stream",
       "domain": "http-server-direct",
       "file": "packages/mira-app-server/src/HttpServer.ts",
-      "line": 489,
+      "line": 490,
       "category": "excluded",
       "sdkMethods": [],
       "note": "SSE log stream, not JSON API"

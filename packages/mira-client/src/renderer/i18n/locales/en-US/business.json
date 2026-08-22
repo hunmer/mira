@@ -818,6 +818,7 @@
     "setFolderCount": "Set folder ({count})",
     "setTags": "Set tags",
     "setTagsCount": "Set tags ({count})",
+    "moveToLibrary": "Move to another library",
     "setCover": "Set cover",
     "locateFolder": "Reveal in folder",
     "delete": "Delete",

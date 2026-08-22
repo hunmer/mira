@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-08-19T02:58:26.865Z",
-  "scannedFiles": 2584,
+  "generatedAt": "2026-08-22T05:23:59.478Z",
+  "scannedFiles": 3093,
   "results": [
     {
       "method": "GET",
@@ -21,9 +21,9 @@
         "packages/mira-app-core/src/shared/sdk/modules/AdminModule.contract.test.ts:31 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/AdminModule.ts:22",
         "packages/mira-app-core/src/shared/sdk/modules/AdminModule.ts:30",
-        "packages/mira-app-server/src/HttpServer.ts:343",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/src/HttpServer.ts:345",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -46,9 +46,9 @@
         "packages/mira-app-core/src/shared/sdk/modules/AdminModule.contract.test.ts:31 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/AdminModule.ts:22",
         "packages/mira-app-core/src/shared/sdk/modules/AdminModule.ts:30",
-        "packages/mira-app-server/src/HttpServer.ts:343",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/src/HttpServer.ts:345",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -70,8 +70,8 @@
         "packages/mira-app-core/src/shared/sdk/modules/AdminModule.contract.test.ts:49 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/AdminModule.ts:37",
         "packages/mira-app-core/src/shared/sdk/modules/AdminModule.ts:44",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -93,8 +93,8 @@
         "packages/mira-app-core/src/shared/sdk/modules/AdminModule.contract.test.ts:49 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/AdminModule.ts:37",
         "packages/mira-app-core/src/shared/sdk/modules/AdminModule.ts:44",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -117,8 +117,8 @@
         "packages/mira-app-core/src/shared/sdk/modules/AdminModule.contract.test.ts:67 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/AdminModule.ts:51",
         "packages/mira-app-core/src/shared/sdk/modules/AdminModule.ts:58",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -141,8 +141,8 @@
         "packages/mira-app-core/src/shared/sdk/modules/AdminModule.contract.test.ts:67 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/AdminModule.ts:51",
         "packages/mira-app-core/src/shared/sdk/modules/AdminModule.ts:58",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -165,8 +165,8 @@
         "packages/mira-app-core/src/shared/sdk/modules/AdminModule.contract.test.ts:85 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/AdminModule.ts:66",
         "packages/mira-app-core/src/shared/sdk/modules/AdminModule.ts:76",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -189,8 +189,8 @@
         "packages/mira-app-core/src/shared/sdk/modules/AdminModule.contract.test.ts:85 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/AdminModule.ts:66",
         "packages/mira-app-core/src/shared/sdk/modules/AdminModule.ts:76",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -210,8 +210,8 @@
       ],
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/AuthModule.ts:75",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -232,8 +232,8 @@
       ],
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/AuthModule.ts:45",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95",
         "packages/mira-client/src/renderer/services/MiraService.ts:82",
         "packages/mira-dashboard-next/src/api/modules/auth.ts:10"
       ],
@@ -256,9 +256,9 @@
       ],
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/AuthModule.ts:27",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-main/main.js:19348",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-main/main.js:20539",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95",
         "packages/mira-client/src/main/ipc/ServerDeployHandlers.ts:200",
         "packages/mira-client/src/renderer/services/MiraService.ts:71",
         "packages/mira-dashboard-next/src/api/client.ts:56",
@@ -283,8 +283,8 @@
       ],
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/AuthModule.ts:54",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95",
         "packages/mira-client/src/renderer/services/MiraService.ts:93",
         "packages/mira-dashboard-next/src/api/modules/auth.ts:7"
       ],
@@ -306,8 +306,8 @@
       ],
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/AuthModule.ts:67",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -330,9 +330,9 @@
         "packages/mira-app-core/src/shared/sdk/CookieSiteModule.test.ts:47 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/CookieSiteModule.ts:40",
         "packages/mira-app-core/src/shared/sdk/modules/CookieSiteModule.ts:44",
-        "packages/mira-app-server/src/HttpServer.ts:358",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/src/HttpServer.ts:359",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -355,9 +355,9 @@
         "packages/mira-app-core/src/shared/sdk/CookieSiteModule.test.ts:47 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/CookieSiteModule.ts:40",
         "packages/mira-app-core/src/shared/sdk/modules/CookieSiteModule.ts:44",
-        "packages/mira-app-server/src/HttpServer.ts:358",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/src/HttpServer.ts:359",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -380,8 +380,8 @@
         "packages/mira-app-core/src/shared/sdk/CookieSiteModule.test.ts:72 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/CookieSiteModule.ts:48",
         "packages/mira-app-core/src/shared/sdk/modules/CookieSiteModule.ts:56",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -402,8 +402,8 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/CookieSiteModule.test.ts:64 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/CookieSiteModule.ts:52",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -426,8 +426,8 @@
         "packages/mira-app-core/src/shared/sdk/CookieSiteModule.test.ts:72 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/CookieSiteModule.ts:48",
         "packages/mira-app-core/src/shared/sdk/modules/CookieSiteModule.ts:56",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -451,8 +451,8 @@
         "packages/mira-app-server/src/cli/commands/database.ts:78",
         "packages/mira-app-server/src/mcp/tools/database.ts:25",
         "packages/mira-app-server/src/mcp/tools/database.ts:85",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -474,8 +474,8 @@
         "packages/mira-app-core/src/shared/sdk/modules/DatabaseModule.ts:43",
         "packages/mira-app-server/src/cli/commands/database.ts:63",
         "packages/mira-app-server/src/mcp/tools/database.ts:67",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -497,8 +497,8 @@
         "packages/mira-app-core/src/shared/sdk/modules/DatabaseModule.ts:53",
         "packages/mira-app-server/src/cli/commands/database.ts:41",
         "packages/mira-app-server/src/mcp/tools/database.ts:45",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -518,8 +518,8 @@
       ],
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/DatabaseModule.ts:33",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -539,9 +539,9 @@
       ],
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/DeviceModule.ts:23",
-        "packages/mira-app-server/src/HttpServer.ts:353",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/src/HttpServer.ts:354",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -561,8 +561,8 @@
       ],
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/DeviceModule.ts:32",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -584,8 +584,8 @@
         "packages/mira-app-core/src/shared/sdk/modules/DeviceModule.contract.test.ts:21 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/DeviceModule.contract.test.ts:24 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/DeviceModule.ts:61",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -605,8 +605,8 @@
       ],
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/DeviceModule.ts:43",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -627,8 +627,8 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/DeviceModule.contract.test.ts:12 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/DeviceModule.ts:51",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -648,8 +648,8 @@
       ],
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/DeviceModule.ts:77",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -711,8 +711,8 @@
       ],
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/DeviceModule.ts:85",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -731,9 +731,9 @@
         "mira-client"
       ],
       "sites": [
-        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:317",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:363",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -754,8 +754,8 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/DownloadModule.contract.test.ts:12 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/DownloadModule.ts:16",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -775,20 +775,42 @@
         "mira-dashboard-next"
       ],
       "sites": [
-        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:136",
-        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:180",
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:147",
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:216",
         "packages/mira-app-server/src/cli/commands/files.ts:54",
         "packages/mira-app-server/src/mcp/tools/files.ts:94",
-        "packages/mira-app-server/web/assets/js/FilePreviewView-BKQ6UnDG.js:303",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/FilePreviewView-BKQ6UnDG.js:303",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95",
+        "packages/mira-app-server/web/assets/js/FilePreviewView-xG84NeuQ.js:358",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/FilePreviewView-D9L6gNQy.js:358",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95",
         "packages/mira-client/src/renderer/components/preview/DocumentPreview.vue:129",
         "packages/mira-client/src/renderer/services/MiraService.ts:126",
         "packages/mira-dashboard-next/src/api/modules/file.ts:5",
         "packages/mira-dashboard-next/src/api/modules/file.ts:9"
       ],
       "frequency": "F3"
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/move",
+      "domain": "files",
+      "category": "covered",
+      "totalSites": 4,
+      "prodSites": 2,
+      "testSites": 1,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.contract.test.ts:16 [test]",
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:174",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
+      ],
+      "frequency": "F2"
     },
     {
       "method": "GET",
@@ -825,9 +847,9 @@
         "mira-client"
       ],
       "sites": [
-        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:632",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:691",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -846,9 +868,9 @@
         "mira-client"
       ],
       "sites": [
-        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:646",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:705",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -867,9 +889,9 @@
         "mira-client"
       ],
       "sites": [
-        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:154",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:187",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -949,9 +971,9 @@
         "mira-client"
       ],
       "sites": [
-        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:401",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:447",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -970,9 +992,9 @@
         "mira-client"
       ],
       "sites": [
-        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:211",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:247",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -991,9 +1013,9 @@
         "mira-client"
       ],
       "sites": [
-        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:427",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:473",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -1012,9 +1034,9 @@
         "mira-client"
       ],
       "sites": [
-        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:411",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:457",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -1033,10 +1055,10 @@
         "mira-client"
       ],
       "sites": [
-        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:196",
-        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:401",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95",
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:232",
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:447",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95",
         "packages/mira-client/src/renderer/services/MiraService.ts:144"
       ],
       "frequency": "F2"
@@ -1056,10 +1078,32 @@
         "mira-client"
       ],
       "sites": [
-        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:462",
-        "packages/mira-app-server/src/routes/FileRoutes.ts:1066",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:508",
+        "packages/mira-app-server/src/routes/FileRoutes.ts:1178",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
+      ],
+      "frequency": "F2"
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/exif",
+      "domain": "files",
+      "category": "covered",
+      "totalSites": 4,
+      "prodSites": 2,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 2,
+      "packages": [
+        "mira-app-core",
+        "mira-client"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:521",
+        "packages/mira-app-server/src/routes/FileRoutes.ts:1216",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -1078,10 +1122,10 @@
         "mira-client"
       ],
       "sites": [
-        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:439",
-        "packages/mira-app-server/src/routes/FileRoutes.ts:1119",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:485",
+        "packages/mira-app-server/src/routes/FileRoutes.ts:1262",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -1100,10 +1144,10 @@
         "mira-client"
       ],
       "sites": [
-        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:449",
-        "packages/mira-app-server/src/routes/FileRoutes.ts:1181",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:495",
+        "packages/mira-app-server/src/routes/FileRoutes.ts:1324",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -1122,10 +1166,10 @@
         "mira-client"
       ],
       "sites": [
-        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:475",
-        "packages/mira-app-server/src/routes/FileRoutes.ts:1234",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:534",
+        "packages/mira-app-server/src/routes/FileRoutes.ts:1377",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -1144,9 +1188,9 @@
         "mira-client"
       ],
       "sites": [
-        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:608",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:667",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -1165,9 +1209,9 @@
         "mira-client"
       ],
       "sites": [
-        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:623",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts:682",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -1187,8 +1231,8 @@
       ],
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/FolderModule.ts:133",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -1209,8 +1253,8 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/FolderModule.contract.test.ts:21 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/FolderModule.ts:138",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -1230,8 +1274,8 @@
       ],
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/FolderModule.ts:154",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -1251,8 +1295,8 @@
       ],
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/FolderModule.ts:163",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -1272,8 +1316,8 @@
       ],
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/FolderModule.ts:172",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -1293,8 +1337,8 @@
       ],
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/FolderModule.ts:246",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -1314,8 +1358,8 @@
       ],
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/FolderModule.ts:182",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -1335,8 +1379,8 @@
       ],
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/FolderModule.ts:194",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -1357,8 +1401,8 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/FolderModule.ts:194",
         "packages/mira-app-core/src/shared/sdk/modules/FolderModule.ts:203",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -1380,8 +1424,8 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.contract.test.ts:21 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.ts:15",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95",
         "packages/mira-dashboard-next/src/components/PathTreeSelect.vue:70"
       ],
       "frequency": "F3"
@@ -1405,8 +1449,8 @@
         "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.contract.test.ts:30 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.contract.test.ts:33 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.ts:23",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95",
         "packages/mira-dashboard-next/src/components/PathTreeSelect.vue:42"
       ],
       "frequency": "F3"
@@ -1428,8 +1472,8 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.contract.test.ts:43 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.ts:32",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -1450,8 +1494,8 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.contract.test.ts:52 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.ts:39",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -1472,8 +1516,8 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.contract.test.ts:61 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.ts:46",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -1494,8 +1538,8 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.contract.test.ts:69 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.ts:53",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -1518,8 +1562,8 @@
         "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.contract.test.ts:81 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.ts:60",
         "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.ts:67",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -1542,8 +1586,8 @@
         "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.contract.test.ts:81 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.ts:60",
         "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.ts:67",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -1566,8 +1610,8 @@
         "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.contract.test.ts:96 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.ts:74",
         "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.ts:88",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -1588,8 +1632,8 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.contract.test.ts:93 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.ts:81",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -1612,8 +1656,8 @@
         "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.contract.test.ts:96 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.ts:74",
         "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.ts:88",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -1636,8 +1680,8 @@
         "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.contract.test.ts:108 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.ts:95",
         "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.ts:102",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -1660,8 +1704,8 @@
         "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.contract.test.ts:108 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.ts:95",
         "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.ts:102",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -1682,8 +1726,8 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.contract.test.ts:117 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/FileSystemModule.ts:109",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -1762,7 +1806,7 @@
       "path": "/api/plugins/:param/:param/*",
       "domain": "api-root",
       "category": "excluded",
-      "totalSites": 1,
+      "totalSites": 2,
       "prodSites": 1,
       "testSites": 0,
       "sdkModuleSites": 0,
@@ -1771,6 +1815,7 @@
         "mira-dashboard-next"
       ],
       "sites": [
+        "packages/mira-app-server/src/ServerPluginManager.ts:494",
         "packages/mira-dashboard-next/src/router/pluginRoutes.ts:69"
       ],
       "frequency": "F1"
@@ -1793,11 +1838,11 @@
         "packages/mira-app-core/src/shared/sdk/client/HttpClient.contract.test.ts:78 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:21",
         "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:44",
-        "packages/mira-app-server/src/HttpServer.ts:349",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-main/main.js:19362",
-        "packages/mira-client/dist-main/main.js:19372",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95",
+        "packages/mira-app-server/src/HttpServer.ts:351",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-main/main.js:20553",
+        "packages/mira-client/dist-main/main.js:20563",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95",
         "packages/mira-client/src/main/ipc/ServerDeployHandlers.ts:215",
         "packages/mira-client/src/main/ipc/ServerDeployHandlers.ts:226"
       ],
@@ -1821,11 +1866,11 @@
         "packages/mira-app-core/src/shared/sdk/client/HttpClient.contract.test.ts:78 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:21",
         "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:44",
-        "packages/mira-app-server/src/HttpServer.ts:349",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-main/main.js:19362",
-        "packages/mira-client/dist-main/main.js:19372",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95",
+        "packages/mira-app-server/src/HttpServer.ts:351",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-main/main.js:20553",
+        "packages/mira-client/dist-main/main.js:20563",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95",
         "packages/mira-client/src/main/ipc/ServerDeployHandlers.ts:215",
         "packages/mira-client/src/main/ipc/ServerDeployHandlers.ts:226"
       ],
@@ -1848,8 +1893,8 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:54",
         "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:63",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -1870,8 +1915,8 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/LibraryModule.contract.test.ts:12 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:69",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -1891,8 +1936,8 @@
       ],
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:76",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -1969,8 +2014,8 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:54",
         "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:63",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -1990,8 +2035,8 @@
       ],
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts:35",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -2012,13 +2057,13 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/PluginModule.contract.test.ts:12 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts:22",
-        "packages/mira-app-server/src/HttpServer.ts:350",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:456",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:456",
+        "packages/mira-app-server/src/HttpServer.ts:342",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:457",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:457",
         "packages/mira-client/src/renderer/App.vue:276",
-        "packages/mira-client/src/renderer/composables/useShortcuts.ts:148",
+        "packages/mira-client/src/renderer/composables/useShortcuts.ts:158",
         "packages/mira-client/src/renderer/services/MiraService.ts:180"
       ],
       "frequency": "F2"
@@ -2040,8 +2085,8 @@
       ],
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts:30",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95",
         "packages/mira-dashboard-next/src/router/pluginRoutes.ts:23"
       ],
       "frequency": "F3"
@@ -2063,8 +2108,8 @@
       ],
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts:62",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95",
         "packages/mira-dashboard-next/src/api/modules/plugin.ts:26"
       ],
       "frequency": "F3"
@@ -2100,8 +2145,8 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/PluginModule.contract.test.ts:55 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts:128",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -2123,8 +2168,8 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/PluginModule.contract.test.ts:99 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts:139",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95",
         "packages/mira-dashboard-next/src/views/mira/plugin/index.vue:332"
       ],
       "frequency": "F3"
@@ -2146,8 +2191,8 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/PluginModule.contract.test.ts:63 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts:146",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -2168,8 +2213,8 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/PluginModule.contract.test.ts:75 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts:157",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -2220,8 +2265,8 @@
         "packages/mira-app-core/src/shared/sdk/modules/PluginModule.contract.test.ts:89 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts:164",
         "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts:174",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -2244,8 +2289,8 @@
         "packages/mira-app-core/src/shared/sdk/modules/PluginModule.contract.test.ts:89 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts:164",
         "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts:174",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -2282,8 +2327,8 @@
         "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts:139",
         "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts:146",
         "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts:157",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95",
         "packages/mira-dashboard-next/src/api/modules/plugin.ts:26",
         "packages/mira-dashboard-next/src/router/pluginRoutes.ts:23",
         "packages/mira-dashboard-next/src/views/mira/plugin/index.vue:332"
@@ -2295,13 +2340,15 @@
       "path": "/api/plugins/:param/icon/:param",
       "domain": "plugins",
       "category": "excluded",
-      "totalSites": 0,
+      "totalSites": 1,
       "prodSites": 0,
       "testSites": 0,
       "sdkModuleSites": 0,
       "pkgCount": 0,
       "packages": [],
-      "sites": [],
+      "sites": [
+        "packages/mira-app-server/src/ServerPluginManager.ts:494"
+      ],
       "frequency": "F0"
     },
     {
@@ -2337,8 +2384,8 @@
         "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts:139",
         "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts:146",
         "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts:157",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95",
         "packages/mira-dashboard-next/src/api/modules/plugin.ts:26",
         "packages/mira-dashboard-next/src/router/pluginRoutes.ts:23",
         "packages/mira-dashboard-next/src/views/mira/plugin/index.vue:332"
@@ -2367,14 +2414,14 @@
         "packages/mira-app-core/src/shared/sdk/modules/SettingsModule.contract.test.ts:21 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/SettingsModule.ts:16",
         "packages/mira-app-core/src/shared/sdk/modules/SettingsModule.ts:25",
-        "packages/mira-app-server/src/HttpServer.ts:357",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:456",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:456",
+        "packages/mira-app-server/src/HttpServer.ts:358",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:457",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:457",
         "packages/mira-client/src/renderer/App.vue:280",
-        "packages/mira-client/src/renderer/composables/useShortcuts.ts:118",
-        "packages/mira-client/src/renderer/router/index.ts:75",
+        "packages/mira-client/src/renderer/composables/useShortcuts.ts:128",
+        "packages/mira-client/src/renderer/router/index.ts:84",
         "packages/mira-dashboard-next/src/layouts/DefaultLayout.vue:56"
       ],
       "frequency": "F3"
@@ -2401,14 +2448,14 @@
         "packages/mira-app-core/src/shared/sdk/modules/SettingsModule.contract.test.ts:21 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/SettingsModule.ts:16",
         "packages/mira-app-core/src/shared/sdk/modules/SettingsModule.ts:25",
-        "packages/mira-app-server/src/HttpServer.ts:357",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:456",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:456",
+        "packages/mira-app-server/src/HttpServer.ts:358",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:457",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:457",
         "packages/mira-client/src/renderer/App.vue:280",
-        "packages/mira-client/src/renderer/composables/useShortcuts.ts:118",
-        "packages/mira-client/src/renderer/router/index.ts:75",
+        "packages/mira-client/src/renderer/composables/useShortcuts.ts:128",
+        "packages/mira-client/src/renderer/router/index.ts:84",
         "packages/mira-dashboard-next/src/layouts/DefaultLayout.vue:56"
       ],
       "frequency": "F3"
@@ -2431,8 +2478,8 @@
         "packages/mira-app-core/src/shared/sdk/modules/StatisticsModule.contract.test.ts:17 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/StatisticsModule.contract.test.ts:20 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/StatisticsModule.ts:14",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -2453,8 +2500,8 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/StatisticsModule.contract.test.ts:28 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/StatisticsModule.ts:23",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -2475,8 +2522,8 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/StatisticsModule.contract.test.ts:36 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/StatisticsModule.ts:32",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -2498,8 +2545,8 @@
         "packages/mira-app-core/src/shared/sdk/modules/StatisticsModule.contract.test.ts:44 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/StatisticsModule.contract.test.ts:47 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/StatisticsModule.ts:41",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -2519,8 +2566,8 @@
       ],
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/TagModule.ts:126",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -2540,8 +2587,8 @@
       ],
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/TagModule.ts:135",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -2561,8 +2608,8 @@
       ],
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/TagModule.ts:144",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -2582,8 +2629,8 @@
       ],
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/TagModule.ts:153",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -2603,8 +2650,8 @@
       ],
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/TagModule.ts:227",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -2624,8 +2671,8 @@
       ],
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/TagModule.ts:163",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -2645,8 +2692,8 @@
       ],
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/TagModule.ts:175",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -2667,8 +2714,8 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/TagModule.ts:175",
         "packages/mira-app-core/src/shared/sdk/modules/TagModule.ts:184",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -2689,8 +2736,8 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/ThumbnailModule.contract.test.ts:16 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/ThumbnailModule.ts:14",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -2711,8 +2758,8 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/ThumbnailModule.contract.test.ts:25 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/ThumbnailModule.ts:21",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -2733,8 +2780,8 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/ThumbnailModule.contract.test.ts:33 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/ThumbnailModule.ts:28",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -2755,8 +2802,8 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/ThumbnailModule.contract.test.ts:41 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/ThumbnailModule.ts:35",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -2777,8 +2824,8 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/ThumbnailModule.contract.test.ts:49 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/ThumbnailModule.ts:42",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -2799,8 +2846,8 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/ThumbnailModule.contract.test.ts:57 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/ThumbnailModule.ts:49",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -2821,8 +2868,8 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/ThumbnailModule.contract.test.ts:65 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/ThumbnailModule.ts:56",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -2843,8 +2890,8 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/ThumbnailModule.contract.test.ts:68 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/ThumbnailModule.ts:63",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -2865,8 +2912,8 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/ThumbnailModule.contract.test.ts:71 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/ThumbnailModule.ts:70",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -2888,8 +2935,8 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/UserModule.ts:21",
         "packages/mira-app-core/src/shared/sdk/modules/UserModule.ts:30",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95",
         "packages/mira-dashboard-next/src/api/modules/auth.ts:8"
       ],
       "frequency": "F3"
@@ -2911,8 +2958,8 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/UserModule.contract.test.ts:11 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/UserModule.ts:39",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -2934,8 +2981,8 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/UserModule.ts:21",
         "packages/mira-app-core/src/shared/sdk/modules/UserModule.ts:30",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95",
         "packages/mira-dashboard-next/src/api/modules/auth.ts:8"
       ],
       "frequency": "F3"
@@ -2957,8 +3004,8 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/UserModule.contract.test.ts:20 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/UserModule.ts:47",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -2979,8 +3026,8 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/UserModule.contract.test.ts:29 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/UserModule.ts:54",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -3004,11 +3051,11 @@
         "packages/mira-app-core/src/shared/sdk/modules/UserModule.ts:61",
         "packages/mira-app-server/src/routes/UserRouter.ts:71",
         "packages/mira-app-server/src/routes/UserRouter.ts:202",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-dashboard-next/src/layouts/DefaultLayout.vue:133",
-        "packages/mira-dashboard-next/src/views/mira/statistics/index.vue:368",
-        "packages/mira-dashboard-next/src/views/mira/statistics/index.vue:416"
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95",
+        "packages/mira-dashboard-next/src/layouts/DefaultLayout.vue:135",
+        "packages/mira-dashboard-next/src/views/mira/statistics/index.vue:369",
+        "packages/mira-dashboard-next/src/views/mira/statistics/index.vue:417"
       ],
       "frequency": "F3"
     },
@@ -3017,21 +3064,24 @@
       "path": "/",
       "domain": "http-server-direct",
       "category": "excluded",
-      "totalSites": 53848,
-      "prodSites": 53076,
-      "testSites": 26,
+      "totalSites": 59701,
+      "prodSites": 58858,
+      "testSites": 29,
       "sdkModuleSites": 0,
-      "pkgCount": 9,
+      "pkgCount": 12,
       "packages": [
         "landing-page",
         "mira-app-core",
         "mira-browser-extension",
+        "mira-cep-panel",
         "mira-client",
         "mira-dashboard-next",
         "mira-doc",
+        "mira-plugin-ui",
         "mira-scripts-core",
         "mira_mobile",
-        "vue-masonry"
+        "vue-masonry",
+        "vue-selection-box"
       ],
       "sites": [
         "packages/landing-page/.next/dev/server/app/(app)/blocks/page_client-reference-manifest.js:2",
@@ -3115,7 +3165,7 @@
       "pkgCount": 0,
       "packages": [],
       "sites": [
-        "packages/mira-app-server/src/HttpServer.ts:364"
+        "packages/mira-app-server/src/HttpServer.ts:365"
       ],
       "frequency": "F0"
     },
@@ -3137,8 +3187,8 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/PluginModule.contract.test.ts:108 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/PluginModule.ts:184",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95",
         "packages/mira-dashboard-next/src/router/pluginRoutes.ts:36"
       ],
       "frequency": "F3"
@@ -3164,10 +3214,10 @@
         "packages/mira-app-core/src/shared/sdk/modules/SystemModule.ts:16",
         "packages/mira-app-core/src/shared/sdk/modules/SystemModule.ts:24",
         "packages/mira-app-server/src/HttpServer.ts:52",
-        "packages/mira-app-server/src/HttpServer.ts:437",
-        "packages/mira-app-server/src/HttpServer.ts:455",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95",
+        "packages/mira-app-server/src/HttpServer.ts:438",
+        "packages/mira-app-server/src/HttpServer.ts:456",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95",
         "packages/mira-dashboard-next/vite.config.ts:34"
       ],
       "frequency": "F3"
@@ -3190,9 +3240,9 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/SystemModule.contract.test.ts:21 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/SystemModule.ts:24",
-        "packages/mira-app-server/src/HttpServer.ts:455",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95",
+        "packages/mira-app-server/src/HttpServer.ts:456",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95",
         "packages/mira-dashboard-next/vite.config.ts:34"
       ],
       "frequency": "F3"
@@ -3214,9 +3264,9 @@
       "sites": [
         "packages/mira-app-core/src/shared/sdk/modules/SystemModule.contract.test.ts:30 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/SystemModule.ts:33",
-        "packages/mira-app-server/src/HttpServer.ts:466",
-        "packages/mira-app-server/web/assets/js/main-B8d1qB1Y.js:95",
-        "packages/mira-client/dist-renderer/assets/js/main-B8d1qB1Y.js:95"
+        "packages/mira-app-server/src/HttpServer.ts:467",
+        "packages/mira-app-server/web/assets/js/main-CFEr2s-v.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95"
       ],
       "frequency": "F2"
     },
@@ -3233,7 +3283,7 @@
       "packages": [],
       "sites": [
         "packages/mira-app-server/src/HttpServer.ts:53",
-        "packages/mira-app-server/src/HttpServer.ts:489",
+        "packages/mira-app-server/src/HttpServer.ts:490",
         "packages/mira-app-server/src/middleware/permission.ts:22"
       ],
       "frequency": "F0"

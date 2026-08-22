@@ -1,4 +1,4 @@
-import { ref, computed, watch, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onBeforeMount, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import type { FileInfo } from '../../../../../shared/types'
@@ -41,6 +41,11 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
   const libraryStore = useLibraryStore()
   const menuVersion = ref(0)
   const menuTimer = setInterval(() => { menuVersion.value++ }, 500)
+  onBeforeMount(() => {
+    if (libraryStore.libraries.length === 0) {
+      void libraryStore.fetchLibraries()
+    }
+  })
   onBeforeUnmount(() => clearInterval(menuTimer))
 
   watch([folderPopoverOpen, tagPopoverOpen], ([folderOpen, tagOpen]) => {
@@ -108,6 +113,29 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
     }, { label: t('business.contextMenu.setTags') })
     await tagStore.refreshTags(libraryStore.currentLibrary?.id || 'default')
   }
+
+  const otherLibraries = computed(() => {
+    const currentLibraryId = currentContextItem.value?.libraryId || libraryStore.currentLibrary?.id || 'default'
+    return libraryStore.libraries.filter(library => String(library.id) !== String(currentLibraryId))
+  })
+
+  const handleMoveToLibrary = async (targetLibraryId: string) => {
+    const files = getTargetFiles()
+    if (files.length === 0) return
+
+    await runBatchOperation(files, async (file) => {
+      const sourceLibraryId = file.libraryId || libraryStore.currentLibrary?.id
+      if (!sourceLibraryId || String(sourceLibraryId) === String(targetLibraryId)) return
+
+      await miraSDKService.moveFile(sourceLibraryId, targetLibraryId, file.id)
+      emit('media-delete', file)
+    }, { label: t('business.contextMenu.moveToLibrary') })
+  }
+
+  const moveToLibraryItems = computed((): MenuItem[] => otherLibraries.value.map(library => ({
+    label: library.name,
+    command: () => handleMoveToLibrary(library.id),
+  })))
 
   const runWithCurrentItem = async (handler: (item: FileInfo) => void | Promise<void>) => {
     const item = currentContextItem.value
@@ -339,6 +367,11 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
         })
       },
       {
+        label: t('business.contextMenu.moveToLibrary'),
+        items: moveToLibraryItems.value,
+        disabled: moveToLibraryItems.value.length === 0,
+      },
+      {
         label: t('business.contextMenu.setCover'),
         command: () => runWithCurrentItem(() => {
           coverCropOpen.value = true
@@ -393,6 +426,7 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
     folderTreeNodes,
     handleFolderSelect,
     handleTagSelect,
+    moveToLibraryItems,
     tagStore,
   }
 }

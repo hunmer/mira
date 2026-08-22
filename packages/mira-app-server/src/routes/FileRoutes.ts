@@ -355,6 +355,114 @@ export class FileRoutes {
             }
         });
 
+        // 在服务端跨素材库移动文件，避免客户端下载后重新上传。
+        this.router.post('/move', async (req: Request, res: Response) => {
+            const { sourceLibraryId, targetLibraryId, fileId } = req.body || {};
+            const sourceId = String(sourceLibraryId || req.body?.libraryId || '');
+            const targetId = String(targetLibraryId || '');
+            const id = Number(fileId);
+
+            if (!sourceId || !targetId || !Number.isSafeInteger(id) || id <= 0) {
+                return res.status(400).json({ code: 400, message: 'sourceLibraryId, targetLibraryId and valid fileId are required', data: null });
+            }
+            if (sourceId === targetId) {
+                return res.status(400).json({ code: 400, message: 'Source and target libraries must be different', data: null });
+            }
+
+            try {
+                const sourceConfig = this.backend.libraries!.getLibraryConfig(sourceId);
+                const targetConfig = this.backend.libraries!.getLibraryConfig(targetId);
+                const userRole = (req as any).user?.role;
+                if (!canAccessLibrary(sourceConfig, userRole) || !canAccessLibrary(targetConfig, userRole)) {
+                    return res.status(403).json({ code: 403, message: 'Access denied', data: null });
+                }
+
+                const source = this.backend.libraries!.getLibrary(sourceId);
+                const target = this.backend.libraries!.getLibrary(targetId);
+                if (!source?.libraryService || !target?.libraryService) {
+                    return res.status(404).json({ code: 404, message: 'Source or target library is unavailable', data: null });
+                }
+
+                const sourceItem = await source.libraryService.getFile(id);
+                if (!sourceItem) {
+                    return res.status(404).json({ code: 404, message: 'File not found', data: null });
+                }
+                if (sourceItem.recycled) {
+                    return res.status(400).json({ code: 400, message: 'Recycled files cannot be moved', data: null });
+                }
+
+                const sourcePath = await source.libraryService.getItemFilePath(sourceItem, { isUrlFile: false });
+                if (!sourcePath || !fs.existsSync(sourcePath)) {
+                    return res.status(404).json({ code: 404, message: 'Source file is missing', data: null });
+                }
+
+                const targetMeta = {
+                    created_at: sourceItem.created_at,
+                    hash: sourceItem.hash,
+                    custom_fields: sourceItem.custom_fields,
+                    notes: sourceItem.notes,
+                    stars: sourceItem.stars,
+                    reference: sourceItem.reference,
+                    tags: sourceItem.tags,
+                    uploader: sourceItem.uploader,
+                    website: sourceItem.website,
+                    metadata: sourceItem.metadata,
+                    folder_id: null,
+                };
+                const targetItem = await target.libraryService.createFileFromPath(
+                    sourcePath,
+                    { name: sourceItem.name, ...targetMeta },
+                    { importType: 'copy' },
+                );
+                if (targetItem?.duplicate) {
+                    return res.status(409).json({ code: 409, message: 'A duplicate file already exists in the target library', data: null });
+                }
+
+                const deleted = await source.libraryService.deleteFile(id, { moveToRecycleBin: false });
+                if (!deleted) {
+                    await this.removeMovedTarget(target.libraryService, targetItem);
+                    return res.status(500).json({ code: 500, message: 'Failed to remove source file record', data: null });
+                }
+
+                await this.removeFileArtifacts(source.libraryService, sourceItem);
+                const result = await target.libraryService.getFile(Number(targetItem.id)) || targetItem;
+
+                if (this.backend.webSocketServer) {
+                    this.backend.webSocketServer.broadcastPluginEvent('file::deleted', {
+                        message: { type: 'file', action: 'delete' },
+                        result: { id, name: sourceItem.name, libraryId: sourceId },
+                        libraryId: sourceId,
+                        fileId: id,
+                    });
+                    this.backend.webSocketServer.broadcastLibraryEvent(sourceId, 'file::deleted', {
+                        id, name: sourceItem.name, libraryId: sourceId, fileId: id,
+                    });
+                    this.backend.webSocketServer.broadcastPluginEvent('file::created', {
+                        message: { type: 'file', action: 'create' },
+                        result: { ...result, libraryId: targetId },
+                        libraryId: targetId,
+                    });
+                    this.backend.webSocketServer.broadcastLibraryEvent(targetId, 'file::created', {
+                        ...result, libraryId: targetId,
+                    });
+                }
+
+                return res.json({
+                    code: 0,
+                    message: 'File moved successfully',
+                    data: {
+                        sourceLibraryId: sourceId,
+                        targetLibraryId: targetId,
+                        sourceFileId: id,
+                        targetFile: result,
+                    },
+                });
+            } catch (error) {
+                console.error('Error moving file between libraries:', error);
+                return res.status(500).json({ code: 500, message: 'Internal server error while moving file', data: null });
+            }
+        });
+
         // 获取文件缩略图
         this.router.get('/thumb/:libraryId/:id', async (req: Request, res: Response) => {
             try {
@@ -1403,6 +1511,30 @@ export class FileRoutes {
                 res.status(500).json({ code: 500, message: 'Internal server error' });
             }
         });
+    }
+
+    private async removeFileArtifacts(libraryService: any, item: Record<string, any>): Promise<void> {
+        try {
+            const filePath = await libraryService.getItemFilePath(item, { isUrlFile: false });
+            if (filePath && fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        } catch (error) {
+            console.error('Failed to remove moved file artifact:', error);
+        }
+
+        try {
+            const thumbPath = await libraryService.getItemThumbPath(item, { isNetworkImage: false });
+            if (thumbPath && fs.existsSync(thumbPath)) fs.unlinkSync(thumbPath);
+        } catch (error) {
+            console.error('Failed to remove moved thumbnail artifact:', error);
+        }
+    }
+
+    private async removeMovedTarget(libraryService: any, item: Record<string, any>): Promise<void> {
+        try {
+            await libraryService.deleteFile(Number(item.id), { moveToRecycleBin: false });
+        } finally {
+            await this.removeFileArtifacts(libraryService, item);
+        }
     }
 
     private broadcastFileEvent(event: string, libraryId: string, result: any, fileId: number, oldData?: any) {

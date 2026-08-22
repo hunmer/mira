@@ -3,6 +3,7 @@ import {
     UploadFileRequest,
     UploadProgressEvent,
     UploadResponse,
+    MoveFileResponse,
     BaseResponse,
     PreviewViewersResponse,
     BatchImportOptions,
@@ -162,6 +163,20 @@ export class FileModule {
      */
     async download(libraryId: string, fileId: string): Promise<Blob> {
         return await this.httpClient.download(`/api/files/download/${libraryId}/${fileId}`);
+    }
+
+    /** 在服务端将文件原子地移动到另一个素材库。 */
+    async moveFile(
+        sourceLibraryId: string,
+        targetLibraryId: string,
+        fileId: string | number,
+    ): Promise<MoveFileResponse> {
+        return await this.httpClient.post<MoveFileResponse>('/api/files/move', {
+            libraryId: sourceLibraryId,
+            sourceLibraryId,
+            targetLibraryId,
+            fileId: String(fileId),
+        });
     }
 
     /** 覆盖素材封面。 */

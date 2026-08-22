@@ -19,6 +19,12 @@ interface ParsedItem<T> {
   lazy: boolean
 }
 
+interface GapSlot {
+  column: number
+  top: number
+  maxBottom: number
+}
+
 /** 宽高比字符串 -> height/width 比例 */
 function aspectToRatio(aspect?: string): number | null {
   if (!aspect) return null
@@ -91,7 +97,7 @@ export function layout<T>(
 /**
  * 智能填充布局:
  *  1. 按输入顺序逐项定位,后续项目不会改变已有项目的位置。
- *  2. 单列项优先回填此前跨列项产生的洞区,没有可用洞区时进入最矮列。
+ *  2. 单列项或能匹配连续洞区的跨列项优先回填,没有可用洞区时进入最矮列。
  */
 export function layoutFill<T>(
   data: T[],
@@ -106,7 +112,7 @@ export function layoutFill<T>(
   if (columns <= 0 || colWidth <= 0) return { items, totalHeight: 0 }
 
   const bottoms = new Array(columns).fill(0)
-  const gapSlots: Array<{ column: number; top: number; maxBottom: number }> = []
+  const gapSlots: GapSlot[] = []
 
   const parsed: ParsedItem<T>[] = data.map((item, index) => {
     const meta = getMeta?.(item, index) ?? {}
@@ -142,6 +148,43 @@ export function layoutFill<T>(
     }
   }
 
+  const findGapRange = (p: ParsedItem<T>) => {
+    let best: { startCol: number; top: number; slots: GapSlot[] } | undefined
+    let bestRemainder = Infinity
+
+    for (let startCol = 0; startCol <= columns - p.colSpan; startCol++) {
+      const slots: GapSlot[] = []
+      let valid = true
+
+      for (let column = startCol; column < startCol + p.colSpan; column++) {
+        const candidates = gapSlots.filter(
+          (slot) => slot.column === column && slot.maxBottom - slot.top >= p.height
+        )
+        if (candidates.length === 0) {
+          valid = false
+          break
+        }
+        candidates.sort((a, b) =>
+          (a.maxBottom - a.top - p.height) - (b.maxBottom - b.top - p.height)
+        )
+        slots.push(candidates[0])
+      }
+
+      if (!valid) continue
+      const top = Math.max(...slots.map((slot) => slot.top))
+      const maxBottom = Math.min(...slots.map((slot) => slot.maxBottom))
+      if (top + p.height > maxBottom) continue
+
+      const remainder = maxBottom - top - p.height
+      if (remainder < bestRemainder) {
+        best = { startCol, top, slots }
+        bestRemainder = remainder
+      }
+    }
+
+    return best
+  }
+
   for (const p of parsed) {
     if (p.colSpan === 1) {
       let bestSlot: (typeof gapSlots)[number] | undefined
@@ -171,6 +214,16 @@ export function layoutFill<T>(
         }
       }
       placeAtBottom(p, minCol, minBottom)
+      continue
+    }
+
+    const gapRange = findGapRange(p)
+    if (gapRange) {
+      pushPlacedItem(p, gapRange.startCol, gapRange.top)
+      const nextTop = gapRange.top + p.height + gap
+      for (const slot of gapRange.slots) {
+        slot.top = Math.max(slot.top, nextTop)
+      }
       continue
     }
 

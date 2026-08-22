@@ -42,3 +42,16 @@ test("fill 布局仍会用后续单列素材回填已有洞区", () => {
   assert.deepEqual({ left: wide?.left, top: wide?.top }, { left: 110, top: 60 })
   assert.deepEqual({ left: filler?.left, top: filler?.top }, { left: 220, top: 0 })
 })
+
+test("fill 布局会用后续跨列素材回填连续洞区", () => {
+  const items = [
+    { id: "tall", colSpan: 1, height: 200 },
+    { id: "short", colSpan: 1, height: 50 },
+    { id: "wide", colSpan: 3, height: 100 },
+    { id: "wide-filler", colSpan: 2, height: 40 }
+  ]
+  const placed = layoutFill(items, 4, 100, 10, 80, getMeta, getKey).items
+  const filler = placed.find((item) => item.item.id === "wide-filler")
+
+  assert.deepEqual({ left: filler?.left, top: filler?.top }, { left: 220, top: 0 })
+})

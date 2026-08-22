@@ -3,6 +3,7 @@
 
 import { miraSDKService } from './MiraSDKService'
 import { electronService } from './ElectronService'
+import type { MoveFileResponse } from 'mira-app-core/shared/sdk'
 import type {
   MiraConnectionConfig,
   LoginCredentials,
@@ -95,6 +96,10 @@ export class AppService {
 
   async downloadFile(libraryId: string, fileId: string): Promise<Blob> {
     return await miraSDKService.downloadFile(libraryId, fileId)
+  }
+
+  async moveFile(sourceLibraryId: string, targetLibraryId: string, fileId: string | number): Promise<MoveFileResponse> {
+    return await miraSDKService.moveFile(sourceLibraryId, targetLibraryId, fileId)
   }
 
   async writeFile(

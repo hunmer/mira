@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-19T02:58:07.799Z",
+  "generatedAt": "2026-08-22T05:23:30.311Z",
   "entries": [
     {
       "module": "Admin",
@@ -337,10 +337,21 @@
       "httpMethod": "POST",
       "path": "/api/files/upload",
       "file": "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts",
-      "line": 136,
+      "line": 147,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "UploadResponse"
+    },
+    {
+      "module": "File",
+      "method": "moveFile",
+      "httpMethod": "POST",
+      "path": "/api/files/move",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts",
+      "line": 174,
+      "hasQuery": false,
+      "hasBody": true,
+      "returnType": "MoveFileResponse"
     },
     {
       "module": "File",
@@ -348,7 +359,7 @@
       "httpMethod": "POST",
       "path": "/api/files/cover/:param/:param",
       "file": "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts",
-      "line": 153,
+      "line": 186,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "{ data: FileData }"
@@ -359,7 +370,7 @@
       "httpMethod": "POST",
       "path": "/api/files/upload",
       "file": "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts",
-      "line": 180,
+      "line": 216,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "UploadResponse"
@@ -370,7 +381,7 @@
       "httpMethod": "DELETE",
       "path": "/api/files/:param/:param",
       "file": "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts",
-      "line": 196,
+      "line": 232,
       "hasQuery": true,
       "hasBody": false,
       "returnType": "BaseResponse"
@@ -381,7 +392,7 @@
       "httpMethod": "POST",
       "path": "/api/files/batch-delete",
       "file": "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts",
-      "line": 211,
+      "line": 247,
       "hasQuery": false,
       "hasBody": true,
       "returnType": null
@@ -392,7 +403,7 @@
       "httpMethod": "POST",
       "path": "/api/download/start",
       "file": "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts",
-      "line": 317,
+      "line": 363,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "BatchImportResponse"
@@ -403,7 +414,7 @@
       "httpMethod": "DELETE",
       "path": "/api/files/:param/trash",
       "file": "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts",
-      "line": 401,
+      "line": 447,
       "hasQuery": true,
       "hasBody": false,
       "returnType": null
@@ -414,7 +425,7 @@
       "httpMethod": "POST",
       "path": "/api/files/recover",
       "file": "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts",
-      "line": 411,
+      "line": 457,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "BaseResponse"
@@ -425,7 +436,7 @@
       "httpMethod": "POST",
       "path": "/api/files/batch-recover",
       "file": "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts",
-      "line": 427,
+      "line": 473,
       "hasQuery": false,
       "hasBody": true,
       "returnType": null
@@ -436,7 +447,7 @@
       "httpMethod": "POST",
       "path": "/api/files/getFiles",
       "file": "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts",
-      "line": 439,
+      "line": 485,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "FileData[]"
@@ -447,7 +458,7 @@
       "httpMethod": "POST",
       "path": "/api/files/getFile",
       "file": "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts",
-      "line": 449,
+      "line": 495,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "FileData"
@@ -458,10 +469,21 @@
       "httpMethod": "POST",
       "path": "/api/files/metadata",
       "file": "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts",
-      "line": 462,
+      "line": 508,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "FileMetadataDimensions[]"
+    },
+    {
+      "module": "File",
+      "method": "getExifByIds",
+      "httpMethod": "POST",
+      "path": "/api/files/exif",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts",
+      "line": 521,
+      "hasQuery": false,
+      "hasBody": true,
+      "returnType": "FileExifResult[]"
     },
     {
       "module": "File",
@@ -469,7 +491,7 @@
       "httpMethod": "POST",
       "path": "/api/files/getPreviewViewers",
       "file": "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts",
-      "line": 475,
+      "line": 534,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "PreviewViewersResponse"
@@ -480,7 +502,7 @@
       "httpMethod": "POST",
       "path": "/api/files/rename",
       "file": "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts",
-      "line": 608,
+      "line": 667,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "FileData"
@@ -491,7 +513,7 @@
       "httpMethod": "POST",
       "path": "/api/files/update",
       "file": "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts",
-      "line": 623,
+      "line": 682,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "FileData"
@@ -502,7 +524,7 @@
       "httpMethod": "GET",
       "path": "/api/files/extra/:param/:param",
       "file": "packages/mira-app-core/src/shared/sdk/modules/FileModule.ts",
-      "line": 631,
+      "line": 690,
       "hasQuery": true,
       "hasBody": false,
       "returnType": "string[]"
