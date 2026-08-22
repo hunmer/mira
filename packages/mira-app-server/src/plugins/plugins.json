@@ -198,5 +198,25 @@
     ],
     "installedAt": "2026-08-21T00:00:00.000Z",
     "status": "active"
+  },
+  {
+    "name": "mira_ai_sdk",
+    "enabled": true,
+    "path": "../../../../plugins/plugins/mira_ai_sdk",
+    "version": "1.0.0",
+    "description": "通用 AI SDK 网关：管理多个 OpenAI 兼容服务商（apiKey / baseUrl / 模型列表），提供测试连接与 AI 聊天 API。",
+    "author": "Mira Team",
+    "main": "dist/index.js",
+    "icon": "smart_toy",
+    "title": "AI 服务商",
+    "category": "integration",
+    "tags": [
+      "ai",
+      "ai-sdk",
+      "聊天",
+      "openai-compatible"
+    ],
+    "installedAt": "2026-08-23T00:00:00.000Z",
+    "status": "active"
   }
 ]
