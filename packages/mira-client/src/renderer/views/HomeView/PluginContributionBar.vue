@@ -23,6 +23,9 @@ import {
   savePluginDevConfig,
 } from '@renderer/plugins/devMode'
 import { usePluginStore } from '@renderer/stores/plugin'
+import { useAuthStore } from '@renderer/stores/auth'
+import { miraSDKService } from '@renderer/services/MiraSDKService'
+import { useTabs } from '@renderer/composables/useTabs'
 import {
   ContextMenu,
   ContextMenuContent,
@@ -54,6 +57,7 @@ const toast = useToast()
 const getPluginSystem = (): any => (window as any).pluginSystem
 
 const pluginStore = usePluginStore()
+const { createWebviewTab } = useTabs()
 
 // ==================== 插件 dev 模式（配置与打开流程见 plugins/devMode.ts） ====================
 
@@ -98,6 +102,55 @@ async function onDisablePlugin(contribution: PluginContribution) {
     toast.add({ severity: 'success', summary: t('views.pluginContributionBar.disableSuccess'), life: 3000 })
   } else {
     toast.add({ severity: 'error', summary: t('views.pluginContributionBar.disableFailed'), detail: result?.message || t('views.common.unknownError'), life: 5000 })
+  }
+}
+
+/**
+ * 右键「在 Webview 标签页打开」：用 Tab 内 <webview> 承载插件入口。
+ * URL 解析优先级：dev url > 服务端插件入口 > 本地插件 dist（file:// 直载）。
+ * query 注入 server/token/libraryId，与 openPluginWindow 对齐（插件页面需直连 server API）。
+ */
+async function onOpenInWebviewTab(contribution: PluginContribution) {
+  const config = getPluginSystem()?.getPlugin?.(contribution.pluginId)?.config
+
+  let url: string | undefined
+  if (isPluginDevEnabled(contribution.pluginId)) {
+    url = getPluginDevConfig(contribution.pluginId)?.url?.trim()
+  }
+  if (!url && config?.source === 'server') {
+    url = resolveServerPluginUrl(config)
+  }
+  if (!url) {
+    const base = config?.actualDirectory || config?.url
+    if (base) {
+      const p = String(base).replace(/\\/g, '/').replace(/\/+$/, '')
+      url = /^https?:\/\//i.test(p)
+        ? `${p}/dist/index.html`
+        : `file:///${p.replace(/^\/+/, '')}/dist/index.html`
+    }
+  }
+
+  if (!url) {
+    toast.add({ severity: 'warn', summary: t('views.pluginContributionBar.pluginUrlUnavailable'), life: 4000 })
+    return
+  }
+
+  try {
+    const u = new URL(url)
+    const serverUrl = miraSDKService.getConnectionConfig()?.serverUrl
+    const token = useAuthStore().token
+    if (serverUrl) u.searchParams.set('server', serverUrl)
+    if (token) u.searchParams.set('token', token)
+    if (config?.libraryId) u.searchParams.set('libraryId', String(config.libraryId))
+    await createWebviewTab(u.toString(), {
+      id: `plugin-webview-${contribution.pluginId}`,
+      label: contribution.title,
+      icon: 'extension',
+      // file:// 直载的本地插件关闭 webSecurity，否则页面 fetch 相对路径资源被 CORS 阻断
+      data: u.protocol === 'file:' ? { disableWebSecurity: true } : undefined,
+    })
+  } catch (e: any) {
+    toast.add({ severity: 'error', summary: t('views.pluginContributionBar.windowOpenFailed'), detail: e?.message || String(e), life: 5000 })
   }
 }
 
@@ -332,7 +385,11 @@ const ContributionHost = defineComponent({
             </template>
           </Dropdown>
         </ContextMenuTrigger>
-        <ContextMenuContent class="w-40">
+        <ContextMenuContent class="w-48">
+          <ContextMenuItem @select="onOpenInWebviewTab(contribution)">
+            <span class="material-icons text-base mr-2">open_in_new</span>
+            <span>{{ t('views.pluginContributionBar.openInWebviewTab') }}</span>
+          </ContextMenuItem>
           <ContextMenuItem @select="openDevDialog(contribution)">
             <span class="material-icons text-base mr-2">developer_mode</span>
             <span>{{ t('views.pluginContributionBar.devMode') }}</span>

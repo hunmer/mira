@@ -22,6 +22,8 @@ export class WebviewTabType extends BaseTabType {
         // 收藏夹传入的会话隔离（persist:xxx）与静音设置
         partition: context.tabData?.partition || '',
         muted: context.tabData?.muted === true,
+        // 本地 file:// 插件入口需关闭 webSecurity，页面才能 fetch 相对路径资源
+        disableWebSecurity: context.tabData?.disableWebSecurity === true,
       },
       key: `${this.name}-${context.tabId}`
     }

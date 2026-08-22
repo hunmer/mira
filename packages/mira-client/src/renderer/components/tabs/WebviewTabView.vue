@@ -25,7 +25,7 @@
       </div>
     </div>
     <!-- allowpopups 让 target=_blank/window.open 请求进入主进程 setWindowOpenHandler 拦截链 -->
-    <webview ref="webviewRef" :src="url" :partition="resolvedPartition" allowpopups class="min-h-0 w-full flex-1"
+    <webview ref="webviewRef" :src="url" :partition="resolvedPartition" :webpreferences="webPreferences" allowpopups class="min-h-0 w-full flex-1"
       @dom-ready="onDomReady" @did-navigate="onNavigate" @did-navigate-in-page="onNavigate"
       @did-start-loading="loading = true" @did-stop-loading="onStopLoading" @page-title-updated="onPageTitleUpdated" />
   </div>
@@ -49,9 +49,12 @@ const props = withDefaults(defineProps<{
   partition?: string
   /** 加载后是否静音 */
   muted?: boolean
+  /** 关闭 webSecurity（file:// 本地插件页面 fetch 相对路径资源需要）。仅在 webview 创建时生效 */
+  disableWebSecurity?: boolean
 }>(), {
   partition: '',
   muted: false,
+  disableWebSecurity: false,
 })
 const emit = defineEmits<{
   /** 页面标题更新（供外层同步 tab label） */
@@ -70,6 +73,7 @@ const canGoForward = ref(false)
 const loading = ref(false)
 let lastFaviconUrl = ''
 const resolvedPartition = computed(() => normalizeWebviewPartition(props.partition))
+const webPreferences = computed(() => (props.disableWebSecurity ? 'webSecurity=no' : undefined))
 
 watch(() => props.url, (v) => { address.value = v || '' }, { immediate: true })
 
