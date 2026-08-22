@@ -54,6 +54,8 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
   /** 页面标题更新（供外层同步 tab label） */
   (e: 'title-updated', title: string): void
+  /** 页面站点图标更新（供外层同步 tab icon） */
+  (e: 'icon-updated', icon: string): void
 }>()
 
 const { t } = useI18n()
@@ -62,6 +64,7 @@ const address = ref(props.url || '')
 const canGoBack = ref(false)
 const canGoForward = ref(false)
 const loading = ref(false)
+let lastFaviconUrl = ''
 
 watch(() => props.url, (v) => { address.value = v || '' }, { immediate: true })
 
@@ -74,7 +77,12 @@ function onDomReady() {
 }
 
 function onNavigate(event: Event) {
-  address.value = (event as any).url ?? address.value
+  const detail = (event as any).detail
+  const nextUrl = (event as any).url ?? detail?.url
+  if (nextUrl) {
+    address.value = nextUrl
+    syncFavicon(nextUrl)
+  }
   syncNavState()
 }
 
@@ -87,9 +95,35 @@ function syncNavState() {
   const wv = webviewRef.value
   if (!wv) return
   try {
+    const currentUrl = typeof wv.getURL === 'function' ? wv.getURL() : ''
+    if (currentUrl) {
+      address.value = currentUrl
+      syncFavicon(currentUrl)
+    }
+  } catch { /* webContents 未就绪时忽略 */ }
+  try {
     canGoBack.value = wv.canGoBack()
     canGoForward.value = wv.canGoForward()
   } catch { /* webContents 未就绪时忽略 */ }
+}
+
+function syncFavicon(pageUrl: string) {
+  let hostname = ''
+  try {
+    const parsed = new URL(pageUrl)
+    if (!/^https?:$/.test(parsed.protocol)) return
+    hostname = parsed.hostname
+  } catch {
+    return
+  }
+  if (!hostname) return
+
+  const iconUrl = window.electronAPI
+    ? `site-icon://${hostname}`
+    : `https://www.google.com/s2/favicons?sz=32&domain=${hostname}`
+  if (iconUrl === lastFaviconUrl) return
+  lastFaviconUrl = iconUrl
+  emit('icon-updated', iconUrl)
 }
 
 function onPageTitleUpdated(event: Event) {

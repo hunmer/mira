@@ -39,6 +39,7 @@
         @item-select="handleItemSelect"
         @selection-change="handleSelectionChange"
         @title-updated="handleTitleUpdated"
+        @icon-updated="handleIconUpdated"
         class="w-full h-full"
       />
     </KeepAlive>
@@ -137,6 +138,14 @@ const handleTitleUpdated = (title: string) => {
   if (!trimmed) return
   const tab = tabs.value.find(t => t.id === props.tabId)
   if (tab) tab.label = trimmed
+}
+
+// Webview 页面图标更新 → 同步 tab icon
+const handleIconUpdated = (icon: string) => {
+  const trimmed = (icon || '').trim()
+  if (!trimmed) return
+  const tab = tabs.value.find(t => t.id === props.tabId)
+  if (tab) tab.icon = trimmed
 }
 
 const getPreviewTarget = (): FileInfo | undefined => {

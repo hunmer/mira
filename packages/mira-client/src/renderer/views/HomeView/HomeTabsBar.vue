@@ -39,6 +39,17 @@ const props = defineProps<{
 
 const draggingTabId = ref<string>()
 const dragOverTabId = ref<string>()
+const failedIconUrls = ref(new Map<string, string>())
+
+function isImageIcon(tab: TabItem) {
+  return /^(https?|site-icon):\/\//i.test(tab.icon) && failedIconUrls.value.get(tab.id) !== tab.icon
+}
+
+function handleIconError(tab: TabItem) {
+  const next = new Map(failedIconUrls.value)
+  next.set(tab.id, tab.icon)
+  failedIconUrls.value = next
+}
 
 // Tab 条滚动容器：切换 tab 时自动滚动到可见位置
 const tabScrollContainer = ref<HTMLElement>()
@@ -167,7 +178,9 @@ function handleDragEnd() {
                 :transition="{ type: 'spring', stiffness: 400, damping: 32 }"
                 class="absolute inset-0 z-0 rounded-t-lg border border-b-0 border-white/30 shadow-[0_-4px_16px_var(--shadow-primary-sm)]"
                 :style="{ backgroundColor: tab.iconColor || 'var(--primary)' }" />
-              <span class="relative z-[1] material-icons text-[12px] leading-none"
+              <img v-if="isImageIcon(tab)" :src="tab.icon" alt="" draggable="false"
+                class="relative z-[1] h-3 w-3 shrink-0 rounded-sm object-contain" @error="handleIconError(tab)" />
+              <span v-else class="relative z-[1] material-icons text-[12px] leading-none"
                 :style="{ color: tab.active ? '#fff' : tab.iconColor }">
                 {{ tab.icon }}
               </span>

@@ -198,9 +198,9 @@ type FavoriteType = 'page' | 'folder'
 
 const dialogOpen = ref(false)
 const editingItem = ref<WebFavoriteItem | null>(null)
-/** 添加模式：目标类型（由入口按钮决定）与目标父节点 id（null = 根级） */
-let addType: FavoriteType = 'page'
-let addParentId: string | null = null
+/** 添加模式：目标类型（由入口按钮决定）与目标父节点 id（null = 根级）。必须响应式，computed 依赖它们 */
+const addType = ref<FavoriteType>('page')
+const addParentId = ref<string | null>(null)
 const form = reactive<{ label: string; url: string; partition: string; muted: boolean }>({
   label: '', url: '', partition: '', muted: false,
 })
@@ -208,10 +208,10 @@ const deleteTarget = ref<WebFavoriteItem | null>(null)
 
 const isEditing = computed(() => !!editingItem.value)
 /** 网页类节点（新建网址或编辑带 url 的节点）才展示网址 / 会话隔离 / 静音字段 */
-const isPage = computed(() => (isEditing.value ? !!editingItem.value!.url : addType === 'page'))
+const isPage = computed(() => (isEditing.value ? !!editingItem.value!.url : addType.value === 'page'))
 const dialogTitle = computed(() => {
   if (isEditing.value) return t('views.webFavorites.edit')
-  return addType === 'page' ? t('views.webFavorites.addUrl') : t('views.webFavorites.addFolder')
+  return addType.value === 'page' ? t('views.webFavorites.addUrl') : t('views.webFavorites.addFolder')
 })
 const canSave = computed(() => {
   const label = form.label.trim()
@@ -223,8 +223,8 @@ const canSave = computed(() => {
 function openDialog(options: { item?: WebFavoriteItem; type?: FavoriteType; parentId?: string | null } = {}) {
   const item = options.item || null
   editingItem.value = item
-  addType = options.type || (item?.url ? 'page' : 'folder')
-  addParentId = item ? null : (options.parentId ?? null)
+  addType.value = options.type || (item?.url ? 'page' : 'folder')
+  addParentId.value = item ? null : (options.parentId ?? null)
   form.label = item?.label || ''
   form.url = item?.url || ''
   // 存储值为完整 partition（persist:xxx），输入框展示去掉前缀的名称
@@ -255,14 +255,14 @@ function save() {
     } else {
       update(editingItem.value.id, { label })
     }
-  } else if (addType === 'page') {
+  } else if (addType.value === 'page') {
     add({
       label, url: form.url.trim(), open: true,
       partition: normalizePartition(form.partition),
       muted: form.muted,
-    }, addParentId)
+    }, addParentId.value)
   } else {
-    add({ label, open: true }, addParentId)
+    add({ label, open: true }, addParentId.value)
   }
   dialogOpen.value = false
 }
