@@ -39,6 +39,8 @@ interface LibraryPrefsData {
   pageSize: number
   /** Home 侧栏各模块的展开状态；缺失项默认展开 */
   sidebarModuleOpenStates: Record<string, boolean>
+  /** 删除选中素材时跳过确认弹窗（由确认框「记住此操作」或设置面板写入） */
+  skipDeleteConfirm: boolean
 }
 
 const STORAGE_KEY_PREFIX = 'mira-library-prefs'
@@ -54,7 +56,8 @@ const state = reactive<LibraryPrefsData>({
   defaultFilterId: '',
   savedFilters: [],
   pageSize: DEFAULT_PAGE_SIZE,
-  sidebarModuleOpenStates: {}
+  sidebarModuleOpenStates: {},
+  skipDeleteConfirm: false
 })
 
 const getStorageKey = () => `${STORAGE_KEY_PREFIX}-${tabPersistence.getScopeId() || 'default'}`
@@ -74,7 +77,8 @@ const persist = async () => {
     defaultFilterId: state.defaultFilterId,
     savedFilters: state.savedFilters,
     pageSize: state.pageSize,
-    sidebarModuleOpenStates: state.sidebarModuleOpenStates
+    sidebarModuleOpenStates: state.sidebarModuleOpenStates,
+    skipDeleteConfirm: state.skipDeleteConfirm
   }))
 }
 
@@ -117,6 +121,7 @@ export async function loadLibraryPrefs(): Promise<void> {
     state.sidebarModuleOpenStates = parsed?.sidebarModuleOpenStates && typeof parsed.sidebarModuleOpenStates === 'object'
       ? Object.fromEntries(Object.entries(parsed.sidebarModuleOpenStates).filter(([, value]) => typeof value === 'boolean'))
       : {}
+    state.skipDeleteConfirm = parsed?.skipDeleteConfirm === true
   } catch (error) {
     console.error('Failed to load library prefs:', error)
   }
@@ -148,6 +153,12 @@ export async function saveLibraryDefaultGroupingMode(mode: LibraryDefaultGroupin
 /** 保存单页最多展示素材数 */
 export async function saveLibraryPageSize(size: number): Promise<void> {
   state.pageSize = VALID_PAGE_SIZES.includes(size) ? size : DEFAULT_PAGE_SIZE
+  await persist()
+}
+
+/** 设置删除选中素材时是否跳过确认弹窗 */
+export async function saveSkipDeleteConfirm(skip: boolean): Promise<void> {
+  state.skipDeleteConfirm = skip
   await persist()
 }
 

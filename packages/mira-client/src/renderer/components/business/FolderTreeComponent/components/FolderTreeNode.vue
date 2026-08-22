@@ -13,7 +13,11 @@
       :indeterminate="checkState === 'indeterminate'" class="mr-1.5"
       @update:model-value="emit('check-change', $event)" @click.stop />
     <!-- icon 模式：层级缩进由图标左 margin 表达 -->
-    <span class="material-icons mr-2 text-lg" :style="{ color: nodeColor, marginLeft: iconIndent ? iconIndentPx : undefined }">{{ node.icon ||
+    <!-- icon 为 http(s) 图片地址（如 favicon）时渲染 <img>，加载失败回退 material icon -->
+    <img v-if="imageSrc" :src="imageSrc" alt="" draggable="false"
+      class="mr-2 h-[18px] w-[18px] shrink-0 rounded-sm object-contain"
+      :style="{ marginLeft: iconIndent ? iconIndentPx : undefined }" @error="imageFailed = true" />
+    <span v-else class="material-icons mr-2 text-lg" :style="{ color: nodeColor, marginLeft: iconIndent ? iconIndentPx : undefined }">{{ node.icon ||
       defaultIcon }}</span>
     <span class="flex-1 truncate text-sm">{{ node.label }}</span>
     <span v-if="node.count" v-digit-pop="node.count"
@@ -31,7 +35,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { Checkbox } from '@/components/ui/checkbox'
 import { vDigitPop } from '../directives/vDigitPop'
 import { convertColorToHex } from '../utils'
@@ -77,6 +81,14 @@ const emit = defineEmits<{
 }>()
 
 const nodeColor = computed(() => convertColorToHex(props.node.color))
+
+/** icon 为 http(s)/site-icon 地址时按图片渲染；失败或非 URL 时回退 material icon */
+const imageFailed = ref(false)
+const imageSrc = computed(() => {
+  const icon = props.node.icon || ''
+  return /^(https?|site-icon):\/\//i.test(icon) && !imageFailed.value ? icon : null
+})
+watch(() => props.node.icon, () => { imageFailed.value = false })
 
 /** 单击整行触发折叠/展开（叶子节点仅转发点击），事件同步 emit 保证 currentTarget 有效 */
 function onRowClick(event: MouseEvent) {

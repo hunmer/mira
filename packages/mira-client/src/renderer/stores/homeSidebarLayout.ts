@@ -35,8 +35,9 @@ const LAYOUT_KEY = 'mira-home-sidebar-layout'
  * - v1：shortcuts / folders / tags / history（history 是合并的「最新添加·历史查看」）
  * - v2：把 history 拆成 recent_added + recent_viewed 两个独立模块
  * - v3：新增 local_files 本地文件模块
+ * - v4：新增 web_favorites 网页收藏夹模块
  */
-const SCHEMA_VERSION = 3
+const SCHEMA_VERSION = 4
 
 /**
  * 旧版本里存在、但当前版本已废弃的模块 id → 替换为的 id 列表（按顺序插入到原位置）。
@@ -51,6 +52,7 @@ const STALE_ID_REPLACEMENTS: Record<string, SidebarModuleId[]> = {
 const MODULES_INTRODUCED_IN_VERSION: Record<number, SidebarModuleId[]> = {
   2: ['recent_added', 'recent_viewed'],
   3: ['local_files'],
+  4: ['web_favorites'],
 }
 
 interface PersistedLayout {

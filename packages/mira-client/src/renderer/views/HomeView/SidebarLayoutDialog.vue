@@ -1,18 +1,21 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import SortableLayoutDialog from '@/renderer/components/common/SortableLayoutDialog.vue'
 import { useHomeSidebarLayoutStore } from '@renderer/stores/homeSidebarLayout'
 import { getModuleDef, type SidebarModuleId } from './sidebarModules'
 
 const props = defineProps<{ modelValue: boolean }>()
 const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>()
+const { t } = useI18n()
 const store = useHomeSidebarLayoutStore()
 const enabled = computed(() => store.enabledIds.map(toItem).filter(Boolean) as ModuleItem[])
 const disabled = computed(() => store.disabledIds.map(toItem).filter(Boolean) as ModuleItem[])
 interface ModuleItem { id: SidebarModuleId; title: string; icon: string; description: string }
+// title/description 在 computed 内经 t() 翻译，语言切换时随 locale 响应式刷新
 function toItem(id: SidebarModuleId): ModuleItem | null {
   const item = getModuleDef(id)
-  return item ? { id: item.id, title: item.title, icon: item.icon, description: item.description } : null
+  return item ? { id: item.id, title: t(item.titleKey), icon: item.icon, description: t(item.descriptionKey) } : null
 }
 function updateEnabled(items: ModuleItem[]) { store.setEnabled(items.map(item => item.id)) }
 function updateDisabled(_items: ModuleItem[]) { /* enabled list is the persisted source of truth */ }

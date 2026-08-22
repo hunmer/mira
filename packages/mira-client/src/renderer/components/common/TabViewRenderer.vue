@@ -38,6 +38,7 @@
         @error="handleComponentError"
         @item-select="handleItemSelect"
         @selection-change="handleSelectionChange"
+        @title-updated="handleTitleUpdated"
         class="w-full h-full"
       />
     </KeepAlive>
@@ -81,6 +82,7 @@ import { Button } from '@/components/ui/button'
 import type { TabViewConfig } from '@renderer/composables/TabRegistry'
 import type { FileInfo } from '../../../shared/types'
 import MediaPreviewContent from '@renderer/components/common/MediaPreviewContent.vue'
+import { useTabs } from '@renderer/composables/useTabs'
 
 // Props 定义
 interface Props {
@@ -126,6 +128,15 @@ const handleSelectionChange = (items: FileInfo[]) => {
   }
   selectedIds.value = nextIds
   if (previewItem.value && !nextIds.has(previewItem.value.id)) previewItem.value = null
+}
+
+// webview 页面标题更新 → 同步 tab label（useTabs 为全局单例状态）
+const { tabs } = useTabs()
+const handleTitleUpdated = (title: string) => {
+  const trimmed = (title || '').trim()
+  if (!trimmed) return
+  const tab = tabs.value.find(t => t.id === props.tabId)
+  if (tab) tab.label = trimmed
 }
 
 const getPreviewTarget = (): FileInfo | undefined => {

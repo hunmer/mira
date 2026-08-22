@@ -19,6 +19,7 @@
     "displayFields": "展示字段",
     "confirmDeleteTitle": "确认删除",
     "confirmDeleteDesc": "确定要删除选中的 {count} 个文件吗？文件将被移至回收站，此操作可在回收站中恢复。",
+    "rememberDeleteChoice": "记住此操作，下次删除时不再确认",
     "errorSummary": "错误",
     "noLibraryDetail": "未选择素材库",
     "directImportSummary": "直接导入",

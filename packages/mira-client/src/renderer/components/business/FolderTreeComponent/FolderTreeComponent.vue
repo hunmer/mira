@@ -36,7 +36,7 @@
           </component>
         </div>
       </ContextMenuTrigger>
-      <ContextMenuContent v-if="!readOnly" class="w-52">
+      <ContextMenuContent v-if="!readOnly || contextMenuItems.length > 0" class="w-52">
         <template v-for="(item, i) in contextMenuItems" :key="i">
           <ContextMenuSeparator v-if="item.separator" />
           <ContextMenuSub v-else-if="item.items?.length">
@@ -141,6 +141,11 @@ interface Props {
   indentMode?: 'tree' | 'icon'
   /** 只读外部树：禁用素材库右键菜单、拖放和增删改操作。 */
   readOnly?: boolean
+  /**
+   * 本地拖拽排序模式：拖拽完成后把最新树结构通过 local-sort 事件抛出，
+   * 由外部自行持久化，不走素材库服务端接口（本地数据树，配合 readOnly 使用）。
+   */
+  localDragSort?: boolean
   /** 选择模式下判断节点是否可选；不可选节点仍可点击以加载/展开。 */
   selectable?: (item: any) => boolean
   /** 按当前节点注入额外右键菜单项。 */
@@ -166,6 +171,8 @@ interface Emits {
   (e: 'expand', item: any, expanded: boolean): void
   (e: 'refresh'): void
   (e: 'empty-trash'): void
+  /** localDragSort 模式下拖拽完成，参数为最新树结构（HeTreeNode[]） */
+  (e: 'local-sort', nodes: HeTreeNode[]): void
 }
 
 const emit = defineEmits<Emits>()
@@ -317,6 +324,8 @@ const {
   isFolder,
   treeRef,
   onRefresh: () => emit('refresh'),
+  localMode: props.localDragSort,
+  onLocalSorted: (nodes) => emit('local-sort', nodes),
 })
 
 // 拖拽：文件夹与标签均支持拖拽排序（标签为扁平结构，仅同层排序）
@@ -341,6 +350,11 @@ const ops = useFolderOperations({
 })
 
 const contextMenuItems = computed(() => {
+  const currentItem = isFolder.value ? ops.currentContextFolder.value : ops.currentContextTag.value
+  // 只读树（本地收藏夹等）：仅展示外部注入的菜单项
+  if (props.readOnly) {
+    return props.extraContextMenuItems?.(isFolder.value ? 'folder' : 'tag', currentItem) || []
+  }
   // 选择模式激活时：右键菜单仅展示「删除」
   if (selectionActive.value) {
     const { nodes, total } = collectSelectedTopLevelNodes()
@@ -355,7 +369,6 @@ const contextMenuItems = computed(() => {
     ]
   }
   const baseItems = isFolder.value ? ops.folderContextMenuItems.value : ops.tagContextMenuItems.value
-  const currentItem = isFolder.value ? ops.currentContextFolder.value : ops.currentContextTag.value
   const extraItems = props.extraContextMenuItems?.(isFolder.value ? 'folder' : 'tag', currentItem) || []
   return [...baseItems, ...(extraItems.length ? [{ separator: true }, ...extraItems] : [])]
 })
@@ -386,8 +399,11 @@ function handleBaseCategoryClick(category: BaseCategory) {
   })
 }
 
-function handleNodeClick(node: HeTreeNode, _stat: any, _event: MouseEvent) {
-  const payload = buildSelectPayload(node, defaultIcon.value)
+function handleNodeClick(node: HeTreeNode, _stat: any, event: MouseEvent) {
+  // ctrlKey / metaKey 透传给 select 载荷（如收藏夹 Ctrl+点击用独立窗口打开）
+  const payload = buildSelectPayload(node, defaultIcon.value, {
+    ctrlKey: event.ctrlKey || event.metaKey || false,
+  })
   // 选择模式激活：点击节点执行选中/取消选中，不触发常规 select
   if (selectionActive.value) {
     if (!isNodeSelectable(node)) {
@@ -419,7 +435,6 @@ function handleNodeCheckChange(node: HeTreeNode, checked: boolean | 'indetermina
 }
 
 function handleNodeContextMenu(node: HeTreeNode, _event: MouseEvent) {
-  if (props.readOnly) return
   if (isFolder.value) {
     ops.currentContextFolder.value = { ...node.originalData, id: node.id, label: node.label, icon: node.icon, count: node.count } as FolderItem
   } else {

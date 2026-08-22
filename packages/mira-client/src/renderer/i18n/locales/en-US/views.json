@@ -633,7 +633,36 @@
     "recentViewedTitle": "History",
     "recentViewedDesc": "Recently viewed media",
     "localFilesTitle": "Local Files",
-    "localFilesDesc": "Browse local drives and folders"
+    "localFilesDesc": "Browse local drives and folders",
+    "webFavoritesTitle": "Web Favorites",
+    "webFavoritesDesc": "Locally saved websites, click to open in a webview tab"
+  },
+  "webFavorites": {
+    "title": "Web Favorites",
+    "addUrl": "New Web Page",
+    "addFolder": "New Folder",
+    "addChildUrl": "Add Child Web Page",
+    "addChildFolder": "Add Child Folder",
+    "edit": "Edit",
+    "delete": "Delete",
+    "open": "Open",
+    "openExternal": "Open in a separate window",
+    "search": "Search favorites",
+    "name": "Name",
+    "url": "URL",
+    "partition": "Session Partition",
+    "partitionPlaceholder": "Empty for default session; a name uses an isolated persisted session",
+    "muted": "Mute",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirmDeleteTitle": "Delete Favorite",
+    "confirmDeleteDesc": "Delete \"{name}\"? Its children will be removed as well."
+  },
+  "webview": {
+    "back": "Back",
+    "forward": "Forward",
+    "reload": "Reload",
+    "addressPlaceholder": "Enter a URL and press Enter"
   },
   "localFolder": {
     "title": "Local Files",

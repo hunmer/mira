@@ -19,6 +19,7 @@
     "displayFields": "Display fields",
     "confirmDeleteTitle": "Confirm delete",
     "confirmDeleteDesc": "Are you sure you want to delete the selected {count} file(s)? They will be moved to the trash and can be restored from there.",
+    "rememberDeleteChoice": "Remember this choice and skip confirmation next time",
     "errorSummary": "Error",
     "noLibraryDetail": "No library selected",
     "directImportSummary": "Direct import",

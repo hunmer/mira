@@ -11,7 +11,12 @@ export class WebviewTabType extends BaseTabType {
   getViewConfig(context: TabContext): TabViewConfig {
     return {
       component: 'WebviewTabView',
-      props: { url: context.tabData?.url || '' },
+      props: {
+        url: context.tabData?.url || '',
+        // 收藏夹传入的会话隔离（persist:xxx）与静音设置
+        partition: context.tabData?.partition || '',
+        muted: context.tabData?.muted === true,
+      },
       key: `${this.name}-${context.tabId}`
     }
   }

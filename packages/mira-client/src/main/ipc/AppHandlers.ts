@@ -97,8 +97,13 @@ export class AppHandlers {
       // 注意：win.setMenu 只在 Windows / Linux 生效；macOS 仍走全局菜单（Electron 限制）。
       win.setMenu(null)
 
-      // 外部链接交给系统默认浏览器，避免在 dashboard 窗口内再开窗口
+      // dashboard 窗口：外部链接仍交给系统默认浏览器（避免在 dashboard 窗口内跳走）；
+      // 其余通用浏览窗口（如收藏夹独立窗口）：http(s) 新链接在当前窗口内跳转
       win.webContents.setWindowOpenHandler(({ url: targetUrl }) => {
+        if (!isDashboard && /^https?:\/\//i.test(targetUrl)) {
+          if (!win.isDestroyed()) win.webContents.loadURL(targetUrl)
+          return { action: 'deny' }
+        }
         require('electron').shell.openExternal(targetUrl)
         return { action: 'deny' }
       })

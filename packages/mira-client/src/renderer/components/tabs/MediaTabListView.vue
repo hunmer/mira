@@ -356,6 +356,13 @@
             {{ $t('tabs.mediaTabListView.confirmDeleteDesc', { count: selectedItems.length }) }}
           </AlertDialogDescription>
         </AlertDialogHeader>
+        <label class="flex items-center space-x-2 px-1 pt-1 cursor-pointer select-none">
+          <Checkbox :model-value="rememberDeleteChoice"
+            @update:model-value="val => rememberDeleteChoice = val === true" />
+          <span class="text-sm text-muted-foreground dark:text-muted-foreground">
+            {{ $t('tabs.mediaTabListView.rememberDeleteChoice') }}
+          </span>
+        </label>
         <AlertDialogFooter>
           <AlertDialogCancel>{{ $t('common.cancel') }}</AlertDialogCancel>
           <AlertDialogAction class="bg-destructive text-white hover:bg-destructive/90" @click="confirmDelete">
@@ -651,6 +658,7 @@ const {
   handleToolbarAction,
   handleDeleteKeyDown,
   deleteDialogOpen,
+  rememberDeleteChoice,
   confirmDelete
 } = useMediaTabBatchOps({
   selectedItems,

@@ -3,14 +3,18 @@ import * as fs from 'fs/promises'
 import * as path from 'path'
 import { fileURLToPath } from 'url'
 import { logger } from '../utils/Logger'
+import { FaviconCacheService } from './FaviconCacheService'
 
 export const LIBRARY_THUMB_SCHEME = 'library-thumb'
 export const LIBRARY_FILE_SCHEME = 'library-file'
+export const SITE_ICON_SCHEME = 'site-icon'
 
 // 让自定义素材协议可被 img/video/fetch 当作标准安全资源加载。
 protocol.registerSchemesAsPrivileged([
   { scheme: LIBRARY_THUMB_SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } },
   { scheme: LIBRARY_FILE_SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } },
+  // 网站图标协议：host 即域名，供 <img src="site-icon://domain"> 加载（本地缓存 + 在线兜底）
+  { scheme: SITE_ICON_SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true } },
 ])
 
 /**
@@ -135,10 +139,29 @@ export class ProtocolService {
     protocol.handle(LIBRARY_THUMB_SCHEME, request => this.handleLibraryResource(request, true))
     // 本地缩略图同样需要按素材库缓存，避免每次从原始磁盘路径读取。
     protocol.handle(LIBRARY_FILE_SCHEME, request => this.handleLibraryResource(request, true))
+    // 网站图标：site-icon://<domain>，缓存命中直读，未命中在线获取（含 icon.horse 兜底）
+    protocol.handle(SITE_ICON_SCHEME, request => this.handleSiteIcon(request))
     protocol.registerStringProtocol('mira', (request: any, callback: (response: string) => void) => {
       this.parseAndHandleUrl(request.url)
       callback('')
     })
+  }
+
+  private async handleSiteIcon(request: Request): Promise<Response> {
+    try {
+      // standard scheme 下 URL 形如 site-icon://github.com/，域名在 host 位
+      const domain = new URL(request.url).host
+      if (!domain) return new Response('Missing domain', { status: 400 })
+      const icon = await FaviconCacheService.getInstance().getFavicon(domain)
+      if (!icon) return new Response('Icon unavailable', { status: 404 })
+      return new Response(new Uint8Array(icon.data), {
+        status: 200,
+        headers: { 'Content-Type': icon.contentType, 'Cache-Control': 'public, max-age=86400' },
+      })
+    } catch (error) {
+      logger.warn('ProtocolService', 'Site icon failed', { error: error instanceof Error ? error.message : String(error) })
+      return new Response('Icon unavailable', { status: 404 })
+    }
   }
 
   private async handleLibraryResource(request: Request, cache: boolean): Promise<Response> {

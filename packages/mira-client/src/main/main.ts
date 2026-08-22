@@ -455,6 +455,22 @@ class MiraApplication {
   }
 
   private setupApp() {
+    // webview（收藏夹网页 tab 等）内的新链接（target=_blank / window.open）：
+    // 在 webContents 创建时机统一拦截，让发起跳转的 webview 自身 loadURL，
+    // 不弹子窗口也不丢给系统浏览器。渲染进程方案（dom-ready 后 setWindowOpenHandler）
+    // 会因 KeepAlive 缓存重建 guest webContents 而丢失，主进程拦截无此问题。
+    app.on('web-contents-created', (_event, contents) => {
+      if (contents.getType() !== 'webview') return
+      contents.setWindowOpenHandler(({ url }) => {
+        if (/^https?:/i.test(url)) {
+          void contents.loadURL(url)
+        } else {
+          void shell.openExternal(url)
+        }
+        return { action: 'deny' }
+      })
+    })
+
     // 当应用就绪时创建窗口
     app.whenReady().then(async () => {
       // 应用持久化的网络代理配置（主进程 fetch + Electron session）

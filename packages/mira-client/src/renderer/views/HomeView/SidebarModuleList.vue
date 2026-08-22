@@ -1,6 +1,10 @@
 <script setup lang="ts">
 /**
- * SidebarModuleList —— HomeSidebar 模块化内容区 + 底部搜索。
+ * SidebarModuleList —— HomeSidebar 模块化内容区 + 顶部工具图标 + 底部搜索。
+ *
+ * 顶部 headerActions 图标（原 SidebarToolbar 迁入）：
+ *   - 导入下拉（上传文件 / 导入文件夹 / 从 URL 导入）
+ *   - 文件夹管理、标签管理、自定义布局
  *
  * 按 enabledModules（自定义布局 store 维护的启用顺序）渲染若干 Collapsible 模块：
  *   - shortcuts：快捷分类（全部/未分类/未标签/回收站）
@@ -13,9 +17,12 @@
  */
 import { ref, computed, onActivated, onDeactivated, onBeforeUnmount, onMounted, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useMediaQuery } from '@vueuse/core'
 import FolderTreeComponent from '@renderer/components/business/FolderTreeComponent/FolderTreeComponent.vue'
 import SidebarHistoryModule from './SidebarHistoryModule.vue'
+import WebFavoritesPanel from './WebFavoritesPanel.vue'
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible'
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import {
   ContextMenu,
   ContextMenuTrigger,
@@ -24,6 +31,7 @@ import {
 } from '@/components/ui/context-menu'
 import { useHomeSidebarLayoutStore } from '@/renderer/stores/homeSidebarLayout'
 import { useLibraryStore } from '@/renderer/stores/library'
+import { useMediaStore } from '@/renderer/stores/media'
 import { useSettingsStore } from '@/renderer/stores/settings'
 import { useServerListStore } from '@/renderer/stores/serverList'
 import { miraSDKService } from '@/renderer/services/MiraSDKService'
@@ -66,6 +74,10 @@ const emit = defineEmits<{
   historyOpen: [file: any]
   upload: [target?: ImportTarget]
   importFolder: [payload: ImportFolderPayload]
+  /** 打开文件夹管理对话框 */
+  manageFolders: []
+  /** 打开标签管理对话框 */
+  manageTags: []
 }>()
 
 const importTarget = ref<ImportTarget>()
@@ -75,6 +87,50 @@ const importHandler = useImportHandler({
   onUpload: () => emit('upload', importTarget.value),
   onImportFolder: (payload) => emit('importFolder', payload),
 })
+
+// ============================================
+// 顶部工具图标（原 SidebarToolbar 迁入）
+// ============================================
+const mediaStore = useMediaStore()
+const isMobile = useMediaQuery('(max-width: 767px)')
+const isImporting = ref(false)
+
+function closeDrawerIfMobile() {
+  if (isMobile.value) mediaStore.showLeftSidebar = false
+}
+
+function handleToolbarUpload() {
+  closeDrawerIfMobile()
+  importHandler.handleUpload()
+}
+
+async function handleToolbarImportFolder() {
+  if (isImporting.value) return
+  closeDrawerIfMobile()
+  isImporting.value = true
+  try {
+    await importHandler.handleImportFolder()
+  } finally {
+    isImporting.value = false
+  }
+}
+
+function handleToolbarUrlImport() {
+  closeDrawerIfMobile()
+  importHandler.handleUrlImport()
+}
+
+/** 文件夹管理：关闭抽屉后抛事件给父级 */
+function handleManageFolders() {
+  closeDrawerIfMobile()
+  emit('manageFolders')
+}
+
+/** 标签管理：关闭抽屉后抛事件给父级 */
+function handleManageTags() {
+  closeDrawerIfMobile()
+  emit('manageTags')
+}
 
 function targetForNode(type: 'folder' | 'tag', item: any): ImportTarget {
   if (!item) return {}
@@ -320,6 +376,15 @@ interface TreeExposed {
 }
 const folderTreeRef = ref<TreeExposed | null>(null)
 const tagTreeRef = ref<TreeExposed | null>(null)
+/** 网页收藏夹面板（hideHeader 模式下能力由面板 expose） */
+interface WebFavExposed {
+  handleAddUrl: () => void
+  handleAddFolder: () => void
+  showSearch?: boolean
+  toggleSearch?: () => void
+}
+const webFavoritesRef = ref<WebFavExposed | null>(null)
+const setWebFavoritesRef = (el: any) => { webFavoritesRef.value = el }
 /**
  * v-for 内的静态 ref 字符串会被 Vue 收集成数组，导致 folderTreeRef.value 变成数组
  * 而非组件实例（取不到 toggleSearch/handleAdd）。改用函数 ref 直接赋值给单个 ref。
@@ -376,6 +441,49 @@ defineExpose({ locateItem })
       @customize="layoutDialogOpen = true"
     >
       <template #headerActions>
+        <!-- 导入下拉（上传文件 / 导入文件夹 / 从 URL 导入） -->
+        <DropdownMenu>
+          <DropdownMenuTrigger as-child>
+            <button
+              type="button"
+              class="header-action-btn pointer-events-auto relative z-10 cursor-pointer text-primary disabled:opacity-50 disabled:cursor-not-allowed"
+              :title="$t('views.sidebarToolbar.import')"
+              :disabled="isImporting"
+              @mousedown.stop
+            >
+              <span class="material-icons pointer-events-none leading-none text-primary" style="font-size: 18px">{{ isImporting ? 'hourglass_top' : 'drive_folder_upload' }}</span>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" class="w-40">
+            <DropdownMenuItem @click="handleToolbarUpload"><span class="material-icons text-base mr-2">upload_file</span><span>{{ $t('views.sidebarToolbar.uploadFile') }}</span></DropdownMenuItem>
+            <DropdownMenuItem @click="handleToolbarImportFolder"><span class="material-icons text-base mr-2">folder_open</span><span>{{ $t('views.sidebarToolbar.importFolder') }}</span></DropdownMenuItem>
+            <DropdownMenuItem @click="handleToolbarUrlImport"><span class="material-icons text-base mr-2">cloud_download</span><span>{{ $t('business.homeHeader.importFromUrl') }}</span></DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <!-- 文件夹管理 -->
+        <button
+          type="button"
+          class="header-action-btn pointer-events-auto relative z-10 cursor-pointer text-primary"
+          :title="$t('views.sidebarToolbar.manageFolders')"
+          @click.stop.prevent="handleManageFolders"
+          @mousedown.stop
+        >
+          <span class="material-icons pointer-events-none leading-none text-primary" style="font-size: 18px">drive_file_move</span>
+        </button>
+
+        <!-- 标签管理 -->
+        <button
+          type="button"
+          class="header-action-btn pointer-events-auto relative z-10 cursor-pointer text-primary"
+          :title="$t('views.sidebarToolbar.manageTags')"
+          @click.stop.prevent="handleManageTags"
+          @mousedown.stop
+        >
+          <span class="material-icons pointer-events-none leading-none text-primary" style="font-size: 18px">sell</span>
+        </button>
+
+        <!-- 自定义布局 -->
         <button
           type="button"
           class="header-action-btn pointer-events-auto relative z-10 cursor-pointer text-primary"
@@ -398,7 +506,7 @@ defineExpose({ locateItem })
       <CollapsibleTrigger as-child>
         <header class="section-header">
           <span class="material-icons title-icon">{{ mod.icon }}</span>
-          <h2 class="section-title">{{ mod.title }}</h2>
+          <h2 class="section-title">{{ t(mod.titleKey) }}</h2>
           <span
             class="material-icons chevron"
             :class="{ 'chevron--open': isModuleOpen(mod.id) }"
@@ -442,6 +550,34 @@ defineExpose({ locateItem })
                 @click="tagTreeRef?.handleAdd?.()"
               >
                 <span class="material-icons leading-none" style="font-size: 18px">add</span>
+              </button>
+            </div>
+          </template>
+
+          <!-- 网页收藏夹操作按钮：新建网址 / 新建文件夹 分开两个入口 -->
+          <template v-else-if="mod.id === 'web_favorites'">
+            <div class="header-actions" @click.stop>
+              <button
+                class="header-action-btn"
+                :class="{ 'text-primary': webFavoritesRef?.showSearch }"
+                :title="$t('views.webFavorites.search')"
+                @click="webFavoritesRef?.toggleSearch?.()"
+              >
+                <span class="material-icons leading-none" style="font-size: 18px">search</span>
+              </button>
+              <button
+                class="header-action-btn"
+                :title="$t('views.webFavorites.addUrl')"
+                @click="webFavoritesRef?.handleAddUrl?.()"
+              >
+                <span class="material-icons leading-none" style="font-size: 18px">link</span>
+              </button>
+              <button
+                class="header-action-btn"
+                :title="$t('views.webFavorites.addFolder')"
+                @click="webFavoritesRef?.handleAddFolder?.()"
+              >
+                <span class="material-icons leading-none" style="font-size: 18px">create_new_folder</span>
               </button>
             </div>
           </template>
@@ -558,13 +694,20 @@ defineExpose({ locateItem })
         <SidebarHistoryModule :library-id="libraryId" mode="recent_viewed" @open="emit('historyOpen', $event)" />
       </CollapsibleContent>
 
+      <!-- 网页收藏夹 -->
+      <CollapsibleContent v-else-if="mod.id === 'web_favorites'" class="section-body">
+        <WebFavoritesPanel :ref="setWebFavoritesRef" />
+      </CollapsibleContent>
+
       <!-- 本地文件 -->
       <CollapsibleContent v-else-if="mod.id === 'local_files'" class="section-body text-foreground">
-        <h3 class="px-2 pb-1 pt-2 text-[11px] font-medium text-muted-foreground text-center">
+        <h3 class="flex items-center gap-1 px-2 pb-1 pt-2 text-[11px] font-medium text-muted-foreground">
+          <span class="material-icons text-sm">storage</span>
           {{ $t('views.localFolder.systemDrives') }}
+          <span v-if="localRoots.length" class="ml-auto text-xs">{{ localRoots.length }}</span>
         </h3>
-        <ul v-if="localRoots.length" class="space-y-0.5">
-          <li v-for="root in localRoots" :key="root.path">
+        <ul v-if="localRoots.length" class="ml-[15px] space-y-0.5 border-l border-border/60 pl-3">
+          <li v-for="root in localRoots" :key="root.path" class="local-tree-leaf relative">
             <button class="cat-item w-full text-foreground" type="button" @click="openLocalRoot(root)">
               <span class="flex min-w-0 items-center">
                 <span class="material-icons mr-2 text-lg text-foreground/70">storage</span>
@@ -575,11 +718,13 @@ defineExpose({ locateItem })
         </ul>
         <p v-else class="px-2 py-3 text-xs text-foreground/70">{{ localRootsError || $t('views.localFolder.loading') }}</p>
 
-        <h3 class="px-2 pb-1 pt-3 text-[11px] font-medium text-muted-foreground text-center">
+        <h3 class="flex items-center gap-1 px-2 pb-1 pt-3 text-[11px] font-medium text-muted-foreground">
+          <span class="material-icons text-sm">folder</span>
           {{ $t('views.localFolder.customFolders') }}
+          <span v-if="customLocalFolders.length" class="ml-auto text-xs">{{ customLocalFolders.length }}</span>
         </h3>
-        <ul v-if="customLocalFolders.length" class="space-y-0.5">
-          <li v-for="folder in customLocalFolders" :key="folder.path" class="group/local-folder relative">
+        <ul v-if="customLocalFolders.length" class="ml-[15px] space-y-0.5 border-l border-border/60 pl-3">
+          <li v-for="folder in customLocalFolders" :key="folder.path" class="group/local-folder local-tree-leaf relative">
             <button class="cat-item w-full pr-8 text-foreground" type="button" @click="openLocalRoot(folder)">
               <span class="flex min-w-0 items-center">
                 <span class="material-icons mr-2 text-lg text-foreground/70">folder</span>
@@ -705,6 +850,17 @@ defineExpose({ locateItem })
 
 .section-body {
   padding-left: 0.125rem;
+}
+
+/* 本地文件模块：列表项横向连线，左端接 ul 的垂直引导线（pl-3 + 1px 边框） */
+.local-tree-leaf::before {
+  content: '';
+  position: absolute;
+  left: -13px;
+  top: 50%;
+  width: 13px;
+  height: 1px;
+  background: color-mix(in oklch, var(--border) 60%, transparent);
 }
 
 .cat-item {

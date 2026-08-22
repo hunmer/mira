@@ -633,7 +633,36 @@
     "recentViewedTitle": "历史查看",
     "recentViewedDesc": "最近浏览过的素材记录",
     "localFilesTitle": "本地文件",
-    "localFilesDesc": "浏览本机磁盘与文件夹"
+    "localFilesDesc": "浏览本机磁盘与文件夹",
+    "webFavoritesTitle": "网页收藏夹",
+    "webFavoritesDesc": "本地保存的常用网址，点击在 webview 中打开"
+  },
+  "webFavorites": {
+    "title": "网页收藏夹",
+    "addUrl": "新建网址",
+    "addFolder": "新建文件夹",
+    "addChildUrl": "添加子网址",
+    "addChildFolder": "添加子文件夹",
+    "edit": "编辑",
+    "delete": "删除",
+    "open": "打开",
+    "openExternal": "在独立窗口打开",
+    "search": "搜索收藏",
+    "name": "名称",
+    "url": "网址",
+    "partition": "会话隔离（partition）",
+    "partitionPlaceholder": "留空使用默认会话；输入名称使用独立会话（自动持久化）",
+    "muted": "静音",
+    "save": "保存",
+    "cancel": "取消",
+    "confirmDeleteTitle": "删除收藏",
+    "confirmDeleteDesc": "确定要删除「{name}」吗？其子项也会一并删除。"
+  },
+  "webview": {
+    "back": "后退",
+    "forward": "前进",
+    "reload": "刷新",
+    "addressPlaceholder": "输入网址，回车跳转"
   },
   "localFolder": {
     "title": "本地文件",

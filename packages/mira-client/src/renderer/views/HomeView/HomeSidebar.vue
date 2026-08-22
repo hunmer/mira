@@ -2,10 +2,9 @@
 /**
  * HomeSidebar —— 首页左侧栏编排壳（orchestrator）。
  *
- * 实际功能拆分到三个子组件：
+ * 实际功能拆分到两个子组件：
  *   - SidebarLibrarySelector：顶部素材库选择 + 关于入口
- *   - SidebarToolbar：导入/文件夹管理/标签管理/自定义布局
- *   - SidebarModuleList：模块化 Collapsible 列表 + locateItem
+ *   - SidebarModuleList：导入/文件夹管理/标签管理/自定义布局图标 + 模块化 Collapsible 列表 + locateItem
  *
  * 本文件仅做 props/emits 透传与 locateItem expose 转发，对外契约
  * （props、15 个 emit、defineExpose({ locateItem })）与拆分前完全一致，
@@ -13,7 +12,6 @@
  */
 import { ref } from 'vue'
 import SidebarLibrarySelector from './SidebarLibrarySelector.vue'
-import SidebarToolbar from './SidebarToolbar.vue'
 import SidebarModuleList from './SidebarModuleList.vue'
 import type { ImportFolderPayload, ImportTarget } from '@/renderer/composables/useImportHandler'
 
@@ -76,13 +74,6 @@ defineExpose({
     @show-about="emit('showAbout')"
   />
 
-  <SidebarToolbar
-    @upload="emit('upload')"
-    @import-folder="emit('importFolder', $event)"
-    @manage-folders="emit('manageFolders')"
-    @manage-tags="emit('manageTags')"
-  />
-
   <SidebarModuleList
     ref="moduleListRef"
     :home-controller="homeController"
@@ -95,6 +86,8 @@ defineExpose({
     @empty-trash="emit('emptyTrash')"
     @upload="emit('upload', $event)"
     @import-folder="emit('importFolder', $event)"
+    @manage-folders="emit('manageFolders')"
+    @manage-tags="emit('manageTags')"
     @history-open="emit('historyOpen', $event)"
   />
 </template>

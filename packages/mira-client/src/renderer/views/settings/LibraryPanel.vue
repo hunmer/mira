@@ -109,6 +109,19 @@
         </div>
       </div>
     </div>
+
+    <!-- 删除前确认 -->
+    <div class="flex items-center justify-between gap-4 py-3">
+      <div class="min-w-0">
+        <label class="text-foreground dark:text-muted-foreground text-base font-medium leading-normal">
+          {{ t('settings.deleteConfirm') }}
+        </label>
+        <p class="text-muted-foreground dark:text-muted-foreground text-sm mt-2">
+          {{ t('settings.deleteConfirmDesc') }}
+        </p>
+      </div>
+      <Switch :model-value="showDeleteConfirm" @update:model-value="handleDeleteConfirmChange" />
+    </div>
   </div>
 </template>
 
@@ -127,6 +140,7 @@ import {
   setDefaultFilterId,
   saveLibraryDefaultGroupingMode,
   saveLibraryPageSize,
+  saveSkipDeleteConfirm,
   type LibraryDefaultViewMode,
   type LibraryDefaultGroupingMode
 } from '@renderer/composables/LibraryPrefs'
@@ -151,6 +165,8 @@ const savedFilters = computed(() => getLibraryPrefs().savedFilters)
 const defaultFilterId = ref('')
 const pageSize = ref(getLibraryPrefs().pageSize)
 const pageSizeOptions = [100, 200, 500, 1000, 2000, 5000]
+// 删除选中素材前是否弹出确认框（与 LibraryPrefs.skipDeleteConfirm 相反）
+const showDeleteConfirm = ref(!getLibraryPrefs().skipDeleteConfirm)
 
 const handleMultiLibraryViewsChange = async (enabled: boolean) => {
   await settingsStore.updateSetting('multiLibraryViewsEnabled', enabled)
@@ -163,6 +179,17 @@ const handleMultiLibraryViewsChange = async (enabled: boolean) => {
 
 const handleOpenFilePreviewInTabChange = async (enabled: boolean) => {
   await settingsStore.updateSetting('openFilePreviewInTab', enabled)
+}
+
+const handleDeleteConfirmChange = async (enabled: boolean) => {
+  await saveSkipDeleteConfirm(!enabled)
+  showDeleteConfirm.value = enabled
+  toast.add({
+    severity: 'success',
+    summary: t('settings.settingSaved'),
+    detail: enabled ? t('settings.deleteConfirmOn') : t('settings.deleteConfirmOff'),
+    life: 2000
+  })
 }
 
 onMounted(async () => {
@@ -182,6 +209,7 @@ onMounted(async () => {
   defaultGroupingMode.value = getLibraryPrefs().defaultGroupingMode
   defaultFilterId.value = getLibraryPrefs().defaultFilterId
   pageSize.value = getLibraryPrefs().pageSize
+  showDeleteConfirm.value = !getLibraryPrefs().skipDeleteConfirm
 })
 
 onUnmounted(() => {

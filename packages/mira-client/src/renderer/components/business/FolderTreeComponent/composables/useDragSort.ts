@@ -14,13 +14,26 @@ export interface DragConfirmInfo {
   newSiblingIds: { id: number; sort_index: number }[]
 }
 
+/** 从 @he-tree 内部 stats 提取整棵最新树（拖拽落点已应用） */
+function extractStatsTree(stats: any[]): HeTreeNode[] {
+  return (stats || []).map((s) => ({
+    ...s.data,
+    open: s.open,
+    children: s.children?.length ? extractStatsTree(s.children) : undefined,
+  }))
+}
+
 /**
  * 树内拖拽排序：同层排序直接保存；跨层级移动弹确认框后再执行。
+ * localMode 为 true 时跳过服务端接口与确认框，拖拽完成后把最新树结构
+ * 通过 onLocalSorted 抛出，由外部自行持久化（本地数据树用）。
  */
 export function useDragSort(options: {
   isFolder: Ref<boolean>
   treeRef: Ref<any>
   onRefresh: () => void
+  localMode?: boolean
+  onLocalSorted?: (nodes: HeTreeNode[]) => void
 }) {
   const libraryStore = useLibraryStore()
   const { t } = useI18n()
@@ -48,6 +61,11 @@ export function useDragSort(options: {
 
   // 拖拽完成后：同层级排序 or 跨层级移动
   function onAfterDrop() {
+    if (options.localMode) {
+      options.onLocalSorted?.(extractStatsTree((options.treeRef.value as any)?.stats ?? []))
+      return
+    }
+
     if (!libraryStore.currentLibrary) return
 
     const dragNode = dragContext.dragNode

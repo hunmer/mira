@@ -3,6 +3,7 @@ import { useI18n } from 'vue-i18n'
 import { useLibraryStore } from '@renderer/stores/library'
 import { useToast } from '@renderer/composables/useToast'
 import { appService } from '@renderer/services'
+import { getLibraryPrefs, saveSkipDeleteConfirm } from '@renderer/composables/LibraryPrefs'
 import type { ComputedRef } from 'vue'
 import type { FileInfo } from '@/shared/types'
 import type { useMediaTabData } from '@renderer/composables/useMediaTabData'
@@ -72,6 +73,8 @@ export function useMediaTabBatchOps(deps: {
 
   // 批量删除确认弹窗
   const deleteDialogOpen = ref(false)
+  // 确认框内「记住此操作」勾选状态，勾选后下次删除不再弹窗
+  const rememberDeleteChoice = ref(false)
 
   const handleToolbarAction = async (action: string) => {
     // 回收站：恢复 / 彻底删除
@@ -100,8 +103,13 @@ export function useMediaTabBatchOps(deps: {
     }
 
     if (action === 'delete') {
-      // 批量删除前需用户确认
+      // 批量删除前需用户确认（已记住选择时直接执行）
       if (selectedItems.value.length === 0) return
+      if (getLibraryPrefs().skipDeleteConfirm) {
+        void confirmDelete()
+        return
+      }
+      rememberDeleteChoice.value = false
       deleteDialogOpen.value = true
       return
     }
@@ -124,6 +132,10 @@ export function useMediaTabBatchOps(deps: {
 
   const confirmDelete = async () => {
     deleteDialogOpen.value = false
+    if (rememberDeleteChoice.value) {
+      rememberDeleteChoice.value = false
+      await saveSkipDeleteConfirm(true)
+    }
     if (selectedItems.value.length === 0) return
     const failed = await runGroupedBatchOperation(
       t('tabs.mediaTabListView.deleteBatchLabel'),
@@ -138,6 +150,7 @@ export function useMediaTabBatchOps(deps: {
     handleToolbarAction,
     handleDeleteKeyDown,
     deleteDialogOpen,
+    rememberDeleteChoice,
     confirmDelete
   }
 }
