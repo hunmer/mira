@@ -41,6 +41,8 @@ interface LibraryPrefsData {
   sidebarModuleOpenStates: Record<string, boolean>
   /** 删除选中素材时跳过确认弹窗（由确认框「记住此操作」或设置面板写入） */
   skipDeleteConfirm: boolean
+  /** 媒体标签页顶部是否展示子文件夹区 */
+  showFoldersInTab: boolean
 }
 
 const STORAGE_KEY_PREFIX = 'mira-library-prefs'
@@ -57,7 +59,8 @@ const state = reactive<LibraryPrefsData>({
   savedFilters: [],
   pageSize: DEFAULT_PAGE_SIZE,
   sidebarModuleOpenStates: {},
-  skipDeleteConfirm: false
+  skipDeleteConfirm: false,
+  showFoldersInTab: true
 })
 
 const getStorageKey = () => `${STORAGE_KEY_PREFIX}-${tabPersistence.getScopeId() || 'default'}`
@@ -78,7 +81,8 @@ const persist = async () => {
     savedFilters: state.savedFilters,
     pageSize: state.pageSize,
     sidebarModuleOpenStates: state.sidebarModuleOpenStates,
-    skipDeleteConfirm: state.skipDeleteConfirm
+    skipDeleteConfirm: state.skipDeleteConfirm,
+    showFoldersInTab: state.showFoldersInTab
   }))
 }
 
@@ -122,6 +126,7 @@ export async function loadLibraryPrefs(): Promise<void> {
       ? Object.fromEntries(Object.entries(parsed.sidebarModuleOpenStates).filter(([, value]) => typeof value === 'boolean'))
       : {}
     state.skipDeleteConfirm = parsed?.skipDeleteConfirm === true
+    state.showFoldersInTab = parsed?.showFoldersInTab !== false
   } catch (error) {
     console.error('Failed to load library prefs:', error)
   }
@@ -159,6 +164,12 @@ export async function saveLibraryPageSize(size: number): Promise<void> {
 /** 设置删除选中素材时是否跳过确认弹窗 */
 export async function saveSkipDeleteConfirm(skip: boolean): Promise<void> {
   state.skipDeleteConfirm = skip
+  await persist()
+}
+
+/** 设置媒体标签页顶部是否展示子文件夹区 */
+export async function saveShowFoldersInTab(show: boolean): Promise<void> {
+  state.showFoldersInTab = show
   await persist()
 }
 

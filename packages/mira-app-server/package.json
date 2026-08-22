@@ -1,6 +1,7 @@
 {
   "name": "mira-app-server",
   "version": "2.0.9",
+  "packageManager": "pnpm@10.17.1",
   "description": "Mira Server - standalone server application using mira-app-core",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -69,7 +70,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@hunmer/procm-mcp-sdk": "link:G:/procm-mcp/packages/procm-sdk",
+    "@hunmer/procm-mcp-sdk": "link:../../../procm-mcp/packages/procm-sdk",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/fluent-ffmpeg": "^2.1.28",

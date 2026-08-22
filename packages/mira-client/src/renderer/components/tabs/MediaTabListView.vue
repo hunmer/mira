@@ -68,7 +68,7 @@
         <!-- 媒体内容 - files 和 trash 都使用统一的视图 -->
         <div class="flex-1 min-h-0 overflow-y-auto w-full min-w-0" @wheel="handleCtrlWheel">
           <!-- 顶部的子文件夹 -->
-          <section v-if="props.viewType !== 'trash'">
+          <section v-if="props.viewType !== 'trash' && showFoldersInTab">
             <header class="flex items-center justify-between px-5 pt-3 pb-1">
               <h3 class="text-sm font-medium text-foreground">{{ $t('views.sidebarModuleList.folders') }}</h3>
               <div class="flex items-center gap-2">
@@ -727,6 +727,9 @@ const filteredMediaItems = computed(() => {
 
 const folderTreeItems = computed(() => homeController.folderTree.value || [])
 const tagTreeItems = computed(() => tagStore.tags || [])
+
+// 设置面板「标签页展示文件夹」开关（存于 LibraryPrefs，按素材库隔离）
+const showFoldersInTab = computed(() => getLibraryPrefs().showFoldersInTab)
 
 const handleMediaDelete = async (_item: FileInfo) => {
   await handleRefresh()

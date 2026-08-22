@@ -51,6 +51,8 @@
   "deleteConfirmDesc": "Show a confirmation dialog when deleting selected items; can also be disabled via \"Remember this choice\" in the dialog (stored in the library's local config)",
   "deleteConfirmOn": "Deletion will ask for confirmation",
   "deleteConfirmOff": "Deletion will skip confirmation",
+  "showFoldersInTab": "Show folders in tabs",
+  "showFoldersInTabDesc": "Show subfolders of the current folder at the top of media tabs (stored in the library's local config)",
   "autoStartFailed": "Failed to set system login item",
   "settingUpdated": "{key} setting updated successfully",
   "saveError": "An error occurred while saving settings",
