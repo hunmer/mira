@@ -35,6 +35,7 @@ function configAt(index: number) {
     :tab="props.tabs[0]"
     :active="true"
     :view-config="configAt(0)"
+    :get-view-config="props.getViewConfig"
     @activate="emit('activate', $event, props.tabs[0]!.id)"
   />
 
@@ -44,11 +45,11 @@ function configAt(index: number) {
     auto-save-id="home-tab-split-two-columns"
   >
     <ResizablePanel :default-size="50" :min-size="20">
-      <HomeSplitPane :pane-index="0" :tab="props.tabs[0]" :active="props.activeTabId === props.tabs[0]?.id" :view-config="configAt(0)" @activate="emit('activate', $event, props.tabs[0]!.id)" />
+      <HomeSplitPane :pane-index="0" :tab="props.tabs[0]" :active="props.activeTabId === props.tabs[0]?.id" :view-config="configAt(0)" :get-view-config="props.getViewConfig" @activate="emit('activate', $event, props.tabs[0]!.id)" />
     </ResizablePanel>
     <ResizableHandle :class="handleClass" />
     <ResizablePanel :default-size="50" :min-size="20">
-      <HomeSplitPane :pane-index="1" :tab="props.tabs[1]" :active="props.activeTabId === props.tabs[1]?.id" :view-config="configAt(1)" @activate="emit('activate', $event, props.tabs[1]!.id)" />
+      <HomeSplitPane :pane-index="1" :tab="props.tabs[1]" :active="props.activeTabId === props.tabs[1]?.id" :view-config="configAt(1)" :get-view-config="props.getViewConfig" @activate="emit('activate', $event, props.tabs[1]!.id)" />
     </ResizablePanel>
   </ResizablePanelGroup>
 
@@ -60,7 +61,7 @@ function configAt(index: number) {
     <template v-for="index in 3" :key="index">
       <ResizableHandle v-if="index > 1" :class="handleClass" />
       <ResizablePanel :default-size="100 / 3" :min-size="15">
-        <HomeSplitPane :pane-index="index - 1" :tab="props.tabs[index - 1]" :active="props.activeTabId === props.tabs[index - 1]?.id" :view-config="configAt(index - 1)" @activate="emit('activate', $event, props.tabs[index - 1]!.id)" />
+        <HomeSplitPane :pane-index="index - 1" :tab="props.tabs[index - 1]" :active="props.activeTabId === props.tabs[index - 1]?.id" :view-config="configAt(index - 1)" :get-view-config="props.getViewConfig" @activate="emit('activate', $event, props.tabs[index - 1]!.id)" />
       </ResizablePanel>
     </template>
   </ResizablePanelGroup>
@@ -95,6 +96,7 @@ function configAt(index: number) {
                 :tab="props.tabs[(row - 1) * 2 + column - 1]"
                 :active="props.activeTabId === props.tabs[(row - 1) * 2 + column - 1]?.id"
                 :view-config="configAt((row - 1) * 2 + column - 1)"
+                :get-view-config="props.getViewConfig"
                 @activate="emit('activate', $event, props.tabs[(row - 1) * 2 + column - 1]!.id)"
               />
             </ResizablePanel>

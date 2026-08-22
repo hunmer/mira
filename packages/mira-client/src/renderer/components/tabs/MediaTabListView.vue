@@ -394,11 +394,11 @@
 <style scoped>
 .folder-card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, var(--folder-grid-item-size, 128px));
+  grid-template-columns: repeat(auto-fit, var(--folder-grid-item-size, 128px));
   gap: 1rem;
   align-items: start;
   justify-items: start;
-  justify-content: start;
+  justify-content: space-around;
   padding: 1.25rem 1.25rem 0;
   box-shadow: none;
 }
@@ -509,19 +509,6 @@ const homeController = useHomeController()
 // 使用专门的MediaTab数据管理
 const mediaTabData = useMediaTabData(props.tabId)
 
-// 初始化筛选器
-let initialFilters = { ...props.filters }
-
-// 根据 viewType 设置默认状态筛选器
-if (props.viewType === 'trash') {
-  initialFilters.recycled = 1
-}
-// files 类型不需要额外的筛选器，folder 和 tag 通过 props.filters 传入
-
-if (Object.keys(initialFilters).length > 0) {
-  mediaTabData.setInitialFilters(initialFilters)
-}
-
 // 使用 composables
 const mediaOperations = useMediaOperations()
 const {
@@ -616,6 +603,8 @@ const {
   baseHandleFilterClear,
   fetchPageData
 })
+
+// FilterRule 显示状态和查询条件都以当前 tabId 的 MediaTabData 为准。
 
 // 素材分组：按标签/文件夹/文件类型分组 + 章节导航
 const {

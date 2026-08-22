@@ -279,6 +279,9 @@ export function useMediaTabFilters(deps: {
 
   // 初始化 filterRules，同步 props.filters 中的初始筛选器
   const initializeFilterRules = () => {
+    // 组件实例可能被复用于不同 Tab，先清除上一个 Tab 的显示状态。
+    filterRules.value.forEach(rule => applySnapshotToRule(rule, null))
+
     // 如果 props.filters 中有 folder，同步到 folders filterRule
     if (props.filters?.folder !== undefined) {
       const foldersFilter = filterRules.value.find(f => f.id === 'folders')
