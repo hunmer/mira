@@ -33,6 +33,8 @@ import { getSidebarModuleOpenStates, saveSidebarModuleOpenState } from '@/render
 import type { LocalFsRoot } from '@/shared/types'
 import { useImportHandler, type ImportFolderPayload, type ImportTarget } from '@/renderer/composables/useImportHandler'
 import type { MenuItem } from '@/renderer/types/menu'
+import OrderedSectionList from '@/renderer/components/common/OrderedSectionList.vue'
+import SidebarLayoutDialog from './SidebarLayoutDialog.vue'
 
 defineOptions({ name: 'SidebarModuleList' })
 
@@ -151,6 +153,7 @@ function libraryLocalPath(): string | null {
 // ============================================
 const layoutStore = useHomeSidebarLayoutStore()
 layoutStore.load()
+const layoutDialogOpen = ref(false)
 
 /** 按启用顺序排列的模块定义（仅已启用项） */
 const enabledModules = computed(() =>
@@ -367,6 +370,23 @@ defineExpose({ locateItem })
 <template>
   <!-- 模块化内容区：按 enabledModules 顺序渲染，每个模块外层包 Collapsible -->
   <div ref="sidebarScrollRef" class="flex-grow p-2 overflow-y-auto min-w-0 space-y-2">
+    <OrderedSectionList
+      :title="$t('views.sidebarLayoutDialog.title')"
+      :customize-label="''"
+      @customize="layoutDialogOpen = true"
+    >
+      <template #headerActions>
+        <button
+          type="button"
+          class="header-action-btn pointer-events-auto relative z-10 cursor-pointer text-primary"
+          :title="$t('views.sidebarToolbar.customizeLayout')"
+          @click.stop.prevent="layoutDialogOpen = true"
+          @mousedown.stop
+        >
+          <span class="material-icons pointer-events-none leading-none text-primary" style="font-size: 18px">dashboard_customize</span>
+        </button>
+      </template>
+    </OrderedSectionList>
     <Collapsible
       v-for="mod in enabledModules"
       :key="mod.id"
@@ -580,6 +600,8 @@ defineExpose({ locateItem })
       </CollapsibleContent>
     </Collapsible>
   </div>
+
+  <SidebarLayoutDialog v-model="layoutDialogOpen" />
 
   <!-- 底部搜索胶囊 -->
   <div class="shrink-0 px-2 pb-2 pt-1">

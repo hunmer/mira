@@ -19,4 +19,5 @@
   "refresh": "Refresh",
   "export": "Export",
   "import": "Import"
+  ,"resetOrder": "Reset order"
 }

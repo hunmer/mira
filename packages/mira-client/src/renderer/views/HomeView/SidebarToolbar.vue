@@ -8,8 +8,6 @@
  *
  * 由原 HomeSidebar 拆出，逻辑零改动。自定义布局对话框内聚在此处（layoutDialogOpen 仅本组件使用）。
  */
-import { ref } from 'vue'
-import SidebarLayoutDialog from './SidebarLayoutDialog.vue'
 import type { LocalFsNode } from '../../../shared/types'
 import ImportDropdown from './ImportDropdown.vue'
 import { useMediaStore } from '@/renderer/stores/media'
@@ -28,7 +26,6 @@ const emit = defineEmits<{
   manageTags: []
 }>()
 
-const layoutDialogOpen = ref(false)
 const mediaStore = useMediaStore()
 const isMobile = useMediaQuery('(max-width: 767px)')
 
@@ -72,16 +69,5 @@ function handleManageTags() {
       <span class="material-icons leading-none" style="font-size: 18px">sell</span>
     </button>
 
-    <!-- 自定义布局 -->
-    <button
-      class="flex h-8 w-8 items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-      :title="$t('views.sidebarToolbar.customizeLayout')"
-      @click="layoutDialogOpen = true"
-    >
-      <span class="material-icons leading-none" style="font-size: 18px">dashboard_customize</span>
-    </button>
   </div>
-
-  <!-- 自定义布局对话框 -->
-  <SidebarLayoutDialog v-model="layoutDialogOpen" />
 </template>

@@ -422,6 +422,7 @@
     "unknownViewMode": "Unknown view mode: {mode}"
   },
   "mediaDetailComponent": {
+    "preview": "Preview",
     "emptyTitle": "Select a file to view details",
     "fileCount": "{count} files",
     "fileName": "File name",
@@ -458,6 +459,9 @@
     "removeFolderAction": "Remove folder",
     "setTagAction": "Set tag",
     "removeTagAction": "Remove tag"
+    ,"sortDescription": "Drag sections to reorder the detail panel"
+    ,"sortEnabled": "Enabled"
+    ,"sortDisabled": "Disabled"
   },
   "mediaGridComponent": {
     "emptyTitle": "No files",

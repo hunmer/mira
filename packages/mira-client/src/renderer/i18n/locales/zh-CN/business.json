@@ -422,6 +422,7 @@
     "unknownViewMode": "未知的视图模式: {mode}"
   },
   "mediaDetailComponent": {
+    "preview": "预览图",
     "emptyTitle": "选择文件以查看详情",
     "fileCount": "{count} 个文件",
     "fileName": "文件名",
@@ -458,6 +459,9 @@
     "removeFolderAction": "移除文件夹",
     "setTagAction": "设置标签",
     "removeTagAction": "移除标签"
+    ,"sortDescription": "拖拽区块调整详情面板顺序"
+    ,"sortEnabled": "已启用"
+    ,"sortDisabled": "未启用"
   },
   "mediaGridComponent": {
     "emptyTitle": "暂无文件",

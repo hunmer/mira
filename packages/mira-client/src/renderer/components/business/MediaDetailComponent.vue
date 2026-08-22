@@ -1,5 +1,58 @@
 <template>
   <div class="flex flex-col h-full space-y-4">
+    <OrderedSectionList
+      :title="$t('business.mediaDetailComponent.basicInfo')"
+      :customize-label="$t('business.filterBar.sortTitle')"
+      customize-icon="sort"
+      header-only
+      @customize="openSortDialog"
+    />
+    <SortableLayoutDialog v-model="sortDialogOpen" :enabled="sectionEnabledItems" :disabled="sectionDisabledItems"
+      :title="$t('business.filterBar.sortTitle')" :description="$t('business.mediaDetailComponent.sortDescription')"
+      :enabled-title="$t('business.mediaDetailComponent.sortEnabled')"
+      :disabled-title="$t('business.mediaDetailComponent.sortDisabled')"
+      :done-label="$t('common.confirm')" :reset-label="$t('common.resetOrder')"
+      @update:enabled="updateSectionOrder" @update:disabled="updateSectionDisabled">
+      <template #item="{ item }">
+        <span class="material-icons text-muted-foreground">{{ item.icon }}</span>
+        <div class="min-w-0 flex-1 truncate text-sm">{{ item.title }}</div>
+      </template>
+    </SortableLayoutDialog>
+    <!-- legacy dialog removed -->
+    <!--
+      <DialogContent class="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{{ $t('business.filterBar.sortTitle') }}</DialogTitle>
+          <DialogDescription>{{ $t('business.filterBar.sortTitle') }}</DialogDescription>
+        </DialogHeader>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <div class="mb-1 text-xs font-semibold text-foreground">已启用</div>
+            <VueDraggable v-model="sectionDragItems" item-key="id" group="detail-sections" class="flex max-h-80 min-h-24 flex-col gap-1.5 overflow-y-auto rounded-lg border border-dashed border-border/70 p-2" handle=".sort-handle">
+              <div v-for="entry in sectionDragItems" :key="entry.id" class="flex items-center gap-2 rounded-md border border-border/60 bg-background p-2">
+                <span class="sort-handle material-icons cursor-grab text-muted-foreground">drag_indicator</span>
+                <span class="material-icons text-muted-foreground">{{ entry.icon }}</span>
+                <span class="truncate text-sm">{{ entry.title }}</span>
+              </div>
+            </VueDraggable>
+          </div>
+          <div>
+            <div class="mb-1 text-xs font-semibold text-muted-foreground">未启用</div>
+            <VueDraggable v-model="sectionDisabledItems" item-key="id" group="detail-sections" class="flex max-h-80 min-h-24 flex-col gap-1.5 overflow-y-auto rounded-lg border border-dashed border-border/70 p-2" handle=".sort-handle">
+              <div v-for="entry in sectionDisabledItems" :key="entry.id" class="flex items-center gap-2 rounded-md border border-border/60 bg-background/60 p-2">
+                <span class="sort-handle material-icons cursor-grab text-muted-foreground">drag_indicator</span>
+                <span class="material-icons text-muted-foreground">{{ entry.icon }}</span>
+                <span class="truncate text-sm">{{ entry.title }}</span>
+              </div>
+            </VueDraggable>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="outline" @click="sortDialogOpen = false">{{ $t('common.cancel') }}</Button>
+          <Button type="button" @click="applySortDialog">{{ $t('common.confirm') }}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>-->
     <!-- 无数据占位 -->
     <Empty v-if="displayItems.length === 0" class="flex-1">
       <EmptyMedia>
@@ -9,7 +62,7 @@
     </Empty>
     <template v-else>
       <!-- 预览图 - 支持多选相册效果 -->
-      <div class="relative">
+      <div class="relative" :style="sectionStyle('preview')">
         <!-- 单选模式 -->
         <div v-if="displayItems.length === 1" class="relative">
           <div class="relative w-full flex items-center justify-center" style="height: 192px;">
@@ -76,7 +129,7 @@
         </div>
       </div>
       <!-- 文件名编辑 - 仅单选模式 -->
-      <div v-if="!isMultiSelect && displayItems[0]">
+      <div v-if="!isMultiSelect && displayItems[0]" :style="sectionStyle('fileName')">
         <label class="block text-xs font-medium text-muted-foreground mb-1">{{
           $t('business.mediaDetailComponent.fileName') }}</label>
         <Input v-model="editName" type="text"
@@ -86,7 +139,7 @@
       </div>
 
       <!-- Website 编辑 - 仅单选模式 -->
-      <div v-if="!isMultiSelect && displayItems[0]">
+      <div v-if="!isMultiSelect && displayItems[0]" :style="sectionStyle('website')">
         <label class="block text-xs font-medium text-muted-foreground mb-1">{{
           $t('business.mediaDetailComponent.website') }}</label>
         <div class="flex items-center gap-1">
@@ -100,7 +153,7 @@
       </div>
 
       <!-- 备注 - 仅单选模式 -->
-      <div v-if="!isMultiSelect && displayItems[0]">
+      <div v-if="!isMultiSelect && displayItems[0]" :style="sectionStyle('notes')">
         <label class="block text-xs font-medium text-muted-foreground mb-1">{{ $t('business.mediaDetailComponent.notes')
           }}</label>
         <textarea v-model="editNotes" rows="3" :placeholder="$t('business.mediaDetailComponent.notesPlaceholder')"
@@ -111,7 +164,7 @@
 
 
       <!-- 评分 - 仅单选模式 -->
-      <div v-if="!isMultiSelect && displayItems[0]">
+      <div v-if="!isMultiSelect && displayItems[0]" :style="sectionStyle('rating')">
         <label class="block text-xs font-medium text-muted-foreground mb-1">{{
           $t('business.mediaDetailComponent.rating') }}</label>
         <div class="flex items-center gap-0.5">
@@ -131,7 +184,7 @@
 
 
       <!-- 文件URL - 仅单选模式显示 -->
-      <div v-if="!isMultiSelect && displayItems[0]?.url"
+      <div v-if="!isMultiSelect && displayItems[0]?.url" :style="sectionStyle('url')"
         class="flex items-center bg-muted/60 border border-border/60 rounded-lg p-2">
         <span class="flex-1 text-xs truncate">{{ displayItems[0].url }}</span>
         <button class="p-1 rounded-md hover:bg-muted" @click="copyToClipboard(displayItems[0].url)">
@@ -140,7 +193,7 @@
       </div>
 
       <!-- 标签管理 -->
-      <div>
+      <div :style="sectionStyle('tags')">
         <div class="flex items-center justify-between mb-2">
           <h3 class="font-semibold text-foreground text-sm">{{ $t('business.mediaDetailComponent.tags') }}</h3>
           <Popover v-model:open="tagPopoverOpen">
@@ -178,7 +231,7 @@
       </div>
 
       <!-- 文件夹信息 -->
-      <div>
+      <div :style="sectionStyle('folder')">
         <div class="flex items-center justify-between mb-2">
           <h3 class="font-semibold text-foreground text-sm">{{ $t('business.mediaDetailComponent.folder') }}</h3>
           <Popover v-model:open="folderPopoverOpen">
@@ -225,7 +278,7 @@
       </div>
 
       <!-- 基本信息 -->
-      <div>
+      <div :style="sectionStyle('basicInfo')">
         <h3 class="font-semibold text-foreground text-sm mb-2">{{ $t('business.mediaDetailComponent.basicInfo') }}</h3>
         <div class="text-xs space-y-2 text-muted-foreground">
           <!-- 单选模式 -->
@@ -287,6 +340,9 @@ import { Input } from '@/components/ui/input'
 import StatusImage from '@renderer/components/common/StatusImage.vue'
 import { getExtIconUrl } from '@renderer/utils/extIconHelper'
 import { runBatchOperation } from '@renderer/composables/useBatchOperation'
+import { VueDraggable } from 'vue-draggable-plus'
+import OrderedSectionList from '@/renderer/components/common/OrderedSectionList.vue'
+import SortableLayoutDialog from '@/renderer/components/common/SortableLayoutDialog.vue'
 
 // 全局图片加载错误状态缓存
 const imageLoadErrorCache = new Map<string, boolean>()
@@ -295,9 +351,34 @@ interface Props {
   item?: FileInfo
   items?: FileInfo[] // 支持多选文件
   libraryId?: string // 素材库ID
+  /** 多选详情中的条目排序；未提供时保持传入顺序 */
+  sortItems?: (a: FileInfo, b: FileInfo) => number
+  sortable?: boolean
 }
 
 const props = defineProps<Props>()
+const emit = defineEmits<{ reorder: [items: FileInfo[]] }>()
+const { t } = useI18n()
+const manualOrder = ref<string[]>([])
+const dragItems = ref<FileInfo[]>([])
+const sortDialogOpen = ref(false)
+const detailSections = [
+  { id: 'preview', title: t('business.mediaDetailComponent.preview'), icon: 'image' },
+  { id: 'fileName', title: t('business.mediaDetailComponent.fileName'), icon: 'drive_file_rename_outline' },
+  { id: 'website', title: t('business.mediaDetailComponent.website'), icon: 'language' },
+  { id: 'notes', title: t('business.mediaDetailComponent.notes'), icon: 'notes' },
+  { id: 'rating', title: t('business.mediaDetailComponent.rating'), icon: 'star' },
+  { id: 'url', title: 'URL', icon: 'link' },
+  { id: 'tags', title: t('business.mediaDetailComponent.tags'), icon: 'sell' },
+  { id: 'folder', title: t('business.mediaDetailComponent.folder'), icon: 'folder' },
+  { id: 'basicInfo', title: t('business.mediaDetailComponent.basicInfo'), icon: 'info' },
+]
+const sectionOrder = ref(detailSections.map(section => section.id))
+const sectionEnabledItems = ref([...detailSections])
+const sectionDisabledItems = ref<typeof detailSections>([])
+const sectionStyle = (id: string) => sectionDisabledItems.value.some(section => section.id === id)
+  ? { display: 'none' }
+  : { order: sectionOrder.value.indexOf(id) }
 
 // Access the item from props for use in functions
 const { item, items, libraryId } = toRefs(props)
@@ -305,7 +386,6 @@ const tagStore = useTagStore()
 const folderStore = useFolderStore()
 const settingsStore = useSettingsStore()
 const { createWebviewTab } = useTabs()
-const { t } = useI18n()
 
 // Popover 控制状态
 const tagPopoverOpen = ref(false)
@@ -361,7 +441,12 @@ const displayItems = computed(() => {
   } else {
     return []
   }
-  return base.map(file => {
+  const ordered = props.sortItems ? [...base].sort(props.sortItems) : [...base]
+  if (manualOrder.value.length) {
+    const rank = new Map(manualOrder.value.map((id, index) => [id, index]))
+    ordered.sort((a, b) => (rank.get(String(a.id)) ?? Number.MAX_SAFE_INTEGER) - (rank.get(String(b.id)) ?? Number.MAX_SAFE_INTEGER))
+  }
+  return ordered.map(file => {
     const update = realtimeUpdates.value.get(file.id)
     if (!update) return file
     return {
@@ -373,6 +458,34 @@ const displayItems = computed(() => {
     }
   })
 })
+
+watch(() => displayItems.value.map(file => String(file.id)), ids => {
+  const nextOrder = manualOrder.value.filter(id => ids.includes(id))
+  ids.forEach(id => { if (!nextOrder.includes(id)) nextOrder.push(id) })
+  if (nextOrder.length !== manualOrder.value.length || nextOrder.some((id, index) => id !== manualOrder.value[index])) {
+    manualOrder.value = nextOrder
+  }
+}, { immediate: true })
+watch(displayItems, value => {
+  const next = [...value]
+  if (next.length !== dragItems.value.length || next.some((item, index) => item.id !== dragItems.value[index]?.id)) {
+    dragItems.value = next
+  }
+}, { immediate: true, deep: true })
+const reorderItems = (items: FileInfo[]) => {
+  manualOrder.value = items.map(item => String(item.id))
+  emit('reorder', items)
+}
+const openSortDialog = () => {
+  sectionEnabledItems.value = sectionOrder.value.map(id => detailSections.find(section => section.id === id)!).filter(Boolean)
+  sectionDisabledItems.value = detailSections.filter(section => !sectionOrder.value.includes(section.id))
+  sortDialogOpen.value = true
+}
+const updateSectionOrder = (items: typeof detailSections) => {
+  sectionOrder.value = items.map(section => section.id)
+  sectionEnabledItems.value = [...items]
+}
+const updateSectionDisabled = (items: typeof detailSections) => { sectionDisabledItems.value = [...items] }
 
 // 是否为多选模式
 const isMultiSelect = computed(() => displayItems.value.length > 1)
