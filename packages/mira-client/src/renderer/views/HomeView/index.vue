@@ -695,8 +695,13 @@ onUnmounted(() => {
         <!-- 中间列：Tabs 条 + 内容面板 -->
         <ResizablePanel :default-size="54" :min-size="30" class="flex flex-col min-w-0 !overflow-visible">
           <!-- Tabs 条（固定高度与右侧悬浮 HomeHeader 对齐，隐藏滚动条）。
-               HomeHeader 始终悬浮于右上角，右侧固定留出 header 宽度避免遮挡 tabs -->
-          <div class="shrink-0 h-[56px] w-full min-w-0 px-2 pr-[220px] flex items-end overflow-hidden" @dblclick="handleHomebarDblClick">
+               HomeHeader 悬浮于窗口右上角（第三列上方），仅当第三列折叠（宽度 0）时会覆盖到本列，
+               此时右侧留出 header 宽度避免遮挡 tabs；第三列展开时 tabs 填满整列宽度 -->
+          <div
+            class="shrink-0 h-[56px] w-full min-w-0 px-2 flex items-end overflow-hidden transition-[padding] duration-150"
+            :class="showDetailSidebar ? 'pr-2' : 'pr-[220px]'"
+            @dblclick="handleHomebarDblClick"
+          >
             <HomeTabsBar
               :active-tabs="activeTabs"
               :tab-context-menu-items="tabContextMenuItems"

@@ -3,7 +3,8 @@
     :data-selectable-id="item.id"
     :data-file="getLocalFile(item)"
     :class="[
-      'waterfall-card media-waterfall-item group relative cursor-pointer transition-all duration-200 rounded-xl overflow-hidden h-full w-full',
+      'waterfall-card media-waterfall-item group relative cursor-pointer transition-all duration-200 overflow-hidden h-full w-full',
+      compact ? 'rounded-none border border-black' : 'rounded-xl',
       isSelected
         ? 'is-selected'
         : 'shadow-sm hover:shadow-[0_12px_36px_rgba(99,102,241,0.15)] hover:-translate-y-0.5'
@@ -29,15 +30,16 @@
       <MediaThumbnail
         :file-id="item.id"
         :file="item"
-          :src="url"
-          :preload="preload"
-          :filename="item.name"
-          :alt="item.name"
-          :img-class="isImage
-            ? 'w-full h-full object-contain transition-transform duration-500 ease-out will-change-transform group-hover:scale-105'
-            : 'w-full h-full object-contain'"
-          @error="$emit('image-error', url)"
-        />
+        :src="url"
+        :preload="preload"
+        :bare="compact"
+        :filename="item.name"
+        :alt="item.name"
+        :img-class="isImage
+          ? `w-full h-full ${fitClass} transition-transform duration-500 ease-out will-change-transform group-hover:scale-105`
+          : `w-full h-full ${fitClass}`"
+        @error="$emit('image-error', url)"
+      />
       </div>
 
       <!-- 视频预览组件插槽 (绝对定位覆盖在缩略图上，pointer-events-none 确保鼠标事件穿透到父容器) -->
@@ -117,8 +119,8 @@
       <!-- 信息块 (玻璃浮层，非视频预览时显示) -->
       <div
         v-show="!isVideoPlaying && hasVisibleInfo"
-        class="absolute bottom-0 left-0 right-0 p-2 rounded-b-xl space-y-0.5"
-        :class="isSelected ? 'bg-primary/90' : 'bg-white/80 dark:bg-muted/80 backdrop-blur'"
+        class="absolute bottom-0 left-0 right-0 p-2 space-y-0.5"
+        :class="[compact ? '' : 'rounded-b-xl', isSelected ? 'bg-primary/90' : 'bg-white/80 dark:bg-muted/80 backdrop-blur']"
       >
         <!-- 文件名 -->
         <h3
@@ -190,6 +192,8 @@ interface Props {
   progress?: number
   /** Masonry 已进入预加载区，立即请求缩略图。 */
   preload?: boolean
+  /** 紧密模式：取消圆角并加黑色描边（类似手机相册） */
+  compact?: boolean
 }
 
 interface Emits extends MediaItemEmits {
@@ -203,7 +207,8 @@ const props = withDefaults(defineProps<Props>(), {
   isMuted: false,
   progress: 0,
   ratio: 1,
-  preload: false
+  preload: false,
+  compact: false
 })
 
 const emit = defineEmits<Emits>()
@@ -211,6 +216,9 @@ const emit = defineEmits<Emits>()
 const mediaContainerStyle = computed(() => ({
   aspectRatio: `${props.ratio} / 1`
 }))
+
+// 紧凑模式下用 cover 完全填满，消除缩略图比例与卡片比例的细微偏差产生的 letterbox 边距
+const fitClass = computed(() => (props.compact ? 'object-cover' : 'object-contain'))
 
 // hovercard 预览图：优先原图（带缓存破坏），保证清晰
 

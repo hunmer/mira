@@ -51,6 +51,7 @@
           :is-muted="settingsStore.settings.videoPreviewMuted"
           :progress="videoProgress[item.id] || 0"
           :preload="preload"
+          :compact="props.compact"
           @click="handleItemClick"
           @double-click="handleItemDoubleClick"
           @mouse-enter="handleMouseEnter"
@@ -150,6 +151,8 @@ interface Props {
   layoutMode?: 'fill' | 'stream'
   /** 懒加载触发的 IntersectionObserver rootMargin */
   lazyRootMargin?: string
+  /** 紧密模式：取消圆角并给卡片加黑色描边（配合 gap=0 使用） */
+  compact?: boolean
 }
 
 interface Emits {
@@ -185,7 +188,8 @@ const props = withDefaults(defineProps<Props>(), {
   maxColSpan: 3,
   layoutTransition: true,
   layoutMode: 'fill',
-  lazyRootMargin: '1500px 0px'
+  lazyRootMargin: '1500px 0px',
+  compact: false
 })
 
 const emit = defineEmits<Emits>()

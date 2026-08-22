@@ -72,6 +72,9 @@ export interface AppSettings {
    */
   visibleItemFields: ItemField[]
 
+  /** 紧密瀑布流：取消圆角、间距为 0、图片带黑色描边（类似手机相册） */
+  compactWaterfall: boolean
+
   // 导入设置
   directImportMode: boolean
 
@@ -215,6 +218,7 @@ export const useSettingsStore = defineStore('settings', () => {
     videoPreviewMuted: true,
     // 媒体项展示字段：默认全部展示
     visibleItemFields: ['filename', 'format', 'size', 'folder', 'tags', 'videoPlayIcon'],
+    compactWaterfall: false,
 
     // 导入设置
     directImportMode: false,
@@ -614,6 +618,7 @@ export const useSettingsStore = defineStore('settings', () => {
       maxConcurrentUploads: 3,
       videoPreviewMuted: true,
       visibleItemFields: ['filename', 'format', 'size', 'folder', 'tags', 'videoPlayIcon'],
+      compactWaterfall: false,
       directImportMode: false,
       screenshotFormat: 'png',
       screenshotCopyToClipboard: true,

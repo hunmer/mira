@@ -187,7 +187,8 @@
               <div v-if="viewMode === 'waterfall'" class="w-full">
                 <WaterfallComponent ref="waterfallRef" :key="`waterfall-${viewMode}-${group.key}`" class="p-5"
                   :items="group.items" :selected-items="selectedItems" :is-trash="viewType === 'trash'"
-                  :column-width="dynamicColumnWidth" :columns-per-row="columnsPerRow" :gap="16"
+                  :column-width="dynamicColumnWidth" :columns-per-row="columnsPerRow"
+                  :gap="compactWaterfall ? 0 : 16" :compact="compactWaterfall"
                   :debug-label="`${groupIndex}:${group.label}`"
                   :lazyload="groupingMode === 'none'"
                   :enter-animation="groupingMode === 'none'" :layout-transition="groupingMode === 'none'"
@@ -346,6 +347,13 @@
             <div class="min-w-[160px] rounded-2xl bg-popover p-2">
               <h3 class="font-medium text-foreground text-sm mb-2 px-1">{{ $t('tabs.mediaTabListView.displayFields') }}
               </h3>
+              <!-- 紧密瀑布流开关：仅瀑布流视图显示 -->
+              <label v-if="viewMode === 'waterfall'"
+                class="flex items-center justify-between space-x-2 px-2 py-1.5 rounded-lg hover:bg-primary/5 cursor-pointer">
+                <span class="text-sm text-foreground">{{ $t('tabs.mediaTabListView.compactWaterfall') }}</span>
+                <Switch :model-value="compactWaterfall"
+                  @update:model-value="val => handleCompactWaterfallChange(val === true)" />
+              </label>
               <label v-for="col in itemFieldOptions" :key="col.key"
                 class="flex items-center space-x-2 px-2 py-1.5 rounded-lg hover:bg-primary/5 cursor-pointer">
                 <Checkbox :model-value="isItemFieldVisible(col.key)"
@@ -426,6 +434,7 @@
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useMediaStore } from '@renderer/stores/media'
 import { useTagStore } from '@renderer/stores/tag'
+import { useSettingsStore } from '@renderer/stores/settings'
 import { useHomeController } from '@renderer/controllers/HomeController'
 import { useMediaOperations, useFilters, useViewModeConfig } from '@renderer/composables'
 import { useMediaTabData } from '@renderer/composables/useMediaTabData'
@@ -443,6 +452,7 @@ import Breadcrumb from '@/renderer/components/common/Breadcrumb.vue'
 import StatusImage from '@/renderer/components/common/StatusImage.vue'
 import { Dropdown } from '@/renderer/components/common/Dropdown'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Switch } from '@/components/ui/switch'
 import { ChapterScrubber } from '@/components/ui/chapter-scrubber'
 import {
   AlertDialog,
@@ -713,6 +723,13 @@ const { toolbarRef, showFloatingToolbar } = useFloatingToolbar({ selectedItems, 
 
 // 展示字段开关
 const { itemFieldOptions, isItemFieldVisible, toggleItemField } = useMediaTabItemFields()
+
+// 紧密瀑布流：取消圆角、间距 0、黑色描边（存于全局设置）
+const settingsStore = useSettingsStore()
+const compactWaterfall = computed(() => settingsStore.settings.compactWaterfall)
+const handleCompactWaterfallChange = async (val: boolean) => {
+  await settingsStore.updateSetting('compactWaterfall', val)
+}
 
 const filteredMediaItems = computed(() => {
   // 对于MediaTabListView，filteredMediaItems应该等于缓存的总数据

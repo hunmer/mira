@@ -4,8 +4,7 @@
     v-else-if="currentSrc && !hasError && preload"
     :src="currentSrc"
     :alt="alt"
-    class="border border-border"
-    :class="imgClass"
+    :class="[bare ? '' : 'border border-border', imgClass]"
     @load="onLoad"
     @error="onError"
   />
@@ -13,14 +12,14 @@
     v-else-if="currentSrc && !hasError"
     v-lazy="currentSrc"
     :alt="alt"
-    class="border border-border"
-    :class="imgClass"
+    :class="[bare ? '' : 'border border-border', imgClass]"
     @load="onLoad"
     @error="onError"
   />
   <slot v-else name="fallback">
     <div :class="['flex items-center justify-center', imgClass]">
-      <img v-if="extIconUrl" :src="extIconUrl" class="object-contain opacity-60 w-full h-full p-5" />
+      <img v-if="extIconUrl" :src="extIconUrl"
+        :class="['object-contain opacity-60 w-full h-full', bare ? '' : 'p-5']" />
       <span v-else class="material-icons text-muted-foreground" :style="{ fontSize: iconSize }">{{ fallbackIcon }}</span>
     </div>
   </slot>
@@ -42,12 +41,15 @@ const props = withDefaults(defineProps<{
   iconSize?: string
   /** 直接加载图片，供上层在进入预加载区时使用。 */
   preload?: boolean
+  /** 移除 img 自带的 border 边框（如紧密瀑布流仅需外层描边时使用） */
+  bare?: boolean
   file?: FileInfo
 }>(), {
   alt: '',
   imgClass: '',
   iconSize: '2rem',
-  preload: false
+  preload: false,
+  bare: false
 })
 
 function resolveThumbnailSource(src: string): string {
