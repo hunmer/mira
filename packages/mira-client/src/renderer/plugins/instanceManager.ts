@@ -50,9 +50,6 @@ export const initializeGlobalPluginSystem = () => {
               break
             }
           }
-          if (!found) {
-            console.warn(`⚠️ Factory ID ${pluginId} doesn't match any registered plugin`)
-          }
         }
       },
 

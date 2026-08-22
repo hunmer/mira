@@ -39,6 +39,7 @@ import { useHomeController } from '@renderer/controllers/HomeController'
 
 // Window and Navigation composables
 import { useWindowAndNavigation } from '@renderer/composables'
+import ConfigStorage from '@renderer/utils/ConfigStorage'
 
 // HomeView模块
 import { useHomeUIState } from './useHomeUIState'
@@ -265,6 +266,7 @@ const {
   tabsComposable,
   activeTabs,
   currentTab,
+  visitedTabs,
   getTabViewConfigForTab,
   getCurrentTab,
   setTabNeedUpdate,
@@ -287,8 +289,31 @@ const {
 // Tab 内容分屏：槽位只记录 tab ID，全局 active 状态仍由 useTabs 维护
 // ============================================
 const splitLayout = ref<HomeSplitLayout>('single')
+const splitLayoutRestored = ref(false)
 const splitPaneTabIds = ref<Array<string | undefined>>([])
 const activeSplitPaneIndex = ref(0)
+
+const HOME_SPLIT_LAYOUT_KEY = 'mira-home-split-layout'
+const isHomeSplitLayout = (value: unknown): value is HomeSplitLayout =>
+  value === 'single' || value === 'two-columns' || value === 'four-grid'
+  || value === 'three-columns' || value === 'three-rows'
+
+async function restoreSplitLayout() {
+  try {
+    const stored = await ConfigStorage.getItem(HOME_SPLIT_LAYOUT_KEY)
+    if (stored && isHomeSplitLayout(stored)) splitLayout.value = stored
+  } catch (error) {
+    console.warn('[HomeView] restore split layout failed:', error)
+  } finally {
+    splitLayoutRestored.value = true
+  }
+}
+
+void restoreSplitLayout()
+
+watch(splitLayout, (layout) => {
+  if (splitLayoutRestored.value) void ConfigStorage.setItem(HOME_SPLIT_LAYOUT_KEY, layout)
+})
 
 const splitPaneTabs = computed(() =>
   splitPaneTabIds.value.map(tabId => activeTabs.value.find(tab => tab.id === tabId))
@@ -678,17 +703,15 @@ onUnmounted(() => {
           <!-- 内容面板（玻璃磨砂） -->
           <div class="flex-1 rounded-2xl border border-white/60 dark:border-border bg-white/30 dark:bg-muted/50 backdrop-blur-xl shadow-[0_12px_40px_var(--shadow-primary-md)] overflow-hidden flex flex-col p-1">
             <main ref="mainContentRef" class="flex-1 flex overflow-hidden relative min-w-0 p-2 gap-2 border border-primary/40 rounded-xl">
-              <KeepAlive>
-                <HomeSplitContent
-                  :key="splitLayout"
-                  class="flex-1 min-w-0 overflow-hidden rounded-xl"
-                  :layout="splitLayout"
-                  :tabs="splitPaneTabs"
-                  :active-tab-id="currentTab?.id"
-                  :get-view-config="getTabViewConfigForTab"
-                  @activate="handleSplitPaneActivate"
-                />
-              </KeepAlive>
+              <HomeSplitContent
+                class="flex-1 min-w-0 overflow-hidden rounded-xl"
+                :layout="splitLayout"
+                :tabs="splitPaneTabs"
+                :visited-tabs="visitedTabs"
+                :active-tab-id="currentTab?.id"
+                :get-view-config="getTabViewConfigForTab"
+                @activate="handleSplitPaneActivate"
+              />
             </main>
           </div>
         </ResizablePanel>
@@ -741,17 +764,15 @@ onUnmounted(() => {
         <!-- 内容面板 -->
         <div class="flex-1 rounded-2xl border border-white/60 dark:border-border bg-white/30 dark:bg-muted/50 backdrop-blur-xl shadow-[0_12px_40px_var(--shadow-primary-md)] overflow-hidden flex flex-col">
           <main ref="mainContentRef" class="flex-1 flex overflow-hidden relative min-w-0 p-2 gap-2 border border-primary/40 rounded-xl">
-            <KeepAlive>
-              <HomeSplitContent
-                :key="splitLayout"
-                class="flex-1 min-w-0 overflow-hidden rounded-xl"
-                :layout="splitLayout"
-                :tabs="splitPaneTabs"
-                :active-tab-id="currentTab?.id"
-                :get-view-config="getTabViewConfigForTab"
-                @activate="handleSplitPaneActivate"
-              />
-            </KeepAlive>
+            <HomeSplitContent
+              class="flex-1 min-w-0 overflow-hidden rounded-xl"
+              :layout="splitLayout"
+              :tabs="splitPaneTabs"
+              :visited-tabs="visitedTabs"
+              :active-tab-id="currentTab?.id"
+              :get-view-config="getTabViewConfigForTab"
+              @activate="handleSplitPaneActivate"
+            />
           </main>
         </div>
       </div>

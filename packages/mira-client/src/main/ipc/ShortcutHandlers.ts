@@ -48,7 +48,6 @@ export class ShortcutHandlers {
     try {
       // 检查快捷键是否已经被注册
       if (this.registeredShortcuts.has(shortcut)) {
-        logger.warn('ShortcutHandlers', 'Shortcut already registered, unregistering first', { shortcut })
         await this.unregisterShortcut(shortcut)
       }
 
@@ -57,8 +56,6 @@ export class ShortcutHandlers {
         // 向渲染进程发送快捷键触发事件
         if (this.mainWindow && !this.mainWindow.isDestroyed()) {
           this.mainWindow.webContents.send('shortcut:triggered', actionId)
-        } else {
-          logger.warn('ShortcutHandlers', 'Main window not available for shortcut event', { shortcut, actionId })
         }
       })
 
