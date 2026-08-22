@@ -1095,6 +1095,37 @@ export class FileRoutes {
             }
         });
 
+        // 按素材 ID 即时调用 exiftool，返回完整 EXIF 标签。
+        this.router.post('/exif', async (req: Request, res: Response) => {
+            try {
+                const { libraryId, ids, clientId } = req.body;
+                if (!libraryId || !Array.isArray(ids)) {
+                    return res.status(400).json({ code: 400, message: 'libraryId and ids are required', data: null });
+                }
+                const obj = this.backend.libraries!.getLibrary(libraryId);
+                if (!obj) return res.status(404).json({ code: 404, message: 'Library not found', data: null });
+                const allowed = await obj.pluginManager.runHttpHooks({
+                    libraryId, clientId, method: req.method, path: '/api/files/exif', req, res,
+                    fields: this.backend.webSocketServer?.getClientFields(libraryId, clientId),
+                });
+                if (!allowed || res.headersSent) return;
+                const fileIds = [...new Set(ids.map((id: unknown) => Number(id)).filter(Number.isSafeInteger))];
+                const data = await Promise.all(fileIds.map(async id => {
+                    const file = await obj.libraryService.getFile(id);
+                    if (!file) return null;
+                    try {
+                        return { id: String(id), tags: await this.backend.metadataService.parseFile(file) };
+                    } catch (error) {
+                        return { id: String(id), error: error instanceof Error ? error.message : String(error) };
+                    }
+                }));
+                res.json({ code: 0, message: 'Success', data: data.filter(Boolean) });
+            } catch (error) {
+                console.error('Error parsing file EXIF:', error);
+                res.status(500).json({ code: 500, message: 'Internal server error while parsing EXIF', data: null });
+            }
+        });
+
         // 获取文件列表 - 支持过滤参数
         this.router.post('/getFiles', async (req: Request, res: Response) => {
             try {

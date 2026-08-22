@@ -13,6 +13,9 @@ import {
 } from '@/components/ui/resizable'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import MediaDetailComponent from '@renderer/components/business/MediaDetailComponent.vue'
+import DetailSidebar from './DetailSidebar.vue'
+import ExifTab from './ExifTab.vue'
+import { getDetailSidebarTabs, registerDetailSidebarTab } from './detailSidebarRegistry'
 
 // 功能子组件
 import HomeHeader from './HomeHeader.vue'
@@ -21,8 +24,6 @@ import HomeTabsBar from './HomeTabsBar.vue'
 import HomeDialogs from './HomeDialogs.vue'
 import PluginContributionBar from './PluginContributionBar.vue'
 
-// shadcn Tabs（右侧详情面板：保留 tabs 壳结构供未来扩展）
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 
 // Store imports
 import { useTagStore } from '@renderer/stores/tag'
@@ -65,13 +66,10 @@ const sidebarMediaItems = computed(() => mediaStore.detailSidebarFiles)
 const detailSidebarItem = computed(() => sidebarMediaItems.value.length === 1 ? sidebarMediaItems.value[0] : undefined)
 const detailSidebarItems = computed(() => sidebarMediaItems.value.length > 1 ? sidebarMediaItems.value : undefined)
 const detailLibraryId = computed(() => libraryStore.currentLibrary?.id || 'default')
-
 const handleDetailTagAdd = (tagName: string) => homeController.handleTagAdd(tagName)
 const handleDetailTagRemove = (tagName: string) => homeController.handleTagRemove(tagName)
 const handleDetailFolderChange = (folderId: string) => homeController.handleFolderChange(folderId)
 
-// 右侧详情面板的底部双 tab（详情 / 历史）激活态；侧栏折叠重开时保持上次选择
-const detailPanelTab = ref<'detail' | 'history'>('detail')
 
 // 第三列详情面板：resizable 折叠态。与 mediaStore.showDetailSidebar 双向同步——
 // 用户拖拽至 min 之下会触发 collapsible 折叠（emit collapse），HomeHeader 按钮则通过
@@ -194,14 +192,12 @@ const sidebarBindings = computed(() => ({
   onShowAbout: () => { showAboutDialog.value = true },
   onHistoryOpen: (file: any) => { openFilePreview(file); if (isMobile.value) mediaStore.showLeftSidebar = false },
 }))
-const detailBindings = computed(() => ({
-  item: detailSidebarItem.value,
-  items: detailSidebarItems.value,
-  libraryId: detailLibraryId.value,
-  onTagAdd: handleDetailTagAdd,
-  onTagRemove: handleDetailTagRemove,
-  onFolderChange: handleDetailFolderChange,
-}))
+registerDetailSidebarTab({
+  id: 'detail', label: '详情', icon: 'info_outline', component: MediaDetailComponent,
+  props: { onTagAdd: handleDetailTagAdd, onTagRemove: handleDetailTagRemove, onFolderChange: handleDetailFolderChange },
+})
+registerDetailSidebarTab({ id: 'exif', label: 'EXIF', icon: 'photo_camera', component: ExifTab })
+const detailSidebarTabs = getDetailSidebarTabs()
 
 // 顶部切换左侧栏：桌面 inline / 移动抽屉，统一走 store
 function handleToggleLeftSidebar() {
@@ -658,30 +654,7 @@ onUnmounted(() => {
           <!-- 插件贡献栏：横向展示在第三列（Header 下方） -->
           <PluginContributionBar @manage="showPluginsDialog = true" />
 
-          <!-- 图片详情面板 -->
-          <aside
-            v-if="!isDetailCollapsed"
-            class="flex-1 min-h-0 rounded-2xl border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur-xl shadow-[0_12px_40px_var(--shadow-primary-md)] overflow-hidden flex flex-col"
-          >
-            <!-- 底部双 tab：内容在上，tab 条在底部 -->
-            <Tabs v-model="detailPanelTab" class="flex-1 min-h-0 flex flex-col gap-0">
-              <!-- 内容区（在上）：详情 -->
-              <TabsContent value="detail" class="flex-1 min-h-0 overflow-y-auto p-4">
-                <MediaDetailComponent v-bind="detailBindings" />
-              </TabsContent>
-
-              <!-- tab 条（底部）：详情 -->
-              <TabsList class="shrink-0 h-9 w-full grid grid-cols-1 rounded-none border-t border-border/60 bg-transparent p-0">
-                <TabsTrigger
-                  value="detail"
-                  class="flex items-center justify-center gap-1 rounded-md border-0 text-xs text-muted-foreground data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none"
-                >
-                  <span class="material-icons text-sm">info_outline</span>
-                  <span>{{ $t('views.homeView.detail') }}</span>
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </aside>
+          <DetailSidebar v-if="!isDetailCollapsed" :item="detailSidebarItem" :items="detailSidebarItems" :library-id="detailLibraryId" :tabs="detailSidebarTabs" />
         </ResizablePanel>
       </ResizablePanelGroup>
 
@@ -744,9 +717,7 @@ onUnmounted(() => {
         <SheetContent side="right" class="w-[90%] max-w-[380px] p-0 gap-0">
           <SheetTitle class="sr-only">{{ $t('views.homeView.detail') }}</SheetTitle>
           <PluginContributionBar @manage="showPluginsDialog = true" />
-          <div class="flex-1 min-h-0 overflow-y-auto p-4">
-            <MediaDetailComponent v-bind="detailBindings" />
-          </div>
+          <DetailSidebar :item="detailSidebarItem" :items="detailSidebarItems" :library-id="detailLibraryId" :tabs="detailSidebarTabs" />
         </SheetContent>
       </Sheet>
     </div>

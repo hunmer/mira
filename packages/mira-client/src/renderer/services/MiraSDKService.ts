@@ -694,6 +694,11 @@ export class MiraSDKService {
     return await this.client.files().getMetadataByIds(libraryId, fileIds)
   }
 
+  async getFileExifByIds(libraryId: string, fileIds: Array<string | number>) {
+    if (!this.client) throw new Error('Not connected to Mira server')
+    return await this.client.files().getExifByIds(libraryId, fileIds, webSocketService.getClientId())
+  }
+
   /** 获取当前文件可用的插件预览器。 */
   async getPreviewViewers(libraryId: string, fileId: string | number): Promise<PreviewViewer[]> {
     if (!this.client) throw new Error('Not connected to Mira server')

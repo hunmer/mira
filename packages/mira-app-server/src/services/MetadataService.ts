@@ -169,6 +169,17 @@ export class MetadataService {
     };
   }
 
+  /** 使用 exiftool 即时解析指定文件，供详情面板等按需读取完整 EXIF。 */
+  async parseFile(file: Record<string, any>): Promise<Record<string, any>> {
+    if (!this.exiftoolPath) throw new Error('exiftool is not available');
+    if (!file?.path) throw new Error('File path is required');
+    const { stdout } = await execFileAsync(this.exiftoolPath, ['-json', file.path], {
+      windowsHide: true,
+      maxBuffer: 20 * 1024 * 1024,
+    });
+    return JSON.parse(stdout)[0] || {};
+  }
+
   async scanPending(libraryId: string, dbService: ILibraryServerData): Promise<{ available: boolean; queued: number }> {
     if (!this.exiftoolPath) return { available: false, queued: 0 };
     const pending = (await this.getSupportedFiles(dbService))

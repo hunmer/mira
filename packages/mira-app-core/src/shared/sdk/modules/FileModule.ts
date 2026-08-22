@@ -77,6 +77,12 @@ export interface FileMetadataDimensions {
     height?: number;
 }
 
+export interface FileExifResult {
+    id: string;
+    tags?: Record<string, any>;
+    error?: string;
+}
+
 /**
  * 文件列表响应
  */
@@ -485,6 +491,19 @@ export class FileModule {
         clientId?: string
     ): Promise<FileMetadataDimensions[]> {
         return await this.httpClient.post<FileMetadataDimensions[]>('/api/files/metadata', {
+            libraryId,
+            ids: fileIds.map(id => String(id)),
+            clientId,
+        });
+    }
+
+    /** 按素材 ID 即时调用服务端 exiftool 获取完整 EXIF。 */
+    async getExifByIds(
+        libraryId: string,
+        fileIds: Array<string | number>,
+        clientId?: string
+    ): Promise<FileExifResult[]> {
+        return await this.httpClient.post<FileExifResult[]>('/api/files/exif', {
             libraryId,
             ids: fileIds.map(id => String(id)),
             clientId,
