@@ -1,5 +1,5 @@
 <template>
-  <div class="w-80 flex-shrink-0 bg-white dark:bg-muted flex flex-col border-l border-border dark:border-border">
+  <div class="w-80 flex-shrink-0 flex flex-col border-l border-border dark:border-border">
     <!-- 顶部标题 -->
     <div class="border-b border-border dark:border-border">
       <div class="py-4 px-4">
@@ -111,7 +111,7 @@
           <span
             v-for="tag in video.tags"
             :key="tag"
-            class="inline-flex items-center rounded-md bg-primary dark:bg-primary/30 px-2 py-1 text-xs font-medium text-primary dark:text-primary"
+            class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium text-primary dark:text-primary"
           >
             <span class="material-icons text-base mr-1">label</span>
             {{ tag }}

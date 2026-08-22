@@ -1,7 +1,7 @@
 <template>
-  <div class="video-preview-view bg-muted dark:bg-muted h-screen flex flex-col text-[13px]">
+  <div class="video-preview-view h-screen flex flex-col text-[13px]">
     <!-- 顶部工具栏 -->
-    <PreviewHeader :file-info="controller.currentVideo.value || {}">
+    <PreviewHeader :file-info="controller.currentVideo.value || {}" :is-tab="props.isTab" @close-tab="$emit('close-tab')">
       <template #left-extra>
         <div class="flex items-center space-x-2">
           <span class="hidden items-center rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground md:inline-flex">
@@ -21,12 +21,6 @@
       <template #right-actions>
         <button class="flex h-9 w-9 items-center justify-center rounded-full hover:bg-muted">
           <span class="material-symbols-outlined text-muted-foreground">more_horiz</span>
-        </button>
-        <button
-          class="flex h-9 w-9 items-center justify-center rounded-full hover:bg-muted"
-          @click="controller.closePreview"
-        >
-          <span class="material-icons text-muted-foreground">close</span>
         </button>
       </template>
     </PreviewHeader>
@@ -81,6 +75,7 @@
           :max-size="35"
           :collapsed-size="0"
           collapsible
+          class="bg-white dark:bg-black"
           @collapse="isRightCollapsed = true"
           @expand="isRightCollapsed = false"
         >
@@ -171,7 +166,8 @@ import { useCollapsibleSidebar } from '../../composables/useCollapsibleSidebar'
 // 使用控制器
 // fileInfo 仅在嵌入 FilePreviewView 时传入：侧边栏/搜索等入口没有 mediaStore
 // 列表上下文，靠它提供当前文件，否则标题会显示「未知文件」
-const props = defineProps<{ fileInfo?: any }>()
+const props = defineProps<{ fileInfo?: any; isTab?: boolean }>()
+defineEmits<{ 'close-tab': [] }>()
 const controller = useVideoPreviewController(() => props.fileInfo)
 
 // 左侧缩略图栏：桌面端与播放器组成一个面板，移动端使用抽屉

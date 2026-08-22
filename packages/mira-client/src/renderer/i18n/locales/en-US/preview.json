@@ -21,6 +21,7 @@
   },
   "previewHeader": {
     "back": "Back",
+    "close": "Close tab",
     "clickToRename": "Click to rename",
     "openWith": "Open with {name}",
     "plugin": "plugin",

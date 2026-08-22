@@ -1,7 +1,7 @@
 <template>
   <div class="image-preview-view bg-muted h-screen flex flex-col text-[13px]">
     <!-- 顶部工具栏 -->
-    <PreviewHeader :file-info="controller.currentImage.value || {}">
+    <PreviewHeader :file-info="controller.currentImage.value || {}" :is-tab="props.isTab" @close-tab="$emit('close-tab')">
       <template #right-actions>
         <button class="flex h-9 w-9 items-center justify-center rounded-full hover:bg-muted">
           <span class="material-symbols-outlined text-muted-foreground">more_horiz</span>
@@ -137,7 +137,8 @@ import { useCollapsibleSidebar } from '../../composables/useCollapsibleSidebar'
 // 使用控制器
 // fileInfo 仅在嵌入 FilePreviewView 时传入：侧边栏/搜索等入口没有 mediaStore
 // 列表上下文，靠它提供当前文件，否则标题会显示「未知文件」
-const props = defineProps<{ fileInfo?: any }>()
+const props = defineProps<{ fileInfo?: any; isTab?: boolean }>()
+defineEmits<{ 'close-tab': [] }>()
 const controller = useImagePreviewController(() => props.fileInfo)
 
 // 左侧缩略图栏：桌面端与查看器组成一个面板，移动端使用抽屉

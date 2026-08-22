@@ -1,7 +1,7 @@
 <template>
   <header class="flex h-16 flex-shrink-0 items-center justify-between border-b border-border bg-background px-6">
     <div class="flex min-w-0 items-center gap-4">
-      <button class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full hover:bg-muted" :title="$t('preview.previewHeader.back')" @click="goBack">
+      <button v-if="!isTab" class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full hover:bg-muted" :title="$t('preview.previewHeader.back')" @click="goBack">
         <span class="material-icons text-muted-foreground">arrow_back</span>
       </button>
       <input v-if="renaming" ref="titleInput" v-model="title" :disabled="savingRename"
@@ -27,6 +27,9 @@
         {{ saving ? $t('preview.previewHeader.saving') : $t('preview.previewHeader.save') }}
       </button>
       <slot name="right-actions" />
+      <button v-if="isTab" class="flex h-9 w-9 items-center justify-center rounded-full hover:bg-muted" :title="$t('preview.previewHeader.close')" @click="$emit('close-tab')">
+        <span class="material-icons text-muted-foreground">close</span>
+      </button>
     </div>
   </header>
 </template>
@@ -39,15 +42,17 @@ import { miraSDKService } from '../../services/MiraSDKService'
 import { getPluginFileFormats } from '../../plugins/instanceManager'
 import type { PluginFileFormat } from '../../plugins/types'
 
-const props = withDefaults(defineProps<{ fileInfo: any; saveVisible?: boolean; saving?: boolean; showOpenWith?: boolean }>(), {
+const props = withDefaults(defineProps<{ fileInfo: any; saveVisible?: boolean; saving?: boolean; showOpenWith?: boolean; isTab?: boolean }>(), {
   saveVisible: false,
   saving: false,
   showOpenWith: true,
+  isTab: false,
 })
-const emit = defineEmits<{ save: []; renamed: [name: string]; error: [message: string] }>()
+const emit = defineEmits<{ save: []; renamed: [name: string]; error: [message: string]; 'close-tab': [] }>()
 const router = useRouter()
 const { t } = useI18n()
 const titleInput = ref<HTMLInputElement | null>(null)
+const isTab = computed(() => props.isTab)
 const title = ref(props.fileInfo?.title || props.fileInfo?.name || t('preview.previewHeader.unknownFile'))
 const renaming = ref(false)
 const savingRename = ref(false)

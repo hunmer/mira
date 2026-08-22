@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full h-screen flex flex-col bg-accent">
+  <div class="w-full h-screen flex flex-col">
     <!-- 加载状态 -->
     <div v-if="isLoading" class="flex flex-col justify-center items-center h-full gap-4">
       <div class="loading-spinner"></div>
@@ -33,8 +33,10 @@
           v-else
           :is="previewComponent"
           :file-info="fileInfo"
+          :is-tab="props.embedded"
           @error="handlePreviewError"
           @renamed="handleFileRenamed"
+          @close-tab="handleBack"
         />
       </div>
     </div>

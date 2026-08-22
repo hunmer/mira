@@ -21,6 +21,7 @@
   },
   "previewHeader": {
     "back": "返回",
+    "close": "关闭标签页",
     "clickToRename": "点击重命名",
     "openWith": "使用{name}打开",
     "plugin": "插件",
