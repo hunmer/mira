@@ -479,6 +479,11 @@ export interface ElectronAPI {
     clear: (libraryId?: string) => Promise<{ success: boolean }>
   }
 
+  // Mira webview 会话
+  webview?: {
+    clearCache: () => Promise<BaseResponse>
+  }
+
   // 协议处理 API
   protocol: {
     registerHandler: (type: string, handler: string) => Promise<BaseResponse>

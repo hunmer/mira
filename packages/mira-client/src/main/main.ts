@@ -1,5 +1,5 @@
 import { app, BrowserView, BrowserWindow, ipcMain, session, shell } from 'electron'
-import type { WebContents } from 'electron'
+import type { Session, WebContents } from 'electron'
 import * as fs from 'fs/promises'
 import * as path from 'path'
 import { IPCHandlers } from './ipc/handlers'
@@ -355,6 +355,8 @@ class MiraApplication {
   private trayService: TrayService | null = null
   private isQuitting = false
   private browserViews = new BrowserViewManager(() => this.windows.getWindow())
+  /** 已创建的 Mira webview 会话，仅用于清理 webview 专用缓存。 */
+  private webviewSessions = new Set<Session>()
 
   constructor() {
     this.setupEnvironment()
@@ -461,6 +463,8 @@ class MiraApplication {
     // 会因 KeepAlive 缓存重建 guest webContents 而丢失，主进程拦截无此问题。
     app.on('web-contents-created', (_event, contents) => {
       if (contents.getType() !== 'webview') return
+      this.webviewSessions.add(contents.session)
+
       contents.setWindowOpenHandler(({ url }) => {
         if (/^https?:/i.test(url)) {
           void contents.loadURL(url)
@@ -599,6 +603,10 @@ class MiraApplication {
     ipcMain.handle('browser-view:close-others', () => this.browserViews.closeOthers())
     ipcMain.handle('browser-view:previous', () => this.browserViews.switchAdjacent(-1))
     ipcMain.handle('browser-view:next', () => this.browserViews.switchAdjacent(1))
+    ipcMain.handle('webview:clear-cache', async () => {
+      await Promise.all(Array.from(this.webviewSessions, webviewSession => webviewSession.clearCache()))
+      return { success: true }
+    })
   }
 
   private setupProtocol() {
@@ -665,6 +673,7 @@ class MiraApplication {
       'browser-view:close-others',
       'browser-view:previous',
       'browser-view:next',
+      'webview:clear-cache',
     ]) {
       ipcMain.removeHandler(channel)
     }
@@ -685,6 +694,7 @@ class MiraApplication {
 
     // 强制销毁所有窗口，避免残留句柄阻止退出
     this.windows.destroyAll()
+    this.webviewSessions.clear()
 
     // 关闭 procm room 客户端
     closeProcm()

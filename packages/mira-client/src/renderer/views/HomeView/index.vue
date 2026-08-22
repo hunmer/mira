@@ -5,7 +5,6 @@ import { useRouter } from 'vue-router'
 import { useMediaQuery, useEventListener } from '@vueuse/core'
 
 // 布局组件
-import TabViewRenderer from '@renderer/components/common/TabViewRenderer.vue'
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -21,8 +20,10 @@ import { getDetailSidebarTabs, registerDetailSidebarTab } from './detailSidebarR
 import HomeHeader from './HomeHeader.vue'
 import HomeSidebar from './HomeSidebar.vue'
 import HomeTabsBar from './HomeTabsBar.vue'
+import HomeSplitContent from './HomeSplitContent.vue'
 import HomeDialogs from './HomeDialogs.vue'
 import PluginContributionBar from './PluginContributionBar.vue'
+import { HOME_SPLIT_CAPACITY, type HomeSplitLayout } from './homeSplitLayout'
 
 
 // Store imports
@@ -264,7 +265,6 @@ const {
   tabsComposable,
   activeTabs,
   currentTab,
-  visitedTabs,
   getTabViewConfigForTab,
   getCurrentTab,
   setTabNeedUpdate,
@@ -273,6 +273,7 @@ const {
   tabContextMenuItems,
   handleTabContextMenu,
   switchToTabWithCallback,
+  activateTabWithoutReload,
   closeTabWithCallback,
   handleActivateLastTab,
   handleReopenClosedTab,
@@ -281,6 +282,71 @@ const {
   refreshCurrentTabAfterLibrarySwitch,
   replaceCurrentTab
 } = tabManagement
+
+// ============================================
+// Tab 内容分屏：槽位只记录 tab ID，全局 active 状态仍由 useTabs 维护
+// ============================================
+const splitLayout = ref<HomeSplitLayout>('single')
+const splitPaneTabIds = ref<Array<string | undefined>>([])
+const activeSplitPaneIndex = ref(0)
+
+const splitPaneTabs = computed(() =>
+  splitPaneTabIds.value.map(tabId => activeTabs.value.find(tab => tab.id === tabId))
+)
+
+function syncSplitPanes() {
+  const capacity = HOME_SPLIT_CAPACITY[splitLayout.value]
+  const validTabIds = new Set(activeTabs.value.map(tab => tab.id))
+  const next = Array.from({ length: capacity }, (_, index) => {
+    const tabId = splitPaneTabIds.value[index]
+    return tabId && validTabIds.has(tabId) ? tabId : undefined
+  })
+  const activeTabId = currentTab.value?.id
+
+  if (activeTabId) {
+    const assignedIndex = next.indexOf(activeTabId)
+    if (assignedIndex >= 0) {
+      activeSplitPaneIndex.value = assignedIndex
+    } else {
+      const emptyIndex = next.findIndex(tabId => !tabId)
+      const targetIndex = emptyIndex >= 0
+        ? emptyIndex
+        : Math.min(activeSplitPaneIndex.value, capacity - 1)
+      next[targetIndex] = activeTabId
+      activeSplitPaneIndex.value = targetIndex
+    }
+  }
+
+  // 扩大布局时，把已打开的普通 Tab 依次填入空槽；首页只作为默认入口，不占用新增分屏槽位。
+  for (const tab of activeTabs.value) {
+    if (tab.type === 'home' || next.includes(tab.id)) continue
+    const emptyIndex = next.findIndex(tabId => !tabId)
+    if (emptyIndex < 0) break
+    next[emptyIndex] = tab.id
+  }
+
+  splitPaneTabIds.value = next
+}
+
+watch(
+  [() => activeTabs.value.map(tab => tab.id), () => currentTab.value?.id, splitLayout],
+  syncSplitPanes,
+  { immediate: true, flush: 'sync' }
+)
+
+function handleSplitPaneActivate(paneIndex: number, tabId: string) {
+  activeSplitPaneIndex.value = paneIndex
+  if (currentTab.value?.id !== tabId) activateTabWithoutReload(tabId)
+}
+
+function handleSplitLayoutChange(layout: HomeSplitLayout) {
+  const activeTabId = currentTab.value?.id
+  if (layout === 'single' && activeTabId) {
+    splitPaneTabIds.value = [activeTabId]
+    activeSplitPaneIndex.value = 0
+  }
+  splitLayout.value = layout
+}
 
 // 保持首页位置不变，仅调整其余标签顺序；useTabs 的深度监听会自动持久化结果。
 const handleReorderTabs = (fromTabId: string, toTabId: string) => {
@@ -591,7 +657,7 @@ onUnmounted(() => {
         <ResizablePanel :default-size="54" :min-size="30" class="flex flex-col min-w-0 !overflow-visible">
           <!-- Tabs 条（固定高度与右侧悬浮 HomeHeader 对齐，隐藏滚动条）。
                HomeHeader 始终悬浮于右上角，右侧固定留出 header 宽度避免遮挡 tabs -->
-          <div class="shrink-0 h-[56px] px-2 pr-[220px] flex items-end overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" @dblclick="handleHomebarDblClick">
+          <div class="shrink-0 h-[56px] w-full min-w-0 px-2 pr-[220px] flex items-end overflow-hidden" @dblclick="handleHomebarDblClick">
             <HomeTabsBar
               :active-tabs="activeTabs"
               :tab-context-menu-items="tabContextMenuItems"
@@ -604,32 +670,25 @@ onUnmounted(() => {
               :on-reorder-tabs="handleReorderTabs"
               :on-toggle-left-sidebar="handleToggleLeftSidebar"
               :left-sidebar-open="mediaStore.showLeftSidebar"
+              :split-layout="splitLayout"
+              :on-split-layout-change="handleSplitLayoutChange"
             />
           </div>
 
           <!-- 内容面板（玻璃磨砂） -->
           <div class="flex-1 rounded-2xl border border-white/60 dark:border-border bg-white/30 dark:bg-muted/50 backdrop-blur-xl shadow-[0_12px_40px_var(--shadow-primary-md)] overflow-hidden flex flex-col p-1">
             <main ref="mainContentRef" class="flex-1 flex overflow-hidden relative min-w-0 p-2 gap-2 border border-primary/40 rounded-xl">
-              <!-- Tab视图内容（占满） -->
-              <div class="flex-1 min-w-0 overflow-hidden rounded-xl">
-                <TabViewRenderer
-                  v-for="tab in visitedTabs"
-                  :key="tab.id"
-                  v-show="currentTab?.id === tab.id"
-                  :tab-id="tab.id"
-                  :view-config="getTabViewConfigForTab(tab.id)"
-                  :cacheable="true"
-                  class="w-full h-full"
+              <KeepAlive>
+                <HomeSplitContent
+                  :key="splitLayout"
+                  class="flex-1 min-w-0 overflow-hidden rounded-xl"
+                  :layout="splitLayout"
+                  :tabs="splitPaneTabs"
+                  :active-tab-id="currentTab?.id"
+                  :get-view-config="getTabViewConfigForTab"
+                  @activate="handleSplitPaneActivate"
                 />
-                <!-- 默认状态 - 没有活跃的Tab时显示 -->
-                <div v-if="!currentTab" class="flex items-center justify-center h-full">
-                  <div class="text-center rounded-2xl border border-white/60 dark:border-border bg-white/50 dark:bg-muted/70 backdrop-blur-xl shadow-[0_12px_40px_var(--shadow-primary-md)] px-10 py-8">
-                    <span class="material-icons text-6xl text-primary/60 mb-4 animate-[fadeUp_300ms_cubic-bezier(0.23,1,0.32,1)_both]">home</span>
-                    <h2 class="text-xl font-medium text-foreground mb-2 animate-[fadeUp_300ms_cubic-bezier(0.23,1,0.32,1)_60ms_both]">{{ $t('views.homeView.welcomeTitle') }}</h2>
-                    <p class="text-muted-foreground animate-[fadeUp_300ms_cubic-bezier(0.23,1,0.32,1)_120ms_both]">{{ $t('views.homeView.welcomeSubtitle') }}</p>
-                  </div>
-                </div>
-              </div>
+              </KeepAlive>
             </main>
           </div>
         </ResizablePanel>
@@ -661,7 +720,7 @@ onUnmounted(() => {
       <!-- 移动端：仅中间列（Tabs 条 + 内容），侧栏改用抽屉 -->
       <div v-else class="flex flex-col flex-1 min-w-0 gap-3">
         <!-- Tabs 条 -->
-        <div class="shrink-0 h-[56px] pl-2 pr-20 flex items-end overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div class="shrink-0 h-[56px] w-full min-w-0 pl-2 pr-20 flex items-end overflow-hidden">
           <HomeTabsBar
             :active-tabs="activeTabs"
             :tab-context-menu-items="tabContextMenuItems"
@@ -674,30 +733,25 @@ onUnmounted(() => {
             :on-reorder-tabs="handleReorderTabs"
             :on-toggle-left-sidebar="handleToggleLeftSidebar"
             :left-sidebar-open="mediaStore.showLeftSidebar"
+            :split-layout="splitLayout"
+            :on-split-layout-change="handleSplitLayoutChange"
           />
         </div>
 
         <!-- 内容面板 -->
         <div class="flex-1 rounded-2xl border border-white/60 dark:border-border bg-white/30 dark:bg-muted/50 backdrop-blur-xl shadow-[0_12px_40px_var(--shadow-primary-md)] overflow-hidden flex flex-col">
-          <main class="flex-1 flex overflow-hidden relative min-w-0 p-2 gap-2 border border-primary/40 rounded-xl">
-            <div class="flex-1 min-w-0 overflow-hidden rounded-xl">
-              <TabViewRenderer
-                v-for="tab in visitedTabs"
-                :key="tab.id"
-                v-show="currentTab?.id === tab.id"
-                :tab-id="tab.id"
-                :view-config="getTabViewConfigForTab(tab.id)"
-                :cacheable="true"
-                class="w-full h-full"
+          <main ref="mainContentRef" class="flex-1 flex overflow-hidden relative min-w-0 p-2 gap-2 border border-primary/40 rounded-xl">
+            <KeepAlive>
+              <HomeSplitContent
+                :key="splitLayout"
+                class="flex-1 min-w-0 overflow-hidden rounded-xl"
+                :layout="splitLayout"
+                :tabs="splitPaneTabs"
+                :active-tab-id="currentTab?.id"
+                :get-view-config="getTabViewConfigForTab"
+                @activate="handleSplitPaneActivate"
               />
-              <div v-if="!currentTab" class="flex items-center justify-center h-full">
-                <div class="text-center rounded-2xl border border-white/60 dark:border-border bg-white/50 dark:bg-muted/70 backdrop-blur-xl shadow-[0_12px_40px_var(--shadow-primary-md)] px-10 py-8">
-                  <span class="material-icons text-6xl text-primary/60 mb-4 animate-[fadeUp_300ms_cubic-bezier(0.23,1,0.32,1)_both]">home</span>
-                  <h2 class="text-xl font-medium text-foreground mb-2 animate-[fadeUp_300ms_cubic-bezier(0.23,1,0.32,1)_60ms_both]">{{ $t('views.homeView.welcomeTitle') }}</h2>
-                  <p class="text-muted-foreground animate-[fadeUp_300ms_cubic-bezier(0.23,1,0.32,1)_120ms_both]">{{ $t('views.homeView.welcomeSubtitle') }}</p>
-                </div>
-              </div>
-            </div>
+            </KeepAlive>
           </main>
         </div>
       </div>

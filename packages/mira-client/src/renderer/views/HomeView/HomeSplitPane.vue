@@ -1,0 +1,49 @@
+<script setup lang="ts">
+import TabViewRenderer from '@renderer/components/common/TabViewRenderer.vue'
+import type { TabItem } from '@renderer/composables'
+import type { TabViewConfig } from '@renderer/api/TabRegistryAPI'
+
+const props = defineProps<{
+  paneIndex: number
+  tab?: TabItem
+  active: boolean
+  viewConfig?: TabViewConfig | null
+}>()
+
+const emit = defineEmits<{
+  activate: [paneIndex: number, tabId: string]
+}>()
+
+function activate() {
+  if (props.tab) emit('activate', props.paneIndex, props.tab.id)
+}
+</script>
+
+<template>
+  <div
+    class="relative h-full min-h-0 min-w-0 overflow-hidden bg-background/20"
+    :class="props.active && props.tab ? 'ring-1 ring-inset ring-primary/40' : ''"
+  >
+    <TabViewRenderer
+      v-if="props.tab"
+      :tab-id="props.tab.id"
+      :view-config="props.viewConfig"
+      :cacheable="true"
+      class="h-full w-full"
+    />
+
+    <div v-else class="flex h-full items-center justify-center text-muted-foreground/25">
+      <span class="material-icons text-4xl">tab_unselected</span>
+    </div>
+
+    <button
+      v-if="props.tab && !props.active"
+      type="button"
+      class="absolute inset-0 z-40 h-full w-full cursor-pointer bg-black/10 backdrop-grayscale transition-colors hover:bg-black/5 dark:bg-black/25 dark:hover:bg-black/15"
+      :aria-label="props.tab.label"
+      :title="props.tab.label"
+      @click="activate"
+    />
+  </div>
+</template>
+

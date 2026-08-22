@@ -30,6 +30,8 @@ export interface AppSettings {
   multiLibraryViewsEnabled: boolean
   /** 是否在应用内标签页打开文件预览 */
   openFilePreviewInTab: boolean
+  /** 是否记住 webview 标签页上次浏览的 URL */
+  rememberWebviewPage: boolean
 
   // 主题风格覆盖（'' | 'mira' | 'lyra' | 'luma' | 'rhea' | 'custom'）
   themeStyle: string
@@ -180,6 +182,7 @@ export const useSettingsStore = defineStore('settings', () => {
     openWebAction: 'system',
     multiLibraryViewsEnabled: false,
     openFilePreviewInTab: false,
+    rememberWebviewPage: false,
 
     // 主题风格 / 主色覆盖
     themeStyle: '',
@@ -586,6 +589,7 @@ export const useSettingsStore = defineStore('settings', () => {
       openWebAction: 'system',
       multiLibraryViewsEnabled: false,
       openFilePreviewInTab: false,
+      rememberWebviewPage: false,
 
       themeStyle: '',
       themeStyleCustomCss: '',

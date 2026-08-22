@@ -75,6 +75,7 @@ import FloatingBallPanel from '../../views/settings/FloatingBallPanel.vue'
 import PluginsPanel from '../../views/settings/pluginPlan.vue'
 import NetworkPanel from '../../views/settings/NetworkPanel.vue'
 import DataPanel from '../../views/settings/DataPanel.vue'
+import BrowserPanel from '../../views/settings/BrowserPanel.vue'
 
 // 导入配置
 import { settingSections } from '../../views/settings/settingsConfig'
@@ -122,7 +123,8 @@ const currentComponent = computed(() => {
     'floating-ball': FloatingBallPanel,
     plugins: PluginsPanel,
     network: NetworkPanel,
-    data: DataPanel
+    data: DataPanel,
+    browser: BrowserPanel,
   }
   return componentMap[activeSection.value] || GeneralPanel
 })

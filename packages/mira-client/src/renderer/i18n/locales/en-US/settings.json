@@ -66,6 +66,7 @@
     "plugins": "Plugins",
     "network": "Network",
     "data": "Data",
-    "screenshot": "Screenshot"
+    "screenshot": "Screenshot",
+    "browser": "Browser"
   }
 }

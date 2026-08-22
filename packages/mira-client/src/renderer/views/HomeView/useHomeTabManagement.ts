@@ -367,6 +367,11 @@ export function useHomeTabManagement(
     })
   }
 
+  // 分屏内容已经挂载时只切换激活态，避免再次触发 Tab 懒加载/数据刷新。
+  const activateTabWithoutReload = (tabId: string) => {
+    switchToTab(tabId, { onSwitchCallback: handleTabSwitch })
+  }
+
   const refreshCurrentTabAfterLibrarySwitch = async () => {
     visitedTabIds.value = []
     tabViewConfigMap.value = {}
@@ -517,6 +522,7 @@ export function useHomeTabManagement(
 
     // Tab操作方法
     switchToTabWithCallback,
+    activateTabWithoutReload,
     closeTabWithCallback,
     handleActivateLastTab,
     canActivateLastTab,

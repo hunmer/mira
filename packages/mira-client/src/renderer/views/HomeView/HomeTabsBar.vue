@@ -12,7 +12,14 @@ import {
   ContextMenuContent,
   ContextMenuItem,
 } from '@/components/ui/context-menu'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu'
 import type { TabItem } from '@renderer/composables'
+import type { HomeSplitLayout } from './homeSplitLayout'
 
 interface TabContextMenuItem {
   label?: string
@@ -35,7 +42,17 @@ const props = defineProps<{
   onActiveTabIdChange?: (activeTabId: string | undefined) => void
   onToggleLeftSidebar?: () => void
   leftSidebarOpen?: boolean
+  splitLayout: HomeSplitLayout
+  onSplitLayoutChange: (layout: HomeSplitLayout) => void
 }>()
+
+const splitLayouts: Array<{ id: HomeSplitLayout; icon: string; labelKey: string }> = [
+  { id: 'single', icon: 'crop_square', labelKey: 'single' },
+  { id: 'two-columns', icon: 'vertical_split', labelKey: 'twoColumns' },
+  { id: 'four-grid', icon: 'grid_view', labelKey: 'fourGrid' },
+  { id: 'three-columns', icon: 'view_column', labelKey: 'threeColumns' },
+  { id: 'three-rows', icon: 'view_stream', labelKey: 'threeRows' },
+]
 
 const draggingTabId = ref<string>()
 const dragOverTabId = ref<string>()
@@ -117,7 +134,7 @@ function handleDragEnd() {
 </script>
 
 <template>
-  <div class="flex h-full items-end gap-0.5">
+  <div class="flex h-full w-full min-w-0 items-end gap-0.5">
     <!-- 切换左侧栏（桌面端 inline / 移动端抽屉） -->
     <div v-if="props.onToggleLeftSidebar" class="flex items-end shrink-0 mr-1">
       <button
@@ -153,9 +170,10 @@ function handleDragEnd() {
       </button>
     </div>
 
-    <ContextMenu>
-      <ContextMenuTrigger as-child>
-        <div ref="tabScrollContainer" class="flex items-end gap-1 h-full">
+    <div class="flex h-full min-w-0 flex-1">
+      <ContextMenu>
+        <ContextMenuTrigger as-child>
+          <div ref="tabScrollContainer" class="flex min-w-0 flex-1 items-end gap-1 h-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <LayoutGroup id="home-tabs">
             <button v-for="tab in props.activeTabs" :key="tab.id" :data-active-tab="tab.active" :draggable="tab.type !== 'home' && !!props.onReorderTabs" :class="[
               'group relative flex items-center space-x-1 shrink-0 text-xs font-medium transition-colors duration-150',
@@ -192,13 +210,39 @@ function handleDragEnd() {
               </button>
             </button>
           </LayoutGroup>
-        </div>
-      </ContextMenuTrigger>
-      <ContextMenuContent>
-        <ContextMenuItem v-for="item in props.tabContextMenuItems" :key="item.label" @click="item.command?.()">
-          {{ item.label }}
-        </ContextMenuItem>
-      </ContextMenuContent>
-    </ContextMenu>
+          </div>
+        </ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuItem v-for="item in props.tabContextMenuItems" :key="item.label" @click="item.command?.()">
+            {{ item.label }}
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
+    </div>
+
+    <DropdownMenu>
+      <DropdownMenuTrigger as-child>
+        <button
+          type="button"
+          class="ml-auto mb-0.5 flex h-7 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-white/50 hover:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+          :title="$t('views.homeTabsBar.splitLayout')"
+          :aria-label="$t('views.homeTabsBar.splitLayout')"
+        >
+          <span class="material-icons text-lg">view_quilt</span>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" class="w-44">
+        <DropdownMenuItem
+          v-for="layout in splitLayouts"
+          :key="layout.id"
+          class="gap-2"
+          @select="props.onSplitLayoutChange(layout.id)"
+        >
+          <span class="material-icons text-base">{{ layout.icon }}</span>
+          <span class="flex-1">{{ $t(`views.homeTabsBar.layouts.${layout.labelKey}`) }}</span>
+          <span v-if="props.splitLayout === layout.id" class="material-icons text-sm text-primary">check</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   </div>
 </template>

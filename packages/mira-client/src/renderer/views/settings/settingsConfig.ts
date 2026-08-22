@@ -15,7 +15,8 @@ export const settingSections: SettingSection[] = [
   { id: 'floating-ball', name: 'settings.sections.floatingBall', icon: 'bubble_chart' },
   { id: 'plugins', name: 'settings.sections.plugins', icon: 'extension' },
   { id: 'network', name: 'settings.sections.network', icon: 'lan' },
-  { id: 'data', name: 'settings.sections.data', icon: 'storage' }
+  { id: 'data', name: 'settings.sections.data', icon: 'storage' },
+  { id: 'browser', name: 'settings.sections.browser', icon: 'language' }
 ]
 
 // 语言选项配置（仅保留简体中文与 English）

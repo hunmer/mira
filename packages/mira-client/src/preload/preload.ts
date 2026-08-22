@@ -65,6 +65,10 @@ const electronAPI: ElectronAPI = {
   libraryCache: {
     clear: (libraryId?: string) => ipcRenderer.invoke('library-cache:clear', libraryId)
   },
+
+  webview: {
+    clearCache: () => ipcRenderer.invoke('webview:clear-cache')
+  },
   
   // 协议处理 API
   protocol: {

@@ -30,7 +30,15 @@
     "activateLastTab": "Activate last tab (Ctrl+Shift+Tab)",
     "noTabToReturn": "No tab to go back to",
     "toggleLeftSidebar": "Toggle left sidebar",
-    "toggleRightSidebar": "Toggle right sidebar"
+    "toggleRightSidebar": "Toggle right sidebar",
+    "splitLayout": "Split layout",
+    "layouts": {
+      "single": "Single",
+      "twoColumns": "Two columns",
+      "fourGrid": "Four grid",
+      "threeColumns": "Three columns",
+      "threeRows": "Three rows"
+    }
   },
   "pluginContributionBar": {
     "activateFailed": "Plugin failed to start",
@@ -663,6 +671,23 @@
     "forward": "Forward",
     "reload": "Reload",
     "addressPlaceholder": "Enter a URL and press Enter"
+  },
+  "browserPanel": {
+    "title": "Browser Settings",
+    "desc": "Manage page restoration and cache for in-app web tabs.",
+    "rememberTitle": "Remember last browsed page",
+    "rememberDesc": "Restore each web tab to its last URL after restarting Mira.",
+    "rememberUpdated": "Page restore setting updated",
+    "clearCacheTitle": "Clear browser cache",
+    "clearCacheDesc": "Only clears Mira web-tab cache; app page data is not affected.",
+    "clearCache": "Clear cache",
+    "clearing": "Clearing...",
+    "clearCacheSuccess": "Cache cleared",
+    "clearCacheSuccessDesc": "Web-tab cache has been cleared.",
+    "clearCacheFailed": "Failed to clear cache",
+    "clearCacheFailedDesc": "The web-tab cache could not be cleared.",
+    "notSupported": "Not supported",
+    "notSupportedDesc": "Clearing browser cache is available only in the Electron desktop app."
   },
   "localFolder": {
     "title": "Local Files",

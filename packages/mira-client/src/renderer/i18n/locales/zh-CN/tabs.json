@@ -1,6 +1,8 @@
 {
   "mediaTabListView": {
     "emptyFolderTitle": "暂无文件夹",
+    "expandFolders": "展开 {count} 个文件夹",
+    "collapseFolders": "收起文件夹",
     "groupNavigation": "素材分组导航",
     "releaseToUpload": "释放文件以上传",
     "refreshData": "刷新数据",

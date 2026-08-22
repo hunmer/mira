@@ -40,6 +40,7 @@
         @selection-change="handleSelectionChange"
         @title-updated="handleTitleUpdated"
         @icon-updated="handleIconUpdated"
+        @url-updated="handleUrlUpdated"
         class="w-full h-full"
       />
     </KeepAlive>
@@ -84,6 +85,7 @@ import type { TabViewConfig } from '@renderer/composables/TabRegistry'
 import type { FileInfo } from '../../../shared/types'
 import MediaPreviewContent from '@renderer/components/common/MediaPreviewContent.vue'
 import { useTabs } from '@renderer/composables/useTabs'
+import { useSettingsStore } from '@renderer/stores/settings'
 
 // Props 定义
 interface Props {
@@ -146,6 +148,16 @@ const handleIconUpdated = (icon: string) => {
   if (!trimmed) return
   const tab = tabs.value.find(t => t.id === props.tabId)
   if (tab) tab.icon = trimmed
+}
+
+// Webview 页面 URL 更新 → 按设置保存到 tabData.lastUrl
+const settingsStore = useSettingsStore()
+const handleUrlUpdated = (url: string) => {
+  const trimmed = (url || '').trim()
+  if (!trimmed || !settingsStore.settings.rememberWebviewPage) return
+  const tab = tabs.value.find(t => t.id === props.tabId)
+  if (!tab || tab.type !== 'webview') return
+  tab.data = { ...(tab.data || {}), lastUrl: trimmed }
 }
 
 const getPreviewTarget = (): FileInfo | undefined => {

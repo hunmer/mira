@@ -30,7 +30,15 @@
     "activateLastTab": "激活上一次的tab (Ctrl+Shift+Tab)",
     "noTabToReturn": "没有可返回的 tab",
     "toggleLeftSidebar": "切换左侧栏",
-    "toggleRightSidebar": "切换右侧栏"
+    "toggleRightSidebar": "切换右侧栏",
+    "splitLayout": "分屏布局",
+    "layouts": {
+      "single": "单个",
+      "twoColumns": "左右两个",
+      "fourGrid": "上下左右四个",
+      "threeColumns": "三个垂直",
+      "threeRows": "三个水平"
+    }
   },
   "pluginContributionBar": {
     "activateFailed": "插件启动失败",
@@ -663,6 +671,23 @@
     "forward": "前进",
     "reload": "刷新",
     "addressPlaceholder": "输入网址，回车跳转"
+  },
+  "browserPanel": {
+    "title": "浏览器设置",
+    "desc": "管理应用内网页标签页的恢复行为和缓存。",
+    "rememberTitle": "记住上次浏览页面",
+    "rememberDesc": "重启 Mira 后，网页标签页恢复到上次离开的地址。",
+    "rememberUpdated": "网页恢复设置已更新",
+    "clearCacheTitle": "清理浏览器缓存",
+    "clearCacheDesc": "仅清理 Mira 网页标签页专用缓存，不影响应用主页面数据。",
+    "clearCache": "清理缓存",
+    "clearing": "清理中...",
+    "clearCacheSuccess": "缓存已清理",
+    "clearCacheSuccessDesc": "网页标签页专用缓存已清理。",
+    "clearCacheFailed": "清理缓存失败",
+    "clearCacheFailedDesc": "无法清理网页标签页缓存。",
+    "notSupported": "当前环境不支持",
+    "notSupportedDesc": "清理浏览器缓存仅支持 Electron 桌面版。"
   },
   "localFolder": {
     "title": "本地文件",

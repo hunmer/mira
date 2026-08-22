@@ -82,8 +82,8 @@
               </div>
             </header>
             <div v-if="childFolderItems.length > 0">
-              <div class="folder-card-grid" :style="{ '--folder-grid-item-size': `${folderGridItemSize}px` }">
-                <FolderContextMenu v-for="item in childFolderItems" :key="String(item.raw.id)" :folder="item.raw as any"
+              <div ref="folderGridRef" class="folder-card-grid" :style="{ '--folder-grid-item-size': `${folderGridItemSize}px` }">
+                <FolderContextMenu v-for="item in visibleChildFolderItems" :key="String(item.raw.id)" :folder="item.raw as any"
                   :folders="availableFolders as any" @refresh="handleRefresh(true)">
                   <div class="folder-card-button" role="button" tabindex="0" :title="item.label"
                     @click="handleChildFolderSelect(item.raw, $event)"
@@ -97,6 +97,17 @@
                       :custom-color="getFolderColor(item.raw.color)" />
                   </div>
                 </FolderContextMenu>
+                <!-- 超过两行时的展开/收起占位卡片 -->
+                <button v-if="folderGridOverflow" type="button"
+                  class="flex flex-col items-center justify-center gap-1 rounded-3xl border border-dashed border-border text-muted-foreground transition-colors hover:border-primary hover:bg-primary/10 hover:text-primary"
+                  :style="{ width: `${folderGridItemSize}px`, height: `${folderGridItemSize}px` }"
+                  :title="folderCollapsed
+                    ? $t('tabs.mediaTabListView.expandFolders', { count: folderHiddenCount })
+                    : $t('tabs.mediaTabListView.collapseFolders')"
+                  @click="folderCollapsed = !folderCollapsed">
+                  <span class="material-icons text-2xl">{{ folderCollapsed ? 'expand_more' : 'expand_less' }}</span>
+                  <span v-if="folderCollapsed" class="text-xs font-medium tabular-nums">+{{ folderHiddenCount }}</span>
+                </button>
               </div>
             </div>
             <div v-else class="py-4">
@@ -634,6 +645,38 @@ const {
   getFolderColor
 } = useMediaTabFolders({ props, homeController, handleRefresh })
 
+// 文件夹区超过两行时折叠：占位卡片占据第二行最后一格，点击切换展开/收起
+const folderGridRef = ref<HTMLElement | null>(null)
+const folderGridWidth = ref(0)
+const FOLDER_GRID_GAP = 16 // 与 .folder-card-grid 的 gap: 1rem 保持一致
+const folderColumns = computed(() => {
+  const itemSize = folderGridItemSize.value
+  if (!folderGridWidth.value || !itemSize) return 0
+  return Math.max(1, Math.floor((folderGridWidth.value + FOLDER_GRID_GAP) / (itemSize + FOLDER_GRID_GAP)))
+})
+const folderGridOverflow = computed(() =>
+  folderColumns.value > 0 && childFolderItems.value.length > folderColumns.value * 2
+)
+const folderCollapsed = ref(true)
+const visibleChildFolderItems = computed(() => {
+  if (!folderGridOverflow.value || !folderCollapsed.value) return childFolderItems.value
+  return childFolderItems.value.slice(0, folderColumns.value * 2 - 1)
+})
+const folderHiddenCount = computed(() => childFolderItems.value.length - visibleChildFolderItems.value.length)
+
+let folderGridObserver: ResizeObserver | null = null
+watch(folderGridRef, el => {
+  folderGridObserver?.disconnect()
+  if (!el) {
+    folderGridWidth.value = 0
+    return
+  }
+  folderGridObserver = new ResizeObserver(entries => {
+    folderGridWidth.value = entries[0]?.contentRect.width ?? 0
+  })
+  folderGridObserver.observe(el)
+})
+
 // 拖拽上传 / 导入
 const {
   canUpload,
@@ -797,6 +840,8 @@ onMounted(async () => {
 // 组件卸载时清理
 onUnmounted(() => {
   // mediaTabData.cleanup()
+  folderGridObserver?.disconnect()
+  folderGridObserver = null
   window.removeEventListener('active-tab-refresh', handleActiveTabRefresh)
 })
 
