@@ -19,8 +19,8 @@ function onReorder() { emit('update:items', [...orderedItems.value]) }
 </script>
 
 <template>
-  <div :class="props.headerOnly ? 'shrink-0' : 'flex min-h-0 flex-1 flex-col overflow-y-auto p-2'">
-    <header v-if="props.title || $slots.headerActions || props.customizeLabel" class="mb-2 flex shrink-0 items-center justify-between px-1 py-1">
+  <div :class="props.headerOnly ? 'shrink-0' : 'flex min-h-0 flex-1 flex-col overflow-y-auto'">
+    <header v-if="props.title || $slots.headerActions || props.customizeLabel" class=" flex shrink-0 items-center justify-between px-1 py-1">
       <h2 class="text-sm font-semibold text-foreground">{{ props.title }}</h2>
       <div class="flex items-center gap-1" @click.stop>
         <slot name="headerActions" />

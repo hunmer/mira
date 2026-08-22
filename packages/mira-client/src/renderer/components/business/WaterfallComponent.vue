@@ -143,8 +143,8 @@ interface Props {
   layoutTransition?: boolean
   /**
    * 布局模式：
-   *  - "fill"（默认）：智能填充。宽图先按序流式定位保序，普通图 best-fit 回填到
-   *    最矮列，自动补齐宽图旁的空隙，减少间隙。代价是普通图相对顺序会被打乱。
+   *  - "fill"（默认）：智能填充。按输入顺序逐项定位，普通图优先回填此前宽图产生的
+   *    空隙；后续素材不会改变已有素材的位置。
    *  - "stream"：纯贪心流式，顺序严格保持，但宽图旁易留空隙。
    */
   layoutMode?: 'fill' | 'stream'
@@ -448,8 +448,7 @@ const handleItemClick = (item: FileInfo, _event: MouseEvent) => {
   emit('click', item)
 }
 
-// Masonry fill 模式会重排 item 视觉顺序，使其 ≠ props.items 数据源顺序。
-// 这里记录 Masonry 实际渲染顺序，用于修正 Shift 范围选择（按视觉顺序而非数据源顺序算区间）。
+// 记录 Masonry 的布局处理顺序，用于 Shift 范围选择。
 const layoutOrder = ref<string[]>([])
 const handleLayoutOrder = (items: FileInfo[]) => {
   layoutOrder.value = items.map(i => i.id)
@@ -464,8 +463,7 @@ const selectFromClick = (item: FileInfo, event: MouseEvent) => {
   }
 
   // Shift 范围选择：以当前已选最后一项为锚，选中两者之间的所有项（与 Grid 视图一致）。
-  // 注意：Masonry fill 模式会重排 item 视觉顺序，使其 ≠ props.items 数据源顺序。
-  // 因此按 Masonry 实际渲染顺序（layoutOrder）算区间，而非数据源顺序。
+  // 按 Masonry 实际布局顺序（layoutOrder）算区间。
   if (event.shiftKey && props.selectedItems.length > 0) {
     const order = layoutOrder.value.length > 0 ? layoutOrder.value : props.items.map(i => i.id)
     const lastSelectedId = props.selectedItems[props.selectedItems.length - 1]

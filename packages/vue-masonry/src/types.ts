@@ -68,9 +68,8 @@ export interface MasonryProps<T = any> {
   /**
    * 布局模式:
    *  - "stream"(默认):纯贪心流式,每个 item 放到当前最矮的起始列
-   *  - "fill":智能填充。宽图(colSpan>1)先按序流式定位并记录跨过的洞区,普通图(colSpan=1)
-   *            再用 best-fit 优先回填这些洞区,减少坐标空洞。
-   *            代价是普通图之间的相对顺序会被打破。
+   *  - "fill":智能填充。按输入顺序逐项定位,普通图(colSpan=1)优先回填此前宽图产生的洞区。
+   *            后续 item 不会改变已有 item 的位置。
    */
   layoutMode?: "stream" | "fill"
 
@@ -83,8 +82,8 @@ export interface MasonryProps<T = any> {
  */
 export interface MasonryEmits<T = any> {
   /**
-   * 布局完成（含 fill 模式重排）后，按实际渲染顺序抛出 item 数组。
-   * 父组件可据此修正"视觉顺序 ≠ 数据源顺序"导致的逻辑（如 Shift 范围选择）。
+   * 布局完成后，按实际布局处理顺序抛出 item 数组。
+   * 父组件可据此处理 Shift 范围选择等顺序相关逻辑。
    */
   (e: "layout-order", items: T[]): void
   /** 布局渲染完成（兼容既有 after-render） */

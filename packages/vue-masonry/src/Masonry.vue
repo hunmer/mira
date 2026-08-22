@@ -17,10 +17,10 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { AnimatePresence, Motion } from "motion-v"
 import { cn } from "./utils"
 import LazyCell from "./LazyCell.vue"
+import { layout, layoutFill } from "./layout"
 import type {
   MasonryColumns,
   MasonryEmits,
-  MasonryItemMeta,
   MasonryProps,
   MasonrySortOption
 } from "./types"
@@ -55,15 +55,6 @@ function handleCellReady(key: string | number): void {
 
 /* --------------------------------------------------------------- helpers */
 
-/** 宽高比字符串 -> height/width 比例 */
-function aspectToRatio(aspect?: string): number | null {
-  if (!aspect) return null
-  const parts = aspect.split(/[:xX]/).map((n) => Number(n))
-  if (parts.length !== 2 || parts.some((v) => !isFinite(v) || v <= 0)) return null
-  const [w, h] = parts
-  return h / w
-}
-
 const TAILWIND_BP = { sm: 640, md: 768, lg: 1024, xl: 1280 } as const
 
 /** 按容器宽度解析列数(移动优先) */
@@ -75,17 +66,6 @@ function resolveColumns(width: number, cols: MasonryColumns): number {
   if (w >= TAILWIND_BP.md && cols.md) return cols.md
   if (w >= TAILWIND_BP.sm && cols.sm) return cols.sm
   return cols.base ?? 1
-}
-
-interface PlacedItem<T> {
-  key: string | number
-  item: T
-  index: number
-  left: number
-  top: number
-  width: number
-  height: number
-  lazy: boolean
 }
 
 const PLACEHOLDER_COLORS = [
@@ -107,203 +87,6 @@ function placeholderColor(key: string | number): string {
     hash = (hash * 31 + value.charCodeAt(i)) | 0
   }
   return PLACEHOLDER_COLORS[Math.abs(hash) % PLACEHOLDER_COLORS.length]
-}
-
-/** 贪心布局:每个 item 放到连续 colSpan 列中"当前最矮"的位置 */
-function layout<T>(
-  data: T[],
-  columns: number,
-  colWidth: number,
-  gap: number,
-  rowHeight: number,
-  getMeta: ((item: T, i: number) => MasonryItemMeta | undefined) | undefined,
-  getKey: (item: T, i: number) => string | number
-): { items: PlacedItem<T>[]; totalHeight: number } {
-  const items: PlacedItem<T>[] = []
-  if (columns <= 0 || colWidth <= 0) return { items, totalHeight: 0 }
-
-  // bottoms[k] = 第 k 列"下一个可用 top"(已含上方 gap)
-  const bottoms = new Array(columns).fill(0)
-
-  data.forEach((item, index) => {
-    const meta = getMeta?.(item, index) ?? {}
-    const cs = Math.min(Math.max(Math.floor(meta.colSpan ?? 1), 1), columns)
-
-    // 在 [0, columns-cs] 内找 max(bottoms) 最小的起始列
-    let bestStart = 0
-    let minTop = Infinity
-    for (let s = 0; s <= columns - cs; s++) {
-      let top = 0
-      for (let k = s; k < s + cs; k++) top = Math.max(top, bottoms[k])
-      if (top < minTop) {
-        minTop = top
-        bestStart = s
-      }
-    }
-    const top = minTop
-
-    const width = cs * colWidth + (cs - 1) * gap
-    let height: number
-    if (typeof meta.height === "number") {
-      height = meta.height
-    } else {
-      const ratio = aspectToRatio(meta.aspect)
-      height = ratio != null ? width * ratio : (meta.rowSpan ?? 1) * rowHeight
-    }
-
-    for (let k = bestStart; k < bestStart + cs; k++) {
-      bottoms[k] = top + height + gap
-    }
-
-    items.push({
-      key: getKey(item, index),
-      item,
-      index,
-      left: bestStart * (colWidth + gap),
-      top,
-      width,
-      height,
-      lazy: !!meta.lazy
-    })
-  })
-
-  const totalHeight = Math.max(0, Math.max(...bottoms, 0) - gap)
-  return { items, totalHeight }
-}
-
-/**
- * 智能填充布局:
- *  1. 宽图(colSpan>1)按原始顺序流式定位,作为保序锚点(跨列图必须保持相对位置才不违和)
- *  2. 记录宽图对齐时跨过的列内洞区,普通图(colSpan=1)先用 best-fit 回填洞区,
- *     再把剩余项目放到当前最矮列。
- * 代价:普通图之间的相对顺序会与原始数组不一致。
- */
-function layoutFill<T>(
-  data: T[],
-  columns: number,
-  colWidth: number,
-  gap: number,
-  rowHeight: number,
-  getMeta: ((item: T, i: number) => MasonryItemMeta | undefined) | undefined,
-  getKey: (item: T, i: number) => string | number
-): { items: PlacedItem<T>[]; totalHeight: number } {
-  const items: PlacedItem<T>[] = []
-  if (columns <= 0 || colWidth <= 0) return { items, totalHeight: 0 }
-
-  // bottoms[k] = 第 k 列"下一个可用 top"(已含上方 gap)
-  const bottoms = new Array(columns).fill(0)
-  const gapSlots: Array<{ column: number; top: number; maxBottom: number }> = []
-
-  // 预解析每个 item 的占列数、高度、懒加载标记(避免对 getMeta 重复求值)
-  const parsed = data.map((item, index) => {
-    const meta = getMeta?.(item, index) ?? {}
-    const cs = Math.min(Math.max(Math.floor(meta.colSpan ?? 1), 1), columns)
-    const width = cs * colWidth + (cs - 1) * gap
-    let height: number
-    if (typeof meta.height === "number") {
-      height = meta.height
-    } else {
-      const ratio = aspectToRatio(meta.aspect)
-      height = ratio != null ? width * ratio : (meta.rowSpan ?? 1) * rowHeight
-    }
-    return { item, index, colSpan: cs, height, lazy: !!meta.lazy }
-  })
-
-  const pushPlacedItem = (
-    p: { item: T; index: number; colSpan: number; height: number; lazy: boolean },
-    startCol: number,
-    top: number
-  ) => {
-    const width = p.colSpan * colWidth + (p.colSpan - 1) * gap
-    items.push({
-      key: getKey(p.item, p.index),
-      item: p.item,
-      index: p.index,
-      left: startCol * (colWidth + gap),
-      top,
-      width,
-      height: p.height,
-      lazy: p.lazy
-    })
-  }
-
-  const placeAtBottom = (
-    p: { item: T; index: number; colSpan: number; height: number; lazy: boolean },
-    startCol: number,
-    top: number
-  ) => {
-    pushPlacedItem(p, startCol, top)
-    for (let k = startCol; k < startCol + p.colSpan; k++) {
-      bottoms[k] = top + p.height + gap
-    }
-  }
-
-  // 1. 宽图流式定位(保序)
-  for (const p of parsed) {
-    if (p.colSpan <= 1) continue
-    let bestStart = 0
-    let minTop = Infinity
-    for (let s = 0; s <= columns - p.colSpan; s++) {
-      let top = 0
-      for (let k = s; k < s + p.colSpan; k++) top = Math.max(top, bottoms[k])
-      if (top < minTop) {
-        minTop = top
-        bestStart = s
-      }
-    }
-
-    // 跨列项以最高列为 top;记录其他列被跨过的空间,供单列项稍后回填。
-    for (let k = bestStart; k < bestStart + p.colSpan; k++) {
-      const maxBottom = minTop - gap
-      if (bottoms[k] < maxBottom) {
-        gapSlots.push({ column: k, top: bottoms[k], maxBottom })
-      }
-    }
-    placeAtBottom(p, bestStart, minTop)
-  }
-
-  // 2. 普通图先 best-fit 到跨列项留下的历史洞区。
-  const singles = parsed.filter(p => p.colSpan === 1)
-  const remainingSingles = new Set(singles)
-  gapSlots.sort((a, b) => a.top - b.top || a.column - b.column)
-
-  for (const slot of gapSlots) {
-    while (remainingSingles.size > 0) {
-      const capacity = slot.maxBottom - slot.top
-      let best: (typeof singles)[number] | undefined
-      let bestRemainder = Infinity
-
-      for (const candidate of remainingSingles) {
-        if (candidate.height > capacity) continue
-        const remainder = capacity - candidate.height
-        if (remainder < bestRemainder) {
-          best = candidate
-          bestRemainder = remainder
-        }
-      }
-
-      if (!best) break
-      pushPlacedItem(best, slot.column, slot.top)
-      remainingSingles.delete(best)
-      slot.top += best.height + gap
-    }
-  }
-
-  // 3. 剩余普通图继续放到当前最矮列。
-  for (const single of remainingSingles) {
-    let minCol = 0
-    let minBottom = bottoms[0]
-    for (let k = 1; k < columns; k++) {
-      if (bottoms[k] < minBottom) {
-        minBottom = bottoms[k]
-        minCol = k
-      }
-    }
-    placeAtBottom(single, minCol, minBottom)
-  }
-
-  const totalHeight = Math.max(0, Math.max(...bottoms, 0) - gap)
-  return { items, totalHeight }
 }
 
 /** 排序(不修改原数组) */
@@ -438,8 +221,7 @@ watch(
   () => placed.value,
   (val) => {
     emit("after-render")
-    // fill 模式下 placed.items 顺序 ≠ 数据源顺序；按实际渲染顺序抛出 item 数组，
-    // 供父组件修正"视觉顺序 ≠ 数据源顺序"相关逻辑（如 Shift 范围选择）
+    // 抛出实际布局处理顺序，供父组件处理 Shift 范围选择等顺序相关逻辑。
     if (val.items.length > 0) {
       emit("layout-order", val.items.map(p => p.item))
     }

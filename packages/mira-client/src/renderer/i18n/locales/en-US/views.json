@@ -64,7 +64,7 @@
     "daysAgo": "{n} d ago"
   },
   "sidebarLayoutDialog": {
-    "title": "Customize sidebar layout",
+    "title": "sidebar",
     "description": "Drag to reorder sidebar modules; drag a module to \"Disabled\" to hide it, drag it back to \"Enabled\" to restore.",
     "enabled": "Enabled",
     "disabled": "Disabled",
