@@ -1,5 +1,5 @@
 <template>
-  <div class="home-dashboard flex h-full flex-col bg-transparent" :class="{ invisible: !dashboardVisible }">
+  <div class="home-dashboard flex h-full flex-col bg-transparent">
     <!-- 顶部工具栏 -->
     <div class="dashboard-toolbar flex items-center justify-between border-b px-4 py-2">
       <div class="flex items-center gap-2 text-sm font-medium">
@@ -178,7 +178,6 @@
       v-else
       ref="dashboardGridScrollRef"
       class="dashboard-grid-scroll flex-1 overflow-auto p-3"
-      :style="frozenGridSize"
     >
       <GridLayout
         :key="store.activeId || 'active'"
@@ -188,7 +187,6 @@
         :gap="[12, 12]"
         :compactor="noCompactor"
         :position-strategy="absoluteStrategy"
-        :width="gridWidth || undefined"
         :is-draggable="editMode"
         :is-resizable="editMode"
         :collision-mode="'push'"
@@ -303,7 +301,6 @@ registerBuiltinCards()
 
 const store = useDashboardLayoutStore()
 const { activeTabId } = useTabs()
-const dashboardVisible = ref(false)
 const editMode = ref(false)
 const { t } = useI18n()
 
@@ -317,8 +314,6 @@ const resizeConfig: ResizeConfig = {
 
 const dashboardGridScrollRef = ref<HTMLElement | null>(null)
 let savedGridScrollTop = 0
-const frozenGridSize = ref<{ width: string; height: string } | undefined>(undefined)
-const gridWidth = ref<number | null>(null)
 const resizingGridItem = ref(false)
 
 watch(
@@ -327,32 +322,12 @@ watch(
     if (nextTabId !== props.tabId) {
       const container = dashboardGridScrollRef.value
       if (container) {
-        const rect = container.getBoundingClientRect()
-        frozenGridSize.value = {
-          width: `${rect.width}px`,
-          height: `${rect.height}px`,
-        }
         savedGridScrollTop = container.scrollTop
       }
-      dashboardVisible.value = false
       return
     }
-    if (gridWidth.value === null) {
-      nextTick(() => {
-        const width = dashboardGridScrollRef.value?.clientWidth
-        if (width) gridWidth.value = width
-      })
-    }
-    dashboardVisible.value = false
     nextTick(() => {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          const width = dashboardGridScrollRef.value?.clientWidth
-          if (width && gridWidth.value === null) gridWidth.value = width
-          dashboardVisible.value = true
-          frozenGridSize.value = undefined
-        })
-      })
+      if (dashboardGridScrollRef.value) dashboardGridScrollRef.value.scrollTop = savedGridScrollTop
     })
   },
   { immediate: true },
@@ -554,9 +529,6 @@ onMounted(async () => {
   await store.load()
   // 默认无卡片时，自动放一张「一言」卡片，方便首次体验
   await nextTick()
-  if (gridWidth.value === null && dashboardGridScrollRef.value) {
-    gridWidth.value = dashboardGridScrollRef.value.clientWidth
-  }
   if (store.renderableLayout.length === 0 && cardRegistry.has('hitokoto')) {
     await store.addCard('hitokoto', { x: 0, y: 0 })
   }
