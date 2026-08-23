@@ -56,6 +56,8 @@ plugins/plugins/mira_ai_sdk/
 5. 修复聊天界面不更新的 BUG（Vue3 响应式，见下）
 6. 图片生成：`/ai-sdk/image/generate`（文生图 + 图生图）、Dashboard 图片生成面板（data URL 预览，因静态路由需 Bearer、`<img>` 无法携带；支持本地上传最多 4 张参考图触发编辑模式）；已用 mock 服务端到端验证（含落盘与静态访问）
 7. AI 图片生成器 web SPA（`web/`）：文生图/图生图/蒙版画笔（MaskEditor 导出透明区 PNG）/素材库选参考图（MediaPickerDialog）/生成结果勾选批量入库（BatchUploadDialog + /api/files/upload）；宿主脚本注册右侧栏贡献与媒体右键菜单「AI 生成 / 编辑」（?media= 传参考图）。构建 `cd web && pnpm build`；`/api/plugins/web` 清单在 server 启动时快照，新增/修改 web/plugin.json 后需重启 server
+8. 插件窗口主题跟随（宿主支持）：mira-client `AppHandlers` 的 `app:set-theme-source` + `settings.ts applyTheme()` 同步 `nativeTheme.themeSource`；主题变化经 `nativeTheme 'updated'` → PluginWindowHandlers 向各插件窗口发 `plugin-window:mira-event`('theme') → preload `window.mira.onThemeChanged` → SPA 切 `html.dark`。插件窗口 preload 已注入 `window.mira`（app.theme/isDarkColors/onThemeChanged 等），SPA 无需自己监听系统主题（浏览器直开时仍回退 prefers-color-scheme）
+9. 插件窗口多语言（宿主支持）：主窗口 `settings.language` 变化/加载时经 `plugin-window:set-locale`（send，PluginWindowHandlers.handleSetLocale）→ 存快照 + 广播 `mira-event('locale')` → preload `window.mira.onLocaleChanged`；`mira-app-info` 的 locale 优先返回应用语言（回退系统 locale）。SPA 用自带轻量 i18n（`web/src/lib/i18n.ts`，zh/en 单例字典），初始值 `mira.app.locale`，监听 `onLocaleChanged` 实时切换；MediaPicker/BatchUpload 弹窗文案经 `*Text` props 双语注入
 
 ## 关键坑（务必了解）
 

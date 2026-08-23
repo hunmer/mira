@@ -1,4 +1,4 @@
-import { ipcMain, IpcMainInvokeEvent, app, BrowserWindow, screen } from 'electron'
+import { ipcMain, IpcMainInvokeEvent, app, BrowserWindow, screen, nativeTheme } from 'electron'
 import * as path from 'path'
 import { ensureLocalServerStarted } from '../services/LocalServerService'
 
@@ -34,6 +34,10 @@ export class AppHandlers {
     ipcMain.handle('app:getVersion', this.handleAppGetVersion.bind(this))
     ipcMain.handle('app:getPath', this.handleAppGetPath.bind(this))
     ipcMain.handle('app:isPackaged', this.handleAppIsPackaged.bind(this))
+
+    // 同步应用主题到 nativeTheme：应用内切换明暗时触发 nativeTheme 'updated'，
+    // PluginWindowHandlers 借此向全部插件窗口广播 theme 事件（子窗口 preload 的 onThemeChanged）
+    ipcMain.handle('app:set-theme-source', this.handleAppSetThemeSource.bind(this))
 
     // 服务自启动（系统登录项）
     ipcMain.handle('server-autostart:get', this.handleServerAutoStartGet.bind(this))
@@ -227,6 +231,17 @@ export class AppHandlers {
    */
   private async handleAppGetVersion(_event: IpcMainInvokeEvent): Promise<string> {
     return app.getVersion()
+  }
+
+  /**
+   * 设置主题来源（'light' | 'dark' | 'system'）。
+   * 渲染进程在 applyTheme 时同步；值变化触发 nativeTheme 'updated'，
+   * 已打开的插件窗口经 'plugin-window:mira-event' 收到 'theme' 事件。
+   */
+  private handleAppSetThemeSource(_event: IpcMainInvokeEvent, source: string): boolean {
+    if (source !== 'light' && source !== 'dark' && source !== 'system') return false
+    nativeTheme.themeSource = source
+    return true
   }
 
   /**

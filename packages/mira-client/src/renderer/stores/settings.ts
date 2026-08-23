@@ -484,6 +484,8 @@ export const useSettingsStore = defineStore('settings', () => {
 
       // 把持久化的语言同步给主进程，使托盘等主进程 UI 与用户设置一致
       window.electronAPI?.send('tray:set-locale', settings.value.language)
+      // 同步给插件窗口（主进程存快照并广播，见 PluginWindowHandlers.handleSetLocale）
+      window.electronAPI?.send('plugin-window:set-locale', settings.value.language)
 
       // 把持久化的代理配置同步给主进程（启动后立即生效；主进程在更早的启动阶段
       // 已自行读盘应用，这里保证后续设置变更的回写也能即时反映）
@@ -536,6 +538,8 @@ export const useSettingsStore = defineStore('settings', () => {
       })
       // 通知主进程更新托盘等 UI
       window.electronAPI?.send('tray:set-locale', value as string)
+      // 通知插件窗口更新语言（preload 的 onLocaleChanged）
+      window.electronAPI?.send('plugin-window:set-locale', value as string)
     } else if (key === 'pluginsDirectory' || key === 'autoLoadPlugins' ||
                key === 'enablePluginDevMode' || key === 'enablePluginSandbox') {
       // 插件相关设置变更时重新初始化插件服务
@@ -703,6 +707,15 @@ export const useSettingsStore = defineStore('settings', () => {
     } else {
       root.classList.remove('dark')
       root.setAttribute('data-theme', 'light')
+    }
+
+    // 同步到主进程 nativeTheme：应用内切换明暗时触发 'updated'，
+    // PluginWindowHandlers 向全部插件窗口广播 theme 事件（子窗口 onThemeChanged 同步配色）
+    if (typeof window !== 'undefined' && window.electronAPI?.invoke) {
+      const source = settings.value.theme === 'dark' || settings.value.theme === 'light'
+        ? settings.value.theme
+        : 'system'
+      window.electronAPI.invoke('app:set-theme-source', source).catch(() => {})
     }
   }
 

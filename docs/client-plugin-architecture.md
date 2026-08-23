@@ -523,7 +523,9 @@ ctx.openPluginWindow({ pluginId, entry?, title?, width?, height?, query? })
 
 - `entry` 默认 `dist/index.html`——**插件需自行构建 dist**（如 `pnpm build`），否则打开失败。
   SPA 中消费 `mira-plugin-ui` 组件（shadcn-vue）须按[源码消费指南](./plugin-ui-source-consumption.md)配置 Tailwind `@source` 等，否则弹窗类组件样式会静默缺失。
-- 插件窗口的 preload（`plugin-window-preload.js`）只暴露最小白名单 `electronAPI.pluginWindow.{open,close,send,onMessage}`，不暴露 fs/插件管理 API（最小权限）。
+- 插件窗口的 preload（`plugin-window-preload.js`）暴露两套 API：
+  - `electronAPI.pluginWindow.*`：窗口通信最小白名单（open/close/send/onMessage/setMenu/onMenuAction 等）；
+  - `window.mira`（别名 `window.eagle`，Eagle 兼容）：受控宿主能力——`app`（版本/平台/主题/语言快照）、`onThemeChanged`/`onLocaleChanged` 事件、窗口控制、剪贴板、`item.getSelected`（query 注入的选中素材）、白名单 `exec`、只读 `fs` 原语、`log`/`shell`/`network`。不暴露任意文件写入或插件管理能力。
 - `query` 通过 `document.location.search` 传递，插件 SPA 可据此区分不同实例（如 whiteboard 按 `projectId`）。
 
 ### 插件窗口间消息
@@ -553,6 +555,59 @@ const off = window.electronAPI.pluginWindow.onMessage((channel, data) => {
 ```
 
 窗口匹配使用 `${pluginId}:${entry}:` 前缀；同一入口存在多个窗口时优先投递到当前聚焦窗口，否则投递到最近创建的窗口。IPC 数据必须是可结构化克隆的普通对象，不能直接传 Vue Proxy、函数或 DOM 节点。
+
+### 主题与多语言自动适配
+
+插件窗口的 preload 已注入 `window.mira`，提供主题与语言的**初始快照 + 变化事件**，宿主负责广播，插件侧无需任何 IPC：
+
+| API | 说明 |
+|-----|------|
+| `mira.app.theme` | 初始快照 `'DARK' \| 'LIGHT'`（主窗口应用内主题，未同步过时为系统主题） |
+| `mira.app.isDarkColors()` | 初始是否暗色 |
+| `mira.onThemeChanged(cb)` | 明暗切换时回调，参数 `'DARK' \| 'LIGHT'`（应用内切换与系统切换均触发） |
+| `mira.app.locale` | 初始语言快照，主窗口应用语言（未同步过时为系统 locale），如 `zh-CN` / `en-US` |
+| `mira.onLocaleChanged(cb)` | 主窗口切换语言时回调，参数为语言 tag |
+
+通知链路（宿主内置）：
+
+- **主题**：主窗口 `settings.ts applyTheme()` → `app:set-theme-source` → 主进程设置 `nativeTheme.themeSource` → Electron 触发 `nativeTheme 'updated'` → `PluginWindowHandlers` 向**所有**插件窗口广播 `plugin-window:mira-event('theme', 'DARK'|'LIGHT')`。
+- **语言**：主窗口 `settings.language` 变化/启动加载 → `plugin-window:set-locale` → 主进程存快照并广播 `mira-event('locale', <语言>)`；此后新开窗口的 `mira-app-info` 快照优先返回应用语言。
+
+SPA 侧标准写法（初始值取宿主快照，浏览器直开时回退系统偏好/浏览器语言）：
+
+```ts
+const host = (window.mira || window.eagle) || null
+
+// ── 主题：切 html.dark（shadcn token 经 @custom-variant dark 跟随该类） ──
+const applyDark = (dark: boolean) => document.documentElement.classList.toggle('dark', dark)
+
+applyDark(Boolean(host?.app?.isDarkColors?.()) || host?.app?.theme === 'DARK')
+const viaHost = host?.onThemeChanged?.((theme: string) => applyDark(theme === 'DARK'))
+if (typeof viaHost !== 'function' && typeof matchMedia === 'function') {
+  // 无宿主（浏览器直开）：回退 prefers-color-scheme
+  const mq = matchMedia('(prefers-color-scheme: dark)')
+  applyDark(mq.matches)
+  mq.addEventListener('change', (e) => applyDark(e.matches))
+}
+
+// ── 语言：轻量 zh/en 字典 + {n} 插值（不引 vue-i18n 亦可） ──
+const parse = (tag?: string | null) => String(tag || '').toLowerCase().startsWith('zh') ? 'zh' : 'en'
+const locale = ref(parse(host?.app?.locale || navigator.language))
+
+host?.onLocaleChanged?.((tag: string) => { locale.value = parse(tag) })
+
+function t(key: string, params?: Record<string, string | number>): string {
+  let text = (dict[locale.value] ?? dict.zh)[key] ?? key
+  for (const [name, value] of Object.entries(params || {})) text = text.split(`{${name}}`).join(String(value))
+  return text
+}
+```
+
+注意点：
+
+- 回调注册后不会自动补发当前值——先读快照再注册事件（如上）。
+- 弹窗类组件文案（如 `MediaPickerDialog` / `BatchUploadDialog`）不接受全局 i18n 实例，经各自的 `title` / `confirmText` / `*Text` props 双语注入。
+- 参考实现：`plugins/plugins/mira_ai_sdk/web/src/App.vue`（主题 + 多语言完整示例）、`web/src/lib/i18n.ts`（zh/en 单例字典）；`plugins/plugins/mira_image_cropper/web/src/lib/host.ts`（主题跟随）。
 
 ### mira-whiteboard 插入流程
 
@@ -614,7 +669,7 @@ const off = window.electronAPI.pluginWindow.onMessage((channel, data) => {
 | `plugin:update-config` / `plugin:get-config` / `plugin:clear-cache` | 配置管理 |
 | `plugin:enable` / `plugin:disable` / `plugin:reload` / `plugin:execute` | ⚠️ 仅记日志返回 success，**真正逻辑在渲染进程 operationManager** |
 
-`PluginWindowHandlers`：`plugin-window:open` / `plugin-window:close` / `plugin-window:send`。
+`PluginWindowHandlers`：`plugin-window:open / close / send / set-menu / set-locale`、`mira-app-info`（sendSync 快照，含 theme/locale）等插件窗口通道。
 
 ---
 

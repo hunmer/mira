@@ -34,6 +34,7 @@ import BatchUploadDialog from 'mira-plugin-ui/src/BatchUploadDialog.vue'
 import MediaPickerDialog from 'mira-plugin-ui/src/library/MediaPickerDialog.vue'
 import type { MediaPickerFile } from 'mira-plugin-ui/src/library/types'
 import MaskEditor from '@/components/MaskEditor.vue'
+import { useI18n } from '@/lib/i18n'
 import {
   createFolder,
   fetchAuthorizedImage,
@@ -48,6 +49,8 @@ import {
   type FolderItem,
   type LibraryItem,
 } from '@/lib/server'
+
+const { setLocale, t } = useI18n()
 
 interface RefImage {
   key: string
@@ -74,6 +77,7 @@ function hostIsDark(): boolean {
 }
 
 let offTheme: (() => void) | null = null
+let offLocale: (() => void) | null = null
 const applyDark = (dark: boolean) => document.documentElement.classList.toggle('dark', dark)
 
 // ── 连接与服务商 ─────────────────────────────────────────
@@ -187,14 +191,14 @@ const generating = ref(false)
 const error = ref('')
 const info = ref('')
 
-const sizeOptions = [
-  { value: 'auto', label: '自动' },
-  { value: '1024x1024', label: '1024 × 1024 方形' },
-  { value: '1024x1536', label: '1024 × 1536 竖版' },
-  { value: '1536x1024', label: '1536 × 1024 横版' },
-  { value: '1024x1792', label: '1024 × 1792 竖版' },
-  { value: '1792x1024', label: '1792 × 1024 横版' },
-]
+const sizeOptions = computed(() => [
+  { value: 'auto', label: t('app.sizeAuto') },
+  { value: '1024x1024', label: t('app.sizeSquare') },
+  { value: '1024x1536', label: t('app.sizePortrait') },
+  { value: '1536x1024', label: t('app.sizeLandscape') },
+  { value: '1024x1792', label: t('app.sizePortrait2') },
+  { value: '1792x1024', label: t('app.sizeLandscape2') },
+])
 
 function slugify(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 40) || 'image'
@@ -230,8 +234,8 @@ async function onGenerate() {
       })
     }
     const ignored = Array.from(new Set((result.warnings || []).map((w) => w.feature).filter(Boolean)))
-    info.value = `生成 ${result.images.length} 张，耗时 ${Math.round(result.elapsed / 1000)}s`
-      + (ignored.length ? `（服务商忽略: ${ignored.join(', ')}）` : '')
+    info.value = t('app.doneInfo', { n: result.images.length, sec: Math.round(result.elapsed / 1000) })
+      + (ignored.length ? t('app.ignored', { list: ignored.join(', ') }) : '')
   } catch (e) {
     error.value = errorMessage(e)
   } finally {
@@ -269,7 +273,7 @@ const preparingImport = ref(false)
 async function openImportDialog() {
   if (!selectedResults.value.length || preparingImport.value) return
   if (!connected.value) {
-    error.value = '缺少服务器连接信息（请从 Mira 主窗口打开本插件）'
+    error.value = t('app.missingConn')
     return
   }
   preparingImport.value = true
@@ -301,7 +305,7 @@ function importCreateNode(payload: { kind?: string; parentId: number; title: str
 }
 
 function onImported() {
-  info.value = `已导入 ${importFiles.value.length} 张到素材库`
+  info.value = t('app.imported', { n: importFiles.value.length })
 }
 
 // ── 生命周期 ────────────────────────────────────────────
@@ -316,11 +320,16 @@ onMounted(() => {
     offTheme = () => mq.removeEventListener('change', listener)
     applyDark(mq.matches)
   }
+  // 主窗口切换语言时实时跟随（preload 广播 → onLocaleChanged）
+  offLocale = host?.onLocaleChanged?.((locale: string) => setLocale(locale)) || null
   void loadProviders()
   void loadMediaQuery()
 })
 
-onUnmounted(() => offTheme?.())
+onUnmounted(() => {
+  offTheme?.()
+  offLocale?.()
+})
 </script>
 
 <template>
@@ -328,17 +337,17 @@ onUnmounted(() => offTheme?.())
     <!-- 顶栏 -->
     <header class="flex h-12 shrink-0 items-center gap-2 border-b px-4">
       <Sparkles class="size-4 shrink-0 text-primary" />
-      <span class="text-sm font-semibold">AI 图片生成器</span>
+      <span class="text-sm font-semibold">{{ t('app.title') }}</span>
       <Badge v-if="currentProvider" variant="secondary" class="max-w-48 truncate font-normal">
-        {{ currentProvider.name }} · {{ model || '未选模型' }}
+        {{ currentProvider.name }} · {{ model || t('app.noModel') }}
       </Badge>
-      <Badge v-if="refImages.length" variant="outline">图生图 × {{ refImages.length }}</Badge>
-      <Badge v-if="maskDataUrl && refImages.length" variant="outline">蒙版</Badge>
+      <Badge v-if="refImages.length" variant="outline">{{ t('app.img2img', { n: refImages.length }) }}</Badge>
+      <Badge v-if="maskDataUrl && refImages.length" variant="outline">{{ t('app.mask') }}</Badge>
 
       <div class="flex-1" />
 
       <span v-if="generating" class="flex items-center gap-1.5 text-xs text-muted-foreground">
-        <Loader2 class="size-3.5 animate-spin" />生成中…
+        <Loader2 class="size-3.5 animate-spin" />{{ t('app.generating') }}
       </span>
       <span v-else-if="info" class="max-w-72 truncate text-xs text-muted-foreground" :title="info">{{ info }}</span>
       <span v-else-if="error" class="max-w-72 truncate text-xs text-destructive" :title="error">{{ error }}</span>
@@ -349,47 +358,47 @@ onUnmounted(() => offTheme?.())
         @click="openImportDialog"
       >
         <Download v-if="preparingImport" class="animate-pulse" />
-        导入素材库{{ selectedResults.length ? `（${selectedResults.length}）` : '' }}
+        {{ selectedResults.length ? t('app.importCount', { n: selectedResults.length }) : t('app.import') }}
       </Button>
     </header>
 
     <div v-if="!connected" class="border-b bg-destructive/10 px-4 py-1.5 text-xs text-destructive">
-      缺少服务器连接信息（请从 Mira 主窗口打开本插件；浏览器调试时可带 ?server=&amp;token=&amp;libraryId=）
+      {{ t('app.missingConnBanner') }}
     </div>
 
     <div class="flex min-h-0 flex-1">
       <!-- 左侧参数栏 -->
       <aside class="flex w-80 shrink-0 flex-col gap-3 overflow-y-auto border-r p-4">
         <div class="space-y-1.5">
-          <Label>服务商</Label>
+          <Label>{{ t('app.provider') }}</Label>
           <Select :model-value="providerId" @update:model-value="onProviderChange(String($event))">
             <SelectTrigger class="w-full">
-              <SelectValue :placeholder="providers.length ? '选择服务商' : '无可用服务商'" />
+              <SelectValue :placeholder="providers.length ? t('app.selectProvider') : t('app.noProviders')" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem v-for="p in providers" :key="p.id" :value="p.id">
-                {{ p.name }}{{ p.isDefault ? '（默认）' : '' }}
+                {{ p.name }}{{ p.isDefault ? t('app.default') : '' }}
               </SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div class="space-y-1.5">
-          <Label>模型</Label>
+          <Label>{{ t('app.model') }}</Label>
           <Select v-model="model" :disabled="!models.length">
             <SelectTrigger class="w-full">
-              <SelectValue placeholder="选择模型" />
+              <SelectValue :placeholder="t('app.selectModel')" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem v-for="m in models" :key="m" :value="m" class="font-mono">{{ m }}</SelectItem>
             </SelectContent>
           </Select>
-          <p class="text-xs text-muted-foreground">模型需为服务商配置中的图片模型（如 gpt-image-1 / seedream）</p>
+          <p class="text-xs text-muted-foreground">{{ t('app.modelHint') }}</p>
         </div>
 
         <div class="grid grid-cols-2 gap-2">
           <div class="space-y-1.5">
-            <Label>尺寸</Label>
+            <Label>{{ t('app.size') }}</Label>
             <Select v-model="size">
               <SelectTrigger class="w-full"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -398,7 +407,7 @@ onUnmounted(() => offTheme?.())
             </Select>
           </div>
           <div class="space-y-1.5">
-            <Label>数量</Label>
+            <Label>{{ t('app.count') }}</Label>
             <Select v-model="count">
               <SelectTrigger class="w-full"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -411,21 +420,21 @@ onUnmounted(() => offTheme?.())
         <Separator />
 
         <div class="space-y-1.5">
-          <Label>提示词</Label>
+          <Label>{{ t('app.prompt') }}</Label>
           <Textarea
             v-model="prompt"
             rows="5"
-            placeholder="描述要生成或编辑的图片，如：A cat on a roof, watercolor style"
+            :placeholder="t('app.promptPlaceholder')"
             :disabled="generating"
             @keydown.ctrl.enter.prevent="onGenerate"
           />
-          <p class="text-xs text-muted-foreground">Ctrl + Enter 快速生成</p>
+          <p class="text-xs text-muted-foreground">{{ t('app.promptHint') }}</p>
         </div>
 
         <Button class="w-full" :disabled="generating || !model || !prompt.trim()" @click="onGenerate">
           <Loader2 v-if="generating" class="animate-spin" />
           <Sparkles v-else />
-          {{ generating ? '生成中…' : refImages.length ? '编辑图片' : '生成图片' }}
+          {{ generating ? t('app.generating') : refImages.length ? t('app.edit') : t('app.generate') }}
         </Button>
       </aside>
 
@@ -433,7 +442,7 @@ onUnmounted(() => offTheme?.())
       <main class="flex min-w-0 flex-1 flex-col">
         <!-- 参考图栏 -->
         <section class="flex shrink-0 items-center gap-2 border-b px-4 py-2.5">
-          <span class="text-xs text-muted-foreground">参考图</span>
+          <span class="text-xs text-muted-foreground">{{ t('app.refs') }}</span>
           <div class="flex flex-wrap items-center gap-2">
             <div v-for="(item, index) in refImages" :key="item.key" class="group relative">
               <img
@@ -445,7 +454,7 @@ onUnmounted(() => offTheme?.())
               />
               <button
                 type="button"
-                title="移除"
+                :title="t('app.remove')"
                 class="absolute -right-1 -top-1 grid size-4 place-items-center rounded-full bg-destructive text-[0.625rem] leading-none text-destructive-foreground opacity-0 transition-opacity group-hover:opacity-100"
                 @click="removeRefImage(index)"
               >×</button>
@@ -453,28 +462,28 @@ onUnmounted(() => offTheme?.())
           </div>
 
           <Button v-if="loadingRefs" variant="ghost" size="sm" disabled>
-            <Loader2 class="animate-spin" />加载素材…
+            <Loader2 class="animate-spin" />{{ t('app.loadingAssets') }}
           </Button>
           <Button v-else variant="outline" size="sm" :disabled="refImages.length >= 4" @click="pickerOpen = true">
-            <Library />素材库
+            <Library />{{ t('app.fromLibrary') }}
           </Button>
           <Button variant="outline" size="sm" :disabled="refImages.length >= 4" @click="localFileInput?.click()">
-            <ImagePlus />本地
+            <ImagePlus />{{ t('app.fromLocal') }}
           </Button>
           <Button
             v-if="refImages.length"
             variant="outline"
             size="sm"
-            :title="maskDataUrl ? '重新绘制蒙版' : '绘制蒙版（涂抹区域将被重绘）'"
+            :title="maskDataUrl ? t('app.redrawMask') : t('app.maskHint')"
             @click="maskEditorOpen = true"
           >
-            <Brush />{{ maskDataUrl ? '蒙版已设置' : '蒙版' }}
+            <Brush />{{ maskDataUrl ? t('app.maskSet') : t('app.drawMask') }}
           </Button>
           <Button
             v-if="maskDataUrl && refImages.length"
             variant="ghost"
             size="sm"
-            title="移除蒙版"
+            :title="t('app.removeMask')"
             @click="maskDataUrl = null"
           >
             <Trash2 />
@@ -495,7 +504,7 @@ onUnmounted(() => offTheme?.())
         <!-- 结果网格 -->
         <section class="min-h-0 flex-1 overflow-y-auto p-4">
           <div v-if="!results.length" class="grid h-full place-items-center text-sm text-muted-foreground">
-            输入提示词生成图片；添加参考图进入图生图 / 蒙版重绘模式
+            {{ t('app.empty') }}
           </div>
           <div v-else class="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
             <div
@@ -506,12 +515,12 @@ onUnmounted(() => offTheme?.())
               <img :src="item.dataUrl" :alt="item.name" class="aspect-square w-full object-cover" draggable="false" />
               <label class="absolute left-2 top-2 flex cursor-pointer items-center gap-1.5 rounded-md bg-black/60 px-2 py-1 text-xs text-white">
                 <Checkbox :checked="item.selected" @update:checked="item.selected = Boolean($event)" />
-                已选
+                {{ t('app.selected') }}
               </label>
               <a
                 :href="item.dataUrl"
                 :download="item.name"
-                title="下载原图"
+                :title="t('app.download')"
                 class="absolute right-2 top-2 grid size-6 place-items-center rounded-md bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100"
                 @click.stop
               >
@@ -529,7 +538,14 @@ onUnmounted(() => offTheme?.())
       v-model:open="pickerOpen"
       v-model:library-id="pickerLibraryId"
       select-mode="multiple"
-      title="从素材库选择参考图"
+      :title="t('picker.title')"
+      :confirm-text="t('picker.confirm')"
+      :cancel-text="t('picker.cancel')"
+      :selected-count-text="t('picker.selected', { n: 1 })"
+      :missing-auth-text="t('picker.missingAuth')"
+      :load-failed-text="t('picker.loadFailed', { error: '' })"
+      :loading-text="t('picker.loading')"
+      :no-library-text="t('picker.noLibrary')"
       @confirm="onPickerConfirm"
     />
 
@@ -549,9 +565,10 @@ onUnmounted(() => offTheme?.())
       :upload-file="uploadFile"
       :create-node="importCreateNode"
       :initial-files="importFiles"
-      title="导入生成结果"
-      description="选择素材库与文件夹，将选中的生成结果导入指定位置。"
-      submit-text="开始导入"
+      :title="t('upload.title')"
+      :description="t('upload.description')"
+      :submit-text="t('upload.submit')"
+      :cancel-text="t('upload.cancel')"
       @library-change="onImportLibraryChange"
       @uploaded="onImported"
     />

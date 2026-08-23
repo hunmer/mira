@@ -47,6 +47,7 @@ const callbacks = {
   show: [],
   hide: [],
   theme: [],
+  locale: [],
 }
 
 function parseSelectedItems() {
@@ -209,6 +210,7 @@ const mira = {
   onPluginShow: (callback) => on('show', callback),
   onPluginHide: (callback) => on('hide', callback),
   onThemeChanged: (callback) => on('theme', callback),
+  onLocaleChanged: (callback) => on('locale', callback),
 }
 
 ipcRenderer.on('plugin-window:mira-event', (_event, name, value) => {

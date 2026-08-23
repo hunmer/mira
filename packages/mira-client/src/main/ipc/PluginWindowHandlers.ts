@@ -78,6 +78,8 @@ export class PluginWindowHandlers {
     // 用 win.setMenu 替换成自己的模板（Windows/Linux 生效）。
     ipcMain.handle('plugin-window:set-menu', this.handleSetMenu.bind(this))
     ipcMain.on('plugin-window:mira-app-info', this.handleMiraAppInfo.bind(this))
+    // 主窗口应用语言变化时同步：存快照（供后续插件窗口的 app-info）+ 广播给已打开的插件窗口
+    ipcMain.on('plugin-window:set-locale', this.handleSetLocale.bind(this))
     ipcMain.handle('plugin-window:mira-window', this.handleMiraWindow.bind(this))
     ipcMain.handle('plugin-window:mira-shell', this.handleMiraShell.bind(this))
     ipcMain.on('plugin-window:mira-clipboard', this.handleMiraClipboard.bind(this))
@@ -476,11 +478,21 @@ export class PluginWindowHandlers {
   private handleMiraAppInfo(event: Electron.IpcMainEvent): void {
     event.returnValue = {
       version: app.getVersion(),
-      locale: app.getLocale(),
+      locale: this.appLocale || app.getLocale(),
       arch: process.arch,
       platform: process.platform,
       theme: nativeTheme.shouldUseDarkColors ? 'DARK' : 'LIGHT',
       isDark: nativeTheme.shouldUseDarkColors,
+    }
+  }
+
+  /** 主窗口应用语言（'zh-CN' | 'en-US'…）；空串表示未同步过，回退系统 locale */
+  private appLocale = ''
+
+  private handleSetLocale(_event: Electron.IpcMainEvent, locale: string): void {
+    this.appLocale = String(locale || '')
+    for (const [, win] of this.windows) {
+      if (!win.isDestroyed()) win.webContents.send('plugin-window:mira-event', 'locale', this.appLocale)
     }
   }
 

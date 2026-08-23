@@ -15,6 +15,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from 'mira-plugin-ui/src/components/ui/dialog'
+import { useI18n } from '@/lib/i18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   open: boolean
@@ -143,14 +146,14 @@ function applyMask() {
   <Dialog :open="props.open" @update:open="emit('update:open', $event)">
     <DialogContent class="max-w-3xl">
       <DialogHeader>
-        <DialogTitle>绘制蒙版</DialogTitle>
-        <DialogDescription>涂抹区域将被 AI 重绘（导出后为透明区），其余区域保持原图不变。</DialogDescription>
+        <DialogTitle>{{ t('mask.title') }}</DialogTitle>
+        <DialogDescription>{{ t('mask.description') }}</DialogDescription>
       </DialogHeader>
 
       <div
         class="relative max-h-[60vh] select-none overflow-hidden rounded-md border bg-[repeating-conic-gradient(hsl(0_0%_80%)_0%_25%,hsl(0_0%_90%)_0%_50%)] bg-[length:16px_16px]"
       >
-        <img :src="props.image" class="block w-full" alt="参考图" draggable="false" />
+        <img :src="props.image" class="block w-full" :alt="t('mask.alt')" draggable="false" />
         <canvas
           ref="paintRef"
           class="absolute inset-0 h-full w-full cursor-crosshair touch-none"
@@ -173,13 +176,13 @@ function applyMask() {
         />
         <span class="w-10 shrink-0 text-right font-mono text-xs text-muted-foreground">{{ brushSize }}</span>
         <Button variant="outline" size="sm" @click="clearMask">
-          <Eraser />清空
+          <Eraser />{{ t('mask.clear') }}
         </Button>
       </div>
 
       <DialogFooter>
-        <Button variant="outline" @click="emit('update:open', false)">取消</Button>
-        <Button @click="applyMask">{{ hasStrokes ? '应用蒙版' : '移除蒙版' }}</Button>
+        <Button variant="outline" @click="emit('update:open', false)">{{ t('picker.cancel') }}</Button>
+        <Button @click="applyMask">{{ hasStrokes ? t('mask.apply') : t('mask.none') }}</Button>
       </DialogFooter>
     </DialogContent>
   </Dialog>
