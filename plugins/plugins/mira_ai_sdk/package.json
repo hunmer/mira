@@ -1,13 +1,16 @@
 {
   "name": "mira_ai_sdk",
   "version": "1.0.0",
-  "description": "通用 AI SDK 网关：管理多个 OpenAI 兼容服务商（apiKey / baseUrl / 模型列表），提供测试连接与 AI 聊天 API。",
+  "description": "通用 AI SDK 网关：管理多个 OpenAI 兼容服务商，提供聊天与图片生成 API（含 AI 图片生成器 web 应用）。",
   "author": "Mira Team",
   "license": "ISC",
   "main": "dist/index.js",
   "files": [
     "dist/**/*",
     "components/**/*",
+    "scripts/**/*",
+    "presets.json",
+    "web/**/*",
     "package.json",
     "README.md"
   ],
@@ -20,11 +23,14 @@
       "ai",
       "ai-sdk",
       "聊天",
+      "图片生成",
       "openai-compatible"
     ]
   },
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "fetch-presets": "node scripts/fetch-presets.mjs",
+    "build:web": "cd web && pnpm build"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^3.0.35",

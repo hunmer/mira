@@ -1,0 +1,20 @@
+{
+  "pluginName": "AI 图片生成器",
+  "pluginId": "18a04e8d-3423-4fd3-9ecb-e85884d3d830",
+  "priority": 5,
+  "version": "1.0.0",
+  "icon": "auto_awesome",
+  "index": "index.js",
+  "tags": ["AI", "图片生成", "文生图", "图生图", "蒙版", "素材库"],
+  "category": "productivity",
+  "description": "文生图 / 图生图 / 蒙版重绘，参考图可从素材库选取，生成结果一键导入素材库。",
+  "author": "Mira Team",
+  "enable": true,
+  "config": {},
+  "hotkey": {},
+  "events": [],
+  "dependencies": [],
+  "permissions": ["ui", "window"],
+  "minAppVersion": "1.0.0",
+  "platform": ["win32", "darwin", "linux"]
+}

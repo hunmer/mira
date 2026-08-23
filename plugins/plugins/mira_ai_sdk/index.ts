@@ -1,6 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { generateText, streamText } from 'ai';
+import { execFile } from 'child_process';
+import { generateText, streamText, generateImage } from 'ai';
+import type { DataContent } from 'ai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 
 interface ProviderConfig {
@@ -18,6 +20,26 @@ interface StoreData {
   defaultProviderId: string | null;
 }
 
+interface PresetModel {
+  id: string;
+  name: string;
+}
+
+interface PresetProvider {
+  id: string;
+  name: string;
+  baseUrl: string;
+  sdk: string;
+  modelCount: number;
+  models: PresetModel[];
+}
+
+interface PresetFile {
+  source: string;
+  updatedAt: string;
+  providers: PresetProvider[];
+}
+
 interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
@@ -25,6 +47,8 @@ interface ChatMessage {
 
 const PLUGIN_NAME = 'mira_ai_sdk';
 const TEST_TIMEOUT_MS = 30000;
+const IMAGE_TIMEOUT_MS = 300000;
+const IMAGE_DIR_NAME = path.join('data', 'images');
 const VALID_ROLES = new Set(['system', 'user', 'assistant']);
 
 function newId(): string {
@@ -54,19 +78,46 @@ function normalizeMessages(value: unknown): ChatMessage[] {
   });
 }
 
+const IMAGE_EXTENSIONS: Record<string, string> = {
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/webp': 'webp',
+  'image/gif': 'gif',
+};
+
+function imageExtensionOf(mediaType: string): string {
+  return IMAGE_EXTENSIONS[String(mediaType || '').toLowerCase()] || 'png';
+}
+
+function slugifyPrompt(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 40);
+}
+
+// 剥离 data URL 前缀，AI SDK 的 DataContent 需要纯 base64
+function toBase64Content(value: unknown): string {
+  return String(value || '').replace(/^data:[^;]*;base64,/, '');
+}
+
 class MiraAiSdkPlugin {
   private readonly pluginName = PLUGIN_NAME;
   private readonly routes: any[] = [];
   private readonly backend: any;
   private readonly libraryId: string;
   private readonly dataFile: string;
+  private readonly pluginDir: string;
   private store: StoreData = { providers: [], defaultProviderId: null };
+  private presetsCache: PresetFile | null = null;
 
   constructor(inst: any) {
     const pluginManager = inst.pluginManager;
     this.backend = pluginManager.server.backend;
     this.libraryId = inst.dbService.getLibraryId();
-    this.dataFile = path.join(pluginManager.getPluginDir(this.pluginName), 'data', 'providers.json');
+    this.pluginDir = pluginManager.getPluginDir(this.pluginName);
+    this.dataFile = path.join(this.pluginDir, 'data', 'providers.json');
     this.loadStore();
     this.registerApiRoutes();
     this.routes.push({
@@ -123,6 +174,17 @@ class MiraAiSdkPlugin {
     return openaiCompatible(model);
   }
 
+  private buildImageModel(provider: ProviderConfig, modelId: unknown) {
+    const model = String(modelId || '').trim() || provider.models[0];
+    if (!model) throw new Error(`服务商 ${provider.name} 没有配置模型`);
+    const openaiCompatible = createOpenAICompatible({
+      name: provider.name,
+      apiKey: provider.apiKey || undefined,
+      baseURL: provider.baseUrl,
+    });
+    return openaiCompatible.imageModel(model);
+  }
+
   private maskedProviders() {
     return this.store.providers.map(item => ({
       id: item.id,
@@ -137,9 +199,70 @@ class MiraAiSdkPlugin {
     }));
   }
 
+  private loadPresets(): PresetFile | null {
+    if (this.presetsCache) return this.presetsCache;
+    try {
+      const raw = JSON.parse(fs.readFileSync(path.join(this.pluginDir, 'presets.json'), 'utf8'));
+      this.presetsCache = {
+        source: String(raw.source || 'https://models.dev/api.json'),
+        updatedAt: String(raw.updatedAt || ''),
+        providers: Array.isArray(raw.providers) ? raw.providers : [],
+      };
+    } catch {
+      this.presetsCache = null;
+    }
+    return this.presetsCache;
+  }
+
   private registerApiRoutes() {
     const router = this.backend.getHttpServer().httpRouter;
     const libraryId = this.libraryId;
+
+    router.registerRounter(libraryId, '/ai-sdk/presets/list', 'get', async (_req: any, res: any) => {
+      const presets = this.loadPresets();
+      res.json({
+        success: true,
+        updatedAt: presets?.updatedAt || '',
+        source: presets?.source || '',
+        providers: (presets?.providers || []).map(item => ({
+          id: item.id,
+          name: item.name,
+          baseUrl: item.baseUrl,
+          sdk: item.sdk,
+          modelCount: item.modelCount,
+        })),
+      });
+    });
+
+    router.registerRounter(libraryId, '/ai-sdk/presets/models', 'post', async (req: any, res: any) => {
+      try {
+        const presets = this.loadPresets();
+        const preset = presets?.providers.find(item => item.id === String(req.body?.id || ''));
+        if (!preset) throw new Error('预设服务商不存在');
+        res.json({ success: true, models: preset.models });
+      } catch (error) {
+        res.status(400).json({ success: false, error: this.errorMessage(error) });
+      }
+    });
+
+    router.registerRounter(libraryId, '/ai-sdk/presets/refresh', 'post', async (_req: any, res: any) => {
+      execFile(
+        process.execPath,
+        [path.join(this.pluginDir, 'scripts', 'fetch-presets.mjs')],
+        { timeout: 120000, cwd: this.pluginDir },
+        (error, _stdout, stderr) => {
+          if (error) {
+            return res.status(502).json({
+              success: false,
+              error: `刷新预设失败（服务器可能无法直连 models.dev，可设置 HTTPS_PROXY 后重试）: ${stderr || error.message}`,
+            });
+          }
+          this.presetsCache = null;
+          const presets = this.loadPresets();
+          res.json({ success: true, updatedAt: presets?.updatedAt || '', providers: presets?.providers.length || 0 });
+        },
+      );
+    });
 
     // 注意: HttpRouter 同一 path 只支持一种 method，各操作使用独立路径
     router.registerRounter(libraryId, '/ai-sdk/providers/list', 'get', async (_req: any, res: any) => {
@@ -258,10 +381,31 @@ class MiraAiSdkPlugin {
       try {
         const body = req.body || {};
         stream = body.stream === true;
-        const provider = this.resolveProvider(body.providerId);
-        const model = this.buildModel(provider, body.model);
         const messages = normalizeMessages(body.messages);
-        const modelId = String(body.model || '').trim() || provider.models[0];
+
+        // 请求自带 baseUrl/apiKey 时直连，不经过已保存的服务商
+        let providerId: string | null = null;
+        let providerName: string;
+        let modelId: string;
+        let model: ReturnType<ReturnType<typeof createOpenAICompatible>>;
+        if (String(body.baseUrl || '').trim()) {
+          const baseUrl = String(body.baseUrl).trim().replace(/\/+$/, '');
+          if (!/^https?:\/\//i.test(baseUrl)) throw new Error('baseUrl 必须以 http:// 或 https:// 开头');
+          modelId = String(body.model || '').trim();
+          if (!modelId) throw new Error('自带 baseUrl 调用时必须指定 model');
+          providerName = String(body.name || '自定义').trim() || '自定义';
+          model = createOpenAICompatible({
+            name: providerName,
+            apiKey: String(body.apiKey || '').trim() || undefined,
+            baseURL: baseUrl,
+          })(modelId);
+        } else {
+          const provider = this.resolveProvider(body.providerId);
+          providerId = provider.id;
+          providerName = provider.name;
+          model = this.buildModel(provider, body.model);
+          modelId = String(body.model || '').trim() || provider.models[0];
+        }
 
         if (!stream) {
           const result = await generateText({
@@ -271,8 +415,8 @@ class MiraAiSdkPlugin {
           });
           return res.json({
             success: true,
-            providerId: provider.id,
-            providerName: provider.name,
+            providerId,
+            providerName,
             model: modelId,
             text: result.text,
             usage: result.usage,
@@ -282,7 +426,7 @@ class MiraAiSdkPlugin {
         res.setHeader('Content-Type', 'text/plain; charset=utf-8');
         res.setHeader('Cache-Control', 'no-cache');
         res.setHeader('X-Accel-Buffering', 'no');
-        res.setHeader('X-Mira-Provider', encodeURIComponent(provider.name));
+        res.setHeader('X-Mira-Provider', encodeURIComponent(providerName));
         res.setHeader('X-Mira-Model', encodeURIComponent(modelId));
         res.flushHeaders();
 
@@ -313,6 +457,99 @@ class MiraAiSdkPlugin {
           return res.end();
         }
         res.status(400).json({ success: false, error: this.errorMessage(error) });
+      }
+    });
+
+    // 图片生成（参考 ai-image 的参数设计；结果写入 data/images/ 并经 /api/plugins 静态路由访问）
+    router.registerRounter(libraryId, '/ai-sdk/image/generate', 'post', async (req: any, res: any) => {
+      try {
+        const body = req.body || {};
+        const prompt = String(body.prompt || '').trim();
+        if (!prompt) throw new Error('prompt 不能为空');
+
+        // 与 /ai-sdk/chat 一致：请求自带 baseUrl/apiKey 时直连，否则用已保存服务商
+        let providerId: string | null = null;
+        let providerName: string;
+        let modelId: string;
+        let imageModel: ReturnType<ReturnType<typeof createOpenAICompatible>['imageModel']>;
+        if (String(body.baseUrl || '').trim()) {
+          const baseUrl = String(body.baseUrl).trim().replace(/\/+$/, '');
+          if (!/^https?:\/\//i.test(baseUrl)) throw new Error('baseUrl 必须以 http:// 或 https:// 开头');
+          modelId = String(body.model || '').trim();
+          if (!modelId) throw new Error('自带 baseUrl 调用时必须指定 model');
+          providerName = String(body.name || '自定义').trim() || '自定义';
+          imageModel = createOpenAICompatible({
+            name: providerName,
+            apiKey: String(body.apiKey || '').trim() || undefined,
+            baseURL: baseUrl,
+          }).imageModel(modelId);
+        } else {
+          const provider = this.resolveProvider(body.providerId);
+          providerId = provider.id;
+          providerName = provider.name;
+          imageModel = this.buildImageModel(provider, body.model);
+          modelId = String(body.model || '').trim() || provider.models[0];
+        }
+
+        const n = Math.min(Math.max(1, Number(body.n) || 1), 10);
+        const size = String(body.size || '').trim();
+        if (size && !/^\d{2,5}x\d{2,5}$/.test(size)) throw new Error('size 格式必须为 {width}x{height}，如 1024x1024');
+        const seed = body.seed === undefined || body.seed === null || body.seed === '' ? undefined : Number(body.seed);
+        if (seed !== undefined && (!Number.isFinite(seed) || seed < 0)) throw new Error('seed 必须是非负数字');
+        const providerOptions = body.providerOptions && typeof body.providerOptions === 'object' && !Array.isArray(body.providerOptions)
+          ? body.providerOptions
+          : undefined;
+
+        // 传入 images（base64 数组，可选）时走图片编辑（/images/edits），否则文生图（/images/generations）
+        const inputImages: DataContent[] = Array.isArray(body.images)
+          ? body.images.map((item: unknown) => toBase64Content(item)).filter(Boolean)
+          : [];
+        const mask: DataContent | undefined = body.mask ? toBase64Content(body.mask) : undefined;
+        const generatePrompt = inputImages.length ? { text: prompt, images: inputImages, mask } : prompt;
+
+        const startedAt = Date.now();
+        const result = await generateImage({
+          model: imageModel,
+          prompt: generatePrompt,
+          n,
+          size: (size || undefined) as `${number}x${number}` | undefined,
+          seed,
+          providerOptions,
+          abortSignal: AbortSignal.timeout(IMAGE_TIMEOUT_MS),
+        });
+
+        const imageDir = path.join(this.pluginDir, IMAGE_DIR_NAME);
+        fs.mkdirSync(imageDir, { recursive: true });
+        const returnBase64 = body.returnBase64 === true;
+        const slug = slugifyPrompt(prompt) || 'image';
+        const images = result.images.map(image => {
+          const extension = imageExtensionOf(image.mediaType);
+          const fileName = `${slug}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}.${extension}`;
+          fs.writeFileSync(path.join(imageDir, fileName), image.uint8Array);
+          const item: Record<string, unknown> = {
+            url: `plugins/${libraryId}/${PLUGIN_NAME}/${IMAGE_DIR_NAME.split(path.sep).join('/')}/${fileName}`,
+            file: `${IMAGE_DIR_NAME.split(path.sep).join('/')}/${fileName}`,
+            mediaType: image.mediaType,
+          };
+          if (returnBase64) item.base64 = image.base64;
+          return item;
+        });
+
+        res.json({
+          success: true,
+          providerId,
+          providerName,
+          model: modelId,
+          prompt,
+          n,
+          size: size || null,
+          elapsed: Date.now() - startedAt,
+          images,
+          warnings: result.warnings,
+          usage: result.usage,
+        });
+      } catch (error) {
+        res.status(502).json({ success: false, error: this.errorMessage(error) });
       }
     });
   }

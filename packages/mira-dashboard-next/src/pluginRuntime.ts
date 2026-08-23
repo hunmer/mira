@@ -16,6 +16,13 @@ import { Separator } from '@/components/ui/separator'
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog'
+import {
+  Combobox, ComboboxAnchor, ComboboxEmpty, ComboboxGroup, ComboboxInput,
+  ComboboxItem, ComboboxItemIndicator, ComboboxList, ComboboxTrigger, ComboboxViewport,
+} from '@/components/ui/combobox'
+import {
+  TagsInput, TagsInputInput, TagsInputItem, TagsInputItemDelete, TagsInputItemText,
+} from '@/components/ui/tags-input'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Progress } from '@/components/ui/progress'
@@ -51,6 +58,21 @@ export function ensurePluginRuntime() {
     DialogFooter,
     DialogHeader,
     DialogTitle,
+    Combobox,
+    ComboboxAnchor,
+    ComboboxEmpty,
+    ComboboxGroup,
+    ComboboxInput,
+    ComboboxItem,
+    ComboboxItemIndicator,
+    ComboboxList,
+    ComboboxTrigger,
+    ComboboxViewport,
+    TagsInput,
+    TagsInputInput,
+    TagsInputItem,
+    TagsInputItemDelete,
+    TagsInputItemText,
     Input,
     Label,
     Progress,
