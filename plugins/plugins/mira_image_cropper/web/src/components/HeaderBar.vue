@@ -6,6 +6,9 @@ import type { MediaPickerFile } from 'mira-plugin-ui/src/library/types'
 import type { MediaInput } from '@/types'
 import { useCropperStore } from '@/stores/cropper'
 import { getServerConfig } from '@/lib/server'
+import { useI18n } from '@/lib/i18n'
+
+const { t } = useI18n()
 
 /** 顶栏：缩放控制 / 撤销重做 / 从素材库添加（均为裸图标；本地添加走左侧栏） */
 const props = defineProps<{
@@ -47,7 +50,7 @@ function onPickerConfirm(files: MediaPickerFile[]) {
 <template>
   <header class="flex items-center gap-2 px-3 h-12 border-b bg-background shrink-0">
     <Crop class="size-4.5 text-primary shrink-0" />
-    <span class="font-semibold text-sm">多选区裁切</span>
+    <span class="font-semibold text-sm">{{ t('app.title') }}</span>
 
     <span v-if="imageInfo" class="text-xs text-muted-foreground truncate max-w-72" :title="imageInfo">
       {{ imageInfo }}
@@ -57,27 +60,27 @@ function onPickerConfirm(files: MediaPickerFile[]) {
 
     <!-- 缩放控制 -->
     <div v-if="store.image" class="flex items-center gap-1.5">
-      <button type="button" class="icon-bare" title="缩小" @click="props.stage?.zoomOut()">
+      <button type="button" class="icon-bare" :title="t('app.zoomOut')" @click="props.stage?.zoomOut()">
         <ZoomOut class="size-4" />
       </button>
       <span class="text-xs text-muted-foreground w-11 text-center font-mono">{{ Math.round(store.scale * 100) }}%</span>
-      <button type="button" class="icon-bare" title="放大" @click="props.stage?.zoomIn()">
+      <button type="button" class="icon-bare" :title="t('app.zoomIn')" @click="props.stage?.zoomIn()">
         <ZoomIn class="size-4" />
       </button>
-      <button type="button" class="icon-bare" title="适应窗口" @click="props.stage?.fit()">
+      <button type="button" class="icon-bare" :title="t('app.fit')" @click="props.stage?.fit()">
         <Maximize class="size-4" />
       </button>
     </div>
 
     <span class="w-px h-5 bg-border mx-1" />
 
-    <button type="button" class="icon-bare" title="撤销 (Ctrl+Z)" :disabled="!store.canUndo" @click="store.undo()">
+    <button type="button" class="icon-bare" :title="t('app.undo')" :disabled="!store.canUndo" @click="store.undo()">
       <Undo2 class="size-4" />
     </button>
-    <button type="button" class="icon-bare" title="重做 (Ctrl+Shift+Z)" :disabled="!store.canRedo" @click="store.redo()">
+    <button type="button" class="icon-bare" :title="t('app.redo')" :disabled="!store.canRedo" @click="store.redo()">
       <Redo2 class="size-4" />
     </button>
-    <button type="button" class="icon-bare" title="从素材库添加图片" @click="pickerOpen = true">
+    <button type="button" class="icon-bare" :title="t('app.fromLibrary')" @click="pickerOpen = true">
       <Images class="size-4" />
     </button>
 
@@ -86,7 +89,14 @@ function onPickerConfirm(files: MediaPickerFile[]) {
       v-model:open="pickerOpen"
       v-model:library-id="pickerLibraryId"
       select-mode="multiple"
-      title="从素材库添加图片"
+      :title="t('picker.title')"
+      :confirm-text="t('picker.confirm')"
+      :cancel-text="t('picker.cancel')"
+      :selected-count-text="t('picker.selected', { n: 1 })"
+      :missing-auth-text="t('picker.missingAuth')"
+      :load-failed-text="t('picker.loadFailed', { error: '' })"
+      :loading-text="t('picker.loading')"
+      :no-library-text="t('picker.noLibrary')"
       @confirm="onPickerConfirm"
     />
   </header>

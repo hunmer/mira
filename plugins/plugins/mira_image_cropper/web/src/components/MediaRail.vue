@@ -3,12 +3,14 @@ import { computed, ref } from 'vue'
 import { ImagePlus, Trash2 } from '@lucide/vue'
 import { Button } from 'mira-plugin-ui/src/components/ui/button'
 import { useCropperStore } from '@/stores/cropper'
+import { useI18n } from '@/lib/i18n'
 
 /**
  * 左侧图片实例栏：每个缩略图对应一份独立的选区/历史/导出数据。
  * 点击切换当前实例（懒加载原图），hover 可删除，底部添加本地图片。
  */
 const store = useCropperStore()
+const { t } = useI18n()
 const fileInput = ref<HTMLInputElement | null>(null)
 /** 缩略图加载失败的实例（降级为占位图标，不影响原图懒加载） */
 const brokenThumbs = ref(new Set<string>())
@@ -33,7 +35,7 @@ function thumbTitle(inst: { name: string; loadError: string }): string {
 <template>
   <aside class="w-24 shrink-0 border-r bg-background flex flex-col min-h-0">
     <div class="flex items-center px-2 h-8 border-b shrink-0">
-      <span class="text-xs text-muted-foreground">图片</span>
+      <span class="text-xs text-muted-foreground">{{ t('app.images') }}</span>
     </div>
 
     <div class="flex-1 overflow-y-auto p-2 space-y-2 min-h-0">
@@ -81,7 +83,7 @@ function thumbTitle(inst: { name: string; loadError: string }): string {
           variant="secondary"
           size="icon-xs"
           class="!absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity !size-5"
-          title="移除此图片"
+          :title="t('app.removeImage')"
           @click.stop="store.removeInstance(inst.key)"
         >
           <Trash2 />
@@ -90,7 +92,7 @@ function thumbTitle(inst: { name: string; loadError: string }): string {
 
       <button
         class="w-full aspect-square rounded-lg border border-dashed grid place-items-center text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors"
-        title="添加图片"
+        :title="t('app.addImage')"
         @click="fileInput?.click()"
       >
         <ImagePlus class="size-5" />

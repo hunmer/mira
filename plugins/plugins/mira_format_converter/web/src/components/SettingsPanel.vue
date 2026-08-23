@@ -6,6 +6,9 @@ import {
   Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue,
 } from 'mira-plugin-ui/src/components/ui/select'
 import { SCALE_OPTIONS, allowedTargets, classifyFile, type Capabilities, type MediaInput, type ScaleKey } from '@/types'
+import { useI18n, type I18nKey } from '@/lib/i18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   files: MediaInput[]
@@ -53,22 +56,22 @@ const canStart = computed(() =>
   !props.running && props.files.length > 0 && Boolean(props.target) && hasAnyTarget.value && !binaryMissing.value)
 
 const targetGroups = computed(() => [
-  { key: 'image', label: '图片格式', formats: availableTargets.value.image },
-  { key: 'video', label: '视频格式', formats: availableTargets.value.video },
-  { key: 'audio', label: '音频格式', formats: availableTargets.value.audio },
+  { key: 'image', label: t('app.groupImage'), formats: availableTargets.value.image },
+  { key: 'video', label: t('app.groupVideo'), formats: availableTargets.value.video },
+  { key: 'audio', label: t('app.groupAudio'), formats: availableTargets.value.audio },
 ].filter((g) => g.formats.length > 0))
 </script>
 
 <template>
   <div class="rounded-lg border bg-card">
-    <div class="border-b px-3 py-2 text-xs font-medium">转换设置</div>
+    <div class="border-b px-3 py-2 text-xs font-medium">{{ t('app.settings') }}</div>
     <div class="space-y-4 p-3">
       <!-- 目标格式 -->
       <div class="space-y-1.5">
-        <label class="text-xs font-medium text-muted-foreground">目标格式</label>
+        <label class="text-xs font-medium text-muted-foreground">{{ t('app.target') }}</label>
         <Select :model-value="target" :disabled="running" @update:model-value="emit('update:target', $event)">
           <SelectTrigger class="h-8 text-xs">
-            <SelectValue placeholder="选择目标格式" />
+            <SelectValue :placeholder="t('app.targetPlaceholder')" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup v-for="group in targetGroups" :key="group.key">
@@ -80,35 +83,35 @@ const targetGroups = computed(() => [
           </SelectContent>
         </Select>
         <p v-if="files.length > 0 && !hasAnyTarget" class="text-[11px] text-destructive">
-          选中素材的格式组合没有共同支持的目标格式
+          {{ t('app.noCommonTarget') }}
         </p>
       </div>
 
       <!-- 质量 -->
       <div class="space-y-1.5">
-        <label class="text-xs font-medium text-muted-foreground">质量</label>
+        <label class="text-xs font-medium text-muted-foreground">{{ t('app.quality') }}</label>
         <Select :model-value="quality" :disabled="running" @update:model-value="emit('update:quality', $event)">
           <SelectTrigger class="h-8 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="high" class="text-xs">高（文件较大）</SelectItem>
-            <SelectItem value="medium" class="text-xs">中（推荐）</SelectItem>
-            <SelectItem value="low" class="text-xs">低（文件较小）</SelectItem>
+            <SelectItem value="high" class="text-xs">{{ t('app.qualityHigh') }}</SelectItem>
+            <SelectItem value="medium" class="text-xs">{{ t('app.qualityMedium') }}</SelectItem>
+            <SelectItem value="low" class="text-xs">{{ t('app.qualityLow') }}</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       <!-- 分辨率 -->
       <div class="space-y-1.5">
-        <label class="text-xs font-medium text-muted-foreground">分辨率（可选，只缩不放）</label>
+        <label class="text-xs font-medium text-muted-foreground">{{ t('app.scale') }}</label>
         <Select :model-value="scale" :disabled="running" @update:model-value="emit('update:scale', $event)">
           <SelectTrigger class="h-8 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem v-for="opt in SCALE_OPTIONS" :key="opt.key" :value="opt.key" class="text-xs">
-              {{ opt.label }}
+              {{ t(opt.label as I18nKey) }}
             </SelectItem>
           </SelectContent>
         </Select>
@@ -123,18 +126,18 @@ const targetGroups = computed(() => [
           :disabled="running"
           @change="emit('update:inheritMeta', ($event.target as HTMLInputElement).checked)"
         />
-        继承原文件所在文件夹与标签
+        {{ t('app.inheritMeta') }}
       </label>
 
       <Button class="w-full" size="sm" :disabled="!canStart" @click="emit('start')">
         <Loader2 v-if="running" class="size-4 animate-spin" />
         <Play v-else class="size-4" />
-        {{ running ? '转换中…' : `开始转换${files.length > 0 ? `（${files.length} 个文件）` : ''}` }}
+        {{ running ? t('app.converting') : files.length > 0 ? t('app.startCount', { n: files.length }) : t('app.start') }}
       </Button>
 
       <p v-if="error" class="text-[11px] text-destructive">{{ error }}</p>
       <p v-else-if="binaryMissing && capabilities" class="text-[11px] text-destructive">
-        服务器未检测到 ImageMagick / FFmpeg，请先安装或设置 FFMPEG_PATH / IMAGEMAGICK_PATH 环境变量
+        {{ t('app.binaryMissing') }}
       </p>
     </div>
   </div>

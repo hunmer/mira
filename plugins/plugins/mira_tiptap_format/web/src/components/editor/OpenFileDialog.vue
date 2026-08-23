@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { FileText, FolderOpen, X } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
+import { useI18n } from '@/lib/i18n'
+
+const { t } = useI18n()
 
 interface DocFile {
   id: string | number
@@ -43,13 +46,13 @@ function formatSize (value?: number) {
       <section class="flex max-h-[70vh] w-full max-w-md flex-col overflow-hidden rounded-xl border bg-card text-card-foreground shadow-2xl">
         <header class="flex items-center gap-2 border-b px-4 py-3">
           <FolderOpen class="size-4 text-muted-foreground" />
-          <h2 class="text-sm font-semibold">打开文档</h2>
-          <button type="button" title="关闭" class="ml-auto cursor-pointer rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground" @click="close">
+          <h2 class="text-sm font-semibold">{{ t('od.title') }}</h2>
+          <button type="button" :title="t('od.close')" class="ml-auto cursor-pointer rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground" @click="close">
             <X class="size-4" />
           </button>
         </header>
         <div class="scroll-thin flex-1 overflow-y-auto p-2">
-          <div v-if="loading" class="px-3 py-8 text-center text-sm text-muted-foreground">正在加载文档列表…</div>
+          <div v-if="loading" class="px-3 py-8 text-center text-sm text-muted-foreground">{{ t('od.loading') }}</div>
           <template v-else-if="files.length">
             <button
               v-for="file in files"
@@ -68,11 +71,11 @@ function formatSize (value?: number) {
             </button>
           </template>
           <div v-else class="px-3 py-8 text-center text-sm text-muted-foreground">
-            当前素材库中没有 .tiptap 文档
+            {{ t('od.empty') }}
           </div>
         </div>
         <footer class="border-t px-4 py-2.5 text-right">
-          <Button variant="ghost" size="sm" @click="close">取消</Button>
+          <Button variant="ghost" size="sm" @click="close">{{ t('od.cancel') }}</Button>
         </footer>
       </section>
     </div>

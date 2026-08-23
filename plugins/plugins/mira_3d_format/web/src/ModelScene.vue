@@ -3,6 +3,9 @@ import { computed, ref, toRef, watch } from 'vue'
 import type * as THREE from 'three'
 import { useAnimations, useGLTF } from '@tresjs/cientos'
 import { collectScene, store } from '@/composables/useViewerStore'
+import { useI18n } from '@/lib/i18n'
+
+const { t } = useI18n()
 
 /**
  * 加载 GLTF 并渲染（primitive）。TresJS v5 的 useGLTF 内部已 watch path，
@@ -41,7 +44,7 @@ watch(isLoading, (loading) => {
 watch([isLoading, state], ([loading, model]) => {
   dbg('check fail: hasStarted=', hasStarted, 'loading=', loading, 'hasModel=', !!model)
   if (hasStarted && !loading && !model && !store.loadError) {
-    store.loadError = '模型加载失败：可能是格式损坏或 Draco 解码失败（检查控制台）'
+    store.loadError = t('app.errParse')
     emit('error', store.loadError)
   }
 })

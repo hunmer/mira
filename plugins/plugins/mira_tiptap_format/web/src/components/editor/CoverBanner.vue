@@ -4,6 +4,9 @@ import { ref, watch } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { useI18n } from '@/lib/i18n'
+
+const { t } = useI18n()
 
 export interface Cover {
   type: 'gradient' | 'url'
@@ -70,12 +73,12 @@ function remove () {
         <PopoverTrigger as-child>
           <Button size="xs" variant="secondary" class="bg-background/70 shadow-sm backdrop-blur">
             <ImagePlus class="size-3" />
-            更换封面
+            {{ t('cv.change') }}
           </Button>
         </PopoverTrigger>
         <Button size="xs" variant="secondary" class="bg-background/70 shadow-sm backdrop-blur" @click="remove">
           <X class="size-3" />
-          移除
+          {{ t('cv.remove') }}
         </Button>
       </div>
     </template>
@@ -87,13 +90,13 @@ function remove () {
           class="flex cursor-pointer items-center gap-1 rounded px-1 py-0.5 text-xs text-muted-foreground/50 transition-colors hover:bg-muted hover:text-foreground"
         >
           <ImagePlus class="size-3.5" />
-          添加封面
+          {{ t('cv.add') }}
         </button>
       </PopoverTrigger>
     </div>
 
     <PopoverContent align="start" class="w-80 p-3" :side-offset="8">
-      <p class="mb-2 text-xs font-medium text-muted-foreground">渐变色</p>
+      <p class="mb-2 text-xs font-medium text-muted-foreground">{{ t('cv.gradient') }}</p>
       <div class="grid grid-cols-6 gap-1.5">
         <button
           v-for="gradient in GRADIENTS"
@@ -105,13 +108,13 @@ function remove () {
           @click="applyGradient(gradient)"
         />
       </div>
-      <p class="mb-2 mt-3 text-xs font-medium text-muted-foreground">图片链接</p>
+      <p class="mb-2 mt-3 text-xs font-medium text-muted-foreground">{{ t('cv.imageUrl') }}</p>
       <div class="flex items-center gap-2">
         <Input v-model="url" placeholder="https://…" class="h-8 text-sm" @keyup.enter="applyUrl" />
-        <Button size="sm" :disabled="!url.trim()" @click="applyUrl">应用</Button>
+        <Button size="sm" :disabled="!url.trim()" @click="applyUrl">{{ t('cv.apply') }}</Button>
       </div>
       <Button v-if="cover" variant="ghost" size="sm" class="mt-2 w-full cursor-pointer" @click="remove">
-        移除封面
+        {{ t('cv.removeCover') }}
       </Button>
     </PopoverContent>
   </Popover>

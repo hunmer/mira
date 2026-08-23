@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ArrowLeftRight } from '@lucide/vue'
 import type { Capabilities } from '@/types'
+import { useI18n } from '@/lib/i18n'
+
+const { t } = useI18n()
 
 defineProps<{
   capabilities: Capabilities | null
@@ -20,9 +23,9 @@ function shortVersion(version: string): string {
       <ArrowLeftRight class="size-4" />
     </div>
     <div class="min-w-0 flex-1">
-      <h1 class="truncate text-sm font-semibold leading-tight">格式转换</h1>
+      <h1 class="truncate text-sm font-semibold leading-tight">{{ t('app.title') }}</h1>
       <p class="truncate text-xs text-muted-foreground">
-        批量转换图片 / 视频 / 音频格式，转换结果作为新文件保存回素材库
+        {{ t('app.subtitle') }}
       </p>
     </div>
     <div v-if="capabilities" class="flex shrink-0 items-center gap-2 text-xs">
@@ -31,7 +34,7 @@ function shortVersion(version: string): string {
         :class="capabilities.ffmpeg.available
           ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
           : 'border-destructive/40 bg-destructive/10 text-destructive'"
-        :title="capabilities.ffmpeg.available ? capabilities.ffmpeg.version : '服务器未安装 FFmpeg（视频/音频转换不可用）'"
+        :title="capabilities.ffmpeg.available ? capabilities.ffmpeg.version : t('app.ffmpegMissing')"
       >
         FFmpeg {{ capabilities.ffmpeg.available ? shortVersion(capabilities.ffmpeg.version) || '✓' : '✗' }}
       </span>
@@ -40,7 +43,7 @@ function shortVersion(version: string): string {
         :class="capabilities.imagemagick.available
           ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
           : 'border-destructive/40 bg-destructive/10 text-destructive'"
-        :title="capabilities.imagemagick.available ? capabilities.imagemagick.version : '服务器未安装 ImageMagick（图片转换不可用）'"
+        :title="capabilities.imagemagick.available ? capabilities.imagemagick.version : t('app.imMissing')"
       >
         ImageMagick {{ capabilities.imagemagick.available ? shortVersion(capabilities.imagemagick.version) || '✓' : '✗' }}
       </span>

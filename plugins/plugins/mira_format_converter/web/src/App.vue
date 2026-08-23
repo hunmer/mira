@@ -5,8 +5,11 @@ import FileList from '@/components/FileList.vue'
 import SettingsPanel from '@/components/SettingsPanel.vue'
 import TaskPanel from '@/components/TaskPanel.vue'
 import { deleteSourceFiles, fetchCapabilities, fetchTaskStatus, setActiveLibraryId, startConvert } from '@/lib/server'
-import { getSelectedItems, isDark, logError, onThemeChanged } from '@/lib/host'
+import { getSelectedItems, isDark, logError, onLocaleChanged, onThemeChanged } from '@/lib/host'
+import { useI18n } from '@/lib/i18n'
 import { allowedTargets, classifyFile, type Capabilities, type MediaInput, type ScaleKey, type TaskState } from '@/types'
+
+const { setLocale, t } = useI18n()
 
 /**
  * 格式转换 SPA：
@@ -28,6 +31,7 @@ const deletedIds = ref<Set<string>>(new Set())
 
 let pollTimer: number | null = null
 let offTheme: (() => void) | null = null
+let offLocale: (() => void) | null = null
 
 const runningItems = computed(() => (running.value && task.value ? task.value.items : []))
 
@@ -52,7 +56,7 @@ async function loadCapabilities() {
     capabilities.value = await fetchCapabilities()
   } catch (e) {
     logError('[format-converter] capabilities failed:', e)
-    error.value = `无法连接转换服务：${e instanceof Error ? e.message : String(e)}`
+    error.value = t('app.errConnect', { msg: e instanceof Error ? e.message : String(e) })
   }
 }
 
@@ -129,7 +133,7 @@ async function handleDeleteSources() {
     for (const id of result.deleted) deletedIds.value.add(String(id))
     sourceDeleted.value = result.failed.length === 0
     if (result.failed.length > 0) {
-      error.value = `${result.failed.length} 个源文件删除失败：${result.failed.map((f) => f.error).join('；')}`
+      error.value = t('app.deleteFailed', { n: result.failed.length, errors: result.failed.map((f) => f.error).join('；') })
     }
   } catch (e) {
     error.value = e instanceof Error ? e.message : String(e)
@@ -149,6 +153,7 @@ function applyTheme(dark: boolean) {
 onMounted(() => {
   applyTheme(isDark())
   offTheme = onThemeChanged(applyTheme)
+  offLocale = onLocaleChanged((locale) => setLocale(locale))
   loadFiles()
   loadCapabilities()
 })
@@ -156,6 +161,7 @@ onMounted(() => {
 onUnmounted(() => {
   stopPolling()
   offTheme?.()
+  offLocale?.()
 })
 </script>
 

@@ -9,6 +9,7 @@ import { defineComponent, h } from 'vue'
 import type { Component } from 'vue'
 import { ChevronDown, ChevronRight, Eye, EyeOff } from 'lucide-vue-next'
 import type { BoneNode, BoneVisibility } from '@/spine/loader'
+import { useI18n } from '@/lib/i18n'
 
 const BoneRow: Component = defineComponent({
   name: 'BoneRow',
@@ -20,6 +21,7 @@ const BoneRow: Component = defineComponent({
   },
   emits: ['toggle-expanded', 'toggle-visibility'],
   setup(props, { emit }) {
+    const { t } = useI18n()
     return () => {
       const node = props.node as BoneNode
       const name = node.bone.data.name
@@ -55,7 +57,7 @@ const BoneRow: Component = defineComponent({
           'button',
           {
             type: 'button',
-            title: hidden ? '显示' : '隐藏',
+            title: hidden ? t('app.show') : t('app.hide'),
             class: 'flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-muted',
             onClick: () => emit('toggle-visibility', node.bone),
           },

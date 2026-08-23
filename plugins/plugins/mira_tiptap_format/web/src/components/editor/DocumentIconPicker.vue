@@ -3,6 +3,9 @@ import { SmilePlus } from 'lucide-vue-next'
 import { ref } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { useI18n } from '@/lib/i18n'
+
+const { t } = useI18n()
 
 const icon = defineModel<string>({ default: '' })
 const open = ref(false)
@@ -31,7 +34,7 @@ function clear () {
     <PopoverTrigger as-child>
       <button
         type="button"
-        :title="icon ? '更改图标' : '添加图标'"
+        :title="icon ? t('ip.change') : t('ip.add')"
         class="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-lg text-3xl leading-none transition-colors hover:bg-accent"
       >
         <span v-if="icon">{{ icon }}</span>
@@ -52,7 +55,7 @@ function clear () {
         </button>
       </div>
       <Button variant="ghost" size="sm" class="mt-1.5 w-full cursor-pointer" :disabled="!icon" @click="clear">
-        移除图标
+        {{ t('ip.remove') }}
       </Button>
     </PopoverContent>
   </Popover>

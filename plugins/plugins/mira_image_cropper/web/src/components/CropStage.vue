@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { CropRegion } from '@/types'
 import { useCropperStore } from '@/stores/cropper'
+import { useI18n } from '@/lib/i18n'
 
 /**
  * 多选区交互画布：
@@ -11,6 +12,7 @@ import { useCropperStore } from '@/stores/cropper'
  *   - 交互：空白拖拽新建、选区拖拽移动、8 手柄缩放、中键/空格拖拽平移、滚轮缩放（指针中心）。
  */
 const store = useCropperStore()
+const { t } = useI18n()
 
 const viewportEl = ref<HTMLDivElement | null>(null)
 const maskCanvas = ref<HTMLCanvasElement | null>(null)
@@ -387,12 +389,12 @@ onBeforeUnmount(() => {
     <div v-else-if="!store.loading" class="absolute inset-0 grid place-items-center pointer-events-none">
       <div class="text-center text-muted-foreground space-y-2">
         <div class="text-4xl">🖼️</div>
-        <div class="text-sm">拖入图片、点击上方「上传」或从左侧栏添加图片</div>
+        <div class="text-sm">{{ t('app.stageEmpty') }}</div>
       </div>
     </div>
 
     <div v-if="store.loading" class="absolute inset-0 grid place-items-center bg-background/60">
-      <div class="text-sm text-muted-foreground">图片加载中…</div>
+      <div class="text-sm text-muted-foreground">{{ t('app.stageLoading') }}</div>
     </div>
     <div v-if="store.loadError" class="absolute bottom-2 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-md bg-destructive/90 text-white text-xs">
       {{ store.loadError }}

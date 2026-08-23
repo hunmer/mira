@@ -3,6 +3,9 @@ import type { Editor } from '@tiptap/vue-3'
 import { TextSelection } from '@tiptap/pm/state'
 import { GripVertical, Plus } from 'lucide-vue-next'
 import { onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { useI18n } from '@/lib/i18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{ editor: Editor }>()
 
@@ -177,7 +180,7 @@ onBeforeUnmount (() => {
     >
       <button
         type="button"
-        title="在下方插入块"
+        :title="t('dh.insertBelow')"
         class="flex size-6 cursor-pointer items-center justify-center rounded text-muted-foreground/60 transition-colors hover:bg-accent hover:text-accent-foreground"
         @mousedown.prevent
         @click="insertBlockBelow"
@@ -188,7 +191,7 @@ onBeforeUnmount (() => {
       <button
         type="button"
         draggable="true"
-        title="拖拽移动块"
+        :title="t('dh.drag')"
         class="flex size-6 cursor-grab items-center justify-center rounded text-muted-foreground/60 transition-colors hover:bg-accent hover:text-accent-foreground active:cursor-grabbing"
         @dragstart="onDragStart"
       >

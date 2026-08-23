@@ -4,6 +4,9 @@ import { Play, Square } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
+import { useI18n } from '@/lib/i18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   animations: string[]
@@ -65,8 +68,8 @@ function onSpeedInput(val: number[] | undefined) {
 <template>
   <div class="flex flex-col gap-3 border-b p-3">
     <div class="flex items-center justify-between">
-      <span class="text-xs font-medium text-muted-foreground">动画（{{ animations.length }}）</span>
-      <Button size="icon-sm" variant="outline" :title="playing ? '暂停' : '播放'" @click="togglePlaying">
+      <span class="text-xs font-medium text-muted-foreground">{{ t('app.animations', { n: animations.length }) }}</span>
+      <Button size="icon-sm" variant="outline" :title="playing ? t('app.pause') : t('app.play')" @click="togglePlaying">
         <Play v-if="!playing" class="size-3.5" />
         <Square v-else class="size-3.5" />
       </Button>
@@ -87,13 +90,13 @@ function onSpeedInput(val: number[] | undefined) {
         <span class="truncate">{{ name }}</span>
         <span v-if="name === 'idle'" class="text-[10px] text-primary">idle</span>
       </button>
-      <p v-if="!animations.length" class="px-2 py-3 text-xs text-muted-foreground">无动画</p>
+      <p v-if="!animations.length" class="px-2 py-3 text-xs text-muted-foreground">{{ t('app.noAnimations') }}</p>
     </div>
 
     <!-- 倍速 -->
     <div class="space-y-1.5">
       <div class="flex items-center justify-between">
-        <Label class="text-xs">倍速</Label>
+        <Label class="text-xs">{{ t('app.speed') }}</Label>
         <span class="font-mono text-[11px] text-muted-foreground">{{ speed[0]?.toFixed(2) }}</span>
       </div>
       <Slider
@@ -107,7 +110,7 @@ function onSpeedInput(val: number[] | undefined) {
 
     <!-- 皮肤 -->
     <div v-if="skins.length" class="space-y-1.5">
-      <Label class="text-xs">皮肤（{{ skins.length }}）</Label>
+      <Label class="text-xs">{{ t('app.skins', { n: skins.length }) }}</Label>
       <select
         :value="skin"
         class="h-8 w-full rounded-md border border-input bg-transparent px-2 text-xs outline-none focus-visible:ring-3"

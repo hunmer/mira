@@ -29,8 +29,10 @@ import {
   MenubarTrigger,
 } from '@/components/ui/menubar'
 import { useEditorVersion } from '@/composables/useEditorVersion'
+import { useI18n } from '@/lib/i18n'
 
 const props = defineProps<{ editor: Editor }>()
+const { t } = useI18n()
 const emit = defineEmits<{
   (event: 'save'): void
   (event: 'open-file'): void
@@ -54,22 +56,22 @@ const tools = computed<ToolButton[]>(() => {
   const e = editor.value
   const c = () => e.chain().focus()
   return [
-    { label: '加粗', icon: Bold, active: e.isActive('bold'), run: () => c().toggleBold().run() },
-    { label: '斜体', icon: Italic, active: e.isActive('italic'), run: () => c().toggleItalic().run() },
-    { label: '下划线', icon: Underline, active: e.isActive('underline'), run: () => c().toggleUnderline().run() },
-    { label: '删除线', icon: Strikethrough, active: e.isActive('strike'), run: () => c().toggleStrike().run() },
-    { label: '行内代码', icon: Code, active: e.isActive('code'), run: () => c().toggleCode().run() },
+    { label: t('tb.bold'), icon: Bold, active: e.isActive('bold'), run: () => c().toggleBold().run() },
+    { label: t('tb.italic'), icon: Italic, active: e.isActive('italic'), run: () => c().toggleItalic().run() },
+    { label: t('tb.underline'), icon: Underline, active: e.isActive('underline'), run: () => c().toggleUnderline().run() },
+    { label: t('tb.strike'), icon: Strikethrough, active: e.isActive('strike'), run: () => c().toggleStrike().run() },
+    { label: t('tb.code'), icon: Code, active: e.isActive('code'), run: () => c().toggleCode().run() },
     { label: 'H1', text: 'H1', active: e.isActive('heading', { level: 1 }), run: () => c().toggleHeading({ level: 1 }).run() },
     { label: 'H2', text: 'H2', active: e.isActive('heading', { level: 2 }), run: () => c().toggleHeading({ level: 2 }).run() },
     { label: 'H3', text: 'H3', active: e.isActive('heading', { level: 3 }), run: () => c().toggleHeading({ level: 3 }).run() },
-    { label: '无序列表', icon: List, active: e.isActive('bulletList'), run: () => c().toggleBulletList().run() },
-    { label: '有序列表', icon: ListOrdered, active: e.isActive('orderedList'), run: () => c().toggleOrderedList().run() },
-    { label: '待办', icon: CheckSquare, active: e.isActive('taskList'), run: () => c().toggleTaskList().run() },
-    { label: '代码块', icon: Code2, active: e.isActive('codeBlock'), run: () => c().toggleCodeBlock().run() },
-    { label: '引用', icon: Quote, active: e.isActive('blockquote'), run: () => c().toggleBlockquote().run() },
-    { label: '分割线', icon: Minus, run: () => c().setHorizontalRule().run() },
-    { label: '撤销', icon: Undo2, disabled: !e.can().undo(), separatorBefore: true, run: () => c().undo().run() },
-    { label: '重做', icon: Redo2, disabled: !e.can().redo(), run: () => c().redo().run() },
+    { label: t('tb.bulletList'), icon: List, active: e.isActive('bulletList'), run: () => c().toggleBulletList().run() },
+    { label: t('tb.orderedList'), icon: ListOrdered, active: e.isActive('orderedList'), run: () => c().toggleOrderedList().run() },
+    { label: t('tb.task'), icon: CheckSquare, active: e.isActive('taskList'), run: () => c().toggleTaskList().run() },
+    { label: t('tb.codeBlock'), icon: Code2, active: e.isActive('codeBlock'), run: () => c().toggleCodeBlock().run() },
+    { label: t('tb.quote'), icon: Quote, active: e.isActive('blockquote'), run: () => c().toggleBlockquote().run() },
+    { label: t('tb.hr'), icon: Minus, run: () => c().setHorizontalRule().run() },
+    { label: t('tb.undo'), icon: Undo2, disabled: !e.can().undo(), separatorBefore: true, run: () => c().undo().run() },
+    { label: t('tb.redo'), icon: Redo2, disabled: !e.can().redo(), run: () => c().redo().run() },
   ]
 })
 
@@ -85,15 +87,15 @@ function openSlashMenu () {
     <div class="absolute left-3 top-1/2 -translate-y-1/2">
       <Menubar>
         <MenubarMenu>
-          <MenubarTrigger>文件</MenubarTrigger>
+          <MenubarTrigger>{{ t('tb.file') }}</MenubarTrigger>
           <MenubarContent class="min-w-44">
             <MenubarItem @click="emit('open-file')">
-              打开文件
+              {{ t('tb.openFile') }}
               <MenubarShortcut>Ctrl+O</MenubarShortcut>
             </MenubarItem>
             <MenubarSeparator />
             <MenubarItem @click="emit('save-as')">
-              另存为
+              {{ t('tb.saveAs') }}
               <MenubarShortcut>Ctrl+S</MenubarShortcut>
             </MenubarItem>
           </MenubarContent>
@@ -118,7 +120,7 @@ function openSlashMenu () {
       </template>
       <button
         type="button"
-        title="/ 快捷命令"
+        :title="t('tb.slashHint')"
         class="ml-1 flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border text-foreground transition-colors hover:bg-muted"
         @mousedown.prevent
         @click="openSlashMenu"
@@ -129,7 +131,7 @@ function openSlashMenu () {
     <div class="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-2">
       <Button size="sm" class="gap-1.5" @click="emit('save')">
         <Save class="size-3.5" />
-        保存
+        {{ t('tb.save') }}
       </Button>
     </div>
   </header>

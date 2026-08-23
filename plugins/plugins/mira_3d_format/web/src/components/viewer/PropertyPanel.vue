@@ -9,6 +9,9 @@ import { Separator } from '@/components/ui/separator'
 import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
 import { selectedMaterial, selectedObject } from '@/composables/useViewerStore'
+import { useI18n } from '@/lib/i18n'
+
+const { t } = useI18n()
 
 // ============ 对象属性 ============
 const position = computed({
@@ -95,24 +98,24 @@ function onColorInput(e: Event) {
     <!-- 对象属性 -->
     <template v-if="selectedObject">
       <div class="mt-3 flex items-center justify-between">
-        <span class="text-xs font-medium text-muted-foreground">选中对象</span>
+        <span class="text-xs font-medium text-muted-foreground">{{ t('app.selectedObject') }}</span>
         <Badge variant="outline">{{ selectedObject.type }}</Badge>
       </div>
-      <h3 class="mb-3 mt-1 truncate text-sm font-semibold" :title="selectedObject.name || '(未命名)'">
-        {{ selectedObject.name || '(未命名)' }}
+      <h3 class="mb-3 mt-1 truncate text-sm font-semibold" :title="selectedObject.name || t('app.unnamed')">
+        {{ selectedObject.name || t('app.unnamed') }}
       </h3>
 
       <Separator class="mb-3" />
 
       <!-- 可见性 -->
       <div class="mb-3 flex items-center justify-between">
-        <Label>可见</Label>
+        <Label>{{ t('app.visible') }}</Label>
         <Switch v-model="visible" />
       </div>
 
       <!-- 位置 -->
       <div class="mb-3">
-        <Label class="mb-1.5 text-muted-foreground">位置 Position</Label>
+        <Label class="mb-1.5 text-muted-foreground">{{ t('app.position') }}</Label>
         <div class="grid grid-cols-3 gap-1.5">
           <div class="relative">
             <span class="pointer-events-none absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-rose-400">X</span>
@@ -131,7 +134,7 @@ function onColorInput(e: Event) {
 
       <!-- 旋转 -->
       <div class="mb-3">
-        <Label class="mb-1.5 text-muted-foreground">旋转 Rotation (°)</Label>
+        <Label class="mb-1.5 text-muted-foreground">{{ t('app.rotation') }}</Label>
         <div class="grid grid-cols-3 gap-1.5">
           <Input v-model="rotation[0]" type="number" step="1" class="h-8 text-xs" />
           <Input v-model="rotation[1]" type="number" step="1" class="h-8 text-xs" />
@@ -141,7 +144,7 @@ function onColorInput(e: Event) {
 
       <!-- 缩放 -->
       <div class="mb-3">
-        <Label class="mb-1.5 text-muted-foreground">缩放 Scale</Label>
+        <Label class="mb-1.5 text-muted-foreground">{{ t('app.scale') }}</Label>
         <div class="grid grid-cols-3 gap-1.5">
           <Input v-model="scale[0]" type="number" step="0.1" class="h-8 text-xs" />
           <Input v-model="scale[1]" type="number" step="0.1" class="h-8 text-xs" />
@@ -153,18 +156,18 @@ function onColorInput(e: Event) {
     <!-- 材质属性 -->
     <template v-else-if="selectedMat">
       <div class="mt-3 flex items-center justify-between">
-        <span class="text-xs font-medium text-muted-foreground">选中材质</span>
+        <span class="text-xs font-medium text-muted-foreground">{{ t('app.selectedMaterial') }}</span>
         <Badge variant="outline">{{ (selectedMat as any).type }}</Badge>
       </div>
-      <h3 class="mb-3 mt-1 truncate text-sm font-semibold" :title="selectedMat.name || '(未命名)'">
-        {{ selectedMat.name || '(未命名)' }}
+      <h3 class="mb-3 mt-1 truncate text-sm font-semibold" :title="selectedMat.name || t('app.unnamed')">
+        {{ selectedMat.name || t('app.unnamed') }}
       </h3>
 
       <Separator class="mb-3" />
 
       <!-- 颜色 -->
       <div v-if="hasColor" class="mb-4 flex items-center justify-between">
-        <Label>颜色</Label>
+        <Label>{{ t('app.color') }}</Label>
         <div class="flex items-center gap-2">
           <span class="text-xs tabular-nums text-muted-foreground">{{ materialColor }}</span>
           <input
@@ -179,7 +182,7 @@ function onColorInput(e: Event) {
       <!-- 金属度 -->
       <div v-if="hasMetalness" class="mb-4">
         <div class="mb-1.5 flex items-center justify-between">
-          <Label class="text-muted-foreground">金属度</Label>
+          <Label class="text-muted-foreground">{{ t('app.metalness') }}</Label>
           <span class="text-xs tabular-nums">{{ metalness.toFixed(2) }}</span>
         </div>
         <Slider
@@ -194,7 +197,7 @@ function onColorInput(e: Event) {
       <!-- 粗糙度 -->
       <div v-if="hasRoughness" class="mb-4">
         <div class="mb-1.5 flex items-center justify-between">
-          <Label class="text-muted-foreground">粗糙度</Label>
+          <Label class="text-muted-foreground">{{ t('app.roughness') }}</Label>
           <span class="text-xs tabular-nums">{{ roughness.toFixed(2) }}</span>
         </div>
         <Slider
@@ -210,7 +213,7 @@ function onColorInput(e: Event) {
     <!-- 空状态 -->
     <div v-else class="flex flex-1 flex-col items-center justify-center gap-3 px-4 text-center">
       <MousePointerClick class="size-8 text-muted-foreground/50" />
-      <p class="text-sm text-muted-foreground">点击左侧网格或材质<br>查看并编辑属性</p>
+      <p class="text-sm text-muted-foreground" v-html="t('app.emptyProps')"></p>
     </div>
   </div>
 </template>

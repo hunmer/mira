@@ -3,6 +3,9 @@ import type { Editor } from '@tiptap/vue-3'
 import { ChevronDown, ListTree } from 'lucide-vue-next'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useEditorVersion } from '@/composables/useEditorVersion'
+import { useI18n } from '@/lib/i18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{ editor: Editor }>()
 const version = useEditorVersion(() => props.editor)
@@ -18,7 +21,7 @@ const headings = computed<Heading[]>(() => {
   const result: Heading[] = []
   props.editor.state.doc.descendants((node, pos) => {
     if (node.type.name === 'heading' && (node.attrs.level as number) <= 3) {
-      result.push({ level: node.attrs.level as number, text: node.textContent || '未命名章节', pos })
+      result.push({ level: node.attrs.level as number, text: node.textContent || t('ol.unnamed'), pos })
     }
   })
   return result
@@ -97,7 +100,7 @@ onBeforeUnmount (() => document.removeEventListener('scroll', onScroll, true))
         @click="panelCollapsed = !panelCollapsed"
       >
         <ListTree class="size-3.5" />
-        <span>文档大纲</span>
+        <span>{{ t('ol.title') }}</span>
         <ChevronDown
           class="ml-auto size-3.5 transition-transform"
           :class="panelCollapsed && '-rotate-90'"
@@ -128,7 +131,7 @@ onBeforeUnmount (() => document.removeEventListener('scroll', onScroll, true))
         </button>
       </div>
       <p v-else-if="!panelCollapsed" class="mt-1 px-1 py-1.5 text-xs leading-5 text-muted-foreground">
-        暂无章节<br>输入 <code class="rounded bg-muted px-1">/</code> 插入标题后在此定位
+        {{ t('ol.empty1') }}<br>{{ t('ol.empty2') }}
       </p>
     </div>
   </aside>

@@ -25,6 +25,12 @@ import OutlinePanel from '@/components/editor/OutlinePanel.vue'
 import CoverBanner from '@/components/editor/CoverBanner.vue'
 import OpenFileDialog from '@/components/editor/OpenFileDialog.vue'
 import { NotionKeyboard, TrailingNode } from '@/components/editor/extensions/notion-behaviors'
+import { host, watchTheme } from '@/lib/host'
+import { useI18n } from '@/lib/i18n'
+
+const { setLocale, t } = useI18n()
+let offTheme: (() => void) | null = null
+let offLocale: (() => void) | null = null
 
 const params = new URLSearchParams(location.search)
 const initialLibraryId = params.get('libraryId') || ''
@@ -82,8 +88,8 @@ const editor = useEditor({
     NotionKeyboard,
     Placeholder.configure({
       placeholder: ({ node, editor: instance, pos }) => {
-        if (node.type.name === 'heading') return `标题 ${node.attrs.level}`
-        if (node.type.name === 'paragraph' && pos === 1 && instance.isEmpty) return "输入 '/' 打开命令菜单，或直接开始书写…"
+        if (node.type.name === 'heading') return t('app.heading', { n: node.attrs.level })
+        if (node.type.name === 'paragraph' && pos === 1 && instance.isEmpty) return t('app.docPlaceholder')
         return ''
       },
     }),
@@ -154,7 +160,7 @@ async function onSaveLibraryChange (libraryId: string) {
 
 /** 保存对话框工具栏「新增」:名称/描述/颜色/图标由组件内对话框收集,创建成功返回新节点 id 供组件自动选中 */
 async function onSaveCreateNode ({ kind, parentId, title, color, description, icon }: { kind: 'folder' | 'tag'; parentId: number; title: string; color?: number; description?: string; icon?: string }): Promise<number | undefined> {
-  if (!currentLibraryId.value) throw new Error('未选择素材库')
+  if (!currentLibraryId.value) throw new Error(t('app.errNoLib'))
   const id = kind === 'folder'
     ? await client.folders().createFolder(currentLibraryId.value, title, parentId, color, description, icon)
     : await client.tags().createTag(currentLibraryId.value, title, parentId, color, description, icon)
@@ -249,11 +255,13 @@ function focusEditorStart () {
 }
 
 onMounted(async () => {
+  offTheme = watchTheme()
+  offLocale = host?.onLocaleChanged?.((locale: string) => setLocale(locale)) || null
   window.addEventListener('keydown', handleKeydown)
   if (isNewDocument.value) return
   try {
     const response = await fetch(fileUrl)
-    if (!response.ok) throw new Error(`加载失败 (${response.status})`)
+    if (!response.ok) throw new Error(t('app.errLoad', { status: response.status }))
     const json = await response.json()
     title.value = typeof json?.title === 'string' ? json.title : ''
     icon.value = typeof json?.icon === 'string' ? json.icon : ''
@@ -261,7 +269,7 @@ onMounted(async () => {
     editor.value?.commands.setContent(json)
   } catch (error) { console.error('[mira-tiptap] load failed', error) }
 })
-onBeforeUnmount(() => { window.removeEventListener('keydown', handleKeydown); if (saveTimer) clearTimeout(saveTimer); editor.value?.destroy() })
+onBeforeUnmount(() => { offTheme?.(); offLocale?.(); window.removeEventListener('keydown', handleKeydown); if (saveTimer) clearTimeout(saveTimer); editor.value?.destroy() })
 </script>
 
 <template>
@@ -274,7 +282,7 @@ onBeforeUnmount(() => { window.removeEventListener('keydown', handleKeydown); if
           <div class="relative w-full overflow-hidden rounded-xl border bg-card shadow-sm">
             <button
               type="button"
-              :title="wide ? '切换为居中版式' : '切换为宽屏版式'"
+              :title="wide ? t('app.toggleCenter') : t('app.toggleWide')"
               class="absolute right-3 top-3 z-20 flex size-7 cursor-pointer items-center justify-center rounded-lg bg-background/40 text-muted-foreground opacity-60 backdrop-blur transition-all hover:bg-muted hover:text-foreground hover:opacity-100"
               @mousedown.prevent
               @click="toggleWide"
@@ -294,7 +302,7 @@ onBeforeUnmount(() => { window.removeEventListener('keydown', handleKeydown); if
                 <DocumentIconPicker v-model="icon" />
                 <input
                   v-model="title"
-                  placeholder="无标题"
+                  :placeholder="t('app.untitled')"
                   class="min-w-0 flex-1 border-none bg-transparent text-3xl font-bold tracking-tight outline-none placeholder:text-muted-foreground/40"
                   @keydown.enter.prevent="focusEditorStart"
                   @keydown.down.prevent="focusEditorStart"
@@ -309,7 +317,7 @@ onBeforeUnmount(() => { window.removeEventListener('keydown', handleKeydown); if
       <LinkEditorMenu :editor="editor" />
       <OutlinePanel :editor="editor" />
     </template>
-    <SaveLocationDialog v-model:open="showSaveDialog" :libraries="libraries" :folders="folders" :tags="tags" :initial-library-id="currentLibraryId" :initial-file-name="currentFileName" :create-node="onSaveCreateNode" @library-change="onSaveLibraryChange" @save="saveToLocation" />
+    <SaveLocationDialog v-model:open="showSaveDialog" :libraries="libraries" :folders="folders" :tags="tags" :initial-library-id="currentLibraryId" :initial-file-name="currentFileName" :create-node="onSaveCreateNode" :title="t('save.title')" :description="t('save.description')" @library-change="onSaveLibraryChange" @save="saveToLocation" />
     <OpenFileDialog v-model:open="showOpenDialog" :files="openDocs" :loading="openDocsLoading" @select="loadDocument" />
   </main>
 </template>

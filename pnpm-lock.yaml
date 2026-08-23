@@ -1410,6 +1410,9 @@ importers:
       tailwind-merge:
         specifier: ^3.3.0
         version: 3.6.0
+      tippy.js:
+        specifier: ^6.3.7
+        version: 6.3.7
       vue:
         specifier: ^3.5.13
         version: 3.5.41(typescript@5.8.3)

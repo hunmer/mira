@@ -16,6 +16,7 @@ import {
   type FolderItem, type LibraryItem,
 } from '@/lib/server'
 import { logError } from '@/lib/host'
+import { useI18n } from '@/lib/i18n'
 import CropThumb from '@/components/CropThumb.vue'
 
 /**
@@ -25,6 +26,7 @@ import CropThumb from '@/components/CropThumb.vue'
  *   - 批量下载（多个选区自动 zip 打包）+ 「导出到」（BatchUploadDialog 批量入库）
  */
 const store = useCropperStore()
+const { locale, t } = useI18n()
 
 const progress = reactive({ active: false, done: 0, total: 0, mode: '' as '' | 'download' })
 const exportError = ref('')
@@ -32,7 +34,7 @@ const exportError = ref('')
 /** 按原图分辨率渲染选区 → Blob（越界区域：PNG 透明 / JPG 白底） */
 function renderRegion(region: CropRegion): Promise<Blob> {
   const img = store.imageEl
-  if (!img) return Promise.reject(new Error('图片未加载'))
+  if (!img) return Promise.reject(new Error(t('app.errNoImage')))
   const w = Math.max(1, Math.round(region.w))
   const h = Math.max(1, Math.round(region.h))
   const canvas = document.createElement('canvas')
@@ -46,7 +48,7 @@ function renderRegion(region: CropRegion): Promise<Blob> {
   ctx.drawImage(img, region.x, region.y, region.w, region.h, 0, 0, w, h)
   return new Promise((resolve, reject) => {
     canvas.toBlob(
-      (blob) => (blob ? resolve(blob) : reject(new Error('toBlob 失败'))),
+      (blob) => (blob ? resolve(blob) : reject(new Error(t('app.errBlob')))),
       `image/${store.format}`,
       store.quality,
     )
@@ -129,11 +131,11 @@ const canExportTo = computed(() => Boolean(getServerConfig().token))
 async function openExportDialog() {
   if (preparing.value) return
   if (!store.regions.length) {
-    exportError.value = '请先在图片上绘制选区'
+    exportError.value = t('app.errDrawFirst')
     return
   }
   if (!canExportTo.value) {
-    exportError.value = '缺少服务器连接信息（请从 Mira 主窗口打开本插件）'
+    exportError.value = t('app.errNoConn')
     return
   }
   preparing.value = true
@@ -165,7 +167,7 @@ function onExportLibraryChange(libraryId: string) {
 
 function onExportUploaded(payload: { total: number; failed: number }) {
   if (payload.failed > 0) {
-    exportError.value = `${payload.failed}/${payload.total} 个文件导入失败`
+    exportError.value = t('app.errImportFailed', { failed: payload.failed, total: payload.total })
   }
 }
 
@@ -176,11 +178,11 @@ const progressText = computed(() => (progress.active ? `${progress.done}/${progr
   <aside class="w-80 shrink-0 border-l bg-background flex flex-col min-h-0">
     <!-- 裁切列表 -->
     <div class="flex items-center gap-1 px-3 h-10 border-b shrink-0">
-      <span class="text-sm font-medium flex-1">裁切列表（{{ store.regions.length }}）</span>
-      <Button variant="ghost" size="icon-xs" title="添加选区" :disabled="!store.image" @click="store.addDefaultRegion()">
+      <span class="text-sm font-medium flex-1">{{ t('app.cropList', { n: store.regions.length }) }}</span>
+      <Button variant="ghost" size="icon-xs" :title="t('app.addRegion')" :disabled="!store.image" @click="store.addDefaultRegion()">
         <Plus />
       </Button>
-      <Button variant="ghost" size="icon-xs" title="清空所有选区" :disabled="!store.regions.length" @click="store.clearRegions()">
+      <Button variant="ghost" size="icon-xs" :title="t('app.clearRegions')" :disabled="!store.regions.length" @click="store.clearRegions()">
         <Trash2 />
       </Button>
     </div>
@@ -206,10 +208,10 @@ const progressText = computed(() => (progress.active ? `${progress.done}/${progr
           </span>
         </div>
         <div class="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button variant="ghost" size="icon-xs" title="下载此选区" @click.stop="exportOne(index, region)">
+          <Button variant="ghost" size="icon-xs" :title="t('app.downloadRegion')" @click.stop="exportOne(index, region)">
             <Download />
           </Button>
-          <Button variant="ghost" size="icon-xs" title="删除此选区" @click.stop="store.removeRegion(region.id)">
+          <Button variant="ghost" size="icon-xs" :title="t('app.removeRegion')" @click.stop="store.removeRegion(region.id)">
             <Trash2 />
           </Button>
         </div>
@@ -218,31 +220,31 @@ const progressText = computed(() => (progress.active ? `${progress.done}/${progr
       <button
         v-if="store.image"
         class="w-full flex items-center justify-center gap-1.5 h-10 rounded-lg border border-dashed text-muted-foreground hover:bg-accent/50 transition-colors"
-        title="添加选区"
+        :title="t('app.addRegion')"
         @click="store.addDefaultRegion()"
       >
         <SquarePen class="size-3.5" />
       </button>
-      <div v-else class="text-center text-xs text-muted-foreground py-6">选择左侧图片后在此查看裁切结果</div>
+      <div v-else class="text-center text-xs text-muted-foreground py-6">{{ t('app.cropEmpty') }}</div>
     </div>
 
     <!-- 导出设置 -->
     <div class="border-t p-3 space-y-3 shrink-0">
       <div class="flex items-center gap-2">
-        <Label class="text-xs shrink-0">格式</Label>
+        <Label class="text-xs shrink-0">{{ t('app.format') }}</Label>
         <Select v-model="store.format">
           <SelectTrigger class="h-8 text-xs flex-1 bg-background">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="png">PNG（无损/透明）</SelectItem>
-            <SelectItem value="jpeg">JPG（体积小）</SelectItem>
+            <SelectItem value="png">{{ t('app.formatPng') }}</SelectItem>
+            <SelectItem value="jpeg">{{ t('app.formatJpeg') }}</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       <div v-if="store.format === 'jpeg'" class="flex items-center gap-2">
-        <Label class="text-xs shrink-0">质量</Label>
+        <Label class="text-xs shrink-0">{{ t('app.quality') }}</Label>
         <input
           v-model.number="store.quality"
           type="range" min="0.3" max="1" step="0.02"
@@ -252,8 +254,8 @@ const progressText = computed(() => (progress.active ? `${progress.done}/${progr
       </div>
 
       <div class="flex items-center gap-2">
-        <Label class="text-xs shrink-0">前缀</Label>
-        <Input v-model="store.prefix" class="h-8 text-xs flex-1" placeholder="导出文件名前缀" />
+        <Label class="text-xs shrink-0">{{ t('app.prefix') }}</Label>
+        <Input v-model="store.prefix" class="h-8 text-xs flex-1" :placeholder="t('app.prefixPlaceholder')" />
       </div>
 
       <div v-if="exportError" class="text-xs text-destructive break-all">{{ exportError }}</div>
@@ -261,23 +263,23 @@ const progressText = computed(() => (progress.active ? `${progress.done}/${progr
       <div class="flex gap-2">
         <Button
           variant="outline" size="sm" class="flex-1"
-          title="批量下载（多个选区自动 zip 打包）"
+          :title="t('app.batchDownload')"
           :disabled="!store.regions.length || progress.active"
           @click="runBatchDownload"
         >
-          下载
+          {{ t('app.download') }}
         </Button>
         <Button
           size="sm" class="flex-1"
-          title="导出到素材库 / 文件夹"
+          :title="t('app.exportToHint')"
           :disabled="preparing"
           @click="openExportDialog"
         >
-          导出到
+          {{ t('app.exportTo') }}
         </Button>
       </div>
       <div v-if="progress.active || preparing" class="text-xs text-muted-foreground flex items-center gap-1">
-        <span class="animate-pulse">{{ preparing ? '生成裁切结果' : '下载' }}中…</span>
+        <span class="animate-pulse">{{ (preparing ? t('app.preparing') : t('app.download')) + (locale === 'zh' ? '中…' : '…') }}</span>
         <span v-if="progressText" class="font-mono">{{ progressText }}</span>
       </div>
     </div>
@@ -291,9 +293,9 @@ const progressText = computed(() => (progress.active ? `${progress.done}/${progr
       :upload-file="uploadFile"
       :create-node="(payload: any) => (payload.kind === 'folder' ? createFolder(payload) : Promise.resolve(undefined))"
       :initial-files="exportFiles"
-      title="导出裁切结果"
-      description="选择素材库与文件夹，将全部裁切结果导入指定位置。"
-      submit-text="开始导入"
+      :title="t('upload.title')"
+      :description="t('upload.description')"
+      :submit-text="t('upload.submit')"
       @library-change="onExportLibraryChange"
       @uploaded="onExportUploaded"
     />

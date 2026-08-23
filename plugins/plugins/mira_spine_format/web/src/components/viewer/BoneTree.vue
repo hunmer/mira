@@ -2,7 +2,10 @@
 import { computed, ref, watch } from 'vue'
 import { ScrollArea } from '@/components/ui/scrollarea'
 import { getBoneTree, type BoneNode, type BoneVisibility } from '@/spine/loader'
+import { useI18n } from '@/lib/i18n'
 import BoneRow from './BoneRow'
+
+const { t } = useI18n()
 
 /**
  * 骨骼树（只读查看 + 显隐切换，无编辑/无变换面板）。
@@ -66,7 +69,7 @@ function toggleVisibility(bone: any) {
 <template>
   <div class="flex h-full min-h-0 flex-col">
     <div class="flex h-9 shrink-0 items-center gap-2 border-b px-3 text-xs font-medium text-muted-foreground">
-      骨骼（{{ boneTotal }}）
+      {{ t('app.bones', { n: boneTotal }) }}
     </div>
     <ScrollArea class="min-h-0 flex-1">
       <div class="space-y-0.5 p-2">
@@ -82,7 +85,7 @@ function toggleVisibility(bone: any) {
             @toggle-visibility="toggleVisibility"
           />
         </template>
-        <p v-else class="p-2 text-xs text-muted-foreground">加载角色后显示骨骼</p>
+        <p v-else class="p-2 text-xs text-muted-foreground">{{ t('app.bonesEmpty') }}</p>
       </div>
     </ScrollArea>
   </div>

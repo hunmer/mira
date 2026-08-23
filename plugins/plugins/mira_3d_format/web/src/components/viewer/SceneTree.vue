@@ -14,6 +14,9 @@ import {
   selectedObject,
 } from '@/composables/useViewerStore'
 import { clearHighlight, highlightObject } from '@/composables/useHighlight'
+import { useI18n } from '@/lib/i18n'
+
+const { t } = useI18n()
 
 const hasAnimations = computed(() => animations.value.length > 0)
 
@@ -62,20 +65,20 @@ function playAnimation(name: string) {
   <Tabs default-value="meshes" class="flex h-full flex-col">
     <TabsList class="mx-3 mt-3 grid w-[calc(100%-1.5rem)] grid-cols-3">
       <TabsTrigger value="meshes" class="gap-1">
-        <Shapes class="size-3.5" />网格
+        <Shapes class="size-3.5" />{{ t('app.tabMeshes') }}
       </TabsTrigger>
       <TabsTrigger value="materials" class="gap-1">
-        <Layers class="size-3.5" />材质
+        <Layers class="size-3.5" />{{ t('app.tabMaterials') }}
       </TabsTrigger>
       <TabsTrigger v-if="hasAnimations" value="animations" class="gap-1">
-        <Film class="size-3.5" />动画
+        <Film class="size-3.5" />{{ t('app.tabAnimations') }}
       </TabsTrigger>
     </TabsList>
 
     <!-- Meshes -->
     <TabsContent value="meshes" class="scroll-thin mt-2 flex-1 overflow-y-auto px-3 pb-4">
       <div class="mb-2 flex items-center justify-between">
-        <span class="text-xs font-medium text-muted-foreground">场景节点</span>
+        <span class="text-xs font-medium text-muted-foreground">{{ t('app.sceneNodes') }}</span>
         <Badge variant="secondary" class="font-normal">{{ sceneNodes.length }}</Badge>
       </div>
       <ul class="space-y-0.5">
@@ -99,11 +102,11 @@ function playAnimation(name: string) {
             v-if="item.type === 'Mesh' && (item.triangles || item.vertices)"
             class="hidden text-[10px] tabular-nums opacity-60 lg:inline"
           >
-            {{ item.triangles?.toLocaleString() }} 面
+            {{ t('app.faces', { n: item.triangles?.toLocaleString() || 0 }) }}
           </span>
           <button
             class="opacity-0 transition-opacity group-hover:opacity-100"
-            :title="item.object.visible ? '隐藏' : '显示'"
+            :title="item.object.visible ? t('app.hide') : t('app.show')"
             @click="toggleVisible(item.object, $event)"
           >
             <component :is="item.object.visible ? Eye : EyeOff" class="size-3.5" />
@@ -115,7 +118,7 @@ function playAnimation(name: string) {
     <!-- Materials -->
     <TabsContent value="materials" class="scroll-thin mt-2 flex-1 overflow-y-auto px-3 pb-4">
       <div class="mb-2 flex items-center justify-between">
-        <span class="text-xs font-medium text-muted-foreground">材质</span>
+        <span class="text-xs font-medium text-muted-foreground">{{ t('app.tabMaterials') }}</span>
         <Badge variant="secondary" class="font-normal">{{ materials.length }}</Badge>
       </div>
       <ul class="space-y-0.5">
@@ -139,10 +142,10 @@ function playAnimation(name: string) {
     <!-- Animations -->
     <TabsContent v-if="hasAnimations" value="animations" class="scroll-thin mt-2 flex-1 overflow-y-auto px-3 pb-4">
       <div class="mb-2 flex items-center justify-between">
-        <span class="text-xs font-medium text-muted-foreground">动画片段</span>
+        <span class="text-xs font-medium text-muted-foreground">{{ t('app.animationClips') }}</span>
         <Badge variant="secondary" class="font-normal">{{ animations.length }}</Badge>
       </div>
-      <p class="mb-2 text-xs text-muted-foreground">点击播放，再次点击暂停。</p>
+      <p class="mb-2 text-xs text-muted-foreground">{{ t('app.animHint') }}</p>
       <Separator class="mb-2" />
       <ul class="space-y-0.5">
         <li

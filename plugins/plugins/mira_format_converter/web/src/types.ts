@@ -47,12 +47,13 @@ export interface Capabilities {
 
 export type ScaleKey = 'none' | 'percent50' | 'width1920' | 'width1280' | 'width640'
 
+/** label 为 i18n key（scale.*），由 lib/i18n.ts 渲染 */
 export const SCALE_OPTIONS: Array<{ key: ScaleKey; label: string }> = [
-  { key: 'none', label: '原始尺寸' },
-  { key: 'percent50', label: '50%' },
-  { key: 'width1920', label: '宽 ≤ 1920' },
-  { key: 'width1280', label: '宽 ≤ 1280' },
-  { key: 'width640', label: '宽 ≤ 640' },
+  { key: 'none', label: 'scale.none' },
+  { key: 'percent50', label: 'scale.percent50' },
+  { key: 'width1920', label: 'scale.width1920' },
+  { key: 'width1280', label: 'scale.width1280' },
+  { key: 'width640', label: 'scale.width640' },
 ]
 
 export function scalePayload(key: ScaleKey): 'none' | { percent: number } | { width: number } {
@@ -75,11 +76,12 @@ export function classifyFile(name: string): MediaCategory {
   return 'unknown'
 }
 
+/** 值为 i18n key（cat.*），由 lib/i18n.ts 渲染 */
 export const CATEGORY_LABELS: Record<MediaCategory, string> = {
-  image: '图片',
-  video: '视频',
-  audio: '音频',
-  unknown: '未知',
+  image: 'cat.image',
+  video: 'cat.video',
+  audio: 'cat.audio',
+  unknown: 'cat.unknown',
 }
 
 /** 源类别允许的目标格式（须与服务端 allowedTargets 一致：视频额外可转 gif） */

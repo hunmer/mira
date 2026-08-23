@@ -4,7 +4,8 @@ import HeaderBar from '@/components/HeaderBar.vue'
 import MediaRail from '@/components/MediaRail.vue'
 import CropStage from '@/components/CropStage.vue'
 import CropPanel from '@/components/CropPanel.vue'
-import { getSelectedItems, isDark, logInfo, onThemeChanged } from '@/lib/host'
+import { getSelectedItems, isDark, logInfo, onLocaleChanged, onThemeChanged } from '@/lib/host'
+import { useI18n } from '@/lib/i18n'
 import { useCropperStore } from '@/stores/cropper'
 
 /**
@@ -17,6 +18,8 @@ import { useCropperStore } from '@/stores/cropper'
 const store = useCropperStore()
 const stageRef = ref<InstanceType<typeof CropStage> | null>(null)
 const dragging = ref(false)
+const { setLocale, t } = useI18n()
+const unsubscribeLocale = onLocaleChanged((locale) => setLocale(locale))
 
 // ── 主题 ─────────────────────────────────────────────
 const unsubscribeTheme = onThemeChanged((dark) => {
@@ -91,6 +94,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKeyDown)
   window.removeEventListener('paste', onPaste)
   unsubscribeTheme()
+  unsubscribeLocale()
 })
 </script>
 
@@ -117,7 +121,7 @@ onBeforeUnmount(() => {
     >
       <div class="border-2 border-dashed border-primary rounded-2xl px-10 py-8 text-center">
         <div class="text-3xl mb-2">📥</div>
-        <div class="text-sm font-medium">松开以添加图片</div>
+        <div class="text-sm font-medium">{{ t('app.dropToAdd') }}</div>
       </div>
     </div>
   </div>

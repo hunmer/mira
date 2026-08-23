@@ -24,6 +24,10 @@ defineExpose({
   fit() {
     app.value?.fitView()
   },
+  /** 画布背景跟随主题 */
+  setBackground(color: string) {
+    app.value?.setBackgroundColor(color)
+  },
 })
 
 onMounted(() => {

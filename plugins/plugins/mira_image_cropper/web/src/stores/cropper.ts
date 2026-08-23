@@ -2,6 +2,7 @@ import { computed, markRaw, ref, shallowRef, watch } from 'vue'
 import { defineStore } from 'pinia'
 import type { CropRegion, ExportFormat, MediaInput } from '@/types'
 import { fetchAuthorizedImage, mediaSourceUrl, tokenizedUrl } from '@/lib/server'
+import { useI18n } from '@/lib/i18n'
 
 let uid = 0
 const nextId = () => `r${Date.now().toString(36)}_${++uid}`
@@ -164,12 +165,12 @@ export const useCropperStore = defineStore('cropper', () => {
         const source = mediaSourceUrl(inst.media) || inst.media.thumbnailURL
         objectUrl = await fetchAuthorizedImage(source)
       } else {
-        throw new Error('图片来源缺失')
+        throw new Error(useI18n().t('app.errNoSource'))
       }
       const el = await new Promise<HTMLImageElement>((resolve, reject) => {
         const el = new Image()
         el.onload = () => resolve(el)
-        el.onerror = () => reject(new Error('图片解码失败'))
+        el.onerror = () => reject(new Error(useI18n().t('app.errDecode')))
         el.src = objectUrl
       })
       inst.imageEl = markRaw(el)

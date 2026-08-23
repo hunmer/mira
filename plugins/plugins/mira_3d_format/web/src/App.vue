@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, shallowRef } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue'
 import type * as THREE from 'three'
 import { TresCanvas } from '@tresjs/core'
 import { OrbitControls } from '@tresjs/cientos'
@@ -18,6 +18,17 @@ import {
   store,
 } from '@/composables/useViewerStore'
 import { clearHighlight, disposeHighlight } from '@/composables/useHighlight'
+import { host, watchTheme } from '@/lib/host'
+import { useI18n } from '@/lib/i18n'
+
+const { setLocale, t } = useI18n()
+let offTheme: (() => void) | null = null
+let offLocale: (() => void) | null = null
+
+// ── 主题跟随：html.dark/.light 切换 token；画布/网格另需手动配色 ──
+const isDark = ref(true)
+const clearColor = computed(() => (isDark.value ? '#0b121b' : '#e9edf2'))
+const gridColors = computed(() => (isDark.value ? ['#294458', '#162633'] : ['#c8d2dc', '#e4e9ef']))
 
 // 从 URL query 读取文件信息
 const params = new URLSearchParams(window.location.search)
@@ -57,7 +68,7 @@ function onFileChosen(e: Event) {
   // 格式校验
   const name = file.name.toLowerCase()
   if (!name.endsWith('.glb') && !name.endsWith('.gltf')) {
-    store.loadError = '仅支持 .glb / .gltf 文件'
+    store.loadError = t('app.errType')
     return
   }
   // 清理上一个 blob
@@ -89,7 +100,7 @@ function onModelLoaded(a: Record<string, THREE.AnimationAction | undefined>) {
 }
 
 function onModelError(error: unknown) {
-  store.loadError = error instanceof Error ? error.message : '无法加载模型，请检查文件 URL 或权限'
+  store.loadError = error instanceof Error ? error.message : t('app.errLoad')
   if (isEmbed) {
     window.parent.postMessage({ type: 'mira-3d-preview-error', fileId: embedFileId }, '*')
   }
@@ -100,7 +111,14 @@ function onCanvasReady(ctx: any) {
   if (sceneRoot.value) fitCameraToObject(sceneRoot.value)
 }
 
+onMounted(() => {
+  offTheme = watchTheme((dark) => { isDark.value = dark })
+  offLocale = host?.onLocaleChanged?.((locale: string) => setLocale(locale)) || null
+})
+
 onBeforeUnmount(() => {
+  offTheme?.()
+  offLocale?.()
   disposeHighlight()
   if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl)
 })
@@ -114,7 +132,7 @@ const rightDrawerOpen = ref(false)
   <main class="flex h-full w-full flex-col bg-background text-foreground">
     <!-- ============ iframe embed 模式：仅全屏画布 + 轻量提示 ============ -->
     <div v-if="isEmbed" class="relative h-full w-full">
-      <TresCanvas clear-color="#0b121b" shadows @ready="onCanvasReady">
+      <TresCanvas :clear-color="clearColor" shadows @ready="onCanvasReady">
         <TresPerspectiveCamera :position="([4, 3, 6] as any)" :fov="45" />
         <OrbitControls make-default :enable-damping="true" :auto-rotate="store.autoRotate" />
 
@@ -131,7 +149,7 @@ const rightDrawerOpen = ref(false)
         class="absolute bottom-3 right-3 z-10 flex items-center gap-2 rounded-full bg-black/50 px-3 py-1.5 text-xs text-white backdrop-blur-sm"
       >
         <Loader2 class="size-3.5 animate-spin" />
-        加载中…
+        {{ t('app.loading') }}
       </div>
 
       <!-- 轻量错误提示（居中底部） -->
@@ -157,7 +175,7 @@ const rightDrawerOpen = ref(false)
         >
           <!-- 手机端关闭按钮 -->
           <div class="flex justify-end p-2 md:hidden">
-            <Button size="icon-sm" variant="ghost" title="关闭" @click="leftDrawerOpen = false">
+            <Button size="icon-sm" variant="ghost" :title="t('app.close')" @click="leftDrawerOpen = false">
               <X class="size-4" />
             </Button>
           </div>
@@ -183,7 +201,7 @@ const rightDrawerOpen = ref(false)
           />
 
           <!-- TresCanvas 始终挂载，避免动态挂载渲染器导致的状态抖动 -->
-          <TresCanvas clear-color="#0b121b" shadows @ready="onCanvasReady">
+          <TresCanvas :clear-color="clearColor" shadows @ready="onCanvasReady">
             <TresPerspectiveCamera :position="([4, 3, 6] as any)" :fov="45" />
             <OrbitControls make-default :enable-damping="true" />
 
@@ -195,12 +213,12 @@ const rightDrawerOpen = ref(false)
             <TresDirectionalLight :position="([5, 8, 5] as any)" :intensity="1.4" cast-shadow />
             <TresDirectionalLight :position="([-4, 3, -3] as any)" :intensity="0.4" />
 
-            <!-- 网格地面 -->
-            <TresGridHelper
-              v-if="store.showGrid"
-              :args="[20, 20, '#294458', '#162633']"
-              :position="([0, 0, 0] as any)"
-            />
+          <!-- 网格地面 -->
+          <TresGridHelper
+            v-if="store.showGrid"
+            :args="[20, 20, gridColors[0], gridColors[1]]"
+            :position="([0, 0, 0] as any)"
+          />
           </TresCanvas>
 
           <!-- 空状态（覆盖在画布上） -->
@@ -209,11 +227,11 @@ const rightDrawerOpen = ref(false)
             class="absolute inset-0 z-[5] flex flex-col items-center justify-center gap-3 bg-background text-muted-foreground"
           >
             <X class="size-8 opacity-40" />
-            <strong class="text-base text-foreground">未提供模型</strong>
-            <span class="text-sm">点击下方按钮选择本地 GLB/GLTF 文件，或从媒体网格双击打开。</span>
+            <strong class="text-base text-foreground">{{ t('app.noModel') }}</strong>
+            <span class="text-sm">{{ t('app.noModelHint') }}</span>
             <Button size="sm" class="mt-1 gap-1.5" @click="openFileDialog">
               <FolderOpen class="size-4" />
-              打开模型文件
+              {{ t('app.openFile') }}
             </Button>
           </div>
 
@@ -223,7 +241,7 @@ const rightDrawerOpen = ref(false)
             class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-background/70 backdrop-blur-sm"
           >
             <Loader2 class="size-7 animate-spin text-primary" />
-            <span class="text-sm text-muted-foreground">正在加载模型…</span>
+            <span class="text-sm text-muted-foreground">{{ t('app.loadingModel') }}</span>
           </div>
 
           <!-- 错误横幅 -->
@@ -238,8 +256,8 @@ const rightDrawerOpen = ref(false)
           <div
             class="pointer-events-none absolute bottom-2 left-3 flex items-center gap-3 text-xs text-muted-foreground/70"
           >
-            <span>拖拽旋转 · 滚轮缩放 · 右键平移</span>
-            <span v-if="isLocalFile" class="text-amber-400/70">本地文件</span>
+            <span>{{ t('app.orbitHint') }}</span>
+            <span v-if="isLocalFile" class="text-amber-400/70">{{ t('app.localFile') }}</span>
           </div>
         </section>
 
@@ -250,7 +268,7 @@ const rightDrawerOpen = ref(false)
         >
           <!-- 手机端关闭按钮 -->
           <div class="flex justify-end p-2 md:hidden">
-            <Button size="icon-sm" variant="ghost" title="关闭" @click="rightDrawerOpen = false">
+            <Button size="icon-sm" variant="ghost" :title="t('app.close')" @click="rightDrawerOpen = false">
               <X class="size-4" />
             </Button>
           </div>

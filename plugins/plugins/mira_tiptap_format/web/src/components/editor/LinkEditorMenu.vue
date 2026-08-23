@@ -6,6 +6,9 @@ import { Check, ExternalLink, Unlink } from 'lucide-vue-next'
 import { onBeforeUnmount, ref } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { useI18n } from '@/lib/i18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{ editor: VueEditor }>()
 const url = ref('')
@@ -54,14 +57,14 @@ function normalizeUrl (value: string) {
     class="w-72 rounded-lg border bg-popover p-2 text-popover-foreground shadow-lg"
   >
     <div class="flex items-center gap-1.5">
-      <Input v-model="url" placeholder="编辑链接…" class="h-8 text-sm" @keyup.enter="apply" />
-      <Button variant="ghost" size="icon-sm" title="浏览器打开" @click="openExternal">
+      <Input v-model="url" :placeholder="t('le.placeholder')" class="h-8 text-sm" @keyup.enter="apply" />
+      <Button variant="ghost" size="icon-sm" :title="t('le.openExternal')" @click="openExternal">
         <ExternalLink />
       </Button>
-      <Button variant="ghost" size="icon-sm" title="移除链接" @click="remove">
+      <Button variant="ghost" size="icon-sm" :title="t('le.remove')" @click="remove">
         <Unlink />
       </Button>
-      <Button size="icon-sm" title="应用" @click="apply">
+      <Button size="icon-sm" :title="t('le.apply')" @click="apply">
         <Check />
       </Button>
     </div>

@@ -30,6 +30,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { useEditorVersion } from '@/composables/useEditorVersion'
+import { useI18n } from '@/lib/i18n'
 import {
   alignOptions,
   applyHighlight,
@@ -50,11 +51,11 @@ const editor = computed(() => { void version.value; return props.editor })
 const activeBtn = 'bg-accent text-accent-foreground'
 
 const marks = [
-  { name: 'bold', label: '粗体 (Ctrl+B)', icon: Bold, command: 'toggleBold' },
-  { name: 'italic', label: '斜体 (Ctrl+I)', icon: Italic, command: 'toggleItalic' },
-  { name: 'underline', label: '下划线 (Ctrl+U)', icon: Underline, command: 'toggleUnderline' },
-  { name: 'strike', label: '删除线', icon: Strikethrough, command: 'toggleStrike' },
-  { name: 'code', label: '行内代码', icon: Code, command: 'toggleCode' },
+  { name: 'bold', label: 'bm.bold', icon: Bold, command: 'toggleBold' },
+  { name: 'italic', label: 'bm.italic', icon: Italic, command: 'toggleItalic' },
+  { name: 'underline', label: 'bm.underline', icon: Underline, command: 'toggleUnderline' },
+  { name: 'strike', label: 'bm.strike', icon: Strikethrough, command: 'toggleStrike' },
+  { name: 'code', label: 'bm.code', icon: Code, command: 'toggleCode' },
 ] as const
 
 function runMark (command: string) {
@@ -112,15 +113,15 @@ function hideLinkInput () {
       <DropdownMenu>
         <DropdownMenuTrigger as-child>
           <button type="button" class="flex h-7 items-center gap-1 rounded-md px-2 text-sm font-medium transition-colors hover:bg-accent/50" @mousedown.prevent>
-            {{ blockLabelOf(editor) }}
+            {{ t(blockLabelOf(editor)) }}
             <ChevronDown class="size-3 opacity-60" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" class="w-48">
-          <DropdownMenuLabel>转换为</DropdownMenuLabel>
+          <DropdownMenuLabel>{{ t('bm.turnInto') }}</DropdownMenuLabel>
           <DropdownMenuItem v-for="option in blockOptions" :key="option.key" @click="setBlock(editor, option.key)">
             <component :is="option.icon" class="size-4 text-muted-foreground" />
-            {{ option.label }}
+            {{ t(option.label) }}
             <Check v-if="isBlockActive(editor, option.key)" class="ml-auto size-4" />
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -132,7 +133,7 @@ function hideLinkInput () {
         v-for="mark in marks"
         :key="mark.name"
         type="button"
-        :title="mark.label"
+        :title="t(mark.label)"
         class="flex size-7 items-center justify-center rounded-md transition-colors"
         :class="editor.isActive(mark.name) ? activeBtn : 'hover:bg-accent/50'"
         @mousedown.prevent
@@ -143,35 +144,35 @@ function hideLinkInput () {
 
       <DropdownMenu>
         <DropdownMenuTrigger as-child>
-          <button type="button" title="文字颜色 / 高亮" class="flex size-7 items-center justify-center rounded-md transition-colors hover:bg-accent/50" @mousedown.prevent>
+          <button type="button" :title="t('bm.color')" class="flex size-7 items-center justify-center rounded-md transition-colors hover:bg-accent/50" @mousedown.prevent>
             <Baseline class="size-4" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" class="w-44">
-          <DropdownMenuLabel>文字颜色</DropdownMenuLabel>
+          <DropdownMenuLabel>{{ t('bm.textColor') }}</DropdownMenuLabel>
           <DropdownMenuItem v-for="color in textColors" :key="`t-${color.label}`" @click="applyTextColor(editor, color.value)">
             <span class="size-3.5 rounded-full border" :style="{ background: color.value || 'var(--foreground)' }" />
-            {{ color.label }}
+            {{ t(color.label) }}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuLabel>背景高亮</DropdownMenuLabel>
+          <DropdownMenuLabel>{{ t('bm.highlight') }}</DropdownMenuLabel>
           <DropdownMenuItem v-for="color in highlightColors" :key="`h-${color.label}`" @click="applyHighlight(editor, color.value)">
             <span class="size-3.5 rounded border" :style="{ background: color.value || 'var(--muted)' }" />
-            {{ color.label }}
+            {{ t(color.label) }}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
       <DropdownMenu>
         <DropdownMenuTrigger as-child>
-          <button type="button" title="文本对齐" class="flex size-7 items-center justify-center rounded-md transition-colors hover:bg-accent/50" @mousedown.prevent>
+          <button type="button" :title="t('bm.align')" class="flex size-7 items-center justify-center rounded-md transition-colors hover:bg-accent/50" @mousedown.prevent>
             <component :is="currentAlignIcon" class="size-4" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" class="w-36">
           <DropdownMenuItem v-for="option in alignOptions" :key="option.key" @click="setAlign(editor, option.key)">
             <component :is="alignIcons[option.icon]" class="size-4 text-muted-foreground" />
-            {{ option.label }}
+            {{ t(option.label) }}
             <Check v-if="alignActive(option.key)" class="ml-auto size-4" />
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -179,7 +180,7 @@ function hideLinkInput () {
 
       <button
         type="button"
-        title="链接"
+        :title="t('bm.link')"
         class="flex size-7 items-center justify-center rounded-md transition-colors"
         :class="editor.isActive('link') ? activeBtn : 'hover:bg-accent/50'"
         @mousedown.prevent
@@ -190,11 +191,11 @@ function hideLinkInput () {
     </template>
 
     <template v-else>
-      <Input v-model="url" placeholder="粘贴或输入链接，留空则移除" class="h-7 w-64 text-sm" @keyup.enter="applyLink" @keyup.esc="hideLinkInput" />
-      <Button variant="ghost" size="icon-sm" title="取消" @click="hideLinkInput">
+      <Input v-model="url" :placeholder="t('bm.linkPlaceholder')" class="h-7 w-64 text-sm" @keyup.enter="applyLink" @keyup.esc="hideLinkInput" />
+      <Button variant="ghost" size="icon-sm" :title="t('bm.cancel')" @click="hideLinkInput">
         <X />
       </Button>
-      <Button size="icon-sm" title="应用" @click="applyLink">
+      <Button size="icon-sm" :title="t('bm.apply')" @click="applyLink">
         <Check />
       </Button>
     </template>

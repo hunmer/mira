@@ -11,42 +11,45 @@ import {
   Quote,
   Type,
 } from 'lucide-vue-next'
+import type { I18nKey } from '@/lib/i18n'
 
 /* ---------- 转换为（Turn into） ---------- */
 export interface BlockOption {
   key: 'paragraph' | 'h1' | 'h2' | 'h3' | 'taskList' | 'bulletList' | 'orderedList' | 'blockquote' | 'codeBlock' | 'hr'
-  label: string
+  /** i18n key（block.*），由使用处 t() 渲染 */
+  label: I18nKey
   icon: unknown
 }
 
 export const blockOptions: BlockOption[] = [
-  { key: 'paragraph', label: '文本', icon: Type },
-  { key: 'h1', label: '标题 1', icon: Heading1 },
-  { key: 'h2', label: '标题 2', icon: Heading2 },
-  { key: 'h3', label: '标题 3', icon: Heading3 },
-  { key: 'taskList', label: '待办列表', icon: CheckSquare },
-  { key: 'bulletList', label: '无序列表', icon: List },
-  { key: 'orderedList', label: '有序列表', icon: ListOrdered },
-  { key: 'blockquote', label: '引用', icon: Quote },
-  { key: 'codeBlock', label: '代码块', icon: Code2 },
-  { key: 'hr', label: '分割线', icon: Minus },
+  { key: 'paragraph', label: 'block.text', icon: Type },
+  { key: 'h1', label: 'block.h1', icon: Heading1 },
+  { key: 'h2', label: 'block.h2', icon: Heading2 },
+  { key: 'h3', label: 'block.h3', icon: Heading3 },
+  { key: 'taskList', label: 'block.taskList', icon: CheckSquare },
+  { key: 'bulletList', label: 'block.bulletList', icon: List },
+  { key: 'orderedList', label: 'block.orderedList', icon: ListOrdered },
+  { key: 'blockquote', label: 'block.blockquote', icon: Quote },
+  { key: 'codeBlock', label: 'block.codeBlock', icon: Code2 },
+  { key: 'hr', label: 'block.hr', icon: Minus },
 ]
 
-export function blockLabelOf (editor: Editor) {
-  if (editor.isActive('heading', { level: 1 })) return '标题 1'
-  if (editor.isActive('heading', { level: 2 })) return '标题 2'
-  if (editor.isActive('heading', { level: 3 })) return '标题 3'
-  if (editor.isActive('taskList')) return '待办列表'
-  if (editor.isActive('bulletList')) return '无序列表'
-  if (editor.isActive('orderedList')) return '有序列表'
-  if (editor.isActive('blockquote')) return '引用'
-  if (editor.isActive('codeBlock')) return '代码块'
-  return '文本'
+/** 当前块类型对应的 i18n key（block.*） */
+export function blockLabelOf (editor: Editor): I18nKey {
+  if (editor.isActive('heading', { level: 1 })) return 'block.h1'
+  if (editor.isActive('heading', { level: 2 })) return 'block.h2'
+  if (editor.isActive('heading', { level: 3 })) return 'block.h3'
+  if (editor.isActive('taskList')) return 'block.taskList'
+  if (editor.isActive('bulletList')) return 'block.bulletList'
+  if (editor.isActive('orderedList')) return 'block.orderedList'
+  if (editor.isActive('blockquote')) return 'block.blockquote'
+  if (editor.isActive('codeBlock')) return 'block.codeBlock'
+  return 'block.text'
 }
 
 export function isBlockActive (editor: Editor, key: BlockOption['key']) {
   switch (key) {
-    case 'paragraph': return editor.isActive('paragraph') && blockLabelOf(editor) === '文本'
+    case 'paragraph': return editor.isActive('paragraph') && blockLabelOf(editor) === 'block.text'
     case 'h1': return editor.isActive('heading', { level: 1 })
     case 'h2': return editor.isActive('heading', { level: 2 })
     case 'h3': return editor.isActive('heading', { level: 3 })
@@ -76,28 +79,30 @@ export function setBlock (editor: Editor, key: BlockOption['key']) {
 }
 
 /* ---------- 颜色与高亮（Notion 色板） ---------- */
-export const textColors = [
-  { label: '默认', value: '' },
-  { label: '灰色', value: '#6B7280' },
-  { label: '棕色', value: '#9B6B53' },
-  { label: '红色', value: '#DC2626' },
-  { label: '橙色', value: '#EA580C' },
-  { label: '黄色', value: '#CA8A04' },
-  { label: '绿色', value: '#16A34A' },
-  { label: '蓝色', value: '#2563EB' },
-  { label: '紫色', value: '#7C3AED' },
+export interface ColorOption { label: I18nKey; value: string }
+
+export const textColors: ColorOption[] = [
+  { label: 'color.default', value: '' },
+  { label: 'color.gray', value: '#6B7280' },
+  { label: 'color.brown', value: '#9B6B53' },
+  { label: 'color.red', value: '#DC2626' },
+  { label: 'color.orange', value: '#EA580C' },
+  { label: 'color.yellow', value: '#CA8A04' },
+  { label: 'color.green', value: '#16A34A' },
+  { label: 'color.blue', value: '#2563EB' },
+  { label: 'color.purple', value: '#7C3AED' },
 ]
 
-export const highlightColors = [
-  { label: '无背景', value: '' },
-  { label: '灰色', value: '#F1F1EF' },
-  { label: '红色', value: '#FDEBEC' },
-  { label: '橙色', value: '#FBEBDD' },
-  { label: '黄色', value: '#FBF3DB' },
-  { label: '绿色', value: '#EDF3EC' },
-  { label: '蓝色', value: '#E7F3F8' },
-  { label: '紫色', value: '#F6F3F9' },
-  { label: '粉色', value: '#FAF1F5' },
+export const highlightColors: ColorOption[] = [
+  { label: 'color.none', value: '' },
+  { label: 'color.gray', value: '#F1F1EF' },
+  { label: 'color.red', value: '#FDEBEC' },
+  { label: 'color.orange', value: '#FBEBDD' },
+  { label: 'color.yellow', value: '#FBF3DB' },
+  { label: 'color.green', value: '#EDF3EC' },
+  { label: 'color.blue', value: '#E7F3F8' },
+  { label: 'color.purple', value: '#F6F3F9' },
+  { label: 'color.pink', value: '#FAF1F5' },
 ]
 
 export function applyTextColor (editor: Editor, value: string) {
@@ -113,13 +118,20 @@ export function applyHighlight (editor: Editor, value: string) {
 }
 
 /* ---------- 对齐 ---------- */
-export const alignOptions = [
-  { key: 'left', label: '左对齐', icon: 'AlignLeft' },
-  { key: 'center', label: '居中', icon: 'AlignCenter' },
-  { key: 'right', label: '右对齐', icon: 'AlignRight' },
-  { key: 'justify', label: '两端对齐', icon: 'AlignJustify' },
-] as const
+export interface AlignOption {
+  key: 'left' | 'center' | 'right' | 'justify'
+  /** i18n key（align.*），由使用处 t() 渲染 */
+  label: I18nKey
+  icon: string
+}
 
-export function setAlign (editor: Editor, key: (typeof alignOptions)[number]['key']) {
+export const alignOptions: AlignOption[] = [
+  { key: 'left', label: 'align.left', icon: 'AlignLeft' },
+  { key: 'center', label: 'align.center', icon: 'AlignCenter' },
+  { key: 'right', label: 'align.right', icon: 'AlignRight' },
+  { key: 'justify', label: 'align.justify', icon: 'AlignJustify' },
+]
+
+export function setAlign (editor: Editor, key: AlignOption['key']) {
   editor.chain().focus().setTextAlign(key).run()
 }

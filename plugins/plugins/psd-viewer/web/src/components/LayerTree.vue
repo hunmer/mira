@@ -4,6 +4,9 @@ import { ref } from 'vue'
 import type { LayerNode } from '@/types'
 import Checkbox from '@/components/ui/checkbox/Checkbox.vue'
 import { cn } from '@/lib/utils'
+import { useI18n } from '@/lib/i18n'
+
+const { t } = useI18n()
 
 defineProps<{
   nodes: LayerNode[]
@@ -72,7 +75,7 @@ function onVisibleChange(node: LayerNode, value: boolean) {
           :class="{ 'text-muted-foreground line-through': !node.visible }"
           :title="node.name"
         >
-          {{ node.name || '(未命名)' }}
+          {{ node.name || t('app.unnamed') }}
         </span>
 
         <span

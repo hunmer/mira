@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
+import { useI18n } from '@/lib/i18n'
 import {
   ctxRef,
   exportScreenshot,
@@ -28,11 +29,13 @@ import {
 } from '@/composables/useViewerStore'
 import { clearHighlight } from '@/composables/useHighlight'
 
+const { t } = useI18n()
+
 const statItems = computed(() => [
-  { label: '网格', value: sceneNodes.value.length },
-  { label: '材质', value: materials.value.length },
-  { label: '顶点', value: stats.value.vertices.toLocaleString() },
-  { label: '三角面', value: stats.value.triangles.toLocaleString() },
+  { label: t('app.statMeshes'), value: sceneNodes.value.length },
+  { label: t('app.statMaterials'), value: materials.value.length },
+  { label: t('app.statVertices'), value: stats.value.vertices.toLocaleString() },
+  { label: t('app.statTriangles'), value: stats.value.triangles.toLocaleString() },
 ])
 
 function toggleWireframe() {
@@ -66,13 +69,13 @@ function onScreenshot() {
 // 移动端 dots dropdown 项：与桌面端工具按钮一一对应
 // separatorAfter 标记在该项后插入分隔线
 const menuItems = computed(() => [
-  { label: '打开模型', icon: FolderOpen, onClick: () => emit('open'), active: false, separatorAfter: true },
-  { label: store.wireframe ? '关闭线框' : '线框模式', icon: LocateFixed, onClick: toggleWireframe, active: store.wireframe, separatorAfter: false },
-  { label: store.showGrid ? '隐藏网格' : '网格地面', icon: Grid3x3, onClick: toggleGrid, active: store.showGrid, separatorAfter: false },
-  { label: store.autoRotate ? '暂停旋转' : '自动旋转', icon: store.autoRotate ? Pause : Play, onClick: toggleAutoRotate, active: store.autoRotate, separatorAfter: true },
-  { label: '重置视角', icon: RotateCcw, onClick: resetCamera, active: false, separatorAfter: false },
-  { label: '导出截图', icon: ImageDown, onClick: onScreenshot, active: false, separatorAfter: false },
-  { label: '取消选中', icon: X, onClick: deselectAll, active: false, separatorAfter: false },
+  { label: t('app.openModel'), icon: FolderOpen, onClick: () => emit('open'), active: false, separatorAfter: true },
+  { label: store.wireframe ? t('app.wireframeOff') : t('app.wireframe'), icon: LocateFixed, onClick: toggleWireframe, active: store.wireframe, separatorAfter: false },
+  { label: store.showGrid ? t('app.gridOff') : t('app.grid'), icon: Grid3x3, onClick: toggleGrid, active: store.showGrid, separatorAfter: false },
+  { label: store.autoRotate ? t('app.pauseRotate') : t('app.autoRotate'), icon: store.autoRotate ? Pause : Play, onClick: toggleAutoRotate, active: store.autoRotate, separatorAfter: true },
+  { label: t('app.resetView'), icon: RotateCcw, onClick: resetCamera, active: false, separatorAfter: false },
+  { label: t('app.screenshot'), icon: ImageDown, onClick: onScreenshot, active: false, separatorAfter: false },
+  { label: t('app.deselect'), icon: X, onClick: deselectAll, active: false, separatorAfter: false },
 ])
 </script>
 
@@ -83,7 +86,7 @@ const menuItems = computed(() => [
       size="icon-sm"
       variant="ghost"
       class="md:hidden"
-      title="场景树"
+      :title="t('app.sceneTree')"
       @click="emit('openLeft')"
     >
       <ListTree class="size-4" />
@@ -101,7 +104,7 @@ const menuItems = computed(() => [
       size="icon-sm"
       variant="ghost"
       class="md:hidden"
-      title="属性面板"
+      :title="t('app.propsPanel')"
       @click="emit('openRight')"
     >
       <SlidersHorizontal class="size-4" />
@@ -110,7 +113,7 @@ const menuItems = computed(() => [
     <!-- 手机端：dots dropdown（收拢除左右栏切换外的所有工具） -->
     <DropdownMenu>
       <DropdownMenuTrigger as-child>
-        <Button size="icon-sm" variant="ghost" class="md:hidden" title="更多">
+        <Button size="icon-sm" variant="ghost" class="md:hidden" :title="t('app.more')">
           <EllipsisVertical class="size-4" />
         </Button>
       </DropdownMenuTrigger>
@@ -139,16 +142,16 @@ const menuItems = computed(() => [
 
     <!-- 视图工具（桌面端） -->
     <div class="hidden items-center gap-1 md:flex">
-      <Button size="sm" variant="default" class="gap-1.5" title="打开本地模型文件" @click="emit('open')">
+      <Button size="sm" variant="default" class="gap-1.5" :title="t('app.openLocalModel')" @click="emit('open')">
         <FolderOpen class="size-4" />
-        <span class="hidden sm:inline">打开</span>
+        <span class="hidden sm:inline">{{ t('app.open') }}</span>
       </Button>
       <Separator orientation="vertical" class="mx-0.5 h-5" />
       <Button
         size="icon-sm"
         :variant="store.wireframe ? 'default' : 'ghost'"
         :class="cn(store.wireframe && 'text-primary-foreground')"
-        title="线框模式"
+        :title="t('app.wireframe')"
         @click="toggleWireframe"
       >
         <LocateFixed class="size-4" />
@@ -157,7 +160,7 @@ const menuItems = computed(() => [
         size="icon-sm"
         :variant="store.showGrid ? 'default' : 'ghost'"
         :class="cn(store.showGrid && 'text-primary-foreground')"
-        title="网格地面"
+        :title="t('app.grid')"
         @click="toggleGrid"
       >
         <Grid3x3 class="size-4" />
@@ -166,19 +169,19 @@ const menuItems = computed(() => [
         size="icon-sm"
         :variant="store.autoRotate ? 'default' : 'ghost'"
         :class="cn(store.autoRotate && 'text-primary-foreground')"
-        title="自动旋转"
+        :title="t('app.autoRotate')"
         @click="toggleAutoRotate"
       >
         <component :is="store.autoRotate ? Pause : Play" class="size-4" />
       </Button>
       <Separator orientation="vertical" class="mx-0.5 h-5" />
-      <Button size="icon-sm" variant="ghost" title="重置视角" @click="resetCamera">
+      <Button size="icon-sm" variant="ghost" :title="t('app.resetView')" @click="resetCamera">
         <RotateCcw class="size-4" />
       </Button>
-      <Button size="icon-sm" variant="ghost" title="导出截图" @click="onScreenshot">
+      <Button size="icon-sm" variant="ghost" :title="t('app.screenshot')" @click="onScreenshot">
         <ImageDown class="size-4" />
       </Button>
-      <Button size="icon-sm" variant="ghost" title="取消选中" @click="deselectAll">
+      <Button size="icon-sm" variant="ghost" :title="t('app.deselect')" @click="deselectAll">
         <X class="size-4" />
       </Button>
     </div>

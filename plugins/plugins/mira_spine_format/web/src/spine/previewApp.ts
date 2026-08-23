@@ -33,6 +33,17 @@ function calculateFitTransform(
   return { scale, x: sw / 2 - cx * scale, y: sh / 2 - cy * scale }
 }
 
+/** 画布背景色（深浅主题各一，由 App.vue 主题跟随时切换） */
+export const CANVAS_BG_DARK = '#10161f'
+export const CANVAS_BG_LIGHT = '#eef0f3'
+
+/** 当前主题下的画布背景（init 时快照；后续切换由 setBackgroundColor 处理） */
+function canvasBgForTheme(): string {
+  return typeof document !== 'undefined' && document.documentElement.classList.contains('dark')
+    ? CANVAS_BG_DARK
+    : CANVAS_BG_LIGHT
+}
+
 export class SpinePreviewApp {
   /** PIXI 创建并挂载的真实 canvas（app.view） */
   canvasElement: HTMLCanvasElement | null = null
@@ -60,7 +71,7 @@ export class SpinePreviewApp {
     this.app = new PIXI.Application({
       width: initWidth,
       height: initHeight,
-      background: '#eef0f3',
+      background: canvasBgForTheme(),
       antialias: true,
       preserveDrawingBuffer: true, // 截图需要
       resizeTo: this.container,
@@ -83,6 +94,11 @@ export class SpinePreviewApp {
     if (!this.spineContainer) return
     this.spineContainer.scale.set(this.viewScale)
     this.spineContainer.position.set(this.viewX, this.viewY)
+  }
+
+  /** 画布背景跟随主题切换 */
+  setBackgroundColor(color: string) {
+    this.app?.background?.setColor?.(color)
   }
 
   /** 把 spine 居中适配画布 */

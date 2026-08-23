@@ -62,3 +62,10 @@ export function logInfo(...args: any[]) {
 export function logError(...args: any[]) {
   host.log?.error?.(...args)
 }
+
+/** 订阅宿主语言变化（主窗口切换语言时广播）；无宿主时为空操作 */
+export function onLocaleChanged(callback: (locale: string) => void): () => void {
+  const off = host.onLocaleChanged?.(callback)
+  if (off !== undefined) return () => {}
+  return () => {}
+}

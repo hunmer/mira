@@ -14,9 +14,12 @@ import {
   Type,
 } from 'lucide-vue-next'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useI18n, type I18nKey } from '@/lib/i18n'
+
+const { t } = useI18n()
 
 interface CommandItem {
-  title: string
+  title: I18nKey
   icon: unknown
   keywords: string[]
   action: () => void
@@ -24,30 +27,30 @@ interface CommandItem {
 
 const props = defineProps<{ editor: Editor }>()
 
-const commandGroups: Array<{ label: string; items: CommandItem[] }> = [
+const commandGroups: Array<{ label: I18nKey; items: CommandItem[] }> = [
   {
-    label: '基本块',
+    label: 'sm.groupBasic',
     items: [
-      { title: '文本', icon: Type, keywords: ['text', 'p', 'wenben'], action: () => props.editor.chain().focus().setParagraph().run() },
-      { title: '一级标题', icon: Heading1, keywords: ['h1', 'heading1', 'biaoti1'], action: () => props.editor.chain().focus().toggleHeading({ level: 1 }).run() },
-      { title: '二级标题', icon: Heading2, keywords: ['h2', 'heading2', 'biaoti2'], action: () => props.editor.chain().focus().toggleHeading({ level: 2 }).run() },
-      { title: '三级标题', icon: Heading3, keywords: ['h3', 'heading3', 'biaoti3'], action: () => props.editor.chain().focus().toggleHeading({ level: 3 }).run() },
+      { title: 'sm.text', icon: Type, keywords: ['text', 'p', 'wenben'], action: () => props.editor.chain().focus().setParagraph().run() },
+      { title: 'sm.h1', icon: Heading1, keywords: ['h1', 'heading1', 'biaoti1'], action: () => props.editor.chain().focus().toggleHeading({ level: 1 }).run() },
+      { title: 'sm.h2', icon: Heading2, keywords: ['h2', 'heading2', 'biaoti2'], action: () => props.editor.chain().focus().toggleHeading({ level: 2 }).run() },
+      { title: 'sm.h3', icon: Heading3, keywords: ['h3', 'heading3', 'biaoti3'], action: () => props.editor.chain().focus().toggleHeading({ level: 3 }).run() },
     ],
   },
   {
-    label: '列表',
+    label: 'sm.groupList',
     items: [
-      { title: '无序列表', icon: List, keywords: ['list', 'bullet', 'liebiao'], action: () => props.editor.chain().focus().toggleBulletList().run() },
-      { title: '有序列表', icon: ListOrdered, keywords: ['ol', 'ordered', 'youxu'], action: () => props.editor.chain().focus().toggleOrderedList().run() },
-      { title: '待办清单', icon: CheckSquare, keywords: ['todo', 'task', 'daiban'], action: () => props.editor.chain().focus().toggleTaskList().run() },
+      { title: 'tb.bulletList', icon: List, keywords: ['list', 'bullet', 'liebiao'], action: () => props.editor.chain().focus().toggleBulletList().run() },
+      { title: 'tb.orderedList', icon: ListOrdered, keywords: ['ol', 'ordered', 'youxu'], action: () => props.editor.chain().focus().toggleOrderedList().run() },
+      { title: 'sm.taskList', icon: CheckSquare, keywords: ['todo', 'task', 'daiban'], action: () => props.editor.chain().focus().toggleTaskList().run() },
     ],
   },
   {
-    label: '高级',
+    label: 'sm.groupAdvanced',
     items: [
-      { title: '代码块', icon: Code2, keywords: ['code', 'daima'], action: () => props.editor.chain().focus().toggleCodeBlock().run() },
-      { title: '引用', icon: Quote, keywords: ['quote', 'blockquote', 'yinyong'], action: () => props.editor.chain().focus().toggleBlockquote().run() },
-      { title: '分割线', icon: Minus, keywords: ['hr', 'divider', 'fengexian'], action: () => props.editor.chain().focus().setHorizontalRule().run() },
+      { title: 'tb.codeBlock', icon: Code2, keywords: ['code', 'daima'], action: () => props.editor.chain().focus().toggleCodeBlock().run() },
+      { title: 'tb.quote', icon: Quote, keywords: ['quote', 'blockquote', 'yinyong'], action: () => props.editor.chain().focus().toggleBlockquote().run() },
+      { title: 'tb.hr', icon: Minus, keywords: ['hr', 'divider', 'fengexian'], action: () => props.editor.chain().focus().setHorizontalRule().run() },
     ],
   },
 ]
@@ -65,14 +68,14 @@ const filtered = computed(() => {
   const q = query.value.toLowerCase()
   if (!q) return commands
   return commands.filter(item =>
-    item.title.toLowerCase().includes(q) || item.keywords.some(k => k.includes(q)))
+    t(item.title).toLowerCase().includes(q) || item.keywords.some(k => k.includes(q)))
 })
 
 /** 按分组渲染（顺序与 filtered 展平一致） */
 const filteredGroups = computed(() => {
   const q = query.value.toLowerCase()
   const match = (item: CommandItem) =>
-    !q || item.title.toLowerCase().includes(q) || item.keywords.some(k => k.includes(q))
+    !q || t(item.title).toLowerCase().includes(q) || item.keywords.some(k => k.includes(q))
   return commandGroups
     .map(group => ({ label: group.label, items: group.items.filter(match) }))
     .filter(group => group.items.length)
@@ -176,14 +179,14 @@ onBeforeUnmount (() => {
   >
     <div class="flex items-center gap-1.5 border-b bg-muted/50 px-3 py-1.5 text-xs font-medium text-muted-foreground">
       <Search class="size-3.5" />
-      <span>搜索块命令</span>
+      <span>{{ t('sm.search') }}</span>
       <span v-if="query" class="ml-auto rounded-md bg-muted px-1.5 py-0.5 font-mono text-foreground">/{{ query }}</span>
     </div>
     <div class="scroll-thin max-h-60 overflow-y-auto p-1.5">
       <template v-if="filtered.length">
         <template v-for="group in filteredGroups" :key="group.label">
           <div class="px-2 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70">
-            {{ group.label }}
+            {{ t(group.label) }}
           </div>
           <button
             v-for="item in group.items"
@@ -198,11 +201,11 @@ onBeforeUnmount (() => {
             <span class="flex size-7 items-center justify-center rounded-lg bg-muted text-muted-foreground">
               <component :is="item.icon" class="size-4" />
             </span>
-            <span class="text-sm font-medium">{{ item.title }}</span>
+            <span class="text-sm font-medium">{{ t(item.title) }}</span>
           </button>
         </template>
       </template>
-      <div v-else class="px-4 py-3 text-center text-sm italic text-muted-foreground">未找到对应块选项</div>
+      <div v-else class="px-4 py-3 text-center text-sm italic text-muted-foreground">{{ t('sm.empty') }}</div>
     </div>
   </div>
 </template>

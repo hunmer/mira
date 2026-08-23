@@ -1,11 +1,17 @@
 <script setup lang="ts">
-import { ref, shallowRef, watch, nextTick, onMounted } from 'vue'
+import { ref, shallowRef, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { Upload, Layers, ImageIcon, Loader2 } from 'lucide-vue-next'
 import { parsePsdFile, compositeLayers } from '@/composables/usePsd'
 import type { LayerNode } from '@/types'
 import LayerTree from '@/components/LayerTree.vue'
 import Button from '@/components/ui/button/Button.vue'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { host, watchTheme } from '@/lib/host'
+import { useI18n } from '@/lib/i18n'
+
+const { setLocale, t } = useI18n()
+let offTheme: (() => void) | null = null
+let offLocale: (() => void) | null = null
 
 // 从 URL query 读资源信息（index.js 推导后传入）
 const params = new URLSearchParams(window.location.search)
@@ -43,7 +49,7 @@ async function onFileChange(e: Event) {
 
 async function loadFile(file: File) {
   if (!file.name.toLowerCase().endsWith('.psd') && !file.name.toLowerCase().endsWith('.psb')) {
-    errorMsg.value = '请选择 .psd 或 .psb 文件'
+    errorMsg.value = t('app.errFileType')
     return
   }
 
@@ -65,7 +71,7 @@ async function loadFile(file: File) {
 /** fetch 主文件 URL → ArrayBuffer → ag-psd 解析 */
 async function loadFromUrl(url: string) {
   if (!url) {
-    errorMsg.value = '资源 URL 不完整'
+    errorMsg.value = t('app.errUrl')
     notifyParent('error')
     return
   }
@@ -73,7 +79,7 @@ async function loadFromUrl(url: string) {
   errorMsg.value = ''
   try {
     const resp = await fetch(url)
-    if (!resp.ok) throw new Error(`加载 PSD 失败 (${resp.status})`)
+    if (!resp.ok) throw new Error(t('app.errLoad', { status: resp.status }))
     const buffer = await resp.arrayBuffer()
     await applyParsed(buffer)
     // 资源就绪后通知 iframe 父级
@@ -100,7 +106,7 @@ async function applyParsed(buffer: ArrayBuffer) {
 }
 
 function handleParseError(err: any) {
-  errorMsg.value = err?.message || '解析失败，请确认文件完整且为 RGB 模式'
+  errorMsg.value = err?.message || t('app.errParse')
   psdMeta.value = null
   layerTree.value = []
 }
@@ -153,7 +159,14 @@ function hideAll() {
 
 // 启动：有 psdUrl 自动加载（宿主调用）；无则显示拖放区（dev 调试）
 onMounted(() => {
+  offTheme = watchTheme()
+  offLocale = host?.onLocaleChanged?.((locale: string) => setLocale(locale)) || null
   if (psdUrl) loadFromUrl(psdUrl)
+})
+
+onBeforeUnmount(() => {
+  offTheme?.()
+  offLocale?.()
 })
 </script>
 
@@ -166,16 +179,16 @@ onMounted(() => {
         <div class="sticky top-0 z-10 flex items-center justify-between border-b bg-card/80 px-2 py-1.5 backdrop-blur-sm">
           <div class="flex items-center gap-1">
             <Layers class="size-3" />
-            <span class="text-[11px] font-medium">图层</span>
+            <span class="text-[11px] font-medium">{{ t('app.layers') }}</span>
           </div>
           <div class="flex gap-0.5">
-            <button type="button" class="rounded px-1 text-[10px] text-muted-foreground hover:text-foreground" @click="showAll">显</button>
-            <button type="button" class="rounded px-1 text-[10px] text-muted-foreground hover:text-foreground" @click="hideAll">隐</button>
+            <button type="button" class="rounded px-1 text-[10px] text-muted-foreground hover:text-foreground" @click="showAll">{{ t('app.show') }}</button>
+            <button type="button" class="rounded px-1 text-[10px] text-muted-foreground hover:text-foreground" @click="hideAll">{{ t('app.hide') }}</button>
           </div>
         </div>
         <div class="py-1">
           <LayerTree v-if="layerTree.length" :nodes="layerTree" @change="redraw" />
-          <p v-else-if="!loading" class="px-2 text-[11px] text-muted-foreground">无图层</p>
+          <p v-else-if="!loading" class="px-2 text-[11px] text-muted-foreground">{{ t('app.noLayersShort') }}</p>
         </div>
       </aside>
 
@@ -204,8 +217,8 @@ onMounted(() => {
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
             <Layers class="h-5 w-5" />
-            <h1 class="text-base font-semibold">PSD 分层查看器</h1>
-            <span class="text-xs text-muted-foreground">ag-psd · 浏览器本地解析</span>
+            <h1 class="text-base font-semibold">{{ t('app.title') }}</h1>
+            <span class="text-xs text-muted-foreground">{{ t('app.subtitle') }}</span>
           </div>
           <div class="flex items-center gap-2">
             <input
@@ -217,7 +230,7 @@ onMounted(() => {
             />
             <Button variant="outline" size="sm" @click="triggerUpload" :disabled="loading">
               <Upload class="h-4 w-4" />
-              选择 PSD
+              {{ t('app.choosePsd') }}
             </Button>
           </div>
         </div>
@@ -232,11 +245,11 @@ onMounted(() => {
           @dragover="onDragOver"
         >
           <ImageIcon class="mb-4 h-12 w-12 text-muted-foreground/60" />
-          <p class="mb-1 text-sm font-medium">拖放 PSD 文件到此处</p>
-          <p class="mb-4 text-xs text-muted-foreground">或点击下方按钮选择文件（仅本地解析，不上传）</p>
+          <p class="mb-1 text-sm font-medium">{{ t('app.dropHint') }}</p>
+          <p class="mb-4 text-xs text-muted-foreground">{{ t('app.dropSub') }}</p>
           <Button @click="triggerUpload">
             <Upload class="h-4 w-4" />
-            选择文件
+            {{ t('app.selectFile') }}
           </Button>
           <p v-if="errorMsg" class="mt-4 text-sm text-red-500">{{ errorMsg }}</p>
         </div>
@@ -244,7 +257,7 @@ onMounted(() => {
         <!-- 加载中 -->
         <div v-else-if="loading" class="flex min-h-[420px] items-center justify-center">
           <Loader2 class="h-8 w-8 animate-spin text-muted-foreground" />
-          <span class="ml-2 text-sm text-muted-foreground">正在解析 {{ fileName }} …</span>
+          <span class="ml-2 text-sm text-muted-foreground">{{ t('app.loading', { name: fileName }) }}</span>
         </div>
 
         <!-- 主界面 -->
@@ -253,10 +266,10 @@ onMounted(() => {
           <Card class="h-fit max-h-[calc(100vh-180px)] overflow-hidden">
             <CardHeader class="border-b py-3">
               <div class="flex items-center justify-between">
-                <CardTitle class="text-sm">图层</CardTitle>
+                <CardTitle class="text-sm">{{ t('app.layers') }}</CardTitle>
                 <div class="flex gap-1">
-                  <Button variant="ghost" size="sm" class="h-7 text-xs" @click="showAll">全部显示</Button>
-                  <Button variant="ghost" size="sm" class="h-7 text-xs" @click="hideAll">全部隐藏</Button>
+                  <Button variant="ghost" size="sm" class="h-7 text-xs" @click="showAll">{{ t('app.showAll') }}</Button>
+                  <Button variant="ghost" size="sm" class="h-7 text-xs" @click="hideAll">{{ t('app.hideAll') }}</Button>
                 </div>
               </div>
               <p class="truncate text-xs text-muted-foreground" :title="fileName">
@@ -266,16 +279,16 @@ onMounted(() => {
             </CardHeader>
             <CardContent class="scroll-thin max-h-[calc(100vh-260px)] overflow-y-auto py-3">
               <LayerTree v-if="layerTree.length" :nodes="layerTree" @change="redraw" />
-              <p v-else class="text-sm text-muted-foreground">无图层数据</p>
+              <p v-else class="text-sm text-muted-foreground">{{ t('app.noLayers') }}</p>
             </CardContent>
           </Card>
 
           <!-- 右侧：预览 -->
           <Card>
             <CardHeader class="border-b py-3">
-              <CardTitle class="text-sm">预览</CardTitle>
+              <CardTitle class="text-sm">{{ t('app.preview') }}</CardTitle>
               <p class="text-xs text-muted-foreground">
-                切换左侧可见性后自动重新合成（仅支持普通混合 + 透明度）
+                {{ t('app.previewHint') }}
               </p>
             </CardHeader>
             <CardContent class="checker-bg flex items-center justify-center overflow-auto p-4">
@@ -295,7 +308,7 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* 透明背景棋盘格：让用户直观看到图层透明区域 */
+/* 透明背景棋盘格：让用户直观看到图层透明区域（浅色主题下用灰白棋盘） */
 .checker-bg {
   background-color: #1a1a1a;
   background-image:
@@ -305,5 +318,14 @@ onMounted(() => {
     linear-gradient(-45deg, transparent 75%, #2a2a2a 75%);
   background-size: 16px 16px;
   background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+}
+
+:global(.light) .checker-bg {
+  background-color: #ffffff;
+  background-image:
+    linear-gradient(45deg, #e2e2e2 25%, transparent 25%),
+    linear-gradient(-45deg, #e2e2e2 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #e2e2e2 75%),
+    linear-gradient(-45deg, transparent 75%, #e2e2e2 75%);
 }
 </style>

@@ -3,6 +3,9 @@ import { computed } from 'vue'
 import { AlertCircle, ArrowLeftRight, AudioLines, CheckCircle2, Film, Image as ImageIcon, Loader2, X } from '@lucide/vue'
 import { thumbUrl } from '@/lib/server'
 import { CATEGORY_LABELS, classifyFile, type MediaInput, type TaskItemState } from '@/types'
+import { useI18n, type I18nKey } from '@/lib/i18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   files: MediaInput[]
@@ -36,20 +39,22 @@ function categoryClass(category: string): string {
   if (category === 'audio') return 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
   return 'bg-muted text-muted-foreground'
 }
+
+function categoryLabel(category: string): string {
+  return t((CATEGORY_LABELS[category as keyof typeof CATEGORY_LABELS] || 'cat.unknown') as I18nKey)
+}
 </script>
 
 <template>
   <div class="flex h-full min-w-0 flex-col overflow-hidden rounded-lg border bg-card">
     <div class="flex items-center justify-between border-b px-3 py-2">
-      <span class="text-xs font-medium">待转换（{{ files.length }}）</span>
-      <span v-if="running" class="text-xs text-muted-foreground">转换中…</span>
+      <span class="text-xs font-medium">{{ t('app.pending', { n: files.length }) }}</span>
+      <span v-if="running" class="text-xs text-muted-foreground">{{ t('app.converting') }}</span>
     </div>
 
     <div v-if="files.length === 0" class="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center text-muted-foreground">
       <ArrowLeftRight class="size-8 opacity-40" />
-      <p class="text-xs leading-relaxed">
-        在素材库中选中素材 → 右键菜单「格式转换」<br />或从右侧栏插件入口打开后选中素材
-      </p>
+      <p class="text-xs leading-relaxed" v-html="t('app.emptyHint')"></p>
     </div>
 
     <ul v-else class="flex-1 divide-y overflow-y-auto">
@@ -77,19 +82,19 @@ function categoryClass(category: string): string {
             <span
               class="rounded px-1.5 py-px text-[10px] leading-4"
               :class="categoryClass(classifyFile(file.name))"
-            >{{ CATEGORY_LABELS[classifyFile(file.name)] }}</span>
+            >{{ categoryLabel(classifyFile(file.name)) }}</span>
 
-            <span v-if="isDeleted(file)" class="text-[10px] text-muted-foreground">源已删除</span>
+            <span v-if="isDeleted(file)" class="text-[10px] text-muted-foreground">{{ t('app.sourceDeleted') }}</span>
 
             <!-- 任务状态 -->
             <template v-else-if="itemOf(file)">
-              <span v-if="itemOf(file)!.status === 'pending'" class="text-[10px] text-muted-foreground">等待中</span>
+              <span v-if="itemOf(file)!.status === 'pending'" class="text-[10px] text-muted-foreground">{{ t('app.waiting') }}</span>
               <span v-else-if="itemOf(file)!.status === 'running'" class="text-[10px] text-primary">
-                {{ itemOf(file)!.progress > 0 && itemOf(file)!.progress < 100 ? itemOf(file)!.progress + '%' : '转换中' }}
+                {{ itemOf(file)!.progress > 0 && itemOf(file)!.progress < 100 ? itemOf(file)!.progress + '%' : t('app.converting') }}
               </span>
-              <span v-else-if="itemOf(file)!.status === 'importing'" class="text-[10px] text-primary">入库中</span>
+              <span v-else-if="itemOf(file)!.status === 'importing'" class="text-[10px] text-primary">{{ t('app.importing') }}</span>
               <span v-else-if="itemOf(file)!.status === 'done'" class="text-[10px] text-emerald-600 dark:text-emerald-400">
-                ✓ {{ itemOf(file)!.newFileName }}{{ itemOf(file)!.duplicate ? '（库内已存在）' : '' }}
+                ✓ {{ itemOf(file)!.newFileName }}{{ itemOf(file)!.duplicate ? t('app.duplicate') : '' }}
               </span>
               <span v-else class="truncate text-[10px] text-destructive" :title="itemOf(file)!.error">
                 ✗ {{ itemOf(file)!.error }}
@@ -113,7 +118,7 @@ function categoryClass(category: string): string {
         <button
           v-if="!running"
           class="shrink-0 rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground group-hover:opacity-100"
-          title="移除"
+          :title="t('app.remove')"
           @click="emit('remove', file.id)"
         >
           <X class="size-3.5" />

@@ -7,6 +7,16 @@ import {
   AlertDialogHeader, AlertDialogTitle,
 } from 'mira-plugin-ui/src/components/ui/alert-dialog'
 import type { TaskState } from '@/types'
+import { useI18n, type I18nKey } from '@/lib/i18n'
+
+const { t } = useI18n()
+
+/** 质量枚举 → 短标签 key */
+const QUALITY_KEYS: Record<string, I18nKey> = {
+  high: 'app.qualityHighShort',
+  medium: 'app.qualityMediumShort',
+  low: 'app.qualityLowShort',
+}
 
 const props = defineProps<{
   task: TaskState | null
@@ -49,12 +59,12 @@ const failedItems = computed(() => props.task?.items.filter((i) => i.status === 
 <template>
   <div v-if="task && summary" class="rounded-lg border bg-card">
     <div class="flex items-center justify-between border-b px-3 py-2">
-      <span class="text-xs font-medium">转换任务</span>
+      <span class="text-xs font-medium">{{ t('app.task') }}</span>
       <span class="text-xs text-muted-foreground">
-        <template v-if="!summary.finished">进行中 {{ overallPercent }}%</template>
+        <template v-if="!summary.finished">{{ t('app.progress', { n: overallPercent }) }}</template>
         <template v-else>
-          <span class="text-emerald-600 dark:text-emerald-400">成功 {{ summary.done }}</span>
-          <span v-if="summary.failed" class="ml-2 text-destructive">失败 {{ summary.failed }}</span>
+          <span class="text-emerald-600 dark:text-emerald-400">{{ t('app.doneCount', { n: summary.done }) }}</span>
+          <span v-if="summary.failed" class="ml-2 text-destructive">{{ t('app.failedCount', { n: summary.failed }) }}</span>
         </template>
       </span>
     </div>
@@ -70,20 +80,23 @@ const failedItems = computed(() => props.task?.items.filter((i) => i.status === 
       </div>
 
       <p class="text-[11px] text-muted-foreground">
-        目标格式 .{{ task.params.target }} · 质量 {{ task.params.quality === 'high' ? '高' : task.params.quality === 'low' ? '低' : '中' }}
-        · {{ task.params.inheritMeta ? '继承文件夹与标签' : '不继承元数据' }}
+        {{ t('app.taskParams', {
+          target: task.params.target,
+          quality: t(QUALITY_KEYS[task.params.quality] || 'app.qualityMediumShort'),
+          meta: task.params.inheritMeta ? t('app.metaInherit') : t('app.metaNoInherit'),
+        }) }}
       </p>
 
       <!-- 失败明细 -->
       <div v-if="failedItems.length > 0" class="space-y-1.5 rounded-md border border-destructive/30 bg-destructive/5 p-2">
-        <p class="text-[11px] font-medium text-destructive">失败明细（其余文件不受影响）</p>
+        <p class="text-[11px] font-medium text-destructive">{{ t('app.failedDetail') }}</p>
         <p v-for="item in failedItems" :key="item.fileId" class="truncate text-[11px] text-destructive/90" :title="item.error">
           {{ item.name }}：{{ item.error }}
         </p>
       </div>
 
       <p v-if="summary.finished && summary.done > 0" class="text-[11px] text-muted-foreground">
-        转换产物已保存回素材库{{ task.params.inheritMeta ? '（原文件夹）' : '' }}，可在素材库中查看。
+        {{ t('app.savedToLibrary', { suffix: task.params.inheritMeta ? t('app.savedToLibraryInherit') : '' }) }}
       </p>
 
       <template v-if="summary.finished">
@@ -98,14 +111,14 @@ const failedItems = computed(() => props.task?.items.filter((i) => i.status === 
         >
           <Loader2 v-if="deleting" class="size-4 animate-spin" />
           <Trash2 v-else class="size-4" />
-          {{ deleting ? '删除中…' : `删除已转换的源文件（${summary.done} 个）` }}
+          {{ deleting ? t('app.deleting') : t('app.deleteSources', { n: summary.done }) }}
         </Button>
         <p v-else-if="sourceDeleted" class="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-          <Trash2 class="size-3.5" /> 源文件已移入回收站
+          <Trash2 class="size-3.5" /> {{ t('app.sourcesDeleted') }}
         </p>
 
         <Button variant="outline" size="sm" class="w-full" @click="emit('reset')">
-          继续转换其他文件
+          {{ t('app.continue') }}
         </Button>
       </template>
 
@@ -113,14 +126,14 @@ const failedItems = computed(() => props.task?.items.filter((i) => i.status === 
       <AlertDialog :open="confirmOpen" @update:open="(v: boolean) => (confirmOpen = v)">
         <AlertDialogContent v-if="confirmOpen">
           <AlertDialogHeader>
-            <AlertDialogTitle>删除已转换的源文件？</AlertDialogTitle>
+            <AlertDialogTitle>{{ t('app.deleteTitle') }}</AlertDialogTitle>
             <AlertDialogDescription>
-              将删除 {{ summary.done }} 个已完成转换的源素材（移入回收站，可从回收站恢复），转换产物保留。
+              {{ t('app.deleteDesc', { n: summary.done }) }}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <Button variant="outline" size="sm" @click="confirmOpen = false">取消</Button>
-            <Button variant="destructive" size="sm" @click="confirmOpen = false; emit('delete-sources')">确认删除</Button>
+            <Button variant="outline" size="sm" @click="confirmOpen = false">{{ t('app.cancel') }}</Button>
+            <Button variant="destructive" size="sm" @click="confirmOpen = false; emit('delete-sources')">{{ t('app.confirmDelete') }}</Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

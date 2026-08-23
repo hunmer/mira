@@ -2,6 +2,9 @@
 import { Maximize2, Bone } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { useI18n } from '@/lib/i18n'
+
+const { t } = useI18n()
 
 defineProps<{
   fileName: string
@@ -21,11 +24,11 @@ const emit = defineEmits<{
       <Badge v-if="spineVersion" variant="secondary" class="shrink-0">
         Spine {{ spineVersion }}
       </Badge>
-      <Badge variant="outline" class="shrink-0">只读预览</Badge>
+      <Badge variant="outline" class="shrink-0">{{ t('app.badgeReadonly') }}</Badge>
     </div>
     <Button size="sm" variant="outline" class="gap-1.5" @click="emit('fit')">
       <Maximize2 class="size-4" />
-      适配视角
+      {{ t('app.fit') }}
     </Button>
   </header>
 </template>

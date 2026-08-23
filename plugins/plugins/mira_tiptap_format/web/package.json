@@ -30,6 +30,7 @@
     "mira-plugin-ui": "file:../../../../packages/mira-plugin-ui",
     "reka-ui": "^2.9.7",
     "tailwind-merge": "^3.3.0",
+    "tippy.js": "^6.3.7",
     "vue": "^3.5.13"
   },
   "devDependencies": {

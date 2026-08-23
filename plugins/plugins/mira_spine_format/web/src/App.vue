@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, shallowRef } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue'
 import { Loader2, X } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import SpineCanvas from './SpineCanvas.vue'
@@ -9,6 +9,13 @@ import AnimationPanel from './components/viewer/AnimationPanel.vue'
 import InfoPanel from './components/viewer/InfoPanel.vue'
 import { ensureRuntime } from './spine/runtime'
 import { loadSpine, getAnimations, getSkins, BoneVisibility } from './spine/loader'
+import { CANVAS_BG_DARK, CANVAS_BG_LIGHT } from './spine/previewApp'
+import { host, watchTheme } from '@/lib/host'
+import { useI18n } from '@/lib/i18n'
+
+const { setLocale, t } = useI18n()
+let offTheme: (() => void) | null = null
+let offLocale: (() => void) | null = null
 
 // 从 URL query 读资源信息（index.js 推导后传入）
 const params = new URLSearchParams(window.location.search)
@@ -43,7 +50,7 @@ const hasResource = computed(() => !!(skelUrl && atlasUrl && pngUrl))
 /** fetch 三件套 → loadSpine → 挂载到 canvas */
 async function loadResource() {
   if (!hasResource.value) {
-    loadError.value = '资源 URL 不完整（缺少 skel/atlas/png）'
+    loadError.value = t('app.errUrl')
     notifyError()
     return
   }
@@ -54,8 +61,8 @@ async function loadResource() {
     await canvasRef.value?.init()
 
     const [skelResp, atlasResp] = await Promise.all([fetch(skelUrl), fetch(atlasUrl)])
-    if (!skelResp.ok) throw new Error(`加载 .skel/.json 失败 (${skelResp.status})`)
-    if (!atlasResp.ok) throw new Error(`加载 .atlas 失败 (${atlasResp.status})`)
+    if (!skelResp.ok) throw new Error(t('app.errSkel', { status: skelResp.status }))
+    if (!atlasResp.ok) throw new Error(t('app.errAtlas', { status: atlasResp.status }))
 
     // 判定 skel 是二进制还是 json：看 Content-Type 或首字节
     const skelBuf = await skelResp.arrayBuffer()
@@ -86,7 +93,7 @@ async function loadResource() {
     }
   } catch (e: any) {
     console.error('[SpinePreview] load failed', e)
-    loadError.value = e?.message || 'Spine 资源加载失败'
+    loadError.value = e?.message || t('app.errLoad')
     notifyError()
   } finally {
     isLoading.value = false
@@ -119,7 +126,15 @@ function onVisibilityToggle() {
   visibilityRevision.value++
 }
 
+onMounted(() => {
+  // 主题跟随：html.dark/.light 切换 shadcn token；PIXI 画布不走 token，单独设背景色
+  offTheme = watchTheme((dark) => canvasRef.value?.setBackground(dark ? CANVAS_BG_DARK : CANVAS_BG_LIGHT))
+  offLocale = host?.onLocaleChanged?.((locale: string) => setLocale(locale)) || null
+})
+
 onBeforeUnmount(() => {
+  offTheme?.()
+  offLocale?.()
   visibility.reset(spine.value)
 })
 
@@ -138,7 +153,7 @@ loadResource()
         class="absolute bottom-3 right-3 z-10 flex items-center gap-2 rounded-full bg-black/50 px-3 py-1.5 text-xs text-white backdrop-blur-sm"
       >
         <Loader2 class="size-3.5 animate-spin" />
-        加载中…
+        {{ t('app.loading') }}
       </div>
 
       <div
@@ -178,8 +193,8 @@ loadResource()
             class="absolute inset-0 z-[5] flex flex-col items-center justify-center gap-3 bg-background text-muted-foreground"
           >
             <X class="size-8 opacity-40" />
-            <strong class="text-base text-foreground">未提供资源</strong>
-            <span class="text-sm">请从媒体网格双击 .skel 文件打开预览。</span>
+            <strong class="text-base text-foreground">{{ t('app.noRes') }}</strong>
+            <span class="text-sm">{{ t('app.noResHint') }}</span>
           </div>
 
           <!-- 加载遮罩 -->
@@ -188,7 +203,7 @@ loadResource()
             class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-background/70 backdrop-blur-sm"
           >
             <Loader2 class="size-7 animate-spin text-primary" />
-            <span class="text-sm text-muted-foreground">正在加载 Spine 资源…</span>
+            <span class="text-sm text-muted-foreground">{{ t('app.loadingRes') }}</span>
           </div>
 
           <!-- 错误横幅 -->
@@ -201,8 +216,8 @@ loadResource()
 
           <!-- 底部提示 -->
           <div class="pointer-events-none absolute bottom-2 left-3 flex items-center gap-3 text-xs text-muted-foreground/70">
-            <span>骨骼动画预览（只读）</span>
-            <Button v-if="spine" size="xs" variant="ghost" class="pointer-events-auto" @click="onFit">适配视角</Button>
+            <span>{{ t('app.readonlyHint') }}</span>
+            <Button v-if="spine" size="xs" variant="ghost" class="pointer-events-auto" @click="onFit">{{ t('app.fit') }}</Button>
           </div>
         </section>
 
