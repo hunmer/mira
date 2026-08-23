@@ -1,8 +1,8 @@
 # mira-plugin-ui
 
-Mira 插件共享 UI 组件库（`mira-plugin-ui`，v1.1.0，private）。构建产物**自包含**（ESM + UMD + 编译好的 CSS，仅 `vue` external），可经 CDN 直接引入任意 HTML 页面，不依赖宿主页面的组件库。内部三层：`src/components/ui/`（shadcn-vue 官方 13 族基础组件，只增不改）、`src/` 顶层业务组件（批量上传/保存位置/文件信息）、`src/library/` 素材库树体系（独立子入口，源码消费，数据经 services/dialog/upload 注入）。
+Mira 插件共享 UI 组件库（`mira-plugin-ui`，v1.1.0，private）。构建产物**自包含**（ESM + UMD + 编译好的 CSS，仅 `vue` external），可经 CDN 直接引入任意 HTML 页面，不依赖宿主页面的组件库。内部三层：`src/components/ui/`（**67 个组件目录/376 个 .vue**：shadcn-vue 官方组件批量导入 + 扩展块 questionnaire/message-scroller/bubble/item/field/stepper 等，只增不改）、`src/` 顶层业务组件（批量上传/保存位置/文件信息）、`src/library/` **媒体库组件族**（15 个 .vue：MediaBrowser/MediaWaterfall/MediaDetail/MediaLibraryView/MediaPickerDialog/FilterBar/SavedFilterDialog + 树体系 + 服务器管理；独立子入口源码消费，数据经 services 注入）。
 
-当前消费方：`mira-browser-extension`（workspace:*，library 子入口 + src 直引）与 `plugins/plugins/mira_tiptap_format/web`（file: 链接，根入口 + dist CSS）。
+当前消费方（8 处）：`mira-browser-extension`（library 子入口 + src 直引）、`plugins/plugins/mira_tiptap_format/web`（file: 链接）、**`mira-cep-panel`**（MediaLibraryView 三栏）、新服务端插件 `mira_image_cropper`/`mira_format_converter`/`mira_ai_sdk` 的 `web/`、客户端市场插件 `mira-video-editor`/`image-search`/`mira-whiteboard`。
 
 ## 约定的规则
 
@@ -31,7 +31,8 @@ Mira 插件共享 UI 组件库（`mira-plugin-ui`，v1.1.0，private）。构建
 ## 扫描状态
 
 - **版本**: 1.1.0
-- **更新时间**: 2026-08-20 14:10 (+0800)
-- **已扫描**: package.json、vite.config.ts、components.json、README、src/index.ts、src/library/index.ts、src/library/types.ts、src/types.ts、tree/drag-data/i18n 头部、顶层 5 个业务组件 Props、assets/tailwind.css、demo/（App.vue 头部 + main.ts）、src 全量文件清单、消费方 grep（mira-browser-extension / mira_tiptap_format）
-- **跳过**: `src/components/ui/` 13 族 80 个 .vue 的实现体（官方源码，仅清点）；library 各 .vue 实现体（仅读类型与注释）；`tsconfig.json` 选项；dist 产物内容
+- **更新时间**: 2026-08-23 16:08 (+0800)
+- **已扫描**: package.json、vite.config.ts、src/index.ts、src/library/index.ts 全量导出、ui 目录清单（67 目录复核）、demo/、全仓消费方 grep（8 处）
+- **本次更新(2026-08-23)**: ui 组件 13 族→**67 目录/376 vue**（08-20~21 批量导入 shadcn 官方 registry + 扩展块）；library 从树体系扩为媒体库组件族（+MediaBrowser/MediaWaterfall/MediaDetail/MediaLibraryView/MediaPickerDialog/FilterBar/SavedFilterDialog/serverAuth）；消费方 2→8（+cep-panel、3 个服务端插件 web/、3 个客户端市场插件）
+- **跳过**: `src/components/ui/` 67 目录实现体（官方源码，仅清点）；library 各 .vue 实现体（仅读类型与导出）；dist 产物内容
 - **下一步建议**: 若改动 library 树体系，深扫 `LibraryTreeView.vue` 与 `useLibraryTreeActions.ts`；可补 type-check 最小门禁

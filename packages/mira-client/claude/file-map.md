@@ -26,7 +26,7 @@ packages/mira-client/
 | `main/handlers/` | DragDropHandler(拖拽)、PluginHandler(插件) |
 | `main/i18n/` | 主进程轻量 i18n(托盘菜单文案,zh-CN/en-US,v2.x 新增) |
 | `main/ipc/handlers.ts` | IPC 注册中心 |
-| `main/ipc/*Handlers.ts` | 18 个 Handler:App、AutoUpdate、FileSystem、FloatingBallWindow、FloatingWindow、LoginWindow、Menu、Network、Notification、NotificationWindow、PluginWindow、Protocol、SearchWindow、ServerControl、ServerDeploy、Shortcut、System、Tray |
+| `main/ipc/*Handlers.ts` | 20 个 Handler:App、AutoUpdate、FileSystem、FloatingBallWindow、FloatingWindow、LoginWindow、Menu、Network、Notification、NotificationWindow、PluginExec、PluginWindow、Protocol、Screenshot、SearchWindow、ServerControl、ServerDeploy、Shortcut、System、Tray |
 | `main/services/` | MiraService(后端 SDK 通信)、MainWindowService(主窗口,拆自 main.ts)、LocalServerService(内置服务端)、ServerControl 相关、DownloadService(含 DownloadService.test.ts 单测)、PluginDiscoveryService、ProtocolService(`mira://`)、ProcmService、TrayService、useAutoUpdater |
 | `main/utils/` | Logger、extIcons(扩展名图标)、consoleHook、windowStateKeeper |
 
@@ -66,4 +66,4 @@ packages/mira-client/
 
 ## UI 组件库(components/ui/)
 
-52 个 shadcn-vue 组件目录(alert … tooltip),详见 [src/components/ui/CLAUDE.md](../src/components/ui/CLAUDE.md)。关键:`date-picker/`(本地组合 Input+Popover+Calendar)、`sonner/`(导出名 Toaster)、`file-card/`+`file-icon/`+`folder/`(业务化组件)、`color-picker/` 系列、`command/`(v2.x 回归)。
+53 个 shadcn-vue 组件目录(alert … tooltip,+chart),详见 [src/components/ui/CLAUDE.md](../src/components/ui/CLAUDE.md)。关键:`date-picker/`(本地组合 Input+Popover+Calendar)、`sonner/`(导出名 Toaster)、`file-card/`+`file-icon/`+`folder/`(业务化组件)、`color-picker/` 系列、`command/`(v2.x 回归)。

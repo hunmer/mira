@@ -13,7 +13,7 @@
 | `SaveLocationForm` | 保存位置表单 |
 | `LibrarySelect` | 素材库选择（自 library 转出） |
 
-基础组件 13 族（`export *`，shadcn-vue 官方）：`AlertDialog*`、`Attachment*`、`Button`、`Combobox*`、`Dialog*`、`IconPicker`、`Input`、`Label`、`Popover*`、`Progress`、`Select*`、`Tabs*`、`TagsInput*`。
+基础组件 67 族（`export *`，`ui` 命名空间 ×14）：shadcn-vue 官方全量（accordion、alert、alert-dialog、avatar、badge、breadcrumb、button、button-group、calendar、card、carousel、chart、checkbox、collapsible、combobox、command、context-menu、dialog、drawer、dropdown-menu、form、hover-card、input、input-group、input-otp、kbd、label、menubar、native-select、navigation-menu、number-field、pagination、pin-input、popover、progress、radio-group、range-calendar、resizable、scroll-area、select、separator、sheet、sidebar、skeleton、slider、sonner、spinner、switch、table、tabs、textarea、toggle、toggle-group、tooltip 等）+ 自有扩展块（aspect-ratio、attachment、bubble、empty、field、icon-picker、item、marker、message、message-scroller、questionnaire、stepper、tags-input）。
 
 默认导出：Vue plugin，`app.use()` 后按原名全局注册以上全部组件（CDN/UMD 用）。
 
@@ -21,11 +21,11 @@
 
 ## library 子入口导出（src/library/index.ts）
 
-组件：`LibraryTree`、`LibraryTreeView`、`CreateNodeDialog`、`LibrarySelect`、`ContextMenu`、`Dropzone`、`MediaBrowser`、`ServerManagerView`、`ServerManagerDialog`。
+组件（15 个 .vue）：`LibraryTree`、`LibraryTreeView`、`CreateNodeDialog`、`LibrarySelect`、`ContextMenu`、`Dropzone`、`MediaBrowser`、`MediaWaterfall`、`MediaDetail`、`MediaLibraryView`、`MediaPickerDialog`、`FilterBar`、`SavedFilterDialog`、`ServerManagerView`、`ServerManagerDialog`。
 
 Hooks：`useLibraryTreeData`、`useLibraryTreeActions`（`LibraryTreeMenuState` / `UseLibraryTreeActionsOptions`）。
 
-纯函数：`buildTree` / `filterTree` / `flattenTree` / `collectIds` / `ROOT_ID`；`parseDrop` / `canAcceptDrop` / `urlKind`；`createLibraryTreeT`。
+纯函数：`buildTree` / `filterTree` / `flattenTree` / `collectIds` / `ROOT_ID`；`parseDrop` / `canAcceptDrop` / `urlKind`；`createLibraryTreeT`；filterBar 规则（`createDefaultFilterRules` / `resetFilterRule` / `applySnapshotToRule` / `rulesToFilters` / `hasActiveFilterConditions` / `toApiFilters` / `filterIconOf`）；`resolveMiraServerConfig`。
 
 类型：见 data-model.md。
 

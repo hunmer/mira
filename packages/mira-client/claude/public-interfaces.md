@@ -42,7 +42,7 @@
 | `notification:*` | 通知 |
 | `update:*` / `updater:*` | 自动更新 |
 
-对应 Handler 实现:`src/main/ipc/*Handlers.ts`(18 个),注册中心 `src/main/ipc/handlers.ts`。
+对应 Handler 实现:`src/main/ipc/*Handlers.ts`(20 个,+PluginExec/Screenshot),注册中心 `src/main/ipc/handlers.ts`。
 
 ## Views(页面视图)
 
@@ -71,4 +71,4 @@
 
 ## UI 组件库公共接口
 
-`@/components/ui/<name>` 导出各 shadcn-vue 组件(Button、Dialog、Popover、Select、Table 等 52 类)。完整清单见 [src/components/ui/CLAUDE.md](../src/components/ui/CLAUDE.md)。
+`@/components/ui/<name>` 导出各 shadcn-vue 组件(Button、Dialog、Popover、Select、Table、Chart 等 53 类)。完整清单见 [src/components/ui/CLAUDE.md](../src/components/ui/CLAUDE.md)。

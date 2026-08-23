@@ -18,7 +18,7 @@
 
 ## Q: 哪些旧的东西已经删了?
 
-自研 `volt/` 组件库整体删除;`--mira-*` / `--surface-*` 自定义变量全部迁到 shadcn 语义 token;element-plus/naive 等旧库 0 引用;**SCSS 体系整体删除**(`assets/scss/` 不存在,0 个 `lang="scss"`);浮动窗口独立构建(vendor/core.js/floating-window.html/`build:float`)移除;`public/ext_icons/` 被 `public/icons/`(188 个)替代。注意:`collapsible/`、`command/` 在 2026-08-05 曾被删,v2.x 又按需加回,现为 52 个组件。仅剩 2 处 radix-vue 直引待清理。
+自研 `volt/` 组件库整体删除;`--mira-*` / `--surface-*` 自定义变量全部迁到 shadcn 语义 token;element-plus/naive 等旧库 0 引用;**SCSS 体系整体删除**(`assets/scss/` 不存在,0 个 `lang="scss"`);浮动窗口独立构建(vendor/core.js/floating-window.html/`build:float`)移除;`public/ext_icons/` 被 `public/icons/`(188 个)替代。注意:`collapsible/`、`command/` 在 2026-08-05 曾被删,v2.x 又按需加回,现为 53 个组件(08-20 后 +chart)。仅剩 2 处 radix-vue 直引待清理。
 
 ## Q: 多窗口怎么加 IPC?
 

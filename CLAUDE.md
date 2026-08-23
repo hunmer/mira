@@ -2,7 +2,7 @@
 
 Mira TypeScript 是基于 TypeScript 的 pnpm workspace monorepo,目标是构建新时代的素材管理软件。核心能力:媒体文件组织/检索/预览/管理(图片/视频/音频/3D/动画/矢量/电子书/归档)、多素材库(独立 SQLite)、**双协议插件架构**(`ServerPlugin` 基类 + `registerFileFormat` 格式注册)、实时 WebSocket、Web 管理面板、n8n 集成、跨平台 Electron 桌面客户端、Chrome 浏览器扩展采集入口、Next.js 落地页。
 
-分层:核心库(`mira-app-core`)→ 服务端(`mira-app-server`)→ 客户端(`mira-client` mira-web,Electron + Vue 3)→ 管理面板(`mira-dashboard-next`),外加 Chrome 扩展、Flutter 移动端(`mira_mobile`)、插件共享 UI 组件库(`mira-plugin-ui`)、瀑布流/框选组件、脚本工具、VitePress 文档、落地页、服务端插件集合(14 个)。
+分层:核心库(`mira-app-core`)→ 服务端(`mira-app-server`)→ 客户端(`mira-client` mira-web,Electron + Vue 3)→ 管理面板(`mira-dashboard-next`),外加 Chrome 扩展、Flutter 移动端(`mira_mobile`)、Photoshop CEP 面板(`mira-cep-panel`)、插件共享 UI 组件库(`mira-plugin-ui`)、瀑布流/框选/栅格组件、脚本工具、VitePress 文档、落地页、服务端插件集合(16 个)与客户端插件市场(`online_client_plugins`)。
 
 > 当前分支:`main`。客户端 shadcn-vue 迁移已完成合并。详见 [packages/mira-client/CLAUDE.md](packages/mira-client/CLAUDE.md)。
 
@@ -10,7 +10,7 @@ Mira TypeScript 是基于 TypeScript 的 pnpm workspace monorepo,目标是构建
 
 - TypeScript strict;服务端 CommonJS,客户端 ESM;移动端为 Flutter(Dart ^3.10)
 - API 统一响应 `{ code, data, message?, timestamp }`,路由前缀 `/api/`,共 19 个路由模块;SDK(mira-app-core)覆盖 17 个 API 模块,128 条 API covered 117
-- **插件双协议**:旧 `extends ServerPlugin`(深度介入服务端);新 `registerFileFormat(ServerFileFormatHandler)`(声明扩展名/缩略图/查看器);均导出 `init(inst)` 工厂,注册表 `plugins/plugins/plugins.recommend.json` + 服务端运行时 `src/plugins/plugins.json`
+- **插件双协议**:深度插件(`extends ServerPlugin` 或等价自定义类,`registerRounter` 注册路由,含 web/ SPA 的新三插件)与格式插件 `registerFileFormat(ServerFileFormatHandler)`(声明扩展名/缩略图/查看器);均导出 `init(inst)` 工厂,注册表:`plugins/plugins/plugins.recommend.json`(推荐 11)+ `plugins/plugins/plugins.json`(展示 meta 3)+ 服务端运行时 `src/plugins/plugins.json`(11)
 - **客户端 UI 约定**:只用 `@/components/ui`(shadcn-vue),禁用原生控件、禁用直接 import reka-ui、禁用 `--mira-*` 变量;插件侧共享 UI 用 `mira-plugin-ui`
 - Electron:Context Isolation 启用,Node Integration 禁用,IPC 经 `contextBridge` 暴露
 - 浏览器扩展:跨上下文传文件必须用 `fileToStaged`;MV3 禁 eval
@@ -43,13 +43,16 @@ Mira TypeScript 是基于 TypeScript 的 pnpm workspace monorepo,目标是构建
 | mira-dashboard-next | 0.0.0 | Web 管理面板:Vue 3 + shadcn-vue + Tailwind 4,API 已迁移到 SDK | [packages/mira-dashboard-next/CLAUDE.md](packages/mira-dashboard-next/CLAUDE.md) |
 | mira-browser-extension | 0.1.0 | Chrome MV3 扩展:网页素材采集(截图/拖拽/嗅探/批量上传) | [packages/mira-browser-extension/CLAUDE.md](packages/mira-browser-extension/CLAUDE.md) |
 | mira_mobile | 1.0.0+1 | Flutter 移动端:浏览/下载/相册自动备份 | [packages/mira_mobile/CLAUDE.md](packages/mira_mobile/CLAUDE.md) |
-| mira-plugin-ui | 1.1.0 | 插件共享 UI 组件库(自包含 dist,CDN 可用;被扩展/tiptap 消费) | [packages/mira-plugin-ui/CLAUDE.md](packages/mira-plugin-ui/CLAUDE.md) |
+| mira-plugin-ui | 1.1.0 | 插件共享 UI 组件库(自包含 dist,CDN 可用;ui 67 目录 + library 媒体库组件族;8 处消费) | [packages/mira-plugin-ui/CLAUDE.md](packages/mira-plugin-ui/CLAUDE.md) |
+| grid-layout-plus | 2.0.0-beta.0 | vendored 栅格布局 fork,供 client Home 仪表盘 | [packages/grid-layout-plus/CLAUDE.md](packages/grid-layout-plus/CLAUDE.md) |
+| mira-cep-panel | 0.1.0 | Adobe CEP 面板:PS 内浏览/置入 Mira 素材(Chromium 61) | [packages/mira-cep-panel/CLAUDE.md](packages/mira-cep-panel/CLAUDE.md) |
 | vue-masonry | 0.1.0 | @hunmer/vue-masonry:Vue 3 瀑布流组件 | [packages/vue-masonry/CLAUDE.md](packages/vue-masonry/CLAUDE.md) |
 | vue-selection-box | 0.1.0 | @hunmer/vue-selection-box:Vue 3 框选组件(被 client/plugin-ui 依赖) | [packages/vue-selection-box/CLAUDE.md](packages/vue-selection-box/CLAUDE.md) |
 | landing-page | 0.1.0 | efferd-ui:Next.js 16 + React 19 官方落地页(efferd.com,静态导出) | [packages/landing-page/CLAUDE.md](packages/landing-page/CLAUDE.md) |
 | mira-scripts-core | 1.0.5 | 脚本工具:数据转换、文件导入 | [packages/mira-scripts-core/CLAUDE.md](packages/mira-scripts-core/CLAUDE.md) |
 | mira-doc | 1.0.0 | VitePress 文档站(部署 base /docs/) | [packages/mira-doc/CLAUDE.md](packages/mira-doc/CLAUDE.md) |
-| plugins | -- | 服务端插件集合(14 个:3 旧协议 + 11 格式协议) | [plugins/CLAUDE.md](plugins/CLAUDE.md) |
+| plugins | -- | 服务端插件集合(16 个:5 深度 + 11 格式) | [plugins/CLAUDE.md](plugins/CLAUDE.md) |
+| online_client_plugins | -- | 客户端插件市场源仓库(8 个入索引:视频剪辑器/格式预览/以图搜图/白板) | [online_client_plugins/CLAUDE.md](online_client_plugins/CLAUDE.md) |
 
 ```mermaid
 graph TD
@@ -60,26 +63,31 @@ graph TD
   core --> dash[mira-dashboard-next]
   vmason[vue-masonry] --> client
   vsel[vue-selection-box] --> client
+  glp[grid-layout-plus] --> client
   vsel --> pui[mira-plugin-ui]
   pui --> ext
-  server --> plugins[plugins/* 双协议]
+  pui --> cep[mira-cep-panel]
+  pui --> plugins[plugins/* 双协议]
+  server --> plugins
   server -.REST/WS.-> dash
   server -.REST/WS.-> ext
   server -.REST/WS.-> mobile[mira_mobile]
+  server -.REST.-> cep
+  client -.拉取索引.-> market[online_client_plugins]
 ```
 
 ## 扫描状态
 
-- **更新时间**: 2026-08-20
+- **更新时间**: 2026-08-23 16:08 CST
 - **分支**: main
-- **已扫描**: 根目录 + 全部 12 个 packages + plugins/(14 插件全目录核对,mira_tiptap_format 深读) + online_client_plugins 概览
-- **本次更新要点**(增量,基线 2026-08-11,期间约 200+ 提交):
-  - 版本:core 2.0.3→2.0.8、server 2.0.3→2.0.9、client 1.0.5→2.0.9
-  - **新增模块文档**:mira-plugin-ui(全新 12 文件)、vue-selection-box(轻量)、mira_mobile 补入根索引(此前遗漏)
-  - client:UI 组件 34→52、IPC Handler 13→18、Store 11→15、新增 i18n/悬浮球窗口/procm-ui-tests;主进程拆分 services
-  - server:CLI 扩展为 5 顶层 + 11 域子命令,新增 MCP 服务(`--mcp`);SDK 模块 10→17,覆盖率 117/128
-  - plugins:13→14(+mira_tiptap_format 格式插件);mira_duplicate_scanner 已于 08-13 移除;mira_gallery_dl 补记为旧协议
-  - dashboard:API 层迁移到 mira-app-core SDK;extension:src 54→101 文件
-  - landing-page:shadcn registry 链整体移除,改为静态导出单页营销站
-- **跳过/陈旧**: 各包 `node_modules/`、`dist/`、`build/`;mira-plugin-ui 的 80 个 shadcn 组件实现体仅结构清点
-- **下一步建议**: ~~补 plugins/ 插件 CLAUDE.md~~(14 个均已补齐);已清理 client vite SCSS 残留注入、dashboard `react-selectable-fast` 遗留依赖(dependency-switch 配置文件已随仓库移除);mira-client 存在 33 个预存 TS6133 类型错误待修;`.claude/index.json` 已同步
+- **已扫描**: 根目录 + 全部 12 个有文档 packages + plugins/(16 插件) + online_client_plugins/(新建文档);08-20 基线以来约 70 提交(信息均为 "fix")
+- **本次更新要点**(增量,基线 2026-08-20):
+  - 版本不变(core 2.0.8 / server 2.0.9 / client 2.0.9),纯功能迭代
+  - **新建文档 3 处**:grid-layout-plus(vendored fork,10 文件)、mira-cep-panel(CEP 面板,6 文件)、online_client_plugins(插件市场,6 文件)
+  - **plugins 14→16**:新增深度插件 mira_image_cropper / mira_format_converter / mira_ai_sdk(「HTTP 路由 + web/ SPA」形态,默认 enabled);recommend 12→11;新增源码侧展示注册表(3 条)
+  - **mira-plugin-ui 大扩容**:ui 13 族→67 目录/376 vue(批量导入 shadcn 官方 registry + questionnaire 等扩展块);library 扩为媒体库组件族(15 vue:MediaBrowser/Waterfall/Detail/MediaLibraryView/PickerDialog/FilterBar…);消费方 2→8(+cep-panel、3 插件 web/、3 市场插件)
+  - **mira-client**:IPC Handler 18→20(+PluginExec 受控执行、+Screenshot 截图窗口);Dashboard 卡片体系 + grid-layout-plus;WebviewTabView + FaviconCache;ui 52→53(+chart,@unovis)
+  - 已删除包确认:mira-server-sdk(-examples)/mira-storage-sqlite/n8n-nodes-mira-ws-trigger 均为 2026-06-09 前移除,磁盘残留不建文档
+  - browser-extension / mira_mobile / vue-masonry / vue-selection-box / landing-page:文档核对仍准确,仅补记 changelog
+- **跳过/陈旧**: 各包 `node_modules/`、`dist/`、`build/`;plugin-ui 67 目录实现体;video-editor 等市场插件实现体
+- **下一步建议**: 为三个新深度插件补建独立 CLAUDE.md;深扫 online_client_plugins/mira-video-editor;client 的 33 个 TS6133 与 vite scss 残留注入待修;`.claude/index.json` 已同步 timestamp

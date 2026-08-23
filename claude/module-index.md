@@ -29,10 +29,11 @@
 - 路径:`packages/mira-client`
 - 语言:TypeScript / Vue 3.5
 - 职责:Electron 桌面客户端 —— 媒体浏览/预览/管理、插件系统、Tab 导航、Pinia Store(15 个)、i18n(vue-i18n 11,zh-CN/en-US)
-- 多窗口:`main`(主进程)、`renderer`(主 UI)、`preload`、`floating-ball-window`(悬浮球)、`notification-window`、`search-window`
+- 多窗口:`main`(主进程)、`renderer`(主 UI)、`preload`、`floating-ball-window`(悬浮球)、`notification-window`、`search-window`、`screenshot-window`(截图采集)
 - 入口:`src/main/main.ts`(主进程)、`src/renderer/`(渲染进程)
-- UI 技术栈:Tailwind v4 + shadcn-vue(new-york,基于 reka-ui,52 组件);**迁移已完成,合并到 main**
+- UI 技术栈:Tailwind v4 + shadcn-vue(new-york,基于 reka-ui,53 组件);**迁移已完成,合并到 main**
 - 测试:`procm-ui-tests/`(约 30 个 UI 用例,`pnpm run test:ui:remote`)+ `DownloadService.test.ts`;门禁 `pnpm run type-check`
+- 08-20 后新增:截图窗口(`screenshot-window/` + ScreenshotHandlers)、插件受控执行(PluginExecHandlers:ffmpeg/scenedetect 白名单)、Dashboard 卡片体系(grid-layout-plus + tabs/dashboard/cards/)、WebviewTabView + FaviconCacheService
 
 ### mira_mobile (v1.0.0+1)
 
@@ -47,10 +48,27 @@
 
 - 路径:`packages/mira-plugin-ui`
 - 语言:TypeScript / Vue 3
-- 职责:插件共享 UI 组件库 —— 自包含 dist(es+umd+单 CSS,仅 vue external),可经 CDN 引入;BatchUpload/SaveLocation/FileInfo 表单 + library 子入口(LibraryTree 等) + shadcn 13 族
-- 消费方:mira-browser-extension(`workspace:*`)、plugins/mira_tiptap_format/web(`file:`)
+- 职责:插件共享 UI 组件库 —— 自包含 dist(es+umd+单 CSS,仅 vue external),可经 CDN 引入;BatchUpload/SaveLocation/FileInfo 表单 + library 子入口(**媒体库组件族 15 个 .vue**:MediaBrowser/MediaWaterfall/MediaDetail/MediaLibraryView/MediaPickerDialog/FilterBar/SavedFilterDialog + 树体系 + 服务器管理)+ ui 67 组件目录/376 vue(shadcn 官方 + questionnaire/message-scroller 等扩展)
+- 消费方(8 处):mira-browser-extension(`workspace:*`)、plugins/mira_tiptap_format/web(`file:`)、mira-cep-panel、plugins 的 mira_image_cropper/mira_format_converter/mira_ai_sdk `web/`、online_client_plugins 的 mira-video-editor/image-search/mira-whiteboard
 - 入口:`src/index.ts` | 构建:`pnpm --filter mira-plugin-ui build`(vite 库模式)
-- 测试:无(提供 demo 手动验证)
+- 测试:无(提供 demo 手动验证,连真实 server)
+
+### grid-layout-plus (v2.0.0-beta.0)
+
+- 路径:`packages/grid-layout-plus`
+- 语言:TypeScript / Vue 3
+- 职责:**vendored fork**(上游 qmhc/grid-layout-plus v2 beta,2026-08-22 整体入库)—— Vue 3 栅格布局库,供 mira-client Home 仪表盘卡片拖拽布局;双入口 `.`(组件)与 `./core`(纯算法)
+- 仅供 mira-client 消费(`workspace:*`:HomeTabView/dashboardLayout/CardRegistry)
+- 注意:上游 docs/dev-server/changeset/eslint 等设施未带入,npm scripts 多数失效(详见该包 claude/conventions.md)
+- 测试:27 个 vitest 文件(e2e 依赖缺失的 dev-server)
+
+### mira-cep-panel (v0.1.0)
+
+- 路径:`packages/mira-cep-panel`
+- 语言:TypeScript / Vue 3.5(Vite 6 + Tailwind 4)
+- 职责:Adobe CEP 面板 —— Photoshop 2020(CEP 9,Chromium 61)内三栏浏览/管理 Mira 素材,拖拽置入画布、导出活动图层;复用 mira-plugin-ui 的 MediaLibraryView,经 MiraClient(mira-app-core/shared/sdk)直连 server
+- 入口:`src/main.ts` → App.vue;部署:`scripts/sync.mjs` 镜像到 PS 扩展目录
+- 测试:无;远程调试端口 8899
 
 ### mira-dashboard-next (v0.0.0)
 
@@ -115,12 +133,15 @@
 
 ## 插件(plugins/)
 
-> **双协议**:旧版 `extends ServerPlugin` 深度介入服务端;新版 `registerFileFormat(ServerFileFormatHandler)` 声明格式扩展与缩略图。共 **13 个**(旧协议 2 + 格式协议 11)。推荐注册表:`plugins/plugins/plugins.recommend.json`;服务端运行时注册表:`packages/mira-app-server/src/plugins/plugins.json`。
+> **双协议**:旧版 `extends ServerPlugin` 深度介入服务端;新版 `registerFileFormat(ServerFileFormatHandler)` 声明格式扩展与缩略图。共 **16 个**(深度 5 + 格式 11)。注册表:`plugins/plugins/plugins.recommend.json`(推荐 11 条)、`plugins/plugins/plugins.json`(源码侧展示 meta 3 条)、`packages/mira-app-server/src/plugins/plugins.json`(服务端运行时 11 条)。
 
 | 插件 | 版本 | 路径 | 协议 | 职责 |
 |------|------|------|------|------|
 | mira_eagle_extension | v1.0.0 | `mira_eagle_extension` | 旧 | 复刻 Eagle 本地 HTTP 协议,让 Eagle 浏览器扩展无改接入(默认禁用) |
 | mira_gallery_dl | v1.0.x | `mira_gallery_dl` | 旧 | gallery-dl 站点下载集成(自定义类 + `getRoutes()`/`registerRounter`) |
+| mira_image_cropper | v1.0.0 | `mira_image_cropper` [+web] | 深度 | 多选区图片裁切(`POST /api/image-cropper/save` 入库)+ 裁切 SPA(2026-08-21 新增) |
+| mira_format_converter | v1.0.0 | `mira_format_converter` [+web] | 深度 | ImageMagick/FFmpeg 批量格式转换(异步任务 `/api/format-converter/*`)+ SPA(2026-08-21 新增) |
+| mira_ai_sdk | v1.0.0 | `mira_ai_sdk` [+web] | 深度 | OpenAI 兼容多服务商 AI 网关(聊天/生图,`ai` + `@ai-sdk/openai-compatible`)+ AI 图片生成器 SPA(2026-08-23 新增) |
 | mira_3d_format | v1.0.2 | `mira_3d_format` [+web] | 格式 | GLB/GLTF 解析 + GLB 缩略图(render-glb + @gltf-transform) |
 | mira_spine_format | v1.1.1 | `mira_spine_format` [+web] | 格式 | Spine `.skel/.spine` 解析,idle-first 预览 |
 | mira_epub_format | v1.0.0 | `mira_epub_format` [+web] | 格式 | EPUB 元数据 + 封面缩略图 + 阅读 |
@@ -137,21 +158,22 @@
 
 ## 客户端在线插件(online_client_plugins/)
 
-**插件市场源仓库**:`scripts/build-client-plugins-index.mjs` 扫描含 `plugin.json` 的子目录生成 `plugins.json` 索引,客户端从市场源 HTTP 地址拉取索引、下载插件到本地加载。与 `plugins/plugins/*/web`(服务端插件的查看器,由服务端经 `/server-plugins/:libraryId/:pluginName/*` 静态托管,客户端 iframe 加载)是两套独立机制。
+**插件市场源仓库**(已建独立 [CLAUDE.md](../online_client_plugins/CLAUDE.md)):`scripts/build-client-plugins-index.mjs` 扫描含 `plugin.json` 的子目录生成 `plugins.json` 索引(sha256 + 原子写入),客户端从市场源 HTTP 地址拉取索引、下载插件到本地加载。与 `plugins/plugins/*/web`(服务端插件的查看器/SPA,由服务端静态托管、客户端加载)是两套独立机制,但 08-20 后三个新深度插件的 `web/` 形态已与在线插件趋同。
 
-当前索引共 **4 个**(2026-08-20 核对,pluginId 均为 UUID,与任何 web 查看器不重合):
+当前索引共 **8 个**(2026-08-23 核对,generatedAt 2026-08-21):
 
-| 在线插件 | 来源/类型 | 对应服务端插件 | 说明 |
-|----------|-----------|----------------|------|
-| mira-custom-tab-demo | 演示 | 无 | 自定义 Tab Demo v1.0.0,注册 Tab + DOM 回调渲染 |
-| mira-welcome-demo | 演示 | 无 | 欢迎示例 v1.0.0,配置/事件/UI/日志能力演示 |
-| mira-pinterest-search | Eagle 迁移 | 无 | Pinterest 视觉搜索 v1.1.9-mira.1,对选中图片发起视觉搜索 |
-| mira-whiteboard | 独立 SPA(vite) | 无 | 自由白板 v1.0.0,@woven-canvas/vue 无限画板,dist/ 随包分发 |
+| 在线插件 | 来源/类型 | 说明 |
+|----------|-----------|------|
+| mira-video-editor | 大型工具 | 视频剪辑器 v1.0.0:片段剪辑、PySceneDetect 场景分割、delogo、批量导出;依赖宿主 PluginExecHandlers 受控 ffmpeg/scenedetect |
+| image-search | 采集 | 以图搜图聚合 v3.0.0:Pinterest + Google/Bing/Yandex/TinEye/SauceNAO/搜狗,webview 内嵌 |
+| mira-3d-format-preview | 格式预览 | GLB/GLTF 可交互 3D 预览 v1.2.1 |
+| mira-spine-format-preview | 格式预览 | Spine 4.2 骨骼动画预览 v1.0.0 |
+| psd-viewer | 格式预览 | PSD/PSB 浏览器本地分层预览 v1.0.0 |
+| mira-whiteboard | 独立 SPA(vite) | 自由白板 v1.0.0,@woven-canvas/vue 无限画板 + 独立窗口 |
+| mira-custom-tab-demo | 演示 | 自定义 Tab Demo v1.0.0,注册 Tab + DOM 回调渲染 |
+| mira-welcome-demo | 演示 | 欢迎示例 v1.0.0,配置/事件/UI/日志能力演示 |
 
-与 `plugins/plugins/*/web` 的对应关系(基于 pluginId / package.json name 证据):
-
-- 11 个 web 查看器均**无**在线分发版本(pluginId 无一匹配);
-- 目录下另有 `mira-3d-format-preview`、`mira-spine-format-preview`、`psd-viewer` 三个目录仅含 node_modules(无 plugin.json,被索引脚本跳过),名称与 `mira_3d_format` / `mira_spine_format` / `psd-viewer` 各自 `web/package.json` 的 name 完全一致,**疑似**曾准备将这三个 vite 型查看器发布为在线插件的本地残留。
+另有 `mira-pinterest-search-v2`(Pinterest 搜索 v2,重写自已删除的 v1)暂无 plugin.json,仅 dist 产物被跟踪,未入索引。
 
 ## 已移除/合并模块
 
@@ -182,8 +204,11 @@ graph TD
   scripts[mira-scripts-core]
   vmason[vue-masonry]
   vsel[vue-selection-box]
+  glp[grid-layout-plus]
   pui[mira-plugin-ui]
+  cep[mira-cep-panel]
   plugins[plugins/* 双协议]
+  market[online_client_plugins]
 
   core --> server
   core --> client
@@ -192,10 +217,16 @@ graph TD
   core --> dash
   vmason --> client
   vsel --> client
+  glp --> client
   vsel --> pui
   pui --> ext
+  pui --> cep
+  pui --> plugins
+  pui --> market
   server --> plugins
   server -.API.-> dash
   server -.API.-> ext
   server -.API.-> mobile
+  server -.API.-> cep
+  client -.拉取索引.-> market
 ```

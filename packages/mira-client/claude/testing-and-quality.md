@@ -38,7 +38,7 @@ ESLint 9 + @typescript-eslint。
 
 ## 质量风险
 
-- shadcn-vue 迁移已合回 main,ui 组件扩到 52 个,新增复合/业务化组件(file-card、folder、command 等)缺自动化视觉回归
+- shadcn-vue 迁移已合回 main,ui 组件扩到 53 个,新增复合/业务化组件(file-card、folder、command、chart 等)缺自动化视觉回归
 - **dev 下弹出层动画不生效**:已知技术债,见仓库根 `handoff-dropdown-animation.md`;生产构建正常
 - **2 处 radix-vue 直引**:`PopoverComponent.vue`、`MediaListComponent.vue`,待统一到 `@/components/ui/popover`
 - **`tailwind.config.js` 死文件**:v3 遗留,易误导(误以为它是主题源)

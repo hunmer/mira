@@ -11,7 +11,7 @@
 | `floating-window/` | 浮动窗口残留(仅 `bridge.ts`,独立构建体系已移除) |
 | `notification-window/` | 系统通知窗口 |
 | `search-window/` | 全局搜索窗口 |
-| `components/ui/` | shadcn-vue 基础组件库(52 目录) |
+| `components/ui/` | shadcn-vue 基础组件库(53 目录) |
 | `lib/` | 通用工具(`cn()` 等) |
 | `shared/` `types/` | 跨进程共享类型 |
 
@@ -21,7 +21,7 @@
 |--------|------|
 | `handlers/` | DragDropHandler(拖拽)、PluginHandler(插件) |
 | `i18n/` | 主进程轻量 i18n 字典(托盘菜单文案,经 `tray:set-locale` 与渲染进程同步) |
-| `ipc/` | IPC 处理器注册中心 + 18 个 Handler(App/AutoUpdate/FileSystem/FloatingBallWindow/FloatingWindow/LoginWindow/Menu/Network/Notification/NotificationWindow/PluginWindow/Protocol/SearchWindow/ServerControl/ServerDeploy/Shortcut/System/Tray) |
+| `ipc/` | IPC 处理器注册中心 + 20 个 Handler(App/AutoUpdate/FileSystem/FloatingBallWindow/FloatingWindow/LoginWindow/Menu/Network/Notification/NotificationWindow/PluginExec/PluginWindow/Protocol/Screenshot/SearchWindow/ServerControl/ServerDeploy/Shortcut/System/Tray) |
 | `services/` | MiraService(后端 SDK 通信)、MainWindowService(主窗口管理)、LocalServerService(内置服务端)、DownloadService(含单测)、PluginDiscoveryService、ProtocolService(`mira://`)、ProcmService、TrayService、useAutoUpdater |
 | `utils/` | Logger、extIcons、consoleHook、windowStateKeeper |
 | `main.ts` | 应用入口,MiraApplication 类(323 行,职责已拆入 services) |
@@ -48,7 +48,7 @@
 
 ## UI 组件库(src/components/ui/)
 
-shadcn-vue 基础组件,样式基线 new-york-v4。52 个组件目录:alert、alert-dialog、avatar、badge、button、calendar、card、carousel、chapter-scrubber、checkbox、collapsible、color-picker、color-slider、color-swatch、command、context-menu、date-picker(本地组合 Input+Popover+Calendar)、dialog、dropdown-menu、empty、expandable-gallery、file-card、file-icon、file-system、folder、form、glowing-button、glowing-shadow、hover-card、input、input-group、label、native-select、notification-list、popover、progress、radio-group、resizable、select、separator、sheet、skeleton、slider、sonner(Toaster)、stepper、switch、table、tabs、textarea、toggle、toggle-group、tooltip。
+shadcn-vue 基础组件,样式基线 new-york-v4。53 个组件目录:alert、alert-dialog、avatar、badge、button、calendar、card、carousel、chapter-scrubber、checkbox、collapsible、color-picker、color-slider、color-swatch、command、context-menu、date-picker(本地组合 Input+Popover+Calendar)、dialog、dropdown-menu、empty、expandable-gallery、file-card、file-icon、file-system、folder、form、glowing-button、glowing-shadow、hover-card、input、input-group、label、native-select、notification-list、popover、progress、radio-group、resizable、select、separator、sheet、skeleton、slider、sonner(Toaster)、stepper、switch、table、tabs、textarea、toggle、toggle-group、tooltip、chart(08-20 后新增)。
 
 其中 v2.x 在 34 个基线上新增:carousel、chapter-scrubber、collapsible、color-picker、color-slider、color-swatch、command、expandable-gallery、file-card、file-icon、file-system、folder、form、glowing-button、glowing-shadow、input-group、notification-list、skeleton(18 个,多为业务化/复合组件)。
 

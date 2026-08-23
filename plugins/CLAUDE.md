@@ -1,6 +1,8 @@
 # plugins
 
-Mira 服务端插件集合(当前 **13 个**)。插件由 `ServerPluginManager`(`packages/mira-app-server/src/ServerPluginManager.ts`)在素材库加载时动态加载。支持两套并行协议:旧版 `extends ServerPlugin`(深度介入服务端)与新版 `registerFileFormat(ServerFileFormatHandler)`(声明格式扩展与缩略图)。推荐插件清单:`plugins/plugins/plugins.recommend.json`(12 条);运行时安装状态:`packages/mira-app-server/src/plugins/plugins.json`。
+Mira 服务端插件集合(当前 **16 个**)。插件由 `ServerPluginManager`(`packages/mira-app-server/src/ServerPluginManager.ts`)在素材库加载时动态加载。支持两套并行协议:旧版深度插件(`extends ServerPlugin` 或等价自定义类,`registerRounter` 注册路由)与新版 `registerFileFormat(ServerFileFormatHandler)`(声明格式扩展与缩略图)。注册表:`plugins.recommend.json`(源码侧推荐,11 条)、`plugins/plugins.json`(源码侧展示 meta,3 条)、`packages/mira-app-server/src/plugins/plugins.json`(server 运行时安装状态,11 条)。
+
+> 三个新深度插件(2026-08-21 起:`mira_image_cropper`/`mira_format_converter`/`mira_ai_sdk`)均为「服务端 HTTP 路由 + `web/` 客户端 SPA」形态,经 `mira-plugin-ui` 构建插件窗口应用,由 ServerPluginManager 自动发现 `web/plugin.json` 分发给客户端。
 
 ## 约定
 
@@ -21,12 +23,15 @@ Mira 服务端插件集合(当前 **13 个**)。插件由 `ServerPluginManager`(
 
 ## 插件清单
 
-### 协议 A — `extends ServerPlugin` 或等价的深度插件(2 个,默认 disabled)
+### 协议 A — 深度插件(5 个:`extends ServerPlugin` 或等价自定义类)
 
 | 插件 | 版本 | 职责 |
 |------|------|------|
 | mira_eagle_extension | 1.0.0 | 复刻 Eagle 本地 HTTP 协议,让 Eagle 浏览器扩展无改接入 |
 | mira_gallery_dl | 1.0.0 | gallery-dl 批量解析图片导入(自定义类 + `getRoutes()`/`registerRounter` 注册 `/gallery-dl/*` HTTP 路由) |
+| mira_image_cropper | 1.0.0 | 多选区图片裁切:单图多矩形选区、实时预览、批量导出 PNG/JPG/WebP;`POST /api/image-cropper/save` 写入素材库;`web/` 裁切 SPA(2026-08-21 新增) |
+| mira_format_converter | 1.0.0 | 格式转换:调服务器 ImageMagick/FFmpeg 批量转换图片/视频/音频并入库;`/api/format-converter/{capabilities,convert,status}` 异步任务路由;`FFMPEG_PATH`/`IMAGEMAGICK_PATH` 环境变量优先(2026-08-21 新增) |
+| mira_ai_sdk | 1.0.0 | 通用 AI SDK 网关:管理多个 OpenAI 兼容服务商(apiKey/baseUrl/模型),基于 `ai` + `@ai-sdk/openai-compatible` 提供聊天与图片生成 API + AI 图片生成器 `web/` 应用(2026-08-23 新增) |
 
 ### 协议 B — `registerFileFormat`(11 个格式插件,默认 enabled)
 
@@ -61,20 +66,20 @@ Mira 服务端插件集合(当前 **13 个**)。插件由 `ServerPluginManager`(
 | mira_swf_format | [plugins/mira_swf_format/CLAUDE.md](plugins/mira_swf_format/CLAUDE.md) |
 | mira_zipper_format | [plugins/mira_zipper_format/CLAUDE.md](plugins/mira_zipper_format/CLAUDE.md) |
 | pdf-viewer | [plugins/pdf-viewer/CLAUDE.md](plugins/pdf-viewer/CLAUDE.md) |
-| old mira_thumb | [old_plugins/mira_thumb/CLAUDE.md](old_plugins/mira_thumb/CLAUDE.md) |
 
-> 13 个活跃插件现均有独立 `CLAUDE.md`。
+> 16 个活跃插件中 13 个有独立 `CLAUDE.md`(三个新深度插件暂无)。
 
 ## 已移除
 
 - `mira_n8n`(2026-08-21 删除,n8n Webhook/WS 集成)
 - `mira_duplicate_scanner`(2026-08-13,重复扫描功能内置到 `mira-app-server/src/services/DuplicateScanner.ts`)
 - `mira_thumb_imagemagick`(由格式插件体系与内置 ThumbnailService 取代)
+- 以上三个目录磁盘上仍残留 `dist/`/`node_modules` 构建产物,但**无 git 跟踪源码**,不属于活跃插件
 
 ## 扫描状态
 
-- **更新时间**: 2026-08-20
-- **已扫描**: `plugins/plugins/` 全部 14 个目录(基于 `index.ts` + `package.json` 核对);`plugins.recommend.json`(12 条目);深读 mira_tiptap_format 入口与 web 前端结构、mira_gallery_dl 协议归属
-- **本次更新要点**: 补建 11 个插件的轻量 `CLAUDE.md`(mira_3d_format、mira_eagle_extension、mira_epub_format、mira_gallery_dl、mira_livp_format、mira_lottie_format、mira_pag_format、mira_spine_format、mira_swf_format、mira_zipper_format、pdf-viewer,各含协议/扩展名/web 结构/扫描状态);14 个活跃插件文档齐全
-- **下一步建议**: 按需深扫各插件 CLAUDE.md 标注的"未扫描"项(如 livpBundle.ts、spine renderIdle.ts/spineBundle.ts、eagle 各 handler、web/src 组件实现)
-- **web/ 与 online_client_plugins/ 关系**(2026-08-20 核对): 11 个 `web/` 查看器均无在线分发版本;`online_client_plugins/plugins/` 下 `mira-3d-format-preview`、`mira-spine-format-preview`、`psd-viewer` 仅剩 node_modules(无 plugin.json,索引跳过),与对应 `web/package.json` name 一致,疑似在线分发残留,详见根 `claude/module-index.md`
+- **更新时间**: 2026-08-23
+- **已扫描**: `plugins/plugins/` 全部 16 个 git 跟踪目录;三个新深度插件的 index.ts 头部与 package.json;双注册表(`plugins.json` 3 条 / server 运行时 11 条)核对
+- **本次更新(2026-08-23)**: 插件 14→16(新增 mira_image_cropper/mira_format_converter/mira_ai_sdk,均为「HTTP 路由 + web/ SPA」深度插件形态,默认 enabled);recommend 12→11 条;新增源码侧展示注册表 `plugins/plugins/plugins.json`(3 条);mira_n8n 删除落档
+- **下一步建议**: 为三个新深度插件补建独立 CLAUDE.md;深扫 mira_ai_sdk 的 provider 管理 web 前端
+- **web/ 与 online_client_plugins/ 关系**(2026-08-23 核对): 三个新插件的 `web/` 即客户端应用本体;`online_client_plugins/` 是**纯客户端插件市场**(已建独立 CLAUDE.md),两者渠道不同但形态趋同

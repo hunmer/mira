@@ -8,6 +8,7 @@
 
 | 日期 | 操作 | 说明 |
 |------|------|------|
+| 2026-08-23 | 增量更新 | 组件目录 52→53:+chart(@unovis/vue 图表封装,配合 Dashboard 统计卡片) |
 | 2026-08-20 | 增量更新 | 组件目录 34→52:v2.x 新增 carousel/chapter-scrubber/color-picker 系列/command(回归)/expandable-gallery/file-card/file-icon/file-system/folder/form/glowing-*/input-group/notification-list/skeleton/collapsible(回归) 等 18 个 |
 | 2026-08-05 | 架构迁移 | 统一到 shadcn-vue `new-york-v4` 默认样式；删除自定义 `volt/` 组件库与未引用组件；清理 mira-* 自定义样式系统。详见仓库根 `task_plan.md` / `progress.md`。 |
 | 2026-05-12 | 新建文档 | 首次创建 |
@@ -31,7 +32,7 @@ import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 
 ## 对外接口
 
-### 组件目录（52 个）
+### 组件目录（53 个，08-20 后新增 chart）
 
 | 分类 | 组件 |
 |------|------|

@@ -24,13 +24,16 @@ pnpm workspace monorepo,分为以下层次:
 - **管理面板** `mira-dashboard-next`(v0.0.0):Vue 3.5 + shadcn-vue 2.7 + Tailwind v4 Web 后台,API 层走 mira-app-core SDK
 - **浏览器扩展** `mira-browser-extension`(v0.1.0):Chrome MV3 网页素材采集(截图/拖拽/嗅探/批量上传/cookie 抓取)
 - **移动端** `mira_mobile`(v1.0.0+1):Flutter(Dart ^3.10),浏览/下载/相册自动备份(不在 workspace.yaml,独立管理)
-- **插件 UI 库** `mira-plugin-ui`(v1.1.0):自包含 dist 的共享组件库,被浏览器扩展与 tiptap 插件消费
+- **插件 UI 库** `mira-plugin-ui`(v1.1.0):自包含 dist 的共享组件库(ui 67 目录 + library 媒体库组件族),被扩展/CEP 面板/服务端插件 web/客户端市场插件共 8 处消费
+- **栅格布局** `grid-layout-plus`(v2.0.0-beta.0):vendored fork,供 mira-client Home 仪表盘
+- **CEP 面板** `mira-cep-panel`(v0.1.0):Photoshop 2020 内浏览/置入 Mira 素材(Chromium 61 兼容)
 - **瀑布流组件** `vue-masonry`(v0.1.0,@hunmer/vue-masonry):Vue 3 瀑布流,被 mira-client/扩展依赖
 - **框选组件** `vue-selection-box`(v0.1.0,@hunmer/vue-selection-box):Vue 3 框选,被 mira-client/mira-plugin-ui 依赖
 - **落地页** `landing-page`(v0.1.0,efferd-ui):Next.js 16 + React 19 单页营销站(efferd.com,静态导出)
 - **工具** `mira-scripts-core`(v1.0.5):数据迁移/导入 CLI
 - **文档** `mira-doc`(v1.0.0):VitePress 文档站
-- **插件** `plugins/`:服务端插件集合(14 个,见 [module-index.md](module-index.md))
+- **插件** `plugins/`:服务端插件集合(16 个,见 [module-index.md](module-index.md))
+- **客户端插件市场** `online_client_plugins/`(8 个入索引):视频剪辑器/格式预览/以图搜图/白板等,经 `plugins.json` 索引分发
 
 ## 技术栈
 
