@@ -17,7 +17,8 @@
     "copyright": "Copyright © 2025 Mira Team. All rights reserved.",
     "updaterNotSupported": "Auto-update is not supported in this environment",
     "updateFailed": "Update failed",
-    "downloadFailed": "Failed to download update"
+    "downloadFailed": "Failed to download update",
+    "noReleaseArtifact": "Update info is unavailable right now. Please try again later or download from the GitHub releases page."
   },
   "animatedFolderCard": {
     "fileCount": "{count} files",

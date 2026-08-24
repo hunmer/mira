@@ -44,7 +44,13 @@ export default defineConfig({
       'electron-updater',
         'electron-window-state',
         '@hunmer/procm-mcp-sdk',
-      'mira-app-core/shared/sdk'
+      'mira-app-core/shared/sdk',
+      // electron-updater / fs-extra 内联后仍会在运行时 require 的传递依赖，
+      // asar 内没有 node_modules，必须一并打进 main bundle
+      'fs-extra', 'jsonfile', 'mkdirp', 'universalify', 'graceful-fs',
+      'js-yaml', 'lazy-val', 'lodash.escaperegexp', 'lodash.isequal',
+      'semver', 'tiny-typed-emitter', 'builder-util-runtime',
+      'debug', 'ms', 'sax'
     ]
   }
 })

@@ -17,7 +17,8 @@
     "copyright": "Copyright © 2025 Mira Team. All rights reserved.",
     "updaterNotSupported": "当前环境不支持自动更新",
     "updateFailed": "更新失败",
-    "downloadFailed": "下载更新失败"
+    "downloadFailed": "下载更新失败",
+    "noReleaseArtifact": "暂无法获取更新信息，请稍后重试或前往 GitHub 发布页手动下载"
   },
   "animatedFolderCard": {
     "fileCount": "{count} 个文件",

@@ -180,6 +180,10 @@ const errorMessage = ref('')
 
 const isUpdaterAvailable = computed(() => Boolean(window.electronAPI?.updater))
 
+// electron-updater 的 latest.yml 缺失报错对用户无意义，替换为友好文案
+const formatUpdateError = (message: string) =>
+  message?.includes('latest.yml') ? t('business.aboutDialog.noReleaseArtifact') : message
+
 // electron-updater 事件清理函数集合
 const cleanups: Array<() => void> = []
 
@@ -210,7 +214,7 @@ const registerUpdaterEvents = () => {
       updateState.value = 'downloaded'
     }),
     api.onUpdateError((error: any) => {
-      errorMessage.value = error?.message || t('business.aboutDialog.updateFailed')
+      errorMessage.value = formatUpdateError(error?.message || t('business.aboutDialog.updateFailed'))
       updateState.value = 'error'
     })
   )
@@ -266,7 +270,7 @@ const checkForUpdates = async () => {
   const res = await api.check()
   if (!res.success) {
     updateState.value = 'error'
-    errorMessage.value = res.error || t('business.aboutDialog.checkFailed')
+    errorMessage.value = formatUpdateError(res.error || t('business.aboutDialog.checkFailed'))
     return
   }
   // 有 updateInfo 表示有更新（onUpdateAvailable 也会把状态置为 available）
@@ -283,7 +287,7 @@ const downloadUpdate = async () => {
   const res = await window.electronAPI.updater.download()
   if (!res.success) {
     updateState.value = 'error'
-    errorMessage.value = res.error || t('business.aboutDialog.downloadFailed')
+    errorMessage.value = formatUpdateError(res.error || t('business.aboutDialog.downloadFailed'))
   } else {
     updateState.value = 'downloading'
   }

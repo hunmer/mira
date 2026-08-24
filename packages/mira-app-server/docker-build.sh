@@ -12,6 +12,18 @@ docker rmi mira_server:latest 2>/dev/null || true
 # 构建 Docker 镜像
 echo "构建 Docker 镜像..."
 cd ../..
+
+# 同步外部 procm SDK（mira-app-server 的 link: 依赖）到 build context
+if [ -d /g/procm-mcp/packages/procm-sdk/dist ]; then
+    echo "同步 procm-mcp SDK -> docker-deps/procm-sdk ..."
+    rm -rf docker-deps/procm-sdk
+    mkdir -p docker-deps/procm-sdk
+    cp /g/procm-mcp/packages/procm-sdk/package.json docker-deps/procm-sdk/
+    cp -r /g/procm-mcp/packages/procm-sdk/dist docker-deps/procm-sdk/
+else
+    echo "警告: 未找到 /g/procm-mcp/packages/procm-sdk/dist，沿用 docker-deps/ 中现有产物"
+fi
+
 docker build -f packages/mira-app-server/Dockerfile -t mira_server:latest .
 cd packages/mira-app-server
 
