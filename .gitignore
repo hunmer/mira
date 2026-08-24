@@ -7,6 +7,7 @@ packages/mira-app-server/data/
 .vscode/edge-debug-user-data/
 packages/mira-server/mira_server.tar
 plugins/users.db
+plugins/plugins/*/data/
 .spec-workflow/
 
 mira-server.tar
