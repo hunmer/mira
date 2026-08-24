@@ -203,7 +203,51 @@ export const zh = {
       skill: "Skill 扩展",
       contributing: "贡献指南",
     },
+    about: {
+      privacy: "隐私政策",
+    },
     copyright: "Mira, 保留所有权利",
+    privacy: {
+      title: "Mira 浏览器扩展隐私政策",
+      lastUpdatedLabel: "最后更新",
+      sections: [
+        {
+          title: "我们收集哪些数据",
+          lead: "Mira 浏览器扩展仅在你主动使用时，才可能收集以下数据：",
+          items: [
+            "网页截图（仅在你主动触发截图时）",
+            "网页中的图片、视频和音频资源（当你使用资源嗅探或拖放功能时）",
+            "你输入的服务器地址和登录凭证（仅存储在浏览器本地）",
+            "你的偏好设置（主题、默认素材库等）",
+          ],
+        },
+        {
+          title: "我们如何使用数据",
+          lead: "",
+          items: [
+            "所有收集的内容仅会上传到由你自己配置的 Mira 服务器。",
+            "我们不会向任何由我们控制的第三方服务器发送数据。",
+            "登录凭证和设置通过 Chrome storage 保存在浏览器本地。",
+          ],
+        },
+        {
+          title: "数据存储",
+          lead: "",
+          items: [
+            "截图和资源会直接发送到你自己搭建的 Mira 服务器。",
+            "扩展设置和登录状态存储在浏览器本地。",
+            "我们不会在自己的服务器上存储你的数据。",
+          ],
+        },
+        {
+          title: "第三方服务",
+          lead: "本扩展不使用任何第三方分析或跟踪服务。",
+          items: [] as string[],
+        },
+      ],
+      contactTitle: "联系方式",
+      contactLead: "如果你对本隐私政策有任何疑问，请联系：",
+    },
   },
   langToggle: {
     label: "切换语言",
@@ -408,7 +452,51 @@ export const en: Dict = {
       skill: "Skills",
       contributing: "Contributing",
     },
+    about: {
+      privacy: "Privacy Policy",
+    },
     copyright: "Mira, All rights reserved",
+    privacy: {
+      title: "Mira Browser Extension Privacy Policy",
+      lastUpdatedLabel: "Last updated",
+      sections: [
+        {
+          title: "What data we collect",
+          lead: "The Mira browser extension may collect the following data only when you actively use it:",
+          items: [
+            "Screenshots of web pages (only when you trigger screenshot)",
+            "Images, videos, and audio resources from web pages (when you use resource sniffing or drag-and-drop)",
+            "Server address and login credentials you enter (stored locally in the browser)",
+            "Your preference settings (theme, default library, etc.)",
+          ],
+        },
+        {
+          title: "How we use the data",
+          lead: "",
+          items: [
+            "All collected content is uploaded only to the Mira server that you configure yourself.",
+            "We do not send any data to third-party servers controlled by us.",
+            "Login credentials and settings are stored locally in your browser using Chrome storage.",
+          ],
+        },
+        {
+          title: "Data storage",
+          lead: "",
+          items: [
+            "Screenshots and resources are sent directly to your own Mira server.",
+            "Extension settings and login status are stored locally in your browser.",
+            "We do not store your data on our servers.",
+          ],
+        },
+        {
+          title: "Third-party services",
+          lead: "This extension does not use any third-party analytics or tracking services.",
+          items: [],
+        },
+      ],
+      contactTitle: "Contact",
+      contactLead: "If you have any questions about this privacy policy, please contact:",
+    },
   },
   langToggle: {
     label: "Switch language",

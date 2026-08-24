@@ -1,6 +1,6 @@
 {
   "name": "mira-browser-extension",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "private": true,
   "description": "Mira 浏览器扩展 - 网页采集入口(截图/拖拽上传/资源嗅探)",
   "type": "module",

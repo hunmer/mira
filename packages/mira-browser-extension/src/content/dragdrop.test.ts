@@ -189,8 +189,9 @@ describe('createDragDrop lifecycle', () => {
 
     img.dispatchEvent(new MouseEvent('dragstart', { bubbles: true, clientX: 10, clientY: 10 }));
     document.dispatchEvent(new MouseEvent('dragover', { bubbles: true, clientX: 100, clientY: 10 }));
-    await Promise.resolve();
-    await Promise.resolve();
+    // fetchFolders 内部是 .then().catch() 链,resolve 依赖多层微任务;
+    // 用宏任务清空整个微任务队列,不依赖链路深度
+    await new Promise(resolve => setTimeout(resolve, 0));
 
     expect(document.querySelector('.mira-overlay-title')?.textContent).toBe('未连接素材库');
     const empty = document.querySelector<HTMLElement>('.mira-empty-state-dropzone');

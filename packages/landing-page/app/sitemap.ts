@@ -9,5 +9,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${SITE_HOME_URL}/`,
       lastModified: new Date().toISOString(),
     },
+    {
+      url: `${SITE_HOME_URL}/privacy`,
+      lastModified: new Date().toISOString(),
+    },
   ];
 }

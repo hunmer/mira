@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { GithubIcon } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import type React from "react";
@@ -9,6 +10,7 @@ import { useI18n } from "@/lib/i18n/i18n-provider";
 const GITHUB_URL = "https://github.com/hunmer/mira";
 const ISSUE_URL = "https://github.com/hunmer/mira/issues";
 const DOCS_URL = "http://miraapp.cc/docs";
+const PRIVACY_URL = "/privacy";
 
 type FooterLink = {
   title: string;
@@ -87,7 +89,10 @@ export function SiteFooterSection() {
     },
     {
       label: t.footer.groups.follow,
-      links: [{ title: "GitHub", href: GITHUB_URL, icon: GithubIcon }],
+      links: [
+        { title: "GitHub", href: GITHUB_URL, icon: GithubIcon },
+        { title: t.footer.about.privacy, href: PRIVACY_URL },
+      ],
     },
   ];
 
@@ -111,14 +116,14 @@ export function SiteFooterSection() {
                 <ul className="mt-4 space-y-2 text-muted-foreground text-sm">
                   {section.links.map((link) => (
                     <li key={link.title}>
-                      <a
+                      <Link
                         className="inline-flex items-center transition-all duration-300 hover:text-foreground"
                         href={link.href}
                         key={`${section.label}-${link.title}`}
                       >
                         {link.icon && <link.icon className="me-1 size-4" />}
                         {link.title}
-                      </a>
+                      </Link>
                     </li>
                   ))}
                 </ul>
