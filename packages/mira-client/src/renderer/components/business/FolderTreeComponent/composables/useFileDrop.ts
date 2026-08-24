@@ -4,8 +4,8 @@ import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { useLibraryStore } from '@renderer/stores/library'
 import { useTagStore } from '@renderer/stores/tag'
 import { useMediaStore } from '@renderer/stores/media'
-import { useSettingsStore } from '@renderer/stores/settings'
 import { useToast } from '@renderer/composables/useToast'
+import { getLibraryPrefs } from '@renderer/composables/LibraryPrefs'
 import type { HeTreeNode } from '../types'
 import {
   clearInternalDragState,
@@ -25,7 +25,6 @@ export function useFileDrop(options: {
   const libraryStore = useLibraryStore()
   const tagStore = useTagStore()
   const mediaStore = useMediaStore()
-  const settingsStore = useSettingsStore()
   const toast = useToast()
   const { t } = useI18n()
 
@@ -110,7 +109,8 @@ export function useFileDrop(options: {
     const nodeIdNum = resolveNodeNum(node)
     if (isNaN(nodeIdNum)) return
 
-    if (settingsStore.settings.directImportMode) {
+    // 「导入后二次确定」关闭：走乐观更新的直传链路；开启时按原逻辑静默上传到目标节点
+    if (!getLibraryPrefs().confirmAfterImport) {
       const metadata: Record<string, any> = {}
       if (options.isFolder.value) metadata.folderId = String(nodeIdNum)
       else metadata.tags = [String(nodeIdNum)]

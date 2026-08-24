@@ -40,6 +40,9 @@ import { useHomeController } from '@renderer/controllers/HomeController'
 // Window and Navigation composables
 import { useWindowAndNavigation } from '@renderer/composables'
 import ConfigStorage from '@renderer/utils/ConfigStorage'
+import { getLibraryPrefs } from '@renderer/composables/LibraryPrefs'
+import { useDirectImport } from '@renderer/composables/useDirectImport'
+import type { ImportFolderPayload } from '@renderer/composables/useImportHandler'
 
 // HomeView模块
 import { useHomeUIState } from './useHomeUIState'
@@ -58,6 +61,8 @@ const mediaStore = useMediaStore()
 const libraryStore = useLibraryStore()
 const settingsStore = useSettingsStore()
 const viewHistoryStore = useViewHistoryStore()
+// 「导入后二次确定」关闭时的直接导入链路
+const { importLocalTreeDirectly } = useDirectImport()
 const router = useRouter()
 
 // ============================================
@@ -417,8 +422,12 @@ const uploadInitialTagIds = computed<string[]>(() => {
   return Number.isFinite(num) ? [String(num)] : []
 })
 
-// 从侧边栏导入本地文件夹：记录本地树并打开上传对话框
-function handleImportFolder(payload: { rootPath: string; tree: any[] }) {
+// 从侧边栏导入本地文件夹：二次确认开启时记录本地树并打开上传对话框，关闭时直接导入
+function handleImportFolder(payload: ImportFolderPayload) {
+  if (!getLibraryPrefs().confirmAfterImport) {
+    void importLocalTreeDirectly(payload.tree, payload)
+    return
+  }
   uploadInitialTree.value = payload
   sidebarUploadTarget.value = payload as any
   showFileUploadDialog.value = true
@@ -431,6 +440,10 @@ async function handleFloatingBallMessage(data: any) {
   if (data.type === 'file-drop') {
     const files = Array.isArray(data.files) ? data.files : []
     if (files.length === 0) return
+    if (!getLibraryPrefs().confirmAfterImport) {
+      void importLocalTreeDirectly(files)
+      return
+    }
     uploadInitialTree.value = { rootPath: '', tree: files }
     showFileUploadDialog.value = true
   } else if (data.type === 'fb-click') {
@@ -782,7 +795,7 @@ onUnmounted(() => {
 
         <!-- 内容面板 -->
         <div class="flex-1 rounded-2xl border border-white/60 dark:border-border bg-white/30 dark:bg-muted/50 backdrop-blur-xl shadow-[0_12px_40px_var(--shadow-primary-md)] overflow-hidden flex flex-col">
-          <main ref="mainContentRef" class="flex-1 flex overflow-hidden relative min-w-0 p-2 gap-2 border border-primary/40 rounded-xl">
+          <main ref="mainContentRef" class="flex-1 flex overflow-hidden relative min-w-0 p-2 gap-2 rounded-xl">
             <HomeSplitContent
               class="flex-1 min-w-0 overflow-hidden rounded-xl"
               :layout="splitLayout"

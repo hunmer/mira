@@ -135,6 +135,19 @@
       </div>
       <Switch :model-value="showDeleteConfirm" @update:model-value="handleDeleteConfirmChange" />
     </div>
+
+    <!-- 导入后二次确定 -->
+    <div class="flex items-center justify-between gap-4 py-3">
+      <div class="min-w-0">
+        <label class="text-foreground dark:text-muted-foreground text-base font-medium leading-normal">
+          {{ t('settings.confirmAfterImport') }}
+        </label>
+        <p class="text-muted-foreground dark:text-muted-foreground text-sm mt-2">
+          {{ t('settings.confirmAfterImportDesc') }}
+        </p>
+      </div>
+      <Switch :model-value="confirmAfterImport" @update:model-value="handleConfirmAfterImportChange" />
+    </div>
   </div>
 </template>
 
@@ -155,6 +168,7 @@ import {
   saveLibraryPageSize,
   saveSkipDeleteConfirm,
   saveShowFoldersInTab,
+  saveConfirmAfterImport,
   type LibraryDefaultViewMode,
   type LibraryDefaultGroupingMode
 } from '@renderer/composables/LibraryPrefs'
@@ -183,6 +197,8 @@ const pageSizeOptions = [100, 200, 500, 1000, 2000, 5000]
 const showDeleteConfirm = ref(!getLibraryPrefs().skipDeleteConfirm)
 // 媒体标签页顶部是否展示子文件夹区
 const showFoldersInTab = ref(getLibraryPrefs().showFoldersInTab)
+// 导入（导入文件夹 / 悬浮球拖入文件）后是否自动打开上传对话框进行二次确认
+const confirmAfterImport = ref(getLibraryPrefs().confirmAfterImport)
 
 const handleMultiLibraryViewsChange = async (enabled: boolean) => {
   await settingsStore.updateSetting('multiLibraryViewsEnabled', enabled)
@@ -218,6 +234,16 @@ const handleShowFoldersInTabChange = async (enabled: boolean) => {
   })
 }
 
+const handleConfirmAfterImportChange = async (enabled: boolean) => {
+  await saveConfirmAfterImport(enabled)
+  confirmAfterImport.value = enabled
+  toast.add({
+    severity: 'success',
+    summary: t('settings.settingSaved'),
+    life: 2000
+  })
+}
+
 onMounted(async () => {
   if (window.electronAPI) {
     const updateBrowserViewState = (state: BrowserViewState) => {
@@ -237,6 +263,7 @@ onMounted(async () => {
   pageSize.value = getLibraryPrefs().pageSize
   showDeleteConfirm.value = !getLibraryPrefs().skipDeleteConfirm
   showFoldersInTab.value = getLibraryPrefs().showFoldersInTab
+  confirmAfterImport.value = getLibraryPrefs().confirmAfterImport
 })
 
 onUnmounted(() => {

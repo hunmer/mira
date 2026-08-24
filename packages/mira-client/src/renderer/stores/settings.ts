@@ -10,6 +10,8 @@ import {
   removeThemeStyle,
   applyPrimaryColor,
   removePrimaryColor,
+  applyCustomCss,
+  removeCustomCss,
 } from '@renderer/utils/theme-style'
 import i18n from '../i18n'
 
@@ -37,6 +39,8 @@ export interface AppSettings {
   themeStyle: string
   // Custom 风格模式下的 CSS 变量文本
   themeStyleCustomCss: string
+  // 全局自定义 CSS（独立 style 元素注入，与主题风格覆盖叠加生效）
+  customCss: string
   // 主色覆盖（hex，空字符串表示使用主题自带主色）
   primaryColor: string
   // 全局字体缩放系数（1 = 默认根字号 16px；范围 0.85~1.3）
@@ -74,9 +78,6 @@ export interface AppSettings {
 
   /** 紧密瀑布流：取消圆角、间距为 0、图片带黑色描边（类似手机相册） */
   compactWaterfall: boolean
-
-  // 导入设置
-  directImportMode: boolean
 
   // 截图设置
   screenshotFormat: 'png' | 'jpeg' | 'webp'
@@ -190,6 +191,7 @@ export const useSettingsStore = defineStore('settings', () => {
     // 主题风格 / 主色覆盖
     themeStyle: '',
     themeStyleCustomCss: '',
+    customCss: '',
     primaryColor: '',
     fontSizeScale: 1,
     uiZoom: 1,
@@ -220,8 +222,6 @@ export const useSettingsStore = defineStore('settings', () => {
     visibleItemFields: ['filename', 'format', 'size', 'folder', 'tags', 'videoPlayIcon'],
     compactWaterfall: false,
 
-    // 导入设置
-    directImportMode: false,
     screenshotFormat: 'png',
     screenshotCopyToClipboard: true,
     screenshotAutoImport: false,
@@ -522,6 +522,8 @@ export const useSettingsStore = defineStore('settings', () => {
       applyTheme()
     } else if (key === 'themeStyle' || key === 'themeStyleCustomCss') {
       applyThemeStyleOverride()
+    } else if (key === 'customCss') {
+      applyCustomCssOverride()
     } else if (key === 'primaryColor') {
       applyPrimaryColorOverride()
     } else if (key === 'fontSizeScale') {
@@ -599,6 +601,7 @@ export const useSettingsStore = defineStore('settings', () => {
 
       themeStyle: '',
       themeStyleCustomCss: '',
+      customCss: '',
       primaryColor: '',
       fontSizeScale: 1,
       uiZoom: 1,
@@ -621,7 +624,6 @@ export const useSettingsStore = defineStore('settings', () => {
       videoPreviewMuted: true,
       visibleItemFields: ['filename', 'format', 'size', 'folder', 'tags', 'videoPlayIcon'],
       compactWaterfall: false,
-      directImportMode: false,
       screenshotFormat: 'png',
       screenshotCopyToClipboard: true,
       screenshotAutoImport: false,
@@ -652,6 +654,7 @@ export const useSettingsStore = defineStore('settings', () => {
     await saveSettings()
     applyTheme()
     applyThemeStyleOverride()
+    applyCustomCssOverride()
     applyPrimaryColorOverride()
     applyFontSizeScale()
     applyUiZoom()
@@ -736,6 +739,15 @@ export const useSettingsStore = defineStore('settings', () => {
     const css = THEME_STYLES[style]
     if (css) applyThemeStyle(css)
     else removeThemeStyle()
+  }
+
+  /**
+   * 应用全局自定义 CSS（独立 style 元素，与主题风格覆盖叠加生效）
+   */
+  const applyCustomCssOverride = () => {
+    const css = settings.value.customCss
+    if (css) applyCustomCss(css)
+    else removeCustomCss()
   }
 
   /**
@@ -829,8 +841,9 @@ export const useSettingsStore = defineStore('settings', () => {
     await loadSettings()
     applyTheme()
 
-    // 应用主题风格 / 主色覆盖
+    // 应用主题风格 / 全局自定义 CSS / 主色覆盖
     applyThemeStyleOverride()
+    applyCustomCssOverride()
     applyPrimaryColorOverride()
     applyFontSizeScale()
     applyUiZoom()

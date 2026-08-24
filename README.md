@@ -47,11 +47,16 @@ mira_typescript/
 │   ├── mira-app-core/          # 核心库（SDK / 存储 / 事件）
 │   ├── mira-app-server/        # 后端服务（HTTP + WebSocket）
 │   ├── mira-client/            # 桌面客户端（Electron）
-│   ├── mira-dashboard-next/    # Web 管理面板（新版）
+│   ├── mira_mobile/            # 移动客户端（Flutter）
+│   ├── mira-dashboard-next/    # Web 管理面板
 │   ├── mira-browser-extension/ # 浏览器扩展（网页采集）
+│   ├── mira-cep-panel/         # Adobe CEP 面板（Photoshop）
+│   ├── mira-plugin-ui/         # 插件共享 UI 组件库
 │   ├── mira-scripts-core/      # 数据处理工具集
 │   ├── mira-doc/               # 系统文档
+│   ├── grid-layout-plus/       # Vue 3 栅格拖拽布局组件
 │   ├── vue-masonry/            # Vue 3 瀑布流组件
+│   ├── vue-selection-box/      # Vue 3 框选组件
 │   └── landing-page/           # 项目官网落地页
 ├── plugins/                    # 插件目录
 ├── data/                       # 数据目录
@@ -66,53 +71,52 @@ mira_typescript/
 | [**mira-app-server**](./packages/mira-app-server/README.md) | 后端服务。基于 HTTP + WebSocket 的独立 server，负责资源库管理、插件系统、用户认证、缩略图与元数据等。 |
 | [**mira-client**](./packages/mira-client/README.md) | 桌面客户端（Electron）。Mira 媒体库的桌面端应用，提供本地化的浏览与管理体验。 |
 | [**mira-dashboard-next**](./packages/mira-dashboard-next/README.md) | Web 管理面板（新版）。基于 Vue 3 + shadcn-vue + Tailwind CSS 4，包含系统概览、资源库/插件/管理员/设备管理、数据库预览等。 |
+| [**mira_mobile**](./packages/mira_mobile/README.md) | 移动客户端。基于 Flutter 的移动端应用。 |
 | [**mira-browser-extension**](./packages/mira-browser-extension/README.md) | 浏览器扩展。网页采集入口，支持截图、拖拽上传、资源嗅探，将网页素材快速归档到 Mira。 |
+| [**mira-cep-panel**](./packages/mira-cep-panel/README.md) | Adobe CEP 面板。Photoshop 内的 Mira 素材库面板（兼容 CEP 9 / Chromium 61）。 |
+| [**mira-plugin-ui**](./packages/mira-plugin-ui/README.md) | 插件共享 UI 组件库。构建产物自包含，可经 CDN 引入，不依赖宿主页面的组件库。 |
 | [**mira-scripts-core**](./packages/mira-scripts-core/README.md) | 数据处理工具集。用于图书馆系统数据的转换与文件批量导入脚本。 |
 | [**mira-doc**](./packages/mira-doc/index.md) | 系统文档。涵盖安装、CLI、MCP、技能等使用说明（基于 VitePress）。 |
+| [**grid-layout-plus**](./packages/grid-layout-plus/README.md) | Vue 3 栅格拖拽布局组件。可拖拽、可缩放的可视化布局系统。 |
 | [**vue-masonry**](./packages/vue-masonry/README.md) | Vue 3 瀑布流组件库。支持响应式列数、跨列跨行、宽高比、懒加载与动画。 |
+| [**vue-selection-box**](./packages/vue-selection-box/README.md) | Vue 3 框选组件。拖拽矩形框选、快捷键加减选、边缘自动滚动，基于 `data-selectable-id` 协议零侵入。 |
 | [**landing-page**](./packages/landing-page/README.md) | 项目官网落地页（Next.js）。对外展示 Mira 产品介绍与功能特性。 |
 
 ## 快速开始
 
 ### 前置要求
 - Node.js 18+
-- npm 或 yarn
+- pnpm
 
 ### 1. 安装依赖
 ```bash
-# 安装所有包的依赖
-npm run install-all
+# 安装核心包依赖（core / server / client）
+pnpm run install:deps
+
+# 构建插件
+pnpm run build:plugins
 ```
 
 ### 2. 启动开发环境
-
-#### 方式一：启动完整全栈（推荐）
 ```bash
-# Windows
-./start-full-stack.bat
-
-# PowerShell
-./start-full-stack.ps1
-
-# 或使用 VS Code 任务
-# Ctrl+Shift+P -> Tasks: Run Task -> start-full-stack
-```
-
-#### 方式二：分别启动服务
-```bash
-# 启动后端服务
+# 启动后端服务（HTTP + WebSocket）
 cd packages/mira-app-server
-npm run dev
+pnpm run dev
 
-# 启动前端管理面板
+# 在仓库根目录启动桌面客户端（Electron，另开终端）
+pnpm run start:client:win   # Windows
+pnpm run start:client:mac   # macOS
+
+# 启动 Web 管理面板（另开终端）
 cd packages/mira-dashboard-next
-npm run dev
+pnpm run dev
 ```
 
 ### 3. 访问应用
-- **后端API**: http://localhost:8081
+- **后端 API**: http://localhost:8081
 - **WebSocket**: ws://localhost:8018
-- **前端管理面板**: http://localhost:3999
+- **Web 管理面板**: http://localhost:5173（Vite 默认端口）
+- **桌面客户端开发页**: http://localhost:3000
 - **默认登录**: 用户名 `admin`，密码 `admin123`
 
 ## 许可证

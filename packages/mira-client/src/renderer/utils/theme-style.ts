@@ -388,6 +388,28 @@ export function removeThemeStyle() {
   document.getElementById(STYLE_EL_ID)?.remove()
 }
 
+// --- Global Custom CSS ---
+
+const CUSTOM_CSS_EL_ID = 'custom-css-override'
+
+/**
+ * 注入全局自定义 CSS（独立 style 元素，不经过 .dark 选择器改写，与主题风格覆盖互不影响）
+ */
+export function applyCustomCss(css: string) {
+  let el = document.getElementById(CUSTOM_CSS_EL_ID) as HTMLStyleElement | null
+  if (!el) {
+    el = document.createElement('style')
+    el.id = CUSTOM_CSS_EL_ID
+    document.head.appendChild(el)
+  }
+  el.textContent = css
+}
+
+/** 移除全局自定义 CSS */
+export function removeCustomCss() {
+  document.getElementById(CUSTOM_CSS_EL_ID)?.remove()
+}
+
 // --- Primary Color ---
 
 const DEFAULT_LIGHT_PRIMARY = '#1456f0'

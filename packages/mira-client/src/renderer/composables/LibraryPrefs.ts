@@ -43,6 +43,10 @@ interface LibraryPrefsData {
   skipDeleteConfirm: boolean
   /** 媒体标签页顶部是否展示子文件夹区 */
   showFoldersInTab: boolean
+  /** 导入（导入文件夹 / 悬浮球拖入文件）后是否自动打开上传对话框进行二次确认 */
+  confirmAfterImport: boolean
+  /** FilterBar 区块显示顺序（启用的区块 id；不在列表中的区块隐藏） */
+  filterBarLayout: string[]
 }
 
 const STORAGE_KEY_PREFIX = 'mira-library-prefs'
@@ -60,7 +64,9 @@ const state = reactive<LibraryPrefsData>({
   pageSize: DEFAULT_PAGE_SIZE,
   sidebarModuleOpenStates: {},
   skipDeleteConfirm: false,
-  showFoldersInTab: true
+  showFoldersInTab: true,
+  confirmAfterImport: true,
+  filterBarLayout: []
 })
 
 const getStorageKey = () => `${STORAGE_KEY_PREFIX}-${tabPersistence.getScopeId() || 'default'}`
@@ -82,7 +88,9 @@ const persist = async () => {
     pageSize: state.pageSize,
     sidebarModuleOpenStates: state.sidebarModuleOpenStates,
     skipDeleteConfirm: state.skipDeleteConfirm,
-    showFoldersInTab: state.showFoldersInTab
+    showFoldersInTab: state.showFoldersInTab,
+    confirmAfterImport: state.confirmAfterImport,
+    filterBarLayout: state.filterBarLayout
   }))
 }
 
@@ -127,6 +135,10 @@ export async function loadLibraryPrefs(): Promise<void> {
       : {}
     state.skipDeleteConfirm = parsed?.skipDeleteConfirm === true
     state.showFoldersInTab = parsed?.showFoldersInTab !== false
+    state.confirmAfterImport = parsed?.confirmAfterImport !== false
+    state.filterBarLayout = Array.isArray(parsed?.filterBarLayout)
+      ? parsed.filterBarLayout.filter((id: any) => typeof id === 'string')
+      : []
   } catch (error) {
     console.error('Failed to load library prefs:', error)
   }
@@ -170,6 +182,18 @@ export async function saveSkipDeleteConfirm(skip: boolean): Promise<void> {
 /** 设置媒体标签页顶部是否展示子文件夹区 */
 export async function saveShowFoldersInTab(show: boolean): Promise<void> {
   state.showFoldersInTab = show
+  await persist()
+}
+
+/** 设置导入后是否自动打开上传对话框进行二次确认 */
+export async function saveConfirmAfterImport(confirm: boolean): Promise<void> {
+  state.confirmAfterImport = confirm
+  await persist()
+}
+
+/** 保存 FilterBar 区块显示顺序（空数组表示全部按默认顺序显示） */
+export async function saveFilterBarLayout(ids: string[]): Promise<void> {
+  state.filterBarLayout = ids.filter(id => typeof id === 'string')
   await persist()
 }
 

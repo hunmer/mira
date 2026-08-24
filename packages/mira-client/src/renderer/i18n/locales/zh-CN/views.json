@@ -323,10 +323,6 @@
     "resetDoneDetail": "悬浮球位置已重置到右下角",
     "resetFailed": "重置失败"
   },
-  "importPanel": {
-    "enableTitle": "启用直接导入",
-    "enableDesc": "开启后，拖拽文件到当前文件夹/标签时将直接上传，无需手动确认"
-  },
   "networkPanel": {
     "desc": "配置 HTTP 代理，对所有网络请求生效（插件下载、插件市场目录、应用自更新等）。",
     "proxyTitle": "HTTP 代理",

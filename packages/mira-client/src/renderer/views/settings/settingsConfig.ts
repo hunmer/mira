@@ -10,7 +10,6 @@ export const settingSections: SettingSection[] = [
   { id: 'general', name: 'settings.sections.general', icon: 'settings' },
   { id: 'library', name: 'settings.sections.library', icon: 'perm_media' },
   { id: 'notifications', name: 'settings.sections.notifications', icon: 'notifications' },
-  { id: 'import', name: 'settings.sections.import', icon: 'upload_file' },
   { id: 'screenshot', name: 'settings.sections.screenshot', icon: 'screenshot_monitor' },
   { id: 'floating-ball', name: 'settings.sections.floatingBall', icon: 'bubble_chart' },
   { id: 'plugins', name: 'settings.sections.plugins', icon: 'extension' },

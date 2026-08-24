@@ -1,9 +1,12 @@
 <template>
-  <div class="filter-bar flex items-center space-x-4 mb-4 text-muted-foreground overflow-x-auto">
-    <!-- 筛选器 -->
-    <div class="flex items-center space-x-3 shrink-0">
-      <template v-for="filter in filters" :key="filter.id">
-        <Dropdown :offset="{ x: 0, y: 8 }" placement="bottom-start" :close-on-content-click="false">
+  <div class="filter-bar flex items-center space-x-2 mb-4 text-muted-foreground min-w-0">
+    <OrderedSectionList :items="enabledSections" draggable headerless horizontal class="flex-1 min-w-0"
+      @update:items="handleSectionsReorder">
+      <template #default="{ item }">
+        <!-- 筛选器 -->
+        <template v-if="filterById[item.id]">
+          <Dropdown v-for="filter in [filterById[item.id]]" :key="filter.id" :offset="{ x: 0, y: 8 }"
+            placement="bottom-start" :close-on-content-click="false">
           <template #trigger="{ isOpen }">
             <Button variant="ghost" size="xs" :class="getFilterButtonClass(filter, isOpen)">
               <span class="relative">
@@ -214,11 +217,10 @@
             </div>
           </template>
         </Dropdown>
-      </template>
-    </div>
+        </template>
 
-    <!-- 已保存的过滤器 -->
-    <Dropdown :offset="{ x: 0, y: 8 }" placement="bottom-start" :close-on-content-click="false">
+        <!-- 已保存的过滤器 -->
+        <Dropdown v-else-if="item.id === 'saved'" :offset="{ x: 0, y: 8 }" placement="bottom-start" :close-on-content-click="false">
       <template #trigger="{ isOpen }">
         <Button variant="ghost" size="xs"
           :class="isOpen || activeSavedFilter ? 'text-primary bg-primary/10 rounded-lg' : 'text-muted-foreground hover:text-foreground hover:bg-primary/5 rounded-lg'"
@@ -281,11 +283,8 @@
       </template>
     </Dropdown>
 
-    <div class="h-5 border-l border-border shrink-0"></div>
-
     <!-- 排序器 -->
-    <div class="flex items-center space-x-3 shrink-0">
-      <Dropdown :offset="{ x: 0, y: 8 }" placement="bottom-start">
+      <Dropdown v-else :offset="{ x: 0, y: 8 }" placement="bottom-start">
         <template #trigger="{ isOpen }">
           <Button variant="ghost" size="xs"
             :class="isOpen ? 'text-primary bg-primary/10 rounded-lg' : 'text-muted-foreground hover:text-foreground hover:bg-primary/5 rounded-lg'">
@@ -334,7 +333,21 @@
           </div>
         </template>
       </Dropdown>
-    </div>
+      </template>
+    </OrderedSectionList>
+
+    <!-- 自定义筛选栏布局：排序 / 隐藏 -->
+    <SortableLayoutDialog v-model="layoutDialogOpen" :enabled="enabledSections" :disabled="disabledSections"
+      :title="$t('business.filterBar.layoutTitle')" :description="$t('business.filterBar.layoutDescription')"
+      :enabled-title="$t('business.filterBar.layoutEnabled')" :disabled-title="$t('business.filterBar.layoutDisabled')"
+      :done-label="$t('common.confirm')" :reset-label="$t('common.resetOrder')"
+      :empty-disabled-label="$t('business.filterBar.layoutAllEnabled')"
+      @update:enabled="updateLayoutEnabled" @update:disabled="updateLayoutDisabled">
+      <template #item="{ item }">
+        <span class="material-icons text-base text-muted-foreground">{{ item.icon }}</span>
+        <div class="min-w-0 flex-1 truncate text-xs">{{ item.title }}</div>
+      </template>
+    </SortableLayoutDialog>
 
     <!-- 新建/编辑已保存过滤器的对话框 -->
     <SavedFilterDialog v-model:open="savedDialogOpen" :editing="editingSavedFilter" :current-rules="savedDialogRules"
@@ -346,9 +359,10 @@
 import { ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Dropdown } from '@/renderer/components/common/Dropdown'
+import OrderedSectionList from '@/renderer/components/common/OrderedSectionList.vue'
+import SortableLayoutDialog from '@/renderer/components/common/SortableLayoutDialog.vue'
 import FolderTreeComponent from '@renderer/components/business/FolderTreeComponent/FolderTreeComponent.vue'
 import SavedFilterDialog from './SavedFilterDialog.vue'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
@@ -361,6 +375,7 @@ import {
   addSavedFilter,
   updateSavedFilter,
   removeSavedFilter,
+  saveFilterBarLayout,
   type SavedFilter
 } from '@renderer/composables/LibraryPrefs'
 
@@ -415,6 +430,39 @@ const toast = useToast()
 // 已保存的过滤器（按当前素材库隔离）
 // ============================================
 const savedFilters = computed(() => getLibraryPrefs().savedFilters)
+
+// ============================================
+// 筛选栏区块：自定义排序 / 隐藏（按当前素材库隔离）
+// ============================================
+interface BarSection { id: string; title: string; icon: string }
+// FilterBar 内置区块（id 不与 FilterRule.id 冲突）
+const builtinBarSections = computed<BarSection[]>(() => [
+  { id: 'saved', title: t('business.filterBar.savedFilters'), icon: 'bookmark' },
+  { id: 'sort', title: t('business.filterBar.sortTitle'), icon: 'sort' }
+])
+const allBarSections = computed<BarSection[]>(() => [
+  ...props.filters.map(f => ({ id: f.id, title: f.label, icon: f.icon || 'filter_list' })),
+  ...builtinBarSections.value
+])
+const filterById = computed(() => Object.fromEntries(props.filters.map(f => [f.id, f])) as Record<string, FilterRule>)
+// 空布局 = 全部按默认顺序显示
+const enabledSections = computed<BarSection[]>(() => {
+  const order = getLibraryPrefs().filterBarLayout
+  if (!order.length) return allBarSections.value
+  return order
+    .map(id => allBarSections.value.find(section => section.id === id))
+    .filter(Boolean) as BarSection[]
+})
+const disabledSections = computed(() =>
+  allBarSections.value.filter(section => !enabledSections.value.some(e => e.id === section.id))
+)
+
+const layoutDialogOpen = ref(false)
+const handleSectionsReorder = (items: BarSection[]) => { void saveFilterBarLayout(items.map(item => item.id)) }
+const updateLayoutEnabled = (items: BarSection[]) => { void saveFilterBarLayout(items.map(item => item.id)) }
+const updateLayoutDisabled = (_items: BarSection[]) => { /* enabled 列表为唯一持久化来源 */ }
+
+defineExpose({ openLayoutDialog: () => { layoutDialogOpen.value = true } })
 const savedDialogOpen = ref(false)
 const editingSavedFilter = ref<SavedFilter | null>(null)
 // 打开对话框时快照的当前筛选条件（保存/更新以此为准）
@@ -461,10 +509,6 @@ const activeSavedFilter = computed<SavedFilter | null>(() => {
   if (!props.appliedFilterId) return null
   return getLibraryPrefs().savedFilters.find(f => f.id === props.appliedFilterId) || null
 })
-
-const handleSelectAllChange = () => {
-  emit('select-all')
-}
 
 const sortOptions = computed<SortOption[]>(() => [
   { value: 'imported_at', label: t('business.filterBar.sortFieldImportedAt'), icon: 'schedule' },

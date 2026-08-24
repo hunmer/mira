@@ -1,18 +1,67 @@
 <template>
   <div class="home-dashboard flex h-full flex-col bg-transparent">
-    <!-- 顶部工具栏 -->
-    <div class="dashboard-toolbar flex items-center justify-between border-b px-4 py-2">
-      <div class="flex items-center gap-2 text-sm font-medium">
-        <span class="material-icons text-base text-primary">dashboard</span>
-        <span>{{ $t('tabs.homeTabView.dashboard') }}</span>
+    <!-- 布局切换条（右侧为操作按钮） -->
+    <div class="dashboard-layouts-bar flex items-center gap-1 border-b px-3 py-1.5">
+      <div class="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
+        <div
+          v-for="layout in store.layouts"
+          :key="layout.id"
+          class="dashboard-layout-chip group flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
+          :class="
+            layout.id === store.activeId
+              ? 'bg-primary/10 text-primary'
+              : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+          "
+          @click="store.switchLayout(layout.id)"
+        >
+          <span class="material-icons text-sm">{{ layout.icon || 'dashboard' }}</span>
+          <span class="max-w-[10rem] truncate">{{ layout.name }}</span>
+          <!-- 默认布局标记（不可删除） -->
+          <span
+            v-if="store.isDefaultLayout(layout.id)"
+            class="material-icons text-[10px] text-muted-foreground/60"
+            :title="$t('tabs.homeTabView.defaultLayoutLock')"
+          >
+            lock
+          </span>
+          <!-- 右侧操作（hover 显示） -->
+          <span class="flex items-center" @click.stop>
+            <button
+              class="ml-0.5 flex h-4 w-4 items-center justify-center rounded text-muted-foreground/70 opacity-0 transition-opacity hover:bg-accent hover:text-foreground group-hover:opacity-100"
+              :title="$t('tabs.homeTabView.rename')"
+              @click="openLayoutDialog('edit', layout.id)"
+            >
+              <span class="material-icons text-xs">edit</span>
+            </button>
+            <button
+              v-if="!store.isDefaultLayout(layout.id)"
+              class="ml-0.5 flex h-4 w-4 items-center justify-center rounded text-muted-foreground/70 opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+              :title="$t('tabs.homeTabView.deleteLayout')"
+              @click="openDeleteConfirm(layout.id)"
+            >
+              <span class="material-icons text-xs">close</span>
+            </button>
+          </span>
+        </div>
+
+        <!-- 新建布局 -->
+        <button
+          class="flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          :title="$t('tabs.homeTabView.createLayout')"
+          @click="openLayoutDialog('create')"
+        >
+          <span class="material-icons text-sm">add</span>
+        </button>
       </div>
-      <div class="flex items-center gap-1">
+
+      <!-- 右侧操作按钮（原 header 右侧） -->
+      <div class="ml-2 flex shrink-0 items-center gap-1">
         <div ref="addMenuRef" class="relative">
           <button
-            class="flex items-center gap-1 rounded-md px-2 py-1.5 text-sm text-foreground/80 transition-colors hover:bg-accent hover:text-accent-foreground"
+            class="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-foreground/80 transition-colors hover:bg-accent hover:text-accent-foreground"
             @click="addMenuOpen = !addMenuOpen"
           >
-            <span class="material-icons text-base">add</span>
+            <span class="material-icons text-sm">add</span>
             <span class="hidden sm:inline">{{ $t('tabs.homeTabView.addCard') }}</span>
           </button>
           <!-- 下拉菜单 -->
@@ -89,7 +138,7 @@
 
         <!-- 编辑模式切换 -->
         <button
-          class="flex items-center gap-1 rounded-md px-2 py-1.5 text-sm transition-colors"
+          class="flex items-center gap-1 rounded-md px-2 py-1 text-xs transition-colors"
           :class="
             editMode
               ? 'bg-primary text-primary-foreground hover:bg-primary/90'
@@ -97,63 +146,10 @@
           "
           @click="editMode = !editMode"
         >
-          <span class="material-icons text-base">{{ editMode ? 'check' : 'edit' }}</span>
+          <span class="material-icons text-sm">{{ editMode ? 'check' : 'edit' }}</span>
           <span class="hidden sm:inline">{{ editMode ? $t('tabs.homeTabView.done') : $t('tabs.homeTabView.edit') }}</span>
         </button>
       </div>
-    </div>
-
-    <!-- 布局切换条 -->
-    <div class="dashboard-layouts-bar flex items-center gap-1 overflow-x-auto border-b px-3 py-1.5">
-      <div
-        v-for="layout in store.layouts"
-        :key="layout.id"
-        class="dashboard-layout-chip group flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
-        :class="
-          layout.id === store.activeId
-            ? 'bg-primary/10 text-primary'
-            : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-        "
-        @click="store.switchLayout(layout.id)"
-      >
-        <span class="material-icons text-sm">{{ layout.icon || 'dashboard' }}</span>
-        <span class="max-w-[10rem] truncate">{{ layout.name }}</span>
-        <!-- 默认布局标记（不可删除） -->
-        <span
-          v-if="store.isDefaultLayout(layout.id)"
-          class="material-icons text-[10px] text-muted-foreground/60"
-          :title="$t('tabs.homeTabView.defaultLayoutLock')"
-        >
-          lock
-        </span>
-        <!-- 右侧操作（hover 显示） -->
-        <span class="flex items-center" @click.stop>
-          <button
-            class="ml-0.5 flex h-4 w-4 items-center justify-center rounded text-muted-foreground/70 opacity-0 transition-opacity hover:bg-accent hover:text-foreground group-hover:opacity-100"
-            :title="$t('tabs.homeTabView.rename')"
-            @click="openLayoutDialog('edit', layout.id)"
-          >
-            <span class="material-icons text-xs">edit</span>
-          </button>
-          <button
-            v-if="!store.isDefaultLayout(layout.id)"
-            class="ml-0.5 flex h-4 w-4 items-center justify-center rounded text-muted-foreground/70 opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
-            :title="$t('tabs.homeTabView.deleteLayout')"
-            @click="openDeleteConfirm(layout.id)"
-          >
-            <span class="material-icons text-xs">close</span>
-          </button>
-        </span>
-      </div>
-
-      <!-- 新建布局 -->
-      <button
-        class="flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-        :title="$t('tabs.homeTabView.createLayout')"
-        @click="openLayoutDialog('create')"
-      >
-        <span class="material-icons text-sm">add</span>
-      </button>
     </div>
 
     <!-- 空状态 -->

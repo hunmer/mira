@@ -20,10 +20,7 @@ function activate() {
 </script>
 
 <template>
-  <div
-    class="relative h-full min-h-0 min-w-0 overflow-hidden bg-background/20"
-    :class="props.active && props.tab ? 'ring-1 ring-inset ring-primary/40' : ''"
-  >
+  <div class="relative h-full min-h-0 min-w-0 overflow-hidden bg-background/20">
     <div :id="`home-split-pane-${props.targetPrefix}-${props.paneIndex}`" class="h-full w-full" />
 
     <div v-if="!props.tab" class="flex h-full items-center justify-center text-muted-foreground/25">

@@ -2,9 +2,10 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useLibraryStore } from '@renderer/stores/library'
 import { useMediaStore } from '@renderer/stores/media'
-import { useSettingsStore } from '@renderer/stores/settings'
 import { useUrlImportStore } from '@renderer/stores/urlImport'
 import { useToast } from '@renderer/composables/useToast'
+import { getLibraryPrefs } from '@renderer/composables/LibraryPrefs'
+import { useDirectImport } from '@renderer/composables/useDirectImport'
 import type { ImportFolderPayload, ImportTarget } from '@renderer/composables/useImportHandler'
 
 /**
@@ -22,9 +23,10 @@ export function useMediaTabUpload(deps: {
   const { t } = useI18n()
   const mediaStore = useMediaStore()
   const libraryStore = useLibraryStore()
-  const settingsStore = useSettingsStore()
   const urlImportStore = useUrlImportStore()
   const toast = useToast()
+  // 「导入后二次确定」关闭时的直接导入链路
+  const { importLocalTreeDirectly } = useDirectImport()
 
   // 拖拽上传
   const canUpload = computed(() =>
@@ -58,6 +60,11 @@ export function useMediaTabUpload(deps: {
   })
 
   function handleImportFolder(payload: ImportFolderPayload) {
+    // 关闭「导入后二次确定」：跳过上传对话框直接导入
+    if (!getLibraryPrefs().confirmAfterImport) {
+      void importLocalTreeDirectly(payload.tree, payload)
+      return
+    }
     uploadFolderId.value = payload.folderId == null ? undefined : String(payload.folderId)
     uploadTagIds.value = (payload.tagIds || []).map(String)
     droppedFiles.value = []
@@ -115,7 +122,8 @@ export function useMediaTabUpload(deps: {
     const tags = props.filters?.tags
     const tagIds = Array.isArray(tags) ? tags.map(String) : []
 
-    if (settingsStore.settings.directImportMode) {
+    // 关闭「导入后二次确定」：拖入文件直接上传，不打开上传对话框
+    if (!getLibraryPrefs().confirmAfterImport) {
       const libraryId = libraryStore.currentLibrary?.id
       if (!libraryId) {
         toast.add({ severity: 'error', summary: t('tabs.mediaTabListView.errorSummary'), detail: t('tabs.mediaTabListView.noLibraryDetail'), life: 3000 })

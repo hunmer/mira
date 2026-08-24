@@ -323,10 +323,6 @@
     "resetDoneDetail": "Floating ball position reset to bottom-right",
     "resetFailed": "Reset failed"
   },
-  "importPanel": {
-    "enableTitle": "Enable direct import",
-    "enableDesc": "When enabled, dragging files onto the current folder/tag will upload them directly without manual confirmation."
-  },
   "networkPanel": {
     "desc": "Configure HTTP proxy. Applies to all network requests (plugin downloads, plugin marketplace catalog, app auto-update, etc.).",
     "proxyTitle": "HTTP proxy",

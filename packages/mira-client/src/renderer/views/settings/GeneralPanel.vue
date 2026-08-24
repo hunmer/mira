@@ -142,6 +142,34 @@
       </Button>
     </div>
 
+    <!-- 自定义 CSS（全局，独立于主题风格，叠加生效） -->
+    <div class="flex items-center justify-between gap-4 py-3">
+      <div>
+        <p class="text-foreground dark:text-muted-foreground text-base font-normal leading-normal">{{
+          t('settings.customCss') }}</p>
+        <p class="text-muted-foreground text-sm">{{ t('settings.customCssDesc') }}</p>
+      </div>
+      <Button variant="outline" @click="openCustomCssDialog">
+        <Code class="size-4 mr-1.5" />
+        {{ t('settings.customCssEdit') }}
+      </Button>
+    </div>
+
+    <!-- 自定义 CSS 编辑对话框 -->
+    <Dialog :open="showCustomCssDialog" @update:open="showCustomCssDialog = $event">
+      <DialogContent class="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>{{ t('settings.customCss') }}</DialogTitle>
+        </DialogHeader>
+        <Textarea v-model="customCssDraft" class="font-mono text-xs min-h-64"
+          :placeholder="t('settings.customCssGlobalPlaceholder')" />
+        <DialogFooter>
+          <Button variant="outline" @click="showCustomCssDialog = false">{{ t('common.cancel') }}</Button>
+          <Button @click="saveCustomCss">{{ t('common.confirm') }}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
     <!-- 字体大小 -->
     <div>
       <div class="flex items-center justify-between gap-4 mb-2.5">
@@ -196,7 +224,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Slider } from '@/components/ui/slider'
-import { ExternalLink } from 'lucide-vue-next'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { ExternalLink, Code } from 'lucide-vue-next'
 import { DEFAULT_PRIMARY_COLORS } from '@renderer/utils/theme-style'
 import { languageOptions } from './settingsConfig'
 
@@ -308,6 +337,21 @@ const openWebActionOptions = [
 // 打开 tweakcn 生成 CSS 变量
 const openTweakcn = () => {
   window.open('https://tweakcn.com/', '_blank')
+}
+
+// 全局自定义 CSS 编辑对话框
+const showCustomCssDialog = ref(false)
+const customCssDraft = ref('')
+
+const openCustomCssDialog = () => {
+  customCssDraft.value = settingsStore.settings.customCss
+  showCustomCssDialog.value = true
+}
+
+const saveCustomCss = async () => {
+  showCustomCssDialog.value = false
+  if (customCssDraft.value === settingsStore.settings.customCss) return
+  await handleSettingChange('customCss', customCssDraft.value)
 }
 
 // 方法
