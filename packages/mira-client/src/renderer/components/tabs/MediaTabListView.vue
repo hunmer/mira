@@ -315,7 +315,7 @@
       class="flex items-center justify-between px-2 pt-2 shrink-0 text-xs border-t border-white/60 dark:border-border">
       <div class="flex-1 flex items-center space-x-6 min-w-0">
         <!-- 路由状态 / 面包屑导航 -->
-        <Breadcrumb v-if="showMediaBreadcrumb" :items="breadcrumbItems" @select="handleBreadcrumbClick" />
+        <Breadcrumb v-if="showMediaBreadcrumb" :items="breadcrumbItems.length > 1 ? breadcrumbItems : undefined" @select="handleBreadcrumbClick" />
 
         <!-- 当前路径和文件数 -->
         <div v-if="filteredMediaItems.length > 0" class="flex items-center space-x-1 flex-shrink-0 me-2">

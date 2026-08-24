@@ -11,13 +11,14 @@
 import type { BreadcrumbItem } from '@renderer/controllers/HomeController'
 
 interface Props {
-  /** 面包屑项目列表，按层级顺序：第一项为根，最后一项为当前位置 */
-  items: BreadcrumbItem[]
+  /** 面包屑项目列表，按层级顺序：第一项为根，最后一项为当前位置；不传或为空时不渲染 */
+  items?: BreadcrumbItem[]
   /** 分隔符图标（material icon 名称），默认 chevron_right */
   separator?: string
 }
 
 withDefaults(defineProps<Props>(), {
+  items: () => [],
   separator: 'chevron_right'
 })
 
