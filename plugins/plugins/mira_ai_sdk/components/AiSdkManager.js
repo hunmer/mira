@@ -68,7 +68,11 @@
       '      <h1 class="text-xl font-semibold">AI 服务商</h1>',
       '      <p class="text-xs text-muted-foreground">基于 Vercel AI SDK，统一管理多个 OpenAI 兼容服务商，并通过 /ai-sdk/chat 提供 AI 聊天接口</p>',
       '    </div>',
-      '    <MiraButton @click="openCreate">新建服务商</MiraButton>',
+      '    <div class="flex items-center gap-2">',
+      '      <MiraButton v-if="providers.length" variant="outline" @click="openTestDialog(\'chat\')">聊天测试</MiraButton>',
+      '      <MiraButton v-if="providers.length" variant="outline" @click="openTestDialog(\'image\')">图片生成</MiraButton>',
+      '      <MiraButton @click="openCreate">新建服务商</MiraButton>',
+      '    </div>',
       '  </header>',
 
       '  <div v-if="!providers.length && !loading" class="flex flex-1 items-center justify-center">',
