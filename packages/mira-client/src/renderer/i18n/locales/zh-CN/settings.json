@@ -52,8 +52,6 @@
   "pageSizeUpdated": "单页最多展示已设置为 {count} 条",
   "deleteConfirm": "删除前确认",
   "deleteConfirmDesc": "删除选中素材时是否弹出确认框，可在删除确认框中勾选「记住此操作」自动关闭（保存在当前素材库本地配置中）",
-  "showFoldersInTab": "标签页展示文件夹",
-  "showFoldersInTabDesc": "在媒体标签页顶部展示当前目录的子文件夹（保存在当前素材库本地配置中）",
   "showTabIcons": "展示标签页图标",
   "showTabIconsDesc": "在顶部标签条上展示各标签页的图标",
   "deleteConfirmOn": "删除前将再次确认",

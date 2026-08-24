@@ -126,19 +126,6 @@
       </div>
     </div>
 
-    <!-- 标签页展示文件夹 -->
-    <div class="flex items-center justify-between gap-4 py-3">
-      <div class="min-w-0">
-        <label class="text-foreground dark:text-muted-foreground text-base font-medium leading-normal">
-          {{ t('settings.showFoldersInTab') }}
-        </label>
-        <p class="text-muted-foreground dark:text-muted-foreground text-sm mt-2">
-          {{ t('settings.showFoldersInTabDesc') }}
-        </p>
-      </div>
-      <Switch :model-value="showFoldersInTab" @update:model-value="handleShowFoldersInTabChange" />
-    </div>
-
     <!-- 删除前确认 -->
     <div class="flex items-center justify-between gap-4 py-3">
       <div class="min-w-0">
@@ -183,7 +170,6 @@ import {
   saveLibraryDefaultGroupingMode,
   saveLibraryPageSize,
   saveSkipDeleteConfirm,
-  saveShowFoldersInTab,
   saveConfirmAfterImport,
   type LibraryDefaultViewMode,
   type LibraryDefaultGroupingMode
@@ -211,8 +197,6 @@ const pageSize = ref(getLibraryPrefs().pageSize)
 const pageSizeOptions = [100, 200, 500, 1000, 2000, 5000]
 // 删除选中素材前是否弹出确认框（与 LibraryPrefs.skipDeleteConfirm 相反）
 const showDeleteConfirm = ref(!getLibraryPrefs().skipDeleteConfirm)
-// 媒体标签页顶部是否展示子文件夹区
-const showFoldersInTab = ref(getLibraryPrefs().showFoldersInTab)
 // 导入（导入文件夹 / 悬浮球拖入文件）后是否自动打开上传对话框进行二次确认
 const confirmAfterImport = ref(getLibraryPrefs().confirmAfterImport)
 
@@ -240,16 +224,6 @@ const handleDeleteConfirmChange = async (enabled: boolean) => {
     severity: 'success',
     summary: t('settings.settingSaved'),
     detail: enabled ? t('settings.deleteConfirmOn') : t('settings.deleteConfirmOff'),
-    life: 2000
-  })
-}
-
-const handleShowFoldersInTabChange = async (enabled: boolean) => {
-  await saveShowFoldersInTab(enabled)
-  showFoldersInTab.value = enabled
-  toast.add({
-    severity: 'success',
-    summary: t('settings.settingSaved'),
     life: 2000
   })
 }
@@ -282,7 +256,6 @@ onMounted(async () => {
   defaultFilterId.value = getLibraryPrefs().defaultFilterId
   pageSize.value = getLibraryPrefs().pageSize
   showDeleteConfirm.value = !getLibraryPrefs().skipDeleteConfirm
-  showFoldersInTab.value = getLibraryPrefs().showFoldersInTab
   confirmAfterImport.value = getLibraryPrefs().confirmAfterImport
 })
 

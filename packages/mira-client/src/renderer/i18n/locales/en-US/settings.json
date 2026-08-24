@@ -57,8 +57,6 @@
   "deleteConfirmOff": "Deletion will skip confirmation",
   "confirmAfterImport": "Confirm after import",
   "confirmAfterImportDesc": "When enabled, importing a folder or dropping files via the floating ball opens the upload dialog for confirmation; when disabled, files are imported into the current library directly (stored in the library's local config)",
-  "showFoldersInTab": "Show folders in tabs",
-  "showFoldersInTabDesc": "Show subfolders of the current folder at the top of media tabs (stored in the library's local config)",
   "showTabIcons": "Show tab icons",
   "showTabIconsDesc": "Show tab icons on the top tab bar",
   "autoStartFailed": "Failed to set system login item",

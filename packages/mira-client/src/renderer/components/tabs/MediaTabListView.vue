@@ -70,7 +70,7 @@
       <div class="flex-1 flex flex-col min-w-0 min-h-0">
         <!-- 媒体内容 - files 和 trash 都使用统一的视图 -->
         <div class="flex-1 min-h-0 overflow-y-auto w-full min-w-0" @wheel="handleCtrlWheel">
-          <OrderedSectionList :items="visibleSections" headerless>
+          <OrderedSectionList :items="enabledSections" headerless>
             <template #default="{ item: section }">
               <!-- 顶部的子文件夹 -->
               <section v-if="section.id === 'folders'">
@@ -214,6 +214,10 @@
                   {{ $t('tabs.mediaTabListView.unknownViewMode', { mode: viewMode }) }}
                 </div>
               </div>
+
+              <!-- 外部注册的自定义区块 -->
+              <MediaTabSectionHost v-else-if="registeredSectionById(section.id)"
+                :def="registeredSectionById(section.id)" />
             </template>
           </OrderedSectionList>
         </div>
@@ -504,6 +508,7 @@ import { useMediaTabBatchOps } from './MediaTabListView/useMediaTabBatchOps'
 import { useMediaTabPagination } from './MediaTabListView/useMediaTabPagination'
 import { useFloatingToolbar } from './MediaTabListView/useFloatingToolbar'
 import { useMediaTabItemFields } from './MediaTabListView/useMediaTabItemFields'
+import { getRegisteredTabSections, resolveSectionTitle, MediaTabSectionHost } from './MediaTabListView/tabSections'
 
 // Props
 interface Props {
@@ -771,11 +776,9 @@ const filteredMediaItems = computed(() => {
 const folderTreeItems = computed(() => homeController.folderTree.value || [])
 const tagTreeItems = computed(() => tagStore.tags || [])
 
-// 设置面板「标签页展示文件夹」开关（存于 LibraryPrefs，按素材库隔离）
-const showFoldersInTab = computed(() => getLibraryPrefs().showFoldersInTab)
-
 // ============================================
-// 区块（文件夹 / 素材）排序与隐藏：复用 FilterBar 的布局偏好模式
+// 区块（内置 folders / media + 外部注册区块）：排序与隐藏
+// 布局偏好存全部区块 id，`!` 前缀表示隐藏；未收录的新注册区块默认追加显示
 // ============================================
 const { t } = useI18n()
 interface MediaTabSection { id: string; title: string; icon: string }
@@ -786,26 +789,43 @@ const builtinTabSections = computed<MediaTabSection[]>(() => {
     ? [media]
     : [{ id: 'folders', title: t('views.sidebarModuleList.folders'), icon: 'folder' }, media]
 })
-// 空布局 = 全部按默认顺序显示；不在列表中的区块隐藏
+// registry 为响应式 Map，运行时注册/注销区块会触发区块列表重算
+const registeredTabSections = computed(() => getRegisteredTabSections())
+const allTabSections = computed<MediaTabSection[]>(() => [
+  ...builtinTabSections.value,
+  ...registeredTabSections.value.map(def => ({ id: def.id, title: resolveSectionTitle(def), icon: def.icon || 'extension' })),
+])
+const registeredSectionById = (id: string) => registeredTabSections.value.find(def => def.id === id)
+
+// 空布局 = 全部按默认顺序显示
 const enabledSections = computed<MediaTabSection[]>(() => {
   const order = getLibraryPrefs().mediaTabLayout
-  if (!order.length) return builtinTabSections.value
-  return order
-    .map(id => builtinTabSections.value.find(section => section.id === id))
+  if (!order.length) return allTabSections.value
+  const enabledIds = order.filter(id => !id.startsWith('!'))
+  const knownIds = new Set(order.map(id => id.replace(/^!/, '')))
+  const list = enabledIds
+    .map(id => allTabSections.value.find(section => section.id === id))
     .filter(Boolean) as MediaTabSection[]
+  allTabSections.value.forEach(section => {
+    if (!knownIds.has(section.id)) list.push(section)
+  })
+  return list
 })
-const disabledSections = computed(() =>
-  builtinTabSections.value.filter(section => !enabledSections.value.some(e => e.id === section.id))
-)
-// 渲染时文件夹区还受「标签页展示文件夹」设置控制
-const visibleSections = computed(() =>
-  showFoldersInTab.value
-    ? enabledSections.value
-    : enabledSections.value.filter(section => section.id !== 'folders')
-)
+const disabledSections = computed(() => {
+  const hidden = new Set(
+    getLibraryPrefs().mediaTabLayout.filter(id => id.startsWith('!')).map(id => id.slice(1))
+  )
+  return allTabSections.value.filter(section => hidden.has(section.id))
+})
 
 const sectionLayoutDialogOpen = ref(false)
-const updateSectionLayout = (items: MediaTabSection[]) => { void saveMediaTabLayout(items.map(item => item.id)) }
+const updateSectionLayout = (items: MediaTabSection[]) => {
+  const enabledIds = items.map(item => item.id)
+  void saveMediaTabLayout([
+    ...enabledIds,
+    ...allTabSections.value.filter(section => !enabledIds.includes(section.id)).map(section => `!${section.id}`),
+  ])
+}
 
 const handleMediaDelete = async (_item: FileInfo) => {
   await handleRefresh()

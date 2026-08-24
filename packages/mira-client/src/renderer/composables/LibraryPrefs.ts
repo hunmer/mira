@@ -41,13 +41,11 @@ interface LibraryPrefsData {
   sidebarModuleOpenStates: Record<string, boolean>
   /** 删除选中素材时跳过确认弹窗（由确认框「记住此操作」或设置面板写入） */
   skipDeleteConfirm: boolean
-  /** 媒体标签页顶部是否展示子文件夹区 */
-  showFoldersInTab: boolean
   /** 导入（导入文件夹 / 悬浮球拖入文件）后是否自动打开上传对话框进行二次确认 */
   confirmAfterImport: boolean
   /** FilterBar 区块显示顺序（启用的区块 id；不在列表中的区块隐藏） */
   filterBarLayout: string[]
-  /** 媒体标签页区块显示顺序（启用的区块 id；不在列表中的区块隐藏） */
+  /** 媒体标签页区块显示顺序（全部区块 id；`!` 前缀表示隐藏；空数组表示全部按默认顺序显示） */
   mediaTabLayout: string[]
 }
 
@@ -66,7 +64,6 @@ const state = reactive<LibraryPrefsData>({
   pageSize: DEFAULT_PAGE_SIZE,
   sidebarModuleOpenStates: {},
   skipDeleteConfirm: false,
-  showFoldersInTab: true,
   confirmAfterImport: true,
   filterBarLayout: [],
   mediaTabLayout: []
@@ -91,7 +88,6 @@ const persist = async () => {
     pageSize: state.pageSize,
     sidebarModuleOpenStates: state.sidebarModuleOpenStates,
     skipDeleteConfirm: state.skipDeleteConfirm,
-    showFoldersInTab: state.showFoldersInTab,
     confirmAfterImport: state.confirmAfterImport,
     filterBarLayout: state.filterBarLayout,
     mediaTabLayout: state.mediaTabLayout
@@ -138,7 +134,6 @@ export async function loadLibraryPrefs(): Promise<void> {
       ? Object.fromEntries(Object.entries(parsed.sidebarModuleOpenStates).filter(([, value]) => typeof value === 'boolean'))
       : {}
     state.skipDeleteConfirm = parsed?.skipDeleteConfirm === true
-    state.showFoldersInTab = parsed?.showFoldersInTab !== false
     state.confirmAfterImport = parsed?.confirmAfterImport !== false
     state.filterBarLayout = Array.isArray(parsed?.filterBarLayout)
       ? parsed.filterBarLayout.filter((id: any) => typeof id === 'string')
@@ -146,6 +141,11 @@ export async function loadLibraryPrefs(): Promise<void> {
     state.mediaTabLayout = Array.isArray(parsed?.mediaTabLayout)
       ? parsed.mediaTabLayout.filter((id: any) => typeof id === 'string')
       : []
+    // 旧版「标签页展示文件夹」开关（showFoldersInTab）已移除，关闭过的库迁移为隐藏 folders 区块
+    const legacyShowFoldersInTab = (parsed as Record<string, any> | null)?.showFoldersInTab
+    if (legacyShowFoldersInTab === false && state.mediaTabLayout.length === 0) {
+      state.mediaTabLayout = ['media', '!folders']
+    }
   } catch (error) {
     console.error('Failed to load library prefs:', error)
   }
@@ -183,12 +183,6 @@ export async function saveLibraryPageSize(size: number): Promise<void> {
 /** 设置删除选中素材时是否跳过确认弹窗 */
 export async function saveSkipDeleteConfirm(skip: boolean): Promise<void> {
   state.skipDeleteConfirm = skip
-  await persist()
-}
-
-/** 设置媒体标签页顶部是否展示子文件夹区 */
-export async function saveShowFoldersInTab(show: boolean): Promise<void> {
-  state.showFoldersInTab = show
   await persist()
 }
 
