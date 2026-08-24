@@ -1,6 +1,6 @@
 {
   "name": "mira-web",
-  "version": "2.0.9",
+  "version": "3.0.1",
   "main": "dist-main/main.js",
   "homepage": "./",
   "engines": {
@@ -106,7 +106,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
-    "@hunmer/procm-mcp-sdk": "link:G:/procm-mcp/packages/procm-sdk",
+    "@hunmer/procm-mcp-sdk": "^0.1.1",
     "@tailwindcss/postcss": "^4.0.17",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/user-event": "^14.6.1",

@@ -49,7 +49,7 @@
     "owner": "hunmer",
     "repo": "mira"
   },
-  "buildVersion": "2.0.9",
+  "buildVersion": "3.0.1",
   "compression": "maximum",
   "electronLanguages": [
     "zh-CN",

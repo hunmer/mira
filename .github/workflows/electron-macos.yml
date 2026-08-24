@@ -17,12 +17,6 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Checkout procm-mcp SDK dependency
-      uses: actions/checkout@v4
-      with:
-        repository: hunmer/procm-mcp
-        path: procm-mcp
-
     - name: Setup pnpm
       uses: pnpm/action-setup@v4
       with:
@@ -35,17 +29,8 @@ jobs:
         cache: 'pnpm'
         cache-dependency-path: 'pnpm-lock.yaml'
 
-    - name: Build procm-mcp SDK
-      run: |
-        node -e "const fs=require('fs'); fs.mkdirSync('../procm-mcp/packages',{recursive:true}); fs.cpSync('procm-mcp/packages/procm-sdk','../procm-mcp/packages/procm-sdk',{recursive:true})"
-        npm --prefix ../procm-mcp/packages/procm-sdk install --no-audit --no-fund
-        npm --prefix ../procm-mcp/packages/procm-sdk run build
-
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
-
-    - name: Materialize procm-mcp SDK links
-      run: node scripts/materialize-procm-sdk.mjs
 
     - name: Build workspace dependencies
       run: pnpm --filter "@hunmer/vue-masonry" --filter "mira-app-core" build
