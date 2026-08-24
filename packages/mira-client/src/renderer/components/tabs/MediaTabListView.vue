@@ -24,15 +24,13 @@
           :applied-filter-id="appliedFilterId" />
       </div>
       <div class="flex-shrink-0 flex items-center space-x-2">
-        <!-- 视图切换下拉菜单 -->
-        <Dropdown :offset="{ x: 0, y: 4 }" placement="bottom-start" min-width="120px">
+        <!-- 更多操作下拉菜单：视图切换 + 刷新 -->
+        <Dropdown :offset="{ x: 0, y: 4 }" placement="bottom-end" min-width="120px">
           <template #trigger>
             <button
-              class="flex items-center space-x-1 rounded-lg border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur shadow-sm hover:bg-white/60 dark:hover:bg-muted transition-colors"
-              :title="getViewModeTitle(viewMode)" style="padding: 6px;">
-              <span class="material-icons text-sm text-muted-foreground dark:text-muted-foreground">{{
-                getViewModeIcon(viewMode) }}</span>
-              <span class="material-icons text-sm text-muted-foreground">keyboard_arrow_down</span>
+              class="flex items-center rounded-lg border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur shadow-sm hover:bg-white/60 dark:hover:bg-muted transition-colors"
+              :title="$t('tabs.mediaTabListView.moreActions')" style="padding: 6px;">
+              <span class="material-icons text-sm text-muted-foreground dark:text-muted-foreground">more_vert</span>
             </button>
           </template>
 
@@ -48,17 +46,16 @@
                   check
                 </span>
               </button>
+              <div class="my-1 border-t border-border dark:border-border"></div>
+              <button
+                class="w-full flex items-center space-x-2 px-3 py-2 text-sm rounded-lg hover:bg-primary/5 text-foreground dark:text-muted-foreground transition-colors"
+                @click="handleManualRefresh(); close()">
+                <span class="material-icons text-sm" :class="{ 'animate-spin': isLoading }">refresh</span>
+                <span>{{ $t('tabs.mediaTabListView.refreshData') }}</span>
+              </button>
             </div>
           </template>
         </Dropdown>
-
-        <!-- 刷新按钮 -->
-        <button
-          class="flex items-center space-x-1 px-3 py-1.5 text-sm text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur shadow-sm transition-colors"
-          @click="handleManualRefresh" :title="$t('tabs.mediaTabListView.refreshData')">
-          <span class="material-icons text-base" :class="{ 'animate-spin': isLoading }">refresh</span>
-        </button>
-
       </div>
     </div>
 
@@ -337,9 +334,9 @@
         <Dropdown :offset="{ x: 0, y: 8 }" placement="top-end">
           <template #trigger>
             <button
-              class="flex items-center rounded-lg border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur shadow-sm hover:bg-white/60 dark:hover:bg-muted transition-colors cursor-pointer"
-              :title="$t('tabs.mediaTabListView.fieldSettingsTitle')" style="padding: 6px;">
-              <span class="material-icons text-sm text-muted-foreground dark:text-muted-foreground">visibility</span>
+              class="flex items-center justify-center rounded-lg p-1.5 text-muted-foreground dark:text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer"
+              :title="$t('tabs.mediaTabListView.fieldSettingsTitle')">
+              <span class="material-icons text-sm">visibility</span>
             </button>
           </template>
 
@@ -537,9 +534,7 @@ const {
 
 const viewModeConfig = useViewModeConfig()
 const {
-  viewModes,
-  getViewModeIcon,
-  getViewModeTitle
+  viewModes
 } = viewModeConfig
 
 // 根元素与瀑布流引用（供分组导航 / 删除键处理 / 视图切换刷新使用）

@@ -237,11 +237,6 @@ const openUiTestPanel = async () => {
           <span class="material-icons text-base">keyboard</span>
           <span>{{ $t('views.homeHeader.shortcuts') }}</span>
         </DropdownMenuItem>
-        <DropdownMenuItem v-if="isDev" @select="openUiTestPanel">
-          <span class="material-icons text-base">bug_report</span>
-          <span>UI 测试面板</span>
-        </DropdownMenuItem>
-
         <DropdownMenuSeparator />
 
         <!-- 高级：Playground / 开发者工具 / 服务端 -->
@@ -254,6 +249,10 @@ const openUiTestPanel = async () => {
             <DropdownMenuItem @select="router.push({ name: 'Playground' })">
               <span class="material-icons text-base">science</span>
               <span>Playground</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem v-if="isDev" @select="openUiTestPanel">
+              <span class="material-icons text-base">bug_report</span>
+              <span>{{ $t('views.homeHeader.uiTestPanel') }}</span>
             </DropdownMenuItem>
             <DropdownMenuItem v-if="environment.isElectron" @select="shortcutService.executeAction('dev.devtools')">
               <span class="material-icons text-base">code</span>

@@ -5,7 +5,6 @@ import { useAuthStore } from '@/renderer/stores/auth'
 import { useServerListStore } from '@/renderer/stores/serverList'
 import { Motion } from 'motion-v'
 import Aurora from '@renderer/components/Aurora.vue'
-import { Badge } from '@/components/ui/badge'
 import { useToast } from '@renderer/composables/useToast'
 import { environment } from '@renderer/utils'
 import { useWindowAndNavigation } from '@renderer/composables/useWindowAndNavigation'
@@ -253,19 +252,18 @@ onBeforeUnmount(() => {
       </button>
     </div>
 
-    <!-- 右下角：当前选中服务器的可用性徽标，点击打开后端 dashboard -->
+    <!-- 右下角：当前选中服务器的可用性徽标（图标右下角小点），点击打开后端 dashboard -->
     <button
       type="button"
-      class="absolute bottom-4 right-4 z-[2] flex h-9 items-center gap-2 rounded-full border border-white/50 dark:border-border/60 bg-white/70 dark:bg-muted/70 backdrop-blur-xl px-3 shadow-[0_4px_20px_rgba(0,0,0,0.15)] cursor-pointer transition-colors hover:bg-white dark:hover:bg-muted"
-      :title="$t('views.homeHeader.openDashboard')"
+      class="absolute bottom-4 right-4 z-[2] flex h-9 w-9 items-center justify-center rounded-full border border-white/50 dark:border-border/60 bg-white/70 dark:bg-muted/70 backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.15)] cursor-pointer transition-colors hover:bg-white dark:hover:bg-muted"
+      :title="`${backendStatusLabel(currentServerId)} · ${$t('views.homeHeader.openDashboard')}`"
       @click="openBackend"
     >
-      <span class="material-icons text-sm text-muted-foreground">dns</span>
-      <Badge variant="outline" :class="backendStatusClass(currentServerId)" class="gap-1 px-1.5 py-0 text-[10px]">
-        <span v-if="backendStatus[currentServerId] === 'checking'" class="material-icons text-[10px] animate-spin">sync</span>
-        <span v-else class="w-1.5 h-1.5 rounded-full" :class="backendStatusDotClass(currentServerId)" />
-        {{ backendStatusLabel(currentServerId) }}
-      </Badge>
+      <span class="relative inline-flex">
+        <span class="material-icons text-sm text-muted-foreground">dns</span>
+        <span v-if="backendStatus[currentServerId] === 'checking'" class="material-icons absolute -right-2 -bottom-1.5 text-[10px] text-muted-foreground animate-spin">sync</span>
+        <span v-else class="absolute -right-1.5 -bottom-1 h-2 w-2 rounded-full ring-2 ring-white dark:ring-muted" :class="backendStatusDotClass(currentServerId)" />
+      </span>
     </button>
   </div>
 </template>
