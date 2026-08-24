@@ -6,8 +6,8 @@ import {
   useContainerWidth,
   useGridLayout,
   useResponsiveLayout,
-} from 'grid-layout-plus'
-import 'grid-layout-plus/style.css'
+} from '@hunmer/grid-layout-plus'
+import '@hunmer/grid-layout-plus/style.css'
 
 import type { Ref } from 'vue'
 import type {
@@ -58,12 +58,12 @@ import type {
   UseGridLayoutReturn,
   UseResponsiveLayoutOptions,
   UseResponsiveLayoutReturn,
-} from 'grid-layout-plus'
+} from '@hunmer/grid-layout-plus'
 import type {
   LayoutOperationResult as CoreLayoutOperationResult,
   LayoutOperationResultBase as CoreLayoutOperationResultBase,
   RejectedLayoutOperationResult as CoreRejectedLayoutOperationResult,
-} from 'grid-layout-plus/core'
+} from '@hunmer/grid-layout-plus/core'
 
 type BusinessBreakpoint = 'mobile' | 'desktop'
 type Equal<Left, Right> =

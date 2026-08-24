@@ -651,6 +651,9 @@ importers:
       '@he-tree/vue':
         specifier: ^2.10.5
         version: 2.10.5(vue@3.5.13(typescript@5.7.3))
+      '@hunmer/grid-layout-plus':
+        specifier: workspace:*
+        version: link:../grid-layout-plus
       '@hunmer/vue-masonry':
         specifier: workspace:*
         version: link:../vue-masonry
@@ -729,9 +732,6 @@ importers:
       filepond-plugin-file-validate-type:
         specifier: ^1.2.9
         version: 1.2.9(filepond@4.32.12)
-      grid-layout-plus:
-        specifier: workspace:*
-        version: link:../grid-layout-plus
       hls.js:
         specifier: ^1.6.17
         version: 1.6.17

@@ -26,8 +26,8 @@ import {
   validateLayout,
   verticalCompactor,
   withOverlap,
-} from 'grid-layout-plus'
-import * as core from 'grid-layout-plus/core'
+} from '@hunmer/grid-layout-plus'
+import * as core from '@hunmer/grid-layout-plus/core'
 
 import type {
   Breakpoint,
@@ -63,9 +63,9 @@ import type {
   UseGridLayoutReturn,
   UseResponsiveLayoutOptions,
   UseResponsiveLayoutReturn,
-} from 'grid-layout-plus'
+} from '@hunmer/grid-layout-plus'
 // @ts-expect-error LayoutInstance 是组件内部注入上下文，不属于 package root API。
-import type { LayoutInstance as PublicLayoutInstance } from 'grid-layout-plus'
+import type { LayoutInstance as PublicLayoutInstance } from '@hunmer/grid-layout-plus'
 export type InternalTypeExclusionCheck = PublicLayoutInstance
 
 void [

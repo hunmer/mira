@@ -62,12 +62,12 @@ async function assertCssBuildBoundary(): Promise<void> {
 
   const expectedStylePath = resolve(rootDir, 'dist/style.css')
   const expectedStyleUrl = pathToFileURL(expectedStylePath).href
-  if (import.meta.resolve('grid-layout-plus/style.css') !== expectedStyleUrl) {
+  if (import.meta.resolve('@hunmer/grid-layout-plus/style.css') !== expectedStyleUrl) {
     throw new Error('ESM style export must resolve to dist/style.css')
   }
 
   const require = createRequire(import.meta.url)
-  if (require.resolve('grid-layout-plus/style.css') !== expectedStylePath) {
+  if (require.resolve('@hunmer/grid-layout-plus/style.css') !== expectedStylePath) {
     throw new Error('CJS style export must resolve to dist/style.css')
   }
 }
@@ -75,11 +75,11 @@ async function assertCssBuildBoundary(): Promise<void> {
 async function verifyBuildOutputs() {
   const require = createRequire(import.meta.url)
   const [esmRoot, esmCore] = await Promise.all([
-    import('grid-layout-plus'),
-    import('grid-layout-plus/core'),
+    import('@hunmer/grid-layout-plus'),
+    import('@hunmer/grid-layout-plus/core'),
   ])
-  const cjsRoot = require('grid-layout-plus') as Record<string, unknown>
-  const cjsCore = require('grid-layout-plus/core') as Record<string, unknown>
+  const cjsRoot = require('@hunmer/grid-layout-plus') as Record<string, unknown>
+  const cjsCore = require('@hunmer/grid-layout-plus/core') as Record<string, unknown>
 
   assertExports('ESM root entry', esmRoot, ['GridLayout', 'useGridLayout', 'verticalCompactor'])
   assertExports('ESM core entry', esmCore, [

@@ -1,5 +1,5 @@
 import type { Component } from 'vue'
-import type { LayoutItem } from 'grid-layout-plus'
+import type { LayoutItem } from '@hunmer/grid-layout-plus'
 import type { z } from 'zod'
 import type { SchemaField } from '@/renderer/components/business/SchemaForm'
 import i18n from '../../../i18n'

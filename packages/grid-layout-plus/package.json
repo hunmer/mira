@@ -1,5 +1,5 @@
 {
-  "name": "grid-layout-plus",
+  "name": "@hunmer/grid-layout-plus",
   "version": "2.0.0-beta.0",
   "type": "module",
   "packageManager": "pnpm@10.17.1",

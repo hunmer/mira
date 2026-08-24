@@ -263,8 +263,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { GridLayout, GridItem, absoluteStrategy, noCompactor } from 'grid-layout-plus'
-import type { ReadonlyLayout, ResizeConfig } from 'grid-layout-plus'
+import { GridLayout, GridItem, absoluteStrategy, noCompactor } from '@hunmer/grid-layout-plus'
+import type { ReadonlyLayout, ResizeConfig } from '@hunmer/grid-layout-plus'
 import { useDashboardLayoutStore } from '@renderer/stores/dashboardLayout'
 import { useTabs } from '@renderer/composables/useTabs'
 import { cardRegistry } from './dashboard/CardRegistry'

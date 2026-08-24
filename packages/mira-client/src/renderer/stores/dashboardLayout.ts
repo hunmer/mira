@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { Layout, LayoutItem, ReadonlyLayout } from 'grid-layout-plus'
+import type { Layout, LayoutItem, ReadonlyLayout } from '@hunmer/grid-layout-plus'
 import ConfigStorage from '@renderer/utils/ConfigStorage'
 import { cardRegistry } from '@renderer/components/tabs/dashboard/CardRegistry'
 import i18n from '../i18n'

@@ -45,6 +45,7 @@
   "description": "Mira Media Library Desktop Application",
   "dependencies": {
     "@he-tree/vue": "^2.10.5",
+    "@hunmer/grid-layout-plus": "workspace:*",
     "@hunmer/vue-masonry": "workspace:*",
     "@hunmer/vue-selection-box": "workspace:*",
     "@internationalized/date": "^3.12.3",
@@ -71,7 +72,6 @@
     "filepond": "^4.32.8",
     "filepond-plugin-file-validate-size": "^2.2.8",
     "filepond-plugin-file-validate-type": "^1.2.9",
-    "grid-layout-plus": "workspace:*",
     "hls.js": "^1.6.17",
     "lodash-es": "^4.17.21",
     "lucide-vue-next": "^1.0.0",
