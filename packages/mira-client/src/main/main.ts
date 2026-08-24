@@ -11,6 +11,7 @@ import { logger } from './utils/Logger'
 import { closeProcm, initProcm, setProcmMainWindow } from './services/ProcmService'
 import { getAutoUpdater } from './services/useAutoUpdater'
 import { ensureLocalServerStarted, runLocalServerScriptSync } from './services/LocalServerService'
+import { injectConsoleHook } from './utils/consoleHook'
 
 interface BrowserViewState {
   enabled: boolean
@@ -40,6 +41,8 @@ interface BrowserViewAuthBootstrap {
  */
 class BrowserViewManager {
   private readonly views = new Map<string, ManagedLibraryView>()
+  /** 以独立 BrowserWindow 打开的素材库窗口，libraryId -> BrowserWindow */
+  private readonly libraryWindows = new Map<string, BrowserWindow>()
   private readonly history: string[] = []
   private enabled = false
   private activeId = 'default'
@@ -120,25 +123,29 @@ class BrowserViewManager {
     this.broadcastState()
   }
 
+  /** BrowserView 与独立库窗口共用的 webPreferences：per-library 持久 session + preload 注入库 ID / 认证快照 */
+  private buildWebPreferences(libraryId: string, authBootstrap?: BrowserViewAuthBootstrap): Electron.WebPreferences {
+    return {
+      nodeIntegration: true,
+      contextIsolation: true,
+      zoomFactor: 1,
+      spellcheck: false,
+      webSecurity: false,
+      webviewTag: true,
+      partition: `persist:mira-${Buffer.from(libraryId).toString('base64url')}`,
+      preload: path.join(__dirname, '../dist-preload/preload.js'),
+      additionalArguments: [
+        `--mira-library-id=${libraryId}`,
+        ...(authBootstrap?.token
+          ? [`--mira-auth-bootstrap=${Buffer.from(JSON.stringify(authBootstrap)).toString('base64url')}`]
+          : []),
+      ],
+    }
+  }
+
   private createView(libraryId: string, authBootstrap?: BrowserViewAuthBootstrap): ManagedLibraryView {
     const id = this.getViewId(libraryId)
-    const view = new BrowserView({
-      webPreferences: {
-        nodeIntegration: true,
-        contextIsolation: true,
-        spellcheck: false,
-        webSecurity: false,
-        webviewTag: true,
-        partition: `persist:mira-${Buffer.from(libraryId).toString('base64url')}`,
-        preload: path.join(__dirname, '../dist-preload/preload.js'),
-        additionalArguments: [
-          `--mira-library-id=${libraryId}`,
-          ...(authBootstrap?.token
-            ? [`--mira-auth-bootstrap=${Buffer.from(JSON.stringify(authBootstrap)).toString('base64url')}`]
-            : []),
-        ],
-      },
-    })
+    const view = new BrowserView({ webPreferences: this.buildWebPreferences(libraryId, authBootstrap) })
     view.setAutoResize({ width: true, height: true })
     view.webContents.setWindowOpenHandler(({ url }) => {
       void shell.openExternal(url)
@@ -248,6 +255,94 @@ class BrowserViewManager {
     return this.getState()
   }
 
+  /**
+   * 以独立 BrowserWindow 打开素材库（与 BrowserView 多开共用 per-library session 与 preload 注入）。
+   * 同一素材库的窗口已存在时聚焦复用，不再重复创建。
+   */
+  async openLibraryWindow(libraryId: string, libraryName: string | null, authBootstrap?: BrowserViewAuthBootstrap): Promise<void> {
+    if (!libraryId) return
+
+    const existing = this.libraryWindows.get(libraryId)
+    if (existing && !existing.isDestroyed()) {
+      if (existing.isMinimized()) existing.restore()
+      existing.show()
+      existing.focus()
+      return
+    }
+
+    const win = this.getWindow()
+    if (!win) return
+
+    logger.info('BrowserViewManager', 'opening library window', { libraryId, hasAuthBootstrap: Boolean(authBootstrap?.token) })
+    const libraryWindow = new BrowserWindow({
+      width: 1200,
+      height: 800,
+      minWidth: 400,
+      minHeight: 600,
+      movable: true,
+      // 与主窗口一致：隐藏系统边框，使用 renderer 自定义标题栏
+      // （标题栏的窗口控制 IPC 均基于 BrowserWindow.fromWebContents(sender)，对本窗口同样生效）
+      frame: false,
+      show: false,
+      title: libraryName ? `${libraryName} - Mira Media Library` : 'Mira Media Library',
+      icon: path.join(
+        app.isPackaged ? process.resourcesPath : __dirname,
+        app.isPackaged ? 'assets/icon.ico' : '../assets/icon.ico',
+      ),
+      webPreferences: this.buildWebPreferences(libraryId, authBootstrap),
+    })
+    this.libraryWindows.set(libraryId, libraryWindow)
+
+    // 与主窗口一致：注入结构化 Console Hook，IPC 转发保留对象结构
+    libraryWindow.webContents.once('did-finish-load', () => {
+      if (!libraryWindow.isDestroyed()) injectConsoleHook(libraryWindow)
+    })
+
+    // 页面长时间未就绪时也显示窗口，避免开发服务器阻塞导致窗口完全不可见
+    const showFallbackTimer = setTimeout(() => {
+      if (!libraryWindow.isDestroyed() && !libraryWindow.isVisible()) libraryWindow.show()
+    }, 10000)
+    showFallbackTimer.unref()
+    libraryWindow.once('ready-to-show', () => {
+      clearTimeout(showFallbackTimer)
+      if (!libraryWindow.isDestroyed()) libraryWindow.show()
+    })
+    libraryWindow.webContents.on('did-fail-load', (_event, _code, _desc, _url, isMainFrame) => {
+      if (isMainFrame && !libraryWindow.isDestroyed()) libraryWindow.show()
+    })
+    libraryWindow.webContents.setWindowOpenHandler(({ url }) => {
+      void shell.openExternal(url)
+      return { action: 'deny' }
+    })
+    libraryWindow.webContents.on('zoom-changed', () => libraryWindow.webContents.setZoomFactor(1))
+    // 与主窗口一致：F12 切换 DevTools、F11 切换全屏、禁用 Ctrl+/- 缩放
+    libraryWindow.webContents.on('before-input-event', (event, input) => {
+      if (input.type !== 'keyDown') return
+      if (input.key === 'F12') libraryWindow.webContents.toggleDevTools()
+      if (input.key === 'F11') libraryWindow.setFullScreen(!libraryWindow.isFullScreen())
+      if (input.control && (input.key === '+' || input.key === '=' || input.key === '-')) {
+        event.preventDefault()
+      }
+    })
+    libraryWindow.on('closed', () => {
+      clearTimeout(showFallbackTimer)
+      this.libraryWindows.delete(libraryId)
+    })
+
+    const target = new URL(win.webContents.getURL())
+    target.searchParams.set('mira-library-id', libraryId)
+    try {
+      await libraryWindow.webContents.loadURL(target.toString())
+    } catch (error) {
+      logger.error('BrowserViewManager', 'library window failed to load', {
+        libraryId,
+        error: error instanceof Error ? error.message : String(error),
+      })
+      if (!libraryWindow.isDestroyed()) libraryWindow.destroy()
+      this.libraryWindows.delete(libraryId)
+    }
+  }
+
   async switchAdjacent(direction: -1 | 1): Promise<BrowserViewState> {
     const runningLibraryIds = this.getRunningLibraryIds()
     if (!this.enabled || runningLibraryIds.length <= 1) return this.getState()
@@ -336,6 +431,10 @@ class BrowserViewManager {
       if (!managed.view.webContents.isDestroyed()) managed.view.webContents.close({ waitForBeforeUnload: false })
     }
     this.views.clear()
+    for (const libraryWindow of this.libraryWindows.values()) {
+      if (!libraryWindow.isDestroyed()) libraryWindow.destroy()
+    }
+    this.libraryWindows.clear()
     this.history.length = 0
   }
 }
@@ -598,6 +697,9 @@ class MiraApplication {
     ipcMain.handle('browser-view:switch', (_event, libraryId: string, authBootstrap?: BrowserViewAuthBootstrap) =>
       this.browserViews.switchToLibrary(String(libraryId), authBootstrap)
     )
+    ipcMain.handle('browser-view:open-window', (_event, libraryId: string, libraryName: string | null, authBootstrap?: BrowserViewAuthBootstrap) =>
+      this.browserViews.openLibraryWindow(String(libraryId), libraryName ?? null, authBootstrap)
+    )
     ipcMain.handle('browser-view:get-state', () => this.browserViews.state())
     ipcMain.handle('browser-view:close-current', () => this.browserViews.closeCurrent())
     ipcMain.handle('browser-view:close-others', () => this.browserViews.closeOthers())
@@ -668,6 +770,7 @@ class MiraApplication {
     for (const channel of [
       'browser-view:set-enabled',
       'browser-view:switch',
+      'browser-view:open-window',
       'browser-view:get-state',
       'browser-view:close-current',
       'browser-view:close-others',

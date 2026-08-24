@@ -100,6 +100,10 @@
     ,"thumbnailCache": "启用缩略图缓存"
     ,"thumbnailCacheDesc": "缓存加载完成的缩略图到系统缓存目录，减少云盘重复请求。"
     ,"clearThumbnailCache": "清空缩略图缓存"
+    ,"moreActions": "更多操作"
+    ,"openInNewWindow": "在新窗口打开"
+    ,"librarySettings": "素材库设置"
+    ,"openInDashboard": "在 Dashboard 中打开设置"
   },
   "sidebarModuleList": {
     "folders": "文件夹",

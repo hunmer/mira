@@ -13,6 +13,8 @@ import { useLibraryStore } from '@/renderer/stores/library'
 import { useSettingsStore } from '@/renderer/stores/settings'
 import { useServerListStore } from '@/renderer/stores/serverList'
 import { useAuthStore } from '@/renderer/stores/auth'
+import { miraSDKService } from '@renderer/services/MiraSDKService'
+import { environment } from '@renderer/utils'
 import { Dropdown } from '@/renderer/components/common/Dropdown'
 import { Badge } from '@/components/ui/badge'
 import miraLogo from '@/renderer/assets/mira-logo.png'
@@ -119,6 +121,28 @@ async function clearThumbnailCache() {
   await window.electronAPI?.libraryCache?.clear(String(cacheLibrary.value.id))
 }
 
+/**
+ * 跳转到 dashboard 的素材库设置面板，并带 lib 参数自动打开当前素材库的编辑对话框。
+ * Electron 下在新 BrowserWindow 打开；Web 下回退到 window.open。
+ */
+async function openDashboardLibrarySettings() {
+  const base = (miraSDKService.getConnectionConfig()?.serverUrl || '').replace(/\/$/, '')
+  if (!base || !cacheLibrary.value) return
+  const url = `${base}/dashboard/#/library?lib=${encodeURIComponent(String(cacheLibrary.value.id))}`
+  if (environment.isElectron) {
+    await window.electronAPI.invoke('window:open-url', url, {
+      width: 1280,
+      height: 800,
+      title: 'Mira Dashboard',
+      // 标记为 dashboard 窗口：注入 dashboard-preload，
+      // 暴露 openLoginWindow / onLoginCookies 供设置页-下载 tab 使用
+      dashboard: true,
+    })
+  } else {
+    window.open(url, '_blank', 'noopener')
+  }
+}
+
 function openCacheSettings(collection: any, event: Event) {
   event.stopPropagation()
   cacheLibrary.value = collection
@@ -156,6 +180,17 @@ const openLibraryFolder = (collection: any, event: Event) => {
   api?.fs?.showItemInFolder(localPath)
 }
 
+// IPC 使用结构化克隆；Pinia 暴露的对象可能仍是 reactive Proxy，必须先转成普通 JSON。
+const buildAuthBootstrap = () =>
+  authStore.isLoggedIn
+    ? {
+        user: authStore.user ? JSON.parse(JSON.stringify(toRaw(authStore.user))) : null,
+        token: authStore.token ? String(authStore.token) : null,
+        refreshToken: authStore.refreshToken ? String(authStore.refreshToken) : null,
+        tokenExpiration: authStore.tokenExpiration?.toISOString() || null,
+      }
+    : undefined
+
 const onSelectCollection = async (collection: any, close: () => void) => {
   if (!canAccessLibrary(collection)) {
     emit('accessDenied')
@@ -164,15 +199,7 @@ const onSelectCollection = async (collection: any, close: () => void) => {
   }
   if (multiLibraryViewsEnabled.value) {
     try {
-      const authBootstrap = authStore.isLoggedIn
-        ? {
-            // IPC 使用结构化克隆；Pinia 暴露的对象可能仍是 reactive Proxy，必须先转成普通 JSON。
-            user: authStore.user ? JSON.parse(JSON.stringify(toRaw(authStore.user))) : null,
-            token: authStore.token ? String(authStore.token) : null,
-            refreshToken: authStore.refreshToken ? String(authStore.refreshToken) : null,
-            tokenExpiration: authStore.tokenExpiration?.toISOString() || null,
-          }
-        : undefined
+      const authBootstrap = buildAuthBootstrap()
       console.info('[BrowserView][sidebar] switching library', {
         libraryId: String(collection.id),
         hasAuthBootstrap: Boolean(authBootstrap?.token),
@@ -189,6 +216,20 @@ const onSelectCollection = async (collection: any, close: () => void) => {
   emit('selectCollection', collection)
   localStorage.setItem('mira-active-library-id', String(collection.id))
   close()
+}
+
+const openLibraryInNewWindow = async (collection: any, close: () => void) => {
+  close()
+  try {
+    await window.electronAPI.invoke(
+      'browser-view:open-window',
+      String(collection.id),
+      collection.name ?? null,
+      buildAuthBootstrap()
+    )
+  } catch (error) {
+    console.error('Failed to open library in new window:', error)
+  }
 }
 
 const closeCurrentBrowserView = () => {
@@ -276,23 +317,49 @@ const closeOtherBrowserViews = async () => {
                     </div>
                   </div>
                 </div>
-                <div class="flex items-center space-x-1">
-                  <button
-                    v-if="isElectron"
-                    class="p-1 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
-                    :title="$t('views.sidebarLibrarySelector.thumbnailCacheSettings')"
-                    @click="openCacheSettings(collection, $event)"
+                <div class="flex items-center" @click.stop>
+                  <Dropdown
+                    :offset="{ x: 0, y: 4 }"
+                    placement="bottom-end"
+                    min-width="180px"
                   >
-                    <span class="material-icons text-sm">settings</span>
-                  </button>
-                  <button
-                    v-if="getLibraryLocalPath(collection)"
-                    class="p-1 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
-                    :title="$t('views.sidebarLibrarySelector.locate')"
-                    @click="openLibraryFolder(collection, $event)"
-                  >
-                    <span class="material-icons text-sm">folder_open</span>
-                  </button>
+                    <template #trigger>
+                      <button
+                        class="p-1 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                        :title="$t('views.sidebarLibrarySelector.moreActions')"
+                      >
+                        <span class="material-icons text-base">more_vert</span>
+                      </button>
+                    </template>
+                    <template #content="{ close }">
+                      <div class="bg-popover rounded-xl p-1 text-sm">
+                        <button
+                          v-if="isElectron"
+                          class="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-foreground transition-colors text-left"
+                          @click.stop="openLibraryInNewWindow(collection, close)"
+                        >
+                          <span class="material-icons text-base">open_in_new</span>
+                          <span>{{ $t('views.sidebarLibrarySelector.openInNewWindow') }}</span>
+                        </button>
+                        <button
+                          v-if="isElectron"
+                          class="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-foreground transition-colors text-left"
+                          @click.stop="openCacheSettings(collection, $event); close()"
+                        >
+                          <span class="material-icons text-base">settings</span>
+                          <span>{{ $t('views.sidebarLibrarySelector.librarySettings') }}</span>
+                        </button>
+                        <button
+                          v-if="getLibraryLocalPath(collection)"
+                          class="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-foreground transition-colors text-left"
+                          @click.stop="openLibraryFolder(collection, $event); close()"
+                        >
+                          <span class="material-icons text-base">folder_open</span>
+                          <span>{{ $t('views.sidebarLibrarySelector.locate') }}</span>
+                        </button>
+                      </div>
+                    </template>
+                  </Dropdown>
                 </div>
               </div>
             </div>
@@ -352,7 +419,7 @@ const closeOtherBrowserViews = async () => {
     <div v-if="showCacheSettings && cacheLibrary" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/40" @click.self="showCacheSettings = false">
       <div class="w-80 rounded-xl bg-popover p-4 shadow-xl">
       <div class="flex items-center justify-between mb-4">
-        <h3 class="font-medium">{{ cacheLibrary.name }} · {{ $t('views.sidebarLibrarySelector.thumbnailCacheSettings') }}</h3>
+        <h3 class="font-medium">{{ cacheLibrary.name }} · {{ $t('views.sidebarLibrarySelector.librarySettings') }}</h3>
         <button class="text-muted-foreground hover:text-foreground" @click="showCacheSettings = false">
           <span class="material-icons text-base">close</span>
         </button>
@@ -368,6 +435,10 @@ const closeOtherBrowserViews = async () => {
       <p class="mt-2 text-xs text-muted-foreground">{{ $t('views.sidebarLibrarySelector.thumbnailCacheDesc') }}</p>
       <button class="mt-4 w-full rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted" @click="clearThumbnailCache">
         {{ $t('views.sidebarLibrarySelector.clearThumbnailCache') }}
+      </button>
+      <button class="mt-2 w-full flex items-center justify-center gap-1.5 rounded-lg bg-primary/10 px-3 py-2 text-sm text-primary hover:bg-primary/15 transition-colors" @click="openDashboardLibrarySettings">
+        <span class="material-icons text-base">dashboard</span>
+        {{ $t('views.sidebarLibrarySelector.openInDashboard') }}
       </button>
       </div>
     </div>

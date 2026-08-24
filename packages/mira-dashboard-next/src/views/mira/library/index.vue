@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute, useRouter } from 'vue-router'
 import type { Library } from '@/types/mira'
 import { libraryApi } from '@/api'
 import { useLibrary } from '@/composables/useLibrary'
@@ -146,6 +147,16 @@ async function toggleStatus(lib: Library) {
 }
 
 await loadLibraries()
+
+// 支持 URL 参数直接打开指定素材库编辑面板：/dashboard/#/library?lib=<id>
+const route = useRoute()
+const router = useRouter()
+const requestedLibId = route.query.lib ? String(route.query.lib) : null
+if (requestedLibId) {
+  const target = libraries.value.find(l => l.id === requestedLibId)
+  if (target) openEdit(target)
+  void router.replace({ query: { ...route.query, lib: undefined } })
+}
 </script>
 
 <template>

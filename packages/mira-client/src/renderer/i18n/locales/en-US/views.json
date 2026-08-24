@@ -100,6 +100,10 @@
     ,"thumbnailCache": "Enable thumbnail cache"
     ,"thumbnailCacheDesc": "Store loaded thumbnails in the system cache to reduce repeated cloud requests."
     ,"clearThumbnailCache": "Clear thumbnail cache"
+    ,"moreActions": "More actions"
+    ,"openInNewWindow": "Open in new window"
+    ,"librarySettings": "Library settings"
+    ,"openInDashboard": "Open settings in Dashboard"
   },
   "sidebarModuleList": {
     "folders": "Folders",

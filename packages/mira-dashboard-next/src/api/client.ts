@@ -48,6 +48,15 @@ client.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   return config
 })
 
+/** 认证失效统一处理：清除本地凭证并跳转登录页 */
+export function handleUnauthorized() {
+  localStorage.removeItem('token')
+  localStorage.removeItem('user')
+  if (window.location.hash !== '#/login') {
+    window.location.hash = '#/login'
+  }
+}
+
 client.interceptors.response.use(
   (res) => res,
   (error) => {
@@ -56,11 +65,7 @@ client.interceptors.response.use(
     const isLoginRequest = requestUrl.endsWith('/auth/login')
 
     if (status === 401 && !isLoginRequest) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      if (window.location.hash !== '#/login') {
-        window.location.hash = '#/login'
-      }
+      handleUnauthorized()
     }
     return Promise.reject(error)
   },
