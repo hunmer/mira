@@ -41,7 +41,6 @@ import {
 import {
   Pagination,
   PaginationContent,
-  PaginationItem,
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
@@ -724,17 +723,13 @@ function getAspectOf(item: MediaBrowserItem): string | undefined {
         @update:page="turnPage"
       >
         <PaginationContent v-slot="{ items: pages }">
-          <PaginationItem>
-            <PaginationPrevious>{{ tt('media.prevPage') }}</PaginationPrevious>
-          </PaginationItem>
-          <PaginationItem v-for="(item, index) in pages" :key="index">
+          <PaginationPrevious>{{ tt('media.prevPage') }}</PaginationPrevious>
+          <template v-for="(item, index) in pages" :key="index">
             <PaginationLink v-if="item.type === 'page'" :value="item.value" :is-active="item.value === page">
               {{ item.value }}
             </PaginationLink>
-          </PaginationItem>
-          <PaginationItem>
-            <PaginationNext>{{ tt('media.nextPage') }}</PaginationNext>
-          </PaginationItem>
+          </template>
+          <PaginationNext>{{ tt('media.nextPage') }}</PaginationNext>
         </PaginationContent>
       </Pagination>
     </div>

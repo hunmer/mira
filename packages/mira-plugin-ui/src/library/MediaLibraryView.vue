@@ -158,7 +158,7 @@ watch(isCompact, (compact) => {
                 :show-dropzone="false"
                 :t="t"
                 :selected="selectedFolder"
-                @update:selected="selectedFolder = $event"
+                @update:selected="selectedFolder = $event ?? []"
               />
             </div>
           </div>
@@ -176,7 +176,7 @@ watch(isCompact, (compact) => {
                 :show-dropzone="false"
                 :t="t"
                 :selected="selectedTags"
-                @update:selected="selectedTags = $event"
+                @update:selected="selectedTags = $event ?? []"
               />
             </div>
           </div>
@@ -304,7 +304,7 @@ watch(isCompact, (compact) => {
                 :show-dropzone="false"
                 :t="t"
                 :selected="selectedFolder"
-                @update:selected="selectedFolder = $event"
+                @update:selected="selectedFolder = $event ?? []"
               />
             </div>
           </div>
@@ -322,7 +322,7 @@ watch(isCompact, (compact) => {
                 :show-dropzone="false"
                 :t="t"
                 :selected="selectedTags"
-                @update:selected="selectedTags = $event"
+                @update:selected="selectedTags = $event ?? []"
               />
             </div>
           </div>

@@ -8,7 +8,8 @@ import { flattenTree, useLibraryTree } from '@/ui/composables/useLibraryTree';
 import { useLibraryTreeActions } from '@/ui/composables/useLibraryTreeActions';
 import Button from '@/ui/components/ui/Button.vue';
 import Input from '@/ui/components/ui/Input.vue';
-import { ContextMenu, LibraryTree } from 'mira-plugin-ui/library';
+import { ContextMenu, CreateNodeDialog, LibraryTree, ROOT_ID } from 'mira-plugin-ui/library';
+import type { LibraryTreeCreatePayload } from 'mira-plugin-ui/library';
 import type { LibraryTreeNode } from '@/shared/types';
 
 const props = defineProps<{ session: CustomUploadSession }>();
@@ -81,41 +82,92 @@ async function reloadTags() {
   tagExpanded.value = expandAllIds(tagTree.value);
 }
 
-// ---- 右键菜单:新建同级 / 新建子级 / 删除(逻辑在 composable) ----
+// ---- 右键菜单:新建同级/子级(底部 CreateNodeDialog) / 删除(确认框,逻辑在 composable) ----
 const {
   menu: folderMenu,
   openMenu: openFolderMenu,
   closeMenu: closeFolderMenu,
-  createNode: createFolderNode,
-  deleteNode: deleteFolderNode,
+  requestDelete: requestFolderDelete,
+  closeDelete: closeFolderDelete,
+  confirmDelete: confirmFolderDelete,
+  deleteTarget: folderDeleteTarget,
+  deleteFiles: folderDeleteFiles,
+  deleteError: folderDeleteError,
+  deleting: folderDeleting,
 } = useLibraryTreeActions({
   mode: 'folder',
   libraryId: () => settings.value.libraryId,
-  count: () => flattenTree(folderTree.value).length,
   reload: reloadFolders,
-  expand: id => {
-    const next = new Set(folderExpanded.value);
-    next.add(id);
-    folderExpanded.value = next;
-  },
 });
 const {
   menu: tagMenu,
   openMenu: openTagMenu,
   closeMenu: closeTagMenu,
-  createNode: createTagNode,
-  deleteNode: deleteTagNode,
+  requestDelete: requestTagDelete,
+  closeDelete: closeTagDelete,
+  confirmDelete: confirmTagDelete,
+  deleteTarget: tagDeleteTarget,
+  deleteError: tagDeleteError,
+  deleting: tagDeleting,
 } = useLibraryTreeActions({
   mode: 'tag',
   libraryId: () => settings.value.libraryId,
-  count: () => flattenTree(tagTree.value).length,
   reload: reloadTags,
-  expand: id => {
-    const next = new Set(tagExpanded.value);
-    next.add(id);
-    tagExpanded.value = next;
-  },
 });
+
+// ---- 新建节点对话框(右键「新建同级/子级」共用;父级树含根行) ----
+const folderCreateOpen = ref(false);
+const folderCreateParent = ref(ROOT_ID);
+const tagCreateOpen = ref(false);
+const tagCreateParent = ref(ROOT_ID);
+
+const folderCreateTree = computed<LibraryTreeNode[]>(() => [
+  { id: ROOT_ID, title: '根目录', parentId: ROOT_ID, level: 0, children: [] },
+  ...folderTree.value,
+]);
+const tagCreateTree = computed<LibraryTreeNode[]>(() => [
+  { id: ROOT_ID, title: '根标签', parentId: ROOT_ID, level: 0, children: [] },
+  ...tagTree.value,
+]);
+
+function openFolderCreate(parentId: number) {
+  folderCreateParent.value = parentId || ROOT_ID;
+  closeFolderMenu();
+  folderCreateOpen.value = true;
+}
+
+function openTagCreate(parentId: number) {
+  tagCreateParent.value = parentId || ROOT_ID;
+  closeTagMenu();
+  tagCreateOpen.value = true;
+}
+
+/** CreateNodeDialog 确认 → background 创建,返回新节点 id 供选中 */
+async function createViaDialog(payload: LibraryTreeCreatePayload): Promise<number | undefined> {
+  const created: any = await bg.createNode(
+    payload.kind,
+    settings.value.libraryId,
+    payload.title,
+    payload.parentId || undefined,
+  );
+  return typeof created === 'number' ? created : created?.id;
+}
+
+async function onFolderCreated(e: { id?: number; parentId: number }) {
+  await reloadFolders();
+  if (e.id != null) selectedFolderId.value = e.id;
+}
+
+async function onTagCreated(e: { id?: number; parentId: number }) {
+  await reloadTags();
+  // 新建标签默认勾上(与快速新建一致)
+  if (e.id == null) return;
+  const node = flattenTree(tagTree.value).find(n => n.id === e.id);
+  if (!node) return;
+  const next = new Map(selectedTags.value);
+  next.set(node.id, node.title);
+  selectedTags.value = next;
+}
 
 // ---- 快速新建(输入框常驻,创建在根级) ----
 const folderName = ref('');
@@ -291,22 +343,70 @@ async function close() {
 
     <!-- 右键菜单:新建同级 / 新建子级 / 删除 -->
     <ContextMenu v-if="folderMenu" :x="folderMenu.x" :y="folderMenu.y" @close="closeFolderMenu">
-      <button @click="createFolderNode('sibling')">{{ t('tree.createSibling') }}</button>
-      <button @click="createFolderNode('child')">{{ t('tree.createChild', { type: t('common.folder') }) }}</button>
+      <button @click="openFolderCreate(folderMenu.node.parentId)">{{ t('tree.createSibling') }}</button>
+      <button @click="openFolderCreate(folderMenu.node.id)">{{ t('tree.createChild', { type: t('common.folder') }) }}</button>
       <div class="sep" />
-      <button class="danger" @click="deleteFolderNode">{{ t('tree.delete') }}</button>
+      <button class="danger" @click="requestFolderDelete">{{ t('tree.delete') }}</button>
     </ContextMenu>
     <ContextMenu v-if="tagMenu" :x="tagMenu.x" :y="tagMenu.y" @close="closeTagMenu">
-      <button @click="createTagNode('sibling')">{{ t('tree.createSibling') }}</button>
-      <button @click="createTagNode('child')">{{ t('tree.createChild', { type: t('common.tag') }) }}</button>
+      <button @click="openTagCreate(tagMenu.node.parentId)">{{ t('tree.createSibling') }}</button>
+      <button @click="openTagCreate(tagMenu.node.id)">{{ t('tree.createChild', { type: t('common.tag') }) }}</button>
       <div class="sep" />
-      <button class="danger" @click="deleteTagNode">{{ t('tree.delete') }}</button>
+      <button class="danger" @click="requestTagDelete">{{ t('tree.delete') }}</button>
     </ContextMenu>
+
+    <!-- 删除确认(folder 带「同时删除其中的文件」勾选;失败错误留在框内可重试) -->
+    <div v-if="folderDeleteTarget" class="confirm-mask" @click.self="closeFolderDelete">
+      <div class="confirm">
+        <p>{{ t('tree.deleteFolderConfirm', { name: folderDeleteTarget.title }) }}</p>
+        <label>
+          <input v-model="folderDeleteFiles" type="checkbox" />
+          {{ t('tree.deleteFilesCheck') }}
+        </label>
+        <p v-if="folderDeleteError" class="error">{{ folderDeleteError }}</p>
+        <div class="confirm-actions">
+          <Button size="sm" variant="outline" :disabled="folderDeleting" @click="closeFolderDelete">{{ t('common.cancel') }}</Button>
+          <Button size="sm" variant="danger" :disabled="folderDeleting" @click="confirmFolderDelete">
+            {{ folderDeleting ? '…' : t('tree.delete') }}
+          </Button>
+        </div>
+      </div>
+    </div>
+    <div v-else-if="tagDeleteTarget" class="confirm-mask" @click.self="closeTagDelete">
+      <div class="confirm">
+        <p>{{ t('tree.deleteTagConfirm', { name: tagDeleteTarget.title }) }}</p>
+        <p v-if="tagDeleteError" class="error">{{ tagDeleteError }}</p>
+        <div class="confirm-actions">
+          <Button size="sm" variant="outline" :disabled="tagDeleting" @click="closeTagDelete">{{ t('common.cancel') }}</Button>
+          <Button size="sm" variant="danger" :disabled="tagDeleting" @click="confirmTagDelete">
+            {{ tagDeleting ? '…' : t('tree.delete') }}
+          </Button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 新建节点对话框:右键「新建同级/子级」共用 -->
+    <CreateNodeDialog
+      v-model:open="folderCreateOpen"
+      kind="folder"
+      :nodes="folderCreateTree"
+      :default-parent-id="folderCreateParent"
+      :create-node="createViaDialog"
+      @created="onFolderCreated"
+    />
+    <CreateNodeDialog
+      v-model:open="tagCreateOpen"
+      kind="tag"
+      :nodes="tagCreateTree"
+      :default-parent-id="tagCreateParent"
+      :create-node="createViaDialog"
+      @created="onTagCreated"
+    />
   </section>
 </template>
 
 <style scoped>
-.custom-upload { display: flex; flex-direction: column; height: 100%; min-height: 0; background: var(--bg); color: var(--fg); }
+.custom-upload { position: relative; display: flex; flex-direction: column; height: 100%; min-height: 0; background: var(--bg); color: var(--fg); }
 .header { display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 8px; border-bottom: 1px solid var(--border); }
 .heading { display: flex; flex-direction: column; min-width: 0; }
 .heading span { overflow: hidden; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
@@ -321,4 +421,9 @@ async function close() {
 .error { margin: 0; color: var(--danger); font-size: 12px; }
 .footer { display: flex; align-items: center; justify-content: space-between; min-height: 54px; padding: 8px 12px; border-top: 1px solid var(--border); color: var(--muted); font-size: 12px; }
 .actions { display: flex; gap: 8px; }
+.confirm-mask { position: absolute; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center; background: rgb(0 0 0 / 40%); }
+.confirm { display: flex; flex-direction: column; gap: 10px; width: min(320px, 90%); padding: 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-elev); }
+.confirm p { margin: 0; }
+.confirm label { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; }
+.confirm-actions { display: flex; justify-content: flex-end; gap: 8px; }
 </style>

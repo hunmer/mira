@@ -7,6 +7,9 @@
 
 @import "tailwindcss";
 
+/* 插件 Dashboard 字符串模板组件不在本项目内，需显式纳入扫描，否则任意值工具类不会生成 */
+@source "../../../../plugins/plugins/*/components/*.js";
+
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));

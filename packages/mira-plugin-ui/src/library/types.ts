@@ -307,8 +307,8 @@ export interface MediaBrowserServices {
   listFolders?(): Promise<LibraryFlatItem[] | null>
   /** 标签扁平列表(提供后过滤栏启用标签筛选器) */
   listTags?(): Promise<LibraryFlatItem[] | null>
-  /** 缩略图地址(如 /api/files/thumb/:libraryId/:id?token=…);不提供则卡片显示类型图标 */
-  getThumbUrl?(item: MediaBrowserItem): string
+  /** 缩略图地址(如 /api/files/thumb/:libraryId/:id?token=…);无缩略图返回 undefined,卡片回退类型图标 */
+  getThumbUrl?(item: MediaBrowserItem): string | undefined
   /**
    * 批量获取文件宽高(对应 SDK files().getMetadataByIds)。
    * 提供后瀑布流按真实宽高布局(item.aspect 优先,无宽高的项退 1:1)。
