@@ -458,10 +458,10 @@
     "setFolderAction": "Set folder",
     "removeFolderAction": "Remove folder",
     "setTagAction": "Set tag",
-    "removeTagAction": "Remove tag"
-    ,"sortDescription": "Drag sections to reorder the detail panel"
-    ,"sortEnabled": "Enabled"
-    ,"sortDisabled": "Disabled"
+    "removeTagAction": "Remove tag",
+    "sortDescription": "Drag sections to reorder the detail panel",
+    "sortEnabled": "Enabled",
+    "sortDisabled": "Disabled"
   },
   "mediaGridComponent": {
     "emptyTitle": "No files",
@@ -798,7 +798,9 @@
     "permanentDeleteCount": "Delete permanently ({count})",
     "pluginDefault": "Plugin",
     "filePreview": "File preview",
-    "more": "More"
+    "more": "More",
+    "sendToDevice": "Send to other device",
+    "sendToDeviceCount": "Send {count} files to other device"
   },
   "deleteSelectedItems": {
     "missingLibraryId": "Missing library ID"
@@ -884,5 +886,29 @@
   },
   "homeHeader": {
     "importFromUrl": "Import from URL"
+  },
+  "deviceShare": {
+    "title": "Send to other device",
+    "fileSummary": "{count} files {size}",
+    "loading": "Loading devices…",
+    "emptyTitle": "No other connected devices",
+    "emptyDesc": "Scan the QR code to pair a new device, or wait for one to connect",
+    "qrHint": "Scan the QR code on another device to pair and receive files",
+    "qrUnavailable": "QR code unavailable (not connected)",
+    "send": "Send",
+    "sending": "Sending…",
+    "sent": "Sent, waiting for the recipient",
+    "sendFailed": "Send failed",
+    "incomingTitle": "Receive files",
+    "incomingDesc": "{count} files from \"{from}\". Accept?",
+    "saveTo": "Save to",
+    "saveDirHint": "Click to choose a folder",
+    "selectSaveDir": "Choose save location",
+    "webSaveHint": "Files will be saved to the browser download folder",
+    "accept": "Accept & download",
+    "decline": "Decline",
+    "downloading": "Downloading {percent}%",
+    "downloadDone": "Downloaded {count} files",
+    "downloadFailed": "Download failed"
   }
 }

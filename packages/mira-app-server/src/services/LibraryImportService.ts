@@ -284,11 +284,17 @@ export class LibraryImportService {
                     fileMeta.tags = JSON.stringify(tagIds.map(String));
                 }
 
+                // 源缩略图存在时预置 thumb=1：onFileImported 的生成任务看到后直接跳过，避免竞态覆盖源图
+                const sourceThumb = path.join(dir, `${m.name}_thumbnail.png`);
+                if (fs.existsSync(sourceThumb)) {
+                    fileMeta.thumb = 1;
+                }
+
                 const result = await db.createFileFromPath(file, fileMeta, { importType: 'copy' });
                 if ((result as any).duplicate) {
                     task.skipped++;
                 } else {
-                    await this.copyThumb(db, result, path.join(dir, `${m.name}_thumbnail.png`));
+                    await this.copyThumb(db, result, sourceThumb);
                     task.completed++;
                 }
             } catch (err) {
@@ -420,12 +426,18 @@ export class LibraryImportService {
                         fileMeta.tags = JSON.stringify(tagIds.map(String));
                     }
 
+                    // 源缩略图存在时预置 thumb=1：onFileImported 的生成任务看到后直接跳过，避免竞态覆盖源图
+                    const idHex = ('0' + row.id.toString(16)).slice(-2);
+                    const sourceThumb = path.join(root, '.bf', '.preview', idHex, `${row.id}.small.webp`);
+                    if (fs.existsSync(sourceThumb)) {
+                        fileMeta.thumb = 1;
+                    }
+
                     const result = await db.createFileFromPath(file, fileMeta, { importType: 'copy' });
                     if ((result as any).duplicate) {
                         task.skipped++;
                     } else {
-                        const idHex = ('0' + row.id.toString(16)).slice(-2);
-                        await this.copyThumb(db, result, path.join(root, '.bf', '.preview', idHex, `${row.id}.small.webp`));
+                        await this.copyThumb(db, result, sourceThumb);
                         task.completed++;
                     }
                 } catch (err) {
@@ -441,7 +453,7 @@ export class LibraryImportService {
         }
     }
 
-    /** 把源库缩略图复制为 mira 的 thumbs/<hash|id>.png 并标记 thumb=1 */
+    /** 把源库缩略图复制为 mira 的 thumbs/<hash|id>.png 并标记 thumb=1（复制失败回滚为 0，交给补扫生成） */
     private async copyThumb(db: ILibraryServerData, file: Record<string, any>, sourceThumb: string): Promise<void> {
         if (!sourceThumb || !fs.existsSync(sourceThumb)) return;
         try {
@@ -450,6 +462,8 @@ export class LibraryImportService {
             await fs.promises.copyFile(sourceThumb, thumbPath);
             await db.updateFile(file.id, { thumb: 1 });
         } catch (err) {
+            // 入库时预置了 thumb=1，复制失败必须回滚，否则 scanPending 不会补生成
+            try { await db.updateFile(file.id, { thumb: 0 }); } catch {}
             console.error('[import] copy thumb failed:', err);
         }
     }

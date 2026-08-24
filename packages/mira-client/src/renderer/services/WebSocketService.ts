@@ -3,6 +3,7 @@ import { useLibraryStore } from '../stores/library'
 import { useAuthStore } from '../stores/auth'
 import { useSettingsStore } from '../stores/settings'
 import { useTabs } from '../composables/useTabs'
+import { pushIncomingShare } from '../composables/useDeviceShare'
 import ConfigStorage from '../utils/ConfigStorage'
 import { toFileUrl } from '../utils/fileUtils'
 import i18n from '../i18n'
@@ -885,6 +886,15 @@ function setupEventListeners(libraryStore: any): void {
   webSocketService.addEventListener('notification', (data) => {
     console.log('Notification received:', data)
     showDesktopNotification(data.title, data.body)
+  })
+
+  // 设备间分享：devices().sendMessage 下发的消息体在 data.message 中
+  webSocketService.addEventListener('admin_message', (data) => {
+    const message = data?.message || data
+    if (message?.type === 'mira-share' && Array.isArray(message.files) && message.files.length > 0) {
+      console.log('[device-share] incoming share from', message.from)
+      pushIncomingShare(message)
+    }
   })
 }
 

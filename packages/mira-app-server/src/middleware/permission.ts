@@ -20,6 +20,8 @@ const PUBLIC_PREFIXES = [
     '/user/avatar/',
     // 服务端日志流（SSE）：供本地控制台订阅后端运行日志，GET 只读，仅本地使用
     '/logs/stream',
+    // 设备间分享票据下载：票据本身即短期凭证（限时 / 限次），GET 只读
+    '/devices/share/',
 ];
 
 // 不需要鉴权的路由正则（<img> 等标签无法携带 Authorization 头）

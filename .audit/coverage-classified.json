@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-08-24T08:34:51.499Z",
+  "generatedAt": "2026-08-24T11:19:25.145Z",
   "summary": {
-    "covered": 121,
-    "missing": 11,
+    "covered": 125,
+    "missing": 13,
     "excluded": 13,
     "dynamic": 7
   },
@@ -254,7 +254,7 @@
       "path": "/api/devices",
       "domain": "devices",
       "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
-      "line": 32,
+      "line": 76,
       "category": "covered",
       "sdkMethods": [
         "Device.getAll"
@@ -265,7 +265,7 @@
       "path": "/api/devices/library/:param",
       "domain": "devices",
       "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
-      "line": 35,
+      "line": 79,
       "category": "covered",
       "sdkMethods": [
         "Device.getByLibrary"
@@ -276,7 +276,7 @@
       "path": "/api/devices/broadcast",
       "domain": "devices",
       "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
-      "line": 38,
+      "line": 82,
       "category": "covered",
       "sdkMethods": [
         "Device.broadcast"
@@ -287,7 +287,7 @@
       "path": "/api/devices/disconnect",
       "domain": "devices",
       "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
-      "line": 41,
+      "line": 85,
       "category": "covered",
       "sdkMethods": [
         "Device.disconnect"
@@ -298,7 +298,7 @@
       "path": "/api/devices/:param/disconnect",
       "domain": "devices",
       "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
-      "line": 42,
+      "line": 86,
       "category": "covered",
       "sdkMethods": [
         "Device.disconnectById"
@@ -309,7 +309,7 @@
       "path": "/api/devices/send-message",
       "domain": "devices",
       "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
-      "line": 45,
+      "line": 89,
       "category": "covered",
       "sdkMethods": [
         "Device.sendMessage"
@@ -320,7 +320,7 @@
       "path": "/api/devices/:param/message",
       "domain": "devices",
       "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
-      "line": 46,
+      "line": 90,
       "category": "missing",
       "sdkMethods": []
     },
@@ -329,7 +329,7 @@
       "path": "/api/devices/:param/test",
       "domain": "devices",
       "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
-      "line": 47,
+      "line": 91,
       "category": "missing",
       "sdkMethods": []
     },
@@ -338,7 +338,27 @@
       "path": "/api/devices/:param/messages",
       "domain": "devices",
       "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
-      "line": 48,
+      "line": 92,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/devices/share-tickets",
+      "domain": "devices",
+      "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
+      "line": 95,
+      "category": "covered",
+      "sdkMethods": [
+        "Device.createShareTicket"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/devices/share/:param",
+      "domain": "devices",
+      "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
+      "line": 96,
       "category": "missing",
       "sdkMethods": []
     },
@@ -347,7 +367,7 @@
       "path": "/api/devices/stats",
       "domain": "devices",
       "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
-      "line": 51,
+      "line": 99,
       "category": "covered",
       "sdkMethods": [
         "Device.getStats"
@@ -925,11 +945,44 @@
       "note": "plugin static/resource wildcard"
     },
     {
+      "method": "POST",
+      "path": "/api/libraries/import",
+      "domain": "libraries",
+      "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
+      "line": 23,
+      "category": "covered",
+      "sdkMethods": [
+        "Library.importFrom"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/libraries/import/:param",
+      "domain": "libraries",
+      "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
+      "line": 42,
+      "category": "covered",
+      "sdkMethods": [
+        "Library.getImportProgress"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/libraries/import/:param/cancel",
+      "domain": "libraries",
+      "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
+      "line": 51,
+      "category": "covered",
+      "sdkMethods": [
+        "Library.cancelImport"
+      ]
+    },
+    {
       "method": "GET",
       "path": "/api/libraries",
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 19,
+      "line": 60,
       "category": "covered",
       "sdkMethods": [
         "Library.getAll"
@@ -940,7 +993,7 @@
       "path": "/api/libraries",
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 80,
+      "line": 121,
       "category": "covered",
       "sdkMethods": [
         "Library.create"
@@ -951,7 +1004,7 @@
       "path": "/api/libraries/:param",
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 184,
+      "line": 225,
       "category": "covered",
       "sdkMethods": [
         "Library.update"
@@ -962,7 +1015,7 @@
       "path": "/api/libraries/:param/status",
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 334,
+      "line": 375,
       "category": "covered",
       "sdkMethods": [
         "Library.setStatus"
@@ -973,7 +1026,7 @@
       "path": "/api/libraries/:param/stats",
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 397,
+      "line": 438,
       "category": "covered",
       "sdkMethods": [
         "Library.stats"
@@ -984,7 +1037,7 @@
       "path": "/api/libraries/:param/query",
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 489,
+      "line": 530,
       "category": "missing",
       "sdkMethods": []
     },
@@ -993,7 +1046,7 @@
       "path": "/api/libraries/:param/execute",
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 529,
+      "line": 570,
       "category": "missing",
       "sdkMethods": []
     },
@@ -1002,7 +1055,7 @@
       "path": "/api/libraries/:param/schema/:param",
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 573,
+      "line": 614,
       "category": "missing",
       "sdkMethods": []
     },
@@ -1011,7 +1064,7 @@
       "path": "/api/libraries/:param/record/:param/:param",
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 610,
+      "line": 651,
       "category": "missing",
       "sdkMethods": []
     },
@@ -1020,7 +1073,7 @@
       "path": "/api/libraries/:param",
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 656,
+      "line": 697,
       "category": "covered",
       "sdkMethods": [
         "Library.delete"
@@ -1028,10 +1081,19 @@
     },
     {
       "method": "GET",
+      "path": "/api/plugins/store",
+      "domain": "plugins",
+      "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
+      "line": 167,
+      "category": "missing",
+      "sdkMethods": []
+    },
+    {
+      "method": "GET",
       "path": "/api/plugins/web",
       "domain": "plugins",
       "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
-      "line": 165,
+      "line": 186,
       "category": "covered",
       "sdkMethods": [
         "Plugin.getWeb"
@@ -1042,7 +1104,7 @@
       "path": "/api/plugins",
       "domain": "plugins",
       "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
-      "line": 190,
+      "line": 211,
       "category": "covered",
       "sdkMethods": [
         "Plugin.getAll"
@@ -1053,7 +1115,7 @@
       "path": "/api/plugins/by-library",
       "domain": "plugins",
       "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
-      "line": 201,
+      "line": 222,
       "category": "covered",
       "sdkMethods": [
         "Plugin.getByLibrary"
@@ -1064,7 +1126,7 @@
       "path": "/api/plugins/install",
       "domain": "plugins",
       "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
-      "line": 227,
+      "line": 248,
       "category": "covered",
       "sdkMethods": [
         "Plugin.install"
@@ -1075,7 +1137,7 @@
       "path": "/api/plugins/install/stream",
       "domain": "plugins",
       "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
-      "line": 369,
+      "line": 390,
       "category": "excluded",
       "sdkMethods": [],
       "note": "SSE install progress stream"
@@ -1085,7 +1147,7 @@
       "path": "/api/plugins/sync-meta",
       "domain": "plugins",
       "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
-      "line": 504,
+      "line": 525,
       "category": "covered",
       "sdkMethods": [
         "Plugin.syncMeta"
@@ -1096,7 +1158,7 @@
       "path": "/api/plugins/upload",
       "domain": "plugins",
       "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
-      "line": 523,
+      "line": 544,
       "category": "covered",
       "sdkMethods": [
         "Plugin.upload"
@@ -1107,7 +1169,7 @@
       "path": "/api/plugins/toggle-status",
       "domain": "plugins",
       "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
-      "line": 714,
+      "line": 735,
       "category": "covered",
       "sdkMethods": [
         "Plugin.toggleStatus"
@@ -1118,7 +1180,7 @@
       "path": "/api/plugins/disable-all",
       "domain": "plugins",
       "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
-      "line": 767,
+      "line": 788,
       "category": "covered",
       "sdkMethods": [
         "Plugin.disableAll"
@@ -1129,7 +1191,7 @@
       "path": "/api/plugins/:param/start",
       "domain": "plugins",
       "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
-      "line": 803,
+      "line": 824,
       "category": "missing",
       "sdkMethods": []
     },
@@ -1138,7 +1200,7 @@
       "path": "/api/plugins/:param/stop",
       "domain": "plugins",
       "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
-      "line": 851,
+      "line": 872,
       "category": "missing",
       "sdkMethods": []
     },
@@ -1147,7 +1209,7 @@
       "path": "/api/plugins/:param/config",
       "domain": "plugins",
       "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
-      "line": 898,
+      "line": 919,
       "category": "covered",
       "sdkMethods": [
         "Plugin.getConfig"
@@ -1158,7 +1220,7 @@
       "path": "/api/plugins/:param/config",
       "domain": "plugins",
       "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
-      "line": 931,
+      "line": 952,
       "category": "covered",
       "sdkMethods": [
         "Plugin.updateConfig"
@@ -1169,7 +1231,7 @@
       "path": "/api/plugins/:param",
       "domain": "plugins",
       "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
-      "line": 967,
+      "line": 988,
       "category": "covered",
       "sdkMethods": [
         "Plugin.uninstall"
@@ -1180,7 +1242,7 @@
       "path": "/api/plugins/:param/icon/:param",
       "domain": "plugins",
       "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
-      "line": 1016,
+      "line": 1037,
       "category": "excluded",
       "sdkMethods": [],
       "note": "plugin icon image resource"
@@ -1190,7 +1252,7 @@
       "path": "/api/plugins/:param",
       "domain": "plugins",
       "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
-      "line": 1066,
+      "line": 1087,
       "category": "covered",
       "sdkMethods": [
         "Plugin.getById"
@@ -1201,7 +1263,7 @@
       "path": "/api/settings",
       "domain": "settings",
       "file": "packages/mira-app-server/src/routes/SettingsRouter.ts",
-      "line": 19,
+      "line": 20,
       "category": "covered",
       "sdkMethods": [
         "Settings.get"
@@ -1212,7 +1274,7 @@
       "path": "/api/settings",
       "domain": "settings",
       "file": "packages/mira-app-server/src/routes/SettingsRouter.ts",
-      "line": 25,
+      "line": 26,
       "category": "covered",
       "sdkMethods": [
         "Settings.update"

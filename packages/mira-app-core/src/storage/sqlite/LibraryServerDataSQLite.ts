@@ -13,6 +13,7 @@ export class LibraryServerDataSQLite {
   private db: Database | null = null;
   private inTransaction = false;
   private readonly fileImported?: (file: Record<string, any>) => void | Promise<void>;
+  private readonly fileDeleted?: (file: Record<string, any>) => void | Promise<void>;
   private readonly dbMirrorRoot?: string;
   private readonly dbMirrorThrottleMs: number;
   private remoteDbPath?: string;
@@ -25,11 +26,14 @@ export class LibraryServerDataSQLite {
 
   constructor(config: Record<string, any>, opts: {
     onFileImported?: (file: Record<string, any>) => void | Promise<void>;
+    /** 文件被真正删除（硬删/清空回收站）时触发；进回收站不触发 */
+    onFileDeleted?: (file: Record<string, any>) => void | Promise<void>;
     dbMirrorRoot?: string;
     dbMirrorThrottleMs?: number;
   } = {}) {
     this.config = config;
     this.fileImported = opts.onFileImported;
+    this.fileDeleted = opts.onFileDeleted;
     this.dbMirrorRoot = opts.dbMirrorRoot;
     this.dbMirrorThrottleMs = opts.dbMirrorThrottleMs ?? 3000;
   }
@@ -397,6 +401,13 @@ export class LibraryServerDataSQLite {
     if (!this.fileImported) return;
     Promise.resolve(this.fileImported(file)).catch(error => {
       console.error('File import callback failed:', error);
+    });
+  }
+
+  notifyFileDeleted(file: Record<string, any>): void {
+    if (!this.fileDeleted) return;
+    Promise.resolve(this.fileDeleted(file)).catch(error => {
+      console.error('File delete callback failed:', error);
     });
   }
 

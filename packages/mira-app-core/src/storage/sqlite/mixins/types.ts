@@ -23,6 +23,7 @@ export interface CoreAccessible {
   calculateFileHashSync(filePath: string): string;
   getUniquePath(destPath: string): string;
   notifyFileImported(file: Record<string, any>): void;
+  notifyFileDeleted(file: Record<string, any>): void;
   processingFiles(files: Record<string, any>[], isUrlFile: boolean): Promise<Record<string, any>[]>;
   beginTransaction(): Promise<void>;
   commitTransaction(): Promise<void>;

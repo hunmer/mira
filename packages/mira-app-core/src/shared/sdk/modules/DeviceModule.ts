@@ -6,6 +6,8 @@ import {
     DisconnectDeviceRequest,
     SendMessageRequest,
     BaseResponse,
+    ShareTicketRequest,
+    ShareTicketResponse,
 } from '../types';
 
 /**
@@ -14,6 +16,17 @@ import {
  */
 export class DeviceModule {
     constructor(private httpClient: HttpClient) { }
+
+    /**
+     * 创建设备间分享票据
+     * 接收方凭 ticketId 通过 downloadUrl（GET /api/devices/share/:ticketId）免 token 下载，
+     * 票据限时（默认 30 分钟）且限次，由服务端内存管理。
+     * @param request 分享请求（libraryId + 库内相对路径文件列表）
+     * @returns Promise<ShareTicketResponse>
+     */
+    async createShareTicket(request: ShareTicketRequest): Promise<ShareTicketResponse> {
+        return await this.httpClient.post<ShareTicketResponse>('/api/devices/share-tickets', request);
+    }
 
     /**
      * 获取所有设备连接信息

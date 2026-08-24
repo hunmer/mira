@@ -4,6 +4,7 @@ import { useLibraryStore } from '@renderer/stores/library'
 import { useToast } from '@renderer/composables/useToast'
 import { appService } from '@renderer/services'
 import { getLibraryPrefs, saveSkipDeleteConfirm } from '@renderer/composables/LibraryPrefs'
+import { openDeviceShare } from '@renderer/composables/useDeviceShare'
 import type { ComputedRef } from 'vue'
 import type { FileInfo } from '@/shared/types'
 import type { useMediaTabData } from '@renderer/composables/useMediaTabData'
@@ -113,6 +114,16 @@ export function useMediaTabBatchOps(deps: {
       deleteDialogOpen.value = true
       return
     }
+    if (action === 'share') {
+      // 发送到其他设备：把选中的文件 FileInfo 交给设备选择对话框
+      if (selectedItems.value.length === 0) return
+      const cachedFiles = mediaTabData.getCachedData().data
+      const idSet = new Set(selectedItems.value)
+      const files = cachedFiles.filter((f: FileInfo) => idSet.has(f.id))
+      if (files.length > 0) openDeviceShare(files)
+      return
+    }
+
     homeController.handleToolbarAction(action)
   }
 

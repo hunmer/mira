@@ -32,6 +32,8 @@ export function useHomeFolderHandler() {
     libraryId: string | null
     path?: string
     fileCount?: number
+    parent_id?: number | null
+    source?: string
     description?: string
     color?: number | string | null
   }>({
@@ -53,6 +55,8 @@ export function useHomeFolderHandler() {
     label?: string
     path?: string
     color?: number | string | null
+    parent_id?: number | null
+    source?: string
   }) => {
     try {
       isProcessing.value = true
@@ -66,7 +70,9 @@ export function useHomeFolderHandler() {
         title: options?.title || options?.label || null,
         libraryId: options?.libraryId || null,
         path: options?.path,
-        color: options?.color
+        color: options?.color,
+        parent_id: options?.parent_id,
+        source: options?.source
       }
       
       // 如果有libraryId，确保文件夹数据已加载
@@ -82,7 +88,8 @@ export function useHomeFolderHandler() {
             path: folderInfo.path,
             fileCount: folderInfo.fileCount,
             description: folderInfo.description,
-            color: folderInfo.color
+            color: folderInfo.color,
+            parent_id: folderInfo.parent_id
           }
         }
       }

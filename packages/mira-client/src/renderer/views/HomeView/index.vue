@@ -542,7 +542,9 @@ const eventHandlers = useHomeEventHandlers(
   createTabFromTag,
   switchToTabWithCallback,
   tabsComposable.setAllTabsNeedUpdate,
-  getCurrentTab
+  getCurrentTab,
+  tabsComposable.tabs,
+  replaceCurrentTab
 )
 const {
   handleFolderSelect,

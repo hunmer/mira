@@ -19,7 +19,9 @@ export function useHomeEventHandlers(
   createTabFromTag: any,
   switchToTabWithCallback: any,
   setAllTabsNeedUpdate: any,
-  getCurrentTab: () => any
+  getCurrentTab: () => any,
+  tabs?: { value: any[] },
+  replaceCurrentTab?: (kind: 'folder' | 'tag' | 'all', payload: { id?: string; title?: string; label?: string }) => Promise<void>
 ) {
   const homeController = useHomeController()
   const libraryStore = useLibraryStore()
@@ -37,7 +39,9 @@ export function useHomeEventHandlers(
       title: folder.title || folder.name,
       label: folder.label,
       path: folder.path,
-      color: folder.color
+      color: folder.color,
+      parent_id: folder.parent_id,
+      source: folder.source
     })
 
     if (success) {
@@ -111,6 +115,22 @@ export function useHomeEventHandlers(
   const handleFolderSelected = async (event: Event) => {
     const customEvent = event as CustomEvent
     const folderData = customEvent.detail
+    // 侧栏树从父文件夹进入子文件夹时复用当前父 Tab；Ctrl/Cmd 点击
+    // 保持原有新 Tab 行为，由 FolderTreeComponent 透传 ctrlKey。
+    if (folderData?.source === 'sidebar-tree' && !folderData.ctrlKey && !folderData.metaKey) {
+      const parentId = folderData.parent_id ?? folderData.parentId
+      const parentTabId = `folder-${String(parentId)}`
+      const parentTab = tabs?.value?.find(tab => tab.type === 'folder' && tab.id === parentTabId)
+      if (parentTab) {
+        if (getCurrentTab()?.id !== parentTab.id) {
+          await switchToTabWithCallback(parentTab.id)
+        }
+        const payload = { id: String(folderData.id), title: folderData.title || folderData.label }
+        if (replaceCurrentTab) await replaceCurrentTab('folder', payload)
+        else window.dispatchEvent(new CustomEvent('home-tab-replace', { detail: { kind: 'folder', payload } }))
+        return
+      }
+    }
     // 只创建tab，不处理路由和数据刷新（这些已经由路由处理器处理了）
     const newTab = createTabFromFolder(folderData, folderData.libraryId || libraryStore.currentLibrary?.id)
 

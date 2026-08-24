@@ -8,6 +8,8 @@ import SettingsDialog from '@renderer/components/business/SettingsDialog.vue'
 import FolderManageDialog from '@renderer/components/business/FolderManageDialog.vue'
 import TagManageDialog from '@renderer/components/business/TagManageDialog.vue'
 import AboutDialog from '@renderer/components/business/AboutDialog.vue'
+import DeviceShareDialog from '@renderer/components/business/DeviceShareDialog/DeviceShareDialog.vue'
+import IncomingShareDialog from '@renderer/components/business/DeviceShareDialog/IncomingShareDialog.vue'
 import {
   AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
   AlertDialogDescription, AlertDialogFooter, AlertDialogAction
@@ -132,6 +134,12 @@ const emit = defineEmits<{
   <AboutDialog
     v-model:visible="showAboutDialog"
   />
+
+  <!-- 发送到其他设备（设备选择 + 配对 QR） -->
+  <DeviceShareDialog />
+
+  <!-- 接收其他设备分享的文件（确认 + 下载） -->
+  <IncomingShareDialog />
 
   <!-- 权限不足对话框 -->
   <AlertDialog v-model:open="showAccessDeniedDialog">

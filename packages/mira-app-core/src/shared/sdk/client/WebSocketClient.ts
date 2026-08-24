@@ -94,7 +94,14 @@ export class WebSocketClient extends SimpleEmitter {
         if (this.options.libraryId) params.append('libraryId', this.options.libraryId);
         if (this.options.token) params.append('token', this.options.token);
 
-        this.url = `ws://localhost:${port}?${params.toString()}`;
+        if (this.options.url) {
+            // 显式完整地址：追加鉴权参数后使用（跨设备场景不能假设 localhost）
+            const base = this.options.url.replace(/\/+$/, '').replace(/\?.*$/, '');
+            this.url = `${base}?${params.toString()}`;
+        } else {
+            const host = this.options.host || 'localhost';
+            this.url = `ws://${host}:${port}?${params.toString()}`;
+        }
     }
 
     async start(): Promise<void> {

@@ -1,6 +1,6 @@
 # Mira Server API 与 SDK 覆盖报告
 
-生成时间: 2026-08-24T08:34:51.500Z
+生成时间: 2026-08-24T11:19:25.147Z
 
 匹配键: HTTP method + 归一化路径（动态参数统一为 `:param`，query string 不参与匹配）。
 
@@ -8,27 +8,29 @@
 
 | 分类 | 数量 | 说明 |
 |------|------|------|
-| covered | 121 | SDK 有等价 method+path |
+| covered | 125 | SDK 有等价 method+path |
 | partial | undefined | path 匹配但 method 不匹配 |
-| missing | 11 | SDK 无对应方法 |
+| missing | 13 | SDK 无对应方法 |
 | excluded | 13 | 资源/流式/SPA/通配, 不生成普通 CRUD |
 | dynamic | 7 | 插件运行时注册/正则路由 |
 
-固定 JSON API 共 132 条, 已 100% 分类（covered 121 / partial undefined / missing 11）。
+固定 JSON API 共 138 条, 已 100% 分类（covered 125 / partial undefined / missing 13）。
 
 ## Missing (SDK 无对应方法)
 
 | method | path | 域 | 来源 | SDK | 备注 |
 |--------|------|----|------|-----|------|
-| POST | `/api/devices/:param/message` | devices | packages/mira-app-server/src/routes/DeviceRoutes.ts:46 | - |  |
-| POST | `/api/devices/:param/test` | devices | packages/mira-app-server/src/routes/DeviceRoutes.ts:47 | - |  |
-| GET | `/api/devices/:param/messages` | devices | packages/mira-app-server/src/routes/DeviceRoutes.ts:48 | - |  |
-| POST | `/api/libraries/:param/query` | libraries | packages/mira-app-server/src/routes/LibraryRoutes.ts:489 | - |  |
-| POST | `/api/libraries/:param/execute` | libraries | packages/mira-app-server/src/routes/LibraryRoutes.ts:529 | - |  |
-| GET | `/api/libraries/:param/schema/:param` | libraries | packages/mira-app-server/src/routes/LibraryRoutes.ts:573 | - |  |
-| PUT | `/api/libraries/:param/record/:param/:param` | libraries | packages/mira-app-server/src/routes/LibraryRoutes.ts:610 | - |  |
-| POST | `/api/plugins/:param/start` | plugins | packages/mira-app-server/src/routes/PluginRoutes.ts:803 | - |  |
-| POST | `/api/plugins/:param/stop` | plugins | packages/mira-app-server/src/routes/PluginRoutes.ts:851 | - |  |
+| POST | `/api/devices/:param/message` | devices | packages/mira-app-server/src/routes/DeviceRoutes.ts:90 | - |  |
+| POST | `/api/devices/:param/test` | devices | packages/mira-app-server/src/routes/DeviceRoutes.ts:91 | - |  |
+| GET | `/api/devices/:param/messages` | devices | packages/mira-app-server/src/routes/DeviceRoutes.ts:92 | - |  |
+| GET | `/api/devices/share/:param` | devices | packages/mira-app-server/src/routes/DeviceRoutes.ts:96 | - |  |
+| POST | `/api/libraries/:param/query` | libraries | packages/mira-app-server/src/routes/LibraryRoutes.ts:530 | - |  |
+| POST | `/api/libraries/:param/execute` | libraries | packages/mira-app-server/src/routes/LibraryRoutes.ts:570 | - |  |
+| GET | `/api/libraries/:param/schema/:param` | libraries | packages/mira-app-server/src/routes/LibraryRoutes.ts:614 | - |  |
+| PUT | `/api/libraries/:param/record/:param/:param` | libraries | packages/mira-app-server/src/routes/LibraryRoutes.ts:651 | - |  |
+| GET | `/api/plugins/store` | plugins | packages/mira-app-server/src/routes/PluginRoutes.ts:167 | - |  |
+| POST | `/api/plugins/:param/start` | plugins | packages/mira-app-server/src/routes/PluginRoutes.ts:824 | - |  |
+| POST | `/api/plugins/:param/stop` | plugins | packages/mira-app-server/src/routes/PluginRoutes.ts:872 | - |  |
 | GET | `/api/user/avatar/:param` | user | packages/mira-app-server/src/routes/UserRouter.ts:247 | - |  |
 | GET | `/api/plugin-routes` | http-server-direct | packages/mira-app-server/src/HttpServer.ts:365 | - |  |
 
@@ -49,8 +51,8 @@
 | GET | `/api/files/preview/:param/:param` | files | packages/mira-app-server/src/routes/FileRoutes.ts:618 | - | preview file stream |
 | GET | `/api/files/file/:param/:param` | files | packages/mira-app-server/src/routes/FileRoutes.ts:649 | - | raw file stream (Range support) |
 | GET | `/api/plugins/:param/:param/*` | api-root | packages/mira-app-server/src/routes/HttpRouter.ts:147 | - | plugin static/resource wildcard |
-| GET | `/api/plugins/install/stream` | plugins | packages/mira-app-server/src/routes/PluginRoutes.ts:369 | - | SSE install progress stream |
-| GET | `/api/plugins/:param/icon/:param` | plugins | packages/mira-app-server/src/routes/PluginRoutes.ts:1016 | - | plugin icon image resource |
+| GET | `/api/plugins/install/stream` | plugins | packages/mira-app-server/src/routes/PluginRoutes.ts:390 | - | SSE install progress stream |
+| GET | `/api/plugins/:param/icon/:param` | plugins | packages/mira-app-server/src/routes/PluginRoutes.ts:1037 | - | plugin icon image resource |
 | GET | `/` | http-server-direct | packages/mira-app-server/src/HttpServer.ts:285 | - | root redirect to /web/ |
 | GET | `/server-plugins/:param/:param/*` | http-server-direct | packages/mira-app-server/src/HttpServer.ts:311 | - | plugin static resource wildcard |
 | GET | `/api/logs/stream` | http-server-direct | packages/mira-app-server/src/HttpServer.ts:490 | - | SSE log stream, not JSON API |
@@ -94,6 +96,7 @@
 | POST | `/api/devices/disconnect` | devices | Device.disconnect |
 | POST | `/api/devices/:param/disconnect` | devices | Device.disconnectById |
 | POST | `/api/devices/send-message` | devices | Device.sendMessage |
+| POST | `/api/devices/share-tickets` | devices | Device.createShareTicket |
 | GET | `/api/devices/stats` | devices | Device.getStats |
 | POST | `/api/download/start` | download | File.batchImportFromUrls |
 | GET | `/api/download/progress/:param` | download | Download.getProgress |
@@ -135,6 +138,9 @@
 | POST | `/api/fs/database/duplicates` | fs | FileSystem.scanDuplicates |
 | DELETE | `/api/fs/database/duplicates` | fs | FileSystem.removeDuplicateRecords |
 | POST | `/api/fs/download` | fs | FileSystem.download |
+| POST | `/api/libraries/import` | libraries | Library.importFrom |
+| GET | `/api/libraries/import/:param` | libraries | Library.getImportProgress |
+| POST | `/api/libraries/import/:param/cancel` | libraries | Library.cancelImport |
 | GET | `/api/libraries` | libraries | Library.getAll |
 | POST | `/api/libraries` | libraries | Library.create |
 | PUT | `/api/libraries/:param` | libraries | Library.update |

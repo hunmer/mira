@@ -1,6 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { MiraServer } from '../MiraServer';
 import { WebSocket } from 'ws';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as crypto from 'crypto';
+import { ZipArchive } from 'archiver';
 
 export interface DeviceInfo {
     clientId: string;
@@ -17,9 +21,49 @@ export interface DeviceInfo {
     ipAddress?: string;
 }
 
+/** 设备间分享票据：免 token 下载，短期有效 + 限次 */
+interface ShareTicket {
+    ticketId: string;
+    libraryId: string;
+    entries: Array<{ absPath: string; relPath: string; name: string }>;
+    zipName: string;
+    createdAt: number;
+    expiresAt: number;
+    maxUses: number;
+    uses: number;
+}
+
+const SHARE_TICKET_TTL_MS = 30 * 60 * 1000; // 30 分钟
+const SHARE_TICKET_MAX_USES = 20;
+// 惰性清理即可：量级小，每次创建时顺手扫一遍过期项
+function createTicketStore() {
+    const store = new Map<string, ShareTicket>();
+    return {
+        create(ticket: ShareTicket): void {
+            const now = Date.now();
+            for (const [id, t] of store) {
+                if (t.expiresAt <= now || t.uses >= t.maxUses) store.delete(id);
+            }
+            store.set(ticket.ticketId, ticket);
+        },
+        consume(ticketId: string): ShareTicket | null {
+            const ticket = store.get(ticketId);
+            if (!ticket) return null;
+            if (ticket.expiresAt <= Date.now() || ticket.uses >= ticket.maxUses) {
+                store.delete(ticketId);
+                return null;
+            }
+            ticket.uses++;
+            if (ticket.uses >= ticket.maxUses) store.delete(ticketId);
+            return ticket;
+        },
+    };
+}
+
 export class DeviceRoutes {
     private router: Router;
     private backend: MiraServer;
+    private shareTickets = createTicketStore();
 
     constructor(backend: MiraServer) {
         this.backend = backend;
@@ -47,8 +91,144 @@ export class DeviceRoutes {
         this.router.post('/:clientId/test', this.sendTestMessageToDevice.bind(this));
         this.router.get('/:clientId/messages', this.getDeviceMessages.bind(this));
 
+        // 设备间分享：创建一次性下载票据 / 凭票据免认证下载
+        this.router.post('/share-tickets', this.createShareTicket.bind(this));
+        this.router.get('/share/:ticketId', this.downloadByShareTicket.bind(this));
+
         // 获取设备统计信息
         this.router.get('/stats', this.getDeviceStats.bind(this));
+    }
+
+    /**
+     * 创建分享票据。发送方（已认证）把待分享文件解析成库内绝对路径，
+     * 接收方之后凭 ticketId 免 token 下载（票据本身即短期凭证）。
+     */
+    private async createShareTicket(req: Request, res: Response): Promise<void> {
+        try {
+            const { libraryId, files } = req.body as {
+                libraryId: string;
+                files: Array<{ path?: string; name?: string }>;
+            };
+
+            if (!libraryId || !Array.isArray(files) || files.length === 0) {
+                res.status(400).json({ success: false, error: 'libraryId and files are required' });
+                return;
+            }
+
+            const lib = this.backend.libraries?.getLibrary(libraryId);
+            const basePath = lib?.libraryService?.config?.customFields?.path || lib?.libraryService?.config?.path;
+            if (!basePath) {
+                res.status(400).json({ success: false, error: 'Invalid libraryId' });
+                return;
+            }
+            const resolvedBase = path.resolve(basePath);
+
+            const entries: ShareTicket['entries'] = [];
+            for (const file of files) {
+                if (!file?.path) continue;
+                const full = path.resolve(path.join(resolvedBase, file.path));
+                // 严格校验路径穿越（与 /api/fs/download 一致）
+                if (!full.startsWith(resolvedBase) || !fs.existsSync(full)) continue;
+                const stat = await fs.promises.stat(full);
+                if (!stat.isFile()) continue;
+                entries.push({
+                    absPath: full,
+                    relPath: path.relative(resolvedBase, full),
+                    name: file.name || path.basename(full),
+                });
+            }
+
+            if (entries.length === 0) {
+                res.status(400).json({ success: false, error: 'No valid files to share' });
+                return;
+            }
+
+            const ticket: ShareTicket = {
+                ticketId: crypto.randomBytes(24).toString('hex'),
+                libraryId,
+                entries,
+                zipName: `mira-share-${Date.now()}.zip`,
+                createdAt: Date.now(),
+                expiresAt: Date.now() + SHARE_TICKET_TTL_MS,
+                maxUses: SHARE_TICKET_MAX_USES,
+                uses: 0,
+            };
+            this.shareTickets.create(ticket);
+
+            res.json({
+                success: true,
+                data: {
+                    ticketId: ticket.ticketId,
+                    // 相对路径，调用方（SDK URL builder / 客户端）负责拼 baseURL
+                    downloadUrl: `/api/devices/share/${ticket.ticketId}`,
+                    fileCount: entries.length,
+                    expiresAt: new Date(ticket.expiresAt).toISOString(),
+                },
+                timestamp: new Date().toISOString(),
+            });
+        } catch (error) {
+            console.error('Failed to create share ticket:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to create share ticket',
+                details: error instanceof Error ? error.message : String(error),
+            });
+        }
+    }
+
+    /**
+     * 凭票据下载：票据有效即可（免 Authorization），单文件直接流式返回，多文件 ZIP 打包。
+     * 与 /api/fs/download 的打包行为保持一致。
+     */
+    private async downloadByShareTicket(req: Request, res: Response): Promise<void> {
+        try {
+            const ticket = this.shareTickets.consume(req.params.ticketId);
+            if (!ticket) {
+                res.status(410).json({ success: false, error: 'Share ticket expired or not found' });
+                return;
+            }
+
+            // 票据创建时已校验过文件存在，这里防御性复查（文件可能已被删除）
+            const valid = ticket.entries.filter(e => fs.existsSync(e.absPath));
+            if (valid.length === 0) {
+                res.status(404).json({ success: false, error: 'Shared files no longer exist' });
+                return;
+            }
+
+            if (valid.length === 1) {
+                const filePath = valid[0].absPath;
+                const stat = await fs.promises.stat(filePath);
+                res.setHeader('Content-Type', 'application/octet-stream');
+                res.setHeader('Content-Length', stat.size);
+                res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(valid[0].name)}`);
+                fs.createReadStream(filePath).on('error', (err: Error) => {
+                    if (!res.headersSent) res.status(500).json({ error: err.message });
+                }).pipe(res);
+                return;
+            }
+
+            res.setHeader('Content-Type', 'application/zip');
+            res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(ticket.zipName)}`);
+            const archive = new ZipArchive({ zlib: { level: 5 } });
+            archive.on('error', (err: Error) => {
+                if (!res.headersSent) res.status(500).json({ error: err.message });
+                else res.end();
+            });
+            archive.pipe(res);
+            for (const entry of valid) {
+                archive.file(entry.absPath, { name: entry.relPath });
+            }
+            archive.finalize();
+        } catch (error) {
+            console.error('Failed to download by share ticket:', error);
+            if (!res.headersSent) {
+                res.status(500).json({
+                    success: false,
+                    error: 'Failed to download',
+                    details: error instanceof Error ? error.message : String(error),
+                });
+            }
+        }
     }
 
     private async broadcastMessage(req: Request, res: Response): Promise<void> {

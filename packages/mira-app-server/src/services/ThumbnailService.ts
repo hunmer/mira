@@ -7,7 +7,6 @@ import which from 'which';
 import crypto from 'crypto';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
-import { EventArgs } from 'mira-app-core';
 import { ILibraryServerData } from 'mira-app-core/storage/sqlite';
 import { MiraWebsocketServer } from '../WebSocketServer';
 
@@ -313,22 +312,41 @@ export class ThumbnailService {
     return this.extMap.get(ext) || null;
   }
 
-  onFileCreated(libraryId: string, event: EventArgs, dbService: ILibraryServerData): void {
-    const { result } = event.args;
-    const filePath = result.path;
+  /**
+   * 文件入库回调（onFileImported 钩子）：入队生成缩略图。
+   * 触发点是数据层 createFileFromPath，上传/导入/CLI 等所有写入路径统一生效，
+   * 不依赖调用方广播 EventManager 事件。
+   */
+  onFileImported(libraryId: string, file: Record<string, any>, dbService: ILibraryServerData): void {
+    const filePath = file.path;
+    if (!filePath) return;
     const generator = this.getGeneratorForFile(filePath);
     if (!generator) return;
 
     this.taskQueue.push(async () => {
       try {
-        const thumbPath = await dbService.getItemThumbPath(result);
-        await generator.generate(filePath, thumbPath);
+        // 已有缩略图则跳过（如导入时从源库复制的缩略图），避免覆盖
+        const current = await dbService.getFile(file.id);
+        if (!current || current.thumb) return;
+
+        const thumbPath = await dbService.getItemThumbPath(current);
+        // 生成到同扩展名临时文件；写回前复查 thumb（copyThumb 可能在生成期间已放入源缩略图）
+        const tmpPath = thumbPath.replace(/(\.[^.]+)?$/, (ext) => `.gen${ext || '.png'}`);
+        await generator.generate(filePath, tmpPath);
+
+        const latest = await dbService.getFile(file.id);
+        if (latest?.thumb) {
+          try { fs.unlinkSync(tmpPath); } catch {}
+          return;
+        }
+        await fs.promises.rename(tmpPath, thumbPath);
 
         if (fs.existsSync(thumbPath)) {
+          const record = latest ?? current;
           // WebSocket 事件与文件列表接口统一广播可直接加载的缩略图 URL。
-          result.thumb = await dbService.getItemThumbPath(result, { isUrlFile: true });
-          await dbService.updateFile(result.id, { thumb: 1 }); // return value unused
-          this.wsServer?.broadcastLibraryEvent(libraryId, 'thumbnail::generated', result);
+          record.thumb = await dbService.getItemThumbPath(record, { isUrlFile: true });
+          await dbService.updateFile(record.id, { thumb: 1 }); // return value unused
+          this.wsServer?.broadcastLibraryEvent(libraryId, 'thumbnail::generated', record);
         } else {
           console.warn('Thumbnail generation failed:', thumbPath);
         }
@@ -338,17 +356,27 @@ export class ThumbnailService {
     });
   }
 
+  /**
+   * 文件删除回调（onFileDeleted 钩子，仅在硬删/清空回收站时触发）：
+   * 清理 thumbs/<hash|id>.png 与 <hash|id>-cover.jpg。
+   * 行已被删除，不再回写 thumb 字段；回收站/恢复不经过此回调，缩略图保留。
+   */
   onFileDeleted(libraryId: string, item: any, dbService: ILibraryServerData): void {
     (async () => {
       try {
-        const thumbPath = path.join(
-          await dbService.getItemPath(item),
-          'preview.png'
-        );
-        if (fs.existsSync(thumbPath)) {
-          fs.unlinkSync(thumbPath);
+        const thumbPath = await dbService.getItemThumbPath(item);
+        const key = item.hash || item.id;
+        const candidates = [
+          thumbPath,
+          path.join(path.dirname(thumbPath), `${key}-cover.jpg`),
+          // 老格式缩略图（曾存于文件同目录 preview.png）
+          path.join(await dbService.getItemPath(item), 'preview.png'),
+        ];
+        for (const file of candidates) {
+          try {
+            if (file && fs.existsSync(file)) fs.unlinkSync(file);
+          } catch {}
         }
-        await dbService.updateFile(item.id, { thumb: 0 }); // return value unused
       } catch (err) {
         console.error('Failed to delete thumbnail:', err);
       }

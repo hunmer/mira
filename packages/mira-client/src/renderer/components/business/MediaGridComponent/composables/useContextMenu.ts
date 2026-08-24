@@ -9,6 +9,7 @@ import { useTagStore } from '@renderer/stores/tag'
 import { useFolderStore } from '@renderer/stores/folder'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { runBatchOperation } from '@renderer/composables/useBatchOperation'
+import { openDeviceShare } from '@renderer/composables/useDeviceShare'
 import { copyToClipboard } from '@renderer/utils/helpers'
 import { getPluginFileFormats } from '@renderer/plugins/instanceManager'
 import { openPluginDevWindow } from '@renderer/plugins/openPluginWindow'
@@ -370,6 +371,15 @@ export function useContextMenu(props: UseContextMenuProps, emit: UseContextMenuE
         label: t('business.contextMenu.moveToLibrary'),
         items: moveToLibraryItems.value,
         disabled: moveToLibraryItems.value.length === 0,
+      },
+      {
+        label: props.selectedItems.length > 1
+          ? t('business.contextMenu.sendToDeviceCount', { count: props.selectedItems.length })
+          : t('business.contextMenu.sendToDevice'),
+        command: () => runWithCurrentItem(() => {
+          const files = getTargetFiles()
+          if (files.length > 0) openDeviceShare(files)
+        }),
       },
       {
         label: t('business.contextMenu.setCover'),

@@ -33,6 +33,7 @@
   "files": [
     "dist/**/*",
     "web/**/*",
+    "public/**/*",
     "README.md"
   ],
   "publishConfig": {

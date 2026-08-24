@@ -27,4 +27,14 @@ describe('DeviceModule contract', () => {
             clientIds: ['c1'],
         });
     });
+
+    it('createShareTicket posts library files to /api/devices/share-tickets', async () => {
+        const res = { ticketId: 't-1', downloadUrl: '/api/devices/share/t-1', fileCount: 2, expiresAt: 'x' };
+        const http = { post: vi.fn().mockResolvedValue(res) };
+        const module = new DeviceModule(http as unknown as HttpClient);
+        const request = { libraryId: 'lib-1', files: [{ path: 'a.png', name: 'a.png' }, { path: 'b/c.mp4' }] };
+
+        await expect(module.createShareTicket(request)).resolves.toEqual(res);
+        expect(http.post).toHaveBeenCalledWith('/api/devices/share-tickets', request);
+    });
 });

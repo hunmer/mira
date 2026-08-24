@@ -53,7 +53,8 @@
     "sectionLayoutDescription": "Drag to reorder sections; move one to the right to hide it",
     "sectionLayoutEnabled": "Visible sections",
     "sectionLayoutDisabled": "Hidden sections",
-    "sectionLayoutAllEnabled": "All sections are visible"
+    "sectionLayoutAllEnabled": "All sections are visible",
+    "share": "Send to other device"
   },
   "homeTabView": {
     "dashboard": "Dashboard",

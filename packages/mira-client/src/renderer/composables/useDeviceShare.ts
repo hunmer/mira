@@ -1,0 +1,168 @@
+import { ref } from 'vue'
+import type { Device } from 'mira-app-core/shared/sdk'
+import type { FileInfo } from '../../shared/types'
+import { miraSDKService } from '../services/MiraSDKService'
+import { webSocketService } from '../services/WebSocketService'
+import { useAuthStore } from '../stores/auth'
+import { useLibraryStore } from '../stores/library'
+
+/** 分享消息中的单个文件（只传 HTTP 直连链，不传二进制内容） */
+export interface DeviceShareFile {
+  id: string
+  name: string
+  /** 相对库根路径，供多文件时服务端 ZIP 打包（POST /api/fs/download）使用 */
+  path?: string
+  size?: number
+  /** 单文件下载直链（含 token） */
+  url: string
+}
+
+/** 通过 devices().sendMessage 发送的设备间分享消息体 */
+export interface DeviceShareMessage {
+  type: 'mira-share'
+  from: string
+  fromLabel?: string
+  libraryId: string
+  files: DeviceShareFile[]
+  /** 一次性分享票据下载链（免 token，多文件为 ZIP）：优先于逐文件直链 */
+  ticketUrl?: string
+}
+
+// 模块级全局状态：发送对话框与接收对话框共享（HomeDialogs 挂载，任意组件触发）
+export const shareDialogOpen = ref(false)
+export const shareFiles = ref<DeviceShareFile[]>([])
+export const incomingShare = ref<DeviceShareMessage | null>(null)
+
+/** 从 FileInfo 的 path/url（形如 http://server/api/files/file/<libId>/<rel>）提取库内相对路径 */
+function extractRelativePath(value: string | undefined, libraryId: string): string | undefined {
+  if (!value) return undefined
+  try {
+    const url = new URL(value, location.href)
+    const prefix = `/api/files/file/${libraryId}/`
+    if (url.pathname.startsWith(prefix)) {
+      return decodeURIComponent(url.pathname.slice(prefix.length))
+    }
+    // 非完整 URL 时直接当相对路径
+    if (!/^https?:\/\//.test(value)) return value.replace(/^\/+/, '')
+  } catch {
+    if (!/^https?:\/\//.test(value)) return value.replace(/^\/+/, '')
+  }
+  return undefined
+}
+
+/** 构造带 token 的单文件下载直链 */
+export function buildFileDownloadUrl(libraryId: string, fileId: string): string | null {
+  const config = miraSDKService.getConnectionConfig()
+  if (!config?.serverUrl) return null
+  const base = config.serverUrl.replace(/\/+$/, '')
+  const token = useAuthStore().token
+  return `${base}/api/files/download/${encodeURIComponent(libraryId)}/${encodeURIComponent(fileId)}${token ? `?token=${encodeURIComponent(token)}` : ''}`
+}
+
+/** 把当前素材的 FileInfo 列表转成可发送的分享文件列表 */
+export function toDeviceShareFiles(items: FileInfo[]): DeviceShareFile[] {
+  const libraryId = items[0]?.libraryId || useLibraryStore().currentLibrary?.id || 'default'
+  return items
+    .map((item): DeviceShareFile | null => {
+      const url = buildFileDownloadUrl(item.libraryId || libraryId, String(item.id))
+      if (!url) return null
+      const file: DeviceShareFile = {
+        id: String(item.id),
+        name: item.name || `${item.id}`,
+        path: extractRelativePath(item.path || item.url, item.libraryId || libraryId),
+        size: item.size,
+        url,
+      }
+      return file
+    })
+    .filter((f): f is DeviceShareFile => f !== null)
+}
+
+/** 打开「发送到其他设备」对话框（useContextMenu / 浮动工具栏调用） */
+export function openDeviceShare(items: FileInfo[]): void {
+  const files = toDeviceShareFiles(items)
+  if (files.length === 0) return
+  shareFiles.value = files
+  shareDialogOpen.value = true
+}
+
+/** 收到其他设备的分享请求（WebSocketService 收到 admin_message 后调用） */
+export function pushIncomingShare(message: DeviceShareMessage): void {
+  incomingShare.value = message
+}
+
+/** 简易设备描述：userAgent + IP 推断展示名 */
+export function describeDevice(device: Pick<Device, 'userAgent' | 'ipAddress'>): string {
+  const ua = device.userAgent || ''
+  let platform = '浏览器'
+  if (/Electron/i.test(ua)) platform = 'Mira 桌面端'
+  else if (/Android/i.test(ua)) platform = 'Android'
+  else if (/iPhone|iPad/i.test(ua)) platform = 'iOS'
+  else if (/Windows/i.test(ua)) platform = 'Windows'
+  else if (/Mac OS/i.test(ua)) platform = 'macOS'
+  const ip = (device.ipAddress || '').replace(/^::ffff:/, '')
+  return ip && ip !== 'Unknown' ? `${platform} · ${ip}` : platform
+}
+
+/** 当前客户端自身设备标识（用于从设备列表中排除自己） */
+export function getSelfClientId(): string | undefined {
+  return webSocketService.getClientId()
+}
+
+/**
+ * 构造静态配对页 URL（QR 码内容）。
+ * 优先使用页面实际访问主机（局域网 IP），保证扫码设备可达；
+ * electron / dev 场景回退 serverUrl。WS 地址同步替换主机。
+ */
+export function buildPairUrl(): { pageUrl: string; wsUrl: string } | null {
+  const config = miraSDKService.getConnectionConfig()
+  if (!config?.serverUrl) return null
+
+  let serverOrigin: string
+  try {
+    serverOrigin = new URL(config.serverUrl).origin
+  } catch {
+    return null
+  }
+
+  // 页面从服务器本身加载（web 版）时用当前访问主机，扫码后才可达
+  const pageOrigin = location.origin === serverOrigin ? location.origin : serverOrigin
+  const isLoopback = (h: string) => /^(localhost|127\.|0\.0\.0\.0|\[::1\])/.test(h)
+  const hostCandidates = [new URL(pageOrigin).hostname, new URL(serverOrigin).hostname]
+  const lanHost = hostCandidates.find((h) => h && !isLoopback(h)) || hostCandidates[0]
+
+  let wsUrl = config.websocketUrl || ''
+  if (wsUrl) {
+    try {
+      const parsed = new URL(wsUrl)
+      parsed.hostname = lanHost
+      wsUrl = parsed.toString().replace(/\/+$/, '')
+    } catch { /* 保留原始值 */ }
+  }
+
+  const token = useAuthStore().token
+  const libraryId = useLibraryStore().currentLibrary?.id || 'default'
+  const query = new URLSearchParams({
+    token: token || '',
+    libraryId,
+    ...(wsUrl ? { ws: wsUrl } : {}),
+    // 发起配对的桌面端 clientId：配对页反向发送文件时作为推送目标
+    ...(getSelfClientId() ? { from: getSelfClientId()! } : {}),
+  })
+  return {
+    pageUrl: `${pageOrigin.replace(/\/+$/, '')}/static/pair.html?${query.toString()}`,
+    wsUrl,
+  }
+}
+
+/** 对外可达的服务器 origin（与配对 QR 一致，优先局域网主机），用于拼接分享票据等跨设备链接 */
+export function resolveServerOrigin(): string | null {
+  const pair = buildPairUrl()
+  if (pair) {
+    try {
+      return new URL(pair.pageUrl).origin
+    } catch { /* fallthrough */ }
+  }
+  const base = miraSDKService.getConnectionConfig()?.serverUrl
+  return base ? base.replace(/\/+$/, '') : null
+}

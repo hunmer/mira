@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-24T08:34:51.154Z",
+  "generatedAt": "2026-08-24T11:19:24.819Z",
   "entries": [
     {
       "module": "Admin",
@@ -245,11 +245,22 @@
     },
     {
       "module": "Device",
+      "method": "createShareTicket",
+      "httpMethod": "POST",
+      "path": "/api/devices/share-tickets",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/DeviceModule.ts",
+      "line": 28,
+      "hasQuery": false,
+      "hasBody": true,
+      "returnType": "ShareTicketResponse"
+    },
+    {
+      "module": "Device",
       "method": "getAll",
       "httpMethod": "GET",
       "path": "/api/devices",
       "file": "packages/mira-app-core/src/shared/sdk/modules/DeviceModule.ts",
-      "line": 23,
+      "line": 36,
       "hasQuery": true,
       "hasBody": false,
       "returnType": "DevicesResponse"
@@ -260,7 +271,7 @@
       "httpMethod": "GET",
       "path": "/api/devices/library/:param",
       "file": "packages/mira-app-core/src/shared/sdk/modules/DeviceModule.ts",
-      "line": 32,
+      "line": 45,
       "hasQuery": true,
       "hasBody": false,
       "returnType": "Device[]"
@@ -271,7 +282,7 @@
       "httpMethod": "POST",
       "path": "/api/devices/disconnect",
       "file": "packages/mira-app-core/src/shared/sdk/modules/DeviceModule.ts",
-      "line": 43,
+      "line": 56,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "BaseResponse"
@@ -282,7 +293,7 @@
       "httpMethod": "POST",
       "path": "/api/devices/:param/disconnect",
       "file": "packages/mira-app-core/src/shared/sdk/modules/DeviceModule.ts",
-      "line": 51,
+      "line": 64,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "BaseResponse"
@@ -293,7 +304,7 @@
       "httpMethod": "POST",
       "path": "/api/devices/broadcast",
       "file": "packages/mira-app-core/src/shared/sdk/modules/DeviceModule.ts",
-      "line": 61,
+      "line": 74,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "BaseResponse"
@@ -304,7 +315,7 @@
       "httpMethod": "POST",
       "path": "/api/devices/send-message",
       "file": "packages/mira-app-core/src/shared/sdk/modules/DeviceModule.ts",
-      "line": 77,
+      "line": 90,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "BaseResponse"
@@ -315,7 +326,7 @@
       "httpMethod": "GET",
       "path": "/api/devices/stats",
       "file": "packages/mira-app-core/src/shared/sdk/modules/DeviceModule.ts",
-      "line": 85,
+      "line": 98,
       "hasQuery": true,
       "hasBody": false,
       "returnType": "DeviceStatsResponse"
@@ -788,7 +799,7 @@
       "httpMethod": "GET",
       "path": "/api/libraries",
       "file": "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts",
-      "line": 21,
+      "line": 24,
       "hasQuery": true,
       "hasBody": false,
       "returnType": "Library[]"
@@ -799,7 +810,7 @@
       "httpMethod": "POST",
       "path": "/api/libraries",
       "file": "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts",
-      "line": 44,
+      "line": 47,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "BaseResponse"
@@ -810,7 +821,7 @@
       "httpMethod": "PUT",
       "path": "/api/libraries/:param",
       "file": "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts",
-      "line": 54,
+      "line": 57,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "BaseResponse"
@@ -821,7 +832,7 @@
       "httpMethod": "DELETE",
       "path": "/api/libraries/:param",
       "file": "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts",
-      "line": 63,
+      "line": 66,
       "hasQuery": true,
       "hasBody": false,
       "returnType": "BaseResponse"
@@ -832,7 +843,7 @@
       "httpMethod": "PATCH",
       "path": "/api/libraries/:param/status",
       "file": "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts",
-      "line": 68,
+      "line": 71,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "{ message: string; status: 'active' | 'inactive' }"
@@ -843,7 +854,7 @@
       "httpMethod": "GET",
       "path": "/api/libraries/:param/stats",
       "file": "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts",
-      "line": 76,
+      "line": 79,
       "hasQuery": true,
       "hasBody": false,
       "returnType": null
@@ -854,7 +865,7 @@
       "httpMethod": "POST",
       "path": "/api/libraries/:param/start",
       "file": "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts",
-      "line": 85,
+      "line": 88,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "BaseResponse"
@@ -865,10 +876,43 @@
       "httpMethod": "POST",
       "path": "/api/libraries/:param/stop",
       "file": "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts",
-      "line": 94,
+      "line": 97,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "BaseResponse"
+    },
+    {
+      "module": "Library",
+      "method": "importFrom",
+      "httpMethod": "POST",
+      "path": "/api/libraries/import",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts",
+      "line": 158,
+      "hasQuery": false,
+      "hasBody": true,
+      "returnType": "ImportLibraryResponse"
+    },
+    {
+      "module": "Library",
+      "method": "getImportProgress",
+      "httpMethod": "GET",
+      "path": "/api/libraries/import/:param",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts",
+      "line": 167,
+      "hasQuery": true,
+      "hasBody": false,
+      "returnType": "LibraryImportProgress"
+    },
+    {
+      "module": "Library",
+      "method": "cancelImport",
+      "httpMethod": "POST",
+      "path": "/api/libraries/import/:param/cancel",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts",
+      "line": 175,
+      "hasQuery": false,
+      "hasBody": true,
+      "returnType": "{ message: string }"
     },
     {
       "module": "Plugin",

@@ -40,7 +40,15 @@ export class LibraryStorage {
         const libraryId = dbConfig.id;
         let dbServer!: LibraryServerDataSQLite;
         dbServer = new LibraryServerDataSQLite(dbConfig, {
-            onFileImported: (file) => { this.server.metadataService.enqueue(file, dbServer); },
+            // 文件入库统一回调：元数据补全 + 缩略图生成（上传/导入等所有 createFileFromPath 路径）
+            onFileImported: (file) => {
+                this.server.metadataService?.enqueue(file, dbServer);
+                this.server.thumbnailService?.onFileImported(libraryId, file, dbServer);
+            },
+            // 文件硬删回调：清理缩略图（回收站不触发，恢复后缩略图保留）
+            onFileDeleted: (file) => {
+                this.server.thumbnailService?.onFileDeleted(libraryId, file, dbServer);
+            },
             dbMirrorRoot: path.join(this.server.getDataPath(), 'db-mirrors'),
         });
         this.libraries[libraryId] = {
@@ -58,13 +66,9 @@ export class LibraryStorage {
         this.libraries[libraryId].pluginManager = pluginManager;
         await pluginManager.loadPlugins();
 
-        // 接入缩略图服务
         const thumbService = this.server.thumbnailService;
         if (thumbService) {
-            const em = this.libraries[libraryId].eventManager!;
-            em.on('file::created', (event: any) => thumbService.onFileCreated(libraryId, event, dbServer));
-            em.on('file::deleted', (event: any) => thumbService.onFileDeleted(libraryId, event.args?.result || event.args, dbServer));
-            // 自动扫描缺失缩略图
+            // 自动扫描缺失缩略图（生成/清理均已迁到 onFileImported/onFileDeleted 钩子，不再依赖 EventManager）
             const enableThumbScan = dbConfig.customFields?.enableThumbScan ?? false;
             if (enableThumbScan) {
                 thumbService.scanPending(libraryId, dbServer, 'library-startup');
@@ -156,7 +160,14 @@ export class LibraryStorage {
 
                 let dbServer!: LibraryServerDataSQLite;
                 dbServer = new LibraryServerDataSQLite(config, {
-                    onFileImported: (file) => { this.server.metadataService.enqueue(file, dbServer); },
+                    // 与 load() 保持一致：入库统一回调（元数据补全 + 缩略图生成）与硬删清理回调
+                    onFileImported: (file) => {
+                        this.server.metadataService?.enqueue(file, dbServer);
+                        this.server.thumbnailService?.onFileImported(libraryId, file, dbServer);
+                    },
+                    onFileDeleted: (file) => {
+                        this.server.thumbnailService?.onFileDeleted(libraryId, file, dbServer);
+                    },
                     dbMirrorRoot: path.join(this.server.getDataPath(), 'db-mirrors'),
                 });
                 this.libraries[libraryId].libraryService = dbServer;

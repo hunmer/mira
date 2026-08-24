@@ -76,6 +76,18 @@ export const initializeGlobalPluginSystem = () => {
             await instance.cleanup()
           }
           ;(window as any).pluginSystem.instances.delete(pluginId)
+
+          // 插件自身未必会撤销已注册的 UI 贡献；卸载时由宿主兜底清理，
+          // 避免禁用后贡献条继续显示并在后续操作中访问失效实例。
+          const contributionApi = (window as any).pluginSystem.contributions
+          if (contributionApi?.list && typeof contributionApi.emit === 'function') {
+            const list = contributionApi.list as any[]
+            const next = list.filter((item: any) => item?.pluginId !== pluginId)
+            if (next.length !== list.length) {
+              contributionApi.list = next
+              contributionApi.emit()
+            }
+          }
         } catch (error) {
           console.error(`❌ Failed to unload plugin instance ${pluginId}:`, error)
           throw error

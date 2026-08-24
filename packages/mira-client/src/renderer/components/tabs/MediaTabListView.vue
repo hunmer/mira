@@ -267,8 +267,8 @@
                     <span class="material-icons text-muted-foreground dark:text-muted-foreground">content_copy</span>
                   </button>
                   <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
-                    :title="$t('tabs.mediaTabListView.open')" @click="handleToolbarAction('open')">
-                    <span class="material-icons text-muted-foreground dark:text-muted-foreground">open_in_new</span>
+                    :title="$t('tabs.mediaTabListView.share')" @click="handleToolbarAction('share')">
+                    <span class="material-icons text-muted-foreground dark:text-muted-foreground">ios_share</span>
                   </button>
                   <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
                     :title="$t('tabs.mediaTabListView.deleteFiles', { count: selectedItems.length })"

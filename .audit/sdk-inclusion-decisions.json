@@ -1,9 +1,10 @@
 {
-  "generatedAt": "2026-08-24T08:35:12.935Z",
+  "generatedAt": "2026-08-24T11:20:32.642Z",
   "summary": {
-    "P3": 11,
+    "P3": 12,
     "excluded": 13,
-    "dynamic": 7
+    "dynamic": 7,
+    "P2": 1
   },
   "decisions": [
     {
@@ -47,6 +48,22 @@
       "batch": null,
       "reason": "F0 无仓库消费者",
       "evidence": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/devices/share/:param",
+      "category": "missing",
+      "frequency": "F0",
+      "prodSites": 0,
+      "pkgCount": 0,
+      "packages": [],
+      "priority": "P3",
+      "module": "Device",
+      "batch": null,
+      "reason": "文件流响应(createReadStream/zip); 票据免token下载, 创建侧已由 DeviceModule.createShareTicket 覆盖(P0 组), 下载 URL 由调用方拼接",
+      "evidence": [
+        "packages/mira-app-core/src/shared/sdk/modules/DeviceModule.contract.test.ts:32 [test]"
+      ]
     },
     {
       "method": "GET",
@@ -210,6 +227,24 @@
     },
     {
       "method": "GET",
+      "path": "/api/plugins/store",
+      "category": "missing",
+      "frequency": "F1",
+      "prodSites": 1,
+      "pkgCount": 1,
+      "packages": [
+        "mira-dashboard-next"
+      ],
+      "priority": "P2",
+      "module": "Plugin",
+      "batch": "C",
+      "reason": "F1 1pkg dashboard 插件商店页; PluginModule 候选(与 store 安装同组)",
+      "evidence": [
+        "packages/mira-dashboard-next/src/api/modules/plugin.ts:29"
+      ]
+    },
+    {
+      "method": "GET",
       "path": "/api/plugins/install/stream",
       "category": "excluded",
       "priority": "-",
@@ -272,7 +307,7 @@
         "packages/mira-app-core/src/shared/sdk/modules/UserModule.contract.test.ts:37 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/UserModule.ts:82",
         "packages/mira-client/dist-renderer/assets/js/main-B6NLT87Y.js:95",
-        "packages/mira-dashboard-next/src/layouts/DefaultLayout.vue:163",
+        "packages/mira-dashboard-next/src/layouts/DefaultLayout.vue:137",
         "packages/mira-dashboard-next/src/views/mira/statistics/index.vue:369",
         "packages/mira-dashboard-next/src/views/mira/statistics/index.vue:417"
       ]

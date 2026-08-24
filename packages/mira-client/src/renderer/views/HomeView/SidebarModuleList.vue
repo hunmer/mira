@@ -390,6 +390,11 @@ const setWebFavoritesRef = (el: any) => { webFavoritesRef.value = el }
  * 而非组件实例（取不到 toggleSearch/handleAdd）。改用函数 ref 直接赋值给单个 ref。
  */
 const setFolderTreeRef = (el: any) => { folderTreeRef.value = el }
+
+function handleFolderTreeSelect(folder: any) {
+  // 标记来源，供 HomeView 区分侧栏树的普通导航与 Ctrl/Cmd 新开 Tab。
+  emit('folderSelect', { ...folder, source: 'sidebar-tree' })
+}
 const setTagTreeRef = (el: any) => { tagTreeRef.value = el }
 
 onDeactivated(() => {
@@ -655,7 +660,7 @@ defineExpose({ locateItem })
           :selected-key="homeController.selectedFolder.value"
           :show-base-categories="false"
           indent-mode="icon"
-          @select="emit('folderSelect', $event)"
+          @select="handleFolderTreeSelect"
           @expand="homeController.handleFolderExpand"
           @refresh="emit('refreshFolders')"
           @empty-trash="emit('emptyTrash')"

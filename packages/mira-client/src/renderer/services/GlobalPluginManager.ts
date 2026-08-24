@@ -135,7 +135,10 @@ export class GlobalPluginManager {
       }
 
       const errors: string[] = []
-      const enablePromises = plugins.map(async (plugin) => {
+      // loadLocalPlugins 已根据持久化状态恢复 status；禁用插件不得在启动时被重新启用。
+      const enablePromises = plugins
+        .filter(plugin => plugin.status !== 'disabled')
+        .map(async (plugin) => {
         try {
           const result = await pluginStore.enableLocalPluginNew(plugin.config.pluginId)
 

@@ -66,11 +66,6 @@ onMounted(async () => {
   }
 })
 
-// 部署成功后立即刷新版本徽标（组件不在场时由下次挂载的 checkVersion 兜底）
-watch(pipelineStatus, (status) => {
-  if (status === 'success') checkVersion()
-})
-
 // 默认部署步骤（贴合 mira-app-server README 真实流程）
 const defaultTasks = computed<DeployTask[]>(() => [
   {
@@ -122,6 +117,11 @@ const {
   syncTaskTexts,
   setTaskExpanded,
 } = useDeployPipeline()
+
+// 部署成功后立即刷新版本徽标（组件不在场时由下次挂载的 checkVersion 兜底）
+watch(pipelineStatus, (status) => {
+  if (status === 'success') checkVersion()
+})
 
 function toggleTask(taskId: number) {
   setTaskExpanded(taskId, !expandedTaskIds.value.has(taskId))

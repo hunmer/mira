@@ -171,7 +171,11 @@ onMounted(() => {
     const ps = getPluginSystem()
     if (ps?.contributions?.subscribe) {
       unsubscribe = ps.contributions.subscribe((list: PluginContribution[]) => {
-        contributions.value = Array.isArray(list) ? list : []
+        // 贡献注册表可能因插件 cleanup 未显式 unregister 而残留，按运行时状态兜底过滤。
+        contributions.value = (Array.isArray(list) ? list : []).filter((item) => {
+          const status = getPluginSystem()?.getPlugin?.(item.pluginId)?.status
+          return status !== 'disabled'
+        })
       })
       return true
     }

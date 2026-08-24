@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-24T08:34:51.118Z",
+  "generatedAt": "2026-08-24T11:19:24.774Z",
   "mounts": {
     "express.static(publicDir)": "/static",
     "express.static(dashboardDir,{//SPA回退：未命中的静态资源回落到index.html，保证前端路由可刷新setHeaders:(res,filePath)=>{if(path.extname(filePath)==='.html'){res.setHeader('Cache-Control','no-cache');}},})": "/dashboard",
@@ -265,7 +265,7 @@
       "dynamic": false,
       "domain": "devices",
       "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
-      "line": 32,
+      "line": 76,
       "middlewares": [
         "this.getAllDevices.bind(this)"
       ]
@@ -277,7 +277,7 @@
       "dynamic": false,
       "domain": "devices",
       "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
-      "line": 35,
+      "line": 79,
       "middlewares": [
         "this.getLibraryDevices.bind(th"
       ]
@@ -289,7 +289,7 @@
       "dynamic": false,
       "domain": "devices",
       "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
-      "line": 38,
+      "line": 82,
       "middlewares": [
         "this.broadcastMessage.bind(thi"
       ]
@@ -301,7 +301,7 @@
       "dynamic": false,
       "domain": "devices",
       "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
-      "line": 41,
+      "line": 85,
       "middlewares": [
         "this.disconnectDevice.bind(thi"
       ]
@@ -313,7 +313,7 @@
       "dynamic": false,
       "domain": "devices",
       "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
-      "line": 42,
+      "line": 86,
       "middlewares": [
         "this.disconnectDeviceByClientI"
       ]
@@ -325,7 +325,7 @@
       "dynamic": false,
       "domain": "devices",
       "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
-      "line": 45,
+      "line": 89,
       "middlewares": [
         "this.sendMessageToDevice.bind("
       ]
@@ -337,7 +337,7 @@
       "dynamic": false,
       "domain": "devices",
       "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
-      "line": 46,
+      "line": 90,
       "middlewares": [
         "this.sendMessageToDeviceByClie"
       ]
@@ -349,7 +349,7 @@
       "dynamic": false,
       "domain": "devices",
       "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
-      "line": 47,
+      "line": 91,
       "middlewares": [
         "this.sendTestMessageToDevice.b"
       ]
@@ -361,9 +361,33 @@
       "dynamic": false,
       "domain": "devices",
       "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
-      "line": 48,
+      "line": 92,
       "middlewares": [
         "this.getDeviceMessages.bind(th"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/devices/share-tickets",
+      "rawPath": "/share-tickets",
+      "dynamic": false,
+      "domain": "devices",
+      "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
+      "line": 95,
+      "middlewares": [
+        "this.createShareTicket.bind(th"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/devices/share/:param",
+      "rawPath": "/share/:ticketId",
+      "dynamic": false,
+      "domain": "devices",
+      "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
+      "line": 96,
+      "middlewares": [
+        "this.downloadByShareTicket.bin"
       ]
     },
     {
@@ -373,7 +397,7 @@
       "dynamic": false,
       "domain": "devices",
       "file": "packages/mira-app-server/src/routes/DeviceRoutes.ts",
-      "line": 51,
+      "line": 99,
       "middlewares": [
         "this.getDeviceStats.bind(this)"
       ]
@@ -927,13 +951,43 @@
       "middlewares": []
     },
     {
+      "method": "POST",
+      "path": "/api/libraries/import",
+      "rawPath": "/import",
+      "dynamic": false,
+      "domain": "libraries",
+      "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
+      "line": 23,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/libraries/import/:param",
+      "rawPath": "/import/:importId",
+      "dynamic": false,
+      "domain": "libraries",
+      "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
+      "line": 42,
+      "middlewares": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/libraries/import/:param/cancel",
+      "rawPath": "/import/:importId/cancel",
+      "dynamic": false,
+      "domain": "libraries",
+      "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
+      "line": 51,
+      "middlewares": []
+    },
+    {
       "method": "GET",
       "path": "/api/libraries",
       "rawPath": "/",
       "dynamic": false,
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 19,
+      "line": 60,
       "middlewares": []
     },
     {
@@ -943,7 +997,7 @@
       "dynamic": false,
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 80,
+      "line": 121,
       "middlewares": []
     },
     {
@@ -953,7 +1007,7 @@
       "dynamic": false,
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 184,
+      "line": 225,
       "middlewares": []
     },
     {
@@ -963,7 +1017,7 @@
       "dynamic": false,
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 334,
+      "line": 375,
       "middlewares": []
     },
     {
@@ -973,7 +1027,7 @@
       "dynamic": false,
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 397,
+      "line": 438,
       "middlewares": []
     },
     {
@@ -983,7 +1037,7 @@
       "dynamic": false,
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 489,
+      "line": 530,
       "middlewares": []
     },
     {
@@ -993,7 +1047,7 @@
       "dynamic": false,
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 529,
+      "line": 570,
       "middlewares": []
     },
     {
@@ -1003,7 +1057,7 @@
       "dynamic": false,
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 573,
+      "line": 614,
       "middlewares": []
     },
     {
@@ -1013,7 +1067,7 @@
       "dynamic": false,
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 610,
+      "line": 651,
       "middlewares": []
     },
     {
@@ -1023,7 +1077,17 @@
       "dynamic": false,
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 656,
+      "line": 697,
+      "middlewares": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/plugins/store",
+      "rawPath": "/store",
+      "dynamic": false,
+      "domain": "plugins",
+      "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
+      "line": 167,
       "middlewares": []
     },
     {
@@ -1033,7 +1097,7 @@
       "dynamic": false,
       "domain": "plugins",
       "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
-      "line": 165,
+      "line": 186,
       "middlewares": []
     },
     {
@@ -1043,7 +1107,7 @@
       "dynamic": false,
       "domain": "plugins",
       "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
-      "line": 190,
+      "line": 211,
       "middlewares": []
     },
     {
@@ -1053,7 +1117,7 @@
       "dynamic": false,
       "domain": "plugins",
       "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
-      "line": 201,
+      "line": 222,
       "middlewares": []
     },
     {
@@ -1063,7 +1127,7 @@
       "dynamic": false,
       "domain": "plugins",
       "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
-      "line": 227,
+      "line": 248,
       "middlewares": []
     },
     {
@@ -1073,7 +1137,7 @@
       "dynamic": false,
       "domain": "plugins",
       "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
-      "line": 369,
+      "line": 390,
       "middlewares": []
     },
     {
@@ -1083,7 +1147,7 @@
       "dynamic": false,
       "domain": "plugins",
       "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
-      "line": 504,
+      "line": 525,
       "middlewares": []
     },
     {
@@ -1093,7 +1157,7 @@
       "dynamic": false,
       "domain": "plugins",
       "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
-      "line": 523,
+      "line": 544,
       "middlewares": []
     },
     {
@@ -1103,7 +1167,7 @@
       "dynamic": false,
       "domain": "plugins",
       "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
-      "line": 714,
+      "line": 735,
       "middlewares": []
     },
     {
@@ -1113,7 +1177,7 @@
       "dynamic": false,
       "domain": "plugins",
       "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
-      "line": 767,
+      "line": 788,
       "middlewares": []
     },
     {
@@ -1123,7 +1187,7 @@
       "dynamic": false,
       "domain": "plugins",
       "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
-      "line": 803,
+      "line": 824,
       "middlewares": []
     },
     {
@@ -1133,7 +1197,7 @@
       "dynamic": false,
       "domain": "plugins",
       "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
-      "line": 851,
+      "line": 872,
       "middlewares": []
     },
     {
@@ -1143,7 +1207,7 @@
       "dynamic": false,
       "domain": "plugins",
       "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
-      "line": 898,
+      "line": 919,
       "middlewares": []
     },
     {
@@ -1153,7 +1217,7 @@
       "dynamic": false,
       "domain": "plugins",
       "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
-      "line": 931,
+      "line": 952,
       "middlewares": []
     },
     {
@@ -1163,7 +1227,7 @@
       "dynamic": false,
       "domain": "plugins",
       "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
-      "line": 967,
+      "line": 988,
       "middlewares": []
     },
     {
@@ -1173,7 +1237,7 @@
       "dynamic": false,
       "domain": "plugins",
       "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
-      "line": 1016,
+      "line": 1037,
       "middlewares": []
     },
     {
@@ -1183,7 +1247,7 @@
       "dynamic": false,
       "domain": "plugins",
       "file": "packages/mira-app-server/src/routes/PluginRoutes.ts",
-      "line": 1066,
+      "line": 1087,
       "middlewares": []
     },
     {
@@ -1193,7 +1257,7 @@
       "dynamic": false,
       "domain": "settings",
       "file": "packages/mira-app-server/src/routes/SettingsRouter.ts",
-      "line": 19,
+      "line": 20,
       "middlewares": []
     },
     {
@@ -1203,7 +1267,7 @@
       "dynamic": false,
       "domain": "settings",
       "file": "packages/mira-app-server/src/routes/SettingsRouter.ts",
-      "line": 25,
+      "line": 26,
       "middlewares": [
         "this.authRouter.authMiddleware"
       ]

@@ -400,6 +400,11 @@ function handleBaseCategoryClick(category: BaseCategory) {
 }
 
 function handleNodeClick(node: HeTreeNode, _stat: any, event: MouseEvent) {
+  // 展开状态下点击含子节点的行会执行折叠；普通点击只应改变树状态，
+  // 不应因此打开/切换文件夹 Tab。保留 Ctrl/Cmd 点击语义供外部新开 Tab。
+  if (node.children?.length && _stat?.open && !(event.ctrlKey || event.metaKey)) {
+    return
+  }
   // ctrlKey / metaKey 透传给 select 载荷（如收藏夹 Ctrl+点击用独立窗口打开）
   const payload = buildSelectPayload(node, defaultIcon.value, {
     ctrlKey: event.ctrlKey || event.metaKey || false,

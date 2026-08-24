@@ -53,7 +53,8 @@
     "sectionLayoutDescription": "拖动调整区块顺序，将区块移到右侧即可隐藏",
     "sectionLayoutEnabled": "显示的区块",
     "sectionLayoutDisabled": "隐藏的区块",
-    "sectionLayoutAllEnabled": "所有区块均已显示"
+    "sectionLayoutAllEnabled": "所有区块均已显示",
+    "share": "发送到其他设备"
   },
   "homeTabView": {
     "dashboard": "仪表盘",

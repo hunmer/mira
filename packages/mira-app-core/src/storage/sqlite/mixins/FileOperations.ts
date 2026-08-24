@@ -110,7 +110,12 @@ export const FileOperations = {
       return true;
     }
     // 硬删：只删 DB 行，物理文件删除仍由调用方（FileRoutes）负责，保持现状
+    const item = await this.getFile(id);
     const result = await this.runSql('DELETE FROM files WHERE id = ?', [id]);
+    if (result.changes > 0 && item) {
+      // 通知删除回调（缩略图清理等）；回收站分支不触发，恢复后缩略图可继续使用
+      this.notifyFileDeleted(item);
+    }
     return result.changes > 0;
   },
 
@@ -160,7 +165,10 @@ export const FileOperations = {
       }
 
       const result = await this.runSql('DELETE FROM files WHERE id = ?', [item.id]);
-      if (result.changes > 0) deletedCount++;
+      if (result.changes > 0) {
+        deletedCount++;
+        this.notifyFileDeleted(item);
+      }
     }
 
     return { deletedCount, errors };

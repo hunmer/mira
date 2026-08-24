@@ -90,6 +90,8 @@ const DECISIONS: Record<string, { priority: 'P0' | 'P1' | 'P2' | 'P3'; module: s
     'POST /api/plugins/:param/start': { priority: 'P3', module: '-', reason: 'F0 无仓库消费者' },
     'POST /api/plugins/:param/stop': { priority: 'P3', module: '-', reason: 'F0 无仓库消费者' },
     'GET /api/plugin-routes': { priority: 'P3', module: '-', reason: 'F0; 插件动态路由发现端点, 建通用 plugin request 时再评估' },
+    'GET /api/devices/share/:param': { priority: 'P3', module: 'Device', reason: '文件流响应(createReadStream/zip); 票据免token下载, 创建侧已由 DeviceModule.createShareTicket 覆盖(P0 组), 下载 URL 由调用方拼接' },
+    'GET /api/plugins/store': { priority: 'P2', module: 'Plugin', reason: 'F1 1pkg dashboard 插件商店页; PluginModule 候选(与 store 安装同组)' },
 };
 
 function main() {

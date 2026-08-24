@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mira 设备配对</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px;
+  }
+  .card {
+    background: #fff; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.25);
+    width: 100%; max-width: 420px; padding: 28px; color: #1f2937;
+  }
+  h1 { font-size: 20px; display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+  .status { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 10px; font-size: 14px; margin-bottom: 16px; }
+  .status.ok { background: #ecfdf5; color: #065f46; }
+  .status.err { background: #fef2f2; color: #991b1b; }
+  .status.wait { background: #f3f4f6; color: #4b5563; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex: none; }
+  .dot.pulse { animation: pulse 1.2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: .35 } 50% { opacity: 1 } }
+  .section { margin-top: 20px; padding-top: 16px; border-top: 1px dashed #e5e7eb; }
+  .section h2 { font-size: 15px; margin-bottom: 8px; }
+  .share-list { margin: 12px 0; max-height: 220px; overflow-y: auto; }
+  .share-item { display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid #e5e7eb; border-radius: 10px; margin-bottom: 8px; font-size: 13px; }
+  .share-item .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .share-item .size { color: #6b7280; flex: none; }
+  button {
+    width: 100%; padding: 12px; border: none; border-radius: 10px; font-size: 15px; cursor: pointer;
+    background: #6366f1; color: #fff; transition: opacity .15s;
+  }
+  button:hover { opacity: .9; }
+  button:disabled { background: #d1d5db; cursor: not-allowed; }
+  button.ghost { background: #eef2ff; color: #4f46e5; }
+  .hint { font-size: 12px; color: #9ca3af; text-align: center; margin-top: 12px; line-height: 1.6; }
+  .meta { font-size: 12px; color: #6b7280; margin-bottom: 4px; word-break: break-all; }
+  .progress { height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden; margin: 12px 0; }
+  .progress > div { height: 100%; background: #6366f1; width: 0; transition: width .2s; }
+  #pickBtn { margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>📱 Mira 设备配对</h1>
+  <div id="status" class="status wait"><span class="dot pulse"></span><span id="statusText">正在连接服务器…</span></div>
+  <div class="meta" id="meta"></div>
+
+  <!-- 接收：等待其他设备推送 -->
+  <div id="shareArea" style="display:none">
+    <div id="shareTitle" style="font-size:15px;font-weight:600;margin-bottom:4px"></div>
+    <div class="share-list" id="shareList"></div>
+    <button id="acceptBtn">接收并下载</button>
+    <div class="progress" id="progressBar" style="display:none"><div id="progressFill"></div></div>
+    <div class="hint" id="progressText"></div>
+  </div>
+  <div class="hint" id="waitHint">已配对，等待其他设备发送文件…<br>保持此页面打开</div>
+
+  <!-- 发送：把本机文件回传给配对的桌面端 -->
+  <div class="section" id="sendSection" style="display:none">
+    <h2>📤 发送文件给桌面端</h2>
+    <p class="hint" style="text-align:left">选择的照片/文件会上传到素材库，并通知桌面端接收</p>
+    <input type="file" id="fileInput" multiple style="display:none" />
+    <button class="ghost" id="pickBtn">选择文件并发送</button>
+    <div class="progress" id="sendBar" style="display:none"><div id="sendFill"></div></div>
+    <div class="hint" id="sendText"></div>
+  </div>
+</div>
+
+<script type="module">
+import { MiraClient } from '/static/sdk/mira-sdk.esm.mjs';
+
+const qs = new URLSearchParams(location.search);
+const token = qs.get('token');
+const libraryId = qs.get('libraryId');
+const wsUrlParam = qs.get('ws');
+const fromClientId = qs.get('from'); // 发起配对的桌面端 clientId（用于反向推送）
+
+const $ = (id) => document.getElementById(id);
+const setStatus = (cls, text, pulse) => {
+  $('status').className = 'status ' + cls;
+  $('statusText').textContent = text;
+  $('status').querySelector('.dot').className = 'dot' + (pulse ? ' pulse' : '');
+};
+
+if (!token || !libraryId || !wsUrlParam) {
+  setStatus('err', '配对参数缺失，请重新扫码', false);
+} else {
+  main().catch((err) => {
+    console.error(err);
+    setStatus('err', '连接失败：' + (err?.message || err), false);
+  });
+}
+
+let client = null;
+let selfId = '';
+
+async function main() {
+  // 静态页与 API 同源部署，直接用当前 origin 作为服务地址
+  client = new MiraClient(location.origin);
+  client.setToken(token);
+
+  // token 认证验证（失败会抛 401）
+  const info = await client.system().getSystemInfo();
+  $('meta').textContent = `服务器 ${location.origin} · 素材库 ${libraryId}`;
+
+  selfId = `pair_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+  const ws = client.websocket(0, {
+    url: wsUrlParam,
+    clientId: selfId,
+    libraryId,
+    token,
+  });
+  // SDK 的 websocket() 构造后需要 start() 建立连接
+  await ws.start();
+  setStatus('ok', `已连接（${info?.data?.version || info?.version || 'ok'}）· 等待接收`, true);
+  if (fromClientId) $('sendSection').style.display = 'block';
+
+  ws.on('disconnected', () => {
+    if (!currentShare) setStatus('err', '连接已断开，请重新扫码配对', false);
+  });
+
+  // 设备消息通过 eventName=admin_message 下发，message 体在 data.message
+  ws.bind('admin_message', (data) => {
+    const msg = data?.message || data;
+    if (msg?.type === 'mira-share') renderShare(msg);
+  });
+
+  // 反向发送：选文件 → 上传到库 → WS 通知桌面端接收
+  $('pickBtn').addEventListener('click', () => $('fileInput').click());
+  $('fileInput').addEventListener('change', () => sendBackToDesktop($('fileInput').files));
+}
+
+let currentShare = null;
+
+function renderShare(msg) {
+  currentShare = msg;
+  setStatus('ok', '收到来自「' + (msg.fromLabel || msg.from || '未知设备') + '」的文件', false);
+  $('waitHint').style.display = 'none';
+  $('shareArea').style.display = 'block';
+  const files = msg.files || [];
+  $('shareTitle').textContent = `接收到 ${files.length} 个文件：`;
+  $('shareList').innerHTML = files.map((f) => `
+    <div class="share-item">
+      <span>📄</span><span class="name" title="${escapeHtml(f.name || '')}">${escapeHtml(f.name || '未命名')}</span>
+      <span class="size">${f.size ? formatSize(f.size) : ''}</span>
+    </div>`).join('');
+  const btn = $('acceptBtn');
+  btn.disabled = false;
+  const isZip = files.length > 1 && msg.ticketUrl;
+  btn.textContent = isZip ? '接收并下载（ZIP 打包）' : '接收并下载';
+  btn.onclick = () => downloadShare(msg);
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function formatSize(n) {
+  if (n > 1048576) return (n / 1048576).toFixed(1) + ' MB';
+  if (n > 1024) return (n / 1024).toFixed(1) + ' KB';
+  return n + ' B';
+}
+
+async function downloadShare(msg) {
+  const files = msg.files || [];
+  if (files.length === 0) return;
+  const btn = $('acceptBtn');
+  btn.disabled = true;
+  $('progressBar').style.display = 'block';
+  const setProgress = (p, text) => {
+    $('progressFill').style.width = Math.round(p * 100) + '%';
+    if (text) $('progressText').textContent = text;
+  };
+  try {
+    // 优先一次性票据（免 token；单文件原文件 / 多文件 ZIP）；缺票据时回退直链/打包接口
+    if (msg.ticketUrl) {
+      const blob = await fetchBlob(reachableUrl(msg.ticketUrl), setProgress);
+      saveBlob(blob, files.length === 1 ? (files[0].name || 'mira-file') : `mira-share-${Date.now()}.zip`);
+    } else if (files.length === 1 && files[0].url) {
+      // 单文件：直接走 HTTP 直连链下载
+      const blob = await fetchBlob(reachableUrl(files[0].url), setProgress);
+      saveBlob(blob, files[0].name || 'mira-file');
+    } else {
+      // 多文件：服务端 ZIP 打包（POST /api/fs/download，走 Authorization 认证）
+      const paths = files.map((f) => f.path).filter(Boolean);
+      const blob = await fetchBlobWithBody(`${location.origin}/api/fs/download`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ libraryId: msg.libraryId || libraryId, paths }),
+      }, setProgress);
+      saveBlob(blob, `mira-share-${Date.now()}.zip`);
+    }
+    setProgress(1, '下载完成，已保存到浏览器默认下载目录');
+    btn.textContent = '已下载 ✓';
+  } catch (err) {
+    console.error(err);
+    setProgress(0, '下载失败：' + (err?.message || err));
+    btn.disabled = false;
+    btn.textContent = '重试下载';
+  }
+}
+
+// 消息中的链接是发送端视角（可能是 127.0.0.1），替换成当前页面主机保证可达
+function reachableUrl(url) {
+  try {
+    const parsed = new URL(url, location.origin);
+    parsed.protocol = location.protocol === 'https:' ? 'https:' : parsed.protocol;
+    parsed.host = location.host;
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
+
+async function sendBackToDesktop(fileList) {
+  if (!fileList || fileList.length === 0 || !client || !fromClientId) return;
+  const files = Array.from(fileList);
+  const btn = $('pickBtn');
+  btn.disabled = true;
+  $('sendBar').style.display = 'block';
+  $('sendText').textContent = `上传中 0/${files.length}`;
+  try {
+    const uploaded = [];
+    for (let i = 0; i < files.length; i++) {
+      const res = await client.files().upload({
+        libraryId,
+        files: [files[i]],
+        clientId: selfId,
+        onUploadProgress: (e) => {
+          if (e.total) $('sendFill').style.width = Math.round(((i + e.loaded / e.total) / files.length) * 100) + '%';
+        },
+      });
+      const results = res?.results || [];
+      for (const r of results) {
+        if (!r?.success) continue;
+        const id = r.result?.id ?? r.result?.fileId;
+        if (id == null) continue;
+        uploaded.push({
+          id: String(id),
+          name: r.result?.name || r.result?.title || r.file || files[i].name,
+          path: r.result?.path,
+          size: r.result?.size ?? files[i].size,
+          url: `${location.origin}/api/files/download/${encodeURIComponent(libraryId)}/${encodeURIComponent(id)}${token ? '?token=' + encodeURIComponent(token) : ''}`,
+        });
+      }
+      $('sendText').textContent = `上传中 ${i + 1}/${files.length}`;
+    }
+    if (uploaded.length === 0) throw new Error('没有文件上传成功');
+    await client.devices().sendMessage(fromClientId, libraryId, {
+      type: 'mira-share',
+      from: selfId,
+      fromLabel: '配对设备 · ' + (/Android|iPhone|iPad/i.test(navigator.userAgent) ? '手机' : '浏览器'),
+      libraryId,
+      files: uploaded,
+    });
+    $('sendFill').style.width = '100%';
+    $('sendText').textContent = `已发送 ${uploaded.length} 个文件，等待桌面端接收`;
+  } catch (err) {
+    console.error(err);
+    $('sendText').textContent = '发送失败：' + (err?.message || err);
+  } finally {
+    btn.disabled = false;
+    $('fileInput').value = '';
+  }
+}
+
+function fetchBlob(url, onProgress) {
+  return fetchBlobWithBody(url, {}, onProgress);
+}
+
+function fetchBlobWithBody(url, init, onProgress) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open(init.method || 'GET', url);
+    for (const [k, v] of Object.entries(init.headers || {})) xhr.setRequestHeader(k, v);
+    xhr.responseType = 'blob';
+    xhr.onprogress = (e) => { if (e.lengthComputable) onProgress?.(e.loaded / e.total); };
+    xhr.onload = () => xhr.status >= 200 && xhr.status < 300
+      ? resolve(xhr.response)
+      : reject(new Error('HTTP ' + xhr.status));
+    xhr.onerror = () => reject(new Error('网络错误'));
+    xhr.send(init.body || null);
+  });
+}
+
+function saveBlob(blob, filename) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 30000);
+}
+</script>
+</body>
+</html>
