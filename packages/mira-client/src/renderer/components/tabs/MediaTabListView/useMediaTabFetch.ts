@@ -3,6 +3,7 @@ import { useLibraryStore } from '@renderer/stores/library'
 import { useMediaStore } from '@renderer/stores/media'
 import type { useMediaTabData } from '@renderer/composables/useMediaTabData'
 import type { useHomeController } from '@renderer/controllers/HomeController'
+import { mergeMediaTabFilters } from './mediaTabRuntime'
 
 /**
  * 数据加载：分页取数、排序、刷新（含 WebSocket 活跃 tab 刷新回调）
@@ -61,10 +62,7 @@ export function useMediaTabFetch(deps: {
       // 清理 null/undefined 值
       // tab 固有筛选来自视图配置；恢复流程中 MediaTabData 可能尚未完成初始化，
       // 先合并固有筛选，再用当前 tab 已保存/编辑过的筛选覆盖同名字段。
-      const rawFilters = {
-        ...(props.filters ?? {}),
-        ...mediaTabData.filters.value
-      }
+      const rawFilters = mergeMediaTabFilters(props.filters ?? {}, mediaTabData.filters.value)
       const currentFilters: Record<string, any> = {}
       Object.entries(rawFilters).forEach(([key, value]) => {
         if (value !== undefined && !(typeof value === 'number' && Number.isNaN(value))) {

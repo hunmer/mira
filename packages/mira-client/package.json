@@ -27,6 +27,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "type-check": "vue-tsc --noEmit -p tsconfig.json --composite false",
+    "test:split-tabs": "node --no-warnings --experimental-strip-types --test src/renderer/components/tabs/MediaTabListView/mediaTabRuntime.test.ts src/renderer/views/HomeView/splitPaneRestore.test.ts",
     "test:ui:remote": "node scripts/test-ui.mjs",
     "docs": "typedoc",
     "analyze:deps": "depcruise src --output-type html --output-to docs/dependencies.html",

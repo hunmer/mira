@@ -59,6 +59,8 @@
   "confirmAfterImportDesc": "When enabled, importing a folder or dropping files via the floating ball opens the upload dialog for confirmation; when disabled, files are imported into the current library directly (stored in the library's local config)",
   "showTabIcons": "Show tab icons",
   "showTabIconsDesc": "Show tab icons on the top tab bar",
+  "showBreadcrumb": "Show breadcrumb",
+  "showBreadcrumbDesc": "Show the current path breadcrumb in the media list footer",
   "autoStartFailed": "Failed to set system login item",
   "settingUpdated": "{key} setting updated successfully",
   "saveError": "An error occurred while saving settings",

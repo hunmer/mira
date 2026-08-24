@@ -24,6 +24,7 @@ import HomeSplitContent from './HomeSplitContent.vue'
 import HomeDialogs from './HomeDialogs.vue'
 import PluginContributionBar from './PluginContributionBar.vue'
 import { HOME_SPLIT_CAPACITY, type HomeSplitLayout } from './homeSplitLayout'
+import { hydrateRestoredSplitTabs } from './splitPaneRestore'
 
 
 // Store imports
@@ -332,16 +333,13 @@ watch(
     const tabsToLoad = tabIds
       .map(tabId => tabId ? activeTabs.value.find(tab => tab.id === tabId) : undefined)
       .filter((tab): tab is NonNullable<typeof tab> => Boolean(tab))
-      .filter(tab => !visitedTabs.value.some(visited => visited.id === tab.id))
-    void Promise.all(tabsToLoad.map(async tab => {
-      await loadTabViewConfig(tab)
-      // 恢复分屏布局时非激活 tab 不会经过 switchToTab 的懒加载回调，
-      // 因此在配置加载后主动加载其首屏数据。
-      if (tab.type !== 'home' && tab.needUpdate) {
-        await tabManagement.loadTabData(tab, { limit: getLibraryPrefs().pageSize, offset: 0 })
-        tab.needUpdate = false
-      }
-    }))
+    const visitedTabIds = new Set(visitedTabs.value.map(tab => tab.id))
+    void hydrateRestoredSplitTabs(
+      tabsToLoad,
+      visitedTabIds,
+      loadTabViewConfig,
+      tab => tabManagement.loadTabData(tab, { limit: getLibraryPrefs().pageSize, offset: 0 }),
+    )
   },
   { immediate: true }
 )

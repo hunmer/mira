@@ -24,6 +24,7 @@ export function useMediaTabBreadcrumb(deps: {
    * - 文件夹：通过 parent_id 向上回溯，得到 全部文件 / 父文件夹 / 子文件夹
    * - 标签：标签为扁平结构，得到 全部文件 / 标签：xxx
    * - 回收站：单条 回收站
+   * 默认不显示图标；根节点「全部文件」仅显示图标。
    * 最后一项标记为 active（当前位置，不可点击）。
    */
   const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
@@ -31,12 +32,12 @@ export function useMediaTabBreadcrumb(deps: {
 
     // 回收站：仅一条
     if (props.viewType === 'trash') {
-      items.push({ id: 'trash', label: t('tabs.mediaTabListView.trashBreadcrumb'), icon: 'delete', active: true })
+      items.push({ id: 'trash', label: t('tabs.mediaTabListView.trashBreadcrumb'), active: true })
       return items
     }
 
-    // 根节点：全部文件（点击会打开 all 文件夹 Tab）
-    items.push({ id: 'all', label: t('tabs.mediaTabListView.allFilesBreadcrumb'), icon: 'folder' })
+    // 根节点：全部文件（点击会打开 all 文件夹 Tab），仅显示图标
+    items.push({ id: 'all', label: '', icon: 'folder' })
 
     // 文件夹：沿 parent_id 向上回溯父级链
     const folderRaw = props.filters?.folder
@@ -50,8 +51,7 @@ export function useMediaTabBreadcrumb(deps: {
           seen.add(current.id)
           chain.unshift({
             id: `folder-${current.id}`,
-            label: current.title || String(current.id),
-            icon: 'folder'
+            label: current.title || String(current.id)
           })
           const parentId = current.parent_id
           if (parentId == null || parentId === 0) break
@@ -74,8 +74,7 @@ export function useMediaTabBreadcrumb(deps: {
           const label = tag?.title || t('tabs.mediaTabListView.tagBreadcrumb', { name: tagId })
           items.push({
             id: `tag-${tagId}`,
-            label,
-            icon: 'label'
+            label
           })
         })
       }

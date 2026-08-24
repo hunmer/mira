@@ -54,6 +54,8 @@
   "deleteConfirmDesc": "删除选中素材时是否弹出确认框，可在删除确认框中勾选「记住此操作」自动关闭（保存在当前素材库本地配置中）",
   "showTabIcons": "展示标签页图标",
   "showTabIconsDesc": "在顶部标签条上展示各标签页的图标",
+  "showBreadcrumb": "展示面包屑导航",
+  "showBreadcrumbDesc": "在媒体列表底部状态栏展示当前路径的面包屑导航",
   "deleteConfirmOn": "删除前将再次确认",
   "deleteConfirmOff": "删除前不再确认",
   "confirmAfterImport": "导入后二次确定",

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { nextTick, ref } from 'vue'
-import { ArrowLeft, Folder, LoaderCircle, Pencil, RefreshCw } from 'lucide-vue-next'
+import { ArrowLeft, ChevronDown, Folder, LoaderCircle, Pencil, RefreshCw } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -9,7 +9,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import type { LocalFileEntry } from '@/shared/types'
 import { getParentPath, normalizePath, type LocalFolderCrumb } from './localFolderUtils'
 
 const props = defineProps<{
@@ -39,24 +38,31 @@ async function startEditing() {
 }
 
 const openCrumbPath = ref('')
-const crumbFolders = ref<LocalFileEntry[]>([])
+const crumbFolders = ref<Array<{ name: string, path: string }>>([])
 const crumbLoading = ref(false)
 
 async function loadCrumbFolders(crumb: LocalFolderCrumb) {
   openCrumbPath.value = crumb.path
   crumbFolders.value = []
   crumbLoading.value = true
+  const api = window.electronAPI?.fs
   const parentPath = getParentPath(crumb.path)
-  const listPath = parentPath === crumb.path ? crumb.path : parentPath
-  const result = await window.electronAPI?.fs.listDirectory(listPath)
-  if (openCrumbPath.value !== crumb.path) return
-  crumbLoading.value = false
-  if (result?.success) {
-    crumbFolders.value = (result.data || []).filter((entry) => entry.isDirectory)
+  let folders: Array<{ name: string, path: string }> = []
+  if (api) {
+    if (parentPath === crumb.path) {
+      const result = await api.listRoots()
+      if (result.success) folders = result.data || []
+    } else {
+      const result = await api.listDirectory(parentPath)
+      if (result.success) folders = (result.data || []).filter((entry) => entry.isDirectory)
+    }
   }
+  if (openCrumbPath.value !== crumb.path) return
+  crumbFolders.value = folders
+  crumbLoading.value = false
 }
 
-function isCurrentCrumb(folder: LocalFileEntry, crumb: LocalFolderCrumb) {
+function isCurrentCrumb(folder: { name: string, path: string }, crumb: LocalFolderCrumb) {
   return normalizePath(folder.path) === normalizePath(crumb.path)
 }
 </script>
@@ -80,8 +86,9 @@ function isCurrentCrumb(folder: LocalFileEntry, crumb: LocalFolderCrumb) {
         <span v-if="index" class="px-1 text-muted-foreground">/</span>
         <DropdownMenu @update:open="open => open && loadCrumbFolders(crumb)">
           <DropdownMenuTrigger as-child>
-            <button class="min-w-0 truncate rounded px-1.5 py-1 hover:bg-accent" :title="crumb.path">
-              {{ crumb.label }}
+            <button class="inline-flex min-w-0 items-center gap-0.5 rounded px-1.5 py-1 hover:bg-accent" :title="crumb.path">
+              <span class="min-w-0 truncate">{{ crumb.label }}</span>
+              <ChevronDown class="size-3 shrink-0 text-muted-foreground" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" class="max-h-72 min-w-40 overflow-y-auto">

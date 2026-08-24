@@ -47,6 +47,22 @@
       />
     </div>
 
+    <!-- 媒体列表面包屑 -->
+    <div class="flex items-center justify-between gap-4 py-3">
+      <div class="min-w-0">
+        <label class="text-foreground dark:text-muted-foreground text-base font-medium leading-normal">
+          {{ t('settings.showBreadcrumb') }}
+        </label>
+        <p class="text-muted-foreground dark:text-muted-foreground text-sm mt-2">
+          {{ t('settings.showBreadcrumbDesc') }}
+        </p>
+      </div>
+      <Switch
+        :model-value="settingsStore.settings.showMediaBreadcrumb"
+        @update:model-value="handleShowBreadcrumbChange"
+      />
+    </div>
+
     <!-- 默认视图选项 -->
     <div>
       <div class="flex flex-wrap items-end gap-4 py-3">
@@ -215,6 +231,10 @@ const handleOpenFilePreviewInTabChange = async (enabled: boolean) => {
 
 const handleShowTabIconsChange = async (enabled: boolean) => {
   await settingsStore.updateSetting('showTabIcons', enabled)
+}
+
+const handleShowBreadcrumbChange = async (enabled: boolean) => {
+  await settingsStore.updateSetting('showMediaBreadcrumb', enabled)
 }
 
 const handleDeleteConfirmChange = async (enabled: boolean) => {

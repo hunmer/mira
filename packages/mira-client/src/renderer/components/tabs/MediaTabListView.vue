@@ -315,7 +315,7 @@
       class="flex items-center justify-between px-2 pt-2 shrink-0 text-xs border-t border-white/60 dark:border-border">
       <div class="flex-1 flex items-center space-x-6 min-w-0">
         <!-- 路由状态 / 面包屑导航 -->
-        <Breadcrumb :items="breadcrumbItems" @select="handleBreadcrumbClick" />
+        <Breadcrumb v-if="showMediaBreadcrumb" :items="breadcrumbItems" @select="handleBreadcrumbClick" />
 
         <!-- 当前路径和文件数 -->
         <div v-if="filteredMediaItems.length > 0" class="flex items-center space-x-1 flex-shrink-0 me-2">
@@ -509,6 +509,7 @@ import { useMediaTabPagination } from './MediaTabListView/useMediaTabPagination'
 import { useFloatingToolbar } from './MediaTabListView/useFloatingToolbar'
 import { useMediaTabItemFields } from './MediaTabListView/useMediaTabItemFields'
 import { getRegisteredTabSections, resolveSectionTitle, MediaTabSectionHost } from './MediaTabListView/tabSections'
+import { resolveMediaTabItems } from './MediaTabListView/mediaTabRuntime'
 
 // Props
 interface Props {
@@ -591,10 +592,7 @@ const totalPages = computed(() => mediaTabData.totalPages.value)
 // 从 MediaTabData 获取数据（优先使用缓存数据）
 const paginatedMediaItems = computed(() => {
   const cachedData = mediaTabData.getCachedData()
-  // 已完成请求的 tab 即使结果为空，也必须使用自己的空缓存；
-  // 否则会回退到共享的 homeController 列表，导致分屏 tab 串数据。
-  if (cachedData.lastUpdated > 0) return cachedData.data
-  return homeController.paginatedMediaItems?.value || []
+  return resolveMediaTabItems(cachedData, homeController.paginatedMediaItems?.value || [])
 })
 
 // ============================================
@@ -759,6 +757,8 @@ const { itemFieldOptions, isItemFieldVisible, toggleItemField } = useMediaTabIte
 
 // 紧密瀑布流：取消圆角、间距 0、黑色描边（存于全局设置）
 const settingsStore = useSettingsStore()
+// 底部状态栏面包屑导航开关（设置页可配置）
+const showMediaBreadcrumb = computed(() => settingsStore.settings.showMediaBreadcrumb)
 const compactWaterfall = computed(() => settingsStore.settings.compactWaterfall)
 const handleCompactWaterfallChange = async (val: boolean) => {
   await settingsStore.updateSetting('compactWaterfall', val)

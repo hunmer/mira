@@ -46,7 +46,7 @@ const handleClick = (item: BreadcrumbItem, isLast: boolean) => {
         :aria-current="item.active ? 'page' : undefined"
       >
         <span v-if="item.icon" class="material-icons text-sm flex-shrink-0">{{ item.icon }}</span>
-        <span class="truncate">{{ item.label }}</span>
+        <span v-if="item.label" class="truncate">{{ item.label }}</span>
       </span>
 
       <!-- 可点击的父级项 -->
@@ -58,7 +58,7 @@ const handleClick = (item: BreadcrumbItem, isLast: boolean) => {
         @click="handleClick(item, false)"
       >
         <span v-if="item.icon" class="material-icons text-sm flex-shrink-0">{{ item.icon }}</span>
-        <span class="truncate">{{ item.label }}</span>
+        <span v-if="item.label" class="truncate">{{ item.label }}</span>
       </button>
 
       <!-- 分隔符（非最后一项后显示） -->

@@ -112,6 +112,11 @@ export class AppHandlers {
         return { action: 'deny' }
       })
 
+      // 与主窗口一致：F12 切换 DevTools（该窗口 setMenu(null) 无角色快捷键，需手动监听）
+      win.webContents.on('before-input-event', (_e, input) => {
+        if (input.type === 'keyDown' && input.key === 'F12') win.webContents.toggleDevTools()
+      })
+
       win.once('ready-to-show', () => {
         win.show()
         win.focus()
