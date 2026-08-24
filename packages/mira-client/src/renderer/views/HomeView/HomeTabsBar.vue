@@ -134,26 +134,7 @@ function handleDragEnd() {
 </script>
 
 <template>
-  <div class="flex h-full w-full min-w-0 items-end gap-0.5">
-    <!-- 切换左侧栏（桌面端 inline / 移动端抽屉） -->
-    <div v-if="props.onToggleLeftSidebar" class="flex items-end shrink-0 mr-1">
-      <button
-        :title="$t('views.homeTabsBar.toggleLeftSidebar')"
-        :class="[
-          'h-6 w-8 flex items-center justify-center rounded-full transition-[color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-95',
-          props.leftSidebarOpen
-            ? 'text-primary hover:bg-white/50 hover:backdrop-blur-xl'
-            : 'text-muted-foreground hover:text-primary hover:bg-white/50 hover:backdrop-blur-xl'
-        ]"
-        @click="props.onToggleLeftSidebar?.()">
-        <!-- 折叠状态切换时以 key 重挂载，播放 spring 弹入旋转动画 -->
-        <Motion :key="String(props.leftSidebarOpen)" as="span" class="material-icons text-xl"
-          :initial="{ scale: 0.4, rotate: -90, opacity: 0 }"
-          :animate="{ scale: 1, rotate: 0, opacity: 1 }"
-          :transition="{ type: 'spring', stiffness: 500, damping: 26 }">menu</Motion>
-      </button>
-    </div>
-
+  <div class="flex h-full w-full min-w-0 items-end gap-0.5 me-1">
     <!-- 返回：激活上一次的 tab -->
     <div class="flex items-end gap-0.5 shrink-0 mr-1">
       <button

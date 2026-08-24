@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { Motion } from 'motion-v'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -14,7 +13,6 @@ import {
   DropdownMenuSubContent,
 } from '@/components/ui/dropdown-menu'
 import { useAuthStore } from '@/renderer/stores/auth'
-import { useMediaStore } from '@/renderer/stores/media'
 import { useSettingsStore } from '@/renderer/stores/settings'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { environment } from '@renderer/utils'
@@ -38,7 +36,6 @@ const emit = defineEmits<{
 }>()
 
 const authStore = useAuthStore()
-const mediaStore = useMediaStore()
 const settingsStore = useSettingsStore()
 const router = useRouter()
 const avatarLoadError = ref(false)
@@ -174,18 +171,6 @@ const openUiTestPanel = async () => {
   <!-- 紧凑右侧悬浮栏：用户头像菜单 + 窗口控制 -->
   <header
     class="flex items-center justify-end gap-1 px-2 py-1.5 rounded-2xl border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur-xl shadow-[0_12px_40px_rgba(99,102,241,0.10)] w-fit ml-auto">
-    <!-- 切换详情侧栏 -->
-    <button
-      class="h-8 w-8 flex items-center justify-center rounded-lg transition-[color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-95 cursor-pointer"
-      :class="mediaStore.showDetailSidebar
-        ? 'text-primary hover:bg-primary/10'
-        : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'" @click="mediaStore.toggleDetailSidebar()">
-      <!-- 折叠状态切换时以 key 重挂载，播放 spring 弹入旋转动画 -->
-      <Motion :key="String(mediaStore.showDetailSidebar)" as="span" class="material-icons" style="font-size: 18px;"
-        :initial="{ scale: 0.4, rotate: -90, opacity: 0 }" :animate="{ scale: 1, rotate: 0, opacity: 1 }"
-        :transition="{ type: 'spring', stiffness: 500, damping: 26 }">view_sidebar</Motion>
-    </button>
-
     <!-- 切换亮色/暗色主题 -->
     <button
       class="h-8 w-8 flex items-center justify-center rounded-lg transition-[color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-95 cursor-pointer text-muted-foreground hover:bg-primary/10 hover:text-primary"
