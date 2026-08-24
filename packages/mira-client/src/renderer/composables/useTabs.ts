@@ -816,7 +816,8 @@ export function useTabs() {
             type: tabState.type,
             data: tabState.data,
             active: false, // 先设为false，后面统一设置active
-            needUpdate: true // 恢复的tab需要重新加载数据
+            needUpdate: true, // 恢复的tab需要重新加载数据
+            filters: tabState.filters // 恢复每个 tab 的筛选条件
           }
 
           // 恢复per-tab viewMode

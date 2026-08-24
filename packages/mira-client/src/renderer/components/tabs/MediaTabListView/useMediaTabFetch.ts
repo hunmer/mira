@@ -13,6 +13,7 @@ export function useMediaTabFetch(deps: {
     tabId: string
     libraryId?: string
     viewType?: 'files' | 'trash'
+    filters?: Record<string, any>
   }
   mediaTabData: ReturnType<typeof useMediaTabData>
   homeController: ReturnType<typeof useHomeController>
@@ -58,7 +59,12 @@ export function useMediaTabFetch(deps: {
       const offset = (page - 1) * itemsPerPage
 
       // 清理 null/undefined 值
-      const rawFilters = mediaTabData.filters.value
+      // tab 固有筛选来自视图配置；恢复流程中 MediaTabData 可能尚未完成初始化，
+      // 先合并固有筛选，再用当前 tab 已保存/编辑过的筛选覆盖同名字段。
+      const rawFilters = {
+        ...(props.filters ?? {}),
+        ...mediaTabData.filters.value
+      }
       const currentFilters: Record<string, any> = {}
       Object.entries(rawFilters).forEach(([key, value]) => {
         if (value !== undefined && !(typeof value === 'number' && Number.isNaN(value))) {

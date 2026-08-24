@@ -75,7 +75,7 @@ export function useHomeTabManagement(
         tabId: tab.id,
         libraryId: libraryStore.currentLibrary?.id,
         tabData: tab.data,
-        filters: {}
+        filters: tab.filters ?? {}
       })
 
       tabViewConfigMap.value = {
@@ -127,7 +127,7 @@ export function useHomeTabManagement(
           tabId: newTab.id,
           libraryId: libraryStore.currentLibrary?.id,
           tabData: newTab.data,
-          filters: {}
+          filters: newTab.filters ?? {}
         })
         tabViewConfigMap.value = {
           ...tabViewConfigMap.value,

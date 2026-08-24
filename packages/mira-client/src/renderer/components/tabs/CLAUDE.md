@@ -53,7 +53,7 @@ Tab 视图组件目录包含 Tab 系统的视图层实现。
 | `useLocalThumbnails.ts` | 网格缩略图：native 缩略图请求去重、缓存与重置 |
 | `useLocalGallery.ts` | 画廊预览：galleryEntry 图片预览 Blob URL 生命周期 |
 | `useLocalFileActions.ts` | 文件操作：导入/上传对话框、copy/move picker、删除、定位、拖拽 |
-| `LocalFolderHeader.vue` | 头部：返回上级、面包屑、路径编辑、刷新 |
+| `LocalFolderHeader.vue` | 头部：返回上级、面包屑（每级下拉展示同级文件夹快速切换）、路径编辑、刷新 |
 | `LocalFolderToolbar.vue` | 工具栏：搜索、类型/日期筛选、排序、视图切换、网格尺寸 |
 | `LocalFolderEntryMenu.vue` | 条目右键菜单（list/grid、columns、gallery 三处复用） |
 | `LocalFolderListGridView.vue` | 列表/网格视图 |
