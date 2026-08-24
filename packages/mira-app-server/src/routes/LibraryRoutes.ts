@@ -3,18 +3,59 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { MiraServer } from '..';
 import { LibraryWatcher } from '../LibraryWatcher';
+import { LibraryImportService, ImportSource } from '../services/LibraryImportService';
 
 export class LibraryRoutes {
     private router: Router;
     private backend: MiraServer;
+    private importService: LibraryImportService;
 
     constructor(backend: MiraServer) {
         this.backend = backend;
         this.router = Router();
+        this.importService = new LibraryImportService(backend);
         this.setupRoutes();
     }
 
     private setupRoutes(): void {
+        // 从其他素材库（Eagle/Billfish）导入：新建库并复制素材
+        // 注册在参数路由（/:id/...）之前，避免 /import 被当作 :id
+        this.router.post('/import', async (req: Request, res: Response) => {
+            try {
+                const { source, sourcePath, name, libraryPath } = req.body;
+                if (!source || !['eagle', 'billfish'].includes(source)) {
+                    return res.status(400).json({ error: 'source must be eagle or billfish' });
+                }
+                if (!sourcePath) {
+                    return res.status(400).json({ error: 'sourcePath is required' });
+                }
+
+                const result = await this.importService.start(source as ImportSource, sourcePath, { name, libraryPath });
+                res.status(201).json(result);
+            } catch (error: any) {
+                console.error('Error starting library import:', error);
+                res.status(400).json({ error: error?.message || 'Failed to start import' });
+            }
+        });
+
+        // 查询导入进度
+        this.router.get('/import/:importId', async (req: Request, res: Response) => {
+            const progress = this.importService.getProgress(req.params.importId);
+            if (!progress) {
+                return res.status(404).json({ error: 'Import task not found' });
+            }
+            res.json(progress);
+        });
+
+        // 取消导入（已导入内容保留）
+        this.router.post('/import/:importId/cancel', async (req: Request, res: Response) => {
+            const ok = this.importService.cancel(req.params.importId);
+            if (!ok) {
+                return res.status(400).json({ error: 'Import task not running' });
+            }
+            res.json({ message: 'Import cancel requested' });
+        });
+
         // 获取资源库列表
         this.router.get('/', async (req: Request, res: Response) => {
             try {

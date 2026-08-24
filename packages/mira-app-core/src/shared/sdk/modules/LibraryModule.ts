@@ -4,6 +4,9 @@ import {
     CreateLibraryRequest,
     UpdateLibraryRequest,
     BaseResponse,
+    ImportLibraryRequest,
+    ImportLibraryResponse,
+    LibraryImportProgress,
 } from '../types';
 
 /**
@@ -144,5 +147,31 @@ export class LibraryModule {
     async getByStatus(status: Library['status']): Promise<Library[]> {
         const libraries = await this.getAll();
         return libraries.filter(lib => lib.status === status);
+    }
+
+    /**
+     * 从其他素材库（Eagle/Billfish）导入：新建素材库并复制素材（保留文件夹、标签、文件信息）
+     * @param request 导入请求
+     * @returns Promise<ImportLibraryResponse> importId 用于轮询进度
+     */
+    async importFrom(request: ImportLibraryRequest): Promise<ImportLibraryResponse> {
+        return await this.httpClient.post<ImportLibraryResponse>('/api/libraries/import', request);
+    }
+
+    /**
+     * 查询导入任务进度
+     * @param importId 导入任务ID（importFrom 返回）
+     * @returns Promise<LibraryImportProgress>
+     */
+    async getImportProgress(importId: string): Promise<LibraryImportProgress> {
+        return await this.httpClient.get<LibraryImportProgress>(`/api/libraries/import/${encodeURIComponent(importId)}`);
+    }
+
+    /**
+     * 取消导入任务（已导入内容保留）
+     * @param importId 导入任务ID
+     */
+    async cancelImport(importId: string): Promise<{ message: string }> {
+        return await this.httpClient.post<{ message: string }>(`/api/libraries/import/${encodeURIComponent(importId)}/cancel`);
     }
 }

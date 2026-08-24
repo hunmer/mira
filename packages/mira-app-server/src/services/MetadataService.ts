@@ -146,7 +146,14 @@ export class MetadataService {
           metadata.coverFile = `${file.hash || file.id}-cover.jpg`;
         }
 
-        await dbService.updateFile(file.id, { metadata });
+        // 合并写入：保留已有 metadata 中 exiftool 未提供的字段（如导入时从源库带来的 colors/rotation）
+        let existing: Record<string, any> | undefined;
+        if (typeof file.metadata === 'string') {
+          try { existing = JSON.parse(file.metadata); } catch { existing = undefined; }
+        } else if (file.metadata && typeof file.metadata === 'object') {
+          existing = file.metadata;
+        }
+        await dbService.updateFile(file.id, { metadata: { ...existing, ...metadata } });
       } catch (error) {
         console.error(`MetadataService: failed to parse ${file.path}:`, error);
       } finally {

@@ -205,6 +205,42 @@ export interface UpdateLibraryRequest {
     allowedRoles?: string[];
 }
 
+// 从其他素材库导入（Eagle / Billfish）
+export type ImportSource = 'eagle' | 'billfish';
+
+export interface ImportLibraryRequest {
+    /** 导入来源 */
+    source: ImportSource;
+    /** 源素材库根目录（Eagle 为 *.library 目录，Billfish 为素材库根目录） */
+    sourcePath: string;
+    /** 新素材库名称，默认取源目录名 */
+    name?: string;
+    /** 新素材库存储路径，默认 <dataPath>/imported/<name> */
+    libraryPath?: string;
+}
+
+export interface ImportLibraryResponse {
+    importId: string;
+    libraryId: string;
+}
+
+export interface LibraryImportProgress {
+    id: string;
+    source: ImportSource;
+    sourcePath: string;
+    libraryId: string;
+    libraryName: string;
+    status: 'importing' | 'completed' | 'error' | 'cancelled';
+    total: number;
+    completed: number;
+    skipped: number;
+    failed: number;
+    current: string;
+    error?: string;
+    startedAt: number;
+    finishedAt?: number;
+}
+
 // 插件类型
 export interface Plugin {
     id: string;

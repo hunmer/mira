@@ -21,6 +21,8 @@ import i18n from '../i18n'
  * - 首次使用时若服务器上没有数据，自动从本地 localStorage 迁移：
  *   新版聚合键 `mira-dashboard-layouts`，或更早的扁平键
  *   `mira-dashboard-layout` / `mira-dashboard-instances`（迁移为默认布局）。
+ * - 服务器与本地都没有数据（用户从未做过布局修改）时，应用内置默认布局
+ *   （见 DEFAULT_LAYOUTS_DATA）。
  */
 
 /** 聚合存储的 schema 版本，便于日后再次升级 */
@@ -73,6 +75,39 @@ interface DashboardLayoutsData {
   layouts: DashboardLayout[]
 }
 
+/**
+ * 内置默认布局：服务器上没有用户配置文件（用户从未做过布局修改）且本地无可迁移数据时使用。
+ */
+const DEFAULT_LAYOUTS_DATA: DashboardLayoutsData = {
+  version: STORAGE_VERSION,
+  activeId: 'layout__1786086458426_lsaac',
+  layouts: [
+    {
+      id: 'layout__1786086458426_lsaac',
+      name: '默认布局',
+      layout: [
+        { i: 'hitokoto__1786505917083_vuyx7', x: 0, y: 0, w: 4, h: 4, minW: 3, minH: 2, maxW: 8, maxH: 6 },
+        { i: 'uploadTrend__1787314068288_0hjb6', x: 0, y: 4, w: 8, h: 5, minW: 4, minH: 3, maxW: 12, maxH: 10 },
+        { i: 'uploaderRank__1787314073991_ag8xz', x: 4, y: 0, w: 4, h: 4, minW: 3, minH: 3, maxW: 8, maxH: 10 },
+        { i: 'fileType__1787314083305_46l86', x: 8, y: 0, w: 4, h: 4, minW: 3, minH: 3, maxW: 8, maxH: 8 },
+        { i: 'recentUploads__1787314087912_mm325', x: 8, y: 4, w: 4, h: 5, minW: 3, minH: 3, maxW: 8, maxH: 12 },
+        { i: 'recentAdded__1787314992713_hqzn5', x: 0, y: 9, w: 12, h: 3, minW: 3, minH: 3, maxW: 12, maxH: 12 },
+      ],
+      instances: {
+        hitokoto__1786505917083_vuyx7: { type: 'hitokoto', props: {}, config: {} },
+        uploadTrend__1787314068288_0hjb6: { type: 'uploadTrend', props: {}, config: { days: 30 } },
+        uploaderRank__1787314073991_ag8xz: { type: 'uploaderRank', props: {}, config: { days: 30 } },
+        fileType__1787314083305_46l86: { type: 'fileType', props: {}, config: { days: 30 } },
+        recentUploads__1787314087912_mm325: { type: 'recentUploads', props: {}, config: { days: 30 } },
+        recentAdded__1787314992713_hqzn5: { type: 'recentAdded', props: { mode: 'recent_added' }, config: { limit: [50] } },
+      },
+      createdAt: 1786086458426,
+      updatedAt: 1787316469949,
+      isDefault: true,
+    },
+  ],
+}
+
 /** 生成 id：时间戳 + 随机串 */
 function genId(prefix: string): string {
   return `${prefix}__${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
@@ -122,10 +157,27 @@ export const useDashboardLayoutStore = defineStore('dashboardLayout', () => {
   }
 
   /**
+   * 应用内置默认布局（深拷贝，避免污染常量）。
+   * 用于服务器上不存在用户配置文件（用户从未做过布局修改）的场景。
+   */
+  function applyDefaultLayouts() {
+    const data = JSON.parse(JSON.stringify(DEFAULT_LAYOUTS_DATA)) as DashboardLayoutsData
+    layouts.value = data.layouts.map((l) => ({
+      ...l,
+      layout: sanitizeLayout(l.layout ?? []),
+      instances: l.instances ?? {},
+    }))
+    activeId.value =
+      data.activeId && layouts.value.some((l) => l.id === data.activeId)
+        ? data.activeId
+        : layouts.value[0]?.id ?? null
+  }
+
+  /**
    * 从存储加载布局数据。
    * - 优先读取服务器当前用户数据目录下的聚合文件；
    * - 若不存在，尝试从本地 localStorage 迁移（新版聚合键或旧版扁平键）；
-   * - 若都没有，初始化一个默认空布局。
+   * - 若都没有（用户从未做过布局修改），应用内置默认布局。
    */
   async function load() {
     if (loaded.value) return
@@ -144,24 +196,18 @@ export const useDashboardLayoutStore = defineStore('dashboardLayout', () => {
             ? parsed.activeId
             : layouts.value[0]?.id ?? null
       } else {
-        // 尝试从本地 localStorage 迁移
+        // 服务器上没有配置文件：先尝试本地 localStorage 迁移，仍无数据则由兜底应用内置默认布局
         await migrateFromLocalStorage()
       }
-      // 兜底：至少保证有一个布局
-      if (layouts.value.length === 0) {
-        const def = createLayout(i18n.global.t('stores.dashboardLayout.defaultLayoutName'), { isDefault: true })
-        layouts.value = [def]
-        activeId.value = def.id
-      }
+      // 兜底：至少保证有一个布局（迁移无数据 / 文件内容为空数组的病态情况）
+      if (layouts.value.length === 0) applyDefaultLayouts()
       if (!activeId.value) activeId.value = layouts.value[0].id
       // 校正默认布局标记：全局有且仅有一个 isDefault=true 的布局
       ensureSingleDefault()
       await persist()
     } catch (e) {
-      console.warn('[dashboardLayout] 加载失败，使用空布局:', e)
-      const def = createLayout(i18n.global.t('stores.dashboardLayout.defaultLayoutName'), { isDefault: true })
-      layouts.value = [def]
-      activeId.value = def.id
+      console.warn('[dashboardLayout] 加载失败，使用默认布局:', e)
+      applyDefaultLayouts()
     } finally {
       loaded.value = true
     }

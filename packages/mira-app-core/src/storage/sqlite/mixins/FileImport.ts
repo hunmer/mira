@@ -25,7 +25,7 @@ export const FileImport = {
       if (existing.length > 0) {
         // move 方式导入时清理临时源文件，避免残留（上传走的就是 move）
         if ((options?.importType || 'copy') === 'move') {
-          try { fs.unlinkSync(filePath); } catch {}
+          try { await fs.promises.unlink(filePath); } catch {}
         }
         return { ...this.rowToMap(existing[0]), duplicate: true };
       }
@@ -155,7 +155,8 @@ export const FileImport = {
         if (!fs.existsSync(destDir)) {
           fs.mkdirSync(destDir, { recursive: true });
         }
-        fs.copyFileSync(filePath, destPath);
+        // 异步复制：大文件（视频等）同步 copy 会长时间阻塞事件循环
+        await fs.promises.copyFile(filePath, destPath);
         fileData.path = destPath;
         fileData.name = path.basename(destPath);
         break;
@@ -164,10 +165,10 @@ export const FileImport = {
           fs.mkdirSync(destDir, { recursive: true });
         }
         if (path.parse(filePath).root !== path.parse(destPath).root) {
-          fs.copyFileSync(filePath, destPath);
-          fs.unlinkSync(filePath);
+          await fs.promises.copyFile(filePath, destPath);
+          await fs.promises.unlink(filePath);
         } else {
-          fs.renameSync(filePath, destPath);
+          await fs.promises.rename(filePath, destPath);
         }
         fileData.path = destPath;
         fileData.name = path.basename(destPath);

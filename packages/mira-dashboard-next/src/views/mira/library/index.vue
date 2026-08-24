@@ -10,14 +10,19 @@ import { Input } from '@/components/ui/input'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import LibraryFormDialog from './LibraryFormDialog.vue'
 import type { LibraryFormData } from './LibraryFormDialog.vue'
+import ImportDialog from './ImportDialog.vue'
 import ShareDialog from './ShareDialog.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import { useConfirmDialog } from '@/composables/useConfirmDialog'
 import { toast } from 'vue-sonner'
 import {
   RiAddLine, RiSearchLine, RiEditLine, RiDeleteBinLine, RiShareLine,
+  RiDownload2Line, RiDownloadCloudLine,
 } from '@remixicon/vue'
 
 const { t } = useI18n()
@@ -30,6 +35,13 @@ const dialogOpen = ref(false)
 const editingLib = ref<(LibraryFormData & { _id?: string }) | null>(null)
 const shareOpen = ref(false)
 const sharingLib = ref<Library | null>(null)
+const importOpen = ref(false)
+const importSource = ref<'eagle' | 'billfish'>('eagle')
+
+function openImport(source: 'eagle' | 'billfish') {
+  importSource.value = source
+  importOpen.value = true
+}
 
 const filtered = computed(() => {
   if (!searchQuery.value) return libraries.value
@@ -163,9 +175,26 @@ if (requestedLibId) {
   <div class="space-y-6">
     <div class="flex items-center justify-between">
       <h1 class="text-2xl font-bold">{{ t('library.title') }}</h1>
-      <Button @click="openCreate">
-        <RiAddLine class="mr-2 size-4" /> {{ t('library.createLibrary') }}
-      </Button>
+      <div class="flex items-center gap-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger as-child>
+            <Button variant="outline">
+              <RiDownload2Line class="mr-2 size-4" /> {{ t('library.importFrom') }}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem @click="openImport('eagle')">
+              <RiDownloadCloudLine class="mr-2 size-4" /> {{ t('library.importEagle') }}
+            </DropdownMenuItem>
+            <DropdownMenuItem @click="openImport('billfish')">
+              <RiDownloadCloudLine class="mr-2 size-4" /> {{ t('library.importBillfish') }}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <Button @click="openCreate">
+          <RiAddLine class="mr-2 size-4" /> {{ t('library.createLibrary') }}
+        </Button>
+      </div>
     </div>
 
     <div class="flex items-center gap-2">
@@ -231,6 +260,14 @@ if (requestedLibId) {
       :is-edit="!!editingLib?._id"
       @update:open="dialogOpen = $event"
       @save="handleSave"
+    />
+
+    <!-- Import from Eagle/Billfish -->
+    <ImportDialog
+      :open="importOpen"
+      :source="importSource"
+      @update:open="importOpen = $event"
+      @imported="loadLibraries"
     />
 
     <!-- Share dialog -->
