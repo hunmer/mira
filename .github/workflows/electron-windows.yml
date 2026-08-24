@@ -33,7 +33,7 @@ jobs:
       run: pnpm install --frozen-lockfile
 
     - name: Build workspace dependencies
-      run: pnpm --filter "@hunmer/vue-masonry" --filter "mira-app-core" build
+      run: pnpm --filter "@hunmer/vue-masonry" --filter "@hunmer/vue-selection-box" --filter "@hunmer/grid-layout-plus" --filter "mira-app-core" build
 
     - name: Install runtime dependencies
       shell: powershell

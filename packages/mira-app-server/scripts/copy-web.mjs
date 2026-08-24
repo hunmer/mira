@@ -24,7 +24,13 @@ const targetDir = path.join(appServerDir, 'web')
 
 function run(cmd, args, cwd) {
   console.log(`\n$ ${cmd} ${args.join(' ')}${cwd ? `  (in ${cwd})` : ''}`)
-  execFileSync(cmd, args, { cwd, stdio: 'inherit' })
+  // Windows 上 pnpm 可能是 .cmd shim，execFileSync 不走 shell 无法解析（node 安全限制），
+  // 交给 shell 按 PATHEXT 解析可同时兼容 pnpm.exe 与 pnpm.cmd
+  execFileSync(cmd, args, {
+    cwd,
+    stdio: 'inherit',
+    shell: process.platform === 'win32',
+  })
 }
 
 // 1. 校验 mira-client 存在
