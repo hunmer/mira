@@ -1,12 +1,5 @@
 <template>
   <div class="filter-bar flex items-center space-x-4 mb-4 text-muted-foreground overflow-x-auto">
-    <!-- 全选控制 -->
-    <label class="flex items-center space-x-1 cursor-pointer select-none shrink-0">
-      <Checkbox :model-value="isAllSelected" @update:model-value="handleSelectAllChange" />
-    </label>
-
-    <div class="h-5 border-l border-border shrink-0"></div>
-
     <!-- 筛选器 -->
     <div class="flex items-center space-x-3 shrink-0">
       <template v-for="filter in filters" :key="filter.id">

@@ -1,6 +1,6 @@
 <template>
   <div ref="mediaTabListViewRef"
-    class="p-2 media-list-view flex-1 flex flex-col w-full bg-transparent overflow-hidden relative h-full text-[13px]"
+    class="media-list-view flex-1 flex flex-col w-full bg-transparent overflow-hidden relative h-full text-[13px]"
     @keydown.capture="handleDeleteKeyDown" @dragover.prevent="canUpload && handleDragOver($event)"
     @dragleave.prevent="canUpload && handleDragLeave($event)" @drop.prevent="canUpload && handleDrop($event)">
     <!-- 拖拽上传覆盖层 -->
