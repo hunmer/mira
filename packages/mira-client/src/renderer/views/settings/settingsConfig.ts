@@ -10,12 +10,10 @@ export const settingSections: SettingSection[] = [
   { id: 'general', name: 'settings.sections.general', icon: 'settings' },
   { id: 'library', name: 'settings.sections.library', icon: 'perm_media' },
   { id: 'notifications', name: 'settings.sections.notifications', icon: 'notifications' },
-  { id: 'screenshot', name: 'settings.sections.screenshot', icon: 'screenshot_monitor' },
-  { id: 'floating-ball', name: 'settings.sections.floatingBall', icon: 'bubble_chart' },
+  { id: 'extensions', name: 'settings.sections.extensions', icon: 'widgets' },
   { id: 'plugins', name: 'settings.sections.plugins', icon: 'extension' },
   { id: 'network', name: 'settings.sections.network', icon: 'lan' },
-  { id: 'data', name: 'settings.sections.data', icon: 'storage' },
-  { id: 'browser', name: 'settings.sections.browser', icon: 'language' }
+  { id: 'data', name: 'settings.sections.data', icon: 'storage' }
 ]
 
 // 语言选项配置（仅保留简体中文与 English）

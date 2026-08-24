@@ -1,6 +1,5 @@
 <template>
   <div class="p-4 space-y-5">
-    <div><h3 class="text-base font-semibold">截图</h3><p class="text-xs text-muted-foreground mt-1">配置快捷键截图完成后的处理方式。</p></div>
     <div class="flex items-center justify-between gap-4">
       <div><p class="text-sm font-medium">默认保存格式</p><p class="text-xs text-muted-foreground">截图保存到系统图片目录时使用的格式。</p></div>
       <Select :model-value="settingsStore.settings.screenshotFormat" @update:model-value="update('screenshotFormat', $event as 'png' | 'jpeg' | 'webp')">

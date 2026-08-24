@@ -1,10 +1,5 @@
 <template>
   <div class="p-4 space-y-6">
-    <div>
-      <h3 class="text-base font-medium text-foreground">{{ t('views.browserPanel.title') }}</h3>
-      <p class="mt-1 text-sm text-muted-foreground">{{ t('views.browserPanel.desc') }}</p>
-    </div>
-
     <div class="space-y-4">
       <div class="flex items-center justify-between gap-4 py-3">
         <div>

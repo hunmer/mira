@@ -13,6 +13,7 @@ import { Motion, AnimatePresence, motion } from 'motion-v'
 import { useSettingsStore } from '@renderer/stores/settings'
 import { useServerDeploy } from '@renderer/composables/useServerDeploy'
 import { cn } from '@/lib/utils'
+import { TerminalView, type TerminalLine } from '@/components/ui/terminal-view'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -142,6 +143,18 @@ function setTaskExpanded(taskId: number, expanded: boolean) {
 
 function toggleTask(taskId: number) {
   setTaskExpanded(taskId, !expandedTaskIds.value.has(taskId))
+}
+
+// task.info 为 \n 拼接的输出，转成终端行；当前不区分 stdout/stderr
+function taskTerminalLines(task: Task): TerminalLine[] {
+  return (task.info ?? '').split('\n').map(text => ({ type: 'stdout' as const, text }))
+}
+
+function terminalStatus(status: TaskStatus): 'idle' | 'running' | 'success' | 'error' {
+  if (status === 'running') return 'running'
+  if (status === 'failed') return 'error'
+  if (status === 'success') return 'success'
+  return 'idle'
 }
 
 function appendTaskOutput(taskId: number, line: string) {
@@ -423,9 +436,14 @@ onBeforeUnmount(() => {
         <!-- Info panel (expandable) -->
         <div :class="cn('z-0 grid w-[90%] transition-all duration-300 ease-in-out', task.info && expandedTaskIds.has(task.id) ? '-mt-3.5 grid-rows-[1fr] opacity-100' : 'pointer-events-none mt-0 grid-rows-[0fr] opacity-0')">
           <div class="min-h-0 overflow-hidden">
-            <div :class="cn('max-h-24 overflow-y-auto whitespace-pre-wrap break-all rounded-b-2xl px-3.5 pt-5 pb-2.5 font-mono text-[9.5px] leading-relaxed transition-colors duration-300', isDarkMode ? 'bg-neutral-800 text-neutral-200' : 'bg-neutral-200/90 text-neutral-800')">
-              {{ task.info }}
-            </div>
+            <TerminalView
+              class="mt-2.5 rounded-b-2xl"
+              :title="task.title"
+              :status="terminalStatus(task.status)"
+              :running="task.status === 'running'"
+              :lines="taskTerminalLines(task)"
+              body-class="max-h-24 text-[10px]"
+            />
           </div>
         </div>
       </div>

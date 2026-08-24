@@ -2,16 +2,16 @@
   <div v-if="url" class="flex h-full w-full flex-col">
     <!-- 简单导航栏：后退 / 前进 / 刷新 + 地址栏 -->
     <div class="relative flex shrink-0 items-center gap-0.5 border-b bg-background px-1.5 py-1">
-      <button type="button" class="nav-btn" :disabled="!canGoBack" :title="t('views.webview.back')"
-        @click="webviewRef?.goBack()">
+      <button type="button" class="nav-btn" :disabled="isElectron && !canGoBack" :title="t('views.webview.back')"
+        @click="goBack()">
         <span class="material-icons text-base">arrow_back</span>
       </button>
-      <button type="button" class="nav-btn" :disabled="!canGoForward" :title="t('views.webview.forward')"
-        @click="webviewRef?.goForward()">
+      <button type="button" class="nav-btn" :disabled="isElectron && !canGoForward" :title="t('views.webview.forward')"
+        @click="goForward()">
         <span class="material-icons text-base">arrow_forward</span>
       </button>
       <button type="button" class="nav-btn" :class="{ 'text-primary': loading }" :title="t('views.webview.reload')"
-        @click="webviewRef?.reload()">
+        @click="reload()">
         <span class="material-icons text-base" :class="{ 'nav-spin': loading }">refresh</span>
       </button>
       <form class="mx-1 min-w-0 flex-1" @submit.prevent="navigate">
@@ -24,10 +24,15 @@
         <div class="nav-progress-bar h-full w-1/4 bg-primary" />
       </div>
     </div>
-    <!-- allowpopups 让 target=_blank/window.open 请求进入主进程 setWindowOpenHandler 拦截链 -->
-    <webview ref="webviewRef" :src="url" :partition="resolvedPartition" :webpreferences="webPreferences" allowpopups class="min-h-0 w-full flex-1"
-      @dom-ready="onDomReady" @did-navigate="onNavigate" @did-navigate-in-page="onNavigate"
-      @did-start-loading="loading = true" @did-stop-loading="onStopLoading" @page-title-updated="onPageTitleUpdated" />
+    <template v-if="isElectron">
+      <!-- allowpopups 让 target=_blank/window.open 请求进入主进程 setWindowOpenHandler 拦截链 -->
+      <webview ref="webviewRef" :src="url" :partition="resolvedPartition" :webpreferences="webPreferences" allowpopups class="min-h-0 w-full flex-1"
+        @dom-ready="onDomReady" @did-navigate="onNavigate" @did-navigate-in-page="onNavigate"
+        @did-start-loading="loading = true" @did-stop-loading="onStopLoading" @page-title-updated="onPageTitleUpdated" />
+    </template>
+    <!-- Web 环境：降级为 iframe（跨源站点无法读取标题/导航状态，仅保留基本加载） -->
+    <iframe v-else :key="reloadKey" ref="iframeRef" :src="iframeSrc" class="min-h-0 w-full flex-1 border-0 bg-background"
+      @load="loading = false" />
   </div>
   <div v-else class="flex h-full items-center justify-center text-muted-foreground">Invalid URL</div>
 </template>
@@ -35,6 +40,7 @@
 <script setup lang="ts">
 /**
  * Webview Tab 内容：简单浏览器外壳（导航栏 + 地址栏 + 加载进度条）+ <webview> 页面。
+ * Web（非 Electron）环境降级为 <iframe>：跨源站点无法读取标题/favicon/导航状态，仅保留基本加载与地址栏导航。
  *
  * 新链接（target=_blank / window.open）由主进程在 web-contents-created 时机统一拦截，
  * 让当前 webview 直接 loadURL（渲染进程 dom-ready 方案会因 KeepAlive 重建 guest 失效）。
@@ -66,7 +72,13 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+const isElectron = typeof window !== 'undefined' && !!window.electronAPI
 const webviewRef = ref<any>(null)
+const iframeRef = ref<HTMLIFrameElement | null>(null)
+/** Web 降级模式的 iframe src（独立于 props.url，地址栏导航可自行更新） */
+const iframeSrc = ref(props.url || '')
+/** 递增以强制重建 iframe 实现刷新 */
+const reloadKey = ref(0)
 const address = ref(props.url || '')
 const canGoBack = ref(false)
 const canGoForward = ref(false)
@@ -75,7 +87,10 @@ let lastFaviconUrl = ''
 const resolvedPartition = computed(() => normalizeWebviewPartition(props.partition))
 const webPreferences = computed(() => (props.disableWebSecurity ? 'webSecurity=no' : undefined))
 
-watch(() => props.url, (v) => { address.value = v || '' }, { immediate: true })
+watch(() => props.url, (v) => {
+  address.value = v || ''
+  if (!isElectron) iframeSrc.value = v || ''
+}, { immediate: true })
 
 function onDomReady() {
   // 静音设置在页面加载完成后应用（audio mute 是 webContents 级别，导航后保持）
@@ -146,7 +161,30 @@ function navigate() {
   let target = address.value.trim()
   if (!target) return
   if (!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(target)) target = `https://${target}`
-  webviewRef.value?.loadURL(target)
+  if (isElectron) {
+    webviewRef.value?.loadURL(target)
+  } else {
+    loading.value = true
+    iframeSrc.value = target
+    emit('url-updated', target)
+  }
+}
+
+function goBack() {
+  if (isElectron) return webviewRef.value?.goBack()
+  // 跨源 iframe 读取 history 会抛 SecurityError，静默忽略
+  try { iframeRef.value?.contentWindow?.history?.back() } catch { /* 跨源受限 */ }
+}
+
+function goForward() {
+  if (isElectron) return webviewRef.value?.goForward()
+  try { iframeRef.value?.contentWindow?.history?.forward() } catch { /* 跨源受限 */ }
+}
+
+function reload() {
+  if (isElectron) return webviewRef.value?.reload()
+  loading.value = true
+  reloadKey.value++
 }
 </script>
 

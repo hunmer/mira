@@ -17,16 +17,6 @@ interface Step {
 
 const { t } = useI18n()
 
-const userAgent = navigator.userAgent.toLowerCase()
-const dependencyInstall = computed(() => userAgent.includes('windows')
-  ? {
-      desc: t('business.manualDeployGuide.step2DescWin'),
-      command: 'winget install --id Gyan.FFmpeg -e; winget install --id ImageMagick.ImageMagick -e',
-    }
-  : userAgent.includes('mac')
-    ? { desc: t('business.manualDeployGuide.step2DescMac'), command: 'brew install ffmpeg imagemagick' }
-    : { desc: t('business.manualDeployGuide.step2DescLinux'), command: 'sudo apt update && sudo apt install -y ffmpeg imagemagick' })
-
 const steps = computed<Step[]>(() => [
   {
     title: t('business.manualDeployGuide.step1Title'),
@@ -35,12 +25,13 @@ const steps = computed<Step[]>(() => [
   },
   {
     title: t('business.manualDeployGuide.step2Title'),
-    ...dependencyInstall.value,
+    desc: t('business.manualDeployGuide.step2Desc'),
+    command: 'npm install -g mira-app-server',
   },
   {
     title: t('business.manualDeployGuide.step3Title'),
     desc: t('business.manualDeployGuide.step3Desc'),
-    command: 'npm install -g mira-app-server',
+    command: 'mira-app-server doctor --install',
   },
   {
     title: t('business.manualDeployGuide.step4Title'),

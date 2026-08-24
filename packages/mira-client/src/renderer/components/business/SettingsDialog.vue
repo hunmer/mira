@@ -69,12 +69,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import GeneralPanel from '../../views/settings/GeneralPanel.vue'
 import LibraryPanel from '../../views/settings/LibraryPanel.vue'
 import NotificationsPanel from '../../views/settings/NotificationsPanel.vue'
-import ScreenshotPanel from '../../views/settings/ScreenshotPanel.vue'
-import FloatingBallPanel from '../../views/settings/FloatingBallPanel.vue'
+import ExtensionsPanel from '../../views/settings/ExtensionsPanel.vue'
 import PluginsPanel from '../../views/settings/pluginPlan.vue'
 import NetworkPanel from '../../views/settings/NetworkPanel.vue'
 import DataPanel from '../../views/settings/DataPanel.vue'
-import BrowserPanel from '../../views/settings/BrowserPanel.vue'
 
 // 导入配置
 import { settingSections } from '../../views/settings/settingsConfig'
@@ -117,12 +115,10 @@ const currentComponent = computed(() => {
     general: GeneralPanel,
     library: LibraryPanel,
     notifications: NotificationsPanel,
-    screenshot: ScreenshotPanel,
-    'floating-ball': FloatingBallPanel,
+    extensions: ExtensionsPanel,
     plugins: PluginsPanel,
     network: NetworkPanel,
     data: DataPanel,
-    browser: BrowserPanel,
   }
   return componentMap[activeSection.value] || GeneralPanel
 })
