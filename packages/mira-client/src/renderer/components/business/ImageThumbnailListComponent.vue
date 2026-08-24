@@ -30,7 +30,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import type { FileInfo } from '../../../shared/types'
-import { getPreviewImageSource, toCacheBustedFileUrl } from '../../utils/fileUtils'
+import { toCacheBustedFileUrl } from '../../utils/fileUtils'
 import StatusImage from '@renderer/components/common/StatusImage.vue'
 
 interface Props {
@@ -65,19 +65,11 @@ const handleImageError = (imageId: string): void => {
   failedImageIds.value = nextFailedImageIds
 }
 
-watch(
-  () => [props.currentImageIndex, props.cacheKey, props.images.length] as const,
-  ([currentImageIndex, cacheKey, imageCount]) => {
-    const currentImage = props.images[currentImageIndex]
-  },
-  { immediate: true }
-)
-
 watch(() => props.cacheKey, () => {
   failedImageIds.value = new Set()
 })
 
-const handleImageSelect = (imageIndex: number, image: FileInfo): void => {
+const handleImageSelect = (imageIndex: number, _image: FileInfo): void => {
   emit('image-select', imageIndex)
 }
 </script>

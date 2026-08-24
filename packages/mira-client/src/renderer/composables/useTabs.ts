@@ -489,7 +489,7 @@ export function useTabs() {
         id: tag.id,
         tagId: tag.id,
         name: tagName,
-        tagName: tagName,
+        tagName,
         title: tag.title,
         color: tag.color,
         fileCount: tag.fileCount,

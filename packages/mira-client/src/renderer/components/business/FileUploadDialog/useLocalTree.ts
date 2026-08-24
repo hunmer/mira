@@ -118,7 +118,7 @@ export function useLocalTree(pendingFiles: Ref<PendingFile[]>) {
     const walk = (nodes: LocalFsNode[], parentDir: string | undefined) => {
       for (const node of nodes) {
         if (!node.isDir) {
-          map.set(node.path, { parentDir: parentDir })
+          map.set(node.path, { parentDir })
         } else {
           walk(node.children || [], node.path)
         }

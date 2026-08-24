@@ -5,7 +5,7 @@
 
 // 插件实例存储
 const pluginInstances = new Map<string, any>()
-const pluginFactories = new Map<string, Function>()
+const pluginFactories = new Map<string, (context?: any) => any>()
 const registeredPlugins = new Map<string, any>()
 const contributions = new Map<string, any>()
 const contributionListeners = new Set<(items: any[]) => void>()
@@ -68,7 +68,7 @@ export const pluginSystem = {
   /**
    * 注册插件实例工厂
    */
-  registerPluginInstance(pluginId: string, factory: Function) {
+  registerPluginInstance(pluginId: string, factory: (context?: any) => any) {
     pluginFactories.set(pluginId, factory)
   },
 
@@ -169,7 +169,6 @@ export function initializePluginSystem() {
     // DOMContentLoaded 触发时不能再用精简核心对象覆盖它。
     if (!existing) {
       (window as any).pluginSystem = pluginSystem
-    } else {
     }
   }
   

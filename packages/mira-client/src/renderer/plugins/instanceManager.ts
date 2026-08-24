@@ -3,7 +3,7 @@
  * 负责插件实例的创建、生命周期管理和全局API
  */
 
-import type { PluginSystemAPI, PluginFileFormat } from './types'
+import type { PluginSystemAPI, PluginFileFormat, PluginEventHandler } from './types'
 import type { FileInfo } from '../../shared/types'
 
 const normalizeFormatValue = (value: string): string => value.trim().toLowerCase().replace(/^\./, '')
@@ -21,7 +21,6 @@ const matchesFileFormat = (format: PluginFileFormat, file: FileInfo): boolean =>
  */
 export const initializeGlobalPluginSystem = () => {
   if (typeof window !== 'undefined') {
-    const previous = (window as any).pluginSystem
     ;(window as any).pluginSystem = {
       // 插件注册表
       plugins: new Map(),
@@ -38,19 +37,8 @@ export const initializeGlobalPluginSystem = () => {
       },
 
       // 注册插件实例工厂
-      registerPluginInstance: (pluginId: string, factory: () => any) => {
+      registerPluginInstance: (pluginId: string, factory: (context?: any) => any) => {
         ;(window as any).pluginSystem.instancesFactory.set(pluginId, factory)
-        // 检查是否有匹配的插件配置
-        const registeredPlugins = (window as any).pluginSystem.plugins
-        if (registeredPlugins?.size > 0) {
-          let found = false
-          for (const [registeredId] of registeredPlugins) {
-            if (registeredId === pluginId) {
-              found = true
-              break
-            }
-          }
-        }
       },
 
       // 获取插件实例工厂
@@ -108,7 +96,7 @@ export const initializeGlobalPluginSystem = () => {
       events: {
         listeners: new Map(),
 
-        on: (event: string, handler: Function) => {
+        on: (event: string, handler: PluginEventHandler) => {
           if (!(window as any).pluginSystem.events.listeners.has(event)) {
             ;(window as any).pluginSystem.events.listeners.set(event, [])
           }
@@ -118,7 +106,7 @@ export const initializeGlobalPluginSystem = () => {
         emit: (event: string, data?: any) => {
           const listeners = (window as any).pluginSystem.events.listeners.get(event)
           if (listeners) {
-            listeners.forEach((handler: Function) => {
+            listeners.forEach((handler: PluginEventHandler) => {
               try {
                 handler(data)
               } catch (err) {
@@ -128,7 +116,7 @@ export const initializeGlobalPluginSystem = () => {
           }
         },
 
-        off: (event: string, handler: Function) => {
+        off: (event: string, handler: PluginEventHandler) => {
           const listeners = (window as any).pluginSystem.events.listeners.get(event)
           if (listeners) {
             const index = listeners.indexOf(handler)

@@ -77,7 +77,7 @@ export class TrayHandlers {
    */
   private async handleFlashTray(
     _event: IpcMainInvokeEvent,
-    duration?: number
+    _duration?: number
   ): Promise<BaseResponse> {
     try {
       // 注意：TrayService 可能没有 flash 方法，这里添加一个简单的实现

@@ -93,7 +93,7 @@ export function useMediaTabBreadcrumb(deps: {
    */
   const handleBreadcrumbClick = (item: BreadcrumbItem) => {
     let kind: 'folder' | 'tag' | 'all'
-    let payload: { id?: string; title?: string } = {}
+    const payload: { id?: string; title?: string } = {}
     if (item.id === 'all') {
       kind = 'all'
     } else if (item.id.startsWith('folder-')) {

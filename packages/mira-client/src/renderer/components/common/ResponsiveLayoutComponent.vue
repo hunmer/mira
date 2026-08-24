@@ -1,13 +1,7 @@
 <template>
-  <div 
+  <div
     ref="containerRef"
-     <!-- 底部栏 -->
-    <footer 
-      v-if="$slots.footer"
-      class="mira-footer mira-footer-sticky"
-    >
-      <slot name="footer" />
-    </footer>"[
+    :class="[
       'mira-responsive-layout',
       layoutClass,
       spacingClass,
@@ -213,6 +207,16 @@ const mainContentClass = computed(() => {
 const headerClass = computed(() => {
   return currentLayout.value.includes('header') ? 'mira-header-sticky' : ''
 })
+
+const layoutClass = computed(() => `mira-layout-${currentLayout.value}`)
+
+const spacingClass = computed(() => `mira-spacing-${props.spacing}`)
+
+const alignmentClass = computed(() => `mira-align-${props.alignment}`)
+
+const breakpointClass = computed(() => `mira-bp-${currentBreakpoint.value}`)
+
+const containerStyle = computed(() => ({}))
 
 // 方法
 const toggleSidebar = () => {

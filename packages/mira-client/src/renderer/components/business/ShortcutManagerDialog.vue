@@ -287,7 +287,7 @@ const availableActions = computed((): ShortcutAction[] => {
 
 const filteredBindings = computed((): ShortcutBinding[] => {
   // 使用refreshTrigger确保响应式更新
-  refreshTrigger.value // 仅用于触发重新计算，不需要实际使用值
+  void refreshTrigger.value // 仅用于触发重新计算，不需要实际使用值
 
   let bindings = shortcutService.getAllBindings()
 

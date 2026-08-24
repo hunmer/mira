@@ -167,7 +167,7 @@ const loadFileInfo = async (): Promise<void> => {
       mimeType: previewQuery.value.mimeType as string || '',
       path: previewQuery.value.path as string || '',
       url: previewQuery.value.path as string || '',
-      libraryId: libraryId,
+      libraryId,
       size: 0,
       updatedAt: new Date().toISOString()
     }

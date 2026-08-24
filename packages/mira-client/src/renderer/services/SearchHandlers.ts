@@ -134,7 +134,7 @@ export class SearchHandlers {
       let result: any = null
 
       switch (data.type) {
-        case 'search-request':
+        case 'search-request': {
           result = await this.handleSearch(data.keyword, data.searchType)
 
           // 返回搜索结果
@@ -146,6 +146,7 @@ export class SearchHandlers {
           }
           await this.sendResultToSearchWindow(searchResponse)
           break
+        }
 
         case 'open-item':
           await this.handleOpenItem(data.item)
@@ -439,7 +440,7 @@ export class SearchHandlers {
         path: '/file-preview',
         query: {
           id: item.id,
-          libraryId: libraryId,
+          libraryId,
           title: fallbackName,
           path: item.path || '',
           mimeType: item.mimeType || 'application/octet-stream'
@@ -483,7 +484,7 @@ export class SearchHandlers {
         path: '/',
         query: {
           folder: item.id,
-          libraryId: libraryId,
+          libraryId,
           title: fallbackName
         }
       })
@@ -525,7 +526,7 @@ export class SearchHandlers {
         path: '/',
         query: {
           tag: item.id,
-          libraryId: libraryId,
+          libraryId,
           title: fallbackName,
           color: item.color || '#666666'
         }

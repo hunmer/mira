@@ -889,15 +889,18 @@ const filteredUploadedFiles = computed(() => {
         switch (timeFilter) {
           case 'today':
             return fileDate.toDateString() === now.toDateString()
-          case 'week':
+          case 'week': {
             const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
             return fileDate >= weekAgo
-          case 'month':
+          }
+          case 'month': {
             const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
             return fileDate >= monthAgo
-          case 'year':
+          }
+          case 'year': {
             const yearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate())
             return fileDate >= yearAgo
+          }
           default:
             return true
         }

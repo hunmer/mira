@@ -133,7 +133,7 @@ export const useUploadHistoryStore = defineStore('uploadHistory', () => {
    * 搜索记录
    */
   const searchRecords = (query: string, libraryId?: string) => {
-    let records = libraryId ? getLibraryRecords(libraryId) : uploadRecords.value
+    const records = libraryId ? getLibraryRecords(libraryId) : uploadRecords.value
     
     if (!query.trim()) return records
     

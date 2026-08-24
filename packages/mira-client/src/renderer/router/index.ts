@@ -159,7 +159,7 @@ const getFilePreviewQuery = (fileId: string): LocationQuery | null => {
   return {
     id: fileId,
     libraryId: String(file.libraryId || ''),
-    title: String(file.name || file.title || ''),
+    title: String(file.name || ''),
     path: String(file.path || file.url || ''),
     mimeType: String(file.mimeType || '')
   }

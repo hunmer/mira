@@ -46,11 +46,9 @@ export const injectPluginsToDocument = async (plugins: PluginRuntime[]) => {
           }
 
           const success = await injectPluginScript(plugin)
-          if (success) {
-          } else {
+          if (!success) {
             console.error(`❌ Failed to inject: ${plugin.config.pluginName}`)
           }
-        } else {
         }
       }
 

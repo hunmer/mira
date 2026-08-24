@@ -136,7 +136,7 @@ export function useHomeEventHandlers(
       rejectLabel: i18n.global.t('views.homeEvent.emptyTrashReject'),
       accept: async () => {
         try {
-          const result = await miraSDKService.emptyTrash(libraryId)
+          await miraSDKService.emptyTrash(libraryId)
           clearTabCache()
           setAllTabsNeedUpdate(true)
           const currentTab = getCurrentTab()

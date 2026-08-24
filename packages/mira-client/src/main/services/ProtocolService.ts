@@ -232,6 +232,7 @@ export class ProtocolService {
         ? path.basename(fileURLToPath(source))
         : path.posix.basename(new URL(source).pathname)
       const name = decodeURIComponent(rawName)
+        // eslint-disable-next-line no-control-regex -- 过滤文件名中的控制字符
         .replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_')
         .trim()
         .replace(/[. ]+$/g, '')

@@ -55,7 +55,7 @@ const optionValue = (opt: SelectOption) => String(opt.value)
       <FormControl v-else-if="field.type === 'number'">
         <Input
           type="number"
-          :model-value="value as number | undefined"
+          :model-value="value as number"
           :placeholder="field.placeholder"
           :disabled="field.disabled"
           @update:model-value="(v: string | number) => setValue(v === '' || v === undefined ? undefined : Number(v))"
@@ -168,7 +168,7 @@ const optionValue = (opt: SelectOption) => String(opt.value)
       <!-- 日期 -->
       <FormControl v-else-if="field.type === 'date'">
         <DatePicker
-          :model-value="value as Date | string | undefined"
+          :model-value="value as Date"
           show-icon
           :disabled="field.disabled"
           @update:model-value="(v: Date | string) => setValue(v)"

@@ -137,24 +137,27 @@ export interface PluginFileFormat {
   open?: (file: FileInfo) => boolean | void | Promise<boolean | void>
 }
 
+// 插件事件处理器（插件侧注册的回调，签名不限）
+export type PluginEventHandler = (...args: any[]) => any
+
 // 插件系统全局API类型
 export interface PluginSystemAPI {
   plugins: Map<string, any>
-  instancesFactory: Map<string, () => any>
+  instancesFactory: Map<string, (context?: any) => any>
   instances: Map<string, any>
   registerPlugin: (pluginId: string, pluginInfo: any) => void
-  registerPluginInstance: (pluginId: string, factory: () => any) => void
-  getPluginInstanceFactory: (pluginId: string) => (() => any) | undefined
+  registerPluginInstance: (pluginId: string, factory: (context?: any) => any) => void
+  getPluginInstanceFactory: (pluginId: string) => ((context?: any) => any) | undefined
   loadPluginInstance: (pluginId: string, context: any) => Promise<any>
   getPluginInstance: (pluginId: string) => any
   unloadPluginInstance: (pluginId: string) => Promise<void>
   getPlugin: (pluginId: string) => any
   getAllPlugins: () => any[]
   events: {
-    listeners: Map<string, Function[]>
-    on: (event: string, handler: Function) => void
+    listeners: Map<string, PluginEventHandler[]>
+    on: (event: string, handler: PluginEventHandler) => void
     emit: (event: string, data?: any) => void
-    off: (event: string, handler: Function) => void
+    off: (event: string, handler: PluginEventHandler) => void
   }
   /** 插件贡献（UI 入口）注册中心 */
   contributions: {

@@ -45,7 +45,7 @@ export function toFileUrl(path: unknown, useLibraryCache = true): string | undef
     if (libraryId) return `library-file://load?libraryId=${encodeURIComponent(String(libraryId))}&url=${encodeURIComponent(path)}`
     return path
   }
-  let normalized = path.replace(/\\/g, '/')
+  const normalized = path.replace(/\\/g, '/')
   if (normalized.match(/^[a-zA-Z]:/)) {
     return `file:///${encodeURI(normalized)}`
   }

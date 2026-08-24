@@ -126,7 +126,7 @@ import { ref, watch, computed, nextTick, onMounted, onUnmounted } from 'vue'
 import { component as VViewer } from 'v-viewer'
 import StatusImage from '@renderer/components/common/StatusImage.vue'
 import type { FileInfo } from '../../../shared/types'
-import { getCacheBustedPreviewImageSource, getPreviewImageSource } from '../../utils/fileUtils'
+import { getCacheBustedPreviewImageSource } from '../../utils/fileUtils'
 
 interface Props {
   image?: FileInfo
@@ -149,20 +149,6 @@ const emit = defineEmits<Emits>()
 const imageUrl = computed(() => getCacheBustedPreviewImageSource(props.image, props.cacheKey))
 const viewerKey = computed(() => `${props.image?.id || 'empty'}:${imageUrl.value || ''}`)
 
-const describeImage = (image?: FileInfo): Record<string, unknown> | null => {
-  if (!image) return null
-
-  return {
-    id: image.id,
-    name: image.name,
-    localFile: image.localFile,
-    path: image.path,
-    url: image.url,
-    thumbnailPath: image.thumbnailPath,
-    previewSource: getPreviewImageSource(image),
-    updatedAt: image.updatedAt
-  }
-}
 
 // 响应式数据
 const loading = ref(false)
@@ -321,12 +307,6 @@ watch(() => props.image, (newImage, oldImage) => {
     }
   }
 }, { immediate: true })
-
-watch(
-  () => props.cacheKey,
-  (newCacheKey, oldCacheKey) => {
-  }
-)
 </script>
 
 <style scoped>

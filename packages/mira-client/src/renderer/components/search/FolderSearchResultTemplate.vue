@@ -124,7 +124,7 @@ const folderDepth = computed((): number => {
   if (!props.item.path) return 0
   
   // 计算路径中的分隔符数量来估算深度
-  const pathSeparators = (props.item.path.match(/[\/\\]/g) || []).length
+  const pathSeparators = (props.item.path.match(/[/\\]/g) || []).length
   return Math.min(pathSeparators, 5) // 最多显示5层
 })
 </script>

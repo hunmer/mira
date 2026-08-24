@@ -254,16 +254,6 @@ export class TrayService {
   }
 
   /**
-   * 显示关于对话框
-   */
-  private showAbout(): void {
-    // 发送消息到主窗口显示关于对话框
-    if (this.mainWindow && !this.mainWindow.isDestroyed()) {
-      this.mainWindow.webContents.send('tray:show-about')
-    }
-  }
-
-  /**
    * 获取托盘图标路径
    */
   private getTrayIconPath(): string {

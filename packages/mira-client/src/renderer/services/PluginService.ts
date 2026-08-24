@@ -147,7 +147,6 @@ export class PluginService {
             }
             this.plugins.set(runtime.config.pluginId, pluginRuntime)
           }
-        } else {
         }
       }
 

@@ -75,9 +75,6 @@ export class TabRegistry {
    */
   register(type: TabTypeDefinition): TabResult {
     try {
-      if (this.registeredTypes.has(type.name)) {
-      }
-
       this.registeredTypes.set(type.name, type)
 
       return { success: true }

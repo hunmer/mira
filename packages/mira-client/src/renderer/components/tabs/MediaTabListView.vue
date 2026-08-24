@@ -861,7 +861,7 @@ watch(
     // 如果 filters 变化，重新初始化过滤器
     if (JSON.stringify(newFilters) !== JSON.stringify(oldFilters)) {
       // 重新构建初始过滤器
-      let initialFilters: Record<string, any> = { ...((newFilters as Record<string, any>) || {}) }
+      const initialFilters: Record<string, any> = { ...((newFilters as Record<string, any>) || {}) }
       if (props.viewType === 'trash') {
         initialFilters.recycled = 1
       }

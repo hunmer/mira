@@ -50,7 +50,7 @@ export async function switchTheme(): Promise<{
   }, { timeout: 10_000 })
 
   // 原始值为 auto 时，两次切换会把 theme 持久化为 light/dark，这里回写还原
-  let restored = true
+  const restored = true
   if (settingsStore.settings.theme !== initialTheme) {
     settingsStore.settings.theme = initialTheme
     settingsStore.applyTheme()

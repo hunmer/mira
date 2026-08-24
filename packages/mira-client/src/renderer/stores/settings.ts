@@ -446,7 +446,6 @@ export const useSettingsStore = defineStore('settings', () => {
 
         // 插件市场源：向后兼容迁移（旧版本仅有单一 clientPluginMarketUrl）
         migrateMarketUrls()
-      } else {
       }
 
       // 插件目录兜底：未配置时默认使用 AppData 下 userData/plugins，
@@ -477,7 +476,6 @@ export const useSettingsStore = defineStore('settings', () => {
         } catch (err) {
           error.value = 'Failed to initialize plugin service'
         }
-      } else if (isPluginSystemInitialized.value) {
       }
 
       window.electronAPI?.send('window:set-close-to-tray', settings.value.closeToTray)

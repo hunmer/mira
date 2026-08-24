@@ -135,13 +135,6 @@ export function useTabPagination(tabId?: string) {
     isServerPagination: isServerPagination.value
   }))
 
-  // 监听状态变化（用于调试）
-  watch(
-    [currentPage, totalRecords, isServerPagination],
-    ([newPage, newTotal, newServerPag], [oldPage, oldTotal, oldServerPag]) => {
-    }
-  )
-
   return {
     // 状态
     currentPage,

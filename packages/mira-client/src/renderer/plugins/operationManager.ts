@@ -189,18 +189,21 @@ export const executeLocalPluginOperation = async (
         case 'reload':
           result = await pluginService.reloadPlugin(pluginId)
           break
-        case 'uninstall':
+        case 'uninstall': {
           const [pluginDirectory, pluginName] = args
           result = await pluginService.uninstallPlugin(pluginId, pluginDirectory, pluginName)
           break
-        case 'import-file':
+        }
+        case 'import-file': {
           const [targetDirectory] = args
           result = await pluginService.importPluginFromFile(targetDirectory)
           break
-        case 'import-url':
+        }
+        case 'import-url': {
           const [url, target] = args
           result = await pluginService.importPluginFromUrl(url, target)
           break
+        }
         case 'discover':
           result = await pluginService.discoverAndLoadPlugins()
           break

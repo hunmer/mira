@@ -173,7 +173,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, toRef, watch } from 'vue'
+import { computed, toRef } from 'vue'
 import MediaThumbnail from '@renderer/components/common/MediaThumbnail.vue'
 import MediaPreviewHoverCard from '@renderer/components/common/MediaPreviewHoverCard.vue'
 import type { FileInfo } from '../../../../shared/types'
@@ -221,12 +221,6 @@ const mediaContainerStyle = computed(() => ({
 const fitClass = computed(() => (props.compact ? 'object-cover' : 'object-contain'))
 
 // hovercard 预览图：优先原图（带缓存破坏），保证清晰
-
-// 调试：监控视频播放状态变化
-watch(() => props.isVideoPlaying, (isPlaying) => {
-  if (isPlaying) {
-  }
-})
 
 // 使用媒体项逻辑
 const {

@@ -23,7 +23,7 @@ export const convertToScriptUrl = (filePath: string): string => {
   }
 
   // 标准化路径分隔符
-  let normalizedPath = filePath.replace(/\\/g, '/')
+  const normalizedPath = filePath.replace(/\\/g, '/')
 
   // 处理不同操作系统的绝对路径格式
   if (normalizedPath.match(/^[a-zA-Z]:/)) {

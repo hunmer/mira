@@ -270,7 +270,7 @@ const handleUploadError = (item: any, error: string) => {
       libraryId: currentLibrary.value.id,
       libraryName: currentLibrary.value.name,
       status: 'failed',
-      error: error
+      error
     })
   }
 

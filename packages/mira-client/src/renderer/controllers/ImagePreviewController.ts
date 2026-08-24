@@ -26,7 +26,7 @@ export class ImagePreviewController {
   public viewerInstance = ref<any>(null)
   public imageCacheKey = ref<number>(Date.now())
 
-  private debug = (event: string, payload: Record<string, unknown> = {}): void => {
+  private debug = (_event: string, _payload: Record<string, unknown> = {}): void => {
   }
 
   private describeImage = (image?: FileInfo): Record<string, unknown> | null => {

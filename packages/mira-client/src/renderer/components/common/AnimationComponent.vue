@@ -127,7 +127,7 @@ const onBeforeEnter = (el: Element) => {
     }
     
     // 强制重绘
-    element.offsetHeight
+    void element.offsetHeight
   }
   
   emit('beforeEnter', el)

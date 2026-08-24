@@ -171,7 +171,7 @@ const rightHandleToggle = makeHandleToggle(() => mediaStore.toggleDetailSidebar(
 // HomeSidebar / 详情面板的 props & 事件绑定对象：桌面 inline 与移动抽屉共用，避免重复
 // ============================================
 const sidebarBindings = computed(() => ({
-  homeController: homeController,
+  homeController,
   tags: tagStore.tags,
   libraryId: detailLibraryId.value,
   onFolderSelect: (...args: any[]) => { (handleFolderSelect as (...a: any[]) => void)(...args); if (isMobile.value) mediaStore.showLeftSidebar = false },

@@ -111,7 +111,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import type { FileInfo } from '../../../shared/types'
-import { getCacheBustedPreviewImageSource, getPreviewImageSource } from '../../utils/fileUtils'
+import { getCacheBustedPreviewImageSource } from '../../utils/fileUtils'
 import { useFolderStore } from '../../stores/folder'
 import { useTagStore } from '../../stores/tag'
 import StatusImage from '@renderer/components/common/StatusImage.vue'
@@ -149,24 +149,9 @@ const folderName = computed(() => {
   return folder?.title || String(folderId)
 })
 
-const describeImage = (image?: FileInfo): Record<string, unknown> | null => {
-  if (!image) return null
-
-  return {
-    id: image.id,
-    name: image.name,
-    localFile: image.localFile,
-    path: image.path,
-    url: image.url,
-    thumbnailPath: image.thumbnailPath,
-    previewSource: getPreviewImageSource(image),
-    updatedAt: image.updatedAt
-  }
-}
-
 watch(
   [() => props.image, () => props.cacheKey, imageSrc],
-  ([image, cacheKey, src]) => {
+  () => {
     imageLoadError.value = false
   },
   { immediate: true }

@@ -8,6 +8,7 @@
         'media-card--selectable': selectable
       }
     ]"
+  >
     <!-- 选择框 -->
     <div v-if="selected" class="media-card__selection-indicator">
       <div class="w-6 h-6 bg-primary rounded-full flex items-center justify-center shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
@@ -192,7 +193,7 @@ import { Badge } from '@/components/ui/badge'
 import { useVideoPreview } from '@renderer/composables/useVideoPreview'
 import type { MediaCardComponentProps, MediaCardEvents } from '../../types/components'
 
-interface Props extends MediaCardComponentProps {}
+type Props = MediaCardComponentProps
 
 const props = withDefaults(defineProps<Props>(), {
   selected: false,

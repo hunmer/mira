@@ -1,7 +1,7 @@
 <script setup lang="ts" generic="T extends { id: string | number; title: string; icon?: string }">
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible'
 import { VueDraggable } from 'vue-draggable-plus'
-import { ref, watch } from 'vue'
+import { ref, watch, type Ref } from 'vue'
 
 const props = withDefaults(defineProps<{
   items?: T[]
@@ -13,7 +13,8 @@ const props = withDefaults(defineProps<{
   isOpen?: (item: T) => boolean
 }>(), { customizeIcon: 'dashboard_customize', isOpen: () => true, draggable: false, headerOnly: false })
 const emit = defineEmits<{ 'update:open': [item: T, value: boolean]; 'update:items': [items: T[]]; customize: [] }>()
-const orderedItems = ref<T[]>([])
+// as Ref<T[]>：避免 UnwrapRefSimple<T> 与泛型 T 不兼容
+const orderedItems = ref<T[]>([]) as Ref<T[]>
 watch(() => props.items, value => { orderedItems.value = [...(value || [])] }, { immediate: true, deep: true })
 function onReorder() { emit('update:items', [...orderedItems.value]) }
 </script>

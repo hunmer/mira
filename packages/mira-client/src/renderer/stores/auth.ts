@@ -507,9 +507,8 @@ export const useAuthStore = defineStore('auth', () => {
       if (result.success) {
         // 更新最后登录时间
         await saveCredentialsToLibrary(credentials, libraryId)
-      } else {
       }
-      
+
       return result
       
     } catch (error) {
@@ -585,7 +584,6 @@ export const useAuthStore = defineStore('auth', () => {
         
         if (autoLoginResult.success) {
           return
-        } else {
         }
       }
     } catch (autoLoginError) {
@@ -649,7 +647,6 @@ export const useAuthStore = defineStore('auth', () => {
         
         if (autoLoginResult.success) {
           return
-        } else {
         }
       }
     } catch (autoLoginError) {

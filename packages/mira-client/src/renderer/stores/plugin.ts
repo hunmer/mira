@@ -284,9 +284,7 @@ export const usePluginStore = defineStore('plugin', () => {
 
     try {
       // 尝试从miraSDKService服务获取插件，如果失败则使用示例数据
-      let result
-      // result = await miraSDKService.getPlugins()
-      result = MockDataGenerator.generatePlugins()
+      const result = MockDataGenerator.generatePlugins()
 
       plugins.value = result.map(plugin => ({
         ...plugin,
@@ -1158,7 +1156,7 @@ export const usePluginStore = defineStore('plugin', () => {
     // 脚本管理（从模块导入）
     injectPluginsToDocument,
     injectPluginScript,
-    cleanupPluginScript: cleanupPluginScript,
+    cleanupPluginScript,
 
     // 实例管理（从模块导入）
     registerPluginInstance,

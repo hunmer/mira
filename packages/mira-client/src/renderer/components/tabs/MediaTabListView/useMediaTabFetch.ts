@@ -69,7 +69,7 @@ export function useMediaTabFetch(deps: {
       const tabInfo = {
         id: props.tabId,
         type: props.viewType || 'all',
-        libraryId: libraryId, // 将 libraryId 放在顶层，确保 fetchFilesForTab 能正确获取
+        libraryId, // 将 libraryId 放在顶层，确保 fetchFilesForTab 能正确获取
         data: {},
         filters: currentFilters, // 将筛选器放在正确的位置
         sort: sortField.value as 'imported_at' | 'id' | 'size' | 'stars' | 'folder_id' | 'tags' | 'name' | 'custom_fields',
@@ -79,7 +79,7 @@ export function useMediaTabFetch(deps: {
       // 调用mediaStore的fetchFilesForTab获取数据
       const result = await mediaStore.fetchFilesForTab(tabInfo, {
         limit: itemsPerPage,
-        offset: offset
+        offset
       })
 
       if (result.success && result.data) {

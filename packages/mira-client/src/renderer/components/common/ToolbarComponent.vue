@@ -48,7 +48,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Separator } from '@/components/ui/separator'
 import type { ToolbarComponentProps, ToolbarButton, ToolbarEvents } from '../../types/components'
 
-interface Props extends ToolbarComponentProps {}
+type Props = ToolbarComponentProps
 
 const props = withDefaults(defineProps<Props>(), {
   size: 'medium',

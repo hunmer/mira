@@ -340,7 +340,6 @@ import { Input } from '@/components/ui/input'
 import StatusImage from '@renderer/components/common/StatusImage.vue'
 import { getExtIconUrl } from '@renderer/utils/extIconHelper'
 import { runBatchOperation } from '@renderer/composables/useBatchOperation'
-import { VueDraggable } from 'vue-draggable-plus'
 import OrderedSectionList from '@/renderer/components/common/OrderedSectionList.vue'
 import SortableLayoutDialog from '@/renderer/components/common/SortableLayoutDialog.vue'
 
@@ -357,7 +356,6 @@ interface Props {
 }
 
 const props = defineProps<Props>()
-const emit = defineEmits<{ reorder: [items: FileInfo[]] }>()
 const { t } = useI18n()
 const manualOrder = ref<string[]>([])
 const dragItems = ref<FileInfo[]>([])
@@ -472,10 +470,6 @@ watch(displayItems, value => {
     dragItems.value = next
   }
 }, { immediate: true, deep: true })
-const reorderItems = (items: FileInfo[]) => {
-  manualOrder.value = items.map(item => String(item.id))
-  emit('reorder', items)
-}
 const openSortDialog = () => {
   sectionEnabledItems.value = sectionOrder.value.map(id => detailSections.find(section => section.id === id)!).filter(Boolean)
   sectionDisabledItems.value = detailSections.filter(section => !sectionOrder.value.includes(section.id))

@@ -31,7 +31,7 @@ export function useMediaTabPagination(deps: {
     } else {
       // 复杂分页逻辑
       let startPage = Math.max(1, currentPageValue - 4)
-      let endPage = Math.min(totalPagesValue, startPage + 9)
+      const endPage = Math.min(totalPagesValue, startPage + 9)
 
       if (endPage - startPage < 9) {
         startPage = Math.max(1, endPage - 9)

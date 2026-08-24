@@ -112,7 +112,7 @@ export class HomeController {
 
     const pagination = {
       limit: itemsPerPageValue,
-      offset: offset
+      offset
     }
 
     // 重新加载当前页数据
@@ -131,8 +131,7 @@ export class HomeController {
         pagination
       )
 
-      if (result.success) {
-      } else {
+      if (!result.success) {
         console.error('❌ 加载当前页数据失败:', (result as any).error)
       }
     } catch (error) {

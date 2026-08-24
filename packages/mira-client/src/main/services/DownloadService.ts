@@ -47,7 +47,6 @@ export function electronResponseToReadable(
   abortRequest?: () => void
 ): Readable {
   let completed = false
-  let stream: Readable
 
   const cleanup = () => {
     response.removeListener('data', onData)
@@ -70,7 +69,7 @@ export function electronResponseToReadable(
     stream.destroy(new Error('下载响应已中止'))
   }
 
-  stream = new Readable({
+  const stream: Readable = new Readable({
     read() {},
     destroy(error, callback) {
       cleanup()
@@ -96,9 +95,8 @@ function requestWithElectron(
 ): Promise<{ statusCode: number; headers: Record<string, string[]>; stream: Readable }> {
   const { method = 'GET', signal, timeoutMs = 0 } = options
   return new Promise((resolve, reject) => {
-    const req = net.request(url)
+    const req = net.request({ url, method })
     req.setHeader('User-Agent', 'Mira-Desktop')
-    if (method === 'HEAD') req.method = 'HEAD'
 
     let settled = false
     const cleanup = () => {

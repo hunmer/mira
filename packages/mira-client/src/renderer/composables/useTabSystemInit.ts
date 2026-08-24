@@ -39,8 +39,7 @@ export function useTabSystemInit(options: TabSystemInitOptions = {}) {
   const registrationStats = computed(() => tabRegistryAPI.getRegistrationStats())
 
   const log = (message: string) => {
-    if (enableLogging) {
-    }
+    if (enableLogging) console.debug(message)
   }
 
   /**

@@ -456,7 +456,7 @@ export const useMediaStore = defineStore('media', () => {
     })
 
     return await fetchFiles({
-      libraryId: libraryId,
+      libraryId,
       tabId: tabInfo.id, // 指定要更新的 tab ID
       filters,
       append: false // 在服务端分页模式下，每次都应该替换数据，不追加

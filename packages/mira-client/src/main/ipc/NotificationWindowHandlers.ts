@@ -96,8 +96,6 @@ export class NotificationWindowHandlers {
   private readonly MARGIN = 20
   /** 最大并存数量 */
   private readonly MAX_SLOTS = 5
-  /** 通知窗口最多直接展示的数量；超过后进入更多队列 */
-  private readonly MAX_VISIBLE_ITEMS = 3
 
   constructor() {
     ipcMain.handle('notification:window-show', this.handleShowNotification.bind(this))
@@ -261,6 +259,7 @@ export class NotificationWindowHandlers {
     position: FloatingWindowPosition,
     _payload: NotificationPayload
   ): FloatingWindowHandler {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias -- 内部类方法中需访问外层实例
     const self = this
 
     // 每条通知唯一 IPC 前缀（基类会注册 <prefix>:show|hide|toggle，必须唯一避免冲突）

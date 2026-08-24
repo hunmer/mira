@@ -592,7 +592,7 @@ export class MiraSDKService {
         return {
           id: file.id.toString(),
           name: file.name,
-          path: toFileUrl(appendToken(resolveServerUrl(file.path, this.connectionConfig?.serverUrl))),
+          path: toFileUrl(appendToken(resolveServerUrl(file.path, this.connectionConfig?.serverUrl) as string | undefined)),
           size: file.size,
           extension: file.extension || this.getFileExtension(file.name),
           mimeType: file.mime_type || this.getMimeTypeFromExtension(file.name),
@@ -604,8 +604,8 @@ export class MiraSDKService {
           stars: Number(file.stars ?? file.rating ?? 0),
           notes: file.notes || '',
           hash: file.hash || '',
-          thumbnailPath: toFileUrl(appendToken(thumbnailPath || resolveServerUrl(file.thumb, this.connectionConfig?.serverUrl))),
-          libraryId: libraryId,
+          thumbnailPath: toFileUrl(appendToken(thumbnailPath || (resolveServerUrl(file.thumb, this.connectionConfig?.serverUrl) as string | undefined))),
+          libraryId,
           localFile: localFile || file.localFile || (() => {
             try {
               const mediaStore = useMediaStore()
@@ -675,7 +675,7 @@ export class MiraSDKService {
         notes: file.notes || '',
         hash: file.hash || '',
         thumbnailPath: toFileUrl(appendToken(useLocalThumb ? file.thumbnail_path : (file.thumb || undefined))),
-        libraryId: libraryId
+        libraryId
       }
       
       return fileInfo

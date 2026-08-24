@@ -148,7 +148,7 @@ const scanIntervalOptions = computed(() => [
 ])
 
 // 显示通知的方法
-const showToast = (severity: 'success' | 'error' | 'warn' | 'info', summary: string, detail: string) => {
+const showToast = (_severity: 'success' | 'error' | 'warn' | 'info', _summary: string, _detail: string) => {
   // 使用全局事件总线或其他方式显示通知
   // 这里简化处理，可以根据实际项目结构调整
 }

@@ -155,8 +155,7 @@ export class SearchWindowHandlers {
           `window.electronAPI.dragDrop.startDrag('${filePath.replace(/\\/g, '\\\\')}')`
         )
 
-        if (result && result.success) {
-        } else {
+        if (!(result && result.success)) {
           console.warn('⚠️ [SearchWindowHandlers] DragDropHandler处理结果:', result)
         }
       } else {

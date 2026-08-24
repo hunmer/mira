@@ -416,6 +416,7 @@ export class PluginWindowHandlers {
       if (preview.isEmpty()) throw new Error('无法解析图片数据')
 
       const safeName = path.basename(payload.fileName || 'image.png')
+        // eslint-disable-next-line no-control-regex -- 过滤文件名中的控制字符
         .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
         .slice(0, 160) || 'image.png'
       const tempDir = path.join(app.getPath('temp'), 'mira-whiteboard-drag')
@@ -617,7 +618,10 @@ export class PluginWindowHandlers {
 
   private getDownloadName(url: URL, options: any): string {
     const requested = typeof options?.name === 'string' ? options.name.trim() : ''
-    const fromUrl = path.basename(url.pathname).replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
+    const fromUrl = path
+      .basename(url.pathname)
+      // eslint-disable-next-line no-control-regex -- 过滤文件名中的控制字符
+      .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
     return (requested || fromUrl || `mira-${Date.now()}.jpg`).slice(0, 180)
   }
 

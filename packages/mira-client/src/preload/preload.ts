@@ -41,7 +41,7 @@ ipcRenderer.on('main-log', (_event, level: keyof typeof nativeConsole, message: 
 // 在渲染进程中暴露安全的 API
 const electronAPI: ElectronAPI = {
   process,
-  isDevelopment: isDevelopment,
+  isDevelopment,
   isProduction: !isDevelopment,
   // IPC 通信
   invoke: (channel: string, ...args: any[]) => ipcRenderer.invoke(channel, ...args),

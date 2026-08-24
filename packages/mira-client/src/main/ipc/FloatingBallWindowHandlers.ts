@@ -40,6 +40,7 @@ export class FloatingBallWindowHandlers {
   constructor() {
     // 用 self 捕获外层实例，供 messageHandlers 内的箭头函数访问
     // （参考 NotificationWindowHandlers.createSlotHandler 的写法）
+    // eslint-disable-next-line @typescript-eslint/no-this-alias -- 内部类方法中需访问外层实例
     const self = this
 
     this.handler = new (class FloatingBallHandler extends FloatingWindowHandler {

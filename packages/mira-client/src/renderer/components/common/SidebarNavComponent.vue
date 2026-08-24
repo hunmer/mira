@@ -124,7 +124,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import type { SidebarNavComponentProps, NavigationItem, SidebarNavEvents } from '../../types/components'
 
-interface Props extends SidebarNavComponentProps {}
+type Props = SidebarNavComponentProps
 
 const props = withDefaults(defineProps<Props>(), {
   showCounts: true,

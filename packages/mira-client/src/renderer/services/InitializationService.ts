@@ -81,15 +81,11 @@ export class InitializationService {
 
       // 启用所有插件
       initState.updateStep(t('services.initialization.stepEnablePlugins'), 40)
-      try {
-        const enableResult = await globalPluginManager.enableAllPlugins()
-        if (!enableResult.success) {
-          const errorMessage = t('services.initialization.pluginEnablePartialFailed', { errors: enableResult.errors.join(', ') })
-          throw new Error(t('services.initialization.pluginEnableFailed', { message: errorMessage }))
-        }
-      } catch (error) {
-        // 重新抛出错误，阻止应用启动
-        throw error
+      // 启用失败直接抛出错误，阻止应用启动
+      const enableResult = await globalPluginManager.enableAllPlugins()
+      if (!enableResult.success) {
+        const errorMessage = t('services.initialization.pluginEnablePartialFailed', { errors: enableResult.errors.join(', ') })
+        throw new Error(t('services.initialization.pluginEnableFailed', { message: errorMessage }))
       }
       initState.completeStep(t('services.initialization.stepEnablePlugins'))
 
@@ -199,7 +195,7 @@ export class InitializationService {
 
       // 第三步：确定要使用的素材库
       initState.updateStep(t('services.initialization.homeStepSelectLibrary'), 50)
-      let selectedLibraryId = await this.selectLibrary(libraryStore)
+      const selectedLibraryId = await this.selectLibrary(libraryStore)
 
       if (!selectedLibraryId) {
         initState.completeStep(t('services.initialization.homeStepSelectLibrary'))

@@ -310,7 +310,7 @@ const setupElectronListeners = () => {
   })
   
   // 监听文件导入事件
-  window.electronAPI.on('files:import', (filePaths: string[]) => {
+  window.electronAPI.on('files:import', (_filePaths: string[]) => {
     // 处理文件导入
     // 这里可以调用文件上传逻辑
   })

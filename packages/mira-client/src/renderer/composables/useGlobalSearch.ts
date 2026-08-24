@@ -257,7 +257,7 @@ export function useGlobalSearch() {
         event.preventDefault()
         hideSearchDialog()
         break
-      case 'Tab':
+      case 'Tab': {
         event.preventDefault()
         // 切换到下一个标签
         const serviceIds = Array.from(searchServices.value.keys())
@@ -265,6 +265,7 @@ export function useGlobalSearch() {
         const nextIndex = (currentIndex + 1) % serviceIds.length
         setActiveTab(serviceIds[nextIndex])
         break
+      }
       case 'ArrowUp':
       case 'ArrowDown':
         // TODO: 实现结果列表内的上下导航

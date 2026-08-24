@@ -393,8 +393,8 @@ const formData = ref({
 const authTokenMode = computed(() => formData.value.authMethod === 'token')
 
 // ToggleGroup 切换处理（点击已选中项时值为 undefined，需忽略）
-const handleAuthMethodChange = (value: string | undefined) => {
-  if (!value || value === formData.value.authMethod) return
+const handleAuthMethodChange = (value: unknown) => {
+  if (typeof value !== 'string' || value === formData.value.authMethod) return
   formData.value.authMethod = value
   if (value === 'token') {
     // 切换到 token 模式时清空用户名密码

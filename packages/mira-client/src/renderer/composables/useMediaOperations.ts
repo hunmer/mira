@@ -60,7 +60,7 @@ export function useMediaOperations() {
   /**
    * 处理删除媒体
    */
-  const handleMediaDelete = (item: FileInfo) => {
+  const handleMediaDelete = (_item: FileInfo) => {
   }
 
   /**

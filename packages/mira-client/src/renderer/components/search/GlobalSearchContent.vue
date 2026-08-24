@@ -134,7 +134,6 @@
 import { ref, onMounted, nextTick, defineAsyncComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useGlobalSearch } from '../../composables/useGlobalSearch'
-// @ts-ignore
 import EmptySearchState from './EmptySearchState.vue'
 
 const { t, te } = useI18n()
@@ -245,7 +244,7 @@ const handleSearchInputKeydown = (event: KeyboardEvent): void => {
       event.preventDefault()
       handleClose()
       break
-    case 'Tab':
+    case 'Tab': {
       event.preventDefault()
       // Tab键切换到下一个服务
       const serviceIds = availableServices.value.map(s => s.id)
@@ -253,6 +252,7 @@ const handleSearchInputKeydown = (event: KeyboardEvent): void => {
       const nextIndex = (currentIndex + 1) % serviceIds.length
       setActiveTab(serviceIds[nextIndex])
       break
+    }
   }
 }
 
