@@ -44,7 +44,7 @@ if (-not $ffmpeg -or -not $ffprobe -or -not $magick -or -not $exiftool) { throw 
 
 Write-Host '[4/7] Setting environment variables ...'
 foreach ($item in @(@('FFMPEG_PATH',$ffmpeg),@('FFPROBE_PATH',$ffprobe),@('IMAGEMAGICK_PATH',$magick),@('EXIFTOOL_PATH',$exiftool))) { [Environment]::SetEnvironmentVariable($item[0],$item[1],'User') }
-$runtimeBins = @((Split-Path $ffmpeg), (Split-Path $magick), (Split-Path $exiftool))
+$runtimeBins = @((Split-Path $ffmpeg), (Split-Path $magick), (Split-Path $exiftool), (Join-Path $InstallDir 'bin'))
 $userPath = [Environment]::GetEnvironmentVariable('Path','User')
 foreach ($runtimeBin in $runtimeBins) { if ($userPath -notlike "*$runtimeBin*") { $userPath = "$runtimeBin;$userPath" } }
 [Environment]::SetEnvironmentVariable('Path', $userPath, 'User')
@@ -53,6 +53,12 @@ Write-Host '[5/7] Registering autostart and starting service ...'
 $launcher = Join-Path $InstallDir 'mira-server.cmd'
 $command = '"' + $node + '" "' + (Join-Path $InstallDir 'server\mira-app-server\dist\cli.js') + '" start --http-port 8081 --ws-port 8018 --data-path "' + (Join-Path $env:USERPROFILE '.mira-data') + '"'
 @('@echo off', "set FFMPEG_PATH=$ffmpeg", "set FFPROBE_PATH=$ffprobe", "set IMAGEMAGICK_PATH=$magick", "set EXIFTOOL_PATH=$exiftool", $command) | Set-Content $launcher -Encoding ASCII
+
+$binDir = Join-Path $InstallDir 'bin'
+New-Item -ItemType Directory -Force -Path $binDir | Out-Null
+$cliJsPath = Join-Path $InstallDir 'server\mira-app-server\dist\cli.js'
+$cliCommand = '"' + $node + '" "' + $cliJsPath + '" %*'
+@('@echo off', "set FFMPEG_PATH=$ffmpeg", "set FFPROBE_PATH=$ffprobe", "set IMAGEMAGICK_PATH=$magick", "set EXIFTOOL_PATH=$exiftool", $cliCommand) | Set-Content (Join-Path $binDir 'mira-app-server.cmd') -Encoding ASCII
 $ErrorActionPreference = 'Continue'
 schtasks /Create /TN MiraAppServer /TR "`"$launcher`"" /SC ONLOGON /RL LIMITED /F 2>$null | Out-Null
 $schedOk = ($LASTEXITCODE -eq 0)

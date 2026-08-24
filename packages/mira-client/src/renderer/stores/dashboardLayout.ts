@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Layout, LayoutItem, ReadonlyLayout } from '@hunmer/grid-layout-plus'
 import ConfigStorage from '@renderer/utils/ConfigStorage'
+import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { cardRegistry } from '@renderer/components/tabs/dashboard/CardRegistry'
 import i18n from '../i18n'
 
@@ -14,17 +15,21 @@ import i18n from '../i18n'
  * - 同一时刻只有一个布局处于「激活」状态（activeLayoutId），界面只渲染激活布局。
  *
  * 持久化策略：
- * - localStorage（经 ConfigStorage）保存一个聚合键 `mira-dashboard-layouts`，
- *   内容为 { version, activeId, layouts: DashboardLayout[] }。
- * - 旧版本（单 layout）使用扁平的两个键 `mira-dashboard-layout` / `mira-dashboard-instances`，
- *   load() 时若新键不存在则自动迁移旧数据为一个默认布局，平滑升级。
+ * - 保存到后端当前登录用户的用户数据目录（服务器 /user_data/{user_id}/ 下），
+ *   文件为 STORAGE_PATH（dashboard/layouts.json），内容为
+ *   { version, activeId, layouts: DashboardLayout[] }，按用户隔离。
+ * - 首次使用时若服务器上没有数据，自动从本地 localStorage 迁移：
+ *   新版聚合键 `mira-dashboard-layouts`，或更早的扁平键
+ *   `mira-dashboard-layout` / `mira-dashboard-instances`（迁移为默认布局）。
  */
 
 /** 聚合存储的 schema 版本，便于日后再次升级 */
 const STORAGE_VERSION = 2
-/** 新版聚合键 */
+/** 服务器用户数据目录下的存储文件路径 */
+const STORAGE_PATH = 'dashboard/layouts.json'
+/** 旧版本地聚合键（仅用于一次性迁移到服务器） */
 const LAYOUTS_KEY = 'mira-dashboard-layouts'
-/** 旧版扁平键（仅用于一次性迁移） */
+/** 旧版本地扁平键（仅用于一次性迁移） */
 const LEGACY_LAYOUT_KEY = 'mira-dashboard-layout'
 const LEGACY_INSTANCES_KEY = 'mira-dashboard-instances'
 
@@ -118,14 +123,14 @@ export const useDashboardLayoutStore = defineStore('dashboardLayout', () => {
 
   /**
    * 从存储加载布局数据。
-   * - 优先读取新版聚合键；
-   * - 若不存在，尝试从旧版扁平键迁移；
+   * - 优先读取服务器当前用户数据目录下的聚合文件；
+   * - 若不存在，尝试从本地 localStorage 迁移（新版聚合键或旧版扁平键）；
    * - 若都没有，初始化一个默认空布局。
    */
   async function load() {
     if (loaded.value) return
     try {
-      const raw = await ConfigStorage.getItem(LAYOUTS_KEY)
+      const raw = await miraSDKService.readUserFile(STORAGE_PATH)
       if (raw) {
         const parsed = JSON.parse(raw) as DashboardLayoutsData
         layouts.value = (parsed.layouts ?? []).map((l) => ({
@@ -139,8 +144,8 @@ export const useDashboardLayoutStore = defineStore('dashboardLayout', () => {
             ? parsed.activeId
             : layouts.value[0]?.id ?? null
       } else {
-        // 尝试迁移旧版数据
-        await migrateFromLegacy()
+        // 尝试从本地 localStorage 迁移
+        await migrateFromLocalStorage()
       }
       // 兜底：至少保证有一个布局
       if (layouts.value.length === 0) {
@@ -159,6 +164,34 @@ export const useDashboardLayoutStore = defineStore('dashboardLayout', () => {
       activeId.value = def.id
     } finally {
       loaded.value = true
+    }
+  }
+
+  /**
+   * 从本地 localStorage 迁移到服务器（一次性）。
+   * - 新版聚合键存在则直接采用；
+   * - 否则回退到旧版扁平键，迁移为一个默认布局。
+   */
+  async function migrateFromLocalStorage() {
+    try {
+      const raw = await ConfigStorage.getItem(LAYOUTS_KEY)
+      if (raw) {
+        const parsed = JSON.parse(raw) as DashboardLayoutsData
+        layouts.value = (parsed.layouts ?? []).map((l) => ({
+          ...l,
+          layout: sanitizeLayout(l.layout ?? []),
+          instances: l.instances ?? {},
+        }))
+        activeId.value =
+          parsed.activeId && layouts.value.some((l) => l.id === parsed.activeId)
+            ? parsed.activeId
+            : layouts.value[0]?.id ?? null
+        console.info('[dashboardLayout] 已从本地 localStorage 迁移布局数据到服务器')
+        return
+      }
+      await migrateFromLegacy()
+    } catch (e) {
+      console.warn('[dashboardLayout] 迁移本地数据失败:', e)
     }
   }
 
@@ -278,7 +311,7 @@ export const useDashboardLayoutStore = defineStore('dashboardLayout', () => {
     return v
   }
 
-  /** 持久化布局与实例映射 */
+  /** 持久化布局与实例映射到服务器当前用户数据目录 */
   async function persist() {
     try {
       const data: DashboardLayoutsData = {
@@ -286,10 +319,20 @@ export const useDashboardLayoutStore = defineStore('dashboardLayout', () => {
         activeId: activeId.value,
         layouts: layouts.value,
       }
-      await ConfigStorage.setItem(LAYOUTS_KEY, JSON.stringify(data))
+      await miraSDKService.writeUserFile(STORAGE_PATH, JSON.stringify(data))
     } catch (e) {
       console.warn('[dashboardLayout] 保存失败:', e)
     }
+  }
+
+  /**
+   * 重置 store（登出/切换用户时调用）。
+   * 清空内存数据并复位加载标记，下次 Dashboard 挂载时会重新从服务器加载对应用户的布局。
+   */
+  function reset() {
+    layouts.value = []
+    activeId.value = null
+    loaded.value = false
   }
 
   /** 构造一个新的 DashboardLayout（内部使用） */
@@ -556,6 +599,7 @@ export const useDashboardLayoutStore = defineStore('dashboardLayout', () => {
     getMeta,
     load,
     persist,
+    reset,
     addCard,
     removeCard,
     applyLayout,

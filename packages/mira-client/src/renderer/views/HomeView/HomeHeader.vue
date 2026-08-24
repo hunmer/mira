@@ -17,7 +17,6 @@ import { useSettingsStore } from '@/renderer/stores/settings'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { environment } from '@renderer/utils'
 import { shortcutService } from '@renderer/services/ShortcutService'
-import ServerControlDialog from '@/renderer/components/business/ServerControlDialog.vue'
 
 defineOptions({ name: 'HomeHeader' })
 
@@ -54,8 +53,6 @@ const connectionDotClass = computed(() => {
       return 'bg-muted-foreground/60'
   }
 })
-/** 服务端控制对话框可见性（自包含在 HomeHeader 内） */
-const showServerDialog = ref(false)
 
 const userAvatarUrl = computed(() => {
   const avatar = (authStore.user as any)?.avatar
@@ -243,10 +240,6 @@ const openUiTestPanel = async () => {
               <span class="material-icons text-base">code</span>
               <span>{{ $t('views.homeHeader.developerTools') }}</span>
             </DropdownMenuItem>
-            <DropdownMenuItem v-if="environment.isElectron" @select="showServerDialog = true">
-              <span class="material-icons text-base">dns</span>
-              <span>{{ $t('views.homeHeader.server') }}</span>
-            </DropdownMenuItem>
           </DropdownMenuSubContent>
         </DropdownMenuSub>
 
@@ -316,7 +309,5 @@ const openUiTestPanel = async () => {
       </template>
     </template>
 
-    <!-- 服务端控制对话框（自包含，仅 Electron 环境） -->
-    <ServerControlDialog v-if="environment.isElectron" v-model:open="showServerDialog" />
   </header>
 </template>

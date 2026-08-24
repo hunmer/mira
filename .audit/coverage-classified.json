@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-08-22T05:23:41.303Z",
+  "generatedAt": "2026-08-24T08:34:51.499Z",
   "summary": {
-    "covered": 119,
+    "covered": 121,
     "missing": 11,
     "excluded": 13,
     "dynamic": 7
@@ -1454,7 +1454,7 @@
       "path": "/api/user/info",
       "domain": "user",
       "file": "packages/mira-app-server/src/routes/UserRouter.ts",
-      "line": 20,
+      "line": 34,
       "category": "covered",
       "sdkMethods": [
         "User.getInfo"
@@ -1465,7 +1465,7 @@
       "path": "/api/user/change-password",
       "domain": "user",
       "file": "packages/mira-app-server/src/routes/UserRouter.ts",
-      "line": 100,
+      "line": 114,
       "category": "covered",
       "sdkMethods": [
         "User.changePassword"
@@ -1476,7 +1476,7 @@
       "path": "/api/user/info",
       "domain": "user",
       "file": "packages/mira-app-server/src/routes/UserRouter.ts",
-      "line": 133,
+      "line": 147,
       "category": "covered",
       "sdkMethods": [
         "User.updateInfo"
@@ -1487,7 +1487,7 @@
       "path": "/api/user/avatar",
       "domain": "user",
       "file": "packages/mira-app-server/src/routes/UserRouter.ts",
-      "line": 174,
+      "line": 188,
       "category": "covered",
       "sdkMethods": [
         "User.uploadAvatar"
@@ -1498,7 +1498,7 @@
       "path": "/api/user/tokens",
       "domain": "user",
       "file": "packages/mira-app-server/src/routes/UserRouter.ts",
-      "line": 211,
+      "line": 225,
       "category": "covered",
       "sdkMethods": [
         "User.getTokens"
@@ -1509,9 +1509,31 @@
       "path": "/api/user/avatar/:param",
       "domain": "user",
       "file": "packages/mira-app-server/src/routes/UserRouter.ts",
-      "line": 233,
+      "line": 247,
       "category": "missing",
       "sdkMethods": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/user/files",
+      "domain": "user",
+      "file": "packages/mira-app-server/src/routes/UserRouter.ts",
+      "line": 277,
+      "category": "covered",
+      "sdkMethods": [
+        "User.readFile"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/user/files",
+      "domain": "user",
+      "file": "packages/mira-app-server/src/routes/UserRouter.ts",
+      "line": 312,
+      "category": "covered",
+      "sdkMethods": [
+        "User.writeFile"
+      ]
     },
     {
       "method": "GET",

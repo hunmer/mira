@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-22T05:23:30.311Z",
+  "generatedAt": "2026-08-24T08:34:51.154Z",
   "entries": [
     {
       "module": "Admin",
@@ -1367,11 +1367,33 @@
     },
     {
       "module": "User",
+      "method": "readFile",
+      "httpMethod": "GET",
+      "path": "/api/user/files",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/UserModule.ts",
+      "line": 56,
+      "hasQuery": true,
+      "hasBody": false,
+      "returnType": "{ content: string } | null"
+    },
+    {
+      "module": "User",
+      "method": "writeFile",
+      "httpMethod": "PUT",
+      "path": "/api/user/files",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/UserModule.ts",
+      "line": 68,
+      "hasQuery": false,
+      "hasBody": true,
+      "returnType": null
+    },
+    {
+      "module": "User",
       "method": "getTokens",
       "httpMethod": "GET",
       "path": "/api/user/tokens",
       "file": "packages/mira-app-core/src/shared/sdk/modules/UserModule.ts",
-      "line": 54,
+      "line": 75,
       "hasQuery": true,
       "hasBody": false,
       "returnType": "ApiToken[]"

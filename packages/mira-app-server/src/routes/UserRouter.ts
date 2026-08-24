@@ -15,6 +15,20 @@ export class UserRouter {
         this.setupRoutes();
     }
 
+    /**
+     * 校验并解析用户文件相对路径，定位到 {dataDir}/user_data/{userId}/ 下的绝对路径。
+     * 拒绝绝对路径、. / .. 段与路径穿越；非法时返回 null。
+     */
+    private resolveUserFilePath(userId: number, relPath: unknown): string | null {
+        if (typeof relPath !== 'string' || relPath.trim() === '') return null;
+        const normalized = relPath.replace(/\\/g, '/').replace(/\/+/g, '/').replace(/^\/+/, '');
+        if (normalized.split('/').some((seg) => seg === '' || seg === '.' || seg === '..')) return null;
+        const base = path.resolve(this.dataDir, 'user_data', String(userId));
+        const target = path.resolve(base, normalized);
+        if (target !== base && !target.startsWith(base + path.sep)) return null;
+        return target;
+    }
+
     private setupRoutes(): void {
         // 获取用户信息路由 - 符合vben框架标准 (/api/user/info)
         this.router.get('/info', async (req: Request, res: Response) => {
@@ -253,6 +267,75 @@ export class UserRouter {
                 res.send(svg);
             } catch (error) {
                 console.error('Get avatar error:', error);
+                res.status(500).json({ code: 500, message: '服务器内部错误', data: null });
+            }
+        });
+
+        // ============ 通用用户文件读写（按用户隔离，存于 {dataDir}/user_data/{userId}/ 下） ============
+
+        // 读取当前登录用户数据目录下的文本文件
+        this.router.get('/files', async (req: Request, res: Response) => {
+            try {
+                const token = req.headers.authorization?.replace('Bearer ', '');
+                if (!token) {
+                    return res.status(401).json({ code: 401, message: '未提供认证令牌', data: null });
+                }
+
+                const user = await this.authRouter.getAuthService().validateToken(token);
+                if (!user) {
+                    return res.status(401).json({ code: 401, message: '无效或过期的认证令牌', data: null });
+                }
+
+                const relPath = req.query.path;
+                const filePath = this.resolveUserFilePath(user.id, relPath);
+                if (!filePath) {
+                    return res.status(400).json({ code: 400, message: '非法的文件路径', data: null });
+                }
+
+                // 文件不存在时返回 data: null，由调用方区分「无数据」
+                try {
+                    const content = await fs.promises.readFile(filePath, 'utf8');
+                    res.json({ code: 0, message: 'Success', data: { path: relPath, content } });
+                } catch (err: any) {
+                    if (err?.code === 'ENOENT') {
+                        return res.json({ code: 0, message: 'Success', data: null });
+                    }
+                    throw err;
+                }
+            } catch (error) {
+                console.error('Read user file error:', error);
+                res.status(500).json({ code: 500, message: '服务器内部错误', data: null });
+            }
+        });
+
+        // 写入当前登录用户数据目录下的文本文件（父目录自动创建）
+        this.router.put('/files', async (req: Request, res: Response) => {
+            try {
+                const token = req.headers.authorization?.replace('Bearer ', '');
+                if (!token) {
+                    return res.status(401).json({ code: 401, message: '未提供认证令牌', data: null });
+                }
+
+                const user = await this.authRouter.getAuthService().validateToken(token);
+                if (!user) {
+                    return res.status(401).json({ code: 401, message: '无效或过期的认证令牌', data: null });
+                }
+
+                const { path: relPath, content } = req.body ?? {};
+                if (typeof relPath !== 'string' || typeof content !== 'string') {
+                    return res.status(400).json({ code: 400, message: '需要提供字符串类型的 path 与 content', data: null });
+                }
+
+                const filePath = this.resolveUserFilePath(user.id, relPath);
+                if (!filePath) {
+                    return res.status(400).json({ code: 400, message: '非法的文件路径', data: null });
+                }
+
+                await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
+                await fs.promises.writeFile(filePath, content, 'utf8');
+                res.json({ code: 0, message: 'Success', data: { path: relPath } });
+            } catch (error) {
+                console.error('Write user file error:', error);
                 res.status(500).json({ code: 500, message: '服务器内部错误', data: null });
             }
         });

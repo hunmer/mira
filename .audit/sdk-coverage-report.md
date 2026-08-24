@@ -1,6 +1,6 @@
 # Mira Server API 与 SDK 覆盖报告
 
-生成时间: 2026-08-22T05:23:41.305Z
+生成时间: 2026-08-24T08:34:51.500Z
 
 匹配键: HTTP method + 归一化路径（动态参数统一为 `:param`，query string 不参与匹配）。
 
@@ -8,13 +8,13 @@
 
 | 分类 | 数量 | 说明 |
 |------|------|------|
-| covered | 119 | SDK 有等价 method+path |
+| covered | 121 | SDK 有等价 method+path |
 | partial | undefined | path 匹配但 method 不匹配 |
 | missing | 11 | SDK 无对应方法 |
 | excluded | 13 | 资源/流式/SPA/通配, 不生成普通 CRUD |
 | dynamic | 7 | 插件运行时注册/正则路由 |
 
-固定 JSON API 共 130 条, 已 100% 分类（covered 119 / partial undefined / missing 11）。
+固定 JSON API 共 132 条, 已 100% 分类（covered 121 / partial undefined / missing 11）。
 
 ## Missing (SDK 无对应方法)
 
@@ -29,7 +29,7 @@
 | PUT | `/api/libraries/:param/record/:param/:param` | libraries | packages/mira-app-server/src/routes/LibraryRoutes.ts:610 | - |  |
 | POST | `/api/plugins/:param/start` | plugins | packages/mira-app-server/src/routes/PluginRoutes.ts:803 | - |  |
 | POST | `/api/plugins/:param/stop` | plugins | packages/mira-app-server/src/routes/PluginRoutes.ts:851 | - |  |
-| GET | `/api/user/avatar/:param` | user | packages/mira-app-server/src/routes/UserRouter.ts:233 | - |  |
+| GET | `/api/user/avatar/:param` | user | packages/mira-app-server/src/routes/UserRouter.ts:247 | - |  |
 | GET | `/api/plugin-routes` | http-server-direct | packages/mira-app-server/src/HttpServer.ts:365 | - |  |
 
 ## Partial (path 匹配, method 不匹配)
@@ -181,6 +181,8 @@
 | PUT | `/api/user/info` | user | User.updateInfo |
 | POST | `/api/user/avatar` | user | User.uploadAvatar |
 | GET | `/api/user/tokens` | user | User.getTokens |
+| GET | `/api/user/files` | user | User.readFile |
+| PUT | `/api/user/files` | user | User.writeFile |
 | GET | `/api/plugin-routes/:param` | http-server-direct | Plugin.getRoutes |
 | GET | `/api/health` | http-server-direct | System.getHealth |
 | GET | `/health` | http-server-direct | System.getSimpleHealth |

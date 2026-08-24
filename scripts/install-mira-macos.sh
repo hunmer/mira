@@ -49,6 +49,19 @@ rm -rf "$INSTALL_DIR/server" "$INSTALL_DIR/runtime-deps"
 cp -R "$ROOT/server" "$INSTALL_DIR/"
 cp -R "$ROOT/runtime-deps" "$INSTALL_DIR/"
 
+mkdir -p "$INSTALL_DIR/bin"
+cat > "$INSTALL_DIR/bin/mira-app-server" <<EOF
+#!/bin/sh
+export FFMPEG_PATH="$INSTALL_DIR/runtime-deps/ffmpeg/bin/ffmpeg"
+export FFPROBE_PATH="$INSTALL_DIR/runtime-deps/ffmpeg/bin/ffprobe"
+export IMAGEMAGICK_PATH="$INSTALL_DIR/runtime-deps/imagemagick/bin/magick"
+export EXIFTOOL_PATH="$INSTALL_DIR/runtime-deps/exiftool/bin/exiftool"
+export DYLD_LIBRARY_PATH="$INSTALL_DIR/runtime-deps/ffmpeg/lib:$INSTALL_DIR/runtime-deps/imagemagick/lib:$INSTALL_DIR/runtime-deps/exiftool/lib:\${DYLD_LIBRARY_PATH:-}"
+exec "$NODE_BIN" "$INSTALL_DIR/server/mira-app-server/dist/cli.js" "\$@"
+EOF
+chmod +x "$INSTALL_DIR/bin/mira-app-server"
+grep -qF "$INSTALL_DIR/bin" "$HOME/.zprofile" || printf '\nexport PATH="%s:$PATH"\n' "$INSTALL_DIR/bin" >> "$HOME/.zprofile"
+
 DMG_ARCH="$(uname -m)"
 [[ "$DMG_ARCH" == x86_64 ]] && DMG_ARCH=x64
 DMG="$(find "$ROOT/installer" -name "*-mac-${DMG_ARCH}.dmg" -print -quit || true)"

@@ -409,6 +409,14 @@ export const useAuthStore = defineStore('auth', () => {
     } catch (err) {
       console.error('Failed to clear auth state:', err)
     }
+
+    // 布局等按用户隔离的服务器端数据，登出后需重置，避免下个账号看到旧数据
+    try {
+      const { useDashboardLayoutStore } = await import('./dashboardLayout')
+      useDashboardLayoutStore().reset()
+    } catch (err) {
+      console.warn('Failed to reset dashboard layout:', err)
+    }
   }
 
   /**

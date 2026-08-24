@@ -36,4 +36,32 @@ describe('UserModule contract', () => {
         expect(module.getAvatarUrl('1')).toBe('http://x/api/user/avatar/1?token=tk');
         expect(http.getUrl).toHaveBeenCalledWith('/api/user/avatar/1');
     });
+
+    it('reads a user file through GET /api/user/files with path param', async () => {
+        const http = { get: vi.fn().mockResolvedValue({ content: '{"a":1}' }) };
+        const module = new UserModule(http as unknown as HttpClient);
+
+        await expect(module.readFile('dashboard/layouts.json')).resolves.toBe('{"a":1}');
+        expect(http.get).toHaveBeenCalledWith('/api/user/files', {
+            params: { path: 'dashboard/layouts.json' },
+        });
+    });
+
+    it('returns null when user file does not exist', async () => {
+        const http = { get: vi.fn().mockResolvedValue(null) };
+        const module = new UserModule(http as unknown as HttpClient);
+
+        await expect(module.readFile('dashboard/layouts.json')).resolves.toBeNull();
+    });
+
+    it('writes a user file through PUT /api/user/files', async () => {
+        const http = { put: vi.fn().mockResolvedValue({ path: 'dashboard/layouts.json' }) };
+        const module = new UserModule(http as unknown as HttpClient);
+
+        await expect(module.writeFile('dashboard/layouts.json', '{"a":1}')).resolves.toBeUndefined();
+        expect(http.put).toHaveBeenCalledWith('/api/user/files', {
+            path: 'dashboard/layouts.json',
+            content: '{"a":1}',
+        });
+    });
 });

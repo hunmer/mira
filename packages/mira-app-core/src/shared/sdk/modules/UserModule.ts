@@ -48,6 +48,27 @@ export class UserModule {
     }
 
     /**
+     * 读取当前登录用户数据目录（服务器 /user_data/{user_id}/）下的文本文件
+     * @param relPath 相对路径，如 'dashboard/layouts.json'
+     * @returns 文件内容；文件不存在时返回 null
+     */
+    async readFile(relPath: string): Promise<string | null> {
+        const data = await this.httpClient.get<{ content: string } | null>('/api/user/files', {
+            params: { path: relPath },
+        });
+        return data ? data.content : null;
+    }
+
+    /**
+     * 写入当前登录用户数据目录下的文本文件（父目录不存在时自动创建）
+     * @param relPath 相对路径
+     * @param content 文本内容
+     */
+    async writeFile(relPath: string, content: string): Promise<void> {
+        await this.httpClient.put('/api/user/files', { path: relPath, content });
+    }
+
+    /**
      * 获取当前登录用户的 API Token 列表
      */
     async getTokens(): Promise<ApiToken[]> {

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-22T05:24:10.489Z",
+  "generatedAt": "2026-08-24T08:35:12.935Z",
   "summary": {
     "P3": 11,
     "excluded": 13,
@@ -270,9 +270,9 @@
       "reason": "头像为图片资源响应(sendFile); SDK 已提供 getAvatarUrl() URL builder, 按资源接口决策不建普通 GET 方法",
       "evidence": [
         "packages/mira-app-core/src/shared/sdk/modules/UserModule.contract.test.ts:37 [test]",
-        "packages/mira-app-core/src/shared/sdk/modules/UserModule.ts:61",
-        "packages/mira-client/dist-renderer/assets/js/main-C2OArGib.js:95",
-        "packages/mira-dashboard-next/src/layouts/DefaultLayout.vue:135",
+        "packages/mira-app-core/src/shared/sdk/modules/UserModule.ts:82",
+        "packages/mira-client/dist-renderer/assets/js/main-B6NLT87Y.js:95",
+        "packages/mira-dashboard-next/src/layouts/DefaultLayout.vue:163",
         "packages/mira-dashboard-next/src/views/mira/statistics/index.vue:369",
         "packages/mira-dashboard-next/src/views/mira/statistics/index.vue:417"
       ]
