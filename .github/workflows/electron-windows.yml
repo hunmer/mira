@@ -70,7 +70,7 @@ jobs:
         BUNDLE_PLATFORM: windows
         SERVER_DIR: ${{ runner.temp }}\mira-server
         INSTALLER_DIR: packages/mira-client/build
-        RELEASE_ARCHIVE: ${{ runner.temp }}\mira-windows-${{ github.ref_name || github.sha }}.zip
+        RELEASE_ARCHIVE: ${{ runner.temp }}\mira-windows-full-${{ github.ref_name || github.sha }}.zip
       run: |
         node scripts/assemble-release-bundle.mjs
 
@@ -87,9 +87,6 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          packages/mira-client/build/*.exe
-          packages/mira-client/build/*.msi
-          packages/mira-client/build/*.zip
           ${{ runner.temp }}/mira-windows-*.zip
         fail_on_unmatched_files: false
         generate_release_notes: true

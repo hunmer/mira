@@ -71,7 +71,7 @@ jobs:
         BUNDLE_PLATFORM: macos
         SERVER_DIR: ${{ runner.temp }}/mira-server
         INSTALLER_DIR: packages/mira-client/build
-        RELEASE_ARCHIVE: ${{ runner.temp }}/mira-macos-${{ github.ref_name || github.sha }}.zip
+        RELEASE_ARCHIVE: ${{ runner.temp }}/mira-macos-full-${{ github.ref_name || github.sha }}.zip
       run: |
         node scripts/assemble-release-bundle.mjs
 
@@ -88,7 +88,6 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          packages/mira-client/build/*.dmg
           ${{ runner.temp }}/mira-macos-*.zip
         fail_on_unmatched_files: false
         generate_release_notes: true
