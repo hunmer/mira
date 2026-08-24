@@ -79,7 +79,8 @@
     "deployFailed": "Deployment failed (retry)",
     "deploymentErrorTitle": "Deployment failed",
     "deploymentErrorConfirm": "OK",
-    "deploymentErrorFallback": "Deployment failed. Check the deployment step output."
+    "deploymentErrorFallback": "Deployment failed. Check the deployment step output.",
+    "deploySuccessToast": "mira-app-server deployed successfully. Open the deployment guide to connect."
   },
   "fileUploadDialog": {
     "title": "File Upload",

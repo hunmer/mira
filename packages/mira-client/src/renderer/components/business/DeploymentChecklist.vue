@@ -7,11 +7,12 @@
  *
  * 点击「启动部署」后，通过 Electron 主进程执行真实命令，并逐步展示后台输出。
  */
-import { ref, computed, onBeforeUnmount, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Motion, AnimatePresence, motion } from 'motion-v'
 import { useSettingsStore } from '@renderer/stores/settings'
 import { useServerDeploy } from '@renderer/composables/useServerDeploy'
+import { useDeployPipeline, type DeployTask, type TaskStatus } from '@renderer/composables/useDeployPipeline'
 import { cn } from '@/lib/utils'
 import { TerminalView, type TerminalLine } from '@/components/ui/terminal-view'
 import {
@@ -23,24 +24,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-
-type TaskStatus = 'pending' | 'running' | 'success' | 'skipped' | 'failed'
-type PipelineStatus = 'idle' | 'running' | 'failed' | 'success'
-
-interface Task {
-  id: number
-  title: string
-  subtitle: string
-  status: TaskStatus
-  info: string | null
-}
-
-interface DeploymentProgress {
-  stepId: number
-  type: 'status' | 'output'
-  status?: 'running' | 'success' | 'failed'
-  line?: string
-}
 
 const emit = defineEmits<{
   connect: [defaultLibraryId: string]
@@ -70,9 +53,10 @@ const {
   checkVersion,
 } = useServerDeploy()
 
-// 打开组件即检测已安装版本；同时自动检测当前生效的代理地址回填
+// 打开组件即检测已安装版本；恢复流水线单例的任务文案（保留运行状态与输出）；自动检测当前生效的代理地址回填
 onMounted(async () => {
   checkVersion()
+  syncTaskTexts(defaultTasks.value)
   try {
     const res = await window.electronAPI?.network?.detectProxy()
     const url = res?.data?.url?.trim()
@@ -82,8 +66,13 @@ onMounted(async () => {
   }
 })
 
+// 部署成功后立即刷新版本徽标（组件不在场时由下次挂载的 checkVersion 兜底）
+watch(pipelineStatus, (status) => {
+  if (status === 'success') checkVersion()
+})
+
 // 默认部署步骤（贴合 mira-app-server README 真实流程）
-const defaultTasks = computed<Task[]>(() => [
+const defaultTasks = computed<DeployTask[]>(() => [
   {
     id: 1,
     title: t('business.deploymentChecklist.task1Title'),
@@ -121,32 +110,25 @@ const defaultTasks = computed<Task[]>(() => [
   },
 ])
 
-const tasks = ref<Task[]>(defaultTasks.value.map(t => ({ ...t })))
-const pipelineStatus = ref<PipelineStatus>('idle')
-const expandedTaskIds = ref<Set<number>>(new Set())
-const defaultLibraryId = ref('')
-const deploymentError = ref('')
-const showDeploymentError = ref(false)
-
-let running = false
-
-function updateTask(taskId: number, update: Partial<Task>) {
-  tasks.value = tasks.value.map(task => (task.id === taskId ? { ...task, ...update } : task))
-}
-
-function setTaskExpanded(taskId: number, expanded: boolean) {
-  const next = new Set(expandedTaskIds.value)
-  if (expanded) next.add(taskId)
-  else next.delete(taskId)
-  expandedTaskIds.value = next
-}
+// 流水线状态为模块级单例：对话框关闭卸载组件后部署仍在主进程运行，重新打开恢复显示
+const {
+  tasks,
+  pipelineStatus,
+  expandedTaskIds,
+  defaultLibraryId,
+  deploymentError,
+  showDeploymentError,
+  runPipeline,
+  syncTaskTexts,
+  setTaskExpanded,
+} = useDeployPipeline()
 
 function toggleTask(taskId: number) {
   setTaskExpanded(taskId, !expandedTaskIds.value.has(taskId))
 }
 
 // task.info 为 \n 拼接的输出，转成终端行；当前不区分 stdout/stderr
-function taskTerminalLines(task: Task): TerminalLine[] {
+function taskTerminalLines(task: DeployTask): TerminalLine[] {
   return (task.info ?? '').split('\n').map(text => ({ type: 'stdout' as const, text }))
 }
 
@@ -157,66 +139,10 @@ function terminalStatus(status: TaskStatus): 'idle' | 'running' | 'success' | 'e
   return 'idle'
 }
 
-function appendTaskOutput(taskId: number, line: string) {
-  const task = tasks.value.find(item => item.id === taskId)
-  if (!task) return
-  const lines = task.info ? task.info.split('\n') : []
-  updateTask(taskId, { info: [...lines, line].slice(-100).join('\n') })
-}
-
-function handleDeploymentFailure(message: string) {
-  const error = message || t('business.deploymentChecklist.deploymentErrorFallback')
-  const current = tasks.value.find(task => task.status === 'running')
-  if (current) {
-    updateTask(current.id, { status: 'failed' })
-    appendTaskOutput(current.id, error)
-  }
-  deploymentError.value = error
-  showDeploymentError.value = true
-  pipelineStatus.value = 'failed'
-}
-
-async function runPipeline() {
-  if (running || updateInProgress.value || !window.electronAPI?.serverDeploy) return
-  running = true
-  pipelineStatus.value = 'running'
-  defaultLibraryId.value = ''
-  expandedTaskIds.value = new Set()
-  tasks.value = tasks.value.map(t => ({ ...t, status: 'pending', info: null }))
-
-  const api = window.electronAPI.serverDeploy
-  const onProgress = (progress: DeploymentProgress) => {
-    if (progress.type === 'status' && progress.status) {
-      updateTask(progress.stepId, { status: progress.status })
-      if (progress.status === 'success') setTaskExpanded(progress.stepId, false)
-      if (progress.status === 'failed') setTaskExpanded(progress.stepId, true)
-    }
-    if (progress.type === 'output' && progress.line) {
-      appendTaskOutput(progress.stepId, progress.line)
-      setTaskExpanded(progress.stepId, true)
-    }
-  }
-  api.removeDeployProgressListener()
-  api.onDeployProgress(onProgress)
-
-  try {
-    const result = await api.deploy({ registry: registry.value, proxy: proxy.value || undefined })
-    if (!result.success) {
-      handleDeploymentFailure(result.message || '')
-      return
-    }
-    if (!result.data?.defaultLibraryId) {
-      throw new Error(t('business.deploymentChecklist.noDefaultLibrary'))
-    }
-    defaultLibraryId.value = result.data.defaultLibraryId
-    pipelineStatus.value = 'success'
-    await checkVersion()
-  } catch (error) {
-    handleDeploymentFailure(error instanceof Error ? error.message : String(error))
-  } finally {
-    api.removeDeployProgressListener()
-    running = false
-  }
+// 启动/重试部署：版本更新通道运行中不重复触发
+function startDeploy() {
+  if (updateInProgress.value) return
+  runPipeline({ registry: registry.value, proxy: proxy.value || undefined })
 }
 
 function connectNow() {
@@ -229,11 +155,6 @@ function connectNow() {
 const MotionRect = motion.rect
 const MotionG = motion.g
 const MotionPath = motion.path
-
-onBeforeUnmount(() => {
-  running = false
-  window.electronAPI?.serverDeploy.removeDeployProgressListener()
-})
 </script>
 
 <template>
@@ -293,7 +214,7 @@ onBeforeUnmount(() => {
             ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30'
             : 'bg-amber-100 text-amber-700 hover:bg-amber-200',
         )"
-        @click="runPipeline"
+        @click="startDeploy"
       >
         {{ installedVersion ? $t('business.deploymentChecklist.actionUpdate') : $t('business.deploymentChecklist.actionInstall') }}
       </button>
@@ -451,7 +372,7 @@ onBeforeUnmount(() => {
 
     <!-- Footer button -->
     <div class="mt-3">
-      <Motion v-if="pipelineStatus === 'idle'" as="button" @click="runPipeline" :while-tap="{ scale: 0.98 }" :class="cn('flex w-full items-center justify-center gap-1.5 rounded-2xl py-2.5 font-sans text-xs font-bold transition-colors border-none cursor-pointer', isDarkMode ? 'bg-neutral-100 text-neutral-950 hover:bg-neutral-200' : 'bg-neutral-950 text-white hover:bg-neutral-900')">
+      <Motion v-if="pipelineStatus === 'idle'" as="button" @click="startDeploy" :while-tap="{ scale: 0.98 }" :class="cn('flex w-full items-center justify-center gap-1.5 rounded-2xl py-2.5 font-sans text-xs font-bold transition-colors border-none cursor-pointer', isDarkMode ? 'bg-neutral-100 text-neutral-950 hover:bg-neutral-200' : 'bg-neutral-950 text-white hover:bg-neutral-900')">
         <svg class="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" /></svg>
         {{ $t('business.deploymentChecklist.startDeploy') }}
       </Motion>
@@ -463,7 +384,7 @@ onBeforeUnmount(() => {
         <svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5L6.5 12L13 4.5" /></svg>
         {{ $t('business.deploymentChecklist.deployComplete') }}
       </Motion>
-      <Motion v-else as="button" @click="runPipeline" :while-tap="{ scale: 0.98 }" :class="cn('flex w-full items-center justify-center gap-1.5 rounded-2xl py-2.5 font-sans text-xs font-bold transition-colors border-none cursor-pointer', isDarkMode ? 'bg-neutral-800 text-neutral-200 hover:bg-neutral-700' : 'bg-neutral-200 text-neutral-800 hover:bg-neutral-300')">
+      <Motion v-else as="button" @click="startDeploy" :while-tap="{ scale: 0.98 }" :class="cn('flex w-full items-center justify-center gap-1.5 rounded-2xl py-2.5 font-sans text-xs font-bold transition-colors border-none cursor-pointer', isDarkMode ? 'bg-neutral-800 text-neutral-200 hover:bg-neutral-700' : 'bg-neutral-200 text-neutral-800 hover:bg-neutral-300')">
         <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
           <polyline points="3 3 3 8 8 8" />

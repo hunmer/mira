@@ -591,7 +591,9 @@ const totalPages = computed(() => mediaTabData.totalPages.value)
 // 从 MediaTabData 获取数据（优先使用缓存数据）
 const paginatedMediaItems = computed(() => {
   const cachedData = mediaTabData.getCachedData()
-  if (cachedData.data.length > 0) return cachedData.data
+  // 已完成请求的 tab 即使结果为空，也必须使用自己的空缓存；
+  // 否则会回退到共享的 homeController 列表，导致分屏 tab 串数据。
+  if (cachedData.lastUpdated > 0) return cachedData.data
   return homeController.paginatedMediaItems?.value || []
 })
 
@@ -765,7 +767,7 @@ const handleCompactWaterfallChange = async (val: boolean) => {
 const filteredMediaItems = computed(() => {
   // 对于MediaTabListView，filteredMediaItems应该等于缓存的总数据
   const cachedData = mediaTabData.getCachedData()
-  if (cachedData.total > 0) {
+  if (cachedData.lastUpdated > 0) {
     // 返回一个模拟的数组表示总数量
     return new Array(cachedData.total).fill(null)
   }

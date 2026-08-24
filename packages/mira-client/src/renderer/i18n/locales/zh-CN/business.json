@@ -79,7 +79,8 @@
     "deployFailed": "部署失败（重试）",
     "deploymentErrorTitle": "部署失败",
     "deploymentErrorConfirm": "知道了",
-    "deploymentErrorFallback": "部署失败，请查看部署步骤输出。"
+    "deploymentErrorFallback": "部署失败，请查看部署步骤输出。",
+    "deploySuccessToast": "mira-app-server 部署完成，打开部署指南即可连接。"
   },
   "fileUploadDialog": {
     "title": "文件上传",
