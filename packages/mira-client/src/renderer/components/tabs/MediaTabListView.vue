@@ -53,6 +53,12 @@
                 <span class="material-icons text-sm" :class="{ 'animate-spin': isLoading }">refresh</span>
                 <span>{{ $t('tabs.mediaTabListView.refreshData') }}</span>
               </button>
+              <button
+                class="w-full flex items-center space-x-2 px-3 py-2 text-sm rounded-lg hover:bg-primary/5 text-foreground dark:text-muted-foreground transition-colors"
+                @click="sectionLayoutDialogOpen = true; close()">
+                <span class="material-icons text-sm">dashboard_customize</span>
+                <span>{{ $t('tabs.mediaTabListView.customizeSections') }}</span>
+              </button>
             </div>
           </template>
         </Dropdown>
@@ -64,145 +70,152 @@
       <div class="flex-1 flex flex-col min-w-0 min-h-0">
         <!-- 媒体内容 - files 和 trash 都使用统一的视图 -->
         <div class="flex-1 min-h-0 overflow-y-auto w-full min-w-0" @wheel="handleCtrlWheel">
-          <!-- 顶部的子文件夹 -->
-          <section v-if="props.viewType !== 'trash' && showFoldersInTab">
-            <header class="flex items-center justify-between px-5 pt-3 pb-1">
-              <h3 class="text-sm font-medium text-foreground">{{ $t('views.sidebarModuleList.folders') }}</h3>
-              <div class="flex items-center gap-2">
-                <span
-                  class="inline-flex min-w-5 h-5 items-center justify-center rounded-full bg-muted px-1.5 text-xs font-medium text-muted-foreground">{{
-                  childFolderItems.length }}</span>
-                <button
-                  class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full p-0 text-muted-foreground hover:bg-primary/10 hover:text-primary"
-                  :title="$t('views.sidebarModuleList.addFolder')" @click="showFolderDialog = true"><span
-                    class="material-icons text-base leading-none">add</span></button>
-              </div>
-            </header>
-            <div v-if="childFolderItems.length > 0">
-              <div ref="folderGridRef" class="folder-card-grid" :style="{ '--folder-grid-item-size': `${folderGridItemSize}px` }">
-                <FolderContextMenu v-for="item in visibleChildFolderItems" :key="String(item.raw.id)" :folder="item.raw as any"
-                  :folders="availableFolders as any" @refresh="handleRefresh(true)">
-                  <div class="folder-card-button" role="button" tabindex="0" :title="item.label"
-                    @click="handleChildFolderSelect(item.raw, $event)"
-                    @keydown.enter.prevent="handleChildFolderSelect(item.raw, $event)"
-                    @keydown.space.prevent="handleChildFolderSelect(item.raw, $event)"
-                    @dragover.prevent.stop="canUpload && handleFolderCardDragOver($event)"
-                    @dragleave.prevent.stop="canUpload && handleFolderCardDragLeave($event)"
-                    @drop.prevent.stop="canUpload && handleDrop($event, String(item.raw.id))">
-                    <Folder :size="folderCardUiSize" :label="item.label" :badge="item.count ?? 0"
-                      :thumbnail="folderCoverUrls[String(item.raw.id)]"
-                      :custom-color="getFolderColor(item.raw.color)" />
-                  </div>
-                </FolderContextMenu>
-                <!-- 超过两行时的展开/收起占位卡片 -->
-                <button v-if="folderGridOverflow" type="button"
-                  class="flex flex-col items-center justify-center gap-1 rounded-3xl border border-dashed border-border text-muted-foreground transition-colors hover:border-primary hover:bg-primary/10 hover:text-primary"
-                  :style="{ width: `${folderGridItemSize}px`, height: `${folderGridItemSize}px` }"
-                  :title="folderCollapsed
-                    ? $t('tabs.mediaTabListView.expandFolders', { count: folderHiddenCount })
-                    : $t('tabs.mediaTabListView.collapseFolders')"
-                  @click="folderCollapsed = !folderCollapsed">
-                  <span class="material-icons text-2xl">{{ folderCollapsed ? 'expand_more' : 'expand_less' }}</span>
-                  <span v-if="folderCollapsed" class="text-xs font-medium tabular-nums">+{{ folderHiddenCount }}</span>
-                </button>
-              </div>
-            </div>
-            <div v-else class="py-4">
-              <StatusImage name="empty" size="large" :text="$t('tabs.mediaTabListView.emptyFolderTitle')" />
-            </div>
-
-          </section>
-          <div>
-            <header class="flex items-center justify-between px-5 pt-3 pb-1">
-              <h3 class="text-sm font-medium text-foreground">{{ $t('views.sidebarModuleList.media') }}</h3>
-              <div class="flex items-center gap-2">
-                <span
-                  class="inline-flex min-w-5 h-5 items-center justify-center rounded-full bg-muted px-1.5 text-xs font-medium text-muted-foreground">{{
-                  filteredMediaItems.length }}</span>
-                <!-- 素材分组下拉菜单 -->
-                <Dropdown :offset="{ x: 0, y: 4 }" placement="bottom-start">
-                  <template #trigger>
+          <OrderedSectionList :items="visibleSections" headerless>
+            <template #default="{ item: section }">
+              <!-- 顶部的子文件夹 -->
+              <section v-if="section.id === 'folders'">
+                <header class="flex items-center justify-between px-5 pt-3 pb-1">
+                  <h3 class="text-sm font-medium text-foreground">{{ $t('views.sidebarModuleList.folders') }}</h3>
+                  <div class="flex items-center gap-2">
+                    <span
+                      class="inline-flex min-w-5 h-5 items-center justify-center rounded-full bg-muted px-1.5 text-xs font-medium text-muted-foreground">{{
+                      childFolderItems.length }}</span>
                     <button
-                      class="flex h-7 w-7 items-center justify-center rounded-lg border border-white/60 bg-white/40 p-0 text-muted-foreground shadow-sm backdrop-blur transition-colors hover:bg-white/60 hover:text-primary dark:border-border dark:bg-muted/60 dark:hover:bg-muted"
-                      :title="groupingOptions.find(option => option.value === groupingMode)?.label">
-                      <span class="material-icons text-sm">view_agenda</span>
+                      class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full p-0 text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                      :title="$t('views.sidebarModuleList.addFolder')" @click="showFolderDialog = true"><span
+                        class="material-icons text-base leading-none">add</span></button>
+                  </div>
+                </header>
+                <div v-if="childFolderItems.length > 0">
+                  <div ref="folderGridRef" class="folder-card-grid"
+                    :style="{ '--folder-grid-item-size': `${folderGridItemSize}px` }">
+                    <FolderContextMenu v-for="item in visibleChildFolderItems" :key="String(item.raw.id)"
+                      :folder="item.raw as any" :folders="availableFolders as any" @refresh="handleRefresh(true)">
+                      <div class="folder-card-button" role="button" tabindex="0" :title="item.label"
+                        @click="handleChildFolderSelect(item.raw, $event)"
+                        @keydown.enter.prevent="handleChildFolderSelect(item.raw, $event)"
+                        @keydown.space.prevent="handleChildFolderSelect(item.raw, $event)"
+                        @dragover.prevent.stop="canUpload && handleFolderCardDragOver($event)"
+                        @dragleave.prevent.stop="canUpload && handleFolderCardDragLeave($event)"
+                        @drop.prevent.stop="canUpload && handleDrop($event, String(item.raw.id))">
+                        <Folder :size="folderCardUiSize" :label="item.label" :badge="item.count ?? 0"
+                          :thumbnail="folderCoverUrls[String(item.raw.id)]"
+                          :custom-color="getFolderColor(item.raw.color)" />
+                      </div>
+                    </FolderContextMenu>
+                    <!-- 超过两行时的展开/收起占位卡片 -->
+                    <button v-if="folderGridOverflow" type="button"
+                      class="flex flex-col items-center justify-center gap-1 rounded-3xl border border-dashed border-border text-muted-foreground transition-colors hover:border-primary hover:bg-primary/10 hover:text-primary"
+                      :style="{ width: `${folderGridItemSize}px`, height: `${folderGridItemSize}px` }"
+                      :title="folderCollapsed
+                        ? $t('tabs.mediaTabListView.expandFolders', { count: folderHiddenCount })
+                        : $t('tabs.mediaTabListView.collapseFolders')"
+                      @click="folderCollapsed = !folderCollapsed">
+                      <span class="material-icons text-2xl">{{ folderCollapsed ? 'expand_more' : 'expand_less' }}</span>
+                      <span v-if="folderCollapsed" class="text-xs font-medium tabular-nums">+{{ folderHiddenCount }}</span>
                     </button>
-                  </template>
-                  <template #content="{ close }">
-                    <div class="min-w-[150px] py-1">
-                      <button v-for="option in groupingOptions" :key="option.value"
-                        :class="['w-full flex items-center space-x-2 px-3 py-2 text-sm rounded-lg hover:bg-primary/5 transition-colors', groupingMode === option.value ? 'bg-primary/10 text-primary' : 'text-foreground dark:text-muted-foreground']"
-                        @click="handleGroupingChange(option.value); close()">
-                        <span>{{ option.label }}</span>
-                        <span v-if="groupingMode === option.value" class="material-icons ml-auto text-sm text-primary">check</span>
-                      </button>
-                    </div>
-                  </template>
-                </Dropdown>
-                <ImportDropdown :target="importTarget" @upload="handleListUpload" @import-folder="handleImportFolder" />
+                  </div>
+                </div>
+                <div v-else class="py-4">
+                  <StatusImage name="empty" size="large" :text="$t('tabs.mediaTabListView.emptyFolderTitle')" />
+                </div>
+              </section>
+
+              <div v-else-if="section.id === 'media'">
+                <header class="flex items-center justify-between px-5 pt-3 pb-1">
+                  <h3 class="text-sm font-medium text-foreground">{{ $t('views.sidebarModuleList.media') }}</h3>
+                  <div class="flex items-center gap-2">
+                    <span
+                      class="inline-flex min-w-5 h-5 items-center justify-center rounded-full bg-muted px-1.5 text-xs font-medium text-muted-foreground">{{
+                      filteredMediaItems.length }}</span>
+                    <!-- 素材分组下拉菜单 -->
+                    <Dropdown :offset="{ x: 0, y: 4 }" placement="bottom-start">
+                      <template #trigger>
+                        <button
+                          class="flex h-7 w-7 items-center justify-center rounded-lg border border-white/60 bg-white/40 p-0 text-muted-foreground shadow-sm backdrop-blur transition-colors hover:bg-white/60 hover:text-primary dark:border-border dark:bg-muted/60 dark:hover:bg-muted"
+                          :title="groupingOptions.find(option => option.value === groupingMode)?.label">
+                          <span class="material-icons text-sm">view_agenda</span>
+                        </button>
+                      </template>
+                      <template #content="{ close }">
+                        <div class="min-w-[150px] py-1">
+                          <button v-for="option in groupingOptions" :key="option.value"
+                            :class="['w-full flex items-center space-x-2 px-3 py-2 text-sm rounded-lg hover:bg-primary/5 transition-colors', groupingMode === option.value ? 'bg-primary/10 text-primary' : 'text-foreground dark:text-muted-foreground']"
+                            @click="handleGroupingChange(option.value); close()">
+                            <span>{{ option.label }}</span>
+                            <span v-if="groupingMode === option.value"
+                              class="material-icons ml-auto text-sm text-primary">check</span>
+                          </button>
+                        </div>
+                      </template>
+                    </Dropdown>
+                    <ImportDropdown :target="importTarget" @upload="handleListUpload"
+                      @import-folder="handleImportFolder" />
+                  </div>
+                </header>
+
+                <!-- 分组章节导航：滚动时固定在视图右上角 -->
+                <div v-if="groupingMode !== 'none' && groupChapters.length > 0"
+                  class="sticky top-2 z-20 flex h-0 justify-end px-5 pointer-events-none">
+                  <div class="pointer-events-auto px-1 py-2">
+                    <ChapterScrubber :chapters="groupChapters" side="left" :row-height="12" :peak-length="42"
+                      :label="$t('tabs.mediaTabListView.groupNavigation')" @select="handleGroupChapterSelect" />
+                  </div>
+                </div>
+
+                <section v-for="(group, groupIndex) in mediaGroups" :key="group.key" class="mb-3"
+                  :data-media-group-index="groupIndex">
+                  <header v-if="groupingMode !== 'none'"
+                    class="sticky top-0 z-10 flex items-center gap-2 bg-background/95 px-5 pt-3 pb-1 backdrop-blur-sm">
+                    <h4 class="text-sm font-medium text-foreground">{{ group.label }}</h4>
+                    <span
+                      class="inline-flex min-w-5 h-5 items-center justify-center rounded-full bg-muted px-1.5 text-xs font-medium text-muted-foreground">{{
+                      group.items.length }}</span>
+                  </header>
+
+                  <!-- 网格视图 -->
+                  <MediaGridComponent v-if="viewMode === 'grid'" :key="`grid-${viewMode}-${group.key}`" class="p-5"
+                    :items="group.items" :selected-items="selectedItems" :card-size="cardSize"
+                    :columns-per-row="columnsPerRow" :is-trash="viewType === 'trash'" @media-click="handleMediaClick"
+                    @media-double-click="handleMediaDoubleClick" @media-select="handleMediaSelect"
+                    @media-context-menu="handleMediaContextMenu" @media-info="handleMediaInfo"
+                    @media-set-folder="handleMediaSetFolder" @media-set-tags="handleMediaSetTags"
+                    @media-delete="handleMediaDelete" @media-restore="handleMediaRestore" />
+
+                  <!-- 列表视图 -->
+                  <MediaListComponent v-if="viewMode === 'list'" :key="`list-${viewMode}-${group.key}`" class="p-5"
+                    :items="group.items" :selected-items="selectedItems" :is-trash="viewType === 'trash'"
+                    @click="handleMediaClick" @dblclick="handleMediaDoubleClick"
+                    @media-context-menu="handleMediaContextMenu" @media-info="handleMediaInfo"
+                    @media-set-folder="handleMediaSetFolder" @media-set-tags="handleMediaSetTags"
+                    @media-select="handleMediaSelect" @media-delete="handleMediaDelete"
+                    @media-restore="handleMediaRestore" />
+
+                  <!-- 瀑布流视图 -->
+                  <div v-if="viewMode === 'waterfall'" class="w-full">
+                    <WaterfallComponent ref="waterfallRef" :key="`waterfall-${viewMode}-${group.key}`" class="p-5"
+                      :items="group.items" :selected-items="selectedItems" :is-trash="viewType === 'trash'"
+                      :column-width="dynamicColumnWidth" :columns-per-row="columnsPerRow"
+                      :gap="compactWaterfall ? 0 : 16" :compact="compactWaterfall"
+                      :debug-label="`${groupIndex}:${group.label}`"
+                      :lazyload="groupingMode === 'none'"
+                      :enter-animation="groupingMode === 'none'" :layout-transition="groupingMode === 'none'"
+                      @click="handleMediaClick" @dblclick="handleMediaDoubleClick"
+                      @media-context-menu="handleMediaContextMenu" @media-info="handleMediaInfo"
+                      @media-set-folder="handleMediaSetFolder" @media-set-tags="handleMediaSetTags"
+                      @media-select="handleMediaSelect" @media-delete="handleMediaDelete"
+                      @media-restore="handleMediaRestore" />
+                  </div>
+                </section>
+
+                <!-- 如果没有匹配的视图模式 -->
+                <div v-if="!['grid', 'list', 'waterfall'].includes(viewMode)"
+                  class="flex items-center justify-center h-40 text-muted-foreground dark:text-muted-foreground">
+                  {{ $t('tabs.mediaTabListView.unknownViewMode', { mode: viewMode }) }}
+                </div>
               </div>
-            </header>
-
-            <!-- 分组章节导航：滚动时固定在视图右上角 -->
-            <div v-if="groupingMode !== 'none' && groupChapters.length > 0"
-              class="sticky top-2 z-20 flex h-0 justify-end px-5 pointer-events-none">
-              <div class="pointer-events-auto px-1 py-2">
-                <ChapterScrubber :chapters="groupChapters" side="left" :row-height="12" :peak-length="42"
-                  :label="$t('tabs.mediaTabListView.groupNavigation')" @select="handleGroupChapterSelect" />
-              </div>
-            </div>
-
-            <section v-for="(group, groupIndex) in mediaGroups" :key="group.key" class="mb-3"
-              :data-media-group-index="groupIndex">
-              <header v-if="groupingMode !== 'none'"
-                class="sticky top-0 z-10 flex items-center gap-2 bg-background/95 px-5 pt-3 pb-1 backdrop-blur-sm">
-                <h4 class="text-sm font-medium text-foreground">{{ group.label }}</h4>
-                <span
-                  class="inline-flex min-w-5 h-5 items-center justify-center rounded-full bg-muted px-1.5 text-xs font-medium text-muted-foreground">{{
-                    group.items.length }}</span>
-              </header>
-
-              <!-- 网格视图 -->
-              <MediaGridComponent v-if="viewMode === 'grid'" :key="`grid-${viewMode}-${group.key}`" class="p-5"
-                :items="group.items" :selected-items="selectedItems" :card-size="cardSize"
-                :columns-per-row="columnsPerRow" :is-trash="viewType === 'trash'" @media-click="handleMediaClick"
-                @media-double-click="handleMediaDoubleClick" @media-select="handleMediaSelect"
-                @media-context-menu="handleMediaContextMenu" @media-info="handleMediaInfo"
-                @media-set-folder="handleMediaSetFolder" @media-set-tags="handleMediaSetTags"
-                @media-delete="handleMediaDelete" @media-restore="handleMediaRestore" />
-
-              <!-- 列表视图 -->
-              <MediaListComponent v-if="viewMode === 'list'" :key="`list-${viewMode}-${group.key}`" class="p-5"
-                :items="group.items" :selected-items="selectedItems" :is-trash="viewType === 'trash'"
-                @click="handleMediaClick" @dblclick="handleMediaDoubleClick"
-                @media-context-menu="handleMediaContextMenu" @media-info="handleMediaInfo"
-                @media-set-folder="handleMediaSetFolder" @media-set-tags="handleMediaSetTags"
-                @media-select="handleMediaSelect" @media-delete="handleMediaDelete"
-                @media-restore="handleMediaRestore" />
-
-              <!-- 瀑布流视图 -->
-              <div v-if="viewMode === 'waterfall'" class="w-full">
-                <WaterfallComponent ref="waterfallRef" :key="`waterfall-${viewMode}-${group.key}`" class="p-5"
-                  :items="group.items" :selected-items="selectedItems" :is-trash="viewType === 'trash'"
-                  :column-width="dynamicColumnWidth" :columns-per-row="columnsPerRow"
-                  :gap="compactWaterfall ? 0 : 16" :compact="compactWaterfall"
-                  :debug-label="`${groupIndex}:${group.label}`"
-                  :lazyload="groupingMode === 'none'"
-                  :enter-animation="groupingMode === 'none'" :layout-transition="groupingMode === 'none'"
-                  @click="handleMediaClick" @dblclick="handleMediaDoubleClick"
-                  @media-context-menu="handleMediaContextMenu" @media-info="handleMediaInfo"
-                  @media-set-folder="handleMediaSetFolder" @media-set-tags="handleMediaSetTags"
-                  @media-select="handleMediaSelect" @media-delete="handleMediaDelete"
-                  @media-restore="handleMediaRestore" />
-              </div>
-            </section>
-
-            <!-- 如果没有匹配的视图模式 -->
-            <div v-if="!['grid', 'list', 'waterfall'].includes(viewMode)"
-              class="flex items-center justify-center h-40 text-muted-foreground dark:text-muted-foreground">
-              {{ $t('tabs.mediaTabListView.unknownViewMode', { mode: viewMode }) }}
-            </div>
-          </div>
+            </template>
+          </OrderedSectionList>
         </div>
 
         <!-- 浮动操作栏 -->
@@ -393,6 +406,21 @@
       :initial-folder-id="uploadFolderId" :initial-tag-ids="uploadTagIds" :initial-local-tree="uploadInitialTree" />
     <FolderEditDialog :visible="showFolderDialog" :parent-folder="currentFolder" :available-folders="folderEditAvailableFolders" item-type="folder"
       @close="showFolderDialog = false" @save="handleFolderSave" />
+
+    <!-- 区块排序 / 隐藏设置对话框 -->
+    <SortableLayoutDialog v-model="sectionLayoutDialogOpen" :enabled="enabledSections" :disabled="disabledSections"
+      :title="$t('tabs.mediaTabListView.sectionLayoutTitle')"
+      :description="$t('tabs.mediaTabListView.sectionLayoutDescription')"
+      :enabled-title="$t('tabs.mediaTabListView.sectionLayoutEnabled')"
+      :disabled-title="$t('tabs.mediaTabListView.sectionLayoutDisabled')"
+      :done-label="$t('common.confirm')" :reset-label="$t('common.resetOrder')"
+      :empty-disabled-label="$t('tabs.mediaTabListView.sectionLayoutAllEnabled')"
+      @update:enabled="updateSectionLayout" @update:disabled="() => {}">
+      <template #item="{ item }">
+        <span class="material-icons text-base text-muted-foreground">{{ item.icon }}</span>
+        <div class="min-w-0 flex-1 truncate text-xs">{{ item.title }}</div>
+      </template>
+    </SortableLayoutDialog>
   </div>
 </template>
 
@@ -429,13 +457,14 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useMediaStore } from '@renderer/stores/media'
 import { useTagStore } from '@renderer/stores/tag'
 import { useSettingsStore } from '@renderer/stores/settings'
 import { useHomeController } from '@renderer/controllers/HomeController'
 import { useMediaOperations, useFilters, useViewModeConfig } from '@renderer/composables'
 import { useMediaTabData } from '@renderer/composables/useMediaTabData'
-import { getLibraryPrefs, getSavedFilters } from '@renderer/composables/LibraryPrefs'
+import { getLibraryPrefs, getSavedFilters, saveMediaTabLayout } from '@renderer/composables/LibraryPrefs'
 import MediaGridComponent from '@renderer/components/business/MediaGridComponent.vue'
 import MediaListComponent from '@renderer/components/business/MediaListComponent.vue'
 import WaterfallComponent from '@renderer/components/business/WaterfallComponent.vue'
@@ -448,6 +477,8 @@ import FilterBar from '@/renderer/components/business/FilterBar/FilterBar.vue'
 import Breadcrumb from '@/renderer/components/common/Breadcrumb.vue'
 import StatusImage from '@/renderer/components/common/StatusImage.vue'
 import { Dropdown } from '@/renderer/components/common/Dropdown'
+import OrderedSectionList from '@/renderer/components/common/OrderedSectionList.vue'
+import SortableLayoutDialog from '@/renderer/components/common/SortableLayoutDialog.vue'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Switch } from '@/components/ui/switch'
 import { ChapterScrubber } from '@/components/ui/chapter-scrubber'
@@ -742,6 +773,39 @@ const tagTreeItems = computed(() => tagStore.tags || [])
 
 // 设置面板「标签页展示文件夹」开关（存于 LibraryPrefs，按素材库隔离）
 const showFoldersInTab = computed(() => getLibraryPrefs().showFoldersInTab)
+
+// ============================================
+// 区块（文件夹 / 素材）排序与隐藏：复用 FilterBar 的布局偏好模式
+// ============================================
+const { t } = useI18n()
+interface MediaTabSection { id: string; title: string; icon: string }
+// 内置区块：回收站视图没有子文件夹区
+const builtinTabSections = computed<MediaTabSection[]>(() => {
+  const media = { id: 'media', title: t('views.sidebarModuleList.media'), icon: 'photo_library' }
+  return props.viewType === 'trash'
+    ? [media]
+    : [{ id: 'folders', title: t('views.sidebarModuleList.folders'), icon: 'folder' }, media]
+})
+// 空布局 = 全部按默认顺序显示；不在列表中的区块隐藏
+const enabledSections = computed<MediaTabSection[]>(() => {
+  const order = getLibraryPrefs().mediaTabLayout
+  if (!order.length) return builtinTabSections.value
+  return order
+    .map(id => builtinTabSections.value.find(section => section.id === id))
+    .filter(Boolean) as MediaTabSection[]
+})
+const disabledSections = computed(() =>
+  builtinTabSections.value.filter(section => !enabledSections.value.some(e => e.id === section.id))
+)
+// 渲染时文件夹区还受「标签页展示文件夹」设置控制
+const visibleSections = computed(() =>
+  showFoldersInTab.value
+    ? enabledSections.value
+    : enabledSections.value.filter(section => section.id !== 'folders')
+)
+
+const sectionLayoutDialogOpen = ref(false)
+const updateSectionLayout = (items: MediaTabSection[]) => { void saveMediaTabLayout(items.map(item => item.id)) }
 
 const handleMediaDelete = async (_item: FileInfo) => {
   await handleRefresh()

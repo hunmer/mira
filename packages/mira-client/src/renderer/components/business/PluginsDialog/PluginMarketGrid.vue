@@ -57,7 +57,7 @@ const pluginStore = usePluginStore()
     </div>
 
     <!-- 市场插件列表 -->
-    <div v-else class="grid grid-cols-2 gap-4">
+    <div v-else class="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-4">
       <PluginCard
         v-for="entry in ctx.filteredMarketplacePlugins.value"
         :key="entry.pluginId"
@@ -66,7 +66,7 @@ const pluginStore = usePluginStore()
       />
 
       <!-- 空状态 -->
-      <div v-if="ctx.filteredMarketplacePlugins.value.length === 0" class="col-span-2 text-center py-12">
+      <div v-if="ctx.filteredMarketplacePlugins.value.length === 0" class="col-span-full text-center py-12">
         <span class="material-icons text-6xl text-muted-foreground dark:text-muted-foreground">store</span>
         <p class="text-muted-foreground dark:text-muted-foreground mt-4">
           {{ ctx.searchQuery.value ? t('business.pluginsDialog.noMarketMatch') : t('business.pluginsDialog.marketEmpty') }}

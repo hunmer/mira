@@ -19,7 +19,7 @@
           <main class="flex-1 flex flex-col min-w-0 min-h-0 border border-border dark:border-border rounded-lg overflow-hidden">
             <div class="flex-1 p-4 overflow-y-auto">
               <!-- 本地插件列表 -->
-              <div v-if="activeTab === 'local'" class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div v-if="activeTab === 'local'" class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                 <PluginCard
                   v-for="plugin in filteredLocalPlugins"
                   :key="plugin.config.pluginId"
@@ -27,7 +27,7 @@
                   :plugin="plugin"
                 />
                 <!-- 空状态 -->
-                <div v-if="filteredLocalPlugins.length === 0" class="col-span-2 text-center py-12">
+                <div v-if="filteredLocalPlugins.length === 0" class="col-span-full text-center py-12">
                   <span class="material-icons text-6xl text-muted-foreground dark:text-muted-foreground">extension</span>
                   <p class="text-muted-foreground dark:text-muted-foreground mt-4">
                     {{ searchQuery ? $t('business.pluginsDialog.noMatch') : $t('business.pluginsDialog.noLocalPlugins') }}
@@ -36,14 +36,14 @@
               </div>
 
               <!-- 服务器插件列表 -->
-              <div v-else-if="activeTab === 'server'" class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div v-else-if="activeTab === 'server'" class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                 <PluginCard
                   v-for="plugin in filteredServerPlugins"
                   :key="plugin.config.pluginId"
                   kind="server"
                   :plugin="plugin"
                 />
-                <div v-if="filteredServerPlugins.length === 0" class="col-span-2 text-center py-12">
+                <div v-if="filteredServerPlugins.length === 0" class="col-span-full text-center py-12">
                   <span class="material-icons text-6xl text-muted-foreground dark:text-muted-foreground">dns</span>
                   <p class="text-muted-foreground dark:text-muted-foreground mt-4">
                     {{ searchQuery ? $t('business.pluginsDialog.noMatch') : $t('business.pluginsDialog.noServerPlugins') }}

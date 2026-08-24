@@ -47,6 +47,8 @@ interface LibraryPrefsData {
   confirmAfterImport: boolean
   /** FilterBar 区块显示顺序（启用的区块 id；不在列表中的区块隐藏） */
   filterBarLayout: string[]
+  /** 媒体标签页区块显示顺序（启用的区块 id；不在列表中的区块隐藏） */
+  mediaTabLayout: string[]
 }
 
 const STORAGE_KEY_PREFIX = 'mira-library-prefs'
@@ -66,7 +68,8 @@ const state = reactive<LibraryPrefsData>({
   skipDeleteConfirm: false,
   showFoldersInTab: true,
   confirmAfterImport: true,
-  filterBarLayout: []
+  filterBarLayout: [],
+  mediaTabLayout: []
 })
 
 const getStorageKey = () => `${STORAGE_KEY_PREFIX}-${tabPersistence.getScopeId() || 'default'}`
@@ -90,7 +93,8 @@ const persist = async () => {
     skipDeleteConfirm: state.skipDeleteConfirm,
     showFoldersInTab: state.showFoldersInTab,
     confirmAfterImport: state.confirmAfterImport,
-    filterBarLayout: state.filterBarLayout
+    filterBarLayout: state.filterBarLayout,
+    mediaTabLayout: state.mediaTabLayout
   }))
 }
 
@@ -138,6 +142,9 @@ export async function loadLibraryPrefs(): Promise<void> {
     state.confirmAfterImport = parsed?.confirmAfterImport !== false
     state.filterBarLayout = Array.isArray(parsed?.filterBarLayout)
       ? parsed.filterBarLayout.filter((id: any) => typeof id === 'string')
+      : []
+    state.mediaTabLayout = Array.isArray(parsed?.mediaTabLayout)
+      ? parsed.mediaTabLayout.filter((id: any) => typeof id === 'string')
       : []
   } catch (error) {
     console.error('Failed to load library prefs:', error)
@@ -194,6 +201,12 @@ export async function saveConfirmAfterImport(confirm: boolean): Promise<void> {
 /** 保存 FilterBar 区块显示顺序（空数组表示全部按默认顺序显示） */
 export async function saveFilterBarLayout(ids: string[]): Promise<void> {
   state.filterBarLayout = ids.filter(id => typeof id === 'string')
+  await persist()
+}
+
+/** 保存媒体标签页区块显示顺序（空数组表示全部按默认顺序显示） */
+export async function saveMediaTabLayout(ids: string[]): Promise<void> {
+  state.mediaTabLayout = ids.filter(id => typeof id === 'string')
   await persist()
 }
 

@@ -47,7 +47,13 @@
     "filterUrls": "URL filter",
     "filterTitle": "Title filter",
     "filterSize": "Size filter",
-    "filterCategory": "Category filter"
+    "filterCategory": "Category filter",
+    "customizeSections": "Customize sections",
+    "sectionLayoutTitle": "Customize section layout",
+    "sectionLayoutDescription": "Drag to reorder sections; move one to the right to hide it",
+    "sectionLayoutEnabled": "Visible sections",
+    "sectionLayoutDisabled": "Hidden sections",
+    "sectionLayoutAllEnabled": "All sections are visible"
   },
   "homeTabView": {
     "dashboard": "Dashboard",

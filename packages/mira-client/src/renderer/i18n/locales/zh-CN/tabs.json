@@ -47,7 +47,13 @@
     "filterUrls": "网址筛选",
     "filterTitle": "标题筛选",
     "filterSize": "大小筛选",
-    "filterCategory": "类别筛选"
+    "filterCategory": "类别筛选",
+    "customizeSections": "自定义区块",
+    "sectionLayoutTitle": "自定义区块布局",
+    "sectionLayoutDescription": "拖动调整区块顺序，将区块移到右侧即可隐藏",
+    "sectionLayoutEnabled": "显示的区块",
+    "sectionLayoutDisabled": "隐藏的区块",
+    "sectionLayoutAllEnabled": "所有区块均已显示"
   },
   "homeTabView": {
     "dashboard": "仪表盘",
