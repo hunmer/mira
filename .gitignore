@@ -20,6 +20,3 @@ packages/mira-client/dist-float/
 packages/mira-client/build/
 packages/mira-app-server/web/
 packages/landing-page/introduction/
-
-# Docker 构建用外部 SDK 物化产物（scripts 同步自 G:/procm-mcp）
-docker-deps/
