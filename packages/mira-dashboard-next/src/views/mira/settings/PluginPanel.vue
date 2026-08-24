@@ -8,25 +8,45 @@ import { Badge } from '@/components/ui/badge'
 import { toast } from 'vue-sonner'
 import { RiAddLine, RiDeleteBin7Line, RiStarLine, RiStarFill } from '@remixicon/vue'
 
-// ===== 插件源管理 (插件商店的 JSON 源, 持久化在 localStorage, 与插件页共享) =====
+// ===== 插件源管理 (插件商店的 JSON 源, 持久化在服务端 settings, 与插件页共享) =====
 const {
-  sources: pluginSources, activeId: pluginActiveId,
+  sources: pluginSources, activeId: pluginActiveId, ready: pluginSourcesReady,
   addSource: addPluginSource, removeSource: removePluginSource, setActive: setPluginSourceActive,
 } = usePluginSources()
 const pluginForm = ref({ name: '', url: '' })
 
-function addPluginSrc() {
+async function addPluginSrc() {
   const url = pluginForm.value.url.trim()
   if (!url) { toast.error('请填写插件源 URL'); return }
-  addPluginSource(pluginForm.value.name, url)
-  pluginForm.value = { name: '', url: '' }
-  toast.success('已添加插件源')
+  try {
+    await addPluginSource(pluginForm.value.name, url)
+    pluginForm.value = { name: '', url: '' }
+    toast.success('已添加插件源')
+  } catch {
+    toast.error('保存插件源失败（需要管理员权限）')
+  }
 }
 
-function removePluginSrc(id: string) {
+async function removePluginSrc(id: string) {
   if (!confirm('确定删除该插件源？')) return
-  removePluginSource(id)
+  try {
+    await removePluginSource(id)
+  } catch {
+    toast.error('删除插件源失败')
+  }
 }
+
+async function markPluginSrcActive(id: string) {
+  try {
+    await setPluginSourceActive(id)
+  } catch {
+    toast.error('设置当前插件源失败')
+  }
+}
+
+// 源列表加载中提示
+const listLoading = ref(true)
+void pluginSourcesReady.finally(() => { listLoading.value = false })
 </script>
 
 <template>
@@ -46,7 +66,8 @@ function removePluginSrc(id: string) {
         </div>
 
         <!-- 源列表 -->
-        <div v-if="pluginSources.length" class="space-y-2">
+        <div v-if="listLoading" class="py-6 text-center text-sm text-muted-foreground">加载中...</div>
+        <div v-else-if="pluginSources.length" class="space-y-2">
           <div
             v-for="s in pluginSources"
             :key="s.id"
@@ -55,7 +76,7 @@ function removePluginSrc(id: string) {
             <button
               class="shrink-0"
               :title="s.id === pluginActiveId ? '当前应用' : '设为当前应用'"
-              @click="setPluginSourceActive(s.id)"
+              @click="markPluginSrcActive(s.id)"
             >
               <RiStarFill v-if="s.id === pluginActiveId" class="size-4 text-yellow-500" />
               <RiStarLine v-else class="size-4 text-muted-foreground hover:text-yellow-500" />

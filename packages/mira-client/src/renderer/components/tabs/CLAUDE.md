@@ -7,6 +7,7 @@
 | 日期 | 操作 | 说明 |
 |------|------|------|
 | 2026-05-12 | 架构扫描更新 | 补充面包屑导航 |
+| 2026-08-24 | 重构 | `LocalFolderTabView.vue` 按功能拆分到 `LocalFolderTabView/` 子目录（纯重构，逻辑不变） |
 
 ## 概述
 
@@ -18,6 +19,7 @@ Tab 视图组件目录包含 Tab 系统的视图层实现。
 |------|------|------|
 | `HomeTabView.vue` | - | 首页 Tab 视图（基于 grid-layout-plus 的可自定义卡片仪表盘） |
 | `MediaTabListView.vue` | ~900 | 媒体列表 Tab 视图（核心，最大的视图组件；脚本为装配层，功能拆分到 `MediaTabListView/` 子目录） |
+| `LocalFolderTabView.vue` | ~430 | 本地文件夹 Tab 视图（Electron fs 浏览器；脚本为装配层，功能拆分到 `LocalFolderTabView/` 子目录） |
 
 ## MediaTabListView 功能拆分
 
@@ -38,6 +40,28 @@ Tab 视图组件目录包含 Tab 系统的视图层实现。
 | `useMediaTabItemFields.ts` | 展示字段开关：控制视图项展示哪些信息 |
 
 依赖注入约定：`homeController` / `mediaTabData` / `emit` / `fetchPageData` / `handleRefresh` / `selectedItems` 等跨功能状态由主组件创建后作为 deps 传入；Pinia store 在各组合式函数内部自建（单例）。
+
+## LocalFolderTabView 功能拆分
+
+`LocalFolderTabView/` 目录按功能存放从 `LocalFolderTabView.vue` 拆出的组合式函数与子组件（纯重构，逻辑不变）：
+
+| 文件 | 职责 |
+|------|------|
+| `localFolderUtils.ts` | 纯工具：entryType/formatSize/mimeType/路径规整、toFileSystemEntry、`LocalFolderEntryActions` 接口 |
+| `useLocalEntryFilters.ts` | 筛选/排序状态：searchQuery、type/dateFilter、sortKey/sortDirection + filterAndSortEntries |
+| `useLocalPagination.ts` | 分页：pageLimits、滚动触底加载更多、按路径清除分页 |
+| `useLocalThumbnails.ts` | 网格缩略图：native 缩略图请求去重、缓存与重置 |
+| `useLocalGallery.ts` | 画廊预览：galleryEntry 图片预览 Blob URL 生命周期 |
+| `useLocalFileActions.ts` | 文件操作：导入/上传对话框、copy/move picker、删除、定位、拖拽 |
+| `LocalFolderHeader.vue` | 头部：返回上级、面包屑、路径编辑、刷新 |
+| `LocalFolderToolbar.vue` | 工具栏：搜索、类型/日期筛选、排序、视图切换、网格尺寸 |
+| `LocalFolderEntryMenu.vue` | 条目右键菜单（list/grid、columns、gallery 三处复用） |
+| `LocalFolderListGridView.vue` | 列表/网格视图 |
+| `LocalFolderColumnsView.vue` | 分栏视图 + 选中文件信息面板 |
+| `LocalFolderGalleryView.vue` | 画廊视图 + 预览 + 信息侧栏（expose `galleryScrollRef`） |
+| `LocalFolderSelectionBar.vue` | 底部批量操作栏 |
+
+依赖注入约定：目录导航/选中/tab 持久化等跨功能状态由主组件创建，文件操作通过 deps getter 传入 `useLocalFileActions`；各视图子组件只接收 props + 统一的 `actions: LocalFolderEntryActions` 回调对象（由主组件组装），不直接引用全局状态。
 
 ## Tab 视图架构
 

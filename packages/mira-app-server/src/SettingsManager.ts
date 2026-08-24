@@ -1,14 +1,34 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
+export interface PluginSourceSetting {
+    id: string;
+    name: string;
+    url: string;
+}
+
 export interface ServerSettings {
     authRequired: boolean;
     allowRegistration: boolean;
+    /** 插件商店的 JSON 源列表（服务端存储，与前端插件商店共享） */
+    pluginSources: PluginSourceSetting[];
+    /** 当前应用的插件源 id */
+    pluginSourceActive: string;
 }
+
+const DEFAULT_PLUGIN_SOURCES: PluginSourceSetting[] = [
+    {
+        id: 'official',
+        name: '官方插件源',
+        url: 'https://raw.githubusercontent.com/hunmer/mira/refs/heads/main/plugins/plugins/plugins.recommend.json',
+    },
+];
 
 const DEFAULT_SETTINGS: ServerSettings = {
     authRequired: true,
     allowRegistration: true,
+    pluginSources: DEFAULT_PLUGIN_SOURCES,
+    pluginSourceActive: 'official',
 };
 
 export class SettingsManager {
@@ -24,9 +44,9 @@ export class SettingsManager {
         try {
             const data = await fs.promises.readFile(this.settingsPath, 'utf8');
             const parsed = JSON.parse(data);
-            this.settings = { ...DEFAULT_SETTINGS, ...parsed };
+            this.settings = { ...DEFAULT_SETTINGS, pluginSources: [...DEFAULT_PLUGIN_SOURCES], ...parsed };
         } catch {
-            this.settings = { ...DEFAULT_SETTINGS };
+            this.settings = { ...DEFAULT_SETTINGS, pluginSources: [...DEFAULT_PLUGIN_SOURCES] };
             await this.save();
         }
     }

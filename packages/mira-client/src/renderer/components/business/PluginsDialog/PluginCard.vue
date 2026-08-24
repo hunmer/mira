@@ -49,7 +49,7 @@ const error = computed(() => (isRuntime.value ? runtime.value!.error : ''))
   <TiltCard
     @click="ctx.selectPlugin({ kind, pluginId })"
     :class="[
-      'border rounded-lg p-4 hover:shadow-md cursor-pointer transition-all',
+      'flex flex-col border rounded-lg p-4 hover:shadow-md cursor-pointer transition-all',
       ctx.isSelected(kind, pluginId)
         ? 'border-primary ring-1 ring-primary/30 bg-primary/5'
         : 'border-border dark:border-border'
@@ -156,7 +156,7 @@ const error = computed(() => (isRuntime.value ? runtime.value!.error : ''))
     </div>
 
     <!-- 底部操作区（按 kind 分支） -->
-    <div class="flex items-center justify-end space-x-2 mt-3 pt-3 border-t border-border dark:border-border" @click.stop>
+    <div class="flex items-center justify-end space-x-2 mt-auto pt-3 border-t border-border dark:border-border" @click.stop>
       <!-- 本地：详情 / 重载 / 更新 / 卸载 -->
       <template v-if="kind === 'local'">
         <button

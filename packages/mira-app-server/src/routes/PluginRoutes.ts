@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import axios from 'axios';
 import * as fs from 'fs';
 import * as path from 'path';
 import { spawnSync, spawn } from 'child_process';
@@ -161,6 +162,26 @@ export class PluginRoutes {
     }
 
     private setupRoutes(): void {
+        // 插件商店源代理：由服务端抓取远程 JSON，规避浏览器 CORS 限制
+        // 需注册在 /:id 之前，避免被单段路径参数路由抢占
+        this.router.get('/store', async (req: Request, res: Response) => {
+            const url = typeof req.query.url === 'string' ? req.query.url.trim() : '';
+            if (!/^https?:\/\//i.test(url)) {
+                return res.status(400).json({ code: 400, message: 'url 必须为 http(s) 地址', data: null });
+            }
+            try {
+                const resp = await axios.get(url, { timeout: 15000, responseType: 'json' });
+                res.json({ code: 0, data: resp.data });
+            } catch (error) {
+                console.error('Error fetching plugin store source:', url, error instanceof Error ? error.message : error);
+                res.status(502).json({
+                    code: 502,
+                    message: `插件源获取失败: ${error instanceof Error ? error.message : 'unknown'}`,
+                    data: null,
+                });
+            }
+        });
+
         // 获取素材库当前启用、且提供 Web 前端的服务端插件
         this.router.get('/web', async (req: Request, res: Response) => {
             try {

@@ -30,12 +30,23 @@ export interface ClientConfig {
     getToken?: () => string | undefined;
 }
 
+// 插件商店源（服务端存储）
+export interface PluginSourceItem {
+    id: string;
+    name: string;
+    url: string;
+}
+
 // 服务器设置
 export interface ServerSettings {
     /** API 访问是否要求登录 */
     authRequired: boolean;
     /** 是否允许自注册 */
     allowRegistration: boolean;
+    /** 插件商店的 JSON 源列表 */
+    pluginSources?: PluginSourceItem[];
+    /** 当前应用的插件源 id */
+    pluginSourceActive?: string;
 }
 
 // API Token

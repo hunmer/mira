@@ -75,19 +75,20 @@ interface StorePlugin {
   registry?: string
 }
 
-const { activeSource: activePluginSource } = usePluginSources()
+const { activeSource: activePluginSource, ready: pluginSourcesReady } = usePluginSources()
 const storePlugins = ref<StorePlugin[]>([])
 const storeLoading = ref(false)
 
 async function loadStorePlugins() {
+  // 等待插件源从服务端加载完成（首次进入页面时可能仍在请求中）
+  await pluginSourcesReady
   const url = activePluginSource.value?.url
   if (!url) { storePlugins.value = []; return }
   storeLoading.value = true
   try {
-    // 使用原生 fetch, 避开 axios 的 baseURL 限制, 支持任意静态 JSON 源
-    const res = await fetch(url)
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    const data = await res.json()
+    // 由后端代理抓取远程 JSON，规避浏览器 CORS 限制
+    const res = await pluginApi.fetchStore(url)
+    const data = res.data?.data
     const list = Array.isArray(data) ? data : (data?.plugins ?? [])
     storePlugins.value = list.filter((p: any) => p && p.name)
   } catch {
