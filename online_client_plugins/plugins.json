@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-21T12:08:30.791Z",
+  "generatedAt": "2026-08-24T06:58:17.267Z",
   "plugins": [
     {
       "pluginId": "7c1f9e2a-4b3d-4c8e-9f6a-2d5b8e7c1a04",
@@ -70,69 +70,6 @@
       ]
     },
     {
-      "pluginId": "d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70",
-      "pluginName": "3D 格式预览",
-      "version": "1.2.1",
-      "description": "为 GLB/GLTF 文件提供可交互的 3D 线框缩略图和详情查看入口，验证自定义格式插件 API。",
-      "author": "Mira Team",
-      "homepage": "https://github.com/mira-team/mira-3d-format-preview",
-      "category": "development",
-      "tags": [
-        "3D",
-        "GLB",
-        "GLTF",
-        "预览"
-      ],
-      "minAppVersion": "1.0.0",
-      "platform": [
-        "win32",
-        "darwin",
-        "linux"
-      ],
-      "directory": "plugins/mira-3d-format-preview",
-      "icon": null,
-      "readme": "README.md",
-      "size": 1225363,
-      "checksum": "sha256:10f0d77dad66e8a5ff6f8445b8de6daa8e19994a93dc7960b13a5c0d6aa2e4c4",
-      "files": [
-        {
-          "path": "README.md",
-          "size": 2512,
-          "checksum": "sha256:3877f0a25be0b6671c468766eb3990221e605d2d4a7884aac164d4741ffb90e9"
-        },
-        {
-          "path": "plugin.json",
-          "size": 648,
-          "checksum": "sha256:c0687ce293cf1b8df64097a748ceb5d1787ea5cdb816a74deeb5f7d3d983706c"
-        },
-        {
-          "path": "package.json",
-          "size": 781,
-          "checksum": "sha256:d0337f5c03e964f3954b7017d4bd04c6336c3f469fb5ed806fab427b69c7f533"
-        },
-        {
-          "path": "index.js",
-          "size": 4317,
-          "checksum": "sha256:c24b51146e825cd8e16677d3cbdf4288328f789f53326623d24508cff9db89e0"
-        },
-        {
-          "path": "dist/index.html",
-          "size": 403,
-          "checksum": "sha256:ddce05f9ac936766c92442ad8521ac41ee059749715b8ddd12b7c779b73e87ad"
-        },
-        {
-          "path": "dist/assets/index-n21lOX6w.js",
-          "size": 1178988,
-          "checksum": "sha256:7226c8f2d00ec0151e71b9d8eb244169f2681fb9c54162943ff343b983b26fab"
-        },
-        {
-          "path": "dist/assets/index-DTzHfNEk.css",
-          "size": 37714,
-          "checksum": "sha256:81cba7f9c039ff339e8d769b6ad4278eee31065c595a28ae7d775a2fc0359dfd"
-        }
-      ]
-    },
-    {
       "pluginId": "7e2d31a4-8a3f-4bd8-a44c-f5a7b2d0c901",
       "pluginName": "自定义 Tab Demo",
       "version": "1.0.0",
@@ -170,84 +107,6 @@
           "path": "index.js",
           "size": 3078,
           "checksum": "sha256:1772f031fb2d9dda7907fa34a7d0d3a38312ea0ae8b233f269b417469f850b33"
-        }
-      ]
-    },
-    {
-      "pluginId": "e5f6a7b8-c9d0-4e1f-8a2b-3c4d5e6f7081",
-      "pluginName": "Spine 格式预览",
-      "version": "1.0.0",
-      "description": "为 Spine 4.2 .skel/.spine 文件提供可交互的骨骼动画预览（骨骼树查看/显隐、动画切换、皮肤切换），缩略图由服务端渲染 idle 首帧。",
-      "author": "Mira Team",
-      "homepage": "https://github.com/mira-team/mira-spine-format-preview",
-      "category": "development",
-      "tags": [
-        "Spine",
-        "skel",
-        "骨骼动画",
-        "预览"
-      ],
-      "minAppVersion": "1.0.0",
-      "platform": [
-        "win32",
-        "darwin",
-        "linux"
-      ],
-      "directory": "plugins/mira-spine-format-preview",
-      "icon": null,
-      "readme": null,
-      "size": 1495809,
-      "checksum": "sha256:a7d0c72fc96db0daad37a64c26af63e7287f02f7bd756eb82c36611adf99b3e8",
-      "files": [
-        {
-          "path": "public/vendor/spine-pixi-v7-4.2.63.min.js",
-          "size": 187895,
-          "checksum": "sha256:0ffc0699e0392085d15338aa8d543a621711f06857fde337ec8d895e1e8bce15"
-        },
-        {
-          "path": "public/vendor/pixi-7.3.3.min.js",
-          "size": 454845,
-          "checksum": "sha256:97f839f755b300177d6fc61903d1bb50c0f101687c88c4b3a9e94f68059286df"
-        },
-        {
-          "path": "plugin.json",
-          "size": 724,
-          "checksum": "sha256:adede3d9cc5fc47ea93b16cf3a8072318e6a8d4b23d60d272d318e9ad0e71087"
-        },
-        {
-          "path": "package.json",
-          "size": 677,
-          "checksum": "sha256:81b1aa0b1d0f4a88f37b77159b1282b7f5ba99c09eea5e71689ecdffcb0e267b"
-        },
-        {
-          "path": "index.js",
-          "size": 7115,
-          "checksum": "sha256:2053108aaf2c223fc7befe5fa1c80f1403d2791e9ff75329515d28457ce0bf53"
-        },
-        {
-          "path": "dist/vendor/spine-pixi-v7-4.2.63.min.js",
-          "size": 187895,
-          "checksum": "sha256:0ffc0699e0392085d15338aa8d543a621711f06857fde337ec8d895e1e8bce15"
-        },
-        {
-          "path": "dist/vendor/pixi-7.3.3.min.js",
-          "size": 454845,
-          "checksum": "sha256:97f839f755b300177d6fc61903d1bb50c0f101687c88c4b3a9e94f68059286df"
-        },
-        {
-          "path": "dist/index.html",
-          "size": 701,
-          "checksum": "sha256:5f13e360e5f9225c652bcf27a2f5bb5e64649c744080e25f16183877ffb83360"
-        },
-        {
-          "path": "dist/assets/index-y7fiq0cG.css",
-          "size": 35583,
-          "checksum": "sha256:57f72475b2671886b6d24aeae2a369e37a4d865ec5f0ab50c80428f3df509b63"
-        },
-        {
-          "path": "dist/assets/index-CzYr3dI5.js",
-          "size": 165529,
-          "checksum": "sha256:6463e510cfd8e384c42950cc570e6393d4e202bdcb5789d013cfa2659d1c4f57"
         }
       ]
     },
@@ -440,80 +299,6 @@
           "path": "dist/assets/index-D1f21AIU.css",
           "size": 143887,
           "checksum": "sha256:a765943f5ac22f01281d698f0cfa75e1bc5da6c5776d99326a0130a63d432d6f"
-        }
-      ]
-    },
-    {
-      "pluginId": "ea4f60c2-0e0d-41e2-b224-f436fbb4487b",
-      "pluginName": "PSD 分层预览",
-      "version": "1.0.0",
-      "description": "为 .psd/.psb 文件提供浏览器本地分层预览（图层树显隐、可见性切换、normal + opacity 合成），缩略图由服务端渲染。",
-      "author": "Mira Team",
-      "homepage": "https://github.com/mira-team/mira-psd-viewer",
-      "category": "development",
-      "tags": [
-        "PSD",
-        "PSB",
-        "Photoshop",
-        "图层",
-        "分层预览"
-      ],
-      "minAppVersion": "1.0.0",
-      "platform": [
-        "win32",
-        "darwin",
-        "linux"
-      ],
-      "directory": "plugins/psd-viewer",
-      "icon": null,
-      "readme": "README.md",
-      "size": 547812,
-      "checksum": "sha256:567ccaf04e9bfb8326661aacfa77d624ffb43aef9a9a48a8545bc2e1243a8b2b",
-      "files": [
-        {
-          "path": "README.md",
-          "size": 2613,
-          "checksum": "sha256:4db13f1d893ae53ea94642571c9dd3896017141128a11725fbb10fb37f60536f"
-        },
-        {
-          "path": "plugin.json",
-          "size": 701,
-          "checksum": "sha256:0d4bc553a505b15eece71d683653759a296bc004b0c65a3dec145319ae75b046"
-        },
-        {
-          "path": "package.json",
-          "size": 657,
-          "checksum": "sha256:ad8b34948fe980a4d887929744f247db89fdb08eb6f8aae32b7c051e67a7b44f"
-        },
-        {
-          "path": "index.js",
-          "size": 5429,
-          "checksum": "sha256:27a733e862a1a60ad5208e4f841263159cf776f058a9fa2aa45572a006ea9c57"
-        },
-        {
-          "path": "dist/index.html",
-          "size": 417,
-          "checksum": "sha256:b5f07eace6f2d24201ce85cea898227d9dcd7d78e435432f474dbefa4250226e"
-        },
-        {
-          "path": "dist/assets/psdWorker-oZFAK-O5.js",
-          "size": 197289,
-          "checksum": "sha256:655f5750b10134c3baec7b5c7d3498657c8a536c01abb1ce630dc1a2da7ff592"
-        },
-        {
-          "path": "dist/assets/index-jLWidxh6.js",
-          "size": 111369,
-          "checksum": "sha256:1efcdadd1f6f0d07981366b2417051ff260ca4c3de9ff799c7026c537dab8be7"
-        },
-        {
-          "path": "dist/assets/index-DE_Myy-p.js",
-          "size": 195891,
-          "checksum": "sha256:2625446e0be819c34372c6ffa18b61e1a3e5dd4564a7fcede7cd391b5307f356"
-        },
-        {
-          "path": "dist/assets/index-B0TL7tWw.css",
-          "size": 33446,
-          "checksum": "sha256:fcf21c53fb1d1ef348aba43415f3fae84ab6263228ca255c86bc9567484e878c"
         }
       ]
     }
