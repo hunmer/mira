@@ -4,8 +4,9 @@
  * 活动标签 / 关闭 / 切换等数据与逻辑由 index.vue 通过 props 注入，
  * 共享 layoutId="home-active-tab" 的激活态指示器在本组件内渲染。
  */
-import { ref, watch, nextTick } from 'vue'
+import { ref, watch, nextTick, computed } from 'vue'
 import { Motion, LayoutGroup } from 'motion-v'
+import { useSettingsStore } from '@renderer/stores/settings'
 import {
   ContextMenu,
   ContextMenuTrigger,
@@ -57,6 +58,9 @@ const splitLayouts: Array<{ id: HomeSplitLayout; icon: string; labelKey: string 
 const draggingTabId = ref<string>()
 const dragOverTabId = ref<string>()
 const failedIconUrls = ref(new Map<string, string>())
+const settingsStore = useSettingsStore()
+// 是否展示 tab 图标（设置面板「展示 tab 图标」）
+const showTabIcons = computed(() => settingsStore.settings.showTabIcons)
 
 function isImageIcon(tab: TabItem) {
   return /^(https?|site-icon):\/\//i.test(tab.icon) && failedIconUrls.value.get(tab.id) !== tab.icon
@@ -177,9 +181,9 @@ function handleDragEnd() {
                 :transition="{ type: 'spring', stiffness: 400, damping: 32 }"
                 class="absolute inset-0 z-0 rounded-t-lg border border-b-0 border-white/30 shadow-[0_-4px_16px_var(--shadow-primary-sm)]"
                 :style="{ backgroundColor: tab.iconColor || 'var(--primary)' }" />
-              <img v-if="isImageIcon(tab)" :src="tab.icon" alt="" draggable="false"
+              <img v-if="showTabIcons && isImageIcon(tab)" :src="tab.icon" alt="" draggable="false"
                 class="relative z-[1] h-3 w-3 shrink-0 rounded-sm object-contain" @error="handleIconError(tab)" />
-              <span v-else class="relative z-[1] material-icons text-[12px] leading-none"
+              <span v-else-if="showTabIcons" class="relative z-[1] material-icons text-[12px] leading-none"
                 :style="{ color: tab.active ? '#fff' : tab.iconColor }">
                 {{ tab.icon }}
               </span>

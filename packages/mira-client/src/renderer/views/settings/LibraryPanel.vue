@@ -31,6 +31,22 @@
       />
     </div>
 
+    <!-- 展示 tab 图标 -->
+    <div class="flex items-center justify-between gap-4 py-3">
+      <div class="min-w-0">
+        <label class="text-foreground dark:text-muted-foreground text-base font-medium leading-normal">
+          {{ t('settings.showTabIcons') }}
+        </label>
+        <p class="text-muted-foreground dark:text-muted-foreground text-sm mt-2">
+          {{ t('settings.showTabIconsDesc') }}
+        </p>
+      </div>
+      <Switch
+        :model-value="settingsStore.settings.showTabIcons"
+        @update:model-value="handleShowTabIconsChange"
+      />
+    </div>
+
     <!-- 默认视图选项 -->
     <div>
       <div class="flex flex-wrap items-end gap-4 py-3">
@@ -211,6 +227,10 @@ const handleMultiLibraryViewsChange = async (enabled: boolean) => {
 
 const handleOpenFilePreviewInTabChange = async (enabled: boolean) => {
   await settingsStore.updateSetting('openFilePreviewInTab', enabled)
+}
+
+const handleShowTabIconsChange = async (enabled: boolean) => {
+  await settingsStore.updateSetting('showTabIcons', enabled)
 }
 
 const handleDeleteConfirmChange = async (enabled: boolean) => {

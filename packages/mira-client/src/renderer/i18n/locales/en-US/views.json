@@ -117,6 +117,7 @@
     "locateFolder": "Reveal in file explorer"
   },
   "sidebarToolbar": {
+    "moreActions": "More actions",
     "import": "Import",
     "importTo": "Import to...",
     "uploadFile": "Upload files",

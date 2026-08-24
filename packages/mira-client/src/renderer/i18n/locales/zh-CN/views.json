@@ -117,6 +117,7 @@
     "locateFolder": "定位到文件夹"
   },
   "sidebarToolbar": {
+    "moreActions": "更多操作",
     "import": "导入",
     "importTo": "导入到",
     "uploadFile": "上传文件",

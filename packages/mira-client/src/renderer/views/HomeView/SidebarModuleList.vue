@@ -3,8 +3,8 @@
  * SidebarModuleList —— HomeSidebar 模块化内容区 + 顶部工具图标 + 底部搜索。
  *
  * 顶部 headerActions 图标（原 SidebarToolbar 迁入）：
- *   - 导入下拉（上传文件 / 导入文件夹 / 从 URL 导入）
- *   - 文件夹管理、标签管理、自定义布局
+ *   - dot dropdown（导入子菜单：上传文件 / 导入文件夹 / 从 URL 导入 + 自定义布局）
+ * 文件夹管理 / 标签管理图标分别位于 folders / tags 模块的 header actions。
  *
  * 按 enabledModules（自定义布局 store 维护的启用顺序）渲染若干 Collapsible 模块：
  *   - shortcuts：快捷分类（全部/未分类/未标签/回收站）
@@ -22,7 +22,7 @@ import FolderTreeComponent from '@renderer/components/business/FolderTreeCompone
 import SidebarHistoryModule from './SidebarHistoryModule.vue'
 import WebFavoritesPanel from './WebFavoritesPanel.vue'
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible'
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent } from '@/components/ui/dropdown-menu'
 import {
   ContextMenu,
   ContextMenuTrigger,
@@ -441,58 +441,37 @@ defineExpose({ locateItem })
       @customize="layoutDialogOpen = true"
     >
       <template #headerActions>
-        <!-- 导入下拉（上传文件 / 导入文件夹 / 从 URL 导入） -->
+        <!-- 更多操作（dot dropdown）：导入 / 自定义布局 -->
         <DropdownMenu>
           <DropdownMenuTrigger as-child>
             <button
               type="button"
               class="header-action-btn pointer-events-auto relative z-10 cursor-pointer text-primary disabled:opacity-50 disabled:cursor-not-allowed"
-              :title="$t('views.sidebarToolbar.import')"
+              :title="$t('views.sidebarToolbar.moreActions')"
               :disabled="isImporting"
               @mousedown.stop
             >
-              <span class="material-icons pointer-events-none leading-none text-primary" style="font-size: 18px">{{ isImporting ? 'hourglass_top' : 'drive_folder_upload' }}</span>
+              <span class="material-icons pointer-events-none leading-none text-primary" style="font-size: 18px">{{ isImporting ? 'hourglass_top' : 'more_vert' }}</span>
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" class="w-40">
-            <DropdownMenuItem @click="handleToolbarUpload"><span class="material-icons text-base mr-2">upload_file</span><span>{{ $t('views.sidebarToolbar.uploadFile') }}</span></DropdownMenuItem>
-            <DropdownMenuItem @click="handleToolbarImportFolder"><span class="material-icons text-base mr-2">folder_open</span><span>{{ $t('views.sidebarToolbar.importFolder') }}</span></DropdownMenuItem>
-            <DropdownMenuItem @click="handleToolbarUrlImport"><span class="material-icons text-base mr-2">cloud_download</span><span>{{ $t('business.homeHeader.importFromUrl') }}</span></DropdownMenuItem>
+          <DropdownMenuContent align="end" class="w-44">
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <span class="material-icons text-base mr-2">drive_folder_upload</span>
+                <span>{{ $t('views.sidebarToolbar.import') }}</span>
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent class="w-40">
+                <DropdownMenuItem @click="handleToolbarUpload"><span class="material-icons text-base mr-2">upload_file</span><span>{{ $t('views.sidebarToolbar.uploadFile') }}</span></DropdownMenuItem>
+                <DropdownMenuItem @click="handleToolbarImportFolder"><span class="material-icons text-base mr-2">folder_open</span><span>{{ $t('views.sidebarToolbar.importFolder') }}</span></DropdownMenuItem>
+                <DropdownMenuItem @click="handleToolbarUrlImport"><span class="material-icons text-base mr-2">cloud_download</span><span>{{ $t('business.homeHeader.importFromUrl') }}</span></DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+            <DropdownMenuItem @click="layoutDialogOpen = true">
+              <span class="material-icons text-base mr-2">dashboard_customize</span>
+              <span>{{ $t('views.sidebarToolbar.customizeLayout') }}</span>
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-
-        <!-- 文件夹管理 -->
-        <button
-          type="button"
-          class="header-action-btn pointer-events-auto relative z-10 cursor-pointer text-primary"
-          :title="$t('views.sidebarToolbar.manageFolders')"
-          @click.stop.prevent="handleManageFolders"
-          @mousedown.stop
-        >
-          <span class="material-icons pointer-events-none leading-none text-primary" style="font-size: 18px">drive_file_move</span>
-        </button>
-
-        <!-- 标签管理 -->
-        <button
-          type="button"
-          class="header-action-btn pointer-events-auto relative z-10 cursor-pointer text-primary"
-          :title="$t('views.sidebarToolbar.manageTags')"
-          @click.stop.prevent="handleManageTags"
-          @mousedown.stop
-        >
-          <span class="material-icons pointer-events-none leading-none text-primary" style="font-size: 18px">sell</span>
-        </button>
-
-        <!-- 自定义布局 -->
-        <button
-          type="button"
-          class="header-action-btn pointer-events-auto relative z-10 cursor-pointer text-primary"
-          :title="$t('views.sidebarToolbar.customizeLayout')"
-          @click.stop.prevent="layoutDialogOpen = true"
-          @mousedown.stop
-        >
-          <span class="material-icons pointer-events-none leading-none text-primary" style="font-size: 18px">dashboard_customize</span>
-        </button>
       </template>
     </OrderedSectionList>
     <Collapsible
@@ -530,6 +509,13 @@ defineExpose({ locateItem })
               >
                 <span class="material-icons leading-none" style="font-size: 18px">add</span>
               </button>
+              <button
+                class="header-action-btn"
+                :title="$t('views.sidebarToolbar.manageFolders')"
+                @click="handleManageFolders"
+              >
+                <span class="material-icons leading-none" style="font-size: 18px">drive_file_move</span>
+              </button>
             </div>
           </template>
 
@@ -550,6 +536,13 @@ defineExpose({ locateItem })
                 @click="tagTreeRef?.handleAdd?.()"
               >
                 <span class="material-icons leading-none" style="font-size: 18px">add</span>
+              </button>
+              <button
+                class="header-action-btn"
+                :title="$t('views.sidebarToolbar.manageTags')"
+                @click="handleManageTags"
+              >
+                <span class="material-icons leading-none" style="font-size: 18px">sell</span>
               </button>
             </div>
           </template>
@@ -820,6 +813,22 @@ defineExpose({ locateItem })
   align-items: center;
   gap: 0.125rem;
   margin-left: auto;
+}
+
+/* 桌面端：hover 模块标题时才显示操作按钮（搜索激活 / 键盘聚焦时保持可见）；移动端始终显示 */
+@media (min-width: 768px) {
+  .header-actions {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 150ms ease;
+  }
+
+  .section-header:hover .header-actions,
+  .section-header:focus-within .header-actions,
+  .header-actions:has(.text-primary) {
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 
 .header-action-btn {
