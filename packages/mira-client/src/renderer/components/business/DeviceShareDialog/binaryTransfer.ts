@@ -1,3 +1,4 @@
+import { ref } from 'vue'
 import { toast } from 'vue-sonner'
 import i18n from '@renderer/i18n'
 import { appService } from '@renderer/services'
@@ -59,6 +60,15 @@ interface BinaryRecvSession {
 
 const sendSessions = new Map<string, BinarySendSession>()
 const recvSessions = new Map<string, BinaryRecvSession>()
+
+/** 发送端本地推流进度（shareId → 位置）：发送界面按文件展示 已完成/进行中/排队 的状态源 */
+export interface BinarySendProgress {
+  /** 已完整推送的文件数 */
+  completed: number
+  /** 正在推送文件（索引 completed）的文件内进度 0-1 */
+  filePercent: number
+}
+export const binarySendProgress = ref(new Map<string, BinarySendProgress>())
 
 /* ---------------- 帧编解码 ---------------- */
 
@@ -145,6 +155,8 @@ export function cancelBinarySend(shareId: string): void {
   clearTimeout(session.acceptTimer)
   clearTimeout(session.gcTimer)
   sendSessions.delete(shareId)
+  binarySendProgress.value.delete(shareId)
+  binarySendProgress.value = new Map(binarySendProgress.value)
 }
 
 /* ---------------- 发送端 ---------------- */
@@ -156,6 +168,12 @@ function markTransferFailed(shareId: string): void {
     item.state = 'failed'
     item.updatedAt = Date.now()
   }
+}
+
+function setSendProgress(shareId: string, completed: number, filePercent: number): void {
+  binarySendProgress.value.set(shareId, { completed, filePercent })
+  // Map 原地更新不触发 ref，替换引用保证响应
+  binarySendProgress.value = new Map(binarySendProgress.value)
 }
 
 /**
@@ -179,6 +197,7 @@ async function pumpSendSession(session: BinarySendSession): Promise<void> {
   const t = i18n.global.t
   try {
     let seq = 0
+    let fileIndex = 0
     for (const file of session.files) {
       for (let pos = 0; pos < file.size; pos += CHUNK_SIZE) {
         if (session.canceled || sendSessions.get(session.shareId) !== session) return
@@ -186,8 +205,11 @@ async function pumpSendSession(session: BinarySendSession): Promise<void> {
         if (!webSocketService.sendBinary(buildBinaryFrame(session.targetClientId, session.shareId, seq++, 0, buf))) {
           throw new Error(t('business.deviceShare.binaryDisconnected'))
         }
+        setSendProgress(session.shareId, fileIndex, Math.min(1, (pos + CHUNK_SIZE) / file.size))
         await drainBacklog(() => session.canceled)
       }
+      fileIndex++
+      setSendProgress(session.shareId, fileIndex, 1)
     }
     if (session.canceled || sendSessions.get(session.shareId) !== session) return
     // 流结束帧：接收端以此与总字节数双保险判断完成
@@ -250,6 +272,15 @@ export function receiveBinaryShare(
     // 通知发送端可以开始推流
     sendBinaryAccept(message.from, session.shareId)
   })
+}
+
+/**
+ * 终止接收会话：发送端主动取消（收到 mira-share-cancel）或接收端本地取消下载，
+ * 上层 receiveShareFiles 随之 reject → 接收 UI 显示取消/失败。
+ */
+export function cancelBinaryReceive(shareId: string, reason = 'canceled'): void {
+  const session = recvSessions.get(shareId)
+  if (session) finishRecv(session, new Error(reason))
 }
 
 /** WebSocketService 二进制帧回调：按 shareId 分发给接收会话 */

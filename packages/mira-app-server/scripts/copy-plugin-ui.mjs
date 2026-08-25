@@ -46,11 +46,15 @@ run('pnpm', ['run', 'build'], pluginUiDir)
 // vue 浏览器构建：经 plugin-ui 自身依赖解析（pnpm 严格 node_modules）
 const vuePkgDir = path.dirname(createRequire(pathToFileURL(path.join(pluginUiDir, 'package.json'))).resolve('vue/package.json'))
 const vueGlobal = path.join(vuePkgDir, 'dist', 'vue.global.prod.js')
+// JSZip 浏览器构建（pair.html 接收多文件打包保存用）：经 app-server 自身依赖解析
+const serverRequire = createRequire(pathToFileURL(path.join(appServerDir, 'package.json')))
+const jszipMin = path.join(path.dirname(serverRequire.resolve('jszip/package.json')), 'dist', 'jszip.min.js')
 
 const files = [
   [path.join(pluginUiDistDir, 'mira-plugin-ui.umd.js'), 'mira-plugin-ui.umd.js'],
   [path.join(pluginUiDistDir, 'mira-plugin-ui.css'), 'mira-plugin-ui.css'],
   [vueGlobal, 'vue.global.prod.js'],
+  [jszipMin, 'jszip.min.js'],
 ]
 
 fs.mkdirSync(targetDir, { recursive: true })

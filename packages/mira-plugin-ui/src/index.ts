@@ -20,6 +20,7 @@ import * as menubar from './components/ui/menubar'
 import * as popover from './components/ui/popover'
 import * as progress from './components/ui/progress'
 import * as select from './components/ui/select'
+import * as spinner from './components/ui/spinner'
 import * as tabs from './components/ui/tabs'
 import * as tagsInput from './components/ui/tags-input'
 
@@ -45,6 +46,7 @@ export * from './components/ui/menubar'
 export * from './components/ui/popover'
 export * from './components/ui/progress'
 export * from './components/ui/select'
+export * from './components/ui/spinner'
 export * from './components/ui/tabs'
 export * from './components/ui/tags-input'
 
@@ -69,6 +71,7 @@ const components = {
   ...popover,
   ...progress,
   ...select,
+  ...spinner,
   ...tabs,
   ...tagsInput,
 }

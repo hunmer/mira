@@ -14,10 +14,12 @@ export interface DeviceTransferItem {
   /** 目标设备描述（发送时的 describeDevice 结果） */
   targetLabel: string
   files: DeviceShareMessage['files']
-  /** sent=已送达待接收 receiving=对方下载中 done=完成 failed=失败 declined=对方拒绝 */
-  state: 'sent' | 'receiving' | 'done' | 'failed' | 'declined'
+  /** sent=已送达待接收 receiving=对方下载中 done=完成 failed=失败 declined=对方拒绝 canceled=发送端主动取消 */
+  state: 'sent' | 'receiving' | 'done' | 'failed' | 'declined' | 'canceled'
   /** 对端下载进度 0-1 */
   percent: number
+  /** 对端 URL/票据部分（素材文件）接收进度 0-1：发送列表按文件大小映射单文件状态 */
+  urlPercent?: number
   createdAt: number
   updatedAt: number
 }
@@ -60,9 +62,13 @@ export function resetTransferForResend(item: DeviceTransferItem, message: Device
 export function applyShareAck(ack: DeviceShareAck): void {
   const item = deviceTransfers.value.find(t => t.id === ack.shareId)
   if (!item) return
+  // 已被发送端本地取消：忽略迟到的对端回执（取消后对端 binary 会话失败会回 failed ack）
+  if (item.state === 'canceled') return
   if (!['receiving', 'done', 'failed', 'declined'].includes(ack.state)) return
   item.state = ack.state
   item.percent = ack.state === 'done' ? 1 : (ack.percent ?? item.percent)
+  if (ack.urlPercent !== undefined) item.urlPercent = ack.urlPercent
+  if (ack.state === 'done') item.urlPercent = 1
   item.updatedAt = Date.now()
 }
 

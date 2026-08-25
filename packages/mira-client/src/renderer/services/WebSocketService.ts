@@ -5,7 +5,7 @@ import { useSettingsStore } from '../stores/settings'
 import { useTabs } from '../composables/useTabs'
 import { pushIncomingShare } from '../composables/useDeviceShare'
 import { applyShareAck } from '../components/business/DeviceShareDialog/useDeviceTransfers'
-import { cancelBinarySend, onBinaryShareAccept } from '../components/business/DeviceShareDialog/binaryTransfer'
+import { cancelBinarySend, cancelBinaryReceive, onBinaryShareAccept } from '../components/business/DeviceShareDialog/binaryTransfer'
 import ConfigStorage from '../utils/ConfigStorage'
 import { toFileUrl } from '../utils/fileUtils'
 import i18n from '../i18n'
@@ -947,6 +947,8 @@ function setupEventListeners(libraryStore: any): void {
     }
     // 接收端确认二进制分享：启动对应发送会话推流
     if (message?.type === 'mira-share-accept' && message.shareId) onBinaryShareAccept(message)
+    // 发送端主动取消：终止本地二进制接收会话（上层接收流程随之失败）
+    if (message?.type === 'mira-share-cancel' && message.shareId) cancelBinaryReceive(message.shareId)
   })
 }
 

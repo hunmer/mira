@@ -14,7 +14,7 @@ function getBase(): string | null {
   return base ? base.replace(/\/+$/, '') : null
 }
 
-function fetchBlob(url: string, init: RequestInit, onProgress?: DownloadProgress): Promise<Blob> {
+function fetchBlob(url: string, init: RequestInit, onProgress?: DownloadProgress, signal?: AbortSignal): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest()
     xhr.open(init.method || 'GET', url)
@@ -29,6 +29,8 @@ function fetchBlob(url: string, init: RequestInit, onProgress?: DownloadProgress
       ? resolve(xhr.response)
       : reject(new Error(`HTTP ${xhr.status}`))
     xhr.onerror = () => reject(new Error('network error'))
+    xhr.onabort = () => reject(new DOMException('Aborted', 'AbortError'))
+    signal?.addEventListener('abort', () => xhr.abort(), { once: true })
     xhr.send((init.body as XMLHttpRequestBodyInit | null | undefined) ?? null)
   })
 }
@@ -56,7 +58,7 @@ function saveBlobViaLink(blob: Blob, filename: string): void {
  */
 export async function downloadShareFiles(
   message: DeviceShareMessage,
-  opts: { saveDir?: string; onProgress?: DownloadProgress } = {}
+  opts: { saveDir?: string; onProgress?: DownloadProgress; signal?: AbortSignal } = {}
 ): Promise<string[]> {
   const files = message.files || []
   if (files.length === 0) return []
@@ -66,7 +68,7 @@ export async function downloadShareFiles(
 
   // 一次性票据：单请求拿全部内容（单文件原文件 / 多文件 ZIP），无需本机 token
   if (message.ticketUrl) {
-    const blob = await fetchBlob(message.ticketUrl, {}, opts.onProgress)
+    const blob = await fetchBlob(message.ticketUrl, {}, opts.onProgress, opts.signal)
     const singleName = files.length === 1 ? sanitizeFilename(files[0].name) : null
     const filename = singleName || `mira-share-${Date.now()}.zip`
     if (isElectron) {
@@ -99,7 +101,7 @@ export async function downloadShareFiles(
         ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       },
       body: JSON.stringify({ libraryId: message.libraryId, ids, paths }),
-    }, opts.onProgress)
+    }, opts.onProgress, opts.signal)
 
     if (isElectron) {
       const zipName = `mira-share-${Date.now()}.zip`
@@ -114,7 +116,7 @@ export async function downloadShareFiles(
 
   // 单文件
   for (const file of withValidUrls as (DeviceShareFile & { url: string })[]) {
-    const blob = await fetchBlob(file.url, {}, opts.onProgress)
+    const blob = await fetchBlob(file.url, {}, opts.onProgress, opts.signal)
     if (isElectron) {
       const target = joinPath(opts.saveDir!, sanitizeFilename(file.name))
       await (window as any).electronAPI?.fs?.writeFile(target, new Uint8Array(await blob.arrayBuffer()))
@@ -129,15 +131,23 @@ export async function downloadShareFiles(
 
 /**
  * 接收入口：混合分享（库内文件 URL/票据 + 本地文件二进制流）并行接收，进度按总字节数合并。
- * 纯 URL 分享等价于直接调 downloadShareFiles。
+ * onProgress 第二参 urlPercent 为 URL/票据部分的进度（发送端据此映射素材文件单文件状态；
+ * 纯二进制分享时为 undefined，纯 URL 分享时与第一参相同）。
  */
 export async function receiveShareFiles(
   message: DeviceShareMessage,
-  opts: { saveDir?: string; onProgress?: DownloadProgress } = {},
+  opts: { saveDir?: string; onProgress?: (percent: number, urlPercent?: number) => void; signal?: AbortSignal } = {},
 ): Promise<string[]> {
   const all = message.files || []
   const binaryFiles = all.filter(f => f.binary)
-  if (binaryFiles.length === 0) return downloadShareFiles(message, opts)
+  if (binaryFiles.length === 0) {
+    // 纯 URL 分享：整体进度即 URL 部分进度
+    return downloadShareFiles(message, {
+      saveDir: opts.saveDir,
+      signal: opts.signal,
+      onProgress: opts.onProgress ? (p => opts.onProgress!(p, p)) : undefined,
+    })
+  }
 
   const urlFiles = all.filter(f => !f.binary)
   const totalBytes = all.reduce((s, f) => s + (f.size || 0), 0) || 1
@@ -145,11 +155,15 @@ export async function receiveShareFiles(
   const binaryBytes = binaryFiles.reduce((s, f) => s + (f.size || 0), 0)
   let urlPercent = urlBytes === 0 ? 1 : 0
   let binaryPercent = 0
-  const merged = () => opts.onProgress?.((urlBytes * urlPercent + binaryBytes * binaryPercent) / totalBytes, 0, totalBytes)
+  const hasUrl = urlFiles.length > 0
+  const merged = () => opts.onProgress?.(
+    (urlBytes * urlPercent + binaryBytes * binaryPercent) / totalBytes,
+    hasUrl ? urlPercent : undefined,
+  )
 
   const tasks: Promise<string[]>[] = []
-  if (urlFiles.length > 0) {
-    tasks.push(downloadShareFiles({ ...message, files: urlFiles }, { saveDir: opts.saveDir, onProgress: p => { urlPercent = p; merged() } }))
+  if (hasUrl) {
+    tasks.push(downloadShareFiles({ ...message, files: urlFiles }, { saveDir: opts.saveDir, signal: opts.signal, onProgress: p => { urlPercent = p; merged() } }))
   }
   tasks.push(receiveBinaryShare({ ...message, files: binaryFiles }, {
     saveDir: opts.saveDir,

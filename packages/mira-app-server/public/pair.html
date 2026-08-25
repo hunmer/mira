@@ -72,14 +72,15 @@
 <body class="bg-background text-foreground">
 <div id="app"></div>
 
-<!-- Vue 全量构建(含模板编译器, 全局 Vue) + 组件库 UMD(全局 MiraPluginUI) -->
+<!-- Vue 全量构建(含模板编译器, 全局 Vue) + 组件库 UMD(全局 MiraPluginUI) + JSZip(接收多文件打包保存) -->
 <script src="/static/vendor/vue.global.prod.js"></script>
 <script src="/static/vendor/mira-plugin-ui.umd.js"></script>
+<script src="/static/vendor/jszip.min.js"></script>
 
 <script type="module">
 import { MiraClient } from '/static/sdk/mira-sdk.esm.mjs';
 
-const { createApp, reactive, ref, computed } = Vue;
+const { createApp, reactive, ref, computed, watch } = Vue;
 
 const qs = new URLSearchParams(location.search);
 const token = qs.get('token');
@@ -128,6 +129,13 @@ const messages = {
     pickDeviceFirst: '请先选择要发送到的设备',
     sendHint: '文件直接端到端发送给对方，不经服务器存储',
     dropHint: '拖放文件到此处，或点击选择',
+    waitingAccept: '等待对方接收',
+    sentShort: '已发送',
+    sendFailedShort: '发送失败',
+    canceledBySender: '发送方已取消',
+    cancelSend: '取消发送',
+    canceledByMe: '已取消',
+    cancelDownload: '取消下载',
     uploading: '上传中 {a}/{b}',
     sent: '已发送 {n} 个文件，等待对方接收',
     sendFailed: '发送失败：{msg}',
@@ -170,6 +178,13 @@ const messages = {
     pickDeviceFirst: 'Select a target device first',
     sendHint: 'Files are sent directly to the recipient, never stored on the server',
     dropHint: 'Drop files here, or click to pick',
+    waitingAccept: 'Waiting for recipient',
+    sentShort: 'Sent',
+    sendFailedShort: 'Failed',
+    canceledBySender: 'Cancelled by sender',
+    cancelSend: 'Cancel send',
+    canceledByMe: 'Cancelled',
+    cancelDownload: 'Cancel download',
     uploading: 'Uploading {a}/{b}',
     sent: 'Sent {n} file(s), waiting for the recipient',
     sendFailed: 'Send failed: {msg}',
@@ -212,6 +227,34 @@ const state = reactive({
 });
 
 const stagedFiles = ref([]); // Dropzone 暂存的本地文件（二进制直传，不上传素材库）
+// 发送阶段：idle=待发 waiting=等对方确认 sending=推流中 done=完成 error=失败（驱动 Dropzone 文件状态）
+const sendPhase = ref('idle');
+// 本地推流位置（单文件状态源）：completed=已推完文件数，filePercent=当前文件内进度
+const sendProg = reactive({ completed: 0, filePercent: 0 });
+watch(() => stagedFiles.value.length, () => {
+  // 文件集合变化（增删）时清除终态，允许再次发送；进行中不重置
+  if (sendPhase.value === 'done' || sendPhase.value === 'error') sendPhase.value = 'idle';
+});
+const dropFileState = (file) => {
+  if (sendPhase.value === 'waiting') return 'processing';
+  if (sendPhase.value === 'sending') {
+    const idx = stagedFiles.value.indexOf(file);
+    if (idx < sendProg.completed) return 'done';
+    if (idx === sendProg.completed) return 'uploading';
+    return 'processing';
+  }
+  if (sendPhase.value === 'done') return 'done';
+  if (sendPhase.value === 'error') return 'error';
+  return 'idle';
+};
+const dropFileDescription = (file) => {
+  const state = dropFileState(file);
+  if (state === 'processing') return t('waitingAccept');
+  if (state === 'uploading') return `${Math.round(sendProg.filePercent * 100)}%`;
+  if (state === 'done') return t('sentShort');
+  if (state === 'error') return t('sendFailedShort');
+  return undefined;
+};
 const selectedDevice = ref(null); // 发送目标 clientId（DeviceListPicker 选中项）
 const activeTab = ref('receive'); // receive | send
 
@@ -346,21 +389,33 @@ function finishRecvSession(s, err) {
   recvSessions.delete(s.shareId);
   clearInterval(s.stallTimer);
   if (err) { s.reject(err); return; }
-  try { s.resolve(saveExtracted(s)); } catch (e) { s.reject(e); }
+  saveExtracted(s).then(s.resolve, s.reject);
 }
 
-/** 按 files[].size 顺序切分字节流，逐文件保存到浏览器下载目录 */
-function saveExtracted(s) {
-  const saved = [];
+/**
+ * 按 files[].size 顺序切分字节流并保存：单文件原样保存；
+ * 多文件用 JSZip 打包（STORE 无压缩，媒体文件已压缩过）成单个 zip 保存，
+ * 与素材多文件走服务端 ZIP 打包的行为一致。
+ */
+async function saveExtracted(s) {
+  const sanitize = (n) => (n || 'mira-file').replace(/[\\/:*?"<>|]/g, '_');
+  if (s.files.length === 1) {
+    const bytes = sliceChunks(s.chunks, 0, s.files[0].size || 0);
+    const name = sanitize(s.files[0].name);
+    saveBlob(new Blob([bytes]), name);
+    return [name];
+  }
+  const zip = new JSZip();
   let offset = 0;
   for (const f of s.files) {
     const bytes = sliceChunks(s.chunks, offset, f.size || 0);
     offset += f.size || 0;
-    const name = (f.name || 'mira-file').replace(/[\\/:*?"<>|]/g, '_');
-    saveBlob(new Blob([bytes]), name);
-    saved.push(name);
+    zip.file(sanitize(f.name), bytes);
   }
-  return saved;
+  const blob = await zip.generateAsync({ type: 'blob', compression: 'STORE' });
+  const name = `mira-share-${Date.now()}.zip`;
+  saveBlob(blob, name);
+  return [name];
 }
 
 /** 从 chunks 流中提取 [start, start+length) 的字节（跨 chunk 拼装单文件） */
@@ -463,6 +518,11 @@ async function main() {
       const waiter = acceptWaiters.get(msg.shareId);
       if (waiter) waiter();
     }
+    // 发送端主动取消：终止本地二进制接收会话（上层接收流程随之失败）
+    else if (msg?.type === 'mira-share-cancel' && msg.shareId) {
+      const s = recvSessions.get(msg.shareId);
+      if (s) finishRecvSession(s, new Error(t('canceledBySender')));
+    }
     // 发送侧终态回执：更新发送状态文案
     else if (msg?.type === 'mira-share-ack' && msg.shareId) {
       if (msg.state === 'done' && !state.sending) state.send.text = t('transferDone');
@@ -472,6 +532,11 @@ async function main() {
 
 function renderShare(msg) {
   state.share = { ...msg, files: msg.files || [] };
+  // 重置上一轮下载状态：新分享到达后按钮/进度条复位于初始态，可再次下载
+  state.downloading = false;
+  state.downloaded = false;
+  state.downloadFailed = false;
+  state.dl = { showBar: false, percent: 0, text: '', error: false };
   activeTab.value = 'receive';
   setStatus('ok', t('incomingFrom', { from: msg.fromLabel || msg.from || '?' }), false);
 }
@@ -505,8 +570,10 @@ async function downloadShare() {
   const files = msg?.files || [];
   if (!client || files.length === 0 || state.downloading) return;
 
-  // 回传接收进度/状态给发送端（mira-share-ack；简单节流：变化 <5% 不发，终态必发）
+  // 回传接收进度/状态给发送端（mira-share-ack；简单节流：变化 <5% 不发，终态必发）。
+  // urlPercent 为 URL/票据部分进度：发送端按文件大小映射素材文件的单文件状态
   let lastAckP = -1;
+  let latestUrlP;
   const sendAck = (ackState, p = 0) => {
     if (!client || !msg?.from || !msg?.id) return;
     if (ackState === 'receiving') {
@@ -518,12 +585,14 @@ async function downloadShare() {
       shareId: msg.id,
       state: ackState,
       percent: p,
+      ...(latestUrlP !== undefined ? { urlPercent: latestUrlP } : {}),
     }).catch(() => {});
   };
 
   state.downloading = true;
   state.downloaded = false;
   state.downloadFailed = false;
+  dlCanceled = false;
   state.dl = { showBar: true, percent: 0, text: '', error: false };
   const setProgress = (p, text) => {
     state.dl.percent = Math.round(p * 100);
@@ -540,7 +609,10 @@ async function downloadShare() {
       const urlBytes = urlFiles.reduce((s, f) => s + (f.size || 0), 0);
       const binBytes = binaryFiles.reduce((s, f) => s + (f.size || 0), 0);
       let urlP = urlBytes === 0 ? 1 : 0, binP = 0;
-      const merged = () => setProgress((urlBytes * urlP + binBytes * binP) / totalBytes);
+      const merged = () => {
+        latestUrlP = urlFiles.length > 0 ? urlP : undefined;
+        setProgress((urlBytes * urlP + binBytes * binP) / totalBytes);
+      };
       const tasks = [];
       if (urlFiles.length > 0) {
         tasks.push(downloadUrlFiles(msg, urlFiles, (p) => { urlP = p; merged(); }));
@@ -548,19 +620,22 @@ async function downloadShare() {
       tasks.push(receiveBinaryShare(msg, binaryFiles, (p) => { binP = p; merged(); }));
       await Promise.all(tasks);
     } else {
-      await downloadUrlFiles(msg, urlFiles, setProgress);
+      await downloadUrlFiles(msg, urlFiles, (p) => { latestUrlP = p; setProgress(p); });
     }
+    latestUrlP = undefined;
     setProgress(1, t('downloadDone'));
     state.downloaded = true;
     sendAck('done', 1);
   } catch (err) {
     console.error(err);
-    setProgress(0, t('downloadFailed', { msg: err?.message || err }));
+    const canceled = dlCanceled || err?.message === '__canceled__';
+    setProgress(0, t(canceled ? 'canceledByMe' : 'downloadFailed', { msg: err?.message || err }));
     state.downloadFailed = true;
     state.dl.error = true;
     sendAck('failed');
   } finally {
     state.downloading = false;
+    activeXhr = null;
   }
 }
 
@@ -576,17 +651,23 @@ function reachableUrl(url) {
   }
 }
 
-/**
- * 二进制端到端发送（Dropzone 暂存文件 → 对端确认 → WS 推流，不经服务器存储）。
- * 文件对象发送后不可复用（无法重发），失败需重新选择。
- */
+/** 二进制端到端发送（Dropzone 暂存文件 → 对端确认 → WS 推流，不经服务器存储）。
+ * 发送中可通过 cancelSending() 中止（停推流 + 通知对端终止接收）。 */
+let sendCancelRequested = false;
+function cancelSending() {
+  if (!state.sending) return;
+  sendCancelRequested = true;
+}
+
 async function sendFiles() {
   const target = selectedDevice.value;
   const files = stagedFiles.value;
   if (!files || files.length === 0 || !client || !target || state.sending) return;
   const shareId = `share_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   state.sending = true;
-  state.send = { showBar: true, percent: 0, text: t('sendingBtn'), error: false };
+  sendCancelRequested = false;
+  sendPhase.value = 'waiting';
+  state.send = { showBar: true, percent: 0, text: t('waitingAccept'), error: false };
   try {
     await client.devices().sendMessage(target, libraryId, {
       type: 'mira-share',
@@ -604,27 +685,46 @@ async function sendFiles() {
       acceptWaiters.set(shareId, () => { clearTimeout(timer); resolve(); });
     });
     if (!wsRef || !wsRef.isConnectedStatus()) throw new Error(t('connLost'));
+    sendPhase.value = 'sending';
+    sendProg.completed = 0;
+    sendProg.filePercent = 0;
 
     const totalBytes = files.reduce((s, f) => s + f.size, 0) || 1;
     let sent = 0, seq = 0;
     for (const file of files) {
       for (let pos = 0; pos < file.size; pos += CHUNK_SIZE) {
+        if (sendCancelRequested) throw new Error('__canceled__');
         if (!wsRef || !wsRef.isConnectedStatus()) throw new Error(t('connLost'));
         const buf = new Uint8Array(await file.slice(pos, pos + CHUNK_SIZE).arrayBuffer());
         wsRef.sendBinary(buildFrame(target, shareId, seq++, 0, buf));
         sent += buf.length;
         state.send.percent = Math.round((sent / totalBytes) * 100);
+        sendProg.filePercent = Math.min(1, (pos + CHUNK_SIZE) / file.size);
         await drainBacklog();
       }
+      sendProg.completed++;
+      sendProg.filePercent = 1;
     }
     // 流结束帧：接收端以此与总字节数双保险判断完成
     wsRef.sendBinary(buildFrame(target, shareId, seq, 1, new Uint8Array(0)));
     state.send.percent = 100;
     state.send.text = t('sent', { n: files.length });
+    // 发送完成：清空暂存列表（完成反馈由上方文案/进度条承担），可立即发起新一批
+    sendPhase.value = 'idle';
     stagedFiles.value = [];
   } catch (err) {
     console.error(err);
-    state.send.text = t('sendFailed', { msg: err?.message || err });
+    if (sendCancelRequested) {
+      // 用户取消：通知对端终止接收（binary 会话随之失败）
+      client.devices().sendMessage(target, libraryId, {
+        type: 'mira-share-cancel', shareId,
+      }).catch(() => {});
+      state.send.text = t('canceledByMe');
+      sendPhase.value = 'error';
+    } else {
+      state.send.text = t('sendFailed', { msg: err?.message || err });
+      sendPhase.value = 'error';
+    }
     state.send.error = true;
   } finally {
     state.sending = false;
@@ -636,9 +736,25 @@ function fetchBlob(url, onProgress) {
   return fetchBlobWithBody(url, {}, onProgress);
 }
 
+// 当前下载 XHR（接收端取消时 abort）与取消标志
+let activeXhr = null;
+let dlCanceled = false;
+function cancelDownload() {
+  if (!state.downloading) return;
+  dlCanceled = true;
+  activeXhr?.abort();
+  // 终止二进制接收会话（上层接收流程随之失败）
+  const msg = state.share;
+  if (msg?.id) {
+    const s = recvSessions.get(msg.id);
+    if (s) finishRecvSession(s, new Error('__canceled__'));
+  }
+}
+
 function fetchBlobWithBody(url, init, onProgress) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
+    activeXhr = xhr;
     xhr.open(init.method || 'GET', url);
     for (const [k, v] of Object.entries(init.headers || {})) xhr.setRequestHeader(k, v);
     xhr.responseType = 'blob';
@@ -646,7 +762,8 @@ function fetchBlobWithBody(url, init, onProgress) {
     xhr.onload = () => xhr.status >= 200 && xhr.status < 300
       ? resolve(xhr.response)
       : reject(new Error('HTTP ' + xhr.status));
-    xhr.onerror = () => reject(new Error('network error'));
+    xhr.onerror = () => reject(new Error(dlCanceled ? '__canceled__' : 'network error'));
+    xhr.onabort = () => reject(new Error('__canceled__'));
     xhr.send(init.body || null);
   });
 }
@@ -676,6 +793,7 @@ const app = createApp({
     return {
       state, libraryId, activeTab, stagedFiles, selectedDevice, deviceServices, onDevices,
       statusClass, acceptLabel, shareAttachState, formatSize, downloadShare, sendFiles,
+      cancelSending, cancelDownload,
       icons, t, theme, toggleTheme, lang, toggleLang,
       phoneIcon: icon('size-6', '<rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/>'),
       origin: location.origin,
@@ -727,6 +845,8 @@ const app = createApp({
                 </Attachment>
               </div>
               <Button :disabled="state.downloading || state.downloaded" @click="downloadShare">{{ acceptLabel }}</Button>
+              <!-- 接收中：取消下载（中断 URL 下载 + 终止二进制接收会话） -->
+              <Button v-if="state.downloading" variant="outline" @click="cancelDownload">{{ t('cancelDownload') }}</Button>
               <Progress v-if="state.dl.showBar" :model-value="state.dl.percent" />
               <p v-if="state.dl.text" class="text-xs text-center" :class="state.dl.error ? 'text-destructive' : 'text-muted-foreground'">{{ state.dl.text }}</p>
             </div>
@@ -760,10 +880,19 @@ const app = createApp({
                   <span class="font-mono break-all">{{ libraryId || '—' }}</span>
                 </div>
 
-                <!-- 本地文件拖放/选择：二进制端到端直传（不上传素材库） -->
-                <Dropzone v-model:files="stagedFiles" :hint="t('dropHint')" class="min-h-0" />
-                <Button variant="outline" :disabled="state.sending || !selectedDevice || stagedFiles.length === 0" @click="sendFiles()">
-                  {{ state.sending ? t('sendingBtn') : t('pickAndSend') }}
+                <!-- 本地文件拖放/选择：二进制端到端直传（不上传素材库）；状态随发送阶段反馈 -->
+                <Dropzone
+                  v-model:files="stagedFiles"
+                  :hint="t('dropHint')"
+                  :file-state="dropFileState"
+                  :file-description="dropFileDescription"
+                  class="min-h-0"
+                />
+                <!-- 发送按钮：发送中切换为「取消发送」（停推流 + 通知对端终止接收） -->
+                <Button variant="outline"
+                  :disabled="!state.sending && (!selectedDevice || stagedFiles.length === 0)"
+                  @click="state.sending ? cancelSending() : sendFiles()">
+                  {{ state.sending ? t('cancelSend') : t('pickAndSend') }}
                 </Button>
                 <Progress v-if="state.send.showBar" :model-value="state.send.percent" />
                 <p v-if="state.send.text" class="text-xs" :class="state.send.error ? 'text-destructive' : 'text-muted-foreground'">{{ state.send.text }}</p>

@@ -4,10 +4,15 @@ import { useI18n } from 'vue-i18n'
 import { toast } from 'vue-sonner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import {
+  Attachment, AttachmentContent, AttachmentDescription, AttachmentMedia, AttachmentTitle,
+} from '@/components/ui/attachment'
+import { Spinner } from '@/components/ui/spinner'
 import { appService } from '@renderer/services'
 import { incomingShare, sendShareAck } from '@renderer/composables/useDeviceShare'
 import { useSettingsStore } from '@renderer/stores/settings'
 import { receiveShareFiles } from './downloadShare'
+import { cancelBinaryReceive } from './binaryTransfer'
 
 /** 接收端：收到其他设备的分享请求后确认接收并下载（Electron 可选保存位置） */
 const { t } = useI18n()
@@ -24,7 +29,33 @@ const fromLabel = computed(() => incomingShare.value?.fromLabel || incomingShare
 const saveDir = ref<string>(settingsStore.settings.deviceShareSaveDir || '')
 watch(open, (v) => { if (v) saveDir.value = settingsStore.settings.deviceShareSaveDir || '' })
 const downloading = ref(false)
+const downloadFailed = ref(false)
+const downloadCanceled = ref(false)
 const percent = ref(0)
+/** 接收端取消：中断 URL/票据下载（xhr abort）+ 终止二进制接收会话 */
+const abortController = ref<AbortController | null>(null)
+
+/** 接收文件卡片状态：未开始=idle(虚线) 下载中=uploading(Spinner) 取消/失败=error */
+const recvAttachState = computed(() => {
+  if (downloading.value) return 'uploading' as const
+  if (downloadFailed.value) return 'error' as const
+  return 'idle' as const
+})
+const recvDescription = computed(() => {
+  if (downloading.value) return t('business.deviceShare.downloading', { percent: Math.round(percent.value * 100) })
+  if (downloadCanceled.value) return t('business.deviceShare.receiveCanceled')
+  if (downloadFailed.value) return t('business.deviceShare.downloadFailed')
+  return undefined
+})
+
+/** 文件扩展名 → material icon */
+const fileIcon = (name?: string) => {
+  const ext = (name || '').split('.').pop()?.toLowerCase() || ''
+  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp'].includes(ext)) return 'image'
+  if (['mp4', 'mov', 'avi', 'mkv', 'webm'].includes(ext)) return 'movie'
+  if (['mp3', 'wav', 'flac', 'ogg', 'm4a'].includes(ext)) return 'audiotrack'
+  return 'description'
+}
 
 const formatSize = (n?: number) => {
   if (!n) return ''
@@ -42,14 +73,18 @@ const handleAccept = async () => {
   const message = incomingShare.value
   if (!message) return
   downloading.value = true
+  downloadFailed.value = false
+  downloadCanceled.value = false
   percent.value = 0
+  abortController.value = new AbortController()
   try {
     const saved = await receiveShareFiles(message, {
       saveDir: saveDir.value || undefined,
-      onProgress: (p) => {
+      signal: abortController.value.signal,
+      onProgress: (p, urlPercent) => {
         percent.value = p
-        // 回传接收进度给发送端（sendShareAck 内部节流）
-        sendShareAck(message.from, message.id, 'receiving', p)
+        // 回传接收进度给发送端（sendShareAck 内部节流）；urlPercent 供发送端映射素材文件单文件状态
+        sendShareAck(message.from, message.id, 'receiving', p, { urlPercent })
       },
     })
     sendShareAck(message.from, message.id, 'done', 1)
@@ -59,13 +94,27 @@ const handleAccept = async () => {
     incomingShare.value = null
   } catch (e) {
     console.error('[device-share] download failed', e)
+    const canceled = e instanceof DOMException && e.name === 'AbortError'
+      || /canceled/i.test(e instanceof Error ? e.message : String(e))
+    downloadCanceled.value = canceled
+    downloadFailed.value = true
     sendShareAck(message.from, message.id, 'failed')
-    toast.error(t('business.deviceShare.downloadFailed'), {
-      description: e instanceof Error ? e.message : String(e),
-    })
+    if (!canceled) {
+      toast.error(t('business.deviceShare.downloadFailed'), {
+        description: e instanceof Error ? e.message : String(e),
+      })
+    }
   } finally {
     downloading.value = false
+    abortController.value = null
   }
+}
+
+/** 接收中取消：中断 URL/票据下载并终止二进制接收会话（弹窗保留，可重新点接收） */
+const handleCancelReceive = () => {
+  const message = incomingShare.value
+  abortController.value?.abort()
+  if (message?.id) cancelBinaryReceive(message.id, 'canceled')
 }
 
 const handleDecline = () => {
@@ -86,17 +135,18 @@ const handleDecline = () => {
       </DialogHeader>
 
       <div class="max-h-[260px] overflow-y-auto flex flex-col gap-2">
-        <div
-          v-for="file in files"
-          :key="file.id"
-          class="flex items-center gap-3 p-2.5 rounded-lg border border-border"
-        >
-          <span class="material-icons text-primary text-xl">description</span>
-          <div class="flex-1 min-w-0">
-            <div class="text-sm truncate" :title="file.name">{{ file.name }}</div>
-            <div class="text-xs text-muted-foreground">{{ formatSize(file.size) }}</div>
-          </div>
-        </div>
+        <Attachment v-for="file in files" :key="file.id ?? file.name" size="sm" :state="recvAttachState" class="w-full">
+          <AttachmentMedia variant="icon">
+            <Spinner v-if="recvAttachState === 'uploading'" />
+            <span v-else class="material-icons" :class="recvAttachState === 'error' && 'text-destructive'">
+              {{ recvAttachState === 'error' ? 'warning' : fileIcon(file.name) }}
+            </span>
+          </AttachmentMedia>
+          <AttachmentContent>
+            <AttachmentTitle :title="file.name">{{ file.name }}</AttachmentTitle>
+            <AttachmentDescription>{{ recvDescription || formatSize(file.size) }}</AttachmentDescription>
+          </AttachmentContent>
+        </Attachment>
       </div>
 
       <!-- Electron：可选保存位置；Web：浏览器默认下载目录 -->
@@ -120,7 +170,11 @@ const handleDecline = () => {
       </div>
 
       <DialogFooter>
-        <Button variant="outline" :disabled="downloading" @click="handleDecline">
+        <!-- 接收中：切换为取消下载（中断 URL 下载 + 终止二进制接收，弹窗保留可重试） -->
+        <Button v-if="downloading" variant="outline" @click="handleCancelReceive">
+          {{ $t('business.deviceShare.cancelDownload') }}
+        </Button>
+        <Button v-else variant="outline" @click="handleDecline">
           {{ $t('business.deviceShare.decline') }}
         </Button>
         <Button :disabled="downloading" @click="handleAccept">

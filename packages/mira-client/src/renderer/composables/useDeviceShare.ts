@@ -21,6 +21,8 @@ export interface DeviceShareFile {
   size?: number
   /** 单文件下载直链（含 token） */
   url: string
+  /** 缩略图地址（thumbnailPath）：发送端 Dropzone 列表作小图预览，避免直链加载原图 */
+  thumb?: string
   /** 本地文件（Dropzone 选择）：无 url 内容，由发送端 WS 二进制推流 */
   binary?: boolean
 }
@@ -54,6 +56,8 @@ export interface DeviceShareAck {
   state: 'receiving' | 'done' | 'failed' | 'declined'
   /** 对端下载进度 0-1 */
   percent?: number
+  /** URL/票据部分（素材文件）的接收进度 0-1：发送端按文件大小比例映射出单文件状态 */
+  urlPercent?: number
 }
 
 /** 生成分享消息 id（发送端调用，ack 关联用） */
@@ -70,6 +74,7 @@ export function sendShareAck(
   shareId: string | undefined,
   state: DeviceShareAck['state'],
   percent = 0,
+  extra?: { urlPercent?: number },
 ): void {
   const client = (miraSDKService as any).client as any
   if (!client || !toClientId || !shareId) return
@@ -86,6 +91,7 @@ export function sendShareAck(
     shareId,
     state,
     percent,
+    ...(extra?.urlPercent !== undefined ? { urlPercent: extra.urlPercent } : {}),
   } satisfies DeviceShareAck).catch(() => {})
 }
 
@@ -133,6 +139,7 @@ export function toDeviceShareFiles(items: FileInfo[]): DeviceShareFile[] {
         path: extractRelativePath(item.path || item.url, item.libraryId || libraryId),
         size: item.size,
         url,
+        thumb: item.thumbnailPath,
       }
       return file
     })
@@ -166,7 +173,7 @@ async function autoAcceptShare(message: DeviceShareMessage): Promise<void> {
   try {
     const saved = await receiveShareFiles(message, {
       saveDir: settings.deviceShareSaveDir || undefined,
-      onProgress: (p) => sendShareAck(message.from, message.id, 'receiving', p),
+      onProgress: (p, urlPercent) => sendShareAck(message.from, message.id, 'receiving', p, { urlPercent }),
     })
     sendShareAck(message.from, message.id, 'done', 1)
     toast.success(t('business.deviceShare.downloadDone', { count: saved.length }), {
