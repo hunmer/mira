@@ -283,7 +283,15 @@ export class FileRoutes {
                                 uploader,
                             };
 
-                            result = await obj.libraryService.createFileFromPath(file.path, fileData, { importType: 'move' }); // 使用move上传完成后自动删除临时文件
+                            // Electron 本地导入会额外传入源文件绝对路径；服务端与客户端同机时直接使用源文件，
+                            // 让 move 按“复制后移入系统回收站”处理，而不是只移动上传临时文件。
+                            const sourceFilePath = typeof sourcePath === 'string' && fs.existsSync(sourcePath)
+                                ? sourcePath
+                                : file.path;
+                            result = await obj.libraryService.createFileFromPath(sourceFilePath, fileData, { importType: 'move' });
+                            if (sourceFilePath !== file.path) {
+                                await fs.promises.unlink(file.path).catch(() => undefined);
+                            }
                             const isDuplicate = result?.duplicate === true;
                             results.push({
                                 success: !isDuplicate,

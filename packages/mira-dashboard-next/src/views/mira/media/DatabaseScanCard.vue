@@ -60,6 +60,7 @@ const missingPage = ref(1)
 const newPage = ref(1)
 const duplicateResult = ref<DuplicateScanResult | null>(null)
 const selectedDuplicateIds = ref(new Set<number>())
+const duplicateMatchMode = ref<'name-size' | 'size' | 'name'>('name-size')
 
 const missingPageCount = computed(() => Math.max(1, Math.ceil(missingFiles.value.length / PAGE_SIZE)))
 const newPageCount = computed(() => Math.max(1, Math.ceil(newFiles.value.length / PAGE_SIZE)))
@@ -105,7 +106,7 @@ async function scanDuplicates() {
   scanningDuplicates.value = true
   selectedDuplicateIds.value = new Set()
   try {
-    const res = await fileManagerApi.scanDuplicates(selectedId.value)
+    const res = await fileManagerApi.scanDuplicates(selectedId.value, duplicateMatchMode.value)
     duplicateResult.value = res?.data || null
     toast.success(t('databaseScan.duplicateResult', {
       groups: duplicateResult.value?.totalGroups || 0,
@@ -130,7 +131,7 @@ async function removeDuplicateRecords() {
     const selected = selectedDuplicateIds.value
     const res = await fileManagerApi.removeDuplicateRecords(selectedId.value, [...selected])
     const result = res?.data as { deleted?: number, errors?: string[] } | undefined
-    const scan = await fileManagerApi.scanDuplicates(selectedId.value)
+    const scan = await fileManagerApi.scanDuplicates(selectedId.value, duplicateMatchMode.value)
     duplicateResult.value = scan.data.data || null
     selectedDuplicateIds.value = new Set()
     toast.success(t('databaseScan.removeDuplicatesResult', { count: result?.deleted || 0 }))
@@ -315,6 +316,14 @@ async function clearNewFiles() {
             <p class="mt-1 text-xs text-muted-foreground">{{ t('databaseScan.duplicateDesc') }}</p>
           </div>
           <div class="flex shrink-0 flex-wrap items-center gap-2">
+            <label class="flex items-center gap-2 text-xs text-muted-foreground">
+              <span>{{ t('databaseScan.matchMode') }}</span>
+              <select v-model="duplicateMatchMode" class="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground">
+                <option value="name-size">{{ t('databaseScan.matchNameSize') }}</option>
+                <option value="size">{{ t('databaseScan.matchSize') }}</option>
+                <option value="name">{{ t('databaseScan.matchName') }}</option>
+              </select>
+            </label>
             <Button size="sm" variant="outline" :disabled="!selectedId || scanningDuplicates || removingDuplicates" @click="scanDuplicates">
               <SearchIcon class="mr-1 size-4" />
               {{ scanningDuplicates ? t('databaseScan.scanning') : t('databaseScan.scanDuplicates') }}

@@ -84,7 +84,9 @@ export function useUploadQueue() {
         const result = await mediaStore.uploadFile(
           uploadFile,
           libraryId,
-          Object.keys(metadata).length > 0 ? metadata : undefined
+          Object.keys(metadata).length > 0 || pendingFile.localPath
+            ? { ...metadata, ...(pendingFile.localPath ? { sourcePath: pendingFile.localPath } : {}) }
+            : undefined
         )
         clearInterval(progressInterval)
         uploadProgressMap.value.set(pendingFile.id, 100)

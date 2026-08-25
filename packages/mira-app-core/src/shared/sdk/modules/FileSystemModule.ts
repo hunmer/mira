@@ -91,8 +91,8 @@ export class FileSystemModule {
     /**
      * 扫描数据库中的重复文件记录
      */
-    async scanDuplicates(libraryId: string): Promise<any> {
-        return await this.httpClient.post('/api/fs/database/duplicates', { libraryId });
+    async scanDuplicates(libraryId: string, matchMode?: 'name-size' | 'size' | 'name'): Promise<any> {
+        return await this.httpClient.post('/api/fs/database/duplicates', { libraryId, ...(matchMode ? { matchMode } : {}) });
     }
 
     /**

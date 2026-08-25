@@ -732,7 +732,11 @@ export class MiraSDKService {
     if (!this.client) throw new Error('Not connected to Mira server')
     
     try {
-      const result = await this.client.files().uploadFile(file, libraryId, metadata)
+      const { sourcePath, ...uploadMetadata } = metadata || {}
+      const result = await this.client.files().uploadFile(file, libraryId, {
+        ...uploadMetadata,
+        ...(sourcePath ? { sourcePath } : {}),
+      })
       const uploaded = result.results?.[0] as (NonNullable<typeof result.results>[number] & {
         operation?: string
       }) | undefined

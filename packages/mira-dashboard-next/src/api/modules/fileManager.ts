@@ -28,8 +28,8 @@ export const fileManagerApi = {
   deleteNewFiles(libraryId: string, paths: string[]) {
     return getMiraClient().fs().deleteNewFiles(libraryId, paths)
   },
-  scanDuplicates(libraryId: string) {
-    return getMiraClient().fs().scanDuplicates(libraryId)
+  scanDuplicates(libraryId: string, matchMode?: 'name-size' | 'size' | 'name') {
+    return getMiraClient().fs().scanDuplicates(libraryId, matchMode)
   },
   removeDuplicateRecords(libraryId: string, fileIds: number[]) {
     return getMiraClient().fs().removeDuplicateRecords(libraryId, fileIds)

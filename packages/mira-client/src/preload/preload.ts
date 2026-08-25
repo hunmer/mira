@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type { ElectronAPI } from '../shared/types'
 
 const isDevelopment = process.env.NODE_ENV === 'development'
@@ -57,6 +57,8 @@ const electronAPI: ElectronAPI = {
 
   // 系统信息
   platform: process.platform,
+  // Electron 29+ 已移除 renderer 端 File.path，使用 webUtils 获取真实本地路径。
+  getPathForFile: (file: File) => webUtils.getPathForFile(file),
 
   libraryCache: {
     clear: (libraryId?: string) => ipcRenderer.invoke('library-cache:clear', libraryId)

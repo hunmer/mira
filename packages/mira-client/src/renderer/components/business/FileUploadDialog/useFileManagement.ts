@@ -83,13 +83,25 @@ export function useFileManagement() {
       return
     }
 
-    const newFiles: PendingFile[] = files.map((file) => ({
-      id: `pending-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      file,
-      folderId: defaultFolderId,
-      tags: defaultTagIds ? [...defaultTagIds] : undefined,
-      preview: undefined
-    }))
+    const newFiles: PendingFile[] = files.map((file) => {
+      // Electron 的 File 对象通常带有非标准 path 属性；保留它才能让服务端按原文件执行 move。
+      let localPath: string | undefined
+      try {
+        const nativePath = window.electronAPI?.getPathForFile?.(file)
+        localPath = nativePath || (file as File & { path?: string }).path
+      } catch {
+        localPath = (file as File & { path?: string }).path
+      }
+      return {
+        id: `pending-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        file,
+        folderId: defaultFolderId,
+        tags: defaultTagIds ? [...defaultTagIds] : undefined,
+        localPath,
+        localSize: localPath ? file.size : undefined,
+        preview: undefined
+      }
+    })
 
     pendingFiles.value.push(...newFiles)
     generatePreviews(files, newFiles)

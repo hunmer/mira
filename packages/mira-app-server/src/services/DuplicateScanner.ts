@@ -31,6 +31,8 @@ export interface DuplicateScanResult {
     hashErrors: Array<{ id: number; path: string; error: string }>;
 }
 
+export type DuplicateMatchMode = 'name-size' | 'size' | 'name';
+
 type DuplicateDatabase = Pick<LibraryServerDataSQLite, 'getFiles' | 'deleteFile' | 'getItemFilePath'>;
 
 export class DuplicateScanner {
@@ -39,9 +41,9 @@ export class DuplicateScanner {
         private readonly hashFile: (filePath: string) => Promise<string> = calculateFileMd5,
     ) {}
 
-    async scan(): Promise<DuplicateScanResult> {
+    async scan(options: { matchMode?: DuplicateMatchMode } = {}): Promise<DuplicateScanResult> {
         const files = await this.fetchAllFiles();
-        const candidates = this.findQuickDuplicates(files);
+        const candidates = this.findQuickDuplicates(files, options.matchMode || 'name-size');
         const { groups, computedHashes, hashErrors } = await this.confirmByHash(candidates);
 
         return {
@@ -84,10 +86,14 @@ export class DuplicateScanner {
         return result as unknown as DuplicateFile[];
     }
 
-    private findQuickDuplicates(files: DuplicateFile[]): DuplicateGroup[] {
+    private findQuickDuplicates(files: DuplicateFile[], matchMode: DuplicateMatchMode): DuplicateGroup[] {
         const filesByKey = new Map<string, DuplicateFile[]>();
         for (const file of files) {
-            const key = `${file.title}|${file.size}`;
+            const key = matchMode === 'size'
+                ? String(file.size)
+                : matchMode === 'name'
+                    ? file.title
+                    : `${file.title}|${file.size}`;
             const group = filesByKey.get(key) || [];
             group.push(file);
             filesByKey.set(key, group);

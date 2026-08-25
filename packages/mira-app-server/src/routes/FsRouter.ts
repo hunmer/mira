@@ -389,7 +389,12 @@ export class FsRouter {
                     res.status(400).json({ error: 'Invalid libraryId or library not active' });
                     return;
                 }
-                const result = await new DuplicateScanner(context.dbService).scan();
+                const matchMode = req.body.matchMode;
+                if (matchMode !== undefined && !['name-size', 'size', 'name'].includes(matchMode)) {
+                    res.status(400).json({ error: 'matchMode must be name-size, size, or name' });
+                    return;
+                }
+                const result = await new DuplicateScanner(context.dbService).scan({ matchMode });
                 res.json({ success: true, data: result });
             } catch (error: any) {
                 res.status(500).json({ error: error.message || 'Failed to scan duplicate files' });

@@ -331,6 +331,7 @@ export interface PluginInstallProgress {
 export interface SystemInfo {
   version: string
   platform: string
+  getPathForFile: (file: File) => string
   arch: string
   nodeVersion: string
   uptime: number
