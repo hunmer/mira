@@ -185,8 +185,13 @@ export function useConnectionFlow(state: LoginFlowState) {
           websocketUrl: wsUrl,
           ...(state.authToken.value && { authToken: state.authToken.value }),
         })
-      } else if (state.authToken.value) {
-        await serverListStore.updateServer(existingServer.id, { authToken: state.authToken.value })
+      } else {
+        // 同地址视为同一服务器：同步用户在表单中修改的名称 / WS 地址 / token
+        await serverListStore.updateServer(existingServer.id, {
+          name: state.serverName.value || existingServer.name,
+          ...(state.wsAddress.value && { websocketUrl: state.wsAddress.value }),
+          ...(state.authToken.value && { authToken: state.authToken.value }),
+        })
       }
       await serverListStore.setActiveServer(existingServer?.id || lib.id, { reconnect: false })
 

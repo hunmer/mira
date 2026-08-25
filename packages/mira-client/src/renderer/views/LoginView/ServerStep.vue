@@ -60,6 +60,15 @@ function closeDeleteDialog() {
   deleteTarget.value = null
 }
 
+// 进入添加表单前清空表单，避免残留上一次连接/预填的服务器数据
+function openAddForm() {
+  serverName.value = ''
+  serverAddress.value = ''
+  wsAddress.value = ''
+  showWsField.value = false
+  showAddForm.value = true
+}
+
 async function handleDeleteServer() {
   const target = deleteTarget.value
   if (!target) return
@@ -77,7 +86,7 @@ async function handleDeleteServer() {
         <!-- Add Server Card -->
         <div
           class="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-border dark:border-border rounded-xl cursor-pointer transition-all hover:border-primary dark:hover:border-primary hover:bg-primary/10 dark:hover:bg-primary/10"
-          @click="showAddForm = true"
+          @click="openAddForm"
         >
           <span class="material-icons text-2xl text-muted-foreground dark:text-muted-foreground">add</span>
           <span class="text-sm text-muted-foreground dark:text-muted-foreground">{{ $t('views.serverStep.addServer') }}</span>

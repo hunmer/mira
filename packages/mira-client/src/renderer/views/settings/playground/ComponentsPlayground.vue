@@ -11,6 +11,18 @@
       <NotificationList />
     </div>
 
+    <!-- InteractiveHoverButton：悬停扩散填充按钮 -->
+    <div class="space-y-3 rounded-lg border p-4">
+      <div class="space-y-1">
+        <p class="text-sm font-medium text-foreground">{{ $t('views.playgroundPanel.interactiveHoverButtonTitle') }}</p>
+        <p class="text-xs text-muted-foreground">{{ $t('views.playgroundPanel.interactiveHoverButtonDesc') }}</p>
+      </div>
+      <div class="flex items-center gap-8 py-3">
+        <InteractiveHoverButton text="Explore" @click="() => {}" />
+        <InteractiveHoverButton text="了解更多" class="w-36" />
+      </div>
+    </div>
+
     <!-- ChapterScrubber：波纹刻度导航 -->
     <div class="space-y-3 rounded-lg border p-4">
       <div class="space-y-1">
@@ -199,6 +211,7 @@
 import { ref } from 'vue'
 import { TabsContent } from '@/components/ui/tabs'
 import { NotificationList } from '@/components/ui/notification-list'
+import { InteractiveHoverButton } from '@/components/ui/interactive-hover-button'
 import { ChapterScrubber, type Chapter } from '@/components/ui/chapter-scrubber'
 import { Folder } from '@/components/ui/folder'
 import { ExpandableGallery, type GalleryItem } from '@/components/ui/expandable-gallery'
