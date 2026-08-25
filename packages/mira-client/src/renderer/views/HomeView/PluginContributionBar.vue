@@ -400,7 +400,7 @@ const ContributionHost = defineComponent({
       horizontal
       @update:items="onReorderItems"
     >
-      <template #item="{ item: contribution }">
+      <template #default="{ item: contribution }">
         <!-- window 行为：纯按钮，点击直开插件主界面；右键菜单提供 dev 模式 / 禁用 -->
         <ContextMenu>
           <ContextMenuTrigger as-child>

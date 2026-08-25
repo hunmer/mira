@@ -78,6 +78,12 @@ function activateTab(tabId: string) {
   if (paneIndex >= 0) emit('activate', paneIndex, tabId)
 }
 
+function isTabActive(tabId: string) {
+  return props.layout === 'single'
+    ? props.tabs[0]?.id === tabId
+    : props.activeTabId === tabId
+}
+
 watch(
   [() => props.layout, () => props.tabs.map(tab => tab?.id).join('|'), () => props.visitedTabs.map(tab => tab.id).join('|')],
   () => {
@@ -181,7 +187,7 @@ onBeforeUnmount(() => resizeObserver?.disconnect())
       class="pointer-events-auto absolute overflow-hidden"
       :style="paneRects[tab.id] || { display: 'none' }"
     >
-      <div class="h-full w-full" :class="props.activeTabId === tab.id ? '' : 'grayscale'">
+      <div class="h-full w-full" :class="isTabActive(tab.id) ? '' : 'grayscale'">
         <TabViewRenderer
           :tab-id="tab.id"
           :view-config="props.getViewConfig(tab.id)"
@@ -190,7 +196,7 @@ onBeforeUnmount(() => resizeObserver?.disconnect())
         />
       </div>
       <button
-        v-if="props.activeTabId !== tab.id && props.tabs.some(paneTab => paneTab?.id === tab.id)"
+        v-if="!isTabActive(tab.id) && props.tabs.some(paneTab => paneTab?.id === tab.id)"
         type="button"
         class="absolute inset-0 z-40 h-full w-full cursor-pointer bg-black/10 dark:bg-black/25"
         :aria-label="tab.label"
