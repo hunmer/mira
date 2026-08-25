@@ -39,6 +39,8 @@ interface LibraryPrefsData {
   pageSize: number
   /** Home 侧栏各模块的展开状态；缺失项默认展开 */
   sidebarModuleOpenStates: Record<string, boolean>
+  /** Home 侧栏文件夹树节点的展开状态；缺失项沿用节点默认值 */
+  sidebarFolderNodeOpenStates: Record<string, boolean>
   /** 删除选中素材时跳过确认弹窗（由确认框「记住此操作」或设置面板写入） */
   skipDeleteConfirm: boolean
   /** 导入（导入文件夹 / 悬浮球拖入文件）后是否自动打开上传对话框进行二次确认 */
@@ -63,6 +65,7 @@ const state = reactive<LibraryPrefsData>({
   savedFilters: [],
   pageSize: DEFAULT_PAGE_SIZE,
   sidebarModuleOpenStates: {},
+  sidebarFolderNodeOpenStates: {},
   skipDeleteConfirm: false,
   confirmAfterImport: true,
   filterBarLayout: [],
@@ -87,6 +90,7 @@ const persist = async () => {
     savedFilters: state.savedFilters,
     pageSize: state.pageSize,
     sidebarModuleOpenStates: state.sidebarModuleOpenStates,
+    sidebarFolderNodeOpenStates: state.sidebarFolderNodeOpenStates,
     skipDeleteConfirm: state.skipDeleteConfirm,
     confirmAfterImport: state.confirmAfterImport,
     filterBarLayout: state.filterBarLayout,
@@ -132,6 +136,9 @@ export async function loadLibraryPrefs(): Promise<void> {
       : []
     state.sidebarModuleOpenStates = parsed?.sidebarModuleOpenStates && typeof parsed.sidebarModuleOpenStates === 'object'
       ? Object.fromEntries(Object.entries(parsed.sidebarModuleOpenStates).filter(([, value]) => typeof value === 'boolean'))
+      : {}
+    state.sidebarFolderNodeOpenStates = parsed?.sidebarFolderNodeOpenStates && typeof parsed.sidebarFolderNodeOpenStates === 'object'
+      ? Object.fromEntries(Object.entries(parsed.sidebarFolderNodeOpenStates).filter(([, value]) => typeof value === 'boolean'))
       : {}
     state.skipDeleteConfirm = parsed?.skipDeleteConfirm === true
     state.confirmAfterImport = parsed?.confirmAfterImport !== false
@@ -220,6 +227,15 @@ export function getSidebarModuleOpenStates(): Record<string, boolean> {
 
 export async function saveSidebarModuleOpenState(moduleId: string, open: boolean): Promise<void> {
   state.sidebarModuleOpenStates[moduleId] = open
+  await persist()
+}
+
+export function getSidebarFolderNodeOpenStates(): Record<string, boolean> {
+  return state.sidebarFolderNodeOpenStates
+}
+
+export async function saveSidebarFolderNodeOpenState(nodeId: string, open: boolean): Promise<void> {
+  state.sidebarFolderNodeOpenStates[nodeId] = open
   await persist()
 }
 

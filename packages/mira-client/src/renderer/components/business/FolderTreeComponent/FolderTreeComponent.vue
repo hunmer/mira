@@ -20,6 +20,8 @@
         <div v-if="treeData.length > 0" class="tree-scroll max-h-64 overflow-y-auto">
           <component :is="draggable ? Draggable : BaseTree" ref="treeRef" v-model="treeData"
             :indent="indentMode === 'icon' ? 0 : undefined"
+            :default-open="false"
+            :stat-handler="initializeNodeStat"
             :each-droppable="draggable ? eachDroppable : undefined" @before-drag-start="onBeforeDragStart"
             @after-drop="onAfterDrop">
             <template #default="{ node, stat }">
@@ -96,6 +98,7 @@ import { useDragSort } from './composables/useDragSort'
 import { useTreeSelection } from './composables/useTreeSelection'
 import { useLocateNode } from './composables/useLocateNode'
 import { useNodeToggleAnimation } from './composables/useNodeToggleAnimation'
+import { getSidebarFolderNodeOpenStates, saveSidebarFolderNodeOpenState } from '@/renderer/composables/LibraryPrefs'
 import { buildSelectPayload, convertFoldersToNodes, convertTagsToNodes, filterNodes } from './utils'
 import type { HeTreeNode, BaseCategory } from './types'
 import FolderTreeBaseCategories from './components/FolderTreeBaseCategories.vue'
@@ -150,6 +153,8 @@ interface Props {
   selectable?: (item: any) => boolean
   /** 按当前节点注入额外右键菜单项。 */
   extraContextMenuItems?: (type: 'folder' | 'tag', item: any | null) => MenuItem[]
+  /** 按当前素材库保存并恢复节点展开状态。 */
+  persistOpenState?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -205,7 +210,10 @@ function toggleSearch() {
 // 数据转换与过滤：FolderItem[]/tags -> HeTreeNode[]
 const rawNodes = computed<HeTreeNode[]>(() => {
   return isFolder.value
-    ? convertFoldersToNodes(props.folders || [])
+    ? convertFoldersToNodes(
+      props.folders || [],
+      props.persistOpenState ? getSidebarFolderNodeOpenStates() : undefined,
+    )
     : convertTagsToNodes(props.tags || [])
 })
 
@@ -278,10 +286,20 @@ const { locatingNodeId, locateNode } = useLocateNode({
 // 展开/折叠动画
 const { toggleNode } = useNodeToggleAnimation()
 
+function initializeNodeStat(stat: any) {
+  if (typeof stat.data?.open === 'boolean') {
+    stat.open = stat.data.open
+  }
+  return stat
+}
+
 async function handleNodeToggle(node: HeTreeNode, stat: any, event: MouseEvent) {
   const expanded = !stat.open
   emit('expand', buildSelectPayload(node, defaultIcon.value), expanded)
   await toggleNode(stat, event)
+  if (props.persistOpenState && isFolder.value) {
+    await saveSidebarFolderNodeOpenState(String(node.id), expanded)
+  }
 }
 
 function handleAdd() {

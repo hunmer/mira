@@ -15,7 +15,7 @@ export function resolveNodeId(node: HeTreeNode, isFolder: boolean): number {
 }
 
 // 数据转换：FolderItem[] -> HeTreeNode[]
-export function convertFoldersToNodes(items: FolderItem[]): HeTreeNode[] {
+export function convertFoldersToNodes(items: FolderItem[], openStates?: Record<string, boolean>): HeTreeNode[] {
   return items.map(f => ({
     id: f.id,
     label: f.label || (f as any).title || (f as any).name,
@@ -24,8 +24,10 @@ export function convertFoldersToNodes(items: FolderItem[]): HeTreeNode[] {
     color: (f as any).originalData?.color ?? (f as any).color,
     nodeType: 'folder',
     originalData: (f as any).originalData || f,
-    open: (f as any).open,
-    children: f.children ? convertFoldersToNodes(f.children) : undefined,
+    open: openStates && Object.prototype.hasOwnProperty.call(openStates, String(f.id))
+      ? openStates[String(f.id)]
+      : (f as any).open,
+    children: f.children ? convertFoldersToNodes(f.children, openStates) : undefined,
   }))
 }
 

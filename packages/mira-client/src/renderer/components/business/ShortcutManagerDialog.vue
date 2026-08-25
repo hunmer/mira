@@ -52,7 +52,7 @@
                   </div>
                 </div>
 
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-3  me-2">
                   <!-- 快捷键显示 -->
                   <div class="flex items-center gap-1">
                     <template v-for="(key, keyIndex) in binding.shortcut.split('+')" :key="keyIndex">

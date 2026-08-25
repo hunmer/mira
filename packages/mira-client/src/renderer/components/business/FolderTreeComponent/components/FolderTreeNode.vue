@@ -93,7 +93,9 @@ watch(() => props.node.icon, () => { imageFailed.value = false })
 /** 单击整行触发折叠/展开（叶子节点仅转发点击），事件同步 emit 保证 currentTarget 有效 */
 function onRowClick(event: MouseEvent) {
   emit('node-click', props.node, props.stat, event)
-  if (props.stat?.children?.length) emit('toggle', props.stat, event)
+  if (props.stat?.children?.length) {
+    emit('toggle', props.stat, event)
+  }
 }
 
 // 与 @he-tree 默认 indent(20px) 一致；stat.level 从 1 开始
