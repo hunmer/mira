@@ -288,7 +288,7 @@ export const useServerListStore = defineStore('serverList', () => {
     await useAuthStore().initializeAuthAfterConnection()
     await initializationService.forceReinitialize()
     await resetTabsForLibrary(createTabScopeId(
-      server.serverUrl,
+      server.id,
       useLibraryStore().currentLibrary?.id || server.id
     ))
   }

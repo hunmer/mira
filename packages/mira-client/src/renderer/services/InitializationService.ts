@@ -36,7 +36,7 @@ export class InitializationService {
     ])
 
     const activeServer = useServerListStore().activeServer
-    tabPersistence.setCurrentLibraryId(createTabScopeId(activeServer?.serverUrl, libraryId))
+    tabPersistence.setCurrentLibraryId(createTabScopeId(activeServer?.id, libraryId))
   }
 
   /**

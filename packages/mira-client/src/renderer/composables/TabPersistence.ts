@@ -2,7 +2,7 @@
  * Tab状态持久化管理
  *
  * 负责保存和恢复Tab状态到localStorage
- * 按素材库ID隔离存储，切换素材库时恢复对应的Tab状态
+ * 按服务器和素材库隔离存储，切换素材库时恢复对应的Tab状态
  */
 
 import type { TabItem } from './useTabs'
@@ -16,13 +16,15 @@ const LAST_VIEW_KEY_PREFIX = 'mira-last-view-mode'
 type ViewMode = 'grid' | 'list' | 'waterfall'
 
 export const createTabScopeId = (
-  serverUrl: string | null | undefined,
+  serverIdentity: string | null | undefined,
   libraryId: string | null | undefined
 ): string | null => {
   if (!libraryId) return null
 
-  const normalizedServerUrl = serverUrl?.replace(/\/$/, '') || 'local'
-  return `${encodeURIComponent(normalizedServerUrl)}::${libraryId}`
+  // 使用服务器配置的稳定 ID，避免同一地址下的不同服务器账号串用 tabs。
+  // 无 ID 时保留传入地址作为兼容回退（本地/旧调用场景）。
+  const normalizedIdentity = serverIdentity?.replace(/\/$/, '') || 'local'
+  return `${encodeURIComponent(normalizedIdentity)}::${libraryId}`
 }
 
 export interface TabState {
@@ -81,7 +83,7 @@ export class TabPersistence {
       : LAST_VIEW_KEY_PREFIX
   }
 
-  /** 当前库 scope id（serverUrl::libraryId），供库级偏好等模块复用同一隔离维度 */
+  /** 当前库 scope id（serverId::libraryId），供库级偏好等模块复用同一隔离维度 */
   getScopeId(): string | null {
     return this.currentLibraryId
   }

@@ -68,7 +68,7 @@ function resetOrder() {
             <span class="material-icons text-sm">{{ index ? 'remove_circle_outline' : 'check_circle' }}</span>
             <span>{{ index ? disabledTitle : enabledTitle }}</span>
           </div>
-          <VueDraggable v-if="index === 0" v-model="enabledList" :animation="180" group="sortable-layout-dialog" class="flex min-h-[120px] flex-col gap-1.5 rounded-xl border border-dashed border-border/70 p-1.5" :fallback-tolerance="4">
+          <VueDraggable v-if="index === 0" v-model="enabledList" :animation="180" group="sortable-layout-dialog" class="flex min-h-[120px] flex-1 flex-col gap-1.5 rounded-xl border border-dashed border-border/70 p-1.5" :fallback-tolerance="4">
             <div v-for="item in enabledList" :key="item[itemKey]" class="group flex cursor-grab items-center gap-2 rounded-lg border border-border/60 bg-background p-2 active:cursor-grabbing">
               <span class="material-icons text-base text-muted-foreground">drag_indicator</span>
               <slot name="item" :item="item" :disabled="!!index">
@@ -76,7 +76,7 @@ function resetOrder() {
               </slot>
             </div>
           </VueDraggable>
-          <VueDraggable v-else v-model="disabledList" :animation="180" group="sortable-layout-dialog" class="flex min-h-[120px] flex-col gap-1.5 rounded-xl border border-dashed border-border/70 p-1.5" :fallback-tolerance="4">
+          <VueDraggable v-else v-model="disabledList" :animation="180" group="sortable-layout-dialog" class="flex min-h-[120px] flex-1 flex-col gap-1.5 rounded-xl border border-dashed border-border/70 p-1.5" :fallback-tolerance="4">
             <div v-for="item in disabledList" :key="item[itemKey]" class="group flex cursor-grab items-center gap-2 rounded-lg border border-border/60 bg-background p-2 active:cursor-grabbing">
               <span class="material-icons text-base text-muted-foreground">drag_indicator</span>
               <slot name="item" :item="item" :disabled="true" />

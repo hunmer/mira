@@ -33,7 +33,7 @@ export function useHomeLibraryManagement(
     try {
       await libraryStore.setCurrentLibrary(collection)
       await resetTabsForLibrary(createTabScopeId(
-        serverListStore.activeServer?.serverUrl,
+        serverListStore.activeServer?.id,
         collection.id
       ))
       await Promise.all([

@@ -49,6 +49,7 @@ const globalActiveTabId = ref('')
 const globalIsRestoringState = ref(true) // 初始为 true，阻止自动创建 tab
 const globalHasInitialized = ref(false) // 标记是否已经初始化过
 let globalHasSetupEffects = false // 标记是否已设置副作用（watch和初始化）
+let tabsResetVersion = 0
 
 /** 将文件夹/标签的数字颜色转换为可直接用于 CSS 的十六进制颜色。 */
 const normalizeTabColor = (color: unknown): string | undefined => {
@@ -134,7 +135,17 @@ async function initializeTabsSystem() {
   await loadLibraryPrefs()
 
   // 尝试从 localStorage 恢复状态
+  const scopeAtStart = tabPersistence.getScopeId()
   const savedState = await tabPersistence.loadTabsState()
+
+  // 初始化期间可能发生服务器/素材库切换，旧作用域的结果不能覆盖新状态。
+  if (scopeAtStart !== tabPersistence.getScopeId()) {
+    console.warn('[tabs-scope] discard stale initial restore', {
+      scopeAtStart,
+      currentScope: tabPersistence.getScopeId()
+    })
+    return
+  }
 
   if (savedState && savedState.tabs.length > 0) {
 
@@ -198,6 +209,7 @@ async function initializeTabsSystem() {
 initializeTabsSystem()
 
 export async function resetTabsForLibrary(libraryId: string | null): Promise<void> {
+  const resetVersion = ++tabsResetVersion
   quickInitTabSystem()
   tabPersistence.setCurrentLibraryId(libraryId)
   clearTabCache()
@@ -207,6 +219,16 @@ export async function resetTabsForLibrary(libraryId: string | null): Promise<voi
 
   try {
     const savedState = await tabPersistence.loadTabsState()
+
+    // 丢弃已被后续服务器/素材库切换取代的恢复结果。
+    if (resetVersion !== tabsResetVersion) {
+      console.warn('[tabs-scope] discard stale library restore', {
+        resetVersion,
+        currentVersion: tabsResetVersion,
+        scope: tabPersistence.getScopeId()
+      })
+      return
+    }
 
     if (!savedState || savedState.tabs.length === 0 || !restoreTabsFromSnapshot(savedState)) {
       globalTabs.value = [createHomeTab()]
@@ -787,9 +809,17 @@ export function useTabs() {
 
     try {
       isRestoringState.value = true
+      const scopeAtStart = tabPersistence.getScopeId()
 
       await loadLibraryPrefs()
       const savedState = await tabPersistence.loadTabsState()
+      if (scopeAtStart !== tabPersistence.getScopeId()) {
+        console.warn('[tabs-scope] discard stale forced restore', {
+          scopeAtStart,
+          currentScope: tabPersistence.getScopeId()
+        })
+        return false
+      }
       if (!savedState || savedState.tabs.length === 0) {
         return false
       }
