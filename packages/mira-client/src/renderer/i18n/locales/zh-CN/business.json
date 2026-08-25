@@ -924,6 +924,7 @@
     "minutesAgo": "{n} 分钟前",
     "tabSend": "发送",
     "tabTransfers": "设备传输",
-    "transferFilesCount": "{count} 个文件"
+    "transferFilesCount": "{count} 个文件",
+    "transferResend": "重新发送"
   }
 }

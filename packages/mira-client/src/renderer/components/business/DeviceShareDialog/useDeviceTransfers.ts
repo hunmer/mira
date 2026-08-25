@@ -7,8 +7,10 @@ import type { DeviceShareAck, DeviceShareMessage } from '@renderer/composables/u
  * 进度由接收端（pair.html / 另一台 mira-client）经 mira-share-ack 回传更新。
  */
 export interface DeviceTransferItem {
-  /** 关联 DeviceShareMessage.id（ack 匹配用） */
+  /** 关联 DeviceShareMessage.id（ack 匹配用；重发后更新为新 id） */
   id: string
+  /** 目标设备 clientId（重新发送用） */
+  targetClientId: string
   /** 目标设备描述（发送时的 describeDevice 结果） */
   targetLabel: string
   files: DeviceShareMessage['files']
@@ -31,10 +33,11 @@ export function activeTransferCount(): number {
 }
 
 /** 发送成功后登记一条传输记录（最新的排在最前） */
-export function addDeviceTransfer(message: DeviceShareMessage, targetLabel: string): void {
+export function addDeviceTransfer(message: DeviceShareMessage, targetClientId: string, targetLabel: string): void {
   deviceTransfers.value.unshift({
     id: message.id || `share_${Date.now()}`,
-    targetLabel,
+    targetClientId,
+    targetLabel: targetLabel || targetClientId,
     files: message.files,
     state: 'sent',
     percent: 0,
@@ -42,6 +45,15 @@ export function addDeviceTransfer(message: DeviceShareMessage, targetLabel: stri
     updatedAt: Date.now(),
   })
   if (deviceTransfers.value.length > 50) deviceTransfers.value.length = 50
+}
+
+/** 重新发送成功后重置记录（新 shareId / 待接收态） */
+export function resetTransferForResend(item: DeviceTransferItem, message: DeviceShareMessage): void {
+  item.id = message.id || item.id
+  item.files = message.files
+  item.state = 'sent'
+  item.percent = 0
+  item.updatedAt = Date.now()
 }
 
 /** 应用接收端回传的进度/状态（WebSocketService 收到 mira-share-ack 后调用） */

@@ -924,6 +924,7 @@
     "minutesAgo": "{n} min ago",
     "tabSend": "Send",
     "tabTransfers": "Transfers",
-    "transferFilesCount": "{count} files"
+    "transferFilesCount": "{count} files",
+    "transferResend": "Resend"
   }
 }

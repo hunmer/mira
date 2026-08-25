@@ -18,7 +18,7 @@ import {
 } from '@renderer/composables/useDeviceShare'
 import type { DeviceShareMessage } from '@renderer/composables/useDeviceShare'
 import {
-  addDeviceTransfer, deviceTransfers, shareDialogTab, clearFinishedTransfers, activeTransferCount,
+  addDeviceTransfer, deviceTransfers, shareDialogTab, clearFinishedTransfers, activeTransferCount, resetTransferForResend,
   type DeviceTransferItem,
 } from './useDeviceTransfers'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
@@ -79,27 +79,31 @@ const handleCopyUrl = async () => {
   toast.success(t('common.copied'))
 }
 
+/** 创建一次性分享票据（免 token 下载，多文件自动 ZIP）；失败返回 undefined 回退逐文件直链 */
+const createTicketUrl = async (files: DeviceShareMessage['files'], libraryId: string): Promise<string | undefined> => {
+  try {
+    // id 优先（server 权威解析路径），path 兜底
+    const ticketFiles = files
+      .filter(f => f.id || f.path)
+      .map(f => ({ id: f.id, path: f.path, name: f.name }))
+    if (ticketFiles.length === 0) return undefined
+    const client = (miraSDKService as any).client
+    const ticket = await client.devices().createShareTicket({ libraryId, files: ticketFiles })
+    // 票据链接要跨设备可达：用局域网 origin（与配对 QR 一致）而不是 serverUrl 里的 loopback
+    const origin = resolveServerOrigin()
+    return ticket?.downloadUrl && origin ? `${origin}${ticket.downloadUrl}` : undefined
+  } catch (e) {
+    console.warn('[device-share] create share ticket failed, fallback to direct urls', e)
+    return undefined
+  }
+}
+
 const handleSend = async () => {
   const client = (miraSDKService as any).client
   if (!client || !selectedClientId.value) return
   const libraryId = libraryStore.currentLibrary?.id || 'default'
 
-  // 先创建一次性分享票据（免 token 下载，多文件自动 ZIP），失败时回退逐文件直链
-  let ticketUrl: string | undefined
-  try {
-    // id 优先（server 权威解析路径），path 兜底
-    const ticketFiles = files.value
-      .filter(f => f.id || f.path)
-      .map(f => ({ id: f.id, path: f.path, name: f.name }))
-    if (ticketFiles.length > 0) {
-      const ticket = await client.devices().createShareTicket({ libraryId, files: ticketFiles })
-      // 票据链接要跨设备可达：用局域网 origin（与配对 QR 一致）而不是 serverUrl 里的 loopback
-      const origin = resolveServerOrigin()
-      if (ticket?.downloadUrl && origin) ticketUrl = `${origin}${ticket.downloadUrl}`
-    }
-  } catch (e) {
-    console.warn('[device-share] create share ticket failed, fallback to direct urls', e)
-  }
+  const ticketUrl = await createTicketUrl(files.value, libraryId)
 
   const message: DeviceShareMessage = {
     type: 'mira-share',
@@ -114,7 +118,7 @@ const handleSend = async () => {
   try {
     await client.devices().sendMessage(selectedClientId.value, libraryId, message)
     // 登记传输记录并切到传输页签查看对端接收进度
-    addDeviceTransfer(message, selectedDeviceLabel.value || selectedClientId.value)
+    addDeviceTransfer(message, selectedClientId.value, selectedDeviceLabel.value)
     shareDialogTab.value = 'transfers'
     toast.success(t('business.deviceShare.sent'))
   } catch (e) {
@@ -124,6 +128,37 @@ const handleSend = async () => {
     })
   } finally {
     sending.value = false
+  }
+}
+
+/** 重新发送一条传输记录：重新生成票据与 shareId，发给原目标设备后重置为待接收态 */
+const resendingId = ref<string | null>(null)
+const handleResend = async (item: DeviceTransferItem) => {
+  const client = (miraSDKService as any).client
+  if (!client || !item.targetClientId || resendingId.value) return
+  const libraryId = libraryStore.currentLibrary?.id || 'default'
+
+  resendingId.value = item.id
+  try {
+    const ticketUrl = await createTicketUrl(item.files, libraryId)
+    const message: DeviceShareMessage = {
+      type: 'mira-share',
+      id: createShareId(),
+      from: getSelfClientId() || 'unknown',
+      libraryId,
+      files: item.files,
+      ...(ticketUrl ? { ticketUrl } : {}),
+    }
+    await client.devices().sendMessage(item.targetClientId, libraryId, message)
+    resetTransferForResend(item, message)
+    toast.success(t('business.deviceShare.sent'))
+  } catch (e) {
+    console.error('[device-share] resend failed', e)
+    toast.error(t('business.deviceShare.sendFailed'), {
+      description: e instanceof Error ? e.message : String(e),
+    })
+  } finally {
+    resendingId.value = null
   }
 }
 
@@ -285,15 +320,26 @@ const dialogDescription = computed(() => shareDialogTab.value === 'send'
                   </AttachmentContent>
                 </Attachment>
 
-                <!-- 多文件：折叠展开逐个 Attachment -->
+                <!-- 多文件：折叠展开逐个 Attachment；右侧提供重新发送 -->
                 <Collapsible v-else :open="isExpanded(item.id)" class="min-w-0" @update:open="setExpanded(item.id, $event)">
-                  <CollapsibleTrigger as-child>
+                  <div class="flex items-center gap-1">
+                    <CollapsibleTrigger as-child>
+                      <button type="button"
+                        class="flex flex-1 min-w-0 items-center gap-1 rounded-md px-1 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
+                        <span class="material-icons text-sm flex-none transition-transform" :class="isExpanded(item.id) && 'rotate-90'">chevron_right</span>
+                        <span class="truncate">
+                          {{ $t('business.deviceShare.transferFilesCount', { count: item.files.length }) }} · {{ formatSize(transferTotalSize(item)) }}
+                        </span>
+                      </button>
+                    </CollapsibleTrigger>
                     <button type="button"
-                      class="flex w-full items-center gap-1 rounded-md px-1 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
-                      <span class="material-icons text-sm transition-transform" :class="isExpanded(item.id) && 'rotate-90'">chevron_right</span>
-                      {{ $t('business.deviceShare.transferFilesCount', { count: item.files.length }) }} · {{ formatSize(transferTotalSize(item)) }}
+                      class="flex-none flex items-center justify-center size-6 rounded-md text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer"
+                      :disabled="resendingId === item.id"
+                      :title="$t('business.deviceShare.transferResend')"
+                      @click="handleResend(item)">
+                      <span class="material-icons text-sm" :class="resendingId === item.id && 'animate-spin'">refresh</span>
                     </button>
-                  </CollapsibleTrigger>
+                  </div>
                   <CollapsibleContent>
                     <div class="flex flex-col gap-2 mt-1 min-w-0">
                       <Attachment v-for="file in item.files" :key="file.id" :state="attachState(item)" class="w-full">
