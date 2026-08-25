@@ -1,13 +1,41 @@
 import * as path from 'path';
 import * as fs from 'fs';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
 import { CoreAccessible } from './types';
+
+const execFileAsync = promisify(execFile);
+
+async function moveToSystemTrash(filePath: string): Promise<void> {
+  if (process.platform === 'win32') {
+    const escaped = filePath.replace(/'/g, "''");
+    await execFileAsync('powershell.exe', [
+      '-NoProfile', '-NonInteractive', '-Command',
+      `$ErrorActionPreference = 'Stop'; Add-Type -AssemblyName Microsoft.VisualBasic; [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile('${escaped}', 'OnlyErrorDialogs', 'SendToRecycleBin')`,
+    ]);
+    return;
+  }
+
+  if (process.platform === 'darwin') {
+    const escaped = filePath.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    await execFileAsync('osascript', ['-e', `tell application "Finder" to delete POSIX file "${escaped}"`]);
+    return;
+  }
+
+  if (process.platform === 'linux') {
+    await execFileAsync('gio', ['trash', filePath]);
+    return;
+  }
+
+  throw new Error(`System trash is not supported on platform: ${process.platform}`);
+}
 
 export const FileImport = {
   async createFileFromPath(
     this: CoreAccessible,
     filePath: string,
     fileMeta: Record<string, any>,
-    options?: { importType: string }
+    options?: { importType?: 'copy' | 'move' | 'link' }
   ): Promise<Record<string, any>> {
     if (!fs.existsSync(filePath)) {
       throw new Error(`File does not exist: ${filePath}`);
@@ -31,6 +59,11 @@ export const FileImport = {
       }
     }
 
+    const importType = options?.importType || 'copy';
+    if (!['copy', 'move', 'link'].includes(importType)) {
+      throw new Error(`Unknown import type: ${importType}`);
+    }
+
     const fileData = {
       path: filePath,
       name: path.basename(filePath),
@@ -41,7 +74,7 @@ export const FileImport = {
       ...fileMeta,
     };
 
-    await (this as any).handleFile(filePath, fileData, options?.importType || 'copy');
+    await (this as any).handleFile(filePath, fileData, importType);
     const result = await this.createFile(fileData);
     this.notifyFileImported(result);
     return result;
@@ -141,36 +174,54 @@ export const FileImport = {
     fileData: Record<string, any>,
     importType: string
   ): Promise<void> {
-    // link 只记录现有文件，不能用目标路径的自身存在性触发重命名。
-    if (importType === 'link') return;
-
-    let destPath = this.getUniquePath(path.join(await this.getItemPath(fileData), fileData.name));
+    const requestedDest = path.join(await this.getItemPath(fileData), fileData.name);
+    // 素材库内已有文件导入时，源和目标相同，不应生成重复文件名。
+    let destPath = path.resolve(filePath) === path.resolve(requestedDest)
+      ? requestedDest
+      : this.getUniquePath(requestedDest);
     const destDir = path.dirname(destPath);
     const actualName = path.basename(destPath);
     if (actualName !== fileData.name) {
       fileData.name = actualName;
     }
     switch (importType) {
+      case 'link':
+        if (path.resolve(filePath) === path.resolve(destPath)) {
+          fileData.path = filePath;
+          break;
+        }
+        if (!fs.existsSync(destDir)) {
+          fs.mkdirSync(destDir, { recursive: true });
+        }
+        // Windows 创建文件符号链接可能需要开发者模式或管理员权限；失败时明确返回原因。
+        await fs.promises.symlink(filePath, destPath, 'file');
+        // link 模式唯一保留源文件绝对路径，便于检测源文件是否失效。
+        fileData.path = filePath;
+        fileData.name = path.basename(destPath);
+        break;
       case 'copy':
         if (!fs.existsSync(destDir)) {
           fs.mkdirSync(destDir, { recursive: true });
         }
         // 异步复制：大文件（视频等）同步 copy 会长时间阻塞事件循环
-        await fs.promises.copyFile(filePath, destPath);
-        fileData.path = destPath;
+        if (path.resolve(filePath) !== path.resolve(destPath)) {
+          await fs.promises.copyFile(filePath, destPath);
+        }
+        fileData.path = null;
         fileData.name = path.basename(destPath);
         break;
       case 'move':
         if (!fs.existsSync(destDir)) {
           fs.mkdirSync(destDir, { recursive: true });
         }
-        if (path.parse(filePath).root !== path.parse(destPath).root) {
-          await fs.promises.copyFile(filePath, destPath);
-          await fs.promises.unlink(filePath);
-        } else {
-          await fs.promises.rename(filePath, destPath);
+        if (path.resolve(filePath) === path.resolve(destPath)) {
+          fileData.path = null;
+          break;
         }
-        fileData.path = destPath;
+        // move 的语义是先完整复制，再将源文件送入系统回收站；复制或回收站操作失败时保留源文件。
+        await fs.promises.copyFile(filePath, destPath);
+        await moveToSystemTrash(filePath);
+        fileData.path = null;
         fileData.name = path.basename(destPath);
         break;
       default:

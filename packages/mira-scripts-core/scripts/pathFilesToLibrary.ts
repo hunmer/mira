@@ -4,7 +4,7 @@ import { LibraryServerDataSQLite } from 'mira-app-core/storage/sqlite';
 
 interface FileImportOptions {
   maxFolderDepth?: number;
-  importType?: 'copy' | 'move';
+  importType?: 'copy' | 'move' | 'link';
 }
 
 export class PathFilesImporter {
@@ -83,7 +83,7 @@ export class PathFilesImporter {
       notes: '',
       folder_id: folderId,
       reference: '',
-      path: filePath, // 使用完整路径
+      path: options.importType === 'link' ? filePath : null,
       tags: null
     };
 
@@ -111,6 +111,8 @@ export class PathFilesImporter {
           fs.copyFileSync(filePath, savePath);
         } else if (options.importType === 'move') {
           fs.renameSync(filePath, savePath);
+        } else if (options.importType === 'link') {
+          fs.symlinkSync(filePath, savePath, 'file');
         }
       } catch (err) {
         console.error(`Failed to ${options.importType} file: ${filePath}`, err);
@@ -169,7 +171,7 @@ async function main(sourcePath: string, options?: FileImportOptions & { targetDb
   const config = {
     id: 'library-1',
     customFields: {
-      path: options?.targetDbPath
+          path: options?.targetDbPath
     }
   };
 

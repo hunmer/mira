@@ -2,6 +2,11 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { CoreAccessible } from './types';
 
+const serializeCustomFields = (value: any) => {
+  if (value === '[object Object]') return null;
+  return value === undefined || typeof value === 'string' ? value : JSON.stringify(value);
+};
+
 export const FileOperations = {
   async createFile(this: CoreAccessible, fileData: Record<string, any>): Promise<Record<string, any>> {
     const result = await this.runSql(
@@ -16,7 +21,7 @@ export const FileOperations = {
         fileData.imported_at,
         fileData.size,
         fileData.hash,
-        fileData.custom_fields,
+        serializeCustomFields(fileData.custom_fields),
         fileData.notes,
         fileData.stars ?? 0,
         fileData.folder_id,
@@ -54,7 +59,7 @@ export const FileOperations = {
     addField('imported_at', fileData.imported_at);
     addField('size', fileData.size);
     addField('hash', fileData.hash);
-    addField('custom_fields', fileData.custom_fields);
+    addField('custom_fields', serializeCustomFields(fileData.custom_fields));
     addField('notes', fileData.notes);
     addField('stars', fileData.stars);
     addField('tags', fileData.tags);

@@ -64,7 +64,7 @@ async function loadLibraries() {
 function getDefaultForm(): LibraryFormData {
   return {
     name: '', path: '', description: '',
-    icon: '', enableHash: false, enableAutoSync: false, enableThumbScan: true, enableAutoBackup: true,
+    icon: '', enableHash: false, enableAutoSync: false, enableThumbScan: true, enableAutoBackup: true, importType: 'copy',
     enableDbMirror: false,
     pluginsDir: '',
     allowedRoles: ['super', 'admin', 'user'],
@@ -97,6 +97,7 @@ function openEdit(lib: Library) {
     enableThumbScan: lib.customFields?.enableThumbScan ?? true,
     enableAutoBackup: lib.customFields?.enableAutoBackup ?? true,
     enableDbMirror: lib.customFields?.enableDbMirror ?? false,
+    importType: ['copy', 'move', 'link'].includes(lib.customFields?.importType) ? lib.customFields?.importType as 'copy' | 'move' | 'link' : 'copy',
     syncFilterMode: (lib.customFields?.syncFilterMode === 'whitelist' ? 'whitelist' : 'blacklist'),
     syncBlacklist: lib.customFields?.syncBlacklist ?? '',
     syncWhitelist: lib.customFields?.syncWhitelist ?? '',
@@ -110,14 +111,14 @@ async function handleSave() {
   if (!editingLib.value) return
   try {
     const {
-      _id, enableHash, enableAutoSync, enableThumbScan, enableAutoBackup, enableDbMirror,
+      _id, enableHash, enableAutoSync, enableThumbScan, enableAutoBackup, enableDbMirror, importType,
       syncFilterMode, syncBlacklist, syncWhitelist,
       ...rest
     } = editingLib.value as LibraryFormData & { _id?: string }
     const data = {
       ...rest,
       customFields: {
-        enableHash, enableAutoSync, enableThumbScan, enableAutoBackup, enableDbMirror,
+        enableHash, enableAutoSync, enableThumbScan, enableAutoBackup, enableDbMirror, importType,
         syncFilterMode, syncBlacklist, syncWhitelist,
       },
     }

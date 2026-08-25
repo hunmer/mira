@@ -593,7 +593,9 @@ export class FsRouter {
             const fileData: Record<string, any> = {};
             const folderId = await this.resolveFolder(filePath, libraryPath, dbService);
             if (folderId) fileData.folder_id = folderId;
-            const file = await dbService.createFileFromPath(filePath, fileData, { importType: 'link' });
+            const importType = ['copy', 'move', 'link'].includes(customFields?.importType)
+                ? customFields?.importType : 'copy';
+            const file = await dbService.createFileFromPath(filePath, fileData, { importType });
             if (file.duplicate) continue;
             added.push({ id: Number(file.id), name: file.name, path: file.path });
         }
@@ -629,7 +631,9 @@ export class FsRouter {
                 const fileData: Record<string, any> = {};
                 const folderId = await this.resolveFolder(filePath, libraryPath, dbService);
                 if (folderId) fileData.folder_id = folderId;
-                await dbService.createFileFromPath(filePath, fileData, { importType: 'link' });
+                const importType = ['copy', 'move', 'link'].includes(customFields?.importType)
+                    ? customFields?.importType : 'copy';
+                await dbService.createFileFromPath(filePath, fileData, { importType });
                 added++;
             }
         }

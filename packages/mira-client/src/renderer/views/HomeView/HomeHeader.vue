@@ -13,6 +13,7 @@ import {
   DropdownMenuSubContent,
 } from '@/components/ui/dropdown-menu'
 import { useAuthStore } from '@/renderer/stores/auth'
+import { useLibraryStore } from '@/renderer/stores/library'
 import { useSettingsStore } from '@/renderer/stores/settings'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { environment } from '@renderer/utils'
@@ -37,6 +38,7 @@ const emit = defineEmits<{
 }>()
 
 const authStore = useAuthStore()
+const libraryStore = useLibraryStore()
 const settingsStore = useSettingsStore()
 const router = useRouter()
 const avatarLoadError = ref(false)
@@ -130,7 +132,9 @@ const revealThemeTransition = (event: MouseEvent, apply: () => void) => {
 const openDashboard = async () => {
   const base = (miraSDKService.getConnectionConfig()?.serverUrl || '').replace(/\/$/, '')
   if (!base) return
-  const url = `${base}/dashboard`
+  // 带上当前素材库 id，让 dashboard 默认选中同一素材库（hash 路由，参数放在 hash query）
+  const libraryId = libraryStore.currentLibrary?.id
+  const url = `${base}/dashboard#/overview${libraryId ? `?library=${libraryId}` : ''}`
   if (environment.isElectron) {
     await window.electronAPI.invoke('window:open-url', url, {
       width: 1280,
@@ -180,17 +184,6 @@ const openUiTestPanel = async () => {
   <!-- 紧凑右侧悬浮栏：用户头像菜单 + 窗口控制 -->
   <header
     class="flex items-center justify-end gap-1 px-2 py-1.5 rounded-2xl border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur-xl shadow-[0_12px_40px_rgba(99,102,241,0.10)] w-fit ml-auto">
-    <!-- 设备传输：待接收列表与对端接收进度 -->
-    <button
-      class="relative h-8 w-8 flex items-center justify-center rounded-lg transition-colors cursor-pointer text-muted-foreground hover:bg-primary/10 hover:text-primary"
-      :title="$t('business.deviceShare.transferTitle')" @click="openTransferPanel">
-      <span class="material-icons" style="font-size: 18px;">swap_vert</span>
-      <span v-if="activeTransferCount > 0"
-        class="absolute -top-0.5 -right-0.5 min-w-3.5 h-3.5 px-0.5 rounded-full bg-primary text-primary-foreground text-[9px] leading-none flex items-center justify-center">
-        {{ activeTransferCount }}
-      </span>
-    </button>
-
     <!-- 切换亮色/暗色主题 -->
     <button
       class="h-8 w-8 flex items-center justify-center rounded-lg transition-[color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-95 cursor-pointer text-muted-foreground hover:bg-primary/10 hover:text-primary"
@@ -226,6 +219,15 @@ const openUiTestPanel = async () => {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <!-- 设备传输：待接收列表与对端接收进度 -->
+        <DropdownMenuItem @select="openTransferPanel">
+          <span class="material-icons text-base">swap_vert</span>
+          <span>{{ $t('business.deviceShare.transferTitle') }}</span>
+          <span v-if="activeTransferCount > 0"
+            class="ml-auto min-w-3.5 h-3.5 px-0.5 rounded-full bg-primary text-primary-foreground text-[9px] leading-none flex items-center justify-center">
+            {{ activeTransferCount }}
+          </span>
+        </DropdownMenuItem>
         <DropdownMenuItem @select="emit('settings')">
           <span class="material-icons text-base">settings</span>
           <span>{{ $t('views.homeHeader.settings') }}</span>

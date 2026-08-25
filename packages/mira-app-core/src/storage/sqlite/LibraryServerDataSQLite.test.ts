@@ -41,4 +41,26 @@ describe('LibraryServerDataSQLite file website metadata', () => {
     expect(update.success).toBe(true);
     expect((await library.getFile(created.id))?.website).toBe('https://www.baidu.com');
   });
+
+  it('serializes custom_fields objects before writing to sqlite', async () => {
+    root = fs.mkdtempSync(path.join(os.tmpdir(), 'mira-custom-fields-'));
+    library = new LibraryServerDataSQLite({ id: 'custom-fields-test', customFields: { path: root } });
+    await library.initialize();
+
+    const created = await library.createFile({
+      name: 'sample.jpg', path: path.join(root, 'sample.jpg'),
+      created_at: Date.now(), imported_at: Date.now(), size: 1, hash: '',
+      custom_fields: { source: { url: 'https://example.com' } },
+    });
+    expect((await library.query('SELECT custom_fields FROM files WHERE id = ?', [created.id]))[0].custom_fields)
+      .toBe('{"source":{"url":"https://example.com"}}');
+
+    await library.updateFile(created.id, { custom_fields: { updated: { ok: true } } });
+    expect((await library.query('SELECT custom_fields FROM files WHERE id = ?', [created.id]))[0].custom_fields)
+      .toBe('{"updated":{"ok":true}}');
+
+    await library.updateFile(created.id, { custom_fields: '[object Object]' });
+    expect((await library.query('SELECT custom_fields FROM files WHERE id = ?', [created.id]))[0].custom_fields)
+      .toBeNull();
+  });
 });

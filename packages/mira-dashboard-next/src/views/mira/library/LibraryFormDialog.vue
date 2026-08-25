@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import PathTreeSelect from '@/components/PathTreeSelect.vue'
 import {
@@ -11,6 +12,7 @@ import {
 } from '@/components/ui/dialog'
 
 export type SyncFilterMode = 'blacklist' | 'whitelist'
+export type ImportType = 'copy' | 'move' | 'link'
 
 export interface LibraryFormData {
   name: string
@@ -22,6 +24,7 @@ export interface LibraryFormData {
   enableThumbScan: boolean
   enableAutoBackup: boolean
   enableDbMirror: boolean
+  importType: ImportType
   pluginsDir: string
   allowedRoles: string[]
   /** 自动同步过滤模式：黑名单（排除） / 白名单（强制包含） */
@@ -71,6 +74,17 @@ const toggleRole = (role: string) => {
         <div class="space-y-2">
           <Label>{{ t('library.path') }}</Label>
           <PathTreeSelect v-model="form.path" :placeholder="t('library.pathPlaceholder')" />
+        </div>
+        <div class="space-y-2">
+          <Label>{{ t('library.importType') }}</Label>
+          <Select v-model="form.importType">
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="copy">{{ t('library.importTypeCopy') }}</SelectItem>
+              <SelectItem value="move">{{ t('library.importTypeMove') }}</SelectItem>
+              <SelectItem value="link">{{ t('library.importTypeLink') }}</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <!-- <div class="space-y-2">
           <Label>{{ t('library.icon') }}</Label>
