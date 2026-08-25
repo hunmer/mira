@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { appService } from '@renderer/services'
 import { incomingShare, sendShareAck } from '@renderer/composables/useDeviceShare'
 import { useSettingsStore } from '@renderer/stores/settings'
-import { downloadShareFiles } from './downloadShare'
+import { receiveShareFiles } from './downloadShare'
 
 /** 接收端：收到其他设备的分享请求后确认接收并下载（Electron 可选保存位置） */
 const { t } = useI18n()
@@ -44,7 +44,7 @@ const handleAccept = async () => {
   downloading.value = true
   percent.value = 0
   try {
-    const saved = await downloadShareFiles(message, {
+    const saved = await receiveShareFiles(message, {
       saveDir: saveDir.value || undefined,
       onProgress: (p) => {
         percent.value = p

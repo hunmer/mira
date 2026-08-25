@@ -12,6 +12,7 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/component
 import {
   Attachment, AttachmentContent, AttachmentDescription, AttachmentMedia, AttachmentTitle,
 } from '@/components/ui/attachment'
+import { Dropzone } from '@/components/ui/dropzone'
 import DeviceListPicker from './DeviceListPicker.vue'
 import {
   shareDialogOpen, shareFiles, getSelfClientId, buildPairUrl, resolveServerOrigin, createShareId, describeDevice,
@@ -21,6 +22,7 @@ import {
   addDeviceTransfer, deviceTransfers, shareDialogTab, clearFinishedTransfers, activeTransferCount, resetTransferForResend,
   type DeviceTransferItem,
 } from './useDeviceTransfers'
+import { startBinarySend } from './binaryTransfer'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { useLibraryStore } from '@renderer/stores/library'
 
@@ -38,7 +40,11 @@ const qrDataUrl = ref<string | null>(null)
 const pairUrl = ref<string | null>(null)
 
 const files = computed(() => shareFiles.value)
-const totalSize = computed(() => files.value.reduce((sum, f) => sum + (f.size || 0), 0))
+/** Dropzone 暂存的本地文件：随消息以 WS 二进制端到端推流（不经过 server 存储） */
+const localFiles = ref<File[]>([])
+const totalSize = computed(() =>
+  files.value.reduce((sum, f) => sum + (f.size || 0), 0)
+  + localFiles.value.reduce((sum, f) => sum + (f.size || 0), 0))
 const activeCount = computed(() => activeTransferCount())
 
 /** 当前选中设备的展示名（传输记录目标描述用） */
@@ -59,6 +65,7 @@ const formatSize = (n?: number) => {
 watch(shareDialogOpen, async (open) => {
   if (!open) {
     selectedClientId.value = null
+    localFiles.value = []
     return
   }
   qrDataUrl.value = null
@@ -82,9 +89,9 @@ const handleCopyUrl = async () => {
 /** 创建一次性分享票据（免 token 下载，多文件自动 ZIP）；失败返回 undefined 回退逐文件直链 */
 const createTicketUrl = async (files: DeviceShareMessage['files'], libraryId: string): Promise<string | undefined> => {
   try {
-    // id 优先（server 权威解析路径），path 兜底
+    // id 优先（server 权威解析路径），path 兜底；binary 本地文件不进票据
     const ticketFiles = files
-      .filter(f => f.id || f.path)
+      .filter(f => !f.binary && (f.id || f.path))
       .map(f => ({ id: f.id, path: f.path, name: f.name }))
     if (ticketFiles.length === 0) return undefined
     const client = (miraSDKService as any).client
@@ -103,7 +110,21 @@ const handleSend = async () => {
   if (!client || !selectedClientId.value) return
   const libraryId = libraryStore.currentLibrary?.id || 'default'
 
-  const ticketUrl = await createTicketUrl(files.value, libraryId)
+  // 本地文件（Dropzone 选择）：无 url，标记 binary 由对端确认后 WS 二进制推流
+  const binaryFiles = localFiles.value.map((f, i) => ({
+    id: `local_${Date.now()}_${i}`,
+    name: f.name,
+    size: f.size,
+    url: '',
+    binary: true as const,
+  }))
+  const allFiles = [...JSON.parse(JSON.stringify(files.value)) as DeviceShareMessage['files'], ...binaryFiles]
+  if (allFiles.length === 0) return
+
+  const hasBinary = binaryFiles.length > 0
+  const ticketUrl = hasBinary && files.value.length === 0
+    ? undefined
+    : await createTicketUrl(files.value, libraryId)
 
   const message: DeviceShareMessage = {
     type: 'mira-share',
@@ -111,14 +132,18 @@ const handleSend = async () => {
     id: createShareId(),
     from: getSelfClientId() || 'unknown',
     libraryId,
-    files: JSON.parse(JSON.stringify(files.value)),
+    files: allFiles,
     ...(ticketUrl ? { ticketUrl } : {}),
+    ...(hasBinary ? { binary: true } : {}),
   }
   sending.value = true
   try {
     await client.devices().sendMessage(selectedClientId.value, libraryId, message)
+    // 含本地文件：登记二进制会话，对端确认接收后自动推流
+    if (hasBinary) startBinarySend(message.id!, selectedClientId.value, [...localFiles.value])
     // 登记传输记录并切到传输页签查看对端接收进度
     addDeviceTransfer(message, selectedClientId.value, selectedDeviceLabel.value)
+    localFiles.value = []
     shareDialogTab.value = 'transfers'
     toast.success(t('business.deviceShare.sent'))
   } catch (e) {
@@ -133,9 +158,11 @@ const handleSend = async () => {
 
 /** 重新发送一条传输记录：重新生成票据与 shareId，发给原目标设备后重置为待接收态 */
 const resendingId = ref<string | null>(null)
+/** 含本地二进制文件的记录无法重发（File 对象不随记录保留） */
+const isBinaryTransfer = (item: DeviceTransferItem) => item.files.some(f => f.binary)
 const handleResend = async (item: DeviceTransferItem) => {
   const client = (miraSDKService as any).client
-  if (!client || !item.targetClientId || resendingId.value) return
+  if (!client || !item.targetClientId || resendingId.value || isBinaryTransfer(item)) return
   const libraryId = libraryStore.currentLibrary?.id || 'default'
 
   resendingId.value = item.id
@@ -228,7 +255,7 @@ const timeAgo = (ts: number) => {
 }
 
 const dialogDescription = computed(() => shareDialogTab.value === 'send'
-  ? t('business.deviceShare.fileSummary', { count: files.value.length, size: formatSize(totalSize.value) || '-' })
+  ? t('business.deviceShare.fileSummary', { count: files.value.length + localFiles.value.length, size: formatSize(totalSize.value) || '-' })
   : t('business.deviceShare.transferDesc'))
 </script>
 
@@ -276,9 +303,12 @@ const dialogDescription = computed(() => shareDialogTab.value === 'send'
               </div>
             </div>
 
+            <!-- 本地文件：拖放/点击选择，随消息二进制端到端推流 -->
+            <Dropzone v-model:files="localFiles" :hint="$t('business.deviceShare.dropHint')" orientation="horizontal" />
+
             <DialogFooter>
               <Button variant="outline" @click="shareDialogOpen = false">{{ $t('common.cancel') }}</Button>
-              <Button :disabled="!selectedClientId || sending" @click="handleSend">
+              <Button :disabled="!selectedClientId || sending || (files.length === 0 && localFiles.length === 0)" @click="handleSend">
                 {{ sending ? $t('business.deviceShare.sending') : $t('business.deviceShare.send') }}
               </Button>
             </DialogFooter>
@@ -334,8 +364,8 @@ const dialogDescription = computed(() => shareDialogTab.value === 'send'
                     </CollapsibleTrigger>
                     <button type="button"
                       class="flex-none flex items-center justify-center size-6 rounded-md text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer"
-                      :disabled="resendingId === item.id"
-                      :title="$t('business.deviceShare.transferResend')"
+                      :disabled="resendingId === item.id || isBinaryTransfer(item)"
+                      :title="isBinaryTransfer(item) ? $t('business.deviceShare.binaryResendUnsupported') : $t('business.deviceShare.transferResend')"
                       @click="handleResend(item)">
                       <span class="material-icons text-sm" :class="resendingId === item.id && 'animate-spin'">refresh</span>
                     </button>

@@ -5,6 +5,7 @@ import { useSettingsStore } from '../stores/settings'
 import { useTabs } from '../composables/useTabs'
 import { pushIncomingShare } from '../composables/useDeviceShare'
 import { applyShareAck } from '../components/business/DeviceShareDialog/useDeviceTransfers'
+import { cancelBinarySend, onBinaryShareAccept } from '../components/business/DeviceShareDialog/binaryTransfer'
 import ConfigStorage from '../utils/ConfigStorage'
 import { toFileUrl } from '../utils/fileUtils'
 import i18n from '../i18n'
@@ -29,6 +30,8 @@ class WebSocketService {
   private maxReconnectAttempts = 5
   private reconnectDelay = 1000
   private eventListeners: Map<string, Array<(data: any) => void>> = new Map()
+  /** 二进制帧处理器（设备间端到端文件传输，单播：binaryTransfer 注册） */
+  private binaryHandler: ((data: ArrayBuffer) => void) | null = null
   private fields: Record<string, any> = {}
   private readonly fieldsStoragePrefix = 'mira_ws_fields'
 
@@ -75,6 +78,8 @@ class WebSocketService {
       this.ws.onmessage = this.handleMessage.bind(this)
       this.ws.onclose = this.handleClose.bind(this)
       this.ws.onerror = this.handleError.bind(this)
+      // 二进制帧（设备间文件传输）按 ArrayBuffer 交付，便于逐字节解析
+      this.ws.binaryType = 'arraybuffer'
 
       // 等待连接建立
       return new Promise((resolve) => {
@@ -138,6 +143,33 @@ class WebSocketService {
   }
 
   /**
+   * 发送二进制帧（设备间端到端文件传输；server 按帧头目标 clientId 转发）
+   */
+  sendBinary(data: ArrayBuffer | Uint8Array): boolean {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      console.warn('WebSocket is not connected')
+      return false
+    }
+    try {
+      this.ws.send(data as ArrayBuffer)
+      return true
+    } catch (error) {
+      console.error('Failed to send WebSocket binary message:', error)
+      return false
+    }
+  }
+
+  /** 当前连接待发送缓冲字节数（发送端流控用） */
+  getBufferedAmount(): number {
+    return this.ws?.bufferedAmount ?? 0
+  }
+
+  /** 注册二进制帧处理器（设备间文件传输专用，单播） */
+  setBinaryHandler(handler: ((data: ArrayBuffer) => void) | null): void {
+    this.binaryHandler = handler
+  }
+
+  /**
    * 添加事件监听器
    */
   addEventListener(eventName: string, callback: (data: any) => void): void {
@@ -180,6 +212,15 @@ class WebSocketService {
   }
 
   private handleMessage(event: MessageEvent): void {
+    // 二进制帧（设备间端到端文件传输）：分发给注册的处理器，不参与 JSON 解析
+    if (typeof event.data !== 'string') {
+      try {
+        this.binaryHandler?.(event.data as ArrayBuffer)
+      } catch (error) {
+        console.error('Error in WebSocket binary handler:', error)
+      }
+      return
+    }
     try {
       const data = JSON.parse(event.data)
       // console.log('WebSocket message received:', data)
@@ -900,7 +941,12 @@ function setupEventListeners(libraryStore: any): void {
     // 接收端回传的进度/状态：更新传输对话框中对应记录
     if (message?.type === 'mira-share-ack' && message.shareId) {
       applyShareAck(message)
+      // 失败/拒绝终态：终止本地二进制推流会话（下一块即停止）
+      if (message.state === 'failed' || message.state === 'declined') cancelBinarySend(message.shareId)
+      return
     }
+    // 接收端确认二进制分享：启动对应发送会话推流
+    if (message?.type === 'mira-share-accept' && message.shareId) onBinaryShareAccept(message)
   })
 }
 

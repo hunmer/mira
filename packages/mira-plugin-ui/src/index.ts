@@ -3,6 +3,7 @@ import './assets/tailwind.css'
 import BatchUploadDialog from './BatchUploadDialog.vue'
 import BatchUploadForm from './BatchUploadForm.vue'
 import DeviceListPicker from './DeviceListPicker.vue'
+import Dropzone from './library/Dropzone.vue'
 import FileInfoForm from './FileInfoForm.vue'
 import LibrarySelect from './library/LibrarySelect.vue'
 import SaveLocationDialog from './SaveLocationDialog.vue'
@@ -25,6 +26,7 @@ import * as tagsInput from './components/ui/tags-input'
 export { default as BatchUploadDialog } from './BatchUploadDialog.vue'
 export { default as BatchUploadForm } from './BatchUploadForm.vue'
 export { default as DeviceListPicker } from './DeviceListPicker.vue'
+export { default as Dropzone } from './library/Dropzone.vue'
 export { default as FileInfoForm } from './FileInfoForm.vue'
 export { default as SaveLocationDialog } from './SaveLocationDialog.vue'
 export { default as SaveLocationForm } from './SaveLocationForm.vue'
@@ -50,6 +52,7 @@ const components = {
   BatchUploadDialog,
   BatchUploadForm,
   DeviceListPicker,
+  Dropzone,
   FileInfoForm,
   SaveLocationDialog,
   SaveLocationForm,

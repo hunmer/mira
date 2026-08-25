@@ -186,10 +186,16 @@ export class MiraWebsocketServer {
     }
 
     private handleConnection(ws: WebSocket): void {
-        ws.on('message', async (message: string) => {
+        ws.on('message', async (message: unknown, isBinary: boolean) => {
+            const client = ws as ConnectedClient;
+            client.lastActivity = new Date().toISOString();
+            // 设备间二进制文件帧：按帧头目标 clientId 直接转发，不进 JSON 业务路由
+            if (isBinary) {
+                this.relayBinaryMessage(ws, message as Buffer);
+                return;
+            }
             try {
-                (ws as ConnectedClient).lastActivity = new Date().toISOString();
-                const data = JSON.parse(message);
+                const data = JSON.parse(message as string);
                 await this.handleMessage(ws, data);
             } catch (e) {
                 this.sendToWebsocket(ws, {
@@ -303,8 +309,42 @@ export class MiraWebsocketServer {
         );
     }
 
-    private unregisterClient(ws: WebSocket): void {
-        Object.keys(this.libraryClients).forEach(libraryId => {
+    /** 按 clientId 跨库查找在线连接（二进制转发目标解析用） */
+    private findDeviceClient(clientId: string): ConnectedClient | undefined {
+        for (const clients of Object.values(this.libraryClients)) {
+            const found = clients.find(c => (c as ConnectedClient).clientId === clientId);
+            if (found && found.readyState === WebSocket.OPEN) return found as ConnectedClient;
+        }
+        return undefined;
+    }
+
+    /**
+     * 设备间二进制文件帧转发（端到端：server 只路由不落盘）。
+     * 帧格式：[0x4D 魔数][u16 目标clientId长度][clientId] + 载荷帧（shareId/flags/seq/payload，
+     * 载荷格式由两端协议定义）。剥掉目标段后原样转发；目标不在线直接丢弃（发送端有超时兜底）。
+     */
+    private relayBinaryMessage(from: WebSocket, data: Buffer): void {
+        try {
+            // 最小合法长度：magic(1) + targetLen(2) + target(>=1) + shareIdLen(2)
+            if (!data || data.length < 6 || data[0] !== 0x4d) return;
+            const targetLen = data.readUInt16BE(1);
+            if (targetLen === 0 || data.length < 3 + targetLen + 2) return;
+            const targetClientId = data.subarray(3, 3 + targetLen).toString('utf8');
+            const sender = (from as ConnectedClient).clientId || 'unknown';
+            if (targetClientId === sender) return;
+
+            const target = this.findDeviceClient(targetClientId);
+            if (!target) {
+                console.warn(`[WebSocketServer] Binary relay target not found: ${targetClientId}`);
+                return;
+            }
+            target.send(data.subarray(3 + targetLen), { binary: true });
+        } catch (error) {
+            console.warn('[WebSocketServer] Failed to relay binary message:', error instanceof Error ? error.message : String(error));
+        }
+    }
+
+    private unregisterClient(ws: WebSocket): void {        Object.keys(this.libraryClients).forEach(libraryId => {
             const index = this.libraryClients[libraryId].findIndex(client => client === ws);
             if (index === -1) return;
 

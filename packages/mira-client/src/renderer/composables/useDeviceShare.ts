@@ -9,10 +9,10 @@ import { webSocketService } from '../services/WebSocketService'
 import { useAuthStore } from '../stores/auth'
 import { useLibraryStore } from '../stores/library'
 import { useSettingsStore } from '../stores/settings'
-import { downloadShareFiles } from '../components/business/DeviceShareDialog/downloadShare'
+import { receiveShareFiles } from '../components/business/DeviceShareDialog/downloadShare'
 import { shareDialogTab } from '../components/business/DeviceShareDialog/useDeviceTransfers'
 
-/** 分享消息中的单个文件（只传 HTTP 直连链，不传二进制内容） */
+/** 分享消息中的单个文件（库内文件传 HTTP 直链；本地文件 binary=true 走 WS 二进制流） */
 export interface DeviceShareFile {
   id: string
   name: string
@@ -21,6 +21,8 @@ export interface DeviceShareFile {
   size?: number
   /** 单文件下载直链（含 token） */
   url: string
+  /** 本地文件（Dropzone 选择）：无 url 内容，由发送端 WS 二进制推流 */
+  binary?: boolean
 }
 
 /** 通过 devices().sendMessage 发送的设备间分享消息体 */
@@ -34,6 +36,14 @@ export interface DeviceShareMessage {
   files: DeviceShareFile[]
   /** 一次性分享票据下载链（免 token，多文件为 ZIP）：优先于逐文件直链 */
   ticketUrl?: string
+  /** 含本地文件二进制推流：接收端确认后发送端开始推 WS 二进制帧 */
+  binary?: boolean
+}
+
+/** 接收端确认接收二进制分享（发送端收到后开始推流） */
+export interface DeviceShareAccept {
+  type: 'mira-share-accept'
+  shareId: string
 }
 
 /** 接收端向发送端回传的进度/状态消息体 */
@@ -154,7 +164,7 @@ async function autoAcceptShare(message: DeviceShareMessage): Promise<void> {
   const from = message.fromLabel || message.from || ''
   const toastId = toast.loading(t('business.deviceShare.autoAccepting', { from, count: message.files?.length || 0 }))
   try {
-    const saved = await downloadShareFiles(message, {
+    const saved = await receiveShareFiles(message, {
       saveDir: settings.deviceShareSaveDir || undefined,
       onProgress: (p) => sendShareAck(message.from, message.id, 'receiving', p),
     })

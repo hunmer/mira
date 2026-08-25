@@ -3,6 +3,7 @@ import type { DeviceShareFile, DeviceShareMessage } from '@renderer/composables/
 import { buildFileDownloadUrl } from '@renderer/composables/useDeviceShare'
 import { useAuthStore } from '@renderer/stores/auth'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
+import { receiveBinaryShare } from './binaryTransfer'
 
 export interface DownloadProgress {
   (percent: number, receivedBytes: number, totalBytes: number): void
@@ -124,6 +125,38 @@ export async function downloadShareFiles(
     }
   }
   return saved
+}
+
+/**
+ * 接收入口：混合分享（库内文件 URL/票据 + 本地文件二进制流）并行接收，进度按总字节数合并。
+ * 纯 URL 分享等价于直接调 downloadShareFiles。
+ */
+export async function receiveShareFiles(
+  message: DeviceShareMessage,
+  opts: { saveDir?: string; onProgress?: DownloadProgress } = {},
+): Promise<string[]> {
+  const all = message.files || []
+  const binaryFiles = all.filter(f => f.binary)
+  if (binaryFiles.length === 0) return downloadShareFiles(message, opts)
+
+  const urlFiles = all.filter(f => !f.binary)
+  const totalBytes = all.reduce((s, f) => s + (f.size || 0), 0) || 1
+  const urlBytes = urlFiles.reduce((s, f) => s + (f.size || 0), 0)
+  const binaryBytes = binaryFiles.reduce((s, f) => s + (f.size || 0), 0)
+  let urlPercent = urlBytes === 0 ? 1 : 0
+  let binaryPercent = 0
+  const merged = () => opts.onProgress?.((urlBytes * urlPercent + binaryBytes * binaryPercent) / totalBytes, 0, totalBytes)
+
+  const tasks: Promise<string[]>[] = []
+  if (urlFiles.length > 0) {
+    tasks.push(downloadShareFiles({ ...message, files: urlFiles }, { saveDir: opts.saveDir, onProgress: p => { urlPercent = p; merged() } }))
+  }
+  tasks.push(receiveBinaryShare({ ...message, files: binaryFiles }, {
+    saveDir: opts.saveDir,
+    onProgress: p => { binaryPercent = p; merged() },
+  }))
+  const results = await Promise.all(tasks)
+  return results.flat()
 }
 
 function joinPath(dir: string, name: string): string {

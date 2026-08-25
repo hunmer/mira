@@ -925,6 +925,11 @@
     "tabSend": "发送",
     "tabTransfers": "设备传输",
     "transferFilesCount": "{count} 个文件",
-    "transferResend": "重新发送"
+    "transferResend": "重新发送",
+    "dropHint": "拖放本地文件到此处，或点击选择（直接发送给对方，不经服务器存储）",
+    "binaryResendUnsupported": "包含本地文件，请重新发起发送",
+    "binaryAcceptTimeout": "对方未确认接收，已取消发送",
+    "binaryDisconnected": "连接已断开，二进制发送中止",
+    "binaryStalled": "接收超时，数据流中断"
   }
 }

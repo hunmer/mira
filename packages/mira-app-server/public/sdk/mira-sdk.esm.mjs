@@ -3199,6 +3199,10 @@ class WebSocketClient extends SimpleEmitter {
       try {
         const wsInstance = new WS(this.url);
         this.ws = wsInstance;
+        try {
+          this.ws.binaryType = "arraybuffer";
+        } catch {
+        }
         if (!this.ws) {
           reject(new Error("Failed to create WebSocket instance"));
           return;
@@ -3264,6 +3268,21 @@ class WebSocketClient extends SimpleEmitter {
     }
     this.ws.send(JSON.stringify(message));
   }
+  /**
+   * 发送二进制帧（设备间端到端文件传输用，server 按帧头目标 clientId 转发）。
+   * 浏览器端传 ArrayBuffer / TypedArray 均可。
+   */
+  sendBinary(data) {
+    if (!this._isConnected || !this.ws) {
+      throw new Error("WebSocket is not connected");
+    }
+    this.ws.send(data);
+  }
+  /** 当前连接的待发送缓冲字节数（浏览器实现可用；发送端流控用，不可得时返回 0） */
+  get bufferedAmount() {
+    const amount = this.ws?.bufferedAmount;
+    return typeof amount === "number" ? amount : 0;
+  }
   sendPluginMessage(action, data, requestId) {
     this.send({
       eventName: "plugin",
@@ -3278,9 +3297,12 @@ class WebSocketClient extends SimpleEmitter {
     return this._isConnected && this.ws?.readyState === WS_OPEN;
   }
   handleMessage(data) {
+    if (typeof data !== "string") {
+      this.emit("binary", data);
+      return;
+    }
     try {
-      const raw = typeof data === "string" ? data : data && typeof data.toString === "function" ? data.toString() : String(data);
-      const message = JSON.parse(raw);
+      const message = JSON.parse(data);
       if (this.dataCallback) {
         try {
           this.dataCallback(message);

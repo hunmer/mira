@@ -83,27 +83,31 @@ defineExpose({ refresh: fetchDevices })
       <p class="text-xs text-muted-foreground">{{ $t('business.deviceShare.emptyDesc') }}</p>
     </div>
 
-    <button
-      v-for="device in devices"
-      :key="device.clientId"
-      type="button"
-      class="flex items-center gap-3 p-3 rounded-lg border text-left transition-colors"
-      :class="selected === device.clientId
-        ? 'border-primary bg-primary/10'
-        : 'border-border hover:bg-muted'"
-      @click="selected = device.clientId"
-    >
-      <span class="material-icons text-primary">devices</span>
-      <div class="flex-1 min-w-0">
-        <div class="text-sm font-medium truncate">{{ describeDevice(device) }}</div>
+    <!-- 多列响应式卡片：小屏单列，sm 两列，xl 三列（对话框 80vw 内随视口折叠） -->
+    <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
+      <button
+        v-for="device in devices"
+        :key="device.clientId"
+        type="button"
+        class="flex flex-col gap-1.5 p-3 rounded-lg border text-left transition-colors"
+        :class="selected === device.clientId
+          ? 'border-primary bg-primary/10'
+          : 'border-border hover:bg-muted'"
+        @click="selected = device.clientId"
+      >
+        <div class="flex items-center justify-between">
+          <span class="material-icons text-primary">devices</span>
+          <span
+            class="w-2 h-2 rounded-full"
+            :class="device.status === 'connected' ? 'bg-green-500' : 'bg-gray-300'"
+            :title="device.status"
+          ></span>
+        </div>
+        <div class="text-sm font-medium truncate" :title="describeDevice(device)">{{ describeDevice(device) }}</div>
         <div class="text-xs text-muted-foreground truncate font-mono" :title="device.clientId">
           {{ device.clientId }} · {{ lastActivityText(device) }}
         </div>
-      </div>
-      <span
-        class="w-2 h-2 rounded-full flex-none"
-        :class="device.status === 'connected' ? 'bg-green-500' : 'bg-gray-300'"
-      ></span>
-    </button>
+      </button>
+    </div>
   </div>
 </template>

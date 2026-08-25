@@ -22,9 +22,10 @@ if (isBrowser) {
 
 interface WSInstance {
     on(event: string, listener: (...args: any[]) => void): void;
-    send(data: string): void;
+    send(data: string | ArrayBufferView | ArrayBuffer): void;
     close(): void;
     readyState: number;
+    binaryType?: string;
 }
 
 // Node ws 用 EventEmitter 的 .on；浏览器原生 WebSocket 只有 addEventListener（回调参数是 Event 对象），统一适配
@@ -123,6 +124,8 @@ export class WebSocketClient extends SimpleEmitter {
             try {
                 const wsInstance = new WS(this.url) as WSInstance;
                 this.ws = wsInstance;
+                // 二进制帧按 ArrayBuffer 交付（默认 Blob 不便逐字节解析）
+                try { this.ws.binaryType = 'arraybuffer'; } catch { /* Node ws 无此属性 */ }
 
                 if (!this.ws) {
                     reject(new Error('Failed to create WebSocket instance'));
@@ -202,6 +205,23 @@ export class WebSocketClient extends SimpleEmitter {
         this.ws.send(JSON.stringify(message));
     }
 
+    /**
+     * 发送二进制帧（设备间端到端文件传输用，server 按帧头目标 clientId 转发）。
+     * 浏览器端传 ArrayBuffer / TypedArray 均可。
+     */
+    sendBinary(data: ArrayBuffer | ArrayBufferView): void {
+        if (!this._isConnected || !this.ws) {
+            throw new Error('WebSocket is not connected');
+        }
+        this.ws.send(data as any);
+    }
+
+    /** 当前连接的待发送缓冲字节数（浏览器实现可用；发送端流控用，不可得时返回 0） */
+    get bufferedAmount(): number {
+        const amount = (this.ws as any)?.bufferedAmount;
+        return typeof amount === 'number' ? amount : 0;
+    }
+
     sendPluginMessage(action: string, data: Record<string, any>, requestId?: string): void {
         this.send({
             eventName: 'plugin',
@@ -218,10 +238,13 @@ export class WebSocketClient extends SimpleEmitter {
     }
 
     private handleMessage(data: any): void {
+        // 二进制帧（设备间文件传输）：不参与 JSON 解析，直接以 binary 事件分发
+        if (typeof data !== 'string') {
+            this.emit('binary', data);
+            return;
+        }
         try {
-            const raw = typeof data === 'string' ? data :
-                (data && typeof data.toString === 'function' ? data.toString() : String(data));
-            const message = JSON.parse(raw) as WebSocketMessage;
+            const message = JSON.parse(data) as WebSocketMessage;
 
             if (this.dataCallback) {
                 try { this.dataCallback(message); } catch (e) { console.error('Error in data callback:', e); }

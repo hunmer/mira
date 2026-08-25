@@ -925,6 +925,11 @@
     "tabSend": "Send",
     "tabTransfers": "Transfers",
     "transferFilesCount": "{count} files",
-    "transferResend": "Resend"
+    "transferResend": "Resend",
+    "dropHint": "Drop local files here, or click to pick (sent directly, never stored on the server)",
+    "binaryResendUnsupported": "Contains local files, please start a new share",
+    "binaryAcceptTimeout": "Recipient did not accept in time, transfer cancelled",
+    "binaryDisconnected": "Connection lost, binary transfer aborted",
+    "binaryStalled": "Timed out waiting for data, stream interrupted"
   }
 }

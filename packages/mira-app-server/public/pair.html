@@ -126,11 +126,16 @@ const messages = {
     pickAndSend: '选择文件并发送',
     sendingBtn: '发送中…',
     pickDeviceFirst: '请先选择要发送到的设备',
-    sendHint: '文件会上传到素材库并通知对方接收',
+    sendHint: '文件直接端到端发送给对方，不经服务器存储',
+    dropHint: '拖放文件到此处，或点击选择',
     uploading: '上传中 {a}/{b}',
     sent: '已发送 {n} 个文件，等待对方接收',
     sendFailed: '发送失败：{msg}',
     noFilesUploaded: '没有文件上传成功',
+    acceptTimeout: '对方未确认接收，已取消发送',
+    connLost: '连接已断开，传输中止',
+    stallTimeout: '接收超时，数据流中断',
+    transferDone: '对方已接收完成',
     pairPhone: '配对设备 · 手机',
     pairBrowser: '配对设备 · 浏览器',
     toggleTheme: '切换主题',
@@ -163,11 +168,16 @@ const messages = {
     pickAndSend: 'Pick files & send',
     sendingBtn: 'Sending…',
     pickDeviceFirst: 'Select a target device first',
-    sendHint: 'Files are uploaded to the library and the recipient is notified',
+    sendHint: 'Files are sent directly to the recipient, never stored on the server',
+    dropHint: 'Drop files here, or click to pick',
     uploading: 'Uploading {a}/{b}',
     sent: 'Sent {n} file(s), waiting for the recipient',
     sendFailed: 'Send failed: {msg}',
     noFilesUploaded: 'No files were uploaded',
+    acceptTimeout: 'Recipient did not accept in time, transfer cancelled',
+    connLost: 'Connection lost, transfer aborted',
+    stallTimeout: 'Timed out waiting for data, stream interrupted',
+    transferDone: 'Received by the recipient',
     pairPhone: 'Paired device · Phone',
     pairBrowser: 'Paired device · Browser',
     toggleTheme: 'Toggle theme',
@@ -201,7 +211,7 @@ const state = reactive({
   send: { showBar: false, percent: 0, text: '', error: false },
 });
 
-const fileInputEl = ref(null);
+const stagedFiles = ref([]); // Dropzone 暂存的本地文件（二进制直传，不上传素材库）
 const selectedDevice = ref(null); // 发送目标 clientId（DeviceListPicker 选中项）
 const activeTab = ref('receive'); // receive | send
 
@@ -263,6 +273,136 @@ function formatSize(n) {
 
 let client = null;
 let selfId = '';
+let wsRef = null; // SDK WebSocketClient（二进制推流用）
+
+/* ---------- 二进制端到端传输（帧协议与 mira-client binaryTransfer.ts 一致） ----------
+ * client→server: [0x4D][u16 targetLen][target][u16 shareIdLen][shareId][u8 flags][u32 seq][payload]
+ * server→接收端: 剥掉 target 段原样转发。flags bit0=eos。多文件按 files 顺序串行拼流。 */
+const CHUNK_SIZE = 256 * 1024;
+const BACKLOG_LIMIT = 8 * 1024 * 1024;
+const ACCEPT_TIMEOUT_MS = 60000;
+const RECV_STALL_MS = 30000;
+
+function buildFrame(target, shareId, seq, flags, payload) {
+  const enc = new TextEncoder();
+  const t = enc.encode(target), s = enc.encode(shareId);
+  const frame = new Uint8Array(1 + 2 + t.length + 2 + s.length + 1 + 4 + 4 + payload.length);
+  let o = 0;
+  frame[o++] = 0x4d;
+  frame[o++] = (t.length >> 8) & 0xff; frame[o++] = t.length & 0xff; frame.set(t, o); o += t.length;
+  frame[o++] = (s.length >> 8) & 0xff; frame[o++] = s.length & 0xff; frame.set(s, o); o += s.length;
+  frame[o++] = flags;
+  frame[o++] = (seq >>> 24) & 0xff; frame[o++] = (seq >>> 16) & 0xff; frame[o++] = (seq >>> 8) & 0xff; frame[o++] = seq & 0xff;
+  const n = payload.length;
+  frame[o++] = (n >>> 24) & 0xff; frame[o++] = (n >>> 16) & 0xff; frame[o++] = (n >>> 8) & 0xff; frame[o++] = n & 0xff;
+  frame.set(payload, o);
+  return frame;
+}
+
+function parseFrame(data) {
+  const u8 = data instanceof Uint8Array ? data : new Uint8Array(data);
+  try {
+    if (u8.length < 9) return null;
+    const idLen = (u8[0] << 8) | u8[1];
+    if (idLen === 0 || u8.length < 2 + idLen + 9) return null;
+    const shareId = new TextDecoder().decode(u8.subarray(2, 2 + idLen));
+    let o = 2 + idLen;
+    const flags = u8[o++];
+    o += 4; // seq（WS 有序，不需要）
+    const pLen = (((u8[o] << 24) | (u8[o + 1] << 16) | (u8[o + 2] << 8) | u8[o + 3]) >>> 0); o += 4;
+    return { shareId, flags, payload: u8.subarray(o, o + pLen) };
+  } catch { return null; }
+}
+
+/** 发送流控：WS 待发送缓冲超限时等排空 */
+async function drainBacklog() {
+  while (wsRef && wsRef.bufferedAmount > BACKLOG_LIMIT) {
+    await new Promise(r => setTimeout(r, 30));
+  }
+}
+
+// 发送会话：等待接收端 accept 的挂起 resolver（shareId → resolve）
+const acceptWaiters = new Map();
+// 接收会话：shareId → { files, total, received, chunks, lastActivity, onProgress, stallTimer }
+const recvSessions = new Map();
+
+/** WS 二进制帧回调（SDK ws.on('binary')）：分发给接收会话 */
+function handleBinaryFrame(data) {
+  const frame = parseFrame(data);
+  if (!frame) return;
+  const s = recvSessions.get(frame.shareId);
+  if (!s) return;
+  s.lastActivity = Date.now();
+  if (frame.flags & 1) { finishRecvSession(s, null); return; }
+  if (frame.payload.length > 0) {
+    s.chunks.push(frame.payload);
+    s.received += frame.payload.length;
+    if (s.total > 0) s.onProgress(Math.min(1, s.received / s.total));
+  }
+}
+
+function finishRecvSession(s, err) {
+  if (!recvSessions.has(s.shareId)) return;
+  recvSessions.delete(s.shareId);
+  clearInterval(s.stallTimer);
+  if (err) { s.reject(err); return; }
+  try { s.resolve(saveExtracted(s)); } catch (e) { s.reject(e); }
+}
+
+/** 按 files[].size 顺序切分字节流，逐文件保存到浏览器下载目录 */
+function saveExtracted(s) {
+  const saved = [];
+  let offset = 0;
+  for (const f of s.files) {
+    const bytes = sliceChunks(s.chunks, offset, f.size || 0);
+    offset += f.size || 0;
+    const name = (f.name || 'mira-file').replace(/[\\/:*?"<>|]/g, '_');
+    saveBlob(new Blob([bytes]), name);
+    saved.push(name);
+  }
+  return saved;
+}
+
+/** 从 chunks 流中提取 [start, start+length) 的字节（跨 chunk 拼装单文件） */
+function sliceChunks(chunks, start, length) {
+  const out = new Uint8Array(length);
+  let written = 0, cursor = 0;
+  for (const chunk of chunks) {
+    const chunkEnd = cursor + chunk.length;
+    if (chunkEnd <= start) { cursor = chunkEnd; continue; }
+    const from = Math.max(start, cursor), to = Math.min(start + length, chunkEnd);
+    if (to > from) {
+      out.set(chunk.subarray(from - cursor, to - cursor), written);
+      written += to - from;
+      if (written >= length) break;
+    }
+    cursor = chunkEnd;
+  }
+  return out;
+}
+
+/**
+ * 接收二进制分享：回 accept 后被动收流，收满按 files[].size 切分保存。
+ * 返回 Promise<savedNames>。
+ */
+function receiveBinaryShare(msg, files, onProgress) {
+  return new Promise((resolve, reject) => {
+    const total = files.reduce((s, f) => s + (f.size || 0), 0);
+    const shareId = msg.id;
+    if (!shareId || total === 0) { reject(new Error('empty binary share')); return; }
+    const s = {
+      shareId, files, total, received: 0, chunks: [], lastActivity: Date.now(),
+      onProgress, resolve, reject,
+      stallTimer: setInterval(() => {
+        if (Date.now() - s.lastActivity > RECV_STALL_MS) finishRecvSession(s, new Error(t('stallTimeout')));
+      }, 3000),
+    };
+    recvSessions.set(shareId, s);
+    client.devices().sendMessage(msg.from, msg.libraryId || libraryId, {
+      type: 'mira-share-accept', shareId,
+    }).catch(() => {});
+  });
+}
 
 if (!token || !libraryId || !wsUrlParam) {
   setStatus('err', t('paramMissing'), false);
@@ -303,16 +443,30 @@ async function main() {
   });
   // SDK 的 websocket() 构造后需要 start() 建立连接
   await ws.start();
+  wsRef = ws;
   setStatus('ok', t('connected', { v: info?.data?.version || info?.version || 'ok' }), true);
 
   ws.on('disconnected', () => {
     if (!state.share) setStatus('err', t('disconnected'), false);
+    wsRef = null;
   });
+
+  // 二进制帧（对端推流）：分发给接收会话
+  ws.on('binary', handleBinaryFrame);
 
   // 设备消息通过 eventName=admin_message 下发，message 体在 data.message
   ws.bind('admin_message', (data) => {
     const msg = data?.message || data;
     if (msg?.type === 'mira-share') renderShare(msg);
+    // 接收端确认二进制分享：唤醒挂起的发送流程开始推流
+    else if (msg?.type === 'mira-share-accept' && msg.shareId) {
+      const waiter = acceptWaiters.get(msg.shareId);
+      if (waiter) waiter();
+    }
+    // 发送侧终态回执：更新发送状态文案
+    else if (msg?.type === 'mira-share-ack' && msg.shareId) {
+      if (msg.state === 'done' && !state.sending) state.send.text = t('transferDone');
+    }
   });
 }
 
@@ -320,6 +474,30 @@ function renderShare(msg) {
   state.share = { ...msg, files: msg.files || [] };
   activeTab.value = 'receive';
   setStatus('ok', t('incomingFrom', { from: msg.fromLabel || msg.from || '?' }), false);
+}
+
+/** URL 部分下载：票据优先 → 单文件直链 → 多文件服务端 ZIP 打包 */
+async function downloadUrlFiles(msg, urlFiles, onP) {
+  if (msg.ticketUrl) {
+    const blob = await fetchBlob(reachableUrl(msg.ticketUrl), onP);
+    saveBlob(blob, urlFiles.length === 1 ? (urlFiles[0].name || 'mira-file') : `mira-share-${Date.now()}.zip`);
+    return;
+  }
+  if (urlFiles.length === 1 && urlFiles[0].url) {
+    const blob = await fetchBlob(reachableUrl(urlFiles[0].url), onP);
+    saveBlob(blob, urlFiles[0].name || 'mira-file');
+    return;
+  }
+  // 多文件：服务端 ZIP 打包（POST /api/fs/download，走 Authorization 认证）
+  // ids 优先（服务端权威解析）；paths 兜底（反向发送场景上传返回的是绝对路径）
+  const paths = urlFiles.map((f) => f.path).filter(Boolean);
+  const ids = urlFiles.map((f) => f.id).filter(Boolean);
+  const blob = await fetchBlobWithBody(`${location.origin}/api/fs/download`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+    body: JSON.stringify({ libraryId: msg.libraryId || libraryId, ids, paths }),
+  }, onP);
+  saveBlob(blob, `mira-share-${Date.now()}.zip`);
 }
 
 async function downloadShare() {
@@ -353,25 +531,24 @@ async function downloadShare() {
     sendAck('receiving', p);
   };
   try {
-    // 优先一次性票据（免 token；单文件原文件 / 多文件 ZIP）；缺票据时回退直链/打包接口
-    if (msg.ticketUrl) {
-      const blob = await fetchBlob(reachableUrl(msg.ticketUrl), setProgress);
-      saveBlob(blob, files.length === 1 ? (files[0].name || 'mira-file') : `mira-share-${Date.now()}.zip`);
-    } else if (files.length === 1 && files[0].url) {
-      // 单文件：直接走 HTTP 直连链下载
-      const blob = await fetchBlob(reachableUrl(files[0].url), setProgress);
-      saveBlob(blob, files[0].name || 'mira-file');
+    const binaryFiles = files.filter((f) => f.binary);
+    const urlFiles = files.filter((f) => !f.binary);
+
+    if (binaryFiles.length > 0) {
+      // 混合分享：URL 部分（票据/直链）与二进制推流并行接收，进度按总字节数合并
+      const totalBytes = files.reduce((s, f) => s + (f.size || 0), 0) || 1;
+      const urlBytes = urlFiles.reduce((s, f) => s + (f.size || 0), 0);
+      const binBytes = binaryFiles.reduce((s, f) => s + (f.size || 0), 0);
+      let urlP = urlBytes === 0 ? 1 : 0, binP = 0;
+      const merged = () => setProgress((urlBytes * urlP + binBytes * binP) / totalBytes);
+      const tasks = [];
+      if (urlFiles.length > 0) {
+        tasks.push(downloadUrlFiles(msg, urlFiles, (p) => { urlP = p; merged(); }));
+      }
+      tasks.push(receiveBinaryShare(msg, binaryFiles, (p) => { binP = p; merged(); }));
+      await Promise.all(tasks);
     } else {
-      // 多文件：服务端 ZIP 打包（POST /api/fs/download，走 Authorization 认证）
-      // ids 优先（服务端权威解析）；paths 兜底（反向发送场景上传返回的是绝对路径）
-      const paths = files.map((f) => f.path).filter(Boolean);
-      const ids = files.map((f) => f.id).filter(Boolean);
-      const blob = await fetchBlobWithBody(`${location.origin}/api/fs/download`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify({ libraryId: msg.libraryId || libraryId, ids, paths }),
-      }, setProgress);
-      saveBlob(blob, `mira-share-${Date.now()}.zip`);
+      await downloadUrlFiles(msg, urlFiles, setProgress);
     }
     setProgress(1, t('downloadDone'));
     state.downloaded = true;
@@ -399,60 +576,59 @@ function reachableUrl(url) {
   }
 }
 
-function onPickFiles(e) {
-  sendBackToDesktop(e.target.files);
-}
-
-async function sendBackToDesktop(fileList) {
+/**
+ * 二进制端到端发送（Dropzone 暂存文件 → 对端确认 → WS 推流，不经服务器存储）。
+ * 文件对象发送后不可复用（无法重发），失败需重新选择。
+ */
+async function sendFiles() {
   const target = selectedDevice.value;
-  if (!fileList || fileList.length === 0 || !client || !target || state.sending) return;
-  const files = Array.from(fileList);
+  const files = stagedFiles.value;
+  if (!files || files.length === 0 || !client || !target || state.sending) return;
+  const shareId = `share_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   state.sending = true;
-  state.send = { showBar: true, percent: 0, text: t('uploading', { a: 0, b: files.length }), error: false };
+  state.send = { showBar: true, percent: 0, text: t('sendingBtn'), error: false };
   try {
-    const uploaded = [];
-    for (let i = 0; i < files.length; i++) {
-      const res = await client.files().upload({
-        libraryId,
-        files: [files[i]],
-        clientId: selfId,
-        onUploadProgress: (e) => {
-          if (e.total) state.send.percent = Math.round(((i + e.loaded / e.total) / files.length) * 100);
-        },
-      });
-      const results = res?.results || [];
-      for (const r of results) {
-        if (!r?.success) continue;
-        const id = r.result?.id ?? r.result?.fileId;
-        if (id == null) continue;
-        uploaded.push({
-          id: String(id),
-          name: r.result?.name || r.result?.title || r.file || files[i].name,
-          path: r.result?.path,
-          size: r.result?.size ?? files[i].size,
-          url: `${location.origin}/api/files/file/${encodeURIComponent(libraryId)}/${encodeURIComponent(id)}${token ? '?token=' + encodeURIComponent(token) : ''}`,
-        });
-      }
-      state.send.text = t('uploading', { a: i + 1, b: files.length });
-    }
-    if (uploaded.length === 0) throw new Error(t('noFilesUploaded'));
     await client.devices().sendMessage(target, libraryId, {
       type: 'mira-share',
-      id: `share_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      id: shareId,
       from: selfId,
       fromLabel: /Android|iPhone|iPad/i.test(navigator.userAgent) ? t('pairPhone') : t('pairBrowser'),
       libraryId,
-      files: uploaded,
+      binary: true,
+      files: files.map((f, i) => ({ id: `local_${Date.now()}_${i}`, name: f.name, size: f.size, url: '', binary: true })),
     });
+
+    // 等接收端确认（mira-share-accept）后开始推流
+    await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error(t('acceptTimeout'))), ACCEPT_TIMEOUT_MS);
+      acceptWaiters.set(shareId, () => { clearTimeout(timer); resolve(); });
+    });
+    if (!wsRef || !wsRef.isConnectedStatus()) throw new Error(t('connLost'));
+
+    const totalBytes = files.reduce((s, f) => s + f.size, 0) || 1;
+    let sent = 0, seq = 0;
+    for (const file of files) {
+      for (let pos = 0; pos < file.size; pos += CHUNK_SIZE) {
+        if (!wsRef || !wsRef.isConnectedStatus()) throw new Error(t('connLost'));
+        const buf = new Uint8Array(await file.slice(pos, pos + CHUNK_SIZE).arrayBuffer());
+        wsRef.sendBinary(buildFrame(target, shareId, seq++, 0, buf));
+        sent += buf.length;
+        state.send.percent = Math.round((sent / totalBytes) * 100);
+        await drainBacklog();
+      }
+    }
+    // 流结束帧：接收端以此与总字节数双保险判断完成
+    wsRef.sendBinary(buildFrame(target, shareId, seq, 1, new Uint8Array(0)));
     state.send.percent = 100;
-    state.send.text = t('sent', { n: uploaded.length });
+    state.send.text = t('sent', { n: files.length });
+    stagedFiles.value = [];
   } catch (err) {
     console.error(err);
     state.send.text = t('sendFailed', { msg: err?.message || err });
     state.send.error = true;
   } finally {
     state.sending = false;
-    if (fileInputEl.value) fileInputEl.value.value = '';
+    acceptWaiters.delete(shareId);
   }
 }
 
@@ -498,8 +674,8 @@ const icons = {
 const app = createApp({
   setup() {
     return {
-      state, libraryId, activeTab, fileInputEl, selectedDevice, deviceServices, onDevices,
-      statusClass, acceptLabel, shareAttachState, formatSize, downloadShare, onPickFiles,
+      state, libraryId, activeTab, stagedFiles, selectedDevice, deviceServices, onDevices,
+      statusClass, acceptLabel, shareAttachState, formatSize, downloadShare, sendFiles,
       icons, t, theme, toggleTheme, lang, toggleLang,
       phoneIcon: icon('size-6', '<rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/>'),
       origin: location.origin,
@@ -584,8 +760,9 @@ const app = createApp({
                   <span class="font-mono break-all">{{ libraryId || '—' }}</span>
                 </div>
 
-                <input ref="fileInputEl" type="file" multiple class="hidden" @change="onPickFiles" />
-                <Button variant="outline" :disabled="state.sending || !selectedDevice" @click="fileInputEl?.click()">
+                <!-- 本地文件拖放/选择：二进制端到端直传（不上传素材库） -->
+                <Dropzone v-model:files="stagedFiles" :hint="t('dropHint')" class="min-h-0" />
+                <Button variant="outline" :disabled="state.sending || !selectedDevice || stagedFiles.length === 0" @click="sendFiles()">
                   {{ state.sending ? t('sendingBtn') : t('pickAndSend') }}
                 </Button>
                 <Progress v-if="state.send.showBar" :model-value="state.send.percent" />

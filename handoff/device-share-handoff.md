@@ -1,7 +1,7 @@
 # 设备间文件分享（Device Share）Handoff
 
 日期：2026-08-25（增量更新；初版 2026-08-24）
-状态：**发送/接收/进度回传/传输管理/设置面板/配对页 UI 全部完成，已本地验证**。代码未提交（工作区另有用户既有未提交改动，提交时注意区分）。
+状态：**发送/接收/进度回传/传输管理/设置面板/配对页 UI 全部完成，已本地验证**；2026-08-25 晚增量：设备列表多列卡片、Dropzone 本地文件 + **WS 二进制端到端传输**（mira-client ⇄ pair.html 双向），代码未提交。
 
 ## 背景与目标
 
@@ -36,6 +36,24 @@
 - `ticketUrl`：一次性票据链接（TTL 30min / 限 20 次），多文件即 ZIP，免 token。
 - ack 双向：pair.html 与 mira-client 接收端都会回传（各自内置 ≥5% 进度节流，终态必发）。
 
+### 二进制端到端传输（2026-08-25 增量）
+
+本地文件（Dropzone 选择）不经 server 磁盘/URL 中转，直接 WS 二进制帧推流：
+
+- **帧协议**（三处实现需保持一致：`binaryTransfer.ts` / `pair.html` / server 只转发不解析载荷）：
+  - client→server：`[0x4D][u16 targetLen][target utf8][u16 shareIdLen][shareId][u8 flags][u32 seq][u32 payloadLen][payload]`
+  - server→接收端：剥掉 target 段原样转发；flags bit0=eos（流结束）；多文件按 files 顺序串行拼流，接收端按 `files[].size` 切分落盘。
+- **控制消息**（走既有 admin_message）：`mira-share(binary:true, files 带 binary:true 项)` → 接收端确认后回 `mira-share-accept{shareId}` → 发送端推流；进度/终态沿用 `mira-share-ack`。
+- **server**：`WebSocketServer.ts` `ws.on('message')` 加 `isBinary` 分支 → `relayBinaryMessage`（校验 magic 0x4D、按 target 跨库查连接、剥头转发）；`findDeviceClient` 新增。
+- **SDK**：`WebSocketClient.ts` 加 `sendBinary()` / `bufferedAmount` getter / binaryType='arraybuffer' / 非文本消息 `emit('binary')`。
+- **mira-client**：
+  - `WebSocketService.ts`：`sendBinary()` / `getBufferedAmount()` / `setBinaryHandler()`（单播）；`admin_message` 分发新增 `mira-share-accept`（→ onBinaryShareAccept）与 ack failed/declined（→ cancelBinarySend）。
+  - `binaryTransfer.ts`（DeviceShareDialog 目录，新文件）：帧编解码 + 发送会话（等 accept 60s 超时→记录置 failed；256KB 分块推流；bufferedAmount>8MB 轮询流控；eos 帧）+ 接收会话（30s 停顿判失败；按 size 切分；Electron `fs:writeFile` / Web blob 下载）。⚠️ `ensureBinaryShareInstalled()` 懒注册 WS handler（避免与 WebSocketService 循环初始化），勿改回模块顶层注册。
+  - `downloadShare.ts`：新增 `receiveShareFiles()`（URL/票据部分与二进制部分并行接收，进度按总字节合并）；IncomingShareDialog/autoAccept 均改走它。
+  - `DeviceShareDialog.vue`：send 页签接入 Dropzone（`components/ui/dropzone/`，自 plugin-ui 复制，drag-data 精简为 canAcceptDrop/urlKind）；发送时 binary 文件并入 files（无 url，`binary:true`），不进票据；含 binary 的传输记录禁用重发（File 对象不随记录保留）。
+- **pair.html**：发送页签 Dropzone 替换原「上传到素材库」链路（不再 `files().upload`，直接二进制推流给选中设备）；接收端 `downloadShare` 支持 binary/混合（同款并行+合并进度）；`ws.on('binary')` 分发接收会话。
+- 混合分享语义：素材文件走票据/直链，本地文件走二进制流，一条 mira-share 消息两类并存。
+
 ### 一次性分享票据（免 token 下载）
 
 - Server：`packages/mira-app-server/src/routes/DeviceRoutes.ts` — `POST /share-tickets`（认证创建，路径穿越校验，解析成绝对路径存内存）+ `GET /share/:ticketId`（免认证，单文件流 / 多文件 ZIP，复用 archiver）。
@@ -48,7 +66,7 @@
 - `src/renderer/composables/useDeviceShare.ts`：全局状态（`shareDialogOpen/shareFiles/incomingShare/shareDialogTab` 模块级 ref）、`openDeviceShare`（重置 send 页签）、`toDeviceShareFiles`、`buildPairUrl()`、`resolveServerOrigin()`、`createShareId()`、`sendShareAck()`（内置 5% 节流 + 终态清理）、`autoAcceptShare()`（自动接收，失败回落确认框，带 ack）、`describeDevice/getSelfClientId`。
 - `components/business/DeviceShareDialog/`：
   - `DeviceShareDialog.vue` **双页签合并对话框**（80vw）：`send`（DeviceListPicker + 配对 QR + 发送，发送成功自动切传输页签）/ `transfers`（传输记录列表）。传输记录 = 记录头（状态图标/目标设备/状态/相对时间 + 进度条）+ 单文件 Attachment 直显或多文件 **Collapsible 折叠**逐文件 Attachment（默认收起，chevron 旋转），折叠触发行右侧**重新发送按钮**（重新生成票据+shareId 发原目标，记录重置待接收态）。票据创建提取为共享 `createTicketUrl()`。
-  - `DeviceListPicker.vue`：本地图层（mira-client 版，`devices().getByLibrary`，排除自身，10s 轮询）。
+  - `DeviceListPicker.vue`：本地图层（mira-client 版，`devices().getByLibrary`，排除自身，10s 轮询）；设备列表为**多列响应式卡片**（grid 1/2/3 列 @ sm/xl，竖式卡片：图标+状态点/设备名/clientId+活跃时间）。
   - `IncomingShareDialog.vue`：接收确认；`fs:selectDirectory` 返回 **`{success, path}`**（早期取 `result.data` 的 bug 已修）；saveDir 一次性（不写配置，每次打开恢复设置默认值）；下载进度/终态/拒绝均回传 ack。
   - `useDeviceTransfers.ts`：**模块级** `deviceTransfers`（≤50 条）+ `shareDialogTab` + `activeTransferCount/addDeviceTransfer/applyShareAck/clearFinishedTransfers/resetTransferForResend`（`DeviceTransferItem` 含 `targetClientId` 供重发）。
   - `downloadShare.ts`：两套下载（票据优先 → 多文件 POST `/api/fs/download` → 单文件直链；Electron `fs:writeFile` 落盘 / Web blob+`<a download>`）。
@@ -84,9 +102,10 @@
 ## 验证状态
 
 - client：`pnpm run type-check` 0 错误（含全部本轮改动）。
-- plugin-ui：`pnpm build` 通过；demo 入口经一次性 vite 脚本构建验证（已删）；UMD 浏览器全局分支经 node 模拟验证（103 导出含 Button/Progress/Empty/Tabs/Attachment/DeviceListPicker，install 函数就绪）。
-- server：pair.html 内联 module 脚本 `node --check` 通过；/static 资源（pair.html/vendor 三件套/sdk mjs）curl 200。
-- 交互验证（用户侧已确认/待回归）：发送→传输页签进度推进、重发（clientId 稳定后）、保存位置记忆与一次性语义、自动接收。
+- plugin-ui：`pnpm build` 通过（Dropzone 已导出并注册进 UMD install，vendor 三件套已同步）。
+- server：`tsc --noEmit` 0 错误；pair.html 内联 module 脚本 `node --check` 通过；/static 资源（pair.html/vendor 三件套/sdk mjs）curl 200。
+- **二进制转发自测通过**：Node 双 WS 客户端直连 8018，A 发数据帧+eos 帧 → server 剥 target 头转发 → B 收到且 payload/shareId/flags 正确（RELAY OK）。
+- 交互验证（用户侧已确认/待回归）：发送→传输页签进度推进、重发（clientId 稳定后）、保存位置记忆与一次性语义、自动接收；**本轮待回归：Dropzone 本地文件双向传输（client→pair、pair→client）、混合分享**。
 
 ## 关键端口/进程（本机 dev）
 
@@ -96,13 +115,14 @@
 ## 未完成 / 后续工作
 
 1. 真机扫码端到端（手机 + 局域网 IP）仍未系统验证；Electron 打包后（file://）`buildPairUrl` 的局域网主机替换需实测。
-2. attachment 组件两处维护（plugin-ui 源 / mira-client 复制版），样式变更需手动同步。
-3. `DeviceListPicker`（plugin-ui 版）组件内文案硬编码中文，未接 t 注入。
+2. attachment / Dropzone 组件两处维护（plugin-ui 源 / mira-client 复制版；Dropzone 的 drag-data 在 client 侧为精简版），样式变更需手动同步。
+3. `DeviceListPicker`（plugin-ui 版）组件内文案硬编码中文，未接 t 注入；pair.html 的 DeviceListPicker 仍是单列（本轮只改了 mira-client 版）。
 4. 自动接收无进度百分比 toast；传输记录仅内存（应用重启丢失），可持久化 localStorage。
 5. 单文件传输记录无重发按钮（按钮目前只在多文件 Collapsible 行）；对端离线重发可前置检测。
-6. 同浏览器双开 pair 标签页共用一个 clientId 会相互顶替连接，需要时加标签页级后缀。
-7. `docs/plugin-ui-source-consumption.md` 可补「无构建静态页走 dist」一节（pair.html 即参考实现）。
-8. `GET /api/plugins/store` 已登记 P2（dashboard 在用），建议纳入 `PluginModule`；票据存内存重启失效，多实例部署考虑落 SQLite；票据无限速/无 referer 校验。
+6. 二进制传输：无中途取消/断点续传；接收端全内存组装（超大文件内存峰值高，Electron 可改流式 append）；binary 记录不可重发（File 对象不保留）；发送端无本地推送进度展示（仅对端 ack 进度）。
+7. 同浏览器双开 pair 标签页共用一个 clientId 会相互顶替连接，需要时加标签页级后缀。
+8. `docs/plugin-ui-source-consumption.md` 可补「无构建静态页走 dist」一节（pair.html 即参考实现）。
+9. `GET /api/plugins/store` 已登记 P2（dashboard 在用），建议纳入 `PluginModule`；票据存内存重启失效，多实例部署考虑落 SQLite；票据无限速/无 referer 校验。
 
 ## 环境注意事项（AGENTS.md 摘要 + 本任务补充）
 
