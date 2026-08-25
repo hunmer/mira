@@ -56,9 +56,6 @@ export function useFileManagement() {
       }
       pendingPreviewUpdates.clear()
       if (updated > 0) pendingFiles.value = [...pendingFiles.value]
-      if (import.meta.env.DEV) {
-        console.debug('[FileUploadPerf] preview batch committed', { updated })
-      }
     })
   }
 

@@ -57,7 +57,6 @@ export class MenuHandlers {
       
       const menu = Menu.buildFromTemplate(processedTemplate)
       Menu.setApplicationMenu(menu)
-      logger.debug('MenuHandlers', 'Application menu updated')
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
       logger.error('MenuHandlers', `Failed to update application menu: ${errorMessage}`)
@@ -110,7 +109,6 @@ export class MenuHandlers {
     try {
       if (this.mainWindow && !this.mainWindow.isDestroyed()) {
         this.mainWindow.webContents.send('menu:navigate', routeName)
-        logger.debug('MenuHandlers', `Navigation request sent: ${routeName}`)
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)

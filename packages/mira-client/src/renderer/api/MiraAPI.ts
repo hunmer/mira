@@ -51,8 +51,6 @@ export class MiraAPI {
     if (environment.isElectron && window.electronAPI) {
       this.electron = window.electronAPI
     }
-
-    console.log('[MiraAPI] Service instance created')
   }
 
   public static getInstance(): MiraAPI {

@@ -628,12 +628,6 @@ function getFileMeta(file: PendingFile, _index: number): MasonryItemMeta {
 const masonryRef = ref<InstanceType<typeof Masonry>>()
 const refreshLayout = () => nextTick(() => {
   masonryRef.value?.refresh()
-  if (import.meta.env.DEV) {
-    console.debug('[FileUploadPerf] masonry layout refreshed', {
-      files: displayFiles.value.length,
-      ratios: Object.keys(ratios.value).length
-    })
-  }
 })
 watch(ratios, refreshLayout, { flush: 'post' })
 
