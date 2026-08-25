@@ -62,7 +62,9 @@
     "disableSuccess": "插件已禁用",
     "disableFailed": "插件禁用失败",
     "layoutTitle": "自定义插件栏",
-    "layoutDescription": "拖拽调整插件图标顺序；把图标拖到「未启用」可隐藏，拖回「已启用」即可恢复。"
+    "layoutDescription": "拖拽调整插件图标顺序；把图标拖到「未启用」可隐藏，拖回「已启用」即可恢复。",
+    "hideAll": "全部隐藏",
+    "showAll": "全部显示"
   },
   "sidebarHistoryModule": {
     "loading": "加载中...",

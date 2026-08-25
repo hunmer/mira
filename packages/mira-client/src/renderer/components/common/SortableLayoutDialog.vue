@@ -16,6 +16,10 @@ const props = withDefaults(defineProps<{
   resetLabel?: string
   emptyDisabledLabel?: string
   itemKey?: string
+  /** 启用区「全部右移」按钮的提示文案 */
+  allToDisabledLabel?: string
+  /** 未启用区「全部左移」按钮的提示文案 */
+  allToEnabledLabel?: string
 }>(), { itemKey: 'id', resetLabel: '重置排序' })
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
@@ -49,9 +53,21 @@ function resetOrder() {
   syncing.value = true
   enabledList.value = [...initialEnabled.value]
   disabledList.value = [...initialDisabled.value]
-  ;(emit as any)('update:enabled', [...initialEnabled.value])
-  ;(emit as any)('update:disabled', [...initialDisabled.value])
+  ;(emit as any)('update:enabled', [...enabledList.value])
+  ;(emit as any)('update:disabled', [...disabledList.value])
   void nextTick(() => { syncing.value = false })
+}
+/** 启用区全部右移到未启用区 */
+function moveAllEnabledToDisabled() {
+  if (enabledList.value.length === 0) return
+  disabledList.value = [...disabledList.value, ...enabledList.value]
+  enabledList.value = []
+}
+/** 未启用区全部左移到启用区 */
+function moveAllDisabledToEnabled() {
+  if (disabledList.value.length === 0) return
+  enabledList.value = [...enabledList.value, ...disabledList.value]
+  disabledList.value = []
 }
 </script>
 
@@ -67,6 +83,16 @@ function resetOrder() {
           <div class="mb-2 flex items-center gap-1.5 text-xs font-semibold" :class="index ? 'text-muted-foreground' : 'text-foreground'">
             <span class="material-icons text-sm">{{ index ? 'remove_circle_outline' : 'check_circle' }}</span>
             <span>{{ index ? disabledTitle : enabledTitle }}</span>
+            <button
+              type="button"
+              class="ml-auto flex h-6 w-6 items-center justify-center rounded text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+              :disabled="index ? disabledList.length === 0 : enabledList.length === 0"
+              :title="index ? allToEnabledLabel : allToDisabledLabel"
+              :aria-label="index ? allToEnabledLabel : allToDisabledLabel"
+              @click="index ? moveAllDisabledToEnabled() : moveAllEnabledToDisabled()"
+            >
+              <span class="material-icons text-sm">{{ index ? 'arrow_back' : 'arrow_forward' }}</span>
+            </button>
           </div>
           <VueDraggable v-if="index === 0" v-model="enabledList" :animation="180" group="sortable-layout-dialog" class="flex min-h-[120px] flex-1 flex-col gap-1.5 rounded-xl border border-dashed border-border/70 p-1.5" :fallback-tolerance="4">
             <div v-for="item in enabledList" :key="item[itemKey]" class="group flex cursor-grab items-center gap-2 rounded-lg border border-border/60 bg-background p-2 active:cursor-grabbing">

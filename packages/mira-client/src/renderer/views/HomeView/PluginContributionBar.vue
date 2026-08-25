@@ -514,6 +514,8 @@ const ContributionHost = defineComponent({
     :done-label="t('views.sidebarLayoutDialog.done')"
     :reset-label="t('common.resetOrder')"
     :empty-disabled-label="t('views.sidebarLayoutDialog.allEnabled')"
+    :all-to-disabled-label="t('views.pluginContributionBar.hideAll')"
+    :all-to-enabled-label="t('views.pluginContributionBar.showAll')"
     @update:enabled="onLayoutEnabledChange"
   >
     <template #item="{ item }">
