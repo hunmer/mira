@@ -5,6 +5,7 @@ import { DuplicateFile, DuplicateScanner } from './DuplicateScanner';
 function file(id: number, title: string, size: number, hash?: string): DuplicateFile {
     return {
         id,
+        name: title,
         title,
         size,
         hash,
@@ -30,7 +31,12 @@ test('scans name and size candidates before confirming matching hashes', async (
     let requestedLimit = 0;
     let requestedSelect = '';
     let requestedCountFile = false;
+    const resolvedNames: string[] = [];
     const db = database([file(1, 'a', 10, 'same'), file(2, 'a', 10, 'same'), file(3, 'a', 20)]);
+    db.getItemFilePath = async (item: DuplicateFile) => {
+        resolvedNames.push(item.name);
+        return item.path;
+    };
     db.getFiles = async (options?: any) => {
         requestedLimit = options?.filters?.limit;
         requestedSelect = options?.select;
@@ -41,8 +47,9 @@ test('scans name and size candidates before confirming matching hashes', async (
     const result = await new DuplicateScanner(db, async () => 'same').scan();
 
     assert.equal(requestedLimit, Number.MAX_SAFE_INTEGER);
-    assert.equal(requestedSelect, 'id, name AS title, path, size, hash, folder_id, created_at');
+    assert.equal(requestedSelect, 'id, name, name AS title, path, size, hash, folder_id, created_at, recycled');
     assert.equal(requestedCountFile, true);
+    assert.deepEqual(resolvedNames, ['a', 'a']);
     assert.equal(result.candidateGroups, 1);
     assert.equal(result.candidateFiles, 2);
     assert.equal(result.computedHashes, 2);

@@ -4,6 +4,7 @@ import { createReadStream } from 'fs';
 
 export interface DuplicateFile {
     id: number;
+    name: string;
     title: string;
     path: string;
     size: number;
@@ -75,7 +76,8 @@ export class DuplicateScanner {
 
     private async fetchAllFiles(): Promise<DuplicateFile[]> {
         const { result } = await this.dbService.getFiles({
-            select: 'id, name AS title, path, size, hash, folder_id, created_at',
+            // getItemFilePath() needs the original file name to resolve the physical path.
+            select: 'id, name, name AS title, path, size, hash, folder_id, created_at, recycled',
             filters: { limit: Number.MAX_SAFE_INTEGER },
             countFile: true,
         });

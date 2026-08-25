@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { thumbnailApi } from '@/api'
 import { useLibrary } from '@/composables/useLibrary'
@@ -63,6 +63,12 @@ async function startScan() {
 }
 
 onMounted(async () => {
+  await refreshStats()
+  await refreshProgress()
+})
+watch(selectedLibraryId, async () => {
+  stopProgressMonitoring()
+  progress.value = { totalPending: 0, completed: 0, queueLength: 0, processing: false, progress: 0 }
   await refreshStats()
   await refreshProgress()
 })
