@@ -99,10 +99,6 @@ export class InitializationService {
 
       // 认证初始化
       if (!authStore.isLoggedIn) {
-        console.info('[BrowserView][initialization] auth required', {
-          libraryId: useServerListStore().activeServer?.id,
-          hasToken: Boolean(authStore.token),
-        })
         initState.updateStep(t('services.initialization.stepVerifyIdentity'), 90)
         await authStore.initializeAuthAfterConnection()
         if (!authStore.isLoggedIn) {

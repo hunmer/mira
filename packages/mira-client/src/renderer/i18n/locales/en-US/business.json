@@ -190,7 +190,12 @@
     "durationPresetHuge": "Huge (≥60min)",
     "durationCustomMin": "Min duration (s)",
     "durationCustomMax": "Max duration (s)",
-    "sortDefault": "Sort"
+    "sortDefault": "Sort",
+    "layoutTitle": "Customize Filter Bar",
+    "layoutDescription": "Drag to reorder filter sections; drag a section to \"Disabled\" to hide it, drag it back to \"Enabled\" to restore.",
+    "layoutEnabled": "Enabled",
+    "layoutDisabled": "Disabled",
+    "layoutAllEnabled": "All sections enabled"
   },
   "folderEditDialog": {
     "editTitle": "Edit Folder",

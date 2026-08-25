@@ -58,7 +58,6 @@ const hasOtherBrowserViews = computed(() => browserViewState.value.runningLibrar
 
 const updateBrowserViewState = (state?: BrowserViewState) => {
   if (!state) return
-  console.info('[BrowserView][sidebar] state changed', state)
   browserViewState.value = state
   settingsStore.settings.multiLibraryViewsEnabled = state.enabled
 }
@@ -200,10 +199,6 @@ const onSelectCollection = async (collection: any, close: () => void) => {
   if (multiLibraryViewsEnabled.value) {
     try {
       const authBootstrap = buildAuthBootstrap()
-      console.info('[BrowserView][sidebar] switching library', {
-        libraryId: String(collection.id),
-        hasAuthBootstrap: Boolean(authBootstrap?.token),
-      })
       const state = await window.electronAPI.invoke('browser-view:switch', String(collection.id), authBootstrap)
       updateBrowserViewState(state)
       close()

@@ -190,7 +190,12 @@
     "durationPresetHuge": "超长 (≥60分钟)",
     "durationCustomMin": "最小时长(秒)",
     "durationCustomMax": "最大时长(秒)",
-    "sortDefault": "排序"
+    "sortDefault": "排序",
+    "layoutTitle": "自定义筛选栏",
+    "layoutDescription": "拖拽调整筛选项顺序；把筛选项拖到「未启用」可隐藏，拖回「已启用」即可恢复。",
+    "layoutEnabled": "已启用",
+    "layoutDisabled": "未启用",
+    "layoutAllEnabled": "所有筛选项均已启用"
   },
   "folderEditDialog": {
     "editTitle": "编辑文件夹",

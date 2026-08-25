@@ -18,28 +18,36 @@
 
         <div class="flex flex-col gap-3 min-h-0 flex-1 overflow-hidden lg:flex-row lg:gap-6">
           <!-- 类别导航（移动端横向滚动条，桌面端左侧竖列） -->
-          <div class="w-full shrink-0 lg:w-1/4">
+          <div class="w-full shrink-0 lg:w-44">
             <nav class="flex gap-1 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible">
-              <button v-for="category in categories" :key="category.id"
-                class="w-auto shrink-0 whitespace-nowrap flex items-center px-3 py-2.5 rounded-md text-sm transition-colors cursor-pointer border-l-4 lg:w-full"
-                :class="selectedCategory === category.id
-                  ? 'bg-primary/10 dark:bg-primary/15 text-primary font-semibold border-primary'
-                  : 'text-muted-foreground dark:text-muted-foreground hover:bg-muted dark:hover:bg-foreground border-transparent'"
-                @click="selectedCategory = category.id">
-                <span class="material-icons text-base mr-3">{{ category.icon }}</span>
-                {{ category.name }}
-              </button>
+              <LayoutGroup id="shortcut-category-nav">
+                <button v-for="category in categories" :key="category.id"
+                  class="relative w-auto shrink-0 whitespace-nowrap flex items-center px-2.5 py-2 rounded-md text-sm transition-colors cursor-pointer lg:w-full"
+                  :class="selectedCategory === category.id
+                    ? 'text-primary font-semibold'
+                    : 'text-muted-foreground dark:text-muted-foreground hover:bg-muted dark:hover:bg-foreground'"
+                  @click="selectedCategory = category.id">
+                  <!-- 激活态背景：共享 layoutId，切换类别时由 motion-v 在按钮间平滑滑动 -->
+                  <Motion v-if="selectedCategory === category.id" layoutId="shortcut-active-tab"
+                    :transition="{ type: 'spring', stiffness: 400, damping: 32 }"
+                    class="absolute inset-0 z-0 rounded-md bg-primary/10 dark:bg-primary/15" />
+                  <span class="relative z-[1] material-icons text-base mr-2.5">{{ category.icon }}</span>
+                  <span class="relative z-[1]">{{ category.name }}</span>
+                </button>
+              </LayoutGroup>
             </nav>
           </div>
 
-          <!-- 快捷键列表（桌面端右侧 3/4） -->
-          <div class="w-full flex-1 flex flex-col min-h-0 lg:w-3/4 lg:flex-none">
-            <h2 class="text-lg font-semibold text-foreground  mb-2 shrink-0">
-              {{ getCurrentCategoryName() }}
-            </h2>
+          <!-- 快捷键列表（桌面端右侧自适应） -->
+          <div class="w-full flex-1 flex flex-col min-h-0">
+            <Transition name="panel-fade" mode="out-in">
+              <div :key="selectedCategory" class="flex flex-col flex-1 min-h-0">
+                <h2 class="text-lg font-semibold text-foreground  mb-2 shrink-0">
+                  {{ getCurrentCategoryName() }}
+                </h2>
 
-            <!-- 快捷键列表 -->
-            <div class="space-y-2 flex-1 min-h-0 overflow-y-scroll pr-2">
+                <!-- 快捷键列表 -->
+                <div class="space-y-2 flex-1 min-h-0 overflow-y-scroll pr-2">
               <div v-for="(binding, index) in filteredBindings" :key="binding.shortcut + binding.actionId"
                 class="flex justify-between items-center p-3 rounded-md transition-colors"
                 :class="index % 2 === 0 ? 'bg-muted dark:bg-muted/50' : ''">
@@ -97,7 +105,9 @@
                 <span class="material-icons text-base mr-2">add</span>
                 <span class="text-sm font-medium">{{ $t('business.shortcutManagerDialog.addNew') }}</span>
               </button>
-            </div>
+                </div>
+              </div>
+            </Transition>
           </div>
         </div>
       </div>
@@ -213,6 +223,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { Motion, LayoutGroup } from 'motion-v'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -526,5 +537,21 @@ onUnmounted(() => {
   display: flex !important;
   flex-direction: column !important;
   overflow: hidden !important;
+}
+</style>
+
+<style scoped>
+/* 切换类别时内容渐显动画（同 SettingsDialog） */
+.panel-fade-enter-active,
+.panel-fade-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.panel-fade-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+.panel-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
 }
 </style>

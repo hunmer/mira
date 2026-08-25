@@ -364,10 +364,6 @@ export const useAuthStore = defineStore('auth', () => {
 
       const bootstrap = localStorage.getItem('mira-auth-bootstrap')
       const stored = bootstrap || await LibraryStorage.getItem('auth')
-      console.info('[BrowserView][auth] restore auth state', {
-        source: bootstrap ? 'browser-view-bootstrap' : 'library-storage',
-        hasStoredState: Boolean(stored),
-      })
       if (!stored) return
 
       const authData = JSON.parse(stored)

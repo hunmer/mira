@@ -8,10 +8,6 @@ const isDevelopment = process.env.NODE_ENV === 'development'
 const authBootstrapArgument = process.argv.find(argument => argument.startsWith('--mira-auth-bootstrap='))
 const libraryArgument = process.argv.find(argument => argument.startsWith('--mira-library-id='))
 const browserViewLibraryId = libraryArgument?.slice('--mira-library-id='.length) || null
-console.info('[BrowserView][preload] initialized', {
-  libraryId: browserViewLibraryId,
-  hasAuthBootstrap: Boolean(authBootstrapArgument),
-})
 if (browserViewLibraryId) {
   localStorage.setItem('mira-browser-view-library-id', browserViewLibraryId)
 }

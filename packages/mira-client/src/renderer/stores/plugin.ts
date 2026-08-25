@@ -953,7 +953,6 @@ export const usePluginStore = defineStore('plugin', () => {
    */
   const runAutoPluginUpdates = async () => {
     const settingsStore = useSettingsStore()
-    console.info('[autoUpdate] startup check, autoUpdatePlugins =', settingsStore.settings.autoUpdatePlugins)
     if (!settingsStore.settings.autoUpdatePlugins) {
       return { success: true, data: { updated: 0 } }
     }
@@ -971,9 +970,6 @@ export const usePluginStore = defineStore('plugin', () => {
       } else {
         console.warn(`[autoUpdate] Failed to update plugin ${entry.pluginName}:`, (installResult as any).message || (installResult as any).error)
       }
-    }
-    if (updated > 0) {
-      console.info(`[autoUpdate] ${updated} plugin(s) updated automatically`)
     }
     return { success: true, data: { updated } }
   }

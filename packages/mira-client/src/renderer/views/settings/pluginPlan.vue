@@ -166,16 +166,9 @@ const toggleAutoScan = async (enabled: boolean) => {
 
 // 切换「自动更新插件」开关并持久化
 const toggleAutoUpdate = async (enabled: boolean) => {
-  console.info('[autoUpdate] switch toggled:', enabled)
   autoUpdateEnabled.value = enabled
   try {
     await settingsStore.updateSettings({ autoUpdatePlugins: enabled })
-    const persisted = await ConfigStorage.getItem('mira-settings')
-    console.info(
-      '[autoUpdate] after save: store =', settingsStore.settings.autoUpdatePlugins,
-      '| persisted JSON has field =', persisted ? persisted.includes('"autoUpdatePlugins":' + String(enabled)) : null,
-      '| persisted =', persisted
-    )
   } catch (error) {
     console.error('[autoUpdate] save failed:', error)
     autoUpdateEnabled.value = !enabled
@@ -312,8 +305,6 @@ const loadCurrentSettings = async () => {
     pluginDirectory.value = currentSettings.pluginsDirectory || ''
     autoScanEnabled.value = currentSettings.autoLoadPlugins ?? true
     autoUpdateEnabled.value = currentSettings.autoUpdatePlugins ?? false
-    console.info('[autoUpdate] settings page loaded, autoUpdatePlugins =', currentSettings.autoUpdatePlugins)
-
     // 插件市场源列表（含旧单值迁移兜底）
     const urlsList = Array.isArray(currentSettings.clientPluginMarketUrls)
       ? currentSettings.clientPluginMarketUrls
