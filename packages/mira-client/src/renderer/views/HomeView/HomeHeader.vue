@@ -17,8 +17,8 @@ import { useSettingsStore } from '@/renderer/stores/settings'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { environment } from '@renderer/utils'
 import { shortcutService } from '@renderer/services/ShortcutService'
-import TransferDialog from '@/renderer/components/business/DeviceShareDialog/TransferDialog.vue'
-import { deviceTransfers, transferDialogOpen } from '@/renderer/components/business/DeviceShareDialog/useDeviceTransfers'
+import { shareDialogOpen } from '@/renderer/composables/useDeviceShare'
+import { deviceTransfers, shareDialogTab } from '@/renderer/components/business/DeviceShareDialog/useDeviceTransfers'
 
 defineOptions({ name: 'HomeHeader' })
 
@@ -152,6 +152,12 @@ const isDev = import.meta.env.DEV
 const activeTransferCount = computed(() =>
   deviceTransfers.value.filter(t => t.state === 'sent' || t.state === 'receiving').length)
 
+/** 打开发送/传输合并对话框并定位到传输页签 */
+const openTransferPanel = () => {
+  shareDialogTab.value = 'transfers'
+  shareDialogOpen.value = true
+}
+
 /**
  * DEV 专用：打开 UI 测试面板窗口（public/ui-test-panel.html）。
  * 面板经 BroadcastChannel 调用主窗口 window.__procmUiTests 执行测试。
@@ -177,7 +183,7 @@ const openUiTestPanel = async () => {
     <!-- 设备传输：待接收列表与对端接收进度 -->
     <button
       class="relative h-8 w-8 flex items-center justify-center rounded-lg transition-colors cursor-pointer text-muted-foreground hover:bg-primary/10 hover:text-primary"
-      :title="$t('business.deviceShare.transferTitle')" @click="transferDialogOpen = true">
+      :title="$t('business.deviceShare.transferTitle')" @click="openTransferPanel">
       <span class="material-icons" style="font-size: 18px;">swap_vert</span>
       <span v-if="activeTransferCount > 0"
         class="absolute -top-0.5 -right-0.5 min-w-3.5 h-3.5 px-0.5 rounded-full bg-primary text-primary-foreground text-[9px] leading-none flex items-center justify-center">
@@ -325,8 +331,5 @@ const openUiTestPanel = async () => {
         </button>
       </template>
     </template>
-
-    <!-- 设备传输对话框（状态全局保存，重开恢复） -->
-    <TransferDialog />
   </header>
 </template>

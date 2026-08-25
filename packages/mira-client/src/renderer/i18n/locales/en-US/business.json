@@ -920,8 +920,10 @@
     "transferFailed": "Receive failed",
     "transferDeclined": "Declined by recipient",
     "transferClear": "Clear finished",
-    "transferFilesTitle": "{name} and {count} more",
     "justNow": "just now",
-    "minutesAgo": "{n} min ago"
+    "minutesAgo": "{n} min ago",
+    "tabSend": "Send",
+    "tabTransfers": "Transfers",
+    "transferFilesCount": "{count} files"
   }
 }

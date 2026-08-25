@@ -920,8 +920,10 @@
     "transferFailed": "接收失败",
     "transferDeclined": "对方已拒绝",
     "transferClear": "清空已完成",
-    "transferFilesTitle": "{name} 等 {count} 个文件",
     "justNow": "刚刚",
-    "minutesAgo": "{n} 分钟前"
+    "minutesAgo": "{n} 分钟前",
+    "tabSend": "发送",
+    "tabTransfers": "设备传输",
+    "transferFilesCount": "{count} 个文件"
   }
 }

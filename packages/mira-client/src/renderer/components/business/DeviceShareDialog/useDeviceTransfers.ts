@@ -20,11 +20,12 @@ export interface DeviceTransferItem {
   updatedAt: number
 }
 
-// 模块级全局状态：TransferDialog 关闭重开可恢复
+// 模块级全局状态：发送/传输合并对话框（DeviceShareDialog 内 Tabs）关闭重开可恢复
 export const deviceTransfers = ref<DeviceTransferItem[]>([])
-export const transferDialogOpen = ref(false)
+/** 合并对话框当前页签：send=发送到设备 transfers=设备传输 */
+export const shareDialogTab = ref<'send' | 'transfers'>('send')
 
-/** 进行中的传输数（HomeHeader 入口 badge 用） */
+/** 进行中的传输数（页签/入口 badge 用） */
 export function activeTransferCount(): number {
   return deviceTransfers.value.filter(t => t.state === 'sent' || t.state === 'receiving').length
 }

@@ -10,6 +10,7 @@ import { useAuthStore } from '../stores/auth'
 import { useLibraryStore } from '../stores/library'
 import { useSettingsStore } from '../stores/settings'
 import { downloadShareFiles } from '../components/business/DeviceShareDialog/downloadShare'
+import { shareDialogTab } from '../components/business/DeviceShareDialog/useDeviceTransfers'
 
 /** 分享消息中的单个文件（只传 HTTP 直连链，不传二进制内容） */
 export interface DeviceShareFile {
@@ -128,11 +129,12 @@ export function toDeviceShareFiles(items: FileInfo[]): DeviceShareFile[] {
     .filter((f): f is DeviceShareFile => f !== null)
 }
 
-/** 打开「发送到其他设备」对话框（useContextMenu / 浮动工具栏调用） */
+/** 打开「发送到其他设备」对话框（useContextMenu / 浮动工具栏调用）；默认停在发送页签 */
 export function openDeviceShare(items: FileInfo[]): void {
   const files = toDeviceShareFiles(items)
   if (files.length === 0) return
   shareFiles.value = files
+  shareDialogTab.value = 'send'
   shareDialogOpen.value = true
 }
 
