@@ -71,6 +71,7 @@ let loadVersion = 0
 let cleanupLoadListeners: (() => void) | null = null
 let initializingPlayer = false
 let hls: Hls | null = null
+let videoObjectUrl: string | undefined
 
 // Plyr 配置选项
 const plyrOptions = computed(() => ({
@@ -239,11 +240,18 @@ const beginLoad = (video: HTMLVideoElement, currentVideo: FileInfo): boolean => 
   return true
 }
 
-const applySource = (video: HTMLVideoElement, currentVideo: FileInfo) => {
+const applySource = async (video: HTMLVideoElement, currentVideo: FileInfo) => {
   hls?.destroy()
   hls = null
   video.poster = currentVideo.thumbnailPath || ''
-  const src = getVideoSrc(currentVideo)
+  let src = getVideoSrc(currentVideo)
+  if (currentVideo.localFile && window.electronAPI?.fs?.readFileBytes) {
+    const result = await window.electronAPI.fs.readFileBytes(currentVideo.localFile)
+    if (!result.success || !result.data) throw new Error(result.message || 'Failed to read local video')
+    if (videoObjectUrl) URL.revokeObjectURL(videoObjectUrl)
+    videoObjectUrl = URL.createObjectURL(new Blob([result.data], { type: currentVideo.mimeType || 'video/*' }))
+    src = videoObjectUrl
+  }
   if (src.includes('.m3u8') && Hls.isSupported()) {
     video.removeAttribute('src')
     hls = new Hls({ enableWorker: true, lowLatencyMode: false })
@@ -285,7 +293,7 @@ const updateSource = () => {
   if (!beginLoad(videoElement.value, props.video)) return
 
   player.pause()
-  applySource(videoElement.value, props.video)
+  void applySource(videoElement.value, props.video)
 }
 
 // 初始化 Plyr 播放器（只调用一次）
@@ -299,7 +307,7 @@ const initializePlayer = async () => {
 
     if (!beginLoad(videoElement.value, props.video)) return
 
-    applySource(videoElement.value, props.video)
+    await applySource(videoElement.value, props.video)
     player = new Plyr(videoElement.value, plyrOptions.value)
     bindPlayerEvents()
   } catch (err) {
@@ -339,6 +347,7 @@ onUnmounted(() => {
   removeLoadListeners()
   hls?.destroy()
   hls = null
+  if (videoObjectUrl) URL.revokeObjectURL(videoObjectUrl)
 
   if (player) {
     player.destroy()
