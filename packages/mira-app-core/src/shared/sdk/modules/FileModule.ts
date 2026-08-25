@@ -162,7 +162,7 @@ export class FileModule {
      * @returns Promise<Blob>
      */
     async download(libraryId: string, fileId: string): Promise<Blob> {
-        return await this.httpClient.download(`/api/files/download/${libraryId}/${fileId}`);
+        return await this.httpClient.download(`/api/files/file/${libraryId}/${fileId}`);
     }
 
     /** 在服务端将文件原子地移动到另一个素材库。 */

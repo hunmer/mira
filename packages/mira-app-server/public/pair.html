@@ -86,6 +86,9 @@ const setStatus = (cls, text, pulse) => {
   $('status').querySelector('.dot').className = 'dot' + (pulse ? ' pulse' : '');
 };
 
+let client = null;
+let selfId = '';
+
 if (!token || !libraryId || !wsUrlParam) {
   setStatus('err', '配对参数缺失，请重新扫码', false);
 } else {
@@ -94,9 +97,6 @@ if (!token || !libraryId || !wsUrlParam) {
     setStatus('err', '连接失败：' + (err?.message || err), false);
   });
 }
-
-let client = null;
-let selfId = '';
 
 async function main() {
   // 静态页与 API 同源部署，直接用当前 origin 作为服务地址
@@ -244,7 +244,7 @@ async function sendBackToDesktop(fileList) {
           name: r.result?.name || r.result?.title || r.file || files[i].name,
           path: r.result?.path,
           size: r.result?.size ?? files[i].size,
-          url: `${location.origin}/api/files/download/${encodeURIComponent(libraryId)}/${encodeURIComponent(id)}${token ? '?token=' + encodeURIComponent(token) : ''}`,
+          url: `${location.origin}/api/files/file/${encodeURIComponent(libraryId)}/${encodeURIComponent(id)}${token ? '?token=' + encodeURIComponent(token) : ''}`,
         });
       }
       $('sendText').textContent = `上传中 ${i + 1}/${files.length}`;

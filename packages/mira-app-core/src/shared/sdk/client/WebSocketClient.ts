@@ -27,6 +27,20 @@ interface WSInstance {
     readyState: number;
 }
 
+// Node ws 用 EventEmitter 的 .on；浏览器原生 WebSocket 只有 addEventListener（回调参数是 Event 对象），统一适配
+const attachListener = (ws: any, event: string, listener: (...args: any[]) => void): void => {
+    if (typeof ws.on === 'function') {
+        ws.on(event, listener);
+    } else if (typeof ws.addEventListener === 'function') {
+        ws.addEventListener(event, (e: any) => {
+            if (event === 'message') return listener(e.data);
+            if (event === 'close') return listener(e.code, e.reason || '');
+            if (event === 'error') return listener(e.error || new Error('WebSocket error'));
+            listener();
+        });
+    }
+};
+
 const WS_OPEN = 1;
 
 /**
@@ -115,18 +129,18 @@ export class WebSocketClient extends SimpleEmitter {
                     return;
                 }
 
-                this.ws.on('open', () => {
+                attachListener(this.ws, 'open', () => {
                     this._isConnected = true;
                     this.reconnectCount = 0;
                     this.emit('connected');
                     resolve();
                 });
 
-                this.ws.on('message', (data: any) => {
+                attachListener(this.ws, 'message', (data: any) => {
                     this.handleMessage(data);
                 });
 
-                this.ws.on('close', (code: number, reason: any) => {
+                attachListener(this.ws, 'close', (code: number, reason: any) => {
                     this._isConnected = false;
                     const reasonStr = typeof reason === 'string' ? reason :
                         (reason && typeof reason.toString === 'function' ? reason.toString() : '');
@@ -137,7 +151,7 @@ export class WebSocketClient extends SimpleEmitter {
                     }
                 });
 
-                this.ws.on('error', (error: Error) => {
+                attachListener(this.ws, 'error', (error: Error) => {
                     this.emit('error', error);
                     if (!this._isConnected) reject(error);
                 });

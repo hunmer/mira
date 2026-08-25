@@ -3128,6 +3128,18 @@ if (isBrowser) {
     };
   }
 }
+const attachListener = (ws, event, listener) => {
+  if (typeof ws.on === "function") {
+    ws.on(event, listener);
+  } else if (typeof ws.addEventListener === "function") {
+    ws.addEventListener(event, (e) => {
+      if (event === "message") return listener(e.data);
+      if (event === "close") return listener(e.code, e.reason || "");
+      if (event === "error") return listener(e.error || new Error("WebSocket error"));
+      listener();
+    });
+  }
+};
 const WS_OPEN = 1;
 class SimpleEmitter {
   constructor() {
@@ -3191,16 +3203,16 @@ class WebSocketClient extends SimpleEmitter {
           reject(new Error("Failed to create WebSocket instance"));
           return;
         }
-        this.ws.on("open", () => {
+        attachListener(this.ws, "open", () => {
           this._isConnected = true;
           this.reconnectCount = 0;
           this.emit("connected");
           resolve();
         });
-        this.ws.on("message", (data) => {
+        attachListener(this.ws, "message", (data) => {
           this.handleMessage(data);
         });
-        this.ws.on("close", (code, reason) => {
+        attachListener(this.ws, "close", (code, reason) => {
           this._isConnected = false;
           const reasonStr = typeof reason === "string" ? reason : reason && typeof reason.toString === "function" ? reason.toString() : "";
           this.emit("disconnected", { code, reason: reasonStr });
@@ -3208,7 +3220,7 @@ class WebSocketClient extends SimpleEmitter {
             this.scheduleReconnect();
           }
         });
-        this.ws.on("error", (error) => {
+        attachListener(this.ws, "error", (error) => {
           this.emit("error", error);
           if (!this._isConnected) reject(error);
         });
@@ -3903,7 +3915,7 @@ class FileModule {
    * @returns Promise<Blob>
    */
   async download(libraryId, fileId) {
-    return await this.httpClient.download(`/api/files/download/${libraryId}/${fileId}`);
+    return await this.httpClient.download(`/api/files/file/${libraryId}/${fileId}`);
   }
   /** 在服务端将文件原子地移动到另一个素材库。 */
   async moveFile(sourceLibraryId, targetLibraryId, fileId) {

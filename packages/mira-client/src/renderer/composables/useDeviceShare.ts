@@ -56,7 +56,7 @@ export function buildFileDownloadUrl(libraryId: string, fileId: string): string 
   if (!config?.serverUrl) return null
   const base = config.serverUrl.replace(/\/+$/, '')
   const token = useAuthStore().token
-  return `${base}/api/files/download/${encodeURIComponent(libraryId)}/${encodeURIComponent(fileId)}${token ? `?token=${encodeURIComponent(token)}` : ''}`
+  return `${base}/api/files/file/${encodeURIComponent(libraryId)}/${encodeURIComponent(fileId)}${token ? `?token=${encodeURIComponent(token)}` : ''}`
 }
 
 /** 把当前素材的 FileInfo 列表转成可发送的分享文件列表 */

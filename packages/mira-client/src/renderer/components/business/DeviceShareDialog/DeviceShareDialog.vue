@@ -18,6 +18,7 @@ const libraryStore = useLibraryStore()
 const selectedClientId = ref<string | null>(null)
 const sending = ref(false)
 const qrDataUrl = ref<string | null>(null)
+const pairUrl = ref<string | null>(null)
 
 const files = computed(() => shareFiles.value)
 const totalSize = computed(() => files.value.reduce((sum, f) => sum + (f.size || 0), 0))
@@ -37,6 +38,7 @@ watch(shareDialogOpen, async (open) => {
   }
   qrDataUrl.value = null
   const pair = buildPairUrl()
+  pairUrl.value = pair?.pageUrl ?? null
   if (pair) {
     try {
       qrDataUrl.value = await QRCode.toDataURL(pair.pageUrl, { width: 220, margin: 1 })
@@ -45,6 +47,12 @@ watch(shareDialogOpen, async (open) => {
     }
   }
 })
+
+const handleCopyUrl = async () => {
+  if (!pairUrl.value) return
+  await navigator.clipboard.writeText(pairUrl.value)
+  toast.success(t('common.copied'))
+}
 
 const handleSend = async () => {
   const client = (miraSDKService as any).client
@@ -113,6 +121,9 @@ const handleSend = async () => {
             <p class="text-xs text-muted-foreground text-center leading-5">
               {{ $t('business.deviceShare.qrHint') }}
             </p>
+            <Button variant="outline" size="xs" @click="handleCopyUrl">
+              {{ $t('common.copy') }} URL
+            </Button>
           </template>
           <p v-else class="text-xs text-muted-foreground text-center">
             {{ $t('business.deviceShare.qrUnavailable') }}
