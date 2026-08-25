@@ -200,7 +200,7 @@ export function ContactSection() {
         </div>
 
         {/* QQ 群二维码 */}
-        <motion.div
+        {/* <motion.div
           className="flex flex-col items-center gap-3 rounded-xl border bg-card/50 p-5 shadow-sm"
           initial={shouldReduceMotion ? false : { opacity: 0, y: 16 }}
           transition={{ duration: 0.5, ease: "easeOut", delay: 0.1 }}
@@ -224,7 +224,7 @@ export function ContactSection() {
             <p className="text-muted-foreground text-xs">{c.qqDesc}</p>
             <p className="text-muted-foreground/70 text-xs">{c.qqHint}</p>
           </div>
-        </motion.div>
+        </motion.div> */}
       </motion.div>
     </div>
   );

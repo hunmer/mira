@@ -693,7 +693,7 @@ importers:
         version: 9.39.4
       '@hunmer/procm-mcp-sdk':
         specifier: link:G:/procm-mcp/packages/procm-sdk
-        version: link:G:/procm-mcp/packages/procm-sdk
+        version: link:../../plugins/plugins/mira_tiptap_format/G:/procm-mcp/packages/procm-sdk
       '@tailwindcss/postcss':
         specifier: ^4.0.17
         version: 4.3.0
