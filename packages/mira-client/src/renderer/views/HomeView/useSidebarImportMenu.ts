@@ -46,7 +46,7 @@ export function useSidebarImportMenu(options: {
     const target = targetForNode(type, item)
     return [
       {
-        label: options.t('views.sidebarToolbar.import'), icon: 'drive_folder_upload', items: [
+        label: options.t('views.sidebarToolbar.import'), items: [
           { label: options.t('views.sidebarToolbar.import'), icon: 'upload_file', command: () => { importTarget.value = target; importHandler.handleUpload() } },
           { label: options.t('views.sidebarToolbar.importFolder'), icon: 'folder_open', command: () => { importTarget.value = target; void importHandler.handleImportFolder() } },
           { label: options.t('business.homeHeader.importFromUrl'), icon: 'cloud_download', command: () => { importTarget.value = target; importHandler.handleUrlImport() } },
@@ -55,7 +55,6 @@ export function useSidebarImportMenu(options: {
       // 定位到文件夹（仅文件夹树）：在系统资源管理器中显示该文件夹的物理目录
       ...(type === 'folder' && item && libraryLocalPath() ? [{
         label: options.t('views.sidebarModuleList.locateFolder'),
-        icon: 'my_location',
         command: () => {
           const root = libraryLocalPath()
           const rel = folderTreePath(String(item.id))
