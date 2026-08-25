@@ -16,6 +16,7 @@ import { markRaw, type Component } from 'vue'
 import ScreenshotPanel from './ScreenshotPanel.vue'
 import FloatingBallPanel from './FloatingBallPanel.vue'
 import BrowserPanel from './BrowserPanel.vue'
+import FileSharePanel from './FileSharePanel.vue'
 
 const { t } = useI18n()
 
@@ -28,6 +29,7 @@ interface ExtensionGroup {
 
 const groups: ExtensionGroup[] = [
   { id: 'screenshot', label: 'settings.sections.screenshot', icon: 'screenshot_monitor', component: markRaw(ScreenshotPanel) },
+  { id: 'file-share', label: 'settings.sections.fileShare', icon: 'share', component: markRaw(FileSharePanel) },
   { id: 'floating-ball', label: 'settings.sections.floatingBall', icon: 'bubble_chart', component: markRaw(FloatingBallPanel) },
   { id: 'browser', label: 'settings.sections.browser', icon: 'language', component: markRaw(BrowserPanel) },
 ]

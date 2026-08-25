@@ -89,6 +89,12 @@ export interface AppSettings {
   screenshotAutoImport: boolean
   screenshotOpenUploadDialog: boolean
 
+  // 设备间文件共享设置
+  /** 收到其他设备的分享时自动接收（不弹确认框；下载失败时回落到确认框） */
+  deviceShareAutoAccept: boolean
+  /** 默认保存目录（空串表示未设置，Electron 落盘用；Web 端忽略） */
+  deviceShareSaveDir: string
+
   // 悬浮球设置
   /** 是否启用悬浮球（默认关闭，opt-in） */
   floatingBallEnabled: boolean
@@ -232,6 +238,10 @@ export const useSettingsStore = defineStore('settings', () => {
     screenshotCopyToClipboard: true,
     screenshotAutoImport: false,
     screenshotOpenUploadDialog: true,
+
+    // 设备间文件共享设置
+    deviceShareAutoAccept: false,
+    deviceShareSaveDir: '',
 
     // 悬浮球设置
     floatingBallEnabled: false,
@@ -636,6 +646,8 @@ export const useSettingsStore = defineStore('settings', () => {
       screenshotCopyToClipboard: true,
       screenshotAutoImport: false,
       screenshotOpenUploadDialog: true,
+      deviceShareAutoAccept: false,
+      deviceShareSaveDir: '',
       floatingBallEnabled: false,
       floatingBallClickAction: 'openUpload',
       debugMode: false,

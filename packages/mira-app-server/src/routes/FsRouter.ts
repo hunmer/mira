@@ -418,9 +418,11 @@ export class FsRouter {
         // 批量下载：单文件直接下原文件，多文件/含目录打包成 zip
         this.router.post('/download', async (req: Request, res: Response) => {
             try {
-                const { libraryId, paths } = req.body as { libraryId: string; paths: string[] };
-                if (!libraryId || !Array.isArray(paths) || paths.length === 0) {
-                    res.status(400).json({ error: 'libraryId and paths are required' });
+                const { libraryId, paths, ids } = req.body as { libraryId: string; paths?: string[]; ids?: string[] };
+                const hasPaths = Array.isArray(paths) && paths.length > 0;
+                const hasIds = Array.isArray(ids) && ids.length > 0;
+                if (!libraryId || (!hasPaths && !hasIds)) {
+                    res.status(400).json({ error: 'libraryId and paths (or ids) are required' });
                     return;
                 }
 
@@ -433,7 +435,20 @@ export class FsRouter {
 
                 // 解析为绝对路径，严格校验路径穿越
                 const safe: string[] = [];
-                for (const rel of paths) {
+                // 按文件 id 解析（库服务给出权威路径；客户端传来的 path 可能只是文件 id）
+                if (hasIds) {
+                    const lib = this.backend?.libraries?.getLibrary(libraryId);
+                    for (const id of ids!) {
+                        const numericId = parseInt(String(id), 10);
+                        if (!Number.isFinite(numericId)) continue;
+                        const item = await lib?.libraryService?.getFile(numericId);
+                        const full = item ? await lib!.libraryService!.getItemFilePath(item) : undefined;
+                        if (full && path.resolve(full).startsWith(resolvedBase) && fs.existsSync(full)) {
+                            safe.push(path.resolve(full));
+                        }
+                    }
+                }
+                for (const rel of hasPaths ? paths! : []) {
                     const full = path.resolve(path.join(resolvedBase, rel));
                     if (full.startsWith(resolvedBase) && fs.existsSync(full)) {
                         safe.push(full);

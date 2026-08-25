@@ -909,6 +909,7 @@
     "decline": "拒绝",
     "downloading": "下载中 {percent}%",
     "downloadDone": "已下载 {count} 个文件",
-    "downloadFailed": "下载失败"
+    "downloadFailed": "下载失败",
+    "autoAccepting": "正在自动接收来自「{from}」的 {count} 个文件…"
   }
 }

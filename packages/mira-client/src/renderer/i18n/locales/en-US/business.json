@@ -909,6 +909,7 @@
     "decline": "Decline",
     "downloading": "Downloading {percent}%",
     "downloadDone": "Downloaded {count} files",
-    "downloadFailed": "Download failed"
+    "downloadFailed": "Download failed",
+    "autoAccepting": "Auto-receiving {count} file(s) from \"{from}\"…"
   }
 }

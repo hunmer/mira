@@ -1,15 +1,17 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { toast } from 'vue-sonner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { appService } from '@renderer/services'
 import { incomingShare } from '@renderer/composables/useDeviceShare'
+import { useSettingsStore } from '@renderer/stores/settings'
 import { downloadShareFiles } from './downloadShare'
 
 /** 接收端：收到其他设备的分享请求后确认接收并下载（Electron 可选保存位置） */
 const { t } = useI18n()
+const settingsStore = useSettingsStore()
 
 const open = computed({
   get: () => incomingShare.value !== null,
@@ -18,7 +20,9 @@ const open = computed({
 
 const files = computed(() => incomingShare.value?.files || [])
 const fromLabel = computed(() => incomingShare.value?.fromLabel || incomingShare.value?.from || '')
-const saveDir = ref<string>('')
+// 默认取设置中的保存位置；对话框内选择是一次性的（不写回配置），每次打开恢复默认
+const saveDir = ref<string>(settingsStore.settings.deviceShareSaveDir || '')
+watch(open, (v) => { if (v) saveDir.value = settingsStore.settings.deviceShareSaveDir || '' })
 const downloading = ref(false)
 const percent = ref(0)
 
@@ -31,7 +35,7 @@ const formatSize = (n?: number) => {
 
 const selectSaveDir = async () => {
   const result = await (window as any).electronAPI?.fs?.selectDirectory(t('business.deviceShare.selectSaveDir'))
-  if (result?.success && result.data) saveDir.value = result.data
+  if (result?.success && result.path) saveDir.value = result.path
 }
 
 const handleAccept = async () => {

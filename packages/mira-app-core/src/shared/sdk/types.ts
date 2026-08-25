@@ -496,10 +496,10 @@ export interface Device {
     ipAddress: string;
 }
 
-/** 设备间分享票据请求（path 为库内相对路径，多文件由服务端 ZIP 打包） */
+/** 设备间分享票据请求（id 优先由服务端解析权威路径；path 为库内相对路径兜底；多文件由服务端 ZIP 打包） */
 export interface ShareTicketRequest {
     libraryId: string;
-    files: Array<{ path: string; name?: string }>;
+    files: Array<{ id?: string | number; path?: string; name?: string }>;
 }
 
 /** 设备间分享票据响应（downloadUrl 为相对路径，凭票据免 token 下载） */

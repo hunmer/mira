@@ -39,3 +39,21 @@ export type BatchUploadFileService = (
   item: { file: File; libraryId: string; folderId?: string; tags?: string[] } & BatchUploadFileMeta,
   onProgress: (percent: number) => void,
 ) => Promise<unknown>
+
+/* ============ 设备列表选择(DeviceListPicker) ============ */
+
+/**
+ * 设备条目:后端 Device 的兼容子集(SDK devices().getByLibrary 返回值可直接传入)。
+ */
+export interface DeviceListItem {
+  clientId: string
+  status: 'connected' | 'disconnected'
+  userAgent?: string
+  ipAddress?: string
+  lastActivity?: string
+}
+
+/** 设备列表数据服务:宿主实现(如 client.devices().getByLibrary) */
+export interface DeviceListPickerServices {
+  listDevices(libraryId: string): Promise<DeviceListItem[]>
+}

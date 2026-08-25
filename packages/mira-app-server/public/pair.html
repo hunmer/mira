@@ -4,74 +4,41 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mira 设备配对</title>
+<!-- mira-plugin-ui 自包含 dist：组件 JS(UMD) + 编译好的完整 CSS(含 shadcn token)，
+     免构建消费详见 docs/plugin-ui-source-consumption.md（本页无构建链路，直接用 dist + 全量 CSS，
+     自有标记只用 dist CSS 中已存在的工具类） -->
+<link rel="stylesheet" href="/static/vendor/mira-plugin-ui.css">
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  /* 覆盖组件库默认 token：默认 primary 为蓝紫(hue 260)，本页改绿色(配对/连接语义)，其余 token 沿用 */
+  :root {
+    --primary: oklch(0.596 0.13 163);
+    --ring: oklch(0.708 0.1 163);
+    --sidebar-primary: oklch(0.596 0.13 163);
+  }
+  .dark {
+    --primary: oklch(0.696 0.14 163);
+    --ring: oklch(0.556 0.1 163);
+    --sidebar-primary: oklch(0.696 0.14 163);
+  }
+  html { height: 100% }
   body {
-    font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-    min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px;
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 1rem;
   }
-  .card {
-    background: #fff; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.25);
-    width: 100%; max-width: 420px; padding: 28px; color: #1f2937;
-  }
-  h1 { font-size: 20px; display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
-  .status { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 10px; font-size: 14px; margin-bottom: 16px; }
-  .status.ok { background: #ecfdf5; color: #065f46; }
-  .status.err { background: #fef2f2; color: #991b1b; }
-  .status.wait { background: #f3f4f6; color: #4b5563; }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex: none; }
-  .dot.pulse { animation: pulse 1.2s ease-in-out infinite; }
-  @keyframes pulse { 0%,100% { opacity: .35 } 50% { opacity: 1 } }
-  .section { margin-top: 20px; padding-top: 16px; border-top: 1px dashed #e5e7eb; }
-  .section h2 { font-size: 15px; margin-bottom: 8px; }
-  .share-list { margin: 12px 0; max-height: 220px; overflow-y: auto; }
-  .share-item { display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid #e5e7eb; border-radius: 10px; margin-bottom: 8px; font-size: 13px; }
-  .share-item .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .share-item .size { color: #6b7280; flex: none; }
-  button {
-    width: 100%; padding: 12px; border: none; border-radius: 10px; font-size: 15px; cursor: pointer;
-    background: #6366f1; color: #fff; transition: opacity .15s;
-  }
-  button:hover { opacity: .9; }
-  button:disabled { background: #d1d5db; cursor: not-allowed; }
-  button.ghost { background: #eef2ff; color: #4f46e5; }
-  .hint { font-size: 12px; color: #9ca3af; text-align: center; margin-top: 12px; line-height: 1.6; }
-  .meta { font-size: 12px; color: #6b7280; margin-bottom: 4px; word-break: break-all; }
-  .progress { height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden; margin: 12px 0; }
-  .progress > div { height: 100%; background: #6366f1; width: 0; transition: width .2s; }
-  #pickBtn { margin-top: 4px; }
 </style>
 </head>
-<body>
-<div class="card">
-  <h1>📱 Mira 设备配对</h1>
-  <div id="status" class="status wait"><span class="dot pulse"></span><span id="statusText">正在连接服务器…</span></div>
-  <div class="meta" id="meta"></div>
+<body class="bg-background text-foreground">
+<div id="app"></div>
 
-  <!-- 接收：等待其他设备推送 -->
-  <div id="shareArea" style="display:none">
-    <div id="shareTitle" style="font-size:15px;font-weight:600;margin-bottom:4px"></div>
-    <div class="share-list" id="shareList"></div>
-    <button id="acceptBtn">接收并下载</button>
-    <div class="progress" id="progressBar" style="display:none"><div id="progressFill"></div></div>
-    <div class="hint" id="progressText"></div>
-  </div>
-  <div class="hint" id="waitHint">已配对，等待其他设备发送文件…<br>保持此页面打开</div>
-
-  <!-- 发送：把本机文件回传给配对的桌面端 -->
-  <div class="section" id="sendSection" style="display:none">
-    <h2>📤 发送文件给桌面端</h2>
-    <p class="hint" style="text-align:left">选择的照片/文件会上传到素材库，并通知桌面端接收</p>
-    <input type="file" id="fileInput" multiple style="display:none" />
-    <button class="ghost" id="pickBtn">选择文件并发送</button>
-    <div class="progress" id="sendBar" style="display:none"><div id="sendFill"></div></div>
-    <div class="hint" id="sendText"></div>
-  </div>
-</div>
+<!-- Vue 全量构建(含模板编译器, 全局 Vue) + 组件库 UMD(全局 MiraPluginUI) -->
+<script src="/static/vendor/vue.global.prod.js"></script>
+<script src="/static/vendor/mira-plugin-ui.umd.js"></script>
 
 <script type="module">
 import { MiraClient } from '/static/sdk/mira-sdk.esm.mjs';
+
+const { createApp, reactive, ref, computed } = Vue;
 
 const qs = new URLSearchParams(location.search);
 const token = qs.get('token');
@@ -79,12 +46,70 @@ const libraryId = qs.get('libraryId');
 const wsUrlParam = qs.get('ws');
 const fromClientId = qs.get('from'); // 发起配对的桌面端 clientId（用于反向推送）
 
-const $ = (id) => document.getElementById(id);
-const setStatus = (cls, text, pulse) => {
-  $('status').className = 'status ' + cls;
-  $('statusText').textContent = text;
-  $('status').querySelector('.dot').className = 'dot' + (pulse ? ' pulse' : '');
+const state = reactive({
+  status: 'wait', // wait | ok | err
+  statusText: '正在连接服务器…',
+  pulse: true,
+  meta: '',
+  share: null, // 收到的 mira-share 消息
+  downloading: false,
+  downloaded: false,
+  downloadFailed: false,
+  dl: { showBar: false, percent: 0, text: '' },
+  selfId: '', // 本页 WS clientId（DeviceListPicker 排除自身用）
+  sending: false,
+  send: { showBar: false, percent: 0, text: '' },
+});
+
+const fileInputEl = ref(null);
+const selectedDevice = ref(null); // 发送目标 clientId（DeviceListPicker 选中项）
+
+// 设备列表数据服务：SDK devices().getByLibrary（返回 Device[]，结构兼容 DeviceListItem）
+const deviceServices = {
+  async listDevices(libId) {
+    if (!client) return [];
+    try {
+      return await client.devices().getByLibrary(libId || libraryId || 'default');
+    } catch (err) {
+      // 库不存在按空列表处理（组件显示"暂无已连接设备"），其余错误照常抛给组件展示
+      if (err?.status === 404) return [];
+      throw err;
+    }
+  },
 };
+
+// 列表回来时预选 QR 中的 from 设备（每次轮询幂等执行）
+function onDevices(devices) {
+  if (!selectedDevice.value && fromClientId && devices.some((d) => d.clientId === fromClientId)) {
+    selectedDevice.value = fromClientId;
+  }
+}
+const statusClass = computed(() => ({
+  wait: 'bg-muted text-muted-foreground',
+  ok: 'bg-primary/10 text-primary',
+  err: 'bg-destructive/10 text-destructive',
+}[state.status]));
+
+const acceptLabel = computed(() => {
+  if (state.downloaded) return '已下载 ✓';
+  if (state.downloading) return '下载中…';
+  if (state.downloadFailed) return '重试下载';
+  const files = state.share?.files || [];
+  return files.length > 1 && state.share?.ticketUrl ? '接收并下载（ZIP 打包）' : '接收并下载';
+});
+
+function setStatus(status, text, pulse) {
+  state.status = status;
+  state.statusText = text;
+  state.pulse = pulse;
+}
+
+function formatSize(n) {
+  if (!n) return '';
+  if (n > 1048576) return (n / 1048576).toFixed(1) + ' MB';
+  if (n > 1024) return (n / 1024).toFixed(1) + ' KB';
+  return n + ' B';
+}
 
 let client = null;
 let selfId = '';
@@ -105,9 +130,18 @@ async function main() {
 
   // token 认证验证（失败会抛 401）
   const info = await client.system().getSystemInfo();
-  $('meta').textContent = `服务器 ${location.origin} · 素材库 ${libraryId}`;
+  state.meta = `服务器 ${location.origin} · 素材库 ${libraryId}`;
+
+  // 验证素材库存在（无效 libraryId 时设备列表/上传接口都会 404，提前给出明确提示）
+  try {
+    await client.devices().getByLibrary(libraryId);
+  } catch (err) {
+    if (err?.status === 404) throw new Error(`素材库 ${libraryId} 不存在，请重新扫码`);
+    throw err;
+  }
 
   selfId = `pair_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+  state.selfId = selfId;
   const ws = client.websocket(0, {
     url: wsUrlParam,
     clientId: selfId,
@@ -117,10 +151,9 @@ async function main() {
   // SDK 的 websocket() 构造后需要 start() 建立连接
   await ws.start();
   setStatus('ok', `已连接（${info?.data?.version || info?.version || 'ok'}）· 等待接收`, true);
-  if (fromClientId) $('sendSection').style.display = 'block';
 
   ws.on('disconnected', () => {
-    if (!currentShare) setStatus('err', '连接已断开，请重新扫码配对', false);
+    if (!state.share) setStatus('err', '连接已断开，请重新扫码配对', false);
   });
 
   // 设备消息通过 eventName=admin_message 下发，message 体在 data.message
@@ -128,52 +161,24 @@ async function main() {
     const msg = data?.message || data;
     if (msg?.type === 'mira-share') renderShare(msg);
   });
-
-  // 反向发送：选文件 → 上传到库 → WS 通知桌面端接收
-  $('pickBtn').addEventListener('click', () => $('fileInput').click());
-  $('fileInput').addEventListener('change', () => sendBackToDesktop($('fileInput').files));
 }
-
-let currentShare = null;
 
 function renderShare(msg) {
-  currentShare = msg;
+  state.share = { ...msg, files: msg.files || [] };
   setStatus('ok', '收到来自「' + (msg.fromLabel || msg.from || '未知设备') + '」的文件', false);
-  $('waitHint').style.display = 'none';
-  $('shareArea').style.display = 'block';
-  const files = msg.files || [];
-  $('shareTitle').textContent = `接收到 ${files.length} 个文件：`;
-  $('shareList').innerHTML = files.map((f) => `
-    <div class="share-item">
-      <span>📄</span><span class="name" title="${escapeHtml(f.name || '')}">${escapeHtml(f.name || '未命名')}</span>
-      <span class="size">${f.size ? formatSize(f.size) : ''}</span>
-    </div>`).join('');
-  const btn = $('acceptBtn');
-  btn.disabled = false;
-  const isZip = files.length > 1 && msg.ticketUrl;
-  btn.textContent = isZip ? '接收并下载（ZIP 打包）' : '接收并下载';
-  btn.onclick = () => downloadShare(msg);
 }
 
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-}
-
-function formatSize(n) {
-  if (n > 1048576) return (n / 1048576).toFixed(1) + ' MB';
-  if (n > 1024) return (n / 1024).toFixed(1) + ' KB';
-  return n + ' B';
-}
-
-async function downloadShare(msg) {
-  const files = msg.files || [];
-  if (files.length === 0) return;
-  const btn = $('acceptBtn');
-  btn.disabled = true;
-  $('progressBar').style.display = 'block';
+async function downloadShare() {
+  const msg = state.share;
+  const files = msg?.files || [];
+  if (!client || files.length === 0 || state.downloading) return;
+  state.downloading = true;
+  state.downloaded = false;
+  state.downloadFailed = false;
+  state.dl = { showBar: true, percent: 0, text: '' };
   const setProgress = (p, text) => {
-    $('progressFill').style.width = Math.round(p * 100) + '%';
-    if (text) $('progressText').textContent = text;
+    state.dl.percent = Math.round(p * 100);
+    if (text) state.dl.text = text;
   };
   try {
     // 优先一次性票据（免 token；单文件原文件 / 多文件 ZIP）；缺票据时回退直链/打包接口
@@ -186,21 +191,24 @@ async function downloadShare(msg) {
       saveBlob(blob, files[0].name || 'mira-file');
     } else {
       // 多文件：服务端 ZIP 打包（POST /api/fs/download，走 Authorization 认证）
+      // ids 优先（服务端权威解析）；paths 兜底（反向发送场景上传返回的是绝对路径）
       const paths = files.map((f) => f.path).filter(Boolean);
+      const ids = files.map((f) => f.id).filter(Boolean);
       const blob = await fetchBlobWithBody(`${location.origin}/api/fs/download`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify({ libraryId: msg.libraryId || libraryId, paths }),
+        body: JSON.stringify({ libraryId: msg.libraryId || libraryId, ids, paths }),
       }, setProgress);
       saveBlob(blob, `mira-share-${Date.now()}.zip`);
     }
     setProgress(1, '下载完成，已保存到浏览器默认下载目录');
-    btn.textContent = '已下载 ✓';
+    state.downloaded = true;
   } catch (err) {
     console.error(err);
     setProgress(0, '下载失败：' + (err?.message || err));
-    btn.disabled = false;
-    btn.textContent = '重试下载';
+    state.downloadFailed = true;
+  } finally {
+    state.downloading = false;
   }
 }
 
@@ -216,13 +224,16 @@ function reachableUrl(url) {
   }
 }
 
+function onPickFiles(e) {
+  sendBackToDesktop(e.target.files);
+}
+
 async function sendBackToDesktop(fileList) {
-  if (!fileList || fileList.length === 0 || !client || !fromClientId) return;
+  const target = selectedDevice.value;
+  if (!fileList || fileList.length === 0 || !client || !target || state.sending) return;
   const files = Array.from(fileList);
-  const btn = $('pickBtn');
-  btn.disabled = true;
-  $('sendBar').style.display = 'block';
-  $('sendText').textContent = `上传中 0/${files.length}`;
+  state.sending = true;
+  state.send = { showBar: true, percent: 0, text: `上传中 0/${files.length}` };
   try {
     const uploaded = [];
     for (let i = 0; i < files.length; i++) {
@@ -231,7 +242,7 @@ async function sendBackToDesktop(fileList) {
         files: [files[i]],
         clientId: selfId,
         onUploadProgress: (e) => {
-          if (e.total) $('sendFill').style.width = Math.round(((i + e.loaded / e.total) / files.length) * 100) + '%';
+          if (e.total) state.send.percent = Math.round(((i + e.loaded / e.total) / files.length) * 100);
         },
       });
       const results = res?.results || [];
@@ -247,24 +258,24 @@ async function sendBackToDesktop(fileList) {
           url: `${location.origin}/api/files/file/${encodeURIComponent(libraryId)}/${encodeURIComponent(id)}${token ? '?token=' + encodeURIComponent(token) : ''}`,
         });
       }
-      $('sendText').textContent = `上传中 ${i + 1}/${files.length}`;
+      state.send.text = `上传中 ${i + 1}/${files.length}`;
     }
     if (uploaded.length === 0) throw new Error('没有文件上传成功');
-    await client.devices().sendMessage(fromClientId, libraryId, {
+    await client.devices().sendMessage(target, libraryId, {
       type: 'mira-share',
       from: selfId,
       fromLabel: '配对设备 · ' + (/Android|iPhone|iPad/i.test(navigator.userAgent) ? '手机' : '浏览器'),
       libraryId,
       files: uploaded,
     });
-    $('sendFill').style.width = '100%';
-    $('sendText').textContent = `已发送 ${uploaded.length} 个文件，等待桌面端接收`;
+    state.send.percent = 100;
+    state.send.text = `已发送 ${uploaded.length} 个文件，等待桌面端接收`;
   } catch (err) {
     console.error(err);
-    $('sendText').textContent = '发送失败：' + (err?.message || err);
+    state.send.text = '发送失败：' + (err?.message || err);
   } finally {
-    btn.disabled = false;
-    $('fileInput').value = '';
+    state.sending = false;
+    if (fileInputEl.value) fileInputEl.value.value = '';
   }
 }
 
@@ -296,6 +307,80 @@ function saveBlob(blob, filename) {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 30000);
 }
+
+// lucide 图标(stroke 风格),内联避免额外请求
+const icon = (cls, paths) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${cls}">${paths}</svg>`;
+const icons = {
+  phone: icon('size-5', '<rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/>'),
+  file: icon('size-4', '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/>'),
+  upload: icon('size-4', '<path d="M12 3v12"/><path d="m7 8 5-5 5 5"/><path d="M5 21h14"/>'),
+};
+
+const app = createApp({
+  setup() {
+    return { state, libraryId, fileInputEl, selectedDevice, deviceServices, onDevices, statusClass, acceptLabel, formatSize, downloadShare, onPickFiles, icons, phoneIcon: icon('size-6', '<rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/>') };
+  },
+  template: `
+  <div class="bg-card text-card-foreground mx-auto w-full max-w-[380px] rounded-xl border shadow-sm">
+    <div class="flex flex-col gap-4 p-6">
+      <h1 class="flex items-center gap-2 text-lg font-semibold">
+        <span class="text-primary" v-html="icons.phone"></span>
+        Mira 设备配对
+      </h1>
+
+      <div class="flex items-center gap-2 rounded-lg p-2.5 text-sm" :class="statusClass">
+        <span class="size-2 shrink-0 rounded-full bg-current" :class="state.pulse && 'animate-pulse'"></span>
+        <span class="min-w-0 flex-1">{{ state.statusText }}</span>
+      </div>
+      <p v-if="state.meta" class="text-muted-foreground text-xs font-mono break-all">{{ state.meta }}</p>
+
+      <!-- 接收：等待其他设备推送 -->
+      <div v-if="state.share" class="flex flex-col gap-3">
+        <p class="text-sm font-medium">接收到 {{ state.share.files.length }} 个文件：</p>
+        <div class="flex flex-col gap-2 overflow-y-auto p-1" style="max-height: 220px">
+          <div v-for="(f, i) in state.share.files" :key="i" class="flex items-center gap-2 rounded-lg border p-2.5 text-sm">
+            <span class="text-muted-foreground shrink-0" v-html="icons.file"></span>
+            <span class="min-w-0 flex-1 truncate" :title="f.name">{{ f.name || '未命名' }}</span>
+            <span class="text-muted-foreground shrink-0 text-xs">{{ formatSize(f.size) }}</span>
+          </div>
+        </div>
+        <Button :disabled="state.downloading || state.downloaded" @click="downloadShare">{{ acceptLabel }}</Button>
+        <Progress v-if="state.dl.showBar" :model-value="state.dl.percent" />
+        <p v-if="state.dl.text" class="text-xs text-center" :class="state.dl.text.startsWith('下载失败') ? 'text-destructive' : 'text-muted-foreground'">{{ state.dl.text }}</p>
+      </div>
+
+      <Empty v-else-if="state.status === 'ok'">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <span v-html="phoneIcon"></span>
+          </EmptyMedia>
+          <EmptyTitle>等待接收</EmptyTitle>
+          <EmptyDescription>已配对，等待其他设备发送文件…保持此页面打开</EmptyDescription>
+        </EmptyHeader>
+      </Empty>
+
+      <!-- 发送：选择在线设备，把本机文件发过去 -->
+      <div v-if="state.status === 'ok'" class="mt-4 flex flex-col gap-3 border-t border-dashed pt-4">
+        <h2 class="flex items-center gap-2 text-sm font-semibold">
+          <span class="text-muted-foreground" v-html="icons.upload"></span>
+          发送文件给其他设备
+        </h2>
+        <p class="text-muted-foreground text-xs">选择下方在线设备，文件会上传到素材库并通知对方接收</p>
+        <DeviceListPicker v-model:selected="selectedDevice" :services="deviceServices" :library-id="libraryId" :self-client-id="state.selfId" @devices="onDevices" />
+        <input ref="fileInputEl" type="file" multiple class="hidden" @change="onPickFiles" />
+        <Button variant="outline" :disabled="state.sending || !selectedDevice" @click="fileInputEl?.click()">
+          {{ state.sending ? '发送中…' : '选择文件并发送' }}
+        </Button>
+        <p v-if="state.send.text" class="text-xs" :class="state.send.text.startsWith('发送失败') ? 'text-destructive' : 'text-muted-foreground'">{{ state.send.text }}</p>
+        <p v-else-if="!selectedDevice" class="text-muted-foreground text-xs text-center">请先选择要发送到的设备</p>
+        <Progress v-if="state.send.showBar" :model-value="state.send.percent" />
+      </div>
+    </div>
+  </div>`,
+});
+
+app.use(MiraPluginUI.default);
+app.mount('#app');
 </script>
 </body>
 </html>

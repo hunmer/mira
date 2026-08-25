@@ -1,10 +1,15 @@
 import { ref } from 'vue'
+import { toast } from 'vue-sonner'
 import type { Device } from 'mira-app-core/shared/sdk'
 import type { FileInfo } from '../../shared/types'
+import i18n from '../i18n'
+import { appService } from '../services'
 import { miraSDKService } from '../services/MiraSDKService'
 import { webSocketService } from '../services/WebSocketService'
 import { useAuthStore } from '../stores/auth'
 import { useLibraryStore } from '../stores/library'
+import { useSettingsStore } from '../stores/settings'
+import { downloadShareFiles } from '../components/business/DeviceShareDialog/downloadShare'
 
 /** 分享消息中的单个文件（只传 HTTP 直连链，不传二进制内容） */
 export interface DeviceShareFile {
@@ -86,9 +91,37 @@ export function openDeviceShare(items: FileInfo[]): void {
   shareDialogOpen.value = true
 }
 
-/** 收到其他设备的分享请求（WebSocketService 收到 admin_message 后调用） */
+/** 收到其他设备的分享请求（WebSocketService 收到 admin_message 后调用）；开启自动接收时直接下载不弹确认框 */
 export function pushIncomingShare(message: DeviceShareMessage): void {
+  if (useSettingsStore().settings.deviceShareAutoAccept) {
+    void autoAcceptShare(message)
+    return
+  }
   incomingShare.value = message
+}
+
+/** 自动接收：用设置中的保存位置直接下载；失败回落到确认框人工处理 */
+async function autoAcceptShare(message: DeviceShareMessage): Promise<void> {
+  const { settings } = useSettingsStore()
+  const t = i18n.global.t
+  const from = message.fromLabel || message.from || ''
+  const toastId = toast.loading(t('business.deviceShare.autoAccepting', { from, count: message.files?.length || 0 }))
+  try {
+    const saved = await downloadShareFiles(message, {
+      saveDir: settings.deviceShareSaveDir || undefined,
+    })
+    toast.success(t('business.deviceShare.downloadDone', { count: saved.length }), {
+      id: toastId,
+      description: appService.isElectron && settings.deviceShareSaveDir ? saved[0] : undefined,
+    })
+  } catch (e) {
+    console.error('[device-share] auto accept failed', e)
+    toast.error(t('business.deviceShare.downloadFailed'), {
+      id: toastId,
+      description: e instanceof Error ? e.message : String(e),
+    })
+    incomingShare.value = message
+  }
 }
 
 /** 简易设备描述：userAgent + IP 推断展示名 */

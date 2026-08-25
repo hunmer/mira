@@ -28,7 +28,8 @@
     "build:sdk": "tsc --project sdk/tsconfig.json",
     "sdk:example": "ts-node sdk/examples/usage-examples.ts",
     "prepublish": "npm run build",
-    "prepack": "npm run build"
+    "prepack": "npm run build",
+    "build:plugin-ui": "node scripts/copy-plugin-ui.mjs"
   },
   "files": [
     "dist/**/*",

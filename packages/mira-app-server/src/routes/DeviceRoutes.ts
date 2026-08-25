@@ -107,7 +107,7 @@ export class DeviceRoutes {
         try {
             const { libraryId, files } = req.body as {
                 libraryId: string;
-                files: Array<{ path?: string; name?: string }>;
+                files: Array<{ id?: string | number; path?: string; name?: string }>;
             };
 
             if (!libraryId || !Array.isArray(files) || files.length === 0) {
@@ -125,16 +125,29 @@ export class DeviceRoutes {
 
             const entries: ShareTicket['entries'] = [];
             for (const file of files) {
-                if (!file?.path) continue;
-                const full = path.resolve(path.join(resolvedBase, file.path));
-                // 严格校验路径穿越（与 /api/fs/download 一致）
-                if (!full.startsWith(resolvedBase) || !fs.existsSync(full)) continue;
+                let full: string | undefined;
+                let name = file?.name;
+                // id 优先：由库服务解析权威绝对路径（客户端传来的 path 可能只是文件 id 或绝对路径）
+                const numericId = parseInt(String(file?.id ?? ''), 10);
+                if (Number.isFinite(numericId)) {
+                    const item = await lib?.libraryService?.getFile(numericId);
+                    if (item) {
+                        full = await lib!.libraryService!.getItemFilePath(item);
+                        name = name || item.name;
+                    }
+                }
+                if (!full && file?.path) {
+                    const candidate = path.resolve(path.join(resolvedBase, file.path));
+                    // 严格校验路径穿越（与 /api/fs/download 一致）；绝对路径 resolve 后必须仍落在库内
+                    if (candidate.startsWith(resolvedBase) && fs.existsSync(candidate)) full = candidate;
+                }
+                if (!full || !fs.existsSync(full)) continue;
                 const stat = await fs.promises.stat(full);
                 if (!stat.isFile()) continue;
                 entries.push({
-                    absPath: full,
-                    relPath: path.relative(resolvedBase, full),
-                    name: file.name || path.basename(full),
+                    absPath: path.resolve(full),
+                    relPath: path.relative(resolvedBase, path.resolve(full)),
+                    name: name || path.basename(full),
                 });
             }
 

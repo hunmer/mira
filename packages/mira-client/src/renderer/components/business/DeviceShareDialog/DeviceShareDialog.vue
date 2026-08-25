@@ -62,9 +62,10 @@ const handleSend = async () => {
   // 先创建一次性分享票据（免 token 下载，多文件自动 ZIP），失败时回退逐文件直链
   let ticketUrl: string | undefined
   try {
+    // id 优先（server 权威解析路径），path 兜底
     const ticketFiles = files.value
-      .filter(f => f.path)
-      .map(f => ({ path: f.path!, name: f.name }))
+      .filter(f => f.id || f.path)
+      .map(f => ({ id: f.id, path: f.path, name: f.name }))
     if (ticketFiles.length > 0) {
       const ticket = await client.devices().createShareTicket({ libraryId, files: ticketFiles })
       // 票据链接要跨设备可达：用局域网 origin（与配对 QR 一致）而不是 serverUrl 里的 loopback

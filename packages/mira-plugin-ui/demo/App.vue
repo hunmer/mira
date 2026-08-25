@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { Loader2, LogOut, Moon, Server, Sun } from '@lucide/vue'
 import { MiraClient, type HealthResponse } from 'mira-app-core/shared/sdk'
-import { BatchUploadDialog, Progress, SaveLocationDialog, type BatchUploadFileService, type SaveLocation } from '@/index'
+import { BatchUploadDialog, DeviceListPicker, Progress, SaveLocationDialog, type BatchUploadFileService, type DeviceListItem, type DeviceListPickerServices, type SaveLocation } from '@/index'
 import { Dropzone, LibrarySelect, LibraryTreeView, MediaBrowser, MediaLibraryView, ServerManagerDialog, toApiFilters } from '@/library'
 import type { LibraryFlatItem, LibrarySelectServer, LibraryTreeDialog, LibraryTreeServices, LibraryTreeNode, LibraryTreeUpload, ManagedServer, MediaBrowserFilters, MediaBrowserItem, MediaBrowserServerManager, MediaBrowserServices, MediaDetailItem, MediaDetailServices, MediaLibraryServices, ServerManagerServices } from '@/library'
 import { Button } from '@/components/ui/button'
@@ -567,6 +567,23 @@ async function handleMediaDelete (items: MediaBrowserItem[]) {
   }
 }
 
+/* ---------- DeviceListPicker 设备列表选择演示 ---------- */
+const selectedDeviceId = ref<string | null>(null)
+// mock 数据(未连接时):不同平台 userAgent 演示设备描述;disconnected 项会被组件过滤
+const mockDevices: DeviceListItem[] = [
+  { clientId: 'desktop-7f3a2b', status: 'connected', userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Electron/33.0.0', ipAddress: '192.168.1.23', lastActivity: new Date(Date.now() - 30_000).toISOString() },
+  { clientId: 'phone-a91c', status: 'connected', userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36', ipAddress: '192.168.1.42', lastActivity: new Date(Date.now() - 5 * 60_000).toISOString() },
+  { clientId: 'ipad-55ee', status: 'disconnected', userAgent: 'Mozilla/5.0 (iPad; CPU OS 17_4)', ipAddress: '192.168.1.77', lastActivity: new Date(Date.now() - 42 * 60_000).toISOString() },
+]
+
+// 连接后走 SDK devices().getByLibrary;未连接返回内存 mock
+const deviceServices: DeviceListPickerServices = {
+  async listDevices (libraryId) {
+    if (connected.value && client) return client.devices().getByLibrary(libraryId)
+    return mockDevices
+  },
+}
+
 /* ---------- Dropzone 暂存 + 真实上传 ---------- */
 const stagedFiles = ref<File[]>([])
 const dzMediaVariant = ref<'icon' | 'image'>('image')
@@ -750,6 +767,20 @@ async function startUpload () {
           :active-server-id="demoActiveId"
           :services="serverServices"
         />
+      </section>
+
+      <!-- DeviceListPicker 设备列表选择演示 -->
+      <section class="bg-card text-card-foreground flex flex-col gap-4 rounded-xl border p-6 shadow-sm">
+        <div class="flex flex-col gap-1">
+          <h2 class="text-base font-semibold">DeviceListPicker 设备列表选择</h2>
+          <p class="text-muted-foreground text-xs">
+            列出当前素材库已连接的设备（10s 轮询），单选目标设备；未连接时展示 mock 数据（已断开的设备被过滤）
+          </p>
+        </div>
+        <div class="rounded-lg border p-2">
+          <DeviceListPicker v-model="selectedDeviceId" :library-id="demoLibraryId" :services="deviceServices" />
+        </div>
+        <p class="text-muted-foreground text-xs">选中设备：{{ selectedDeviceId || '无' }}</p>
       </section>
 
       <!-- 树视图演示卡片(受控选择:为上传卡片选目标) -->

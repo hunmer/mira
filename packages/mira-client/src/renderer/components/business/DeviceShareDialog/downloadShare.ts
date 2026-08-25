@@ -86,9 +86,10 @@ export async function downloadShareFiles(
   })))
 
   if (withValidUrls.length > 1) {
-    // 多文件 ZIP：复用服务端打包接口
+    // 多文件 ZIP：复用服务端打包接口（ids 优先，服务端权威解析；paths 兜底）
     const base = getBase()
     const paths = withValidUrls.map(f => f.path).filter(Boolean) as string[]
+    const ids = withValidUrls.map(f => f.id).filter(Boolean) as string[]
     const token = useAuthStore().token
     const blob = await fetchBlob(`${base}/api/fs/download`, {
       method: 'POST',
@@ -96,7 +97,7 @@ export async function downloadShareFiles(
         'Content-Type': 'application/json',
         ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       },
-      body: JSON.stringify({ libraryId: message.libraryId, paths }),
+      body: JSON.stringify({ libraryId: message.libraryId, ids, paths }),
     }, opts.onProgress)
 
     if (isElectron) {
