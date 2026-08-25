@@ -3,7 +3,9 @@
  * PluginContributionBar —— HomeView 右侧栏顶部的「插件图标列表」。
  *
  * 订阅 window.pluginSystem.contributions，把所有已注册 contribution 的插件渲染为图标，
- * 水平排列展示。
+ * 水平排列展示（OrderedSectionList headerless 横向模式，支持直接拖拽排序）。
+ * 图标顺序与隐藏状态持久化在 mira-plugin-bar-layout，由 dots dropdown 的
+ * 「自定义布局」打开 SortableLayoutDialog 管理。
  *
  * 点击图标的行为由 contribution.behavior 决定：
  *   - 'window'（默认）：直接调 onActivate（一般在此 openPluginWindow 打开插件主界面）
@@ -11,10 +13,13 @@
  *
  * 无任何 contribution 时整体隐藏（不占位）。
  */
-import { ref, onMounted, onBeforeUnmount, defineComponent, h } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, defineComponent, h } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Dropdown } from '@/renderer/components/common/Dropdown'
+import OrderedSectionList from '@renderer/components/common/OrderedSectionList.vue'
+import SortableLayoutDialog from '@renderer/components/common/SortableLayoutDialog.vue'
 import PluginIcon from '@/renderer/components/common/PluginIcon.vue'
+import ConfigStorage from '@renderer/utils/ConfigStorage'
 import { useToast } from '@renderer/composables/useToast'
 import { openPluginWindow, openPluginDevWindow, resolveServerPluginUrl } from '@renderer/plugins/openPluginWindow'
 import {
@@ -32,6 +37,12 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu'
 import {
   Dialog,
   DialogContent,
@@ -164,7 +175,57 @@ async function onPopoverTriggerClick(e: Event, contribution: PluginContribution)
   await openPluginDevWindow(contribution)
 }
 
+// ==================== 图标布局（顺序 + 隐藏；dots 菜单「自定义布局」入口） ====================
+
+const LAYOUT_KEY = 'mira-plugin-bar-layout'
+const layoutOrder = ref<string[]>([])
+const layoutHidden = ref<string[]>([])
+const layoutDialogOpen = ref(false)
+
+async function loadBarLayout() {
+  try {
+    const raw = await ConfigStorage.getItem(LAYOUT_KEY)
+    if (!raw) return
+    const parsed = JSON.parse(raw)
+    if (Array.isArray(parsed?.order)) layoutOrder.value = parsed.order.filter((id: unknown): id is string => typeof id === 'string')
+    if (Array.isArray(parsed?.hidden)) layoutHidden.value = parsed.hidden.filter((id: unknown): id is string => typeof id === 'string')
+  } catch (e) {
+    console.warn('[PluginContributionBar] 加载布局失败:', e)
+  }
+}
+
+function saveBarLayout() {
+  void ConfigStorage.setItem(LAYOUT_KEY, JSON.stringify({ order: layoutOrder.value, hidden: layoutHidden.value }))
+}
+
+/** 展示中的图标：按持久化顺序排列，未记录的新 contribution 稳定排序追加末尾 */
+const visibleContributions = computed(() => {
+  const index = new Map(layoutOrder.value.map((id, i) => [id, i]))
+  return contributions.value
+    .filter((c) => !layoutHidden.value.includes(c.id))
+    .sort((a, b) => (index.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (index.get(b.id) ?? Number.MAX_SAFE_INTEGER))
+})
+
+/** 隐藏的图标：仍在贡献注册表，可在布局对话框拖回启用区 */
+const hiddenContributions = computed(() => contributions.value.filter((c) => layoutHidden.value.includes(c.id)))
+
+/** 工具栏内直接拖拽图标排序 */
+function onReorderItems(items: PluginContribution[]) {
+  layoutOrder.value = [...items.map((c) => c.id), ...layoutHidden.value]
+  saveBarLayout()
+}
+
+/** 布局对话框跨区拖拽：enabled 区为持久化来源（disabled 区是派生展示） */
+function onLayoutEnabledChange(items: PluginContribution[]) {
+  const enabledIds = items.map((c) => c.id)
+  const hiddenIds = contributions.value.filter((c) => !enabledIds.includes(c.id)).map((c) => c.id)
+  layoutOrder.value = [...enabledIds, ...hiddenIds]
+  layoutHidden.value = hiddenIds
+  saveBarLayout()
+}
+
 onMounted(() => {
+  void loadBarLayout()
   // pluginSystem 可能尚未初始化（插件系统初始化在 useHomeInit 内进行），
   // 这里轮询等待 contributions 中心可用后订阅。
   const trySubscribe = () => {
@@ -330,93 +391,139 @@ const ContributionHost = defineComponent({
     v-if="contributions.length > 0"
     class="rounded-2xl border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur-xl shadow-[0_12px_40px_rgba(99,102,241,0.10)] flex items-center gap-1 px-2 py-1.5"
   >
-    <template v-for="contribution in contributions" :key="contribution.id">
-      <!-- window 行为：纯按钮，点击直开插件主界面；右键菜单提供 dev 模式 / 禁用 -->
-      <ContextMenu>
-        <ContextMenuTrigger as-child>
-          <button
-            v-if="!isPopover(contribution)"
-            class="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
-            :title="contribution.title"
-            :aria-label="contribution.title"
-            @click="onWindowActivate(contribution)"
-          >
-            <PluginIcon
-              :plugin-id="contribution.pluginId"
-              :contribution-icon="contribution.icon"
-              :size="18"
-              rounded="sm"
-              :badge="isPluginDevEnabled(contribution.pluginId) ? '#f97316' : undefined"
-            />
-          </button>
-
-          <!-- popover 行为：Dropdown 弹出 render 返回的内容；dev 模式下点击直接打开 dev url -->
-          <Dropdown
-            v-else
-            placement="bottom-end"
-            min-width="280px"
-          >
-            <template #trigger>
-              <button
-                class="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
-                :title="contribution.title"
-                :aria-label="contribution.title"
-                @click="onPopoverTriggerClick($event, contribution)"
-              >
-                <PluginIcon
-                  :plugin-id="contribution.pluginId"
-                  :contribution-icon="contribution.icon"
-                  :size="18"
-                  rounded="sm"
-                  :badge="isPluginDevEnabled(contribution.pluginId) ? '#f97316' : undefined"
-                />
-              </button>
-            </template>
-            <template #content="{ close }">
-              <div class="p-3">
-                <div class="flex items-center justify-between mb-2 pb-2 border-b border-border/60">
-                  <div class="text-sm font-medium truncate">{{ contribution.title }}</div>
-                  <button
-                    class="h-6 w-6 flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted transition-colors"
-                    @click="close"
-                  >
-                    <span class="material-icons" style="font-size: 16px;">close</span>
-                  </button>
-                </div>
-                <!-- 插件自定义内容挂载点：ContributionHost 在挂载后调用 render(container, ctx) -->
-                <ContributionHost :contribution="contribution" />
-              </div>
-            </template>
-          </Dropdown>
-        </ContextMenuTrigger>
-        <ContextMenuContent class="w-48">
-          <ContextMenuItem @select="onOpenInWebviewTab(contribution)">
-            <span class="material-icons text-base mr-2">open_in_new</span>
-            <span>{{ t('views.pluginContributionBar.openInWebviewTab') }}</span>
-          </ContextMenuItem>
-          <ContextMenuItem @select="openDevDialog(contribution)">
-            <span class="material-icons text-base mr-2">developer_mode</span>
-            <span>{{ t('views.pluginContributionBar.devMode') }}</span>
-          </ContextMenuItem>
-          <ContextMenuItem @select="onDisablePlugin(contribution)">
-            <span class="material-icons text-base mr-2">block</span>
-            <span>{{ t('views.pluginContributionBar.disable') }}</span>
-          </ContextMenuItem>
-        </ContextMenuContent>
-      </ContextMenu>
-    </template>
-
-    <!-- 最右侧：管理插件入口（ml-auto 推到栏右端，左侧分割线区隔） -->
-    <div class="ml-auto w-px h-5 bg-border/60 mx-0.5 shrink-0" />
-    <button
-      class="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
-      :title="t('views.pluginContributionBar.managePlugins')"
-      :aria-label="t('views.pluginContributionBar.managePlugins')"
-      @click="emit('manage')"
+    <!-- 图标区：OrderedSectionList 控制顺序（headerless 横向工具栏，可直接拖拽排序） -->
+    <OrderedSectionList
+      class="min-w-0 flex-1"
+      :items="visibleContributions"
+      draggable
+      headerless
+      horizontal
+      @update:items="onReorderItems"
     >
-      <span class="material-icons" style="font-size: 18px;">extension</span>
-    </button>
+      <template #item="{ item: contribution }">
+        <!-- window 行为：纯按钮，点击直开插件主界面；右键菜单提供 dev 模式 / 禁用 -->
+        <ContextMenu>
+          <ContextMenuTrigger as-child>
+            <button
+              v-if="!isPopover(contribution)"
+              class="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+              :title="contribution.title"
+              :aria-label="contribution.title"
+              @click="onWindowActivate(contribution)"
+            >
+              <PluginIcon
+                :plugin-id="contribution.pluginId"
+                :contribution-icon="contribution.icon"
+                :size="18"
+                rounded="sm"
+                :badge="isPluginDevEnabled(contribution.pluginId) ? '#f97316' : undefined"
+              />
+            </button>
+
+            <!-- popover 行为：Dropdown 弹出 render 返回的内容；dev 模式下点击直接打开 dev url -->
+            <Dropdown
+              v-else
+              placement="bottom-end"
+              min-width="280px"
+            >
+              <template #trigger>
+                <button
+                  class="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                  :title="contribution.title"
+                  :aria-label="contribution.title"
+                  @click="onPopoverTriggerClick($event, contribution)"
+                >
+                  <PluginIcon
+                    :plugin-id="contribution.pluginId"
+                    :contribution-icon="contribution.icon"
+                    :size="18"
+                    rounded="sm"
+                    :badge="isPluginDevEnabled(contribution.pluginId) ? '#f97316' : undefined"
+                  />
+                </button>
+              </template>
+              <template #content="{ close }">
+                <div class="p-3">
+                  <div class="flex items-center justify-between mb-2 pb-2 border-b border-border/60">
+                    <div class="text-sm font-medium truncate">{{ contribution.title }}</div>
+                    <button
+                      class="h-6 w-6 flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted transition-colors"
+                      @click="close"
+                    >
+                      <span class="material-icons" style="font-size: 16px;">close</span>
+                    </button>
+                  </div>
+                  <!-- 插件自定义内容挂载点：ContributionHost 在挂载后调用 render(container, ctx) -->
+                  <ContributionHost :contribution="contribution" />
+                </div>
+              </template>
+            </Dropdown>
+          </ContextMenuTrigger>
+          <ContextMenuContent class="w-48">
+            <ContextMenuItem @select="onOpenInWebviewTab(contribution)">
+              <span class="material-icons text-base mr-2">open_in_new</span>
+              <span>{{ t('views.pluginContributionBar.openInWebviewTab') }}</span>
+            </ContextMenuItem>
+            <ContextMenuItem @select="openDevDialog(contribution)">
+              <span class="material-icons text-base mr-2">developer_mode</span>
+              <span>{{ t('views.pluginContributionBar.devMode') }}</span>
+            </ContextMenuItem>
+            <ContextMenuItem @select="onDisablePlugin(contribution)">
+              <span class="material-icons text-base mr-2">block</span>
+              <span>{{ t('views.pluginContributionBar.disable') }}</span>
+            </ContextMenuItem>
+          </ContextMenuContent>
+        </ContextMenu>
+      </template>
+    </OrderedSectionList>
+
+    <!-- 最右侧：dots dropdown（自定义布局 / 插件管理） -->
+    <div class="w-px h-5 bg-border/60 mx-0.5 shrink-0" />
+    <DropdownMenu>
+      <DropdownMenuTrigger as-child>
+        <button
+          class="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+          :title="t('views.sidebarToolbar.moreActions')"
+          :aria-label="t('views.sidebarToolbar.moreActions')"
+        >
+          <span class="material-icons" style="font-size: 18px;">more_vert</span>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" class="w-44">
+        <DropdownMenuItem @click="layoutDialogOpen = true">
+          <span class="material-icons text-base mr-2">dashboard_customize</span>
+          <span>{{ t('views.sidebarToolbar.customizeLayout') }}</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem @click="emit('manage')">
+          <span class="material-icons text-base mr-2">extension</span>
+          <span>{{ t('views.pluginContributionBar.managePlugins') }}</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   </div>
+
+  <!-- 自定义布局弹窗：拖拽排序 / 隐藏 / 恢复插件图标 -->
+  <SortableLayoutDialog
+    v-model="layoutDialogOpen"
+    :enabled="visibleContributions"
+    :disabled="hiddenContributions"
+    :title="t('views.pluginContributionBar.layoutTitle')"
+    :description="t('views.pluginContributionBar.layoutDescription')"
+    :enabled-title="t('views.sidebarLayoutDialog.enabled')"
+    :disabled-title="t('views.sidebarLayoutDialog.disabled')"
+    :done-label="t('views.sidebarLayoutDialog.done')"
+    :reset-label="t('common.resetOrder')"
+    :empty-disabled-label="t('views.sidebarLayoutDialog.allEnabled')"
+    @update:enabled="onLayoutEnabledChange"
+  >
+    <template #item="{ item }">
+      <PluginIcon :plugin-id="item.pluginId" :contribution-icon="item.icon" :size="18" rounded="sm" />
+      <div class="min-w-0 flex-1">
+        <div class="truncate text-xs font-medium">{{ item.title }}</div>
+        <div v-if="item.description" class="truncate text-[11px] text-muted-foreground">{{ item.description }}</div>
+      </div>
+    </template>
+  </SortableLayoutDialog>
 
   <!-- dev 模式配置弹窗 -->
   <Dialog v-model:open="devDialogOpen">

@@ -72,7 +72,8 @@ export function useHomeInit() {
       localStorage.setItem('mira-active-library-id', String(libraryStore.currentLibrary.id))
       tabPersistence.setCurrentLibraryId(createTabScopeId(
         serverListStore.activeServer?.id,
-        libraryStore.currentLibrary.id
+        libraryStore.currentLibrary.id,
+        serverListStore.activeServer?.serverUrl
       ))
     }
   }

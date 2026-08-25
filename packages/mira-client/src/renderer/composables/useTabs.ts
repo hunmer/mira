@@ -140,10 +140,6 @@ async function initializeTabsSystem() {
 
   // 初始化期间可能发生服务器/素材库切换，旧作用域的结果不能覆盖新状态。
   if (scopeAtStart !== tabPersistence.getScopeId()) {
-    console.warn('[tabs-scope] discard stale initial restore', {
-      scopeAtStart,
-      currentScope: tabPersistence.getScopeId()
-    })
     return
   }
 
@@ -222,11 +218,6 @@ export async function resetTabsForLibrary(libraryId: string | null): Promise<voi
 
     // 丢弃已被后续服务器/素材库切换取代的恢复结果。
     if (resetVersion !== tabsResetVersion) {
-      console.warn('[tabs-scope] discard stale library restore', {
-        resetVersion,
-        currentVersion: tabsResetVersion,
-        scope: tabPersistence.getScopeId()
-      })
       return
     }
 
@@ -814,13 +805,13 @@ export function useTabs() {
       await loadLibraryPrefs()
       const savedState = await tabPersistence.loadTabsState()
       if (scopeAtStart !== tabPersistence.getScopeId()) {
-        console.warn('[tabs-scope] discard stale forced restore', {
-          scopeAtStart,
-          currentScope: tabPersistence.getScopeId()
-        })
         return false
       }
       if (!savedState || savedState.tabs.length === 0) {
+        // 目标服务器/素材库没有已保存状态时，必须清空旧作用域的内存 tabs。
+        // 仅返回 false 会让服务器切换后继续显示上一个服务器的 tabs。
+        tabs.value = [createHomeTab()]
+        activeTabId.value = 'home'
         return false
       }
 

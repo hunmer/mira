@@ -17,14 +17,19 @@ type ViewMode = 'grid' | 'list' | 'waterfall'
 
 export const createTabScopeId = (
   serverIdentity: string | null | undefined,
-  libraryId: string | null | undefined
+  libraryId: string | null | undefined,
+  serverUrl?: string | null
 ): string | null => {
   if (!libraryId) return null
 
   // 使用服务器配置的稳定 ID，避免同一地址下的不同服务器账号串用 tabs。
   // 无 ID 时保留传入地址作为兼容回退（本地/旧调用场景）。
   const normalizedIdentity = serverIdentity?.replace(/\/$/, '') || 'local'
-  return `${encodeURIComponent(normalizedIdentity)}::${libraryId}`
+  const normalizedUrl = serverUrl?.replace(/\/$/, '')
+  const scopeIdentity = normalizedUrl && normalizedIdentity !== normalizedUrl
+    ? `${normalizedIdentity}@${normalizedUrl}`
+    : normalizedIdentity
+  return `${encodeURIComponent(scopeIdentity)}::${libraryId}`
 }
 
 export interface TabState {

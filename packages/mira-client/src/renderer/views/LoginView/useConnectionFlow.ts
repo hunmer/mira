@@ -223,6 +223,21 @@ export function useConnectionFlow(state: LoginFlowState) {
         if (selectedLib) {
           await libraryStore.setCurrentLibrary(selectedLib)
         }
+
+        // 此流程使用 reconnect:false，不会经过 serverList 的重连回调；
+        // 连接完成后必须主动切换 tabs 作用域，避免沿用上一服务器的全局 tabs。
+        const activeServer = serverListStore.activeServer
+        if (activeServer && selectedLib) {
+          const [{ resetTabsForLibrary }, { createTabScopeId }] = await Promise.all([
+            import('@renderer/composables/useTabs'),
+            import('@renderer/composables/TabPersistence')
+          ])
+          await resetTabsForLibrary(createTabScopeId(
+            activeServer.id,
+            selectedLib.id,
+            activeServer.serverUrl
+          ))
+        }
       } catch { /* 非致命：selectLibrary() 有自身回退 */ }
 
       const redirect = route.query.redirect as string

@@ -60,7 +60,9 @@
     "save": "Save",
     "cancel": "Cancel",
     "disableSuccess": "Plugin disabled",
-    "disableFailed": "Failed to disable plugin"
+    "disableFailed": "Failed to disable plugin",
+    "layoutTitle": "Customize Plugin Bar",
+    "layoutDescription": "Drag to reorder plugin icons; drag to \"Disabled\" to hide an icon, drag back to \"Enabled\" to restore it."
   },
   "sidebarHistoryModule": {
     "loading": "Loading...",
