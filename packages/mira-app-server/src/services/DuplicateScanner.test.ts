@@ -31,6 +31,7 @@ test('scans name and size candidates before confirming matching hashes', async (
     let requestedLimit = 0;
     let requestedSelect = '';
     let requestedCountFile = false;
+    let requestedRecycled: boolean | undefined;
     const resolvedNames: string[] = [];
     const db = database([file(1, 'a', 10, 'same'), file(2, 'a', 10, 'same'), file(3, 'a', 20)]);
     db.getItemFilePath = async (item: DuplicateFile) => {
@@ -39,6 +40,7 @@ test('scans name and size candidates before confirming matching hashes', async (
     };
     db.getFiles = async (options?: any) => {
         requestedLimit = options?.filters?.limit;
+        requestedRecycled = options?.filters?.recycled;
         requestedSelect = options?.select;
         requestedCountFile = options?.countFile;
         return { result: [file(1, 'a', 10, 'same'), file(2, 'a', 10, 'same'), file(3, 'a', 20)], limit: requestedLimit, offset: 0, total: 3 };
@@ -47,6 +49,7 @@ test('scans name and size candidates before confirming matching hashes', async (
     const result = await new DuplicateScanner(db, async () => 'same').scan();
 
     assert.equal(requestedLimit, Number.MAX_SAFE_INTEGER);
+    assert.equal(requestedRecycled, false);
     assert.equal(requestedSelect, 'id, name, name AS title, path, size, hash, folder_id, created_at, recycled');
     assert.equal(requestedCountFile, true);
     assert.deepEqual(resolvedNames, ['a', 'a']);
@@ -77,6 +80,28 @@ test('resolves current paths and computes MD5 for every first-round candidate', 
     assert.equal(result.totalGroups, 1);
     assert.equal(result.groups[0].hash, 'same');
     assert.deepEqual(result.groups[0].files.map(item => item.id), [1, 2]);
+});
+
+test('resolves non-recycled records with null database paths from name and folder hierarchy', async () => {
+    const candidates = [
+        { ...file(1, 'same.png', 10), path: null as any, folder_id: 3 },
+        { ...file(2, 'same.png', 10), path: null as any, folder_id: 3 },
+    ];
+    const calculatedPaths: string[] = [];
+    const scanner = new DuplicateScanner(database(candidates, async item => {
+        assert.equal(item.name, 'same.png');
+        assert.equal(item.folder_id, 3);
+        return `D:/library/parent/child/${item.name}`;
+    }), async filePath => {
+        calculatedPaths.push(filePath);
+        return 'same';
+    });
+
+    const result = await scanner.scan();
+
+    assert.deepEqual(calculatedPaths, ['D:/library/parent/child/same.png']);
+    assert.equal(result.totalFiles, 2);
+    assert.deepEqual(result.hashErrors, []);
 });
 
 test('reports unreadable candidates without failing the scan', async () => {

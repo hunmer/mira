@@ -80,7 +80,7 @@ export class DuplicateScanner {
         const { result } = await this.dbService.getFiles({
             // getItemFilePath() needs the original file name to resolve the physical path.
             select: 'id, name, name AS title, path, size, hash, folder_id, created_at, recycled',
-            filters: { limit: Number.MAX_SAFE_INTEGER },
+            filters: { limit: Number.MAX_SAFE_INTEGER, recycled: false },
             countFile: true,
         });
         return result as unknown as DuplicateFile[];

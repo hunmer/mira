@@ -288,8 +288,12 @@ export class FileRoutes {
                             const sourceFilePath = typeof sourcePath === 'string' && fs.existsSync(sourcePath)
                                 ? sourcePath
                                 : file.path;
-                            result = await obj.libraryService.createFileFromPath(sourceFilePath, fileData, { importType: 'move' });
-                            if (sourceFilePath !== file.path) {
+                            const configuredImportType = obj.libraryService.config.customFields?.importType;
+                            const importType = ['copy', 'move', 'link'].includes(configuredImportType)
+                                ? configuredImportType as 'copy' | 'move' | 'link'
+                                : 'copy';
+                            result = await obj.libraryService.createFileFromPath(sourceFilePath, fileData, { importType });
+                            if (sourceFilePath !== file.path || importType === 'copy') {
                                 await fs.promises.unlink(file.path).catch(() => undefined);
                             }
                             const isDuplicate = result?.duplicate === true;

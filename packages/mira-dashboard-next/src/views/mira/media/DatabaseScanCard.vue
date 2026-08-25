@@ -8,6 +8,7 @@ import { useLibrary } from '@/composables/useLibrary'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import { useConfirmDialog } from '@/composables/useConfirmDialog'
 
@@ -107,7 +108,7 @@ async function scanDuplicates() {
   selectedDuplicateIds.value = new Set()
   try {
     const res = await fileManagerApi.scanDuplicates(selectedId.value, duplicateMatchMode.value)
-    duplicateResult.value = res?.data || null
+    duplicateResult.value = res || null
     toast.success(t('databaseScan.duplicateResult', {
       groups: duplicateResult.value?.totalGroups || 0,
       files: duplicateResult.value?.totalFiles || 0,
@@ -130,9 +131,9 @@ async function removeDuplicateRecords() {
   try {
     const selected = selectedDuplicateIds.value
     const res = await fileManagerApi.removeDuplicateRecords(selectedId.value, [...selected])
-    const result = res?.data as { deleted?: number, errors?: string[] } | undefined
+    const result = res as { deleted?: number, errors?: string[] } | undefined
     const scan = await fileManagerApi.scanDuplicates(selectedId.value, duplicateMatchMode.value)
-    duplicateResult.value = scan.data.data || null
+    duplicateResult.value = scan || null
     selectedDuplicateIds.value = new Set()
     toast.success(t('databaseScan.removeDuplicatesResult', { count: result?.deleted || 0 }))
     if (result?.errors?.length) toast.error(result.errors.join('\n'))
@@ -318,11 +319,16 @@ async function clearNewFiles() {
           <div class="flex shrink-0 flex-wrap items-center gap-2">
             <label class="flex items-center gap-2 text-xs text-muted-foreground">
               <span>{{ t('databaseScan.matchMode') }}</span>
-              <select v-model="duplicateMatchMode" class="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground">
-                <option value="name-size">{{ t('databaseScan.matchNameSize') }}</option>
-                <option value="size">{{ t('databaseScan.matchSize') }}</option>
-                <option value="name">{{ t('databaseScan.matchName') }}</option>
-              </select>
+              <Select v-model="duplicateMatchMode">
+                <SelectTrigger size="sm" class="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name-size">{{ t('databaseScan.matchNameSize') }}</SelectItem>
+                  <SelectItem value="size">{{ t('databaseScan.matchSize') }}</SelectItem>
+                  <SelectItem value="name">{{ t('databaseScan.matchName') }}</SelectItem>
+                </SelectContent>
+              </Select>
             </label>
             <Button size="sm" variant="outline" :disabled="!selectedId || scanningDuplicates || removingDuplicates" @click="scanDuplicates">
               <SearchIcon class="mr-1 size-4" />
