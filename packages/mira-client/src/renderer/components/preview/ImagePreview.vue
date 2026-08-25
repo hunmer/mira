@@ -15,7 +15,7 @@
       <ResizablePanelGroup v-if="!isMobile" direction="horizontal" auto-save-id="image-preview-layout-v2"
         class="flex-1 min-w-0">
         <ResizablePanel :default-size="76" :min-size="65" class="relative flex min-w-0">
-          <ImageThumbnailListComponent v-bind="thumbnailBindings" class="h-full border-r border-border" />
+          <ImageThumbnailListComponent v-bind="thumbnailBindings" class="h-full border-r border-border ms-2" />
 
           <div class="relative flex min-w-0 flex-1 flex-col">
             <ImageViewerComponent v-bind="viewerBindings" />

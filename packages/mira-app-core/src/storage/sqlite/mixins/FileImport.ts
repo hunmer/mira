@@ -193,8 +193,20 @@ export const FileImport = {
         if (!fs.existsSync(destDir)) {
           fs.mkdirSync(destDir, { recursive: true });
         }
-        // Windows 创建文件符号链接可能需要开发者模式或管理员权限；失败时明确返回原因。
-        await fs.promises.symlink(filePath, destPath, 'file');
+        // Windows 创建文件符号链接可能需要开发者模式或管理员权限；普通权限下回退到硬链接。
+        try {
+          await fs.promises.symlink(filePath, destPath, 'file');
+        } catch (error: any) {
+          if (process.platform !== 'win32' || !['EPERM', 'EACCES'].includes(error?.code)) throw error;
+          try {
+            await fs.promises.link(filePath, destPath);
+          } catch (linkError: any) {
+            if (linkError?.code === 'EXDEV') {
+              throw new Error('Windows 当前权限无法创建符号链接，且源文件与素材库不在同一磁盘，无法使用硬链接。请开启开发者模式或以管理员身份运行。');
+            }
+            throw linkError;
+          }
+        }
         // link 模式唯一保留源文件绝对路径，便于检测源文件是否失效。
         fileData.path = filePath;
         fileData.name = path.basename(destPath);

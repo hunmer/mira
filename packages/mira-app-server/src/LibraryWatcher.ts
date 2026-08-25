@@ -212,6 +212,15 @@ export class LibraryWatcher {
       );
       if (existing.length > 0) return;
 
+      // 上传接口刚创建的 copy/link 文件可能先触发 watcher，再完成数据库写入；
+      // 同目录同名的活动记录视为已入库，避免再次创建重复条目。
+      const folderId = await this.resolveFolder(filePath);
+      const sameItem = await this.libraryService.getSql(
+        'SELECT id FROM files WHERE name = ? AND recycled = 0 AND (folder_id = ? OR (folder_id IS NULL AND ? IS NULL)) LIMIT 1',
+        [path.basename(filePath), folderId, folderId],
+      );
+      if (sameItem.length > 0) return;
+
       // 检查是否是移动/重命名：匹配最近 unlink 的文件（按大小匹配）
       let moved: PendingUnlink | undefined;
       for (const [oldPath, entry] of this.pendingUnlinks) {
@@ -225,7 +234,6 @@ export class LibraryWatcher {
 
       if (moved) {
         // 移动/重命名 → 更新已有记录
-        const folderId = await this.resolveFolder(filePath);
         const { oldData } = await this.libraryService.updateFile(moved.id, {
           path: filePath,
           name: path.basename(filePath),
@@ -241,7 +249,6 @@ export class LibraryWatcher {
         });
       } else {
         // 全新文件 → 导入
-        const folderId = await this.resolveFolder(filePath);
         const fileData: Record<string, any> = {};
         if (folderId) fileData.folder_id = folderId;
 

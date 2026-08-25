@@ -2,8 +2,9 @@
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { toast } from 'vue-sonner'
-import { ChevronLeftIcon, ChevronRightIcon, SearchIcon, Trash2Icon, UploadIcon } from '@lucide/vue'
+import { ChevronLeftIcon, ChevronRightIcon, ExternalLinkIcon, ListChecksIcon, SearchIcon, Trash2Icon, UploadIcon } from '@lucide/vue'
 import { fileManagerApi } from '@/api'
+import { getMiraClient } from '@/lib/miraClient'
 import { useLibrary } from '@/composables/useLibrary'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -20,6 +21,7 @@ interface ScannedFile {
 
 interface DuplicateFile {
   id: number
+  name?: string
   title: string
   path: string
   size: number
@@ -94,6 +96,10 @@ function toggleDuplicate(id: number) {
   selectedDuplicateIds.value = selected
 }
 
+function duplicateFileUrl(file: DuplicateFile) {
+  return getMiraClient().getHttpClient().getUrl(`/api/files/file/${encodeURIComponent(selectedId.value || '')}/${file.id}`)
+}
+
 function selectDuplicateRecords() {
   const selected = new Set<number>()
   for (const group of duplicateResult.value?.groups || []) {
@@ -149,7 +155,7 @@ async function scanMissing() {
   scanningMissing.value = true
   try {
     const res = await fileManagerApi.scanMissing(selectedId.value)
-    missingFiles.value = res?.data || []
+    missingFiles.value = res || []
     missingPage.value = 1
     toast.success(t('databaseScan.missingResult', { count: missingFiles.value.length }))
   } catch (error: any) {
@@ -169,7 +175,7 @@ async function clearMissing() {
   clearingMissing.value = true
   try {
     const res = await fileManagerApi.clearMissing(selectedId.value)
-    toast.success(t('databaseScan.clearResult', { count: res?.data?.removed || 0 }))
+    toast.success(t('databaseScan.clearResult', { count: res?.removed || 0 }))
     missingFiles.value = []
     missingPage.value = 1
   } catch (error: any) {
@@ -184,7 +190,7 @@ async function findNewFiles() {
   findingNew.value = true
   try {
     const res = await fileManagerApi.findNewFiles(selectedId.value)
-    newFiles.value = res?.data || []
+    newFiles.value = res || []
     newPage.value = 1
     toast.success(t('databaseScan.newResult', { count: newFiles.value.length }))
   } catch (error: any) {
@@ -199,7 +205,7 @@ async function importNewFiles() {
   importingNew.value = true
   try {
     const res = await fileManagerApi.importNewFiles(selectedId.value, newFiles.value.map(file => file.path))
-    const imported = res?.data || []
+    const imported = res || []
     toast.success(t('databaseScan.importResult', { count: imported.length }))
     newFiles.value = []
     newPage.value = 1
@@ -220,7 +226,7 @@ async function clearNewFiles() {
   deletingNew.value = true
   try {
     const res = await fileManagerApi.deleteNewFiles(selectedId.value, newFiles.value.map(file => file.path))
-    toast.success(t('databaseScan.deleteNewResult', { count: res?.data?.removed || 0 }))
+    toast.success(t('databaseScan.deleteNewResult', { count: res?.removed || 0 }))
     newFiles.value = []
     newPage.value = 1
   } catch (error: any) {
@@ -353,7 +359,7 @@ async function clearNewFiles() {
               <span class="shrink-0 text-xs text-muted-foreground">{{ formatSize(group.size) }} × {{ group.files.length }}</span>
             </div>
             <Table>
-              <TableHeader><TableRow><TableHead class="w-12"></TableHead><TableHead class="w-20">ID</TableHead><TableHead>{{ t('databaseScan.path') }}</TableHead></TableRow></TableHeader>
+              <TableHeader><TableRow><TableHead class="w-12"></TableHead><TableHead class="w-20">ID</TableHead><TableHead>{{ t('common.name') }}</TableHead><TableHead>{{ t('databaseScan.path') }}</TableHead></TableRow></TableHeader>
               <TableBody>
                 <TableRow v-for="file in group.files" :key="file.id">
                   <TableCell>
@@ -366,6 +372,18 @@ async function clearNewFiles() {
                     />
                   </TableCell>
                   <TableCell>{{ file.id }}</TableCell>
+                  <TableCell class="max-w-0 truncate">
+                    <a
+                      :href="duplicateFileUrl(file)"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="inline-flex max-w-full items-center gap-1 truncate text-primary underline-offset-4 hover:underline"
+                      :title="t('databaseScan.openFile')"
+                    >
+                      <span class="truncate">{{ file.name || file.title }}</span>
+                      <ExternalLinkIcon class="size-3.5 shrink-0" />
+                    </a>
+                  </TableCell>
                   <TableCell class="max-w-0 truncate font-mono" :title="file.path">{{ file.path }}</TableCell>
                 </TableRow>
               </TableBody>
@@ -382,7 +400,8 @@ async function clearNewFiles() {
 
         <div v-if="duplicateResult?.groups.length" class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <Button size="sm" variant="ghost" :disabled="removingDuplicates" @click="selectDuplicateRecords">
-            {{ t('databaseScan.selectDuplicates') }}
+            <ListChecksIcon class="mr-1 size-4" />
+            {{ t('databaseScan.quickSelectDuplicates') }}
           </Button>
           <Button size="sm" variant="destructive" :disabled="!selectedDuplicateIds.size || removingDuplicates" @click="removeDuplicateRecords">
             <Trash2Icon class="mr-1 size-4" />

@@ -3,26 +3,23 @@
     <!-- 图片容器 - 使用 VViewer 组件的内嵌模式 -->
     <div class="flex flex-grow items-center justify-center w-full h-full min-h-[400px]">
       <VViewer
-        v-if="!error"
+        v-if="!error && viewerImageUrl"
         :key="viewerKey"
         ref="viewerRef"
         :options="viewerOptions"
-        :trigger="imageUrl"
         class="h-full w-full"
         @inited="onViewerInited"
       >
         <template #default>
           <div class="h-full flex items-center justify-center">
-            <img 
+            <img
               v-if="image"
-              v-show="!error"
-              :key="viewerKey"
-              :src="imageUrl"
+              :src="viewerImageUrl"
               :alt="image.name"
-              class="max-h-full max-w-full rounded-lg object-contain hidden opacity-0 transition-opacity duration-300 ease-in-out"
+              class="hidden max-h-full max-w-full rounded-lg object-contain opacity-0"
               @load="handleImageLoad"
               @error="handleImageError"
-            />
+            >
           </div>
         </template>
       </VViewer>
@@ -147,6 +144,8 @@ const emit = defineEmits<Emits>()
 
 // 本地路径转 file:// URL
 const imageUrl = computed(() => getCacheBustedPreviewImageSource(props.image, props.cacheKey))
+const viewerImageUrl = ref<string>()
+let imageObjectUrl: string | undefined
 const viewerKey = computed(() => `${props.image?.id || 'empty'}:${imageUrl.value || ''}`)
 
 
@@ -194,6 +193,33 @@ const handleImageLoad = async () => {
 const handleImageError = () => {
   loading.value = false
   error.value = true
+}
+
+async function loadImageBlob(url?: string) {
+  if (imageObjectUrl) {
+    URL.revokeObjectURL(imageObjectUrl)
+    imageObjectUrl = undefined
+  }
+  viewerImageUrl.value = undefined
+  if (!url) return
+  try {
+    let blob: Blob
+    const localPath = props.image?.localFile
+    if (localPath && window.electronAPI?.fs?.readFileBytes) {
+      const result = await window.electronAPI.fs.readFileBytes(localPath)
+      if (!result.success || !result.data) throw new Error(result.message || 'Failed to read local image')
+      blob = new Blob([result.data], { type: props.image?.mimeType || 'application/octet-stream' })
+    } else {
+      const response = await fetch(url)
+      if (!response.ok) throw new Error(`Image request failed: ${response.status}`)
+      blob = await response.blob()
+    }
+    imageObjectUrl = URL.createObjectURL(blob)
+    viewerImageUrl.value = imageObjectUrl
+  } catch (error) {
+    console.error('Failed to load image as blob:', error)
+    handleImageError()
+  }
 }
 
 // viewer 初始化回调
@@ -291,6 +317,7 @@ onUnmounted(() => {
   document.removeEventListener('fullscreenchange', handleDocumentFullscreenChange)
   resizeObserver?.disconnect()
   cancelAnimationFrame(resizeFrame)
+  if (imageObjectUrl) URL.revokeObjectURL(imageObjectUrl)
 })
 
 // 监听图片变化，重置状态
@@ -300,13 +327,20 @@ watch(() => props.image, (newImage, oldImage) => {
     if (!oldImage || newImage.id !== oldImage.id) {
       loading.value = true
       error.value = false
-      viewerInstance.value = null
+    viewerInstance.value = null
       // 重置翻转状态
       flipHorizontalState.value = 1
       flipVerticalState.value = 1
     }
   }
 }, { immediate: true })
+
+watch(imageUrl, (url) => {
+  loading.value = Boolean(url)
+  error.value = false
+  void loadImageBlob(url)
+}, { immediate: true })
+
 </script>
 
 <style scoped>

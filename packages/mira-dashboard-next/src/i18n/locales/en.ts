@@ -395,6 +395,8 @@ export default {
     noDuplicateScan: 'No scan results. Run a scan first.',
     selectRecord: 'Select record {id}',
     selectDuplicates: 'Select duplicates (keep one per group)',
+    quickSelectDuplicates: 'Quick select (keep one per group)',
+    openFile: 'Open file in new window',
     removeSelected: 'Remove Selected Records ({count})',
     removing: 'Removing...',
     removeDuplicatesTitle: 'Remove Duplicate File Records',

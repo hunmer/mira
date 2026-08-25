@@ -395,6 +395,8 @@ export default {
     noDuplicateScan: '暂无扫描结果，请先执行扫描',
     selectRecord: '选择记录 {id}',
     selectDuplicates: '选择重复项（每组保留 1 条）',
+    quickSelectDuplicates: '快速选择（每组保留一个）',
+    openFile: '在新窗口打开文件',
     removeSelected: '移除选中记录（{count}）',
     removing: '移除中...',
     removeDuplicatesTitle: '移除重复文件记录',

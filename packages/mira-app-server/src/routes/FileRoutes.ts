@@ -288,11 +288,26 @@ export class FileRoutes {
                             const sourceFilePath = typeof sourcePath === 'string' && fs.existsSync(sourcePath)
                                 ? sourcePath
                                 : file.path;
-                            const configuredImportType = obj.libraryService.config.customFields?.importType;
+                            const configuredImportType = obj.libraryService.config.customFields?.importType
+                                ?? obj.libraryService.config.importType
+                                ?? req.body.importType;
                             const importType = ['copy', 'move', 'link'].includes(configuredImportType)
                                 ? configuredImportType as 'copy' | 'move' | 'link'
                                 : 'copy';
+                            console.info(`[FileUpload] library=${libraryId} importType=${importType} sourcePath=${sourcePath || '<none>'} sourceFile=${sourceFilePath}`);
+                            // copy/link 会在素材库目录产生新的目录项，预先屏蔽 watcher 的 add 事件，避免重复入库。
+                            if (importType !== 'move' && obj.watcher) {
+                                const anticipatedPath = path.join(
+                                    await obj.libraryService.getItemPath(fileData),
+                                    fileData.name,
+                                );
+                                obj.watcher.ignorePath(anticipatedPath);
+                            }
                             result = await obj.libraryService.createFileFromPath(sourceFilePath, fileData, { importType });
+                            if (obj.watcher) {
+                                const actualPath = await obj.libraryService.getItemFilePath(result, { isUrlFile: false });
+                                obj.watcher.ignorePath(actualPath);
+                            }
                             if (sourceFilePath !== file.path || importType === 'copy') {
                                 await fs.promises.unlink(file.path).catch(() => undefined);
                             }
@@ -1349,10 +1364,13 @@ export class FileRoutes {
                     });
                 }
 
+                // 与 getFiles 保持一致，补充实际素材库文件位置；link 模式的 path 是源文件路径，
+                // 不能直接作为 Electron 预览路径使用。
+                const processedFile = (await obj.libraryService.processingFiles([file], true))[0];
                 res.json({
                     code: 0,
                     message: 'Success',
-                    data: file
+                    data: processedFile
                 });
 
             } catch (error) {

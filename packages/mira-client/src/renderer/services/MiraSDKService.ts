@@ -677,6 +677,7 @@ export class MiraSDKService {
       //   - path 字段已是 HTTP URL（toFileUrl 对 http 原样返回），Electron/网页均安全
       //   - 缩略图：Electron 用本地 thumbnail_path 走 file://；网页回退到 HTTP thumb
       const useLocalThumb = environment.isElectron
+      const localFile = environment.isElectron ? file.file_path : undefined
       const fileInfo: FileInfo = {
         id: file.id.toString(),
         name: file.title || file.name, // 优先使用 title，如果没有则使用 name
@@ -693,7 +694,8 @@ export class MiraSDKService {
         notes: file.notes || '',
         hash: file.hash || '',
         thumbnailPath: toFileUrl(appendToken(useLocalThumb ? file.thumbnail_path : (file.thumb || undefined))),
-        libraryId
+        libraryId,
+        localFile,
       }
       
       return fileInfo
