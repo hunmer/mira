@@ -25,12 +25,57 @@ export interface DeviceShareFile {
 /** 通过 devices().sendMessage 发送的设备间分享消息体 */
 export interface DeviceShareMessage {
   type: 'mira-share'
+  /** 本次分享的唯一标识：接收端回传进度（mira-share-ack）时关联用 */
+  id?: string
   from: string
   fromLabel?: string
   libraryId: string
   files: DeviceShareFile[]
   /** 一次性分享票据下载链（免 token，多文件为 ZIP）：优先于逐文件直链 */
   ticketUrl?: string
+}
+
+/** 接收端向发送端回传的进度/状态消息体 */
+export interface DeviceShareAck {
+  type: 'mira-share-ack'
+  /** 关联的 DeviceShareMessage.id */
+  shareId: string
+  state: 'receiving' | 'done' | 'failed' | 'declined'
+  /** 对端下载进度 0-1 */
+  percent?: number
+}
+
+/** 生成分享消息 id（发送端调用，ack 关联用） */
+export function createShareId(): string {
+  return `share_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+}
+
+/** 各 shareId 最近一次已发送的进度（receiving 节流用，变化 <5% 不重发） */
+const ackLastSentPercent = new Map<string, number>()
+
+/** 接收端回传接收进度/状态给发送端（失败静默，进度回调不影响下载流程） */
+export function sendShareAck(
+  toClientId: string | undefined,
+  shareId: string | undefined,
+  state: DeviceShareAck['state'],
+  percent = 0,
+): void {
+  const client = (miraSDKService as any).client as any
+  if (!client || !toClientId || !shareId) return
+  if (state === 'receiving') {
+    const last = ackLastSentPercent.get(shareId) ?? -1
+    if (percent - last < 0.05 && percent < 1) return
+    ackLastSentPercent.set(shareId, percent)
+  } else {
+    ackLastSentPercent.delete(shareId)
+  }
+  const libraryId = useLibraryStore().currentLibrary?.id || 'default'
+  void client.devices().sendMessage(toClientId, libraryId, {
+    type: 'mira-share-ack',
+    shareId,
+    state,
+    percent,
+  } satisfies DeviceShareAck).catch(() => {})
 }
 
 // 模块级全局状态：发送对话框与接收对话框共享（HomeDialogs 挂载，任意组件触发）
@@ -109,13 +154,16 @@ async function autoAcceptShare(message: DeviceShareMessage): Promise<void> {
   try {
     const saved = await downloadShareFiles(message, {
       saveDir: settings.deviceShareSaveDir || undefined,
+      onProgress: (p) => sendShareAck(message.from, message.id, 'receiving', p),
     })
+    sendShareAck(message.from, message.id, 'done', 1)
     toast.success(t('business.deviceShare.downloadDone', { count: saved.length }), {
       id: toastId,
       description: appService.isElectron && settings.deviceShareSaveDir ? saved[0] : undefined,
     })
   } catch (e) {
     console.error('[device-share] auto accept failed', e)
+    sendShareAck(message.from, message.id, 'failed')
     toast.error(t('business.deviceShare.downloadFailed'), {
       id: toastId,
       description: e instanceof Error ? e.message : String(e),

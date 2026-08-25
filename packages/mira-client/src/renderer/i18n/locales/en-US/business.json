@@ -910,6 +910,18 @@
     "downloading": "Downloading {percent}%",
     "downloadDone": "Downloaded {count} files",
     "downloadFailed": "Download failed",
-    "autoAccepting": "Auto-receiving {count} file(s) from \"{from}\"…"
+    "autoAccepting": "Auto-receiving {count} file(s) from \"{from}\"…",
+    "transferTitle": "Device Transfers",
+    "transferDesc": "Files sent to other devices and their receiving progress",
+    "transferEmpty": "No transfers yet",
+    "transferSent": "Waiting for recipient",
+    "transferReceiving": "Receiving {percent}%",
+    "transferDone": "Completed",
+    "transferFailed": "Receive failed",
+    "transferDeclined": "Declined by recipient",
+    "transferClear": "Clear finished",
+    "transferFilesTitle": "{name} and {count} more",
+    "justNow": "just now",
+    "minutesAgo": "{n} min ago"
   }
 }

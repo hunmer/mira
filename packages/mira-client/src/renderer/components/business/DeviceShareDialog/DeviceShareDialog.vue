@@ -7,8 +7,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Button } from '@/components/ui/button'
 import DeviceListPicker from './DeviceListPicker.vue'
 import {
-  shareDialogOpen, shareFiles, getSelfClientId, buildPairUrl, resolveServerOrigin,
+  shareDialogOpen, shareFiles, getSelfClientId, buildPairUrl, resolveServerOrigin, createShareId, describeDevice,
 } from '@renderer/composables/useDeviceShare'
+import type { DeviceShareMessage } from '@renderer/composables/useDeviceShare'
+import type { Device } from 'mira-app-core/shared/sdk'
+import { addDeviceTransfer, transferDialogOpen } from './useDeviceTransfers'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { useLibraryStore } from '@renderer/stores/library'
 
@@ -16,9 +19,16 @@ import { useLibraryStore } from '@renderer/stores/library'
 const { t } = useI18n()
 const libraryStore = useLibraryStore()
 const selectedClientId = ref<string | null>(null)
+const devices = ref<Device[]>([])
 const sending = ref(false)
 const qrDataUrl = ref<string | null>(null)
 const pairUrl = ref<string | null>(null)
+
+/** 当前选中设备的展示名（传输记录目标描述用） */
+const selectedDeviceLabel = computed(() => {
+  const device = devices.value.find(d => d.clientId === selectedClientId.value)
+  return device ? describeDevice(device) : ''
+})
 
 const files = computed(() => shareFiles.value)
 const totalSize = computed(() => files.value.reduce((sum, f) => sum + (f.size || 0), 0))
@@ -76,8 +86,10 @@ const handleSend = async () => {
     console.warn('[device-share] create share ticket failed, fallback to direct urls', e)
   }
 
-  const message = {
+  const message: DeviceShareMessage = {
     type: 'mira-share',
+    // ack 关联用：接收端回传进度（mira-share-ack）时携带
+    id: createShareId(),
     from: getSelfClientId() || 'unknown',
     libraryId,
     files: JSON.parse(JSON.stringify(files.value)),
@@ -86,6 +98,9 @@ const handleSend = async () => {
   sending.value = true
   try {
     await client.devices().sendMessage(selectedClientId.value, libraryId, message)
+    // 登记传输记录（传输对话框展示待接收列表与对端进度）并打开查看
+    addDeviceTransfer(message, selectedDeviceLabel.value || selectedClientId.value)
+    transferDialogOpen.value = true
     toast.success(t('business.deviceShare.sent'))
     shareDialogOpen.value = false
   } catch (e) {
@@ -112,7 +127,7 @@ const handleSend = async () => {
       <div class="flex gap-4 max-h-[420px]">
         <!-- 左：设备列表 -->
         <div class="flex-1 min-w-0 overflow-y-auto pr-1">
-          <DeviceListPicker v-model:selected="selectedClientId" />
+          <DeviceListPicker v-model:selected="selectedClientId" @devices="devices = $event" />
         </div>
 
         <!-- 右：快捷配对 QR -->

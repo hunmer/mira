@@ -172,6 +172,23 @@ async function downloadShare() {
   const msg = state.share;
   const files = msg?.files || [];
   if (!client || files.length === 0 || state.downloading) return;
+
+  // 回传接收进度/状态给发送端（mira-share-ack；简单节流：变化 <5% 不发，终态必发）
+  let lastAckP = -1;
+  const sendAck = (ackState, p = 0) => {
+    if (!client || !msg?.from || !msg?.id) return;
+    if (ackState === 'receiving') {
+      if (p - lastAckP < 0.05 && p < 1) return;
+      lastAckP = p;
+    }
+    client.devices().sendMessage(msg.from, msg.libraryId || libraryId, {
+      type: 'mira-share-ack',
+      shareId: msg.id,
+      state: ackState,
+      percent: p,
+    }).catch(() => {});
+  };
+
   state.downloading = true;
   state.downloaded = false;
   state.downloadFailed = false;
@@ -179,6 +196,7 @@ async function downloadShare() {
   const setProgress = (p, text) => {
     state.dl.percent = Math.round(p * 100);
     if (text) state.dl.text = text;
+    sendAck('receiving', p);
   };
   try {
     // 优先一次性票据（免 token；单文件原文件 / 多文件 ZIP）；缺票据时回退直链/打包接口
@@ -203,10 +221,12 @@ async function downloadShare() {
     }
     setProgress(1, '下载完成，已保存到浏览器默认下载目录');
     state.downloaded = true;
+    sendAck('done', 1);
   } catch (err) {
     console.error(err);
     setProgress(0, '下载失败：' + (err?.message || err));
     state.downloadFailed = true;
+    sendAck('failed');
   } finally {
     state.downloading = false;
   }

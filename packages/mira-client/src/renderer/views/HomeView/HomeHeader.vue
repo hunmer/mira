@@ -17,6 +17,8 @@ import { useSettingsStore } from '@/renderer/stores/settings'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { environment } from '@renderer/utils'
 import { shortcutService } from '@renderer/services/ShortcutService'
+import TransferDialog from '@/renderer/components/business/DeviceShareDialog/TransferDialog.vue'
+import { deviceTransfers, transferDialogOpen } from '@/renderer/components/business/DeviceShareDialog/useDeviceTransfers'
 
 defineOptions({ name: 'HomeHeader' })
 
@@ -146,6 +148,10 @@ const openDashboard = async () => {
 /** DEV 构建标识：控制 UI 测试面板入口等开发专用功能 */
 const isDev = import.meta.env.DEV
 
+/** 设备传输：进行中（等待接收/接收中）的数量角标 */
+const activeTransferCount = computed(() =>
+  deviceTransfers.value.filter(t => t.state === 'sent' || t.state === 'receiving').length)
+
 /**
  * DEV 专用：打开 UI 测试面板窗口（public/ui-test-panel.html）。
  * 面板经 BroadcastChannel 调用主窗口 window.__procmUiTests 执行测试。
@@ -168,6 +174,17 @@ const openUiTestPanel = async () => {
   <!-- 紧凑右侧悬浮栏：用户头像菜单 + 窗口控制 -->
   <header
     class="flex items-center justify-end gap-1 px-2 py-1.5 rounded-2xl border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur-xl shadow-[0_12px_40px_rgba(99,102,241,0.10)] w-fit ml-auto">
+    <!-- 设备传输：待接收列表与对端接收进度 -->
+    <button
+      class="relative h-8 w-8 flex items-center justify-center rounded-lg transition-colors cursor-pointer text-muted-foreground hover:bg-primary/10 hover:text-primary"
+      :title="$t('business.deviceShare.transferTitle')" @click="transferDialogOpen = true">
+      <span class="material-icons" style="font-size: 18px;">swap_vert</span>
+      <span v-if="activeTransferCount > 0"
+        class="absolute -top-0.5 -right-0.5 min-w-3.5 h-3.5 px-0.5 rounded-full bg-primary text-primary-foreground text-[9px] leading-none flex items-center justify-center">
+        {{ activeTransferCount }}
+      </span>
+    </button>
+
     <!-- 切换亮色/暗色主题 -->
     <button
       class="h-8 w-8 flex items-center justify-center rounded-lg transition-[color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-95 cursor-pointer text-muted-foreground hover:bg-primary/10 hover:text-primary"
@@ -309,5 +326,7 @@ const openUiTestPanel = async () => {
       </template>
     </template>
 
+    <!-- 设备传输对话框（状态全局保存，重开恢复） -->
+    <TransferDialog />
   </header>
 </template>

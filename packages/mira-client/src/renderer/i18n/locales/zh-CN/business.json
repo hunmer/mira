@@ -910,6 +910,18 @@
     "downloading": "下载中 {percent}%",
     "downloadDone": "已下载 {count} 个文件",
     "downloadFailed": "下载失败",
-    "autoAccepting": "正在自动接收来自「{from}」的 {count} 个文件…"
+    "autoAccepting": "正在自动接收来自「{from}」的 {count} 个文件…",
+    "transferTitle": "设备传输",
+    "transferDesc": "发送到其他设备的文件与对方接收进度",
+    "transferEmpty": "暂无传输记录",
+    "transferSent": "等待对方接收",
+    "transferReceiving": "对方接收中 {percent}%",
+    "transferDone": "已完成",
+    "transferFailed": "接收失败",
+    "transferDeclined": "对方已拒绝",
+    "transferClear": "清空已完成",
+    "transferFilesTitle": "{name} 等 {count} 个文件",
+    "justNow": "刚刚",
+    "minutesAgo": "{n} 分钟前"
   }
 }

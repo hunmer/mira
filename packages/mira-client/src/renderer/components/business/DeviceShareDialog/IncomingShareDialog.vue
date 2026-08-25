@@ -5,7 +5,7 @@ import { toast } from 'vue-sonner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { appService } from '@renderer/services'
-import { incomingShare } from '@renderer/composables/useDeviceShare'
+import { incomingShare, sendShareAck } from '@renderer/composables/useDeviceShare'
 import { useSettingsStore } from '@renderer/stores/settings'
 import { downloadShareFiles } from './downloadShare'
 
@@ -46,14 +46,20 @@ const handleAccept = async () => {
   try {
     const saved = await downloadShareFiles(message, {
       saveDir: saveDir.value || undefined,
-      onProgress: (p) => { percent.value = p },
+      onProgress: (p) => {
+        percent.value = p
+        // 回传接收进度给发送端（sendShareAck 内部节流）
+        sendShareAck(message.from, message.id, 'receiving', p)
+      },
     })
+    sendShareAck(message.from, message.id, 'done', 1)
     toast.success(t('business.deviceShare.downloadDone', { count: saved.length }), {
       description: appService.isElectron && saveDir.value ? saved[0] : undefined,
     })
     incomingShare.value = null
   } catch (e) {
     console.error('[device-share] download failed', e)
+    sendShareAck(message.from, message.id, 'failed')
     toast.error(t('business.deviceShare.downloadFailed'), {
       description: e instanceof Error ? e.message : String(e),
     })
@@ -62,7 +68,11 @@ const handleAccept = async () => {
   }
 }
 
-const handleDecline = () => { incomingShare.value = null }
+const handleDecline = () => {
+  const message = incomingShare.value
+  if (message) sendShareAck(message.from, message.id, 'declined')
+  incomingShare.value = null
+}
 </script>
 
 <template>

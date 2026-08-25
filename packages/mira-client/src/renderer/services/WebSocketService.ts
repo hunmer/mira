@@ -4,6 +4,7 @@ import { useAuthStore } from '../stores/auth'
 import { useSettingsStore } from '../stores/settings'
 import { useTabs } from '../composables/useTabs'
 import { pushIncomingShare } from '../composables/useDeviceShare'
+import { applyShareAck } from '../components/business/DeviceShareDialog/useDeviceTransfers'
 import ConfigStorage from '../utils/ConfigStorage'
 import { toFileUrl } from '../utils/fileUtils'
 import i18n from '../i18n'
@@ -894,6 +895,11 @@ function setupEventListeners(libraryStore: any): void {
     if (message?.type === 'mira-share' && Array.isArray(message.files) && message.files.length > 0) {
       console.log('[device-share] incoming share from', message.from)
       pushIncomingShare(message)
+      return
+    }
+    // 接收端回传的进度/状态：更新传输对话框中对应记录
+    if (message?.type === 'mira-share-ack' && message.shareId) {
+      applyShareAck(message)
     }
   })
 }
