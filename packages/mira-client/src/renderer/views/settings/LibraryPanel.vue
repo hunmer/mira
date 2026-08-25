@@ -197,10 +197,11 @@ const settingsStore = useSettingsStore()
 const libraryStore = useLibraryStore()
 const isElectron = computed(() => Boolean(window.electronAPI))
 interface BrowserViewState {
+  enabled: boolean
   runningLibraryIds: string[]
 }
-const browserViewState = ref<BrowserViewState>({ runningLibraryIds: [] })
-const multiLibraryViewsActive = computed(() => browserViewState.value.runningLibraryIds.length > 1)
+const browserViewState = ref<BrowserViewState>({ enabled: false, runningLibraryIds: [] })
+const multiLibraryViewsActive = computed(() => browserViewState.value.enabled)
 let removeBrowserViewStateListener: (() => void) | undefined
 
 const defaultViewMode = ref<LibraryDefaultViewMode>('grid')
