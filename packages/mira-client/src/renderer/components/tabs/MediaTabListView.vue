@@ -60,7 +60,7 @@
 
         <!-- 浮动操作栏 -->
         <MediaTabFloatingToolbar :selected-items="selectedItems" :selected-images="selectedImages" :is-trash="isTrash"
-          :current-page="currentPage" :total-pages="totalPages" :pagination-pages="paginationPages"
+          :current-page="currentPage" :total-pages="totalPages"
           @invert-selection="handleInvertSelection" @clear-selection="handleClearSelection"
           @toolbar-action="handleToolbarAction" @previous-page="handlePreviousPage"
           @next-page="handleNextPage" @page-change="handlePageChange" />
@@ -370,9 +370,8 @@ const {
   rootEl: () => mediaTabListViewRef.value
 })
 
-// 分页：页码列表与翻页
+// 分页：翻页（页码列表已收进浮动工具栏的 dots dropdown，paginationPages 不再消费）
 const {
-  paginationPages,
   handlePreviousPage,
   handleNextPage,
   handlePageChange

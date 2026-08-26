@@ -16,6 +16,8 @@
     "deleteFiles": "删除 ({count})",
     "fileCount": "{count} 个文件",
     "selectedCount": "已选择 {count} 个素材",
+    "pageJumpPlaceholder": "跳转到页…",
+    "pageJumpEmpty": "无匹配页码",
     "pageInfo": "第 {current} / {total} 页",
     "adjustColumns": "调整列数",
     "fieldSettingsTitle": "展示字段设置",

@@ -9,12 +9,12 @@ export type ImagesBadgeShape = "circle" | "rounded" | "square"
  * 图片堆叠徽章（由 21st.dev nexus-ui/images-badge 的 React 版移植，motion-v 驱动）
  *
  * - 收起态：图片层层叠压、各自微旋转；悬停：弹簧展开成扇形（边缘下沉、隐藏卡延迟浮现），溢出部分显示 +N 圆形卡
- * - 尺寸 sm/md/lg、形状 circle/rounded/square、可选尾部文字 label
+ * - 尺寸 sm/md/lg、形状 circle/rounded/square、堆叠右上角可选数字徽章 label
  * - bare 模式去掉胶囊外壳，用于嵌入工具栏等已有容器
  * - 尊重系统"减少动态效果"：reduced 时不旋转、直接平铺
  *
  * 用法：
- *   <ImagesBadge :images="[{ src, alt }]" label="已选 3 项" />
+ *   <ImagesBadge :images="[{ src, alt }]" label="3" />
  */
 import { computed, ref } from "vue"
 import { Motion, useReducedMotion } from "motion-v"
@@ -29,7 +29,7 @@ const props = withDefaults(
     maxVisible?: number
     /** 悬停时额外展开的图片数 */
     revealCount?: number
-    /** 图片堆后的文字标签 */
+    /** 堆叠右上角的数字徽章内容（如选中数量） */
     label?: string
     size?: ImagesBadgeSize
     shape?: ImagesBadgeShape
@@ -192,10 +192,27 @@ function onKeydown(e: KeyboardEvent) {
         <img v-else :src="slot.src" :alt="slot.alt" :width="cfg.px" :height="cfg.px" class="h-full w-full object-cover"
           draggable="false">
       </Motion>
+      <!-- 数字徽章：堆叠右上角，始终浮在所有卡片之上；展开时隐藏（计数由 +N 溢出卡承担） -->
+      <Transition name="images-badge-fade">
+        <span v-if="label && !hovered" :style="{ zIndex: total + 2 }"
+          class="absolute -top-1.5 -right-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-background bg-primary px-1.5 font-semibold leading-none text-primary-foreground text-[10px] shadow-sm">
+          {{ label }}
+        </span>
+      </Transition>
     </Motion>
-    <!-- 尾部文字 -->
-    <span v-if="label" class="whitespace-nowrap font-medium leading-none text-foreground/80 dark:text-foreground/70">
-      {{ label }}
-    </span>
   </Motion>
 </template>
+
+<style scoped>
+/* 数字徽章随堆叠展开/收起淡入淡出 */
+.images-badge-fade-enter-active,
+.images-badge-fade-leave-active {
+  transition: opacity 150ms ease, transform 150ms ease;
+}
+
+.images-badge-fade-enter-from,
+.images-badge-fade-leave-to {
+  opacity: 0;
+  transform: scale(0.6);
+}
+</style>

@@ -16,6 +16,8 @@
     "deleteFiles": "Delete ({count})",
     "fileCount": "{count} files",
     "selectedCount": "{count} item(s) selected",
+    "pageJumpPlaceholder": "Go to page…",
+    "pageJumpEmpty": "No matching page",
     "pageInfo": "Page {current} / {total}",
     "adjustColumns": "Adjust columns",
     "fieldSettingsTitle": "Display field settings",

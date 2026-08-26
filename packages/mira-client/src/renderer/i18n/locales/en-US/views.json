@@ -64,7 +64,9 @@
     "layoutTitle": "Customize Plugin Bar",
     "layoutDescription": "Drag to reorder plugin icons; drag to \"Disabled\" to hide an icon, drag back to \"Enabled\" to restore it.",
     "hideAll": "Hide all",
-    "showAll": "Show all"
+    "showAll": "Show all",
+    "prevPage": "Previous page",
+    "nextPage": "Next page"
   },
   "sidebarHistoryModule": {
     "loading": "Loading...",

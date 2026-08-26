@@ -1,12 +1,22 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { ImagesBadge } from '@/components/ui/images-badge'
 import type { BadgeImage } from '@/components/ui/images-badge'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList
+} from '@/components/ui/command'
 import { useFloatingToolbar } from './useFloatingToolbar'
 
 /**
  * 浮动操作栏：选中项批量操作（回收站恢复/彻底删除，普通视图复制/分享/删除）+ 分页控件
- * 选中指示由 images-badge（21st.dev 移植）呈现：缩略图堆叠、悬停扇形展开、溢出显示 +N；
+ * 选中指示由 images-badge（21st.dev 移植）呈现：缩略图堆叠、悬停扇形展开、右上角数字徽章；
+ * 页码收进 dots combobox（‹ 当前页/总页 ⋯ ›，可搜索键入跳页），避免选中多图时工具栏过宽；
  * FLIP 宽度过渡（useFloatingToolbar）与进入/退出缩放动画保留。
  */
 const props = defineProps<{
@@ -15,7 +25,6 @@ const props = defineProps<{
   isTrash: boolean
   currentPage: number
   totalPages: number
-  paginationPages: Array<{ number: number; active: boolean }>
 }>()
 
 const emit = defineEmits<{
@@ -30,6 +39,12 @@ const emit = defineEmits<{
 const selectedItems = computed(() => props.selectedItems)
 const totalPages = computed(() => props.totalPages)
 const { toolbarRef, showFloatingToolbar } = useFloatingToolbar({ selectedItems, totalPages })
+
+const pageMenuOpen = ref(false)
+const goToPage = (n: number) => {
+  pageMenuOpen.value = false
+  emit('pageChange', n)
+}
 </script>
 
 <template>
@@ -39,9 +54,10 @@ const { toolbarRef, showFloatingToolbar } = useFloatingToolbar({ selectedItems, 
       <div v-if="showFloatingToolbar" ref="toolbarRef"
         class="pointer-events-auto flex items-center space-x-4 bg-white/60 dark:bg-muted/80 backdrop-blur-xl shadow-[0_12px_36px_rgba(99,102,241,0.15)] rounded-full p-1.5 border border-white/60 dark:border-border"
         style="transform-origin: center;">
-        <!-- 选中指示：缩略图堆叠徽章（悬停扇形展开） -->
+        <!-- 选中指示：缩略图堆叠徽章（悬停扇形展开），右上角数字徽章为选中总数 -->
         <ImagesBadge v-if="selectedItems.length > 0" bare size="sm" :images="selectedImages"
-          :label="$t('tabs.mediaTabListView.selectedCount', { count: selectedItems.length })" />
+          :label="String(selectedItems.length)"
+          :title="$t('tabs.mediaTabListView.selectedCount', { count: selectedItems.length })" />
 
         <!-- 操作按钮 - 仅在选中文件时显示 -->
         <div v-if="selectedItems.length > 0" class="flex items-center space-x-2">
@@ -94,7 +110,7 @@ const { toolbarRef, showFloatingToolbar } = useFloatingToolbar({ selectedItems, 
           <div class="h-6 border-l border-border dark:border-border"></div>
         </div>
 
-        <!-- 分页控件 - 只有多页时显示 -->
+        <!-- 分页控件 - 只有多页时显示：当前页文本 + dots combobox 搜索跳页 -->
         <div v-if="totalPages > 1"
           class="flex items-center space-x-1 text-muted-foreground dark:text-muted-foreground text-xs">
           <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
@@ -102,17 +118,31 @@ const { toolbarRef, showFloatingToolbar } = useFloatingToolbar({ selectedItems, 
             <span class="material-symbols-outlined text-sm">chevron_left</span>
           </button>
 
-          <template v-for="page in paginationPages" :key="page.number">
-            <!-- 省略号 -->
-            <span v-if="page.number === -1" class="px-1">...</span>
-            <!-- 页码按钮 -->
-            <button v-else :class="[
-              'px-2 py-1 rounded-full hover:bg-primary/10 min-w-[28px] transition-colors',
-              page.active ? 'bg-primary text-primary-foreground font-semibold shadow-sm hover:bg-primary' : ''
-            ]" @click="emit('pageChange', page.number)">
-              {{ page.number }}
-            </button>
-          </template>
+          <span class="px-1 font-medium">{{ currentPage }}/{{ totalPages }}</span>
+
+          <Popover v-model:open="pageMenuOpen">
+            <PopoverTrigger as-child>
+              <button
+                class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors">
+                <span class="material-symbols-outlined text-sm">more_horiz</span>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="center" class="w-44 p-0">
+              <Command>
+                <CommandInput :placeholder="$t('tabs.mediaTabListView.pageJumpPlaceholder')" />
+                <CommandList class="max-h-64">
+                  <CommandEmpty>{{ $t('tabs.mediaTabListView.pageJumpEmpty') }}</CommandEmpty>
+                  <CommandGroup>
+                    <CommandItem v-for="n in totalPages" :key="n" :value="String(n)" class="justify-center"
+                      :class="n === currentPage ? 'bg-primary font-semibold text-primary-foreground' : ''"
+                      @select="goToPage(n)">
+                      {{ n }}
+                    </CommandItem>
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
 
           <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
             :disabled="currentPage === totalPages" @click="emit('nextPage')">
@@ -140,9 +170,18 @@ const { toolbarRef, showFloatingToolbar } = useFloatingToolbar({ selectedItems, 
   opacity: 0;
 }
 
+/* 图标字体 span 是 inline-block，在非 flex 按钮里按基线对齐会把内容撑到 ~23.5px；
+   按钮统一 flex 居中后内容高 = 图标行盒 18px，恢复 34x34 正方 */
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .material-icons,
 .material-symbols-outlined {
   font-size: 18px;
+  line-height: 1;
 }
 
 .material-symbols-outlined.text-sm {
