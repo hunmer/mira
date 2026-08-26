@@ -8,6 +8,7 @@ import { openImportDialog, extractUrls } from './overlay/import-dialog';
 import { urlKind } from '@/shared/drag-data';
 import { upgradeImageUrl } from '@/shared/imu';
 import { fileToStaged } from '@/shared/staged-file';
+import { isDragPopoverHostAllowed } from '@/shared/types';
 import { dbg } from '@/shared/debug';
 import type { ResourceKind } from '@/shared/types';
 import type { Folder, Tag } from 'mira-app-core/shared/sdk';
@@ -219,7 +220,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         sendResponse({ ok: true });
         return true;
       case 'DISPATCH_DRAGDROP':
-        dragdrop.setEnabled(msg.payload.enabled);
+        dragdrop.setEnabled(msg.payload.enabled && isDragPopoverHostAllowed(location.host, msg.payload.hosts ?? []));
         sendResponse({ ok: true, dragdrop: dragdrop.health() });
         return true;
       case 'DISPATCH_HOVER_BUTTON':
@@ -306,12 +307,15 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 chrome.runtime.sendMessage({ type: 'CONFIG_GET' }).then((settings: any) => {
   dbg.info('content', 'init CONFIG_GET', {
     dragPopoverEnabled: settings?.dragPopoverEnabled,
+    dragPopoverHosts: settings?.dragPopoverHosts,
     imageHoverButtonEnabled: settings?.imageHoverButtonEnabled,
     snifferEnabled: settings?.snifferEnabled,
     snifferKinds: settings?.snifferKinds,
     libraryId: settings?.libraryId,
   });
-  if (settings?.dragPopoverEnabled === false) dragdrop.setEnabled(false);
+  // 拖拽快传按钮:总开关关闭,或当前 host 不在启用站点列表(空列表 = 所有站点)时禁用
+  if (settings?.dragPopoverEnabled === false
+    || !isDragPopoverHostAllowed(location.host, settings?.dragPopoverHosts)) dragdrop.setEnabled(false);
   if (settings?.imageHoverButtonEnabled !== true) hoverButton.setEnabled(false);
   if (settings?.snifferEnabled) sniffer.start(settings.snifferKinds);
   dbg.info('content', 'initialization complete', { dragdrop: dragdrop.health() });

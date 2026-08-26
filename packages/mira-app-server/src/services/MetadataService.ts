@@ -128,20 +128,22 @@ export class MetadataService {
   }
 
   enqueue(file: Record<string, any>, dbService: ILibraryServerData, onSettled?: () => void): boolean {
-    if (!this.exiftoolPath || !file?.id || !file?.path) return false;
-    const rule = this.extensionRules.get(path.extname(file.path).slice(1).toLowerCase());
+    if (!this.exiftoolPath || !file?.id) return false;
+    const rule = this.extensionRules.get(path.extname(file.name || file.path || '').slice(1).toLowerCase());
     if (!rule) return false;
 
     void this.queue.add(async () => {
       try {
-        const { stdout } = await execFileAsync(this.exiftoolPath!, ['-json', file.path], {
+        const filePath = await dbService.getItemFilePath(file, { isUrlFile: false });
+        if (!filePath) return;
+        const { stdout } = await execFileAsync(this.exiftoolPath!, ['-json', filePath], {
           windowsHide: true,
           maxBuffer: 10 * 1024 * 1024,
         });
         const raw = JSON.parse(stdout)[0] || {};
-        const metadata = compact(await rule.parse(raw, file.path));
+        const metadata = compact(await rule.parse(raw, filePath));
 
-        if (rule.extractCover && await this.extractCover(file, dbService)) {
+        if (rule.extractCover && await this.extractCover(file, filePath, dbService)) {
           metadata.cover = true;
           metadata.coverFile = `${file.hash || file.id}-cover.jpg`;
         }
@@ -155,7 +157,7 @@ export class MetadataService {
         }
         await dbService.updateFile(file.id, { metadata: { ...existing, ...metadata } });
       } catch (error) {
-        console.error(`MetadataService: failed to parse ${file.path}:`, error);
+        console.error(`MetadataService: failed to parse ${file.name || file.path}:`, error);
       } finally {
         onSettled?.();
       }
@@ -177,10 +179,11 @@ export class MetadataService {
   }
 
   /** 使用 exiftool 即时解析指定文件，供详情面板等按需读取完整 EXIF。 */
-  async parseFile(file: Record<string, any>): Promise<Record<string, any>> {
+  async parseFile(file: Record<string, any>, filePath?: string): Promise<Record<string, any>> {
     if (!this.exiftoolPath) throw new Error('exiftool is not available');
-    if (!file?.path) throw new Error('File path is required');
-    const { stdout } = await execFileAsync(this.exiftoolPath, ['-json', file.path], {
+    const sourcePath = filePath || file?.path;
+    if (!sourcePath) throw new Error('File path is required');
+    const { stdout } = await execFileAsync(this.exiftoolPath, ['-json', sourcePath], {
       windowsHide: true,
       maxBuffer: 20 * 1024 * 1024,
     });
@@ -228,9 +231,9 @@ export class MetadataService {
     return result.filter(file => this.extensionRules.has(path.extname(file.name || file.path || '').slice(1).toLowerCase()));
   }
 
-  private async extractCover(file: Record<string, any>, dbService: ILibraryServerData): Promise<boolean> {
+  private async extractCover(file: Record<string, any>, filePath: string, dbService: ILibraryServerData): Promise<boolean> {
     const cover = await new Promise<Buffer>((resolve, reject) => {
-      execFile(this.exiftoolPath!, ['-b', '-Picture', file.path], {
+      execFile(this.exiftoolPath!, ['-b', '-Picture', filePath], {
         encoding: 'buffer',
         windowsHide: true,
         maxBuffer: 25 * 1024 * 1024,

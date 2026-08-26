@@ -461,7 +461,7 @@ export class LibraryRoutes {
                 // 获取文件夹数量
                 let totalFolders = 0;
                 try {
-                    const folderResult = await libraryObj.libraryService.getSql('SELECT COUNT(*) as total_folders FROM files WHERE type = "folder" AND recycled = 0');
+                    const folderResult = await libraryObj.libraryService.getSql('SELECT COUNT(*) as total_folders FROM folders');
                     totalFolders = folderResult[0]?.total_folders || 0;
                 } catch (error) {
                     console.warn('Failed to get folder count:', error);
@@ -470,7 +470,11 @@ export class LibraryRoutes {
                 // 获取标签数量
                 let totalTags = 0;
                 try {
-                    const tagResult = await libraryObj.libraryService.getSql('SELECT COUNT(DISTINCT tag) as total_tags FROM file_tags');
+                    const tagResult = await libraryObj.libraryService.getSql(
+                        `SELECT COUNT(DISTINCT j.value) as total_tags
+                         FROM files f, json_each(CASE WHEN f.tags IS NULL OR f.tags = '' THEN '[]' ELSE f.tags END) j
+                         WHERE f.recycled = 0`
+                    );
                     totalTags = tagResult[0]?.total_tags || 0;
                 } catch (error) {
                     console.warn('Failed to get tag count:', error);
@@ -479,9 +483,9 @@ export class LibraryRoutes {
                 // 获取文件类型分布
                 let fileTypes = {};
                 try {
-                    const typeResult = await libraryObj.libraryService.getSql('SELECT type, COUNT(*) as count FROM files WHERE recycled = 0 GROUP BY type');
+                    const typeResult = await libraryObj.libraryService.getFileTypeStatistics();
                     fileTypes = typeResult.reduce((acc: any, row: any) => {
-                        acc[row.type] = row.count;
+                        acc[row.type] = row.file_count;
                         return acc;
                     }, {});
                 } catch (error) {

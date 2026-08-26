@@ -50,6 +50,7 @@ export function mergeWithDefaults(partial: Partial<ExtensionSettings>): Extensio
     }) as ImageUrlRule[]
     : DEFAULT_IMAGE_URL_RULES;
   merged.tags = orDefault(merged.tags, DEFAULT_SETTINGS.tags);
+  merged.dragPopoverHosts = orDefault(merged.dragPopoverHosts, DEFAULT_SETTINGS.dragPopoverHosts);
   merged.snifferKinds = orDefault(merged.snifferKinds, DEFAULT_SETTINGS.snifferKinds);
   merged.snifferAspectRatios = orDefault(merged.snifferAspectRatios, DEFAULT_SETTINGS.snifferAspectRatios);
   merged.imuRules = validRules(merged.imuRules);

@@ -315,12 +315,10 @@ export class ThumbnailService {
   /**
    * 文件入库回调（onFileImported 钩子）：入队生成缩略图。
    * 触发点是数据层 createFileFromPath，上传/导入/CLI 等所有写入路径统一生效，
-   * 不依赖调用方广播 EventManager 事件。
-   */
+  * 不依赖调用方广播 EventManager 事件。
+  */
   onFileImported(libraryId: string, file: Record<string, any>, dbService: ILibraryServerData): void {
-    const filePath = file.path;
-    if (!filePath) return;
-    const generator = this.getGeneratorForFile(filePath);
+    const generator = this.getGeneratorForFile(file.name || file.path || '');
     if (!generator) return;
 
     this.taskQueue.push(async () => {
@@ -329,6 +327,7 @@ export class ThumbnailService {
         const current = await dbService.getFile(file.id);
         if (!current || current.thumb) return;
 
+        const filePath = await dbService.getItemFilePath(current, { isUrlFile: false });
         const thumbPath = await dbService.getItemThumbPath(current);
         // 生成到同扩展名临时文件；写回前复查 thumb（copyThumb 可能在生成期间已放入源缩略图）
         const tmpPath = thumbPath.replace(/(\.[^.]+)?$/, (ext) => `.gen${ext || '.png'}`);

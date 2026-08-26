@@ -144,6 +144,8 @@ export interface ExtensionSettings {
   /** 界面语言:i18n locale */
   locale: Locale;
   dragPopoverEnabled: boolean;
+  /** 拖拽快传按钮启用站点(host 列表,空 = 所有站点) */
+  dragPopoverHosts: string[];
   dropZoneEnabled: boolean;
   /** 页面图片 hover 时右上角显示 dots 操作按钮(点击弹出「导入图片」菜单) */
   imageHoverButtonEnabled: boolean;
@@ -185,6 +187,7 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   theme: 'auto',
   locale: 'zh-CN',
   dragPopoverEnabled: true,
+  dragPopoverHosts: [],
   dropZoneEnabled: true,
   imageHoverButtonEnabled: false,
   snifferEnabled: false,
@@ -200,6 +203,16 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   imuEnabled: true,
   imuRules: DEFAULT_IMAGE_URL_RULES,
 };
+
+/**
+ * 判断拖拽快传按钮是否在指定 host 启用。
+ * hosts 为空 = 所有站点;否则按 host 精确匹配(忽略大小写与首尾空白)。
+ */
+export function isDragPopoverHostAllowed(host: string, hosts: string[] | undefined): boolean {
+  if (!hosts?.length) return true;
+  const h = (host || '').trim().toLowerCase();
+  return hosts.some(item => item.trim().toLowerCase() === h);
+}
 
 /**
  * 跨上下文文件序列化结构

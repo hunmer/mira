@@ -1249,7 +1249,8 @@ export class FileRoutes {
                     const file = await obj.libraryService.getFile(id);
                     if (!file) return null;
                     try {
-                        return { id: String(id), tags: await this.backend.metadataService.parseFile(file) };
+                        const filePath = await obj.libraryService.getItemFilePath(file, { isUrlFile: false });
+                        return { id: String(id), tags: await this.backend.metadataService.parseFile(file, filePath) };
                     } catch (error) {
                         return { id: String(id), error: error instanceof Error ? error.message : String(error) };
                     }

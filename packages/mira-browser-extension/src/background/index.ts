@@ -204,7 +204,8 @@ async function applyFeatureSettings(tabId: number, settings: ExtensionSettings):
   try {
     const dragdropResult = await sendToContent<{ ok: boolean; dragdrop?: unknown }>(tabId, {
       type: 'DISPATCH_DRAGDROP',
-      payload: { enabled: settings.dragPopoverEnabled },
+      // hosts 由 content 按页面 location.host 过滤(空列表 = 所有站点)
+      payload: { enabled: settings.dragPopoverEnabled, hosts: settings.dragPopoverHosts },
     });
     dbg.info('inject', 'content dragdrop ready', { tabId, result: dragdropResult });
     await sendToContent(tabId, {
