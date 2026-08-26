@@ -18,6 +18,8 @@ interface ProviderConfig {
 interface StoreData {
   providers: ProviderConfig[];
   defaultProviderId: string | null;
+  defaultImageProviderId: string | null;
+  defaultImageModelId: string | null;
 }
 
 interface PresetModel {
@@ -152,7 +154,12 @@ class MiraAiSdkPlugin {
   private readonly libraryId: string;
   private readonly dataFile: string;
   private readonly pluginDir: string;
-  private store: StoreData = { providers: [], defaultProviderId: null };
+  private store: StoreData = {
+    providers: [],
+    defaultProviderId: null,
+    defaultImageProviderId: null,
+    defaultImageModelId: null,
+  };
   private presetsCache: PresetFile | null = null;
 
   constructor(inst: any) {
@@ -183,9 +190,16 @@ class MiraAiSdkPlugin {
       this.store = {
         providers: Array.isArray(raw.providers) ? raw.providers : [],
         defaultProviderId: raw.defaultProviderId ?? null,
+        defaultImageProviderId: raw.defaultImageProviderId ?? null,
+        defaultImageModelId: raw.defaultImageModelId ?? null,
       };
     } catch {
-      this.store = { providers: [], defaultProviderId: null };
+      this.store = {
+        providers: [],
+        defaultProviderId: null,
+        defaultImageProviderId: null,
+        defaultImageModelId: null,
+      };
     }
   }
 
@@ -238,6 +252,8 @@ class MiraAiSdkPlugin {
       hasApiKey: Boolean(item.apiKey),
       models: item.models,
       isDefault: item.id === this.store.defaultProviderId,
+      isDefaultImage: item.id === this.store.defaultImageProviderId,
+      defaultImageModelId: item.id === this.store.defaultImageProviderId ? this.store.defaultImageModelId : null,
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
     }));
@@ -310,7 +326,13 @@ class MiraAiSdkPlugin {
 
     // 注意: HttpRouter 同一 path 只支持一种 method，各操作使用独立路径
     router.registerRounter(libraryId, '/ai-sdk/providers/list', 'get', async (_req: any, res: any) => {
-      res.json({ success: true, providers: this.maskedProviders(), defaultProviderId: this.store.defaultProviderId });
+      res.json({
+        success: true,
+        providers: this.maskedProviders(),
+        defaultProviderId: this.store.defaultProviderId,
+        defaultImageProviderId: this.store.defaultImageProviderId,
+        defaultImageModelId: this.store.defaultImageModelId,
+      });
     });
 
     router.registerRounter(libraryId, '/ai-sdk/providers/create', 'post', async (req: any, res: any) => {
@@ -363,6 +385,9 @@ class MiraAiSdkPlugin {
           const models = parseModels(body.models);
           if (!models.length) throw new Error('至少配置一个模型');
           provider.models = models;
+          if (this.store.defaultImageProviderId === provider.id && !models.includes(this.store.defaultImageModelId || '')) {
+            this.store.defaultImageModelId = models[0];
+          }
         }
         provider.updatedAt = Date.now();
         this.saveStore();
@@ -379,6 +404,10 @@ class MiraAiSdkPlugin {
         if (this.store.defaultProviderId === provider.id) {
           this.store.defaultProviderId = this.store.providers[0]?.id ?? null;
         }
+        if (this.store.defaultImageProviderId === provider.id) {
+          this.store.defaultImageProviderId = null;
+          this.store.defaultImageModelId = null;
+        }
         this.saveStore();
         res.json({ success: true });
       } catch (error) {
@@ -390,6 +419,20 @@ class MiraAiSdkPlugin {
       try {
         const provider = this.findProvider(req.body?.id);
         this.store.defaultProviderId = provider.id;
+        this.saveStore();
+        res.json({ success: true });
+      } catch (error) {
+        res.status(400).json({ success: false, error: this.errorMessage(error) });
+      }
+    });
+
+    router.registerRounter(libraryId, '/ai-sdk/providers/default-image', 'post', async (req: any, res: any) => {
+      try {
+        const provider = this.findProvider(req.body?.id);
+        const model = String(req.body?.model || '').trim();
+        if (!provider.models.includes(model)) throw new Error('生图模型不属于该服务商');
+        this.store.defaultImageProviderId = provider.id;
+        this.store.defaultImageModelId = model;
         this.saveStore();
         res.json({ success: true });
       } catch (error) {
@@ -529,11 +572,13 @@ class MiraAiSdkPlugin {
             fetch: imageResponseFetch,
           }).imageModel(modelId);
         } else {
-          const provider = this.resolveProvider(body.providerId);
+          const imageProviderId = body.providerId || this.store.defaultImageProviderId;
+          const provider = this.resolveProvider(imageProviderId);
           providerId = provider.id;
           providerName = provider.name;
-          imageModel = this.buildImageModel(provider, body.model);
-          modelId = String(body.model || '').trim() || provider.models[0];
+          const requestedModel = body.model || (provider.id === this.store.defaultImageProviderId ? this.store.defaultImageModelId : undefined);
+          imageModel = this.buildImageModel(provider, requestedModel);
+          modelId = String(requestedModel || '').trim() || provider.models[0];
         }
 
         const n = Math.min(Math.max(1, Number(body.n) || 1), 10);

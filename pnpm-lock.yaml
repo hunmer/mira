@@ -917,6 +917,9 @@ importers:
       vee-validate:
         specifier: ^4.15.1
         version: 4.15.1(vue@3.5.13(typescript@5.8.3))
+      vue-draggable-plus:
+        specifier: ^0.6.1
+        version: 0.6.1(@types/sortablejs@1.15.9)
       vue-input-otp:
         specifier: ^0.4.0
         version: 0.4.0(typescript@5.8.3)(vue@3.5.13(typescript@5.8.3))

@@ -47,6 +47,7 @@
     "reka-ui": "^2.9.7",
     "tailwind-merge": "^3.3.0",
     "vee-validate": "^4.15.1",
+    "vue-draggable-plus": "^0.6.1",
     "vue-input-otp": "^0.4.0",
     "vue-sonner": "^2.0.9"
   },
